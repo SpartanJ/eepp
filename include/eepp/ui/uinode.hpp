@@ -276,6 +276,34 @@ class EE_API UINode : public Node {
 
 	virtual const Rectf& getPixelsPadding() const;
 
+	const std::string& getMinWidthEq() const;
+
+	void setMinSizeEq( const std::string& minWidthEq, const std::string& minHeightEq );
+
+	void setMinWidthEq( const std::string& minWidthEq );
+
+	const std::string& getMinHeightEq() const;
+
+	void setMinHeightEq( const std::string& minHeightEq );
+
+	const std::string& getMaxWidthEq() const;
+
+	void setMaxSizeEq( const std::string& maxWidthEq, const std::string& maxHeightEq );
+
+	void setMaxWidthEq( const std::string& maxWidthEq );
+
+	const std::string& getMaxHeightEq() const;
+
+	void setMaxHeightEq( const std::string& maxHeightEq );
+
+	Sizef getMinSize();
+
+	Sizef getMaxSize();
+
+	Sizef fitMinMaxSizeDp( const Sizef& size ) const;
+
+	Sizef fitMinMaxSizePx( const Sizef& size ) const;
+
   protected:
 	Vector2f mDpPos;
 	Sizef mDpSize;
@@ -293,6 +321,10 @@ class EE_API UINode : public Node {
 	Rectf mPadding;
 	Rectf mPaddingPx;
 	UIClip mClip;
+	std::string mMinWidthEq;
+	std::string mMinHeightEq;
+	std::string mMaxWidthEq;
+	std::string mMaxHeightEq;
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 

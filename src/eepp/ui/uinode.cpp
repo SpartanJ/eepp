@@ -174,8 +174,8 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 	}
 }
 
-Node* UINode::setSize( const Sizef& Size ) {
-	Sizef s( Size );
+Node* UINode::setSize( const Sizef& size ) {
+	Sizef s( fitMinMaxSizeDp( size ) );
 
 	if ( s.x < mMinSize.x )
 		s.x = mMinSize.x;
@@ -203,7 +203,7 @@ Node* UINode::setSize( const Float& Width, const Float& Height ) {
 }
 
 UINode* UINode::setPixelsSize( const Sizef& size ) {
-	Sizef s( size );
+	Sizef s( fitMinMaxSizePx( size ) );
 	Sizef pMinSize( PixelDensity::dpToPx( mMinSize ) );
 
 	if ( s.x < pMinSize.x )
@@ -262,6 +262,202 @@ void UINode::setMinHeight( const Float& height ) {
 
 const Sizef& UINode::getMinSize() const {
 	return mMinSize;
+}
+
+const std::string& UINode::getMinWidthEq() const {
+	return mMinWidthEq;
+}
+
+void UINode::setMinSizeEq( const std::string& minWidthEq, const std::string& minHeightEq ) {
+	if ( mMinWidthEq != minWidthEq || mMinHeightEq != minHeightEq ) {
+		mMinWidthEq = minWidthEq;
+		mMinHeightEq = minHeightEq;
+
+		if ( !mMinWidthEq.empty() ) {
+			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		}
+
+		if ( !mMinHeightEq.empty() ) {
+			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		}
+
+		setSize( mDpSize );
+	}
+}
+
+void UINode::setMinWidthEq( const std::string& minWidthEq ) {
+	if ( mMinWidthEq != minWidthEq ) {
+		mMinWidthEq = minWidthEq;
+
+		if ( !mMinWidthEq.empty() ) {
+			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		}
+
+		setSize( mDpSize );
+	}
+}
+
+const std::string& UINode::getMinHeightEq() const {
+	return mMinHeightEq;
+}
+
+void UINode::setMinHeightEq( const std::string& minHeightEq ) {
+	if ( mMinHeightEq != minHeightEq ) {
+		mMinHeightEq = minHeightEq;
+
+		if ( !mMinHeightEq.empty() ) {
+			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		}
+
+		setSize( mDpSize );
+	}
+}
+
+const std::string& UINode::getMaxWidthEq() const {
+	return mMaxWidthEq;
+}
+
+void UINode::setMaxSizeEq( const std::string& maxWidthEq, const std::string& maxHeightEq ) {
+	if ( mMaxWidthEq != maxWidthEq || mMaxHeightEq != maxHeightEq ) {
+		mMaxWidthEq = maxWidthEq;
+		mMaxHeightEq = maxHeightEq;
+		setSize( mDpSize );
+	}
+}
+
+void UINode::setMaxWidthEq( const std::string& maxWidthEq ) {
+	if ( mMaxWidthEq != maxWidthEq ) {
+		mMaxWidthEq = maxWidthEq;
+		setSize( mDpSize );
+	}
+}
+
+const std::string& UINode::getMaxHeightEq() const {
+	return mMaxHeightEq;
+}
+
+void UINode::setMaxHeightEq( const std::string& maxHeightEq ) {
+	if ( mMaxHeightEq != maxHeightEq ) {
+		mMaxHeightEq = maxHeightEq;
+		setSize( mDpSize );
+	}
+}
+
+Sizef UINode::getMaxSize() {
+	Sizef s;
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+
+	return s;
+}
+
+Sizef UINode::getMinSize() {
+	Sizef s;
+
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
+
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
+
+	if ( !mMinWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMinHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+	return s;
+}
+
+Sizef UINode::fitMinMaxSizePx( const Sizef& size ) const {
+	Sizef s( size );
+
+	if ( mMinSize.x != 0.f && s.x < PixelDensity::pxToDp( mMinSize.x ) )
+		s.x = PixelDensity::pxToDp( mMinSize.x );
+
+	if ( mMinSize.y != 0.f && s.y < PixelDensity::pxToDp( mMinSize.y ) )
+		s.y = PixelDensity::pxToDp( mMinSize.y );
+
+	if ( !mMinWidthEq.empty() ) {
+		Float length =
+			lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMinHeightEq.empty() ) {
+		Float length =
+			lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemin( s.x, length );
+	}
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float length =
+			lengthFromValue( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemin( s.y, length );
+	}
+
+	return s;
+}
+
+Sizef UINode::fitMinMaxSizeDp( const Sizef& size ) const {
+	Sizef s( size );
+
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
+
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
+
+	if ( !mMinWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMinHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemin( s.x, length );
+	}
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemin( s.y, length );
+	}
+
+	return s;
 }
 
 void UINode::updateOriginPoint() {

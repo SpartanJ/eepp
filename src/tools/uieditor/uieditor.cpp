@@ -50,13 +50,16 @@ UISceneNode* uiSceneNode = NULL;
 UISceneNode* appUiSceneNode = NULL;
 std::string currentLayout;
 std::string currentStyleSheet;
+std::string baseStyleSheet;
 bool layoutExpanded = true;
 bool updateLayout = false;
 bool updateStyleSheet = false;
+bool updateBaseStyleSheet = false;
 bool useDefaultTheme = false;
 bool preserveContainerSize = false;
 Clock waitClock;
 Clock cssWaitClock;
+Clock cssBaseWaitClock;
 efsw::WatchID watch = 0;
 efsw::WatchID styleSheetWatch = 0;
 std::map<std::string, std::string> widgetRegistered;
@@ -116,6 +119,9 @@ class UpdateListener : public efsw::FileWatchListener {
 			} else if ( dir + filename == currentStyleSheet ) {
 				updateStyleSheet = true;
 				cssWaitClock.restart();
+			} else if ( dir + filename == baseStyleSheet ) {
+				updateBaseStyleSheet = true;
+				cssBaseWaitClock.restart();
 			}
 		}
 	}
@@ -218,15 +224,13 @@ static void loadStyleSheet( std::string cssPath ) {
 		bool keepWatch = false;
 
 		for ( auto& directory : fileWatcher->directories() ) {
-			if ( directory == folder ) {
+			if ( directory == folder )
 				keepWatch = true;
-			}
 		}
 
 		if ( !keepWatch ) {
-			if ( styleSheetWatch != 0 ) {
+			if ( styleSheetWatch != 0 )
 				fileWatcher->removeWatch( styleSheetWatch );
-			}
 
 			styleSheetWatch = fileWatcher->addWatch( folder, listener );
 		}
@@ -271,17 +275,23 @@ static void refreshLayout() {
 }
 
 static void refreshStyleSheet() {
+	if ( updateBaseStyleSheet )
+		theme->reloadStyleSheet();
+
 	if ( !currentStyleSheet.empty() && FileSystem::fileExists( currentStyleSheet ) &&
 		 uiContainer != NULL ) {
 		loadStyleSheet( currentStyleSheet );
+	} else if ( updateBaseStyleSheet ) {
+		setUserDefaultTheme();
+	}
 
-		if ( !currentLayout.empty() && FileSystem::fileExists( currentLayout ) &&
-			 uiContainer != NULL ) {
-			loadLayout( currentLayout );
-		}
+	if ( !currentLayout.empty() && FileSystem::fileExists( currentLayout ) &&
+		 uiContainer != NULL ) {
+		loadLayout( currentLayout );
 	}
 
 	updateStyleSheet = false;
+	updateBaseStyleSheet = false;
 }
 
 void onRecentProjectClick( const Event* event ) {
@@ -741,7 +751,8 @@ void mainLoop() {
 	if ( updateLayout && waitClock.getElapsedTime().asMilliseconds() > 250.f )
 		refreshLayout();
 
-	if ( updateStyleSheet && cssWaitClock.getElapsedTime().asMilliseconds() > 250.f )
+	if ( ( updateStyleSheet && cssWaitClock.getElapsedTime().asMilliseconds() > 250.f ) ||
+		 ( updateBaseStyleSheet && cssBaseWaitClock.getElapsedTime().asMilliseconds() > 250.f ) )
 		refreshStyleSheet();
 
 	SceneManager::instance()->update();
@@ -964,7 +975,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			FontTrueType::New( "NotoSans-Regular", resPath + "assets/fonts/NotoSans-Regular.ttf" );
 		FontTrueType::New( "monospace", resPath + "assets/fonts/DejaVuSansMono.ttf" );
 
-		theme = UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );
+		baseStyleSheet = resPath + "assets/ui/breeze.css";
+		theme = UITheme::load( "uitheme", "uitheme", "", font, baseStyleSheet );
 
 		uiSceneNode = UISceneNode::New();
 		uiSceneNode->setId( "uiSceneNode" );

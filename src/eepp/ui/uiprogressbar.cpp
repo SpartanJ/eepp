@@ -24,15 +24,14 @@ class UIProgressBarFiller : public UIWidget {
 		if ( NULL == mFillerSkin )
 			return;
 
-		Float Height = (Float)mSize.getHeight();
+		Sizef fSize( mSize );
 
 		if ( !mProgressBar->getStyleConfig().VerticalExpand )
-			Height = (Float)mFillerSkin->getSize().getHeight();
+			fSize.y = (Float)mFillerSkin->getSize().getHeight();
 
-		if ( Height > mSize.getHeight() )
-			Height = mSize.getHeight();
+		if ( fSize.y > mSize.getHeight() )
+			fSize.y = mSize.getHeight();
 
-		Sizef fSize( mSize );
 		Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
 		Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
 						(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
@@ -94,7 +93,7 @@ void UIProgressBar::scheduledUpdate( const Time& time ) {
 
 	Vector2f offset( mOffset );
 
-	mOffset += mStyleConfig.MovementSpeed * ( Float )( time.asSeconds() );
+	mOffset += mStyleConfig.MovementSpeed * (Float)( time.asSeconds() );
 
 	Sizei rSize( PixelDensity::dpToPxI( mFiller->mFillerSkin->getSize() ) );
 
@@ -211,7 +210,7 @@ const bool& UIProgressBar::getDisplayPercent() const {
 
 void UIProgressBar::updateTextBox() {
 	mTextBox->setVisible( mStyleConfig.DisplayPercent );
-	mTextBox->setText( String::toString( ( Int32 )( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
+	mTextBox->setText( String::toString( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
 	mTextBox->center();
 }
 

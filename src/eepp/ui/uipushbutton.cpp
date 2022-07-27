@@ -108,7 +108,7 @@ void UIPushButton::onAutoSize() {
 			return;
 		}
 
-		Sizef fsize = fitMinMaxSize( size );
+		Sizef fsize = fitMinMaxSizePx( size );
 
 		if ( size.getWidth() != fsize.getWidth() ) {
 			UIWidget* eiw = getExtraInnerWidget();

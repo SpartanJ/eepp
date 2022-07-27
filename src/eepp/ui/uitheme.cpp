@@ -45,6 +45,7 @@ UITheme* UITheme::load( const std::string& name, const std::string& abbr,
 
 	if ( styleSheetParser.loadFromFile( styleSheetPath ) ) {
 		theme->setStyleSheet( styleSheetParser.getStyleSheet() );
+		theme->setStyleSheetPath( styleSheetPath );
 	}
 
 	if ( textureAtlasPath.empty() )
@@ -334,6 +335,28 @@ void UITheme::setDefaultFontSize( const Float& defaultFontSize ) {
 
 UIIconTheme* UITheme::getIconTheme() const {
 	return mIconTheme;
+}
+
+const std::string& UITheme::getStyleSheetPath() const {
+	return mStyleSheetPath;
+}
+
+void UITheme::setStyleSheetPath( const std::string& styleSheetPath ) {
+	mStyleSheetPath = styleSheetPath;
+}
+
+bool UITheme::reloadStyleSheet() {
+	if ( mStyleSheetPath.empty() )
+		return false;
+
+	CSS::StyleSheetParser styleSheetParser;
+
+	if ( styleSheetParser.loadFromFile( mStyleSheetPath ) ) {
+		setStyleSheet( styleSheetParser.getStyleSheet() );
+		return true;
+	}
+
+	return false;
 }
 
 Font* UITheme::getDefaultFont() const {

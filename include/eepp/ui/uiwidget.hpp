@@ -35,8 +35,6 @@ class EE_API UIWidget : public UINode {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	virtual Node* setSize( const Sizef& size );
-
 	virtual UINode* setFlags( const Uint32& flags );
 
 	virtual UINode* unsetFlags( const Uint32& flags );
@@ -49,11 +47,7 @@ class EE_API UIWidget : public UINode {
 
 	virtual UINode* setThemeSkin( UITheme* Theme, const std::string& skinName );
 
-	virtual Node* setSize( const Float& Width, const Float& Height );
-
 	virtual Node* setId( const std::string& id );
-
-	virtual const Sizef& getSize() const;
 
 	virtual bool acceptsDropOfWidget( const UIWidget* widget );
 
@@ -214,34 +208,10 @@ class EE_API UIWidget : public UINode {
 
 	bool isSceneNodeLoading() const;
 
-	const std::string& getMinWidthEq() const;
-
-	void setMinSizeEq( const std::string& minWidthEq, const std::string& minHeightEq );
-
-	void setMinWidthEq( const std::string& minWidthEq );
-
-	const std::string& getMinHeightEq() const;
-
-	void setMinHeightEq( const std::string& minHeightEq );
-
-	const std::string& getMaxWidthEq() const;
-
-	void setMaxSizeEq( const std::string& maxWidthEq, const std::string& maxHeightEq );
-
-	void setMaxWidthEq( const std::string& maxWidthEq );
-
-	const std::string& getMaxHeightEq() const;
-
-	void setMaxHeightEq( const std::string& maxHeightEq );
-
 	void reportStyleStateChangeRecursive( bool disableAnimations = false,
 										  bool forceReApplyStyles = false );
 
 	void createTooltip();
-
-	Sizef getMinSize();
-
-	Sizef getMaxSize();
 
 	bool isTabStop() const;
 
@@ -252,8 +222,6 @@ class EE_API UIWidget : public UINode {
 	bool isTooltipEnabled() const;
 
 	void setTooltipEnabled( bool enabled );
-
-	Sizef fitMinMaxSize( const Sizef& size ) const;
 
   protected:
 	friend class UIManager;
@@ -279,10 +247,6 @@ class EE_API UIWidget : public UINode {
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
 	std::vector<std::string> mPseudoClasses;
-	std::string mMinWidthEq;
-	std::string mMinHeightEq;
-	std::string mMaxWidthEq;
-	std::string mMaxHeightEq;
 
 	explicit UIWidget( const std::string& tag );
 

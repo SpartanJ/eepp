@@ -143,6 +143,10 @@ class EE_API UISceneNode : public SceneNode {
 
 	void setColorSchemePreference( const ColorSchemePreference& colorSchemePreference );
 
+	const Uint32& getMaxInvalidationDepth() const;
+
+	void setMaxInvalidationDepth( const Uint32& maxInvalidationDepth );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -166,6 +170,7 @@ class EE_API UISceneNode : public SceneNode {
 	std::unordered_set<UILayout*> mDirtyLayouts;
 	std::vector<std::pair<Float, std::string>> mTimes;
 	ColorSchemePreference mColorSchemePreference{ ColorSchemePreference::Dark };
+	Uint32 mMaxInvalidationDepth{ 2 };
 
 	virtual void resizeNode( EE::Window::Window* win );
 

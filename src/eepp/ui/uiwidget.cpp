@@ -384,89 +384,6 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-Sizef UIWidget::fitMinMaxSize( const Sizef& size ) const {
-	Sizef s( size );
-
-	if ( s.x < mMinSize.x )
-		s.x = mMinSize.x;
-
-	if ( s.y < mMinSize.y )
-		s.y = mMinSize.y;
-
-	if ( !mMinWidthEq.empty() ) {
-		Float length =
-			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
-		s.x = eemax( s.x, length );
-	}
-
-	if ( !mMinHeightEq.empty() ) {
-		Float length =
-			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
-		s.y = eemax( s.y, length );
-	}
-
-	if ( !mMaxWidthEq.empty() ) {
-		Float length =
-			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
-		s.x = eemin( s.x, length );
-	}
-
-	if ( !mMaxHeightEq.empty() ) {
-		Float length =
-			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
-		s.y = eemin( s.y, length );
-	}
-
-	return s;
-}
-
-Node* UIWidget::setSize( const Sizef& size ) {
-	Sizef s( size );
-	s = fitMinMaxSize( s );
-	return UINode::setSize( s );
-}
-
-Sizef UIWidget::getMinSize() {
-	Sizef s;
-
-	if ( s.x < mMinSize.x )
-		s.x = mMinSize.x;
-
-	if ( s.y < mMinSize.y )
-		s.y = mMinSize.y;
-
-	if ( !mMinWidthEq.empty() ) {
-		Float length =
-			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
-		s.x = eemax( s.x, length );
-	}
-
-	if ( !mMinHeightEq.empty() ) {
-		Float length =
-			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
-		s.y = eemax( s.y, length );
-	}
-	return s;
-}
-
-Sizef UIWidget::getMaxSize() {
-	Sizef s;
-
-	if ( !mMaxWidthEq.empty() ) {
-		Float length =
-			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
-		s.x = eemax( s.x, length );
-	}
-
-	if ( !mMaxHeightEq.empty() ) {
-		Float length =
-			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
-		s.y = eemax( s.y, length );
-	}
-
-	return s;
-}
-
 UINode* UIWidget::setFlags( const Uint32& flags ) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();
@@ -509,10 +426,6 @@ UINode* UIWidget::setThemeSkin( UITheme* Theme, const std::string& skinName ) {
 	return UINode::setThemeSkin( Theme, skinName );
 }
 
-Node* UIWidget::setSize( const Float& Width, const Float& Height ) {
-	return UINode::setSize( Width, Height );
-}
-
 Node* UIWidget::setId( const std::string& id ) {
 	Node::setId( id );
 
@@ -522,10 +435,6 @@ Node* UIWidget::setId( const std::string& id ) {
 	}
 
 	return this;
-}
-
-const Sizef& UIWidget::getSize() const {
-	return UINode::getSize();
 }
 
 bool UIWidget::acceptsDropOfWidget( const UIWidget* ) {
@@ -688,89 +597,6 @@ void UIWidget::reportStyleStateChange( bool disableAnimations, bool forceReApply
 
 bool UIWidget::isSceneNodeLoading() const {
 	return NULL != mUISceneNode ? mUISceneNode->isLoading() : false;
-}
-
-const std::string& UIWidget::getMinWidthEq() const {
-	return mMinWidthEq;
-}
-
-void UIWidget::setMinSizeEq( const std::string& minWidthEq, const std::string& minHeightEq ) {
-	if ( mMinWidthEq != minWidthEq || mMinHeightEq != minHeightEq ) {
-		mMinWidthEq = minWidthEq;
-		mMinHeightEq = minHeightEq;
-
-		if ( !mMinWidthEq.empty() ) {
-			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
-											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
-		}
-
-		if ( !mMinHeightEq.empty() ) {
-			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
-											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
-		}
-
-		setSize( mDpSize );
-	}
-}
-
-void UIWidget::setMinWidthEq( const std::string& minWidthEq ) {
-	if ( mMinWidthEq != minWidthEq ) {
-		mMinWidthEq = minWidthEq;
-
-		if ( !mMinWidthEq.empty() ) {
-			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
-											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
-		}
-
-		setSize( mDpSize );
-	}
-}
-
-const std::string& UIWidget::getMinHeightEq() const {
-	return mMinHeightEq;
-}
-
-void UIWidget::setMinHeightEq( const std::string& minHeightEq ) {
-	if ( mMinHeightEq != minHeightEq ) {
-		mMinHeightEq = minHeightEq;
-
-		if ( !mMinHeightEq.empty() ) {
-			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
-											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
-		}
-
-		setSize( mDpSize );
-	}
-}
-
-const std::string& UIWidget::getMaxWidthEq() const {
-	return mMaxWidthEq;
-}
-
-void UIWidget::setMaxSizeEq( const std::string& maxWidthEq, const std::string& maxHeightEq ) {
-	if ( mMaxWidthEq != maxWidthEq || mMaxHeightEq != maxHeightEq ) {
-		mMaxWidthEq = maxWidthEq;
-		mMaxHeightEq = maxHeightEq;
-		setSize( mDpSize );
-	}
-}
-
-void UIWidget::setMaxWidthEq( const std::string& maxWidthEq ) {
-	if ( mMaxWidthEq != maxWidthEq ) {
-		mMaxWidthEq = maxWidthEq;
-		setSize( mDpSize );
-	}
-}
-
-const std::string& UIWidget::getMaxHeightEq() const {
-	return mMaxHeightEq;
-}
-
-void UIWidget::setMaxHeightEq( const std::string& maxHeightEq ) {
-	if ( mMaxHeightEq != maxHeightEq ) {
-		mMaxHeightEq = maxHeightEq;
-		setSize( mDpSize );
-	}
 }
 
 const Rectf& UIWidget::getPadding() const {

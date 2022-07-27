@@ -1360,6 +1360,9 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 						  and can be mistaken for other control
 						  codes. */
 					break;
+				case 2026: // IGNORE DECSET/DECRST 2026 for sync updates
+						   // (https://codeberg.org/dnkl/foot/pulls/461/files)
+					break;
 				default:
 					fprintf( stderr, "erresc: unknown private set/reset mode %d\n", *args );
 					break;
@@ -2432,7 +2435,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 	char buf[40];
 	static int ox, oy;
 
-	for ( btn = 1; btn <= 11 && !( flags & ( 1 << ( btn - 1 ) ) ); btn++ )
+	for ( btn = 1; btn <= 31 && !( flags & ( 1 << ( btn - 1 ) ) ); btn++ )
 		;
 
 	if ( type == TerminalMouseEventType::MouseMotion ) {
@@ -2448,6 +2451,27 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 
 		code = 32;
 	} else {
+		/* Fix button numbers from ee to tty */
+		switch ( btn ) {
+			case 28:
+				btn = 4;
+				break;
+			case 29:
+				btn = 5;
+				break;
+			case 30:
+				btn = 6;
+				break;
+			case 31:
+				btn = 7;
+				break;
+			default: {
+				if ( btn >= 4 && btn <= 7 )
+					btn += 4;
+				break;
+			}
+		}
+
 		/* Only buttons 1 through 11 can be encoded */
 		if ( btn < 1 || btn > 11 )
 			return;
@@ -2456,7 +2480,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 			if ( xgetmode( MODE_MOUSEX10 ) )
 				return;
 			/* Don't send release events for the scroll wheel */
-			if ( btn == 4 || btn == 5 )
+			if ( btn >= 28 && btn <= 31 )
 				return;
 		}
 		code = 0;
@@ -2472,9 +2496,9 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 		code += 3;
 	else if ( btn >= 8 )
 		code += 128 + btn - 8;
-	else if ( btn >= 4 )
+	else if ( btn >= 4 ) {
 		code += 64 + btn - 4;
-	else
+	} else
 		code += btn - 1;
 
 	if ( !xgetmode( MODE_MOUSEX10 ) ) {

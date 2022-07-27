@@ -485,7 +485,7 @@ void UISceneNode::update( const Time& elapsed ) {
 	// of any of these 3 steps. Usually during the layout update, this could trigger resizes that
 	// provokes the creation of dynamic elements. This is the case of the UIListBox for example
 	// that creates childs dynamically only when they are visible.
-	int invalidationDepth = 2;
+	int invalidationDepth = mMaxInvalidationDepth;
 	while ( ( !mDirtyStyle.empty() || !mDirtyStyleState.empty() || !mDirtyLayouts.empty() ) &&
 			invalidationDepth > 0 ) {
 		updateDirtyStyles();
@@ -892,6 +892,14 @@ void UISceneNode::setColorSchemePreference( const ColorSchemePreference& colorSc
 			}
 		}
 	}
+}
+
+const Uint32& UISceneNode::getMaxInvalidationDepth() const {
+	return mMaxInvalidationDepth;
+}
+
+void UISceneNode::setMaxInvalidationDepth( const Uint32& maxInvalidationDepth ) {
+	mMaxInvalidationDepth = maxInvalidationDepth;
 }
 
 }} // namespace EE::UI

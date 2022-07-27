@@ -78,6 +78,12 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
 	UIIconTheme* getIconTheme() const;
 
+	const std::string& getStyleSheetPath() const;
+
+	void setStyleSheetPath( const std::string& styleSheetPath );
+
+	bool reloadStyleSheet();
+
   protected:
 	std::string mName;
 	String::HashType mNameHash;
@@ -86,6 +92,7 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 	Font* mDefaultFont;
 	Float mDefaultFontSize;
 	CSS::StyleSheet mStyleSheet;
+	std::string mStyleSheetPath;
 	UIIconTheme* mIconTheme;
 
 	void setTextureAtlas( Graphics::TextureAtlas* SG );
