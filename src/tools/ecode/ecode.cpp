@@ -2454,7 +2454,7 @@ UIPopUpMenu* App::createToolsMenu() {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		std::string id( item->getText() );
+		std::string id( item->getId() );
 		if ( id == "open-locatebar" ) {
 			mFileLocator->showLocateBar();
 		} else if ( id == "open-global-search" ) {
