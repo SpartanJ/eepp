@@ -265,8 +265,6 @@ void UIStyle::onStateChange() {
 
 			mWidget->beginAttributesTransaction();
 
-			updateAnimations();
-
 			if ( nullptr != mDefinition && !mDefinition->getTransitionProperties().empty() ) {
 				mTransitions = TransitionDefinition::parseTransitionProperties(
 					mDefinition->getTransitionProperties() );
@@ -290,6 +288,8 @@ void UIStyle::onStateChange() {
 					applyStyleSheetProperty( *property, prevDefinition );
 				}
 			}
+
+			updateAnimations();
 
 			mWidget->endAttributesTransaction();
 		}

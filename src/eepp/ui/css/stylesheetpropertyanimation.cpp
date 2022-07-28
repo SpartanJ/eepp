@@ -422,6 +422,8 @@ void StyleSheetPropertyAnimation::setRunning( const bool& running ) {
 
 void StyleSheetPropertyAnimation::setPaused( const bool& paused ) {
 	mPaused = paused;
+	if ( !mPaused )
+		onUpdate( Time::Zero );
 }
 
 void StyleSheetPropertyAnimation::notifyClose() {
