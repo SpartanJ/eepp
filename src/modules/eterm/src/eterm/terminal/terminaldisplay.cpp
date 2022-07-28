@@ -562,6 +562,14 @@ bool TerminalDisplay::isAltScr() const {
 	return mEmulator && mEmulator->tisaltscr();
 }
 
+const Uint32& TerminalDisplay::getClickStep() const {
+	return mClickStep;
+}
+
+void TerminalDisplay::setClickStep( const Uint32& clickStep ) {
+	mClickStep = clickStep;
+}
+
 void TerminalDisplay::update() {
 	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
@@ -591,25 +599,25 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 			break;
 		}
 		case TerminalShortcutAction::SCROLLUP_SCREEN: {
-			TerminalArg arg( (int)-1 );
+			TerminalArg arg( (int)-mClickStep );
 			mTerminal->kscrollup( &arg );
 			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLDOWN_SCREEN: {
-			TerminalArg arg( (int)-1 );
+			TerminalArg arg( (int)-mClickStep );
 			mTerminal->kscrolldown( &arg );
 			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLUP_ROW: {
-			TerminalArg arg( (int)1 );
+			TerminalArg arg( (int)mClickStep );
 			mTerminal->kscrollup( &arg );
 			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;
 		}
 		case TerminalShortcutAction::SCROLLDOWN_ROW: {
-			TerminalArg arg( (int)1 );
+			TerminalArg arg( (int)mClickStep );
 			mTerminal->kscrolldown( &arg );
 			sendEvent( { EventType::SCROLL_HISTORY } );
 			break;

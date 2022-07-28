@@ -693,7 +693,7 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 	if ( outline ) {
 		if ( bold ) {
 			FT_OutlineGlyph outlineGlyph = (FT_OutlineGlyph)glyphDesc;
-			FT_Outline_Embolden( &outlineGlyph->outline, weight );
+			FT_Outline_EmboldenXY( &outlineGlyph->outline, 1 << 5, weight );
 		}
 
 		if ( outlineThickness != 0 && !mIsColorEmojiFont ) {

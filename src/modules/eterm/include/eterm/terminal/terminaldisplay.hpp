@@ -237,6 +237,10 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	bool isAltScr() const;
 
+	const Uint32& getClickStep() const;
+
+	void setClickStep( const Uint32& clickStep );
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;
@@ -268,6 +272,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	Clock mLastDoubleClick;
 	int mColumns{ 0 };
 	int mRows{ 0 };
+	Uint32 mClickStep{ 5 };
 	FrameBuffer* mFrameBuffer{ nullptr };
 	TerminalColorScheme mColorScheme;
 

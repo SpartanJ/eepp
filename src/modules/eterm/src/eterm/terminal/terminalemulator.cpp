@@ -1503,6 +1503,9 @@ void TerminalEmulator::csihandle( void ) {
 						tclearregion( 0, 0, mTerm.col - 1, mTerm.c.y - 1 );
 					tclearregion( 0, mTerm.c.y, mTerm.c.x, mTerm.c.y );
 					break;
+				case 3:
+					clearHistory();
+					// fallthrough
 				case 2: /* all */
 					tclearregion( 0, 0, mTerm.col - 1, mTerm.row - 1 );
 					break;
