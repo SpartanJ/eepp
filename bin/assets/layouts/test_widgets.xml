@@ -1,5 +1,5 @@
 <vbox layout_width="match_parent" layout_height="match_parent">
-	<TabWidget layout_width="match_parent" layout_height="match_parent" padding-left="8dp" padding-right="8dp" padding-bottom="8dp" padding-top="20dp" background="#31363b">
+	<TabWidget layout_width="match_parent" layout_height="match_parent" padding-left="8dp" padding-right="8dp" padding-bottom="8dp" background="#31363b">
 		<hbox id="test_1" layout_width="match_parent" layout_height="match_parent">
 			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" background="#31363b" padding="12dp">
 				<TextView layout_width="wrap_content" layout_height="wrap_content" text="Testing TextView" />

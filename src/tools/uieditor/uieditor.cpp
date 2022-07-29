@@ -62,6 +62,7 @@ Clock cssWaitClock;
 Clock cssBaseWaitClock;
 efsw::WatchID watch = 0;
 efsw::WatchID styleSheetWatch = 0;
+efsw::WatchID baseStyleSheetWatch = 0;
 std::map<std::string, std::string> widgetRegistered;
 std::string basePath;
 
@@ -233,6 +234,11 @@ static void loadStyleSheet( std::string cssPath ) {
 				fileWatcher->removeWatch( styleSheetWatch );
 
 			styleSheetWatch = fileWatcher->addWatch( folder, listener );
+		}
+
+		if ( baseStyleSheetWatch == 0 && useDefaultTheme ) {
+			std::string baseFolder( FileSystem::fileRemoveFileName( baseStyleSheet ) );
+			baseStyleSheetWatch = fileWatcher->addWatch( baseFolder, listener );
 		}
 	}
 }
@@ -1020,8 +1026,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		if ( useAppTheme.Get() )
 			useDefaultTheme = true;
 
-		if ( cssFile )
+		if ( cssFile ) {
 			loadStyleSheet( cssFile.Get() );
+		} else if ( useDefaultTheme ) {
+			setUserDefaultTheme();
+		}
 
 		if ( xmlFile )
 			loadLayoutFile( xmlFile.Get() );
@@ -1030,9 +1039,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			loadProject( projectFile.Get() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		if ( !xmlFile && !cssFile )
-			loadStyleSheet( "assets/ui/breeze.css" );
-		loadLayoutFile( "assets/layouts/test_widgets.xml" );
+		if ( !xmlFile && !cssFile ) {
+			useDefaultTheme = true;
+			loadStyleSheet( "assets/layouts/test.css" );
+			loadLayoutFile( "assets/layouts/test.xml" );
+		}
 #endif
 
 		window->runMainLoop( &mainLoop );
