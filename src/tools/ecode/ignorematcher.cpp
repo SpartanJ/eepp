@@ -184,7 +184,7 @@ bool GitIgnoreMatcher::match( const std::string& value ) const {
 	for ( size_t i = 0; i < mPatterns.size(); i++ ) {
 		if ( gitignore_glob_match( value, mPatterns[i].first ) ) {
 			if ( mHasNegates ) {
-				for ( size_t n = i + 1; i < mPatterns.size(); i++ ) {
+				for ( size_t n = i + 1; n < mPatterns.size(); n++ ) {
 					// Check if there's a positive negate after the match
 					if ( mPatterns[n].second && gitignore_glob_match( value, mPatterns[n].first ) )
 						return false;
