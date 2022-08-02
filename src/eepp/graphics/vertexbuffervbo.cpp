@@ -8,10 +8,10 @@
 
 namespace EE { namespace Graphics {
 
-VertexBufferVBO::VertexBufferVBO( const Uint32& VertexFlags, PrimitiveType DrawType,
-								  const Int32& ReserveVertexSize, const Int32& ReserveIndexSize,
-								  VertexBufferUsageType UsageType ) :
-	VertexBuffer( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ),
+VertexBufferVBO::VertexBufferVBO( const Uint32& vertexFlags, PrimitiveType drawType,
+								  const Int32& reserveVertexSize, const Int32& reserveIndexSize,
+								  VertexBufferUsageType usageType ) :
+	VertexBuffer( vertexFlags, drawType, reserveVertexSize, reserveIndexSize, usageType ),
 	mCompiled( false ),
 	mBuffersSet( false ),
 	mTextured( false ),
@@ -72,23 +72,54 @@ bool VertexBufferVBO::compile() {
 	// Create the VBO vertex arrays
 	for ( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
-			if ( !mVertexArray[i].empty() ) {
-				glGenBuffersARB( 1, (unsigned int*)&mArrayHandle[i] );
+			switch ( i ) {
+				case VERTEX_FLAG_POSITION: {
+					if ( mPosArray.empty() )
+						return false;
 
-				glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
+					glGenBuffersARB( 1, (unsigned int*)&mArrayHandle[i] );
+					glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
 
-				if ( mArrayHandle[i] ) {
-					if ( i != VERTEX_FLAG_COLOR )
-						glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof( Float ),
-										 &( mVertexArray[i][0] ), usageType );
-					else
-						glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0],
-										 usageType );
-				} else {
-					return false;
+					if ( !mArrayHandle[i] )
+						return false;
+
+					glBufferDataARB( GL_ARRAY_BUFFER, mPosArray.size() * sizeof( Vector2f ),
+									 &( mPosArray[0] ), usageType );
+					break;
 				}
-			} else {
-				return false;
+				case VERTEX_FLAG_TEXTURE0:
+				case VERTEX_FLAG_TEXTURE1:
+				case VERTEX_FLAG_TEXTURE2:
+				case VERTEX_FLAG_TEXTURE3:
+					if ( mTexCoordArray[i - 1].empty() )
+						return false;
+
+					glGenBuffersARB( 1, (unsigned int*)&mArrayHandle[i] );
+					glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
+
+					if ( !mArrayHandle[i] )
+						return false;
+
+					glBufferDataARB( GL_ARRAY_BUFFER,
+									 mTexCoordArray[i - 1].size() * sizeof( Vector2f ),
+									 &mTexCoordArray[i - 1][0], usageType );
+					break;
+				case VERTEX_FLAG_COLOR: {
+					if ( mColorArray.empty() )
+						return false;
+
+					glGenBuffersARB( 1, (unsigned int*)&mArrayHandle[i] );
+					glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
+
+					if ( !mArrayHandle[i] )
+						return false;
+
+					glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size() * sizeof( Color ),
+									 &mColorArray[0], usageType );
+					break;
+				}
+				default:
+					break;
 			}
 		}
 	}
@@ -310,7 +341,7 @@ void VertexBufferVBO::setVertexStates() {
 	}
 }
 
-void VertexBufferVBO::update( const Uint32& Types, bool Indices ) {
+void VertexBufferVBO::update( const Uint32& types, bool indices ) {
 	unsigned int usageType = GL_STATIC_DRAW;
 	if ( mUsageType == VertexBufferUsageType::Dynamic )
 		usageType = GL_DYNAMIC_DRAW;
@@ -318,23 +349,39 @@ void VertexBufferVBO::update( const Uint32& Types, bool Indices ) {
 		usageType = GL_STREAM_DRAW;
 
 	for ( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
-		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) && VERTEX_FLAG_QUERY( Types, i ) ) {
+		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) && VERTEX_FLAG_QUERY( types, i ) ) {
 			glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
 
 			if ( mArrayHandle[i] ) {
-				if ( i != VERTEX_FLAG_COLOR )
-					glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof( Float ),
-									 &( mVertexArray[i][0] ), usageType );
-				else
-					glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0],
-									 usageType );
+				switch ( i ) {
+					case VERTEX_FLAG_POSITION: {
+						glBufferDataARB( GL_ARRAY_BUFFER, mPosArray.size() * sizeof( Vector2f ),
+										 &( mPosArray[0] ), usageType );
+						break;
+					}
+					case VERTEX_FLAG_TEXTURE0:
+					case VERTEX_FLAG_TEXTURE1:
+					case VERTEX_FLAG_TEXTURE2:
+					case VERTEX_FLAG_TEXTURE3:
+						glBufferDataARB( GL_ARRAY_BUFFER,
+										 mTexCoordArray[i - 1].size() * sizeof( Vector2f ),
+										 &mTexCoordArray[i - 1][0], usageType );
+						break;
+					case VERTEX_FLAG_COLOR: {
+						glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size() * sizeof( Color ),
+										 &mColorArray[0], usageType );
+						break;
+					}
+					default:
+						break;
+				}
 			}
 		}
 	}
 
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
-	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && Indices ) {
+	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && indices ) {
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
 
 		glBufferDataARB( GL_ELEMENT_ARRAY_BUFFER, getIndexCount() * sizeof( Uint32 ),
