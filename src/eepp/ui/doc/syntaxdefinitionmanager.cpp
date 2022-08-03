@@ -102,15 +102,29 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addOdin();
 
 	addIgnore();
+
+	addPowerShell();
+
+	addWren();
+
+	addEnv();
+
+	addRuby();
+
+	addScala();
+
+	addSass();
+
+	addPO();
+
+	addPerl();
 }
 
 void SyntaxDefinitionManager::addPlainText() {
-	// Plain text
 	add( { "Plain Text", { "%.txt$" }, {} } );
 }
 
 void SyntaxDefinitionManager::addXML() {
-	// XML
 	add( { "XML",
 		   { "%.xml$", "%.svg$" },
 		   {
@@ -136,7 +150,6 @@ void SyntaxDefinitionManager::addXML() {
 }
 
 void SyntaxDefinitionManager::addHTML() {
-	// HTML
 	add( { "HTML",
 		   { "%.html?$", "%.php$", "%.php3$", "%.php4$", "%.php5$", "%.phtml", "%.handlebars" },
 		   {
@@ -171,7 +184,6 @@ void SyntaxDefinitionManager::addHTML() {
 }
 
 void SyntaxDefinitionManager::addCSS() {
-	// CSS
 	add( { "CSS",
 		   { "%.css$" },
 		   {
@@ -195,7 +207,6 @@ void SyntaxDefinitionManager::addCSS() {
 }
 
 void SyntaxDefinitionManager::addMarkdown() {
-	// Markdown
 	add( { "Markdown",
 		   { "%.md$", "%.markdown$" },
 		   {
@@ -255,7 +266,6 @@ void SyntaxDefinitionManager::addMarkdown() {
 }
 
 void SyntaxDefinitionManager::addC() {
-	// C
 	add( { "C",
 		   { "%.c$", "%.h$" },
 		   {
@@ -290,7 +300,6 @@ void SyntaxDefinitionManager::addC() {
 }
 
 void SyntaxDefinitionManager::addLua() {
-	// Lua
 	add( { "Lua",
 		   { "%.lua$" },
 		   {
@@ -324,7 +333,6 @@ void SyntaxDefinitionManager::addLua() {
 }
 
 void SyntaxDefinitionManager::addJavaScript() {
-	// JavaScript
 	add( { "JavaScript",
 		   { "%.js$" },
 		   {
@@ -371,7 +379,6 @@ void SyntaxDefinitionManager::addJavaScript() {
 }
 
 void SyntaxDefinitionManager::addJSON() {
-	// JSON
 	add( { "JSON",
 		   { "%.json$", "%.cson$" },
 		   {
@@ -390,7 +397,6 @@ void SyntaxDefinitionManager::addJSON() {
 }
 
 void SyntaxDefinitionManager::addTypeScript() {
-	// TypeScript
 	add(
 		{ "TypeScript",
 		  { "%.ts$", "%.tsx$", "%.d.ts$" },
@@ -433,7 +439,6 @@ void SyntaxDefinitionManager::addTypeScript() {
 }
 
 void SyntaxDefinitionManager::addPython() {
-	// Python
 	add( { "Python",
 		   { "%.py$", "%.pyw$" },
 		   {
@@ -467,7 +472,6 @@ void SyntaxDefinitionManager::addPython() {
 }
 
 void SyntaxDefinitionManager::addBash() {
-	// sh - bash
 	add( { "Bash",
 		   { "%.sh$", "%.bash$", "%.bashrc$", "%.bash_profile$" },
 		   {
@@ -497,7 +501,6 @@ void SyntaxDefinitionManager::addBash() {
 }
 
 void SyntaxDefinitionManager::addCPP() {
-	// C++
 	add( { "C++",
 		   { "%.cpp$", "%.cc$", "%.C$", "%.cxx$", "%.c++$", "%.hh$", "%.H$", "%.h$", "%.inl$",
 			 "%.hxx$", "%.hpp$", "%.h++$" },
@@ -642,7 +645,6 @@ void SyntaxDefinitionManager::addCPP() {
 }
 
 void SyntaxDefinitionManager::addPHP() {
-	// PHP
 	add( { "PHP",
 		   {},
 		   {
@@ -707,7 +709,6 @@ void SyntaxDefinitionManager::addPHP() {
 }
 
 void SyntaxDefinitionManager::addSQL() {
-	// SQL
 	const std::vector<std::string> keywords = {
 		"CREATE",	  "SELECT",		"INSERT",	 "INTO",	  "UPDATE",		  "DELETE",
 		"TABLE",	  "DROP",		"VALUES",	 "NOT",		  "NULL",		  "PRIMARY",
@@ -780,7 +781,6 @@ void SyntaxDefinitionManager::addSQL() {
 }
 
 void SyntaxDefinitionManager::addGLSL() {
-	// GLSL
 	add( { "GLSL",
 		   { "%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$" },
 		   {
@@ -1141,9 +1141,8 @@ void SyntaxDefinitionManager::addGLSL() {
 }
 
 void SyntaxDefinitionManager::addIni() {
-	// ini / conf
 	add( { "Config File",
-		   { "%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "%.env$", "%.properties$",
+		   { "%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "%.properties$",
 			 "Doxyfile" },
 		   { { { "%s?#%x%x%x%x%x%x%x%x" }, "string" },
 			 { { "%s?#%x%x%x%x%x%x" }, "string" },
@@ -1165,7 +1164,6 @@ void SyntaxDefinitionManager::addIni() {
 }
 
 void SyntaxDefinitionManager::addMakefile() {
-	// Makefile
 	add( { "Makefile",
 		   { "Makefile", "makefile", "%.mk$", "%.make$" },
 		   {
@@ -1184,7 +1182,6 @@ void SyntaxDefinitionManager::addMakefile() {
 }
 
 void SyntaxDefinitionManager::addCSharp() {
-	// C#
 	add( { "C#",
 		   { "%.cs$" },
 		   {
@@ -1239,7 +1236,6 @@ void SyntaxDefinitionManager::addCSharp() {
 }
 
 void SyntaxDefinitionManager::addGo() {
-	// Go
 	add( { "Go",
 		   { "%.go$" },
 		   {
@@ -1279,7 +1275,6 @@ void SyntaxDefinitionManager::addGo() {
 }
 
 void SyntaxDefinitionManager::addRust() {
-	// Rust
 	add( { "Rust",
 		   { "%.rs$" },
 		   {
@@ -1323,7 +1318,6 @@ void SyntaxDefinitionManager::addRust() {
 }
 
 void SyntaxDefinitionManager::addGDScript() {
-	// GDScript
 	add( { "GDScript",
 		   { "%.gd$" },
 		   {
@@ -1417,7 +1411,6 @@ void SyntaxDefinitionManager::addGDScript() {
 }
 
 void SyntaxDefinitionManager::addD() {
-	// D
 	add( { "D",
 		   { "%.d$", "%.di$" },
 		   {
@@ -1552,7 +1545,6 @@ void SyntaxDefinitionManager::addD() {
 }
 
 void SyntaxDefinitionManager::addHaskell() {
-	// Haskell
 	add( { "Haskell",
 		   { "%.hs$" },
 		   {
@@ -1581,7 +1573,6 @@ void SyntaxDefinitionManager::addHaskell() {
 }
 
 void SyntaxDefinitionManager::addHLSL() {
-	// HLSL
 	add( { "HLSL",
 		   {
 			   "%.hlsl$",
@@ -1842,7 +1833,6 @@ void SyntaxDefinitionManager::addHLSL() {
 }
 
 void SyntaxDefinitionManager::addLatex() {
-	// LaTeX
 	add( { "LaTeX",
 		   { "%.tex$" },
 		   {
@@ -1859,7 +1849,6 @@ void SyntaxDefinitionManager::addLatex() {
 }
 
 void SyntaxDefinitionManager::addMeson() {
-	// Meson
 	add( { "Meson",
 		   { "meson.build$" },
 		   {
@@ -1894,7 +1883,6 @@ void SyntaxDefinitionManager::addMeson() {
 }
 
 void SyntaxDefinitionManager::addAngelScript() {
-	// AngelScript
 	add( { "AlgelScript",
 		   { "%.as$", "%.asc$" },
 		   {
@@ -1941,7 +1929,6 @@ void SyntaxDefinitionManager::addAngelScript() {
 }
 
 void SyntaxDefinitionManager::addBatchScript() {
-	// Batch script
 	std::unordered_map<std::string, std::vector<std::string>> batchSymTable = {
 		{ "keyword",
 		  {
@@ -1995,7 +1982,6 @@ void SyntaxDefinitionManager::addBatchScript() {
 }
 
 void SyntaxDefinitionManager::addDiff() {
-	// diff - patch
 	add( { "Diff File",
 		   { "%.diff$", "%.patch$" },
 		   {
@@ -2010,7 +1996,6 @@ void SyntaxDefinitionManager::addDiff() {
 }
 
 void SyntaxDefinitionManager::addJava() {
-	// Java
 	add(
 		{ "Java",
 		  { "%.java$" },
@@ -2053,7 +2038,6 @@ void SyntaxDefinitionManager::addJava() {
 }
 
 void SyntaxDefinitionManager::addYAML() {
-	// YAML
 	add( { "YAML",
 		   { "%.yml$", "%.yaml$" },
 		   {
@@ -2087,7 +2071,6 @@ void SyntaxDefinitionManager::addYAML() {
 }
 
 void SyntaxDefinitionManager::addSwift() {
-	// Swift
 	add( { "Swift",
 		   { "%.swift$" },
 		   {
@@ -2309,7 +2292,6 @@ void SyntaxDefinitionManager::addSwift() {
 }
 
 void SyntaxDefinitionManager::addSolidity() {
-	// Solidity
 	add( { "Solidity",
 		   { "%.sol$" },
 		   {
@@ -2387,7 +2369,6 @@ void SyntaxDefinitionManager::addSolidity() {
 }
 
 void SyntaxDefinitionManager::addObjetiveC() {
-	// Objective-C
 	add( { "Objective-C",
 		   { "%.m$" },
 		   { { { "//.-\n" }, "comment" },
@@ -2419,7 +2400,6 @@ void SyntaxDefinitionManager::addObjetiveC() {
 }
 
 void SyntaxDefinitionManager::addDart() {
-	// Dart
 	add( { "Dart",
 		   { "%.dart$" },
 		   {
@@ -2455,7 +2435,6 @@ void SyntaxDefinitionManager::addDart() {
 }
 
 void SyntaxDefinitionManager::addKotlin() {
-	// Kotlin
 	add( { "Kotlin",
 		   { "%.kt$" },
 		   {
@@ -2515,7 +2494,6 @@ void SyntaxDefinitionManager::addKotlin() {
 }
 
 void SyntaxDefinitionManager::addZig() {
-	// Zig
 	add( { "Zig",
 		   { "%.zig$" },
 		   {
@@ -2627,7 +2605,6 @@ void SyntaxDefinitionManager::addZig() {
 }
 
 void SyntaxDefinitionManager::addNim() {
-	// Nim
 	std::vector<SyntaxPattern> nim_patterns;
 	std::unordered_map<std::string, std::string> nim_symbols;
 
@@ -2710,7 +2687,6 @@ void SyntaxDefinitionManager::addNim() {
 }
 
 void SyntaxDefinitionManager::addCMake() {
-	// CMake
 	std::unordered_map<std::string, std::string> cmake_symbols;
 	const std::vector<std::string> cmake_keywords{
 		"ANDROID",		  "APPLE",	   "BORLAND",		 "CACHE",	   "CYGWIN",	  "ENV",
@@ -2760,7 +2736,6 @@ void SyntaxDefinitionManager::addCMake() {
 }
 
 void SyntaxDefinitionManager::addJSX() {
-	// JSX
 	add( { "JSX",
 		   { "%.jsx$" },
 		   {
@@ -2798,7 +2773,6 @@ void SyntaxDefinitionManager::addJSX() {
 }
 
 void SyntaxDefinitionManager::addContainerfile() {
-	// Containerfile / Dockerfile
 	add( { "Containerfile",
 		   { "^[Cc]ontainerfile$", "^[dD]ockerfile$", "%.[cC]ontainerfile$", "%.[dD]ockerfile$" },
 		   { { { "#.*\n" }, "comment" },
@@ -2830,7 +2804,6 @@ void SyntaxDefinitionManager::addContainerfile() {
 }
 
 void SyntaxDefinitionManager::addOdin() {
-	// Odin
 	add( { "Odin",
 		   { "%.odin$" },
 		   {
@@ -2972,6 +2945,552 @@ void SyntaxDefinitionManager::addIgnore() {
 		   },
 		   {},
 		   "#" } );
+}
+
+void SyntaxDefinitionManager::addPowerShell() {
+	add( { "PowerShell",
+		   { "%.ps1$", "%.psm1$", "%.psd1$", "%.ps1xml$", "%.pssc$", "%.psrc$", "%.cdxml$" },
+		   { { { "#.*\n" }, "comment" },
+			 { { "[[\\.]]" }, "normal" },
+			 { { "\"", "\"" }, "string" },
+			 { { "'", "'" }, "string" },
+			 { { "%f[%w_][%d%.]+%f[^%w_]" }, "number" },
+			 { { "[%+=/%*%^%%<>!~|&,:]+" }, "operator" },
+			 { { "%f[%S]%-[%w%-_]+" }, "function" },
+			 { { "[%u][%a]+[%-][%u][%a]+" }, "function" },
+			 { { "${.*}" }, "symbol" },
+			 { { "$[%a_@*][%w_]*" }, "keyword2" },
+			 { { "$[%$][%a]+" }, "keyword2" },
+			 { { "[%a_][%w_]*" }, "symbol" } },
+		   { { "if", "keyword" },
+			 { "else", "keyword" },
+			 { "elseif", "keyword" },
+			 { "switch", "keyword" },
+			 { "default", "keyword" },
+			 { "function", "keyword" },
+			 { "filter", "keyword" },
+			 { "workflow", "keyword" },
+			 { "configuration", "keyword" },
+			 { "class", "keyword" },
+			 { "enum", "keyword" },
+			 { "Parameter", "keyword" },
+			 { "ValidateScript", "keyword" },
+			 { "CmdletBinding", "keyword" },
+			 { "try", "keyword" },
+			 { "catch", "keyword" },
+			 { "finally", "keyword" },
+			 { "throw", "keyword" },
+			 { "while", "keyword" },
+			 { "for", "keyword" },
+			 { "do", "keyword" },
+			 { "until", "keyword" },
+			 { "break", "keyword" },
+			 { "continue", "keyword" },
+			 { "foreach", "keyword" },
+			 { "in", "keyword" },
+			 { "return", "keyword" },
+			 { "where", "function" },
+			 { "select", "function" },
+			 { "filter", "keyword" },
+			 { "trap", "keyword" },
+			 { "param", "keyword" },
+			 { "data", "keyword" },
+			 { "dynamicparam", "keyword" },
+			 { "begin", "function" },
+			 { "process", "function" },
+			 { "end", "function" },
+			 { "exit", "function" },
+			 { "inlinescript", "function" },
+			 { "parallel", "function" },
+			 { "sequence", "function" },
+			 { "true", "literal" },
+			 { "false", "literal" },
+			 { "TODO", "comment" },
+			 { "FIXME", "comment" },
+			 { "XXX", "comment" },
+			 { "TBD", "comment" },
+			 { "HACK", "comment" },
+			 { "NOTE", "comment" } },
+		   "#" } );
+}
+
+void SyntaxDefinitionManager::addWren() {
+	add( { "Wren",
+		   { "%.wren$" },
+		   {
+			   { { "//.-\n" }, "comment" },
+			   { { "/%*", "%*/" }, "comment" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "-?%.?%d+" }, "number" },
+			   { { "%.%.%.?" }, "operator" },
+			   { { "[<>!=]=" }, "operator" },
+			   { { "[%+%-=/%*%^%%<>!~|&?:]" }, "operator" },
+			   { { "[%a_][%w_]*%s*%f[(\"{]" }, "function" },
+			   { { "[%a_][%w_]*" }, "symbol" },
+		   },
+		   {
+			   { "break", "keyword" }, { "class", "keyword" },	{ "construct", "keyword" },
+			   { "else", "keyword" },  { "for", "keyword" },	{ "foreign", "keyword" },
+			   { "if", "keyword" },	   { "import", "keyword" }, { "in", "keyword" },
+			   { "is", "keyword" },	   { "return", "keyword" }, { "static", "keyword" },
+			   { "super", "keyword" }, { "var", "keyword" },	{ "while", "keyword" },
+			   { "this", "keyword2" }, { "true", "literal" },	{ "false", "literal" },
+			   { "null", "literal" },
+		   },
+		   "//" } );
+}
+
+void SyntaxDefinitionManager::addEnv() {
+	add( { "Environment File",
+		   { "%.env$", "%.env.[%w-_]*$" },
+		   { { { "^#.-\n" }, "comment" },
+			 { { "%s#.-\n" }, "comment" },
+			 { { "\\[nrtfb\\\"']" }, "literal" },
+			 { { "'?\\u%x%x%x%x'?" }, "literal" },
+			 { { "(%${)([%w]+[%w_]*)(})" }, { "keyword", "keyword", "keyword2", "keyword" } },
+			 { { "%$[%w]+[%w_]*" }, "keyword2" },
+			 { { "[%a_][%w-+_%s%p]-%f[=]" }, "keyword" },
+			 { { "\"", "\"", "\\" }, "string" },
+			 { { "'", "'", "\\" }, "string" },
+			 { { "^%[.-%]" }, "keyword2" },
+			 { { "%s%[.-%]" }, "keyword2" },
+			 { { "=" }, "operator" },
+			 { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"
+				 "?%%#=-]*" },
+			   "link" },
+			 { { "[a-z]+" }, "symbol" } },
+		   { { "true", "literal" },
+			 { "false", "literal" },
+			 { "export", "literal" },
+			 { "null", "literal" } },
+		   "#" } );
+}
+
+void SyntaxDefinitionManager::addRuby() {
+	add( {
+		"Ruby",
+		{ "%.rb", "%.gemspec", "%.ruby" },
+		{
+			{ { "\"", "\"", "\\" }, "string" },
+			{ { "'", "'", "\\" }, "string" },
+			{ { "-?0x%x+" }, "number" },
+			{ { "%#.-\n" }, "comment" },
+			{ { "-?%d+[%d%.eE]*f?" }, "number" },
+			{ { "-?%.?%d+f?" }, "number" },
+			{ { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			{ { "[%a_][%w_]*%f[(]" }, "function" },
+			{ { "@?@[%a_][%w_]*" }, "keyword2" },
+			{ { "::[%w_]*" }, "symbol" },
+			{ { ":[%w_]*" }, "keyword2" },
+			{ { "[%a_][%w_]*:[^:]" }, "keyword2" },
+			{ { "[%a_][%w_]*" }, "symbol" },
+		},
+		{
+			{ "nil", "literal" },
+			{ "end", "literal" },
+			{ "true", "literal" },
+			{ "false", "literal" },
+			{ "private", "keyword" },
+			{ "extend", "keyword" },
+			{ "include", "keyword" },
+			{ "require", "keyword" },
+			{ "require_dependency", "keyword" },
+			{ "__ENCODING__", "keyword" },
+			{ "__LINE__", "keyword" },
+			{ "__FILE__", "keyword" },
+			{ "BEGIN", "keyword" },
+			{ "END", "keyword" },
+			{ "alias", "keyword" },
+			{ "and", "keyword" },
+			{ "begin", "keyword" },
+			{ "break", "keyword" },
+			{ "case", "keyword" },
+			{ "class", "keyword" },
+			{ "def", "keyword" },
+			{ "defined?", "keyword" },
+			{ "do", "keyword" },
+			{ "else", "keyword" },
+			{ "elsif", "keyword" },
+			{ "ensure", "keyword" },
+			{ "for", "keyword" },
+			{ "if", "keyword" },
+			{ "in", "keyword" },
+			{ "module", "keyword" },
+			{ "next", "keyword" },
+			{ "not", "keyword" },
+			{ "or", "keyword" },
+			{ "redo", "keyword" },
+			{ "rescue", "keyword" },
+			{ "retry", "keyword" },
+			{ "return", "keyword" },
+			{ "self", "keyword" },
+			{ "super", "keyword" },
+			{ "then", "keyword" },
+			{ "undef", "keyword" },
+			{ "unless", "keyword" },
+			{ "until", "keyword" },
+			{ "when", "keyword" },
+			{ "while", "keyword" },
+			{ "yield", "keyword" },
+		},
+		"#",
+		{ "^#!.*[ /]ruby" },
+	} );
+}
+
+void SyntaxDefinitionManager::addScala() {
+	add( {
+		"Scala",
+		{ "%.sc$", "%.scala$" },
+		{
+			{ { "//.-\n" }, "comment" },
+			{ { "/%*", "%*/" }, "comment" },
+			{ { "[ruU]?\"", "\"", "\\" }, "string" },
+			{ { "[ruU]?'", "'", "\\" }, "string" },
+			{ { "0x[%da-fA-F]+" }, "number" },
+			{ { "-?%d+[%d%.eE]*" }, "number" },
+			{ { "-?%.?%d+" }, "number" },
+			{ { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			{ { "[%a_][%w_]*\"\"\"*[%a_][%w_]*\"\"\"" }, "string" },
+			{ { "[%a_][%w_]*%f[(]" }, "function" },
+			{ { "[%a_][%w_]*" }, "symbol" },
+		},
+		{
+			{ "abstract", "keyword" },	 { "case", "keyword" },		{ "catch", "keyword" },
+			{ "class", "keyword" },		 { "finally", "keyword" },	{ "final", "keyword" },
+			{ "do", "keyword" },		 { "extends", "keyword" },	{ "forSome", "keyword" },
+			{ "implicit", "keyword" },	 { "lazy", "keyword" },		{ "match", "keyword" },
+			{ "new", "keyword" },		 { "override", "keyword" }, { "package", "keyword" },
+			{ "throw", "keyword" },		 { "trait", "keyword" },	{ "type", "keyword" },
+			{ "var", "keyword" },		 { "val", "keyword" },		{ "println", "keyword" },
+			{ "return", "keyword" },	 { "for", "keyword" },		{ "Try", "keyword" },
+			{ "def", "keyword" },		 { "while", "keyword" },	{ "with", "keyword" },
+			{ "if", "keyword" },		 { "else", "keyword" },		{ "import", "keyword" },
+			{ "object", "keyword" },	 { "yield", "keyword" },	{ "private", "keyword2" },
+			{ "protected", "keyword2" }, { "sealed", "keyword2" },	{ "super", "keyword2" },
+			{ "this", "keyword2" },		 { "Byte", "keyword2" },	{ "Short", "keyword2" },
+			{ "Int", "keyword2" },		 { "Long", "keyword2" },	{ "Float", "keyword2" },
+			{ "Double", "keyword2" },	 { "Char", "keyword2" },	{ "String", "keyword2" },
+			{ "List", "keyword2" },		 { "Array", "keyword2" },	{ "Boolean", "keyword2" },
+			{ "Null", "literal" },		 { "Any", "literal" },		{ "AnyRef", "literal" },
+			{ "Nothing", "literal" },	 { "Unit", "literal" },		{ "true", "literal" },
+			{ "false", "literal" },
+		},
+		"//",
+	} );
+}
+
+void SyntaxDefinitionManager::addSass() {
+	add( {
+		"Sass",
+		{ "%.sass$", "%.scss$" },
+		{
+			{ { "/[/%*].-\n" }, "comment" },
+			{ { "\"", "\"", "\\" }, "string" },
+			{ { "'", "'", "\\" }, "string" },
+			{ { "$%w+" }, "keyword" },
+			{ { "@%w+" }, "literal" },
+			{ { "[#,]%w+" }, "function" },
+			{ { "&" }, "keyword2" },
+			{ { "[:%/%*%-]" }, "operator" },
+			{ { "[%a][%w-]*%s*%f[:]" }, "keyword2" },
+			{ { "-?%d+[%d%.]*p[xt]" }, "number" },
+			{ { "-?%d+[%d%.]*deg" }, "number" },
+			{ { "-?%d+[%d%.]*[s%%]" }, "number" },
+			{ { "-?%d+[%d%.]*" }, "number" },
+			{ { "[%a_][%w_]*" }, "symbol" },
+		},
+		{
+			{ "transparent", "literal" }, { "none", "literal" },	 { "absolute", "literal" },
+			{ "relative", "literal" },	  { "solid", "literal" },	 { "flex", "literal" },
+			{ "flex-start", "literal" },  { "flex-end", "literal" }, { "row", "literal" },
+			{ "center", "literal" },	  { "column", "literal" },	 { "pointer", "literal" },
+			{ "ease", "literal" },		  { "white", "function" },	 { "black", "function" },
+			{ "gray", "function" },		  { "blue", "function" },	 { "red", "function" },
+			{ "purple", "function" },	  { "green", "function" },	 { "yellow", "function" },
+		},
+		"//",
+	} );
+}
+
+void SyntaxDefinitionManager::addPO() {
+	add( {
+		"PO",
+		{ "%.po$", "%.pot$" },
+		{
+			{ { "#", "\n" }, "comment" },
+			{ { "\"", "\"", "\\" }, "string" },
+			{ { "[%[%]]" }, "operator" },
+			{ { "%d+" }, "number" },
+			{ { "[%a_][%w_]*" }, "symbol" },
+		},
+		{
+			{ "msgctxt", "keyword" },
+			{ "msgid", "keyword" },
+			{ "msgid_plural", "keyword" },
+			{ "msgstr", "keyword" },
+		},
+		"#",
+	} );
+}
+
+void SyntaxDefinitionManager::addPerl() {
+	add( {
+		"Perl",
+		{ "%.pm$", "%.pl$" },
+		{
+			{ { "%#.-\n" }, "comment" },
+			{ { "\"", "\"", "\\" }, "string" },
+			{ { "'", "'", "\\" }, "string" },
+			{ { "-?%d+[%d%.eE]*" }, "number" },
+			{ { "-?%.?%d+" }, "number" },
+			{ { "[%a_][%w_]*%f[(]" }, "function" },
+			{ { "[%@%$%*]+[%a_][%w_]*" }, "keyword2" },
+			{ { "%--[%a_][%w_]*" }, "symbol" },
+		},
+		{
+			{ "-A", "keyword" },
+			{ "END", "keyword" },
+			{ "length", "keyword" },
+			{ "setpgrp", "keyword" },
+			{ "-B", "keyword" },
+			{ "endgrent", "keyword" },
+			{ "link", "keyword" },
+			{ "setpriority", "keyword" },
+			{ "-b", "keyword" },
+			{ "endhostent", "keyword" },
+			{ "listen", "keyword" },
+			{ "setprotoent", "keyword" },
+			{ "-C", "keyword" },
+			{ "endnetent", "keyword" },
+			{ "local", "keyword" },
+			{ "setpwent", "keyword" },
+			{ "-c", "keyword" },
+			{ "endprotoent", "keyword" },
+			{ "localtime", "keyword" },
+			{ "setservent", "keyword" },
+			{ "-d", "keyword" },
+			{ "endpwent", "keyword" },
+			{ "log", "keyword" },
+			{ "setsockopt", "keyword" },
+			{ "-e", "keyword" },
+			{ "endservent", "keyword" },
+			{ "lstat", "keyword" },
+			{ "shift", "keyword" },
+			{ "-f", "keyword" },
+			{ "eof$", "keyword" },
+			{ "map", "keyword" },
+			{ "shmctl", "keyword" },
+			{ "-g", "keyword" },
+			{ "eval", "keyword" },
+			{ "mkdir", "keyword" },
+			{ "shmget", "keyword" },
+			{ "-k", "keyword" },
+			{ "exec", "keyword" },
+			{ "msgctl", "keyword" },
+			{ "shmread", "keyword" },
+			{ "-l", "keyword" },
+			{ "exists", "keyword" },
+			{ "msgget", "keyword" },
+			{ "shmwrite", "keyword" },
+			{ "-M", "keyword" },
+			{ "exit", "keyword" },
+			{ "msgrcv", "keyword" },
+			{ "shutdown", "keyword" },
+			{ "-O", "keyword" },
+			{ "fcntl", "keyword" },
+			{ "msgsnd", "keyword" },
+			{ "sin", "keyword" },
+			{ "-o", "keyword" },
+			{ "fileno", "keyword" },
+			{ "my", "keyword" },
+			{ "sleep", "keyword" },
+			{ "-p", "keyword" },
+			{ "flock", "keyword" },
+			{ "next", "keyword" },
+			{ "socket", "keyword" },
+			{ "package", "keyword" },
+			{ "-r", "keyword" },
+			{ "fork", "keyword" },
+			{ "not", "keyword" },
+			{ "socketpair", "keyword" },
+			{ "-R", "keyword" },
+			{ "format", "keyword" },
+			{ "oct", "keyword" },
+			{ "sort", "keyword" },
+			{ "-S", "keyword" },
+			{ "formline", "keyword" },
+			{ "open", "keyword" },
+			{ "splice", "keyword" },
+			{ "-s", "keyword" },
+			{ "getc", "keyword" },
+			{ "opendir", "keyword" },
+			{ "split", "keyword" },
+			{ "-T", "keyword" },
+			{ "getgrent", "keyword" },
+			{ "ord", "keyword" },
+			{ "sprintf", "keyword" },
+			{ "-t", "keyword" },
+			{ "getgrgid", "keyword" },
+			{ "our", "keyword" },
+			{ "sqrt", "keyword" },
+			{ "-u", "keyword" },
+			{ "getgrnam", "keyword" },
+			{ "pack", "keyword" },
+			{ "srand", "keyword" },
+			{ "-w", "keyword" },
+			{ "gethostbyaddr", "keyword" },
+			{ "pipe", "keyword" },
+			{ "stat", "keyword" },
+			{ "-W", "keyword" },
+			{ "gethostbyname", "keyword" },
+			{ "pop", "keyword" },
+			{ "state", "keyword" },
+			{ "-X", "keyword" },
+			{ "gethostent", "keyword" },
+			{ "pos", "keyword" },
+			{ "study", "keyword" },
+			{ "-x", "keyword" },
+			{ "getlogin", "keyword" },
+			{ "print", "keyword" },
+			{ "substr", "keyword" },
+			{ "-z", "keyword" },
+			{ "getnetbyaddr", "keyword" },
+			{ "printf", "keyword" },
+			{ "symlink", "keyword" },
+			{ "abs", "keyword" },
+			{ "getnetbyname", "keyword" },
+			{ "prototype", "keyword" },
+			{ "syscall", "keyword" },
+			{ "accept", "keyword" },
+			{ "getnetent", "keyword" },
+			{ "push", "keyword" },
+			{ "sysopen", "keyword" },
+			{ "alarm", "keyword" },
+			{ "getpeername", "keyword" },
+			{ "quotemeta", "keyword" },
+			{ "sysread", "keyword" },
+			{ "atan2", "keyword" },
+			{ "getpgrp", "keyword" },
+			{ "rand", "keyword" },
+			{ "sysseek", "keyword" },
+			{ "AUTOLOAD", "keyword" },
+			{ "getppid", "keyword" },
+			{ "read", "keyword" },
+			{ "system", "keyword" },
+			{ "BEGIN", "keyword" },
+			{ "getpriority", "keyword" },
+			{ "readdir", "keyword" },
+			{ "syswrite", "keyword" },
+			{ "bind", "keyword" },
+			{ "getprotobyname", "keyword" },
+			{ "readline", "keyword" },
+			{ "tell", "keyword" },
+			{ "binmode", "keyword" },
+			{ "getprotobynumber", "keyword" },
+			{ "SUPER", "keyword" },
+			{ "readlink", "keyword" },
+			{ "telldir", "keyword" },
+			{ "bless", "keyword" },
+			{ "sub", "keyword" },
+			{ "getprotoent", "keyword" },
+			{ "readpipe", "keyword" },
+			{ "tie", "keyword" },
+			{ "getpwent", "keyword" },
+			{ "recv", "keyword" },
+			{ "tied", "keyword" },
+			{ "caller", "keyword" },
+			{ "getpwnam", "keyword" },
+			{ "redo", "keyword" },
+			{ "time", "keyword" },
+			{ "chdir", "keyword" },
+			{ "getpwuid", "keyword" },
+			{ "ref", "keyword" },
+			{ "times", "keyword" },
+			{ "CHECK", "keyword" },
+			{ "getservbyname", "keyword" },
+			{ "rename", "keyword" },
+			{ "truncate", "keyword" },
+			{ "chmod", "keyword" },
+			{ "getservbyport", "keyword" },
+			{ "require", "keyword" },
+			{ "uc", "keyword" },
+			{ "chomp", "keyword" },
+			{ "getservent", "keyword" },
+			{ "reset", "keyword" },
+			{ "ucfirst", "keyword" },
+			{ "chop", "keyword" },
+			{ "getsockname", "keyword" },
+			{ "return", "keyword" },
+			{ "umask", "keyword" },
+			{ "chown", "keyword" },
+			{ "getsockopt", "keyword" },
+			{ "reverse", "keyword" },
+			{ "undef", "keyword" },
+			{ "chr", "keyword" },
+			{ "glob", "keyword" },
+			{ "rewinddir", "keyword" },
+			{ "UNITCHECK", "keyword" },
+			{ "chroot", "keyword" },
+			{ "gmtime", "keyword" },
+			{ "rindex", "keyword" },
+			{ "unlink", "keyword" },
+			{ "close", "keyword" },
+			{ "goto", "keyword" },
+			{ "rmdir", "keyword" },
+			{ "unpack", "keyword" },
+			{ "closedir", "keyword" },
+			{ "grep", "keyword" },
+			{ "say", "keyword" },
+			{ "unshift", "keyword" },
+			{ "connect", "keyword" },
+			{ "hex", "keyword" },
+			{ "scalar", "keyword" },
+			{ "untie", "keyword" },
+			{ "cos", "keyword" },
+			{ "index", "keyword" },
+			{ "seek", "keyword" },
+			{ "use", "keyword" },
+			{ "crypt", "keyword" },
+			{ "INIT", "keyword" },
+			{ "seekdir", "keyword" },
+			{ "utime", "keyword" },
+			{ "dbmclose", "keyword" },
+			{ "int", "keyword" },
+			{ "select", "keyword" },
+			{ "values", "keyword" },
+			{ "dbmopen", "keyword" },
+			{ "ioctl", "keyword" },
+			{ "semctl", "keyword" },
+			{ "vec", "keyword" },
+			{ "defined", "keyword" },
+			{ "join", "keyword" },
+			{ "semget", "keyword" },
+			{ "wait", "keyword" },
+			{ "delete", "keyword" },
+			{ "keys", "keyword" },
+			{ "semop", "keyword" },
+			{ "waitpid", "keyword" },
+			{ "DESTROY", "keyword" },
+			{ "kill", "keyword" },
+			{ "send", "keyword" },
+			{ "wantarray", "keyword" },
+			{ "die", "keyword" },
+			{ "last", "keyword" },
+			{ "setgrent", "keyword" },
+			{ "warn", "keyword" },
+			{ "dump", "keyword" },
+			{ "lc", "keyword" },
+			{ "sethostent", "keyword" },
+			{ "write", "keyword" },
+			{ "each", "keyword" },
+			{ "lcfirst", "keyword" },
+			{ "setnetent", "keyword" },
+		},
+		"#",
+		{ "^#!.*[ /]perl" },
+	} );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {

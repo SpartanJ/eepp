@@ -125,6 +125,22 @@ class EE_API SyntaxDefinitionManager {
 	void addOdin();
 
 	void addIgnore();
+
+	void addPowerShell();
+
+	void addWren();
+
+	void addEnv();
+
+	void addRuby();
+
+	void addScala();
+
+	void addSass();
+
+	void addPO();
+
+	void addPerl();
 };
 
 }}} // namespace EE::UI::Doc
