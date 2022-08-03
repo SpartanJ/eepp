@@ -21,6 +21,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 
 	addHTML();
 
+	addCSS();
+
 	addMarkdown();
 
 	addC();
