@@ -318,6 +318,8 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 		for ( const auto& file : j["files"] ) {
 			if ( !file.contains( "type" ) || file["type"] == "editor" ) {
 				std::string path( file["path"] );
+				if ( !FileSystem::fileExists( path ) )
+					return;
 				TextRange selection( TextRange::fromString( file["selection"] ) );
 				editorSplitter->loadAsyncFileFromPathInNewTab(
 					path, pool,
