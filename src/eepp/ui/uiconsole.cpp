@@ -438,6 +438,7 @@ void UIConsole::createDefaultCommands() {
 	addCommand( "ls", [&]( const auto& params ) { cmdDir( params ); } );
 	addCommand( "showfps", [&]( const auto& params ) { cmdShowFps( params ); } );
 	addCommand( "gettexturememory", [&]( const auto& ) { cmdGetTextureMemory(); } );
+	addCommand( "hide", [&]( const auto& ) { hide(); } );
 }
 
 void UIConsole::cmdClear() {
