@@ -87,19 +87,25 @@ int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::R
 
 	mPrevRs = rs;
 
+	bool inString = false;
+	int prevChar = -1;
+
 	while ( pos < str.size() ) {
 		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos + 1] == '*' ) {
 			rs = ReadingComment;
 			return pos;
 		}
 
-		if ( str[pos] == ';' ) {
+		if ( str[pos] == ';' && !inString ) {
 			rs = ReadingPropertyName;
 
 			addProperty( propName, buffer );
 
 			return pos + 1;
 		}
+
+		if ( str[pos] == '"' && prevChar != '\\' )
+			inString = !inString;
 
 		if ( str[pos] != '\n' && str[pos] != '\r' && str[pos] != '\t' )
 			buffer += str[pos];
@@ -113,6 +119,8 @@ int StyleSheetPropertiesParser::readPropertyValue( StyleSheetPropertiesParser::R
 
 			return pos + 1;
 		}
+
+		prevChar = str[pos - 1];
 	}
 
 	return pos;

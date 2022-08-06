@@ -4,6 +4,8 @@
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/system/base64.hpp>
+#include <eepp/system/md5.hpp>
 
 #include <eepp/network/http.hpp>
 #include <eepp/network/uri.hpp>
@@ -42,6 +44,61 @@ static Drawable* searchByNameInternal( const std::string& name ) {
 		drawable = TextureFactory::instance()->getByHash( id );
 	}
 
+	return drawable;
+}
+
+static Drawable* parseDataURI( const std::string& name ) {
+	auto hash = MD5::fromString( name ).toHexString();
+	Drawable* drawable = TextureFactory::instance()->getByName( hash );
+	std::string::size_type formatAndEncSep;
+	if ( nullptr == drawable &&
+		 ( formatAndEncSep = name.find_first_of( ',' ) ) != std::string::npos ) {
+		std::string decodingType = "urldecode";
+		std::string mediaType = name.substr( 0, formatAndEncSep );
+		std::string format;
+		auto parts = String::split( mediaType, ';' );
+		if ( parts.empty() )
+			return nullptr;
+		auto formatNamePos = parts[0].find_first_of( '/' );
+		if ( formatNamePos + 1 < mediaType.size() )
+			format = parts[0].substr( formatNamePos + 1 );
+		if ( parts.size() > 1 ) {
+			for ( size_t i = 1; i < parts.size(); ++i ) {
+				if ( "base64" == parts[i] ) {
+					decodingType = parts[i];
+					break;
+				}
+			}
+		}
+
+		Uint32 texId = 0;
+		if ( !format.empty() &&
+			 ( Image::isImageExtension( "." + format ) || format == "svg+xml" ) ) {
+			if ( decodingType == "base64" ) {
+				int fileStart = formatAndEncSep + 1;
+				int base64Size = name.size() - fileStart;
+				int bufSize = Base64::decodeSafeOutLen( base64Size );
+				if ( bufSize <= 0 )
+					return nullptr;
+				ScopedBuffer buffer( bufSize );
+				int len = Base64::decode( base64Size, &name[fileStart], bufSize, buffer.get() );
+				if ( len > 0 )
+					texId = TextureFactory::instance()->loadFromMemory( buffer.get(), len );
+			} else if ( decodingType == "urldecode" ) {
+				int fileStart = formatAndEncSep + 1;
+				std::string decoded( URI::decode( name.substr( fileStart ) ) );
+				if ( !decoded.empty() )
+					texId = TextureFactory::instance()->loadFromMemory(
+						(const unsigned char*)decoded.c_str(), decoded.size() );
+			}
+		}
+
+		if ( texId > 0 ) {
+			Texture* tex = TextureFactory::instance()->getTexture( texId );
+			tex->setName( hash );
+			drawable = tex;
+		}
+	}
 	return drawable;
 }
 
@@ -118,6 +175,8 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 			}
 
 			drawable = texture;
+		} else if ( String::startsWith( name, "data:image/" ) ) {
+			drawable = parseDataURI( name );
 		} else {
 			drawable = searchByNameInternal( name );
 		}

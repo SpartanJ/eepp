@@ -502,6 +502,13 @@ TabWidget {
 	margin-right: 8dp;
 }
 
+#tm {
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAA/UlEQVR42u3ZsQkAMAhFwW/I/iubIQIp4l1vIw8srE46jLWsQAAIAAEgAASAABAAAkAACAABIAAEwKf21bRH8vAAkqRU4AQgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAKwAgEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAA8dwB+IAUBZkHfLAAAAABJRU5ErkJggg=="),
+					  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='45'%3E%3Cpath d='M10 10h60' stroke='%2300F' stroke-width='5'/%3E%3Cpath d='M10 20h60' stroke='%230F0' stroke-width='5'/%3E%3Cpath d='M10 30h60' stroke='red' stroke-width='5'/%3E%3C/svg%3E");
+	background-repeat: none;
+	background-position: 0 0, 64dp 0dp;
+}
+
 @media screen and (max-width: 1024px) {
 
 #lvbox {

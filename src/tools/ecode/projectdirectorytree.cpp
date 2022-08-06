@@ -167,6 +167,9 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 				FileSystem::dirAddSlashAtEnd( fullpath );
 				if ( currentDirs.find( fullpath ) == currentDirs.end() )
 					continue;
+				if ( std::find( mDirectories.begin(), mDirectories.end(), fullpath ) !=
+					 mDirectories.end() )
+					continue;
 				mDirectories.push_back( fullpath );
 			} else {
 				mDirectories.push_back( fullpath );

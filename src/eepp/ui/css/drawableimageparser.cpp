@@ -203,14 +203,18 @@ void DrawableImageParser::registerBaseParsers() {
 		for ( size_t i = 0; i < params.size(); i++ ) {
 			std::string param( String::toLower( params[i] ) );
 
-			if ( Color::isColorString( param ) ) {
+			if ( param == "solid" || param == "fill" ) {
+				drawable->setFillMode( DRAW_FILL );
+			} else if ( String::startsWith( param, "line" ) ) {
+				drawable->setFillMode( DRAW_LINE );
+			} else if ( Color::isColorString( param ) ) {
 				colors.push_back( Color::fromString( param ) );
 			} else {
 				std::vector<std::string> vertex( String::split( param, ',' ) );
 
 				if ( vertex.size() == 3 ) {
 					for ( size_t v = 0; v < vertex.size(); v++ ) {
-						vertex[v] = String::trim( vertex[v] );
+						String::trimInPlace( vertex[v] );
 						std::vector<std::string> coords( String::split( vertex[v], ' ' ) );
 
 						if ( coords.size() == 2 ) {
@@ -302,7 +306,7 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["url"] = []( const FunctionString& functionType, const Sizef& /*size*/, bool& /*ownIt*/,
-						UINode *
+						UINode*
 						/*node*/ ) -> Drawable* {
 		if ( functionType.getParameters().size() < 1 ) {
 			return NULL;

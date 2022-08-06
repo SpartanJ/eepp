@@ -280,6 +280,10 @@ Sets if the element skin background should be expanded to the element dimensions
 
 Read [background-image](https://developer.mozilla.org/en-US/docs/Web/CSS/background-image) documentation.
 
+* Applicable to: Any element
+* Data Type: [resource-path](#resource-path-data-type)
+* Default value: `none`
+
 ---
 
 ### background-position-x
@@ -601,6 +605,10 @@ Same as [background-color](#background-color) but for the foreground.
 
 Same as [background-image](#background-image) but for the foreground.
 
+* Applicable to: Any element
+* Data Type: [resource-path](#resource-path-data-type)
+* Default value: `none`
+
 ---
 
 ### foreground-position-x
@@ -776,7 +784,7 @@ The mode defines the visibility of the horizontal scroll.
 Sets an icon to an element that support icons.
 
 * Applicable to: EE::UI::UIImage (Image), EE::UI::UIPushButton (PushButton), EE::UI::UITab (Tab)
-* Data Type: resource-path (`url()`)
+* Data Type: [resource-path](#resource-path-data-type)
 * Default value: _No value_
 
 ---
@@ -1550,34 +1558,8 @@ Sets the space ocuppied by the first view contained by the splitter.
 Sets the source of a resource in an element that supports source.
 
 * Applicable to: EE::UI::UIImage (Image), EE::UI::UISprite (Sprite), EE::UI::UITextureRegion (TextureRegion)
-* Data Type: [string](#string-data-type)
+* Data Type: [resource-path](#resource-path-data-type)
 * Default value: _No value_
-
-Syntax:
-
-For Image (all the examples are valid).
-
-For a TextureRegion only the examples with: @textureregion, @drawable, drawable_resource_name
-from a texture region resource are valid.
-
-For a Sprite only the examples with: all the examples are valid except for @9p and http/s resources.
-
-```CSS
-src: file://assets/icon/ee.png; /** relative path to the current working diretory */
-src: "file://assets/icon/ee.png";
-src: https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png;
-src: "https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png";
-src: url(file://assets/icon/ee.png);
-src: url(https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png);
-src: url("file://assets/icon/ee.png");
-src: @image/image_name_already_in_texture_factory;
-src: @texture/image_name_already_in_texture_factory;
-src: @textureregion/region_name_already_in_any_texture_atlas;
-src: @sprite/sprite_name_already_in_any_texture_atlas; /* sprite pattern name **/
-src: @drawable/drawable_name_already_in_any_drawable_manager; /* drawable managers are any holder of image resources. This includes: texture atlases, textures, nine patchs. */
-src: @9p/nine_patch_resource_name_already_in_the_nine_path_manager;
-src: drawable_resource_name; /** same as doing: @drawable/drawable_resource_name */
-```
 
 ---
 
@@ -2313,6 +2295,45 @@ Read [number](https://developer.mozilla.org/en-US/docs/Web/CSS/number) documenta
 ### position (data-type)
 
 Read [position](https://developer.mozilla.org/en-US/docs/Web/CSS/position_value) documentation.
+
+---
+
+### resource-path (data-type)
+
+For EE::UI::UIImage (Image), background-image, foreground-image (all the examples are valid).
+
+For a EE::UI::UITextureRegion (TextureRegion) only the examples with: @textureregion, @drawable, 
+drawable_resource_name from a texture region resource are valid.
+
+For a EE::UI::UISprite (Sprite) only the examples with: all the examples are valid except for @9p 
+and http/s resources.
+
+Valid resources path:
+```CSS
+file://assets/icon/ee.png; /** relative path to the current working diretory */
+"file://assets/icon/ee.png";
+https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png;
+"https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png";
+url(file://assets/icon/ee.png);
+url(https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png);
+url("file://assets/icon/ee.png");
+url(data:image/format;base64,data);
+url(data:image/format,url-encoded-data);
+@image/image_name_already_in_texture_factory;
+@texture/image_name_already_in_texture_factory;
+@textureregion/region_name_already_in_any_texture_atlas;
+@sprite/sprite_name_already_in_any_texture_atlas; /* sprite pattern name **/
+@drawable/drawable_name_already_in_any_drawable_manager; /* drawable managers are any holder of image resources. This includes: texture atlases, textures, nine patchs. */
+@9p/nine_patch_resource_name_already_in_the_nine_path_manager;
+drawable_resource_name; /** same as doing: @drawable/drawable_resource_name */
+linear-gradient(from_color, to_color);
+linear-gradient(direction, from_color, to_color); /** valid directions are (without quotes): "to bottom", "to left", "to right", "to top". */
+circle(type, color); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
+rectangle(type, color, rotation, radius); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). rotation (optional) is a number in degress: "0º" (without quotes). radius (optional), must be the last parameter. */
+triangle(type, color, "point_1.x point1.y, point_2.x point2.y, point_3.x point3.y") /** type can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
+poly(type, color, "point_1.x point1.y, point_2.x point2.y, ...") /** polygon. type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
+```
+
 
 ---
 
