@@ -2,10 +2,16 @@
 #include <eepp/graphics/convexshapedrawable.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/triangledrawable.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+
+using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -313,6 +319,42 @@ void DrawableImageParser::registerBaseParsers() {
 		}
 
 		return DrawableSearcher::searchByName( functionType.getParameters().at( 0 ) );
+	};
+
+	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size, bool&,
+						 UINode* node ) -> Drawable* {
+		auto* uiScene = SceneManager::instance()->getUISceneNode();
+		const auto& params = functionType.getParameters();
+		if ( params.size() < 2 )
+			return nullptr;
+		CSS::StyleSheetLength length( params[1] );
+		return uiScene->findIconDrawable( params[0],
+										  node->convertLength( length, size.getWidth() ) );
+	};
+
+	mFuncs["glyph"] = []( const FunctionString& functionType, const Sizef& size, bool&,
+						  UINode* node ) -> Drawable* {
+		const auto& params = functionType.getParameters();
+		if ( params.size() < 3 )
+			return nullptr;
+		Font* font = FontManager::instance()->getByName( params[0] );
+		if ( font == nullptr )
+			return nullptr;
+		Uint32 codePoint = 0;
+		std::string buffer( params[1] );
+		Uint32 value;
+		if ( functionType.parameterWasString( 2 ) ) {
+			String unicodeChar = String::fromUtf8( params[2] );
+			if ( !unicodeChar.empty() )
+				codePoint = unicodeChar[0];
+		} else if ( String::startsWith( buffer, "0x" ) ) {
+			if ( String::fromString( value, buffer, std::hex ) )
+				codePoint = value;
+		} else if ( String::fromString( value, buffer ) ) {
+			codePoint = value;
+		}
+		return font->getGlyphDrawable( codePoint,
+									   node->convertLength( params[1], size.getWidth() ) );
 	};
 }
 

@@ -1145,8 +1145,12 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromFloat( getPadding().Bottom, "dp" );
 		case PropertyId::BackgroundColor:
 			return getBackgroundColor().toHexString();
+		case PropertyId::BackgroundTint:
+			return getBackgroundTint( propertyIndex ).toHexString();
 		case PropertyId::ForegroundColor:
 			return getForegroundColor().toHexString();
+		case PropertyId::ForegroundTint:
+			return getForegroundTint( propertyIndex ).toHexString();
 		case PropertyId::ForegroundRadius:
 			return String::toString( getForegroundRadius() );
 		case PropertyId::BorderType:
@@ -1294,6 +1298,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::BackgroundColor:
 			setBackgroundColor( attribute.asColor() );
 			break;
+		case PropertyId::BackgroundTint:
+			setBackgroundTint( attribute.asColor(), attribute.getIndex() );
+			break;
 		case PropertyId::BackgroundImage:
 			setBackgroundDrawable( attribute.getValue(), attribute.getIndex() );
 			break;
@@ -1305,6 +1312,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::ForegroundColor:
 			setForegroundColor( attribute.asColor() );
+			break;
+		case PropertyId::ForegroundTint:
+			setForegroundTint( attribute.asColor(), attribute.getIndex() );
 			break;
 		case PropertyId::ForegroundImage:
 			setForegroundDrawable( attribute.getValue(), attribute.getIndex() );

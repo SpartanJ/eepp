@@ -1,3 +1,4 @@
+#include <eepp/core/debug.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/functionstring.hpp>
 
@@ -8,6 +9,7 @@ FunctionString FunctionString::parse( const std::string& function ) {
 	size_t posFuncEnd = function.find_last_of( ')' );
 	std::string funcName;
 	std::vector<std::string> parameters;
+	std::vector<bool> typeStringData;
 
 	if ( std::string::npos != posFuncStart && std::string::npos != posFuncEnd && posFuncStart > 1 &&
 		 posFuncStart + 1 < function.size() ) {
@@ -31,10 +33,12 @@ FunctionString FunctionString::parse( const std::string& function ) {
 
 						if ( !curParameter.empty() ) {
 							parameters.push_back( curParameter );
+							typeStringData.push_back( false );
 							curParameter = "";
 						}
 					} else if ( '"' == curChar ) {
 						parsingString = true;
+						curParameter = "";
 					} else {
 						curParameter += curChar;
 					}
@@ -44,6 +48,7 @@ FunctionString FunctionString::parse( const std::string& function ) {
 
 						if ( !curParameter.empty() ) {
 							parameters.push_back( curParameter );
+							typeStringData.push_back( true );
 							curParameter = "";
 						}
 					} else {
@@ -57,17 +62,19 @@ FunctionString FunctionString::parse( const std::string& function ) {
 
 			curParameter = String::trim( curParameter );
 
-			if ( !curParameter.empty() )
+			if ( !curParameter.empty() ) {
 				parameters.push_back( curParameter );
+				typeStringData.push_back( false );
+			}
 		}
 	}
 
-	return FunctionString( funcName, parameters );
+	return FunctionString( funcName, parameters, typeStringData );
 }
 
-FunctionString::FunctionString( const std::string& name,
-								const std::vector<std::string>& parameters ) :
-	name( name ), parameters( parameters ) {}
+FunctionString::FunctionString( const std::string& name, const std::vector<std::string>& parameters,
+								const std::vector<bool>& typeStringData ) :
+	name( name ), parameters( parameters ), typeStringData( typeStringData ) {}
 
 const std::string& FunctionString::getName() const {
 	return name;
@@ -75,6 +82,12 @@ const std::string& FunctionString::getName() const {
 
 const std::vector<std::string>& FunctionString::getParameters() const {
 	return parameters;
+}
+
+bool FunctionString::parameterWasString( const Uint32& index ) const {
+	eeASSERT( index < parameters.size() );
+	eeASSERT( index < typeStringData.size() );
+	return typeStringData[index];
 }
 
 bool FunctionString::isEmpty() const {

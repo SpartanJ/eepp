@@ -89,6 +89,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "background-color", "" ).setType( PropertyType::Color );
 	registerProperty( "background-image", "none" ).setIndexed();
+	registerProperty( "background-tint", "" ).setIndexed().setType( PropertyType::Color );
 	registerProperty( "background-position-x", "center" )
 		.setRelativeTarget( PropertyRelativeTarget::BackgroundWidth )
 		.setType( PropertyType::NumberLength )
@@ -103,6 +104,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setIndexed();
 	registerProperty( "foreground-color", "" ).setType( PropertyType::Color );
 	registerProperty( "foreground-image", "none" ).setIndexed();
+	registerProperty( "foreground-tint", "" ).setIndexed().setType( PropertyType::Color );
 	registerProperty( "foreground-position-x", "center" )
 		.setRelativeTarget( PropertyRelativeTarget::ForegroundWidth )
 		.setType( PropertyType::NumberLength )

@@ -7,6 +7,7 @@
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
+#include <eepp/ui/uiwidget.hpp>
 using namespace EE::Math::easing;
 
 namespace EE { namespace UI {
@@ -103,6 +104,10 @@ void UINodeDrawable::setDrawableSize( int index, const std::string& sizeEq ) {
 	getLayer( index )->setSizeEq( sizeEq );
 }
 
+void UINodeDrawable::setDrawableColor( int index, const Color& color ) {
+	getLayer( index )->setColor( color );
+}
+
 void UINodeDrawable::setBackgroundColor( const Color& color ) {
 	mBackgroundColor.setColor( color );
 }
@@ -122,6 +127,10 @@ void UINodeDrawable::setClipEnabled( bool clipEnabled ) {
 void UINodeDrawable::invalidate() {
 	mNeedsUpdate = true;
 	mBackgroundColor.invalidate();
+}
+
+UINode* UINodeDrawable::getOwner() const {
+	return mOwner;
 }
 
 UIBackgroundDrawable& UINodeDrawable::getBackgroundDrawable() {
@@ -301,6 +310,7 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 	if ( mNeedsUpdate )
 		update();
 
+	mDrawable->setColorFilter( getColor() );
 	mDrawable->setAlpha( getAlpha() );
 
 	switch ( mRepeat ) {
@@ -625,6 +635,10 @@ std::string UINodeDrawable::LayerDrawable::getOffsetEq() {
 }
 
 void UINodeDrawable::LayerDrawable::onPositionChange() {
+	invalidate();
+}
+
+void UINodeDrawable::LayerDrawable::onColorFilterChange() {
 	invalidate();
 }
 

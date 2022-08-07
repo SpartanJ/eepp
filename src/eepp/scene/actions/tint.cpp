@@ -1,4 +1,5 @@
 #include <eepp/scene/actions/tint.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 using namespace EE::UI;
@@ -7,8 +8,9 @@ namespace EE { namespace Scene { namespace Actions {
 
 Tint* Tint::New( const Color& start, const Color& end, const bool& interpolateAlpha,
 				 const Time& duration, const Ease::Interpolation& type,
-				 const TintType& colorInterpolationType ) {
-	return eeNew( Tint, ( start, end, interpolateAlpha, duration, type, colorInterpolationType ) );
+				 const TintType& colorInterpolationType, const Uint32& elemIndex ) {
+	return eeNew(
+		Tint, ( start, end, interpolateAlpha, duration, type, colorInterpolationType, elemIndex ) );
 }
 
 Tint::Tint() {}
@@ -47,8 +49,10 @@ void Tint::setInterpolationR( const Interpolation1d& interpolationR ) {
 
 Tint::Tint( const Color& start, const Color& end, const bool& interpolateAlpha,
 			const Time& duration, const Ease::Interpolation& type,
-			const TintType& colorInterpolationType ) :
-	mColorInterpolationType( colorInterpolationType ), mInterpolateAlpha( interpolateAlpha ) {
+			const TintType& colorInterpolationType, const Uint32& elemIndex ) :
+	mColorInterpolationType( colorInterpolationType ),
+	mInterpolateAlpha( interpolateAlpha ),
+	mIndex( elemIndex ) {
 	mInterpolationR.clear().add( start.r, duration ).add( end.r ).setType( type );
 	mInterpolationG.clear().add( start.g, duration ).add( end.g ).setType( type );
 	mInterpolationB.clear().add( start.b, duration ).add( end.b ).setType( type );
@@ -195,6 +199,23 @@ void Tint::onUpdate( const Time& ) {
 							   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
 				}
 
+				break;
+			}
+			case BackgroundTint: {
+				widget->setBackgroundTint(
+					Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+						   mInterpolationB.getPosition(),
+						   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ),
+					mIndex );
+
+				break;
+			}
+			case ForegroundTint: {
+				widget->setForegroundTint(
+					Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+						   mInterpolationB.getPosition(),
+						   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ),
+					mIndex );
 				break;
 			}
 		}

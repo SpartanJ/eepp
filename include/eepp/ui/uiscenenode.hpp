@@ -113,6 +113,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIIcon* findIcon( const std::string& iconName );
 
+	/** @param drawableSize Size in pixels */
 	Drawable* findIconDrawable( const std::string& iconName, const size_t& drawableSize );
 
 	typedef std::function<void()> KeyBindingCommand;

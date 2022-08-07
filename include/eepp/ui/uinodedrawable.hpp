@@ -102,6 +102,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 		virtual void onPositionChange();
 
+		virtual void onColorFilterChange();
+
 		void update();
 
 		Drawable* createDrawable( const std::string& value, const Sizef& size, bool& ownIt );
@@ -151,6 +153,8 @@ class EE_API UINodeDrawable : public Drawable {
 
 	void setDrawableSize( int index, const std::string& sizeEq );
 
+	void setDrawableColor( int index, const Color& color );
+
 	void setBackgroundColor( const Color& color );
 
 	Color getBackgroundColor() const;
@@ -161,7 +165,7 @@ class EE_API UINodeDrawable : public Drawable {
 
 	void invalidate();
 
-	UINode* getOwner() const { return mOwner; }
+	UINode* getOwner() const;
 
 	UIBackgroundDrawable& getBackgroundDrawable();
 

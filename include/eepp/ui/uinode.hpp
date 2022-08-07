@@ -101,6 +101,8 @@ class EE_API UINode : public Node {
 
 	UINode* setBackgroundColor( const Color& color );
 
+	UINode* setBackgroundTint( const Color& color, int index );
+
 	UINode* setBackgroundPositionX( const std::string& positionX, int index = 0 );
 
 	UINode* setBackgroundPositionY( const std::string& positionY, int index = 0 );
@@ -110,6 +112,8 @@ class EE_API UINode : public Node {
 	UINode* setBackgroundSize( const std::string& size, int index = 0 );
 
 	Color getBackgroundColor() const;
+
+	Color getBackgroundTint( int index = 0 ) const;
 
 	UINode* setBorderRadius( const unsigned int& corners );
 
@@ -131,6 +135,8 @@ class EE_API UINode : public Node {
 
 	UINode* setForegroundColor( const Color& color );
 
+	UINode* setForegroundTint( const Color& color, int index );
+
 	UINode* setForegroundPositionX( const std::string& positionX, int index = 0 );
 
 	UINode* setForegroundPositionY( const std::string& positionY, int index = 0 );
@@ -140,6 +146,8 @@ class EE_API UINode : public Node {
 	UINode* setForegroundSize( const std::string& size, int index = 0 );
 
 	Color getForegroundColor() const;
+
+	Color getForegroundTint( int index ) const;
 
 	UINode* setForegroundRadius( const unsigned int& corners );
 
@@ -165,7 +173,11 @@ class EE_API UINode : public Node {
 
 	UINodeDrawable* getBackground() const;
 
+	bool hasBackground() const;
+
 	UINodeDrawable* getForeground() const;
+
+	bool hasForeground() const;
 
 	UIBorderDrawable* getBorder() const;
 

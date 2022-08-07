@@ -29,7 +29,7 @@ void Drawable::setColor( const Color& color ) {
 	}
 }
 
-Color Drawable::getColor() const {
+const Color& Drawable::getColor() const {
 	return mColor;
 }
 

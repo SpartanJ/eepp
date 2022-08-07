@@ -12,11 +12,22 @@ namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Tint : public Action {
   public:
-	enum TintType { Background, Foreground, Skin, Border, Text, TextShadow, TextOutline };
+	enum TintType {
+		Background,
+		Foreground,
+		Skin,
+		Border,
+		Text,
+		TextShadow,
+		TextOutline,
+		BackgroundTint,
+		ForegroundTint
+	};
 
 	static Tint* New( const Color& start, const Color& end, const bool& interpolateAlpha,
 					  const Time& duration, const Ease::Interpolation& type = Ease::Linear,
-					  const TintType& colorInterpolationType = Background );
+					  const TintType& colorInterpolationType = Background,
+					  const Uint32& elemIndex = 0 );
 
 	void start() override;
 
@@ -52,7 +63,8 @@ class EE_API Tint : public Action {
 
   protected:
 	Tint( const Color& start, const Color& end, const bool& interpolateAlpha, const Time& duration,
-		  const Ease::Interpolation& type, const TintType& colorInterpolationType );
+		  const Ease::Interpolation& type, const TintType& colorInterpolationType,
+		  const Uint32& elemIndex );
 
 	void onStart() override;
 
@@ -66,6 +78,7 @@ class EE_API Tint : public Action {
 	Interpolation1d mInterpolationA;
 	TintType mColorInterpolationType;
 	bool mInterpolateAlpha;
+	Uint32 mIndex;
 };
 
 }}} // namespace EE::Scene::Actions

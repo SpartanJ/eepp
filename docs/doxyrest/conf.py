@@ -1,8 +1,9 @@
 import os
 import sys
+import datetime
 
 project = 'eepp'
-copyright = '2020, Martín Lucas Golini'
+copyright = datetime.date.today().strftime("%Y") + ', Martín Lucas Golini'
 author = 'Martín Lucas Golini'
 
 sys.path.insert(1, os.path.abspath('./sphinx'))

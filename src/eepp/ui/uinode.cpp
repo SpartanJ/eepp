@@ -742,6 +742,11 @@ UINode* UINode::setBackgroundColor( const Color& color ) {
 	return this;
 }
 
+UINode* UINode::setBackgroundTint( const Color& color, int index ) {
+	setBackgroundFillEnabled( true )->setDrawableColor( index, color );
+	return this;
+}
+
 UINode* UINode::setBackgroundPositionX( const std::string& positionX, int index ) {
 	setBackgroundFillEnabled( true )->setDrawablePositionX( index, positionX );
 	return this;
@@ -764,6 +769,10 @@ UINode* UINode::setBackgroundSize( const std::string& size, int index ) {
 
 Color UINode::getBackgroundColor() const {
 	return NULL != mBackground ? mBackground->getBackgroundColor() : Color::Transparent;
+}
+
+Color UINode::getBackgroundTint( int index ) const {
+	return mBackground ? mBackground->getLayer( index )->getColor() : Color::White;
 }
 
 UINode* UINode::setBorderRadius( const unsigned int& corners ) {
@@ -826,8 +835,17 @@ Color UINode::getForegroundColor() const {
 	return NULL != mForeground ? mForeground->getBackgroundColor() : Color::Transparent;
 }
 
+Color UINode::getForegroundTint( int index ) const {
+	return mForeground ? mForeground->getLayer( index )->getColor() : Color::White;
+}
+
 UINode* UINode::setForegroundColor( const Color& color ) {
 	setForegroundFillEnabled( true )->setBackgroundColor( color );
+	return this;
+}
+
+UINode* UINode::setForegroundTint( const Color& color, int index ) {
+	setForegroundFillEnabled( true )->setDrawableColor( index, color );
 	return this;
 }
 
@@ -1085,12 +1103,20 @@ UINodeDrawable* UINode::getBackground() const {
 	return mBackground;
 }
 
+bool UINode::hasBackground() const {
+	return mBackground != nullptr;
+}
+
 UINodeDrawable* UINode::getForeground() const {
 	if ( NULL == mForeground ) {
 		mForeground = UINodeDrawable::New( const_cast<UINode*>( this ) );
 	}
 
 	return mForeground;
+}
+
+bool UINode::hasForeground() const {
+	return mForeground != nullptr;
 }
 
 UIBorderDrawable* UINode::getBorder() const {

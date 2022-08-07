@@ -307,6 +307,16 @@ Read [background-repeat](https://developer.mozilla.org/en-US/docs/Web/CSS/backgr
 
 ---
 
+### background-tint
+
+Sets the tint color of the background image.
+
+* Applicable to: Any element
+* Data Type: [color](#color-data-type)
+* Default value: `white`
+
+---
+
 ### background-size
 
 Read [background-size](https://developer.mozilla.org/en-US/docs/Web/CSS/background-size) documentation.
@@ -632,6 +642,16 @@ Same as [background-repeat](#background-repeat) but for the foreground.
 ### foreground-size
 
 Same as [background-size](#background-size) but for the foreground.
+
+---
+
+### foreground-tint
+
+Sets the tint color of the foreground image.
+
+* Applicable to: Any element
+* Data Type: [color](#color-data-type)
+* Default value: `white`
 
 ---
 
@@ -2328,12 +2348,13 @@ url(data:image/format,url-encoded-data);
 drawable_resource_name; /** same as doing: @drawable/drawable_resource_name */
 linear-gradient(from_color, to_color);
 linear-gradient(direction, from_color, to_color); /** valid directions are (without quotes): "to bottom", "to left", "to right", "to top". */
-circle(type, color); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
+circle(radius, color, type); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
 rectangle(type, color, rotation, radius); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). rotation (optional) is a number in degress: "0º" (without quotes). radius (optional), must be the last parameter. */
 triangle(type, color, "point_1.x point1.y, point_2.x point2.y, point_3.x point3.y") /** type can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
 poly(type, color, "point_1.x point1.y, point_2.x point2.y, ...") /** polygon. type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
+icon(name, size) /** icons usually come from font glyphs, size is the font glyph size */
+glyph(font_name, font_size, codepoint)
 ```
-
 
 ---
 
