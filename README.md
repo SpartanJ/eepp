@@ -166,7 +166,7 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 ## Documentation
 
-Documentation is located [here](https://eepp.ensoft.dev). I'm currently working
+Documentation is located [here](https://cdn.ensoft.dev/eepp-docs/). I'm currently working
 on improving it. About 50% of the project is currently documented so still needs
 a lot of work. Please check the code examples located in `src/examples` and you
 can also check out the test ( `src/test` ) and tools ( `src/tools` ).
@@ -190,26 +190,26 @@ Text editor inspired in [lite](https://github.com/rxi/lite).
 It's using the newest pure CSS theme based on the default [Plasma](https://kde.org/plasma-desktop)
 dark theme: Breeze Dark.
 
-![ecode - Text Editor](https://web.ensoft.dev/eepp/screenshots/ecode.png)
+![ecode - Text Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/ecode.png)
 
 ### UI Editor
 
 Editor that displays in real-time the changes on any layout and CSS to help speed up the development
 of user interfaces. In the screenshot is displaying some of the default widgets available in eepp.
 
-![UI Editor](https://web.ensoft.dev/eepp/screenshots/uieditor.png)
+![UI Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/uieditor.png)
 
 ### Texture Atlas Editor
 
 Small tool, used to create and edit texture atlases.
 
-![Texture Atlas Editor with 1.5x pixel density](https://web.ensoft.dev/eepp/screenshots/taeditor.png)
+![Texture Atlas Editor with 1.5x pixel density](https://cdn.ensoft.dev/eepp-demos/screenshots/taeditor.png)
 
 ### Map Editor
 
 2D map editor using the default skinned theme (using a single texture atlas with 9-patch images).
 
-![Map Editor](https://web.ensoft.dev/eepp/screenshots/eepp1.png)
+![Map Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/eepp1.png)
 
 ## UI Layout XML example
 
@@ -236,7 +236,7 @@ the most basic widgets in a vertical linear layout display.
 </window>
 ```
 
-**UI introduction can be found [here](https://eepp.ensoft.dev/page_uiintroduction.html)**.
+**UI introduction can be found [here](https://cdn.ensoft.dev/eepp-docs/page_uiintroduction.html)**.
 
 ## UI Widgets with C++ example
 
@@ -334,7 +334,7 @@ Here is a small example on how the CSS looks like:
 }
 ```
 
-**The complete CSS specification can be found in the docs: [here](https://eepp.ensoft.dev/page_cssspecification.html).**
+**The complete CSS specification can be found in the docs: [here](https://cdn.ensoft.dev/eepp-docs/page_cssspecification.html).**
 
 **You can also check how a pure CSS theme looks like in eepp: [here](https://github.com/SpartanJ/eepp/blob/develop/bin/assets/ui/breeze.css).**
 
@@ -346,23 +346,23 @@ that emscripten have at the moment (no threads, no access to the file system, no
 Note: please wait some seconds until the resources are loaded, currently there is no loading indicator.
 Also please use a modern browser with good WebGL and WASM support (Chrome/ium 70+ or Firefox 80+).
 
-* **[ecode - Text Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=ecode.js)**
+* **[ecode - Text Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=ecode.js)**
 
-* **[Texture Atlas Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-TextureAtlasEditor.js)**
+* **[Texture Atlas Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-TextureAtlasEditor.js)**
 
-* **[Map Editor](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-MapEditor.js)**
+* **[Map Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-MapEditor.js)**
 
-* **[UI Hello World](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-ui-hello-world.js)**
+* **[UI Hello World](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-ui-hello-world.js)**
 
-* **[UI Editor running some tests](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-UIEditor.js)**
+* **[UI Editor running some tests](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-UIEditor.js)**
 
-* **[Fonts example](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-fonts.js)**
+* **[Fonts example](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-fonts.js)**
 
-* **[Physics module demo](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-physics.js)**
+* **[Physics module demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-physics.js)**
 
-* **[Sprites example](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-sprites.js)**
+* **[Sprites example](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-sprites.js)**
 
-* **[Full Test](https://web.ensoft.dev/eepp/demo-fs.html?run=eepp-test.js)**
+* **[Full Test](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-test.js)**
 
 ## How to build it
 

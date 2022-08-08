@@ -1173,3 +1173,4 @@
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../src/tools/texturepacker/texturepacker.cpp
 ../../src/tools/uieditor/uieditor.cpp
+../../src/tools/uieditor/uieditor.hpp

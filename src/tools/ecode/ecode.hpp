@@ -8,10 +8,7 @@
 #include "globalsearchcontroller.hpp"
 #include "notificationcenter.hpp"
 #include "projectdirectorytree.hpp"
-#include "projectsearch.hpp"
 #include "terminalmanager.hpp"
-#include "uitreeviewglobalsearch.hpp"
-#include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
 #include <eterm/terminal/terminalcolorscheme.hpp>

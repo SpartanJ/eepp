@@ -1,7 +1,6 @@
 #ifndef ECODE_APPCONFIG_HPP
 #define ECODE_APPCONFIG_HPP
 
-#include "widgetcommandexecuter.hpp"
 #include <eepp/config.hpp>
 #include <eepp/math/size.hpp>
 #include <eepp/system/inifile.hpp>
