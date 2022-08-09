@@ -63,7 +63,8 @@ SceneNode::~SceneNode() {
 
 	eeSAFE_DELETE( mActionManager );
 
-	eeSAFE_DELETE( mEventDispatcher );
+	if ( !mParentNode )
+		eeSAFE_DELETE( mEventDispatcher );
 
 	eeSAFE_DELETE( mFrameBuffer );
 }
@@ -132,7 +133,7 @@ void SceneNode::update( const Time& time ) {
 
 	mActionManager->update( time );
 
-	if ( NULL != mEventDispatcher )
+	if ( NULL == mParentNode && NULL != mEventDispatcher )
 		mEventDispatcher->update( time );
 
 	checkClose();

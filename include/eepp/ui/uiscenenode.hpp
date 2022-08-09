@@ -148,10 +148,12 @@ class EE_API UISceneNode : public SceneNode {
 
 	void setMaxInvalidationDepth( const Uint32& maxInvalidationDepth );
 
+	void nodeToWorldTranslation( Vector2f& Pos ) const;
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
-	UIWidget* mRoot;
+	UIWidget* mRoot{ nullptr };
 	Sizef mDpSize;
 	Uint32 mFlags;
 	Translator mTranslator;
@@ -160,8 +162,8 @@ class EE_API UISceneNode : public SceneNode {
 	bool mIsLoading;
 	bool mVerbose;
 	bool mUpdatingLayouts;
-	UIThemeManager* mUIThemeManager;
-	UIIconThemeManager* mUIIconThemeManager;
+	UIThemeManager* mUIThemeManager{ nullptr };
+	UIIconThemeManager* mUIIconThemeManager{ nullptr };
 	std::vector<Font*> mFontFaces;
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
@@ -172,12 +174,16 @@ class EE_API UISceneNode : public SceneNode {
 	std::vector<std::pair<Float, std::string>> mTimes;
 	ColorSchemePreference mColorSchemePreference{ ColorSchemePreference::Dark };
 	Uint32 mMaxInvalidationDepth{ 2 };
+	Node* mCurParent{ nullptr };
+	Uint32 mCurOnSizeChangeListener{ 0 };
 
 	virtual void resizeNode( EE::Window::Window* win );
 
 	virtual void onDrawDebugDataChange();
 
 	virtual void setFocus();
+
+	virtual void onParentChange();
 
 	void setInternalPixelsSize( const Sizef& size );
 

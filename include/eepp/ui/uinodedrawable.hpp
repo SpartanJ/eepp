@@ -93,8 +93,9 @@ class EE_API UINodeDrawable : public Drawable {
 		std::string mPositionX;
 		std::string mPositionY;
 		std::string mSizeEq;
-		bool mNeedsUpdate;
-		bool mOwnsDrawable;
+		bool mNeedsUpdate{ false };
+		bool mOwnsDrawable{ false };
+		bool mColorWasSet{ false };
 		Drawable* mDrawable;
 		std::string mDrawableRef;
 		Uint32 mResourceChangeCbId;

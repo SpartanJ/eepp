@@ -69,6 +69,8 @@ UISceneNode::~UISceneNode() {
 }
 
 void UISceneNode::resizeNode( EE::Window::Window* ) {
+	if ( mParentNode )
+		return;
 	setPixelsSize( mWindow->getSize().asFloat() );
 	onMediaChanged();
 	sendMsg( this, NodeMessage::WindowResize );
@@ -101,6 +103,50 @@ void UISceneNode::onDrawDebugDataChange() {
 void UISceneNode::setFocus() {
 	if ( NULL != getEventDispatcher() )
 		getEventDispatcher()->setFocusNode( mRoot );
+}
+
+void UISceneNode::nodeToWorldTranslation( Vector2f& Pos ) const {
+	Node* ParentLoop = mParentNode;
+
+	while ( NULL != ParentLoop ) {
+		const Vector2f& ParentPos = ParentLoop->isUINode()
+										? ParentLoop->asType<UINode>()->getPixelsPosition()
+										: ParentLoop->getPosition();
+
+		Pos += ParentPos;
+
+		ParentLoop = ParentLoop->getParent();
+	}
+}
+
+void UISceneNode::onParentChange() {
+	SceneNode::onParentChange();
+
+	if ( mCurParent && mCurOnSizeChangeListener )
+		mCurParent->removeEventListener( mCurOnSizeChangeListener );
+
+	if ( !mCurParent )
+		eeSAFE_DELETE( mEventDispatcher );
+
+	mCurParent = mParentNode;
+
+	if ( !mParentNode ) {
+		setEventDispatcher( UIEventDispatcher::New( this ) );
+		return;
+	}
+
+	mEventDispatcher = getParent()->asType<UINode>()->getUISceneNode()->getEventDispatcher();
+
+	setDirty();
+	setPixelsSize( getParent()->getPixelsSize() );
+
+	mCurOnSizeChangeListener =
+		getParent()->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+			setDirty();
+			setPixelsSize( getParent()->getPixelsSize() );
+			onMediaChanged();
+			sendMsg( this, NodeMessage::WindowResize );
+		} );
 }
 
 void UISceneNode::setTranslator( Translator translator ) {
@@ -148,7 +194,8 @@ String UISceneNode::getTranslatorStringFromKey( const std::string& key,
 }
 
 void UISceneNode::setFocusLastWindow( UIWindow* window ) {
-	if ( NULL != mEventDispatcher && !mWindowsList.empty() && window != mWindowsList.front() ) {
+	if ( NULL == mParentNode && NULL != mEventDispatcher && !mWindowsList.empty() &&
+		 window != mWindowsList.front() ) {
 		mEventDispatcher->setFocusNode( mWindowsList.front() );
 	}
 }

@@ -1183,9 +1183,11 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 		toSend.setField( "User-Agent", "eepp-network" );
 
 	if ( !toSend.hasField( "Host" ) )
-		toSend.setField( "Host", mHostName );
+		toSend.setField(
+			"Host",
+			mHostName + ( mPort != 80 && mPort != 443 ? ":" + String::toString( mPort ) : "" ) );
 
-	if ( !toSend.hasField( "Content-Length" ) ) {
+	if ( !toSend.hasField( "Content-Length" ) && toSend.mBody.size() > 0 ) {
 		std::ostringstream out;
 		out << toSend.mBody.size();
 		toSend.setField( "Content-Length", out.str() );

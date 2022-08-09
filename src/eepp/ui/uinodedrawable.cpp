@@ -310,7 +310,8 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 	if ( mNeedsUpdate )
 		update();
 
-	mDrawable->setColorFilter( getColor() );
+	if ( mColorWasSet )
+		mDrawable->setColorFilter( getColor() );
 	mDrawable->setAlpha( getAlpha() );
 
 	switch ( mRepeat ) {
@@ -639,6 +640,7 @@ void UINodeDrawable::LayerDrawable::onPositionChange() {
 }
 
 void UINodeDrawable::LayerDrawable::onColorFilterChange() {
+	mColorWasSet = true;
 	invalidate();
 }
 
