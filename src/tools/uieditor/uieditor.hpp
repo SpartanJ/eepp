@@ -13,37 +13,38 @@ namespace uieditor {
 
 class UpdateListener;
 
+enum InvalidationType : Uint32 { None, FileSystem, Memory };
+
 class App : public UICodeEditorSplitter::Client {
   public:
 	App();
 
 	~App();
 
-	void init( const Float& pixelDensityConf, const bool& preserveContainerSizeFlag,
-			   const bool& useAppTheme, const std::string& cssFile, const std::string& xmlFile,
-			   const std::string& projectFile );
+	void init( const Float& pixelDensityConf, const bool& useAppTheme, const std::string& cssFile,
+			   const std::string& xmlFile, const std::string& projectFile );
 
-	virtual void onCodeEditorCreated( UICodeEditor*, TextDocument& ){};
+	virtual void onCodeEditorCreated( UICodeEditor*, TextDocument& );
 
-	virtual void onCodeEditorFocusChange( UICodeEditor* ){};
+	virtual void onCodeEditorFocusChange( UICodeEditor* );
 
 	virtual void onWidgetFocusChange( UIWidget* ){};
 
 	virtual void onDocumentStateChanged( UICodeEditor*, TextDocument& ){};
 
-	virtual void onDocumentModified( UICodeEditor*, TextDocument& ){};
+	virtual void onDocumentModified( UICodeEditor*, TextDocument& );
 
-	virtual void onDocumentSelectionChange( UICodeEditor*, TextDocument& ){};
+	virtual void onDocumentSelectionChange( UICodeEditor*, TextDocument& );
 
 	virtual void onDocumentCursorPosChange( UICodeEditor*, TextDocument& ){};
 
 	virtual void onColorSchemeChanged( const std::string& ){};
 
-	virtual void onDocumentLoaded( UICodeEditor*, const std::string& ){};
+	virtual void onDocumentLoaded( UICodeEditor*, const std::string& );
 
-	void updateLayoutFunc();
-	void updateStyleSheetFunc();
-	void updateBaseStyleSheetFunc();
+	void updateLayoutFunc( const InvalidationType& invalidator );
+	void updateStyleSheetFunc( const InvalidationType& invalidator );
+	void updateBaseStyleSheetFunc( const InvalidationType& invalidator );
 	const std::string& getCurrentLayout() const;
 	const std::string& getCurrentStyleSheet() const;
 	const std::string& getBaseStyleSheet() const;
@@ -53,8 +54,8 @@ class App : public UICodeEditorSplitter::Client {
 	void loadFontsFromFolder( std::string folderPath );
 	void loadLayoutsFromFolder( std::string folderPath );
 	void setUserDefaultTheme();
-	void loadStyleSheet( std::string cssPath );
-	void loadLayout( std::string file );
+	void loadStyleSheet( std::string cssPath, bool updateCurrentStyleSheet = true );
+	void loadLayout( std::string file, bool updateCurrentLayout = true );
 	void refreshLayout();
 	void refreshStyleSheet();
 	void onRecentProjectClick( const Event* event );
@@ -71,7 +72,7 @@ class App : public UICodeEditorSplitter::Client {
 	void loadProject( std::string projectPath );
 	void loadLayoutFile( std::string layoutPath );
 
-	void resizeCb( EE::Window::Window* window );
+	void resizeCb();
 	void resizeWindowToLayout();
 
 	UIWidget* createWidget( std::string widgetName );
@@ -104,6 +105,30 @@ class App : public UICodeEditorSplitter::Client {
 	FontTrueType* loadFont( const std::string& name, std::string fontPath,
 							const std::string& fallback = "" );
 
+	void createWidgetTreeView();
+
+	std::string titleFromEditor( UICodeEditor* editor );
+
+	void updateEditorTabTitle( UICodeEditor* editor );
+
+	void updateEditorTitle( UICodeEditor* editor );
+
+	void tryUpdateEditorTitle( UICodeEditor* editor );
+
+	void closeEditors();
+
+	void saveTmpDocument( TextDocument& doc, std::function<void( const std::string& )> action );
+
+	void reloadLayout();
+
+	void reloadStyleSheet();
+
+	void reloadBaseStyleSheet();
+
+	void toggleEditor();
+
+	void showEditor( bool show );
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UIMessageBox* mMsgBox{ nullptr };
@@ -112,7 +137,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIWindow* mUIContainer{ nullptr };
 	UIMenuBar* mUIMenuBar{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
-	UISceneNode* mAppUiSceneNode{ nullptr };
+	UISceneNode* mAppUISceneNode{ nullptr };
 	std::string mCurrentLayout;
 	std::string mCurrentStyleSheet;
 	std::string mBaseStyleSheet;
@@ -123,8 +148,11 @@ class App : public UICodeEditorSplitter::Client {
 	bool mUpdateStyleSheet{ false };
 	bool mUpdateBaseStyleSheet{ false };
 	bool mUseDefaultTheme{ false };
-	bool mPreserveContainerSize{ false };
 	bool mIsBundledApp{ false };
+	InvalidationType mInvalidationLayout{ InvalidationType::None };
+	InvalidationType mInvalidationStyleSheet{ InvalidationType::None };
+	InvalidationType mInvalidationBaseStyleSheet{ InvalidationType::None };
+	Sizef mProjectScreenSize;
 	Clock mWaitClock;
 	Clock mCssWaitClock;
 	Clock mCssBaseWaitClock;
@@ -144,6 +172,15 @@ class App : public UICodeEditorSplitter::Client {
 	std::map<Uint32, TextureRegion*> mImagesLoaded;
 	std::map<Font*, std::string> mFontsLoaded;
 	UpdateListener* mListener{ nullptr };
+	std::string mConfigPath;
+	std::string mColorSchemesPath;
+	UISplitter* mProjectSplitter{ nullptr };
+	UICodeEditorSplitter* mSplitter{ nullptr };
+	UILayout* mBaseLayout{ nullptr };
+	UILayout* mPreviewLayout{ nullptr };
+	UIWidget* mSidePanel{ nullptr };
+
+	Drawable* findIcon( const std::string& icon );
 };
 
 } // namespace uieditor

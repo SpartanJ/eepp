@@ -113,6 +113,8 @@ class EE_API UICodeEditorSplitter {
 	UITab* isDocumentOpen( const std::string& path,
 						   bool checkOnlyInCurrentTabWidget = false ) const;
 
+	UICodeEditor* findEditorFromPath( const std::string& path );
+
 	void applyColorScheme( const SyntaxColorScheme& colorScheme );
 
 	void forEachWidgetStoppable( std::function<bool( UIWidget* )> run ) const;

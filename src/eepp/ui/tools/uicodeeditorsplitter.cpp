@@ -581,6 +581,18 @@ UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
 	return nullptr;
 }
 
+UICodeEditor* UICodeEditorSplitter::findEditorFromPath( const std::string& path ) {
+	UICodeEditor* editor = nullptr;
+	forEachEditorStoppable( [&, path]( UICodeEditor* curEditor ) -> bool {
+		if ( curEditor->getDocument().getFilePath() == path ) {
+			editor = curEditor;
+			return true;
+		}
+		return false;
+	} );
+	return editor;
+}
+
 void UICodeEditorSplitter::applyColorScheme( const SyntaxColorScheme& colorScheme ) {
 	forEachEditor(
 		[colorScheme]( UICodeEditor* editor ) { editor->setColorScheme( colorScheme ); } );

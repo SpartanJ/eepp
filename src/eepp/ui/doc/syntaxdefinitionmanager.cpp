@@ -128,7 +128,7 @@ void SyntaxDefinitionManager::addXML() {
 	add( { "XML",
 		   { "%.xml$", "%.svg$" },
 		   {
-			   { { "<%s*[sS][tT][yY][lL][eE][^>]*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
+			   { { "<%s*[sS][tT][yY][lL][eE]%s*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
 				 "function",
 				 "CSS" },
 			   { { "<!%-%-", "%-%->" }, "comment" },

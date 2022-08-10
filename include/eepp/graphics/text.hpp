@@ -164,7 +164,7 @@ class EE_API Text {
 	};
 
 	String mString;			///< String to display
-	Font* mFont;			///< FontTrueType used to display the string
+	Font* mFont{ nullptr }; ///< FontTrueType used to display the string
 	unsigned int mFontSize; ///< Base size of characters, in pixels
 	unsigned int mRealFontSize;
 	Uint32 mStyle;		 ///< Text style (see Style enum)
