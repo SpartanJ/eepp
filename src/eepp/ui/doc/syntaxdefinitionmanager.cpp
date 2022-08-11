@@ -353,7 +353,7 @@ void SyntaxDefinitionManager::addJavaScript() {
 				 { "normal", "keyword2", "function", "operator" } },
 			   { { "([%w_][%w_]+)%.([%w_][%w%d_]*)%s*(=)%s*(async)%s*%f[(]" },
 				 { "normal", "keyword2", "function", "operator", "function" } },
-			   { { "[%a_][%w_]*%s*%f[(]" }, "function" },
+			   { { "[%a_][%w_]*%f[(]" }, "function" },
 			   { { "[%a_][%w_]*" }, "symbol" },
 		   },
 		   { { "arguments", "keyword2" }, { "async", "keyword" },	  { "await", "keyword" },
@@ -374,7 +374,7 @@ void SyntaxDefinitionManager::addJavaScript() {
 			 { "implements", "keyword" }, { "Array", "keyword2" },	  { "any", "keyword" },
 			 { "from", "keyword" },		  { "public", "keyword" },	  { "private", "keyword" },
 			 { "declare", "keyword" },	  { "namespace", "keyword" }, { "protected", "keyword" },
-			 { "enum", "keyword" },		  { "function", "keyword" } },
+			 { "enum", "keyword" },		  { "function", "keyword" },  { "of", "keyword" } },
 		   "//" } );
 }
 
