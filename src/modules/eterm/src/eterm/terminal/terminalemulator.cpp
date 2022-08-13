@@ -2659,18 +2659,20 @@ void TerminalEmulator::resize( int columns, int rows ) {
 	redraw();
 }
 
-void TerminalEmulator::update() {
+#define MAX_TTY_READS ( 1024 * 40 )
+
+bool TerminalEmulator::update() {
 	if ( mStatus == TerminalEmulator::STARTING ) {
 		mStatus = TerminalEmulator::RUNNING;
 	} else if ( mStatus != TerminalEmulator::RUNNING ) {
-		return;
+		return true;
 	}
 
-	int n = 1024;
-	while ( ttyread() > 0 && n > 0 )
-		--n;
+	int read = MAX_TTY_READS;
+	while ( ttyread() > 0 && read--)
+		;
 
-	if ( n != 1024 || mDirty )
+	if ( read != MAX_TTY_READS || mDirty )
 		draw();
 
 	mProcess->checkExitStatus();
@@ -2680,6 +2682,8 @@ void TerminalEmulator::update() {
 		mStatus = TERMINATED;
 		onProcessExit( mExitCode );
 	}
+
+	return read != 0;
 }
 
 }} // namespace eterm::Terminal

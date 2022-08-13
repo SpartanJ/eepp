@@ -358,11 +358,10 @@ bool Image::isImage( const std::string& path ) {
 }
 
 bool Image::isImageExtension( const std::string& path ) {
-	std::string Ext( FileSystem::fileExtension( path ) );
-
-	return ( Ext == "png" || Ext == "tga" || Ext == "bmp" || Ext == "jpg" || Ext == "gif" ||
-			 Ext == "jpeg" || Ext == "dds" || Ext == "psd" || Ext == "hdr" || Ext == "pic" ||
-			 Ext == "pvr" || Ext == "pkm" || Ext == "svg" );
+	const std::string ext( FileSystem::fileExtension( path ) );
+	return ( ext == "png" || ext == "tga" || ext == "bmp" || ext == "jpg" || ext == "gif" ||
+			 ext == "jpeg" || ext == "dds" || ext == "psd" || ext == "hdr" || ext == "pic" ||
+			 ext == "pvr" || ext == "pkm" || ext == "svg" );
 }
 
 std::string Image::getLastFailureReason() {

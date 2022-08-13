@@ -124,7 +124,14 @@ extern TerminalKeyMap terminalKeyMap;
 
 class TerminalDisplay : public ITerminalDisplay {
   public:
-	enum class EventType { TITLE, ICON_TITLE, SCROLL_HISTORY, HISTORY_LENGTH_CHANGE, UNKNOWN };
+	enum class EventType {
+		TITLE,
+		ICON_TITLE,
+		SCROLL_HISTORY,
+		HISTORY_LENGTH_CHANGE,
+		PROCESS_EXIT,
+		UNKNOWN
+	};
 
 	struct Event {
 		EventType type{ EventType::UNKNOWN };
@@ -142,7 +149,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
 			std::string program = "", const std::vector<std::string>& args = {},
 			const std::string& workingDir = "", const size_t& historySize = 10000,
-			IProcessFactory* processFactory = nullptr, const bool& useFrameBuffer = false );
+			IProcessFactory* processFactory = nullptr, const bool& useFrameBuffer = false,
+			const bool& keepAlive = true );
 
 	virtual ~TerminalDisplay();
 
@@ -160,7 +168,9 @@ class TerminalDisplay : public ITerminalDisplay {
 	virtual void drawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy, TerminalGlyph og );
 	virtual void drawEnd();
 
-	virtual void update();
+	virtual bool update();
+
+	void executeFile( const std::string& cmd );
 
 	void action( TerminalShortcutAction action );
 
@@ -241,6 +251,10 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void setClickStep( const Uint32& clickStep );
 
+	bool getKeepAlive() const;
+
+	void setKeepAlive( bool keepAlive );
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;
@@ -268,6 +282,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mUseFrameBuffer{ true };
 	bool mAlreadyClickedLButton{ false };
 	bool mAlreadyClickedMButton{ false };
+	bool mKeepAlive{ true };
 	Clock mClock;
 	Clock mLastDoubleClick;
 	int mColumns{ 0 };

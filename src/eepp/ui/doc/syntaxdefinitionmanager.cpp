@@ -267,7 +267,7 @@ void SyntaxDefinitionManager::addMarkdown() {
 
 void SyntaxDefinitionManager::addC() {
 	add( { "C",
-		   { "%.c$", "%.h$" },
+		   { "%.c$", "%.h$", "%.icc" },
 		   {
 			   { { "//.-\n" }, "comment" },
 			   { { "/%*", "%*/" }, "comment" },

@@ -51,13 +51,12 @@ FunctionString FunctionString::parse( const std::string& function ) {
 							typeStringData.push_back( true );
 							curParameter = "";
 						}
-					} else {
-						if ( '\\' == curChar )
-							lastWasBackslash = !lastWasBackslash;
-
+					} else if ( '\\' != curChar || lastWasBackslash ) {
 						curParameter += curChar;
 					}
 				}
+
+				lastWasBackslash = '\\' == curChar;
 			}
 
 			curParameter = String::trim( curParameter );

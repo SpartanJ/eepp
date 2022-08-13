@@ -134,7 +134,8 @@ class TerminalEmulator final {
 
 	void logError( const char* err );
 
-	void update();
+	/** @return If the tty read was completed or there's still buffer to read (true completed) */
+	bool update();
 
 	void terminate();
 

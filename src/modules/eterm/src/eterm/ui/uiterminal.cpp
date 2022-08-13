@@ -229,12 +229,8 @@ std::string UITerminal::getPropertyString( const PropertyDefinition* propertyDef
 }
 
 void UITerminal::executeFile( const std::string& cmd ) {
-	if ( mTerm && mTerm->getTerminal() ) {
-		std::string rcmd( cmd + "\r" );
-		char clearLine = 0x15;
-		mTerm->getTerminal()->ttywrite( &clearLine, 1, 1 );
-		mTerm->getTerminal()->ttywrite( rcmd.c_str(), rcmd.size(), 1 );
-	}
+	if ( mTerm )
+		mTerm->executeFile( cmd );
 }
 
 const TerminalColorScheme& UITerminal::getColorScheme() const {

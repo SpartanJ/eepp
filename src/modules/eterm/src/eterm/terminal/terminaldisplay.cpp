@@ -144,7 +144,7 @@ static TerminalKey keys[] = {
 	{ KEY_DELETE, KEYMOD_CTRL, "\033[3;5~", +1, 0 },
 	{ KEY_DELETE, KEYMOD_SHIFT, "\033[2K", -1, 0 },
 	{ KEY_DELETE, KEYMOD_SHIFT, "\033[3;2~", +1, 0 },
-	{ KEY_DELETE, KEYMOD_CTRL_SHIFT_ALT_META, "\033[P", -1, 0 },
+	{ KEY_DELETE, KEYMOD_CTRL_SHIFT_ALT_META, "\033[3~", -1, 0 },
 	{ KEY_DELETE, KEYMOD_CTRL_SHIFT_ALT_META, "\033[3~", +1, 0 },
 	{ KEY_BACKSPACE, KEYMOD_NONE, "\177", 0, 0 },
 	{ KEY_BACKSPACE, KEYMOD_LALT, "\033\177", 0, 0 },
@@ -383,10 +383,12 @@ static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
 	return { clipColumns, clipRows };
 }
 
-std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
-	EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
-	std::string program, const std::vector<std::string>& args, const std::string& workingDir,
-	const size_t& historySize, IProcessFactory* processFactory, const bool& useFrameBuffer ) {
+std::shared_ptr<TerminalDisplay>
+TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
+						 const Sizef& pixelsSize, std::string program,
+						 const std::vector<std::string>& args, const std::string& workingDir,
+						 const size_t& historySize, IProcessFactory* processFactory,
+						 const bool& useFrameBuffer, const bool& keepAlive ) {
 	if ( program.empty() ) {
 #ifdef _WIN32
 		program = "cmd.exe";
@@ -435,6 +437,7 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 	terminal->mProgram = program;
 	terminal->mArgs = args;
 	terminal->mWorkingDir = workingDir;
+	terminal->mKeepAlive = keepAlive;
 
 	if ( freeProcessFactory )
 		eeSAFE_DELETE( processFactory );
@@ -570,7 +573,16 @@ void TerminalDisplay::setClickStep( const Uint32& clickStep ) {
 	mClickStep = clickStep;
 }
 
-void TerminalDisplay::update() {
+bool TerminalDisplay::getKeepAlive() const {
+	return mKeepAlive;
+}
+
+void TerminalDisplay::setKeepAlive( bool keepAlive ) {
+	mKeepAlive = keepAlive;
+}
+
+bool TerminalDisplay::update() {
+	bool ret = true;
 	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
 		mClock.restart();
@@ -578,9 +590,19 @@ void TerminalDisplay::update() {
 	}
 	if ( mTerminal ) {
 		int histi = mTerminal->getHistorySize();
-		mTerminal->update();
+		ret = mTerminal->update();
 		if ( histi != mTerminal->getHistorySize() )
 			sendEvent( { EventType::HISTORY_LENGTH_CHANGE } );
+	}
+	return ret;
+}
+
+void TerminalDisplay::executeFile( const std::string& cmd ) {
+	if ( mTerminal ) {
+		std::string rcmd( cmd + "\r" );
+		char clearLine = 0x15;
+		mTerminal->ttywrite( &clearLine, 1, 1 );
+		mTerminal->ttywrite( rcmd.c_str(), rcmd.size(), 1 );
 	}
 }
 
@@ -1286,10 +1308,9 @@ void TerminalDisplay::onSizeChange() {
 }
 
 void TerminalDisplay::onProcessExit( int exitCode ) {
-	if ( !mTerminal || mProgram.empty() )
-		return;
+	sendEvent( { EventType::PROCESS_EXIT, String::toString( exitCode ) } );
 
-	if ( exitCode != 0 )
+	if ( !mTerminal || mProgram.empty() || exitCode != 0 || !mKeepAlive )
 		return;
 
 	auto processFactory = eeNew( ProcessFactory, () );

@@ -142,12 +142,11 @@ int PseudoTerminal::write( const char* s, size_t n ) {
 }
 
 int PseudoTerminal::read( char* s, size_t n, bool block ) {
-	struct pollfd pfd;
-	pfd.fd = (int)mMaster;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
-
 	if ( !block ) {
+		struct pollfd pfd;
+		pfd.fd = mMaster.handle();
+		pfd.events = POLLIN;
+		pfd.revents = 0;
 		auto i = poll( &pfd, 1, 0 );
 		if ( i == 0 || !( pfd.revents & POLLIN ) ) {
 			return 0;
@@ -157,7 +156,7 @@ int PseudoTerminal::read( char* s, size_t n, bool block ) {
 			return -1;
 		}
 	}
-	ssize_t r = ::read( (int)mMaster, s, n );
+	ssize_t r = ::read( mMaster.handle(), s, n );
 	return (int)r;
 }
 

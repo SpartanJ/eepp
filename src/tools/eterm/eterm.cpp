@@ -75,16 +75,17 @@ void inputCallback( InputEvent* event ) {
 }
 
 void mainLoop() {
+	bool termNeedsUpdate = false;
 	win->getInput()->update();
 
 	if ( terminal )
-		terminal->update();
+		termNeedsUpdate = !terminal->update();
 
 	if ( terminal && terminal->isDirty() ) {
 		win->clear();
 		terminal->draw();
 		win->display();
-	} else {
+	} else if ( !termNeedsUpdate ) {
 		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 	}
 }
@@ -111,7 +112,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
-	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory" );
+	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory / executable" );
+	args::Flag closeOnExit( parser, "close-on-exit",
+							"close the application when the executable exits", { 'c', "close" } );
+	args::ValueFlag<std::string> executeInShell(
+		parser, "execute-in-shell", "execute program in shell", { 'e', "execute" }, "" );
 
 	try {
 		parser.ParseCLI( argc, argv );
@@ -158,7 +163,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 						WindowBackend::Default, 32, resPath + "icon/ee.png",
 						pixelDenstiyConf ? pixelDenstiyConf.Get()
 										 : currentDisplay->getPixelDensity() ),
-		ContextSettings( true ) );
+		ContextSettings( false ) );
 
 	if ( win->isOpen() ) {
 		win->setClearColor( RGB( 0, 0, 0 ) );
@@ -185,14 +190,23 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		}
 
 		if ( !terminal || terminal->hasTerminated() ) {
+			FileInfo file( wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory() );
 			terminal = TerminalDisplay::create(
 				win, fontMono, PixelDensity::dpToPx( fontSize.Get() ), win->getSize().asFloat(),
-				shell.Get(), {}, wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory(),
-				historySize.Get(), nullptr, fb.Get() );
+				file.isRegularFile() && file.isExecutable() ? file.getFilepath() : shell.Get(), {},
+				file.getDirectoryPath(), historySize.Get(), nullptr, fb.Get(),
+				!( file.isRegularFile() && file.isExecutable() ) );
 			terminal->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
 				if ( event.type == TerminalDisplay::EventType::TITLE )
 					win->setTitle( "eterm - " + event.eventData );
+				else if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
+						  closeOnExit.Get() ) {
+					win->close();
+				}
 			} );
+
+			if ( !executeInShell.Get().empty() )
+				terminal->executeFile( executeInShell.Get() );
 
 			win->startTextInput();
 		}
