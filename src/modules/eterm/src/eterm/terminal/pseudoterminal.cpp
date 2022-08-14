@@ -152,7 +152,7 @@ int PseudoTerminal::read( char* s, size_t n, bool block ) {
 			return 0;
 		}
 		if ( i < 0 ) {
-			perror( "PseudoTerminal::Reader(poll)" );
+			perror( "PseudoTerminal::read(poll)" );
 			return -1;
 		}
 	}

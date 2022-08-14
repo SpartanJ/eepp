@@ -55,7 +55,8 @@ class App : public UICodeEditorSplitter::Client {
 	void loadLayoutsFromFolder( std::string folderPath );
 	void setUserDefaultTheme();
 	void loadStyleSheet( std::string cssPath, bool updateCurrentStyleSheet = true );
-	void loadLayout( std::string file, bool updateCurrentLayout = true );
+	std::pair<UITab*, UICodeEditor*> loadLayout( std::string file,
+												 bool updateCurrentLayout = true );
 	void refreshLayout();
 	void refreshStyleSheet();
 	void onRecentProjectClick( const Event* event );
@@ -129,6 +130,24 @@ class App : public UICodeEditorSplitter::Client {
 
 	void showEditor( bool show );
 
+	void createNewLayout();
+
+	UIFileDialog* saveFileDialog( UICodeEditor* editor, bool focusOnClose = true );
+
+	String i18n( const std::string& key, const String& def );
+
+	void updateEditorState();
+
+	void saveDoc();
+
+	void saveAll();
+
+	void saveAllProcess();
+
+	void tryUpdateWatch( const std::string& file );
+
+	void loadBaseStyleSheet();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UIMessageBox* mMsgBox{ nullptr };
@@ -179,6 +198,7 @@ class App : public UICodeEditorSplitter::Client {
 	UILayout* mBaseLayout{ nullptr };
 	UILayout* mPreviewLayout{ nullptr };
 	UIWidget* mSidePanel{ nullptr };
+	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 
 	Drawable* findIcon( const std::string& icon );
 };

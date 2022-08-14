@@ -70,6 +70,9 @@ class EE_API FileSystem {
 	/** Write a file in binary mode and close it. */
 	static bool fileWrite( const std::string& filepath, const std::vector<Uint8>& data );
 
+	/** Write a file in binary mode and close it. */
+	static bool fileWrite( const std::string& filepath, const std::string& data );
+
 	/** Deletes a file from the file system. */
 	static bool fileRemove( const std::string& filepath );
 

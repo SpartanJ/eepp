@@ -101,6 +101,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["hslider"] = UISlider::NewHorizontal;
 		registeredWidget["vscrollbar"] = UIScrollBar::NewVertical;
 		registeredWidget["hscrollbar"] = UIScrollBar::NewHorizontal;
+		registeredWidget["button"] = UIPushButton::New;
 
 		sBaseListCreated = true;
 	}

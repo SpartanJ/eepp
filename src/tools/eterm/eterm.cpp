@@ -4,6 +4,8 @@
 
 EE::Window::Window* win = NULL;
 std::shared_ptr<TerminalDisplay> terminal = nullptr;
+Clock lastRender;
+Time frameTime{ Time::Zero };
 
 void inputCallback( InputEvent* event ) {
 	if ( !terminal || event->Type == InputEvent::EventsSent )
@@ -81,10 +83,13 @@ void mainLoop() {
 	if ( terminal )
 		termNeedsUpdate = !terminal->update();
 
-	if ( terminal && terminal->isDirty() ) {
-		win->clear();
-		terminal->draw();
-		win->display();
+	if ( terminal && terminal->isDirty() && !termNeedsUpdate ) {
+		if ( lastRender.getElapsedTime() >= frameTime ) {
+			lastRender.restart();
+			win->clear();
+			terminal->draw();
+			win->display();
+		}
 	} else if ( !termNeedsUpdate ) {
 		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 	}
@@ -117,6 +122,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 							"close the application when the executable exits", { 'c', "close" } );
 	args::ValueFlag<std::string> executeInShell(
 		parser, "execute-in-shell", "execute program in shell", { 'e', "execute" }, "" );
+	args::Flag vsync( parser, "vsync", "Enable vsync", { "vsync" } );
+	args::ValueFlag<Uint32> maxFPS( parser, "max-fps",
+									"Maximum rendering frames per second of the terminal",
+									{ "--max-fps" }, 60 );
 
 	try {
 		parser.ParseCLI( argc, argv );
@@ -163,7 +172,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 						WindowBackend::Default, 32, resPath + "icon/ee.png",
 						pixelDenstiyConf ? pixelDenstiyConf.Get()
 										 : currentDisplay->getPixelDensity() ),
-		ContextSettings( false ) );
+		ContextSettings( vsync.Get() ) );
 
 	if ( win->isOpen() ) {
 		win->setClearColor( RGB( 0, 0, 0 ) );
@@ -188,6 +197,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			FontTrueType::New( "emoji-font" )
 				->loadFromFile( resPath + "fonts/NotoEmoji-Regular.ttf" );
 		}
+
+		frameTime = Milliseconds( 1000.f / (Float)maxFPS.Get() );
 
 		if ( !terminal || terminal->hasTerminated() ) {
 			FileInfo file( wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory() );

@@ -646,6 +646,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["box"] = []( const ShorthandDefinition* shorthand,
 								   std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
+		if ( value.empty() )
+			return {};
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
 		if ( propNames.size() != 4 ) {
@@ -670,6 +672,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		[]( const ShorthandDefinition* shorthand,
 			std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
+		if ( value.empty() )
+			return {};
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
 		for ( auto& prop : propNames ) {
@@ -681,6 +685,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["vector2"] = []( const ShorthandDefinition* shorthand,
 									   std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
+		if ( value.empty() )
+			return {};
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
 		if ( propNames.size() != 2 ) {
@@ -703,6 +709,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["border-box"] = []( const ShorthandDefinition* shorthand,
 										  std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
+		if ( value.empty() )
+			return {};
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
 		auto ltrbSplit = String::split( value, " ", "", "(\"" );
@@ -718,6 +726,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["radius"] = []( const ShorthandDefinition* shorthand,
 									  std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
+		if ( value.empty() )
+			return {};
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
 		auto splits = String::split( value, '/' );
@@ -742,6 +752,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		[]( const ShorthandDefinition* shorthand,
 			std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
+		if ( value.empty() )
+			return {};
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
 		std::vector<std::string> values = String::split( value, ',' );
@@ -794,6 +806,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["background"] = [&]( const ShorthandDefinition* shorthand,
 										   std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
+		if ( value.empty() )
+			return {};
 		if ( "none" == value )
 			return {};
 		std::vector<StyleSheetProperty> properties;

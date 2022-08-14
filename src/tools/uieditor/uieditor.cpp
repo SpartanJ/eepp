@@ -227,20 +227,36 @@ void App::setUserDefaultTheme() {
 	mUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
 }
 
+void App::loadBaseStyleSheet() {
+	if ( !mUseDefaultTheme )
+		return;
+
+	if ( mBaseStyleSheetWatch == 0 ) {
+		std::string baseFolder( FileSystem::fileRemoveFileName( mBaseStyleSheet ) );
+		mBaseStyleSheetWatch = mFileWatcher->addWatch( baseFolder, mListener );
+	}
+
+	setUserDefaultTheme();
+
+	if ( !mSplitter->isDocumentOpen( mBaseStyleSheet ) && mUseDefaultTheme ) {
+		SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
+		mSplitter->loadFileFromPathInNewTab( mBaseStyleSheet );
+		SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+	}
+}
+
 void App::loadStyleSheet( std::string cssPath, bool updateCurrentStyleSheet ) {
+	if ( NULL == mUISceneNode )
+		return;
 	CSS::StyleSheetParser parser;
 
-	if ( NULL != mUISceneNode && parser.loadFromFile( cssPath ) ) {
+	loadBaseStyleSheet();
+
+	if ( NULL != mUISceneNode && !cssPath.empty() && parser.loadFromFile( cssPath ) ) {
 		if ( mUseDefaultTheme ) {
-			setUserDefaultTheme();
 			mUISceneNode->combineStyleSheet( parser.getStyleSheet() );
 		} else {
 			mUISceneNode->setStyleSheet( parser.getStyleSheet() );
-		}
-
-		if ( mBaseStyleSheetWatch == 0 && mUseDefaultTheme ) {
-			std::string baseFolder( FileSystem::fileRemoveFileName( mBaseStyleSheet ) );
-			mBaseStyleSheetWatch = mFileWatcher->addWatch( baseFolder, mListener );
 		}
 
 		if ( updateCurrentStyleSheet ) {
@@ -264,8 +280,6 @@ void App::loadStyleSheet( std::string cssPath, bool updateCurrentStyleSheet ) {
 
 			if ( !mSplitter->isDocumentOpen( cssPath ) ) {
 				SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
-				if ( mUseDefaultTheme )
-					mSplitter->loadFileFromPathInNewTab( mBaseStyleSheet );
 				mSplitter->loadFileFromPathInNewTab( cssPath );
 				SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 			}
@@ -273,36 +287,42 @@ void App::loadStyleSheet( std::string cssPath, bool updateCurrentStyleSheet ) {
 	}
 }
 
-void App::loadLayout( std::string file, bool updateCurrentLayout ) {
+void App::tryUpdateWatch( const std::string& file ) {
+	std::string folder( FileSystem::fileRemoveFileName( file ) );
+	bool keepWatch = false;
+
+	for ( auto& directory : mFileWatcher->directories() ) {
+		if ( directory == folder )
+			keepWatch = true;
+	}
+
+	if ( !keepWatch ) {
+		if ( mWatch != 0 )
+			mFileWatcher->removeWatch( mWatch );
+		mWatch = mFileWatcher->addWatch( folder, mListener );
+	}
+}
+
+std::pair<UITab*, UICodeEditor*> App::loadLayout( std::string file, bool updateCurrentLayout ) {
 	mUIContainer->getContainer()->childsCloseAll();
 	mUISceneNode->update( Time::Zero );
 
 	mUISceneNode->loadLayoutFromFile( file, mUIContainer );
 
 	if ( updateCurrentLayout ) {
-		std::string folder( FileSystem::fileRemoveFileName( file ) );
-
-		bool keepWatch = false;
-
-		for ( auto& directory : mFileWatcher->directories() ) {
-			if ( directory == folder )
-				keepWatch = true;
-		}
-
-		if ( !keepWatch ) {
-			if ( mWatch != 0 )
-				mFileWatcher->removeWatch( mWatch );
-			mWatch = mFileWatcher->addWatch( folder, mListener );
-		}
+		tryUpdateWatch( file );
 
 		mCurrentLayout = file;
 
 		if ( !mSplitter->isDocumentOpen( file ) ) {
 			SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
-			mSplitter->loadFileFromPathInNewTab( file );
+			auto d = mSplitter->loadFileFromPathInNewTab( file );
 			SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+			return d;
 		}
 	}
+
+	return std::make_pair( nullptr, nullptr );
 }
 
 void App::saveTmpDocument( TextDocument& doc,
@@ -914,7 +934,7 @@ void App::mainLoop() {
 
 		mWindow->display();
 	} else {
-		Sys::sleep( Milliseconds( 8 ) );
+		mWindow->getInput()->waitEvent( Milliseconds( mWindow->hasFocus() ? 16 : 100 ) );
 	}
 }
 
@@ -950,6 +970,85 @@ void App::showFileDialog( const String& title, const std::function<void( const E
 	dialog->show();
 }
 
+String App::i18n( const std::string& key, const String& def ) {
+	return mUISceneNode->getTranslatorStringFromKey( key, def );
+}
+
+void App::updateEditorState() {
+	if ( mSplitter->curEditorExistsAndFocused() ) {
+		updateEditorTitle( mSplitter->getCurEditor() );
+	}
+}
+
+UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
+	if ( !editor )
+		return nullptr;
+	UIFileDialog* dialog =
+		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
+	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	std::string filename( editor->getDocument().getFilename() );
+	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
+		filename += editor->getSyntaxDefinition().getFileExtension();
+	dialog->setFileName( filename );
+	dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* event ) {
+		if ( editor ) {
+			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
+			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
+				 FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+				std::string oldPath( editor->getDocument().getFilePath() );
+				if ( editor->getDocument().save( path ) ) {
+					editor->getDocument().setDeleteOnClose( false );
+					FileSystem::fileRemove( oldPath );
+					if ( mCurrentLayout == oldPath )
+						mCurrentLayout = path;
+					UITab* tab = mSplitter->isDocumentOpen( path );
+					if ( tab )
+						tab->setTooltipText( editor->getDocument().getFilePath() );
+					tryUpdateWatch( path );
+					updateEditorState();
+				} else {
+					UIMessageBox* msg =
+						UIMessageBox::New( UIMessageBox::OK, i18n( "coudlnt_write_the_file",
+																   "Couldn't write the file." ) );
+					msg->setTitle( "Error" );
+					msg->show();
+				}
+			} else {
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK,
+					i18n( "empty_file_name", "You must set a name to the file." ) );
+				msg->setTitle( "Error" );
+				msg->show();
+			}
+		}
+	} );
+	if ( focusOnClose ) {
+		dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+			if ( editor && !SceneManager::instance()->isShootingDown() )
+				editor->setFocus();
+		} );
+	}
+	dialog->center();
+	dialog->show();
+	return dialog;
+}
+
+void App::createNewLayout() {
+	std::string file;
+	std::string tmpPath( Sys::getTempPath() + "untitled_%d.xml" );
+	int i = 0;
+	do {
+		file = String::format( tmpPath.c_str(), ++i );
+	} while ( FileSystem::fileExists( file ) );
+	FileSystem::fileWrite( file, "<vbox>\n</vbox>" );
+	std::pair<UITab*, UICodeEditor*> d = loadLayout( file );
+	if ( !d.first )
+		return;
+	d.second->getDocument().setDeleteOnClose( true );
+}
+
 void App::fileMenuClick( const Event* event ) {
 	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
@@ -958,7 +1057,9 @@ void App::fileMenuClick( const Event* event ) {
 
 	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
 
-	if ( "open-project" == id ) {
+	if ( "new-layout" == id ) {
+		createNewLayout();
+	} else if ( "open-project" == id ) {
 		showFileDialog(
 			"Open project...", [&]( const Event* event ) { projectOpen( event ); }, "*.xml" );
 	} else if ( "open-layout" == id ) {
@@ -993,6 +1094,13 @@ void App::fileMenuClick( const Event* event ) {
 		mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
 	} else if ( "inspect-widgets" == id ) {
 		createWidgetTreeView();
+	} else if ( "save-doc" == id ) {
+		saveDoc();
+	} else if ( "save-as-doc" == id ) {
+		if ( mSplitter->curEditorExistsAndFocused() )
+			saveFileDialog( mSplitter->getCurEditor() );
+	} else if ( "save-all" == id ) {
+		saveAll();
 	}
 
 	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
@@ -1007,17 +1115,24 @@ void App::createAppMenu() {
 
 	mUIMenuBar = mAppUISceneNode->find( "menubar" )->asType<UIMenuBar>();
 	UIPopUpMenu* uiPopMenu = UIPopUpMenu::New();
-	uiPopMenu->add( "Open project...", findIcon( "document-open" ) )->setId( "open-project" );
-	uiPopMenu->addSeparator();
+	uiPopMenu->add( "New layout", findIcon( "file-add" ) )->setId( "new-layout" );
 	uiPopMenu->add( "Open layout...", findIcon( "document-open" ) )->setId( "open-layout" );
+	uiPopMenu->add( "Open project...", findIcon( "document-open" ) )->setId( "open-project" );
 	uiPopMenu->addSeparator();
 	uiPopMenu->addSubMenu( "Recent files", NULL, UIPopUpMenu::New() )->setId( "recent-files" );
 	uiPopMenu->addSubMenu( "Recent projects", NULL, UIPopUpMenu::New() )
 		->setId( "recent-projects" );
 	uiPopMenu->addSeparator();
+	uiPopMenu->add( i18n( "save", "Save" ), findIcon( "document-save" ) )->setId( "save-doc" );
+	uiPopMenu->add( i18n( "save_as", "Save as..." ), findIcon( "document-save-as" ) )
+		->setId( "save-as-doc" );
+	uiPopMenu->add( i18n( "save_all", "Save All" ), findIcon( "document-save-as" ) )
+		->setId( "save-all" );
+	uiPopMenu->addSeparator();
 	uiPopMenu->add( "Close", findIcon( "document-close" ) )->setId( "close" );
 	uiPopMenu->addSeparator();
 	uiPopMenu->add( "Quit", findIcon( "quit" ) )->setId( "quit" );
+
 	mUIMenuBar->addMenuButton( "File", uiPopMenu );
 	uiPopMenu->addEventListener( Event::OnItemClicked,
 								 [&]( const Event* event ) { fileMenuClick( event ); } );
@@ -1292,6 +1407,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		if ( !cssFile.empty() ) {
 			loadStyleSheet( cssFile );
 		} else if ( mUseDefaultTheme ) {
+			loadBaseStyleSheet();
 			setUserDefaultTheme();
 		}
 
@@ -1308,6 +1424,10 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 			loadLayoutFile( "assets/layouts/test.xml" );
 		}
 #endif
+
+		if ( xmlFile.empty() && projectFile.empty() ) {
+			createNewLayout();
+		}
 
 		mWindow->runMainLoop( &appLoop );
 	}
@@ -1366,13 +1486,63 @@ void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	}
 }
 
-void App::onCodeEditorCreated( UICodeEditor*, TextDocument& doc ) {
-	doc.setCommand( "save-doc", [&] {
-		if ( mSplitter->getCurEditor() ) {
-			mSplitter->getCurEditor()->save();
-			updateEditorTabTitle( mSplitter->getCurEditor() );
+void App::saveAllProcess() {
+	if ( mTmpDocs.empty() )
+		return;
+
+	mSplitter->forEachEditorStoppable( [&]( UICodeEditor* editor ) {
+		if ( editor->getDocument().isDirty() &&
+			 std::find( mTmpDocs.begin(), mTmpDocs.end(), &editor->getDocument() ) !=
+				 mTmpDocs.end() ) {
+			if ( editor->getDocument().hasFilepath() ) {
+				editor->save();
+				updateEditorTabTitle( editor );
+				if ( mSplitter->getCurEditor() == editor )
+					updateEditorTitle( editor );
+				mTmpDocs.erase( &editor->getDocument() );
+			} else {
+				UIFileDialog* dialog = saveFileDialog( editor, false );
+				dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* ) {
+					updateEditorTabTitle( editor );
+					if ( mSplitter->getCurEditor() == editor )
+						updateEditorTitle( editor );
+				} );
+				dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+					mTmpDocs.erase( &editor->getDocument() );
+					if ( !SceneManager::instance()->isShootingDown() && !mTmpDocs.empty() )
+						saveAllProcess();
+				} );
+				return true;
+			}
 		}
+		return false;
 	} );
+}
+
+void App::saveDoc() {
+	if ( mSplitter->getCurEditor() ) {
+		mSplitter->getCurEditor()->save();
+		updateEditorTabTitle( mSplitter->getCurEditor() );
+	}
+}
+
+void App::saveAll() {
+	mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+		if ( editor->isDirty() )
+			mTmpDocs.insert( &editor->getDocument() );
+	} );
+	saveAllProcess();
+}
+
+void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
+	editor->setAutoCloseXMLTags( true );
+	doc.setCommand( "save-doc", [&] { saveDoc(); } );
+	doc.setCommand( "save-as-doc", [&] {
+		if ( mSplitter->curEditorExistsAndFocused() )
+			saveFileDialog( mSplitter->getCurEditor() );
+	} );
+	doc.setCommand( "save-all", [&] { saveAll(); } );
+	doc.setCommand( "create-new", [&] { createNewLayout(); } );
 }
 
 void App::onCodeEditorFocusChange( UICodeEditor* editor ) {

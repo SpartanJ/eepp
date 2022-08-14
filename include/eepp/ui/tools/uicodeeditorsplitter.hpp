@@ -2,6 +2,7 @@
 #define EE_UI_TOOLS_UICODEEDITORSPLITTER_HPP
 
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uitabwidget.hpp>
@@ -95,7 +96,7 @@ class EE_API UICodeEditorSplitter {
 								std::function<void( UICodeEditor*, const std::string& )> onLoaded =
 									std::function<void( UICodeEditor*, const std::string& )>() );
 
-	void loadFileFromPathInNewTab( const std::string& path );
+	std::pair<UITab*, UICodeEditor*> loadFileFromPathInNewTab( const std::string& path );
 
 	void loadAsyncFileFromPathInNewTab(
 		const std::string& path, std::shared_ptr<ThreadPool> pool,
@@ -189,6 +190,7 @@ class EE_API UICodeEditorSplitter {
 	bool mHideTabBarOnSingleTab{ true };
 	bool mFirstCodeEditor{ true };
 	UICodeEditor* mAboutToAddEditor{ nullptr };
+	UIMessageBox* mTryCloseMsgBox{ nullptr };
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  const std::vector<SyntaxColorScheme>& colorSchemes,

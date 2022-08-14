@@ -396,12 +396,13 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 #endif
 }
 
-void UICodeEditorSplitter::loadFileFromPathInNewTab( const std::string& path ) {
+std::pair<UITab*, UICodeEditor*>
+UICodeEditorSplitter::loadFileFromPathInNewTab( const std::string& path ) {
 	auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
 	UITabWidget* tabWidget = d.first->getTabWidget();
-	UITab* addedTab = d.first;
 	loadFileFromPath( path, d.second );
-	tabWidget->setTabSelected( addedTab );
+	tabWidget->setTabSelected( d.first );
+	return d;
 }
 
 void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
@@ -738,19 +739,24 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget ) {
 	if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		UICodeEditor* editor = widget->asType<UICodeEditor>();
 		if ( nullptr != editor && editor->isDirty() ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
+			if ( nullptr != mTryCloseMsgBox )
+				return false;
+			mTryCloseMsgBox = UIMessageBox::New(
 				UIMessageBox::OK_CANCEL,
-				"Do you really want to close this tab?\nAll changes will be lost." );
-			msgBox->addEventListener( Event::MsgBoxConfirmClick,
-									  [&, editor]( const Event* ) { closeTab( editor ); } );
-			msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
-				msgBox = nullptr;
+				widget->getUISceneNode()->getTranslatorString(
+					"@string/confirm_close_tab",
+					"Do you really want to close this tab?\nAll changes will be lost." ) );
+			mTryCloseMsgBox->addEventListener(
+				Event::MsgBoxConfirmClick, [&, editor]( const Event* ) { closeTab( editor ); } );
+			mTryCloseMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+				mTryCloseMsgBox = nullptr;
 				if ( mCurEditor )
 					mCurEditor->setFocus();
 			} );
-			msgBox->setTitle( "Close Tab?" );
-			msgBox->center();
-			msgBox->show();
+			mTryCloseMsgBox->setTitle( widget->getUISceneNode()->getTranslatorString(
+				"@string/ask_close_tab", "Close Tab?" ) );
+			mTryCloseMsgBox->center();
+			mTryCloseMsgBox->show();
 			return false;
 		} else {
 			closeTab( editor );

@@ -2659,7 +2659,7 @@ void TerminalEmulator::resize( int columns, int rows ) {
 	redraw();
 }
 
-#define MAX_TTY_READS ( 1024 * 40 )
+#define MAX_TTY_READS ( 1024 )
 
 bool TerminalEmulator::update() {
 	if ( mStatus == TerminalEmulator::STARTING ) {
@@ -2669,7 +2669,7 @@ bool TerminalEmulator::update() {
 	}
 
 	int read = MAX_TTY_READS;
-	while ( ttyread() > 0 && read--)
+	while ( ttyread() > 0 && --read )
 		;
 
 	if ( read != MAX_TTY_READS || mDirty )
