@@ -265,21 +265,23 @@ Vector2f UIWidget::getTooltipPosition() {
 	if ( NULL == eventDispatcher || NULL == themeManager )
 		return Vector2f::Zero;
 
-	Vector2f Pos = eventDispatcher->getMousePosf();
-	Pos.x += themeManager->getCursorSize().x;
-	Pos.y += themeManager->getCursorSize().y;
+	UISceneNode* uiSceneNode = getUISceneNode();
+	Vector2f pos = eventDispatcher->getMousePosf();
+	pos -= uiSceneNode->getScreenPos(); // TODO: Fix UISceneNode inside UISceneNode position
+	pos.x += themeManager->getCursorSize().x;
+	pos.y += themeManager->getCursorSize().y;
 
-	if ( Pos.x + mTooltip->getPixelsSize().getWidth() >
+	if ( pos.x + mTooltip->getPixelsSize().getWidth() >
 		 eventDispatcher->getSceneNode()->getPixelsSize().getWidth() ) {
-		Pos.x = eventDispatcher->getMousePos().x - mTooltip->getPixelsSize().getWidth();
+		pos.x = eventDispatcher->getMousePos().x - mTooltip->getPixelsSize().getWidth();
 	}
 
-	if ( Pos.y + mTooltip->getPixelsSize().getHeight() >
+	if ( pos.y + mTooltip->getPixelsSize().getHeight() >
 		 eventDispatcher->getSceneNode()->getPixelsSize().getHeight() ) {
-		Pos.y = eventDispatcher->getMousePos().y - mTooltip->getPixelsSize().getHeight();
+		pos.y = eventDispatcher->getMousePos().y - mTooltip->getPixelsSize().getHeight();
 	}
 
-	return Pos;
+	return pos;
 }
 
 void UIWidget::createStyle() {

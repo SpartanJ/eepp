@@ -36,12 +36,21 @@ void UISelectButton::select() {
 	if ( !wasSelected ) {
 		NodeMessage tMsg( this, NodeMessage::Selected, 0 );
 		messagePost( &tMsg );
+
+		sendCommonEvent( Event::OnSelectionChanged );
 	}
 }
 
+void UISelectButton::toggleSelection() {
+	setSelected( !isSelected() );
+}
+
 void UISelectButton::unselect() {
-	if ( mNodeFlags & NODE_FLAG_SELECTED )
+	if ( mNodeFlags & NODE_FLAG_SELECTED ) {
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
+
+		sendCommonEvent( Event::OnSelectionChanged );
+	}
 
 	popState( UIState::StateSelected );
 }
@@ -61,6 +70,66 @@ void UISelectButton::onStateChange() {
 	if ( !( mSkinState->getState() & UIState::StateFlagSelected ) && isSelected() ) {
 		pushState( UIState::StateSelected, false );
 	}
+}
+
+bool UISelectButton::applyProperty( const StyleSheetProperty& attribute ) {
+	bool attributeSet = true;
+
+	if ( attribute.getPropertyDefinition() == NULL ) {
+		return false;
+	}
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::SelectOnClick:
+			setSelectOnClick( attribute.asBool() );
+			break;
+		case PropertyId::Selected:
+			setSelected( attribute.asBool() );
+			break;
+		default:
+			attributeSet = UIPushButton::applyProperty( attribute );
+			break;
+	}
+
+	return attributeSet;
+}
+
+std::string UISelectButton::getPropertyString( const PropertyDefinition* propertyDef,
+											   const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::SelectOnClick:
+			return hasSelectOnClick() ? "true" : "false";
+		case PropertyId::Selected:
+			return isSelected() ? "true" : "false";
+		default:
+			return UIPushButton::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+void UISelectButton::setSelected( bool set ) {
+	if ( set ) {
+		select();
+	} else {
+		unselect();
+	}
+}
+
+void UISelectButton::setSelectOnClick( bool set ) {
+	if ( set ) {
+		if ( mSelectOnClickCbId == 0 )
+			mSelectOnClickCbId =
+				addEventListener( Event::MouseClick, [&]( const Event* ) { toggleSelection(); } );
+	} else {
+		if ( mSelectOnClickCbId != 0 )
+			removeEventListener( mSelectOnClickCbId );
+	}
+}
+
+bool UISelectButton::hasSelectOnClick() const {
+	return 0 != mSelectOnClickCbId;
 }
 
 }} // namespace EE::UI

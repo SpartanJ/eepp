@@ -28,7 +28,7 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual void setTheme( UITheme* Theme );
 
-	virtual UIPushButton* setIcon( Drawable* icon );
+	virtual UIPushButton* setIcon( Drawable* icon, bool ownIt = false );
 
 	virtual UIImage* getIcon() const;
 
@@ -61,11 +61,16 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual Sizef updateLayout();
 
+	bool isTextAsFallback() const;
+
+	void setTextAsFallback( bool textAsFallback );
+
   protected:
 	UIImage* mIcon;
 	UITextView* mTextBox;
 	Sizei mIconMinSize;
 	InnerWidgetOrientation mInnerWidgetOrientation{ InnerWidgetOrientation::Right };
+	bool mTextAsFallback{ false };
 
 	explicit UIPushButton( const std::string& tag );
 
@@ -90,6 +95,8 @@ class EE_API UIPushButton : public UIWidget {
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 	virtual Uint32 onKeyUp( const KeyEvent& Event );
+
+	void updateTextBox();
 
 	Vector2f packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding );
 

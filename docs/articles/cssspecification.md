@@ -1460,7 +1460,7 @@ Sets the scrollbar style (for the moment defines if it contains buttons at its e
 
 Sets the element state as selected when supported by the specific widget.
 
-* Applicable to: EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton)
+* Applicable to: EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::SelectButton (SelectButton)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
 * Aliases: `active`
@@ -1511,6 +1511,16 @@ Sets the text selection color on a text element that suports text selection.
   EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton)
 * Data Type: [color](#color-data-type)
 * Default color: `white`
+
+---
+
+### select-on-click
+
+Enables the selection state toggle on element click.
+
+* Applicable to: EE::UI::SelectButton (SelectButton)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
 
 ---
 
@@ -1684,6 +1694,16 @@ code implementation, but it's available as an option.
 ### text-align
 
 Read [text-align](https://developer.mozilla.org/en-US/docs/Web/CSS/text-align) documentation.
+
+---
+
+### text-as-fallback
+
+When enabled will only display text if the icon is not set/found.
+
+* Applicable to: EE::UI::UIPushButton (PushButton)
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
 
 ---
 
@@ -1944,7 +1964,7 @@ Multiple values are separated with a `|` (as a logical or).
   * `close`: Adds a close button to the titlebar.
   * `maximize`: Adds a maximize button to the titlebar.
   * `minimize`: Adds a minimize button to the titlebar.
-  * `dragable`: Makes the window background dragable.
+  * `draggable`: Makes the window background draggable.
   * `shadow`: The window will project a shadow.
   * `modal`: Makes the window modal (blocks interacting any element ouside the window).
   * `undecorated`: Creates an undecorated window (no borders and titlebar).

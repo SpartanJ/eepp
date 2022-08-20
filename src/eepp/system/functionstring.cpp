@@ -6,6 +6,8 @@ namespace EE { namespace System {
 
 FunctionString FunctionString::parse( const std::string& function ) {
 	size_t posFuncStart = function.find_first_of( '(' );
+	if ( posFuncStart == std::string::npos )
+		return FunctionString( "", {}, {} );
 	size_t posFuncEnd = function.find_last_of( ')' );
 	std::string funcName;
 	std::vector<std::string> parameters;

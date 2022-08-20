@@ -271,6 +271,11 @@ void SyntaxDefinitionManager::addC() {
 		   {
 			   { { "//.-\n" }, "comment" },
 			   { { "/%*", "%*/" }, "comment" },
+			   { { "^%s*(#include)%s+([<%\"][%w%d%.%\\%/]+[>%\"])" },
+				 { "keyword", "keyword", "literal" } },
+			   { { "^%s*(#e?l?n?d?ifn?d?e?f?)%s+" }, { "keyword", "keyword", "literal" } },
+			   { { "^%s*(#define)%s*" }, { "keyword", "keyword", "literal" } },
+			   { { "^%s*(#else)%s*" }, { "keyword", "keyword", "literal" } },
 			   { { "#", "[^\\]\n" }, "comment" },
 			   { { "\"", "\"", "\\" }, "string" },
 			   { { "'", "'", "\\" }, "string" },
@@ -502,8 +507,8 @@ void SyntaxDefinitionManager::addBash() {
 
 void SyntaxDefinitionManager::addCPP() {
 	add( { "C++",
-		   { "%.cpp$", "%.cc$", "%.C$", "%.cxx$", "%.c++$", "%.hh$", "%.H$", "%.h$", "%.inl$",
-			 "%.hxx$", "%.hpp$", "%.h++$" },
+		   { "%.cpp$", "%.cc$", "%.C$", "%.cxx$", "%.c++$", "%.hh$", "%.inl$", "%.hxx$", "%.hpp$",
+			 "%.h++$" },
 		   {
 			   { { "R%\"xml%(", "%)xml%\"" }, "function", "XML" },
 			   { { "R%\"css%(", "%)css%\"" }, "function", "CSS" },
@@ -511,9 +516,14 @@ void SyntaxDefinitionManager::addCPP() {
 			   { { "R\"[%a-\"]+%(", "%)[%a-\"]+%\"" }, "string" },
 			   { { "//.-\n" }, "comment" },
 			   { { "/%*", "%*/" }, "comment" },
-			   { { "#", "[^\\]\n" }, "keyword2" },
 			   { { "\"", "\"", "\\" }, "string" },
 			   { { "'", "'", "\\" }, "string" },
+			   { { "^%s*(#include)%s+([<%\"][%w%d%.%\\%/]+[>%\"])" },
+				 { "keyword", "keyword", "literal" } },
+			   { { "^%s*(#e?l?n?d?ifn?d?e?f?)%s+" }, { "keyword", "keyword", "literal" } },
+			   { { "^%s*(#define)%s*" }, { "keyword", "keyword", "literal" } },
+			   { { "^%s*(#else)%s*" }, { "keyword", "keyword", "literal" } },
+			   { { "#", "[^\\]\n" }, "comment" },
 			   { { "-?0x%x+" }, "number" },
 			   { { "-?%d+[%d%.eE]*f?" }, "number" },
 			   { { "-?%.?%d+f?" }, "number" },

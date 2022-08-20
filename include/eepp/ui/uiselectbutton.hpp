@@ -27,7 +27,21 @@ class EE_API UISelectButton : public UIPushButton {
 
 	virtual void select();
 
+	void toggleSelection();
+
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) const;
+
+	virtual void setSelected( bool set );
+
+	void setSelectOnClick( bool set );
+
+	bool hasSelectOnClick() const;
   protected:
+	Uint32 mSelectOnClickCbId{ 0 };
+
 	virtual void onStateChange();
 };
 

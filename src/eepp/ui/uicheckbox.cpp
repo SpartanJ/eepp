@@ -226,7 +226,6 @@ std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Selected:
 			return isChecked() ? "true" : "false";
-			break;
 		default:
 			return UITextView::getPropertyString( propertyDef, propertyIndex );
 	}

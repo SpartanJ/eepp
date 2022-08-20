@@ -1328,6 +1328,11 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 			{ "help", 0xf045 },
 			{ "terminal", 0xf1f6 },
 			{ "earth", 0xec7a },
+			{ "arrow-down", 0xea4c },
+			{ "arrow-up", 0xea76 },
+			{ "arrow-down-s", 0xea4e },
+			{ "arrow-right-s", 0xea6e },
+			{ "match-case", 0xed8d },
 		};
 		for ( const auto& icon : icons ) {
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );

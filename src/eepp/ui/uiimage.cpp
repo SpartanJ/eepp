@@ -146,8 +146,11 @@ const Color& UIImage::getColor() const {
 }
 
 UIImage* UIImage::setColor( const Color& col ) {
-	mColor = col;
-	setAlpha( col.a );
+	if ( mColor != col ) {
+		mColor = col;
+		setAlpha( col.a );
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -247,24 +250,24 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 				setDrawable( createdDrawable, ownIt );
 			} else {
 				Drawable* res = NULL;
-				if ( NULL != ( res = DrawableSearcher::searchByName( path ) ) ) {
-					if ( res->getDrawableType() == Drawable::SPRITE )
-						mDrawableOwner = true;
-
-					setDrawable( res );
-				}
+				if ( NULL != ( res = DrawableSearcher::searchByName( path ) ) )
+					setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 			}
 			break;
 		}
 		case PropertyId::Icon: {
 			std::string val = attribute.asString();
 			Drawable* icon = NULL;
+			bool ownIt;
 			UIIcon* iconF = getUISceneNode()->findIcon( val );
 			if ( iconF ) {
 				setDrawable(
 					iconF->getSize( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom ) );
-			} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
-				setDrawable( icon );
+			} else if ( NULL !=
+						( icon = CSS::StyleSheetSpecification::instance()
+									 ->getDrawableImageParser()
+									 .createDrawable( val, getPixelsSize(), ownIt, this ) ) ) {
+				setDrawable( icon, ownIt );
 			}
 			break;
 		}

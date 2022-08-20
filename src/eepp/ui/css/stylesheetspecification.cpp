@@ -374,6 +374,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "droppable-hovering-color", "#FFFFFF20" ).setType( PropertyType::Color );
 
+	registerProperty( "text-as-fallback", "false" ).setType( PropertyType::Bool );
+	registerProperty( "select-on-click", "false" ).setType( PropertyType::Bool );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );

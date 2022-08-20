@@ -669,8 +669,9 @@ void UIWindow::fixChildsSize() {
 			Sizei( getSize().getWidth(), mWindowDecoration->getSkinSize().getHeight() );
 	}
 
-	mWindowDecoration->setPixelsSize(
-		mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.TitlebarSize.getHeight() ) );
+	if ( mWindowDecoration )
+		mWindowDecoration->setPixelsSize(
+			mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.TitlebarSize.getHeight() ) );
 
 	if ( mStyleConfig.BorderAutoSize ) {
 		mBorderBottom->setPixelsSize(
@@ -1541,7 +1542,7 @@ std::string UIWindow::getWindowFlagsString() const {
 	if ( getWinFlags() & UI_WIN_MAXIMIZE_BUTTON )
 		flags.push_back( "maximize" );
 	if ( getWinFlags() & UI_WIN_DRAGABLE_CONTAINER )
-		flags.push_back( "dragable" );
+		flags.push_back( "draggable" );
 	if ( getWinFlags() & UI_WIN_SHADOW )
 		flags.push_back( "shadow" );
 	if ( getWinFlags() & UI_WIN_MODAL )
@@ -1641,7 +1642,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 						winflags |= UI_WIN_MAXIMIZE_BUTTON;
 					else if ( "minimize" == cur )
 						winflags |= UI_WIN_MINIMIZE_BUTTON;
-					else if ( "dragable" == cur )
+					else if ( "draggable" == cur )
 						winflags |= UI_WIN_DRAGABLE_CONTAINER;
 					else if ( "shadow" == cur )
 						winflags |= UI_WIN_SHADOW;

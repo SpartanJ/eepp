@@ -29,15 +29,15 @@ Drawable* DrawableImageParser::createDrawable( const std::string& value, const S
 	Drawable* res = NULL;
 	ownIt = false;
 
-	if ( "none" == value ) {
+	if ( "none" == value )
 		return NULL;
-	}
 
 	if ( !functionType.isEmpty() ) {
-		if ( exists( functionType.getName() ) ) {
+		if ( exists( functionType.getName() ) )
 			return mFuncs[functionType.getName()]( functionType, size, ownIt, node );
-		}
 	} else if ( NULL != ( res = DrawableSearcher::searchByName( value ) ) ) {
+		if ( res->getDrawableType() == Drawable::SPRITE )
+			ownIt = true;
 		return res;
 	}
 
@@ -314,9 +314,8 @@ void DrawableImageParser::registerBaseParsers() {
 	mFuncs["url"] = []( const FunctionString& functionType, const Sizef& /*size*/, bool& /*ownIt*/,
 						UINode*
 						/*node*/ ) -> Drawable* {
-		if ( functionType.getParameters().size() < 1 ) {
+		if ( functionType.getParameters().size() < 1 )
 			return NULL;
-		}
 
 		return DrawableSearcher::searchByName( functionType.getParameters().at( 0 ) );
 	};

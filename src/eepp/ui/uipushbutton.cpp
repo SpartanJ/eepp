@@ -251,6 +251,17 @@ Sizef UIPushButton::updateLayout() {
 	return size.ceil();
 }
 
+bool UIPushButton::isTextAsFallback() const {
+	return mTextAsFallback;
+}
+
+void UIPushButton::setTextAsFallback( bool textAsFallback ) {
+	if ( mTextAsFallback != textAsFallback ) {
+		mTextAsFallback = textAsFallback;
+		updateTextBox();
+	}
+}
+
 void UIPushButton::onPaddingChange() {
 	onSizeChange();
 
@@ -278,13 +289,19 @@ void UIPushButton::onThemeLoaded() {
 	UIWidget::onThemeLoaded();
 }
 
-UIPushButton* UIPushButton::setIcon( Drawable* icon ) {
-	if ( mIcon->getDrawable() != icon ) {
-		mIcon->setPixelsSize( icon->getPixelsSize() );
-		mIcon->setDrawable( icon );
-		mTextBox->setVisible( !getText().empty() );
+void UIPushButton::updateTextBox() {
+	if ( mTextBox->isVisible() != ( !getText().empty() && !mTextAsFallback ) ) {
+		mTextBox->setVisible( !getText().empty() && !mTextAsFallback );
 		onAutoSize();
 		updateLayout();
+	}
+}
+
+UIPushButton* UIPushButton::setIcon( Drawable* icon, bool ownIt ) {
+	if ( mIcon->getDrawable() != icon ) {
+		mIcon->setPixelsSize( icon->getPixelsSize() );
+		mIcon->setDrawable( icon, ownIt );
+		updateTextBox();
 	}
 	return this;
 }
@@ -431,6 +448,10 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 					   ? "center"
 					   : ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right"
 																					 : "left" );
+		case PropertyId::TextAsFallback:
+			return mTextAsFallback ? "true" : "false";
+		case PropertyId::Tint:
+			return mIcon->getColor().toHexString();
 		case PropertyId::Color:
 		case PropertyId::ShadowColor:
 		case PropertyId::SelectionColor:
@@ -464,13 +485,17 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Icon: {
 			std::string val = attribute.asString();
 			Drawable* icon = NULL;
+			bool ownIt;
 			UIIcon* iconF = getUISceneNode()->findIcon( val );
 			if ( iconF ) {
 				setIcon( iconF->getSize(
 					eemax<size_t>( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom,
 								   PixelDensity::dpToPxI( 16 ) ) ) );
-			} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
-				setIcon( icon );
+			} else if ( NULL !=
+						( icon = StyleSheetSpecification::instance()
+									 ->getDrawableImageParser()
+									 .createDrawable( val, getPixelsSize(), ownIt, this ) ) ) {
+				setIcon( icon, ownIt );
 			}
 			break;
 		}
@@ -487,6 +512,12 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 				setTextAlign( UI_HALIGN_RIGHT );
 			break;
 		}
+		case PropertyId::TextAsFallback:
+			setTextAsFallback( attribute.asBool() );
+			break;
+		case PropertyId::Tint:
+			mIcon->setColor( attribute.asColor() );
+			break;
 		case PropertyId::Color:
 		case PropertyId::ShadowColor:
 		case PropertyId::SelectionColor:

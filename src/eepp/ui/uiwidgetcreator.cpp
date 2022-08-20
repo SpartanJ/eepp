@@ -102,6 +102,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["vscrollbar"] = UIScrollBar::NewVertical;
 		registeredWidget["hscrollbar"] = UIScrollBar::NewHorizontal;
 		registeredWidget["button"] = UIPushButton::New;
+		registeredWidget["rlay"] = UIRelativeLayout::New;
 
 		sBaseListCreated = true;
 	}
