@@ -57,6 +57,8 @@ UIWidget::UIWidget( const std::string& tag ) :
 UIWidget::UIWidget() : UIWidget( "widget" ) {}
 
 UIWidget::~UIWidget() {
+	onClose();
+
 	if ( mUISceneNode && mUISceneNode->getUIEventDispatcher() &&
 		 mUISceneNode->getUIEventDispatcher()->getNodeDragging() == this )
 		mUISceneNode->getUIEventDispatcher()->setNodeDragging( nullptr );
@@ -1474,9 +1476,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			std::string val = attribute.asString();
 			String::toLowerInPlace( val );
 
-			if ( "match_parent" == val || "match-parent" == val ) {
+			if ( "match_parent" == val || "match-parent" == val || "mp" == val ) {
 				setLayoutWidthPolicy( SizePolicy::MatchParent );
-			} else if ( "wrap_content" == val || "wrap-content" == val ) {
+			} else if ( "wrap_content" == val || "wrap-content" == val || "wc" == val ) {
 				setLayoutWidthPolicy( SizePolicy::WrapContent );
 			} else if ( "fixed" == val ) {
 				setLayoutWidthPolicy( SizePolicy::Fixed );
@@ -1497,9 +1499,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			std::string val = attribute.asString();
 			String::toLowerInPlace( val );
 
-			if ( "match_parent" == val ) {
+			if ( "match_parent" == val || "match-parent" == val || "mp" == val ) {
 				setLayoutHeightPolicy( SizePolicy::MatchParent );
-			} else if ( "wrap_content" == val ) {
+			} else if ( "wrap_content" == val || "wrap-content" == val || "wc" == val ) {
 				setLayoutHeightPolicy( SizePolicy::WrapContent );
 			} else if ( "fixed" == val ) {
 				setLayoutHeightPolicy( SizePolicy::Fixed );

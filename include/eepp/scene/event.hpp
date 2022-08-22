@@ -60,7 +60,7 @@ class EE_API Event {
 		OnTabAdded,
 		OnTabClosed,
 		OnTabNavigate,
-		OnClose, // Warning: Only some nodes will report this event.
+		OnClose,
 		OnDragStart,
 		OnDragStop,
 		OnPaddingChange,

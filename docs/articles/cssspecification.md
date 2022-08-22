@@ -856,7 +856,7 @@ or one of the special constants.
   * `match_parent`: The element must be as big as its parent.
   * `wrap_content`: The element should be only big enough to enclose its content (plus padding).
 * Default value: `wrap_content`
-* Aliases: `layout_height`
+* Aliases: `layout_height`, `lh`
 
 ---
 
@@ -928,7 +928,7 @@ layout weight.
 * Applicable to: Any element child of a EE::UI::UILinearLayout (LinearLayout)
 * Data Type: [number](#number-data-type) (normalized from `0` to `1`)
 * Default value: `0`
-* Aliases: `layout_weight`
+* Aliases: `layout_weight`, `lw8`
 
 ---
 
@@ -946,7 +946,7 @@ or one of the special constants.
   * `match_parent`: The element must be as big as its parent.
   * `wrap_content`: The element should be only big enough to enclose its content (plus padding).
 * Default value: `wrap_content`
-* Aliases: `layout_width`
+* Aliases: `layout_width`, `lw`
 
 ---
 
@@ -2064,6 +2064,13 @@ Only eepp CSS properties supported are valid in the shorthand.
 ### background-position
 
 Read [background-position](https://developer.mozilla.org/en-US/docs/Web/CSS/background-position) documentation.
+
+---
+
+### border
+
+Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border) documentation.
+`border-style` is not implemented yet.
 
 ---
 

@@ -71,9 +71,8 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 
 void UIImage::onAutoSize() {
 	if ( NULL != mDrawable ) {
-		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getSize() ) {
-			setInternalSize( mDrawable->getSize() );
-		}
+		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getSize() )
+			setInternalSize( mDrawable->getSize().asInt().asFloat() );
 
 		Sizef size( getSize() );
 

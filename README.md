@@ -217,7 +217,7 @@ It should look really familiar to any Android developer. This is a window with
 the most basic widgets in a vertical linear layout display.
 
 ```xml
-<window layout_width="300dp" layout_height="300dp" winflags="default|maximize">
+<window layout_width="300dp" layout_height="300dp" window-flags="default|maximize|shadow">
   <LinearLayout id="testlayout" orientation="vertical" layout_width="match_parent" layout_height="match_parent" layout_margin="8dp">
 	<TextView text="Hello World!" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" backgroundColor="black" />
 	<PushButton text="OK!" textSize="16dp" icon="ok" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />

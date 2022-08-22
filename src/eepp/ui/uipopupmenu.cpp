@@ -18,7 +18,6 @@ UIPopUpMenu::UIPopUpMenu() : UIMenu() {
 }
 
 UIPopUpMenu::~UIPopUpMenu() {
-	onClose();
 }
 
 Uint32 UIPopUpMenu::getType() const {

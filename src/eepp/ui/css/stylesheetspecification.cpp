@@ -148,10 +148,11 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "tooltip", "" ).setType( PropertyType::String );
 	registerProperty( "layout-weight", "" )
 		.addAlias( "layout_weight" )
+		.addAlias( "lw8" )
 		.setType( PropertyType::NumberFloat );
 	registerProperty( "layout-gravity", "" ).addAlias( "layout_gravity" );
-	registerProperty( "layout-width", "" ).addAlias( "layout_width" );
-	registerProperty( "layout-height", "" ).addAlias( "layout_height" );
+	registerProperty( "layout-width", "" ).addAlias( "layout_width" ).addAlias( "lw" );
+	registerProperty( "layout-height", "" ).addAlias( "layout_height" ).addAlias( "lh" );
 	registerProperty( "layout-to-left-of", "" ).addAlias( "layout_to_left_of" );
 	registerProperty( "layout-to-right-of", "" ).addAlias( "layout_to_right_of" );
 	registerProperty( "layout-to-top-of", "" ).addAlias( "layout_to_top_of" );
@@ -417,6 +418,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   "vector2" );
 	registerShorthand( "min-size", { "min-width", "min-height" }, "vector2" );
 	registerShorthand( "max-size", { "max-width", "max-height" }, "vector2" );
+	registerShorthand( "border", { "border-width", "border-style", "border-color" }, "border" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
@@ -715,7 +717,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		if ( value.empty() )
 			return {};
 		std::vector<StyleSheetProperty> properties;
-		const std::vector<std::string> propNames( shorthand->getProperties() );
+		const std::vector<std::string>& propNames = shorthand->getProperties();
 		auto ltrbSplit = String::split( value, " ", "", "(\"" );
 		if ( !ltrbSplit.empty() ) {
 			for ( size_t i = 0; i < propNames.size(); i++ ) {
@@ -732,7 +734,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		if ( value.empty() )
 			return {};
 		std::vector<StyleSheetProperty> properties;
-		const std::vector<std::string> propNames( shorthand->getProperties() );
+		const std::vector<std::string>& propNames = shorthand->getProperties();
 		auto splits = String::split( value, '/' );
 		auto widths = String::split( splits[0], ' ' );
 		std::vector<std::string> heights;
@@ -758,7 +760,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		if ( value.empty() )
 			return {};
 		std::vector<StyleSheetProperty> properties;
-		const std::vector<std::string> propNames( shorthand->getProperties() );
+		const std::vector<std::string>& propNames = shorthand->getProperties();
 		std::vector<std::string> values = String::split( value, ',' );
 		std::map<std::string, std::vector<std::string>> tmpProperties;
 
@@ -809,12 +811,10 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["background"] = [&]( const ShorthandDefinition* shorthand,
 										   std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
-		if ( value.empty() )
-			return {};
-		if ( "none" == value )
+		if ( value.empty() || "none" == value )
 			return {};
 		std::vector<StyleSheetProperty> properties;
-		const std::vector<std::string> propNames( shorthand->getProperties() );
+		const std::vector<std::string>& propNames = shorthand->getProperties();
 		std::vector<std::string> tokens = String::split( value, " ", "", "(" );
 		std::string positionStr;
 
@@ -843,8 +843,55 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 			int pos = getIndexEndingWith( propNames, "-position" );
 			if ( pos != -1 ) {
 				const ShorthandDefinition* shorthand = getShorthand( propNames[pos] );
-				if ( NULL != shorthand )
-					mShorthandParsers["background-position"]( shorthand, positionStr );
+				if ( NULL != shorthand ) {
+					auto bpVec = mShorthandParsers["background-position"]( shorthand, positionStr );
+					for ( auto& bp : bpVec )
+						properties.emplace_back( bp );
+				}
+			}
+		}
+
+		return properties;
+	};
+
+	mShorthandParsers["border"] = [&]( const ShorthandDefinition* shorthand,
+									   std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() || "none" == value )
+			return {};
+
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		std::vector<std::string> tokens = String::split( value, " ", "", "(" );
+
+		for ( auto& tok : tokens ) {
+			if ( -1 !=
+				 String::valueIndex(
+					 tok, "none;hidden;dotted;dashed;solid;double;groove;ridge;inset;outset" ) ) {
+				int pos = getIndexEndingWith( propNames, "-style" );
+				// boder-style is not implemented yet
+				if ( pos != -1 )
+					continue;
+			} else if ( Color::isColorString( tok ) ) {
+				int pos = getIndexEndingWith( propNames, "-color" );
+				if ( pos != -1 ) {
+					const ShorthandDefinition* shorthand = getShorthand( propNames[pos] );
+					if ( NULL != shorthand ) {
+						auto bbVec = mShorthandParsers["border-box"]( shorthand, tok );
+						for ( auto& bb : bbVec )
+							properties.emplace_back( bb );
+					}
+				}
+			} else {
+				int pos = getIndexEndingWith( propNames, "-width" );
+				if ( pos != -1 ) {
+					const ShorthandDefinition* shorthand = getShorthand( propNames[pos] );
+					if ( NULL != shorthand ) {
+						auto bbVec = mShorthandParsers["border-box"]( shorthand, tok );
+						for ( auto& bb : bbVec )
+							properties.emplace_back( bb );
+					}
+				}
 			}
 		}
 

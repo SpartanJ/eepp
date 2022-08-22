@@ -109,8 +109,6 @@ UIWindow::~UIWindow() {
 
 	sendCommonEvent( Event::OnWindowClose );
 
-	onClose();
-
 	eeSAFE_DELETE( mFrameBuffer );
 }
 

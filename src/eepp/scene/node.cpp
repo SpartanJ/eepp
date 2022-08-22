@@ -390,7 +390,6 @@ Uint32 Node::onCalculateDrag( const Vector2f&, const Uint32& ) {
 
 void Node::onClose() {
 	sendCommonEvent( Event::OnClose );
-	invalidateDraw();
 }
 
 Node* Node::getNextNode() const {
