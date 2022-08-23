@@ -30,6 +30,7 @@
 #include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitouchdraggablewidget.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <eepp/ui/uiviewpager.hpp>
@@ -103,6 +104,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["hscrollbar"] = UIScrollBar::NewHorizontal;
 		registeredWidget["button"] = UIPushButton::New;
 		registeredWidget["rlay"] = UIRelativeLayout::New;
+		registeredWidget["tooltip"] = UITooltip::New;
 
 		sBaseListCreated = true;
 	}
