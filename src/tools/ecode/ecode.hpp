@@ -87,7 +87,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void downloadFileWebDialog();
 
-	void showGlobalSearch();
+	void showGlobalSearch( bool searchAndReplace );
 
 	void showFindView();
 

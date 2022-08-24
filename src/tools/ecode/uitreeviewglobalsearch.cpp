@@ -146,8 +146,8 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 		const String& txt = mTextBox->getText();
 
 		if ( mSearchStrPos.second < txt.size() ) {
-			mResultStr =
-				txt.substr( mSearchStrPos.first, mSearchStrPos.second - mSearchStrPos.first );
+			mResultStr = String( txt.toUtf8().substr(
+				mSearchStrPos.first, mSearchStrPos.second - mSearchStrPos.first ) );
 		} else {
 			mResultStr = "";
 		}
@@ -157,9 +157,10 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 
 		size_t start = to;
 		for ( auto& token : tokens ) {
+			size_t strSize = String::fromUtf8( token.text ).size();
 			mTextBox->setFontFillColor( pp->getColorScheme().getSyntaxStyle( token.type ).color,
-										start, start + token.text.size() );
-			start += token.text.size();
+										start, start + strSize );
+			start += strSize;
 		}
 	}
 	return this;
@@ -224,4 +225,4 @@ void UITreeViewCellGlobalSearch::updateCell( Model* ) {
 	}
 }
 
-}
+} // namespace ecode

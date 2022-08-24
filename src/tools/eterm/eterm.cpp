@@ -5,7 +5,10 @@
 EE::Window::Window* win = NULL;
 std::shared_ptr<TerminalDisplay> terminal = nullptr;
 Clock lastRender;
+Clock secondsCounter;
 Time frameTime{ Time::Zero };
+bool benchmarkMode{ false };
+std::string windowStringData;
 
 void inputCallback( InputEvent* event ) {
 	if ( !terminal || event->Type == InputEvent::EventsSent )
@@ -83,16 +86,19 @@ void mainLoop() {
 	if ( terminal )
 		termNeedsUpdate = !terminal->update();
 
-	if ( terminal && terminal->isDirty() && !termNeedsUpdate ) {
+	if ( terminal && ( benchmarkMode || terminal->isDirty() ) && !termNeedsUpdate ) {
 		if ( lastRender.getElapsedTime() >= frameTime ) {
 			lastRender.restart();
 			win->clear();
 			terminal->draw();
 			win->display();
 		}
-	} else if ( !termNeedsUpdate ) {
+	} else if ( !benchmarkMode && !termNeedsUpdate ) {
 		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 	}
+
+	if ( benchmarkMode && secondsCounter.getElapsedTime() >= Seconds( 1 ) )
+		win->setTitle( "eterm - " + windowStringData + " - " + String::toString( win->getFPS() ) );
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
@@ -126,6 +132,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<Uint32> maxFPS( parser, "max-fps",
 									"Maximum rendering frames per second of the terminal",
 									{ "--max-fps" }, 60 );
+	args::Flag benchmarkModeFlag( parser, "benchmark-mode", "Render as much as possible.",
+								  { "benchmark-mode" } );
 
 	try {
 		parser.ParseCLI( argc, argv );
@@ -177,6 +185,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	if ( win->isOpen() ) {
 		win->setClearColor( RGB( 0, 0, 0 ) );
 
+		benchmarkMode = benchmarkModeFlag.Get();
+
 		FontTrueType* fontMono = nullptr;
 		if ( fontPath && FileSystem::fileExists( fontPath.Get() ) ) {
 			FileInfo file( fontPath.Get() );
@@ -198,7 +208,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				->loadFromFile( resPath + "fonts/NotoEmoji-Regular.ttf" );
 		}
 
-		frameTime = Milliseconds( 1000.f / (Float)maxFPS.Get() );
+		frameTime = benchmarkMode ? Time::Zero : Milliseconds( 1000.f / (Float)maxFPS.Get() );
 
 		if ( !terminal || terminal->hasTerminated() ) {
 			FileInfo file( wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory() );
@@ -208,10 +218,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				file.getDirectoryPath(), historySize.Get(), nullptr, fb.Get(),
 				!( file.isRegularFile() && file.isExecutable() ) );
 			terminal->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
-				if ( event.type == TerminalDisplay::EventType::TITLE )
-					win->setTitle( "eterm - " + event.eventData );
-				else if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
-						  closeOnExit.Get() ) {
+				if ( event.type == TerminalDisplay::EventType::TITLE ) {
+					windowStringData = event.eventData;
+					win->setTitle( "eterm - " + windowStringData );
+				} else if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
+							closeOnExit.Get() ) {
 					win->close();
 				}
 			} );

@@ -2156,8 +2156,8 @@ void App::fullscreenToggle() {
 		->setActive( !mWindow->isWindowed() );
 }
 
-void App::showGlobalSearch() {
-	mGlobalSearchController->showGlobalSearch();
+void App::showGlobalSearch( bool searchAndReplace ) {
+	mGlobalSearchController->showGlobalSearch( searchAndReplace );
 }
 
 void App::showFindView() {
@@ -2207,7 +2207,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	} );
 	doc.setCommand( "save-all", [&] { saveAll(); } );
 	doc.setCommand( "find-replace", [&] { showFindView(); } );
-	doc.setCommand( "open-global-search", [&] { showGlobalSearch(); } );
+	doc.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
 	doc.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
 	doc.setCommand( "repeat-find", [&] {
 		mDocSearchController->findNextText( mDocSearchController->getSearchState() );

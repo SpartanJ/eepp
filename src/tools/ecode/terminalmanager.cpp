@@ -321,7 +321,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	term->setCommand( "open-folder", [&] { mApp->openFolderDialog(); } );
 	term->setCommand( "console-toggle", [&] { mApp->consoleToggle(); } );
 	term->setCommand( "menu-toggle", [&] { mApp->toggleSettingsMenu(); } );
-	term->setCommand( "open-global-search", [&] { mApp->showGlobalSearch(); } );
+	term->setCommand( "open-global-search", [&] { mApp->showGlobalSearch( false ); } );
 	term->setCommand( "open-locatebar", [&] { mApp->getFileLocator()->showLocateBar(); } );
 	term->setCommand( "download-file-web", [&] { mApp->downloadFileWebDialog(); } );
 

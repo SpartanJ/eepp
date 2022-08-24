@@ -53,6 +53,10 @@
 #include <emscripten.h>
 #endif
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 namespace EE { namespace System {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -176,7 +180,11 @@ static std::string GetWindowsVersion() {
 		if ( osvi.dwMajorVersion == 10 ) {
 			if ( osvi.dwMinorVersion == 0 ) {
 				if ( osvi.wProductType == VER_NT_WORKSTATION ) {
-					os += "Windows 10";
+					if ( osvi.dwBuildNumber >= 22000 ) {
+						os += "Windows 11";
+					} else {
+						os += "Windows 10";
+					}
 				} else {
 					os += "Windows Server 2016";
 				}

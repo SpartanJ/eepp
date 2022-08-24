@@ -139,7 +139,7 @@ void DocSearchController::initSearchBar(
 	mSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
 		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
 	} );
-	mSearchBarLayout->addCommand( "open-global-search", [&] { mApp->showGlobalSearch(); } );
+	mSearchBarLayout->addCommand( "open-global-search", [&] { mApp->showGlobalSearch( false ); } );
 
 	addReturnListener( findInput, "repeat-find" );
 	addReturnListener( replaceInput, "find-and-replace" );
