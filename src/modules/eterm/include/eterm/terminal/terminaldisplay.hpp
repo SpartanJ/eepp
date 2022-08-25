@@ -4,6 +4,7 @@
 #include <eepp/config.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/framebuffer.hpp>
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/keycodes.hpp>
@@ -23,6 +24,10 @@ using namespace EE::Window;
 using namespace EE::System;
 using namespace eterm::System;
 using namespace eterm::Terminal;
+
+namespace EE { namespace Graphics {
+class VertexBuffer;
+}} // namespace EE::Graphics
 
 namespace eterm { namespace Terminal {
 
@@ -163,7 +168,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	virtual void setClipboard( const char* text );
 	virtual const char* getClipboard() const;
 
-	virtual bool drawBegin( int columns, int rows );
+	virtual bool drawBegin( Uint32 columns, Uint32 rows );
 	virtual void drawLine( Line line, int x1, int y, int x2 );
 	virtual void drawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy, TerminalGlyph og );
 	virtual void drawEnd();
@@ -285,11 +290,17 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mKeepAlive{ true };
 	Clock mClock;
 	Clock mLastDoubleClick;
-	int mColumns{ 0 };
-	int mRows{ 0 };
+	Uint32 mColumns{ 0 };
+	Uint32 mRows{ 0 };
 	Uint32 mClickStep{ 5 };
 	FrameBuffer* mFrameBuffer{ nullptr };
+	VertexBuffer* mVBBackground{ nullptr };
+	VertexBuffer* mVBForeground{ nullptr };
+	std::vector<VertexBuffer*> mVBStyles;
 	TerminalColorScheme mColorScheme;
+	Uint32 mQuadVertexs{ 6 };
+	Primitives mPrimitives;
+	Vector2u mCurGridPos;
 
 	std::string mProgram;
 	std::vector<std::string> mArgs;
@@ -315,6 +326,22 @@ class TerminalDisplay : public ITerminalDisplay {
 	void createFrameBuffer();
 
 	void drawFrameBuffer();
+
+	void createVBO( VertexBuffer** vbo, bool usesTexCoords );
+
+	VertexBuffer* createRowVBO( bool usesTexCoords );
+
+	void initVBOs();
+
+	void drawbox( float x, float y, float w, float h, Color fg, Color bg, ushort bd );
+
+	void drawrect( const Color& col, const float& x, const float& y, const float& w,
+				   const float& h );
+
+	void drawpoint( const Color& col, const float& x, const float& y, const float& w,
+					const float& h );
+
+	void drawboxlines( float x, float y, float w, float h, Color fg, ushort bd );
 };
 
 }} // namespace eterm::Terminal

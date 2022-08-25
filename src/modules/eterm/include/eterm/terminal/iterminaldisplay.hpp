@@ -70,7 +70,7 @@ class ITerminalDisplay {
 
 	virtual const char* getClipboard() const;
 
-	virtual bool drawBegin( int columns, int rows ) = 0;
+	virtual bool drawBegin( Uint32 columns, Uint32 rows ) = 0;
 
 	virtual void drawLine( Line line, int x1, int y, int x2 ) = 0;
 

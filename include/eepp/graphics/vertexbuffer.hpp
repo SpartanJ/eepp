@@ -109,6 +109,21 @@ class EE_API VertexBuffer {
 	 */
 	void resizeIndices( const Uint32& size );
 
+	void addQuad( const Vector2f& pos, const Sizef& size, const Color& color );
+
+	void setQuad( const Vector2u& gridPos, const Vector2f& pos, const Sizef& size,
+				  const Color& color );
+
+	void setQuadColor( const Vector2u& gridPos, const Color& color );
+
+	void setQuadFree( const Vector2u& gridPos, const Vector2f& pos0, const Vector2f& pos1,
+					  const Vector2f& pos2, const Vector2f& pos3, const Color& color );
+
+	void setQuadTexCoords( const Vector2u& gridPos, const Rectf& coords,
+						   const Uint32& textureLevel );
+
+	void setGridSize( const Sizei& size );
+
 	/** @return The position array */
 	std::vector<Vector2f>& getPositionArray();
 
@@ -177,6 +192,7 @@ class EE_API VertexBuffer {
 	std::vector<Vector2f> mTexCoordArray[4];
 	std::vector<Color> mColorArray;
 	std::vector<Uint32> mIndexArray;
+	Sizei mGridSize;
 
 	VertexBuffer( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT,
 				  PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0,

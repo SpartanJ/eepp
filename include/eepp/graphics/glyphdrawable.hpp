@@ -7,6 +7,8 @@
 
 namespace EE { namespace Graphics {
 
+class VertexBuffer;
+
 class EE_API GlyphDrawable : public DrawableResource {
   public:
 	static GlyphDrawable* New( Texture* texture, const Rect& srcRect,
@@ -26,6 +28,9 @@ class EE_API GlyphDrawable : public DrawableResource {
 	virtual void draw( const Vector2f& position );
 
 	virtual void draw( const Vector2f& position, const Sizef& size );
+
+	virtual void drawIntoVertexBuffer( VertexBuffer* vbo, const Vector2u& gridPos,
+									   const Vector2f& pos, const Uint32& textureLevel = 0 );
 
 	virtual bool isStateful();
 

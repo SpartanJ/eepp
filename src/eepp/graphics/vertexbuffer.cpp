@@ -149,6 +149,162 @@ void VertexBuffer::resizeIndices( const Uint32& size ) {
 	mIndexArray.resize( size );
 }
 
+void VertexBuffer::addQuad( const Vector2f& pos, const Sizef& size, const Color& color ) {
+	if ( GLi->quadVertexs() == 6 ) {
+		addColor( color );
+		addColor( color );
+		addColor( color );
+		addColor( color );
+		addColor( color );
+		addColor( color );
+		addVertex( { pos.x, pos.y + size.y } );
+		addVertex( { pos.x, pos.y } );
+		addVertex( { pos.x + size.x, pos.y } );
+		addVertex( { pos.x, pos.y + size.y } );
+		addVertex( { pos.x + size.x, pos.y + size.y } );
+		addVertex( { pos.x + size.x, pos.y } );
+	} else {
+		addColor( color );
+		addColor( color );
+		addColor( color );
+		addColor( color );
+		addVertex( { pos.x, pos.y } );
+		addVertex( { pos.x, pos.y + size.y } );
+		addVertex( { pos.x + size.x, pos.y + size.y } );
+		addVertex( { pos.x + size.x, pos.y } );
+	}
+}
+
+void VertexBuffer::setQuad( const Vector2u& gridPos, const Vector2f& pos, const Sizef& size,
+							const Color& color ) {
+	eeASSERT( mDrawType == PrimitiveType::PRIMITIVE_QUADS ||
+			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP );
+	eeASSERT( mGridSize != Sizei::Zero );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
+								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
+								   GLi->quadVertexs() - 1 ) < mPosArray.size() );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
+								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
+								   GLi->quadVertexs() - 1 ) < mColorArray.size() );
+	int idx = ( gridPos.x * GLi->quadVertexs() + gridPos.y * mGridSize.x * GLi->quadVertexs() );
+	if ( GLi->quadVertexs() == 6 ) {
+		setColor( idx + 0, color );
+		setColor( idx + 1, color );
+		setColor( idx + 2, color );
+		setColor( idx + 3, color );
+		setColor( idx + 4, color );
+		setColor( idx + 5, color );
+		setVertex( idx + 0, { pos.x, pos.y + size.y } );
+		setVertex( idx + 1, { pos.x, pos.y } );
+		setVertex( idx + 2, { pos.x + size.x, pos.y } );
+		setVertex( idx + 3, { pos.x, pos.y + size.y } );
+		setVertex( idx + 4, { pos.x + size.x, pos.y + size.y } );
+		setVertex( idx + 5, { pos.x + size.x, pos.y } );
+	} else {
+		setColor( idx + 0, color );
+		setColor( idx + 1, color );
+		setColor( idx + 2, color );
+		setColor( idx + 3, color );
+		setVertex( idx + 0, { pos.x, pos.y } );
+		setVertex( idx + 1, { pos.x, pos.y + size.y } );
+		setVertex( idx + 2, { pos.x + size.x, pos.y + size.y } );
+		setVertex( idx + 3, { pos.x + size.x, pos.y } );
+	}
+}
+
+void VertexBuffer::setQuadColor( const Vector2u& gridPos, const Color& color ) {
+	eeASSERT( mDrawType == PrimitiveType::PRIMITIVE_QUADS ||
+			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP );
+	eeASSERT( mGridSize != Sizei::Zero );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
+								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
+								   GLi->quadVertexs() - 1 ) < mPosArray.size() );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
+								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
+								   GLi->quadVertexs() - 1 ) < mColorArray.size() );
+	int idx = ( gridPos.x * GLi->quadVertexs() + gridPos.y * mGridSize.x * GLi->quadVertexs() );
+	if ( GLi->quadVertexs() == 6 ) {
+		setColor( idx + 0, color );
+		setColor( idx + 1, color );
+		setColor( idx + 2, color );
+		setColor( idx + 3, color );
+		setColor( idx + 4, color );
+		setColor( idx + 5, color );
+	} else {
+		setColor( idx + 0, color );
+		setColor( idx + 1, color );
+		setColor( idx + 2, color );
+		setColor( idx + 3, color );
+	}
+}
+
+void VertexBuffer::setQuadFree( const Vector2u& gridPos, const Vector2f& pos0, const Vector2f& pos1,
+								const Vector2f& pos2, const Vector2f& pos3, const Color& color ) {
+	eeASSERT( mDrawType == PrimitiveType::PRIMITIVE_QUADS ||
+			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP );
+	eeASSERT( mGridSize != Sizei::Zero );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
+								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
+								   GLi->quadVertexs() - 1 ) < mPosArray.size() );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
+								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
+								   GLi->quadVertexs() - 1 ) < mColorArray.size() );
+	int idx = ( gridPos.x * GLi->quadVertexs() + gridPos.y * mGridSize.x * GLi->quadVertexs() );
+	if ( GLi->quadVertexs() == 6 ) {
+		setColor( idx + 0, color );
+		setColor( idx + 1, color );
+		setColor( idx + 2, color );
+		setColor( idx + 3, color );
+		setColor( idx + 4, color );
+		setColor( idx + 5, color );
+		setVertex( idx + 0, pos1 );
+		setVertex( idx + 1, pos0 );
+		setVertex( idx + 2, pos3 );
+		setVertex( idx + 3, pos1 );
+		setVertex( idx + 4, pos2 );
+		setVertex( idx + 5, pos3 );
+	} else {
+		setColor( idx + 0, color );
+		setColor( idx + 1, color );
+		setColor( idx + 2, color );
+		setColor( idx + 3, color );
+		setVertex( idx + 0, pos0 );
+		setVertex( idx + 1, pos1 );
+		setVertex( idx + 2, pos2 );
+		setVertex( idx + 3, pos3 );
+	}
+}
+
+void VertexBuffer::setQuadTexCoords( const Vector2u& gridPos, const Rectf& coords,
+									 const Uint32& textureLevel ) {
+	eeASSERT( mDrawType == PrimitiveType::PRIMITIVE_QUADS ||
+			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP );
+	eeASSERT( mGridSize != Sizei::Zero );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
+								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
+								   GLi->quadVertexs() - 1 ) < mTexCoordArray[textureLevel].size() );
+	int idx = ( gridPos.x * GLi->quadVertexs() + gridPos.y * mGridSize.x * GLi->quadVertexs() );
+	if ( GLi->quadVertexs() == 6 ) {
+		// 1 0 3 1 2 3
+		setTextureCoord( idx + 0, { coords.Left, coords.Bottom }, textureLevel );
+		setTextureCoord( idx + 1, { coords.Left, coords.Top }, textureLevel );
+		setTextureCoord( idx + 2, { coords.Right, coords.Top }, textureLevel );
+		setTextureCoord( idx + 3, { coords.Left, coords.Bottom }, textureLevel );
+		setTextureCoord( idx + 4, { coords.Right, coords.Bottom }, textureLevel );
+		setTextureCoord( idx + 5, { coords.Right, coords.Top }, textureLevel );
+	} else {
+		// 0 1 2 3
+		setTextureCoord( idx + 0, { coords.Left, coords.Top }, textureLevel );
+		setTextureCoord( idx + 1, { coords.Left, coords.Bottom }, textureLevel );
+		setTextureCoord( idx + 2, { coords.Right, coords.Bottom }, textureLevel );
+		setTextureCoord( idx + 3, { coords.Right, coords.Top }, textureLevel );
+	}
+}
+
+void VertexBuffer::setGridSize( const Sizei& size ) {
+	mGridSize = size;
+}
+
 std::vector<Vector2f>& VertexBuffer::getPositionArray() {
 	return mPosArray;
 }

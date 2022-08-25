@@ -131,7 +131,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag vsync( parser, "vsync", "Enable vsync", { "vsync" } );
 	args::ValueFlag<Uint32> maxFPS( parser, "max-fps",
 									"Maximum rendering frames per second of the terminal",
-									{ "--max-fps" }, 60 );
+									{ "max-fps" }, 60 );
 	args::Flag benchmarkModeFlag( parser, "benchmark-mode", "Render as much as possible.",
 								  { "benchmark-mode" } );
 

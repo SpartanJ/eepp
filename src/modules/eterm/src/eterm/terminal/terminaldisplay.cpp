@@ -1,7 +1,8 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
-#include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/math/math.hpp>
 #include <eepp/system/color.hpp>
 #include <eepp/window.hpp>
@@ -446,6 +447,10 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 }
 
 TerminalDisplay::~TerminalDisplay() {
+	eeSAFE_DELETE( mVBBackground );
+	eeSAFE_DELETE( mVBForeground );
+	for ( VertexBuffer* vb : mVBStyles )
+		eeSAFE_DELETE( vb );
 	eeSAFE_DELETE( mFrameBuffer );
 }
 
@@ -468,8 +473,12 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 	Sizei gridSize( gridSizeFromTermDimensions( mFont, mFontSize, mSize - mPadding * 2.f ) );
 	mDirtyLines.resize( gridSize.getHeight(), 1 );
 
+	mQuadVertexs = GLi->quadVertexs();
+
 	if ( mUseFrameBuffer )
 		createFrameBuffer();
+	else
+		initVBOs();
 }
 
 void TerminalDisplay::resetColors() {
@@ -702,12 +711,16 @@ const char* TerminalDisplay::getClipboard() const {
 	return mClipboardUtf8.c_str();
 }
 
-bool TerminalDisplay::drawBegin( int columns, int rows ) {
+bool TerminalDisplay::drawBegin( Uint32 columns, Uint32 rows ) {
 	if ( columns != mColumns || rows != mRows ) {
 		TerminalGlyph defaultGlyph{};
 		mBuffer.resize( columns * rows, defaultGlyph );
 		mColumns = columns;
 		mRows = rows;
+
+		if ( !mUseFrameBuffer )
+			initVBOs();
+
 		invalidateLines();
 		invalidateCursor();
 	}
@@ -853,20 +866,31 @@ static inline Color termColor( unsigned int terminalColor, const std::vector<Col
 				  terminalColor & 0xFF, ( ~( ( terminalColor >> 25 ) & 0xFF ) ) & 0xFF );
 }
 
-inline static void drawrect( const Color& col, const float& x, const float& y, const float& w,
-							 const float& h, Primitives& p ) {
-	p.setColor( col );
-	p.drawRectangle( { { eefloor( x ), eefloor( y ) }, { eeceil( w ), eeceil( h ) } } );
+void TerminalDisplay::drawrect( const Color& col, const float& x, const float& y, const float& w,
+								const float& h ) {
+	if ( mVBStyles.empty() ) {
+		mPrimitives.setColor( col );
+		mPrimitives.drawRectangle(
+			{ { eefloor( x ), eefloor( y ) }, { eeceil( w ), eeceil( h ) } } );
+	} else {
+		mVBStyles[mCurGridPos.y]->addQuad( { eefloor( x ), eefloor( y ) },
+										   { eeceil( w ), eeceil( h ) }, col );
+	}
 }
 
-inline static void drawpoint( const Color& col, const float& x, const float& y, const float& w,
-							  const float& h, Primitives& p ) {
-	p.setColor( col );
-	p.drawPoint( { eefloor( x ), eefloor( y ) }, eemin( w / 2.f, h / 2.f ) );
+void TerminalDisplay::drawpoint( const Color& col, const float& x, const float& y, const float& w,
+								 const float& h ) {
+	if ( mVBStyles.empty() ) {
+		mPrimitives.setColor( col );
+		mPrimitives.drawPoint( { eefloor( x ), eefloor( y ) }, eemin( w / 2.f, h / 2.f ) );
+	} else {
+		Float s = eemin( w / 2.f, h / 2.f );
+		mVBStyles[mCurGridPos.y]->addQuad( { eefloor( x ), eefloor( y ) },
+										   { eefloor( s ), eefloor( s ) }, col );
+	}
 }
 
-inline static void drawboxlines( float x, float y, float w, float h, Color fg, ushort bd,
-								 Primitives& pr ) {
+void TerminalDisplay::drawboxlines( float x, float y, float w, float h, Color fg, ushort bd ) {
 	/* s: stem thickness. width/8 roughly matches underscore thickness. */
 	/* We draw bold as 1.5 * normal-stem and at least 1px thicker.      */
 	/* doubles draw at least 3px, even when w or h < 3. bold needs 6px. */
@@ -891,13 +915,13 @@ inline static void drawboxlines( float x, float y, float w, float h, Color fg, u
 		float d = arc || ( multi_double && !multi_light ) ? -s : 0.0f;
 
 		if ( bd & LL )
-			drawrect( fg, x, y + h2, w2 + s + d, s, pr );
+			drawrect( fg, x, y + h2, w2 + s + d, s );
 		if ( bd & LU )
-			drawrect( fg, x + w2, y, s, h2 + s + d, pr );
+			drawrect( fg, x + w2, y, s, h2 + s + d );
 		if ( bd & LR )
-			drawrect( fg, x + w2 - d, y + h2, w - w2 + d, s, pr );
+			drawrect( fg, x + w2 - d, y + h2, w - w2 + d, s );
 		if ( bd & LD )
-			drawrect( fg, x + w2, y + h2 - d, s, h - h2 + d, pr );
+			drawrect( fg, x + w2, y + h2 - d, s, h - h2 + d );
 	}
 
 	/* double lines - also align with light to form heavy when combined */
@@ -912,58 +936,57 @@ inline static void drawboxlines( float x, float y, float w, float h, Color fg, u
 		int dl = bd & DL, du = bd & DU, dr = bd & DR, dd = bd & DD;
 		if ( dl ) {
 			float p = dd ? -s : 0.0f, n = du ? -s : dd ? s : 0.0f;
-			drawrect( fg, x, y + h2 + s, w2 + s + p, s, pr );
-			drawrect( fg, x, y + h2 - s, w2 + s + n, s, pr );
+			drawrect( fg, x, y + h2 + s, w2 + s + p, s );
+			drawrect( fg, x, y + h2 - s, w2 + s + n, s );
 		}
 		if ( du ) {
 			float p = dl ? -s : 0.0f, n = dr ? -s : dl ? s : 0.0f;
-			drawrect( fg, x + w2 - s, y, s, h2 + s + p, pr );
-			drawrect( fg, x + w2 + s, y, s, h2 + s + n, pr );
+			drawrect( fg, x + w2 - s, y, s, h2 + s + p );
+			drawrect( fg, x + w2 + s, y, s, h2 + s + n );
 		}
 		if ( dr ) {
 			float p = du ? -s : 0.0f, n = dd ? -s : du ? s : 0.0f;
-			drawrect( fg, x + w2 - p, y + h2 - s, w - w2 + p, s, pr );
-			drawrect( fg, x + w2 - n, y + h2 + s, w - w2 + n, s, pr );
+			drawrect( fg, x + w2 - p, y + h2 - s, w - w2 + p, s );
+			drawrect( fg, x + w2 - n, y + h2 + s, w - w2 + n, s );
 		}
 		if ( dd ) {
 			float p = dr ? -s : 0.0f, n = dl ? -s : dr ? s : 0.0f;
-			drawrect( fg, x + w2 + s, y + h2 - p, s, h - h2 + p, pr );
-			drawrect( fg, x + w2 - s, y + h2 - n, s, h - h2 + n, pr );
+			drawrect( fg, x + w2 + s, y + h2 - p, s, h - h2 + p );
+			drawrect( fg, x + w2 - s, y + h2 - n, s, h - h2 + n );
 		}
 	}
 }
 
-inline static void drawbox( float x, float y, float w, float h, Color fg, Color bg, ushort bd,
-							Primitives& p ) {
+void TerminalDisplay::drawbox( float x, float y, float w, float h, Color fg, Color bg, ushort bd ) {
 	ushort cat = bd & ~( BDB | 0xff ); /* mask out bold and data */
 	if ( bd & ( BDL | BDA ) ) {
 		/* lines (light/double/heavy/arcs) */
-		drawboxlines( x, y, w, h, fg, bd, p );
+		drawboxlines( x, y, w, h, fg, bd );
 	} else if ( cat == BBD ) {
 		/* lower (8-X)/8 block */
 		float d = DIV( ( bd & 0xFF ) * h, 8.0f );
-		drawrect( fg, x, y + d, w, h - d, p );
+		drawrect( fg, x, y + d, w, h - d );
 	} else if ( cat == BBU ) {
 		/* upper X/8 block */
-		drawrect( fg, x, y, w, DIV( ( bd & 0xFF ) * h, 8 ), p );
+		drawrect( fg, x, y, w, DIV( ( bd & 0xFF ) * h, 8 ) );
 	} else if ( cat == BBL ) {
 		/* left X/8 block */
-		drawrect( fg, x, y, DIV( ( bd & 0xFF ) * w, 8 ), h, p );
+		drawrect( fg, x, y, DIV( ( bd & 0xFF ) * w, 8 ), h );
 	} else if ( cat == BBR ) {
 		/* right (8-X)/8 block */
 		float d = DIV( ( bd & 0xFF ) * w, 8.0f );
-		drawrect( fg, x + d, y, w - d, h, p );
+		drawrect( fg, x + d, y, w - d, h );
 	} else if ( cat == BBQ ) {
 		/* Quadrants */
 		float w2 = DIV( w, 2.0f ), h2 = DIV( h, 2.0f );
 		if ( bd & TL )
-			drawrect( fg, x, y, w2, h2, p );
+			drawrect( fg, x, y, w2, h2 );
 		if ( bd & TR )
-			drawrect( fg, x + w2, y, w - w2, h2, p );
+			drawrect( fg, x + w2, y, w - w2, h2 );
 		if ( bd & BL )
-			drawrect( fg, x, y + h2, w2, h - h2, p );
+			drawrect( fg, x, y + h2, w2, h - h2 );
 		if ( bd & BR )
-			drawrect( fg, x + w2, y + h2, w - w2, h - h2, p );
+			drawrect( fg, x + w2, y + h2, w - w2, h - h2 );
 	} else if ( bd & BBS ) {
 		/* Shades - data is 1/2/3 for 25%/50%/75% alpha, respectively */
 		int d = ( bd & 0xFF );
@@ -979,28 +1002,28 @@ inline static void drawbox( float x, float y, float w, float h, Color fg, Color 
 						   4 );
 		Color drawcol = Color( red, green, blue, 0xFF );
 
-		drawrect( drawcol, x, y, w, h, p );
+		drawrect( drawcol, x, y, w, h );
 	} else if ( cat == BRL ) {
 		/* braille, each data bit corresponds to one dot at 2x4 grid */
 		float w1 = DIV( w, 2.0f );
 		float h1 = DIV( h, 4.0f ), h2 = DIV( h, 2.0f ), h3 = DIV( 3.0f * h, 4.0f );
 
 		if ( bd & 1 )
-			drawpoint( fg, x, y, w1, h1, p );
+			drawpoint( fg, x, y, w1, h1 );
 		if ( bd & 2 )
-			drawpoint( fg, x, y + h1, w1, h2 - h1, p );
+			drawpoint( fg, x, y + h1, w1, h2 - h1 );
 		if ( bd & 4 )
-			drawpoint( fg, x, y + h2, w1, h3 - h2, p );
+			drawpoint( fg, x, y + h2, w1, h3 - h2 );
 		if ( bd & 8 )
-			drawpoint( fg, x + w1, y, w - w1, h1, p );
+			drawpoint( fg, x + w1, y, w - w1, h1 );
 		if ( bd & 16 )
-			drawpoint( fg, x + w1, y + h1, w - w1, h2 - h1, p );
+			drawpoint( fg, x + w1, y + h1, w - w1, h2 - h1 );
 		if ( bd & 32 )
-			drawpoint( fg, x + w1, y + h2, w - w1, h3 - h2, p );
+			drawpoint( fg, x + w1, y + h2, w - w1, h3 - h2 );
 		if ( bd & 64 )
-			drawpoint( fg, x, y + h3, w1, h - h3, p );
+			drawpoint( fg, x, y + h3, w1, h - h3 );
 		if ( bd & 128 )
-			drawpoint( fg, x + w1, y + h3, w - w1, h - h3, p );
+			drawpoint( fg, x + w1, y + h3, w - w1, h - h3 );
 	}
 }
 
@@ -1020,21 +1043,25 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 	Rectf xBounds = mFont->getGlyph( L'x', mFontSize, false ).bounds;
 	Float strikeThroughOffset = lineHeight + xBounds.Top + cursorThickness;
 
-	Primitives p;
-	p.setForceDraw( false );
+	mPrimitives.setForceDraw( false );
 
-	for ( int j = 0; j < mRows; j++ ) {
+	bool dirtyBG = false;
+	if ( mVBBackground )
+		mVBBackground->bind();
+
+	for ( Uint32 j = 0; j < mRows; j++ ) {
 		x = std::floor( pos.x );
 
 		if ( pos.y + lineHeight * j > pos.y + mSize.getHeight() )
 			break;
 
-		if ( mFrameBuffer && !mDirtyLines[j] ) {
+		if ( !mDirtyLines[j] ) {
 			y += lineHeight;
 			continue;
 		}
 
-		for ( int i = 0; i < mColumns; i++ ) {
+		for ( Uint32 i = 0; i < mColumns; i++ ) {
+			mCurGridPos = { i, j };
 			auto& glyph = mBuffer[j * mColumns + i];
 			auto fg = termColor( glyph.fg, mColors );
 			auto bg = termColor( glyph.bg, mColors );
@@ -1054,12 +1081,16 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 			auto advanceX = spaceCharAdvanceX * ( isWide ? 2.0f : 1.0f );
 
-			if ( glyph.mode & ATTR_WDUMMY ) {
+			if ( glyph.mode & ATTR_WDUMMY )
 				continue;
-			}
 
-			p.setColor( bg );
-			p.drawRectangle( Rectf( { x, y }, { advanceX, lineHeight } ) );
+			if ( mVBBackground ) {
+				mVBBackground->setQuad( mCurGridPos, { x, y }, { advanceX, lineHeight }, bg );
+				dirtyBG = true;
+			} else {
+				mPrimitives.setColor( bg );
+				mPrimitives.drawRectangle( Rectf( { x, y }, { advanceX, lineHeight } ) );
+			}
 
 			x += advanceX;
 		}
@@ -1067,22 +1098,37 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		y += lineHeight;
 	}
 
+	if ( mVBBackground ) {
+		if ( dirtyBG )
+			mVBBackground->update( VERTEX_FLAGS_PRIMITIVE, false );
+		mVBBackground->draw();
+		mVBBackground->unbind();
+	}
+
 	y = std::floor( pos.y );
 
-	for ( int j = 0; j < mRows; j++ ) {
+	bool dirtyFG = false;
+
+	for ( Uint32 j = 0; j < mRows; j++ ) {
 		x = std::floor( pos.x );
 
 		if ( pos.y + lineHeight * j > pos.y + mSize.getHeight() )
 			break;
 
-		if ( mFrameBuffer && !mDirtyLines[j] ) {
+		if ( ( mFrameBuffer || mVBForeground ) && !mDirtyLines[j] ) {
 			y += lineHeight;
 			continue;
 		}
 
 		mDirtyLines[j] = false;
 
-		for ( int i = 0; i < mColumns; i++ ) {
+		if ( !mVBStyles.empty() ) {
+			eeSAFE_DELETE( mVBStyles[j] );
+			mVBStyles[j] = createRowVBO( false );
+		}
+
+		for ( Uint32 i = 0; i < mColumns; i++ ) {
+			mCurGridPos = { i, j };
 			auto& glyph = mBuffer[j * mColumns + i];
 			auto fg = termColor( glyph.fg, mColors );
 			auto bg = termColor( glyph.bg, mColors );
@@ -1118,9 +1164,18 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 			if ( glyph.mode & ATTR_WDUMMY )
 				continue;
 
+			if ( glyph.u == 32 ) {
+				x += advanceX;
+				if ( mVBForeground )
+					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
+				continue;
+			}
+
 			if ( glyph.mode & ATTR_BOXDRAW ) {
 				auto bd = TerminalEmulator::boxdrawindex( &glyph );
-				drawbox( x, y, advanceX, lineHeight, fg, bg, bd, p );
+				drawbox( x, y, advanceX, lineHeight, fg, bg, bd );
+				if ( mVBForeground )
+					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
 			} else {
 				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD );
 
@@ -1141,18 +1196,31 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 					gd->setColor( fg );
 				}
 
-				gd->draw( { x, y } );
-
-				if ( glyph.mode & ATTR_UNDERLINE ) {
-					p.setColor( fg );
-					p.drawRectangle( Rectf( { x, y + lineHeight - cursorThickness },
-											{ advanceX, cursorThickness } ) );
+				if ( mVBForeground ) {
+					gd->drawIntoVertexBuffer( mVBForeground, mCurGridPos, { x, y } );
+				} else {
+					gd->draw( { x, y } );
 				}
+				dirtyFG = true;
 
-				if ( glyph.mode & ATTR_STRUCK ) {
-					p.setColor( fg );
-					p.drawRectangle(
-						Rectf( { x, y + strikeThroughOffset }, { advanceX, cursorThickness } ) );
+				if ( mVBStyles.empty() ) {
+					if ( glyph.mode & ATTR_UNDERLINE ) {
+						mPrimitives.setColor( fg );
+						mPrimitives.drawRectangle( Rectf( { x, y + lineHeight - cursorThickness },
+														  { advanceX, cursorThickness } ) );
+					} else if ( glyph.mode & ATTR_STRUCK ) {
+						mPrimitives.setColor( fg );
+						mPrimitives.drawRectangle( Rectf( { x, y + strikeThroughOffset },
+														  { advanceX, cursorThickness } ) );
+					}
+				} else {
+					if ( glyph.mode & ATTR_UNDERLINE ) {
+						mVBStyles[j]->addQuad( { x, y + lineHeight - cursorThickness },
+											   { advanceX, cursorThickness }, fg );
+					} else if ( glyph.mode & ATTR_STRUCK ) {
+						mVBStyles[j]->addQuad( { x, y + strikeThroughOffset },
+											   { advanceX, cursorThickness }, fg );
+					}
 				}
 			}
 
@@ -1160,6 +1228,27 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		}
 
 		y += lineHeight;
+	}
+
+	if ( mVBForeground ) {
+		mFont->getTexture( mFontSize )->bind();
+		if ( dirtyFG )
+			mVBForeground->update( VERTEX_FLAGS_DEFAULT, false );
+		mVBForeground->bind();
+		mVBForeground->draw();
+		mVBForeground->unbind();
+	}
+
+	if ( !mVBStyles.empty() ) {
+		if ( dirtyFG ) {
+			for ( auto& vbo : mVBStyles )
+				vbo->update( VERTEX_FLAGS_PRIMITIVE, false );
+		}
+		for ( auto& vbo : mVBStyles ) {
+			vbo->bind();
+			vbo->draw();
+			vbo->unbind();
+		}
 	}
 
 	if ( !mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) &&
@@ -1177,56 +1266,55 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 																	: mColorScheme.getCursor();
 		}
 
-		Vector2f a{}, b{}, c{}, d{};
-
-		p.setColor( drawcol );
+		mPrimitives.setColor( drawcol );
 		/* draw the new one */
 		if ( IS_SET( MODE_FOCUSED ) ) {
 			switch ( mCursorMode ) {
-				case 7:						 /* st extension */
-					mCursorGlyph.u = 0x2603; /* snowman (U+2603) */
-											 /* FALLTHROUGH */
-				case 0:						 /* Blinking Block */
-				case 1: {					 /* Blinking Block (Default) */
-					if ( !( mMode & MODE_BLINK ) )
-						break;
-				}
-				case 2: { /* Steady Block */
-					auto* gd = mFont->getGlyphDrawable( mCursorGlyph.u, mFontSize );
+				case StExtension:
+				case SteadyBlock: {
+					auto* gd = mFont->getGlyphDrawable(
+						mCursorMode == StExtension ? 0xFB04 /* TUX */ : mCursorGlyph.u, mFontSize );
 					gd->setColor( termColor( mCursorGlyph.fg, mColors ) );
 					gd->setDrawMode( GlyphDrawable::DrawMode::Text );
 					gd->draw(
 						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight } );
 					break;
 				}
-				case 3: { /* Blinking Underline */
+				case BlinkUnderline: {
 					if ( !( mMode & MODE_BLINK ) )
 						break;
 				}
-				case 4: /* Steady Underline */
-					p.drawRectangle(
+				case SteadyUnderline:
+					mPrimitives.drawRectangle(
 						Rectf( { pos.x + mCursor.x * spaceCharAdvanceX,
 								 pos.y + ( mCursor.y + 1 ) * lineHeight - cursorThickness },
 							   { spaceCharAdvanceX, cursorThickness } ) );
 					break;
-				case 5: { /* Blinking bar */
+				case BlinkingBlock:
+				case BlinkingBlockDefault:
+				case BlinkBar: {
 					if ( !( mMode & MODE_BLINK ) )
 						break;
 				}
-				case 6: /* Steady bar */
+				case SteadyBar:
 				case TerminalCursorMode::MAX_CURSOR:
-					p.drawRectangle( Rectf(
+					mPrimitives.drawRectangle( Rectf(
 						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight },
 						{ spaceCharAdvanceX, lineHeight } ) );
 					break;
 			}
 		} else {
 			Vector2f cpos{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight };
-			drawrect( drawcol, cpos.x, cpos.y, spaceCharAdvanceX, cursorThickness, p );
-			drawrect( drawcol, cpos.x, cpos.y, cursorThickness, lineHeight, p );
-			drawrect( drawcol, cpos.x + spaceCharAdvanceX, cpos.y, cursorThickness, lineHeight, p );
-			drawrect( drawcol, cpos.x, cpos.y + lineHeight - cursorThickness, spaceCharAdvanceX,
-					  cursorThickness, p );
+			mPrimitives.setColor( drawcol );
+			mPrimitives.drawRectangle(
+				Rectf( Vector2f( cpos.x, cpos.y ), { spaceCharAdvanceX, cursorThickness } ) );
+			mPrimitives.drawRectangle(
+				Rectf( Vector2f( cpos.x, cpos.y ), { cursorThickness, lineHeight } ) );
+			mPrimitives.drawRectangle( Rectf( Vector2f( cpos.x + spaceCharAdvanceX, cpos.y ),
+											  { cursorThickness, lineHeight } ) );
+			mPrimitives.drawRectangle(
+				Rectf( Vector2f( cpos.x, cpos.y + lineHeight - cursorThickness ),
+					   { spaceCharAdvanceX, cursorThickness } ) );
 		}
 	}
 
@@ -1543,6 +1631,38 @@ void TerminalDisplay::drawFrameBuffer() {
 									 r.getSize().asFloat() );
 		textureRegion.draw( mPosition.floor().x, mPosition.floor().y );
 	}
+}
+
+VertexBuffer* TerminalDisplay::createRowVBO( bool usesTexCoords ) {
+	auto* VBO = VertexBuffer::New(
+		usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
+		mQuadVertexs == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
+		mRows * mColumns * mQuadVertexs, 0, VertexBufferUsageType::Stream );
+	VBO->setGridSize( Sizei( mColumns, 1 ) );
+	return VBO;
+}
+
+void TerminalDisplay::createVBO( VertexBuffer** vbo, bool usesTexCoords ) {
+	eeSAFE_DELETE( ( *vbo ) );
+	( *vbo ) = VertexBuffer::New(
+		usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
+		mQuadVertexs == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
+		mRows * mColumns * mQuadVertexs, 0, VertexBufferUsageType::Stream );
+	( *vbo )->resizeArray( VERTEX_FLAG_POSITION, mRows * mColumns * mQuadVertexs );
+	( *vbo )->resizeArray( VERTEX_FLAG_COLOR, mRows * mColumns * mQuadVertexs );
+	( *vbo )->setGridSize( Sizei( mColumns, mRows ) );
+	if ( usesTexCoords )
+		( *vbo )->resizeArray( VERTEX_FLAG_TEXTURE0, mRows * mColumns * mQuadVertexs );
+}
+
+void TerminalDisplay::initVBOs() {
+	createVBO( &mVBBackground, false );
+	createVBO( &mVBForeground, true );
+	for ( VertexBuffer* vb : mVBStyles )
+		eeSAFE_DELETE( vb );
+	mVBStyles.clear();
+	for ( Uint32 i = 0; i < mRows; ++i )
+		mVBStyles.emplace_back( createRowVBO( false ) );
 }
 
 }} // namespace eterm::Terminal

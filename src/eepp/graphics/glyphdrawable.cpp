@@ -1,6 +1,7 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/vertexbuffer.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -49,6 +50,27 @@ void GlyphDrawable::draw( const Vector2f& position, const Sizef& size ) {
 					   size.getHeight() );
 	}
 	BR->drawOpt();
+}
+
+void GlyphDrawable::drawIntoVertexBuffer( VertexBuffer* vbo, const Vector2u& gridPos,
+										  const Vector2f& pos, const Uint32& textureLevel ) {
+	vbo->setQuadTexCoords( gridPos,
+						   Rectf( mSrcRect.Left, mSrcRect.Top, mSrcRect.Left + mSrcRect.Right,
+								  mSrcRect.Top + mSrcRect.Bottom ),
+						   textureLevel );
+	Sizef size( mSrcRect.Right, mSrcRect.Bottom );
+	if ( mDrawMode == DrawMode::Image ) {
+		vbo->setQuad( gridPos, pos, Sizef( mSrcRect.Right, mSrcRect.Bottom ), mColor );
+	} else if ( mDrawMode == DrawMode::TextItalic ) {
+		Float x = pos.x + mGlyphOffset.x;
+		Float y = pos.y + mGlyphOffset.y;
+		Float italic = 0.208f * size.getWidth(); // 12 degrees
+		vbo->setQuadFree( gridPos, { x + italic, y }, { x, y + size.getHeight() },
+						  { x + size.getWidth(), y + size.getHeight() },
+						  { x + size.getWidth() + italic, y }, mColor );
+	} else {
+		vbo->setQuad( gridPos, pos + mGlyphOffset, size, mColor );
+	}
 }
 
 bool GlyphDrawable::isStateful() {
