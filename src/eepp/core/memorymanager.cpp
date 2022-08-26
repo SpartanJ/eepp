@@ -61,6 +61,46 @@ void* MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
 	return aAllocatedPointer.mData;
 }
 
+void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAllocatedPointer ) {
+	Lock l( sAlloMutex );
+
+	AllocatedPointerMapIt it = sMapPointers.find( data );
+
+	if ( it->second.mTrack )
+		eePRINTL( "Realloc pointer %p at '%s' %d", data, aAllocatedPointer.mFile.c_str(),
+				  aAllocatedPointer.mLine );
+
+	if ( it == sMapPointers.end() )
+		return addPointer( aAllocatedPointer );
+
+	if ( aAllocatedPointer.mTrack )
+		eePRINTL( "Reallocating pointer %p at '%s' %d", aAllocatedPointer.mData,
+				  aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
+
+	if ( it->first != aAllocatedPointer.mData ) {
+		removePointer( data, aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
+		addPointer( aAllocatedPointer );
+	} else {
+		sTotalMemoryUsage -= it->second.mMemory;
+		it->second.mMemory = aAllocatedPointer.mMemory;
+		it->second.mFile = aAllocatedPointer.mFile;
+		it->second.mLine = aAllocatedPointer.mLine;
+		it->second.mTrack = aAllocatedPointer.mTrack;
+
+		sTotalMemoryUsage += aAllocatedPointer.mMemory;
+
+		if ( sPeakMemoryUsage < sTotalMemoryUsage ) {
+			sPeakMemoryUsage = sTotalMemoryUsage;
+		}
+
+		if ( aAllocatedPointer.mMemory > sBiggestAllocation.mMemory ) {
+			sBiggestAllocation = aAllocatedPointer;
+		}
+	}
+
+	return aAllocatedPointer.mData;
+}
+
 bool MemoryManager::removePointer( void* data, const char* file, const size_t& line ) {
 	Lock l( sAlloMutex );
 

@@ -29,6 +29,8 @@ class EE_API MemoryManager {
   public:
 	static void* addPointer( const AllocatedPointer& aAllocatedPointer );
 
+	static void* reallocPointer( void* data, const AllocatedPointer& aAllocatedPointer );
+
 	static void* addPointerInPlace( void* place, const AllocatedPointer& aAllocatedPointer );
 
 	static bool removePointer( void* data, const char* file, const size_t& line );
@@ -61,6 +63,17 @@ class EE_API MemoryManager {
 		return malloc( size );
 	}
 
+	inline static void* reallocate( void* ptr, size_t size ) {
+#if defined( __GNUC__ ) && __GNUC__ >= 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+		return realloc( ptr, size );
+#pragma GCC diagnostic pop
+#else
+		return realloc( ptr, size );
+#endif
+	}
+
 	static size_t getPeakMemoryUsage();
 
 	static size_t getTotalMemoryUsage();
@@ -89,6 +102,11 @@ class EE_API MemoryManager {
 #define eeMalloc( amount )                                                                      \
 	EE::MemoryManager::addPointer( EE::AllocatedPointer( EE::MemoryManager::allocate( amount ), \
 														 __FILE__, __LINE__, amount ) )
+
+#define eeRealloc( ptr, amount )                                                           \
+	EE::MemoryManager::reallocPointer(                                                     \
+		ptr, EE::AllocatedPointer( EE::MemoryManager::reallocate( ptr, amount ), __FILE__, \
+								   __LINE__, amount ) )
 
 #define eeDelete( data )                                                                       \
 	{                                                                                          \
@@ -122,11 +140,14 @@ class EE_API MemoryManager {
 
 #define eeMalloc( amount ) malloc( amount )
 
+#define eeRealloc( ptr, amount ) realloc( ptr, amount )
+
 #define eeDelete( data ) delete data
 
 #define eeDeleteArray( data ) delete[] data
 
 #define eeFree( data ) free( data )
+
 #endif
 
 } // namespace EE

@@ -172,6 +172,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 			? workingDir
 			: ( !mApp->getCurrentProject().empty() ? mApp->getCurrentProject() : "" ),
 		10000, nullptr, mUseFrameBuffer );
+	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? mApp->i18n( "shell", "Shell" ).toUtf8() : title, true );
 	mApp->getSplitter()->removeUnusedTab( tabWidget );

@@ -39,9 +39,11 @@
 #include <assert.h>
 #include <cmath>
 #include <ctype.h>
+#include <eepp/core/memorymanager.hpp>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <memory.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -49,6 +51,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+// For malloc_trim, which is a GNU extension
+extern "C" {
+#include <malloc.h>
+}
+#endif
 
 namespace eterm { namespace Terminal {
 
@@ -219,21 +228,9 @@ ushort TerminalEmulator::boxdrawindex( const TerminalGlyph* g ) {
 	return boxdata[g->u & 0xFF];
 }
 
-static void* xmalloc( size_t len ) {
-	void* p;
-
-	p = malloc( len );
-	assert( p != NULL );
-
-	return p;
-}
-
-static void* xrealloc( void* p, size_t len ) {
-	p = realloc( p, len );
-	assert( p != NULL );
-
-	return p;
-}
+#define xfree( p ) eeFree( p )
+#define xmalloc( p ) eeMalloc( p )
+#define xrealloc( p, len ) eeRealloc( p, len )
 
 static size_t utf8decode( const char*, Rune*, size_t );
 static Rune utf8decodebyte( char, size_t* );
@@ -587,7 +584,7 @@ std::string TerminalEmulator::getSelection() const {
 	char* sel = getsel();
 	if ( sel ) {
 		std::string selection( sel );
-		free( sel );
+		xfree( sel );
 		return selection;
 	}
 	return "";
@@ -704,15 +701,33 @@ int TerminalEmulator::rowCount() const {
 	return mTerm.row;
 }
 
+void TerminalEmulator::trimMemory() {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( mAllowMemoryTrimnming ) {
+		malloc_trim( 0 );
+	}
+#endif
+}
+
 void TerminalEmulator::clearHistory() {
-	for ( size_t i = 0; i < mTerm.hist.size(); ++i )
-		free( mTerm.hist[i] );
-	mTerm.hist.clear();
+	for ( int i = 0; i < mTerm.histcursize; ++i )
+		eeSAFE_FREE( mTerm.hist[i] );
+	eeSAFE_FREE( mTerm.hist );
+	mTerm.histcursize = 0;
 	mTerm.histi = 0;
+	trimMemory();
 }
 
 int TerminalEmulator::scrollPos() {
 	return mTerm.scr;
+}
+
+bool TerminalEmulator::getAllowMemoryTrimnming() const {
+	return mAllowMemoryTrimnming;
+}
+
+void TerminalEmulator::setAllowMemoryTrimnming( bool allowMemoryTrimnming ) {
+	mAllowMemoryTrimnming = allowMemoryTrimnming;
 }
 
 bool TerminalEmulator::isScrolling() const {
@@ -862,13 +877,14 @@ void TerminalEmulator::tswapscreen( void ) {
 }
 
 void TerminalEmulator::resizeHistory() {
-	size_t oriSize = mTerm.hist.size();
-	if ( mTerm.histi >= (int)mTerm.hist.size() ) {
+	size_t oriSize = mTerm.histcursize;
+	if ( mTerm.histi >= (int)mTerm.histcursize ) {
 		int newSize = eemin( mTerm.histi + mTerm.row, mTerm.histsize );
-		mTerm.hist.resize( newSize, nullptr );
-		for ( size_t i = oriSize; i < mTerm.hist.size(); i++ ) {
-			mTerm.hist[i] =
-				(TerminalGlyph*)xrealloc( mTerm.hist[i], mTerm.col * sizeof( TerminalGlyph ) );
+		mTerm.hist = (Line*)xrealloc( mTerm.hist, newSize * sizeof( Line ) );
+		mTerm.histcursize = newSize;
+
+		for ( int i = oriSize; i < mTerm.histcursize; i++ ) {
+			mTerm.hist[i] = (TerminalGlyph*)xmalloc( mTerm.col * sizeof( TerminalGlyph ) );
 			for ( int j = 0; j < mTerm.col; j++ ) {
 				mTerm.hist[i][j] = mTerm.c.attr;
 				mTerm.hist[i][j].u = ' ';
@@ -1790,7 +1806,7 @@ void TerminalEmulator::tdumpsel( void ) {
 
 	if ( ( ptr = getsel() ) ) {
 		tprinter( ptr, strlen( ptr ) );
-		free( ptr );
+		xfree( ptr );
 	}
 }
 
@@ -2284,8 +2300,8 @@ void TerminalEmulator::tresize( int col, int row ) {
 	 * memmove because we're freeing the earlier lines
 	 */
 	for ( i = 0; i <= mTerm.c.y - row; i++ ) {
-		free( mTerm.line[i] );
-		free( mTerm.alt[i] );
+		xfree( mTerm.line[i] );
+		xfree( mTerm.alt[i] );
 	}
 	/* ensure that both src and dst are not NULL */
 	if ( i > 0 ) {
@@ -2293,8 +2309,8 @@ void TerminalEmulator::tresize( int col, int row ) {
 		memmove( mTerm.alt, mTerm.alt + i, row * sizeof( Line ) );
 	}
 	for ( i += row; i < mTerm.row; i++ ) {
-		free( mTerm.line[i] );
-		free( mTerm.alt[i] );
+		xfree( mTerm.line[i] );
+		xfree( mTerm.alt[i] );
 	}
 
 	/* resize to new height */
@@ -2302,14 +2318,6 @@ void TerminalEmulator::tresize( int col, int row ) {
 	mTerm.alt = (Line*)xrealloc( mTerm.alt, row * sizeof( Line ) );
 	mTerm.dirty = (int*)xrealloc( mTerm.dirty, row * sizeof( *mTerm.dirty ) );
 	mTerm.tabs = (int*)xrealloc( mTerm.tabs, col * sizeof( *mTerm.tabs ) );
-
-	for ( size_t i = 0; i < mTerm.hist.size(); i++ ) {
-		mTerm.hist[i] = (TerminalGlyph*)xrealloc( mTerm.hist[i], col * sizeof( TerminalGlyph ) );
-		for ( j = mincol; j < col; j++ ) {
-			mTerm.hist[i][j] = mTerm.c.attr;
-			mTerm.hist[i][j].u = ' ';
-		}
-	}
 
 	/* resize each row to new width, zero-pad if needed */
 	for ( i = 0; i < minrow; i++ ) {
@@ -2322,6 +2330,16 @@ void TerminalEmulator::tresize( int col, int row ) {
 		mTerm.line[i] = (Line)xmalloc( col * sizeof( TerminalGlyph ) );
 		mTerm.alt[i] = (Line)xmalloc( col * sizeof( TerminalGlyph ) );
 	}
+
+	/* add new columns to history */
+	for ( int i = 0; i < mTerm.histcursize; i++ ) {
+		mTerm.hist[i] = (TerminalGlyph*)xrealloc( mTerm.hist[i], col * sizeof( TerminalGlyph ) );
+		for ( j = mincol; j < col; j++ ) {
+			mTerm.hist[i][j] = mTerm.c.attr;
+			mTerm.hist[i][j].u = ' ';
+		}
+	}
+
 	if ( col > mTerm.col ) {
 		bp = mTerm.tabs + mTerm.col;
 
@@ -2331,6 +2349,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 		for ( bp += tabspaces; bp < mTerm.tabs + col; bp += tabspaces )
 			*bp = 1;
 	}
+
 	/* update terminal size */
 	mTerm.col = col;
 	mTerm.row = row;
@@ -2582,6 +2601,14 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 }
 
 TerminalEmulator::~TerminalEmulator() {
+	for ( int i = 0; i < mTerm.row; i++ ) {
+		eeSAFE_FREE( mTerm.line[i] );
+		eeSAFE_FREE( mTerm.alt[i] );
+	}
+	eeSAFE_FREE( mTerm.dirty );
+	eeSAFE_FREE( mTerm.tabs );
+	eeSAFE_FREE( mStrescseq.buf );
+
 	clearHistory();
 
 	{
@@ -2684,6 +2711,11 @@ bool TerminalEmulator::update() {
 	}
 
 	return read != 0;
+}
+
+Term::~Term() {
+	eeSAFE_FREE( line );
+	eeSAFE_FREE( alt );
 }
 
 }} // namespace eterm::Terminal

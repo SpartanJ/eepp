@@ -1096,6 +1096,9 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		}
 
 		y += lineHeight;
+
+		if ( j == (Uint32)mCursor.y )
+			invalidateCursor();
 	}
 
 	if ( mVBBackground ) {
@@ -1228,6 +1231,9 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		}
 
 		y += lineHeight;
+
+		if ( j == (Uint32)mCursor.y )
+			invalidateCursor();
 	}
 
 	if ( mVBForeground ) {
@@ -1287,7 +1293,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				case SteadyUnderline:
 					mPrimitives.drawRectangle(
 						Rectf( { pos.x + mCursor.x * spaceCharAdvanceX,
-								 pos.y + ( mCursor.y + 1 ) * lineHeight - cursorThickness },
+								 pos.y + mCursor.y * lineHeight + lineHeight - cursorThickness },
 							   { spaceCharAdvanceX, cursorThickness } ) );
 					break;
 				case BlinkingBlock:
@@ -1316,6 +1322,13 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				Rectf( Vector2f( cpos.x, cpos.y + lineHeight - cursorThickness ),
 					   { spaceCharAdvanceX, cursorThickness } ) );
 		}
+	}
+
+	if ( mFrameBuffer && pos.y + lineHeight * mRows < mSize.getHeight() ) {
+		mPrimitives.setColor( defaultBg );
+		mPrimitives.drawRectangle(
+			{ { pos.x, pos.y + lineHeight * mRows },
+			  { mSize.getWidth(), mSize.getHeight() - pos.y + lineHeight * mRows } } );
 	}
 
 	if ( mFrameBuffer )

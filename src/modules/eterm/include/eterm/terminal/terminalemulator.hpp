@@ -63,8 +63,9 @@ struct Term {
 	int col{ 0 };				   /* nb col */
 	Line* line{ nullptr };		   /* screen */
 	Line* alt{ nullptr };		   /* alternate screen */
-	std::vector<Line> hist;		   /* history buffer */
-	int histsize{ 0 };			   /* history size */
+	Line* hist{ nullptr };		   /* history buffer */
+	int histcursize{ 0 };		   /* history current size */
+	int histsize{ 0 };			   /* history max size */
 	int histi{ 0 };				   /* history index */
 	int scr{ 0 };				   /* scroll back */
 	int* dirty{ nullptr };		   /* dirtyness of lines */
@@ -80,6 +81,8 @@ struct Term {
 	int icharset{ 0 };			   /* selected charset for sequence */
 	int* tabs{ nullptr };
 	Rune lastc{ 0 }; /* last printed char outside of sequence, 0 if control */
+
+	~Term();
 };
 
 /* CSI Escape sequence structs */
@@ -214,6 +217,10 @@ class TerminalEmulator final {
 
 	int scrollPos();
 
+	bool getAllowMemoryTrimnming() const;
+
+	void setAllowMemoryTrimnming( bool allowMemoryTrimnming );
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;
@@ -221,6 +228,7 @@ class TerminalEmulator final {
 
 	bool mColorsLoaded;
 	bool mDirty{ true };
+	bool mAllowMemoryTrimnming{ false };
 	int mExitCode;
 
 	enum { STARTING = 0, RUNNING, TERMINATED } mStatus;
@@ -327,6 +335,8 @@ class TerminalEmulator final {
 	void xsetpointermotion( int );
 	void xsetsel( char* );
 	void xximspot( int, int );
+
+	void trimMemory();
 
 	TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 					  const std::shared_ptr<ITerminalDisplay>& display,
