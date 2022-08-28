@@ -64,6 +64,8 @@ class ProjectDirectoryTree {
 
 	ProjectDirectoryTree( const std::string& path, std::shared_ptr<ThreadPool> threadPool );
 
+	~ProjectDirectoryTree();
+
 	void scan( const ScanCompleteEvent& scanComplete,
 			   const std::vector<std::string>& acceptedPatterns = {},
 			   const bool& ignoreHidden = true );
@@ -101,6 +103,7 @@ class ProjectDirectoryTree {
 	std::vector<std::string> mNames;
 	std::vector<std::string> mDirectories;
 	std::vector<LuaPattern> mAcceptedPatterns;
+	bool mRunning;
 	bool mIsReady;
 	bool mIgnoreHidden;
 	Mutex mFilesMutex;

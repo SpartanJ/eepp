@@ -6,8 +6,19 @@ namespace ecode {
 
 ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 											std::shared_ptr<ThreadPool> threadPool ) :
-	mPath( path ), mPool( threadPool ), mIsReady( false ), mIgnoreMatcher( path ) {
+	mPath( path ),
+	mPool( threadPool ),
+	mRunning( false ),
+	mIsReady( false ),
+	mIgnoreMatcher( path ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
+}
+
+ProjectDirectoryTree::~ProjectDirectoryTree() {
+	if ( mRunning ) {
+		mRunning = false;
+		Lock l( mFilesMutex );
+	}
 }
 
 void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& scanComplete,
@@ -18,6 +29,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 		[&, acceptedPatterns, ignoreHidden] {
 #endif
 			Lock l( mFilesMutex );
+			mRunning = true;
 			mIgnoreHidden = ignoreHidden;
 			mDirectories.push_back( mPath );
 			if ( !acceptedPatterns.empty() ) {
@@ -49,6 +61,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher );
 			}
 			mIsReady = true;
+			mRunning = false;
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )
 			if ( scanComplete )
 				scanComplete( *this );
@@ -149,6 +162,8 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 											  std::set<std::string> currentDirs,
 											  const bool& ignoreHidden,
 											  const IgnoreMatcherManager& ignoreMatcher ) {
+	if ( !mRunning )
+		return;
 	currentDirs.insert( directory );
 	std::string localDirPath( directory.substr(
 		ignoreMatcher.foundMatch() ? ignoreMatcher.getPath().size() : mPath.size() ) );

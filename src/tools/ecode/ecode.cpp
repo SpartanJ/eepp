@@ -6,6 +6,12 @@
 #include <algorithm>
 #include <args/args.hxx>
 
+#ifdef ECODE_USE_BACKWARD
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+#define BACKWARD_HAS_DW 1
+#endif
+#include <backward-cpp/backward.hpp>
+#endif
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 #include "macos/macos.hpp"
 #endif
@@ -482,10 +488,16 @@ void App::onTextDropped( String text ) {
 App::App() : mThreadPool( ThreadPool::createShared( eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
 
 App::~App() {
-	if ( mFileWatcher )
+	mThreadPool.reset();
+	if ( mFileWatcher ) {
+		Lock l( mWatchesLock );
 		delete mFileWatcher;
-	if ( mFileSystemListener )
+		mFileWatcher = nullptr;
+	}
+	if ( mFileSystemListener ) {
 		delete mFileSystemListener;
+		mFileSystemListener = nullptr;
+	}
 	eeSAFE_DELETE( mSplitter );
 	eeSAFE_DELETE( mAutoCompletePlugin );
 	eeSAFE_DELETE( mLinterPlugin );
@@ -3396,8 +3408,6 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			   ecode::Version::getCodename().c_str() );
 
 	if ( mWindow->isOpen() ) {
-		if ( mBenchmarkMode )
-			mWindow->setFrameRateLimit( 0 );
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 		macOS_CreateApplicationMenus();
 #endif
@@ -3913,7 +3923,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			downloadFileWeb( "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md" );
 #endif
 
-		mWindow->runMainLoop( &appLoop );
+		mWindow->runMainLoop( &appLoop, mBenchmarkMode ? 0 : mConfig.context.FrameRateLimit );
 	}
 }
 
@@ -3940,6 +3950,9 @@ std::vector<std::string> parseEmscriptenArgs( int argc, char* argv[] ) {
 #endif
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+#ifdef ECODE_USE_BACKWARD
+	backward::SignalHandling sh;
+#endif
 	args::ArgumentParser parser( "ecode" );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
 	args::Positional<std::string> file( parser, "file", "The file or folder path" );

@@ -118,6 +118,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addPO();
 
 	addPerl();
+
+	addxit();
 }
 
 void SyntaxDefinitionManager::addPlainText() {
@@ -138,9 +140,9 @@ void SyntaxDefinitionManager::addXML() {
 			   { { "0x[%da-fA-F]+" }, "number" },
 			   { { "-?%d+[%d%.]*f?" }, "number" },
 			   { { "-?%.?%d+f?" }, "number" },
-			   { { "%f[^<]![%a_][%w_-]*" }, "keyword2" },
-			   { { "%f[^<][%a_][%w_-]*" }, "function" },
-			   { { "%f[^<]/[%a_][%w_-]*" }, "function" },
+			   { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+			   { { "%f[^<][%a_][%w%_%-]*" }, "function" },
+			   { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
 			   { { "[%a_][%w_]*" }, "keyword" },
 			   { { "[/<>=]" }, "operator" },
 		   },
@@ -172,9 +174,9 @@ void SyntaxDefinitionManager::addHTML() {
 			   { { "0x[%da-fA-F]+" }, "number" },
 			   { { "-?%d+[%d%.]*f?" }, "number" },
 			   { { "-?%.?%d+f?" }, "number" },
-			   { { "%f[^<]![%a_][%w_-]*" }, "keyword2" },
-			   { { "%f[^<][%a_][%w_-]*" }, "function" },
-			   { { "%f[^<]/[%a_][%w_-]*" }, "function" },
+			   { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+			   { { "%f[^<][%a_][%w%_%-]*" }, "function" },
+			   { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
 			   { { "[%a_][%w_]*" }, "keyword" },
 			   { { "[/<>=]" }, "operator" },
 		   },
@@ -192,16 +194,16 @@ void SyntaxDefinitionManager::addCSS() {
 			   { { "/%*", "%*/" }, "comment" },
 			   { { "\"", "\"", "\\" }, "string" },
 			   { { "'", "'", "\\" }, "string" },
-			   { { "^%s*#[%a_-][%w_-]*" }, "keyword2" },
-			   { { ",%s*#[%a_-][%w_-]*" }, "keyword2" },
-			   { { "#%x%x?%x?%x?%x?%x?x?x?" }, "string" },
-			   { { "#[%a_-][%w_-]*" }, "keyword2" },
-			   { { "%-%-%a[%w-_]*" }, "keyword2" },
+			   { { "^%s*#[%a%_%-][%w%_%-]*" }, "keyword2" },
+			   { { ",%s*#[%a%_%-][%w%_%-]*" }, "keyword2" },
+			   { { "#%x%x?%x?%x?%x?%x?%x?%x?" }, "string" },
+			   { { "#[%a%_%-][%w%_%-]*" }, "keyword2" },
+			   { { "%-%-%a[%w%-%_]*" }, "keyword2" },
 			   { { "-?%d+[%d%.]*p[xt]" }, "number" },
 			   { { "-?%d+[%d%.]*deg" }, "number" },
 			   { { "-?%d+[%d%.]*" }, "number" },
-			   { { "@[%a][%w_-]*" }, "keyword2" },
-			   { { "%.[%a_-][%w_-]*" }, "keyword2" },
+			   { { "@[%a][%w%_%-]*" }, "keyword2" },
+			   { { "%.[%a%_%-][%w%_%-]*" }, "keyword2" },
 			   { { "(:)(hover)" }, { "normal", "operator", "literal" } },
 			   { { "(:)(focus)" }, { "normal", "operator", "literal" } },
 			   { { "(:)(selectedpressed)" }, { "normal", "operator", "literal" } },
@@ -510,7 +512,7 @@ void SyntaxDefinitionManager::addBash() {
 			   { { "`", "`", "\\" }, "string" },
 			   { { "%f[%w_][%d%.]+%f[^%w_]" }, "number" },
 			   { { "[!<>|&%[%]=*]" }, "operator" },
-			   { { "%f[%S]%-[%w%-_]+" }, "function" },
+			   { { "%f[%S]%-[%w%-%_]+" }, "function" },
 			   { { "${.*}" }, "keyword2" },
 			   { { "$[%a_@*][%w_]*" }, "keyword2" },
 			   { { "[%a_][%w_]*" }, "symbol" },
@@ -2989,7 +2991,7 @@ void SyntaxDefinitionManager::addPowerShell() {
 			 { { "'", "'" }, "string" },
 			 { { "%f[%w_][%d%.]+%f[^%w_]" }, "number" },
 			 { { "[%+=/%*%^%%<>!~|&,:]+" }, "operator" },
-			 { { "%f[%S]%-[%w%-_]+" }, "function" },
+			 { { "%f[%S]%-[%w%-%_]+" }, "function" },
 			 { { "[%u][%a]+[%-][%u][%a]+" }, "function" },
 			 { { "${.*}" }, "symbol" },
 			 { { "$[%a_@*][%w_]*" }, "keyword2" },
@@ -3076,7 +3078,7 @@ void SyntaxDefinitionManager::addWren() {
 
 void SyntaxDefinitionManager::addEnv() {
 	add( { "Environment File",
-		   { "%.env$", "%.env.[%w-_]*$" },
+		   { "%.env$", "%.env.[%w%-%_]*$" },
 		   { { { "^#.-\n" }, "comment" },
 			 { { "%s#.-\n" }, "comment" },
 			 { { "\\[nrtfb\\\"']" }, "literal" },
@@ -3523,6 +3525,40 @@ void SyntaxDefinitionManager::addPerl() {
 		},
 		"#",
 		{ "^#!.*[ /]perl" },
+	} );
+}
+
+void SyntaxDefinitionManager::addxit() {
+	add( {
+		"[x]it!",
+		{ "%.xit$" },
+		{
+			{ { "%f[^%s%(]%-%>%s%d%d%d%d%-%d%d%-%d%d%f[\n%s%!%?%)]" }, "number" },
+			{ { "%f[^%s%(]%-%>%s%d%d%d%d%/%d%d%/%d%d%f[\n%s%!%?%)]" }, "number" },
+			{ { "%f[^%s%(]%-%>%s%d%d%d%d%-[wWqQ]?%d%d?%f[\n%s%!%?%)]" }, "number" },
+			{ { "%f[^%s%(]%-%>%s%d%d%d%d%/[wWqQ]?%d%d?%f[\n%s%!%?%)]" }, "number" },
+			{ { "%f[^%s%(]%-%>%s%d%d%d%d%f[\n%s%!%?%)]" }, "number" },
+			{ { "^(%[%s%]%s)([%.!]+)%s" }, { "operator", "operator", "red" } },
+			{ { "^(%[x%]%s)([%.!]+)%s" }, { "function", "function", "red" } },
+			{ { "^(%[@%]%s)([%.!]+)%s" }, { "keyword", "keyword", "red" } },
+			{ { "^(%[~%]%s)([%.!]+)%s" }, { "comment", "comment", "red" } },
+			{ { "%#[%wñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ%-%_]+%=\"", "\"" },
+			  "string" },
+			{ { "%#[%wñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ%-%_]+%='", "'" },
+			  "string" },
+			{ { "%#[%wñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ%-%_]+%=[%w%-%_]*" },
+			  "string" },
+			{ { "%#[%wñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ%-%_]+" }, "string" },
+			{ { "^%[%s%]%s" }, "operator" },
+			{ { "^%[x%]%s" }, "function" },
+			{ { "^%[@%]%s" }, "keyword" },
+			{ { "^%[~%]%s" }, "comment" },
+			{ { "^[%wñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w"
+				"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ%s%p]*%f[\n]" },
+			  "underline" },
+		},
+		{},
+		"",
 	} );
 }
 

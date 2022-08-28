@@ -141,6 +141,8 @@ class EE_API SyntaxDefinitionManager {
 	void addPO();
 
 	void addPerl();
+
+	void addxit();
 };
 
 }}} // namespace EE::UI::Doc

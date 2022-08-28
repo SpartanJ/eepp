@@ -310,6 +310,7 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 	if ( mNeedsUpdate )
 		update();
 
+	RGB prevColor = getColorFilter();
 	if ( mColorWasSet )
 		mDrawable->setColorFilter( getColor() );
 	mDrawable->setAlpha( getAlpha() );
@@ -357,6 +358,8 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 			break;
 		}
 	}
+	if ( mColorWasSet )
+		mDrawable->setColorFilter( prevColor );
 }
 
 Sizef UINodeDrawable::LayerDrawable::getSize() {

@@ -10,6 +10,7 @@ newoption { trigger = "windows-vc-build", description = "This is used to build t
 newoption { trigger = "windows-mingw-build", description = "This is used to build the framework with mingw downloading its external dependencies." }
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
+newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -201,6 +202,9 @@ function build_base_cpp_configuration( package_name )
 
 	filter "configurations:release*"
 		optimize "Speed"
+		if _OPTIONS["with-debug-symbols"] then
+			symbols "On"
+		end
 		targetname ( package_name )
 
 	filter "system:emscripten"
@@ -653,6 +657,9 @@ workspace "eepp"
 		symbols "On"
 	filter "configurations:release*"
 		optimize "Speed"
+		if _OPTIONS["with-debug-symbols"] then
+			symbols "On"
+		end
 
 	filter { "system:windows", "action:vs*" }
 		flags { "MultiProcessorCompile" }
@@ -938,6 +945,9 @@ workspace "eepp"
 		filter { "configurations:release*", "action:not vs*" }
 			defines { "NDEBUG" }
 			optimize "Speed"
+			if _OPTIONS["with-debug-symbols"] then
+				symbols "On"
+			end
 			targetname ( "ecode-macos-helper-static" )
 
 	project "ecode"
@@ -953,7 +963,12 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:linux"
-			links { "util" }
+			if _OPTIONS["with-debug-symbols"] then
+				defines { "ECODE_USE_BACKWARD" }
+				links { "util", "bfd", "dw", "dl" }
+			else
+				links { "util" }
+			end
 		filter "system:haiku"
 			links { "bsd" }
 

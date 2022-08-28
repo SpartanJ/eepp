@@ -74,6 +74,8 @@ static Drawable* parseDataURI( const std::string& name ) {
 		Uint32 texId = 0;
 		if ( !format.empty() &&
 			 ( Image::isImageExtension( "." + format ) || format == "svg+xml" ) ) {
+			Image::FormatConfiguration format;
+			format.svgScale( PixelDensity::getPixelDensity() );
 			if ( decodingType == "base64" ) {
 				int fileStart = formatAndEncSep + 1;
 				int base64Size = name.size() - fileStart;
@@ -83,13 +85,17 @@ static Drawable* parseDataURI( const std::string& name ) {
 				ScopedBuffer buffer( bufSize );
 				int len = Base64::decode( base64Size, &name[fileStart], bufSize, buffer.get() );
 				if ( len > 0 )
-					texId = TextureFactory::instance()->loadFromMemory( buffer.get(), len );
+					texId = TextureFactory::instance()->loadFromMemory(
+						buffer.get(), len, false, Texture::ClampMode::ClampToEdge, false, false,
+						format );
 			} else if ( decodingType == "urldecode" ) {
 				int fileStart = formatAndEncSep + 1;
 				std::string decoded( URI::decode( name.substr( fileStart ) ) );
-				if ( !decoded.empty() )
+				if ( !decoded.empty() ) {
 					texId = TextureFactory::instance()->loadFromMemory(
-						(const unsigned char*)decoded.c_str(), decoded.size() );
+						(const unsigned char*)decoded.c_str(), decoded.size(), false,
+						Texture::ClampMode::ClampToEdge, false, false, format );
+				}
 			}
 		}
 

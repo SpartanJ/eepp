@@ -330,7 +330,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 	if ( !mVisible )
 		return;
 
-	if ( mHighlighter.updateDirty( getVisibleLinesCount() ) ) {
+	if ( mDoc && !mDoc->isLoading() && mHighlighter.updateDirty( getVisibleLinesCount() ) ) {
 		invalidateDraw();
 	}
 

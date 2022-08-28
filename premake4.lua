@@ -161,6 +161,7 @@ newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenA
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
+newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -324,6 +325,9 @@ function build_base_configuration( package_name )
 	configuration "release"
 		defines { "NDEBUG" }
 		flags { "OptimizeSpeed" }
+		if _OPTIONS["with-debug-symbols"] then
+			flags { "Symbols" }
+		end
 		if not is_vs() then
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
@@ -361,6 +365,9 @@ function build_base_cpp_configuration( package_name )
 	configuration "release"
 		defines { "NDEBUG" }
 		flags { "OptimizeSpeed" }
+		if _OPTIONS["with-debug-symbols"] then
+			flags { "Symbols" }
+		end
 		if not is_vs() then
 			buildoptions{ "-Wall" }
 		end
@@ -521,6 +528,9 @@ function build_link_configuration( package_name, use_ee_icon )
 	configuration "release"
 		defines { "NDEBUG" }
 		flags { "OptimizeSpeed" }
+		if _OPTIONS["with-debug-symbols"] then
+			flags { "Symbols" }
+		end
 
 		if not is_vs() and not os.is_real("emscripten") then
 			buildoptions { "-fno-strict-aliasing -ffast-math" }
@@ -1196,6 +1206,9 @@ solution "eepp"
 		configuration "release"
 			defines { "NDEBUG" }
 			flags { "OptimizeSpeed" }
+			if _OPTIONS["with-debug-symbols"] then
+				flags { "Symbols" }
+			end
 			buildoptions{ "-O3" }
 			targetname ( "ecode-macos-helper-static" )
 	end
@@ -1214,7 +1227,12 @@ solution "eepp"
 			links { "ecode-macos-helper-static" }
 		end
 		if os.is_real("linux") then
-			links { "util" }
+			if _OPTIONS["with-debug-symbols"] then
+				defines { "ECODE_USE_BACKWARD" }
+				links { "util", "bfd", "dw", "dl" }
+			else
+				links { "util" }
+			end
 		end
 		if os.is("haiku") then
 			links { "bsd" }

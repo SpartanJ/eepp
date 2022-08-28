@@ -174,6 +174,10 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 				   clock.getElapsedTime().asMilliseconds() );
 
 	bool wasInterrupted = !mLoading;
+	if ( wasInterrupted ) {
+		mLines.clear();
+		mLines.push_back( String( "\n" ) );
+	}
 	mLoading = false;
 	return wasInterrupted ? LoadStatus::Interrupted
 						  : ( file.isOpen() ? LoadStatus::Loaded : LoadStatus::Failed );
@@ -334,7 +338,7 @@ bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<T
 									  std::function<void( TextDocument*, bool )> onLoaded ) {
 	mLoading = true;
 	pool->run(
-		[&, path, onLoaded] {
+		[this, path, onLoaded] {
 			auto loaded = loadFromFile( path );
 			if ( loaded != LoadStatus::Interrupted && onLoaded )
 				onLoaded( this, loaded == LoadStatus::Loaded );
@@ -1387,7 +1391,7 @@ bool TextDocument::isSaving() const {
 }
 
 TextPosition TextDocument::sanitizePosition( const TextPosition& position ) const {
-	Int64 line = eeclamp<Int64>( position.line(), 0UL, mLines.size() - 1 );
+	Int64 line = eeclamp<Int64>( position.line(), 0UL, mLines.size() ? mLines.size() - 1 : 0 );
 	Int64 col =
 		eeclamp<Int64>( position.column(), 0UL, eemax<Int64>( 0, mLines[line].size() - 1 ) );
 	return { line, col };

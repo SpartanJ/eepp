@@ -152,6 +152,7 @@ std::string KeyBindings::getCommandKeybindString( const std::string& command ) c
 
 void KeyBindings::reset() {
 	mShortcuts.clear();
+	mKeybindingsInvert.clear();
 }
 
 const ShortcutMap& KeyBindings::getShortcutMap() const {

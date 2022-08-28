@@ -79,6 +79,7 @@ class EE_API SyntaxColorScheme {
 	std::string mName;
 	std::unordered_map<std::string, Style> mSyntaxColors;
 	std::unordered_map<std::string, Style> mEditorColors;
+	mutable std::unordered_map<std::string, Style> mStyleCache;
 };
 
 }}} // namespace EE::UI::Doc

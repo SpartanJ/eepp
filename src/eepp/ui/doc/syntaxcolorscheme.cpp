@@ -80,6 +80,53 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			   { "minimap_visible_area", Color( "#FFFFFF0A" ) } } };
 }
 
+SyntaxColorScheme::Style parseStyle(
+	const std::string& value, bool* colorWasSet = nullptr,
+	const std::unordered_map<std::string, SyntaxColorScheme::Style>* syntaxColors = nullptr ) {
+	auto values = String::split( value, ',' );
+	SyntaxColorScheme::Style style;
+	bool colorSet = false;
+	for ( auto& val : values ) {
+		String::toLowerInPlace( val );
+		String::trimInPlace( val );
+		if ( Color::isColorString( val ) ) {
+			if ( !colorSet ) {
+				style.color = Color::fromString( val );
+				colorSet = true;
+			} else {
+				style.background = Color::fromString( val );
+			}
+		} else {
+			if ( "regular" == val )
+				style.style |= Text::Regular;
+			else if ( "bold" == val )
+				style.style |= Text::Bold;
+			else if ( "italic" == val )
+				style.style |= Text::Italic;
+			else if ( "underline" == val || "underlined" == val )
+				style.style |= Text::Underlined;
+			else if ( "strikethrough" == val )
+				style.style |= Text::StrikeThrough;
+			else if ( "shadow" == val )
+				style.style |= Text::Shadow;
+			else if ( syntaxColors &&
+					  ( "normal" == val || "symbol" == val || "comment" == val ||
+						"keyword" == val || "keyword2" == val || "number" == val ||
+						"literal" == val || "string" == val || "opetaror" == val ||
+						"function" == val || "link" == val || "link_hover" == val ) ) {
+				auto styleIt = ( *syntaxColors ).find( val );
+				if ( styleIt != ( *syntaxColors ).end() ) {
+					style = styleIt->second;
+					colorSet = true;
+				}
+			}
+		}
+	}
+	if ( colorWasSet )
+		*colorWasSet = colorSet;
+	return style;
+}
+
 std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stream ) {
 	Clock clock;
 	std::vector<SyntaxColorScheme> colorSchemes;
@@ -94,41 +141,13 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromStream( IOStream& stre
 			std::string valueName( String::toLower( ini.getValueName( keyIdx, valueIdx ) ) );
 			std::string value( ini.getValue( keyIdx, valueIdx ) );
 			if ( !value.empty() ) {
-				auto values = String::split( value, ',' );
-				SyntaxColorScheme::Style style;
-				bool colorSet = false;
-				for ( auto& val : values ) {
-					String::toLowerInPlace( val );
-					String::trimInPlace( val );
-					if ( Color::isColorString( val ) ) {
-						if ( !colorSet ) {
-							style.color = Color::fromString( val );
-							colorSet = true;
-						} else {
-							style.background = Color::fromString( val );
-						}
-					} else {
-						if ( "regular" == val )
-							style.style |= Text::Regular;
-						else if ( "bold" == val )
-							style.style |= Text::Bold;
-						else if ( "italic" == val )
-							style.style |= Text::Italic;
-						else if ( "underline" == val || "underlined" == val )
-							style.style |= Text::Underlined;
-						else if ( "strikethrough" == val )
-							style.style |= Text::StrikeThrough;
-						else if ( "shadow" == val )
-							style.style |= Text::Shadow;
-					}
-
-					if ( refColorScheme.mSyntaxColors.find( valueName ) !=
-						 refColorScheme.mSyntaxColors.end() ) {
-						colorScheme.setSyntaxStyle( valueName, style );
-					} else if ( refColorScheme.mEditorColors.find( valueName ) !=
-								refColorScheme.mEditorColors.end() ) {
-						colorScheme.setEditorSyntaxStyle( valueName, style );
-					}
+				SyntaxColorScheme::Style style = parseStyle( value );
+				if ( refColorScheme.mSyntaxColors.find( valueName ) !=
+					 refColorScheme.mSyntaxColors.end() ) {
+					colorScheme.setSyntaxStyle( valueName, style );
+				} else if ( refColorScheme.mEditorColors.find( valueName ) !=
+							refColorScheme.mEditorColors.end() ) {
+					colorScheme.setEditorSyntaxStyle( valueName, style );
 				}
 			}
 		}
@@ -184,6 +203,20 @@ const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::st
 		return it->second;
 	else if ( type == "link" || type == "link_hover" )
 		return getSyntaxStyle( "function" );
+	else {
+		auto foundIt = mStyleCache.find( type );
+		if ( foundIt != mStyleCache.end() )
+			return foundIt->second;
+		bool colorWasSet;
+		mStyleCache[type] = parseStyle( type, &colorWasSet, &mSyntaxColors );
+		if ( !colorWasSet ) {
+			auto normalStyle = mSyntaxColors.find( "normal" );
+			if ( normalStyle != mSyntaxColors.end() ) {
+				mStyleCache[type].color = normalStyle->second.color;
+			}
+		}
+		return mStyleCache[type];
+	}
 	return StyleEmpty;
 }
 
@@ -254,5 +287,4 @@ const std::string& SyntaxColorScheme::getName() const {
 void SyntaxColorScheme::setName( const std::string& name ) {
 	mName = name;
 }
-
 }}} // namespace EE::UI::Doc
