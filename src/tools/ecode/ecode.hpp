@@ -32,7 +32,8 @@ class App : public UICodeEditorSplitter::Client {
 	void createWidgetTreeView();
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-			   const std::string& colorScheme, bool terminal, bool frameBuffer );
+			   const std::string& colorScheme, bool terminal, bool frameBuffer,
+			   bool benchmarkMode );
 
 	void setAppTitle( const std::string& title );
 
@@ -163,6 +164,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIPopUpMenu* mDocMenu{ nullptr };
 	UIPopUpMenu* mViewMenu{ nullptr };
 	UIPopUpMenu* mWindowMenu{ nullptr };
+	UIPopUpMenu* mRendererMenu{ nullptr };
 	UIPopUpMenu* mToolsMenu{ nullptr };
 	UIPopUpMenu* mProjectTreeMenu{ nullptr };
 	UIPopUpMenu* mProjectMenu{ nullptr };
@@ -178,8 +180,8 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mPluginsPath;
 	std::string mColorSchemesPath;
 	std::string mKeybindingsPath;
-	Float mDisplayDPI{ 96 };
 	std::string mResPath;
+	Float mDisplayDPI{ 96 };
 	AutoCompletePlugin* mAutoCompletePlugin{ nullptr };
 	LinterPlugin* mLinterPlugin{ nullptr };
 	FormatterPlugin* mFormatterPlugin{ nullptr };
@@ -191,6 +193,10 @@ class App : public UICodeEditorSplitter::Client {
 	bool mDirTreeReady{ false };
 	bool mIsBundledApp{ false };
 	bool mUseFrameBuffer{ false };
+	bool mBenchmarkMode{ false };
+	Time mFrameTime{ Time::Zero };
+	Clock mLastRender;
+	Clock mSecondsCounter;
 	ProjectDocumentConfig mProjectDocConfig;
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;
@@ -261,6 +267,8 @@ class App : public UICodeEditorSplitter::Client {
 	UIMenu* createEditMenu();
 
 	UIMenu* createWindowMenu();
+
+	UIMenu* createRendererMenu();
 
 	UIMenu* createHelpMenu();
 

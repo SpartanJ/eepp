@@ -13,21 +13,25 @@ class EE_API Display {
   public:
 	Display( int displayIndex );
 
-	virtual std::string getName() = 0;
+	virtual std::string getName() const = 0;
 
-	virtual Rect getBounds() = 0;
+	virtual Rect getBounds() const = 0;
 
-	virtual Rect getUsableBounds() = 0;
+	virtual Rect getUsableBounds() const = 0;
 
 	virtual Float getDPI() = 0;
 
 	virtual const int& getIndex() const = 0;
 
-	virtual DisplayMode getCurrentMode() = 0;
+	virtual DisplayMode getCurrentMode() const = 0;
 
-	virtual DisplayMode getClosestDisplayMode( DisplayMode wantedMode ) = 0;
+	virtual DisplayMode getClosestDisplayMode( DisplayMode wantedMode ) const = 0;
 
 	virtual const std::vector<DisplayMode>& getModes() const = 0;
+
+	virtual Uint32 getRefreshRate() const = 0;
+
+	virtual Sizeu getSize() const = 0;
 
 	virtual ~Display();
 

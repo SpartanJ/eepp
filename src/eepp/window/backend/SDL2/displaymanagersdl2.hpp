@@ -9,21 +9,25 @@ class EE_API DisplaySDL2 : public Display {
   public:
 	DisplaySDL2( int index );
 
-	std::string getName();
+	std::string getName() const;
 
-	Rect getBounds();
+	Rect getBounds() const;
 
-	Rect getUsableBounds();
+	Rect getUsableBounds() const;
 
 	Float getDPI();
 
 	const int& getIndex() const;
 
-	DisplayMode getCurrentMode();
+	DisplayMode getCurrentMode() const;
 
-	DisplayMode getClosestDisplayMode( DisplayMode wantedMode );
+	DisplayMode getClosestDisplayMode( DisplayMode wantedMode ) const;
 
 	const std::vector<DisplayMode>& getModes() const;
+
+	Uint32 getRefreshRate() const;
+
+	Sizeu getSize() const;
 };
 
 class EE_API DisplayManagerSDL2 : public DisplayManager {

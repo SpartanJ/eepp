@@ -295,7 +295,7 @@ void TextureAtlasEditor::fileMenuClick( const Event* Event ) {
 	} else if ( "Open..." == txt ) {
 		UIFileDialog* TGDialog = UIFileDialog::New(
 			UIFileDialog::DefaultFlags, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Texture Atlas" );
 		TGDialog->addEventListener( Event::OpenFile,
 									cb::Make1( this, &TextureAtlasEditor::openTextureAtlas ) );

@@ -31,7 +31,7 @@ struct UIConfig {
 	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
 };
 
-struct WindowConfig {
+struct WindowStateConfig {
 	Float pixelDensity{ 0 };
 	Sizei size{ 1280, 720 };
 	std::string winIcon;
@@ -104,7 +104,8 @@ struct TerminalConfig {
 };
 
 struct AppConfig {
-	WindowConfig window;
+	WindowStateConfig windowState;
+	ContextSettings context;
 	CodeEditorConfig editor;
 	DocumentConfig doc;
 	TerminalConfig term;

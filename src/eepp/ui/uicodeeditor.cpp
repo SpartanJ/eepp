@@ -290,7 +290,7 @@ void UICodeEditor::draw() {
 						 lineNumberDigits, charSize );
 	}
 
-	if ( mColorPreview && mPreviewColorRange.isValid() ) {
+	if ( mColorPreview && mPreviewColorRange.isValid() && isMouseOver() && !mMinimapHover ) {
 		drawColorPreview( startScroll, lineHeight );
 	}
 

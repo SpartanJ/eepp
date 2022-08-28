@@ -39,7 +39,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 
 	mUIWindow = UIWindow::New();
 	mUIWindow->setSizeWithDecoration( 500, 500 )
-		->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )
+		->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )
 		->setMinWindowSize( 500, 500 );
 
 	mUIWindow->addEventListener( Event::OnWindowClose,

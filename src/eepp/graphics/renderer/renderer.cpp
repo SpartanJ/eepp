@@ -41,31 +41,93 @@ Renderer* GLi = NULL;
 
 Renderer* Renderer::sSingleton = NULL;
 
-Renderer* Renderer::createSingleton( GraphicsLibraryVersion ver ) {
+GraphicsLibraryVersion Renderer::glVersionFromString( std::string glVersion ) {
+	GraphicsLibraryVersion GLVer;
+	String::toLowerInPlace( glVersion );
+	if ( "3" == glVersion || "opengl 3" == glVersion || "gl3" == glVersion ||
+		 "opengl3" == glVersion )
+		GLVer = GLv_3;
+	else if ( "4" == glVersion || "opengl es 2" == glVersion || "gles2" == glVersion ||
+			  "opengles2" == glVersion || "es2" == glVersion )
+		GLVer = GLv_ES2;
+	else if ( "5" == glVersion || "opengl 3 core profile" == glVersion || "gl3cp" == glVersion ||
+			  "opengl3cp" == glVersion || "opengl core profile" == glVersion ||
+			  "core profile" == glVersion || "cp" == glVersion )
+		GLVer = GLv_3CP;
+	else if ( "opengl es 1" == glVersion || "gles1" == glVersion || "gl es 1" == glVersion ||
+			  "opengl es1" == glVersion || "opengles1" == glVersion || "es1" == glVersion ||
+			  "gles 1" == glVersion )
+		GLVer = GLv_ES1;
+	else if ( "2" == glVersion || "opengl 2" == glVersion || "gl2" == glVersion ||
+			  "gl 2" == glVersion )
+		GLVer = GLv_2;
+	else
+		GLVer = GLv_default;
+	return GLVer;
+}
+
+std::string Renderer::graphicsLibraryVersionToString( const GraphicsLibraryVersion& glVersion ) {
+	switch ( glVersion ) {
+		case GLv_2:
+			return "OpenGL 2";
+		case GLv_3:
+			return "OpenGL 3";
+		case GLv_3CP:
+			return "OpenGL 3 Core Profile";
+		case GLv_ES1:
+			return "OpenGL ES 1";
+		case GLv_ES2:
+			return "OpenGL ES 2";
+		case GLv_default:
+		default:
+			return graphicsLibraryVersionToString( getDefaultGraphicsLibraryVersion() );
+	}
+}
+
+GraphicsLibraryVersion Renderer::getDefaultGraphicsLibraryVersion() {
+	GraphicsLibraryVersion ver = GLv_2;
 #if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
-	if ( GLv_default == ver )
-		ver = GLv_2;
+	ver = GLv_2;
 #else
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	if ( GLv_default == ver )
 #ifdef EE_GLES2
-		ver = GLv_ES2;
+	ver = GLv_ES2;
 #else
-		ver = GLv_ES1;
+	ver = GLv_ES1;
 #endif
 #else
-	if ( GLv_default == ver )
 #ifndef EE_GLES1_DEFAULT
 #ifdef EE_GLES2
-		ver = GLv_ES2;
+	ver = GLv_ES2;
 #else
-		ver = GLv_ES1;
+	ver = GLv_ES1;
 #endif
 #else
-		ver = GLv_ES1;
+	ver = GLv_ES1;
 #endif
 #endif
 #endif
+	return ver;
+}
+
+std::vector<GraphicsLibraryVersion> Renderer::getAvailableGraphicsLibraryVersions() {
+	std::vector<GraphicsLibraryVersion> vers;
+#if ( defined( EE_GLES1 ) && !defined( EE_GLES2 ) ) || defined( EE_GLES_BOTH )
+	vers.emplace_back( GLv_ES1 );
+#else
+	vers.emplace_back( GLv_2 );
+#endif
+#ifdef EE_GL3_ENABLED
+	vers.emplace_back( GLv_3 );
+	vers.emplace_back( GLv_3CP );
+	vers.emplace_back( GLv_ES2 );
+#endif
+	return vers;
+}
+
+Renderer* Renderer::createSingleton( GraphicsLibraryVersion ver ) {
+	if ( ver == GLv_default )
+		ver = getDefaultGraphicsLibraryVersion();
 
 	switch ( ver ) {
 		case GLv_ES2: {
@@ -325,7 +387,7 @@ std::string Renderer::getExtensions() {
 			eeglGetStringiFunc = (pglGetStringiFunc)SOIL_GL_GetProcAddress( "glGetStringi" );
 
 			if ( NULL == eeglGetStringiFunc ) {
-				return 0;
+				return "";
 			}
 		}
 

@@ -1134,7 +1134,7 @@ void MapEditor::fileMenuClick( const Event* Event ) {
 		createNewMap();
 	} else if ( "Open..." == txt ) {
 		UIFileDialog* TGDialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.eem" );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Map" );
 		TGDialog->addEventListener( Event::OpenFile, cb::Make1( this, &MapEditor::mapOpen ) );
 		TGDialog->center();
@@ -1142,7 +1142,7 @@ void MapEditor::fileMenuClick( const Event* Event ) {
 	} else if ( "Save As..." == txt ) {
 		UIFileDialog* TGDialog =
 			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*.eem" );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Map" );
 		TGDialog->addEventListener( Event::SaveFile, cb::Make1( this, &MapEditor::mapSave ) );
 		TGDialog->center();
@@ -1267,7 +1267,7 @@ void MapEditor::mapMenuClick( const Event* Event ) {
 	if ( "New Texture Atlas..." == txt ) {
 		UIWindow* tWin = UIWindow::New();
 		tWin->setSizeWithDecoration( 1024, 768 );
-		tWin->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
+		tWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
 						   UI_WIN_DRAGABLE_CONTAINER );
 		tWin->setMinWindowSize( 1024, 768 );
 
@@ -1277,7 +1277,7 @@ void MapEditor::mapMenuClick( const Event* Event ) {
 	} else if ( "Add External Texture Atlas..." == txt ) {
 		UIFileDialog* TGDialog = UIFileDialog::New(
 			UIFileDialog::DefaultFlags, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Load Texture Atlas..." );
 		TGDialog->addEventListener( Event::OpenFile,
 									cb::Make1( this, &MapEditor::cextureAtlasOpen ) );
@@ -1328,7 +1328,7 @@ void MapEditor::layerMenuClick( const Event* Event ) {
 
 UIMessageBox* MapEditor::createAlert( const String& title, const String& text ) {
 	UIMessageBox* MsgBox = UIMessageBox::New( UIMessageBox::OK, text );
-	MsgBox->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MODAL );
+	MsgBox->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MODAL );
 	MsgBox->setTitle( title );
 	MsgBox->center();
 	MsgBox->show();

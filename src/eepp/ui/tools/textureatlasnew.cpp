@@ -11,7 +11,7 @@ namespace EE { namespace UI { namespace Tools {
 
 TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNewTGCb( NewTGCb ) {
 	mUIWindow = UIWindow::New();
-	mUIWindow->setSizeWithDecoration( 378, 0 )->setMinWindowSize( 378, 0 )->setWinFlags(
+	mUIWindow->setSizeWithDecoration( 378, 0 )->setMinWindowSize( 378, 0 )->setWindowFlags(
 		UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS |
 		UI_WIN_MODAL );
 
@@ -130,7 +130,7 @@ void TextureAtlasNew::okClick( const Event* event ) {
 
 		UIFileDialog* TGDialog =
 			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*." + ext );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Texture Atlas" );
 		TGDialog->addEventListener( Event::SaveFile,
 									cb::Make1( this, &TextureAtlasNew::textureAtlasSave ) );
@@ -208,7 +208,7 @@ void TextureAtlasNew::onDialogFolderSelect( const Event* event ) {
 	if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 		UIFileDialog* TGDialog =
 			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect, "*" );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Create Texture Atlas ( Select Folder Containing Textures )" );
 		TGDialog->addEventListener( Event::OpenFile,
 									cb::Make1( this, &TextureAtlasNew::onSelectFolder ) );

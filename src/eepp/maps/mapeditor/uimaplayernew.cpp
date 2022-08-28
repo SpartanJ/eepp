@@ -23,7 +23,7 @@ UIMapLayerNew::UIMapLayerNew( UIMap* Map, EE_LAYER_TYPE Type, NewLayerCb newLaye
 
 	mUIWindow = UIWindow::New();
 	mUIWindow->setSizeWithDecoration( 278, 114 )
-		->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )
+		->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )
 		->setMinWindowSize( 278, 114 );
 
 	mUIWindow->addEventListener( Event::OnWindowClose,

@@ -68,6 +68,7 @@ template <typename T> tSize<T>& tSize<T>::operator=( const tSize<T>& right ) {
 }
 
 typedef tSize<int> Sizei;
+typedef tSize<unsigned int> Sizeu;
 typedef tSize<Float> Sizef;
 
 }} // namespace EE::Math

@@ -208,7 +208,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 		UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );
 		uiWin->setMinWindowSize( 500, 400 );
-		uiWin->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
+		uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 		UITreeView* widgetTree = UITreeView::New();
 		widgetTree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		widgetTree->setParent( uiWin );

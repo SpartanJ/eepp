@@ -130,6 +130,9 @@ void App::setAppTitle( const std::string& title ) {
 	if ( !title.empty() )
 		fullTitle += " - " + title;
 
+	if ( mBenchmarkMode )
+		fullTitle += " - " + String::toString( mWindow->getFPS() ) + " FPS";
+
 	mWindow->setTitle( fullTitle );
 }
 
@@ -150,7 +153,7 @@ void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {
 void App::openFileDialog() {
 	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*",
 											  mLastFileFolder.empty() ? "." : mLastFileFolder );
-	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
@@ -171,7 +174,7 @@ void App::openFolderDialog() {
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
 							   UIFileDialog::ShowOnlyFolders,
 						   "*", "." );
-	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_folder", "Open Folder" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
@@ -199,7 +202,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 	if ( index.isValid() )
 		dialog->runOnMainThread(
 			[&, dialog, index]() { dialog->getMultiView()->setSelection( index ); } );
-	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "select_font_file", "Select Font File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
@@ -282,7 +285,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		return nullptr;
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
-	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	std::string filename( editor->getDocument().getFilename() );
@@ -419,7 +422,7 @@ void App::mainLoop() {
 	mWindow->getInput()->update();
 	SceneManager::instance()->update();
 
-	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
+	if ( SceneManager::instance()->getUISceneNode()->invalidated() || mBenchmarkMode ) {
 		mWindow->clear();
 		SceneManager::instance()->draw();
 		mWindow->display();
@@ -429,6 +432,11 @@ void App::mainLoop() {
 		}
 	} else {
 		mWindow->getInput()->waitEvent( Milliseconds( mWindow->hasFocus() ? 16 : 100 ) );
+	}
+
+	if ( mBenchmarkMode && mSecondsCounter.getElapsedTime() >= Seconds( 1 ) ) {
+		setAppTitle( mWindowTitle );
+		mSecondsCounter.restart();
 	}
 }
 
@@ -488,7 +496,7 @@ App::~App() {
 void App::createWidgetTreeView() {
 	UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );
 	uiWin->setMinWindowSize( 600, 400 );
-	uiWin->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
+	uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 	UITreeView* widgetTree = UITreeView::New();
 	widgetTree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	widgetTree->setParent( uiWin );
@@ -652,6 +660,8 @@ UIMenu* App::createWindowMenu() {
 	} );
 	mWindowMenu->addSubMenu( i18n( "ui_prefes_color_scheme", "UI Prefers Color Scheme" ),
 							 findIcon( "color-scheme" ), colorsMenu );
+	mWindowMenu->addSubMenu( i18n( "ui_renderer", "Renderer" ), findIcon( "renderer" ),
+							 createRendererMenu() );
 	mWindowMenu
 		->add( i18n( "ui_scale_factor", "UI Scale Factor (Pixel Density)" ),
 			   findIcon( "pixel-density" ) )
@@ -755,7 +765,7 @@ UIMenu* App::createWindowMenu() {
 					  "1, and maximum 6. Requires restart." ) );
 			msgBox->setTitle( mWindowTitle );
 			msgBox->getTextInput()->setText(
-				String::format( "%.2f", mConfig.window.pixelDensity ) );
+				String::format( "%.2f", mConfig.windowState.pixelDensity ) );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->showWhenReady();
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
@@ -763,8 +773,8 @@ UIMenu* App::createWindowMenu() {
 				Float val;
 				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 1 &&
 					 val <= 6 ) {
-					if ( mConfig.window.pixelDensity != val ) {
-						mConfig.window.pixelDensity = val;
+					if ( mConfig.windowState.pixelDensity != val ) {
+						mConfig.windowState.pixelDensity = val;
 						UIMessageBox* msg = UIMessageBox::New(
 							UIMessageBox::OK,
 							i18n( "new_ui_scale_factor", "New UI scale factor assigned.\nPlease "
@@ -857,6 +867,93 @@ UIMenu* App::createWindowMenu() {
 		}
 	} );
 	return mWindowMenu;
+}
+
+UIMenu* App::createRendererMenu() {
+	mRendererMenu = UIPopUpMenu::New();
+
+	mRendererMenu->addCheckBox( i18n( "vsync", "VSync" ), mConfig.context.VSync )->setId( "vsync" );
+	mRendererMenu->add( i18n( "frame_rate_limit", "Frame Rate Limit" ), findIcon( "fps" ) )
+		->setId( "frame_rate_limit" );
+
+	mRendererMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		if ( "vsync" == item->getId() ) {
+			mConfig.context.VSync = item->asType<UIMenuCheckBox>()->isActive();
+			saveConfig();
+			mNotificationCenter->addNotification(
+				i18n( "vsync_changed",
+					  "Vsync configuration changed.\nRestart ecode to see the changes." )
+					.unescape() );
+		} else if ( "frame_rate_limit" == item->getId() ) {
+			UIMessageBox* msgBox = UIMessageBox::New(
+				UIMessageBox::INPUT,
+				i18n( "set_frame_rate_limit", "Set Frame Rate Limit:\nSet 0 to disable it.\n" )
+					.unescape() );
+			msgBox->setTitle( mWindowTitle );
+			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
+			msgBox->getTextInput()->setText( String::toString( mConfig.context.FrameRateLimit ) );
+			msgBox->showWhenReady();
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+				int val;
+				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
+					mConfig.context.FrameRateLimit = val;
+					saveConfig();
+					mWindow->setFrameRateLimit( val );
+					mNotificationCenter->addNotification(
+						i18n( "frame_rate_limit_applied", "Frame Rate Limit Applied" ) );
+					msgBox->closeWindow();
+				}
+			} );
+			setFocusEditorOnClose( msgBox );
+		}
+	} );
+
+	UIPopUpMenu* glVersion = UIPopUpMenu::New();
+	std::vector<GraphicsLibraryVersion> versions = Renderer::getAvailableGraphicsLibraryVersions();
+	for ( const auto& ver : versions )
+		glVersion
+			->addRadioButton( Renderer::graphicsLibraryVersionToString( ver ),
+							  GLi->version() == ver )
+			->setData( ver );
+	glVersion->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		mConfig.context.Version = static_cast<GraphicsLibraryVersion>( item->getData() );
+		saveConfig();
+		mNotificationCenter->addNotification(
+			i18n( "glversion_changed",
+				  "Renderer version changed.\nRestart ecode to see the changes." )
+				.unescape() );
+	} );
+	mRendererMenu->addSubMenu( i18n( "ui_renderer_version", "Renderer Version" ),
+							   findIcon( "renderer" ), glVersion );
+
+	UIPopUpMenu* multisampleLvl = UIPopUpMenu::New();
+	const std::vector<Uint32> msaaVals = { 0, 2, 4, 8, 16 };
+	for ( const auto& val : msaaVals )
+		multisampleLvl
+			->addRadioButton( String::toString( val ), mConfig.context.Multisamples == val )
+			->setData( val );
+	mRendererMenu->addSubMenu( i18n( "ui_multisamples_level", "Multisample Anti-Aliasing Level" ),
+							   findIcon( "multisamples" ), multisampleLvl );
+	multisampleLvl->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		mConfig.context.Multisamples = item->getData();
+		saveConfig();
+		mNotificationCenter->addNotification(
+			i18n( "multisamples_changed",
+				  "Multisample Anti-Aliasing Level applied.\nRestart ecode to see the changes." )
+				.unescape() );
+	} );
+
+	return mRendererMenu;
 }
 
 UIMenu* App::createViewMenu() {
@@ -3235,17 +3332,19 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 }
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-				const std::string& colorScheme, bool terminal, bool frameBuffer ) {
+				const std::string& colorScheme, bool terminal, bool frameBuffer,
+				bool benchmarkMode ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 	mUseFrameBuffer = frameBuffer;
+	mBenchmarkMode = benchmarkMode;
 
 	loadConfig( logLevel );
 
-	currentDisplay = displayManager->getDisplayIndex( mConfig.window.displayIndex <
+	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
 															  displayManager->getDisplayCount()
-														  ? mConfig.window.displayIndex
+														  ? mConfig.windowState.displayIndex
 														  : 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 	mResPath = Sys::getProcessPath();
@@ -3267,10 +3366,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
-	mConfig.window.pixelDensity =
-		pidelDensity > 0 ? pidelDensity
-						 : ( mConfig.window.pixelDensity > 0 ? mConfig.window.pixelDensity
-															 : currentDisplay->getPixelDensity() );
+	mConfig.windowState.pixelDensity =
+		pidelDensity > 0
+			? pidelDensity
+			: ( mConfig.windowState.pixelDensity > 0 ? mConfig.windowState.pixelDensity
+													 : currentDisplay->getPixelDensity() );
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -3280,37 +3380,40 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 	WindowSettings winSettings = engine->createWindowSettings( &mConfig.iniState, "window" );
 	winSettings.PixelDensity = 1;
-	winSettings.Width = mConfig.window.size.getWidth();
-	winSettings.Height = mConfig.window.size.getHeight();
+	winSettings.Width = mConfig.windowState.size.getWidth();
+	winSettings.Height = mConfig.windowState.size.getHeight();
 	if ( winSettings.Icon.empty() ) {
-		winSettings.Icon = mConfig.window.winIcon;
+		winSettings.Icon = mConfig.windowState.winIcon;
 		if ( FileSystem::isRelativePath( winSettings.Icon ) )
 			winSettings.Icon = mResPath + winSettings.Icon;
 	}
-	ContextSettings contextSettings = engine->createContextSettings( &mConfig.ini, "window" );
-	contextSettings.SharedGLContext = true;
 
-	mWindow = engine->createWindow( winSettings, contextSettings );
+	mConfig.context = engine->createContextSettings( &mConfig.ini, "window" );
+	mConfig.context.SharedGLContext = true;
+
+	mWindow = engine->createWindow( winSettings, mConfig.context );
 	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionName().c_str(),
 			   ecode::Version::getCodename().c_str() );
 
 	if ( mWindow->isOpen() ) {
+		if ( mBenchmarkMode )
+			mWindow->setFrameRateLimit( 0 );
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 		macOS_CreateApplicationMenus();
 #endif
 
 		Log::info( "Window creation took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
-		if ( mConfig.window.position != Vector2i( -1, -1 ) &&
-			 mConfig.window.displayIndex < displayManager->getDisplayCount() ) {
-			mWindow->setPosition( mConfig.window.position.x, mConfig.window.position.y );
+		if ( mConfig.windowState.position != Vector2i( -1, -1 ) &&
+			 mConfig.windowState.displayIndex < displayManager->getDisplayCount() ) {
+			mWindow->setPosition( mConfig.windowState.position.x, mConfig.windowState.position.y );
 		}
 
 		loadKeybindings();
 
-		PixelDensity::setPixelDensity( mConfig.window.pixelDensity );
+		PixelDensity::setPixelDensity( mConfig.windowState.pixelDensity );
 
-		if ( mConfig.window.maximized )
+		if ( mConfig.windowState.maximized )
 			mWindow->maximize();
 
 		mWindow->setCloseRequestCallback(
@@ -3324,7 +3427,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			}
 		} );
 
-		PixelDensity::setPixelDensity( eemax( mWindow->getScale(), mConfig.window.pixelDensity ) );
+		PixelDensity::setPixelDensity(
+			eemax( mWindow->getScale(), mConfig.windowState.pixelDensity ) );
 
 		mUISceneNode = UISceneNode::New();
 		mUIColorScheme = mConfig.ui.colorScheme;
@@ -3728,7 +3832,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		} );
 		mDocInfo->setVisible( mConfig.editor.showDocInfo );
 
-		mProjectSplitter->setSplitPartition( StyleSheetLength( mConfig.window.panelPartition ) );
+		mProjectSplitter->setSplitPartition(
+			StyleSheetLength( mConfig.windowState.panelPartition ) );
 		if ( mConfig.ui.panelPosition == PanelPosition::Right )
 			mProjectSplitter->swap();
 
@@ -3852,6 +3957,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ 'l', "log-level" }, Log::getMapFlag(), Log::getDefaultLogLevel() );
 	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
 				   { "fb", "framebuffer" } );
+	args::Flag benchmarkMode( parser, "benchmark-mode",
+							  "Render as much as possible to measure the rendering performance.",
+							  { "benchmark-mode" } );
 
 	try {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -3875,8 +3983,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	appInstance = eeNew( App, () );
 	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
-					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(),
-					   fb.Get() );
+					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
+					   benchmarkMode.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

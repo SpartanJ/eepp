@@ -28,11 +28,11 @@ void DisplayManagerSDL2::setDPIAwareness() {
 
 DisplaySDL2::DisplaySDL2( int index ) : Display( index ) {}
 
-std::string DisplaySDL2::getName() {
+std::string DisplaySDL2::getName() const {
 	return std::string( SDL_GetDisplayName( index ) );
 }
 
-Rect DisplaySDL2::getBounds() {
+Rect DisplaySDL2::getBounds() const {
 	SDL_Rect r;
 	if ( SDL_GetDisplayBounds( index, &r ) == 0 )
 		return Rect( r.x, r.y, r.w, r.h );
@@ -76,7 +76,16 @@ const std::vector<DisplayMode>& DisplaySDL2::getModes() const {
 	return displayModes;
 }
 
-DisplayMode DisplaySDL2::getCurrentMode() {
+Uint32 DisplaySDL2::getRefreshRate() const {
+	return getCurrentMode().RefreshRate;
+}
+
+Sizeu DisplaySDL2::getSize() const {
+	DisplayMode mode( getCurrentMode() );
+	return { mode.Width, mode.Height };
+}
+
+DisplayMode DisplaySDL2::getCurrentMode() const {
 	SDL_DisplayMode mode;
 
 	if ( SDL_GetCurrentDisplayMode( index, &mode ) == 0 ) {
@@ -86,7 +95,7 @@ DisplayMode DisplaySDL2::getCurrentMode() {
 	return DisplayMode( 0, 0, 0, 0 );
 }
 
-DisplayMode DisplaySDL2::getClosestDisplayMode( DisplayMode wantedMode ) {
+DisplayMode DisplaySDL2::getClosestDisplayMode( DisplayMode wantedMode ) const {
 	SDL_DisplayMode target, mode;
 
 	target.w = wantedMode.Width;
@@ -102,7 +111,7 @@ DisplayMode DisplaySDL2::getClosestDisplayMode( DisplayMode wantedMode ) {
 	return DisplayMode( 0, 0, 0, 0 );
 }
 
-Rect DisplaySDL2::getUsableBounds() {
+Rect DisplaySDL2::getUsableBounds() const {
 	SDL_Rect r;
 	if ( SDL_GetDisplayUsableBounds( index, &r ) == 0 )
 		return Rect( r.x, r.y, r.w, r.h );

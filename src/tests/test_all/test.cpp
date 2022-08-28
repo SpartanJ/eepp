@@ -115,18 +115,18 @@ void EETest::init() {
 
 	IniFile Ini( MyPath + "ee.ini" );
 
-	PartsNum = Ini.getValueI( "EEPP", "ParticlesNum", 1000 );
-	mUseShaders = Ini.getValueB( "EEPP", "UseShaders", false );
-	mJoyEnabled = Ini.getValueB( "EEPP", "JoystickEnabled", false );
-	mDebugUI = Ini.getValueB( "EEPP", "DebugUI", false );
+	PartsNum = Ini.getValueI( "EEPP", "particlesnum", 1000 );
+	mUseShaders = Ini.getValueB( "EEPP", "useshaders", false );
+	mJoyEnabled = Ini.getValueB( "EEPP", "joystickenabled", false );
+	mDebugUI = Ini.getValueB( "EEPP", "debugui", false );
 
 #if defined( EE_PLATFORM_TOUCH )
 	mJoyEnabled = false;
 #endif
 
-	mMusEnabled = Ini.getValueB( "EEPP", "Music", false );
-	mLastFPSLimit = Ini.getValueI( "EEPP", "FrameRateLimit", 0 );
-	Int32 StartScreen = Ini.getValueI( "EEPP", "StartScreen", 5 );
+	mMusEnabled = Ini.getValueB( "EEPP", "music", false );
+	mLastFPSLimit = Ini.getValueI( "EEPP", "frameratelimit", 0 );
+	Int32 StartScreen = Ini.getValueI( "EEPP", "startscreen", 5 );
 
 	WindowSettings WinSettings = EE->createWindowSettings( &Ini );
 	ContextSettings ConSettings = EE->createContextSettings( &Ini );
@@ -839,7 +839,7 @@ void EETest::createNewUI() {
 
 	UIWindow* win = UIWindow::New();
 	win->setSize( 500, 500 );
-	win->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
+	win->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
 	UILinearLayout* layWin = UILinearLayout::NewVertical();
 	layWin->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -919,7 +919,7 @@ void EETest::createNewUI() {
 
 	UIWindow* win2 = UIWindow::New();
 	win2->setSize( 500, 500 );
-	win2->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
+	win2->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
 	UIRelativeLayout* rlay = UIRelativeLayout::New();
 	rlay->setParent( win2 );
@@ -1044,7 +1044,7 @@ void EETest::createColorPicker( Node* node ) {
 
 void EETest::createFileDialog() {
 	UIFileDialog* CDialog = UIFileDialog::New();
-	CDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
+	CDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
 	CDialog->addFilePattern( "*.hpp;*.cpp", true );
 	CDialog->center();
 	CDialog->show();
@@ -1069,8 +1069,8 @@ static void onWinDragStop( const Event* event ) {
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIBlurredWindow::New( mBlur );
 	mUIWindow
-		->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW |
-					   UI_WIN_FRAME_BUFFER )
+		->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW |
+						  UI_WIN_FRAME_BUFFER )
 		->setMinWindowSize( 530, 350 )
 		->setPosition( 200, 50 );
 
@@ -1112,10 +1112,10 @@ void EETest::createDecoratedWindow() {
 		const String& txt = menuItem->getText();
 
 		if ( "Hide Border" == txt ) {
-			win->setWinFlags( win->getWinFlags() | UI_WIN_NO_DECORATION );
+			win->setWindowFlags( win->getWinFlags() | UI_WIN_NO_DECORATION );
 			menuItem->setText( "Show Border" );
 		} else if ( "Show Border" == txt ) {
-			win->setWinFlags( win->getWinFlags() & ~UI_WIN_NO_DECORATION );
+			win->setWindowFlags( win->getWinFlags() & ~UI_WIN_NO_DECORATION );
 			menuItem->setText( "Hide Border" );
 		} else if ( "Close" == txt ) {
 			win->closeWindow();

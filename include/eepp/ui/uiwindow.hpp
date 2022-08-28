@@ -126,7 +126,7 @@ class EE_API UIWindow : public UIWidget {
 
 	Uint32 getWinFlags() const;
 
-	UIWindow* setWinFlags( const Uint32& winFlags );
+	UIWindow* setWindowFlags( const Uint32& winFlags );
 
 	const StyleConfig& getStyleConfig() const;
 

@@ -27,6 +27,16 @@ class RendererGLES2;
  */
 class EE_API Renderer {
   public:
+	/** @return The graphic library renderer version from a string. */
+	static GraphicsLibraryVersion glVersionFromString( std::string glVersion );
+
+	/** @return Converts GralphicsLibraryVersion to a string */
+	static std::string graphicsLibraryVersionToString( const GraphicsLibraryVersion& glVersion );
+
+	static GraphicsLibraryVersion getDefaultGraphicsLibraryVersion();
+
+	static std::vector<GraphicsLibraryVersion> getAvailableGraphicsLibraryVersions();
+
 	static Renderer* createSingleton( GraphicsLibraryVersion ver );
 
 	static Renderer* createSingleton();

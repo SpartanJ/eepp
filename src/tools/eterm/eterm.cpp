@@ -97,8 +97,11 @@ void mainLoop() {
 		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 	}
 
-	if ( benchmarkMode && secondsCounter.getElapsedTime() >= Seconds( 1 ) )
-		win->setTitle( "eterm - " + windowStringData + " - " + String::toString( win->getFPS() ) );
+	if ( benchmarkMode && secondsCounter.getElapsedTime() >= Seconds( 1 ) ) {
+		win->setTitle( "eterm - " + windowStringData + " - " + String::toString( win->getFPS() ) +
+					   " FPS" );
+		secondsCounter.restart();
+	}
 }
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
@@ -130,10 +133,12 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "execute-in-shell", "execute program in shell", { 'e', "execute" }, "" );
 	args::Flag vsync( parser, "vsync", "Enable vsync", { "vsync" } );
 	args::ValueFlag<Uint32> maxFPS( parser, "max-fps",
-									"Maximum rendering frames per second of the terminal",
-									{ "max-fps" }, 60 );
-	args::Flag benchmarkModeFlag( parser, "benchmark-mode", "Render as much as possible.",
-								  { "benchmark-mode" } );
+									"Maximum rendering frames per second of the terminal. Default "
+									"value will be the refresh rate of the screen.",
+									{ "max-fps" }, 0 );
+	args::Flag benchmarkModeFlag(
+		parser, "benchmark-mode",
+		"Render as much as possible to measure the rendering performance.", { "benchmark-mode" } );
 
 	try {
 		parser.ParseCLI( argc, argv );
@@ -208,7 +213,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				->loadFromFile( resPath + "fonts/NotoEmoji-Regular.ttf" );
 		}
 
-		frameTime = benchmarkMode ? Time::Zero : Milliseconds( 1000.f / (Float)maxFPS.Get() );
+		Float realMaxFPS = maxFPS.Get() ? maxFPS.Get() : currentDisplay->getRefreshRate();
+		frameTime = benchmarkMode ? Time::Zero : Milliseconds( 1000.f / realMaxFPS );
 
 		if ( !terminal || terminal->hasTerminated() ) {
 			FileInfo file( wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory() );

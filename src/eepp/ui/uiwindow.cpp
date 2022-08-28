@@ -1384,7 +1384,7 @@ Uint32 UIWindow::getWinFlags() const {
 	return mStyleConfig.WinFlags;
 }
 
-UIWindow* UIWindow::setWinFlags( const Uint32& winFlags ) {
+UIWindow* UIWindow::setWindowFlags( const Uint32& winFlags ) {
 	mStyleConfig.WinFlags = winFlags;
 
 	updateWinFlags();

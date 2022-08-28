@@ -52,16 +52,17 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	recentFolders = urlDecode( String::split( recentFol, ';' ) );
 	initColorScheme = editor.colorScheme = ini.getValue( "editor", "colorscheme", "eepp" );
 	editor.fontSize = ini.getValue( "editor", "font_size", "11dp" );
-	window.size.setWidth( iniState.getValueI( "window", "width", displayDPI > 105 ? 1920 : 1280 ) );
-	window.size.setHeight(
+	windowState.size.setWidth(
+		iniState.getValueI( "window", "width", displayDPI > 105 ? 1920 : 1280 ) );
+	windowState.size.setHeight(
 		iniState.getValueI( "window", "height", displayDPI > 105 ? 1080 : 720 ) );
-	window.maximized = iniState.getValueB( "window", "maximized", false );
-	window.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
-	window.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ee.png" );
-	window.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
-	window.displayIndex = iniState.getValueI( "window", "display_index", 0 );
-	window.position.x = iniState.getValueI( "window", "x", -1 );
-	window.position.y = iniState.getValueI( "window", "y", -1 );
+	windowState.maximized = iniState.getValueB( "window", "maximized", false );
+	windowState.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
+	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ee.png" );
+	windowState.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
+	windowState.displayIndex = iniState.getValueI( "window", "display_index", 0 );
+	windowState.position.x = iniState.getValueI( "window", "x", -1 );
+	windowState.position.y = iniState.getValueI( "window", "y", -1 );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.highlightMatchingBracket =
@@ -136,23 +137,23 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	}
 
 	editor.colorScheme = colorSchemeName;
-	window.size = win->getLastWindowedSize();
-	window.maximized = win->isMaximized();
-	window.displayIndex = win->getCurrentDisplayIndex();
-	window.position = win->getPosition();
-	if ( window.position.x < 0 )
-		window.position.x = 0;
-	if ( window.position.y < 0 )
-		window.position.y = 0;
+	windowState.size = win->getLastWindowedSize();
+	windowState.maximized = win->isMaximized();
+	windowState.displayIndex = win->getCurrentDisplayIndex();
+	windowState.position = win->getPosition();
+	if ( windowState.position.x < 0 )
+		windowState.position.x = 0;
+	if ( windowState.position.y < 0 )
+		windowState.position.y = 0;
 	ini.setValue( "editor", "colorscheme", editor.colorScheme );
-	iniState.setValueI( "window", "width", window.size.getWidth() );
-	iniState.setValueI( "window", "height", window.size.getHeight() );
-	iniState.setValueB( "window", "maximized", window.maximized );
-	iniState.setValueF( "window", "pixeldensity", window.pixelDensity );
+	iniState.setValueI( "window", "width", windowState.size.getWidth() );
+	iniState.setValueI( "window", "height", windowState.size.getHeight() );
+	iniState.setValueB( "window", "maximized", windowState.maximized );
+	iniState.setValueF( "window", "pixeldensity", windowState.pixelDensity );
 	iniState.setValue( "window", "panel_partition", panelPartition );
-	iniState.setValueI( "window", "display_index", window.displayIndex );
-	iniState.setValueI( "window", "x", window.position.x );
-	iniState.setValueI( "window", "y", window.position.y );
+	iniState.setValueI( "window", "display_index", windowState.displayIndex );
+	iniState.setValueI( "window", "x", windowState.position.x );
+	iniState.setValueI( "window", "y", windowState.position.y );
 	iniState.setValue( "files", "recentfiles", String::join( urlEncode( recentFiles ), ';' ) );
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
@@ -206,6 +207,12 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 
 	ini.setValue( "terminal", "font_size", term.fontSize.toString() );
 	ini.setValue( "terminal", "colorscheme", term.colorScheme );
+
+	ini.setValueB( "window", "vsync", context.VSync );
+	ini.setValue( "window", "glversion",
+				  Renderer::graphicsLibraryVersionToString( context.Version ) );
+	ini.setValueI( "window", "multisamples", context.Multisamples );
+	ini.setValueI( "window", "frameratelimit", context.FrameRateLimit );
 
 	ini.writeFile();
 	iniState.writeFile();

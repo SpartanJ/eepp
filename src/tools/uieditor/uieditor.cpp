@@ -170,7 +170,7 @@ void App::createWidgetTreeView() {
 
 	UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );
 	uiWin->setMinWindowSize( 600, 400 );
-	uiWin->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
+	uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 	UITreeView* widgetTree = UITreeView::New();
 	widgetTree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	widgetTree->setParent( uiWin );
@@ -962,7 +962,7 @@ void App::showFileDialog( const String& title, const std::function<void( const E
 						  const std::string& filePattern, const Uint32& dialogFlags ) {
 	UIFileDialog* dialog = UIFileDialog::New( dialogFlags, filePattern );
 	dialog->setTheme( mTheme );
-	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( title );
 	dialog->addEventListener( Event::OpenFile, cb );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -985,7 +985,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		return nullptr;
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
-	dialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	std::string filename( editor->getDocument().getFilename() );

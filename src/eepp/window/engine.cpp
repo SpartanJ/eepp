@@ -252,17 +252,17 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 
 	ini->readFile();
 
-	int Width = ini->getValueI( iniKeyName, "Width", 800 );
-	int Height = ini->getValueI( iniKeyName, "Height", 600 );
-	int BitColor = ini->getValueI( iniKeyName, "BitColor", 32 );
-	bool Windowed = ini->getValueB( iniKeyName, "Windowed", true );
-	bool Resizeable = ini->getValueB( iniKeyName, "Resizeable", true );
-	bool Borderless = ini->getValueB( iniKeyName, "Borderless", false );
-	bool useDesktopResolution = ini->getValueB( iniKeyName, "UseDesktopResolution", false );
-	std::string pixelDensityStr = ini->getValue( iniKeyName, "PixelDensity" );
+	int Width = ini->getValueI( iniKeyName, "width", 800 );
+	int Height = ini->getValueI( iniKeyName, "height", 600 );
+	int BitColor = ini->getValueI( iniKeyName, "bitcolor", 32 );
+	bool Windowed = ini->getValueB( iniKeyName, "windowed", true );
+	bool Resizeable = ini->getValueB( iniKeyName, "resizeable", true );
+	bool Borderless = ini->getValueB( iniKeyName, "borderless", false );
+	bool useDesktopResolution = ini->getValueB( iniKeyName, "usedesktopresolution", false );
+	std::string pixelDensityStr = ini->getValue( iniKeyName, "pixeldensity" );
 	float pixelDensity = PixelDensity::getPixelDensity();
 	bool useScreenKeyboard =
-		ini->getValueB( iniKeyName, "UseScreenKeyboard", EE_SCREEN_KEYBOARD_ENABLED );
+		ini->getValueB( iniKeyName, "usescreenkeyboard", EE_SCREEN_KEYBOARD_ENABLED );
 
 	if ( !pixelDensityStr.empty() ) {
 		if ( String::toLower( pixelDensityStr ) == "auto" ) {
@@ -277,7 +277,7 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 		}
 	}
 
-	std::string backend = ini->getValue( iniKeyName, "Backend", "" );
+	std::string backend = ini->getValue( iniKeyName, "backend", "" );
 	WindowBackend winBackend = getDefaultBackend();
 
 	String::toLowerInPlace( backend );
@@ -299,8 +299,8 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 	if ( Resizeable )
 		Style |= WindowStyle::Resize;
 
-	std::string icon = ini->getValue( iniKeyName, "WinIcon", "" );
-	std::string title = ini->getValue( iniKeyName, "WinTitle", "" );
+	std::string icon = ini->getValue( iniKeyName, "winicon", "" );
+	std::string title = ini->getValue( iniKeyName, "wintitle", "" );
 
 	WindowSettings WinSettings( Width, Height, title, Style, winBackend, BitColor, icon,
 								pixelDensity, useScreenKeyboard );
@@ -319,41 +319,18 @@ ContextSettings Engine::createContextSettings( IniFile* ini, std::string iniKeyN
 
 	ini->readFile();
 
-	bool VSync = ini->getValueB( iniKeyName, "VSync", true );
-	std::string GLVersion = ini->getValue( iniKeyName, "GLVersion", "0" );
+	bool VSync = ini->getValueB( iniKeyName, "vsync", true );
+	std::string GLVersion = ini->getValue( iniKeyName, "glversion", "0" );
+	int depthBufferSize = ini->getValueI( iniKeyName, "depthbuffersize", 24 );
+	int stencilBufferSize = ini->getValueI( iniKeyName, "stencilbuffersize", 1 );
+	int multisamples = ini->getValueI( iniKeyName, "multisamples", 0 );
+	int frameRateLimit = ini->getValueI( iniKeyName, "frameratelimit", 0 );
+	bool doubleBuffering = ini->getValueB( iniKeyName, "doublebuffering", true );
+	bool sharedGLContext = ini->getValueB( iniKeyName, "sharedglcontext", false );
 
-	String::toLowerInPlace( GLVersion );
-
-	GraphicsLibraryVersion GLVer;
-	if ( "3" == GLVersion || "opengl 3" == GLVersion || "gl3" == GLVersion ||
-		 "opengl3" == GLVersion )
-		GLVer = GLv_3;
-	else if ( "4" == GLVersion || "opengl es 2" == GLVersion || "gles2" == GLVersion ||
-			  "opengles2" == GLVersion || "es2" == GLVersion )
-		GLVer = GLv_ES2;
-	else if ( "5" == GLVersion || "opengl 3 core profile" == GLVersion || "gl3cp" == GLVersion ||
-			  "opengl3cp" == GLVersion || "opengl core profile" == GLVersion ||
-			  "core profile" == GLVersion || "cp" == GLVersion )
-		GLVer = GLv_3CP;
-	else if ( "opengl es 1" == GLVersion || "gles1" == GLVersion || "gl es 1" == GLVersion ||
-			  "opengl es1" == GLVersion || "opengles1" == GLVersion || "es1" == GLVersion ||
-			  "gles 1" == GLVersion )
-		GLVer = GLv_ES1;
-	else if ( "2" == GLVersion || "opengl 2" == GLVersion || "gl2" == GLVersion ||
-			  "gl 2" == GLVersion )
-		GLVer = GLv_2;
-	else
-		GLVer = GLv_default;
-
-	int depthBufferSize = ini->getValueI( iniKeyName, "DepthBufferSize", 24 );
-	int stencilBufferSize = ini->getValueI( iniKeyName, "StencilBufferSize", 1 );
-	int multisamples = ini->getValueI( iniKeyName, "Multisamples", 0 );
-	int frameRateLimit = ini->getValueI( iniKeyName, "FrameRateLimit", 0 );
-	bool doubleBuffering = ini->getValueB( iniKeyName, "DoubleBuffering", true );
-	bool sharedGLContext = ini->getValueB( iniKeyName, "SharedGLContext", false );
-
-	return ContextSettings( VSync, GLVer, doubleBuffering, depthBufferSize, stencilBufferSize,
-							multisamples, sharedGLContext, frameRateLimit );
+	return ContextSettings( VSync, Renderer::glVersionFromString( GLVersion ), doubleBuffering,
+							depthBufferSize, stencilBufferSize, multisamples, sharedGLContext,
+							frameRateLimit );
 }
 
 ContextSettings Engine::createContextSettings( std::string iniPath, std::string iniKeyName ) {
