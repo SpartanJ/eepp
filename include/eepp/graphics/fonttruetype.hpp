@@ -32,13 +32,14 @@ class EE_API FontTrueType : public Font {
 	const Font::Info& getInfo() const;
 
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-						   Float outlineThickness = 0 ) const;
+						   Float outlineThickness = 0, Float maxWidth = 0 ) const;
 
 	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
 								  Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-									 bool bold = false, Float outlineThickness = 0 ) const;
+									 bool bold = false, Float outlineThickness = 0,
+									 const Float& maxWidth = 0 ) const;
 
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold ) const;
 
@@ -82,6 +83,7 @@ class EE_API FontTrueType : public Font {
 
 	void setEnableEmojiFallback( bool enableEmojiFallback );
 
+	const Uint32& getFontInternalId() const;
   protected:
 	explicit FontTrueType( const std::string& FontName );
 
@@ -114,16 +116,15 @@ class EE_API FontTrueType : public Font {
 	void cleanup();
 
 	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-								  Float outlineThickness, Page& page,
-								  const Float& forzeSize ) const;
+								  Float outlineThickness, Page& page, const Float& maxWidth ) const;
 
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-						   Float outlineThickness, Page& page, const Float& forzeSize ) const;
+						   Float outlineThickness, Page& page, const Float& maxWidth ) const;
 
 	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
 
 	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-					 Float outlineThickness, Page& page, const Float& forceSize = 0.f ) const;
+					 Float outlineThickness, Page& page, const Float& maxWidth = 0.f ) const;
 
 	Rect findGlyphRect( Page& page, unsigned int width, unsigned int height ) const;
 
@@ -145,7 +146,8 @@ class EE_API FontTrueType : public Font {
 	int* mRefCount;	  ///< Reference counter used by implicit sharing
 	mutable ScopedBuffer mMemCopy; ///< If loaded from memory, this is the file copy in memory
 	Font::Info mInfo;			   ///< Information about the font
-	mutable PageTable mPages;	   ///< Table containing the glyphs pages by character size
+	Uint32 mFontInternalId{ 0 };
+	mutable PageTable mPages; ///< Table containing the glyphs pages by character size
 	mutable std::vector<Uint8>
 		mPixelBuffer; ///< Pixel buffer holding a glyph's pixels before being written to the texture
 	bool mBoldAdvanceSameAsRegular;
@@ -158,6 +160,8 @@ class EE_API FontTrueType : public Font {
 
 	Uint64 getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold,
 						Float outlineThickness ) const;
+
+	void updateFontInternalId();
 };
 
 }} // namespace EE::Graphics

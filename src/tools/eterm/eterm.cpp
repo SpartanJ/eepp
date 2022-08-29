@@ -202,7 +202,6 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		if ( fontMono == nullptr ) {
 			fontMono = FontTrueType::New( "monospace" );
 			fontMono->loadFromFile( resPath + "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
-			fontMono->setEnableEmojiFallback( false );
 		}
 
 		if ( FileSystem::fileExists( resPath + "fonts/NotoColorEmoji.ttf" ) ) {

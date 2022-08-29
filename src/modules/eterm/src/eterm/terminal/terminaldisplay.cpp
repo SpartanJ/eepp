@@ -1081,8 +1081,12 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 			auto advanceX = spaceCharAdvanceX * ( isWide ? 2.0f : 1.0f );
 
-			if ( glyph.mode & ATTR_WDUMMY )
+			if ( glyph.mode & ATTR_WDUMMY ) {
+				if ( mVBBackground )
+					mVBBackground->setQuad( mCurGridPos, { x, y }, { advanceX, lineHeight },
+											Color::Transparent );
 				continue;
+			}
 
 			if ( mVBBackground ) {
 				mVBBackground->setQuad( mCurGridPos, { x, y }, { advanceX, lineHeight }, bg );
@@ -1164,8 +1168,11 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 			auto advanceX = spaceCharAdvanceX * ( isWide ? 2.0f : 1.0f );
 
-			if ( glyph.mode & ATTR_WDUMMY )
+			if ( glyph.mode & ATTR_WDUMMY ) {
+				if ( mVBForeground )
+					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
 				continue;
+			}
 
 			if ( glyph.u == 32 ) {
 				x += advanceX;
@@ -1180,24 +1187,17 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				if ( mVBForeground )
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
 			} else {
-				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD );
+				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD, 0,
+													advanceX );
 
-				if ( glyph.mode & ATTR_EMOJI ) {
-					if ( FontManager::instance()->getColorEmojiFont() ) {
-						Font* font = FontManager::instance()->getColorEmojiFont();
-						gd = font->getGlyphDrawable( glyph.u, mFontSize );
-						gd->setColor( Color::White );
-					} else if ( FontManager::instance()->getEmojiFont() ) {
-						Font* font = FontManager::instance()->getEmojiFont();
-						gd = font->getGlyphDrawable( glyph.u, mFontSize );
-						gd->setColor( fg );
-					}
-					gd->setDrawMode( GlyphDrawable::DrawMode::Text );
+				if ( ( glyph.mode & ATTR_EMOJI ) && FontManager::instance()->getColorEmojiFont() ) {
+					gd->setColor( Color::White );
 				} else {
-					gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
-															  : GlyphDrawable::DrawMode::Text );
 					gd->setColor( fg );
 				}
+
+				gd->setDrawMode( glyph.mode & ATTR_ITALIC ? GlyphDrawable::DrawMode::TextItalic
+														  : GlyphDrawable::DrawMode::Text );
 
 				if ( mVBForeground ) {
 					gd->drawIntoVertexBuffer( mVBForeground, mCurGridPos, { x, y } );

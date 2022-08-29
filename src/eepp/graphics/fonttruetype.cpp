@@ -163,9 +163,7 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
 
-	auto fontInternalId = fontsInternalIds.find( mInfo.family );
-	if ( fontsInternalIds.end() == fontInternalId )
-		fontsInternalIds[mInfo.family] = ++fontInternalIdCounter;
+	updateFontInternalId();
 
 	sendEvent( Event::Load );
 
@@ -238,9 +236,7 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
 
-	auto fontInternalId = fontsInternalIds.find( mInfo.family );
-	if ( fontsInternalIds.end() == fontInternalId )
-		fontsInternalIds[mInfo.family] = ++fontInternalIdCounter;
+	updateFontInternalId();
 
 	sendEvent( Event::Load );
 
@@ -326,9 +322,7 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
 
-	auto fontInternalId = fontsInternalIds.find( mInfo.family );
-	if ( fontsInternalIds.end() == fontInternalId )
-		fontsInternalIds[mInfo.family] = ++fontInternalIdCounter;
+	updateFontInternalId();
 
 	sendEvent( Event::Load );
 
@@ -359,6 +353,16 @@ Uint64 FontTrueType::getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold
 	return combine( outlineThickness, bold, index, fontInternalId );
 }
 
+void FontTrueType::updateFontInternalId() {
+	auto fontInternalId = fontsInternalIds.find( mInfo.family );
+	if ( fontsInternalIds.end() == fontInternalId ) {
+		mFontInternalId = ++fontInternalIdCounter;
+		fontsInternalIds[mInfo.family] = mFontInternalId;
+	} else {
+		mFontInternalId = fontInternalId->second;
+	}
+}
+
 bool FontTrueType::hasGlyph( Uint32 codePoint ) const {
 	return getGlyphIndex( codePoint ) != 0;
 }
@@ -376,17 +380,13 @@ Uint32 FontTrueType::getGlyphIndex( const Uint32& codePoint ) const {
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 Float outlineThickness ) const {
-	Uint32 index = getGlyphIndex( codePoint );
-
+									 Float outlineThickness, Float maxWidth ) const {
 	if ( mEnableEmojiFallback && Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont &&
 		 !mIsEmojiFont ) {
 		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 
-			Float maxWidth = 0.f;
-
-			if ( isMonospace() ) {
+			if ( isMonospace() && maxWidth == 0.f ) {
 				Glyph monospaceGlyph = getGlyph( ' ', characterSize, bold, outlineThickness );
 				maxWidth = monospaceGlyph.advance;
 			}
@@ -398,12 +398,11 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 
-			Float maxWidth = 0.f;
-
-			if ( isMonospace() ) {
+			if ( isMonospace() && maxWidth == 0.f ) {
 				Glyph monospaceGlyph = getGlyph( ' ', characterSize, bold, outlineThickness );
 				maxWidth = monospaceGlyph.advance;
 			}
+
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
 			return fontEmoji->getGlyph( codePoint, characterSize, bold, outlineThickness,
@@ -411,24 +410,24 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 		}
 	}
 
-	return getGlyphByIndex( index, characterSize, bold, outlineThickness );
+	return getGlyphByIndex( getGlyphIndex( codePoint ), characterSize, bold, outlineThickness );
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 									 Float outlineThickness, Page& page,
-									 const Float& forzeSize ) const {
+									 const Float& maxWidth ) const {
 	Uint32 index = getGlyphIndex( codePoint );
-	return getGlyphByIndex( index, characterSize, bold, outlineThickness, page, forzeSize );
+	return getGlyphByIndex( index, characterSize, bold, outlineThickness, page, maxWidth );
 }
 
 const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
 											Float outlineThickness, Page& page,
-											const Float& forzeSize ) const {
+											const Float& maxWidth ) const {
 	// Get the page corresponding to the character size
 	GlyphTable& glyphs = page.glyphs;
 
 	// Build the key by combining the code point, bold flag, and outline thickness
-	Uint64 key = getIndexKey( fontsInternalIds[mInfo.family], index, bold, outlineThickness );
+	Uint64 key = getIndexKey( mFontInternalId, index, bold, outlineThickness );
 
 	// Search the glyph into the cache
 	GlyphTable::const_iterator it = glyphs.find( key );
@@ -437,7 +436,7 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 		return it->second;
 	} else {
 		// Not found: we have to load it
-		Glyph glyph = loadGlyph( index, characterSize, bold, outlineThickness, page, forzeSize );
+		Glyph glyph = loadGlyph( index, characterSize, bold, outlineThickness, page, maxWidth );
 
 		return glyphs.insert( std::make_pair( key, glyph ) ).first->second;
 	}
@@ -450,18 +449,42 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 }
 
 GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											   bool bold, Float outlineThickness ) const {
-	GlyphDrawableTable& drawables = getPage( characterSize ).drawables;
+											   bool bold, Float outlineThickness,
+											   const Float& maxWidth ) const {
+	Page& page = getPage( characterSize );
+	GlyphDrawableTable& drawables = page.drawables;
 
-	Uint64 key = getIndexKey( getPage( characterSize ).fontInternalId, getGlyphIndex( codePoint ),
-							  bold, outlineThickness );
+	Uint32 glyphIndex = 0;
+	Uint32 fontInternalId = mFontInternalId;
+
+	if ( mEnableEmojiFallback && Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont &&
+		 !mIsEmojiFont ) {
+		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
+			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
+			FontTrueType* fontEmoji =
+				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
+			glyphIndex = fontEmoji->getGlyphIndex( codePoint );
+			fontInternalId = fontEmoji->getFontInternalId();
+		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
+					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
+			FontTrueType* fontEmoji =
+				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
+			glyphIndex = fontEmoji->getGlyphIndex( codePoint );
+			fontInternalId = fontEmoji->getFontInternalId();
+		} else {
+			glyphIndex = getGlyphIndex( codePoint );
+		}
+	} else {
+		glyphIndex = getGlyphIndex( codePoint );
+	}
+
+	Uint64 key = getIndexKey( fontInternalId, glyphIndex, bold, outlineThickness );
 
 	auto it = drawables.find( key );
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness );
-		auto& page = getPage( characterSize );
+		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness, maxWidth );
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
@@ -1035,8 +1058,7 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 	auto pageIt = mPages.find( characterSize );
 	if ( pageIt == mPages.end() ) {
-		mPages.insert( std::make_pair( characterSize,
-									   std::make_unique<Page>( fontsInternalIds[mInfo.family] ) ) );
+		mPages.insert( std::make_pair( characterSize, std::make_unique<Page>( mFontInternalId ) ) );
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;
@@ -1048,6 +1070,10 @@ bool FontTrueType::isEmojiFallbackEnabled() const {
 
 void FontTrueType::setEnableEmojiFallback( bool enableEmojiFallback ) {
 	mEnableEmojiFallback = enableEmojiFallback;
+}
+
+const Uint32& FontTrueType::getFontInternalId() const {
+	return mFontInternalId;
 }
 
 void FontTrueType::setIsEmojiFont( bool isEmojiFont ) {

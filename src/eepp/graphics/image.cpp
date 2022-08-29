@@ -11,6 +11,7 @@
 #include <eepp/system/packmanager.hpp>
 #include <imageresampler/resampler.h>
 #include <jpeg-compressor/jpge.h>
+#include <memory>
 
 #define NANOSVG_IMPLEMENTATION
 #include <nanosvg/nanosvg.h>
@@ -95,18 +96,18 @@ static unsigned char* resample_image( unsigned char* pSrc_image, int src_width, 
 		linear_to_srgb[i] = (unsigned char)k;
 	}
 
-	Resampler* resamplers[max_components];
+	std::unique_ptr<Resampler> resamplers[max_components];
 	std::vector<float> samples[max_components];
 
-	resamplers[0] =
+	resamplers[0] = std::unique_ptr<Resampler>(
 		new Resampler( src_width, src_height, dst_width, dst_height, Resampler::BOUNDARY_CLAMP,
-					   0.0f, 1.0f, pFilter, NULL, NULL, filter_scale, filter_scale );
+					   0.0f, 1.0f, pFilter, NULL, NULL, filter_scale, filter_scale ) );
 	samples[0].resize( src_width );
 	for ( int i = 1; i < n; i++ ) {
-		resamplers[i] =
+		resamplers[i] = std::unique_ptr<Resampler>(
 			new Resampler( src_width, src_height, dst_width, dst_height, Resampler::BOUNDARY_CLAMP,
 						   0.0f, 1.0f, pFilter, resamplers[0]->get_clist_x(),
-						   resamplers[0]->get_clist_y(), filter_scale, filter_scale );
+						   resamplers[0]->get_clist_y(), filter_scale, filter_scale ) );
 		samples[i].resize( src_width );
 	}
 
