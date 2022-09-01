@@ -38,7 +38,3 @@
 ### StyleSheetParser
 
 * Detect errors and log them.
-
-## UIEditor
-
-* Reload *all* CSS styles on each refresh (find a better way to set and combine style-sheets).

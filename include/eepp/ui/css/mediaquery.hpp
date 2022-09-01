@@ -102,8 +102,8 @@ struct MediaFeatures {
 					// device does not use a color lookup table, the value is zero.
 	int monochrome; // The number of bits per pixel in a monochrome frame buffer. If the device is
 					// not a monochrome device, the output device value will be 0.
-	int resolution;		// The resolution of the output device (in DPI)
-	float pixelDensity; // Screen pixel density
+	int resolution;							  // The resolution of the output device (in DPI)
+	float pixelDensity;						  // Screen pixel density
 	std::string prefersColorScheme{ "dark" }; // Color Scheme Default Preference
 };
 
@@ -157,7 +157,12 @@ class EE_API MediaQueryList {
 
 	bool applyMediaFeatures( const MediaFeatures& features ); // returns true if the isUsed changed
 
+	const Uint32& getMarker() const;
+
+	void setMarker( const Uint32& marker );
+
   private:
+	Uint32 mMarker{ 0 };
 	MediaQuery::vector mQueries;
 	bool mUsed;
 };

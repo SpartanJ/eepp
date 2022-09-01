@@ -56,18 +56,22 @@ class EE_API UISceneNode : public SceneNode {
 
 	String getTranslatorStringFromKey( const std::string& key, const String& defaultValue );
 
-	UIWidget* loadLayoutFromFile( const std::string& layoutPath, Node* parent = NULL );
+	UIWidget* loadLayoutNodes( pugi::xml_node node, Node* parent, const Uint32& marker );
 
-	UIWidget* loadLayoutFromString( const std::string& layoutString, Node* parent = NULL );
+	UIWidget* loadLayoutFromFile( const std::string& layoutPath, Node* parent = NULL,
+								  const Uint32& marker = 0 );
 
-	UIWidget* loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent = NULL );
+	UIWidget* loadLayoutFromString( const std::string& layoutString, Node* parent = NULL,
+									const Uint32& marker = 0 );
 
-	UIWidget* loadLayoutFromStream( IOStream& stream, Node* parent = NULL );
+	UIWidget* loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent = NULL,
+									const Uint32& marker = 0 );
+
+	UIWidget* loadLayoutFromStream( IOStream& stream, Node* parent = NULL,
+									const Uint32& marker = 0 );
 
 	UIWidget* loadLayoutFromPack( Pack* pack, const std::string& FilePackPath,
 								  Node* parent = NULL );
-
-	UIWidget* loadLayoutNodes( pugi::xml_node node, Node* parent );
 
 	void setStyleSheet( const CSS::StyleSheet& styleSheet );
 
@@ -211,8 +215,6 @@ class EE_API UISceneNode : public SceneNode {
 
 	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
 
-	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent );
-
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	void onWidgetDelete( Node* node );
@@ -220,6 +222,8 @@ class EE_API UISceneNode : public SceneNode {
 	void resetTooltips( Node* node );
 
 	CSS::MediaFeatures getMediaFeatures() const;
+
+	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent, const Uint32& marker );
 };
 
 }} // namespace EE::UI

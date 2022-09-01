@@ -220,7 +220,8 @@ bool UISceneNode::windowExists( UIWindow* win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
-std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent ) {
+std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
+											  const Uint32& marker ) {
 	std::vector<UIWidget*> rootWidgets;
 
 	if ( NULL == parent )
@@ -258,26 +259,32 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent 
 			}
 
 			if ( widget.first_child() ) {
-				loadNode( widget.first_child(), uiwidget );
+				loadNode( widget.first_child(), uiwidget, marker );
 			}
 
 			uiwidget->onWidgetCreated();
 		} else if ( String::toLower( std::string( widget.name() ) ) == "style" ) {
-			combineStyleSheet( widget.text().as_string(), false );
+			// combineStyleSheet( widget.text().as_string(), false );
+			CSS::StyleSheetParser parser;
+
+			if ( parser.loadFromString( widget.text().as_string() ) ) {
+				parser.getStyleSheet().setMarker( marker );
+				combineStyleSheet( parser.getStyleSheet(), false );
+			}
 		}
 	}
 
 	return rootWidgets;
 }
 
-UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent ) {
+UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const Uint32& marker ) {
 	Clock clock;
 	UISceneNode* prevUISceneNode = SceneManager::instance()->getUISceneNode();
 	SceneManager::instance()->setCurrentUISceneNode( this );
 	std::string id( node.attribute( "id" ).as_string() );
 	mIsLoading = true;
 	Clock innerClock;
-	std::vector<UIWidget*> widgets = loadNode( node, parent );
+	std::vector<UIWidget*> widgets = loadNode( node, parent, marker );
 
 	if ( mVerbose ) {
 		std::sort(
@@ -368,13 +375,14 @@ void UISceneNode::reloadStyle( const bool& disableAnimations ) {
 	}
 }
 
-UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* parent ) {
+UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* parent,
+										   const Uint32& marker ) {
 	if ( FileSystem::fileExists( layoutPath ) ) {
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
 
 		if ( result ) {
-			return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
+			return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 		} else {
 			Log::error( "Couldn't load UI Layout: %s", layoutPath.c_str() );
 			Log::error( "Error description: %s", result.description() );
@@ -392,12 +400,13 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 	return NULL;
 }
 
-UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, Node* parent ) {
+UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, Node* parent,
+											 const Uint32& marker ) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_string( layoutString.c_str() );
 
 	if ( result ) {
-		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
+		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
 		Log::error( "Couldn't load UI Layout from string: %s", layoutString.c_str() );
 		Log::error( "Error description: %s", result.description() );
@@ -407,12 +416,13 @@ UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, No
 	return NULL;
 }
 
-UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent ) {
+UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent,
+											 const Uint32& marker ) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize );
 
 	if ( result ) {
-		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
+		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
 		Log::error( "Couldn't load UI Layout from buffer" );
 		Log::error( "Error description: %s", result.description() );
@@ -422,7 +432,8 @@ UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSiz
 	return NULL;
 }
 
-UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent ) {
+UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent,
+											 const Uint32& marker ) {
 	if ( !stream.isOpen() )
 		return NULL;
 
@@ -434,7 +445,7 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent ) {
 	pugi::xml_parse_result result = doc.load_buffer( scopedBuffer.get(), scopedBuffer.length() );
 
 	if ( result ) {
-		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
+		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
 		Log::error( "Couldn't load UI Layout from stream" );
 		Log::error( "Error description: %s", result.description() );
@@ -934,7 +945,7 @@ void UISceneNode::setColorSchemePreference( const ColorSchemePreference& colorSc
 		mColorSchemePreference = colorSchemePreference;
 		if ( !mStyleSheet.isMediaQueryListEmpty() ) {
 			if ( mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
-				mStyleSheet.resetCache();
+				mStyleSheet.invalidateCache();
 				mRoot->reloadStyle( true, true, true, true );
 			}
 		}

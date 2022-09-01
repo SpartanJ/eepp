@@ -165,6 +165,16 @@ const AtRuleType& StyleSheetStyle::getAtRuleType() const {
 	return mAtRuleType;
 }
 
+const Uint32& StyleSheetStyle::getMarker() const {
+	return mMarker;
+}
+
+void StyleSheetStyle::setMarker( const Uint32& marker ) {
+	mMarker = marker;
+	if ( mMediaQueryList )
+		mMediaQueryList->setMarker( marker );
+}
+
 AtRuleType StyleSheetStyle::checkAtRule() {
 	if ( mSelector.getName() == "@font-face" ) {
 		return AtRuleType::FontFace;

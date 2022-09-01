@@ -31,6 +31,11 @@ class EE_API KeyframesDefinition {
 	/** @return A map containing all the properties involved in the keyframes definition. */
 	std::map<PropertyId, const PropertyDefinition*> getPropertyDefinitionList() const;
 
+	const Uint32& getMarker() const;
+
+	void setMarker( const Uint32& marker );
+
+	Uint32 marker{ 0 };
 	std::string name;
 	std::map<Float, KeyframeBlock> keyframeBlocks;
 };

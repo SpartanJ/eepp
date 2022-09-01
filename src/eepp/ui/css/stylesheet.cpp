@@ -24,8 +24,78 @@ size_t StyleSheet::nodeHash( const std::string& tag, const std::string& id ) {
 	return seed;
 }
 
-void StyleSheet::resetCache() {
+void StyleSheet::invalidateCache() {
 	mNodeCache.clear();
+}
+
+const Uint32& StyleSheet::getMarker() const {
+	return mMarker;
+}
+
+void StyleSheet::setMarker( const Uint32& marker ) {
+	if ( marker == mMarker )
+		return;
+
+	mMarker = marker;
+
+	for ( auto& node : mNodes )
+		node->setMarker( marker );
+
+	for ( auto& keyframes : mKeyframesMap )
+		keyframes.second.setMarker( marker );
+}
+
+void StyleSheet::removeAllWithMarker( const Uint32& marker ) {
+	std::vector<std::shared_ptr<StyleSheetStyle>> removeNodes;
+
+	for ( auto& node : mNodes )
+		if ( node->getMarker() == marker )
+			removeNodes.emplace_back( node );
+
+	std::vector<size_t> deprecatedNodeIndex;
+	for ( auto& nodeIndex : mNodeIndex ) {
+		std::vector<StyleSheetStyle*> removeNodesIndex;
+		for ( auto node : nodeIndex.second ) {
+			if ( node->getMarker() == marker ) {
+				removeNodesIndex.emplace_back( node );
+			}
+		}
+		for ( auto removeNodeIndex : removeNodesIndex ) {
+			auto found =
+				std::find( nodeIndex.second.begin(), nodeIndex.second.end(), removeNodeIndex );
+			if ( found != nodeIndex.second.end() )
+				nodeIndex.second.erase( found );
+		}
+		if ( nodeIndex.second.empty() )
+			deprecatedNodeIndex.emplace_back( nodeIndex.first );
+	}
+
+	for ( auto removeIndex : deprecatedNodeIndex )
+		mNodeIndex.erase( removeIndex );
+
+	std::vector<MediaQueryList::ptr> removeMediaQueries;
+	for ( auto& mediaQueryList : mMediaQueryList ) {
+		if ( mediaQueryList->getMarker() == marker )
+			removeMediaQueries.emplace_back( mediaQueryList );
+	}
+	if ( !removeMediaQueries.empty() ) {
+		for ( auto& removeMediaQuery : removeMediaQueries ) {
+			auto found =
+				std::find( mMediaQueryList.begin(), mMediaQueryList.end(), removeMediaQuery );
+			if ( found != mMediaQueryList.end() )
+				mMediaQueryList.erase( found );
+		}
+	}
+
+	std::vector<std::string> removeKeys;
+	for ( auto& keyFrame : mKeyframesMap ) {
+		if ( keyFrame.second.getMarker() == marker )
+			removeKeys.emplace_back( keyFrame.first );
+	}
+	for ( auto& removeKey : removeKeys )
+		mKeyframesMap.erase( removeKey );
+
+	invalidateCache();
 }
 
 bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {

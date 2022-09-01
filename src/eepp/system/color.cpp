@@ -413,6 +413,16 @@ Color Color::fromString( std::string str ) {
 			}
 
 			return color;
+		} else if ( functionString.getName() == "rgba" &&
+					functionString.getParameters().size() >= 2 &&
+					isColorString( functionString.getParameters()[0] ) ) {
+			// Allow creating rgba( #AABBCC, 0.5 )
+			Color color( Color::fromString( functionString.getParameters()[0] ) );
+			Float val = 255;
+			if ( String::fromString<Float>( val, functionString.getParameters().at( 1 ) ) )
+				color.a = static_cast<Uint8>( eemax( eemin( 1.f, val ), 0.f ) * 255.f + 0.5f );
+
+			return color;
 		} else {
 			return Color::Transparent;
 		}

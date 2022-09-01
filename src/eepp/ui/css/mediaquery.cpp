@@ -177,6 +177,14 @@ bool MediaQueryList::applyMediaFeatures( const MediaFeatures& features ) {
 	return ret;
 }
 
+const Uint32& MediaQueryList::getMarker() const {
+	return mMarker;
+}
+
+void MediaQueryList::setMarker( const Uint32& marker ) {
+	mMarker = marker;
+}
+
 MediaQueryExpression::MediaQueryExpression() {
 	checkAsBool = false;
 	feature = media_feature_none;

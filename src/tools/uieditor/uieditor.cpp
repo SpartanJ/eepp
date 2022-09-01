@@ -307,7 +307,10 @@ std::pair<UITab*, UICodeEditor*> App::loadLayout( std::string file, bool updateC
 	mUIContainer->getContainer()->childsCloseAll();
 	mUISceneNode->update( Time::Zero );
 
-	mUISceneNode->loadLayoutFromFile( file, mUIContainer );
+	Uint32 marker = String::hash( updateCurrentLayout ? file : mCurrentLayout );
+
+	mUISceneNode->getStyleSheet().removeAllWithMarker( marker );
+	mUISceneNode->loadLayoutFromFile( file, mUIContainer, marker );
 
 	if ( updateCurrentLayout ) {
 		tryUpdateWatch( file );
@@ -1541,6 +1544,7 @@ void App::saveAll() {
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setAutoCloseXMLTags( true );
+	editor->setColorPreview( true );
 	doc.setCommand( "save-doc", [&] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [&] {
 		if ( mSplitter->curEditorExistsAndFocused() )

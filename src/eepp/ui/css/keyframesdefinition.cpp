@@ -25,7 +25,7 @@ KeyframesDefinition KeyframesDefinition::parseKeyframes(
 			continue;
 		}
 
-		def.keyframeBlocks[blockTime] = {blockTime, block->getProperties()};
+		def.keyframeBlocks[blockTime] = { blockTime, block->getProperties() };
 	}
 
 	return def;
@@ -46,6 +46,14 @@ KeyframesDefinition::getPropertyDefinitionList() const {
 		}
 	}
 	return propDefs;
+}
+
+const Uint32& KeyframesDefinition::getMarker() const {
+	return marker;
+}
+
+void KeyframesDefinition::setMarker( const Uint32& marker ) {
+	this->marker = marker;
 }
 
 const std::string& KeyframesDefinition::getName() const {

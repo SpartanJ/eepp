@@ -45,9 +45,16 @@ class EE_API StyleSheet {
 
 	static size_t nodeHash( const std::string& tag, const std::string& id );
 
-	void resetCache();
+	void invalidateCache();
+
+	const Uint32& getMarker() const;
+
+	void setMarker( const Uint32& marker );
+
+	void removeAllWithMarker( const Uint32& marker );
 
   protected:
+	Uint32 mMarker{ 0 };
 	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;
 	std::unordered_map<size_t, StyleSheetStyleVector> mNodeIndex;
 	MediaQueryList::vector mMediaQueryList;

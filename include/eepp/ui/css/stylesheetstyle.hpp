@@ -55,7 +55,12 @@ class EE_API StyleSheetStyle {
 
 	const AtRuleType& getAtRuleType() const;
 
+	const Uint32& getMarker() const;
+
+	void setMarker( const Uint32& marker );
+
   protected:
+	Uint32 mMarker{ 0 };
 	StyleSheetSelector mSelector;
 	StyleSheetProperties mProperties;
 	StyleSheetVariables mVariables;
