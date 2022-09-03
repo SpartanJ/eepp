@@ -12,3 +12,7 @@
 ../../src/modules/eterm/include/
 ../../src/modules/eterm/include/eterm/ui
 ../../src/modules/eterm/src/eterm/ui
+../../include/eepp/ui/tools
+../../src/eepp/ui/tools
+../../src/eepp/ui
+../../include/eepp/ui

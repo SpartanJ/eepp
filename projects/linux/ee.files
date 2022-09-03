@@ -352,6 +352,7 @@
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
 ../../include/eepp/ui/tools/uicodeeditorsplitter.hpp
 ../../include/eepp/ui/tools/uicolorpicker.hpp
+../../include/eepp/ui/tools/uidocfindreplace.hpp
 ../../include/eepp/ui/uiabstractview.hpp
 ../../include/eepp/ui/uibackgrounddrawable.hpp
 ../../include/eepp/ui/uiborderdrawable.hpp
@@ -431,6 +432,7 @@
 ../../include/eepp/ui/uiwidgettable.hpp
 ../../include/eepp/ui/uiwidgettablerow.hpp
 ../../include/eepp/ui/uiwindow.hpp
+../../include/eepp/ui/widgetcommandexecuter.hpp
 ../../include/eepp/version.hpp
 ../../include/eepp/window/base.hpp
 ../../include/eepp/window/clipboard.hpp
@@ -834,6 +836,7 @@
 ../../src/eepp/ui/tools/textureatlastextureregioneditor.hpp
 ../../src/eepp/ui/tools/uicodeeditorsplitter.cpp
 ../../src/eepp/ui/tools/uicolorpicker.cpp
+../../src/eepp/ui/tools/uidocfindreplace.cpp
 ../../src/eepp/ui/uiabstractview.cpp
 ../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp
@@ -908,6 +911,7 @@
 ../../src/eepp/ui/uiwidgettable.cpp
 ../../src/eepp/ui/uiwidgettablerow.cpp
 ../../src/eepp/ui/uiwindow.cpp
+../../src/eepp/ui/widgetcommandexecuter.hpp
 ../../src/eepp/window/backend/allegro5/cbackendal.hpp
 ../../src/eepp/window/backend/allegro5/cclipboardal.cpp
 ../../src/eepp/window/backend/allegro5/cclipboardal.hpp

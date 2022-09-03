@@ -161,7 +161,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mCurrentStyleSheet;
 	std::string mBaseStyleSheet;
 	Float mDisplayDPI{ 96.f };
-	size_t mMenuIconSize;
+	size_t mMenuIconSize{ 16 };
 	bool mLayoutExpanded{ true };
 	bool mUpdateLayout{ false };
 	bool mUpdateStyleSheet{ false };

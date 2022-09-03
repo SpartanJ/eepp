@@ -18,6 +18,10 @@ class Font;
 
 namespace EE { namespace UI {
 
+namespace Tools {
+class UIDocFindReplace;
+}
+
 class UICodeEditor;
 class UIWindow;
 class UIScrollBar;
@@ -554,6 +558,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 		String::HashType hash;
 	};
 	mutable std::map<Int64, TextLine> mTextCache;
+	Tools::UIDocFindReplace* mFindReplace{ nullptr };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -728,6 +733,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Text& getLineText( const Int64& lineNumber ) const;
 
 	void updateLineCache( const Int64& lineIndex );
+
+	void findReplace();
 };
 
 }} // namespace EE::UI

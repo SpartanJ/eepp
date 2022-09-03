@@ -55,6 +55,7 @@
 #include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/ui/widgetcommandexecuter.hpp>
 
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/propertyidset.hpp>
@@ -73,6 +74,7 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
+#include <eepp/ui/tools/uidocfindreplace.hpp>
 
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/model.hpp>

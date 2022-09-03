@@ -6,6 +6,7 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
+#include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiicon.hpp>
@@ -96,6 +97,7 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_KP_DIVIDE, KeyMod::getDefaultModifier() }, "toggle-line-comments" },
 		{ { KEY_UP, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-upper" },
 		{ { KEY_DOWN, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-lower" },
+		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
 	};
 }
 
@@ -114,7 +116,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ),
 	mPreviewColor( Color::Transparent ) {
-	mFlags |= UI_TAB_STOP;
+	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDS_POSITION;
 	setTextSelection( true );
 	setColorScheme( SyntaxColorScheme::getDefault() );
 	mVScrollBar = UIScrollBar::NewVertical();
@@ -501,6 +503,8 @@ void UICodeEditor::onDocumentLoaded() {
 
 void UICodeEditor::onDocumentChanged() {
 	invalidateLinesCache();
+	if ( mFindReplace )
+		mFindReplace->setDoc( mDoc );
 	DocEvent event( this, mDoc.get(), Event::OnDocumentChanged );
 	sendEvent( &event );
 }
@@ -2600,7 +2604,14 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "open-containing-folder", [&] { openContainingFolder(); } );
 	mDoc->setCommand( "copy-containing-folder-path", [&] { copyContainingFolderPath(); } );
 	mDoc->setCommand( "copy-file-path", [&] { copyFilePath(); } );
+	mDoc->setCommand( "find-replace", [&] { findReplace(); } );
 	mUnlockedCmd.insert( { "copy", "select-all" } );
+}
+
+void UICodeEditor::findReplace() {
+	if ( nullptr == mFindReplace )
+		mFindReplace = UIDocFindReplace::New( this, mDoc );
+	mFindReplace->show();
 }
 
 void UICodeEditor::registerKeybindings() {

@@ -128,7 +128,7 @@ UISplitter* UICodeEditorSplitter::splitterFromWidget( UIWidget* widget ) const {
 }
 
 UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
-	UICodeEditor* editor = UICodeEditor::NewOpt( false, true );
+	UICodeEditor* editor = UICodeEditor::NewOpt( true, true );
 	TextDocument& doc = editor->getDocument();
 	/* global commands */
 	doc.setCommand( "move-to-previous-line", [&] {

@@ -886,8 +886,8 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 void App::mainLoop() {
 	mWindow->getInput()->update();
 
-	if ( mWindow->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == mMsgBox &&
-		 onCloseRequestCallback( mWindow ) )
+	if ( mWindow->getInput()->isControlPressed() && mWindow->getInput()->isKeyUp( KEY_ESCAPE ) &&
+		 NULL == mMsgBox && onCloseRequestCallback( mWindow ) )
 		mWindow->close();
 
 	if ( mWindow->getInput()->isKeyUp( KEY_F3 ) || mWindow->getInput()->isKeyUp( KEY_BACKSLASH ) )
