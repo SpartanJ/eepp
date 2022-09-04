@@ -12,8 +12,7 @@ template <typename T> class UIDataBind {
 		Converter(
 			std::function<bool( const UIDataBind<T>*, T&, const std::string& )> toVal =
 				[]( const UIDataBind<T>*, T& val, const std::string& str ) {
-					auto base = std::is_same<T, bool>::value ? std::boolalpha : std::dec;
-					return String::fromString( val, str, base );
+					return String::fromString( val, str );
 				},
 			std::function<bool( const UIDataBind<T>*, std::string&, const T& )> fromVal =
 				[]( const UIDataBind<T>*, std::string& str, const T& val ) {
@@ -25,7 +24,19 @@ template <typename T> class UIDataBind {
 		std::function<bool( const UIDataBind<T>*, std::string&, const T& )> fromVal;
 	};
 
-	UIDataBind( T* t, std::set<UIWidget*> widgets, const Converter& converter = {},
+	static Converter converterBool() {
+		return Converter(
+			[]( const UIDataBind<T>* databind, T& val, const std::string& str ) -> bool {
+				val = StyleSheetProperty( databind->getPropertyDefinition(), str ).asBool();
+				return true;
+			},
+			[]( const UIDataBind<T>*, std::string& str, const T& val ) -> bool {
+				str = val ? "true" : "false";
+				return true;
+			} );
+	}
+
+	UIDataBind( T* t, const std::set<UIWidget*>& widgets, const Converter& converter = {},
 				const std::string& valueKey = "value" ) :
 		data( t ),
 		widgets( widgets ),
@@ -136,6 +147,16 @@ template <typename T> class UIDataBind {
 		for ( auto widget : widgets )
 			widget->applyProperty( prop );
 	}
+};
+
+class UIDataBindBool : public UIDataBind<bool> {
+  public:
+	UIDataBindBool( bool* t, const std::set<UIWidget*>& widgets,
+					const std::string& valueKey = "value" ) :
+		UIDataBind<bool>( t, widgets, UIDataBind<bool>::converterBool(), valueKey ) {}
+
+	UIDataBindBool( bool* t, UIWidget* widget, const std::string& valueKey = "value" ) :
+		UIDataBind<bool>( t, widget, UIDataBind<bool>::converterBool(), valueKey ) {}
 };
 
 }} // namespace EE::UI

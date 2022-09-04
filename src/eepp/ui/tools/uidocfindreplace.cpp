@@ -296,12 +296,12 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mReplaceInput->addEventListener( Event::OnTabNavigate,
 									 [&]( const Event* ) { mFindInput->setFocus(); } );
 
-	mDataBinds.emplace_back( std::unique_ptr<UIDataBind<bool>>(
-		new UIDataBind<bool>( &mSearchState.caseSensitive, mCaseSensitive ) ) );
-	mDataBinds.emplace_back( std::unique_ptr<UIDataBind<bool>>(
-		new UIDataBind<bool>( &mSearchState.wholeWord, mWholeWord ) ) );
-	mDataBinds.emplace_back( std::unique_ptr<UIDataBind<bool>>(
-		new UIDataBind<bool>( &mSearchState.escapeSequences, mEscapeSequences ) ) );
+	mDataBinds.emplace_back( std::unique_ptr<UIDataBindBool>(
+		new UIDataBindBool( &mSearchState.caseSensitive, mCaseSensitive ) ) );
+	mDataBinds.emplace_back( std::unique_ptr<UIDataBindBool>(
+		new UIDataBindBool( &mSearchState.wholeWord, mWholeWord ) ) );
+	mDataBinds.emplace_back( std::unique_ptr<UIDataBindBool>(
+		new UIDataBindBool( &mSearchState.escapeSequences, mEscapeSequences ) ) );
 	UIDataBind<TextDocument::FindReplaceType>::Converter luaPatternConverter(
 		[]( const UIDataBind<TextDocument::FindReplaceType>* databind,
 			TextDocument::FindReplaceType& val, const std::string& str ) -> bool {

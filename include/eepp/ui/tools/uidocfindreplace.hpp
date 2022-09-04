@@ -63,7 +63,7 @@ class EE_API UIDocFindReplace : public UILinearLayout, public WidgetCommandExecu
 	UIWidget* mToggle{ nullptr };
 	UIWidget* mReplaceBox{ nullptr };
 	std::shared_ptr<Doc::TextDocument> mDoc;
-	std::vector<std::unique_ptr<UIDataBind<bool>>> mDataBinds;
+	std::vector<std::unique_ptr<UIDataBindBool>> mDataBinds;
 	std::unique_ptr<UIDataBind<TextDocument::FindReplaceType>> mPatternBind;
 
 	UIDocFindReplace(

@@ -1177,15 +1177,13 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
-
+		links { "efsw-static", "pugixml-static" }
 		if not os.is_real("windows") and not os.is_real("haiku") then
 			links { "pthread" }
 		end
 		if os.is_real("macosx") then
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		end
-
-		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )
 
