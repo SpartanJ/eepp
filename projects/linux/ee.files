@@ -361,6 +361,7 @@
 ../../include/eepp/ui/uicodeeditor.hpp
 ../../include/eepp/ui/uicombobox.hpp
 ../../include/eepp/ui/uiconsole.hpp
+../../include/eepp/ui/uidatabind.hpp
 ../../include/eepp/ui/uidropdownlist.hpp
 ../../include/eepp/ui/uieventdispatcher.hpp
 ../../include/eepp/ui/uifiledialog.hpp

@@ -135,4 +135,35 @@ void UIMenuRadioButton::onStateChange() {
 	setActive( mActive );
 }
 
+std::string UIMenuRadioButton::getPropertyString( const PropertyDefinition* propertyDef,
+												  const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Selected:
+		case PropertyId::Value:
+			return isActive() ? "true" : "false";
+			break;
+		default:
+			return UIMenuItem::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+bool UIMenuRadioButton::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Selected:
+		case PropertyId::Value:
+			setActive( attribute.asBool() );
+			break;
+		default:
+			return UIMenuItem::applyProperty( attribute );
+	}
+
+	return true;
+}
+
 }} // namespace EE::UI

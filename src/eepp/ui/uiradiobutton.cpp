@@ -280,6 +280,7 @@ std::string UIRadioButton::getPropertyString( const PropertyDefinition* property
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Selected:
+		case PropertyId::Value:
 			return isActive() ? "true" : "false";
 			break;
 		default:
@@ -293,6 +294,7 @@ bool UIRadioButton::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Selected:
+		case PropertyId::Value:
 			setActive( attribute.asBool() );
 			break;
 		default:

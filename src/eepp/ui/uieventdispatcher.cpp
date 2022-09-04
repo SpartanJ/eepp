@@ -37,9 +37,11 @@ void UIEventDispatcher::inputCallback( InputEvent* Event ) {
 
 void UIEventDispatcher::checkTabPress( const Uint32& KeyCode ) {
 	eeASSERT( NULL != mFocusNode );
-	Window::Window* win = mFocusNode->getSceneNode()->getWindow();
-	if ( KeyCode == KEY_TAB && mFocusNode->isWidget() && NULL != win && !mJustGainedFocus ) {
-		mFocusNode->asType<UIWidget>()->onTabPress();
+	if ( KeyCode == KEY_TAB ) {
+		Window::Window* win = mFocusNode->getSceneNode()->getWindow();
+		if ( mFocusNode->isWidget() && NULL != win && !mJustGainedFocus ) {
+			mFocusNode->asType<UIWidget>()->onTabPress();
+		}
 	}
 }
 

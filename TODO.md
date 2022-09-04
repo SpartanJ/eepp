@@ -19,7 +19,7 @@
 
 * Implement a rich text view.
 
-* Provide some facilities for basic data-binding.
+* Provide some facilities for basic data-binding (WIP).
 
 ### CSS
 
@@ -28,8 +28,6 @@
 * Add support for [calc](https://developer.mozilla.org/en-US/docs/Web/CSS/calc).
 
 ### UICodeEditor
-
-* Implement and embed a default find-replace widget inside the editor.
 
 * Add better support for double-width characters.
 

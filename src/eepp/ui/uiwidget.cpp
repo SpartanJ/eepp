@@ -260,6 +260,14 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	}
 }
 
+Uint32 UIWidget::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_TAB && isTabStop() ) {
+		Node::onKeyDown( event );
+		return 1;
+	}
+	return Node::onKeyDown( event );
+}
+
 Vector2f UIWidget::getTooltipPosition() {
 	EventDispatcher* eventDispatcher = getEventDispatcher();
 	UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
@@ -1774,6 +1782,10 @@ bool UIWidget::isTabStop() const {
 	return ( mFlags & UI_TAB_STOP ) != 0;
 }
 
+void UIWidget::setTabStop() {
+	mFlags |= UI_TAB_STOP;
+}
+
 UIWidget* UIWidget::getNextWidget() const {
 	UIWidget* found = NULL;
 	UIWidget* possible = NULL;
@@ -1844,6 +1856,8 @@ void UIWidget::onTabPress() {
 			node->setFocus();
 			sendCommonEvent( Event::OnTabNavigate );
 		}
+	} else {
+		sendCommonEvent( Event::OnTabNavigate );
 	}
 }
 

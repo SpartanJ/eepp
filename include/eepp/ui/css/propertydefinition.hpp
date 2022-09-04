@@ -91,6 +91,7 @@ enum class PropertyId : Uint32 {
 	TabSeparation = String::hash( "tab-separation" ),
 	TabHeight = String::hash( "tab-height" ),
 	Selected = String::hash( "selected" ),
+	Checked = String::hash( "checked" ),
 	PopUpToRoot = String::hash( "popup-to-root" ),
 	MaxVisibleItems = String::hash( "max-visible-items" ),
 	SelectedIndex = String::hash( "selected-index" ),

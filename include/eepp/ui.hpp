@@ -82,4 +82,6 @@
 #include <eepp/ui/models/sortingproxymodel.hpp>
 #include <eepp/ui/models/widgettreemodel.hpp>
 
+#include <eepp/ui/uidatabind.hpp>
+
 #endif

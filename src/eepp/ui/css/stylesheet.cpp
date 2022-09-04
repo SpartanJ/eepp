@@ -98,6 +98,14 @@ void StyleSheet::removeAllWithMarker( const Uint32& marker ) {
 	invalidateCache();
 }
 
+bool StyleSheet::markerExists( const Uint32& marker ) const {
+	for ( auto node : mNodes ) {
+		if ( node->getMarker() == marker )
+			return true;
+	}
+	return false;
+}
+
 bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 	const std::string& id = style->getSelector().getSelectorId();
 	const std::string& tag = style->getSelector().getSelectorTagName();

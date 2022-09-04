@@ -1,14 +1,15 @@
-#include "eepp/window/clipboard.hpp"
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
-const char DOC_FIND_REPLACE_XML[] = R"xml(
-<style>
-<![CDATA[
+const char* DOC_FIND_REPLACE_CSS_MARKER = "ce_find_replace_box_marker";
+
+const char DOC_FIND_REPLACE_CSS[] = R"css(
 .ce_find_replace_box {
 	background-color: var(--list-back);
 }
@@ -95,8 +96,13 @@ const char DOC_FIND_REPLACE_XML[] = R"xml(
 .ce_find_replace_box pushbutton.replace-all-button {
 	icon: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16' fill='#ffffff'><path fill-rule='evenodd' clip-rule='evenodd' d='M11.6 2.677c.147-.31.356-.465.626-.465.248 0 .44.118.573.353.134.236.201.557.201.966 0 .443-.078.798-.235 1.067-.156.268-.365.402-.627.402-.237 0-.416-.125-.537-.374h-.008v.31H11V1h.593v1.677h.008zm-.016 1.1a.78.78 0 0 0 .107.426c.071.113.163.169.274.169.136 0 .24-.072.314-.216.075-.145.113-.35.113-.615 0-.22-.035-.39-.104-.514-.067-.124-.164-.187-.29-.187-.12 0-.219.062-.297.185a.886.886 0 0 0-.117.48v.272zM4.12 7.695L2 5.568l.662-.662 1.006 1v-1.51A1.39 1.39 0 0 1 5.055 3H7.4v.905H5.055a.49.49 0 0 0-.468.493l.007 1.5.949-.944.656.656-2.08 2.085zM9.356 4.93H10V3.22C10 2.408 9.685 2 9.056 2c-.135 0-.285.024-.45.073a1.444 1.444 0 0 0-.388.167v.665c.237-.203.487-.304.75-.304.261 0 .392.156.392.469l-.6.103c-.506.086-.76.406-.76.961 0 .263.061.473.183.631A.61.61 0 0 0 8.69 5c.29 0 .509-.16.657-.48h.009v.41zm.004-1.355v.193a.75.75 0 0 1-.12.436.368.368 0 0 1-.313.17.276.276 0 0 1-.22-.095.38.38 0 0 1-.08-.248c0-.222.11-.351.332-.389l.4-.067zM7 12.93h-.644v-.41h-.009c-.148.32-.367.48-.657.48a.61.61 0 0 1-.507-.235c-.122-.158-.183-.368-.183-.63 0-.556.254-.876.76-.962l.6-.103c0-.313-.13-.47-.392-.47-.263 0-.513.102-.75.305v-.665c.095-.063.224-.119.388-.167.165-.049.315-.073.45-.073.63 0 .944.407.944 1.22v1.71zm-.64-1.162v-.193l-.4.068c-.222.037-.333.166-.333.388 0 .1.027.183.08.248a.276.276 0 0 0 .22.095.368.368 0 0 0 .312-.17c.08-.116.12-.26.12-.436zM9.262 13c.321 0 .568-.058.738-.173v-.71a.9.9 0 0 1-.552.207.619.619 0 0 1-.5-.215c-.12-.145-.181-.345-.181-.598 0-.26.063-.464.189-.612a.644.644 0 0 1 .516-.223c.194 0 .37.069.528.207v-.749c-.129-.09-.338-.134-.626-.134-.417 0-.751.14-1.001.422-.249.28-.373.662-.373 1.148 0 .42.116.764.349 1.03.232.267.537.4.913.4zM2 9l1-1h9l1 1v5l-1 1H3l-1-1V9zm1 0v5h9V9H3zm3-2l1-1h7l1 1v5l-1 1V7H6z'/></svg>");
 }
-]]>
-</style>
+.ce_find_replace_box .input-find.error,
+.ce_find_replace_box .input-replace.error {
+	border-color: #ff4040;
+}
+)css";
+
+const char DOC_FIND_REPLACE_XML[] = R"xml(
 <hbox class="ce_find_replace_box" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="right|top" layout-margin-right="32dp">
 	<!-- <Widget class="expander" layout_width="2dp" layout_height="match_parent" /> -->
 	<button class="find_replace_toggle" layout_width="16dp" layout_height="wrap_content" padding="2dp" layout_gravity="center" />
@@ -159,8 +165,17 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 	getKeyBindings().addKeybindsStringUnordered( keybindings );
 
+	if ( !parent->getUISceneNode()->getStyleSheet().markerExists(
+			 String::hash( DOC_FIND_REPLACE_CSS_MARKER ) ) ) {
+		CSS::StyleSheetParser parser;
+		parser.loadFromMemory( (const Uint8*)DOC_FIND_REPLACE_CSS,
+							   eeARRAY_SIZE( DOC_FIND_REPLACE_CSS ) );
+		parent->getUISceneNode()->getStyleSheet().combineStyleSheet( parser.getStyleSheet() );
+	}
+
 	parent->getUISceneNode()->loadLayoutFromMemory( DOC_FIND_REPLACE_XML,
 													eeARRAY_SIZE( DOC_FIND_REPLACE_XML ), this );
+
 	setParent( parent );
 
 	mReplaceBox = querySelector( ".replace_box" );
@@ -229,6 +244,19 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	addCommand( "toggle-lua-pattern",
 				[&] { mLuaPattern->setSelected( !mLuaPattern->isSelected() ); } );
 
+	mCaseSensitive->setTooltipText( mCaseSensitive->getTooltipText() + " (" +
+									getKeyBindings().getCommandKeybindString( "change-case" ) +
+									")" );
+	mWholeWord->setTooltipText( mWholeWord->getTooltipText() + " (" +
+								getKeyBindings().getCommandKeybindString( "change-whole-word" ) +
+								")" );
+	mEscapeSequences->setTooltipText(
+		mEscapeSequences->getTooltipText() + " (" +
+		getKeyBindings().getCommandKeybindString( "change-escape-sequence" ) + ")" );
+	mLuaPattern->setTooltipText( mLuaPattern->getTooltipText() + " (" +
+								 getKeyBindings().getCommandKeybindString( "toggle-lua-pattern" ) +
+								 ")" );
+
 	mReplaceInput = querySelector<UITextInput>( ".input-replace" );
 
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
@@ -254,8 +282,42 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	addClickListener( querySelector( ".ce_find_replace_box .replace-all-button" ), "replace-all" );
 	addClickListener( querySelector( ".ce_find_replace_box .exit-button" ), "close-find-replace" );
 
+	mFindInput->setTabStop();
+	mReplaceInput->setTabStop();
+
+	mFindInput->addEventListener( Event::OnTabNavigate, [&]( const Event* ) {
+		if ( !mToggle->hasClass( "enabled" ) ) {
+			mToggle->addClass( "enabled" );
+			mReplaceBox->addClass( "enabled" );
+		}
+		mReplaceInput->setFocus();
+	} );
+
 	mReplaceInput->addEventListener( Event::OnTabNavigate,
 									 [&]( const Event* ) { mFindInput->setFocus(); } );
+
+	mDataBinds.emplace_back( std::unique_ptr<UIDataBind<bool>>(
+		new UIDataBind<bool>( &mSearchState.caseSensitive, mCaseSensitive ) ) );
+	mDataBinds.emplace_back( std::unique_ptr<UIDataBind<bool>>(
+		new UIDataBind<bool>( &mSearchState.wholeWord, mWholeWord ) ) );
+	mDataBinds.emplace_back( std::unique_ptr<UIDataBind<bool>>(
+		new UIDataBind<bool>( &mSearchState.escapeSequences, mEscapeSequences ) ) );
+	UIDataBind<TextDocument::FindReplaceType>::Converter luaPatternConverter(
+		[]( const UIDataBind<TextDocument::FindReplaceType>* databind,
+			TextDocument::FindReplaceType& val, const std::string& str ) -> bool {
+			val = StyleSheetProperty( databind->getPropertyDefinition(), str ).asBool()
+					  ? TextDocument::FindReplaceType::LuaPattern
+					  : TextDocument::FindReplaceType::Normal;
+			return true;
+		},
+		[]( const UIDataBind<TextDocument::FindReplaceType>*, std::string& str,
+			const TextDocument::FindReplaceType& val ) -> bool {
+			str = val == TextDocument::FindReplaceType::LuaPattern ? "true" : "false";
+			return true;
+		} );
+	mPatternBind = std::unique_ptr<UIDataBind<TextDocument::FindReplaceType>>(
+		new UIDataBind<TextDocument::FindReplaceType>( &mSearchState.type, mLuaPattern,
+													   luaPatternConverter ) );
 
 	setVisible( false );
 
@@ -267,7 +329,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	} );
 }
 
-void UIDocFindReplace::show() {
+void UIDocFindReplace::show( bool expanded ) {
 	if ( !mReady ) {
 		runOnMainThread( [&] { show(); } );
 		return;
@@ -283,25 +345,19 @@ void UIDocFindReplace::show() {
 
 	UICodeEditor* editor =
 		getParent()->isType( UI_TYPE_CODEEDITOR ) ? getParent()->asType<UICodeEditor>() : nullptr;
+
 	mSearchState.range = TextRange();
-	mSearchState.caseSensitive = mCaseSensitive->isSelected();
-	mSearchState.wholeWord = mWholeWord->isSelected();
-	mSearchState.escapeSequences = mEscapeSequences->isSelected();
-	mSearchState.type = mLuaPattern->isSelected() ? TextDocument::FindReplaceType::LuaPattern
-												  : TextDocument::FindReplaceType::Normal;
 
 	mFindInput->getDocument().selectAll();
 	mFindInput->setFocus();
 
-	const TextDocument& doc = *mDoc;
+	if ( mDoc->getSelection().hasSelection() ) {
+		String text = mDoc->getSelectedText();
 
-	if ( doc.getSelection().hasSelection() ) {
-		String text = doc.getSelectedText();
+		if ( !mDoc->getSelection().inSameLine() )
+			mSearchState.range = mDoc->getSelection( true );
 
-		if ( !doc.getSelection().inSameLine() )
-			mSearchState.range = doc.getSelection( true );
-
-		if ( !text.empty() && doc.getSelection().inSameLine() ) {
+		if ( !text.empty() && mDoc->getSelection().inSameLine() ) {
 			mFindInput->setText( text );
 			mFindInput->getDocument().selectAll();
 		} else if ( !mFindInput->getText().empty() ) {
@@ -311,10 +367,18 @@ void UIDocFindReplace::show() {
 
 	mSearchState.text = mFindInput->getText();
 
+	if ( !expanded ) {
+		mToggle->removeClass( "enabled" );
+		mReplaceBox->removeClass( "enabled" );
+	} else {
+		mToggle->addClass( "enabled" );
+		mReplaceBox->addClass( "enabled" );
+	}
+
 	if ( editor ) {
 		editor->setHighlightTextRange( mSearchState.range );
 		editor->setHighlightWord( mSearchState.text );
-		editor->getDocument().setActiveClient( editor );
+		mDoc->setActiveClient( editor );
 	}
 }
 
@@ -342,12 +406,10 @@ bool UIDocFindReplace::findPrevText( SearchState& search ) {
 		search.text = mLastSearch;
 
 	mLastSearch = search.text;
-	TextDocument& doc = *mDoc;
-
-	TextRange range = doc.getDocRange();
-	TextPosition from = doc.getSelection( true ).start();
+	TextRange range = mDoc->getDocRange();
+	TextPosition from = mDoc->getSelection( true ).start();
 	if ( search.range.isValid() ) {
-		range = doc.sanitizeRange( search.range ).normalized();
+		range = mDoc->sanitizeRange( search.range ).normalized();
 		from = from < range.start() ? range.start() : from;
 	}
 
@@ -355,17 +417,17 @@ bool UIDocFindReplace::findPrevText( SearchState& search ) {
 	if ( search.escapeSequences )
 		txt.unescape();
 
-	TextRange found = doc.findLast( txt, from, search.caseSensitive, search.wholeWord, search.type,
-									search.range );
+	TextRange found = mDoc->findLast( txt, from, search.caseSensitive, search.wholeWord,
+									  search.type, search.range );
 	if ( found.isValid() ) {
-		doc.setSelection( found );
+		mDoc->setSelection( found );
 		mFindInput->removeClass( "error" );
 		return true;
 	} else {
-		found = doc.findLast( txt, range.end(), search.caseSensitive, search.wholeWord, search.type,
-							  range );
+		found = mDoc->findLast( txt, range.end(), search.caseSensitive, search.wholeWord,
+								search.type, range );
 		if ( found.isValid() ) {
-			doc.setSelection( found );
+			mDoc->setSelection( found );
 			mFindInput->removeClass( "error" );
 			return true;
 		}
@@ -379,12 +441,11 @@ bool UIDocFindReplace::findNextText( SearchState& search ) {
 		search.text = mLastSearch;
 
 	mLastSearch = search.text;
-	TextDocument& doc = *mDoc;
 
-	TextRange range = doc.getDocRange();
-	TextPosition from = doc.getSelection( true ).end();
+	TextRange range = mDoc->getDocRange();
+	TextPosition from = mDoc->getSelection( true ).end();
 	if ( search.range.isValid() ) {
-		range = doc.sanitizeRange( search.range ).normalized();
+		range = mDoc->sanitizeRange( search.range ).normalized();
 		from = from < range.start() ? range.start() : from;
 	}
 
@@ -393,16 +454,16 @@ bool UIDocFindReplace::findNextText( SearchState& search ) {
 		txt.unescape();
 
 	TextRange found =
-		doc.find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
+		mDoc->find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
 	if ( found.isValid() ) {
-		doc.setSelection( found.reversed() );
+		mDoc->setSelection( found.reversed() );
 		mFindInput->removeClass( "error" );
 		return true;
 	} else {
-		found = doc.find( txt, range.start(), search.caseSensitive, search.wholeWord, search.type,
-						  range );
+		found = mDoc->find( txt, range.start(), search.caseSensitive, search.wholeWord, search.type,
+							range );
 		if ( found.isValid() ) {
-			doc.setSelection( found.reversed() );
+			mDoc->setSelection( found.reversed() );
 			mFindInput->removeClass( "error" );
 			return true;
 		}
@@ -416,10 +477,9 @@ int UIDocFindReplace::replaceAll( SearchState& search, const String& replace ) {
 		search.text = mLastSearch;
 	if ( search.text.empty() )
 		return 0;
-	TextDocument& doc = *mDoc;
 
 	mLastSearch = search.text;
-	TextPosition startedPosition = doc.getSelection().start();
+	TextPosition startedPosition = mDoc->getSelection().start();
 
 	String txt( search.text );
 	String repl( replace );
@@ -428,9 +488,9 @@ int UIDocFindReplace::replaceAll( SearchState& search, const String& replace ) {
 		repl.unescape();
 	}
 
-	int count = doc.replaceAll( txt, repl, search.caseSensitive, search.wholeWord, search.type,
-								search.range );
-	doc.setSelection( startedPosition );
+	int count = mDoc->replaceAll( txt, repl, search.caseSensitive, search.wholeWord, search.type,
+								  search.range );
+	mDoc->setSelection( startedPosition );
 	return count;
 }
 
@@ -443,7 +503,6 @@ bool UIDocFindReplace::findAndReplace( SearchState& search, const String& replac
 		search.text = mLastSearch;
 	if ( search.text.empty() )
 		return false;
-	TextDocument& doc = *mDoc;
 
 	mLastSearch = search.text;
 
@@ -454,7 +513,7 @@ bool UIDocFindReplace::findAndReplace( SearchState& search, const String& replac
 		repl.unescape();
 	}
 
-	if ( doc.hasSelection() && doc.getSelectedText() == txt ) {
+	if ( mDoc->hasSelection() && mDoc->getSelectedText() == txt ) {
 		mDoc->replaceSelection( repl );
 		return true;
 	} else {

@@ -53,6 +53,8 @@ class EE_API StyleSheet {
 
 	void removeAllWithMarker( const Uint32& marker );
 
+	bool markerExists( const Uint32& marker ) const;
+
   protected:
 	Uint32 mMarker{ 0 };
 	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;

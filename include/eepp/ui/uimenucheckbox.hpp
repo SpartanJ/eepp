@@ -25,6 +25,11 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 
 	void switchActive();
 
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) const;
+
   protected:
 	bool mActive;
 	UISkin* mSkinActive;

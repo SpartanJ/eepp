@@ -122,4 +122,40 @@ void UIMenuCheckBox::onStateChange() {
 	setActive( mActive );
 }
 
+bool UIMenuCheckBox::applyProperty( const StyleSheetProperty& attribute ) {
+	bool attributeSet = true;
+
+	if ( attribute.getPropertyDefinition() == NULL ) {
+		return false;
+	}
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Selected:
+		case PropertyId::Checked:
+		case PropertyId::Value:
+			setActive( attribute.asBool() );
+			break;
+		default:
+			attributeSet = UIPushButton::applyProperty( attribute );
+			break;
+	}
+
+	return attributeSet;
+}
+
+std::string UIMenuCheckBox::getPropertyString( const PropertyDefinition* propertyDef,
+											   const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Selected:
+		case PropertyId::Checked:
+		case PropertyId::Value:
+			return isActive() ? "true" : "false";
+		default:
+			return UIPushButton::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
 }} // namespace EE::UI

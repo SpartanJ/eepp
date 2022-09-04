@@ -215,6 +215,8 @@ class EE_API UIWidget : public UINode {
 
 	bool isTabStop() const;
 
+	void setTabStop();
+
 	UIWidget* getNextTabWidget() const;
 
 	bool hasPseudoClass( const std::string& pseudoCls ) const;
@@ -253,6 +255,8 @@ class EE_API UIWidget : public UINode {
 	void updatePseudoClasses();
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32& Flags );
 

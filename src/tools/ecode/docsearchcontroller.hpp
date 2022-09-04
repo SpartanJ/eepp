@@ -27,11 +27,16 @@ class UISearchBar;
 class DocSearchController {
   public:
 	static std::unordered_map<std::string, std::string> getDefaultKeybindings() {
-		return { { "mod+g", "repeat-find" },		   { "escape", "close-searchbar" },
-				 { "mod+r", "replace-selection" },	   { "mod+shift+n", "find-and-replace" },
-				 { "mod+shift+r", "replace-all" },	   { "mod+s", "change-case" },
-				 { "mod+w", "change-whole-word" },	   { "mod+l", "toggle-lua-pattern" },
-				 { "mod+e", "change-escape-sequence" } };
+		return { { "mod+g", "repeat-find" },
+				 { "escape", "close-searchbar" },
+				 { "mod+r", "replace-selection" },
+				 { "mod+shift+n", "find-and-replace" },
+				 { "mod+shift+r", "replace-all" },
+				 { "mod+s", "change-case" },
+				 { "mod+w", "change-whole-word" },
+				 { "mod+l", "toggle-lua-pattern" },
+				 { "mod+e", "change-escape-sequence" },
+				 { "mod+shift+g", "find-prev" } };
 	}
 
 	DocSearchController( UICodeEditorSplitter*, App* app );
@@ -62,7 +67,13 @@ class DocSearchController {
 
   protected:
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };
+	UITextInput* mFindInput{ nullptr };
+	UITextInput* mReplaceInput{ nullptr };
 	UISearchBar* mSearchBarLayout{ nullptr };
+	UICheckBox* mCaseSensitiveChk{ nullptr };
+	UICheckBox* mEscapeSequenceChk{ nullptr };
+	UICheckBox* mWholeWordChk{ nullptr };
+	UICheckBox* mLuaPatternChk{ nullptr };
 	App* mApp{ nullptr };
 	SearchState mSearchState;
 	String mLastSearch;

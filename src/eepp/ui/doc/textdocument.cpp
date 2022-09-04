@@ -1579,11 +1579,13 @@ TextRange TextDocument::findTextLast( String text, TextPosition from, const bool
 		if ( i == from.line() ) {
 			col = caseSensitive
 					  ? findLastType( line( i ).getText().substr( 0, from.column() ), text, type )
-					  : findLastType( String::toLower( line( i ).getText() ), text, type );
+					  : findLastType(
+							String::toLower( line( i ).getText().substr( 0, from.column() ) ), text,
+							type );
 		} else if ( i == to.line() ) {
 			col = caseSensitive
 					  ? findLastType( line( i ).getText().substr( to.column() ), text, type )
-					  : findLastType( String::toLower( line( i ).getText() ).substr( to.column() ),
+					  : findLastType( String::toLower( line( i ).getText().substr( to.column() ) ),
 									  text, type );
 			if ( String::StringType::npos != col.first ) {
 				col.first += to.column();

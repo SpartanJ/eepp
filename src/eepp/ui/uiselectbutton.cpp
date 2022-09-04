@@ -38,6 +38,7 @@ void UISelectButton::select() {
 		messagePost( &tMsg );
 
 		sendCommonEvent( Event::OnSelectionChanged );
+		onValueChange();
 	}
 }
 
@@ -50,6 +51,7 @@ void UISelectButton::unselect() {
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
 		sendCommonEvent( Event::OnSelectionChanged );
+		onValueChange();
 	}
 
 	popState( UIState::StateSelected );
@@ -84,6 +86,7 @@ bool UISelectButton::applyProperty( const StyleSheetProperty& attribute ) {
 			setSelectOnClick( attribute.asBool() );
 			break;
 		case PropertyId::Selected:
+		case PropertyId::Value:
 			setSelected( attribute.asBool() );
 			break;
 		default:
@@ -103,6 +106,7 @@ std::string UISelectButton::getPropertyString( const PropertyDefinition* propert
 		case PropertyId::SelectOnClick:
 			return hasSelectOnClick() ? "true" : "false";
 		case PropertyId::Selected:
+		case PropertyId::Value:
 			return isSelected() ? "true" : "false";
 		default:
 			return UIPushButton::getPropertyString( propertyDef, propertyIndex );

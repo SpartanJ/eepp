@@ -225,6 +225,8 @@ std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Selected:
+		case PropertyId::Checked:
+		case PropertyId::Value:
 			return isChecked() ? "true" : "false";
 		default:
 			return UITextView::getPropertyString( propertyDef, propertyIndex );
@@ -237,6 +239,8 @@ bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Selected:
+		case PropertyId::Checked:
+		case PropertyId::Value:
 			setChecked( attribute.asBool() );
 			break;
 		default:
