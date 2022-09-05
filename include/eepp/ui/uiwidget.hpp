@@ -206,6 +206,8 @@ class EE_API UIWidget : public UINode {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
 	bool isSceneNodeLoading() const;
 
 	void reportStyleStateChangeRecursive( bool disableAnimations = false,

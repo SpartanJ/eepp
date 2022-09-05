@@ -2,6 +2,7 @@
 #define EE_UI_UIDATABIND_HPP
 
 #include <eepp/ui/uiwidget.hpp>
+#include <memory>
 #include <set>
 
 namespace EE { namespace UI {
@@ -9,20 +10,24 @@ namespace EE { namespace UI {
 template <typename T> class UIDataBind {
   public:
 	struct Converter {
-		Converter(
-			std::function<bool( const UIDataBind<T>*, T&, const std::string& )> toVal =
-				[]( const UIDataBind<T>*, T& val, const std::string& str ) {
-					return String::fromString( val, str );
-				},
-			std::function<bool( const UIDataBind<T>*, std::string&, const T& )> fromVal =
-				[]( const UIDataBind<T>*, std::string& str, const T& val ) {
-					str = String::toString( val );
-					return true;
-				} ) :
+		Converter() {}
+
+		Converter( std::function<bool( const UIDataBind<T>*, T&, const std::string& )> toVal,
+				   std::function<bool( const UIDataBind<T>*, std::string&, const T& )> fromVal ) :
 			toVal( toVal ), fromVal( fromVal ) {}
+
 		std::function<bool( const UIDataBind<T>*, T&, const std::string& )> toVal;
 		std::function<bool( const UIDataBind<T>*, std::string&, const T& )> fromVal;
 	};
+
+	static Converter converterDefault() {
+		return Converter( []( const UIDataBind<T>*, T& val,
+							  const std::string& str ) { return String::fromString( val, str ); },
+						  []( const UIDataBind<T>*, std::string& str, const T& val ) {
+							  str = String::toString( val );
+							  return true;
+						  } );
+	}
 
 	static Converter converterBool() {
 		return Converter(
@@ -36,23 +41,42 @@ template <typename T> class UIDataBind {
 			} );
 	}
 
-	UIDataBind( T* t, const std::set<UIWidget*>& widgets, const Converter& converter = {},
-				const std::string& valueKey = "value" ) :
-		data( t ),
-		widgets( widgets ),
-		property( StyleSheetSpecification::instance()->getProperty( valueKey ) ),
-		converter( converter ) {
-		for ( auto widget : widgets )
-			bindListeners( widget );
-		set( *data );
+	static std::unique_ptr<UIDataBind<T>>
+	New( T* t, const std::set<UIWidget*>& widgets,
+		 const Converter& converter = UIDataBind<T>::converterDefault(),
+		 const std::string& valueKey = "value" ) {
+		return std::unique_ptr<UIDataBind<T>>(
+			new UIDataBind<T>( t, widgets, converter, valueKey ) );
 	}
 
-	UIDataBind( T* t, UIWidget* widget, const Converter& converter = {},
-				const std::string& valueKey = "value" ) :
-		data( t ),
-		widgets( { widget } ),
-		property( StyleSheetSpecification::instance()->getProperty( valueKey ) ),
-		converter( converter ) {
+	static std::unique_ptr<UIDataBind<T>>
+	New( T* t, UIWidget* widget, const Converter& converter = UIDataBind<T>::converterDefault(),
+		 const std::string& valueKey = "value" ) {
+		return std::unique_ptr<UIDataBind<T>>(
+			new UIDataBind<T>( t, widget, converter, valueKey ) );
+	}
+
+	UIDataBind() {}
+
+	UIDataBind( T* t, const std::set<UIWidget*>& widgets,
+				const Converter& converter = UIDataBind<T>::converterDefault(),
+				const std::string& valueKey = "value" ) {
+		init( t, widgets, converter, valueKey );
+	}
+
+	UIDataBind( T* t, UIWidget* widget,
+				const Converter& converter = UIDataBind<T>::converterDefault(),
+				const std::string& valueKey = "value" ) {
+		init( t, { widget }, converter, valueKey );
+	}
+
+	void init( T* t, const std::set<UIWidget*>& widgets,
+			   const Converter& converter = UIDataBind<T>::converterDefault(),
+			   const std::string& valueKey = "value" ) {
+		data = t;
+		this->widgets = widgets;
+		this->property = StyleSheetSpecification::instance()->getProperty( valueKey );
+		this->converter = converter;
 		for ( auto widget : widgets )
 			bindListeners( widget );
 		set( *data );
@@ -66,6 +90,20 @@ template <typename T> class UIDataBind {
 	}
 
 	const T& get() const { return *data; }
+
+	void reset() {
+		for ( auto widget : widgets ) {
+			widget->removeEventListener( valueCbs[widget] );
+			widget->removeEventListener( closeCbs[widget] );
+		}
+		widgets.clear();
+		valueCbs.clear();
+		closeCbs.clear();
+		converter = Converter();
+		inSetValue = false;
+		property = nullptr;
+		data = nullptr;
+	}
 
 	void bind( UIWidget* widget ) {
 		bindListeners( widget );
@@ -85,17 +123,12 @@ template <typename T> class UIDataBind {
 		widgets.erase( widget );
 	}
 
-	~UIDataBind() {
-		for ( auto widget : widgets ) {
-			widget->removeEventListener( valueCbs[widget] );
-			widget->removeEventListener( closeCbs[widget] );
-		}
-	}
+	~UIDataBind() { reset(); }
 
 	const PropertyDefinition* getPropertyDefinition() const { return property; }
 
   protected:
-	T* data;
+	T* data{ nullptr };
 	std::set<UIWidget*> widgets;
 	std::map<UIWidget*, Uint32> valueCbs;
 	std::map<UIWidget*, Uint32> closeCbs;
@@ -149,14 +182,21 @@ template <typename T> class UIDataBind {
 	}
 };
 
-class UIDataBindBool : public UIDataBind<bool> {
+class UIDataBindBool {
   public:
-	UIDataBindBool( bool* t, const std::set<UIWidget*>& widgets,
-					const std::string& valueKey = "value" ) :
-		UIDataBind<bool>( t, widgets, UIDataBind<bool>::converterBool(), valueKey ) {}
+	static std::unique_ptr<UIDataBind<bool>>
+	New( bool* t, const std::set<UIWidget*>& widgets,
+		 const UIDataBind<bool>::Converter& converter = UIDataBind<bool>::converterBool(),
+		 const std::string& valueKey = "value" ) {
+		return UIDataBind<bool>::New( t, widgets, converter, valueKey );
+	}
 
-	UIDataBindBool( bool* t, UIWidget* widget, const std::string& valueKey = "value" ) :
-		UIDataBind<bool>( t, widget, UIDataBind<bool>::converterBool(), valueKey ) {}
+	static std::unique_ptr<UIDataBind<bool>>
+	New( bool* t, UIWidget* widget,
+		 const UIDataBind<bool>::Converter& converter = UIDataBind<bool>::converterBool(),
+		 const std::string& valueKey = "value" ) {
+		return UIDataBind<bool>::New( t, widget, converter, valueKey );
+	}
 };
 
 }} // namespace EE::UI

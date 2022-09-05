@@ -296,12 +296,10 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mReplaceInput->addEventListener( Event::OnTabNavigate,
 									 [&]( const Event* ) { mFindInput->setFocus(); } );
 
-	mDataBinds.emplace_back( std::unique_ptr<UIDataBindBool>(
-		new UIDataBindBool( &mSearchState.caseSensitive, mCaseSensitive ) ) );
-	mDataBinds.emplace_back( std::unique_ptr<UIDataBindBool>(
-		new UIDataBindBool( &mSearchState.wholeWord, mWholeWord ) ) );
-	mDataBinds.emplace_back( std::unique_ptr<UIDataBindBool>(
-		new UIDataBindBool( &mSearchState.escapeSequences, mEscapeSequences ) ) );
+	mDataBinds.emplace_back( UIDataBindBool::New( &mSearchState.caseSensitive, mCaseSensitive ) );
+	mDataBinds.emplace_back( UIDataBindBool::New( &mSearchState.wholeWord, mWholeWord ) );
+	mDataBinds.emplace_back(
+		UIDataBindBool::New( &mSearchState.escapeSequences, mEscapeSequences ) );
 	UIDataBind<TextDocument::FindReplaceType>::Converter luaPatternConverter(
 		[]( const UIDataBind<TextDocument::FindReplaceType>* databind,
 			TextDocument::FindReplaceType& val, const std::string& str ) -> bool {
@@ -315,9 +313,8 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 			str = val == TextDocument::FindReplaceType::LuaPattern ? "true" : "false";
 			return true;
 		} );
-	mPatternBind = std::unique_ptr<UIDataBind<TextDocument::FindReplaceType>>(
-		new UIDataBind<TextDocument::FindReplaceType>( &mSearchState.type, mLuaPattern,
-													   luaPatternConverter ) );
+	mPatternBind = UIDataBind<TextDocument::FindReplaceType>::New( &mSearchState.type, mLuaPattern,
+																   luaPatternConverter );
 
 	setVisible( false );
 
@@ -340,7 +337,7 @@ void UIDocFindReplace::show( bool expanded ) {
 		Float startX = eemax( 0.f, getParent()->getSize().getWidth() - getSize().getWidth() );
 		setPosition( startX, -getSize().getHeight() );
 		runAction( Actions::Move::New( { startX, getPosition().y }, { startX, 0 }, Seconds( 0.2f ),
-									   Ease::ExponentialIn ) );
+									   Ease::QuadraticIn ) );
 	}
 
 	UICodeEditor* editor =
@@ -385,7 +382,7 @@ void UIDocFindReplace::show( bool expanded ) {
 void UIDocFindReplace::hide() {
 	runAction( Actions::Sequence::New(
 		Actions::Move::New( getPosition(), { getPosition().x, -getSize().getHeight() },
-							Seconds( 0.2f ), Ease::ExponentialOut ),
+							Seconds( 0.2f ), Ease::QuadraticOut ),
 		Actions::Visible::New( false ) ) );
 
 	UICodeEditor* editor =
