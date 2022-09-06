@@ -37,7 +37,7 @@ struct LinterMatch {
 	std::string text;
 	TextPosition pos;
 	String::HashType lineCache;
-	Rectf box;
+	std::map<UICodeEditor*, Rectf> box;
 	LinterType type{ LinterType::Error };
 };
 

@@ -35,7 +35,7 @@ static String textLine( const std::string& fileText, const size_t& fromPos, size
 	while ( ++ptr && *ptr != '\0' && *ptr != '\n' ) {
 	}
 	end = ptr - stringStartPtr;
-	relCol = String( fileText.substr( start, startPtr - nlStartPtr ) ).size();
+	relCol = String::utf8StringLength( fileText.substr( start, startPtr - nlStartPtr ) );
 	// if the line to substract is massive we only get the fist kilobyte of that line, since the
 	// line is only shared for visual aid.
 	return fileText.substr( start, end - start > EE_1KB ? EE_1KB : end - start );
@@ -69,11 +69,12 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 			totNl += countNewLines( fileText, lSearchRes, searchRes );
 			String str(
 				textLine( caseSensitive ? fileText : fileTextOriginal, searchRes, relCol ) );
-			res.push_back( { str,
-							 { { (Int64)totNl, (Int64)relCol },
-							   { (Int64)totNl, (Int64)( relCol + text.size() ) } },
-							 searchRes,
-							 static_cast<Int64>( searchRes + text.size() ) } );
+			res.push_back(
+				{ str,
+				  { { (Int64)totNl, (Int64)relCol },
+					{ (Int64)totNl, (Int64)( relCol + String::utf8StringLength( text ) ) } },
+				  searchRes,
+				  static_cast<Int64>( searchRes + text.size() ) } );
 			lSearchRes = searchRes;
 			searchRes += text.size();
 		}
@@ -188,4 +189,4 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 	}
 }
 
-}
+} // namespace ecode

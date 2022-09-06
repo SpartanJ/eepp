@@ -879,6 +879,25 @@ String String::fromUtf8( const std::string& utf8String ) {
 	return String( utf32 );
 }
 
+#define iscont( p ) ( ( *(p)&0xC0 ) == 0x80 )
+
+static inline const char* utf8_next( const char* s, const char* e ) {
+	while ( s < e && iscont( s + 1 ) )
+		++s;
+	return s < e ? s + 1 : e;
+}
+
+static inline size_t utf8_length( const char* s, const char* e ) {
+	size_t i = 0;
+	for ( i = 0; s < e; ++i )
+		s = utf8_next( s, e );
+	return i;
+}
+
+size_t String::utf8StringLength( const std::string& utf8String ) {
+	return utf8_length( utf8String.c_str(), utf8String.c_str() + utf8String.length() );
+}
+
 String::operator std::string() const {
 	return toUtf8();
 }

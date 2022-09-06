@@ -11,10 +11,11 @@ namespace ecode {
 
 UITreeViewGlobalSearch::UITreeViewGlobalSearch( const SyntaxColorScheme& colorScheme,
 												bool searchReplace ) :
-	UITreeView(), mColorScheme( colorScheme ), mSearchReplace( searchReplace ) {
-	mLineNumColor = Color::fromString(
-		mUISceneNode->getRoot()->getUIStyle()->getVariable( "--font-hint" ).getValue() );
-}
+	UITreeView(),
+	mLineNumColor( Color::fromString(
+		mUISceneNode->getRoot()->getUIStyle()->getVariable( "--font-hint" ).getValue() ) ),
+	mColorScheme( colorScheme ),
+	mSearchReplace( searchReplace ) {}
 
 UIWidget* UITreeViewGlobalSearch::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn()

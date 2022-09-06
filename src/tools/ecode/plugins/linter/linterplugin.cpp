@@ -452,7 +452,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		String string( str );
 		line.setString( string );
 		Rectf box( pos - editor->getScreenPos(), { editor->getTextWidth( string ), lineHeight } );
-		match.box = box;
+		match.box[editor] = box;
 		line.draw( pos.x, pos.y + lineHeight * 0.5f );
 	}
 }
@@ -462,10 +462,10 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 	auto it = mMatches.find( editor->getDocumentRef().get() );
 	if ( it != mMatches.end() ) {
 		Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
-		for ( const auto& matchIt : it->second ) {
+		for ( auto& matchIt : it->second ) {
 			auto& matches = matchIt.second;
-			for ( const auto& match : matches ) {
-				if ( match.box.contains( localPos ) ) {
+			for ( auto& match : matches ) {
+				if ( match.box[editor].contains( localPos ) ) {
 					editor->setTooltipText( match.text );
 					editor->getTooltip()->setDontAutoHideOnMouseMove( true );
 					editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
