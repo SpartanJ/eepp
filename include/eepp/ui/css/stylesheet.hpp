@@ -18,7 +18,7 @@ class EE_API StyleSheet {
 
 	bool isEmpty() const;
 
-	void print();
+	std::string print();
 
 	void combineStyleSheet( const StyleSheet& styleSheet );
 

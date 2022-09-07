@@ -6,6 +6,8 @@
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <random>
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -286,12 +288,22 @@ void FormatterPlugin::registerNativeFormatters() {
 		if ( result ) {
 			xml_string_writer str;
 			doc.save( str );
-			return { true, str.result };
+			return { true, str.result, "" };
 		} else {
-			Log::error( "Couldn't load: %s", file.c_str() );
-			Log::error( "Error description: %s", result.description() );
-			Log::error( "Error offset: %d", result.offset );
-			return { false, "" };
+			std::string err(
+				String::format( "Couldn't load: %s\nError description: %s\nError offset: %td\n",
+								file.c_str(), result.description(), result.offset ) );
+			Log::error( err );
+			return { false, "", err };
+		}
+	};
+
+	mNativeFormatters["css"] = []( const std::string& file ) -> NativeFormatterResult {
+		CSS::StyleSheetParser parser;
+		if ( parser.loadFromFile( file ) ) {
+			return { true, parser.getStyleSheet().print(), "" };
+		} else {
+			return { false, "", "Couldn't parse CSS file." };
 		}
 	};
 }

@@ -25,5 +25,10 @@
 	"file_patterns": ["%.xml", "%.html?$"],
 	"command": "xml",
 	"type": "native"
+  },
+  {
+	"file_patterns": ["%.css"],
+	"command": "css",
+	"type": "native"
   }
 ]

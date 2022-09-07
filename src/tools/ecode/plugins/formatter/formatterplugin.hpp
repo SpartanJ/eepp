@@ -17,6 +17,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	struct NativeFormatterResult {
 		bool success;
 		std::string result;
+		std::string err;
 	};
 
 	FormatterPlugin( const std::string& formatterPath, std::shared_ptr<ThreadPool> pool );

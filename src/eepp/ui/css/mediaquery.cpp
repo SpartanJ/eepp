@@ -159,6 +159,8 @@ MediaQueryList::ptr MediaQueryList::parse( const std::string& str ) {
 		list = 0;
 	}
 
+	list->mQueryStr = str;
+
 	return list;
 }
 

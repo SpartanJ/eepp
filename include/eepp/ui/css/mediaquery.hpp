@@ -161,10 +161,13 @@ class EE_API MediaQueryList {
 
 	void setMarker( const Uint32& marker );
 
+	const std::string& getQueryString() const { return mQueryStr; }
+
   private:
 	Uint32 mMarker{ 0 };
 	MediaQuery::vector mQueries;
 	bool mUsed;
+	std::string mQueryStr;
 };
 
 }}} // namespace EE::UI::CSS

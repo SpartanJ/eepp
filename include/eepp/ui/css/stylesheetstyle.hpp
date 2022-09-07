@@ -19,7 +19,7 @@ class EE_API StyleSheetStyle {
 							  const StyleSheetVariables& variables,
 							  MediaQueryList::ptr mediaQueryList );
 
-	std::string build();
+	std::string build( bool emmitMediaQueryStart = true, bool emmitMediaQueryEnd = true );
 
 	const StyleSheetSelector& getSelector() const;
 

@@ -134,10 +134,25 @@ bool StyleSheet::isEmpty() const {
 	return mNodes.empty();
 }
 
-void StyleSheet::print() {
-	for ( auto& style : mNodes ) {
-		std::cout << style->build();
+std::string StyleSheet::print() {
+	std::string str;
+	std::map<MediaQueryList::ptr, std::vector<StyleSheetStyle*>> byMQ;
+
+	for ( size_t i = 0; i < mNodes.size(); ++i ) {
+		auto node = mNodes[i];
+		byMQ[node->getMediaQueryList()].emplace_back( node.get() );
 	}
+
+	for ( const auto& mq : byMQ ) {
+		bool first = true;
+		for ( size_t q = 0; q < mq.second.size(); ++q ) {
+			const auto& style = mq.second[q];
+			str += style->build( first, q == mq.second.size() - 1 );
+			first = false;
+		}
+	}
+
+	return str;
 }
 
 void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {

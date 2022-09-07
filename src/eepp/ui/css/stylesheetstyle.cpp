@@ -22,10 +22,16 @@ StyleSheetStyle::StyleSheetStyle( const std::string& selector,
 	}
 }
 
-std::string StyleSheetStyle::build() {
+std::string StyleSheetStyle::build( bool emmitMediaQueryStart, bool emmitMediaQueryEnd ) {
 	std::string css;
 
-	css += mSelector.getName() + " {";
+	if ( emmitMediaQueryStart && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
+		css += mMediaQueryList->getQueryString() + " {\n\n";
+
+	css += mSelector.getName() + " {\n";
+
+	for ( auto& it : mVariables )
+		css += "\t" + it.second.getName() + ": " + it.second.getValue() + ";\n";
 
 	for ( auto& it : mProperties ) {
 		StyleSheetProperty& prop = it.second;
@@ -33,7 +39,10 @@ std::string StyleSheetStyle::build() {
 		css += "\t" + prop.getName() + ": " + prop.getValue() + ";\n";
 	}
 
-	css += "}\n";
+	css += "}\n\n";
+
+	if ( emmitMediaQueryEnd && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
+		css += "}\n\n";
 
 	return css;
 }
