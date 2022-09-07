@@ -20,5 +20,10 @@
   {
 	"file_patterns": ["%.json$", "%.cson$"],
 	"command": "jq -M --tab . $FILENAME"
+  },
+  {
+	"file_patterns": ["%.xml", "%.html?$"],
+	"command": "xml",
+	"type": "native"
   }
 ]

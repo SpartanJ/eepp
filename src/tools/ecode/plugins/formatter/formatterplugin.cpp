@@ -7,6 +7,8 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <random>
+#define PUGIXML_HEADER_ONLY
+#include <pugixml/pugixml.hpp>
 
 using json = nlohmann::json;
 
@@ -70,7 +72,19 @@ void FormatterPlugin::setAutoFormatOnSave( bool autoFormatOnSave ) {
 	mAutoFormatOnSave = autoFormatOnSave;
 }
 
+void FormatterPlugin::registerNativeFormatter(
+	const std::string& cmd,
+	const std::function<NativeFormatterResult( const std::string& )>& nativeFormatter ) {
+	mNativeFormatters[cmd] = nativeFormatter;
+}
+
+void FormatterPlugin::unregisterNativeFormatter( const std::string& cmd ) {
+	mNativeFormatters.erase( cmd );
+}
+
 void FormatterPlugin::load( const std::string& formatterPath ) {
+	registerNativeFormatters();
+
 	if ( !FileSystem::fileExists( formatterPath ) )
 		return;
 	try {
@@ -91,8 +105,17 @@ void FormatterPlugin::load( const std::string& formatterPath ) {
 				std::string typeStr( obj["type"].get<std::string>() );
 				String::toLowerInPlace( typeStr );
 				String::trimInPlace( typeStr );
-				formatter.type =
-					"inplace" == typeStr ? FormatterType::Inplace : FormatterType::Output;
+				if ( "native" == typeStr ) {
+					formatter.type = FormatterType::Native;
+					if ( mNativeFormatters.find( formatter.command ) == mNativeFormatters.end() ) {
+						Log::error( "Requested native formatter: '%s' does not exists.",
+									formatter.command.c_str() );
+						continue;
+					}
+				} else {
+					formatter.type =
+						"inplace" == typeStr ? FormatterType::Inplace : FormatterType::Output;
+				}
 			}
 
 			mFormatters.emplace_back( std::move( formatter ) );
@@ -168,6 +191,19 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 
 void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& formatter,
 									const std::string& path ) {
+	if ( formatter.type == FormatterType::Native ) {
+		NativeFormatterResult res = mNativeFormatters[formatter.command]( path );
+		if ( !res.success )
+			return;
+		editor->runOnMainThread( [&, res, editor]() {
+			std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
+			TextPosition pos = doc->getSelection().start();
+			doc->selectAll();
+			doc->textInput( res.result );
+			doc->setSelection( pos );
+		} );
+		return;
+	}
 
 	std::string cmd( formatter.command );
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
@@ -231,6 +267,33 @@ FormatterPlugin::Formatter FormatterPlugin::supportsFormatter( std::shared_ptr<T
 		}
 	}
 	return {};
+}
+
+void FormatterPlugin::registerNativeFormatters() {
+	if ( !mNativeFormatters.empty() )
+		return;
+	mNativeFormatters["xml"] = []( const std::string& file ) -> NativeFormatterResult {
+		struct xml_string_writer : pugi::xml_writer {
+			std::string result;
+
+			virtual void write( const void* data, size_t size ) {
+				result.append( static_cast<const char*>( data ), size );
+			}
+		};
+		pugi::xml_document doc;
+		pugi::xml_parse_result result = doc.load_file( file.c_str() );
+
+		if ( result ) {
+			xml_string_writer str;
+			doc.save( str );
+			return { true, str.result };
+		} else {
+			Log::error( "Couldn't load: %s", file.c_str() );
+			Log::error( "Error description: %s", result.description() );
+			Log::error( "Error offset: %d", result.offset );
+			return { false, "" };
+		}
+	};
 }
 
 } // namespace ecode

@@ -465,7 +465,7 @@ void App::onFileDropped( String file ) {
 			tab = d.first;
 		}
 	}
-	loadFileFromPath( file, true, codeEditor, [tab]( UICodeEditor*, const std::string& ) {
+	loadFileFromPath( file, false, codeEditor, [tab]( UICodeEditor*, const std::string& ) {
 		if ( tab )
 			tab->getTabWidget()->setTabSelected( tab );
 	} );
