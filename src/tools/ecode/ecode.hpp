@@ -189,7 +189,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
 	UITreeView* mProjectTreeView{ nullptr };
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
-	size_t mMenuIconSize;
+	size_t mMenuIconSize{ 16 };
 	bool mDirTreeReady{ false };
 	bool mIsBundledApp{ false };
 	bool mUseFrameBuffer{ false };

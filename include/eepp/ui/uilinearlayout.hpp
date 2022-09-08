@@ -48,6 +48,10 @@ class EE_API UILinearLayout : public UILayout {
 	void packHorizontal();
 
 	Sizei getTotalUsedSize();
+
+	void applyWidthPolicyOnChilds();
+
+	void applyHeightPolicyOnChilds();
 };
 
 }} // namespace EE::UI

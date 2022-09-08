@@ -67,49 +67,7 @@ bool UILinearLayout::isPacking() const {
 	return mPacking;
 }
 
-void UILinearLayout::packVertical() {
-	if ( mPacking )
-		return;
-	mPacking = true;
-	bool sizeChanged = false;
-	Sizef size( getPixelsSize() );
-
-	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
-		Float w =
-			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
-
-		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
-			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
-		}
-
-		if ( (int)w != (int)getPixelsSize().getWidth() ) {
-			sizeChanged = true;
-
-			size.setWidth( w );
-		}
-	}
-
-	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		Float h =
-			getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top - mLayoutMarginPx.Bottom;
-
-		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
-			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			h = h - pLay->getPixelsPadding().Top - pLay->getPixelsPadding().Bottom;
-		}
-
-		if ( (int)h != (int)getPixelsSize().getHeight() ) {
-			sizeChanged = true;
-
-			size.setHeight( h );
-		}
-	}
-
-	if ( sizeChanged ) {
-		setInternalPixelsSize( size );
-	}
-
+void UILinearLayout::applyWidthPolicyOnChilds() {
 	Node* child = mChild;
 
 	while ( NULL != child ) {
@@ -156,12 +114,106 @@ void UILinearLayout::packVertical() {
 
 		child = child->getNextNode();
 	}
+}
+
+void UILinearLayout::applyHeightPolicyOnChilds() {
+	Node* child = mChild;
+
+	while ( NULL != child ) {
+		if ( child->isWidget() && child->isVisible() ) {
+			UIWidget* widget = static_cast<UIWidget*>( child );
+
+			if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
+				widget->setFlags( UI_AUTO_SIZE );
+			}
+
+			switch ( widget->getLayoutHeightPolicy() ) {
+				case SizePolicy::WrapContent: {
+					widget->setFlags( UI_AUTO_SIZE );
+					break;
+				}
+				case SizePolicy::MatchParent: {
+					int h = getPixelsSize().getHeight() - widget->getLayoutPixelsMargin().Top -
+							widget->getLayoutPixelsMargin().Bottom - mPaddingPx.Top -
+							mPaddingPx.Bottom;
+
+					if ( h != (int)widget->getPixelsSize().getHeight() && h > 0 )
+						widget->setPixelsSize( widget->getPixelsSize().getWidth(), h );
+
+					break;
+				}
+				case SizePolicy::Fixed:
+				default: {
+				}
+			}
+
+			if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent &&
+				 widget->getLayoutWeight() == 0 &&
+				 widget->getPixelsSize().getWidth() != getPixelsSize().getWidth() -
+														   widget->getLayoutPixelsMargin().Left -
+														   widget->getLayoutPixelsMargin().Right -
+														   mPaddingPx.Left - mPaddingPx.Right ) {
+				widget->setPixelsSize(
+					getPixelsSize().getWidth() - widget->getLayoutPixelsMargin().Left -
+						widget->getLayoutPixelsMargin().Right - mPaddingPx.Left - mPaddingPx.Right,
+					widget->getPixelsSize().getHeight() );
+			}
+		}
+
+		child = child->getNextNode();
+	}
+}
+
+void UILinearLayout::packVertical() {
+	if ( mPacking )
+		return;
+	mPacking = true;
+	bool sizeChanged = false;
+	Sizef size( getPixelsSize() );
+
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
+		Float w =
+			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
+
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout* pLay = static_cast<UILayout*>( getParent() );
+			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
+		}
+
+		if ( (int)w != (int)getPixelsSize().getWidth() ) {
+			sizeChanged = true;
+
+			size.setWidth( w );
+		}
+	}
+
+	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
+		Float h =
+			getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top - mLayoutMarginPx.Bottom;
+
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout* pLay = static_cast<UILayout*>( getParent() );
+			h = h - pLay->getPixelsPadding().Top - pLay->getPixelsPadding().Bottom;
+		}
+
+		if ( (int)h != (int)getPixelsSize().getHeight() ) {
+			sizeChanged = true;
+
+			size.setHeight( h );
+		}
+	}
+
+	if ( sizeChanged ) {
+		setInternalPixelsSize( size );
+	}
+
+	applyWidthPolicyOnChilds();
 
 	Float curY = mPaddingPx.Top;
 	Float maxX = 0;
 	Sizei freeSize = getTotalUsedSize();
 
-	child = mChild;
+	Node* child = mChild;
 
 	while ( NULL != child ) {
 		if ( child->isWidget() && child->isVisible() ) {
@@ -178,8 +230,7 @@ void UILinearLayout::packVertical() {
 						? getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
 						: getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Bottom -
 							  mLayoutMarginPx.Top - mPaddingPx.Top - mPaddingPx.Bottom;
-				Float size =
-					( Float )( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
+				Float size = (Float)( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
 
 				widget->setPixelsSize( widget->getPixelsSize().getWidth(), (Int32)size );
 			}
@@ -205,9 +256,11 @@ void UILinearLayout::packVertical() {
 
 			curY += eeceil( widget->getPixelsSize().getHeight() + margin.Bottom );
 
-			maxX = eeceil( eemax( maxX, ( widget->getPixelsSize().getWidth() +
-										  widget->getLayoutPixelsMargin().Left +
-										  widget->getLayoutPixelsMargin().Right ) ) );
+			if ( widget->getLayoutWidthPolicy() != SizePolicy::MatchParent ) {
+				maxX = eeceil( eemax( maxX, ( widget->getPixelsSize().getWidth() +
+											  widget->getLayoutPixelsMargin().Left +
+											  widget->getLayoutPixelsMargin().Right ) ) );
+			}
 		}
 
 		child = child->getNextNode();
@@ -295,57 +348,13 @@ void UILinearLayout::packHorizontal() {
 		setInternalPixelsSize( size );
 	}
 
-	Node* child = mChild;
-
-	while ( NULL != child ) {
-		if ( child->isWidget() && child->isVisible() ) {
-			UIWidget* widget = static_cast<UIWidget*>( child );
-
-			if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
-				widget->setFlags( UI_AUTO_SIZE );
-			}
-
-			switch ( widget->getLayoutHeightPolicy() ) {
-				case SizePolicy::WrapContent: {
-					widget->setFlags( UI_AUTO_SIZE );
-					break;
-				}
-				case SizePolicy::MatchParent: {
-					int h = getPixelsSize().getHeight() - widget->getLayoutPixelsMargin().Top -
-							widget->getLayoutPixelsMargin().Bottom - mPaddingPx.Top -
-							mPaddingPx.Bottom;
-
-					if ( h != (int)widget->getPixelsSize().getHeight() && h > 0 )
-						widget->setPixelsSize( widget->getPixelsSize().getWidth(), h );
-
-					break;
-				}
-				case SizePolicy::Fixed:
-				default: {
-				}
-			}
-
-			if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent &&
-				 widget->getLayoutWeight() == 0 &&
-				 widget->getPixelsSize().getWidth() != getPixelsSize().getWidth() -
-														   widget->getLayoutPixelsMargin().Left -
-														   widget->getLayoutPixelsMargin().Right -
-														   mPaddingPx.Left - mPaddingPx.Right ) {
-				widget->setPixelsSize(
-					getPixelsSize().getWidth() - widget->getLayoutPixelsMargin().Left -
-						widget->getLayoutPixelsMargin().Right - mPaddingPx.Left - mPaddingPx.Right,
-					widget->getPixelsSize().getHeight() );
-			}
-		}
-
-		child = child->getNextNode();
-	}
+	applyHeightPolicyOnChilds();
 
 	Float curX = mPaddingPx.Left;
 	Float maxY = 0;
 	Sizei freeSize = getTotalUsedSize();
 
-	child = mChild;
+	Node* child = mChild;
 
 	while ( NULL != child ) {
 		if ( child->isWidget() && child->isVisible() ) {
@@ -362,7 +371,7 @@ void UILinearLayout::packHorizontal() {
 						? getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right
 						: getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Right -
 							  mLayoutMarginPx.Left - mPaddingPx.Left - mPaddingPx.Right;
-				Float size = ( Float )( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
+				Float size = (Float)( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
 
 				widget->setPixelsSize( (Int32)size, widget->getPixelsSize().getHeight() );
 			}
@@ -388,9 +397,11 @@ void UILinearLayout::packHorizontal() {
 
 			curX += eeceil( widget->getPixelsSize().getWidth() + margin.Right );
 
-			maxY = eeceil( eemax( maxY, ( widget->getPixelsSize().getHeight() +
-										  widget->getLayoutPixelsMargin().Top +
-										  widget->getLayoutPixelsMargin().Bottom ) ) );
+			if ( widget->getLayoutHeightPolicy() != SizePolicy::MatchParent ) {
+				maxY = eeceil( eemax( maxY, ( widget->getPixelsSize().getHeight() +
+											  widget->getLayoutPixelsMargin().Top +
+											  widget->getLayoutPixelsMargin().Bottom ) ) );
+			}
 		}
 
 		child = child->getNextNode();
