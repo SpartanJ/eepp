@@ -141,7 +141,7 @@ DropDownList {
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
-	transition: all 0.125s;
+	transition: all 0.125s cubic-bezier(0.77, 0.77, 0.38, 0.38);
 }
 
 DropDownList,

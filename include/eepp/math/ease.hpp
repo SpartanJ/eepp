@@ -1,6 +1,7 @@
 #ifndef EE_MATH_EASE
 #define EE_MATH_EASE
 
+#include <eepp/system/functionstring.hpp>
 #include <string>
 
 namespace EE { namespace Math {
@@ -41,6 +42,7 @@ class Ease {
 		ElasticIn,
 		ElasticOut,
 		ElasticInOut,
+		CubizBezier,
 		None
 	};
 
@@ -108,6 +110,8 @@ class Ease {
 				return "elastic-out";
 			case Ease::ElasticInOut:
 				return "elastic-in-out";
+			case Ease::CubizBezier:
+				return "cubic-bezier";
 			case Ease::None:
 				return "none";
 		}
@@ -178,6 +182,13 @@ class Ease {
 			return Ease::ElasticOut;
 		if ( "elasticinout" == name || "elastic-in-out" == name )
 			return Ease::ElasticInOut;
+		if ( "cubicbezier" == name || "cubic-bezier" == name )
+			return Ease::CubizBezier;
+		// Handle the case that the name is a function
+		if ( name.find_first_of( '(' ) != std::string::npos ) {
+			System::FunctionString func( System::FunctionString::parse( name ) );
+			return fromName( func.getName(), defaultInterpolation );
+		}
 		return defaultInterpolation;
 	}
 };

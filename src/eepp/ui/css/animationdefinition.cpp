@@ -1,9 +1,11 @@
+#include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/animationdefinition.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/timingfunction.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
-bool isTimingFunction( const std::string& str ) {
+inline bool isTimingFunction( const std::string& str ) {
 	return Ease::Interpolation::None != Ease::fromName( str, Ease::Interpolation::None );
 }
 
@@ -15,6 +17,7 @@ std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseA
 	std::vector<Time> delays;
 	std::vector<Int32> iterations;
 	std::vector<Ease::Interpolation> timingFunctions;
+	std::vector<std::vector<double>> timingFunctionParameters;
 	std::vector<AnimationDirection> directions;
 	std::vector<AnimationFillMode> fillModes;
 	std::vector<bool> pausedStates;
@@ -51,7 +54,9 @@ std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseA
 							} else if ( "running" == val ) {
 								animationDef.setPaused( false );
 							} else if ( isTimingFunction( val ) ) {
-								animationDef.setTimingFunction( Ease::fromName( val ) );
+								TimingFunction tf( TimingFunction::parse( val ) );
+								animationDef.setTimingFunction( tf.interpolation );
+								animationDef.setTimingFunctionParameters( tf.parameters );
 							} else if ( Time::isValid( val ) ) {
 								if ( durationSet ) {
 									animationDef.setDelay( Time::fromString( val ) );
@@ -112,11 +117,9 @@ std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseA
 							break;
 						}
 						case PropertyId::AnimationTimingFunction: {
-							Ease::Interpolation interpolation =
-								Ease::fromName( val, Ease::Interpolation::None );
-							if ( Ease::Interpolation::None != interpolation ) {
-								timingFunctions.push_back( interpolation );
-							}
+							TimingFunction tf( TimingFunction::parse( val ) );
+							timingFunctions.emplace_back( tf.interpolation );
+							timingFunctionParameters.emplace_back( tf.parameters );
 							break;
 						}
 						default:
@@ -151,6 +154,10 @@ std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseA
 
 		if ( !timingFunctions.empty() )
 			animationDef.setTimingFunction( timingFunctions[i % timingFunctions.size()] );
+
+		if ( !timingFunctionParameters.empty() )
+			animationDef.setTimingFunctionParameters(
+				timingFunctionParameters[i % timingFunctionParameters.size()] );
 
 		animations[animationDef.getName()] = std::move( animationDef );
 	}
@@ -246,6 +253,15 @@ void AnimationDefinition::setPaused( bool value ) {
 
 const String::HashType& AnimationDefinition::getId() const {
 	return mId;
+}
+
+const std::vector<double>& AnimationDefinition::getTimingFunctionParameters() const {
+	return mTimingFunctionParameters;
+}
+
+void AnimationDefinition::setTimingFunctionParameters(
+	const std::vector<double>& timingFunctionParameters ) {
+	mTimingFunctionParameters = timingFunctionParameters;
 }
 
 const AnimationDefinition::AnimationFillMode& AnimationDefinition::getFillMode() const {

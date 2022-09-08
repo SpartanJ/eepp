@@ -57,6 +57,8 @@ class EE_API AnimationDefinition {
 
 	const Ease::Interpolation& getTimingFunction() const;
 
+	const std::vector<double>& getTimingFunctionParameters() const;
+
 	const AnimationFillMode& getFillMode() const;
 
 	void setName( const std::string& value );
@@ -68,6 +70,8 @@ class EE_API AnimationDefinition {
 	void setIterations( const Int32& value );
 
 	void setTimingFunction( const Ease::Interpolation& value );
+
+	void setTimingFunctionParameters( const std::vector<double>& timingFunctionParameters );
 
 	void setDirection( const AnimationDirection& value );
 
@@ -84,6 +88,7 @@ class EE_API AnimationDefinition {
 	Time mDuration = Time::Zero;
 	Int32 mIterations = 1; /* -1 == "infinite" */
 	Ease::Interpolation mTimingFunction = Ease::Interpolation::Linear;
+	std::vector<double> mTimingFunctionParameters{};
 	AnimationDirection mDirection = Normal;
 	AnimationFillMode mFillMode = None;
 	bool mPaused = false;
@@ -93,7 +98,8 @@ inline bool operator==( const AnimationDefinition& a, const AnimationDefinition&
 	return a.getDuration() == b.getDuration() && a.getTimingFunction() == b.getTimingFunction() &&
 		   a.getDelay() == b.getDelay() && a.getDirection() == b.getDirection() &&
 		   a.isPaused() == b.isPaused() && a.getIterations() == b.getIterations() &&
-		   a.getName() == b.getName();
+		   a.getName() == b.getName() &&
+		   a.getTimingFunctionParameters() == b.getTimingFunctionParameters();
 }
 
 inline bool operator!=( const AnimationDefinition& a, const AnimationDefinition& b ) {

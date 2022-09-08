@@ -1847,12 +1847,12 @@ Read [transition-property](https://developer.mozilla.org/en-US/docs/Web/CSS/tran
 
 Read [transition-timing-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transition-timing-function) documentation.
 
-Timing function names are custom, and not the same as the standard, but `cubic-bezier` will be added
-soon. Current timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out,
+Timing function names are custom, and not the same as the standard, but `cubic-bezier` is supported.
+Current timing functions supported: linear, quadratic-in, quadratic-out, quadratic-in-out,
 sine-in, sine-out, sine-in-out, exponential-in, exponential-out, exponential-in-out, quartic-in,
 quartic-out, quartic-in-out, circular-in, circular-out, circular-in-out, cubic-in, cubic-out,
 cubic-in-out, back-in, back-out, back-in-out, bounce-in, bounce-out, bounce-in-out, elastic-in,
-elastic-out, elastic-in-out, none.
+elastic-out, elastic-in-out, cubic-bezier, none.
 
 ### value
 

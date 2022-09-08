@@ -327,6 +327,7 @@
 ../../include/eepp/ui/css/stylesheetspecification.hpp
 ../../include/eepp/ui/css/stylesheetstyle.hpp
 ../../include/eepp/ui/css/stylesheetvariable.hpp
+../../include/eepp/ui/css/timingfunction.hpp
 ../../include/eepp/ui/css/transitiondefinition.hpp
 ../../include/eepp/ui/doc/syntaxcolorscheme.hpp
 ../../include/eepp/ui/doc/syntaxdefinition.hpp
@@ -814,6 +815,7 @@
 ../../src/eepp/ui/css/stylesheetspecification.cpp
 ../../src/eepp/ui/css/stylesheetstyle.cpp
 ../../src/eepp/ui/css/stylesheetvariable.cpp
+../../src/eepp/ui/css/timingfunction.cpp
 ../../src/eepp/ui/css/transitiondefinition.cpp
 ../../src/eepp/ui/doc/syntaxcolorscheme.cpp
 ../../src/eepp/ui/doc/syntaxdefinition.cpp

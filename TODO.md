@@ -23,8 +23,6 @@
 
 ### CSS
 
-* Add `cubic-bezier` timing function support.
-
 * Add support for [calc](https://developer.mozilla.org/en-US/docs/Web/CSS/calc).
 
 ### UICodeEditor

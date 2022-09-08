@@ -26,6 +26,7 @@ class EE_API StyleSheetPropertyAnimation : public Action {
 							   const PropertyDefinition* property, const std::string& startValue,
 							   const std::string& endValue,
 							   const Ease::Interpolation& timingFunction,
+							   const std::vector<double> timingFunctionParameters,
 							   const Uint32& propertyIndex, const bool& isDone );
 
 	static StyleSheetPropertyAnimation* fromAnimationKeyframes(
@@ -44,6 +45,7 @@ class EE_API StyleSheetPropertyAnimation : public Action {
 	New( const PropertyDefinition* property, const std::string& startValue,
 		 const std::string& endValue, const Uint32& propertyIndex, const Time& duration,
 		 const Time& delay, const Ease::Interpolation& timingFunction,
+		 const std::vector<double>& timingFunctionParameters,
 		 const AnimationOrigin& animationOrigin );
 
 	void start() override;

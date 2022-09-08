@@ -494,7 +494,8 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 			StyleSheetPropertyAnimation* newTransition = StyleSheetPropertyAnimation::New(
 				propertyDefinition, startValue, property.getValue(), property.getIndex(),
 				transitionInfo.getDuration(), transitionInfo.getDelay(),
-				transitionInfo.getTimingFunction(), AnimationOrigin::Transition );
+				transitionInfo.getTimingFunction(), transitionInfo.getTimingFunctionParameters(),
+				AnimationOrigin::Transition );
 			newTransition->setElapsed( elapsed );
 			newTransition->setTag( propertyDefinition->getId() );
 			mWidget->runAction( newTransition );

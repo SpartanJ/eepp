@@ -1,5 +1,7 @@
 #include <eepp/core/string.hpp>
+#include <eepp/system/functionstring.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/timingfunction.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
 
 namespace EE { namespace UI { namespace CSS {
@@ -10,6 +12,7 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 	std::vector<Time> durations;
 	std::vector<Time> delays;
 	std::vector<Ease::Interpolation> timingFunctions;
+	std::vector<std::vector<double>> timingFunctionParameters;
 	TransitionsMap transitions;
 
 	for ( auto& prop : styleSheetProperties ) {
@@ -19,11 +22,11 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 		const PropertyDefinition* propDef = prop->getPropertyDefinition();
 
 		if ( propDef->getPropertyId() == PropertyId::Transition ) {
-			auto strTransitions = String::split( prop->getValue(), ',' );
+			auto strTransitions = String::split( prop->getValue(), ",", ",", "()" );
 
 			for ( auto tit = strTransitions.begin(); tit != strTransitions.end(); ++tit ) {
 				auto strTransition = String::trim( *tit );
-				auto splitTransition = String::split( strTransition, ' ' );
+				auto splitTransition = String::split( strTransition, " ", "", "()" );
 
 				if ( !splitTransition.empty() ) {
 					TransitionDefinition transitionDef;
@@ -40,11 +43,12 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 						transitionDef.duration = duration;
 
 						if ( splitTransition.size() >= 3 ) {
-							transitionDef.timingFunction =
-								Ease::fromName( String::toLower( splitTransition[2] ) );
+							TimingFunction tf( TimingFunction::parse( splitTransition[2] ) );
+							transitionDef.timingFunction = std::move( tf.interpolation );
+							transitionDef.timingFunctionParameters = std::move( tf.parameters );
 
-							if ( transitionDef.timingFunction == Ease::Linear &&
-								 splitTransition[2] != "linear" && splitTransition.size() == 3 ) {
+							if ( transitionDef.timingFunction == Ease::None &&
+								 splitTransition.size() == 3 ) {
 								transitionDef.delay =
 									StyleSheetProperty( prop->getName(),
 														String::toLower( splitTransition[2] ) )
@@ -78,12 +82,12 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 				delays.push_back( StyleSheetProperty( prop->getName(), delay ).asTime() );
 			}
 		} else if ( propDef->getPropertyId() == PropertyId::TransitionTimingFunction ) {
-			auto strTimingFuncs = String::split( prop->getValue(), ',' );
+			auto strTimingFuncs = String::split( prop->getValue(), ",", "", "()" );
 
 			for ( auto dit = strTimingFuncs.begin(); dit != strTimingFuncs.end(); ++dit ) {
-				std::string timingFunction( String::trim( *dit ) );
-				String::toLowerInPlace( timingFunction );
-				timingFunctions.push_back( Ease::fromName( timingFunction ) );
+				TimingFunction tf( TimingFunction::parse( *dit ) );
+				timingFunctions.emplace_back( tf.interpolation );
+				timingFunctionParameters.emplace_back( tf.parameters );
 			}
 		} else if ( propDef->getPropertyId() == PropertyId::TransitionProperty ) {
 			auto strProperties = String::split( prop->getValue(), ',' );
@@ -108,8 +112,11 @@ std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitio
 		if ( !delays.empty() )
 			transitionDef.delay = delays[i % delays.size()];
 
-		if ( timingFunctions.empty() )
-			transitionDef.timingFunction = timingFunctions[i % delays.size()];
+		if ( !timingFunctions.empty() ) {
+			size_t idx = !delays.empty() ? i % delays.size() : 0;
+			transitionDef.timingFunction = timingFunctions[idx];
+			transitionDef.timingFunctionParameters = timingFunctionParameters[idx];
+		}
 
 		transitions[property] = transitionDef;
 	}

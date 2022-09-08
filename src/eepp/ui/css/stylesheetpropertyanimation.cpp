@@ -10,18 +10,34 @@ using namespace EE::Math::easing;
 
 namespace EE { namespace UI { namespace CSS {
 
+inline Float easingFn( const Ease::Interpolation& timingFunction,
+					   const std::vector<double>& timingFunctionParameters, const double& t,
+					   const double& b, const double& c, const double& d ) {
+	if ( timingFunction != Ease::Interpolation::CubizBezier )
+		return easingCb[timingFunction]( t, b, c, d );
+
+	if ( timingFunctionParameters.size() == 4 )
+		return cubicBezierInterpolation( timingFunctionParameters[0], timingFunctionParameters[1],
+										 timingFunctionParameters[2], timingFunctionParameters[3],
+										 t );
+
+	return t;
+}
+
 void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& normalizedProgress,
 												 const PropertyDefinition* property,
 												 const std::string& startValue,
 												 const std::string& endValue,
 												 const Ease::Interpolation& timingFunction,
+												 const std::vector<double> timingFunctionParameters,
 												 const Uint32& propertyIndex, const bool& isDone ) {
 	switch ( property->getType() ) {
 		case PropertyType::NumberFloat:
 		case PropertyType::NumberInt: {
 			Float start = widget->convertLength( startValue, 0 );
 			Float end = widget->convertLength( endValue, 0 );
-			Float value = easingCb[timingFunction]( normalizedProgress, start, end - start, 1.f );
+			Float value = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+									start, end - start, 1.f );
 			if ( property->getType() == PropertyType::NumberFloat ) {
 				widget->applyProperty(
 					StyleSheetProperty( property, String::fromFloat( value ), propertyIndex ) );
@@ -42,7 +58,8 @@ void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& 
 				endColor = startColor;
 				endColor.a = 0;
 			}
-			Float progress = easingCb[timingFunction]( normalizedProgress, 0, 1, 1.f );
+			Float progress =
+				easingFn( timingFunction, timingFunctionParameters, normalizedProgress, 0, 1, 1.f );
 			Color resColor( startColor );
 			resColor.r = static_cast<Uint8>( eemin(
 				static_cast<Int32>( startColor.r + ( endColor.r - startColor.r ) * progress ),
@@ -65,7 +82,8 @@ void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& 
 				property->getRelativeTarget(), 0.f, propertyIndex );
 			Float start = widget->convertLength( startValue, containerLength );
 			Float end = widget->convertLength( endValue, containerLength );
-			Float value = easingCb[timingFunction]( normalizedProgress, start, end - start, 1.f );
+			Float value = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+									start, end - start, 1.f );
 			widget->applyProperty(
 				StyleSheetProperty( property, String::fromFloat( value, "px" ), propertyIndex ) );
 
@@ -77,8 +95,10 @@ void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& 
 		case PropertyType::RadiusLength: {
 			Sizef start( Borders::radiusFromString( widget, startValue ) );
 			Sizef end( Borders::radiusFromString( widget, endValue ) );
-			Float x = easingCb[timingFunction]( normalizedProgress, start.x, end.x - start.x, 1.f );
-			Float y = easingCb[timingFunction]( normalizedProgress, start.y, end.y - start.y, 1.f );
+			Float x = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+								start.x, end.x - start.x, 1.f );
+			Float y = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+								start.y, end.y - start.y, 1.f );
 			widget->applyProperty( StyleSheetProperty(
 				property, String::fromFloat( x ) + " " + String::fromFloat( y ), propertyIndex ) );
 			if ( isDone ) {
@@ -89,8 +109,10 @@ void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& 
 		case PropertyType::Vector2: {
 			Vector2f start( StyleSheetProperty( property, startValue ).asVector2f() );
 			Vector2f end( StyleSheetProperty( property, endValue ).asVector2f() );
-			Float x = easingCb[timingFunction]( normalizedProgress, start.x, end.x - start.x, 1.f );
-			Float y = easingCb[timingFunction]( normalizedProgress, start.y, end.y - start.y, 1.f );
+			Float x = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+								start.x, end.x - start.x, 1.f );
+			Float y = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+								start.y, end.y - start.y, 1.f );
 			widget->applyProperty( StyleSheetProperty(
 				property, String::fromFloat( x ) + " " + String::fromFloat( y ), propertyIndex ) );
 			if ( isDone ) {
@@ -104,8 +126,10 @@ void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& 
 							 ->calcDrawableSize( startValue ) );
 			Sizef end(
 				widget->getBackground()->getLayer( propertyIndex )->calcDrawableSize( endValue ) );
-			Float x = easingCb[timingFunction]( normalizedProgress, start.x, end.x - start.x, 1.f );
-			Float y = easingCb[timingFunction]( normalizedProgress, start.y, end.y - start.y, 1.f );
+			Float x = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+								start.x, end.x - start.x, 1.f );
+			Float y = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+								start.y, end.y - start.y, 1.f );
 			widget->applyProperty( StyleSheetProperty(
 				property, String::fromFloat( x, "px" ) + " " + String::fromFloat( y, "px" ),
 				propertyIndex ) );
@@ -120,8 +144,10 @@ void StyleSheetPropertyAnimation::tweenProperty( UIWidget* widget, const Float& 
 							 ->calcDrawableSize( startValue ) );
 			Sizef end(
 				widget->getForeground()->getLayer( propertyIndex )->calcDrawableSize( endValue ) );
-			Float x = easingCb[timingFunction]( normalizedProgress, start.x, end.x - start.x, 1.f );
-			Float y = easingCb[timingFunction]( normalizedProgress, start.y, end.y - start.y, 1.f );
+			Float x = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+								start.x, end.x - start.x, 1.f );
+			Float y = easingFn( timingFunction, timingFunctionParameters, normalizedProgress,
+								start.y, end.y - start.y, 1.f );
 			widget->applyProperty( StyleSheetProperty(
 				property, String::fromFloat( x, "px" ) + " " + String::fromFloat( y, "px" ),
 				propertyIndex ) );
@@ -192,11 +218,13 @@ StyleSheetPropertyAnimation* StyleSheetPropertyAnimation::New(
 StyleSheetPropertyAnimation* StyleSheetPropertyAnimation::New(
 	const PropertyDefinition* property, const std::string& startValue, const std::string& endValue,
 	const Uint32& propertyIndex, const Time& duration, const Time& delay,
-	const Ease::Interpolation& timingFunction, const AnimationOrigin& animationOrigin ) {
+	const Ease::Interpolation& timingFunction, const std::vector<double>& timingFunctionParameters,
+	const AnimationOrigin& animationOrigin ) {
 	AnimationDefinition animation;
 	animation.setDelay( delay );
 	animation.setDuration( duration );
 	animation.setTimingFunction( timingFunction );
+	animation.setTimingFunctionParameters( timingFunctionParameters );
 	return New( animation, property, { startValue, endValue }, { 0, 1 }, propertyIndex,
 				animationOrigin );
 }
@@ -342,8 +370,8 @@ void StyleSheetPropertyAnimation::onUpdate( const Time& ) {
 			Float curTime = normalizedProgress - mAnimationStepsTime[curPos - 1];
 			Float relativeProgress = curTime / relTime;
 			tweenProperty( widget, relativeProgress, mPropertyDef, mStates[curPos - 1],
-						   mStates[curPos], mAnimation.getTimingFunction(), mPropertyIndex,
-						   isDone() );
+						   mStates[curPos], mAnimation.getTimingFunction(),
+						   mAnimation.getTimingFunctionParameters(), mPropertyIndex, isDone() );
 		}
 	}
 }

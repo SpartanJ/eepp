@@ -11,6 +11,25 @@ typedef double ( *easingCbFunc )( double, double, double, double );
 extern EE_API easingCbFunc easingCb[];
 
 /**
+ *  Keeps the initial value until the current time equals the duration.
+ *
+ *  @param t Specifies the current time, between 0 and duration inclusive.
+ *  @param b Specifies the initial value of the animation property.
+ *  @param c Specifies the total change in the animation property.
+ *  @param d Specifies the duration of the motion.
+ *  @return The value of the interpolated property at the specified time.
+ */
+inline double noneInterpolation( double t, double b, double c, double d ) {
+	return t == 0 ? b : ( t == d ? c : b );
+}
+
+double EE_API cubicBezierInterpolation( double x1, double y1, double x2, double y2, double t );
+
+inline double cubicBezierNoParams( double t, double, double, double ) {
+	return cubicBezierInterpolation( 0, 0, 1, 1, t );
+}
+
+/**
  *  Calculate the position of a point from a linear interpolation.
  *
  *  @param t Specifies the current time, between 0 and duration inclusive.
@@ -24,7 +43,7 @@ inline double linearInterpolation( double t, double b, double c, double d ) {
 }
 
 /**
- *  The <code>QuadraticIn()</code> method starts motion from a zero velocity
+ *  The <code>quadraticIn()</code> method starts motion from a zero velocity
  *  and then accelerates motion as it executes.
  *  @param t Specifies the current time, between 0 and duration inclusive.
  *  @param b Specifies the initial value of the animation property.
@@ -39,7 +58,7 @@ inline double quadraticIn( double t, double b, double c, double d ) {
 }
 
 /**
- *  The <code>QuadraticOut()</code> method starts motion fast
+ *  The <code>quadraticOut()</code> method starts motion fast
  *  and then decelerates motion to a zero velocity as it executes.
  *
  *  @param t Specifies the current time, between 0 and duration inclusive.
@@ -55,8 +74,8 @@ inline double quadraticOut( double t, double b, double c, double d ) {
 }
 
 /**
- *  The <code>QuadraticInOut()</code> method combines the motion
- *  of the <code>QuadraticIn()</code> and <code>QuadraticOut()</code> methods
+ *  The <code>quadraticInOut()</code> method combines the motion
+ *  of the <code>quadraticIn()</code> and <code>QuadraticOut()</code> methods
  *  to start the motion from a zero velocity,
  *  accelerate motion, then decelerate to a zero velocity.
  *
@@ -78,7 +97,7 @@ inline double quadraticInOut( double t, double b, double c, double d ) {
 }
 
 /**
- *  The <code>SineIn()</code> method starts motion from zero velocity
+ *  The <code>sineIn()</code> method starts motion from zero velocity
  *  and then accelerates motion as it executes.
  *
  *  @param t Specifies the current time, between 0 and duration inclusive.
@@ -122,7 +141,7 @@ inline double sineInOut( double t, double b, double c, double d ) {
 }
 
 /**
- *  The <code>ExponentialIn()</code> method starts motion slowly
+ *  The <code>exponentialIn()</code> method starts motion slowly
  *  and then accelerates motion as it executes.
  *
  *  @param t Specifies the current time, between 0 and duration inclusive.
@@ -136,7 +155,7 @@ inline double exponentialIn( double t, double b, double c, double d ) {
 }
 
 /**
- *  The <code>ExponentialOut()</code> method starts motion fast
+ *  The <code>exponentialOut()</code> method starts motion fast
  *  and then decelerates motion to a zero velocity as it executes.
  *
  *  @param t Specifies the current time, between 0 and duration inclusive.
@@ -150,8 +169,8 @@ inline double exponentialOut( double t, double b, double c, double d ) {
 }
 
 /**
- *  The <code>ExponentialInOut()</code> method combines the motion
- *  of the <code>ExponentialIn()</code> and <code>ExponentialOut()</code> methods
+ *  The <code>exponentialInOut()</code> method combines the motion
+ *  of the <code>exponentialIn()</code> and <code>ExponentialOut()</code> methods
  *  to start the motion from a zero velocity, accelerate motion,
  *  then decelerate to a zero velocity.
  *

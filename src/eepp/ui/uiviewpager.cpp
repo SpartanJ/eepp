@@ -60,8 +60,7 @@ void UIViewPager::onChildCountChange( Node* child, const bool& removed ) {
 	}
 
 	if ( !removed && child != mContainer ) {
-		child->addEventListener( Event::OnPositionChange,
-								 [&]( const Event* event ) { updateChilds(); } );
+		child->addEventListener( Event::OnPositionChange, [&]( const Event* ) { updateChilds(); } );
 	}
 
 	UIWidget::onChildCountChange( child, removed );
@@ -230,7 +229,7 @@ void UIViewPager::moveToPage( const Int32& pageNum, bool animate ) {
 	}
 }
 
-Uint32 UIViewPager::onCalculateDrag( const Vector2f& position, const Uint32& flags ) {
+Uint32 UIViewPager::onCalculateDrag( const Vector2f&, const Uint32& flags ) {
 	if ( !( flags & EE_BUTTON_LMASK ) ) {
 		onMouseUpEvent();
 	}
