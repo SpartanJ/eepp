@@ -3037,7 +3037,7 @@ void App::createProjectTreeMenu() {
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( mCurrentProject );
 		} else if ( "execute_dir_in_terminal" == id ) {
-			mTerminalManager->createNewTerminal();
+			mTerminalManager->createNewTerminal( "", nullptr, mCurrentProject );
 		} else if ( "show_hidden_files" == id ) {
 			toggleHiddenFiles();
 		} else if ( "collapse-all" == id ) {

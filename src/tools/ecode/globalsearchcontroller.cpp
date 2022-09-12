@@ -189,7 +189,7 @@ void GlobalSearchController::initGlobalSearchBar(
 	addClickListener( searchClearHistory, "global-search-clear-history" );
 	mGlobalSearchLayout = mUISceneNode
 							  ->loadLayoutFromString( R"xml(
-		<vbox id="global_search_layout" layout_width="wrap_content" layout_height="wrap_content" visible="false">
+		<vbox id="global_search_layout" layout_width="fixed" layout_height="wrap_content" visible="false">
 			<hbox class="status_box" layout_width="match_parent" layout_height="wrap_content" visible="false">
 				<TextView layout_width="wrap_content" layout_height="match_parent" text="Searched for:" margin-right="4dp" />
 				<TextView class="search_str" layout_width="wrap_content" layout_height="match_parent" />
