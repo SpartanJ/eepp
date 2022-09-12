@@ -600,6 +600,38 @@ void UICodeEditorSplitter::applyColorScheme( const SyntaxColorScheme& colorSchem
 	mClient->onColorSchemeChanged( mCurrentColorScheme );
 }
 
+void UICodeEditorSplitter::forEachWidgetType( const UINodeType& nodeType,
+											  std::function<void( UIWidget* )> run ) const {
+	Node* node;
+	UIWidget* widget;
+	for ( auto tabWidget : mTabWidgets ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+			node = tabWidget->getTab( i )->getOwnedWidget();
+			if ( node && node->isWidget() ) {
+				widget = node->asType<UIWidget>();
+				if ( widget->isType( nodeType ) )
+					run( widget );
+			}
+		}
+	}
+}
+
+void UICodeEditorSplitter::forEachWidgetTypeStoppable(
+	const UINodeType& nodeType, std::function<bool( UIWidget* )> run ) const {
+	Node* node;
+	UIWidget* widget;
+	for ( auto tabWidget : mTabWidgets ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+			node = tabWidget->getTab( i )->getOwnedWidget();
+			if ( node && node->isWidget() ) {
+				widget = node->asType<UIWidget>();
+				if ( widget->isType( nodeType ) && run( widget ) )
+					return;
+			}
+		}
+	}
+}
+
 void UICodeEditorSplitter::forEachEditor( std::function<void( UICodeEditor* )> run ) const {
 	for ( auto tabWidget : mTabWidgets )
 		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {

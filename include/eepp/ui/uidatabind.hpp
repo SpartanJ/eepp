@@ -87,6 +87,8 @@ template <typename T> class UIDataBind {
 		*data = t;
 		setValueChange();
 		inSetValue = false;
+		if ( onValueChangeCb )
+			onValueChangeCb( t );
 	}
 
 	const T& get() const { return *data; }
@@ -126,6 +128,8 @@ template <typename T> class UIDataBind {
 	~UIDataBind() { reset(); }
 
 	const PropertyDefinition* getPropertyDefinition() const { return property; }
+
+	std::function<void( const T& newVal )> onValueChangeCb;
 
   protected:
 	T* data{ nullptr };
@@ -172,6 +176,8 @@ template <typename T> class UIDataBind {
 					widget->applyProperty( prop );
 			}
 			inSetValue = false;
+			if ( onValueChangeCb )
+				onValueChangeCb( val );
 		}
 	}
 

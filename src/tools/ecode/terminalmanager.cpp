@@ -298,8 +298,10 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 				 mApp->getSplitter()->splitterFromWidget( mApp->getSplitter()->getCurWidget() ) )
 			splitter->swap();
 	} );
-	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(),
-					  [term] { term->setExclusiveMode( !term->getExclusiveMode() ); } );
+	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term, this] {
+		term->setExclusiveMode( !term->getExclusiveMode() );
+		mApp->updateTerminalMenu();
+	} );
 	term->setCommand( "create-new-terminal", [&] { createNewTerminal(); } );
 	term->setCommand( "terminal-rename", [&, term] {
 		UIMessageBox* msgBox = UIMessageBox::New(

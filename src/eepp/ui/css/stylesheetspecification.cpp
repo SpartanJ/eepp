@@ -158,12 +158,14 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "layout-to-top-of", "" ).addAlias( "layout_to_top_of" );
 	registerProperty( "layout-to-bottom-of", "" ).addAlias( "layout_to_bottom_of" );
 	registerProperty( "clip", "" ).setType( PropertyType::String );
-	registerProperty( "rotation", "" ).setType( PropertyType::NumberFloat );
+	registerProperty( "rotation", "" ).addAlias( "rotate" ).setType( PropertyType::NumberFloat );
 	registerProperty( "scale", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "rotation-origin-point-x", "50%" )
+		.addAlias( "rotate-origin-point-x" )
 		.setRelativeTarget( PropertyRelativeTarget::LocalBlockWidth )
 		.setType( PropertyType::NumberLength );
 	registerProperty( "rotation-origin-point-y", "50%" )
+		.addAlias( "rotate-origin-point-y" )
 		.setRelativeTarget( PropertyRelativeTarget::LocalBlockHeight )
 		.setType( PropertyType::NumberLength );
 	registerProperty( "scale-origin-point-x", "50%" )
@@ -413,6 +415,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 						 "border-bottom-right-radius", "border-bottom-left-radius" },
 					   "radius" );
 	registerShorthand( "rotation-origin-point",
+					   { "rotation-origin-point-x", "rotation-origin-point-y" }, "vector2" );
+	registerShorthand( "rotate-origin-point",
 					   { "rotation-origin-point-x", "rotation-origin-point-y" }, "vector2" );
 	registerShorthand( "scale-origin-point", { "scale-origin-point-x", "scale-origin-point-y" },
 					   "vector2" );

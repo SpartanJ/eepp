@@ -140,6 +140,10 @@ class App : public UICodeEditorSplitter::Client {
 
 	void updatedReopenClosedFileState();
 
+	void updateDocumentMenu();
+
+	void updateTerminalMenu();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -162,6 +166,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::vector<std::string> mRecentFolders;
 	AppConfig mConfig;
 	UIPopUpMenu* mDocMenu{ nullptr };
+	UIPopUpMenu* mTerminalMenu{ nullptr };
 	UIPopUpMenu* mViewMenu{ nullptr };
 	UIPopUpMenu* mWindowMenu{ nullptr };
 	UIPopUpMenu* mRendererMenu{ nullptr };
@@ -276,7 +281,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	UIMenu* createDocumentMenu();
 
-	void updateDocumentMenu();
+	UIMenu* createTerminalMenu();
 
 	void loadKeybindings();
 

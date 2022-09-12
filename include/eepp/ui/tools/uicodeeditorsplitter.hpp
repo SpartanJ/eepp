@@ -118,6 +118,12 @@ class EE_API UICodeEditorSplitter {
 
 	void applyColorScheme( const SyntaxColorScheme& colorScheme );
 
+	void forEachWidgetType( const UINodeType& nodeType,
+							std::function<void( UIWidget* )> run ) const;
+
+	void forEachWidgetTypeStoppable( const UINodeType& nodeType,
+									 std::function<bool( UIWidget* )> run ) const;
+
 	void forEachWidgetStoppable( std::function<bool( UIWidget* )> run ) const;
 
 	void forEachWidget( std::function<void( UIWidget* )> run ) const;

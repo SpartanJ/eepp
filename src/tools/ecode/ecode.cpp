@@ -1215,6 +1215,33 @@ makeAutoClosePairs( const std::string& strPairs ) {
 	return pairs;
 }
 
+UIMenu* App::createTerminalMenu() {
+	mTerminalMenu = UIPopUpMenu::New();
+
+	UIMenuCheckBox* exclusiveChk =
+		mTerminalMenu->addCheckBox( i18n( "exclusive_mode", "Exclusive Mode" ), false,
+									getKeybind( UITerminal::getExclusiveModeToggleCommandName() ) );
+	exclusiveChk
+		->setTooltipText(
+			i18n( "exclusive_mode_tooltip",
+				  "Global Keybindings are disabled when exclusive mode is enabled.\nThis is to "
+				  "avoid keyboard shortcut overlapping between the terminal an the application." ) )
+		->setId( "exclusive-mode" );
+
+	mTerminalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		if ( "exclusive-mode" == id ) {
+			if ( mSplitter->getCurWidget() &&
+				 mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
+				mSplitter->getCurWidget()->asType<UITerminal>()->setExclusiveMode(
+					event->getNode()->asType<UIMenuCheckBox>()->isActive() );
+			}
+		}
+	} );
+
+	return mTerminalMenu;
+}
+
 UIMenu* App::createDocumentMenu() {
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 
@@ -1749,6 +1776,17 @@ void App::updateProjectSettingsMenu() {
 		->setActive( mProjectDocConfig.useGlobalSettings );
 }
 
+void App::updateTerminalMenu() {
+	bool enabled =
+		mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL );
+	mSettingsMenu->getItemId( "term-menu" )->setEnabled( enabled );
+	if ( !enabled )
+		return;
+	mTerminalMenu->getItemId( "exclusive-mode" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mSplitter->getCurWidget()->asType<UITerminal>()->getExclusiveMode() );
+}
+
 void App::updateDocumentMenu() {
 	if ( !mSplitter->getCurWidget() || !mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 		mSettingsMenu->getItemId( "doc-menu" )->setEnabled( false );
@@ -1986,9 +2024,12 @@ void App::onWidgetFocusChange( UIWidget* widget ) {
 		mDocInfo->setVisible( widget && widget->isType( UI_TYPE_CODEEDITOR ) );
 
 	updateDocumentMenu();
+	updateTerminalMenu();
 	if ( widget && !widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		if ( widget->isType( UI_TYPE_TERMINAL ) )
 			setAppTitle( widget->asType<UITerminal>()->getTitle() );
+		else
+			setAppTitle( "" );
 	}
 }
 
@@ -2698,8 +2739,12 @@ void App::createSettingsMenu() {
 		mTerminalManager->updateMenuColorScheme( termColorSchemeMenu );
 	} );
 #endif
-	mSettingsMenu->addSubMenu( i18n( "document", "Document" ), nullptr, createDocumentMenu() )
+	mSettingsMenu
+		->addSubMenu( i18n( "document", "Document" ), findIcon( "file" ), createDocumentMenu() )
 		->setId( "doc-menu" );
+	mSettingsMenu
+		->addSubMenu( i18n( "terminal", "Terminal" ), findIcon( "terminal" ), createTerminalMenu() )
+		->setId( "term-menu" );
 	mSettingsMenu->addSubMenu( i18n( "edit", "Edit" ), nullptr, createEditMenu() );
 	mSettingsMenu->addSubMenu( i18n( "view", "View" ), nullptr, createViewMenu() );
 	mSettingsMenu->addSubMenu( i18n( "tools", "Tools" ), nullptr, createToolsMenu() );
@@ -2992,7 +3037,7 @@ void App::createProjectTreeMenu() {
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( mCurrentProject );
 		} else if ( "execute_dir_in_terminal" == id ) {
-			mTerminalManager->createNewTerminal( "", nullptr, mCurrentProject );
+			mTerminalManager->createNewTerminal();
 		} else if ( "show_hidden_files" == id ) {
 			toggleHiddenFiles();
 		} else if ( "collapse-all" == id ) {

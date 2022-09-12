@@ -1283,6 +1283,7 @@ Sets the element rotation in degrees.
 * Applicable to: Any element
 * Data Type: [number](#number-data-type)
 * Default value: `0`
+* Aliases: `rotate`
 
 ---
 
@@ -1293,6 +1294,7 @@ Sets the x-axis rotation origin point relative to the element expressed as a len
 * Applicable to: Any element
 * Data Type: [length-percentage](#length-percentage-data-type)
 * Default value: `center`
+* Aliases: `rotate-origin-point-x`
 
 Syntax:
 
@@ -1311,6 +1313,7 @@ Sets the y-axis rotation origin point relative to the element expressed as a len
 * Applicable to: Any element
 * Data Type: [length-percentage](#length-percentage-data-type)
 * Default value: `center`
+* Aliases: `rotate-origin-point-y`
 
 Syntax:
 
@@ -2154,6 +2157,7 @@ Read [padding](https://developer.mozilla.org/en-US/docs/Web/CSS/padding) documen
 The origin point of the rotation expressed as a [position](#position-data-type).
 
 Default value: `center center`.
+Aliases: `rotate-origin-point`
 
 Syntax:
 
