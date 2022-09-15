@@ -61,6 +61,9 @@ class LinterPlugin : public UICodeEditorPlugin {
 	void drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 							const Float& fontSize, const Float& lineHeight );
 
+	void minimapDrawBeforeLineText( UICodeEditor*, const Int64&, const Vector2f&, const Vector2f&,
+									const Float&, const Float& );
+
 	void update( UICodeEditor* );
 
 	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& );

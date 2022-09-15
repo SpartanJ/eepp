@@ -2943,6 +2943,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			if ( !selectionString.empty() )
 				drawWordMatch( selectionString, index );
 
+			for ( auto* plugin : mPlugins )
+				plugin->minimapDrawBeforeLineText( this, index, { rect.Left, lineY },
+												   { rect.getWidth(), charHeight }, charSpacing,
+												   gutterWidth );
+
 			auto& tokens = mHighlighter.getLine( index );
 			for ( auto& token : tokens ) {
 				String text( token.text );
@@ -2968,6 +2973,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 				}
 			}
 			flushBatch( "normal" );
+
+			for ( auto* plugin : mPlugins )
+				plugin->minimapDrawAfterLineText( this, index, { rect.Left, lineY },
+												  { rect.getWidth(), charHeight }, charSpacing,
+												  gutterWidth );
 
 			if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
 				drawTextRange( mHighlightTextRange, index,

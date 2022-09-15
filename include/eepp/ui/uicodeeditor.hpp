@@ -64,8 +64,15 @@ class UICodeEditorPlugin {
 	}
 	virtual void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
 									 const Float& ){};
-	virtual void drawAfterLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
-									const Float& ){};
+	virtual void drawAfterLineText( UICodeEditor* /*editor*/, const Int64& /*index*/,
+									Vector2f /*position*/, const Float& /*fontSize*/,
+									const Float& /*lineHeight*/ ){};
+	virtual void minimapDrawBeforeLineText( UICodeEditor* /*editor*/, const Int64& /*index*/,
+											const Vector2f& /*position*/, const Vector2f& /*size*/,
+											const Float& /*charWidth*/,
+											const Float& /*gutterWidth*/ ){};
+	virtual void minimapDrawAfterLineText( UICodeEditor*, const Int64&, const Vector2f&,
+										   const Vector2f&, const Float&, const Float& ){};
 };
 
 class EE_API DocEvent : public Event {

@@ -3,6 +3,7 @@
 #include "../../thirdparty/json.hpp"
 #include "../../thirdparty/subprocess.h"
 #include <algorithm>
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
@@ -454,6 +455,33 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		Rectf box( pos - editor->getScreenPos(), { editor->getTextWidth( string ), lineHeight } );
 		match.box[editor] = box;
 		line.draw( pos.x, pos.y + lineHeight * 0.5f );
+	}
+}
+
+void LinterPlugin::minimapDrawBeforeLineText( UICodeEditor* editor, const Int64& index,
+											  const Vector2f& pos, const Vector2f& size,
+											  const Float&, const Float& ) {
+	Lock l( mMatchesMutex );
+	auto matchIt = mMatches.find( editor->getDocumentRef().get() );
+	if ( matchIt == mMatches.end() )
+		return;
+
+	std::map<Int64, std::vector<LinterMatch>>& map = matchIt->second;
+	auto lineIt = map.find( index );
+	if ( lineIt == map.end() )
+		return;
+	TextDocument* doc = matchIt->first;
+	std::vector<LinterMatch>& matches = lineIt->second;
+	Primitives p;
+	for ( auto& match : matches ) {
+		if ( match.lineCache != doc->line( index ).getHash() )
+			return;
+		Color col(
+			editor->getColorScheme().getEditorSyntaxStyle( getMatchString( match.type ) ).color );
+		col.blendAlpha( 100 );
+		p.setColor( col );
+		p.drawRectangle( Rectf( pos, size ) );
+		break;
 	}
 }
 

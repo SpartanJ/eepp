@@ -85,8 +85,8 @@ newgcctoolchain {
 newgcctoolchain {
 	name = "mingw64",
 	description = "Mingw64 to cross-compile windows binaries from *nix",
-	prefix = "x86_64-w64-mingw64-",
-	cppflags = "-B /usr/bin/x86_64-w64-mingw64-"
+	prefix = "x86_64-w64-mingw32-",
+	cppflags = "-B /usr/bin/x86_64-w64-mingw32-"
 }
 
 newgcctoolchain {
