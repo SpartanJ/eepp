@@ -7,6 +7,7 @@
 #include "filesystemlistener.hpp"
 #include "globalsearchcontroller.hpp"
 #include "notificationcenter.hpp"
+#include "plugins/pluginmanager.hpp"
 #include "projectdirectorytree.hpp"
 #include "terminalmanager.hpp"
 #include <eepp/ee.hpp>
@@ -144,6 +145,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void updateTerminalMenu();
 
+	void createPluginManagerUI();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -220,6 +223,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mLastFileFolder;
 	ColorSchemePreference mUIColorScheme;
 	std::unique_ptr<TerminalManager> mTerminalManager;
+	std::unique_ptr<PluginManager> mPluginManager;
 
 	void saveAllProcess();
 
@@ -305,12 +309,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 
-	bool setAutoComplete( bool enable );
-
-	bool setLinter( bool enable );
-
-	bool setFormatter( bool enable );
-
 	void updateDocInfo( TextDocument& doc );
 
 	void setFocusEditorOnClose( UIMessageBox* msgBox );
@@ -345,6 +343,8 @@ class App : public UICodeEditorSplitter::Client {
 	UIMessageBox* fileAlreadyExistsMsgBox();
 
 	void renameFile( const FileInfo& file );
+
+	void initPluginManager();
 };
 
 } // namespace ecode

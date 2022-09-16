@@ -31,12 +31,14 @@ class UIMenuItem;
 
 class UICodeEditorPlugin {
   public:
+	virtual std::string getId() = 0;
 	virtual std::string getTitle() = 0;
 	virtual std::string getDescription() = 0;
 	virtual bool hasGUIConfig() { return false; }
 	virtual bool hasFileConfig() { return false; }
 	virtual UIWindow* getGUIConfig() { return nullptr; }
 	virtual std::string getFileConfigPath() { return ""; }
+	virtual ~UICodeEditorPlugin() {}
 
 	virtual void onRegister( UICodeEditor* ) = 0;
 	virtual void onUnregister( UICodeEditor* ) = 0;

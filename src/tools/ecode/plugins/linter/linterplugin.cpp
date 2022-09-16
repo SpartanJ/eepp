@@ -22,10 +22,14 @@ namespace ecode {
 #define LINTER_THREADED 0
 #endif
 
-LinterPlugin::LinterPlugin( const std::string& lintersPath, std::shared_ptr<ThreadPool> pool ) :
-	mPool( pool ) {
+UICodeEditorPlugin* LinterPlugin::New( const PluginManager* pluginManager ) {
+	return eeNew( LinterPlugin, ( pluginManager ) );
+}
+
+LinterPlugin::LinterPlugin( const PluginManager* pluginManager ) :
+	mPool( pluginManager->getThreadPool() ) {
 #if LINTER_THREADED
-	mPool->run( [&, lintersPath] { load( lintersPath ); }, [] {} );
+	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 #else
 	load( lintersPath );
 #endif
@@ -46,11 +50,14 @@ LinterPlugin::~LinterPlugin() {
 	}
 }
 
-void LinterPlugin::load( const std::string& lintersPath ) {
-	if ( !FileSystem::fileExists( lintersPath ) )
+void LinterPlugin::load( const PluginManager* pluginManager ) {
+	std::string path( pluginManager->getResourcesPath() + "plugins/linters.json" );
+	if ( FileSystem::fileExists( pluginManager->getPluginsPath() + "linters.json" ) )
+		path = pluginManager->getPluginsPath() + "linters.json";
+	if ( !FileSystem::fileExists( path ) )
 		return;
 	try {
-		std::ifstream stream( lintersPath );
+		std::ifstream stream( path );
 		json j;
 		stream >> j;
 

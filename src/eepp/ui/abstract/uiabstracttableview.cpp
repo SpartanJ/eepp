@@ -130,8 +130,7 @@ void UIAbstractTableView::createOrUpdateColumns() {
 		for ( size_t col = 0; col < count; col++ ) {
 			if ( col != mMainColumn && !isColumnHidden( col ) ) {
 				Float colWidth = getMaxColumnContentWidth( col, true );
-				if ( colWidth == 0 )
-					colWidth = columnData( col ).widget->getPixelsSize().getWidth();
+				colWidth = eemax( colWidth, columnData( col ).widget->getPixelsSize().getWidth() );
 				usedWidth += colWidth;
 				columnData( col ).width = colWidth;
 			}
@@ -336,8 +335,17 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t> columns )
 		return;
 	for ( size_t i = 0; i < getModel()->columnCount(); i++ )
 		columnData( i ).visible = false;
-	for ( auto col : columns )
+
+	bool foundMainColumn = false;
+	for ( auto col : columns ) {
 		columnData( col ).visible = true;
+		if ( col == mMainColumn )
+			foundMainColumn = true;
+	}
+
+	if ( !foundMainColumn && !columns.empty() )
+		mMainColumn = columns[0];
+
 	createOrUpdateColumns();
 }
 

@@ -1,6 +1,7 @@
 #ifndef ECODE_LINTERPLUGIN_HPP
 #define ECODE_LINTERPLUGIN_HPP
 
+#include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
@@ -43,16 +44,21 @@ struct LinterMatch {
 
 class LinterPlugin : public UICodeEditorPlugin {
   public:
-	LinterPlugin( const std::string& lintersPath, std::shared_ptr<ThreadPool> pool );
+	static PluginDefinition Definition() {
+		return { "linter", "Linter",
+				 "Use static code analysis tool used to flag programming errors, bugs,\n"
+				 "stylistic errors, and suspicious constructs.",
+				 LinterPlugin::New };
+	}
+	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
 
 	virtual ~LinterPlugin();
 
-	std::string getTitle() { return "Linter"; }
+	std::string getId() { return Definition().id; }
 
-	std::string getDescription() {
-		return "Use static code analysis tool used to flag programming errors, bugs,\n"
-			   "stylistic errors, and suspicious constructs.";
-	}
+	std::string getTitle() { return Definition().name; }
+
+	std::string getDescription() { return Definition().description; }
 
 	void onRegister( UICodeEditor* );
 
@@ -92,7 +98,9 @@ class LinterPlugin : public UICodeEditorPlugin {
 	bool mReady{ false };
 	bool mShuttingDown{ false };
 
-	void load( const std::string& lintersPath );
+	LinterPlugin( const PluginManager* pluginManager );
+
+	void load( const PluginManager* pluginManager );
 
 	void lintDoc( std::shared_ptr<TextDocument> doc );
 

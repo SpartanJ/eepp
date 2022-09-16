@@ -1,5 +1,6 @@
 #include "appconfig.hpp"
 #include "ecode.hpp"
+#include "plugins/pluginmanager.hpp"
 #include "thirdparty/json.hpp"
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -42,7 +43,7 @@ static std::vector<std::string> urlDecode( const std::vector<std::string>& vec )
 void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 					  std::string& initColorScheme, std::vector<std::string>& recentFiles,
 					  std::vector<std::string>& recentFolders, const std::string& resPath,
-					  const Float& displayDPI ) {
+					  const Float& displayDPI, PluginManager* pluginManager ) {
 	keybindingsPath = confPath + "keybindings.cfg";
 	ini.loadFromFile( confPath + "config.cfg" );
 	iniState.loadFromFile( confPath + "state.cfg" );
@@ -95,9 +96,6 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.colorPickerSelection = ini.getValueB( "editor", "color_picker_selection", true );
 	editor.colorPreview = ini.getValueB( "editor", "color_preview", true );
 	editor.minimap = ini.getValueB( "editor", "minimap", true );
-	editor.autoComplete = ini.getValueB( "editor", "auto_complete", true );
-	editor.linter = ini.getValueB( "editor", "linter", true );
-	editor.formatter = ini.getValueB( "editor", "formatter", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", true );
 	editor.singleClickTreeNavigation =
@@ -121,6 +119,15 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.fontSize = ini.getValue( "terminal", "font_size", "11dp" );
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 
+	std::map<std::string, bool> pluginsEnabled;
+	const auto& creators = pluginManager->getDefinitions();
+	for ( const auto& creator : creators )
+		pluginsEnabled[creator.first] =
+			ini.getValueB( "plugins", creator.first,
+						   "autocomplete" == creator.first || "linter" == creator.first ||
+							   "autoformatter" == creator.first );
+	pluginManager->setPluginsEnabled( pluginsEnabled );
+
 	iniInfo = FileInfo( ini.path() );
 }
 
@@ -128,7 +135,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 					  const std::vector<std::string>& recentFolders,
 					  const std::string& panelPartition, EE::Window::Window* win,
 					  const std::string& colorSchemeName, const SearchBarConfig& searchBarConfig,
-					  const GlobalSearchBarConfig& globalSearchBarConfig ) {
+					  const GlobalSearchBarConfig& globalSearchBarConfig,
+					  PluginManager* pluginManager ) {
 
 	FileInfo configInfo( ini.path() );
 	if ( iniInfo.getModificationTime() != 0 &&
@@ -186,9 +194,6 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "color_picker_selection", editor.colorPickerSelection );
 	ini.setValueB( "editor", "color_preview", editor.colorPreview );
 	ini.setValueB( "editor", "minimap", editor.minimap );
-	ini.setValueB( "editor", "auto_complete", editor.autoComplete );
-	ini.setValueB( "editor", "linter", editor.linter );
-	ini.setValueB( "editor", "formatter", editor.formatter );
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
 	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );
 	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickTreeNavigation );
@@ -213,6 +218,10 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				  Renderer::graphicsLibraryVersionToString( context.Version ) );
 	ini.setValueI( "window", "multisamples", context.Multisamples );
 	ini.setValueI( "window", "frameratelimit", context.FrameRateLimit );
+
+	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
+	for ( const auto& plugin : pluginsEnabled )
+		ini.setValueB( "plugins", plugin.first, plugin.second );
 
 	ini.writeFile();
 	iniState.writeFile();

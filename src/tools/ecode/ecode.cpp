@@ -342,6 +342,18 @@ void App::runCommand( const std::string& command ) {
 	}
 }
 
+void App::initPluginManager() {
+	mPluginManager = std::make_unique<PluginManager>( mResPath, mPluginsPath, mThreadPool );
+	mPluginManager->onPluginEnabled = [&]( UICodeEditorPlugin* plugin ) {
+		if ( mSplitter )
+			mSplitter->forEachEditor(
+				[&]( UICodeEditor* editor ) { editor->registerPlugin( plugin ); } );
+	};
+	mPluginManager->registerPlugin( LinterPlugin::Definition() );
+	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
+	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );
+}
+
 void App::loadConfig( const LogLevel& logLevel ) {
 	mConfigPath = Sys::getConfigPath( "ecode" );
 	if ( !FileSystem::fileExists( mConfigPath ) )
@@ -363,8 +375,10 @@ void App::loadConfig( const LogLevel& logLevel ) {
 	Log::create( mConfigPath + "ecode.log", logLevel, true, true );
 #endif
 
+	initPluginManager();
+
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
-				  mResPath, mDisplayDPI );
+				  mResPath, mDisplayDPI, mPluginManager.get() );
 }
 
 void App::saveConfig() {
@@ -373,7 +387,7 @@ void App::saveConfig() {
 				  mWindow,
 				  mSplitter ? mSplitter->getCurrentColorSchemeName() : mConfig.editor.colorScheme,
 				  mDocSearchController->getSearchBarConfig(),
-				  mGlobalSearchController->getGlobalSearchBarConfig() );
+				  mGlobalSearchController->getGlobalSearchBarConfig(), mPluginManager.get() );
 }
 
 static std::string keybindFormat( std::string str ) {
@@ -1009,25 +1023,6 @@ UIMenu* App::createViewMenu() {
 								"Enables the color picker tool when a double click selection\n"
 								"is done over a word representing a color." ) )
 		->setId( "enable-color-picker" );
-	mViewMenu->addCheckBox( i18n( "enable_autocomplete", "Enable Auto Complete" ) )
-		->setActive( mConfig.editor.autoComplete )
-		->setTooltipText(
-			i18n( "enable_autocomplete_tooltip",
-				  "Auto complete shows the completion popup as you type, so you can fill\n"
-				  "in long words by typing only a few characters." ) )
-		->setId( "enable-autocomplete" );
-	mViewMenu->addCheckBox( i18n( "enable_linter", "Enable Linter" ) )
-		->setActive( mConfig.editor.linter )
-		->setTooltipText(
-			i18n( "enable_linter_tooltip",
-				  "Use static code analysis tool used to flag programming errors, bugs,\n"
-				  "stylistic errors, and suspicious constructs." ) )
-		->setId( "enable-linter" );
-	mViewMenu->addCheckBox( i18n( "enable_code_formatter", "Enable Code Formatter" ) )
-		->setActive( mConfig.editor.formatter )
-		->setTooltipText( i18n( "enable_code_formatter_tooltip",
-								"Enables the code formatter/prettifier plugin." ) )
-		->setId( "enable-code-formatter" );
 	mViewMenu->addCheckBox( i18n( "hide_tabbar_on_single_tab", "Hide tabbar on single tab" ) )
 		->setActive( mConfig.editor.hideTabBarOnSingleTab )
 		->setTooltipText(
@@ -1108,12 +1103,6 @@ UIMenu* App::createViewMenu() {
 			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPickerSelection );
 			} );
-		} else if ( item->getId() == "enable-autocomplete" ) {
-			setAutoComplete( item->asType<UIMenuCheckBox>()->isActive() );
-		} else if ( item->getId() == "enable-linter" ) {
-			setLinter( item->asType<UIMenuCheckBox>()->isActive() );
-		} else if ( item->getId() == "enable-code-formatter" ) {
-			setFormatter( item->asType<UIMenuCheckBox>()->isActive() );
 		} else if ( item->getId() == "hide-tabbar-on-single-tab" ) {
 			mConfig.editor.hideTabBarOnSingleTab = item->asType<UIMenuCheckBox>()->isActive();
 			mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
@@ -1217,6 +1206,16 @@ makeAutoClosePairs( const std::string& strPairs ) {
 
 UIMenu* App::createTerminalMenu() {
 	mTerminalMenu = UIPopUpMenu::New();
+
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	UIMenuSubMenu* termColorSchemeMenu = mTerminalMenu->addSubMenu(
+		i18n( "terminal_color_scheme", "Terminal Color Scheme" ), findIcon( "palette" ),
+		mTerminalManager->createColorSchemeMenu() );
+	termColorSchemeMenu->addEventListener(
+		Event::OnMenuShow, [&, termColorSchemeMenu]( const Event* ) {
+			mTerminalManager->updateMenuColorScheme( termColorSchemeMenu );
+		} );
+#endif
 
 	UIMenuCheckBox* exclusiveChk =
 		mTerminalMenu->addCheckBox( i18n( "exclusive_mode", "Exclusive Mode" ), false,
@@ -1787,6 +1786,10 @@ void App::updateTerminalMenu() {
 		->setActive( mSplitter->getCurWidget()->asType<UITerminal>()->getExclusiveMode() );
 }
 
+void App::createPluginManagerUI() {
+	UIPluginManager::New( mUISceneNode, mPluginManager.get() )->showWhenReady();
+}
+
 void App::updateDocumentMenu() {
 	if ( !mSplitter->getCurWidget() || !mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 		mSettingsMenu->getItemId( "doc-menu" )->setEnabled( false );
@@ -2129,7 +2132,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "open-global-search",	 "menu-toggle",			"switch-side-panel",
 			 "download-file-web",	 "create-new-terminal", "terminal-split-left",
 			 "terminal-split-right", "terminal-split-top",	"terminal-split-bottom",
-			 "terminal-split-swap",	 "reopen-closed-tab" };
+			 "terminal-split-swap",	 "reopen-closed-tab",	"plugin-manager" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {
@@ -2428,6 +2431,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		doc.execute( "create-new-terminal" );
 	} );
 	doc.setCommand( "reopen-closed-tab", [&] { reopenClosedTab(); } );
+	doc.setCommand( "plugin-manager", [&] { createPluginManagerUI(); } );
 
 	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -2518,68 +2522,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	editor->showMinimap( config.minimap );
 
-	if ( config.autoComplete && !mAutoCompletePlugin )
-		setAutoComplete( config.autoComplete );
-
-	if ( config.linter && !mLinterPlugin )
-		setLinter( config.linter );
-
-	if ( config.formatter && !mFormatterPlugin )
-		setFormatter( config.formatter );
-
-	if ( config.autoComplete && mAutoCompletePlugin )
-		editor->registerPlugin( mAutoCompletePlugin );
-
-	if ( config.linter && mLinterPlugin )
-		editor->registerPlugin( mLinterPlugin );
-
-	if ( config.formatter && mFormatterPlugin )
-		editor->registerPlugin( mFormatterPlugin );
-}
-
-bool App::setAutoComplete( bool enable ) {
-	mConfig.editor.autoComplete = enable;
-	if ( enable && !mAutoCompletePlugin ) {
-		mAutoCompletePlugin = eeNew( AutoCompletePlugin, ( mThreadPool ) );
-		mSplitter->forEachEditor(
-			[&]( UICodeEditor* editor ) { editor->registerPlugin( mAutoCompletePlugin ); } );
-		return true;
-	}
-	if ( !enable && mAutoCompletePlugin )
-		eeSAFE_DELETE( mAutoCompletePlugin );
-	return false;
-}
-
-bool App::setLinter( bool enable ) {
-	mConfig.editor.linter = enable;
-	if ( enable && !mLinterPlugin ) {
-		std::string path( mResPath + "plugins/linters.json" );
-		if ( FileSystem::fileExists( mPluginsPath + "linters.json" ) )
-			path = mPluginsPath + "linters.json";
-		mLinterPlugin = eeNew( LinterPlugin, ( path, mThreadPool ) );
-		mSplitter->forEachEditor(
-			[&]( UICodeEditor* editor ) { editor->registerPlugin( mLinterPlugin ); } );
-		return true;
-	}
-	if ( !enable && mLinterPlugin )
-		eeSAFE_DELETE( mLinterPlugin );
-	return false;
-}
-
-bool App::setFormatter( bool enable ) {
-	mConfig.editor.formatter = enable;
-	if ( enable && !mFormatterPlugin ) {
-		std::string path( mResPath + "plugins/formatters.json" );
-		if ( FileSystem::fileExists( mPluginsPath + "formatters.json" ) )
-			path = mPluginsPath + "formatter.json";
-		mFormatterPlugin = eeNew( FormatterPlugin, ( path, mThreadPool ) );
-		mSplitter->forEachEditor(
-			[&]( UICodeEditor* editor ) { editor->registerPlugin( mFormatterPlugin ); } );
-		return true;
-	}
-	if ( !enable && mFormatterPlugin )
-		eeSAFE_DELETE( mFormatterPlugin );
-	return false;
+	mPluginManager->onNewEditor( editor );
 }
 
 void App::loadCurrentDirectory() {
@@ -2707,8 +2650,8 @@ void App::createSettingsMenu() {
 			   getKeybind( "save-all" ) )
 		->setId( "save-all" );
 	mSettingsMenu->addSeparator();
-	UIMenuSubMenu* fileTypeMenu = mSettingsMenu->addSubMenu( i18n( "file_type", "File Type" ),
-															 nullptr, createFileTypeMenu() );
+	UIMenuSubMenu* fileTypeMenu = mSettingsMenu->addSubMenu(
+		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu() );
 	fileTypeMenu->addEventListener( Event::OnMenuShow, [&, fileTypeMenu]( const Event* ) {
 		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
 			for ( UIPopUpMenu* menu : mFileTypeMenues )
@@ -2719,8 +2662,9 @@ void App::createSettingsMenu() {
 			fileTypeMenu->setSubMenu( newMenu );
 		}
 	} );
-	UIMenuSubMenu* colorSchemeMenu = mSettingsMenu->addSubMenu(
-		i18n( "syntax_color_scheme", "Syntax Color Scheme" ), nullptr, createColorSchemeMenu() );
+	UIMenuSubMenu* colorSchemeMenu =
+		mSettingsMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
+								   findIcon( "palette" ), createColorSchemeMenu() );
 	colorSchemeMenu->addEventListener( Event::OnMenuShow, [&, colorSchemeMenu]( const Event* ) {
 		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
 			for ( UIPopUpMenu* menu : mColorSchemeMenues )
@@ -2731,14 +2675,6 @@ void App::createSettingsMenu() {
 			colorSchemeMenu->setSubMenu( newMenu );
 		}
 	} );
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	UIMenuSubMenu* termColorSchemeMenu =
-		mSettingsMenu->addSubMenu( i18n( "terminal_color_scheme", "Terminal Color Scheme" ),
-								   nullptr, mTerminalManager->createColorSchemeMenu() );
-	colorSchemeMenu->addEventListener( Event::OnMenuShow, [&, termColorSchemeMenu]( const Event* ) {
-		mTerminalManager->updateMenuColorScheme( termColorSchemeMenu );
-	} );
-#endif
 	mSettingsMenu
 		->addSubMenu( i18n( "document", "Document" ), findIcon( "file" ), createDocumentMenu() )
 		->setId( "doc-menu" );
@@ -2749,6 +2685,8 @@ void App::createSettingsMenu() {
 	mSettingsMenu->addSubMenu( i18n( "view", "View" ), nullptr, createViewMenu() );
 	mSettingsMenu->addSubMenu( i18n( "tools", "Tools" ), nullptr, createToolsMenu() );
 	mSettingsMenu->addSubMenu( i18n( "window", "Window" ), nullptr, createWindowMenu() );
+	mSettingsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "package" ) )
+		->setId( "plugin-manager" );
 	mSettingsMenu->addSubMenu( i18n( "help", "Help" ), findIcon( "help" ), createHelpMenu() );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu
@@ -3397,13 +3335,6 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mUseFrameBuffer = frameBuffer;
 	mBenchmarkMode = benchmarkMode;
 
-	loadConfig( logLevel );
-
-	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
-															  displayManager->getDisplayCount()
-														  ? mConfig.windowState.displayIndex
-														  : 0 );
-	mDisplayDPI = currentDisplay->getDPI();
 	mResPath = Sys::getProcessPath();
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	if ( String::contains( mResPath, "ecode.app" ) ) {
@@ -3422,6 +3353,14 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 #endif
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
+
+	loadConfig( logLevel );
+
+	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
+															  displayManager->getDisplayCount()
+														  ? mConfig.windowState.displayIndex
+														  : 0 );
+	mDisplayDPI = currentDisplay->getDPI();
 
 	mConfig.windowState.pixelDensity =
 		pidelDensity > 0
@@ -3790,6 +3729,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			{ "arrow-down-s", 0xea4e },
 			{ "arrow-right-s", 0xea6e },
 			{ "match-case", 0xed8d },
+			{ "palette", 0xefc5 },
+			{ "file-code", 0xecd1 },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );

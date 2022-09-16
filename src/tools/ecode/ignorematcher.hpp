@@ -45,7 +45,11 @@ class GitIgnoreMatcher : public IgnoreMatcher {
 
 class IgnoreMatcherManager {
   public:
+	IgnoreMatcherManager( IgnoreMatcherManager&& ignoreMatcher );
+
 	IgnoreMatcherManager( std::string rootPath );
+
+	IgnoreMatcherManager& operator=( IgnoreMatcherManager&& other );
 
 	virtual ~IgnoreMatcherManager();
 

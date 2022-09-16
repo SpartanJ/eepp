@@ -1,6 +1,7 @@
 #ifndef ECODE_FORMATTERPLUGIN_HPP
 #define ECODE_FORMATTERPLUGIN_HPP
 
+#include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
@@ -20,13 +21,20 @@ class FormatterPlugin : public UICodeEditorPlugin {
 		std::string err;
 	};
 
-	FormatterPlugin( const std::string& formatterPath, std::shared_ptr<ThreadPool> pool );
+	static PluginDefinition Definition() {
+		return { "autoformatter", "Auto Formatter", "Enables the code formatter/prettifier plugin.",
+				 FormatterPlugin::New };
+	}
+
+	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
 
 	virtual ~FormatterPlugin();
 
-	std::string getTitle() { return "Auto Formatter"; }
+	std::string getId() { return Definition().id; }
 
-	std::string getDescription() { return "Enables the code formatter/prettifier plugin."; }
+	std::string getTitle() { return Definition().name; }
+
+	std::string getDescription() { return Definition().description; }
 
 	void onRegister( UICodeEditor* );
 
@@ -41,6 +49,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 		const std::function<NativeFormatterResult( const std::string& file )>& nativeFormatter );
 
 	void unregisterNativeFormatter( const std::string& cmd );
+
   protected:
 	enum class FormatterType { Inplace, Output, Native };
 
@@ -63,7 +72,9 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	bool mShuttingDown{ false };
 	bool mReady{ false };
 
-	void load( const std::string& formatterPath );
+	FormatterPlugin( const PluginManager* pluginManager );
+
+	void load( const PluginManager* pluginManager );
 
 	void formatDoc( UICodeEditor* editor );
 

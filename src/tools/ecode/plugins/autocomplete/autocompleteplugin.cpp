@@ -15,20 +15,15 @@ namespace ecode {
 #define AUTO_COMPLETE_THREADED 0
 #endif
 
-AutoCompletePlugin::AutoCompletePlugin() :
-#if AUTO_COMPLETE_THREADED
-	AutoCompletePlugin( ThreadPool::createShared( eemin<int>( 2, Sys::getCPUCount() ) ) )
-#else
-	AutoCompletePlugin( nullptr )
-#endif
-{
+UICodeEditorPlugin* AutoCompletePlugin::New( const PluginManager* pluginManager ) {
+	return eeNew( AutoCompletePlugin, ( pluginManager ) );
 }
 
-AutoCompletePlugin::AutoCompletePlugin( std::shared_ptr<ThreadPool> pool ) :
+AutoCompletePlugin::AutoCompletePlugin( const PluginManager* pluginManager ) :
 	mSymbolPattern( "[%a_ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_"
 					"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
 	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 4, 4 ) ) ),
-	mPool( pool ) {}
+	mPool( pluginManager->getThreadPool() ) {}
 
 AutoCompletePlugin::~AutoCompletePlugin() {
 	mClosing = true;
@@ -478,4 +473,4 @@ void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEdi
 	}
 }
 
-}
+} // namespace ecode

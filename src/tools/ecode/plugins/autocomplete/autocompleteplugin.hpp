@@ -1,6 +1,7 @@
 #ifndef ECODE_AUTOCOMPLETEPLUGIN_HPP
 #define ECODE_AUTOCOMPLETEPLUGIN_HPP
 
+#include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/mutex.hpp>
@@ -18,18 +19,22 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
   public:
 	typedef std::unordered_set<std::string> SymbolsList;
 
-	AutoCompletePlugin();
+	static PluginDefinition Definition() {
+		return { "autocomplete", "Auto Complete",
+				 "Auto complete shows the completion popup as you type, so you can fill\n"
+				 "in long words by typing only a few characters.",
+				 AutoCompletePlugin::New };
+	}
 
-	AutoCompletePlugin( std::shared_ptr<ThreadPool> pool );
+	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
 
 	virtual ~AutoCompletePlugin();
 
-	std::string getTitle() { return "Auto Complete"; }
+	std::string getId() { return Definition().id; }
 
-	std::string getDescription() {
-		return "Auto complete shows the completion popup as you type, so you can fill\n"
-			   "in long words by typing only a few characters.";
-	}
+	std::string getTitle() { return Definition().name; }
+
+	std::string getDescription() { return Definition().description; }
 
 	void onRegister( UICodeEditor* );
 	void onUnregister( UICodeEditor* );
@@ -96,6 +101,8 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
 
+	AutoCompletePlugin( const PluginManager* pluginManager );
+
 	void resetSuggestions( UICodeEditor* editor );
 
 	void updateSuggestions( const std::string& symbol, UICodeEditor* editor );
@@ -114,6 +121,6 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void pickSuggestion( UICodeEditor* editor );
 };
 
-}
+} // namespace ecode
 
 #endif // ECODE_AUTOCOMPLETEPLUGIN_HPP

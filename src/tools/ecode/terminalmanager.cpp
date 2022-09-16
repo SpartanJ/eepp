@@ -344,6 +344,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 									: mTerminalColorSchemes.begin()->first );
 	} );
 	term->setCommand( "reopen-closed-tab", [&] { mApp->reopenClosedTab(); } );
+	term->setCommand( "plugin-manager", [&] { mApp->createPluginManagerUI(); } );
 	// debug-draw-highlight-toggle
 	// debug-draw-boxes-toggle
 	// debug-draw-debug-data

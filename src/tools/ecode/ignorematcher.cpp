@@ -203,11 +203,22 @@ bool GitIgnoreMatcher::match( const std::string& value ) const {
 	return false;
 }
 
+IgnoreMatcherManager::IgnoreMatcherManager( IgnoreMatcherManager&& ignoreMatcher ) :
+	mMatchers( ignoreMatcher.mMatchers ) {
+	ignoreMatcher.mMatchers.clear();
+}
+
 IgnoreMatcherManager::IgnoreMatcherManager( std::string rootPath ) {
 	FileSystem::dirAddSlashAtEnd( rootPath );
 	GitIgnoreMatcher git( rootPath );
 	if ( git.canMatch() )
 		mMatchers.emplace_back( eeNew( GitIgnoreMatcher, ( rootPath ) ) );
+}
+
+IgnoreMatcherManager& IgnoreMatcherManager::operator=( IgnoreMatcherManager&& other ) {
+	mMatchers = other.mMatchers;
+	other.mMatchers.clear();
+	return *this;
 }
 
 IgnoreMatcherManager::~IgnoreMatcherManager() {

@@ -22,11 +22,14 @@ namespace ecode {
 #define FORMATTER_THREADED 0
 #endif
 
-FormatterPlugin::FormatterPlugin( const std::string& formattersPath,
-								  std::shared_ptr<ThreadPool> pool ) :
-	mPool( pool ) {
+UICodeEditorPlugin* FormatterPlugin::New( const PluginManager* pluginManager ) {
+	return eeNew( FormatterPlugin, ( pluginManager ) );
+}
+
+FormatterPlugin::FormatterPlugin( const PluginManager* pluginManager ) :
+	mPool( pluginManager->getThreadPool() ) {
 #if FORMATTER_THREADED
-	mPool->run( [&, formattersPath] { load( formattersPath ); }, [] {} );
+	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 #else
 	load( formattersPath );
 #endif
@@ -84,13 +87,16 @@ void FormatterPlugin::unregisterNativeFormatter( const std::string& cmd ) {
 	mNativeFormatters.erase( cmd );
 }
 
-void FormatterPlugin::load( const std::string& formatterPath ) {
+void FormatterPlugin::load( const PluginManager* pluginManager ) {
 	registerNativeFormatters();
 
-	if ( !FileSystem::fileExists( formatterPath ) )
+	std::string path( pluginManager->getResourcesPath() + "plugins/formatters.json" );
+	if ( FileSystem::fileExists( pluginManager->getPluginsPath() + "formatters.json" ) )
+		path = pluginManager->getPluginsPath() + "formatter.json";
+	if ( !FileSystem::fileExists( path ) )
 		return;
 	try {
-		std::ifstream stream( formatterPath );
+		std::ifstream stream( path );
 		json j;
 		stream >> j;
 

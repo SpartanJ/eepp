@@ -1161,6 +1161,8 @@
 ../../src/tools/ecode/notificationcenter.hpp
 ../../src/tools/ecode/plugins/linter/linterplugin.cpp
 ../../src/tools/ecode/plugins/linter/linterplugin.hpp
+../../src/tools/ecode/plugins/pluginmanager.cpp
+../../src/tools/ecode/plugins/pluginmanager.hpp
 ../../src/tools/ecode/projectdirectorytree.cpp
 ../../src/tools/ecode/projectdirectorytree.hpp
 ../../src/tools/ecode/projectsearch.cpp

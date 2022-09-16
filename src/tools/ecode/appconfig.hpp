@@ -18,6 +18,7 @@ using namespace EE::Window;
 
 namespace ecode {
 class App;
+class PluginManager;
 
 enum class PanelPosition { Left, Right };
 
@@ -54,10 +55,7 @@ struct CodeEditorConfig {
 	bool colorPickerSelection{ false };
 	bool colorPreview{ false };
 	bool minimap{ true };
-	bool autoComplete{ true };
 	bool showDocInfo{ true };
-	bool linter{ true };
-	bool formatter{ true };
 	bool hideTabBarOnSingleTab{ true };
 	bool singleClickTreeNavigation{ false };
 	bool syncProjectTreeWithEditor{ true };
@@ -109,6 +107,7 @@ struct AppConfig {
 	CodeEditorConfig editor;
 	DocumentConfig doc;
 	TerminalConfig term;
+	std::map<std::string, bool> pluginsConfig;
 	UIConfig ui;
 	IniFile ini;
 	IniFile iniState;
@@ -119,13 +118,13 @@ struct AppConfig {
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,
 			   std::vector<std::string>& recentFolders, const std::string& resPath,
-			   const Float& displayDPI );
+			   const Float& displayDPI, PluginManager* pluginManager );
 
 	void save( const std::vector<std::string>& recentFiles,
 			   const std::vector<std::string>& recentFolders, const std::string& panelPartition,
 			   EE::Window::Window* win, const std::string& colorSchemeName,
 			   const SearchBarConfig& searchBarConfig,
-			   const GlobalSearchBarConfig& globalSearchBarConfig );
+			   const GlobalSearchBarConfig& globalSearchBarConfig, PluginManager* pluginManager );
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectDocumentConfig& docConfig );

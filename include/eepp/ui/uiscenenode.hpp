@@ -56,6 +56,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	String getTranslatorStringFromKey( const std::string& key, const String& defaultValue );
 
+	String i18n( const std::string& key, const String& defaultValue );
+
 	UIWidget* loadLayoutNodes( pugi::xml_node node, Node* parent, const Uint32& marker );
 
 	UIWidget* loadLayoutFromFile( const std::string& layoutPath, Node* parent = NULL,
