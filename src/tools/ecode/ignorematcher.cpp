@@ -1,4 +1,5 @@
 #include "ignorematcher.hpp"
+#include <algorithm>
 #include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 
@@ -171,7 +172,6 @@ bool GitIgnoreMatcher::parse() {
 		if ( pattern[0] == '!' ) {
 			negates = true;
 			pattern = String::lTrim( pattern, '!' );
-			mHasNegates = true;
 		}
 		pattern = String::rTrim( pattern, '/' );
 		mPatterns.emplace_back( std::make_pair( pattern, negates ) );
@@ -181,13 +181,20 @@ bool GitIgnoreMatcher::parse() {
 }
 
 bool GitIgnoreMatcher::match( const std::string& value ) const {
+	bool match = false;
 	for ( size_t i = 0; i < mPatterns.size(); i++ ) {
-		if ( gitignore_glob_match( value, mPatterns[i].first ) ) {
-			if ( mHasNegates ) {
+		auto& pattern = mPatterns[i];
+		match = gitignore_glob_match( value, pattern.first );
+		if ( ( match && !pattern.second ) || ( !match && pattern.second ) ) {
+			if ( !pattern.second && i + 1 < mPatterns.size() && mPatterns[i + 1].second ) {
 				for ( size_t n = i + 1; n < mPatterns.size(); n++ ) {
 					// Check if there's a positive negate after the match
-					if ( mPatterns[n].second && gitignore_glob_match( value, mPatterns[n].first ) )
-						return false;
+					if ( mPatterns[n].second ) {
+						if ( gitignore_glob_match( value, mPatterns[n].first ) )
+							return false;
+					} else {
+						break;
+					}
 				}
 			}
 			return true;
@@ -200,21 +207,45 @@ IgnoreMatcherManager::IgnoreMatcherManager( std::string rootPath ) {
 	FileSystem::dirAddSlashAtEnd( rootPath );
 	GitIgnoreMatcher git( rootPath );
 	if ( git.canMatch() )
-		mMatcher = std::make_unique<GitIgnoreMatcher>( rootPath );
+		mMatchers.emplace_back( eeNew( GitIgnoreMatcher, ( rootPath ) ) );
+}
+
+IgnoreMatcherManager::~IgnoreMatcherManager() {
+	for ( size_t i = 0; i < mMatchers.size(); ++i )
+		eeDelete( mMatchers[i] );
 }
 
 bool IgnoreMatcherManager::foundMatch() const {
-	return mMatcher != nullptr;
+	return !mMatchers.empty();
 }
 
 bool IgnoreMatcherManager::match( const std::string& value ) const {
 	eeASSERT( foundMatch() );
-	return mMatcher->match( value );
+	for ( const auto& matcher : mMatchers )
+		if ( matcher->match( value ) )
+			return true;
+	return false;
 }
 
 const std::string& IgnoreMatcherManager::getPath() const {
 	eeASSERT( foundMatch() );
-	return mMatcher->getPath();
+	return mMatchers[mMatchers.size() - 1]->getPath();
 }
 
+void IgnoreMatcherManager::addChild( IgnoreMatcher* child ) {
+	mMatchers.emplace_back( child );
 }
+
+void IgnoreMatcherManager::removeChild( IgnoreMatcher* child ) {
+	auto it = std::find( mMatchers.begin(), mMatchers.end(), child );
+	if ( it != mMatchers.end() )
+		mMatchers.erase( it );
+}
+
+IgnoreMatcher* IgnoreMatcherManager::popMatcher( size_t index ) {
+	IgnoreMatcher* matcher = mMatchers[index];
+	mMatchers.erase( mMatchers.begin() + index );
+	return matcher;
+}
+
+} // namespace ecode

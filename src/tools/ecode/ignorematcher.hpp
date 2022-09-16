@@ -41,12 +41,13 @@ class GitIgnoreMatcher : public IgnoreMatcher {
 	bool parse() override;
 
 	std::vector<std::pair<std::string, bool>> mPatterns;
-	bool mHasNegates{ false };
 };
 
 class IgnoreMatcherManager {
   public:
 	IgnoreMatcherManager( std::string rootPath );
+
+	virtual ~IgnoreMatcherManager();
 
 	bool foundMatch() const;
 
@@ -54,8 +55,16 @@ class IgnoreMatcherManager {
 
 	const std::string& getPath() const;
 
+	void addChild( IgnoreMatcher* child );
+
+	void removeChild( IgnoreMatcher* child );
+
+	size_t matchersCount() { return mMatchers.size(); }
+
+	IgnoreMatcher* popMatcher( size_t index );
+
   protected:
-	std::unique_ptr<IgnoreMatcher> mMatcher;
+	std::vector<IgnoreMatcher*> mMatchers;
 };
 
 } // namespace ecode

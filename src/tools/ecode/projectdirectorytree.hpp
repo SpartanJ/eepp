@@ -111,7 +111,7 @@ class ProjectDirectoryTree {
 
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
 							std::string directory, std::set<std::string> currentDirs,
-							const bool& ignoreHidden, const IgnoreMatcherManager& ignoreMatcher );
+							const bool& ignoreHidden, IgnoreMatcherManager& ignoreMatcher );
 
 	void addFile( const FileInfo& file );
 
@@ -126,6 +126,6 @@ class ProjectDirectoryTree {
 	size_t findFileIndex( const std::string& path );
 };
 
-}
+} // namespace ecode
 
 #endif // ECODE_PROJECTDIRECTORYTREE_HPP

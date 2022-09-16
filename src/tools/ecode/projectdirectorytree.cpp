@@ -161,7 +161,7 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 											  std::string directory,
 											  std::set<std::string> currentDirs,
 											  const bool& ignoreHidden,
-											  const IgnoreMatcherManager& ignoreMatcher ) {
+											  IgnoreMatcherManager& ignoreMatcher ) {
 	if ( !mRunning )
 		return;
 	currentDirs.insert( directory );
@@ -190,8 +190,16 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 				mDirectories.push_back( fullpath );
 			}
 			IgnoreMatcherManager dirMatcher( fullpath );
-			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden,
-							   dirMatcher.foundMatch() ? dirMatcher : ignoreMatcher );
+			IgnoreMatcher* childMatch = nullptr;
+			if ( dirMatcher.foundMatch() ) {
+				childMatch = dirMatcher.popMatcher( 0 );
+				ignoreMatcher.addChild( childMatch );
+			}
+			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden, ignoreMatcher );
+			if ( childMatch ) {
+				ignoreMatcher.removeChild( childMatch );
+				eeSAFE_DELETE( childMatch );
+			}
 		} else {
 			files.emplace_back( fullpath );
 			names.emplace_back( file );
