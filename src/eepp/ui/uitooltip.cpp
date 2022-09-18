@@ -341,6 +341,8 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::TextTransform:
+			return TextTransform::toString( getTextTransform() );
 		case PropertyId::Color:
 			return getFontColor().toHexString();
 		case PropertyId::ShadowColor:
@@ -385,11 +387,28 @@ void UITooltip::setDontAutoHideOnMouseMove( bool dontAutoHideOnMouseMove ) {
 	mDontAutoHideOnMouseMove = dontAutoHideOnMouseMove;
 }
 
+void UITooltip::transformText() {
+	mTextCache->transformText( mTextTransform );
+}
+
+const TextTransform::Value& UITooltip::getTextTransform() const {
+	return mTextTransform;
+}
+
+void UITooltip::setTextTransform( const TextTransform::Value& textTransform ) {
+	if ( textTransform != mTextTransform ) {
+		mTextTransform = textTransform;
+		transformText();
+	}
+}
+
 bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::TextTransform:
+			setTextTransform( TextTransform::fromString( attribute.asString() ) );
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
 			break;

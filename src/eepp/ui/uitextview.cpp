@@ -235,6 +235,23 @@ const Vector2f& UITextView::getRealAlignOffset() const {
 	return mRealAlignOffset;
 }
 
+const TextTransform::Value& UITextView::getTextTransform() const {
+	return mTextTransform;
+}
+
+void UITextView::transformText() {
+	mTextCache->setString( mString );
+	mTextCache->transformText( mTextTransform );
+}
+
+void UITextView::setTextTransform( const TextTransform::Value& textTransform ) {
+	if ( textTransform != mTextTransform ) {
+		mTextTransform = textTransform;
+		transformText();
+		recalculate();
+	}
+}
+
 const Color& UITextView::getFontShadowColor() const {
 	return mFontStyleConfig.ShadowColor;
 }
@@ -281,8 +298,11 @@ void UITextView::wrapText( const Uint32& maxWidth ) {
 }
 
 void UITextView::onAutoSize() {
+	bool sizeChanged = false;
+
 	if ( ( mFlags & UI_AUTO_SIZE && 0 == getSize().getWidth() ) ) {
 		setInternalPixelsSize( Sizef( mTextCache->getTextWidth(), mTextCache->getTextHeight() ) );
+		sizeChanged = true;
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
@@ -293,7 +313,10 @@ void UITextView::onAutoSize() {
 			if ( oldW != totW )
 				setClipType( ClipType::ContentBox );
 		}
-		setInternalPixelsWidth( totW );
+		if ( mSize.x != totW ) {
+			setInternalPixelsWidth( totW );
+			sizeChanged = true;
+		}
 	}
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
@@ -304,8 +327,14 @@ void UITextView::onAutoSize() {
 			if ( oldH != totH )
 				setClipType( ClipType::ContentBox );
 		}
-		setInternalPixelsHeight( totH );
+		if ( mSize.y != totH ) {
+			setInternalPixelsHeight( totH );
+			sizeChanged = true;
+		}
 	}
+
+	if ( sizeChanged )
+		notifyLayoutAttrChange();
 }
 
 void UITextView::alignFix() {
@@ -624,6 +653,9 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Text:
 			setText( getTranslatorString( attribute.asString() ) );
 			break;
+		case PropertyId::TextTransform:
+			setTextTransform( TextTransform::fromString( attribute.asString() ) );
+			break;
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
 			break;
@@ -700,6 +732,8 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Text:
 			return getText().toUtf8();
+		case PropertyId::TextTransform:
+			return TextTransform::toString( getTextTransform() );
 		case PropertyId::Color:
 			return getFontColor().toHexString();
 		case PropertyId::ShadowColor:

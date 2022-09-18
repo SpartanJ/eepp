@@ -63,6 +63,7 @@ enum class PropertyId : Uint32 {
 	Opacity = String::hash( "opacity" ),
 	Cursor = String::hash( "cursor" ),
 	Text = String::hash( "text" ),
+	TextTransform = String::hash( "text-transform" ),
 	Color = String::hash( "color" ),
 	ShadowColor = String::hash( "shadow-color" ),
 	SelectionColor = String::hash( "selection-color" ),

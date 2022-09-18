@@ -165,14 +165,23 @@ class EE_API String {
 	/** Convert the reference of a string into lower case string */
 	static void toLowerInPlace( std::string& str );
 
+	/** Capitalizes the reference of a string */
+	static void capitalizeInPlace( std::string& str );
+
 	/** Convert a string to lower case */
 	static std::string toLower( std::string str );
+
+	/** Catitalize a string */
+	static std::string capitalize( std::string str );
 
 	/** Convert a string to lower case */
 	static String toUpper( const String& str );
 
 	/** Convert a string to lower case */
 	static String toLower( const String& str );
+
+	/** Capitalizes a string */
+	static String capitalize( const String& str );
 
 	/** Convert the string to an std::vector<Uint8> */
 	static std::vector<Uint8> stringToUint8( const std::string& str );
@@ -790,6 +799,8 @@ class EE_API String {
 	String& toLower();
 
 	String& toUpper();
+
+	String& capitalize();
 
 	String& escape();
 

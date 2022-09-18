@@ -190,6 +190,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "opacity", "" ).setType( PropertyType::NumberFloat );
 	registerProperty( "cursor", "arrow" );
 	registerProperty( "text", "" ).setType( PropertyType::String );
+	registerProperty( "text-transform", "" ).setType( PropertyType::String );
 	registerProperty( "color", "" )
 		.setType( PropertyType::Color )
 		.addAlias( "text-color" )

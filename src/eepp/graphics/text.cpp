@@ -250,6 +250,22 @@ void Text::setOutlineThickness( Float thickness ) {
 	}
 }
 
+void Text::transformText( const TextTransform::Value& transform ) {
+	switch ( transform ) {
+		case TextTransform::LowerCase:
+			setString( String::toLower( mString ) );
+			break;
+		case TextTransform::UpperCase:
+			setString( String::toUpper( mString ) );
+			break;
+		case TextTransform::Capitalize:
+			setString( String::capitalize( mString ) );
+			break;
+		default:
+			break;
+	}
+}
+
 String& Text::getString() {
 	return mString;
 }

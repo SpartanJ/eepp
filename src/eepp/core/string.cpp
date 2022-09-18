@@ -520,9 +520,28 @@ void String::toLowerInPlace( std::string& str ) {
 	std::transform( str.begin(), str.end(), str.begin(), (int ( * )( int ))std::tolower );
 }
 
+void String::capitalizeInPlace( std::string& str ) {
+	char last = ' ';
+	for ( std::string::iterator i = str.begin(); i != str.end(); ++i ) {
+		if ( isspace( last ) || last == '.' )
+			*i = toupper( *i );
+		last = *i;
+	}
+}
+
 std::string String::toLower( std::string str ) {
 	for ( std::string::iterator i = str.begin(); i != str.end(); ++i )
 		*i = static_cast<char>( std::tolower( *i ) );
+	return str;
+}
+
+std::string String::capitalize( std::string str ) {
+	char last = ' ';
+	for ( std::string::iterator i = str.begin(); i != str.end(); ++i ) {
+		if ( isspace( last ) || last == '.' )
+			*i = toupper( *i );
+		last = *i;
+	}
 	return str;
 }
 
@@ -538,6 +557,12 @@ String String::toLower( const String& str ) {
 	return cpy;
 }
 
+String String::capitalize( const String& str ) {
+	String cpy( str );
+	cpy.capitalize();
+	return cpy;
+}
+
 String& String::toLower() {
 	for ( StringType::iterator i = mString.begin(); i != mString.end(); ++i )
 		*i = static_cast<Uint32>( std::tolower( *i ) );
@@ -547,6 +572,16 @@ String& String::toLower() {
 String& String::toUpper() {
 	for ( StringType::iterator i = mString.begin(); i != mString.end(); ++i )
 		*i = static_cast<Uint32>( std::toupper( *i ) );
+	return *this;
+}
+
+String& String::capitalize() {
+	String::StringBaseType last = ' ';
+	for ( StringType::iterator i = mString.begin(); i != mString.end(); ++i ) {
+		if ( isspace( last ) || last == '.' )
+			*i = toupper( *i );
+		last = *i;
+	}
 	return *this;
 }
 

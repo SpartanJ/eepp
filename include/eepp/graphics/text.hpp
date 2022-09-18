@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
+#include <eepp/graphics/texttransform.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -55,6 +56,8 @@ class EE_API Text {
 	void setOutlineColor( const Color& color );
 
 	void setOutlineThickness( Float thickness );
+
+	void transformText( const TextTransform::Value& transform );
 
 	String& getString();
 

@@ -1,5 +1,5 @@
-#ifndef EE_UICUITEXTBOX_H
-#define EE_UICUITEXTBOX_H
+#ifndef EE_UI_UITEXTVIEW_HPP
+#define EE_UI_UITEXTVIEW_HPP
 
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
@@ -96,6 +96,10 @@ class EE_API UITextView : public UIWidget {
 
 	const Vector2f& getRealAlignOffset() const;
 
+	const TextTransform::Value& getTextTransform() const;
+
+	void setTextTransform( const TextTransform::Value& textTransform );
+
   protected:
 	Text* mTextCache;
 	String mString;
@@ -114,6 +118,7 @@ class EE_API UITextView : public UIWidget {
 	Int32 mLastSelCurEnd;
 	Int32 mFontLineCenter;
 	bool mSelecting;
+	TextTransform::Value mTextTransform{ TextTransform::None };
 
 	virtual void drawSelection( Text* textCache );
 
@@ -154,6 +159,8 @@ class EE_API UITextView : public UIWidget {
 	virtual void onSelectionChange();
 
 	const Int32& getFontLineCenter();
+
+	void transformText();
 
 	void recalculate();
 

@@ -1748,6 +1748,23 @@ Sets the text stroke (also known as text outline) width/thickness.
 
 ---
 
+### text-transform
+
+The text-transform CSS property specifies how to capitalize an element's text. It can be used to 
+make text appear in all-uppercase or all-lowercase, or with each word capitalized.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
+  TextView, EE::UI::UITooltip (Tooltip).
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `lowercase`
+  * `uppercase`
+  * `capitalize`
+  * `none`
+* Default value: `none`
+
+---
+
 ### theme
 
 Sets a theme to the element. Changing the theme will not have any effect unless [skin](#skin) is also set.

@@ -1,6 +1,7 @@
 #ifndef EE_UICUITOOLTIP_HPP
 #define EE_UICUITOOLTIP_HPP
 
+#include <eepp/graphics/texttransform.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
@@ -100,6 +101,10 @@ class EE_API UITooltip : public UIWidget {
 
 	void setDontAutoHideOnMouseMove( bool dontAutoHideOnMouseMove );
 
+	const TextTransform::Value& getTextTransform() const;
+
+	void setTextTransform( const TextTransform::Value& textTransform );
+
   protected:
 	Text* mTextCache;
 	UIFontStyleConfig mStyleConfig;
@@ -107,6 +112,7 @@ class EE_API UITooltip : public UIWidget {
 	Time mTooltipTime;
 	UINode* mTooltipOf;
 	String mStringBuffer;
+	TextTransform::Value mTextTransform{ TextTransform::None };
 	bool mDontAutoHideOnMouseMove{ false };
 
 	virtual void onAlphaChange();
@@ -118,6 +124,8 @@ class EE_API UITooltip : public UIWidget {
 	virtual void autoAlign();
 
 	virtual void autoPadding();
+
+	void transformText();
 };
 
 }} // namespace EE::UI

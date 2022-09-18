@@ -463,6 +463,7 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::TextStrokeWidth:
 		case PropertyId::TextStrokeColor:
 		case PropertyId::TextSelection:
+		case PropertyId::TextTransform:
 			return mTextBox->getPropertyString( propertyDef, propertyIndex );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
@@ -529,6 +530,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextStrokeWidth:
 		case PropertyId::TextStrokeColor:
 		case PropertyId::TextSelection:
+		case PropertyId::TextTransform:
 			attributeSet = mTextBox->applyProperty( attribute );
 			break;
 		default:
