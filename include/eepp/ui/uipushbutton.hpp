@@ -15,10 +15,9 @@ class EE_API UIPushButton : public UIWidget {
 
 	static UIPushButton* NewWithTag( const std::string& tag );
 
-	static UIPushButton* NewWithOpt( const std::string& tag,
-									 const std::function<UITextView*()>& newTextViewCb );
-
-	UIPushButton();
+	static UIPushButton*
+	NewWithOpt( const std::string& tag,
+				const std::function<UITextView*( UIPushButton* )>& newTextViewCb );
 
 	virtual ~UIPushButton();
 
@@ -72,9 +71,12 @@ class EE_API UIPushButton : public UIWidget {
 	InnerWidgetOrientation mInnerWidgetOrientation{ InnerWidgetOrientation::Right };
 	bool mTextAsFallback{ false };
 
+	UIPushButton();
+
 	explicit UIPushButton( const std::string& tag );
 
-	explicit UIPushButton( const std::string& tag, const std::function<UITextView*()>& cb );
+	explicit UIPushButton( const std::string& tag,
+						   const std::function<UITextView*( UIPushButton* )>& cb );
 
 	virtual Rectf calculatePadding() const;
 

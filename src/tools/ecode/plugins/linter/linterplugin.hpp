@@ -46,7 +46,7 @@ class LinterPlugin : public UICodeEditorPlugin {
   public:
 	static PluginDefinition Definition() {
 		return { "linter", "Linter",
-				 "Use static code analysis tool used to flag programming errors, bugs,\n"
+				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New };
 	}

@@ -14,6 +14,12 @@ class EE_API UITableCell : public UIPushButton {
 
 	static UITableCell* New( const std::string& tag ) { return eeNew( UITableCell, ( tag ) ); }
 
+	static UITableCell*
+	NewWithOpt( const std::string& tag,
+				const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) {
+		return eeNew( UITableCell, ( tag, newTextViewCb ) );
+	}
+
 	Uint32 getType() const { return UI_TYPE_TABLECELL; }
 
 	bool isType( const Uint32& type ) const {
@@ -43,7 +49,7 @@ class EE_API UITableCell : public UIPushButton {
 	UITableCell() : UITableCell( "table::cell" ) {}
 
 	UITableCell( const std::string& tag,
-				 const std::function<UITextView*()>& newTextViewCb = nullptr ) :
+				 const std::function<UITextView*( UIPushButton* )>& newTextViewCb = nullptr ) :
 		UIPushButton( tag, newTextViewCb ) {
 		applyDefaultTheme();
 	}

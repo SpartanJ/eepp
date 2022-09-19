@@ -1,5 +1,7 @@
 #include "pluginmanager.hpp"
+#include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
+#include <eepp/ui/uiwidgetcreator.hpp>
 
 namespace ecode {
 
@@ -92,7 +94,7 @@ bool PluginManager::hasDefinition( const std::string& id ) {
 	return mDefinitions.find( id ) != mDefinitions.end();
 }
 
-std::shared_ptr<PluginsModel> PluginsModel::create( PluginManager* manager ) {
+std::shared_ptr<PluginsModel> PluginsModel::New( PluginManager* manager ) {
 	return std::make_shared<PluginsModel>( manager );
 }
 
@@ -117,6 +119,8 @@ Variant PluginsModel::data( const ModelIndex& index, ModelRole role ) const {
 				return Variant( def->description.c_str() );
 			case Columns::Title:
 				return Variant( def->name.c_str() );
+			case Columns::Enabled:
+				return Variant( mManager->isEnabled( def->id ) );
 			case Columns::Id:
 				return Variant( def->id.c_str() );
 		}
@@ -124,7 +128,54 @@ Variant PluginsModel::data( const ModelIndex& index, ModelRole role ) const {
 	return {};
 }
 
+PluginManager* PluginsModel::getManager() const {
+	return mManager;
+}
+
+class UIPluginManagerTable : public UITableView {
+  public:
+	UIPluginManagerTable() : UITableView() {}
+
+	std::function<UITextView*( UIPushButton* )> getCheckBoxFn( const ModelIndex& index,
+															   const PluginsModel* model ) {
+		return [index, model]( UIPushButton* but ) -> UITextView* {
+			UICheckBox* chk = UICheckBox::New();
+			chk->setChecked(
+				model->data( model->index( index.row(), PluginsModel::Enabled ) ).asBool() );
+			but->addEventListener( Event::MouseClick, [&, index, model, chk]( const Event* event ) {
+				if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) )
+					return 1;
+				UIWidget* chkBut = chk->getCurrentButton();
+				auto mousePos =
+					chkBut->convertToNodeSpace( event->asMouseEvent()->getPosition().asFloat() );
+				if ( chkBut->getLocalBounds().contains( mousePos ) ) {
+					bool checked = !chk->isChecked();
+					chk->setChecked( checked );
+					std::string id(
+						model->data( model->index( index.row(), PluginsModel::Id ) ).asCStr() );
+					model->getManager()->setEnabled( id, checked );
+				}
+				return 1;
+			} );
+			return chk;
+		};
+	}
+
+	UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index ) {
+		if ( index.column() == PluginsModel::Title ) {
+			UITableCell* widget = UITableCell::NewWithOpt(
+				mTag + "::cell", getCheckBoxFn( index, (const PluginsModel*)getModel() ) );
+			return setupCell( widget, rowWidget, index );
+		}
+		return UITableView::createCell( rowWidget, index );
+	}
+};
+
 UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager ) {
+	if ( !UIWidgetCreator::isWidgetRegistered( "UIPluginManagerTable" ) )
+		UIWidgetCreator::registerWidget( "UIPluginManagerTable",
+										 [] { return eeNew( UIPluginManagerTable, () ); } );
+
 	UIWindow* win = sceneNode
 						->loadLayoutFromString( R"xml(
 	<window
@@ -135,11 +186,9 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager )
 		window-flags="default|maximize|shadow"
 		window-min-size="300dp 300dp">
 		<vbox lw="mp" lh="mp">
-			<tableview id="plugin-manager-table" lw="mp" lh="fixed" layout_weight="1">
-			</tableview>
+			<UIPluginManagerTable id="plugin-manager-table" lw="mp" lh="fixed" layout_weight="1" />
 			<vbox lw="mp" lh="wc">
 				<hbox margin-top="4dp" layout-gravity="right">
-					<pushbutton id="plugin-manager-enabled" enabled="false" />
 					<!-- <pushbutton id="plugin-manager-preferences" enabled="false" text="Enabled" /> -->
 					<pushbutton id="plugin-manager-close" text="Close" icon="close" margin-left="4dp" />
 				</hbox>
@@ -149,44 +198,19 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager )
 	)xml" )
 						->asType<UIWindow>();
 	UIWidget* cont = win->getContainer();
-	UIPushButton* enable = cont->find<UIPushButton>( "plugin-manager-enabled" );
 	UIPushButton* close = cont->find<UIPushButton>( "plugin-manager-close" );
-	UITableView* tv = win->getContainer()->find<UITableView>( "plugin-manager-table" );
+	UIPluginManagerTable* tv =
+		win->getContainer()->find<UIPluginManagerTable>( "plugin-manager-table" );
 	close->addEventListener( Event::MouseClick, [win]( const Event* event ) {
 		const MouseEvent* mevent = static_cast<const MouseEvent*>( event );
 		if ( mevent->getFlags() & EE_BUTTON_LMASK )
 			win->closeWindow();
 	} );
-
 	win->setTitle( sceneNode->i18n( "plugin_manager", "Plugin Manager" ) );
-	enable->setText( sceneNode->i18n( "enable", "Select a Plugin" ) );
-
-	auto updateButtonsState = [sceneNode, enable, manager]( const ModelIndex& index ) {
-		const PluginDefinition* def = manager->getDefinitionIndex( index.row() );
-		if ( def == nullptr )
-			return;
-		enable->setEnabled( true );
-		enable->setText( manager->isEnabled( def->id ) ? sceneNode->i18n( "disable", "Disable" )
-													   : sceneNode->i18n( "enable", "Enable" ) );
-	};
-	enable->addEventListener(
-		Event::MouseClick, [updateButtonsState, tv, manager]( const Event* event ) {
-			const MouseEvent* mevent = static_cast<const MouseEvent*>( event );
-			if ( mevent->getFlags() & EE_BUTTON_LMASK && !tv->getSelection().isEmpty() ) {
-				const PluginDefinition* def =
-					manager->getDefinitionIndex( tv->getSelection().first().row() );
-				if ( def == nullptr )
-					return;
-				manager->setEnabled( def->id, !manager->isEnabled( def->id ) );
-				updateButtonsState( tv->getSelection().first() );
-			}
-		} );
-	tv->setOnSelection( updateButtonsState );
-	tv->setModel( PluginsModel::create( manager ) );
+	tv->setModel( PluginsModel::New( manager ) );
 	tv->setColumnsVisible(
 		{ PluginsModel::Title, PluginsModel::Description, PluginsModel::Version } );
 	tv->setAutoColumnsWidth( true );
-	tv->setRowHeight( PixelDensity::dpToPx( 64 ) );
 	win->center();
 	return win;
 }

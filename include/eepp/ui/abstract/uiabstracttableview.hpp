@@ -163,6 +163,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
 
+	virtual UIWidget* setupCell( UITableCell* widget, UIWidget* rowWidget,
+								 const ModelIndex& index );
+
 	virtual void onScrollChange();
 
 	virtual void onOpenModelIndex( const ModelIndex& index, const Event* triggerEvent = nullptr );

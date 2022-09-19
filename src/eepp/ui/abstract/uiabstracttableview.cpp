@@ -415,6 +415,11 @@ void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
 
 UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	UITableCell* widget = UITableCell::New( mTag + "::cell" );
+	return setupCell( widget, rowWidget, index );
+}
+
+UIWidget* UIAbstractTableView::setupCell( UITableCell* widget, UIWidget* rowWidget,
+										  const ModelIndex& index ) {
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->setClipType( ClipType::ContentBox );
@@ -450,6 +455,10 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 				cell->setText( txt.asString() );
 			else if ( txt.is( Variant::Type::cstr ) )
 				cell->setText( txt.asCStr() );
+			else if ( txt.is( Variant::Type::Bool ) || txt.is( Variant::Type::Float ) ||
+					  txt.is( Variant::Type::Int ) || txt.is( Variant::Type::Uint ) ||
+					  txt.is( Variant::Type::Int64 ) || txt.is( Variant::Type::Uint64 ) )
+				cell->setText( txt.toString() );
 		}
 
 		bool isVisible = false;

@@ -58,7 +58,7 @@ class EE_API UITreeViewCell : public UITableCell {
 	mutable UIImage* mImage{ nullptr };
 	Float mIndent{ 0 };
 
-	UITreeViewCell( const std::function<UITextView*()>& newTextViewCb = nullptr ) :
+	UITreeViewCell( const std::function<UITextView*( UIPushButton* )>& newTextViewCb = nullptr ) :
 		UITableCell( "treeview::cell", newTextViewCb ) {
 		mTextBox->setElementTag( mTag + "::text" );
 		mIcon->setElementTag( mTag + "::icon" );

@@ -74,9 +74,9 @@ class PluginManager {
 
 class PluginsModel : public Model {
   public:
-	enum Columns { Id, Enabled, Title, Description, Version };
+	enum Columns { Id, Title, Enabled, Description, Version };
 
-	static std::shared_ptr<PluginsModel> create( PluginManager* manager );
+	static std::shared_ptr<PluginsModel> New( PluginManager* manager );
 
 	PluginsModel( PluginManager* manager ) : mManager( manager ) {}
 
@@ -97,9 +97,11 @@ class PluginsModel : public Model {
 
 	virtual void update() { onModelUpdate(); }
 
-  protected:
+	PluginManager* getManager() const;
+
+	protected:
 	PluginManager* mManager;
-	std::vector<std::string> mColumnNames{ "Id", "Enabled", "Title", "Description", "Version" };
+	std::vector<std::string> mColumnNames{ "Id", "Title", "Enabled", "Description", "Version" };
 };
 
 class UIPluginManager {

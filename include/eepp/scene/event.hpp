@@ -7,6 +7,11 @@
 namespace EE { namespace Scene {
 
 class Node;
+class MouseEvent;
+class KeyEvent;
+class DropEvent;
+class TextEvent;
+class TextInputEvent;
 
 class EE_API Event {
   public:
@@ -99,6 +104,16 @@ class EE_API Event {
 	const Uint32& getType() const;
 
 	const Uint32& getCallbackId() const;
+
+	const MouseEvent* asMouseEvent() const;
+
+	const KeyEvent* asKeyEvent() const;
+
+	const DropEvent* asDropEvent() const;
+
+	const TextEvent* asTextEvent() const;
+
+	const TextInputEvent* asTextInputEvent() const;
 
   protected:
 	friend class Node;

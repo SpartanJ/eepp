@@ -207,6 +207,10 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 				cell->setText( txt.asString() );
 			else if ( txt.is( Variant::Type::cstr ) )
 				cell->setText( txt.asCStr() );
+			else if ( txt.is( Variant::Type::Bool ) || txt.is( Variant::Type::Float ) ||
+					  txt.is( Variant::Type::Int ) || txt.is( Variant::Type::Uint ) ||
+					  txt.is( Variant::Type::Int64 ) || txt.is( Variant::Type::Uint64 ) )
+				cell->setText( txt.toString() );
 		}
 
 		bool hasChilds = false;

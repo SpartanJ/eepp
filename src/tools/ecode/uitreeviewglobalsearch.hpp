@@ -32,7 +32,7 @@ class UITreeViewCellGlobalSearch : public UITreeViewCell {
 	std::pair<size_t, size_t> mSearchStrPos;
 	String mResultStr;
 
-	std::function<UITextView*()> getCheckBoxFn();
+	std::function<UITextView*( UIPushButton* )> getCheckBoxFn();
 
 	void* getDataPtr( const ModelIndex& modelIndex );
 

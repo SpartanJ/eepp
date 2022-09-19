@@ -187,7 +187,7 @@ void TextDocument::guessIndentType() {
 	int guessSpaces = 0;
 	int guessTabs = 0;
 	std::map<int, int> guessWidth;
-	int guessCoundown = 10;
+	int guessCountdown = 10;
 	size_t linesCount = eemin<size_t>( 100, mLines.size() );
 	for ( size_t i = 0; i < linesCount; i++ ) {
 		const String& text = mLines[i].getText();
@@ -196,16 +196,16 @@ void TextDocument::guessIndentType() {
 		if ( !match.empty() ) {
 			guessSpaces++;
 			guessWidth[match.size()]++;
-			guessCoundown--;
+			guessCountdown--;
 		} else {
 			match = LuaPattern::match( mLines[i].getText(), "^\t+" );
 			if ( !match.empty() ) {
 				guessTabs++;
-				guessCoundown--;
+				guessCountdown--;
 				break; // if tab found asume tabs
 			}
 		}
-		if ( guessCoundown == 0 )
+		if ( guessCountdown == 0 )
 			break;
 	}
 	if ( !guessTabs && !guessSpaces ) {

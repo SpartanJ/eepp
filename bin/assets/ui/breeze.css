@@ -40,6 +40,7 @@
 	--floating-icon: #eff0f188;
 	--term-back-color: #1e2127;
 	--term-font-color: #abb2bf;
+	--highlight-primary: #FFFFFF7A;
 	droppable-hovering-color: #FFFFFF20;
 }
 
@@ -193,6 +194,13 @@ CheckBox::active {
 	background-image: rectangle(solid, var(--primary));
 	background-size: 70% 70%;
 	background-position: center;
+}
+
+tableview::row:selected CheckBox::active,
+treeview::row:selected CheckBox::active,
+listview::row:selected CheckBox::active {
+	border-color: var(--highlight-primary);
+	background-image: rectangle(solid, var(--highlight-primary));
 }
 
 RadioButton::active,

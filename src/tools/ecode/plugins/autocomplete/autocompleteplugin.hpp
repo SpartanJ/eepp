@@ -21,7 +21,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 
 	static PluginDefinition Definition() {
 		return { "autocomplete", "Auto Complete",
-				 "Auto complete shows the completion popup as you type, so you can fill\n"
+				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
 				 AutoCompletePlugin::New };
 	}

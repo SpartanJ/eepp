@@ -58,11 +58,13 @@ void UITreeViewCellGlobalSearch::toggleSelected() {
 	}
 }
 
-std::function<UITextView*()> UITreeViewCellGlobalSearch::getCheckBoxFn() {
-	return [&]() -> UITextView* {
+std::function<UITextView*( UIPushButton* )> UITreeViewCellGlobalSearch::getCheckBoxFn() {
+	return [&]( UIPushButton* ) -> UITextView* {
 		UICheckBox* chk = UICheckBox::New();
 		addEventListener( Event::MouseClick, [&, chk]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+			if ( !( mouseEvent->getFlags() & EE_BUTTON_LMASK ) )
+				return 1;
 			Vector2f pos = convertToNodeSpace( mouseEvent->getPosition().asFloat() );
 			Rectf box( { convertToNodeSpace( chk->getCurrentButton()->convertToWorldSpace(
 							 chk->getCurrentButton()->getPixelsPosition() ) ),
