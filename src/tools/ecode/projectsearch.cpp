@@ -28,8 +28,10 @@ static String textLine( const std::string& fileText, const size_t& fromPos, size
 	if ( stringStartPtr != ptr ) {
 		while ( stringStartPtr != ptr && *--ptr != '\n' ) {
 		}
-		nlStartPtr = ptr + 1;
-		start = ptr - stringStartPtr + 1;
+		if ( stringStartPtr != ptr ) {
+			nlStartPtr = ptr + 1;
+			start = ptr - stringStartPtr + 1;
+		}
 	}
 	ptr = startPtr;
 	while ( ++ptr && *ptr != '\0' && *ptr != '\n' ) {

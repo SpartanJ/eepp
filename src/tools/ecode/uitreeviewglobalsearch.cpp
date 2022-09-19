@@ -148,7 +148,7 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 
 		const String& txt = mTextBox->getText();
 
-		if ( mSearchStrPos.second < txt.size() ) {
+		if ( mSearchStrPos.second <= txt.size() ) {
 			mResultStr = String( txt.toUtf8().substr(
 				mSearchStrPos.first, mSearchStrPos.second - mSearchStrPos.first ) );
 		} else {
@@ -191,28 +191,25 @@ static Float getXOffsetCol( Float glyphWidth, Uint32 tabWidth, const String& lin
 
 void UITreeViewCellGlobalSearch::draw() {
 	UITreeViewCell::draw();
-	if ( getCurIndex().internalId() != -1 ) {
+	if ( getCurIndex().internalId() != -1 && mSearchStrPos.first != std::string::npos &&
+		 mSearchStrPos.second > 0 && mSearchStrPos.second <= mTextBox->getText().length() ) {
 		UITreeViewGlobalSearch* pp = getParent()->getParent()->asType<UITreeViewGlobalSearch>();
-		if ( mSearchStrPos.first != std::string::npos && mSearchStrPos.second > 0 ) {
-			auto hspace =
-				mTextBox->getFont()->getGlyph( L' ', mTextBox->getPixelsFontSize(), false ).advance;
-			Primitives p;
-			p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection" ).color );
-			Vector2f screenPos( mScreenPos );
-			if ( mTextBox->isType( UI_TYPE_CHECKBOX ) ) {
-				UICheckBox* chk = mTextBox->asType<UICheckBox>();
-				screenPos.x += chk->getRealAlignOffset().x;
-			}
-			if ( mSearchStrPos.second >= mTextBox->getText().length() )
-				return;
-			p.drawRectangle( Rectf(
-				{ screenPos.x + mTextBox->getPixelsPosition().x +
-					  getXOffsetCol( hspace, mTextBox->getTextCache()->getTabWidth(),
-									 mTextBox->getText(), mSearchStrPos.first ),
-				  screenPos.y + mTextBox->getPixelsPosition().y },
-				Sizef( getTextWidth( hspace, mTextBox->getTextCache()->getTabWidth(), mResultStr ),
-					   mTextBox->getPixelsSize().getHeight() ) ) );
+		auto hspace =
+			mTextBox->getFont()->getGlyph( L' ', mTextBox->getPixelsFontSize(), false ).advance;
+		Primitives p;
+		p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection" ).color );
+		Vector2f screenPos( mScreenPos );
+		if ( mTextBox->isType( UI_TYPE_CHECKBOX ) ) {
+			UICheckBox* chk = mTextBox->asType<UICheckBox>();
+			screenPos.x += chk->getRealAlignOffset().x;
 		}
+		p.drawRectangle( Rectf(
+			{ screenPos.x + mTextBox->getPixelsPosition().x +
+				  getXOffsetCol( hspace, mTextBox->getTextCache()->getTabWidth(),
+								 mTextBox->getText(), mSearchStrPos.first ),
+			  screenPos.y + mTextBox->getPixelsPosition().y },
+			Sizef( getTextWidth( hspace, mTextBox->getTextCache()->getTabWidth(), mResultStr ),
+				   mTextBox->getPixelsSize().getHeight() ) ) );
 	}
 }
 
