@@ -347,7 +347,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 }
 
 void UICodeEditor::updateLongestLineWidth() {
-	if ( mHorizontalScrollBarEnabled ) {
+	if ( mHorizontalScrollBarEnabled && mDoc && !mDoc->isLoading() ) {
 		Float maxWidth = mLongestLineWidth;
 		findLongestLine();
 		mLongestLineWidthLastUpdate.restart();
