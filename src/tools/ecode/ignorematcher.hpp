@@ -21,6 +21,8 @@ class IgnoreMatcher {
 
 	virtual bool match( const std::string& value ) const = 0;
 
+	virtual std::string findRepositoryRootPath() const = 0;
+
 	const std::string& getPath() const { return mPath; }
 
   protected:
@@ -36,6 +38,8 @@ class GitIgnoreMatcher : public IgnoreMatcher {
 	bool canMatch() override;
 
 	bool match( const std::string& value ) const override;
+
+	std::string findRepositoryRootPath() const override;
 
   protected:
 	bool parse() override;
@@ -55,9 +59,13 @@ class IgnoreMatcherManager {
 
 	bool foundMatch() const;
 
-	bool match( const std::string& value ) const;
+	bool match( const std::string& dir, const std::string& value ) const;
+
+	std::string findRepositoryRootPath() const;
 
 	const std::string& getPath() const;
+
+	const std::string& getRootPath() const;
 
 	void addChild( IgnoreMatcher* child );
 
@@ -67,8 +75,13 @@ class IgnoreMatcherManager {
 
 	IgnoreMatcher* popMatcher( size_t index );
 
+	const std::vector<IgnoreMatcher*>& getMatchers() const;
+
   protected:
+	std::string mRootPath;
 	std::vector<IgnoreMatcher*> mMatchers;
+
+
 };
 
 } // namespace ecode

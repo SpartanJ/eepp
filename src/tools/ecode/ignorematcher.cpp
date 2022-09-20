@@ -176,7 +176,8 @@ bool GitIgnoreMatcher::parse() {
 		pattern = String::rTrim( pattern, '/' );
 		mPatterns.emplace_back( std::make_pair( pattern, negates ) );
 	}
-	mPatterns.emplace_back( std::make_pair( "/.git", false ) ); // Also ignore the .git folder
+	if ( FileSystem::fileExists( mPath + ".git" ) )
+		mPatterns.emplace_back( std::make_pair( "/.git", false ) ); // Also ignore the .git folder
 	return !mPatterns.empty();
 }
 
@@ -184,9 +185,15 @@ bool GitIgnoreMatcher::match( const std::string& value ) const {
 	bool match = false;
 	for ( size_t i = 0; i < mPatterns.size(); i++ ) {
 		auto& pattern = mPatterns[i];
+		if ( String::contains( pattern.first, "Tarballs" ) &&
+			 String::contains( value, "Tarballs" ) ) {
+			String::toLower( pattern.first );
+		}
 		match = gitignore_glob_match( value, pattern.first );
-		if ( ( match && !pattern.second ) || ( !match && pattern.second ) ) {
-			if ( !pattern.second && i + 1 < mPatterns.size() && mPatterns[i + 1].second ) {
+		if ( pattern.second )
+			match = !match;
+		if ( match && !pattern.second ) {
+			if ( i + 1 < mPatterns.size() && mPatterns[i + 1].second ) {
 				for ( size_t n = i + 1; n < mPatterns.size(); n++ ) {
 					// Check if there's a positive negate after the match
 					if ( mPatterns[n].second ) {
@@ -203,6 +210,17 @@ bool GitIgnoreMatcher::match( const std::string& value ) const {
 	return false;
 }
 
+std::string GitIgnoreMatcher::findRepositoryRootPath() const {
+	std::string rootPath( mPath );
+	std::string lRootPath;
+	FileSystem::dirAddSlashAtEnd( rootPath );
+	while ( rootPath != lRootPath && !FileSystem::fileExists( rootPath + ".git" ) ) {
+		lRootPath = rootPath;
+		rootPath = FileSystem::removeLastFolderFromPath( rootPath );
+	}
+	return FileSystem::fileExists( rootPath + ".git" ) ? rootPath : "";
+}
+
 IgnoreMatcherManager::IgnoreMatcherManager( IgnoreMatcherManager&& ignoreMatcher ) :
 	mMatchers( ignoreMatcher.mMatchers ) {
 	ignoreMatcher.mMatchers.clear();
@@ -210,6 +228,7 @@ IgnoreMatcherManager::IgnoreMatcherManager( IgnoreMatcherManager&& ignoreMatcher
 
 IgnoreMatcherManager::IgnoreMatcherManager( std::string rootPath ) {
 	FileSystem::dirAddSlashAtEnd( rootPath );
+	mRootPath = rootPath;
 	GitIgnoreMatcher git( rootPath );
 	if ( git.canMatch() )
 		mMatchers.emplace_back( eeNew( GitIgnoreMatcher, ( rootPath ) ) );
@@ -230,17 +249,41 @@ bool IgnoreMatcherManager::foundMatch() const {
 	return !mMatchers.empty();
 }
 
-bool IgnoreMatcherManager::match( const std::string& value ) const {
+bool IgnoreMatcherManager::match( const std::string& dir, const std::string& value ) const {
 	eeASSERT( foundMatch() );
-	for ( const auto& matcher : mMatchers )
-		if ( matcher->match( value ) )
+	for ( const auto& matcher : mMatchers ) {
+		std::string localPath;
+		if ( String::startsWith( dir, matcher->getPath() ) )
+			localPath = dir.substr( matcher->getPath().size() );
+		if ( matcher->match( localPath + value ) )
 			return true;
+	}
 	return false;
+}
+
+std::string IgnoreMatcherManager::findRepositoryRootPath() const {
+	if ( mMatchers.empty() ) {
+		std::string rootPath( mRootPath );
+		std::string lRootpath;
+		while ( rootPath != lRootpath && !rootPath.empty() ) {
+			GitIgnoreMatcher git( rootPath );
+			if ( git.canMatch() )
+				return git.findRepositoryRootPath();
+			lRootpath = rootPath;
+			rootPath = FileSystem::removeLastFolderFromPath( rootPath );
+		}
+		return "";
+	}
+	return mMatchers.front()->findRepositoryRootPath();
 }
 
 const std::string& IgnoreMatcherManager::getPath() const {
 	eeASSERT( foundMatch() );
 	return mMatchers[mMatchers.size() - 1]->getPath();
+}
+
+const std::string& IgnoreMatcherManager::getRootPath() const {
+	return mRootPath;
 }
 
 void IgnoreMatcherManager::addChild( IgnoreMatcher* child ) {
@@ -257,6 +300,10 @@ IgnoreMatcher* IgnoreMatcherManager::popMatcher( size_t index ) {
 	IgnoreMatcher* matcher = mMatchers[index];
 	mMatchers.erase( mMatchers.begin() + index );
 	return matcher;
+}
+
+const std::vector<IgnoreMatcher*>& IgnoreMatcherManager::getMatchers() const {
+	return mMatchers;
 }
 
 } // namespace ecode

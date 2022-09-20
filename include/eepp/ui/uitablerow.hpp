@@ -30,13 +30,13 @@ class EE_API UITableRow : public UIWidget {
 	UITableRow() : UIWidget( "table::row" ) {}
 
 	virtual Uint32 onMessage( const NodeMessage* msg ) {
-		if ( msg->getMsg() == NodeMessage::MouseDown && ( msg->getFlags() & EE_BUTTON_LMASK ) &&
-			 ( !getEventDispatcher()->getMouseDownNode() ||
-			   getEventDispatcher()->getMouseDownNode() == this ||
-			   isParentOf( getEventDispatcher()->getMouseDownNode() ) ) &&
-			 getEventDispatcher()->getNodeDragging() == nullptr ) {
-			sendMouseEvent( Event::MouseDown, getEventDispatcher()->getMousePos(),
-							msg->getFlags() );
+		EventDispatcher* eventDispatcher = getEventDispatcher();
+		Node* mouseDownNode = eventDispatcher->getMouseDownNode();
+		Node* draggingNode = eventDispatcher->getNodeDragging();
+		if ( msg->getMsg() == NodeMessage::MouseDown &&
+			 ( mouseDownNode == nullptr || mouseDownNode == this || isParentOf( mouseDownNode ) ) &&
+			 draggingNode == nullptr ) {
+			sendMouseEvent( Event::MouseDown, eventDispatcher->getMousePos(), msg->getFlags() );
 		}
 		return 0;
 	}

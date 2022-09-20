@@ -357,12 +357,9 @@ UITableRow* UIAbstractTableView::createRow() {
 	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	rowWidget->reloadStyle( true, true, true );
 	rowWidget->addEventListener( Event::MouseDown, [&]( const Event* event ) {
-		if ( ( !getEventDispatcher()->getMouseDownNode() ||
-			   getEventDispatcher()->getMouseDownNode() == this ||
-			   isParentOf( getEventDispatcher()->getMouseDownNode() ) ) &&
-			 getEventDispatcher()->getNodeDragging() == nullptr ) {
-			getSelection().set( event->getNode()->asType<UITableRow>()->getCurIndex() );
-		}
+		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) )
+			return;
+		getSelection().set( event->getNode()->asType<UITableRow>()->getCurIndex() );
 	} );
 	return rowWidget;
 }

@@ -165,14 +165,11 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 	if ( !mRunning )
 		return;
 	currentDirs.insert( directory );
-	std::string localDirPath( directory.substr(
-		ignoreMatcher.foundMatch() ? ignoreMatcher.getPath().size() : mPath.size() ) );
 	std::vector<std::string> pathFiles =
 		FileSystem::filesGetInPath( directory, false, false, false );
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
-		std::string localpath( localDirPath + file );
-		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( localpath ) )
+		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) )
 			continue;
 		if ( FileSystem::isDirectory( fullpath ) ) {
 			fullpath += FileSystem::getOSSlash();
@@ -228,8 +225,7 @@ void ProjectDirectoryTree::onChange( const ProjectDirectoryTree::Action& action,
 
 void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
 	IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( file.getFilepath() ) );
-	if ( !matcher.foundMatch() ||
-		 ( matcher.foundMatch() && !matcher.match( file.getFilepath() ) ) ) {
+	if ( !matcher.foundMatch() || !matcher.match( file.getDirectoryPath(), file.getFilepath() ) ) {
 		bool foundPattern = mAcceptedPatterns.empty();
 		for ( auto& pattern : mAcceptedPatterns ) {
 			if ( pattern.matches( file.getFilepath() ) ) {
@@ -348,22 +344,27 @@ void ProjectDirectoryTree::removeFile( const FileInfo& file ) {
 
 IgnoreMatcherManager ProjectDirectoryTree::getIgnoreMatcherFromPath( const std::string& path ) {
 	std::string dir( FileSystem::fileRemoveFileName( path ) );
-	std::string ldir;
 	FileSystem::dirAddSlashAtEnd( dir );
-	IgnoreMatcherManager dirMatcher( dir );
-	while ( !dirMatcher.foundMatch() ) {
-		dirMatcher = IgnoreMatcherManager( dir );
-		if ( !dirMatcher.foundMatch() ) {
-			if ( dir.empty() || dir.find_first_of( "/\\" ) == std::string::npos || dir == mPath ||
-				 dir == ldir )
-				break;
-			ldir = dir;
-			FileSystem::dirRemoveSlashAtEnd( dir );
-			dir = FileSystem::fileRemoveFileName( dir );
-			FileSystem::dirAddSlashAtEnd( dir );
+	IgnoreMatcherManager curMatcher( dir );
+	IgnoreMatcherManager matcher( curMatcher.findRepositoryRootPath() );
+	if ( !matcher.foundMatch() ) {
+		if ( curMatcher.foundMatch() )
+			return curMatcher;
+		return matcher;
+	}
+	std::string prevDir( dir );
+	if ( prevDir != matcher.getRootPath() && prevDir.size() > matcher.getRootPath().size() ) {
+		std::string tmpdir( FileSystem::removeLastFolderFromPath( dir ) );
+		std::string ltmpdir;
+		while ( ltmpdir != tmpdir && tmpdir != matcher.getRootPath() ) {
+			IgnoreMatcherManager tmpMatcher( tmpdir );
+			if ( tmpMatcher.foundMatch() )
+				matcher.addChild( tmpMatcher.popMatcher( 0 ) );
+			ltmpdir = tmpdir;
+			tmpdir = FileSystem::removeLastFolderFromPath( tmpdir );
 		}
 	}
-	return dirMatcher;
+	return matcher;
 }
 
 size_t ProjectDirectoryTree::findFileIndex( const std::string& path ) {
