@@ -523,6 +523,7 @@ void UICodeEditor::disableEditorFeatures() {
 	mHighlightSelectionMatch = false;
 	mEnableColorPickerOnSelection = false;
 	mMinimapEnabled = false;
+	mFindReplaceEnabled = false;
 	mLineBreakingColumn = 0;
 }
 
@@ -2609,6 +2610,8 @@ void UICodeEditor::registerCommands() {
 }
 
 void UICodeEditor::findReplace() {
+	if ( !mFindReplaceEnabled )
+		return;
 	if ( nullptr == mFindReplace )
 		mFindReplace = UIDocFindReplace::New( this, mDoc );
 	mFindReplace->show();
@@ -3102,6 +3105,14 @@ Int64 UICodeEditor::getCurrentColumnCount() const {
 	for ( Int64 i = 0; i < sel; i++ )
 		count += mDoc->line( curLine ).getText()[i] == '\t' ? mTabWidth : 1;
 	return count;
+}
+
+bool UICodeEditor::getFindReplaceEnabled() const {
+	return mFindReplaceEnabled;
+}
+
+void UICodeEditor::setFindReplaceEnabled( bool findReplaceEnabled ) {
+	mFindReplaceEnabled = findReplaceEnabled;
 }
 
 Text& UICodeEditor::getLineText( const Int64& lineNumber ) const {

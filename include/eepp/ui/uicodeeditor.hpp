@@ -480,6 +480,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Int64 getCurrentColumnCount() const;
 
+	bool getFindReplaceEnabled() const;
+
+	void setFindReplaceEnabled( bool findReplaceEnabled );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -513,6 +517,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mMinimapDragging{ false };
 	bool mMinimapHover{ false };
 	bool mAutoCloseXMLTags{ false };
+	bool mFindReplaceEnabled{ true };
 	TextRange mLinkPosition;
 	String mLink;
 	Uint32 mTabWidth;
