@@ -93,16 +93,15 @@ void EventDispatcher::update( const Time& time ) {
 		mNodeDragging->onCalculateDrag( mMousePos, mInput->getPressTrigger() );
 
 	if ( mInput->getPressTrigger() ) {
-		if ( NULL != mOverNode ) {
-			mOverNode->onMouseDown( mMousePosi, mInput->getPressTrigger() );
-			sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getPressTrigger() );
-		}
-
 		if ( !mFirstPress ) {
 			mDownNode = mOverNode;
 			mMouseDownPos = mMousePosi;
-
 			mFirstPress = true;
+		}
+
+		if ( NULL != mOverNode ) {
+			mOverNode->onMouseDown( mMousePosi, mInput->getPressTrigger() );
+			sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getPressTrigger() );
 		}
 	}
 

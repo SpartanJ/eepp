@@ -60,6 +60,10 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	std::string getDescription() { return Definition().description; }
 
+	bool hasFileConfig();
+
+	std::string getFileConfigPath();
+
 	void onRegister( UICodeEditor* );
 
 	void onUnregister( UICodeEditor* );
@@ -94,6 +98,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 	std::mutex mWorkMutex;
 	std::condition_variable mWorkerCondition;
 	Int32 mWorkersCount{ 0 };
+	std::string mConfigPath;
 
 	bool mReady{ false };
 	bool mShuttingDown{ false };
@@ -116,6 +121,10 @@ class LinterPlugin : public UICodeEditorPlugin {
 	void invalidateEditors( TextDocument* doc );
 
 	std::string getMatchString( const LinterType& type );
+
+	void loadLinterConfig( const std::string& path );
+
+	size_t linterFilePatternPosition( const std::vector<std::string>& patterns );
 };
 
 } // namespace ecode

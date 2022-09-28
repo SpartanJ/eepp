@@ -99,14 +99,15 @@ class PluginsModel : public Model {
 
 	PluginManager* getManager() const;
 
-	protected:
+  protected:
 	PluginManager* mManager;
 	std::vector<std::string> mColumnNames{ "Id", "Title", "Enabled", "Description", "Version" };
 };
 
 class UIPluginManager {
   public:
-	static UIWindow* New( UISceneNode* sceneNode, PluginManager* manager );
+	static UIWindow* New( UISceneNode* sceneNode, PluginManager* manager,
+						  std::function<void( const std::string& )> loadFileCb );
 };
 
 } // namespace ecode

@@ -50,81 +50,123 @@ LinterPlugin::~LinterPlugin() {
 	}
 }
 
-void LinterPlugin::load( const PluginManager* pluginManager ) {
-	std::string path( pluginManager->getResourcesPath() + "plugins/linters.json" );
-	if ( FileSystem::fileExists( pluginManager->getPluginsPath() + "linters.json" ) )
-		path = pluginManager->getPluginsPath() + "linters.json";
-	if ( !FileSystem::fileExists( path ) )
-		return;
-	try {
-		std::ifstream stream( path );
-		json j;
-		stream >> j;
+bool LinterPlugin::hasFileConfig() {
+	return !mConfigPath.empty();
+}
 
-		for ( auto& obj : j ) {
-			Linter linter;
-			auto fp = obj["file_patterns"];
+std::string LinterPlugin::getFileConfigPath() {
+	return mConfigPath;
+}
 
-			for ( auto& pattern : fp )
-				linter.files.push_back( pattern.get<std::string>() );
-
-			auto wp = obj["warning_pattern"];
-
-			if ( wp.is_array() ) {
-				for ( auto& warningPattern : wp )
-					linter.warningPattern.push_back( warningPattern.get<std::string>() );
-			} else {
-				linter.warningPattern = { wp.get<std::string>() };
-			}
-
-			linter.command = obj["command"].get<std::string>();
-
-			if ( obj.contains( "expected_exitcodes" ) ) {
-				auto ee = obj["expected_exitcodes"];
-				if ( ee.is_array() ) {
-					for ( auto& number : ee )
-						if ( number.is_number() )
-							linter.expectedExitCodes.push_back( number.get<Int64>() );
-				} else if ( ee.is_number() ) {
-					linter.expectedExitCodes.push_back( ee.get<Int64>() );
+size_t LinterPlugin::linterFilePatternPosition( const std::vector<std::string>& patterns ) {
+	for ( size_t i = 0; i < mLinters.size(); ++i ) {
+		for ( const std::string& filePattern : mLinters[i].files ) {
+			for ( const std::string& pattern : patterns ) {
+				if ( filePattern == pattern ) {
+					return i;
 				}
 			}
+		}
+	}
+	return std::string::npos;
+}
 
-			if ( obj.contains( "warning_pattern_order" ) ) {
-				auto& wpo = obj["warning_pattern_order"];
-				if ( wpo.contains( "line" ) && wpo["line"].is_number() )
-					linter.warningPatternOrder.line = wpo["line"].get<int>();
-				if ( wpo.contains( "col" ) && wpo["col"].is_number() )
-					linter.warningPatternOrder.col = wpo["col"].get<int>();
-				if ( wpo.contains( "message" ) && wpo["message"].is_number() )
-					linter.warningPatternOrder.message = wpo["message"].get<int>();
-				if ( wpo.contains( "type" ) && wpo["type"].is_number() )
-					linter.warningPatternOrder.type = wpo["type"].get<int>();
-			}
+void LinterPlugin::loadLinterConfig( const std::string& path ) {
+	std::ifstream stream( path );
+	json j;
+	stream >> j;
 
-			if ( obj.contains( "column_starts_at_zero" ) )
-				linter.columnsStartAtZero = obj["column_starts_at_zero"].get<bool>();
+	for ( auto& obj : j ) {
+		Linter linter;
+		if ( !obj.contains( "file_patterns" ) || !obj.contains( "warning_pattern" ) ||
+			 !obj.contains( "command" ) )
+			continue;
 
-			if ( obj.contains( "deduplicate" ) )
-				linter.deduplicate = obj["deduplicate"].get<bool>();
+		auto fp = obj["file_patterns"];
 
-			if ( obj.contains( "use_tmp_folder" ) )
-				linter.useTmpFolder = obj["use_tmp_folder"].get<bool>();
+		for ( auto& pattern : fp )
+			linter.files.push_back( pattern.get<std::string>() );
 
-			if ( obj.contains( "no_errors_exit_code" ) &&
-				 obj["no_errors_exit_code"].is_number_integer() ) {
-				linter.hasNoErrorsExitCode = true;
-				linter.noErrorsExitCode = obj["no_errors_exit_code"].get<int>();
-			}
+		auto wp = obj["warning_pattern"];
 
-			mLinters.emplace_back( std::move( linter ) );
+		if ( wp.is_array() ) {
+			for ( auto& warningPattern : wp )
+				linter.warningPattern.push_back( warningPattern.get<std::string>() );
+		} else {
+			linter.warningPattern = { wp.get<std::string>() };
 		}
 
-		mReady = true;
-	} catch ( json::exception& e ) {
-		mReady = false;
-		Log::error( "Parsing linter failed:\n%s", e.what() );
+		linter.command = obj["command"].get<std::string>();
+
+		if ( obj.contains( "expected_exitcodes" ) ) {
+			auto ee = obj["expected_exitcodes"];
+			if ( ee.is_array() ) {
+				for ( auto& number : ee )
+					if ( number.is_number() )
+						linter.expectedExitCodes.push_back( number.get<Int64>() );
+			} else if ( ee.is_number() ) {
+				linter.expectedExitCodes.push_back( ee.get<Int64>() );
+			}
+		}
+
+		if ( obj.contains( "warning_pattern_order" ) ) {
+			auto& wpo = obj["warning_pattern_order"];
+			if ( wpo.contains( "line" ) && wpo["line"].is_number() )
+				linter.warningPatternOrder.line = wpo["line"].get<int>();
+			if ( wpo.contains( "col" ) && wpo["col"].is_number() )
+				linter.warningPatternOrder.col = wpo["col"].get<int>();
+			if ( wpo.contains( "message" ) && wpo["message"].is_number() )
+				linter.warningPatternOrder.message = wpo["message"].get<int>();
+			if ( wpo.contains( "type" ) && wpo["type"].is_number() )
+				linter.warningPatternOrder.type = wpo["type"].get<int>();
+		}
+
+		if ( obj.contains( "column_starts_at_zero" ) )
+			linter.columnsStartAtZero = obj["column_starts_at_zero"].get<bool>();
+
+		if ( obj.contains( "deduplicate" ) )
+			linter.deduplicate = obj["deduplicate"].get<bool>();
+
+		if ( obj.contains( "use_tmp_folder" ) )
+			linter.useTmpFolder = obj["use_tmp_folder"].get<bool>();
+
+		if ( obj.contains( "no_errors_exit_code" ) &&
+			 obj["no_errors_exit_code"].is_number_integer() ) {
+			linter.hasNoErrorsExitCode = true;
+			linter.noErrorsExitCode = obj["no_errors_exit_code"].get<int>();
+		}
+
+		// If the file pattern is repeated, we will overwrite the previous linter.
+		// The previous linter should be the "default" linter that comes with ecode.
+		size_t pos = linterFilePatternPosition( linter.files );
+		if ( pos != std::string::npos ) {
+			mLinters[pos] = linter;
+		} else {
+			mLinters.emplace_back( std::move( linter ) );
+		}
 	}
+}
+
+void LinterPlugin::load( const PluginManager* pluginManager ) {
+	std::vector<std::string> paths;
+	std::string path( pluginManager->getResourcesPath() + "plugins/linters.json" );
+	if ( FileSystem::fileExists( path ) )
+		paths.emplace_back( path );
+	path = pluginManager->getPluginsPath() + "linters.json";
+	if ( FileSystem::fileExists( path ) || FileSystem::fileWrite( path, "[]\n" ) ) {
+		mConfigPath = path;
+		paths.emplace_back( path );
+	}
+	if ( paths.empty() )
+		return;
+	for ( const auto& path : paths ) {
+		try {
+			loadLinterConfig( path );
+		} catch ( json::exception& e ) {
+			Log::error( "Parsing linter \"%s\" failed:\n%s", path.c_str(), e.what() );
+		}
+	}
+	mReady = !mLinters.empty();
 }
 
 void LinterPlugin::onRegister( UICodeEditor* editor ) {

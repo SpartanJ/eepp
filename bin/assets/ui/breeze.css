@@ -41,6 +41,8 @@
 	--term-back-color: #1e2127;
 	--term-font-color: #abb2bf;
 	--highlight-primary: #FFFFFF7A;
+	--disabled-color: #727679;
+	--disabled-border: #43474c;
 	droppable-hovering-color: #FFFFFF20;
 }
 
@@ -166,6 +168,12 @@ SelectButton:pressed,
 SelectButton:selected,
 SelectButton:selectedpressed {
 	background-color: var(--primary);
+}
+
+pushbutton:disabled,
+selectbutton:disabled {
+	color: var(--disabled-color);
+	border-color: var(--disabled-border);
 }
 
 PushButton::icon,
@@ -1030,6 +1038,8 @@ console {
 	--floating-icon: #cbcdcd;
 	--term-back-color: #eff0f1;
 	--term-font-color: #232627;
+	--disabled-color: #727679;
+	--disabled-border: #d3d4d5;
 	droppable-hovering-color: #00000020;
 }
 
@@ -1061,6 +1071,9 @@ listview::row:selected listview::cell::icon,
 tableview::row:selected tableview::cell::expander,
 treeview::row:selected treeview::cell::expander,
 listview::row:selected listview::cell::expander,
+tableview::row:selected tableview::cell checkbox,
+treeview::row:selected treeview::cell checkbox,
+listview::row:selected listview::cell checkbox,
 tableview::row:hover tableview::cell::text,
 treeview::row:hover treeview::cell::text,
 listview::row:hover listview::cell::text,
@@ -1070,6 +1083,9 @@ listview::row:hover listview::cell::icon,
 tableview::row:hover tableview::cell::expander,
 treeview::row:hover treeview::cell::expander,
 listview::row:hover listview::cell::expander,
+tableview::row:hover tableview::cell checkbox,
+treeview::row:hover treeview::cell checkbox,
+listview::row:hover listview::cell checkbox,
 tableview::header::column:hover,
 treeview::header::column:hover,
 listview::header::column:hover {

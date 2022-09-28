@@ -1787,7 +1787,14 @@ void App::updateTerminalMenu() {
 }
 
 void App::createPluginManagerUI() {
-	UIPluginManager::New( mUISceneNode, mPluginManager.get() )->showWhenReady();
+	UIPluginManager::New( mUISceneNode, mPluginManager.get(), [&]( const std::string& path ) {
+		UITab* tab = mSplitter->isDocumentOpen( path );
+		if ( !tab ) {
+			loadFileFromPath( path );
+		} else {
+			tab->getTabWidget()->setTabSelected( tab );
+		}
+	} )->showWhenReady();
 }
 
 void App::updateDocumentMenu() {

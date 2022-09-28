@@ -1,4 +1,5 @@
 #include "pluginmanager.hpp"
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -171,7 +172,8 @@ class UIPluginManagerTable : public UITableView {
 	}
 };
 
-UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager ) {
+UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
+								std::function<void( const std::string& )> loadFileCb ) {
 	if ( !UIWidgetCreator::isWidgetRegistered( "UIPluginManagerTable" ) )
 		UIWidgetCreator::registerWidget( "UIPluginManagerTable",
 										 [] { return eeNew( UIPluginManagerTable, () ); } );
@@ -189,7 +191,7 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager )
 			<UIPluginManagerTable id="plugin-manager-table" lw="mp" lh="fixed" layout_weight="1" />
 			<vbox lw="mp" lh="wc">
 				<hbox margin-top="4dp" layout-gravity="right">
-					<!-- <pushbutton id="plugin-manager-preferences" enabled="false" text="Enabled" /> -->
+					<pushbutton id="plugin-manager-preferences" enabled="false" text="Configuration" />
 					<pushbutton id="plugin-manager-close" text="Close" icon="close" margin-left="4dp" />
 				</hbox>
 			</vbox>
@@ -199,18 +201,40 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager )
 						->asType<UIWindow>();
 	UIWidget* cont = win->getContainer();
 	UIPushButton* close = cont->find<UIPushButton>( "plugin-manager-close" );
+	UIPushButton* prefs = cont->find<UIPushButton>( "plugin-manager-preferences" );
 	UIPluginManagerTable* tv =
 		win->getContainer()->find<UIPluginManagerTable>( "plugin-manager-table" );
 	close->addEventListener( Event::MouseClick, [win]( const Event* event ) {
-		const MouseEvent* mevent = static_cast<const MouseEvent*>( event );
-		if ( mevent->getFlags() & EE_BUTTON_LMASK )
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
 			win->closeWindow();
 	} );
+	prefs->setText( sceneNode->i18n( "preferences", "Preferences" ) );
 	win->setTitle( sceneNode->i18n( "plugin_manager", "Plugin Manager" ) );
 	tv->setModel( PluginsModel::New( manager ) );
 	tv->setColumnsVisible(
 		{ PluginsModel::Title, PluginsModel::Description, PluginsModel::Version } );
 	tv->setAutoColumnsWidth( true );
+	prefs->addEventListener( Event::MouseClick, [tv, manager, loadFileCb]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK &&
+			 !tv->getSelection().isEmpty() ) {
+			const PluginDefinition* def =
+				manager->getDefinitionIndex( tv->getSelection().first().row() );
+			if ( def == nullptr || !manager->isEnabled( def->id ) )
+				return;
+			auto* plugin = manager->get( def->id );
+			if ( !plugin->hasFileConfig() )
+				return;
+			if ( FileSystem::fileExists( plugin->getFileConfigPath() ) )
+				loadFileCb( plugin->getFileConfigPath() );
+		}
+	} );
+	tv->setOnSelection( [&, prefs, manager]( const ModelIndex& index ) {
+		const PluginDefinition* def = manager->getDefinitionIndex( index.row() );
+		if ( def == nullptr )
+			return;
+		prefs->setEnabled( manager->isEnabled( def->id ) &&
+						   manager->get( def->id )->hasFileConfig() );
+	} );
 	win->center();
 	return win;
 }
