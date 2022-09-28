@@ -539,16 +539,21 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 	auto it = mMatches.find( editor->getDocumentRef().get() );
 	if ( it != mMatches.end() ) {
 		Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
+		auto visibleLineRange = editor->getVisibleLineRange();
 		for ( auto& matchIt : it->second ) {
-			auto& matches = matchIt.second;
-			for ( auto& match : matches ) {
-				if ( match.box[editor].contains( localPos ) ) {
-					editor->setTooltipText( match.text );
-					editor->getTooltip()->setDontAutoHideOnMouseMove( true );
-					editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
-					if ( !editor->getTooltip()->isVisible() )
-						editor->runOnMainThread( [&, editor] { editor->getTooltip()->show(); } );
-					return false;
+			Uint64 matchLine = matchIt.first;
+			if ( matchLine >= visibleLineRange.first && matchLine <= visibleLineRange.second ) {
+				auto& matches = matchIt.second;
+				for ( auto& match : matches ) {
+					if ( match.box[editor].contains( localPos ) ) {
+						editor->setTooltipText( match.text );
+						editor->getTooltip()->setDontAutoHideOnMouseMove( true );
+						editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
+						if ( !editor->getTooltip()->isVisible() )
+							editor->runOnMainThread(
+								[&, editor] { editor->getTooltip()->show(); } );
+						return false;
+					}
 				}
 			}
 		}

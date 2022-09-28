@@ -484,6 +484,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setFindReplaceEnabled( bool findReplaceEnabled );
 
+	const Vector2f& getScroll() const;
+
+	std::pair<Uint64, Uint64> getVisibleLineRange() const;
+
+	bool isLineVisible( const Uint64& line ) const;
+
+	int getVisibleLinesCount() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -492,7 +500,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
 	std::shared_ptr<Doc::TextDocument> mDoc;
-	Vector2f mScrollPos;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
 	bool mDirtyEditor{ false };
@@ -646,10 +653,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void onDocumentClosed( TextDocument* doc );
 
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
-
-	std::pair<Uint64, Uint64> getVisibleLineRange();
-
-	int getVisibleLinesCount();
 
 	void setScrollX( const Float& val, bool emmitEvent = true );
 

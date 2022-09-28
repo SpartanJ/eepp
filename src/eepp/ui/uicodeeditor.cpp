@@ -1476,7 +1476,7 @@ void UICodeEditor::onDocumentDirtyOnFileSystem( TextDocument* doc ) {
 	sendEvent( &event );
 }
 
-std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange() {
+std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange() const {
 	Float lineHeight = getLineHeight();
 	Float minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
 	Float maxLine = eemin( mDoc->linesCount() - 1.f,
@@ -1484,7 +1484,12 @@ std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange() {
 	return std::make_pair<Uint64, Uint64>( (Uint64)minLine, (Uint64)maxLine );
 }
 
-int UICodeEditor::getVisibleLinesCount() {
+bool UICodeEditor::isLineVisible( const Uint64& line ) const {
+	auto range = getVisibleLineRange();
+	return line >= range.first && line <= range.second;
+}
+
+int UICodeEditor::getVisibleLinesCount() const {
 	auto lines = getVisibleLineRange();
 	return lines.second - lines.first;
 }
@@ -3113,6 +3118,10 @@ bool UICodeEditor::getFindReplaceEnabled() const {
 
 void UICodeEditor::setFindReplaceEnabled( bool findReplaceEnabled ) {
 	mFindReplaceEnabled = findReplaceEnabled;
+}
+
+const Vector2f& UICodeEditor::getScroll() const {
+	return mScroll;
 }
 
 Text& UICodeEditor::getLineText( const Int64& lineNumber ) const {
