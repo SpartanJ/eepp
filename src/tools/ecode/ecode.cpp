@@ -519,18 +519,50 @@ App::~App() {
 	eeSAFE_DELETE( mConsole );
 }
 
+void App::checkWidgetPick( UITreeView* widgetTree ) {
+	Input* input = mWindow->getInput();
+	if ( input->getClickTrigger() & EE_BUTTON_LMASK ) {
+		Node* node = mUISceneNode->getEventDispatcher()->getMouseOverNode();
+		WidgetTreeModel* model = static_cast<WidgetTreeModel*>( widgetTree->getModel() );
+		ModelIndex index( model->getModelIndex( node ) );
+		widgetTree->setSelection( index );
+		mUISceneNode->setHighlightOver( false );
+		mUISceneNode->getEventDispatcher()->setDisableMousePress( false );
+	} else {
+		mUISceneNode->runOnMainThread( [this, widgetTree]() { checkWidgetPick( widgetTree ); } );
+	}
+}
+
 void App::createWidgetTreeView() {
-	UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );
+	UIWindow* uiWin = UIWindow::New();
 	uiWin->setMinWindowSize( 600, 400 );
 	uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
-	UITreeView* widgetTree = UITreeView::New();
-	widgetTree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-	widgetTree->setParent( uiWin );
+	UIWidget* cont = mUISceneNode->loadLayoutFromString( R"xml(
+	<vbox lw="mp" lh="mp">
+		<hbox lw="mp" lh="wc">
+			<pushbutton id="pick_widget" text='@string(pick_widget, "Pick Widget")' />
+		</hbox>
+		<treeview lw="mp" lh="fixed" lw8="1" />
+	</vbox>
+	)xml",
+														 uiWin->getContainer() );
+	UITreeView* widgetTree = cont->findByType<UITreeView>( UI_TYPE_TREEVIEW );
 	widgetTree->setHeadersVisible( true );
 	widgetTree->setAutoExpandOnSingleColumn( true );
 	widgetTree->setExpanderIconSize( mMenuIconSize );
 	widgetTree->setAutoColumnsWidth( true );
-	widgetTree->setModel( WidgetTreeModel::New( mUISceneNode ) );
+	auto model = WidgetTreeModel::New( mUISceneNode );
+	widgetTree->setModel( model );
+	widgetTree->tryOpenModelIndex( model->getRoot() );
+	UIPushButton* button = cont->find<UIPushButton>( "pick_widget" );
+	button->addEventListener( Event::MouseClick, [&, widgetTree]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
+			mUISceneNode->setHighlightOver( true );
+			mUISceneNode->getEventDispatcher()->setDisableMousePress( true );
+			mUISceneNode->runOnMainThread(
+				[this, widgetTree]() { checkWidgetPick( widgetTree ); } );
+		}
+	} );
 	uiWin->center();
 }
 

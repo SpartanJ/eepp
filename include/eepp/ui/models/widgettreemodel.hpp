@@ -34,6 +34,10 @@ class EE_API WidgetTreeModel : public Model {
 
 	virtual void update() override;
 
+	ModelIndex getRoot() const;
+
+	ModelIndex getModelIndex( const Node* node ) const;
+
   protected:
 	Node* mRoot;
 

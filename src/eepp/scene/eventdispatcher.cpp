@@ -89,6 +89,11 @@ void EventDispatcher::update( const Time& time ) {
 		}
 	}
 
+	if ( mDisableMousePress || mJustDisabledMousePress ) {
+		mJustDisabledMousePress = false;
+		return;
+	}
+
 	if ( NULL != mNodeDragging )
 		mNodeDragging->onCalculateDrag( mMousePos, mInput->getPressTrigger() );
 
@@ -329,6 +334,17 @@ Node* EventDispatcher::getNodeDragging() const {
 
 Node* EventDispatcher::getNodeWasDragging() const {
 	return mNodeWasDragging;
+}
+
+bool EventDispatcher::getDisableMousePress() const {
+	return mDisableMousePress;
+}
+
+void EventDispatcher::setDisableMousePress( bool disableMousePress ) {
+	if ( mDisableMousePress && !disableMousePress )
+		mJustDisabledMousePress = true;
+	mDisableMousePress = disableMousePress;
+
 }
 
 }} // namespace EE::Scene

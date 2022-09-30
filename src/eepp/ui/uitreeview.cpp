@@ -6,6 +6,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitreeview.hpp>
+#include <stack>
 
 namespace EE { namespace UI {
 
@@ -138,6 +139,26 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 			onOpenMenuModelIndex( idx, event );
 		}
 	} );
+}
+
+bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) {
+	size_t rowCount = 0;
+	{
+		ConditionalLock l( getModel() != nullptr,
+						   getModel() ? &getModel()->resourceMutex() : nullptr );
+		rowCount = getModel()->rowCount( index );
+	}
+	if ( rowCount ) {
+		auto& data = getIndexMetadata( index );
+		if ( !data.open ) {
+			data.open = true;
+			if ( forceUpdate )
+				createOrUpdateColumns();
+			onOpenTreeModelIndex( index, data.open );
+		}
+		return true;
+	}
+	return false;
 }
 
 UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
@@ -701,20 +722,7 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 		if ( foundIndex == ModelIndex() )
 			break;
 
-		size_t rowCount = 0;
-		{
-			ConditionalLock l( getModel() != nullptr,
-							   getModel() ? &getModel()->resourceMutex() : nullptr );
-			rowCount = getModel()->rowCount( foundIndex );
-		}
-		if ( rowCount ) {
-			auto& data = getIndexMetadata( foundIndex );
-			if ( !data.open ) {
-				data.open = true;
-				createOrUpdateColumns();
-				onOpenTreeModelIndex( foundIndex, data.open );
-			}
-		}
+		tryOpenModelIndex( foundIndex );
 
 		parentIndex = foundIndex;
 
@@ -726,12 +734,19 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 	return {};
 }
 
-void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection ) {
+void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection,
+							   bool openModelIndexTree ) {
 	if ( !getModel() )
 		return;
 	auto& model = *this->getModel();
-	if ( model.isValid( index ) && scrollToSelection ) {
+	if ( model.isValid( index ) ) {
+		if ( openModelIndexTree )
+			openModelIndexParentTree( index );
+
 		getSelection().set( index );
+
+		if ( !scrollToSelection )
+			return;
 
 		ModelIndex prevIndex;
 		ModelIndex foundIndex;
@@ -757,6 +772,26 @@ void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection )
 			}
 		}
 	}
+}
+
+void UITreeView::openModelIndexParentTree( const ModelIndex& index ) {
+	if ( !index.hasParent() )
+		return;
+
+	std::stack<ModelIndex> indexes;
+	ModelIndex parent = index;
+	while ( parent.hasParent() ) {
+		indexes.push( parent );
+		parent = parent.parent();
+	}
+
+	while ( !indexes.empty() ) {
+		if ( !tryOpenModelIndex( indexes.top() ) )
+			return;
+		indexes.pop();
+	}
+
+	createOrUpdateColumns();
 }
 
 bool UITreeView::getFocusOnSelection() const {

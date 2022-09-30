@@ -489,11 +489,14 @@ void UIAbstractTableView::moveSelection( int steps ) {
 	setSelection( newIndex );
 }
 
-void UIAbstractTableView::setSelection( const ModelIndex& index, bool scrollToSelection ) {
+void UIAbstractTableView::setSelection( const ModelIndex& index, bool scrollToSelection,
+										bool openModelIndexTree ) {
 	if ( !getModel() )
 		return;
 	auto& model = *this->getModel();
 	if ( model.isValid( index ) ) {
+		if ( openModelIndexTree )
+			onOpenMenuModelIndex( index );
 		getSelection().set( index );
 		if ( scrollToSelection )
 			scrollToPosition(

@@ -445,6 +445,7 @@ std::string LinterPlugin::getMatchString( const LinterType& type ) {
 	return "error";
 }
 
+// TODO: Implement error lens
 void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 									  const Float& /*fontSize*/, const Float& lineHeight ) {
 	Lock l( mMatchesMutex );

@@ -77,4 +77,21 @@ void WidgetTreeModel::update() {
 	onModelUpdate();
 }
 
+ModelIndex WidgetTreeModel::getRoot() const {
+	return createIndex( 0, 0, mRoot );
+}
+
+ModelIndex WidgetTreeModel::getModelIndex( const Node* node ) const {
+	eeASSERT( node != nullptr );
+	const Node* fNode = node;
+	while ( fNode ) {
+		if ( fNode == mRoot )
+			break;
+		fNode = fNode->getParent();
+	}
+	if ( fNode != mRoot || nullptr == node->getParent() )
+		return {};
+	return createIndex( node->getNodeIndex(), 0, node );
+}
+
 }}} // namespace EE::UI::Models

@@ -162,24 +162,43 @@ Translator& UISceneNode::getTranslator() {
 }
 
 String UISceneNode::getTranslatorString( const std::string& str ) {
-	if ( String::startsWith( str, "@string/" ) ) {
-		String tstr = mTranslator.getString( str.substr( 8 ) );
+	if ( str.size() >= 8 && String::startsWith( str, "@string" ) ) {
+		if ( str[7] == '/' ) {
+			String tstr = mTranslator.getString( str.substr( 8 ) );
 
-		if ( !tstr.empty() )
-			return tstr;
+			if ( !tstr.empty() )
+				return tstr;
+		} else if ( str[7] == '(' ) {
+			FunctionString fun( FunctionString::parse( str ) );
+			if ( !fun.isEmpty() ) {
+				String tstr( mTranslator.getString( fun.getParameters()[0] ) );
+				if ( !tstr.empty() )
+					return tstr;
+				if ( fun.getParameters().size() >= 2 )
+					return fun.getParameters()[1];
+			}
+		}
 	}
-
 	return String( str );
 }
 
 String UISceneNode::getTranslatorString( const std::string& str, const String& defaultValue ) {
-	if ( String::startsWith( str, "@string/" ) ) {
-		String tstr = mTranslator.getString( str.substr( 8 ) );
-
-		if ( !tstr.empty() )
-			return tstr;
+	if ( str.size() >= 8 && String::startsWith( str, "@string" ) ) {
+		if ( str[7] == '/' ) {
+			String tstr( mTranslator.getString( str.substr( 8 ) ) );
+			if ( !tstr.empty() )
+				return tstr;
+		} else if ( str[7] == '(' ) {
+			FunctionString fun( FunctionString::parse( str ) );
+			if ( !fun.isEmpty() ) {
+				String tstr( mTranslator.getString( fun.getParameters()[0] ) );
+				if ( !tstr.empty() )
+					return tstr;
+				if ( fun.getParameters().size() >= 2 )
+					return fun.getParameters()[1];
+			}
+		}
 	}
-
 	return defaultValue;
 }
 

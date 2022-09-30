@@ -98,6 +98,10 @@ class EE_API EventDispatcher {
 
 	Node* getNodeWasDragging() const;
 
+	bool getDisableMousePress() const;
+
+	void setDisableMousePress( bool disableMousePress );
+
   protected:
 	EE::Window::Window* mWindow;
 	Input* mInput;
@@ -113,6 +117,8 @@ class EE_API EventDispatcher {
 	Vector2i mClickPos;
 	Int32 mCbId;
 	bool mFirstPress;
+	bool mDisableMousePress{ false };
+	bool mJustDisabledMousePress{ false };
 	Node* mNodeWasDragging;
 	Node* mNodeDragging;
 	Time mElapsed;

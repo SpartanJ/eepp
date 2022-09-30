@@ -345,6 +345,8 @@ class App : public UICodeEditorSplitter::Client {
 	void renameFile( const FileInfo& file );
 
 	void initPluginManager();
+
+	void checkWidgetPick( UITreeView* widgetTree );
 };
 
 } // namespace ecode

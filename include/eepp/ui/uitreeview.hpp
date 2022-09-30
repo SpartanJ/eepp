@@ -131,11 +131,16 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual ModelIndex selectRowWithPath( std::string path );
 
-	virtual void setSelection( const ModelIndex& index, bool scrollToSelection = true );
+	virtual void setSelection( const ModelIndex& index, bool scrollToSelection = true,
+							   bool openModelIndexTree = true );
+
+	virtual void openModelIndexParentTree( const ModelIndex& index );
 
 	bool getFocusOnSelection() const;
 
 	void setFocusOnSelection( bool focusOnSelection );
+
+	bool tryOpenModelIndex( const ModelIndex& index, bool forceUpdate = true );
 
   protected:
 	enum class IterationDecision {
