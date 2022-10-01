@@ -983,7 +983,8 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 
 		Rectf rect( getMinimapRect( getScreenStart() ) );
 		if ( ( flags & EE_BUTTON_LMASK ) && !getEventDispatcher()->isNodeDragging() &&
-			 !mMinimapDragging && rect.contains( position.asFloat() ) ) {
+			 getEventDispatcher()->getMouseDownNode() == this && !mMinimapDragging &&
+			 rect.contains( position.asFloat() ) ) {
 			if ( mMouseDown )
 				return 1;
 			if ( !mMinimapHover && !mMouseDown ) {
