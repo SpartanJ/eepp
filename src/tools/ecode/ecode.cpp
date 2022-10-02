@@ -2166,12 +2166,28 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
-	return { "fullscreen-toggle",	 "open-file",			"open-folder",
-			 "console-toggle",		 "close-app",			"open-locatebar",
-			 "open-global-search",	 "menu-toggle",			"switch-side-panel",
-			 "download-file-web",	 "create-new-terminal", "terminal-split-left",
-			 "terminal-split-right", "terminal-split-top",	"terminal-split-bottom",
-			 "terminal-split-swap",	 "reopen-closed-tab",	"plugin-manager" };
+	return { "fullscreen-toggle",
+			 "open-file",
+			 "open-folder",
+			 "console-toggle",
+			 "close-app",
+			 "open-locatebar",
+			 "open-global-search",
+			 "menu-toggle",
+			 "switch-side-panel",
+			 "download-file-web",
+			 "create-new-terminal",
+			 "terminal-split-left",
+			 "terminal-split-right",
+			 "terminal-split-top",
+			 "terminal-split-bottom",
+			 "terminal-split-swap",
+			 "reopen-closed-tab",
+			 "plugin-manager-open",
+			 "debug-widget-tree-view",
+			 "debug-draw-highlight-toggle",
+			 "debug-draw-boxes-toggle",
+			 "debug-draw-debug-data" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {
@@ -2470,7 +2486,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		doc.execute( "create-new-terminal" );
 	} );
 	doc.setCommand( "reopen-closed-tab", [&] { reopenClosedTab(); } );
-	doc.setCommand( "plugin-manager", [&] { createPluginManagerUI(); } );
+	doc.setCommand( "plugin-manager-open", [&] { createPluginManagerUI(); } );
 
 	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -2725,7 +2741,7 @@ void App::createSettingsMenu() {
 	mSettingsMenu->addSubMenu( i18n( "tools", "Tools" ), nullptr, createToolsMenu() );
 	mSettingsMenu->addSubMenu( i18n( "window", "Window" ), nullptr, createWindowMenu() );
 	mSettingsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "package" ) )
-		->setId( "plugin-manager" );
+		->setId( "plugin-manager-open" );
 	mSettingsMenu->addSubMenu( i18n( "help", "Help" ), findIcon( "help" ), createHelpMenu() );
 	mSettingsMenu->addSeparator();
 	mSettingsMenu

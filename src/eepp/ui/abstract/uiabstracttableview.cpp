@@ -139,6 +139,18 @@ void UIAbstractTableView::createOrUpdateColumns() {
 		columnData( mMainColumn ).width = contentWidth - usedWidth >= mainColMaxWidth
 											  ? contentWidth - usedWidth
 											  : mainColMaxWidth;
+		usedWidth += columnData( mMainColumn ).width;
+		if ( usedWidth > contentWidth ) {
+			size_t longestCol = 0;
+			Float longestColWidth = columnData( 0 ).width;
+			for ( size_t col = 1; col < count; col++ ) {
+				if ( columnData( col ).width > longestColWidth ) {
+					longestCol = col;
+					longestColWidth = columnData( col ).width;
+				}
+			}
+			columnData( longestCol ).width = contentWidth - ( usedWidth - longestColWidth );
+		}
 	}
 
 	mHeaderHeight = 0;
