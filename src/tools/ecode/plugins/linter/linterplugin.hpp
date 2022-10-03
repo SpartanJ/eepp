@@ -45,10 +45,12 @@ struct LinterMatch {
 class LinterPlugin : public UICodeEditorPlugin {
   public:
 	static PluginDefinition Definition() {
-		return { "linter", "Linter",
+		return { "linter",
+				 "Linter",
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
-				 LinterPlugin::New };
+				 LinterPlugin::New,
+				 { 0, 1, 0 } };
 	}
 	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
 

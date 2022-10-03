@@ -115,7 +115,7 @@ Variant PluginsModel::data( const ModelIndex& index, ModelRole role ) const {
 			return {};
 		switch ( index.column() ) {
 			case Columns::Version:
-				return Variant( def->versionString.c_str() );
+				return Variant( def->version.getVersionString().c_str() );
 			case Columns::Description:
 				return Variant( def->description.c_str() );
 			case Columns::Title:
@@ -214,6 +214,8 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 	tv->setColumnsVisible(
 		{ PluginsModel::Title, PluginsModel::Description, PluginsModel::Version } );
 	tv->setAutoColumnsWidth( true );
+	tv->setFitAllColumnsToWidget( true );
+	tv->setMainColumn( PluginsModel::Description );
 	prefs->addEventListener( Event::MouseClick, [tv, manager, loadFileCb]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK &&
 			 !tv->getSelection().isEmpty() ) {

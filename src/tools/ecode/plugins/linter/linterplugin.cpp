@@ -72,11 +72,24 @@ size_t LinterPlugin::linterFilePatternPosition( const std::vector<std::string>& 
 }
 
 void LinterPlugin::loadLinterConfig( const std::string& path ) {
-	std::ifstream stream( path );
-	json j;
-	stream >> j;
+	std::string data;
+	if ( !FileSystem::fileGet( path, data ) )
+		return;
+	json j = json::parse( data, nullptr, true, true );
 
-	for ( auto& obj : j ) {
+	if ( j.contains( "config" ) ) {
+		auto& config = j["config"];
+		if ( config.contains( "delay_time" ) ) {
+			Time time( Time::fromString( config["delay_time"].get<std::string>() ) );
+			setDelayTime( time );
+		}
+	}
+
+	if ( !j.contains( "linters" ) )
+		return;
+
+	auto& linters = j["linters"];
+	for ( auto& obj : linters ) {
 		Linter linter;
 		if ( !obj.contains( "file_patterns" ) || !obj.contains( "warning_pattern" ) ||
 			 !obj.contains( "command" ) )
@@ -153,7 +166,8 @@ void LinterPlugin::load( const PluginManager* pluginManager ) {
 	if ( FileSystem::fileExists( path ) )
 		paths.emplace_back( path );
 	path = pluginManager->getPluginsPath() + "linters.json";
-	if ( FileSystem::fileExists( path ) || FileSystem::fileWrite( path, "[]\n" ) ) {
+	if ( FileSystem::fileExists( path ) ||
+		 FileSystem::fileWrite( path, "{\n\"config\":{},\n\"linters\":[]\n}\n" ) ) {
 		mConfigPath = path;
 		paths.emplace_back( path );
 	}

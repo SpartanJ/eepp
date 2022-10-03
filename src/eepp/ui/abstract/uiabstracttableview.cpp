@@ -140,7 +140,7 @@ void UIAbstractTableView::createOrUpdateColumns() {
 											  ? contentWidth - usedWidth
 											  : mainColMaxWidth;
 		usedWidth += columnData( mMainColumn ).width;
-		if ( usedWidth > contentWidth ) {
+		if ( mFitAllColumnsToWidget && usedWidth > contentWidth ) {
 			size_t longestCol = 0;
 			Float longestColWidth = columnData( 0 ).width;
 			for ( size_t col = 1; col < count; col++ ) {
@@ -149,7 +149,9 @@ void UIAbstractTableView::createOrUpdateColumns() {
 					longestColWidth = columnData( col ).width;
 				}
 			}
-			columnData( longestCol ).width = contentWidth - ( usedWidth - longestColWidth );
+			longestColWidth = contentWidth - ( usedWidth - longestColWidth );
+			if ( longestColWidth > 0 )
+				columnData( longestCol ).width = longestColWidth;
 		}
 	}
 
@@ -695,6 +697,14 @@ void UIAbstractTableView::setSingleClickNavigation( bool singleClickNavigation )
 			bindNavigationClick( widgetIt.first );
 		}
 	}
+}
+
+bool UIAbstractTableView::getFitAllColumnsToWidget() const {
+	return mFitAllColumnsToWidget;
+}
+
+void UIAbstractTableView::setFitAllColumnsToWidget( bool fitAllColumnsToWidget ) {
+	mFitAllColumnsToWidget = fitAllColumnsToWidget;
 }
 
 }}} // namespace EE::UI::Abstract

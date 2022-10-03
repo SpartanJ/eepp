@@ -20,10 +20,12 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	typedef std::unordered_set<std::string> SymbolsList;
 
 	static PluginDefinition Definition() {
-		return { "autocomplete", "Auto Complete",
+		return { "autocomplete",
+				 "Auto Complete",
 				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
-				 AutoCompletePlugin::New };
+				 AutoCompletePlugin::New,
+				 { 0, 1, 0 } };
 	}
 
 	static UICodeEditorPlugin* New( const PluginManager* pluginManager );

@@ -798,7 +798,7 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 		if ( !mAlreadyClickedMButton ) {
 			mAlreadyClickedMButton = true;
 			auto selection = mTerminal->getSelection();
-			if ( !selection.empty() ) {
+			if ( !selection.empty() && selection != "\n" ) {
 				for ( auto& chr : selection )
 					onTextInput( chr );
 			} else {

@@ -43,8 +43,10 @@ FormatterPlugin::~FormatterPlugin() {
 		mWorkerCondition.wait( lock, [&]() { return mWorkersCount <= 0; } );
 	}
 
-	for ( auto editor : mEditors )
+	for ( auto editor : mEditors ) {
+		editor->getDocument().removeCommand( "format-doc" );
 		editor->unregisterPlugin( this );
+	}
 }
 
 void FormatterPlugin::onRegister( UICodeEditor* editor ) {
@@ -87,53 +89,103 @@ void FormatterPlugin::unregisterNativeFormatter( const std::string& cmd ) {
 	mNativeFormatters.erase( cmd );
 }
 
+size_t FormatterPlugin::formatterFilePatternPosition( const std::vector<std::string>& patterns ) {
+	for ( size_t i = 0; i < mFormatters.size(); ++i ) {
+		for ( const std::string& filePattern : mFormatters[i].files ) {
+			for ( const std::string& pattern : patterns ) {
+				if ( filePattern == pattern ) {
+					return i;
+				}
+			}
+		}
+	}
+	return std::string::npos;
+}
+
+void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
+	std::string data;
+	if ( !FileSystem::fileGet( path, data ) )
+		return;
+	json j = json::parse( data, nullptr, true, true );
+
+	if ( j.contains( "config" ) ) {
+		auto& config = j["config"];
+		if ( config.contains( "auto_format_on_save" ) )
+			setAutoFormatOnSave( config["auto_format_on_save"].get<bool>() );
+	}
+
+	if ( !j.contains( "formatters" ) )
+		return;
+
+	auto& formatters = j["formatters"];
+	for ( auto& obj : formatters ) {
+		Formatter formatter;
+		auto fp = obj["file_patterns"];
+
+		for ( auto& pattern : fp )
+			formatter.files.push_back( pattern.get<std::string>() );
+
+		formatter.command = obj["command"].get<std::string>();
+
+		if ( obj.contains( "type" ) ) {
+			std::string typeStr( obj["type"].get<std::string>() );
+			String::toLowerInPlace( typeStr );
+			String::trimInPlace( typeStr );
+			if ( "native" == typeStr ) {
+				formatter.type = FormatterType::Native;
+				if ( mNativeFormatters.find( formatter.command ) == mNativeFormatters.end() ) {
+					Log::error( "Requested native formatter: '%s' does not exists.",
+								formatter.command.c_str() );
+					continue;
+				}
+			} else {
+				formatter.type =
+					"inplace" == typeStr ? FormatterType::Inplace : FormatterType::Output;
+			}
+		}
+
+		// If the file pattern is repeated, we will overwrite the previous linter.
+		// The previous linter should be the "default" linter that comes with ecode.
+		size_t pos = formatterFilePatternPosition( formatter.files );
+		if ( pos != std::string::npos ) {
+			mFormatters[pos] = formatter;
+		} else {
+			mFormatters.emplace_back( std::move( formatter ) );
+		}
+	}
+}
+
 void FormatterPlugin::load( const PluginManager* pluginManager ) {
 	registerNativeFormatters();
 
+	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/formatters.json" );
-	if ( FileSystem::fileExists( pluginManager->getPluginsPath() + "formatters.json" ) )
-		path = pluginManager->getPluginsPath() + "formatter.json";
-	if ( !FileSystem::fileExists( path ) )
-		return;
-	try {
-		std::ifstream stream( path );
-		json j;
-		stream >> j;
-
-		for ( auto& obj : j ) {
-			Formatter formatter;
-			auto fp = obj["file_patterns"];
-
-			for ( auto& pattern : fp )
-				formatter.files.push_back( pattern.get<std::string>() );
-
-			formatter.command = obj["command"].get<std::string>();
-
-			if ( obj.contains( "type" ) ) {
-				std::string typeStr( obj["type"].get<std::string>() );
-				String::toLowerInPlace( typeStr );
-				String::trimInPlace( typeStr );
-				if ( "native" == typeStr ) {
-					formatter.type = FormatterType::Native;
-					if ( mNativeFormatters.find( formatter.command ) == mNativeFormatters.end() ) {
-						Log::error( "Requested native formatter: '%s' does not exists.",
-									formatter.command.c_str() );
-						continue;
-					}
-				} else {
-					formatter.type =
-						"inplace" == typeStr ? FormatterType::Inplace : FormatterType::Output;
-				}
-			}
-
-			mFormatters.emplace_back( std::move( formatter ) );
-		}
-
-		mReady = true;
-	} catch ( json::exception& e ) {
-		mReady = false;
-		Log::error( "Parsing formatter failed:\n%s", e.what() );
+	if ( FileSystem::fileExists( path ) )
+		paths.emplace_back( path );
+	path = pluginManager->getPluginsPath() + "formatters.json";
+	if ( FileSystem::fileExists( path ) ||
+		 FileSystem::fileWrite( path, "{\n\"config\":{},\n\"formatters\":[]\n}\n" ) ) {
+		mConfigPath = path;
+		paths.emplace_back( path );
 	}
+	if ( paths.empty() )
+		return;
+	for ( const auto& path : paths ) {
+		try {
+			loadFormatterConfig( path );
+		} catch ( json::exception& e ) {
+			Log::error( "Parsing formatter \"%s\" failed:\n%s", path.c_str(), e.what() );
+		}
+	}
+	mReady = !mFormatters.empty();
+}
+
+bool FormatterPlugin::hasFileConfig() {
+	return !mConfigPath.empty();
+}
+
+std::string FormatterPlugin::getFileConfigPath() {
+	return mConfigPath;
 }
 
 void FormatterPlugin::formatDoc( UICodeEditor* editor ) {

@@ -105,6 +105,11 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setSingleClickNavigation( bool singleClickNavigation );
 
+	bool getFitAllColumnsToWidget() const;
+
+	/** Tries to make all columns visible in the widget content. */
+	void setFitAllColumnsToWidget( bool fitAllColumnsToWidget );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -129,6 +134,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	bool mAutoColumnsWidth{ false };
 	bool mRowSearchByName{ true };
 	bool mSingleClickNavigation{ false };
+	bool mFitAllColumnsToWidget{ false };
 	Action* mSearchTextAction{ nullptr };
 	std::string mSearchText;
 	size_t mMainColumn{ 0 };

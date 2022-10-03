@@ -1466,6 +1466,10 @@ bool TextDocument::hasCommand( const std::string& command ) {
 	return mCommands.find( command ) != mCommands.end();
 }
 
+bool TextDocument::removeCommand( const std::string& command ) {
+	return mCommands.erase( command ) > 0;
+}
+
 static std::pair<size_t, size_t> findType( const String& str, const String& findStr,
 										   const TextDocument::FindReplaceType& type ) {
 	switch ( type ) {

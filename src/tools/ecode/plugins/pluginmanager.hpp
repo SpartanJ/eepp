@@ -19,17 +19,43 @@ class PluginManager;
 
 typedef std::function<UICodeEditorPlugin*( const PluginManager* pluginManager )> PluginCreatorFn;
 
+struct PluginVersion {
+	PluginVersion() {}
+
+	PluginVersion( Uint8 major, Uint8 minor, Uint8 patch ) :
+		major( major ),
+		minor( minor ),
+		patch( patch ),
+		string( String::format( "%d.%d.%d", major, minor, patch ) ) {}
+
+	Uint8 major; /**< major version */
+	Uint8 minor; /**< minor version */
+	Uint8 patch; /**< update version */
+	std::string string;
+
+	Uint32 getVersion() const { return major * 1000 + minor * 100 + patch; }
+
+	const std::string& getVersionString() const { return string; }
+};
+
 struct PluginDefinition {
 	std::string id;
 	std::string name;
 	std::string description;
 	PluginCreatorFn creatorFn;
-	int versionNumber{ 0 };
-	std::string versionString{ "0" };
+	PluginVersion version;
 };
 
 class PluginManager {
   public:
+	static constexpr int versionNumber( int major, int minor, int patch ) {
+		return ( (major)*1000 + (minor)*100 + ( patch ) );
+	}
+
+	static std::string versionString( int major, int minor, int patch ) {
+		return String::format( "%d.%d.%.d", major, minor, patch );
+	}
+
 	PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
 				   std::shared_ptr<ThreadPool> pool );
 

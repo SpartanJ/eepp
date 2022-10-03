@@ -22,8 +22,11 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	};
 
 	static PluginDefinition Definition() {
-		return { "autoformatter", "Auto Formatter", "Enables the code formatter/prettifier plugin.",
-				 FormatterPlugin::New };
+		return { "autoformatter",
+				 "Auto Formatter",
+				 "Enables the code formatter/prettifier plugin.",
+				 FormatterPlugin::New,
+				 { 0, 1, 0 } };
 	}
 
 	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
@@ -50,6 +53,10 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	void unregisterNativeFormatter( const std::string& cmd );
 
+	bool hasFileConfig();
+
+	std::string getFileConfigPath();
+
   protected:
 	enum class FormatterType { Inplace, Output, Native };
 
@@ -67,6 +74,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	std::map<std::string, std::function<NativeFormatterResult( const std::string& file )>>
 		mNativeFormatters;
 	Int32 mWorkersCount{ 0 };
+	std::string mConfigPath;
 
 	bool mAutoFormatOnSave{ false };
 	bool mShuttingDown{ false };
@@ -76,9 +84,13 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	void load( const PluginManager* pluginManager );
 
+	void loadFormatterConfig( const std::string& path );
+
 	void formatDoc( UICodeEditor* editor );
 
 	void runFormatter( UICodeEditor* editor, const Formatter& formatter, const std::string& path );
+
+	size_t formatterFilePatternPosition( const std::vector<std::string>& patterns );
 
 	FormatterPlugin::Formatter supportsFormatter( std::shared_ptr<TextDocument> doc );
 
