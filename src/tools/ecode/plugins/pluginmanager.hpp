@@ -22,6 +22,9 @@ typedef std::function<UICodeEditorPlugin*( const PluginManager* pluginManager )>
 #ifdef minor
 #undef minor
 #endif
+#ifdef major
+#undef major
+#endif
 struct PluginVersion {
 	PluginVersion() {}
 
