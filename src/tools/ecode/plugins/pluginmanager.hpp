@@ -19,6 +19,9 @@ class PluginManager;
 
 typedef std::function<UICodeEditorPlugin*( const PluginManager* pluginManager )> PluginCreatorFn;
 
+#ifdef minor
+#undef minor
+#endif
 struct PluginVersion {
 	PluginVersion() {}
 
