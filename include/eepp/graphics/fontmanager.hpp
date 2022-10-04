@@ -31,9 +31,14 @@ class EE_API FontManager : public ResourceManager<Font> {
 
 	void setEmojiFont( Font* newEmojiFont );
 
+	Font* getFallbackFont() const;
+
+	void setFallbackFont( Font* fallbackFont );
+
   protected:
 	Font* mColorEmojiFont{ nullptr };
 	Font* mEmojiFont{ nullptr };
+	Font* mFallbackFont{ nullptr };
 	FontManager();
 };
 

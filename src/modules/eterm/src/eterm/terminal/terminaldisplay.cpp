@@ -500,7 +500,28 @@ int TerminalDisplay::resetColor( const Uint32& index, const char* name ) {
 	}
 
 	if ( index < mColors.size() ) {
-		mColors[index] = Color::fromString( name );
+		if ( name && String::startsWith( name, "rgb:" ) ) {
+			auto split = String::split( std::string( name ), ':' );
+			if ( split.size() == 2 ) {
+				auto splitRgb = String::split( split[1], '/' );
+				if ( splitRgb.size() == 3 ) {
+					char* pr = NULL;
+					char* pg = NULL;
+					char* pb = NULL;
+					long r = 0, g = 0, b = 0;
+					r = std::strtol( splitRgb[0].c_str(), &pr, 16 );
+					g = std::strtol( splitRgb[1].c_str(), &pg, 16 );
+					b = std::strtol( splitRgb[2].c_str(), &pb, 16 );
+					if ( pr && pg && pb ) {
+						mColors[index] = Color( r, g, b );
+						return 0;
+					}
+				}
+			}
+		} else {
+			mColors[index] = Color::fromString( name );
+			return 0;
+		}
 	}
 
 	return 1;

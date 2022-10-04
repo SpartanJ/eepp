@@ -213,6 +213,13 @@ class EE_API String {
 	 */
 	static bool startsWith( const String& haystack, const String& needle );
 
+	/** Compare two strings from its beginning.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool startsWith( const char* haystack, const char* needle );
+
 	/** Compare two strings from its end.
 	 * @param haystack The string to search in.
 	 * @param needle The searched string.

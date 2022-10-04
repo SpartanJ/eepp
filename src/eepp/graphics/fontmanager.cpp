@@ -29,4 +29,12 @@ void FontManager::setEmojiFont( Graphics::Font* newEmojiFont ) {
 	mEmojiFont = newEmojiFont;
 }
 
+Font* FontManager::getFallbackFont() const {
+	return mFallbackFont;
+}
+
+void FontManager::setFallbackFont( Font* fallbackFont ) {
+	mFallbackFont = fallbackFont;
+}
+
 }} // namespace EE::Graphics

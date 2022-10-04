@@ -650,6 +650,10 @@ bool String::startsWith( const String& haystack, const String& needle ) {
 		   std::equal( needle.begin(), needle.end(), haystack.begin() );
 }
 
+bool String::startsWith( const char* haystack, const char* needle ) {
+	return strncmp( needle, haystack, strlen( needle ) ) == 0;
+}
+
 bool String::endsWith( const std::string& haystack, const std::string& needle ) {
 	return needle.length() <= haystack.length() &&
 		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;

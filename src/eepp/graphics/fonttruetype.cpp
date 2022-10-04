@@ -410,7 +410,16 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 		}
 	}
 
-	return getGlyphByIndex( getGlyphIndex( codePoint ), characterSize, bold, outlineThickness );
+	Uint32 glyphIndex = getGlyphIndex( codePoint );
+	if ( 0 == glyphIndex && FontManager::instance()->getFallbackFont() &&
+		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
+		FontTrueType* fallbackFont =
+			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
+		return fallbackFont->getGlyph( codePoint, characterSize, bold, outlineThickness,
+									   getPage( characterSize ), maxWidth );
+	}
+
+	return getGlyphByIndex( glyphIndex, characterSize, bold, outlineThickness );
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
@@ -476,6 +485,13 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 		}
 	} else {
 		glyphIndex = getGlyphIndex( codePoint );
+		if ( 0 == glyphIndex && FontManager::instance()->getFallbackFont() != nullptr &&
+			 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
+			FontTrueType* fontFallback =
+				static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
+			glyphIndex = fontFallback->getGlyphIndex( codePoint );
+			fontInternalId = fontFallback->getFontInternalId();
+		}
 	}
 
 	Uint64 key = getIndexKey( fontInternalId, glyphIndex, bold, outlineThickness );
