@@ -344,7 +344,9 @@ void GlobalSearchController::updateGlobalSearchBar() {
 		Float rowHeight = mGlobalSearchTree->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS;
 		mGlobalSearchLayout->setPixelsSize( width, 0 );
 		mGlobalSearchTree->setPixelsSize( width, rowHeight );
-		width -= mGlobalSearchTree->getVerticalScrollBar()->getPixelsSize().getWidth();
+		width -= mGlobalSearchTree->shouldVerticalScrollBeVisible()
+					 ? mGlobalSearchTree->getVerticalScrollBar()->getPixelsSize().getWidth()
+					 : 0;
 		mGlobalSearchTree->setColumnWidth( 0, eeceil( width ) );
 		Vector2f pos( mGlobalSearchInput->convertToWorldSpace( { 0, 0 } ) );
 		pos = PixelDensity::pxToDp( pos );

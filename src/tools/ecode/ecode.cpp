@@ -2089,7 +2089,7 @@ void App::onColorSchemeChanged( const std::string& ) {
 						mSplitter->getCurrentColorScheme().getName().c_str() ) );
 }
 
-void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
+void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	updateEditorTitle( editor );
 	if ( mSplitter->curEditorExistsAndFocused() && editor == mSplitter->getCurEditor() )
 		updateCurrentFileType();
@@ -2119,6 +2119,18 @@ void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 		Lock l( mWatchesLock );
 		mFilesFolderWatches[dir] = mFileWatcher->addWatch( dir, mFileSystemListener );
 	}
+}
+
+void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
+	onRealDocumentLoaded( editor, path );
+
+	// Check if other editor is using the same document and needs to receive the same notification
+	const TextDocument* docPtr = &editor->getDocument();
+	mSplitter->forEachEditor( [&, docPtr, editor]( UICodeEditor* otherEditor ) {
+		if ( otherEditor != editor && docPtr == &otherEditor->getDocument() ) {
+			onRealDocumentLoaded( otherEditor, path );
+		}
+	} );
 }
 
 const CodeEditorConfig& App::getCodeEditorConfig() const {

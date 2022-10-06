@@ -149,8 +149,8 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 		const String& txt = mTextBox->getText();
 
 		if ( mSearchStrPos.second <= txt.size() ) {
-			mResultStr = String( txt.toUtf8().substr(
-				mSearchStrPos.first, mSearchStrPos.second - mSearchStrPos.first ) );
+			mResultStr =
+				txt.substr( mSearchStrPos.first, mSearchStrPos.second - mSearchStrPos.first );
 		} else {
 			mResultStr = "";
 		}

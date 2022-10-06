@@ -112,7 +112,8 @@ class EE_API UICodeEditorSplitter {
 	UITabWidget* createEditorWithTabWidget( Node* parent, bool openCurEditor = true );
 
 	UITab* isDocumentOpen( const std::string& path,
-						   bool checkOnlyInCurrentTabWidget = false ) const;
+						   bool checkOnlyInCurrentTabWidget = false,
+						   bool checkOpeningDocuments = false ) const;
 
 	UICodeEditor* findEditorFromPath( const std::string& path );
 
@@ -183,6 +184,8 @@ class EE_API UICodeEditorSplitter {
 	bool curWidgetExists() const;
 
 	UICodeEditor* getSomeEditor();
+
+	size_t countEditorsOpeningDoc( const TextDocument& doc ) const;
 
   protected:
 	UISceneNode* mUISceneNode{ nullptr };

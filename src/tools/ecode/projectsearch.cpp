@@ -19,28 +19,22 @@ static int countNewLines( const std::string& text, const size_t& start, const si
 }
 
 static String textLine( const std::string& fileText, const size_t& fromPos, size_t& relCol ) {
-	size_t start = 0;
-	size_t end = 0;
 	const char* stringStartPtr = fileText.c_str();
 	const char* startPtr = fileText.c_str() + fromPos;
-	const char* ptr = startPtr;
-	const char* nlStartPtr = stringStartPtr;
-	if ( stringStartPtr != ptr ) {
-		while ( stringStartPtr != ptr && *--ptr != '\n' ) {
-		}
-		if ( stringStartPtr != ptr ) {
-			nlStartPtr = ptr + 1;
-			start = ptr - stringStartPtr + 1;
-		}
+	const char* endPtr = startPtr;
+	const char* nlStartPtr = startPtr;
+	while ( nlStartPtr != stringStartPtr && *nlStartPtr != '\n' )
+		--nlStartPtr;
+	if ( *nlStartPtr == '\n' )
+		nlStartPtr++;
+	while ( ++endPtr && *endPtr != '\0' && *endPtr != '\n' ) {
 	}
-	ptr = startPtr;
-	while ( ++ptr && *ptr != '\0' && *ptr != '\n' ) {
-	}
-	end = ptr - stringStartPtr;
-	relCol = String::utf8StringLength( fileText.substr( start, startPtr - nlStartPtr ) );
+	relCol = String::utf8StringLength(
+		fileText.substr( nlStartPtr - stringStartPtr, startPtr - nlStartPtr ) );
 	// if the line to substract is massive we only get the fist kilobyte of that line, since the
 	// line is only shared for visual aid.
-	return fileText.substr( start, end - start > EE_1KB ? EE_1KB : end - start );
+	return fileText.substr( nlStartPtr - stringStartPtr,
+							endPtr - nlStartPtr > EE_1KB ? EE_1KB : endPtr - nlStartPtr );
 }
 
 static std::vector<ProjectSearch::ResultData::Result>

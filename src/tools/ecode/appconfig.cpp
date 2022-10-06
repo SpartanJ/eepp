@@ -337,17 +337,31 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 				if ( !FileSystem::fileExists( path ) )
 					return;
 				TextRange selection( TextRange::fromString( file["selection"] ) );
-				editorSplitter->loadAsyncFileFromPathInNewTab(
-					path, pool,
-					[curTabWidget, selection, totalToLoad, currentPage]( UICodeEditor* editor,
-																		 const std::string& ) {
-						editor->getDocument().setSelection( selection );
-						editor->scrollToCursor();
-						if ( curTabWidget->getTabCount() == totalToLoad )
-							curTabWidget->setTabSelected(
-								eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
-					},
-					curTabWidget );
+				UITab* tab = nullptr;
+				if ( ( tab = editorSplitter->isDocumentOpen( path, false, true ) ) != nullptr ) {
+					auto tabAndEditor = editorSplitter->createCodeEditorInTabWidget( curTabWidget );
+					UICodeEditor* editor = tabAndEditor.second;
+					editor->setDocument(
+						tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef() );
+					editorSplitter->removeUnusedTab( curTabWidget );
+					editor->getDocument().setSelection( selection );
+					editor->scrollToCursor();
+					if ( curTabWidget->getTabCount() == totalToLoad )
+						curTabWidget->setTabSelected(
+							eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+				} else {
+					editorSplitter->loadAsyncFileFromPathInNewTab(
+						path, pool,
+						[curTabWidget, selection, totalToLoad, currentPage]( UICodeEditor* editor,
+																			 const std::string& ) {
+							editor->getDocument().setSelection( selection );
+							editor->scrollToCursor();
+							if ( curTabWidget->getTabCount() == totalToLoad )
+								curTabWidget->setTabSelected( eeclamp<Int32>(
+									currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+						},
+						curTabWidget );
+				}
 			} else if ( file["type"] == "terminal" ) {
 				app->getTerminalManager()->createNewTerminal(
 					file.contains( "title" ) ? file["title"] : "", curTabWidget );

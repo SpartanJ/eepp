@@ -393,8 +393,9 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
-			return fontEmoji->getGlyph( codePoint, characterSize, bold, outlineThickness,
-										getPage( characterSize ), maxWidth );
+			if ( 0 != fontEmoji->getGlyphIndex( codePoint ) )
+				return fontEmoji->getGlyph( codePoint, characterSize, bold, outlineThickness,
+											getPage( characterSize ), maxWidth );
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 
@@ -405,13 +406,14 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
-			return fontEmoji->getGlyph( codePoint, characterSize, bold, outlineThickness,
-										getPage( characterSize ), maxWidth );
+			if ( 0 != fontEmoji->getGlyphIndex( codePoint ) )
+				return fontEmoji->getGlyph( codePoint, characterSize, bold, outlineThickness,
+											getPage( characterSize ), maxWidth );
 		}
 	}
 
 	Uint32 glyphIndex = getGlyphIndex( codePoint );
-	if ( 0 == glyphIndex && FontManager::instance()->getFallbackFont() &&
+	if ( 0 == glyphIndex && mEnableFallbackFont && FontManager::instance()->getFallbackFont() &&
 		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
 		FontTrueType* fallbackFont =
 			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
@@ -485,13 +487,15 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 		}
 	} else {
 		glyphIndex = getGlyphIndex( codePoint );
-		if ( 0 == glyphIndex && FontManager::instance()->getFallbackFont() != nullptr &&
-			 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
-			FontTrueType* fontFallback =
-				static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
-			glyphIndex = fontFallback->getGlyphIndex( codePoint );
-			fontInternalId = fontFallback->getFontInternalId();
-		}
+	}
+
+	if ( 0 == glyphIndex && mEnableFallbackFont &&
+		 FontManager::instance()->getFallbackFont() != nullptr &&
+		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
+		FontTrueType* fontFallback =
+			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
+		glyphIndex = fontFallback->getGlyphIndex( codePoint );
+		fontInternalId = fontFallback->getFontInternalId();
 	}
 
 	Uint64 key = getIndexKey( fontInternalId, glyphIndex, bold, outlineThickness );
@@ -1078,6 +1082,14 @@ FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;
+}
+
+bool FontTrueType::getEnableFallbackFont() const {
+	return mEnableFallbackFont;
+}
+
+void FontTrueType::setEnableFallbackFont( bool enableFallbackFont ) {
+	mEnableFallbackFont = enableFallbackFont;
 }
 
 bool FontTrueType::isEmojiFallbackEnabled() const {

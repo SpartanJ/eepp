@@ -550,7 +550,8 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 }
 
 UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
-											 bool checkOnlyInCurrentTabWidget ) const {
+											 bool checkOnlyInCurrentTabWidget,
+											 bool checkOpeningDocuments ) const {
 	if ( checkOnlyInCurrentTabWidget ) {
 		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
 		if ( nullptr == tabWidget )
@@ -561,7 +562,8 @@ UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
 				continue;
 			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 
-			if ( editor->getDocument().getFilePath() == path ) {
+			if ( editor->getDocument().getFilePath() == path ||
+				 ( checkOpeningDocuments && editor->getDocument().getLoadingFilePath() == path ) ) {
 				return tab;
 			}
 		}
@@ -573,7 +575,9 @@ UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
 					continue;
 				UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 
-				if ( editor->getDocument().getFilePath() == path ) {
+				if ( editor->getDocument().getFilePath() == path ||
+					 ( checkOpeningDocuments &&
+					   editor->getDocument().getLoadingFilePath() == path ) ) {
 					return tab;
 				}
 			}
@@ -770,7 +774,8 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget ) {
 
 	if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		UICodeEditor* editor = widget->asType<UICodeEditor>();
-		if ( nullptr != editor && editor->isDirty() ) {
+		if ( nullptr != editor && editor->isDirty() &&
+			 countEditorsOpeningDoc( editor->getDocument() ) == 1 ) {
 			if ( nullptr != mTryCloseMsgBox )
 				return false;
 			mTryCloseMsgBox = UIMessageBox::New(
@@ -1032,6 +1037,17 @@ UICodeEditor* UICodeEditorSplitter::getSomeEditor() {
 		return true;
 	} );
 	return ed;
+}
+
+size_t UICodeEditorSplitter::countEditorsOpeningDoc( const TextDocument& doc ) const {
+	size_t count = 0;
+	const TextDocument* docPtr = &doc;
+	forEachEditor( [&count, docPtr]( UICodeEditor* editor ) {
+		const TextDocument* editorDocPtr = &editor->getDocument();
+		if ( editorDocPtr == docPtr )
+			++count;
+	} );
+	return count;
 }
 
 UICodeEditor* UICodeEditorSplitter::getCurEditor() const {

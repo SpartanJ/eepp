@@ -312,6 +312,10 @@ void TextDocument::toLowerSelection() {
 	setSelection( selection );
 }
 
+const std::string& TextDocument::getLoadingFilePath() const {
+	return mLoadingFilePath;
+}
+
 TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 	mLoading = true;
 	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
@@ -337,11 +341,13 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<ThreadPool> pool,
 									  std::function<void( TextDocument*, bool )> onLoaded ) {
 	mLoading = true;
+	mLoadingFilePath = path;
 	pool->run(
 		[this, path, onLoaded] {
 			auto loaded = loadFromFile( path );
 			if ( loaded != LoadStatus::Interrupted && onLoaded )
 				onLoaded( this, loaded == LoadStatus::Loaded );
+			mLoadingFilePath.clear();
 		},
 		[] {} );
 	return true;

@@ -430,10 +430,13 @@ class EE_API TextDocument {
 
 	void toLowerSelection();
 
+	const std::string& getLoadingFilePath() const;
+
   protected:
 	friend class UndoStack;
 	UndoStack mUndoStack;
 	std::string mFilePath;
+	std::string mLoadingFilePath;
 	FileInfo mFileRealPath;
 	std::vector<TextDocumentLine> mLines;
 	TextRange mSelection;

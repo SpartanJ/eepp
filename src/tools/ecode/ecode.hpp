@@ -295,6 +295,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onColorSchemeChanged( const std::string& );
 
+	void onRealDocumentLoaded( UICodeEditor* editor, const std::string& path );
+
 	void onDocumentLoaded( UICodeEditor* editor, const std::string& path );
 
 	const CodeEditorConfig& getCodeEditorConfig() const;
