@@ -137,9 +137,11 @@ class UIPluginManagerTable : public UITableView {
   public:
 	UIPluginManagerTable() : UITableView() {}
 
+	std::function<void( const std::string&, bool )> onModelEnabledChange;
+
 	std::function<UITextView*( UIPushButton* )> getCheckBoxFn( const ModelIndex& index,
 															   const PluginsModel* model ) {
-		return [index, model]( UIPushButton* but ) -> UITextView* {
+		return [index, model, this]( UIPushButton* but ) -> UITextView* {
 			UICheckBox* chk = UICheckBox::New();
 			chk->setChecked(
 				model->data( model->index( index.row(), PluginsModel::Enabled ) ).asBool() );
@@ -155,6 +157,8 @@ class UIPluginManagerTable : public UITableView {
 					std::string id(
 						model->data( model->index( index.row(), PluginsModel::Id ) ).asCStr() );
 					model->getManager()->setEnabled( id, checked );
+					if ( onModelEnabledChange )
+						onModelEnabledChange( id, checked );
 				}
 				return 1;
 			} );
@@ -237,6 +241,9 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		prefs->setEnabled( manager->isEnabled( def->id ) &&
 						   manager->get( def->id )->hasFileConfig() );
 	} );
+	tv->onModelEnabledChange = [&, prefs, manager]( const std::string& id, bool enabled ) {
+		prefs->setEnabled( enabled && manager->get( id )->hasFileConfig() );
+	};
 	win->center();
 	return win;
 }
