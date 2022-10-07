@@ -55,12 +55,9 @@ FormatterPlugin::~FormatterPlugin() {
 }
 
 void FormatterPlugin::onRegister( UICodeEditor* editor ) {
-	Log::info( "FormatterPlugin::onRegister" );
 	mEditors.insert( editor );
 
 	for ( auto& kb : mKeyBindings ) {
-		Log::info( "FormatterPlugin::onRegister addKeybindString %s %s", kb.first.c_str(),
-				   kb.second.c_str() );
 		editor->getKeyBindings().addKeybindString( kb.second, kb.first );
 	}
 
@@ -74,7 +71,6 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
-	Log::info( "FormatterPlugin::onUnregister" );
 	for ( auto& kb : mKeyBindings ) {
 		editor->getKeyBindings().removeCommandKeybind( kb.first );
 		if ( editor->hasDocument() )
@@ -130,11 +126,12 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
 		auto& config = j["config"];
 		if ( config.contains( "auto_format_on_save" ) )
 			setAutoFormatOnSave( config["auto_format_on_save"].get<bool>() );
-
-		mKeyBindings["format-doc"] = "alt+f";
-		if ( config.contains( "keybindings" ) && config["keybindings"].contains( "format-doc" ) )
-			mKeyBindings["format-doc"] = config["keybindings"]["format-doc"];
 	}
+
+	if ( mKeyBindings.empty() )
+		mKeyBindings["format-doc"] = "alt+f";
+	if ( j.contains( "keybindings" ) && j["keybindings"].contains( "format-doc" ) )
+		mKeyBindings["format-doc"] = j["keybindings"]["format-doc"];
 
 	if ( !j.contains( "formatters" ) )
 		return;
@@ -200,8 +197,8 @@ void FormatterPlugin::load( const PluginManager* pluginManager ) {
 		}
 	}
 	mReady = !mFormatters.empty();
-	if ( mReady && mOnReadyCallback )
-		mOnReadyCallback( this );
+	if ( mReady )
+		fireReadyCbs();
 }
 
 bool FormatterPlugin::hasFileConfig() {
@@ -269,8 +266,8 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 		path = doc->getFilePath();
 	}
 
-	Log::debug( "FormatterPlugin::formatDoc for %s took %.2fms", path.c_str(),
-				clock.getElapsedTime().asMilliseconds() );
+	Log::info( "FormatterPlugin::formatDoc for %s took %.2fms", path.c_str(),
+			   clock.getElapsedTime().asMilliseconds() );
 }
 
 void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& formatter,

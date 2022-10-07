@@ -135,6 +135,8 @@ PluginManager* PluginsModel::getManager() const {
 
 class UIPluginManagerTable : public UITableView {
   public:
+	std::map<std::string, Uint32> readyCbs;
+
 	UIPluginManagerTable() : UITableView() {}
 
 	std::function<void( const std::string&, bool )> onModelEnabledChange;
@@ -241,9 +243,29 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		prefs->setEnabled( manager->isEnabled( def->id ) &&
 						   manager->get( def->id )->hasFileConfig() );
 	} );
-	tv->onModelEnabledChange = [&, prefs, manager]( const std::string& id, bool enabled ) {
-		prefs->setEnabled( enabled && manager->get( id )->hasFileConfig() );
+	tv->onModelEnabledChange = [&, prefs, manager, tv]( const std::string& id, bool enabled ) {
+		auto* plugin = manager->get( id );
+		if ( enabled && !plugin->isReady() ) {
+			tv->readyCbs[id] = plugin->addOnReadyCallback(
+				[&, manager, prefs, tv]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
+					prefs->runOnMainThread( [prefs, manager, plugin]() {
+						prefs->setEnabled( manager->isEnabled( plugin->getId() ) &&
+										   plugin->hasFileConfig() );
+					} );
+					tv->readyCbs.erase( plugin->getId() );
+					plugin->removeReadyCallback( cbId );
+				} );
+		} else {
+			prefs->setEnabled( enabled && plugin->hasFileConfig() );
+		}
 	};
+	tv->addEventListener( Event::OnClose, [&, manager, tv]( const Event* ) {
+		for ( auto& cb : tv->readyCbs ) {
+			auto* plugin = manager->get( cb.first );
+			if ( plugin )
+				plugin->removeReadyCallback( cb.second );
+		}
+	} );
 	win->center();
 	return win;
 }

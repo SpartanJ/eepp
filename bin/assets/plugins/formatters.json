@@ -2,6 +2,9 @@
   "config": {
     "auto_format_on_save": false
   },
+  "keybindings": {
+    "format-doc": "alt+f"
+  },
   "formatters": [
     {
   	"file_patterns": ["%.js$", "%.ts$"],

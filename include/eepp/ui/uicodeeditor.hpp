@@ -31,7 +31,7 @@ class UIMenuItem;
 
 class UICodeEditorPlugin {
   public:
-	typedef std::function<void( UICodeEditorPlugin* )> OnReadyCb;
+	typedef std::function<void( UICodeEditorPlugin*, const Uint32& )> OnReadyCb;
 	virtual std::string getId() = 0;
 	virtual std::string getTitle() = 0;
 	virtual std::string getDescription() = 0;
@@ -40,7 +40,6 @@ class UICodeEditorPlugin {
 	virtual bool hasFileConfig() { return false; }
 	virtual UIWindow* getGUIConfig() { return nullptr; }
 	virtual std::string getFileConfigPath() { return ""; }
-	virtual void setOnReadyCallback( const OnReadyCb& cb ) { mOnReadyCallback = cb; };
 
 	virtual ~UICodeEditorPlugin() {}
 
@@ -80,8 +79,23 @@ class UICodeEditorPlugin {
 	virtual void minimapDrawAfterLineText( UICodeEditor*, const Int64&, const Vector2f&,
 										   const Vector2f&, const Float&, const Float& ){};
 
+	Uint32 addOnReadyCallback( const OnReadyCb& cb ) {
+		mOnReadyCallbacks[mReadyCbNum++] = cb;
+		return mReadyCbNum;
+	};
+
+	void removeReadyCallback( const Uint32& id ) { mOnReadyCallbacks.erase( id ); }
+
   protected:
-	OnReadyCb mOnReadyCallback;
+	Uint32 mReadyCbNum{ 0 };
+	std::map<Uint32, OnReadyCb> mOnReadyCallbacks;
+
+	void fireReadyCbs() {
+		auto cpyCbs = mOnReadyCallbacks;
+		for ( auto& cb : cpyCbs )
+			if ( cb.second )
+				cb.second( this, cb.first );
+	}
 };
 
 class EE_API DocEvent : public Event {

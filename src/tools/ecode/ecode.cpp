@@ -355,8 +355,9 @@ void App::initPluginManager() {
 			onPluginEnabled( plugin );
 		} else {
 			// If plugin loads asynchronously and is not ready, delay the plugin enabled callback
-			plugin->setOnReadyCallback( [&, plugin]( auto* ) {
+			plugin->addOnReadyCallback( [&]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
 				mUISceneNode->runOnMainThread( [&, plugin]() { onPluginEnabled( plugin ); } );
+				plugin->removeReadyCallback( cbId );
 			} );
 		}
 	};
@@ -3903,6 +3904,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mUISceneNode->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 			trySendUnlockedCmd( *static_cast<const KeyEvent*>( event ) );
 		} );
+		if ( logLevel == LogLevel::Debug )
+			mUISceneNode->setVerbose( true );
 		mDocInfo->setVisible( mConfig.editor.showDocInfo );
 
 		mProjectSplitter->setSplitPartition(

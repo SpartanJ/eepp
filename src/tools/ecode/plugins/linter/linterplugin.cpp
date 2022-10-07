@@ -181,8 +181,8 @@ void LinterPlugin::load( const PluginManager* pluginManager ) {
 		}
 	}
 	mReady = !mLinters.empty();
-	if ( mReady && mOnReadyCallback )
-		mOnReadyCallback( this );
+	if ( mReady )
+		fireReadyCbs();
 }
 
 void LinterPlugin::onRegister( UICodeEditor* editor ) {
@@ -442,10 +442,10 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		invalidateEditors( doc.get() );
 
-		Log::debug( "LinterPlugin::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
-					"Warnings: %d, Notices: %d.",
-					path.c_str(), clock.getElapsedTime().asMilliseconds(), totalMatches,
-					totalErrors, totalWarns, totalNotice );
+		Log::info( "LinterPlugin::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
+				   "Warnings: %d, Notices: %d.",
+				   path.c_str(), clock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
+				   totalWarns, totalNotice );
 	}
 }
 
