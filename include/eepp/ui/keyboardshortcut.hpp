@@ -43,9 +43,9 @@ class EE_API KeyBindings {
 
 	void addKeybindsUnordered( const std::unordered_map<Shortcut, std::string>& binds );
 
-	void addKeybindString( const std::string& keys, const std::string& command );
+	void addKeybindString(const std::string& key, const std::string& command );
 
-	void addKeybind( const Shortcut& keys, const std::string& command );
+	void addKeybind( const Shortcut& key, const std::string& command );
 
 	/** If the command is already on the list, it will remove the previous keybind. */
 	void replaceKeybindString( const std::string& keys, const std::string& command );

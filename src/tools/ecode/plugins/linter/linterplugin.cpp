@@ -181,6 +181,8 @@ void LinterPlugin::load( const PluginManager* pluginManager ) {
 		}
 	}
 	mReady = !mLinters.empty();
+	if ( mReady && mOnReadyCallback )
+		mOnReadyCallback( this );
 }
 
 void LinterPlugin::onRegister( UICodeEditor* editor ) {

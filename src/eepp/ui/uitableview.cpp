@@ -117,7 +117,7 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 	getUISceneNode()->setIsLoading( true );
 	Float yOffset = getHeaderHeight();
 	auto worstCaseFunc = [&]( const ModelIndex& index ) {
-		UIWidget* widget = updateCell( 0, index, 0, yOffset );
+		UIWidget* widget = updateCell( index.row(), index, 0, yOffset );
 		if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 			Float w = widget->asType<UIPushButton>()->getContentSize().getWidth();
 			if ( w > lWidth )

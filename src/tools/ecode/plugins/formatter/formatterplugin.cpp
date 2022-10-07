@@ -44,28 +44,46 @@ FormatterPlugin::~FormatterPlugin() {
 	}
 
 	for ( auto editor : mEditors ) {
-		editor->getDocument().removeCommand( "format-doc" );
+		for ( auto& kb : mKeyBindings ) {
+			editor->getKeyBindings().removeCommandKeybind( kb.first );
+			if ( editor->hasDocument() )
+				editor->getDocument().removeCommand( kb.first );
+		}
+
 		editor->unregisterPlugin( this );
 	}
 }
 
 void FormatterPlugin::onRegister( UICodeEditor* editor ) {
+	Log::info( "FormatterPlugin::onRegister" );
 	mEditors.insert( editor );
 
-	auto& doc = editor->getDocument();
+	for ( auto& kb : mKeyBindings ) {
+		Log::info( "FormatterPlugin::onRegister addKeybindString %s %s", kb.first.c_str(),
+				   kb.second.c_str() );
+		editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+	}
 
-	if ( doc.hasCommand( "format-doc" ) )
-		return;
+	if ( editor->hasDocument() )
+		editor->getDocument().setCommand( "format-doc", [&, editor]() { formatDoc( editor ); } );
 
-	doc.setCommand( "format-doc", [&, editor]() { formatDoc( editor ); } );
-
-	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
+	mOnDocumentSaveCb = editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) )
 			formatDoc( event->getNode()->asType<UICodeEditor>() );
 	} );
 }
 
 void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
+	Log::info( "FormatterPlugin::onUnregister" );
+	for ( auto& kb : mKeyBindings ) {
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+		if ( editor->hasDocument() )
+			editor->getDocument().removeCommand( kb.first );
+	}
+
+	if ( mOnDocumentSaveCb != 0 )
+		editor->removeEventListener( mOnDocumentSaveCb );
+
 	if ( mShuttingDown )
 		return;
 	mEditors.erase( editor );
@@ -112,6 +130,10 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
 		auto& config = j["config"];
 		if ( config.contains( "auto_format_on_save" ) )
 			setAutoFormatOnSave( config["auto_format_on_save"].get<bool>() );
+
+		mKeyBindings["format-doc"] = "alt+f";
+		if ( config.contains( "keybindings" ) && config["keybindings"].contains( "format-doc" ) )
+			mKeyBindings["format-doc"] = config["keybindings"]["format-doc"];
 	}
 
 	if ( !j.contains( "formatters" ) )
@@ -178,6 +200,8 @@ void FormatterPlugin::load( const PluginManager* pluginManager ) {
 		}
 	}
 	mReady = !mFormatters.empty();
+	if ( mReady && mOnReadyCallback )
+		mOnReadyCallback( this );
 }
 
 bool FormatterPlugin::hasFileConfig() {

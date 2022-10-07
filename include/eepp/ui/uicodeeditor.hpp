@@ -31,13 +31,17 @@ class UIMenuItem;
 
 class UICodeEditorPlugin {
   public:
+	typedef std::function<void( UICodeEditorPlugin* )> OnReadyCb;
 	virtual std::string getId() = 0;
 	virtual std::string getTitle() = 0;
 	virtual std::string getDescription() = 0;
+	virtual bool isReady() const = 0;
 	virtual bool hasGUIConfig() { return false; }
 	virtual bool hasFileConfig() { return false; }
 	virtual UIWindow* getGUIConfig() { return nullptr; }
 	virtual std::string getFileConfigPath() { return ""; }
+	virtual void setOnReadyCallback( const OnReadyCb& cb ) { mOnReadyCallback = cb; };
+
 	virtual ~UICodeEditorPlugin() {}
 
 	virtual void onRegister( UICodeEditor* ) = 0;
@@ -75,6 +79,9 @@ class UICodeEditorPlugin {
 											const Float& /*gutterWidth*/ ){};
 	virtual void minimapDrawAfterLineText( UICodeEditor*, const Int64&, const Vector2f&,
 										   const Vector2f&, const Float&, const Float& ){};
+
+  protected:
+	OnReadyCb mOnReadyCallback;
 };
 
 class EE_API DocEvent : public Event {
@@ -244,6 +251,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	const SyntaxColorScheme& getColorScheme() const;
 
 	void setColorScheme( const SyntaxColorScheme& colorScheme );
+
+	bool hasDocument() const;
 
 	/** If the document is managed by more than one client you need to NOT auto register base
 	 * commands and implement your own logic for those commands, since are dependant of the client

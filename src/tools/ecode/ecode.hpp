@@ -349,6 +349,8 @@ class App : public UICodeEditorSplitter::Client {
 	void initPluginManager();
 
 	void checkWidgetPick( UITreeView* widgetTree );
+
+	void onPluginEnabled( UICodeEditorPlugin* plugin );
 };
 
 } // namespace ecode

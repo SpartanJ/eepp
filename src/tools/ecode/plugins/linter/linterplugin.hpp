@@ -62,6 +62,8 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	std::string getDescription() { return Definition().description; }
 
+	bool isReady() const { return mReady; }
+
 	bool hasFileConfig();
 
 	std::string getFileConfigPath();

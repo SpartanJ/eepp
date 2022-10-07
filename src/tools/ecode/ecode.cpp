@@ -342,12 +342,23 @@ void App::runCommand( const std::string& command ) {
 	}
 }
 
+void App::onPluginEnabled( UICodeEditorPlugin* plugin ) {
+	if ( mSplitter )
+		mSplitter->forEachEditor(
+			[&]( UICodeEditor* editor ) { editor->registerPlugin( plugin ); } );
+}
+
 void App::initPluginManager() {
 	mPluginManager = std::make_unique<PluginManager>( mResPath, mPluginsPath, mThreadPool );
 	mPluginManager->onPluginEnabled = [&]( UICodeEditorPlugin* plugin ) {
-		if ( mSplitter )
-			mSplitter->forEachEditor(
-				[&]( UICodeEditor* editor ) { editor->registerPlugin( plugin ); } );
+		if ( nullptr == mUISceneNode || plugin->isReady() ) {
+			onPluginEnabled( plugin );
+		} else {
+			// If plugin loads asynchronously and is not ready, delay the plugin enabled callback
+			plugin->setOnReadyCallback( [&, plugin]( auto* ) {
+				mUISceneNode->runOnMainThread( [&, plugin]() { onPluginEnabled( plugin ); } );
+			} );
+		}
 	};
 	mPluginManager->registerPlugin( LinterPlugin::Definition() );
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
@@ -2167,7 +2178,6 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
 		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-		{ { KEY_F, KEYMOD_LALT }, "format-doc" },
 		{ { KEY_J, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-left" },
 		{ { KEY_L, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-right" },
 		{ { KEY_I, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-top" },

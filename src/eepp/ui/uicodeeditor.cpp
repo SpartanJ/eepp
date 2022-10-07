@@ -734,6 +734,10 @@ void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
 	invalidateDraw();
 }
 
+bool UICodeEditor::hasDocument() const {
+	return mDoc.get() != nullptr;
+}
+
 std::shared_ptr<Doc::TextDocument> UICodeEditor::getDocumentRef() const {
 	return mDoc;
 }

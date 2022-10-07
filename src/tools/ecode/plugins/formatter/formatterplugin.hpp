@@ -43,6 +43,8 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	void onUnregister( UICodeEditor* );
 
+	bool isReady() const { return mReady; }
+
 	bool getAutoFormatOnSave() const;
 
 	void setAutoFormatOnSave( bool autoFormatOnSave );
@@ -75,10 +77,13 @@ class FormatterPlugin : public UICodeEditorPlugin {
 		mNativeFormatters;
 	Int32 mWorkersCount{ 0 };
 	std::string mConfigPath;
+	/* cmd, shortcut */
+	std::map<std::string, std::string> mKeyBindings;
 
 	bool mAutoFormatOnSave{ false };
 	bool mShuttingDown{ false };
 	bool mReady{ false };
+	Uint32 mOnDocumentSaveCb{ 0 };
 
 	FormatterPlugin( const PluginManager* pluginManager );
 

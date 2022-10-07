@@ -48,13 +48,13 @@ void KeyBindings::addKeybindsUnordered(
 	}
 }
 
-void KeyBindings::addKeybindString( const std::string& keys, const std::string& command ) {
-	addKeybind( getShortcutFromString( keys ), command );
+void KeyBindings::addKeybindString( const std::string& key, const std::string& command ) {
+	addKeybind( getShortcutFromString( key ), command );
 }
 
-void KeyBindings::addKeybind( const KeyBindings::Shortcut& keys, const std::string& command ) {
-	mShortcuts[sanitizeShortcut( keys )] = command;
-	mKeybindingsInvert[command] = sanitizeShortcut( keys );
+void KeyBindings::addKeybind( const KeyBindings::Shortcut& key, const std::string& command ) {
+	mShortcuts[sanitizeShortcut( key )] = command;
+	mKeybindingsInvert[command] = sanitizeShortcut( key );
 }
 
 void KeyBindings::replaceKeybindString( const std::string& keys, const std::string& command ) {

@@ -38,6 +38,8 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 
 	std::string getDescription() { return Definition().description; }
 
+	bool isReady() const { return true; }
+
 	void onRegister( UICodeEditor* );
 	void onUnregister( UICodeEditor* );
 	bool onKeyDown( UICodeEditor*, const KeyEvent& );
