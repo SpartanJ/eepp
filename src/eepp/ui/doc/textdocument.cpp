@@ -211,7 +211,7 @@ void TextDocument::guessIndentType() {
 	if ( !guessTabs && !guessSpaces ) {
 		return;
 	}
-	if ( guessTabs > guessSpaces ) {
+	if ( guessTabs >= guessSpaces ) {
 		mIndentType = IndentType::IndentTabs;
 	} else {
 		mIndentType = IndentType::IndentSpaces;
@@ -1251,21 +1251,43 @@ void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEm
 				  TextPosition( range.end().line(), range.end().column() + text.size() ), swap );
 }
 
-void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skipEmpty ) {
+void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
+												   bool removeExtraSpaces ) {
 	TextPosition prevStart = getSelection().start();
 	TextRange range = getSelection( true );
 	bool swap = prevStart != range.start();
 	Int64 startRemoved = 0;
 	Int64 endRemoved = 0;
+	String indentSpaces( removeExtraSpaces ? std::string( mIndentWidth, ' ' ) : "" );
 	for ( auto i = range.start().line(); i <= range.end().line(); i++ ) {
 		const String& line = this->line( i ).getText();
-		if ( !skipEmpty || line.length() != 1 ) {
+		if ( !skipEmpty || line.length() > 1 ) {
 			if ( line.substr( 0, text.length() ) == text ) {
 				remove( { { i, 0 }, { i, static_cast<Int64>( text.length() ) } } );
 				if ( i == range.start().line() ) {
 					startRemoved = text.size();
 				} else if ( i == range.end().line() ) {
 					endRemoved = text.size();
+				}
+			} else if ( removeExtraSpaces ) {
+				if ( line.size() >= indentSpaces.size() &&
+					 line.substr( 0, indentSpaces.size() ) == indentSpaces ) {
+					remove( { { i, 0 }, { i, static_cast<Int64>( indentSpaces.length() ) } } );
+					if ( i == range.start().line() ) {
+						startRemoved = indentSpaces.size();
+					} else if ( i == range.end().line() ) {
+						endRemoved = indentSpaces.size();
+					}
+				} else {
+					size_t pos = line.find_first_not_of( ' ' );
+					if ( pos != String::InvalidPos ) {
+						remove( { { i, 0 }, { i, static_cast<Int64>( pos ) } } );
+						if ( i == range.start().line() ) {
+							startRemoved = pos;
+						} else if ( i == range.end().line() ) {
+							endRemoved = pos;
+						}
+					}
 				}
 			}
 		}
@@ -1283,7 +1305,7 @@ void TextDocument::indent() {
 }
 
 void TextDocument::unindent() {
-	removeFromStartOfSelectedLines( getIndentString(), false );
+	removeFromStartOfSelectedLines( getIndentString(), false, true );
 }
 
 void TextDocument::moveLinesUp() {
@@ -1327,9 +1349,8 @@ void TextDocument::appendLineIfLastLine( Int64 line ) {
 }
 
 String TextDocument::getIndentString() {
-	if ( IndentType::IndentSpaces == mIndentType ) {
+	if ( IndentType::IndentSpaces == mIndentType )
 		return String( std::string( mIndentWidth, ' ' ) );
-	}
 	return String( "\t" );
 }
 

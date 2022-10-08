@@ -491,7 +491,8 @@ class EE_API TextDocument {
 
 	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
 
-	void removeFromStartOfSelectedLines( const String& text, bool skipEmpty );
+	void removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
+										 bool removeExtraSpaces = false );
 
 	void remove( TextRange range, UndoStackContainer& undoStack, const Time& time );
 
