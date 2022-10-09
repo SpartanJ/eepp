@@ -204,6 +204,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "text-size" )
 		.addAlias( "textsize" );
 	registerProperty( "font-style", "" ).addAlias( "text-style" ).addAlias( "text-decoration" );
+	registerProperty( "line-spacing", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "text-stroke-width", "" )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "fontoutlinethickness" );

@@ -1277,11 +1277,11 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 							   const TextPosition& cursor ) {
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() ) {
 		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
-							startScroll.y + cursor.line() * lineHeight );
+							startScroll.y + cursor.line() * lineHeight + getLineOffset() );
 		Primitives primitives;
 		primitives.setColor( Color( mCaretColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle(
-			Rectf( cursorPos, Sizef( PixelDensity::dpToPx( 2 ), lineHeight ) ) );
+			Rectf( cursorPos, Sizef( PixelDensity::dpToPx( 2 ), getFontHeight() ) ) );
 	}
 }
 
@@ -1497,6 +1497,17 @@ bool UICodeEditor::isLineVisible( const Uint64& line ) const {
 int UICodeEditor::getVisibleLinesCount() const {
 	auto lines = getVisibleLineRange();
 	return lines.second - lines.first;
+}
+
+const StyleSheetLength& UICodeEditor::getLineSpacing() const {
+	return mLineSpacing;
+}
+
+void UICodeEditor::setLineSpacing( const StyleSheetLength& lineSpace ) {
+	if ( lineSpace != mLineSpacing ) {
+		mLineSpacing = lineSpace;
+		invalidateDraw();
+	}
 }
 
 void UICodeEditor::scrollTo( const TextPosition& position, bool centered, bool forceExactPosition,
@@ -1879,6 +1890,9 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextSelection:
 			setTextSelection( attribute.asBool() );
 			break;
+		case PropertyId::LineSpacing:
+			setLineSpacing( attribute.asStyleSheetLength() );
+			break;
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -1914,6 +1928,8 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 			return getOutlineColor().toHexString();
 		case PropertyId::TextSelection:
 			return isTextSelectionEnabled() ? "true" : "false";
+		case PropertyId::LineSpacing:
+			return getLineSpacing().toString();
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -2049,8 +2065,16 @@ Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const 
 	return static_cast<Int64>( line.size() ) - 1;
 }
 
-Float UICodeEditor::getLineHeight() const {
+Float UICodeEditor::getFontHeight() const {
 	return mFont->getFontHeight( getCharacterSize() );
+}
+
+Float UICodeEditor::getLineHeight() const {
+	return getFontHeight() + eeceil( convertLength( mLineSpacing, mSize.getWidth() ) );
+}
+
+Float UICodeEditor::getLineOffset() const {
+	return eeceil( convertLength( mLineSpacing, mSize.getWidth() ) * 0.5f );
 }
 
 Float UICodeEditor::getCharacterSize() const {
@@ -2356,6 +2380,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	Int64 curChar = 0;
 	Int64 maxWidth = eeceil( mSize.getWidth() / getGlyphWidth() + 1 );
 	bool isMonospace = mFont->isMonospace();
+	Float lineOffset = getLineOffset();
 	for ( auto& token : tokens ) {
 		String text( token.text );
 		Float textWidth = isMonospace ? getTextWidth( text ) : 0;
@@ -2396,7 +2421,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 									Rectf( position, Sizef( beforeWidth, lineHeight ) ) );
 							}
 							txt.setString( beforeString );
-							txt.draw( position.x, position.y );
+							txt.draw( position.x, position.y + lineOffset );
 							offset += beforeWidth;
 						}
 
@@ -2422,7 +2447,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 									   Sizef( linkWidth, lineHeight ) ) );
 						}
 						txt.setString( mLink );
-						txt.draw( position.x + offset, position.y );
+						txt.draw( position.x + offset, position.y + lineOffset );
 						offset += linkWidth;
 
 						if ( !afterString.empty() ) {
@@ -2437,7 +2462,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							txt.setColor( Color( style.color ).blendAlpha( mAlpha ) );
 							txt.setStyle( lineStyle );
 							txt.setString( afterString );
-							txt.draw( position.x + offset, position.y );
+							txt.draw( position.x + offset, position.y + lineOffset );
 							offset += afterWidth;
 						}
 
@@ -2465,17 +2490,17 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 					Int64 end = eemin( totalChars, minimumCharsToCoverScreen );
 					if ( curCharsWidth >= charsToVisible ) {
 						txt.setString( text.substr( start, end ) );
-						txt.draw( position.x + start * getGlyphWidth(), position.y );
+						txt.draw( position.x + start * getGlyphWidth(), position.y + lineOffset );
 						if ( minimumCharsToCoverScreen == end )
 							break;
 					}
 				} else {
 					txt.setString( text.substr( 0, eemin( curCharsWidth, maxWidth ) ) );
-					txt.draw( position.x, position.y );
+					txt.draw( position.x, position.y + lineOffset );
 				}
 			} else {
 				txt.setString( text );
-				txt.draw( position.x, position.y );
+				txt.draw( position.x, position.y + lineOffset );
 			}
 
 			if ( !isMonospace )
@@ -2534,6 +2559,7 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 	primitives.setColor( Color( mLineNumberBackgroundColor ).blendAlpha( mAlpha ) );
 	primitives.drawRectangle( Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
 	TextRange selection = mDoc->getSelection( true );
+	Float lineOffset = getLineOffset();
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
 		Text line( String( String::toString( i + 1 ) ).padLeft( lineNumberDigits, ' ' ), mFont,
 				   fontSize );
@@ -2541,7 +2567,8 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 		line.setColor( ( i >= selection.start().line() && i <= selection.end().line() )
 						   ? mLineNumberActiveFontColor
 						   : mLineNumberFontColor );
-		line.draw( screenStart.x + mLineNumberPaddingLeft, startScroll.y + lineHeight * (double)i );
+		line.draw( screenStart.x + mLineNumberPaddingLeft,
+				   startScroll.y + lineHeight * (double)i + lineOffset );
 	}
 }
 

@@ -45,6 +45,7 @@ struct WindowStateConfig {
 struct CodeEditorConfig {
 	std::string colorScheme{ "ecode" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
+	StyleSheetLength lineSpacing{ 0, StyleSheetLength::Dp };
 	bool showLineNumbers{ true };
 	bool showWhiteSpaces{ true };
 	bool highlightMatchingBracket{ true };

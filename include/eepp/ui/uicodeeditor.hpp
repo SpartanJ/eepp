@@ -515,6 +515,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	int getVisibleLinesCount() const;
 
+	const StyleSheetLength& getLineSpacing() const;
+
+	void setLineSpacing( const StyleSheetLength& lineSpace );
+
+	Float getFontHeight() const;
+
+	Float getLineOffset() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -554,6 +562,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
 	Float mFontSize;
+	StyleSheetLength mLineSpacing{ 0.f, StyleSheetLength::Px };
 	Float mLineNumberPaddingLeft;
 	Float mLineNumberPaddingRight;
 	Color mLineNumberFontColor;

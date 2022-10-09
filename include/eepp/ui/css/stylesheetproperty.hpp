@@ -9,6 +9,7 @@
 #include <eepp/math/rect.hpp>
 #include <eepp/system/color.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/ui/css/stylesheetlength.hpp>
 #include <map>
 #include <string>
 
@@ -170,6 +171,8 @@ class EE_API StyleSheetProperty {
 	Sizef asSizef( UINode* node, const Sizef& defaultValue = Sizef::Zero ) const;
 
 	Sizei asSizei( UINode* node, const Sizei& defaultValue = Sizei::Zero ) const;
+
+	StyleSheetLength asStyleSheetLength() const;
 
 	const String::HashType& getValueHash() const;
 

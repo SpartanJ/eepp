@@ -654,6 +654,10 @@ Sizei StyleSheetProperty::asSizei( UINode* node, const Sizei& defaultValue ) con
 	return Sizei( asVector2i( node, defaultValue ) );
 }
 
+StyleSheetLength StyleSheetProperty::asStyleSheetLength() const {
+	return StyleSheetLength( mValue );
+}
+
 const String::HashType& StyleSheetProperty::getValueHash() const {
 	return mValueHash;
 }

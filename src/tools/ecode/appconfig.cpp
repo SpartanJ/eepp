@@ -103,6 +103,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.syncProjectTreeWithEditor =
 		ini.getValueB( "editor", "sync_project_tree_with_editor", false );
 	editor.autoCloseXMLTags = ini.getValueB( "editor", "auto_close_xml_tags", true );
+	editor.lineSpacing = ini.getValue( "editor", "line_spacing", "0dp" );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
@@ -199,6 +200,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickTreeNavigation );
 	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );
+	ini.setValue( "editor", "line_spacing", editor.lineSpacing.toString() );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );

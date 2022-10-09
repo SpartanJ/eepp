@@ -1557,6 +1557,8 @@ UIMenu* App::createDocumentMenu() {
 	globalMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
 		->setId( "line_breaking_column" );
 
+	globalMenu->add( i18n( "line_spacing", "Line Spacing" ) )->setId( "line_spacing" );
+
 	globalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
@@ -1593,6 +1595,22 @@ UIMenu* App::createDocumentMenu() {
 						[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
 					msgBox->closeWindow();
 				}
+			} );
+			setFocusEditorOnClose( msgBox );
+		} else if ( "line_spacing" == id ) {
+			UIMessageBox* msgBox = UIMessageBox::New(
+				UIMessageBox::INPUT,
+				i18n( "set_line_spacing", "Set Line Spacing:\nSet 0 to disable it.\n" )
+					.unescape() );
+			msgBox->setTitle( mWindowTitle );
+			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+			msgBox->getTextInput()->setText( mConfig.editor.lineSpacing.toString() );
+			msgBox->showWhenReady();
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+				mConfig.editor.lineSpacing = StyleSheetLength( msgBox->getTextInput()->getText() );
+				mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+					editor->setLineSpacing( mConfig.editor.lineSpacing );
+				} );
 			} );
 			setFocusEditorOnClose( msgBox );
 		}
@@ -2417,6 +2435,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setFont( mFontMono );
 	editor->setMenuIconSize( mMenuIconSize );
 	editor->setAutoCloseXMLTags( config.autoCloseXMLTags );
+	editor->setLineSpacing( config.lineSpacing );
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
 	doc.setLineEnding( docc.windowsLineEndings ? TextDocument::LineEnding::CRLF

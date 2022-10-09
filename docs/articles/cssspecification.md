@@ -950,6 +950,16 @@ or one of the special constants.
 
 ---
 
+### line-spacing
+
+Sets a extra line spacing to the line box.
+
+* Applicable to: Any element child of a EE::UI::UICodeEditor (CodeEditor)
+* Data Type: [length](#length-data-type)
+* Default value: `0dp`
+
+---
+
 ### locked
 
 Enable or disable editing on code editor elements.

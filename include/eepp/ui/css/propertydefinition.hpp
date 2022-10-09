@@ -203,6 +203,7 @@ enum class PropertyId : Uint32 {
 	DroppableHoveringColor = String::hash( "droppable-hovering-color" ),
 	TextAsFallback = String::hash( "text-as-fallback" ),
 	SelectOnClick = String::hash( "select-on-click" ),
+	LineSpacing = String::hash( "line-spacing" ),
 };
 
 enum class PropertyType : Uint32 {
