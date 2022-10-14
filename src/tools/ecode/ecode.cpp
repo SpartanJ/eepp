@@ -20,6 +20,7 @@ namespace ecode {
 
 Clock globalClock;
 bool firstFrame = true;
+bool firstUpdate = true;
 App* appInstance = nullptr;
 
 void appLoop() {
@@ -453,13 +454,17 @@ void App::closeApp() {
 void App::mainLoop() {
 	mWindow->getInput()->update();
 	SceneManager::instance()->update();
+	if ( firstUpdate ) {
+		Log::info( "First update took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
+		firstUpdate = false;
+	}
 
 	if ( SceneManager::instance()->getUISceneNode()->invalidated() || mBenchmarkMode ) {
 		mWindow->clear();
 		SceneManager::instance()->draw();
 		mWindow->display();
 		if ( firstFrame ) {
-			Log::info( "First frame took: %.2f ms", globalClock.getElapsed().asMilliseconds() );
+			Log::info( "First frame took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 			firstFrame = false;
 		}
 	} else {
@@ -2287,21 +2292,20 @@ void App::createDocAlert( UICodeEditor* editor ) {
 	if ( docAlert )
 		return;
 
-	// TODO: Add text translations
 	const std::string& msg = R"xml(
 	<hbox class="doc_alert" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right">
 		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
 			text="The file on the disk is more recent that the current buffer.&#xA;Do you want to reload it?"
 		/>
-		<PushButton id="file_reload" layout_width="wrap_content" layout_height="18dp" text="Reload" margin-right="4dp"
+		<PushButton id="file_reload" layout_width="wrap_content" layout_height="18dp" text='@string("reload", "Reload")' margin-right="4dp"
 					tooltip="Reload the file from disk. Unsaved changes will be lost." />
-		<PushButton id="file_overwrite" layout_width="wrap_content" layout_height="18dp" text="Overwrite" margin-right="4dp"
+		<PushButton id="file_overwrite" layout_width="wrap_content" layout_height="18dp" text='@string("overwrite", "Overwrite")' margin-right="4dp"
 					tooltip="Writes the local changes on disk, overwriting the disk changes" />
-		<PushButton id="file_ignore" layout_width="wrap_content" layout_height="18dp" text="Ignore"
+		<PushButton id="file_ignore" layout_width="wrap_content" layout_height="18dp" text='@string("ignore", "Ignore")'
 					tooltip="Ignores the changes on disk without any action." />
 	</hbox>
 	)xml";
-	docAlert = static_cast<UILinearLayout*>( mUISceneNode->loadLayoutFromString( msg, editor ) );
+	docAlert = mUISceneNode->loadLayoutFromString( msg, editor )->asType<UILinearLayout>();
 
 	editor->enableReportSizeChangeToChilds();
 
@@ -3684,7 +3688,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
 			<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true">
 				<TreeView id="project_view" />
-				<Tab text="Project" owns="project_view" />
+				<Tab text='@string("project", "Project")' owns="project_view" />
 			</TabWidget>
 			<vbox>
 				<RelativeLayout layout_width="match_parent" layout_height="0" layout_weight="1">
@@ -3703,8 +3707,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				</RelativeLayout>
 				<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
 					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
-						<TextView layout_width="wrap_content" layout_height="18dp" text="Find:" margin-bottom="2dp" />
-						<TextView layout_width="wrap_content" layout_height="18dp" text="Replace with:" />
+						<TextView layout_width="wrap_content" layout_height="18dp" text='@string("find_text", "Find:")' margin-bottom="2dp" />
+						<TextView layout_width="wrap_content" layout_height="18dp" text='@string("replace_with_text", "Replace with:")' />
 					</vbox>
 					<vbox layout_width="0" layout_weight="1" layout_height="wrap_content" margin-right="4dp">
 						<TextInput id="search_find" layout_width="match_parent" layout_height="18dp" padding="0" margin-bottom="2dp" />
@@ -3840,6 +3844,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				  { "filetype-h", 61792 },
 				  { "filetype-cs", 61720 },
 				  { "filetype-cpp", 61719 },
+				  { "filetype-hpp", 61719 },
 				  { "filetype-css", 61743 },
 				  { "filetype-conf", 61781 },
 				  { "filetype-cfg", 61781 },

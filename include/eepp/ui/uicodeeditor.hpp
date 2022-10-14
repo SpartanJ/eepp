@@ -79,6 +79,10 @@ class UICodeEditorPlugin {
 	virtual void minimapDrawAfterLineText( UICodeEditor*, const Int64&, const Vector2f&,
 										   const Vector2f&, const Float&, const Float& ){};
 
+	virtual void drawGutter( UICodeEditor* /*editor*/, const Int64& /*index*/,
+							 const Vector2f& /*screenStart*/, const Float& /*lineHeight*/,
+							 const Float& /*gutterWidth*/, const Float& /*fontSize*/ ){};
+
 	Uint32 addOnReadyCallback( const OnReadyCb& cb ) {
 		mOnReadyCallbacks[mReadyCbNum++] = cb;
 		return mReadyCbNum;
@@ -523,6 +527,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getLineOffset() const;
 
+	/** Register a gutter space to be used by a plugin.
+	 * @param plugin Plugin requesting it
+	 * @param pixels Amount of pixels to request in the gutter
+	 * @param order Order goes from left (lower number) to right (bigger number). */
+	bool registerGutterSpace( UICodeEditorPlugin* plugin, const Float& pixels, int order );
+
+	bool unregisterGutterSpace( UICodeEditorPlugin* plugin );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -612,6 +624,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	};
 	mutable std::map<Int64, TextLine> mTextCache;
 	Tools::UIDocFindReplace* mFindReplace{ nullptr };
+	struct PluginGutterSpace {
+		UICodeEditorPlugin* plugin;
+		Float space;
+		int order;
+	};
+	std::vector<PluginGutterSpace> mPluginGutterSpaces;
+	Float mPluginsGutterSpace{ 0 };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -784,6 +803,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateLineCache( const Int64& lineIndex );
 
 	void findReplace();
+
+	bool gutterSpaceExists( UICodeEditorPlugin* plugin ) const;
 };
 
 }} // namespace EE::UI

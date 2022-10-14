@@ -2,10 +2,13 @@
 #define ECODE_PROJECTDIRECTORYTREE_HPP
 
 #include "ignorematcher.hpp"
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/models/model.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -14,6 +17,7 @@
 
 using namespace EE;
 using namespace EE::System;
+using namespace EE::UI;
 using namespace EE::UI::Models;
 
 namespace ecode {
@@ -21,7 +25,7 @@ namespace ecode {
 class FileListModel : public Model {
   public:
 	FileListModel( const std::vector<std::string>& files, const std::vector<std::string>& names ) :
-		mFiles( files ), mNames( names ) {}
+		mFiles( files ), mNames( names ), mIcons( mNames.size(), nullptr ) {}
 
 	virtual size_t rowCount( const ModelIndex& ) const { return mNames.size(); }
 
@@ -32,10 +36,18 @@ class FileListModel : public Model {
 	}
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
-		if ( role == ModelRole::Display && index.row() < (Int64)mFiles.size() ) {
-			return Variant( index.column() == 0 ? mNames[index.row()].c_str()
-												: mFiles[index.row()].c_str() );
+		if ( index.row() >= (Int64)mFiles.size() )
+			return {};
+
+		switch ( role ) {
+			case ModelRole::Icon:
+				return Variant( iconFor( index ) );
+			default:
+			case ModelRole::Display:
+				return Variant( index.column() == 0 ? mNames[index.row()].c_str()
+													: mFiles[index.row()].c_str() );
 		}
+
 		return {};
 	}
 
@@ -44,6 +56,22 @@ class FileListModel : public Model {
   protected:
 	std::vector<std::string> mFiles;
 	std::vector<std::string> mNames;
+	mutable std::vector<UIIcon*> mIcons;
+
+	UIIcon* iconFor( const ModelIndex& index ) const {
+		if ( index.column() == 0 ) {
+			if ( mIcons[index.row()] )
+				return mIcons[index.row()];
+			auto* scene = SceneManager::instance()->getUISceneNode();
+			auto* d = scene->findIcon(
+				UIIconThemeManager::getIconNameFromFileName( mNames[index.row()], true ) );
+			if ( !d )
+				d = scene->findIcon( "file" );
+			mIcons[index.row()] = d;
+			return d;
+		}
+		return nullptr;
+	}
 };
 
 class ProjectDirectoryTree {

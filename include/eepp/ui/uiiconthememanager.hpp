@@ -10,7 +10,8 @@ class UIThemeManager;
 
 class EE_API UIIconThemeManager {
   public:
-	static std::string getIconNameFromFileName( const std::string& fileName );
+	static std::string getIconNameFromFileName( const std::string& fileName,
+												bool retOnlyWithExtension = false );
 
 	static UIIconThemeManager* New();
 
@@ -36,9 +37,9 @@ class EE_API UIIconThemeManager {
 
   protected:
 	std::vector<UIIconTheme*> mIconThemes;
-	UIIconTheme* mCurrentTheme{nullptr};
-	UIIconTheme* mFallbackTheme{nullptr};
-	UIThemeManager* mFallbackThemeManager{nullptr};
+	UIIconTheme* mCurrentTheme{ nullptr };
+	UIIconTheme* mFallbackTheme{ nullptr };
+	UIThemeManager* mFallbackThemeManager{ nullptr };
 
 	UIIconThemeManager();
 

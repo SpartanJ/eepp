@@ -75,7 +75,12 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
-	json j = json::parse( data, nullptr, true, true );
+	json j;
+	try {
+		j = json::parse( data, nullptr, true, true );
+	} catch ( ... ) {
+		return;
+	}
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];

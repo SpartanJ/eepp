@@ -417,7 +417,12 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		eemax( 0, ini.getValueI( "document", "line_breaking_column", 100 ) );
 
 	if ( ini.keyValueExists( "nodes", "documents" ) ) {
-		json j = json::parse( ini.getValue( "nodes", "documents" ) );
+		json j;
+		try {
+			j = json::parse( ini.getValue( "nodes", "documents" ) );
+		} catch ( ... ) {
+			return;
+		}
 		if ( j.is_discarded() )
 			return;
 		loadDocuments( editorSplitter, pool, j,

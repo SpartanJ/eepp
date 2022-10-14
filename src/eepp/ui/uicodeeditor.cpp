@@ -268,28 +268,36 @@ void UICodeEditor::draw() {
 	}
 
 	for ( unsigned long i = lineRange.first; i <= lineRange.second; i++ ) {
-		for ( auto& plugin : mPlugins )
-			plugin->drawBeforeLineText(
-				this, i,
-				{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) },
-				charSize, lineHeight );
-
-		drawLineText(
-			i, { startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) },
-			charSize, lineHeight );
+		Vector2f curScroll(
+			{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) } );
 
 		for ( auto& plugin : mPlugins )
-			plugin->drawAfterLineText(
-				this, i,
-				{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) },
-				charSize, lineHeight );
+			plugin->drawBeforeLineText( this, i, curScroll, charSize, lineHeight );
+
+		drawLineText( i, curScroll, charSize, lineHeight );
+
+		for ( auto& plugin : mPlugins )
+			plugin->drawAfterLineText( this, i, curScroll, charSize, lineHeight );
+
+		if ( mPluginsGutterSpace > 0 ) {
+			Float curGutterPos = 0.f;
+			for ( auto& plugin : mPluginGutterSpaces ) {
+				for ( unsigned long i = lineRange.first; i <= lineRange.second; i++ ) {
+					plugin.plugin->drawGutter( this, i,
+											   { screenStart.x + curGutterPos, curScroll.y },
+											   lineHeight, plugin.space, charSize );
+				}
+				curGutterPos += plugin.space;
+			}
+		}
 	}
 
 	drawCursor( startScroll, lineHeight, cursor );
 
 	if ( mShowLineNumber ) {
-		drawLineNumbers( lineRange, startScroll, screenStart, lineHeight, gutterWidth,
-						 lineNumberDigits, charSize );
+		drawLineNumbers( lineRange, startScroll,
+						 { screenStart.x + mPluginsGutterSpace, screenStart.y }, lineHeight,
+						 getLineNumberWidth(), lineNumberDigits, charSize );
 	}
 
 	if ( mColorPreview && mPreviewColorRange.isValid() && isMouseOver() && !mMinimapHover ) {
@@ -648,7 +656,7 @@ Float UICodeEditor::getLineNumberWidth() const {
 }
 
 Float UICodeEditor::getGutterWidth() const {
-	return getLineNumberWidth();
+	return getLineNumberWidth() + mPluginsGutterSpace;
 }
 
 const bool& UICodeEditor::getShowLineNumber() const {
@@ -2075,6 +2083,38 @@ Float UICodeEditor::getLineHeight() const {
 
 Float UICodeEditor::getLineOffset() const {
 	return eeceil( convertLength( mLineSpacing, mSize.getWidth() ) * 0.5f );
+}
+
+bool UICodeEditor::gutterSpaceExists( UICodeEditorPlugin* plugin ) const {
+	for ( const auto& space : mPluginGutterSpaces ) {
+		if ( space.plugin == plugin )
+			return true;
+	}
+	return false;
+}
+
+bool UICodeEditor::registerGutterSpace( UICodeEditorPlugin* plugin, const Float& pixels,
+										int order ) {
+	if ( gutterSpaceExists( plugin ) )
+		return false;
+	mPluginGutterSpaces.push_back( { plugin, pixels, order } );
+	mPluginsGutterSpace += pixels;
+	std::sort( mPluginGutterSpaces.begin(), mPluginGutterSpaces.end(),
+			   []( const PluginGutterSpace& left, const PluginGutterSpace& right ) {
+				   return left.order < right.order;
+			   } );
+	return true;
+}
+
+bool UICodeEditor::unregisterGutterSpace( UICodeEditorPlugin* plugin ) {
+	for ( size_t i = 0; i < mPluginGutterSpaces.size(); ++i ) {
+		if ( mPluginGutterSpaces[i].plugin == plugin ) {
+			mPluginsGutterSpace -= mPluginGutterSpaces[i].space;
+			mPluginGutterSpaces.erase( mPluginGutterSpaces.begin() + i );
+			return true;
+		}
+	}
+	return false;
 }
 
 Float UICodeEditor::getCharacterSize() const {

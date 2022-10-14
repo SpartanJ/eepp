@@ -120,7 +120,13 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
-	json j = json::parse( data, nullptr, true, true );
+	json j;
+
+	try {
+		j = json::parse( data, nullptr, true, true );
+	} catch ( ... ) {
+		return;
+	}
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
@@ -384,6 +390,20 @@ void FormatterPlugin::registerNativeFormatters() {
 		} else {
 			return { false, "", "Couldn't parse CSS file." };
 		}
+	};
+
+	mNativeFormatters["json"] = []( const std::string& file ) -> NativeFormatterResult {
+		std::string data;
+		if ( !FileSystem::fileGet( file, data ) )
+			return { false, "", "Couldn't access JSON file." };
+		json j;
+		try {
+			j = json::parse( data, nullptr, true, true );
+		} catch ( ... ) {
+			return { false, "", "Error parsing JSON file." };
+		}
+		std::string res( j.dump( 2 ) );
+		return { !res.empty(), res, "" };
 	};
 }
 

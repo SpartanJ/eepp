@@ -5,13 +5,15 @@
 
 namespace EE { namespace UI {
 
-std::string UIIconThemeManager::getIconNameFromFileName( const std::string& fileName ) {
+std::string UIIconThemeManager::getIconNameFromFileName( const std::string& fileName,
+														 bool retOnlyWithExtension ) {
 	std::string ext( FileSystem::fileExtension( fileName ) );
 	if ( !ext.empty() ) {
 		return "filetype-" + ext;
-	} else {
+	} else if ( !retOnlyWithExtension ) {
 		return "filetype-" + String::toLower( fileName );
 	}
+	return "file";
 }
 
 UIIconThemeManager* UIIconThemeManager::New() {
