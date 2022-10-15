@@ -684,6 +684,18 @@ gravity: center_horizontal|bottom;
 
 ---
 
+### gravity-owner
+
+Widgets elements can inform that own childs position using a special flag on its implementation 
+(UI_OWNS_CHILDS_POSITION). Sometimes some layouts may need to override the parent behavior that uses
+that flag. This flag will let the layout manage his gravity against its parent in all cases.
+
+* Applicable to: Any layout element.
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### half-slider
 
 Defines how the slider widget should set its movement limits against the slider.

@@ -7,13 +7,12 @@ UILayout* UILayout::New() {
 	return eeNew( UILayout, () );
 }
 
-UILayout::UILayout() : UIWidget( "layout" ), mDirtyLayout( false ), mPacking( false ) {
+UILayout::UILayout() : UIWidget( "layout" ) {
 	mNodeFlags |= NODE_FLAG_LAYOUT;
 	unsetFlags( UI_TAB_FOCUSABLE );
 }
 
-UILayout::UILayout( const std::string& tag ) :
-	UIWidget( tag ), mDirtyLayout( false ), mPacking( false ) {
+UILayout::UILayout( const std::string& tag ) : UIWidget( tag ) {
 	mNodeFlags |= NODE_FLAG_LAYOUT;
 	unsetFlags( UI_TAB_FOCUSABLE );
 }
@@ -76,6 +75,14 @@ void UILayout::setLayoutDirty() {
 		mUISceneNode->invalidateLayout( this );
 		mDirtyLayout = true;
 	}
+}
+
+bool UILayout::isGravityOwner() const {
+	return mGravityOwner;
+}
+
+void UILayout::setGravityOwner( bool gravityOwner ) {
+	mGravityOwner = gravityOwner;
 }
 
 void UILayout::tryUpdateLayout() {

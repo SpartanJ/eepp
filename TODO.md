@@ -5,10 +5,6 @@
 
 * Add support for font packs/families (separate fonts for regular/bold/italics).
 
-* Add support for fallback fonts.
-
-* Improve `VertexBuffer` class with facilities for easy update of trigs and quads.
-
 ## UI Module
 
 * Implement a "float" layout.
@@ -18,8 +14,6 @@
 * Implement a model to view each widget property.
 
 * Implement a rich text view.
-
-* Provide some facilities for basic data-binding (WIP).
 
 ### CSS
 

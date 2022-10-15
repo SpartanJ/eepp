@@ -278,7 +278,8 @@ void UISplitter::updateFromDrag() {
 void UISplitter::updateLayout() {
 	mDirtyLayout = true;
 
-	if ( !getParent()->isLayout() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+	if ( !getParent()->isLayout() &&
+		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
 		bool sizeChanged = false;
 		Sizef size( getSize() );
 

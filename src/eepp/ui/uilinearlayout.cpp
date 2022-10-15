@@ -299,7 +299,8 @@ void UILinearLayout::packVertical() {
 		}
 	}
 
-	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+	if ( getParent()->isUINode() &&
+		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
 		alignAgainstLayout();
 	}
 	mPacking = false;
@@ -441,7 +442,8 @@ void UILinearLayout::packHorizontal() {
 		}
 	}
 
-	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+	if ( getParent()->isUINode() &&
+		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
 		alignAgainstLayout();
 	}
 
@@ -490,6 +492,8 @@ std::string UILinearLayout::getPropertyString( const PropertyDefinition* propert
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Orientation:
 			return getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
+		case PropertyId::GravityOwner:
+			return isGravityOwner() ? "true" : "false";
 		default:
 			return UILayout::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -508,6 +512,10 @@ bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute ) {
 				setOrientation( UIOrientation::Horizontal );
 			else if ( "vertical" == val )
 				setOrientation( UIOrientation::Vertical );
+			break;
+		}
+		case PropertyId::GravityOwner: {
+			setGravityOwner( attribute.asBool() );
 			break;
 		}
 		default:

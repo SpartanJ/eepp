@@ -204,6 +204,7 @@ enum class PropertyId : Uint32 {
 	TextAsFallback = String::hash( "text-as-fallback" ),
 	SelectOnClick = String::hash( "select-on-click" ),
 	LineSpacing = String::hash( "line-spacing" ),
+	GravityOwner = String::hash( "gravity-owner" ),
 };
 
 enum class PropertyType : Uint32 {

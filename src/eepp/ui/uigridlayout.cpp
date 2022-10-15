@@ -112,7 +112,8 @@ void UIGridLayout::updateLayout() {
 	mPacking = true;
 	Sizef oldSize( getSize() );
 
-	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+	if ( getParent()->isUINode() &&
+		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
 		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 	}
 

@@ -28,7 +28,8 @@ void UIRelativeLayout::updateLayout() {
 	if ( mPacking )
 		return;
 	mPacking = true;
-	if ( getParent()->isUINode() && !getParent()->asType<UINode>()->ownsChildPosition() ) {
+	if ( getParent()->isUINode() &&
+		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
 		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 	}
 

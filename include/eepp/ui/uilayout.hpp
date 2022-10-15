@@ -19,6 +19,10 @@ class EE_API UILayout : public UIWidget {
 
 	virtual void updateLayout();
 
+	bool isGravityOwner() const;
+
+	void setGravityOwner( bool gravityOwner );
+
   protected:
 	friend class UISceneNode;
 
@@ -41,8 +45,9 @@ class EE_API UILayout : public UIWidget {
 	void setLayoutDirty();
 
 	std::unordered_set<UILayout*> mLayouts;
-	bool mDirtyLayout;
-	bool mPacking;
+	bool mDirtyLayout{ false };
+	bool mPacking{ false };
+	bool mGravityOwner{ false };
 };
 
 }} // namespace EE::UI

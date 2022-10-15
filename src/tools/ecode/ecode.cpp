@@ -2293,7 +2293,7 @@ void App::createDocAlert( UICodeEditor* editor ) {
 		return;
 
 	const std::string& msg = R"xml(
-	<hbox class="doc_alert" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right">
+	<hbox class="doc_alert" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" gravity-owner="true">
 		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
 			text="The file on the disk is more recent that the current buffer.&#xA;Do you want to reload it?"
 		/>
