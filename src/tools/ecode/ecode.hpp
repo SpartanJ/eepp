@@ -30,7 +30,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	~App();
 
-	void createWidgetTreeView();
+	void createWidgetInspector();
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer,
@@ -111,9 +111,11 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string& resPath() const { return mResPath; }
 
-	Font* getFontMonoNerdFont() const { return mFontMonoNerdFont; }
+	Font* getTerminalFont() const { return mTerminalFont; }
 
 	Font* getFontMono() const { return mFontMono; }
+
+	Font* getFallbackFont() const { return mFallbackFont; }
 
 	const Float& getDisplayDPI() const { return mDisplayDPI; }
 
@@ -146,6 +148,12 @@ class App : public UICodeEditorSplitter::Client {
 	void updateTerminalMenu();
 
 	void createPluginManagerUI();
+
+	void debugDrawHighlightToggle();
+
+	void debugDrawBoxesToggle();
+
+	void debugDrawData();
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };
@@ -210,7 +218,8 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mCurrentProject;
 	FontTrueType* mFont{ nullptr };
 	FontTrueType* mFontMono{ nullptr };
-	FontTrueType* mFontMonoNerdFont{ nullptr };
+	FontTrueType* mTerminalFont{ nullptr };
+	FontTrueType* mFallbackFont{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mWatchesLock;
@@ -348,7 +357,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void initPluginManager();
 
-	void checkWidgetPick( UITreeView* widgetTree );
+	void checkWidgetPick( UITreeView* widgetTree, bool wasHighlightOver );
 
 	void onPluginEnabled( UICodeEditorPlugin* plugin );
 };

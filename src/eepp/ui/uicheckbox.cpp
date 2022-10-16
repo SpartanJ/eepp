@@ -136,7 +136,7 @@ void UICheckBox::switchState() {
 	setChecked( !mChecked );
 }
 
-void UICheckBox::setChecked( const bool& checked ) {
+UICheckBox* UICheckBox::setChecked( const bool& checked ) {
 	if ( !checked ) {
 		mActiveButton->setVisible( false );
 		mInactiveButton->setVisible( true );
@@ -156,6 +156,8 @@ void UICheckBox::setChecked( const bool& checked ) {
 	alignFix();
 
 	onValueChange();
+
+	return this;
 }
 
 const bool& UICheckBox::isChecked() const {
@@ -177,13 +179,13 @@ void UICheckBox::alignFix() {
 
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x =
-				( Float )( ( Int32 )( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right -
-										mTextCache->getTextWidth() -
-										mActiveButton->getPixelsSize().getWidth() +
-										PixelDensity::dpToPx( mTextSeparation ) ) /
-									  2.f ) ) +
-				mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right -
+													 mTextCache->getTextWidth() -
+													 mActiveButton->getPixelsSize().getWidth() +
+													 PixelDensity::dpToPx( mTextSeparation ) ) /
+												   2.f ) ) +
+								 mActiveButton->getPixelsSize().getWidth() +
+								 PixelDensity::dpToPx( mTextSeparation );
 			break;
 		case UI_HALIGN_RIGHT:
 			mRealAlignOffset.x = ( (Float)mSize.x - mPaddingPx.Left - mPaddingPx.Right -

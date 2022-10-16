@@ -850,7 +850,7 @@ XML attribute (for those who are familiar with).
   * `center_vertical`: Place element in the vertical center of its container.
   * `center`: shorthand of `center_horizontal|center_vertical`
 * Default value: `left|top`
-* Aliases: `layout_gravity`
+* Aliases: `layout_gravity`, `lg`
 
 ---
 

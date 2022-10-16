@@ -89,7 +89,10 @@ void GlobalSearchController::initGlobalSearchBar(
 	luaPatternChk->setTooltipText( kbind.getCommandKeybindString( "toggle-lua-pattern" ) );
 
 	UICheckBox* escapeSequenceChk = mGlobalSearchBarLayout->find<UICheckBox>( "escape_sequence" );
-	escapeSequenceChk->setTooltipText( kbind.getCommandKeybindString( "change-escape-sequence" ) );
+	std::string kbindEscape = kbind.getCommandKeybindString( "change-escape-sequence" );
+	if ( !kbindEscape.empty() )
+		escapeSequenceChk->setTooltipText( escapeSequenceChk->getTooltipText() + " (" +
+										   kbindEscape + ")" );
 
 	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
 

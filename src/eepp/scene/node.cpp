@@ -759,6 +759,20 @@ Node* Node::find( const std::string& id ) const {
 	return findIdHash( String::hash( id ) );
 }
 
+Node* Node::hasChildHash( const String::HashType& idHash ) const {
+	Node* child = mChild;
+	while ( NULL != child ) {
+		if ( child->getIdHash() == idHash )
+			return child;
+		child = child->mNext;
+	}
+	return nullptr;
+}
+
+Node* Node::hasChild( const std::string& id ) const {
+	return hasChildHash( String::hash( id ) );
+}
+
 Node* Node::findByType( const Uint32& type ) const {
 	if ( !isClosing() && isType( type ) ) {
 		return const_cast<Node*>( this );
@@ -1102,6 +1116,15 @@ Uint32 Node::addEventListener( const Uint32& eventType, const EventCallback& cal
 	mNumCallBacks++;
 	mEvents[eventType][mNumCallBacks] = callback;
 	return mNumCallBacks;
+}
+
+Uint32 Node::addMouseClickListener( const std::function<void( const MouseEvent* )>& callback,
+									const MouseButton& button ) {
+	return addEventListener( Event::MouseClick, [callback, button]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & ( EE_BUTTON_MASK( button ) ) ) {
+			callback( event->asMouseEvent() );
+		}
+	} );
 }
 
 void Node::removeEventsOfType( const Uint32& eventType ) {

@@ -121,7 +121,6 @@ class EE_API DocSyntaxDefEvent : public DocEvent {
 	const std::string& getNewLang() const { return newLang; }
 
   protected:
-	TextDocument* doc;
 	std::string oldLang;
 	std::string newLang;
 };
@@ -546,6 +545,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Clock mBlinkTimer;
 	Time mBlinkTime;
 	bool mDirtyEditor{ false };
+	bool mDirtyScroll{ false };
 	bool mCursorVisible{ false };
 	bool mMouseDown{ false };
 	bool mShowLineNumber{ true };
@@ -641,7 +641,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void updateLongestLineWidth();
 
-	void invalidateEditor();
+	void invalidateEditor( bool dirtyScroll = true );
 
 	void invalidateLongestLineWidth();
 

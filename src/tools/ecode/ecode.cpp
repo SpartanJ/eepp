@@ -221,15 +221,18 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 		if ( String::startsWith( newPath, mResPath ) )
 			newPath = newPath.substr( mResPath.size() );
 		if ( fontPath != newPath ) {
-			fontPath = newPath;
-			if ( !loadingMonoFont )
+			if ( !loadingMonoFont ) {
+				fontPath = newPath;
 				return;
+			}
 			auto fontName =
-				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( fontPath ) );
-			FontTrueType* fontMono = loadFont( fontName, fontPath );
+				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( newPath ) );
+			FontTrueType* fontMono = loadFont( fontName, newPath );
 			if ( fontMono ) {
-				auto loadMonoFont = [&]( FontTrueType* fontMono ) {
+				auto loadMonoFont = [&, newPath]( FontTrueType* fontMono ) {
+					fontPath = newPath;
 					mFontMono = fontMono;
+					mFontMono->setEnableFallbackFont( false );
 					mFontMono->setBoldAdvanceSameAsRegular( true );
 					if ( mSplitter ) {
 						mSplitter->forEachEditor(
@@ -442,6 +445,13 @@ bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
 			mSplitter->getCurEditor()->getDocument().execute( cmd );
 			return true;
 		}
+	} else if ( mSplitter->curWidgetExists() &&
+				mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
+		UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
+		std::string cmd = terminal->getKeyBindings().getCommandFromKeyBind(
+			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
+		if ( !cmd.empty() )
+			terminal->execute( cmd );
 	}
 	return false;
 }
@@ -536,28 +546,36 @@ App::~App() {
 	eeSAFE_DELETE( mConsole );
 }
 
-void App::checkWidgetPick( UITreeView* widgetTree ) {
+void App::checkWidgetPick( UITreeView* widgetTree, bool wasHighlightOver ) {
 	Input* input = mWindow->getInput();
 	if ( input->getClickTrigger() & EE_BUTTON_LMASK ) {
 		Node* node = mUISceneNode->getEventDispatcher()->getMouseOverNode();
 		WidgetTreeModel* model = static_cast<WidgetTreeModel*>( widgetTree->getModel() );
 		ModelIndex index( model->getModelIndex( node ) );
 		widgetTree->setSelection( index );
-		mUISceneNode->setHighlightOver( false );
+		mUISceneNode->setHighlightOver( wasHighlightOver );
 		mUISceneNode->getEventDispatcher()->setDisableMousePress( false );
 	} else {
-		mUISceneNode->runOnMainThread( [this, widgetTree]() { checkWidgetPick( widgetTree ); } );
+		mUISceneNode->runOnMainThread( [this, widgetTree, wasHighlightOver]() {
+			checkWidgetPick( widgetTree, wasHighlightOver );
+		} );
 	}
 }
 
-void App::createWidgetTreeView() {
+void App::createWidgetInspector() {
+	if ( mUISceneNode->getRoot()->hasChild( "widget-tree-view" ) )
+		return;
 	UIWindow* uiWin = UIWindow::New();
+	uiWin->setId( "widget-tree-view" );
 	uiWin->setMinWindowSize( 600, 400 );
 	uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 	UIWidget* cont = mUISceneNode->loadLayoutFromString( R"xml(
 	<vbox lw="mp" lh="mp">
-		<hbox lw="mp" lh="wc">
-			<pushbutton id="pick_widget" text='@string(pick_widget, "Pick Widget")' />
+		<hbox lw="wc" lh="wc">
+			<pushbutton id="pick_widget" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
+			<CheckBox id="debug-draw-highlight" text='@string(debug_draw_highlight, "Highlight Focus & Hover")' margin-left="4dp" lg="center" />
+			<CheckBox id="debug-draw-boxes" text='@string(debug_draw_boxes, "Draw Boxes")' margin-left="4dp" lg="center" />
+			<CheckBox id="debug-draw-debug-data" text='@string(debug_draw_debug_data, "Draw Debug Data")' margin-left="4dp" lg="center" />
 		</hbox>
 		<treeview lw="mp" lh="fixed" lw8="1" />
 	</vbox>
@@ -574,12 +592,31 @@ void App::createWidgetTreeView() {
 	UIPushButton* button = cont->find<UIPushButton>( "pick_widget" );
 	button->addEventListener( Event::MouseClick, [&, widgetTree]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
+			bool wasHighlightOver = mUISceneNode->getHighlightOver();
 			mUISceneNode->setHighlightOver( true );
 			mUISceneNode->getEventDispatcher()->setDisableMousePress( true );
-			mUISceneNode->runOnMainThread(
-				[this, widgetTree]() { checkWidgetPick( widgetTree ); } );
+			mUISceneNode->runOnMainThread( [this, widgetTree, wasHighlightOver]() {
+				checkWidgetPick( widgetTree, wasHighlightOver );
+			} );
 		}
 	} );
+
+	cont->find<UICheckBox>( "debug-draw-highlight" )
+		->setChecked( mUISceneNode->getHighlightOver() )
+		->addEventListener( Event::OnValueChange, [this]( const auto* ) {
+			runCommand( "debug-draw-highlight-toggle" );
+		} );
+
+	cont->find<UICheckBox>( "debug-draw-boxes" )
+		->setChecked( mUISceneNode->getDrawBoxes() )
+		->addEventListener( Event::OnValueChange,
+							[this]( const auto* ) { runCommand( "debug-draw-boxes-toggle" ); } );
+
+	cont->find<UICheckBox>( "debug-draw-debug-data" )
+		->setChecked( mUISceneNode->getDrawDebugData() )
+		->addEventListener( Event::OnValueChange,
+							[this]( const auto* ) { runCommand( "debug-draw-debug-data" ); } );
+
 	uiWin->center();
 }
 
@@ -753,6 +790,8 @@ UIMenu* App::createWindowMenu() {
 		->setId( "monospace-font" );
 	mWindowMenu->add( i18n( "terminal_font", "Terminal Font..." ), findIcon( "font-size" ) )
 		->setId( "terminal-font" );
+	mWindowMenu->add( i18n( "fallback_font", "Fallback Font..." ), findIcon( "font-size" ) )
+		->setId( "fallback-font" );
 	mWindowMenu->addSeparator();
 	mWindowMenu
 		->addCheckBox( i18n( "fullscreen_mode", "Full Screen Mode" ), false,
@@ -928,6 +967,8 @@ UIMenu* App::createWindowMenu() {
 			openFontDialog( mConfig.ui.monospaceFont, true );
 		} else if ( item->getId() == "terminal-font" ) {
 			openFontDialog( mConfig.ui.terminalFont, false );
+		} else if ( item->getId() == "fallback-font" ) {
+			openFontDialog( mConfig.ui.fallbackFont, false );
 		} else if ( "zoom-in" == item->getId() ) {
 			mSplitter->zoomIn();
 		} else if ( "zoom-out" == item->getId() ) {
@@ -1276,13 +1317,20 @@ UIMenu* App::createTerminalMenu() {
 				  "avoid keyboard shortcut overlapping between the terminal an the application." ) )
 		->setId( "exclusive-mode" );
 
+	mTerminalMenu
+		->add( i18n( "rename_session", "Rename Session" ), nullptr,
+			   getKeybind( "terminal-rename" ) )
+		->setId( "terminal-rename" );
+
 	mTerminalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
-		if ( "exclusive-mode" == id ) {
-			if ( mSplitter->getCurWidget() &&
-				 mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
-				mSplitter->getCurWidget()->asType<UITerminal>()->setExclusiveMode(
+		if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
+			UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
+			if ( "exclusive-mode" == id ) {
+				terminal->setExclusiveMode(
 					event->getNode()->asType<UIMenuCheckBox>()->isActive() );
+			} else {
+				terminal->execute( id );
 			}
 		}
 	} );
@@ -1864,6 +1912,19 @@ void App::createPluginManagerUI() {
 	} )->showWhenReady();
 }
 
+void App::debugDrawHighlightToggle() {
+	mUISceneNode->setHighlightFocus( !mUISceneNode->getHighlightFocus() );
+	mUISceneNode->setHighlightOver( !mUISceneNode->getHighlightOver() );
+}
+
+void App::debugDrawBoxesToggle() {
+	mUISceneNode->setDrawBoxes( !mUISceneNode->getDrawBoxes() );
+}
+
+void App::debugDrawData() {
+	mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
+}
+
 void App::updateDocumentMenu() {
 	if ( !mSplitter->getCurWidget() || !mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 		mSettingsMenu->getItemId( "doc-menu" )->setEnabled( false );
@@ -2192,9 +2253,6 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
 		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
 		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F6, KEYMOD_NONE }, "debug-draw-highlight-toggle" },
-		{ { KEY_F7, KEYMOD_NONE }, "debug-draw-boxes-toggle" },
-		{ { KEY_F8, KEYMOD_NONE }, "debug-draw-debug-data" },
 		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
 		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
 		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
@@ -2295,14 +2353,14 @@ void App::createDocAlert( UICodeEditor* editor ) {
 	const std::string& msg = R"xml(
 	<hbox class="doc_alert" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" gravity-owner="true">
 		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
-			text="The file on the disk is more recent that the current buffer.&#xA;Do you want to reload it?"
+			text='@string(reload_current_file, "The file on the disk is more recent that the current buffer.&#xA;Do you want to reload it?")'
 		/>
 		<PushButton id="file_reload" layout_width="wrap_content" layout_height="18dp" text='@string("reload", "Reload")' margin-right="4dp"
-					tooltip="Reload the file from disk. Unsaved changes will be lost." />
+					tooltip='@string(tooltip_reload_file, "Reload the file from disk. Unsaved changes will be lost.")' />
 		<PushButton id="file_overwrite" layout_width="wrap_content" layout_height="18dp" text='@string("overwrite", "Overwrite")' margin-right="4dp"
-					tooltip="Writes the local changes on disk, overwriting the disk changes" />
+					tooltip='@string(tooltip_write_local_changes, "Writes the local changes on disk, overwriting the disk changes")' />
 		<PushButton id="file_ignore" layout_width="wrap_content" layout_height="18dp" text='@string("ignore", "Ignore")'
-					tooltip="Ignores the changes on disk without any action." />
+					tooltip='@string(tooltip_ignore_file_changes, "Ignores the changes on disk without any action.")' />
 	</hbox>
 	)xml";
 	docAlert = mUISceneNode->loadLayoutFromString( msg, editor )->asType<UILinearLayout>();
@@ -2494,15 +2552,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		}
 	} );
 	doc.setCommand( "keybindings", [&] { loadFileFromPath( mKeybindingsPath ); } );
-	doc.setCommand( "debug-draw-boxes-toggle",
-					[&] { mUISceneNode->setDrawBoxes( !mUISceneNode->getDrawBoxes() ); } );
-	doc.setCommand( "debug-draw-highlight-toggle", [&] {
-		mUISceneNode->setHighlightFocus( !mUISceneNode->getHighlightFocus() );
-		mUISceneNode->setHighlightOver( !mUISceneNode->getHighlightOver() );
-	} );
-	doc.setCommand( "debug-draw-debug-data",
-					[&] { mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() ); } );
-	doc.setCommand( "debug-widget-tree-view", [&] { createWidgetTreeView(); } );
+	doc.setCommand( "debug-draw-boxes-toggle", [&] { debugDrawBoxesToggle(); } );
+	doc.setCommand( "debug-draw-highlight-toggle", [&] { debugDrawHighlightToggle(); } );
+	doc.setCommand( "debug-draw-debug-data", [&] { debugDrawData(); } );
+	doc.setCommand( "debug-widget-tree-view", [&] { createWidgetInspector(); } );
 	doc.setCommand( "go-to-line", [&] { mFileLocator->goToLine(); } );
 	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
 	doc.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
@@ -3535,8 +3588,10 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
 		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
-		if ( mFontMono )
+		if ( mFontMono ) {
+			mFontMono->setEnableFallbackFont( false );
 			mFontMono->setBoldAdvanceSameAsRegular( true );
+		}
 
 		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
 
@@ -3553,8 +3608,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			return;
 		}
 
-		mFontMonoNerdFont =
-			loadFont( "monospace-nerdfont", "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+		mTerminalFont = loadFont( "monospace-nerdfont", mConfig.ui.terminalFont,
+								  "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+
+		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
+		if ( mFallbackFont )
+			FontManager::instance()->setFallbackFont( mFallbackFont );
 
 		SceneManager::instance()->add( mUISceneNode );
 
@@ -3686,9 +3745,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		</style>
 		<RelativeLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
-			<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true">
+			<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
 				<TreeView id="project_view" />
-				<Tab text='@string("project", "Project")' owns="project_view" />
+				<Tab text='@string("project", "Project")' owns="project_view" text-as-fallback="true" icon="icon(folder-open, 12dp)" />
 			</TabWidget>
 			<vbox>
 				<RelativeLayout layout_width="match_parent" layout_height="0" layout_weight="1">
@@ -3715,25 +3774,25 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 						<TextInput id="search_replace" layout_width="match_parent" layout_height="18dp" padding="0" />
 					</vbox>
 					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
-						<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="false" />
-						<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text="Lua Pattern" selected="false" />
+						<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text='@string(case_sensitive, "Case sensitive")' selected="false" />
+						<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text='@string(lua_pattern, "Lua Pattern")' selected="false" />
 					</vbox>
 					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
-						<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" />
-						<CheckBox id="escape_sequence" layout_width="wrap_content" layout_height="wrap_content" text="Use escape sequences" selected="false" tooltip="Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control" />
+						<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text='@string(match_whole_word, "Match Whole Word")' selected="false" />
+						<CheckBox id="escape_sequence" layout_width="wrap_content" layout_height="wrap_content" text='@string(use_escape_sequences, "Use escape sequences")' selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
 					</vbox>
 					<vbox layout_width="wrap_content" layout_height="wrap_content">
 						<hbox layout_width="wrap_content" layout_height="wrap_content" margin-bottom="2dp">
-							<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text="Previous" margin-right="4dp" />
-							<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text="Next" margin-right="4dp" />
+							<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text='@string(previous, "Previous")' margin-right="4dp" />
+							<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text='@string(next, "Next")' margin-right="4dp" />
 							<RelativeLayout layout_width="0" layout_weight="1" layout_height="18dp">
 								<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" margin-right="2dp" />
 							</RelativeLayout>
 						</hbox>
 						<hbox layout_width="wrap_content" layout_height="wrap_content">
-							<PushButton id="replace" layout_width="wrap_content" layout_height="18dp" text="Replace" margin-right="4dp" />
-							<PushButton id="replace_find" layout_width="wrap_content" layout_height="18dp" text="Replace & Find" margin-right="4dp" />
-							<PushButton id="replace_all" layout_width="wrap_content" layout_height="18dp" text="Replace All" />
+							<PushButton id="replace" layout_width="wrap_content" layout_height="18dp" text='@string(replace, "Replace")' margin-right="4dp" />
+							<PushButton id="replace_find" layout_width="wrap_content" layout_height="18dp" text='@string(replace_and_find, "Replace & Find")' margin-right="4dp" />
+							<PushButton id="replace_all" layout_width="wrap_content" layout_height="18dp" text='@string(replace_all, "Replace All")' />
 						</hbox>
 					</vbox>
 				</searchbar>
@@ -3743,21 +3802,21 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				</locatebar>
 				<globalsearchbar id="global_search_bar" layout_width="match_parent" layout_height="wrap_content">
 					<hbox layout_width="match_parent" layout_height="wrap_content">
-						<TextView layout_width="wrap_content" layout_height="wrap_content" text="Search for:" margin-right="4dp" />
+						<TextView layout_width="wrap_content" layout_height="wrap_content" text='@string(search_for, "Search for:")' margin-right="4dp" />
 						<vbox layout_width="0" layout_weight="1" layout_height="wrap_content">
 							<TextInput id="global_search_find" layout_width="match_parent" layout_height="wrap_content" layout_height="18dp" padding="0" margin-bottom="2dp" />
 							<hbox layout_width="match_parent" layout_height="wrap_content" margin-bottom="4dp">
-								<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text="Case sensitive" selected="true" />
-								<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text="Match Whole Word" selected="false" margin-left="8dp" />
-								<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text="Lua Pattern" selected="false" margin-left="8dp" />
-								<CheckBox id="escape_sequence" layout_width="wrap_content" layout_height="wrap_content" text="Use escape sequences" margin-left="8dp" selected="false" tooltip="Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control" />
+								<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text='@string(case_sensitive, "Case sensitive")' selected="true" />
+								<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text='@string(match_whole_word, "Match Whole Word")' selected="false" margin-left="8dp" />
+								<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text='@string(lua_pattern, "Lua Pattern")' selected="false" margin-left="8dp" />
+								<CheckBox id="escape_sequence" layout_width="wrap_content" layout_height="wrap_content" text='@string(use_escape_sequences, "Use escape sequences")' margin-left="8dp" selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
 							</hbox>
 							<hbox layout_width="match_parent" layout_height="wrap_content">
-								<TextView layout_width="wrap_content" layout_height="wrap_content" text="History:" margin-right="4dp" layout_height="18dp" />
+								<TextView layout_width="wrap_content" layout_height="wrap_content" text='@string(history, "History:")' margin-right="4dp" layout_height="18dp" />
 								<DropDownList id="global_search_history" layout_width="0" layout_height="18dp" layout_weight="1" margin-right="4dp" />
-								<PushButton id="global_search_clear_history" layout_width="wrap_content" layout_height="18dp" text="Clear History" margin-right="4dp" />
-								<PushButton id="global_search" layout_width="wrap_content" layout_height="18dp" text="Search" margin-right="4dp" />
-								<PushButton id="global_search_replace" layout_width="wrap_content" layout_height="18dp" text="Search & Replace" />
+								<PushButton id="global_search_clear_history" layout_width="wrap_content" layout_height="18dp" text='@string(clear_history, "Clear History")' margin-right="4dp" />
+								<PushButton id="global_search" layout_width="wrap_content" layout_height="18dp" text='@string(search, "Search")' margin-right="4dp" />
+								<PushButton id="global_search_replace" layout_width="wrap_content" layout_height="18dp" text='@string(search_and_replace, "Search & Replace")' />
 							</hbox>
 						</vbox>
 						<Widget id="global_searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" margin-left="4dp" margin-top="4dp" />
@@ -3832,6 +3891,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			{ "match-case", 0xed8d },
 			{ "palette", 0xefc5 },
 			{ "file-code", 0xecd1 },
+			{ "cursor-pointer", 0xec09 },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );

@@ -195,6 +195,9 @@ class EE_API Node : public Transformable {
 		return addEventListener( eventType, callback );
 	}
 
+	Uint32 addMouseClickListener( const std::function<void( const MouseEvent* )>& callback,
+								  const MouseButton& button );
+
 	void removeEventsOfType( const Uint32& eventType );
 
 	void removeEventListener( const Uint32& callbackId );
@@ -228,6 +231,8 @@ class EE_API Node : public Transformable {
 	const String::HashType& getIdHash() const;
 
 	Node* find( const std::string& id ) const;
+
+	Node* hasChild( const std::string& id ) const;
 
 	template <typename T> T* find( const std::string& id ) const {
 		return reinterpret_cast<T*>( find( id ) );
@@ -546,6 +551,8 @@ class EE_API Node : public Transformable {
 	Color getColor( const Color& Col );
 
 	Node* findIdHash( const String::HashType& idHash ) const;
+
+	Node* hasChildHash( const String::HashType& idHash ) const;
 
 	virtual void updateOriginPoint();
 

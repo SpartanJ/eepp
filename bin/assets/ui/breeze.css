@@ -197,6 +197,10 @@ CheckBox::inactive {
 	border-color: var(--button-border);
 }
 
+CheckBox:hover CheckBox::inactive {
+	border-color: var(--primary);
+}
+
 CheckBox::active {
 	border-color: var(--primary);
 	background-image: rectangle(solid, var(--primary));
@@ -221,6 +225,10 @@ RadioButton::inactive {
 
 RadioButton::inactive {
 	border-color: var(--button-border);
+}
+
+RadioButton:hover RadioButton::inactive {
+	border-color: var(--primary);
 }
 
 RadioButton::active {

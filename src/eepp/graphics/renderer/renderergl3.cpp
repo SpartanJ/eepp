@@ -7,17 +7,17 @@
 
 namespace EE { namespace Graphics {
 
-const char* EEGL3_STATES_NAME[] = {"dgl_Vertex", "dgl_Normal", "dgl_FrontColor"};
+const char* EEGL3_STATES_NAME[] = { "dgl_Vertex", "dgl_Normal", "dgl_FrontColor" };
 
-const char* EEGL3_TEXTUREUNIT_NAMES[] = {"dgl_MultiTexCoord0", "dgl_MultiTexCoord1",
-										 "dgl_MultiTexCoord2", "dgl_MultiTexCoord3"};
+const char* EEGL3_TEXTUREUNIT_NAMES[] = { "dgl_MultiTexCoord0", "dgl_MultiTexCoord1",
+										  "dgl_MultiTexCoord2", "dgl_MultiTexCoord3" };
 
-const char* EEGL3_PLANES_ENABLED_NAME[] = {"dgl_ClipEnabled[0]", "dgl_ClipEnabled[1]",
-										   "dgl_ClipEnabled[2]", "dgl_ClipEnabled[3]",
-										   "dgl_ClipEnabled[4]", "dgl_ClipEnabled[5]"};
+const char* EEGL3_PLANES_ENABLED_NAME[] = { "dgl_ClipEnabled[0]", "dgl_ClipEnabled[1]",
+											"dgl_ClipEnabled[2]", "dgl_ClipEnabled[3]",
+											"dgl_ClipEnabled[4]", "dgl_ClipEnabled[5]" };
 
-const char* EEGL3_PLANES_NAME[] = {"dgl_ClipPlane[0]", "dgl_ClipPlane[1]", "dgl_ClipPlane[2]",
-								   "dgl_ClipPlane[3]", "dgl_ClipPlane[4]", "dgl_ClipPlane[5]"};
+const char* EEGL3_PLANES_NAME[] = { "dgl_ClipPlane[0]", "dgl_ClipPlane[1]", "dgl_ClipPlane[2]",
+									"dgl_ClipPlane[3]", "dgl_ClipPlane[4]", "dgl_ClipPlane[5]" };
 
 #ifdef EE_GLES2
 const GLchar* GL3_SHADER_HEAD = "precision mediump float;\nprecision lowp int;\n";
@@ -88,7 +88,8 @@ void RendererGL3::init() {
 
 		mShaders[EEGL3_SHADER_BASE] =
 			ShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
-		mShaders[EEGL3_SHADER_BASE]->setReloadCb( cb::Make1( this, &RendererGL3::reloadShader ) );
+		mShaders[EEGL3_SHADER_BASE]->setReloadCb(
+			[&]( ShaderProgram* sp ) { reloadShader( sp ); } );
 
 		Shader::ensure( true );
 
@@ -323,7 +324,7 @@ void RendererGL3::disableClientState( unsigned int array ) {
 }
 
 void RendererGL3::vertexPointer( int size, unsigned int type, int stride, const void* pointer,
-								 unsigned int allocate ) {
+								 unsigned int /*allocate*/ ) {
 	const int index = mAttribsLoc[EEGL_VERTEX_ARRAY];
 
 	if ( -1 != index ) {
@@ -338,7 +339,7 @@ void RendererGL3::vertexPointer( int size, unsigned int type, int stride, const 
 }
 
 void RendererGL3::colorPointer( int size, unsigned int type, int stride, const void* pointer,
-								unsigned int allocate ) {
+								unsigned int /*allocate*/ ) {
 	const int index = mAttribsLoc[EEGL_COLOR_ARRAY];
 
 	if ( -1 != index ) {
@@ -357,7 +358,7 @@ void RendererGL3::colorPointer( int size, unsigned int type, int stride, const v
 }
 
 void RendererGL3::texCoordPointer( int size, unsigned int type, int stride, const void* pointer,
-								   unsigned int allocate ) {
+								   unsigned int /*allocate*/ ) {
 	const int index = mTextureUnits[mCurActiveTex];
 
 	if ( -1 != index ) {

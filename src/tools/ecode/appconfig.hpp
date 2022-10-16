@@ -29,6 +29,7 @@ struct UIConfig {
 	std::string serifFont;
 	std::string monospaceFont;
 	std::string terminalFont;
+	std::string fallbackFont;
 	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
 };
 

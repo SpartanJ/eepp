@@ -150,7 +150,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "layout_weight" )
 		.addAlias( "lw8" )
 		.setType( PropertyType::NumberFloat );
-	registerProperty( "layout-gravity", "" ).addAlias( "layout_gravity" );
+	registerProperty( "layout-gravity", "" ).addAlias( "layout_gravity" ).addAlias( "lg" );
 	registerProperty( "layout-width", "" ).addAlias( "layout_width" ).addAlias( "lw" );
 	registerProperty( "layout-height", "" ).addAlias( "layout_height" ).addAlias( "lh" );
 	registerProperty( "layout-to-left-of", "" ).addAlias( "layout_to_left_of" );

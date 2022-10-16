@@ -249,8 +249,10 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
 			setAllowSwitchTabsInEmptySpaces( attribute.asBool() );
+			break;
 		case PropertyId::DroppableHoveringColor:
 			setDroppableHoveringColor( attribute.asColor() );
+			break;
 		default:
 			return UIWidget::applyProperty( attribute );
 	}

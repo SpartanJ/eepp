@@ -22,7 +22,7 @@ class EE_API UICheckBox : public UITextView {
 
 	const bool& isChecked() const;
 
-	void setChecked( const bool& checked );
+	UICheckBox* setChecked( const bool& checked );
 
 	UIWidget* getCheckedButton() const;
 

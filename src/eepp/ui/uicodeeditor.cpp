@@ -776,8 +776,9 @@ bool UICodeEditor::isDirty() const {
 	return mDoc->isDirty();
 }
 
-void UICodeEditor::invalidateEditor() {
+void UICodeEditor::invalidateEditor( bool dirtyScroll ) {
 	mDirtyEditor = true;
+	mDirtyScroll = dirtyScroll;
 }
 
 void UICodeEditor::invalidateLongestLineWidth() {
@@ -1295,12 +1296,12 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 
 void UICodeEditor::onSizeChange() {
 	UIWidget::onSizeChange();
-	invalidateEditor();
+	invalidateEditor( false );
 }
 
 void UICodeEditor::onPaddingChange() {
 	UIWidget::onPaddingChange();
-	invalidateEditor();
+	invalidateEditor( false );
 }
 
 void UICodeEditor::findLongestLine() {
@@ -1428,10 +1429,11 @@ void UICodeEditor::scrollToCursor( bool centered ) {
 
 void UICodeEditor::updateEditor() {
 	mDoc->setPageSize( getVisibleLinesCount() );
-	if ( mDoc->getActiveClient() == this )
+	if ( mDirtyScroll && mDoc->getActiveClient() == this )
 		scrollTo( mDoc->getSelection().start() );
 	updateScrollBar();
 	mDirtyEditor = false;
+	mDirtyScroll = false;
 }
 
 void UICodeEditor::onDocumentTextChanged() {

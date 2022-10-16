@@ -165,7 +165,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		}
 	}
 	UITerminal* term = UITerminal::New(
-		mApp->getFontMonoNerdFont() ? mApp->getFontMonoNerdFont() : mApp->getFontMono(),
+		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), Sizef( 16, 16 ),
 		"", {},
 		!workingDir.empty()
@@ -345,10 +345,10 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	} );
 	term->setCommand( "reopen-closed-tab", [&] { mApp->reopenClosedTab(); } );
 	term->setCommand( "plugin-manager", [&] { mApp->createPluginManagerUI(); } );
-	// debug-draw-highlight-toggle
-	// debug-draw-boxes-toggle
-	// debug-draw-debug-data
-	// debug-widget-tree-view
+	term->setCommand( "debug-draw-boxes-toggle", [&] { mApp->debugDrawBoxesToggle(); } );
+	term->setCommand( "debug-draw-highlight-toggle", [&] { mApp->debugDrawHighlightToggle(); } );
+	term->setCommand( "debug-draw-debug-data", [&] { mApp->debugDrawData(); } );
+	term->setCommand( "debug-widget-tree-view", [&] { mApp->createWidgetInspector(); } );
 	term->setFocus();
 	return term;
 #endif

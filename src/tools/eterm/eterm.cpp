@@ -214,7 +214,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				->loadFromFile( resPath + "fonts/NotoEmoji-Regular.ttf" );
 		}
 
-		std::string fallbackFontPath( fallbackFontPathF.Get() );
+		std::string fallbackFontPath( fallbackFontPathF
+										  ? fallbackFontPathF.Get()
+										  : resPath + "fonts/DroidSansFallbackFull.ttf" );
 		if ( FileSystem::fileExists( fallbackFontPath ) ) {
 			FontTrueType* fallbackFont = FontTrueType::New( "fallback-font" );
 			if ( fallbackFont->loadFromFile( fallbackFontPath ) )

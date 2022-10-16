@@ -649,7 +649,7 @@ Probably deprecate the Maps module, since I will focus my efforts on the UI syst
 
 * Lewis Van Winkle for [PlusCallback](https://github.com/codeplea/pluscallback)
 
-* Dieter Baron and Thomas Klausner for [libbzip](https://libzip.org/)
+* Dieter Baron and Thomas Klausner for [libzip](https://libzip.org/)
 
 * Jean-loup Gailly and Mark Adler for [zlib](https://zlib.net/)
 
