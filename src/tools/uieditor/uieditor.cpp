@@ -937,7 +937,9 @@ void App::mainLoop() {
 
 		mWindow->display();
 	} else {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mWindow->getInput()->waitEvent( Milliseconds( mWindow->hasFocus() ? 16 : 100 ) );
+#endif
 	}
 }
 

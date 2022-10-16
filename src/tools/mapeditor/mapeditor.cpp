@@ -69,7 +69,9 @@ void mainLoop() {
 
 		win->display();
 	} else {
-		Sys::sleep( Milliseconds( 8 ) );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
+#endif
 	}
 }
 
@@ -91,7 +93,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 	if ( win->isOpen() ) {
 		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );
 
-		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
+		win->setCloseRequestCallback( onCloseRequestCallback );
 
 		UISceneNode* uiSceneNode = UISceneNode::New();
 

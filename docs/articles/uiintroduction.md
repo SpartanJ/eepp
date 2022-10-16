@@ -116,7 +116,8 @@ if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
     // Display the scene to the screen.
     win->display();
 } else {
-    Sys::sleep( Milliseconds( 8 ) );
+    // For for an input event or timeout after 16ms if has focus, otherwise wait 100ms.
+    win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 }
 ```
 

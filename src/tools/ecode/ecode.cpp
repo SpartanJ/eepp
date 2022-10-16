@@ -478,7 +478,9 @@ void App::mainLoop() {
 			firstFrame = false;
 		}
 	} else {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mWindow->getInput()->waitEvent( Milliseconds( mWindow->hasFocus() ? 16 : 100 ) );
+#endif
 	}
 
 	if ( mBenchmarkMode && mSecondsCounter.getElapsedTime() >= Seconds( 1 ) ) {

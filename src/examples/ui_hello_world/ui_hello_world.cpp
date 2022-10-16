@@ -23,9 +23,13 @@ void mainLoop() {
 		// Redraw the UI scene.
 		SceneManager::instance()->draw();
 
+		// Display the scene to the screen.
 		win->display();
 	} else {
-		Sys::sleep( Milliseconds( 8 ) );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		// For for an input event or timeout after 16ms if has focus, otherwise wait 100ms.
+		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
+#endif
 	}
 }
 
