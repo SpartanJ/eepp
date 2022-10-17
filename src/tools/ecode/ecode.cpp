@@ -2654,6 +2654,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		updateEditorTabTitle( editor );
+		editor->getDocument().resetSyntax();
+		editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
 	} );
 
 	auto docChanged = [&]( const Event* event ) {
@@ -3633,7 +3635,6 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mUISceneNode->getRoot()->addClass( "appbackground" );
 
-		// TODO: Add text translations
 		const std::string baseUI = R"html(
 		<style>
 		TextInput#search_find,

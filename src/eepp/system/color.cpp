@@ -1,7 +1,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctype.h>
-#include <eepp/core/string.hpp>
 #include <eepp/system/color.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <iomanip>
@@ -17,9 +16,9 @@ template <typename T> inline T _round( T r ) {
 } // namespace
 
 std::map<std::string, Color> Color::sColors;
+std::map<String::HashType, Color> Color::sColorMap;
 
-// TODO: Support all CSS3 color keywords.
-// Reference: https://www.w3.org/TR/2018/REC-css-color-3-20180619/
+// Keep the old defined colors
 const Color Color::Transparent = Color( 0x00000000 );
 const Color Color::Black = Color( 0x000000FF );
 const Color Color::Silver = Color( 0xC0C0C0FF );
@@ -37,6 +36,155 @@ const Color Color::Navy = Color( 0x000080FF );
 const Color Color::Blue = Color( 0x0000FFFF );
 const Color Color::Teal = Color( 0x008080FF );
 const Color Color::Aqua = Color( 0x00FFFFFF );
+
+// Reference: https://www.w3.org/TR/css-color-3/
+const Color Color::aliceblue = Color( 0xF0F8FFFF );
+const Color Color::antiquewhite = Color( 0xFAEBD7FF );
+const Color Color::aqua = Color( 0x00FFFFFF );
+const Color Color::aquamarine = Color( 0x7FFFD4FF );
+const Color Color::azure = Color( 0xF0FFFFFF );
+const Color Color::beige = Color( 0xF5F5DCFF );
+const Color Color::bisque = Color( 0xFFE4C4FF );
+const Color Color::black = Color( 0x000000FF );
+const Color Color::blanchedalmond = Color( 0xFFEBCDFF );
+const Color Color::blue = Color( 0x0000FFFF );
+const Color Color::blueviolet = Color( 0x8A2BE2FF );
+const Color Color::brown = Color( 0xA52A2AFF );
+const Color Color::burlywood = Color( 0xDEB887FF );
+const Color Color::cadetblue = Color( 0x5F9EA0FF );
+const Color Color::chartreuse = Color( 0x7FFF00FF );
+const Color Color::chocolate = Color( 0xD2691EFF );
+const Color Color::coral = Color( 0xFF7F50FF );
+const Color Color::cornflowerblue = Color( 0x6495EDFF );
+const Color Color::cornsilk = Color( 0xFFF8DCFF );
+const Color Color::crimson = Color( 0xDC143CFF );
+const Color Color::cyan = Color( 0x00FFFFFF );
+const Color Color::darkblue = Color( 0x00008BFF );
+const Color Color::darkcyan = Color( 0x008B8BFF );
+const Color Color::darkgoldenrod = Color( 0xB8860BFF );
+const Color Color::darkgray = Color( 0xA9A9A9FF );
+const Color Color::darkgreen = Color( 0x006400FF );
+const Color Color::darkgrey = Color( 0xA9A9A9FF );
+const Color Color::darkkhaki = Color( 0xBDB76BFF );
+const Color Color::darkmagenta = Color( 0x8B008BFF );
+const Color Color::darkolivegreen = Color( 0x556B2FFF );
+const Color Color::darkorange = Color( 0xFF8C00FF );
+const Color Color::darkorchid = Color( 0x9932CCFF );
+const Color Color::darkred = Color( 0x8B0000FF );
+const Color Color::darksalmon = Color( 0xE9967AFF );
+const Color Color::darkseagreen = Color( 0x8FBC8FFF );
+const Color Color::darkslateblue = Color( 0x483D8BFF );
+const Color Color::darkslategray = Color( 0x2F4F4FFF );
+const Color Color::darkslategrey = Color( 0x2F4F4FFF );
+const Color Color::darkturquoise = Color( 0x00CED1FF );
+const Color Color::darkviolet = Color( 0x9400D3FF );
+const Color Color::deeppink = Color( 0xFF1493FF );
+const Color Color::deepskyblue = Color( 0x00BFFFFF );
+const Color Color::dimgray = Color( 0x696969FF );
+const Color Color::dimgrey = Color( 0x696969FF );
+const Color Color::dodgerblue = Color( 0x1E90FFFF );
+const Color Color::firebrick = Color( 0xB22222FF );
+const Color Color::floralwhite = Color( 0xFFFAF0FF );
+const Color Color::forestgreen = Color( 0x228B22FF );
+const Color Color::fuchsia = Color( 0xFF00FFFF );
+const Color Color::gainsboro = Color( 0xDCDCDCFF );
+const Color Color::ghostwhite = Color( 0xF8F8FFFF );
+const Color Color::gold = Color( 0xFFD700FF );
+const Color Color::goldenrod = Color( 0xDAA520FF );
+const Color Color::gray = Color( 0x808080FF );
+const Color Color::green = Color( 0x008000FF );
+const Color Color::greenyellow = Color( 0xADFF2FFF );
+const Color Color::grey = Color( 0x808080FF );
+const Color Color::honeydew = Color( 0xF0FFF0FF );
+const Color Color::hotpink = Color( 0xFF69B4FF );
+const Color Color::indianred = Color( 0xCD5C5CFF );
+const Color Color::indigo = Color( 0x4B0082FF );
+const Color Color::ivory = Color( 0xFFFFF0FF );
+const Color Color::khaki = Color( 0xF0E68CFF );
+const Color Color::lavender = Color( 0xE6E6FAFF );
+const Color Color::lavenderblush = Color( 0xFFF0F5FF );
+const Color Color::lawngreen = Color( 0x7CFC00FF );
+const Color Color::lemonchiffon = Color( 0xFFFACDFF );
+const Color Color::lightblue = Color( 0xADD8E6FF );
+const Color Color::lightcoral = Color( 0xF08080FF );
+const Color Color::lightcyan = Color( 0xE0FFFFFF );
+const Color Color::lightgoldenrodyellow = Color( 0xFAFAD2FF );
+const Color Color::lightgray = Color( 0xD3D3D3FF );
+const Color Color::lightgreen = Color( 0x90EE90FF );
+const Color Color::lightgrey = Color( 0xD3D3D3FF );
+const Color Color::lightpink = Color( 0xFFB6C1FF );
+const Color Color::lightsalmon = Color( 0xFFA07AFF );
+const Color Color::lightseagreen = Color( 0x20B2AAFF );
+const Color Color::lightskyblue = Color( 0x87CEFAFF );
+const Color Color::lightslategray = Color( 0x778899FF );
+const Color Color::lightslategrey = Color( 0x778899FF );
+const Color Color::lightsteelblue = Color( 0xB0C4DEFF );
+const Color Color::lightyellow = Color( 0xFFFFE0FF );
+const Color Color::lime = Color( 0x00FF00FF );
+const Color Color::limegreen = Color( 0x32CD32FF );
+const Color Color::linen = Color( 0xFAF0E6FF );
+const Color Color::magenta = Color( 0xFF00FFFF );
+const Color Color::maroon = Color( 0x800000FF );
+const Color Color::mediumaquamarine = Color( 0x66CDAAFF );
+const Color Color::mediumblue = Color( 0x0000CDFF );
+const Color Color::mediumorchid = Color( 0xBA55D3FF );
+const Color Color::mediumpurple = Color( 0x9370DBFF );
+const Color Color::mediumseagreen = Color( 0x3CB371FF );
+const Color Color::mediumslateblue = Color( 0x7B68EEFF );
+const Color Color::mediumspringgreen = Color( 0x00FA9AFF );
+const Color Color::mediumturquoise = Color( 0x48D1CCFF );
+const Color Color::mediumvioletred = Color( 0xC71585FF );
+const Color Color::midnightblue = Color( 0x191970FF );
+const Color Color::mintcream = Color( 0xF5FFFAFF );
+const Color Color::mistyrose = Color( 0xFFE4E1FF );
+const Color Color::moccasin = Color( 0xFFE4B5FF );
+const Color Color::navajowhite = Color( 0xFFDEADFF );
+const Color Color::navy = Color( 0x000080FF );
+const Color Color::oldlace = Color( 0xFDF5E6FF );
+const Color Color::olive = Color( 0x808000FF );
+const Color Color::olivedrab = Color( 0x6B8E23FF );
+const Color Color::orange = Color( 0xFFA500FF );
+const Color Color::orangered = Color( 0xFF4500FF );
+const Color Color::orchid = Color( 0xDA70D6FF );
+const Color Color::palegoldenrod = Color( 0xEEE8AAFF );
+const Color Color::palegreen = Color( 0x98FB98FF );
+const Color Color::paleturquoise = Color( 0xAFEEEEFF );
+const Color Color::palevioletred = Color( 0xDB7093FF );
+const Color Color::papayawhip = Color( 0xFFEFD5FF );
+const Color Color::peachpuff = Color( 0xFFDAB9FF );
+const Color Color::peru = Color( 0xCD853FFF );
+const Color Color::pink = Color( 0xFFC0CBFF );
+const Color Color::plum = Color( 0xDDA0DDFF );
+const Color Color::powderblue = Color( 0xB0E0E6FF );
+const Color Color::purple = Color( 0x800080FF );
+const Color Color::red = Color( 0xFF0000FF );
+const Color Color::rosybrown = Color( 0xBC8F8FFF );
+const Color Color::royalblue = Color( 0x4169E1FF );
+const Color Color::saddlebrown = Color( 0x8B4513FF );
+const Color Color::salmon = Color( 0xFA8072FF );
+const Color Color::sandybrown = Color( 0xF4A460FF );
+const Color Color::seagreen = Color( 0x2E8B57FF );
+const Color Color::seashell = Color( 0xFFF5EEFF );
+const Color Color::sienna = Color( 0xA0522DFF );
+const Color Color::silver = Color( 0xC0C0C0FF );
+const Color Color::skyblue = Color( 0x87CEEBFF );
+const Color Color::slateblue = Color( 0x6A5ACDFF );
+const Color Color::slategray = Color( 0x708090FF );
+const Color Color::slategrey = Color( 0x708090FF );
+const Color Color::snow = Color( 0xFFFAFAFF );
+const Color Color::springgreen = Color( 0x00FF7FFF );
+const Color Color::steelblue = Color( 0x4682B4FF );
+const Color Color::tan = Color( 0xD2B48CFF );
+const Color Color::teal = Color( 0x008080FF );
+const Color Color::thistle = Color( 0xD8BFD8FF );
+const Color Color::tomato = Color( 0xFF6347FF );
+const Color Color::turquoise = Color( 0x40E0D0FF );
+const Color Color::violet = Color( 0xEE82EEFF );
+const Color Color::wheat = Color( 0xF5DEB3FF );
+const Color Color::white = Color( 0xFFFFFFFF );
+const Color Color::whitesmoke = Color( 0xF5F5F5FF );
+const Color Color::yellow = Color( 0xFFFF00FF );
+const Color Color::yellowgreen = Color( 0x9ACD32FF );
 
 RGB::RGB() : tRGB<Uint8>() {}
 
@@ -551,40 +699,10 @@ Color Color::fromString( std::string str ) {
 		}
 	} else if ( size >= 3 && isalpha( str[0] ) && isalpha( str[1] ) && isalpha( str[2] ) ) {
 		String::toLowerInPlace( str );
-		if ( "transparent" == str )
-			return Color::Transparent;
-		else if ( "black" == str )
-			return Color::Black;
-		else if ( "silver" == str )
-			return Color::Silver;
-		else if ( "gray" == str )
-			return Color::Gray;
-		else if ( "white" == str )
-			return Color::White;
-		else if ( "maroon" == str )
-			return Color::Maroon;
-		else if ( "red" == str )
-			return Color::Red;
-		else if ( "purple" == str )
-			return Color::Purple;
-		else if ( "fuchsia" == str )
-			return Color::Fuchsia;
-		else if ( "green" == str )
-			return Color::Green;
-		else if ( "lime" == str )
-			return Color::Lime;
-		else if ( "olive" == str )
-			return Color::Olive;
-		else if ( "yellow" == str )
-			return Color::Yellow;
-		else if ( "navy" == str )
-			return Color::Navy;
-		else if ( "blue" == str )
-			return Color::Blue;
-		else if ( "teal" == str )
-			return Color::Teal;
-		else if ( "aqua" == str )
-			return Color::Aqua;
+		initColorMap();
+		auto it = sColorMap.find( String::hash( str ) );
+		if ( it != sColorMap.end() )
+			return it->second;
 	} else {
 		String::toLowerInPlace( str );
 		const auto& it = sColors.find( str );
@@ -607,41 +725,12 @@ bool Color::isColorString( std::string str ) {
 		return true;
 
 	String::toLowerInPlace( str );
-	if ( "transparent" == str )
+
+	initColorMap();
+	auto it = sColorMap.find( String::hash( str ) );
+	if ( it != sColorMap.end() )
 		return true;
-	else if ( "black" == str )
-		return true;
-	else if ( "silver" == str )
-		return true;
-	else if ( "gray" == str )
-		return true;
-	else if ( "white" == str )
-		return true;
-	else if ( "maroon" == str )
-		return true;
-	else if ( "red" == str )
-		return true;
-	else if ( "purple" == str )
-		return true;
-	else if ( "fuchsia" == str )
-		return true;
-	else if ( "green" == str )
-		return true;
-	else if ( "lime" == str )
-		return true;
-	else if ( "olive" == str )
-		return true;
-	else if ( "yellow" == str )
-		return true;
-	else if ( "navy" == str )
-		return true;
-	else if ( "blue" == str )
-		return true;
-	else if ( "teal" == str )
-		return true;
-	else if ( "aqua" == str )
-		return true;
-	else if ( String::startsWith( str, "rgb(" ) )
+	if ( String::startsWith( str, "rgb(" ) )
 		return true;
 	else if ( String::startsWith( str, "rgba(" ) )
 		return true;
@@ -681,6 +770,280 @@ bool Color::validHexColorString( const std::string& hexColor ) {
 	}
 
 	return true;
+}
+
+void Color::initColorMap() {
+	if ( !sColorMap.empty() )
+		return;
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "transparent" ), Color::Transparent ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "aliceblue" ), Color::aliceblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "antiquewhite" ), Color::antiquewhite ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "aqua" ), Color::aqua ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "aquamarine" ), Color::aquamarine ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "azure" ), Color::azure ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "beige" ), Color::beige ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "bisque" ), Color::bisque ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "black" ), Color::black ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "blanchedalmond" ),
+														  Color::blanchedalmond ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "blue" ), Color::blue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "blueviolet" ), Color::blueviolet ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "brown" ), Color::brown ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "burlywood" ), Color::burlywood ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "cadetblue" ), Color::cadetblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "chartreuse" ), Color::chartreuse ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "chocolate" ), Color::chocolate ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "coral" ), Color::coral ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "cornflowerblue" ),
+														  Color::cornflowerblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "cornsilk" ), Color::cornsilk ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "crimson" ), Color::crimson ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "cyan" ), Color::cyan ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkblue" ), Color::darkblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkcyan" ), Color::darkcyan ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "darkgoldenrod" ),
+														  Color::darkgoldenrod ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkgray" ), Color::darkgray ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkgreen" ), Color::darkgreen ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkgrey" ), Color::darkgrey ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkkhaki" ), Color::darkkhaki ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkmagenta" ), Color::darkmagenta ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "darkolivegreen" ),
+														  Color::darkolivegreen ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkorange" ), Color::darkorange ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkorchid" ), Color::darkorchid ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkred" ), Color::darkred ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darksalmon" ), Color::darksalmon ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkseagreen" ), Color::darkseagreen ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "darkslateblue" ),
+														  Color::darkslateblue ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "darkslategray" ),
+														  Color::darkslategray ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "darkslategrey" ),
+														  Color::darkslategrey ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "darkturquoise" ),
+														  Color::darkturquoise ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "darkviolet" ), Color::darkviolet ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "deeppink" ), Color::deeppink ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "deepskyblue" ), Color::deepskyblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "dimgray" ), Color::dimgray ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "dimgrey" ), Color::dimgrey ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "dodgerblue" ), Color::dodgerblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "firebrick" ), Color::firebrick ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "floralwhite" ), Color::floralwhite ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "forestgreen" ), Color::forestgreen ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "fuchsia" ), Color::fuchsia ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "gainsboro" ), Color::gainsboro ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "ghostwhite" ), Color::ghostwhite ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "gold" ), Color::gold ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "goldenrod" ), Color::goldenrod ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "gray" ), Color::gray ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "green" ), Color::green ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "greenyellow" ), Color::greenyellow ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "grey" ), Color::grey ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "honeydew" ), Color::honeydew ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "hotpink" ), Color::hotpink ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "indianred" ), Color::indianred ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "indigo" ), Color::indigo ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "ivory" ), Color::ivory ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "khaki" ), Color::khaki ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lavender" ), Color::lavender ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "lavenderblush" ),
+														  Color::lavenderblush ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lawngreen" ), Color::lawngreen ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lemonchiffon" ), Color::lemonchiffon ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightblue" ), Color::lightblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightcoral" ), Color::lightcoral ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightcyan" ), Color::lightcyan ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "lightgoldenrodyellow" ),
+														  Color::lightgoldenrodyellow ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightgray" ), Color::lightgray ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightgreen" ), Color::lightgreen ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightgrey" ), Color::lightgrey ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightpink" ), Color::lightpink ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightsalmon" ), Color::lightsalmon ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "lightseagreen" ),
+														  Color::lightseagreen ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightskyblue" ), Color::lightskyblue ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "lightslategray" ),
+														  Color::lightslategray ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "lightslategrey" ),
+														  Color::lightslategrey ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "lightsteelblue" ),
+														  Color::lightsteelblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "lightyellow" ), Color::lightyellow ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "lime" ), Color::lime ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "limegreen" ), Color::limegreen ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "linen" ), Color::linen ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "magenta" ), Color::magenta ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "maroon" ), Color::maroon ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "mediumaquamarine" ),
+														  Color::mediumaquamarine ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "mediumblue" ), Color::mediumblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "mediumorchid" ), Color::mediumorchid ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "mediumpurple" ), Color::mediumpurple ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "mediumseagreen" ),
+														  Color::mediumseagreen ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "mediumslateblue" ),
+														  Color::mediumslateblue ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "mediumspringgreen" ),
+														  Color::mediumspringgreen ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "mediumturquoise" ),
+														  Color::mediumturquoise ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "mediumvioletred" ),
+														  Color::mediumvioletred ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "midnightblue" ), Color::midnightblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "mintcream" ), Color::mintcream ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "mistyrose" ), Color::mistyrose ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "moccasin" ), Color::moccasin ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "navajowhite" ), Color::navajowhite ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "navy" ), Color::navy ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "oldlace" ), Color::oldlace ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "olive" ), Color::olive ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "olivedrab" ), Color::olivedrab ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "orange" ), Color::orange ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "orangered" ), Color::orangered ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "orchid" ), Color::orchid ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "palegoldenrod" ),
+														  Color::palegoldenrod ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "palegreen" ), Color::palegreen ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "paleturquoise" ),
+														  Color::paleturquoise ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "palevioletred" ),
+														  Color::palevioletred ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "papayawhip" ), Color::papayawhip ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "peachpuff" ), Color::peachpuff ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "peru" ), Color::peru ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "pink" ), Color::pink ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "plum" ), Color::plum ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "powderblue" ), Color::powderblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "purple" ), Color::purple ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "red" ), Color::red ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "rosybrown" ), Color::rosybrown ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "royalblue" ), Color::royalblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "saddlebrown" ), Color::saddlebrown ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "salmon" ), Color::salmon ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "sandybrown" ), Color::sandybrown ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "seagreen" ), Color::seagreen ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "seashell" ), Color::seashell ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "sienna" ), Color::sienna ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "silver" ), Color::silver ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "skyblue" ), Color::skyblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "slateblue" ), Color::slateblue ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "slategray" ), Color::slategray ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "slategrey" ), Color::slategrey ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "snow" ), Color::snow ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "springgreen" ), Color::springgreen ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "steelblue" ), Color::steelblue ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "tan" ), Color::tan ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "teal" ), Color::teal ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "thistle" ), Color::thistle ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "tomato" ), Color::tomato ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "turquoise" ), Color::turquoise ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "violet" ), Color::violet ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "wheat" ), Color::wheat ) );
+	sColorMap.insert( std::pair<String::HashType, Color>( String::hash( "white" ), Color::white ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "whitesmoke" ), Color::whitesmoke ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "yellow" ), Color::yellow ) );
+	sColorMap.insert(
+		std::pair<String::HashType, Color>( String::hash( "yellowgreen" ), Color::yellowgreen ) );
 }
 
 }} // namespace EE::System

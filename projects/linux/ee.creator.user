@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 8.0.1, 2022-10-16T03:14:23. -->
+<!-- Written by QtCreator 8.0.1, 2022-10-17T00:25:16. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -192,6 +192,7 @@
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.ProcessStep</value>
      </valuemap>
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.1">
+      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">verbose=true</value>
       <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeCommand">/usr/bin/make</value>
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">GenericProjectManager.GenericMakeStep</value>
@@ -233,7 +234,7 @@
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.ProcessStep</value>
      </valuemap>
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.1">
-      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">-e config=release</value>
+      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">-e config=release -e verbose=true</value>
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">GenericProjectManager.GenericMakeStep</value>
      </valuemap>

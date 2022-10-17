@@ -248,7 +248,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		videoResize( win );
 
 		/// Push a window resize callback the reset the projection when needed
-		win->pushResizeCallback( cb::Make1( &videoResize ) );
+		win->pushResizeCallback( videoResize );
 
 		Uint32 i;
 

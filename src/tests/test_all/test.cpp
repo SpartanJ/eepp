@@ -1076,8 +1076,8 @@ void EETest::createDecoratedWindow() {
 
 	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
 	mUIWindow->setTitle( "Test Window" );
-	mUIWindow->addEventListener( Event::OnDragStart, cb::Make1( &onWinDragStart ) );
-	mUIWindow->addEventListener( Event::OnDragStop, cb::Make1( &onWinDragStop ) );
+	mUIWindow->addEventListener( Event::OnDragStart, onWinDragStart );
+	mUIWindow->addEventListener( Event::OnDragStop, onWinDragStop );
 
 	UILinearLayout* lay = UILinearLayout::NewVertical();
 	lay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );

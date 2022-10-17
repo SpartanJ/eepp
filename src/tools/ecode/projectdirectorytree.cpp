@@ -10,6 +10,7 @@ ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 	mPool( threadPool ),
 	mRunning( false ),
 	mIsReady( false ),
+	mIgnoreHidden( true ),
 	mIgnoreMatcher( path ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }

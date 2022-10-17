@@ -163,7 +163,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		PlanetAngle.start();
 
 		// Create a Event callback for the rock sprite
-		Rock.setEventsCallback( cb::Make3( &spriteCallback ), &RockAngle );
+		Rock.setEventsCallback( spriteCallback, &RockAngle );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );
