@@ -230,8 +230,9 @@ void Renderer::writeExtension( Uint8 Pos, Uint32 BitWrite ) {
 
 void Renderer::init() {
 #ifdef EE_GLEW_AVAILABLE
+#if EE_PLATFORM != EE_PLATFORM_MACOSX
 	glewExperimental = 1;
-
+#endif
 	bool glewOn = ( GLEW_OK == glewInit() );
 
 	if ( glewOn ) {
