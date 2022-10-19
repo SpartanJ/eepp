@@ -70,7 +70,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValueB( "editor", "highlight_matching_brackets", true );
 	editor.highlightCurrentLine = ini.getValueB( "editor", "highlight_current_line", true );
 	editor.verticalScrollbar = ini.getValueB( "editor", "vertical_scrollbar", true );
-	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", false );
+	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", true );
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
@@ -98,11 +98,11 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.colorPreview = ini.getValueB( "editor", "color_preview", true );
 	editor.minimap = ini.getValueB( "editor", "minimap", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
-	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", true );
+	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", false );
 	editor.singleClickTreeNavigation =
 		ini.getValueB( "editor", "single_click_tree_navigation", false );
 	editor.syncProjectTreeWithEditor =
-		ini.getValueB( "editor", "sync_project_tree_with_editor", false );
+		ini.getValueB( "editor", "sync_project_tree_with_editor", true );
 	editor.autoCloseXMLTags = ini.getValueB( "editor", "auto_close_xml_tags", true );
 	editor.lineSpacing = ini.getValue( "editor", "line_spacing", "0dp" );
 

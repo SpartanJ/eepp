@@ -1,9 +1,14 @@
 #include <cstring>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 
 namespace EE { namespace System {
 
-IOStreamString::IOStreamString() : mPos( 0 ) {}
+IOStreamString::IOStreamString() {}
+
+IOStreamString::IOStreamString( const std::string& filepath ) {
+	FileSystem::fileGet( filepath, mStream );
+}
 
 ios_size IOStreamString::read( char* data, ios_size size ) {
 	Int64 endPosition = mPos + size;

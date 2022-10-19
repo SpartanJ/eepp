@@ -348,13 +348,13 @@ Also please use a modern browser with good WebGL and WASM support (Chrome/ium 70
 
 * **[ecode - Text Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=ecode.js)**
 
-* **[Texture Atlas Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-TextureAtlasEditor.js)**
-
-* **[Map Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-MapEditor.js)**
+* **[UI Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-UIEditor.js)**
 
 * **[UI Hello World](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-ui-hello-world.js)**
 
-* **[UI Editor running some tests](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-UIEditor.js)**
+* **[Texture Atlas Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-TextureAtlasEditor.js)**
+
+* **[Map Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-MapEditor.js)**
 
 * **[Fonts example](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-fonts.js)**
 

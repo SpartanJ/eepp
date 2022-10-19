@@ -736,6 +736,11 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 							pos = { pos.x, 0 };
 						}
 					}
+
+					if ( pos.x < 0 )
+						pos.x = 0;
+					if ( pos.y < 0 )
+						pos.y = 0;
 				}
 			}
 		}

@@ -24,6 +24,7 @@ cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode.app/Contents/MacOS/as
 cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/Contents/MacOS/assets/fonts/
+cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode.app/Contents/MacOS/assets/
 cp -r ../../../bin/assets/icon ecode.app/Contents/MacOS/assets/
 mkdir ecode.app/Contents/MacOS/assets/ui

@@ -376,7 +376,7 @@ void App::loadConfig( const LogLevel& logLevel ) {
 		FileSystem::makeDir( mConfigPath );
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mPluginsPath = mConfigPath + "plugins";
-	mColorSchemesPath = mConfigPath + "colorschemes";
+	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes";
 	mTerminalManager = std::make_unique<TerminalManager>( this );
 	mTerminalManager->setTerminalColorSchemesPath( mConfigPath + "terminal" +
 												   FileSystem::getOSSlash() + "colorschemes" );
@@ -2053,11 +2053,13 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 	for ( const auto& key : keybindings )
 		invertedKeybindings[key.second] = key.first;
 
+	bool keybindingsWereEmpty = keybindings.empty();
+
 	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
 		for ( const auto& key : defKeybindings ) {
 			auto foundCmd = invertedKeybindings.find( key.second );
 			auto shortcutStr = bindings.getShortcutString( key.first );
-			if ( foundCmd == invertedKeybindings.end() &&
+			if ( ( foundCmd == invertedKeybindings.end() || keybindingsWereEmpty ) &&
 				 keybindings.find( shortcutStr ) == keybindings.end() ) {
 				keybindings[shortcutStr] = key.second;
 				invertedKeybindings[key.second] = shortcutStr;

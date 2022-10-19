@@ -48,6 +48,7 @@ cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/remixicon.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode/assets/
 mkdir ecode/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode/assets/ui/

@@ -28,6 +28,7 @@ cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/assets/fonts/
+cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode.app/assets/
 mkdir -p ecode.app/assets/icon/
 cp -r ../../../bin/assets/icon/ee.png ecode.app/assets/icon/

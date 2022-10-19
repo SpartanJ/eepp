@@ -11,6 +11,8 @@ class EE_API IOStreamString : public IOStream {
   public:
 	IOStreamString();
 
+	IOStreamString( const std::string& filepath );
+
 	virtual ios_size read( char* data, ios_size size );
 
 	virtual ios_size write( const char* data, ios_size size );
@@ -37,7 +39,7 @@ class EE_API IOStreamString : public IOStream {
 
   protected:
 	std::string mStream;
-	ios_size mPos;
+	ios_size mPos{ 0 };
 };
 
 }} // namespace EE::System
