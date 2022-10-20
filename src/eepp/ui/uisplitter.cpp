@@ -124,9 +124,21 @@ bool UISplitter::applyProperty( const StyleSheetProperty& attribute ) {
 			setSplitPartition( StyleSheetLength( attribute.asString() ) );
 		case PropertyId::SplitterAlwaysShow:
 			setAlwaysShowSplitter( attribute.asBool() );
+		case PropertyId::Orientation: {
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
+
+			if ( "horizontal" == val )
+				setOrientation( UIOrientation::Horizontal );
+			else if ( "vertical" == val )
+				setOrientation( UIOrientation::Vertical );
+			break;
+		}
 		default:
 			return UILayout::applyProperty( attribute );
 	}
+
+	return true;
 }
 
 std::string UISplitter::getPropertyString( const PropertyDefinition* propertyDef,
@@ -139,6 +151,8 @@ std::string UISplitter::getPropertyString( const PropertyDefinition* propertyDef
 			return getSplitPartition().toString();
 		case PropertyId::SplitterAlwaysShow:
 			return alwaysShowSplitter() ? "true" : "false";
+		case PropertyId::Orientation:
+			return getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		default:
 			return UILayout::getPropertyString( propertyDef, propertyIndex );
 	}

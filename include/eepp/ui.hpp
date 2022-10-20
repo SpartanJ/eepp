@@ -76,6 +76,7 @@
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 
+#include <eepp/ui/models/csspropertiesmodel.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/models/modelselection.hpp>

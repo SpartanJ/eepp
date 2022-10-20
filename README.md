@@ -342,9 +342,8 @@ Here is a small example on how the CSS looks like:
 
 Since eepp supports emscripten you can take a quick look on some of the examples, demos and tools that
 the library currently provides. Please be aware that you'll find some differences based on the limitations
-that emscripten have at the moment (no threads, no access to the file system, no custom cursors, etc).
-Note: please wait some seconds until the resources are loaded, currently there is no loading indicator.
-Also please use a modern browser with good WebGL and WASM support (Chrome/ium 70+ or Firefox 80+).
+that emscripten have at the moment (no access to the file system, no custom cursors, etc).
+Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 70+ or Firefox 80+).
 
 * **[ecode - Text Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=ecode.js)**
 

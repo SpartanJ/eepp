@@ -357,7 +357,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void initPluginManager();
 
-	void checkWidgetPick( UITreeView* widgetTree, bool wasHighlightOver );
+	void checkWidgetPick( UITreeView* widgetTree, bool wasHighlightOver, UITableView* tableView );
 
 	void onPluginEnabled( UICodeEditorPlugin* plugin );
 };

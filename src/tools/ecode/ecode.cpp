@@ -548,7 +548,7 @@ App::~App() {
 	eeSAFE_DELETE( mConsole );
 }
 
-void App::checkWidgetPick( UITreeView* widgetTree, bool wasHighlightOver ) {
+void App::checkWidgetPick( UITreeView* widgetTree, bool wasHighlightOver, UITableView* tableView ) {
 	Input* input = mWindow->getInput();
 	if ( input->getClickTrigger() & EE_BUTTON_LMASK ) {
 		Node* node = mUISceneNode->getEventDispatcher()->getMouseOverNode();
@@ -558,8 +558,8 @@ void App::checkWidgetPick( UITreeView* widgetTree, bool wasHighlightOver ) {
 		mUISceneNode->setHighlightOver( wasHighlightOver );
 		mUISceneNode->getEventDispatcher()->setDisableMousePress( false );
 	} else {
-		mUISceneNode->runOnMainThread( [this, widgetTree, wasHighlightOver]() {
-			checkWidgetPick( widgetTree, wasHighlightOver );
+		mUISceneNode->runOnMainThread( [this, widgetTree, wasHighlightOver, tableView]() {
+			checkWidgetPick( widgetTree, wasHighlightOver, tableView );
 		} );
 	}
 }
@@ -579,7 +579,10 @@ void App::createWidgetInspector() {
 			<CheckBox id="debug-draw-boxes" text='@string(debug_draw_boxes, "Draw Boxes")' margin-left="4dp" lg="center" />
 			<CheckBox id="debug-draw-debug-data" text='@string(debug_draw_debug_data, "Draw Debug Data")' margin-left="4dp" lg="center" />
 		</hbox>
-		<treeview lw="mp" lh="fixed" lw8="1" />
+		<Splitter layout_width="match_parent" lh="fixed" lw8="1" splitter-partition="50%">
+			<treeview lw="fixed" lh="mp" />
+			<tableview lw="fixed" lh="mp" />
+		</Splitter>
 	</vbox>
 	)xml",
 														 uiWin->getContainer() );
@@ -591,14 +594,26 @@ void App::createWidgetInspector() {
 	auto model = WidgetTreeModel::New( mUISceneNode );
 	widgetTree->setModel( model );
 	widgetTree->tryOpenModelIndex( model->getRoot() );
+	UITableView* tableView = cont->findByType<UITableView>( UI_TYPE_TABLEVIEW );
+	tableView->setAutoColumnsWidth( true );
+	tableView->setHeadersVisible( true );
+	widgetTree->setOnSelection( [&, tableView]( const ModelIndex& index ) {
+		Node* node = static_cast<Node*>( index.internalData() );
+		if ( node->isWidget() ) {
+			tableView->setModel( node->isWidget()
+									 ? CSSPropertiesModel::create( node->asType<UIWidget>() )
+									 : CSSPropertiesModel::create() );
+		}
+	} );
+
 	UIPushButton* button = cont->find<UIPushButton>( "pick_widget" );
-	button->addEventListener( Event::MouseClick, [&, widgetTree]( const Event* event ) {
+	button->addEventListener( Event::MouseClick, [&, widgetTree, tableView]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
 			bool wasHighlightOver = mUISceneNode->getHighlightOver();
 			mUISceneNode->setHighlightOver( true );
 			mUISceneNode->getEventDispatcher()->setDisableMousePress( true );
-			mUISceneNode->runOnMainThread( [this, widgetTree, wasHighlightOver]() {
-				checkWidgetPick( widgetTree, wasHighlightOver );
+			mUISceneNode->runOnMainThread( [this, widgetTree, tableView, wasHighlightOver]() {
+				checkWidgetPick( widgetTree, wasHighlightOver, tableView );
 			} );
 		}
 	} );

@@ -132,39 +132,16 @@ void UITextInput::draw() {
 
 		if ( mTextCache->getTextWidth() ) {
 			drawSelection( mTextCache );
-
-			//			if ( getClipType() == ClipType::PaddingBox ) {
-			//				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y +
-			//mPaddingPx.Top, 								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
-			//								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
-			//);
-			//			}
-
 			mTextCache->setAlign( getFlags() );
 			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
-
-			//			if ( getClipType() == ClipType::PaddingBox ) {
-			//				clipSmartDisable();
-			//			}
 		} else if ( !mHintCache->getString().empty() ) {
-			//			if ( getClipType() == ClipType::PaddingBox ) {
-			//				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y +
-			//mPaddingPx.Top, 								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
-			//								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
-			//);
-			//			}
-
 			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
-
-			//			if ( getClipType() == ClipType::PaddingBox ) {
-			//				clipSmartDisable();
-			//			}
 		}
 	}
 

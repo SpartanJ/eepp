@@ -341,6 +341,7 @@
 ../../include/eepp/ui/doc/undostack.hpp
 ../../include/eepp/ui/keyboardshortcut.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
+../../include/eepp/ui/models/csspropertiesmodel.hpp
 ../../include/eepp/ui/models/filesystemmodel.hpp
 ../../include/eepp/ui/models/itemlistmodel.hpp
 ../../include/eepp/ui/models/model.hpp
