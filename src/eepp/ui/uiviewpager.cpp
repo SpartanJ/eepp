@@ -309,6 +309,19 @@ std::string UIViewPager::getPropertyString( const PropertyDefinition* propertyDe
 	}
 }
 
+std::vector<PropertyId> UIViewPager::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Orientation,
+				   PropertyId::DragResistance,
+				   PropertyId::ChangePagePercent,
+				   PropertyId::MaxEdgeResistance,
+				   PropertyId::PageTransitionDuration,
+				   PropertyId::TimingFunction,
+				   PropertyId::PageLocked };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIViewPager::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

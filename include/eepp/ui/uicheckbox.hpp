@@ -36,8 +36,10 @@ class EE_API UICheckBox : public UITextView {
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-	std::string getPropertyString( const PropertyDefinition* propertyDef,
-								   const Uint32& propertyIndex = 0 ) const;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
   protected:
 	UIWidget* mActiveButton;

@@ -277,6 +277,14 @@ std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyD
 	}
 }
 
+std::vector<PropertyId> UIScrollView::getPropertiesImplemented() const {
+	auto props = UITouchDraggableWidget::getPropertiesImplemented();
+	auto local = { PropertyId::VScrollMode, PropertyId::HScrollMode, PropertyId::ScrollBarStyle,
+				   PropertyId::ScrollBarMode };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

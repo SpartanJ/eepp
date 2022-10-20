@@ -258,6 +258,15 @@ std::string UIGridLayout::getPropertyString( const PropertyDefinition* propertyD
 	}
 }
 
+std::vector<PropertyId> UIGridLayout::getPropertiesImplemented() const {
+	auto props = UILayout::getPropertiesImplemented();
+	auto local = { PropertyId::ColumnMargin, PropertyId::RowMargin,	   PropertyId::ColumnMode,
+				   PropertyId::RowMode,		 PropertyId::ColumnWeight, PropertyId::RowWeight,
+				   PropertyId::ColumnWidth,	 PropertyId::RowHeight,	   PropertyId::ReverseDraw };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIGridLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

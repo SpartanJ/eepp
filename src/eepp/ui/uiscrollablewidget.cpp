@@ -240,6 +240,14 @@ std::string UIScrollableWidget::getPropertyString( const PropertyDefinition* pro
 	}
 }
 
+std::vector<PropertyId> UIScrollableWidget::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::VScrollMode, PropertyId::HScrollMode, PropertyId::ScrollBarStyle,
+				   PropertyId::ScrollBarMode };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 void UIScrollableWidget::scrollToTop() {
 	mVScroll->setValue( 0 );
 }

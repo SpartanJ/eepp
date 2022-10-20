@@ -49,6 +49,8 @@ class EE_API UIDropDownList : public UITextInput {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
   protected:

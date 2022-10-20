@@ -157,6 +157,13 @@ std::string UITouchDraggableWidget::getPropertyString( const PropertyDefinition*
 	}
 }
 
+std::vector<PropertyId> UITouchDraggableWidget::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::TouchDrag, PropertyId::TouchDragDeceleration };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UITouchDraggableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

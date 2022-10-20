@@ -240,6 +240,14 @@ std::string UIProgressBar::getPropertyString( const PropertyDefinition* property
 	}
 }
 
+std::vector<PropertyId> UIProgressBar::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::TotalSteps, PropertyId::Progress, PropertyId::VerticalExpand,
+				   PropertyId::DisplayPercent, PropertyId::MovementSpeed };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIProgressBar::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

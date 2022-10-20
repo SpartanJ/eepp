@@ -45,9 +45,7 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 								cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::OnClear, cb::Make1( this, &UIDropDownList::onWidgetClear ) );
-	mListBox->addEventListener( Event::OnClose, [&]( const Event* ) {
-		mListBox = nullptr;
-	} );
+	mListBox->addEventListener( Event::OnClose, [&]( const Event* ) { mListBox = nullptr; } );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -143,12 +141,12 @@ void UIDropDownList::showList() {
 			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() ) {
 				mListBox->setSize(
 					NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth(),
-					( Int32 )( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) +
+					(Int32)( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) +
 						tPadding.Top + tPadding.Bottom );
 			} else {
 				mListBox->setSize( NULL != mFriendNode ? mFriendNode->getSize().getWidth()
 													   : getSize().getWidth(),
-								   ( Int32 )( mListBox->getCount() * mListBox->getRowHeight() ) +
+								   (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) +
 									   tPadding.Top + tPadding.Bottom );
 			}
 
@@ -375,6 +373,15 @@ std::string UIDropDownList::getPropertyString( const PropertyDefinition* propert
 	}
 
 	return "";
+}
+
+std::vector<PropertyId> UIDropDownList::getPropertiesImplemented() const {
+	auto props = UITextInput::getPropertiesImplemented();
+	auto local = { PropertyId::PopUpToRoot,	 PropertyId::MaxVisibleItems, PropertyId::SelectedIndex,
+				   PropertyId::SelectedText, PropertyId::ScrollBarStyle,  PropertyId::RowHeight,
+				   PropertyId::VScrollMode,	 PropertyId::HScrollMode };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
 }
 
 void UIDropDownList::loadFromXmlNode( const pugi::xml_node& node ) {

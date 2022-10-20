@@ -235,6 +235,12 @@ std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef
 	}
 }
 
+std::vector<PropertyId> UICheckBox::getPropertiesImplemented() const {
+	auto props = UITextView::getPropertiesImplemented();
+	props.push_back( PropertyId::Checked );
+	return props;
+}
+
 bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

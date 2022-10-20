@@ -16,8 +16,9 @@ UIPushButton* UIPushButton::NewWithTag( const std::string& tag ) {
 	return eeNew( UIPushButton, ( tag ) );
 }
 
-UIPushButton* UIPushButton::NewWithOpt( const std::string& tag,
-										const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) {
+UIPushButton*
+UIPushButton::NewWithOpt( const std::string& tag,
+						  const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) {
 	return eeNew( UIPushButton, ( tag, newTextViewCb ) );
 }
 
@@ -468,6 +469,30 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+std::vector<PropertyId> UIPushButton::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Text,
+				   PropertyId::Icon,
+				   PropertyId::MinIconSize,
+				   PropertyId::TextAlign,
+				   PropertyId::TextAsFallback,
+				   PropertyId::Tint,
+				   PropertyId::Color,
+				   PropertyId::ShadowColor,
+				   PropertyId::SelectionColor,
+				   PropertyId::SelectionBackColor,
+				   PropertyId::FontFamily,
+				   PropertyId::FontSize,
+				   PropertyId::FontStyle,
+				   PropertyId::Wordwrap,
+				   PropertyId::TextStrokeWidth,
+				   PropertyId::TextStrokeColor,
+				   PropertyId::TextSelection,
+				   PropertyId::TextTransform };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
 }
 
 bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {

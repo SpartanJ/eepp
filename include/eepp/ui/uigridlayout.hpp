@@ -48,6 +48,8 @@ class EE_API UIGridLayout : public UILayout {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual void updateLayout();

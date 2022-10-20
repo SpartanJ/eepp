@@ -54,6 +54,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
 	virtual UIWidget* setPadding( const Rectf& padding );
 
 	const String& getHint() const;

@@ -1945,6 +1945,24 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 	}
 }
 
+std::vector<PropertyId> UICodeEditor::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Locked,
+				   PropertyId::Color,
+				   PropertyId::ShadowColor,
+				   PropertyId::SelectionColor,
+				   PropertyId::SelectionBackColor,
+				   PropertyId::FontFamily,
+				   PropertyId::FontSize,
+				   PropertyId::FontStyle,
+				   PropertyId::TextStrokeWidth,
+				   PropertyId::TextStrokeColor,
+				   PropertyId::TextSelection,
+				   PropertyId::LineSpacing };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 const bool& UICodeEditor::getHighlightMatchingBracket() const {
 	return mHighlightMatchingBracket;
 }

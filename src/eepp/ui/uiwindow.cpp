@@ -1601,6 +1601,25 @@ std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
+std::vector<PropertyId> UIWindow::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Width,
+				   PropertyId::Height,
+				   PropertyId::WindowTitle,
+				   PropertyId::WindowOpacity,
+				   PropertyId::WindowButtonsOffset,
+				   PropertyId::WindowFlags,
+				   PropertyId::WindowTitlebarSize,
+				   PropertyId::WindowBorderSize,
+				   PropertyId::WindowMinSize,
+				   PropertyId::WindowButtonsSeparation,
+				   PropertyId::WindowCornerDistance,
+				   PropertyId::WindowTitlebarAutoSize,
+				   PropertyId::WindowBorderAutoSize };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

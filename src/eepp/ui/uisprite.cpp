@@ -54,8 +54,8 @@ void UISprite::draw() {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			checkTextureRegionUpdate();
 
-			mSprite->setPosition( Vector2f( ( Float )( mScreenPosi.x + (int)mAlignOffset.x ),
-											( Float )( mScreenPosi.y + (int)mAlignOffset.y ) ) );
+			mSprite->setPosition( Vector2f( (Float)( mScreenPosi.x + (int)mAlignOffset.x ),
+											(Float)( mScreenPosi.y + (int)mAlignOffset.y ) ) );
 
 			TextureRegion* textureRegion = mSprite->getCurrentTextureRegion();
 
@@ -206,6 +206,13 @@ std::string UISprite::getPropertyString( const PropertyDefinition* propertyDef,
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+std::vector<PropertyId> UISprite::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Src };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
 }
 
 bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {

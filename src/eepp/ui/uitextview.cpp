@@ -766,6 +766,18 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 	}
 }
 
+std::vector<PropertyId> UITextView::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = {
+		PropertyId::Text,		   PropertyId::TextTransform,	PropertyId::Color,
+		PropertyId::ShadowColor,   PropertyId::SelectionColor,	PropertyId::SelectionBackColor,
+		PropertyId::FontFamily,	   PropertyId::FontSize,		PropertyId::FontStyle,
+		PropertyId::Wordwrap,	   PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
+		PropertyId::TextSelection, PropertyId::TextAlign };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 void UITextView::setTextAlign( const Uint32& align ) {
 	mFlags &= ~( UI_HALIGN_CENTER | UI_HALIGN_RIGHT );
 	mFlags |= align;

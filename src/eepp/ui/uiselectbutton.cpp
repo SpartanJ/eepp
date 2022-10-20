@@ -113,6 +113,13 @@ std::string UISelectButton::getPropertyString( const PropertyDefinition* propert
 	}
 }
 
+std::vector<PropertyId> UISelectButton::getPropertiesImplemented() const {
+	auto props = UIPushButton::getPropertiesImplemented();
+	auto local = { PropertyId::SelectOnClick, PropertyId::Selected };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 void UISelectButton::setSelected( bool set ) {
 	if ( set ) {
 		select();

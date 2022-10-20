@@ -225,4 +225,45 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 	}
 }
 
+std::vector<PropertyId> UIComboBox::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = {
+		PropertyId::Color,
+		PropertyId::ShadowColor,
+		PropertyId::SelectionColor,
+		PropertyId::SelectionBackColor,
+		PropertyId::FontFamily,
+		PropertyId::FontSize,
+		PropertyId::FontStyle,
+		PropertyId::Wordwrap,
+		PropertyId::TextStrokeWidth,
+		PropertyId::TextStrokeColor,
+		PropertyId::TextSelection,
+		PropertyId::TextAlign,
+		PropertyId::Text,
+		PropertyId::AllowEditing,
+		PropertyId::MaxLength,
+		PropertyId::Numeric,
+		PropertyId::AllowFloat,
+		PropertyId::Hint,
+		PropertyId::HintColor,
+		PropertyId::HintShadowColor,
+		PropertyId::HintFontSize,
+		PropertyId::HintFontFamily,
+		PropertyId::HintFontStyle,
+		PropertyId::HintStrokeWidth,
+		PropertyId::HintStrokeColor,
+		PropertyId::PopUpToRoot,
+		PropertyId::MaxVisibleItems,
+		PropertyId::SelectedIndex,
+		PropertyId::SelectedText,
+		PropertyId::ScrollBarStyle,
+		PropertyId::RowHeight,
+		PropertyId::VScrollMode,
+		PropertyId::HScrollMode,
+	};
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 }} // namespace EE::UI

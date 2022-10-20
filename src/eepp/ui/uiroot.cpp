@@ -36,4 +36,10 @@ bool UIRoot::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
+std::vector<PropertyId> UIRoot::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	props.push_back( PropertyId::DroppableHoveringColor );
+	return props;
+}
+
 }} // namespace EE::UI

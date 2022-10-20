@@ -34,6 +34,8 @@ class EE_API UITouchDraggableWidget : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
   protected:
 	Vector2f mTouchDragPoint;
 	Vector2f mTouchDragAcceleration;

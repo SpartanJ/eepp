@@ -48,6 +48,8 @@ class EE_API UITextureRegion : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
   protected:
 	UIScaleType mScaleType;
 	Graphics::TextureRegion* mTextureRegion;

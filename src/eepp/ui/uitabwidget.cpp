@@ -177,6 +177,24 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 	}
 }
 
+std::vector<PropertyId> UITabWidget::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::MaxTextLength,
+				   PropertyId::MinTabWidth,
+				   PropertyId::MaxTabWidth,
+				   PropertyId::TabClosable,
+				   PropertyId::TabsEdgesDiffSkin,
+				   PropertyId::TabSeparation,
+				   PropertyId::TabHeight,
+				   PropertyId::TabBarHideOnSingleTab,
+				   PropertyId::TabBarAllowRearrange,
+				   PropertyId::TabBarAllowDragAndDrop,
+				   PropertyId::TabAllowSwitchTabsInEmptySpaces,
+				   PropertyId::DroppableHoveringColor };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UITabWidget::isDrawInvalidator() const {
 	return true;
 }

@@ -656,6 +656,12 @@ std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* pr
 	}
 }
 
+std::vector<PropertyId> UIAbstractTableView::getPropertiesImplemented() const {
+	auto props = UIAbstractView::getPropertiesImplemented();
+	props.push_back( PropertyId::RowHeight );
+	return props;
+}
+
 bool UIAbstractTableView::getRowSearchByName() const {
 	return mRowSearchByName;
 }

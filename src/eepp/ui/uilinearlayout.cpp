@@ -499,6 +499,13 @@ std::string UILinearLayout::getPropertyString( const PropertyDefinition* propert
 	}
 }
 
+std::vector<PropertyId> UILinearLayout::getPropertiesImplemented() const {
+	auto props = UILayout::getPropertiesImplemented();
+	auto local = { PropertyId::Orientation, PropertyId::GravityOwner };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UILinearLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

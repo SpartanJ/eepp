@@ -465,6 +465,18 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 	}
 }
 
+std::vector<PropertyId> UITextInput::getPropertiesImplemented() const {
+	auto props = UITextView::getPropertiesImplemented();
+	auto local = {
+		PropertyId::Text,			PropertyId::AllowEditing,	 PropertyId::MaxLength,
+		PropertyId::Numeric,		PropertyId::AllowFloat,		 PropertyId::Hint,
+		PropertyId::HintColor,		PropertyId::HintShadowColor, PropertyId::HintFontSize,
+		PropertyId::HintFontFamily, PropertyId::HintFontStyle,	 PropertyId::HintStrokeWidth,
+		PropertyId::HintStrokeColor };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

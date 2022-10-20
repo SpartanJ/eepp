@@ -600,6 +600,13 @@ std::string UIMenu::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
+std::vector<PropertyId> UIMenu::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::MinIconSize };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIMenu::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

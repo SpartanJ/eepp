@@ -236,13 +236,13 @@ void UIRadioButton::alignFix() {
 
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x =
-				( Float )( ( Int32 )( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right -
-										mTextCache->getTextWidth() -
-										mActiveButton->getPixelsSize().getWidth() +
-										PixelDensity::dpToPx( mTextSeparation ) ) /
-									  2.f ) ) +
-				mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right -
+													 mTextCache->getTextWidth() -
+													 mActiveButton->getPixelsSize().getWidth() +
+													 PixelDensity::dpToPx( mTextSeparation ) ) /
+												   2.f ) ) +
+								 mActiveButton->getPixelsSize().getWidth() +
+								 PixelDensity::dpToPx( mTextSeparation );
 			break;
 		case UI_HALIGN_RIGHT:
 			mRealAlignOffset.x = ( (Float)mSize.x - mPaddingPx.Left - mPaddingPx.Right -
@@ -286,6 +286,13 @@ std::string UIRadioButton::getPropertyString( const PropertyDefinition* property
 		default:
 			return UITextView::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+std::vector<PropertyId> UIRadioButton::getPropertiesImplemented() const {
+	auto props = UITextView::getPropertiesImplemented();
+	auto local = { PropertyId::Selected };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
 }
 
 bool UIRadioButton::applyProperty( const StyleSheetProperty& attribute ) {

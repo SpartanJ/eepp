@@ -34,6 +34,8 @@ class EE_API UISelectButton : public UIPushButton {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
 	virtual void setSelected( bool set );
 
 	void setSelectOnClick( bool set );

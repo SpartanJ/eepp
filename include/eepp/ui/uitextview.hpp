@@ -88,6 +88,8 @@ class EE_API UITextView : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
 	void setTextAlign( const Uint32& align );
 
 	UITextView* setFontFillColor( const Color& color, Uint32 from, Uint32 to );

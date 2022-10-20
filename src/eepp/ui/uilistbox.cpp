@@ -1054,6 +1054,15 @@ std::string UIListBox::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
+std::vector<PropertyId> UIListBox::getPropertiesImplemented() const {
+	auto props = UITouchDraggableWidget::getPropertiesImplemented();
+	auto local = { PropertyId::RowHeight,	 PropertyId::VScrollMode,
+				   PropertyId::HScrollMode,	 PropertyId::SelectedIndex,
+				   PropertyId::SelectedText, PropertyId::ScrollBarStyle };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

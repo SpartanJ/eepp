@@ -367,6 +367,16 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
+std::vector<PropertyId> UITooltip::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = {
+		PropertyId::TextTransform,	 PropertyId::Color,			  PropertyId::ShadowColor,
+		PropertyId::FontFamily,		 PropertyId::FontSize,		  PropertyId::FontStyle,
+		PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor, PropertyId::TextAlign };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 const String& UITooltip::getStringBuffer() const {
 	return mStringBuffer;
 }

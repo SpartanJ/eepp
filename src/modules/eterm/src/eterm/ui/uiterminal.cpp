@@ -227,6 +227,13 @@ std::string UITerminal::getPropertyString( const PropertyDefinition* propertyDef
 	}
 }
 
+std::vector<PropertyId> UITerminal::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::VScrollMode, PropertyId::ScrollBarStyle, PropertyId::ScrollBarMode };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 void UITerminal::executeFile( const std::string& cmd ) {
 	if ( mTerm )
 		mTerm->executeFile( cmd );

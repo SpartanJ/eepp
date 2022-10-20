@@ -114,10 +114,10 @@ void UITextureRegion::draw() {
 				}
 			} else {
 				mTextureRegion->setOffset(
-					Vector2i( ( Int32 )( (Float)oOff.x / mTextureRegion->getPixelDensity() *
-										 PixelDensity::getPixelDensity() ),
-							  ( Int32 )( (Float)oOff.y / mTextureRegion->getPixelDensity() *
-										 PixelDensity::getPixelDensity() ) ) );
+					Vector2i( (Int32)( (Float)oOff.x / mTextureRegion->getPixelDensity() *
+									   PixelDensity::getPixelDensity() ),
+							  (Int32)( (Float)oOff.y / mTextureRegion->getPixelDensity() *
+									   PixelDensity::getPixelDensity() ) ) );
 
 				mTextureRegion->setDestSize( Vector2f( (Float)mTextureRegion->getPixelsSize().x,
 													   (Float)mTextureRegion->getPixelsSize().y ) );
@@ -220,6 +220,13 @@ std::string UITextureRegion::getPropertyString( const PropertyDefinition* proper
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+std::vector<PropertyId> UITextureRegion::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Src, PropertyId::ScaleType, PropertyId::Tint };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
 }
 
 bool UITextureRegion::applyProperty( const StyleSheetProperty& attribute ) {

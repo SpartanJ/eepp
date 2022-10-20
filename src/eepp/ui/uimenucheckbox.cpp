@@ -158,4 +158,11 @@ std::string UIMenuCheckBox::getPropertyString( const PropertyDefinition* propert
 	}
 }
 
+std::vector<PropertyId> UIMenuCheckBox::getPropertiesImplemented() const {
+	auto props = UIPushButton::getPropertiesImplemented();
+	auto local = { PropertyId::Checked };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 }} // namespace EE::UI

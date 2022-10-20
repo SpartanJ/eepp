@@ -343,6 +343,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
 	const bool& getHighlightMatchingBracket() const;
 
 	void setHighlightMatchingBracket( const bool& highlightMatchingBracket );

@@ -208,12 +208,22 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
+std::vector<PropertyId> UIConsole::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Color,		   PropertyId::ShadowColor,
+				   PropertyId::SelectionColor, PropertyId::SelectionBackColor,
+				   PropertyId::FontFamily,	   PropertyId::FontSize,
+				   PropertyId::FontStyle,	   PropertyId::TextStrokeWidth,
+				   PropertyId::TextStrokeColor };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 UIConsole* UIConsole::setFontSize( const Float& dpSize ) {
 	if ( mFontStyleConfig.CharacterSize != dpSize ) {
 		mFontStyleConfig.CharacterSize =
 			eeabs( dpSize - (int)dpSize ) == 0.5f || (int)dpSize == dpSize ? dpSize
 																		   : eefloor( dpSize );
-		mFontStyleConfig.CharacterSize = mFontStyleConfig.CharacterSize;
 		invalidateDraw();
 		onFontChanged();
 	}

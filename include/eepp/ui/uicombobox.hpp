@@ -32,6 +32,8 @@ class EE_API UIComboBox : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
 	void loadFromXmlNode( const pugi::xml_node& node );
 
   protected:

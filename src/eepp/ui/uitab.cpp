@@ -280,6 +280,13 @@ std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
+std::vector<PropertyId> UITab::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Text, PropertyId::Owns };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

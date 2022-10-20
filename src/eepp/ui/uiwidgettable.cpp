@@ -678,6 +678,14 @@ std::string UIWidgetTable::getPropertyString( const PropertyDefinition* property
 	}
 }
 
+std::vector<PropertyId> UIWidgetTable::getPropertiesImplemented() const {
+	auto props = UITouchDraggableWidget::getPropertiesImplemented();
+	auto local = { PropertyId::RowHeight, PropertyId::VScrollMode, PropertyId::HScrollMode,
+				   PropertyId::ScrollBarStyle };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIWidgetTable::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

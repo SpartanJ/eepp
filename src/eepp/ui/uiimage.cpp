@@ -234,6 +234,13 @@ std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
+std::vector<PropertyId> UIImage::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::ScaleType, PropertyId::Tint };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

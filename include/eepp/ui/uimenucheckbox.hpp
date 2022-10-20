@@ -30,6 +30,8 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
   protected:
 	bool mActive;
 	UISkin* mSkinActive;

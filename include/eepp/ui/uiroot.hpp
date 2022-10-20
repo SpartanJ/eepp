@@ -14,6 +14,8 @@ class EE_API UIRoot : public UIWidget {
 
 	bool applyProperty( const StyleSheetProperty& attribute );
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
   protected:
 	UIRoot();
 

@@ -150,6 +150,13 @@ std::string UIMenuRadioButton::getPropertyString( const PropertyDefinition* prop
 	}
 }
 
+std::vector<PropertyId> UIMenuRadioButton::getPropertiesImplemented() const {
+	auto props = UIMenuItem::getPropertiesImplemented();
+	auto local = { PropertyId::Selected };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIMenuRadioButton::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

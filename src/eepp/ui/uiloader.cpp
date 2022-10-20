@@ -249,6 +249,16 @@ std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
+std::vector<PropertyId> UILoader::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Indeterminate,  PropertyId::MaxProgress,
+				   PropertyId::Progress,	   PropertyId::FillColor,
+				   PropertyId::Radius,		   PropertyId::OutlineThickness,
+				   PropertyId::AnimationSpeed, PropertyId::ArcStartAngle };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UILoader::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;

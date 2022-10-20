@@ -380,6 +380,15 @@ std::string UIScrollBar::getPropertyString( const PropertyDefinition* propertyDe
 	}
 }
 
+std::vector<PropertyId> UIScrollBar::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Orientation,		PropertyId::MinValue,  PropertyId::MaxValue,
+				   PropertyId::Value,			PropertyId::ClickStep, PropertyId::PageStep,
+				   PropertyId::BackgroundExpand };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UIScrollBar::isDragging() const {
 	return mSlider->isDragging();
 }

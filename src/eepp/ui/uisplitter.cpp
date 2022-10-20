@@ -158,6 +158,14 @@ std::string UISplitter::getPropertyString( const PropertyDefinition* propertyDef
 	}
 }
 
+std::vector<PropertyId> UISplitter::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::SplitterPartition, PropertyId::SplitterAlwaysShow,
+				   PropertyId::Orientation };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 void UISplitter::onChildCountChange( Node* child, const bool& removed ) {
 	if ( child != mSplitter ) {
 		if ( !removed ) {

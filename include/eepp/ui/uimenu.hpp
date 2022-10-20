@@ -74,6 +74,8 @@ class EE_API UIMenu : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
 	UINode* getOwnerNode() const;
 
 	/** The owner node is the node who triggers the visibility of the menu */

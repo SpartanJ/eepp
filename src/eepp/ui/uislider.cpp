@@ -445,8 +445,8 @@ void UISlider::manageClick( const Uint32& Flags ) {
 				else
 					setValue( mValue + mClickStep );
 			}
-		} else if ( Flags & (EE_BUTTONS_WUWD|EE_BUTTONS_WLWR) ) {
-			if ( Flags & (EE_BUTTON_WUMASK|EE_BUTTON_WLMASK) )
+		} else if ( Flags & ( EE_BUTTONS_WUWD | EE_BUTTONS_WLWR ) ) {
+			if ( Flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WLMASK ) )
 				setValue( mValue - mClickStep );
 			else
 				setValue( mValue + mClickStep );
@@ -581,6 +581,15 @@ std::string UISlider::getPropertyString( const PropertyDefinition* propertyDef,
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+std::vector<PropertyId> UISlider::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Orientation, PropertyId::MinValue,		 PropertyId::MaxValue,
+				   PropertyId::Value,		PropertyId::ClickStep,		 PropertyId::PageStep,
+				   PropertyId::HalfSlider,	PropertyId::BackgroundExpand };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
 }
 
 bool UISlider::applyProperty( const StyleSheetProperty& attribute ) {

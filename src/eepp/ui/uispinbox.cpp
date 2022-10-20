@@ -301,6 +301,14 @@ std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef,
 	}
 }
 
+std::vector<PropertyId> UISpinBox::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::MinValue, PropertyId::MaxValue, PropertyId::Value,
+				   PropertyId::ClickStep };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
 bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
