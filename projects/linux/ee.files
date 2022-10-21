@@ -355,6 +355,7 @@
 ../../include/eepp/ui/tools/uicodeeditorsplitter.hpp
 ../../include/eepp/ui/tools/uicolorpicker.hpp
 ../../include/eepp/ui/tools/uidocfindreplace.hpp
+../../include/eepp/ui/tools/uiwidgetinspector.hpp
 ../../include/eepp/ui/uiabstractview.hpp
 ../../include/eepp/ui/uibackgrounddrawable.hpp
 ../../include/eepp/ui/uiborderdrawable.hpp
@@ -841,6 +842,7 @@
 ../../src/eepp/ui/tools/uicodeeditorsplitter.cpp
 ../../src/eepp/ui/tools/uicolorpicker.cpp
 ../../src/eepp/ui/tools/uidocfindreplace.cpp
+../../src/eepp/ui/tools/uiwidgetinspector.cpp
 ../../src/eepp/ui/uiabstractview.cpp
 ../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp

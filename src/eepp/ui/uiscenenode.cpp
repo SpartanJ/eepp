@@ -226,6 +226,8 @@ void UISceneNode::setFocusLastWindow( UIWindow* window ) {
 void UISceneNode::windowAdd( UIWindow* win ) {
 	if ( !windowExists( win ) ) {
 		mWindowsList.push_front( win );
+		WindowEvent wevent( this, win, Event::OnWindowAdded );
+		sendEvent( &wevent );
 	} else {
 		//! Send to front
 		mWindowsList.remove( win );
@@ -235,6 +237,8 @@ void UISceneNode::windowAdd( UIWindow* win ) {
 
 void UISceneNode::windowRemove( UIWindow* win ) {
 	if ( windowExists( win ) ) {
+		WindowEvent wevent( this, win, Event::OnWindowRemoved );
+		sendEvent( &wevent );
 		mWindowsList.remove( win );
 	}
 }

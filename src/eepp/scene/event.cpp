@@ -41,4 +41,8 @@ const TextInputEvent* Event::asTextInputEvent() const {
 	return static_cast<const TextInputEvent*>( this );
 }
 
+const WindowEvent* Event::asWindowEvent() const {
+	return static_cast<const WindowEvent*>( this );
+}
+
 }} // namespace EE::Scene

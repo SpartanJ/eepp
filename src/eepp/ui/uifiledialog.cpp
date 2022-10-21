@@ -256,7 +256,6 @@ UIFileDialog::~UIFileDialog() {}
 void UIFileDialog::onWindowReady() {
 	updateClickStep();
 	UIWindow::onWindowReady();
-	sendCommonEvent( Event::OnWindowReady );
 }
 
 Uint32 UIFileDialog::getType() const {

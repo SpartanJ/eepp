@@ -14,6 +14,8 @@ class EE_API WidgetTreeModel : public Model {
 	enum Column {
 		Type = 0,
 		ID,
+		Classes,
+		PseudoClasses,
 		Count,
 	};
 

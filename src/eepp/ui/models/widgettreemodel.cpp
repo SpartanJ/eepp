@@ -19,11 +19,15 @@ size_t WidgetTreeModel::rowCount( const ModelIndex& index ) const {
 }
 
 size_t WidgetTreeModel::columnCount( const ModelIndex& ) const {
-	return 2;
+	return Column::Count;
 }
 
 std::string WidgetTreeModel::columnName( const size_t& col ) const {
 	switch ( col ) {
+		case Column::PseudoClasses:
+			return "Pseudo Classes";
+		case Column::Classes:
+			return "Classes";
 		case Column::Type:
 			return "Type";
 		case Column::ID:
@@ -38,6 +42,20 @@ Variant WidgetTreeModel::data( const ModelIndex& index, ModelRole role ) const {
 
 	if ( role == ModelRole::Display ) {
 		switch ( index.column() ) {
+			case Column::PseudoClasses: {
+				if ( node->isWidget() ) {
+					return Variant(
+						String::join( node->asType<UIWidget>()->getStyleSheetPseudoClasses() ) );
+				}
+				break;
+			}
+			case Column::Classes: {
+				if ( node->isWidget() ) {
+					return Variant(
+						String::join( node->asType<UIWidget>()->getStyleSheetClasses() ) );
+				}
+				break;
+			}
 			case Column::Type: {
 				if ( node->isWidget() ) {
 					return Variant( node->asType<UIWidget>()->getElementTag().c_str() );

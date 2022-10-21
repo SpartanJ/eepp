@@ -12,6 +12,7 @@ class KeyEvent;
 class DropEvent;
 class TextEvent;
 class TextInputEvent;
+class WindowEvent;
 
 class EE_API Event {
   public:
@@ -92,6 +93,8 @@ class EE_API Event {
 		OnMenuHide,
 		OnEditorTabReady,
 		OnTitleChange,
+		OnWindowAdded,
+		OnWindowRemoved,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 
@@ -114,6 +117,8 @@ class EE_API Event {
 	const TextEvent* asTextEvent() const;
 
 	const TextInputEvent* asTextInputEvent() const;
+
+	const WindowEvent* asWindowEvent() const;
 
   protected:
 	friend class Node;
@@ -141,6 +146,16 @@ class EE_API TextEvent : public Event {
 
   protected:
 	std::string text;
+};
+
+class EE_API WindowEvent : public Event {
+  public:
+	WindowEvent( Node* node, Node* window, const Uint32& eventType ) :
+		Event( node, eventType ), window( window ) {}
+	Node* getWindow() const { return window; }
+
+  protected:
+	Node* window;
 };
 
 }} // namespace EE::Scene

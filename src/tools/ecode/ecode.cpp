@@ -548,95 +548,6 @@ App::~App() {
 	eeSAFE_DELETE( mConsole );
 }
 
-void App::checkWidgetPick( UITreeView* widgetTree, bool wasHighlightOver, UITableView* tableView ) {
-	Input* input = mWindow->getInput();
-	if ( input->getClickTrigger() & EE_BUTTON_LMASK ) {
-		Node* node = mUISceneNode->getEventDispatcher()->getMouseOverNode();
-		WidgetTreeModel* model = static_cast<WidgetTreeModel*>( widgetTree->getModel() );
-		ModelIndex index( model->getModelIndex( node ) );
-		widgetTree->setSelection( index );
-		mUISceneNode->setHighlightOver( wasHighlightOver );
-		mUISceneNode->getEventDispatcher()->setDisableMousePress( false );
-	} else {
-		mUISceneNode->runOnMainThread( [this, widgetTree, wasHighlightOver, tableView]() {
-			checkWidgetPick( widgetTree, wasHighlightOver, tableView );
-		} );
-	}
-}
-
-void App::createWidgetInspector() {
-	if ( mUISceneNode->getRoot()->hasChild( "widget-tree-view" ) )
-		return;
-	UIWindow* uiWin = UIWindow::New();
-	uiWin->setId( "widget-tree-view" );
-	uiWin->setMinWindowSize( 600, 400 );
-	uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
-	UIWidget* cont = mUISceneNode->loadLayoutFromString( R"xml(
-	<vbox lw="mp" lh="mp">
-		<hbox lw="wc" lh="wc">
-			<pushbutton id="pick_widget" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
-			<CheckBox id="debug-draw-highlight" text='@string(debug_draw_highlight, "Highlight Focus & Hover")' margin-left="4dp" lg="center" />
-			<CheckBox id="debug-draw-boxes" text='@string(debug_draw_boxes, "Draw Boxes")' margin-left="4dp" lg="center" />
-			<CheckBox id="debug-draw-debug-data" text='@string(debug_draw_debug_data, "Draw Debug Data")' margin-left="4dp" lg="center" />
-		</hbox>
-		<Splitter layout_width="match_parent" lh="fixed" lw8="1" splitter-partition="50%">
-			<treeview lw="fixed" lh="mp" />
-			<tableview lw="fixed" lh="mp" />
-		</Splitter>
-	</vbox>
-	)xml",
-														 uiWin->getContainer() );
-	UITreeView* widgetTree = cont->findByType<UITreeView>( UI_TYPE_TREEVIEW );
-	widgetTree->setHeadersVisible( true );
-	widgetTree->setAutoExpandOnSingleColumn( true );
-	widgetTree->setExpanderIconSize( mMenuIconSize );
-	widgetTree->setAutoColumnsWidth( true );
-	auto model = WidgetTreeModel::New( mUISceneNode );
-	widgetTree->setModel( model );
-	widgetTree->tryOpenModelIndex( model->getRoot() );
-	UITableView* tableView = cont->findByType<UITableView>( UI_TYPE_TABLEVIEW );
-	tableView->setAutoColumnsWidth( true );
-	tableView->setHeadersVisible( true );
-	widgetTree->setOnSelection( [&, tableView]( const ModelIndex& index ) {
-		Node* node = static_cast<Node*>( index.internalData() );
-		if ( node->isWidget() ) {
-			tableView->setModel( node->isWidget()
-									 ? CSSPropertiesModel::create( node->asType<UIWidget>() )
-									 : CSSPropertiesModel::create() );
-		}
-	} );
-
-	UIPushButton* button = cont->find<UIPushButton>( "pick_widget" );
-	button->addEventListener( Event::MouseClick, [&, widgetTree, tableView]( const Event* event ) {
-		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
-			bool wasHighlightOver = mUISceneNode->getHighlightOver();
-			mUISceneNode->setHighlightOver( true );
-			mUISceneNode->getEventDispatcher()->setDisableMousePress( true );
-			mUISceneNode->runOnMainThread( [this, widgetTree, tableView, wasHighlightOver]() {
-				checkWidgetPick( widgetTree, wasHighlightOver, tableView );
-			} );
-		}
-	} );
-
-	cont->find<UICheckBox>( "debug-draw-highlight" )
-		->setChecked( mUISceneNode->getHighlightOver() )
-		->addEventListener( Event::OnValueChange, [this]( const auto* ) {
-			runCommand( "debug-draw-highlight-toggle" );
-		} );
-
-	cont->find<UICheckBox>( "debug-draw-boxes" )
-		->setChecked( mUISceneNode->getDrawBoxes() )
-		->addEventListener( Event::OnValueChange,
-							[this]( const auto* ) { runCommand( "debug-draw-boxes-toggle" ); } );
-
-	cont->find<UICheckBox>( "debug-draw-debug-data" )
-		->setChecked( mUISceneNode->getDrawDebugData() )
-		->addEventListener( Event::OnValueChange,
-							[this]( const auto* ) { runCommand( "debug-draw-debug-data" ); } );
-
-	uiWin->center();
-}
-
 void App::updateRecentFiles() {
 	UINode* node = nullptr;
 	if ( mSettingsMenu && ( node = mSettingsMenu->getItemId( "menu-recent-files" ) ) ) {
@@ -2492,6 +2403,10 @@ void App::showGlobalSearch( bool searchAndReplace ) {
 
 void App::showFindView() {
 	mDocSearchController->showFindView();
+}
+
+void App::createWidgetInspector() {
+	UIWidgetInspector::create( mUISceneNode, mMenuIconSize );
 }
 
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {

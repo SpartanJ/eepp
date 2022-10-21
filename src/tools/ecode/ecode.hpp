@@ -30,11 +30,11 @@ class App : public UICodeEditorSplitter::Client {
 
 	~App();
 
-	void createWidgetInspector();
-
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer,
 			   bool benchmarkMode );
+
+	void createWidgetInspector();
 
 	void setAppTitle( const std::string& title );
 
@@ -356,8 +356,6 @@ class App : public UICodeEditorSplitter::Client {
 	void renameFile( const FileInfo& file );
 
 	void initPluginManager();
-
-	void checkWidgetPick( UITreeView* widgetTree, bool wasHighlightOver, UITableView* tableView );
 
 	void onPluginEnabled( UICodeEditorPlugin* plugin );
 };

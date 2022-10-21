@@ -447,6 +447,8 @@ void UIWindow::onWindowReady() {
 		mShowWhenReady = false;
 		show();
 	}
+
+	sendCommonEvent( Event::OnWindowReady );
 }
 
 void UIWindow::createModalNode() {

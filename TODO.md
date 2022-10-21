@@ -9,10 +9,6 @@
 
 * Implement a "float" layout.
 
-* Expose properties implemented by each widget.
-
-* Implement a model to view each widget property.
-
 * Implement a rich text view.
 
 ### CSS
