@@ -1,18 +1,19 @@
-/***************************************************************************/
-/*                                                                         */
-/*  ftcid.c                                                                */
-/*                                                                         */
-/*    FreeType API for accessing CID font information.                     */
-/*                                                                         */
-/*  Copyright 2007, 2009 by Derek Clegg, Michael Toftdal.                  */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * ftcid.c
+ *
+ *   FreeType API for accessing CID font information.
+ *
+ * Copyright (C) 2007-2019 by
+ * Derek Clegg and Michael Toftdal.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 
 #include <ft2build.h>
@@ -35,7 +36,7 @@
     FT_Int       s = 0;
 
 
-    error = FT_Err_Invalid_Argument;
+    error = FT_ERR( Invalid_Argument );
 
     if ( face )
     {
@@ -65,7 +66,7 @@
   FT_Get_CID_Is_Internally_CID_Keyed( FT_Face   face,
                                       FT_Bool  *is_cid )
   {
-    FT_Error  error = FT_Err_Invalid_Argument;
+    FT_Error  error = FT_ERR( Invalid_Argument );
     FT_Bool   ic = 0;
 
 
@@ -92,7 +93,7 @@
                                FT_UInt   glyph_index,
                                FT_UInt  *cid )
   {
-    FT_Error  error = FT_Err_Invalid_Argument;
+    FT_Error  error = FT_ERR( Invalid_Argument );
     FT_UInt   c = 0;
 
 

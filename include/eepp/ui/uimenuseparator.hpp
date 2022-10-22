@@ -6,22 +6,22 @@
 namespace EE { namespace UI {
 
 class EE_API UIMenuSeparator : public UIWidget {
-	public:
-		static UIMenuSeparator * New();
+  public:
+	static UIMenuSeparator* New();
 
-		UIMenuSeparator();
-		
-		virtual ~UIMenuSeparator();
+	UIMenuSeparator();
 
-		virtual Uint32 getType() const;
+	virtual ~UIMenuSeparator();
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual Uint32 getType() const;
 
-		virtual void setTheme( UITheme * Theme );
-	protected:
+	virtual bool isType( const Uint32& type ) const;
+
+	virtual void setTheme( UITheme* Theme );
+
+  protected:
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

@@ -10,23 +10,23 @@
 namespace EE { namespace System { namespace Platform {
 
 class MutexImpl {
-	public:
-		MutexImpl();
+  public:
+	MutexImpl();
 
-		~MutexImpl();
+	~MutexImpl();
 
-		void lock();
+	void lock();
 
-		void unlock();
+	void unlock();
 
-		int tryLock();
-	private:
-		pthread_mutex_t mMutex;
+	int tryLock();
+
+  private:
+	pthread_mutex_t mMutex;
 };
 
-}}}
+}}} // namespace EE::System::Platform
 
 #endif
 
 #endif
- 

@@ -1,0 +1,79 @@
+{
+  "config": {
+    "delay_time": "0.5s"
+  },
+  "linters": [
+    {
+      "file_patterns": ["%.php$"],
+      "warning_pattern": "[%a ]+:%s+(.*)%s+in%s.*on%sline%s+(%d+)",
+      "warning_pattern_order": { "line": 2, "col": 0, "message": 1 },
+      "command": "php -l $FILENAME"
+    },
+    {
+      "file_patterns": ["%.json$"],
+      "warning_pattern": "parse%s(%w*):%s(.*)at%sline%s(%d*),%scolumn%s(%d*)",
+      "warning_pattern_order": { "line": 3, "col": 4, "message": 2, "type": 1 },
+      "command": "jq -e . $FILENAME",
+      "expected_exitcodes": [1, 2, 3, 4],
+      "no_errors_exit_code": 0,
+      "use_tmp_folder": true
+    },
+    {
+      "file_patterns": ["%.js$", "%.ts$"],
+      "warning_pattern": "[^:]:(%d+):(%d+): ([^%[]+)%[([^\n]+)",
+      "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
+      "command": "eslint --no-ignore --format unix $FILENAME"
+    },
+    {
+      "file_patterns": ["%.lua$"],
+      "warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
+      "command": "luacheck $FILENAME --formatter=plain -g --no-max-line-length"
+    },
+    {
+      "file_patterns": ["%.py$"],
+      "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
+      "command": "pycodestyle --ignore=E402 $FILENAME"
+    },
+    {
+      "file_patterns": ["%.sh$"],
+      "warning_pattern": "[^:]:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
+      "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+      "command": "shellcheck -f gcc $FILENAME"
+    },
+    {
+      "file_patterns": ["%.sol$"],
+      "warning_pattern": "(%d+):(%d+)%s.(%w*)%s.([^\n]*)",
+      "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+      "command": "solhint $FILENAME"
+    },
+    {
+      "file_patterns": ["%.cpp$", "%.hpp$", "%.cxx$", "%.hxx$"],
+      "warning_pattern": "$FILENAME:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
+      "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+      "command": "cppcheck --language=c++ --enable=all --template=gcc $FILENAME"
+    },
+    {
+      "file_patterns": ["%.kt$"],
+      "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
+      "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
+      "command": "ktlint $FILENAME"
+    },
+    {
+      "file_patterns": ["%.zig$"],
+      "warning_pattern": "[^%s:]:(%d+):(%d+):[%s]?(%w*):([^\n]*)",
+      "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+      "command": "zig ast-check $FILENAME",
+      "deduplicate": true,
+      "expected_exitcodes": [0, 1]
+    },
+    {
+      "file_patterns": ["%.nim$", "%.nims$"],
+      "warning_pattern": "$FILENAME%((%d+), (%d+)%)%s(%w*):%s([^\n]+[^/]*)",
+      "command": "nim --listfullpaths --stdout check $FILENAME",
+      "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+      "deduplicate": true,
+      "expected_exitcodes": [0, 1],
+      "use_tmp_folder": true
+    }
+  ]
+}

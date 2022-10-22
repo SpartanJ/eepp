@@ -6,31 +6,32 @@
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
 #ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef NOMINMAX
-	#define NOMINMAX
+#define NOMINMAX
 #endif
 #include <windows.h>
 
 namespace EE { namespace System { namespace Platform {
 
 class MutexImpl {
-	public:
-		MutexImpl();
+  public:
+	MutexImpl();
 
-		~MutexImpl();
+	~MutexImpl();
 
-		void lock();
+	void lock();
 
-		void unlock();
+	void unlock();
 
-		int tryLock();
-	private:
-		CRITICAL_SECTION mMutex;
+	int tryLock();
+
+  private:
+	CRITICAL_SECTION mMutex;
 };
 
-}}}
+}}} // namespace EE::System::Platform
 
 #endif
 

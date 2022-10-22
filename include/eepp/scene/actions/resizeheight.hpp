@@ -7,22 +7,25 @@
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API ResizeHeight : public ActionInterpolation1d {
-	public:
-		static ResizeHeight * New( const Float& start, const Float& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
+  public:
+	static ResizeHeight* New( const Float& start, const Float& end, const Time& duration,
+							  const Ease::Interpolation& type = Ease::Linear );
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
-	protected:
-		ResizeHeight();
+	Action* reverse() const override;
 
-		ResizeHeight( const Float & start, const Float & end, const Time & duration, const Ease::Interpolation & type );
+  protected:
+	ResizeHeight();
 
-		void onStart() override;
+	ResizeHeight( const Float& start, const Float& end, const Time& duration,
+				  const Ease::Interpolation& type );
 
-		void onUpdate( const Time& time ) override;
+	void onStart() override;
+
+	void onUpdate( const Time& time ) override;
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif

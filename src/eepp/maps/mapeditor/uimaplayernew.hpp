@@ -2,47 +2,48 @@
 #define EE_GAMINGCUILAYERNEW_HPP
 
 #include <eepp/maps/base.hpp>
-#include <eepp/ui/uiwindow.hpp>
 #include <eepp/maps/mapeditor/uimap.hpp>
 #include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uiwindow.hpp>
 
 using namespace EE::UI;
 
 namespace EE { namespace Maps { namespace Private {
 
 class EE_API UIMapLayerNew {
-	public:
-		typedef std::function<void( UIMapLayerNew* )> NewLayerCb;
+  public:
+	typedef std::function<void( UIMapLayerNew* )> NewLayerCb;
 
-		UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLayerCb = NewLayerCb() );
+	UIMapLayerNew( UIMap* Map, EE_LAYER_TYPE Type, NewLayerCb newLayerCb = NewLayerCb() );
 
-		virtual ~UIMapLayerNew();
+	virtual ~UIMapLayerNew();
 
-		const EE_LAYER_TYPE& getType() const;
+	const EE_LAYER_TYPE& getType() const;
 
-		UITextInput * getUILayerName() const;
+	UITextInput* getUILayerName() const;
 
-		const String& getName() const;
+	const String& getName() const;
 
-		MapLayer * getLayer() const;
-	protected:
-		UITheme *			mTheme;
-		UIMap *			mUIMap;
-		EE_LAYER_TYPE		mType;
-		NewLayerCb			mNewLayerCb;
-		UIWindow *			mUIWindow;
-		UITextInput *		mUILayerName;
-		MapLayer *			mLayer;
+	MapLayer* getLayer() const;
 
-		void onWindowClose( const Event * Event );
+  protected:
+	UITheme* mTheme;
+	UIMap* mUIMap;
+	EE_LAYER_TYPE mType;
+	NewLayerCb mNewLayerCb;
+	UIWindow* mUIWindow;
+	UITextInput* mUILayerName;
+	MapLayer* mLayer;
 
-		void onCancelClick( const Event * Event );
+	void onWindowClose( const Event* Event );
 
-		void onOKClick( const Event * Event );
+	void onCancelClick( const Event* Event );
 
-		void onOnKeyUp( const Event * Event );
+	void onOKClick( const Event* Event );
+
+	void onOnKeyUp( const Event* Event );
 };
 
-}}}
+}}} // namespace EE::Maps::Private
 
 #endif

@@ -1,22 +1,14 @@
-#include <eepp/ui/css/stylesheetselectorrule.hpp>
-#include <eepp/ui/css/stylesheetelement.hpp>
 #include <algorithm>
+#include <eepp/ui/css/stylesheetselectorrule.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
-static const char * StatePseudoClasses[] = {
-	"normal",
-	"focus",
-	"selected",
-	"hover",
-	"pressed",
-	"selectedhover",
-	"selectedpressed",
-	"disabled"
-};
+static const char* StatePseudoClasses[] = { "focus",	"selected",		"hover", "pressed",
+											"disabled", "focus-within", "active" };
 
 static bool isPseudoClassState( const std::string& pseudoClass ) {
-	for ( Uint32 i = 0; i < eeARRAY_SIZE(StatePseudoClasses); i++ ) {
+	for ( Uint32 i = 0; i < eeARRAY_SIZE( StatePseudoClasses ); i++ ) {
 		if ( pseudoClass == StatePseudoClasses[i] )
 			return true;
 	}
@@ -24,45 +16,43 @@ static bool isPseudoClassState( const std::string& pseudoClass ) {
 	return false;
 }
 
-static const char * StructuralPseudoClasses[] = {
-	"root",
-	"nth-child",
-	"nth-last-child",
-	"nth-of-type",
-	"nth-last-of-type",
-	"nth-child",
-	"nth-last-child",
-	"first-of-type",
-	"last-of-type",
-	"only-child",
-	"only-of-type",
-	"empty"
-};
+static const char* StructuralPseudoClasses[] = {
+	"checked",		  "disabled",		  "empty",		  "enabled",	  "first-child",
+	"first-of-type",  "last-child",		  "last-of-type", "not",		  "nth-child",
+	"nth-last-child", "nth-last-of-type", "nth-of-type",  "only-of-type", "only-child" };
 
 static bool isStructuralPseudoClass( const std::string& pseudoClass ) {
-	for ( Uint32 i = 0; i < eeARRAY_SIZE(StructuralPseudoClasses); i++ ) {
-		if ( String::startsWith( StructuralPseudoClasses[i], pseudoClass ) )
+	for ( Uint32 i = 0; i < eeARRAY_SIZE( StructuralPseudoClasses ); i++ ) {
+		if ( String::startsWith( pseudoClass, StructuralPseudoClasses[i] ) )
 			return true;
 	}
 
 	return false;
 }
 
-static void splitSelectorPseudoClass( const std::string& selector, std::string& realSelector, std::string& realPseudoClass ) {
+static void splitSelectorPseudoClass( const std::string& selector, std::string& realSelector,
+									  std::string& realPseudoClass ) {
 	if ( !selector.empty() ) {
 		bool lastWasColon = false;
+		bool inFunction = false;
 
 		for ( int i = (Int32)selector.size() - 1; i >= 0; i-- ) {
 			char curChar = selector[i];
+
+			if ( inFunction && curChar == '(' )
+				inFunction = false;
+
+			if ( inFunction )
+				continue;
 
 			if ( lastWasColon ) {
 				if ( StyleSheetSelectorRule::PSEUDO_CLASS == curChar ) {
 					// no pseudo class
 					realSelector = selector;
 				} else {
-					if ( i+2 <= (int)selector.size() ) {
-						realSelector = selector.substr(0,i+1);
-						realPseudoClass = selector.substr(i+2);
+					if ( i + 2 <= (int)selector.size() ) {
+						realSelector = selector.substr( 0, i + 1 );
+						realPseudoClass = selector.substr( i + 2 );
 					} else {
 						realSelector = selector;
 					}
@@ -72,31 +62,35 @@ static void splitSelectorPseudoClass( const std::string& selector, std::string& 
 			} else if ( StyleSheetSelectorRule::PSEUDO_CLASS == curChar ) {
 				lastWasColon = true;
 			}
+
+			if ( curChar == ')' ) {
+				inFunction = true;
+				lastWasColon = false;
+			}
 		}
 
 		if ( lastWasColon ) {
 			if ( selector.size() > 1 )
-				realPseudoClass = selector.substr(1);
+				realPseudoClass = selector.substr( 1 );
 		} else {
 			realSelector = selector;
 		}
 	}
 }
 
-
-StyleSheetSelectorRule::StyleSheetSelectorRule( const std::string& selectorFragment, PatternMatch patternMatch ) :
-	mSpecificity(0),
-	mPatternMatch( patternMatch ),
-	mRequirementFlags(0)
-{
+StyleSheetSelectorRule::StyleSheetSelectorRule( const std::string& selectorFragment,
+												PatternMatch patternMatch ) :
+	mSpecificity( 0 ), mPatternMatch( patternMatch ), mRequirementFlags( 0 ) {
 	parseFragment( selectorFragment );
 }
 
-void StyleSheetSelectorRule::pushSelectorTypeIdentifier( TypeIdentifier selectorTypeIdentifier, std::string name ) {
+void StyleSheetSelectorRule::pushSelectorTypeIdentifier( TypeIdentifier selectorTypeIdentifier,
+														 std::string name ) {
 	switch ( selectorTypeIdentifier ) {
 		case GLOBAL:
 			mTagName = name;
 			mSpecificity += SpecificityGlobal;
+			break;
 		case TAG:
 			mTagName = name;
 			mSpecificity += SpecificityTag;
@@ -123,16 +117,25 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 		pseudoClass.clear();
 		realSelector.clear();
 
-		splitSelectorPseudoClass( selector, realSelector, pseudoClass );
+		if ( !selectorFragment.empty() && selectorFragment[0] != ':' ) {
+			splitSelectorPseudoClass( selector, realSelector, pseudoClass );
 
-		if ( !pseudoClass.empty() ) {
-			if ( isPseudoClassState( pseudoClass ) ) {
-				mPseudoClasses.push_back( pseudoClass );
-			} else if ( isStructuralPseudoClass( pseudoClass ) ) {
-				mStructuralPseudoClasses.push_back( pseudoClass );
+			if ( !pseudoClass.empty() ) {
+				if ( isPseudoClassState( pseudoClass ) ) {
+					mPseudoClasses.push_back( pseudoClass == "active" ? "pressed" : pseudoClass );
+				} else if ( isStructuralPseudoClass( pseudoClass ) ) {
+					mStructuralPseudoClasses.push_back( pseudoClass );
+
+					StructuralSelector structuralSelector =
+						StyleSheetSpecification::instance()->getStructuralSelector( pseudoClass );
+
+					if ( structuralSelector.selector ) {
+						mStructuralSelectors.push_back( structuralSelector );
+					}
+				}
+
+				selector = realSelector;
 			}
-
-			selector = realSelector;
 		}
 	} while ( !pseudoClass.empty() );
 
@@ -143,8 +146,7 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 		char curChar = *charIt;
 
 		switch ( curChar ) {
-			case CLASS:
-			{
+			case CLASS: {
 				if ( !buffer.empty() ) {
 					pushSelectorTypeIdentifier( curSelectorType, buffer );
 					buffer.clear();
@@ -154,8 +156,7 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 
 				break;
 			}
-			case ID:
-			{
+			case ID: {
 				if ( !buffer.empty() ) {
 					pushSelectorTypeIdentifier( curSelectorType, buffer );
 					buffer.clear();
@@ -165,8 +166,7 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 
 				break;
 			}
-			default:
-			{
+			default: {
 				buffer += curChar;
 				break;
 			}
@@ -191,15 +191,17 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 
 	if ( !mPseudoClasses.empty() ) {
 		mRequirementFlags |= PseudoClass;
+		mSpecificity += SpecificityPseudoClass * mPseudoClasses.size();
+	}
 
-		for ( auto it = mPseudoClasses.begin(); it != mPseudoClasses.end(); ++it ) {
-			mSpecificity += SpecificityPseudoClass;
-		}
+	if ( !mStructuralPseudoClasses.empty() ) {
+		mRequirementFlags |= StructuralPseudoClass;
+		mSpecificity += SpecificityStructuralPseudoClass * mStructuralPseudoClasses.size();
 	}
 }
 
 bool StyleSheetSelectorRule::hasClass( const std::string& cls ) const {
-	return std::find(mClasses.begin(), mClasses.end(), cls) != mClasses.end();
+	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
 }
 
 bool StyleSheetSelectorRule::hasPseudoClasses() const {
@@ -207,10 +209,10 @@ bool StyleSheetSelectorRule::hasPseudoClasses() const {
 }
 
 bool StyleSheetSelectorRule::hasPseudoClass( const std::string& cls ) const {
-	return std::find(mPseudoClasses.begin(), mPseudoClasses.end(), cls) != mPseudoClasses.end();
+	return std::find( mPseudoClasses.begin(), mPseudoClasses.end(), cls ) != mPseudoClasses.end();
 }
 
-const std::vector<std::string> &StyleSheetSelectorRule::getPseudoClasses() const {
+const std::vector<std::string>& StyleSheetSelectorRule::getPseudoClasses() const {
 	return mPseudoClasses;
 }
 
@@ -218,32 +220,56 @@ bool StyleSheetSelectorRule::hasStructuralPseudoClasses() const {
 	return !mStructuralPseudoClasses.empty();
 }
 
-const std::vector<std::string> &StyleSheetSelectorRule::getStructuralPseudoClasses() const {
+const std::vector<std::string>& StyleSheetSelectorRule::getStructuralPseudoClasses() const {
 	return mStructuralPseudoClasses;
 }
 
 bool StyleSheetSelectorRule::hasStructuralPseudoClass( const std::string& cls ) const {
-	return std::find(mStructuralPseudoClasses.begin(), mStructuralPseudoClasses.end(), cls) != mStructuralPseudoClasses.end();
+	return std::find( mStructuralPseudoClasses.begin(), mStructuralPseudoClasses.end(), cls ) !=
+		   mStructuralPseudoClasses.end();
 }
 
-bool StyleSheetSelectorRule::matches( StyleSheetElement * element, const bool& applyPseudo ) const {
+const std::string& StyleSheetSelectorRule::getTagName() const {
+	return mTagName;
+}
+
+const std::string& StyleSheetSelectorRule::getId() const {
+	return mId;
+}
+
+bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo ) const {
 	Uint32 flags = 0;
 
-	if ( mTagName == "*" )
-		return true;
-
-	if ( !mTagName.empty() && !element->getStyleSheetTag().empty() && mTagName == element->getStyleSheetTag() ) {
-		flags |= TagName;
+	if ( !mTagName.empty() ) {
+		if ( mTagName != "*" ) {
+			if ( mTagName != element->getElementTag() ) {
+				return false;
+			} else {
+				flags |= TagName;
+			}
+		} else {
+			if ( !applyPseudo ) {
+				return true;
+			} else {
+				flags |= TagName;
+			}
+		}
 	}
 
-	if ( !mId.empty() && !element->getStyleSheetId().empty() && mId == element->getStyleSheetId() ) {
-		flags |= Id;
+	if ( !mId.empty() ) {
+		if ( mId != element->getId() ) {
+			return false;
+		} else {
+			flags |= Id;
+		}
 	}
 
 	if ( !mClasses.empty() && !element->getStyleSheetClasses().empty() ) {
 		bool hasClasses = true;
-		for ( const auto& cls : element->getStyleSheetClasses() ) {
-			if ( !hasClass( cls ) ) {
+		const std::vector<std::string>& elClasses = element->getStyleSheetClasses();
+
+		for ( const auto& cls : mClasses ) {
+			if ( std::find( elClasses.begin(), elClasses.end(), cls ) == elClasses.end() ) {
 				hasClasses = false;
 				break;
 			}
@@ -256,12 +282,11 @@ bool StyleSheetSelectorRule::matches( StyleSheetElement * element, const bool& a
 
 	if ( applyPseudo ) {
 		if ( !mPseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
-			bool hasPseudoClasses = false;
-			const std::vector<std::string>& elPseudoClasses = element->getStyleSheetPseudoClasses();
+			bool hasPseudoClasses = true;
 
-			for ( const auto& cls : elPseudoClasses ) {
-				if ( hasPseudoClass( cls ) ) {
-					hasPseudoClasses = true;
+			for ( const auto& cls : mPseudoClasses ) {
+				if ( !element->hasPseudoClass( cls ) ) {
+					hasPseudoClasses = false;
 					break;
 				}
 			}
@@ -271,10 +296,25 @@ bool StyleSheetSelectorRule::matches( StyleSheetElement * element, const bool& a
 			}
 		}
 
+		if ( !mStructuralSelectors.empty() ) {
+			bool matchesStructural = true;
+
+			for ( const auto& spc : mStructuralSelectors ) {
+				if ( !spc.selector( element, spc.a, spc.b, spc.data ) ) {
+					matchesStructural = false;
+					break;
+				}
+			}
+
+			if ( matchesStructural ) {
+				flags |= StructuralPseudoClass;
+			}
+		}
+
 		return mRequirementFlags == flags;
 	}
 
-	return ( mRequirementFlags & ~PseudoClass ) == flags;
+	return ( mRequirementFlags & ~PseudoClass & ~StructuralPseudoClass ) == flags;
 }
 
-}}}
+}}} // namespace EE::UI::CSS

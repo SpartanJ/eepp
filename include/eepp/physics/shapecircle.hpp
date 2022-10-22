@@ -3,25 +3,25 @@
 
 #include <eepp/physics/shape.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API ShapeCircle : public Shape {
-	public:
-		static ShapeCircle * New( Physics::Body * body, cpFloat radius, cVect offset );
+class EE_API ShapeCircle : public Shape {
+  public:
+	static ShapeCircle* New( Physics::Body* body, cpFloat radius, cVect offset );
 
-		ShapeCircle( Physics::Body * body, cpFloat radius, cVect offset );
+	ShapeCircle( Physics::Body* body, cpFloat radius, cVect offset );
 
-		cVect getOffset();
+	cVect getOffset();
 
-		virtual void setOffset( const cVect& offset );
+	virtual void setOffset( const cVect& offset );
 
-		cpFloat getRadius();
+	cpFloat getRadius();
 
-		virtual void setRadius( const cpFloat& radius );
+	virtual void setRadius( const cpFloat& radius );
 
-		virtual void draw( Space * space );
+	virtual void draw( Space* space );
 };
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics
 
 #endif

@@ -8,43 +8,46 @@ namespace EE { namespace Window {
 
 /** @brief A Joystick Manager class */
 class EE_API JoystickManager {
-	public:
-		JoystickManager();
+  public:
+	typedef std::function<void()> OpenCb;
 
-		virtual ~JoystickManager();
+	JoystickManager();
 
-		/** @return The number of joysticks attached to the system */
-		virtual Uint32 getCount();
+	virtual ~JoystickManager();
 
-		/** Update the states of all joysticks */
-		virtual void 	update() = 0;
+	/** @return The number of joysticks attached to the system */
+	Uint32 getCount();
 
-		/** @return The joystick instante of the joystick index */
-		Joystick * 	getJoystick( const Uint32& index );
+	/** Update the states of all joysticks */
+	virtual void update() = 0;
 
-		/** Rescan all joysticks to look for new joystick connected.
-		* This could be slow on some backends, and unnecessary on others.
-		* Is slow in SDL. SFML and SDL2 shouldn't need this.
-		*/
-		virtual void	rescan();
+	/** @return The joystick instante of the joystick index */
+	Joystick* getJoystick( const Uint32& index );
 
-		/** Close all the joysticks */
-		virtual void 	close();
+	/** Rescan all joysticks to look for new joystick connected.
+	 * This could be slow on some backends, and unnecessary on others.
+	 */
+	virtual void rescan();
 
-		/** Open all the joysticks */
-		virtual void 	open();
-	protected:
-		friend class Joystick;
-		
-		bool			mInit;
+	/** Close all the joysticks */
+	virtual void close();
 
-		Joystick * 	mJoysticks[ MAX_JOYSTICKS ];
+	/** Open all the joysticks */
+	virtual void open( OpenCb openCb = nullptr );
 
-		Uint32			mCount;
+  protected:
+	friend class Joystick;
 
-		virtual void 	create( const Uint32& index ) = 0;
+	bool mInit;
+	OpenCb mOpenCb;
+
+	Joystick* mJoysticks[MAX_JOYSTICKS];
+
+	Uint32 mCount;
+
+	virtual void create( const Uint32& index ) = 0;
 };
 
-}}
+}} // namespace EE::Window
 
 #endif

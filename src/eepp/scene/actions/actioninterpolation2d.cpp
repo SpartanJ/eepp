@@ -3,8 +3,7 @@
 
 namespace EE { namespace Scene { namespace Actions {
 
-ActionInterpolation2d::ActionInterpolation2d()
-{}
+ActionInterpolation2d::ActionInterpolation2d() {}
 
 void ActionInterpolation2d::setInterpolation( Interpolation2d interpolation ) {
 	mInterpolation = interpolation;
@@ -36,8 +35,16 @@ bool ActionInterpolation2d::isDone() {
 	return mInterpolation.ended();
 }
 
-Interpolation2d * ActionInterpolation2d::getInterpolation() {
+Float ActionInterpolation2d::getCurrentProgress() {
+	return mInterpolation.getCurrentProgress();
+}
+
+Time ActionInterpolation2d::getTotalTime() {
+	return mInterpolation.getDuration();
+}
+
+Interpolation2d* ActionInterpolation2d::getInterpolation() {
 	return &mInterpolation;
 }
 
-}}}
+}}} // namespace EE::Scene::Actions

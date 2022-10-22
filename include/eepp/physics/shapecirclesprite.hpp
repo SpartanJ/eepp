@@ -7,34 +7,37 @@
 
 namespace EE { namespace Graphics {
 class Sprite;
-}}
+}} // namespace EE::Graphics
 using namespace EE::Graphics;
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API ShapeCircleSprite : public ShapeCircle {
-	public:
-		static ShapeCircleSprite * New( Physics::Body * body, cpFloat radius, cVect offset, Sprite * Sprite, bool AutoDeleteSprite = false );
+class EE_API ShapeCircleSprite : public ShapeCircle {
+  public:
+	static ShapeCircleSprite* New( Physics::Body* body, cpFloat radius, cVect offset,
+								   Sprite* Sprite, bool AutoDeleteSprite = false );
 
-		ShapeCircleSprite( Physics::Body * body, cpFloat radius, cVect offset, Sprite * Sprite, bool AutoDeleteSprite = false );
+	ShapeCircleSprite( Physics::Body* body, cpFloat radius, cVect offset, Sprite* Sprite,
+					   bool AutoDeleteSprite = false );
 
-		virtual ~ShapeCircleSprite();
+	virtual ~ShapeCircleSprite();
 
-		virtual void draw( Space * space );
+	virtual void draw( Space* space );
 
-		virtual void setRadius( const cpFloat& radius );
+	virtual void setRadius( const cpFloat& radius );
 
-		virtual void setOffset( const cVect &offset );
+	virtual void setOffset( const cVect& offset );
 
-		Sprite * getSprite() const;
-	protected:
-		Sprite *	mSprite;
-		bool		mSpriteAutoDelete;
+	Sprite* getSprite() const;
 
-		void offsetSet();
+  protected:
+	Sprite* mSprite;
+	bool mSpriteAutoDelete;
+
+	void offsetSet();
 };
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics
 
 #endif
 

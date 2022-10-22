@@ -2,30 +2,23 @@
 
 namespace EE { namespace Window {
 
-JoystickManager::JoystickManager() :
-	mInit(false),
-	mCount(0)
-{
+JoystickManager::JoystickManager() : mInit( false ), mCount( 0 ) {
 	for ( Uint32 i = 0; i < MAX_JOYSTICKS; i++ )
 		mJoysticks[i] = NULL;
-
-	open();
 }
 
 JoystickManager::~JoystickManager() {
-	for ( Uint32 i = 0; i < getCount(); i++ )
+	for ( Uint32 i = 0; i < mCount; i++ )
 		eeSAFE_DELETE( mJoysticks[i] );
-
-	close();
 }
 
 Uint32 JoystickManager::getCount() {
 	return mCount;
 }
 
-Joystick * JoystickManager::getJoystick( const Uint32& index ) {
+Joystick* JoystickManager::getJoystick( const Uint32& index ) {
 	if ( index < MAX_JOYSTICKS )
-		return mJoysticks[ index ];
+		return mJoysticks[index];
 
 	return NULL;
 }
@@ -33,13 +26,13 @@ Joystick * JoystickManager::getJoystick( const Uint32& index ) {
 void JoystickManager::rescan() {
 	close();
 
-	open();
+	open( mOpenCb );
 }
 
-void JoystickManager::close() {
+void JoystickManager::close() {}
+
+void JoystickManager::open( OpenCb openCb ) {
+	mOpenCb = openCb;
 }
 
-void JoystickManager::open() {
-}
-
-}}
+}} // namespace EE::Window

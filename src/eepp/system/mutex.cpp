@@ -3,10 +3,7 @@
 
 namespace EE { namespace System {
 
-Mutex::Mutex() :
-	mMutexImpl( new Platform::MutexImpl() )
-{
-}
+Mutex::Mutex() : mMutexImpl( new Platform::MutexImpl() ) {}
 
 Mutex::~Mutex() {
 	delete mMutexImpl;
@@ -24,4 +21,4 @@ int Mutex::tryLock() {
 	return mMutexImpl->tryLock();
 }
 
-}}
+}} // namespace EE::System

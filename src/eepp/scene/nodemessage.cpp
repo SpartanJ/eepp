@@ -1,20 +1,14 @@
-#include <eepp/scene/nodemessage.hpp>
 #include <eepp/scene/node.hpp>
+#include <eepp/scene/nodemessage.hpp>
 
 namespace EE { namespace Scene {
 
-NodeMessage::NodeMessage( Node * node, const Uint32& Msg, const Uint32& Flags ) :
-	mNode( node ),
-	mMsg( Msg ),
-	mFlags( Flags )
-{
-}
+NodeMessage::NodeMessage( Node* node, const Uint32& msg, const Uint32& flags ) :
+	mNode( node ), mMsg( msg ), mFlags( flags ) {}
 
-NodeMessage::~NodeMessage()
-{
-}
+NodeMessage::~NodeMessage() {}
 
-Node * NodeMessage::getSender() const {
+Node* NodeMessage::getSender() const {
 	return mNode;
 }
 
@@ -26,4 +20,11 @@ const Uint32& NodeMessage::getFlags() const {
 	return mFlags;
 }
 
-}}
+NodeDropMessage::NodeDropMessage( Node* node, const Uint32& msg, Node* droppedNode ) :
+	NodeMessage( node, msg ), mDroppedNode( droppedNode ) {}
+
+Node* NodeDropMessage::getDroppedNode() const {
+	return mDroppedNode;
+}
+
+}} // namespace EE::Scene

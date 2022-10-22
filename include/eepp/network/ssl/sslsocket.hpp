@@ -7,57 +7,72 @@ namespace EE { namespace Network { namespace SSL {
 
 class SSLSocketImpl;
 
+/** TLS over TCP socket implementation. **/
 class EE_API SSLSocket : public TcpSocket {
-	public:
-		static std::string CertificatesPath;
+  public:
+	/** @brief This is the certificate location in the file system.
+	** If no certificate path is provided it will try to use the default CA bundle
+	** provided in most OSes. If no CA bundle is found on the current OS it will fallback to
+	** "assets/ca-bundle.pem".
+	** The path can be inside of any open EE::System::Pack.
+	** This should be set before using any SSLSocket connection.
+	*/
+	static std::string CertificatesPath;
 
-		static bool init();
-		
-		static bool end();
+	static bool init();
 
-		/** @return True when the library was compiled with SSL support. */
-		static bool isSupported();
+	static bool end();
 
-		static SSLSocket * New( std::string hostname, bool validateCertificate, bool validateHostname );
+	/** @return True when the library was compiled with SSL support. */
+	static bool isSupported();
 
-		SSLSocket( std::string hostname, bool validateCertificate, bool validateHostname );
+	static SSLSocket* New( std::string hostname, bool validateCertificate, bool validateHostname,
+						   SSLSocket* restoreSession = NULL );
 
-		virtual ~SSLSocket();
+	SSLSocket( std::string hostname, bool validateCertificate, bool validateHostname,
+			   SSLSocket* restoreSession = NULL );
 
-		Status connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+	virtual ~SSLSocket();
 
-		void disconnect();
+	Status connect( const IpAddress& remoteAddress, unsigned short remotePort,
+					Time timeout = Time::Zero );
 
-		Status send(const void* data, std::size_t size);
+	void disconnect();
 
-		Status receive(void* data, std::size_t size, std::size_t& received);
+	Status send( const void* data, std::size_t size );
 
-		Status send(Packet& packet);
+	Status receive( void* data, std::size_t size, std::size_t& received );
 
-		Status receive(Packet& packet);
+	Status send( Packet& packet );
 
-		Status sslConnect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+	Status receive( Packet& packet );
 
-		void sslDisconnect();
+	Status sslConnect( const IpAddress& remoteAddress, unsigned short remotePort,
+					   Time timeout = Time::Zero );
 
-		Status tcpConnect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+	void sslDisconnect();
 
-		void tcpDisconnect();
+	Status tcpConnect( const IpAddress& remoteAddress, unsigned short remotePort,
+					   Time timeout = Time::Zero );
 
-		Status tcpReceive(void* data, std::size_t size, std::size_t& received);
+	void tcpDisconnect();
 
-		Status tcpSend(const void* data, std::size_t size, std::size_t& sent);
-	protected:
-		friend class SSLSocketImpl;
-		friend class OpenSSLSocket;
-		friend class MbedTLSSocket;
+	Status tcpReceive( void* data, std::size_t size, std::size_t& received );
 
-		SSLSocketImpl *			mImpl;
-		std::string				mHostName;
-		bool					mValidateCertificate;
-		bool					mValidateHostname;
+	Status tcpSend( const void* data, std::size_t size, std::size_t& sent );
+
+  protected:
+	friend class SSLSocketImpl;
+	friend class OpenSSLSocket;
+	friend class MbedTLSSocket;
+
+	SSLSocketImpl* mImpl;
+	std::string mHostName;
+	bool mValidateCertificate;
+	bool mValidateHostname;
+	SSLSocket* mRestoreSession;
 };
 
-}}}
+}}} // namespace EE::Network::SSL
 
 #endif

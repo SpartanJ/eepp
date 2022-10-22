@@ -8,9 +8,9 @@ namespace EE { namespace System { namespace Platform {
 
 MutexImpl::MutexImpl() {
 	pthread_mutexattr_t attributes;
-	pthread_mutexattr_init(&attributes);
-	pthread_mutexattr_settype(&attributes, PTHREAD_MUTEX_RECURSIVE);
-	if ( 0 != pthread_mutex_init(&mMutex, &attributes) )
+	pthread_mutexattr_init( &attributes );
+	pthread_mutexattr_settype( &attributes, PTHREAD_MUTEX_RECURSIVE );
+	if ( 0 != pthread_mutex_init( &mMutex, &attributes ) )
 		std::cerr << "MutexImpl::MutexImpl(): pthread_mutex_init() error\n";
 }
 
@@ -20,17 +20,17 @@ MutexImpl::~MutexImpl() {
 }
 
 void MutexImpl::lock() {
-	pthread_mutex_lock(&mMutex);
+	pthread_mutex_lock( &mMutex );
 }
 
 void MutexImpl::unlock() {
-	pthread_mutex_unlock(&mMutex);
+	pthread_mutex_unlock( &mMutex );
 }
 
 int MutexImpl::tryLock() {
-	return pthread_mutex_trylock(&mMutex);
+	return pthread_mutex_trylock( &mMutex );
 }
 
-}}}
+}}} // namespace EE::System::Platform
 
 #endif

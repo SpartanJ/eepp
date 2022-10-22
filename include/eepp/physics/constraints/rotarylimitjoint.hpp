@@ -3,23 +3,23 @@
 
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API RotaryLimitJoint : public Constraint {
-	public:
-		RotaryLimitJoint( Body * a, Body * b, cpFloat min, cpFloat max );
+class EE_API RotaryLimitJoint : public Constraint {
+  public:
+	RotaryLimitJoint( Body* a, Body* b, cpFloat min, cpFloat max );
 
-		cpFloat getMin();
+	cpFloat getMin();
 
-		void setMin( const cpFloat& min );
+	void setMin( const cpFloat& min );
 
-		cpFloat getMax();
+	cpFloat getMax();
 
-		void setMax( const cpFloat& max );
+	void setMax( const cpFloat& max );
 
-		virtual void draw();
+	virtual void draw();
 };
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics
 
 #endif

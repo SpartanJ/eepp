@@ -1,24 +1,18 @@
 #include <eepp/physics/constraints/constraint.hpp>
 #include <eepp/physics/physicsmanager.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-void Constraint::Free( Constraint * constraint ) {
-	cpSAFE_DELETE( constraint );
+void Constraint::Free( Constraint* constraint ) {
+	eeSAFE_DELETE( constraint );
 }
 
-Constraint::Constraint( cpConstraint * Constraint ) :
-	mData( NULL )
-{
+Constraint::Constraint( cpConstraint* Constraint ) : mData( NULL ) {
 	mConstraint = Constraint;
 	setData();
 }
 
-Constraint::Constraint() :
-	mConstraint( NULL ),
-	mData( NULL )
-{
-}
+Constraint::Constraint() : mConstraint( NULL ), mData( NULL ) {}
 
 Constraint::~Constraint() {
 	cpConstraintFree( mConstraint );
@@ -31,15 +25,15 @@ void Constraint::setData() {
 	PhysicsManager::instance()->addConstraintFree( this );
 }
 
-cpConstraint * Constraint::getConstraint() const {
+cpConstraint* Constraint::getConstraint() const {
 	return mConstraint;
 }
 
-Body * Constraint::getA() {
+Body* Constraint::getA() {
 	return reinterpret_cast<Body*>( mConstraint->a->data );
 }
 
-Body * Constraint::getB() {
+Body* Constraint::getB() {
 	return reinterpret_cast<Body*>( mConstraint->b->data );
 }
 
@@ -67,11 +61,11 @@ void Constraint::setErrorBias( cpFloat value ) {
 	cpConstraintSetErrorBias( mConstraint, value );
 }
 
-void Constraint::setData( void * data ) {
+void Constraint::setData( void* data ) {
 	mData = data;
 }
 
-void * Constraint::getData() const {
+void* Constraint::getData() const {
 	return mData;
 }
 
@@ -79,7 +73,6 @@ cpFloat Constraint::getImpulse() {
 	return cpConstraintGetImpulse( mConstraint );
 }
 
-void Constraint::draw() {
-}
+void Constraint::draw() {}
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics

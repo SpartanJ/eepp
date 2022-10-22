@@ -1,45 +1,49 @@
 #ifndef EE_UICUILISTBOXITEM_HPP
 #define EE_UICUILISTBOXITEM_HPP
 
-#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
+#include <eepp/ui/uitextview.hpp>
 
 namespace EE { namespace UI {
 
 class UIListBox;
 
 class EE_API UIListBoxItem : public UITextView {
-	public:
-		static UIListBoxItem * New();
+  public:
+	static UIListBoxItem* New();
 
-		UIListBoxItem();
+	static UIListBoxItem* NewWithTag( const std::string& tag );
 
-		virtual ~UIListBoxItem();
+	UIListBoxItem();
 
-		virtual Uint32 getType() const;
+	UIListBoxItem( const std::string& tag );
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual ~UIListBoxItem();
 
-		virtual void setTheme( UITheme * Theme );
+	virtual Uint32 getType() const;
 
-		bool isSelected() const;
+	virtual bool isType( const Uint32& type ) const;
 
-		void unselect();
+	virtual void setTheme( UITheme* Theme );
 
-		void select();
-	protected:
-		friend class UIItemContainer<UIListBox>;
+	bool isSelected() const;
 
-		virtual void onStateChange();
+	void unselect();
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+	void select();
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+  protected:
+	friend class UIItemContainer<UIListBox>;
 
-		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+	virtual void onStateChange();
+
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

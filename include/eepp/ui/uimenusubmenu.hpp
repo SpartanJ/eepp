@@ -8,56 +8,56 @@ namespace EE { namespace UI {
 class UIMenu;
 
 class EE_API UIMenuSubMenu : public UIMenuItem {
-	public:
-		static UIMenuSubMenu * New();
+  public:
+	static UIMenuSubMenu* New();
 
-		UIMenuSubMenu();
+	UIMenuSubMenu();
 
-		virtual ~UIMenuSubMenu();
+	virtual ~UIMenuSubMenu();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		void setSubMenu( UIMenu * subMenu );
+	void setSubMenu( UIMenu* subMenu );
 
-		UIMenu * getSubMenu() const;
+	UIMenu* getSubMenu() const;
 
-		UINode * getArrow() const;
+	UINode* getArrow() const;
 
-		void showSubMenu();
+	void showSubMenu();
 
-		virtual bool inheritsFrom( const Uint32 getType );
+	const Time& getMouseOverTimeShowMenu() const;
 
-		Float getMouseOverTimeShowMenu() const;
+	void setMouseOverTimeShowMenu( const Time& maxTime );
 
-		void setMouseOverTimeShowMenu(const Float & maxTime);
+	virtual UIWidget* getExtraInnerWidget() const;
 
-	protected:
-		UIMenu *	mSubMenu;
-		UINode *	mArrow;
-		Float		mTimeOver;
-		Float		mMaxTime;
-		Uint32		mCbId;
-		Uint32		mCbId2;
+  protected:
+	UIMenu* mSubMenu;
+	UIWidget* mArrow;
+	Time mMaxTime;
+	Action* mCurWait;
 
-		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseOver( const Vector2i& pos, const Uint32& flags );
 
-		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseLeave( const Vector2i& pos, const Uint32& flags );
 
-		virtual void onStateChange();
+	virtual Uint32 onMouseClick( const Vector2i& pos, const Uint32& flags );
 
-		virtual void onSizeChange();
+	virtual void onStateChange();
 
-		virtual void onAlphaChange();
+	virtual void onSizeChange();
 
-		void onSubMenuFocusLoss( const Event * Event );
+	virtual void onAlphaChange();
 
-		void onHideByClick( const Event * Event );
+	void onSubMenuFocusLoss( const Event* Event );
+
+	void onHideByClick( const Event* Event );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

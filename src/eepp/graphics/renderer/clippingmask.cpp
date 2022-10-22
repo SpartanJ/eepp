@@ -1,17 +1,18 @@
-#include <eepp/graphics/renderer/clippingmask.hpp>
-#include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/renderer/openglext.hpp>
-#include <eepp/graphics/drawable.hpp>
-#include <eepp/window/engine.hpp>
 #include <algorithm>
+#include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/clippingmask.hpp>
+#include <eepp/graphics/renderer/openglext.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/window/engine.hpp>
 
 using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-void ClippingMask::clipEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
-	EE::Window::Window * window = Engine::instance()->getCurrentWindow();
+void ClippingMask::clipEnable( const Int32& x, const Int32& y, const Int32& Width,
+							   const Int32& Height ) {
+	EE::Window::Window* window = Engine::instance()->getCurrentWindow();
 	GlobalBatchRenderer::instance()->draw();
 
 	Rectf r( x, y, x + Width, y + Height );
@@ -46,7 +47,8 @@ void ClippingMask::clipDisable() {
 	}
 }
 
-void ClippingMask::clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+void ClippingMask::clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width,
+									const Int32& Height ) {
 	GlobalBatchRenderer::instance()->draw();
 
 	Rectf r( x, y, x + Width, y + Height );
@@ -66,7 +68,7 @@ void ClippingMask::clipPlaneEnable( const Int32& x, const Int32& y, const Int32&
 void ClippingMask::clipPlaneDisable() {
 	GlobalBatchRenderer::instance()->draw();
 
-	if ( ! mPlanesClipped.empty() ) { // This should always be true
+	if ( !mPlanesClipped.empty() ) { // This should always be true
 		mPlanesClipped.pop_back();
 	}
 
@@ -80,22 +82,17 @@ void ClippingMask::clipPlaneDisable() {
 	}
 }
 
-ClippingMask::ClippingMask() :
-	mPushScissorClip( true ),
-	mPushClip( true ),
-	mMode( Inclusive )
-{
-}
+ClippingMask::ClippingMask() : mPushScissorClip( true ), mPushClip( true ), mMode( Inclusive ) {}
 
 std::size_t ClippingMask::getMaskCount() const {
 	return mDrawables.size();
 }
 
-const Drawable*& ClippingMask::operator [](std::size_t index) {
+const Drawable*& ClippingMask::operator[]( std::size_t index ) {
 	return mDrawables[index];
 }
 
-const Drawable* const& ClippingMask::operator [](std::size_t index) const {
+const Drawable* const& ClippingMask::operator[]( std::size_t index ) const {
 	return mDrawables[index];
 }
 
@@ -103,36 +100,37 @@ void ClippingMask::clearMasks() {
 	mDrawables.clear();
 }
 
-void ClippingMask::appendMask(const Drawable& drawable) {
-	mDrawables.push_back(&drawable);
+void ClippingMask::appendMask( const Drawable& drawable ) {
+	mDrawables.push_back( &drawable );
 }
 
-void ClippingMask::removeMask(const Drawable& drawable) {
-	mDrawables.erase(std::remove(mDrawables.begin(), mDrawables.end(), &drawable), mDrawables.end());
+void ClippingMask::removeMask( const Drawable& drawable ) {
+	mDrawables.erase( std::remove( mDrawables.begin(), mDrawables.end(), &drawable ),
+					  mDrawables.end() );
 }
 
 ClippingMask::Mode ClippingMask::getMaskMode() const {
 	return mMode;
 }
 
-void ClippingMask::setMaskMode(Mode theMode) {
+void ClippingMask::setMaskMode( Mode theMode ) {
 	mMode = theMode;
 }
 
 void ClippingMask::stencilMaskEnable() {
-	GLi->enable(GL_STENCIL_TEST);
-	GLi->stencilMask(0xFF);
-	GLi->stencilFunc(GL_NEVER, 1, 0xFF);
-	GLi->stencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
-	GLi->clear(GL_STENCIL_BUFFER_BIT);
+	GLi->enable( GL_STENCIL_TEST );
+	GLi->stencilMask( 0xFF );
+	GLi->stencilFunc( GL_NEVER, 1, 0xFF );
+	GLi->stencilOp( GL_REPLACE, GL_KEEP, GL_KEEP );
+	GLi->clear( GL_STENCIL_BUFFER_BIT );
 
 	drawMask();
 
-	GLi->stencilFunc(GL_EQUAL, getMaskMode() == Inclusive ? 1 : 0, 0xFF);
+	GLi->stencilFunc( GL_EQUAL, getMaskMode() == Inclusive ? 1 : 0, 0xFF );
 }
 
 void ClippingMask::stencilMaskDisable( bool clearMasks ) {
-	GLi->disable(GL_STENCIL_TEST);
+	GLi->disable( GL_STENCIL_TEST );
 
 	if ( clearMasks )
 		this->clearMasks();
@@ -142,12 +140,12 @@ std::list<Rectf> ClippingMask::getScissorsClipped() const {
 	return mScissorsClipped;
 }
 
-void ClippingMask::setScissorsClipped(const std::list<Rectf> & scissorsClipped) {
+void ClippingMask::setScissorsClipped( const std::list<Rectf>& scissorsClipped ) {
 	mScissorsClipped = scissorsClipped;
 
 	if ( !mScissorsClipped.empty() ) {
 		Rectf r( mScissorsClipped.back() );
-		EE::Window::Window * window = Engine::instance()->getCurrentWindow();
+		EE::Window::Window* window = Engine::instance()->getCurrentWindow();
 		GLi->scissor( r.Left, window->getHeight() - r.Bottom, r.getWidth(), r.getHeight() );
 		GLi->enable( GL_SCISSOR_TEST );
 	}
@@ -157,7 +155,7 @@ std::list<Rectf> ClippingMask::getPlanesClipped() const {
 	return mPlanesClipped;
 }
 
-void ClippingMask::setPlanesClipped(const std::list<Rectf> & planesClipped) {
+void ClippingMask::setPlanesClipped( const std::list<Rectf>& planesClipped ) {
 	mPlanesClipped = planesClipped;
 
 	if ( !mPlanesClipped.empty() ) {
@@ -169,7 +167,7 @@ void ClippingMask::setPlanesClipped(const std::list<Rectf> & planesClipped) {
 
 void ClippingMask::drawMask() {
 	for ( std::size_t i = 0; i < getMaskCount(); i++ )
-		const_cast<Drawable*>(mDrawables[i])->draw();
+		const_cast<Drawable*>( mDrawables[i] )->draw();
 }
 
-}}
+}} // namespace EE::Graphics

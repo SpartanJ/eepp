@@ -1,157 +1,230 @@
-#ifndef EE_UICUITABWIDGET_HPP
-#define EE_UICUITABWIDGET_HPP
+﻿#ifndef EE_UI_UITABWIDGET_HPP
+#define EE_UI_UITABWIDGET_HPP
 
-#include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uitab.hpp>
 #include <deque>
+#include <eepp/ui/uitab.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UITabWidget : public UIWidget {
-	public:
-		class StyleConfig {
-			public:
-				Int32		TabSeparation = 0;
-				Uint32		MaxTextLength = 30;
-				Uint32		TabWidgetHeight = 0;
-				Uint32		TabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-				Uint32		MinTabWidth = 32;
-				Uint32		MaxTabWidth = 300;
-				bool		TabsClosable = false;
-				bool		SpecialBorderTabs = false; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
-				bool		DrawLineBelowTabs = false;
-				Color		LineBelowTabsColor;
-				Int32		LineBelowTabsYOffset = 0;
-		};
+class UIScrollBar;
 
-		static UITabWidget * New();
+class EE_API TabEvent : public Event {
+  public:
+	TabEvent( Node* node, UITab* tabEvent, Uint32 tabIndex, const Uint32& eventType ) :
+		Event( node, eventType ), tab( tabEvent ), tabIndex( tabIndex ) {}
 
-		UITabWidget();
+	UITab* getTab() const { return tab; }
 
-		virtual ~UITabWidget();
+	Uint32 getTabIndex() const { return tabIndex; }
 
-		virtual Uint32 getType() const;
-
-		virtual bool isType( const Uint32& type ) const;
-
-		UITabWidget * add( const String& Text, UINode * CtrlOwned, Drawable * Icon = NULL );
-
-		UITabWidget * add( UITab * Tab );
-
-		UITab * getTab( const Uint32& Index );
-
-		UITab * getTab( const String& Text );
-
-		Uint32 getTabIndex( UITab * Tab );
-
-		Uint32 getCount() const;
-
-		void remove( const Uint32& Index );
-
-		void remove( UITab * Tab );
-
-		void removeAll();
-
-		void insert( const String& Text, UINode * CtrlOwned, Drawable * Icon, const Uint32& Index );
-
-		void insert( UITab * Tab, const Uint32& Index );
-
-		virtual void setTheme( UITheme * Theme );
-
-		UITab * getSelectedTab() const;
-
-		Uint32 getSelectedTabIndex() const;
-
-		UIWidget * getTabContainer() const;
-
-		UIWidget * getControlContainer() const;
-
-		virtual void draw();
-
-		Int32 getTabSeparation() const;
-
-		void setTabSeparation(const Int32 & tabSeparation);
-
-		Uint32 getMaxTextLength() const;
-
-		void setMaxTextLength(const Uint32 & maxTextLength);
-
-		Uint32 getTabWidgetHeight() const;
-
-		Uint32 getMinTabWidth() const;
-
-		void setMinTabWidth(const Uint32 & minTabWidth);
-
-		Uint32 getMaxTabWidth() const;
-
-		void setMaxTabWidth(const Uint32 & maxTabWidth);
-
-		bool getTabsClosable() const;
-
-		void setTabsClosable(bool tabsClosable);
-
-		bool getSpecialBorderTabs() const;
-
-		void setSpecialBorderTabs(bool specialBorderTabs);
-
-		bool getDrawLineBelowTabs() const;
-
-		void setDrawLineBelowTabs(bool drawLineBelowTabs);
-
-		Color getLineBelowTabsColor() const;
-
-		void setLineBelowTabsColor(const Color & lineBelowTabsColor);
-
-		Int32 getLineBelowTabsYOffset() const;
-
-		void setLineBelowTabsYOffset(const Int32 & lineBelowTabsYOffset);
-
-		const StyleConfig & getStyleConfig() const;
-
-		void setStyleConfig(const StyleConfig & styleConfig);
-
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		friend class UITab;
-
-		UIWidget *		mCtrlContainer;
-		UIWidget *		mTabContainer;
-		StyleConfig	mStyleConfig;
-		std::deque<UITab*>		mTabs;
-		UITab *					mTabSelected;
-		Uint32					mTabSelectedIndex;
-
-		void onThemeLoaded();
-
-		UITab * createTab( const String& Text, UINode * CtrlOwned, Drawable * Icon );
-
-		virtual void onSizeChange();
-
-		virtual void onChildCountChange();
-
-		virtual void onPaddingChange();
-
-		void setTabSelected( UITab * Tab );
-
-		void setTabContainerSize();
-
-		void setContainerSize();
-
-		void posTabs();
-
-		void zorderTabs();
-
-		void orderTabs();
-
-		void selectPrev();
-
-		void selectNext();
-
-		void applyThemeToTabs();
-
-		void refreshControlOwned( UITab * tab );
+  protected:
+	UITab* tab;
+	Uint32 tabIndex;
 };
 
-}}
+class EE_API UITabWidget : public UIWidget {
+  public:
+	class StyleConfig {
+	  public:
+		Float TabSeparation = 0;
+		Uint32 MaxTextLength = 100;
+		Float TabHeight = 0;
+		Uint32 TabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+		std::string MinTabWidth = "32dp";
+		std::string MaxTabWidth = "300dp";
+		bool TabsClosable = false;
+		bool TabsEdgesDiffSkins = false; //! Indicates if the edge tabs ( the left and right
+										 //! border tab ) are different from the central tabs.
+	};
+
+	typedef std::function<bool( UITab* )> TabTryCloseCallback;
+
+	static UITabWidget* New();
+
+	UITabWidget();
+
+	virtual ~UITabWidget();
+
+	virtual Uint32 getType() const;
+
+	virtual bool isType( const Uint32& type ) const;
+
+	UITab* add( const String& text, UINode* nodeOwned, Drawable* icon = NULL );
+
+	UITabWidget* add( UITab* tab );
+
+	UITab* getTabFromOwnedWidget( const UIWidget* widget );
+
+	UITab* getTab( const Uint32& index );
+
+	UITab* getTab( const String& text );
+
+	Uint32 getTabIndex( UITab* tab );
+
+	Uint32 getTabCount() const;
+
+	void removeTab( const Uint32& index, bool destroyOwnedNode = true,
+					bool immediateClose = false );
+
+	void removeTab( UITab* tab, bool destroyOwnedNode = true, bool immediateClose = false );
+
+	void removeAllTabs( bool destroyOwnedNode = true, bool immediateClose = false );
+
+	void insertTab( const String& text, UINode* nodeOwned, Drawable* icon, const Uint32& index );
+
+	void insertTab( UITab* tab, const Uint32& index );
+
+	virtual void setTheme( UITheme* theme );
+
+	UITab* getTabSelected() const;
+
+	Uint32 getTabSelectedIndex() const;
+
+	UIWidget* getTabBar() const;
+
+	UIWidget* getContainerNode() const;
+
+	Float getTabSeparation() const;
+
+	void setTabSeparation( const Float& tabSeparation );
+
+	Uint32 getMaxTextLength() const;
+
+	void setMaxTextLength( const Uint32& maxTextLength );
+
+	std::string getMinTabWidth() const;
+
+	void setMinTabWidth( const std::string& minTabWidth );
+
+	std::string getMaxTabWidth() const;
+
+	void setMaxTabWidth( const std::string& maxTabWidth );
+
+	bool getTabsClosable() const;
+
+	void setTabsClosable( bool tabsClosable );
+
+	bool getSpecialBorderTabs() const;
+
+	void setTabsEdgesDiffSkins( bool diffSkins );
+
+	void setTabsHeight( const Float& height );
+
+	Float getTabsHeight() const;
+
+	const StyleConfig& getStyleConfig() const;
+
+	void setStyleConfig( const StyleConfig& styleConfig );
+
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	virtual bool isDrawInvalidator() const;
+
+	void invalidate( Node* invalidator );
+
+	void selectPreviousTab();
+
+	void selectNextTab();
+
+	UITab* setTabSelected( UITab* tab );
+
+	UITab* setTabSelected( const Uint32& tabIndex );
+
+	const bool& getHideTabBarOnSingleTab() const;
+
+	void setHideTabBarOnSingleTab( const bool& hideTabBarOnSingleTab );
+
+	const TabTryCloseCallback& getTabTryCloseCallback() const;
+
+	void setTabTryCloseCallback( const TabTryCloseCallback& tabTryCloseCallback );
+
+	const bool& getAllowRearrangeTabs() const;
+
+	void setAllowRearrangeTabs( bool allowRearrangeTabs );
+
+	bool getAllowDragAndDropTabs() const;
+
+	void setAllowDragAndDropTabs( bool allowDragAndDropTabs );
+
+	const Float& getTabVerticalDragResistance() const;
+
+	void setTabVerticalDragResistance( const Float& tabVerticalDragResistance );
+
+	bool getAllowSwitchTabsInEmptySpaces() const;
+
+	void setAllowSwitchTabsInEmptySpaces( bool allowSwitchTabsInEmptySpaces );
+
+	virtual bool acceptsDropOfWidget( const UIWidget* widget );
+
+	const Color& getDroppableHoveringColor() const;
+
+	void setDroppableHoveringColor( const Color& droppableHoveringColor );
+
+  protected:
+	friend class UITab;
+
+	UIWidget* mNodeContainer;
+	UIWidget* mTabBar;
+	UIScrollBar* mTabScroll;
+	StyleConfig mStyleConfig;
+	std::deque<UITab*> mTabs;
+	UITab* mTabSelected;
+	Uint32 mTabSelectedIndex;
+	TabTryCloseCallback mTabTryCloseCallback;
+	bool mHideTabBarOnSingleTab;
+	bool mAllowRearrangeTabs;
+	bool mAllowDragAndDropTabs;
+	bool mAllowSwitchTabsInEmptySpaces;
+	bool mDroppableHoveringColorWasSet{ false };
+	Float mTabVerticalDragResistance;
+	Color mDroppableHoveringColor{ Color::Transparent };
+
+	void onThemeLoaded();
+
+	UITab* createTab( const String& text, UINode* nodeOwned, Drawable* icon );
+
+	void removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab,
+					bool immediateClose );
+
+	void removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab, bool immediateClose );
+
+	virtual void onSizeChange();
+
+	virtual void onChildCountChange( Node* child, const bool& removed );
+
+	virtual void onPaddingChange();
+
+	virtual Uint32 onMessage( const NodeMessage* msg );
+
+	void setContainerSize();
+
+	void posTabs();
+
+	void zorderTabs();
+
+	void orderTabs();
+
+	void updateTabs();
+
+	void applyThemeToTabs();
+
+	void refreshOwnedWidget( UITab* tab );
+
+	void tryCloseTab( UITab* tab );
+
+	void swapTabs( UITab* left, UITab* right );
+
+	void updateScrollBar();
+
+	void updateScroll();
+};
+
+}} // namespace EE::UI
 
 #endif

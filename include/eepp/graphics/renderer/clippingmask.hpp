@@ -9,68 +9,66 @@
 namespace EE { namespace Graphics {
 
 class EE_API ClippingMask {
-	public:
-		enum Mode {
-			Inclusive,
-			Exclusive
-		};
+  public:
+	enum Mode { Inclusive, Exclusive };
 
-		/** Set the current Clipping area ( default the entire window, SCISSOR TEST ). */
-		void clipEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
+	/** Set the current Clipping area ( default the entire window, SCISSOR TEST ). */
+	void clipEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
 
-		/** Disable the Clipping area */
-		void clipDisable();
+	/** Disable the Clipping area */
+	void clipDisable();
 
-		/** Clip the area with a plane. */
-		void clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
+	/** Clip the area with a plane. */
+	void clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
 
-		/** Disable the clip plane area. */
-		void clipPlaneDisable();
+	/** Disable the clip plane area. */
+	void clipPlaneDisable();
 
-		std::size_t getMaskCount() const;
+	std::size_t getMaskCount() const;
 
-		const Drawable*& operator [](std::size_t index);
+	const Drawable*& operator[]( std::size_t index );
 
-		const Drawable* const& operator [](std::size_t index) const;
+	const Drawable* const& operator[]( std::size_t index ) const;
 
-		void clearMasks();
+	void clearMasks();
 
-		void appendMask(const Drawable& drawable);
+	void appendMask( const Drawable& drawable );
 
-		void removeMask(const Drawable& drawable);
+	void removeMask( const Drawable& drawable );
 
-		Mode getMaskMode() const;
+	Mode getMaskMode() const;
 
-		void setMaskMode(Mode theMode);
+	void setMaskMode( Mode theMode );
 
-		void stencilMaskEnable();
+	void stencilMaskEnable();
 
-		void stencilMaskDisable( bool clearMasks = false );
+	void stencilMaskDisable( bool clearMasks = false );
 
-		std::list<Rectf> getScissorsClipped() const;
+	std::list<Rectf> getScissorsClipped() const;
 
-		void setScissorsClipped(const std::list<Rectf> & scissorsClipped);
+	void setScissorsClipped( const std::list<Rectf>& scissorsClipped );
 
-		std::list<Rectf> getPlanesClipped() const;
+	std::list<Rectf> getPlanesClipped() const;
 
-		void setPlanesClipped(const std::list<Rectf> & planesClipped);
+	void setPlanesClipped( const std::list<Rectf>& planesClipped );
 
-	protected:
-		std::list<Rectf> mScissorsClipped;
-		std::list<Rectf> mPlanesClipped;
-		bool mPushScissorClip;
-		bool mPushClip;
+  protected:
+	std::list<Rectf> mScissorsClipped;
+	std::list<Rectf> mPlanesClipped;
+	bool mPushScissorClip;
+	bool mPushClip;
 
-		std::vector<const Drawable*> mDrawables;
-		Mode mMode;
+	std::vector<const Drawable*> mDrawables;
+	Mode mMode;
 
-		void drawMask();
-	private:
-		friend class Renderer;
+	void drawMask();
 
-		ClippingMask();
+  private:
+	friend class Renderer;
+
+	ClippingMask();
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

@@ -1,70 +1,86 @@
-////////////////////////////////////////////////////////////
-//
-// SFML - Simple and Fast Multimedia Library
-// Copyright (C) 2007-2009 Laurent Gomila (laurent.gom@gmail.com)
-//
-// This software is provided 'as-is', without any express or implied warranty.
-// In no event will the authors be held liable for any damages arising from the use of this software.
-//
-// Permission is granted to anyone to use this software for any purpose,
-// including commercial applications, and to alter it and redistribute it freely,
-// subject to the following restrictions:
-//
-// 1. The origin of this software must not be misrepresented;
-//    you must not claim that you wrote the original software.
-//    If you use this software in a product, an acknowledgment
-//    in the product documentation would be appreciated but is not required.
-//
-// 2. Altered source versions must be plainly marked as such,
-//    and must not be misrepresented as being the original software.
-//
-// 3. This notice may not be removed or altered from any source distribution.
-//
-////////////////////////////////////////////////////////////
-/** NOTE:
+#ifndef EE_STRING_HPP
+#define EE_STRING_HPP
+
+#include <cstdlib>
+#include <cstring>
+#include <eepp/config.hpp>
+#include <eepp/core/utf.hpp>
+#include <fstream>
+#include <locale>
+#include <sstream>
+#include <string>
+#include <vector>
+
+namespace EE {
+
+/*
 ** The class was modified to fit EEPP own needs. This is not the original implementation from SFML2.
 ** Functions and methods are the same that in std::string to facilitate portability.
 ** Also added a lot of utilities for string manipulation
 **/
 
-#ifndef EE_STRING_HPP
-#define EE_STRING_HPP
-
-#include <eepp/config.hpp>
-#include <eepp/core/utf.hpp>
-#include <locale>
-#include <string>
-#include <cstring>
-#include <cstdlib>
-#include <fstream>
-#include <sstream>
-#include <vector>
-
-namespace EE {
-
-/** @brief Utility string class that automatically handles conversions between types and encodings **/
+/** Utility string class that automatically handles conversions between types and encodings **/
 class EE_API String {
-	public :
-	typedef Uint32								StringBaseType;
-	typedef std::basic_string<StringBaseType>	StringType;
-	typedef StringType::iterator				Iterator;				//! Iterator type
-	typedef StringType::const_iterator			ConstIterator;			//! Constant iterator type
-	typedef StringType::reverse_iterator		ReverseIterator;		//! Reverse Iterator type
-	typedef StringType::const_reverse_iterator	ConstReverseIterator;	//! Constant iterator type
+  public:
+	typedef char32_t StringBaseType;
+	typedef std::basic_string<StringBaseType> StringType;
+	typedef StringType::iterator Iterator;							 //! Iterator type
+	typedef StringType::const_iterator ConstIterator;				 //! Constant iterator type
+	typedef StringType::reverse_iterator ReverseIterator;			 //! Reverse Iterator type
+	typedef StringType::const_reverse_iterator ConstReverseIterator; //! Constant iterator type
+	typedef Uint32 HashType;
 
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
-	/** @return string hash */
-	static constexpr Uint32 hash( const Uint8 * str );
+	/** Boyer–Moore–Horspool fast string search. */
+	class EE_API BMH {
+	  public:
+		typedef std::vector<size_t> OccTable;
+
+		static const OccTable createOccTable( const unsigned char* needle, size_t needleLength );
+
+		/** @returns haystackLength if not found, otherwise the position */
+		static size_t search( const unsigned char* haystack, size_t haystackLength,
+							  const unsigned char* needle, const size_t needleLength,
+							  const OccTable& occ );
+
+		/** @returns -1 if not found otherwise the position */
+		static Int64 find( const std::string& haystack, const std::string& needle,
+						   const size_t& haystackOffset, const OccTable& occ );
+
+		/** @returns -1 if not found otherwise the position */
+		static Int64 find( const std::string& haystack, const std::string& needle,
+						   const size_t& haystackOffset = 0 );
+	};
 
 	/** @return string hash */
-	static constexpr Uint32 hash( const char * str );
+	static constexpr HashType hash( const char* str ) {
+		//! djb2
+		if ( NULL != str ) {
+			Uint32 hash = 5381;
+			Int32 c = 0;
+
+			while ( ( c = *str++ ) )
+				hash = ( ( hash << 5 ) + hash ) + c;
+
+			return hash;
+		}
+
+		return 0;
+	}
+
+	/** Escape string sequence */
+	static String escape( const String& str );
+
+	/** Unescape string sequence */
+	static String unescape( const String& str );
 
 	/** @return string hash */
-	static Uint32 hash( const std::string& str );
+	static String::HashType hash( const std::string& str );
 
-	/** @return string hash. Note: String::hash( std::string( "text" ) ) is != to String::hash( String( "text" ) ) */
-	static Uint32 hash( const String& str );
+	/** @return string hash. Note: String::hash( std::string( "text" ) ) is != to String::hash(
+	 * String( "text" ) ) */
+	static String::HashType hash( const String& str );
 
 	/** @return If the value passed is a character */
 	static bool isCharacter( const int& value );
@@ -72,122 +88,243 @@ class EE_API String {
 	/** @return If the value passed is a number */
 	static bool isNumber( const int& value, bool AllowDot = false );
 
+	/** @return If the string represents a number. */
+	static bool isNumber( const std::string& value, bool AllowDot = false );
+
 	/** @return If the value passed is a letter */
 	static bool isLetter( const int& value );
 
+	/** @return If the value passed is a letter or a number */
+	static bool isAlphaNum( const int& value );
+
+	/** @return If the string is a representation of a hexa number */
+	static bool isHexNotation( const std::string& value, const std::string& withPrefix = "" );
+
+	/** @return If the needle substring, found starting at startPos is a whole-word. */
+	static bool isWholeWord( const std::string& haystack, const std::string& needle,
+							 const Int64& startPos );
+
+	/** @return If the needle substring, found starting at startPos is a whole-word. */
+	static bool isWholeWord( const String& haystack, const String& needle, const Int64& startPos );
+
 	/** Split a String and hold it on a vector */
-	static std::vector < String > split( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
+	static std::vector<String> split( const String& str, const StringBaseType& delim = '\n',
+									  const bool& pushEmptyString = false,
+									  const bool& keepDelim = false );
 
 	/** Split a string and hold it on a vector */
-	static std::vector < std::string > split( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
+	static std::vector<std::string> split( const std::string& str, const Int8& delim = '\n',
+										   const bool& pushEmptyString = false,
+										   const bool& keepDelim = false );
+
+	/** Split a string and hold it on a vector. This function is meant to be used for code
+	 * splitting, detects functions, arrays, braces and quotes for the splitting. */
+	static std::vector<std::string> split( const std::string& str, const std::string& delims,
+										   const std::string& delimsPreserve = "",
+										   const std::string& quote = "\"",
+										   const bool& removeQuotes = false );
 
 	/** Joins a string vector into a single string */
-	static std::string join( const std::vector<std::string>& strArray, const Int8& joinchar = ' ', const bool& appendLastJoinChar = false );
+	static std::string join( const std::vector<std::string>& strArray, const Int8& joinchar = ' ',
+							 const bool& appendLastJoinChar = false );
 
 	/** Joins a string vector into a single string */
-	static String join( const std::vector<String>& strArray, const Int8& joinchar = ' ', const bool& appendLastJoinChar = false );
+	static String join( const std::vector<String>& strArray, const Int8& joinchar = ' ',
+						const bool& appendLastJoinChar = false );
 
-	/** Remove the first space ( or the specified character ) on the string */
-	static std::string lTrim( const std::string & str, char character = ' ' );
+	/** Removes the trailing prefix. */
+	static std::string lTrim( const std::string& str, char character = ' ' );
 
-	/** Removes all spaces ( or the specified character ) on the string */
-	static std::string trim( const std::string & str, char character = ' ' );
-
-	/** Remove the first space ( or the specified character ) on the string */
-	static String lTrim(const String & str, char character = ' ' );
+	/** Removes the trailing suffix. */
+	static std::string rTrim( const std::string& str, char character );
 
 	/** Removes all spaces ( or the specified character ) on the string */
-	static String trim( const String & str, char character = ' ' );
+	static std::string trim( const std::string& str, char character = ' ' );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static void trimInPlace( std::string& str, char character = ' ' );
+
+	/** Removes the trailing prefix. */
+	static String lTrim( const String& str, char character = ' ' );
+
+	/** Removes the trailing suffix. */
+	static String rTrim( const String& str, char character = ' ' );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static String trim( const String& str, char character = ' ' );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static void trimInPlace( String& str, char character = ' ' );
 
 	/** Convert the string into upper case string */
-	static void toUpperInPlace( std::string & str );
+	static void toUpperInPlace( std::string& str );
 
 	/** Convert a string to lower case */
 	static std::string toUpper( std::string str );
 
 	/** Convert the reference of a string into lower case string */
-	static void toLowerInPlace( std::string & str );
+	static void toLowerInPlace( std::string& str );
+
+	/** Capitalizes the reference of a string */
+	static void capitalizeInPlace( std::string& str );
 
 	/** Convert a string to lower case */
 	static std::string toLower( std::string str );
+
+	/** Catitalize a string */
+	static std::string capitalize( std::string str );
+
+	/** Convert a string to lower case */
+	static String toUpper( const String& str );
+
+	/** Convert a string to lower case */
+	static String toLower( const String& str );
+
+	/** Capitalizes a string */
+	static String capitalize( const String& str );
 
 	/** Convert the string to an std::vector<Uint8> */
 	static std::vector<Uint8> stringToUint8( const std::string& str );
 
 	/** Convert the std::vector<Uint8> to an string */
-	static std::string Uint8ToString( const std::vector<Uint8> & v );
+	static std::string Uint8ToString( const std::vector<Uint8>& v );
 
 	/** Insert a char into String on pos (added this function to avoid a bug on String) */
-	static void insertChar( String& str, const unsigned int& pos, const Uint32& tchar );
+	static void insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar );
 
 	/** Copy a string to another
-	* @param Dst Destination String
-	* @param Src Source String
-	* @param DstSize Destination Size
-	*/
-	static void strCopy( char * Dst, const char * Src, unsigned int DstSize );
+	 * @param Dst Destination String
+	 * @param Src Source String
+	 * @param DstSize Destination Size
+	 */
+	static void strCopy( char* Dst, const char* Src, unsigned int DstSize );
 
 	/** Compare two strings from its beginning.
-	* @param haystack The string to search in.
-	* @param needle The searched string.
-	* @return true if string starts with the substring
-	*/
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
 	static bool startsWith( const std::string& haystack, const std::string& needle );
 
 	/** Compare two strings from its beginning.
-	* @param haystack The string to search in.
-	* @param needle The searched string.
-	* @return true if string starts with the substring
-	*/
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
 	static bool startsWith( const String& haystack, const String& needle );
 
+	/** Compare two strings from its beginning.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool startsWith( const char* haystack, const char* needle );
+
+	/** Compare two strings from its end.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool endsWith( const std::string& haystack, const std::string& needle );
+
+	/** Compare two strings from its end.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool endsWith( const String& haystack, const String& needle );
+
+	/** @return True if a string contains a substring.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 */
+	static bool contains( const std::string& haystack, const std::string& needle );
+
+	/** @return True if a string contains a substring.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 */
+	static bool contains( const String& haystack, const String& needle );
+
+	static int fuzzyMatch( const std::string& string, const std::string& pattern );
+
 	/** Replace all occurrences of the search string with the replacement string. */
-	static void replaceAll( std::string &target, const std::string& that, const std::string& with );
+	static void replaceAll( std::string& target, const std::string& that, const std::string& with );
+
+	/** Replace all occurrences of the search string with the replacement string. */
+	static void replaceAll( String& target, const String& that, const String& with );
 
 	/** Replace the first ocurrence of the search string with the replacement string. */
 	static void replace( std::string& target, const std::string& that, const std::string& with );
 
+	/** Replace the first ocurrence of the search string with the replacement string. */
+	static void replace( String& target, const String& that, const String& with );
+
 	/** Removes the numbers at the end of the string */
 	static std::string removeNumbersAtEnd( std::string txt );
 
+	/** Searchs the position of the corresponding close bracket in a string. */
+	static std::size_t findCloseBracket( const std::string& string, std::size_t startOffset,
+										 char openBracket, char closeBracket );
+
+	/** Having a string of values separated by a delimiter, returns the corresponding index of the
+	 * searched value */
+	static int valueIndex( const std::string& val, const std::string& strings, int defValue = -1,
+						   char delim = ';' );
+
+	/** Creates a random string using the dictionary characters. */
+	static std::string randString(
+		size_t len,
+		std::string dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" );
+
 	/** Converts from any basic type to std::string */
-	template <class T>
-	static std::string toStr(const T& i) {
+	template <class T> static std::string toString( const T& i ) {
 		std::ostringstream ss;
-		ss << i;
+		ss << std::fixed << i;
 		return ss.str();
 	}
 
+	static std::string fromFloat( const Float& value, const std::string& append = "",
+								  const std::string& prepend = "" );
+
+	static std::string fromDouble( const double& value, const std::string& append = "",
+								   const std::string& prepend = "" );
+
 	/** Converts from a string to type */
 	template <class T>
-	static bool fromString(T& t, const std::string& s, std::ios_base& (*f)(std::ios_base&) = std::dec  ) {
-		std::istringstream iss(s);
-		return !(iss >> f >> t).fail();
+	static bool fromString( T& t, const std::string& s,
+							std::ios_base& ( *f )( std::ios_base& ) = std::dec ) {
+		std::istringstream iss( s );
+		return !( iss >> f >> t ).fail();
 	}
 
 	/** Converts from a String to type */
 	template <class T>
-	static bool fromString(T& t, const String& s, std::ios_base& (*f)(std::ios_base&) = std::dec ) {
+	static bool fromString( T& t, const String& s,
+							std::ios_base& ( *f )( std::ios_base& ) = std::dec ) {
 		std::istringstream iss( s.toUtf8() );
-		return !(iss >> f >> t).fail();
+		return !( iss >> f >> t ).fail();
 	}
 
 	/** Returning a std::string from a formated string */
 	static std::string format( const char* format, ... )
-	#ifdef __GNUC__
+#ifdef __GNUC__
 		/* This attribute is nice: it even works through gettext invokation. For
 		   example, gcc will complain that StrFormat(_("%s"), 42) is ill-formed. */
-		__attribute__((format(printf, 1, 2)))
-	#endif
-	;
+		__attribute__( ( format( printf, 1, 2 ) ) )
+#endif
+		;
 
 	/** Format a char buffer */
-	static void formatBuffer( char * Buffer, int BufferSize, const char * format, ... );
+	static void formatBuffer( char* Buffer, int BufferSize, const char* format, ... );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert
 	**/
 	static String fromUtf8( const std::string& utf8String );
+
+	/** @return The number of codepoints of the utf8 string. */
+	static size_t utf8StringLength( const std::string& utf8String );
 
 	/** @brief Default constructor
 	** This constructor creates an empty string.
@@ -218,7 +355,12 @@ class EE_API String {
 	/** @brief Construct from an from a null-terminated C-style UTF-8 string to UTF-32
 	** @param uf8String UTF-8 string to convert
 	**/
-	String( const char* uf8String );
+	String( const char* utf8String );
+
+	/** @brief Construct from an from a sub-string C-style UTF-8 string to UTF-32
+	** @param uf8String UTF-8 string to convert
+	**/
+	String( const char* utf8String, const size_t& utf8StringSize );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert
@@ -265,7 +407,6 @@ class EE_API String {
 	**/
 	String( const StringType& utf32String );
 
-
 	/** @brief Copy constructor
 	** @param str Instance to copy
 	**/
@@ -276,10 +417,9 @@ class EE_API String {
 	**  @param end   Forward iterator to the end of the UTF-8 sequence
 	**  @return A String containing the source string
 	**  @see FromUtf16, FromUtf32 */
-	template <typename T>
-	static String fromUtf8(T begin, T end) {
+	template <typename T> static String fromUtf8( T begin, T end ) {
 		String string;
-		Utf8::toUtf32(begin, end, std::back_inserter(string.mString));
+		Utf8::toUtf32( begin, end, std::back_inserter( string.mString ) );
 		return string;
 	}
 
@@ -288,10 +428,9 @@ class EE_API String {
 	**  @param end   Forward iterator to the end of the UTF-16 sequence
 	**  @return A String containing the source string
 	**  @see FromUtf8, FromUtf32 */
-	template <typename T>
-	static String fromUtf16(T begin, T end) {
+	template <typename T> static String fromUtf16( T begin, T end ) {
 		String string;
-		Utf16::toUtf32(begin, end, std::back_inserter(string.mString));
+		Utf16::toUtf32( begin, end, std::back_inserter( string.mString ) );
 		return string;
 	}
 
@@ -300,10 +439,9 @@ class EE_API String {
 	**  @param end   Forward iterator to the end of the UTF-32 sequence
 	**  @return A String containing the source string
 	**  @see FromUtf8, FromUtf32 */
-	template <typename T>
-	static String fromUtf32(T begin, T end) {
+	template <typename T> static String fromUtf32( T begin, T end ) {
 		String string;
-		Utf32::toUtf32(begin, end, std::back_inserter(string.mString));
+		Utf32::toUtf32( begin, end, std::back_inserter( string.mString ) );
 		return string;
 	}
 
@@ -349,23 +487,23 @@ class EE_API String {
 	std::basic_string<Uint16> toUtf16() const;
 
 	/** @return The hash code of the String */
-	Uint32 getHash() const;
+	HashType getHash() const;
 
 	/** @brief Overload of assignment operator
 	** @param right Instance to assign
 	** @return Reference to self
 	**/
-	String& operator =(const String& right);
+	String& operator=( const String& right );
 
-	String& operator =( const StringBaseType& right );
+	String& operator=( const StringBaseType& right );
 
 	/** @brief Overload of += operator to append an UTF-32 string
 	** @param right String to append
 	** @return Reference to self
 	**/
-	String& operator +=(const String& right);
+	String& operator+=( const String& right );
 
-	String& operator +=( const StringBaseType& right );
+	String& operator+=( const StringBaseType& right );
 
 	/** @brief Overload of [] operator to access a character by its position
 	** This function provides read-only access to characters.
@@ -373,7 +511,7 @@ class EE_API String {
 	** @param index Index of the character to get
 	** @return Character at position \a index
 	**/
-	StringBaseType operator [](std::size_t index) const;
+	const StringBaseType& operator[]( std::size_t index ) const;
 
 	/** @brief Overload of [] operator to access a character by its position
 	** This function provides read and write access to characters.
@@ -382,14 +520,15 @@ class EE_API String {
 	** @return Reference to the character at position \a index
 	**/
 
-	StringBaseType& operator [](std::size_t index);
+	StringBaseType& operator[]( std::size_t index );
 
 	/** @brief Get character in string
-	** Performs a range check, throwing an exception of type out_of_range in case that pos is not an actual position in the string.
+	** Performs a range check, throwing an exception of type out_of_range in case that pos is not an
+	*actual position in the string.
 	** @return The character at position pos in the string.
 	*/
-	StringBaseType at( std::size_t index ) const;
-	
+	const StringBaseType& at( std::size_t index ) const;
+
 	/** @brief clear the string
 	** This function removes all the characters from the string.
 	** @see empty, erase
@@ -401,7 +540,7 @@ class EE_API String {
 	** @see empty
 	**/
 	std::size_t size() const;
-	
+
 	/** @see size() */
 	std::size_t length() const;
 
@@ -417,8 +556,7 @@ class EE_API String {
 	** @param position Position of the first character to erase
 	** @param count    Number of characters to erase
 	**/
-	void erase(std::size_t position, std::size_t count = 1);
-
+	void erase( std::size_t position, std::size_t count = 1 );
 
 	/** @brief Insert one or more characters into the string
 	** This function inserts the characters of \a str
@@ -426,23 +564,22 @@ class EE_API String {
 	** @param position Position of insertion
 	** @param str      Characters to insert
 	**/
-	String& insert(std::size_t position, const String& str);
+	String& insert( std::size_t position, const String& str );
+
+	String& insert( size_t pos1, const char* s, size_t n );
 
 	String& insert( std::size_t pos1, const String& str, std::size_t pos2, std::size_t n );
 
-	String& insert ( std::size_t pos1, const char* s, std::size_t n );
+	String& insert( std::size_t pos1, const char* s );
 
-	String& insert ( std::size_t pos1, const char* s );
+	String& insert( std::size_t pos1, size_t n, const String::StringBaseType& c );
 
-	String& insert ( std::size_t pos1, size_t n, char c );
+	Iterator insert( Iterator p, const String::StringBaseType& c );
 
-	Iterator insert ( Iterator p, char c );
+	void insert( Iterator p, std::size_t n, const StringBaseType& c );
 
-	void insert ( Iterator p, std::size_t n, char c );
-
-	template<class InputIterator>
-	void insert ( Iterator p, InputIterator first, InputIterator last )
-	{
+	template <class InputIterator>
+	void insert( Iterator p, InputIterator first, InputIterator last ) {
 		mString.insert( p, first, last );
 	}
 
@@ -455,11 +592,11 @@ class EE_API String {
 	**/
 	std::size_t find( const String& str, std::size_t start = 0 ) const;
 
-	std::size_t find ( const char* s, std::size_t pos, std::size_t n ) const;
+	std::size_t find( const char* s, std::size_t pos, std::size_t n ) const;
 
-	std::size_t find ( const char* s, std::size_t pos = 0 ) const;
+	std::size_t find( const char* s, std::size_t pos = 0 ) const;
 
-	std::size_t find ( char c, std::size_t pos = 0 ) const;
+	std::size_t find( const String::StringBaseType& c, std::size_t pos = 0 ) const;
 
 	/** @brief Get a pointer to the C-style array of characters
 	** This functions provides a read-only access to a
@@ -469,11 +606,14 @@ class EE_API String {
 	** @return Read-only pointer to the array of characters
 	**/
 	const StringBaseType* c_str() const;
-	
+
 	/** @brief Get string data
-	** Notice that no terminating null character is appended (see member c_str for such a functionality).
-	** The returned array points to an internal location which should not be modified directly in the program.
-	** Its contents are guaranteed to remain unchanged only until the next call to a non-constant member function of the string object.
+	** Notice that no terminating null character is appended (see member c_str for such a
+	*functionality).
+	** The returned array points to an internal location which should not be modified directly in
+	*the program.
+	** Its contents are guaranteed to remain unchanged only until the next call to a non-constant
+	*member function of the string object.
 	** @return Pointer to an internal array containing the same content as the string.
 	**/
 	const StringBaseType* data() const;
@@ -507,7 +647,7 @@ class EE_API String {
 	** @see begin
 	**/
 	ConstIterator end() const;
-	
+
 	/** @brief Return an reverse iterator to the beginning of the string
 	** @return Read-write reverse iterator to the beginning of the string characters
 	** @see end
@@ -537,147 +677,153 @@ class EE_API String {
 	** @see begin
 	**/
 	ConstReverseIterator rend() const;
-	
+
 	/** @brief Resize String */
-	void resize ( std::size_t n, StringBaseType c );
-	
+	void resize( std::size_t n, StringBaseType c );
+
 	/** @brief Resize String */
-	void resize ( std::size_t n );
-	
+	void resize( std::size_t n );
+
 	/** @return Maximum size of string */
 	std::size_t max_size() const;
-	
+
 	/** @brief Request a change in capacity */
-	void reserve ( size_t res_arg=0 );
-	
+	void reserve( size_t res_arg = 0 );
+
 	/** @return Size of allocated storage */
 	std::size_t capacity() const;
 
 	/** @brief Append character to string */
 	void push_back( StringBaseType c );
-	
+
 	/** @brief Swap contents with another string */
-	void swap ( String& str );
-	
-	String& assign ( const String& str );
+	void swap( String& str );
 
-	String& assign ( const String& str, std::size_t pos, std::size_t n );
+	String& assign( const String& str );
 
-	String& assign ( const char* s, std::size_t n );
+	String& assign( const String& str, std::size_t pos, std::size_t n );
 
-	String& assign ( const char* s );
+	String& assign( const char* s );
 
-	String& assign ( std::size_t n, char c );
+	String& assign( std::size_t n, StringBaseType c );
 
-	template <class InputIterator>
-	String& assign ( InputIterator first, InputIterator last )
-	{
+	template <class InputIterator> String& assign( InputIterator first, InputIterator last ) {
 		mString.assign( first, last );
 		return *this;
 	}
 
-	String& append ( const String& str );
+	String& append( const String& str );
 
-	String& append ( const String& str, std::size_t pos, std::size_t n );
+	String& append( const String& str, std::size_t pos, std::size_t n );
 
-	String& append ( const char* s, std::size_t n );
+	String& append( const char* s );
 
-	String& append ( const char* s );
+	String& append( std::size_t n, char c );
 
-	String& append ( std::size_t n, char c );
+	String& append( std::size_t n, StringBaseType c );
 
-	String& append ( std::size_t n, StringBaseType c );
-
-	template <class InputIterator>
-	String& append ( InputIterator first, InputIterator last )
-	{
+	template <class InputIterator> String& append( InputIterator first, InputIterator last ) {
 		mString.append( first, last );
 		return *this;
 	}
 
-	String& replace ( std::size_t pos1, std::size_t n1,   const String& str );
+	String& replace( std::size_t pos1, std::size_t n1, const String& str );
 
-	String& replace ( Iterator i1, Iterator i2, const String& str );
+	String& replace( Iterator i1, Iterator i2, const String& str );
 
-	String& replace ( std::size_t pos1, std::size_t n1, const String& str, std::size_t pos2, std::size_t n2 );
+	String& replace( std::size_t pos1, std::size_t n1, const String& str, std::size_t pos2,
+					 std::size_t n2 );
 
-	String& replace ( std::size_t pos1, std::size_t n1, const char* s, std::size_t n2 );
+	String& replace( std::size_t pos1, std::size_t n1, const char* s, std::size_t n2 );
 
-	String& replace ( Iterator i1, Iterator i2, const char* s, std::size_t n2 );
+	String& replace( Iterator i1, Iterator i2, const char* s, std::size_t n2 );
 
-	String& replace ( std::size_t pos1, std::size_t n1,   const char* s );
+	String& replace( std::size_t pos1, std::size_t n1, const char* s );
 
-	String& replace ( Iterator i1, Iterator i2, const char* s );
+	String& replace( Iterator i1, Iterator i2, const char* s );
 
-	String& replace ( std::size_t pos1, std::size_t n1, std::size_t n2, char c );
+	String& replace( std::size_t pos1, std::size_t n1, std::size_t n2, StringBaseType c );
 
-	String& replace ( Iterator i1, Iterator i2, std::size_t n2, char c );
+	String& replace( Iterator i1, Iterator i2, std::size_t n2, StringBaseType c );
 
-	template<class InputIterator>
-	String& replace ( Iterator i1, Iterator i2, InputIterator j1, InputIterator j2 )
-	{
+	template <class InputIterator>
+	String& replace( Iterator i1, Iterator i2, InputIterator j1, InputIterator j2 ) {
 		mString.replace( i1, i2, j1, j2 );
 		return *this;
 	}
 
-	std::size_t rfind ( const String& str, std::size_t pos = StringType::npos ) const;
+	std::size_t rfind( const String& str, std::size_t pos = StringType::npos ) const;
 
-	std::size_t rfind ( const char* s, std::size_t pos, std::size_t n ) const;
+	std::size_t rfind( const char* s, std::size_t pos = StringType::npos ) const;
 
-	std::size_t rfind ( const char* s, std::size_t pos = StringType::npos ) const;
+	std::size_t rfind( const StringBaseType& c, std::size_t pos = StringType::npos ) const;
 
-	std::size_t rfind ( char c, std::size_t pos = StringType::npos ) const;
+	String substr( std::size_t pos = 0, std::size_t n = StringType::npos ) const;
 
-	String substr ( std::size_t pos = 0, std::size_t n = StringType::npos ) const;
+	std::size_t copy( StringBaseType* s, std::size_t n, std::size_t pos = 0 ) const;
 
-	std::size_t copy ( StringBaseType* s, std::size_t n, std::size_t pos = 0 ) const;
+	int compare( const String& str ) const;
 
-	int compare ( const String& str ) const;
+	int compare( const char* s ) const;
 
-	int compare ( const char* s ) const;
+	int compare( std::size_t pos1, std::size_t n1, const String& str ) const;
 
-	int compare ( std::size_t pos1, std::size_t n1, const String& str ) const;
+	int compare( std::size_t pos1, std::size_t n1, const char* s ) const;
 
-	int compare ( std::size_t pos1, std::size_t n1, const char* s) const;
+	int compare( std::size_t pos1, std::size_t n1, const String& str, std::size_t pos2,
+				 std::size_t n2 ) const;
 
-	int compare ( std::size_t pos1, std::size_t n1, const String& str, std::size_t pos2, std::size_t n2 ) const;
+	int compare( std::size_t pos1, std::size_t n1, const char* s, std::size_t n2 ) const;
 
-	int compare ( std::size_t pos1, std::size_t n1, const char* s, std::size_t n2) const;
+	std::size_t find_first_of( const String& str, std::size_t pos = 0 ) const;
 
-	std::size_t find_first_of ( const String& str, std::size_t pos = 0 ) const;
+	std::size_t find_first_of( const char* s, std::size_t pos = 0 ) const;
 
-	std::size_t find_first_of ( const char* s, std::size_t pos, std::size_t n ) const;
+	std::size_t find_first_of( StringBaseType c, std::size_t pos = 0 ) const;
 
-	std::size_t find_first_of ( const char* s, std::size_t pos = 0 ) const;
+	std::size_t find_last_of( const String& str, std::size_t pos = StringType::npos ) const;
 
-	std::size_t find_first_of ( StringBaseType c, std::size_t pos = 0 ) const;
+	std::size_t find_last_of( const char* s, std::size_t pos = StringType::npos ) const;
 
-	std::size_t find_last_of ( const String& str, std::size_t pos = StringType::npos ) const;
+	std::size_t find_last_of( StringBaseType c, std::size_t pos = StringType::npos ) const;
 
-	std::size_t find_last_of ( const char* s, std::size_t pos, std::size_t n ) const;
+	std::size_t find_first_not_of( const String& str, std::size_t pos = 0 ) const;
 
-	std::size_t find_last_of ( const char* s, std::size_t pos = StringType::npos ) const;
+	std::size_t find_first_not_of( const char* s, std::size_t pos = 0 ) const;
 
-	std::size_t find_last_of ( StringBaseType c, std::size_t pos = StringType::npos ) const;
+	std::size_t find_first_not_of( StringBaseType c, std::size_t pos = 0 ) const;
 
-	std::size_t find_first_not_of ( const String& str, std::size_t pos = 0 ) const;
+	std::size_t find_last_not_of( const String& str, std::size_t pos = StringType::npos ) const;
 
-	std::size_t find_first_not_of ( const char* s, std::size_t pos, std::size_t n ) const;
+	std::size_t find_last_not_of( const char* s, std::size_t pos = StringType::npos ) const;
 
-	std::size_t find_first_not_of ( const char* s, std::size_t pos = 0 ) const;
+	std::size_t find_last_not_of( StringBaseType c, std::size_t pos = StringType::npos ) const;
 
-	std::size_t find_first_not_of ( StringBaseType c, std::size_t pos = 0 ) const;
+	size_t countChar( StringBaseType c ) const;
 
-	std::size_t find_last_not_of ( const String& str, std::size_t pos = StringType::npos ) const;
+	String& padLeft( unsigned int minDigits, StringBaseType padChar );
 
-	std::size_t find_last_not_of ( const char* s, std::size_t pos, std::size_t n ) const;
+	String& toLower();
 
-	std::size_t find_last_not_of ( const char* s, std::size_t pos = StringType::npos ) const;
+	String& toUpper();
 
-	std::size_t find_last_not_of ( StringBaseType c, std::size_t pos = StringType::npos ) const;
-private :
-    friend EE_API bool operator ==(const String& left, const String& right);
-    friend EE_API bool operator <(const String& left, const String& right);
+	String& capitalize();
+
+	String& escape();
+
+	String& unescape();
+
+	StringBaseType lastChar() const;
+
+	std::vector<String> split( const StringBaseType& delim = '\n',
+							   const bool& pushEmptyString = false,
+							   const bool& keepDelim = false ) const;
+
+	std::pair<bool, int> fuzzyMatch( const String& pattern );
+
+  private:
+	friend EE_API bool operator==( const String& left, const String& right );
+	friend EE_API bool operator<( const String& left, const String& right );
 
 	StringType mString; ///< Internal string of UTF-32 characters
 };
@@ -688,7 +834,7 @@ private :
 ** @param right Right operand (a string)
 ** @return True if both strings are equal
 **/
-EE_API bool operator ==(const String& left, const String& right);
+EE_API bool operator==( const String& left, const String& right );
 
 /** @relates String
 ** @brief Overload of != operator to compare two UTF-32 strings
@@ -696,7 +842,7 @@ EE_API bool operator ==(const String& left, const String& right);
 ** @param right Right operand (a string)
 ** @return True if both strings are different
 **/
-EE_API bool operator !=(const String& left, const String& right);
+EE_API bool operator!=( const String& left, const String& right );
 
 /** @relates String
 ** @brief Overload of < operator to compare two UTF-32 strings
@@ -704,7 +850,7 @@ EE_API bool operator !=(const String& left, const String& right);
 ** @param right Right operand (a string)
 ** @return True if \a left is alphabetically lesser than \a right
 **/
-EE_API bool operator <(const String& left, const String& right);
+EE_API bool operator<( const String& left, const String& right );
 
 /** @relates String
 ** @brief Overload of > operator to compare two UTF-32 strings
@@ -712,7 +858,7 @@ EE_API bool operator <(const String& left, const String& right);
 ** @param right Right operand (a string)
 ** @return True if \a left is alphabetically greater than \a right
 **/
-EE_API bool operator >(const String& left, const String& right);
+EE_API bool operator>( const String& left, const String& right );
 
 /** @relates String
 ** @brief Overload of <= operator to compare two UTF-32 strings
@@ -720,7 +866,7 @@ EE_API bool operator >(const String& left, const String& right);
 ** @param right Right operand (a string)
 ** @return True if \a left is alphabetically lesser or equal than \a right
 **/
-EE_API bool operator <=(const String& left, const String& right);
+EE_API bool operator<=( const String& left, const String& right );
 
 /** @relates String
 ** @brief Overload of >= operator to compare two UTF-32 strings
@@ -728,7 +874,7 @@ EE_API bool operator <=(const String& left, const String& right);
 ** @param right Right operand (a string)
 ** @return True if \a left is alphabetically greater or equal than \a right
 **/
-EE_API bool operator >=(const String& left, const String& right);
+EE_API bool operator>=( const String& left, const String& right );
 
 /** @relates String
 ** @brief Overload of binary + operator to concatenate two strings
@@ -736,9 +882,9 @@ EE_API bool operator >=(const String& left, const String& right);
 ** @param right Right operand (a string)
 ** @return Concatenated string
 **/
-EE_API String operator +( const String& left, const String& right );
+EE_API String operator+( const String& left, const String& right );
 
-}
+} // namespace EE
 
 #endif
 

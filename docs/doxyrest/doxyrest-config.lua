@@ -1,0 +1,16 @@
+INDEX_TITLE = "eepp - Entropia Engine++ Documentation"
+LANGUAGE = "cpp"
+ML_SPECIFIER_MODIFIER_LIST = false
+ML_PARAM_LIST_COUNT_THRESHOLD = 6
+PRE_BODY_NL = false
+VERBATIM_TO_CODE_BLOCK = "cpp"
+EXCLUDE_DEFAULT_CONSTRUCTORS = true
+SHOW_DIRECT_DESCENDANTS = false
+ESCAPE_ASTERISKS = true
+ESCAPE_TRAILING_UNDERSCORES = true
+PROTECTION_FILTER = "public"
+INPUT_FILE = "../xml/index.xml"
+OUTPUT_FILE = "../rst/index.rst"
+FRAME_FILE = "index.rst.in"
+FRAME_DIR_LIST = { "frame/cfamily", "frame/common" }
+SORT_GROUPS_BY = title

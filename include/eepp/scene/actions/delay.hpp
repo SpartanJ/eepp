@@ -8,29 +8,32 @@ using namespace EE::System;
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Delay : public Action {
-	public:
-		static Delay * New( const Time& time );
-		
-		void start() override;
+  public:
+	static Delay* New( const Time& time );
 
-		void stop() override;
+	void start() override;
 
-		void update( const Time& time ) override;
+	void stop() override;
 
-		bool isDone() override;
+	void update( const Time& time ) override;
 
-		Action * clone() const override;
+	bool isDone() override;
 
-		Action * reverse() const override;
+	Float getCurrentProgress() override;
 
-	protected:
-		Clock mClock;
-		Time mTime;
-		
-		Delay( const Time& time );
-		
+	Time getTotalTime() override;
+
+	Action* clone() const override;
+
+	Action* reverse() const override;
+
+  protected:
+	Clock mClock;
+	Time mTime;
+
+	Delay( const Time& time );
 };
 
-}}} 
+}}} // namespace EE::Scene::Actions
 
 #endif

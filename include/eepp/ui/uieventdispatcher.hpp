@@ -6,17 +6,22 @@ using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
-class UIEventDispatcher : public EventDispatcher {
-	public:
-		static UIEventDispatcher * New( SceneNode * sceneNode );
+class EE_API UIEventDispatcher : public EventDispatcher {
+  public:
+	static UIEventDispatcher* New( SceneNode* sceneNode );
 
-		UIEventDispatcher( SceneNode * sceneNode );
-	protected:
-		void inputCallback( InputEvent * Event );
+	UIEventDispatcher( SceneNode* sceneNode );
 
-		void checkTabPress( const Uint32& KeyCode );
+	const bool& justGainedFocus() const;
+
+  protected:
+	bool mJustGainedFocus;
+
+	void inputCallback( InputEvent* Event );
+
+	void checkTabPress( const Uint32& KeyCode );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

@@ -11,63 +11,76 @@ using namespace EE::Math;
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Tint : public Action {
-	public:
-		enum TintType {
-			Background,
-			Foreground,
-			Skin,
-			Border,
-			Text,
-			TextShadow,
-			TextOutline
-		};
+  public:
+	enum TintType {
+		Background,
+		Foreground,
+		Skin,
+		Border,
+		Text,
+		TextShadow,
+		TextOutline,
+		BackgroundTint,
+		ForegroundTint
+	};
 
-		static Tint * New( const Color& start, const Color& end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type = Ease::Linear, const TintType& colorInterpolationType = Background );
+	static Tint* New( const Color& start, const Color& end, const bool& interpolateAlpha,
+					  const Time& duration, const Ease::Interpolation& type = Ease::Linear,
+					  const TintType& colorInterpolationType = Background,
+					  const Uint32& elemIndex = 0 );
 
-		void start() override;
+	void start() override;
 
-		void stop() override;
+	void stop() override;
 
-		void update( const Time& time ) override;
+	void update( const Time& time ) override;
 
-		bool isDone() override;
+	bool isDone() override;
 
-		virtual Action * clone() const override;
+	virtual Action* clone() const override;
 
-		Action * reverse() const override;
+	Action* reverse() const override;
 
-		Interpolation1d getInterpolationR() const;
+	Float getCurrentProgress() override;
 
-		void setInterpolationR(const Interpolation1d & interpolationR);
+	Time getTotalTime() override;
 
-		Interpolation1d getInterpolationG() const;
+	Interpolation1d getInterpolationR() const;
 
-		void setInterpolationG(const Interpolation1d & interpolationG);
+	void setInterpolationR( const Interpolation1d& interpolationR );
 
-		Interpolation1d getInterpolationB() const;
+	Interpolation1d getInterpolationG() const;
 
-		void setInterpolationB(const Interpolation1d & interpolationB);
+	void setInterpolationG( const Interpolation1d& interpolationG );
 
-		Interpolation1d getInterpolationA() const;
+	Interpolation1d getInterpolationB() const;
 
-		void setInterpolationA(const Interpolation1d & interpolationA);
-	protected:
-		Tint( const Color& start, const Color& end, const bool& interpolateAlpha, const Time & duration, const Ease::Interpolation & type, const TintType& colorInterpolationType );
+	void setInterpolationB( const Interpolation1d& interpolationB );
 
-		void onStart() override;
+	Interpolation1d getInterpolationA() const;
 
-		virtual void onUpdate( const Time& time ) override;
+	void setInterpolationA( const Interpolation1d& interpolationA );
 
-		Tint();
+  protected:
+	Tint( const Color& start, const Color& end, const bool& interpolateAlpha, const Time& duration,
+		  const Ease::Interpolation& type, const TintType& colorInterpolationType,
+		  const Uint32& elemIndex );
 
-		Interpolation1d mInterpolationR;
-		Interpolation1d mInterpolationG;
-		Interpolation1d mInterpolationB;
-		Interpolation1d mInterpolationA;
-		TintType mColorInterpolationType;
-		bool mInterpolateAlpha;
+	void onStart() override;
+
+	virtual void onUpdate( const Time& time ) override;
+
+	Tint();
+
+	Interpolation1d mInterpolationR;
+	Interpolation1d mInterpolationG;
+	Interpolation1d mInterpolationB;
+	Interpolation1d mInterpolationA;
+	TintType mColorInterpolationType;
+	bool mInterpolateAlpha;
+	Uint32 mIndex;
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif

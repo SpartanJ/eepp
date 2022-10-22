@@ -11,28 +11,50 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API InputSDL : public Input {
-	public:
-		virtual ~InputSDL();
-		
-		void update();
+  public:
+	~InputSDL();
 
-		bool grabInput();
+	void update();
 
-		void grabInput( const bool& Grab );
+	void waitEvent( const Time& timeout = Time::Zero );
 
-		void injectMousePos( const Uint16& x, const Uint16& y );
-	protected:
-		friend class WindowSDL;
-		Float mDPIScale;
+	bool grabInput();
 
-		InputSDL( EE::Window::Window * window );
-		
-		virtual void init();
+	void grabInput( const bool& Grab );
 
-		void initializeTables();
+	void injectMousePos( const Uint16& x, const Uint16& y );
+
+	Vector2i queryMousePos();
+
+	void captureMouse( const bool& capture );
+
+	bool isMouseCaptured() const;
+
+	std::string getKeyName( const Keycode& keycode ) const;
+
+	Keycode getKeyFromName( const std::string& keycode ) const;
+
+	std::string getScancodeName( const Scancode& scancode ) const;
+
+	Scancode getScancodeFromName( const std::string& scancode ) const;
+
+	Keycode getKeyFromScancode( const Scancode& scancode ) const;
+
+	Scancode getScancodeFromKey( const Keycode& scancode ) const;
+
+  protected:
+	friend class WindowSDL;
+	Float mDPIScale;
+	std::vector<SDL_Event> mQueuedEvents;
+
+	InputSDL( EE::Window::Window* window );
+
+	void init();
+
+	void sendEvent( const SDL_Event& SDLEvent );
 };
 
-}}}}
+}}}} // namespace EE::Window::Backend::SDL2
 
 #endif
 

@@ -7,32 +7,38 @@
 namespace EE { namespace Graphics {
 
 class EE_API ConvexShapeDrawable : public PrimitiveDrawable {
-	public:
-		static ConvexShapeDrawable * New();
+  public:
+	static ConvexShapeDrawable* New();
 
-		ConvexShapeDrawable();
+	ConvexShapeDrawable();
 
-		virtual Sizef getSize();
+	virtual Sizef getSize();
 
-		virtual void draw();
+	virtual Sizef getPixelsSize();
 
-		virtual void draw( const Vector2f& position );
+	virtual void draw();
 
-		virtual void draw( const Vector2f& position, const Sizef& size );
+	virtual void draw( const Vector2f& position );
 
-		virtual bool isStateful() { return false; }
+	virtual void draw( const Vector2f& position, const Sizef& size );
 
-		void setPolygon( const Polygon2f& polygon );
+	virtual bool isStateful() { return false; }
 
-		void addPoint( const Vector2f& point );
+	void setPolygon( const Polygon2f& polygon );
 
-		void resetPoints();
-	protected:
-		Polygon2f mPolygon;
+	void addPoint( const Vector2f& point );
 
-		void updateVertex();
+	void addPoint( const Vector2f& point, const Color& color );
+
+	void resetPoints();
+
+  protected:
+	Polygon2f mPolygon;
+	std::vector<Color> mIndexColor;
+
+	void updateVertex();
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

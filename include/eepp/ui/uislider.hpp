@@ -2,115 +2,123 @@
 #define EE_UIUISlider_HPP
 
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uisliderbutton.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UISliderStyleConfig {
-	public:
-		UISliderStyleConfig() {}
-
-		bool AllowHalfSliderOut = false;
-		bool ExpandBackground = false;
-};
-
 class EE_API UISlider : public UIWidget {
-	public:
-		static UISlider * New();
+  public:
+	static UISlider* New();
 
-		static UISlider * NewVertical();
+	static UISlider* NewWithTag( const std::string& tag, const UIOrientation& orientation );
 
-		static UISlider * NewHorizontal();
+	static UISlider* NewVertical();
 
-		UISlider( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
+	static UISlider* NewHorizontal();
 
-		virtual ~UISlider();
+	static UISlider* NewVerticalWithTag( const std::string& tag );
 
-		virtual Uint32 getType() const;
+	static UISlider* NewHorizontalWithTag( const std::string& tag );
 
-		virtual bool isType( const Uint32& type ) const;
+	UISlider( const std::string& tag,
+			  const UIOrientation& orientation = UIOrientation::Horizontal );
 
-		virtual void setTheme( UITheme * Theme );
+	virtual ~UISlider();
 
-		virtual void setValue( Float Val );
+	virtual Uint32 getType() const;
 
-		const Float& getValue() const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setMinValue( const Float& MinVal );
+	virtual void setTheme( UITheme* Theme );
 
-		const Float& getMinValue() const;
+	virtual void setValue( Float val, bool emmitEvent = true );
 
-		virtual void setMaxValue( const Float& MaxVal );
+	const Float& getValue() const;
 
-		const Float& getMaxValue() const;
+	virtual void setMinValue( const Float& MinVal );
 
-		virtual void setClickStep( const Float& step );
+	const Float& getMinValue() const;
 
-		const Float& getClickStep() const;
+	virtual void setMaxValue( const Float& MaxVal );
 
-		bool isVertical() const;
+	const Float& getMaxValue() const;
 
-		UINode * getBackSlider() const;
+	virtual void setClickStep( const Float& step );
 
-		UINode * getSliderButton() const;
+	const Float& getClickStep() const;
 
-		void adjustChilds();
+	bool isVertical() const;
 
-		void manageClick( const Uint32& flags );
+	UIWidget* getBackSlider() const;
 
-		UI_ORIENTATION getOrientation() const;
+	UIWidget* getSliderButton() const;
 
-		UISlider * setOrientation( const UI_ORIENTATION & orientation );
+	void adjustChilds();
 
-		bool getAllowHalfSliderOut() const;
+	void manageClick( const Uint32& flags );
 
-		void setAllowHalfSliderOut( bool allowHalfSliderOut );
+	UIOrientation getOrientation() const;
 
-		bool getExpandBackground() const;
+	UISlider* setOrientation( const UIOrientation& orientation, std::string childsBaseTag = "" );
 
-		void setExpandBackground( bool expandBackground );
+	bool getAllowHalfSliderOut() const;
 
-		Float getPageStep() const;
+	void setAllowHalfSliderOut( bool allowHalfSliderOut );
 
-		void setPageStep( const Float & pageStep );
+	bool getExpandBackground() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+	void setExpandBackground( bool expandBackground );
 
-		Sizef getMinimumSize();
-	protected:
-		friend class Private::UISliderButton;
+	Float getPageStep() const;
 
-		UI_ORIENTATION		mOrientation;
-		UISliderStyleConfig	mStyleConfig;
-		UINode *		mBackSlider;
-		Private::UISliderButton * 	mSlider;
-		Float				mMinValue;
-		Float				mMaxValue;
-		Float				mValue;
-		Float				mClickStep;
-		Float				mPageStep;
+	void setPageStep( const Float& pageStep );
 
-		bool				mOnPosChange;
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		Uint32				mLastTickMove;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		virtual void onAutoSize();
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual void onSizeChange();
+	Sizef getMinimumSize();
 
-		virtual void onPaddingChange();
+	bool isDragging() const;
 
-		void fixSliderPos();
+  protected:
+	UIOrientation mOrientation;
+	bool mAllowHalfSliderOut;
+	bool mExpandBackground;
+	bool mUpdating;
+	UIWidget* mBackSlider;
+	UIWidget* mSlider;
+	Float mMinValue;
+	Float mMaxValue;
+	Float mValue;
+	Float mClickStep;
+	Float mPageStep;
 
-		virtual Uint32 onKeyDown( const KeyEvent &Event );
-		
-		virtual void onAlphaChange();
+	bool mOnPosChange;
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	Uint32 mLastTickMove;
+
+	virtual void onAutoSize();
+
+	virtual void onSizeChange();
+
+	virtual void onPaddingChange();
+
+	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+
+	void fixSliderPos();
+
+	void adjustSliderPos();
+
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
+
+	virtual void onAlphaChange();
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-
-

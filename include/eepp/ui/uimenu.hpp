@@ -1,135 +1,165 @@
 #ifndef EE_UICUIMENU_HPP
 #define EE_UICUIMENU_HPP
 
-#include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uimenuitem.hpp>
-#include <eepp/ui/uimenucheckbox.hpp>
-#include <eepp/ui/uimenusubmenu.hpp>
-#include <eepp/ui/uimenuseparator.hpp>
 #include <deque>
+#include <eepp/ui/uimenucheckbox.hpp>
+#include <eepp/ui/uimenuitem.hpp>
+#include <eepp/ui/uimenuradiobutton.hpp>
+#include <eepp/ui/uimenuseparator.hpp>
+#include <eepp/ui/uimenusubmenu.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UIMenu : public UIWidget {
-	public:
-		class StyleConfig {
-			public:
-				Rectf Padding = Rectf(0, 0, 0, 0);
-				Uint32 MinWidth = 0;
-				Uint32 MinSpaceForIcons = 0;
-				Uint32 MinRightMargin = 0;
+  public:
+	static UIMenu* New();
 
-		};
+	static void findBestMenuPos( Vector2f& position, UIMenu* menu, UIMenu* parent = NULL,
+								 UIMenuSubMenu* subMenu = NULL );
 
-		static UIMenu * New();
+	UIMenu();
 
-		static void fixMenuPos( Vector2f& position, UIMenu * Menu, UIMenu * parent = NULL, UIMenuSubMenu * SubMenu = NULL );
+	virtual ~UIMenu();
 
-		UIMenu();
+	virtual Uint32 getType() const;
 
-		virtual ~UIMenu();
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual Uint32 getType() const;
+	UIMenuItem* add( const String& text, Drawable* icon = NULL, const String& shortcutText = "" );
 
-		virtual bool isType( const Uint32& type ) const;
+	UIWidget* add( UIWidget* widget );
 
-		Uint32 add( const String& Text, Drawable * Icon = NULL );
+	UIMenuSeparator* addSeparator();
 
-		Uint32 add( UINode * Control );
+	UIMenuCheckBox* addCheckBox( const String& text, const bool& active = false,
+								 const String& shortcutText = "" );
 
-		Uint32 addSeparator();
+	UIMenuRadioButton* addRadioButton( const String& text, const bool& active = false );
 
-		Uint32 addCheckBox( const String& Text, const bool& Active = false );
+	UIMenuSubMenu* addSubMenu( const String& text, Drawable* icon = NULL, UIMenu* subMenu = NULL );
 
-		Uint32 addSubMenu( const String& Text, Drawable * Icon = NULL, UIMenu * SubMenu = NULL );
+	UIWidget* getItem( const Uint32& index );
 
-		UINode * getItem( const Uint32& Index );
-		
-		UINode * getItem( const String& Text );
+	UIMenuItem* getItem( const String& text );
 
-		Uint32 getItemIndex( UINode * Item );
+	UIMenuItem* getItemId( const String& id );
 
-		Uint32 getCount() const;
+	Uint32 getItemIndex( UIWidget* item );
 
-		void remove( const Uint32& Index );
+	Uint32 getCount() const;
 
-		void remove( UINode * Ctrl );
+	UIWidget* getItemSelected() const;
 
-		void removeAll();
+	void remove( const Uint32& index );
 
-		void insert( const String& Text, Drawable * Icon, const Uint32& Index );
+	void remove( UIWidget* widget );
 
-		void insert( UINode * Control, const Uint32& Index );
+	void removeAll();
 
-		virtual void setTheme( UITheme * Theme );
+	void insert( const String& text, Drawable* icon, const Uint32& index );
 
-		virtual bool show();
+	void insert( UIWidget* widget, const Uint32& index );
 
-		virtual bool hide();
+	virtual void setTheme( UITheme* theme );
 
-		Uint32 getMinRightMargin() const;
+	virtual bool show();
 
-		void setMinRightMargin(const Uint32 & minRightMargin);
+	virtual bool hide();
 
-		const StyleConfig& getStyleConfig() const;
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		friend class UIMenuItem;
-		friend class UIMenuCheckBox;
-		friend class UIMenuSubMenu;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		std::deque<UINode *> mItems;
-		StyleConfig			mStyleConfig;
-		Uint32				mMaxWidth;
-		Uint32				mNextPosY;
-		Uint32				mBiggestIcon;
-		UINode *			mItemSelected;
-		Uint32				mItemSelectedIndex;
-		bool				mClickHide;
-		Uint32				mLastTickMove;
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual void onSizeChange();
+	UINode* getOwnerNode() const;
 
-		void autoPadding();
+	/** The owner node is the node who triggers the visibility of the menu */
+	void setOwnerNode( UIWidget* ownerNode );
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	void setIconMinimumSize( const Sizei& minIconSize );
 
-		void setControlSize( UINode * Control, const Uint32& position );
-		
-		void resizeControls();
-		
-		void rePosControls();
-		
-		void resizeMe();
-		
-		UIMenuItem * createMenuItem( const String& Text, Drawable * Icon );
+	const Sizei& getIconMinimumSize() const;
 
-		UIMenuCheckBox * createMenuCheckBox( const String& Text, const bool& Active );
+	void backpropagateHide();
 
-		UIMenuSubMenu * createSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu );
-		
-		void onThemeLoaded();
+	const Clock& getInactiveTime() const;
 
-		bool checkControlSize( UINode * Control, const bool& Resize = true );
+  protected:
+	friend class UIMenuItem;
+	friend class UIMenuCheckBox;
+	friend class UIMenuRadioButton;
+	friend class UIMenuSubMenu;
 
-		bool isSubMenu( Node * Ctrl );
+	std::deque<UIWidget*> mItems;
+	Uint32 mMaxWidth;
+	Uint32 mNextPosY;
+	Int32 mBiggestIcon;
+	UIWidget* mItemSelected;
+	Uint32 mItemSelectedIndex;
+	bool mResizing;
+	UIWidget* mOwnerNode;
+	Sizei mIconMinSize;
+	UIMenu* mCurrentSubMenu{ nullptr };
+	Clock mInactiveTime;
 
-		void setItemSelected( UINode * Item );
+	virtual void onSizeChange();
 
-		virtual Uint32 onKeyDown( const KeyEvent& Event );
+	void autoPadding();
 
-		void prevSel();
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		void nextSel();
+	void setWidgetSize( UIWidget* widget );
 
-		void trySelect( UINode * Ctrl, bool Up );
+	void widgetsResize();
 
-		void setMinSpaceForIcons( const Uint32& minSpaceForIcons );
+	void widgetsSetPos();
+
+	void resizeMe();
+
+	UIMenuItem* createMenuItem( const String& text, Drawable* icon,
+								const String& shortcutText = "" );
+
+	UIMenuCheckBox* createMenuCheckBox( const String& text, const bool& active,
+										const String& shortcutText = "" );
+
+	UIMenuRadioButton* createMenuRadioButton( const String& text, const bool& active );
+
+	UIMenuSubMenu* createSubMenu( const String& text, Drawable* icon, UIMenu* subMenu );
+
+	void onThemeLoaded();
+
+	virtual void onPaddingChange();
+
+	bool widgetCheckSize( UIWidget* widget, const bool& resize = true );
+
+	bool isSubMenu( Node* node );
+
+	void setItemSelected( UIWidget* Item );
+
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
+
+	void prevSel();
+
+	void nextSel();
+
+	void trySelect( UIWidget* node, bool up );
+
+	void safeHide();
+
+	virtual void onVisibilityChange();
+
+	virtual void scheduledUpdate( const Time& time );
+
+	bool isChildOfMeOrSubMenu( Node* node );
+
+	void unselectSelected();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

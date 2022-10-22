@@ -6,8 +6,8 @@
 
 //! EE includes needed for the wrapper, all templates, so it will be easy to port this.
 
-#include <eepp/math/vector2.hpp>
 #include <eepp/math/rect.hpp>
+#include <eepp/math/vector2.hpp>
 using namespace EE::Math;
 
 #include <eepp/core.hpp>

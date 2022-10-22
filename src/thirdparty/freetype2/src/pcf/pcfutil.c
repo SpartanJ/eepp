@@ -37,7 +37,7 @@ in this Software without prior written authorization from The Open Group.
 
 
   /*
-   *  Invert bit order within each BYTE of an array.
+   * Invert bit order within each BYTE of an array.
    */
 
   FT_LOCAL_DEF( void )
@@ -59,18 +59,18 @@ in this Software without prior written authorization from The Open Group.
 
 
   /*
-   *  Invert byte order within each 16-bits of an array.
+   * Invert byte order within each 16-bits of an array.
    */
 
   FT_LOCAL_DEF( void )
   TwoByteSwap( unsigned char*  buf,
                size_t          nbytes )
   {
-    unsigned char  c;
-
-
     for ( ; nbytes >= 2; nbytes -= 2, buf += 2 )
     {
+      unsigned char  c;
+
+
       c      = buf[0];
       buf[0] = buf[1];
       buf[1] = c;
@@ -78,18 +78,18 @@ in this Software without prior written authorization from The Open Group.
   }
 
   /*
-   *  Invert byte order within each 32-bits of an array.
+   * Invert byte order within each 32-bits of an array.
    */
 
   FT_LOCAL_DEF( void )
   FourByteSwap( unsigned char*  buf,
                 size_t          nbytes )
   {
-    unsigned char  c;
-
-
     for ( ; nbytes >= 4; nbytes -= 4, buf += 4 )
     {
+      unsigned char  c;
+
+
       c      = buf[0];
       buf[0] = buf[3];
       buf[3] = c;

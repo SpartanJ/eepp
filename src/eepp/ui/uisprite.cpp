@@ -1,12 +1,13 @@
-#include <eepp/ui/uisprite.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <pugixml/pugixml.hpp>
-#include <eepp/graphics/globaltextureatlas.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uisprite.hpp>
 
 namespace EE { namespace UI {
 
-UISprite * UISprite::New() {
+UISprite* UISprite::New() {
 	return eeNew( UISprite, () );
 }
 
@@ -14,9 +15,8 @@ UISprite::UISprite() :
 	UIWidget( "sprite" ),
 	mSprite( NULL ),
 	mRender( RENDER_NORMAL ),
-	mAlignOffset(0,0),
-	mTextureRegionLast(NULL)
-{
+	mAlignOffset( 0, 0 ),
+	mTextureRegionLast( NULL ) {
 	subscribeScheduledUpdate();
 }
 
@@ -37,13 +37,13 @@ Uint32 UISprite::deallocSprite() {
 	return mNodeFlags & NODE_FLAG_FREE_USE;
 }
 
-void UISprite::setSprite( Graphics::Sprite * sprite ) {
+void UISprite::setSprite( Graphics::Sprite* sprite ) {
 	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 
 	mSprite = sprite;
 	mSprite->setAutoAnimate( false );
-	
+
 	updateSize();
 }
 
@@ -54,13 +54,14 @@ void UISprite::draw() {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			checkTextureRegionUpdate();
 
-			mSprite->setPosition( Vector2f( (Float)( mScreenPosi.x + (int)mAlignOffset.x ), (Float)( mScreenPosi.y + (int)mAlignOffset.y ) ) );
+			mSprite->setPosition( Vector2f( (Float)( mScreenPosi.x + (int)mAlignOffset.x ),
+											(Float)( mScreenPosi.y + (int)mAlignOffset.y ) ) );
 
-			TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
+			TextureRegion* textureRegion = mSprite->getCurrentTextureRegion();
 
 			if ( NULL != textureRegion ) {
 				Sizef oDestSize = textureRegion->getDestSize();
-				Sizei pxSize = textureRegion->getPxSize();
+				Sizef pxSize = textureRegion->getPixelsSize();
 
 				textureRegion->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
 
@@ -74,7 +75,7 @@ void UISprite::draw() {
 
 void UISprite::scheduledUpdate( const Time& time ) {
 	if ( NULL != mSprite ) {
-		TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
+		TextureRegion* textureRegion = mSprite->getCurrentTextureRegion();
 
 		mSprite->update( time );
 
@@ -84,7 +85,8 @@ void UISprite::scheduledUpdate( const Time& time ) {
 }
 
 void UISprite::checkTextureRegionUpdate() {
-	if ( NULL != mSprite && NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion() != mTextureRegionLast ) {
+	if ( NULL != mSprite && NULL != mSprite->getCurrentTextureRegion() &&
+		 mSprite->getCurrentTextureRegion() != mTextureRegionLast ) {
 		updateSize();
 		autoAlign();
 		mTextureRegionLast = mSprite->getCurrentTextureRegion();
@@ -98,7 +100,7 @@ void UISprite::setAlpha( const Float& alpha ) {
 	UIWidget::setAlpha( alpha );
 }
 
-Graphics::Sprite * UISprite::getSprite() const {
+Graphics::Sprite* UISprite::getSprite() const {
 	return mSprite;
 }
 
@@ -112,7 +114,7 @@ Color UISprite::getColor() const {
 void UISprite::setColor( const Color& color ) {
 	if ( NULL != mSprite )
 		mSprite->setColor( color );
-	
+
 	setAlpha( color.a );
 }
 
@@ -128,17 +130,22 @@ void UISprite::setRenderMode( const RenderMode& render ) {
 void UISprite::updateSize() {
 	if ( NULL != mSprite ) {
 		if ( mFlags & UI_AUTO_SIZE ) {
-			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != mDpSize )
+			if ( NULL != mSprite->getCurrentTextureRegion() &&
+				 mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != getSize() )
 				setSize( mSprite->getCurrentTextureRegion()->getDpSize().asFloat() );
 		}
 
 		if ( NULL != mSprite->getCurrentTextureRegion() ) {
-			if ( mLayoutWidthRules == WRAP_CONTENT ) {
-				setInternalPixelsWidth( mSprite->getCurrentTextureRegion()->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
+			if ( mWidthPolicy == SizePolicy::WrapContent ) {
+				setInternalPixelsWidth(
+					mSprite->getCurrentTextureRegion()->getPixelsSize().getWidth() +
+					mPaddingPx.Left + mPaddingPx.Right );
 			}
 
-			if ( mLayoutHeightRules == WRAP_CONTENT ) {
-				setInternalPixelsHeight( mSprite->getCurrentTextureRegion()->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+			if ( mHeightPolicy == SizePolicy::WrapContent ) {
+				setInternalPixelsHeight(
+					mSprite->getCurrentTextureRegion()->getPixelsSize().getHeight() +
+					mPaddingPx.Top + mPaddingPx.Bottom );
 			}
 		}
 	}
@@ -148,22 +155,24 @@ void UISprite::autoAlign() {
 	if ( NULL == mSprite || NULL == mSprite->getCurrentTextureRegion() )
 		return;
 
-	TextureRegion * tTextureRegion = mSprite->getCurrentTextureRegion();
+	TextureRegion* tTextureRegion = mSprite->getCurrentTextureRegion();
 
-	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = ( mSize.getWidth() - tTextureRegion->getPxSize().getWidth() ) / 2;
-	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - tTextureRegion->getPxSize().getWidth() - mRealPadding.Right;
+	if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_CENTER ) {
+		mAlignOffset.x = ( mSize.getWidth() - tTextureRegion->getPixelsSize().getWidth() ) / 2;
+	} else if ( Font::getHorizontalAlign( mFlags ) == UI_HALIGN_RIGHT ) {
+		mAlignOffset.x =
+			mSize.getWidth() - tTextureRegion->getPixelsSize().getWidth() - mPaddingPx.Right;
 	} else {
-		mAlignOffset.x = mRealPadding.Left;
+		mAlignOffset.x = mPaddingPx.Left;
 	}
 
-	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = ( mSize.getHeight() - tTextureRegion->getPxSize().getHeight() ) / 2;
-	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - tTextureRegion->getPxSize().getHeight() - mRealPadding.Bottom;
+	if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_CENTER ) {
+		mAlignOffset.y = ( mSize.getHeight() - tTextureRegion->getPixelsSize().getHeight() ) / 2;
+	} else if ( Font::getVerticalAlign( mFlags ) == UI_VALIGN_BOTTOM ) {
+		mAlignOffset.y =
+			mSize.getHeight() - tTextureRegion->getPixelsSize().getHeight() - mPaddingPx.Bottom;
 	} else {
-		mAlignOffset.y = mRealPadding.Top;
+		mAlignOffset.y = mPaddingPx.Top;
 	}
 }
 
@@ -185,21 +194,59 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-bool UISprite::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+std::string UISprite::getPropertyString( const PropertyDefinition* propertyDef,
+										 const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
 
-	if ( "src" == name ) {
-		std::string val = attribute.asString();
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Src:
+			// TODO: Implement src
+			return "";
+		default:
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+	}
+}
 
-		if ( val.size() ) {
-			setIsSpriteOwner( true );
-			setSprite( Sprite::New( val ) );
+std::vector<PropertyId> UISprite::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Src };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
+bool UISprite::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Src: {
+			std::string path( attribute.getValue() );
+
+			FunctionString func( FunctionString::parse( path ) );
+			if ( !func.getParameters().empty() && func.getName() == "url" ) {
+				path = func.getParameters().at( 0 );
+			}
+
+			Drawable* res = NULL;
+			if ( NULL != ( res = DrawableSearcher::searchByName( path, true ) ) ) {
+				setIsSpriteOwner( true );
+
+				if ( res->getDrawableType() == Drawable::SPRITE ) {
+					setSprite( static_cast<Sprite*>( res ) );
+				} else if ( res->getDrawableType() == Drawable::TEXTUREREGION ) {
+					setSprite( Sprite::New( static_cast<TextureRegion*>( res ) ) );
+				} else if ( res->getDrawableType() == Drawable::TEXTURE ) {
+					setSprite( Sprite::New( static_cast<Texture*>( res )->getTextureId() ) );
+				}
+			}
+			break;
 		}
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;
 }
 
-}}
+}} // namespace EE::UI

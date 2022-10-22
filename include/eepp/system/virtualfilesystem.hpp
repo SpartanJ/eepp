@@ -1,68 +1,65 @@
 #ifndef EE_VIRTUALFILESYSTEM_HPP
 #define EE_VIRTUALFILESYSTEM_HPP
 
-#include <eepp/system/singleton.hpp>
+#include <cstddef>
 #include <eepp/system/container.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>
+#include <eepp/system/singleton.hpp>
 
 namespace EE { namespace System {
 
 class EE_API VirtualFileSystem : protected Container<Pack> {
-	SINGLETON_DECLARE_HEADERS(VirtualFileSystem)
+	SINGLETON_DECLARE_HEADERS( VirtualFileSystem )
 
-	public:
-		std::vector<std::string> filesGetInPath( std::string path );
+  public:
+	std::vector<std::string> filesGetInPath( std::string path );
 
-		Pack * getPackFromFile( std::string path );
+	Pack* getPackFromFile( std::string path );
 
-		IOStream * getFileFromPath( const std::string& path );
+	IOStream* getFileFromPath( const std::string& path );
 
-		bool fileExists( const std::string& path );
-	protected:
-		friend class Pack;
+	bool fileExists( const std::string& path );
 
-		class vfsFile {
-			public:
-				std::string path;
-				Pack * pack;
+  protected:
+	friend class Pack;
 
-				vfsFile() {}
+	class vfsFile {
+	  public:
+		std::string path;
+		Pack* pack;
 
-				vfsFile( const std::string& path, Pack * pack ) :
-					path( path ),
-					pack( pack )
-				{}
-		};
+		vfsFile() : pack( NULL ) {}
 
-		class vfsDirectory {
-			public:
-				vfsDirectory() {}
-				std::string path;
-				std::map<std::string,vfsFile> files;
-				std::map<std::string,vfsDirectory> directories;
-		};
+		vfsFile( const std::string& path, Pack* pack ) : path( path ), pack( pack ) {}
+	};
 
-		VirtualFileSystem();
+	class vfsDirectory {
+	  public:
+		vfsDirectory() {}
+		std::string path;
+		std::map<std::string, vfsFile> files;
+		std::map<std::string, vfsDirectory> directories;
+	};
 
-		void onResourceAdd( Pack * resource );
+	VirtualFileSystem();
 
-		void onResourceRemove( Pack * resource );
+	void onResourceAdd( Pack* resource );
 
-		void addFile( std::string path, Pack * pack );
+	void onResourceRemove( Pack* resource );
 
-		void removePackFromDirectory( Pack * resource, vfsDirectory& directory );
+	void addFile( std::string path, Pack* pack );
 
-		vfsDirectory mRoot;
+	void removePackFromDirectory( Pack* resource, vfsDirectory& directory );
+
+	vfsDirectory mRoot;
 };
 
 class EE_API VFS {
-	public:
-		static VirtualFileSystem * instance() {
-			return VirtualFileSystem::instance();
-		}
+  public:
+	static VirtualFileSystem* instance() { return VirtualFileSystem::instance(); }
 };
 
-}}
+}} // namespace EE::System
 
 #endif

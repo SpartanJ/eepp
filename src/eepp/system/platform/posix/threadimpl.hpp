@@ -14,24 +14,26 @@ class Thread;
 namespace Platform {
 
 class ThreadImpl {
-	public:
-		static UintPtr getCurrentThreadId();
+  public:
+	static UintPtr getCurrentThreadId();
 
-		ThreadImpl( Thread * owner );
-		
-		void wait();
-		
-		void terminate();
+	ThreadImpl( Thread* owner );
 
-		UintPtr getId();
-	protected:
-		static void *	entryPoint( void* userData );
+	void wait();
 
-		pthread_t		mThread;
-		bool			mIsActive;
+	void terminate();
+
+	UintPtr getId();
+
+  protected:
+	static void* entryPoint( void* userData );
+
+	pthread_t mThread;
+	bool mIsActive;
 };
 
-}}}
+} // namespace Platform
+}} // namespace EE::System
 
 #endif
 

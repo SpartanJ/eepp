@@ -1,35 +1,35 @@
 #include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
-#include <eepp/system/filesystem.hpp>
-#include <eepp/graphics/texturefactory.hpp>
 
 namespace EE { namespace Graphics {
 
-FontBMFont * FontBMFont::New( const std::string FontName ) {
-	return eeNew( FontBMFont, ( FontName ) );
+FontBMFont* FontBMFont::New( const std::string fontName ) {
+	return eeNew( FontBMFont, ( fontName ) );
 }
 
-FontBMFont * FontBMFont::New(const std::string FontName, const std::string & filename) {
-	FontBMFont * fontBMFont = New( FontName );
+FontBMFont* FontBMFont::New( const std::string fontName, const std::string& filename ) {
+	FontBMFont* fontBMFont = New( fontName );
 	fontBMFont->loadFromFile( filename );
 	return fontBMFont;
 }
 
 FontBMFont::FontBMFont( const std::string FontName ) :
-	Font( FONT_TYPE_BMF, FontName ),
-	mInfo(),
-	mFontSize(0)
-{}
+	Font( FontType::BMF, FontName ), mInfo(), mFontSize( 0 ) {}
 
 void FontBMFont::cleanup() {
-	Texture * texture = mPages[ mFontSize ].texture;
+	sendEvent( Event::Unload );
+
+	Texture* texture = mPages[mFontSize].texture;
 
 	if ( NULL != texture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( texture->getId() );
+		TextureFactory::instance()->remove( texture->getTextureId() );
 
 	mPages.clear();
 	mFontSize = 0;
@@ -48,10 +48,10 @@ bool FontBMFont::loadFromFile( const std::string& filename ) {
 		return loadFromStream( stream );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string path( filename );
-		Pack * pack = PackManager::instance()->exists( path );
+		Pack* pack = PackManager::instance()->exists( path );
 
 		if ( NULL != pack ) {
-			eePRINTL( "Loading font from pack: %s", path.c_str() );
+			Log::info( "Loading font from pack: %s", path.c_str() );
 
 			return loadFromPack( pack, path );
 		}
@@ -59,9 +59,11 @@ bool FontBMFont::loadFromFile( const std::string& filename ) {
 	return false;
 }
 
-bool FontBMFont::loadFromMemory(const void * data, std::size_t sizeInBytes , const std::string& imageFileBasePath) {
+bool FontBMFont::loadFromMemory( const void* data, std::size_t sizeInBytes,
+								 const std::string& imageFileBasePath ) {
 	cleanup();
-	mFilePath = imageFileBasePath.empty() ? FileSystem::getCurrentWorkingDirectory() : imageFileBasePath;
+	mFilePath =
+		imageFileBasePath.empty() ? FileSystem::getCurrentWorkingDirectory() : imageFileBasePath;
 	IOStreamMemory stream( (const char*)data, sizeInBytes );
 	return loadFromStream( stream );
 }
@@ -76,28 +78,33 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 
 	std::vector<std::string> lines = String::split( myfile );
 
-	/** Implementation specification taken from raylib ( LICENSE zlib/libpng ). Copyright (c) Ramon Santamaria (@raysan5) */
+	/** Implementation specification taken from raylib ( LICENSE zlib/libpng ). Copyright (c) Ramon
+	 * Santamaria (@raysan5) */
 	if ( lines.size() > 4 ) {
-		const char *searchPoint = NULL;
-		int fontSize; int base; int texWidth; int texHeight;
-		char texFileName[128];
+		const char* searchPoint = NULL;
+		int fontSize;
+		int base;
+		int texWidth;
+		int texHeight;
+		char texFileName[129];
 		int charsCount = 0;
 
 		searchPoint = strstr( lines[1].c_str(), "lineHeight" );
-		sscanf(searchPoint, "lineHeight=%i base=%i scaleW=%i scaleH=%i", &fontSize, &base, &texWidth, &texHeight);
+		sscanf( searchPoint, "lineHeight=%i base=%i scaleW=%i scaleH=%i", &fontSize, &base,
+				&texWidth, &texHeight );
 
-		searchPoint = strstr( lines[2].c_str(), "file");
-		sscanf(searchPoint, "file=\"%128[^\"]\"", texFileName);
+		searchPoint = strstr( lines[2].c_str(), "file" );
+		sscanf( searchPoint, "file=\"%128[^\"]\"", texFileName );
 
-		searchPoint = strstr( lines[3].c_str(), "count");
-		sscanf(searchPoint, "count=%i", &charsCount);
+		searchPoint = strstr( lines[3].c_str(), "count" );
+		sscanf( searchPoint, "count=%i", &charsCount );
 
 		mFontSize = fontSize;
 
-		FileSystem::dirPathAddSlashAtEnd( mFilePath );
+		FileSystem::dirAddSlashAtEnd( mFilePath );
 
 		{
-			TextureFactory * TF = TextureFactory::instance();
+			TextureFactory* TF = TextureFactory::instance();
 
 			Image img( mFilePath + std::string( texFileName ) );
 
@@ -111,19 +118,23 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 					}
 				}
 
-				Uint32 texId = TF->loadFromPixels( rgbaImg.getPixelsPtr(), rgbaImg.getWidth(), rgbaImg.getHeight(), rgbaImg.getChannels() );
+				Uint32 texId = TF->loadFromPixels( rgbaImg.getPixelsPtr(), rgbaImg.getWidth(),
+												   rgbaImg.getHeight(), rgbaImg.getChannels() );
 
-				mPages[ mFontSize ].texture = TF->getTexture( texId );
+				mPages[mFontSize].texture = TF->getTexture( texId );
 			} else {
-				Uint32 texId = TF->loadFromPixels( img.getPixelsPtr(), img.getWidth(), img.getHeight(), img.getChannels() );
-				mPages[ mFontSize ].texture = TF->getTexture( texId );
+				Uint32 texId = TF->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
+												   img.getHeight(), img.getChannels() );
+				mPages[mFontSize].texture = TF->getTexture( texId );
 			}
 
-			if ( NULL != mPages[ mFontSize ].texture )
-				mPages[ mFontSize ].texture->setFilter( Texture::TextureFilter::Nearest );
+			if ( NULL != mPages[mFontSize].texture ) {
+				mPages[mFontSize].texture->setFilter( Texture::Filter::Nearest );
+				mPages[mFontSize].texture->setCoordinateType( Texture::CoordinateType::Pixels );
+			}
 		}
 
-		GlyphTable& glyphs = mPages[ mFontSize ].glyphs;
+		GlyphTable& glyphs = mPages[mFontSize].glyphs;
 
 		size_t firstLine = 4;
 		size_t lastLine = firstLine + charsCount;
@@ -134,49 +145,85 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 		int charId, charX, charY, charWidth, charHeight, charOffsetX, charOffsetY, charAdvanceX;
 
 		for ( size_t i = firstLine; i < lastLine; i++ ) {
-			sscanf( lines[i].c_str(), "char id=%i x=%i y=%i width=%i height=%i xoffset=%i yoffset=%i xadvance=%i", &charId, &charX, &charY, &charWidth, &charHeight, &charOffsetX, &charOffsetY, &charAdvanceX);
+			sscanf( lines[i].c_str(),
+					"char id=%i x=%i y=%i width=%i height=%i xoffset=%i yoffset=%i xadvance=%i",
+					&charId, &charX, &charY, &charWidth, &charHeight, &charOffsetX, &charOffsetY,
+					&charAdvanceX );
 
-			Glyph& glyph = glyphs[ charId ];
+			Glyph& glyph = glyphs[charId];
 
 			glyph.advance = charAdvanceX;
 			glyph.bounds = Rectf( charOffsetX, -fontSize + charOffsetY, charWidth, charHeight );
 			glyph.textureRect = Rect( charX, charY, charWidth, charHeight );
 		}
+
+		const Glyph& gl1 = getGlyph( '@', mFontSize, false );
+		const Glyph& gl2 = getGlyph( '.', mFontSize, false );
+		mIsMonospace = gl1.advance == gl2.advance;
+
+		sendEvent( Event::Load );
 	}
 
 	return true;
 }
 
-bool FontBMFont::loadFromPack( Pack * pack, std::string filePackPath ) {
+bool FontBMFont::loadFromPack( Pack* pack, std::string filePackPath ) {
 	cleanup();
 	mFilePath = FileSystem::fileRemoveFileName( filePackPath );
 	return loadFromStream( *pack->getFileStream( filePackPath ) );
+}
+
+bool FontBMFont::isMonospace() const {
+	return mIsMonospace;
+}
+
+bool FontBMFont::isScalable() const {
+	return false;
 }
 
 const FontBMFont::Info& FontBMFont::getInfo() const {
 	return mInfo;
 }
 
-const Glyph &FontBMFont::getGlyph(Uint32 codePoint, unsigned int characterSize, bool bold, Float outlineThickness) const {
+const Glyph& FontBMFont::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
+								   Float outlineThickness, Float ) const {
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
-	GlyphTable::const_iterator it = glyphs.find(codePoint);
+	GlyphTable::const_iterator it = glyphs.find( codePoint );
 
-	if (it != glyphs.end()) {
+	if ( it != glyphs.end() ) {
 		return it->second;
 	} else {
-		glyphs[ characterSize ] = loadGlyph(codePoint, characterSize, bold, outlineThickness);
-		return glyphs[ characterSize ];
+		glyphs[characterSize] = loadGlyph( codePoint, characterSize, bold, outlineThickness );
+		return glyphs[characterSize];
 	}
 }
 
-Glyph FontBMFont::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool bold, Float outlineThickness) const {
+GlyphDrawable* FontBMFont::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
+											 bool bold, Float outlineThickness,
+											 const Float& ) const {
+	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
+	auto it = drawables.find( codePoint );
+	if ( it != drawables.end() ) {
+		return it->second;
+	} else {
+		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness );
+		auto& page = mPages[characterSize];
+		GlyphDrawable* region = GlyphDrawable::New(
+			page.texture, glyph.textureRect,
+			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
+		drawables[codePoint] = region;
+		return region;
+	}
+}
+
+Glyph FontBMFont::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool, Float ) const {
 	Glyph glyph;
 
 	GlyphTable& glyphs = mPages[mFontSize].glyphs;
-	GlyphTable::const_iterator it = glyphs.find(codePoint);
+	GlyphTable::const_iterator it = glyphs.find( codePoint );
 
-	if (it != glyphs.end()) {
+	if ( it != glyphs.end() ) {
 		const Glyph& oriGlyph = it->second;
 
 		Float scale = (Float)characterSize / (Float)mFontSize;
@@ -189,37 +236,49 @@ Glyph FontBMFont::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool b
 	return glyph;
 }
 
-Float FontBMFont::getKerning(Uint32 first, Uint32 second, unsigned int characterSize) const {
+Float FontBMFont::getKerning( Uint32, Uint32, unsigned int, bool ) const {
 	return 0;
 }
 
-Float FontBMFont::getLineSpacing(unsigned int characterSize) const {
-	return ((Float)characterSize / mFontSize ) * mFontSize;
+Float FontBMFont::getLineSpacing( unsigned int characterSize ) const {
+	return ( (Float)characterSize / mFontSize ) * mFontSize;
 }
 
-Uint32 FontBMFont::getFontHeight(const Uint32 & characterSize) {
-	return (Uint32)((Float)characterSize / mFontSize ) * mFontSize;
+Uint32 FontBMFont::getFontHeight( const Uint32& characterSize ) const {
+	return (Uint32)( (Float)characterSize / mFontSize ) * mFontSize;
 }
 
-Float FontBMFont::getUnderlinePosition(unsigned int characterSize) const {
+Float FontBMFont::getUnderlinePosition( unsigned int ) const {
 	return 0.f;
 }
 
-Float FontBMFont::getUnderlineThickness(unsigned int characterSize) const {
+Float FontBMFont::getUnderlineThickness( unsigned int ) const {
 	return 0.f;
 }
 
-Texture * FontBMFont::getTexture(unsigned int characterSize) const {
-	return mPages[ mFontSize ].texture;
+Texture* FontBMFont::getTexture( unsigned int ) const {
+	return mPages[mFontSize].texture;
 }
 
-FontBMFont& FontBMFont::operator =(const FontBMFont& right) {
-	FontBMFont temp(right);
-	std::swap(mInfo,        temp.mInfo);
-	std::swap(mPages,       temp.mPages);
-	std::swap(mFilePath,       temp.mFilePath);
-	std::swap(mFontSize,       temp.mFontSize);
+bool FontBMFont::loaded() const {
+	return !mPages.empty();
+}
+
+FontBMFont& FontBMFont::operator=( const FontBMFont& right ) {
+	FontBMFont temp( right );
+	std::swap( mInfo, temp.mInfo );
+	std::swap( mPages, temp.mPages );
+	std::swap( mFilePath, temp.mFilePath );
+	std::swap( mFontSize, temp.mFontSize );
 	return *this;
 }
 
-}} 
+FontBMFont::Page::~Page() {
+	for ( auto drawable : drawables )
+		eeDelete( drawable.second );
+
+	if ( NULL != texture && TextureFactory::existsSingleton() )
+		TextureFactory::instance()->remove( texture->getTextureId() );
+}
+
+}} // namespace EE::Graphics

@@ -11,21 +11,21 @@
 namespace EE { namespace System { namespace Private {
 
 class ThreadLocalImpl : NonCopyable {
-	public:
-		ThreadLocalImpl();
+  public:
+	ThreadLocalImpl();
 
-		~ThreadLocalImpl();
+	~ThreadLocalImpl();
 
-		void setValue(void* val);
+	void setValue( void* val );
 
-		void* getValue() const;
-	private :
-		pthread_key_t mKey;
+	void* getValue() const;
+
+  private:
+	pthread_key_t mKey;
 };
 
-}}}
+}}} // namespace EE::System::Private
 
 #endif
 
 #endif
-

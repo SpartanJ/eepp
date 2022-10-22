@@ -8,68 +8,70 @@ namespace EE { namespace Maps {
 class TileMap;
 
 class EE_API MapLayer {
-	public:
-		typedef std::map<std::string, std::string> PropertiesMap;
+  public:
+	typedef std::map<std::string, std::string> PropertiesMap;
 
-		virtual ~MapLayer();
+	virtual ~MapLayer();
 
-		virtual void draw( const Vector2f& Offset = Vector2f(0,0) ) = 0;
+	virtual void draw( const Vector2f& Offset = Vector2f( 0, 0 ) ) = 0;
 
-		virtual void update( const Time& dt ) = 0;
+	virtual void update( const Time& dt ) = 0;
 
-		const Uint32& getFlags() const;
+	const Uint32& getFlags() const;
 
-		Uint32 getFlag( const Uint32& Flag );
+	Uint32 getFlag( const Uint32& Flag );
 
-		void setFlag( const Uint32& Flag );
+	void setFlag( const Uint32& Flag );
 
-		void clearFlag( const Uint32& Flag );
+	void clearFlag( const Uint32& Flag );
 
-		const Uint32& getType() const;
+	const Uint32& getType() const;
 
-		TileMap * getMap() const;
+	TileMap* getMap() const;
 
-		const Vector2f& getOffset() const;
+	const Vector2f& getOffset() const;
 
-		void setOffset( const Vector2f& offset );
+	void setOffset( const Vector2f& offset );
 
-		void setName( const std::string& name );
+	void setName( const std::string& name );
 
-		const std::string& getName() const;
+	const std::string& getName() const;
 
-		const Uint32& getId() const;
+	const String::HashType& getId() const;
 
-		void addProperty( std::string Text, std::string Value );
+	void addProperty( std::string Text, std::string Value );
 
-		void editProperty( std::string Text, std::string Value );
+	void editProperty( std::string Text, std::string Value );
 
-		void removeProperty( std::string Text );
+	void removeProperty( std::string Text );
 
-		void clearProperties();
+	void clearProperties();
 
-		PropertiesMap& getProperties();
+	PropertiesMap& getProperties();
 
-		void setVisible( const bool& visible );
+	void setVisible( const bool& visible );
 
-		bool isVisible();
+	bool isVisible();
 
-		bool getLightsEnabled();
+	bool getLightsEnabled();
 
-		void setLightsEnabled( const bool& enabled );
-	protected:
-		friend class TileMap;
+	void setLightsEnabled( const bool& enabled );
 
-		TileMap *			mMap;
-		Uint32			mType;
-		Uint32			mFlags;
-		Vector2f		mOffset;
-		Uint32			mNameHash;
-		std::string		mName;
-		PropertiesMap	mProperties;
+  protected:
+	friend class TileMap;
 
-		MapLayer( TileMap * map, Uint32 type, Uint32 flags, std::string name = "", Vector2f offset = Vector2f(0,0) );
+	TileMap* mMap;
+	Uint32 mType;
+	Uint32 mFlags;
+	Vector2f mOffset;
+	String::HashType mNameHash;
+	std::string mName;
+	PropertiesMap mProperties;
+
+	MapLayer( TileMap* map, Uint32 type, Uint32 flags, std::string name = "",
+			  Vector2f offset = Vector2f( 0, 0 ) );
 };
 
-}}
+}} // namespace EE::Maps
 
 #endif

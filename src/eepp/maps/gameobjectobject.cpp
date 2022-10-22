@@ -1,25 +1,23 @@
 #include <eepp/maps/gameobjectobject.hpp>
 
-#include <eepp/maps/tilemap.hpp>
-#include <eepp/maps/maplayer.hpp>
-#include <eepp/maps/tilemaplayer.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/maps/maplayer.hpp>
+#include <eepp/maps/tilemap.hpp>
+#include <eepp/maps/tilemaplayer.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
 
-GameObjectObject::GameObjectObject( Uint32 DataId, const Rectf& rect, MapLayer * Layer, const Uint32& Flags ) :
+GameObjectObject::GameObjectObject( Uint32 DataId, const Rectf& rect, MapLayer* Layer,
+									const Uint32& Flags ) :
 	GameObject( Flags, Layer ),
 	mRect( rect ),
 	mPoly( rect ),
 	mPos( mRect.getPosition() ),
 	mDataId( DataId ),
-	mSelected( false )
-{
-}
+	mSelected( false ) {}
 
-GameObjectObject::~GameObjectObject() {
-}
+GameObjectObject::~GameObjectObject() {}
 
 Uint32 GameObjectObject::getType() const {
 	return GAMEOBJECT_TYPE_OBJECT;
@@ -35,8 +33,8 @@ Sizei GameObjectObject::getSize() {
 }
 
 void GameObjectObject::draw() {
-	Int32 selAdd	= mSelected ? 50 : 0;
-	Int32 colFill	= 100 + selAdd;
+	Int32 selAdd = mSelected ? 50 : 0;
+	Int32 colFill = 100 + selAdd;
 
 	Primitives P;
 	P.setFillMode( DRAW_FILL );
@@ -54,33 +52,29 @@ Vector2f GameObjectObject::getPosition() const {
 
 void GameObjectObject::setPosition( Vector2f pos ) {
 	mPoly.move( pos - mPos );
-	mPos	= pos;
-	mRect	= Rectf( pos, Sizef( getSize().x, getSize().y ) );
+	mPos = pos;
+	mRect = Rectf( pos, Sizef( getSize().x, getSize().y ) );
 }
 
 void GameObjectObject::setPolygonPoint( Uint32 index, Vector2f p ) {
 	switch ( index ) {
-		case 0:
-		{
+		case 0: {
 			mPoly.setAt( 1, Vector2f( p.x, mPoly[1].y ) );
 			mPoly.setAt( 3, Vector2f( mPoly[3].x, p.y ) );
 			break;
 		}
-		case 1:
-		{
+		case 1: {
 			mPoly.setAt( 0, Vector2f( p.x, mPoly[0].y ) );
 			mPoly.setAt( 2, Vector2f( mPoly[2].x, p.y ) );
 			break;
 		}
-		case 2:
-		{
+		case 2: {
 			mPoly.setAt( 3, Vector2f( p.x, mPoly[3].y ) );
 			mPoly.setAt( 1, Vector2f( mPoly[1].x, p.y ) );
 			break;
 		}
 		case 3:
-		default:
-		{
+		default: {
 			mPoly.setAt( 2, Vector2f( p.x, mPoly[2].y ) );
 			mPoly.setAt( 0, Vector2f( mPoly[0].x, p.y ) );
 			break;
@@ -88,9 +82,9 @@ void GameObjectObject::setPolygonPoint( Uint32 index, Vector2f p ) {
 	}
 
 	mPoly.setAt( index, p );
-	mRect	= mPoly.getBounds();
-	mPos	= Vector2f( mRect.Left, mRect.Top );
-	mPoly	= mRect;
+	mRect = mPoly.getBounds();
+	mPos = Vector2f( mRect.Left, mRect.Top );
+	mPoly = mRect;
 }
 
 Uint32 GameObjectObject::getDataId() {
@@ -106,11 +100,11 @@ void GameObjectObject::clearProperties() {
 }
 
 void GameObjectObject::addProperty( std::string Text, std::string Value ) {
-	mProperties[ Text ] = Value;
+	mProperties[Text] = Value;
 }
 
 void GameObjectObject::editProperty( std::string Text, std::string Value ) {
-	mProperties[ Text ] = Value;
+	mProperties[Text] = Value;
 }
 
 void GameObjectObject::removeProperty( std::string Text ) {
@@ -161,8 +155,8 @@ void GameObjectObject::setSelected( const bool& sel ) {
 	mSelected = sel;
 }
 
-GameObjectObject * GameObjectObject::clone() {
+GameObjectObject* GameObjectObject::clone() {
 	return eeNew( GameObjectObject, ( mDataId, mRect, mLayer, mFlags ) );
 }
 
-}}
+}} // namespace EE::Maps

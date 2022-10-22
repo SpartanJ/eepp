@@ -1,0 +1,43 @@
+{
+  "config": {
+    "auto_format_on_save": false
+  },
+  "keybindings": {
+    "format-doc": "alt+f"
+  },
+  "formatters": [
+    {
+      "file_patterns": ["%.js$", "%.ts$"],
+      "command": "prettier $FILENAME"
+    },
+    {
+      "file_patterns": ["%.cpp$", "%.h$", "%.hpp$"],
+      "command": "clang-format --style=file $FILENAME"
+    },
+    {
+      "file_patterns": ["%.py$", "%.pyw$"],
+      "command": "black $FILENAME",
+      "type": "inplace"
+    },
+    {
+      "file_patterns": ["%.kt$"],
+      "command": "ktlint -F $FILENAME",
+      "type": "inplace"
+    },
+    {
+      "file_patterns": ["%.json$", "%.cson$"],
+      "command": "json",
+      "type": "native"
+    },
+    {
+      "file_patterns": ["%.xml", "%.html?$"],
+      "command": "xml",
+      "type": "native"
+    },
+    {
+      "file_patterns": ["%.css"],
+      "command": "css",
+      "type": "native"
+    }
+  ]
+}

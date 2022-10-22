@@ -5,10 +5,7 @@ using namespace EE::System::Platform;
 
 namespace EE { namespace System {
 
-Condition::Condition( int value ) :
-	mCondImpl( new ConditionImpl( value ) )
-{
-}
+Condition::Condition( int value ) : mCondImpl( new ConditionImpl( value ) ) {}
 
 Condition::~Condition() {
 	delete mCondImpl;
@@ -20,16 +17,16 @@ void Condition::lock() {
 
 bool Condition::waitAndLock( int awaitedValue, int autorelease ) {
 	bool flag = mCondImpl->waitAndRetain( awaitedValue );
-	
+
 	if ( autorelease ) {
 		mCondImpl->release( awaitedValue );
 	}
-	
+
 	return flag;
 }
 
 void Condition::unlock( int value ) {
-	mCondImpl->release(value);
+	mCondImpl->release( value );
 }
 
 void Condition::unlock() {
@@ -57,4 +54,4 @@ void Condition::restore() {
 	mCondImpl->restore();
 }
 
-}}
+}} // namespace EE::System

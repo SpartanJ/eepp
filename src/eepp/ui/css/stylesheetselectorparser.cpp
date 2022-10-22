@@ -2,7 +2,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetSelectorParser::StyleSheetSelectorParser(){}
+StyleSheetSelectorParser::StyleSheetSelectorParser() {}
 
 StyleSheetSelectorParser::StyleSheetSelectorParser( std::string name ) {
 	std::vector<std::string> sels = String::split( name, ',' );
@@ -16,4 +16,4 @@ StyleSheetSelectorParser::StyleSheetSelectorParser( std::string name ) {
 	}
 }
 
-}}}
+}}} // namespace EE::UI::CSS

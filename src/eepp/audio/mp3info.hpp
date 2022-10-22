@@ -12,58 +12,59 @@ namespace EE { namespace Audio {
 #define MIN_FRAME_SIZE 21
 
 class Mp3Info {
-	public:
-		class Header {
-			public:
-				unsigned long	sync;
-				unsigned int	version;
-				unsigned int	layer;
-				unsigned int	crc;
-				unsigned int	bitrate;
-				unsigned int	freq;
-				unsigned int	padding;
-				unsigned int	extension;
-				unsigned int	mode;
-				unsigned int	mode_extension;
-				unsigned int	copyright;
-				unsigned int	original;
-				unsigned int	emphasis;
-		};
+  public:
+	class Header {
+	  public:
+		unsigned long sync;
+		unsigned int version;
+		unsigned int layer;
+		unsigned int crc;
+		unsigned int bitrate;
+		unsigned int freq;
+		unsigned int padding;
+		unsigned int extension;
+		unsigned int mode;
+		unsigned int mode_extension;
+		unsigned int copyright;
+		unsigned int original;
+		unsigned int emphasis;
+	};
 
-		class Info {
-			public:
-				off_t datasize;
-				int header_isvalid;
-				Header header;
-				int id3_isvalid;
-				int vbr;
-				float vbr_average;
-				int seconds;
-				int frames;
-				int badframes;
-		};
+	class Info {
+	  public:
+		off_t datasize;
+		int header_isvalid;
+		Header header;
+		int id3_isvalid;
+		int vbr;
+		float vbr_average;
+		int seconds;
+		int frames;
+		int badframes;
+	};
 
-		Mp3Info( IOStream& stream );
+	Mp3Info( IOStream& stream );
 
-		Info getInfo();
+	Info getInfo();
 
-		int getFrequency();
+	int getFrequency();
 
-		int getBitrate();
+	int getBitrate();
 
-		bool isValidMp3();
-	protected:
-		IOStream& mStream;
-		Info mInfo;
-		bool mValidMp3;
-		bool mFetchedInfo;
+	bool isValidMp3();
 
-		bool fetchInfo();
-		bool getFirstHeader(long startpos);
-		int getHeader(Header * header);
-		int getNextHeader();
+  protected:
+	IOStream& mStream;
+	Info mInfo;
+	bool mValidMp3;
+	bool mFetchedInfo;
+
+	bool fetchInfo();
+	bool getFirstHeader( long startpos );
+	int getHeader( Header* header );
+	int getNextHeader();
 };
 
-}}
+}} // namespace EE::Audio
 
 #endif

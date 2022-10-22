@@ -11,67 +11,103 @@ namespace EE { namespace Scene {
 class Node;
 
 class EE_API Action {
-	public:
-		enum ActionType
-		{
-			OnStart,
-			OnStop,
-			OnDone,
-			OnStep
-		};
+  public:
+	enum ActionType { OnStart, OnStop, OnDone, OnStep, OnDelete };
 
-		typedef std::function<void(Action*,const ActionType&)> ActionCallback;
+	typedef std::function<void( Action*, const ActionType& )> ActionCallback;
 
-		Action();
+	Action();
 
-		virtual ~Action();
+	virtual ~Action();
 
-		virtual void start() = 0;
+	/** Starts the action. */
+	virtual void start() = 0;
 
-		virtual void stop() = 0;
+	/** Stops the actions (pause it, it will not reset the animation state). */
+	virtual void stop() = 0;
 
-		virtual void update( const Time& time ) = 0;
+	/** Update the action state (shouldn't be called manually unless you actually now what you are
+	 * doing) */
+	virtual void update( const Time& time ) = 0;
 
-		virtual bool isDone() = 0;
+	/** @return If the action is completed. */
+	virtual bool isDone() = 0;
 
-		virtual Action * clone() const;
+	/** @return The current progress percentage. Normalized between 0 and 1. */
+	virtual Float getCurrentProgress() = 0;
 
-		virtual Action * reverse() const;
+	/** The total action time. */
+	virtual Time getTotalTime() = 0;
 
-		Uint32 getFlags() const;
+	/** Clones the action. */
+	virtual Action* clone() const;
 
-		void setFlags( const Uint32 & flags );
+	/** Clones and reverse the action sequence. Note: not all actions can be reversed. */
+	virtual Action* reverse() const;
 
-		Uint32 getTag() const;
+	/** @return The action custom flags. */
+	Uint32 getFlags() const;
 
-		void setTag(const Uint32 & tag);
+	/** Sets the action custom flags. */
+	void setFlags( const Uint32& flags );
 
-		Node * getTarget() const;
+	/** @return The action tag. */
+	String::HashType getTag() const;
 
-		Uint32 addEventListener( const ActionType & actionType, const ActionCallback & callback );
+	/** Sets a tag to identify and filter actions. */
+	void setTag( const Uint32& tag );
 
-		void removeEventListener( const Uint32 & callbackId );
+	/** The target node that the action is being applied. */
+	Node* getTarget() const;
 
-		void sendEvent( const ActionType & actionType );
+	/** Adds an event listener for a specific Action::ActionType.
+	 * @param actionType The action type to receive the event notification.
+	 * @param callback The callback to receive the event notification.
+	 * @return An unique event callback ID. This can be use to remove the event listener with
+	 * Action::removeEventListener.
+	 */
+	Uint32 addEventListener( const ActionType& actionType, const ActionCallback& callback );
 
-		void setTarget( Node * target );
-	protected:
-		friend class Node;
-		typedef std::map< ActionType, std::map<Uint32, ActionCallback> > ActionCallbackMap;
+	/** Same as Action::addEventListener */
+	Action* on( const ActionType& actionType, const ActionCallback& callback );
 
-		Node * mNode;
-		Uint32 mFlags;
-		Uint32 mTag;
-		Uint32 mNumCallBacks;
-		ActionCallbackMap mCallbacks;
+	/** Removes an event listener previusly added.
+	 * @param callbackId The ID of the event listener returned by the Action::addEventListener call.
+	 */
+	void removeEventListener( const Uint32& callbackId );
 
-		virtual void onStart();
+	/** Manually emmit an event of type Action::ActionType. */
+	void sendEvent( const ActionType& actionType );
 
-		virtual void onStop();
+	/** Sets the action EE::Scene::Node target. */
+	void setTarget( Node* target );
 
-		virtual void onUpdate( const Time& time );
+	/** Sets a unique ID to identify the action. */
+	void setId( const Uint32& id );
+
+	/** @return The unique action ID. */
+	const Uint32& getId();
+
+  protected:
+	friend class Node;
+	typedef std::map<ActionType, std::map<Uint32, ActionCallback>> ActionCallbackMap;
+
+	Node* mNode;
+	Uint32 mFlags;
+	String::HashType mTag;
+	Uint32 mNumCallBacks;
+	Uint32 mId;
+	ActionCallbackMap mCallbacks;
+
+	virtual void onStart();
+
+	virtual void onStop();
+
+	virtual void onUpdate( const Time& time );
+
+	virtual void onTargetChange();
 };
 
-}}
+}} // namespace EE::Scene
 
 #endif

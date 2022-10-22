@@ -6,30 +6,31 @@
 #if defined( EE_PLATFORM_POSIX )
 
 #ifdef EE_HAVE_CLOCK_GETTIME
-	#include <time.h>
+#include <time.h>
 #else
-	#include <sys/time.h>
+#include <sys/time.h>
 #endif
 
 namespace EE { namespace System { namespace Platform {
 
 class ClockImpl {
-	public:
-		ClockImpl();
+  public:
+	ClockImpl();
 
-		~ClockImpl();
+	~ClockImpl();
 
-		void restart();
+	void restart();
 
-		unsigned long getElapsedTime();
-	private:
-		#ifdef EE_HAVE_CLOCK_GETTIME
-		struct timespec mStart;
-		#else
-		struct timeval mStart;
-		#endif
-	};
-}}}
+	unsigned long getElapsedTime();
+
+  private:
+#ifdef EE_HAVE_CLOCK_GETTIME
+	struct timespec mStart;
+#else
+	struct timeval mStart;
+#endif
+};
+}}} // namespace EE::System::Platform
 
 #endif
 

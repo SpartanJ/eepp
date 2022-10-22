@@ -1,0 +1,32 @@
+%{
+--------------------------------------------------------------------------------
+--
+--  This file is part of the Doxyrest toolkit.
+--
+--  Doxyrest is distributed under the MIT license.
+--  For details see accompanying license.txt file,
+--  the public copy of which is also available at:
+--  http://tibbo.com/downloads/archive/doxyrest/license.txt
+--
+--------------------------------------------------------------------------------
+
+local argArray = table.pack(...)
+local compound = argArray[1]
+local sectionName = argArray[2]
+local comma = argArray[3]
+
+if sectionName then
+}
+	-- $sectionName
+
+%{
+end -- if
+
+for i = 1, #compound.variableArray do
+	local item = compound.variableArray[i]
+	local nameTemplate = getItemNameTemplate(item)
+}
+	$(getItemLocalPrefix(item))$(fillItemNameTemplate(nameTemplate, item.name, item.id))$comma
+%{
+end -- for
+}

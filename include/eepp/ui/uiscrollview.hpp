@@ -1,77 +1,85 @@
 #ifndef EE_UISCROLLVIEW_HPP
 #define EE_UISCROLLVIEW_HPP
 
-#include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 
 namespace EE { namespace UI {
 
 class UIScrollBar;
 
-class EE_API UIScrollView : public UITouchDragableWidget {
-	public:
-		enum ScrollViewType {
-			Inclusive,
-			Exclusive
-		};
+class EE_API UIScrollView : public UITouchDraggableWidget {
+  public:
+	enum ScrollViewType { Inclusive, Exclusive };
 
-		static UIScrollView * New();
+	static UIScrollView* New();
 
-		UIScrollView();
+	UIScrollView();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+	void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
+	const ScrollBarMode& getVerticalScrollMode() const;
 
-		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+	void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
+	const ScrollBarMode& getHorizontalScrollMode() const;
 
-		const ScrollViewType& getViewType() const;
+	const ScrollViewType& getViewType() const;
 
-		void setViewType( const ScrollViewType& viewType );
+	void setViewType( const ScrollViewType& viewType );
 
-		UIScrollBar * getVerticalScrollBar() const;
+	UIScrollBar* getVerticalScrollBar() const;
 
-		UIScrollBar * getHorizontalScrollBar() const;
+	UIScrollBar* getHorizontalScrollBar() const;
 
-		UIWidget * getContainer() const;
+	UIWidget* getContainer() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		ScrollViewType mViewType;
-		UI_SCROLLBAR_MODE mVScrollMode;
-		UI_SCROLLBAR_MODE mHScrollMode;
-		UIScrollBar * mVScroll;
-		UIScrollBar * mHScroll;
-		UIWidget * mContainer;
-		Node * mScrollView;
-		Uint32 mSizeChangeCb;
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual void onSizeChange();
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		virtual void onAlphaChange();
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual void onChildCountChange();
+  protected:
+	ScrollViewType mViewType;
+	ScrollBarMode mVScrollMode;
+	ScrollBarMode mHScrollMode;
+	UIScrollBar* mVScroll;
+	UIScrollBar* mHScroll;
+	UIWidget* mContainer;
+	Node* mScrollView;
+	Uint32 mSizeChangeCb;
+	Uint32 mPosChangeCb;
 
-		virtual void onPaddingChange();
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		void onValueChangeCb( const Event * Event );
+	virtual void onSizeChange();
 
-		void onScrollViewSizeChange( const Event * Event );
+	virtual void onAlphaChange();
 
-		void containerUpdate();
+	virtual void onChildCountChange( Node* child, const bool& removed );
 
-		void updateScroll();
+	virtual void onPaddingChange();
 
-		virtual void onTouchDragValueChange( Vector2f diff );
+	void onValueChangeCb( const Event* Event );
 
-		virtual bool isTouchOverAllowedChilds();
+	void onScrollViewSizeChange( const Event* Event );
+
+	void onScrollViewPositionChange( const Event* Event );
+
+	void containerUpdate();
+
+	void updateScroll();
+
+	virtual void onTouchDragValueChange( Vector2f diff );
+
+	virtual bool isTouchOverAllowedChilds();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

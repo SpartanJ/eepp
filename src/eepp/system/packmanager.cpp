@@ -1,45 +1,37 @@
-#include <eepp/system/packmanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/packmanager.hpp>
 
 namespace EE { namespace System {
 
-SINGLETON_DECLARE_IMPLEMENTATION(PackManager)
+SINGLETON_DECLARE_IMPLEMENTATION( PackManager )
 
-PackManager::PackManager() :
-	mFallback( true )
-{
-}
+PackManager::PackManager() : mFallback( true ) {}
 
-PackManager::~PackManager() {
-}
+PackManager::~PackManager() {}
 
-Pack * PackManager::exists( std::string& path ) {
+Pack* PackManager::exists( std::string& path ) {
 	std::string tpath( path );
 
 	FileSystem::filePathRemoveProcessPath( tpath );
 
-	std::list<Pack*>::iterator it;
-
-	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
-		if ( -1 != (*it)->exists( tpath ) ) {
+	for ( auto& pack : mResources ) {
+		if ( -1 != pack->exists( tpath ) ) {
 			if ( path.size() != tpath.size() ) {
 				path = tpath;
 			}
 
-			return (*it);
+			return pack;
 		}
 	}
 
 	return NULL;
 }
 
-Pack * PackManager::getPackByPath( std::string path ) {
-	std::list<Pack*>::iterator it;
-
-	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
-		if ( path == (*it)->getPackPath() ) {
-			return (*it);
+Pack* PackManager::getPackByPath( std::string path ) {
+	for ( auto& pack : mResources ) {
+		if ( path == pack->getPackPath() ) {
+			return pack;
 		}
 	}
 
@@ -54,4 +46,4 @@ void PackManager::setFallbackToPacks( const bool& fallback ) {
 	mFallback = fallback;
 }
 
-}}
+}} // namespace EE::System

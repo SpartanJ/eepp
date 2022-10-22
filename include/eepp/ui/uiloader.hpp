@@ -8,77 +8,83 @@
 namespace EE { namespace UI {
 
 class EE_API UILoader : public UIWidget {
-	public:
-		static UILoader * New();
+  public:
+	static UILoader* New();
 
-		UILoader();
+	UILoader();
 
-		~UILoader();
+	~UILoader();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void scheduledUpdate( const Time& time );
+	virtual void scheduledUpdate( const Time& time );
 
-		UILoader * setOutlineThickness( const Float& thickness );
+	UILoader* setOutlineThickness( const Float& thickness );
 
-		const Float& getOutlineThickness() const;
+	const Float& getOutlineThickness() const;
 
-		UILoader * setRadius( const Float& radius );
+	UILoader* setRadius( const Float& radius );
 
-		const Float& getRadius() const;
+	const Float& getRadius() const;
 
-		UILoader * setFillColor( const Color& color );
+	UILoader* setFillColor( const Color& color );
 
-		const Color& getFillColor() const;
+	const Color& getFillColor() const;
 
-		const bool& isIndeterminate() const;
+	const bool& isIndeterminate() const;
 
-		UILoader * setIndeterminate( const bool& indeterminate );
+	UILoader* setIndeterminate( const bool& indeterminate );
 
-		UILoader * setProgress( const Float& progress );
+	UILoader* setProgress( const Float& progress );
 
-		const Float& getProgress() const;
+	const Float& getProgress() const;
 
-		const Float& getMaxProgress() const;
+	const Float& getMaxProgress() const;
 
-		UILoader * setMaxProgress( const Float& maxProgress );
+	UILoader* setMaxProgress( const Float& maxProgress );
 
-		const Float& getAnimationSpeed() const;
+	const Float& getAnimationSpeed() const;
 
-		UILoader * setAnimationSpeed( const Float& animationSpeed );
+	UILoader* setAnimationSpeed( const Float& animationSpeed );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		Float getArcStartAngle() const;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		UILoader * setArcStartAngle( const Float& arcStartAngle );
-	protected:
-		Float mRadius;
-		Float mOutlineThickness;
-		ArcDrawable mArc;
-		CircleDrawable mCircle;
-		Color mColor;
-		Float mArcAngle;
-		Float mArcStartAngle;
-		Float mProgress;
-		Float mMaxProgress;
-		Float mAnimationSpeed;
-		IntPtr mOp;
-		bool mIndeterminate;
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual void onAutoSize();
+	Float getArcStartAngle() const;
 
-		virtual void onSizeChange();
+	UILoader* setArcStartAngle( const Float& arcStartAngle );
 
-		virtual void onPaddingChange();
+  protected:
+	Float mRadius;
+	Float mOutlineThickness;
+	ArcDrawable mArc;
+	CircleDrawable mCircle;
+	Color mColor;
+	Float mArcAngle;
+	Float mArcStartAngle;
+	Float mProgress;
+	Float mMaxProgress;
+	Float mAnimationSpeed;
+	IntPtr mOp;
+	bool mIndeterminate;
 
-		void updateRadius();
+	virtual void onAutoSize();
+
+	virtual void onSizeChange();
+
+	virtual void onPaddingChange();
+
+	void updateRadius();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

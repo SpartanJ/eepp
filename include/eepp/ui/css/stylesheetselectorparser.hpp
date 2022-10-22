@@ -6,13 +6,13 @@
 namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetSelectorParser {
-	public:
-		StyleSheetSelectorParser();
+  public:
+	StyleSheetSelectorParser();
 
-		explicit StyleSheetSelectorParser( std::string name );
+	explicit StyleSheetSelectorParser( std::string name );
 
-		std::vector<StyleSheetSelector> selectors;
+	std::vector<StyleSheetSelector> selectors;
 };
 
-}}}
+}}} // namespace EE::UI::CSS
 #endif

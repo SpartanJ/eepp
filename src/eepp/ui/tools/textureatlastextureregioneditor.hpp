@@ -1,44 +1,43 @@
 #ifndef EE_UITOOLSCTEXTUREATLASTEXTUREREGIONEDITOR_HPP
 #define EE_UITOOLSCTEXTUREATLASTEXTUREREGIONEDITOR_HPP
 
-#include <eepp/ui/base.hpp>
-#include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/textureregion.hpp>
+#include <eepp/ui/base.hpp>
 #include <eepp/ui/uitextureregion.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
 class TextureAtlasEditor;
 
 class EE_API TextureAtlasTextureRegionEditor : public UIWidget {
-	public:
-		static TextureAtlasTextureRegionEditor * New( TextureAtlasEditor * Editor );
+  public:
+	static TextureAtlasTextureRegionEditor* New( TextureAtlasEditor* Editor );
 
-		TextureAtlasTextureRegionEditor( TextureAtlasEditor * Editor );
+	TextureAtlasTextureRegionEditor( TextureAtlasEditor* Editor );
 
-		virtual ~TextureAtlasTextureRegionEditor();
+	virtual ~TextureAtlasTextureRegionEditor();
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void scheduledUpdate( const Time& time );
+	Graphics::TextureRegion* getTextureRegion() const;
 
-		Graphics::TextureRegion * getTextureRegion() const;
+	void setTextureRegion( Graphics::TextureRegion* TextureRegion );
 
-		void setTextureRegion( Graphics::TextureRegion * TextureRegion );
+	UITextureRegion* getGfx() const;
 
-		UITextureRegion * getGfx() const;
-	protected:
-		UITheme *				mTheme;
-		UITextureRegion *					mGfx;
-		UINode *			mDrag;
-		Vector2f				mUICenter;
-		TextureAtlasEditor *	mEditor;
+  protected:
+	UITextureRegion* mGfx;
+	UINode* mDrag;
+	Vector2f mUICenter;
+	TextureAtlasEditor* mEditor;
+	Vector2f mDragPos;
 
-		virtual void onSizeChange();
+	virtual void onSizeChange();
 
-		void getCenter();
+	void getCenter();
 };
 
-}}}
+}}} // namespace EE::UI::Tools
 
 #endif

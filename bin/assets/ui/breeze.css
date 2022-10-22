@@ -1,0 +1,1137 @@
+
+:root {
+	--primary: #3daee9;
+	--back: #31363b;
+	--font: #eff0f1;
+	--font-hint: #898b8d;
+	--button-back: #30353a;
+	--button-border: #6b6f73;
+	--button-radius: 2dp;
+	--base-horizontal-padding: 5dp;
+	--base-vertical-padding: 5dp;
+	--border-width: 1dp;
+	--list-back: #232629;
+	--separator: #383a3d;
+	--item-hover: #284150;
+	--scroll-button: #6b6d6f;
+	--slider-back: #676a6e;
+	--slider-button: #31363b;
+	--slider-border: #787b80;
+	--scrollbar-border: #373a3d;
+	--scrollbar-button: #4085a9;
+	--scrollbar-hback-hover: #606365;
+	--tab-back: #2b3034;
+	--tab-line: #616569;
+	--tab-active: #31363b;
+	--tab-hover: #334e5e;
+	--tab-close: #909396;
+	--tab-close-hover: #863d47;
+	--icon: #b6bbc2;
+	--icon-active: white;
+	--icon-back-hover: #eff0f1;
+	--icon-line-hover: #3d4246;
+	--icon-back-alert: #e49aa2;
+	--menu-back: #2d3136;
+	--menu-font: #eff0f1;
+	--menu-border: #616569;
+	--menu-font-active: white;
+	--menu-font-disabled: #6e7275;
+	--win-icon: #dbdbdd;
+	--floating-icon: #eff0f188;
+	--term-back-color: #1e2127;
+	--term-font-color: #abb2bf;
+	--highlight-primary: #FFFFFF7A;
+	--disabled-color: #727679;
+	--disabled-border: #43474c;
+	droppable-hovering-color: #FFFFFF20;
+}
+
+pushbutton::icon,
+selectbutton::icon,
+tableview::cell::icon,
+treeview::cell::icon,
+treeview::cell::expander,
+listview::cell::icon,
+Menu::Item:selected,
+Menu::CheckBox:selected,
+Menu::SubMenu:selected,
+Menu::RadioButton:selected,
+Menu::Item:hover > Menu::Item::text,
+Menu::Item:hover > Menu::Item::shortcut,
+Menu::CheckBox:hover > Menu::CheckBox::text,
+Menu::CheckBox:hover > Menu::CheckBox::shortcut,
+Menu::RadioButton:hover > Menu::RadioButton::text,
+Menu::RadioButton:hover > Menu::RadioButton::shortcut,
+Menu::SubMenu:hover > Menu::SubMenu::text,
+Menu::item:hover > Menu::Item::icon,
+Menu::SubMenu:hover > Menu::SubMenu::icon,
+Menu::item:hover > Menu::CheckBox::icon,
+Menu::item:hover > Menu::RadioButton::icon,
+PushButton:pressed > PushButton::icon,
+SelectButton:pressed > SelectButton::icon,
+SelectButton:selected > SelectButton::icon,
+SelectButton:selected:pressed > SelectButton::icon,
+tableview::row:selected tableview::cell::text,
+treeview::row:selected treeview::cell::text,
+listview::row:selected listview::cell::text,
+tableview::row:selected tableview::cell::icon,
+treeview::row:selected treeview::cell::icon,
+listview::row:selected listview::cell::icon,
+tableview::row:selected tableview::cell::expander,
+treeview::row:selected treeview::cell::expander,
+listview::row:selected listview::cell::expander,
+tableview::row:hover tableview::cell::text,
+treeview::row:hover treeview::cell::text,
+listview::row:hover listview::cell::text,
+tableview::row:hover tableview::cell::icon,
+treeview::row:hover treeview::cell::icon,
+listview::row:hover listview::cell::icon,
+tableview::row:hover tableview::cell::expander,
+treeview::row:hover treeview::cell::expander,
+listview::row:hover listview::cell::expander,
+tableview::header::column:hover,
+treeview::header::column:hover,
+listview::header::column:hover {
+	color: var(--font);
+	tint: var(--font);
+}
+
+CheckBox,
+ComboBox,
+ComboBox::DropDownList::ListBox::item,
+DropDownList,
+DropDownList::ListBox::item,
+ListBox::item,
+Menu::item::text,
+Menu::item::shortcut,
+Menu::SubMenu,
+PushButton,
+RadioButton,
+SelectButton,
+SpinBox::input,
+Tab,
+TextEdit,
+TextInput,
+TextInputPassword,
+TextView,
+Tooltip,
+MenuBar::button,
+Window::title,
+ListView::cell,
+tableview::cell::text,
+treeview::cell::text,
+listview::cell::text {
+	color: var(--font);
+}
+
+TextView,
+TextEdit,
+TextInput,
+TextInputPassword,
+ComboBox::DropDownList,
+SpinBox::input, {
+	selection-back-color: var(--primary);
+}
+
+PushButton,
+SelectButton,
+DropDownList {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+	background-color: var(--button-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	transition: all 0.125s cubic-bezier(0.77, 0.77, 0.38, 0.38);
+}
+
+DropDownList,
+ComboBox::DropDownList {
+	max-visible-items: 6;
+}
+
+PushButton:hover,
+PushButton:focus,
+DropDownList:hover,
+DropDownList:focus,
+SelectButton:hover,
+SelectButton:focus,
+ComboBox:hover,
+ComboBox:focus {
+	border-color: var(--primary);
+}
+
+PushButton:pressed,
+SelectButton:pressed,
+SelectButton:selected,
+SelectButton:selected:pressed {
+	background-color: var(--primary);
+}
+
+pushbutton:disabled,
+selectbutton:disabled {
+	color: var(--disabled-color);
+	border-color: var(--disabled-border);
+}
+
+PushButton::icon,
+SelectButton::icon,
+TableView::cell::icon,
+TreeView::cell::icon,
+TreeView::cell::expander,
+ListView::cell::icon {
+	margin-right: 4dp;
+}
+
+CheckBox::active,
+CheckBox::inactive {
+	width: 12dp;
+	height: 12dp;
+	border-width: 1dp;
+	border-radius: var(--button-radius);
+}
+
+CheckBox::inactive {
+	border-color: var(--button-border);
+}
+
+CheckBox:hover CheckBox::inactive {
+	border-color: var(--primary);
+}
+
+CheckBox::active {
+	border-color: var(--primary);
+	background-image: rectangle(solid, var(--primary));
+	background-size: 70% 70%;
+	background-position: center;
+}
+
+tableview::row:selected CheckBox::active,
+treeview::row:selected CheckBox::active,
+listview::row:selected CheckBox::active {
+	border-color: var(--highlight-primary);
+	background-image: rectangle(solid, var(--highlight-primary));
+}
+
+RadioButton::active,
+RadioButton::inactive {
+	width: 12dp;
+	height: 12dp;
+	border-width: 1dp;
+	border-radius: 100%;
+}
+
+RadioButton::inactive {
+	border-color: var(--button-border);
+}
+
+RadioButton:hover RadioButton::inactive {
+	border-color: var(--primary);
+}
+
+RadioButton::active {
+	border-color: var(--primary);
+	background-image: circle(solid, var(--primary));
+	background-size: 8dp 8dp;
+	background-position: 6dp 6dp;
+}
+
+ListBox,
+DropDownList::ListBox,
+ComboBox::DropDownList::ListBox,
+Table,
+ListView {
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	transition: all 0.15;
+}
+
+ListBox::item {
+	padding-left: 4dp;
+	background-color: transparent;
+	background-image: linear-gradient( to right, var(--list-back), var(--separator) ), linear-gradient( to right, var(--separator), var(--list-back) );
+	background-size: 50% 1dp, 50% 1dp;
+	background-position: left bottom, right bottom;
+}
+
+ListView::row {
+	background-color: transparent;
+	background-image: linear-gradient( to right, var(--list-back), var(--separator) ), linear-gradient( to right, var(--separator), var(--list-back) );
+	background-size: 50% 1dp, 50% 1dp;
+	background-position: left bottom, right bottom;
+}
+
+ListView::cell {
+	padding-left: 4dp;
+	min-icon-size: 16dp 16dp;
+}
+
+ListBox:hover,
+ListView:hover {
+	border-color: var(--primary);
+}
+
+ListBox::item:hover,
+ListView::row:hover {
+	background-color: var(--item-hover);
+}
+
+ListBox::item:selected,
+ListView::row:selected {
+	background-color: var(--primary);
+}
+
+DropDownList::ListBox::item,
+ComboBox::DropDownList::ListBox::item {
+	padding-left: 4dp;
+}
+
+DropDownList::ListBox::item:hover,
+DropDownList::ListBox::item:selected,
+ComboBox::DropDownList::ListBox::item:hover,
+ComboBox::DropDownList::ListBox::item:selected {
+	background-color: var(--primary);
+}
+
+TextInput,
+TextInputPassword {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	hint-color: var(--font-hint);
+	transition: all 0.15;
+}
+
+ComboBox {
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	transition: all 0.15;
+}
+
+ComboBox::DropDownList {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+}
+
+TextInputPassword:hover,
+TextInputPassword:focus,
+TextInput:hover,
+TextInput:focus,
+SpinBox:hover,
+SpinBox:focus {
+	border-color: var(--primary);
+}
+
+SpinBox {
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	transition: all 0.15;
+}
+
+SpinBox::input {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+}
+
+SpinBox::input,
+SpinBox::input::hover,
+SpinBox::input::focus {
+	border-width: 0dp;
+	border-color: transparent;
+}
+
+SpinBox::btnup,
+SpinBox::btndown {
+	width: 13dp;
+	height: 13dp;
+}
+
+TextEdit {
+	background-color: var(--list-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+	transition: all 0.15;
+}
+
+TextEdit:focus,
+TextEdit:hover {
+	border-color: var(--primary);
+}
+
+Tooltip {
+	padding-left: var(--base-horizontal-padding);
+	padding-right: var(--base-horizontal-padding);
+	padding-top: var(--base-vertical-padding);
+	padding-bottom: var(--base-vertical-padding);
+	background-color: var(--button-back);
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	border-width: var(--border-width);
+	font-style: shadow;
+}
+
+Slider {
+	min-width: 16dp;
+	min-height: 16dp;
+	half-slider: true;
+}
+
+Slider::vback {
+	background-color: var(--slider-back);
+	border-radius: 4dp;
+	min-width: 8dp;
+	transition: all 0.15s;
+}
+
+Slider::hback {
+	background-color: var(--slider-back);
+	border-radius: 4dp;
+	min-width: 64dp;
+	min-height: 8dp;
+	transition: all 0.15s;
+}
+
+Slider::vbutton,
+Slider::hbutton {
+	background-color: var(--slider-button);
+	border-color: var(--slider-border);
+	border-width: 1dp;
+	border-radius: 100%;
+	min-width: 16dp;
+	min-height: 16dp;
+}
+
+Slider::vbutton:hover,
+Slider::vbutton:focus,
+Slider::hbutton:hover,
+Slider::hbutton:focus {
+	border-color: var(--primary);
+}
+
+ScrollBar {
+	scrollbar-style: no-buttons;
+	min-width: 18dp;
+	min-height: 18dp;
+}
+
+ScrollBar::hback {
+	min-height: 6dp;
+	border-radius: 3dp;
+	background-color: transparent;
+}
+
+ScrollBar::vback {
+	min-width: 6dp;
+	border-radius: 3dp;
+	background-color: transparent;
+}
+
+ScrollBar::vslider {
+	padding-top: 4dp;
+	padding-bottom: 4dp;
+}
+
+ScrollBar::hslider {
+	padding-left: 4dp;
+	padding-right: 4dp;
+}
+
+ScrollBar::hslider,
+ScrollBar::vslider {
+	border-width: 1dp;
+	border-color: var(--scrollbar-border);
+	transition: all 0.15s;
+}
+
+ScrollBar::hbutton {
+	min-width: 12dp;
+	min-height: 6dp;
+	background-color: var(--scrollbar-button);
+	border-radius: 3dp;
+	border-width: 0dp;
+	transition: all 0.15s;
+}
+
+ScrollBar::vbutton {
+	min-width: 6dp;
+	min-height: 12dp;
+	background-color: var(--scrollbar-button);
+	border-radius: 3dp;
+	border-width: 0dp;
+	transition: all 0.15s;
+}
+
+ScrollBar::hslider:hover ScrollBar::hback,
+ScrollBar::vslider:hover ScrollBar::vback {
+	background-color: var(--scrollbar-hback-hover);
+}
+
+ScrollBar::vslider:hover ScrollBar::vbutton,
+ScrollBar::vbutton:hover,
+ScrollBar::hslider:hover ScrollBar::hbutton,
+ScrollBar::hbutton:hover {
+	background-color: var(--primary);
+}
+
+ProgressBar {
+	min-height: 9dp;
+}
+
+ProgressBar::filler {
+	border-radius: 4dp;
+	background-color: var(--primary);
+}
+
+TabWidget {
+	tab-height: 24dp;
+	gravity: left|bottom;
+}
+
+TabWidget::TabBar {
+	background-image: rectangle(solid, var(--tab-line));
+	background-size: 100% 1dp;
+	background-position-y: bottom;
+}
+
+Tab {
+	background-color: var(--tab-back);
+	border-left-color: transparent;
+	border-right-color: transparent;
+	border-top-color: transparent;
+	background-image: rectangle(solid, var(--tab-line));
+	background-size: 100% 1dp;
+	background-position-y: bottom;
+	height: 24dp;
+	transition: background-color 0.15s;
+}
+
+Tab:hover {
+	background-color: var(--tab-hover);
+}
+
+Tab::text {
+	padding-left: 4dp;
+	padding-right: 4dp;
+}
+
+Tab:selected {
+	background-image: rectangle(solid, transparent);
+	background-size: 100% 1dp;
+	background-position-y: bottom;
+	background-color: var(--tab-active);
+	border-left-color: var(--tab-line);
+	border-right-color: var(--tab-line);
+	border-top-color: var(--tab-line);
+	border-left-width: 1dp;
+	border-right-width: 1dp;
+	border-top-width: 1dp;
+	border-top-left-radius: 2dp;
+	border-top-right-radius: 2dp;
+}
+
+Tab:selected:hover {
+	background-color: var(--tab-active);
+}
+
+tab::icon {
+	margin-left: 2dp;
+	margin-right: 2dp;
+}
+
+Tab::close {
+	width: 10dp;
+	height: 10dp;
+	border-radius: 5dp;
+	/*background-color: var(--tab-close);
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 5dp 5dp"), poly(line, var(--icon-line-hover), "5dp 0dp, 0dp 5dp");
+	foreground-position: 2.5dp 2.5dp, 2.5dp 2.5dp;*/
+	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
+	foreground-tint: var(--tab-close);
+	foreground-size: 10dp 10dp;
+	margin-right: 4dp;
+	transition: all 0.15s;
+}
+
+Tab::close:hover {
+	/*background-color: var(--tab-close-hover);*/
+	foreground-tint: var(--tab-close-hover);
+}
+
+Loader {
+	fill-color: var(--primary);
+}
+
+CodeEditor > Loader {
+	background-color: #0000002d;
+	radius: 32dp;
+	outline-thickness: 6dp;
+}
+
+Window::close {
+	width: 12dp;
+	height: 12dp;
+	border-radius: 6dp;
+	background-color: var(--icon-back-hover);
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 6dp 6dp"), poly(line, var(--icon-line-hover), "6dp 0dp, 0dp 6dp");
+	foreground-position: 3dp 3dp, 3dp 3dp;
+	transition: all 0.15s;
+}
+
+Window::close:hover {
+	background-color: var(--icon-back-alert);
+}
+
+Window::maximize {
+	width: 12dp;
+	height: 12dp;
+	border-radius: 6dp;
+	background-color: transparent;
+	foreground-image: poly(line, var(--win-icon), "0dp 4dp, 4dp 0dp"), poly(line, var(--win-icon), "4dp 0dp, 8dp 4dp");
+	foreground-position: 2dp 4dp, 2dp 4dp;
+	transition: all 0.15s;
+}
+
+Window::maximize:hover {
+	background-color: var(--icon-back-hover);
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 4dp, 4dp 0dp"), poly(line, var(--icon-line-hover), "4dp 0dp, 8dp 4dp");
+}
+
+Window::minimize {
+	width: 12dp;
+	height: 12dp;
+	border-radius: 6dp;
+	background-color: transparent;
+	foreground-image: poly(line, var(--win-icon), "0dp 0dp, 4dp 4dp"), poly(line, var(--win-icon), "4dp 4dp, 8dp 0dp");
+	foreground-position: 2dp 4dp, 2dp 4dp;
+	transition: all 0.15s;
+}
+
+Window::minimize:hover {
+	background-color: var(--icon-back-hover);
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 4dp 4dp"), poly(line, var(--icon-line-hover), "4dp 4dp, 8dp 0dp");
+}
+
+Window {
+	background-color: var(--back);
+	window-border-size: 2dp 2dp;
+	window-titlebar-size: 24dp 24dp;
+	window-buttons-offset: -6dp 0dp;
+	window-buttons-separation: 8dp;
+	window-flags: shadow;
+}
+
+Window::decoration {
+	background-color: var(--back);
+}
+
+Window::border::left,
+Window::border::right {
+	background-color: var(--back);
+}
+
+Window::border::bottom {
+	background-color: var(--back);
+}
+
+DropDownList {
+	foreground-image: poly(line, var(--icon), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon), "-16dp 0dp, -12dp 3dp");
+	foreground-position-x: right, right;
+	foreground-position-y: center, center;
+}
+
+DropDownList:hover,
+DropDownList:focus {
+	foreground-image: poly(line, var(--icon-active), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon-active), "-16dp 0dp, -12dp 3dp");
+}
+
+ComboBox::Button {
+	width: 24dp;
+	height: 16dp;
+	foreground-image: poly(line, var(--icon), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon), "-16dp 0dp, -12dp 3dp");
+	foreground-position-x: right, right;
+	foreground-position-y: center, center;
+}
+
+ComboBox::Button:focus,
+ComboBox::Button:hover {
+	foreground-image: poly(line, var(--icon-active), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon-active), "-16dp 0dp, -12dp 3dp");
+}
+
+SpinBox::btndown {
+	width: 16dp;
+	height: 12dp;
+	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
+}
+
+SpinBox::btndown:hover {
+	foreground-image: poly(line, var(--primary), "1dp 4dp, 5dp 7dp"), poly(line, var(--primary), "5dp 7dp, 9dp 4dp");
+}
+
+SpinBox::btnup {
+	width: 16dp;
+	height: 12dp;
+	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
+}
+
+SpinBox::btnup:hover {
+	foreground-image: poly(line, var(--primary), "1dp 7dp, 5dp 4dp"), poly(line, var(--primary), "5dp 4dp, 9dp 7dp");
+}
+
+MenuBar {
+	height: 24dp;
+	background-color: var(--back);
+}
+
+Menu,
+PopUpMenu {
+	background-color: var(--menu-back);
+	color: var(--menu-font);
+	min-width: 150dp;
+	min-icon-size: 12dp 12dp;
+	border-width: 1dp;
+	border-color: var(--menu-border);
+}
+
+MenuBar::Button {
+	padding-left: 4dp;
+	padding-right: 4dp;
+	min-height: 24dp;
+}
+
+MenuBar::Button:hover {
+	background-color: var(--primary);
+}
+
+Menu::Item,
+Menu::CheckBox,
+Menu::Separator,
+Menu::SubMenu,
+Menu::RadioButton {
+	padding-left: 6dp;
+	padding-top: 2dp;
+	padding-bottom: 2dp;
+	background-color: transparent;
+}
+
+Menu::Item:selected,
+Menu::CheckBox:selected,
+Menu::SubMenu:selected,
+Menu::RadioButton:selected {
+	background-color: var(--primary);
+}
+
+Menu::Item::text,
+Menu::CheckBox::text,
+Menu::SubMenu::text,
+Menu::RadioButton::text {
+	padding-right: 8dp;
+	color: var(--menu-font);
+}
+
+Menu::Item::shortcut,
+Menu::CheckBox::shortcut,
+Menu::RadioButton::shortcut {
+	padding-left: 48dp;
+	padding-right: 8dp;
+	color: var(--menu-font);
+}
+
+Menu::Item:disabled > Menu::Item::text,
+Menu::Item:disabled > Menu::Item::shortcut,
+Menu::Item:disabled > Menu::Item::icon,
+Menu::CheckBox:disabled > Menu::CheckBox::text,
+Menu::CheckBox:disabled > Menu::CheckBox::shortcut,
+Menu::CheckBox:disabled > Menu::CheckBox::icon,
+Menu::RadioButton:disabled > Menu::RadioButton::text,
+Menu::RadioButton:disabled > Menu::RadioButton::shortcut,
+Menu::RadioButton:disabled > Menu::RadioButton::icon,
+Menu::SubMenu:disabled > Menu::SubMenu::text,
+Menu::SubMenu:disabled > Menu::SubMenu::icon {
+	color: var(--menu-font-disabled);
+	tint: var(--menu-font-disabled);
+}
+
+Menu::Item:hover > Menu::Item::text,
+Menu::CheckBox:hover > Menu::Item::text,
+Menu::RadioButton:hover > Menu::Item::text,
+Menu::SubMenu:hover > Menu::Item::text,
+ListBox::item:hover {
+	color: var(--menu-font-active);
+}
+
+Menu::Separator {
+	height: 3dp;
+	background-color: var(--button-back);
+	background-image: rectangle(solid, var(--button-border));
+	background-size: 100% 1dp;
+	background-position: center;
+}
+
+Menu::SubMenu::Arrow {
+	width: 16dp;
+	height: 16dp;
+	margin-right: 1dp;
+	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp"), poly(line, var(--icon), "5dp 13dp, 10dp 8dp");
+}
+
+Menu::Item::icon,
+Menu::SubMenu::icon,
+Menu::CheckBox::icon,
+Menu::RadioButton::icon {
+	margin-right: 4dp;
+	tint: var(--font);
+}
+
+Menu::CheckBox::icon {
+	max-width: 12dp;
+	max-height: 12dp;
+	border-width: 1dp;
+	border-color: var(--button-border);
+	border-radius: var(--button-radius);
+	background-image: none;
+	background-color: var(--menu-back);
+}
+
+Menu::CheckBox::icon:selected {
+	border-color: var(--primary);
+	background-image: rectangle(solid, var(--primary));
+	background-size: 70% 70%;
+	background-position: center;
+}
+
+Menu::RadioButton::icon {
+	max-width: 12dp;
+	max-height: 12dp;
+	border-width: 1dp;
+	border-color: var(--button-border);
+	border-radius: 100%;
+	background-image: none;
+	background-color: var(--menu-back);
+}
+
+Menu::RadioButton::icon:selected {
+	border-color: var(--primary);
+	background-image: circle(solid, var(--primary));
+	background-size: 8dp 8dp;
+	background-position: 6dp 6dp;
+}
+
+ListBox > ScrollBar,
+TextEdit > ScrollBar,
+Table > ScrollBar {
+	background-color: var(--list-back);
+}
+
+Splitter::separator {
+	background-color: var(--back);
+}
+
+Splitter::separator:selected,
+Splitter::separator:hover {
+	background-color: var(--primary);
+}
+
+tableview::header,
+listview::header {
+	background-color: var(--back);
+}
+
+tableview::header::column,
+treeview::header::column,
+listview::header::column {
+	background-color: var(--back);
+	border-right-color: var(--tab-line);
+	border-right-width: 1dp;
+	border-bottom-color: var(--tab-line);
+	border-bottom-width: 1dp;
+	border-type: inside;
+	color: var(--font);
+	padding: 2dp 6dp 2dp 6dp;
+	transition: all 0.125s;
+	text-align: left;
+}
+
+tableview::header::column:hover,
+treeview::header::column:hover,
+listview::header::column:hover {
+	background-color: var(--tab-hover);
+}
+
+tableview::row,
+treeview::row {
+	background-color: var(--list-back);
+}
+
+tableview::row:hover,
+treeview::row:hover {
+	background-color: var(--tab-hover);
+}
+
+tableview::row:selected,
+treeview::row:selected {
+	background-color: var(--primary);
+}
+
+tableview::cell,
+treeview::cell {
+	padding-left: 6dp;
+	padding-right: 6dp;
+	min-icon-size: 16dp 16dp;
+}
+
+treeview::cell::expander {
+	min-size: 16dp 16dp;
+}
+
+TreeView,
+TableView {
+	background-color: var(--list-back);
+}
+
+TreeView > ScrollBar,
+TableView > ScrollBar {
+	background-color: var(--list-back);
+}
+
+tableview::header::column::arrow-up,
+treeview::header::column::arrow-up,
+listview::header::column::arrow-up {
+	width: 16dp;
+	height: 12dp;
+	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
+}
+
+tableview::header::column::arrow-down,
+treeview::header::column::arrow-down,
+listview::header::column::arrow-down {
+	width: 16dp;
+	height: 12dp;
+	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
+}
+
+ScrollBarMini {
+	scrollbar-style: no-buttons;
+	min-width: 4dp;
+	min-height: 4dp;
+}
+
+ScrollBarMini::hback {
+	min-height: 4dp;
+	border-radius: 2dp;
+	background-color: transparent;
+}
+
+ScrollBarMini::vback {
+	min-width: 4dp;
+	border-radius: 2dp;
+	background-color: transparent;
+}
+
+ScrollBarMini::hslider,
+ScrollBarMini::vslider {
+	border-width: 1dp;
+	border-color: var(--scrollbar-border);
+	transition: all 0.15s;
+}
+
+ScrollBarMini::hbutton {
+	min-width: 4dp;
+	min-height: 4dp;
+	background-color: var(--scrollbar-button);
+	border-radius: 2dp;
+	border-width: 0dp;
+	transition: all 0.15s;
+}
+
+ScrollBarMini::vbutton {
+	min-width: 4dp;
+	min-height: 4dp;
+	background-color: var(--scrollbar-button);
+	border-radius: 2dp;
+	border-width: 0dp;
+	transition: all 0.15s;
+}
+
+ScrollBarMini::vslider:hover ScrollBar::vbutton,
+ScrollBarMini::vbutton:hover,
+ScrollBarMini::hslider:hover ScrollBar::hbutton,
+ScrollBarMini::hbutton:hover {
+	background-color: var(--primary);
+}
+
+.appbackground {
+	background-color: var(--back);
+}
+
+tab::icon {
+	tint: var(--icon);
+}
+
+tab:selected > tab::icon,
+tab:not(:selected):hover > tab::icon {
+	tint: var(--menu-font-active);
+}
+
+console {
+	background-color: var(--term-back-color);
+	color: var(--term-font-color);
+	padding: 2dp;
+	font-size: 11dp;
+	border-bottom-color: var(--separator);
+	border-bottom-width: var(--border-width);
+}
+
+@media (prefers-color-scheme: light) {
+
+:root {
+	--primary: #3daee9;
+	--back: #eff0f1;
+	--font: #232627;
+	--font-hint: #232627;
+	--button-back: #fcfcfc;
+	--button-border: #b3b4b5;
+	--button-radius: 2dp;
+	--base-horizontal-padding: 5dp;
+	--base-vertical-padding: 5dp;
+	--border-width: 1dp;
+	--list-back: #ffffff;
+	--separator: #cbcdcd;
+	--item-hover: #93cee9;
+	--scroll-button: #cbcdcd;
+	--slider-back: #e9e9e9;
+	--slider-button: #cbcdcd;
+	--slider-border: #e6e6e6;
+	--scrollbar-border: #e6e6e6;
+	--scrollbar-button: #cbcdcd;
+	--scrollbar-hback-hover: #e9e9e9;
+	--tab-back: #eff0f1;
+	--tab-line: #e6e6e6;
+	--tab-active: #fcfcfc;
+	--tab-hover: #93cee9;
+	--tab-close: #e6e6e6;
+	--tab-close-hover: #e49aa2;
+	--icon: #232627;
+	--icon-active: #3daee9;
+	--icon-back-hover: #e6e6e6;
+	--icon-line-hover: #232627;
+	--icon-back-alert: #e49aa2;
+	--menu-back: #eff0f1;
+	--menu-font: #232627;
+	--menu-border: #b3b4b5;
+	--menu-font-active: #fcfcfc;
+	--menu-font-disabled: #a8a9aa;
+	--win-icon: #232627;
+	--floating-icon: #cbcdcd;
+	--term-back-color: #eff0f1;
+	--term-font-color: #232627;
+	--disabled-color: #727679;
+	--disabled-border: #d3d4d5;
+	droppable-hovering-color: #00000020;
+}
+
+Menu::Item:selected,
+Menu::CheckBox:selected,
+Menu::SubMenu:selected,
+Menu::RadioButton:selected,
+Menu::Item:hover > Menu::Item::text,
+Menu::Item:hover > Menu::Item::shortcut,
+Menu::CheckBox:hover > Menu::CheckBox::text,
+Menu::CheckBox:hover > Menu::CheckBox::shortcut,
+Menu::RadioButton:hover > Menu::RadioButton::text,
+Menu::RadioButton:hover > Menu::RadioButton::shortcut,
+Menu::SubMenu:hover > Menu::SubMenu::text,
+Menu::item:hover > Menu::Item::icon,
+Menu::SubMenu:hover > Menu::SubMenu::icon,
+Menu::item:hover > Menu::CheckBox::icon,
+Menu::item:hover > Menu::RadioButton::icon,
+PushButton:pressed > PushButton::icon,
+SelectButton:pressed > SelectButton::icon,
+SelectButton:selected > SelectButton::icon,
+SelectButton:selected:pressed > SelectButton::icon,
+tableview::row:selected tableview::cell::text,
+treeview::row:selected treeview::cell::text,
+listview::row:selected listview::cell::text,
+tableview::row:selected tableview::cell::icon,
+treeview::row:selected treeview::cell::icon,
+listview::row:selected listview::cell::icon,
+tableview::row:selected tableview::cell::expander,
+treeview::row:selected treeview::cell::expander,
+listview::row:selected listview::cell::expander,
+tableview::row:selected tableview::cell checkbox,
+treeview::row:selected treeview::cell checkbox,
+listview::row:selected listview::cell checkbox,
+tableview::row:hover tableview::cell::text,
+treeview::row:hover treeview::cell::text,
+listview::row:hover listview::cell::text,
+tableview::row:hover tableview::cell::icon,
+treeview::row:hover treeview::cell::icon,
+listview::row:hover listview::cell::icon,
+tableview::row:hover tableview::cell::expander,
+treeview::row:hover treeview::cell::expander,
+listview::row:hover listview::cell::expander,
+tableview::row:hover tableview::cell checkbox,
+treeview::row:hover treeview::cell checkbox,
+listview::row:hover listview::cell checkbox,
+tableview::header::column:hover,
+treeview::header::column:hover,
+listview::header::column:hover {
+	color: var(--menu-font-active);
+	tint: var(--menu-font-active);
+}
+
+Tab:selected,
+Tab:hover,
+Tab:pressed {
+	color: var(--font);
+}
+
+Tab:not(:selected):hover {
+	color: var(--menu-font-active);
+}
+
+Tooltip {
+	background-color: var(--font)!important;
+	color: var(--back)!important;
+}
+
+tab::icon,
+tab:selected > tab::icon, {
+	tint: var(--icon);
+}
+
+tab:not(:selected):hover > tab::icon {
+	tint: var(--menu-font-active);
+}
+
+}
+
+@media screen and (min-pixel-density: 1.1) and (max-pixel-density: 1.99) {
+
+Menu::Separator {
+	height: 3px;
+	background-size: 100% 1px;
+}
+
+}

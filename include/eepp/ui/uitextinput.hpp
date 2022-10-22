@@ -1,107 +1,229 @@
 #ifndef EE_UICUITEXTINPUT_H
 #define EE_UICUITEXTINPUT_H
 
+#include <eepp/ui/doc/textdocument.hpp>
+#include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextview.hpp>
-#include <eepp/window/inputtextbuffer.hpp>
+
+using namespace EE::UI::Doc;
 
 namespace EE { namespace UI {
 
-class EE_API UITextInput : public UITextView {
-	public:
-		static UITextInput * New();
+class UIPopUpMenu;
+class UIMenuItem;
 
-		static UITextInput * NewWithTag( const std::string& tag );
+class EE_API UITextInput : public UITextView, public TextDocument::Client {
+  public:
+	static UITextInput* New();
 
-		UITextInput();
+	static UITextInput* NewWithTag( const std::string& tag );
 
-		explicit UITextInput( const std::string& tag );
+	UITextInput();
 
-		virtual ~UITextInput();
+	explicit UITextInput( const std::string& tag );
 
-		virtual Uint32 getType() const;
+	virtual ~UITextInput();
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual Uint32 getType() const;
 
-		virtual void scheduledUpdate( const Time& time );
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void draw();
+	virtual void scheduledUpdate( const Time& time );
 
-		void pushIgnoredChar( const Uint32& ch );
+	virtual void draw();
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		InputTextBuffer * getInputTextBuffer();
+	UITextInput* setAllowEditing( const bool& allow );
 
-		UITextInput * setAllowEditing( const bool& allow );
+	const bool& isEditingAllowed() const;
 
-		const bool& getAllowEditing() const;
+	virtual const String& getText() const;
 
-		virtual const String& getText();
+	virtual UITextView* setText( const String& text );
 
-		virtual UITextView * setText( const String& text );
+	virtual void wrapText( const Uint32& MaxWidth );
 
-		virtual void shrinkText( const Uint32& MaxWidth );
+	UITextInput* setMaxLength( const Uint32& maxLength );
 
-		UITextInput * setMaxLength( Uint32 maxLength );
+	const Uint32& getMaxLength() const;
 
-		Uint32 getMaxLength();
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		UITextInput * setFreeEditing( bool support );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		bool isFreeEditingEnabled();
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+	virtual UIWidget* setPadding( const Rectf& padding );
 
-		virtual UIWidget * setPadding(const Rectf& padding);
-	protected:
-		InputTextBuffer	mTextBuffer;
-		Float			mWaitCursorTime;
-		Vector2f		mCurPos;
-		int				mCursorPos;
-		bool			mAllowEditing;
-		bool			mShowingWait;
-		void resetWaitCursor();
+	const String& getHint() const;
 
-		virtual void alignFix();
+	UITextInput* setHint( const String& hint );
 
-		virtual void onAutoSize();
+	const Color& getHintColor() const;
 
-		void privOnPressEnter();
+	UITextInput* setHintColor( const Color& hintColor );
 
-		void autoPadding();
+	const Color& getHintShadowColor() const;
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	UITextInput* setHintShadowColor( const Color& shadowColor );
 
-		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
+	Font* getHintFont() const;
 
-		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+	UITextInput* setHintFont( Font* font );
 
-		virtual Uint32 onFocus();
+	Uint32 getHintFontSize() const;
 
-		virtual Uint32 onFocusLoss();
+	UITextView* setHintFontSize( const Uint32& characterSize );
 
-		virtual Uint32 onPressEnter();
+	const Uint32& getHintFontStyle() const;
 
-		void onThemeLoaded();
+	UITextView* setHintFontStyle( const Uint32& fontStyle );
 
-		virtual void onCursorPosChange();
+	const Float& getHintOutlineThickness() const;
 
-		void drawWaitingCursor();
+	UITextView* setHintOutlineThickness( const Float& outlineThickness );
 
-		void updateWaitingCursor(const Time & time);
+	const Color& getHintOutlineColor() const;
 
-		virtual void updateText();
+	UITextView* setHintOutlineColor( const Color& outlineColor );
 
-		virtual void selCurInit( const Int32& init );
+	/** Block all the inserts, allow only numeric characters. */
+	void setAllowOnlyNumbers( const bool& onlyNumbers, const bool& allowFloat = false );
 
-		virtual void selCurEnd( const Int32& end );
+	/** @return If is only allowing numbers */
+	bool onlyNumbersAllowed() const;
 
-		virtual Int32 selCurInit();
+	/** @return If is only allowing numbers, it allow floating point numbers? */
+	bool floatingPointAllowed() const;
 
-		virtual Int32 selCurEnd();
+	TextDocument& getDocument();
+
+	KeyBindings& getKeyBindings();
+
+	size_t getMenuIconSize() const;
+
+	void setMenuIconSize( size_t menuIconSize );
+
+	bool getEscapePastedText() const;
+
+	void setEscapePastedText( bool escapePastedText );
+
+  protected:
+	TextDocument mDoc;
+	Float mWaitCursorTime;
+	Vector2f mCurPos;
+	Text* mHintCache;
+	FontStyleConfig mHintStyleConfig;
+	int mCursorPos;
+	bool mAllowEditing;
+	bool mShowingWait;
+	bool mOnlyNumbers;
+	bool mAllowFloat;
+	bool mMouseDown;
+	bool mCreateDefaultContextMenuOptions{ true };
+	bool mEscapePastedText{ false };
+	Uint32 mMaxLength{ 0 };
+	KeyBindings mKeyBindings;
+	Clock mLastDoubleClick;
+	size_t mMenuIconSize{ 16 };
+	UIPopUpMenu* mCurrentMenu{ nullptr };
+
+	void resetWaitCursor();
+
+	virtual void alignFix();
+
+	virtual void onAutoSize();
+
+	virtual void onSizeChange();
+
+	void autoPadding();
+
+	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onFocus();
+
+	virtual Uint32 onFocusLoss();
+
+	virtual Uint32 onPressEnter();
+
+	virtual void onFontChanged();
+
+	void onThemeLoaded();
+
+	virtual void onCursorPosChange();
+
+	void drawWaitingCursor();
+
+	void updateWaitingCursor( const Time& time );
+
+	virtual void updateText();
+
+	virtual void selCurInit( const Int32& init );
+
+	virtual void selCurEnd( const Int32& end );
+
+	virtual Int32 selCurInit();
+
+	virtual Int32 selCurEnd();
+
+	virtual void onDocumentTextChanged();
+
+	virtual void onDocumentCursorChange( const TextPosition& );
+
+	virtual void onDocumentSelectionChange( const TextRange& );
+
+	virtual void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
+
+	virtual void onDocumentLineChanged( const Int64& lineIndex );
+
+	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& );
+
+	virtual void onDocumentSaved( TextDocument* );
+
+	virtual void onDocumentMoved( TextDocument* );
+
+	void onDocumentClosed( TextDocument* ){};
+
+	void onDocumentDirtyOnFileSystem( TextDocument* ){};
+
+	void registerKeybindings();
+
+	void registerCommands();
+
+	void copy();
+
+	void cut();
+
+	void paste();
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onTextInput( const TextInputEvent& event );
+
+	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
+
+	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
+
+	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+						 const String& translateString, const std::string& icon,
+						 const std::string& cmd );
+
+	Drawable* findIcon( const std::string& name );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

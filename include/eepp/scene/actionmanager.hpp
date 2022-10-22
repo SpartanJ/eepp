@@ -1,9 +1,11 @@
 #ifndef EE_SCENEACTIONMANAGER_HPP
 #define EE_SCENEACTIONMANAGER_HPP
 
-#include <list>
+#include <atomic>
 #include <eepp/config.hpp>
+#include <eepp/system/mutex.hpp>
 #include <eepp/system/time.hpp>
+#include <vector>
 using namespace EE::System;
 
 namespace EE { namespace Scene {
@@ -12,35 +14,46 @@ class Action;
 class Node;
 
 class EE_API ActionManager {
-	public:
-		static ActionManager * New();
+  public:
+	static ActionManager* New();
 
-		ActionManager();
+	ActionManager();
 
-		~ActionManager();
-		
-		void addAction( Action * action );
-		
-		Action * getActionByTag( const Uint32& tag );
+	~ActionManager();
 
-		void removeActionByTag( const Uint32& tag );
+	void addAction( Action* action );
 
-		void removeAction( Action * action );
+	Action* getActionByTag( const Uint32& tag );
 
-		void removeAllActionsFromTarget( Node * target );
+	void removeActionByTag( const Uint32& tag );
 
-		void update( const Time& time );
+	void removeAction( Action* action );
 
-		std::size_t count() const;
+	void removeActions( const std::vector<EE::Scene::Action*>& actions );
 
-		bool isEmpty() const;
+	void removeAllActionsFromTarget( Node* target );
 
-		void clear();
-	protected:
-		std::list<Action*> mActions;
+	void removeActionsByTagFromTarget( Node* target, const String::HashType& tag );
+
+	std::vector<Action*> getActionsFromTarget( Node* target );
+
+	std::vector<Action*> getActionsByTagFromTarget( Node* target, const String::HashType& tag );
+
+	void update( const Time& time );
+
+	std::size_t count() const;
+
+	bool isEmpty() const;
+
+	void clear();
+
+  protected:
+	std::vector<Action*> mActions;
+	std::vector<Action*> mActionsRemoveList;
+	mutable Mutex mMutex;
+	std::atomic<bool> mUpdating;
 };
 
-}}
+}} // namespace EE::Scene
 
 #endif
-

@@ -1,22 +1,25 @@
 #include <eepp/scene/actions/tint.hpp>
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uiwidget.hpp>
 using namespace EE::UI;
 
 namespace EE { namespace Scene { namespace Actions {
 
-Tint * Tint::New( const Color& start, const Color& end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type, const TintType& colorInterpolationType ) {
-	return eeNew( Tint, ( start, end, interpolateAlpha, duration, type, colorInterpolationType ) );
+Tint* Tint::New( const Color& start, const Color& end, const bool& interpolateAlpha,
+				 const Time& duration, const Ease::Interpolation& type,
+				 const TintType& colorInterpolationType, const Uint32& elemIndex ) {
+	return eeNew(
+		Tint, ( start, end, interpolateAlpha, duration, type, colorInterpolationType, elemIndex ) );
 }
 
-Tint::Tint()
-{}
+Tint::Tint() {}
 
 Interpolation1d Tint::getInterpolationA() const {
 	return mInterpolationA;
 }
 
-void Tint::setInterpolationA(const Interpolation1d & interpolationA) {
+void Tint::setInterpolationA( const Interpolation1d& interpolationA ) {
 	mInterpolationA = interpolationA;
 }
 
@@ -24,7 +27,7 @@ Interpolation1d Tint::getInterpolationB() const {
 	return mInterpolationB;
 }
 
-void Tint::setInterpolationB(const Interpolation1d& interpolationB) {
+void Tint::setInterpolationB( const Interpolation1d& interpolationB ) {
 	mInterpolationB = interpolationB;
 }
 
@@ -32,7 +35,7 @@ Interpolation1d Tint::getInterpolationG() const {
 	return mInterpolationG;
 }
 
-void Tint::setInterpolationG(const Interpolation1d & interpolationG) {
+void Tint::setInterpolationG( const Interpolation1d& interpolationG ) {
 	mInterpolationG = interpolationG;
 }
 
@@ -40,14 +43,16 @@ Interpolation1d Tint::getInterpolationR() const {
 	return mInterpolationR;
 }
 
-void Tint::setInterpolationR(const Interpolation1d & interpolationR) {
+void Tint::setInterpolationR( const Interpolation1d& interpolationR ) {
 	mInterpolationR = interpolationR;
 }
 
-Tint::Tint( const Color& start, const Color & end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type, const TintType& colorInterpolationType ) :
+Tint::Tint( const Color& start, const Color& end, const bool& interpolateAlpha,
+			const Time& duration, const Ease::Interpolation& type,
+			const TintType& colorInterpolationType, const Uint32& elemIndex ) :
 	mColorInterpolationType( colorInterpolationType ),
-	mInterpolateAlpha( interpolateAlpha )
-{
+	mInterpolateAlpha( interpolateAlpha ),
+	mIndex( elemIndex ) {
 	mInterpolationR.clear().add( start.r, duration ).add( end.r ).setType( type );
 	mInterpolationG.clear().add( start.g, duration ).add( end.g ).setType( type );
 	mInterpolationB.clear().add( start.b, duration ).add( end.b ).setType( type );
@@ -92,13 +97,9 @@ void Tint::update( const Time& time ) {
 }
 
 bool Tint::isDone() {
-	return mInterpolationR.ended() &&
-			mInterpolationG.ended() &&
-			mInterpolationB.ended() && (
-			!mInterpolateAlpha ||
-			mInterpolationA.ended() );
+	return mInterpolationR.ended() && mInterpolationG.ended() && mInterpolationB.ended() &&
+		   ( !mInterpolateAlpha || mInterpolationA.ended() );
 }
-
 
 void Tint::onStart() {
 	if ( NULL != mNode && mNode->isWidget() ) {
@@ -106,8 +107,8 @@ void Tint::onStart() {
 	}
 }
 
-Action * Tint::clone() const {
-	Tint * action = eeNew( Tint, () );
+Action* Tint::clone() const {
+	Tint* action = eeNew( Tint, () );
 	action->setInterpolationR( mInterpolationR );
 	action->setInterpolationG( mInterpolationG );
 	action->setInterpolationB( mInterpolationB );
@@ -115,100 +116,110 @@ Action * Tint::clone() const {
 	return action;
 }
 
-Action * Tint::reverse() const {
+Action* Tint::reverse() const {
 	return NULL;
+}
+
+Float Tint::getCurrentProgress() {
+	return mInterpolationR.getCurrentProgress();
+}
+
+Time Tint::getTotalTime() {
+	return mInterpolationR.getDuration();
 }
 
 void Tint::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
-		UIWidget * widget = static_cast<UIWidget*>( mNode );
+		UIWidget* widget = static_cast<UIWidget*>( mNode );
 
 		switch ( mColorInterpolationType ) {
-			case Background:
-			{
+			case Background: {
 				widget->setBackgroundColor(
-						Color( mInterpolationR.getPosition(),
-							  mInterpolationG.getPosition(),
-							  mInterpolationB.getPosition(),
-							  mInterpolateAlpha ? mInterpolationA.getPosition() : 255
-				) );
+					Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+						   mInterpolationB.getPosition(),
+						   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
 
 				break;
 			}
-			case Foreground:
-			{
+			case Foreground: {
 				widget->setForegroundColor(
-						Color( mInterpolationR.getPosition(),
-							  mInterpolationG.getPosition(),
-							  mInterpolationB.getPosition(),
-							  mInterpolateAlpha ? mInterpolationA.getPosition() : 255
-				) );
+					Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+						   mInterpolationB.getPosition(),
+						   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
 
 				break;
 			}
-			case Skin:
-			{
+			case Skin: {
 				widget->setSkinColor(
-						Color( mInterpolationR.getPosition(),
-							  mInterpolationG.getPosition(),
-							  mInterpolationB.getPosition(),
-							  mInterpolateAlpha ? mInterpolationA.getPosition() : 255
-				) );
+					Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+						   mInterpolationB.getPosition(),
+						   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
 
 				break;
 			}
-			case Border:
-			{
+			case Border: {
 				widget->setBorderColor(
-						Color( mInterpolationR.getPosition(),
-							  mInterpolationG.getPosition(),
-							  mInterpolationB.getPosition(),
-							  mInterpolateAlpha ? mInterpolationA.getPosition() : 255
-				) );
+					Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+						   mInterpolationB.getPosition(),
+						   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
 
 				break;
 			}
-			case Text:
-			{
+			case Text: {
 				if ( widget->isType( UI_TYPE_TEXTVIEW ) ) {
-					UITextView * textView = static_cast<UITextView*>( widget );
+					UITextView* textView = static_cast<UITextView*>( widget );
 
-					textView->setFontColor( Color( mInterpolationR.getPosition(),
-												   mInterpolationG.getPosition(),
-												   mInterpolationB.getPosition(),
-												   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
+					textView->setFontColor(
+						Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+							   mInterpolationB.getPosition(),
+							   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
 				}
 
 				break;
 			}
-			case TextShadow:
-			{
+			case TextShadow: {
 				if ( widget->isType( UI_TYPE_TEXTVIEW ) ) {
-					UITextView * textView = static_cast<UITextView*>( widget );
+					UITextView* textView = static_cast<UITextView*>( widget );
 
-					textView->setFontShadowColor( Color( mInterpolationR.getPosition(),
-												   mInterpolationG.getPosition(),
-												   mInterpolationB.getPosition(),
-												   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
+					textView->setFontShadowColor(
+						Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+							   mInterpolationB.getPosition(),
+							   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
 				}
 
 				break;
 			}
-			case TextOutline:
-			{
+			case TextOutline: {
 				if ( widget->isType( UI_TYPE_TEXTVIEW ) ) {
-					UITextView * textView = static_cast<UITextView*>( widget );
+					UITextView* textView = static_cast<UITextView*>( widget );
 
-					textView->setOutlineColor( Color( mInterpolationR.getPosition(),
-												   mInterpolationG.getPosition(),
-												   mInterpolationB.getPosition(),
-												   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
+					textView->setOutlineColor(
+						Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+							   mInterpolationB.getPosition(),
+							   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
 				}
 
+				break;
+			}
+			case BackgroundTint: {
+				widget->setBackgroundTint(
+					Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+						   mInterpolationB.getPosition(),
+						   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ),
+					mIndex );
+
+				break;
+			}
+			case ForegroundTint: {
+				widget->setForegroundTint(
+					Color( mInterpolationR.getPosition(), mInterpolationG.getPosition(),
+						   mInterpolationB.getPosition(),
+						   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ),
+					mIndex );
 				break;
 			}
 		}
 	}
 }
 
-}}}
+}}} // namespace EE::Scene::Actions

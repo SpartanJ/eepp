@@ -5,60 +5,63 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-#pragma pack(push, 1)
+#pragma pack( push, 1 )
 
-#define HDR_NAME_SIZE 64
+#define HDR_NAME_SIZE 128
+#define HDR_HASH_SIZE 16 // MD5 hash - 128 bit
 
-typedef struct sTextureRegionHdrSN {
-	char	Name[ HDR_NAME_SIZE ];
-	Uint64	Date;
-	Int32	X;
-	Int32	Y;
-	Int32	Width;
-	Int32	Height;
-	Int32	Channels;
-	Uint32	ResourceID;
-	Int32	OffsetX;
-	Int32	OffsetY;
-	Int32	DestWidth;
-	Int32	DestHeight;
-	Uint32	Flags;
-	Uint32	PixelDensity;
-} sTextureRegionHdr;
+struct sTextureRegionHdr {
+	char Name[HDR_NAME_SIZE];
+	char Hash[HDR_HASH_SIZE];
+	Uint64 Date;
+	Int32 X;
+	Int32 Y;
+	Int32 Width;
+	Int32 Height;
+	Int32 Channels;
+	Uint32 ResourceID;
+	Int32 OffsetX;
+	Int32 OffsetY;
+	Int32 DestWidth;
+	Int32 DestHeight;
+	Uint32 Flags;
+	Uint32 PixelDensity;
+};
 
-#define HDR_TEXTUREREGION_FLAG_FLIPED 					( 1 << 0 )
+#define HDR_TEXTUREREGION_FLAG_FLIPED ( 1 << 0 )
 
-typedef struct sTextureHdrS {
-	char	Name[ HDR_NAME_SIZE ];
-	Uint32	ResourceID;
-	Uint32	Size;
-	Int32	TextureRegionCount;
-} sTextureHdr;
+struct sTextureHdr {
+	char Name[HDR_NAME_SIZE];
+	Uint32 ResourceID;
+	Uint32 Size;
+	Int32 TextureRegionCount;
+};
 
-typedef struct sTextureAtlasHdrSN {
-	Uint32	Magic;
-	Uint32	Version;
-	Uint64	Date;
-	Uint32	TextureCount;
-	Uint32	Format;
-	Int32	Width;
-	Int32	Height;
-	Uint32	PixelBorder;
-	Uint32	Flags;
-	char	TextureFilter;
-	char	Reserved[15];
-} sTextureAtlasHdr;
+struct sTextureAtlasHdr {
+	Uint32 Magic;
+	Uint32 Version;
+	Uint64 Date;
+	Uint32 TextureCount;
+	Uint32 Format;
+	Int32 Width;
+	Int32 Height;
+	Uint32 PixelBorder;
+	Uint32 Flags;
+	char TextureFilter;
+	char Reserved[15];
+};
 
-#define HDR_TEXTURE_ATLAS_ALLOW_FLIPPING		( 1 << 0 )
-#define HDR_TEXTURE_ATLAS_REMOVE_EXTENSION		( 1 << 1 )
-#define HDR_TEXTURE_ATLAS_POW_OF_TWO			( 1 << 2 )
-#define HDR_TEXTURE_ATLAS_SCALABLE_SVG			( 1 << 3 )
+#define HDR_TEXTURE_ATLAS_VERSION 3000
+#define HDR_TEXTURE_ATLAS_ALLOW_FLIPPING ( 1 << 0 )
+#define HDR_TEXTURE_ATLAS_REMOVE_EXTENSION ( 1 << 1 )
+#define HDR_TEXTURE_ATLAS_POW_OF_TWO ( 1 << 2 )
+#define HDR_TEXTURE_ATLAS_SCALABLE_SVG ( 1 << 3 )
 
-#define EE_TEXTURE_ATLAS_MAGIC		( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'A' << 24 ) )
+#define EE_TEXTURE_ATLAS_MAGIC ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'A' << 24 ) )
 #define EE_TEXTURE_ATLAS_EXTENSION ".eta"
 
-#pragma pack(pop)
+#pragma pack( pop )
 
-}}}
+}}} // namespace EE::Graphics::Private
 
 #endif

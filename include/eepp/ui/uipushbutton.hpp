@@ -1,83 +1,112 @@
 #ifndef EE_UICUIPUSHBUTTON_HPP
 #define EE_UICUIPUSHBUTTON_HPP
 
-#include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
+enum class InnerWidgetOrientation { Left, Right, Center };
+
 class EE_API UIPushButton : public UIWidget {
-	public:
-		class StyleConfig {
-			public:
-				Int32 IconHorizontalMargin = 4;
-				bool IconAutoMargin = true;
-				Sizei IconMinSize;
-		};
+  public:
+	static UIPushButton* New();
 
-		static UIPushButton * New();
+	static UIPushButton* NewWithTag( const std::string& tag );
 
-		UIPushButton();
+	static UIPushButton*
+	NewWithOpt( const std::string& tag,
+				const std::function<UITextView*( UIPushButton* )>& newTextViewCb );
 
-		virtual ~UIPushButton();
+	virtual ~UIPushButton();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual UIPushButton * setIcon( Drawable * icon );
+	virtual UIPushButton* setIcon( Drawable* icon, bool ownIt = false );
 
-		virtual UIImage * getIcon() const;
+	virtual UIImage* getIcon() const;
 
-		virtual UIPushButton * setText( const String& text );
+	virtual UIPushButton* setText( const String& text );
 
-		virtual const String& getText();
+	virtual const String& getText() const;
 
-		void setIconHorizontalMargin( Int32 margin );
+	UITextView* getTextBox() const;
 
-		const Int32& getIconHorizontalMargin() const;
+	void setIconMinimumSize( const Sizei& minIconSize );
 
-		UITextView * getTextBox() const;
+	const Sizei& getIconMinimumSize() const;
 
-		const StyleConfig& getStyleConfig() const;
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		void setIconMinimumSize( const Sizei& minIconSize );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		void setStyleConfig(const StyleConfig & styleConfig);
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		StyleConfig mStyleConfig;
-		UIImage * 	mIcon;
-		UITextView * 	mTextBox;
+	void setTextAlign( const Uint32& align );
 
-		explicit UIPushButton( const std::string& tag );
+	virtual Sizef getContentSize() const;
 
-		virtual void onSizeChange();
+	const InnerWidgetOrientation& getInnerWidgetOrientation() const;
 
-		virtual void onAlphaChange();
+	void setInnerWidgetOrientation( const InnerWidgetOrientation& innerWidgetOrientation );
 
-		virtual void onStateChange();
+	virtual UIWidget* getExtraInnerWidget() const;
 
-		virtual void onAlignChange();
+	UIWidget* getFirstInnerItem() const;
 
-		virtual void onThemeLoaded();
+	virtual Sizef updateLayout();
 
-		virtual void onAutoSize();
+	bool isTextAsFallback() const;
 
-		virtual void onPaddingChange();
+	void setTextAsFallback( bool textAsFallback );
 
-		virtual Uint32 onKeyDown( const KeyEvent& Event );
+  protected:
+	UIImage* mIcon;
+	UITextView* mTextBox;
+	Sizei mIconMinSize;
+	InnerWidgetOrientation mInnerWidgetOrientation{ InnerWidgetOrientation::Right };
+	bool mTextAsFallback{ false };
 
-		virtual Uint32 onKeyUp( const KeyEvent& Event );
+	UIPushButton();
 
-		void autoIconHorizontalMargin();
+	explicit UIPushButton( const std::string& tag );
+
+	explicit UIPushButton( const std::string& tag,
+						   const std::function<UITextView*( UIPushButton* )>& cb );
+
+	virtual Rectf calculatePadding() const;
+
+	virtual void onSizeChange();
+
+	virtual void onAlphaChange();
+
+	virtual void onStateChange();
+
+	virtual void onAlignChange();
+
+	virtual void onThemeLoaded();
+
+	virtual void onAutoSize();
+
+	virtual void onPaddingChange();
+
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
+
+	virtual Uint32 onKeyUp( const KeyEvent& Event );
+
+	void updateTextBox();
+
+	Vector2f packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding );
+
+	Vector2f calcLayoutSize( const std::vector<UIWidget*>& widgets, const Rectf& padding ) const;
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

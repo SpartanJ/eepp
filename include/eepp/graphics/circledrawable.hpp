@@ -6,16 +6,16 @@
 namespace EE { namespace Graphics {
 
 class EE_API CircleDrawable : public ArcDrawable {
-	public:
-		static CircleDrawable * New();
+  public:
+	static CircleDrawable* New();
 
-		static CircleDrawable * New( const Float& radius, const Uint32& segmentsCount );
+	static CircleDrawable* New( const Float& radius, const Uint32& segmentsCount );
 
-		CircleDrawable();
+	CircleDrawable();
 
-		CircleDrawable( const Float& radius, const Uint32& segmentsCount );
+	CircleDrawable( const Float& radius, const Uint32& segmentsCount );
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

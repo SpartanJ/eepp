@@ -1,55 +1,62 @@
-#ifndef EE_UICUIGRIDCELL_HPP
-#define EE_UICUIGRIDCELL_HPP
+#ifndef EE_UI_UITABLECELL_HPP
+#define EE_UI_UITABLECELL_HPP
 
-#include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uiitemcontainer.hpp>
+#include <eepp/ui/models/modelindex.hpp>
+#include <eepp/ui/uipushbutton.hpp>
+
+using namespace EE::UI::Models;
 
 namespace EE { namespace UI {
 
-class UITable;
+class EE_API UITableCell : public UIPushButton {
+  public:
+	static UITableCell* New() { return eeNew( UITableCell, () ); }
 
-class EE_API UITableCell : public UIWidget {
-	public:
-		static UITableCell * New();
+	static UITableCell* New( const std::string& tag ) { return eeNew( UITableCell, ( tag ) ); }
 
-		UITableCell();
+	static UITableCell*
+	NewWithOpt( const std::string& tag,
+				const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) {
+		return eeNew( UITableCell, ( tag, newTextViewCb ) );
+	}
 
-		virtual ~UITableCell();
+	Uint32 getType() const { return UI_TYPE_TABLECELL; }
 
-		virtual void setTheme( UITheme * Theme );
+	bool isType( const Uint32& type ) const {
+		return UITableCell::getType() == type ? true : UIPushButton::isType( type );
+	}
 
-		void setCell( const Uint32& CollumnIndex, UINode * Ctrl );
+	ModelIndex getCurIndex() const { return mCurIndex; }
 
-		UINode * getCell( const Uint32& CollumnIndex ) const;
+	void setCurIndex( const ModelIndex& curIndex ) {
+		if ( curIndex != mCurIndex ) {
+			mCurIndex = curIndex;
+			onModelIndexChange();
+		}
+	}
 
-		bool isSelected() const;
+	void setTheme( UITheme* Theme ) {
+		UIPushButton::setTheme( Theme );
+		setThemeSkin( Theme, "tablerow" );
+		onThemeLoaded();
+	}
 
-		void unselect();
+	virtual void updateCell( Model* ){};
 
-		void select();
+  protected:
+	ModelIndex mCurIndex;
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
-	protected:
-		friend class UIItemContainer<UITable>;
-		friend class UITable;
+	UITableCell() : UITableCell( "table::cell" ) {}
 
-		std::vector<UINode*> mCells;
+	UITableCell( const std::string& tag,
+				 const std::function<UITextView*( UIPushButton* )>& newTextViewCb = nullptr ) :
+		UIPushButton( tag, newTextViewCb ) {
+		applyDefaultTheme();
+	}
 
-		UITable * gridParent() const;
-
-		void fixCell();
-
-		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
-
-		virtual void onStateChange();
-
-		virtual void onParentChange();
-
-		virtual void onAlphaChange();
-
-		virtual void onAutoSize();
+	virtual void onModelIndexChange() {}
 };
 
-}}
+}} // namespace EE::UI
 
-#endif
+#endif // EE_UI_UITABLECELL_HPP

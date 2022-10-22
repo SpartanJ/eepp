@@ -1,20 +1,30 @@
+#include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 
 namespace EE { namespace Window {
 
-Input::Input( EE::Window::Window * window, JoystickManager * joystickmanager ) :
+Input::Input( EE::Window::Window* window, JoystickManager* joystickmanager ) :
 	mWindow( window ),
 	mJoystickManager( joystickmanager ),
-	mPressTrigger(0), mReleaseTrigger(0), mLastPressTrigger(0), mClickTrigger(0), mDoubleClickTrigger(0), mInputMod(0),
-	mDoubleClickInterval(400),
-	mLastButtonLeftClicked(0), 		mLastButtonRightClicked(0), 	mLastButtonMiddleClicked(0),
-	mLastButtonLeftClick(0), 		mLastButtonRightClick(0), 		mLastButtonMiddleClick(0),
-	mTClick(0), mNumCallBacks(0),
-	mMouseSpeed(1.0f),
-	mInputGrabed( false )
-{
-	memset( mKeysDown	, 0, EE_KEYS_SPACE );
-	memset( mKeysUp		, 0, EE_KEYS_SPACE );
+	mPressTrigger( 0 ),
+	mReleaseTrigger( 0 ),
+	mLastPressTrigger( 0 ),
+	mClickTrigger( 0 ),
+	mDoubleClickTrigger( 0 ),
+	mInputMod( 0 ),
+	mDoubleClickInterval( Milliseconds( 400 ) ),
+	mLastButtonLeftClicked( 0 ),
+	mLastButtonRightClicked( 0 ),
+	mLastButtonMiddleClicked( 0 ),
+	mLastButtonLeftClick( 0 ),
+	mLastButtonRightClick( 0 ),
+	mLastButtonMiddleClick( 0 ),
+	mTClick( 0 ),
+	mNumCallBacks( 0 ),
+	mMouseSpeed( 1.0f ),
+	mInputGrabed( false ) {
+	memset( mScancodeDown, 0, EE_KEYS_SPACE );
+	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 }
 
 Input::~Input() {
@@ -22,46 +32,55 @@ Input::~Input() {
 }
 
 void Input::cleanStates() {
-	memset( mKeysUp, 0, EE_KEYS_SPACE );
+	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 
-	mReleaseTrigger 	= 0;
-	mLastPressTrigger 	= mPressTrigger;
-	mClickTrigger 		= 0;
+	mReleaseTrigger = 0;
+	mLastPressTrigger = mPressTrigger;
+	mClickTrigger = 0;
 	mDoubleClickTrigger = 0;
 
 	resetFingerWasDown();
 }
 
-void Input::sendEvent( InputEvent * Event ) {
-	for ( std::map<Uint32, InputCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); ++i ) {
+void Input::sendEvent( InputEvent* Event ) {
+	for ( std::map<Uint32, InputCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end();
+		  ++i ) {
 		i->second( Event );
 	}
 }
 
-void Input::processEvent( InputEvent * Event ) {
-	switch( Event->Type ) {
-		case InputEvent::KeyDown:
-		{
-			if ( Event->key.keysym.sym > EE_KEYS_NUM )
+void Input::processEvent( InputEvent* Event ) {
+	switch ( Event->Type ) {
+		case InputEvent::Window: {
+			if ( Event->window.type == InputEvent::WindowClose )
+				mWindow->onCloseRequest();
+			break;
+		}
+		case InputEvent::KeyDown: {
+			if ( Event->key.keysym.scancode > EE_KEYS_NUM )
 				break;
 
 			if ( Event->key.keysym.mod != eeINDEX_NOT_FOUND )
 				mInputMod = Event->key.keysym.mod;
 
-			BitOp::writeBitKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 1 );
+			BitOp::writeBitKey( &mScancodeDown[Event->key.keysym.scancode / 8],
+								Event->key.keysym.scancode % 8, 1 );
 			break;
 		}
-		case InputEvent::KeyUp:
-		{
-			if ( Event->key.keysym.sym > EE_KEYS_NUM )
+		case InputEvent::KeyUp: {
+			if ( Event->key.keysym.mod != eeINDEX_NOT_FOUND )
+				mInputMod = Event->key.keysym.mod;
+
+			if ( Event->key.keysym.scancode > EE_KEYS_NUM )
 				break;
 
-			BitOp::writeBitKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 0 );
-			BitOp::writeBitKey( &mKeysUp	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 1 );
+			BitOp::writeBitKey( &mScancodeDown[Event->key.keysym.scancode / 8],
+								Event->key.keysym.scancode % 8, 0 );
+			BitOp::writeBitKey( &mScancodeUp[Event->key.keysym.scancode / 8],
+								Event->key.keysym.scancode % 8, 1 );
 			break;
 		}
-		case InputEvent::MouseMotion:
-		{
+		case InputEvent::MouseMotion: {
 			if ( !mInputGrabed ) {
 				mMousePos.x = Event->motion.x;
 				mMousePos.y = Event->motion.y;
@@ -84,119 +103,111 @@ void Input::processEvent( InputEvent * Event ) {
 
 			break;
 		}
-		case InputEvent::MouseButtonDown:
-		{
-			mPressTrigger		|= EE_BUTTON_MASK( Event->button.button );
+		case InputEvent::MouseButtonDown: {
+			mPressTrigger |= EE_BUTTON_MASK( Event->button.button );
 
 			break;
 		}
-		case InputEvent::MouseButtonUp:
-		{
-			mPressTrigger		&= ~EE_BUTTON_MASK( Event->button.button );
-			mReleaseTrigger		|= EE_BUTTON_MASK( Event->button.button );
-			mClickTrigger		|= EE_BUTTON_MASK( Event->button.button );
+		case InputEvent::MouseButtonUp: {
+			mPressTrigger &= ~EE_BUTTON_MASK( Event->button.button );
+			mReleaseTrigger |= EE_BUTTON_MASK( Event->button.button );
+			mClickTrigger |= EE_BUTTON_MASK( Event->button.button );
 
 			// I know this is ugly, but i'm too lazy to fix it, it works...
 			if ( Event->button.button == EE_BUTTON_LEFT ) {
-				mLastButtonLeftClicked		= mLastButtonLeftClick;
-				mLastButtonLeftClick		= Sys::getTicks();
+				mLastButtonLeftClicked = mLastButtonLeftClick;
+				mLastButtonLeftClick = Sys::getTicks();
 
 				mTClick = mLastButtonLeftClick - mLastButtonLeftClicked;
 
-				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
-					mDoubleClickTrigger			|= EE_BUTTON_MASK(EE_BUTTON_LEFT);
-					mLastButtonLeftClick		= 0;
-					mLastButtonLeftClicked		= 0;
+				if ( mTClick < mDoubleClickInterval.asMilliseconds() && mTClick > 0 ) {
+					mDoubleClickTrigger |= EE_BUTTON_MASK( EE_BUTTON_LEFT );
+					mLastButtonLeftClick = 0;
+					mLastButtonLeftClicked = 0;
 				}
 			} else if ( Event->button.button == EE_BUTTON_RIGHT ) {
-				mLastButtonRightClicked		= mLastButtonRightClick;
-				mLastButtonRightClick		= Sys::getTicks();
+				mLastButtonRightClicked = mLastButtonRightClick;
+				mLastButtonRightClick = Sys::getTicks();
 
 				mTClick = mLastButtonRightClick - mLastButtonRightClicked;
 
-				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
-					mDoubleClickTrigger			|= EE_BUTTON_MASK(EE_BUTTON_RIGHT);
-					mLastButtonRightClick		= 0;
-					mLastButtonRightClicked		= 0;
+				if ( mTClick < mDoubleClickInterval.asMilliseconds() && mTClick > 0 ) {
+					mDoubleClickTrigger |= EE_BUTTON_MASK( EE_BUTTON_RIGHT );
+					mLastButtonRightClick = 0;
+					mLastButtonRightClicked = 0;
 				}
-			} else if( Event->button.button == EE_BUTTON_MIDDLE ) {
-				mLastButtonMiddleClicked	= mLastButtonMiddleClick;
-				mLastButtonMiddleClick		= Sys::getTicks();
+			} else if ( Event->button.button == EE_BUTTON_MIDDLE ) {
+				mLastButtonMiddleClicked = mLastButtonMiddleClick;
+				mLastButtonMiddleClick = Sys::getTicks();
 
 				mTClick = mLastButtonMiddleClick - mLastButtonMiddleClicked;
 
-				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
-					mDoubleClickTrigger			|= EE_BUTTON_MASK(EE_BUTTON_MIDDLE);
-					mLastButtonMiddleClick		= 0;
-					mLastButtonMiddleClicked	= 0;
+				if ( mTClick < mDoubleClickInterval.asMilliseconds() && mTClick > 0 ) {
+					mDoubleClickTrigger |= EE_BUTTON_MASK( EE_BUTTON_MIDDLE );
+					mLastButtonMiddleClick = 0;
+					mLastButtonMiddleClicked = 0;
 				}
 			}
 
 			break;
 		}
-		case InputEvent::FingerDown:
-		{
-			InputFinger * Finger = getFingerId( Event->finger.fingerId );
+		case InputEvent::FingerDown: {
+			InputFinger* Finger = getFingerId( Event->finger.fingerId );
 
 			Finger->writeLast();
-			Finger->x			= (Uint16)( Event->finger.x * (Float)mWindow->getWidth() );
-			Finger->y			= (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
-			Finger->pressure	= Event->finger.pressure;
-			Finger->down		= true;
-			Finger->xdelta		= Event->finger.dx;
-			Finger->ydelta		= Event->finger.dy;
+			Finger->x = (Uint16)( Event->finger.x * (Float)mWindow->getWidth() );
+			Finger->y = (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
+			Finger->pressure = Event->finger.pressure;
+			Finger->down = true;
+			Finger->xdelta = Event->finger.dx;
+			Finger->ydelta = Event->finger.dy;
 
 			if ( 0 == Event->finger.fingerId ) {
-				mPressTrigger		|= EE_BUTTON_LMASK;
+				mPressTrigger |= EE_BUTTON_LMASK;
 			}
 
 			break;
 		}
-		case InputEvent::FingerUp:
-		{
-			InputFinger * Finger = getFingerId( Event->finger.fingerId );
+		case InputEvent::FingerUp: {
+			InputFinger* Finger = getFingerId( Event->finger.fingerId );
 
 			Finger->writeLast();
-			Finger->x			= (Uint16)( Event->finger.x * (Float)mWindow->getWidth() );
-			Finger->y			= (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
-			Finger->pressure	= Event->finger.pressure;
-			Finger->down		= false;
-			Finger->wasDown		= true;
-			Finger->xdelta		= Event->finger.dx;
-			Finger->ydelta		= Event->finger.dy;
+			Finger->x = (Uint16)( Event->finger.x * (Float)mWindow->getWidth() );
+			Finger->y = (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
+			Finger->pressure = Event->finger.pressure;
+			Finger->down = false;
+			Finger->wasDown = true;
+			Finger->xdelta = Event->finger.dx;
+			Finger->ydelta = Event->finger.dy;
 
 			if ( 0 == Event->finger.fingerId ) {
-				mPressTrigger		&= ~EE_BUTTON_LMASK;
+				mPressTrigger &= ~EE_BUTTON_LMASK;
 			}
 
 			break;
 		}
-		case InputEvent::FingerMotion:
-		{
-			InputFinger * Finger = getFingerId( Event->finger.fingerId );
+		case InputEvent::FingerMotion: {
+			InputFinger* Finger = getFingerId( Event->finger.fingerId );
 
 			Finger->writeLast();
-			Finger->x			= (Uint16)( Event->finger.x * (Float)mWindow->getWidth() );
-			Finger->y			= (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
-			Finger->pressure	= Event->finger.pressure;
-			Finger->down		= true;
-			Finger->xdelta		= Event->finger.dx;
-			Finger->ydelta		= Event->finger.dy;
+			Finger->x = (Uint16)( Event->finger.x * (Float)mWindow->getWidth() );
+			Finger->y = (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
+			Finger->pressure = Event->finger.pressure;
+			Finger->down = true;
+			Finger->xdelta = Event->finger.dx;
+			Finger->ydelta = Event->finger.dy;
 
 			if ( 0 == Event->finger.fingerId ) {
-				mPressTrigger		|= EE_BUTTON_LMASK;
+				mPressTrigger |= EE_BUTTON_LMASK;
 			}
 
 			break;
 		}
-		case InputEvent::VideoResize:
-		{
+		case InputEvent::VideoResize: {
 			mWindow->onWindowResize( Event->resize.w, Event->resize.h );
 			break;
 		}
-		case InputEvent::Quit:
-		{
-			mWindow->onCloseRequest();
+		case InputEvent::Quit: {
 			break;
 		}
 	}
@@ -204,7 +215,7 @@ void Input::processEvent( InputEvent * Event ) {
 	sendEvent( Event );
 }
 
-InputFinger * Input::getFingerId( const Int64 &fingerId ) {
+InputFinger* Input::getFingerId( const Int64& fingerId ) {
 	Uint32 i;
 
 	for ( i = 0; i < EE_MAX_FINGERS; i++ ) {
@@ -238,37 +249,45 @@ void Input::resetFingerWasDown() {
 	}
 }
 
-bool Input::isKeyDown( const EE_KEY& Key ) {
-	return 0 != BitOp::readBitKey( &mKeysDown[ Key / 8 ], Key % 8 );
+bool Input::isKeyDown( const Keycode& Key ) {
+	return isScancodeDown( getScancodeFromKey( Key ) );
 }
 
-bool Input::isKeyUp( const EE_KEY& Key ) {
-	return 0 != BitOp::readBitKey( &mKeysUp[ Key / 8 ], Key % 8 );
+bool Input::isKeyUp( const Keycode& Key ) {
+	return isScancodeUp( getScancodeFromKey( Key ) );
 }
 
-void Input::injectKeyDown( const EE_KEY& Key ) {
-	BitOp::writeBitKey( &mKeysDown	[ Key / 8 ], Key % 8, 1 );
+bool Input::isScancodeUp( const Scancode& scancode ) {
+	return 0 != BitOp::readBitKey( &mScancodeUp[scancode / 8], scancode % 8 );
 }
 
-void Input::injectKeyUp( const EE_KEY& Key ) {
-	BitOp::writeBitKey( &mKeysUp	[ Key / 8 ], Key % 8, 1 );
+bool Input::isScancodeDown( const Scancode& scancode ) {
+	return 0 != BitOp::readBitKey( &mScancodeDown[scancode / 8], scancode % 8 );
+}
+
+void Input::injectScancodeDown( const Scancode& scancode ) {
+	BitOp::writeBitKey( &mScancodeDown[scancode / 8], scancode % 8, 1 );
+}
+
+void Input::injectScancodeUp( const Scancode& scancode ) {
+	BitOp::writeBitKey( &mScancodeUp[scancode / 8], scancode % 8, 1 );
 }
 
 void Input::injectButtonPress( const Uint32& Button ) {
 	if ( Button < 8 )
-		if ( !( mPressTrigger & EE_BUTTON_MASK( Button )  ) )
+		if ( !( mPressTrigger & EE_BUTTON_MASK( Button ) ) )
 			mPressTrigger |= EE_BUTTON_MASK( Button );
 }
 
 void Input::injectButtonRelease( const Uint32& Button ) {
 	if ( Button < 8 ) {
-		if ( mPressTrigger & EE_BUTTON_MASK( Button )  )
+		if ( mPressTrigger & EE_BUTTON_MASK( Button ) )
 			mPressTrigger &= ~EE_BUTTON_MASK( Button );
 
-		if ( !( mReleaseTrigger & EE_BUTTON_MASK( Button )  ) )
+		if ( !( mReleaseTrigger & EE_BUTTON_MASK( Button ) ) )
 			mReleaseTrigger |= EE_BUTTON_MASK( Button );
 
-		if ( !( mClickTrigger & EE_BUTTON_MASK( Button )  ) )
+		if ( !( mClickTrigger & EE_BUTTON_MASK( Button ) ) )
 			mClickTrigger |= EE_BUTTON_MASK( Button );
 	}
 }
@@ -291,13 +310,13 @@ Vector2f Input::getMousePosFromView( const View& View ) {
 
 Uint32 Input::pushCallback( const InputCallback& cb ) {
 	mNumCallBacks++;
-	mCallbacks[ mNumCallBacks ] = cb;
+	mCallbacks[mNumCallBacks] = cb;
 	return mNumCallBacks;
 }
 
 void Input::popCallback( const Uint32& CallbackId ) {
-	mCallbacks[ CallbackId ] = 0;
-	mCallbacks.erase( mCallbacks.find(CallbackId) );
+	mCallbacks[CallbackId] = 0;
+	mCallbacks.erase( mCallbacks.find( CallbackId ) );
 }
 
 void Input::injectMousePos( const Vector2i& Pos ) {
@@ -314,6 +333,14 @@ bool Input::isShiftPressed() const {
 
 bool Input::isAltPressed() const {
 	return ( mInputMod & KEYMOD_ALT ) != 0;
+}
+
+bool Input::isLeftAltPressed() const {
+	return ( mInputMod & KEYMOD_LALT ) != 0;
+}
+
+bool Input::isAltGrPressed() const {
+	return ( mInputMod & KEYMOD_RALT ) != 0;
 }
 
 bool Input::isMetaPressed() const {
@@ -392,28 +419,28 @@ const Uint32& Input::getDoubleClickTrigger() const {
 	return mDoubleClickTrigger;
 }
 
-const Uint32& Input::getDoubleClickInterval() const {
+const Time& Input::getDoubleClickInterval() const {
 	return mDoubleClickInterval;
 }
 
-void Input::setDoubleClickInterval( const Uint32& Interval ) {
+void Input::setDoubleClickInterval( const Time& Interval ) {
 	mDoubleClickInterval = Interval;
 }
 
-JoystickManager * Input::getJoystickManager() const {
+JoystickManager* Input::getJoystickManager() const {
 	return mJoystickManager;
 }
 
 Uint32 Input::getFingerCount() {
-	 return EE_MAX_FINGERS;
+	return EE_MAX_FINGERS;
 }
 
-InputFinger * Input::getFingerIndex( const Uint32 &Index ) {
+InputFinger* Input::getFingerIndex( const Uint32& Index ) {
 	eeASSERT( Index < EE_MAX_FINGERS );
 	return &mFingers[Index];
 }
 
-InputFinger * Input::getFinger( const Int64 &fingerId ) {
+InputFinger* Input::getFinger( const Int64& fingerId ) {
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
 		if ( mFingers[i].id == fingerId ) {
 			return &mFingers[i];
@@ -423,8 +450,8 @@ InputFinger * Input::getFinger( const Int64 &fingerId ) {
 	return NULL;
 }
 
-std::list<InputFinger *> Input::getFingersDown() {
-	std::list<InputFinger *> fDown;
+std::vector<InputFinger*> Input::getFingersDown() {
+	std::vector<InputFinger*> fDown;
 
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
 		if ( mFingers[i].down ) {
@@ -435,8 +462,8 @@ std::list<InputFinger *> Input::getFingersDown() {
 	return fDown;
 }
 
-std::list<InputFinger *> Input::getFingersWasDown() {
-	std::list<InputFinger *> fDown;
+std::vector<InputFinger*> Input::getFingersWasDown() {
+	std::vector<InputFinger*> fDown;
 
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
 		if ( mFingers[i].wasDown ) {
@@ -447,4 +474,8 @@ std::list<InputFinger *> Input::getFingersWasDown() {
 	return fDown;
 }
 
-}}
+const Uint32& Input::getModState() const {
+	return mInputMod;
+}
+
+}} // namespace EE::Window

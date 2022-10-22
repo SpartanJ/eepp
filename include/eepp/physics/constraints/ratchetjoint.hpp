@@ -3,27 +3,27 @@
 
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API RatchetJoint : public Constraint {
-	public:
-		RatchetJoint( Body * a, Body * b, cpFloat phase, cpFloat ratchet );
+class EE_API RatchetJoint : public Constraint {
+  public:
+	RatchetJoint( Body* a, Body* b, cpFloat phase, cpFloat ratchet );
 
-		cpFloat getAngle();
+	cpFloat getAngle();
 
-		void setAngle( const cpFloat& angle );
+	void setAngle( const cpFloat& angle );
 
-		cpFloat getPhase();
+	cpFloat getPhase();
 
-		void setPhase( const cpFloat& phase );
+	void setPhase( const cpFloat& phase );
 
-		cpFloat getRatchet();
+	cpFloat getRatchet();
 
-		void setRatchet( const cpFloat& ratchet );
+	void setRatchet( const cpFloat& ratchet );
 
-		virtual void draw();
+	virtual void draw();
 };
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics
 
 #endif

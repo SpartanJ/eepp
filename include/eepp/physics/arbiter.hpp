@@ -2,60 +2,61 @@
 #define EE_PHYSICS_CARBITER_HPP
 
 #include <eepp/physics/base.hpp>
-#include <eepp/physics/shape.hpp>
 #include <eepp/physics/body.hpp>
+#include <eepp/physics/shape.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API Arbiter {
-	public:
-		Arbiter( cpArbiter * arbiter );
+class EE_API Arbiter {
+  public:
+	Arbiter( cpArbiter* arbiter );
 
-		cVect totalImpulse();
+	cVect totalImpulse();
 
-		cVect totalImpulseWithFriction();
+	cVect totalImpulseWithFriction();
 
-		void ignore();
+	void ignore();
 
-		void getShapes( Shape ** a, Shape ** b );
+	void getShapes( Shape** a, Shape** b );
 
-		void getBodies( Body ** a, Body ** b);
+	void getBodies( Body** a, Body** b );
 
-		bool isFirstContact();
+	bool isFirstContact();
 
-		int getCount();
+	int getCount();
 
-		cVect getNormal( int i );
+	cVect getNormal( int i );
 
-		cVect getPoint( int i );
+	cVect getPoint( int i );
 
-		cpFloat getDepth( int i );
+	cpFloat getDepth( int i );
 
-		cpContactPointSet getContactPointSet();
+	cpContactPointSet getContactPointSet();
 
-		void setContactPointSet( cpContactPointSet * contact );
+	void setContactPointSet( cpContactPointSet* contact );
 
-		cpArbiter *	getArbiter() const;
+	cpArbiter* getArbiter() const;
 
-		cpFloat getElasticity();
+	cpFloat getElasticity();
 
-		void setElasticity( cpFloat value );
+	void setElasticity( cpFloat value );
 
-		cpFloat getFriction();
+	cpFloat getFriction();
 
-		void setFriction( cpFloat value );
+	void setFriction( cpFloat value );
 
-		cVect getSurfaceVelocity();
+	cVect getSurfaceVelocity();
 
-		void setSurfaceVelocity( cVect value );
+	void setSurfaceVelocity( cVect value );
 
-		void setUserData( cpDataPointer value );
+	void setUserData( cpDataPointer value );
 
-		cpDataPointer getUserData() const;
-	protected:
-		cpArbiter *		mArbiter;
+	cpDataPointer getUserData() const;
+
+  protected:
+	cpArbiter* mArbiter;
 };
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics
 
 #endif

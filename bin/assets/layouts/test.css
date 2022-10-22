@@ -1,38 +1,75 @@
+@font-face {
+	font-family: "OpenSans Regular";
+	src: url("https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/fonts/OpenSans-Regular.ttf");
+	/*src: url("file://assets/fonts/OpenSans-Regular.ttf");*/
+}
+
+@import url("assets/layouts/imported.css") screen and (min-width: 800px);
+
+:root {
+	--font-color: #E6E6E6FF;
+}
+
 /* Global rules */
 * {
-	textColor: #E6E6E6FF;
-	textShadowColor: #32323296;
-	textSelectedColor: #000;
-	textSelectionBackColor: #969696FF;
+	color: #E6E6E6FF;
+	shadow-color: #32323296;
+	selection-color: #000;
+	selection-back-color: #969696FF;
 }
 
 TabWidget {
-	tabSeparation: -1dp;
-	drawLineBelowTabs: true;
-	lineBelowTabsColor: #2f3030;
-	lineBelowTabsYOffset: 0dp;
+	tab-separation: -1dp;
+}
+
+TabWidget::TabBar {
+	background-image: rectangle(solid, #2f3030);
+	background-size: 100% 1dp;
+	background-position-y: bottom;
 }
 
 ProgressBar {
-	displayPercent: true;
-	verticalExpand: true;
-	fillerPadding: 2dp;
-	movementSpeed: 32, 0;
+	display-percent: true;
+	vertical-expand: true;
+	movement-speed: 32dp 0dp;
+	padding: 2dp;
 }
 
-WinMenu {
-	buttonMargin: 12dp;
+MenuBar {
+	padding-left: 1dp;
+}
+
+MenuBar::button {
+	padding-left: -3dp;
+	padding-right: -3dp;
 }
 
 Menu,
 PopUpMenu {
-	textColor: #E6E6E6FF;
-	minWidth: 100dp;
-	minSpaceForIcons: 24dp;
-	minRightMargin: 8dp;
+	color: #E6E6E6FF;
+	min-width: 100dp;
+	min-icon-size: 16dp 16dp;
 }
 
-Menu:hover, 
+Menu::Item,
+Menu::CheckBox,
+Menu::Separator,
+Menu::SubMenu {
+	padding-left: 4dp;
+}
+
+Menu::Item::text,
+Menu::CheckBox::text,
+Menu::Separator::text,
+Menu::SubMenu::text {
+	padding-right: 4dp;
+}
+
+Menu::SubMenu::arrow {
+	margin-right: 1dp;
+}
+
+Menu:hover,
 PopUpMenu:hover,
 Menu::Item:hover,
 Menu::CheckBox:hover,
@@ -41,109 +78,121 @@ ListBox::item:hover,
 Tab:selected,
 Tab:hover,
 Tab:pressed {
-	textColor: #FFF;
+	color: #FFF;
 }
 
-Slider { 
-	halfSlider: true;
-	backgroundColor: #555;
+Slider {
+	half-slider: true;
 }
 
 ScrollBar {
-	expandBackground: true;
+	background-expand: true;
 }
 
 Window {
-	winFlags: shadow;
-	buttonsPositionFixer: -2, 0;
+	window-flags: shadow;
+	window-buttons-offset: -2dp 0;
 }
 
 Window::title {
-	textColor: #E6E6E6FF;
-	textStyle: shadow;
+	color: #E6E6E6FF;
+	font-style: shadow;
+}
+
+Tab::text {
+	padding-left: 4dp;
+	padding-right: 4dp;
 }
 
 Tooltip {
 	padding: 8dp;
-	textColor: black;
+	color: #020203;
+}
+
+CheckBox {
+	foreground-color: transparent;
+}
+
+CheckBox:checked {
+	foreground-color: rgba(255,255,255,0.1);
 }
 
 #lvbox > * {
-	layout_marginTop: 8dp;
+	margin-top: 8dp;
 }
 
 #lvbox > #tpad {
-	layout_marginTop: 0dp;
-	borderWidth: 2dp;
-	borderColor: #66666666;
-	backgroundColor: #33FF3333;
-	backgroundImage: linear-gradient( #8c8886, #585857 );
-	borderRadius: 12;
-	textSize: 24dp;
+	margin-top: 0dp;
+	border-width: 2dp;
+	border-color: #66666666;
+	background-color: #33FF3310;
+	border-radius: 12;
+	font-size: 24dp;
 	padding: 12dp;
-	transition: scale 0.25s, rotation 0.25s 0.25s, borderColor 0.25s, backgroundColor 0.25s, borderRadius 0.25s;
+	rotation-origin-point: 50% 50%;
+	transition: scale 0.25s, rotation 0.25s 0.25s, border-color 0.25s, background-color 0.25s, border-radius 0.25s;
 }
 
 #lvbox > #tpad:hover {
 	scale: 1.1;
 	rotation: -3;
-	backgroundColor: #FF333333;
-	borderColor: #99999999;
-	borderRadius: 4;
+	background-color: #FF333310;
+	border-color: #99999999;
+	border-radius: 4;
 }
 
 #tpad2 {
-	layout_marginLeft: 0;
+	margin-left: 0;
 	padding: 24dp;
 	opacity: 0.8;
-	textSize: 24dp;
-	backgroundColor: #333;
+	font-size: 24dp;
+	background-color: #333;
 	transition: all 0.25s;
 }
 
 #tpad2:hover {
-	layout_marginLeft: 8dp;
+	margin-left: 8dp;
 	padding: 28dp;
 	opacity: 1;
-	borderRadius: 24;
-	backgroundColor: #656;
+	border-radius: 24;
+	background-color: #656;
 }
 
 #tpad3 {
-	borderWidth: 2dp;
-	borderColor: #1e2021d7;
-	backgroundImage: linear-gradient( #797a79, #585857 );
-	borderRadius: 3;
+	border-width: 2dp;
+	border-color: #1e2021d7;
+	background-image: linear-gradient( #797a79, #585857 );
+	border-radius: 3;
 	padding: 12dp;
 	transition: all 0.25;
-	textStyle: shadow;
-	textColor: white;
+	font-style: shadow;
+	color: white;
 }
 
 #tpad3:hover {
-	backgroundImage: linear-gradient( #9c9d9b, #5b5b5a );
-	borderColor: #1d1f1fd7;
-	borderRadius: 3;
+	background-image: linear-gradient( #9c9d9b, #5b5b5a );
+	border-color: #1d1f1fd7;
+	border-radius: 3;
 	cursor: hand;
-	textShadowColor: black;
-	padding: 18dp 12dp 100dp 12dp;
+	shadow-color: black;
+	padding: 12dp 100dp 12dp 18dp;
 }
 
 #tpad3:pressed {
-	backgroundImage: linear-gradient( #4e4f4d, #414141 );
-	borderColor: #222320d7;
-	padding: 22dp 12dp 120dp 12dp;
+	background-image: linear-gradient( #4e4f4d, #414141 );
+	border-color: #222320d7;
+	padding: 12dp 120dp 12dp 22dp;
 }
 
 #chbox,
 #rdbut {
-	textSize:24dp;
+	font-size:24dp;
 	padding: 12dp;
-	backgroundColor: #333;
+	background-color: #333;
 }
 
 #tres {
-	backgroundColor: #444;
+	background-color: #444;
 	padding: 8dp;
 	transition: all 0.25s;
 }
@@ -158,18 +207,28 @@ Tooltip {
 }
 
 #pbut:hover {
-	skinColor: #66ff44;
+	skin-color: #66ff44;
+}
+
+@keyframes rtest {
+	from {
+		background-color: #221122;
+	}
+	to {
+		background-color: #110011;
+	}
 }
 
 #test_2 > #rtest {
 	padding: 8dp;
 	background: #221122;
+	animation: 1s infinite alternate rtest;
 }
 
 #test_2 > #rtest #rttv {
 	background: #333;
-	textSize: 24dp;
-	borderRadius: 8;
+	font-size: 24dp;
+	border-radius: 8;
 	padding: 8dp;
 	transition: all 0.125s;
 }
@@ -188,7 +247,7 @@ Tooltip {
 
 #test_2 > #rtest:hover #rttv:pressed {
 	background: lime;
-	textColor: #333;
+	color: #333;
 }
 
 #test_3 {
@@ -219,7 +278,7 @@ Tooltip {
 
 #test_3 > .rooter:hover .outer:hover .inner {
 	background: #DABA22;
-	layout_marginLeft: 16dp;
+	margin-left: 16dp;
 }
 
 #test_3 > .rooter:hover .outer:hover .inner:hover {
@@ -227,104 +286,235 @@ Tooltip {
 }
 
 #test_4 {
-	backgroundColor: #221122;
+	background-color: #221122;
+}
+
+#test_4 > RelativeLayout:nth-child(even) {
+	background-color: #220022;
 }
 
 #test_4 > RelativeLayout {
-	backgroundColor: #331133;
+	background-color: #331133;
 	padding: 8dp;
 	transition: all 0.125s;
 }
 
 #test_4 > RelativeLayout:hover {
-	backgroundColor: #442244;
+	background-color: #442244;
 	cursor: hand;
 }
 
 #test_4 > RelativeLayout:pressed {
-	backgroundColor: #662266;
+	background-color: #662266;
 }
 
 #test_4 > RelativeLayout > TextView {
-	transition: all 0.125s;
+	transition: all 0.2s;
 }
 
 #test_4 > RelativeLayout:hover > TextView {
-	layout_marginLeft: 8dp;
+	margin-left: 24dp;
 }
 
 TabWidget {
-	paddingLeft: 8dp;
-	paddingRight: 8dp;
-	paddingBottom: 8dp;
-	paddingTop: 20dp;
-	backgroundColor: #656565;
+	padding-left: 8dp;
+	padding-right: 8dp;
+	padding-bottom: 8dp;
+	background-color: #656565;
 }
 
 #lvbox {
-	backgroundColor: #222;
+	background-color: #222;
 	padding: 12dp;
 }
 
 .list {
-	textSize: 16dp;
+	font-size: 16dp;
 	padding: 8dp;
 }
 
 #tviewl {
-	textSize: 24dp;
-	backgroundColor: #333;
+	font-size: 24dp;
+	background-color: #333;
 }
 
 #tinput {
-	textSize: 24dp;
+	font-size: 24dp;
 	padding: 24dp;
 }
 
 #rvbox {
-	backgroundColor: #323232;
+	background-color: #323232;
 	padding: 12dp;
 }
 
 #rrl {
-	backgroundColor: #999;
+	background-color: #999;
+	background-image: url("file://assets/sprites/4.png");
+	background-size: auto;
+	background-position: bottom right;
+	background-repeat: repeat;
 	padding: 24dp;
+	transition: all 1s;
+}
+
+#rrl:hover {
+	background-size: 50% 50%;
+	background-position: top left;
+}
+
+#rrl > .real_back {
+	background-color: #333;
+}
+
+#rrl > .back {
+	width: 1dp;
+	height: 1dp;
+	background-image: url(file://assets/icon/ee.png);
+	background-repeat: repeat;
+	background-position: center;
+	layout-gravity: center;
+	background-color: #333;
+	transition: all 0.5s;
+	clip: true;
+}
+
+#rrl:hover > .back {
+	width: 300dp;
+	height: 300dp;
+	background-color: black;
+	background-position: bottom right;
+}
+
+#lvbox {
+	background-image: url(file://assets/icon/ee.png), url("file://assets/sprites/6.png");
+	background-position: bottom right, top left;
+	background-size: 128px 128px, auto;
+	background-repeat: no-repeat;
+	transition: all 1s;
+	clip: true;
+}
+
+#lvbox:hover {
+	background-position: top right, bottom left;
 }
 
 #rrl > #tmap {
-	textSize: 24dp;
+	font-size: 24dp;
 	padding: 12dp;
-	backgroundColor: #333;
 }
 
 .eltv {
-	textSize: 24dp;
+	font-size: 24dp;
 	padding: 12dp;
-	backgroundColor: #242424;
+	background-color: #242424;
 }
 
 #rrl > #el2,
 #rrl > #tm,
 #rrl > #tmp {
-	layout_margin: 12dp;
+	margin: 12dp;
 }
 
 #rrl > #slider {
 	padding: 32dp;
-	backgroundColor: #555;
+	background-color: #555;
 }
 
 #rrl > #scrollbar {
 	padding: 8dp;
-	backgroundColor: #12345666;
+	background-color: #12345666;
 }
 
 #rrl > #spinbox {
 	padding: 8dp;
-	backgroundColor: #54345666;
+	background-color: #54345666;
 }
 
-#rrl > TextEdit {
+#rrl > TextEdit:not(.cool) {
 	padding: 16dp;
-	layout_marginBottom: 140dp;
+	margin-bottom: 140dp;
+}
+
+#test_5 {
+	padding: 8dp;
+	background: #555;
+}
+
+#test_5 .ll {
+	background: #333;
+}
+
+#test_5 TextView {
+	margin: 4dp;
+	padding: 8dp;
+	layout_width: match_parent;
+	skin: button;
+}
+
+#test_6 {
+	margin: 8dp;
+	background: #323232;
+}
+
+#test_6 > * {
+	gravity: center;
+	background: #323232;
+	transition: all 0.2;
+	scale-type: expand;
+	padding: 4dp;
+}
+
+#test_6 > *:hover {
+	background: #444;
+	scale: 1.1;
+	cursor: hand;
+}
+
+@keyframes pulse {
+	from {
+		scale: 1;
+		foreground-color: transparent;
+	}
+	to {
+		scale: 1.2;
+		foreground-color: rgba(255, 255, 255, 0.2);
+	}
+}
+
+#lvbox:hover .tres2 {
+	animation: 0.5s infinite alternate pulse;
+}
+
+#rttv {
+	animation: 0.5s infinite alternate paused ease-in pulse;
+}
+
+#rttv:hover {
+	/** This rule should be ignored. */
+	foreground-color: red;
+	animation-play-state: running;
+}
+
+#test_8 Widget {
+	max-width: 64dp;
+	background-color: #323232;
+	margin-right: 8dp;
+}
+
+#tm {
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAA/UlEQVR42u3ZsQkAMAhFwW/I/iubIQIp4l1vIw8srE46jLWsQAAIAAEgAASAABAAAkAACAABIAAEwKf21bRH8vAAkqRU4AQgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAKwAgEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAAIAAEgAASAABAAAkAACAABIAAEgAAQAAJAAAgAASAABIAAEAACQAA8dwB+IAUBZkHfLAAAAABJRU5ErkJggg=="),
+					  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='45'%3E%3Cpath d='M10 10h60' stroke='%2300F' stroke-width='5'/%3E%3Cpath d='M10 20h60' stroke='%230F0' stroke-width='5'/%3E%3Cpath d='M10 30h60' stroke='red' stroke-width='5'/%3E%3C/svg%3E");
+	background-repeat: none;
+	background-position: 0 0, 64dp 0dp;
+	foreground-image: glyph("monospace", 24dp, "@"), icon("quit", 24dp);
+	foreground-position: right center, right top;
+}
+
+@media screen and (max-width: 1024px) {
+
+#lvbox {
+	background-color: red;
+}
+
 }

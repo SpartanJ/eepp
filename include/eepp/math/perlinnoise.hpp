@@ -11,61 +11,64 @@ And for the C++ implementation of Henrik Krysell.
 
 namespace EE { namespace Math {
 
-/** @brief Perlin noise can be used to generate gradients, textures and effects. For more information go to http://en.wikipedia.org/wiki/Perlin_noise
-**	To get a better understanding of the variables to generate the noise, visit http://freespace.virgin.net/hugo.elias/models/m_perlin.htm */
+/** @brief Perlin noise can be used to generate gradients, textures and effects. For more
+ *information go to http://en.wikipedia.org/wiki/Perlin_noise *	To get a better understanding of
+ *the variables to generate the noise, visit
+ *http://freespace.virgin.net/hugo.elias/models/m_perlin.htm */
 class EE_API PerlinNoise {
-	public:
-		PerlinNoise();
-		
-		~PerlinNoise();
+  public:
+	PerlinNoise();
 
-		/** Reset the initial values */
-		void init();
+	~PerlinNoise();
 
-		/** @return The noise value for the 2D coordinates */
-		Float getPerlinNoise2D(Float x, Float y);
+	/** Reset the initial values */
+	void init();
 
-		void setOctaves( const int& octaves ) { mOctaves = octaves; }
-		
-		void setPersistence( const Float& pers)  { mPersistence = pers; }
+	/** @return The noise value for the 2D coordinates */
+	Float getPerlinNoise2D( Float x, Float y );
 
-		void setFrequency( const Float& freq ) { mFrequency = freq; }
+	void setOctaves( const int& octaves ) { mOctaves = octaves; }
 
-		void setAmplitude( const Float& amp ) { mAmplitude = amp; }
-		
-		void setFrequencyOctaveDep( const bool& dep ) { mFreqOctaveDep =  dep; }
-		
-		void setAmplitudeOctaveDep( const bool& dep ) { mAmpOctaveDep = dep; }
+	void setPersistence( const Float& pers ) { mPersistence = pers; }
 
-		int getOctaves() const { return mOctaves; }
-		
-		Float getPersistence() const { return mPersistence; }
-		
-		Float getFrequency() const { return mFrequency; }
-		
-		Float getAmplitude() const { return mAmplitude; }
-		
-		bool getFrequencyOctaveDep() const { return mFreqOctaveDep; }
-		
-		bool getAmplitudeOctaveDep() const { return mAmpOctaveDep; }
-	protected:
-		Float noise2D(Int32 x, Int32 y);
-		
-		Float smoothedNoise2D(Float x, Float y);
-		
-		Float interpolate(Float a, Float b, Float x);
-		
-		Float interpolatedNoise2D(Float x, Float y);
+	void setFrequency( const Float& freq ) { mFrequency = freq; }
 
-		Float	mCurrSeed;
-		Float	mPersistence;
-		int	mOctaves;
-		Float	mFrequency;
-		Float	mAmplitude;
+	void setAmplitude( const Float& amp ) { mAmplitude = amp; }
 
-		bool	mFreqOctaveDep;
-		bool	mAmpOctaveDep;
+	void setFrequencyOctaveDep( const bool& dep ) { mFreqOctaveDep = dep; }
+
+	void setAmplitudeOctaveDep( const bool& dep ) { mAmpOctaveDep = dep; }
+
+	int getOctaves() const { return mOctaves; }
+
+	Float getPersistence() const { return mPersistence; }
+
+	Float getFrequency() const { return mFrequency; }
+
+	Float getAmplitude() const { return mAmplitude; }
+
+	bool getFrequencyOctaveDep() const { return mFreqOctaveDep; }
+
+	bool getAmplitudeOctaveDep() const { return mAmpOctaveDep; }
+
+  protected:
+	Float noise2D( Int32 x, Int32 y );
+
+	Float smoothedNoise2D( Float x, Float y );
+
+	Float interpolate( Float a, Float b, Float x );
+
+	Float interpolatedNoise2D( Float x, Float y );
+
+	Float mCurrSeed;
+	Float mPersistence;
+	int mOctaves;
+	Float mFrequency;
+	Float mAmplitude;
+
+	bool mFreqOctaveDep;
+	bool mAmpOctaveDep;
 };
 
-}}
+}} // namespace EE::Math
 #endif

@@ -1,274 +1,425 @@
 #ifndef EE_UIUINODE_HPP
 #define EE_UIUINODE_HPP
 
+#include <eepp/scene/node.hpp>
 #include <eepp/ui/base.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/stylesheetlength.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/uiclip.hpp>
 #include <eepp/ui/uihelper.hpp>
-#include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinstate.hpp>
-#include <eepp/scene/node.hpp>
+#include <eepp/ui/uistate.hpp>
 
 namespace EE { namespace Graphics {
 class Drawable;
-class RectangleDrawable;
-}}
+}} // namespace EE::Graphics
 
 namespace EE { namespace Scene {
 class Action;
 class ActionManager;
-}}
+}} // namespace EE::Scene
 using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
+class UISceneNode;
 class UITheme;
-class UISkin;
-class UISkinState;
+class UINodeDrawable;
+class UIBorderDrawable;
 
 class EE_API UINode : public Node {
-	public:
-		static UINode * New();
+  public:
+	static UINode* New();
 
-		typedef std::function<void( const Event* )> EventCallback;
+	typedef std::function<void( const Event* )> EventCallback;
 
-		UINode();
+	UINode();
 
-		virtual ~UINode();
+	virtual ~UINode();
 
-		void worldToNodeTranslation( Vector2f& position ) const;
+	void worldToNodeTranslation( Vector2f& position ) const;
 
-		void nodeToWorldTranslation( Vector2f& position ) const;
+	void nodeToWorldTranslation( Vector2f& position ) const;
 
-		void worldToNode( Vector2i& pos ) const;
+	void worldToNode( Vector2i& pos ) const;
 
-		void nodeToWorld( Vector2i& pos ) const;
+	void nodeToWorld( Vector2i& pos ) const;
 
-		void worldToNode( Vector2f& pos ) const;
+	void worldToNode( Vector2f& pos ) const;
 
-		void nodeToWorld( Vector2f& pos ) const;
+	void nodeToWorld( Vector2f& pos ) const;
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setPosition( const Vector2f& Pos );
+	virtual void setPosition( const Vector2f& Pos );
 
-		virtual Node * setPosition( const Float& x, const Float& y );
+	virtual Node* setPosition( const Float& x, const Float& y );
 
-		void setPixelsPosition(const Vector2f & position );
+	void setPixelsPosition( const Vector2f& position );
 
-		void setPixelsPosition( const Float& x, const Float& y );
+	void setPixelsPosition( const Float& x, const Float& y );
 
-		const Vector2f& getPosition() const;
+	const Vector2f& getPosition() const;
 
-		const Vector2f& getPixelsPosition() const;
+	const Vector2f& getPixelsPosition() const;
 
-		virtual Node * setSize( const Sizef& size );
+	virtual Node* setSize( const Sizef& size );
 
-		virtual Node * setSize( const Float& Width, const Float& Height );
+	virtual Node* setSize( const Float& Width, const Float& Height );
 
-		UINode * setPixelsSize( const Sizef& size );
+	UINode* setPixelsSize( const Sizef& size );
 
-		UINode * setPixelsSize( const Float& x, const Float& y );
+	UINode* setPixelsSize( const Float& x, const Float& y );
 
-		const Sizef& getSize() const;
+	const Sizef& getSize() const;
 
-		Rect getRect() const;
+	Rect getRect() const;
 
-		virtual void draw();
+	Rectf getRectBox() const;
 
-		Uint32 getHorizontalAlign() const;
+	virtual void draw();
 
-		UINode * setHorizontalAlign( Uint32 halign );
+	Uint32 getHorizontalAlign() const;
 
-		Uint32 getVerticalAlign() const;
+	UINode* setHorizontalAlign( Uint32 halign );
 
-		UINode * setVerticalAlign( Uint32 valign );
+	Uint32 getVerticalAlign() const;
 
-		UINode * setGravity( Uint32 hvalign );
+	UINode* setVerticalAlign( Uint32 valign );
 
-		UISkin * setBackgroundFillEnabled( bool enabled );
+	UINode* setGravity( Uint32 hvalign );
 
-		UINode * setBackgroundDrawable( Drawable * drawable , bool ownIt = false );
+	UINodeDrawable* setBackgroundFillEnabled( bool enabled );
 
-		UINode * setBackgroundColor( const Color& color );
+	UINode* setBackgroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
 
-		Color getBackgroundColor() const;
+	UINode* setBackgroundDrawable( const std::string& drawable, int index );
 
-		UINode * setBorderRadius( const unsigned int& corners );
+	UINode* setBackgroundColor( const Color& color );
 
-		Uint32 getBorderRadius() const;
+	UINode* setBackgroundTint( const Color& color, int index );
 
-		UISkin * setForegroundFillEnabled( bool enabled );
+	UINode* setBackgroundPositionX( const std::string& positionX, int index = 0 );
 
-		UINode * setForegroundDrawable( Drawable * drawable , bool ownIt = false );
+	UINode* setBackgroundPositionY( const std::string& positionY, int index = 0 );
 
-		UINode * setForegroundColor( const Color& color );
+	UINode* setBackgroundRepeat( const std::string& repeatRule, int index = 0 );
 
-		Color getForegroundColor() const;
+	UINode* setBackgroundSize( const std::string& size, int index = 0 );
 
-		UINode * setForegroundRadius( const unsigned int& corners );
+	Color getBackgroundColor() const;
 
-		Uint32 getForegroundRadius() const;
+	Color getBackgroundTint( int index = 0 ) const;
 
-		RectangleDrawable * setBorderEnabled( bool enabled );
+	UINode* setBorderRadius( const unsigned int& corners );
 
-		UINode * setBorderColor( const Color& color );
+	UINode* setTopLeftRadius( const std::string& radius );
 
-		Color getBorderColor();
+	UINode* setTopRightRadius( const std::string& radius );
 
-		UINode * setBorderWidth( const unsigned int& width );
+	UINode* setBottomLeftRadius( const std::string& radius );
 
-		Float getBorderWidth() const;
+	UINode* setBottomRightRadius( const std::string& radius );
 
-		const Uint32& getFlags() const;
+	Uint32 getBorderRadius() const;
 
-		virtual UINode * setFlags( const Uint32& flags );
+	UINodeDrawable* setForegroundFillEnabled( bool enabled );
 
-		virtual UINode * unsetFlags( const Uint32& flags );
+	UINode* setForegroundDrawable( Drawable* drawable, bool ownIt = false, int index = 0 );
 
-		virtual UINode * resetFlags( Uint32 newFlags = 0 );
+	UINode* setForegroundDrawable( const std::string& drawable, int index = 0 );
 
-		UISkin * getBackground();
+	UINode* setForegroundColor( const Color& color );
 
-		UISkin * getForeground();
+	UINode* setForegroundTint( const Color& color, int index );
 
-		RectangleDrawable * getBorder();
+	UINode* setForegroundPositionX( const std::string& positionX, int index = 0 );
 
-		void setThemeByName( const std::string& Theme );
+	UINode* setForegroundPositionY( const std::string& positionY, int index = 0 );
 
-		virtual void setTheme( UITheme * Theme );
+	UINode* setForegroundRepeat( const std::string& repeatRule, int index = 0 );
 
-		virtual UINode * setThemeSkin( UITheme * Theme, const std::string& skinName );
+	UINode* setForegroundSize( const std::string& size, int index = 0 );
 
-		virtual UINode * setThemeSkin( const std::string& skinName );
+	Color getForegroundColor() const;
 
-		void setThemeToChilds( UITheme * Theme );
+	Color getForegroundTint( int index ) const;
 
-		UISkin * getSkin() const;
+	UINode* setForegroundRadius( const unsigned int& corners );
 
-		virtual UINode * setSkin( const UISkin& Skin );
+	Uint32 getForegroundRadius() const;
 
-		UINode * setSkin( UISkin * skin );
+	UIBorderDrawable* setBorderEnabled( bool enabled ) const;
 
-		UINode * setSkinColor( const Color& color );
+	UINode* setBorderColor( const Color& color );
 
-		const Color& getSkinColor() const;
+	Color getBorderColor();
 
-		void removeSkin();
+	UINode* setBorderWidth( const unsigned int& width );
 
-		virtual void pushState( const Uint32& State, bool emitEvent = true );
+	Float getBorderWidth() const;
 
-		virtual void popState( const Uint32& State, bool emitEvent = true );
+	const Uint32& getFlags() const;
 
-		Sizef getSkinSize() const;
+	virtual UINode* setFlags( const Uint32& flags );
 
-		void applyDefaultTheme();
+	virtual UINode* unsetFlags( const Uint32& flags );
 
-		Node * getWindowContainer() const;
+	virtual UINode* resetFlags( Uint32 newFlags = 0 );
 
-		bool isDragging() const;
+	UINodeDrawable* getBackground() const;
 
-		void setDragging( const bool& dragging );
+	bool hasBackground() const;
 
-		const Vector2f& getDragPoint() const;
+	UINodeDrawable* getForeground() const;
 
-		void setDragPoint( const Vector2f& Point );
+	bool hasForeground() const;
 
-		bool isDragEnabled() const;
+	UIBorderDrawable* getBorder() const;
 
-		void setDragEnabled( const bool& enable );
+	void setThemeByName( const std::string& Theme );
 
-		void setDragButton( const Uint32& Button );
+	virtual void setTheme( UITheme* Theme );
 
-		const Uint32& getDragButton() const;
+	virtual UINode* setThemeSkin( UITheme* Theme, const std::string& skinName );
 
-		virtual void setFocus();
-	protected:
-		Vector2f		mDpPos;
-		Sizef			mDpSize;
-		Uint32			mFlags;
-		Uint32			mState;
-		UISkinState *	mSkinState;
-		UISkinState *	mBackgroundState;
-		UISkinState *	mForegroundState;
-		RectangleDrawable *	mBorder;
-		Vector2f		mDragPoint;
-		Uint32			mDragButton;
-		Color			mSkinColor;
+	virtual UINode* setThemeSkin( const std::string& skinName );
 
-		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+	void setThemeToChilds( UITheme* Theme );
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+	UISkin* getSkin() const;
 
-		virtual Uint32 onValueChange();
+	virtual UINode* setSkin( const UISkin& Skin );
 
-		virtual void onStateChange();
+	UINode* setSkin( UISkin* skin );
 
-		virtual void onEnabledChange();
+	UINode* setSkinColor( const Color& color );
 
-		virtual void onAlignChange();
+	const Color& getSkinColor() const;
 
-		virtual void drawSkin();
+	void removeSkin();
 
-		virtual void drawBackground();
+	virtual void pushState( const Uint32& State, bool emitEvent = true );
 
-		virtual void drawForeground();
+	virtual void popState( const Uint32& State, bool emitEvent = true );
 
-		virtual void drawBorder();
+	Sizef getSkinSize( const Uint32& state = UIState::StateFlagNormal ) const;
 
-		virtual void onThemeLoaded();
+	void applyDefaultTheme();
 
-		virtual void onChildCountChange();
+	Node* getWindowContainer() const;
 
-		virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
+	bool isTabFocusable() const;
 
-		virtual Uint32 onDrag( const Vector2f& position, const Uint32& flags );
+	bool isDragging() const;
 
-		virtual Uint32 onDragStart( const Vector2i& position );
+	void setDragging( const bool& dragging );
 
-		virtual Uint32 onDragStop( const Vector2i& position );
+	void startDragging( const Vector2f& position );
 
-		virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+	bool ownsChildPosition() const;
 
-		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+	const Vector2f& getDragPoint() const;
 
-		virtual Uint32 onFocus();
+	void setDragPoint( const Vector2f& Point );
 
-		virtual Uint32 onFocusLoss();
+	bool isDragEnabled() const;
 
-		void checkClose();
+	void setDragEnabled( const bool& enable );
 
-		virtual void internalDraw();
+	void setDragButton( const Uint32& Button );
 
-		virtual void onWidgetFocusLoss();
+	const Uint32& getDragButton() const;
 
-		void writeFlag( const Uint32& Flag, const Uint32& Val );
+	virtual void setFocus();
 
-		Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
+	Float
+	getPropertyRelativeTargetContainerLength( const CSS::PropertyRelativeTarget& relativeTarget,
+											  const Float& defaultValue = 0,
+											  const Uint32& propertyIndex = 0 ) const;
 
-		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UIState::StateFlagNormal ) const;
+	virtual Float convertLength( const CSS::StyleSheetLength& length,
+								 const Float& containerLength ) const;
 
-		void drawHighlightFocus();
+	Float convertLengthAsDp( const CSS::StyleSheetLength& length,
+							 const Float& containerLength ) const;
 
-		void drawOverNode();
+	Float lengthFromValue( const std::string& value,
+						   const CSS::PropertyRelativeTarget& relativeTarget,
+						   const Float& defaultValue = 0, const Uint32& propertyIndex = 0 ) const;
 
-		void drawDebugData();
+	Float lengthFromValue( const CSS::StyleSheetProperty& property, const Float& defaultValue = 0 );
 
-		void drawBox();
+	Float lengthFromValueAsDp( const std::string& value,
+							   const CSS::PropertyRelativeTarget& relativeTarget,
+							   const Float& defaultValue = 0,
+							   const Uint32& propertyIndex = 0 ) const;
 
-		void setInternalPosition( const Vector2f& Pos );
+	Float lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
+							   const Float& defaultValue = 0 ) const;
 
-		virtual void setInternalSize(const Sizef& size );
+	UISceneNode* getUISceneNode() const;
 
-		void setInternalPixelsSize( const Sizef& size );
+	void setMinWidth( const Float& width );
 
-		void setInternalPixelsWidth( const Float& width );
+	void setMinHeight( const Float& height );
 
-		void setInternalPixelsHeight( const Float& height );
+	void setMinSize( const Sizef& size );
 
+	const Sizef& getMinSize() const;
+
+	Rectf getLocalDpBounds() const;
+
+	virtual void nodeDraw();
+
+	void clearForeground();
+
+	void clearBackground();
+
+	const ClipType& getClipType() const;
+
+	UINode* setClipType( const ClipType& clipType );
+
+	bool hasBorder() const;
+
+	virtual const Rectf& getPixelsPadding() const;
+
+	const std::string& getMinWidthEq() const;
+
+	void setMinSizeEq( const std::string& minWidthEq, const std::string& minHeightEq );
+
+	void setMinWidthEq( const std::string& minWidthEq );
+
+	const std::string& getMinHeightEq() const;
+
+	void setMinHeightEq( const std::string& minHeightEq );
+
+	const std::string& getMaxWidthEq() const;
+
+	void setMaxSizeEq( const std::string& maxWidthEq, const std::string& maxHeightEq );
+
+	void setMaxWidthEq( const std::string& maxWidthEq );
+
+	const std::string& getMaxHeightEq() const;
+
+	void setMaxHeightEq( const std::string& maxHeightEq );
+
+	Sizef getMinSize();
+
+	Sizef getMaxSize();
+
+	Sizef fitMinMaxSizeDp( const Sizef& size ) const;
+
+	Sizef fitMinMaxSizePx( const Sizef& size ) const;
+
+  protected:
+	Vector2f mDpPos;
+	Sizef mDpSize;
+	Sizef mMinSize;
+	Uint32 mFlags;
+	Uint32 mState;
+	UISkinState* mSkinState;
+	mutable UINodeDrawable* mBackground;
+	mutable UINodeDrawable* mForeground;
+	mutable UIBorderDrawable* mBorder;
+	Vector2f mDragPoint;
+	Uint32 mDragButton;
+	Color mSkinColor;
+	UISceneNode* mUISceneNode;
+	Rectf mPadding;
+	Rectf mPaddingPx;
+	UIClip mClip;
+	std::string mMinWidthEq;
+	std::string mMinHeightEq;
+	std::string mMaxWidthEq;
+	std::string mMaxHeightEq;
+
+	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onValueChange();
+
+	virtual void onStateChange();
+
+	virtual void onEnabledChange();
+
+	virtual void onAlignChange();
+
+	virtual void drawSkin();
+
+	virtual void drawBackground();
+
+	virtual void drawForeground();
+
+	virtual void drawBorder();
+
+	virtual void onThemeLoaded();
+
+	virtual void onChildCountChange( Node* child, const bool& removed );
+
+	virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
+
+	virtual Uint32 onDrag( const Vector2f& position, const Uint32& flags, const Sizef& dragDiff );
+
+	virtual Uint32 onDragStart( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onDragStop( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onDrop( UINode* widget );
+
+	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onFocus();
+
+	virtual Uint32 onFocusLoss();
+
+	virtual void onSceneChange();
+
+	virtual void drawDroppableHovering();
+
+	void checkClose();
+
+	virtual void onWidgetFocusLoss();
+
+	void writeFlag( const Uint32& Flag, const Uint32& Val );
+
+	Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true,
+					   bool PadBottom = true, bool SkipFlags = false ) const;
+
+	Sizef getSkinSize( UISkin* Skin, const Uint32& State = UIState::StateFlagNormal ) const;
+
+	void drawHighlightFocus();
+
+	void drawOverNode();
+
+	void updateDebugData();
+
+	void drawBox();
+
+	void setInternalPosition( const Vector2f& Pos );
+
+	virtual void setInternalSize( const Sizef& size );
+
+	void setInternalPixelsSize( const Sizef& size );
+
+	void setInternalPixelsWidth( const Float& width );
+
+	void setInternalPixelsHeight( const Float& height );
+
+	virtual void updateOriginPoint();
+
+	void smartClipStart( const ClipType& reqClipType );
+
+	void smartClipEnd( const ClipType& reqClipType );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

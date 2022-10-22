@@ -6,26 +6,25 @@
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Enable : public Delay {
-	public:
-		static Enable * New( const Time& time = Seconds(0) );
+  public:
+	static Enable* New( const Time& time = Seconds( 0 ) );
 
-		static Enable * New( bool enable, const Time& time = Seconds(0) );
+	static Enable* New( bool enable, const Time& time = Seconds( 0 ) );
 
-		void update( const Time& time ) override;
+	void update( const Time& time ) override;
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
+	Action* reverse() const override;
 
-	protected:
-		bool mEnable;
+  protected:
+	bool mEnable;
 
-		explicit Enable( bool enable, const Time& time );
+	explicit Enable( bool enable, const Time& time );
 
-		void onStart() override;
-
+	void onStart() override;
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif

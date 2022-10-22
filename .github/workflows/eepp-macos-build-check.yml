@@ -1,0 +1,25 @@
+name: macOS
+
+on: [push, pull_request]
+
+jobs:
+  MacOS:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+    - name: Checkout submodules
+      run: |
+        git submodule update --init --recursive
+    - name: Install dependencies
+      run: |
+        brew install wget
+        brew install SDL2
+        wget https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-macosx.tar.gz
+        tar -xzf premake-5.0.0-alpha14-macosx.tar.gz
+    - name: Build
+      run: |
+        ./premake5 --with-mojoAL gmake2
+        make -C make/macosx/ -j`nproc` all

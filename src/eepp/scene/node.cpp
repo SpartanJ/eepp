@@ -1,13 +1,15 @@
-#include <eepp/scene/node.hpp>
-#include <eepp/scene/scenenode.hpp>
-#include <eepp/scene/actionmanager.hpp>
-#include <eepp/scene/action.hpp>
-#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/scene/action.hpp>
+#include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/node.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/scene/scenenode.hpp>
 
 namespace EE { namespace Scene {
 
-Node * Node::New() {
+Node* Node::New() {
 	return eeNew( Node, () );
 }
 
@@ -15,7 +17,7 @@ Node::Node() :
 	mIdHash( 0 ),
 	mSize( 0, 0 ),
 	mData( 0 ),
-	mParentCtrl( NULL ),
+	mParentNode( NULL ),
 	mSceneNode( NULL ),
 	mNodeDrawInvalidator( NULL ),
 	mChild( NULL ),
@@ -23,41 +25,48 @@ Node::Node() :
 	mNext( NULL ),
 	mPrev( NULL ),
 	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY ),
-	mBlend( BlendAlpha ),
+	mBlend( BlendMode::Alpha() ),
 	mNumCallBacks( 0 ),
 	mVisible( true ),
 	mEnabled( true ),
-	mAlpha(255.f)
-{
-}
+	mAlpha( 255.f ) {}
 
 Node::~Node() {
-	if ( NULL != mSceneNode && mSceneNode != this && NULL != mSceneNode->getActionManager() )
-		mSceneNode->getActionManager()->removeAllActionsFromTarget( this );
+	if ( !SceneManager::instance()->isShootingDown() && NULL != mSceneNode ) {
+		if ( mSceneNode != this && NULL != mSceneNode->getActionManager() )
+			mSceneNode->getActionManager()->removeAllActionsFromTarget( this );
 
-	if ( NULL != mSceneNode && ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE ) )
-		mSceneNode->unsubscribeScheduledUpdate( this );
+		if ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE )
+			mSceneNode->unsubscribeScheduledUpdate( this );
+
+		if ( isMouseOverMeOrChilds() )
+			mSceneNode->removeMouseOverNode( this );
+	}
 
 	childDeleteAll();
 
-	if ( NULL != mParentCtrl )
-		mParentCtrl->childRemove( this );
+	if ( NULL != mParentNode )
+		mParentNode->childRemove( this );
 
-	EventDispatcher * eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
+	EventDispatcher* eventDispatcher = getEventDispatcher();
 
 	if ( NULL != eventDispatcher ) {
-		if ( eventDispatcher->getFocusControl() == this && mSceneNode != this ) {
-			eventDispatcher->setFocusControl( mSceneNode );
+		if ( eventDispatcher->getFocusNode() == this && mSceneNode != this ) {
+			eventDispatcher->setFocusNode( mSceneNode );
 		}
 
-		if ( eventDispatcher->getOverControl() == this && mSceneNode != this ) {
-			eventDispatcher->setOverControl( mSceneNode );
+		if ( eventDispatcher->getMouseOverNode() == this && mSceneNode != this ) {
+			eventDispatcher->setMouseOverNode( mSceneNode );
+		}
+
+		if ( eventDispatcher->getMouseDownNode() == this ) {
+			eventDispatcher->resetMouseDownNode();
 		}
 	}
 }
 
 void Node::worldToNodeTranslation( Vector2f& Pos ) const {
-	Node * ParentLoop = mParentCtrl;
+	Node* ParentLoop = mParentNode;
 
 	Pos -= mPosition;
 
@@ -71,7 +80,7 @@ void Node::worldToNodeTranslation( Vector2f& Pos ) const {
 }
 
 void Node::nodeToWorldTranslation( Vector2f& Pos ) const {
-	Node * ParentLoop = mParentCtrl;
+	Node* ParentLoop = mParentNode;
 
 	while ( NULL != ParentLoop ) {
 		const Vector2f& ParentPos = ParentLoop->getPosition();
@@ -90,18 +99,16 @@ bool Node::isType( const Uint32& type ) const {
 	return Node::getType() == type;
 }
 
-void Node::messagePost( const NodeMessage * Msg ) {
-	Node * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->onMessage( Msg ) )
+void Node::messagePost( const NodeMessage* Msg ) {
+	Node* node = this;
+	while ( NULL != node ) {
+		if ( node->onMessage( Msg ) )
 			break;
-
-		Ctrl = Ctrl->getParent();
+		node = node->getParent();
 	}
 }
 
-Uint32 Node::onMessage( const NodeMessage * ) {
+Uint32 Node::onMessage( const NodeMessage* ) {
 	return 0;
 }
 
@@ -111,31 +118,29 @@ void Node::setInternalPosition( const Vector2f& Pos ) {
 }
 
 void Node::setPosition( const Vector2f& Pos ) {
-	if ( Pos != getPosition()) {
+	if ( Pos != getPosition() ) {
 		setInternalPosition( Pos );
 		onPositionChange();
 	}
 }
 
-Node * Node::setPosition( const Float& x, const Float& y ) {
+Node* Node::setPosition( const Float& x, const Float& y ) {
 	setPosition( Vector2f( x, y ) );
 	return this;
 }
 
 void Node::setInternalSize( const Sizef& size ) {
 	mSize = size;
+	mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 	updateCenter();
 	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();
 }
 
-void Node::scheduledUpdate( const Time& ) {
-}
+void Node::scheduledUpdate( const Time& ) {}
 
-Node * Node::setSize( const Sizef & Size ) {
+Node* Node::setSize( const Sizef& Size ) {
 	if ( Size != mSize ) {
-		Vector2f sizeChange( Size.x - mSize.x, Size.y - mSize.y );
-
 		setInternalSize( Size );
 
 		onSizeChange();
@@ -144,7 +149,7 @@ Node * Node::setSize( const Sizef & Size ) {
 	return this;
 }
 
-Node * Node::setSize( const Float& Width, const Float& Height ) {
+Node* Node::setSize( const Float& Width, const Float& Height ) {
 	return setSize( Vector2f( Width, Height ) );
 }
 
@@ -164,7 +169,7 @@ const Sizef& Node::getPixelsSize() const {
 	return mSize;
 }
 
-Node * Node::setVisible( const bool& visible ) {
+Node* Node::setVisible( const bool& visible ) {
 	if ( mVisible != visible ) {
 		mVisible = visible;
 		onVisibilityChange();
@@ -180,7 +185,7 @@ bool Node::isHided() const {
 	return !mVisible;
 }
 
-Node * Node::setEnabled( const bool& enabled ) {
+Node* Node::setEnabled( const bool& enabled ) {
 	if ( mEnabled != enabled ) {
 		mEnabled = enabled;
 		onEnabledChange();
@@ -196,20 +201,18 @@ bool Node::isDisabled() const {
 	return !mEnabled;
 }
 
-Node * Node::getParent() const {
-	return mParentCtrl;
+Node* Node::getParent() const {
+	return mParentNode;
 }
 
 void Node::updateDrawInvalidator( bool force ) {
 	mNodeDrawInvalidator = getDrawInvalidator();
 
 	if ( NULL != mChild && ( mChild->mNodeDrawInvalidator != mNodeDrawInvalidator || force ) ) {
-		Node * ChildLoop = mChild;
-
-		while ( NULL != ChildLoop ) {
-			ChildLoop->updateDrawInvalidator();
-
-			ChildLoop = ChildLoop->mNext;
+		Node* child = mChild;
+		while ( NULL != child ) {
+			child->updateDrawInvalidator();
+			child = child->mNext;
 		}
 	}
 }
@@ -232,44 +235,40 @@ bool Node::isSubscribedForScheduledUpdate() {
 	return 0 != ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE );
 }
 
-Node * Node::setParent( Node * parent ) {
+Node* Node::setParent( Node* parent ) {
 	eeASSERT( NULL != parent );
 
-	if ( parent == mParentCtrl )
+	if ( parent == mParentNode )
 		return this;
 
-	if ( NULL != mParentCtrl )
-		mParentCtrl->childRemove( this );
+	if ( NULL != mParentNode )
+		mParentNode->childRemove( this );
 
-	mParentCtrl = parent;
+	mParentNode = parent;
 
 	updateDrawInvalidator();
 
-	if ( NULL != mParentCtrl )
-		mParentCtrl->childAdd( this );
+	if ( NULL != mParentNode )
+		mParentNode->childAdd( this );
 
 	setDirty();
-
-	onParentChange();
 
 	if ( mSceneNode != findSceneNode() )
 		onSceneChange();
 
+	onParentChange();
+
 	return this;
 }
 
-bool Node::isParentOf( Node * Ctrl ) const {
-	eeASSERT( NULL != Ctrl );
-
-	Node * tParent = Ctrl->getParent();
-
+bool Node::isParentOf( const Node* node ) const {
+	eeASSERT( NULL != node );
+	Node* tParent = node->getParent();
 	while ( NULL != tParent ) {
 		if ( this == tParent )
 			return true;
-
 		tParent = tParent->getParent();
 	}
-
 	return false;
 }
 
@@ -281,15 +280,14 @@ void Node::close() {
 	}
 }
 
-void Node::draw() {
-}
+void Node::draw() {}
 
 void Node::update( const Time& time ) {
-	Node * ChildLoop = mChild;
+	Node* childLoop = mChild;
 
-	while ( NULL != ChildLoop ) {
-		ChildLoop->update( time );
-		ChildLoop = ChildLoop->mNext;
+	while ( NULL != childLoop ) {
+		childLoop->update( time );
+		childLoop = childLoop->mNext;
 	}
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
@@ -303,6 +301,16 @@ void Node::sendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint3
 void Node::sendCommonEvent( const Uint32& event ) {
 	Event CommonEvent( this, event );
 	sendEvent( &CommonEvent );
+}
+
+void Node::sendTextEvent( const Uint32& event, const std::string& text ) {
+	TextEvent tevent( this, event, text );
+	sendEvent( &tevent );
+}
+
+Uint32 Node::onTextInput( const TextInputEvent& event ) {
+	sendEvent( &event );
+	return 0;
 }
 
 Uint32 Node::onKeyDown( const KeyEvent& Event ) {
@@ -349,28 +357,28 @@ Uint32 Node::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != mParentCtrl )
-		mParentCtrl->onMouseOver( Pos, Flags );
+	if ( NULL != mParentNode && mParentNode->isMouseOverMeOrChilds() )
+		mParentNode->onMouseOver( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 1 );
 
-	EventDispatcher * eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
+	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
-	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this )
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this )
 		sendMouseEvent( Event::MouseOver, Pos, Flags );
 
 	return 1;
 }
 
 Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != mParentCtrl )
-		mParentCtrl->onMouseLeave( Pos, Flags );
+	if ( NULL != mParentNode && !mParentNode->isMouseOverMeOrChilds() )
+		mParentNode->onMouseLeave( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 0 );
 
-	EventDispatcher * eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
+	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
-	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this )
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this )
 		sendMouseEvent( Event::MouseLeave, Pos, Flags );
 
 	return 1;
@@ -382,25 +390,24 @@ Uint32 Node::onCalculateDrag( const Vector2f&, const Uint32& ) {
 
 void Node::onClose() {
 	sendCommonEvent( Event::OnClose );
-	invalidateDraw();
 }
 
-Node * Node::getNextNode() const {
+Node* Node::getNextNode() const {
 	return mNext;
 }
 
-Node * Node::getPrevNode() const {
+Node* Node::getPrevNode() const {
 	return mPrev;
 }
 
-Node * Node::getNextNodeLoop() const {
+Node* Node::getNextNodeLoop() const {
 	if ( NULL == mNext )
 		return getParent()->getFirstChild();
 	else
 		return mNext;
 }
 
-Node * Node::setData(const UintPtr& data ) {
+Node* Node::setData( const UintPtr& data ) {
 	mData = data;
 	return this;
 }
@@ -409,7 +416,7 @@ const UintPtr& Node::getData() const {
 	return mData;
 }
 
-Node * Node::setBlendMode( const BlendMode& blend ) {
+Node* Node::setBlendMode( const BlendMode& blend ) {
 	mBlend = blend;
 	invalidateDraw();
 	return this;
@@ -420,21 +427,21 @@ const BlendMode& Node::getBlendMode() const {
 }
 
 void Node::toFront() {
-	if ( NULL != mParentCtrl && mParentCtrl->mChildLast != this ) {
-		mParentCtrl->childRemove( this );
-		mParentCtrl->childAdd( this );
+	if ( NULL != mParentNode && mParentNode->mChildLast != this ) {
+		mParentNode->childRemove( this );
+		mParentNode->childAdd( this );
 	}
 }
 
 void Node::toBack() {
-	if ( NULL != mParentCtrl ) {
-		mParentCtrl->childAddAt( this, 0 );
+	if ( NULL != mParentNode ) {
+		mParentNode->childAddAt( this, 0 );
 	}
 }
 
 void Node::toPosition( const Uint32& Pos ) {
-	if ( NULL != mParentCtrl ) {
-		mParentCtrl->childAddAt( this, Pos );
+	if ( NULL != mParentNode ) {
+		mParentNode->childAddAt( this, Pos );
 	}
 }
 
@@ -444,11 +451,11 @@ void Node::onVisibilityChange() {
 }
 
 void Node::onEnabledChange() {
-	EventDispatcher * eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
+	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
-	if ( !isEnabled() && NULL != eventDispatcher && NULL != eventDispatcher->getFocusControl() ) {
-		if ( isChild( eventDispatcher->getFocusControl() ) ) {
-			eventDispatcher->setFocusControl( NULL );
+	if ( !isEnabled() && NULL != eventDispatcher && NULL != eventDispatcher->getFocusNode() ) {
+		if ( isChild( eventDispatcher->getFocusNode() ) ) {
+			eventDispatcher->setFocusNode( NULL );
 		}
 	}
 
@@ -468,7 +475,8 @@ void Node::onSizeChange() {
 }
 
 Rectf Node::getScreenBounds() {
-	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( (Float)(int)mSize.getWidth(), (Float)(int)mSize.getHeight() ) );
+	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ),
+				  Sizef( (Float)(int)mSize.getWidth(), (Float)(int)mSize.getHeight() ) );
 }
 
 Rectf Node::getLocalBounds() const {
@@ -479,35 +487,35 @@ const Uint32& Node::getNodeFlags() const {
 	return mNodeFlags;
 }
 
-void Node::setNodeFlags( const Uint32& Flags ) {
-	mNodeFlags = Flags;
+void Node::setNodeFlags( const Uint32& flags ) {
+	mNodeFlags = flags;
 }
 
 void Node::drawChilds() {
 	if ( isReverseDraw() ) {
-		Node * ChildLoop = mChildLast;
+		Node* child = mChildLast;
 
-		while ( NULL != ChildLoop ) {
-			if ( ChildLoop->mVisible ) {
-				ChildLoop->internalDraw();
+		while ( NULL != child ) {
+			if ( child->mVisible ) {
+				child->nodeDraw();
 			}
 
-			ChildLoop = ChildLoop->mPrev;
+			child = child->mPrev;
 		}
 	} else {
-		Node * ChildLoop = mChild;
+		Node* child = mChild;
 
-		while ( NULL != ChildLoop ) {
-			if ( ChildLoop->mVisible ) {
-				ChildLoop->internalDraw();
+		while ( NULL != child ) {
+			if ( child->mVisible ) {
+				child->nodeDraw();
 			}
 
-			ChildLoop = ChildLoop->mNext;
+			child = child->mNext;
 		}
 	}
 }
 
-void Node::internalDraw() {
+void Node::nodeDraw() {
 	if ( mVisible ) {
 		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 			updateScreenPos();
@@ -524,6 +532,22 @@ void Node::internalDraw() {
 
 		matrixUnset();
 	}
+}
+
+Uint32 Node::forceKeyDown( const KeyEvent& event ) {
+	return onKeyDown( event );
+}
+
+Uint32 Node::foceKeyUp( const KeyEvent& event ) {
+	return onKeyUp( event );
+}
+
+Uint32 Node::forceTextInput( const TextInputEvent& event ) {
+	return onTextInput( event );
+}
+
+const Vector2f& Node::getScreenPos() const {
+	return mScreenPos;
 }
 
 void Node::clipStart() {
@@ -545,12 +569,12 @@ void Node::matrixSet() {
 		GLi->pushMatrix();
 
 		Vector2f scaleCenter = getScaleCenter();
-		GLi->translatef( scaleCenter.x , scaleCenter.y, 0.f );
+		GLi->translatef( scaleCenter.x, scaleCenter.y, 0.f );
 		GLi->scalef( getScale().x, getScale().y, 1.0f );
 		GLi->translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
 
 		Vector2f rotationCenter = getRotationCenter();
-		GLi->translatef( rotationCenter.x , rotationCenter.y, 0.f );
+		GLi->translatef( rotationCenter.x, rotationCenter.y, 0.f );
 		GLi->rotatef( getRotation(), 0.0f, 0.0f, 1.0f );
 		GLi->translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
 	}
@@ -565,138 +589,164 @@ void Node::matrixUnset() {
 }
 
 void Node::childDeleteAll() {
-	while( NULL != mChild ) {
+	while ( NULL != mChild ) {
 		eeDelete( mChild );
 	}
 }
 
-void Node::childAdd( Node * ChildCtrl ) {
+void Node::childAdd( Node* node ) {
 	if ( NULL == mChild ) {
-		mChild 		= ChildCtrl;
-		mChildLast 	= ChildCtrl;
+		mChild = node;
+		mChildLast = node;
+		mChild->mPrev = NULL;
+		mChild->mNext = NULL;
 	} else {
-		mChildLast->mNext 		= ChildCtrl;
-		ChildCtrl->mPrev		= mChildLast;
-		ChildCtrl->mNext		= NULL;
-		mChildLast 				= ChildCtrl;
+		mChildLast->mNext = node;
+		node->mPrev = mChildLast;
+		node->mNext = NULL;
+		mChildLast = node;
 	}
 
-	onChildCountChange();
+	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
+
+	onChildCountChange( node, false );
 }
 
-void Node::childAddAt( Node * ChildCtrl, Uint32 Pos ) {
-	eeASSERT( NULL != ChildCtrl );
+void Node::childAddAt( Node* node, Uint32 index ) {
+	eeASSERT( NULL != node );
 
-	Node * ChildLoop = mChild;
-	
-	ChildCtrl->setParent( this );
+	Node* nodeLoop = mChild;
 
-	childRemove( ChildCtrl );
+	node->setParent( this );
 
-	ChildCtrl->mParentCtrl = this;
-	ChildCtrl->mSceneNode = ChildCtrl->findSceneNode();
+	childRemove( node );
 
-	if ( ChildLoop == NULL ) {
-		mChild 				= ChildCtrl;
-		mChildLast			= ChildCtrl;
-		ChildCtrl->mNext 	= NULL;
-		ChildCtrl->mPrev 	= NULL;
+	node->mParentNode = this;
+	node->mSceneNode = node->findSceneNode();
+
+	if ( nodeLoop == NULL ) {
+		mChild = node;
+		mChildLast = node;
+		node->mNext = NULL;
+		node->mPrev = NULL;
 	} else {
-		if( Pos == 0 ) {
+		if ( index == 0 ) {
 			if ( NULL != mChild ) {
-				mChild->mPrev		= ChildCtrl;
+				mChild->mPrev = node;
 			}
 
-			ChildCtrl->mNext 	= mChild;
-			ChildCtrl->mPrev	= NULL;
-			mChild 				= ChildCtrl;
+			node->mNext = mChild;
+			node->mPrev = NULL;
+			mChild = node;
+
+			if ( mChild->mNext == NULL )
+				mChildLast = mChild;
 		} else {
 			Uint32 i = 0;
 
-			while ( NULL != ChildLoop->mNext && i < Pos ) {
-				ChildLoop = ChildLoop->mNext;
+			while ( NULL != nodeLoop->mNext && i < index ) {
+				nodeLoop = nodeLoop->mNext;
 				i++;
 			}
 
-			Node * ChildTmp = ChildLoop->mNext;
-			ChildLoop->mNext 	= ChildCtrl;
-			ChildCtrl->mPrev 	= ChildLoop;
-			ChildCtrl->mNext 	= ChildTmp;
+			Node* ChildTmp = nodeLoop->mNext;
+			nodeLoop->mNext = node;
+			node->mPrev = nodeLoop;
+			node->mNext = ChildTmp;
 
 			if ( NULL != ChildTmp ) {
-				ChildTmp->mPrev = ChildCtrl;
+				ChildTmp->mPrev = node;
 			} else {
-				mChildLast		= ChildCtrl;
+				mChildLast = node;
 			}
 		}
 	}
 
-	onChildCountChange();
+	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
+
+	onChildCountChange( node, false );
 }
 
-void Node::childRemove( Node * ChildCtrl ) {
-	if ( ChildCtrl == mChild ) {
-		mChild 			= mChild->mNext;
+void Node::childRemove( Node* node ) {
+	if ( node == mChild ) {
+		mChild = mChild->mNext;
 
 		if ( NULL != mChild ) {
-			mChild->mPrev 	= NULL;
+			mChild->mPrev = NULL;
 
-			if ( ChildCtrl == mChildLast )
-				mChildLast		= mChild;
+			if ( node == mChildLast )
+				mChildLast = mChild;
 		} else {
-			mChildLast		= NULL;
+			mChildLast = NULL;
 		}
 	} else {
-		if ( mChildLast == ChildCtrl )
+		if ( mChildLast == node )
 			mChildLast = mChildLast->mPrev;
 
-		ChildCtrl->mPrev->mNext = ChildCtrl->mNext;
+		if ( node->mPrev )
+			node->mPrev->mNext = node->mNext;
 
-		if ( NULL != ChildCtrl->mNext ) {
-			ChildCtrl->mNext->mPrev = ChildCtrl->mPrev;
-			ChildCtrl->mNext = NULL;
+		if ( NULL != node->mNext ) {
+			node->mNext->mPrev = node->mPrev;
+			node->mNext = NULL;
 		}
 
-		ChildCtrl->mPrev = NULL;
+		node->mPrev = NULL;
 	}
 
-	onChildCountChange();
+	eeASSERT( !( NULL == mChildLast && NULL != mChild ) );
+
+	onChildCountChange( node, true );
 }
 
 void Node::childsCloseAll() {
-	Node * ChildLoop = mChild;
-
-	while ( NULL != ChildLoop ) {
-		ChildLoop->close();
-		ChildLoop = ChildLoop->mNext;
+	Node* childLoop = mChild;
+	writeNodeFlag( NODE_FLAG_CLOSING_CHILDREN, 1 );
+	while ( NULL != childLoop ) {
+		childLoop->close();
+		childLoop = childLoop->mNext;
 	}
+	writeNodeFlag( NODE_FLAG_CLOSING_CHILDREN, 0 );
 }
 
-std::string Node::getId() const {
+const std::string& Node::getId() const {
 	return mId;
 }
 
-Node * Node::setId(const std::string & id) {
+Node* Node::setId( const std::string& id ) {
 	mId = id;
 	mIdHash = String::hash( id );
+	onIdChange();
 	return this;
 }
 
-Uint32 Node::getIdHash() const {
+void Node::onIdChange() {
+	sendCommonEvent( Event::OnIdChange );
+}
+
+bool Node::isClosing() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_CLOSE );
+}
+
+bool Node::isClosingChildren() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_CLOSING_CHILDREN );
+}
+
+const String::HashType& Node::getIdHash() const {
 	return mIdHash;
 }
 
-Node * Node::findIdHash( const Uint32& idHash ) const {
-	if ( mIdHash == idHash ) {
+Node* Node::findIdHash( const String::HashType& idHash ) const {
+	if ( !isClosing() && mIdHash == idHash ) {
 		return const_cast<Node*>( this );
 	} else {
-		Node * child = mChild;
+		Node* child = mChild;
 
 		while ( NULL != child ) {
-			Node * foundCtrl = child->findIdHash( idHash );
+			Node* foundNode = child->findIdHash( idHash );
 
-			if ( NULL != foundCtrl )
-				return foundCtrl;
+			if ( NULL != foundNode )
+				return foundNode;
 
 			child = child->mNext;
 		}
@@ -705,105 +755,182 @@ Node * Node::findIdHash( const Uint32& idHash ) const {
 	return NULL;
 }
 
-Node * Node::find( const std::string& id ) const {
+Node* Node::find( const std::string& id ) const {
 	return findIdHash( String::hash( id ) );
 }
 
-bool Node::isChild( Node * ChildCtrl ) const {
-	Node * ChildLoop = mChild;
+Node* Node::hasChildHash( const String::HashType& idHash ) const {
+	Node* child = mChild;
+	while ( NULL != child ) {
+		if ( child->getIdHash() == idHash )
+			return child;
+		child = child->mNext;
+	}
+	return nullptr;
+}
 
-	while ( NULL != ChildLoop ) {
-		if ( ChildCtrl == ChildLoop )
-			return true;
+Node* Node::hasChild( const std::string& id ) const {
+	return hasChildHash( String::hash( id ) );
+}
 
-		ChildLoop = ChildLoop->mNext;
+Node* Node::findByType( const Uint32& type ) const {
+	if ( !isClosing() && isType( type ) ) {
+		return const_cast<Node*>( this );
+	} else {
+		Node* child = mChild;
+		while ( NULL != child ) {
+			Node* foundNode = child->findByType( type );
+			if ( NULL != foundNode )
+				return foundNode;
+			child = child->mNext;
+		}
+	}
+
+	return NULL;
+}
+
+bool Node::inNodeTree( Node* node ) const {
+	if ( this == node ) {
+		return true;
+	} else {
+		Node* child = mChild;
+		while ( NULL != child ) {
+			if ( child->inNodeTree( node ) )
+				return true;
+			child = child->mNext;
+		}
 	}
 
 	return false;
 }
 
-bool Node::inParentTreeOf( Node * Child ) const {
-	Node * ParentLoop = Child->mParentCtrl;
+bool Node::isChild( Node* child ) const {
+	Node* childLoop = mChild;
 
-	while ( NULL != ParentLoop ) {
-		if ( ParentLoop == this )
+	while ( NULL != childLoop ) {
+		if ( child == childLoop )
 			return true;
 
-		ParentLoop = ParentLoop->mParentCtrl;
+		childLoop = childLoop->mNext;
 	}
 
 	return false;
 }
 
-Uint32 Node::childCount() const {
-	Node * ChildLoop = mChild;
-	Uint32 Count = 0;
+bool Node::inParentTreeOf( Node* child ) const {
+	Node* node = child->mParentNode;
+	while ( NULL != node ) {
+		if ( node == this )
+			return true;
+		node = node->mParentNode;
+	}
+	return false;
+}
 
-	while( NULL != ChildLoop ) {
-		ChildLoop = ChildLoop->mNext;
-		Count++;
+void Node::setLoadingState( bool loading ) {
+	writeNodeFlag( NODE_FLAG_LOADING, loading ? 1 : 0 );
+}
+
+bool Node::isLoadingState() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_LOADING );
+}
+
+Uint32 Node::getChildCount() const {
+	Node* child = mChild;
+	Uint32 count = 0;
+	while ( NULL != child ) {
+		child = child->mNext;
+		count++;
+	}
+	return count;
+}
+
+Uint32 Node::getChildOfTypeCount( const Uint32& type ) const {
+	Node* childLoop = mChild;
+	Uint32 count = 0;
+
+	while ( NULL != childLoop ) {
+		if ( childLoop->getType() == type ) {
+			count++;
+		}
+		childLoop = childLoop->mNext;
 	}
 
-	return Count;
+	return count;
 }
 
-Node * Node::childAt( Uint32 Index ) const {
-	Node * ChildLoop = mChild;
+Node* Node::getChildAt( Uint32 index ) const {
+	Node* child = mChild;
 
-	while( NULL != ChildLoop && Index ) {
-		ChildLoop = ChildLoop->mNext;
-		Index--;
+	while ( NULL != child && index ) {
+		child = child->mNext;
+		index--;
 	}
 
-	return ChildLoop;
+	return child;
 }
 
-Node * Node::childPrev( Node * Ctrl, bool Loop ) const {
-	if ( Loop && Ctrl == mChild && NULL != mChild->mNext )
-		return mChildLast;
-
-	return Ctrl->mPrev;
+Uint32 Node::getNodeIndex() const {
+	Uint32 nodeIndex = 0;
+	if ( NULL != mParentNode ) {
+		Node* parentChild = mParentNode->mChild;
+		while ( parentChild != NULL ) {
+			if ( parentChild == this )
+				return nodeIndex;
+			parentChild = parentChild->mNext;
+			nodeIndex++;
+		};
+	}
+	return nodeIndex;
 }
 
-Node * Node::childNext( Node * Ctrl, bool Loop ) const {
-	if ( NULL == Ctrl->mNext && Loop )
-		return mChild;
-
-	return Ctrl->mNext;
+Uint32 Node::getNodeOfTypeIndex() const {
+	Uint32 nodeIndex = 0;
+	Uint32 type = getType();
+	if ( NULL != mParentNode ) {
+		Node* parentChild = mParentNode->mChild;
+		while ( parentChild != NULL ) {
+			if ( parentChild == this )
+				return nodeIndex;
+			if ( parentChild->getType() == type )
+				nodeIndex++;
+			parentChild = parentChild->mNext;
+		};
+	}
+	return nodeIndex;
 }
 
-Node * Node::getFirstChild() const {
+Node* Node::getFirstChild() const {
 	return mChild;
 }
 
-Node * Node::getLastChild() const {
+Node* Node::getLastChild() const {
 	return mChildLast;
 }
 
-Node * Node::overFind( const Vector2f& Point ) {
-	Node * pOver = NULL;
+Node* Node::overFind( const Vector2f& point ) {
+	Node* pOver = NULL;
 
 	if ( ( mNodeFlags & NODE_FLAG_OVER_FIND_ALLOWED ) && mEnabled && mVisible ) {
 		updateWorldPolygon();
 
-		if ( mWorldBounds.contains( Point ) && mPoly.pointInside( Point ) ) {
+		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
 			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 			mSceneNode->addMouseOverNode( this );
 
-			Node * ChildLoop = mChildLast;
+			Node* child = mChildLast;
 
-			while ( NULL != ChildLoop ) {
-				Node * ChildOver = ChildLoop->overFind( Point );
+			while ( NULL != child ) {
+				Node* childOver = child->overFind( point );
 
-				if ( NULL != ChildOver ) {
-					pOver = ChildOver;
+				if ( NULL != childOver ) {
+					pOver = childOver;
 
 					break; // Search from top to bottom, so the first over will be the topmost
 				}
 
-				ChildLoop = ChildLoop->mPrev;
+				child = child->mPrev;
 			}
-
 
 			if ( NULL == pOver )
 				pOver = this;
@@ -813,106 +940,133 @@ Node * Node::overFind( const Vector2f& Point ) {
 	return pOver;
 }
 
-void Node::onSceneChange() {
-	mSceneNode = findSceneNode();
-
-	Node * ChildLoop = mChild;
-
-	while ( NULL != ChildLoop ) {
-		ChildLoop->onSceneChange();
-		ChildLoop = ChildLoop->mNext;
+void Node::detach() {
+	if ( mParentNode ) {
+		mParentNode->childRemove( this );
+		mParentNode = NULL;
 	}
 }
 
-Uint32 Node::isWidget() const {
-	return mNodeFlags & NODE_FLAG_WIDGET;
+void Node::forEachNode( std::function<void( Node* )> func ) {
+	func( this );
+	Node* node = mChild;
+	while ( node ) {
+		node->forEachNode( func );
+		node = node->getNextNode();
+	}
 }
 
-Uint32 Node::isWindow() const {
-	return mNodeFlags & NODE_FLAG_WINDOW;
+void Node::forEachChild( std::function<void( Node* )> func ) {
+	Node* node = mChild;
+	while ( node ) {
+		func( node );
+		node = node->getNextNode();
+	}
 }
 
-Uint32 Node::isClipped() const {
-	return mNodeFlags & NODE_FLAG_CLIP_ENABLE;
+void Node::onSceneChange() {
+	mSceneNode = findSceneNode();
+	eeASSERT( !mSceneNode->removeFromCloseQueue( this ) );
+
+	Node* child = mChild;
+
+	while ( NULL != child ) {
+		child->onSceneChange();
+		child = child->mNext;
+	}
 }
 
-Uint32 Node::isRotated() const {
-	return mNodeFlags & NODE_FLAG_ROTATED;
+bool Node::isWidget() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_WIDGET );
 }
 
-Uint32 Node::isScaled() const {
-	return mNodeFlags & NODE_FLAG_SCALED;
+bool Node::isWindow() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_WINDOW );
 }
 
-Uint32 Node::isFrameBuffer() const {
-	return mNodeFlags & NODE_FLAG_FRAME_BUFFER;
+bool Node::isLayout() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_LAYOUT );
 }
 
-Uint32 Node::isSceneNode() const {
-	return mNodeFlags & NODE_FLAG_SCENENODE;
+bool Node::isClipped() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_CLIP_ENABLE );
 }
 
-Uint32 Node::isUISceneNode() const {
-	return mNodeFlags & NODE_FLAG_UISCENENODE;
+bool Node::isRotated() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_ROTATED );
 }
 
-Uint32 Node::isUINode() const {
-	return mNodeFlags & NODE_FLAG_UINODE;
+bool Node::isScaled() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_SCALED );
+}
+
+bool Node::isFrameBuffer() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_FRAME_BUFFER );
+}
+
+bool Node::isSceneNode() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_SCENENODE );
+}
+
+bool Node::isUISceneNode() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_UISCENENODE );
+}
+
+bool Node::isUINode() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_UINODE );
+}
+
+bool Node::isMeOrParentTreeVisible() const {
+	const Node* node = this;
+	while ( NULL != node ) {
+		if ( !node->isVisible() )
+			return false;
+		node = node->getParent();
+	}
+	return true;
 }
 
 bool Node::isMeOrParentTreeRotated() const {
-	const Node * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->isRotated() )
+	const Node* node = this;
+	while ( NULL != node ) {
+		if ( node->isRotated() )
 			return true;
-
-		Ctrl = Ctrl->getParent();
+		node = node->getParent();
 	}
-
 	return false;
 }
 
 bool Node::isMeOrParentTreeScaled() const {
-	const Node * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->isScaled() )
+	const Node* node = this;
+	while ( NULL != node ) {
+		if ( node->isScaled() )
 			return true;
-
-		Ctrl = Ctrl->getParent();
+		node = node->getParent();
 	}
-
 	return false;
 }
 
 bool Node::isMeOrParentTreeScaledOrRotated() const {
-	const Node * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->isScaled() || Ctrl->isRotated() )
+	const Node* node = this;
+	while ( NULL != node ) {
+		if ( node->isScaled() || node->isRotated() )
 			return true;
-
-		Ctrl = Ctrl->getParent();
+		node = node->getParent();
 	}
-
 	return false;
 }
 
 bool Node::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() const {
-	const Node * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->isScaled() || Ctrl->isRotated() || Ctrl->isFrameBuffer() )
+	const Node* node = this;
+	while ( NULL != node ) {
+		if ( node->isScaled() || node->isRotated() || node->isFrameBuffer() )
 			return true;
-
-		Ctrl = Ctrl->getParent();
+		node = node->getParent();
 	}
-
 	return false;
 }
 
-const Polygon2f & Node::getWorldPolygon() {
+const Polygon2f& Node::getWorldPolygon() {
 	if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
 		updateWorldPolygon();
 
@@ -933,12 +1087,13 @@ void Node::updateWorldPolygon() {
 	if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 		updateScreenPos();
 
-	mPoly		= Polygon2f( Rectf( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.getWidth(), mScreenPos.y + mSize.getHeight() ) );
+	mPoly = Polygon2f( Rectf( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.getWidth(),
+							  mScreenPos.y + mSize.getHeight() ) );
 
 	mPoly.rotate( getRotation(), getRotationCenter() );
 	mPoly.scale( getScale(), getScaleCenter() );
 
-	Node * tParent = getParent();
+	Node* tParent = getParent();
 
 	while ( tParent ) {
 		mPoly.rotate( tParent->getRotation(), tParent->getRotationCenter() );
@@ -953,36 +1108,53 @@ void Node::updateWorldPolygon() {
 }
 
 void Node::updateCenter() {
-	mCenter = Vector2f( mScreenPos.x + (Float)mSize.getWidth() * 0.5f, mScreenPos.y + (Float)mSize.getHeight() * 0.5f );
+	mCenter = Vector2f( mScreenPos.x + (Float)mSize.getWidth() * 0.5f,
+						mScreenPos.y + (Float)mSize.getHeight() * 0.5f );
 }
 
-Uint32 Node::addEventListener( const Uint32& EventType, const EventCallback& Callback ) {
+Uint32 Node::addEventListener( const Uint32& eventType, const EventCallback& callback ) {
 	mNumCallBacks++;
-
-	mEvents[ EventType ][ mNumCallBacks ] = Callback;
-
+	mEvents[eventType][mNumCallBacks] = callback;
 	return mNumCallBacks;
 }
 
-void Node::removeEventListener( const Uint32& CallbackId ) {
+Uint32 Node::addMouseClickListener( const std::function<void( const MouseEvent* )>& callback,
+									const MouseButton& button ) {
+	return addEventListener( Event::MouseClick, [callback, button]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & ( EE_BUTTON_MASK( button ) ) ) {
+			callback( event->asMouseEvent() );
+		}
+	} );
+}
+
+void Node::removeEventsOfType( const Uint32& eventType ) {
+	auto it = mEvents.find( eventType );
+	if ( it != mEvents.end() )
+		mEvents.erase( it );
+}
+
+void Node::removeEventListener( const Uint32& callbackId ) {
 	EventsMap::iterator it;
-
 	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
-		std::map<Uint32, EventCallback> event = it->second;
-
-		if ( event.erase( CallbackId ) )
+		std::map<Uint32, EventCallback>& event = it->second;
+		if ( event.erase( callbackId ) > 0 )
 			break;
 	}
 }
 
-void Node::sendEvent( const Event * Event ) {
-	if ( 0 != mEvents.count( Event->getType() ) ) {
-		std::map<Uint32, EventCallback>			event = mEvents[ Event->getType() ];
-		std::map<Uint32, EventCallback>::iterator it;
+void Node::clearEventListener() {
+	mEvents.clear();
+}
 
-		if ( event.begin() != event.end() ) {
-			for ( it = event.begin(); it != event.end(); ++it )
-				it->second( Event );
+void Node::sendEvent( const Event* event ) {
+	if ( 0 != mEvents.count( event->getType() ) ) {
+		std::map<Uint32, EventCallback> eventMap = mEvents[event->getType()];
+		if ( eventMap.begin() != eventMap.end() ) {
+			std::map<Uint32, EventCallback>::iterator it;
+			for ( it = eventMap.begin(); it != eventMap.end(); ++it ) {
+				const_cast<Event*>( event )->mCallbackId = it->first;
+				it->second( event );
+			}
 		}
 	}
 }
@@ -992,7 +1164,7 @@ void Node::onParentChange() {
 }
 
 void Node::updateScreenPos() {
-	if ( !(mNodeFlags & NODE_FLAG_POSITION_DIRTY) )
+	if ( !( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) )
 		return;
 
 	Vector2f Pos( mPosition );
@@ -1005,6 +1177,8 @@ void Node::updateScreenPos() {
 	updateCenter();
 
 	mNodeFlags &= ~NODE_FLAG_POSITION_DIRTY;
+
+	sendCommonEvent( Event::OnUpdateScreenPosition );
 }
 
 void Node::writeNodeFlag( const Uint32& Flag, const Uint32& Val ) {
@@ -1016,7 +1190,7 @@ void Node::onParentSizeChange( const Vector2f& ) {
 	invalidateDraw();
 }
 
-void Node::onChildCountChange() {
+void Node::onChildCountChange( Node*, const bool& ) {
 	invalidateDraw();
 }
 
@@ -1051,28 +1225,25 @@ void Node::setReverseDraw( bool reverseDraw ) {
 
 void Node::invalidateDraw() {
 	if ( NULL != mNodeDrawInvalidator ) {
-		mNodeDrawInvalidator->invalidate();
+		mNodeDrawInvalidator->invalidate( this );
 	}
 }
 
-SceneNode * Node::getSceneNode() const {
+SceneNode* Node::getSceneNode() const {
 	return mSceneNode;
 }
 
-SceneNode * Node::findSceneNode() {
-	Node * Ctrl = mParentCtrl;
-
-	while ( Ctrl != NULL ) {
-		if ( Ctrl->isSceneNode() )
-			return static_cast<SceneNode*>( Ctrl );
-
-		Ctrl = Ctrl->getParent();
+SceneNode* Node::findSceneNode() {
+	Node* node = mParentNode;
+	while ( node != NULL ) {
+		if ( node->isSceneNode() )
+			return static_cast<SceneNode*>( node );
+		node = node->getParent();
 	}
-
 	return isSceneNode() ? reinterpret_cast<SceneNode*>( this ) : NULL;
 }
 
-EventDispatcher * Node::getEventDispatcher() const {
+EventDispatcher* Node::getEventDispatcher() const {
 	return NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 }
 
@@ -1085,7 +1256,8 @@ void Node::updateOriginPoint() {
 		case OriginPoint::OriginTopLeft:
 			mRotationOriginPoint.x = mRotationOriginPoint.y = 0;
 			break;
-		default: {}
+		default: {
+		}
 	}
 
 	switch ( mScaleOriginPoint.OriginType ) {
@@ -1096,15 +1268,15 @@ void Node::updateOriginPoint() {
 		case OriginPoint::OriginTopLeft:
 			mScaleOriginPoint.x = mScaleOriginPoint.y = 0;
 			break;
-		default: {}
+		default: {
+		}
 	}
 
 	setDirty();
 }
 
 void Node::setDirty() {
-	if ( ( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) &&
-		 ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY ) )
+	if ( ( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) && ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY ) )
 		return;
 
 	mNodeFlags |= NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY;
@@ -1113,7 +1285,7 @@ void Node::setDirty() {
 }
 
 void Node::setChildsDirty() {
-	Node * ChildLoop = mChild;
+	Node* ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		ChildLoop->setDirty();
@@ -1145,17 +1317,33 @@ const OriginPoint& Node::getRotationOriginPoint() const {
 	return mRotationOriginPoint;
 }
 
-void Node::setRotationOriginPoint( const OriginPoint & center ) {
+void Node::setRotationOriginPoint( const OriginPoint& center ) {
 	mRotationOriginPoint = PixelDensity::dpToPx( center );
+	updateOriginPoint();
+	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+}
+
+void Node::setRotationOriginPointX( const std::string& xEq ) {
+	mRotationOriginPoint.setXEq( xEq );
+	updateOriginPoint();
+	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+}
+
+void Node::setRotationOriginPointY( const std::string& yEq ) {
+	mRotationOriginPoint.setYEq( yEq );
 	updateOriginPoint();
 	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
 }
 
 Vector2f Node::getRotationCenter() const {
 	switch ( mRotationOriginPoint.OriginType ) {
-		case OriginPoint::OriginCenter: return mCenter;
-		case OriginPoint::OriginTopLeft: return mScreenPos;
-		case OriginPoint::OriginCustom: default: return mScreenPos + mRotationOriginPoint;
+		case OriginPoint::OriginCenter:
+			return mCenter;
+		case OriginPoint::OriginTopLeft:
+			return mScreenPos;
+		case OriginPoint::OriginCustom:
+		default:
+			return mScreenPos + mRotationOriginPoint;
 	}
 }
 
@@ -1177,13 +1365,13 @@ void Node::setRotation( float angle ) {
 	onAngleChange();
 }
 
-void Node::setRotation( const Float& angle , const OriginPoint & center ) {
+void Node::setRotation( const Float& angle, const OriginPoint& center ) {
 	mRotationOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
 	setRotation( angle );
 }
 
-void Node::setScale( const Vector2f & scale ) {
+void Node::setScale( const Vector2f& scale ) {
 	Transformable::setScale( scale.x, scale.y );
 
 	updateOriginPoint();
@@ -1205,17 +1393,33 @@ const OriginPoint& Node::getScaleOriginPoint() const {
 	return mScaleOriginPoint;
 }
 
-void Node::setScaleOriginPoint( const OriginPoint & center ) {
+void Node::setScaleOriginPoint( const OriginPoint& center ) {
 	mScaleOriginPoint = PixelDensity::dpToPx( center );
+	updateOriginPoint();
+	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+}
+
+void Node::setScaleOriginPointX( const std::string& xEq ) {
+	mScaleOriginPoint.setXEq( xEq );
+	updateOriginPoint();
+	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+}
+
+void Node::setScaleOriginPointY( const std::string& yEq ) {
+	mScaleOriginPoint.setYEq( yEq );
 	updateOriginPoint();
 	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
 }
 
 Vector2f Node::getScaleCenter() const {
 	switch ( mScaleOriginPoint.OriginType ) {
-		case OriginPoint::OriginCenter: return mCenter;
-		case OriginPoint::OriginTopLeft: return mScreenPos;
-		case OriginPoint::OriginCustom: default: return mScreenPos + mScaleOriginPoint;
+		case OriginPoint::OriginCenter:
+			return mCenter;
+		case OriginPoint::OriginTopLeft:
+			return mScreenPos;
+		case OriginPoint::OriginCustom:
+		default:
+			return mScreenPos + mScaleOriginPoint;
 	}
 }
 
@@ -1235,25 +1439,27 @@ const Float& Node::getAlpha() const {
 }
 
 void Node::setAlpha( const Float& alpha ) {
-	mAlpha = alpha;
-	onAlphaChange();
-}
-
-void Node::setChildsAlpha( const Float &alpha ) {
-	Node * CurChild = mChild;
-
-	while ( NULL != CurChild ) {
-		CurChild->setAlpha( alpha );
-		CurChild->setChildsAlpha( alpha );
-		CurChild = CurChild->getNextNode();
+	if ( mAlpha != alpha ) {
+		mAlpha = alpha;
+		invalidateDraw();
+		onAlphaChange();
 	}
 }
 
-ActionManager * Node::getActionManager() const {
+void Node::setChildsAlpha( const Float& alpha ) {
+	Node* child = mChild;
+	while ( NULL != child ) {
+		child->setAlpha( alpha );
+		child->setChildsAlpha( alpha );
+		child = child->getNextNode();
+	}
+}
+
+ActionManager* Node::getActionManager() const {
 	return mSceneNode->getActionManager();
 }
 
-Node * Node::runAction( Action * action ) {
+Node* Node::runAction( Action* action ) {
 	if ( NULL != action ) {
 		action->setTarget( this );
 
@@ -1265,12 +1471,44 @@ Node * Node::runAction( Action * action ) {
 	return this;
 }
 
+void Node::removeAction( Action* action ) {
+	getActionManager()->removeAction( action );
+}
+
+void Node::removeActions( const std::vector<Action*>& actions ) {
+	getActionManager()->removeActions( actions );
+}
+
+void Node::removeActionsByTag( const String::HashType& tag ) {
+	getActionManager()->removeActionsByTagFromTarget( this, tag );
+}
+
+std::vector<Action*> Node::getActions() {
+	return getActionManager()->getActionsFromTarget( this );
+}
+
+std::vector<Action*> Node::getActionsByTag( const Uint32& tag ) {
+	return getActionManager()->getActionsByTagFromTarget( this, tag );
+}
+
+void Node::clearActions() {
+	getActionManager()->removeAllActionsFromTarget( this );
+}
+
+void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay,
+							const Uint32& tag ) {
+	Action* action = Actions::Runnable::New( runnable, delay );
+	action->setTag( tag );
+	runAction( action );
+}
+
 Transform Node::getLocalTransform() const {
 	return getTransform();
 }
 
 Transform Node::getGlobalTransform() const {
-	return NULL != mParentCtrl ? mParentCtrl->getGlobalTransform() * getTransform() : getTransform();
+	return NULL != mParentNode ? mParentNode->getGlobalTransform() * getTransform()
+							   : getTransform();
 }
 
 Transform Node::getNodeToWorldTransform() const {
@@ -1281,23 +1519,23 @@ Transform Node::getWorldToNodeTransform() const {
 	return getNodeToWorldTransform().getInverse();
 }
 
-Vector2f Node::convertToNodeSpace(const Vector2f& worldPoint) const {
-	return getWorldToNodeTransform().transformPoint(worldPoint.x, worldPoint.y);
+Vector2f Node::convertToNodeSpace( const Vector2f& worldPoint ) const {
+	return getWorldToNodeTransform().transformPoint( worldPoint.x, worldPoint.y );
 }
 
-Vector2f Node::convertToWorldSpace(const Vector2f& nodePoint) const {
-	return getNodeToWorldTransform().transformPoint(nodePoint.x, nodePoint.y);
+Vector2f Node::convertToWorldSpace( const Vector2f& nodePoint ) const {
+	return getNodeToWorldTransform().transformPoint( nodePoint.x, nodePoint.y );
 }
 
-void Node::setScale(float factorX, float factorY) {
+void Node::setScale( float factorX, float factorY ) {
 	setScale( Vector2f( factorX, factorY ) );
 }
 
-void Node::setScaleOrigin(float x, float y) {
+void Node::setScaleOrigin( float x, float y ) {
 	setScaleOriginPoint( OriginPoint( x, y ) );
 }
 
-void Node::setRotationOrigin(float x, float y) {
+void Node::setRotationOrigin( float x, float y ) {
 	setRotationOriginPoint( OriginPoint( x, y ) );
 }
 
@@ -1325,63 +1563,44 @@ bool Node::hasFocus() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_HAS_FOCUS );
 }
 
-void Node::setFocus() {
+bool Node::hasFocusWithin() const {
+	return hasFocus() || inParentTreeOf( getEventDispatcher()->getFocusNode() );
 }
 
-Node * Node::getNextWidget() const {
-	Node * Found		= NULL;
-	Node * ChildLoop	= mChild;
+void Node::setFocus() {}
 
-	while( NULL != ChildLoop ) {
-		if ( ChildLoop->isVisible() && ChildLoop->isEnabled() ) {
-			if ( ChildLoop->isWidget() ) {
-				return ChildLoop;
-			} else {
-				Found = ChildLoop->getNextWidget();
-
-				if ( NULL != Found ) {
-					return Found;
-				}
-			}
+Node* Node::getFirstWidget() const {
+	Node* child = mChild;
+	while ( NULL != child ) {
+		if ( child->isWidget() ) {
+			return child;
 		}
-
-		ChildLoop = ChildLoop->getNextNode();
+		child = child->getNextNode();
 	}
+	return NULL;
+}
 
-	if ( NULL != mNext ) {
-		if ( mNext->isVisible() && mNext->isEnabled() && mNext->isWidget() ) {
-			return mNext;
-		} else {
-			return mNext->getNextWidget();
+Node* Node::getParentWidget() const {
+	Node* parentNode = mParentNode;
+
+	while ( NULL != parentNode ) {
+		if ( parentNode->isWidget() ) {
+			return parentNode;
 		}
-	} else {
-		ChildLoop = mParentCtrl;
 
-		while ( NULL != ChildLoop ) {
-			if ( NULL != ChildLoop->getNextNode() ) {
-				if ( ChildLoop->getNextNode()->isVisible() &&
-					 ChildLoop->getNextNode()->isEnabled() &&
-					 ChildLoop->getNextNode()->isWidget() ) {
-					return ChildLoop->getNextNode();
-				} else {
-					return ChildLoop->getNextNode()->getNextWidget();
-				}
-			}
-
-			ChildLoop = ChildLoop->getParent();
-		}
+		parentNode = parentNode->getParent();
 	}
 
 	return NULL;
 }
 
-void Node::sendParentSizeChange( const Vector2f& SizeChange ) {
-	if ( reportSizeChangeToChilds() )	{
-		Node * ChildLoop = mChild;
+void Node::sendParentSizeChange( const Vector2f& sizeChange ) {
+	if ( reportSizeChangeToChilds() ) {
+		Node* child = mChild;
 
-		while( NULL != ChildLoop ) {
-			ChildLoop->onParentSizeChange( SizeChange );
-			ChildLoop = ChildLoop->getNextNode();
+		while ( NULL != child ) {
+			child->onParentSizeChange( sizeChange );
+			child = child->getNextNode();
 		}
 	}
 }
@@ -1399,39 +1618,40 @@ void Node::disableReportSizeChangeToChilds() {
 }
 
 void Node::centerHorizontal() {
-	Node * Ctrl = getParent();
-
-	if ( NULL != Ctrl ) {
-		setPosition( eefloor( ( Ctrl->getSize().getWidth() - getSize().getWidth() ) * 0.5f ), getPosition().y );
+	Node* node = getParent();
+	if ( NULL != node ) {
+		setPosition( eefloor( ( node->getSize().getWidth() - getSize().getWidth() ) * 0.5f ),
+					 getPosition().y );
 	}
 }
 
-void Node::centerVertical(){
-	Node * Ctrl = getParent();
-
-	if ( NULL != Ctrl ) {
-		setPosition( getPosition().x, eefloor( Ctrl->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
+void Node::centerVertical() {
+	Node* node = getParent();
+	if ( NULL != node ) {
+		setPosition( getPosition().x,
+					 eefloor( node->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
 	}
 }
 
 void Node::center() {
-	Node * Ctrl = getParent();
-
-	if ( NULL != Ctrl )
-		setPosition( eefloor( ( Ctrl->getSize().getWidth() - getSize().getWidth() ) * 0.5f ), eefloor( Ctrl->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
+	Node* node = getParent();
+	if ( NULL != node )
+		setPosition( eefloor( ( node->getSize().getWidth() - getSize().getWidth() ) * 0.5f ),
+					 eefloor( node->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
 }
 
-Node * Node::clipEnable() {
+Node* Node::clipEnable() {
 	writeNodeFlag( NODE_FLAG_CLIP_ENABLE, 1 );
 	return this;
 }
 
-Node * Node::clipDisable() {
+Node* Node::clipDisable() {
 	writeNodeFlag( NODE_FLAG_CLIP_ENABLE, 0 );
 	return this;
 }
 
-void Node::clipSmartEnable( const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height ) {
+void Node::clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
+							const Uint32& Height ) {
 	if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
 		GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
 	} else {
@@ -1447,16 +1667,13 @@ void Node::clipSmartDisable() {
 	}
 }
 
-Node * Node::getDrawInvalidator() {
-	Node * Ctrl = mParentCtrl;
-
-	while ( Ctrl != NULL ) {
-		if ( Ctrl->isDrawInvalidator() )
-			return Ctrl;
-
-		Ctrl = Ctrl->getParent();
+Node* Node::getDrawInvalidator() {
+	Node* node = mParentNode;
+	while ( node != NULL ) {
+		if ( node->isDrawInvalidator() )
+			return node;
+		node = node->getParent();
 	}
-
 	return isDrawInvalidator() ? this : NULL;
 }
 
@@ -1464,7 +1681,7 @@ bool Node::isDrawInvalidator() const {
 	return false;
 }
 
-void Node::invalidate() {
+void Node::invalidate( Node* ) {
 	if ( mVisible && mAlpha != 0.f ) {
 		writeNodeFlag( NODE_FLAG_VIEW_DIRTY, 1 );
 	}
@@ -1474,4 +1691,4 @@ bool Node::invalidated() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_VIEW_DIRTY );
 }
 
-}}
+}} // namespace EE::Scene

@@ -3,9 +3,7 @@
 
 namespace EE { namespace System {
 
-Clock::Clock() :
-	mClockImpl( new Platform::ClockImpl() )
-{
+Clock::Clock() : mClockImpl( new Platform::ClockImpl() ) {
 	restart();
 }
 
@@ -27,4 +25,4 @@ Time Clock::getElapsed() {
 	return r;
 }
 
-}}
+}} // namespace EE::System

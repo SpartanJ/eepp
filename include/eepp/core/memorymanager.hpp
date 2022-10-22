@@ -1,114 +1,155 @@
 #ifndef EE_MEMORY_MANAGER_HPP
 #define EE_MEMORY_MANAGER_HPP
 
-#include <eepp/config.hpp>
-#include <cstdlib>
 #include <cstdio>
-#include <string>
+#include <cstdlib>
 #include <cstring>
+#include <eepp/config.hpp>
 #include <map>
+#include <string>
 
 namespace EE {
 
 class EE_API AllocatedPointer {
-	public:
-		AllocatedPointer( void * Data, const std::string& File, int Line, size_t Memory );
+  public:
+	AllocatedPointer( void* data, const std::string& File, int Line, size_t memory,
+					  bool track = false );
 
-		std::string 	mFile;
-		int 			mLine;
-		size_t			mMemory;
-		void *			mData;
+	std::string mFile;
+	int mLine;
+	size_t mMemory;
+	void* mData;
+	bool mTrack;
 };
 
-typedef std::map<void*, AllocatedPointer> 	AllocatedPointerMap;
-typedef AllocatedPointerMap::iterator 		AllocatedPointerMapIt;
+typedef std::map<void*, AllocatedPointer> AllocatedPointerMap;
+typedef AllocatedPointerMap::iterator AllocatedPointerMapIt;
 
 class EE_API MemoryManager {
-	public:
-		static void * addPointer( const AllocatedPointer& aAllocatedPointer );
+  public:
+	static void* addPointer( const AllocatedPointer& aAllocatedPointer );
 
-		static void * addPointerInPlace( void * Place, const AllocatedPointer& aAllocatedPointer );
+	static void* reallocPointer( void* data, const AllocatedPointer& aAllocatedPointer );
 
-		static bool removePointer( void * Data );
+	static void* addPointerInPlace( void* place, const AllocatedPointer& aAllocatedPointer );
 
-		static void showResults();
+	static bool removePointer( void* data, const char* file, const size_t& line );
 
-		template<class T>
-		static T* deletePtr( T * Data ) {
-			delete Data;
-			return Data;
-		}
+	static void showResults();
 
-		template<class T>
-		static T* deleteArrayPtr( T * Data ) {
-			delete [] Data;
-			return Data;
-		}
+	template <class T> static T* deletePtr( T* data ) {
+		delete data;
+		return data;
+	}
 
-		template<class T>
-		static T * free( T * Data ) {
-			::free( Data );
-			return Data;
-		}
+	template <class T> static T* deleteArrayPtr( T* data ) {
+		delete[] data;
+		return data;
+	}
 
-		inline static void * allocate( size_t size ) {
-			return malloc( size );
-		}
+	template <class T> static T* free( T* data ) {
+		::free( data );
+#if defined( __GNUC__ ) && __GNUC__ >= 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+		return data;
+#pragma GCC diagnostic pop
+#else
+		return data;
+#endif
+	}
 
-		static size_t getPeakMemoryUsage();
+	inline static void* allocate( size_t size ) {
+		return malloc( size );
+	}
 
-		static size_t getTotalMemoryUsage();
+	inline static void* reallocate( void* ptr, size_t size ) {
+#if defined( __GNUC__ ) && __GNUC__ >= 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+		return realloc( ptr, size );
+#pragma GCC diagnostic pop
+#else
+		return realloc( ptr, size );
+#endif
+	}
 
-		static const AllocatedPointer&	getBiggestAllocation();
+	static size_t getPeakMemoryUsage();
+
+	static size_t getTotalMemoryUsage();
+
+	static const AllocatedPointer& getBiggestAllocation();
 };
 
 #ifdef EE_MEMORY_MANAGER
-	#define eeNew( classType, constructor ) \
-			( classType *)EE::MemoryManager::addPointer( EE::AllocatedPointer( new classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
+#define eeNewTracked( classType, constructor )                       \
+	(classType*)EE::MemoryManager::addPointer( EE::AllocatedPointer( \
+		new classType constructor, __FILE__, __LINE__, sizeof( classType ), true ) )
 
-	#define eeNewInPlace( place, classType, constructor ) \
-			( classType *)EE::MemoryManager::addPointerInPlace( place, EE::AllocatedPointer( new place classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
+#define eeNew( classType, constructor )                              \
+	(classType*)EE::MemoryManager::addPointer( EE::AllocatedPointer( \
+		new classType constructor, __FILE__, __LINE__, sizeof( classType ) ) )
 
-	#define eeNewArray( classType, amount ) \
-			( classType *) EE::MemoryManager::addPointer( EE::AllocatedPointer( new classType [ amount ], __FILE__, __LINE__, amount * sizeof( classType ) ) )
+#define eeNewInPlace( place, classType, constructor )                                     \
+	(classType*)EE::MemoryManager::addPointerInPlace(                                     \
+		place, EE::AllocatedPointer( new place classType constructor, __FILE__, __LINE__, \
+									 sizeof( classType ) ) )
 
-	#define eeMalloc(amount) \
-			EE::MemoryManager::addPointer( EE::AllocatedPointer( EE::MemoryManager::allocate( amount ), __FILE__, __LINE__, amount ) )
+#define eeNewArray( classType, amount )                              \
+	(classType*)EE::MemoryManager::addPointer( EE::AllocatedPointer( \
+		new classType[amount], __FILE__, __LINE__, amount * sizeof( classType ) ) )
 
-	#define eeDelete( data ){ \
-			if( EE::MemoryManager::removePointer( EE::MemoryManager::deletePtr( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
-			}
+#define eeMalloc( amount )                                                                      \
+	EE::MemoryManager::addPointer( EE::AllocatedPointer( EE::MemoryManager::allocate( amount ), \
+														 __FILE__, __LINE__, amount ) )
 
-	#define eeDeleteArray( data ){ \
-			if ( EE::MemoryManager::removePointer( EE::MemoryManager::deleteArrayPtr( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
-			}
+#define eeRealloc( ptr, amount )                                                           \
+	EE::MemoryManager::reallocPointer(                                                     \
+		ptr, EE::AllocatedPointer( EE::MemoryManager::reallocate( ptr, amount ), __FILE__, \
+								   __LINE__, amount ) )
 
-	#define eeFree( data ){ \
-			if( EE::MemoryManager::removePointer( EE::MemoryManager::free( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
-			}
+#define eeDelete( data )                                                                       \
+	{                                                                                          \
+		if ( EE::MemoryManager::removePointer( EE::MemoryManager::deletePtr( data ), __FILE__, \
+											   __LINE__ ) == false )                           \
+			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                             \
+	}
+
+#define eeDeleteArray( data )                                                             \
+	{                                                                                     \
+		if ( EE::MemoryManager::removePointer( EE::MemoryManager::deleteArrayPtr( data ), \
+											   __FILE__, __LINE__ ) == false )            \
+			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                        \
+	}
+
+#define eeFree( data )                                                                    \
+	{                                                                                     \
+		if ( EE::MemoryManager::removePointer( EE::MemoryManager::free( data ), __FILE__, \
+											   __LINE__ ) == false )                      \
+			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                        \
+	}
 #else
-	#define eeNew( classType, constructor ) \
-			new classType constructor
 
-	#define eeNewInPlace( place, classType, constructor ) \
-			new place classType constructor
+#define eeNewTracked( classType, constructor ) new classType constructor
 
-	#define eeNewArray( classType, amount ) \
-			new classType [ amount ]
+#define eeNew( classType, constructor ) new classType constructor
 
-	#define eeMalloc( amount ) \
-			malloc( amount )
+#define eeNewInPlace( place, classType, constructor ) new place classType constructor
 
-	#define eeDelete( data ) \
-		delete data
+#define eeNewArray( classType, amount ) new classType[amount]
 
-	#define eeDeleteArray( data ) \
-		delete [] data
+#define eeMalloc( amount ) malloc( amount )
 
-	#define eeFree( data ) \
-		free(data)
+#define eeRealloc( ptr, amount ) realloc( ptr, amount )
+
+#define eeDelete( data ) delete data
+
+#define eeDeleteArray( data ) delete[] data
+
+#define eeFree( data ) free( data )
+
 #endif
 
-}
+} // namespace EE
 
 #endif

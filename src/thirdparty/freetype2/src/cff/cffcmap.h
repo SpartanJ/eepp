@@ -1,25 +1,25 @@
-/***************************************************************************/
-/*                                                                         */
-/*  cffcmap.h                                                              */
-/*                                                                         */
-/*    CFF character mapping table (cmap) support (specification).          */
-/*                                                                         */
-/*  Copyright 2002, 2003, 2006 by                                          */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * cffcmap.h
+ *
+ *   CFF character mapping table (cmap) support (specification).
+ *
+ * Copyright (C) 2002-2019 by
+ * David Turner, Robert Wilhelm, and Werner Lemberg.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 
-#ifndef __CFFCMAP_H__
-#define __CFFCMAP_H__
+#ifndef CFFCMAP_H_
+#define CFFCMAP_H_
 
-#include "cffobjs.h"
+#include FT_INTERNAL_CFF_OBJECTS_TYPES_H
 
 FT_BEGIN_HEADER
 
@@ -61,7 +61,7 @@ FT_BEGIN_HEADER
 
 FT_END_HEADER
 
-#endif /* __CFFCMAP_H__ */
+#endif /* CFFCMAP_H_ */
 
 
 /* END */

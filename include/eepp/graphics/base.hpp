@@ -3,10 +3,10 @@
 
 #include <eepp/core.hpp>
 
+#include <eepp/math/math.hpp>
+#include <eepp/math/rect.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/math/vector3.hpp>
-#include <eepp/math/rect.hpp>
-#include <eepp/math/math.hpp>
 using namespace EE::Math;
 
 #include <eepp/graphics/rendermode.hpp>

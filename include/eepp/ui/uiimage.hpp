@@ -6,62 +6,70 @@
 namespace EE { namespace UI {
 
 class EE_API UIImage : public UIWidget {
-	public:
-		static UIImage * New();
+  public:
+	static UIImage* New();
 
-		static UIImage * NewWithTag( const std::string& tag );
+	static UIImage* NewWithTag( const std::string& tag );
 
-		UIImage();
+	UIImage();
 
-		explicit UIImage( const std::string& tag );
+	explicit UIImage( const std::string& tag );
 
-		virtual ~UIImage();
+	virtual ~UIImage();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void setAlpha( const Float& alpha );
+	virtual void setAlpha( const Float& alpha );
 
-		Drawable * getDrawable() const;
+	Drawable* getDrawable() const;
 
-		UIImage * setDrawable( Drawable * drawable );
+	UIImage* setDrawable( Drawable* drawable, bool ownIt = false );
 
-		const Color& getColor() const;
+	const Color& getColor() const;
 
-		UIImage * setColor( const Color& col );
+	UIImage* setColor( const Color& col );
 
-		const Vector2f& getAlignOffset() const;
+	const Vector2f& getAlignOffset() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		Uint32 getScaleType() const;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		UIImage * setScaleType(const Uint32 & scaleType);
-	protected:
-		Uint32			mScaleType;
-		Drawable *		mDrawable;
-		Color			mColor;
-		Vector2f		mAlignOffset;
-		Vector2f		mDestSize;
-		bool			mDrawableOwner;
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual void onSizeChange();
+	const UIScaleType& getScaleType() const;
 
-		virtual void onAlignChange();
+	UIImage* setScaleType( const UIScaleType& scaleType );
 
-		void onAutoSize();
+  protected:
+	UIScaleType mScaleType;
+	Drawable* mDrawable;
+	Color mColor;
+	Vector2f mAlignOffset;
+	Vector2f mDestSize;
+	Uint32 mResourceChangeCb;
+	bool mDrawableOwner;
 
-		void calcDestSize();
+	virtual void onSizeChange();
 
-		void autoAlign();
+	virtual void onAlignChange();
 
-		void safeDeleteDrawable();
+	void onAutoSize();
+
+	void calcDestSize();
+
+	void autoAlign();
+
+	void safeDeleteDrawable();
+
+	void onDrawableResourceEvent( DrawableResource::Event event, DrawableResource* );
 };
 
-}}
-
+}} // namespace EE::UI
 
 #endif

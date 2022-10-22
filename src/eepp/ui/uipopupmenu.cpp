@@ -1,17 +1,16 @@
-#include <eepp/ui/uipopupmenu.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/scene/scenenode.hpp>
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
-UIPopUpMenu * UIPopUpMenu::New() {
+UIPopUpMenu* UIPopUpMenu::New() {
 	return eeNew( UIPopUpMenu, () );
 }
 
-UIPopUpMenu::UIPopUpMenu() :
-	UIMenu()
-{
+UIPopUpMenu::UIPopUpMenu() : UIMenu() {
 	setElementTag( "popupmenu" );
 	setVisible( false );
 	setEnabled( false );
@@ -19,7 +18,6 @@ UIPopUpMenu::UIPopUpMenu() :
 }
 
 UIPopUpMenu::~UIPopUpMenu() {
-	onClose();
 }
 
 Uint32 UIPopUpMenu::getType() const {
@@ -30,7 +28,7 @@ bool UIPopUpMenu::isType( const Uint32& type ) const {
 	return UIPopUpMenu::getType() == type ? true : UIMenu::isType( type );
 }
 
-void UIPopUpMenu::setTheme( UITheme * Theme ) {
+void UIPopUpMenu::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 	setThemeSkin( Theme, "popupmenu" );
 	onThemeLoaded();
@@ -38,22 +36,23 @@ void UIPopUpMenu::setTheme( UITheme * Theme ) {
 
 bool UIPopUpMenu::show() {
 	if ( !isVisible() || 0.f == mAlpha ) {
-		#ifdef EE_PLATFORM_TOUCH
-		mTE.restart();
-		#endif
-
 		setEnabled( true );
 		setVisible( true );
-
 		toFront();
-
-		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			runAction( Actions::Sequence::New( Actions::Fade::New( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeOutTime() ),
-										  Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
+		if ( NULL != getUISceneNode() &&
+			 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+			if ( mHidingAction ) {
+				removeAction( mHidingAction );
+				mHidingAction = nullptr;
+			}
+			runAction( Actions::Sequence::New(
+				Actions::Fade::New(
+					255.f == mAlpha ? 0.f : mAlpha, 255.f,
+					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
+				Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 		}
-
+		sendCommonEvent( Event::OnMenuShow );
 		setFocus();
-
 		return true;
 	}
 
@@ -61,55 +60,42 @@ bool UIPopUpMenu::show() {
 }
 
 bool UIPopUpMenu::hide() {
-	if ( isVisible() ) {
-		if ( NULL != mItemSelected )
-			mItemSelected->popState( UIState::StateSelected );
-
-		mItemSelected		= NULL;
-		mItemSelectedIndex	= eeINDEX_NOT_FOUND;
-
-		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ),
-											   Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
+	if ( isVisible() && !mHidingAction ) {
+		if ( NULL != getUISceneNode() &&
+			 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+			mHidingAction = Actions::Sequence::New(
+				Actions::FadeOut::New(
+					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
+				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ),
+									 Actions::Runnable::New( [&] {
+										 mHidingAction = nullptr;
+										 if ( mCloseOnHide )
+											 close();
+									 } ) ) );
+			runAction( mHidingAction );
 		} else {
 			setEnabled( false );
 			setVisible( false );
+			if ( mCloseOnHide )
+				close();
 		}
-
+		safeHide();
+		sendCommonEvent( Event::OnMenuHide );
 		return true;
 	}
-
 	return false;
 }
 
-void UIPopUpMenu::onWidgetFocusLoss() {
-	hide();
-
-	UIMenu::onWidgetFocusLoss();
+bool UIPopUpMenu::isHiding() const {
+	return mHidingAction != nullptr;
 }
 
-Uint32 UIPopUpMenu::onMessage( const NodeMessage * Msg ) {
-	switch ( Msg->getMsg() ) {
-		case NodeMessage::MouseUp:
-		{
-			#ifdef EE_PLATFORM_TOUCH
-			if ( mTE.getElapsed().asMilliseconds() > 250.f ) {
-			#endif
-				if ( !Msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
-					sendCommonEvent( Event::OnHideByClick );
-
-					if ( isVisible() && NULL != mSceneNode )
-						mSceneNode->setFocus();
-
-					hide();
-				}
-			#ifdef EE_PLATFORM_TOUCH
-			}
-			#endif
-		}
-	}
-
-	return UIMenu::onMessage( Msg );
+bool UIPopUpMenu::getCloseOnHide() const {
+	return mCloseOnHide;
 }
 
-}}
+void UIPopUpMenu::setCloseOnHide( bool closeOnHide ) {
+	mCloseOnHide = closeOnHide;
+}
+
+}} // namespace EE::UI

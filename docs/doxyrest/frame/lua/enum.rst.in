@@ -1,0 +1,110 @@
+%{
+--------------------------------------------------------------------------------
+--
+--  This file is part of the Doxyrest toolkit.
+--
+--  Doxyrest is distributed under the MIT license.
+--  For details see accompanying license.txt file,
+--  the public copy of which is also available at:
+--  http://tibbo.com/downloads/archive/doxyrest/license.txt
+--
+--------------------------------------------------------------------------------
+
+local argArray = table.pack(...)
+local enum = argArray[1]
+
+local enumStats = prepareEnum(enum)
+
+if FORCE_INCLUDE_FILE then
+}
+.. include:: $FORCE_INCLUDE_FILE
+%{
+end -- if
+}
+.. index:: pair: enum; $(enum.name)
+.. _doxid-$(enum.id):
+
+$(getTitle("enumeration " .. enum.name, 1))
+
+%{
+local hasDetails =
+	enumStats.hasDocumentedEnumValues or
+	enumStats.hasBriefDocumentation and enumStats.hasDetailedDocumentation
+
+if hasDetails then
+}
+Overview
+~~~~~~~~
+
+$(getItemBriefDocumentation(enum))
+
+%{
+else
+}
+$(getItemDetailedDocumentation(enum))
+
+%{
+end -- if
+}
+.. ref-code-block:: lua
+	:class: doxyrest-overview-code-block
+
+	$(enum.name) =$g_preBodySpace{
+		-- enumeration values
+
+%{
+for i = 1, #enum.enumValueArray do
+	local item = enum.enumValueArray[i]
+}
+		$(getEnumValueString(item)),
+%{
+end -- for
+}
+	}
+
+%{
+if hasDetails then
+}
+.. _details-$(enum.id):
+
+Detailed Documentation
+~~~~~~~~~~~~~~~~~~~~~~
+
+$(getItemDetailedDocumentation(enum))
+
+%{
+end -- if
+
+if enumStats.hasDocumentedEnumValues then
+}
+Enumeration Values
+------------------
+
+%{
+	for i = 1, #enum.enumValueArray do
+		local item = enum.enumValueArray[i]
+		if item.hasDocumentation then
+}
+$(getItemRefTargetString(item))
+.. ref-code-block:: $LANGUAGE
+	:class: doxyrest-title-code-block
+
+	$(getEnumValueString(item))
+%{
+		if item.isSubGroupHead then
+			for j = 1, #item.subGroupSlaveArray do
+				slaveItem = item.subGroupSlaveArray[j]
+}
+	$(getEnumValueString(slaveItem))
+%{
+			end -- for
+		end -- if
+}
+
+$(getItemDetailedDocumentation(item))
+
+%{
+		end -- if
+	end -- for
+end -- if
+}

@@ -1,10 +1,10 @@
 #include <eepp/graphics/framebuffer.hpp>
-#include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/window/engine.hpp>
-#include <eepp/graphics/renderer/opengl.hpp>
-#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/framebufferfbo.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
 using namespace EE::Graphics::Private;
 
@@ -12,24 +12,26 @@ namespace EE { namespace Graphics {
 
 static std::list<const View*> sFBOActiveViews;
 
-FrameBuffer * FrameBuffer::New(const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, bool useColorBuffer, const Uint32& channels, EE::Window::Window * window ) {
+FrameBuffer* FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool StencilBuffer,
+							   bool DepthBuffer, bool useColorBuffer, const Uint32& channels,
+							   EE::Window::Window* window ) {
 	if ( FrameBufferFBO::isSupported() )
-		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, useColorBuffer, channels, window ) );
-	eePRINTL( "FBO not supported" );
+		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, useColorBuffer,
+										channels, window ) );
+	Log::warning( "FBO not supported" );
 	return NULL;
 }
 
-FrameBuffer::FrameBuffer( EE::Window::Window * window  ) :
+FrameBuffer::FrameBuffer( EE::Window::Window* window ) :
 	mWindow( window ),
-	mSize(0,0),
-	mChannels(4),
-	mId(0),
-	mHasColorBuffer(false),
-	mHasDepthBuffer(false),
-	mHasStencilBuffer(false),
-	mTexture(NULL),
-	mClearColor(0,0,0,0)
-{
+	mSize( 0, 0 ),
+	mChannels( 4 ),
+	mId( 0 ),
+	mHasColorBuffer( false ),
+	mHasDepthBuffer( false ),
+	mHasStencilBuffer( false ),
+	mTexture( NULL ),
+	mClearColor( 0, 0, 0, 0 ) {
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
@@ -43,12 +45,12 @@ FrameBuffer::~FrameBuffer() {
 	FrameBufferManager::instance()->remove( this );
 }
 
-Texture * FrameBuffer::getTexture() const {
+Texture* FrameBuffer::getTexture() const {
 	return mTexture;
 }
 
-void FrameBuffer::setClearColor( ColorAf Color ) {
-	mClearColor = Color;
+void FrameBuffer::setClearColor( const ColorAf& color ) {
+	mClearColor = color;
 }
 
 ColorAf FrameBuffer::getClearColor() const {
@@ -67,7 +69,7 @@ void FrameBuffer::setBufferView() {
 	GLi->getCurrentMatrix( GL_MODELVIEW_MATRIX, mModelViewMat );
 
 	mView.reset( Rectf( 0, 0, mSize.getWidth(), mSize.getHeight() ) );
-	sFBOActiveViews.push_back(&mView);
+	sFBOActiveViews.push_back( &mView );
 
 	GLi->viewport( 0, 0, mSize.getWidth(), mSize.getHeight() );
 	GLi->matrixMode( GL_PROJECTION );
@@ -80,7 +82,7 @@ void FrameBuffer::setBufferView() {
 void FrameBuffer::recoverView() {
 	GlobalBatchRenderer::instance()->draw();
 
-	sFBOActiveViews.remove(&mView);
+	sFBOActiveViews.remove( &mView );
 
 	if ( sFBOActiveViews.empty() ) {
 		mWindow->setView( mWindow->getView(), true );
@@ -106,7 +108,7 @@ const Int32& FrameBuffer::getHeight() const {
 	return mSize.y;
 }
 
-const Sizei &FrameBuffer::getSize() const {
+const Sizei& FrameBuffer::getSize() const {
 	return mSize;
 }
 
@@ -114,7 +116,7 @@ const Sizef FrameBuffer::getSizef() {
 	return Sizef( mSize.getWidth(), mSize.getHeight() );
 }
 
-const bool &FrameBuffer::hasColorBuffer() const {
+const bool& FrameBuffer::hasColorBuffer() const {
 	return mHasColorBuffer;
 }
 
@@ -135,8 +137,8 @@ void FrameBuffer::setName( const std::string& name ) {
 	mId = String::hash( mName );
 }
 
-const Uint32& FrameBuffer::getId() const {
+const String::HashType& FrameBuffer::getId() const {
 	return mId;
 }
 
-}}
+}} // namespace EE::Graphics

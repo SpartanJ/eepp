@@ -1,4 +1,4 @@
-#ifndef EE_UI_UIGRIDLAYOUT
+﻿#ifndef EE_UI_UIGRIDLAYOUT
 #define EE_UI_UIGRIDLAYOUT
 
 #include <eepp/ui/uilayout.hpp>
@@ -6,74 +6,70 @@
 namespace EE { namespace UI {
 
 class EE_API UIGridLayout : public UILayout {
-	public:
-		enum ElementMode
-		{
-			Size,
-			Weight
-		};
+  public:
+	enum ElementMode { Size, Weight };
 
-		static UIGridLayout * New();
-		
-		UIGridLayout();
-		
-		virtual Uint32 getType() const;
+	static UIGridLayout* New();
 
-		virtual bool isType( const Uint32& type ) const;
+	UIGridLayout();
 
-		Sizei getSpan() const;
+	virtual Uint32 getType() const;
 
-		UIGridLayout * setSpan(const Sizei& span);
+	virtual bool isType( const Uint32& type ) const;
 
-		ElementMode getColumnMode() const;
+	Sizei getBoxMargin() const;
 
-		UIGridLayout * setColumnMode( const ElementMode& mode );
+	UIGridLayout* setBoxMargin( const Sizei& span );
 
-		ElementMode getRowMode() const;
+	ElementMode getColumnMode() const;
 
-		UIGridLayout * setRowMode( const ElementMode& mode );
+	UIGridLayout* setColumnMode( const ElementMode& mode );
 
-		Float getColumnWeight() const;
+	ElementMode getRowMode() const;
 
-		UIGridLayout * setColumnWeight(const Float & columnWeight);
+	UIGridLayout* setRowMode( const ElementMode& mode );
 
-		int getColumnWidth() const;
+	Float getColumnWeight() const;
 
-		UIGridLayout * setColumnWidth(int columnWidth);
+	UIGridLayout* setColumnWeight( const Float& columnWeight );
 
-		int getRowHeight() const;
+	int getColumnWidth() const;
 
-		UIGridLayout * setRowHeight(int rowHeight);
+	UIGridLayout* setColumnWidth( int columnWidth );
 
-		Float getRowWeight() const;
+	int getRowHeight() const;
 
-		UIGridLayout * setRowWeight(const Float & rowWeight);
+	UIGridLayout* setRowHeight( int rowHeight );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		Sizei mSpan;
-		ElementMode mColumnMode;
-		ElementMode mRowMode;
-		Float mColumnWeight;
-		int mColumnWidth;
-		Float mRowWeight;
-		int mRowHeight;
+	Float getRowWeight() const;
 
-		virtual void onSizeChange();
-		
-		virtual void onChildCountChange();
+	UIGridLayout* setRowWeight( const Float& rowWeight );
 
-		virtual void onPaddingChange();
-		
-		virtual void onParentSizeChange( const Vector2f& SizeChange );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		Sizef getTargetElementSize() const;
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		void pack();
+	virtual void updateLayout();
+
+  protected:
+	Sizei mBoxMargin;
+	ElementMode mColumnMode;
+	ElementMode mRowMode;
+	Float mColumnWeight;
+	int mColumnWidth;
+	Float mRowWeight;
+	int mRowHeight;
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	virtual void onParentSizeChange( const Vector2f& size );
+
+	Sizef getTargetElementSize() const;
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

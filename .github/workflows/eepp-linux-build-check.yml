@@ -1,0 +1,26 @@
+name: Linux
+
+on: [push, pull_request]
+
+jobs:
+  Linux:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+    - name: Checkout submodules
+      run: |
+        git submodule update --init --recursive
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget g++-8 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev
+        wget https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-linux.tar.gz
+        tar xvzf premake-5.0.0-alpha14-linux.tar.gz
+    - name: Build
+      run: |
+        ./premake5 gmake2
+        cd make/linux
+        make all $* CC=gcc-8 CPP=g++-8 CXX=g++-8 CC=gcc-8 -j`nproc`

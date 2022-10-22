@@ -1,17 +1,13 @@
+#include <eepp/core/debug.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/statefuldrawable.hpp>
-#include <eepp/core/debug.hpp>
 
 namespace EE { namespace Graphics {
 
-Drawable::Drawable(Type drawableType ) :
-	mDrawableType( drawableType ),
-	mColor( Color(255,255,255,255) )
-{
-}
+Drawable::Drawable( Type drawableType ) :
+	mDrawableType( drawableType ), mColor( Color( 255, 255, 255, 255 ) ) {}
 
-Drawable::~Drawable()
-{}
+Drawable::~Drawable() {}
 
 void Drawable::setAlpha( Uint8 alpha ) {
 	if ( mColor.a != alpha ) {
@@ -25,7 +21,7 @@ const Uint8& Drawable::getAlpha() {
 	return mColor.a;
 }
 
-void Drawable::setColor(const Color & color) {
+void Drawable::setColor( const Color& color ) {
 	if ( mColor != color ) {
 		mColor = color;
 		onColorFilterChange();
@@ -33,7 +29,7 @@ void Drawable::setColor(const Color & color) {
 	}
 }
 
-Color Drawable::getColor() const {
+const Color& Drawable::getColor() const {
 	return mColor;
 }
 
@@ -91,18 +87,14 @@ void Drawable::setPosition( const Vector2f& position ) {
 	}
 }
 
-StatefulDrawable * Drawable::asStatefulDrawable() {
-	eeASSERT( isStateful() );
-	return static_cast<StatefulDrawable*>( this );
+bool Drawable::isDrawableResource() const {
+	return false;
 }
 
-void Drawable::onAlphaChange() {
-}
+void Drawable::onAlphaChange() {}
 
-void Drawable::onColorFilterChange() {
-}
+void Drawable::onColorFilterChange() {}
 
-void Drawable::onPositionChange() {
-}
+void Drawable::onPositionChange() {}
 
-}}
+}} // namespace EE::Graphics

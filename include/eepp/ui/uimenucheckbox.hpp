@@ -6,36 +6,42 @@
 namespace EE { namespace UI {
 
 class EE_API UIMenuCheckBox : public UIMenuItem {
-	public:
-		static UIMenuCheckBox * New();
+  public:
+	static UIMenuCheckBox* New();
 
-		UIMenuCheckBox();
+	UIMenuCheckBox();
 
-		virtual ~UIMenuCheckBox();
+	virtual ~UIMenuCheckBox();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		const bool& isActive() const;
+	const bool& isActive() const;
 
-		void setActive( const bool& active );
+	UIMenuCheckBox* setActive( const bool& active );
 
-		void switchActive();
+	void switchActive();
 
-		virtual bool inheritsFrom( const Uint32 getType );
-	protected:
-		bool		mActive;
-		UISkin *	mSkinActive;
-		UISkin *	mSkinInactive;
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex ) const;
 
-		virtual void onStateChange();
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+  protected:
+	bool mActive;
+	UISkin* mSkinActive;
+	UISkin* mSkinInactive;
+
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
+	virtual void onStateChange();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

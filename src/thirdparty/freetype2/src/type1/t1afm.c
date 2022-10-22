@@ -1,36 +1,39 @@
-/***************************************************************************/
-/*                                                                         */
-/*  t1afm.c                                                                */
-/*                                                                         */
-/*    AFM support for Type 1 fonts (body).                                 */
-/*                                                                         */
-/*  Copyright 1996-2011 by                                                 */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * t1afm.c
+ *
+ *   AFM support for Type 1 fonts (body).
+ *
+ * Copyright (C) 1996-2019 by
+ * David Turner, Robert Wilhelm, and Werner Lemberg.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 
 #include <ft2build.h>
 #include "t1afm.h"
-#include "t1errors.h"
+#include FT_INTERNAL_DEBUG_H
 #include FT_INTERNAL_STREAM_H
 #include FT_INTERNAL_POSTSCRIPT_AUX_H
+#include "t1errors.h"
 
 
-  /*************************************************************************/
-  /*                                                                       */
-  /* The macro FT_COMPONENT is used in trace mode.  It is an implicit      */
-  /* parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log  */
-  /* messages during execution.                                            */
-  /*                                                                       */
+#ifndef T1_CONFIG_OPTION_NO_AFM
+
+  /**************************************************************************
+   *
+   * The macro FT_COMPONENT is used in trace mode.  It is an implicit
+   * parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log
+   * messages during execution.
+   */
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_t1afm
+#define FT_COMPONENT  t1afm
 
 
   FT_LOCAL_DEF( void )
@@ -107,7 +110,7 @@
                FT_Stream     stream,
                AFM_FontInfo  fi )
   {
-    FT_Error      error = T1_Err_Ok;
+    FT_Error      error  = FT_Err_Ok;
     FT_Memory     memory = stream->memory;
     FT_Byte*      start;
     FT_Byte*      limit;
@@ -121,14 +124,13 @@
 
     start = (FT_Byte*)stream->cursor;
     limit = (FT_Byte*)stream->limit;
-    p     = start;
 
     /* Figure out how long the width table is.          */
     /* This info is a little-endian short at offset 99. */
     p = start + 99;
     if ( p + 2 > limit )
     {
-      error = T1_Err_Unknown_File_Format;
+      error = FT_THROW( Unknown_File_Format );
       goto Exit;
     }
     width_table_length = FT_PEEK_USHORT_LE( p );
@@ -148,7 +150,7 @@
 
     if ( p + 2 > limit )
     {
-      error = T1_Err_Unknown_File_Format;
+      error = FT_THROW( Unknown_File_Format );
       goto Exit;
     }
 
@@ -156,7 +158,7 @@
     p += 2;
     if ( p + 4 * fi->NumKernPair > limit )
     {
-      error = T1_Err_Unknown_File_Format;
+      error = FT_THROW( Unknown_File_Format );
       goto Exit;
     }
 
@@ -169,8 +171,8 @@
       goto Exit;
 
     /* now, read each kern pair */
-    kp             = fi->KernPairs;
-    limit          = p + 4 * fi->NumKernPair;
+    kp    = fi->KernPairs;
+    limit = p + 4 * fi->NumKernPair;
 
     /* PFM kerning data are stored by encoding rather than glyph index, */
     /* so find the PostScript charmap of this font and install it       */
@@ -197,7 +199,7 @@
     /*   encoding of first glyph (1 byte)     */
     /*   encoding of second glyph (1 byte)    */
     /*   offset (little-endian short)         */
-    for ( ; p < limit ; p += 4 )
+    for ( ; p < limit; p += 4 )
     {
       kp->index1 = FT_Get_Char_Index( t1_face, p[0] );
       kp->index2 = FT_Get_Char_Index( t1_face, p[1] );
@@ -208,7 +210,7 @@
       kp++;
     }
 
-    if ( oldcharmap != NULL )
+    if ( oldcharmap )
       error = FT_Set_Charmap( t1_face, oldcharmap );
     if ( error )
       goto Exit;
@@ -238,9 +240,19 @@
     FT_Memory      memory  = stream->memory;
     AFM_ParserRec  parser;
     AFM_FontInfo   fi      = NULL;
-    FT_Error       error   = T1_Err_Unknown_File_Format;
-    T1_Font        t1_font = &( (T1_Face)t1_face )->type1;
+    FT_Error       error   = FT_ERR( Unknown_File_Format );
+    T1_Face        face    = (T1_Face)t1_face;
+    T1_Font        t1_font = &face->type1;
 
+
+    if ( face->afm_data )
+    {
+      FT_TRACE1(( "T1_Read_Metrics:"
+                  " Freeing previously attached metrics data.\n" ));
+      T1_Done_Metrics( memory, (AFM_FontInfo)face->afm_data );
+
+      face->afm_data = NULL;
+    }
 
     if ( FT_NEW( fi )                   ||
          FT_FRAME_ENTER( stream->size ) )
@@ -250,7 +262,7 @@
     fi->Ascender  = t1_font->font_bbox.yMax;
     fi->Descender = t1_font->font_bbox.yMin;
 
-    psaux = (PSAux_Service)( (T1_Face)t1_face )->psaux;
+    psaux = (PSAux_Service)face->psaux;
     if ( psaux->afm_parser_funcs )
     {
       error = psaux->afm_parser_funcs->init( &parser,
@@ -269,7 +281,7 @@
       }
     }
 
-    if ( error == T1_Err_Unknown_File_Format )
+    if ( FT_ERR_EQ( error, Unknown_File_Format ) )
     {
       FT_Byte*  start = stream->cursor;
 
@@ -298,15 +310,15 @@
       if ( fi->NumKernPair )
       {
         t1_face->face_flags |= FT_FACE_FLAG_KERNING;
-        ( (T1_Face)t1_face )->afm_data = fi;
-        fi = NULL;
+        face->afm_data       = fi;
+        fi                   = NULL;
       }
     }
 
     FT_FRAME_EXIT();
 
   Exit:
-    if ( fi != NULL )
+    if ( fi )
       T1_Done_Metrics( memory, fi );
 
     return error;
@@ -362,11 +374,11 @@
                         FT_Fixed*  kerning )
   {
     AFM_FontInfo  fi = (AFM_FontInfo)( (T1_Face)face )->afm_data;
-    FT_Int        i;
+    FT_UInt       i;
 
 
     if ( !fi )
-      return T1_Err_Invalid_Argument;
+      return FT_THROW( Invalid_Argument );
 
     for ( i = 0; i < fi->NumTrackKern; i++ )
     {
@@ -389,8 +401,15 @@
       }
     }
 
-    return T1_Err_Ok;
+    return FT_Err_Ok;
   }
+
+#else /* T1_CONFIG_OPTION_NO_AFM */
+
+  /* ANSI C doesn't like empty source files */
+  typedef int  _t1_afm_dummy;
+
+#endif /* T1_CONFIG_OPTION_NO_AFM */
 
 
 /* END */

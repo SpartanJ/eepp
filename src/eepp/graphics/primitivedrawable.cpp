@@ -1,25 +1,23 @@
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitivedrawable.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
-#include <eepp/graphics/globalbatchrenderer.hpp>
 
 namespace EE { namespace Graphics {
 
-PrimitiveDrawable::PrimitiveDrawable(Type drawableType) :
+PrimitiveDrawable::PrimitiveDrawable( Type drawableType ) :
 	Drawable( drawableType ),
 	mFillMode( DRAW_FILL ),
-	mBlendMode( BlendAlpha ),
+	mBlendMode( BlendMode::Alpha() ),
 	mLineWidth( 1.f ),
 	mNeedsUpdate( true ),
 	mRecreateVertexBuffer( true ),
-	mVertexBuffer( NULL )
-{
-}
+	mVertexBuffer( NULL ) {}
 
 PrimitiveDrawable::~PrimitiveDrawable() {
 	eeSAFE_DELETE( mVertexBuffer );
 }
 
-void PrimitiveDrawable::draw( const Vector2f & position, const Sizef& size ) {
+void PrimitiveDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	if ( mPosition != position ) {
 		mPosition = position;
 		mNeedsUpdate = true;
@@ -29,7 +27,7 @@ void PrimitiveDrawable::draw( const Vector2f & position, const Sizef& size ) {
 		updateVertex();
 
 	if ( NULL != mVertexBuffer ) {
-		BatchRenderer * BR = GlobalBatchRenderer::instance();
+		BatchRenderer* BR = GlobalBatchRenderer::instance();
 
 		BR->draw();
 
@@ -44,7 +42,7 @@ void PrimitiveDrawable::draw( const Vector2f & position, const Sizef& size ) {
 	}
 }
 
-void PrimitiveDrawable::setFillMode(const PrimitiveFillMode & Mode) {
+void PrimitiveDrawable::setFillMode( const PrimitiveFillMode& Mode ) {
 	mFillMode = Mode;
 	mNeedsUpdate = true;
 	mRecreateVertexBuffer = true;
@@ -92,4 +90,4 @@ void PrimitiveDrawable::prepareVertexBuffer( const PrimitiveType& drawableType )
 	mVertexBuffer->clear();
 }
 
-}}
+}} // namespace EE::Graphics

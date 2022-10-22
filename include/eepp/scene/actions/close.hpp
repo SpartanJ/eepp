@@ -6,22 +6,21 @@
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Close : public Delay {
-	public:
-		static Close * New( const Time& time = Seconds(0) );
-		
-		void update( const Time& time ) override;
+  public:
+	static Close* New( const Time& time = Seconds( 0 ) );
 
-		Action * clone() const override;
+	void update( const Time& time ) override;
 
-		Action * reverse() const override;
+	Action* clone() const override;
 
-	protected:
-		explicit Close( const Time& time );
+	Action* reverse() const override;
 
-		void onStart() override;
-		
+  protected:
+	explicit Close( const Time& time );
+
+	void onStart() override;
 };
 
-}}} 
+}}} // namespace EE::Scene::Actions
 
 #endif

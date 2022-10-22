@@ -20,81 +20,87 @@ class MatrixStack;
 }
 
 class EE_API RendererGLES2 : public RendererGLShader {
-	public:
-		RendererGLES2();
+  public:
+	RendererGLES2();
 
-		~RendererGLES2();
+	~RendererGLES2();
 
-		EEGL_version version();
+	GraphicsLibraryVersion version();
 
-		std::string versionStr();
+	std::string versionStr();
 
-		void init();
+	void init();
 
-		void pointSize( float size );
+	void pointSize( float size );
 
-		float pointSize();
+	float pointSize();
 
-		void disable ( unsigned int cap );
+	void disable( unsigned int cap );
 
-		void enable( unsigned int cap );
+	void enable( unsigned int cap );
 
-		void enableClientState( unsigned int array );
+	void enableClientState( unsigned int array );
 
-		void disableClientState( unsigned int array );
+	void disableClientState( unsigned int array );
 
-		void vertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
+	void vertexPointer( int size, unsigned int type, int stride, const void* pointer,
+						unsigned int allocate );
 
-		void colorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
+	void colorPointer( int size, unsigned int type, int stride, const void* pointer,
+					   unsigned int allocate );
 
-		void texCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
+	void texCoordPointer( int size, unsigned int type, int stride, const void* pointer,
+						  unsigned int allocate );
 
-		void clientActiveTexture( unsigned int texture );
+	void clientActiveTexture( unsigned int texture );
 
-		unsigned int baseShaderId();
+	unsigned int baseShaderId();
 
-		void setShader( ShaderProgram * Shader );
+	void setShader( ShaderProgram* Shader );
 
-		void setShader( const EEGLES2_SHADERS& Shader );
+	void setShader( const EEGLES2_SHADERS& Shader );
 
-		int getStateIndex( const Uint32& State );
+	int getStateIndex( const Uint32& State );
 
-		void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
+	void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width,
+							const Int32& Height );
 
-		void clip2DPlaneDisable();
+	void clip2DPlaneDisable();
 
-		void clipPlane( unsigned int plane, const double *equation );
+	void clipPlane( unsigned int plane, const double* equation );
 
-		std::string getBaseVertexShader();
+	std::string getBaseVertexShader();
 
-		void reloadCurrentShader();
-	protected:
-		ShaderProgram *		mShaders[ EEGLES2_SHADERS_COUNT ];
-		int					mAttribsLoc[ EEGL_ARRAY_STATES_COUNT ];
-		int					mAttribsLocStates[ EEGL_ARRAY_STATES_COUNT ];
-		int					mPlanes[ EE_MAX_PLANES ];
-		int					mPlanesStates[ EE_MAX_PLANES ];
-		Int32				mTexActive;
-		int					mTexActiveLoc;
-		int					mClippingEnabledLoc;
-		float				mPointSize;
-		int					mTextureUnits[ EE_MAX_TEXTURE_UNITS ];
-		int					mTextureUnitsStates[ EE_MAX_TEXTURE_UNITS ];
-		int					mCurActiveTex;
-		Uint8				mClippingEnabled;
-		Uint8				mPointSpriteEnabled;
-		bool				mLoaded;
-		bool				mCurShaderLocal;
-		std::string			mBaseVertexShader;
+	void reloadCurrentShader();
 
-		void planeStateCheck( bool tryEnable );
+  protected:
+	ShaderProgram* mShaders[EEGLES2_SHADERS_COUNT];
+	int mAttribsLoc[EEGL_ARRAY_STATES_COUNT];
+	int mAttribsLocStates[EEGL_ARRAY_STATES_COUNT];
+	int mPlanes[EE_MAX_PLANES];
+	int mPlanesStates[EE_MAX_PLANES];
+	Int32 mTexActive;
+	int mTexActiveLoc;
+	int mClippingEnabledLoc;
+	int mPointSizeLoc;
+	float mPointSize;
+	int mTextureUnits[EE_MAX_TEXTURE_UNITS];
+	int mTextureUnitsStates[EE_MAX_TEXTURE_UNITS];
+	int mCurActiveTex;
+	Uint8 mClippingEnabled;
+	Uint8 mPointSpriteEnabled;
+	bool mLoaded;
+	bool mCurShaderLocal;
+	std::string mBaseVertexShader;
 
-		void reloadShader( ShaderProgram * Shader );
+	void planeStateCheck( bool tryEnable );
 
-		void checkLocalShader();
+	void reloadShader( ShaderProgram* Shader );
+
+	void checkLocalShader();
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif
 

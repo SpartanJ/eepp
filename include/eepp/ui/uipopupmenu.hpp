@@ -6,33 +6,46 @@
 namespace EE { namespace UI {
 
 class EE_API UIPopUpMenu : public UIMenu {
-	public:
-		static UIPopUpMenu * New();
+  public:
+	static UIPopUpMenu* New();
 
-		UIPopUpMenu();
+	UIPopUpMenu();
 
-		virtual ~UIPopUpMenu();
+	virtual ~UIPopUpMenu();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual bool show();
+	virtual bool show();
 
-		virtual bool hide();
-	protected:
-		virtual void onWidgetFocusLoss();
+	virtual bool hide();
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	bool isHiding() const;
 
-		#ifdef EE_PLATFORM_TOUCH
-		Clock mTE;
-		#endif
+	bool getCloseOnHide() const;
+
+	void setCloseOnHide( bool closeOnHide );
+
+  protected:
+	Action* mHidingAction{ nullptr };
+	bool mCloseOnHide{ false };
 };
 
-}}
+class EE_API ContextMenuEvent : public MouseEvent {
+  public:
+	ContextMenuEvent( Node* node, UIPopUpMenu* menu, const Uint32& eventType, const Vector2i& pos,
+					  const Uint32& flags ) :
+		MouseEvent( node, eventType, pos, flags ), menu( menu ) {}
+
+	UIPopUpMenu* getMenu() const { return menu; }
+
+  protected:
+	UIPopUpMenu* menu;
+};
+
+}} // namespace EE::UI
 
 #endif
-

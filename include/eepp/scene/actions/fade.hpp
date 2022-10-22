@@ -7,61 +7,68 @@
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Fade : public ActionInterpolation1d {
-	public:
-		static Fade * New( const Float& start, const Float& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear, const bool& alphaChilds = true );
+  public:
+	static Fade* New( const Float& start, const Float& end, const Time& duration,
+					  const Ease::Interpolation& type = Ease::Linear,
+					  const bool& alphaChilds = true );
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
-	protected:
-		Fade();
+	Action* reverse() const override;
 
-		Fade( const Float & start, const Float & end, const Time & duration, const Ease::Interpolation & type, const bool& alphaChilds );
+  protected:
+	Fade();
 
-		void onStart() override;
+	Fade( const Float& start, const Float& end, const Time& duration,
+		  const Ease::Interpolation& type, const bool& alphaChilds );
 
-		void onUpdate( const Time& time ) override;
+	void onStart() override;
 
-		bool mAffectChilds;
+	void onUpdate( const Time& time ) override;
+
+	bool mAffectChilds;
 };
 
 class EE_API FadeIn : public Fade {
-	public:
-		static FadeIn * New( const Time& duration, const Ease::Interpolation& type = Ease::Linear, const bool& alphaChilds = true );
+  public:
+	static FadeIn* New( const Time& duration, const Ease::Interpolation& type = Ease::Linear,
+						const bool& alphaChilds = true );
 
-		void start() override;
+	void start() override;
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
-	protected:
-		Time mDuration;
-		Ease::Interpolation mType;
+	Action* reverse() const override;
 
-		FadeIn();
+  protected:
+	Time mDuration;
+	Ease::Interpolation mType;
 
-		FadeIn( const Time & duration, const Ease::Interpolation & type, const bool& alphaChilds );
+	FadeIn();
+
+	FadeIn( const Time& duration, const Ease::Interpolation& type, const bool& alphaChilds );
 };
 
-class EE_API FadeOut: public Fade {
-	public:
-		static FadeOut * New( const Time& duration, const Ease::Interpolation& type = Ease::Linear, const bool& alphaChilds = true );
+class EE_API FadeOut : public Fade {
+  public:
+	static FadeOut* New( const Time& duration, const Ease::Interpolation& type = Ease::Linear,
+						 const bool& alphaChilds = true );
 
-		void start() override;
+	void start() override;
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
-	protected:
-		Time mDuration;
-		Ease::Interpolation mType;
+	Action* reverse() const override;
 
-		FadeOut();
+  protected:
+	Time mDuration;
+	Ease::Interpolation mType;
 
-		FadeOut( const Time & duration, const Ease::Interpolation & type, const bool& alphaChilds );
+	FadeOut();
+
+	FadeOut( const Time& duration, const Ease::Interpolation& type, const bool& alphaChilds );
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif
-

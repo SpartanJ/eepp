@@ -6,12 +6,12 @@
 namespace EE { namespace Audio {
 
 class EE_API AlResource {
-	protected:
-		AlResource();
+  protected:
+	AlResource();
 
-		~AlResource();
+	~AlResource();
 };
 
-}}
+}} // namespace EE::Audio
 
 #endif

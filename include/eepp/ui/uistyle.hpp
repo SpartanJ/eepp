@@ -1,105 +1,138 @@
 #ifndef EE_UI_UISTYLE_HPP
 #define EE_UI_UISTYLE_HPP
 
-#include <eepp/ui/uistate.hpp>
-#include <eepp/scene/nodeattribute.hpp>
-#include <eepp/ui/css/stylesheetproperty.hpp>
-#include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/math/ease.hpp>
-#include <set>
+#include <eepp/ui/css/animationdefinition.hpp>
+#include <eepp/ui/css/elementdefinition.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetstyle.hpp>
+#include <eepp/ui/css/transitiondefinition.hpp>
+#include <eepp/ui/uistate.hpp>
 #include <functional>
-
-using namespace EE::Scene;
+#include <set>
+#include <unordered_set>
 
 namespace EE { namespace Graphics {
 class Font;
-}}
+}} // namespace EE::Graphics
+
+namespace EE { namespace UI { namespace CSS {
+class StyleSheetPropertyAnimation;
+}}} // namespace EE::UI::CSS
 
 namespace EE { namespace UI {
 
 class UIWidget;
 
 class EE_API UIStyle : public UIState {
-	public:
-		class TransitionInfo
-		{
-			public:
-				TransitionInfo() :
-					timingFunction( Ease::Linear )
-				{}
+  public:
+	static UIStyle* New( UIWidget* widget );
 
-				const std::string& getProperty() const { return property; }
+	explicit UIStyle( UIWidget* widget );
 
-				Ease::Interpolation getTimingFunction() const { return timingFunction; }
+	virtual ~UIStyle();
 
-				const Time& getDelay() const { return delay; }
+	bool stateExists( const Uint32& state ) const;
 
-				const Time& getDuration() const { return duration; }
+	void load();
 
-				std::string property;
-				Ease::Interpolation timingFunction;
-				Time delay;
-				Time duration;
-		};
+	void onStateChange();
 
-		static UIStyle * New( UIWidget * widget );
+	const CSS::StyleSheetProperty* getStatelessStyleSheetProperty( const Uint32& propertyId ) const;
 
-		explicit UIStyle( UIWidget * widget );
+	void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 
-		virtual ~UIStyle();
+	void setStyleSheetProperty( const CSS::StyleSheetProperty& property );
 
-		bool stateExists( const Uint32& state ) const;
+	bool hasTransition( const std::string& propertyName );
 
-		void load();
+	CSS::StyleSheetPropertyAnimation* getAnimation( const CSS::PropertyDefinition* propertyDef );
 
-		void onStateChange();
+	bool hasAnimation( const CSS::PropertyDefinition* propertyDef );
 
-		CSS::StyleSheetProperty getStatelessStyleSheetProperty( const std::string& propertyName ) const;
+	CSS::TransitionDefinition getTransition( const std::string& propertyName );
 
-		CSS::StyleSheetProperty getStyleSheetProperty( const std::string& propertyName ) const;
+	const bool& isChangingState() const;
 
-		NodeAttribute getNodeAttribute(const std::string& attributeName ) const;
+	CSS::StyleSheetVariable getVariable( const std::string& variable );
 
-		void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
+	bool getForceReapplyProperties() const;
 
-		void setStyleSheetProperty( const CSS::StyleSheetProperty& property );
+	void setForceReapplyProperties( bool forceReapplyProperties );
 
-		bool hasTransition( const std::string& propertyName );
+	bool getDisableAnimations() const;
 
-		TransitionInfo getTransition( const std::string& propertyName );
-	protected:
-		typedef std::map<std::string, TransitionInfo> TransitionsMap;
+	void setDisableAnimations( bool disableAnimations );
 
-		UIWidget * mWidget;
-		CSS::StyleSheetStyleVector mCacheableStyles;
-		CSS::StyleSheetStyleVector mNoncacheableStyles;
-		CSS::StyleSheetStyle mElementStyle;
-		CSS::StyleSheetProperties mProperties;
-		std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
-		TransitionsMap mTransitions;
-		std::set<UIWidget*> mRelatedWidgets;
-		std::set<UIWidget*> mSubscribedWidgets;
+	bool isStructurallyVolatile() const;
 
-		void tryApplyStyle( const CSS::StyleSheetStyle& style );
+	void reloadFontFamily();
 
-		void updateState();
+	void addStructurallyVolatileChild( UIWidget* widget );
 
-		void parseTransitions();
+	void removeStructurallyVolatileChild( UIWidget* widget );
 
-		void subscribeNonCacheableStyles();
+	std::unordered_set<UIWidget*>& getStructurallyVolatileChilds();
 
-		void unsubscribeNonCacheableStyles();
+	bool hasProperty( const CSS::PropertyId& propertyId ) const;
 
-		void subscribeRelated( UIWidget * widget );
+	void resetGlobalDefinition();
 
-		void unsubscribeRelated( UIWidget * widget );
+  protected:
+	UIWidget* mWidget;
+	std::shared_ptr<CSS::StyleSheetStyle> mElementStyle;
+	std::shared_ptr<CSS::ElementDefinition> mGlobalDefinition;
+	std::shared_ptr<CSS::ElementDefinition> mDefinition;
+	CSS::TransitionsMap mTransitions;
+	CSS::AnimationsMap mAnimations;
+	std::set<UIWidget*> mRelatedWidgets;
+	std::set<UIWidget*> mSubscribedWidgets;
+	std::unordered_set<UIWidget*> mStructurallyVolatileChilds;
+	bool mChangingState;
+	bool mForceReapplyProperties;
+	bool mDisableAnimations;
+	bool mFirstState;
 
-		void removeFromSubscribedWidgets( UIWidget * widget );
+	void applyVarValues( CSS::StyleSheetProperty* style );
 
-		void removeRelatedWidgets();
+	void setVariableFromValue( CSS::StyleSheetProperty* property, const std::string& value );
+
+	void updateState();
+
+	void subscribeNonCacheableStyles();
+
+	void unsubscribeNonCacheableStyles();
+
+	void subscribeRelated( UIWidget* widget );
+
+	void unsubscribeRelated( UIWidget* widget );
+
+	void removeFromSubscribedWidgets( UIWidget* widget );
+
+	void removeRelatedWidgets();
+
+	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
+								  std::shared_ptr<CSS::ElementDefinition> prevDefinition );
+
+	void updateAnimationsPlayState();
+
+	void updateAnimations();
+
+	void startAnimations( const CSS::AnimationsMap& animations );
+
+	void removeAllAnimations();
+
+	void removeAnimation( const CSS::PropertyDefinition* propertyDefinition,
+						  const Uint32& propertyIndex );
+
+	CSS::StyleSheetProperty* getLocalProperty( Uint32 propId );
+
+	void addStructurallyVolatileWidgetFromParent();
+
+	void removeStructurallyVolatileWidgetFromParent();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

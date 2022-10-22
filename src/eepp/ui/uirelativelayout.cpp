@@ -1,14 +1,14 @@
 #include <eepp/ui/uirelativelayout.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
-UIRelativeLayout * UIRelativeLayout::New() {
+UIRelativeLayout* UIRelativeLayout::New() {
 	return eeNew( UIRelativeLayout, () );
 }
 
-UIRelativeLayout::UIRelativeLayout() :
-	UILayout( "relativelayout" )
-{
+UIRelativeLayout::UIRelativeLayout() : UILayout( "relativelayout" ) {
+	mFlags |= UI_OWNS_CHILDS_POSITION;
 }
 
 Uint32 UIRelativeLayout::getType() const {
@@ -16,54 +16,48 @@ Uint32 UIRelativeLayout::getType() const {
 }
 
 bool UIRelativeLayout::isType( const Uint32& type ) const {
-	return UIRelativeLayout::getType() == type ? true : UIWidget::isType( type );
+	return UIRelativeLayout::getType() == type ? true : UILayout::isType( type );
 }
 
-UIRelativeLayout * UIRelativeLayout::add(UIWidget * widget) {
+UIRelativeLayout* UIRelativeLayout::add( UIWidget* widget ) {
 	widget->setParent( this );
 	return this;
 }
 
-void UIRelativeLayout::onSizeChange() {
-	UILayout::onSizeChange();
-	fixChilds();
-}
+void UIRelativeLayout::updateLayout() {
+	if ( mPacking )
+		return;
+	mPacking = true;
+	if ( getParent()->isUINode() &&
+		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
+		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	}
 
-void UIRelativeLayout::onChildCountChange() {
-	UILayout::onChildCountChange();
-	fixChilds();
-}
-
-void UIRelativeLayout::onParentSizeChange( const Vector2f& ) {
-	fixChilds();
-}
-
-void UIRelativeLayout::fixChilds() {
-	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
-
-	if ( getLayoutWidthRules() == MATCH_PARENT ) {
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
 		Rectf padding = Rectf();
 
 		if ( getParent()->isWidget() )
 			padding = static_cast<UIWidget*>( getParent() )->getPadding();
 
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right - padding.Left - padding.Right );
+		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left -
+						  mLayoutMargin.Right - padding.Left - padding.Right );
 	}
 
-	if ( getLayoutHeightRules() == MATCH_PARENT ) {
+	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
 		Rectf padding = Rectf();
 
 		if ( getParent()->isWidget() )
 			padding = static_cast<UIWidget*>( getParent() )->getPadding();
 
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom - padding.Top - padding.Bottom );
+		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top -
+						   mLayoutMargin.Bottom - padding.Top - padding.Bottom );
 	}
 
-	Node * child = mChild;
+	Node* child = mChild;
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			UIWidget * widget = static_cast<UIWidget*>( child );
+			UIWidget* widget = static_cast<UIWidget*>( child );
 
 			fixChildSize( widget );
 
@@ -72,41 +66,51 @@ void UIRelativeLayout::fixChilds() {
 
 		child = child->getNextNode();
 	}
+
+	mDirtyLayout = false;
+	mPacking = false;
 }
 
-void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
+void UIRelativeLayout::fixChildPos( UIWidget* widget ) {
 	Vector2f pos( widget->getPosition() );
 
-	if ( widget->getLayoutPositionRule() != NONE && widget->getParent() == widget->getLayoutPositionRuleWidget()->getParent() ) {
-		UIWidget * of = widget->getLayoutPositionRuleWidget();
+	if ( widget->getLayoutPositionPolicy() != PositionPolicy::None &&
+		 widget->getParent() == widget->getLayoutPositionPolicyWidget()->getParent() ) {
+		UIWidget* of = widget->getLayoutPositionPolicyWidget();
 
-		switch ( widget->getLayoutPositionRule() ) {
-			case LEFT_OF:
-				pos.x = of->getPosition().x - widget->getSize().getWidth() - widget->getLayoutMargin().Right - of->getLayoutMargin().Left;
+		switch ( widget->getLayoutPositionPolicy() ) {
+			case PositionPolicy::LeftOf:
+				pos.x = of->getPosition().x - widget->getSize().getWidth() -
+						widget->getLayoutMargin().Right - of->getLayoutMargin().Left;
 				pos.y = of->getPosition().y + widget->getLayoutMargin().Top;
 				break;
-			case RIGHT_OF:
-				pos.x = of->getPosition().x + of->getSize().getWidth() + widget->getLayoutMargin().Left + of->getLayoutMargin().Right;
+			case PositionPolicy::RightOf:
+				pos.x = of->getPosition().x + of->getSize().getWidth() +
+						widget->getLayoutMargin().Left + of->getLayoutMargin().Right;
 				pos.y = of->getPosition().y + widget->getLayoutMargin().Top;
 				break;
-			case TOP_OF:
+			case PositionPolicy::TopOf:
 				pos.x = of->getPosition().x + widget->getLayoutMargin().Left;
-				pos.y = of->getPosition().y - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom - of->getLayoutMargin().Top;
+				pos.y = of->getPosition().y - widget->getSize().getHeight() -
+						widget->getLayoutMargin().Bottom - of->getLayoutMargin().Top;
 				break;
-			case BOTTOM_OF:
+			case PositionPolicy::BottomOf:
 				pos.x = of->getPosition().x + widget->getLayoutMargin().Left;
-				pos.y = of->getPosition().y + of->getSize().getHeight() + widget->getLayoutMargin().Top + of->getLayoutMargin().Bottom;
+				pos.y = of->getPosition().y + of->getSize().getHeight() +
+						widget->getLayoutMargin().Top + of->getLayoutMargin().Bottom;
 				break;
 			default:
 				break;
 		}
 	} else {
-		switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
+		switch ( Font::getHorizontalAlign( widget->getLayoutGravity() ) ) {
 			case UI_HALIGN_CENTER:
-				pos.x = ( mDpSize.getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
+				pos.x = ( getSize().getWidth() - widget->getSize().getWidth() ) / 2 +
+						widget->getLayoutMargin().Left;
 				break;
 			case UI_HALIGN_RIGHT:
-				pos.x = mDpSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right - mPadding.Right;
+				pos.x = getSize().getWidth() - widget->getSize().getWidth() -
+						widget->getLayoutMargin().Right - mPadding.Right;
 				break;
 			case UI_HALIGN_LEFT:
 			default:
@@ -114,12 +118,14 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 				break;
 		}
 
-		switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
+		switch ( Font::getVerticalAlign( widget->getLayoutGravity() ) ) {
 			case UI_VALIGN_CENTER:
-				pos.y = ( mDpSize.getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
+				pos.y = ( getSize().getHeight() - widget->getSize().getHeight() ) / 2 +
+						widget->getLayoutMargin().Top;
 				break;
 			case UI_VALIGN_BOTTOM:
-				pos.y = mDpSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom - mPadding.Bottom;
+				pos.y = getSize().getHeight() - widget->getSize().getHeight() -
+						widget->getLayoutMargin().Bottom - mPadding.Bottom;
 				break;
 			case UI_VALIGN_TOP:
 			default:
@@ -131,52 +137,50 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 	widget->setPosition( pos );
 }
 
-void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
-	switch ( widget->getLayoutWidthRules() ) {
-		case WRAP_CONTENT:
-		{
+void UIRelativeLayout::fixChildSize( UIWidget* widget ) {
+	switch ( widget->getLayoutWidthPolicy() ) {
+		case SizePolicy::WrapContent: {
 			widget->setFlags( UI_AUTO_SIZE );
 			break;
 		}
-		case MATCH_PARENT:
-		{
-			widget->setSize( mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right, widget->getSize().getHeight() );
+		case SizePolicy::MatchParent: {
+			widget->setSize( getSize().getWidth() - widget->getLayoutMargin().Left -
+								 widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right,
+							 widget->getSize().getHeight() );
 			break;
 		}
-		case FIXED:
-		default:
-		{
+		case SizePolicy::Fixed:
+		default: {
 		}
 	}
 
-	switch ( widget->getLayoutHeightRules() ) {
-		case WRAP_CONTENT:
-		{
+	switch ( widget->getLayoutHeightPolicy() ) {
+		case SizePolicy::WrapContent: {
 			widget->setFlags( UI_AUTO_SIZE );
 			break;
 		}
-		case MATCH_PARENT:
-		{
-			widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
+		case SizePolicy::MatchParent: {
+			widget->setSize( widget->getSize().getWidth(), getSize().getHeight() -
+															   widget->getLayoutMargin().Top -
+															   widget->getLayoutMargin().Bottom -
+															   mPadding.Top - mPadding.Bottom );
 			break;
 		}
-		case FIXED:
-		default:
-		{
+		case SizePolicy::Fixed:
+		default: {
 		}
 	}
 }
 
-Uint32 UIRelativeLayout::onMessage(const NodeMessage * Msg) {
-	switch( Msg->getMsg() ) {
-		case NodeMessage::LayoutAttributeChange:
-		{
-			fixChilds();
-			break;
+Uint32 UIRelativeLayout::onMessage( const NodeMessage* Msg ) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::LayoutAttributeChange: {
+			tryUpdateLayout();
+			return 1;
 		}
 	}
 
 	return 0;
 }
 
-}}
+}} // namespace EE::UI

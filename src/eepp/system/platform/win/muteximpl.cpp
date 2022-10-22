@@ -5,25 +5,25 @@
 namespace EE { namespace System { namespace Platform {
 
 MutexImpl::MutexImpl() {
-	InitializeCriticalSection(&mMutex);
+	InitializeCriticalSection( &mMutex );
 }
 
 MutexImpl::~MutexImpl() {
-	DeleteCriticalSection(&mMutex);
+	DeleteCriticalSection( &mMutex );
 }
 
 void MutexImpl::lock() {
-	EnterCriticalSection(&mMutex);
+	EnterCriticalSection( &mMutex );
 }
 
 void MutexImpl::unlock() {
-	LeaveCriticalSection(&mMutex);
+	LeaveCriticalSection( &mMutex );
 }
 
 int MutexImpl::tryLock() {
-	return TryEnterCriticalSection(&mMutex);
+	return TryEnterCriticalSection( &mMutex );
 }
 
-}}}
+}}} // namespace EE::System::Platform
 
 #endif

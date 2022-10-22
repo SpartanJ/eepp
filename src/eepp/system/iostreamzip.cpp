@@ -5,16 +5,12 @@
 
 namespace EE { namespace System {
 
-IOStreamZip * IOStreamZip::New( Zip * pack, const std::string& path ) {
+IOStreamZip* IOStreamZip::New( Zip* pack, const std::string& path ) {
 	return eeNew( IOStreamZip, ( pack, path ) );
 }
 
-IOStreamZip::IOStreamZip( Zip * pack, const std::string& path ) :
-	mPath( path ),
-	mZip( pack->getZip() ),
-	mFile( NULL ),
-	mPos( 0 )
-{
+IOStreamZip::IOStreamZip( Zip* pack, const std::string& path ) :
+	mPath( path ), mZip( pack->getZip() ), mFile( NULL ), mPos( 0 ) {
 	struct zip_stat zs;
 	int err = zip_stat( mZip, path.c_str(), 0, &zs );
 
@@ -25,15 +21,15 @@ IOStreamZip::IOStreamZip( Zip * pack, const std::string& path ) :
 
 IOStreamZip::~IOStreamZip() {
 	if ( isOpen() ) {
-		zip_fclose(mFile);
+		zip_fclose( mFile );
 	}
 }
 
-ios_size IOStreamZip::read( char * data, ios_size size ) {
+ios_size IOStreamZip::read( char* data, ios_size size ) {
 	int res = -1;
 
 	if ( isOpen() ) {
-		res = zip_fread( mFile, reinterpret_cast<void*> (&data[0]), size );
+		res = zip_fread( mFile, reinterpret_cast<void*>( &data[0] ), size );
 
 		if ( -1 != res ) {
 			mPos += size;
@@ -43,7 +39,7 @@ ios_size IOStreamZip::read( char * data, ios_size size ) {
 	return -1 != res ? res : 0;
 }
 
-ios_size IOStreamZip::write( const char * data, ios_size size ) {
+ios_size IOStreamZip::write( const char* data, ios_size size ) {
 	return 0;
 }
 
@@ -85,4 +81,4 @@ bool IOStreamZip::isOpen() {
 	return NULL != mFile;
 }
 
-}}
+}} // namespace EE::System

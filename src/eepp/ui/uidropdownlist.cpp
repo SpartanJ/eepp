@@ -1,22 +1,25 @@
-#include <eepp/ui/uidropdownlist.hpp>
-#include <eepp/ui/uithememanager.hpp>
+#include <eepp/scene/actions/actions.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <eepp/scene/actions/actions.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
-UIDropDownList * UIDropDownList::New() {
+UIDropDownList* UIDropDownList::NewWithTag( const std::string& tag ) {
+	return eeNew( UIDropDownList, ( tag ) );
+}
+
+UIDropDownList* UIDropDownList::New() {
 	return eeNew( UIDropDownList, () );
 }
 
-UIDropDownList::UIDropDownList() :
-	UITextInput( "dropdownlist" ),
-	mListBox( NULL ),
-	mFriendCtrl( NULL )
-{
-	clipEnable();
+UIDropDownList::UIDropDownList( const std::string& tag ) :
+	UITextInput( tag ), mListBox( NULL ), mFriendNode( NULL ) {
+	setClipType( ClipType::ContentBox );
 	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
 
@@ -24,17 +27,25 @@ UIDropDownList::UIDropDownList() :
 
 	applyDefaultTheme();
 
-	mListBox = UIListBox::NewWithTag( "dropdownlist::listbox" );
-	mListBox->setSize( mDpSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mDpSize.getHeight() );
+	mListBox = UIListBox::NewWithTag( mTag + "::listbox" );
+	mListBox->setSize( getSize().getWidth(),
+					   mStyleConfig.MaxNumVisibleItems * getSize().getHeight() );
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
+	// This will force to change the parent when shown, and force the CSS style reload.
+	mListBox->setParent( this );
 
-	mListBox->addEventListener( Event::OnWidgetFocusLoss, cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
-	mListBox->addEventListener( Event::OnItemSelected	, cb::Make1( this, &UIDropDownList::onItemSelected ) );
-	mListBox->addEventListener( Event::OnItemClicked, cb::Make1( this, &UIDropDownList::onItemClicked ) );
-	mListBox->addEventListener( Event::OnItemKeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( Event::KeyDown		, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( Event::OnControlClear, cb::Make1( this, &UIDropDownList::onControlClear ) );
+	mListBox->addEventListener( Event::OnWidgetFocusLoss,
+								cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
+	mListBox->addEventListener( Event::OnItemSelected,
+								cb::Make1( this, &UIDropDownList::onItemSelected ) );
+	mListBox->addEventListener( Event::OnItemClicked,
+								cb::Make1( this, &UIDropDownList::onItemClicked ) );
+	mListBox->addEventListener( Event::OnItemKeyDown,
+								cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( Event::OnClear, cb::Make1( this, &UIDropDownList::onWidgetClear ) );
+	mListBox->addEventListener( Event::OnClose, [&]( const Event* ) { mListBox = nullptr; } );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -49,7 +60,7 @@ bool UIDropDownList::isType( const Uint32& type ) const {
 	return UIDropDownList::getType() == type ? true : UITextInput::isType( type );
 }
 
-void UIDropDownList::setTheme( UITheme * Theme ) {
+void UIDropDownList::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "dropdownlist" );
@@ -60,7 +71,7 @@ void UIDropDownList::setTheme( UITheme * Theme ) {
 void UIDropDownList::onSizeChange() {
 	onAutoSize();
 
-	UIWidget::onSizeChange();
+	UITextInput::onSizeChange();
 }
 
 void UIDropDownList::onThemeLoaded() {
@@ -69,24 +80,27 @@ void UIDropDownList::onThemeLoaded() {
 	onAutoSize();
 }
 
-void UIDropDownList::setFriendControl( UINode * friendCtrl ) {
-	mFriendCtrl = friendCtrl;
+void UIDropDownList::setFriendNode( UINode* friendNode ) {
+	mFriendNode = friendNode;
 }
 
 void UIDropDownList::onAutoSize() {
-	if ( mLayoutHeightRules == WRAP_CONTENT ) {
-		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
-	} else if ( ( mFlags & UI_AUTO_SIZE || 0 == mDpSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
-		setInternalHeight( getSkinSize().getHeight() );
+	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getHeight() ),
+							  mTextCache->getLineSpacing() );
+
+	if ( mHeightPolicy == SizePolicy::WrapContent ) {
+		setInternalPixelsHeight( eeceil( max + mPaddingPx.Top + mPaddingPx.Bottom ) );
+	} else if ( ( ( mFlags & UI_AUTO_SIZE ) || 0 == getSize().getHeight() ) && max > 0 ) {
+		setInternalPixelsHeight( eeceil( max ) );
 	}
 }
 
-UIListBox * UIDropDownList::getListBox() const {
+UIListBox* UIDropDownList::getListBox() const {
 	return mListBox;
 }
 
 Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( mEnabled && mVisible && isMouseOver() ) {
+	if ( mEnabled && mVisible && isMouseOver() && NULL != mListBox ) {
 		if ( Flags & EE_BUTTONS_WUWD ) {
 			if ( Flags & EE_BUTTON_WUMASK ) {
 				mListBox->selectPrev();
@@ -104,10 +118,10 @@ Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( ( Flags & EE_BUTTON_LMASK ) && NULL == mFriendCtrl )
+	if ( ( Flags & EE_BUTTON_LMASK ) && NULL == mFriendNode )
 		showList();
 
-	if ( NULL != mFriendCtrl ) {
+	if ( NULL != mFriendNode ) {
 		UITextInput::onMouseClick( Pos, Flags );
 	}
 
@@ -115,42 +129,58 @@ Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) 
 }
 
 void UIDropDownList::showList() {
+	if ( NULL == mListBox )
+		return;
+
 	if ( !mListBox->isVisible() ) {
-		if ( !mStyleConfig.PopUpToMainControl )
-			mListBox->setParent( getWindowContainer() );
-		else
-			mListBox->setParent( mSceneNode );
-
-		mListBox->toFront();
-
-		Vector2f Pos( mDpPos.x, mDpPos.y + mDpSize.getHeight() );
-
-		if ( mStyleConfig.PopUpToMainControl ) {
-			getParent()->nodeToWorld( Pos );
-			Pos = PixelDensity::pxToDp( Pos );
-		} else {
-			Node * ParentLoop = getParent();
-			Node * rp = getWindowContainer();
-			while ( rp != ParentLoop ) {
-				Pos += ParentLoop->getPosition();
-				ParentLoop = ParentLoop->getParent();
-			}
-		}
-
-		mListBox->setPosition( Pos );
-
 		if ( mListBox->getCount() ) {
 			Rectf tPadding = mListBox->getContainerPadding();
 
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 
-			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() )
-				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mDpSize.getWidth(), (Int32)( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
-			else {
-				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mDpSize.getWidth(), (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
+			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() ) {
+				mListBox->setSize(
+					NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth(),
+					(Int32)( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) +
+						tPadding.Top + tPadding.Bottom );
+			} else {
+				mListBox->setSize( NULL != mFriendNode ? mFriendNode->getSize().getWidth()
+													   : getSize().getWidth(),
+								   (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) +
+									   tPadding.Top + tPadding.Bottom );
 			}
 
 			mListBox->getVerticalScrollBar()->setValue( sliderValue );
+
+			if ( !mStyleConfig.PopUpToRoot )
+				mListBox->setParent( getWindowContainer() );
+			else
+				mListBox->setParent( getUISceneNode()->getRoot() );
+
+			mListBox->toFront();
+
+			Vector2f pos( mDpPos.x, mDpPos.y + getSize().getHeight() );
+			Vector2f posCpy( pos );
+			nodeToWorld( posCpy );
+
+			if ( !getUISceneNode()->getWorldBounds().contains(
+					 Rectf( posCpy, mListBox->getSize() ) ) ) {
+				pos = Vector2f( mDpPos.x, mDpPos.y - mListBox->getSize().getHeight() );
+			}
+
+			if ( mStyleConfig.PopUpToRoot ) {
+				getParent()->nodeToWorld( pos );
+				pos = PixelDensity::pxToDp( pos );
+			} else {
+				Node* parentNode = getParent();
+				Node* rp = getWindowContainer();
+				while ( rp != parentNode ) {
+					pos += parentNode->getPosition();
+					parentNode = parentNode->getParent();
+				}
+			}
+
+			mListBox->setPosition( pos );
 
 			show();
 
@@ -161,22 +191,26 @@ void UIDropDownList::showList() {
 	}
 }
 
-bool UIDropDownList::getPopUpToMainControl() const {
-	return mStyleConfig.PopUpToMainControl;
+bool UIDropDownList::getPopUpToRoot() const {
+	return mStyleConfig.PopUpToRoot;
 }
 
-void UIDropDownList::setPopUpToMainControl(bool popUpToMainControl) {
-	mStyleConfig.PopUpToMainControl = popUpToMainControl;
+void UIDropDownList::setPopUpToRoot( bool popUpToRoot ) {
+	mStyleConfig.PopUpToRoot = popUpToRoot;
 }
 
 Uint32 UIDropDownList::getMaxNumVisibleItems() const {
 	return mStyleConfig.MaxNumVisibleItems;
 }
 
-void UIDropDownList::setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems) {
-	mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
+void UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisibleItems ) {
+	if ( maxNumVisibleItems != mStyleConfig.MaxNumVisibleItems ) {
+		mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
 
-	mListBox->setSize( mDpSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mDpSize.getHeight() );
+		if ( NULL != mListBox )
+			mListBox->setSize( getSize().getWidth(),
+							   mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() );
+	}
 }
 
 const UIDropDownList::StyleConfig& UIDropDownList::getStyleConfig() const {
@@ -187,38 +221,38 @@ void UIDropDownList::setStyleConfig( const StyleConfig& styleConfig ) {
 	mStyleConfig = styleConfig;
 
 	setMaxNumVisibleItems( mStyleConfig.MaxNumVisibleItems );
-	setPopUpToMainControl( mStyleConfig.PopUpToMainControl );
+	setPopUpToRoot( mStyleConfig.PopUpToRoot );
 }
 
-void UIDropDownList::onControlClear( const Event * ) {
+void UIDropDownList::onWidgetClear( const Event* ) {
 	setText( "" );
 }
 
-void UIDropDownList::onItemKeyDown( const Event * Event ) {
-	const KeyEvent * KEvent = reinterpret_cast<const KeyEvent*> ( Event );
+void UIDropDownList::onItemKeyDown( const Event* Event ) {
+	const KeyEvent* KEvent = reinterpret_cast<const KeyEvent*>( Event );
 
 	if ( KEvent->getKeyCode() == KEY_RETURN )
 		onItemClicked( Event );
 }
 
-void UIDropDownList::onListBoxFocusLoss( const Event * ) {
+void UIDropDownList::onListBoxFocusLoss( const Event* ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
-	bool frienIsFocus = NULL != mFriendCtrl && mFriendCtrl == getEventDispatcher()->getFocusControl();
-	bool isChildFocus = isChild( getEventDispatcher()->getFocusControl() );
+	bool frienIsFocus = NULL != mFriendNode && mFriendNode == getEventDispatcher()->getFocusNode();
+	bool isChildFocus = isChild( getEventDispatcher()->getFocusNode() );
 
-	if ( getEventDispatcher()->getFocusControl() != this && !isChildFocus && !frienIsFocus ) {
+	if ( getEventDispatcher()->getFocusNode() != this && !isChildFocus && !frienIsFocus ) {
 		hide();
 	}
 }
 
-void UIDropDownList::onItemClicked( const Event * ) {
+void UIDropDownList::onItemClicked( const Event* ) {
 	hide();
 	setFocus();
 }
 
-void UIDropDownList::onItemSelected( const Event * ) {
+void UIDropDownList::onItemSelected( const Event* ) {
 	setText( mListBox->getItemSelectedText() );
 
 	NodeMessage Msg( this, NodeMessage::Selected, mListBox->getItemSelectedIndex() );
@@ -228,66 +262,137 @@ void UIDropDownList::onItemSelected( const Event * ) {
 }
 
 void UIDropDownList::show() {
+	if ( NULL == mListBox )
+		return;
+
 	mListBox->setEnabled( true );
 	mListBox->setVisible( true );
 
-	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+	if ( NULL != getUISceneNode() &&
+		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
 		mListBox->runAction( Actions::Sequence::New(
-								 Actions::Fade::New( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->getControlsFadeOutTime() ),
-								 Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
+			Actions::Fade::New( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f,
+								getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
+			Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 	}
 }
 
 void UIDropDownList::hide() {
-	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-		mListBox->runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ),
-													 Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
+	if ( NULL == mListBox )
+		return;
+
+	if ( NULL != getUISceneNode() &&
+		 getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() ) {
+		mListBox->runAction( Actions::Sequence::New(
+			Actions::FadeOut::New( getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
+			Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 	} else {
 		mListBox->setEnabled( false );
 		mListBox->setVisible( false );
 	}
 }
 
-Uint32 UIDropDownList::onKeyDown( const KeyEvent &Event ) {
-	mListBox->onKeyDown( Event );
+Uint32 UIDropDownList::onMouseOver( const Vector2i& position, const Uint32& flags ) {
+	if ( getParent()->isType( UI_TYPE_COMBOBOX ) ) {
+		return UITextInput::onMouseOver( position, flags );
+	} else {
+		return UITextView::onMouseOver( position, flags );
+	}
+}
+
+Uint32 UIDropDownList::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
+	if ( getParent()->isType( UI_TYPE_COMBOBOX ) ) {
+		return UITextInput::onMouseLeave( position, flags );
+	} else {
+		return UITextView::onMouseLeave( position, flags );
+	}
+}
+
+Uint32 UIDropDownList::onKeyDown( const KeyEvent& Event ) {
+	if ( NULL != mListBox )
+		mListBox->onKeyDown( Event );
 
 	return UITextInput::onKeyDown( Event );
 }
 
 void UIDropDownList::destroyListBox() {
-	if ( !SceneManager::instance()->isShootingDown() ) {
-		mListBox->close();
+	if ( !SceneManager::instance()->isShootingDown() && NULL != mListBox &&
+		 mListBox->getParent() != this ) {
+		mListBox->setParent( this );
 	}
 }
 
-bool UIDropDownList::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 
-	if ( "popuptomaincontrol" == name ) {
-		setPopUpToMainControl( attribute.asBool() );
-	} else if ( "maxnumvisibleitems" == name ) {
-		setMaxNumVisibleItems( attribute.asUint() );
-	} else {
-		return UITextInput::setAttribute( attribute, state );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::PopUpToRoot:
+			setPopUpToRoot( attribute.asBool() );
+			break;
+		case PropertyId::MaxVisibleItems:
+			setMaxNumVisibleItems( attribute.asUint() );
+			break;
+		case PropertyId::SelectedIndex:
+		case PropertyId::SelectedText:
+		case PropertyId::ScrollBarStyle:
+		case PropertyId::RowHeight:
+		case PropertyId::VScrollMode:
+		case PropertyId::HScrollMode:
+			if ( NULL != mListBox )
+				return mListBox->applyProperty( attribute );
+			else
+				return false;
+		default:
+			return UITextInput::applyProperty( attribute );
 	}
 
 	return true;
 }
 
-void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
-	beginAttributesTransaction();
+std::string UIDropDownList::getPropertyString( const PropertyDefinition* propertyDef,
+											   const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
 
-	UITextInput::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		if ( String::startsWith( std::string( ait->name() ), "listbox_" ) ) {
-			mListBox->setAttribute( NodeAttribute( std::string( ait->name() + 8 ), ait->value() ) );
-		}
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::PopUpToRoot:
+			return mStyleConfig.PopUpToRoot ? "true" : "false";
+		case PropertyId::MaxVisibleItems:
+			return String::toString( mStyleConfig.MaxNumVisibleItems );
+		case PropertyId::SelectedIndex:
+		case PropertyId::SelectedText:
+		case PropertyId::ScrollBarStyle:
+		case PropertyId::RowHeight:
+		case PropertyId::VScrollMode:
+		case PropertyId::HScrollMode:
+			if ( NULL != mListBox )
+				return mListBox->getPropertyString( propertyDef, propertyIndex );
+		default:
+			return UITextInput::getPropertyString( propertyDef, propertyIndex );
 	}
 
-	mListBox->loadItemsFromXmlNode( node );
+	return "";
+}
+
+std::vector<PropertyId> UIDropDownList::getPropertiesImplemented() const {
+	auto props = UITextInput::getPropertiesImplemented();
+	auto local = { PropertyId::PopUpToRoot,	 PropertyId::MaxVisibleItems, PropertyId::SelectedIndex,
+				   PropertyId::SelectedText, PropertyId::ScrollBarStyle,  PropertyId::RowHeight,
+				   PropertyId::VScrollMode,	 PropertyId::HScrollMode };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
+void UIDropDownList::loadFromXmlNode( const pugi::xml_node& node ) {
+	beginAttributesTransaction();
+
+	if ( NULL != mListBox )
+		mListBox->loadItemsFromXmlNode( node );
+
+	UITextInput::loadFromXmlNode( node );
 
 	endAttributesTransaction();
 }
 
-}}
+}} // namespace EE::UI

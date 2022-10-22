@@ -1,183 +1,192 @@
 #ifndef EE_UICUILISTBOX_HPP
 #define EE_UICUILISTBOX_HPP
 
-#include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
-#include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uitouchdraggablewidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIListBox : public UITouchDragableWidget {
-	public:
-		static UIListBox * New();
+class EE_API UIListBox : public UITouchDraggableWidget {
+  public:
+	static UIListBox* New();
 
-		UIListBox();
+	UIListBox();
 
-		static UIListBox * NewWithTag( const std::string& tag );
+	static UIListBox* NewWithTag( const std::string& tag );
 
-		explicit UIListBox( const std::string& tag );
+	explicit UIListBox( const std::string& tag );
 
-		virtual ~UIListBox();
+	virtual ~UIListBox();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		void clear();
+	void clear();
 
-		void addListBoxItems( std::vector<String> Texts );
+	void addListBoxItems( std::vector<String> Texts );
 
-		Uint32 addListBoxItem( const String& Text );
+	Uint32 addListBoxItem( const String& Text );
 
-		Uint32 addListBoxItem( UIListBoxItem * Item );
+	Uint32 addListBoxItem( UIListBoxItem* Item );
 
-		Uint32 removeListBoxItem( const String& Text );
+	Uint32 removeListBoxItem( const String& Text );
 
-		Uint32 removeListBoxItem( UIListBoxItem * Item );
+	Uint32 removeListBoxItem( UIListBoxItem* Item );
 
-		Uint32 removeListBoxItem( Uint32 ItemIndex );
+	Uint32 removeListBoxItem( Uint32 ItemIndex );
 
-		void removeListBoxItems( std::vector<Uint32> ItemsIndex );
+	void removeListBoxItems( std::vector<Uint32> ItemsIndex );
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		bool isMultiSelect() const;
+	bool isMultiSelect() const;
 
-		UIScrollBar * getVerticalScrollBar() const;
+	UIScrollBar* getVerticalScrollBar() const;
 
-		UIScrollBar * getHorizontalScrollBar() const;
+	UIScrollBar* getHorizontalScrollBar() const;
 
-		UIListBoxItem * getItem( const Uint32& Index ) const;
+	UIListBoxItem* getItem( const Uint32& Index ) const;
 
-		Uint32 getItemIndex( UIListBoxItem * Item );
+	Uint32 getItemIndex( UIListBoxItem* Item );
 
-		Uint32 getItemIndex( const String& Text );
+	Uint32 getItemIndex( const String& Text );
 
-		UIListBoxItem * getItemSelected();
+	UIListBoxItem* getItemSelected();
 
-		String getItemSelectedText() const;
+	String getItemSelectedText() const;
 
-		Uint32 getItemSelectedIndex() const;
+	Uint32 getItemSelectedIndex() const;
 
-		std::list<Uint32> getItemsSelectedIndex() const;
+	std::list<Uint32> getItemsSelectedIndex() const;
 
-		std::list<UIListBoxItem *> getItemsSelected();
+	std::list<UIListBoxItem*> getItemsSelected();
 
-		Rectf getContainerPadding() const;
+	Rectf getContainerPadding() const;
 
-		void setSmoothScroll( const bool& soft );
+	void setSmoothScroll( const bool& soft );
 
-		const bool& isSmoothScroll() const;
+	const bool& isSmoothScroll() const;
 
-		void setRowHeight( const Uint32& height );
+	void setRowHeight( const Uint32& height );
 
-		const Uint32& getRowHeight() const;
+	const Uint32& getRowHeight() const;
 
-		Uint32 getCount();
+	Uint32 getCount();
 
-		void setSelected( Uint32 Index );
+	void setSelected( Uint32 Index );
 
-		void setSelected( const String& Text );
+	void setSelected( const String& Text );
 
-		void selectPrev();
+	void selectPrev();
 
-		void selectNext();
+	void selectNext();
 
-		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+	void setVerticalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
+	const ScrollBarMode& getVerticalScrollMode() const;
 
-		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+	void setHorizontalScrollMode( const ScrollBarMode& Mode );
 
-		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
+	const ScrollBarMode& getHorizontalScrollMode() const;
 
-		void loadFromXmlNode(const pugi::xml_node & node);
+	void loadFromXmlNode( const pugi::xml_node& node );
 
-		void loadItemsFromXmlNode(const pugi::xml_node & node);
+	void loadItemsFromXmlNode( const pugi::xml_node& node );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		friend class UIListBoxItem;
-		friend class UIItemContainer<UIListBox>;
-		friend class UIDropDownList;
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		Uint32 				mRowHeight;
-		UI_SCROLLBAR_MODE	mVScrollMode;
-		UI_SCROLLBAR_MODE	mHScrollMode;
-		Rectf				mContainerPadding;
-		Rectf				mHScrollPadding;
-		Rectf				mVScrollPadding;
-		UIItemContainer<UIListBox> * mContainer;
-		UIScrollBar * 		mVScrollBar;
-		UIScrollBar * 		mHScrollBar;
-		Uint32 				mLastPos;
-		Uint32 				mMaxTextWidth;
-		Int32 				mHScrollInit;
-		Int32 				mItemsNotVisible;
-		Uint32				mLastTickMove;
-		UIListBoxItem *		mDummyItem;
-		Uint32				mVisibleFirst;
-		Uint32				mVisibleLast;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		bool 				mSmoothScroll;
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		std::list<Uint32>				mSelected;
-		std::vector<UIListBoxItem *> 	mItems;
-		std::vector<String>				mTexts;
+  protected:
+	friend class UIListBoxItem;
+	friend class UIItemContainer<UIListBox>;
+	friend class UIDropDownList;
 
-		void updateScroll( bool FromScrollChange = false );
+	Uint32 mRowHeight;
+	ScrollBarMode mVScrollMode;
+	ScrollBarMode mHScrollMode;
+	Rectf mContainerPadding;
+	UIItemContainer<UIListBox>* mContainer;
+	UIScrollBar* mVScrollBar;
+	UIScrollBar* mHScrollBar;
+	Uint32 mLastPos;
+	Uint32 mMaxTextWidth;
+	Int32 mHScrollInit;
+	Int32 mItemsNotVisible;
+	UIListBoxItem* mDummyItem;
+	Uint32 mVisibleFirst;
+	Uint32 mVisibleLast;
 
-		void onScrollValueChange( const Event * Event );
+	bool mSmoothScroll;
 
-		void onHScrollValueChange( const Event * Event );
+	std::list<Uint32> mSelected;
+	std::vector<UIListBoxItem*> mItems;
+	std::vector<String> mTexts;
 
-		virtual void onSizeChange();
+	void updateScroll( bool fromScrollChange = false );
 
-		virtual void onPaddingChange();
+	void updateScrollBarState();
 
-		void setRowHeight();
+	void onScrollValueChange( const Event* Event );
 
-		void updateListBoxItemsSize();
+	void onHScrollValueChange( const Event* Event );
 
-		Uint32 getListBoxItemIndex( const String& Name );
+	virtual void onSizeChange();
 
-		Uint32 getListBoxItemIndex( UIListBoxItem * Item );
+	virtual void onPaddingChange();
 
-		void itemClicked( UIListBoxItem * Item );
+	void setRowHeight();
 
-		void resetItemsStates();
+	void updateListBoxItemsSize();
 
-		virtual Uint32 onSelected();
+	Uint32 getListBoxItemIndex( const String& Name );
 
-		void containerResize();
+	Uint32 getListBoxItemIndex( UIListBoxItem* Item );
 
-		void itemUpdateSize( UIListBoxItem * Item );
+	void itemClicked( UIListBoxItem* Item );
 
-		void autoPadding();
+	void resetItemsStates();
 
-		void findMaxWidth();
+	virtual Uint32 onSelected();
 
-		UIListBoxItem * createListBoxItem( const String& Name );
+	void containerResize();
 
-		void createItemIndex( const Uint32& i );
+	void itemUpdateSize( UIListBoxItem* Item );
 
-		virtual void onAlphaChange();
+	void autoPadding();
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	void findMaxWidth();
 
-		virtual Uint32 onKeyDown( const KeyEvent &Event );
+	UIListBoxItem* createListBoxItem( const String& Name );
 
-		void itemKeyEvent( const KeyEvent &Event );
+	void createItemIndex( const Uint32& i );
 
-		void setHScrollStep();
+	virtual void onAlphaChange();
 
-		virtual void onTouchDragValueChange( Vector2f diff );
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		virtual bool isTouchOverAllowedChilds();
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
+
+	void itemKeyEvent( const KeyEvent& Event );
+
+	void setHScrollStep();
+
+	void updateScrollBar();
+
+	void updatePageStep();
+
+	virtual void onTouchDragValueChange( Vector2f diff );
+
+	virtual bool isTouchOverAllowedChilds();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

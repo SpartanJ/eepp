@@ -2,157 +2,176 @@
 #define EE_WINDOWCENGINE_H
 
 #include <eepp/window/base.hpp>
-#include <eepp/window/window.hpp>
-#include <eepp/window/platformhelper.hpp>
 #include <eepp/window/displaymanager.hpp>
+#include <eepp/window/platformhelper.hpp>
+#include <eepp/window/window.hpp>
 #include <list>
 
-namespace EE { namespace System { class IniFile; class Pack; } }
-namespace EE { namespace Window { namespace Backend { class WindowBackend; } } }
+namespace EE { namespace System {
+class IniFile;
+class Pack;
+}} // namespace EE::System
+namespace EE { namespace Window { namespace Backend {
+class WindowBackendLibrary;
+}}} // namespace EE::Window::Backend
 
 namespace EE { namespace Window {
 
 /** @brief The window management class. Here the engine starts working. (Singleton Class). */
 class EE_API Engine {
-	SINGLETON_DECLARE_HEADERS(Engine)
+	SINGLETON_DECLARE_HEADERS( Engine )
 
-	public:
-		~Engine();
+  public:
+	~Engine();
 
-		/** Creates a new window.
-		* SDL2, SFML backends support more than one window creation, SDL 1.2 backend only 1 window.
-		*/
-		EE::Window::Window * createWindow( WindowSettings Settings, ContextSettings Context = ContextSettings() );
+	static bool isEngineRunning();
 
-		/** Destroy the window instance, and set as current other window running ( if any ).
-		* This function is only useful for multi-window environment. Avoid using it with one window context.
-		*/
-		void destroyWindow( EE::Window::Window * window );
+	/** Creates a new window. */
+	EE::Window::Window* createWindow( WindowSettings Settings,
+									  ContextSettings Context = ContextSettings() );
 
-		/** @return The current Window context. */
-		EE::Window::Window * getCurrentWindow() const;
+	/** Destroy the window instance, and set as current other window running ( if any ).
+	 * This function is only useful for multi-window environment. Avoid using it with one window
+	 * context.
+	 */
+	void destroyWindow( EE::Window::Window* window );
 
-		/** Set the window as the current. */
-		void setCurrentWindow( EE::Window::Window * window );
+	/** @return The current Window context. */
+	EE::Window::Window* getCurrentWindow() const;
 
-		/** @return The number of windows created. */
-		Uint32	getWindowCount() const;
+	/** Set the window as the current. */
+	void setCurrentWindow( EE::Window::Window* window );
 
-		/** @return If any window is created. */
-		bool isRunning() const;
+	/** @return The number of windows created. */
+	Uint32 getWindowCount() const;
 
-		/** @return If the window instance is inside the window list. */
-		bool existsWindow( EE::Window::Window * window );
+	/** @return If any window is created. */
+	bool isRunning() const;
 
-		/** Constructs WindowSettings from an ini file
-		It will search for the following properties:
-			Width			Window width
-			Height			Window height
-			BitColor		32,16,8
-			Windowed		bool
-			Resizeable		bool
-			Backend			SDL, SDL2 or SFML
-			WinIcon			The path to the window icon
-			WinCaption		The window default title
+	/** @return If the window instance is inside the window list. */
+	bool existsWindow( EE::Window::Window* window );
 
-			@param iniPath The ini file path
-			@param iniKeyName The ini key name to search the properties
-		*/
-		WindowSettings createWindowSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
+	void forEachWindow( std::function<void( EE::Window::Window* )> cb );
 
-		/** Constructs WindowSettings from an ini file instance
-		It will search for the following properties:
-			Width			Window width
-			Height			Window height
-			BitColor		32,16,8
-			Windowed		bool
-			Resizeable		bool
-			Backend			SDL, SDL2 or SFML
-			WinIcon			The path to the window icon
-			WinCaption		The window default title
+	EE::Window::Window* getWindowID( const Uint32& winID );
 
-			@param ini The ini file instance
-			@param iniKeyName The ini key name to search the properties
-		*/
-		WindowSettings createWindowSettings( IniFile * ini, std::string iniKeyName = "EEPP" );
+	/** Constructs WindowSettings from an ini file
+	It will search for the following properties:
+		Width			Window width
+		Height			Window height
+		BitColor		32,16,8
+		Windowed		bool
+		Resizeable		bool
+		Backend			SDL2
+		WinIcon			The path to the window icon
+		WinTitle		The window default title
 
-		/** Constructs ContextSettings from an ini file\n
-		It will search for the following properties:
-			VSync				bool
-			GLVersion			Selects the default renderer: 2 for OpenGL 2, 3 for OpenGL 3, 4 for OpenGL ES 2
-			DoubleBuffering		bool
-			DepthBufferSize		int
-			StencilBufferSize	int
+		@param iniPath The ini file path
+		@param iniKeyName The ini key name to search the properties
+	*/
+	WindowSettings createWindowSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
 
-			@param iniPath The ini file path
-			@param iniKeyName The ini key name to search the properties
-		*/
-		ContextSettings createContextSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
+	/** Constructs WindowSettings from an ini file instance
+	It will search for the following properties:
+		Width			Window width
+		Height			Window height
+		BitColor		32,16,8
+		Windowed		bool
+		Resizeable		bool
+		Backend			SDL2
+		WinIcon			The path to the window icon
+		WinTitle		The window default title
 
-		/** Constructs ContextSettings from an ini file instance\n
-		It will search for the following properties:
-			VSync				bool
-			GLVersion			Selects the default renderer: 2 for OpenGL 2, 3 for OpenGL 3, 4 for OpenGL ES 2
-			DoubleBuffering		bool
-			DepthBufferSize		int
-			StencilBufferSize	int
+		@param ini The ini file instance
+		@param iniKeyName The ini key name to search the properties
+	*/
+	WindowSettings createWindowSettings( IniFile* ini, std::string iniKeyName = "EEPP" );
 
-			@param ini The ini file instance
-			@param iniKeyName The ini key name to search the properties
-		*/
-		ContextSettings createContextSettings( IniFile * ini, std::string iniKeyName = "EEPP" );
+	/** Constructs ContextSettings from an ini file\n
+	It will search for the following properties:
+		VSync				bool
+		GLVersion			Selects the default renderer: 2 for OpenGL 2, 3 for OpenGL 3, 4 for
+	OpenGL ES 2 DoubleBuffering		bool DepthBufferSize		int StencilBufferSize	int
 
-		/** Enabling Shared GL Context allows asynchronous OpenGL resource loading ( only if is supported by the backend and the OS, SDL 2 backend is the only one supported ).
-		**	If the TextureLoader is threaded, will upload the texture in another thread to the GPU. So, it will not block the main rendering thread.
-		**	Shared GL Context is disabled by default.
-		*/
-		void enableSharedGLContext();
+		@param iniPath The ini file path
+		@param iniKeyName The ini key name to search the properties
+	*/
+	ContextSettings createContextSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
 
-		/** Disable the Shared GL Context
-		**	@see enableSharedGLContext()
-		*/
-		void disableSharedGLContext();
+	/** Constructs ContextSettings from an ini file instance\n
+	It will search for the following properties:
+		VSync				bool
+		GLVersion			Selects the default renderer: 2 for OpenGL 2, 3 for OpenGL 3, 4 for
+	OpenGL ES 2 DoubleBuffering		bool DepthBufferSize		int StencilBufferSize	int
 
-		/** @return If the Shared GL Context is enabled and ready to use. */
-		bool isSharedGLContextEnabled();
+		@param ini The ini file instance
+		@param iniKeyName The ini key name to search the properties
+	*/
+	ContextSettings createContextSettings( IniFile* ini, std::string iniKeyName = "EEPP" );
 
-		/** @return The id of the thread that was used to initialize the OpenGL Context. */
-		Uint32 getMainThreadId();
+	/** Enabling Shared GL Context allows asynchronous OpenGL resource loading ( only if is
+	 *supported by the backend and the OS, SDL 2 backend is the only one supported ). *	If the
+	 *TextureLoader is threaded, will upload the texture in another thread to the GPU. So, it will
+	 *not block the main rendering thread. *	Shared GL Context is disabled by default.
+	 */
+	void enableSharedGLContext();
 
-		/** @return The instance of platform class that provides some helpers for some platforms */
-		PlatformHelper * getPlatformHelper();
+	/** Disable the Shared GL Context
+	**	@see enableSharedGLContext()
+	*/
+	void disableSharedGLContext();
 
-		/** @return The display manager. Holds the physical displays information. */
-		DisplayManager * getDisplayManager();
-	protected:
-		friend class Window;
+	/** @return If the Shared GL Context is enabled and ready to use. */
+	bool isSharedGLContextEnabled();
 
-		Backend::WindowBackend *	mBackend;
-		std::list<Window*>	mWindows;
-		EE::Window::Window *			mWindow;
-		bool				mSharedGLContext;
-		Uint32				mMainThreadId;
-		PlatformHelper *	mPlatformHelper;
-		Pack *				mZip;
-		DisplayManager *	mDisplayManager;
+	/** @return Indicates if the current running platform/OS supports threads (always true except
+	 * for emscripten) */
+	bool isThreaded();
 
-		Engine();
+	/** @return The id of the thread that was used to initialize the OpenGL Context. */
+	Uint32 getMainThreadId();
 
-		void destroy();
+	/** @returns True if the current thread is the main thread. */
+	bool isMainThread() const;
 
-		Backend::WindowBackend * createSDL2Backend( const WindowSettings& Settings );
+	/** @return The instance of platform class that provides some helpers for some platforms */
+	PlatformHelper* getPlatformHelper();
 
-		Backend::WindowBackend * createSFMLBackend( const WindowSettings& Settings );
+	/** @return The display manager. Holds the physical displays information. */
+	DisplayManager* getDisplayManager();
 
-		EE::Window::Window * createSDL2Window( const WindowSettings& Settings, const ContextSettings& Context );
+	/** Open a URL in a separate, system-provided application.
+	 * @return true if success
+	 */
+	bool openURI( const std::string& url );
 
-		EE::Window::Window * createSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context );
+  protected:
+	friend class Window;
 
-		EE::Window::Window * createDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context );
+	Backend::WindowBackendLibrary* mBackend;
+	std::map<Uint32, Window*> mWindows;
+	EE::Window::Window* mWindow;
+	bool mSharedGLContext;
+	Uint32 mMainThreadId;
+	PlatformHelper* mPlatformHelper;
+	Pack* mZip;
+	DisplayManager* mDisplayManager;
 
-		Uint32 getDefaultBackend() const;
+	Engine();
+
+	void destroy();
+
+	Backend::WindowBackendLibrary* createSDL2Backend( const WindowSettings& Settings );
+
+	EE::Window::Window* createSDL2Window( const WindowSettings& Settings,
+										  const ContextSettings& Context );
+
+	EE::Window::Window* createDefaultWindow( const WindowSettings& Settings,
+											 const ContextSettings& Context );
+
+	WindowBackend getDefaultBackend() const;
 };
 
-}}
+}} // namespace EE::Window
 
 #endif

@@ -2,10 +2,14 @@
 
 namespace EE { namespace Window {
 
-Display::Display( int displayIndex ) : index ( displayIndex ) {}
+Display::Display( int displayIndex ) : index( displayIndex ) {}
 
-EE_PIXEL_DENSITY Display::getPixelDensity() {
+PixelDensitySize Display::getPixelDensitySize() {
 	return PixelDensity::fromDPI( getDPI() );
+}
+
+Float Display::getPixelDensity() {
+	return PixelDensity::toFloat( PixelDensity::fromDPI( getDPI() ) );
 }
 
 Display::~Display() {}
@@ -22,4 +26,12 @@ void DisplayManager::enableScreenSaver() {}
 
 void DisplayManager::disableScreenSaver() {}
 
-}}
+void DisplayManager::enableMouseFocusClickThrough() {}
+
+void DisplayManager::disableMouseFocusClickThrough() {}
+
+void DisplayManager::disableBypassCompositor() {}
+
+void DisplayManager::enableBypassCompositor() {}
+
+}} // namespace EE::Window

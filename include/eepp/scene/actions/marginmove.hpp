@@ -10,62 +10,68 @@ using namespace EE::Math;
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API MarginMove : public Action {
-	public:
-		enum InterpolateFlag {
-			Left   = 1 << 0,
-			Top    = 1 << 1,
-			Right  = 1 << 2,
-			Bottom = 1 << 3,
-			All    = Left | Top | Right | Bottom
-		};
+  public:
+	enum InterpolateFlag {
+		Left = 1 << 0,
+		Top = 1 << 1,
+		Right = 1 << 2,
+		Bottom = 1 << 3,
+		All = Left | Top | Right | Bottom
+	};
 
-		static MarginMove * New( const Rect& start, const Rect& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear, const Uint32& interpolateFlag = InterpolateFlag::All );
+	static MarginMove* New( const Rect& start, const Rect& end, const Time& duration,
+							const Ease::Interpolation& type = Ease::Linear,
+							const Uint32& interpolateFlag = InterpolateFlag::All );
 
-		void start() override;
+	void start() override;
 
-		void stop() override;
+	void stop() override;
 
-		void update( const Time& time ) override;
+	void update( const Time& time ) override;
 
-		bool isDone() override;
+	bool isDone() override;
 
-		virtual Action * clone() const override;
+	virtual Action* clone() const override;
 
-		Action * reverse() const override;
+	Action* reverse() const override;
 
-		Interpolation1d getInterpolationLeft() const;
+	Float getCurrentProgress() override;
 
-		void setInterpolationLeft(const Interpolation1d & interpolationLeft);
+	Time getTotalTime() override;
 
-		Interpolation1d getInterpolationRight() const;
+	Interpolation1d getInterpolationLeft() const;
 
-		void setInterpolationRight(const Interpolation1d & interpolationRight);
+	void setInterpolationLeft( const Interpolation1d& interpolationLeft );
 
-		Interpolation1d getInterpolationTop() const;
+	Interpolation1d getInterpolationRight() const;
 
-		void setInterpolationTop(const Interpolation1d & interpolationTop);
+	void setInterpolationRight( const Interpolation1d& interpolationRight );
 
-		Interpolation1d getInterpolationBottom() const;
+	Interpolation1d getInterpolationTop() const;
 
-		void setInterpolationBottom(const Interpolation1d & interpolationBottom);
+	void setInterpolationTop( const Interpolation1d& interpolationTop );
 
-	protected:
-		MarginMove( const Rect & start, const Rect & end, const Time & duration, const Ease::Interpolation & type, const Uint32& interpolateFlag );
+	Interpolation1d getInterpolationBottom() const;
 
-		void onStart() override;
+	void setInterpolationBottom( const Interpolation1d& interpolationBottom );
 
-		virtual void onUpdate( const Time& time ) override;
+  protected:
+	MarginMove( const Rect& start, const Rect& end, const Time& duration,
+				const Ease::Interpolation& type, const Uint32& interpolateFlag );
 
-		MarginMove();
+	void onStart() override;
 
-		Uint32 mFlags;
-		Interpolation1d mInterpolationLeft;
-		Interpolation1d mInterpolationRight;
-		Interpolation1d mInterpolationTop;
-		Interpolation1d mInterpolationBottom;
+	virtual void onUpdate( const Time& time ) override;
+
+	MarginMove();
+
+	Uint32 mFlags;
+	Interpolation1d mInterpolationLeft;
+	Interpolation1d mInterpolationRight;
+	Interpolation1d mInterpolationTop;
+	Interpolation1d mInterpolationBottom;
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif
-

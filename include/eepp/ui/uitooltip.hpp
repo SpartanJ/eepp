@@ -1,115 +1,135 @@
 #ifndef EE_UICUITOOLTIP_HPP
 #define EE_UICUITOOLTIP_HPP
 
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/graphics/texttransform.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace Graphics {
 class Text;
 class Font;
-}}
+}} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 
 class EE_API UITooltip : public UIWidget {
-	public:
-		static UITooltip * New();
+  public:
+	static UITooltip* New();
 
-		UITooltip();
+	UITooltip();
 
-		virtual ~UITooltip();
+	virtual ~UITooltip();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		void show();
+	void show();
 
-		void hide();
+	void hide();
 
-		virtual void draw();
+	virtual void draw();
 
-		Graphics::Font * getFont() const;
+	Graphics::Font* getFont() const;
 
-		void setFont( Graphics::Font * font );
+	void setFont( Graphics::Font* font );
 
-		virtual const String& getText();
+	virtual const String& getText();
 
-		virtual void setText( const String& text );
+	virtual void setText( const String& text );
 
-		const Color& getFontColor() const;
+	const Color& getFontColor() const;
 
-		void setFontColor( const Color& color );
+	void setFontColor( const Color& color );
 
-		const Color& getFontShadowColor() const;
+	const Color& getFontShadowColor() const;
 
-		void setFontShadowColor( const Color& color );
+	void setFontShadowColor( const Color& color );
 
-		virtual void onTextChanged();
+	virtual void onTextChanged();
 
-		virtual void onFontChanged();
+	virtual void onFontChanged();
 
-		Text * getTextCache();
+	Text* getTextCache();
 
-		Float getTextWidth();
+	Float getTextWidth();
 
-		Float getTextHeight();
+	Float getTextHeight();
 
-		const int& getNumLines() const;
+	const int& getNumLines() const;
 
-		Vector2f getAlignOffset();
+	Vector2f getAlignOffset();
 
-		void setTooltipTime( const Time& Time );
+	UINode* getTooltipOf() const;
 
-		void addTooltipTime( const Time & Time );
+	void setTooltipOf( UINode* tooltipOf );
 
-		const Time & getTooltipTime() const;
+	const UIFontStyleConfig& getFontStyleConfig() const;
 
-		UINode * getTooltipOf() const;
+	void setFontStyleConfig( const UIFontStyleConfig& styleConfig );
 
-		void setTooltipOf(UINode * tooltipOf);
+	Uint32 getCharacterSize() const;
 
-		const UIFontStyleConfig & getFontStyleConfig() const;
+	UITooltip* setFontSize( const Uint32& characterSize );
 
-		void setFontStyleConfig(const UIFontStyleConfig & styleConfig);
+	UITooltip* setFontStyle( const Uint32& fontStyle );
 
-		Uint32 getCharacterSize() const;
+	const Uint32& getFontStyle() const;
 
-		UITooltip * setCharacterSize( const Uint32& characterSize );
+	const Float& getOutlineThickness() const;
 
-		UITooltip * setFontStyle( const Uint32 & fontStyle );
+	UITooltip* setOutlineThickness( const Float& outlineThickness );
 
-		const Uint32& getFontStyle() const;
+	const Color& getOutlineColor() const;
 
-		const Float& getOutlineThickness() const;
+	UITooltip* setOutlineColor( const Color& outlineColor );
 
-		UITooltip * setOutlineThickness( const Float& outlineThickness );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		const Color& getOutlineColor() const;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		UITooltip * setOutlineColor( const Color& outlineColor );
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		Text *	mTextCache;
-		UIFontStyleConfig mStyleConfig;
-		Vector2f 	mAlignOffset;
-		Time		mTooltipTime;
-		UINode *	mTooltipOf;
+	const String& getStringBuffer() const;
 
-		virtual void onAlphaChange();
+	void setStringBuffer( const String& stringBuffer );
 
-		virtual void onSizeChange();
+	void resetTextToStringBuffer();
 
-		virtual void onAutoSize();
+	bool dontAutoHideOnMouseMove() const;
 
-		virtual void autoAlign();
+	void setDontAutoHideOnMouseMove( bool dontAutoHideOnMouseMove );
 
-		virtual void autoPadding();
+	const TextTransform::Value& getTextTransform() const;
+
+	void setTextTransform( const TextTransform::Value& textTransform );
+
+  protected:
+	Text* mTextCache;
+	UIFontStyleConfig mStyleConfig;
+	Vector2f mAlignOffset;
+	Time mTooltipTime;
+	UINode* mTooltipOf;
+	String mStringBuffer;
+	TextTransform::Value mTextTransform{ TextTransform::None };
+	bool mDontAutoHideOnMouseMove{ false };
+
+	virtual void onAlphaChange();
+
+	virtual void onSizeChange();
+
+	virtual void onAutoSize();
+
+	virtual void autoAlign();
+
+	virtual void autoPadding();
+
+	void transformText();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

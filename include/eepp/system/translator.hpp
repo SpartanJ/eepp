@@ -7,52 +7,52 @@ namespace pugi {
 class xml_node;
 }
 
-namespace  EE { namespace System {
+namespace EE { namespace System {
 
 class IOStream;
 class Pack;
 
 class EE_API Translator {
-	public:
-		Translator( const std::locale& locale = std::locale() );
+  public:
+	Translator( const std::locale& locale = std::locale() );
 
-		void loadFromDirectory( std::string dirPath, std::string ext = "xml" );
+	bool loadFromDirectory( std::string dirPath, std::string ext = "xml" );
 
-		void loadFromFile( const std::string& path, std::string lang = "" );
+	bool loadFromFile( const std::string& path, std::string lang = "" );
 
-		void loadFromString( const std::string& string, std::string lang = "" );
+	bool loadFromString( const std::string& string, std::string lang = "" );
 
-		void loadFromMemory( const void * buffer, Int32 bufferSize, std::string lang = "" );
+	bool loadFromMemory( const void* buffer, Int32 bufferSize, std::string lang = "" );
 
-		void loadFromStream( IOStream& stream, std::string lang = "" );
+	bool loadFromStream( IOStream& stream, std::string lang = "" );
 
-		void loadFromPack( Pack * pack, const std::string& FilePackPath, std::string lang = "" );
+	bool loadFromPack( Pack* pack, const std::string& FilePackPath, std::string lang = "" );
 
-		String getString( const std::string& key, const String& defaultValue = String() );
+	String getString( const std::string& key, const String& defaultValue = String() );
 
-		String getStringf( const char * key, ... );
+	String getStringf( const char* key, ... );
 
-		void setLanguageFromLocale( std::locale locale );
+	void setLanguageFromLocale( std::locale locale );
 
-		std::string getDefaultLanguage() const;
+	std::string getDefaultLanguage() const;
 
-		void setDefaultLanguage( const std::string& defaultLanguage );
+	void setDefaultLanguage( const std::string& defaultLanguage );
 
-		std::string getCurrentLanguage() const;
+	std::string getCurrentLanguage() const;
 
-		void setCurrentLanguage( const std::string& currentLanguage );
-	protected:
-		typedef std::map<std::string, String> StringDictionary;
-		typedef std::map<std::string, StringDictionary> StringLocaleDictionary;
+	void setCurrentLanguage( const std::string& currentLanguage );
 
-		std::string mDefaultLanguage;
-		std::string mCurrentLanguage;
-		StringLocaleDictionary mDictionary;
+  protected:
+	typedef std::map<std::string, String> StringDictionary;
+	typedef std::map<std::string, StringDictionary> StringLocaleDictionary;
 
-		void loadNodes( pugi::xml_node node, std::string lang = "" );
+	std::string mDefaultLanguage;
+	std::string mCurrentLanguage;
+	StringLocaleDictionary mDictionary;
+
+	bool loadNodes( pugi::xml_node node, std::string lang = "" );
 };
 
-}}
+}} // namespace EE::System
 
 #endif
-

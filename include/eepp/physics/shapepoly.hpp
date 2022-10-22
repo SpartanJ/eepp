@@ -3,35 +3,35 @@
 
 #include <eepp/physics/shape.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API ShapePoly : public Shape {
-	public:
-		static ShapePoly * New( Physics::Body * body, int numVerts, cVect *verts, cVect offset );
+class EE_API ShapePoly : public Shape {
+  public:
+	static ShapePoly* New( Physics::Body* body, int numVerts, cVect* verts, cVect offset );
 
-		static ShapePoly * New( Physics::Body * body, cpFloat width, cpFloat height );
+	static ShapePoly* New( Physics::Body* body, cpFloat width, cpFloat height );
 
-		ShapePoly( Physics::Body * body, int numVerts, cVect *verts, cVect offset );
+	ShapePoly( Physics::Body* body, int numVerts, cVect* verts, cVect offset );
 
-		ShapePoly( Physics::Body * body, cpFloat width, cpFloat height );
+	ShapePoly( Physics::Body* body, cpFloat width, cpFloat height );
 
-		static bool validate( const cVect * verts, const int numVerts );
+	static bool validate( const cVect* verts, const int numVerts );
 
-		int getNumVerts();
+	int getNumVerts();
 
-		cVect getVert( int idx );
+	cVect getVert( int idx );
 
-		void setVerts( int numVerts, cVect *verts, cVect offset );
+	void setVerts( int numVerts, cVect* verts, cVect offset );
 
-		virtual void draw( Space * space );
+	virtual void draw( Space* space );
 
-		virtual void drawBorder( Space * space );
+	virtual void drawBorder( Space* space );
 
-		static void recenter( int numVerts, cVect * verts );
+	static void recenter( int numVerts, cVect* verts );
 
-		static cVect centroid( int numVerts, const cVect * verts );
+	static cVect centroid( int numVerts, const cVect* verts );
 };
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics
 
 #endif

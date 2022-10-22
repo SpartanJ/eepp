@@ -3,30 +3,28 @@
 
 namespace EE { namespace Scene { namespace Actions {
 
-Close * Close::New(const Time & time) {
+Close* Close::New( const Time& time ) {
 	return eeNew( Close, ( time ) );
 }
 
-void Close::update(const Time &) {
+void Close::update( const Time& ) {
 	if ( NULL != mNode && isDone() ) {
 		mNode->close();
 	}
 }
 
-Action *Close::clone() const {
+Action* Close::clone() const {
 	return New( mTime );
 }
 
-Action *Close::reverse() const {
+Action* Close::reverse() const {
 	return NULL; // or a time machine
 }
 
-Close::Close(const Time & time) :
-	Delay( time )
-{}
+Close::Close( const Time& time ) : Delay( time ) {}
 
 void Close::onStart() {
-	update(Seconds(0));
+	update( Seconds( 0 ) );
 }
 
-}}}
+}}} // namespace EE::Scene::Actions

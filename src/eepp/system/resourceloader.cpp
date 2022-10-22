@@ -1,19 +1,23 @@
 #include <eepp/system/resourceloader.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/system/threadpool.hpp>
 
 namespace EE { namespace System {
 
-ResourceLoader::ResourceLoader( const Uint32& MaxThreads ) :
-	mLoaded(false),
-	mLoading(false),
-	mThreaded(true),
-	mThreads(MaxThreads)
-{
+ResourceLoader::ResourceLoader( const Uint32& maxThreads ) :
+	mLoaded( false ),
+	mLoading( false ),
+	mThreaded( true ),
+	mThreads( maxThreads ),
+	mTotalLoaded( 0 ),
+	mThread( &ResourceLoader::taskRunner, this ) {
 	setThreads();
 }
 
 ResourceLoader::~ResourceLoader() {
 	clear();
+
+	mThread.wait();
 }
 
 void ResourceLoader::setThreads() {
@@ -31,7 +35,7 @@ bool ResourceLoader::isThreaded() const {
 }
 
 Uint32 ResourceLoader::getCount() const {
-	return mObjs.size();
+	return mTasks.size();
 }
 
 void ResourceLoader::setThreaded( const bool& threaded ) {
@@ -40,38 +44,27 @@ void ResourceLoader::setThreaded( const bool& threaded ) {
 	}
 }
 
-void ResourceLoader::add( ObjectLoader * Object ) {
-	mObjs.push_front( Object );
+void ResourceLoader::add( const ObjectLoaderTask& objectLoaderTask ) {
+	if ( !mLoading ) {
+		mTasks.emplace_back( objectLoaderTask );
+	}
 }
 
-bool ResourceLoader::clear( const bool& ClearObjectsLoaded ) {
+bool ResourceLoader::clear() {
 	if ( !mLoading ) {
 		mLoaded = false;
 		mLoading = false;
-
-		std::list<ObjectLoader *>::iterator it;
-
-		for ( it = mObjs.begin(); it != mObjs.end(); ++it )
-			eeSAFE_DELETE( *it );
-
-		mObjs.clear();
-
-		if ( ClearObjectsLoaded ) {
-			for ( it = mObjsLoaded.begin(); it != mObjsLoaded.end(); ++it )
-				eeSAFE_DELETE( *it );
-
-			mObjsLoaded.clear();
-		}
-
+		mTotalLoaded = 0;
+		mTasks.clear();
 		return true;
 	}
 
 	return false;
 }
 
-void ResourceLoader::load( ResLoadCallback Cb ) {
-	if ( Cb )
-		mLoadCbs.push_back( Cb );
+void ResourceLoader::load( const ResLoadCallback& callback ) {
+	if ( callback )
+		mLoadCbs.push_back( callback );
 
 	load();
 }
@@ -80,71 +73,13 @@ void ResourceLoader::load() {
 	if ( mLoaded )
 		return;
 
-	mLoading = true;
-
-	bool AllLoaded = true;
-
-	ObjectLoader * Obj = NULL;
-	std::list<ObjectLoader *>::iterator it;
-	std::list<ObjectLoader *> ObjsErase;
-
-	Uint32 count = 0;
-
-	for ( it = mObjs.begin(); it != mObjs.end(); ++it ) {
-		Obj = (*it);
-
-		if ( NULL != Obj ) {
-			Obj->setThreaded( mThreaded );
-
-			if ( !Obj->isLoaded() ) {
-				if ( !Obj->isLoading() ) {
-					Obj->load();
-				}
-
-				if ( Obj->isLoading() ) {
-					count++;
-				}
-
-				Obj->update();
-
-				if ( !Obj->isLoaded() ) {
-					AllLoaded = false;
-				} else {
-					ObjsErase.push_back( Obj );
-				}
-
-				if ( mThreaded && mThreads == count ) {
-					AllLoaded = false;
-					break;
-				}
-			}
+	if ( mThreaded ) {
+		if ( !mLoading ) {
+			mLoading = true;
+			mThread.launch();
 		}
-	}
-
-	for ( it = ObjsErase.begin(); it != ObjsErase.end(); ++it ) {
-		Obj = (*it);
-		mObjs.remove( Obj );
-		mObjsLoaded.push_back( Obj );
-	}
-
-	if ( AllLoaded ) {
-		setLoaded();
-	}
-}
-
-void ResourceLoader::update() {
-	load();
-}
-
-void ResourceLoader::unload() {
-	if ( mLoaded ) {
-		std::list<ObjectLoader *>::iterator it;
-
-		for ( it = mObjs.begin(); it != mObjs.end(); ++it ) {
-			(*it)->unload();
-		}
-
-		mLoaded = false;
+	} else {
+		serializedLoad();
 	}
 }
 
@@ -157,23 +92,46 @@ bool ResourceLoader::isLoading() {
 }
 
 void ResourceLoader::setLoaded() {
-	mLoaded		= true;
-	mLoading	= false;
+	mLoaded = true;
+	mLoading = false;
 
 	if ( mLoadCbs.size() ) {
-		std::list<ResLoadCallback>::iterator it;
-
-		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); ++it ) {
-			(*it)( this );
+		for ( auto it = mLoadCbs.begin(); it != mLoadCbs.end(); ++it ) {
+			( *it )( this );
 		}
 
 		mLoadCbs.clear();
 	}
 }
 
-Float ResourceLoader::getProgress() {
-	return ( (Float)mObjsLoaded.size() / (Float)( mObjs.size() + mObjsLoaded.size() ) ) * 100.f;
+void ResourceLoader::taskRunner() {
+	{
+		auto pool = ThreadPool::createUnique( eemin( mThreads, (Uint32)mTasks.size() ) );
+
+		for ( auto& task : mTasks ) {
+			pool->run( task, [&] { mTotalLoaded++; } );
+		}
+	}
+
+	mLoading = false;
+	setLoaded();
 }
 
-}}
+void ResourceLoader::serializedLoad() {
+	mLoading = true;
 
+	for ( auto& task : mTasks ) {
+		task();
+
+		mTotalLoaded++;
+	}
+
+	mLoading = false;
+	setLoaded();
+}
+
+Float ResourceLoader::getProgress() {
+	return mTotalLoaded / (float)mTasks.size() * 100.f;
+}
+
+}} // namespace EE::System

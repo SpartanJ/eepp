@@ -1,84 +1,89 @@
 #ifndef EE_UICUISPINBOX_HPP
 #define EE_UICUISPINBOX_HPP
 
-#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uitextinput.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UISpinBox : public UIWidget {
-	public:
-		static UISpinBox * New();
+  public:
+	static UISpinBox* New();
 
-		UISpinBox();
+	UISpinBox();
 
-		virtual ~UISpinBox();
+	virtual ~UISpinBox();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual void setPadding( const Rectf& padding );
+	virtual void setPadding( const Rectf& padding );
 
-		const Rectf& getPadding() const;
+	const Rectf& getPadding() const;
 
-		virtual void setClickStep( const Float& step );
+	virtual void setClickStep( const double& step );
 
-		const Float& getClickStep() const;
+	const double& getClickStep() const;
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		void addValue( const Float& value );
+	void addValue( const double& value );
 
-		virtual UISpinBox * setMinValue( const Float& MinVal );
+	virtual UISpinBox* setMinValue( const double& minVal );
 
-		const Float& getMinValue() const;
+	const double& getMinValue() const;
 
-		virtual UISpinBox * setMaxValue( const Float& MaxVal );
+	virtual UISpinBox* setMaxValue( const double& maxVal );
 
-		const Float& getMaxValue() const;
+	const double& getMaxValue() const;
 
-		virtual UISpinBox * setValue( const Float& Val );
+	virtual UISpinBox* setValue( const double& val );
 
-		const Float& getValue() const;
+	const double& getValue() const;
 
-		virtual void scheduledUpdate( const Time& time );
+	UINode* getButtonPushUp() const;
 
-		UINode * getButtonPushUp() const;
+	UINode* getButtonPushDown() const;
 
-		UINode * getButtonPushDown() const;
+	UITextInput* getTextInput() const;
 
-		UITextInput * getTextInput() const;
+	UISpinBox* allowFloatingPoint( bool allow );
 
-		UISpinBox * setAllowOnlyNumbers( bool allow );
+	bool dotsInNumbersAllowed();
 
-		bool dotsInNumbersAllowed();
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		UITextInput * 		mInput;
-		UINode * 	mPushUp;
-		UINode * 	mPushDown;
-		Float				mMinValue;
-		Float				mMaxValue;
-		Float				mValue;
-		Float				mClickStep;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		void adjustChilds();
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		void internalValue( const Float& Val, const bool& Force = false );
+  protected:
+	UITextInput* mInput;
+	UIWidget* mPushUp;
+	UIWidget* mPushDown;
+	double mMinValue;
+	double mMaxValue;
+	double mValue;
+	double mClickStep;
+	bool mModifyingVal;
 
-		virtual void onSizeChange();
+	void adjustChilds();
 
-		virtual void onPositionChange();
-		
-		virtual void onAlphaChange();
+	virtual void onSizeChange();
 
-		virtual void onPaddingChange();
+	virtual void onPositionChange();
+
+	virtual void onAlphaChange();
+
+	virtual void onPaddingChange();
+
+	virtual void onBufferChange( const Event* event );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

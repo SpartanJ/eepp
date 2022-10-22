@@ -1,28 +1,33 @@
-#include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uilistboxitem.hpp>
+#include <eepp/ui/uiskinstate.hpp>
 
 namespace EE { namespace UI {
 
-UIListBoxItem * UIListBoxItem::New() {
+UIListBoxItem* UIListBoxItem::New() {
 	return eeNew( UIListBoxItem, () );
 }
 
-UIListBoxItem::UIListBoxItem() :
-	UITextView( "listbox::item" )
-{
-	setLayoutSizeRules( FIXED, FIXED );
+UIListBoxItem* UIListBoxItem::NewWithTag( const std::string& tag ) {
+	return eeNew( UIListBoxItem, ( tag ) );
+}
+
+UIListBoxItem::UIListBoxItem() : UIListBoxItem( "listbox::item" ) {}
+
+UIListBoxItem::UIListBoxItem( const std::string& tag ) : UITextView( tag ) {
+	setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	applyDefaultTheme();
 }
 
 UIListBoxItem::~UIListBoxItem() {
-	EventDispatcher * eventDispatcher = getEventDispatcher();
+	EventDispatcher* eventDispatcher = getEventDispatcher();
 
 	if ( NULL != eventDispatcher ) {
-		if ( eventDispatcher->getFocusControl() == this )
-			mParentCtrl->setFocus();
+		if ( eventDispatcher->getFocusNode() == this )
+			mParentNode->setFocus();
 
-		if ( eventDispatcher->getOverControl() == this )
-			eventDispatcher->setOverControl( mParentCtrl );
+		if ( eventDispatcher->getMouseOverNode() == this )
+			eventDispatcher->setMouseOverNode( mParentNode );
 	}
 }
 
@@ -34,7 +39,7 @@ bool UIListBoxItem::isType( const Uint32& type ) const {
 	return UIListBoxItem::getType() == type ? true : UITextView::isType( type );
 }
 
-void UIListBoxItem::setTheme( UITheme * Theme ) {
+void UIListBoxItem::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "listboxitem" );
@@ -46,7 +51,7 @@ Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	UITextView::onMouseUp( Pos, Flags );
 
 	if ( mEnabled && mVisible ) {
-		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
+		UIListBox* LBParent = getParent()->getParent()->asType<UIListBox>();
 
 		if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
 			// Manage click can delete _this_
@@ -59,16 +64,21 @@ Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 
 Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
-		reinterpret_cast<UIListBox*> ( getParent()->getParent() )->itemClicked( this );
+		UIListBox* LBParent = getParent()->getParent()->asType<UIListBox>();
+
+		LBParent->itemClicked( this );
 
 		select();
+
+		if ( !LBParent->isMultiSelect() )
+			setFocus();
 	}
 
 	return UITextView::onMouseClick( Pos, Flags );
 }
 
 void UIListBoxItem::select() {
-	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
+	UIListBox* LBParent = getParent()->getParent()->asType<UIListBox>();
 
 	bool wasSelected = 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 
@@ -91,6 +101,11 @@ void UIListBoxItem::select() {
 
 		mNodeFlags |= NODE_FLAG_SELECTED;
 
+		if ( !LBParent->mSelected.empty() &&
+			 NULL != LBParent->mItems[LBParent->mSelected.front()] &&
+			 LBParent->getItemIndex( this ) != LBParent->mSelected.front() ) {
+			LBParent->mItems[LBParent->mSelected.front()]->unselect();
+		}
 		LBParent->mSelected.clear();
 		LBParent->mSelected.push_back( LBParent->getItemIndex( this ) );
 
@@ -101,7 +116,7 @@ void UIListBoxItem::select() {
 }
 
 Uint32 UIListBoxItem::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	UINode::onMouseLeave( Pos, Flags );
+	UIWidget::onMouseLeave( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		pushState( UIState::StateSelected );
@@ -121,11 +136,11 @@ bool UIListBoxItem::isSelected() const {
 }
 
 void UIListBoxItem::onStateChange() {
-	if ( isSelected() && mSkinState->getState() != UIState::StateSelected ) {
+	if ( isSelected() && NULL != mSkinState && mSkinState->getState() != UIState::StateSelected ) {
 		pushState( UIState::StateSelected, false );
 	}
 
 	UITextView::onStateChange();
 }
 
-}}
+}} // namespace EE::UI

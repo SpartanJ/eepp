@@ -1,74 +1,72 @@
-#include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uitheme.hpp>
-#include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uistate.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/graphics/primitives.hpp>
-#include <eepp/graphics/textureregion.hpp>
-#include <eepp/graphics/rectangledrawable.hpp>
-#include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/window/engine.hpp>
-#include <eepp/scene/scenenode.hpp>
-#include <eepp/scene/actionmanager.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/scene/action.hpp>
+#include <eepp/scene/actionmanager.hpp>
 #include <eepp/scene/actions/fade.hpp>
-#include <eepp/scene/actions/scale.hpp>
-#include <eepp/scene/actions/rotate.hpp>
 #include <eepp/scene/actions/move.hpp>
+#include <eepp/scene/actions/rotate.hpp>
+#include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/uiborderdrawable.hpp>
+#include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinstate.hpp>
+#include <eepp/ui/uistate.hpp>
+#include <eepp/ui/uitheme.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI {
 
-UINode * UINode::New() {
+UINode* UINode::New() {
 	return eeNew( UINode, () );
 }
 
 UINode::UINode() :
 	Node(),
-	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
-	mState(UIState::StateFlagNormal),
+	mFlags( UI_NODE_DEFAULT_FLAGS ),
+	mState( UIState::StateFlagNormal ),
 	mSkinState( NULL ),
-	mBackgroundState( NULL ),
-	mForegroundState( NULL ),
+	mBackground( NULL ),
+	mForeground( NULL ),
 	mBorder( NULL ),
 	mDragButton( EE_BUTTON_LMASK ),
-	mSkinColor( Color::White )
-{
+	mSkinColor( Color::White ),
+	mUISceneNode( SceneManager::instance()->getUISceneNode() ) {
 	mNodeFlags |= NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
-	if ( NULL != SceneManager::instance()->getUISceneNode() )
-		setParent( (Node*)SceneManager::instance()->getUISceneNode() );
+	if ( NULL != mUISceneNode )
+		setParent( (Node*)mUISceneNode->getRoot() );
 }
 
 UINode::~UINode() {
 	removeSkin();
 
-	if ( NULL != mBackgroundState && NULL != mBackgroundState->getSkin() )
-		eeDelete( mBackgroundState->getSkin() );
-
-	if ( NULL != mForegroundState && NULL != mForegroundState->getSkin() )
-		eeDelete( mForegroundState->getSkin() );
-
-	eeSAFE_DELETE( mBackgroundState );
-	eeSAFE_DELETE( mForegroundState );
+	eeSAFE_DELETE( mBackground );
+	eeSAFE_DELETE( mForeground );
 	eeSAFE_DELETE( mBorder );
 
-	if ( isDragging() )
+	if ( isDragging() && getEventDispatcher() )
 		getEventDispatcher()->setNodeDragging( NULL );
 }
 
 void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
-	Node * ParentLoop = mParentCtrl;
+	Node* ParentLoop = mParentNode;
 
 	Pos -= mPosition;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getPixelsPosition() : ParentLoop->getPosition();
+		const Vector2f& ParentPos = ParentLoop->isUINode()
+										? ParentLoop->asType<UINode>()->getPixelsPosition()
+										: ParentLoop->getPosition();
 
 		Pos -= ParentPos;
 
@@ -77,10 +75,12 @@ void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
 }
 
 void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
-	Node * ParentLoop = mParentCtrl;
+	Node* ParentLoop = mParentNode;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getPixelsPosition() : ParentLoop->getPosition();
+		const Vector2f& ParentPos = ParentLoop->isUINode()
+										? ParentLoop->asType<UINode>()->getPixelsPosition()
+										: ParentLoop->getPosition();
 
 		Pos += ParentPos;
 
@@ -109,7 +109,7 @@ void UINode::setPosition( const Vector2f& Pos ) {
 	}
 }
 
-Node * UINode::setPosition( const Float& x, const Float& y ) {
+Node* UINode::setPosition( const Float& x, const Float& y ) {
 	setPosition( Vector2f( x, y ) );
 	return this;
 }
@@ -131,31 +131,62 @@ const Vector2f& UINode::getPosition() const {
 	return mDpPos;
 }
 
-const Vector2f &UINode::getPixelsPosition() const {
+const Vector2f& UINode::getPixelsPosition() const {
 	return mPosition;
 }
 
 void UINode::setInternalSize( const Sizef& size ) {
-	mDpSize = size;
-	mSize = PixelDensity::dpToPx( size );
-	updateCenter();
-	sendCommonEvent( Event::OnSizeChange );
-	invalidateDraw();
+	Sizef s( size );
+
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
+
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
+
+	if ( s != mDpSize ) {
+		mDpSize = size;
+		mSize = PixelDensity::dpToPx( s );
+		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
+		updateCenter();
+		sendCommonEvent( Event::OnSizeChange );
+		invalidateDraw();
+	}
 }
 
 void UINode::setInternalPixelsSize( const Sizef& size ) {
-	mDpSize = PixelDensity::pxToDp( size );
-	mSize = size;
-	updateCenter();
-	sendCommonEvent( Event::OnSizeChange );
-	invalidateDraw();
+	Sizef s( size );
+	Sizef pMinSize( PixelDensity::dpToPx( mMinSize ) );
+
+	if ( s.x < pMinSize.x )
+		s.x = pMinSize.x;
+
+	if ( s.y < pMinSize.y )
+		s.y = pMinSize.y;
+
+	if ( s != mSize ) {
+		mDpSize = PixelDensity::pxToDp( s ).ceil();
+		mSize = s;
+		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
+		updateCenter();
+		sendCommonEvent( Event::OnSizeChange );
+		invalidateDraw();
+	}
 }
 
-Node * UINode::setSize( const Sizef & Size ) {
-	if ( Size != mDpSize ) {
-		Vector2f sizeChange( Size.x - mDpSize.x, Size.y - mDpSize.y );
+Node* UINode::setSize( const Sizef& size ) {
+	Sizef s( fitMinMaxSizeDp( size ) );
 
-		setInternalSize( Size );
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
+
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
+
+	if ( s != mDpSize ) {
+		Vector2f sizeChange( s.x - mDpSize.x, s.y - mDpSize.y );
+
+		setInternalSize( s );
 
 		onSizeChange();
 
@@ -167,15 +198,24 @@ Node * UINode::setSize( const Sizef & Size ) {
 	return this;
 }
 
-Node * UINode::setSize(const Float & Width, const Float & Height) {
+Node* UINode::setSize( const Float& Width, const Float& Height ) {
 	return setSize( Vector2f( Width, Height ) );
 }
 
-UINode * UINode::setPixelsSize( const Sizef& size ) {
-	if ( size != mSize ) {
-		Vector2f sizeChange( size.x - mSize.x, size.y - mSize.y );
+UINode* UINode::setPixelsSize( const Sizef& size ) {
+	Sizef s( fitMinMaxSizePx( size ) );
+	Sizef pMinSize( PixelDensity::dpToPx( mMinSize ) );
 
-		setInternalPixelsSize( size );
+	if ( s.x < pMinSize.x )
+		s.x = pMinSize.x;
+
+	if ( s.y < pMinSize.y )
+		s.y = pMinSize.y;
+
+	if ( s != mSize ) {
+		Vector2f sizeChange( s.x - mSize.x, s.y - mSize.y );
+
+		setInternalPixelsSize( s );
 
 		onSizeChange();
 
@@ -187,7 +227,7 @@ UINode * UINode::setPixelsSize( const Sizef& size ) {
 	return this;
 }
 
-UINode * UINode::setPixelsSize(const Float & x, const Float & y ) {
+UINode* UINode::setPixelsSize( const Float& x, const Float& y ) {
 	return setPixelsSize( Sizef( x, y ) );
 }
 
@@ -199,8 +239,265 @@ void UINode::setInternalPixelsHeight( const Float& height ) {
 	setInternalPixelsSize( Sizef( mSize.x, height ) );
 }
 
+void UINode::setMinSize( const Sizef& size ) {
+	if ( size != mMinSize ) {
+		mMinSize = size;
+		setSize( getSize() );
+	}
+}
+
+void UINode::setMinWidth( const Float& width ) {
+	if ( width != mMinSize.x ) {
+		mMinSize.x = width;
+		setSize( getSize() );
+	}
+}
+
+void UINode::setMinHeight( const Float& height ) {
+	if ( height != mMinSize.y ) {
+		mMinSize.y = height;
+		setSize( getSize() );
+	}
+}
+
+const Sizef& UINode::getMinSize() const {
+	return mMinSize;
+}
+
+const std::string& UINode::getMinWidthEq() const {
+	return mMinWidthEq;
+}
+
+void UINode::setMinSizeEq( const std::string& minWidthEq, const std::string& minHeightEq ) {
+	if ( mMinWidthEq != minWidthEq || mMinHeightEq != minHeightEq ) {
+		mMinWidthEq = minWidthEq;
+		mMinHeightEq = minHeightEq;
+
+		if ( !mMinWidthEq.empty() ) {
+			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		}
+
+		if ( !mMinHeightEq.empty() ) {
+			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		}
+
+		setSize( mDpSize );
+	}
+}
+
+void UINode::setMinWidthEq( const std::string& minWidthEq ) {
+	if ( mMinWidthEq != minWidthEq ) {
+		mMinWidthEq = minWidthEq;
+
+		if ( !mMinWidthEq.empty() ) {
+			mMinSize.x = lengthFromValueAsDp( mMinWidthEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		}
+
+		setSize( mDpSize );
+	}
+}
+
+const std::string& UINode::getMinHeightEq() const {
+	return mMinHeightEq;
+}
+
+void UINode::setMinHeightEq( const std::string& minHeightEq ) {
+	if ( mMinHeightEq != minHeightEq ) {
+		mMinHeightEq = minHeightEq;
+
+		if ( !mMinHeightEq.empty() ) {
+			mMinSize.y = lengthFromValueAsDp( mMinHeightEq,
+											  CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		}
+
+		setSize( mDpSize );
+	}
+}
+
+const std::string& UINode::getMaxWidthEq() const {
+	return mMaxWidthEq;
+}
+
+void UINode::setMaxSizeEq( const std::string& maxWidthEq, const std::string& maxHeightEq ) {
+	if ( mMaxWidthEq != maxWidthEq || mMaxHeightEq != maxHeightEq ) {
+		mMaxWidthEq = maxWidthEq;
+		mMaxHeightEq = maxHeightEq;
+		setSize( mDpSize );
+	}
+}
+
+void UINode::setMaxWidthEq( const std::string& maxWidthEq ) {
+	if ( mMaxWidthEq != maxWidthEq ) {
+		mMaxWidthEq = maxWidthEq;
+		setSize( mDpSize );
+	}
+}
+
+const std::string& UINode::getMaxHeightEq() const {
+	return mMaxHeightEq;
+}
+
+void UINode::setMaxHeightEq( const std::string& maxHeightEq ) {
+	if ( mMaxHeightEq != maxHeightEq ) {
+		mMaxHeightEq = maxHeightEq;
+		setSize( mDpSize );
+	}
+}
+
+Sizef UINode::getMaxSize() {
+	Sizef s;
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+
+	return s;
+}
+
+Sizef UINode::getMinSize() {
+	Sizef s;
+
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
+
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
+
+	if ( !mMinWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMinHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+	return s;
+}
+
+Sizef UINode::fitMinMaxSizePx( const Sizef& size ) const {
+	Sizef s( size );
+
+	if ( mMinSize.x != 0.f && s.x < PixelDensity::pxToDp( mMinSize.x ) )
+		s.x = PixelDensity::pxToDp( mMinSize.x );
+
+	if ( mMinSize.y != 0.f && s.y < PixelDensity::pxToDp( mMinSize.y ) )
+		s.y = PixelDensity::pxToDp( mMinSize.y );
+
+	if ( !mMinWidthEq.empty() ) {
+		Float length =
+			lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMinHeightEq.empty() ) {
+		Float length =
+			lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemin( s.x, length );
+	}
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float length =
+			lengthFromValue( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemin( s.y, length );
+	}
+
+	return s;
+}
+
+Sizef UINode::fitMinMaxSizeDp( const Sizef& size ) const {
+	Sizef s( size );
+
+	if ( s.x < mMinSize.x )
+		s.x = mMinSize.x;
+
+	if ( s.y < mMinSize.y )
+		s.y = mMinSize.y;
+
+	if ( !mMinWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMinHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemin( s.x, length );
+	}
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float length =
+			lengthFromValueAsDp( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemin( s.y, length );
+	}
+
+	return s;
+}
+
+void UINode::updateOriginPoint() {
+	Node::updateOriginPoint();
+
+	if ( mRotationOriginPoint.OriginType == OriginPoint::OriginEquation ) {
+		if ( !mRotationOriginPoint.getXEq().empty() ) {
+			mRotationOriginPoint.x = lengthFromValue( mRotationOriginPoint.getXEq(),
+													  PropertyRelativeTarget::LocalBlockWidth );
+		}
+
+		if ( !mRotationOriginPoint.getYEq().empty() ) {
+			mRotationOriginPoint.y = lengthFromValue( mRotationOriginPoint.getYEq(),
+													  PropertyRelativeTarget::LocalBlockHeight );
+		}
+
+		Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+	}
+
+	if ( mScaleOriginPoint.OriginType == OriginPoint::OriginEquation ) {
+		if ( !mScaleOriginPoint.getXEq().empty() ) {
+			mScaleOriginPoint.x = lengthFromValue( mScaleOriginPoint.getXEq(),
+												   PropertyRelativeTarget::LocalBlockWidth );
+		}
+
+		if ( !mScaleOriginPoint.getYEq().empty() ) {
+			mScaleOriginPoint.y = lengthFromValue( mScaleOriginPoint.getYEq(),
+												   PropertyRelativeTarget::LocalBlockHeight );
+		}
+
+		Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
+	}
+}
+
 Rect UINode::getRect() const {
 	return Rect( Vector2i( mDpPos.x, mDpPos.y ), Sizei( mDpSize.x, mDpSize.y ) );
+}
+
+Rectf UINode::getRectBox() const {
+	return Rectf( mPosition, mSize );
 }
 
 const Sizef& UINode::getSize() const {
@@ -208,7 +505,8 @@ const Sizef& UINode::getSize() const {
 }
 
 void UINode::drawHighlightFocus() {
-	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightFocus() && getEventDispatcher()->getFocusControl() == this ) {
+	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightFocus() &&
+		 getEventDispatcher()->getFocusNode() == this ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
@@ -219,7 +517,8 @@ void UINode::drawHighlightFocus() {
 }
 
 void UINode::drawOverNode() {
-	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightOver() && getEventDispatcher()->getOverControl() == this ) {
+	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightOver() &&
+		 getEventDispatcher()->getMouseOverNode() == this ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
@@ -229,23 +528,67 @@ void UINode::drawOverNode() {
 	}
 }
 
-void UINode::drawDebugData() {
-	if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() ) {
-		if ( isWidget() ) {
-			UIWidget * me = static_cast<UIWidget*>( this );
-
-			if ( NULL != getEventDispatcher() && getEventDispatcher()->getOverControl() == this ) {
-				String text( String::format( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y, mDpSize.x, mDpSize.y ) );
-
-				if ( !mId.empty() ) {
-					text = "ID: " + mId + "\n" + text;
-				}
-
-				me->setTooltipText( text );
-			} else {
-				me->setTooltipText( "" );
-			}
+void UINode::drawDroppableHovering() {
+	const PropertyDefinition* def =
+		StyleSheetSpecification::instance()->getProperty( "droppable-hovering-color" );
+	Color color = Color::fromString( def->getDefaultValue() );
+	if ( isWidget() ) {
+		UIWidget* widget = asType<UIWidget>();
+		std::string colorString = widget->getPropertyString( def );
+		if ( !colorString.empty() ) {
+			color = Color::fromString( colorString );
+		} else {
+			colorString = mUISceneNode->getRoot()->getPropertyString( def );
+			if ( !colorString.empty() )
+				color = Color::fromString( colorString );
 		}
+	}
+
+	Primitives P;
+	P.setFillMode( DRAW_FILL );
+	P.setBlendMode( getBlendMode() );
+	P.setColor( color );
+	P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
+	P.drawRectangle( getScreenBounds() );
+}
+
+void UINode::updateDebugData() {
+	if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() && isWidget() &&
+		 NULL != getEventDispatcher() && getEventDispatcher()->getMouseOverNode() == this ) {
+		UIWidget* widget = asType<UIWidget>();
+
+		String text = "Tag: " + String::fromUtf8( widget->getStyleSheetTag() ) + "\n";
+
+		if ( !mId.empty() ) {
+			text += "ID: " + mId + "\n";
+		}
+
+		if ( !widget->getStyleSheetClasses().empty() ) {
+			text += "Classes: " + String::join( widget->getStyleSheetClasses(), ' ' ) + "\n";
+		}
+
+		if ( !widget->getStyleSheetPseudoClasses().empty() ) {
+			text += "Pseudo Classes: " + String::join( widget->getStyleSheetPseudoClasses(), ' ' ) +
+					"\n";
+		}
+
+		text += String::format(
+			"X: %.2fpx (%.2fdp) Y: %.2fpx (%.2fdp)\nW: %.2fpx (%.2fdp) H: %.2fpx (%.2fdp)",
+			mPosition.x, mDpPos.x, mPosition.y, mDpPos.y, mSize.x, mDpSize.x, mSize.y, mDpSize.y );
+
+		if ( widget->getPadding() != Rectf( 0, 0, 0, 0 ) ) {
+			Rectf p( widget->getPadding() );
+			text += String::format( "\npadding: %.2f %.2f %.2f %.2f", p.Top, p.Right, p.Bottom,
+									p.Left );
+		}
+
+		if ( widget->getLayoutMargin() != Rectf( 0, 0, 0, 0 ) ) {
+			Rectf m( widget->getLayoutMargin() );
+			text +=
+				String::format( "\nmargin: %.2f %.2f %.2f %.2f", m.Top, m.Right, m.Bottom, m.Left );
+		}
+
+		widget->setTooltipText( text );
 	}
 }
 
@@ -265,39 +608,32 @@ void UINode::drawSkin() {
 		mSkinState->setStateColor( mSkinState->getCurrentState(), mSkinColor );
 
 		if ( mFlags & UI_SKIN_KEEP_SIZE_ON_DRAW ) {
-			Sizef rSize = PixelDensity::dpToPx( getSkinSize( getSkin(), mSkinState->getCurrentState() ) );
+			Sizef rSize =
+				PixelDensity::dpToPx( getSkinSize( getSkin(), mSkinState->getCurrentState() ) );
 			Sizef diff = ( mSize - rSize ) * 0.5f;
 
-			mSkinState->draw( mScreenPosi.x + eefloor(diff.x), mScreenPosi.y + eefloor(diff.y), eefloor(rSize.getWidth()), eefloor(rSize.getHeight()), (Uint32)mAlpha );
+			mSkinState->draw( mScreenPosi.x + eefloor( diff.x ), mScreenPosi.y + eefloor( diff.y ),
+							  eefloor( rSize.getWidth() ), eefloor( rSize.getHeight() ),
+							  (Uint32)mAlpha );
 		} else {
-			mSkinState->draw( mScreenPosi.x, mScreenPosi.y, eefloor(mSize.getWidth()), eefloor(mSize.getHeight()), (Uint32)mAlpha );
+			mSkinState->draw( mScreenPosi.x, mScreenPosi.y, eefloor( mSize.getWidth() ),
+							  eefloor( mSize.getHeight() ), (Uint32)mAlpha );
 		}
 	}
 }
 
-void UINode::draw() {
-	if ( mVisible && 0.f != mAlpha ) {
-		drawBackground();
+void UINode::draw() {}
 
-		drawSkin();
-
-		drawForeground();
-	}
-}
-
-Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != getEventDispatcher() && !getEventDispatcher()->isNodeDragging() && !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
-		setDragging( true );
-
-		if ( NULL != getEventDispatcher() )
-			getEventDispatcher()->setNodeDragging( this );
-
-		mDragPoint = Vector2f( Pos.x, Pos.y );
+Uint32 UINode::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	if ( NULL != getEventDispatcher() && !getEventDispatcher()->isNodeDragging() &&
+		 !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) &&
+		 ( flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
+		startDragging( position.asFloat() );
 	}
 
 	pushState( UIState::StatePressed );
 
-	return Node::onMouseDown( Pos, Flags );
+	return Node::onMouseDown( position, flags );
 }
 
 Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
@@ -315,29 +651,24 @@ Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 
 Uint32 UINode::onCalculateDrag( const Vector2f& position, const Uint32& flags ) {
 	if ( isDragEnabled() && isDragging() && NULL != getEventDispatcher() ) {
-		EventDispatcher * eventDispatcher = getEventDispatcher();
+		EventDispatcher* eventDispatcher = getEventDispatcher();
 
-		if ( !( flags/*press trigger*/ & mDragButton ) ) {
+		if ( !( flags /*press trigger*/ & mDragButton ) ) {
 			setDragging( false );
 			eventDispatcher->setNodeDragging( NULL );
 			return 1;
 		}
 
-		Vector2f Pos( eefloor( position.x ), eefloor( position.y ) );
+		Vector2f pos( eefloor( position.x ), eefloor( position.y ) );
+		if ( mDragPoint != pos && ( std::abs( mDragPoint.x - pos.x ) > 1.f ||
+									std::abs( mDragPoint.y - pos.y ) > 1.f ) ) {
+			Sizef dragDiff;
+			dragDiff.x = ( mFlags & UI_DRAG_HORIZONTAL ) ? (Float)( mDragPoint.x - pos.x ) : 0;
+			dragDiff.y = ( mFlags & UI_DRAG_VERTICAL ) ? (Float)( mDragPoint.y - pos.y ) : 0;
 
-		if ( mDragPoint != Pos && ( std::abs( mDragPoint.x - Pos.x ) > 1.f || std::abs( mDragPoint.y - Pos.y ) > 1.f ) ) {
-			if ( onDrag( Pos, flags ) ) {
-				Sizef dragDiff;
-
-				dragDiff.x = (Float)( mDragPoint.x - Pos.x );
-				dragDiff.y = (Float)( mDragPoint.y - Pos.y );
-
+			if ( onDrag( pos, flags, dragDiff ) ) {
 				setPixelsPosition( mPosition - dragDiff );
-
-				mDragPoint = Pos;
-
-				onPositionChange();
-
+				mDragPoint = pos;
 				eventDispatcher->setNodeDragging( this );
 			}
 		}
@@ -356,7 +687,7 @@ Uint32 UINode::getHorizontalAlign() const {
 	return mFlags & UI_HALIGN_MASK;
 }
 
-UINode * UINode::setHorizontalAlign( Uint32 halign ) {
+UINode* UINode::setHorizontalAlign( Uint32 halign ) {
 	mFlags &= ~UI_HALIGN_MASK;
 	mFlags |= halign & UI_HALIGN_MASK;
 
@@ -368,7 +699,7 @@ Uint32 UINode::getVerticalAlign() const {
 	return mFlags & UI_VALIGN_MASK;
 }
 
-UINode * UINode::setVerticalAlign( Uint32 valign ) {
+UINode* UINode::setVerticalAlign( Uint32 valign ) {
 	mFlags &= ~UI_VALIGN_MASK;
 	mFlags |= valign & UI_VALIGN_MASK;
 
@@ -376,168 +707,194 @@ UINode * UINode::setVerticalAlign( Uint32 valign ) {
 	return this;
 }
 
-UINode * UINode::setGravity( Uint32 hvalign ) {
+UINode* UINode::setGravity( Uint32 hvalign ) {
 	mFlags &= ~( UI_VALIGN_MASK | UI_HALIGN_MASK );
-	mFlags |= ( hvalign & ( UI_VALIGN_MASK | UI_HALIGN_MASK ) ) ;
+	mFlags |= ( hvalign & ( UI_VALIGN_MASK | UI_HALIGN_MASK ) );
 
 	onAlignChange();
 	return this;
 }
 
-UISkin * UINode::setBackgroundFillEnabled( bool enabled ) {
+UINodeDrawable* UINode::setBackgroundFillEnabled( bool enabled ) {
 	writeFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 
-	if ( enabled && NULL == mBackgroundState ) {
+	if ( enabled && NULL == mBackground ) {
 		getBackground();
 	}
 
 	invalidateDraw();
 
-	return NULL != mBackgroundState ? mBackgroundState->getSkin() : NULL;
+	return mBackground;
 }
 
-UINode * UINode::setBackgroundDrawable( Drawable * drawable, bool ownIt ) {
-	setBackgroundFillEnabled( true )->setStateDrawable( UIState::StateFlagNormal, drawable, ownIt );
+UINode* UINode::setBackgroundDrawable( Drawable* drawable, bool ownIt, int index ) {
+	setBackgroundFillEnabled( true )->setDrawable( index, drawable, ownIt );
 	return this;
 }
 
-UINode * UINode::setBackgroundColor( const Color& color ) {
-	UISkin * background = setBackgroundFillEnabled( true );
+UINode* UINode::setBackgroundDrawable( const std::string& drawable, int index ) {
+	setBackgroundFillEnabled( true )->setDrawable( index, drawable );
+	return this;
+}
 
-	Drawable * stateDrawable = background->getStateDrawable( UIState::StateFlagNormal );
+UINode* UINode::setBackgroundColor( const Color& color ) {
+	setBackgroundFillEnabled( true )->setBackgroundColor( color );
+	return this;
+}
 
-	if ( NULL == stateDrawable )
-		setBackgroundDrawable( RectangleDrawable::New(), true );
+UINode* UINode::setBackgroundTint( const Color& color, int index ) {
+	setBackgroundFillEnabled( true )->setDrawableColor( index, color );
+	return this;
+}
 
-	if ( NULL != mBackgroundState )
-		mBackgroundState->setStateColor( UIState::StateFlagNormal, color );
+UINode* UINode::setBackgroundPositionX( const std::string& positionX, int index ) {
+	setBackgroundFillEnabled( true )->setDrawablePositionX( index, positionX );
+	return this;
+}
 
+UINode* UINode::setBackgroundPositionY( const std::string& positionY, int index ) {
+	setBackgroundFillEnabled( true )->setDrawablePositionY( index, positionY );
+	return this;
+}
+
+UINode* UINode::setBackgroundRepeat( const std::string& repeatRule, int index ) {
+	setBackgroundFillEnabled( true )->setDrawableRepeat( index, repeatRule );
+	return this;
+}
+
+UINode* UINode::setBackgroundSize( const std::string& size, int index ) {
+	setBackgroundFillEnabled( true )->setDrawableSize( index, size );
 	return this;
 }
 
 Color UINode::getBackgroundColor() const {
-	if ( NULL != mBackgroundState )
-		return mBackgroundState->getStateColor( UIState::StateFlagNormal );
-
-	return Color::Transparent;
+	return NULL != mBackground ? mBackground->getBackgroundColor() : Color::Transparent;
 }
 
-UINode * UINode::setBorderRadius( const unsigned int& corners ) {
-	setBorderEnabled( true )->setCorners( corners );
+Color UINode::getBackgroundTint( int index ) const {
+	return mBackground ? mBackground->getLayer( index )->getColor() : Color::White;
+}
 
-	UISkin * background = setBackgroundFillEnabled( true );
+UINode* UINode::setBorderRadius( const unsigned int& corners ) {
+	setBorderEnabled( true )->setRadius( corners );
+	setBackgroundFillEnabled( true )->setBorderRadius( corners );
+	return this;
+}
 
-	Drawable * stateDrawable = background->getStateDrawable( UIState::StateFlagNormal );
+UINode* UINode::setTopLeftRadius( const std::string& radius ) {
+	setBorderEnabled( true )->setTopLeftRadius( radius );
+	setBackgroundFillEnabled( true )->getBackgroundDrawable().setTopLeftRadius( radius );
+	return this;
+}
 
-	if ( NULL == stateDrawable ) {
-		setBackgroundColor( Color::Transparent );
+UINode* UINode::setTopRightRadius( const std::string& radius ) {
+	setBorderEnabled( true )->setTopRightRadius( radius );
+	setBackgroundFillEnabled( true )->getBackgroundDrawable().setTopRightRadius( radius );
+	return this;
+}
 
-		stateDrawable = background->getStateDrawable( UIState::StateFlagNormal );
-	}
+UINode* UINode::setBottomLeftRadius( const std::string& radius ) {
+	setBorderEnabled( true )->setBottomLeftRadius( radius );
+	setBackgroundFillEnabled( true )->getBackgroundDrawable().setBottomLeftRadius( radius );
+	return this;
+}
 
-	if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
-		static_cast<RectangleDrawable*>( stateDrawable )->setCorners( corners );
-	}
-
+UINode* UINode::setBottomRightRadius( const std::string& radius ) {
+	setBorderEnabled( true )->setBottomRightRadius( radius );
+	setBackgroundFillEnabled( true )->getBackgroundDrawable().setBottomRightRadius( radius );
 	return this;
 }
 
 Uint32 UINode::getBorderRadius() const {
-	if ( NULL != mBorder )
-		return mBorder->getCorners();
-
-	return 0;
+	return NULL != mBorder ? mBorder->getRadius() : 0;
 }
 
-UISkin * UINode::setForegroundFillEnabled( bool enabled ) {
+UINodeDrawable* UINode::setForegroundFillEnabled( bool enabled ) {
 	writeFlag( UI_FILL_FOREGROUND, enabled ? 1 : 0 );
 
-	if ( enabled && NULL == mForegroundState ) {
+	if ( enabled && NULL == mForeground ) {
 		getForeground();
 	}
 
 	invalidateDraw();
 
-	return NULL != mForegroundState ? mForegroundState->getSkin() : NULL;
+	return mForeground;
 }
 
-UINode * UINode::setForegroundDrawable( Drawable * drawable, bool ownIt ) {
-	setForegroundFillEnabled( true )->setStateDrawable( UIState::StateFlagNormal, drawable, ownIt );
+UINode* UINode::setForegroundDrawable( Drawable* drawable, bool ownIt, int index ) {
+	setForegroundFillEnabled( true )->setDrawable( index, drawable, ownIt );
+	return this;
+}
+
+UINode* UINode::setForegroundDrawable( const std::string& drawable, int index ) {
+	setForegroundFillEnabled( true )->setDrawable( index, drawable );
 	return this;
 }
 
 Color UINode::getForegroundColor() const {
-	if ( NULL != mForegroundState )
-		return mForegroundState->getStateColor( UIState::StateFlagNormal );
-
-	return Color::Transparent;
+	return NULL != mForeground ? mForeground->getBackgroundColor() : Color::Transparent;
 }
 
-UINode * UINode::setForegroundColor( const Color& color ) {
-	UISkin * foreground = setForegroundFillEnabled( true );
+Color UINode::getForegroundTint( int index ) const {
+	return mForeground ? mForeground->getLayer( index )->getColor() : Color::White;
+}
 
-	Drawable * stateDrawable = foreground->getStateDrawable( UIState::StateFlagNormal );
-
-	if ( NULL == stateDrawable )
-		setForegroundDrawable( RectangleDrawable::New(), true );
-
-	if ( NULL != mForegroundState )
-		mForegroundState->setStateColor( UIState::StateFlagNormal, color );
-
+UINode* UINode::setForegroundColor( const Color& color ) {
+	setForegroundFillEnabled( true )->setBackgroundColor( color );
 	return this;
 }
 
-UINode * UINode::setForegroundRadius( const unsigned int& corners ) {
-	UISkin * foreground = setForegroundFillEnabled( true );
+UINode* UINode::setForegroundTint( const Color& color, int index ) {
+	setForegroundFillEnabled( true )->setDrawableColor( index, color );
+	return this;
+}
 
-	Drawable * stateDrawable = foreground->getStateDrawable( UIState::StateFlagNormal );
+UINode* UINode::setForegroundPositionX( const std::string& positionX, int index ) {
+	setForegroundFillEnabled( true )->setDrawablePositionX( index, positionX );
+	return this;
+}
 
-	if ( NULL == stateDrawable ) {
-		setForegroundColor( Color::Black );
+UINode* UINode::setForegroundPositionY( const std::string& positionY, int index ) {
+	setForegroundFillEnabled( true )->setDrawablePositionY( index, positionY );
+	return this;
+}
 
-		stateDrawable = foreground->getStateDrawable( UIState::StateFlagNormal );
-	}
+UINode* UINode::setForegroundRepeat( const std::string& repeatRule, int index ) {
+	setForegroundFillEnabled( true )->setDrawableRepeat( index, repeatRule );
+	return this;
+}
 
-	if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
-		RectangleDrawable * rectangleDrawable = static_cast<RectangleDrawable*>( stateDrawable );
+UINode* UINode::setForegroundSize( const std::string& size, int index ) {
+	setForegroundFillEnabled( true )->setDrawableSize( index, size );
+	return this;
+}
 
-		rectangleDrawable->setCorners( corners );
-	}
-
+UINode* UINode::setForegroundRadius( const unsigned int& corners ) {
+	setForegroundFillEnabled( true )->setBorderRadius( corners );
 	return this;
 }
 
 Uint32 UINode::getForegroundRadius() const {
-	if ( NULL != mForegroundState && NULL != mForegroundState->getSkin() ) {
-		Drawable * stateDrawable = mForegroundState->getSkin()->getStateDrawable( UIState::StateFlagNormal );
-
-		if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
-			RectangleDrawable * rectangleDrawable = static_cast<RectangleDrawable*>( stateDrawable );
-
-			return rectangleDrawable->getCorners();
-		}
-	}
-
-	return 0;
+	return NULL != mForeground ? mForeground->getBorderRadius() : 0;
 }
 
-RectangleDrawable * UINode::setBorderEnabled( bool enabled ) {
-	writeFlag( UI_BORDER, enabled ? 1 : 0 );
+UIBorderDrawable* UINode::setBorderEnabled( bool enabled ) const {
+	const_cast<UINode*>( this )->writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
 		getBorder();
 
-		if ( NULL == mBackgroundState ) {
+		if ( NULL == mBackground ) {
 			getBackground();
 		}
 	}
 
-	invalidateDraw();
+	const_cast<UINode*>( this )->invalidateDraw();
 
 	return NULL != mBorder ? mBorder : NULL;
 }
 
-UINode * UINode::setBorderColor( const Color& color ) {
+UINode* UINode::setBorderColor( const Color& color ) {
 	setBorderEnabled( true )->setColor( color );
 	return this;
 }
@@ -546,7 +903,7 @@ Color UINode::getBorderColor() {
 	return setBorderEnabled( true )->getColor();
 }
 
-UINode * UINode::setBorderWidth( const unsigned int& width ) {
+UINode* UINode::setBorderWidth( const unsigned int& width ) {
 	setBorderEnabled( true )->setLineWidth( width );
 	return this;
 }
@@ -559,131 +916,232 @@ const Uint32& UINode::getFlags() const {
 	return mFlags;
 }
 
-UINode * UINode::setFlags( const Uint32& flags ) {
-	if ( NULL == mBackgroundState && ( flags & UI_FILL_BACKGROUND ) )
+UINode* UINode::setFlags( const Uint32& flags ) {
+	if ( NULL == mBackground && ( flags & UI_FILL_BACKGROUND ) )
 		setBackgroundFillEnabled( true );
 
-	if ( NULL == mForegroundState && ( flags & UI_FILL_FOREGROUND ) )
+	if ( NULL == mForeground && ( flags & UI_FILL_FOREGROUND ) )
 		setForegroundFillEnabled( true );
 
 	if ( NULL == mBorder && ( flags & UI_BORDER ) )
 		setBorderEnabled( true );
 
-	if ( fontHAlignGet( flags ) || fontVAlignGet( flags ) ) {
+	mFlags |= flags;
+
+	if ( Font::getHorizontalAlign( flags ) || Font::getVerticalAlign( flags ) ) {
 		onAlignChange();
 	}
-
-	mFlags |= flags;
 
 	return this;
 }
 
-UINode * UINode::unsetFlags(const Uint32 & flags) {
+UINode* UINode::unsetFlags( const Uint32& flags ) {
 	if ( mFlags & flags )
 		mFlags &= ~flags;
 
-	if ( fontHAlignGet( flags ) || fontVAlignGet( flags ) ) {
+	if ( Font::getHorizontalAlign( flags ) || Font::getVerticalAlign( flags ) ) {
 		onAlignChange();
 	}
 
 	return this;
 }
 
-UINode * UINode::resetFlags( Uint32 newFlags ) {
+UINode* UINode::resetFlags( Uint32 newFlags ) {
 	mFlags = newFlags;
 	return this;
 }
 
 void UINode::drawBackground() {
-	if ( ( mFlags & UI_FILL_BACKGROUND ) && NULL != mBackgroundState ) {
-		mBackgroundState->draw( mScreenPosi.x, mScreenPosi.y, eefloor(mSize.getWidth()), eefloor(mSize.getHeight()), (Uint32)mAlpha );
+	if ( ( mFlags & UI_FILL_BACKGROUND ) && NULL != mBackground ) {
+		mBackground->draw( mScreenPosi.asFloat(), mSize.floor(), mAlpha );
 	}
 }
 
 void UINode::drawForeground() {
-	if ( ( mFlags & UI_FILL_FOREGROUND ) && NULL != mForegroundState ) {
-		mForegroundState->draw( mScreenPosi.x, mScreenPosi.y, eefloor(mSize.getWidth()), eefloor(mSize.getHeight()), (Uint32)mAlpha );
+	if ( ( mFlags & UI_FILL_FOREGROUND ) && NULL != mForeground ) {
+		mForeground->draw( mScreenPosi.asFloat(), mSize.floor(), (Uint32)mAlpha );
 	}
 }
 
 void UINode::drawBorder() {
 	if ( ( mFlags & UI_BORDER ) && NULL != mBorder ) {
-		Uint8 alpha = mBorder->getAlpha();
-		mBorder->setAlpha( eemin<Uint32>( mAlpha * alpha / 255.f, 255 ) );
-		mBorder->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( eefloor(mSize.getWidth()), eefloor(mSize.getHeight()) ) );
-		mBorder->setAlpha( alpha );
+		mBorder->setAlpha( mAlpha );
+		mBorder->draw( mScreenPosi.asFloat(), mSize.floor() );
 	}
 }
 
-void UINode::internalDraw() {
+void UINode::smartClipStart( const ClipType& reqClipType ) {
+	if ( mClip.getClipType() != reqClipType )
+		return;
+	switch ( mClip.getClipType() ) {
+		case ClipType::PaddingBox: {
+			const Rectf& pd = getPixelsPadding();
+			clipSmartEnable( mScreenPos.x + pd.Left, mScreenPos.y + pd.Top,
+							 mSize.getWidth() - pd.Left - pd.Right,
+							 mSize.getHeight() - pd.Top - pd.Bottom );
+			break;
+		}
+		case ClipType::ContentBox: {
+			clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
+			break;
+		}
+		case ClipType::BorderBox: {
+			Rectf borderDiff;
+			if ( mBorder )
+				borderDiff = mBorder->getBorderBoxDiff();
+			clipSmartEnable( mScreenPos.x + borderDiff.Left, mScreenPos.y + borderDiff.Top,
+							 mSize.getWidth() + borderDiff.Right,
+							 mSize.getHeight() + borderDiff.Bottom );
+			break;
+		}
+		case ClipType::None: {
+			break;
+		}
+	}
+}
+
+void UINode::smartClipEnd( const ClipType& reqClipType ) {
+	if ( mVisible && isClipped() && mClip.getClipType() == reqClipType ) {
+		clipEnd();
+	}
+}
+
+void UINode::nodeDraw() {
 	if ( mVisible ) {
 		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 			updateScreenPos();
 
+		if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
+			updateWorldPolygon();
+
 		matrixSet();
 
-		clipStart();
+		smartClipStart( ClipType::BorderBox );
 
-		draw();
+		if ( mWorldBounds.intersect( mSceneNode->getWorldBounds() ) ) {
+			smartClipStart( ClipType::ContentBox );
 
-		drawChilds();
+			if ( 0.f != mAlpha ) {
+				drawBackground();
 
-		clipEnd();
+				drawSkin();
+			}
+
+			smartClipStart( ClipType::PaddingBox );
+
+			draw();
+
+			drawChilds();
+
+			smartClipEnd( ClipType::PaddingBox );
+
+			if ( 0.f != mAlpha )
+				drawForeground();
+
+			smartClipEnd( ClipType::ContentBox );
+		} else if ( !isClipped() ) {
+			drawChilds();
+		}
 
 		drawBorder();
+
+		if ( mNodeFlags & NODE_FLAG_DROPPABLE_HOVERING )
+			drawDroppableHovering();
 
 		drawHighlightFocus();
 
 		drawOverNode();
 
-		drawDebugData();
+		updateDebugData();
 
 		drawBox();
+
+		smartClipEnd( ClipType::BorderBox );
 
 		matrixUnset();
 	}
 }
 
-UISkin * UINode::getBackground() {
-	if ( NULL == mBackgroundState ) {
-		mBackgroundState = UISkinState::New( UISkin::New() );
-	}
-
-	return mBackgroundState->getSkin();
+void UINode::clearForeground() {
+	eeSAFE_DELETE( mForeground );
 }
 
-UISkin * UINode::getForeground() {
-	if ( NULL == mForegroundState ) {
-		mForegroundState = UISkinState::New( UISkin::New() );
-	}
-
-	return mForegroundState->getSkin();
+void UINode::clearBackground() {
+	eeSAFE_DELETE( mBackground );
 }
 
-RectangleDrawable * UINode::getBorder() {
+const ClipType& UINode::getClipType() const {
+	return mClip.getClipType();
+}
+
+UINode* UINode::setClipType( const ClipType& clipType ) {
+	if ( mClip.getClipType() != clipType ) {
+		mClip.setClipType( clipType );
+		if ( mClip.getClipType() != ClipType::None ) {
+			clipEnable();
+		} else {
+			clipDisable();
+		}
+	}
+	return this;
+}
+
+bool UINode::hasBorder() const {
+	return ( mFlags & UI_BORDER ) != 0;
+}
+
+const Rectf& UINode::getPixelsPadding() const {
+	static const Rectf Zero{};
+	return Zero;
+}
+
+UINodeDrawable* UINode::getBackground() const {
+	if ( NULL == mBackground ) {
+		mBackground = UINodeDrawable::New( const_cast<UINode*>( this ) );
+	}
+
+	return mBackground;
+}
+
+bool UINode::hasBackground() const {
+	return mBackground != nullptr;
+}
+
+UINodeDrawable* UINode::getForeground() const {
+	if ( NULL == mForeground ) {
+		mForeground = UINodeDrawable::New( const_cast<UINode*>( this ) );
+	}
+
+	return mForeground;
+}
+
+bool UINode::hasForeground() const {
+	return mForeground != nullptr;
+}
+
+UIBorderDrawable* UINode::getBorder() const {
 	if ( NULL == mBorder ) {
-		mBorder = RectangleDrawable::New();
+		mBorder = UIBorderDrawable::New( this );
 		mBorder->setColor( Color::Transparent );
-		mBorder->setFillMode( PrimitiveFillMode::DRAW_LINE );
-		mBorder->setLineWidth( PixelDensity::dpToPx(1) );
+		mBorder->setLineWidth( PixelDensity::dpToPx( 1 ) );
 	}
 
 	return mBorder;
 }
 
 void UINode::setThemeByName( const std::string& Theme ) {
-	setTheme( UIThemeManager::instance()->getByName( Theme ) );
+	setTheme( getUISceneNode()->getUIThemeManager()->getByName( Theme ) );
 }
 
-void UINode::setTheme( UITheme * Theme ) {
-	setThemeSkin( Theme, "control" );
+void UINode::setTheme( UITheme* Theme ) {
+	setThemeSkin( Theme, "widget" );
 }
 
-UINode * UINode::setThemeSkin( const std::string& skinName ) {
-	return setThemeSkin( UIThemeManager::instance()->getDefaultTheme(), skinName );
+UINode* UINode::setThemeSkin( const std::string& skinName ) {
+	return setThemeSkin( getUISceneNode()->getUIThemeManager()->getDefaultTheme(), skinName );
 }
 
-UINode * UINode::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
+UINode* UINode::setThemeSkin( UITheme* Theme, const std::string& skinName ) {
 	if ( NULL != Theme ) {
 		setSkin( Theme->getSkin( skinName ) );
 	}
@@ -691,12 +1149,12 @@ UINode * UINode::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
 	return this;
 }
 
-UINode * UINode::setSkin( const UISkin& Skin ) {
+UINode* UINode::setSkin( const UISkin& Skin ) {
 	removeSkin();
 
 	writeNodeFlag( NODE_FLAG_SKIN_OWNER, 1 );
 
-	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->clone();
+	UISkin* SkinCopy = const_cast<UISkin*>( &Skin )->clone();
 
 	mSkinState = UISkinState::New( SkinCopy );
 
@@ -705,7 +1163,7 @@ UINode * UINode::setSkin( const UISkin& Skin ) {
 	return this;
 }
 
-UINode * UINode::setSkin( UISkin * skin ) {
+UINode* UINode::setSkin( UISkin* skin ) {
 	if ( NULL != skin ) {
 		if ( NULL != mSkinState && mSkinState->getSkin() == skin )
 			return this;
@@ -722,13 +1180,18 @@ UINode * UINode::setSkin( UISkin * skin ) {
 		mSkinState->setState( InitialState );
 
 		onThemeLoaded();
+	} else {
+		removeSkin();
 	}
 
 	return this;
 }
 
-UINode * UINode::setSkinColor( const Color& color ) {
-	mSkinColor = color;
+UINode* UINode::setSkinColor( const Color& color ) {
+	if ( color != mSkinColor ) {
+		mSkinColor = color;
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -738,7 +1201,7 @@ const Color& UINode::getSkinColor() const {
 
 void UINode::removeSkin() {
 	if ( NULL != mSkinState && ( mNodeFlags & NODE_FLAG_SKIN_OWNER ) ) {
-		UISkin * tSkin = mSkinState->getSkin();
+		UISkin* tSkin = mSkinState->getSkin();
 
 		eeSAFE_DELETE( tSkin );
 	}
@@ -764,19 +1227,13 @@ void UINode::onAlignChange() {
 	invalidateDraw();
 }
 
-void UINode::pushState(const Uint32& State , bool emitEvent) {
+void UINode::pushState( const Uint32& State, bool emitEvent ) {
 	if ( !( mState & ( 1 << State ) ) ) {
 		mState |= 1 << State;
 
 		if ( NULL != mSkinState )
 			mSkinState->pushState( State );
 
-		if ( NULL != mBackgroundState )
-			mBackgroundState->pushState( State );
-
-		if ( NULL != mForegroundState )
-			mForegroundState->pushState( State );
-
 		if ( emitEvent ) {
 			onStateChange();
 		} else {
@@ -785,19 +1242,13 @@ void UINode::pushState(const Uint32& State , bool emitEvent) {
 	}
 }
 
-void UINode::popState(const Uint32& State , bool emitEvent) {
+void UINode::popState( const Uint32& State, bool emitEvent ) {
 	if ( mState & ( 1 << State ) ) {
 		mState &= ~( 1 << State );
 
 		if ( NULL != mSkinState )
 			mSkinState->popState( State );
 
-		if ( NULL != mBackgroundState )
-			mBackgroundState->popState( State );
-
-		if ( NULL != mForegroundState )
-			mForegroundState->popState( State );
-
 		if ( emitEvent ) {
 			onStateChange();
 		} else {
@@ -806,21 +1257,22 @@ void UINode::popState(const Uint32& State , bool emitEvent) {
 	}
 }
 
-void UINode::setThemeToChilds( UITheme * Theme ) {
-	Node * ChildLoop = mChild;
+void UINode::setThemeToChilds( UITheme* Theme ) {
+	Node* ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isUINode() ) {
-			UINode * node = static_cast<UINode*>( ChildLoop );
+			UINode* node = static_cast<UINode*>( ChildLoop );
 			node->setThemeToChilds( Theme );
-			node->setTheme( Theme );	// First set the theme to childs to let the father override the childs forced themes
+			node->setTheme( Theme ); // First set the theme to childs to let the father override the
+									 // childs forced themes
 		}
 
 		ChildLoop = ChildLoop->getNextNode();
 	}
 }
 
-UISkin * UINode::getSkin() const {
+UISkin* UINode::getSkin() const {
 	if ( NULL != mSkinState )
 		return mSkinState->getSkin();
 
@@ -837,10 +1289,11 @@ void UINode::writeFlag( const Uint32& Flag, const Uint32& Val ) {
 }
 
 void UINode::applyDefaultTheme() {
-	UIThemeManager::instance()->applyDefaultTheme( this );
+	getUISceneNode()->getUIThemeManager()->applyDefaultTheme( this );
 }
 
-Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
+Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom,
+						   bool SkipFlags ) const {
 	Rectf tPadding( 0, 0, 0, 0 );
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
@@ -868,7 +1321,7 @@ Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBot
 	return PixelDensity::pxToDp( tPadding );
 }
 
-Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) const {
+Sizef UINode::getSkinSize( UISkin* Skin, const Uint32& State ) const {
 	if ( NULL != Skin ) {
 		return Skin->getSize( State );
 	}
@@ -876,9 +1329,9 @@ Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) const {
 	return Sizef::Zero;
 }
 
-Sizef UINode::getSkinSize() const {
+Sizef UINode::getSkinSize( const Uint32& state ) const {
 	if ( NULL != getSkin() ) {
-		return getSkin()->getSize();
+		return getSkin()->getSize( state );
 	}
 
 	return Sizef::Zero;
@@ -888,44 +1341,56 @@ void UINode::onThemeLoaded() {
 	invalidateDraw();
 }
 
-void UINode::onChildCountChange() {
+void UINode::onChildCountChange( Node*, const bool& ) {
 	invalidateDraw();
 }
 
 void UINode::worldToNode( Vector2i& pos ) const {
 	Vector2f toPos( convertToNodeSpace( Vector2f( pos.x, pos.y ) ) );
-	pos = Vector2i( toPos.x  / PixelDensity::getPixelDensity(), toPos.y / PixelDensity::getPixelDensity() );
+	pos = Vector2i( toPos.x / PixelDensity::getPixelDensity(),
+					toPos.y / PixelDensity::getPixelDensity() );
 }
 
 void UINode::nodeToWorld( Vector2i& pos ) const {
-	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(), pos.y * PixelDensity::getPixelDensity() ) ) );
+	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(),
+												   pos.y * PixelDensity::getPixelDensity() ) ) );
 	pos = Vector2i( toPos.x, toPos.y );
 }
 
 void UINode::worldToNode( Vector2f& pos ) const {
 	Vector2f toPos( convertToNodeSpace( pos ) );
-	pos = Vector2f( toPos.x  / PixelDensity::getPixelDensity(), toPos.y / PixelDensity::getPixelDensity() );
+	pos = Vector2f( toPos.x / PixelDensity::getPixelDensity(),
+					toPos.y / PixelDensity::getPixelDensity() );
 }
 
 void UINode::nodeToWorld( Vector2f& pos ) const {
-	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(), pos.y * PixelDensity::getPixelDensity() ) ) );
+	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(),
+												   pos.y * PixelDensity::getPixelDensity() ) ) );
 	pos = Vector2f( toPos.x, toPos.y );
 }
 
-Node * UINode::getWindowContainer() const {
-	const Node * Ctrl = this;
+Node* UINode::getWindowContainer() const {
+	const Node* node = this;
 
-	while ( Ctrl != NULL ) {
-		if ( Ctrl->isType( UI_TYPE_WINDOW ) ) {
-			return static_cast<const UIWindow*>( Ctrl )->getContainer();
-		} else if ( mSceneNode == Ctrl ) {
-			return mSceneNode;
+	while ( node != NULL ) {
+		if ( node->isType( UI_TYPE_WINDOW ) ) {
+			return static_cast<const UIWindow*>( node )->getContainer();
+		} else if ( mSceneNode == node ) {
+			if ( mSceneNode->isUISceneNode() ) {
+				return static_cast<UISceneNode*>( mSceneNode )->getRoot();
+			} else {
+				return mSceneNode;
+			}
 		}
 
-		Ctrl = Ctrl->getParent();
+		node = node->getParent();
 	}
 
 	return mSceneNode;
+}
+
+bool UINode::isTabFocusable() const {
+	return 0 != ( mFlags & UI_TAB_FOCUSABLE );
 }
 
 const Vector2f& UINode::getDragPoint() const {
@@ -936,21 +1401,27 @@ void UINode::setDragPoint( const Vector2f& Point ) {
 	mDragPoint = Point;
 }
 
-Uint32 UINode::onDrag( const Vector2f& , const Uint32& ) {
+Uint32 UINode::onDrag( const Vector2f&, const Uint32&, const Sizef& ) {
 	return 1;
 }
 
-Uint32 UINode::onDragStart( const Vector2i& ) {
-	sendCommonEvent( Event::OnDragStart );
+Uint32 UINode::onDragStart( const Vector2i& pos, const Uint32& flags ) {
+	sendMouseEvent( Event::OnDragStart, pos, flags );
 	return 1;
 }
 
-Uint32 UINode::onDragStop( const Vector2i& ) {
-	sendCommonEvent( Event::OnDragStop );
+Uint32 UINode::onDragStop( const Vector2i& pos, const Uint32& flags ) {
+	sendMouseEvent( Event::OnDragStop, pos, flags );
 	return 1;
 }
 
-Uint32 UINode::onMouseOver(const Vector2i& position, const Uint32& flags) {
+Uint32 UINode::onDrop( UINode* widget ) {
+	DropEvent event( this, widget, Event::OnNodeDropped );
+	sendEvent( &event );
+	return 1;
+}
+
+Uint32 UINode::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 	Node::onMouseOver( position, flags );
 
 	pushState( UIState::StateHover );
@@ -958,7 +1429,7 @@ Uint32 UINode::onMouseOver(const Vector2i& position, const Uint32& flags) {
 	return 1;
 }
 
-Uint32 UINode::onMouseLeave(const Vector2i& position, const Uint32& flags) {
+Uint32 UINode::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
 	Node::onMouseLeave( position, flags );
 
 	popState( UIState::StateHover );
@@ -986,16 +1457,39 @@ void UINode::setDragging( const bool& dragging ) {
 	writeNodeFlag( NODE_FLAG_DRAGGING, dragging );
 
 	if ( dragging ) {
-		NodeMessage tMsg( this, NodeMessage::DragStart, 0 );
+		NodeMessage tMsg( this, NodeMessage::DragStart, getEventDispatcher()->getPressTrigger() );
 		messagePost( &tMsg );
 
-		onDragStart( getEventDispatcher()->getMousePos() );
+		onDragStart( getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
 	} else {
-		NodeMessage tMsg( this, NodeMessage::DragStop, 0 );
+		NodeMessage tMsg( this, NodeMessage::DragStop, getEventDispatcher()->getPressTrigger() );
 		messagePost( &tMsg );
 
-		onDragStop( getEventDispatcher()->getMousePos() );
+		onDragStop( getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
+
+		bool enabled = isEnabled();
+		mEnabled = false;
+		Node* found = getUISceneNode()->overFind( getEventDispatcher()->getMousePosf() );
+		if ( found && found->isUINode() ) {
+			NodeDropMessage msg( found, NodeMessage::Drop, this );
+			found->messagePost( &msg );
+			found->asType<UINode>()->onDrop( this );
+		}
+		mEnabled = enabled;
 	}
+}
+
+void UINode::startDragging( const Vector2f& position ) {
+	setDragging( true );
+
+	if ( NULL != getEventDispatcher() )
+		getEventDispatcher()->setNodeDragging( this );
+
+	mDragPoint = position;
+}
+
+bool UINode::ownsChildPosition() const {
+	return 0 != ( mFlags & UI_OWNS_CHILDS_POSITION );
 }
 
 void UINode::setDragButton( const Uint32& Button ) {
@@ -1013,7 +1507,88 @@ void UINode::onWidgetFocusLoss() {
 
 void UINode::setFocus() {
 	if ( NULL != getEventDispatcher() )
-		getEventDispatcher()->setFocusControl( this );
+		getEventDispatcher()->setFocusNode( this );
+}
+
+Float UINode::getPropertyRelativeTargetContainerLength(
+	const CSS::PropertyRelativeTarget& relativeTarget, const Float& defaultValue,
+	const Uint32& propertyIndex ) const {
+	Float containerLength = defaultValue;
+	switch ( relativeTarget ) {
+		case PropertyRelativeTarget::ContainingBlockWidth:
+			containerLength = getParent() ? getParent()->getPixelsSize().getWidth() : 0;
+			break;
+		case PropertyRelativeTarget::ContainingBlockHeight:
+			containerLength = getParent() ? getParent()->getPixelsSize().getHeight() : 0;
+			break;
+		case PropertyRelativeTarget::LocalBlockWidth:
+			containerLength = getPixelsSize().getWidth();
+			break;
+		case PropertyRelativeTarget::LocalBlockHeight:
+			containerLength = getPixelsSize().getHeight();
+			break;
+		case PropertyRelativeTarget::BackgroundWidth:
+			containerLength =
+				getPixelsSize().getWidth() -
+				getBackground()->getLayer( propertyIndex )->getDrawableSize().getWidth();
+			break;
+		case PropertyRelativeTarget::BackgroundHeight:
+			containerLength =
+				getPixelsSize().getHeight() -
+				getBackground()->getLayer( propertyIndex )->getDrawableSize().getHeight();
+			break;
+		case PropertyRelativeTarget::ForegroundWidth:
+			containerLength =
+				getPixelsSize().getWidth() -
+				getForeground()->getLayer( propertyIndex )->getDrawableSize().getWidth();
+			break;
+		case PropertyRelativeTarget::ForegroundHeight:
+			containerLength =
+				getPixelsSize().getHeight() -
+				getForeground()->getLayer( propertyIndex )->getDrawableSize().getHeight();
+			break;
+		case PropertyRelativeTarget::LocalBlockRadiusWidth:
+			containerLength = getPixelsSize().getWidth() * 0.5f;
+			break;
+		case PropertyRelativeTarget::LocalBlockRadiusHeight:
+			containerLength = getPixelsSize().getHeight() * 0.5f;
+			break;
+		case PropertyRelativeTarget::None:
+		default:
+			break;
+	}
+	return containerLength;
+}
+
+Float UINode::lengthFromValue( const std::string& value,
+							   const PropertyRelativeTarget& relativeTarget,
+							   const Float& defaultValue, const Uint32& propertyIndex ) const {
+	Float containerLength =
+		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
+	return convertLength( CSS::StyleSheetLength( value, defaultValue ), containerLength );
+}
+
+Float UINode::lengthFromValue( const CSS::StyleSheetProperty& property,
+							   const Float& defaultValue ) {
+	return lengthFromValue( property.getValue(),
+							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
+							property.getIndex() );
+}
+
+Float UINode::lengthFromValueAsDp( const std::string& value,
+								   const PropertyRelativeTarget& relativeTarget,
+								   const Float& defaultValue, const Uint32& propertyIndex ) const {
+	Float containerLength =
+		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
+	return convertLengthAsDp( CSS::StyleSheetLength::fromString( value, defaultValue ),
+							  containerLength );
+}
+
+Float UINode::lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
+								   const Float& defaultValue ) const {
+	return lengthFromValueAsDp( property.getValue(),
+								property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
+								property.getIndex() );
 }
 
 Uint32 UINode::onFocus() {
@@ -1028,4 +1603,104 @@ Uint32 UINode::onFocusLoss() {
 	return Node::onFocusLoss();
 }
 
-}}
+void UINode::onSceneChange() {
+	Node::onSceneChange();
+	if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+		mUISceneNode = static_cast<UISceneNode*>( mSceneNode );
+	}
+}
+
+Float UINode::convertLength( const CSS::StyleSheetLength& length,
+							 const Float& containerLength ) const {
+	Float elFontSize = 12;
+	Float rootFontSize = 12;
+
+	if ( length.getUnit() == CSS::StyleSheetLength::Unit::Rem ) {
+		if ( getUISceneNode() != NULL ) {
+			std::string fontSizeStr( getUISceneNode()->getRoot()->getPropertyString(
+				CSS::StyleSheetSpecification::instance()->getProperty(
+					(Uint32)PropertyId::FontSize ) ) );
+			if ( !fontSizeStr.empty() ) {
+				Float num;
+				if ( String::fromString( num, fontSizeStr ) ) {
+					rootFontSize = num;
+				}
+			} else if ( NULL != getUISceneNode() &&
+						NULL != getUISceneNode()->getUIThemeManager() ) {
+				UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+				if ( NULL != themeManager->getDefaultTheme() ) {
+					rootFontSize = getUISceneNode()
+									   ->getUIThemeManager()
+									   ->getDefaultTheme()
+									   ->getDefaultFontSize();
+				} else {
+					rootFontSize = themeManager->getDefaultFontSize();
+				}
+			}
+		}
+	} else if ( length.getUnit() == CSS::StyleSheetLength::Unit::Em ) {
+		if ( isWidget() ) {
+			std::string fontSizeStr( asConstType<UIWidget>()->getPropertyString(
+				CSS::StyleSheetSpecification::instance()->getProperty(
+					(Uint32)PropertyId::FontSize ) ) );
+			if ( !fontSizeStr.empty() ) {
+				Float num;
+				if ( String::fromString( num, fontSizeStr ) ) {
+					elFontSize = num;
+				}
+			} else {
+				Node* node = getParent();
+
+				while ( NULL != node ) {
+					if ( node->isWidget() ) {
+						std::string fontSizeStr( node->asType<UIWidget>()->getPropertyString(
+							CSS::StyleSheetSpecification::instance()->getProperty(
+								(Uint32)PropertyId::FontSize ) ) );
+						if ( !fontSizeStr.empty() ) {
+							Float num;
+							if ( String::fromString( num, fontSizeStr ) ) {
+								elFontSize = num;
+								break;
+							}
+						}
+					}
+
+					node = node->getParent();
+				}
+
+				if ( node == NULL ) {
+					if ( NULL != getUISceneNode() &&
+						 NULL != getUISceneNode()->getUIThemeManager() ) {
+						UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+						if ( NULL != themeManager->getDefaultTheme() ) {
+							elFontSize = getUISceneNode()
+											 ->getUIThemeManager()
+											 ->getDefaultTheme()
+											 ->getDefaultFontSize();
+						} else {
+							elFontSize = themeManager->getDefaultFontSize();
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return length.asPixels( containerLength, getSceneNode()->getPixelsSize(),
+							getSceneNode()->getDPI(), elFontSize, rootFontSize );
+}
+
+Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length,
+								 const Float& containerLength ) const {
+	return PixelDensity::pxToDp( convertLength( length, containerLength ) );
+}
+
+UISceneNode* UINode::getUISceneNode() const {
+	return mUISceneNode;
+}
+
+Rectf UINode::getLocalDpBounds() const {
+	return Rectf( 0, 0, mDpSize.getWidth(), mDpSize.getHeight() );
+}
+
+}} // namespace EE::UI

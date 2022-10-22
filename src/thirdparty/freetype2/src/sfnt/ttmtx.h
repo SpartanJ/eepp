@@ -1,23 +1,23 @@
-/***************************************************************************/
-/*                                                                         */
-/*  ttmtx.h                                                                */
-/*                                                                         */
-/*    Load the metrics tables common to TTF and OTF fonts (specification). */
-/*                                                                         */
-/*  Copyright 2006 by                                                      */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * ttmtx.h
+ *
+ *   Load the metrics tables common to TTF and OTF fonts (specification).
+ *
+ * Copyright (C) 2006-2019 by
+ * David Turner, Robert Wilhelm, and Werner Lemberg.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 
-#ifndef __TTMTX_H__
-#define __TTMTX_H__
+#ifndef TTMTX_H_
+#define TTMTX_H_
 
 
 #include <ft2build.h>
@@ -40,7 +40,7 @@ FT_BEGIN_HEADER
                      FT_Bool    vertical );
 
 
-  FT_LOCAL( FT_Error )
+  FT_LOCAL( void )
   tt_face_get_metrics( TT_Face     face,
                        FT_Bool     vertical,
                        FT_UInt     gindex,
@@ -49,7 +49,7 @@ FT_BEGIN_HEADER
 
 FT_END_HEADER
 
-#endif /* __TTMTX_H__ */
+#endif /* TTMTX_H_ */
 
 
 /* END */

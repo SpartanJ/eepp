@@ -1,14 +1,33 @@
-#include <eepp/ee.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/maps/mapeditor/mapeditor.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitheme.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
-EE::Window::Window * win = NULL;
-UIMessageBox * MsgBox = NULL;
-MapEditor * Editor = NULL;
+using namespace EE;
+using namespace EE::Graphics;
+using namespace EE::Maps;
+using namespace EE::Scene;
+using namespace EE::Window;
+using namespace EE::UI;
+using namespace EE::UI::Tools;
 
-bool onCloseRequestCallback( EE::Window::Window * w ) {
+EE::Window::Window* win = NULL;
+UIMessageBox* MsgBox = NULL;
+MapEditor* Editor = NULL;
+
+bool onCloseRequestCallback( EE::Window::Window* ) {
 	if ( NULL != Editor ) {
-		MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current map?\nAll changes will be lost." );
-		MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1<void, const Event*>( []( const Event * event ) { win->close(); } ) );
-		MsgBox->addEventListener( Event::OnClose, cb::Make1<void, const Event*>( []( const Event * event ) { MsgBox = NULL; } ) );
+		MsgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL,
+			"Do you really want to close the current map?\nAll changes will be lost." );
+		MsgBox->addEventListener( Event::MsgBoxConfirmClick, []( const Event* ) { win->close(); } );
+		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
 		MsgBox->setTitle( "Close Map?" );
 		MsgBox->center();
 		MsgBox->show();
@@ -21,52 +40,88 @@ bool onCloseRequestCallback( EE::Window::Window * w ) {
 void mainLoop() {
 	win->getInput()->update();
 
-	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( win ) ) {
+	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox &&
+		 onCloseRequestCallback( win ) ) {
 		win->close();
+	}
+
+	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
+
+	if ( win->getInput()->isKeyUp( KEY_F6 ) ) {
+		uiSceneNode->setHighlightFocus( !uiSceneNode->getHighlightFocus() );
+		uiSceneNode->setHighlightOver( !uiSceneNode->getHighlightOver() );
+	}
+
+	if ( win->getInput()->isKeyUp( KEY_F7 ) ) {
+		uiSceneNode->setDrawBoxes( !uiSceneNode->getDrawBoxes() );
+	}
+
+	if ( win->getInput()->isKeyUp( KEY_F8 ) ) {
+		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
 	SceneManager::instance()->update();
 
-	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
+	if ( uiSceneNode->invalidated() ) {
 		win->clear();
 
 		SceneManager::instance()->draw();
 
 		win->display();
 	} else {
-		Sys::sleep( Milliseconds(8) );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
+#endif
 	}
 }
 
-EE_MAIN_FUNC int main (int argc, char * argv []) {
-	Display * currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(0);
-	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
-	DisplayMode currentMode = currentDisplay->getCurrentMode();
+EE_MAIN_FUNC int main( int, char*[] ) {
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	displayManager->enableScreenSaver();
+	displayManager->enableMouseFocusClickThrough();
+	displayManager->disableBypassCompositor();
+	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+	Float pixelDensity = currentDisplay->getPixelDensity();
 
-	Uint32 width = eemin( currentMode.Width, (Uint32)( 1280 * pixelDensity ) );
-	Uint32 height = eemin( currentMode.Height, (Uint32)( 720 * pixelDensity ) );
+	std::string resPath( Sys::getProcessPath() );
 
-	win = Engine::instance()->createWindow( WindowSettings( width, height, "eepp - Map Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
+	win = Engine::instance()->createWindow(
+		WindowSettings( 1280, 720, "eepp - Map Editor", WindowStyle::Default,
+						WindowBackend::Default, 32, resPath + "assets/icon/ee.png", pixelDensity ),
+		ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
 
 	if ( win->isOpen() ) {
-		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
+		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );
 
-		UISceneNode * uiSceneNode = UISceneNode::New();
+		win->setCloseRequestCallback( onCloseRequestCallback );
+
+		UISceneNode* uiSceneNode = UISceneNode::New();
 
 		SceneManager::instance()->add( uiSceneNode );
 
 		{
 			std::string pd;
-			if ( PixelDensity::getPixelDensity() >= 1.5f ) pd = "1.5x";
-			else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
+			if ( PixelDensity::getPixelDensity() >= 1.5f )
+				pd = "1.5x";
+			else if ( PixelDensity::getPixelDensity() >= 2.f )
+				pd = "2x";
 
-			FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+			FontTrueType* font = FontTrueType::New( "NotoSans-Regular",
+													resPath + "assets/fonts/NotoSans-Regular.ttf" );
 
-			UITheme * theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
+			UITheme* theme = UITheme::load( "uitheme" + pd, "uitheme" + pd,
+											resPath + "assets/ui/uitheme" + pd + ".eta", font,
+											resPath + "assets/ui/uitheme.css" );
+			/*UITheme* theme =
+				UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );*/
 
 			uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 
-			UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
+			uiSceneNode->getUIThemeManager()
+				->setDefaultEffectsEnabled( true )
+				->setDefaultTheme( theme )
+				->setDefaultFont( font )
+				->add( theme );
 		}
 
 		Editor = MapEditor::New();

@@ -6,10 +6,10 @@
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
 #ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
 #include <process.h>
+#include <windows.h>
 
 namespace EE { namespace System {
 class Thread;
@@ -17,26 +17,28 @@ class Thread;
 namespace Platform {
 
 class ThreadImpl {
-	public:
-		static UintPtr getCurrentThreadId();
+  public:
+	static UintPtr getCurrentThreadId();
 
-		ThreadImpl( Thread * owner );
+	ThreadImpl( Thread* owner );
 
-		~ThreadImpl();
-		
-		void wait();
-		
-		void terminate();
+	~ThreadImpl();
 
-		UintPtr getId();
-	protected:
-		static unsigned int __stdcall entryPoint(void* userData);
+	void wait();
 
-		HANDLE			mThread;
-		unsigned int	mThreadId;
+	void terminate();
+
+	UintPtr getId();
+
+  protected:
+	static unsigned int __stdcall entryPoint( void* userData );
+
+	HANDLE mThread;
+	unsigned int mThreadId;
 };
 
-}}}
+} // namespace Platform
+}} // namespace EE::System
 
 #endif
 

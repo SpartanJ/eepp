@@ -5,20 +5,22 @@
 using namespace EE::Graphics;
 #endif
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-PivotJoint::PivotJoint( Body * a, Body * b, cVect pivot )
+PivotJoint::PivotJoint( Body* a, Body* b, cVect pivot )
 #ifdef PHYSICS_RENDERER_ENABLED
-	: mDrawPointSize( 10.f )
+	:
+	mDrawPointSize( 10.f )
 #endif
 {
 	mConstraint = cpPivotJointNew( a->getBody(), b->getBody(), tocpv( pivot ) );
 	setData();
 }
 
-PivotJoint::PivotJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 )
+PivotJoint::PivotJoint( Body* a, Body* b, cVect anchr1, cVect anchr2 )
 #ifdef PHYSICS_RENDERER_ENABLED
-	: mDrawPointSize( 10.f )
+	:
+	mDrawPointSize( 10.f )
 #endif
 {
 	mConstraint = cpPivotJointNew2( a->getBody(), b->getBody(), tocpv( anchr1 ), tocpv( anchr2 ) );
@@ -42,16 +44,16 @@ void PivotJoint::setAnchr2( const cVect& anchr2 ) {
 }
 
 void PivotJoint::draw() {
-	#ifdef PHYSICS_RENDERER_ENABLED
+#ifdef PHYSICS_RENDERER_ENABLED
 	if ( mDrawPointSize <= 0 )
 		return;
 
-	cpBody * body_a		= mConstraint->a;
-	cpBody * body_b		= mConstraint->b;
-	cpPivotJoint* joint	= (cpPivotJoint *)mConstraint;
-	cVect a				= tovect( cpvadd(body_a->p, cpvrotate(joint->anchr1, body_a->rot)) );
-	cVect b				= tovect( cpvadd(body_b->p, cpvrotate(joint->anchr2, body_b->rot)) );
-	BatchRenderer * BR = GlobalBatchRenderer::instance();
+	cpBody* body_a = mConstraint->a;
+	cpBody* body_b = mConstraint->b;
+	cpPivotJoint* joint = (cpPivotJoint*)mConstraint;
+	cVect a = tovect( cpvadd( body_a->p, cpvrotate( joint->anchr1, body_a->rot ) ) );
+	cVect b = tovect( cpvadd( body_b->p, cpvrotate( joint->anchr2, body_b->rot ) ) );
+	BatchRenderer* BR = GlobalBatchRenderer::instance();
 
 	cpFloat ps = BR->getPointSize();
 	BR->setTexture( NULL );
@@ -62,7 +64,7 @@ void PivotJoint::draw() {
 	BR->batchPoint( b.x, b.y );
 	BR->draw();
 	BR->setPointSize( ps );
-	#endif
+#endif
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
@@ -75,4 +77,4 @@ void PivotJoint::setDrawPointSize( const cpFloat& size ) {
 }
 #endif
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics

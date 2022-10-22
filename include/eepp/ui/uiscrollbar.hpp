@@ -1,97 +1,110 @@
 #ifndef EE_UICUISCROLLBAR_HPP
 #define EE_UICUISCROLLBAR_HPP
 
-#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uislider.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UIScrollBar : public UIWidget {
-	public:
-		enum ScrollBarType {
-			TwoButtons,
-			NoButtons
-		};
+  public:
+	enum ScrollBarType { TwoButtons, NoButtons };
 
-		static UIScrollBar * New();
+	static UIScrollBar* New();
 
-		static UIScrollBar * NewHorizontal();
+	static UIScrollBar* NewHorizontal();
 
-		static UIScrollBar * NewVertical();
+	static UIScrollBar* NewVertical();
 
-		explicit UIScrollBar( const UI_ORIENTATION& orientation = UI_VERTICAL );
+	static UIScrollBar* NewWithTag( const std::string& tag );
 
-		virtual ~UIScrollBar();
+	static UIScrollBar* NewHorizontalWithTag( const std::string& tag );
 
-		virtual Uint32 getType() const;
+	static UIScrollBar* NewVerticalWithTag( const std::string& tag );
 
-		virtual bool isType( const Uint32& type ) const;
+	explicit UIScrollBar( const std::string& tag = "scrollbar",
+						  const UIOrientation& orientation = UIOrientation::Vertical );
 
-		virtual void setValue( Float Val );
+	virtual ~UIScrollBar();
 
-		const Float& getValue() const;
+	virtual Uint32 getType() const;
 
-		virtual void setMinValue( const Float& MinVal );
+	virtual bool isType( const Uint32& type ) const;
 
-		const Float& getMinValue() const;
+	virtual void setValue( Float val, const bool& emmitEvent = true );
 
-		virtual void setMaxValue( const Float& MaxVal );
+	const Float& getValue() const;
 
-		const Float& getMaxValue() const;
+	virtual void setMinValue( const Float& MinVal );
 
-		virtual void setClickStep( const Float& step );
+	const Float& getMinValue() const;
 
-		const Float& getClickStep() const;
+	virtual void setMaxValue( const Float& MaxVal );
 
-		Float getPageStep() const;
+	const Float& getMaxValue() const;
 
-		void setPageStep( const Float& pageStep );
+	virtual void setClickStep( const Float& step );
 
-		virtual void setTheme( UITheme * Theme );
+	const Float& getClickStep() const;
 
-		bool isVertical() const;
+	Float getPageStep() const;
 
-		UISlider * getSlider() const;
+	void setPageStep( const Float& pageStep );
 
-		UINode * getButtonUp() const;
+	virtual void setTheme( UITheme* Theme );
 
-		UINode * getButtonDown() const;
+	bool isVertical() const;
 
-		UI_ORIENTATION getOrientation() const;
+	UISlider* getSlider() const;
 
-		UINode * setOrientation( const UI_ORIENTATION & orientation );
+	UINode* getButtonUp() const;
 
-		ScrollBarType getScrollBarType() const;
+	UINode* getButtonDown() const;
 
-		void setScrollBarType(const ScrollBarType & scrollBarType);
+	UIOrientation getOrientation() const;
 
-		bool getExpandBackground() const;
+	UINode* setOrientation( const UIOrientation& orientation );
 
-		void setExpandBackground( bool expandBackground );
+	ScrollBarType getScrollBarType() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		ScrollBarType	mScrollBarType;
-		UISlider * 		mSlider;
-		UINode *	mBtnUp;
-		UINode * mBtnDown;
+	void setScrollBarStyle( const ScrollBarType& scrollBarType );
 
-		virtual void onSizeChange();
+	bool getExpandBackground() const;
 
-		virtual void onAutoSize();
+	void setExpandBackground( bool expandBackground );
 
-		void adjustChilds();
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		void onValueChangeCb( const Event * Event );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		virtual void onAlphaChange();
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	bool isDragging() const;
 
-		virtual void onPaddingChange();
+  protected:
+	ScrollBarType mScrollBarStyle;
+	UISlider* mSlider;
+	UIWidget* mBtnUp;
+	UIWidget* mBtnDown;
+
+	virtual void onSizeChange();
+
+	virtual void onAutoSize();
+
+	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+
+	void adjustChilds();
+
+	void onValueChangeCb( const Event* Event );
+
+	virtual void onAlphaChange();
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	virtual void onPaddingChange();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

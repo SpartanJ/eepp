@@ -9,76 +9,85 @@ namespace EE { namespace Graphics {
 #if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
 
 class EE_API RendererGL : public Renderer {
-	public:
-		RendererGL();
-		
-		~RendererGL();
+  public:
+	RendererGL();
 
-		EEGL_version version();
+	~RendererGL();
 
-		std::string versionStr();
+	GraphicsLibraryVersion version();
 
-		void clientActiveTexture( unsigned int texture );
+	std::string versionStr();
 
-		void pointSize( float size );
+	void clientActiveTexture( unsigned int texture );
 
-		float pointSize();
+	void pointSize( float size );
 
-		void pushMatrix();
+	float pointSize();
 
-		void popMatrix();
+	void pushMatrix();
 
-		void loadIdentity();
+	void popMatrix();
 
-		void translatef( float x, float y, float z );
+	void loadIdentity();
 
-		void rotatef( float angle, float x, float y, float z );
+	void translatef( float x, float y, float z );
 
-		void scalef( float x, float y, float z );
+	void rotatef( float angle, float x, float y, float z );
 
-		void matrixMode (unsigned int mode);
+	void scalef( float x, float y, float z );
 
-		void ortho ( float left, float right, float bottom, float top, float zNear, float zFar );
+	void matrixMode( unsigned int mode );
 
-		void lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ );
+	void ortho( float left, float right, float bottom, float top, float zNear, float zFar );
 
-		void perspective ( float fovy, float aspect, float zNear, float zFar );
+	void lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ,
+				 float upX, float upY, float upZ );
 
-		void enableClientState( unsigned int array );
+	void perspective( float fovy, float aspect, float zNear, float zFar );
 
-		void disableClientState( unsigned int array );
+	void enableClientState( unsigned int array );
 
-		void vertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
+	void disableClientState( unsigned int array );
 
-		void colorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
+	void vertexPointer( int size, unsigned int type, int stride, const void* pointer,
+						unsigned int allocate );
 
-		void texCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
+	void colorPointer( int size, unsigned int type, int stride, const void* pointer,
+					   unsigned int allocate );
 
-		void clipPlane( unsigned int plane, const double *equation );
+	void texCoordPointer( int size, unsigned int type, int stride, const void* pointer,
+						  unsigned int allocate );
 
-		void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
+	void clipPlane( unsigned int plane, const double* equation );
 
-		void clip2DPlaneDisable();
+	void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width,
+							const Int32& Height );
 
-		void multMatrixf ( const float *m );
+	void clip2DPlaneDisable();
 
-		void loadMatrixf( const float *m );
+	void multMatrixf( const float* m );
 
-		void frustum( float left, float right, float bottom, float top, float near_val, float far_val );
+	void loadMatrixf( const float* m );
 
-		void getCurrentMatrix( unsigned int mode, float * m );
+	void frustum( float left, float right, float bottom, float top, float near_val, float far_val );
 
-		unsigned int getCurrentMatrixMode();
+	void getCurrentMatrix( unsigned int mode, float* m );
 
-		int project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz );
+	unsigned int getCurrentMatrixMode();
 
-		int unProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz );
-	protected:	
-		
+	int project( float objx, float objy, float objz, const float modelMatrix[16],
+				 const float projMatrix[16], const int viewport[4], float* winx, float* winy,
+				 float* winz );
+
+	int unProject( float winx, float winy, float winz, const float modelMatrix[16],
+				   const float projMatrix[16], const int viewport[4], float* objx, float* objy,
+				   float* objz );
+
+  protected:
 };
 
 #endif
 
-}}
+}} // namespace EE::Graphics
 
 #endif

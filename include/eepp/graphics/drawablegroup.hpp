@@ -7,49 +7,56 @@
 namespace EE { namespace Graphics {
 
 class EE_API DrawableGroup : public Drawable {
-	public:
-		static DrawableGroup * New();
+  public:
+	static DrawableGroup* New();
 
-		DrawableGroup();
+	DrawableGroup();
 
-		virtual ~DrawableGroup();
+	virtual ~DrawableGroup();
 
-		virtual Sizef getSize();
+	virtual Sizef getSize();
 
-		virtual void draw();
+	virtual Sizef getPixelsSize();
 
-		virtual void draw( const Vector2f& position );
+	virtual void draw();
 
-		virtual void draw( const Vector2f& position, const Sizef& size );
+	virtual void draw( const Vector2f& position );
 
-		virtual bool isStateful() { return false; }
+	virtual void draw( const Vector2f& position, const Sizef& size );
 
-		void clearDrawables();
-		
-		Drawable * addDrawable( Drawable * drawable );
-		
-		Uint32 getDrawableCount() const;
+	virtual bool isStateful() { return false; }
 
-		bool isClipEnabled() const;
+	void clearDrawables();
 
-		void setClipEnabled(bool clipEnabled);
+	Drawable* addDrawable( Drawable* drawable );
 
-		bool isDrawableOwner() const;
+	Uint32 getDrawableCount() const;
 
-		void setDrawableOwner(bool drawableOwner);
-	protected:
-		std::vector<Drawable*> mGroup;
-		std::vector<Vector2f> mPos;
-		Sizef mSize;
-		bool mNeedsUpdate;
-		bool mClipEnabled;
-		bool mDrawableOwner;
-		
-		virtual void onPositionChange();
+	bool isClipEnabled() const;
 
-		void update();
+	void setClipEnabled( bool clipEnabled );
+
+	bool isDrawableOwner() const;
+
+	void setDrawableOwner( bool drawableOwner );
+
+	std::vector<Drawable*>& getGroup();
+
+  protected:
+	std::vector<Drawable*> mGroup;
+	std::vector<Vector2f> mPos;
+	Sizef mSize;
+	bool mNeedsUpdate;
+	bool mClipEnabled;
+	bool mDrawableOwner;
+
+	virtual void onPositionChange();
+
+	virtual void onAlphaChange();
+
+	void update();
 };
 
-}}
+}} // namespace EE::Graphics
 
-#endif 
+#endif

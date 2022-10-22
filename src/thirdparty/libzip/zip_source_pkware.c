@@ -81,7 +81,7 @@ zip_source_pkware(struct zip *za, struct zip_source *src,
     }
 
     if (crc == NULL)
-	crc = get_crc_table();
+    crc = (uLongf *)get_crc_table();
 
     if ((ctx=(struct trad_pkware *)malloc(sizeof(*ctx))) == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);

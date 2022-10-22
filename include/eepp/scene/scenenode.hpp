@@ -2,167 +2,170 @@
 #define EE_SCENENODE_HPP
 
 #include <eepp/scene/node.hpp>
-#include <eepp/window/cursor.hpp>
 #include <eepp/system/translator.hpp>
+#include <eepp/window/cursor.hpp>
+#include <unordered_set>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;
-}}
+}} // namespace EE::Graphics
 using namespace EE::Graphics;
 
 namespace EE { namespace Window {
 class Window;
-}}
+}} // namespace EE::Window
 
 namespace EE { namespace Scene {
 
 class EE_API SceneNode : public Node {
-	public:
-		static SceneNode * New( EE::Window::Window * window = NULL );
+  public:
+	static SceneNode* New( EE::Window::Window* window = NULL );
 
-		SceneNode( EE::Window::Window * window = NULL );
+	SceneNode( EE::Window::Window* window = NULL );
 
-		~SceneNode();
+	~SceneNode();
 
-		void setTranslator( Translator translator );
+	void enableFrameBuffer();
 
-		Translator& getTranslator();
+	void disableFrameBuffer();
 
-		String getTranslatorString( const std::string& str );
+	bool ownsFrameBuffer() const;
 
-		void enableFrameBuffer();
+	virtual void draw();
 
-		void disableFrameBuffer();
+	virtual void update( const Time& elapsed );
 
-		bool ownsFrameBuffer() const;
+	void enableDrawInvalidation();
 
-		virtual void draw();
+	void disableDrawInvalidation();
 
-		virtual void update( const Time& elapsed );
+	EE::Window::Window* getWindow();
 
-		void enableDrawInvalidation();
+	FrameBuffer* getFrameBuffer() const;
 
-		void disableDrawInvalidation();
+	void setEventDispatcher( EventDispatcher* eventDispatcher );
 
-		EE::Window::Window * getWindow();
+	EventDispatcher* getEventDispatcher() const;
 
-		FrameBuffer * getFrameBuffer() const;
+	void setDrawDebugData( bool debug );
 
-		void setEventDispatcher( EventDispatcher * eventDispatcher );
+	bool getDrawDebugData() const;
 
-		EventDispatcher * getEventDispatcher() const;
+	void setDrawBoxes( bool draw );
 
-		void setDrawDebugData( bool debug );
+	bool getDrawBoxes() const;
 
-		bool getDrawDebugData() const;
+	void setHighlightOver( bool Highlight );
 
-		void setDrawBoxes( bool draw );
+	bool getHighlightOver() const;
 
-		bool getDrawBoxes() const;
+	void setHighlightFocus( bool Highlight );
 
-		void setHighlightOver( bool Highlight );
+	bool getHighlightFocus() const;
 
-		bool getHighlightOver() const;
+	void setHighlightInvalidation( bool Highlight );
 
-		void setHighlightFocus( bool Highlight );
+	bool getHighlightInvalidation() const;
 
-		bool getHighlightFocus() const;
+	void setHighlightOverColor( const Color& Color );
 
-		void setHighlightInvalidation( bool Highlight );
+	const Color& getHighlightOverColor() const;
 
-		bool getHighlightInvalidation() const;
+	void setHighlightFocusColor( const Color& Color );
 
-		void setHighlightOverColor( const Color& Color );
+	const Color& getHighlightFocusColor() const;
 
-		const Color& getHighlightOverColor() const;
+	void setHighlightInvalidationColor( const Color& Color );
 
-		void setHighlightFocusColor( const Color& Color );
+	const Color& getHighlightInvalidationColor() const;
 
-		const Color& getHighlightFocusColor() const;
+	const Time& getElapsed() const;
 
-		void setHighlightInvalidationColor( const Color& Color );
+	bool usesInvalidation();
 
-		const Color& getHighlightInvalidationColor() const;
+	void setUseGlobalCursors( const bool& use );
 
-		const Time& getElapsed() const;
+	const bool& getUseGlobalCursors();
 
-		bool usesInvalidation();
+	void setCursor( Cursor::Type cursor );
 
-		void setUseGlobalCursors( const bool& use );
+	virtual bool isDrawInvalidator() const;
 
-		const bool& getUseGlobalCursors();
+	ActionManager* getActionManager() const;
 
-		void setCursor( Cursor::Type cursor );
+	void subscribeScheduledUpdate( Node* node );
 
-		virtual bool isDrawInvalidator() const;
+	void unsubscribeScheduledUpdate( Node* node );
 
-		ActionManager * getActionManager() const;
+	bool isSubscribedForScheduledUpdate( Node* node );
 
-		void subscribeScheduledUpdate( Node * node );
+	void addMouseOverNode( Node* node );
 
-		void unsubscribeScheduledUpdate( Node * node );
+	void removeMouseOverNode( Node* node );
 
-		bool isSubscribedForScheduledUpdate( Node * node );
+	const bool& getUpdateAllChilds() const;
 
-		void addMouseOverNode( Node * node );
+	void setUpdateAllChilds( const bool& updateAllChilds );
 
-		void removeMouseOverNode( Node * node );
+	const Float& getDPI() const;
 
-		const bool& getUpdateAllChilds() const;
+  protected:
+	friend class Node;
+	typedef std::unordered_set<Node*> CloseList;
 
-		void setUpdateAllChilds( const bool& updateAllChilds );
-	protected:
-		friend class Node;
-		typedef std::list<Node*> CloseList;
+	EE::Window::Window* mWindow;
+	ActionManager* mActionManager;
+	FrameBuffer* mFrameBuffer;
+	EventDispatcher* mEventDispatcher;
+	CloseList mCloseList;
+	bool mFrameBufferBound;
+	bool mUseInvalidation;
+	bool mUseGlobalCursors;
+	bool mUpdateAllChilds;
+	Int32 mResizeCb;
+	bool mDrawDebugData;
+	bool mDrawBoxes;
+	bool mHighlightOver;
+	bool mHighlightFocus;
+	bool mHighlightInvalidation;
+	Color mHighlightFocusColor;
+	Color mHighlightOverColor;
+	Color mHighlightInvalidationColor;
+	Time mElapsed;
+	std::unordered_set<Node*> mScheduledUpdate;
+	std::unordered_set<Node*> mScheduledUpdateRemove;
+	std::unordered_set<Node*> mMouseOverNodes;
+	Float mDPI;
 
-		EE::Window::Window * mWindow;
-		ActionManager * mActionManager;
-		FrameBuffer * mFrameBuffer;
-		EventDispatcher * mEventDispatcher;
-		CloseList	mCloseList;
-		bool mFrameBufferBound;
-		bool mUseInvalidation;
-		bool mUseGlobalCursors;
-		bool mUpdateAllChilds;
-		Int32 mResizeCb;
-		bool mDrawDebugData;
-		bool mDrawBoxes;
-		bool mHighlightOver;
-		bool mHighlightFocus;
-		bool mHighlightInvalidation;
-		Color mHighlightFocusColor;
-		Color mHighlightOverColor;
-		Color mHighlightInvalidationColor;
-		Time mElapsed;
-		std::list<Node*>	mScheduledUpdate;
-		std::list<Node*>	mScheduledUpdateRemove;
-		std::list<Node*>	mMouseOverNodes;
+	virtual void onSizeChange();
 
-		virtual void onSizeChange();
+	virtual void matrixSet();
 
-		virtual void matrixSet();
+	virtual void matrixUnset();
 
-		virtual void matrixUnset();
+	virtual void preDraw();
 
-		virtual void preDraw();
+	virtual void postDraw();
 
-		virtual void postDraw();
+	virtual void onDrawDebugDataChange();
 
-		void sendMsg( Node * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
+	void sendMsg( Node* node, const Uint32& msg, const Uint32& flags = 0 );
 
-		virtual void resizeControl( EE::Window::Window * win );
+	virtual void resizeNode( EE::Window::Window* win );
 
-		void addToCloseQueue( Node * Ctrl );
+	void addToCloseQueue( Node* node );
 
-		void checkClose();
+	bool removeFromCloseQueue( Node* node );
 
-		void createFrameBuffer();
+	void checkClose();
 
-		void drawFrameBuffer();
+	void createFrameBuffer();
 
-		Sizei getFrameBufferSize();
+	void drawFrameBuffer();
+
+	Sizei getFrameBufferSize();
 };
 
-}}
+}} // namespace EE::Scene
 
 #endif

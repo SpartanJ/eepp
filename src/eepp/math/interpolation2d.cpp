@@ -1,53 +1,52 @@
-#include <eepp/math/interpolation2d.hpp>
 #include <eepp/math/easing.hpp>
+#include <eepp/math/interpolation2d.hpp>
 using namespace EE::Math::easing;
 
 namespace EE { namespace Math {
 
 Interpolation2d::Interpolation2d() :
-	mData(0),
-	mType(Ease::Linear),
-	mEnable(false),
-	mUpdate(true),
-	mLoop(false),
-	mEnded(false),
-	mTotDist(0.f),
-	mCurPoint(0),
-	mCurTime(Time::Zero),
-	mSpeed(1.3f),
+	mData( 0 ),
+	mType( Ease::Linear ),
+	mEnable( false ),
+	mUpdate( true ),
+	mLoop( false ),
+	mEnded( false ),
+	mTotDist( 0.f ),
+	mCurPoint( 0 ),
+	mCurTime( Time::Zero ),
+	mElapsed( Time::Zero ),
+	mDuration( Time::Zero ),
+	mSpeed( 1.3f ),
 	mOnPathEndCallback(),
-	mOnStepCallback()
-{
-}
+	mOnStepCallback() {}
 
 Interpolation2d::Interpolation2d( std::vector<Point2d> points ) :
-	mData(0),
-	mType(Ease::Linear),
-	mEnable(false),
-	mUpdate(true),
-	mLoop(false),
-	mEnded(false),
-	mTotDist(0.f),
-	mCurPoint(0),
-	mCurTime(Time::Zero),
-	mSpeed(1.3f),
-	mPoints(points),
+	mData( 0 ),
+	mType( Ease::Linear ),
+	mEnable( false ),
+	mUpdate( true ),
+	mLoop( false ),
+	mEnded( false ),
+	mTotDist( 0.f ),
+	mCurPoint( 0 ),
+	mCurTime( Time::Zero ),
+	mElapsed( Time::Zero ),
+	mDuration( Time::Zero ),
+	mSpeed( 1.3f ),
+	mPoints( points ),
 	mOnPathEndCallback(),
-	mOnStepCallback()
-{
-}
+	mOnStepCallback() {}
 
-Interpolation2d::~Interpolation2d() {
-}
+Interpolation2d::~Interpolation2d() {}
 
 Interpolation2d& Interpolation2d::start() {
-	mEnable				= true;
+	mEnable = true;
 
 	if ( mPoints.size() ) {
-		mActP = &mPoints[ 0 ];
+		mActP = &mPoints[0];
 
 		if ( mPoints.size() > 1 )
-			mNexP = &mPoints[ 1 ];
+			mNexP = &mPoints[1];
 
 		mCurPos = mPoints[0].p;
 	} else {
@@ -57,10 +56,11 @@ Interpolation2d& Interpolation2d::start() {
 	return *this;
 }
 
-Interpolation2d& Interpolation2d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
+Interpolation2d& Interpolation2d::start( OnPathEndCallback PathEndCallback,
+										 OnStepCallback StepCallback ) {
 	start();
-	mOnPathEndCallback	= PathEndCallback;
-	mOnStepCallback		= StepCallback;
+	mOnPathEndCallback = PathEndCallback;
+	mOnStepCallback = StepCallback;
 	return *this;
 }
 
@@ -85,6 +85,8 @@ Interpolation2d& Interpolation2d::reset() {
 	mEnable = false;
 	mCurPoint = 0;
 	mCurTime = Time::Zero;
+	mElapsed = Time::Zero;
+	mDuration = Time::Zero;
 	mUpdate = true;
 	mEnded = false;
 	mOnPathEndCallback = OnPathEndCallback();
@@ -107,27 +109,32 @@ Interpolation2d& Interpolation2d::add( const Vector2f& pos, const Time& time ) {
 	mPoints.push_back( Point2d( pos, time ) );
 
 	if ( mPoints.size() >= 2 ) {
-		mTotDist += mPoints[ mPoints.size() - 1 ].p.distance( mPoints[ mPoints.size() - 2 ].p );
+		mTotDist += mPoints[mPoints.size() - 1].p.distance( mPoints[mPoints.size() - 2].p );
 	}
+
+	mDuration += time;
 
 	return *this;
 }
 
-Interpolation2d& Interpolation2d::edit(const unsigned int& PointNum, const Vector2f& pos, const Time& time  ) {
+Interpolation2d& Interpolation2d::edit( const unsigned int& PointNum, const Vector2f& pos,
+										const Time& time ) {
 	if ( PointNum < mPoints.size() ) {
 		if ( 0 == PointNum ) {
-			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum + 1 ].p );
+			mTotDist -= mPoints[PointNum].p.distance( mPoints[PointNum + 1].p );
 		} else {
-			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum - 1 ].p );
+			mTotDist -= mPoints[PointNum].p.distance( mPoints[PointNum - 1].p );
 		}
 
-		mPoints[ PointNum ] = Point2d( pos, time );
+		mDuration -= mPoints[PointNum].t;
+		mPoints[PointNum] = Point2d( pos, time );
+		mDuration += mPoints[PointNum].t;
 
 		if ( 0 == PointNum ) {
 			if ( PointNum + (unsigned int)1 < mPoints.size() )
-				mTotDist += mPoints[ PointNum ].p.distance( mPoints[ PointNum + 1 ].p );
+				mTotDist += mPoints[PointNum].p.distance( mPoints[PointNum + 1].p );
 		} else {
-			mTotDist += mPoints[ PointNum ].p.distance( mPoints[ PointNum - 1 ].p );
+			mTotDist += mPoints[PointNum].p.distance( mPoints[PointNum - 1].p );
 		}
 	}
 
@@ -137,10 +144,12 @@ Interpolation2d& Interpolation2d::edit(const unsigned int& PointNum, const Vecto
 Interpolation2d& Interpolation2d::erase( const unsigned int& PointNum ) {
 	if ( PointNum < mPoints.size() && !mEnable ) {
 		if ( 0 == PointNum ) {
-			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum + 1 ].p );
+			mTotDist -= mPoints[PointNum].p.distance( mPoints[PointNum + 1].p );
 		} else {
-			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum - 1 ].p );
+			mTotDist -= mPoints[PointNum].p.distance( mPoints[PointNum - 1].p );
 		}
+
+		mDuration -= mPoints[PointNum].t;
 
 		mPoints.erase( mPoints.begin() + PointNum );
 	}
@@ -148,12 +157,13 @@ Interpolation2d& Interpolation2d::erase( const unsigned int& PointNum ) {
 	return *this;
 }
 
-Interpolation2d &Interpolation2d::wait( const Vector2f& pos, const Time& time ) {
+Interpolation2d& Interpolation2d::wait( const Vector2f& pos, const Time& time ) {
 	add( pos, time ).add( pos );
 	return *this;
 }
 
-Interpolation2d &Interpolation2d::waitAndAdd( const Vector2f& pos, const Time& waitTime, const Time& addTime ) {
+Interpolation2d& Interpolation2d::waitAndAdd( const Vector2f& pos, const Time& waitTime,
+											  const Time& addTime ) {
 	add( pos, waitTime ).add( pos, addTime );
 	return *this;
 }
@@ -172,17 +182,19 @@ Interpolation2d& Interpolation2d::setSpeed( const Float& Speed ) {
 		Float TotTime = tdist * ( 1000.f / mSpeed );
 
 		if ( mLoop ) {
-			CurDist = mPoints[ mPoints.size() - 1 ].p.distance( mPoints[0].p );
+			CurDist = mPoints[mPoints.size() - 1].p.distance( mPoints[0].p );
 			tdist += CurDist;
 
-			mPoints[ mPoints.size() - 1 ].t = Milliseconds( CurDist * TotTime / tdist );
+			mPoints[mPoints.size() - 1].t = Milliseconds( CurDist * TotTime / tdist );
 			TotTime = tdist * ( 1000.f / mSpeed );
 		}
 
-		for ( unsigned int i = 0; i < mPoints.size() - 1; i++) {
+		for ( unsigned int i = 0; i < mPoints.size() - 1; i++ ) {
 			CurDist = mPoints[i].p.distance( mPoints[i + 1].p );
 			mPoints[i].t = Milliseconds( CurDist * TotTime / tdist );
 		}
+
+		mDuration = Milliseconds( TotTime );
 	}
 
 	return *this;
@@ -194,30 +206,32 @@ const Vector2f& Interpolation2d::getPosition() {
 
 void Interpolation2d::update( const Time& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
+		mElapsed += Elapsed;
+
 		if ( mUpdate ) {
 			mCurTime = Time::Zero;
-			mActP = &mPoints[ mCurPoint ];
+			mActP = &mPoints[mCurPoint];
 
 			if ( mCurPoint + 1 < mPoints.size() ) {
-				mNexP = &mPoints[ mCurPoint + 1 ];
+				mNexP = &mPoints[mCurPoint + 1];
 
 				if ( mOnStepCallback )
-					mOnStepCallback(*this);
+					mOnStepCallback( *this );
 			} else {
 				if ( mOnStepCallback )
-					mOnStepCallback(*this);
+					mOnStepCallback( *this );
 
 				if ( mLoop ) {
-					mNexP = &mPoints[ 0 ];
+					mNexP = &mPoints[0];
 
 					if ( mOnPathEndCallback )
-						mOnPathEndCallback(*this);
+						mOnPathEndCallback( *this );
 				} else {
 					mEnable = false;
 					mEnded = true;
 
 					if ( mOnPathEndCallback ) {
-						mOnPathEndCallback(*this);
+						mOnPathEndCallback( *this );
 
 						if ( !mEnable )
 							mOnPathEndCallback = nullptr;
@@ -230,8 +244,10 @@ void Interpolation2d::update( const Time& Elapsed ) {
 
 		mCurTime += Elapsed;
 
-		mCurPos.x = easingCb[ mType ]( mCurTime.asMilliseconds(), mActP->p.x, ( mNexP->p.x - mActP->p.x ), mActP->t.asMilliseconds() );
-		mCurPos.y = easingCb[ mType ]( mCurTime.asMilliseconds(), mActP->p.y, ( mNexP->p.y - mActP->p.y ), mActP->t.asMilliseconds() );
+		mCurPos.x = easingCb[mType]( mCurTime.asMilliseconds(), mActP->p.x,
+									 ( mNexP->p.x - mActP->p.x ), mActP->t.asMilliseconds() );
+		mCurPos.y = easingCb[mType]( mCurTime.asMilliseconds(), mActP->p.y,
+									 ( mNexP->p.y - mActP->p.y ), mActP->t.asMilliseconds() );
 
 		if ( mCurTime >= mActP->t ) {
 			mCurPos = mNexP->p;
@@ -240,8 +256,10 @@ void Interpolation2d::update( const Time& Elapsed ) {
 
 			mCurPoint++;
 
-			if ( mCurPoint == mPoints.size() && mLoop )
+			if ( mCurPoint == mPoints.size() && mLoop ) {
 				mCurPoint = 0;
+				mElapsed = Time::Zero;
+			}
 		}
 	}
 }
@@ -259,14 +277,23 @@ Interpolation2d& Interpolation2d::setDuration( const Time& TotTime ) {
 	}
 
 	if ( mLoop ) {
-		tdist += mPoints[ mPoints.size() - 1 ].p.distance( mPoints[0].p );
-		mPoints[ mPoints.size() - 1 ].t = Milliseconds( mPoints[ mPoints.size() - 1 ].p.distance( mPoints[0].p ) * TotTime.asMilliseconds() / tdist );
+		tdist += mPoints[mPoints.size() - 1].p.distance( mPoints[0].p );
+		mPoints[mPoints.size() - 1].t =
+			Milliseconds( mPoints[mPoints.size() - 1].p.distance( mPoints[0].p ) *
+						  TotTime.asMilliseconds() / tdist );
 	}
 
-	for (i = 0; i < mPoints.size() - 1; i++)
-		mPoints[i].t = Milliseconds( mPoints[i].p.distance( mPoints[i + 1].p ) * TotTime.asMilliseconds() / tdist );
+	for ( i = 0; i < mPoints.size() - 1; i++ )
+		mPoints[i].t = Milliseconds( mPoints[i].p.distance( mPoints[i + 1].p ) *
+									 TotTime.asMilliseconds() / tdist );
+
+	mDuration = TotTime;
 
 	return *this;
+}
+
+const Time& Interpolation2d::getDuration() const {
+	return mDuration;
 }
 
 Interpolation2d& Interpolation2d::setType( Ease::Interpolation InterpolationType ) {
@@ -278,14 +305,20 @@ const int& Interpolation2d::getType() const {
 	return mType;
 }
 
-UintPtr Interpolation2d::getData() const
-{
+UintPtr Interpolation2d::getData() const {
 	return mData;
 }
 
-void Interpolation2d::setData(const UintPtr & data)
-{
+void Interpolation2d::setData( const UintPtr& data ) {
 	mData = data;
+}
+
+Float Interpolation2d::getCurrentProgress() {
+	return mElapsed.asMilliseconds() / mDuration.asMilliseconds();
+}
+
+Float Interpolation2d::getPartialCurrentProgress() {
+	return mCurTime >= mActP->t ? 1.f : mCurTime.asMilliseconds() / mActP->t.asMilliseconds();
 }
 
 bool Interpolation2d::getLoop() const {
@@ -301,11 +334,11 @@ bool Interpolation2d::ended() const {
 	return mEnded;
 }
 
-Point2d * Interpolation2d::getCurrentActual() const {
+Point2d* Interpolation2d::getCurrentActual() const {
 	return mActP;
 }
 
-Point2d * Interpolation2d::getCurrentNext() const {
+Point2d* Interpolation2d::getCurrentNext() const {
 	return mNexP;
 }
 
@@ -340,4 +373,4 @@ Interpolation2d& Interpolation2d::setEnabled( const bool& Enabled ) {
 	return *this;
 }
 
-}}
+}} // namespace EE::Math

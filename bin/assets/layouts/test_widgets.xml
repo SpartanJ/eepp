@@ -1,67 +1,91 @@
 <vbox layout_width="match_parent" layout_height="match_parent">
-	<TabWidget layout_width="match_parent" layout_height="match_parent" paddingLeft="8dp" paddingRight="8dp" paddingBottom="8dp" paddingTop="20dp" background="#656565">
+	<TabWidget layout_width="match_parent" layout_height="match_parent" padding-left="8dp" padding-right="8dp" padding-bottom="8dp" background="#31363b">
 		<hbox id="test_1" layout_width="match_parent" layout_height="match_parent">
-			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" background="#222" padding="12dp">
-				<TextView layout_width="wrap_content" layout_height="wrap_content" text="Testing TextView"/>
-				<PushButton layout_width="wrap_content" layout_height="wrap_content" text="Testing PushButton" />
-				<CheckBox layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="Testing CheckBox" />
-				<RadioButton layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="Testing RadioButton"/>
-				<DropDownList layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="Testing DropDownList">
+			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" background="#31363b" padding="12dp">
+				<TextView layout_width="wrap_content" layout_height="wrap_content" text="Testing TextView" />
+				<PushButton layout_width="wrap_content" layout_height="wrap_content" text="Testing PushButton" margin-top="8dp" tooltip="Testing Tooltip" />
+				<CheckBox layout_width="wrap_content" layout_height="wrap_content" margin-top="8dp" text="Testing CheckBox" />
+				<RadioButton layout_width="wrap_content" layout_height="wrap_content" margin-top="8dp" text="Testing RadioButton"/>
+				<DropDownList layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing DropDownList">
 					<item>Test</item>
 					<item>Test 2</item>
 					<item>Test 3</item>
+					<item>Test 4</item><item>Test 5</item><item>Test 6</item><item>Test 7</item><item>Test 8</item>
+					<item>Test 9</item><item>Test 10</item><item>Test 11</item><item>Test 12</item><item>Test 13</item>
 				</DropDownList>
-				<Image layout_width="32dp" layout_height="32dp" src="file://assets/tiles/1.png" layout_marginTop="8dp" />
-				<ListBox layout_width="300dp" layout_height="100dp" layout_marginTop="8dp" text="Testing ListBox">
+				<!-- <Image layout_width="32dp" layout_height="32dp" src="file://assets/tiles/1.png" margin-top="8dp" /> -->
+				<ListBox layout_width="300dp" layout_height="100dp" margin-top="8dp" text="Testing ListBox">
 					<item>Test</item>
 					<item>Test 2</item>
 					<item>Test 3</item>
+					<item>Test 4</item><item>Test 5</item><item>Test 6</item><item>Test 7</item><item>Test 8</item>
 				</ListBox>
-				<ProgressBar layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" progress="50" layout_marginTop="8dp" />
-				<ScrollBar id="scrollbar" orientation="horizontal" layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" />
-				<Slider id="scrollbar" orientation="horizontal" layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" />
-				<!-- <Sprite layout_width="wrap_content" layout_height="wrap_content" src="" layout_marginTop="8dp" /> -->
-				<ComboBox layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="Testing ComboBox" layout_marginTop="8dp">
+				<ProgressBar layout_width="300dp" layout_height="wrap_content" margin-top="8dp" progress="50" margin-top="8dp" />
+				<ScrollBar id="scrollbar" orientation="horizontal" layout_width="300dp" layout_height="wrap_content" margin-top="8dp" />
+				<Slider id="scrollbar" orientation="horizontal" layout_width="300dp" layout_height="wrap_content" margin-top="8dp" />
+				<!-- <Sprite layout_width="wrap_content" layout_height="wrap_content" src="" margin-top="8dp" /> -->
+				<ComboBox layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing ComboBox">
 					<item>Test</item>
 					<item>Test 2</item>
 					<item>Test 3</item>
+					<item>Test 4</item><item>Test 5</item><item>Test 6</item><item>Test 7</item><item>Test 8</item>
 				</ComboBox>
-				<TextInput layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="Testing TextInput" />
-				<TextEdit layout_width="300dp" layout_height="60dp" layout_marginTop="8dp" text="Testing TextEdit" />
-				<SelectButton layout_width="wrap_content" layout_height="wrap_content" text="Testing SelectButton" layout_marginTop="8dp" />
-				<!-- <TextureRegion layout_width="32dp" layout_height="32dp" src="" layout_marginTop="8dp" layout_marginTop="8dp" /> -->
+				<TextInput layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing TextInput" />
+				<TextInputPassword layout_width="300dp" layout_height="wrap_content" margin-top="8dp" hint="Password" />
+				<TextEdit layout_width="300dp" layout_height="100dp" margin-top="8dp" text="Testing TextEdit Text Texted with text as text is the way to test the text.&#10;Multi line&#10;Texts" />
+				<SelectButton layout_width="wrap_content" layout_height="wrap_content" text="Testing SelectButton" margin-top="8dp" />
+				<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" margin-top="8dp" />
+				<!-- <TextureRegion layout_width="32dp" layout_height="32dp" src="" margin-top="8dp" margin-top="8dp" /> -->
 			</vbox>
 			<vbox id="rvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" background="#323232" padding="12dp">
 				<RelativeLayout id="rrl" layout_width="match_parent" layout_height="match_parent" background="#999" padding="24dp">
-					<TextView layout_width="match_parent" layout_height="match_parent" text="testing match_parent" textSize="24dp" padding="12dp" background="#333" gravity="center" />
-					<TextView id="el1" layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" background="#242424" />
-					<TextView layout_width="wrap_content" layout_height="wrap_content" text="testing margin" textSize="24dp" padding="12dp" background="#242424" layout_gravity="top|right" layout_margin="12dp" />
-					<TextView id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" textSize="24dp" background="#242424" layout_gravity="bottom|left" layout_margin="12dp" />
-					<TextView id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" textSize="24dp" background="#242424" layout_gravity="bottom|right" layout_margin="12dp" padding="12dp" />
-					<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fillColor="#999" padding="44dp" outlinethickness="8dp" />
+					<TextView layout_width="match_parent" layout_height="match_parent" text="testing match_parent" font-size="24dp" padding="12dp" background="#333" gravity="center" />
+					<TextView id="el1" layout_width="wrap_content" layout_height="wrap_content" text="testing padding" font-size="24dp" padding="12dp" background="#242424" />
+					<TextView layout_width="wrap_content" layout_height="wrap_content" text="testing margin" font-size="24dp" padding="12dp" background="#242424" layout_gravity="top|right" margin="12dp" />
+					<TextView id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" font-size="24dp" background="#242424" layout_gravity="bottom|left" margin="12dp" />
+					<TextView id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" font-size="24dp" background="#242424" layout_gravity="bottom|right" margin="12dp" padding="12dp" />
 
-					<Sprite layout_width="96dp" layout_height="96dp" src="bn" padding="8dp" background="#888" gravity="center" layout_marginTop="56dp" gravity="right|bottom" />
-					<TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" background="#787" gravity="center" layout_marginTop="162dp" gravity="right|bottom" />
+					<Sprite layout_width="96dp" layout_height="96dp" src="bn" padding="8dp" background="#888" gravity="center" margin-top="56dp" gravity="right|bottom" />
+					<TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" background="#787" gravity="center" margin-top="162dp" gravity="right|bottom" />
 
 					<PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
-					<PushButton text="OK!" textSize="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" layout_marginBottom="8dp" padding="8dp" layout_to_top_of="tm" />
-					
-					<Slider id="slider" orientation="horizontal" halfslider="true" layout_width="200dp" layout_height="wrap_content" padding="32dp" background="#555" layout_to_bottom_of="el1" />
-					
-					<ScrollBar id="scrollbar" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#12345666" layout_to_bottom_of="slider" />
+					<PushButton text="OK!" font-size="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" margin-bottom="8dp" padding="8dp" layout_to_top_of="tm" />
 
-					<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#54345666" layout_to_bottom_of="scrollbar" />
-					
-					<TextEdit layout_width="200dp" layout_height="50dp" layout_gravity="bottom|center_horizontal" padding="16dp" layout_marginBottom="140dp" />
+					<Slider id="slider" orientation="horizontal" half-slider="true" layout_width="200dp" layout_height="wrap_content" padding="32dp" background="#555" layout_to_bottom_of="el1" />
+
+					<ScrollBar id="scrollbarpadding" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#12345666" layout_to_bottom_of="slider" />
+
+					<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#54345666" layout_to_bottom_of="scrollbar" allow-float="true" />
+
+					<TextEdit layout_width="200dp" layout_height="50dp" layout_gravity="bottom|center_horizontal" padding="8dp" margin-bottom="140dp" />
 				</RelativeLayout>
 			</vbox>
 		</hbox>
-		<hbox id="test_2" layout_width="match_parent" layout_height="match_parent">
-			<TextView layout_width="match_parent" layout_height="match_parent" text="Hello World!" gravity="center" background="#333" textSize="24dp" borderRadius="128" />
-		</hbox>
-		
-		<Tab name="Padding Test" owns="test_1" />
-		<Tab name="Tabs Test" owns="test_2" />
+		<RelativeLayout id="test_2" layout_width="match_parent" layout_height="match_parent">
+			<TextView layout_width="match_parent" layout_height="match_parent" font-size="24dp" text="Hello World!" gravity="center" />
+			<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" padding="44dp" outline-thickness="8dp" />
+		</RelativeLayout>
+		<RelativeLayout id="test_3" layout_width="match_parent" layout_height="match_parent">
+			<CodeEditor layout_width="match_parent" layout_height="match_parent" />
+		</RelativeLayout>
+
+		<Tab text="Padding Test" owns="test_1" />
+		<Tab text="Tabs Test" owns="test_2" />
+		<Tab text="Code Editor Test" owns="test_3" />
 	</TabWidget>
 </vbox>
- 
+<window windowFlags="default|maximize|minimize|shadow" layout_width="300dp" layout_height="300dp" x="400dp" y="300dp" window-title="Test Window">
+  <LinearLayout id="testlayout" orientation="vertical" layout_width="match_parent" layout_height="match_parent" layout_margin="8dp">
+	<TextView text="Hello World!" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />
+	<PushButton text="OK!" textSize="16dp" icon="ok" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />
+	<TextInput text="test" layout_width="match_parent" layout_height="wrap_content" />
+	<DropDownList layout_width="match_parent" layout_height="wrap_content" selectedIndex="0">
+	  <item>Test Item</item>
+	  <item>@string/test_item</item>
+	</DropDownList>
+	<ListBox layout_width="match_parent" layout_height="match_parent" layout_weight="1">
+	  <item>Hello!</item>
+	  <item>World!</item>
+	</ListBox>
+  </LinearLayout>
+</window>

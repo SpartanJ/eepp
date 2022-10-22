@@ -10,40 +10,43 @@ using namespace EE::Graphics;
 namespace EE { namespace Maps {
 
 class EE_API GameObjectTextureRegion : public GameObject {
-	public:
-		GameObjectTextureRegion( const Uint32& Flags, MapLayer * Layer, Graphics::TextureRegion * TextureRegion = NULL, const Vector2f& Pos = Vector2f() );
+  public:
+	GameObjectTextureRegion( const Uint32& Flags, MapLayer* Layer,
+							 Graphics::TextureRegion* TextureRegion = NULL,
+							 const Vector2f& Pos = Vector2f() );
 
-		virtual ~GameObjectTextureRegion();
+	virtual ~GameObjectTextureRegion();
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual Vector2f getPosition() const;
+	virtual Vector2f getPosition() const;
 
-		virtual void setPosition( Vector2f pos );
+	virtual void setPosition( Vector2f pos );
 
-		virtual Vector2i getTilePosition() const;
+	virtual Vector2i getTilePosition() const;
 
-		virtual void setTilePosition( Vector2i pos );
+	virtual void setTilePosition( Vector2i pos );
 
-		virtual Sizei getSize();
+	virtual Sizei getSize();
 
-		Graphics::TextureRegion * getTextureRegion() const;
+	Graphics::TextureRegion* getTextureRegion() const;
 
-		void setTextureRegion( Graphics::TextureRegion * TextureRegion );
+	void setTextureRegion( Graphics::TextureRegion* TextureRegion );
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type );
+	virtual bool isType( const Uint32& type );
 
-		virtual Uint32 getDataId();
+	virtual Uint32 getDataId();
 
-		virtual void setDataId( Uint32 Id );
-	protected:
-		Graphics::TextureRegion *	mTextureRegion;
-		Vector2f				mPos;
-		Vector2i				mTilePos;
+	virtual void setDataId( Uint32 Id );
+
+  protected:
+	Graphics::TextureRegion* mTextureRegion;
+	Vector2f mPos;
+	Vector2i mTilePos;
 };
 
-}}
+}} // namespace EE::Maps
 
 #endif

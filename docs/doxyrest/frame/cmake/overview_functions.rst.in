@@ -1,0 +1,38 @@
+%{
+--------------------------------------------------------------------------------
+--
+--  This file is part of the Doxyrest toolkit.
+--
+--  Doxyrest is distributed under the MIT license.
+--  For details see accompanying license.txt file,
+--  the public copy of which is also available at:
+--  http://tibbo.com/downloads/archive/doxyrest/license.txt
+--
+--------------------------------------------------------------------------------
+
+local argArray = table.pack(...)
+local compound = argArray[1]
+local functionArray = argArray[2]
+local sectionName = argArray[3]
+}
+	# $sectionName
+
+%{
+local isPrevMl = false
+
+for i = 1, #functionArray do
+	local item = functionArray[i]
+	local decl = getFunctionDeclString(item, getItemNameTemplate(item), "\t")
+	local isMl = string.find(decl, "\n")
+	local extraNl = ""
+
+	if i > 1 and (isMl or isPrevMl) then
+		extraNl = "\n"
+	end
+
+	isPrevMl = isMl
+}
+$extraNl	$decl
+%{
+end -- for
+}

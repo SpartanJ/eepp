@@ -630,13 +630,18 @@ cpBBTreeContains(cpBBTree *tree, void *obj, cpHashValue hashid)
 
 //MARK: Reindex
 
+static void LeafUpdate2(void* elt, void* data)
+{
+	LeafUpdate((Node*)elt, (cpBBTree*)data);
+}
+
 static void
 cpBBTreeReindexQuery(cpBBTree *tree, cpSpatialIndexQueryFunc func, void *data)
 {
 	if(!tree->root) return;
 	
 	// LeafUpdate() may modify tree->root. Don't cache it.
-	cpHashSetEach(tree->leaves, (cpHashSetIteratorFunc)LeafUpdate, tree);
+	cpHashSetEach(tree->leaves, (cpHashSetIteratorFunc)LeafUpdate2, tree);
 	
 	cpSpatialIndex *staticIndex = tree->spatialIndex.staticIndex;
 	Node *staticRoot = (staticIndex && staticIndex->klass == Klass() ? ((cpBBTree *)staticIndex)->root : NULL);

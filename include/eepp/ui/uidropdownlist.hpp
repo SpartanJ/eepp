@@ -1,88 +1,100 @@
 #ifndef EE_UICUIDROPDOWNLIST_HPP
 #define EE_UICUIDROPDOWNLIST_HPP
 
-#include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uitextinput.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UIDropDownList : public UITextInput {
-	public:
-		class StyleConfig {
-			public:
-				Uint32 MaxNumVisibleItems = 10;
-				bool PopUpToMainControl = false;
-		};
+  public:
+	class StyleConfig {
+	  public:
+		Uint32 MaxNumVisibleItems = 10;
+		bool PopUpToRoot = false;
+	};
 
-		static UIDropDownList * New();
+	static UIDropDownList* NewWithTag( const std::string& tag );
 
-		UIDropDownList();
+	static UIDropDownList* New();
 
-		virtual ~UIDropDownList();
+	UIDropDownList( const std::string& tag = "dropdownlist" );
 
-		virtual Uint32 getType() const;
+	virtual ~UIDropDownList();
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual Uint32 getType() const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual bool isType( const Uint32& type ) const;
 
-		UIListBox * getListBox() const;
+	virtual void setTheme( UITheme* Theme );
 
-		void showList();
+	UIListBox* getListBox() const;
 
-		bool getPopUpToMainControl() const;
+	void showList();
 
-		void setPopUpToMainControl(bool popUpToMainControl);
+	bool getPopUpToRoot() const;
 
-		Uint32 getMaxNumVisibleItems() const;
+	void setPopUpToRoot( bool popUpToRoot );
 
-		void setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems);
+	Uint32 getMaxNumVisibleItems() const;
 
-		const StyleConfig& getStyleConfig() const;
+	void setMaxNumVisibleItems( const Uint32& maxNumVisibleItems );
 
-		void setStyleConfig(const StyleConfig & styleConfig);
+	const StyleConfig& getStyleConfig() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+	void setStyleConfig( const StyleConfig& styleConfig );
 
-		virtual void loadFromXmlNode(const pugi::xml_node & node);
-	protected:
-		friend class UIComboBox;
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		StyleConfig		mStyleConfig;
-		UIListBox *		mListBox;
-		UINode *		mFriendCtrl;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		void onListBoxFocusLoss( const Event * Event );
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual void onItemSelected( const Event * Event );
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual void show();
+  protected:
+	friend class UIComboBox;
 
-		virtual void hide();
+	StyleConfig mStyleConfig;
+	UIListBox* mListBox;
+	UINode* mFriendNode;
 
-		Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+	void onListBoxFocusLoss( const Event* Event );
 
-		Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	virtual void onItemSelected( const Event* Event );
 
-		virtual void onItemClicked( const Event * Event );
+	virtual void show();
 
-		virtual void onItemKeyDown( const Event * Event );
+	virtual void hide();
 
-		virtual void onControlClear( const Event * Event );
+	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 
-		Uint32 onKeyDown( const KeyEvent &Event );
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
-		virtual void onSizeChange();
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
-		virtual void onAutoSize();
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
-		virtual void onThemeLoaded();
+	virtual void onItemClicked( const Event* Event );
 
-		void setFriendControl( UINode * friendCtrl );
+	virtual void onItemKeyDown( const Event* Event );
 
-		void destroyListBox();
+	virtual void onWidgetClear( const Event* Event );
+
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
+
+	virtual void onSizeChange();
+
+	virtual void onAutoSize();
+
+	virtual void onThemeLoaded();
+
+	void setFriendNode( UINode* friendNode );
+
+	void destroyListBox();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

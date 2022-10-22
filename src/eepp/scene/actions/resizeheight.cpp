@@ -3,14 +3,15 @@
 
 namespace EE { namespace Scene { namespace Actions {
 
-ResizeHeight * ResizeHeight::New( const Float & start, const Float & end, const Time& duration, const Ease::Interpolation& type ) {
+ResizeHeight* ResizeHeight::New( const Float& start, const Float& end, const Time& duration,
+								 const Ease::Interpolation& type ) {
 	return eeNew( ResizeHeight, ( start, end, duration, type ) );
 }
 
-ResizeHeight::ResizeHeight()
-{}
+ResizeHeight::ResizeHeight() {}
 
-ResizeHeight::ResizeHeight( const Float & start, const Float & end, const Time& duration, const Ease::Interpolation& type ) {
+ResizeHeight::ResizeHeight( const Float& start, const Float& end, const Time& duration,
+							const Ease::Interpolation& type ) {
 	mInterpolation.clear().add( start, duration ).add( end ).setType( type );
 }
 
@@ -24,16 +25,16 @@ void ResizeHeight::onUpdate( const Time& ) {
 	}
 }
 
-Action * ResizeHeight::clone() const {
-	ResizeHeight * action = eeNew( ResizeHeight, () );
+Action* ResizeHeight::clone() const {
+	ResizeHeight* action = eeNew( ResizeHeight, () );
 	action->setInterpolation( mInterpolation );
 	return action;
 }
 
-Action * ResizeHeight::reverse() const {
-	ResizeHeight * action = eeNew( ResizeHeight, () );
+Action* ResizeHeight::reverse() const {
+	ResizeHeight* action = eeNew( ResizeHeight, () );
 	action->setInterpolation( Interpolation1d( mInterpolation.getReversePoints() ) );
 	return action;
 }
 
-}}}
+}}} // namespace EE::Scene::Actions

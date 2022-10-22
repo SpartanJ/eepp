@@ -1,45 +1,55 @@
 #ifndef EE_SCENEMANAGER_HPP
 #define EE_SCENEMANAGER_HPP
 
-#include <eepp/system/singleton.hpp>
 #include <eepp/system/clock.hpp>
-#include <eepp/system/time.hpp>
 #include <eepp/system/container.hpp>
+#include <eepp/system/singleton.hpp>
+#include <eepp/system/time.hpp>
 using namespace EE::System;
 
 namespace EE { namespace UI {
 class UISceneNode;
-}}
+}} // namespace EE::UI
 using namespace EE::UI;
 
 namespace EE { namespace Scene {
 
 class SceneNode;
 
-class EE_API SceneManager : public Container<SceneNode> {
-	SINGLETON_DECLARE_HEADERS(SceneManager)
-	public:
-		SceneManager();
+class EE_API SceneManager {
+	SINGLETON_DECLARE_HEADERS( SceneManager )
+  public:
+	SceneManager();
 
-		~SceneManager();
+	~SceneManager();
 
-		void draw();
+	SceneNode* add( SceneNode* sceneNode );
 
-		void update( const Time& elapsed );
+	bool remove( SceneNode* sceneNode );
 
-		void update();
+	size_t count() const;
 
-		bool isShootingDown() const;
+	void draw();
 
-		UISceneNode * getUISceneNode();
+	void update( const Time& elapsed );
 
-		void setCurrentUISceneNode( UISceneNode * uiSceneNode );
-	protected:
-		Clock mClock;
-		UISceneNode * mUISceneNode;
-		bool mIsShootingDown;
+	void update();
+
+	bool isShootingDown() const;
+
+	UISceneNode* getUISceneNode();
+
+	void setCurrentUISceneNode( UISceneNode* uiSceneNode );
+
+	Time getElapsed() const;
+
+  protected:
+	Clock mClock;
+	UISceneNode* mUISceneNode;
+	bool mIsShootingDown;
+	std::vector<SceneNode*> mSceneNodes;
 };
 
-}}
+}} // namespace EE::Scene
 
 #endif

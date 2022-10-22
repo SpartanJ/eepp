@@ -3,16 +3,17 @@
 
 namespace EE { namespace Graphics {
 
-ConvexShapeDrawable * ConvexShapeDrawable::New() {
+ConvexShapeDrawable* ConvexShapeDrawable::New() {
 	return eeNew( ConvexShapeDrawable, () );
 }
 
-ConvexShapeDrawable::ConvexShapeDrawable() :
-	PrimitiveDrawable( Drawable::CONVEXSHAPE )
-{
-}
+ConvexShapeDrawable::ConvexShapeDrawable() : PrimitiveDrawable( Drawable::CONVEXSHAPE ) {}
 
 Sizef ConvexShapeDrawable::getSize() {
+	return mPolygon.getBounds().getSize();
+}
+
+Sizef ConvexShapeDrawable::getPixelsSize() {
 	return mPolygon.getBounds().getSize();
 }
 
@@ -20,21 +21,27 @@ void ConvexShapeDrawable::draw() {
 	draw( mPosition, getSize() );
 }
 
-void ConvexShapeDrawable::draw(const Vector2f & position) {
+void ConvexShapeDrawable::draw( const Vector2f& position ) {
 	draw( position, getSize() );
 }
 
-void ConvexShapeDrawable::draw(const Vector2f & position, const Sizef & size) {
+void ConvexShapeDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	PrimitiveDrawable::draw( position, size );
 }
 
-void ConvexShapeDrawable::setPolygon(const Polygon2f& polygon) {
+void ConvexShapeDrawable::setPolygon( const Polygon2f& polygon ) {
 	mPolygon = polygon;
 	mNeedsUpdate = true;
 }
 
-void ConvexShapeDrawable::addPoint(const Vector2f & point) {
+void ConvexShapeDrawable::addPoint( const Vector2f& point ) {
 	mPolygon.pushBack( point );
+	mNeedsUpdate = true;
+}
+
+void ConvexShapeDrawable::addPoint( const Vector2f& point, const Color& color ) {
+	mPolygon.pushBack( point );
+	mIndexColor.push_back( color );
 	mNeedsUpdate = true;
 }
 
@@ -49,28 +56,53 @@ void ConvexShapeDrawable::updateVertex() {
 	if ( mPolygon.getSize() == 0 )
 		return;
 
-	switch( mFillMode ) {
-		case DRAW_LINE:
-		{
+	switch ( mFillMode ) {
+		case DRAW_LINE: {
 			for ( Uint32 i = 0; i < mPolygon.getSize(); i++ ) {
 				mVertexBuffer->addVertex( mPosition + mPolygon[i] );
-				mVertexBuffer->addColor( mColor );
+				if ( mIndexColor.empty() ) {
+					mVertexBuffer->addColor( mColor );
+				} else {
+					if ( mColor.a == 255 ) {
+						mVertexBuffer->addColor( mIndexColor[i & mIndexColor.size()] );
+					} else {
+						mVertexBuffer->addColor(
+							Color( mIndexColor[i & mIndexColor.size()] ).blendAlpha( mColor.a ) );
+					}
+				}
 			}
 
 			break;
 		}
-		case DRAW_FILL:
-		{
+		case DRAW_FILL: {
 			mVertexBuffer->addVertex( mPosition + mPolygon.getBounds().getCenter() );
-			mVertexBuffer->addColor( mColor );
+			if ( mIndexColor.empty() ) {
+				mVertexBuffer->addColor( mColor );
+			} else {
+				mVertexBuffer->addColor( Color( mIndexColor[0] ).blendAlpha( mColor.a ) );
+			}
 
 			for ( Uint32 i = 0; i < mPolygon.getSize(); i++ ) {
 				mVertexBuffer->addVertex( mPosition + mPolygon[i] );
-				mVertexBuffer->addColor( mColor );
+				if ( mIndexColor.empty() ) {
+					mVertexBuffer->addColor( mColor );
+				} else {
+					if ( mColor.a == 255 ) {
+						mVertexBuffer->addColor( mIndexColor[i & mIndexColor.size()] );
+					} else {
+						mVertexBuffer->addColor(
+							Color( mIndexColor[i & mIndexColor.size()] ).blendAlpha( mColor.a ) );
+					}
+				}
 			}
 
 			mVertexBuffer->addVertex( mPosition + mPolygon[0] );
-			mVertexBuffer->addColor( mColor );
+			if ( mIndexColor.empty() ) {
+				mVertexBuffer->addColor( mColor );
+			} else {
+				mVertexBuffer->addColor(
+					Color( mIndexColor[mIndexColor.size() - 1] ).blendAlpha( mColor.a ) );
+			}
 
 			break;
 		}
@@ -79,4 +111,4 @@ void ConvexShapeDrawable::updateVertex() {
 	mNeedsUpdate = false;
 }
 
-}}
+}} // namespace EE::Graphics

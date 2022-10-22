@@ -3,17 +3,17 @@
 
 #include <eepp/physics/base.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API Area {
-	public:
-		cpFloat forCircle( cpFloat r1, cpFloat r2 );
+class EE_API Area {
+  public:
+	cpFloat forCircle( cpFloat r1, cpFloat r2 );
 
-		cpFloat forSegment( cVect a, cVect b, cpFloat r );
+	cpFloat forSegment( cVect a, cVect b, cpFloat r );
 
-		cpFloat forPoly( const int numVerts, const cVect * verts );
+	cpFloat forPoly( const int numVerts, const cVect* verts );
 };
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics
 
 #endif

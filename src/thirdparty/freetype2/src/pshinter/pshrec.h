@@ -1,35 +1,35 @@
-/***************************************************************************/
-/*                                                                         */
-/*  pshrec.h                                                               */
-/*                                                                         */
-/*    Postscript (Type1/Type2) hints recorder (specification).             */
-/*                                                                         */
-/*  Copyright 2001, 2002, 2003, 2006, 2008 by                              */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * pshrec.h
+ *
+ *   Postscript (Type1/Type2) hints recorder (specification).
+ *
+ * Copyright (C) 2001-2019 by
+ * David Turner, Robert Wilhelm, and Werner Lemberg.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 
-  /**************************************************************************/
-  /*                                                                        */
-  /*  The functions defined here are called from the Type 1, CID and CFF    */
-  /*  font drivers to record the hints of a given character/glyph.          */
-  /*                                                                        */
-  /*  The hints are recorded in a unified format, and are later processed   */
-  /*  by the `optimizer' and `fitter' to adjust the outlines to the pixel   */
-  /*  grid.                                                                 */
-  /*                                                                        */
-  /**************************************************************************/
+  /***************************************************************************
+   *
+   * The functions defined here are called from the Type 1, CID and CFF
+   * font drivers to record the hints of a given character/glyph.
+   *
+   * The hints are recorded in a unified format, and are later processed
+   * by the `optimizer' and `fitter' to adjust the outlines to the pixel
+   * grid.
+   *
+   */
 
 
-#ifndef __PSHREC_H__
-#define __PSHREC_H__
+#ifndef PSHREC_H_
+#define PSHREC_H_
 
 
 #include <ft2build.h>
@@ -61,12 +61,8 @@ FT_BEGIN_HEADER
 
 
   /* hint flags */
-  typedef enum  PS_Hint_Flags_
-  {
-    PS_HINT_FLAG_GHOST  = 1,
-    PS_HINT_FLAG_BOTTOM = 2
-
-  } PS_Hint_Flags;
+#define PS_HINT_FLAG_GHOST   1U
+#define PS_HINT_FLAG_BOTTOM  2U
 
 
   /* hint descriptor */
@@ -141,7 +137,7 @@ FT_BEGIN_HEADER
   /* */
 
   /* initialize hints recorder */
-  FT_LOCAL( FT_Error )
+  FT_LOCAL( void )
   ps_hints_init( PS_Hints   hints,
                  FT_Memory  memory );
 
@@ -170,7 +166,7 @@ FT_BEGIN_HEADER
 FT_END_HEADER
 
 
-#endif /* __PS_HINTER_RECORD_H__ */
+#endif /* PSHREC_H_ */
 
 
 /* END */

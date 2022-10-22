@@ -2,7 +2,7 @@
 
 namespace EE { namespace System {
 
-SINGLETON_DECLARE_IMPLEMENTATION(VirtualFileSystem)
+SINGLETON_DECLARE_IMPLEMENTATION( VirtualFileSystem )
 
 static std::vector<std::string> vfsSplitPath( std::string& path ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -13,13 +13,12 @@ static std::vector<std::string> vfsSplitPath( std::string& path ) {
 	return String::split( path, '/' );
 }
 
-VirtualFileSystem::VirtualFileSystem() {
-}
+VirtualFileSystem::VirtualFileSystem() {}
 
 std::vector<std::string> VirtualFileSystem::filesGetInPath( std::string path ) {
 	std::vector<std::string> files;
 	std::vector<std::string> paths = vfsSplitPath( path );
-	vfsDirectory * curDir = &mRoot;
+	vfsDirectory* curDir = &mRoot;
 
 	if ( paths.size() >= 1 ) {
 		size_t pos = 0;
@@ -30,7 +29,7 @@ std::vector<std::string> VirtualFileSystem::filesGetInPath( std::string path ) {
 					return files;
 				}
 
-				curDir = &curDir->directories[ paths[pos] ];
+				curDir = &curDir->directories[paths[pos]];
 			}
 
 			pos++;
@@ -45,9 +44,9 @@ std::vector<std::string> VirtualFileSystem::filesGetInPath( std::string path ) {
 	return files;
 }
 
-Pack * VirtualFileSystem::getPackFromFile( std::string path ) {
+Pack* VirtualFileSystem::getPackFromFile( std::string path ) {
 	std::vector<std::string> paths = vfsSplitPath( path );
-	vfsDirectory * curDir = &mRoot;
+	vfsDirectory* curDir = &mRoot;
 
 	if ( paths.size() >= 1 ) {
 		size_t pos = 0;
@@ -55,14 +54,14 @@ Pack * VirtualFileSystem::getPackFromFile( std::string path ) {
 		do {
 			if ( pos == paths.size() - 1 ) {
 				if ( curDir->files.find( paths[pos] ) != curDir->files.end() ) {
-					return curDir->files[ paths[pos] ].pack;
+					return curDir->files[paths[pos]].pack;
 				}
 			} else {
 				if ( curDir->directories.find( paths[pos] ) == curDir->directories.end() ) {
 					return NULL;
 				}
 
-				curDir = &curDir->directories[ paths[pos] ];
+				curDir = &curDir->directories[paths[pos]];
 			}
 
 			pos++;
@@ -72,8 +71,8 @@ Pack * VirtualFileSystem::getPackFromFile( std::string path ) {
 	return NULL;
 }
 
-IOStream * VirtualFileSystem::getFileFromPath( const std::string& path ) {
-	Pack * pack = getPackFromFile( path );
+IOStream* VirtualFileSystem::getFileFromPath( const std::string& path ) {
+	Pack* pack = getPackFromFile( path );
 	return NULL != pack ? pack->getFileStream( path ) : NULL;
 }
 
@@ -81,7 +80,7 @@ bool VirtualFileSystem::fileExists( const std::string& path ) {
 	return NULL != getPackFromFile( path );
 }
 
-void VirtualFileSystem::onResourceAdd( Pack * resource ) {
+void VirtualFileSystem::onResourceAdd( Pack* resource ) {
 	add( resource );
 
 	std::vector<std::string> files = resource->getFileList();
@@ -91,27 +90,27 @@ void VirtualFileSystem::onResourceAdd( Pack * resource ) {
 	}
 }
 
-void VirtualFileSystem::onResourceRemove( Pack * resource ) {
+void VirtualFileSystem::onResourceRemove( Pack* resource ) {
 	remove( resource );
 	removePackFromDirectory( resource, mRoot );
 }
 
-void VirtualFileSystem::addFile( std::string path , Pack * pack ) {
+void VirtualFileSystem::addFile( std::string path, Pack* pack ) {
 	std::vector<std::string> paths = vfsSplitPath( path );
-	vfsDirectory * curDir = &mRoot;
+	vfsDirectory* curDir = &mRoot;
 
 	if ( paths.size() >= 1 ) {
 		size_t pos = 0;
 
 		do {
 			if ( pos == paths.size() - 1 ) {
-				curDir->files[ paths[pos] ] = vfsFile( path, pack );
+				curDir->files[paths[pos]] = vfsFile( path, pack );
 			} else {
 				if ( curDir->directories.find( paths[pos] ) == curDir->directories.end() ) {
-					curDir->directories[ paths[pos] ] = vfsDirectory();
+					curDir->directories[paths[pos]] = vfsDirectory();
 				}
 
-				curDir = &curDir->directories[ paths[pos] ];
+				curDir = &curDir->directories[paths[pos]];
 			}
 
 			pos++;
@@ -119,7 +118,7 @@ void VirtualFileSystem::addFile( std::string path , Pack * pack ) {
 	}
 }
 
-void VirtualFileSystem::removePackFromDirectory( Pack * resource, vfsDirectory& directory ) {
+void VirtualFileSystem::removePackFromDirectory( Pack* resource, vfsDirectory& directory ) {
 	std::vector<std::string> removeList;
 
 	for ( auto it = directory.files.begin(); it != directory.files.end(); ++it ) {
@@ -130,7 +129,7 @@ void VirtualFileSystem::removePackFromDirectory( Pack * resource, vfsDirectory& 
 		}
 	}
 
-	for( auto it = removeList.begin(); it != removeList.end(); ++it ) {
+	for ( auto it = removeList.begin(); it != removeList.end(); ++it ) {
 		directory.files.erase( *it );
 	}
 
@@ -139,4 +138,4 @@ void VirtualFileSystem::removePackFromDirectory( Pack * resource, vfsDirectory& 
 	}
 }
 
-}}
+}} // namespace EE::System

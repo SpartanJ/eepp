@@ -1,8 +1,8 @@
 #include <eepp/physics/constraints/ratchetjoint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-RatchetJoint::RatchetJoint( Body * a, Body * b, cpFloat phase, cpFloat ratchet ) {
+RatchetJoint::RatchetJoint( Body* a, Body* b, cpFloat phase, cpFloat ratchet ) {
 	mConstraint = cpRatchetJointNew( a->getBody(), b->getBody(), phase, ratchet );
 	setData();
 }
@@ -35,4 +35,4 @@ void RatchetJoint::draw() {
 	// Not implemented
 }
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics

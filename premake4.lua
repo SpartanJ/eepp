@@ -79,7 +79,14 @@ newgcctoolchain {
 	name = "mingw32",
 	description = "Mingw32 to cross-compile windows binaries from *nix",
 	prefix = "i686-w64-mingw32-",
-	cppflags = ""
+	cppflags = "-B /usr/bin/i686-w64-mingw32-"
+}
+
+newgcctoolchain {
+	name = "mingw64",
+	description = "Mingw64 to cross-compile windows binaries from *nix",
+	prefix = "x86_64-w64-mingw32-",
+	cppflags = "-B /usr/bin/x86_64-w64-mingw32-"
 }
 
 newgcctoolchain {
@@ -119,10 +126,10 @@ newplatform {
 }
 
 newclangtoolchain {
-	name ="ios-arm7",
-	description = "iOS ARMv7",
+	name ="ios-arm64",
+	description = "iOS ARM64",
 	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
-	cppflags = "-arch armv7 -mfpu=neon"
+	cppflags = "-arch arm64"
 }
 
 newclangtoolchain {
@@ -132,43 +139,52 @@ newclangtoolchain {
 	cppflags = "-m32 -arch i386"
 }
 
+newclangtoolchain {
+	name ="ios-x86_64",
+	description = "iOS x86_64",
+	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
+	cppflags = "-m64 -arch x86_64"
+}
+
 if _OPTIONS.platform then
 	-- overwrite the native platform with the options::platform
 	premake.gcc.platforms['Native'] = premake.gcc.platforms[_OPTIONS.platform]
 end
 
-newoption { trigger = "with-ssl", description = "Enables SSL support for the Network module ( by default uses mbedtls. )" }
 newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
-newoption { trigger = "with-static-freetype", description = "Build freetype as a static library." }
+newoption { trigger = "with-dynamic-freetype", description = "Dynamic link against freetype." }
 newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
-newoption { trigger = "use-frameworks", description = "In Mac OS X it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
+newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
+newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
+newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
+newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
+newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
-		{ "SDL2",  "SDL2 (default and recommended)" },
-		{ "SFML",  "SFML2" },
-		{ "SDL2,SFML", "SDL2+SFML" }
+		{ "SDL2",  "SDL2" }
 	}
 }
 
 function explode(div,str)
-    if (div=='') then return false end
-    local pos,arr = 0,{}
-    for st,sp in function() return string.find(str,div,pos,true) end do
-        table.insert(arr,string.sub(str,pos,st-1))
-        pos = sp + 1
-    end
-    table.insert(arr,string.sub(str,pos))
-    return arr
+	if (div=='') then return false end
+	local pos,arr = 0,{}
+	for st,sp in function() return string.find(str,div,pos,true) end do
+		table.insert(arr,string.sub(str,pos,st-1))
+		pos = sp + 1
+	end
+	table.insert(arr,string.sub(str,pos))
+	return arr
 end
 
 function os.get_real()
-	if 	_OPTIONS.platform == "ios-arm7" or
+	if 	_OPTIONS.platform == "ios-arm64" or
 		_OPTIONS.platform == "ios-x86" or
+		_OPTIONS.platform == "ios-x86_64" or
 		_OPTIONS.platform == "ios-cross-arm7" or
 		_OPTIONS.platform == "ios-cross-x86" then
 		return "ios"
@@ -178,11 +194,11 @@ function os.get_real()
 		return "android"
 	end
 
-	if 	_OPTIONS.platform == "mingw32" then
+	if _OPTIONS.platform == "mingw32" then
 		return _OPTIONS.platform
 	end
 
-	if 	_OPTIONS.platform == "emscripten" then
+	if _OPTIONS.platform == "emscripten" then
 		return _OPTIONS.platform
 	end
 
@@ -279,11 +295,12 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
+remote_sdl2_version = "SDL2-2.0.20"
 
 function build_base_configuration( package_name )
 	includedirs { "src/thirdparty/zlib" }
 
-	if not os.is("windows") then
+	if not os.is("windows") and not os.is_real("emscripten") then
 		buildoptions{ "-fPIC" }
 	end
 
@@ -291,6 +308,9 @@ function build_base_configuration( package_name )
 		includedirs { "src/thirdparty/libzip/vs" }
 	end
 
+	set_ios_config()
+	set_xcode_config()
+
 	configuration "debug"
 		defines { "DEBUG" }
 		flags { "Symbols" }
@@ -298,21 +318,33 @@ function build_base_configuration( package_name )
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
 		targetname ( package_name .. "-debug" )
+		if os.is_real("emscripten") then
+			buildoptions{ "-g3" }
+		end
 
 	configuration "release"
 		defines { "NDEBUG" }
 		flags { "OptimizeSpeed" }
+		if _OPTIONS["with-debug-symbols"] then
+			flags { "Symbols" }
+		end
 		if not is_vs() then
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
+		if os.is_real("emscripten") then
+			buildoptions{ "-O3" }
+		end
 		targetname ( package_name )
 
-	set_ios_config()
-	set_xcode_config()
+	configuration "emscripten"
+		buildoptions { "-s USE_SDL=2" }
+		if _OPTIONS["with-emscripten-pthreads"] then
+			buildoptions { "-s USE_PTHREADS=1" }
+		end
 end
 
 function build_base_cpp_configuration( package_name )
-	if not os.is("windows") then
+	if not os.is("windows") and not os.is_real("emscripten") then
 		buildoptions{ "-fPIC" }
 	end
 
@@ -320,29 +352,44 @@ function build_base_cpp_configuration( package_name )
 	set_xcode_config()
 
 	configuration "debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		flags { "Symbols" }
 		if not is_vs() then
 			buildoptions{ "-Wall" }
+		end
+		if os.is_real("emscripten") then
+			buildoptions{ "-g3" }
 		end
 		targetname ( package_name .. "-debug" )
 
 	configuration "release"
 		defines { "NDEBUG" }
 		flags { "OptimizeSpeed" }
+		if _OPTIONS["with-debug-symbols"] then
+			flags { "Symbols" }
+		end
 		if not is_vs() then
 			buildoptions{ "-Wall" }
 		end
+		if os.is_real("emscripten") then
+			buildoptions{ "-O3" }
+		end
 		targetname ( package_name )
+
+	configuration "emscripten"
+		buildoptions { "-s USE_SDL=2" }
+		if _OPTIONS["with-emscripten-pthreads"] then
+			buildoptions { "-s USE_PTHREADS=1" }
+		end
 end
 
 function add_cross_config_links()
 	if not is_vs() then
-		if os.is_real("mingw32") or os.is_real("windows") or os.is_real("ios") then -- if is crosscompiling from *nix
-			linkoptions { "-static-libgcc", "-static-libstdc++" }
+		if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") or os.is_real("ios") then -- if is crosscompiling from *nix
+			linkoptions { "-static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
 		end
 
-		if os.is_real("mingw32") then
+		if os.is_real("mingw32") or os.is_real("mingw64") then
 			linkoptions { "-Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
 		end
 	end
@@ -358,6 +405,29 @@ function fix_shared_lib_linking_path( package_name, libname )
 			linkoptions { "-Wl,-soname=\"" .. libname .. ".so" .. "\"" }
 		end
 	end
+end
+
+function version_to_number( version )
+	versionpart = 0
+	versionnum = 0
+	versionmod = 1000
+	for str in string.gmatch(version, "[^%.]+") do
+		versionnum = versionnum + tonumber(str) * versionmod
+		versionpart = versionpart + 1
+		if versionpart == 1 then
+			versionmod = 100
+		elseif versionpart == 2 then
+			versionmod = 10
+		end
+	end
+	return versionnum
+end
+
+function popen( executable_path )
+	local handle = io.popen(executable_path)
+	local result = handle:read("*a")
+	handle:close()
+	return result
 end
 
 function build_link_configuration( package_name, use_ee_icon )
@@ -400,7 +470,11 @@ function build_link_configuration( package_name, use_ee_icon )
 					package_name ~= "eephysics" and
 					package_name ~= "eevbo-fbo-batch"
 			) then
-				linkoptions { "--preload-file assets/" }
+				if package_name == "ecode" then
+					linkoptions { "--preload-file " .. package_name .. "/assets/" }
+				else
+					linkoptions { "--preload-file assets/" }
+				end
 			end
 		end
 
@@ -410,6 +484,24 @@ function build_link_configuration( package_name, use_ee_icon )
 
 		if _OPTIONS.platform == "ios-cross-x86" then
 			extension = ".x86.ios"
+		end
+
+		if _OPTIONS.platform == "ios-cross-x86_64" then
+			extension = ".x86_64.ios"
+		end
+	end
+
+	if _OPTIONS["with-mold-linker"] then
+		if _OPTIONS.platform == "clang" or _OPTIONS.platform == "clang-analyzer" then
+			linkoptions { "-fuse-ld=mold" }
+		else
+			gccversion = popen( "gcc -dumpfullversion" )
+			gccversionnumber = version_to_number( gccversion )
+			if gccversionnumber >= 12110 then
+				linkoptions { "-fuse-ld=mold" }
+			else
+				linkoptions { "-B/usr/bin/mold" }
+			end
 		end
 	end
 
@@ -421,13 +513,24 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions{ "-Wall -Wno-long-long" }
 		end
 
+		if os.is_real("emscripten") then
+			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1" }
+		end
+
 		fix_shared_lib_linking_path( package_name, "libeepp-debug" )
 
-		targetname ( package_name .. "-debug" .. extension )
+		if not os.is_real("emscripten") then
+			targetname ( package_name .. "-debug" .. extension )
+		else
+			targetname ( package_name .. extension )
+		end
 
 	configuration "release"
 		defines { "NDEBUG" }
 		flags { "OptimizeSpeed" }
+		if _OPTIONS["with-debug-symbols"] then
+			flags { "Symbols" }
+		end
 
 		if not is_vs() and not os.is_real("emscripten") then
 			buildoptions { "-fno-strict-aliasing -ffast-math" }
@@ -445,8 +548,15 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
-		buildoptions { "-fno-strict-aliasing -O2 -s USE_SDL=2 -s PRECISE_F32=1" }
+		linkoptions { "-s TOTAL_MEMORY=67108864" }
+		linkoptions { "-s USE_SDL=2" }
+		buildoptions { "-s USE_SDL=2" }
+		defines { "NO_POSIX_SPAWN" }
+
+		if _OPTIONS["with-emscripten-pthreads"] then
+			buildoptions { "-s USE_PTHREADS=1" }
+			linkoptions { "-s USE_PTHREADS=1" }
+		end
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }
@@ -462,25 +572,39 @@ end
 
 function generate_os_links()
 	if os.is_real("linux") then
-		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
+		multiple_insert( os_links, { "rt", "pthread", "GL" } )
+
+		if not _OPTIONS["with-mojoal"] then
+			table.insert( os_links, "openal" )
+		end
 
 		if _OPTIONS["with-static-eepp"] then
 			table.insert( os_links, "dl" )
 		end
 	elseif os.is_real("windows") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32", "winmm" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
 	elseif os.is_real("mingw32") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32", "winmm" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+	elseif os.is_real("mingw64") then
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
 	elseif os.is_real("macosx") then
-		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework" } )
+		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework" } )
 	elseif os.is_real("freebsd") then
-		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
+		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 	elseif os.is_real("haiku") then
-		multiple_insert( os_links, { "openal", "GL", "network" } )
+		multiple_insert( os_links, { "GL", "network" } )
 	elseif os.is_real("ios") then
-		multiple_insert( os_links, { "OpenGLES.framework", "OpenAL.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
-	elseif os.is_real("emscripten") then
-		multiple_insert( os_links, { "openal" } )
+		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
+	end
+
+	if not _OPTIONS["with-mojoal"] then
+		if os.is_real("linux") or os.is_real("freebsd") or os.is_real("haiku") or os.is_real("emscripten") then
+			multiple_insert( os_links, { "openal" } )
+		elseif os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
+			multiple_insert( os_links, { "OpenAL32" } )
+		elseif os.is_real("macosx") or os.is_real("ios") then
+			multiple_insert( os_links, { "OpenAL.framework" } )
+		end
 	end
 end
 
@@ -505,9 +629,8 @@ function add_static_links()
 		end
 	end
 
-	if _OPTIONS["with-static-freetype"] or not os_findlib("freetype") then
-		print("Enabled static freetype")
-		links { "freetype-static" }
+	if not _OPTIONS["with-dynamic-freetype"] then
+		links { "freetype-static", "libpng-static" }
 	end
 
 	links { "SOIL2-static",
@@ -520,7 +643,11 @@ function add_static_links()
 			"vorbis-static"
 	}
 
-	if _OPTIONS["with-ssl"] and not _OPTIONS["with-openssl"] then
+	if _OPTIONS["with-mojoal"] then
+		links { "mojoal-static"}
+	end
+
+	if not _OPTIONS["with-openssl"] then
 		links { "mbedtls-static" }
 	end
 
@@ -546,23 +673,11 @@ function add_sdl2()
 	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
 
 	if not can_add_static_backend("SDL2") then
-		table.insert( link_list, get_backend_link_name( "SDL2" ) )
+		if not os.is_real("emscripten") then
+			table.insert( link_list, get_backend_link_name( "SDL2" ) )
+		end
 	else
 		insert_static_backend( "SDL2" )
-	end
-end
-
-function add_sfml()
-	print("Using SFML backend");
-	files { "src/eepp/window/backend/SFML/*.cpp" }
-	defines { "EE_BACKEND_SFML_ACTIVE" }
-
-	if not can_add_static_backend("SFML") then
-		table.insert( link_list, get_backend_link_name( "sfml-system" ) )
-		table.insert( link_list, get_backend_link_name( "sfml-window" ) )
-	else
-		insert_static_backend( "libsfml-system" )
-		insert_static_backend( "libsfml-window" )
 	end
 end
 
@@ -575,7 +690,7 @@ function set_xcode_config()
 end
 
 function set_ios_config()
-	if _OPTIONS.platform == "ios-arm7" or _OPTIONS.platform == "ios-x86" then
+	if _OPTIONS.platform == "ios-arm64" or _OPTIONS.platform == "ios-x86" or _OPTIONS.platform == "ios-x86_64" then
 		local err = false
 
 		if nil == os.getenv("TOOLCHAINPATH") then
@@ -586,13 +701,13 @@ function set_ios_config()
 
 		if nil == os.getenv("SYSROOTPATH") then
 			print("You must set SYSROOTPATH enviroment variable.")
-			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk")
+			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk")
 			err = true
 		end
 
 		if nil == os.getenv("IOSVERSION") then
 			print("You must set IOSVERSION enviroment variable.")
-			print("\tExample: 5.0")
+			print("\tExample: 12.1")
 			err = true
 		end
 
@@ -603,17 +718,17 @@ function set_ios_config()
 		local sysroot_path = os.getenv("SYSROOTPATH")
 		local framework_path = sysroot_path .. "/System/Library/Frameworks"
 		local framework_libs_path = framework_path .. "/usr/lib"
-		local sysroot_ver = " -miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
+		local sysroot_ver = " -miphoneos-version-min=9.0 -isysroot " .. sysroot_path
 
 		buildoptions { sysroot_ver .. " -I" .. sysroot_path .. "/usr/include" }
 		linkoptions { sysroot_ver }
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-		includedirs { "src/thirdparty/SDL2/include" }
+		includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 	end
 
 	if _OPTIONS.platform == "ios-cross-arm7" or _OPTIONS.platform == "ios-cross-x86" then
-		includedirs { "src/thirdparty/SDL2/include" }
+		includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 	end
 end
 
@@ -630,7 +745,7 @@ function backend_is( name, libname )
 
 	local ret_val = os_findlib( libname ) and backend_sel
 
-	if os.is_real("mingw32") or os.is_real("emscripten") then
+	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("emscripten") then
 		ret_val = backend_sel
 	end
 
@@ -647,17 +762,10 @@ function select_backend()
 		add_sdl2()
 	end
 
-	if backend_is("SFML", "sfml-window") then
-		print("Selected SFML")
-		add_sfml()
-	end
-
 	-- If the selected backend is not present, try to find one present
 	if not backend_selected then
 		if os_findlib("SDL2", "SDL2") then
 			add_sdl2()
-		elseif os_findlib("SFML", "sfml-window") then
-			add_sfml()
 		else
 			print("ERROR: Couldnt find any backend. Forced SDL2.")
 			add_sdl2( true )
@@ -666,34 +774,46 @@ function select_backend()
 end
 
 function check_ssl_support()
-	if _OPTIONS["with-ssl"] then
-		print("Enabled SSL support")
-
-		if _OPTIONS["with-openssl"] then
-			if os.is("windows") then
-				table.insert( link_list, get_backend_link_name( "libssl" ) )
-				table.insert( link_list, get_backend_link_name( "libcrypto" ) )
-			else
-				table.insert( link_list, get_backend_link_name( "ssl" ) )
-				table.insert( link_list, get_backend_link_name( "crypto" ) )
-			end
-
-			files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
-
-			defines { "EE_OPENSSL" }
+	if _OPTIONS["with-openssl"] then
+		if os.is("windows") then
+			table.insert( link_list, get_backend_link_name( "libssl" ) )
+			table.insert( link_list, get_backend_link_name( "libcrypto" ) )
 		else
-			files { "src/eepp/network/ssl/backend/mbedtls/*.cpp" }
-
-			defines { "EE_MBEDTLS" }
+			table.insert( link_list, get_backend_link_name( "ssl" ) )
+			table.insert( link_list, get_backend_link_name( "crypto" ) )
 		end
 
-		defines { "EE_SSL_SUPPORT" }
+		files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
+
+		defines { "EE_OPENSSL" }
+	else
+		files { "src/eepp/network/ssl/backend/mbedtls/*.cpp" }
+
+		defines { "EE_MBEDTLS" }
+	end
+
+	defines { "EE_SSL_SUPPORT" }
+end
+
+function set_macos_and_ios_config()
+	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
+		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
+	end
+
+	if _OPTIONS["use-frameworks"] then
+		defines { "EE_USE_FRAMEWORKS" }
 	end
 end
 
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
 
+	if _OPTIONS["with-mojoal"] then
+		defines( "AL_LIBTYPE_STATIC" )
+		includedirs { "src/thirdparty/mojoAL" }
+	end
+
+	set_macos_and_ios_config()
 	set_ios_config()
 	set_xcode_config()
 
@@ -704,10 +824,10 @@ function build_eepp( build_name )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++11" }
+		buildoptions{ "-std=c++14" }
 	end
 
-	if os.is("windows") then
+	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }
 	else
@@ -722,15 +842,16 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
-			"src/eepp/window/platform/null/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
 			"src/eepp/network/http/*.cpp",
 			"src/eepp/scene/*.cpp",
 			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
-			"src/eepp/ui/actions/*.cpp",
+			"src/eepp/ui/abstract/*.cpp",
+			"src/eepp/ui/models/*.cpp",
 			"src/eepp/ui/css/*.cpp",
+			"src/eepp/ui/doc/*.cpp",
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
 			"src/eepp/physics/constraints/*.cpp",
@@ -742,7 +863,7 @@ function build_eepp( build_name )
 
 	select_backend()
 
-	if not _OPTIONS["with-static-freetype"] and os_findlib("freetype") then
+	if _OPTIONS["with-dynamic-freetype"] and os_findlib("freetype") then
 		table.insert( link_list, get_backend_link_name( "freetype" ) )
 	end
 
@@ -751,16 +872,6 @@ function build_eepp( build_name )
 	links { link_list }
 
 	build_link_configuration( build_name )
-
-	configuration "windows"
-		files { "src/eepp/window/platform/win/*.cpp" }
-		add_cross_config_links()
-
-	configuration "linux"
-		files { "src/eepp/window/platform/x11/*.cpp" }
-
-	configuration "macosx"
-		files { "src/eepp/window/platform/osx/*.cpp" }
 
 	configuration "emscripten"
 		if _OPTIONS["force-gles1"] then
@@ -792,16 +903,13 @@ solution "eepp"
 	generate_os_links()
 	parse_args()
 
+	if os.is_real("macosx") then
+		defines { "GL_SILENCE_DEPRECATION" }
+	end
+
 	project "SOIL2-static"
 		kind "StaticLib"
-
-		if is_vs() then
-			language "C++"
-			buildoptions { "/TP" }
-		else
-			language "C"
-		end
-
+		language "C"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/SOIL2/src/SOIL2/*.c" }
 		includedirs { "src/thirdparty/SOIL2" }
@@ -818,7 +926,7 @@ solution "eepp"
 			build_base_configuration( "glew" )
 	end
 
-	if _OPTIONS["with-ssl"] and not _OPTIONS["with-openssl"] then
+	if not _OPTIONS["with-openssl"] then
 		project "mbedtls-static"
 			kind "StaticLib"
 			language "C"
@@ -858,13 +966,21 @@ solution "eepp"
 		includedirs { "src/thirdparty/zlib" }
 		build_base_configuration( "libzip" )
 
+	project "libpng-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/libpng/**.c" }
+		includedirs { "src/thirdparty/libpng/include" }
+		build_base_configuration( "libpng" )
+
 	project "freetype-static"
 		kind "StaticLib"
 		language "C"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
-		includedirs { "src/thirdparty/freetype2/include" }
+		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
 		build_base_configuration( "freetype" )
 
 	project "chipmunk-static"
@@ -896,11 +1012,26 @@ solution "eepp"
 		files { "src/thirdparty/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
 
+	if _OPTIONS["with-mojoal"] then
+		project "mojoal-static"
+			kind "StaticLib"
+			language "C"
+			defines( "AL_LIBTYPE_STATIC" )
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+			includedirs { "include/eepp/thirdparty/mojoAL" }
+			files { "src/thirdparty/mojoAL/*.c" }
+			build_base_cpp_configuration( "mojoal" )
+	end
+
 	project "efsw-static"
 		kind "StaticLib"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
+		defines { "EFSW_USE_CXX11" }
+		if not is_vs() then
+			buildoptions{ "-std=c++14" }
+		end
 
 		if os.is("windows") then
 			osfiles = "src/thirdparty/efsw/src/efsw/platform/win/*.cpp"
@@ -911,23 +1042,55 @@ solution "eepp"
 		files { "src/thirdparty/efsw/src/efsw/*.cpp", osfiles }
 
 		if os.is("windows") then
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
+			}
 		elseif os.is("linux") then
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
+			}
 		elseif os.is("macosx") then
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp"
+			}
 		elseif os.is("freebsd") then
-			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+			excludes {
+				"src/thirdparty/efsw/src/efsw/WatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp",
+				"src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp"
+			}
 		end
 
 		build_base_cpp_configuration( "efsw" )
 
-	project "eepp-main"
+	project "eterm-static"
 		kind "StaticLib"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
-		files { "src/eepp/main/eepp_main.cpp" }
+		includedirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
+		files { "src/modules/eterm/src/**.cpp" }
+		if not is_vs() then
+			buildoptions{ "-std=c++14" }
+		end
+		build_base_cpp_configuration( "eterm" )
 
+	-- Library
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"
@@ -941,60 +1104,61 @@ solution "eepp"
 		build_eepp( "eepp" )
 
 	-- Examples
-	project "eepp-test"
-		set_kind()
-		language "C++"
-		files { "src/test/*.cpp" }
-		build_link_configuration( "eetest", true )
-
-	project "eepp-es"
+	project "eepp-external-shader"
 		set_kind()
 		language "C++"
 		files { "src/examples/external_shader/*.cpp" }
-		build_link_configuration( "eees", true )
+		build_link_configuration( "eepp-external-shader", true )
 
-	project "eepp-ew"
+	project "eepp-empty-window"
 		set_kind()
 		language "C++"
 		files { "src/examples/empty_window/*.cpp" }
-		build_link_configuration( "eeew", true )
+		build_link_configuration( "eepp-empty-window", true )
 
 	project "eepp-sound"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/sound/*.cpp" }
-		build_link_configuration( "eesound", true )
+		build_link_configuration( "eepp-sound", true )
 
 	project "eepp-sprites"
 		set_kind()
 		language "C++"
 		files { "src/examples/sprites/*.cpp" }
-		build_link_configuration( "eesprites", true )
+		build_link_configuration( "eepp-sprites", true )
 
 	project "eepp-fonts"
 		set_kind()
 		language "C++"
 		files { "src/examples/fonts/*.cpp" }
-		build_link_configuration( "eefonts", true )
+		build_link_configuration( "eepp-fonts", true )
 
 	project "eepp-vbo-fbo-batch"
 		set_kind()
 		language "C++"
 		files { "src/examples/vbo_fbo_batch/*.cpp" }
-		build_link_configuration( "eevbo-fbo-batch", true )
+		build_link_configuration( "eepp-vbo-fbo-batch", true )
 
 	project "eepp-physics"
 		set_kind()
 		language "C++"
 		files { "src/examples/physics/*.cpp" }
-		build_link_configuration( "eephysics", true )
+		build_link_configuration( "eepp-physics", true )
 
 	project "eepp-http-request"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/http_request/*.cpp" }
 		includedirs { "src/thirdparty" }
-		build_link_configuration( "eehttp-request", true )
+		build_link_configuration( "eepp-http-request", true )
+
+	project "eepp-ui-hello-world"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_hello_world/*.cpp" }
+		includedirs { "src/thirdparty" }
+		build_link_configuration( "eepp-ui-hello-world", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"
@@ -1013,14 +1177,100 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
+		links { "efsw-static", "pugixml-static" }
+		if not os.is_real("windows") and not os.is_real("haiku") then
+			links { "pthread" }
+		end
+		if os.is_real("macosx") then
+			links { "CoreFoundation.framework", "CoreServices.framework" }
+		end
+		files { "src/tools/uieditor/*.cpp" }
+		build_link_configuration( "eepp-UIEditor", true )
 
+	if os.is("macosx") then
+	project "ecode-macos-helper-static"
+		kind "StaticLib"
+		language "C++"
+		files { "src/tools/ecode/macos/*.m" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+
+		configuration "debug"
+			defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
+			flags { "Symbols" }
+			buildoptions{ "-Wall" }
+			buildoptions{ "-g3" }
+			targetname ( "ecode-macos-helper-static-debug" )
+
+		configuration "release"
+			defines { "NDEBUG" }
+			flags { "OptimizeSpeed" }
+			if _OPTIONS["with-debug-symbols"] then
+				flags { "Symbols" }
+			end
+			buildoptions{ "-O3" }
+			targetname ( "ecode-macos-helper-static" )
+	end
+
+	project "ecode"
+		set_kind()
+		language "C++"
+		files { "src/tools/ecode/**.cpp" }
+		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/" }
+		links { "efsw-static", "eterm-static" }
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end
+		if os.is("macosx") then
+			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
+			links { "ecode-macos-helper-static" }
+		end
+		if os.is_real("linux") then
+			if _OPTIONS["with-debug-symbols"] then
+				defines { "ECODE_USE_BACKWARD" }
+				links { "util", "bfd", "dw", "dl" }
+			else
+				links { "util" }
+			end
+		end
+		if os.is("haiku") then
+			links { "bsd" }
+		end
+		build_link_configuration( "ecode", true )
 
-		links { "efsw-static", "pugixml-static" }
-		files { "src/tools/uieditor/*.cpp" }
-		build_link_configuration( "eepp-UIEditor", true )
+	project "eterm"
+		set_kind()
+		language "C++"
+		files { "src/tools/eterm/**.cpp" }
+		links { "eterm-static" }
+		if os.is_real("linux") then
+			links { "util" }
+		end
+		if os.is("haiku") then
+			links { "bsd" }
+		end
+		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
+		build_link_configuration( "eterm", true )
+
+	project "eepp-texturepacker"
+		kind "ConsoleApp"
+		language "C++"
+		includedirs { "src/thirdparty" }
+		files { "src/tools/texturepacker/*.cpp" }
+		build_link_configuration( "eepp-TexturePacker", true )
+
+	-- Tests
+	project "eepp-test"
+		set_kind()
+		language "C++"
+		files { "src/tests/test_all/*.cpp" }
+		build_link_configuration( "eepp-test", true )
+
+	project "eepp-ui-perf-test"
+		set_kind()
+		language "C++"
+		files { "src/tests/ui_perf_test/*.cpp" }
+		includedirs { "src/thirdparty" }
+		build_link_configuration( "eepp-ui-perf-test", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

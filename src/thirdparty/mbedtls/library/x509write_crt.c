@@ -37,17 +37,13 @@
 #include "mbedtls/oid.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/sha1.h"
+#include "mbedtls/platform_util.h"
 
 #include <string.h>
 
 #if defined(MBEDTLS_PEM_WRITE_C)
 #include "mbedtls/pem.h"
 #endif /* MBEDTLS_PEM_WRITE_C */
-
-/* Implementation that should never be optimized out by the compiler */
-static void mbedtls_zeroize( void *v, size_t n ) {
-    volatile unsigned char *p = v; while( n-- ) *p++ = 0;
-}
 
 void mbedtls_x509write_crt_init( mbedtls_x509write_cert *ctx )
 {
@@ -65,7 +61,7 @@ void mbedtls_x509write_crt_free( mbedtls_x509write_cert *ctx )
     mbedtls_asn1_free_named_data_list( &ctx->issuer );
     mbedtls_asn1_free_named_data_list( &ctx->extensions );
 
-    mbedtls_zeroize( ctx, sizeof( mbedtls_x509write_cert ) );
+    mbedtls_platform_zeroize( ctx, sizeof( mbedtls_x509write_cert ) );
 }
 
 void mbedtls_x509write_crt_set_version( mbedtls_x509write_cert *ctx, int version )
@@ -225,23 +221,36 @@ int mbedtls_x509write_crt_set_authority_key_identifier( mbedtls_x509write_cert *
 int mbedtls_x509write_crt_set_key_usage( mbedtls_x509write_cert *ctx,
                                          unsigned int key_usage )
 {
-    unsigned char buf[4], ku;
+    unsigned char buf[5], ku[2];
     unsigned char *c;
     int ret;
+    const unsigned int allowed_bits = MBEDTLS_X509_KU_DIGITAL_SIGNATURE |
+        MBEDTLS_X509_KU_NON_REPUDIATION   |
+        MBEDTLS_X509_KU_KEY_ENCIPHERMENT  |
+        MBEDTLS_X509_KU_DATA_ENCIPHERMENT |
+        MBEDTLS_X509_KU_KEY_AGREEMENT     |
+        MBEDTLS_X509_KU_KEY_CERT_SIGN     |
+        MBEDTLS_X509_KU_CRL_SIGN          |
+        MBEDTLS_X509_KU_ENCIPHER_ONLY     |
+        MBEDTLS_X509_KU_DECIPHER_ONLY;
 
-    /* We currently only support 7 bits, from 0x80 to 0x02 */
-    if( ( key_usage & ~0xfe ) != 0 )
+    /* Check that nothing other than the allowed flags is set */
+    if( ( key_usage & ~allowed_bits ) != 0 )
         return( MBEDTLS_ERR_X509_FEATURE_UNAVAILABLE );
 
-    c = buf + 4;
-    ku = (unsigned char) key_usage;
+    c = buf + 5;
+    ku[0] = (unsigned char)( key_usage      );
+    ku[1] = (unsigned char)( key_usage >> 8 );
+    ret = mbedtls_asn1_write_named_bitstring( &c, buf, ku, 9 );
 
-    if( ( ret = mbedtls_asn1_write_bitstring( &c, buf, &ku, 7 ) ) != 4 )
+    if( ret < 0 )
         return( ret );
+    else if( ret < 3 || ret > 5 )
+        return( MBEDTLS_ERR_X509_INVALID_FORMAT );
 
     ret = mbedtls_x509write_crt_set_extension( ctx, MBEDTLS_OID_KEY_USAGE,
                                        MBEDTLS_OID_SIZE( MBEDTLS_OID_KEY_USAGE ),
-                                       1, buf, 4 );
+                                       1, c, (size_t)ret );
     if( ret != 0 )
         return( ret );
 
@@ -257,12 +266,13 @@ int mbedtls_x509write_crt_set_ns_cert_type( mbedtls_x509write_cert *ctx,
 
     c = buf + 4;
 
-    if( ( ret = mbedtls_asn1_write_bitstring( &c, buf, &ns_cert_type, 8 ) ) != 4 )
+    ret = mbedtls_asn1_write_named_bitstring( &c, buf, &ns_cert_type, 8 );
+    if( ret < 3 || ret > 4 )
         return( ret );
 
     ret = mbedtls_x509write_crt_set_extension( ctx, MBEDTLS_OID_NS_CERT_TYPE,
                                        MBEDTLS_OID_SIZE( MBEDTLS_OID_NS_CERT_TYPE ),
-                                       0, buf, 4 );
+                                       0, c, (size_t)ret );
     if( ret != 0 )
         return( ret );
 

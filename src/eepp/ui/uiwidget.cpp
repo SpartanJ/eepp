@@ -1,51 +1,70 @@
-#include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uistyle.hpp>
-#include <eepp/ui/uitooltip.hpp>
-#include <eepp/graphics/drawablesearcher.hpp>
-#include <eepp/graphics/rectangledrawable.hpp>
-#include <eepp/ui/uiscenenode.hpp>
-#include <eepp/scene/actions/actions.hpp>
-#include <pugixml/pugixml.hpp>
-#include <eepp/ui/css/stylesheetproperty.hpp>
 #include <algorithm>
+#include <eepp/scene/actions/actions.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/css/shorthanddefinition.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/css/stylesheetspecification.hpp>
+#include <eepp/ui/css/transitiondefinition.hpp>
+#include <eepp/ui/uiborderdrawable.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uinodedrawable.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uitooltip.hpp>
+#include <eepp/ui/uiwidget.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/window.hpp>
+#include <pugixml/pugixml.hpp>
+
+using namespace EE::Window;
 
 namespace EE { namespace UI {
 
-UIWidget * UIWidget::New() {
+UIWidget* UIWidget::New() {
 	return eeNew( UIWidget, () );
 }
 
-UIWidget * UIWidget::NewWithTag( const std::string& tag ) {
+UIWidget* UIWidget::NewWithTag( const std::string& tag ) {
 	return eeNew( UIWidget, ( tag ) );
 }
 
-UIWidget::UIWidget( const std::string & tag ) :
+UIWidget::UIWidget( const std::string& tag ) :
 	UINode(),
 	mTag( tag ),
 	mTheme( NULL ),
 	mStyle( NULL ),
 	mTooltip( NULL ),
-	mMinControlSize(),
-	mLayoutWeight(0),
-	mLayoutGravity(0),
-	mLayoutWidthRules(WRAP_CONTENT),
-	mLayoutHeightRules(WRAP_CONTENT),
-	mLayoutPositionRule(NONE),
-	mLayoutPositionRuleWidget(NULL),
-	mAttributesTransactionCount(0)
-{
+	mLayoutWeight( 0 ),
+	mLayoutGravity( 0 ),
+	mWidthPolicy( SizePolicy::WrapContent ),
+	mHeightPolicy( SizePolicy::WrapContent ),
+	mLayoutPositionPolicy( PositionPolicy::None ),
+	mLayoutPositionPolicyWidget( NULL ),
+	mAttributesTransactionCount( 0 ) {
 	mNodeFlags |= NODE_FLAG_WIDGET;
+	mFlags |= UI_TAB_FOCUSABLE | UI_TOOLTIP_ENABLED;
 
-	updateAnchorsDistances();
+	createStyle();
+
+	if ( NULL != mUISceneNode && !isSceneNodeLoading() && !isLoadingState() ) {
+		mUISceneNode->invalidateStyle( this );
+		mUISceneNode->invalidateStyleState( this, true );
+	}
 }
 
-UIWidget::UIWidget() :
-	UIWidget( "widget" )
-{
-}
+UIWidget::UIWidget() : UIWidget( "widget" ) {}
 
 UIWidget::~UIWidget() {
+	onClose();
+
+	if ( mUISceneNode && mUISceneNode->getUIEventDispatcher() &&
+		 mUISceneNode->getUIEventDispatcher()->getNodeDragging() == this )
+		mUISceneNode->getUIEventDispatcher()->setNodeDragging( nullptr );
+
+	if ( !SceneManager::instance()->isShootingDown() && NULL != mUISceneNode )
+		mUISceneNode->onWidgetDelete( this );
 	eeSAFE_DELETE( mStyle );
 	eeSAFE_DELETE( mTooltip );
 }
@@ -59,18 +78,70 @@ bool UIWidget::isType( const Uint32& type ) const {
 }
 
 void UIWidget::updateAnchorsDistances() {
-	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Rect( mPosition.x, mPosition.y, mParentCtrl->getPixelsSize().x - ( mPosition.x + mSize.x ), mParentCtrl->getPixelsSize().y - ( mPosition.y + mSize.y ) );
+	if ( NULL != mParentNode ) {
+		mDistToBorder = Rect( mPosition.x, mPosition.y,
+							  mParentNode->getPixelsSize().x - ( mPosition.x + mSize.x ),
+							  mParentNode->getPixelsSize().y - ( mPosition.y + mSize.y ) );
 	}
 }
 
-Rect UIWidget::getLayoutMargin() const {
+const Rectf& UIWidget::getLayoutMargin() const {
 	return mLayoutMargin;
 }
 
-UIWidget * UIWidget::setLayoutMargin(const Rect & margin) {
+const Rectf& UIWidget::getLayoutPixelsMargin() const {
+	return mLayoutMarginPx;
+}
+
+UIWidget* UIWidget::setLayoutMargin( const Rectf& margin ) {
 	if ( mLayoutMargin != margin ) {
 		mLayoutMargin = margin;
+		mLayoutMarginPx = PixelDensity::dpToPx( mLayoutMargin );
+		onMarginChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
+	if ( mLayoutMargin.Left != marginLeft ) {
+		mLayoutMargin.Left = marginLeft;
+		mLayoutMarginPx.Left = PixelDensity::dpToPx( mLayoutMargin.Left );
+		onMarginChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
+	if ( mLayoutMargin.Right != marginRight ) {
+		mLayoutMargin.Right = marginRight;
+		mLayoutMarginPx.Right = PixelDensity::dpToPx( mLayoutMargin.Right );
+		onMarginChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
+	if ( mLayoutMargin.Top != marginTop ) {
+		mLayoutMargin.Top = marginTop;
+		mLayoutMarginPx.Top = PixelDensity::dpToPx( mLayoutMargin.Top );
+		onMarginChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setLayoutMarginBottom( const Float& marginBottom ) {
+	if ( mLayoutMargin.Bottom != marginBottom ) {
+		mLayoutMargin.Bottom = marginBottom;
+		mLayoutMarginPx.Bottom = PixelDensity::dpToPx( mLayoutMargin.Bottom );
+		onMarginChange();
 		notifyLayoutAttrChange();
 	}
 
@@ -81,7 +152,7 @@ Float UIWidget::getLayoutWeight() const {
 	return mLayoutWeight;
 }
 
-UIWidget * UIWidget::setLayoutWeight(const Float & weight) {
+UIWidget* UIWidget::setLayoutWeight( const Float& weight ) {
 	if ( mLayoutWeight != weight ) {
 		mLayoutWeight = weight;
 		notifyLayoutAttrChange();
@@ -94,7 +165,7 @@ Uint32 UIWidget::getLayoutGravity() const {
 	return mLayoutGravity;
 }
 
-UIWidget * UIWidget::setLayoutGravity(const Uint32 & layoutGravity) {
+UIWidget* UIWidget::setLayoutGravity( const Uint32& layoutGravity ) {
 	if ( mLayoutGravity != layoutGravity ) {
 		mLayoutGravity = layoutGravity;
 		notifyLayoutAttrChange();
@@ -103,59 +174,60 @@ UIWidget * UIWidget::setLayoutGravity(const Uint32 & layoutGravity) {
 	return this;
 }
 
-LayoutSizeRules UIWidget::getLayoutWidthRules() const {
-	return mLayoutWidthRules;
+const SizePolicy& UIWidget::getLayoutWidthPolicy() const {
+	return mWidthPolicy;
 }
 
-UIWidget * UIWidget::setLayoutWidthRules(const LayoutSizeRules & layoutWidthRules) {
-	if ( mLayoutWidthRules != layoutWidthRules ) {
-		mLayoutWidthRules = layoutWidthRules;
+UIWidget* UIWidget::setLayoutWidthPolicy( const SizePolicy& widthPolicy ) {
+	if ( mWidthPolicy != widthPolicy ) {
+		mWidthPolicy = widthPolicy;
 		notifyLayoutAttrChange();
 	}
 
 	return this;
 }
 
-LayoutSizeRules UIWidget::getLayoutHeightRules() const {
-	return mLayoutHeightRules;
+const SizePolicy& UIWidget::getLayoutHeightPolicy() const {
+	return mHeightPolicy;
 }
 
-UIWidget * UIWidget::setLayoutHeightRules(const LayoutSizeRules & layoutHeightRules) {
-	if ( mLayoutHeightRules != layoutHeightRules ) {
-		mLayoutHeightRules = layoutHeightRules;
+UIWidget* UIWidget::setLayoutHeightPolicy( const SizePolicy& heightPolicy ) {
+	if ( mHeightPolicy != heightPolicy ) {
+		mHeightPolicy = heightPolicy;
 		notifyLayoutAttrChange();
 	}
 
 	return this;
 }
 
-UIWidget * UIWidget::setLayoutSizeRules(const LayoutSizeRules & layoutWidthRules, const LayoutSizeRules & layoutHeightRules) {
-	if ( mLayoutWidthRules != layoutWidthRules || mLayoutHeightRules != layoutHeightRules ) {
-		mLayoutWidthRules = layoutWidthRules;
-		mLayoutHeightRules = layoutHeightRules;
+UIWidget* UIWidget::setLayoutSizePolicy( const SizePolicy& widthPolicy,
+										 const SizePolicy& heightPolicy ) {
+	if ( mWidthPolicy != widthPolicy || mHeightPolicy != heightPolicy ) {
+		mWidthPolicy = widthPolicy;
+		mHeightPolicy = heightPolicy;
 		notifyLayoutAttrChange();
 	}
 
 	return this;
 }
 
-UIWidget * UIWidget::setLayoutPositionRule(const LayoutPositionRules & layoutPositionRule, UIWidget * of) {
-
-	if ( mLayoutPositionRule != layoutPositionRule || mLayoutPositionRuleWidget != of ) {
-		mLayoutPositionRule = layoutPositionRule;
-		mLayoutPositionRuleWidget = of;
+UIWidget* UIWidget::setLayoutPositionPolicy( const PositionPolicy& layoutPositionPolicy,
+											 UIWidget* of ) {
+	if ( mLayoutPositionPolicy != layoutPositionPolicy || mLayoutPositionPolicyWidget != of ) {
+		mLayoutPositionPolicy = layoutPositionPolicy;
+		mLayoutPositionPolicyWidget = of;
 		notifyLayoutAttrChange();
 	}
 
 	return this;
 }
 
-UIWidget * UIWidget::getLayoutPositionRuleWidget() const {
-	return mLayoutPositionRuleWidget;
+UIWidget* UIWidget::getLayoutPositionPolicyWidget() const {
+	return mLayoutPositionPolicyWidget;
 }
 
-LayoutPositionRules UIWidget::getLayoutPositionRule() const {
-	return mLayoutPositionRule;
+PositionPolicy UIWidget::getLayoutPositionPolicy() const {
+	return mLayoutPositionPolicy;
 }
 
 void UIWidget::createTooltip() {
@@ -167,69 +239,140 @@ void UIWidget::createTooltip() {
 	mTooltip->setTooltipOf( this );
 }
 
-Uint32 UIWidget::onMouseMove( const Vector2i & Pos, const Uint32& Flags ) {
-	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
-		EventDispatcher * eventDispatcher = getEventDispatcher();
+void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
+	UINode::onChildCountChange( child, removed );
 
-		if ( NULL == eventDispatcher )
-			return 1;
-
-		UIThemeManager * themeManager = UIThemeManager::instance();
-
-		Vector2f Pos = eventDispatcher->getMousePosf();
-		Pos.x += themeManager->getCursorSize().x;
-		Pos.y += themeManager->getCursorSize().y;
-
-		if ( Pos.x + mTooltip->getPixelsSize().getWidth() > eventDispatcher->getSceneNode()->getPixelsSize().getWidth() ) {
-			Pos.x = eventDispatcher->getMousePos().x - mTooltip->getPixelsSize().getWidth();
-		}
-
-		if ( Pos.y + mTooltip->getPixelsSize().getHeight() > eventDispatcher->getSceneNode()->getPixelsSize().getHeight() ) {
-			Pos.y = eventDispatcher->getMousePos().y - mTooltip->getPixelsSize().getHeight();
-		}
-
-		if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {
-			if ( !mTooltip->isVisible() || themeManager->getTooltipFollowMouse() )
-				mTooltip->setPosition( PixelDensity::pxToDp( Pos ) );
-
-			mTooltip->show();
-		} else {
-			if ( -1.f != mTooltip->getTooltipTime().asMilliseconds() ) {
-				mTooltip->addTooltipTime( mSceneNode->getElapsed() );
-			}
-
-			if ( mTooltip->getTooltipTime() >= themeManager->getTooltipTimeToShow() ) {
-				if ( mTooltip->getTooltipTime().asMilliseconds() != -1.f ) {
-					mTooltip->setPixelsPosition( Pos );
-
-					mTooltip->show();
-
-					mTooltip->setTooltipTime( Milliseconds( -1.f ) );
-				}
-			}
-		}
-
-		if ( themeManager->getTooltipFollowMouse() ) {
-			mTooltip->setPixelsPosition( Pos );
+	if ( removed && child->isWidget() ) {
+		UIWidget* widget = child->asType<UIWidget>();
+		if ( widget->getUIStyle() && widget->getUIStyle()->isStructurallyVolatile() ) {
+			mStyle->removeStructurallyVolatileChild( widget->asType<UIWidget>() );
 		}
 	}
 
-	return UINode::onMouseMove( Pos, Flags );
+	if ( !isSceneNodeLoading() && mUISceneNode != NULL && mStyle != NULL ) {
+		// Childs that are structurally volatile can change states when a new
+		// element is added to the parent. We pre-store them and invalidate its
+		// state if that's the case.
+		auto& svc = mStyle->getStructurallyVolatileChilds();
+		for ( auto& child : svc ) {
+			mUISceneNode->invalidateStyleState( child );
+		}
+	}
 }
 
-Uint32 UIWidget::onMouseLeave( const Vector2i & Pos, const Uint32& Flags ) {
-	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
-		mTooltip->setTooltipTime( Milliseconds( 0.f ) );
+Uint32 UIWidget::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_TAB && isTabStop() ) {
+		Node::onKeyDown( event );
+		return 1;
+	}
+	return Node::onKeyDown( event );
+}
 
-		if ( mTooltip->isVisible() )
+Vector2f UIWidget::getTooltipPosition() {
+	EventDispatcher* eventDispatcher = getEventDispatcher();
+	UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+
+	if ( NULL == eventDispatcher || NULL == themeManager )
+		return Vector2f::Zero;
+
+	UISceneNode* uiSceneNode = getUISceneNode();
+	Vector2f pos = eventDispatcher->getMousePosf();
+	pos -= uiSceneNode->getScreenPos(); // TODO: Fix UISceneNode inside UISceneNode position
+	pos.x += themeManager->getCursorSize().x;
+	pos.y += themeManager->getCursorSize().y;
+
+	if ( pos.x + mTooltip->getPixelsSize().getWidth() >
+		 eventDispatcher->getSceneNode()->getPixelsSize().getWidth() ) {
+		pos.x = eventDispatcher->getMousePos().x - mTooltip->getPixelsSize().getWidth();
+	}
+
+	if ( pos.y + mTooltip->getPixelsSize().getHeight() >
+		 eventDispatcher->getSceneNode()->getPixelsSize().getHeight() ) {
+		pos.y = eventDispatcher->getMousePos().y - mTooltip->getPixelsSize().getHeight();
+	}
+
+	return pos;
+}
+
+void UIWidget::createStyle() {
+	if ( NULL == mStyle && NULL != mUISceneNode ) {
+		mStyle = UIStyle::New( this );
+		mStyle->setState( mState );
+	}
+}
+
+Uint32 UIWidget::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	EventDispatcher* eventDispatcher = getEventDispatcher();
+
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this ) {
+		if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
+			UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+
+			if ( themeManager->getTooltipFollowMouse() ) {
+				mTooltip->setPixelsPosition( getTooltipPosition() );
+			} else if ( !mTooltip->dontAutoHideOnMouseMove() ) {
+				mTooltip->hide();
+			}
+		}
+	}
+
+	return UINode::onMouseMove( position, flags );
+}
+
+Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
+	EventDispatcher* eventDispatcher = getEventDispatcher();
+
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this ) {
+		if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() ) {
+			updateDebugData();
+		}
+
+		if ( mVisible && NULL != mTooltip && isTooltipEnabled() && !mTooltip->getText().empty() ) {
+			UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
+
+			if ( NULL == themeManager )
+				return UINode::onMouseOver( position, flags );
+
+			if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {
+				if ( !mTooltip->isVisible() || themeManager->getTooltipFollowMouse() )
+					mTooltip->setPosition( getTooltipPosition() );
+				mTooltip->show();
+			} else {
+				runAction( Actions::Runnable::New(
+					[&] {
+						if ( isTooltipEnabled() &&
+							 getEventDispatcher()->getMouseOverNode() == this ) {
+							mTooltip->setPixelsPosition( getTooltipPosition() );
+							mTooltip->show();
+						}
+					},
+					themeManager->getTooltipTimeToShow() ) );
+			}
+
+			if ( themeManager->getTooltipFollowMouse() ) {
+				mTooltip->setPixelsPosition( getTooltipPosition() );
+			}
+		}
+	}
+
+	return UINode::onMouseOver( position, flags );
+}
+
+Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
+	EventDispatcher* eventDispatcher = getEventDispatcher();
+
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this ) {
+		if ( mVisible && NULL != mTooltip ) {
 			mTooltip->hide();
+		}
 	}
 
 	return UINode::onMouseLeave( Pos, Flags );
 }
 
-UIWidget * UIWidget::setTooltipText( const String& Text ) {
-	if ( NULL == mTooltip ) {	// If the tooltip wasn't created it will avoid to create a new one if the string is ""
+UIWidget* UIWidget::setTooltipText( const String& Text ) {
+	if ( NULL == mTooltip ) { // If the tooltip wasn't created it will avoid to create a new one if
+							  // the string is ""
 		if ( Text.size() ) {
 			createTooltip();
 
@@ -253,19 +396,7 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-Node * UIWidget::setSize( const Sizef& size ) {
-	Sizef s( size );
-
-	if ( s.x < mMinControlSize.x )
-		s.x = mMinControlSize.x;
-
-	if ( s.y < mMinControlSize.y )
-		s.y = mMinControlSize.y;
-
-	return UINode::setSize( s );
-}
-
-UINode * UIWidget::setFlags(const Uint32 & flags) {
+UINode* UIWidget::setFlags( const Uint32& flags ) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();
 	}
@@ -277,7 +408,7 @@ UINode * UIWidget::setFlags(const Uint32 & flags) {
 	return UINode::setFlags( flags );
 }
 
-UINode * UIWidget::unsetFlags(const Uint32 & flags) {
+UINode* UIWidget::unsetFlags( const Uint32& flags ) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();
 	}
@@ -285,49 +416,66 @@ UINode * UIWidget::unsetFlags(const Uint32 & flags) {
 	return UINode::unsetFlags( flags );
 }
 
-UIWidget * UIWidget::setAnchors(const Uint32 & flags) {
-	mFlags &= ~(UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM);
+UIWidget* UIWidget::setAnchors( const Uint32& flags ) {
+	mFlags &= ~( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mFlags |= flags;
 	updateAnchorsDistances();
 	return this;
 }
 
-void UIWidget::setTheme( UITheme * Theme ) {
+void UIWidget::setTheme( UITheme* Theme ) {
 	mTheme = Theme;
 	invalidateDraw();
 }
 
-UINode * UIWidget::setThemeSkin( const std::string& skinName ) {
-	return setThemeSkin( NULL != mTheme ? mTheme : UIThemeManager::instance()->getDefaultTheme(), skinName );
+UINode* UIWidget::setThemeSkin( const std::string& skinName ) {
+	return setThemeSkin( NULL != mTheme ? mTheme
+										: getUISceneNode()->getUIThemeManager()->getDefaultTheme(),
+						 skinName );
 }
 
-UINode * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
+UINode* UIWidget::setThemeSkin( UITheme* Theme, const std::string& skinName ) {
 	return UINode::setThemeSkin( Theme, skinName );
 }
 
-Node * UIWidget::setSize( const Float& Width, const Float& Height ) {
-	return UINode::setSize( Width, Height );
-}
-
-Node * UIWidget::setId( const std::string& id ) {
+Node* UIWidget::setId( const std::string& id ) {
 	Node::setId( id );
 
-	reloadStyle( true );
+	if ( !isSceneNodeLoading() && !isLoadingState() ) {
+		getUISceneNode()->invalidateStyle( this );
+		getUISceneNode()->invalidateStyleState( this );
+	}
 
 	return this;
 }
 
-const Sizef& UIWidget::getSize() const {
-	return UINode::getSize();
+bool UIWidget::acceptsDropOfWidget( const UIWidget* ) {
+	return false;
 }
 
-UITooltip * UIWidget::getTooltip() {
+UIWidget* UIWidget::acceptsDropOfWidgetInTree( const UIWidget* widget ) {
+	if ( acceptsDropOfWidget( widget ) ) {
+		return this;
+	} else {
+		Node* parent = getParent();
+		while ( parent ) {
+			if ( parent->isType( UI_TYPE_WIDGET ) &&
+				 parent->asType<UIWidget>()->acceptsDropOfWidget( widget ) ) {
+				return parent->asType<UIWidget>();
+			}
+			parent = parent->getParent();
+		}
+	}
+	return nullptr;
+}
+
+UITooltip* UIWidget::getTooltip() {
 	return mTooltip;
 }
 
-void UIWidget::onParentSizeChange( const Vector2f& SizeChange ) {
-	updateAnchors( SizeChange );
-	UINode::onParentSizeChange( SizeChange );
+void UIWidget::onParentSizeChange( const Vector2f& sizeChange ) {
+	updateAnchors( sizeChange );
+	UINode::onParentSizeChange( sizeChange );
 }
 
 void UIWidget::onPositionChange() {
@@ -338,117 +486,143 @@ void UIWidget::onPositionChange() {
 void UIWidget::onVisibilityChange() {
 	updateAnchorsDistances();
 	notifyLayoutAttrChange();
+	notifyLayoutAttrChangeParent();
 	UINode::onVisibilityChange();
 }
 
 void UIWidget::onSizeChange() {
 	UINode::onSizeChange();
+
+	if ( mBorder != NULL )
+		mBorder->invalidate();
+
+	if ( mBackground != NULL )
+		mBackground->invalidate();
+
+	if ( mForeground != NULL )
+		mForeground->invalidate();
+
 	notifyLayoutAttrChange();
 }
 
-void UIWidget::onAutoSize() {
-}
+void UIWidget::onAutoSize() {}
 
-void UIWidget::onWidgetCreated() {
-}
+void UIWidget::onWidgetCreated() {}
 
 void UIWidget::notifyLayoutAttrChange() {
 	if ( 0 == mAttributesTransactionCount ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		messagePost( &msg );
+	} else {
+		mFlags |= UI_ATTRIBUTE_CHANGED;
 	}
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
-	if ( 0 == mAttributesTransactionCount && NULL != mParentCtrl ) {
+	if ( 0 == mAttributesTransactionCount && NULL != mParentNode ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
-		mParentCtrl->messagePost( &msg );
+		mParentNode->messagePost( &msg );
 	}
 }
 
-void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
+void UIWidget::updateAnchors( const Vector2f& sizeChange ) {
 	if ( !( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) )
 		return;
 
-	Sizef newSize( mDpSize );
+	Sizef newSize( getSize() );
 
 	if ( !( mFlags & UI_ANCHOR_LEFT ) ) {
-		setInternalPosition( Vector2f( mDpPos.x += SizeChange.x, mDpPos.y ) );
+		setInternalPosition( Vector2f( mDpPos.x += sizeChange.x, mDpPos.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
-		if ( NULL != mParentCtrl ) {
-			newSize.x = mParentCtrl->getSize().getWidth() - mDpPos.x - PixelDensity::pxToDpI( mDistToBorder.Right );
+		if ( NULL != mParentNode ) {
+			newSize.x = mParentNode->getSize().getWidth() - mDpPos.x -
+						PixelDensity::pxToDpI( mDistToBorder.Right );
 
-			if ( newSize.x < mMinControlSize.getWidth() )
-				newSize.x = mMinControlSize.getWidth();
+			if ( newSize.x < mMinSize.getWidth() )
+				newSize.x = mMinSize.getWidth();
 		}
 	}
 
 	if ( !( mFlags & UI_ANCHOR_TOP ) ) {
-		setInternalPosition( Vector2f( mDpPos.x, mDpPos.y += SizeChange.y ) );
+		setInternalPosition( Vector2f( mDpPos.x, mDpPos.y += sizeChange.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
-		if ( NULL != mParentCtrl ) {
-			newSize.y = mParentCtrl->getSize().y - mDpPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
+		if ( NULL != mParentNode ) {
+			newSize.y =
+				mParentNode->getSize().y - mDpPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
 
-			if ( newSize.y < mMinControlSize.getHeight() )
-				newSize.y = mMinControlSize.getHeight();
+			if ( newSize.y < mMinSize.getHeight() )
+				newSize.y = mMinSize.getHeight();
 		}
 	}
 
-	if ( newSize != mDpSize )
+	if ( newSize != getSize() )
 		setSize( newSize );
 }
 
 void UIWidget::alignAgainstLayout() {
 	Vector2f pos = mDpPos;
 
-	switch ( fontHAlignGet( mLayoutGravity ) ) {
+	switch ( Font::getHorizontalAlign( mLayoutGravity ) ) {
 		case UI_HALIGN_CENTER:
-			pos.x = ( getParent()->getSize().getWidth() - mDpSize.getWidth() ) / 2;
+			pos.x = ( getParent()->getSize().getWidth() - getSize().getWidth() ) / 2;
 			break;
 		case UI_HALIGN_RIGHT:
-			pos.x = getParent()->getSize().getWidth() - mLayoutMargin.Right;
+			pos.x = getParent()->getSize().getWidth() - getSize().getWidth() - mLayoutMargin.Right;
 			break;
 		case UI_HALIGN_LEFT:
 			pos.x = mLayoutMargin.Left;
 			break;
 	}
 
-	switch ( fontVAlignGet( mLayoutGravity ) ) {
+	switch ( Font::getVerticalAlign( mLayoutGravity ) ) {
 		case UI_VALIGN_CENTER:
-			pos.y = ( getParent()->getSize().getHeight() - mDpSize.getHeight() ) / 2;
+			pos.y = ( getParent()->getSize().getHeight() - getSize().getHeight() ) / 2;
 			break;
 		case UI_VALIGN_BOTTOM:
-			pos.y = getParent()->getSize().getHeight() - mLayoutMargin.Bottom;
+			pos.y =
+				getParent()->getSize().getHeight() - getSize().getHeight() - mLayoutMargin.Bottom;
 			break;
 		case UI_VALIGN_TOP:
 			pos.y = mLayoutMargin.Top;
 			break;
 	}
 
-	setInternalPosition( pos );
+	setPosition( pos );
 }
 
-void UIWidget::reportStyleStateChange() {
-	if ( NULL != mStyle )
+void UIWidget::reportStyleStateChange( bool disableAnimations, bool forceReApplyStyles ) {
+	if ( NULL != mStyle && !mStyle->isChangingState() ) {
+		bool hasAnimDisabled = mStyle->getDisableAnimations();
+		if ( disableAnimations )
+			mStyle->setDisableAnimations( disableAnimations );
+		if ( forceReApplyStyles )
+			mStyle->setForceReapplyProperties( true );
 		mStyle->onStateChange();
+		if ( disableAnimations )
+			mStyle->setDisableAnimations( hasAnimDisabled );
+	}
 }
 
 bool UIWidget::isSceneNodeLoading() const {
-	return getSceneNode()->isUISceneNode() ? static_cast<UISceneNode*>( getSceneNode() )->isLoading() : false;
+	return NULL != mUISceneNode ? mUISceneNode->isLoading() : false;
 }
 
 const Rectf& UIWidget::getPadding() const {
 	return mPadding;
 }
 
-UIWidget * UIWidget::setPadding(const Rectf& padding) {
+const Rectf& UIWidget::getPixelsPadding() const {
+	return mPaddingPx;
+}
+
+UIWidget* UIWidget::setPadding( const Rectf& padding ) {
 	if ( padding != mPadding ) {
 		mPadding = padding;
-		mRealPadding = PixelDensity::dpToPx( mPadding );
+		mPaddingPx = PixelDensity::dpToPx( mPadding );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -457,7 +631,55 @@ UIWidget * UIWidget::setPadding(const Rectf& padding) {
 	return this;
 }
 
-const std::string &UIWidget::getStyleSheetId() const {
+UIWidget* UIWidget::setPaddingLeft( const Float& paddingLeft ) {
+	if ( paddingLeft != mPadding.Left ) {
+		mPadding.Left = paddingLeft;
+		mPaddingPx.Left = PixelDensity::dpToPx( mPadding.Left );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setPaddingRight( const Float& paddingRight ) {
+	if ( paddingRight != mPadding.Right ) {
+		mPadding.Right = paddingRight;
+		mPaddingPx.Right = PixelDensity::dpToPx( mPadding.Right );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setPaddingTop( const Float& paddingTop ) {
+	if ( paddingTop != mPadding.Top ) {
+		mPadding.Top = paddingTop;
+		mPaddingPx.Top = PixelDensity::dpToPx( mPadding.Top );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setPaddingBottom( const Float& paddingBottom ) {
+	if ( paddingBottom != mPadding.Bottom ) {
+		mPadding.Bottom = paddingBottom;
+		mPaddingPx.Bottom = PixelDensity::dpToPx( mPadding.Bottom );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+const std::string& UIWidget::getStyleSheetId() const {
 	return mId;
 }
 
@@ -465,23 +687,23 @@ const std::string& UIWidget::getStyleSheetTag() const {
 	return mTag;
 }
 
-const std::vector<std::string> &UIWidget::getStyleSheetClasses() const {
+const std::vector<std::string>& UIWidget::getStyleSheetClasses() const {
 	return mClasses;
 }
 
-CSS::StyleSheetElement * UIWidget::getStyleSheetParentElement() const {
-	return NULL != mParentCtrl && mParentCtrl->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mParentCtrl ) : NULL;
+UIWidget* UIWidget::getStyleSheetParentElement() const {
+	return NULL != mParentNode && mParentNode->isWidget() ? mParentNode->asType<UIWidget>() : NULL;
 }
 
-CSS::StyleSheetElement * UIWidget::getStyleSheetPreviousSiblingElement() const {
-	return NULL != mPrev && mPrev->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mPrev ) : NULL;
+UIWidget* UIWidget::getStyleSheetPreviousSiblingElement() const {
+	return NULL != mPrev && mPrev->isWidget() ? mPrev->asType<UIWidget>() : NULL;
 }
 
-CSS::StyleSheetElement * UIWidget::getStyleSheetNextSiblingElement() const {
-	return NULL != mNext && mNext->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mNext ) : NULL;
+UIWidget* UIWidget::getStyleSheetNextSiblingElement() const {
+	return NULL != mNext && mNext->isWidget() ? mNext->asType<UIWidget>() : NULL;
 }
 
-const std::vector<std::string> &UIWidget::getStyleSheetPseudoClasses() const {
+const std::vector<std::string>& UIWidget::getStyleSheetPseudoClasses() const {
 	return mPseudoClasses;
 }
 
@@ -493,6 +715,9 @@ void UIWidget::updatePseudoClasses() {
 
 	if ( mState & UIState::StateFlagFocus )
 		mPseudoClasses.push_back( "focus" );
+
+	if ( mState & UIState::StateFlagFocusWithin )
+		mPseudoClasses.push_back( "focus-within" );
 
 	if ( mState & UIState::StateFlagSelected )
 		mPseudoClasses.push_back( "selected" );
@@ -507,10 +732,15 @@ void UIWidget::updatePseudoClasses() {
 }
 
 void UIWidget::addClass( const std::string& cls ) {
-	if ( !cls.empty() && !containsClass( cls ) ) {
+	if ( !cls.empty() && !hasClass( cls ) ) {
 		mClasses.push_back( cls );
 
-		reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
+
+		onClassChange();
 	}
 }
 
@@ -519,32 +749,89 @@ void UIWidget::addClasses( const std::vector<std::string>& classes ) {
 		for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
 			const std::string& cls = *cit;
 
-			if ( !cls.empty() && !containsClass( cls ) ) {
+			if ( !cls.empty() && !hasClass( cls ) ) {
 				mClasses.push_back( cls );
 			}
 		}
 
-		reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
+
+		onClassChange();
 	}
 }
 
 void UIWidget::removeClass( const std::string& cls ) {
-	if ( containsClass( cls ) ) {
+	if ( hasClass( cls ) ) {
 		mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
 
-		reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
+
+		onClassChange();
 	}
 }
 
-bool UIWidget::containsClass( const std::string& cls ) {
+void UIWidget::removeClasses( const std::vector<std::string>& classes ) {
+	if ( !classes.empty() ) {
+		for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
+			const std::string& cls = *cit;
+
+			if ( !cls.empty() ) {
+				auto found = std::find( mClasses.begin(), mClasses.end(), cls );
+
+				if ( found != mClasses.end() ) {
+					mClasses.erase( found );
+				}
+			}
+		}
+
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
+
+		onClassChange();
+	}
+}
+
+bool UIWidget::hasClass( const std::string& cls ) const {
 	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
+}
+
+bool UIWidget::hasPseudoClass( const std::string& pseudoCls ) const {
+	return std::find( mPseudoClasses.begin(), mPseudoClasses.end(), pseudoCls ) !=
+		   mPseudoClasses.end();
+}
+
+bool UIWidget::isTooltipEnabled() const {
+	return ( mFlags & UI_TOOLTIP_ENABLED ) != 0;
+}
+
+void UIWidget::setTooltipEnabled( bool enabled ) {
+	writeFlag( UI_TOOLTIP_ENABLED, enabled ? 1 : 0 );
+	if ( mTooltip && mTooltip->isVisible() )
+		mTooltip->setVisible( false );
 }
 
 void UIWidget::setElementTag( const std::string& tag ) {
 	if ( mTag != tag ) {
 		mTag = tag;
+		// Some rules are going to be invalidated if the tag is changed
+		mMinWidthEq = "";
+		mMinHeightEq = "";
+		mMinSize = Sizef::Zero;
 
-		reloadStyle( true );
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
+
+		onTagChange();
 	}
 }
 
@@ -560,8 +847,10 @@ void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
 			mSkinState->pushState( State );
 
 		if ( NULL != mStyle ) {
-			updatePseudoClasses();
-			mStyle->pushState( State );
+			if ( !( State == UIState::StateHover && !isMouseOverMeOrChilds() ) ) {
+				updatePseudoClasses();
+				mStyle->pushState( State );
+			}
 		}
 
 		if ( emitEvent ) {
@@ -580,8 +869,10 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 			mSkinState->popState( State );
 
 		if ( NULL != mStyle ) {
-			updatePseudoClasses();
-			mStyle->popState( State );
+			if ( !( State == UIState::StateHover && isMouseOverMeOrChilds() ) ) {
+				updatePseudoClasses();
+				mStyle->popState( State );
+			}
 		}
 
 		if ( emitEvent ) {
@@ -592,30 +883,58 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 	}
 }
 
-UIStyle * UIWidget::getUIStyle() const {
+Uint32 UIWidget::onFocus() {
+	pushState( UIState::StateFocusWithin );
+
+	Node* parent = mParentNode;
+	while ( parent ) {
+		if ( parent->isUINode() )
+			parent->asType<UINode>()->pushState( UIState::StateFocusWithin );
+		parent = parent->getParent();
+	}
+
+	return UINode::onFocus();
+}
+
+Uint32 UIWidget::onFocusLoss() {
+	popState( UIState::StateFocusWithin );
+
+	Node* parent = mParentNode;
+	while ( parent ) {
+		if ( parent->isUINode() )
+			parent->asType<UINode>()->popState( UIState::StateFocusWithin );
+		parent = parent->getParent();
+	}
+
+	return UINode::onFocusLoss();
+}
+
+UIStyle* UIWidget::getUIStyle() const {
 	return mStyle;
 }
 
-void UIWidget::reloadStyle( const bool& reloadChilds ) {
-	if ( NULL == mStyle && getSceneNode()->isUISceneNode() && static_cast<UISceneNode*>( getSceneNode() )->hasStyleSheet() ) {
-		mStyle = UIStyle::New( this );
-		mStyle->setState( mState );
-	}
+void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimations,
+							const bool& reportStateChange, const bool& forceReApplyProperties ) {
+	createStyle();
 
 	if ( NULL != mStyle ) {
 		mStyle->load();
-		reportStyleStateChange();
 
-		if ( NULL != mChild && reloadChilds ) {
-			Node * ChildLoop = mChild;
+		if ( NULL != getFirstChild() && reloadChilds ) {
+			Node* child = getFirstChild();
 
-			while ( NULL != ChildLoop ) {
-				if ( ChildLoop->isWidget() )
-					static_cast<UIWidget*>( ChildLoop )->reloadStyle( reloadChilds );
+			while ( NULL != child ) {
+				if ( child->isWidget() )
+					child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
+															reportStateChange,
+															forceReApplyProperties );
 
-				ChildLoop = ChildLoop->getNextNode();
+				child = child->getNextNode();
 			}
 		}
+
+		if ( reportStateChange )
+			reportStyleStateChange( disableAnimations, forceReApplyProperties );
 	}
 }
 
@@ -624,12 +943,26 @@ void UIWidget::onPaddingChange() {
 	invalidateDraw();
 }
 
-void UIWidget::onThemeLoaded() {
-	reportStyleStateChange();
+void UIWidget::onMarginChange() {
+	sendCommonEvent( Event::OnMarginChange );
+	invalidateDraw();
 }
 
+void UIWidget::onThemeLoaded() {}
+
 void UIWidget::onParentChange() {
-	reloadStyle( true );
+	if ( !isSceneNodeLoading() && !isLoadingState() ) {
+		getUISceneNode()->invalidateStyle( this );
+		getUISceneNode()->invalidateStyleState( this, true );
+	}
+}
+
+void UIWidget::onClassChange() {
+	sendCommonEvent( Event::OnClassChange );
+}
+
+void UIWidget::onTagChange() {
+	sendCommonEvent( Event::OnTagChange );
 }
 
 void UIWidget::beginAttributesTransaction() {
@@ -640,7 +973,11 @@ void UIWidget::endAttributesTransaction() {
 	mAttributesTransactionCount--;
 
 	if ( 0 == mAttributesTransactionCount ) {
-		notifyLayoutAttrChange();
+		if ( mFlags & UI_ATTRIBUTE_CHANGED ) {
+			notifyLayoutAttrChange();
+
+			mFlags &= ~UI_ATTRIBUTE_CHANGED;
+		}
 	}
 }
 
@@ -652,578 +989,769 @@ const Uint32& UIWidget::getStylePreviousState() const {
 	return NULL != mStyle ? mStyle->getPreviousState() : mState;
 }
 
-void UIWidget::setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity ) {
-	if ( mStyle != NULL )
-		mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( name, value, specificity ) );
-}
+std::vector<UIWidget*> UIWidget::findAllByClass( const std::string& className ) {
+	std::vector<UIWidget*> widgets;
 
-#define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
-		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
-		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
-			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
-		} \
+	if ( !isClosing() && hasClass( className ) ) {
+		widgets.push_back( this );
 	}
 
-bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
+	Node* child = mChild;
 
+	while ( NULL != child ) {
+		if ( child->isWidget() ) {
+			std::vector<UIWidget*> foundWidgets =
+				child->asType<UIWidget>()->findAllByClass( className );
+
+			if ( !foundWidgets.empty() )
+				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
+		}
+
+		child = child->getNextNode();
+	}
+
+	return widgets;
+}
+
+std::vector<UIWidget*> UIWidget::findAllByTag( const std::string& tag ) {
+	std::vector<UIWidget*> widgets;
+
+	if ( !isClosing() && getElementTag() == tag ) {
+		widgets.push_back( this );
+	}
+
+	Node* child = mChild;
+
+	while ( NULL != child ) {
+		if ( child->isWidget() ) {
+			std::vector<UIWidget*> foundWidgets = child->asType<UIWidget>()->findAllByTag( tag );
+
+			if ( !foundWidgets.empty() )
+				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
+		}
+
+		child = child->getNextNode();
+	}
+
+	return widgets;
+}
+
+UIWidget* UIWidget::findByClass( const std::string& className ) {
+	if ( !isClosing() && hasClass( className ) ) {
+		return this;
+	} else {
+		Node* child = mChild;
+
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				UIWidget* foundWidget = child->asType<UIWidget>()->findByClass( className );
+
+				if ( NULL != foundWidget )
+					return foundWidget;
+			}
+
+			child = child->getNextNode();
+		}
+	}
+
+	return NULL;
+}
+
+UIWidget* UIWidget::findByTag( const std::string& tag ) {
+	if ( !isClosing() && getElementTag() == tag ) {
+		return this;
+	} else {
+		Node* child = mChild;
+
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				UIWidget* foundWidget = child->asType<UIWidget>()->findByTag( tag );
+
+				if ( NULL != foundWidget )
+					return foundWidget;
+			}
+
+			child = child->getNextNode();
+		}
+	}
+
+	return NULL;
+}
+
+UIWidget* UIWidget::querySelector( const CSS::StyleSheetSelector& selector ) {
+	if ( !isClosing() && selector.select( this ) ) {
+		return this;
+	} else {
+		Node* child = mChild;
+
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				UIWidget* foundWidget = child->asType<UIWidget>()->querySelector( selector );
+
+				if ( NULL != foundWidget )
+					return foundWidget;
+			}
+
+			child = child->getNextNode();
+		}
+	}
+
+	return NULL;
+}
+
+std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector& selector ) {
+	std::vector<UIWidget*> widgets;
+
+	if ( !isClosing() && selector.select( this ) ) {
+		widgets.push_back( this );
+	}
+
+	Node* child = mChild;
+
+	while ( NULL != child ) {
+		if ( child->isWidget() ) {
+			std::vector<UIWidget*> foundWidgets =
+				child->asType<UIWidget>()->querySelectorAll( selector );
+
+			if ( !foundWidgets.empty() )
+				widgets.insert( widgets.end(), foundWidgets.begin(), foundWidgets.end() );
+		}
+
+		child = child->getNextNode();
+	}
+
+	return widgets;
+}
+
+bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
+	if ( property.getPropertyDefinition() == NULL ) {
+		Log::warning( "applyProperty: Property %s not defined!", property.getName().c_str() );
+		return false;
+	}
+	return true;
+}
+
+void UIWidget::reportStyleStateChangeRecursive( bool disableAnimations, bool forceReApplyStyles ) {
+	Node* childLoop = getFirstChild();
+	while ( childLoop != NULL ) {
+		if ( childLoop->isWidget() )
+			childLoop->asType<UIWidget>()->reportStyleStateChangeRecursive( disableAnimations,
+																			forceReApplyStyles );
+		childLoop = childLoop->getNextNode();
+	}
+	reportStyleStateChange( disableAnimations, forceReApplyStyles );
+}
+
+UIWidget* UIWidget::querySelector( const std::string& selector ) {
+	return querySelector( CSS::StyleSheetSelector( selector ) );
+}
+
+std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector ) {
+	return querySelectorAll( CSS::StyleSheetSelector( selector ) );
+}
+
+std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
+	return {
+		PropertyId::X,
+		PropertyId::Y,
+		PropertyId::Width,
+		PropertyId::Height,
+		PropertyId::MarginLeft,
+		PropertyId::MarginTop,
+		PropertyId::MarginRight,
+		PropertyId::MarginBottom,
+		PropertyId::PaddingLeft,
+		PropertyId::PaddingTop,
+		PropertyId::PaddingRight,
+		PropertyId::PaddingBottom,
+		PropertyId::BackgroundColor,
+		PropertyId::BackgroundTint,
+		PropertyId::ForegroundColor,
+		PropertyId::ForegroundTint,
+		PropertyId::ForegroundRadius,
+		PropertyId::BorderType,
+		PropertyId::SkinColor,
+		PropertyId::Rotation,
+		PropertyId::Scale,
+		PropertyId::Opacity,
+		PropertyId::Cursor,
+		PropertyId::Visible,
+		PropertyId::Enabled,
+		PropertyId::Theme,
+		PropertyId::Skin,
+		PropertyId::Flags,
+		PropertyId::BackgroundSize,
+		PropertyId::ForegroundSize,
+		PropertyId::LayoutWeight,
+		PropertyId::LayoutGravity,
+		PropertyId::LayoutWidth,
+		PropertyId::LayoutHeight,
+		PropertyId::Clip,
+		PropertyId::BackgroundPositionX,
+		PropertyId::BackgroundPositionY,
+		PropertyId::ForegroundPositionX,
+		PropertyId::ForegroundPositionY,
+		PropertyId::RotationOriginPointX,
+		PropertyId::RotationOriginPointY,
+		PropertyId::ScaleOriginPointX,
+		PropertyId::ScaleOriginPointY,
+		PropertyId::BlendMode,
+		PropertyId::MinWidth,
+		PropertyId::MaxWidth,
+		PropertyId::MinHeight,
+		PropertyId::MaxHeight,
+		PropertyId::BorderLeftColor,
+		PropertyId::BorderTopColor,
+		PropertyId::BorderRightColor,
+		PropertyId::BorderBottomColor,
+		PropertyId::BorderLeftWidth,
+		PropertyId::BorderTopWidth,
+		PropertyId::BorderRightWidth,
+		PropertyId::BorderBottomWidth,
+		PropertyId::BorderTopLeftRadius,
+		PropertyId::BorderTopRightRadius,
+		PropertyId::BorderBottomLeftRadius,
+		PropertyId::BorderBottomRightRadius,
+	};
+}
+
+std::string UIWidget::getPropertyString( const std::string& property ) const {
+	return getPropertyString( StyleSheetSpecification::instance()->getProperty( property ) );
+}
+
+std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
+										 const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::X:
+			return String::fromFloat( getPosition().x, "dp" );
+		case PropertyId::Y:
+			return String::fromFloat( getPosition().y, "dp" );
+		case PropertyId::Width:
+			return String::fromFloat( getSize().getWidth(), "dp" );
+		case PropertyId::Height:
+			return String::fromFloat( getSize().getHeight(), "dp" );
+		case PropertyId::MarginLeft:
+			return String::format( "%.2fdp", getLayoutMargin().Left );
+		case PropertyId::MarginTop:
+			return String::format( "%.2fdp", getLayoutMargin().Top );
+		case PropertyId::MarginRight:
+			return String::format( "%.2fdp", getLayoutMargin().Right );
+		case PropertyId::MarginBottom:
+			return String::format( "%.2fdp", getLayoutMargin().Bottom );
+		case PropertyId::PaddingLeft:
+			return String::fromFloat( getPadding().Left, "dp" );
+		case PropertyId::PaddingTop:
+			return String::fromFloat( getPadding().Top, "dp" );
+		case PropertyId::PaddingRight:
+			return String::fromFloat( getPadding().Right, "dp" );
+		case PropertyId::PaddingBottom:
+			return String::fromFloat( getPadding().Bottom, "dp" );
+		case PropertyId::BackgroundColor:
+			return getBackgroundColor().toHexString();
+		case PropertyId::BackgroundTint:
+			return getBackgroundTint( propertyIndex ).toHexString();
+		case PropertyId::ForegroundColor:
+			return getForegroundColor().toHexString();
+		case PropertyId::ForegroundTint:
+			return getForegroundTint( propertyIndex ).toHexString();
+		case PropertyId::ForegroundRadius:
+			return String::toString( getForegroundRadius() );
+		case PropertyId::BorderType:
+			return Borders::fromBorderType( setBorderEnabled( true )->getBorderType() );
+		case PropertyId::SkinColor:
+			return getSkinColor().toHexString();
+		case PropertyId::Rotation:
+			return String::fromFloat( getRotation() );
+		case PropertyId::Scale:
+			return String::fromFloat( getScale().x ) + " " + String::fromFloat( getScale().y );
+		case PropertyId::Opacity:
+			return String::fromFloat( getAlpha() / 255.f );
+		case PropertyId::Cursor:
+			return "arrow";
+		case PropertyId::Visible:
+			return isVisible() ? "true" : "false";
+		case PropertyId::Enabled:
+			return isEnabled() ? "true" : "false";
+		case PropertyId::Theme:
+			return NULL != mTheme ? mTheme->getName() : "";
+		case PropertyId::Skin:
+			return mSkinName;
+		case PropertyId::Flags:
+			return getFlagsString();
+		case PropertyId::BackgroundSize:
+			return getBackground()->getLayer( propertyIndex )->getSizeEq();
+		case PropertyId::ForegroundSize:
+			return getForeground()->getLayer( propertyIndex )->getSizeEq();
+		case PropertyId::LayoutWeight:
+			return String::fromFloat( getLayoutWeight() );
+		case PropertyId::LayoutGravity:
+			return getLayoutGravityString();
+		case PropertyId::LayoutWidth:
+			return getLayoutWidthPolicyString();
+		case PropertyId::LayoutHeight:
+			return getLayoutHeightPolicyString();
+		case PropertyId::Clip:
+			return UIClip::toString( mClip.getClipType() );
+		case PropertyId::BackgroundPositionX:
+			return getBackground()->getLayer( propertyIndex )->getPositionX();
+		case PropertyId::BackgroundPositionY:
+			return getBackground()->getLayer( propertyIndex )->getPositionY();
+		case PropertyId::ForegroundPositionX:
+			return getForeground()->getLayer( propertyIndex )->getPositionX();
+		case PropertyId::ForegroundPositionY:
+			return getForeground()->getLayer( propertyIndex )->getPositionY();
+		case PropertyId::RotationOriginPointX:
+			return String::fromFloat( getRotationOriginPoint().x, "px" );
+		case PropertyId::RotationOriginPointY:
+			return String::fromFloat( getRotationOriginPoint().y, "px" );
+		case PropertyId::ScaleOriginPointX:
+			return String::fromFloat( getScaleOriginPoint().x, "px" );
+		case PropertyId::ScaleOriginPointY:
+			return String::fromFloat( getScaleOriginPoint().y, "px" );
+		case PropertyId::BlendMode:
+			return "";
+		case PropertyId::MinWidth:
+			return mMinWidthEq;
+		case PropertyId::MaxWidth:
+			return mMaxWidthEq;
+		case PropertyId::MinHeight:
+			return mMinHeightEq;
+		case PropertyId::MaxHeight:
+			return mMaxHeightEq;
+		case PropertyId::BorderLeftColor:
+			return setBorderEnabled( true )->getColorLeft().toHexString();
+		case PropertyId::BorderRightColor:
+			return setBorderEnabled( true )->getColorRight().toHexString();
+		case PropertyId::BorderTopColor:
+			return setBorderEnabled( true )->getColorTop().toHexString();
+		case PropertyId::BorderBottomColor:
+			return setBorderEnabled( true )->getColorBottom().toHexString();
+		case PropertyId::BorderLeftWidth:
+			return String::fromFloat( setBorderEnabled( true )->getBorders().left.width, "px" );
+		case PropertyId::BorderRightWidth:
+			return String::fromFloat( setBorderEnabled( true )->getBorders().right.width, "px" );
+		case PropertyId::BorderTopWidth:
+			return String::fromFloat( setBorderEnabled( true )->getBorders().top.width, "px" );
+		case PropertyId::BorderBottomWidth:
+			return String::fromFloat( setBorderEnabled( true )->getBorders().bottom.width, "px" );
+		case PropertyId::BorderTopLeftRadius:
+			return String::format( "%.2fpx %.2fpx",
+								   setBorderEnabled( true )->getBorders().radius.topLeft.x,
+								   getBorder()->getBorders().radius.topLeft.y );
+		case PropertyId::BorderTopRightRadius:
+			return String::format( "%.2fpx %.2fpx",
+								   setBorderEnabled( true )->getBorders().radius.topRight.x,
+								   getBorder()->getBorders().radius.topRight.y );
+		case PropertyId::BorderBottomLeftRadius:
+			return String::format( "%.2fpx %.2fpx",
+								   setBorderEnabled( true )->getBorders().radius.bottomLeft.x,
+								   getBorder()->getBorders().radius.bottomLeft.y );
+		case PropertyId::BorderBottomRightRadius:
+			return String::format( "%.2fpx %.2fpx",
+								   setBorderEnabled( true )->getBorders().radius.bottomRight.x,
+								   getBorder()->getBorders().radius.bottomRight.y );
+		default:
+			break;
+	}
+
+	return "";
+}
+
+void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::string& value,
+											const Uint32& specificity ) {
+	if ( mStyle != NULL )
+		mStyle->setStyleSheetProperty(
+			CSS::StyleSheetProperty( name, value, specificity, false, 0 ) );
+}
+
+bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
 	bool attributeSet = true;
 
-	if ( "id" == name ) {
-		setId( attribute.value() );
-	} else if ( "class" == name ) {
-		addClasses( String::split( attribute.getValue(), ' ' ) );
-	} else if ( "x" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
-
-		setLayoutWidthRules( FIXED );
-
-		Float newX = attribute.asDpDimensionI();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::MoveCoordinate::New( getPosition().x, newX, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateX );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setInternalPosition( Vector2f( newX, mDpPos.y ) );
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Id:
+			setId( attribute.value() );
+			break;
+		case PropertyId::Class:
+			addClasses( String::split( attribute.getValue(), ' ' ) );
+			break;
+		case PropertyId::X:
+			setLayoutWidthPolicy( SizePolicy::Fixed );
+			setInternalPosition(
+				Vector2f( eefloor( lengthFromValueAsDp( attribute ) ), mDpPos.y ) );
 			notifyLayoutAttrChange();
-		}
-	} else if ( "y" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
-
-		setLayoutWidthRules( FIXED );
-
-		Float newY = attribute.asDpDimensionI();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::MoveCoordinate::New( getPosition().y, newY, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateY );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setInternalPosition( Vector2f( mDpPos.x, newY ) );
+			break;
+		case PropertyId::Y:
+			setLayoutWidthPolicy( SizePolicy::Fixed );
+			setInternalPosition(
+				Vector2f( mDpPos.x, eefloor( lengthFromValueAsDp( attribute ) ) ) );
 			notifyLayoutAttrChange();
-		}
-	} else if ( "width" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
-
-		setLayoutWidthRules( FIXED );
-
-		Float newWidth = attribute.asDpDimensionI();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::ResizeWidth::New( getSize().getWidth(), newWidth, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setInternalWidth( newWidth );
+			break;
+		case PropertyId::Width:
+			setLayoutWidthPolicy( SizePolicy::Fixed );
+			setSize( eefloor( lengthFromValueAsDp( attribute ) ), getSize().getHeight() );
 			notifyLayoutAttrChange();
-		}
-	} else if ( "height" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getHeight() ) );
-
-		setLayoutHeightRules( FIXED );
-
-		Float newHeight = attribute.asDpDimensionI();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-
-			Action * action = Actions::ResizeHeight::New( getSize().getHeight(), newHeight, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setInternalHeight( newHeight );
+			break;
+		case PropertyId::Height:
+			setLayoutHeightPolicy( SizePolicy::Fixed );
+			setSize( getSize().getWidth(), eefloor( lengthFromValueAsDp( attribute ) ) );
 			notifyLayoutAttrChange();
-		}
-	} else if ( "background" == name ) {
-		Drawable * res = NULL;
+			break;
+		case PropertyId::BackgroundColor:
+			setBackgroundColor( attribute.asColor() );
+			break;
+		case PropertyId::BackgroundTint:
+			setBackgroundTint( attribute.asColor(), attribute.getIndex() );
+			break;
+		case PropertyId::BackgroundImage:
+			setBackgroundDrawable( attribute.getValue(), attribute.getIndex() );
+			break;
+		case PropertyId::BackgroundRepeat:
+			setBackgroundRepeat( attribute.value(), attribute.getIndex() );
+			break;
+		case PropertyId::BackgroundSize:
+			setBackgroundSize( attribute.value(), attribute.getIndex() );
+			break;
+		case PropertyId::ForegroundColor:
+			setForegroundColor( attribute.asColor() );
+			break;
+		case PropertyId::ForegroundTint:
+			setForegroundTint( attribute.asColor(), attribute.getIndex() );
+			break;
+		case PropertyId::ForegroundImage:
+			setForegroundDrawable( attribute.getValue(), attribute.getIndex() );
+			break;
+		case PropertyId::ForegroundRadius:
+			setForegroundRadius( lengthFromValue( attribute ) );
+			break;
+		case PropertyId::ForegroundSize:
+			setForegroundSize( attribute.value(), attribute.getIndex() );
+			break;
+		case PropertyId::BorderType:
+			setBorderEnabled( true )->setBorderType(
+				Borders::toBorderType( attribute.getValue() ) );
+			break;
+		case PropertyId::Visible:
+			setVisible( attribute.asBool() );
+			break;
+		case PropertyId::Enabled:
+			setEnabled( attribute.asBool() );
+			break;
+		case PropertyId::Theme:
+			setThemeByName( attribute.asString() );
+			if ( !mSkinName.empty() )
+				setThemeSkin( mSkinName );
+			break;
+		case PropertyId::Skin:
+			mSkinName = attribute.asString();
+			if ( "none" == mSkinName || mSkinName.empty() ) {
+				removeSkin();
+			} else {
+				setThemeSkin( mSkinName );
+			}
+			break;
+		case PropertyId::SkinColor:
+			setSkinColor( attribute.asColor() );
+			break;
+		case PropertyId::Gravity: {
+			std::string gravity = attribute.asString();
+			String::toLowerInPlace( gravity );
+			std::vector<std::string> strings = String::split( gravity, '|' );
 
-		if ( Color::isColorString( attribute.getValue() ) ) {
-			setAttribute( NodeAttribute( "backgroundcolor", attribute.getValue() ) );
-		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
-			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
-		}
-	} else if ( "backgroundcolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getBackgroundColor().toHexString() );
+			if ( strings.empty() ) {
+				strings = String::split( gravity, ' ' );
+			}
 
-		Color color = attribute.asColor();
+			if ( !strings.empty() ) {
+				for ( std::size_t i = 0; i < strings.size(); i++ ) {
+					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
 
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Color start( getBackgroundColor() );
-
-			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Background );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setBackgroundColor( color );
-		}
-	} else if ( "backgroundimage" == name ) {
-		NodeAttribute::FunctionType functionType = NodeAttribute::FunctionType::parse( attribute.getValue() );
-		Drawable * res = NULL;
-
-		if ( !functionType.isEmpty() ) {
-			if ( functionType.getName() == "linear-gradient" && functionType.getParameters().size() >= 2 ) {
-				RectangleDrawable * drawable = RectangleDrawable::New();
-				RectColors rectColors;
-
-				const std::vector<std::string>& params( functionType.getParameters() );
-
-				if ( Color::isColorString( params.at(0) ) ) {
-					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(0) );
-					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(1) );
-				} else if ( params.size() >= 3 ) {
-					std::string direction = params.at(0);
-					String::toLowerInPlace( direction );
-
-					if ( direction == "to bottom" ) {
-						rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(1) );
-						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
-					} else if ( direction == "to left" ) {
-						rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( params.at(2) );
-						rectColors.TopRight = rectColors.BottomRight = Color::fromString( params.at(1) );
-					} else if ( direction == "to right" ) {
-						rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( params.at(1) );
-						rectColors.TopRight = rectColors.BottomRight = Color::fromString( params.at(2) );
-					} else if ( direction == "to top" ) {
-						rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(2) );
-						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(1) );
-					} else {
-						rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(1) );
-						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
+					if ( "left" == cur )
+						setHorizontalAlign( UI_HALIGN_LEFT );
+					else if ( "right" == cur )
+						setHorizontalAlign( UI_HALIGN_RIGHT );
+					else if ( "center_horizontal" == cur )
+						setHorizontalAlign( UI_HALIGN_CENTER );
+					else if ( "top" == cur )
+						setVerticalAlign( UI_VALIGN_TOP );
+					else if ( "bottom" == cur )
+						setVerticalAlign( UI_VALIGN_BOTTOM );
+					else if ( "center_vertical" == cur ) {
+						setVerticalAlign( UI_VALIGN_CENTER );
+					} else if ( "center" == cur ) {
+						setHorizontalAlign( UI_HALIGN_CENTER );
+						setVerticalAlign( UI_VALIGN_CENTER );
 					}
-				} else {
-					return setAttribute( NodeAttribute( "backgroundcolor", params.at(0) ) );
 				}
 
-				drawable->setRectColors( rectColors );
-
-				setBackgroundDrawable( drawable, true );
+				notifyLayoutAttrChange();
 			}
-		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
-			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+			break;
 		}
-	} else if ( "foreground" == name ) {
-		Drawable * res = NULL;
+		case PropertyId::Flags: {
+			std::string flags = attribute.asString();
+			String::toLowerInPlace( flags );
+			std::vector<std::string> strings = String::split( flags, '|' );
 
-		if ( Color::isColorString( attribute.getValue() ) ) {
-			setAttribute( NodeAttribute( "foregroundcolor", attribute.getValue() ) );
-		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
-			setForegroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
-		}
-	} else if ( "foregroundcolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getForegroundColor().toHexString() );
+			if ( strings.size() ) {
+				for ( std::size_t i = 0; i < strings.size(); i++ ) {
+					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
 
-		Color color = attribute.asColor();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Color start( getForegroundColor() );
-
-			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Foreground );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setForegroundColor( color );
-		}
-	} else if ( "foregroundradius" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::toStr( getForegroundRadius() ) );
-
-		setForegroundRadius( attribute.asUint() );
-	} else if ( "bordercolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getBorderColor().toHexString() )
-
-		Color color = attribute.asColor();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Color start( getBorderColor() );
-
-			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Border );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setBorderColor( color );
-		}
-	} else if ( "borderwidth" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::toStr( getBorderWidth() ) );
-
-		setBorderWidth( attribute.asDpDimensionI("1") );
-	} else if ( "borderradius" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%d", getBorderRadius() ) );
-
-		Uint32 borderRadius = attribute.asUint();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Uint32 start( getBorderRadius() );
-
-			Action * action = Actions::ResizeBorderRadius::New( start, borderRadius, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setBorderRadius( attribute.asUint() );
-		}
-	} else if ( "visible" == name ) {
-		SAVE_NORMAL_STATE_ATTR( isVisible() ? "true" : "false" );
-
-		setVisible( attribute.asBool() );
-	} else if ( "enabled" == name ) {
-		SAVE_NORMAL_STATE_ATTR( isEnabled() ? "true" : "false" );
-
-		setEnabled( attribute.asBool() );
-	} else if ( "theme" == name ) {
-		if ( NULL != mTheme ) {
-			SAVE_NORMAL_STATE_ATTR( mTheme->getName() );
-		}
-
-		setThemeByName( attribute.asString() );
-
-		if ( !mSkinName.empty() )
-			setThemeSkin( mSkinName );
-	} else if ( "skin" == name ) {
-		SAVE_NORMAL_STATE_ATTR( mSkinName );
-		mSkinName = attribute.asString();
-		setThemeSkin( mSkinName );
-	} else if ( "skincolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getSkinColor().toHexString() );
-
-		Color color = attribute.asColor();
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Color start( getSkinColor() );
-
-			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Skin );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setSkinColor( color );
-		}
-	} else if ( "gravity" == name ) {
-		std::string gravity = attribute.asString();
-		String::toLowerInPlace( gravity );
-		std::vector<std::string> strings = String::split( gravity, '|' );
-
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
-
-				if ( "left" == cur )
-					setHorizontalAlign( UI_HALIGN_LEFT );
-				else if ( "right" == cur )
-					setHorizontalAlign( UI_HALIGN_RIGHT );
-				else if ( "center_horizontal" == cur )
-					setHorizontalAlign( UI_HALIGN_CENTER );
-				else if ( "top" == cur )
-					setVerticalAlign( UI_VALIGN_TOP );
-				else if ( "bottom" == cur )
-					setVerticalAlign( UI_VALIGN_BOTTOM );
-				else if ( "center_vertical" == cur ) {
-					setVerticalAlign( UI_VALIGN_CENTER );
-				} else if ( "center" == cur ) {
-					setHorizontalAlign( UI_HALIGN_CENTER );
-					setVerticalAlign( UI_VALIGN_CENTER );
+					if ( "auto_size" == cur || "autosize" == cur ) {
+						setFlags( UI_AUTO_SIZE );
+						notifyLayoutAttrChange();
+					} else if ( "clip" == cur ) {
+						setClipType( ClipType::ContentBox );
+					} else if ( "multiselect" == cur ) {
+						setFlags( UI_MULTI_SELECT );
+					} else if ( "auto_padding" == cur || "autopadding" == cur ) {
+						setFlags( UI_AUTO_PADDING );
+						notifyLayoutAttrChange();
+					} else if ( "reportsizechangetochilds" == cur ||
+								"report_size_change_to_childs" == cur ) {
+						enableReportSizeChangeToChilds();
+					}
 				}
 			}
-
-			notifyLayoutAttrChange();
+			break;
 		}
-	} else if ( "flags" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getFlagsString() );
+		case PropertyId::MarginLeft:
+			setLayoutMarginLeft( lengthFromValueAsDp( attribute ) );
+			break;
+		case PropertyId::MarginRight:
+			setLayoutMarginRight( lengthFromValueAsDp( attribute ) );
+			break;
+		case PropertyId::MarginTop:
+			setLayoutMarginTop( lengthFromValueAsDp( attribute ) );
+			break;
+		case PropertyId::MarginBottom:
+			setLayoutMarginBottom( lengthFromValueAsDp( attribute ) );
+			break;
+		case PropertyId::Tooltip: {
+			String text = getTranslatorString( attribute.asString() );
+			setTooltipText( text );
+			if ( NULL != mTooltip )
+				mTooltip->setStringBuffer( text );
+			break;
+		}
+		case PropertyId::LayoutWeight:
+			setLayoutWeight( attribute.asFloat() );
+			break;
+		case PropertyId::LayoutGravity: {
+			std::string gravityStr = attribute.asString();
+			String::toLowerInPlace( gravityStr );
+			std::vector<std::string> strings = String::split( gravityStr, '|' );
+			Uint32 gravity = 0;
+			if ( strings.size() ) {
+				for ( std::size_t i = 0; i < strings.size(); i++ ) {
+					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
 
-		std::string flags = attribute.asString();
-		String::toLowerInPlace( flags );
-		std::vector<std::string> strings = String::split( flags, '|' );
+					if ( "left" == cur )
+						gravity |= UI_HALIGN_LEFT;
+					else if ( "right" == cur )
+						gravity |= UI_HALIGN_RIGHT;
+					else if ( "center_horizontal" == cur )
+						gravity |= UI_HALIGN_CENTER;
+					else if ( "top" == cur )
+						gravity |= UI_VALIGN_TOP;
+					else if ( "bottom" == cur )
+						gravity |= UI_VALIGN_BOTTOM;
+					else if ( "center_vertical" == cur ) {
+						gravity |= UI_VALIGN_CENTER;
+					} else if ( "center" == cur ) {
+						gravity |= UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+					}
+				}
 
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
+				setLayoutGravity( gravity );
+			}
+			break;
+		}
+		case PropertyId::LayoutWidth: {
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
 
-				if ( "auto_size" == cur || "autosize" == cur ) {
-					setFlags( UI_AUTO_SIZE );
-					notifyLayoutAttrChange();
-				} else if ( "clip" == cur ) {
-					clipEnable();
-				} else if ( "multi" == cur ) {
-					setFlags(  UI_MULTI_SELECT );
-				} else if ( "auto_padding" == cur || "autopadding" == cur ) {
-					setFlags( UI_AUTO_PADDING );
-					notifyLayoutAttrChange();
-				} else if ( "reportsizechangetochilds" == cur || "report_size_change_to_childs" == cur ) {
-					enableReportSizeChangeToChilds();
+			if ( "match_parent" == val || "match-parent" == val || "mp" == val ) {
+				setLayoutWidthPolicy( SizePolicy::MatchParent );
+			} else if ( "wrap_content" == val || "wrap-content" == val || "wc" == val ) {
+				setLayoutWidthPolicy( SizePolicy::WrapContent );
+			} else if ( "fixed" == val ) {
+				setLayoutWidthPolicy( SizePolicy::Fixed );
+				unsetFlags( UI_AUTO_SIZE );
+			} else {
+				unsetFlags( UI_AUTO_SIZE );
+				setLayoutWidthPolicy( SizePolicy::Fixed );
+				Float newVal = eefloor( lengthFromValueAsDp( attribute ) );
+				if ( !( newVal == 0 && getLayoutWeight() != 0 &&
+						getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) ) ) {
+					setInternalWidth( newVal );
+					onSizeChange();
 				}
 			}
+			break;
 		}
-	} else if ( String::startsWith( name, "layout_margin" ) ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%d %d %d %d", mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+		case PropertyId::LayoutHeight: {
+			std::string val = attribute.asString();
+			String::toLowerInPlace( val );
 
-		Rect margin;
-		Uint32 marginFlag = 0;
-
-		if ( "layout_margin" == name ) {
-			margin = attribute.asRect();
-			marginFlag = Actions::MarginMove::All;
-		} else if ( "layout_marginleft" == name ) {
-			margin = Rect( attribute.asDpDimensionI(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom );
-			marginFlag = Actions::MarginMove::Left;
-		} else if ( "layout_marginright" == name ) {
-			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, attribute.asDpDimensionI(), mLayoutMargin.Bottom );
-			marginFlag = Actions::MarginMove::Right;
-		} else if ( "layout_margintop" == name ) {
-			margin = Rect( mLayoutMargin.Left, attribute.asDpDimensionI(), mLayoutMargin.Right, mLayoutMargin.Bottom );
-			marginFlag = Actions::MarginMove::Top;
-		} else if ( "layout_marginbottom" == name ) {
-			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, attribute.asDpDimensionI() );
-			marginFlag = Actions::MarginMove::Bottom;
-		}
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction, marginFlag );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setLayoutMargin( margin );
-		}
-	} else if ( "tooltip" == name ) {
-		setTooltipText( attribute.asString() );
-	} else if ( "layout_weight" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::toStr( getLayoutWeight() ) );
-
-		setLayoutWeight( attribute.asFloat() );
-	} else if ( "layout_gravity" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getLayoutGravityString() );
-
-		std::string gravityStr = attribute.asString();
-		String::toLowerInPlace( gravityStr );
-		std::vector<std::string> strings = String::split( gravityStr, '|' );
-		Uint32 gravity = 0;
-
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
-
-				if ( "left" == cur )
-					gravity |= UI_HALIGN_LEFT;
-				else if ( "right" == cur )
-					gravity |= UI_HALIGN_RIGHT;
-				else if ( "center_horizontal" == cur )
-					gravity |= UI_HALIGN_CENTER;
-				else if ( "top" == cur )
-					gravity |= UI_VALIGN_TOP;
-				else if ( "bottom" == cur )
-					gravity |= UI_VALIGN_BOTTOM;
-				else if ( "center_vertical" == cur ) {
-					gravity |= UI_VALIGN_CENTER;
-				} else if ( "center" == cur ) {
-					gravity |= UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+			if ( "match_parent" == val || "match-parent" == val || "mp" == val ) {
+				setLayoutHeightPolicy( SizePolicy::MatchParent );
+			} else if ( "wrap_content" == val || "wrap-content" == val || "wc" == val ) {
+				setLayoutHeightPolicy( SizePolicy::WrapContent );
+			} else if ( "fixed" == val ) {
+				setLayoutHeightPolicy( SizePolicy::Fixed );
+				unsetFlags( UI_AUTO_SIZE );
+			} else {
+				unsetFlags( UI_AUTO_SIZE );
+				setLayoutHeightPolicy( SizePolicy::Fixed );
+				Float newVal = eefloor( lengthFromValueAsDp( attribute ) );
+				if ( !( newVal == 0 && getLayoutWeight() != 0 &&
+						getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) ) ) {
+					setInternalHeight( newVal );
+					onSizeChange();
 				}
 			}
-
-			setLayoutGravity( gravity );
+			break;
 		}
-	} else if ( "layout_width" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getLayoutWidthRulesString() );
-
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
-
-		if ( "match_parent" == val ) {
-			setLayoutWidthRules( MATCH_PARENT );
-		} else if ( "wrap_content" == val ) {
-			setLayoutWidthRules( WRAP_CONTENT );
-		} else if ( "fixed" == val ) {
-			setLayoutWidthRules( FIXED );
-			unsetFlags( UI_AUTO_SIZE );
-		} else {
-			unsetFlags( UI_AUTO_SIZE );
-			setLayoutWidthRules( FIXED );
-			setInternalWidth( PixelDensity::toDpFromStringI( val ) );
-			onSizeChange();
+		case PropertyId::LayoutToBottomOf:
+		case PropertyId::LayoutToLeftOf:
+		case PropertyId::LayoutToRightOf:
+		case PropertyId::LayoutToTopOf: {
+			PositionPolicy rule = PositionPolicy::None;
+			PropertyId layoutId =
+				static_cast<PropertyId>( attribute.getPropertyDefinition()->getId() );
+			if ( layoutId == PropertyId::LayoutToLeftOf )
+				rule = PositionPolicy::LeftOf;
+			else if ( layoutId == PropertyId::LayoutToRightOf )
+				rule = PositionPolicy::RightOf;
+			else if ( layoutId == PropertyId::LayoutToTopOf )
+				rule = PositionPolicy::TopOf;
+			else if ( layoutId == PropertyId::LayoutToBottomOf )
+				rule = PositionPolicy::BottomOf;
+			std::string id = attribute.asString();
+			Node* node = getParent()->find( id );
+			if ( NULL != node && node->isWidget() ) {
+				UIWidget* widget = static_cast<UIWidget*>( node );
+				setLayoutPositionPolicy( rule, widget );
+			}
+			break;
 		}
-	} else if ( "layout_height" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getLayoutHeightRulesString() );
-
-		std::string val = attribute.asString();
-		String::toLowerInPlace( val );
-
-		if ( "match_parent" == val ) {
-			setLayoutHeightRules( MATCH_PARENT );
-		} else if ( "wrap_content" == val ) {
-			setLayoutHeightRules( WRAP_CONTENT );
-		} else if ( "fixed" == val ) {
-			setLayoutHeightRules( FIXED );
-			unsetFlags( UI_AUTO_SIZE );
-		} else {
-			unsetFlags( UI_AUTO_SIZE );
-			setLayoutHeightRules( FIXED );
-			setInternalHeight( PixelDensity::toDpFromStringI( val ) );
-			onSizeChange();
-		}
-	} else if ( String::startsWith( name, "layout_to_" ) || String::startsWith( name, "layoutto" ) ) {
-		// @TODO: SAVE_NORMAL_STATE_ATTR
-
-		LayoutPositionRules rule = NONE;
-		if ( "layout_to_left_of" == name || "layouttoleftof" == name ) rule = LEFT_OF;
-		else if ( "layout_to_right_of" == name || "layouttorightof" == name ) rule = RIGHT_OF;
-		else if ( "layout_to_top_of" == name || "layouttotopof" == name ) rule = TOP_OF;
-		else if ( "layout_to_bottom_of" == name || "layouttobottomof" == name ) rule = BOTTOM_OF;
-
-		std::string id = attribute.asString();
-
-		Node * control = getParent()->find( id );
-
-		if ( NULL != control && control->isWidget() ) {
-			UIWidget * widget = static_cast<UIWidget*>( control );
-
-			setLayoutPositionRule( rule, widget );
-		}
-	} else if ( "clip" == name ) {
-		SAVE_NORMAL_STATE_ATTR( isClipped() ? "true" : "false" );
-
-		if ( attribute.asBool() )
-			clipEnable();
-		else
-			clipDisable();
-	} else if ( "rotation" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mRotation ) )
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Float newRotation( mStyle->getNodeAttribute( attribute.getName() ).asFloat() );
-			Action * action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
+		case PropertyId::Clip:
+			setClipType( UIClip::fromString( attribute.asString() ) );
+			break;
+		case PropertyId::Rotation:
 			setRotation( attribute.asFloat() );
-		}
-	} else if ( "scale" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f, %2.f", mScale.x, mScale.y ) )
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Vector2f newScale( mStyle->getNodeAttribute( attribute.getName() ).asVector2f() );
-			Action * action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
+			break;
+		case PropertyId::Scale:
 			setScale( attribute.asVector2f() );
-		}
-	} else if ( "rotationoriginpoint" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getRotationOriginPoint().toString() );
-
-		setRotationOriginPoint( attribute.asOriginPoint() );
-	} else if ( "scaleoriginpoint" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getScaleOriginPoint().toString() );
-
-		setScaleOriginPoint( attribute.asOriginPoint() );
-	} else if ( "blendmode" == name ) {
-		// @TODO: SAVE_NORMAL_STATE_ATTR
-		setBlendMode( attribute.asBlendMode() );
-	} else if ( String::startsWith( name, "padding" ) ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f %2.f %2.f %2.f", mPadding.Left, mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-
-		Rectf padding;
-		Uint32 paddingFlag = 0;
-
-		if ( "padding" == name ) {
-			padding = ( attribute.asRectf() );
-			paddingFlag = Actions::PaddingTransition::All;
-		} else if ( "paddingleft" == name ) {
-			padding = Rectf( attribute.asDpDimension(), mPadding.Top, mPadding.Right, mPadding.Bottom );
-			paddingFlag = Actions::PaddingTransition::Left;
-		} else if ( "paddingright" == name ) {
-			padding = Rectf( mPadding.Left, mPadding.Top, attribute.asDpDimension(), mPadding.Bottom );
-			paddingFlag = Actions::PaddingTransition::Right;
-		} else if ( "paddingtop" == name ) {
-			padding = Rectf( mPadding.Left, attribute.asDpDimension(), mPadding.Right, mPadding.Bottom );
-			paddingFlag = Actions::PaddingTransition::Top;
-		} else if ( "paddingbottom" == name ) {
-			padding = Rectf( mPadding.Left, mPadding.Top, mPadding.Right, attribute.asDpDimension() );
-			paddingFlag = Actions::PaddingTransition::Bottom;
-		}
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Action * action = Actions::PaddingTransition::New( mPadding, padding, transitionInfo.duration, transitionInfo.timingFunction, paddingFlag );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
-			setPadding( padding );
-		}
-	} else if ( "opacity" == name ) {
-		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mAlpha ) )
-
-		Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
-
-		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
-			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Action * action = Actions::Fade::New( mAlpha, alpha, transitionInfo.duration, transitionInfo.timingFunction );
-
-			if ( Time::Zero != transitionInfo.delay )
-				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
-
-			runAction( action );
-		} else {
+			break;
+		case PropertyId::BlendMode:
+			setBlendMode( attribute.asBlendMode() );
+			break;
+		case PropertyId::PaddingLeft:
+			setPaddingLeft( lengthFromValueAsDp( attribute ) );
+			break;
+		case PropertyId::PaddingRight:
+			setPaddingRight( lengthFromValueAsDp( attribute ) );
+			break;
+		case PropertyId::PaddingTop:
+			setPaddingTop( lengthFromValueAsDp( attribute ) );
+			break;
+		case PropertyId::PaddingBottom:
+			setPaddingBottom( lengthFromValueAsDp( attribute ) );
+			break;
+		case PropertyId::Opacity: {
+			Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
 			setAlpha( alpha );
 			setChildsAlpha( alpha );
+			break;
 		}
-	} else if ( "cursor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( "arrow" );
-
-		mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
-	} else {
-		attributeSet = false;
+		case PropertyId::Cursor:
+			mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
+			break;
+		case PropertyId::BackgroundPositionX:
+			setBackgroundPositionX( attribute.value(), attribute.getIndex() );
+			break;
+		case PropertyId::BackgroundPositionY:
+			setBackgroundPositionY( attribute.value(), attribute.getIndex() );
+			break;
+		case PropertyId::ForegroundPositionX:
+			setForegroundPositionX( attribute.value(), attribute.getIndex() );
+			break;
+		case PropertyId::ForegroundPositionY:
+			setForegroundPositionY( attribute.value(), attribute.getIndex() );
+			break;
+		case PropertyId::RotationOriginPointX:
+			setRotationOriginPointX( attribute.value() );
+			break;
+		case PropertyId::RotationOriginPointY:
+			setRotationOriginPointY( attribute.value() );
+			break;
+		case PropertyId::ScaleOriginPointX:
+			setScaleOriginPointX( attribute.value() );
+			break;
+		case PropertyId::ScaleOriginPointY:
+			setScaleOriginPointY( attribute.value() );
+			break;
+		case PropertyId::MinWidth:
+			setMinWidthEq( attribute.getValue() );
+			break;
+		case PropertyId::MaxWidth:
+			setMaxWidthEq( attribute.getValue() );
+			break;
+		case PropertyId::MinHeight:
+			setMinHeightEq( attribute.getValue() );
+			break;
+		case PropertyId::MaxHeight:
+			setMaxHeightEq( attribute.getValue() );
+			break;
+		case PropertyId::BorderLeftColor:
+			setBorderEnabled( true )->setColorLeft( attribute.asColor() );
+			invalidateDraw();
+			break;
+		case PropertyId::BorderRightColor:
+			setBorderEnabled( true )->setColorRight( attribute.asColor() );
+			break;
+		case PropertyId::BorderTopColor:
+			setBorderEnabled( true )->setColorTop( attribute.asColor() );
+			break;
+		case PropertyId::BorderBottomColor:
+			setBorderEnabled( true )->setColorBottom( attribute.asColor() );
+			break;
+		case PropertyId::BorderLeftWidth:
+			setBorderEnabled( true )->setLeftWidth( attribute.asString() );
+			break;
+		case PropertyId::BorderRightWidth:
+			setBorderEnabled( true )->setRightWidth( attribute.asString() );
+			break;
+		case PropertyId::BorderTopWidth:
+			setBorderEnabled( true )->setTopWidth( attribute.asString() );
+			break;
+		case PropertyId::BorderBottomWidth:
+			setBorderEnabled( true )->setBottomWidth( attribute.asString() );
+			break;
+		case PropertyId::BorderTopLeftRadius:
+			setTopLeftRadius( attribute.asString() );
+			break;
+		case PropertyId::BorderBottomLeftRadius:
+			setBottomLeftRadius( attribute.asString() );
+			break;
+		case PropertyId::BorderTopRightRadius:
+			setTopRightRadius( attribute.asString() );
+			break;
+		case PropertyId::BorderBottomRightRadius:
+			setBottomRightRadius( attribute.asString() );
+			break;
+		default:
+			attributeSet = false;
+			break;
 	}
 
 	return attributeSet;
@@ -1232,43 +1760,64 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		setAttribute( NodeAttribute( ait->name(), ait->value() ) );
+	for ( pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end();
+		  ++ait ) {
+		// Create a property without triming its value
+		StyleSheetProperty prop( ait->name(), ait->value(), false,
+								 StyleSheetSelectorRule::SpecificityInline );
+
+		if ( prop.getShorthandDefinition() != NULL ) {
+			auto properties = prop.getShorthandDefinition()->parse( ait->value() );
+
+			for ( auto& property : properties ) {
+				if ( NULL != mStyle )
+					mStyle->setStyleSheetProperty( property );
+				applyProperty( property );
+			}
+		} else {
+			if ( NULL != mStyle )
+				mStyle->setStyleSheetProperty( prop );
+			applyProperty( prop );
+		}
 	}
 
 	endAttributesTransaction();
 }
 
-std::string UIWidget::getLayoutWidthRulesString() const {
-	LayoutSizeRules rules = getLayoutWidthRules();
+std::string UIWidget::getLayoutWidthPolicyString() const {
+	SizePolicy rules = getLayoutWidthPolicy();
 
-	if ( rules == LayoutSizeRules::MATCH_PARENT ) return "match_parent";
-	else if ( rules == LayoutSizeRules::WRAP_CONTENT ) return "wrap_content";
-	return String::toStr( getSize().getHeight() ) + "dp";
+	if ( rules == SizePolicy::MatchParent )
+		return "match_parent";
+	else if ( rules == SizePolicy::WrapContent )
+		return "wrap_content";
+	return String::toString( getSize().getHeight() ) + "dp";
 }
 
-std::string UIWidget::getLayoutHeightRulesString() const {
-	LayoutSizeRules rules = getLayoutHeightRules();
+std::string UIWidget::getLayoutHeightPolicyString() const {
+	SizePolicy rules = getLayoutHeightPolicy();
 
-	if ( rules == LayoutSizeRules::MATCH_PARENT ) return "match_parent";
-	else if ( rules == LayoutSizeRules::WRAP_CONTENT ) return "wrap_content";
-	return String::toStr( getSize().getHeight() ) + "dp";
+	if ( rules == SizePolicy::MatchParent )
+		return "match_parent";
+	else if ( rules == SizePolicy::WrapContent )
+		return "wrap_content";
+	return String::toString( getSize().getHeight() ) + "dp";
 }
 
 static std::string getGravityStringFromUint( const Uint32& gravity ) {
 	std::vector<std::string> gravec;
 
-	if ( HAlignGet( gravity ) == UI_HALIGN_RIGHT ) {
+	if ( Font::getHorizontalAlign( gravity ) == UI_HALIGN_RIGHT ) {
 		gravec.push_back( "right" );
-	} else if ( HAlignGet( gravity ) == UI_HALIGN_CENTER ) {
+	} else if ( Font::getHorizontalAlign( gravity ) == UI_HALIGN_CENTER ) {
 		gravec.push_back( "center_horizontal" );
 	} else {
 		gravec.push_back( "left" );
 	}
 
-	if ( VAlignGet( gravity ) == UI_VALIGN_BOTTOM ) {
+	if ( Font::getVerticalAlign( gravity ) == UI_VALIGN_BOTTOM ) {
 		gravec.push_back( "bottom" );
-	} else if ( VAlignGet( gravity ) == UI_VALIGN_CENTER ) {
+	} else if ( Font::getVerticalAlign( gravity ) == UI_VALIGN_CENTER ) {
 		gravec.push_back( "center_vertical" );
 	} else {
 		gravec.push_back( "top" );
@@ -1288,13 +1837,122 @@ std::string UIWidget::getGravityString() const {
 std::string UIWidget::getFlagsString() const {
 	std::vector<std::string> flagvec;
 
-	if ( mFlags & UI_AUTO_SIZE ) flagvec.push_back( "autosize" );
-	if ( mFlags & UI_MULTI_SELECT ) flagvec.push_back( "multi" );
-	if ( mFlags & UI_AUTO_PADDING ) flagvec.push_back( "autopadding" );
-	if ( reportSizeChangeToChilds() ) flagvec.push_back( "reportsizechangetochilds" );
-	if ( isClipped() ) flagvec.push_back( "clip" );
+	if ( mFlags & UI_AUTO_SIZE )
+		flagvec.push_back( "autosize" );
+	if ( mFlags & UI_MULTI_SELECT )
+		flagvec.push_back( "multiselect" );
+	if ( mFlags & UI_AUTO_PADDING )
+		flagvec.push_back( "autopadding" );
+	if ( reportSizeChangeToChilds() )
+		flagvec.push_back( "reportsizechangetochilds" );
+	if ( isClipped() )
+		flagvec.push_back( "clip" );
 
 	return String::join( flagvec, '|' );
 }
 
-}}
+void UIWidget::enableCSSAnimations() {
+	if ( NULL != mStyle )
+		mStyle->setDisableAnimations( false );
+}
+
+void UIWidget::disableCSSAnimations() {
+	if ( NULL != mStyle )
+		mStyle->setDisableAnimations( true );
+}
+
+void UIWidget::reloadFontFamily() {
+	if ( NULL != mStyle )
+		mStyle->reloadFontFamily();
+	Node* child = getFirstChild();
+	while ( NULL != child ) {
+		if ( child->isWidget() )
+			child->asType<UIWidget>()->reloadFontFamily();
+		child = child->getNextNode();
+	}
+}
+
+bool UIWidget::isTabStop() const {
+	return ( mFlags & UI_TAB_STOP ) != 0;
+}
+
+void UIWidget::setTabStop() {
+	mFlags |= UI_TAB_STOP;
+}
+
+UIWidget* UIWidget::getNextWidget() const {
+	UIWidget* found = NULL;
+	UIWidget* possible = NULL;
+	Node* child = mChild;
+	while ( NULL != child ) {
+		if ( child->isVisible() && child->isEnabled() && child->isWidget() ) {
+			possible = child->asType<UIWidget>();
+			if ( possible->isTabFocusable() ) {
+				return possible;
+			}
+			found = possible->getNextWidget();
+			if ( found ) {
+				return found;
+			}
+		}
+		child = child->getNextNode();
+	}
+	return NULL;
+}
+
+String UIWidget::getTranslatorString( const std::string& str ) {
+	return getUISceneNode() != nullptr ? getUISceneNode()->getTranslatorString( str ) : String();
+}
+
+String UIWidget::getTranslatorString( const std::string& str, const String& defaultValue ) {
+	return getUISceneNode() != nullptr ? getUISceneNode()->getTranslatorString( str, defaultValue )
+									   : defaultValue;
+}
+
+UIWidget* UIWidget::getNextTabWidget() const {
+	UIWidget* widget = getNextWidget();
+	if ( widget ) {
+		return widget;
+	}
+	UIWidget* found = NULL;
+	UIWidget* possible = NULL;
+	const Node* start = this;
+	Node* container = getWindowContainer();
+	while ( start ) {
+		if ( start->isVisible() && start->isEnabled() ) {
+			Node* next = start->getNextNode();
+			while ( next ) {
+				if ( next->isVisible() && next->isEnabled() && next->isWidget() ) {
+					possible = next->asType<UIWidget>();
+					if ( possible->isTabFocusable() ) {
+						return possible;
+					}
+					found = possible->getNextWidget();
+					if ( found ) {
+						return found;
+					}
+				}
+				next = next->getNextNode();
+			}
+			if ( start->getParent() == container && container->getFirstWidget() ) {
+				return container->asType<UIWidget>()->getNextTabWidget();
+			}
+		}
+		start = start->getParent();
+	}
+	return NULL;
+}
+
+void UIWidget::onTabPress() {
+	if ( !isTabStop() ) {
+		Node* node = getNextTabWidget();
+		if ( NULL != node ) {
+			node->setFocus();
+			sendCommonEvent( Event::OnTabNavigate );
+		}
+	} else {
+		sendCommonEvent( Event::OnTabNavigate );
+	}
+}
+
+}} // namespace EE::UI

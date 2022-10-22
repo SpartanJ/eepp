@@ -4,83 +4,230 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/keyboardshortcut.hpp>
+#include <list>
+
+namespace EE { namespace Graphics {
+class Font;
+}} // namespace EE::Graphics
 
 namespace EE { namespace UI {
 
+class UIThemeManager;
+class UIIconThemeManager;
+class UIEventDispatcher;
 class UIWidget;
 class UIWindow;
+class UIWidget;
+class UILayout;
+class UIIcon;
+
+enum class ColorSchemePreference { Light, Dark };
 
 class EE_API UISceneNode : public SceneNode {
-	public:
-		static UISceneNode * New( EE::Window::Window * window = NULL );
+  public:
+	static UISceneNode* New( EE::Window::Window* window = NULL );
 
-		explicit UISceneNode( EE::Window::Window * window = NULL );
+	explicit UISceneNode( EE::Window::Window* window = NULL );
 
-		virtual Node * setSize( const Sizef& size );
+	virtual ~UISceneNode();
 
-		virtual Node * setSize( const Float& Width, const Float& Height );
+	virtual Node* setSize( const Sizef& size );
 
-		const Sizef& getSize() const;
+	virtual Node* setSize( const Float& Width, const Float& Height );
 
-		void setTranslator( Translator translator );
+	UISceneNode* setPixelsSize( const Sizef& size );
 
-		Translator& getTranslator();
+	UISceneNode* setPixelsSize( const Float& x, const Float& y );
 
-		String getTranslatorString( const std::string& str );
+	const Sizef& getSize() const;
 
-		String getTranslatorString( const std::string& str, const String& defaultValue );
+	virtual void update( const Time& elapsed );
 
-		UIWidget * loadLayoutFromFile( const std::string& layoutPath, Node * parent = NULL );
+	void setTranslator( Translator translator );
 
-		UIWidget * loadLayoutFromString( const std::string& layoutString, Node * parent = NULL );
+	const Translator& getTranslator() const;
 
-		UIWidget * loadLayoutFromMemory( const void * buffer, Int32 bufferSize, Node * parent = NULL );
+	Translator& getTranslator();
 
-		UIWidget * loadLayoutFromStream( IOStream& stream, Node * parent = NULL );
+	String getTranslatorString( const std::string& str );
 
-		UIWidget * loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, Node * parent = NULL );
+	String getTranslatorString( const std::string& str, const String& defaultValue );
 
-		UIWidget * loadLayoutNodes( pugi::xml_node node, Node * parent );
+	String getTranslatorStringFromKey( const std::string& key, const String& defaultValue );
 
-		void setStyleSheet( const CSS::StyleSheet& styleSheet );
+	String i18n( const std::string& key, const String& defaultValue );
 
-		void setStyleSheet( const std::string& inlineStyleSheet );
+	UIWidget* loadLayoutNodes( pugi::xml_node node, Node* parent, const Uint32& marker );
 
-		void combineStyleSheet( const CSS::StyleSheet& styleSheet );
+	UIWidget* loadLayoutFromFile( const std::string& layoutPath, Node* parent = NULL,
+								  const Uint32& marker = 0 );
 
-		void combineStyleSheet( const std::string& inlineStyleSheet );
+	UIWidget* loadLayoutFromString( const std::string& layoutString, Node* parent = NULL,
+									const Uint32& marker = 0 );
 
-		CSS::StyleSheet& getStyleSheet();
+	UIWidget* loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent = NULL,
+									const Uint32& marker = 0 );
 
-		bool hasStyleSheet();
+	UIWidget* loadLayoutFromStream( IOStream& stream, Node* parent = NULL,
+									const Uint32& marker = 0 );
 
-		const bool& isLoading() const;
-	protected:
-		friend class EE::UI::UIWindow;
-		Sizef				mDpSize;
-		Uint32				mFlags;
-		Translator			mTranslator;
-		std::list<UIWindow*> mWindowsList;
-		CSS::StyleSheet mStyleSheet;
-		bool				mIsLoading;
+	UIWidget* loadLayoutFromPack( Pack* pack, const std::string& FilePackPath,
+								  Node* parent = NULL );
 
-		virtual void resizeControl( EE::Window::Window * win );
+	void setStyleSheet( const CSS::StyleSheet& styleSheet );
 
-		void				setActiveWindow( UIWindow * window );
+	void setStyleSheet( const std::string& inlineStyleSheet );
 
-		void				setFocusLastWindow( UIWindow * window  );
+	void combineStyleSheet( const CSS::StyleSheet& styleSheet,
+							const bool& forceReloadStyle = true );
 
-		void				windowAdd( UIWindow * win );
+	void combineStyleSheet( const std::string& inlineStyleSheet,
+							const bool& forceReloadStyle = true );
 
-		void				windowRemove( UIWindow * win );
+	CSS::StyleSheet& getStyleSheet();
 
-		bool				windowExists( UIWindow * win );
+	bool hasStyleSheet();
 
-		virtual void setInternalSize(const Sizef& size );
+	const bool& isLoading() const;
 
-		void reloadStyle();
+	UIThemeManager* getUIThemeManager() const;
+
+	UIWidget* getRoot() const;
+
+	bool getVerbose() const;
+
+	void setVerbose( bool verbose );
+
+	void invalidateStyle( UIWidget* widget );
+
+	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false );
+
+	void invalidateLayout( UILayout* widget );
+
+	void setIsLoading( bool isLoading );
+
+	void updateDirtyLayouts();
+
+	void updateDirtyStyles();
+
+	void updateDirtyStyleStates();
+
+	const bool& isUpdatingLayouts() const;
+
+	UIIconThemeManager* getUIIconThemeManager() const;
+
+	UIIcon* findIcon( const std::string& iconName );
+
+	/** @param drawableSize Size in pixels */
+	Drawable* findIconDrawable( const std::string& iconName, const size_t& drawableSize );
+
+	typedef std::function<void()> KeyBindingCommand;
+
+	KeyBindings& getKeyBindings();
+
+	void setKeyBindings( const KeyBindings& keyBindings );
+
+	void addKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void addKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void replaceKeyBindingString( const std::string& shortcut, const std::string& command );
+
+	void replaceKeyBinding( const KeyBindings::Shortcut& shortcut, const std::string& command );
+
+	void addKeyBindsString( const std::map<std::string, std::string>& binds );
+
+	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
+
+	void setKeyBindingCommand( const std::string& command, KeyBindingCommand func );
+
+	void executeKeyBindingCommand( const std::string& command );
+
+	UIEventDispatcher* getUIEventDispatcher() const;
+
+	ColorSchemePreference getColorSchemePreference() const;
+
+	void setColorSchemePreference( const ColorSchemePreference& colorSchemePreference );
+
+	const Uint32& getMaxInvalidationDepth() const;
+
+	void setMaxInvalidationDepth( const Uint32& maxInvalidationDepth );
+
+	void nodeToWorldTranslation( Vector2f& Pos ) const;
+
+  protected:
+	friend class EE::UI::UIWindow;
+	friend class EE::UI::UIWidget;
+	UIWidget* mRoot{ nullptr };
+	Sizef mDpSize;
+	Uint32 mFlags;
+	Translator mTranslator;
+	std::list<UIWindow*> mWindowsList;
+	CSS::StyleSheet mStyleSheet;
+	bool mIsLoading;
+	bool mVerbose;
+	bool mUpdatingLayouts;
+	UIThemeManager* mUIThemeManager{ nullptr };
+	UIIconThemeManager* mUIIconThemeManager{ nullptr };
+	std::vector<Font*> mFontFaces;
+	KeyBindings mKeyBindings;
+	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
+	std::unordered_set<UIWidget*> mDirtyStyle;
+	std::unordered_set<UIWidget*> mDirtyStyleState;
+	std::unordered_map<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
+	std::unordered_set<UILayout*> mDirtyLayouts;
+	std::vector<std::pair<Float, std::string>> mTimes;
+	ColorSchemePreference mColorSchemePreference{ ColorSchemePreference::Dark };
+	Uint32 mMaxInvalidationDepth{ 2 };
+	Node* mCurParent{ nullptr };
+	Uint32 mCurOnSizeChangeListener{ 0 };
+
+	virtual void resizeNode( EE::Window::Window* win );
+
+	virtual void onDrawDebugDataChange();
+
+	virtual void setFocus();
+
+	virtual void onParentChange();
+
+	void setInternalPixelsSize( const Sizef& size );
+
+	void setActiveWindow( UIWindow* window );
+
+	void setFocusLastWindow( UIWindow* window );
+
+	void windowAdd( UIWindow* win );
+
+	void windowRemove( UIWindow* win );
+
+	bool windowExists( UIWindow* win );
+
+	virtual void setInternalSize( const Sizef& size );
+
+	void reloadStyle( const bool& disableAnimations = false );
+
+	bool onMediaChanged( bool forceReApplyStyles = false );
+
+	virtual void onChildCountChange( Node* child, const bool& removed );
+
+	virtual void onSizeChange();
+
+	void processStyleSheetAtRules( const CSS::StyleSheet& styleSheet );
+
+	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	void onWidgetDelete( Node* node );
+
+	void resetTooltips( Node* node );
+
+	CSS::MediaFeatures getMediaFeatures() const;
+
+	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent, const Uint32& marker );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

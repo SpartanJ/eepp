@@ -6,47 +6,53 @@
 namespace EE { namespace UI {
 
 class EE_API UIComboBox : public UIWidget {
-	public:
-		static UIComboBox * New();
+  public:
+	static UIComboBox* New();
 
-		UIComboBox();
+	UIComboBox();
 
-		virtual ~UIComboBox();
+	virtual ~UIComboBox();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		UIListBox * getListBox();
+	UIListBox* getListBox();
 
-		UIDropDownList * getDropDownList() const { return mDropDownList; }
+	UIDropDownList* getDropDownList() const { return mDropDownList; }
 
-		UINode * getButton() const { return mButton; }
+	UINode* getButton() const { return mButton; }
 
-		InputTextBuffer * getInputTextBuffer();
+	const String& getText();
 
-		const String& getText();
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		void loadFromXmlNode(const pugi::xml_node & node);
-	protected:
-		UIDropDownList * mDropDownList;
-		UINode * mButton;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		Uint32 onMessage(const NodeMessage *Msg);
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		void updateControls();
+	void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual void onSizeChange();
+  protected:
+	UIDropDownList* mDropDownList;
+	UINode* mButton;
 
-		virtual void onPositionChange();
+	Uint32 onMessage( const NodeMessage* Msg );
 
-		virtual void onPaddingChange();
+	void updateWidgets();
 
-		virtual void onAutoSize();
+	virtual void onSizeChange();
+
+	virtual void onPositionChange();
+
+	virtual void onPaddingChange();
+
+	virtual void onAutoSize();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

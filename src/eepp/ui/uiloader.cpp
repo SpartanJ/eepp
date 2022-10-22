@@ -1,36 +1,34 @@
-#include <eepp/ui/uiloader.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/scene/scenenode.hpp>
-#include <pugixml/pugixml.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uiloader.hpp>
 
 namespace EE { namespace UI {
 
-UILoader * UILoader::New() {
+UILoader* UILoader::New() {
 	return eeNew( UILoader, () );
 }
 
 UILoader::UILoader() :
 	UIWidget( "loader" ),
-	mRadius(0),
-	mOutlineThickness( PixelDensity::dpToPx(8) ),
-	mColor( Color::Green ),
-	mArcAngle(0),
-	mArcStartAngle(0),
-	mProgress(0),
-	mMaxProgress(100),
-	mAnimationSpeed(0.5f),
-	mOp(1),
-	mIndeterminate(true)
-{
+	mRadius( 0 ),
+	mOutlineThickness( PixelDensity::dpToPx( 8 ) ),
+	mColor( Color::White ),
+	mArcAngle( 0 ),
+	mArcStartAngle( 0 ),
+	mProgress( 0 ),
+	mMaxProgress( 100 ),
+	mAnimationSpeed( 0.5f ),
+	mOp( 1 ),
+	mIndeterminate( true ) {
 	subscribeScheduledUpdate();
 
 	mArc.setFillMode( DRAW_FILL );
 	mCircle.setFillMode( DRAW_FILL );
-	setFillColor( mColor );
+	setFillColor( Color::White );
 }
 
-UILoader::~UILoader() {
-}
+UILoader::~UILoader() {}
 
 Uint32 UILoader::getType() const {
 	return UI_TYPE_LOADER;
@@ -47,23 +45,29 @@ void UILoader::draw() {
 	mArc.setPosition( rect.getCenter() );
 	mCircle.setPosition( rect.getCenter() );
 
-	ClippingMask * clippingMask = Renderer::instance()->getClippingMask();
-	clippingMask->setMaskMode( ClippingMask::Exclusive );
-	clippingMask->clearMasks();
-	clippingMask->appendMask( mCircle );
-	clippingMask->stencilMaskEnable();
+	ClippingMask* clippingMask = Renderer::instance()->getClippingMask();
+
+	if ( mCircle.getRadius() > 0 ) {
+		clippingMask->setMaskMode( ClippingMask::Exclusive );
+		clippingMask->clearMasks();
+		clippingMask->appendMask( mCircle );
+		clippingMask->stencilMaskEnable();
+	}
 
 	mArc.draw();
 
-	clippingMask->stencilMaskDisable();
+	if ( mCircle.getRadius() > 0 ) {
+		clippingMask->stencilMaskDisable();
+	}
 }
 
 void UILoader::scheduledUpdate( const Time& time ) {
-	invalidateDraw();
+	if ( mVisible && isMeOrParentTreeVisible() && mAnimationSpeed != 0.f )
+		invalidateDraw();
 
 	if ( mIndeterminate ) {
 		mArcAngle += time.asMilliseconds() * mAnimationSpeed * mOp;
-		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcStartAngle += time.asMilliseconds() * ( mAnimationSpeed * 1.5f );
 
 		if ( mOp == 1 && mArcAngle > 340 ) {
 			mOp = -1;
@@ -76,14 +80,18 @@ void UILoader::scheduledUpdate( const Time& time ) {
 		mArc.setArcAngle( mArcAngle );
 		mArc.setArcStartAngle( mArcStartAngle );
 	} else {
-		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcStartAngle += time.asMilliseconds() * ( mAnimationSpeed * 1.5f );
 		mArc.setArcStartAngle( mArcStartAngle );
 	}
 }
 
-UILoader * UILoader::setOutlineThickness( const Float& thickness ) {
-	mOutlineThickness = thickness;
-	mCircle.setRadius( PixelDensity::dpToPx( mRadius ) - PixelDensity::dpToPx( mOutlineThickness ) );
+UILoader* UILoader::setOutlineThickness( const Float& thickness ) {
+	if ( thickness != mOutlineThickness ) {
+		mOutlineThickness = thickness;
+		mCircle.setRadius( PixelDensity::dpToPx( mRadius ) -
+						   PixelDensity::dpToPx( mOutlineThickness ) );
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -91,11 +99,14 @@ const Float& UILoader::getOutlineThickness() const {
 	return mOutlineThickness;
 }
 
-UILoader * UILoader::setRadius( const Float& radius ) {
-	mRadius = radius;
-	Float rRadius = PixelDensity::dpToPx( radius );
-	mCircle.setRadius( rRadius - PixelDensity::dpToPx( mOutlineThickness ) );
-	mArc.setRadius( rRadius );
+UILoader* UILoader::setRadius( const Float& radius ) {
+	if ( radius != mRadius ) {
+		mRadius = radius;
+		Float rRadius = PixelDensity::dpToPx( radius );
+		mCircle.setRadius( rRadius - PixelDensity::dpToPx( mOutlineThickness ) );
+		mArc.setRadius( rRadius );
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -103,10 +114,13 @@ const Float& UILoader::getRadius() const {
 	return mRadius;
 }
 
-UILoader * UILoader::setFillColor( const Color& color ) {
-	mColor = color;
-	mArc.setColor( mColor );
-	mCircle.setColor( mColor );
+UILoader* UILoader::setFillColor( const Color& color ) {
+	if ( color != mColor ) {
+		mColor = color;
+		mArc.setColor( mColor );
+		mCircle.setColor( mColor );
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -130,19 +144,21 @@ void UILoader::onPaddingChange() {
 
 void UILoader::updateRadius() {
 	if ( mRadius == 0 ) {
-		setRadius( eemin( mDpSize.x - mPadding.Left - mPadding.Right, mDpSize.y - mPadding.Top - mPadding.Bottom ) / 2.f );
+		setRadius( eemin( getSize().getWidth() - mPadding.Left - mPadding.Right,
+						  getSize().getHeight() - mPadding.Top - mPadding.Bottom ) /
+				   2.f );
 	}
 }
 
 void UILoader::onAutoSize() {
-	if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
-		Sizef minSize( mDpSize );
+	if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
+		Sizef minSize( getSize() );
 
-		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		if ( mWidthPolicy == SizePolicy::WrapContent ) {
 			minSize.x = eemax( minSize.x, 64.f );
 		}
 
-		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		if ( mHeightPolicy == SizePolicy::WrapContent ) {
 			minSize.y = eemax( minSize.y, 64.f );
 		}
 
@@ -156,19 +172,25 @@ const bool& UILoader::isIndeterminate() const {
 	return mIndeterminate;
 }
 
-UILoader * UILoader::setIndeterminate( const bool& indeterminate ) {
-	mIndeterminate = indeterminate;
+UILoader* UILoader::setIndeterminate( const bool& indeterminate ) {
+	if ( indeterminate != mIndeterminate ) {
+		mIndeterminate = indeterminate;
+		invalidateDraw();
+	}
 	return this;
 }
 
-UILoader * UILoader::setProgress( const Float& progress ) {
-	mProgress = eemax( 0.f, eemin( progress, mMaxProgress ) );
+UILoader* UILoader::setProgress( const Float& progress ) {
+	if ( progress != mProgress ) {
+		mProgress = eemax( 0.f, eemin( progress, mMaxProgress ) );
 
-	if ( !mIndeterminate ) {
-		mArcAngle = progress / mMaxProgress * 360.f;
-		mArc.setArcAngle( mArcAngle );
+		if ( !mIndeterminate ) {
+			mArcAngle = progress / mMaxProgress * 360.f;
+			mArc.setArcAngle( mArcAngle );
+		}
+
+		invalidateDraw();
 	}
-
 	return this;
 }
 
@@ -180,8 +202,11 @@ const Float& UILoader::getMaxProgress() const {
 	return mMaxProgress;
 }
 
-UILoader * UILoader::setMaxProgress( const Float& maxProgress ) {
-	mMaxProgress = maxProgress;
+UILoader* UILoader::setMaxProgress( const Float& maxProgress ) {
+	if ( maxProgress != mMaxProgress ) {
+		mMaxProgress = maxProgress;
+		invalidateDraw();
+	}
 	return this;
 }
 
@@ -189,32 +214,82 @@ const Float& UILoader::getAnimationSpeed() const {
 	return mAnimationSpeed;
 }
 
-UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
-	mAnimationSpeed = animationSpeed;
+UILoader* UILoader::setAnimationSpeed( const Float& animationSpeed ) {
+	if ( animationSpeed != mAnimationSpeed ) {
+		mAnimationSpeed = animationSpeed;
+		invalidateDraw();
+	}
 	return this;
 }
 
-bool UILoader::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	std::string name = attribute.getName();
+std::string UILoader::getPropertyString( const PropertyDefinition* propertyDef,
+										 const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
 
-	if ( "indeterminate" == name ) {
-		setIndeterminate( attribute.asBool() );
-	} else if ( "maxprogress" == name ) {
-		setMaxProgress( attribute.asFloat() );
-	} else if ( "progress" == name ) {
-		setProgress( attribute.asFloat() );
-	} else if ( "fillcolor" == name ) {
-		setFillColor( attribute.asColor() );
-	} else if ( "radius" == name ) {
-		setRadius( attribute.asFloat() );
-	} else if ( "outlinethickness" == name ) {
-		setOutlineThickness( attribute.asFloat() );
-	} else if ( "animationspeed" == name ) {
-		setAnimationSpeed( attribute.asFloat() );
-	} else if ( "arcstartangle" == name ) {
-		setArcStartAngle( attribute.asFloat() );
-	} else {
-		return UIWidget::setAttribute( attribute, state );
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Indeterminate:
+			return isIndeterminate() ? "true" : "false";
+		case PropertyId::MaxProgress:
+			return String::fromFloat( getMaxProgress() );
+		case PropertyId::Progress:
+			return String::fromFloat( getProgress() );
+		case PropertyId::FillColor:
+			return getFillColor().toHexString();
+		case PropertyId::Radius:
+			return String::fromFloat( getRadius(), "dp" );
+		case PropertyId::OutlineThickness:
+			return String::fromFloat( getOutlineThickness(), "dp" );
+		case PropertyId::AnimationSpeed:
+			return String::fromFloat( getAnimationSpeed() );
+		case PropertyId::ArcStartAngle:
+			return String::fromFloat( getArcStartAngle() );
+		default:
+			return UIWidget::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+std::vector<PropertyId> UILoader::getPropertiesImplemented() const {
+	auto props = UIWidget::getPropertiesImplemented();
+	auto local = { PropertyId::Indeterminate,  PropertyId::MaxProgress,
+				   PropertyId::Progress,	   PropertyId::FillColor,
+				   PropertyId::Radius,		   PropertyId::OutlineThickness,
+				   PropertyId::AnimationSpeed, PropertyId::ArcStartAngle };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
+}
+
+bool UILoader::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Indeterminate:
+			setIndeterminate( attribute.asBool() );
+			break;
+		case PropertyId::MaxProgress:
+			setMaxProgress( attribute.asFloat() );
+			break;
+		case PropertyId::Progress:
+			setProgress( attribute.asFloat() );
+			break;
+		case PropertyId::FillColor:
+			setFillColor( attribute.asColor() );
+			break;
+		case PropertyId::Radius:
+			setRadius( attribute.asDpDimension( this ) );
+			break;
+		case PropertyId::OutlineThickness:
+			setOutlineThickness( attribute.asDpDimension( this ) );
+			break;
+		case PropertyId::AnimationSpeed:
+			setAnimationSpeed( attribute.asFloat() );
+			break;
+		case PropertyId::ArcStartAngle:
+			setArcStartAngle( attribute.asFloat() );
+			break;
+		default:
+			return UIWidget::applyProperty( attribute );
 	}
 
 	return true;
@@ -224,9 +299,12 @@ Float UILoader::getArcStartAngle() const {
 	return mArcStartAngle;
 }
 
-UILoader * UILoader::setArcStartAngle( const Float& arcStartAngle ) {
-	mArcStartAngle = arcStartAngle;
+UILoader* UILoader::setArcStartAngle( const Float& arcStartAngle ) {
+	if ( arcStartAngle != mArcStartAngle ) {
+		mArcStartAngle = arcStartAngle;
+		invalidateDraw();
+	}
 	return this;
 }
 
-}}
+}} // namespace EE::UI

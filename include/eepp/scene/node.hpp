@@ -1,482 +1,583 @@
 #ifndef EE_SCENE_NODE_HPP
 #define EE_SCENE_NODE_HPP
 
-#include <eepp/scene/nodemessage.hpp>
+#include <eepp/scene/actions/runnable.hpp>
 #include <eepp/scene/event.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/mouseevent.hpp>
-#include <eepp/scene/eventdispatcher.hpp>
+#include <eepp/scene/nodemessage.hpp>
 
 #include <eepp/graphics/blendmode.hpp>
 using namespace EE::Graphics;
 
-#include <eepp/math/transformable.hpp>
-#include <eepp/math/rect.hpp>
-#include <eepp/math/vector2.hpp>
-#include <eepp/math/polygon2.hpp>
 #include <eepp/math/math.hpp>
 #include <eepp/math/originpoint.hpp>
+#include <eepp/math/polygon2.hpp>
+#include <eepp/math/rect.hpp>
+#include <eepp/math/transformable.hpp>
+#include <eepp/math/vector2.hpp>
 using namespace EE::Math;
+
+#include <eepp/system/color.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Scene {
 class Action;
 class ActionManager;
 class SceneNode;
-}}
+}} // namespace EE::Scene
 using namespace EE::Scene;
 
 namespace EE { namespace Scene {
 
-enum NODE_FLAGS_VALUES {
-	NODE_FLAG_SCHEDULED_UPDATE					= (1<<0),
-	NODE_FLAG_VIEW_DIRTY						= (1<<1),
-	NODE_FLAG_POSITION_DIRTY					= (1<<2),
-	NODE_FLAG_POLYGON_DIRTY						= (1<<3),
-	NODE_FLAG_ROTATED							= (1<<4),
-	NODE_FLAG_SCALED							= (1<<5),
-	NODE_FLAG_CLOSE								= (1<<6),
-	NODE_FLAG_MOUSEOVER							= (1<<7),
-	NODE_FLAG_HAS_FOCUS							= (1<<8),
-	NODE_FLAG_SELECTED							= (1<<9),
-	NODE_FLAG_MOUSEOVER_ME_OR_CHILD				= (1<<10),
-	NODE_FLAG_DRAGGING							= (1<<11),
-	NODE_FLAG_SKIN_OWNER						= (1<<12),
-	NODE_FLAG_TOUCH_DRAGGING					= (1<<13),
-	NODE_FLAG_DISABLED_BY_NODE					= (1<<14),
-	NODE_FLAG_OWNED_BY_NODE						= (1<<15),
-	NODE_FLAG_REVERSE_DRAW						= (1<<16),
-	NODE_FLAG_FRAME_BUFFER						= (1<<17),
-	NODE_FLAG_CLIP_ENABLE						= (1<<18),
-	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<19),
-	NODE_FLAG_OVER_FIND_ALLOWED					= (1<<20),
+enum NodeFlags {
+	NODE_FLAG_SCHEDULED_UPDATE = ( 1 << 0 ),
+	NODE_FLAG_VIEW_DIRTY = ( 1 << 1 ),
+	NODE_FLAG_POSITION_DIRTY = ( 1 << 2 ),
+	NODE_FLAG_POLYGON_DIRTY = ( 1 << 3 ),
+	NODE_FLAG_ROTATED = ( 1 << 4 ),
+	NODE_FLAG_SCALED = ( 1 << 5 ),
+	NODE_FLAG_CLOSE = ( 1 << 6 ),
+	NODE_FLAG_MOUSEOVER = ( 1 << 7 ),
+	NODE_FLAG_HAS_FOCUS = ( 1 << 8 ),
+	NODE_FLAG_SELECTED = ( 1 << 9 ),
+	NODE_FLAG_MOUSEOVER_ME_OR_CHILD = ( 1 << 10 ),
+	NODE_FLAG_DRAGGING = ( 1 << 11 ),
+	NODE_FLAG_SKIN_OWNER = ( 1 << 12 ),
+	NODE_FLAG_TOUCH_DRAGGING = ( 1 << 13 ),
+	NODE_FLAG_DROPPABLE_HOVERING = ( 1 << 14 ),
+	NODE_FLAG_OWNED_BY_NODE = ( 1 << 15 ),
+	NODE_FLAG_REVERSE_DRAW = ( 1 << 16 ),
+	NODE_FLAG_FRAME_BUFFER = ( 1 << 17 ),
+	NODE_FLAG_CLIP_ENABLE = ( 1 << 18 ),
+	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS = ( 1 << 19 ),
+	NODE_FLAG_OVER_FIND_ALLOWED = ( 1 << 20 ),
 
-	NODE_FLAG_SCENENODE							= (1<<21),
-	NODE_FLAG_UISCENENODE						= (1<<22),
-	NODE_FLAG_UINODE							= (1<<23),
-	NODE_FLAG_WIDGET							= (1<<24),
-	NODE_FLAG_WINDOW							= (1<<25),
+	NODE_FLAG_SCENENODE = ( 1 << 21 ),
+	NODE_FLAG_UISCENENODE = ( 1 << 22 ),
+	NODE_FLAG_UINODE = ( 1 << 23 ),
+	NODE_FLAG_WIDGET = ( 1 << 24 ),
+	NODE_FLAG_WINDOW = ( 1 << 25 ),
+	NODE_FLAG_LAYOUT = ( 1 << 26 ),
 
-	NODE_FLAG_FREE_USE							= (1<<26)
+	NODE_FLAG_LOADING = ( 1 << 27 ),
+	NODE_FLAG_CLOSING_CHILDREN = ( 1 << 28 ),
+	NODE_FLAG_FREE_USE = ( 1 << 29 )
 };
 
 class EE_API Node : public Transformable {
-	public:
-		static Node * New();
+  public:
+	static Node* New();
 
-		typedef std::function<void( const Event* )> EventCallback;
+	typedef std::function<void( const Event* )> EventCallback;
 
-		Node();
+	Node();
 
-		virtual ~Node();
+	virtual ~Node();
 
-		virtual void worldToNodeTranslation( Vector2f& position ) const;
+	virtual void worldToNodeTranslation( Vector2f& position ) const;
 
-		virtual void nodeToWorldTranslation( Vector2f& position ) const;
+	virtual void nodeToWorldTranslation( Vector2f& position ) const;
 
-		virtual void worldToNode( Vector2i& pos ) const;
+	virtual void worldToNode( Vector2i& pos ) const;
 
-		virtual void nodeToWorld( Vector2i& pos ) const;
+	virtual void nodeToWorld( Vector2i& pos ) const;
 
-		virtual void worldToNode( Vector2f& pos ) const;
+	virtual void worldToNode( Vector2f& pos ) const;
 
-		virtual void nodeToWorld( Vector2f& pos ) const;
+	virtual void nodeToWorld( Vector2f& pos ) const;
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		void messagePost( const NodeMessage * Msg );
+	void messagePost( const NodeMessage* Msg );
 
-		virtual void setPosition( const Vector2f& Pos );
+	virtual void setPosition( const Vector2f& Pos );
 
-		virtual Node * setPosition( const Float& x, const Float& y );
+	virtual Node* setPosition( const Float& x, const Float& y );
 
-		virtual Node * setSize( const Sizef& size );
+	virtual Node* setSize( const Sizef& size );
 
-		Node * setSize( const Float& Width, const Float& Height );
+	Node* setSize( const Float& Width, const Float& Height );
 
-		virtual const Sizef& getSize() const;
+	virtual const Sizef& getSize() const;
 
-		const Sizef& getPixelsSize() const;
+	const Sizef& getPixelsSize() const;
 
-		Node * setVisible( const bool& visible );
+	Node* setVisible( const bool& visible );
 
-		bool isVisible() const;
+	bool isVisible() const;
 
-		bool isHided() const;
+	bool isHided() const;
 
-		Node * setEnabled( const bool& enabled );
+	Node* setEnabled( const bool& enabled );
 
-		bool isEnabled() const;
+	bool isEnabled() const;
 
-		bool isDisabled() const;
+	bool isDisabled() const;
 
-		Node * getParent() const;
+	Node* getParent() const;
 
-		Node * setParent( Node * parent );
+	Node* setParent( Node* parent );
 
-		virtual void close();
+	virtual void close();
 
-		virtual void draw();
+	virtual void draw();
 
-		virtual void update( const Time& time );
+	virtual void update( const Time& time );
 
-		virtual void scheduledUpdate( const Time& time );
+	virtual void scheduledUpdate( const Time& time );
 
-		Node * getNextNode() const;
+	Node* getNextNode() const;
 
-		Node * getPrevNode() const;
+	Node* getPrevNode() const;
 
-		Node * getNextNodeLoop() const;
+	Node* getNextNodeLoop() const;
 
-		Node * setData( const UintPtr& data );
+	Node* setData( const UintPtr& data );
 
-		const UintPtr& getData() const;
+	const UintPtr& getData() const;
 
-		Node * setBlendMode( const BlendMode& blend );
+	Node* setBlendMode( const BlendMode& blend );
 
-		const BlendMode& getBlendMode() const;
+	const BlendMode& getBlendMode() const;
 
-		void toFront();
+	void toFront();
 
-		void toBack();
+	void toBack();
 
-		void toPosition( const Uint32& position );
+	void toPosition( const Uint32& position );
 
-		const Uint32& getNodeFlags() const;
+	const Uint32& getNodeFlags() const;
 
-		/** Use it at your own risk */
-		void setNodeFlags( const Uint32& flags );
+	/** Use it at your own risk */
+	void setNodeFlags( const Uint32& flags );
 
-		Uint32 isSceneNode() const;
+	bool isSceneNode() const;
 
-		Uint32 isUISceneNode() const;
+	bool isUISceneNode() const;
 
-		Uint32 isUINode() const;
+	bool isUINode() const;
 
-		Uint32 isWidget() const;
+	bool isWidget() const;
 
-		Uint32 isWindow() const;
+	bool isWindow() const;
 
-		Uint32 isClipped() const;
+	bool isLayout() const;
 
-		Uint32 isRotated() const;
+	bool isClipped() const;
 
-		Uint32 isScaled() const;
+	bool isRotated() const;
 
-		Uint32 isFrameBuffer() const;
+	bool isScaled() const;
 
-		bool isMouseOver() const;
+	bool isFrameBuffer() const;
 
-		bool isMouseOverMeOrChilds() const;
+	bool isMouseOver() const;
 
-		bool isMeOrParentTreeRotated() const;
+	bool isMouseOverMeOrChilds() const;
 
-		bool isMeOrParentTreeScaled() const;
+	bool isMeOrParentTreeVisible() const;
 
-		bool isMeOrParentTreeScaledOrRotated() const;
+	bool isMeOrParentTreeRotated() const;
 
-		bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer() const;
+	bool isMeOrParentTreeScaled() const;
 
-		Uint32 addEventListener( const Uint32& EventType, const EventCallback& Callback );
+	bool isMeOrParentTreeScaledOrRotated() const;
 
-		void removeEventListener( const Uint32& CallbackId );
+	bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer() const;
 
-		Node * getFirstChild() const;
+	Uint32 addEventListener( const Uint32& eventType, const EventCallback& callback );
 
-		Node * getLastChild() const;
+	Uint32 on( const Uint32& eventType, const EventCallback& callback ) {
+		return addEventListener( eventType, callback );
+	}
 
-		const Polygon2f& getWorldPolygon();
+	Uint32 addMouseClickListener( const std::function<void( const MouseEvent* )>& callback,
+								  const MouseButton& button );
 
-		const Rectf& getWorldBounds();
+	void removeEventsOfType( const Uint32& eventType );
 
-		bool isParentOf( Node * Ctrl ) const;
+	void removeEventListener( const Uint32& callbackId );
 
-		void sendEvent( const Event * Event );
+	void clearEventListener();
 
-		void sendMouseEvent( const Uint32& Event, const Vector2i& position, const Uint32& flags );
+	Node* getFirstChild() const;
 
-		void sendCommonEvent( const Uint32& Event );
+	Node* getLastChild() const;
 
-		void childsCloseAll();
+	const Polygon2f& getWorldPolygon();
 
-		std::string getId() const;
+	const Rectf& getWorldBounds();
 
-		virtual Node * setId( const std::string & id );
+	bool isParentOf( const Node* node ) const;
 
-		Uint32 getIdHash() const;
+	void sendEvent( const Event* Event );
 
-		Node * find( const std::string& id ) const;
+	void sendMouseEvent( const Uint32& Event, const Vector2i& position, const Uint32& flags );
 
-		template<typename T>
-		T * find( const std::string& id ) const
-		{
-			return reinterpret_cast<T*>( find( id ) );
-		}
+	void sendCommonEvent( const Uint32& Event );
 
-		template<typename T>
-		T * bind( const std::string& id, T*& ctrl )
-		{
-			ctrl = find<T>( id );
-			return ctrl;
-		}
+	void sendTextEvent( const Uint32& event, const std::string& text );
 
-		bool isReverseDraw() const;
+	void childsCloseAll();
 
-		void setReverseDraw( bool reverseDraw );
+	const std::string& getId() const;
 
-		void invalidateDraw();
+	virtual Node* setId( const std::string& id );
 
-		void setRotation( float angle );
+	const String::HashType& getIdHash() const;
 
-		void setRotation( const Float& angle, const OriginPoint& center );
+	Node* find( const std::string& id ) const;
 
-		const OriginPoint& getRotationOriginPoint() const;
+	Node* hasChild( const std::string& id ) const;
 
-		void setRotationOriginPoint( const OriginPoint& center );
+	template <typename T> T* find( const std::string& id ) const {
+		return reinterpret_cast<T*>( find( id ) );
+	}
 
-		Vector2f getRotationCenter() const;
+	template <typename T> T* bind( const std::string& id, T*& node ) {
+		node = find<T>( id );
+		return node;
+	}
 
-		void setScale( const Vector2f& scale );
+	template <typename T> T* asType() { return reinterpret_cast<T*>( this ); }
 
-		void setScale( const Vector2f& scale, const OriginPoint& center );
+	template <typename T> const T* asConstType() const {
+		return reinterpret_cast<const T*>( this );
+	}
 
-		void setScale( const Float& scale , const OriginPoint & center = OriginPoint::OriginCenter );
+	Node* findByType( const Uint32& type ) const;
 
-		const OriginPoint& getScaleOriginPoint() const;
+	template <typename T> T* findByType( const Uint32& type ) const {
+		return reinterpret_cast<T*>( findByType( type ) );
+	}
 
-		void setScaleOriginPoint( const OriginPoint& center );
+	template <typename T> T* bindByType( const Uint32& type, T*& node ) {
+		node = findByType<T>( type );
+		return node;
+	}
 
-		Vector2f getScaleCenter() const;
+	bool inNodeTree( Node* node ) const;
 
-		virtual void setScale(float factorX, float factorY);
+	bool isReverseDraw() const;
 
-		virtual void setScaleOrigin(float x, float y);
+	void setReverseDraw( bool reverseDraw );
 
-		virtual void setRotationOrigin(float x, float y);
+	void invalidateDraw();
 
-		const Float& getAlpha() const;
+	void setRotation( float angle );
 
-		virtual void setAlpha( const Float& alpha );
+	void setRotation( const Float& angle, const OriginPoint& center );
 
-		virtual void setChildsAlpha( const Float& alpha );
+	const OriginPoint& getRotationOriginPoint() const;
 
-		ActionManager * getActionManager() const;
+	void setRotationOriginPoint( const OriginPoint& center );
 
-		Node * runAction( Action * action );
+	void setRotationOriginPointX( const std::string& xEq );
 
-		Transform getLocalTransform() const;
+	void setRotationOriginPointY( const std::string& yEq );
 
-		Transform getGlobalTransform() const;
+	Vector2f getRotationCenter() const;
 
-		Transform getNodeToWorldTransform() const;
+	void setScale( const Vector2f& scale );
 
-		Transform getWorldToNodeTransform() const;
+	void setScale( const Vector2f& scale, const OriginPoint& center );
 
-		Vector2f convertToNodeSpace(const Vector2f& worldPoint) const;
+	void setScale( const Float& scale, const OriginPoint& center = OriginPoint::OriginCenter );
 
-		Vector2f convertToWorldSpace(const Vector2f& nodePoint) const;
+	const OriginPoint& getScaleOriginPoint() const;
 
-		Rectf getLocalBounds() const;
+	void setScaleOriginPoint( const OriginPoint& center );
 
-		bool hasFocus() const;
+	void setScaleOriginPointX( const std::string& xEq );
 
-		virtual void setFocus();
+	void setScaleOriginPointY( const std::string& yEq );
 
-		Node * getNextWidget() const;
+	Vector2f getScaleCenter() const;
 
-		void enableReportSizeChangeToChilds();
+	virtual void setScale( float factorX, float factorY );
 
-		void disableReportSizeChangeToChilds();
+	virtual void setScaleOrigin( float x, float y );
 
-		bool reportSizeChangeToChilds() const;
+	virtual void setRotationOrigin( float x, float y );
 
-		void centerHorizontal();
+	const Float& getAlpha() const;
 
-		void centerVertical();
+	virtual void setAlpha( const Float& alpha );
 
-		void center();
+	virtual void setChildsAlpha( const Float& alpha );
 
-		Node * clipEnable();
+	ActionManager* getActionManager() const;
 
-		Node * clipDisable();
+	Node* runAction( Action* action );
 
-		void writeNodeFlag( const Uint32& Flag, const Uint32& Val );
+	void removeAction( Action* action );
 
-		SceneNode * getSceneNode() const;
+	void removeActions( const std::vector<Action*>& actions );
 
-		EventDispatcher * getEventDispatcher() const;
+	void removeActionsByTag( const String::HashType& tag );
 
-		virtual bool isDrawInvalidator() const;
+	std::vector<Action*> getActions();
 
-		bool invalidated() const;
+	std::vector<Action*> getActionsByTag( const Uint32& tag );
 
-		void invalidate();
+	void clearActions();
 
-		Uint32 childCount() const;
+	Transform getLocalTransform() const;
 
-		Node * childAt( Uint32 Index ) const;
-	protected:
-		typedef std::map< Uint32, std::map<Uint32, EventCallback> > EventsMap;
-		friend class EventDispatcher;
+	Transform getGlobalTransform() const;
 
-		std::string		mId;
-		Uint32			mIdHash;
-		Vector2f		mScreenPos;
-		Vector2i		mScreenPosi;
-		Sizef			mSize;
-		UintPtr			mData;
-		Node *			mParentCtrl;
-		SceneNode *		mSceneNode;
-		Node *			mNodeDrawInvalidator;
-		Node *			mChild;			//! Pointer to the first child of the node
-		Node *			mChildLast;		//! Pointer to the last child added
-		Node *			mNext;			//! Pointer to the next child of the father
-		Node *			mPrev;			//! Pointer to the prev child of the father
-		Uint32			mNodeFlags;
-		BlendMode		mBlend;
-		Uint16			mNumCallBacks;
+	Transform getNodeToWorldTransform() const;
 
-		mutable Polygon2f	mPoly;
-		mutable Rectf	mWorldBounds;
-		Vector2f 		mCenter;
+	Transform getWorldToNodeTransform() const;
 
-		EventsMap		mEvents;
+	Vector2f convertToNodeSpace( const Vector2f& worldPoint ) const;
 
-		bool			mVisible;
-		bool			mEnabled;
+	Vector2f convertToWorldSpace( const Vector2f& nodePoint ) const;
 
-		OriginPoint			mRotationOriginPoint;
-		OriginPoint			mScaleOriginPoint;
-		Float				mAlpha;
+	Rectf getLocalBounds() const;
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	bool hasFocus() const;
 
-		virtual Uint32 onKeyDown( const KeyEvent& Event );
+	bool hasFocusWithin() const;
 
-		virtual Uint32 onKeyUp( const KeyEvent& Event );
+	virtual void setFocus();
 
-		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
+	Node* getFirstWidget() const;
 
-		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+	Node* getParentWidget() const;
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	void enableReportSizeChangeToChilds();
 
-		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
+	void disableReportSizeChangeToChilds();
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+	bool reportSizeChangeToChilds() const;
 
-		virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+	void centerHorizontal();
 
-		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
+	void centerVertical();
 
-		virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
+	void center();
 
-		virtual void onClose();
+	Node* clipEnable();
 
-		virtual void onVisibilityChange();
+	Node* clipDisable();
 
-		virtual void onEnabledChange();
+	void writeNodeFlag( const Uint32& Flag, const Uint32& Val );
 
-		virtual void onPositionChange();
+	SceneNode* getSceneNode() const;
 
-		virtual void onSizeChange();
+	EventDispatcher* getEventDispatcher() const;
 
-		virtual void onParentSizeChange( const Vector2f& SizeChange );
+	virtual bool isDrawInvalidator() const;
 
-		virtual void onParentChange();
+	bool invalidated() const;
 
-		virtual void updateWorldPolygon();
+	virtual void invalidate( Node* invalidator );
 
-		virtual void updateCenter();
+	Uint32 getChildCount() const;
 
-		virtual void matrixSet();
+	Uint32 getChildOfTypeCount( const Uint32& type ) const;
 
-		virtual void matrixUnset();
+	Node* getChildAt( Uint32 Index ) const;
 
-		virtual void drawChilds();
+	Uint32 getNodeIndex() const;
 
-		virtual void onChildCountChange();
+	Uint32 getNodeOfTypeIndex() const;
 
-		virtual void onAngleChange();
+	void runOnMainThread( Actions::Runnable::RunnableFunc runnable,
+						  const Time& delay = Seconds( 0 ), const Uint32& tag = 0 );
 
-		virtual void onScaleChange();
+	bool isChild( Node* child ) const;
 
-		virtual void onAlphaChange();
+	bool inParentTreeOf( Node* child ) const;
 
-		virtual Node * overFind( const Vector2f& Point );
+	void setLoadingState( bool loading );
 
-		virtual void onSceneChange();
+	bool isLoadingState() const;
 
-		virtual void clipStart();
+	virtual void onIdChange();
 
-		virtual Uint32 onFocus();
+	bool isClosing() const;
 
-		virtual Uint32 onFocusLoss();
+	bool isClosingChildren() const;
 
-		virtual void internalDraw();
+	virtual Node* overFind( const Vector2f& Point );
 
-		virtual void clipEnd();
+	/** This removes the node from its parent. Never use this unless you know what you are doing. */
+	void detach();
 
-		virtual void updateScreenPos();
+	void forEachNode( std::function<void( Node* )> func );
 
-		virtual void setInternalSize(const Sizef& size );
+	void forEachChild( std::function<void( Node* )> func );
 
-		void checkClose();
+	virtual void nodeDraw();
 
-		void sendParentSizeChange( const Vector2f& SizeChange );
+	Uint32 forceKeyDown( const KeyEvent& event );
 
-		void childDeleteAll();
+	Uint32 foceKeyUp( const KeyEvent& event );
 
-		void childAdd( Node * ChildCtrl );
+	Uint32 forceTextInput( const TextInputEvent& Event );
 
-		void childAddAt( Node * ChildCtrl, Uint32 position );
+	const Vector2f& getScreenPos() const;
 
-		void childRemove( Node * ChildCtrl );
+  protected:
+	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
+	friend class EventDispatcher;
 
-		bool isChild( Node * ChildCtrl ) const;
+	std::string mId;
+	String::HashType mIdHash;
+	Vector2f mScreenPos;
+	Vector2i mScreenPosi;
+	Sizef mSize;
+	UintPtr mData;
+	Node* mParentNode;
+	SceneNode* mSceneNode;
+	Node* mNodeDrawInvalidator;
+	Node* mChild;	  //! Pointer to the first child of the node
+	Node* mChildLast; //! Pointer to the last child added
+	Node* mNext;	  //! Pointer to the next child of the father
+	Node* mPrev;	  //! Pointer to the prev child of the father
+	Uint32 mNodeFlags;
+	BlendMode mBlend;
+	Uint16 mNumCallBacks;
 
-		bool inParentTreeOf( Node * Child ) const;
+	mutable Polygon2f mPoly;
+	mutable Rectf mWorldBounds;
+	Vector2f mCenter;
 
-		Node * childPrev( Node * Ctrl, bool Loop = false ) const;
+	EventsMap mEvents;
 
-		Node * childNext( Node * Ctrl, bool Loop = false ) const;
+	bool mVisible;
+	bool mEnabled;
 
-		Rectf getScreenBounds();
+	OriginPoint mRotationOriginPoint;
+	OriginPoint mScaleOriginPoint;
+	Float mAlpha;
 
-		void setInternalPosition( const Vector2f& Pos );
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-		void setInternalWidth(const Float& width );
+	virtual Uint32 onTextInput( const TextInputEvent& Event );
 
-		void setInternalHeight( const Float& height );
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		Color getColor( const Color& Col );
+	virtual Uint32 onKeyUp( const KeyEvent& Event );
 
-		Node * findIdHash( const Uint32& idHash ) const;
+	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
-		void updateOriginPoint();
+	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
-		void setDirty();
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
-		void setChildsDirty();
+	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
-		void clipSmartEnable( const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height );
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
-		void clipSmartDisable();
+	virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 
-		Node * getDrawInvalidator();
+	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
-		SceneNode * findSceneNode();
+	virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
-		void updateDrawInvalidator( bool force = false );
+	void onClose();
 
-		void subscribeScheduledUpdate();
+	virtual void onVisibilityChange();
 
-		void unsubscribeScheduledUpdate();
+	virtual void onEnabledChange();
 
-		bool isSubscribedForScheduledUpdate();
+	virtual void onPositionChange();
+
+	virtual void onSizeChange();
+
+	virtual void onParentSizeChange( const Vector2f& SizeChange );
+
+	virtual void onParentChange();
+
+	void updateWorldPolygon();
+
+	void updateCenter();
+
+	virtual void matrixSet();
+
+	virtual void matrixUnset();
+
+	virtual void drawChilds();
+
+	virtual void onChildCountChange( Node* child, const bool& removed );
+
+	virtual void onAngleChange();
+
+	virtual void onScaleChange();
+
+	virtual void onAlphaChange();
+
+	virtual void onSceneChange();
+
+	void clipStart();
+
+	virtual Uint32 onFocus();
+
+	virtual Uint32 onFocusLoss();
+
+	void clipEnd();
+
+	void updateScreenPos();
+
+	virtual void setInternalSize( const Sizef& size );
+
+	void checkClose();
+
+	void sendParentSizeChange( const Vector2f& sizeChange );
+
+	void childDeleteAll();
+
+	void childAdd( Node* node );
+
+	void childAddAt( Node* node, Uint32 index );
+
+	void childRemove( Node* node );
+
+	Rectf getScreenBounds();
+
+	void setInternalPosition( const Vector2f& Pos );
+
+	void setInternalWidth( const Float& width );
+
+	void setInternalHeight( const Float& height );
+
+	Color getColor( const Color& Col );
+
+	Node* findIdHash( const String::HashType& idHash ) const;
+
+	Node* hasChildHash( const String::HashType& idHash ) const;
+
+	virtual void updateOriginPoint();
+
+	void setDirty();
+
+	void setChildsDirty();
+
+	void clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
+						  const Uint32& Height );
+
+	void clipSmartDisable();
+
+	Node* getDrawInvalidator();
+
+	SceneNode* findSceneNode();
+
+	void updateDrawInvalidator( bool force = false );
+
+	void subscribeScheduledUpdate();
+
+	void unsubscribeScheduledUpdate();
+
+	bool isSubscribedForScheduledUpdate();
 };
 
-}}
+}} // namespace EE::Scene
 
 #endif

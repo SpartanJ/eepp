@@ -1,14 +1,15 @@
-#include <eepp/ee.hpp>
-#include <efsw/efsw.hpp>
+﻿#include "uieditor.hpp"
+#include <args/args.hxx>
 #include <pugixml/pugixml.hpp>
 
+namespace uieditor {
 /**
 This is a real time visual editor for the UI module.
-The layout files can be edited with any editor, and the layout changes can be seen live with this editor.
-So this is a layout preview app.
-The layout is updated every time the layout file is modified by the user. So you'll need to save the file in your editor to see the changes.
-This was done in a rush for a personal project ( hence the horrendous code ), but it's quite useful and functional.
-Project files are created by hand for the moment, and they shuld look like this one:
+The layout files can be edited with any editor, and the layout changes can be seen live with this
+editor. So this is a layout preview app. The layout is updated every time the layout file is
+modified by the user. You'll need to save the file in your editor to see the changes. This was
+done in a rush for a personal project ( hence the horrendous code ), but it's quite useful and
+functional. Project files are created by hand for the moment, and they shuld look like this one:
 
 <uiproject>
 	<basepath>/optional/project/root/path</basepath>
@@ -28,108 +29,74 @@ Project files are created by hand for the moment, and they shuld look like this 
 	<stylesheet path="style.css" />
 </uiproject>
 
-basepath is optional, otherwise it will take the base path from the xml file itself ( it xml is in /home/project.xml, basepath it going to be /home )
+basepath is optional, otherwise it will take the base path from the xml file itself ( if the xml is
+in /home/project.xml, basepath it going to be /home )
 
 Layout width and height are the default/target window size for the project.
 
 "path"s could be explicit files or directories.
 
-customWidget are defined in the case you use special widgets in your application, you'll need to indicate a valid replacement to be able to edit the file.
+customWidget are defined in the case you use special widgets in your application, you'll need to
+indicate a valid replacement to be able to edit the file.
 */
 
-EE::Window::Window * window = NULL;
-UIMessageBox * MsgBox = NULL;
-efsw::FileWatcher * fileWatcher = NULL;
-UITheme * theme = NULL;
-UIWidget * uiContainer = NULL;
-UIWinMenu * uiWinMenu = NULL;
-UISceneNode * uiSceneNode = NULL;
-UISceneNode * appUiSceneNode = NULL;
-std::string currentLayout;
-std::string currentStyleSheet;
-bool layoutExpanded = true;
-bool updateLayout = false;
-bool updateStyleSheet = false;
-Clock waitClock;
-Clock cssWaitClock;
-efsw::WatchID watch = 0;
-std::map<std::string, std::string> widgetRegistered;
-std::string basePath;
+App* appInstance = nullptr;
 
-Vector2i mousePos;
-Clock mouseClock;
-
-std::map<std::string,std::string> layouts;
-std::vector<std::string> recentProjects;
-IniFile ini;
-Uint32 recentProjectEventClickId = 0xFFFFFFFF;
-
-std::map<Uint32,TextureRegion*> imagesLoaded;
-std::map<Font*,std::string> fontsLoaded;
-
-void closeProject();
-void updateRecentProjects();
-void loadProject(std::string projectPath);
-
-void loadConfig() {
-	std::string path( Sys::getConfigPath( "eepp-uieditor" ) );
-	if ( !FileSystem::fileExists( path ) ) FileSystem::makeDir( path );
-	FileSystem::dirPathAddSlashAtEnd( path );
-	path += "config.ini";
-
-	ini.loadFromFile( path );
-	ini.readFile();
-
-	std::string recent = ini.getValue( "UIEDITOR", "recentfiles", "" );
-	std::vector<std::string> files = String::split( recent, ';' );
-
-	recentProjects = files;
+void appLoop() {
+	appInstance->mainLoop();
 }
 
-void saveConfig() {
-	std::string files = String::join( recentProjects, ';' );
+void App::updateLayoutFunc( const InvalidationType& invalidator ) {
+	mUpdateLayout = true;
+	mWaitClock.restart();
+	mInvalidationLayout = invalidator;
+}
 
-	ini.setValue( "UIEDITOR", "recentfiles", files );
-	ini.writeFile();
+void App::updateStyleSheetFunc( const InvalidationType& invalidator ) {
+	mUpdateStyleSheet = true;
+	mCssWaitClock.restart();
+	mInvalidationStyleSheet = invalidator;
+}
+void App::updateBaseStyleSheetFunc( const InvalidationType& invalidator ) {
+	mUpdateBaseStyleSheet = true;
+	mCssBaseWaitClock.restart();
+	mInvalidationBaseStyleSheet = invalidator;
+}
+
+const std::string& App::getCurrentLayout() const {
+	return mCurrentLayout;
+}
+
+const std::string& App::getCurrentStyleSheet() const {
+	return mCurrentStyleSheet;
+}
+
+const std::string& App::getBaseStyleSheet() const {
+	return mBaseStyleSheet;
 }
 
 class UpdateListener : public efsw::FileWatchListener {
-	public:
-		UpdateListener() {}
+  public:
+	UpdateListener( App* app ) : mApp( app ) {}
 
-		virtual ~UpdateListener() {};
+	virtual ~UpdateListener() {}
 
-		void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string ) {
-			if ( action == efsw::Actions::Modified ) {
-				if ( dir + filename == currentLayout ) {
-					updateLayout = true;
-					waitClock.restart();
-				} else if ( dir + filename == currentStyleSheet ) {
-					updateStyleSheet = true;
-					cssWaitClock.restart();
-				}
+	void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename,
+						   efsw::Action action, std::string ) {
+		if ( action == efsw::Actions::Modified ) {
+			if ( dir + filename == mApp->getCurrentLayout() ) {
+				mApp->updateLayoutFunc( InvalidationType::FileSystem );
+			} else if ( dir + filename == mApp->getCurrentStyleSheet() ) {
+				mApp->updateStyleSheetFunc( InvalidationType::FileSystem );
+			} else if ( dir + filename == mApp->getBaseStyleSheet() ) {
+				mApp->updateBaseStyleSheetFunc( InvalidationType::FileSystem );
 			}
 		}
+	}
+
+  protected:
+	App* mApp;
 };
-
-UpdateListener * listener = NULL;
-
-void unloadImages() {
-	for ( auto it = imagesLoaded.begin(); it != imagesLoaded.end(); ++it ) {
-		GlobalTextureAtlas::instance()->remove( it->second );
-		TextureFactory::instance()->remove( it->first );
-	}
-
-	imagesLoaded.clear();
-}
-
-void unloadFonts() {
-	for ( auto it = fontsLoaded.begin(); it != fontsLoaded.end(); ++it ) {
-		FontManager::instance()->remove( it->first );
-	}
-
-	fontsLoaded.clear();
-}
 
 static bool isFont( const std::string& path ) {
 	std::string ext = FileSystem::fileExtension( path );
@@ -144,108 +111,339 @@ static bool isCSS( const std::string& path ) {
 	return FileSystem::fileExtension( path ) == "css";
 }
 
-static void loadImage( std::string path ) {
-	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
+void App::loadConfig() {
+	std::string path( Sys::getConfigPath( "eepp-uieditor" ) );
+	if ( !FileSystem::fileExists( path ) )
+		FileSystem::makeDir( path );
+	FileSystem::dirAddSlashAtEnd( path );
+	path += "config.ini";
+	mIni.loadFromFile( path );
+	std::string recent = mIni.getValue( "UIEDITOR", "recentprojects", "" );
+	mRecentProjects = String::split( recent, ';' );
+	recent = mIni.getValue( "UIEDITOR", "recentfiles", "" );
+	mRecentFiles = String::split( recent, ';' );
+}
 
+void App::saveConfig() {
+	mIni.setValue( "UIEDITOR", "recentprojects", String::join( mRecentProjects, ';' ) );
+	mIni.setValue( "UIEDITOR", "recentfiles", String::join( mRecentFiles, ';' ) );
+	mIni.writeFile();
+}
+
+void App::unloadImages() {
+	for ( auto it = mImagesLoaded.begin(); it != mImagesLoaded.end(); ++it ) {
+		GlobalTextureAtlas::instance()->remove( it->second );
+		TextureFactory::instance()->remove( it->first );
+	}
+	mImagesLoaded.clear();
+}
+
+void App::unloadFonts() {
+	for ( auto it = mFontsLoaded.begin(); it != mFontsLoaded.end(); ++it )
+		FontManager::instance()->remove( it->first );
+	mFontsLoaded.clear();
+}
+
+void App::loadImage( std::string path ) {
+	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
 	Uint32 texId = TextureFactory::instance()->loadFromFile( path );
-
-	TextureRegion * texRegion = GlobalTextureAtlas::instance()->add( texId, filename );
-
-	imagesLoaded[ texId ] = texRegion;
+	TextureRegion* texRegion = GlobalTextureAtlas::instance()->add( texId, filename );
+	mImagesLoaded[texId] = texRegion;
 }
 
-static void loadFont( std::string path ) {
+FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
+							 const std::string& fallback ) {
+	if ( FileSystem::isRelativePath( fontPath ) )
+		fontPath = mResPath + fontPath;
+	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) ) {
+		fontPath = fallback;
+		if ( !fontPath.empty() && FileSystem::isRelativePath( fontPath ) )
+			fontPath = mResPath + fontPath;
+	}
+	if ( fontPath.empty() )
+		return nullptr;
+	return FontTrueType::New( name, fontPath );
+}
+
+void App::createWidgetInspector() {
+	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
+	UIWidgetInspector::create( mUISceneNode, mMenuIconSize );
+	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+}
+
+void App::loadFont( std::string path ) {
 	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
-	FontTrueType * font = FontTrueType::New( filename );
-
+	FontTrueType* font = FontTrueType::New( filename );
 	font->loadFromFile( path );
-
-	fontsLoaded[ font ] = filename;
+	mFontsLoaded[font] = filename;
 }
 
-static void loadImagesFromFolder( std::string folderPath ) {
+void App::loadImagesFromFolder( std::string folderPath ) {
 	std::vector<std::string> files = FileSystem::filesGetInPath( folderPath );
 
-	FileSystem::dirPathAddSlashAtEnd( folderPath );
+	FileSystem::dirAddSlashAtEnd( folderPath );
 
-	for ( auto it = files.begin(); it != files.end(); ++it ) {
-		if ( Image::isImageExtension( *it ) ) {
-			loadImage( folderPath + (*it) );
-		}
+	for ( auto it = files.begin(); it != files.end(); ++it )
+		if ( Image::isImageExtension( *it ) )
+			loadImage( folderPath + ( *it ) );
+}
+
+void App::loadFontsFromFolder( std::string folderPath ) {
+	std::vector<std::string> files = FileSystem::filesGetInPath( folderPath );
+
+	FileSystem::dirAddSlashAtEnd( folderPath );
+
+	for ( auto it = files.begin(); it != files.end(); ++it )
+		if ( isFont( *it ) )
+			loadFont( folderPath + ( *it ) );
+}
+
+void App::loadLayoutsFromFolder( std::string folderPath ) {
+	std::vector<std::string> files = FileSystem::filesGetInPath( folderPath );
+
+	FileSystem::dirAddSlashAtEnd( folderPath );
+
+	for ( auto it = files.begin(); it != files.end(); ++it )
+		if ( isXML( *it ) )
+			mLayouts[FileSystem::fileRemoveExtension( ( *it ) )] = ( folderPath + ( *it ) );
+}
+
+void App::setUserDefaultTheme() {
+	mUseDefaultTheme = true;
+	mUISceneNode->getUIThemeManager()->setDefaultTheme( mTheme );
+	mUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
+}
+
+void App::loadBaseStyleSheet() {
+	if ( !mUseDefaultTheme )
+		return;
+
+	if ( mBaseStyleSheetWatch == 0 ) {
+		std::string baseFolder( FileSystem::fileRemoveFileName( mBaseStyleSheet ) );
+		mBaseStyleSheetWatch = mFileWatcher->addWatch( baseFolder, mListener );
+	}
+
+	setUserDefaultTheme();
+
+	if ( !mSplitter->isDocumentOpen( mBaseStyleSheet ) && mUseDefaultTheme ) {
+		SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
+		mSplitter->loadFileFromPathInNewTab( mBaseStyleSheet );
+		SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 	}
 }
 
-static void loadFontsFromFolder( std::string folderPath ) {
-	std::vector<std::string> files = FileSystem::filesGetInPath( folderPath );
-
-	FileSystem::dirPathAddSlashAtEnd( folderPath );
-
-	for ( auto it = files.begin(); it != files.end(); ++it ) {
-		if ( isFont( *it ) ) {
-			loadFont( folderPath + (*it) );
-		}
-	}
-}
-
-static void loadLayoutsFromFolder( std::string folderPath ) {
-	std::vector<std::string> files = FileSystem::filesGetInPath( folderPath );
-
-	FileSystem::dirPathAddSlashAtEnd( folderPath );
-
-	for ( auto it = files.begin(); it != files.end(); ++it ) {
-		if ( isXML( *it ) ) {
-			layouts[ FileSystem::fileRemoveExtension( (*it) ) ] = ( folderPath + (*it) );
-		}
-	}
-}
-
-static void loadStyleSheet( std::string cssPath ) {
+void App::loadStyleSheet( std::string cssPath, bool updateCurrentStyleSheet ) {
+	if ( NULL == mUISceneNode )
+		return;
 	CSS::StyleSheetParser parser;
 
-	if ( NULL != uiSceneNode && parser.loadFromFile( cssPath ) ) {
-		uiSceneNode->setStyleSheet( parser.getStyleSheet() );
+	loadBaseStyleSheet();
 
-		currentStyleSheet = cssPath;
+	if ( NULL != mUISceneNode && !cssPath.empty() && parser.loadFromFile( cssPath ) ) {
+		if ( mUseDefaultTheme ) {
+			mUISceneNode->combineStyleSheet( parser.getStyleSheet() );
+		} else {
+			mUISceneNode->setStyleSheet( parser.getStyleSheet() );
+		}
+
+		if ( updateCurrentStyleSheet ) {
+			mCurrentStyleSheet = cssPath;
+
+			std::string folder( FileSystem::fileRemoveFileName( cssPath ) );
+
+			bool keepWatch = false;
+
+			for ( auto& directory : mFileWatcher->directories() ) {
+				if ( directory == folder )
+					keepWatch = true;
+			}
+
+			if ( !keepWatch ) {
+				if ( mStyleSheetWatch != 0 )
+					mFileWatcher->removeWatch( mStyleSheetWatch );
+
+				mStyleSheetWatch = mFileWatcher->addWatch( folder, mListener );
+			}
+
+			if ( !mSplitter->isDocumentOpen( cssPath ) ) {
+				SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
+				mSplitter->loadFileFromPathInNewTab( cssPath );
+				SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+			}
+		}
 	}
 }
 
-static void loadLayout( std::string file ) {
-	if ( watch != 0 ) {
-		fileWatcher->removeWatch( watch );
-	}
-
+void App::tryUpdateWatch( const std::string& file ) {
 	std::string folder( FileSystem::fileRemoveFileName( file ) );
+	bool keepWatch = false;
 
-	watch = fileWatcher->addWatch( folder, listener );
-
-	uiContainer->childsCloseAll();
-
-	uiSceneNode->loadLayoutFromFile( file, uiContainer );
-
-	currentLayout = file;
-}
-
-static void refreshLayout() {
-	if ( !currentLayout.empty() && FileSystem::fileExists( currentLayout ) && uiContainer != NULL ) {
-		loadLayout( currentLayout );
+	for ( auto& directory : mFileWatcher->directories() ) {
+		if ( directory == folder )
+			keepWatch = true;
 	}
 
-	updateLayout = false;
+	if ( !keepWatch ) {
+		if ( mWatch != 0 )
+			mFileWatcher->removeWatch( mWatch );
+		mWatch = mFileWatcher->addWatch( folder, mListener );
+	}
 }
 
-static void refreshStyleSheet() {
-	if ( !currentStyleSheet.empty() && FileSystem::fileExists( currentStyleSheet ) && uiContainer != NULL ) {
-		loadStyleSheet( currentStyleSheet );
+std::pair<UITab*, UICodeEditor*> App::loadLayout( std::string file, bool updateCurrentLayout ) {
+	mUIContainer->getContainer()->childsCloseAll();
+	mUISceneNode->update( Time::Zero );
+
+	Uint32 marker = String::hash( updateCurrentLayout ? file : mCurrentLayout );
+
+	mUISceneNode->getStyleSheet().removeAllWithMarker( marker );
+	mUISceneNode->loadLayoutFromFile( file, mUIContainer, marker );
+
+	if ( updateCurrentLayout ) {
+		tryUpdateWatch( file );
+
+		mCurrentLayout = file;
+
+		if ( !mSplitter->isDocumentOpen( file ) ) {
+			SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
+			auto d = mSplitter->loadFileFromPathInNewTab( file );
+			SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+			return d;
+		}
 	}
 
-	updateStyleSheet = false;
+	return std::make_pair( nullptr, nullptr );
 }
 
-void onRecentProjectClick( const Event * event ) {
+void App::saveTmpDocument( TextDocument& doc,
+						   std::function<void( const std::string& tmpPath )> action ) {
+	std::string tmpPath = Sys::getTempPath() + doc.getFilename();
+	if ( FileSystem::fileExists( tmpPath ) ) {
+		tmpPath = Sys::getTempPath() + ".eepp-uieditor-" + doc.getFilename() + "." +
+				  String::randString( 8 );
+	}
+	IOStreamString fileString;
+	doc.save( fileString, true );
+	FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(), fileString.getSize() );
+	action( tmpPath );
+	FileSystem::fileRemove( tmpPath );
+}
+
+void App::reloadStyleSheet() {
+	switch ( mInvalidationStyleSheet ) {
+		case InvalidationType::Memory: {
+			UICodeEditor* editor = mSplitter->findEditorFromPath( mCurrentStyleSheet );
+			if ( !editor )
+				return;
+			saveTmpDocument( editor->getDocument(), [&]( const std::string& tmpPath ) {
+				loadStyleSheet( tmpPath, false );
+			} );
+			break;
+		}
+		case InvalidationType::FileSystem:
+		default:
+			loadStyleSheet( mCurrentStyleSheet );
+			break;
+	}
+}
+
+void App::reloadBaseStyleSheet() {
+	switch ( mInvalidationBaseStyleSheet ) {
+		case InvalidationType::Memory: {
+			std::string realStyleSheetPath( mTheme->getStyleSheetPath() );
+			UICodeEditor* editor = mSplitter->findEditorFromPath( mTheme->getStyleSheetPath() );
+			if ( !editor )
+				return;
+			saveTmpDocument( editor->getDocument(),
+							 [&, realStyleSheetPath]( const std::string& tmpPath ) {
+								 mTheme->setStyleSheetPath( tmpPath );
+								 mTheme->reloadStyleSheet();
+								 mTheme->setStyleSheetPath( realStyleSheetPath );
+							 } );
+			break;
+		}
+		case InvalidationType::FileSystem:
+		default:
+			mTheme->reloadStyleSheet();
+			break;
+	}
+}
+
+void App::showEditor( bool show ) {
+	if ( show == mSidePanel->isVisible() )
+		return;
+
+	if ( show ) {
+		mSidePanel->setVisible( true );
+		mSidePanel->setParent( mProjectSplitter );
+		mProjectSplitter->swap();
+	} else {
+		mSidePanel->setVisible( false );
+		mSidePanel->setParent( mUISceneNode->getRoot() );
+	}
+}
+
+void App::toggleEditor() {
+	showEditor( !mSidePanel->isVisible() );
+}
+
+void App::reloadLayout() {
+	switch ( mInvalidationLayout ) {
+		case InvalidationType::Memory: {
+			UICodeEditor* editor = mSplitter->findEditorFromPath( mCurrentLayout );
+			if ( !editor )
+				return;
+			saveTmpDocument( editor->getDocument(),
+							 [&]( const std::string& tmpPath ) { loadLayout( tmpPath, false ); } );
+			break;
+		}
+		case InvalidationType::FileSystem:
+		default:
+			loadLayout( mCurrentLayout );
+			break;
+	}
+}
+
+void App::refreshLayout() {
+	if ( !mCurrentLayout.empty() && FileSystem::fileExists( mCurrentLayout ) &&
+		 mUIContainer != NULL ) {
+		if ( !mCurrentStyleSheet.empty() && FileSystem::fileExists( mCurrentStyleSheet ) &&
+			 mUIContainer != NULL )
+			reloadStyleSheet();
+		reloadLayout();
+	}
+
+	mUpdateLayout = false;
+	mInvalidationLayout = InvalidationType::None;
+}
+
+void App::refreshStyleSheet() {
+	if ( mUpdateBaseStyleSheet )
+		reloadBaseStyleSheet();
+
+	if ( !mCurrentStyleSheet.empty() && FileSystem::fileExists( mCurrentStyleSheet ) &&
+		 mUIContainer != NULL ) {
+		reloadStyleSheet();
+	} else if ( mUpdateBaseStyleSheet ) {
+		setUserDefaultTheme();
+	}
+
+	if ( !mCurrentLayout.empty() && FileSystem::fileExists( mCurrentLayout ) &&
+		 mUIContainer != NULL ) {
+		loadLayout( mCurrentLayout );
+	}
+
+	mUpdateStyleSheet = false;
+	mUpdateBaseStyleSheet = false;
+	mInvalidationStyleSheet = InvalidationType::None;
+	mInvalidationBaseStyleSheet = InvalidationType::None;
+}
+
+void App::onRecentProjectClick( const Event* event ) {
 	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( event->getNode() )->getText();
+	const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 	std::string path( txt.toUtf8() );
 
 	if ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) {
@@ -253,158 +451,215 @@ void onRecentProjectClick( const Event * event ) {
 	}
 }
 
-void updateRecentProjects() {
-	if ( NULL == uiWinMenu )
+void App::onRecentFilesClick( const Event* event ) {
+	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	UIPopUpMenu * fileMenu = uiWinMenu->getPopUpMenu( "File" );
+	const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+	std::string path( txt.toUtf8() );
 
-	UINode * node = NULL;
+	if ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) )
+		loadLayoutFile( path );
+}
 
-	if ( NULL != fileMenu  && ( node = fileMenu->getItem( "Recent projects" ) ) ) {
-		UIMenuSubMenu * uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
-		UIMenu * menu = uiMenuSubMenu->getSubMenu();
+void App::updateRecentFiles() {
+	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
+
+	if ( NULL == mUIMenuBar )
+		return;
+
+	UIPopUpMenu* fileMenu = mUIMenuBar->getPopUpMenu( "File" );
+
+	UINode* node = NULL;
+
+	if ( NULL != fileMenu && ( node = fileMenu->getItem( "Recent files" ) ) ) {
+		UIMenuSubMenu* uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
+		UIMenu* menu = uiMenuSubMenu->getSubMenu();
 
 		menu->removeAll();
 
-		for ( size_t i = 0; i < recentProjects.size(); i++ ) {
-			menu->add( recentProjects[i] );
-		}
+		for ( size_t i = 0; i < mRecentFiles.size(); i++ )
+			menu->add( mRecentFiles[i] );
 
-		if ( 0xFFFFFFFF != recentProjectEventClickId ) {
-			menu->removeEventListener( recentProjectEventClickId );
-		}
+		if ( 0xFFFFFFFF != mRecentFilesEventClickId )
+			menu->removeEventListener( mRecentFilesEventClickId );
 
-		recentProjectEventClickId = menu->addEventListener( Event::OnItemClicked, cb::Make1( &onRecentProjectClick ) );
+		mRecentFilesEventClickId = menu->addEventListener(
+			Event::OnItemClicked, [&]( const Event* event ) { onRecentFilesClick( event ); } );
 	}
+
+	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 }
 
-void resizeCb(EE::Window::Window *) {
-	if ( layoutExpanded ) {
-		uiContainer->setSize( uiSceneNode->getSize() );
-	} else {
-		Float scaleW = (Float)uiSceneNode->getSize().getWidth() / (Float)uiContainer->getSize().getWidth();
-		Float scaleH = (Float)uiSceneNode->getSize().getHeight() / (Float)uiContainer->getSize().getHeight();
+void App::updateRecentProjects() {
+	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
 
-		uiContainer->setScale( scaleW < scaleH ? scaleW : scaleH );
-		uiContainer->center();
-	}
-}
-
-void resizeWindowToLayout() {
-	if ( layoutExpanded )
+	if ( NULL == mUIMenuBar )
 		return;
 
-	Sizef size( uiContainer->getSize() );
-	Rect borderSize( window->getBorderSize() );
-	Sizei displayMode = Engine::instance()->getDisplayManager()->getDisplayIndex( window->getCurrentDisplayIndex() )->getUsableBounds().getSize();
+	UIPopUpMenu* fileMenu = mUIMenuBar->getPopUpMenu( "File" );
+
+	UINode* node = NULL;
+
+	if ( NULL != fileMenu && ( node = fileMenu->getItem( "Recent projects" ) ) ) {
+		UIMenuSubMenu* uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
+		UIMenu* menu = uiMenuSubMenu->getSubMenu();
+
+		menu->removeAll();
+
+		for ( size_t i = 0; i < mRecentProjects.size(); i++ )
+			menu->add( mRecentProjects[i] );
+
+		if ( 0xFFFFFFFF != mRecentProjectEventClickId )
+			menu->removeEventListener( mRecentProjectEventClickId );
+
+		mRecentProjectEventClickId = menu->addEventListener(
+			Event::OnItemClicked, [&]( const Event* event ) { onRecentProjectClick( event ); } );
+	}
+
+	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+}
+
+void App::resizeCb() {
+	if ( mLayoutExpanded ) {
+		mUIContainer->setSize( mUISceneNode->getSize() );
+	} else {
+		mUIContainer->setPixelsSize( mProjectScreenSize );
+
+		Float scaleW =
+			(Float)mUISceneNode->getPixelsSize().getWidth() / mProjectScreenSize.getWidth();
+		Float scaleH =
+			(Float)mUISceneNode->getPixelsSize().getHeight() / mProjectScreenSize.getHeight();
+		Float scale = scaleW < scaleH ? scaleW : scaleH;
+
+		if ( scale < 1 ) {
+			mUIContainer->setScale( scale );
+			mUIContainer->center();
+		}
+	}
+}
+
+void App::resizeWindowToLayout() {
+	if ( mLayoutExpanded )
+		return;
+
+	Sizef size( mUIContainer->getSize() );
+	Rect borderSize( mWindow->getBorderSize() );
+	Sizei displayMode = Engine::instance()
+							->getDisplayManager()
+							->getDisplayIndex( mWindow->getCurrentDisplayIndex() )
+							->getUsableBounds()
+							.getSize();
 	displayMode.x = displayMode.x - borderSize.Left - borderSize.Right;
 	displayMode.y = displayMode.y - borderSize.Top - borderSize.Bottom;
 
-	Float scaleW = size.getWidth() > displayMode.getWidth() ? displayMode.getWidth() / size.getWidth() : 1.f;
-	Float scaleH = size.getHeight() > displayMode.getHeight() ? displayMode.getHeight() / size.getHeight() : 1.f;
+	Float scaleW =
+		size.getWidth() > displayMode.getWidth() ? displayMode.getWidth() / size.getWidth() : 1.f;
+	Float scaleH = size.getHeight() > displayMode.getHeight()
+					   ? displayMode.getHeight() / size.getHeight()
+					   : 1.f;
 	Float scale = scaleW < scaleH ? scaleW : scaleH;
 
-	window->setSize( (Uint32)( uiContainer->getSize().getWidth() * scale ), (Uint32)( uiContainer->getSize().getHeight() * scale ) );
-	window->centerToDisplay();
+	mWindow->setSize( (Uint32)( size.getWidth() * scale ), (Uint32)( size.getHeight() * scale ) );
+	mWindow->centerToDisplay();
 }
 
-static UIWidget * createWidget( std::string widgetName ) {
-	return UIWidgetCreator::createFromName( widgetRegistered[ widgetName ] );
+UIWidget* App::createWidget( std::string widgetName ) {
+	return UIWidgetCreator::createFromName( mWidgetRegistered[widgetName] );
 }
 
-static std::string pathFix( std::string path ) {
-	if ( !path.empty() && ( path.at(0) != '/' || !( Sys::getPlatform() == "Windows" && path.size() > 3 && path.at(1) != ':' ) ) ) {
-		return basePath + path;
+std::string App::pathFix( std::string path ) {
+	if ( !path.empty() && ( path.at( 0 ) != '/' || !( Sys::getPlatform() == "Windows" &&
+													  path.size() > 3 && path.at( 1 ) != ':' ) ) ) {
+		return mBasePath + path;
 	}
 
 	return path;
 }
 
-static void loadUITheme( std::string themePath ) {
+void App::loadUITheme( std::string themePath ) {
 	TextureAtlasLoader tgl( themePath );
 
-	std::string name( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( themePath ) ) );
+	std::string name(
+		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( themePath ) ) );
 
-	UITheme * uitheme = UITheme::loadFromTextureAtlas( UITheme::New( name, name ), TextureAtlasManager::instance()->getByName( name ) );
+	UITheme* uitheme = UITheme::loadFromTextureAtlas(
+		UITheme::New( name, name ), TextureAtlasManager::instance()->getByName( name ) );
 
-	UIThemeManager::instance()->setDefaultTheme( uitheme )->add( uitheme );
+	mUISceneNode->getUIThemeManager()->setDefaultTheme( uitheme )->add( uitheme );
 }
 
-void onLayoutSelected( const Event * event ) {
-	if ( !event->getNode()->isType( UI_TYPE_MENUCHECKBOX) )
+void App::onLayoutSelected( const Event* event ) {
+	if ( !event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( event->getNode() )->getText();
+	const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 
-	UIPopUpMenu * uiLayoutsMenu;
+	UIPopUpMenu* uiLayoutsMenu;
 
-	if ( ( uiLayoutsMenu = uiWinMenu->getPopUpMenu( "Layouts" ) ) && uiLayoutsMenu->getCount() > 0 ) {
-		for ( size_t i = 0; i < uiLayoutsMenu->getCount(); i++ ) {
-			UIMenuCheckBox * menuItem = static_cast<UIMenuCheckBox*>( uiLayoutsMenu->getItem( i ) );
-			menuItem->setActive( false );
-		}
+	if ( ( uiLayoutsMenu = mUIMenuBar->getPopUpMenu( "Layouts" ) ) &&
+		 uiLayoutsMenu->getCount() > 0 ) {
+		for ( size_t i = 0; i < uiLayoutsMenu->getCount(); i++ )
+			uiLayoutsMenu->getItem( i )->asType<UIMenuCheckBox>()->setActive( false );
 	}
 
-	UIMenuCheckBox * chk = static_cast<UIMenuCheckBox*>( event->getNode() );
+	UIMenuCheckBox* chk = static_cast<UIMenuCheckBox*>( event->getNode() );
 	chk->setActive( true );
 
-	std::map<std::string,std::string>::iterator it;
+	std::map<std::string, std::string>::iterator it;
 
-	if ( ( it = layouts.find( txt.toUtf8() ) ) != layouts.end() ) {
+	if ( ( it = mLayouts.find( txt.toUtf8() ) ) != mLayouts.end() )
 		loadLayout( it->second );
-	}
-
 }
 
-void refreshLayoutList() {
-	if ( NULL == uiWinMenu ) return;
+void App::refreshLayoutList() {
+	if ( NULL == mUIMenuBar )
+		return;
 
-	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
+	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
 
-	if ( layouts.size() > 0 ) {
-		UIPopUpMenu * uiLayoutsMenu = NULL;
+	if ( mLayouts.size() > 0 ) {
+		UIPopUpMenu* uiLayoutsMenu = NULL;
 
-		if ( uiWinMenu->getButton( "Layouts" ) == NULL ) {
+		if ( mUIMenuBar->getButton( "Layouts" ) == NULL ) {
 			uiLayoutsMenu = UIPopUpMenu::New();
 
-			uiWinMenu->addMenuButton( "Layouts", uiLayoutsMenu );
+			mUIMenuBar->addMenuButton( "Layouts", uiLayoutsMenu );
 
-			uiLayoutsMenu->addEventListener( Event::OnItemClicked, cb::Make1( &onLayoutSelected ) );
+			uiLayoutsMenu->addEventListener(
+				Event::OnItemClicked, [&]( const Event* event ) { onLayoutSelected( event ); } );
 		} else {
-			uiLayoutsMenu = uiWinMenu->getPopUpMenu( "Layouts" );
+			uiLayoutsMenu = mUIMenuBar->getPopUpMenu( "Layouts" );
 		}
 
 		uiLayoutsMenu->removeAll();
 
-		for ( auto it = layouts.begin(); it != layouts.end(); ++it ) {
-			Uint32 idx = uiLayoutsMenu->addCheckBox( it->first );
-			UIMenuCheckBox * chk = static_cast<UIMenuCheckBox*>( uiLayoutsMenu->getItem( idx ) );
-
-			chk->setActive( currentLayout == it->second );
-		}
-	} else if ( uiWinMenu->getButton( "Layouts" ) == NULL ) {
-		uiWinMenu->removeMenuButton( "Layouts" );
+		for ( auto it = mLayouts.begin(); it != mLayouts.end(); ++it )
+			uiLayoutsMenu->addCheckBox( it->first )->setActive( mCurrentLayout == it->second );
+	} else if ( mUIMenuBar->getButton( "Layouts" ) != NULL ) {
+		mUIMenuBar->removeMenuButton( "Layouts" );
 	}
 
-	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
+	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 }
 
-static void loadProjectNodes( pugi::xml_node node ) {
+void App::loadProjectNodes( pugi::xml_node node ) {
+	mUISceneNode->getUIThemeManager()->setDefaultTheme( mUseDefaultTheme ? mTheme : NULL );
+
 	for ( pugi::xml_node resources = node; resources; resources = resources.next_sibling() ) {
-		std::string name = String::toLower( resources.name() );
+		std::string name = String::toLower( std::string( resources.name() ) );
 
 		if ( name == "uiproject" ) {
 			pugi::xml_node basePathNode = resources.child( "basepath" );
 
-			if ( !basePathNode.empty() ) {
-				basePath = basePathNode.text().as_string();
-			}
+			if ( !basePathNode.empty() )
+				mBasePath = basePathNode.text().as_string();
 
 			pugi::xml_node fontNode = resources.child( "font" );
 
 			if ( !fontNode.empty() ) {
-				for ( pugi::xml_node pathNode = fontNode.child("path"); pathNode; pathNode= pathNode.next_sibling("path") ) {
+				for ( pugi::xml_node pathNode = fontNode.child( "path" ); pathNode;
+					  pathNode = pathNode.next_sibling( "path" ) ) {
 					std::string fontPath( pathFix( pathNode.text().as_string() ) );
 
 					if ( FileSystem::isDirectory( fontPath ) ) {
@@ -418,7 +673,8 @@ static void loadProjectNodes( pugi::xml_node node ) {
 			pugi::xml_node drawableNode = resources.child( "drawable" );
 
 			if ( !drawableNode.empty() ) {
-				for ( pugi::xml_node pathNode = drawableNode.child("path"); pathNode; pathNode= pathNode.next_sibling("path") ) {
+				for ( pugi::xml_node pathNode = drawableNode.child( "path" ); pathNode;
+					  pathNode = pathNode.next_sibling( "path" ) ) {
 					std::string drawablePath( pathFix( pathNode.text().as_string() ) );
 
 					if ( FileSystem::isDirectory( drawablePath ) ) {
@@ -432,23 +688,27 @@ static void loadProjectNodes( pugi::xml_node node ) {
 			pugi::xml_node widgetNode = resources.child( "widget" );
 
 			if ( !widgetNode.empty() ) {
-				for ( pugi::xml_node cwNode = widgetNode.child("customWidget"); cwNode; cwNode= cwNode.next_sibling("customWidget") ) {
+				for ( pugi::xml_node cwNode = widgetNode.child( "customWidget" ); cwNode;
+					  cwNode = cwNode.next_sibling( "customWidget" ) ) {
 					std::string wname( cwNode.attribute( "name" ).as_string() );
 					std::string replacement( cwNode.attribute( "replacement" ).as_string() );
-					widgetRegistered[ String::toLower( wname ) ] = replacement;
+					mWidgetRegistered[String::toLower( wname )] = replacement;
 				}
 
-				for ( auto it = widgetRegistered.begin(); it != widgetRegistered.end(); ++it ) {
-					if ( !UIWidgetCreator::existsCustomWidgetCallback( it->first ) ) {
-						UIWidgetCreator::addCustomWidgetCallback( it->first, cb::Make1( createWidget ) );
-					}
+				for ( auto it = mWidgetRegistered.begin(); it != mWidgetRegistered.end(); ++it ) {
+					if ( !UIWidgetCreator::existsCustomWidgetCallback( it->first ) )
+						UIWidgetCreator::addCustomWidgetCallback(
+							it->first, [&]( std::string widgetName ) -> UIWidget* {
+								return createWidget( widgetName );
+							} );
 				}
 			}
 
 			pugi::xml_node uiNode = resources.child( "uitheme" );
 
 			if ( !uiNode.empty() ) {
-				for ( pugi::xml_node uiThemeNode = uiNode; uiThemeNode; uiThemeNode = uiThemeNode.next_sibling("uitheme") ) {
+				for ( pugi::xml_node uiThemeNode = uiNode; uiThemeNode;
+					  uiThemeNode = uiThemeNode.next_sibling( "uitheme" ) ) {
 					std::string uiThemePath( pathFix( uiThemeNode.text().as_string() ) );
 
 					loadUITheme( uiThemePath );
@@ -460,61 +720,44 @@ static void loadProjectNodes( pugi::xml_node node ) {
 			if ( !styleSheetNode.empty() ) {
 				std::string cssPath( styleSheetNode.attribute( "path" ).as_string() );
 
-				if ( isCSS( cssPath ) && FileSystem::fileExists( cssPath ) ) {
-					loadStyleSheet( cssPath );
-				}
+				if ( isCSS( cssPath ) && FileSystem::fileExists( mBasePath + cssPath ) )
+					loadStyleSheet( mBasePath + cssPath );
 			}
 
 			pugi::xml_node layoutNode = resources.child( "layout" );
 
 			if ( !layoutNode.empty() ) {
 				bool loaded = false;
-				bool loadedSizedLayout = false;
 
 				Float width = layoutNode.attribute( "width" ).as_float();
 				Float height = layoutNode.attribute( "height" ).as_float();
 
-				if ( 0.f != width && 0.f != height ) {
-					layoutExpanded = false;
-					uiContainer->setSize( width, height );
-				} else {
-					layoutExpanded = true;
-				}
+				mLayoutExpanded = ( 0.f == width && 0.f == height );
+				mProjectScreenSize = { width, height };
 
-				resizeCb( window );
+				resizeCb();
 
-				layouts.clear();
+				mLayouts.clear();
 
-				for ( pugi::xml_node layNode = layoutNode.child("path"); layNode; layNode = layNode.next_sibling("path") ) {
+				for ( pugi::xml_node layNode = layoutNode.child( "path" ); layNode;
+					  layNode = layNode.next_sibling( "path" ) ) {
 					std::string layoutPath( pathFix( layNode.text().as_string() ) );
 
 					if ( FileSystem::isDirectory( layoutPath ) ) {
 						loadLayoutsFromFolder( layoutPath );
 					} else if ( FileSystem::fileExists( layoutPath ) && isXML( layoutPath ) ) {
-						layouts[ FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( layoutPath ) ) ] = layoutPath;
+						mLayouts[FileSystem::fileRemoveExtension(
+							FileSystem::fileNameFromPath( layoutPath ) )] = layoutPath;
 
 						if ( !loaded ) {
 							loadLayout( layoutPath );
 							loaded = true;
 						}
-
-						if ( width != 0 && height != 0 ) {
-							loadedSizedLayout = true;
-						}
 					}
 				}
 
-				if ( layouts.size() > 0 && !loaded ) {
-					loadLayout( layouts.begin()->second );
-
-					if ( width != 0 && height != 0 ) {
-						loadedSizedLayout = true;
-					}
-				}
-
-				if ( loadedSizedLayout ) {
-					resizeWindowToLayout();
-				}
+				if ( mLayouts.size() > 0 && !loaded )
+					loadLayout( mLayouts.begin()->second );
 			}
 
 			refreshLayoutList();
@@ -522,11 +765,33 @@ static void loadProjectNodes( pugi::xml_node node ) {
 	}
 }
 
-void loadProject( std::string projectPath ) {
+void App::loadLayoutFile( std::string layoutPath ) {
+	if ( FileSystem::fileExists( layoutPath ) ) {
+		loadLayout( layoutPath );
+
+		for ( auto pathIt = mRecentFiles.begin(); pathIt != mRecentFiles.end(); pathIt++ ) {
+			if ( *pathIt == layoutPath ) {
+				mRecentFiles.erase( pathIt );
+				break;
+			}
+		}
+
+		mRecentFiles.insert( mRecentFiles.begin(), layoutPath );
+
+		if ( mRecentFiles.size() > 10 )
+			mRecentFiles.resize( 10 );
+
+		updateRecentFiles();
+	}
+}
+
+void App::loadProject( std::string projectPath ) {
 	if ( FileSystem::fileExists( projectPath ) ) {
 		closeProject();
 
-		basePath = FileSystem::fileRemoveFileName( projectPath );
+		mBasePath = FileSystem::fileRemoveFileName( projectPath );
+
+		FileSystem::changeWorkingDirectory( mBasePath );
 
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file( projectPath.c_str() );
@@ -534,31 +799,52 @@ void loadProject( std::string projectPath ) {
 		if ( result ) {
 			loadProjectNodes( doc.first_child() );
 
-			if ( recentProjects.size() > 0 && recentProjects[0] == projectPath )
-				return;
-
-			recentProjects.insert( recentProjects.begin(), projectPath );
-
-			if ( recentProjects.size() > 10 ) {
-				recentProjects.resize( 10 );
+			for ( auto pathIt = mRecentProjects.begin(); pathIt != mRecentProjects.end();
+				  pathIt++ ) {
+				if ( *pathIt == projectPath ) {
+					mRecentProjects.erase( pathIt );
+					break;
+				}
 			}
+
+			mRecentProjects.insert( mRecentProjects.begin(), projectPath );
+
+			if ( mRecentProjects.size() > 10 )
+				mRecentProjects.resize( 10 );
 
 			updateRecentProjects();
 		} else {
-			eePRINTL( "Error: Couldn't load UI Layout: %s", projectPath.c_str() );
-			eePRINTL( "Error description: %s", result.description() );
-			eePRINTL( "Error offset: %d", result.offset );
+			Log::error( "Couldn't load UI Layout: %s", projectPath.c_str() );
+			Log::error( "Error description: %s", result.description() );
+			Log::error( "Error offset: %d", result.offset );
 		}
 	}
 }
 
-void closeProject() {
-	currentLayout = "";
-	currentStyleSheet = "";
-	uiContainer->childsCloseAll();
-	uiSceneNode->setStyleSheet( CSS::StyleSheet() );
+void App::closeEditors() {
+	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
+	while ( !editors.empty() ) {
+		UICodeEditor* editor = editors[0];
+		UITabWidget* tabWidget = mSplitter->tabWidgetFromEditor( editor );
+		tabWidget->removeTab( (UITab*)editor->getData(), true, true );
+		editors = mSplitter->getAllEditors();
+		if ( editors.size() == 1 && editors[0]->getDocument().isEmpty() )
+			break;
+	};
+	if ( !mSplitter->getTabWidgets().empty() && mSplitter->getTabWidgets()[0]->getTabCount() == 0 )
+		mSplitter->createCodeEditorInTabWidget( mSplitter->getTabWidgets()[0] );
+}
 
-	layouts.clear();
+void App::closeProject() {
+	mCurrentLayout = "";
+	mCurrentStyleSheet = "";
+	mUIContainer->getContainer()->childsCloseAll();
+	mUISceneNode->update( Time::Zero );
+	mUISceneNode->setStyleSheet( CSS::StyleSheet() );
+
+	mLayouts.clear();
+
+	closeEditors();
 
 	refreshLayoutList();
 
@@ -566,260 +852,749 @@ void closeProject() {
 	unloadImages();
 }
 
-bool onCloseRequestCallback( EE::Window::Window * ) {
-	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
-	UIThemeManager::instance()->setDefaultTheme( theme );
+bool App::onCloseRequestCallback( EE::Window::Window* ) {
+	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
 
-	MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current file?\nAll changes will be lost." );
-	MsgBox->setTheme( theme );
-	MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1<void, const Event*>( []( const Event * ) { window->close(); } ) );
-	MsgBox->addEventListener( Event::OnClose, cb::Make1<void, const Event*>( []( const Event * ) { MsgBox = NULL; } ) );
-	MsgBox->setTitle( "Close Editor?" );
-	MsgBox->center();
-	MsgBox->show();
+	mMsgBox = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		"Do you really want to close the current file?\nAll changes will be lost." );
+	mMsgBox->setTheme( mTheme );
+	mMsgBox->addEventListener( Event::MsgBoxConfirmClick,
+							   [&]( const Event* ) { mWindow->close(); } );
+	mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) { mMsgBox = NULL; } );
+	mMsgBox->setTitle( "Close Editor?" );
+	mMsgBox->center();
+	mMsgBox->show();
 
-	UIThemeManager::instance()->setDefaultTheme( prevTheme );
-
+	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 	return false;
 }
 
-void mainLoop() {
-	window->getInput()->update();
+void App::mainLoop() {
+	mWindow->getInput()->update();
 
-	if ( window->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( window ) ) {
-		window->close();
-	}
+	if ( mWindow->getInput()->isControlPressed() && mWindow->getInput()->isKeyUp( KEY_ESCAPE ) &&
+		 NULL == mMsgBox && onCloseRequestCallback( mWindow ) )
+		mWindow->close();
 
-	if ( NULL != uiContainer && window->getInput()->isKeyUp( KEY_F1 ) ) {
+	if ( mWindow->getInput()->isKeyUp( KEY_F3 ) || mWindow->getInput()->isKeyUp( KEY_BACKSLASH ) )
+		mConsole->toggle();
+
+	if ( NULL != mUIContainer && mWindow->getInput()->isKeyUp( KEY_F1 ) )
 		resizeWindowToLayout();
+
+	if ( mWindow->getInput()->isKeyUp( KEY_F6 ) ) {
+		mUISceneNode->setHighlightFocus( !mUISceneNode->getHighlightFocus() );
+		mUISceneNode->setHighlightOver( !mUISceneNode->getHighlightOver() );
 	}
 
-	if ( mousePos != window->getInput()->getMousePos() ) {
-		mousePos = window->getInput()->getMousePos();
-		mouseClock.restart();
+	if ( mWindow->getInput()->isKeyUp( KEY_F7 ) )
+		mUISceneNode->setDrawBoxes( !mUISceneNode->getDrawBoxes() );
 
-		if ( uiWinMenu->getAlpha() != 255 && uiWinMenu->getActionManager()->isEmpty() ) {
-			uiWinMenu->runAction( Actions::Fade::New( uiWinMenu->getAlpha(), 255, Milliseconds(250) ) );
-		}
-	} else if ( mouseClock.getElapsedTime() > Seconds(1) ) {
-		if ( uiWinMenu->getAlpha() == 255 && uiWinMenu->getActionManager()->isEmpty() ) {
-			uiWinMenu->runAction( Actions::Fade::New( 255, 0, Milliseconds(250) ) );
-		}
+	if ( mWindow->getInput()->isKeyUp( KEY_F8 ) )
+		mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
+
+	if ( mWindow->getInput()->isKeyUp( KEY_F9 ) ) {
+		toggleEditor();
 	}
 
-	if ( updateLayout && waitClock.getElapsedTime().asMilliseconds() > 250.f ) {
+	if ( mWindow->getInput()->isKeyUp( KEY_F11 ) )
+		createWidgetInspector();
+
+	if ( mWindow->getInput()->isKeyUp( KEY_F12 ) ) {
+		Clock clock;
+		mUISceneNode->getRoot()->reportStyleStateChangeRecursive();
+		Log::info( "Applied style state changes in: %.2fms",
+				   clock.getElapsedTime().asMilliseconds() );
+	}
+
+	if ( mUpdateLayout && mWaitClock.getElapsedTime().asMilliseconds() > 350.f )
 		refreshLayout();
-	}
 
-	if ( updateStyleSheet && cssWaitClock.getElapsedTime().asMilliseconds() > 250.f ) {
+	if ( ( mUpdateStyleSheet && mCssWaitClock.getElapsedTime().asMilliseconds() > 350.f ) ||
+		 ( mUpdateBaseStyleSheet && mCssBaseWaitClock.getElapsedTime().asMilliseconds() > 350.f ) )
 		refreshStyleSheet();
-	}
 
 	SceneManager::instance()->update();
 
-	if ( appUiSceneNode->invalidated() || uiSceneNode->invalidated() ) {
-		window->clear();
+	if ( mAppUISceneNode->invalidated() || mUISceneNode->invalidated() ) {
+		mWindow->clear();
 
 		SceneManager::instance()->draw();
 
-		window->display();
+		mWindow->display();
 	} else {
-		Sys::sleep( Milliseconds(8) );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		mWindow->getInput()->waitEvent( Milliseconds( mWindow->hasFocus() ? 16 : 100 ) );
+#endif
 	}
 }
 
-void imagePathOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadImagesFromFolder( CDL->getFullPath() );
+void App::imagePathOpen( const Event* event ) {
+	loadImagesFromFolder( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
-void fontPathOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadFontsFromFolder( CDL->getFullPath() );
+void App::fontPathOpen( const Event* event ) {
+	loadFontsFromFolder( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
-void styleSheetPathOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadStyleSheet( CDL->getFullPath() );
+void App::styleSheetPathOpen( const Event* event ) {
+	loadStyleSheet( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
-void layoutOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadLayout( CDL->getFullPath() );
+void App::layoutOpen( const Event* event ) {
+	loadLayoutFile( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
-void projectOpen( const Event * event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
-
-	loadProject( CDL->getFullPath() );
+void App::projectOpen( const Event* event ) {
+	loadProject( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 }
 
-void fileMenuClick( const Event * event ) {
+void App::showFileDialog( const String& title, const std::function<void( const Event* )>& cb,
+						  const std::string& filePattern, const Uint32& dialogFlags ) {
+	UIFileDialog* dialog = UIFileDialog::New( dialogFlags, filePattern );
+	dialog->setTheme( mTheme );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( title );
+	dialog->addEventListener( Event::OpenFile, cb );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->center();
+	dialog->show();
+}
+
+String App::i18n( const std::string& key, const String& def ) {
+	return mUISceneNode->getTranslatorStringFromKey( key, def );
+}
+
+void App::updateEditorState() {
+	if ( mSplitter->curEditorExistsAndFocused() ) {
+		updateEditorTitle( mSplitter->getCurEditor() );
+	}
+}
+
+UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
+	if ( !editor )
+		return nullptr;
+	UIFileDialog* dialog =
+		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
+	dialog->setCloseShortcut( KEY_ESCAPE );
+	std::string filename( editor->getDocument().getFilename() );
+	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
+		filename += editor->getSyntaxDefinition().getFileExtension();
+	dialog->setFileName( filename );
+	dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* event ) {
+		if ( editor ) {
+			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
+			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
+				 FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+				std::string oldPath( editor->getDocument().getFilePath() );
+				if ( editor->getDocument().save( path ) ) {
+					editor->getDocument().setDeleteOnClose( false );
+					FileSystem::fileRemove( oldPath );
+					if ( mCurrentLayout == oldPath )
+						mCurrentLayout = path;
+					UITab* tab = mSplitter->isDocumentOpen( path );
+					if ( tab )
+						tab->setTooltipText( editor->getDocument().getFilePath() );
+					tryUpdateWatch( path );
+					updateEditorState();
+				} else {
+					UIMessageBox* msg =
+						UIMessageBox::New( UIMessageBox::OK, i18n( "coudlnt_write_the_file",
+																   "Couldn't write the file." ) );
+					msg->setTitle( "Error" );
+					msg->show();
+				}
+			} else {
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK,
+					i18n( "empty_file_name", "You must set a name to the file." ) );
+				msg->setTitle( "Error" );
+				msg->show();
+			}
+		}
+	} );
+	if ( focusOnClose ) {
+		dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+			if ( editor && !SceneManager::instance()->isShootingDown() )
+				editor->setFocus();
+		} );
+	}
+	dialog->center();
+	dialog->show();
+	return dialog;
+}
+
+void App::createNewLayout() {
+	std::string file;
+	std::string tmpPath( Sys::getTempPath() + "untitled_%d.xml" );
+	int i = 0;
+	do {
+		file = String::format( tmpPath.c_str(), ++i );
+	} while ( FileSystem::fileExists( file ) );
+	FileSystem::fileWrite( file, "<vbox>\n</vbox>" );
+	std::pair<UITab*, UICodeEditor*> d = loadLayout( file );
+	if ( !d.first )
+		return;
+	d.second->getDocument().setDeleteOnClose( true );
+}
+
+void App::fileMenuClick( const Event* event ) {
 	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( event->getNode() )->getText();
+	const String& id = event->getNode()->asType<UIMenuItem>()->getId();
 
-	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
-	UIThemeManager::instance()->setDefaultTheme( theme );
+	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
 
-	if ( "Open project..." == txt ) {
-		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml" );
-		TGDialog->setTheme( theme );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-		TGDialog->setTitle( "Open layout..." );
-		TGDialog->addEventListener( Event::OpenFile, cb::Make1( projectOpen ) );
-		TGDialog->center();
-		TGDialog->show();
-	} else if ( "Open layout..." == txt ) {
-		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml" );
-		TGDialog->setTheme( theme );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-		TGDialog->setTitle( "Open layout..." );
-		TGDialog->addEventListener( Event::OpenFile, cb::Make1( layoutOpen ) );
-		TGDialog->center();
-		TGDialog->show();
-	} else if ( "Close" == txt ) {
+	if ( "new-layout" == id ) {
+		createNewLayout();
+	} else if ( "open-project" == id ) {
+		showFileDialog(
+			"Open project...", [&]( const Event* event ) { projectOpen( event ); }, "*.xml" );
+	} else if ( "open-layout" == id ) {
+		showFileDialog(
+			"Open layout...", [&]( const Event* event ) { layoutOpen( event ); }, "*.xml" );
+	} else if ( "close" == id ) {
 		closeProject();
-	} else if ( "Quit" == txt ) {
-		onCloseRequestCallback( window );
-	} else if ( "Load images from path..." == txt ) {
-		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT );
-		TGDialog->setTheme( theme );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-		TGDialog->setTitle( "Open images from folder..." );
-		TGDialog->addEventListener( Event::OpenFile, cb::Make1( imagePathOpen ) );
-		TGDialog->center();
-		TGDialog->show();
-	} else if ( "Load fonts from path..." == txt ) {
-		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT );
-		TGDialog->setTheme( theme );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-		TGDialog->setTitle( "Open fonts from folder..." );
-		TGDialog->addEventListener( Event::OpenFile, cb::Make1( fontPathOpen ) );
-		TGDialog->center();
-		TGDialog->show();
-	} else if ( "Load style sheet from path..." == txt ) {
-		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.css" );
-		TGDialog->setTheme( theme );
-		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-		TGDialog->setTitle( "Open style sheet from path..." );
-		TGDialog->addEventListener( Event::OpenFile, cb::Make1( styleSheetPathOpen ) );
-		TGDialog->center();
-		TGDialog->show();
+	} else if ( "quit" == id ) {
+		onCloseRequestCallback( mWindow );
+	} else if ( "load-images-from-path" == id ) {
+		showFileDialog(
+			"Open images from folder...", [&]( const Event* event ) { imagePathOpen( event ); },
+			"*", UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect );
+	} else if ( "load-fonts-from-path" == id ) {
+		showFileDialog(
+			"Open fonts from folder...", [&]( const Event* event ) { fontPathOpen( event ); }, "*",
+			UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect );
+	} else if ( "load-css-from-path" == id ) {
+		showFileDialog(
+			"Open style sheet from path...",
+			[&]( const Event* event ) { styleSheetPathOpen( event ); }, "*.css" );
+	} else if ( "toggle-console" == id ) {
+		mConsole->toggle();
+	} else if ( "toggle-editor" == id ) {
+		toggleEditor();
+	} else if ( "highlight-focus" == id ) {
+		mUISceneNode->setHighlightFocus( !mUISceneNode->getHighlightFocus() );
+		mUISceneNode->setHighlightOver( !mUISceneNode->getHighlightOver() );
+	} else if ( "debug-boxes" == id ) {
+		mUISceneNode->setDrawBoxes( !mUISceneNode->getDrawBoxes() );
+	} else if ( "debug-data" == id ) {
+		mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
+	} else if ( "inspect-widgets" == id ) {
+		createWidgetInspector();
+	} else if ( "save-doc" == id ) {
+		saveDoc();
+	} else if ( "save-as-doc" == id ) {
+		if ( mSplitter->curEditorExistsAndFocused() )
+			saveFileDialog( mSplitter->getCurEditor() );
+	} else if ( "save-all" == id ) {
+		saveAll();
 	}
 
-	UIThemeManager::instance()->setDefaultTheme( prevTheme );
+	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 }
 
-EE_MAIN_FUNC int main (int argc, char * argv []) {
-	fileWatcher = new efsw::FileWatcher();
-	listener = new UpdateListener();
-	fileWatcher->watch();
+Drawable* App::findIcon( const std::string& icon ) {
+	return mAppUISceneNode->findIconDrawable( icon, mMenuIconSize );
+}
 
-	Display * currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(0);
-	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
-	DisplayMode currentMode = currentDisplay->getCurrentMode();
+void App::createAppMenu() {
+	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
 
-	Uint32 width = eemin( currentMode.Width, (Uint32)( 1280 * pixelDensity ) );
-	Uint32 height = eemin( currentMode.Height, (Uint32)( 720 * pixelDensity ) );
+	mUIMenuBar = mAppUISceneNode->find( "menubar" )->asType<UIMenuBar>();
+	UIPopUpMenu* uiPopMenu = UIPopUpMenu::New();
+	uiPopMenu->add( "New layout", findIcon( "file-add" ) )->setId( "new-layout" );
+	uiPopMenu->add( "Open layout...", findIcon( "document-open" ) )->setId( "open-layout" );
+	uiPopMenu->add( "Open project...", findIcon( "document-open" ) )->setId( "open-project" );
+	uiPopMenu->addSeparator();
+	uiPopMenu->addSubMenu( "Recent files", NULL, UIPopUpMenu::New() )->setId( "recent-files" );
+	uiPopMenu->addSubMenu( "Recent projects", NULL, UIPopUpMenu::New() )
+		->setId( "recent-projects" );
+	uiPopMenu->addSeparator();
+	uiPopMenu->add( i18n( "save", "Save" ), findIcon( "document-save" ) )->setId( "save-doc" );
+	uiPopMenu->add( i18n( "save_as", "Save as..." ), findIcon( "document-save-as" ) )
+		->setId( "save-as-doc" );
+	uiPopMenu->add( i18n( "save_all", "Save All" ), findIcon( "document-save-as" ) )
+		->setId( "save-all" );
+	uiPopMenu->addSeparator();
+	uiPopMenu->add( "Close", findIcon( "document-close" ) )->setId( "close" );
+	uiPopMenu->addSeparator();
+	uiPopMenu->add( "Quit", findIcon( "quit" ) )->setId( "quit" );
 
-	window = Engine::instance()->createWindow( WindowSettings( width, height, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
+	mUIMenuBar->addMenuButton( "File", uiPopMenu );
+	uiPopMenu->addEventListener( Event::OnItemClicked,
+								 [&]( const Event* event ) { fileMenuClick( event ); } );
 
-	if ( window->isOpen() ) {
-		window->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
+	UIPopUpMenu* uiResourceMenu = UIPopUpMenu::New();
+	uiResourceMenu->add( "Load images from path...", findIcon( "document-open" ) )
+		->setId( "load-images-from-path" );
+	uiResourceMenu->addSeparator();
+	uiResourceMenu->add( "Load fonts from path...", findIcon( "document-open" ) )
+		->setId( "load-fonts-from-path" );
+	uiResourceMenu->addSeparator();
+	uiResourceMenu->add( "Load style sheet from path...", findIcon( "document-open" ) )
+		->setId( "load-css-from-path" );
+	mUIMenuBar->addMenuButton( "Resources", uiResourceMenu );
+	uiResourceMenu->addEventListener( Event::OnItemClicked,
+									  [&]( const Event* event ) { fileMenuClick( event ); } );
 
-		uiSceneNode = UISceneNode::New();
-		SceneManager::instance()->add( uiSceneNode );
+	UIPopUpMenu* viewMenu = UIPopUpMenu::New();
+	viewMenu->add( "Highlight Focus & Hover", nullptr, "F6" )->setId( "highlight-focus" );
+	viewMenu->add( "Draw debug boxes", nullptr, "F7" )->setId( "debug-boxes" );
+	viewMenu->add( "Draw debug data (mouse hover boxes)", nullptr, "F8" )->setId( "debug-data" );
+	viewMenu->addSeparator();
+	viewMenu->add( "Inspect Widgets", findIcon( "package" ), "F11" )->setId( "inspect-widgets" );
+	viewMenu->add( "Toggle Console", findIcon( "terminal" ), "F3" )->setId( "toggle-console" );
+	viewMenu->add( "Toggle Editor", findIcon( "editor" ), "F9" )->setId( "toggle-editor" );
+	mUIMenuBar->addMenuButton( "View", viewMenu );
+	viewMenu->addEventListener( Event::OnItemClicked,
+								[&]( const Event* event ) { fileMenuClick( event ); } );
+	mConsole = UIConsole::New();
+	mConsole->setQuakeMode( true );
+	mConsole->setVisible( false );
 
-		appUiSceneNode = UISceneNode::New();
-		SceneManager::instance()->add( appUiSceneNode );
+	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+}
 
-		appUiSceneNode->enableDrawInvalidation();
-		uiSceneNode->enableDrawInvalidation();
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+std::vector<std::string> parseEmscriptenArgs( int argc, char* argv[] ) {
+	if ( argc < 1 )
+		return {};
+	std::vector<std::string> args;
+	args.emplace_back( argv[0] );
+	for ( int i = 1; i < argc; i++ ) {
+		Log::debug( "argv %d %s", i, argv[i] );
+		auto split = String::split( std::string( argv[i] ), '=' );
+		if ( split.size() == 2 ) {
+			std::string arg( split[0] + "=" + URI::decode( split[1] ) );
+			args.emplace_back( !String::startsWith( arg, "--" ) ? ( std::string( "--" ) + arg )
+																: arg );
+		}
+	}
+	return args;
+}
+#endif
 
-		std::string pd;
-		if ( PixelDensity::getPixelDensity() >= 1.5f ) pd = "1.5x";
-		else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
+App::App() {}
 
-		FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+App::~App() {
+	saveConfig();
 
-		theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
+	eeSAFE_DELETE( mSplitter );
 
-		appUiSceneNode->combineStyleSheet( theme->getStyleSheet() );
+	delete mFileWatcher;
 
-		UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
+	delete mListener;
+}
+
+void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const std::string& cssFile,
+				const std::string& xmlFile, const std::string& projectFile ) {
+	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
+	displayManager->enableScreenSaver();
+	displayManager->enableMouseFocusClickThrough();
+	displayManager->disableBypassCompositor();
+
+	mFileWatcher = new efsw::FileWatcher();
+	mListener = new UpdateListener( this );
+	mFileWatcher->watch();
+
+	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+	mDisplayDPI = currentDisplay->getDPI();
+	Float pixelDensity = currentDisplay->getPixelDensity();
+
+	if ( pixelDensityConf != 0 )
+		pixelDensity = pixelDensityConf;
+
+	Log::instance()->setLiveWrite( true );
+	Log::instance()->setConsoleOutput( true );
+
+	mResPath = Sys::getProcessPath();
+
+	mWindow = Engine::instance()->createWindow(
+		WindowSettings( 1280, 720, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default,
+						32, mResPath + "assets/icon/ee.png", pixelDensity ),
+		ContextSettings( true, GLv_default, true, 24, 1, 0, true ) );
+
+	if ( mWindow->isOpen() ) {
+		PixelDensity::setPixelDensity( eemax( mWindow->getScale(), pixelDensity ) );
+
+		mWindow->setCloseRequestCallback(
+			[&]( auto* window ) -> bool { return onCloseRequestCallback( window ); } );
+
+		mResPath = Sys::getProcessPath();
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+		if ( String::contains( mResPath, "eepp-UIEditor.app" ) ) {
+			mResPath = FileSystem::getCurrentWorkingDirectory();
+			FileSystem::dirAddSlashAtEnd( mResPath );
+			mIsBundledApp = true;
+		}
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+		if ( String::contains( mResPath, ".mount_" ) ) {
+			mResPath = FileSystem::getCurrentWorkingDirectory();
+			FileSystem::dirAddSlashAtEnd( mResPath );
+			mIsBundledApp = true;
+		}
+#endif
+		mResPath += "assets";
+		FileSystem::dirAddSlashAtEnd( mResPath );
+
+		FontTrueType* font =
+			FontTrueType::New( "NotoSans-Regular", mResPath + "fonts/NotoSans-Regular.ttf" );
+		FontTrueType::New( "monospace", mResPath + "fonts/DejaVuSansMono.ttf" );
+
+		mBaseStyleSheet = mResPath + "ui/breeze.css";
+		mTheme = UITheme::load( "uitheme", "uitheme", "", font, mBaseStyleSheet );
+
+		mUISceneNode = UISceneNode::New();
+		mUISceneNode->setId( "uiSceneNode" );
+		mUISceneNode->setVerbose( true );
+		SceneManager::instance()->add( mUISceneNode );
+
+		mAppUISceneNode = UISceneNode::New();
+		mAppUISceneNode->setId( "appUiSceneNode" );
+		SceneManager::instance()->add( mAppUISceneNode );
+
+		mAppUISceneNode->enableDrawInvalidation();
+		mUISceneNode->enableDrawInvalidation();
+
+		FontTrueType* iconFont = loadFont( "icon", "fonts/remixicon.ttf" );
+		UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
+		UIIconTheme* iconTheme2 = UIIconTheme::New( "ecode" );
+		StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
+		mMenuIconSize = fontSize.asPixels( 0, Sizef(), mDisplayDPI );
+		std::unordered_map<std::string, Uint32> icons = {
+			{ "document-new", 0xecc3 },
+			{ "document-open", 0xed70 },
+			{ "document-save", 0xf0b3 },
+			{ "document-save-as", 0xf0b3 },
+			{ "document-close", 0xeb99 },
+			{ "quit", 0xeb97 },
+			{ "undo", 0xea58 },
+			{ "redo", 0xea5a },
+			{ "cut", 0xf0c1 },
+			{ "copy", 0xecd5 },
+			{ "paste", 0xeb91 },
+			{ "edit", 0xec86 },
+			{ "split-horizontal", 0xf17a },
+			{ "split-vertical", 0xf17b },
+			{ "find-replace", 0xed2b },
+			{ "folder", 0xed54 },
+			{ "folder-open", 0xed70 },
+			{ "folder-add", 0xed5a },
+			{ "file", 0xecc3 },
+			{ "file-add", 0xecc9 },
+			{ "file-copy", 0xecd3 },
+			{ "file-code", 0xecd1 },
+			{ "file-edit", 0xecdb },
+			{ "font-size", 0xed8d },
+			{ "delete-bin", 0xec1e },
+			{ "delete-text", 0xec1e },
+			{ "zoom-in", 0xf2db },
+			{ "zoom-out", 0xf2dd },
+			{ "zoom-reset", 0xeb47 },
+			{ "fullscreen", 0xed9c },
+			{ "keybindings", 0xee75 },
+			{ "tree-expanded", 0xea50 },
+			{ "tree-contracted", 0xea54 },
+			{ "search", 0xf0d1 },
+			{ "go-up", 0xea78 },
+			{ "ok", 0xeb7a },
+			{ "cancel", 0xeb98 },
+			{ "color-picker", 0xf13d },
+			{ "pixel-density", 0xed8c },
+			{ "go-to-line", 0xf1f8 },
+			{ "table-view", 0xf1de },
+			{ "list-view", 0xecf1 },
+			{ "menu-unfold", 0xef40 },
+			{ "menu-fold", 0xef3d },
+			{ "download-cloud", 0xec58 },
+			{ "layout-left", 0xee94 },
+			{ "layout-right", 0xee9b },
+			{ "color-scheme", 0xebd4 },
+			{ "global-settings", 0xedcf },
+			{ "folder-user", 0xed84 },
+			{ "help", 0xf045 },
+			{ "terminal", 0xf1f6 },
+			{ "earth", 0xec7a },
+			{ "arrow-down", 0xea4c },
+			{ "arrow-up", 0xea76 },
+			{ "arrow-down-s", 0xea4e },
+			{ "arrow-right-s", 0xea6e },
+			{ "match-case", 0xed8d },
+			{ "cursor-pointer", 0xec09 },
+		};
+		for ( const auto& icon : icons ) {
+			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
+			iconTheme2->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
+		}
+
+		mAppUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
+		mAppUISceneNode->getUIThemeManager()
+			->setDefaultEffectsEnabled( true )
+			->setDefaultTheme( mTheme )
+			->setDefaultFont( font )
+			->add( mTheme );
+
+		mUISceneNode->getUIThemeManager()->setDefaultFont( font )->setDefaultEffectsEnabled( true );
+
+		mAppUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
+
+		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme2 );
 
 		loadConfig();
 
-		SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
+		UIWindow::StyleConfig winStyle( UI_NODE_DEFAULT_FLAGS | UI_WIN_NO_DECORATION );
+		mUIContainer = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winStyle );
+		mUIContainer->setId( "appContainer" )->setSize( mUISceneNode->getSize() );
+		mUIContainer->setParent( mUISceneNode->getRoot() );
+		mUISceneNode->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+			mUIContainer->setPixelsSize( mUISceneNode->getPixelsSize() );
+		} );
 
-		uiWinMenu = UIWinMenu::New();
+		const std::string& baseUI = R"xml(
+		<vbox id="main_layout" layout_width="match_parent" layout_height="match_parent">
+			<MenuBar id="menubar" layout_width="match_parent" layout_height="wrap_content" />
+			<Splitter id="project_splitter" layout_width="match_parent" layout_height="0dp" layout_weight="1">
+				<vbox id="code_container" />
+				<vbox id="preview_container" />
+			</Splitter>
+		</vbox>
+		)xml";
+		mAppUISceneNode->loadLayoutFromString( baseUI );
+		mAppUISceneNode->getRoot()->addClass( "appbackground" );
 
-		UIPopUpMenu * uiPopMenu = UIPopUpMenu::New();
-		uiPopMenu->add( "Open project...", theme->getIconByName( "document-open" ) );
-		uiPopMenu->addSeparator();
-		uiPopMenu->add( "Open layout...", theme->getIconByName( "document-open" ) );
-		uiPopMenu->addSeparator();
-		uiPopMenu->addSubMenu( "Recent projects", NULL, UIPopUpMenu::New() );
-		uiPopMenu->addSeparator();
-		uiPopMenu->add( "Close", theme->getIconByName( "document-close" ) );
-		uiPopMenu->addSeparator();
-		uiPopMenu->add( "Quit", theme->getIconByName( "quit" ) );
-		uiWinMenu->addMenuButton( "File", uiPopMenu );
-		uiPopMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
+		createAppMenu();
 
-		UIPopUpMenu * uiResourceMenu = UIPopUpMenu::New();
-		uiResourceMenu->add( "Load images from path...", theme->getIconByName( "document-open" ) );
-		uiResourceMenu->addSeparator();
-		uiResourceMenu->add( "Load fonts from path...", theme->getIconByName( "document-open" ) );
-		uiResourceMenu->addSeparator();
-		uiResourceMenu->add( "Load style sheet from path...", theme->getIconByName( "document-open" ) );
-		uiWinMenu->addMenuButton( "Resources", uiResourceMenu );
-		uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
-
-		SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
-
-		uiContainer = UIWidget::New();
-		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
-		uiContainer->clipDisable();
-		uiContainer->enableReportSizeChangeToChilds();
+		mConfigPath = Sys::getConfigPath( "ecode" );
+		mColorSchemesPath = mConfigPath + "colorschemes";
+		auto colorSchemes(
+			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );
+		if ( FileSystem::isDirectory( mColorSchemesPath ) ) {
+			auto colorSchemesFiles = FileSystem::filesGetInPath( mColorSchemesPath );
+			for ( auto& file : colorSchemesFiles ) {
+				auto colorSchemesInFile = SyntaxColorScheme::loadFromFile( file );
+				for ( auto& coloScheme : colorSchemesInFile )
+					colorSchemes.emplace_back( coloScheme );
+			}
+		}
+		mAppUISceneNode->bind( "code_container", mBaseLayout );
+		mAppUISceneNode->bind( "preview_container", mPreviewLayout );
+		mAppUISceneNode->bind( "project_splitter", mProjectSplitter );
+		mSidePanel = mProjectSplitter->getFirstWidget();
+		SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
+		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, colorSchemes, "eepp" );
+		mSplitter->setHideTabBarOnSingleTab( false );
+		mSplitter->createEditorWithTabWidget( mBaseLayout );
+		SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+		mUISceneNode->setParent( mProjectSplitter->getLastWidget() );
+		mProjectSplitter->setSplitPartition( StyleSheetLength( 30, StyleSheetLength::Percentage ) );
 
 		updateRecentProjects();
+		updateRecentFiles();
 
-		resizeCb( window );
+		resizeCb();
 
-		window->pushResizeCallback( cb::Make1( resizeCb ) );
+		mUISceneNode->addEventListener( Event::OnSizeChange, [&]( const Event* ) { resizeCb(); } );
 
-		if ( argc >= 2 ) {
-			if ( argc >= 3 ) {
-				loadStyleSheet( argv[2] );
-			}
+		mUseDefaultTheme = useAppTheme;
 
-			loadLayout( argv[1] );
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		} else {
-			loadStyleSheet( "assets/layouts/test.css" );
-			loadLayout( "assets/layouts/test.xml" );
-#endif
+		if ( !cssFile.empty() ) {
+			loadStyleSheet( cssFile );
+		} else if ( mUseDefaultTheme ) {
+			loadBaseStyleSheet();
+			setUserDefaultTheme();
 		}
 
-		window->runMainLoop( &mainLoop );
+		if ( !xmlFile.empty() )
+			loadLayoutFile( xmlFile );
+
+		if ( !projectFile.empty() )
+			loadProject( projectFile );
+
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+		if ( xmlFile.empty() && cssFile.empty() ) {
+			mUseDefaultTheme = true;
+			loadStyleSheet( "assets/layouts/test.css" );
+			loadLayoutFile( "assets/layouts/test.xml" );
+		}
+#endif
+
+		if ( xmlFile.empty() && projectFile.empty() ) {
+			createNewLayout();
+		}
+
+		mWindow->runMainLoop( &appLoop );
+	}
+}
+
+std::string App::titleFromEditor( UICodeEditor* editor ) {
+	std::string title( editor->getDocument().getFilename() );
+	return editor->getDocument().isDirty() ? title + "*" : title;
+}
+
+void App::updateEditorTabTitle( UICodeEditor* editor ) {
+	std::string title( titleFromEditor( editor ) );
+	if ( editor->getData() ) {
+		UITab* tab = (UITab*)editor->getData();
+		tab->setText( title );
+	}
+}
+
+void App::updateEditorTitle( UICodeEditor* editor ) {
+	std::string title( titleFromEditor( editor ) );
+	updateEditorTabTitle( editor );
+}
+
+void App::tryUpdateEditorTitle( UICodeEditor* editor ) {
+	bool isDirty = editor->getDocument().isDirty();
+	bool tabDirty = ( (UITab*)editor->getData() )->getText().lastChar() == '*';
+
+	if ( isDirty != tabDirty )
+		updateEditorTitle( editor );
+}
+
+void App::onDocumentSelectionChange( UICodeEditor* editor, TextDocument& ) {
+	tryUpdateEditorTitle( editor );
+}
+
+void App::onDocumentModified( UICodeEditor* editor, TextDocument& doc ) {
+	tryUpdateEditorTitle( editor );
+
+	if ( doc.getFilePath() == getCurrentLayout() ) {
+		updateLayoutFunc( InvalidationType::Memory );
+	} else if ( doc.getFilePath() == getCurrentStyleSheet() ) {
+		updateStyleSheetFunc( InvalidationType::Memory );
+	} else if ( doc.getFilePath() == getBaseStyleSheet() ) {
+		updateBaseStyleSheetFunc( InvalidationType::Memory );
+	}
+}
+
+void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
+	mSplitter->removeUnusedTab( mSplitter->tabWidgetFromEditor( editor ) );
+
+	updateEditorTabTitle( editor );
+
+	if ( !path.empty() ) {
+		UITab* tab = reinterpret_cast<UITab*>( editor->getData() );
+		tab->setTooltipText( path );
+	}
+}
+
+void App::saveAllProcess() {
+	if ( mTmpDocs.empty() )
+		return;
+
+	mSplitter->forEachEditorStoppable( [&]( UICodeEditor* editor ) {
+		if ( editor->getDocument().isDirty() &&
+			 std::find( mTmpDocs.begin(), mTmpDocs.end(), &editor->getDocument() ) !=
+				 mTmpDocs.end() ) {
+			if ( editor->getDocument().hasFilepath() ) {
+				editor->save();
+				updateEditorTabTitle( editor );
+				if ( mSplitter->getCurEditor() == editor )
+					updateEditorTitle( editor );
+				mTmpDocs.erase( &editor->getDocument() );
+			} else {
+				UIFileDialog* dialog = saveFileDialog( editor, false );
+				dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* ) {
+					updateEditorTabTitle( editor );
+					if ( mSplitter->getCurEditor() == editor )
+						updateEditorTitle( editor );
+				} );
+				dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+					mTmpDocs.erase( &editor->getDocument() );
+					if ( !SceneManager::instance()->isShootingDown() && !mTmpDocs.empty() )
+						saveAllProcess();
+				} );
+				return true;
+			}
+		}
+		return false;
+	} );
+}
+
+void App::saveDoc() {
+	if ( mSplitter->getCurEditor() ) {
+		mSplitter->getCurEditor()->save();
+		updateEditorTabTitle( mSplitter->getCurEditor() );
+	}
+}
+
+void App::saveAll() {
+	mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+		if ( editor->isDirty() )
+			mTmpDocs.insert( &editor->getDocument() );
+	} );
+	saveAllProcess();
+}
+
+void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
+	editor->setAutoCloseXMLTags( true );
+	editor->setColorPreview( true );
+	doc.setCommand( "save-doc", [&] { saveDoc(); } );
+	doc.setCommand( "save-as-doc", [&] {
+		if ( mSplitter->curEditorExistsAndFocused() )
+			saveFileDialog( mSplitter->getCurEditor() );
+	} );
+	doc.setCommand( "save-all", [&] { saveAll(); } );
+	doc.setCommand( "create-new", [&] { createNewLayout(); } );
+}
+
+void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
+	std::string ext( FileSystem::fileExtension( editor->getDocument().getFilePath() ) );
+	if ( ext == "xml" && editor->getDocument().getFilePath() != mCurrentLayout )
+		loadLayout( editor->getDocument().getFilePath() );
+}
+
+} // namespace uieditor
+
+using namespace uieditor;
+
+EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+	args::ArgumentParser parser( "eepp UIEditor" );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
+	args::ValueFlag<std::string> xmlFile( parser, "xml", "Loads XML file", { 'x', "xml" } );
+	args::ValueFlag<std::string> cssFile( parser, "css", "Loads CSS file", { 'c', "css" } );
+	args::ValueFlag<std::string> projectFile( parser, "project", "Loads project file",
+											  { 'p', "project" } );
+	args::ValueFlag<Float> pixelDensityConf( parser, "pixel-density",
+											 "Set default application pixel density",
+											 { 'd', "pixel-density" }, 0.f );
+	args::Flag useAppTheme( parser, "use-app-theme",
+							"Use the default application theme in the editor.",
+							{ 'u', "use-app-theme" } );
+
+	try {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		parser.ParseCLI( argc, argv );
+#else
+		parser.ParseCLI( parseEmscriptenArgs( argc, argv ) );
+#endif
+	} catch ( const args::Help& ) {
+		std::cout << parser;
+		return EXIT_SUCCESS;
+	} catch ( const args::ParseError& e ) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
+	} catch ( args::ValidationError& e ) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
 	}
 
-	saveConfig();
+	appInstance = eeNew( App, () );
+	appInstance->init( pixelDensityConf.Get(), useAppTheme.Get(), cssFile.Get(), xmlFile.Get(),
+					   projectFile.Get() );
+	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();
 
 	MemoryManager::showResults();
-
-	delete fileWatcher;
-
-	delete listener;
 
 	return EXIT_SUCCESS;
 }

@@ -14,7 +14,7 @@
 
 #define resampler_assert assert
 
-static inline int resampler_range_check(int v, int h) { resampler_assert((v >= 0) && (v < h)); return v; }   
+static inline int resampler_range_check(int v, int h) { resampler_assert((v >= 0) && (v < h)); return v; }
 
 #ifndef max
    #define max(a,b) (((a) > (b)) ? (a) : (b))
@@ -58,15 +58,15 @@ static inline int posmod(int x, int y)
    }
 }
 
-// To add your own filter, insert the new function below and update the filter table. 
-// There is no need to make the filter function particularly fast, because it's 
+// To add your own filter, insert the new function below and update the filter table.
+// There is no need to make the filter function particularly fast, because it's
 // only called during initializing to create the X and Y axis contributor tables.
 
 #define BOX_FILTER_SUPPORT (0.5f)
 static Resample_Real box_filter(Resample_Real t)    /* pulse/Fourier window */
 {
    // make_clist() calls the filter function with t inverted (pos = left, neg = right)
-   if ((t >= -0.5f) && (t < 0.5f))	
+   if ((t >= -0.5f) && (t < 0.5f))
       return 1.0f;
    else
       return 0.0f;
@@ -124,18 +124,18 @@ static Resample_Real B_spline_filter(Resample_Real t)  /* box (*) box (*) box (*
    return (0.0f);
 }
 
-// Dodgson, N., "Quadratic Interpolation for Image Resampling" 
+// Dodgson, N., "Quadratic Interpolation for Image Resampling"
 #define QUADRATIC_SUPPORT 1.5f
 static Resample_Real quadratic(Resample_Real t, const Resample_Real R)
 {
    if (t < 0.0f)
-      t = -t;	
+      t = -t;
    if (t < QUADRATIC_SUPPORT)
    {
       Resample_Real tt = t * t;
       if (t <= .5f)
          return (-2.0f * R) * tt + .5f * (R + 1.0f);
-      else 
+      else
          return (R * tt) + (-2.0f * R - .5f) * t + (3.0f / 4.0f) * (R + 1.0f);
    }
    else
@@ -157,10 +157,10 @@ static Resample_Real quadratic_mix_filter(Resample_Real t)
    return quadratic(t, .8f);
 }
 
-// Mitchell, D. and A. Netravali, "Reconstruction Filters in Computer Graphics." 
+// Mitchell, D. and A. Netravali, "Reconstruction Filters in Computer Graphics."
 // Computer Graphics, Vol. 22, No. 4, pp. 221-228.
 // (B, C)
-// (1/3, 1/3)  - Defaults recommended by Mitchell and Netravali 
+// (1/3, 1/3)  - Defaults recommended by Mitchell and Netravali
 // (1, 0)	   - Equivalent to the Cubic B-Spline
 // (0, 0.5)		- Equivalent to the Catmull-Rom Spline
 // (0, C)		- The family of Cardinal Cubic Splines
@@ -226,7 +226,7 @@ static Resample_Real clean(double t)
 }
 
 //static double blackman_window(double x)
-//{	
+//{
 //	return .42f + .50f * cos(M_PI*x) + .08f * cos(2.0f*M_PI*x);
 //}
 
@@ -308,7 +308,7 @@ static Resample_Real lanczos12_filter(Resample_Real t)
       return (0.0f);
 }
 
-static double bessel0(double x) 
+static double bessel0(double x)
 {
    const double EPSILON_RATIO = 1E-16;
    double xh, sum, pow, ds;
@@ -331,7 +331,7 @@ static double bessel0(double x)
 }
 
 static const Resample_Real KAISER_ALPHA = 4.0;
-static double kaiser(double alpha, double half_width, double x) 
+static double kaiser(double alpha, double half_width, double x)
 {
    const double ratio = (x / half_width);
    return bessel0(alpha * sqrt(1 - ratio * ratio)) / bessel0(alpha);
@@ -346,14 +346,14 @@ static Resample_Real kaiser_filter(Resample_Real t)
    if (t < KAISER_SUPPORT)
    {
       // db atten
-      const Resample_Real att = 40.0f; 
+      const Resample_Real att = 40.0f;
       const Resample_Real alpha = (Resample_Real)(exp(log((double)0.58417 * (att - 20.96)) * 0.4) + 0.07886 * (att - 20.96));
       //const Resample_Real alpha = KAISER_ALPHA;
       return (Resample_Real)clean(sinc(t) * kaiser(alpha, KAISER_SUPPORT, t));
    }
 
    return 0.0f;
-} 
+}
 
 // filters[] is a list of all the available filter functions.
 static struct
@@ -424,7 +424,7 @@ int Resampler::reflect(const int j, const int src_x, const Boundary_Op boundary_
    return n;
 }
 
-// The make_clist() method generates, for all destination samples, 
+// The make_clist() method generates, for all destination samples,
 // the list of all source samples with non-zero weighted contributions.
 Resampler::Contrib_List* Resampler::make_clist(
    int src_x, int dst_x, Boundary_Op boundary_op,
@@ -518,7 +518,7 @@ Resampler::Contrib_List* Resampler::make_clist(
          Pcontrib[i].n = 0;
          Pcontrib[i].p = Pcpool_next;
          Pcpool_next += (right - left + 1);
-         resampler_assert ((Pcpool_next - Pcpool) <= n);
+         //resampler_assert ((Pcpool_next - Pcpool) <= n);
 
          total_weight = 0;
 
@@ -569,13 +569,13 @@ Resampler::Contrib_List* Resampler::make_clist(
 
          //resampler_assert(Pcontrib[i].n);
          //resampler_assert(max_k != -1);
-         if ((max_k == -1) || (Pcontrib[i].n == 0))		
+         if ((max_k == -1) || (Pcontrib[i].n == 0))
          {
             free(Pcpool);
             free(Pcontrib);
             free(Pcontrib_bounds);
             return NULL;
-         }   
+         }
 
          if (total_weight != 1.0f)
             Pcontrib[i].p[max_k].weight += 1.0f - total_weight;
@@ -659,7 +659,7 @@ Resampler::Contrib_List* Resampler::make_clist(
 
             n = reflect(j, src_x, boundary_op);
 
-#if RESAMPLER_DEBUG				
+#if RESAMPLER_DEBUG
             printf("%i(%f), ", n, weight);
 #endif
 
@@ -689,13 +689,13 @@ Resampler::Contrib_List* Resampler::make_clist(
          //resampler_assert(Pcontrib[i].n);
          //resampler_assert(max_k != -1);
 
-         if ((max_k == -1) || (Pcontrib[i].n == 0))		
+         if ((max_k == -1) || (Pcontrib[i].n == 0))
          {
             free(Pcpool);
             free(Pcontrib);
             free(Pcontrib_bounds);
             return NULL;
-         }   
+         }
 
          if (total_weight != 1.0f)
             Pcontrib[i].p[max_k].weight += 1.0f - total_weight;
@@ -929,12 +929,12 @@ Resampler::~Resampler()
    printf("actual ops: %i\n", total_ops);
 #endif
 
-   free(m_Pdst_buf); 
+   free(m_Pdst_buf);
    m_Pdst_buf = NULL;
 
    if (m_Ptmp_buf)
    {
-      free(m_Ptmp_buf); 
+      free(m_Ptmp_buf);
       m_Ptmp_buf = NULL;
    }
 
@@ -977,7 +977,7 @@ void Resampler::restart()
    if (STATUS_OKAY != m_status)
       return;
 
-   m_cur_src_y = m_cur_dst_y = 0;   
+   m_cur_src_y = m_cur_dst_y = 0;
 
    int i, j;
    for (i = 0; i < m_resample_src_y; i++)
@@ -1008,7 +1008,7 @@ Resampler::Resampler(int src_x, int src_y,
                      const char* Pfilter_name,
                      Contrib_List* Pclist_x,
                      Contrib_List* Pclist_y,
-                     Resample_Real filter_x_scale, 
+                     Resample_Real filter_x_scale,
                      Resample_Real filter_y_scale,
                      Resample_Real src_x_ofs,
                      Resample_Real src_y_ofs)

@@ -3,26 +3,34 @@
 
 #include <eepp/config.hpp>
 
+#ifdef EE_USE_FRAMEWORKS
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+#else
 #include <AL/al.h>
 #include <AL/alc.h>
-
+#endif
 namespace EE { namespace Audio {
 
 #ifdef EE_DEBUG
 
-	// If in debug mode, perform a test on every call
-	// The do-while loop is needed so that alCheck can be used as a single statement in if/else branches
-	#define alCheck(expr) do { expr; EE::Audio::alCheckError(__FILE__, __LINE__, #expr); } while (false)
+// If in debug mode, perform a test on every call
+// The do-while loop is needed so that alCheck can be used as a single statement in if/else branches
+#define alCheck( expr )                                       \
+	do {                                                      \
+		expr;                                                 \
+		EE::Audio::alCheckError( __FILE__, __LINE__, #expr ); \
+	} while ( false )
 
 #else
 
-	// Else, we don't add any overhead
-	#define alCheck(expr) (expr)
+// Else, we don't add any overhead
+#define alCheck( expr ) ( expr )
 
 #endif
 
-void alCheckError(const char* file, unsigned int line, const char* expression);
+void alCheckError( const char* file, unsigned int line, const char* expression );
 
-}}
+}} // namespace EE::Audio
 
 #endif

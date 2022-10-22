@@ -4,84 +4,87 @@
 #include <eepp/physics/base.hpp>
 #include <list>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
 class Body;
 class Shape;
 class Constraint;
 class Space;
 
-class CP_API PhysicsManager {
-	SINGLETON_DECLARE_HEADERS(PhysicsManager)
+class EE_API PhysicsManager {
+	SINGLETON_DECLARE_HEADERS( PhysicsManager )
 
-	public:
-		class DrawSpaceOptions {
-			public:
-				DrawSpaceOptions() :
-					DrawBBs( false ),
-					DrawShapes( true ),
-	#ifdef EE_GLES
-					DrawShapesBorders( false ),
-	#else
-					DrawShapesBorders( true ),
-	#endif
-					CollisionPointSize( 0.0f ),
-					BodyPointSize( 0.0f ),
-					LineThickness( 0.0f )
-				{}
+  public:
+	class DrawSpaceOptions {
+	  public:
+		DrawSpaceOptions() :
+			DrawBBs( false ),
+			DrawShapes( true ),
+#ifdef EE_GLES
+			DrawShapesBorders( false ),
+#else
+			DrawShapesBorders( true ),
+#endif
+			CollisionPointSize( 0.0f ),
+			BodyPointSize( 0.0f ),
+			LineThickness( 0.0f ) {
+		}
 
-				bool	DrawBBs;
-				bool	DrawShapes;
-				bool	DrawShapesBorders;
-				cpFloat CollisionPointSize;
-				cpFloat BodyPointSize;
-				cpFloat LineThickness;
-		};
+		bool DrawBBs;
+		bool DrawShapes;
+		bool DrawShapesBorders;
+		cpFloat CollisionPointSize;
+		cpFloat BodyPointSize;
+		cpFloat LineThickness;
+	};
 
-		~PhysicsManager();
+	~PhysicsManager();
 
-		/** The Memory Manager will keep track of all the allocations from Space, Body, Shape and Constraint and will release any non-released pointer.
-		***	This is a lazy deallocation for the lazy programmers. It is disabled by default.
-		*** To work properly set as active before allocating anything, activate it just after the singleton instantiation.
-		*/
-		void setMemoryManager( bool memoryManager );
+	/** The Memory Manager will keep track of all the allocations from Space, Body, Shape and
+	 *Constraint and will release any non-released pointer.
+	 ***	This is a lazy deallocation for the lazy programmers. It is disabled by default.
+	 *** To work properly set as active before allocating anything, activate it just after the
+	 *singleton instantiation.
+	 */
+	void setMemoryManager( bool memoryManager );
 
-		const bool& isMemoryManagerEnabled() const;
+	const bool& isMemoryManagerEnabled() const;
 
-		PhysicsManager::DrawSpaceOptions * getDrawOptions();
-	protected:
-		DrawSpaceOptions	mOptions;
+	PhysicsManager::DrawSpaceOptions* getDrawOptions();
 
-		friend class Body;
-		friend class Shape;
-		friend class Constraint;
-		friend class Space;
+  protected:
+	DrawSpaceOptions mOptions;
 
-		bool						mMemoryManager;
-		std::list<Body *>			mBodysFree;
-		std::list<Shape *>			mShapesFree;
-		std::list<Constraint *>	mConstraintFree;
-		std::list<Space*>			mSpaces;
+	friend class Body;
+	friend class Shape;
+	friend class Constraint;
+	friend class Space;
 
-		PhysicsManager();
+	bool mMemoryManager;
+	std::list<Body*> mBodysFree;
+	std::list<Shape*> mShapesFree;
+	std::list<Constraint*> mConstraintFree;
+	std::list<Space*> mSpaces;
 
-		void addBodyFree( Body * body );
+	PhysicsManager();
 
-		void removeBodyFree( Body * body );
+	void addBodyFree( Body* body );
 
-		void addShapeFree( Shape * shape );
+	void removeBodyFree( Body* body );
 
-		void removeShapeFree( Shape * shape );
+	void addShapeFree( Shape* shape );
 
-		void addConstraintFree( Constraint * constraint );
+	void removeShapeFree( Shape* shape );
 
-		void removeConstraintFree( Constraint * constraint );
+	void addConstraintFree( Constraint* constraint );
 
-		void addSpace( Space * space );
+	void removeConstraintFree( Constraint* constraint );
 
-		void removeSpace( Space * space );
+	void addSpace( Space* space );
+
+	void removeSpace( Space* space );
 };
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics
 
 #endif

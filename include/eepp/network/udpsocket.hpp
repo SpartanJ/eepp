@@ -1,8 +1,8 @@
 #ifndef EE_NETWORKCUDPSOCKET_HPP
 #define EE_NETWORKCUDPSOCKET_HPP
 
-#include <eepp/network/socket.hpp>
 #include <eepp/network/ipaddress.hpp>
+#include <eepp/network/socket.hpp>
 #include <vector>
 
 namespace EE { namespace Network {
@@ -12,14 +12,14 @@ class Packet;
 
 /** @brief Specialized socket using the UDP protocol */
 class EE_API UdpSocket : public Socket {
-	public:
-
+  public:
 	// Constants
 	enum {
-		MaxDatagramSize = 65507 ///< The maximum number of bytes that can be sent in a single UDP datagram
+		MaxDatagramSize =
+			65507 ///< The maximum number of bytes that can be sent in a single UDP datagram
 	};
 
-	static UdpSocket * New();
+	static UdpSocket* New();
 
 	/** @brief Default constructor */
 	UdpSocket();
@@ -41,7 +41,7 @@ class EE_API UdpSocket : public Socket {
 	**  @param address Address of the interface to bind to
 	**  @return Status code
 	**  @see Unbind, GetLocalPort */
-	Status bind(unsigned short port, const IpAddress& address = IpAddress::Any);
+	Status bind( unsigned short port, const IpAddress& address = IpAddress::Any );
 
 	/** @brief Unbind the socket from the local port to which it is bound
 	**  The port that the socket was previously using is immediately
@@ -60,7 +60,8 @@ class EE_API UdpSocket : public Socket {
 	**  @param remotePort	Port of the receiver to send the data to
 	**  @return Status code
 	**  @see Receive */
-	Status send(const void* data, std::size_t size, const IpAddress& remoteAddress, unsigned short remotePort);
+	Status send( const void* data, std::size_t size, const IpAddress& remoteAddress,
+				 unsigned short remotePort );
 
 	/** @brief Receive raw data from a remote peer
 	**  In blocking mode, this function will wait until some
@@ -76,7 +77,8 @@ class EE_API UdpSocket : public Socket {
 	**  @param remotePort	Port of the peer that sent the data
 	**  @return Status code
 	**  @see Send */
-	Status receive(void* data, std::size_t size, std::size_t& received, IpAddress& remoteAddress, unsigned short& remotePort);
+	Status receive( void* data, std::size_t size, std::size_t& received, IpAddress& remoteAddress,
+					unsigned short& remotePort );
 
 	/** @brief Send a formatted packet of data to a remote peer
 	**  Make sure that the packet size is not greater than
@@ -87,7 +89,7 @@ class EE_API UdpSocket : public Socket {
 	**  @param remotePort	Port of the receiver to send the data to
 	**  @return Status code
 	**  @see Receive */
-	Status send(Packet& packet, const IpAddress& remoteAddress, unsigned short remotePort);
+	Status send( Packet& packet, const IpAddress& remoteAddress, unsigned short remotePort );
 
 	/** @brief Receive a formatted packet of data from a remote peer
 	**  In blocking mode, this function will wait until the whole packet
@@ -97,27 +99,27 @@ class EE_API UdpSocket : public Socket {
 	**  @param remotePort	Port of the peer that sent the data
 	**  @return Status code
 	**  @see Send */
-	Status receive(Packet& packet, IpAddress& remoteAddress, unsigned short& remotePort);
+	Status receive( Packet& packet, IpAddress& remoteAddress, unsigned short& remotePort );
 
 	/** Set the send timeout. Only callable after bind ( after the socket
 	 ** has been initialized ). */
-	void setSendTimeout(SocketHandle sock, const Time& timeout);
+	void setSendTimeout( SocketHandle sock, const Time& timeout );
 
 	/** Set the receive timeout Only callable after bind ( after the socket
 	 ** has been initialized ). */
-	void setReceiveTimeout(SocketHandle sock, const Time& timeout);
-private:
+	void setReceiveTimeout( SocketHandle sock, const Time& timeout );
+
+  private:
 	// Member data
 	std::vector<char> mBuffer; ///< Temporary buffer holding the received data in Receive(Packet)
 };
 
-}}
+}} // namespace EE::Network
 
 #endif // EE_NETWORKCUDPSOCKET_HPP
 
 /**
-@class UdpSocket
-@ingroup Network
+@class EE::Network::UdpSocket
 
 A UDP socket is a connectionless socket. Instead of
 connecting once to a remote host, like TCP sockets,
@@ -166,7 +168,7 @@ Usage example:
 
 // Create a socket and bind it to the port 55001
 UdpSocket socket;
-socket.Bind(55001);
+socket.bind(55001);
 
 // Send a message to 192.168.1.50 on port 55002
 std::string message = "Hi, I am " + IpAddress::getLocalAddress().toString();
@@ -199,5 +201,5 @@ std::string message = "Welcome " + sender.toString();
 socket.send(message.c_str(), message.size() + 1, sender, port);
 @endcode
 
-@see Socket, TcpSocket, Packet
+@see EE::Network::Socket, EE::Network::TcpSocket, EE::Network::Packet
 */

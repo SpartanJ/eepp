@@ -12,11 +12,9 @@
 #include <eepp/audio/soundfilefactory.hpp>
 #include <eepp/audio/soundfilereader.hpp>
 #include <eepp/audio/soundfilewriter.hpp>
+#include <eepp/audio/soundmanager.hpp>
 #include <eepp/audio/soundrecorder.hpp>
 #include <eepp/audio/soundsource.hpp>
 #include <eepp/audio/soundstream.hpp>
-
-#include <eepp/audio/soundloader.hpp>
-#include <eepp/audio/soundmanager.hpp>
 
 #endif

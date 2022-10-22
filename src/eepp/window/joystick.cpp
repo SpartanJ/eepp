@@ -5,14 +5,13 @@ namespace EE { namespace Window {
 
 Joystick::Joystick( const Uint32& index ) :
 	mIndex( index ),
-	mHats(0),
-	mButtons(0),
-	mAxes(0),
-	mBalls(0),
-	mButtonDown(0),
-	mButtonDownLast(0),
-	mButtonUp(0)
-{
+	mHats( 0 ),
+	mButtons( 0 ),
+	mAxes( 0 ),
+	mBalls( 0 ),
+	mButtonDown( 0 ),
+	mButtonDownLast( 0 ),
+	mButtonUp( 0 ) {
 	open();
 }
 
@@ -27,7 +26,7 @@ void Joystick::reOpen() {
 }
 
 void Joystick::clearStates() {
-	mButtonUp		= 0;
+	mButtonUp = 0;
 	mButtonDownLast = mButtonDown;
 }
 
@@ -82,10 +81,8 @@ bool Joystick::isButtonUp( const Int32& index ) {
 	return false;
 }
 
-void Joystick::close() {
-}
+void Joystick::close() {}
 
-void Joystick::open() {
-}
+void Joystick::open() {}
 
-}}
+}} // namespace EE::Window

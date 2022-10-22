@@ -11,6 +11,7 @@ output = open(filename + ".new", "w")
 parsing_controllers = False
 controllers = []
 controller_guids = {}
+sdk_conditionals = []
 split_pattern = re.compile(r'([^"]*")([^,]*,)([^,]*,)([^"]*)(".*)')
 
 def save_controller(line):
@@ -24,19 +25,34 @@ def save_controller(line):
     entry.append(match.group(5))
     controllers.append(entry)
 
+    if ',sdk' in line:
+        sdk_conditionals.append(entry[1])
+
 def write_controllers():
     global controllers
     global controller_guids
-    for entry in sorted(controllers, key=lambda entry: entry[2]):
+    # Check for duplicates
+    for entry in controllers:
+        if (entry[1] in controller_guids and entry[1] not in sdk_conditionals):
+            current_name = entry[2]
+            existing_name = controller_guids[entry[1]][2]
+            print("Warning: entry '%s' is duplicate of entry '%s'" % (current_name, existing_name))
+
+            if (not current_name.startswith("(DUPE)")):
+                entry[2] = "(DUPE) " + current_name
+
+            if (not existing_name.startswith("(DUPE)")):
+                controller_guids[entry[1]][2] = "(DUPE) " + existing_name
+
+        controller_guids[entry[1]] = entry
+
+    for entry in sorted(controllers, key=lambda entry: entry[2]+"-"+entry[1]):
         line = "".join(entry) + "\n"
         line = line.replace("\t", "    ")
         if not line.endswith(",\n") and not line.endswith("*/\n"):
             print("Warning: '%s' is missing a comma at the end of the line" % (line))
-        if (entry[1] in controller_guids):
-            print("Warning: entry '%s' is duplicate of entry '%s'" % (entry[2], controller_guids[entry[1]][2]))
-        controller_guids[entry[1]] = entry
-
         output.write(line)
+
     controllers = []
     controller_guids = {}
 

@@ -9,49 +9,50 @@ namespace EE { namespace Graphics {
 class VertexBuffer;
 
 class EE_API PrimitiveDrawable : public Drawable {
-	public:
-		virtual ~PrimitiveDrawable();
+  public:
+	virtual ~PrimitiveDrawable();
 
-		virtual void draw( const Vector2f& position, const Sizef& size );
+	virtual void draw( const Vector2f& position, const Sizef& size );
 
-		/** Set the fill mode used to draw primitives */
-		virtual void setFillMode( const PrimitiveFillMode& Mode );
+	/** Set the fill mode used to draw primitives */
+	virtual void setFillMode( const PrimitiveFillMode& Mode );
 
-		/** @return The fill mode used to draw primitives */
-		const PrimitiveFillMode& getFillMode() const;
+	/** @return The fill mode used to draw primitives */
+	const PrimitiveFillMode& getFillMode() const;
 
-		/** Set the blend mode used to draw primitives */
-		virtual void setBlendMode( const BlendMode& Mode );
+	/** Set the blend mode used to draw primitives */
+	virtual void setBlendMode( const BlendMode& Mode );
 
-		/** @return The blend mode used to draw primitives */
-		const BlendMode& getBlendMode() const;
+	/** @return The blend mode used to draw primitives */
+	const BlendMode& getBlendMode() const;
 
-		/** Set the line width to draw primitives */
-		virtual void setLineWidth( const Float& width );
+	/** Set the line width to draw primitives */
+	virtual void setLineWidth( const Float& width );
 
-		/** @return The line with to draw primitives */
-		const Float& getLineWidth() const;
-	protected:
-		PrimitiveDrawable( Type drawableType );
+	/** @return The line with to draw primitives */
+	const Float& getLineWidth() const;
 
-		PrimitiveFillMode			mFillMode;
-		BlendMode				mBlendMode;
-		Float					mLineWidth;
-		bool mNeedsUpdate;
-		bool mRecreateVertexBuffer;
-		VertexBuffer * mVertexBuffer;
+  protected:
+	PrimitiveDrawable( Type drawableType );
 
-		virtual void onAlphaChange();
+	PrimitiveFillMode mFillMode;
+	BlendMode mBlendMode;
+	Float mLineWidth;
+	bool mNeedsUpdate;
+	bool mRecreateVertexBuffer;
+	VertexBuffer* mVertexBuffer;
 
-		virtual void onColorFilterChange();
+	virtual void onAlphaChange();
 
-		virtual void onPositionChange();
+	virtual void onColorFilterChange();
 
-		void prepareVertexBuffer( const PrimitiveType& drawableType );
+	virtual void onPositionChange();
 
-		virtual void updateVertex() = 0;
+	void prepareVertexBuffer( const PrimitiveType& drawableType );
+
+	virtual void updateVertex() = 0;
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

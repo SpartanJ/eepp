@@ -1,26 +1,25 @@
-/***************************************************************************/
-/*                                                                         */
-/*  ftlzw.c                                                                */
-/*                                                                         */
-/*    FreeType support for .Z compressed files.                            */
-/*                                                                         */
-/*  This optional component relies on NetBSD's zopen().  It should mainly  */
-/*  be used to parse compressed PCF fonts, as found with many X11 server   */
-/*  distributions.                                                         */
-/*                                                                         */
-/*  Copyright 2004-2006, 2009, 2010, 2012 by                               */
-/*  Albert Chin-A-Young.                                                   */
-/*                                                                         */
-/*  Based on code in src/gzip/ftgzip.c, Copyright 2004 by                  */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * ftlzw.c
+ *
+ *   FreeType support for .Z compressed files.
+ *
+ * This optional component relies on NetBSD's zopen().  It should mainly
+ * be used to parse compressed PCF fonts, as found with many X11 server
+ * distributions.
+ *
+ * Copyright (C) 2004-2019 by
+ * Albert Chin-A-Young.
+ *
+ * based on code in `src/gzip/ftgzip.c'
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 #include <ft2build.h>
 #include FT_INTERNAL_MEMORY_H
@@ -32,7 +31,7 @@
 
 #include FT_MODULE_ERRORS_H
 
-#undef __FTERRORS_H__
+#undef FTERRORS_H_
 
 #undef  FT_ERR_PREFIX
 #define FT_ERR_PREFIX  LZW_Err_
@@ -42,10 +41,6 @@
 
 
 #ifdef FT_CONFIG_OPTION_USE_LZW
-
-#ifdef FT_CONFIG_OPTION_PIC
-#error "lzw code does not support PIC yet"
-#endif
 
 #include "ftzopen.h"
 
@@ -96,9 +91,9 @@
       goto Exit;
 
     /* head[0] && head[1] are the magic numbers */
-    if ( head[0] != 0x1f ||
-         head[1] != 0x9d )
-      error = LZW_Err_Invalid_File_Format;
+    if ( head[0] != 0x1F ||
+         head[1] != 0x9D )
+      error = FT_THROW( Invalid_File_Format );
 
   Exit:
     return error;
@@ -111,7 +106,7 @@
                     FT_Stream   source )
   {
     FT_LzwState  lzw   = &zip->lzw;
-    FT_Error     error = LZW_Err_Ok;
+    FT_Error     error;
 
 
     zip->stream = stream;
@@ -172,7 +167,7 @@
   {
     FT_LzwState  lzw = &zip->lzw;
     FT_ULong     count;
-    FT_Error     error = LZW_Err_Ok;
+    FT_Error     error = FT_Err_Ok;
 
 
     zip->cursor = zip->buffer;
@@ -182,7 +177,7 @@
     zip->limit = zip->cursor + count;
 
     if ( count == 0 )
-      error = LZW_Err_Invalid_Stream_Operation;
+      error = FT_THROW( Invalid_Stream_Operation );
 
     return error;
   }
@@ -193,7 +188,7 @@
   ft_lzw_file_skip_output( FT_LZWFile  zip,
                            FT_ULong    count )
   {
-    FT_Error  error = LZW_Err_Ok;
+    FT_Error  error = FT_Err_Ok;
 
 
     /* first, we skip what we can from the output buffer */
@@ -224,7 +219,7 @@
       if ( numread < delta )
       {
         /* not enough bytes */
-        error = LZW_Err_Invalid_Stream_Operation;
+        error = FT_THROW( Invalid_Stream_Operation );
         break;
       }
 
@@ -331,16 +326,16 @@
   }
 
 
-  static FT_ULong
-  ft_lzw_stream_io( FT_Stream  stream,
-                    FT_ULong   pos,
-                    FT_Byte*   buffer,
-                    FT_ULong   count )
+  static unsigned long
+  ft_lzw_stream_io( FT_Stream       stream,
+                    unsigned long   offset,
+                    unsigned char*  buffer,
+                    unsigned long   count )
   {
     FT_LZWFile  zip = (FT_LZWFile)stream->descriptor.pointer;
 
 
-    return ft_lzw_file_io( zip, pos, buffer, count );
+    return ft_lzw_file_io( zip, offset, buffer, count );
   }
 
 
@@ -349,16 +344,24 @@
                      FT_Stream  source )
   {
     FT_Error    error;
-    FT_Memory   memory = source->memory;
+    FT_Memory   memory;
     FT_LZWFile  zip = NULL;
 
 
+    if ( !stream || !source )
+    {
+      error = FT_THROW( Invalid_Stream_Handle );
+      goto Exit;
+    }
+
+    memory = source->memory;
+
     /*
-     *  Check the header right now; this prevents allocation of a huge
-     *  LZWFile object (400 KByte of heap memory) if not necessary.
+     * Check the header right now; this prevents allocation of a huge
+     * LZWFile object (400 KByte of heap memory) if not necessary.
      *
-     *  Did I mention that you should never use .Z compressed font
-     *  files?
+     * Did I mention that you should never use .Z compressed font
+     * files?
      */
     error = ft_lzw_check_header( source );
     if ( error )
@@ -403,7 +406,7 @@
     FT_UNUSED( stream );
     FT_UNUSED( source );
 
-    return LZW_Err_Unimplemented_Feature;
+    return FT_THROW( Unimplemented_Feature );
   }
 
 

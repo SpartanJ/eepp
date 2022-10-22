@@ -66,80 +66,81 @@
 namespace EE { namespace Math {
 
 class EE_API MTRand {
-	public:
-		static const Uint32 M		= 397;
-		static const Int32 N		= 624;
-		static const Uint32 SAVE	= N + 1;
+  public:
+	static const Uint32 M = 397;
+	static const Int32 N = 624;
+	static const Uint32 SAVE = N + 1;
 
-		/** Initialize with a defined user seed */
-		MTRand( const Uint32 oneSeed );
+	/** Initialize with a defined user seed */
+	MTRand( const Uint32 oneSeed );
 
-		/** Initialize with a predefined seed */
-		MTRand();
+	/** Initialize with a predefined seed */
+	MTRand();
 
-		/** Initialize with a copy of another MTRand object */
-		MTRand( const MTRand& o );
+	/** Initialize with a copy of another MTRand object */
+	MTRand( const MTRand& o );
 
-		/** Copy MTRand object */
-		MTRand& operator=( const MTRand& o );
+	/** Copy MTRand object */
+	MTRand& operator=( const MTRand& o );
 
-		/** @return integer in [0,2^32-1] */
-		Uint32				getRandi();
+	/** @return integer in [0,2^32-1] */
+	Uint32 getRandi();
 
-		/** @return integer in [0,n] for n < 2^32 */
-		Uint32				getRandi( const Uint32 n );
+	/** @return integer in [0,n] for n < 2^32 */
+	Uint32 getRandi( const Uint32 n );
 
-		/** @return real number in [0,1] */
-		double				getRand();
+	/** @return real number in [0,1] */
+	double getRand();
 
-		/** @return real number in [0,n] */
-		double				getRand( const double n );
+	/** @return real number in [0,n] */
+	double getRand( const double n );
 
-		/** Set a new seed */
-		void				setSeed( const Uint32 oneSeed );
+	/** Set a new seed */
+	void setSeed( const Uint32 oneSeed );
 
-		/** Set the default seed */
-		void				setSeed();
+	/** Set the default seed */
+	void setSeed();
 
-		/** @return float number in [0,1] */
-		Float				getRandf();
+	/** @return float number in [0,1] */
+	Float getRandf();
 
-		/** @return float number in [0,n] */
-		Float				getRandf( const Float n );
+	/** @return float number in [0,n] */
+	Float getRandf( const Float n );
 
-		/** @return int number in [Min,Max] */
-		int					getRandFromRange( int Min, int Max );
+	/** @return int number in [Min,Max] */
+	int getRandFromRange( int Min, int Max );
 
-		/** @return float number in [Min,Max] */
-		Float				getRandFromRange( Float Min, Float Max );
+	/** @return float number in [Min,Max] */
+	Float getRandFromRange( Float Min, Float Max );
 
-		/** Save the state to an allocated array */
-		void 				save( Uint32* saveArray ) const;
+	/** Save the state to an allocated array */
+	void save( Uint32* saveArray ) const;
 
-		/** Load state from an array */
-		void				load( Uint32 *const loadArray );
-	protected:
-		Uint32				mState[N];
-		Uint32 *			mNext;
-		int				mLeft;
+	/** Load state from an array */
+	void load( Uint32* const loadArray );
 
-		void				initialize( const Uint32 oneSeed );
+  protected:
+	Uint32 mState[N];
+	Uint32* mNext;
+	int mLeft;
 
-		void				reload();
+	void initialize( const Uint32 oneSeed );
 
-		Uint32				hiBit( const Uint32 u ) const;
+	void reload();
 
-		Uint32				loBit( const Uint32 u ) const;
+	Uint32 hiBit( const Uint32 u ) const;
 
-		Uint32				loBits( const Uint32 u ) const;
+	Uint32 loBit( const Uint32 u ) const;
 
-		Uint32				mixBits( const Uint32 u, const Uint32 v ) const;
+	Uint32 loBits( const Uint32 u ) const;
 
-		Uint32				magic( const Uint32 u ) const;
+	Uint32 mixBits( const Uint32 u, const Uint32 v ) const;
 
-		Uint32				twist( const Uint32 m, const Uint32 s0, const Uint32 s1 ) const;
+	Uint32 magic( const Uint32 u ) const;
+
+	Uint32 twist( const Uint32 m, const Uint32 s0, const Uint32 s1 ) const;
 };
 
-}}
+}} // namespace EE::Math
 
 #endif

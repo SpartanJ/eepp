@@ -6,19 +6,50 @@
 namespace EE { namespace UI {
 
 class EE_API UILayout : public UIWidget {
-	public:
-		static UILayout * New();
+  public:
+	static UILayout* New();
 
-		UILayout();
+	UILayout();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
-	protected:
-		UILayout( const std::string& tag );
+	virtual bool isType( const Uint32& type ) const;
 
+	virtual const Sizef& getSize() const;
+
+	virtual void updateLayout();
+
+	bool isGravityOwner() const;
+
+	void setGravityOwner( bool gravityOwner );
+
+  protected:
+	friend class UISceneNode;
+
+	UILayout( const std::string& tag );
+
+	virtual void onSizeChange();
+
+	virtual void onPaddingChange();
+
+	virtual void onParentSizeChange( const Vector2f& SizeChange );
+
+	virtual void onChildCountChange( Node* child, const bool& removed );
+
+	virtual void onLayoutUpdate();
+
+	virtual void tryUpdateLayout();
+
+	virtual void updateLayoutTree();
+
+	void setLayoutDirty();
+
+	std::unordered_set<UILayout*> mLayouts;
+	bool mDirtyLayout{ false };
+	bool mPacking{ false };
+	bool mGravityOwner{ false };
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

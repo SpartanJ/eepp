@@ -48,7 +48,7 @@
  * [6] Digital Signature Standard (DSS), FIPS 186-4.
  *     <http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf>
  *
- * [7] Elliptic Curve Cryptography (ECC) Cipher Suites for Transport Layer 
+ * [7] Elliptic Curve Cryptography (ECC) Cipher Suites for Transport Layer
  *     Security (TLS), RFC 4492.
  *     <https://tools.ietf.org/search/rfc4492>
  *
@@ -60,6 +60,12 @@
 
 #ifndef MBEDTLS_ECP_INTERNAL_H
 #define MBEDTLS_ECP_INTERNAL_H
+
+#if !defined(MBEDTLS_CONFIG_FILE)
+#include "config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if defined(MBEDTLS_ECP_INTERNAL_ALT)
 

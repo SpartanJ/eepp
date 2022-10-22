@@ -1,79 +1,85 @@
 #ifndef EE_SYSTEMCRESOURCELOADER
 #define EE_SYSTEMCRESOURCELOADER
 
-#include <eepp/system/objectloader.hpp>
+#include <eepp/core.hpp>
+#include <eepp/system/thread.hpp>
+#include <vector>
 
 namespace EE { namespace System {
 
-#define THREADS_AUTO (eeINDEX_NOT_FOUND)
+#define THREADS_AUTO ( eeINDEX_NOT_FOUND )
 
-/** @brief A simple resource loader that can load a batch of resources synchronously or asynchronously */
+/** @brief A simple resource loader that can load a batch of resources synchronously or
+ * asynchronously */
 class EE_API ResourceLoader {
-	public:
-		typedef std::function<void( ResourceLoader * )> ResLoadCallback;
+  public:
+	typedef std::function<void( ResourceLoader* )> ResLoadCallback;
+	typedef std::function<void()> ObjectLoaderTask;
 
-		/** @param MaxThreads Set the maximun simultaneous threads to load resources, THREADS_AUTO will use the cpu number of cores. */
-		ResourceLoader( const Uint32& MaxThreads = THREADS_AUTO );
+	/** @param MaxThreads Set the maximun simultaneous threads to load resources, THREADS_AUTO will
+	 * use the cpu number of cores. */
+	ResourceLoader( const Uint32& MaxThreads = THREADS_AUTO );
 
-		virtual ~ResourceLoader();
+	virtual ~ResourceLoader();
 
-		/** @brief Adds a resource to load.
-		**	Must be called before the loading starts.
-		**	Once an object loader is added to the resource loader, the instance of that object will be managed and released by the loader.
-		**	@param Object The instance object loader to load
-		*/
-		void			add( ObjectLoader * Object );
+	/** @brief Adds a resource to load.
+	**	Must be called before the loading starts.
+	**	Once an object loader is added to the resource loader, the instance of that object will be
+	*managed and released by the loader. *	@param objectLoaderTask The function callback of the
+	*load process
+	*/
+	void add( const ObjectLoaderTask& objectLoaderTask );
 
-		/** @brief Starts loading the resources.
-		**	@param Cb A callback that is called when the resources finished loading. */
-		void 			load( ResLoadCallback Cb );
+	/** @brief Starts loading the resources.
+	**	@param callback A callback that is called when the resources finished loading. */
+	void load( const ResLoadCallback& callback );
 
-		/** @brief Starts loading the resources. */
-		void 			load();
+	/** @brief Starts loading the resources. */
+	void load();
 
-		/** @brief Unload all the resources already loaded. */
-		void			unload();
+	/** @returns If the resources were loaded. */
+	virtual bool isLoaded();
 
-		/** @brief Update must be called from the thread that started the loading to update the state of the resource loader. */
-		virtual void 	update();
+	/** @returns If the resources are still loading. */
+	virtual bool isLoading();
 
-		/** @returns If the resources were loaded. */
-		virtual bool	isLoaded();
+	/** @returns If the resource loader is asynchronous */
+	bool isThreaded() const;
 
-		/** @returns If the resources are still loading. */
-		virtual bool	isLoading();
+	/** @brief Sets if the resource loader is asynchronous.
+	**	This must be called before the load starts. */
+	void setThreaded( const bool& setThreaded );
 
-		/** @returns If the resource loader is asynchronous */
-		bool			isThreaded() const;
+	/** @brief Clears the resources added to load that werent loaded, and delete the instances of
+	 * the loaders. */
+	bool clear();
 
-		/** @brief Sets if the resource loader is asynchronous.
-		**	This must be called before the load starts. */
-		void			setThreaded( const bool& setThreaded );
+	/** @return The aproximate percent of progress ( between 0 and 100 ) */
+	Float getProgress();
 
-		/** @brief Clears the resources added to load that werent loaded, and delete the instances of the loaders.
-		**	@param ClearObjectsLoaded Sets if the objects loader that were already loaded must be also deleted ( it will not unload the loaded resources, but the instance of the object loader ). */
-		bool			clear( const bool& ClearObjectsLoaded = true );
+	/** @returns The number of resources added to load. */
+	Uint32 getCount() const;
 
-		/** @return The aproximate percent of progress ( between 0 and 100 ) */
-		Float			getProgress();
+  protected:
+	bool mLoaded;
+	bool mLoading;
+	bool mThreaded;
+	Uint32 mThreads;
+	Uint32 mTotalLoaded;
+	Thread mThread;
 
-		/** @returns The number of resources added to load. */
-		Uint32			getCount() const;
-	protected:
-		bool			mLoaded;
-		bool			mLoading;
-		bool			mThreaded;
-		Uint32			mThreads;
+	std::vector<ResLoadCallback> mLoadCbs;
+	std::vector<ObjectLoaderTask> mTasks;
 
-		std::list<ResLoadCallback>	mLoadCbs;
-		std::list<ObjectLoader *>	mObjs;
-		std::list<ObjectLoader *>	mObjsLoaded;
+	void setThreads();
 
-		void			setThreads();
+	virtual void setLoaded();
 
-		virtual void	setLoaded();
+	void taskRunner();
+
+	void serializedLoad();
 };
 
-}}
+}} // namespace EE::System
 
 #endif

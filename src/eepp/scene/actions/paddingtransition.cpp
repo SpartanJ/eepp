@@ -4,16 +4,18 @@ using namespace EE::UI;
 
 namespace EE { namespace Scene { namespace Actions {
 
-PaddingTransition * PaddingTransition::New( const Rectf& start, const Rectf& end, const Time& duration, const Ease::Interpolation& type, const Uint32& interpolateFlag ) {
+PaddingTransition* PaddingTransition::New( const Rectf& start, const Rectf& end,
+										   const Time& duration, const Ease::Interpolation& type,
+										   const Uint32& interpolateFlag ) {
 	return eeNew( PaddingTransition, ( start, end, duration, type, interpolateFlag ) );
 }
 
-PaddingTransition::PaddingTransition()
-{}
+PaddingTransition::PaddingTransition() {}
 
-PaddingTransition::PaddingTransition( const Rectf& start, const Rectf& end, const Time& duration, const Ease::Interpolation& type, const Uint32& interpolateFlag ) :
-	MarginMove()
-{
+PaddingTransition::PaddingTransition( const Rectf& start, const Rectf& end, const Time& duration,
+									  const Ease::Interpolation& type,
+									  const Uint32& interpolateFlag ) :
+	MarginMove() {
 	mFlags = interpolateFlag;
 
 	if ( mFlags & InterpolateFlag::Left )
@@ -26,24 +28,30 @@ PaddingTransition::PaddingTransition( const Rectf& start, const Rectf& end, cons
 		mInterpolationTop.clear().add( start.Top, duration ).add( end.Top ).setType( type );
 
 	if ( mFlags & InterpolateFlag::Bottom )
-		mInterpolationBottom.clear().add( start.Bottom, duration ).add( end.Bottom ).setType( type );
+		mInterpolationBottom.clear()
+			.add( start.Bottom, duration )
+			.add( end.Bottom )
+			.setType( type );
 }
 
-void PaddingTransition::onUpdate(const Time &) {
+void PaddingTransition::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
-		UIWidget * widget = static_cast<UIWidget*>( mNode );
+		UIWidget* widget = static_cast<UIWidget*>( mNode );
 
 		widget->setPadding(
-					Rectf( ( mFlags & InterpolateFlag::Left ) ? mInterpolationLeft.getPosition() : widget->getPadding().Left,
-						  ( mFlags & InterpolateFlag::Top ) ? mInterpolationTop.getPosition() : widget->getPadding().Top,
-						  ( mFlags & InterpolateFlag::Right ) ? mInterpolationRight.getPosition() : widget->getPadding().Right,
-						  ( mFlags & InterpolateFlag::Bottom ) ? mInterpolationBottom.getPosition() : widget->getPadding().Bottom
-					) );
+			Rectf( ( mFlags & InterpolateFlag::Left ) ? mInterpolationLeft.getPosition()
+													  : widget->getPadding().Left,
+				   ( mFlags & InterpolateFlag::Top ) ? mInterpolationTop.getPosition()
+													 : widget->getPadding().Top,
+				   ( mFlags & InterpolateFlag::Right ) ? mInterpolationRight.getPosition()
+													   : widget->getPadding().Right,
+				   ( mFlags & InterpolateFlag::Bottom ) ? mInterpolationBottom.getPosition()
+														: widget->getPadding().Bottom ) );
 	}
 }
 
-Action * PaddingTransition::clone() const {
-	PaddingTransition * action = eeNew( PaddingTransition, () );
+Action* PaddingTransition::clone() const {
+	PaddingTransition* action = eeNew( PaddingTransition, () );
 	action->mFlags = mFlags;
 	action->setInterpolationLeft( mInterpolationLeft );
 	action->setInterpolationRight( mInterpolationRight );
@@ -52,4 +60,4 @@ Action * PaddingTransition::clone() const {
 	return action;
 }
 
-}}}
+}}} // namespace EE::Scene::Actions

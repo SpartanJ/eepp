@@ -1,13 +1,16 @@
-#include <eepp/system/iostreamstring.hpp>
 #include <cstring>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreamstring.hpp>
 
 namespace EE { namespace System {
 
-IOStreamString::IOStreamString() :
-	mPos(0)
-{}
+IOStreamString::IOStreamString() {}
 
-ios_size IOStreamString::read(char * data, ios_size size) {
+IOStreamString::IOStreamString( const std::string& filepath ) {
+	FileSystem::fileGet( filepath, mStream );
+}
+
+ios_size IOStreamString::read( char* data, ios_size size ) {
 	Int64 endPosition = mPos + size;
 	Int64 count = endPosition <= getSize() ? size : getSize() - mPos;
 
@@ -19,7 +22,7 @@ ios_size IOStreamString::read(char * data, ios_size size) {
 	return count;
 }
 
-ios_size IOStreamString::write(const char * data, ios_size size) {
+ios_size IOStreamString::write( const char* data, ios_size size ) {
 	mStream.insert( mPos, data, size );
 
 	mPos += size;
@@ -27,11 +30,11 @@ ios_size IOStreamString::write(const char * data, ios_size size) {
 	return size;
 }
 
-ios_size IOStreamString::write(const std::string& string) {
+ios_size IOStreamString::write( const std::string& string ) {
 	return write( string.c_str(), string.size() );
 }
 
-ios_size IOStreamString::seek(ios_size position) {
+ios_size IOStreamString::seek( ios_size position ) {
 	mPos = ( position < getSize() ) ? position : getSize();
 	return mPos;
 }
@@ -65,4 +68,4 @@ const std::string& IOStreamString::getStream() const {
 	return mStream;
 }
 
-}}
+}} // namespace EE::System

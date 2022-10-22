@@ -1,11 +1,11 @@
 #ifndef EE_GRAPHICS_CGL_HPP
 #define EE_GRAPHICS_CGL_HPP
 
-#include <eepp/graphics/renderer/base.hpp>
-#include <eepp/graphics/shaderprogram.hpp>
 #include <eepp/graphics/primitivetype.hpp>
-#include <eepp/graphics/renderer/rendererhelper.hpp>
+#include <eepp/graphics/renderer/base.hpp>
 #include <eepp/graphics/renderer/clippingmask.hpp>
+#include <eepp/graphics/renderer/rendererhelper.hpp>
+#include <eepp/graphics/shaderprogram.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -19,243 +19,275 @@ class RendererGL3CP;
 class RendererGLES2;
 
 /** @brief This class is an abstraction of some OpenGL functionality.
-*	eepp have 4 different rendering pipelines: OpenGL 2, OpenGL 3, OpenGL 3 Core Profile and OpenGL ES 2. This abstraction is to encapsulate this pipelines.
-*	eepp implements its own state machine to simulate fixed-pipeline commands with OpenGL 3 and OpenGL ES 2.
-*	Most of the commands can be found in the OpenGL documentation.
-*	This is only useful for advanced users that want some control of the OpenGL pipeline. It's mostly used internally by the engine.
-*/
+ *	eepp has 4 different rendering pipelines: OpenGL 2, OpenGL 3, OpenGL 3 Core Profile and OpenGL
+ *ES 2. This abstraction is to encapsulate this pipelines. eepp implements its own state machine to
+ *simulate fixed-pipeline commands with OpenGL 3 and OpenGL ES 2. Most of the commands can be found
+ *in the OpenGL documentation. This is only useful for advanced users that want some control of the
+ *OpenGL pipeline. It's mostly used internally by the engine.
+ */
 class EE_API Renderer {
-	public:
-		static Renderer * createSingleton( EEGL_version ver );
+  public:
+	/** @return The graphic library renderer version from a string. */
+	static GraphicsLibraryVersion glVersionFromString( std::string glVersion );
 
-		static Renderer * createSingleton();
+	/** @return Converts GralphicsLibraryVersion to a string */
+	static std::string graphicsLibraryVersionToString( const GraphicsLibraryVersion& glVersion );
 
-		static Renderer * existsSingleton();
+	static GraphicsLibraryVersion getDefaultGraphicsLibraryVersion();
 
-		static Renderer * instance();
+	static std::vector<GraphicsLibraryVersion> getAvailableGraphicsLibraryVersions();
 
-		static void destroySingleton();
+	static Renderer* createSingleton( GraphicsLibraryVersion ver );
 
-		Renderer();
+	static Renderer* createSingleton();
 
-		virtual ~Renderer();
+	static Renderer* existsSingleton();
 
-		virtual void init();
+	static Renderer* instance();
 
-		/** @return The company responsible for this GL implementation. */
-		std::string getVendor();
+	static void destroySingleton();
 
-		/** @return The name of the renderer.\n This name is typically specific to a particular configuration of a hardware platform. */
-		std::string getRenderer();
+	Renderer();
 
-		/** @return A GL version or release number. */
-		std::string getVersion();
+	virtual ~Renderer();
 
-		/** @return The shading language version */
-		std::string getShadingLanguageVersion();
+	virtual void init();
 
-		/** @return If the extension passed is supported by the GPU */
-		bool isExtension( const std::string& name );
+	/** @return The company responsible for this GL implementation. */
+	std::string getVendor();
 
-		/** @return If the extension from the EEGL_extensions is present on the GPU. */
-		bool isExtension( EEGL_extensions name );
+	/** @return The name of the renderer.\n This name is typically specific to a particular
+	 * configuration of a hardware platform. */
+	std::string getRenderer();
 
-		bool pointSpriteSupported();
+	/** @return A GL version or release number. */
+	std::string getVersion();
 
-		bool shadersSupported();
+	/** @return The shading language version */
+	std::string getShadingLanguageVersion();
 
-		void clear ( unsigned int mask );
+	/** @return If the extension passed is supported by the GPU */
+	bool isExtension( const std::string& name );
 
-		void clearColor ( float red, float green, float blue, float alpha );
+	/** @return If the extension from the EEGL_extensions is present on the GPU. */
+	bool isExtension( GraphicsLibraryExtension name );
 
-		void scissor ( int x, int y, int width, int height );
+	bool pointSpriteSupported();
 
-		void polygonMode( unsigned int face, unsigned int mode );
+	bool shadersSupported();
 
-		std::string getExtensions();
+	void clear( unsigned int mask );
 
-		const char * getString( unsigned int name );
+	void clearColor( float red, float green, float blue, float alpha );
 
-		void drawArrays ( unsigned int mode, int first, int count );
+	void scissor( int x, int y, int width, int height );
 
-		void drawElements( unsigned int mode, int count, unsigned int type, const void *indices );
+	void polygonMode( unsigned int face, unsigned int mode );
 
-		void bindTexture( unsigned int target, unsigned int texture );
+	std::string getExtensions();
 
-		void activeTexture( unsigned int texture );
+	const char* getString( unsigned int name );
 
-		void blendFunc( unsigned int sfactor, unsigned int dfactor );
+	void drawArrays( unsigned int mode, int first, int count );
 
-		void blendFuncSeparate( unsigned int sfactorRGB, unsigned int dfactorRGB, unsigned int sfactorAlpha, unsigned int dfactorAlpha );
+	void drawElements( unsigned int mode, int count, unsigned int type, const void* indices );
 
-		void blendEquationSeparate( unsigned int modeRGB, unsigned int modeAlpha );
+	void bindTexture( unsigned int target, unsigned int texture );
 
-		void blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, unsigned int mask, unsigned int filter );
+	void activeTexture( unsigned int texture );
 
-		void viewport( int x, int y, int width, int height );
+	void blendFunc( unsigned int sfactor, unsigned int dfactor );
 
-		void lineSmooth( const bool& enable );
+	void blendFuncSeparate( unsigned int sfactorRGB, unsigned int dfactorRGB,
+							unsigned int sfactorAlpha, unsigned int dfactorAlpha );
 
-		void lineWidth( float width );
+	void blendEquationSeparate( unsigned int modeRGB, unsigned int modeAlpha );
 
-		/** Reapply the line smooth state */
-		void lineSmooth();
+	void blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0,
+						  int dstX1, int dstY1, unsigned int mask, unsigned int filter );
 
-		bool isLineSmooth();
+	void viewport( int x, int y, int width, int height );
 
-		/** Set the polygon fill mode ( wireframe or filled ) */
-		void polygonMode( const PrimitiveFillMode& Mode );
+	void lineSmooth( const bool& enable );
 
-		/** Reapply the polygon mode */
-		void polygonMode();
+	void lineWidth( float width );
 
-		void pixelStorei (unsigned int pname, int param);
+	/** Reapply the line smooth state */
+	void lineSmooth();
 
-		RendererGL * getRendererGL();
+	bool isLineSmooth();
 
-		RendererGL3 * getRendererGL3();
+	/** Set the polygon fill mode ( wireframe or filled ) */
+	void polygonMode( const PrimitiveFillMode& Mode );
 
-		RendererGL3CP * getRendererGL3CP();
+	/** Reapply the polygon mode */
+	void polygonMode();
 
-		RendererGLES2 * getRendererGLES2();
+	void pixelStorei( unsigned int pname, int param );
 
-		virtual void pointSize( float size ) = 0;
+	RendererGL* getRendererGL();
 
-		virtual float pointSize() = 0;
+	RendererGL3* getRendererGL3();
 
-		virtual void clientActiveTexture( unsigned int texture ) = 0;
+	RendererGL3CP* getRendererGL3CP();
 
-		virtual void disable( unsigned int cap );
+	RendererGLES2* getRendererGLES2();
 
-		virtual void enable( unsigned int cap );
+	virtual void pointSize( float size ) = 0;
 
-		virtual EEGL_version version() = 0;
+	virtual float pointSize() = 0;
 
-		virtual std::string versionStr() = 0;
+	virtual void clientActiveTexture( unsigned int texture ) = 0;
 
-		virtual void pushMatrix() = 0;
+	virtual void disable( unsigned int cap );
 
-		virtual void popMatrix() = 0;
+	virtual void enable( unsigned int cap );
 
-		virtual void loadIdentity() = 0;
+	virtual GraphicsLibraryVersion version() = 0;
 
-		virtual void translatef( float x, float y, float z ) = 0;
+	virtual std::string versionStr() = 0;
 
-		virtual void rotatef( float angle, float x, float y, float z ) = 0;
+	virtual void pushMatrix() = 0;
 
-		virtual void scalef( float x, float y, float z ) = 0;
+	virtual void popMatrix() = 0;
 
-		virtual void matrixMode ( unsigned int mode ) = 0;
+	virtual void loadIdentity() = 0;
 
-		virtual void ortho( float left, float right, float bottom, float top, float zNear, float zFar ) = 0;
+	virtual void translatef( float x, float y, float z ) = 0;
 
-		virtual void lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) = 0;
+	virtual void rotatef( float angle, float x, float y, float z ) = 0;
 
-		virtual void perspective( float fovy, float aspect, float zNear, float zFar ) = 0;
+	virtual void scalef( float x, float y, float z ) = 0;
 
-		virtual void enableClientState( unsigned int array ) = 0;
+	virtual void matrixMode( unsigned int mode ) = 0;
 
-		virtual void disableClientState( unsigned int array ) = 0;
+	virtual void ortho( float left, float right, float bottom, float top, float zNear,
+						float zFar ) = 0;
 
-		virtual void vertexPointer( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
+	virtual void lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY,
+						 float centerZ, float upX, float upY, float upZ ) = 0;
 
-		virtual void colorPointer( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
+	virtual void perspective( float fovy, float aspect, float zNear, float zFar ) = 0;
 
-		virtual void texCoordPointer( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
+	virtual void enableClientState( unsigned int array ) = 0;
 
-		virtual void setShader( ShaderProgram * Shader );
+	virtual void disableClientState( unsigned int array ) = 0;
 
-		virtual void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) = 0;
+	virtual void vertexPointer( int size, unsigned int type, int stride, const void* pointer,
+								unsigned int allocate ) = 0;
 
-		virtual void clip2DPlaneDisable() = 0;
+	virtual void colorPointer( int size, unsigned int type, int stride, const void* pointer,
+							   unsigned int allocate ) = 0;
 
-		virtual void multMatrixf( const float *m ) = 0;
+	virtual void texCoordPointer( int size, unsigned int type, int stride, const void* pointer,
+								  unsigned int allocate ) = 0;
 
-		virtual void clipPlane( unsigned int plane, const double *equation ) = 0;
+	virtual void setShader( ShaderProgram* Shader );
 
-		virtual void loadMatrixf( const float *m ) = 0;
+	virtual void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width,
+									const Int32& Height ) = 0;
 
-		virtual void frustum( float left, float right, float bottom, float top, float near_val, float far_val ) = 0;
+	virtual void clip2DPlaneDisable() = 0;
 
-		virtual void getCurrentMatrix( unsigned int mode, float * m ) = 0;
+	virtual void multMatrixf( const float* m ) = 0;
 
-		virtual unsigned int getCurrentMatrixMode() = 0;
+	virtual void clipPlane( unsigned int plane, const double* equation ) = 0;
 
-		void getViewport( int * viewport );
+	virtual void loadMatrixf( const float* m ) = 0;
 
-		virtual int project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) = 0;
+	virtual void frustum( float left, float right, float bottom, float top, float near_val,
+						  float far_val ) = 0;
 
-		virtual int unProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) = 0;
+	virtual void getCurrentMatrix( unsigned int mode, float* m ) = 0;
 
-		Vector3f projectCurrent( const Vector3f& point );
+	virtual unsigned int getCurrentMatrixMode() = 0;
 
-		Vector3f unProjectCurrent( const Vector3f& point );
+	void getViewport( int* viewport );
 
-		void stencilFunc( unsigned int func, int ref, unsigned int mask );
+	virtual int project( float objx, float objy, float objz, const float modelMatrix[16],
+						 const float projMatrix[16], const int viewport[4], float* winx,
+						 float* winy, float* winz ) = 0;
 
-		void stencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass );
+	virtual int unProject( float winx, float winy, float winz, const float modelMatrix[16],
+						   const float projMatrix[16], const int viewport[4], float* objx,
+						   float* objy, float* objz ) = 0;
 
-		void stencilMask( unsigned int mask );
+	Vector3f projectCurrent( const Vector3f& point );
 
-		void colorMask( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha );
+	Vector3f unProjectCurrent( const Vector3f& point );
 
-		void bindVertexArray( unsigned int array );
+	void stencilFunc( unsigned int func, int ref, unsigned int mask );
 
-		void deleteVertexArrays( int n, const unsigned int *arrays );
+	void stencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass );
 
-		void genVertexArrays( int n, unsigned int *arrays );
+	void stencilMask( unsigned int mask );
 
-		const bool& quadsSupported() const;
+	void colorMask( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha );
 
-		const int& quadVertexs() const;
+	void bindVertexArray( unsigned int array );
 
-		ClippingMask * getClippingMask() const;
+	void deleteVertexArrays( int n, const unsigned int* arrays );
 
-		void genFramebuffers( int n, unsigned int* framebuffers );
+	void genVertexArrays( int n, unsigned int* arrays );
 
-		void deleteFramebuffers( int n, const unsigned int* framebuffers );
+	const bool& quadsSupported() const;
 
-		void bindFramebuffer( unsigned int target, unsigned int framebuffer );
+	const int& quadVertexs() const;
 
-		void framebufferTexture2D( unsigned int target, unsigned int attachment, unsigned int textarget, unsigned int texture, int level );
+	ClippingMask* getClippingMask() const;
 
-		void genRenderbuffers( int n, unsigned int * renderbuffers );
+	void genFramebuffers( int n, unsigned int* framebuffers );
 
-		void deleteRenderbuffers( int n, const unsigned int* renderbuffers );
+	void deleteFramebuffers( int n, const unsigned int* framebuffers );
 
-		void bindRenderbuffer( unsigned int target, unsigned int renderbuffer);
+	void bindFramebuffer( unsigned int target, unsigned int framebuffer );
 
-		void renderbufferStorage( unsigned int target, unsigned int internalformat, int width, int height );
+	void framebufferTexture2D( unsigned int target, unsigned int attachment, unsigned int textarget,
+							   unsigned int texture, int level );
 
-		void framebufferRenderbuffer( unsigned int target, unsigned int attachment, unsigned int renderbuffertarget, unsigned int renderbuffer );
+	void genRenderbuffers( int n, unsigned int* renderbuffers );
 
-		unsigned int checkFramebufferStatus( unsigned int target );
+	void deleteRenderbuffers( int n, const unsigned int* renderbuffers );
 
-		void discardFramebuffer( unsigned int target, int numAttachments, const unsigned int* attachments );
+	void bindRenderbuffer( unsigned int target, unsigned int renderbuffer );
 
-		void * getProcAddress( std::string proc );
-	protected:
-		static Renderer * sSingleton;
+	void renderbufferStorage( unsigned int target, unsigned int internalformat, int width,
+							  int height );
 
-		enum RendererStateFlags {
-			RSF_LINE_SMOOTH	= 0,
-			RSF_POLYGON_MODE
-		};
+	void framebufferRenderbuffer( unsigned int target, unsigned int attachment,
+								  unsigned int renderbuffertarget, unsigned int renderbuffer );
 
-		Uint32	mExtensions;
-		Uint32	mStateFlags;
-		bool	mQuadsSupported;
-		int		mQuadVertexs;
-		float mLineWidth;
-		unsigned int	mCurVAO;
+	unsigned int checkFramebufferStatus( unsigned int target );
 
-		ClippingMask * mClippingMask;
-	private:
-		void writeExtension( Uint8 Pos, Uint32 BitWrite );
+	void discardFramebuffer( unsigned int target, int numAttachments,
+							 const unsigned int* attachments );
+
+	void* getProcAddress( std::string proc );
+
+	void readPixels( int x, int y, unsigned int width, unsigned int height, void* pixels );
+
+	Color readPixel( int x, int y );
+
+  protected:
+	static Renderer* sSingleton;
+
+	enum RendererStateFlags { RSF_LINE_SMOOTH = 0, RSF_POLYGON_MODE };
+
+	Uint32 mExtensions;
+	Uint32 mStateFlags;
+	bool mQuadsSupported;
+	int mQuadVertexs;
+	float mLineWidth;
+	unsigned int mCurVAO;
+
+	ClippingMask* mClippingMask;
+
+  private:
+	void writeExtension( Uint8 Pos, Uint32 BitWrite );
 };
 
-extern EE_API Renderer * GLi;
+extern EE_API Renderer* GLi;
 
-}}
+}} // namespace EE::Graphics
 
 #endif

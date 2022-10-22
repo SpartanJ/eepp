@@ -1,87 +1,90 @@
 #ifndef EE_UICPROGRESSBAR_HPP
 #define EE_UICPROGRESSBAR_HPP
 
+#include <eepp/graphics/scrollparallax.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextview.hpp>
-#include <eepp/graphics/scrollparallax.hpp>
 
 namespace EE { namespace UI {
 
+class UIProgressBarFiller;
+
 class EE_API UIProgressBar : public UIWidget {
-	public:
-		class StyleConfig {
-			public:
-				bool DisplayPercent = false;
-				bool VerticalExpand = true;
-				Vector2f MovementSpeed = Vector2f( 64.f, 0 );
-				Rectf FillerPadding;
-		};
+  public:
+	class StyleConfig {
+	  public:
+		bool DisplayPercent = false;
+		bool VerticalExpand = true;
+		Vector2f MovementSpeed = Vector2f( 0.f, 0 );
+	};
 
-		static UIProgressBar * New();
+	static UIProgressBar* New();
 
-		UIProgressBar();
+	UIProgressBar();
 
-		virtual ~UIProgressBar();
+	virtual ~UIProgressBar();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual void setProgress( Float Val );
+	virtual void setProgress( Float Val );
 
-		const Float& getProgress() const;
+	const Float& getProgress() const;
 
-		virtual void setTotalSteps( const Float& Steps );
+	virtual void setTotalSteps( const Float& Steps );
 
-		const Float& getTotalSteps() const;
+	const Float& getTotalSteps() const;
 
-		virtual void draw();
+	virtual void scheduledUpdate( const Time& time );
 
-		virtual void scheduledUpdate( const Time& time );
+	void setMovementSpeed( const Vector2f& Speed );
 
-		void setMovementSpeed( const Vector2f& Speed );
+	const Vector2f& getMovementSpeed() const;
 
-		const Vector2f& getMovementSpeed() const;
+	void setVerticalExpand( const bool& verticalExpand );
 
-		void setVerticalExpand( const bool& verticalExpand );
+	const bool& getVerticalExpand() const;
 
-		const bool& getVerticalExpand() const;
+	void setDisplayPercent( const bool& displayPercent );
 
-		void setFillerPadding( const Rectf& padding );
+	const bool& getDisplayPercent() const;
 
-		const Rectf& getFillerPadding() const;
+	UITextView* getTextBox() const;
 
-		void setDisplayPercent( const bool& displayPercent );
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		const bool& getDisplayPercent() const;
-		
-		UITextView * getTextBox() const;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		const StyleConfig& getStyleConfig() const;
-	protected:
-		StyleConfig			mStyleConfig;
-		Float				mProgress;
-		Float				mTotalSteps;
-		UITextView * 		mTextBox;
-		Vector2f			mOffset;
-		UISkin *			mFillerSkin;
+	const StyleConfig& getStyleConfig() const;
 
-		virtual Uint32 onValueChange();
+  protected:
+	friend class UIProgressBarFiller;
+	StyleConfig mStyleConfig;
+	Float mProgress;
+	Float mTotalSteps;
+	UITextView* mTextBox;
+	Vector2f mOffset;
+	UIProgressBarFiller* mFiller;
 
-		virtual void onSizeChange();
+	virtual Uint32 onValueChange();
 
-		virtual void onThemeLoaded();
-		
-		void updateTextBox();
-		
-		virtual void onAlphaChange();
+	virtual void onSizeChange();
+
+	virtual void onPaddingChange();
+
+	virtual void onThemeLoaded();
+
+	void updateTextBox();
+
+	virtual void onAlphaChange();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

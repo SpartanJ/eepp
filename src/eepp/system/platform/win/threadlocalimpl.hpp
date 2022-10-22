@@ -7,29 +7,30 @@
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
 #ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef NOMINMAX
-	#define NOMINMAX
+#define NOMINMAX
 #endif
 #include <windows.h>
 
 namespace EE { namespace System { namespace Private {
 
 class ThreadLocalImpl : NonCopyable {
-	public:
-		ThreadLocalImpl();
+  public:
+	ThreadLocalImpl();
 
-		~ThreadLocalImpl();
+	~ThreadLocalImpl();
 
-		void setValue(void* val);
+	void setValue( void* val );
 
-		void* getValue() const;
-	private :
-		DWORD mIndex;
+	void* getValue() const;
+
+  private:
+	DWORD mIndex;
 };
 
-}}}
+}}} // namespace EE::System::Private
 
 #endif
 

@@ -6,16 +6,17 @@
 namespace EE { namespace Graphics {
 
 class EE_API StatefulDrawable : public DrawableResource {
-	public:
-		StatefulDrawable( Type drawableType ) : DrawableResource( drawableType ) {}
+  public:
+	StatefulDrawable( Type drawableType ) : DrawableResource( drawableType ) {}
 
-		StatefulDrawable( Type drawableType, const std::string& name ) : DrawableResource( drawableType, name ) {}
+	StatefulDrawable( Type drawableType, const std::string& name ) :
+		DrawableResource( drawableType, name ) {}
 
-		virtual StatefulDrawable * setState( Uint32 state ) = 0;
+	virtual StatefulDrawable* setState( Uint32 state ) = 0;
 
-		virtual const Uint32& getState() const = 0;
+	virtual const Uint32& getState() const = 0;
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

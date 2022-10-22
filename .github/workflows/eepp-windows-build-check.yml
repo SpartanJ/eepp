@@ -1,0 +1,30 @@
+name: Windows
+
+on: [push, pull_request]
+
+jobs:
+  Windows:
+    runs-on: windows-2019
+    env:
+      MSBUILD_PATH: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+    - name: Checkout submodules
+      run: |
+        git submodule update --init --recursive
+    - name: Install dependencies
+      shell: powershell
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-windows.zip" -OutFile "premake-5.0.0-alpha14-windows.zip"
+        Expand-Archive -DestinationPath . -Path premake-5.0.0-alpha14-windows.zip
+    - name: Create project
+      shell: powershell
+      run: |
+        ./premake5.exe --windows-vc-build --with-mojoal vs2019
+    - name: Build
+      shell: cmd
+      run: |
+        "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m

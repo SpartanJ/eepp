@@ -1,8 +1,8 @@
 #include <eepp/physics/constraints/gearjoint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-GearJoint::GearJoint( Body * a, Body * b, cpFloat phase, cpFloat ratio ) {
+GearJoint::GearJoint( Body* a, Body* b, cpFloat phase, cpFloat ratio ) {
 	mConstraint = cpGearJointNew( a->getBody(), b->getBody(), phase, ratio );
 	setData();
 }
@@ -27,4 +27,4 @@ void GearJoint::draw() {
 	// Not implemented
 }
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics

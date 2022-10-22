@@ -10,37 +10,38 @@
 namespace EE { namespace System { namespace Platform {
 
 class ConditionImpl {
-	public:
-		ConditionImpl( int var );
-		
-		~ConditionImpl();
-		
-		void lock();
-		
-		void unlock();
-		
-		bool waitAndRetain( int value );
-		
-		void release( int value );
-		
-		void setValue( int value );
-		
-		int value() const;
-		
-		void signal();
-		
-		void invalidate();
-		
-		void restore();
-	private:
-		int mIsInvalid;
-		int mConditionnedVar;
-		
-		pthread_cond_t mCond;
-		pthread_mutex_t mMutex;
+  public:
+	ConditionImpl( int var );
+
+	~ConditionImpl();
+
+	void lock();
+
+	void unlock();
+
+	bool waitAndRetain( int value );
+
+	void release( int value );
+
+	void setValue( int value );
+
+	int value() const;
+
+	void signal();
+
+	void invalidate();
+
+	void restore();
+
+  private:
+	int mIsInvalid;
+	int mConditionnedVar;
+
+	pthread_cond_t mCond;
+	pthread_mutex_t mMutex;
 };
-	
-}}}
+
+}}} // namespace EE::System::Platform
 
 #endif
 

@@ -1,0 +1,708 @@
+#include <algorithm>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
+#include <eepp/ui/models/filesystemmodel.hpp>
+#include <eepp/ui/models/sortingproxymodel.hpp>
+#include <eepp/ui/uifiledialog.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uilistboxitem.hpp>
+#include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uithememanager.hpp>
+
+namespace EE { namespace UI {
+
+#define FDLG_MIN_WIDTH 640
+#define FDLG_MIN_HEIGHT 400
+
+UIFileDialog* UIFileDialog::New( Uint32 dialogFlags, const std::string& defaultFilePattern,
+								 const std::string& defaultDirectory ) {
+	return eeNew( UIFileDialog, ( dialogFlags, defaultFilePattern, defaultDirectory ) );
+}
+
+UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePattern,
+							const std::string& defaultDirectory ) :
+	UIWindow(),
+	mCurPath( FileSystem::getRealPath( defaultDirectory ) ),
+	mDialogFlags( dialogFlags ),
+	mCloseShortcut( KEY_ESCAPE ) {
+	if ( getSize().getWidth() < FDLG_MIN_WIDTH ) {
+		mDpSize.x = FDLG_MIN_WIDTH;
+		mSize.x = PixelDensity::dpToPxI( FDLG_MIN_WIDTH );
+	}
+
+	if ( getSize().getHeight() < FDLG_MIN_HEIGHT ) {
+		mDpSize.y = FDLG_MIN_HEIGHT;
+		mSize.y = PixelDensity::dpToPxI( FDLG_MIN_HEIGHT );
+	}
+
+	if ( mStyleConfig.MinWindowSize.getWidth() < FDLG_MIN_WIDTH )
+		mStyleConfig.MinWindowSize.setWidth( FDLG_MIN_WIDTH );
+
+	if ( mStyleConfig.MinWindowSize.getHeight() < FDLG_MIN_HEIGHT )
+		mStyleConfig.MinWindowSize.setHeight( FDLG_MIN_HEIGHT );
+
+	bool loading = isSceneNodeLoading();
+	mUISceneNode->setIsLoading( true );
+
+	mContainer->setSize( getSize() );
+
+	if ( allowFolderSelect() ) {
+		setTitle( getTranslatorString( "@string/uifiledialog_select_folder", "Select a folder" ) );
+	} else {
+		setTitle( getTranslatorString( "@string/uifiledialog_select_file", "Select a file" ) );
+	}
+
+	UILinearLayout* linearLayout = UILinearLayout::NewVertical();
+	linearLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent )
+		->setLayoutMargin( Rectf( 4, 2, 4, 2 ) )
+		->setParent( getContainer() );
+
+	UILinearLayout* hLayout = UILinearLayout::NewHorizontal();
+	hLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) )
+		->setParent( linearLayout )
+		->setId( "lay1" );
+
+	UITextView::New()
+		->setText( getTranslatorString( "@string/uifiledialog_look_in", "Look in:" ) )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
+		->setLayoutMargin( Rectf( 0, 0, 4, 0 ) )
+		->setParent( hLayout )
+		->setEnabled( false );
+
+	FileSystem::dirAddSlashAtEnd( mCurPath );
+
+	mPath = UITextInput::New();
+	mPath->setText( mCurPath )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setLayoutWeight( 1 )
+		->setParent( hLayout );
+	mPath->addEventListener( Event::OnPressEnter, cb::Make1( this, &UIFileDialog::onPressEnter ) );
+
+	mButtonUp = UIPushButton::New();
+	mButtonUp->setText( "Up" )
+		->setLayoutMarginLeft( 4 )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
+		->setParent( hLayout );
+
+	mButtonNewFolder = UIPushButton::New();
+	mButtonNewFolder
+		->setText( getTranslatorString( "@string/uifiledialog_new_folder", "New Folder" ) )
+		->setLayoutMarginLeft( 4 )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
+		->setParent( hLayout );
+	mButtonNewFolder->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+		if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+			UIMessageBox* msgBox = UIMessageBox::New(
+				UIMessageBox::INPUT,
+				getTranslatorString( "@string/uifiledialog_enter_new_folder_name",
+									 "Enter new folder name:" ) );
+			msgBox->setTitle( getTranslatorString( "@string/uifiledialog_create_new_folder",
+												   "Create new folder" ) );
+			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+			msgBox->show();
+			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+				auto folderName( msgBox->getTextInput()->getText() );
+				auto newFolderPath( getCurPath() + folderName );
+				if ( !FileSystem::fileExists( newFolderPath ) &&
+					 FileSystem::makeDir( newFolderPath ) ) {
+					refreshFolder();
+				}
+			} );
+		}
+	} );
+
+	mButtonListView = UISelectButton::New();
+	mButtonListView->setText( "List" )
+		->setLayoutMarginLeft( 4 )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
+		->setParent( hLayout );
+	mButtonListView->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+		if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
+			setViewMode( UIMultiModelView::ViewMode::List );
+	} );
+
+	mButtonTableView = UISelectButton::New();
+	mButtonTableView->setText( "Table" )
+		->setLayoutMarginLeft( 4 )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
+		->setParent( hLayout );
+	mButtonTableView->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+		if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
+			setViewMode( UIMultiModelView::ViewMode::Table );
+	} );
+
+	mMultiView = UIMultiModelView::New();
+	mMultiView->setParent( linearLayout );
+	mMultiView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+		->setLayoutWeight( 1 )
+		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) );
+	mMultiView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+		const KeyEvent* kevent = reinterpret_cast<const KeyEvent*>( event );
+		if ( kevent->getKeyCode() == KEY_BACKSPACE )
+			goFolderUp();
+	} );
+	mMultiView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+			Variant vPath(
+				modelEvent->getModel()->data( modelEvent->getModelIndex(), ModelRole::Custom ) );
+			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+				bool shouldOpenFolder = false;
+				if ( allowFolderSelect() && modelEvent->getTriggerEvent() &&
+					 modelEvent->getTriggerEvent()->getType() == Event::EventType::KeyDown ) {
+					const KeyEvent* keyEvent =
+						static_cast<const KeyEvent*>( modelEvent->getTriggerEvent() );
+					if ( keyEvent->getMod() & KeyMod::getDefaultModifier() ) {
+						shouldOpenFolder = true;
+					}
+				}
+				openFileOrFolder( shouldOpenFolder );
+			}
+		}
+	} );
+	mMultiView->setOnSelectionChange( [&] {
+		if ( mMultiView->getSelection().isEmpty() )
+			return;
+		const FileSystemModel::Node* node = getSelectionNode();
+		if ( !node ) {
+			Log::error( "UIFileDialog() - mMultiView->setOnSelectionChange - "
+						"UIFileDialog::getSelectionNode() was empty, shouldn't "
+						"be empty" );
+			return;
+		}
+		if ( !isSaveDialog() ) {
+			if ( allowFolderSelect() || !FileSystem::isDirectory( node->fullPath() ) )
+				setFileName( node->getName() );
+		} else if ( !FileSystem::isDirectory( node->fullPath() ) ) {
+			setFileName( node->getName() );
+		}
+	} );
+
+	hLayout = UILinearLayout::NewHorizontal();
+	hLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) )
+		->setParent( linearLayout );
+
+	UITextView::New()
+		->setText( getTranslatorString( "@string/uifiledialog_file_name", "File Name:" ) )
+		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::MatchParent )
+		->setSize( 74, 0 )
+		->setParent( hLayout )
+		->setEnabled( false );
+
+	mFile = UITextInput::New();
+	mFile->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
+		->setLayoutWeight( 1 )
+		->setParent( hLayout );
+	mFile->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );
+	mFile->addEventListener( Event::OnPressEnter,
+							 cb::Make1( this, &UIFileDialog::onPressFileEnter ) );
+
+	mButtonOpen = UIPushButton::New();
+	mButtonOpen
+		->setText( isSaveDialog() ? getTranslatorString( "@string/uifiledialog_save", "Save" )
+								  : getTranslatorString( "@string/uifiledialog_open", "Open" ) )
+		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
+		->setSize( 80, 0 )
+		->setParent( hLayout );
+
+	hLayout = UILinearLayout::NewHorizontal();
+	hLayout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
+		->setParent( linearLayout );
+
+	UITextView::New()
+		->setText( getTranslatorString( "@string/uifiledialog_files_of_type", "Files of type:" ) )
+		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::MatchParent )
+		->setSize( 74, 0 )
+		->setParent( hLayout )
+		->setEnabled( false );
+
+	mFiletype = UIDropDownList::New();
+	mFiletype->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setLayoutWeight( 1 )
+		->setParent( hLayout );
+	mFiletype->setPopUpToRoot( true );
+	mFiletype->getListBox()->addListBoxItem( defaultFilePattern );
+	mFiletype->getListBox()->setSelected( 0 );
+	mFiletype->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );
+
+	mButtonCancel = UIPushButton::New();
+	mButtonCancel->setText( getTranslatorString( "@string/uifiledialog_cancel", "Cancel" ) )
+		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
+		->setSize( 80, 0 )
+		->setParent( hLayout );
+
+	mMultiView->getCurrentView()->setFocus();
+	mMultiView->getListView()->setColumnsVisible( { FileSystemModel::Name } );
+	mMultiView->getTableView()->setColumnsVisible(
+		{ FileSystemModel::Name, FileSystemModel::Size, FileSystemModel::ModificationTime } );
+	mMultiView->getTableView()->setAutoColumnsWidth( true );
+	mMultiView->getTableView()->setMainColumn( FileSystemModel::Name );
+	setViewMode( UIMultiModelView::ViewMode::List );
+
+	applyDefaultTheme();
+
+	mUISceneNode->setIsLoading( loading );
+}
+
+UIFileDialog::~UIFileDialog() {}
+
+void UIFileDialog::onWindowReady() {
+	updateClickStep();
+	UIWindow::onWindowReady();
+}
+
+Uint32 UIFileDialog::getType() const {
+	return UI_TYPE_FILEDIALOG;
+}
+
+bool UIFileDialog::isType( const Uint32& type ) const {
+	return UIFileDialog::getType() == type ? true : UIWindow::isType( type );
+}
+
+void UIFileDialog::setTheme( UITheme* Theme ) {
+	UIWindow::setTheme( Theme );
+
+	mButtonOpen->setTheme( Theme );
+	mButtonCancel->setTheme( Theme );
+	mButtonUp->setTheme( Theme );
+	mMultiView->setTheme( Theme );
+	mPath->setTheme( Theme );
+	mFile->setTheme( Theme );
+	mFiletype->setTheme( Theme );
+
+	Drawable* icon = getUISceneNode()->findIconDrawable( "go-up", PixelDensity::dpToPxI( 16 ) );
+	if ( icon ) {
+		mButtonUp->setText( "" );
+		mButtonUp->setIcon( icon );
+	}
+
+	icon = getUISceneNode()->findIconDrawable( "folder-add", PixelDensity::dpToPxI( 16 ) );
+	if ( icon ) {
+		mButtonNewFolder->setText( "" );
+		mButtonNewFolder->setIcon( icon );
+	}
+
+	icon = getUISceneNode()->findIconDrawable( "list-view", PixelDensity::dpToPxI( 16 ) );
+	if ( icon ) {
+		mButtonListView->setText( "" );
+		mButtonListView->setIcon( icon );
+	}
+
+	icon = getUISceneNode()->findIconDrawable( "table-view", PixelDensity::dpToPxI( 16 ) );
+	if ( icon ) {
+		mButtonTableView->setText( "" );
+		mButtonTableView->setIcon( icon );
+	}
+
+	onThemeLoaded();
+}
+
+void UIFileDialog::refreshFolder( bool resetScroll ) {
+	FileSystem::dirAddSlashAtEnd( mCurPath );
+	std::vector<String> flist = FileSystem::filesGetInPath(
+		String( mCurPath ), getSortAlphabetically(), getFoldersFirst(), !getShowHidden() );
+	std::vector<String> files;
+	std::vector<std::string> patterns;
+
+	if ( "*" != mFiletype->getText() ) {
+		patterns = String::split( mFiletype->getText().toUtf8(), ';' );
+
+		for ( size_t i = 0; i < patterns.size(); i++ )
+			patterns[i] = FileSystem::fileExtension( String::trim( patterns[i] ) );
+	}
+
+	if ( !mModel ) {
+		mModel = FileSystemModel::New(
+			mCurPath,
+			getShowOnlyFolders() ? FileSystemModel::Mode::DirectoriesOnly
+								 : FileSystemModel::Mode::FilesAndDirectories,
+			FileSystemModel::DisplayConfig( getSortAlphabetically(), getFoldersFirst(),
+											!getShowHidden(), patterns ) );
+
+		mMultiView->setModel( SortingProxyModel::New( mModel ) );
+	} else {
+		mModel->setRootPath( mCurPath );
+	}
+
+	updateClickStep();
+
+	if ( resetScroll )
+		mMultiView->getCurrentView()->scrollToTop();
+
+	mMultiView->getCurrentView()->setFocus();
+}
+
+void UIFileDialog::updateClickStep() {
+	if ( mMultiView->getListView()->getVerticalScrollBar() ) {
+		mMultiView->getListView()->getVerticalScrollBar()->setClickStep(
+			1.f /
+			( ( mMultiView->getModel()->rowCount() * mMultiView->getListView()->getRowHeight() ) /
+			  (Float)mMultiView->getListView()->getSize().getHeight() ) );
+	}
+	if ( mMultiView->getTableView()->getVerticalScrollBar() ) {
+		Float step =
+			1.f /
+			( ( mMultiView->getModel()->rowCount() * mMultiView->getTableView()->getRowHeight() ) /
+			  (Float)mMultiView->getTableView()->getSize().getHeight() );
+		mMultiView->getTableView()->getVerticalScrollBar()->setClickStep(
+			step > 0 ? step : mMultiView->getListView()->getVerticalScrollBar()->getClickStep() );
+	}
+}
+
+void UIFileDialog::setCurPath( const std::string& path ) {
+	mCurPath = path;
+	FileSystem::dirAddSlashAtEnd( mCurPath );
+	mPath->setText( mCurPath );
+	if ( !isSaveDialog() )
+		mFile->setText( "" );
+	refreshFolder( true );
+}
+
+const FileSystemModel::Node* UIFileDialog::getSelectionNode() const {
+	if ( mMultiView->getSelection().isEmpty() )
+		return nullptr;
+	auto index = mMultiView->getSelection().first();
+	auto* filterModel = (SortingProxyModel*)mMultiView->getModel().get();
+	auto localIndex = filterModel->mapToSource( index );
+	const FileSystemModel::Node& node = mModel.get()->node( localIndex );
+	return &node;
+}
+
+void UIFileDialog::openSaveClick() {
+	if ( isSaveDialog() ) {
+		save();
+	} else {
+		open();
+	}
+}
+
+void UIFileDialog::onPressFileEnter( const Event* ) {
+	openSaveClick();
+}
+
+void UIFileDialog::disableButtons() {
+	mButtonOpen->setEnabled( false );
+	mButtonCancel->setEnabled( false );
+	mButtonUp->setEnabled( false );
+
+	if ( NULL != mButtonClose )
+		mButtonClose->setEnabled( false );
+
+	if ( NULL != mButtonMinimize )
+		mButtonMinimize->setEnabled( false );
+
+	if ( NULL != mButtonMaximize )
+		mButtonMaximize->setEnabled( false );
+
+	mOpenShortut = {};
+	mCloseShortcut = {};
+}
+
+void UIFileDialog::openFileOrFolder( bool shouldOpenFolder = false ) {
+	if ( mMultiView->getSelection().isEmpty() )
+		return;
+	auto* node = getSelectionNode();
+	if ( !node ) {
+		Log::error( "UIFileDialog::getSelectionNode() was empty, shouldn't be empty" );
+		return;
+	}
+	std::string newPath = mCurPath + node->getName();
+
+	if ( FileSystem::isDirectory( newPath ) ) {
+		if ( shouldOpenFolder ) {
+			open();
+		} else {
+			setCurPath( newPath );
+		}
+	} else {
+		open();
+	}
+}
+
+void UIFileDialog::goFolderUp() {
+	std::string prevFolderName( FileSystem::fileNameFromPath( mCurPath ) );
+	setCurPath( FileSystem::removeLastFolderFromPath( mCurPath ) );
+	ModelIndex index = mMultiView->getCurrentView()->findRowWithText( prevFolderName, true, true );
+	if ( index.isValid() )
+		mMultiView->setSelection( index );
+}
+
+Uint32 UIFileDialog::onMessage( const NodeMessage* Msg ) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::MouseClick: {
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				if ( Msg->getSender() == mButtonOpen ) {
+					openSaveClick();
+				} else if ( Msg->getSender() == mButtonCancel ) {
+					disableButtons();
+
+					closeWindow();
+				} else if ( Msg->getSender() == mButtonUp ) {
+					goFolderUp();
+				}
+			}
+
+			break;
+		}
+		case NodeMessage::MouseDoubleClick: {
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				if ( Msg->getSender()->isType( UI_TYPE_LISTBOXITEM ) ) {
+					openFileOrFolder();
+				}
+			}
+
+			break;
+		}
+		case NodeMessage::Selected: {
+			if ( Msg->getSender() == mFiletype ) {
+				refreshFolder();
+			}
+
+			break;
+		}
+	}
+
+	return UIWindow::onMessage( Msg );
+}
+
+void UIFileDialog::save() {
+	sendCommonEvent( Event::SaveFile );
+
+	disableButtons();
+
+	closeWindow();
+}
+
+void UIFileDialog::open() {
+	if ( mMultiView->getSelection().isEmpty() &&
+		 !( allowFolderSelect() && FileSystem::isDirectory( getFullPath() ) ) &&
+		 !FileSystem::fileExists( getFullPath() ) )
+		return;
+
+	auto* node = !mMultiView->getSelection().isEmpty() ? getSelectionNode() : nullptr;
+	if ( !node ) {
+		node = mModel->getNodeFromPath( getFullPath() );
+
+		if ( !node ) {
+			Log::warning( "UIFileDialog::open() - Should contain a valid path." );
+			return;
+		}
+	}
+
+	if ( ( node && "" != node->getName() ) || allowFolderSelect() ) {
+		if ( !allowFolderSelect() ) {
+			if ( FileSystem::isDirectory( getFullPath() ) )
+				return;
+		} else {
+			if ( !FileSystem::isDirectory( getFullPath() ) &&
+				 !FileSystem::isDirectory( getCurPath() ) )
+				return;
+		}
+
+		sendCommonEvent( Event::OpenFile );
+
+		disableButtons();
+
+		closeWindow();
+	}
+}
+
+void UIFileDialog::onPressEnter( const Event* ) {
+	if ( FileSystem::isDirectory( mPath->getText() ) ) {
+		setCurPath( mPath->getText() );
+	} else if ( !allowFolderSelect() && FileSystem::fileExists( mPath->getText() ) ) {
+		String folderPath( FileSystem::fileRemoveFileName( mPath->getText() ) );
+		String fileName( FileSystem::fileNameFromPath( mPath->getText() ) );
+		if ( FileSystem::isDirectory( folderPath ) ) {
+			setCurPath( folderPath );
+			setFileName( fileName );
+			auto index = mMultiView->getCurrentView()->findRowWithText( fileName, true, true );
+			if ( index.isValid() )
+				mMultiView->setSelection( index );
+		}
+	}
+}
+
+void UIFileDialog::addFilePattern( std::string pattern, bool select ) {
+	Uint32 index = mFiletype->getListBox()->addListBoxItem( pattern );
+
+	if ( select ) {
+		mFiletype->getListBox()->setSelected( index );
+
+		refreshFolder();
+	}
+}
+
+bool UIFileDialog::isSaveDialog() {
+	return 0 != ( mDialogFlags & SaveDialog );
+}
+
+bool UIFileDialog::getSortAlphabetically() {
+	return 0 != ( mDialogFlags & SortAlphabetically );
+}
+
+bool UIFileDialog::getFoldersFirst() {
+	return 0 != ( mDialogFlags & FoldersFirst );
+}
+
+bool UIFileDialog::allowFolderSelect() {
+	return 0 != ( mDialogFlags & AllowFolderSelect );
+}
+
+bool UIFileDialog::getShowOnlyFolders() {
+	return 0 != ( mDialogFlags & ShowOnlyFolders );
+}
+
+bool UIFileDialog::getShowHidden() {
+	return 0 != ( mDialogFlags & ShowHidden );
+}
+
+void UIFileDialog::setSortAlphabetically( const bool& sortAlphabetically ) {
+	BitOp::setBitFlagValue( &mDialogFlags, SortAlphabetically, sortAlphabetically ? 1 : 0 );
+	refreshFolder();
+}
+
+void UIFileDialog::setFoldersFirst( const bool& foldersFirst ) {
+	BitOp::setBitFlagValue( &mDialogFlags, FoldersFirst, foldersFirst ? 1 : 0 );
+	refreshFolder();
+}
+
+void UIFileDialog::setAllowFolderSelect( const bool& allowFolderSelect ) {
+	BitOp::setBitFlagValue( &mDialogFlags, AllowFolderSelect, allowFolderSelect ? 1 : 0 );
+}
+
+void UIFileDialog::setShowOnlyFolders( const bool& showOnlyFolders ) {
+	BitOp::setBitFlagValue( &mDialogFlags, ShowOnlyFolders, showOnlyFolders ? 1 : 0 );
+	refreshFolder();
+}
+
+void UIFileDialog::setShowHidden( const bool& showHidden ) {
+	BitOp::setBitFlagValue( &mDialogFlags, ShowHidden, showHidden ? 1 : 0 );
+	refreshFolder();
+}
+
+std::string UIFileDialog::getFullPath() {
+	std::string tPath = mCurPath;
+
+	FileSystem::dirAddSlashAtEnd( tPath );
+
+	tPath += getCurFile();
+
+	return tPath;
+}
+
+std::string UIFileDialog::getCurPath() const {
+	return mCurPath;
+}
+
+std::string UIFileDialog::getCurFile() const {
+	if ( mDialogFlags & SaveDialog )
+		return mFile->getText();
+	if ( mMultiView->getSelection().isEmpty() )
+		return "";
+	auto* node = getSelectionNode();
+
+	if ( !node ) {
+		Log::error( "UIFileDialog::getCurFile() - UIFileDialog::getSelectionNode() was empty, "
+					"shouldn't be empty" );
+		return "";
+	}
+	return node->getName();
+}
+
+UIPushButton* UIFileDialog::getButtonOpen() const {
+	return mButtonOpen;
+}
+
+UIPushButton* UIFileDialog::getButtonCancel() const {
+	return mButtonCancel;
+}
+
+UIPushButton* UIFileDialog::getButtonUp() const {
+	return mButtonUp;
+}
+
+UIMultiModelView* UIFileDialog::getMultiView() const {
+	return mMultiView;
+}
+
+UITextInput* UIFileDialog::getPathInput() const {
+	return mPath;
+}
+
+UITextInput* UIFileDialog::getFileInput() const {
+	return mFile;
+}
+
+UIDropDownList* UIFileDialog::getFiletypeList() const {
+	return mFiletype;
+}
+
+Uint32 UIFileDialog::onKeyUp( const KeyEvent& event ) {
+	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut.key &&
+		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
+		disableButtons();
+
+		closeWindow();
+	}
+
+	return UIWindow::onKeyUp( event );
+}
+
+Uint32 UIFileDialog::onKeyDown( const KeyEvent& event ) {
+	if ( mOpenShortut && event.getKeyCode() == mOpenShortut.key &&
+		 ( mOpenShortut.mod == 0 || ( event.getMod() & mOpenShortut.mod ) ) ) {
+		open();
+	}
+
+	return UIWindow::onKeyDown( event );
+}
+
+const KeyBindings::Shortcut& UIFileDialog::getCloseShortcut() const {
+	return mCloseShortcut;
+}
+
+void UIFileDialog::setFileName( const std::string& name ) {
+	if ( mFile )
+		mFile->setText( name );
+}
+
+void UIFileDialog::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey ) {
+	mCloseShortcut = closeWithKey;
+}
+
+void UIFileDialog::setViewMode( const UIMultiModelView::ViewMode& viewMode ) {
+	mMultiView->setViewMode( viewMode );
+	switch ( viewMode ) {
+		case UIMultiModelView::ViewMode::Table:
+			mButtonTableView->select();
+			mButtonListView->unselect();
+			break;
+		case UIMultiModelView::ViewMode::List:
+		default:
+			mButtonTableView->unselect();
+			mButtonListView->select();
+			break;
+	}
+}
+
+const UIMultiModelView::ViewMode& UIFileDialog::getViewMode() const {
+	return mMultiView->getViewMode();
+}
+
+const KeyBindings::Shortcut& UIFileDialog::openShortut() const {
+	return mOpenShortut;
+}
+
+void UIFileDialog::setOpenShortut( const KeyBindings::Shortcut& newOpenShortut ) {
+	mOpenShortut = newOpenShortut;
+}
+
+}} // namespace EE::UI

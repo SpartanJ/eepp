@@ -6,24 +6,48 @@
 namespace EE { namespace UI {
 
 class EE_API UIMenuItem : public UIPushButton {
-	public:
-		static UIMenuItem * New();
+  public:
+	typedef std::function<bool( UIMenuItem* item )> OnShouldCloseCb;
 
-		UIMenuItem();
+	static UIMenuItem* New();
 
-		virtual ~UIMenuItem();
+	UIMenuItem();
 
-		virtual Uint32 getType() const;
+	virtual ~UIMenuItem();
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual Uint32 getType() const;
 
-		virtual void setTheme( UITheme * Theme );
-	protected:
-		explicit UIMenuItem( const std::string& tag );
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
+	virtual void setTheme( UITheme* Theme );
+
+	virtual UIMenuItem* setShortcutText( const String& text );
+
+	UITextView* getShortcutView() const;
+
+	virtual UIWidget* getExtraInnerWidget() const;
+
+	OnShouldCloseCb getOnShouldCloseCb() const;
+
+	UIMenuItem* setOnShouldCloseCb( const OnShouldCloseCb& onShouldCloseCb );
+
+  protected:
+	UITextView* mShortcutView;
+	OnShouldCloseCb mOnShouldCloseCb;
+
+	explicit UIMenuItem( const std::string& tag );
+
+	virtual void onSizeChange();
+
+	virtual Uint32 onMouseOver( const Vector2i& pos, const Uint32& flags );
+
+	virtual Uint32 onMouseLeave( const Vector2i& pos, const Uint32& flags );
+
+	virtual Uint32 onMouseClick( const Vector2i& pos, const Uint32& flags );
+
+	void createShortcutView();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif

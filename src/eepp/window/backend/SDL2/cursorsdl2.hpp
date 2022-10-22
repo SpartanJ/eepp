@@ -1,8 +1,8 @@
 #ifndef EE_WINDOWCCURSORSDL2_HPP
 #define EE_WINDOWCCURSORSDL2_HPP
 
-#include <eepp/window/cursor.hpp>
 #include <eepp/window/backend/SDL2/base.hpp>
+#include <eepp/window/cursor.hpp>
 
 #ifdef EE_BACKEND_SDL2
 
@@ -11,25 +11,29 @@ using namespace EE::Window;
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class CursorSDL : public Cursor {
-	public:
-		SDL_Cursor * GetCursor() const;
-	protected:
-		friend class CursorManagerSDL;
+  public:
+	SDL_Cursor* GetCursor() const;
 
-		SDL_Cursor * mCursor;
+  protected:
+	friend class CursorManagerSDL;
 
-		CursorSDL( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+	SDL_Cursor* mCursor;
 
-		CursorSDL( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+	CursorSDL( Texture* tex, const Vector2i& hotspot, const std::string& name,
+			   EE::Window::Window* window );
 
-		CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+	CursorSDL( Graphics::Image* img, const Vector2i& hotspot, const std::string& name,
+			   EE::Window::Window* window );
 
-		virtual ~CursorSDL();
+	CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name,
+			   EE::Window::Window* window );
 
-		void create();
+	virtual ~CursorSDL();
+
+	void create();
 };
 
-}}}}
+}}}} // namespace EE::Window::Backend::SDL2
 
 #endif
 

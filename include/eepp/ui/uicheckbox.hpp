@@ -1,66 +1,76 @@
 #ifndef EE_UICUICHECKBOX_H
 #define EE_UICUICHECKBOX_H
 
-#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uitextview.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UICheckBox : public UITextView {
-	public:
-		static UICheckBox * New();
+  public:
+	static UICheckBox* New();
 
-		UICheckBox();
+	static UICheckBox* NewWithTag( const std::string& tag );
 
-		virtual ~UICheckBox();
+	virtual ~UICheckBox();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual void setTheme( UITheme * Theme );
+	virtual void setTheme( UITheme* Theme );
 
-		const bool& isActive() const;
+	const bool& isChecked() const;
 
-		void setActive( const bool& active );
+	UICheckBox* setChecked( const bool& checked );
 
-		UINode * getActiveButton() const;
+	UIWidget* getCheckedButton() const;
 
-		UINode * getInactiveButton() const;
+	UIWidget* getInactiveButton() const;
 
-		Int32 getTextSeparation() const;
+	UIWidget* getCurrentButton() const;
 
-		void setTextSeparation(const Int32 & textSeparation);
+	Int32 getTextSeparation() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		UINode *	mActiveButton;
-		UINode *	mInactiveButton;
-		bool			mActive;
-		Uint32			mLastTick;
-		Int32			mTextSeparation;
+	void setTextSeparation( const Int32& textSeparation );
 
-		virtual void onSizeChange();
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		void switchState();
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		virtual void onAlphaChange();
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		virtual Uint32 onKeyDown( const KeyEvent& Event );
+  protected:
+	UIWidget* mActiveButton;
+	UIWidget* mInactiveButton;
+	bool mChecked;
+	Uint32 mLastTick;
+	Int32 mTextSeparation;
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	UICheckBox();
 
-		virtual void onThemeLoaded();
+	UICheckBox( const std::string& tag );
 
-		virtual void onAutoSize();
+	virtual void onSizeChange();
 
-		virtual void onPaddingChange();
+	void switchState();
 
-		virtual void alignFix();
+	virtual void onAlphaChange();
+
+	virtual Uint32 onKeyDown( const KeyEvent& Event );
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	virtual void onThemeLoaded();
+
+	virtual void onAutoSize();
+
+	virtual void onPaddingChange();
+
+	virtual void alignFix();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-
-

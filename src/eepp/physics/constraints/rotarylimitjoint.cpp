@@ -1,8 +1,8 @@
 #include <eepp/physics/constraints/rotarylimitjoint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-RotaryLimitJoint::RotaryLimitJoint( Body * a, Body * b, cpFloat min, cpFloat max ) {
+RotaryLimitJoint::RotaryLimitJoint( Body* a, Body* b, cpFloat min, cpFloat max ) {
 	mConstraint = cpRotaryLimitJointNew( a->getBody(), b->getBody(), min, max );
 	setData();
 }
@@ -27,4 +27,4 @@ void RotaryLimitJoint::draw() {
 	// Not implemented
 }
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics

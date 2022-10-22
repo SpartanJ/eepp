@@ -7,22 +7,25 @@
 namespace EE { namespace Scene { namespace Actions {
 
 class EE_API ResizeWidth : public ActionInterpolation1d {
-	public:
-		static ResizeWidth * New( const Float& start, const Float& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
+  public:
+	static ResizeWidth* New( const Float& start, const Float& end, const Time& duration,
+							 const Ease::Interpolation& type = Ease::Linear );
 
-		Action * clone() const override;
+	Action* clone() const override;
 
-		Action * reverse() const override;
-	protected:
-		ResizeWidth();
+	Action* reverse() const override;
 
-		ResizeWidth( const Float & start, const Float & end, const Time & duration, const Ease::Interpolation & type );
+  protected:
+	ResizeWidth();
 
-		void onStart() override;
+	ResizeWidth( const Float& start, const Float& end, const Time& duration,
+				 const Ease::Interpolation& type );
 
-		void onUpdate( const Time& time ) override;
+	void onStart() override;
+
+	void onUpdate( const Time& time ) override;
 };
 
-}}}
+}}} // namespace EE::Scene::Actions
 
 #endif

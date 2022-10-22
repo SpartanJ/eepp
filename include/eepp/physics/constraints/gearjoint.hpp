@@ -3,23 +3,23 @@
 
 #include <eepp/physics/constraints/constraint.hpp>
 
-CP_NAMESPACE_BEGIN
+namespace EE { namespace Physics {
 
-class CP_API GearJoint : public Constraint {
-	public:
-		GearJoint( Body * a, Body * b, cpFloat phase, cpFloat ratio );
+class EE_API GearJoint : public Constraint {
+  public:
+	GearJoint( Body* a, Body* b, cpFloat phase, cpFloat ratio );
 
-		cpFloat getPhase();
+	cpFloat getPhase();
 
-		void setPhase( const cpFloat& phase );
+	void setPhase( const cpFloat& phase );
 
-		cpFloat getRatio();
+	cpFloat getRatio();
 
-		void setRatio( const cpFloat& ratio );
+	void setRatio( const cpFloat& ratio );
 
-		virtual void draw();
+	virtual void draw();
 };
 
-CP_NAMESPACE_END
+}} // namespace EE::Physics
 
 #endif

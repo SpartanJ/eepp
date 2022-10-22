@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,7 +23,9 @@
    configure script knows the C runtime has it and enables it. */
 #ifndef __QNXNTO__
 /* Need this so Linux systems define fseek64o, ftell64o and off64_t */
+#ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
+#endif
 #endif
 
 #include "../SDL_internal.h"
@@ -361,13 +363,29 @@ stdio_size(SDL_RWops * context)
 static Sint64 SDLCALL
 stdio_seek(SDL_RWops * context, Sint64 offset, int whence)
 {
+    int stdiowhence;
+
+    switch (whence) {
+    case RW_SEEK_SET:
+        stdiowhence = SEEK_SET;
+        break;
+    case RW_SEEK_CUR:
+        stdiowhence = SEEK_CUR;
+        break;
+    case RW_SEEK_END:
+        stdiowhence = SEEK_END;
+        break;
+    default:
+        return SDL_SetError("Unknown value for 'whence'");
+    }
+
 #if defined(FSEEK_OFF_MIN) && defined(FSEEK_OFF_MAX)
     if (offset < (Sint64)(FSEEK_OFF_MIN) || offset > (Sint64)(FSEEK_OFF_MAX)) {
         return SDL_SetError("Seek offset out of range");
     }
 #endif
 
-    if (fseek(context->hidden.stdio.fp, (fseek_off_t)offset, whence) == 0) {
+    if (fseek(context->hidden.stdio.fp, (fseek_off_t)offset, stdiowhence) == 0) {
         Sint64 pos = ftell(context->hidden.stdio.fp);
         if (pos < 0) {
             return SDL_SetError("Couldn't get stream offset");
@@ -462,7 +480,7 @@ mem_read(SDL_RWops * context, void *ptr, size_t size, size_t maxnum)
 
     total_bytes = (maxnum * size);
     if ((maxnum <= 0) || (size <= 0)
-        || ((total_bytes / maxnum) != (size_t) size)) {
+        || ((total_bytes / maxnum) != size)) {
         return 0;
     }
 
@@ -528,6 +546,7 @@ SDL_RWFromFile(const char *file, const char *mode)
         char *path;
         FILE *fp;
 
+        /* !!! FIXME: why not just "char path[PATH_MAX];" ? */
         path = SDL_stack_alloc(char, PATH_MAX);
         if (path) {
             SDL_snprintf(path, PATH_MAX, "%s/%s",
@@ -584,7 +603,7 @@ SDL_RWFromFile(const char *file, const char *mode)
         if (fp == NULL) {
             SDL_SetError("Couldn't open %s", file);
         } else {
-            rwops = SDL_RWFromFP(fp, 1);
+            rwops = SDL_RWFromFP(fp, SDL_TRUE);
         }
     }
 #else
@@ -749,6 +768,48 @@ done:
         SDL_RWclose(src);
     }
     return data;
+}
+
+void *
+SDL_LoadFile(const char *file, size_t *datasize)
+{
+   return SDL_LoadFile_RW(SDL_RWFromFile(file, "rb"), datasize, 1);
+}
+
+Sint64
+SDL_RWsize(SDL_RWops *context)
+{
+    return context->size(context);
+}
+
+Sint64
+SDL_RWseek(SDL_RWops *context, Sint64 offset, int whence)
+{
+    return context->seek(context, offset, whence);
+}
+
+Sint64
+SDL_RWtell(SDL_RWops *context)
+{
+    return context->seek(context, 0, RW_SEEK_CUR);
+}
+
+size_t
+SDL_RWread(SDL_RWops *context, void *ptr, size_t size, size_t maxnum)
+{
+    return context->read(context, ptr, size, maxnum);
+}
+
+size_t
+SDL_RWwrite(SDL_RWops *context, const void *ptr, size_t size, size_t num)
+{
+    return context->write(context, ptr, size, num);
+}
+
+int
+SDL_RWclose(SDL_RWops *context)
+{
+    return context->close(context);
 }
 
 /* Functions for dynamically reading and writing endian-specific values */

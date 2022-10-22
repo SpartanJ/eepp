@@ -6,107 +6,128 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#include <eepp/window/window.hpp>
 #include <eepp/window/backend/SDL2/wminfo.hpp>
+#include <eepp/window/window.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_ANDROID
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || \
+	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
+	EE_PLATFORM == EE_PLATFORM_ANDROID
 #define EE_USE_WMINFO
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API WindowSDL : public Window {
-	public:
-		WindowSDL( WindowSettings Settings, ContextSettings Context );
-		
-		virtual ~WindowSDL();
-		
-		bool create( WindowSettings Settings, ContextSettings Context );
-		
-		void toggleFullscreen();
-		
-		void setCaption( const std::string& setCaption );
+  public:
+	WindowSDL( WindowSettings Settings, ContextSettings Context );
 
-		bool setIcon( const std::string& Path );
+	virtual ~WindowSDL();
 
-		bool isActive();
+	bool create( WindowSettings Settings, ContextSettings Context );
 
-		bool isVisible();
+	Uint32 getWindowID();
 
-		void setSize( Uint32 Width, Uint32 Height, bool isWindowed );
+	void makeCurrent();
 
-		std::vector<DisplayMode> getDisplayModes() const;
+	void close();
 
-		void setGamma( Float Red, Float Green, Float Blue );
+	void setCurrent();
 
-		eeWindowHandle	getWindowHandler();
+	void toggleFullscreen();
 
-		virtual void minimize();
+	void setTitle( const std::string& title );
 
-		virtual void maximize();
+	bool setIcon( const std::string& Path );
 
-		virtual void hide();
+	bool isActive();
 
-		virtual void raise();
+	bool isVisible();
 
-		virtual void show();
+	bool hasFocus();
 
-		virtual void setPosition( Int16 Left, Int16 Top );
+	bool hasInputFocus();
 
-		virtual Vector2i getPosition();
+	bool hasMouseFocus();
 
-		const Sizei& getDesktopResolution();
+	void setSize( Uint32 width, Uint32 height, bool windowed );
 
-		virtual Rect getBorderSize();
+	std::vector<DisplayMode> getDisplayModes() const;
 
-		SDL_Window *	GetSDLWindow() const;
+	void setGamma( Float Red, Float Green, Float Blue );
 
-		void startTextInput();
+	eeWindowHandle getWindowHandler();
 
-		bool isTextInputActive();
+	virtual void minimize();
 
-		void stopTextInput();
+	virtual void maximize();
 
-		void setTextInputRect( Rect& rect );
+	virtual bool isMaximized();
 
-		bool hasScreenKeyboardSupport();
+	virtual void hide();
 
-		bool isScreenKeyboardShown();
+	virtual void raise();
 
-		bool isThreadedGLContext();
+	virtual void show();
 
-		void setGLContextThread();
+	virtual void setPosition( int Left, int Top );
 
-		void unsetGLContextThread();
+	virtual Vector2i getPosition();
 
-		int getCurrentDisplayIndex();
-	protected:
-		friend class ClipboardSDL;
+	const Sizei& getDesktopResolution();
 
-		SDL_Window *	mSDLWindow;
-		SDL_GLContext	mGLContext;
-		SDL_GLContext	mGLContextThread;
+	virtual Rect getBorderSize();
 
-		#ifdef EE_USE_WMINFO
-		WMInfo *		mWMinfo;
-		#endif
+	virtual Float getScale();
 
-		Vector2i		mWinPos;
+	SDL_Window* GetSDLWindow() const;
 
-		void createPlatform();
+	void startTextInput();
 
-		void swapBuffers();
+	bool isTextInputActive();
 
-		void setGLConfig();
+	void stopTextInput();
 
-		std::string getVersion();
+	void setTextInputRect( Rect& rect );
 
-		void updateDesktopResolution();
+	bool hasScreenKeyboardSupport();
 
-		void onWindowResize( Uint32 Width, Uint32 Height );
+	bool isScreenKeyboardShown();
+
+	bool isThreadedGLContext();
+
+	void setGLContextThread();
+
+	void unsetGLContextThread();
+
+	int getCurrentDisplayIndex();
+
+  protected:
+	friend class ClipboardSDL;
+
+	SDL_Window* mSDLWindow;
+	SDL_GLContext mGLContext;
+	SDL_GLContext mGLContextThread;
+	Mutex mGLContextMutex;
+	Uint32 mID{ 0 };
+
+#ifdef EE_USE_WMINFO
+	WMInfo* mWMinfo;
+#endif
+
+	Vector2i mWinPos;
+
+	void swapBuffers();
+
+	void setGLConfig();
+
+	std::string getVersion();
+
+	void updateDesktopResolution();
+
+	void onWindowResize( Uint32 width, Uint32 height );
 };
 
-}}}}
+}}}} // namespace EE::Window::Backend::SDL2
 
 #endif
 

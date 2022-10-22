@@ -2,66 +2,127 @@
 #define EE_GRAPHICSCFONT_H
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/graphics/fonthelper.hpp>
+#include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace Graphics {
 
 class EE_API Glyph {
-	public:
-		Glyph() : advance(0) {}
+  public:
+	Float advance{ 0 }; ///< Offset to move horizontally to the next character
+	Rectf bounds;	   ///< Bounding rectangle of the glyph, in coordinates relative to the baseline
+	Rect textureRect;  ///< Texture coordinates of the glyph inside the font's texture
+	int lsbDelta{ 0 }; //!< Left offset after forced autohint. Internally used by getKerning()
+	int rsbDelta{ 0 }; //!< Right offset after forced autohint. Internally used by getKerning()
+};
 
-		Float advance;     ///< Offset to move horizontally to the next character
-		Rectf bounds;      ///< Bounding rectangle of the glyph, in coordinates relative to the baseline
-		Rect textureRect; ///< Texture coordinates of the glyph inside the font's texture
+enum class FontType { TTF, BMF, Sprite };
+
+enum FontHorizontalAlign {
+	TEXT_ALIGN_LEFT = ( 0 << 0 ),
+	TEXT_ALIGN_RIGHT = ( 1 << 0 ),
+	TEXT_ALIGN_CENTER = ( 2 << 0 ),
+	TEXT_HALIGN_MASK = ( 3 << 0 )
+};
+
+enum FontVerticalAlign {
+	TEXT_ALIGN_TOP = ( 0 << 2 ),
+	TEXT_ALIGN_BOTTOM = ( 1 << 2 ),
+	TEXT_ALIGN_MIDDLE = ( 2 << 2 ),
+	TEXT_VALIGN_MASK = ( 3 << 2 )
 };
 
 /** @brief Font interface class. */
 class EE_API Font {
-	public:
-		struct Info
-		{
-			std::string family; ///< The font family
-		};
+  public:
+	enum Event { Load, Unload };
 
-		virtual ~Font();
+	typedef std::function<void( Uint32, Event, Font* )> FontEventCallback;
 
-		/** @return The current font height */
-		virtual Uint32 getFontHeight( const Uint32& characterSize ) = 0;
+	struct Info {
+		std::string family; ///< The font family
+	};
 
-		/** @return The type of the instance of the font, can be FONT_TYPE_TTF ( true type font ) or FONT_TYPE_TEX ( texture font ) */
-		const Uint32& getType() const;
+	static inline Uint32 getHorizontalAlign( const Uint32& flags ) {
+		return flags & TEXT_HALIGN_MASK;
+	}
 
-		/** @return The font name */
-		const std::string&	getName() const;
+	static inline Uint32 getVerticalAlign( const Uint32& flags ) {
+		return flags & TEXT_VALIGN_MASK;
+	}
 
-		/** Change the font name ( and id, because it's the font name hash ) */
-		void setName( const std::string& setName );
+	static bool isEmojiCodePoint( const Uint32& codePoint );
 
-		/** @return The font id */
-		const Uint32& getId();
+	static bool containsEmojiCodePoint( const String& string );
 
-		virtual const Info& getInfo() const = 0;
+	static std::vector<std::size_t> emojiCodePointsPositions( const String& string );
 
-		virtual const Glyph& getGlyph(Uint32 codePoint, unsigned int characterSize, bool bold, Float outlineThickness = 0) const = 0;
+	virtual ~Font();
 
-		virtual Float getKerning(Uint32 first, Uint32 second, unsigned int characterSize) const = 0;
+	/** @return The current font height */
+	virtual Uint32 getFontHeight( const Uint32& characterSize ) const = 0;
 
-		virtual Float getLineSpacing(unsigned int characterSize) const = 0;
+	/** @return The type of the instance of the font */
+	const FontType& getType() const;
 
-		virtual Float getUnderlinePosition(unsigned int characterSize) const = 0;
+	/** @return The font name */
+	const std::string& getName() const;
 
-		virtual Float getUnderlineThickness(unsigned int characterSize) const = 0;
+	/** Change the font name ( and id, because it's the font name hash ) */
+	void setName( const std::string& setName );
 
-		virtual Texture * getTexture(unsigned int characterSize) const = 0;
-	protected:
-		Uint32 						mType;
-		std::string					mFontName;
-		Uint32						mFontHash;
+	/** @return The font id */
+	const String::HashType& getId();
 
-		Font( const Uint32& Type, const std::string& setName );
+	virtual bool isMonospace() const = 0;
+
+	virtual bool isScalable() const = 0;
+
+	virtual const Info& getInfo() const = 0;
+
+	virtual const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
+								   Float outlineThickness = 0, Float maxWidth = 0 ) const = 0;
+
+	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
+	 * allocation is managed by the font. */
+	virtual GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
+											 bool bold = false, Float outlineThickness = 0,
+											 const Float& forzeSize = 0 ) const = 0;
+
+	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize,
+							  bool bold ) const = 0;
+
+	virtual Float getLineSpacing( unsigned int characterSize ) const = 0;
+
+	virtual Float getUnderlinePosition( unsigned int characterSize ) const = 0;
+
+	virtual Float getUnderlineThickness( unsigned int characterSize ) const = 0;
+
+	virtual Texture* getTexture( unsigned int characterSize ) const = 0;
+
+	virtual bool loaded() const = 0;
+
+	/** Push a new on resource change callback.
+	 * @return The Callback Id
+	 */
+	Uint32 pushFontEventCallback( const FontEventCallback& cb );
+
+	/** Pop the on resource change callback id indicated. */
+	void popFontEventCallback( const Uint32& callbackId );
+
+  protected:
+	FontType mType;
+	std::string mFontName;
+	String::HashType mFontHash;
+	Uint32 mNumCallBacks;
+	std::map<Uint32, FontEventCallback> mCallbacks;
+
+	Font( const FontType& Type, const std::string& setName );
+
+	void sendEvent( const Event& event );
 };
 
-}}
+}} // namespace EE::Graphics
 
 #endif

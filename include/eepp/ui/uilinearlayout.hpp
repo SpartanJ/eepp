@@ -3,50 +3,59 @@
 
 #include <eepp/ui/uilayout.hpp>
 
-namespace  EE { namespace UI {
+namespace EE { namespace UI {
 
 class EE_API UILinearLayout : public UILayout {
-	public:
-		static UILinearLayout * New();
+  public:
+	static UILinearLayout* NewWithTag( const std::string& tag, const UIOrientation& orientation );
 
-		static UILinearLayout * NewVertical();
+	static UILinearLayout* New();
 
-		static UILinearLayout * NewHorizontal();
+	static UILinearLayout* NewVertical();
 
-		UILinearLayout();
+	static UILinearLayout* NewHorizontal();
 
-		virtual Uint32 getType() const;
+	UILinearLayout();
 
-		virtual bool isType( const Uint32& type ) const;
+	UILinearLayout( const std::string& tag, const UIOrientation& orientation );
 
-		UI_ORIENTATION getOrientation() const;
+	virtual Uint32 getType() const;
 
-		UILinearLayout * setOrientation(const UI_ORIENTATION & getOrientation);
+	virtual bool isType( const Uint32& type ) const;
 
-		UILinearLayout * add( UIWidget * widget );
+	UIOrientation getOrientation() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
-	protected:
-		UI_ORIENTATION mOrientation;
+	UILinearLayout* setOrientation( const UIOrientation& getOrientation );
 
-		virtual Uint32 onMessage( const NodeMessage * Msg );
+	UILinearLayout* add( UIWidget* widget );
 
-		virtual void onSizeChange();
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		virtual void onParentSizeChange( const Vector2f& SizeChange );
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		virtual void onChildCountChange();
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-		void pack();
+	void updateLayout();
 
-		void packVertical();
+	bool isPacking() const;
 
-		void packHorizontal();
+  protected:
+	UIOrientation mOrientation;
 
-		Sizei getTotalUsedSize();
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	void packVertical();
+
+	void packHorizontal();
+
+	Sizei getTotalUsedSize();
+
+	void applyWidthPolicyOnChilds();
+
+	void applyHeightPolicyOnChilds();
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
-

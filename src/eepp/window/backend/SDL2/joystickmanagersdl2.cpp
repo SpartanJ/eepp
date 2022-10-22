@@ -5,13 +5,21 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-JoystickManagerSDL::JoystickManagerSDL() :
-	JoystickManager(),
-	mAsyncInit( &JoystickManagerSDL::openAsync, this )
-{
+void closeSubsystem() {
+#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_IOS
+	if ( SDL_WasInit( SDL_INIT_JOYSTICK ) )
+		SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
+#endif
 }
 
+JoystickManagerSDL::JoystickManagerSDL() :
+	JoystickManager(), mAsyncInit( &JoystickManagerSDL::openAsync, this ) {}
+
 JoystickManagerSDL::~JoystickManagerSDL() {
+	for ( Uint32 i = 0; i < mCount; i++ )
+		eeSAFE_DELETE( mJoysticks[i] );
+	closeSubsystem();
+	mInit = false;
 }
 
 void JoystickManagerSDL::update() {
@@ -25,7 +33,7 @@ void JoystickManagerSDL::update() {
 }
 
 void JoystickManagerSDL::openAsync() {
-	Sys::sleep(Milliseconds(500));
+	Sys::sleep( Milliseconds( 500 ) );
 
 	int error = SDL_InitSubSystem( SDL_INIT_JOYSTICK );
 
@@ -33,31 +41,32 @@ void JoystickManagerSDL::openAsync() {
 		mCount = SDL_NumJoysticks();
 
 		for ( Uint32 i = 0; i < mCount; i++ )
-			create(i);
+			create( i );
 
 		mInit = true;
+
+		if ( mOpenCb )
+			mOpenCb();
 	}
 }
 
-void JoystickManagerSDL::open() {
+void JoystickManagerSDL::open( OpenCb openCb ) {
+	mOpenCb = openCb;
 	mAsyncInit.launch();
 }
 
 void JoystickManagerSDL::close() {
-	if ( SDL_WasInit( SDL_INIT_JOYSTICK ) ) {
-		SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
-		
-		mInit = false;
-	}
+	closeSubsystem();
+	mInit = false;
 }
 
 void JoystickManagerSDL::create( const Uint32& index ) {
-	if ( NULL != mJoysticks[ index ] )
-		mJoysticks[ index ]->reOpen();
+	if ( NULL != mJoysticks[index] )
+		mJoysticks[index]->reOpen();
 	else
-		mJoysticks[ index ] = eeNew( JoystickSDL, ( index ) );
+		mJoysticks[index] = eeNew( JoystickSDL, ( index ) );
 }
 
-}}}}
+}}}} // namespace EE::Window::Backend::SDL2
 
 #endif

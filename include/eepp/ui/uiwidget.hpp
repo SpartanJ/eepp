@@ -1,217 +1,336 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
-#include <eepp/scene/nodeattribute.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/uinode.hpp>
-#include <eepp/ui/css/stylesheetelement.hpp>
 
 namespace pugi {
 class xml_node;
 }
+
+namespace EE { namespace UI { namespace CSS {
+class PropertyDefinition;
+}}} // namespace EE::UI::CSS
+
+using namespace EE::UI::CSS;
 
 namespace EE { namespace UI {
 
 class UITooltip;
 class UIStyle;
 
-class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
-	public:
-		static UIWidget * New();
+class EE_API UIWidget : public UINode {
+  public:
+	static UIWidget* New();
 
-		static UIWidget * NewWithTag( const std::string& tag );
+	static UIWidget* NewWithTag( const std::string& tag );
 
-		UIWidget();
+	UIWidget();
 
-		virtual ~UIWidget();
+	virtual ~UIWidget();
 
-		virtual Uint32 getType() const;
+	virtual Uint32 getType() const;
 
-		virtual bool isType( const Uint32& type ) const;
+	virtual bool isType( const Uint32& type ) const;
 
-		virtual Node * setSize( const Sizef& size );
+	virtual UINode* setFlags( const Uint32& flags );
 
-		virtual UINode * setFlags( const Uint32& flags );
+	virtual UINode* unsetFlags( const Uint32& flags );
 
-		virtual UINode * unsetFlags( const Uint32& flags );
+	virtual UIWidget* setAnchors( const Uint32& flags );
 
-		virtual UIWidget * setAnchors( const Uint32& flags );
+	virtual void setTheme( UITheme* Theme );
 
-		virtual void setTheme( UITheme * Theme );
+	virtual UINode* setThemeSkin( const std::string& skinName );
 
-		virtual UINode * setThemeSkin( const std::string& skinName );
+	virtual UINode* setThemeSkin( UITheme* Theme, const std::string& skinName );
 
-		virtual UINode * setThemeSkin( UITheme * Theme, const std::string& skinName );
+	virtual Node* setId( const std::string& id );
 
-		virtual Node * setSize( const Float& Width, const Float& Height );
+	virtual bool acceptsDropOfWidget( const UIWidget* widget );
 
-		virtual Node * setId( const std::string & id );
+	UIWidget* acceptsDropOfWidgetInTree( const UIWidget* widget );
 
-		const Sizef& getSize() const;
+	UITooltip* getTooltip();
 
-		UITooltip * getTooltip();
+	void tooltipRemove();
 
-		void tooltipRemove();
+	UIWidget* setTooltipText( const String& Text );
 
-		UIWidget * setTooltipText( const String& Text );
+	String getTooltipText();
 
-		String getTooltipText();
+	void updateAnchorsDistances();
 
-		void updateAnchorsDistances();
+	const Rectf& getLayoutMargin() const;
 
-		Rect getLayoutMargin() const;
+	const Rectf& getLayoutPixelsMargin() const;
 
-		UIWidget * setLayoutMargin(const Rect & margin);
+	UIWidget* setLayoutMargin( const Rectf& margin );
 
-		Float getLayoutWeight() const;
+	UIWidget* setLayoutMarginLeft( const Float& marginLeft );
 
-		UIWidget * setLayoutWeight(const Float & weight);
+	UIWidget* setLayoutMarginRight( const Float& marginRight );
 
-		Uint32 getLayoutGravity() const;
+	UIWidget* setLayoutMarginTop( const Float& marginTop );
 
-		UIWidget * setLayoutGravity(const Uint32 & layoutGravity);
+	UIWidget* setLayoutMarginBottom( const Float& marginBottom );
 
-		LayoutSizeRules getLayoutWidthRules() const;
+	Float getLayoutWeight() const;
 
-		UIWidget * setLayoutWidthRules(const LayoutSizeRules & layoutWidthRules);
+	UIWidget* setLayoutWeight( const Float& weight );
 
-		LayoutSizeRules getLayoutHeightRules() const;
+	Uint32 getLayoutGravity() const;
 
-		UIWidget * setLayoutHeightRules(const LayoutSizeRules & layoutHeightRules);
+	UIWidget* setLayoutGravity( const Uint32& layoutGravity );
 
-		UIWidget * setLayoutSizeRules( const LayoutSizeRules & layoutWidthRules, const LayoutSizeRules & layoutHeightRules );
+	const SizePolicy& getLayoutWidthPolicy() const;
 
-		UIWidget * setLayoutPositionRule( const LayoutPositionRules& layoutPositionRule, UIWidget * of );
+	UIWidget* setLayoutWidthPolicy( const SizePolicy& widthPolicy );
 
-		UIWidget * getLayoutPositionRuleWidget() const;
+	const SizePolicy& getLayoutHeightPolicy() const;
 
-		LayoutPositionRules getLayoutPositionRule() const;
+	UIWidget* setLayoutHeightPolicy( const SizePolicy& heightPolicy );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+	UIWidget* setLayoutSizePolicy( const SizePolicy& widthPolicy, const SizePolicy& heightPolicy );
 
-		void notifyLayoutAttrChange();
+	UIWidget* setLayoutPositionPolicy( const PositionPolicy& layoutPositionPolicy, UIWidget* of );
 
-		void notifyLayoutAttrChangeParent();
+	UIWidget* getLayoutPositionPolicyWidget() const;
 
-		void setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity = UINT32_MAX - 1/*SpecificityInline*/ );
+	PositionPolicy getLayoutPositionPolicy() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		const Rectf& getPadding() const;
+	void notifyLayoutAttrChange();
 
-		UIWidget * setPadding(const Rectf& padding);
+	void notifyLayoutAttrChangeParent();
 
-		const std::string& getStyleSheetTag() const;
+	void setStyleSheetInlineProperty( const std::string& name, const std::string& value,
+									  const Uint32& specificity = UINT32_MAX -
+																  1 /*SpecificityInline*/ );
 
-		const std::string& getStyleSheetId() const;
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
-		const std::vector<std::string>& getStyleSheetClasses() const;
+	const Rectf& getPadding() const;
 
-		StyleSheetElement * getStyleSheetParentElement() const;
+	const Rectf& getPixelsPadding() const;
 
-		StyleSheetElement * getStyleSheetPreviousSiblingElement() const;
+	UIWidget* setPadding( const Rectf& padding );
 
-		StyleSheetElement * getStyleSheetNextSiblingElement() const;
+	UIWidget* setPaddingLeft( const Float& paddingLeft );
 
-		const std::vector<std::string>& getStyleSheetPseudoClasses() const;
+	UIWidget* setPaddingRight( const Float& paddingRight );
 
-		void addClass( const std::string& cls );
+	UIWidget* setPaddingTop( const Float& paddingTop );
 
-		void addClasses( const std::vector<std::string>& classes );
+	UIWidget* setPaddingBottom( const Float& paddingBottom );
 
-		void removeClass( const std::string& cls );
+	const std::string& getStyleSheetTag() const;
 
-		bool containsClass( const std::string& cls );
+	const std::string& getStyleSheetId() const;
 
-		void setElementTag( const std::string& tag );
+	const std::vector<std::string>& getStyleSheetClasses() const;
 
-		const std::string& getElementTag() const;
+	UIWidget* getStyleSheetParentElement() const;
 
-		virtual void pushState( const Uint32& State, bool emitEvent = true );
+	UIWidget* getStyleSheetPreviousSiblingElement() const;
 
-		virtual void popState( const Uint32& State, bool emitEvent = true );
+	UIWidget* getStyleSheetNextSiblingElement() const;
 
-		UIStyle * getUIStyle() const;
+	const std::vector<std::string>& getStyleSheetPseudoClasses() const;
 
-		void reloadStyle( const bool& reloadChilds = true );
+	void addClass( const std::string& cls );
 
-		void beginAttributesTransaction();
+	void addClasses( const std::vector<std::string>& classes );
 
-		void endAttributesTransaction();
+	void removeClass( const std::string& cls );
 
-		const Uint32& getStyleState() const;
+	void removeClasses( const std::vector<std::string>& classes );
 
-		const Uint32& getStylePreviousState() const;
-	protected:
-		friend class UIManager;
-		friend class UISceneNode;
+	bool hasClass( const std::string& cls ) const;
 
-		std::string mTag;
-		UITheme *	mTheme;
-		UIStyle *	mStyle;
-		UITooltip *	mTooltip;
-		Sizef		mMinControlSize;
-		Rect		mDistToBorder;
-		Rect		mLayoutMargin;
-		Rectf		mPadding;
-		Rectf		mRealPadding;
-		Float		mLayoutWeight;
-		Uint32		mLayoutGravity;
-		LayoutSizeRules mLayoutWidthRules;
-		LayoutSizeRules mLayoutHeightRules;
-		LayoutPositionRules mLayoutPositionRule;
-		UIWidget * mLayoutPositionRuleWidget;
-		int	mAttributesTransactionCount;
-		std::string mSkinName;
-		std::vector<std::string> mClasses;
-		std::vector<std::string> mPseudoClasses;
+	void setElementTag( const std::string& tag );
 
-		explicit UIWidget( const std::string& tag );
+	const std::string& getElementTag() const;
 
-		void updatePseudoClasses();
+	virtual void pushState( const Uint32& State, bool emitEvent = true );
 
-		void createTooltip();
+	virtual void popState( const Uint32& State, bool emitEvent = true );
 
-		virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32& Flags );
+	UIStyle* getUIStyle() const;
 
-		virtual Uint32 onMouseLeave( const Vector2i& Pos, const Uint32& Flags );
+	void reloadStyle( const bool& reloadChilds = true, const bool& disableAnimations = false,
+					  const bool& reportStateChange = true,
+					  const bool& forceReApplyProperties = false );
 
-		virtual void onParentSizeChange( const Vector2f& SizeChange );
+	void beginAttributesTransaction();
 
-		virtual void onPositionChange();
+	void endAttributesTransaction();
 
-		virtual void onVisibilityChange();
+	const Uint32& getStyleState() const;
 
-		virtual void onSizeChange();
+	const Uint32& getStylePreviousState() const;
 
-		virtual void onAutoSize();
+	std::vector<UIWidget*> findAllByClass( const std::string& className );
 
-		virtual void onWidgetCreated();
+	std::vector<UIWidget*> findAllByTag( const std::string& tag );
 
-		virtual void onPaddingChange();
+	UIWidget* findByClass( const std::string& className );
 
-		virtual void onThemeLoaded();
+	template <typename T> T* findByClass( const std::string& className ) {
+		return reinterpret_cast<T*>( findByClass( className ) );
+	}
 
-		virtual void onParentChange();
+	UIWidget* findByTag( const std::string& tag );
 
-		void updateAnchors( const Vector2f & SizeChange );
+	template <typename T> T* findByTag( const std::string& tag ) {
+		return reinterpret_cast<T*>( findByTag( tag ) );
+	}
 
-		void alignAgainstLayout();
+	UIWidget* querySelector( const CSS::StyleSheetSelector& selector );
 
-		void reportStyleStateChange();
+	UIWidget* querySelector( const std::string& selector );
 
-		bool isSceneNodeLoading() const;
+	template <typename T> T* querySelector( const std::string& selector ) {
+		return reinterpret_cast<T*>( querySelector( selector ) );
+	}
 
-		std::string getLayoutWidthRulesString() const;
+	std::vector<UIWidget*> querySelectorAll( const CSS::StyleSheetSelector& selector );
 
-		std::string getLayoutHeightRulesString() const;
+	std::vector<UIWidget*> querySelectorAll( const std::string& selector );
 
-		std::string getLayoutGravityString() const;
+	std::string getPropertyString( const std::string& property ) const;
 
-		std::string getGravityString() const;
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
 
-		std::string getFlagsString() const;
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	bool isSceneNodeLoading() const;
+
+	void reportStyleStateChangeRecursive( bool disableAnimations = false,
+										  bool forceReApplyStyles = false );
+
+	void createTooltip();
+
+	bool isTabStop() const;
+
+	void setTabStop();
+
+	UIWidget* getNextTabWidget() const;
+
+	bool hasPseudoClass( const std::string& pseudoCls ) const;
+
+	bool isTooltipEnabled() const;
+
+	void setTooltipEnabled( bool enabled );
+
+  protected:
+	friend class UIManager;
+	friend class UISceneNode;
+	friend class UIEventDispatcher;
+
+	std::string mTag;
+	UITheme* mTheme;
+	UIStyle* mStyle;
+	UITooltip* mTooltip;
+	Rect mDistToBorder;
+	Rectf mLayoutMargin;
+	Rectf mLayoutMarginPx;
+	Rectf mPadding;
+	Rectf mPaddingPx;
+	Float mLayoutWeight;
+	Uint32 mLayoutGravity;
+	SizePolicy mWidthPolicy;
+	SizePolicy mHeightPolicy;
+	PositionPolicy mLayoutPositionPolicy;
+	UIWidget* mLayoutPositionPolicyWidget;
+	int mAttributesTransactionCount;
+	std::string mSkinName;
+	std::vector<std::string> mClasses;
+	std::vector<std::string> mPseudoClasses;
+
+	explicit UIWidget( const std::string& tag );
+
+	void updatePseudoClasses();
+
+	virtual void onChildCountChange( Node* child, const bool& removed );
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32& Flags );
+
+	virtual Uint32 onMouseOver( const Vector2i& Pos, const Uint32& Flags );
+
+	virtual Uint32 onMouseLeave( const Vector2i& Pos, const Uint32& Flags );
+
+	virtual void onParentSizeChange( const Vector2f& sizeChange );
+
+	virtual void onPositionChange();
+
+	virtual void onVisibilityChange();
+
+	virtual void onSizeChange();
+
+	virtual void onAutoSize();
+
+	virtual void onWidgetCreated();
+
+	virtual void onPaddingChange();
+
+	virtual void onMarginChange();
+
+	virtual void onThemeLoaded();
+
+	virtual void onParentChange();
+
+	virtual void onClassChange();
+
+	virtual void onTagChange();
+
+	virtual void onTabPress();
+
+	virtual Uint32 onFocus();
+
+	virtual Uint32 onFocusLoss();
+
+	void updateAnchors( const Vector2f& sizeChange );
+
+	void alignAgainstLayout();
+
+	void reportStyleStateChange( bool disableAnimations = false, bool forceReApplyStyles = false );
+
+	std::string getLayoutWidthPolicyString() const;
+
+	std::string getLayoutHeightPolicyString() const;
+
+	std::string getLayoutGravityString() const;
+
+	std::string getGravityString() const;
+
+	std::string getFlagsString() const;
+
+	bool checkPropertyDefinition( const StyleSheetProperty& property );
+
+	Vector2f getTooltipPosition();
+
+	void createStyle();
+
+	void enableCSSAnimations();
+
+	void disableCSSAnimations();
+
+	void reloadFontFamily();
+
+	UIWidget* getNextWidget() const;
+
+	String getTranslatorString( const std::string& str );
+
+	String getTranslatorString( const std::string& str, const String& defaultValue );
 };
 
-}}
+}} // namespace EE::UI
 
 #endif
