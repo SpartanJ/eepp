@@ -716,6 +716,9 @@ void UIWidget::updatePseudoClasses() {
 	if ( mState & UIState::StateFlagFocus )
 		mPseudoClasses.push_back( "focus" );
 
+	if ( mState & UIState::StateFlagFocusWithin )
+		mPseudoClasses.push_back( "focus-within" );
+
 	if ( mState & UIState::StateFlagSelected )
 		mPseudoClasses.push_back( "selected" );
 
@@ -878,6 +881,32 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 			invalidateDraw();
 		}
 	}
+}
+
+Uint32 UIWidget::onFocus() {
+	pushState( UIState::StateFocusWithin );
+
+	Node* parent = mParentNode;
+	while ( parent ) {
+		if ( parent->isUINode() )
+			parent->asType<UINode>()->pushState( UIState::StateFocusWithin );
+		parent = parent->getParent();
+	}
+
+	return UINode::onFocus();
+}
+
+Uint32 UIWidget::onFocusLoss() {
+	popState( UIState::StateFocusWithin );
+
+	Node* parent = mParentNode;
+	while ( parent ) {
+		if ( parent->isUINode() )
+			parent->asType<UINode>()->popState( UIState::StateFocusWithin );
+		parent = parent->getParent();
+	}
+
+	return UINode::onFocusLoss();
 }
 
 UIStyle* UIWidget::getUIStyle() const {

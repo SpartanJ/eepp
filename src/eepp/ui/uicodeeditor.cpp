@@ -2702,16 +2702,23 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "open-containing-folder", [&] { openContainingFolder(); } );
 	mDoc->setCommand( "copy-containing-folder-path", [&] { copyContainingFolderPath(); } );
 	mDoc->setCommand( "copy-file-path", [&] { copyFilePath(); } );
-	mDoc->setCommand( "find-replace", [&] { findReplace(); } );
+	mDoc->setCommand( "find-replace", [&] { showFindReplace(); } );
 	mUnlockedCmd.insert( { "copy", "select-all" } );
 }
 
-void UICodeEditor::findReplace() {
+void UICodeEditor::showFindReplace() {
+	UISceneNode* curSceneNode = SceneManager::instance()->getUISceneNode();
+	if ( mUISceneNode != curSceneNode )
+		SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+
 	if ( !mFindReplaceEnabled )
 		return;
 	if ( nullptr == mFindReplace )
 		mFindReplace = UIDocFindReplace::New( this, mDoc );
 	mFindReplace->show();
+
+	if ( mUISceneNode != curSceneNode )
+		SceneManager::instance()->setCurrentUISceneNode( curSceneNode );
 }
 
 void UICodeEditor::registerKeybindings() {

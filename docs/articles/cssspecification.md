@@ -1566,7 +1566,7 @@ Sets the text shadow color.
 ### skin
 
 Sets the skin (a.k.a. decoration) to an element. Element skins are automatically applied if there's a specific skin for the element
-loaded in the current theme, but new skins can be used and loaded with this property. Skins are the default way
+loaded in the current theme, but new skins can be used and loaded with this property. Skins are a way
 to decorate the widgets, they are loaded from a list of textures or from a texture atlas. Skins are stateful,
 this means that a skin can contain all the possible states that a widget can have for decoration, these are: `normal`, `focus`, `selected`, `hover`, `pressed`, `selectedhover`, `selectedpressed`, `disabled`, `checked`.
 Current UI skin documentation is lacking.
@@ -2284,6 +2284,12 @@ can be used to change a button's color when the user's pointer hovers over it.
 
 Most common pseudo-class selectors are supported. The list is:
 
+* [:hover](https://developer.mozilla.org/en-US/docs/Web/CSS/:hover)
+
+* [:focus](https://developer.mozilla.org/en-US/docs/Web/CSS/:focus)
+
+* [:focus-within](https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-within)
+
 * [:checked](https://developer.mozilla.org/en-US/docs/Web/CSS/:checked)
 
 * [:disabled](https://developer.mozilla.org/en-US/docs/Web/CSS/:disabled)
@@ -2292,11 +2298,11 @@ Most common pseudo-class selectors are supported. The list is:
 
 * [:enabled](https://developer.mozilla.org/en-US/docs/Web/CSS/:enabled)
 
+* [:active or :pressed](https://developer.mozilla.org/en-US/docs/Web/CSS/:active)
+
 * [:first-child](https://developer.mozilla.org/en-US/docs/Web/CSS/:first-child)
 
 * [:first-of-type](https://developer.mozilla.org/en-US/docs/Web/CSS/:first-of-type)
-
-* [:hover](https://developer.mozilla.org/en-US/docs/Web/CSS/:hover)
 
 * [:last-child](https://developer.mozilla.org/en-US/docs/Web/CSS/:last-child)
 
@@ -2314,7 +2320,11 @@ Most common pseudo-class selectors are supported. The list is:
 
 * [:only-child](https://developer.mozilla.org/en-US/docs/Web/CSS/:only-child)
 
+* [:only-of-type](https://developer.mozilla.org/en-US/docs/Web/CSS/:only-of-type)
+
 * [:root](https://developer.mozilla.org/en-US/docs/Web/CSS/:root)
+
+* :selected Matches when elements are selectable and currently selected.
 
 ## CSS Data Types
 

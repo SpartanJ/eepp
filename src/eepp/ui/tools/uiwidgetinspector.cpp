@@ -1,3 +1,4 @@
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/models/csspropertiesmodel.hpp>
 #include <eepp/ui/models/widgettreemodel.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
@@ -11,6 +12,7 @@
 
 using namespace EE::Window;
 using namespace EE::UI::Models;
+using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -114,12 +116,14 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 					eWinEvent->getNode()->removeEventListener( eWinEvent->getCallbackId() );
 				} );
 			uiWin->addEventListener( Event::OnWindowClose, [sceneNode, winRdCb]( const Event* ) {
-				sceneNode->removeEventListener( winRdCb );
+				if ( !SceneManager::instance()->isShootingDown() )
+					sceneNode->removeEventListener( winRdCb );
 			} );
 		}
 	} );
 	uiWin->addEventListener( Event::OnWindowClose, [sceneNode, winCb]( const Event* ) {
-		sceneNode->removeEventListener( winCb );
+		if ( !SceneManager::instance()->isShootingDown() )
+			sceneNode->removeEventListener( winCb );
 	} );
 	return uiWin;
 }

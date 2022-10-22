@@ -54,7 +54,7 @@ class CSSPropertiesModel final : public Model {
 	explicit CSSPropertiesModel( UIWidget* widget ) { setWidget( widget ); }
 
 	virtual ~CSSPropertiesModel() {
-		if ( mCloseCb )
+		if ( mWidget && mCloseCb )
 			mWidget->removeEventListener( mCloseCb );
 	}
 
@@ -70,8 +70,10 @@ class CSSPropertiesModel final : public Model {
 			mProps[prop] = def;
 		}
 		if ( mWidget )
-			mCloseCb = mWidget->addEventListener( Event::OnClose,
-												  [this]( const Event* ) { mWidget = nullptr; } );
+			mCloseCb = mWidget->addEventListener( Event::OnClose, [this]( const Event* ) {
+				mWidget = nullptr;
+				mCloseCb = 0;
+			} );
 	}
 
 	UIWidget* getWidget() const { return mWidget; }

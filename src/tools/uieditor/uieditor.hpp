@@ -106,7 +106,7 @@ class App : public UICodeEditorSplitter::Client {
 	FontTrueType* loadFont( const std::string& name, std::string fontPath,
 							const std::string& fallback = "" );
 
-	void createWidgetTreeView();
+	void createWidgetInspector();
 
 	std::string titleFromEditor( UICodeEditor* editor );
 

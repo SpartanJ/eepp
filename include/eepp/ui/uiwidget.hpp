@@ -292,6 +292,10 @@ class EE_API UIWidget : public UINode {
 
 	virtual void onTabPress();
 
+	virtual Uint32 onFocus();
+
+	virtual Uint32 onFocusLoss();
+
 	void updateAnchors( const Vector2f& sizeChange );
 
 	void alignAgainstLayout();

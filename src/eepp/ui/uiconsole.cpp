@@ -820,7 +820,7 @@ void UIConsole::resetCursor() {
 }
 
 Uint32 UIConsole::onFocus() {
-	UINode::onFocus();
+	UIWidget::onFocus();
 
 	resetCursor();
 

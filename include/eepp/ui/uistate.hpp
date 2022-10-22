@@ -19,6 +19,7 @@ class EE_API UIState {
 		StateSelectedPressed,
 		StateDisabled,
 		StateChecked,
+		StateFocusWithin,
 		StateCount
 	};
 
@@ -32,6 +33,7 @@ class EE_API UIState {
 		StateFlagSelectedPressed = StateFlagSelected | StateFlagPressed,
 		StateFlagDisabled = 1 << StateDisabled,
 		StateFlagChecked = 1 << StateChecked,
+		StateFlagFocusWithin = 1 << StateFocusWithin,
 		StateFlagCount = StateCount
 	};
 

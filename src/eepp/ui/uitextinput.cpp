@@ -149,7 +149,7 @@ void UITextInput::draw() {
 }
 
 Uint32 UITextInput::onFocus() {
-	UINode::onFocus();
+	UIWidget::onFocus();
 
 	if ( mAllowEditing ) {
 		resetWaitCursor();

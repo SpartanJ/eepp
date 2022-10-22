@@ -536,6 +536,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool unregisterGutterSpace( UICodeEditorPlugin* plugin );
 
+	void showFindReplace();
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -803,8 +805,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Text& getLineText( const Int64& lineNumber ) const;
 
 	void updateLineCache( const Int64& lineIndex );
-
-	void findReplace();
 
 	bool gutterSpaceExists( UICodeEditorPlugin* plugin ) const;
 };

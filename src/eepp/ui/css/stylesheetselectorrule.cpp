@@ -4,9 +4,8 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-static const char* StatePseudoClasses[] = { "normal",		   "focus",	  "selected",
-											"hover",		   "pressed", "selectedhover",
-											"selectedpressed", "disabled" };
+static const char* StatePseudoClasses[] = { "focus",	"selected",		"hover", "pressed",
+											"disabled", "focus-within", "active" };
 
 static bool isPseudoClassState( const std::string& pseudoClass ) {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( StatePseudoClasses ); i++ ) {
@@ -123,7 +122,7 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 
 			if ( !pseudoClass.empty() ) {
 				if ( isPseudoClassState( pseudoClass ) ) {
-					mPseudoClasses.push_back( pseudoClass );
+					mPseudoClasses.push_back( pseudoClass == "active" ? "pressed" : pseudoClass );
 				} else if ( isStructuralPseudoClass( pseudoClass ) ) {
 					mStructuralPseudoClasses.push_back( pseudoClass );
 
@@ -283,12 +282,11 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 
 	if ( applyPseudo ) {
 		if ( !mPseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
-			bool hasPseudoClasses = false;
-			const std::vector<std::string>& elPseudoClasses = element->getStyleSheetPseudoClasses();
+			bool hasPseudoClasses = true;
 
-			for ( const auto& cls : elPseudoClasses ) {
-				if ( hasPseudoClass( cls ) ) {
-					hasPseudoClasses = true;
+			for ( const auto& cls : mPseudoClasses ) {
+				if ( !element->hasPseudoClass( cls ) ) {
+					hasPseudoClasses = false;
 					break;
 				}
 			}

@@ -509,8 +509,6 @@ void EETest::createBaseUI() {
 	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 );
 	w->setBackgroundColor( Color::Green );
 	w->setRotation( 45 );
-	// w->setBackgroundColor( UIState::StateFlagHover, Color::Yellow );
-	// w->setBackgroundColor( UIState::StateFlagPressed, Color::Red );
 
 	C = C->getParent()->asType<UINode>();
 

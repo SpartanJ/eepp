@@ -165,22 +165,9 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	return FontTrueType::New( name, fontPath );
 }
 
-void App::createWidgetTreeView() {
+void App::createWidgetInspector() {
 	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
-
-	UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );
-	uiWin->setMinWindowSize( 600, 400 );
-	uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
-	UITreeView* widgetTree = UITreeView::New();
-	widgetTree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-	widgetTree->setParent( uiWin );
-	widgetTree->setHeadersVisible( true );
-	widgetTree->setAutoExpandOnSingleColumn( true );
-	widgetTree->setExpanderIconSize( mMenuIconSize );
-	widgetTree->setAutoColumnsWidth( true );
-	widgetTree->setModel( WidgetTreeModel::New( mUIContainer->getContainer() ) );
-	uiWin->center();
-
+	UIWidgetInspector::create( mUISceneNode, mMenuIconSize );
 	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 }
 
@@ -912,7 +899,7 @@ void App::mainLoop() {
 	}
 
 	if ( mWindow->getInput()->isKeyUp( KEY_F11 ) )
-		createWidgetTreeView();
+		createWidgetInspector();
 
 	if ( mWindow->getInput()->isKeyUp( KEY_F12 ) ) {
 		Clock clock;
@@ -1098,7 +1085,7 @@ void App::fileMenuClick( const Event* event ) {
 	} else if ( "debug-data" == id ) {
 		mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
 	} else if ( "inspect-widgets" == id ) {
-		createWidgetTreeView();
+		createWidgetInspector();
 	} else if ( "save-doc" == id ) {
 		saveDoc();
 	} else if ( "save-as-doc" == id ) {
@@ -1338,6 +1325,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 			{ "arrow-down-s", 0xea4e },
 			{ "arrow-right-s", 0xea6e },
 			{ "match-case", 0xed8d },
+			{ "cursor-pointer", 0xec09 },
 		};
 		for ( const auto& icon : icons ) {
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );

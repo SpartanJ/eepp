@@ -70,7 +70,7 @@ Menu::item:hover > Menu::RadioButton::icon,
 PushButton:pressed > PushButton::icon,
 SelectButton:pressed > SelectButton::icon,
 SelectButton:selected > SelectButton::icon,
-SelectButton:selectedpressed > SelectButton::icon,
+SelectButton:selected:pressed > SelectButton::icon,
 tableview::row:selected tableview::cell::text,
 treeview::row:selected treeview::cell::text,
 listview::row:selected listview::cell::text,
@@ -166,7 +166,7 @@ ComboBox:focus {
 PushButton:pressed,
 SelectButton:pressed,
 SelectButton:selected,
-SelectButton:selectedpressed {
+SelectButton:selected:pressed {
 	background-color: var(--primary);
 }
 
@@ -551,7 +551,7 @@ Tab:selected {
 	border-top-right-radius: 2dp;
 }
 
-Tab:selectedhover {
+Tab:selected:hover {
 	background-color: var(--tab-active);
 }
 
@@ -1069,7 +1069,7 @@ Menu::item:hover > Menu::RadioButton::icon,
 PushButton:pressed > PushButton::icon,
 SelectButton:pressed > SelectButton::icon,
 SelectButton:selected > SelectButton::icon,
-SelectButton:selectedpressed > SelectButton::icon,
+SelectButton:selected:pressed > SelectButton::icon,
 tableview::row:selected tableview::cell::text,
 treeview::row:selected treeview::cell::text,
 listview::row:selected listview::cell::text,
