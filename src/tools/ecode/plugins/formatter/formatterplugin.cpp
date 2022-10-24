@@ -1,13 +1,13 @@
 #include "formatterplugin.hpp"
 #include "../../scopedop.hpp"
-#include "../../thirdparty/json.hpp"
-#include "../../thirdparty/subprocess.h"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/process.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
+#include <nlohmann/json.hpp>
 #include <random>
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -294,34 +294,24 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 
 	std::string cmd( formatter.command );
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
-	std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
-	std::vector<const char*> strings;
-	for ( size_t i = 0; i < cmdArr.size(); ++i )
-		strings.push_back( cmdArr[i].c_str() );
-	strings.push_back( NULL );
-	struct subprocess_s subprocess;
-	int result =
-		subprocess_create( strings.data(),
-						   subprocess_option_search_user_path |
-							   subprocess_option_inherit_environment | subprocess_option_no_window,
-						   &subprocess );
-	if ( 0 == result ) {
+	Process process;
+	if ( process.create( cmd ) ) {
 		std::string buffer( 1024, '\0' );
 		std::string data;
 		unsigned bytesRead = 0;
 		int returnCode;
 		do {
-			bytesRead = subprocess_read_stdout( &subprocess, &buffer[0], buffer.size() );
+			bytesRead = process.readStdOut( buffer );
 			data += buffer.substr( 0, bytesRead );
-		} while ( bytesRead != 0 && subprocess_alive( &subprocess ) && !mShuttingDown );
+		} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown );
 
 		if ( mShuttingDown ) {
-			subprocess_terminate( &subprocess );
+			process.kill();
 			return;
 		}
 
-		subprocess_join( &subprocess, &returnCode );
-		subprocess_destroy( &subprocess );
+		process.join( &returnCode );
+		process.destroy();
 
 		// Log::info( "Formatter result:\n%s", data.c_str() );
 

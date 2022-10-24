@@ -39,12 +39,26 @@ class EE_API MemoryManager {
 
 	template <class T> static T* deletePtr( T* data ) {
 		delete data;
+#if defined( __GNUC__ ) && __GNUC__ >= 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
 		return data;
+#pragma GCC diagnostic pop
+#else
+		return data;
+#endif
 	}
 
 	template <class T> static T* deleteArrayPtr( T* data ) {
 		delete[] data;
+#if defined( __GNUC__ ) && __GNUC__ >= 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
 		return data;
+#pragma GCC diagnostic pop
+#else
+		return data;
+#endif
 	}
 
 	template <class T> static T* free( T* data ) {
@@ -59,9 +73,7 @@ class EE_API MemoryManager {
 #endif
 	}
 
-	inline static void* allocate( size_t size ) {
-		return malloc( size );
-	}
+	inline static void* allocate( size_t size ) { return malloc( size ); }
 
 	inline static void* reallocate( void* ptr, size_t size ) {
 #if defined( __GNUC__ ) && __GNUC__ >= 12

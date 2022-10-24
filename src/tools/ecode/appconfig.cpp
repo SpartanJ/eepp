@@ -1,12 +1,12 @@
 #include "appconfig.hpp"
 #include "ecode.hpp"
 #include "plugins/pluginmanager.hpp"
-#include "thirdparty/json.hpp"
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
 #include <eterm/ui/uiterminal.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace EE::Network;
 using namespace eterm::UI;

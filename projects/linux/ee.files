@@ -257,6 +257,7 @@
 ../../include/eepp/system/pack.hpp
 ../../include/eepp/system/packmanager.hpp
 ../../include/eepp/system/pak.hpp
+../../include/eepp/system/process.hpp
 ../../include/eepp/system/rc4.hpp
 ../../include/eepp/system/resourceloader.hpp
 ../../include/eepp/system/resourcemanager.hpp
@@ -781,6 +782,7 @@
 ../../src/eepp/system/platform/win/threadimpl.hpp
 ../../src/eepp/system/platform/win/threadlocalimpl.cpp
 ../../src/eepp/system/platform/win/threadlocalimpl.hpp
+../../src/eepp/system/process.cpp
 ../../src/eepp/system/rc4.cpp
 ../../src/eepp/system/resourceloader.cpp
 ../../src/eepp/system/sys.cpp

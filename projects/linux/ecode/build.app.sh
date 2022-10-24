@@ -49,4 +49,4 @@ then
 	chmod +x "$APPIMAGETOOL"
 fi
 
-$APPIMAGETOOL ecode.app ecode-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-"$(arch)".AppImage
+$APPIMAGETOOL ecode.app ecode-linux-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-"$(arch)".AppImage
