@@ -113,6 +113,7 @@ subprocess_weak int subprocess_create(const char *const command_line[],
 subprocess_weak int
 subprocess_create_ex(const char *const command_line[], int options,
                      const char *const environment[],
+                     const char *working_directory,
                      struct subprocess_s *const out_process);
 
 /// @brief Get the standard input file for a process.
@@ -451,11 +452,12 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
 int subprocess_create(const char *const commandLine[], int options,
                       struct subprocess_s *const out_process) {
   return subprocess_create_ex(commandLine, options, SUBPROCESS_NULL,
-                              out_process);
+                              SUBPROCESS_NULL, out_process);
 }
 
 int subprocess_create_ex(const char *const commandLine[], int options,
                          const char *const environment[],
+                         const char* working_directory,
                          struct subprocess_s *const out_process) {
 #if defined(_WIN32)
   int fd;
@@ -710,7 +712,7 @@ int subprocess_create_ex(const char *const commandLine[], int options,
           1,                   // handles are inherited
           flags,               // creation flags
           used_environment,    // used environment
-          SUBPROCESS_NULL,     // use parent's current directory
+          working_directory,   // set process working directory
           SUBPROCESS_PTR_CAST(LPSTARTUPINFOA,
                               &startInfo), // STARTUPINFO pointer
           SUBPROCESS_PTR_CAST(LPPROCESS_INFORMATION, &processInfo))) {
@@ -764,7 +766,7 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     }
   }
 
-#if !defined(NO_POSIX_SPAWN)
+#if defined(SUBPROCESS_USE_POSIX_SPAWN)
   extern char **environ;
   posix_spawn_file_actions_t actions;
   char *const *used_environment;
@@ -832,6 +834,13 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     // Map the write end to stdout
     if (0 != posix_spawn_file_actions_adddup2(&actions, stderrfd[1],
                                               STDERR_FILENO)) {
+      posix_spawn_file_actions_destroy(&actions);
+      return -1;
+    }
+  }
+
+  if (working_directory) {
+    if (0 != posix_spawn_file_actions_addchdir_np(&actions, working_directory)) {
       posix_spawn_file_actions_destroy(&actions);
       return -1;
     }
@@ -921,6 +930,8 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 #pragma clang diagnostic ignored "-Wcast-qual"
 #pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
+    if (working_directory)
+      chdir(working_directory);
 
     if (environment) {
       _Exit(execve(commandLine[0], (char *const *)commandLine,

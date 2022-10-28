@@ -2,6 +2,7 @@
 #include <eepp/core/debug.hpp>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/process.hpp>
 #include <thirdparty/subprocess/subprocess.h>
@@ -21,9 +22,11 @@ namespace EE { namespace System {
 
 Process::Process() {}
 
-Process::Process( const std::string& command, const Uint32& options, const size_t& bufferSize ) :
+Process::Process( const std::string& command, const Uint32& options,
+				  const std::map<std::string, std::string>& environment,
+				  const std::string& workingDirectory, const size_t& bufferSize ) :
 	mBufferSize( bufferSize ) {
-	create( command, options );
+	create( command, options, environment, workingDirectory );
 }
 
 Process::~Process() {
@@ -36,7 +39,8 @@ Process::~Process() {
 }
 
 bool Process::create( const std::string& command, const Uint32& options,
-					  const std::map<std::string, std::string>& environment ) {
+					  const std::map<std::string, std::string>& environment,
+					  const std::string& workingDirectory ) {
 	if ( mProcess )
 		return false;
 	std::vector<std::string> cmdArr = String::split( command, " ", "", "\"", true );
@@ -54,9 +58,22 @@ bool Process::create( const std::string& command, const Uint32& options,
 			envStrings.push_back( envArr[envArr.size() - 1].c_str() );
 		}
 		envStrings.push_back( NULL );
-		return 0 == subprocess_create_ex( strings.data(), options, envStrings.data(), PROCESS_PTR );
+
+		std::string cwd;
+		if ( !workingDirectory.empty() ) {
+			cwd = FileSystem::getCurrentWorkingDirectory();
+		}
+
+		auto ret = 0 == subprocess_create_ex( strings.data(), options, envStrings.data(),
+											  !workingDirectory.empty() ? workingDirectory.c_str()
+																		: nullptr,
+											  PROCESS_PTR );
+
+		return ret;
 	}
-	return 0 == subprocess_create( strings.data(), options, PROCESS_PTR );
+	return 0 == subprocess_create_ex(
+					strings.data(), options, nullptr,
+					!workingDirectory.empty() ? workingDirectory.c_str() : nullptr, PROCESS_PTR );
 }
 
 size_t Process::readAllStdOut( std::string& buffer ) {

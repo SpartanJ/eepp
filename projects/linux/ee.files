@@ -1166,6 +1166,12 @@
 ../../src/tools/ecode/notificationcenter.hpp
 ../../src/tools/ecode/plugins/linter/linterplugin.cpp
 ../../src/tools/ecode/plugins/linter/linterplugin.hpp
+../../src/tools/ecode/plugins/lsp/lspclient.cpp
+../../src/tools/ecode/plugins/lsp/lspclient.hpp
+../../src/tools/ecode/plugins/lsp/lspclientmanager.cpp
+../../src/tools/ecode/plugins/lsp/lspclientmanager.hpp
+../../src/tools/ecode/plugins/lsp/lspplugin.cpp
+../../src/tools/ecode/plugins/lsp/lspplugin.hpp
 ../../src/tools/ecode/plugins/pluginmanager.cpp
 ../../src/tools/ecode/plugins/pluginmanager.hpp
 ../../src/tools/ecode/projectdirectorytree.cpp

@@ -133,7 +133,7 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 		ProjectSearch::ResultData* res =
 			(ProjectSearch::ResultData*)getCurIndex().parent().internalData();
 
-		auto styleDef = SyntaxDefinitionManager::instance()->getStyleByExtension( res->file );
+		auto styleDef = SyntaxDefinitionManager::instance()->getByExtension( res->file );
 
 		Uint32 from = text.find_first_not_of( ' ' );
 		Uint32 to = from;

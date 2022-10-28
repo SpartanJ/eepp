@@ -31,7 +31,7 @@ LinterPlugin::LinterPlugin( const PluginManager* pluginManager ) :
 #if LINTER_THREADED
 	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 #else
-	load( lintersPath );
+	load( pluginManager );
 #endif
 }
 

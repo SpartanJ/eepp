@@ -26,6 +26,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/pak.hpp>
+#include <eepp/system/process.hpp>
 #include <eepp/system/rc4.hpp>
 #include <eepp/system/resourceloader.hpp>
 #include <eepp/system/resourcemanager.hpp>

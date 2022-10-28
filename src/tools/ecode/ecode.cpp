@@ -2,6 +2,7 @@
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
+// #include "plugins/lsp/lspplugin.hpp"
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
@@ -368,6 +369,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( LinterPlugin::Definition() );
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );
+	// mPluginManager->registerPlugin( LSPPlugin::Definition() );
 }
 
 void App::loadConfig( const LogLevel& logLevel ) {
@@ -682,6 +684,101 @@ UIMenu* App::createHelpMenu() {
 	return helpMenu;
 }
 
+void App::setUIScaleFactor() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_ui_scale_factor", "Set the UI scale factor (pixel density):\nMinimum value is "
+									 "1, and maximum 6. Requires restart." ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( String::format( "%.2f", mConfig.windowState.pixelDensity ) );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+		msgBox->closeWindow();
+		Float val;
+		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 1 &&
+			 val <= 6 ) {
+			if ( mConfig.windowState.pixelDensity != val ) {
+				mConfig.windowState.pixelDensity = val;
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK,
+					i18n( "new_ui_scale_factor", "New UI scale factor assigned.\nPlease "
+												 "restart the application." ) );
+				msg->show();
+				setFocusEditorOnClose( msg );
+			} else if ( mSplitter && mSplitter->getCurWidget() ) {
+				mSplitter->getCurWidget()->setFocus();
+			}
+		} else {
+			UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK, "Invalid value!" );
+			msg->show();
+			setFocusEditorOnClose( msg );
+		}
+	} );
+}
+
+void App::setEditorFontSize() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT, i18n( "set_editor_font_size", "Set the editor font size:" ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+		mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+		mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+			editor->setFontSize( mConfig.editor.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+		} );
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
+void App::setTerminalFontSize() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT, i18n( "set_terminal_font_size", "Set the terminal font size:" ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( mConfig.term.fontSize.toString() );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+		mConfig.term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+		mSplitter->forEachWidget( [&]( UIWidget* widget ) {
+			if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
+				widget->asType<UITerminal>()->setFontSize(
+					mConfig.term.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
+		} );
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
+void App::setUIFontSize() {
+	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
+											  i18n( "set_ui_font_size", "Set the UI font size:" ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+		mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+		Float fontSize = mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI );
+		UIThemeManager* manager = mUISceneNode->getUIThemeManager();
+		manager->setDefaultFontSize( fontSize );
+		manager->getDefaultTheme()->setDefaultFontSize( fontSize );
+		mUISceneNode->forEachNode( [&]( Node* node ) {
+			if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
+				UITextView* textView = node->asType<UITextView>();
+				if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
+					textView->setFontSize(
+						mConfig.ui.fontSize.asDp( node->getParent()->getPixelsSize().getWidth(),
+												  Sizef(), mUISceneNode->getDPI() ) );
+				}
+			}
+		} );
+		msgBox->closeWindow();
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
 UIMenu* App::createWindowMenu() {
 	mWindowMenu = UIPopUpMenu::New();
 	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
@@ -797,98 +894,15 @@ UIMenu* App::createWindowMenu() {
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		if ( item->getId() == "show-side-panel" ) {
-			mConfig.ui.showSidePanel = item->asType<UIMenuCheckBox>()->isActive();
-			showSidePanel( mConfig.ui.showSidePanel );
+			switchSidePanel();
 		} else if ( item->getId() == "ui-scale-factor" ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT,
-				i18n( "set_ui_scale_factor",
-					  "Set the UI scale factor (pixel density):\nMinimum value is "
-					  "1, and maximum 6. Requires restart." ) );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setText(
-				String::format( "%.2f", mConfig.windowState.pixelDensity ) );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				msgBox->closeWindow();
-				Float val;
-				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 1 &&
-					 val <= 6 ) {
-					if ( mConfig.windowState.pixelDensity != val ) {
-						mConfig.windowState.pixelDensity = val;
-						UIMessageBox* msg = UIMessageBox::New(
-							UIMessageBox::OK,
-							i18n( "new_ui_scale_factor", "New UI scale factor assigned.\nPlease "
-														 "restart the application." ) );
-						msg->show();
-						setFocusEditorOnClose( msg );
-					} else if ( mSplitter && mSplitter->getCurWidget() ) {
-						mSplitter->getCurWidget()->setFocus();
-					}
-				} else {
-					UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK, "Invalid value!" );
-					msg->show();
-					setFocusEditorOnClose( msg );
-				}
-			} );
+			setUIScaleFactor();
 		} else if ( item->getId() == "editor-font-size" ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT, i18n( "set_editor_font_size", "Set the editor font size:" ) );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				mConfig.term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-				mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-					editor->setFontSize( mConfig.editor.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
-				} );
-			} );
-			setFocusEditorOnClose( msgBox );
+			setEditorFontSize();
 		} else if ( item->getId() == "terminal-font-size" ) {
-			UIMessageBox* msgBox =
-				UIMessageBox::New( UIMessageBox::INPUT, i18n( "set_terminal_font_size",
-															  "Set the terminal font size:" ) );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setText( mConfig.term.fontSize.toString() );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				mConfig.term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-				mSplitter->forEachWidget( [&]( UIWidget* widget ) {
-					if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
-						widget->asType<UITerminal>()->setFontSize(
-							mConfig.term.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
-				} );
-			} );
-			setFocusEditorOnClose( msgBox );
+			setTerminalFontSize();
 		} else if ( item->getId() == "ui-font-size" ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT, i18n( "set_ui_font_size", "Set the UI font size:" ) );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-				Float fontSize = mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI );
-				UIThemeManager* manager = mUISceneNode->getUIThemeManager();
-				manager->setDefaultFontSize( fontSize );
-				manager->getDefaultTheme()->setDefaultFontSize( fontSize );
-				mUISceneNode->forEachNode( [&]( Node* node ) {
-					if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
-						UITextView* textView = node->asType<UITextView>();
-						if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
-							textView->setFontSize( mConfig.ui.fontSize.asDp(
-								node->getParent()->getPixelsSize().getWidth(), Sizef(),
-								mUISceneNode->getDPI() ) );
-						}
-					}
-				} );
-				msgBox->closeWindow();
-			} );
-			setFocusEditorOnClose( msgBox );
+			setUIFontSize();
 		} else if ( item->getId() == "serif-font" ) {
 			openFontDialog( mConfig.ui.serifFont, false );
 		} else if ( item->getId() == "monospace-font" ) {
@@ -2865,7 +2879,7 @@ UIMenu* App::createFileTypeMenu() {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		const String& name = item->getText();
 		if ( mSplitter->curEditorExistsAndFocused() ) {
-			mSplitter->getCurEditor()->setSyntaxDefinition( dM->getStyleByLanguageName( name ) );
+			mSplitter->getCurEditor()->setSyntaxDefinition( dM->getByLanguageName( name ) );
 			updateCurrentFileType();
 		}
 	};

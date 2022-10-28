@@ -3724,43 +3724,43 @@ void SyntaxDefinitionManager::addxit() {
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
-	mStyles.emplace_back( std::move( syntaxStyle ) );
-	return mStyles.back();
+	mDefinitions.emplace_back( std::move( syntaxStyle ) );
+	return mDefinitions.back();
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getPlainStyle() const {
-	return mStyles[0];
+	return mDefinitions[0];
 }
 
-SyntaxDefinition& SyntaxDefinitionManager::getStyleByExtensionRef( const std::string& filePath ) {
-	return const_cast<SyntaxDefinition&>( getStyleByExtension( filePath ) );
+SyntaxDefinition& SyntaxDefinitionManager::getByExtensionRef( const std::string& filePath ) {
+	return const_cast<SyntaxDefinition&>( getByExtension( filePath ) );
 }
 
 const SyntaxDefinition&
-SyntaxDefinitionManager::getStyleByLanguageName( const std::string& name ) const {
-	for ( auto& style : mStyles ) {
+SyntaxDefinitionManager::getByLanguageName( const std::string& name ) const {
+	for ( auto& style : mDefinitions ) {
 		if ( style.getLanguageName() == name )
 			return style;
 	}
-	return mStyles[0];
+	return mDefinitions[0];
 }
 
 const SyntaxDefinition&
-SyntaxDefinitionManager::getStyleByLanguageId( const String::HashType& id ) const {
-	for ( auto& style : mStyles ) {
+SyntaxDefinitionManager::getByLanguageId( const String::HashType& id ) const {
+	for ( auto& style : mDefinitions ) {
 		if ( style.getLanguageId() == id )
 			return style;
 	}
-	return mStyles[0];
+	return mDefinitions[0];
 }
 
-SyntaxDefinition& SyntaxDefinitionManager::getStyleByLanguageNameRef( const std::string& name ) {
-	return const_cast<SyntaxDefinition&>( getStyleByLanguageName( name ) );
+SyntaxDefinition& SyntaxDefinitionManager::getByLanguageNameRef( const std::string& name ) {
+	return const_cast<SyntaxDefinition&>( getByLanguageName( name ) );
 }
 
 std::vector<std::string> SyntaxDefinitionManager::getLanguageNames() const {
 	std::vector<std::string> names;
-	for ( auto& style : mStyles ) {
+	for ( auto& style : mDefinitions ) {
 		names.push_back( style.getLanguageName() );
 	}
 	std::sort( names.begin(), names.end() );
@@ -3769,14 +3769,24 @@ std::vector<std::string> SyntaxDefinitionManager::getLanguageNames() const {
 
 std::vector<std::string> SyntaxDefinitionManager::getExtensionsPatternsSupported() const {
 	std::vector<std::string> exts;
-	for ( auto& style : mStyles )
+	for ( auto& style : mDefinitions )
 		for ( auto& pattern : style.getFiles() )
 			exts.emplace_back( pattern );
 	return exts;
 }
 
+const SyntaxDefinition*
+SyntaxDefinitionManager::getPtrByLanguageName( const std::string& name ) const {
+	return &getByLanguageName( name );
+}
+
+const SyntaxDefinition*
+SyntaxDefinitionManager::getPtrByLanguageId( const String::HashType& id ) const {
+	return &getByLanguageId( id );
+}
+
 const SyntaxDefinition&
-SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) const {
+SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 	std::string extension( FileSystem::fileExtension( filePath ) );
 	std::string fileName( FileSystem::fileNameFromPath( filePath ) );
 
@@ -3785,7 +3795,7 @@ SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) cons
 		extension = FileSystem::fileNameFromPath( filePath );
 
 	if ( !extension.empty() ) {
-		for ( auto style = mStyles.rbegin(); style != mStyles.rend(); ++style ) {
+		for ( auto style = mDefinitions.rbegin(); style != mDefinitions.rend(); ++style ) {
 			for ( const auto& ext : style->getFiles() ) {
 				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
 					 String::endsWith( ext, "$" ) ) {
@@ -3799,13 +3809,12 @@ SyntaxDefinitionManager::getStyleByExtension( const std::string& filePath ) cons
 			}
 		}
 	}
-	return mStyles[0];
+	return mDefinitions[0];
 }
 
-const SyntaxDefinition&
-SyntaxDefinitionManager::getStyleByHeader( const std::string& header ) const {
+const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string& header ) const {
 	if ( !header.empty() ) {
-		for ( auto style = mStyles.rbegin(); style != mStyles.rend(); ++style ) {
+		for ( auto style = mDefinitions.rbegin(); style != mDefinitions.rend(); ++style ) {
 			for ( const auto& hdr : style->getHeaders() ) {
 				LuaPattern words( hdr );
 				int start, end;
@@ -3815,14 +3824,14 @@ SyntaxDefinitionManager::getStyleByHeader( const std::string& header ) const {
 			}
 		}
 	}
-	return mStyles[0];
+	return mDefinitions[0];
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePath,
 													   const std::string& header ) {
-	const SyntaxDefinition& def = getStyleByHeader( header );
-	if ( def.getLanguageName() == mStyles[0].getLanguageName() )
-		return getStyleByExtension( filePath );
+	const SyntaxDefinition& def = getByHeader( header );
+	if ( def.getLanguageName() == mDefinitions[0].getLanguageName() )
+		return getByExtension( filePath );
 	return def;
 }
 }}} // namespace EE::UI::Doc

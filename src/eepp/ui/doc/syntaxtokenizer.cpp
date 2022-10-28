@@ -98,7 +98,7 @@ SyntaxState SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition& syntax
 					syntaxState.subsyntaxInfo =
 						&syntaxState.currentSyntax->getPatterns()[target - 1];
 					syntaxState.currentSyntax =
-						&SyntaxDefinitionManager::instance()->getStyleByLanguageName(
+						&SyntaxDefinitionManager::instance()->getByLanguageName(
 							syntaxState.subsyntaxInfo->syntax );
 					syntaxState.currentPatternIdx = SYNTAX_TOKENIZER_STATE_NONE;
 					syntaxState.currentLevel++;
@@ -141,7 +141,7 @@ SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& te
 		setSubsyntaxPatternIdx( patternIndex );
 		curState.currentLevel++;
 		curState.subsyntaxInfo = &enteringSubsyntax;
-		curState.currentSyntax = &SyntaxDefinitionManager::instance()->getStyleByLanguageName(
+		curState.currentSyntax = &SyntaxDefinitionManager::instance()->getByLanguageName(
 			curState.subsyntaxInfo->syntax );
 		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
 	};

@@ -31,7 +31,7 @@ FormatterPlugin::FormatterPlugin( const PluginManager* pluginManager ) :
 #if FORMATTER_THREADED
 	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 #else
-	load( formattersPath );
+	load( pluginManager );
 #endif
 }
 

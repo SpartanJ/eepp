@@ -155,6 +155,16 @@ class App : public UICodeEditorSplitter::Client {
 
 	void debugDrawData();
 
+	void setUIFontSize();
+
+	void setEditorFontSize();
+
+	void setTerminalFontSize();
+
+	void setUIScaleFactor();
+
+	void toggleSidePanel();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };

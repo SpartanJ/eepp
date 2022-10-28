@@ -15,28 +15,32 @@ class EE_API SyntaxDefinitionManager {
 
 	const SyntaxDefinition& getPlainStyle() const;
 
-	const SyntaxDefinition& getStyleByExtension( const std::string& filePath ) const;
+	const SyntaxDefinition& getByExtension( const std::string& filePath ) const;
 
-	const SyntaxDefinition& getStyleByHeader( const std::string& header ) const;
+	const SyntaxDefinition& getByHeader( const std::string& header ) const;
 
 	const SyntaxDefinition& find( const std::string& filePath, const std::string& header );
 
-	SyntaxDefinition& getStyleByExtensionRef( const std::string& filePath );
+	SyntaxDefinition& getByExtensionRef( const std::string& filePath );
 
-	const SyntaxDefinition& getStyleByLanguageName( const std::string& name ) const;
+	const SyntaxDefinition& getByLanguageName( const std::string& name ) const;
 
-	const SyntaxDefinition& getStyleByLanguageId( const String::HashType& id ) const;
+	const SyntaxDefinition& getByLanguageId( const String::HashType& id ) const;
 
-	SyntaxDefinition& getStyleByLanguageNameRef( const std::string& name );
+	SyntaxDefinition& getByLanguageNameRef( const std::string& name );
 
 	std::vector<std::string> getLanguageNames() const;
 
 	std::vector<std::string> getExtensionsPatternsSupported() const;
 
+	const SyntaxDefinition* getPtrByLanguageName( const std::string& name ) const;
+
+	const SyntaxDefinition* getPtrByLanguageId( const String::HashType& id ) const;
+
   protected:
 	SyntaxDefinitionManager();
 
-	std::vector<SyntaxDefinition> mStyles;
+	std::vector<SyntaxDefinition> mDefinitions;
 
 	void addPlainText();
 
