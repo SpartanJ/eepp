@@ -198,7 +198,7 @@ void FormatterPlugin::load( const PluginManager* pluginManager ) {
 	for ( const auto& path : paths ) {
 		try {
 			loadFormatterConfig( path );
-		} catch ( json::exception& e ) {
+		} catch ( const json::exception& e ) {
 			Log::error( "Parsing formatter \"%s\" failed:\n%s", path.c_str(), e.what() );
 		}
 	}

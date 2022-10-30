@@ -105,21 +105,21 @@ void GlobalSearchController::initGlobalSearchBar(
 
 	mGlobalSearchHistoryList =
 		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
-	mGlobalSearchBarLayout->addCommand( "global-search-clear-history", [&] { clearHistory(); } );
-	mGlobalSearchBarLayout->addCommand(
+	mGlobalSearchBarLayout->setCommand( "global-search-clear-history", [&] { clearHistory(); } );
+	mGlobalSearchBarLayout->setCommand(
 		"search-in-files", [&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
 			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
 							wholeWordChk->isChecked(), luaPatternChk->isChecked(),
 							escapeSequenceChk->isChecked(), false );
 		} );
-	mGlobalSearchBarLayout->addCommand(
+	mGlobalSearchBarLayout->setCommand(
 		"search-replace-in-files",
 		[&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
 			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
 							wholeWordChk->isChecked(), luaPatternChk->isChecked(),
 							escapeSequenceChk->isChecked(), true );
 		} );
-	mGlobalSearchBarLayout->addCommand(
+	mGlobalSearchBarLayout->setCommand(
 		"search-again", [&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
 			auto listBox = mGlobalSearchHistoryList->getListBox();
 			if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
@@ -131,39 +131,39 @@ void GlobalSearchController::initGlobalSearchBar(
 								mGlobalSearchTreeReplace == mGlobalSearchTree, true );
 			}
 		} );
-	mGlobalSearchBarLayout->addCommand( "search-set-string", [&] {
+	mGlobalSearchBarLayout->setCommand( "search-set-string", [&] {
 		auto listBox = mGlobalSearchHistoryList->getListBox();
 		mGlobalSearchInput->setText(
 			mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 - listBox->getItemSelectedIndex()]
 				.first );
 		;
 	} );
-	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
+	mGlobalSearchBarLayout->setCommand( "close-global-searchbar", [&] {
 		hideGlobalSearchBar();
 		if ( mEditorSplitter->getCurWidget() )
 			mEditorSplitter->getCurWidget()->setFocus();
 	} );
-	mGlobalSearchBarLayout->addCommand( "expand-all", [&] {
+	mGlobalSearchBarLayout->setCommand( "expand-all", [&] {
 		mGlobalSearchTree->expandAll();
 		mGlobalSearchTree->setFocus();
 	} );
-	mGlobalSearchBarLayout->addCommand( "collapse-all", [&] {
+	mGlobalSearchBarLayout->setCommand( "collapse-all", [&] {
 		mGlobalSearchTree->collapseAll();
 		mGlobalSearchTree->setFocus();
 	} );
-	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
+	mGlobalSearchBarLayout->setCommand( "change-case", [&, caseSensitiveChk] {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
 	} );
-	mGlobalSearchBarLayout->addCommand( "change-whole-word", [&, wholeWordChk] {
+	mGlobalSearchBarLayout->setCommand( "change-whole-word", [&, wholeWordChk] {
 		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
 	} );
-	mGlobalSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
+	mGlobalSearchBarLayout->setCommand( "toggle-lua-pattern", [&, luaPatternChk] {
 		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
 	} );
-	mGlobalSearchBarLayout->addCommand( "change-escape-sequence", [&, escapeSequenceChk] {
+	mGlobalSearchBarLayout->setCommand( "change-escape-sequence", [&, escapeSequenceChk] {
 		escapeSequenceChk->setChecked( !escapeSequenceChk->isChecked() );
 	} );
-	mGlobalSearchBarLayout->addCommand( "find-replace", [&] { mApp->showFindView(); } );
+	mGlobalSearchBarLayout->setCommand( "find-replace", [&] { mApp->showFindView(); } );
 	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
 		if ( mGlobalSearchInput->hasFocus() ) {
 			mGlobalSearchBarLayout->execute( "search-in-files" );
@@ -244,7 +244,7 @@ void GlobalSearchController::initGlobalSearchBar(
 		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
 			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
 	} );
-	mGlobalSearchBarLayout->addCommand( "replace-in-files", [&, replaceInput, escapeSequenceChk] {
+	mGlobalSearchBarLayout->setCommand( "replace-in-files", [&, replaceInput, escapeSequenceChk] {
 		auto listBox = mGlobalSearchHistoryList->getListBox();
 		if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
 			const auto& replaceData = mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -

@@ -165,12 +165,59 @@ class App : public UICodeEditorSplitter::Client {
 
 	void toggleSidePanel();
 
+	UIMainLayout* getMainLayout() const { return mMainLayout; }
+
+	template <typename T> void registerUnlockedCommands( T& t ) {
+		t.setCommand( "keybindings", [&] { loadFileFromPath( mKeybindingsPath ); } );
+		t.setCommand( "debug-draw-boxes-toggle", [&] { debugDrawBoxesToggle(); } );
+		t.setCommand( "debug-draw-highlight-toggle", [&] { debugDrawHighlightToggle(); } );
+		t.setCommand( "debug-draw-debug-data", [&] { debugDrawData(); } );
+		t.setCommand( "debug-widget-tree-view", [&] { createWidgetInspector(); } );
+		t.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
+		t.setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
+		t.setCommand( "download-file-web", [&] { downloadFileWebDialog(); } );
+		t.setCommand( "move-panel-left", [&] { panelPosition( PanelPosition::Left ); } );
+		t.setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
+		t.setCommand( "create-new-terminal", [&] { mTerminalManager->createNewTerminal(); } );
+		t.setCommand( "terminal-split-right", [&] {
+			mSplitter->split( UICodeEditorSplitter::SplitDirection::Right,
+							  mSplitter->getCurWidget(), false );
+			t.execute( "create-new-terminal" );
+		} );
+		t.setCommand( "terminal-split-bottom", [&] {
+			mSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
+							  mSplitter->getCurWidget(), false );
+			t.execute( "create-new-terminal" );
+		} );
+		t.setCommand( "terminal-split-left", [&] {
+			mSplitter->split( UICodeEditorSplitter::SplitDirection::Left, mSplitter->getCurWidget(),
+							  false );
+			t.execute( "create-new-terminal" );
+		} );
+		t.setCommand( "terminal-split-top", [&] {
+			mSplitter->split( UICodeEditorSplitter::SplitDirection::Top, mSplitter->getCurWidget(),
+							  false );
+			t.execute( "create-new-terminal" );
+		} );
+		t.setCommand( "reopen-closed-tab", [&] { reopenClosedTab(); } );
+		t.setCommand( "plugin-manager-open", [&] { createPluginManagerUI(); } );
+		t.setCommand( "close-app", [&] { closeApp(); } );
+		t.setCommand( "fullscreen-toggle", [&]() { fullscreenToggle(); } );
+		t.setCommand( "open-file", [&] { openFileDialog(); } );
+		t.setCommand( "open-folder", [&] { openFolderDialog(); } );
+		t.setCommand( "console-toggle", [&] { consoleToggle(); } );
+		t.setCommand( "find-replace", [&] { showFindView(); } );
+		t.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
+		t.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
+		mSplitter->registerSplitterCommands( t );
+	}
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
 	UIConsole* mConsole{ nullptr };
 	std::string mWindowTitle{ "ecode" };
-	UILayout* mMainLayout{ nullptr };
+	UIMainLayout* mMainLayout{ nullptr };
 	UILayout* mBaseLayout{ nullptr };
 	UILayout* mImageLayout{ nullptr };
 	UIPopUpMenu* mSettingsMenu{ nullptr };

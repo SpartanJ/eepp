@@ -4,6 +4,7 @@
 #include <atomic>
 #include <eepp/core/string.hpp>
 #include <eepp/network/http.hpp>
+#include <eepp/network/uri.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -42,6 +43,7 @@ class EE_API TextDocument {
 	class EE_API Client {
 	  public:
 		virtual ~Client();
+		virtual void onDocumentLoaded( TextDocument* ) {};
 		virtual void onDocumentTextChanged() = 0;
 		virtual void onDocumentUndoRedo( const UndoRedo& eventType ) = 0;
 		virtual void onDocumentCursorChange( const TextPosition& ) = 0;
@@ -290,7 +292,7 @@ class EE_API TextDocument {
 
 	void setCommands( const std::map<std::string, DocumentCommand>& cmds );
 
-	void setCommand( const std::string& command, DocumentCommand func );
+	void setCommand( const std::string& command, const DocumentCommand& func );
 
 	bool hasCommand( const std::string& command );
 
@@ -346,6 +348,8 @@ class EE_API TextDocument {
 	void setDefaultFileName( const std::string& defaultFileName );
 
 	const std::string& getFilePath() const;
+
+	URI getURI() const;
 
 	const FileInfo& getFileInfo() const;
 
@@ -468,6 +472,8 @@ class EE_API TextDocument {
 	void initializeCommands();
 
 	void cleanChangeId();
+
+	void notifyDocumentLoaded();
 
 	void notifyTextChanged();
 

@@ -594,6 +594,14 @@ double Sys::getSystemTime() {
 #endif
 }
 
+Uint64 Sys::getProcessID() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return GetCurrentProcessId();
+#else
+	return getpid();
+#endif
+}
+
 std::string Sys::getDateTimeStr() {
 	time_t rawtime;
 	time( &rawtime );

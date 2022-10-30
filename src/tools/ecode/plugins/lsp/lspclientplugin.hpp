@@ -2,7 +2,7 @@
 #define ECODE_LSPPLUGIN_HPP
 
 #include "../pluginmanager.hpp"
-#include "lspclientmanager.hpp"
+#include "lspclientservermanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/mutex.hpp>
@@ -17,26 +17,21 @@ using namespace EE::UI;
 
 namespace ecode {
 
-struct LSP {
-	std::string name;
-	std::string language;
-	const SyntaxDefinition* langDefinition;
-	std::vector<SyntaxPattern> filePatterns;
-	std::string command;
-	std::string url;
-	std::vector<std::string> rootIndicationFileName;
-};
-
-class LSPPlugin : public UICodeEditorPlugin {
+// Implementation of the LSP Client:
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
+class LSPClientPlugin : public UICodeEditorPlugin {
   public:
 	static PluginDefinition Definition() {
-		return {
-			"lsp", "LSP Client", "Language Server Protocol Client.", LSPPlugin::New, { 0, 1, 0 } };
+		return { "lspclient",
+				 "LSP Client",
+				 "Language Server Protocol Client.",
+				 LSPClientPlugin::New,
+				 { 0, 0, 1 } };
 	}
 
 	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
 
-	virtual ~LSPPlugin();
+	virtual ~LSPClientPlugin();
 
 	std::string getId() { return Definition().id; }
 
@@ -57,16 +52,19 @@ class LSPPlugin : public UICodeEditorPlugin {
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
 	std::set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
-	LSPClientManager mClientManager;
+	LSPClientServerManager mClientManager;
 	std::string mConfigPath;
 	bool mClosing{ false };
 	bool mReady{ false };
 
-	LSPPlugin( const PluginManager* pluginManager );
+	LSPClientPlugin( const PluginManager* pluginManager );
 
 	void load( const PluginManager* pluginManager );
 
-	void loadLSPConfig( const std::string& path );
+	void loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path );
+
+	size_t lspFilePatternPosition( const std::vector<LSPDefinition>& lsps,
+								   const std::vector<std::string>& patterns );
 };
 
 } // namespace ecode

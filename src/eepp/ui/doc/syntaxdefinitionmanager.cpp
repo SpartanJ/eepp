@@ -448,7 +448,7 @@ void SyntaxDefinitionManager::addMarkdown() {
 
 void SyntaxDefinitionManager::addC() {
 	add( { "C",
-		   { "%.c$", "%.h$", "%.icc" },
+		   { "%.c$", "%.C", "%.h$", "%.icc" },
 		   {
 			   { { "//.-\n" }, "comment" },
 			   { { "/%*", "%*/" }, "comment" },
@@ -656,8 +656,7 @@ void SyntaxDefinitionManager::addPython() {
 		   "#",
 		   { "^#!.*[ /]python", "^#!.*[ /]python3" } } );
 }
-
-void SyntaxDefinitionManager::addBash() {
+ void SyntaxDefinitionManager::addBash() {
 	add( { "Bash",
 		   { "%.sh$", "%.bash$", "%.bashrc$", "%.bash_profile$" },
 		   {
@@ -688,7 +687,7 @@ void SyntaxDefinitionManager::addBash() {
 
 void SyntaxDefinitionManager::addCPP() {
 	add( { "C++",
-		   { "%.cpp$", "%.cc$", "%.C$", "%.cxx$", "%.c++$", "%.hh$", "%.inl$", "%.hxx$", "%.hpp$",
+		   { "%.cpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.inl$", "%.hxx$", "%.hpp$",
 			 "%.h++$" },
 		   {
 			   { { "R%\"xml%(", "%)xml%\"" }, "function", "XML" },

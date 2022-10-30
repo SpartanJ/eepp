@@ -224,24 +224,24 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 		}
 	} );
 
-	addCommand( "close-find-replace", [this] { hide(); } );
-	addCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
-	addCommand( "replace-all", [this] {
+	setCommand( "close-find-replace", [this] { hide(); } );
+	setCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
+	setCommand( "replace-all", [this] {
 		/*size_t count = */ replaceAll( mSearchState, mReplaceInput->getText() );
 		mReplaceInput->setFocus();
 	} );
-	addCommand( "find-and-replace",
+	setCommand( "find-and-replace",
 				[this] { findAndReplace( mSearchState, mReplaceInput->getText() ); } );
-	addCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
-	addCommand( "replace-selection",
+	setCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
+	setCommand( "replace-selection",
 				[this] { mDoc->replaceSelection( mReplaceInput->getText() ); } );
-	addCommand( "change-case",
+	setCommand( "change-case",
 				[&] { mCaseSensitive->setSelected( !mCaseSensitive->isSelected() ); } );
-	addCommand( "change-whole-word",
+	setCommand( "change-whole-word",
 				[&] { mWholeWord->setSelected( !mWholeWord->isSelected() ); } );
-	addCommand( "change-escape-sequence",
+	setCommand( "change-escape-sequence",
 				[&] { mEscapeSequences->setSelected( !mEscapeSequences->isSelected() ); } );
-	addCommand( "toggle-lua-pattern",
+	setCommand( "toggle-lua-pattern",
 				[&] { mLuaPattern->setSelected( !mLuaPattern->isSelected() ); } );
 
 	mCaseSensitive->setTooltipText( mCaseSensitive->getTooltipText() + " (" +

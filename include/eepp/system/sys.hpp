@@ -8,7 +8,10 @@ namespace EE { namespace System {
 
 class EE_API Sys {
   public:
-	/** Returns the current date time */
+	/** @return The current process id */
+	static Uint64 getProcessID();
+
+	/** @return the current date time */
 	static std::string getDateTimeStr();
 
 	/** Converts any epoch timestmap to a formatted string. */

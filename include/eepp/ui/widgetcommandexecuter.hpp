@@ -16,13 +16,19 @@ class EE_API WidgetCommandExecuter {
 
 	WidgetCommandExecuter( const KeyBindings& keybindings ) : mKeyBindings( keybindings ) {}
 
-	void addCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
+	void setCommand( const std::string& name, const CommandCallback& cb ) { mCommands[name] = cb; }
+
+	bool hasCommand( const std::string& name ) const {
+		return mCommands.find( name ) != mCommands.end();
+	}
 
 	void execute( const std::string& command ) {
 		auto cmdIt = mCommands.find( command );
 		if ( cmdIt != mCommands.end() )
 			cmdIt->second();
 	}
+
+	size_t commandCount() const { return mCommands.size(); }
 
 	KeyBindings& getKeyBindings() { return mKeyBindings; }
 

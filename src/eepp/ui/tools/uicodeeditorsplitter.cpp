@@ -130,7 +130,7 @@ UISplitter* UICodeEditorSplitter::splitterFromWidget( UIWidget* widget ) const {
 UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	UICodeEditor* editor = UICodeEditor::NewOpt( true, true );
 	TextDocument& doc = editor->getDocument();
-	/* global commands */
+	/* document commands */
 	doc.setCommand( "move-to-previous-line", [&] {
 		if ( mCurEditor )
 			mCurEditor->moveToPreviousLine();
@@ -198,8 +198,9 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	} );
 	editor->addUnlockedCommand( "copy" );
 	editor->addUnlockedCommand( "select-all" );
-	/* global commands */
+	/* document commands */
 
+	/* editor commands */
 	doc.setCommand( "switch-to-previous-colorscheme", [&] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
 		auto prev = std::prev( it, 1 );
@@ -209,6 +210,7 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			setColorScheme( mColorSchemes.rbegin()->first );
 		}
 	} );
+
 	doc.setCommand( "switch-to-next-colorscheme", [&] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
 		if ( ++it != mColorSchemes.end() )
@@ -217,64 +219,6 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			mCurrentColorScheme = mColorSchemes.begin()->first;
 		applyColorScheme( mColorSchemes[mCurrentColorScheme] );
 	} );
-
-	/* Splitter commands */
-	doc.setCommand( "switch-to-previous-split", [&] { switchPreviousSplit( mCurWidget ); } );
-	doc.setCommand( "switch-to-next-split", [&] { switchNextSplit( mCurWidget ); } );
-	doc.setCommand( "close-tab", [&] { tryTabClose( mCurWidget ); } );
-	doc.setCommand( "create-new", [&] {
-		auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
-		d.first->getTabWidget()->setTabSelected( d.first );
-	} );
-	doc.setCommand( "next-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mCurWidget->getData();
-			Uint32 tabIndex = tabWidget->getTabIndex( tab );
-			switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
-		}
-	} );
-	doc.setCommand( "previous-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mCurWidget->getData();
-			Uint32 tabIndex = tabWidget->getTabIndex( tab );
-			Int32 newTabIndex = (Int32)tabIndex - 1;
-			switchToTab( newTabIndex < 0 ? tabWidget->getTabCount() - newTabIndex : newTabIndex );
-		}
-	} );
-	for ( int i = 1; i <= 10; i++ )
-		doc.setCommand( String::format( "switch-to-tab-%d", i ), [&, i] { switchToTab( i - 1 ); } );
-	doc.setCommand( "switch-to-first-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-		if ( tabWidget && tabWidget->getTabCount() ) {
-			switchToTab( 0 );
-		}
-	} );
-	doc.setCommand( "switch-to-last-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-		if ( tabWidget && tabWidget->getTabCount() ) {
-			switchToTab( tabWidget->getTabCount() - 1 );
-		}
-	} );
-	doc.setCommand( "split-right", [&] {
-		split( SplitDirection::Right, mCurWidget, curEditorExistsAndFocused() );
-	} );
-	doc.setCommand( "split-bottom", [&] {
-		split( SplitDirection::Bottom, mCurWidget, curEditorExistsAndFocused() );
-	} );
-	doc.setCommand( "split-left", [&] {
-		split( SplitDirection::Left, mCurWidget, curEditorExistsAndFocused() );
-	} );
-	doc.setCommand( "split-top", [&] {
-		split( SplitDirection::Top, mCurWidget, curEditorExistsAndFocused() );
-	} );
-	doc.setCommand( "split-swap", [&] {
-		if ( UISplitter* splitter = splitterFromWidget( mCurWidget ) )
-			splitter->swap();
-	} );
-	/* Splitter commands */
-
 	doc.setCommand( "open-containing-folder", [&] {
 		if ( mCurEditor )
 			mCurEditor->openContainingFolder();
@@ -283,6 +227,12 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 		if ( mCurEditor )
 			mCurEditor->copyFilePath();
 	} );
+	/* editor commands */
+
+	/* Splitter commands */
+	registerSplitterCommands( doc );
+	/* Splitter commands */
+
 	editor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
 		setCurrentWidget( event->getNode()->asType<UICodeEditor>() );
 	} );

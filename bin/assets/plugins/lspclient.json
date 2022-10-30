@@ -1,0 +1,82 @@
+{
+  "config": {
+  },
+  "servers": [
+    {
+      "language": "typescript",
+      "name": "typescript-language-server",
+      "url": "https://github.com/theia-ide/typescript-language-server",
+      "command": "typescript-language-server --stdio",
+      "file_patterns": ["%.ts$"],
+      "rootIndicationFileNames": ["package.json", "package-lock.json"]
+    },
+    {
+      "language": "javascript",
+      "use": "typescript-language-server",
+      "file_patterns": ["%.js$"]
+    },
+    {
+      "language": "go",
+      "name": "gopls",
+      "url": "golang.org/x/tools/gopls",
+      "command": "gopls",
+      "file_patterns": ["%.go$"],
+      "rootIndicationFileNames": ["go.mod"]
+    },
+    {
+      "language": "php",
+      "name": "intelephense",
+      "url": "https://intelephense.com/",
+      "command": "intelephense --stdio",
+      "file_patterns": ["%.php$", "%.php%d$"]
+    },
+    {
+      "language": "c",
+      "name": "clangd",
+      "url": "https://clang.llvm.org/extra/clangd/",
+      "command": "clangd -log=error --background-index --limit-results=500 --completion-style=bundled",
+      "file_patterns": ["%.c$", "%.h$", "%.C$", "%.H$", "%.objc$"]
+    },
+    {
+      "language": "cpp",
+      "use": "clangd",
+      "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"]
+    },
+    {
+      "language": "d",
+      "name": "serve-d",
+      "url": "https://github.com/Pure-D/serve-d",
+      "command": "serve-d",
+      "file_patterns": ["%.d$"],
+      "rootIndicationFileNames": ["dub.json"]
+    },
+    {
+      "language": "zig",
+      "name": "zls",
+      "url": "https://github.com/zigtools/zls",
+      "command": "zls",
+      "file_patterns": ["%.zig$"]
+    },
+    {
+      "language": "python",
+      "name": "pylsp",
+      "url": "https://github.com/python-lsp/python-lsp-server",
+      "command": "pylsp --check-parent-process",
+      "file_patterns": ["%.py$"]
+    },
+    {
+      "language": "rust",
+      "name": "rust-language-server",
+      "url": "https://github.com/rust-lang/rls",
+      "command": "rls",
+      "file_patterns": ["%.rs$"]
+    },
+    {
+      "language": "lua",
+      "name": "lua-language-server",
+      "url": "https://github.com/sumneko/lua-language-server",
+      "command": "lua-language-server",
+      "file_patterns": ["%.lua"]
+    }
+  ]
+}

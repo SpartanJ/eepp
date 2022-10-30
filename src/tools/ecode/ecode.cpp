@@ -2,7 +2,7 @@
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
-// #include "plugins/lsp/lspplugin.hpp"
+//#include "plugins/lsp/lspclientplugin.hpp"
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
@@ -369,7 +369,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( LinterPlugin::Definition() );
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );
-	// mPluginManager->registerPlugin( LSPPlugin::Definition() );
+	//mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
 }
 
 void App::loadConfig( const LogLevel& logLevel ) {
@@ -454,6 +454,11 @@ bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
 			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
 		if ( !cmd.empty() )
 			terminal->execute( cmd );
+	} else {
+		std::string cmd = mMainLayout->getKeyBindings().getCommandFromKeyBind(
+			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
+		if ( !cmd.empty() )
+			mMainLayout->execute( cmd );
 	}
 	return false;
 }
@@ -2466,9 +2471,6 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			saveFileDialog( mSplitter->getCurEditor() );
 	} );
 	doc.setCommand( "save-all", [&] { saveAll(); } );
-	doc.setCommand( "find-replace", [&] { showFindView(); } );
-	doc.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
-	doc.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
 	doc.setCommand( "repeat-find", [&] {
 		mDocSearchController->findNextText( mDocSearchController->getSearchState() );
 	} );
@@ -2476,11 +2478,6 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		mDocSearchController->findPrevText( mDocSearchController->getSearchState() );
 	} );
 	doc.setCommand( "close-folder", [&] { closeFolder(); } );
-	doc.setCommand( "close-app", [&] { closeApp(); } );
-	doc.setCommand( "fullscreen-toggle", [&]() { fullscreenToggle(); } );
-	doc.setCommand( "open-file", [&] { openFileDialog(); } );
-	doc.setCommand( "open-folder", [&] { openFolderDialog(); } );
-	doc.setCommand( "console-toggle", [&] { consoleToggle(); } );
 	doc.setCommand( "lock", [&] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( true );
@@ -2499,41 +2496,9 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			updateDocumentMenu();
 		}
 	} );
-	doc.setCommand( "keybindings", [&] { loadFileFromPath( mKeybindingsPath ); } );
-	doc.setCommand( "debug-draw-boxes-toggle", [&] { debugDrawBoxesToggle(); } );
-	doc.setCommand( "debug-draw-highlight-toggle", [&] { debugDrawHighlightToggle(); } );
-	doc.setCommand( "debug-draw-debug-data", [&] { debugDrawData(); } );
-	doc.setCommand( "debug-widget-tree-view", [&] { createWidgetInspector(); } );
 	doc.setCommand( "go-to-line", [&] { mFileLocator->goToLine(); } );
 	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
-	doc.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
-	doc.setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
-	doc.setCommand( "download-file-web", [&] { downloadFileWebDialog(); } );
-	doc.setCommand( "move-panel-left", [&] { panelPosition( PanelPosition::Left ); } );
-	doc.setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
-	doc.setCommand( "create-new-terminal", [&] { mTerminalManager->createNewTerminal(); } );
-	doc.setCommand( "terminal-split-right", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Right, mSplitter->getCurWidget(),
-						  false );
-		doc.execute( "create-new-terminal" );
-	} );
-	doc.setCommand( "terminal-split-bottom", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom, mSplitter->getCurWidget(),
-						  false );
-		doc.execute( "create-new-terminal" );
-	} );
-	doc.setCommand( "terminal-split-left", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Left, mSplitter->getCurWidget(),
-						  false );
-		doc.execute( "create-new-terminal" );
-	} );
-	doc.setCommand( "terminal-split-top", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Top, mSplitter->getCurWidget(),
-						  false );
-		doc.execute( "create-new-terminal" );
-	} );
-	doc.setCommand( "reopen-closed-tab", [&] { reopenClosedTab(); } );
-	doc.setCommand( "plugin-manager-open", [&] { createPluginManagerUI(); } );
+	registerUnlockedCommands( doc );
 
 	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -3692,7 +3657,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			opacity: 0.8;
 		}
 		</style>
-		<RelativeLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
+		<MainLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
 			<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
 				<TreeView id="project_view" />
@@ -3774,7 +3739,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			</vbox>
 		</Splitter>
 		<TextView id="settings" layout_width="wrap_content" layout_height="wrap_content" text="&#xf0e9;" layout_gravity="top|right" />
-		</RelativeLayout>
+		</MainLayout>
 		)html";
 
 		UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
@@ -3926,6 +3891,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );
 		UIWidgetCreator::registerWidget( "globalsearchbar", UIGlobalSearchBar::New );
+		UIWidgetCreator::registerWidget( "mainlayout", UIMainLayout::New );
 		mUISceneNode->loadLayoutFromString( baseUI );
 		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );
@@ -3999,6 +3965,10 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mConsole = UIConsole::NewOpt( mFontMono, true, true, 1024 * 10 );
 		mConsole->setQuakeMode( true );
 		mConsole->setVisible( false );
+
+		registerUnlockedCommands( *mMainLayout );
+		mSplitter->registerSplitterCommands( *mMainLayout );
+		mMainLayout->getKeyBindings().addKeybinds( getDefaultKeybindings() );
 
 		Log::info( "Complete UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 

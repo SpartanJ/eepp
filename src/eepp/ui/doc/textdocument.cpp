@@ -335,6 +335,7 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 												  : FileInfo( mFilePath );
 	resetSyntax();
 	mLoading = false;
+	notifyDocumentLoaded();
 	return ret;
 }
 
@@ -399,6 +400,7 @@ TextDocument::LoadStatus TextDocument::loadFromURL( const std::string& url,
 	}
 
 	mLoading = false;
+	notifyDocumentLoaded();
 	return LoadStatus::Failed;
 }
 
@@ -428,6 +430,7 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 				onLoaded( this, false );
 			}
 			mLoading = false;
+			notifyDocumentLoaded();
 		},
 		uri, Seconds( 10 ), progressCallback, headers, "", true, Http::getEnvProxyURI() );
 	return true;
@@ -1466,6 +1469,10 @@ const std::string& TextDocument::getFilePath() const {
 	return mFilePath;
 }
 
+URI TextDocument::getURI() const {
+	return URI( "file://" + getFilePath() );
+}
+
 const FileInfo& TextDocument::getFileInfo() const {
 	return mFileRealPath;
 }
@@ -1485,7 +1492,8 @@ void TextDocument::setCommands( const std::map<std::string, DocumentCommand>& cm
 	mCommands.insert( cmds.begin(), cmds.end() );
 }
 
-void TextDocument::setCommand( const std::string& command, TextDocument::DocumentCommand func ) {
+void TextDocument::setCommand( const std::string& command,
+							   const TextDocument::DocumentCommand& func ) {
 	mCommands[command] = func;
 }
 
@@ -1954,6 +1962,12 @@ void TextDocument::notifyCursorChanged() {
 void TextDocument::notifySelectionChanged() {
 	for ( auto& client : mClients ) {
 		client->onDocumentSelectionChange( getSelection() );
+	}
+}
+
+void TextDocument::notifyDocumentLoaded() {
+	for ( auto& client : mClients ) {
+		client->onDocumentLoaded( this );
 	}
 }
 

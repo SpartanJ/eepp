@@ -83,7 +83,7 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		mLocateTable->forceKeyDown( *keyEvent );
 	} );
-	mLocateBarLayout->addCommand( "close-locatebar", [&] {
+	mLocateBarLayout->setCommand( "close-locatebar", [&] {
 		hideLocateBar();
 		if ( mEditorSplitter->getCurWidget() )
 			mEditorSplitter->getCurWidget()->setFocus();

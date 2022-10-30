@@ -30,6 +30,7 @@ Process::Process( const std::string& command, const Uint32& options,
 }
 
 Process::~Process() {
+	mShuttingDown = true;
 	if ( mStdOutThread.joinable() )
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )
@@ -233,30 +234,31 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 		}
 		auto buffer = std::unique_ptr<char[]>( new char[mBufferSize] );
 		bool anyOpen = !pollfds.empty();
-		while ( anyOpen && !mShuttingDown &&
-				( poll( pollfds.data(), static_cast<nfds_t>( pollfds.size() ), -1 ) > 0 ||
-				  errno == EINTR ) ) {
-			anyOpen = false;
-			for ( size_t i = 0; i < pollfds.size(); ++i ) {
-				if ( pollfds[i].fd >= 0 ) {
-					if ( pollfds[i].revents & POLLIN ) {
-						const ssize_t n = read( pollfds[i].fd, buffer.get(), mBufferSize );
-						if ( n > 0 ) {
-							if ( fdIsStdOut[i] )
-								mReadStdOutFn( buffer.get(), static_cast<size_t>( n ) );
-							else
-								mReadStdErrFn( buffer.get(), static_cast<size_t>( n ) );
-						} else if ( n < 0 && errno != EINTR && errno != EAGAIN &&
-									errno != EWOULDBLOCK ) {
+		while ( anyOpen && !mShuttingDown && errno != EINTR ) {
+			int res = poll( pollfds.data(), static_cast<nfds_t>( pollfds.size() ), 100 );
+			if ( res > 0 ) {
+				anyOpen = false;
+				for ( size_t i = 0; i < pollfds.size(); ++i ) {
+					if ( pollfds[i].fd >= 0 ) {
+						if ( pollfds[i].revents & POLLIN ) {
+							const ssize_t n = read( pollfds[i].fd, buffer.get(), mBufferSize );
+							if ( n > 0 ) {
+								if ( fdIsStdOut[i] )
+									mReadStdOutFn( buffer.get(), static_cast<size_t>( n ) );
+								else
+									mReadStdErrFn( buffer.get(), static_cast<size_t>( n ) );
+							} else if ( n < 0 && errno != EINTR && errno != EAGAIN &&
+										errno != EWOULDBLOCK ) {
+								pollfds[i].fd = -1;
+								continue;
+							}
+						}
+						if ( pollfds[i].revents & ( POLLERR | POLLHUP | POLLNVAL ) ) {
 							pollfds[i].fd = -1;
 							continue;
 						}
+						anyOpen = true;
 					}
-					if ( pollfds[i].revents & ( POLLERR | POLLHUP | POLLNVAL ) ) {
-						pollfds[i].fd = -1;
-						continue;
-					}
-					anyOpen = true;
 				}
 			}
 		}

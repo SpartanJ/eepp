@@ -100,7 +100,7 @@ void DocSearchController::initSearchBar(
 				mEscapeSequenceChk->setChecked( true );
 		}
 	} );
-	mSearchBarLayout->addCommand( "close-searchbar", [&] {
+	mSearchBarLayout->setCommand( "close-searchbar", [&] {
 		hideSearchBar();
 		if ( mEditorSplitter->getCurWidget() )
 			mEditorSplitter->getCurWidget()->setFocus();
@@ -111,29 +111,29 @@ void DocSearchController::initSearchBar(
 			}
 		}
 	} );
-	mSearchBarLayout->addCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
-	mSearchBarLayout->addCommand( "replace-all", [this] {
+	mSearchBarLayout->setCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
+	mSearchBarLayout->setCommand( "replace-all", [this] {
 		size_t count = replaceAll( mSearchState, mReplaceInput->getText() );
 		mApp->getNotificationCenter()->addNotification(
 			String::format( "Replaced %zu occurrences.", count ) );
 		mReplaceInput->setFocus();
 	} );
-	mSearchBarLayout->addCommand(
+	mSearchBarLayout->setCommand(
 		"find-and-replace", [this] { findAndReplace( mSearchState, mReplaceInput->getText() ); } );
-	mSearchBarLayout->addCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
-	mSearchBarLayout->addCommand( "replace-selection", [this] {
+	mSearchBarLayout->setCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
+	mSearchBarLayout->setCommand( "replace-selection", [this] {
 		replaceSelection( mSearchState, mReplaceInput->getText() );
 	} );
-	mSearchBarLayout->addCommand(
+	mSearchBarLayout->setCommand(
 		"change-case", [&] { mCaseSensitiveChk->setChecked( !mCaseSensitiveChk->isChecked() ); } );
-	mSearchBarLayout->addCommand( "change-whole-word",
+	mSearchBarLayout->setCommand( "change-whole-word",
 								  [&] { mWholeWordChk->setChecked( !mWholeWordChk->isChecked() ); } );
-	mSearchBarLayout->addCommand( "change-escape-sequence", [&] {
+	mSearchBarLayout->setCommand( "change-escape-sequence", [&] {
 		mEscapeSequenceChk->setChecked( !mEscapeSequenceChk->isChecked() );
 	} );
-	mSearchBarLayout->addCommand(
+	mSearchBarLayout->setCommand(
 		"toggle-lua-pattern", [&] { mLuaPatternChk->setChecked( !mLuaPatternChk->isChecked() ); } );
-	mSearchBarLayout->addCommand( "open-global-search", [&] { mApp->showGlobalSearch( false ); } );
+	mSearchBarLayout->setCommand( "open-global-search", [&] { mApp->showGlobalSearch( false ); } );
 
 	addReturnListener( mFindInput, "repeat-find" );
 	addReturnListener( mReplaceInput, "find-and-replace" );

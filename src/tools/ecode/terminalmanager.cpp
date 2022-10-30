@@ -195,114 +195,6 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
 		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
 		  "open-locatebar", "open-global-search", "menu-toggle", "console-toggle", "go-to-line" } );
-	term->setCommand( "switch-side-panel", [&] { mApp->switchSidePanel(); } );
-	term->setCommand( "fullscreen-toggle", [&]() { mApp->fullscreenToggle(); } );
-	for ( int i = 1; i <= 10; i++ )
-		term->setCommand( String::format( "switch-to-tab-%d", i ),
-						  [&, i] { mApp->getSplitter()->switchToTab( i - 1 ); } );
-	term->setCommand( "switch-to-first-tab", [&] {
-		UITabWidget* tabWidget =
-			mApp->getSplitter()->tabWidgetFromWidget( mApp->getSplitter()->getCurWidget() );
-		if ( tabWidget && tabWidget->getTabCount() ) {
-			mApp->getSplitter()->switchToTab( 0 );
-		}
-	} );
-	term->setCommand( "switch-to-last-tab", [&] {
-		UITabWidget* tabWidget =
-			mApp->getSplitter()->tabWidgetFromWidget( mApp->getSplitter()->getCurWidget() );
-		if ( tabWidget && tabWidget->getTabCount() ) {
-			mApp->getSplitter()->switchToTab( tabWidget->getTabCount() - 1 );
-		}
-	} );
-	term->setCommand( "switch-to-previous-split", [&] {
-		mApp->getSplitter()->switchPreviousSplit( mApp->getSplitter()->getCurWidget() );
-	} );
-	term->setCommand( "switch-to-next-split", [&] {
-		mApp->getSplitter()->switchNextSplit( mApp->getSplitter()->getCurWidget() );
-	} );
-	term->setCommand( "close-tab", [&] {
-		mApp->getSplitter()->tryTabClose( mApp->getSplitter()->getCurWidget() );
-	} );
-	term->setCommand( "create-new", [&] {
-		auto d = mApp->getSplitter()->createCodeEditorInTabWidget(
-			mApp->getSplitter()->tabWidgetFromWidget( mApp->getSplitter()->getCurWidget() ) );
-		d.first->getTabWidget()->setTabSelected( d.first );
-	} );
-	term->setCommand( "next-tab", [&] {
-		UITabWidget* tabWidget =
-			mApp->getSplitter()->tabWidgetFromWidget( mApp->getSplitter()->getCurWidget() );
-		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mApp->getSplitter()->getCurWidget()->getData();
-			Uint32 tabIndex = tabWidget->getTabIndex( tab );
-			mApp->getSplitter()->switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
-		}
-	} );
-	term->setCommand( "previous-tab", [&] {
-		UITabWidget* tabWidget =
-			mApp->getSplitter()->tabWidgetFromWidget( mApp->getSplitter()->getCurWidget() );
-		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mApp->getSplitter()->getCurWidget()->getData();
-			Uint32 tabIndex = tabWidget->getTabIndex( tab );
-			Int32 newTabIndex = (Int32)tabIndex - 1;
-			mApp->getSplitter()->switchToTab(
-				newTabIndex < 0 ? tabWidget->getTabCount() - newTabIndex : newTabIndex );
-		}
-	} );
-	term->setCommand( "split-right", [&] {
-		mApp->getSplitter()->split( UICodeEditorSplitter::SplitDirection::Right,
-									mApp->getSplitter()->getCurWidget(),
-									mApp->getSplitter()->curEditorExistsAndFocused() );
-	} );
-	term->setCommand( "split-bottom", [&] {
-		mApp->getSplitter()->split( UICodeEditorSplitter::SplitDirection::Bottom,
-									mApp->getSplitter()->getCurWidget(),
-									mApp->getSplitter()->curEditorExistsAndFocused() );
-	} );
-	term->setCommand( "split-left", [&] {
-		mApp->getSplitter()->split( UICodeEditorSplitter::SplitDirection::Left,
-									mApp->getSplitter()->getCurWidget(),
-									mApp->getSplitter()->curEditorExistsAndFocused() );
-	} );
-	term->setCommand( "split-top", [&] {
-		mApp->getSplitter()->split( UICodeEditorSplitter::SplitDirection::Top,
-									mApp->getSplitter()->getCurWidget(),
-									mApp->getSplitter()->curEditorExistsAndFocused() );
-	} );
-	term->setCommand( "split-swap", [&] {
-		if ( UISplitter* splitter =
-				 mApp->getSplitter()->splitterFromWidget( mApp->getSplitter()->getCurWidget() ) )
-			splitter->swap();
-	} );
-	term->setCommand( "terminal-split-right", [&, term] {
-		mApp->getSplitter()->split( UICodeEditorSplitter::SplitDirection::Right,
-									mApp->getSplitter()->getCurWidget(), false );
-		term->execute( "create-new-terminal" );
-	} );
-	term->setCommand( "terminal-split-bottom", [&, term] {
-		mApp->getSplitter()->split( UICodeEditorSplitter::SplitDirection::Bottom,
-									mApp->getSplitter()->getCurWidget(), false );
-		term->execute( "create-new-terminal" );
-	} );
-	term->setCommand( "terminal-split-left", [&, term] {
-		mApp->getSplitter()->split( UICodeEditorSplitter::SplitDirection::Left,
-									mApp->getSplitter()->getCurWidget(), false );
-		term->execute( "create-new-terminal" );
-	} );
-	term->setCommand( "terminal-split-top", [&, term] {
-		mApp->getSplitter()->split( UICodeEditorSplitter::SplitDirection::Top,
-									mApp->getSplitter()->getCurWidget(), false );
-		term->execute( "create-new-terminal" );
-	} );
-	term->setCommand( "split-swap", [&] {
-		if ( UISplitter* splitter =
-				 mApp->getSplitter()->splitterFromWidget( mApp->getSplitter()->getCurWidget() ) )
-			splitter->swap();
-	} );
-	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term, this] {
-		term->setExclusiveMode( !term->getExclusiveMode() );
-		mApp->updateTerminalMenu();
-	} );
-	term->setCommand( "create-new-terminal", [&] { createNewTerminal(); } );
 	term->setCommand( "terminal-rename", [&, term] {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::INPUT, mApp->i18n( "new_terminal_name", "New terminal name:" ) );
@@ -317,17 +209,6 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 			term->setFocus();
 		} );
 	} );
-	term->setCommand( "move-panel-left", [&] { mApp->panelPosition( PanelPosition::Left ); } );
-	term->setCommand( "move-panel-right", [&] { mApp->panelPosition( PanelPosition::Right ); } );
-	term->setCommand( "close-app", [&] { mApp->closeApp(); } );
-	term->setCommand( "open-file", [&] { mApp->openFileDialog(); } );
-	term->setCommand( "open-folder", [&] { mApp->openFolderDialog(); } );
-	term->setCommand( "console-toggle", [&] { mApp->consoleToggle(); } );
-	term->setCommand( "menu-toggle", [&] { mApp->toggleSettingsMenu(); } );
-	term->setCommand( "open-global-search", [&] { mApp->showGlobalSearch( false ); } );
-	term->setCommand( "open-locatebar", [&] { mApp->getFileLocator()->showLocateBar(); } );
-	term->setCommand( "download-file-web", [&] { mApp->downloadFileWebDialog(); } );
-
 	term->setCommand( "switch-to-previous-colorscheme", [&] {
 		auto it = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
 		auto prev = std::prev( it, 1 );
@@ -343,12 +224,12 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 									? it->first
 									: mTerminalColorSchemes.begin()->first );
 	} );
-	term->setCommand( "reopen-closed-tab", [&] { mApp->reopenClosedTab(); } );
-	term->setCommand( "plugin-manager", [&] { mApp->createPluginManagerUI(); } );
-	term->setCommand( "debug-draw-boxes-toggle", [&] { mApp->debugDrawBoxesToggle(); } );
-	term->setCommand( "debug-draw-highlight-toggle", [&] { mApp->debugDrawHighlightToggle(); } );
-	term->setCommand( "debug-draw-debug-data", [&] { mApp->debugDrawData(); } );
-	term->setCommand( "debug-widget-tree-view", [&] { mApp->createWidgetInspector(); } );
+	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term, this] {
+		term->setExclusiveMode( !term->getExclusiveMode() );
+		mApp->updateTerminalMenu();
+	} );
+	mApp->registerUnlockedCommands( *term );
+	mApp->getSplitter()->registerSplitterCommands( *term );
 	term->setFocus();
 	return term;
 #endif

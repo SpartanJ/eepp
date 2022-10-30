@@ -95,11 +95,11 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 
 	auto& linters = j["linters"];
 	for ( auto& obj : linters ) {
-		Linter linter;
 		if ( !obj.contains( "file_patterns" ) || !obj.contains( "warning_pattern" ) ||
 			 !obj.contains( "command" ) )
 			continue;
 
+		Linter linter;
 		auto fp = obj["file_patterns"];
 
 		for ( auto& pattern : fp )
@@ -181,7 +181,7 @@ void LinterPlugin::load( const PluginManager* pluginManager ) {
 	for ( const auto& path : paths ) {
 		try {
 			loadLinterConfig( path );
-		} catch ( json::exception& e ) {
+		} catch ( const json::exception& e ) {
 			Log::error( "Parsing linter \"%s\" failed:\n%s", path.c_str(), e.what() );
 		}
 	}
@@ -259,6 +259,8 @@ void LinterPlugin::update( UICodeEditor* editor ) {
 		mDirtyDoc.erase( doc.get() );
 #if LINTER_THREADED
 		mPool->run( [&, doc] { lintDoc( doc ); }, [] {} );
+#else
+		lintDoc( doc );
 #endif
 	}
 }
