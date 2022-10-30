@@ -1,4 +1,9 @@
 #include "lspclientserver.hpp"
+#include "lspclientservermanager.hpp"
+#include <algorithm>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreamstring.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -69,13 +74,14 @@ static json textDocumentParams( const URI& document, int version = -1 ) {
 	return textDocumentParams( versionedTextDocumentIdentifier( document, version ) );
 }
 
-LSPClientServer::LSPClientServer( const LSPDefinition& lsp, const std::string& rootPath ) :
-	mLSP( lsp ), mRootPath( rootPath ) {}
+LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String::HashType& id,
+								  const LSPDefinition& lsp, const std::string& rootPath ) :
+	mManager( manager ), mId( id ), mLSP( lsp ), mRootPath( rootPath ) {}
 
 LSPClientServer::~LSPClientServer() {
-	for ( const auto& client : mClients ) {
+	Lock l( mClientsMutex );
+	for ( const auto& client : mClients )
 		client.first->unregisterClient( client.second.get() );
-	}
 }
 
 bool LSPClientServer::start() {
@@ -91,8 +97,9 @@ bool LSPClientServer::start() {
 }
 
 bool LSPClientServer::registerDoc( const std::shared_ptr<TextDocument>& doc ) {
-	for ( auto& cdoc : mDocs ) {
-		if ( cdoc.get() == doc.get() ) {
+	Lock l( mClientsMutex );
+	for ( TextDocument* cdoc : mDocs ) {
+		if ( cdoc == doc.get() ) {
 			if ( mClients.find( doc.get() ) == mClients.end() ) {
 				mClients[doc.get()] = std::make_unique<LSPDocumentClient>( this, doc.get() );
 				return true;
@@ -102,9 +109,17 @@ bool LSPClientServer::registerDoc( const std::shared_ptr<TextDocument>& doc ) {
 	}
 
 	mClients[doc.get()] = std::make_unique<LSPDocumentClient>( this, doc.get() );
-	mDocs.emplace_back( doc );
+	mDocs.emplace_back( doc.get() );
 	doc->registerClient( mClients[doc.get()].get() );
 	return true;
+}
+
+LSPClientServer::RequestHandle LSPClientServer::cancel( int reqid ) {
+	if ( mHandlers.erase( reqid ) > 0 ) {
+		auto params = json{ MEMBER_ID, reqid };
+		return write( newRequest( "$/cancelRequest", params ) );
+	}
+	return RequestHandle();
 }
 
 LSPClientServer::RequestHandle LSPClientServer::write( const json& msg,
@@ -155,6 +170,85 @@ LSPClientServer::RequestHandle LSPClientServer::didOpen( const URI& document,
 														 const std::string& text, int version ) {
 	auto params = textDocumentParams( textDocumentItem( document, mLSP.language, text, version ) );
 	return send( newRequest( "textDocument/didOpen", params ) );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::didOpen( TextDocument* doc, int version ) {
+	if ( doc->isDirty() ) {
+		IOStreamString text;
+		doc->save( text, true );
+		return didOpen( doc->getURI(), text.getStream(), version );
+	} else {
+		std::string text;
+		FileSystem::fileGet( doc->getFilePath(), text );
+		return didOpen( doc->getURI(), text, version );
+	}
+}
+
+LSPClientServer::RequestHandle LSPClientServer::didSave( const URI& document,
+														 const std::string& text ) {
+	auto params = textDocumentParams( document );
+	if ( !text.empty() )
+		params["text"] = text;
+	return send( newRequest( "textDocument/didSave", params ) );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::didSave( TextDocument* doc ) {
+	return didSave( doc->getURI(), doc->getText( doc->getDocRange() ).toUtf8() );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::didChange( const URI& document, int version,
+														   const std::string& text ) {
+	auto params = textDocumentParams( document, version );
+	if ( !text.empty() )
+		params["contentChanges"] = { json{ MEMBER_TEXT, text } };
+	return send( newRequest( "textDocument/didChange", params ) );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::didChange( TextDocument* doc ) {
+	Lock l( mClientsMutex );
+	auto it = mClients.find( doc );
+	if ( it != mClients.end() )
+		return didChange( doc->getURI(), it->second->getVersion(),
+						  doc->getText( doc->getDocRange() ).toUtf8() );
+	return RequestHandle();
+}
+
+void LSPClientServer::updateDirty() {
+	Lock l( mClientsMutex );
+	for ( auto& client : mClients ) {
+		if ( client.second->isDirty() ) {
+			TextDocument* doc = client.first;
+			mManager->getThreadPool()->run( [this, doc]() { didChange( doc ); } );
+			client.second->resetDirty();
+		}
+	}
+}
+
+LSPClientServer::RequestHandle LSPClientServer::didClose( const URI& document ) {
+	auto params = textDocumentParams( document );
+	return send( newRequest( "textDocument/didClose", params ) );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::didClose( TextDocument* doc ) {
+	auto ret = didClose( doc->getURI() );
+	Lock l( mClientsMutex );
+	if ( mClients.erase( doc ) > 0 ) {
+		auto it = std::find( mDocs.begin(), mDocs.end(), doc );
+		if ( it != mDocs.end() )
+			mDocs.erase( it );
+		// No more docs are being used, close the LSP
+		if ( mDocs.empty() )
+			mManager->notifyClose( mId );
+	}
+	return ret;
+}
+
+LSPClientServerManager* LSPClientServer::getManager() const {
+	return mManager;
+}
+
+const std::shared_ptr<ThreadPool>& LSPClientServer::getThreadPool() const {
+	return mManager->getThreadPool();
 }
 
 LSPClientServer::RequestHandle LSPClientServer::documentSymbols( const URI& document,

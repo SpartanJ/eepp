@@ -39,9 +39,10 @@ LSPClientServerManager::supportsLSP( const std::shared_ptr<TextDocument>& doc ) 
 	return lsps;
 }
 
-std::shared_ptr<LSPClientServer>
-LSPClientServerManager::runLSPServer( const LSPDefinition& lsp, const std::string& rootPath ) {
-	auto server = std::make_shared<LSPClientServer>( lsp, rootPath );
+std::unique_ptr<LSPClientServer>
+LSPClientServerManager::runLSPServer( const String::HashType& id, const LSPDefinition& lsp,
+									  const std::string& rootPath ) {
+	auto server = std::make_unique<LSPClientServer>( this, id, lsp, rootPath );
 	server->start();
 	return server;
 }
@@ -76,17 +77,23 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 		auto lspName = lsp.name.empty() ? lsp.command : lsp.name;
 		String::HashType id = String::hash( lspName + "|" + lsp.language + "|" + rootPath );
 		auto clientIt = mClients.find( id );
-		std::shared_ptr<LSPClientServer> server;
+		LSPClientServer* server = nullptr;
 		if ( clientIt == mClients.end() ) {
-			server = runLSPServer( lsp, rootPath );
-			if ( server.use_count() )
-				mClients[id] = server;
+			std::unique_ptr<LSPClientServer> serverUP = runLSPServer( id, lsp, rootPath );
+			if ( ( server = serverUP.get() ) )
+				mClients[id] = std::move( serverUP );
 		} else {
-			server = clientIt->second;
+			server = clientIt->second.get();
 		}
-		if ( server.use_count() ) {
+		if ( server )
 			server->registerDoc( doc );
-		}
+	}
+}
+
+void LSPClientServerManager::notifyClose( const String::HashType& id ) {
+	auto it = mClients.find( id );
+	if ( it != mClients.end() ) {
+		mClients.erase( it );
 	}
 }
 
@@ -96,6 +103,15 @@ void LSPClientServerManager::run( const std::shared_ptr<TextDocument>& doc ) {
 
 size_t LSPClientServerManager::clientCount() const {
 	return mClients.size();
+}
+
+const std::shared_ptr<ThreadPool>& LSPClientServerManager::getThreadPool() const {
+	return mPool;
+}
+
+void LSPClientServerManager::updateDirty() {
+	for ( auto& server : mClients )
+		server.second->updateDirty();
 }
 
 } // namespace ecode

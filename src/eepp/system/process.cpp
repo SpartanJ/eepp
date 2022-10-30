@@ -188,26 +188,32 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	if ( stdOutFd ) {
 		mStdOutThread = std::thread( [this, stdOutFd]() {
 			DWORD n;
-			std::unique_ptr<char[]> buffer( new char[mBufferSize] );
+			std::string buffer;
+			buffer.resize( mBufferSize );
 			while ( !mShuttingDown ) {
-				BOOL bSuccess = ReadFile( stdOutFd, static_cast<CHAR*>( buffer.get() ),
+				BOOL bSuccess = ReadFile( stdOutFd, static_cast<CHAR*>( &buffer[0] ),
 										  static_cast<DWORD>( mBufferSize ), &n, nullptr );
 				if ( !bSuccess || n == 0 )
 					break;
-				mReadStdOutFn( buffer.get(), static_cast<size_t>( n ) );
+				if ( n < mBufferSize - 1 )
+					buffer[n] = '\0';
+				mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
 			}
 		} );
 	}
 	if ( stdErrFd ) {
 		mStdErrThread = std::thread( [this, stdErrFd]() {
 			DWORD n;
-			std::unique_ptr<char[]> buffer( new char[mBufferSize] );
+			std::string buffer;
+			buffer.resize( mBufferSize );
 			while ( !mShuttingDown ) {
-				BOOL bSuccess = ReadFile( stdErrFd, static_cast<CHAR*>( buffer.get() ),
+				BOOL bSuccess = ReadFile( stdErrFd, static_cast<CHAR*>( &buffer[0] ),
 										  static_cast<DWORD>( mBufferSize ), &n, nullptr );
 				if ( !bSuccess || n == 0 )
 					break;
-				mReadStdErrFn( buffer.get(), static_cast<size_t>( n ) );
+				if ( n < mBufferSize - 1 )
+					buffer[n] = '\0';
+				mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
 			}
 		} );
 	}
@@ -232,7 +238,8 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 																						 : -1;
 			pollfds.back().events = POLLIN;
 		}
-		auto buffer = std::unique_ptr<char[]>( new char[mBufferSize] );
+		std::string buffer;
+		buffer.resize( mBufferSize );
 		bool anyOpen = !pollfds.empty();
 		while ( anyOpen && !mShuttingDown && errno != EINTR ) {
 			int res = poll( pollfds.data(), static_cast<nfds_t>( pollfds.size() ), 100 );
@@ -241,12 +248,14 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 				for ( size_t i = 0; i < pollfds.size(); ++i ) {
 					if ( pollfds[i].fd >= 0 ) {
 						if ( pollfds[i].revents & POLLIN ) {
-							const ssize_t n = read( pollfds[i].fd, buffer.get(), mBufferSize );
+							const ssize_t n = read( pollfds[i].fd, &buffer[0], mBufferSize );
 							if ( n > 0 ) {
+								if ( n < mBufferSize - 1 )
+									buffer[n] = '\0';
 								if ( fdIsStdOut[i] )
-									mReadStdOutFn( buffer.get(), static_cast<size_t>( n ) );
+									mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
 								else
-									mReadStdErrFn( buffer.get(), static_cast<size_t>( n ) );
+									mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
 							} else if ( n < 0 && errno != EINTR && errno != EAGAIN &&
 										errno != EWOULDBLOCK ) {
 								pollfds[i].fd = -1;

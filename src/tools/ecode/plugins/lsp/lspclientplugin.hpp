@@ -33,6 +33,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	virtual ~LSPClientPlugin();
 
+	virtual void update( UICodeEditor* );
+
 	std::string getId() { return Definition().id; }
 
 	std::string getTitle() { return Definition().name; }

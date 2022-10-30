@@ -1,9 +1,11 @@
 #ifndef ECODE_LSPDOCUMENTCLIENT_HPP
 #define ECODE_LSPDOCUMENTCLIENT_HPP
 
+#include <eepp/system/clock.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 
 using namespace EE;
+using namespace EE::System;
 using namespace EE::UI::Doc;
 
 namespace ecode {
@@ -25,11 +27,24 @@ class LSPDocumentClient : public TextDocument::Client {
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* );
 	virtual void onDocumentMoved( TextDocument* );
 
+	bool isDirty() const;
+
 	void notifyOpen();
+
+	void resetDirty();
+
+	TextDocument* getDoc() const;
+
+	LSPClientServer* getServer() const;
+
+	int getVersion() const;
+
   protected:
 	LSPClientServer* mServer{ nullptr };
 	TextDocument* mDoc{ nullptr };
+	bool mModified{ false };
 	int mVersion{ 0 };
+	Clock mLastModified;
 };
 
 } // namespace ecode

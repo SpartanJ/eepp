@@ -18,6 +18,8 @@ using namespace EE::UI::Doc;
 
 namespace ecode {
 
+class LSPClientServerManager;
+
 class LSPClientServer {
   public:
 	template <typename T> using ReplyHandler = std::function<void( const T& )>;
@@ -37,7 +39,8 @@ class LSPClientServer {
 		}
 	};
 
-	LSPClientServer( const LSPDefinition& lsp, const std::string& rootPath );
+	LSPClientServer( LSPClientServerManager* manager, const String::HashType& id,
+					 const LSPDefinition& lsp, const std::string& rootPath );
 
 	~LSPClientServer();
 
@@ -45,13 +48,14 @@ class LSPClientServer {
 
 	bool registerDoc( const std::shared_ptr<TextDocument>& doc );
 
-	int cancel( int id ) { return id; }
+	LSPClientServerManager* getManager() const;
+
+	const std::shared_ptr<ThreadPool>& getThreadPool() const;
+
+	LSPClientServer::RequestHandle cancel( int id );
 
 	RequestHandle send( const json& msg, const GenericReplyHandler& h = nullptr,
 						const GenericReplyHandler& eh = nullptr );
-
-	LSPClientServer::RequestHandle didOpen( const URI& document, const std::string& text,
-											int version );
 
 	const LSPDefinition& getDefinition() const { return mLSP; }
 
@@ -59,13 +63,37 @@ class LSPClientServer {
 													const GenericReplyHandler& h,
 													const GenericReplyHandler& eh );
 
+	LSPClientServer::RequestHandle didOpen( const URI& document, const std::string& text,
+											int version );
+
+	LSPClientServer::RequestHandle didOpen( TextDocument* doc, int version );
+
+	LSPClientServer::RequestHandle didSave( const URI& document, const std::string& text );
+
+	LSPClientServer::RequestHandle didSave( TextDocument* doc );
+
+	LSPClientServer::RequestHandle didClose( const URI& document );
+
+	LSPClientServer::RequestHandle didClose( TextDocument* document );
+
+	LSPClientServer::RequestHandle didChange( const URI& document, int version,
+											  const std::string& text );
+
+	LSPClientServer::RequestHandle didChange( TextDocument* doc );
+
+	void updateDirty();
+
   protected:
+	LSPClientServerManager* mManager{ nullptr };
+	String::HashType mId;
 	LSPDefinition mLSP;
 	std::string mRootPath;
 	Process mProcess;
-	std::vector<std::shared_ptr<TextDocument>> mDocs;
+	std::vector<TextDocument*> mDocs;
 	std::map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
 	std::map<int, std::pair<GenericReplyHandler, GenericReplyHandler>> mHandlers;
+	Mutex mClientsMutex;
+
 	int mLastMsgId{ 0 };
 
 	void readStdOut( const char* bytes, size_t n );

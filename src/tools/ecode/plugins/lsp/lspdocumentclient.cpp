@@ -10,17 +10,13 @@ namespace ecode {
 LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc ) :
 	mServer( server ), mDoc( doc ) {
 	notifyOpen();
-	mServer->documentSymbols(
-		mDoc->getURI(),
-		[&]( const json& ) {
-
-		},
-		[&]( const json& ) {
-
-		} );
 }
 
-void LSPDocumentClient::onDocumentTextChanged() {}
+void LSPDocumentClient::onDocumentTextChanged() {
+	mModified = true;
+	++mVersion;
+	mLastModified.restart();
+}
 
 void LSPDocumentClient::onDocumentUndoRedo( const TextDocument::UndoRedo& /*eventType*/ ) {}
 
@@ -33,24 +29,42 @@ void LSPDocumentClient::onDocumentLineCountChange( const size_t& /*lastCount*/,
 
 void LSPDocumentClient::onDocumentLineChanged( const Int64& /*lineIndex*/ ) {}
 
-void LSPDocumentClient::onDocumentSaved( TextDocument* ) {}
+void LSPDocumentClient::onDocumentSaved( TextDocument* ) {
+	mServer->getThreadPool()->run( [&]() { mServer->didSave( mDoc ); } );
+}
 
-void LSPDocumentClient::onDocumentClosed( TextDocument* ) {}
+void LSPDocumentClient::onDocumentClosed( TextDocument* ) {
+	mServer->didClose( mDoc );
+	mDoc = nullptr;
+}
 
 void LSPDocumentClient::onDocumentDirtyOnFileSystem( TextDocument* ) {}
 
 void LSPDocumentClient::onDocumentMoved( TextDocument* ) {}
 
+bool LSPDocumentClient::isDirty() const {
+	return mModified && mLastModified.getElapsedTime() > Milliseconds( 250.f );
+}
+
+void LSPDocumentClient::resetDirty() {
+	mModified = false;
+}
+
+TextDocument* LSPDocumentClient::getDoc() const {
+	return mDoc;
+}
+
+LSPClientServer* LSPDocumentClient::getServer() const {
+	return mServer;
+}
+
+int LSPDocumentClient::getVersion() const {
+	return mVersion;
+}
+
 void LSPDocumentClient::notifyOpen() {
-	if ( mDoc->isDirty() ) {
-		IOStreamString text;
-		mDoc->save( text, true );
-		mServer->didOpen( mDoc->getURI(), text.getStream(), mVersion );
-	} else {
-		std::string text;
-		FileSystem::fileGet( mDoc->getFilePath(), text );
-		mServer->didOpen( mDoc->getURI(), text, mVersion );
-	}
+	eeASSERT( mDoc );
+	mServer->didOpen( mDoc, ++mVersion );
 }
 
 } // namespace ecode

@@ -27,7 +27,8 @@ class EE_API ThreadPool : NonCopyable {
 
 	virtual ~ThreadPool();
 
-	void run( const std::function<void()>& func, const std::function<void()>& doneCallback );
+	void run(
+		const std::function<void()>& func, const std::function<void()>& doneCallback = []() {} );
 
 	Uint32 numThreads() const;
 

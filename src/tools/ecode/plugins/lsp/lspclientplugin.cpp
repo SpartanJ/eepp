@@ -26,6 +26,10 @@ LSPClientPlugin::~LSPClientPlugin() {
 	}
 }
 
+void LSPClientPlugin::update( UICodeEditor* ) {
+	mClientManager.updateDirty();
+}
+
 void LSPClientPlugin::load( const PluginManager* pluginManager ) {
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/lspclient.json" );

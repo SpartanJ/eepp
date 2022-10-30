@@ -2,7 +2,7 @@
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
-//#include "plugins/lsp/lspclientplugin.hpp"
+// #include "plugins/lsp/lspclientplugin.hpp"
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
@@ -369,7 +369,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( LinterPlugin::Definition() );
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );
-	//mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
+	// mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
 }
 
 void App::loadConfig( const LogLevel& logLevel ) {

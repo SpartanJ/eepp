@@ -20,19 +20,28 @@ class LSPClientServerManager {
 
 	size_t clientCount() const;
 
+	const std::shared_ptr<ThreadPool>& getThreadPool() const;
+
+	void updateDirty();
+
   protected:
+	friend class LSPClientServer;
+
 	std::shared_ptr<ThreadPool> mPool;
-	std::map<String::HashType, std::shared_ptr<LSPClientServer>> mClients;
+	std::map<String::HashType, std::unique_ptr<LSPClientServer>> mClients;
 	std::vector<LSPDefinition> mLSPs;
 
 	std::vector<LSPDefinition> supportsLSP( const std::shared_ptr<TextDocument>& doc );
 
-	std::shared_ptr<LSPClientServer> runLSPServer( const LSPDefinition& lsp,
+	std::unique_ptr<LSPClientServer> runLSPServer( const String::HashType& id,
+												   const LSPDefinition& lsp,
 												   const std::string& rootPath );
 
 	std::string findRootPath( const LSPDefinition& lsp, const std::shared_ptr<TextDocument>& doc );
 
 	void tryRunServer( const std::shared_ptr<TextDocument>& doc );
+
+	void notifyClose( const String::HashType& id );
 };
 
 } // namespace ecode
