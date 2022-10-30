@@ -760,6 +760,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentLoaded( TextDocument* doc );
 
+	virtual void onDocumentLoaded();
+
 	virtual void onDocumentChanged();
 
 	virtual Uint32 onMessage( const NodeMessage* msg );

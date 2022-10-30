@@ -447,6 +447,7 @@ class EE_API TextDocument {
 	std::unordered_set<Client*> mClients;
 	LineEnding mLineEnding{ LineEnding::LF };
 	std::atomic<bool> mLoading{ false };
+	std::atomic<bool> mLoadingAsync{ false };
 	bool mIsBOM{ false };
 	bool mAutoDetectIndentType{ true };
 	bool mForceNewLineAtEndOfFile{ false };

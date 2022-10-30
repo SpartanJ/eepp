@@ -335,13 +335,15 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 												  : FileInfo( mFilePath );
 	resetSyntax();
 	mLoading = false;
-	notifyDocumentLoaded();
+	if ( !mLoadingAsync )
+		notifyDocumentLoaded();
 	return ret;
 }
 
 bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<ThreadPool> pool,
 									  std::function<void( TextDocument*, bool )> onLoaded ) {
 	mLoading = true;
+	mLoadingAsync = true;
 	mLoadingFilePath = path;
 	pool->run(
 		[this, path, onLoaded] {
@@ -349,6 +351,8 @@ bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<T
 			if ( loaded != LoadStatus::Interrupted && onLoaded )
 				onLoaded( this, loaded == LoadStatus::Loaded );
 			mLoadingFilePath.clear();
+			mLoadingAsync = false;
+			notifyDocumentLoaded();
 		},
 		[] {} );
 	return true;
@@ -414,6 +418,7 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 		return false;
 
 	mLoading = true;
+	mLoadingAsync = true;
 
 	Http::getAsync(
 		[=]( const Http&, Http::Request&, Http::Response& response ) {
@@ -430,6 +435,7 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 				onLoaded( this, false );
 			}
 			mLoading = false;
+			mLoadingAsync = false;
 			notifyDocumentLoaded();
 		},
 		uri, Seconds( 10 ), progressCallback, headers, "", true, Http::getEnvProxyURI() );
