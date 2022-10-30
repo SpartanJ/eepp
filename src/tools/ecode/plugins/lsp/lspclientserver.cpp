@@ -145,8 +145,8 @@ LSPClientServer::RequestHandle LSPClientServer::send( const json& msg, const Gen
 	if ( mProcess.isAlive() ) {
 		return write( msg, h, eh );
 	} else {
-		Log::error( "LSPClientServer - Send for non-running server: %s - %s", mLSP.name,
-					mLSP.language );
+		Log::error( "LSPClientServer - Send for non-running server: %s - %s", mLSP.name.c_str(),
+					mLSP.language.c_str() );
 	}
 	return RequestHandle();
 }

@@ -378,7 +378,7 @@ TextDocument::LoadStatus UICodeEditor::loadFromFile( const std::string& path ) {
 		updateLongestLineWidth();
 		mHighlighter.changeDoc( mDoc.get() );
 		invalidateDraw();
-		onDocumentLoaded();
+		onDocumentLoaded( mDoc.get() );
 	}
 	return ret;
 }
@@ -407,7 +407,7 @@ bool UICodeEditor::loadAsyncFromFile(
 												invalidateDraw();
 												if ( !wasLocked )
 													setLocked( false );
-												onDocumentLoaded();
+												onDocumentLoaded( mDoc.get() );
 												if ( onLoaded )
 													onLoaded( mDoc, success );
 											} );
@@ -425,7 +425,7 @@ TextDocument::LoadStatus UICodeEditor::loadFromURL( const std::string& url,
 		updateLongestLineWidth();
 		mHighlighter.changeDoc( mDoc.get() );
 		invalidateDraw();
-		onDocumentLoaded();
+		onDocumentLoaded( mDoc.get() );
 	}
 	return ret;
 }
@@ -446,7 +446,7 @@ bool UICodeEditor::loadAsyncFromURL(
 				invalidateDraw();
 				if ( !wasLocked )
 					setLocked( false );
-				onDocumentLoaded();
+				onDocumentLoaded( mDoc.get() );
 				if ( onLoaded )
 					onLoaded( mDoc, success );
 			} );
@@ -504,8 +504,8 @@ void UICodeEditor::onFontStyleChanged() {
 	udpateGlyphWidth();
 }
 
-void UICodeEditor::onDocumentLoaded() {
-	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
+void UICodeEditor::onDocumentLoaded( TextDocument* doc ) {
+	DocEvent event( this, doc, Event::OnDocumentLoaded );
 	sendEvent( &event );
 }
 

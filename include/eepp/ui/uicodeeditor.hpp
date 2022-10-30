@@ -758,7 +758,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onFontStyleChanged();
 
-	virtual void onDocumentLoaded();
+	virtual void onDocumentLoaded( TextDocument* doc );
 
 	virtual void onDocumentChanged();
 
