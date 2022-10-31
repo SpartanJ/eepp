@@ -180,7 +180,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	mReadStdOutFn = readStdOut;
 	mReadStdErrFn = readStdErr;
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	// TODO: Implement WaitForMultipleObjectsEx
+	// TODO: Implement WaitForMultipleObjects
 	void* stdOutFd =
 		SUBPROCESS_PTR_CAST( void*, _get_osfhandle( _fileno( PROCESS_PTR->stdout_file ) ) );
 	void* stdErrFd =
@@ -195,7 +195,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 										  static_cast<DWORD>( mBufferSize ), &n, nullptr );
 				if ( !bSuccess || n == 0 )
 					break;
-				if ( n < mBufferSize - 1 )
+				if ( n < static_cast<long>( mBufferSize - 1 ) )
 					buffer[n] = '\0';
 				mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
 			}
@@ -211,7 +211,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 										  static_cast<DWORD>( mBufferSize ), &n, nullptr );
 				if ( !bSuccess || n == 0 )
 					break;
-				if ( n < mBufferSize - 1 )
+				if ( n < static_cast<long>( mBufferSize - 1 ) )
 					buffer[n] = '\0';
 				mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
 			}
@@ -250,7 +250,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 						if ( pollfds[i].revents & POLLIN ) {
 							const ssize_t n = read( pollfds[i].fd, &buffer[0], mBufferSize );
 							if ( n > 0 ) {
-								if ( n < mBufferSize - 1 )
+								if ( n < static_cast<long>( mBufferSize - 1 ) )
 									buffer[n] = '\0';
 								if ( fdIsStdOut[i] )
 									mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );

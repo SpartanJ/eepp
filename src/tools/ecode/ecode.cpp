@@ -3930,6 +3930,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, colorSchemes, mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
+		mPluginManager->setSplitter( mSplitter );
 
 		Log::info( "Base UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 

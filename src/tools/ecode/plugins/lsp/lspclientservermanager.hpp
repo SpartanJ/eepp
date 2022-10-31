@@ -10,11 +10,14 @@ using namespace EE;
 
 namespace ecode {
 
+class LSPClientPlugin;
+
 class LSPClientServerManager {
   public:
 	LSPClientServerManager();
 
-	void load( const PluginManager* pluginManager, std::vector<LSPDefinition>&& lsps );
+	void load( LSPClientPlugin*, const PluginManager* pluginManager,
+			   std::vector<LSPDefinition>&& lsps );
 
 	void run( const std::shared_ptr<TextDocument>& doc );
 
@@ -24,10 +27,13 @@ class LSPClientServerManager {
 
 	void updateDirty();
 
+	void followSymbolUnderCursor( TextDocument* doc );
+
   protected:
 	friend class LSPClientServer;
 
-	std::shared_ptr<ThreadPool> mPool;
+	LSPClientPlugin* mPlugin{ nullptr };
+	std::shared_ptr<ThreadPool> mThreadPool;
 	std::map<String::HashType, std::unique_ptr<LSPClientServer>> mClients;
 	std::vector<LSPDefinition> mLSPs;
 
@@ -42,6 +48,8 @@ class LSPClientServerManager {
 	void tryRunServer( const std::shared_ptr<TextDocument>& doc );
 
 	void notifyClose( const String::HashType& id );
+
+	void goToLocation( const LSPLocation& loc );
 };
 
 } // namespace ecode

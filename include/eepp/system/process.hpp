@@ -195,7 +195,7 @@ class EE_API Process {
 	void* mProcess{ nullptr };
 	bool mShuttingDown{ false };
 	bool mIsAsync{ false };
-	ssize_t mBufferSize{ 131072 };
+	size_t mBufferSize{ 131072 };
 	std::thread mStdOutThread;
 	std::thread mStdErrThread;
 	Mutex mStdInMutex;

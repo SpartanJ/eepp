@@ -499,9 +499,10 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	return tabWidget;
 }
 
-UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
-											 bool checkOnlyInCurrentTabWidget,
+UITab* UICodeEditorSplitter::isDocumentOpen( std::string path, bool checkOnlyInCurrentTabWidget,
 											 bool checkOpeningDocuments ) const {
+	if ( String::startsWith( path, "file://" ) )
+		path = path.substr( 7 );
 	if ( checkOnlyInCurrentTabWidget ) {
 		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
 		if ( nullptr == tabWidget )
@@ -534,6 +535,12 @@ UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
 		}
 	}
 	return nullptr;
+}
+
+UICodeEditor* UICodeEditorSplitter::editorFromTab( UITab* tab ) const {
+	return tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR )
+			   ? tab->getOwnedWidget()->asType<UICodeEditor>()
+			   : nullptr;
 }
 
 UICodeEditor* UICodeEditorSplitter::findEditorFromPath( const std::string& path ) {
@@ -998,6 +1005,10 @@ size_t UICodeEditorSplitter::countEditorsOpeningDoc( const TextDocument& doc ) c
 			++count;
 	} );
 	return count;
+}
+
+UISceneNode* UICodeEditorSplitter::getUISceneNode() const {
+	return mUISceneNode;
 }
 
 UICodeEditor* UICodeEditorSplitter::getCurEditor() const {

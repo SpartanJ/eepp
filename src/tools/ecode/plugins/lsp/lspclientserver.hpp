@@ -20,6 +20,11 @@ namespace ecode {
 
 class LSPClientServerManager;
 
+struct LSPLocation {
+	URI uri;
+	TextRange range;
+};
+
 class LSPClientServer {
   public:
 	template <typename T> using ReplyHandler = std::function<void( const T& )>;
@@ -54,8 +59,8 @@ class LSPClientServer {
 
 	LSPClientServer::RequestHandle cancel( int id );
 
-	RequestHandle send( const json& msg, const GenericReplyHandler& h = nullptr,
-						const GenericReplyHandler& eh = nullptr );
+	LSPClientServer::RequestHandle send( const json& msg, const GenericReplyHandler& h = nullptr,
+										 const GenericReplyHandler& eh = nullptr );
 
 	const LSPDefinition& getDefinition() const { return mLSP; }
 
@@ -81,8 +86,21 @@ class LSPClientServer {
 
 	LSPClientServer::RequestHandle didChange( TextDocument* doc );
 
+	LSPClientServer::RequestHandle documentDefinition( const URI& document,
+													   const TextPosition& pos );
+
+	LSPClientServer::RequestHandle documentDeclaration( const URI& document,
+														const TextPosition& pos );
+
+	LSPClientServer::RequestHandle documentTypeDefinition( const URI& document,
+														   const TextPosition& pos );
+
+	LSPClientServer::RequestHandle documentImplementation( const URI& document,
+														   const TextPosition& pos );
+
 	void updateDirty();
 
+	bool hasDocument( TextDocument* doc ) const;
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;
@@ -98,12 +116,20 @@ class LSPClientServer {
 
 	void readStdOut( const char* bytes, size_t n );
 
-	void readStdErr( const char* bytes, size_t n );
-
 	LSPClientServer::RequestHandle write( const json& msg, const GenericReplyHandler& h = nullptr,
 										  const GenericReplyHandler& eh = nullptr,
 										  const int id = 0 );
+
 	void initialize();
+
+	void processNotification( const json& msg );
+
+	void processRequest( const json& msg );
+
+	void goToLocation( const json& res );
+
+	LSPClientServer::RequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
+													   const std::string& search );
 };
 
 } // namespace ecode

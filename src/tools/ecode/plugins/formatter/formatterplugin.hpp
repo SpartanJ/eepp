@@ -77,8 +77,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 		mNativeFormatters;
 	Int32 mWorkersCount{ 0 };
 	std::string mConfigPath;
-	/* cmd, shortcut */
-	std::map<std::string, std::string> mKeyBindings;
+	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 
 	bool mAutoFormatOnSave{ false };
 	bool mShuttingDown{ false };

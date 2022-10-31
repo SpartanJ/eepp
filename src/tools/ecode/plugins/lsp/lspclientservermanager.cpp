@@ -1,4 +1,5 @@
 #include "lspclientservermanager.hpp"
+#include "lspclientplugin.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -7,9 +8,10 @@ namespace ecode {
 
 LSPClientServerManager::LSPClientServerManager() {}
 
-void LSPClientServerManager::load( const PluginManager* pluginManager,
+void LSPClientServerManager::load( LSPClientPlugin* plugin, const PluginManager* pluginManager,
 								   std::vector<LSPDefinition>&& lsps ) {
-	mPool = pluginManager->getThreadPool();
+	mPlugin = plugin;
+	mThreadPool = pluginManager->getThreadPool();
 	mLSPs = lsps;
 }
 
@@ -97,8 +99,32 @@ void LSPClientServerManager::notifyClose( const String::HashType& id ) {
 	}
 }
 
+void LSPClientServerManager::goToLocation( const LSPLocation& loc ) {
+	UICodeEditorSplitter* splitter = mPlugin->getManager()->getSplitter();
+	if ( nullptr == splitter )
+		return;
+	splitter->getUISceneNode()->runOnMainThread( [this, splitter, loc]() {
+		UITab* tab = splitter->isDocumentOpen( loc.uri.toString() );
+		if ( !tab ) {
+			std::string path( loc.uri.getPath() );
+			FileInfo fileInfo( path );
+			if ( fileInfo.exists() && fileInfo.isRegularFile() ) {
+				splitter->loadAsyncFileFromPathInNewTab( path, mThreadPool,
+														 [loc]( UICodeEditor* editor, auto ) {
+															 editor->goToLine( loc.range.start() );
+															 editor->setFocus();
+														 } );
+			}
+		} else {
+			tab->getTabWidget()->setTabSelected( tab );
+			splitter->editorFromTab( tab )->goToLine( loc.range.start() );
+			splitter->editorFromTab( tab )->setFocus();
+		}
+	} );
+}
+
 void LSPClientServerManager::run( const std::shared_ptr<TextDocument>& doc ) {
-	mPool->run( [&, doc]() { tryRunServer( doc ); }, []() {} );
+	mThreadPool->run( [&, doc]() { tryRunServer( doc ); }, []() {} );
 }
 
 size_t LSPClientServerManager::clientCount() const {
@@ -106,12 +132,21 @@ size_t LSPClientServerManager::clientCount() const {
 }
 
 const std::shared_ptr<ThreadPool>& LSPClientServerManager::getThreadPool() const {
-	return mPool;
+	return mThreadPool;
 }
 
 void LSPClientServerManager::updateDirty() {
 	for ( auto& server : mClients )
 		server.second->updateDirty();
+}
+
+void LSPClientServerManager::followSymbolUnderCursor( TextDocument* doc ) {
+	for ( auto& server : mClients ) {
+		if ( server.second->hasDocument( doc ) ) {
+			server.second->documentDefinition( doc->getURI(), doc->getSelection().start() );
+			return;
+		}
+	}
 }
 
 } // namespace ecode

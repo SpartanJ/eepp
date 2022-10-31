@@ -91,6 +91,14 @@ const PluginDefinition* PluginManager::getDefinitionIndex( const Int64& index ) 
 	return def;
 }
 
+UICodeEditorSplitter* PluginManager::getSplitter() const {
+	return mSplitter;
+}
+
+void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {
+	mSplitter = splitter;
+}
+
 bool PluginManager::hasDefinition( const std::string& id ) {
 	return mDefinitions.find( id ) != mDefinitions.end();
 }

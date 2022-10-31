@@ -14,14 +14,19 @@ UICodeEditorPlugin* LSPClientPlugin::New( const PluginManager* pluginManager ) {
 }
 
 LSPClientPlugin::LSPClientPlugin( const PluginManager* pluginManager ) :
-	mPool( pluginManager->getThreadPool() ) {
+	mManager( pluginManager ), mPool( pluginManager->getThreadPool() ) {
 	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 }
 
 LSPClientPlugin::~LSPClientPlugin() {
 	mClosing = true;
 	Lock l( mDocMutex );
-	for ( const auto& editor : mEditors ) {
+	for ( auto editor : mEditors ) {
+		for ( auto& kb : mKeyBindings ) {
+			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
+			if ( editor.first->hasDocument() )
+				editor.first->getDocument().removeCommand( kb.first );
+		}
 		editor.first->unregisterPlugin( this );
 	}
 }
@@ -54,7 +59,7 @@ void LSPClientPlugin::load( const PluginManager* pluginManager ) {
 		}
 	}
 
-	mClientManager.load( pluginManager, std::move( lsps ) );
+	mClientManager.load( this, pluginManager, std::move( lsps ) );
 
 	mReady = mClientManager.clientCount() > 0;
 	if ( mReady )
@@ -71,6 +76,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 	} catch ( ... ) {
 		return;
 	}
+
+	if ( mKeyBindings.empty() )
+		mKeyBindings["follow-symbol-under-cursor"] = "f2";
+	if ( j.contains( "keybindings" ) && j["keybindings"].contains( "follow-symbol-under-cursor" ) )
+		mKeyBindings["follow-symbol-under-cursor"] = j["keybindings"]["follow-symbol-under-cursor"];
 
 	if ( !j.contains( "servers" ) )
 		return;
@@ -154,6 +164,15 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	mDocs.insert( editor->getDocumentRef().get() );
 
+	for ( auto& kb : mKeyBindings ) {
+		editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+	}
+
+	if ( editor->hasDocument() )
+		editor->getDocument().setCommand( "follow-symbol-under-cursor", [&, editor]() {
+			mClientManager.followSymbolUnderCursor( editor->getDocumentRef().get() );
+		} );
+
 	std::vector<Uint32> listeners;
 
 	listeners.push_back(
@@ -169,6 +188,12 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
+	for ( auto& kb : mKeyBindings ) {
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+		if ( editor->hasDocument() )
+			editor->getDocument().removeCommand( kb.first );
+	}
+
 	if ( mClosing )
 		return;
 	Lock l( mDocMutex );
@@ -182,6 +207,10 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 		if ( editor.second == doc )
 			return;
 	mDocs.erase( doc );
+}
+
+const PluginManager* LSPClientPlugin::getManager() const {
+	return mManager;
 }
 
 } // namespace ecode

@@ -47,7 +47,12 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	void onUnregister( UICodeEditor* );
 
+	const std::unordered_map<UICodeEditor*, TextDocument*>& getEditorDocs() { return mEditorDocs; };
+
+	const PluginManager* getManager() const;
+
   protected:
+	const PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mPool;
 	Clock mClock;
 	Mutex mDocMutex;
@@ -58,6 +63,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	std::string mConfigPath;
 	bool mClosing{ false };
 	bool mReady{ false };
+	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 
 	LSPClientPlugin( const PluginManager* pluginManager );
 

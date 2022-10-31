@@ -2,6 +2,7 @@
 #define ECODE_PLUGINMANAGER_HPP
 
 #include <eepp/ui/models/model.hpp>
+#include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwindow.hpp>
@@ -12,6 +13,7 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::UI::Models;
+using namespace EE::UI::Tools;
 
 namespace ecode {
 
@@ -93,15 +95,21 @@ class PluginManager {
 
 	const PluginDefinition* getDefinitionIndex( const Int64& index ) const;
 
+	UICodeEditorSplitter* getSplitter() const;
+
   protected:
+	friend class App;
 	std::string mResourcesPath;
 	std::string mPluginsPath;
 	std::map<std::string, UICodeEditorPlugin*> mPlugins;
 	std::map<std::string, bool> mPluginsEnabled;
 	std::map<std::string, PluginDefinition> mDefinitions;
 	std::shared_ptr<ThreadPool> mThreadPool;
+	UICodeEditorSplitter* mSplitter{ nullptr };
 
 	bool hasDefinition( const std::string& id );
+
+	void setSplitter( UICodeEditorSplitter* splitter );
 };
 
 class PluginsModel : public Model {

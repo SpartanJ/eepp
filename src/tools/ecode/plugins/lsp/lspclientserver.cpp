@@ -17,18 +17,18 @@ static const char* MEMBER_URI = "uri";
 static const char* MEMBER_VERSION = "version";
 static const char* MEMBER_TEXT = "text";
 static const char* MEMBER_LANGID = "languageId";
-// static const char* MEMBER_ERROR = "error";
+static const char* MEMBER_ERROR = "error";
 // static const char* MEMBER_CODE = "code";
 // static const char* MEMBER_MESSAGE = "message";
-// static const char* MEMBER_RESULT = "result";
-// static const char* MEMBER_START = "start";
-// static const char* MEMBER_END = "end";
-// static const char* MEMBER_POSITION = "position";
+static const char* MEMBER_RESULT = "result";
+static const char* MEMBER_START = "start";
+static const char* MEMBER_END = "end";
+static const char* MEMBER_POSITION = "position";
 // static const char* MEMBER_POSITIONS = "positions";
 // static const char* MEMBER_LOCATION = "location";
-// static const char* MEMBER_RANGE = "range";
-// static const char* MEMBER_LINE = "line";
-// static const char* MEMBER_CHARACTER = "character";
+static const char* MEMBER_RANGE = "range";
+static const char* MEMBER_LINE = "line";
+static const char* MEMBER_CHARACTER = "character";
 // static const char* MEMBER_KIND = "kind";
 // static const char* MEMBER_LABEL = "label";
 // static const char* MEMBER_DOCUMENTATION = "documentation";
@@ -38,9 +38,9 @@ static const char* MEMBER_LANGID = "languageId";
 // static const char* MEMBER_TITLE = "title";
 // static const char* MEMBER_ARGUMENTS = "arguments";
 // static const char* MEMBER_DIAGNOSTICS = "diagnostics";
-// static const char* MEMBER_TARGET_URI = "targetUri";
-// static const char* MEMBER_TARGET_RANGE = "targetRange";
-// static const char* MEMBER_TARGET_SELECTION_RANGE = "targetSelectionRange";
+static const char* MEMBER_TARGET_URI = "targetUri";
+static const char* MEMBER_TARGET_RANGE = "targetRange";
+static const char* MEMBER_TARGET_SELECTION_RANGE = "targetSelectionRange";
 // static const char* MEMBER_PREVIOUS_RESULT_ID = "previousResultId";
 // static const char* MEMBER_QUERY = "query";
 
@@ -73,6 +73,15 @@ static json textDocumentParams( const json& m ) {
 static json textDocumentParams( const URI& document, int version = -1 ) {
 	return textDocumentParams( versionedTextDocumentIdentifier( document, version ) );
 }
+static json to_json( const TextPosition& pos ) {
+	return json{ { MEMBER_LINE, pos.line() }, { MEMBER_CHARACTER, pos.column() } };
+}
+
+static json textDocumentPositionParams( const URI& document, TextPosition pos ) {
+	auto params = textDocumentParams( document );
+	params[MEMBER_POSITION] = to_json( pos );
+	return params;
+}
 
 LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String::HashType& id,
 								  const LSPDefinition& lsp, const std::string& rootPath ) :
@@ -85,11 +94,12 @@ LSPClientServer::~LSPClientServer() {
 }
 
 bool LSPClientServer::start() {
-	bool ret = mProcess.create( mLSP.command, Process::getDefaultOptions(), {}, mRootPath );
+	bool ret = mProcess.create(
+		mLSP.command, Process::getDefaultOptions() | (Uint32)Process::Options::CombinedStdoutStderr,
+		{}, mRootPath );
 	if ( ret ) {
-		mProcess.startAsyncRead(
-			[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
-			[this]( const char* bytes, size_t n ) { readStdErr( bytes, n ); } );
+		mProcess.startAsyncRead( [this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
+								 []( const char*, size_t ) {} );
 
 		initialize();
 	}
@@ -224,6 +234,10 @@ void LSPClientServer::updateDirty() {
 	}
 }
 
+bool LSPClientServer::hasDocument( TextDocument* doc ) const {
+	return std::find( mDocs.begin(), mDocs.end(), doc ) != mDocs.end();
+}
+
 LSPClientServer::RequestHandle LSPClientServer::didClose( const URI& document ) {
 	auto params = textDocumentParams( document );
 	return send( newRequest( "textDocument/didClose", params ) );
@@ -258,12 +272,63 @@ LSPClientServer::RequestHandle LSPClientServer::documentSymbols( const URI& docu
 	return send( newRequest( "textDocument/documentSymbol", params ), h, eh );
 }
 
+void LSPClientServer::processNotification( const json& msg ) {
+	auto method = msg[MEMBER_METHOD].get<std::string>();
+	if ( method == "textDocument/publishDiagnostics" ) {
+		// publishDiagnostics( msg );
+	} else if ( method == ( "window/showMessage" ) ) {
+		// showMessage( msg );
+	} else if ( method == ( "window/logMessage" ) ) {
+		// logMessage( msg );
+	} else if ( method == ( "$/progress" ) ) {
+		// workDoneProgress( msg );
+	} else {
+		Log::warning( "LSPClientServer::processNotification msg discarded: %s",
+					  msg.dump( 2, ' ' ) );
+	}
+}
+void LSPClientServer::processRequest( const json& /*msg*/ ) {
+	//	auto method = msg[MEMBER_METHOD].get<std::string>();
+	//	auto msgid = msg[MEMBER_ID];
+	//	auto params = msg[MEMBER_PARAMS];
+	//	bool handled = false;
+}
+
 void LSPClientServer::readStdOut( const char* bytes, size_t /*n*/ ) {
 	const char* skipLength = strstr( bytes, "\r\n\r\n" );
 	if ( nullptr != skipLength ) {
 		try {
-			auto j = json::parse( skipLength + 4 );
-			Log::debug( "LSP Server %s said: \n%s", mLSP.name.c_str(), j.dump( 2, ' ' ).c_str() );
+			auto res = json::parse( skipLength + 4 );
+			Log::debug( "LSP Server %s said: \n%s", mLSP.name.c_str(), res.dump( 2, ' ' ).c_str() );
+
+			int msgid = -1;
+			if ( res.contains( MEMBER_ID ) ) {
+				msgid = res[MEMBER_ID].get<int>();
+			} else {
+				processNotification( res );
+				return;
+			}
+
+			if ( res.contains( MEMBER_METHOD ) ) {
+				processRequest( res );
+				return;
+			}
+
+			auto it = mHandlers.find( msgid );
+			if ( it != mHandlers.end() ) {
+				const auto handler = *it;
+				mHandlers.erase( it );
+				auto& h = handler.second.first;
+				auto& eh = handler.second.second;
+				if ( res.contains( MEMBER_ERROR ) && eh ) {
+					eh( res[MEMBER_ERROR] );
+				} else {
+					h( res[MEMBER_RESULT] );
+				}
+			} else {
+				Log::debug( "LSPClientServer::readStdOut unexpected reply id: %d", msgid );
+			}
+
 			return;
 		} catch ( const json::exception& e ) {
 			Log::debug( "LSP Server %s said: Coudln't parse json err: %s", mLSP.name.c_str(),
@@ -273,60 +338,127 @@ void LSPClientServer::readStdOut( const char* bytes, size_t /*n*/ ) {
 	Log::debug( "LSP Server %s said: \n%s", mLSP.name.c_str(), bytes );
 }
 
-void LSPClientServer::readStdErr( const char* bytes, size_t /*n*/ ) {
-	Log::debug( "LSP Server %s err said: \n%s", mLSP.name.c_str(), bytes );
-}
-
 static std::vector<std::string> supportedSemanticTokenTypes() {
-	return { ( "namespace" ), ( "type" ),	  ( "class" ),		   ( "enum" ),
-			 ( "interface" ), ( "struct" ),	  ( "typeParameter" ), ( "parameter" ),
-			 ( "variable" ),  ( "property" ), ( "enumMember" ),	   ( "event" ),
-			 ( "function" ),  ( "method" ),	  ( "macro" ),		   ( "keyword" ),
-			 ( "modifier" ),  ( "comment" ),  ( "string" ),		   ( "number" ),
-			 ( "regexp" ),	  ( "operator" ) };
+	return { "namespace",	  "type",	   "class",	   "enum",	   "interface",	 "struct",
+			 "typeParameter", "parameter", "variable", "property", "enumMember", "event",
+			 "function",	  "method",	   "macro",	   "keyword",  "modifier",	 "comment",
+			 "string",		  "number",	   "regexp",   "operator" };
 }
 
 void LSPClientServer::initialize() {
-	json codeAction{ { ( "codeActionLiteralSupport" ),
-					   json{ { ( "codeActionKind" ), json{ { ( "valueSet" ), {} } } } } } };
+	json codeAction{
+		{ "codeActionLiteralSupport", json{ { "codeActionKind", json{ { "valueSet", {} } } } } } };
 
 	json semanticTokens{
-		{ ( "requests" ),
-		  json{ { ( "range" ), true }, { ( "full" ), json{ { ( "delta" ), true } } } } },
-		{ ( "tokenTypes" ), supportedSemanticTokenTypes() },
-		{ ( "tokenModifiers" ), {} },
-		{ ( "formats" ), { ( "relative" ) } },
+		{ "requests", json{ { "range", true }, { "full", json{ { "delta", true } } } } },
+		{ "tokenTypes", supportedSemanticTokenTypes() },
+		{ "tokenModifiers", {} },
+		{ "formats", { "relative" } },
 	};
 
 	json capabilities{
 		{
-			( "textDocument" ),
-			json{
-				{ ( "documentSymbol" ), json{ { ( "hierarchicalDocumentSymbolSupport" ), true } } },
-				{ ( "publishDiagnostics" ), json{ { ( "relatedInformation" ), true } } },
-				{ ( "codeAction" ), codeAction },
-				{ ( "semanticTokens" ), semanticTokens },
-				{ ( "synchronization" ), json{ { ( "didSave" ), true } } },
-				{ ( "selectionRange" ), json{ { ( "dynamicRegistration" ), false } } },
-				{ ( "hover" ),
-				  json{ { ( "contentFormat" ), { ( "markdown" ), ( "plaintext" ) } } } } },
+			"textDocument",
+			json{ { "documentSymbol", json{ { "hierarchicalDocumentSymbolSupport", true } } },
+				  { "publishDiagnostics", json{ { "relatedInformation", true } } },
+				  { "codeAction", codeAction },
+				  { "semanticTokens", semanticTokens },
+				  { "synchronization", json{ { "didSave", true } } },
+				  { "selectionRange", json{ { "dynamicRegistration", false } } },
+				  { "hover", json{ { "contentFormat", { "markdown", "plaintext" } } } } },
 		},
-		{ ( "window" ), json{ { ( "workDoneProgress" ), true } } } };
+		{ "window", json{ { "workDoneProgress", true } } } };
 
-	json params{ { ( "processId" ), Sys::getProcessID() },
-				 { ( "rootPath" ), !mRootPath.empty() ? mRootPath : "" },
-				 { ( "rootUri" ), !mRootPath.empty() ? "file://" + mRootPath : "" },
-				 { ( "capabilities" ), capabilities },
-				 { ( "initializationOptions" ), {} } };
+	json params{ { "processId", Sys::getProcessID() },
+				 { "rootPath", !mRootPath.empty() ? mRootPath : "" },
+				 { "rootUri", !mRootPath.empty() ? "file://" + mRootPath : "" },
+				 { "capabilities", capabilities },
+				 { "initializationOptions", {} } };
 
 	write(
-		newRequest( ( "initialize" ), params ),
+		newRequest( "initialize", params ),
 		[&]( const json& ) {
 
 		},
 		[&]( const json& ) {
 
 		} );
+}
+
+static TextPosition parsePosition( const json& m ) {
+	auto line = m[MEMBER_LINE].get<int>();
+	auto column = m[MEMBER_CHARACTER].get<int>();
+	return { line, column };
+}
+
+static TextRange parseRange( const json& range ) {
+	auto startpos = parsePosition( range[MEMBER_START] );
+	auto endpos = parsePosition( range[MEMBER_END] );
+	return { startpos, endpos };
+}
+
+static LSPLocation parseLocation( const json& loc ) {
+	auto uri = URI( loc[MEMBER_URI].get<std::string>() );
+	auto range = parseRange( loc[MEMBER_RANGE] );
+	return { uri, range };
+}
+
+static LSPLocation parseLocationLink( const json& loc ) {
+	auto uri = URI( loc[MEMBER_TARGET_URI].get<std::string>() );
+	auto vrange = loc[MEMBER_TARGET_SELECTION_RANGE];
+	if ( vrange.is_null() )
+		vrange = loc[MEMBER_TARGET_RANGE];
+	auto range = parseRange( vrange );
+	return { uri, range };
+}
+
+static std::vector<LSPLocation> parseDocumentLocation( const json& result ) {
+	std::vector<LSPLocation> ret;
+	if ( result.is_array() ) {
+		const auto& locs = result;
+		for ( const auto& def : locs ) {
+			const auto& ob = def;
+			ret.push_back( parseLocation( ob ) );
+			if ( ret.back().uri.empty() )
+				ret.back() = parseLocationLink( ob );
+		}
+	} else if ( result.is_object() ) {
+		ret.push_back( parseLocation( result ) );
+	}
+	return ret;
+}
+
+void LSPClientServer::goToLocation( const json& res ) {
+	auto locs = parseDocumentLocation( res );
+	if ( !locs.empty() )
+		mManager->goToLocation( locs.front() );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::getAndGoToLocation( const URI& document,
+																	const TextPosition& pos,
+																	const std::string& search ) {
+	auto params = textDocumentPositionParams( document, pos );
+	return send( newRequest( search, params ), [this]( json res ) { goToLocation( res ); } );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentDefinition( const URI& document,
+																	const TextPosition& pos ) {
+	return getAndGoToLocation( document, pos, "textDocument/definition" );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentDeclaration( const URI& document,
+																	 const TextPosition& pos ) {
+	return getAndGoToLocation( document, pos, "textDocument/declaration" );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentTypeDefinition( const URI& document,
+																		const TextPosition& pos ) {
+	return getAndGoToLocation( document, pos, "textDocument/typeDefinition" );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentImplementation( const URI& document,
+																		const TextPosition& pos ) {
+	return getAndGoToLocation( document, pos, "textDocument/implementation" );
 }
 
 } // namespace ecode
