@@ -129,7 +129,9 @@ size_t Process::write( const char* buffer, const size_t& size ) {
 	eeASSERT( mProcess != nullptr );
 	Lock l( mStdInMutex );
 	FILE* stdInFile = subprocess_stdin( PROCESS_PTR );
-	return fwrite( buffer, sizeof( char ), size, stdInFile );
+	int ret = fwrite( buffer, 1, size, stdInFile );
+	fflush( stdInFile );
+	return ret;
 }
 
 size_t Process::write( const std::string& buffer ) {
@@ -201,7 +203,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 			}
 		} );
 	}
-	if ( stdErrFd ) {
+	if ( stdErrFd && stdErrFd != stdOutFd ) {
 		mStdErrThread = std::thread( [this, stdErrFd]() {
 			DWORD n;
 			std::string buffer;
@@ -231,7 +233,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 																						 : -1;
 			pollfds.back().events = POLLIN;
 		}
-		if ( stdErrFd ) {
+		if ( stdErrFd && stdOutFd != stdErrFd ) {
 			pollfds.emplace_back();
 			pollfds.back().fd =
 				fcntl( stdErrFd, F_SETFL, fcntl( stdErrFd, F_GETFL ) | O_NONBLOCK ) == 0 ? stdErrFd

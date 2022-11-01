@@ -4,6 +4,8 @@
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 
+using json = nlohmann::json;
+
 namespace ecode {
 
 PluginManager::PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
@@ -38,6 +40,7 @@ bool PluginManager::setEnabled( const std::string& id, bool enable ) {
 	}
 	if ( !enable && plugin != nullptr ) {
 		eeSAFE_DELETE( plugin );
+		mSubscribedPlugins.erase( id );
 		mPlugins.erase( id );
 	}
 	return false;
@@ -95,8 +98,34 @@ UICodeEditorSplitter* PluginManager::getSplitter() const {
 	return mSplitter;
 }
 
+const std::string& PluginManager::getWorkspaceFolder() const {
+	return mWorkspaceFolder;
+}
+
+void PluginManager::setWorkspaceFolder( const std::string& workspaceFolder ) {
+	mWorkspaceFolder = workspaceFolder;
+	sendNotification( Notification::WorkspaceFolderChanged,
+					  json{ { "folder", mWorkspaceFolder } } );
+}
+
+void PluginManager::subscribeNotifications(
+	UICodeEditorPlugin* plugin,
+	std::function<void( Notification, const nlohmann::json& )> cb ) const {
+	const_cast<PluginManager*>( this )->mSubscribedPlugins[plugin->getId()] = cb;
+}
+
+void PluginManager::unsubscribeNotifications( UICodeEditorPlugin* plugin ) const {
+	const_cast<PluginManager*>( this )->mSubscribedPlugins.erase( plugin->getId() );
+}
+
 void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {
 	mSplitter = splitter;
+}
+
+void PluginManager::sendNotification( const Notification& notification,
+									  const nlohmann::json& json ) {
+	for ( const auto& plugin : mSubscribedPlugins )
+		plugin.second( notification, json );
 }
 
 bool PluginManager::hasDefinition( const std::string& id ) {

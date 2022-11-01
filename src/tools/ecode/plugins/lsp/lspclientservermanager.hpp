@@ -29,13 +29,19 @@ class LSPClientServerManager {
 
 	void followSymbolUnderCursor( TextDocument* doc );
 
-  protected:
+	void didChangeWorkspaceFolders( const std::string& folder );
+
+	const LSPWorkspaceFolder& getLSPWorkspaceFolder() const;
+
+	protected:
 	friend class LSPClientServer;
 
 	LSPClientPlugin* mPlugin{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::map<String::HashType, std::unique_ptr<LSPClientServer>> mClients;
 	std::vector<LSPDefinition> mLSPs;
+	std::vector<String::HashType> mLSPsToClose;
+	LSPWorkspaceFolder mLSPWorkspaceFolder;
 
 	std::vector<LSPDefinition> supportsLSP( const std::shared_ptr<TextDocument>& doc );
 
@@ -47,7 +53,7 @@ class LSPClientServerManager {
 
 	void tryRunServer( const std::shared_ptr<TextDocument>& doc );
 
-	void notifyClose( const String::HashType& id );
+	void closeLSPServer( const String::HashType& id );
 
 	void goToLocation( const LSPLocation& loc );
 };

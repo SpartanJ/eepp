@@ -159,6 +159,9 @@ UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
 	UICodeEditor( "codeeditor", autoRegisterBaseCommands, autoRegisterBaseKeybindings ) {}
 
 UICodeEditor::~UICodeEditor() {
+	for ( auto& plugin : mPlugins )
+		plugin->onUnregister( this );
+
 	if ( mDoc.use_count() == 1 ) {
 		DocEvent event( this, mDoc.get(), Event::OnDocumentClosed );
 		sendEvent( &event );
@@ -167,8 +170,6 @@ UICodeEditor::~UICodeEditor() {
 	} else {
 		mDoc->unregisterClient( this );
 	}
-	for ( auto& plugin : mPlugins )
-		plugin->onUnregister( this );
 }
 
 Uint32 UICodeEditor::getType() const {

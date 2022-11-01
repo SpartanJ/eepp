@@ -1,6 +1,7 @@
-#ifndef ECODE_LSPCLIENTSERVER_HPP
+﻿#ifndef ECODE_LSPCLIENTSERVER_HPP
 #define ECODE_LSPCLIENTSERVER_HPP
 
+#include "lspclientprotocol.hpp"
 #include "lspdefinition.hpp"
 #include "lspdocumentclient.hpp"
 #include <eepp/system/process.hpp>
@@ -19,11 +20,6 @@ using namespace EE::UI::Doc;
 namespace ecode {
 
 class LSPClientServerManager;
-
-struct LSPLocation {
-	URI uri;
-	TextRange range;
-};
 
 class LSPClientServer {
   public:
@@ -101,6 +97,13 @@ class LSPClientServer {
 	void updateDirty();
 
 	bool hasDocument( TextDocument* doc ) const;
+
+	bool hasDocuments() const;
+
+	LSPClientServer::RequestHandle
+	didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
+							   const std::vector<LSPWorkspaceFolder>& removed );
+
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;
@@ -111,16 +114,30 @@ class LSPClientServer {
 	std::map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
 	std::map<int, std::pair<GenericReplyHandler, GenericReplyHandler>> mHandlers;
 	Mutex mClientsMutex;
+	bool mReady{ false };
+	struct QueueMessage {
+		json msg;
+		GenericReplyHandler h;
+		GenericReplyHandler eh;
+	};
+	std::vector<QueueMessage> mQueuedMessages;
+	std::string mReceive;
+	std::string mReceiveErr;
+	LSPServerCapabilities mCapabilities;
 
-	int mLastMsgId{ 0 };
+	int mLastMsgId{ -2147483648 };
 
 	void readStdOut( const char* bytes, size_t n );
+
+	void readStdErr( const char* bytes, size_t n );
 
 	LSPClientServer::RequestHandle write( const json& msg, const GenericReplyHandler& h = nullptr,
 										  const GenericReplyHandler& eh = nullptr,
 										  const int id = 0 );
 
 	void initialize();
+
+	void sendQueuedMessages();
 
 	void processNotification( const json& msg );
 

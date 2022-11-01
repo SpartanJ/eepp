@@ -35,7 +35,21 @@ void LSPClientPlugin::update( UICodeEditor* ) {
 	mClientManager.updateDirty();
 }
 
+void LSPClientPlugin::processNotification( PluginManager::Notification noti,
+										   const nlohmann::json& obj ) {
+	switch ( noti ) {
+		case PluginManager::WorkspaceFolderChanged: {
+			mClientManager.didChangeWorkspaceFolders( obj["folder"] );
+			break;
+		}
+		default:
+			break;
+	}
+}
+
 void LSPClientPlugin::load( const PluginManager* pluginManager ) {
+	pluginManager->subscribeNotifications(
+		this, [&]( auto noti, auto obj ) { processNotification( noti, obj ); } );
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/lspclient.json" );
 	if ( FileSystem::fileExists( path ) )
@@ -107,6 +121,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					foundTlsp = true;
 					lsp.command = tlsp.command;
 					lsp.name = tlsp.name;
+					lsp.rootIndicationFileNames = tlsp.rootIndicationFileNames;
+					lsp.url = tlsp.url;
 					break;
 				}
 			}
@@ -130,6 +146,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			lsp.filePatterns.push_back( pattern.get<std::string>() );
 
 		if ( obj.contains( "rootIndicationFileNames" ) ) {
+			lsp.rootIndicationFileNames.clear();
 			auto fnms = obj["rootIndicationFileNames"];
 			for ( auto& fn : fnms )
 				lsp.rootIndicationFileNames.push_back( fn );

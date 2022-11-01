@@ -1169,6 +1169,7 @@
 ../../src/tools/ecode/plugins/linter/linterplugin.hpp
 ../../src/tools/ecode/plugins/lsp/lspclientplugin.cpp
 ../../src/tools/ecode/plugins/lsp/lspclientplugin.hpp
+../../src/tools/ecode/plugins/lsp/lspclientprotocol.hpp
 ../../src/tools/ecode/plugins/lsp/lspclientserver.cpp
 ../../src/tools/ecode/plugins/lsp/lspclientserver.hpp
 ../../src/tools/ecode/plugins/lsp/lspclientservermanager.cpp

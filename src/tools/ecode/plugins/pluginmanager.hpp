@@ -7,6 +7,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string>
 
 using namespace EE;
@@ -56,6 +57,8 @@ struct PluginDefinition {
 
 class PluginManager {
   public:
+	enum Notification { WorkspaceFolderChanged };
+
 	static constexpr int versionNumber( int major, int minor, int patch ) {
 		return ( (major)*1000 + (minor)*100 + ( patch ) );
 	}
@@ -97,19 +100,34 @@ class PluginManager {
 
 	UICodeEditorSplitter* getSplitter() const;
 
+	const std::string& getWorkspaceFolder() const;
+
+	void setWorkspaceFolder( const std::string& workspaceFolder );
+
+	void
+	subscribeNotifications( UICodeEditorPlugin* plugin,
+							std::function<void( Notification, const nlohmann::json& )> cb ) const;
+
+	void unsubscribeNotifications( UICodeEditorPlugin* plugin ) const;
+
   protected:
 	friend class App;
 	std::string mResourcesPath;
 	std::string mPluginsPath;
+	std::string mWorkspaceFolder;
 	std::map<std::string, UICodeEditorPlugin*> mPlugins;
 	std::map<std::string, bool> mPluginsEnabled;
 	std::map<std::string, PluginDefinition> mDefinitions;
 	std::shared_ptr<ThreadPool> mThreadPool;
 	UICodeEditorSplitter* mSplitter{ nullptr };
+	std::map<std::string, std::function<void( Notification, const nlohmann::json& )>>
+		mSubscribedPlugins;
 
 	bool hasDefinition( const std::string& id );
 
 	void setSplitter( UICodeEditorSplitter* splitter );
+
+	void sendNotification( const Notification& notification, const nlohmann::json& json = {} );
 };
 
 class PluginsModel : public Model {

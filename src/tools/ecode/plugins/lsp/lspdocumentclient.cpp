@@ -2,6 +2,7 @@
 #include "lspclientserver.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
+#include <eepp/system/log.hpp>
 
 using namespace EE::System;
 
@@ -11,6 +12,8 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	mServer( server ), mDoc( doc ) {
 	notifyOpen();
 }
+
+LSPDocumentClient::~LSPDocumentClient() {}
 
 void LSPDocumentClient::onDocumentTextChanged() {
 	mModified = true;
@@ -35,7 +38,6 @@ void LSPDocumentClient::onDocumentSaved( TextDocument* ) {
 
 void LSPDocumentClient::onDocumentClosed( TextDocument* ) {
 	mServer->didClose( mDoc );
-	mDoc = nullptr;
 }
 
 void LSPDocumentClient::onDocumentDirtyOnFileSystem( TextDocument* ) {}

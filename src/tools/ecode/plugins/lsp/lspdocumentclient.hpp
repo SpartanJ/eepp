@@ -16,6 +16,8 @@ class LSPDocumentClient : public TextDocument::Client {
   public:
 	LSPDocumentClient( LSPClientServer* server, TextDocument* doc );
 
+	~LSPDocumentClient();
+
 	virtual void onDocumentTextChanged();
 	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& eventType );
 	virtual void onDocumentCursorChange( const TextPosition& );

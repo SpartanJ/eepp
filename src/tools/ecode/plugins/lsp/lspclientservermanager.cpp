@@ -87,16 +87,21 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 		} else {
 			server = clientIt->second.get();
 		}
-		if ( server )
+		if ( server ) {
+			if ( !mLSPWorkspaceFolder.uri.empty() )
+				server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {} );
 			server->registerDoc( doc );
+		}
 	}
 }
 
-void LSPClientServerManager::notifyClose( const String::HashType& id ) {
-	auto it = mClients.find( id );
-	if ( it != mClients.end() ) {
-		mClients.erase( it );
-	}
+void LSPClientServerManager::closeLSPServer( const String::HashType& id ) {
+	mThreadPool->run( [this, id]() {
+		auto it = mClients.find( id );
+		if ( it != mClients.end() ) {
+			mClients.erase( it );
+		}
+	} );
 }
 
 void LSPClientServerManager::goToLocation( const LSPLocation& loc ) {
@@ -136,8 +141,16 @@ const std::shared_ptr<ThreadPool>& LSPClientServerManager::getThreadPool() const
 }
 
 void LSPClientServerManager::updateDirty() {
-	for ( auto& server : mClients )
+	for ( auto& server : mClients ) {
 		server.second->updateDirty();
+
+		if ( !server.second->hasDocuments() )
+			mLSPsToClose.push_back( server.first );
+	}
+
+	if ( !mLSPsToClose.empty() )
+		for ( const auto& server : mLSPsToClose )
+			closeLSPServer( server );
 }
 
 void LSPClientServerManager::followSymbolUnderCursor( TextDocument* doc ) {
@@ -147,6 +160,17 @@ void LSPClientServerManager::followSymbolUnderCursor( TextDocument* doc ) {
 			return;
 		}
 	}
+}
+
+void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folder ) {
+	mLSPWorkspaceFolder = { "file://" + folder, FileSystem::fileNameFromPath( folder ) };
+	for ( auto& server : mClients ) {
+		server.second->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {} );
+	}
+}
+
+const LSPWorkspaceFolder& LSPClientServerManager::getLSPWorkspaceFolder() const {
+	return mLSPWorkspaceFolder;
 }
 
 } // namespace ecode
