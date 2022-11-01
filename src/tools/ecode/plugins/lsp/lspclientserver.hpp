@@ -125,7 +125,7 @@ class LSPClientServer {
 	std::string mReceiveErr;
 	LSPServerCapabilities mCapabilities;
 
-	int mLastMsgId{ -2147483648 };
+	int mLastMsgId{ -1 };
 
 	void readStdOut( const char* bytes, size_t n );
 
