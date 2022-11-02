@@ -376,7 +376,7 @@ Int32 UITextInput::selCurEnd() {
 	return mDoc.getSelection().end().column();
 }
 
-void UITextInput::onDocumentTextChanged() {
+void UITextInput::onDocumentTextChanged( const DocumentContentChange& ) {
 	Vector2f offSet = mRealAlignOffset;
 
 	const String& text = mDoc.line( 0 ).getText();

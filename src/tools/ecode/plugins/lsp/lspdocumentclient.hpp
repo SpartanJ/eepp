@@ -18,7 +18,7 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	~LSPDocumentClient();
 
-	virtual void onDocumentTextChanged();
+	virtual void onDocumentTextChanged( const DocumentContentChange& change );
 	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& eventType );
 	virtual void onDocumentCursorChange( const TextPosition& );
 	virtual void onDocumentSelectionChange( const TextRange& );
@@ -41,12 +41,16 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	int getVersion() const;
 
+	const std::vector<DocumentContentChange>& getDocChange() const;
+
+	void clearDocChange();
   protected:
 	LSPClientServer* mServer{ nullptr };
 	TextDocument* mDoc{ nullptr };
 	bool mModified{ false };
 	int mVersion{ 0 };
 	Clock mLastModified;
+	std::vector<DocumentContentChange> mDocChange;
 };
 
 } // namespace ecode

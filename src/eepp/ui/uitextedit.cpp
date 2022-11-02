@@ -71,7 +71,7 @@ void UITextEdit::wrapText( const Float& maxWidth ) {
 }
 
 String UITextEdit::getText() const {
-	return mDoc->getText( { mDoc->startOfDoc(), mDoc->endOfDoc() } );
+	return mDoc->getText();
 }
 
 void UITextEdit::setText( const String& text ) {

@@ -1439,7 +1439,7 @@ void UICodeEditor::updateEditor() {
 	mDirtyScroll = false;
 }
 
-void UICodeEditor::onDocumentTextChanged() {
+void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& ) {
 	invalidateDraw();
 	checkMatchingBrackets();
 	sendCommonEvent( Event::OnTextChanged );

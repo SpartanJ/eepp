@@ -15,9 +15,11 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 
 LSPDocumentClient::~LSPDocumentClient() {}
 
-void LSPDocumentClient::onDocumentTextChanged() {
+void LSPDocumentClient::onDocumentTextChanged( const DocumentContentChange& change ) {
 	mModified = true;
 	++mVersion;
+	if ( !change.text.empty() || change.range.start() != change.range.end() )
+		mDocChange.push_back( change );
 	mLastModified.restart();
 }
 
@@ -62,6 +64,14 @@ LSPClientServer* LSPDocumentClient::getServer() const {
 
 int LSPDocumentClient::getVersion() const {
 	return mVersion;
+}
+
+const std::vector<DocumentContentChange>& LSPDocumentClient::getDocChange() const {
+	return mDocChange;
+}
+
+void LSPDocumentClient::clearDocChange() {
+	mDocChange.clear();
 }
 
 void LSPDocumentClient::notifyOpen() {

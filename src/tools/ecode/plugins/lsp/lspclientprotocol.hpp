@@ -2,6 +2,7 @@
 #define ECODE_LSPCLIENTPROTOCOL_HPP
 
 #include <eepp/ui/doc/textdocument.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
 
 using namespace EE::UI::Doc;
@@ -106,6 +107,89 @@ struct LSPShowMessageParams {
 	LSPMessageType type;
 	std::string message;
 };
+
+struct LSPTextDocumentContentChangeEvent {
+	TextRange range;
+	std::string text;
+};
+
+enum class LSPDiagnosticSeverity {
+	Unknown = 0,
+	Error = 1,
+	Warning = 2,
+	Information = 3,
+	Hint = 4,
+};
+
+struct LSPDiagnosticRelatedInformation {
+	// empty url / invalid range when absent
+	LSPLocation location;
+	std::string message;
+};
+
+struct LSPDiagnostic {
+	TextRange range;
+	LSPDiagnosticSeverity severity;
+	std::string code;
+	std::string source;
+	std::string message;
+	std::vector<LSPDiagnosticRelatedInformation> relatedInformation;
+};
+
+struct LSPPublishDiagnosticsParams {
+	URI uri;
+	std::vector<LSPDiagnostic> diagnostics;
+};
+
+struct LSPCommand {
+	std::string title;
+	std::string command;
+	// pretty opaque
+	nlohmann::json arguments;
+};
+
+struct LSPVersionedTextDocumentIdentifier {
+	URI uri;
+	int version = -1;
+};
+
+using LSPTextEdit = LSPTextDocumentContentChangeEvent;
+
+struct LSPTextDocumentEdit {
+	LSPVersionedTextDocumentIdentifier textDocument;
+	std::vector<LSPTextEdit> edits;
+};
+
+struct LSPWorkspaceEdit {
+	// supported part for now
+	std::map<URI, std::vector<LSPTextEdit>> changes;
+	std::vector<LSPTextDocumentEdit> documentChanges;
+};
+
+struct LSPCodeAction {
+	std::string title;
+	std::string kind;
+	std::vector<LSPDiagnostic> diagnostics;
+	LSPWorkspaceEdit edit;
+	LSPCommand command;
+};
+
+enum class LSPWorkDoneProgressKind { Begin, Report, End };
+
+struct LSPWorkDoneProgressValue {
+	LSPWorkDoneProgressKind kind;
+	std::string title;
+	std::string message;
+	bool cancellable;
+	unsigned percentage;
+};
+template <typename T> struct LSPProgressParams {
+	// number or string
+	nlohmann::json token;
+	T value;
+};
+
+using LSPWorkDoneProgressParams = LSPProgressParams<LSPWorkDoneProgressValue>;
 
 } // namespace ecode
 

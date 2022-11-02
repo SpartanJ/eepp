@@ -689,7 +689,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void updateEditor();
 
-	virtual void onDocumentTextChanged();
+	virtual void onDocumentTextChanged( const DocumentContentChange& );
 
 	virtual void onDocumentCursorChange( const TextPosition& );
 

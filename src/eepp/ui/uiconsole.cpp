@@ -895,7 +895,7 @@ Uint32 UIConsole::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	return UIWidget::onMouseLeave( Pos, Flags );
 }
 
-void UIConsole::onDocumentTextChanged() {
+void UIConsole::onDocumentTextChanged( const DocumentContentChange& ) {
 	resetCursor();
 
 	invalidateDraw();

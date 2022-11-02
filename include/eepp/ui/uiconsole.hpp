@@ -201,7 +201,7 @@ class EE_API UIConsole : public UIWidget,
 
 	virtual Uint32 onFocusLoss();
 
-	virtual void onDocumentTextChanged();
+	virtual void onDocumentTextChanged( const DocumentContentChange& );
 
 	virtual void onDocumentCursorChange( const TextPosition& );
 

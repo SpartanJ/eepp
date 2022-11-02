@@ -179,7 +179,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual Int32 selCurEnd();
 
-	virtual void onDocumentTextChanged();
+	virtual void onDocumentTextChanged( const DocumentContentChange& );
 
 	virtual void onDocumentCursorChange( const TextPosition& );
 

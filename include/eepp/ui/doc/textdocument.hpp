@@ -26,6 +26,11 @@ using namespace EE::Network;
 
 namespace EE { namespace UI { namespace Doc {
 
+struct DocumentContentChange {
+	TextRange range;
+	String text;
+};
+
 class EE_API TextDocument {
   public:
 	typedef std::function<void()> DocumentCommand;
@@ -43,8 +48,8 @@ class EE_API TextDocument {
 	class EE_API Client {
 	  public:
 		virtual ~Client();
-		virtual void onDocumentLoaded( TextDocument* ) {};
-		virtual void onDocumentTextChanged() = 0;
+		virtual void onDocumentLoaded( TextDocument* ){};
+		virtual void onDocumentTextChanged( const DocumentContentChange& ) = 0;
 		virtual void onDocumentUndoRedo( const UndoRedo& eventType ) = 0;
 		virtual void onDocumentCursorChange( const TextPosition& ) = 0;
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
@@ -130,6 +135,8 @@ class EE_API TextDocument {
 	bool hasSelection() const;
 
 	String getText( const TextRange& range ) const;
+
+	String getText() const;
 
 	String getSelectedText() const;
 
@@ -476,7 +483,7 @@ class EE_API TextDocument {
 
 	void notifyDocumentLoaded();
 
-	void notifyTextChanged();
+	void notifyTextChanged( const DocumentContentChange& );
 
 	void notifyCursorChanged();
 

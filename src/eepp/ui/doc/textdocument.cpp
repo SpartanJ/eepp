@@ -57,6 +57,7 @@ bool TextDocument::isEmpty() {
 }
 
 void TextDocument::reset() {
+	auto oldSelection = sanitizeRange( mSelection );
 	mFilePath = mDefaultFileName;
 	mFileRealPath = FileInfo();
 	mSelection.set( { 0, 0 }, { 0, 0 } );
@@ -65,7 +66,8 @@ void TextDocument::reset() {
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainStyle();
 	mUndoStack.clear();
 	cleanChangeId();
-	notifyTextChanged();
+	if ( oldSelection.isValid() )
+		notifyTextChanged( { { oldSelection.end(), oldSelection.start() }, "" } );
 	notifyCursorChanged();
 	notifySelectionChanged();
 }
@@ -167,7 +169,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 	if ( mAutoDetectIndentType )
 		guessIndentType();
 
-	notifyTextChanged();
+	notifyTextChanged( { { { 0, 0 }, { 0, 0 } }, "" } );
 
 	if ( mVerbose )
 		Log::info( "Document \"%s\" loaded in %.2fms.", path.c_str(),
@@ -454,7 +456,7 @@ TextDocument::LoadStatus TextDocument::reload() {
 		mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
 													  : FileInfo( mFilePath );
 		resetSyntax();
-		notifyTextChanged();
+		notifyTextChanged( { { { 0, 0 }, { 0, 0 } }, "" } );
 		setSelection( sanitizePosition( selection.start() ) );
 	}
 	return ret;
@@ -498,6 +500,7 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 		if ( !keepUndoRedoStatus && mTrimTrailingWhitespaces && text.size() > 1 &&
 			 whitespaces.find( text[text.size() - 2] ) != std::string::npos ) {
 			size_t pos = text.find_last_not_of( whitespaces );
+			size_t oriSize = text.size();
 			if ( pos != std::string::npos ) {
 				text.erase( pos + 1 );
 				text += nl;
@@ -506,7 +509,10 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 			}
 			mLines[i].setText( text );
 			notifyLineChanged( i );
-			notifyTextChanged();
+			notifyTextChanged(
+				{ { { static_cast<Int64>( i ), static_cast<Int64>( oriSize ) },
+					{ static_cast<Int64>( i ), static_cast<Int64>( text.size() - 1 ) } },
+				  "" } );
 		}
 		if ( i == lastLine ) {
 			if ( !text.empty() && text[text.size() - 1] == '\n' ) {
@@ -519,7 +525,11 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 				 text[text.size() - 1] != '\n' ) {
 				text += "\n";
 				mLines.emplace_back( TextDocumentLine( "\n" ) );
-				notifyTextChanged();
+				notifyTextChanged( { { TextPosition{ static_cast<Int64>( i ),
+													 static_cast<Int64>( mLines[i].size() - 1 ) },
+									   TextPosition{ static_cast<Int64>( i ),
+													 static_cast<Int64>( mLines[i].size() - 1 ) } },
+									 "\n" } );
 				notifyLineChanged( i );
 				notifyLineCountChanged( lastLine, lastLine + 1 );
 			}
@@ -650,6 +660,10 @@ String TextDocument::getText( const TextRange& range ) const {
 	return String::join( lines, -1 );
 }
 
+String TextDocument::getText() const {
+	return getText( getDocRange() );
+}
+
 String TextDocument::getSelectedText() const {
 	return getText( getSelection() );
 }
@@ -694,7 +708,7 @@ TextPosition TextDocument::insert( TextPosition position, const String& text,
 	mUndoStack.pushSelection( undoStack, getSelection(), time );
 	mUndoStack.pushRemove( undoStack, { position, cursor }, time );
 
-	notifyTextChanged();
+	notifyTextChanged( { { position, position }, text } );
 
 	if ( lineCount != mLines.size() ) {
 		notifyLineCountChanged( lineCount, mLines.size() );
@@ -778,7 +792,7 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 	if ( lines().empty() ) {
 		mLines.emplace_back( String( "\n" ) );
 	}
-	notifyTextChanged();
+	notifyTextChanged( { range, "" } );
 	notifyLineChanged( range.start().line() );
 }
 
@@ -1390,6 +1404,8 @@ void TextDocument::print() const {
 }
 
 TextRange TextDocument::sanitizeRange( const TextRange& range ) const {
+	if ( !range.isValid() )
+		return range;
 	return { sanitizePosition( range.start() ), sanitizePosition( range.end() ) };
 }
 
@@ -1953,9 +1969,9 @@ void TextDocument::setNonWordChars( const String& nonWordChars ) {
 	mNonWordChars = nonWordChars;
 }
 
-void TextDocument::notifyTextChanged() {
+void TextDocument::notifyTextChanged( const DocumentContentChange& change ) {
 	for ( auto& client : mClients ) {
-		client->onDocumentTextChanged();
+		client->onDocumentTextChanged( change );
 	}
 }
 

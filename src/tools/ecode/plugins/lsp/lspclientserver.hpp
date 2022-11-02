@@ -77,10 +77,12 @@ class LSPClientServer {
 
 	LSPClientServer::RequestHandle didClose( TextDocument* document );
 
-	LSPClientServer::RequestHandle didChange( const URI& document, int version,
-											  const std::string& text );
+	LSPClientServer::RequestHandle
+	didChange( const URI& document, int version, const std::string& text,
+			   const std::vector<DocumentContentChange>& change = {} );
 
-	LSPClientServer::RequestHandle didChange( TextDocument* doc );
+	LSPClientServer::RequestHandle
+	didChange( TextDocument* doc, const std::vector<DocumentContentChange>& change = {} );
 
 	LSPClientServer::RequestHandle documentDefinition( const URI& document,
 													   const TextPosition& pos );
@@ -103,6 +105,10 @@ class LSPClientServer {
 	LSPClientServer::RequestHandle
 	didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
 							   const std::vector<LSPWorkspaceFolder>& removed );
+
+	void publishDiagnostics( const json& msg );
+
+	void workDoneProgress( const LSPWorkDoneProgressParams& workDoneParams );
 
   protected:
 	LSPClientServerManager* mManager{ nullptr };
