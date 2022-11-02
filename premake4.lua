@@ -442,7 +442,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++14" }
+		buildoptions{ "-std=c++17" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -823,7 +823,7 @@ function build_eepp( build_name )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++14" }
+		buildoptions{ "-std=c++17" }
 	end
 
 	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then
@@ -1029,7 +1029,7 @@ solution "eepp"
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		defines { "EFSW_USE_CXX11" }
 		if not is_vs() then
-			buildoptions{ "-std=c++14" }
+			buildoptions{ "-std=c++17" }
 		end
 
 		if os.is("windows") then
@@ -1085,7 +1085,7 @@ solution "eepp"
 		includedirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
 		if not is_vs() then
-			buildoptions{ "-std=c++14" }
+			buildoptions{ "-std=c++17" }
 		end
 		build_base_cpp_configuration( "eterm" )
 

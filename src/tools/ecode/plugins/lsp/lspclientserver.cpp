@@ -267,7 +267,10 @@ static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
 		auto diag = vdiag;
 		auto range = parseRange( diag[MEMBER_RANGE] );
 		auto severity = static_cast<LSPDiagnosticSeverity>( diag["severity"].get<int>() );
-		auto code = diag.at( "code" ).get<std::string>();
+		auto code = diag.contains( "code" ) ? ( diag["code"].is_number_integer()
+													? String::toString( diag["code"].get<int>() )
+													: diag.at( "code" ).get<std::string>() )
+											: "";
 		auto source = diag.at( "source" ).get<std::string>();
 		auto message = diag.at( MEMBER_MESSAGE ).get<std::string>();
 		std::vector<LSPDiagnosticRelatedInformation> relatedInfoList;
@@ -462,7 +465,7 @@ LSPClientServer::RequestHandle LSPClientServer::send( const json& msg, const Gen
 	if ( mProcess.isAlive() ) {
 		return write( msg, h, eh );
 	} else {
-		Log::error( "LSPClientServer server %s Send for non-running server: %s", mLSP.name.c_str(),
+		Log::debug( "LSPClientServer server %s Send for non-running server: %s", mLSP.name.c_str(),
 					mLSP.name.c_str() );
 	}
 	return RequestHandle();
@@ -609,7 +612,8 @@ static json newError( const LSPErrorCode& code, const std::string& msg ) {
 void LSPClientServer::publishDiagnostics( const json& msg ) {
 	// should emmit event somewhere
 	auto res = parseDiagnostics( msg[MEMBER_PARAMS] );
-	Log::debug( "LSPClientServer::publishDiagnostics: %s", res.uri.toString().c_str() );
+	Log::debug( "LSPClientServer::publishDiagnostics: %s - returned %zu items",
+				res.uri.toString().c_str(), res.diagnostics.size() );
 }
 
 void LSPClientServer::workDoneProgress( const LSPWorkDoneProgressParams& workDoneParams ) {
@@ -673,7 +677,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 		// FIXME perhaps detect if no reply for some time
 		// then again possibly better left to user to restart in such case
 		if ( !ok ) {
-			Log::error( "LSPClientServer::readStdOut server %s invalid " CONTENT_LENGTH,
+			Log::debug( "LSPClientServer::readStdOut server %s invalid " CONTENT_LENGTH,
 						mLSP.name.c_str() );
 			// flush and try to carry on to some next header
 			buffer.erase( 0, msgstart );
@@ -681,7 +685,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 		}
 		// sanity check to avoid extensive buffering
 		if ( length > ( 1 << 29 ) ) {
-			Log::error( "LSPClientServer::readStdOut server %s excessive size", mLSP.name.c_str() );
+			Log::debug( "LSPClientServer::readStdOut server %s excessive size", mLSP.name.c_str() );
 			buffer.clear();
 			continue;
 		}
@@ -693,51 +697,49 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 		auto payload = buffer.substr( msgstart, length );
 		buffer.erase( 0, msgstart + length );
 
-		if ( !payload.empty() ) {
-			try {
-				auto res = json::parse( payload );
-
-				int msgid = -1;
-				if ( res.contains( MEMBER_ID ) ) {
-					msgid = res[MEMBER_ID].get<int>();
-				} else {
-					processNotification( res );
-					continue;
-				}
-
-				if ( res.contains( MEMBER_METHOD ) ) {
-					processRequest( res );
-					continue;
-				}
-
-				Log::debug( "LSPClientServer::readStdOut server %s said: \n%s", mLSP.name.c_str(),
-							res.dump().c_str() );
-
-				auto it = mHandlers.find( msgid );
-				if ( it != mHandlers.end() ) {
-					const auto handler = *it;
-					mHandlers.erase( it );
-					auto& h = handler.second.first;
-					auto& eh = handler.second.second;
-					if ( res.contains( MEMBER_ERROR ) && eh ) {
-						eh( res[MEMBER_ERROR] );
-					} else {
-						h( res[MEMBER_RESULT] );
-					}
-				} else {
-					Log::debug( "LSPClientServer::readStdOut server %s unexpected reply id: %d",
-								mLSP.name.c_str(), msgid );
-				}
-
-				continue;
-			} catch ( const json::exception& e ) {
-				Log::debug(
-					"LSPClientServer::readStdOut server %s said: Coudln't parse json err: %s",
-					mLSP.name.c_str(), e.what() );
-			}
+		if ( payload.empty() ) {
+			Log::debug( "LSPClientServer::readStdOut server %s empty payload", mLSP.name.c_str() );
+			continue;
 		}
-		Log::debug( "LSPClientServer::readStdOut server %s said: \n%s", mLSP.name.c_str(),
-					payload.c_str() );
+
+		try {
+			auto res = json::parse( payload );
+
+			int msgid = -1;
+			if ( res.contains( MEMBER_ID ) ) {
+				msgid = res[MEMBER_ID].get<int>();
+			} else {
+				processNotification( res );
+				continue;
+			}
+
+			if ( res.contains( MEMBER_METHOD ) ) {
+				processRequest( res );
+				continue;
+			}
+
+			Log::debug( "LSPClientServer::readStdOut server %s said: \n%s", mLSP.name.c_str(),
+						res.dump().c_str() );
+
+			auto it = mHandlers.find( msgid );
+			if ( it != mHandlers.end() ) {
+				const auto handler = *it;
+				mHandlers.erase( it );
+				auto& h = handler.second.first;
+				auto& eh = handler.second.second;
+				if ( res.contains( MEMBER_ERROR ) && eh ) {
+					eh( res[MEMBER_ERROR] );
+				} else {
+					h( res[MEMBER_RESULT] );
+				}
+			} else {
+				Log::debug( "LSPClientServer::readStdOut server %s unexpected reply id: %d",
+							mLSP.name.c_str(), msgid );
+			}
+		} catch ( const json::exception& e ) {
+			Log::debug( "LSPClientServer::readStdOut server %s said: Coudln't parse json err: %s",
+						mLSP.name.c_str(), e.what() );
+		}
 	}
 }
 
@@ -751,8 +753,8 @@ void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
 	}
 	if ( !msg.message.empty() ) {
 		msg.type = LSPMessageType::Log;
-		Log::warning( "LSPClientServer::readStdOut server %s: %s", mLSP.name.c_str(),
-					  msg.message.c_str() );
+		Log::debug( "LSPClientServer::readStdOut server %s: %s", mLSP.name.c_str(),
+					msg.message.c_str() );
 	}
 }
 

@@ -90,10 +90,10 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.0.22"
-remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.0.22.zip"
-remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.0.22-VC.zip"
-remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.zip"
+remote_sdl2_version = "SDL2-2.24.2"
+remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.24.2.zip"
+remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.24.2-VC.zip"
+remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.24.2-mingw.zip"
 
 function incdirs( dirs )
 	if is_xcode() then
@@ -268,7 +268,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		vpaths { ['Resources/*'] = { "ee.rc", "ee.ico" } }
 
 	filter "action:not vs*"
-		cppdialect "C++14"
+		cppdialect "C++17"
 		buildoptions { "-Wall" }
 
 	filter { "configurations:debug*", "action:not vs*" }
@@ -620,7 +620,7 @@ function build_eepp( build_name )
 		incdirs { "src/thirdparty/libzip/vs" }
 
 	filter "action:not vs*"
-		cppdialect "C++14"
+		cppdialect "C++17"
 end
 
 workspace "eepp"
@@ -786,7 +786,7 @@ workspace "eepp"
 		build_base_cpp_configuration( "efsw" )
 		defines { "EFSW_USE_CXX11" }
 		filter "action:not vs*"
-			cppdialect "C++14"
+			cppdialect "C++17"
 		filter "system:windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/win/*.cpp" }
 			excludes {
@@ -833,7 +833,7 @@ workspace "eepp"
 		files { "src/modules/eterm/src/**.cpp" }
 		build_base_cpp_configuration( "eterm" )
 		filter "action:not vs*"
-			cppdialect "C++14"
+			cppdialect "C++17"
 			buildoptions { "-Wall" }
 
 	-- Library
