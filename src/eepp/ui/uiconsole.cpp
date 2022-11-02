@@ -340,7 +340,7 @@ void UIConsole::setMaxLogLines( const Uint32& maxLogLines ) {
 
 void UIConsole::privPushText( const String& str ) {
 	Lock l( mMutex );
-	mCmdLog.push_back( str );
+	mCmdLog.push_back( { str, String::hash( str ) } );
 	invalidateDraw();
 	if ( mCmdLog.size() >= mMaxLogLines )
 		mCmdLog.pop_front();
@@ -381,10 +381,13 @@ void UIConsole::draw() {
 		if ( i < (int)mCmdLog.size() && i >= 0 ) {
 			curY = mScreenPos.y + getPixelsSize().getHeight() - mPaddingPx.Bottom -
 				   pos * lineHeight - lineHeight * 2 - 1;
-			Text& text = mTextCache[pos];
+			Text& text = mTextCache[pos].text;
 			text.setStyleConfig( mFontStyleConfig );
 			text.setFillColor( fontColor );
-			text.setString( mCmdLog[i] );
+			if ( mCmdLog[i].hash != mTextCache[pos].hash ) {
+				text.setString( mCmdLog[i].log );
+				mTextCache[pos].hash = mCmdLog[i].hash;
+			}
 			text.draw( mScreenPos.x + mPaddingPx.Left, curY );
 			pos++;
 		}
@@ -392,13 +395,13 @@ void UIConsole::draw() {
 
 	curY = mScreenPos.y + getPixelsSize().getHeight() - mPaddingPx.Bottom - lineHeight - 1;
 
-	Text& text = mTextCache[mTextCache.size() - 1];
+	Text& text = mTextCache[mTextCache.size() - 1].text;
 	text.setStyleConfig( mFontStyleConfig );
 	text.setFillColor( fontColor );
 	text.setString( "> " + mDoc.getCurrentLine().getTextWithoutNewLine() );
 	text.draw( mScreenPos.x + mPaddingPx.Left, curY );
 
-	Text& text2 = mTextCache[mTextCache.size() - 2];
+	Text& text2 = mTextCache[mTextCache.size() - 2].text;
 	text2.setStyleConfig( mFontStyleConfig );
 	text2.setFillColor( fontColor );
 
@@ -420,7 +423,7 @@ void UIConsole::draw() {
 	if ( mShowFps ) {
 		Float cw =
 			mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false ).advance;
-		Text& text = mTextCache[mTextCache.size() - 3];
+		Text& text = mTextCache[mTextCache.size() - 3].text;
 		Color OldColor1( text.getColor() );
 		text.setStyleConfig( mFontStyleConfig );
 		text.setFillColor( fontColor );

@@ -113,13 +113,6 @@ void GlobalSearchController::initGlobalSearchBar(
 							escapeSequenceChk->isChecked(), false );
 		} );
 	mGlobalSearchBarLayout->setCommand(
-		"search-replace-in-files",
-		[&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
-			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
-							wholeWordChk->isChecked(), luaPatternChk->isChecked(),
-							escapeSequenceChk->isChecked(), true );
-		} );
-	mGlobalSearchBarLayout->setCommand(
 		"search-again", [&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
 			auto listBox = mGlobalSearchHistoryList->getListBox();
 			if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
@@ -173,7 +166,7 @@ void GlobalSearchController::initGlobalSearchBar(
 			mGlobalSearchTree->forceKeyDown( keyEvent );
 		}
 	} );
-	mGlobalSearchInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+	auto switchInputToTree = [&]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		Uint32 keyCode = keyEvent->getKeyCode();
 		if ( ( keyCode == KEY_UP || keyCode == KEY_DOWN || keyCode == KEY_PAGEUP ||
@@ -181,7 +174,8 @@ void GlobalSearchController::initGlobalSearchBar(
 			 mGlobalSearchTree->forceKeyDown( *keyEvent ) && !mGlobalSearchTree->hasFocus() ) {
 			mGlobalSearchTree->setFocus();
 		}
-	} );
+	};
+	mGlobalSearchInput->addEventListener( Event::KeyDown, switchInputToTree );
 	mGlobalSearchInput->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
 		if ( mGlobalSearchBarLayout->isVisible() )
 			updateGlobalSearchBar();
@@ -239,11 +233,27 @@ void GlobalSearchController::initGlobalSearchBar(
 		if ( replaceInput->hasFocus() )
 			mGlobalSearchBarLayout->execute( "replace-in-files" );
 	} );
-	replaceInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+	replaceInput->addEventListener( Event::KeyDown, switchInputToTree );
+	mGlobalSearchLayout->addEventListener( Event::KeyDown, [&]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
+		if ( keyEvent->getKeyCode() == KEY_ESCAPE ) {
 			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
+			return;
+		}
+		mGlobalSearchBarLayout->forceKeyDown( *keyEvent );
 	} );
+	mGlobalSearchBarLayout->setCommand(
+		"search-replace-in-files",
+		[&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk, replaceInput] {
+			if ( mGlobalSearchTreeReplace == mGlobalSearchTree ) {
+				replaceInput->setFocus();
+				replaceInput->getDocument().selectAll();
+				return;
+			}
+			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
+							wholeWordChk->isChecked(), luaPatternChk->isChecked(),
+							escapeSequenceChk->isChecked(), true );
+		} );
 	mGlobalSearchBarLayout->setCommand( "replace-in-files", [&, replaceInput, escapeSequenceChk] {
 		auto listBox = mGlobalSearchHistoryList->getListBox();
 		if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
@@ -265,6 +275,12 @@ void GlobalSearchController::initGlobalSearchBar(
 		UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme(), true );
 	initGlobalSearchTree( mGlobalSearchTreeSearch );
 	initGlobalSearchTree( mGlobalSearchTreeReplace );
+	mGlobalSearchTreeReplace->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		if ( keyEvent->getSanitizedMod() == KeyMod::getDefaultModifier() &&
+			 keyEvent->getKeyCode() == KEY_RETURN )
+			mGlobalSearchBarLayout->execute( "replace-in-files" );
+	} );
 	mGlobalSearchTree = mGlobalSearchTreeSearch;
 }
 
@@ -488,11 +504,6 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 	searchTree->setHeadersVisible( false );
 	searchTree->setColumnsHidden(
 		{ ProjectSearch::ResultModel::Line, ProjectSearch::ResultModel::ColumnStart }, true );
-	searchTree->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
-			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
-	} );
 	searchTree->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {

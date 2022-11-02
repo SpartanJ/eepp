@@ -76,6 +76,7 @@ static json textDocumentParams( const json& m ) {
 static json textDocumentParams( const URI& document, int version = -1 ) {
 	return textDocumentParams( versionedTextDocumentIdentifier( document, version ) );
 }
+
 static json toJson( const TextPosition& pos ) {
 	return json{ { MEMBER_LINE, pos.line() }, { MEMBER_CHARACTER, pos.column() } };
 }
@@ -328,8 +329,9 @@ LSPClientServer::RequestHandle LSPClientServer::write( const json& msg,
 			method = msg[MEMBER_METHOD].get<std::string>();
 		else if ( msg.contains( MEMBER_MESSAGE ) )
 			method = msg[MEMBER_MESSAGE];
-		Log::info( "LSPClientServer calling %s", method.c_str() );
-		Log::debug( "LSPClientServer sending message:\n%s", sjson.c_str() );
+		Log::info( "LSPClientServer server %s calling %s", mLSP.name.c_str(), method.c_str() );
+		Log::debug( "LSPClientServer server %s sending message:\n%s", mLSP.name.c_str(),
+					sjson.c_str() );
 		mProcess.write( sjson );
 	} else {
 		mQueuedMessages.push_back( { std::move( ob ), h, eh } );
@@ -343,8 +345,8 @@ LSPClientServer::RequestHandle LSPClientServer::send( const json& msg, const Gen
 	if ( mProcess.isAlive() ) {
 		return write( msg, h, eh );
 	} else {
-		Log::error( "LSPClientServer - Send for non-running server: %s - %s", mLSP.name.c_str(),
-					mLSP.language.c_str() );
+		Log::error( "LSPClientServer server %s Send for non-running server: %s", mLSP.name.c_str(),
+					mLSP.name.c_str() );
 	}
 	return RequestHandle();
 }
@@ -498,7 +500,8 @@ static json newError( const LSPErrorCode& code, const std::string& msg ) {
 }
 
 void LSPClientServer::processNotification( const json& msg ) {
-	Log::warning( "LSPClientServer::processNotification: %s", msg.dump().c_str() );
+	Log::warning( "LSPClientServer::processNotification server %s: %s", mLSP.name.c_str(),
+				  msg.dump().c_str() );
 	auto method = msg[MEMBER_METHOD].get<std::string>();
 	if ( method == "textDocument/publishDiagnostics" ) {
 		// publishDiagnostics( msg );
@@ -513,7 +516,8 @@ void LSPClientServer::processNotification( const json& msg ) {
 }
 
 void LSPClientServer::processRequest( const json& msg ) {
-	Log::debug( "LSPClientServer::processRequest: %s", msg.dump().c_str() );
+	Log::debug( "LSPClientServer::processRequest server %s: %s", mLSP.name.c_str(),
+				msg.dump().c_str() );
 	auto method = msg[MEMBER_METHOD].get<std::string>();
 	auto msgid = msg[MEMBER_ID].get<int>();
 	//	auto params = msg[MEMBER_PARAMS];
@@ -546,14 +550,15 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 		// FIXME perhaps detect if no reply for some time
 		// then again possibly better left to user to restart in such case
 		if ( !ok ) {
-			Log::error( "LSPClientServer::readStdOut invalid " CONTENT_LENGTH );
+			Log::error( "LSPClientServer::readStdOut server %s invalid " CONTENT_LENGTH,
+						mLSP.name.c_str() );
 			// flush and try to carry on to some next header
 			buffer.erase( 0, msgstart );
 			continue;
 		}
 		// sanity check to avoid extensive buffering
 		if ( length > ( 1 << 29 ) ) {
-			Log::error( "LSPClientServer::readStdOut excessive size" );
+			Log::error( "LSPClientServer::readStdOut server %s excessive size", mLSP.name.c_str() );
 			buffer.clear();
 			continue;
 		}
@@ -582,7 +587,8 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 					continue;
 				}
 
-				Log::debug( "LSP Server %s said: \n%s", mLSP.name.c_str(), res.dump().c_str() );
+				Log::debug( "LSPClientServer::readStdOut server %s said: \n%s", mLSP.name.c_str(),
+							res.dump().c_str() );
 
 				auto it = mHandlers.find( msgid );
 				if ( it != mHandlers.end() ) {
@@ -596,16 +602,19 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 						h( res[MEMBER_RESULT] );
 					}
 				} else {
-					Log::debug( "LSPClientServer::readStdOut unexpected reply id: %d", msgid );
+					Log::debug( "LSPClientServer::readStdOut server %s unexpected reply id: %d",
+								mLSP.name.c_str(), msgid );
 				}
 
 				continue;
 			} catch ( const json::exception& e ) {
-				Log::debug( "LSP Server %s said: Coudln't parse json err: %s", mLSP.name.c_str(),
-							e.what() );
+				Log::debug(
+					"LSPClientServer::readStdOut server %s said: Coudln't parse json err: %s",
+					mLSP.name.c_str(), e.what() );
 			}
 		}
-		Log::debug( "LSP Server %s said: \n%s", mLSP.name.c_str(), payload.c_str() );
+		Log::debug( "LSPClientServer::readStdOut server %s said: \n%s", mLSP.name.c_str(),
+					payload.c_str() );
 	}
 }
 
@@ -619,7 +628,8 @@ void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
 	}
 	if ( !msg.message.empty() ) {
 		msg.type = LSPMessageType::Log;
-		Log::warning( "LSPClientServer::readStdErr: %s", msg.message.c_str() );
+		Log::warning( "LSPClientServer::readStdOut server %s: %s", mLSP.name.c_str(),
+					  msg.message.c_str() );
 	}
 }
 
@@ -679,7 +689,9 @@ void LSPClientServer::initialize() {
 			try {
 				fromJson( mCapabilities, resp["capabilities"] );
 			} catch ( const json::exception& e ) {
-				Log::warning( "LSPClientServer: error parsing capabilities: %s", e.what() );
+				Log::warning(
+					"LSPClientServer::initialize server %s error parsing capabilities: %s",
+					mLSP.name.c_str(), e.what() );
 			}
 
 			mReady = true;

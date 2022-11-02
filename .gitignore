@@ -57,3 +57,4 @@ ecode.dmg
 /projects/mingw32/ecode/ecode-*
 *.dmg
 /bin/eterm*
+/compile_flags.txt

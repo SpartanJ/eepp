@@ -26,6 +26,9 @@ class EE_API KeyEvent : public Event {
 
 	const Uint32& getMod() const;
 
+	/** The modifier key mask only for CTRL ALT SHIFT and META (no caps, num, etc) */
+	Uint32 getSanitizedMod() const;
+
   protected:
 	Keycode mKeyCode{ Keycode::KEY_UNKNOWN };
 	Scancode mScancode{ Scancode::SCANCODE_UNKNOWN };

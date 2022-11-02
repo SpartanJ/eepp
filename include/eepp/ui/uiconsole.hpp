@@ -125,11 +125,19 @@ class EE_API UIConsole : public UIWidget,
 	void setBlinkTime( const Time& blinkTime );
 
   protected:
+	struct TextCache {
+		Text text;
+		String::HashType hash;
+	};
+	struct CommandLogCache {
+		String log;
+		String::HashType hash;
+	};
 	Mutex mMutex;
 	std::map<String, ConsoleCallback> mCallbacks;
-	std::deque<String> mCmdLog;
+	std::deque<CommandLogCache> mCmdLog;
 	std::deque<String> mLastCommands;
-	std::vector<Text> mTextCache;
+	std::vector<TextCache> mTextCache;
 	UIFontStyleConfig mFontStyleConfig;
 	Uint32 mMaxLogLines{ 8192 };
 	TextDocument mDoc;
