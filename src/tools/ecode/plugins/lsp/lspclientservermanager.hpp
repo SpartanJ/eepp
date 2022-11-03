@@ -27,13 +27,21 @@ class LSPClientServerManager {
 
 	void updateDirty();
 
-	void followSymbolUnderCursor( TextDocument* doc );
+	void goToDocumentDefinition( TextDocument* doc );
 
 	void didChangeWorkspaceFolders( const std::string& folder );
 
 	const LSPWorkspaceFolder& getLSPWorkspaceFolder() const;
 
-	protected:
+	std::vector<LSPClientServer*> getLSPClientServers( UICodeEditor* editor );
+
+	std::vector<LSPClientServer*> getLSPClientServers( const std::shared_ptr<TextDocument>& doc );
+
+	LSPClientServer* getOneLSPClientServer( UICodeEditor* editor );
+
+	LSPClientServer* getOneLSPClientServer( const std::shared_ptr<TextDocument>& doc );
+
+  protected:
 	friend class LSPClientServer;
 
 	LSPClientPlugin* mPlugin{ nullptr };

@@ -153,7 +153,7 @@ void LSPClientServerManager::updateDirty() {
 			closeLSPServer( server );
 }
 
-void LSPClientServerManager::followSymbolUnderCursor( TextDocument* doc ) {
+void LSPClientServerManager::goToDocumentDefinition( TextDocument* doc ) {
 	for ( auto& server : mClients ) {
 		if ( server.second->hasDocument( doc ) ) {
 			server.second->documentDefinition( doc->getURI(), doc->getSelection().start() );
@@ -171,6 +171,33 @@ void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folde
 
 const LSPWorkspaceFolder& LSPClientServerManager::getLSPWorkspaceFolder() const {
 	return mLSPWorkspaceFolder;
+}
+
+std::vector<LSPClientServer*> LSPClientServerManager::getLSPClientServers( UICodeEditor* editor ) {
+	return getLSPClientServers( editor->getDocumentRef() );
+}
+
+std::vector<LSPClientServer*>
+LSPClientServerManager::getLSPClientServers( const std::shared_ptr<TextDocument>& doc ) {
+	std::vector<LSPClientServer*> servers;
+	for ( auto& server : mClients ) {
+		if ( server.second->hasDocument( doc.get() ) )
+			servers.push_back( server.second.get() );
+	}
+	return servers;
+}
+
+LSPClientServer* LSPClientServerManager::getOneLSPClientServer( UICodeEditor* editor ) {
+	return getOneLSPClientServer( editor->getDocumentRef() );
+}
+
+LSPClientServer*
+LSPClientServerManager::getOneLSPClientServer( const std::shared_ptr<TextDocument>& doc ) {
+	for ( auto& server : mClients ) {
+		if ( server.second->hasDocument( doc.get() ) )
+			return server.second.get();
+	}
+	return nullptr;
 }
 
 } // namespace ecode

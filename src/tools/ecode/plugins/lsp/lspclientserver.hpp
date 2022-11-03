@@ -7,6 +7,8 @@
 #include <eepp/system/process.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/doc/undostack.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
 
@@ -25,7 +27,7 @@ class LSPClientServer {
   public:
 	template <typename T> using ReplyHandler = std::function<void( const T& )>;
 
-	using GenericReplyHandler = ReplyHandler<json>;
+	using JsonReplyHandler = ReplyHandler<json>;
 
 	class RequestHandle {
 		friend class LSPClientServer;
@@ -49,20 +51,21 @@ class LSPClientServer {
 
 	bool registerDoc( const std::shared_ptr<TextDocument>& doc );
 
+	const LSPServerCapabilities& getCapabilities() const;
+
 	LSPClientServerManager* getManager() const;
 
 	const std::shared_ptr<ThreadPool>& getThreadPool() const;
 
 	LSPClientServer::RequestHandle cancel( int id );
 
-	LSPClientServer::RequestHandle send( const json& msg, const GenericReplyHandler& h = nullptr,
-										 const GenericReplyHandler& eh = nullptr );
+	LSPClientServer::RequestHandle send( const json& msg, const JsonReplyHandler& h = nullptr,
+										 const JsonReplyHandler& eh = nullptr );
 
 	const LSPDefinition& getDefinition() const { return mLSP; }
 
-	LSPClientServer::RequestHandle documentSymbols( const URI& document,
-													const GenericReplyHandler& h,
-													const GenericReplyHandler& eh );
+	LSPClientServer::RequestHandle documentSymbols( const URI& document, const JsonReplyHandler& h,
+													const JsonReplyHandler& eh );
 
 	LSPClientServer::RequestHandle didOpen( const URI& document, const std::string& text,
 											int version );
@@ -110,6 +113,9 @@ class LSPClientServer {
 
 	void workDoneProgress( const LSPWorkDoneProgressParams& workDoneParams );
 
+	LSPClientServer::RequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
+													   const std::string& search );
+
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;
@@ -118,13 +124,13 @@ class LSPClientServer {
 	Process mProcess;
 	std::vector<TextDocument*> mDocs;
 	std::map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
-	std::map<int, std::pair<GenericReplyHandler, GenericReplyHandler>> mHandlers;
+	std::map<int, std::pair<JsonReplyHandler, JsonReplyHandler>> mHandlers;
 	Mutex mClientsMutex;
 	bool mReady{ false };
 	struct QueueMessage {
 		json msg;
-		GenericReplyHandler h;
-		GenericReplyHandler eh;
+		JsonReplyHandler h;
+		JsonReplyHandler eh;
 	};
 	std::vector<QueueMessage> mQueuedMessages;
 	std::string mReceive;
@@ -137,9 +143,8 @@ class LSPClientServer {
 
 	void readStdErr( const char* bytes, size_t n );
 
-	LSPClientServer::RequestHandle write( const json& msg, const GenericReplyHandler& h = nullptr,
-										  const GenericReplyHandler& eh = nullptr,
-										  const int id = 0 );
+	LSPClientServer::RequestHandle write( const json& msg, const JsonReplyHandler& h = nullptr,
+										  const JsonReplyHandler& eh = nullptr, const int id = 0 );
 
 	void initialize();
 
@@ -150,9 +155,6 @@ class LSPClientServer {
 	void processRequest( const json& msg );
 
 	void goToLocation( const json& res );
-
-	LSPClientServer::RequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
-													   const std::string& search );
 };
 
 } // namespace ecode

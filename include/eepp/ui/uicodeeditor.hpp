@@ -64,7 +64,8 @@ class UICodeEditorPlugin {
 	}
 	virtual bool onMouseOver( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
 	virtual bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
-	virtual bool onCreateContextMenu( UICodeEditor*, const Vector2i&, const Uint32& ) {
+	virtual bool onCreateContextMenu( UICodeEditor*, UIPopUpMenu* /*menu*/,
+									  const Vector2i& /*position*/, const Uint32& /*flags*/ ) {
 		return false;
 	}
 	virtual void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,

@@ -51,6 +51,9 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	const PluginManager* getManager() const;
 
+	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
+									  const Vector2i& position, const Uint32& flags );
+
   protected:
 	const PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mPool;

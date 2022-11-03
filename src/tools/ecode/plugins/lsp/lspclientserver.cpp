@@ -218,8 +218,8 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	// it should not be sent unless such support is announced, but let's handle it anyway
 	// so consider an object there as a (good?) sign that the server is suitably capable
 	auto toBoolOrObject = []( const nlohmann::json& value, const std::string& valueName ) {
-		return value.contains( "valueName" ) &&
-			   ( value[valueName].get<bool>() || value[valueName].is_object() );
+		return value.contains( valueName ) &&
+			   ( value[valueName].is_boolean() || value[valueName].is_object() );
 	};
 
 	auto sync = json["textDocumentSync"];
@@ -228,8 +228,10 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	if ( sync.is_object() ) {
 		auto syncObject = sync;
 		auto save = syncObject["save"];
-		if ( !save.empty() && ( save.is_object() || save.get<bool>() ) ) {
-			caps.textDocumentSync.save = { save["includeText"].get<bool>() };
+		if ( save.is_boolean() ) {
+			caps.textDocumentSync.save.includeText = save.get<bool>();
+		} else if ( save.is_object() && save.contains( "includeText" ) ) {
+			caps.textDocumentSync.save.includeText = save["includeText"].get<bool>();
 		}
 	}
 
@@ -410,6 +412,10 @@ bool LSPClientServer::registerDoc( const std::shared_ptr<TextDocument>& doc ) {
 	return true;
 }
 
+const LSPServerCapabilities& LSPClientServer::getCapabilities() const {
+	return mCapabilities;
+}
+
 LSPClientServer::RequestHandle LSPClientServer::cancel( int reqid ) {
 	if ( mHandlers.erase( reqid ) > 0 ) {
 		auto params = json{ MEMBER_ID, reqid };
@@ -418,10 +424,8 @@ LSPClientServer::RequestHandle LSPClientServer::cancel( int reqid ) {
 	return RequestHandle();
 }
 
-LSPClientServer::RequestHandle LSPClientServer::write( const json& msg,
-													   const GenericReplyHandler& h,
-													   const GenericReplyHandler& eh,
-													   const int id ) {
+LSPClientServer::RequestHandle LSPClientServer::write( const json& msg, const JsonReplyHandler& h,
+													   const JsonReplyHandler& eh, const int id ) {
 	RequestHandle ret;
 	ret.mServer = this;
 
@@ -460,8 +464,8 @@ LSPClientServer::RequestHandle LSPClientServer::write( const json& msg,
 	return ret;
 }
 
-LSPClientServer::RequestHandle LSPClientServer::send( const json& msg, const GenericReplyHandler& h,
-													  const GenericReplyHandler& eh ) {
+LSPClientServer::RequestHandle LSPClientServer::send( const json& msg, const JsonReplyHandler& h,
+													  const JsonReplyHandler& eh ) {
 	if ( mProcess.isAlive() ) {
 		return write( msg, h, eh );
 	} else {
@@ -569,8 +573,8 @@ const std::shared_ptr<ThreadPool>& LSPClientServer::getThreadPool() const {
 }
 
 LSPClientServer::RequestHandle LSPClientServer::documentSymbols( const URI& document,
-																 const GenericReplyHandler& h,
-																 const GenericReplyHandler& eh ) {
+																 const JsonReplyHandler& h,
+																 const JsonReplyHandler& eh ) {
 	auto params = textDocumentParams( document );
 	return send( newRequest( "textDocument/documentSymbol", params ), h, eh );
 }
@@ -702,7 +706,9 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 			continue;
 		}
 
+#ifndef EE_DEBUG
 		try {
+#endif
 			auto res = json::parse( payload );
 
 			int msgid = -1;
@@ -736,10 +742,12 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 				Log::debug( "LSPClientServer::readStdOut server %s unexpected reply id: %d",
 							mLSP.name.c_str(), msgid );
 			}
+#ifndef EE_DEBUG
 		} catch ( const json::exception& e ) {
 			Log::debug( "LSPClientServer::readStdOut server %s said: Coudln't parse json err: %s",
 						mLSP.name.c_str(), e.what() );
 		}
+#endif
 	}
 }
 
@@ -753,7 +761,7 @@ void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
 	}
 	if ( !msg.message.empty() ) {
 		msg.type = LSPMessageType::Log;
-		Log::debug( "LSPClientServer::readStdOut server %s: %s", mLSP.name.c_str(),
+		Log::debug( "LSPClientServer::readStdErr server %s: %s", mLSP.name.c_str(),
 					msg.message.c_str() );
 	}
 }
@@ -812,13 +820,17 @@ void LSPClientServer::initialize() {
 	write(
 		newRequest( "initialize", params ),
 		[&]( const json& resp ) {
+#ifndef EE_DEBUG
 			try {
+#endif
 				fromJson( mCapabilities, resp["capabilities"] );
+#ifndef EE_DEBUG
 			} catch ( const json::exception& e ) {
 				Log::warning(
 					"LSPClientServer::initialize server %s error parsing capabilities: %s",
 					mLSP.name.c_str(), e.what() );
 			}
+#endif
 
 			mReady = true;
 			write( newRequest( "initialized" ) );

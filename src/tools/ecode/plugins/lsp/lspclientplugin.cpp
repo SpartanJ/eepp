@@ -92,9 +92,9 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 	}
 
 	if ( mKeyBindings.empty() )
-		mKeyBindings["follow-symbol-under-cursor"] = "f2";
-	if ( j.contains( "keybindings" ) && j["keybindings"].contains( "follow-symbol-under-cursor" ) )
-		mKeyBindings["follow-symbol-under-cursor"] = j["keybindings"]["follow-symbol-under-cursor"];
+		mKeyBindings["lsp-go-to-definition"] = "f2";
+	if ( j.contains( "keybindings" ) && j["keybindings"].contains( "lsp-go-to-definition" ) )
+		mKeyBindings["lsp-go-to-definition"] = j["keybindings"]["lsp-go-to-definition"];
 
 	if ( !j.contains( "servers" ) )
 		return;
@@ -185,10 +185,11 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		editor->getKeyBindings().addKeybindString( kb.second, kb.first );
 	}
 
-	if ( editor->hasDocument() )
-		editor->getDocument().setCommand( "follow-symbol-under-cursor", [&, editor]() {
-			mClientManager.followSymbolUnderCursor( editor->getDocumentRef().get() );
+	if ( editor->hasDocument() ) {
+		editor->getDocument().setCommand( "lsp-go-to-definition", [&, editor]() {
+			mClientManager.goToDocumentDefinition( editor->getDocumentRef().get() );
 		} );
+	}
 
 	std::vector<Uint32> listeners;
 
@@ -228,6 +229,46 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 
 const PluginManager* LSPClientPlugin::getManager() const {
 	return mManager;
+}
+
+bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
+										   const Vector2i& /*position*/, const Uint32& /*flags*/ ) {
+	auto* server = mClientManager.getOneLSPClientServer( editor );
+	if ( !server )
+		return false;
+
+	menu->addSeparator();
+
+	auto addFn = [editor, server, menu]( const std::string& txtKey, const std::string& txtVal,
+										 const std::string& cmd ) {
+		menu->add( editor->getUISceneNode()->i18n( txtKey, txtVal ) )
+			->setId( txtKey )
+			->on( Event::OnItemClicked, [server, editor, cmd]( const Event* event ) {
+				if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+					return;
+				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+				if ( String::startsWith( item->getId(), "lsp" ) ) {
+					server->getAndGoToLocation( editor->getDocument().getURI(),
+												editor->getDocument().getSelection().start(), cmd );
+				}
+			} );
+	};
+	auto cap = server->getCapabilities();
+
+	if ( cap.definitionProvider )
+		addFn( "lsp-go-to-definition", "Go To Definition", "textDocument/definition" );
+
+	if ( cap.declarationProvider )
+		addFn( "lsp-go-to-declaration", "Go To Declaration", "textDocument/declaration" );
+
+	if ( cap.typeDefinitionProvider )
+		addFn( "lsp-go-to-type-definition", "Go To Type Definition",
+			   "textDocument/typeDefinition" );
+
+	if ( cap.implementationProvider )
+		addFn( "lsp-go-to-implementation", "Go To Implementation", "textDocument/implementation" );
+
+	return false;
 }
 
 } // namespace ecode

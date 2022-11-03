@@ -938,7 +938,7 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 	createDefaultContextMenuOptions( menu );
 
 	for ( auto& plugin : mPlugins )
-		if ( plugin->onCreateContextMenu( this, position, flags ) )
+		if ( plugin->onCreateContextMenu( this, menu, position, flags ) )
 			return false;
 
 	if ( menu->getCount() == 0 ) {
@@ -1027,7 +1027,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		}
 	}
 
-	if ( ( flags & EE_BUTTON_LMASK ) && isTextSelectionEnabled() &&
+	if ( ( flags & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) && isTextSelectionEnabled() &&
 		 !getEventDispatcher()->isNodeDragging() && NULL != mFont && !mMouseDown &&
 		 getEventDispatcher()->getMouseDownNode() == this ) {
 		mMouseDown = true;
