@@ -127,7 +127,7 @@ std::string KeyBindings::getCommandFromKeyBind( const KeyBindings::Shortcut& key
 	return "";
 }
 
-static std::string keybindFormat( std::string str ) {
+std::string KeyBindings::keybindFormat( std::string str ) {
 	if ( !str.empty() ) {
 		String::replace( str, "mod", KeyMod::getDefaultModifierString() );
 		str[0] = std::toupper( str[0] );

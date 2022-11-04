@@ -112,6 +112,8 @@ void PluginManager::subscribeNotifications(
 	UICodeEditorPlugin* plugin,
 	std::function<void( Notification, const nlohmann::json& )> cb ) const {
 	const_cast<PluginManager*>( this )->mSubscribedPlugins[plugin->getId()] = cb;
+	if ( !mWorkspaceFolder.empty() )
+		cb( Notification::WorkspaceFolderChanged, json{ { "folder", mWorkspaceFolder } } );
 }
 
 void PluginManager::unsubscribeNotifications( UICodeEditorPlugin* plugin ) const {

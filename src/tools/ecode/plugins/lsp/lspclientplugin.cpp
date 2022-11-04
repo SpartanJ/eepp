@@ -14,8 +14,8 @@ UICodeEditorPlugin* LSPClientPlugin::New( const PluginManager* pluginManager ) {
 }
 
 LSPClientPlugin::LSPClientPlugin( const PluginManager* pluginManager ) :
-	mManager( pluginManager ), mPool( pluginManager->getThreadPool() ) {
-	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
+	mManager( pluginManager ), mThreadPool( pluginManager->getThreadPool() ) {
+	mThreadPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 }
 
 LSPClientPlugin::~LSPClientPlugin() {
@@ -56,7 +56,8 @@ void LSPClientPlugin::load( const PluginManager* pluginManager ) {
 		paths.emplace_back( path );
 	path = pluginManager->getPluginsPath() + "lspclient.json";
 	if ( FileSystem::fileExists( path ) ||
-		 FileSystem::fileWrite( path, "{\n\"config\":{},\n\"servers\":[]\n}\n" ) ) {
+		 FileSystem::fileWrite(
+			 path, "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"formatters\":[]\n}\n" ) ) {
 		mConfigPath = path;
 		paths.emplace_back( path );
 	}
@@ -75,7 +76,11 @@ void LSPClientPlugin::load( const PluginManager* pluginManager ) {
 
 	mClientManager.load( this, pluginManager, std::move( lsps ) );
 
-	mReady = mClientManager.clientCount() > 0;
+	mReady = mClientManager.lspCount() > 0;
+	for ( const auto& doc : mDelayedDocs )
+		if ( mDocs.find( doc.first ) != mDocs.end() )
+			mClientManager.tryRunServer( doc.second );
+	mDelayedDocs.clear();
 	if ( mReady )
 		fireReadyCbs();
 }
@@ -87,14 +92,27 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 	json j;
 	try {
 		j = json::parse( data, nullptr, true, true );
-	} catch ( ... ) {
+	} catch ( const json::exception& e ) {
+		Log::error( "LSPClientPlugin::loadLSPConfig - Error parsing LSP config from "
+					"path %s, error: ",
+					path.c_str(), e.what() );
 		return;
 	}
 
 	if ( mKeyBindings.empty() )
 		mKeyBindings["lsp-go-to-definition"] = "f2";
-	if ( j.contains( "keybindings" ) && j["keybindings"].contains( "lsp-go-to-definition" ) )
-		mKeyBindings["lsp-go-to-definition"] = j["keybindings"]["lsp-go-to-definition"];
+
+	if ( j.contains( "keybindings" ) ) {
+		auto kb = j["keybindings"];
+		auto bindKey = [this, kb]( const std::string& key ) {
+			if ( kb.contains( key ) )
+				mKeyBindings[key] = kb[key];
+		};
+		auto list = { "lsp-go-to-definition", "lsp-go-to-declaration", "lsp-go-to-implementation",
+					  "lsp-go-to-type-definition", "lsp-switch-header-source" };
+		for ( const auto& key : list )
+			bindKey( key );
+	}
 
 	if ( !j.contains( "servers" ) )
 		return;
@@ -187,7 +205,29 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 
 	if ( editor->hasDocument() ) {
 		editor->getDocument().setCommand( "lsp-go-to-definition", [&, editor]() {
-			mClientManager.goToDocumentDefinition( editor->getDocumentRef().get() );
+			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
+											   "textDocument/definition" );
+		} );
+
+		editor->getDocument().setCommand( "lsp-go-to-declaration", [&, editor]() {
+			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
+											   "textDocument/declaration" );
+		} );
+
+		editor->getDocument().setCommand( "lsp-go-to-implementation", [&, editor]() {
+			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
+											   "textDocument/implementation" );
+		} );
+
+		editor->getDocument().setCommand( "lsp-go-to-type-definition", [&, editor]() {
+			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
+											   "textDocument/typeDefinition" );
+		} );
+
+		editor->getDocument().setCommand( "lsp-switch-header-source", [&, editor]() {
+			auto* server = mClientManager.getOneLSPClientServer( editor );
+			if ( server )
+				server->switchSourceHeader( editor->getDocument().getURI() );
 		} );
 	}
 
@@ -201,8 +241,10 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	mEditors.insert( { editor, listeners } );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
 
-	if ( editor->hasDocument() && editor->getDocument().hasFilepath() )
+	if ( mReady && editor->hasDocument() && editor->getDocument().hasFilepath() )
 		mClientManager.run( editor->getDocumentRef() );
+	if ( !mReady )
+		mDelayedDocs[&editor->getDocument()] = editor->getDocumentRef();
 }
 
 void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
@@ -239,34 +281,27 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	menu->addSeparator();
 
-	auto addFn = [editor, server, menu]( const std::string& txtKey, const std::string& txtVal,
-										 const std::string& cmd ) {
-		menu->add( editor->getUISceneNode()->i18n( txtKey, txtVal ) )
-			->setId( txtKey )
-			->on( Event::OnItemClicked, [server, editor, cmd]( const Event* event ) {
-				if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-					return;
-				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-				if ( String::startsWith( item->getId(), "lsp" ) ) {
-					server->getAndGoToLocation( editor->getDocument().getURI(),
-												editor->getDocument().getSelection().start(), cmd );
-				}
-			} );
+	auto addFn = [this, editor, menu]( const std::string& txtKey, const std::string& txtVal ) {
+		menu->add( editor->getUISceneNode()->i18n( txtKey, txtVal ), nullptr,
+				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
+			->setId( txtKey );
 	};
 	auto cap = server->getCapabilities();
 
 	if ( cap.definitionProvider )
-		addFn( "lsp-go-to-definition", "Go To Definition", "textDocument/definition" );
+		addFn( "lsp-go-to-definition", "Go To Definition" );
 
 	if ( cap.declarationProvider )
-		addFn( "lsp-go-to-declaration", "Go To Declaration", "textDocument/declaration" );
+		addFn( "lsp-go-to-declaration", "Go To Declaration" );
 
 	if ( cap.typeDefinitionProvider )
-		addFn( "lsp-go-to-type-definition", "Go To Type Definition",
-			   "textDocument/typeDefinition" );
+		addFn( "lsp-go-to-type-definition", "Go To Type Definition" );
 
 	if ( cap.implementationProvider )
-		addFn( "lsp-go-to-implementation", "Go To Implementation", "textDocument/implementation" );
+		addFn( "lsp-go-to-implementation", "Go To Implementation" );
+
+	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
+		addFn( "lsp-switch-header-source", "Switch Header/Source" );
 
 	return false;
 }

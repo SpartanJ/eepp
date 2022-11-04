@@ -408,26 +408,10 @@ void App::saveConfig() {
 				  mGlobalSearchController->getGlobalSearchBarConfig(), mPluginManager.get() );
 }
 
-static std::string keybindFormat( std::string str ) {
-	if ( !str.empty() ) {
-		String::replace( str, "mod", KeyMod::getDefaultModifierString() );
-		str[0] = std::toupper( str[0] );
-		size_t found = str.find_first_of( '+' );
-		while ( found != std::string::npos ) {
-			if ( found + 1 < str.size() ) {
-				str[found + 1] = std::toupper( str[found + 1] );
-			}
-			found = str.find_first_of( '+', found + 1 );
-		}
-		return str;
-	}
-	return "";
-}
-
 std::string App::getKeybind( const std::string& command ) {
 	auto it = mKeybindingsInvert.find( command );
 	if ( it != mKeybindingsInvert.end() )
-		return keybindFormat( it->second );
+		return KeyBindings::keybindFormat( it->second );
 	return "";
 }
 
@@ -3099,6 +3083,8 @@ void App::consoleToggle() {
 	mConsole->toggle();
 	bool lock = mConsole->isActive();
 	mSplitter->forEachEditor( [lock]( UICodeEditor* editor ) { editor->setLocked( lock ); } );
+	if ( !lock && mSplitter->getCurWidget() )
+		mSplitter->getCurWidget()->setFocus();
 }
 
 void App::createProjectTreeMenu( const FileInfo& file ) {

@@ -54,6 +54,10 @@ static json newRequest( const std::string& method, const json& params = {} ) {
 	return j;
 }
 
+static json textDocumentURI( const URI& document ) {
+	return json{ { MEMBER_URI, document.toString() } };
+}
+
 static json versionedTextDocumentIdentifier( const URI& document, int version = -1 ) {
 	json map{ { MEMBER_URI, document.toString() } };
 	if ( version >= 0 )
@@ -224,10 +228,9 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 
 	auto sync = json["textDocumentSync"];
 	caps.textDocumentSync.change = static_cast<LSPDocumentSyncKind>(
-		( sync.is_object() ? sync["change"].get<int>() : sync.get<bool>() ) );
-	if ( sync.is_object() ) {
-		auto syncObject = sync;
-		auto save = syncObject["save"];
+		( sync.is_object() ? sync["change"].get<int>() : sync.get<int>() ) );
+	if ( sync.is_object() && sync.contains( "save" ) ) {
+		auto save = sync["save"];
 		if ( save.is_boolean() ) {
 			caps.textDocumentSync.save.includeText = save.get<bool>();
 		} else if ( save.is_object() && save.contains( "includeText" ) ) {
@@ -246,9 +249,11 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	caps.documentSymbolProvider = toBoolOrObject( json, "documentSymbolProvider" );
 	caps.documentHighlightProvider = toBoolOrObject( json, "documentHighlightProvider" );
 	caps.documentFormattingProvider = toBoolOrObject( json, "documentFormattingProvider" );
-	caps.documentRangeFormattingProvider =
-		toBoolOrObject( json, "documentRangeFormattingProvider" );
-	fromJson( caps.documentOnTypeFormattingProvider, json["documentOnTypeFormattingProvider"] );
+	if ( json.contains( "documentRangeFormattingProvider" ) )
+		caps.documentRangeFormattingProvider =
+			toBoolOrObject( json, "documentRangeFormattingProvider" );
+	if ( json.contains( "documentOnTypeFormattingProvider" ) )
+		fromJson( caps.documentOnTypeFormattingProvider, json["documentOnTypeFormattingProvider"] );
 	caps.renameProvider = toBoolOrObject( json, "renameProvider" );
 	if ( json.contains( "codeActionProvider" ) &&
 		 json["codeActionProvider"].contains( "resolveProvider" ) ) {
@@ -793,7 +798,7 @@ void LSPClientServer::initialize() {
 				  { "semanticTokens", semanticTokens },
 				  { "synchronization", json{ { "didSave", true } } },
 				  { "selectionRange", json{ { "dynamicRegistration", false } } },
-				  { "hover", json{ { "contentFormat", { "markdown", "plaintext" } } } } },
+				  { "hover", json{ { "contentFormat", { "plaintext" } } } } },
 		},
 		{ "window", json{ { "workDoneProgress", true } } },
 		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
@@ -876,6 +881,16 @@ LSPClientServer::RequestHandle LSPClientServer::documentTypeDefinition( const UR
 LSPClientServer::RequestHandle LSPClientServer::documentImplementation( const URI& document,
 																		const TextPosition& pos ) {
 	return getAndGoToLocation( document, pos, "textDocument/implementation" );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::switchSourceHeader( const URI& document ) {
+	return send( newRequest( "textDocument/switchSourceHeader", textDocumentURI( document ) ),
+				 [this]( json res ) {
+					 if ( res.is_string() ) {
+						 mManager->goToLocation(
+							 { res.get<std::string>(), TextRange{ { 0, 0 }, { 0, 0 } } } );
+					 }
+				 } );
 }
 
 LSPClientServer::RequestHandle

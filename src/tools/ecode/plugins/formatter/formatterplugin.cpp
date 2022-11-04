@@ -124,7 +124,10 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
 
 	try {
 		j = json::parse( data, nullptr, true, true );
-	} catch ( ... ) {
+	} catch ( const json::exception& e ) {
+		Log::error( "FormatterPlugin::loadFormatterConfig - Error parsing formatter config from "
+					"path %s, error: ",
+					path.c_str(), e.what() );
 		return;
 	}
 
@@ -189,7 +192,8 @@ void FormatterPlugin::load( const PluginManager* pluginManager ) {
 		paths.emplace_back( path );
 	path = pluginManager->getPluginsPath() + "formatters.json";
 	if ( FileSystem::fileExists( path ) ||
-		 FileSystem::fileWrite( path, "{\n\"config\":{},\n\"formatters\":[]\n}\n" ) ) {
+		 FileSystem::fileWrite(
+			 path, "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"formatters\":[]\n}\n" ) ) {
 		mConfigPath = path;
 		paths.emplace_back( path );
 	}

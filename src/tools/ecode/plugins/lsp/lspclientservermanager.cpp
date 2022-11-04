@@ -136,6 +136,10 @@ size_t LSPClientServerManager::clientCount() const {
 	return mClients.size();
 }
 
+size_t LSPClientServerManager::lspCount() const {
+	return mLSPs.size();
+}
+
 const std::shared_ptr<ThreadPool>& LSPClientServerManager::getThreadPool() const {
 	return mThreadPool;
 }
@@ -153,13 +157,11 @@ void LSPClientServerManager::updateDirty() {
 			closeLSPServer( server );
 }
 
-void LSPClientServerManager::goToDocumentDefinition( TextDocument* doc ) {
-	for ( auto& server : mClients ) {
-		if ( server.second->hasDocument( doc ) ) {
-			server.second->documentDefinition( doc->getURI(), doc->getSelection().start() );
-			return;
-		}
-	}
+void LSPClientServerManager::getAndGoToLocation( const std::shared_ptr<TextDocument>& doc,
+												 const std::string& search ) {
+	auto* server = getOneLSPClientServer( doc );
+	if ( server )
+		server->getAndGoToLocation( doc->getURI(), doc->getSelection().start(), search );
 }
 
 void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folder ) {

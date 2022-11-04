@@ -23,6 +23,8 @@ UITabWidget::UITabWidget() :
 	mHideTabBarOnSingleTab( false ),
 	mAllowRearrangeTabs( false ),
 	mAllowDragAndDropTabs( false ),
+	mAllowSwitchTabsInEmptySpaces( false ),
+	mDroppableHoveringColorWasSet( false ),
 	mTabVerticalDragResistance( PixelDensity::dpToPx( 64 ) ) {
 	setHorizontalAlign( UI_HALIGN_CENTER );
 	setClipType( ClipType::ContentBox );

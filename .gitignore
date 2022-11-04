@@ -21,7 +21,7 @@ projects/android-project-ant/gen
 projects/android-project-ant/assets
 projects/android-project-ant/libs
 src/examples/strobe
-src/thirdparty/SDL2-2.0.*
+src/thirdparty/SDL2-*
 *.dll
 bin/ee*
 bin/eepp-*

@@ -422,7 +422,8 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		json j;
 		try {
 			j = json::parse( ini.getValue( "nodes", "documents" ) );
-		} catch ( ... ) {
+		} catch ( const json::exception& e ) {
+			Log::error( "AppConfig::loadProject: error loading project: %s", e.what() );
 			return;
 		}
 		if ( j.is_discarded() )

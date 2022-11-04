@@ -177,10 +177,10 @@ class EE_API UITabWidget : public UIWidget {
 	UITab* mTabSelected;
 	Uint32 mTabSelectedIndex;
 	TabTryCloseCallback mTabTryCloseCallback;
-	bool mHideTabBarOnSingleTab;
-	bool mAllowRearrangeTabs;
-	bool mAllowDragAndDropTabs;
-	bool mAllowSwitchTabsInEmptySpaces;
+	bool mHideTabBarOnSingleTab{ false };
+	bool mAllowRearrangeTabs{ false };
+	bool mAllowDragAndDropTabs{ false };
+	bool mAllowSwitchTabsInEmptySpaces{ false };
 	bool mDroppableHoveringColorWasSet{ false };
 	Float mTabVerticalDragResistance;
 	Color mDroppableHoveringColor{ Color::Transparent };

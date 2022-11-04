@@ -116,6 +116,8 @@ class LSPClientServer {
 	LSPClientServer::RequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
 													   const std::string& search );
 
+	LSPClientServer::RequestHandle switchSourceHeader( const URI& document );
+
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;

@@ -78,7 +78,10 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 	json j;
 	try {
 		j = json::parse( data, nullptr, true, true );
-	} catch ( ... ) {
+	} catch ( const json::exception& e ) {
+		Log::error( "LinterPlugin::loadLinterConfig - Error parsing linter config from "
+					"path %s, error: ",
+					path.c_str(), e.what() );
 		return;
 	}
 

@@ -367,6 +367,8 @@ void UIConsole::draw() {
 	size_t pos = 0;
 	Float curY;
 	Float lineHeight = getLineHeight();
+	Float cw =
+		mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false ).advance;
 
 	mCon.min = eemax( 0, (Int32)mCmdLog.size() - linesInScreen );
 	mCon.max = (int)mCmdLog.size() - 1;
@@ -385,8 +387,14 @@ void UIConsole::draw() {
 			text.setStyleConfig( mFontStyleConfig );
 			text.setFillColor( fontColor );
 			if ( mCmdLog[i].hash != mTextCache[pos].hash ) {
-				text.setString( mCmdLog[i].log );
-				mTextCache[pos].hash = mCmdLog[i].hash;
+				if ( mCmdLog[i].log.size() * cw <= mSize.getWidth() ) {
+					text.setString( mCmdLog[i].log );
+					mTextCache[pos].hash = mCmdLog[i].hash;
+				} else {
+					auto substr = mCmdLog[i].log.substr( 0, ( mSize.getWidth() + 8 * cw ) / cw );
+					mTextCache[pos].hash = String::hash( substr );
+					text.setString( substr );
+				}
 			}
 			text.draw( mScreenPos.x + mPaddingPx.Left, curY );
 			pos++;

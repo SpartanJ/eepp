@@ -19,15 +19,19 @@ class LSPClientServerManager {
 	void load( LSPClientPlugin*, const PluginManager* pluginManager,
 			   std::vector<LSPDefinition>&& lsps );
 
+	// async
 	void run( const std::shared_ptr<TextDocument>& doc );
 
+	// sync
+	void tryRunServer( const std::shared_ptr<TextDocument>& doc );
+
 	size_t clientCount() const;
+
+	size_t lspCount() const;
 
 	const std::shared_ptr<ThreadPool>& getThreadPool() const;
 
 	void updateDirty();
-
-	void goToDocumentDefinition( TextDocument* doc );
 
 	void didChangeWorkspaceFolders( const std::string& folder );
 
@@ -40,6 +44,8 @@ class LSPClientServerManager {
 	LSPClientServer* getOneLSPClientServer( UICodeEditor* editor );
 
 	LSPClientServer* getOneLSPClientServer( const std::shared_ptr<TextDocument>& doc );
+
+	void getAndGoToLocation( const std::shared_ptr<TextDocument>& doc, const std::string& search );
 
   protected:
 	friend class LSPClientServer;
@@ -58,8 +64,6 @@ class LSPClientServerManager {
 												   const std::string& rootPath );
 
 	std::string findRootPath( const LSPDefinition& lsp, const std::shared_ptr<TextDocument>& doc );
-
-	void tryRunServer( const std::shared_ptr<TextDocument>& doc );
 
 	void closeLSPServer( const String::HashType& id );
 

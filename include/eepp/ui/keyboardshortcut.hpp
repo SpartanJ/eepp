@@ -33,6 +33,8 @@ class EE_API KeyBindings {
 		bool empty() const { return 0 == mod && 0 == key; }
 	};
 
+	static std::string keybindFormat( std::string str );
+
 	KeyBindings( const Window::Input* input );
 
 	void addKeybindsString( const std::map<std::string, std::string>& binds );
@@ -43,7 +45,7 @@ class EE_API KeyBindings {
 
 	void addKeybindsUnordered( const std::unordered_map<Shortcut, std::string>& binds );
 
-	void addKeybindString(const std::string& key, const std::string& command );
+	void addKeybindString( const std::string& key, const std::string& command );
 
 	void addKeybind( const Shortcut& key, const std::string& command );
 
@@ -81,9 +83,8 @@ class EE_API KeyBindings {
 
 }} // namespace EE::UI
 
-template<>
-struct std::hash<EE::UI::KeyBindings::Shortcut> {
-	std::size_t operator()(EE::UI::KeyBindings::Shortcut const& s) const noexcept {
+template <> struct std::hash<EE::UI::KeyBindings::Shortcut> {
+	std::size_t operator()( EE::UI::KeyBindings::Shortcut const& s ) const noexcept {
 		return s.toUint64();
 	}
 };
