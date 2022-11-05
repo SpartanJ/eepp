@@ -54,6 +54,13 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );
 
+	virtual bool onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& flags );
+
+	virtual void onFocusLoss( UICodeEditor* editor );
+
+	const Time& getHoverDelay() const;
+	void setHoverDelay( const Time& hoverDelay );
+
   protected:
 	const PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -68,6 +75,9 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	bool mReady{ false };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::map<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
+	Uint32 mHoverWaitCb;
+	LSPHover mCurrentHover;
+	Time mHoverDelay{ Seconds( 1.f ) };
 
 	LSPClientPlugin( const PluginManager* pluginManager );
 

@@ -32,14 +32,14 @@ static const char* MEMBER_LOCATION = "location";
 static const char* MEMBER_RANGE = "range";
 static const char* MEMBER_LINE = "line";
 static const char* MEMBER_CHARACTER = "character";
-// static const char* MEMBER_KIND = "kind";
-//  static const char* MEMBER_LABEL = "label";
-//  static const char* MEMBER_DOCUMENTATION = "documentation";
-//  static const char* MEMBER_DETAIL = "detail";
-// static const char* MEMBER_COMMAND = "command";
-// static const char* MEMBER_EDIT = "edit";
-// static const char* MEMBER_TITLE = "title";
-// static const char* MEMBER_ARGUMENTS = "arguments";
+static const char* MEMBER_KIND = "kind";
+static const char* MEMBER_LABEL = "label";
+static const char* MEMBER_DOCUMENTATION = "documentation";
+static const char* MEMBER_DETAIL = "detail";
+static const char* MEMBER_COMMAND = "command";
+static const char* MEMBER_EDIT = "edit";
+static const char* MEMBER_TITLE = "title";
+static const char* MEMBER_ARGUMENTS = "arguments";
 static const char* MEMBER_DIAGNOSTICS = "diagnostics";
 static const char* MEMBER_TARGET_URI = "targetUri";
 static const char* MEMBER_TARGET_RANGE = "targetRange";
@@ -295,14 +295,87 @@ static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
 	return ret;
 }
 
-static LSPPublishDiagnosticsParams parseDiagnostics( const json& result ) {
+static LSPPublishDiagnosticsParams parsePublishDiagnostics( const json& result ) {
 	LSPPublishDiagnosticsParams ret;
 	ret.uri = URI( result.at( MEMBER_URI ).get<std::string>() );
 	ret.diagnostics = parseDiagnosticsArr( result.at( MEMBER_DIAGNOSTICS ) );
 	return ret;
 }
 
-/*static std::vector<LSPTextEdit> parseTextEdit( const json& result ) {
+static bool isPositionValid( const TextPosition& pos ) {
+	return pos.column() >= 0 && pos.line() >= 0;
+}
+
+static std::vector<LSPSymbolInformation> parseDocumentSymbols( const json& result ) {
+	// the reply could be old SymbolInformation[] or new (hierarchical) DocumentSymbol[]
+	// try to parse it adaptively in any case
+	// if new style, hierarchy is specified clearly in reply
+	// if old style, it is assumed the values enter linearly, that is;
+	// * a parent/container is listed before its children
+	// * if a name is defined/declared several times and then used as a parent,
+	//   then we try to find such a parent whose range contains current range
+	//   (otherwise fall back to using the last instance as a parent)
+	std::vector<LSPSymbolInformation> ret;
+	std::map<std::string, LSPSymbolInformation*> index;
+
+	std::function<void( const json& symbol, LSPSymbolInformation* parent )> parseSymbol =
+		[&]( const json& symbol, LSPSymbolInformation* parent ) {
+			const auto& mrange = symbol.contains( MEMBER_RANGE )
+									 ? symbol.at( MEMBER_RANGE )
+									 : symbol[MEMBER_LOCATION].at( MEMBER_RANGE );
+			auto range = parseRange( mrange );
+			std::map<std::string, LSPSymbolInformation*>::iterator it = index.end();
+			// if flat list, try to find parent by name
+			if ( !parent ) {
+				auto container = symbol.value( "containerName", "" );
+				it = index.find( container );
+				// default to last inserted
+				if ( it != index.end() ) {
+					parent = it->second;
+				}
+				// but prefer a containing range
+				while ( it != index.end() && it->first == container ) {
+					if ( it->second->range.contains( range ) ) {
+						parent = it->second;
+						break;
+					}
+					++it;
+				}
+			}
+			auto list = parent ? &parent->children : &ret;
+			if ( isPositionValid( range.start() ) && isPositionValid( range.end() ) ) {
+				auto name = symbol.at( ( "name" ) ).get<std::string>();
+				auto kind = static_cast<LSPSymbolKind>( symbol.at( MEMBER_KIND ).get<int>() );
+				auto detail = symbol.value( MEMBER_DETAIL, "" );
+				list->push_back( { name, kind, range, detail } );
+				index.insert( std::pair( name, &list->back() ) );
+				// proceed recursively
+				if ( symbol.contains( "children" ) ) {
+					const auto& children = symbol.at( ( "children" ) );
+					for ( const auto& child : children )
+						parseSymbol( child, &list->back() );
+				}
+			}
+		};
+
+	const auto symInfos = result;
+	for ( const auto& info : symInfos )
+		parseSymbol( info, nullptr );
+	return ret;
+}
+
+static LSPResponseError parseResponseError( const json& v ) {
+	LSPResponseError ret;
+	if ( v.is_object() ) {
+		const auto& vm = v;
+		ret.code = LSPErrorCode( vm.at( MEMBER_CODE ).get<int>() );
+		ret.message = vm.at( MEMBER_MESSAGE ).get<std::string>();
+		ret.data = vm.value( "data", json() );
+	}
+	return ret;
+}
+
+static std::vector<LSPTextEdit> parseTextEdit( const json& result ) {
 	std::vector<LSPTextEdit> ret;
 	const auto textEdits = result;
 	for ( const auto& redit : textEdits ) {
@@ -352,20 +425,56 @@ static LSPCommand parseCommand( const json& result ) {
 	return { title, command, args };
 }
 
+static std::vector<LSPDiagnostic> parseDiagnostics( const json& result ) {
+	std::vector<LSPDiagnostic> ret;
+	for ( const auto& vdiag : result ) {
+		const auto& diag = vdiag;
+		auto range = parseRange( diag.at( MEMBER_RANGE ) );
+		auto severity = static_cast<LSPDiagnosticSeverity>( diag.value<int>( "severity", 0 ) );
+		std::string code;
+		if ( diag.contains( "code" ) ) {
+			if ( diag["code"].is_number_integer() )
+				code = String::toString( diag["code"].get<int>() );
+			else
+				code = diag.value( "code", "" );
+		}
+
+		auto source = diag.value( "source", "" );
+		auto message = diag.value( MEMBER_MESSAGE, "" );
+		std::vector<LSPDiagnosticRelatedInformation> relatedInfoList;
+		if ( diag.contains( "relatedInformation" ) ) {
+			const auto& relatedInfo = diag.at( "relatedInformation" );
+			for ( const auto& related : relatedInfo ) {
+				auto relLocation = parseLocation( related.at( MEMBER_LOCATION ) );
+				auto relMessage = related.value( MEMBER_MESSAGE, "" );
+				relatedInfoList.push_back( { relLocation, relMessage } );
+			}
+		}
+		ret.push_back( { range, severity, code, source, message, relatedInfoList } );
+	}
+	return ret;
+}
+
 static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 	std::vector<LSPCodeAction> ret;
-	const auto codeActions = result;
+	const auto& codeActions = result;
 	for ( const auto& vaction : codeActions ) {
-		auto action = vaction;
+		auto& action = vaction;
 		// entry could be Command or CodeAction
 		if ( !action.at( MEMBER_COMMAND ).is_string() ) {
 			// CodeAction
 			auto title = action.at( MEMBER_TITLE ).get<std::string>();
-			auto kind = action.at( MEMBER_KIND ).get<std::string>();
-			auto command = parseCommand( action.at( MEMBER_COMMAND ) );
-			auto edit = parseWorkSpaceEdit( action.at( MEMBER_EDIT ) );
-			auto diagnostics = parseDiagnostics( action.at( MEMBER_DIAGNOSTICS ) );
-			ret.push_back( { title, kind, diagnostics, edit, command } );
+			auto kind = action.value( MEMBER_KIND, "" );
+			auto command = action.contains( MEMBER_COMMAND )
+							   ? parseCommand( action.at( MEMBER_COMMAND ) )
+							   : LSPCommand{};
+			auto edit = action.at( MEMBER_EDIT ) ? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
+												 : LSPWorkspaceEdit{};
+			auto diagnostics = action.contains( MEMBER_DIAGNOSTICS )
+								   ? parseDiagnostics( action.at( MEMBER_DIAGNOSTICS ) )
+								   : std::vector<LSPDiagnostic>{};
+			LSPCodeAction action = { title, kind, diagnostics, edit, command };
+			ret.push_back( action );
 		} else {
 			// Command
 			auto command = parseCommand( action );
@@ -373,7 +482,212 @@ static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 		}
 	}
 	return ret;
-}*/
+}
+
+static json toJson( const LSPLocation& location ) {
+	if ( !location.uri.empty() ) {
+		return json{ { MEMBER_URI, location.uri.toString() },
+					 { MEMBER_RANGE, toJson( location.range ) } };
+	}
+	return json();
+}
+
+static json toJson( const LSPDiagnosticRelatedInformation& related ) {
+	auto loc = toJson( related.location );
+	if ( loc.is_object() ) {
+		return json{ { MEMBER_LOCATION, toJson( related.location ) },
+					 { MEMBER_MESSAGE, related.message } };
+	}
+	return json();
+}
+
+static json toJson( const LSPDiagnostic& diagnostic ) {
+	// required
+	auto result = json();
+	result[MEMBER_RANGE] = toJson( diagnostic.range );
+	result[MEMBER_MESSAGE] = diagnostic.message;
+	// optional
+	if ( !diagnostic.code.empty() )
+		result[( "code" )] = diagnostic.code;
+	if ( diagnostic.severity != LSPDiagnosticSeverity::Unknown )
+		result[( "severity" )] = static_cast<int>( diagnostic.severity );
+	if ( !diagnostic.source.empty() )
+		result[( "source" )] = diagnostic.source;
+	json relatedInfo;
+	for ( const auto& vrelated : diagnostic.relatedInformation ) {
+		auto related = toJson( vrelated );
+		if ( related.is_object() ) {
+			relatedInfo.push_back( related );
+		}
+	}
+	result[( "relatedInformation" )] = relatedInfo;
+	return result;
+}
+
+static json codeActionParams( const URI& document, const TextRange& range,
+							  const std::vector<std::string>& kinds,
+							  const std::vector<LSPDiagnostic>& diagnostics ) {
+	auto params = textDocumentParams( document );
+	params[MEMBER_RANGE] = toJson( range );
+	json context;
+	json diags;
+	for ( const auto& diagnostic : diagnostics ) {
+		diags.push_back( toJson( diagnostic ) );
+	}
+	context[MEMBER_DIAGNOSTICS] = diags;
+	if ( !kinds.empty() )
+		context["only"] = json( kinds );
+	params["context"] = context;
+	return params;
+}
+
+static LSPMarkupContent parseMarkupContent( const json& v ) {
+	LSPMarkupContent ret;
+	if ( v.is_object() ) {
+		ret.value = v.at( "value" );
+		auto kind = v.value( MEMBER_KIND, "plaintext" );
+		if ( kind == "plaintext" ) {
+			ret.kind = LSPMarkupKind::PlainText;
+		} else if ( kind == "markdown" ) {
+			ret.kind = LSPMarkupKind::MarkDown;
+		}
+	} else if ( v.is_string() ) {
+		ret.kind = LSPMarkupKind::PlainText;
+		ret.value = v.get<std::string>();
+	}
+	return ret;
+}
+
+static LSPHover parseHover( const json& result ) {
+	LSPHover ret;
+	if ( result.is_null() )
+		return ret;
+
+	if ( result.contains( MEMBER_RANGE ) )
+		ret.range = parseRange( result.at( MEMBER_RANGE ) );
+	const auto& contents = result.at( "contents" );
+
+	if ( contents.is_array() ) {
+		for ( const auto& c : contents )
+			ret.contents.push_back( parseMarkupContent( c ) );
+	} else {
+		ret.contents.push_back( parseMarkupContent( contents ) );
+	}
+
+	return ret;
+}
+
+static std::vector<std::string> supportedSemanticTokenTypes() {
+	return { "namespace",	  "type",	   "class",	   "enum",	   "interface",	 "struct",
+			 "typeParameter", "parameter", "variable", "property", "enumMember", "event",
+			 "function",	  "method",	   "macro",	   "keyword",  "modifier",	 "comment",
+			 "string",		  "number",	   "regexp",   "operator" };
+}
+
+static std::vector<LSPCompletionItem> parseDocumentCompletion( const json& result ) {
+	std::vector<LSPCompletionItem> ret;
+	if ( result.empty() )
+		return {};
+	const json& items =
+		( result.is_object() && result.contains( "items" ) ) ? result["items"] : result;
+
+	for ( const auto& item : items ) {
+		auto label = item.value( MEMBER_LABEL, "" );
+		auto detail = item.value( MEMBER_DETAIL, "" );
+		LSPMarkupContent doc = item.contains( MEMBER_DOCUMENTATION )
+								   ? parseMarkupContent( item.at( MEMBER_DOCUMENTATION ) )
+								   : LSPMarkupContent{};
+		auto sortText = item.value( "sortText", "" );
+		if ( sortText.empty() )
+			sortText = label;
+		auto insertText = item.value( "insertText", "" );
+		if ( insertText.empty() )
+			insertText = label;
+		if ( item.contains( "textEdit" ) ) {
+			const auto& textEdit = item["textEdit"];
+			if ( !textEdit.empty() ) {
+				auto newText = textEdit.value( "newText", "" );
+				insertText = newText;
+			}
+		}
+		auto kind = static_cast<LSPCompletionItemKind>( item.value( MEMBER_KIND, 1 ) );
+
+		const std::vector<LSPTextEdit> additionalTextEdits =
+			item.contains( "additionalTextEdits" )
+				? parseTextEdit( item.at( "additionalTextEdits" ) )
+				: std::vector<LSPTextEdit>{};
+
+		ret.push_back( { label, kind, detail, doc, sortText, insertText,
+						 additionalTextEdits /*, textEdit*/ } );
+	}
+	return ret;
+}
+
+void LSPClientServer::initialize() {
+	json codeAction{
+		{ "codeActionLiteralSupport", json{ { "codeActionKind", json{ { "valueSet", {} } } } } } };
+
+	json semanticTokens{
+		{ "requests", json{ { "range", true }, { "full", json{ { "delta", true } } } } },
+		{ "tokenTypes", supportedSemanticTokenTypes() },
+		{ "tokenModifiers", {} },
+		{ "formats", { "relative" } },
+	};
+
+	json capabilities{
+		{
+			"textDocument",
+			json{ { "documentSymbol", json{ { "hierarchicalDocumentSymbolSupport", true } } },
+				  { "publishDiagnostics", json{ { "relatedInformation", true } } },
+				  { "codeAction", codeAction },
+				  { "semanticTokens", semanticTokens },
+				  { "synchronization", json{ { "didSave", true } } },
+				  { "selectionRange", json{ { "dynamicRegistration", false } } },
+				  { "hover", json{ { "contentFormat", { "plaintext" } } } } },
+		},
+		{ "window", json{ { "workDoneProgress", true } } },
+		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
+
+	json params{ { "processId", Sys::getProcessID() },
+				 { "capabilities", capabilities },
+				 { "initializationOptions", {} } };
+
+	std::string rootPath = mRootPath;
+	if ( rootPath.empty() ) {
+		if ( !mManager->getLSPWorkspaceFolder().uri.empty() )
+			rootPath = mManager->getLSPWorkspaceFolder().uri.getPath();
+		else
+			rootPath = FileSystem::getCurrentWorkingDirectory();
+	}
+
+	std::string uriRootPath = "file://" + rootPath;
+	params["rootPath"] = rootPath;
+	params["rootUri"] = uriRootPath;
+	params["workspaceFolders"] =
+		toJson( { LSPWorkspaceFolder{ uriRootPath, FileSystem::fileNameFromPath( rootPath ) } } );
+	capabilities["workspace"] = json{ { "workspaceFolders", true }, { "configuration", false } };
+
+	write(
+		newRequest( "initialize", params ),
+		[&]( const json& resp ) {
+#ifndef EE_DEBUG
+			try {
+#endif
+				fromJson( mCapabilities, resp["capabilities"] );
+#ifndef EE_DEBUG
+			} catch ( const json::exception& e ) {
+				Log::warning(
+					"LSPClientServer::initialize server %s error parsing capabilities: %s",
+					mLSP.name.c_str(), e.what() );
+			}
+#endif
+
+			mReady = true;
+			write( newRequest( "initialized" ) );
+			sendQueuedMessages();
+		},
+		[&]( const json& ) {} );
+}
 
 LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String::HashType& id,
 								  const LSPDefinition& lsp, const std::string& rootPath ) :
@@ -422,6 +736,7 @@ const LSPServerCapabilities& LSPClientServer::getCapabilities() const {
 }
 
 LSPClientServer::RequestHandle LSPClientServer::cancel( int reqid ) {
+	Lock l( mHandlersMutex );
 	if ( mHandlers.erase( reqid ) > 0 ) {
 		auto params = json{ MEMBER_ID, reqid };
 		return write( newRequest( "$/cancelRequest", params ) );
@@ -444,6 +759,7 @@ LSPClientServer::RequestHandle LSPClientServer::write( const json& msg, const Js
 	if ( h ) {
 		ob[MEMBER_ID] = ++mLastMsgId;
 		ret.mId = mLastMsgId;
+		Lock l( mHandlersMutex );
 		mHandlers[mLastMsgId] = { h, eh };
 	} else if ( id ) {
 		ob[MEMBER_ID] = id;
@@ -584,6 +900,22 @@ LSPClientServer::RequestHandle LSPClientServer::documentSymbols( const URI& docu
 	return send( newRequest( "textDocument/documentSymbol", params ), h, eh );
 }
 
+LSPClientServer::RequestHandle
+LSPClientServer::documentSymbols( const URI& document,
+								  const ReplyHandler<std::vector<LSPSymbolInformation>>& h,
+								  const ReplyHandler<LSPResponseError>& eh ) {
+	return documentSymbols(
+		document,
+		[h]( const json& json ) {
+			if ( h )
+				h( parseDocumentSymbols( json ) );
+		},
+		[eh]( const json& json ) {
+			if ( eh )
+				eh( parseResponseError( json ) );
+		} );
+}
+
 void fromJson( LSPWorkDoneProgressValue& value, const json& json ) {
 	if ( !json.empty() ) {
 		auto ob = json;
@@ -620,7 +952,7 @@ static json newError( const LSPErrorCode& code, const std::string& msg ) {
 
 void LSPClientServer::publishDiagnostics( const json& msg ) {
 	// should emmit event somewhere
-	auto res = parseDiagnostics( msg[MEMBER_PARAMS] );
+	auto res = parsePublishDiagnostics( msg[MEMBER_PARAMS] );
 	Log::debug( "LSPClientServer::publishDiagnostics: %s - returned %zu items",
 				res.uri.toString().c_str(), res.diagnostics.size() );
 }
@@ -732,6 +1064,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 			Log::debug( "LSPClientServer::readStdOut server %s said: \n%s", mLSP.name.c_str(),
 						res.dump().c_str() );
 
+			Lock l( mHandlersMutex );
 			auto it = mHandlers.find( msgid );
 			if ( it != mHandlers.end() ) {
 				const auto handler = *it;
@@ -769,79 +1102,6 @@ void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
 		Log::debug( "LSPClientServer::readStdErr server %s: %s", mLSP.name.c_str(),
 					msg.message.c_str() );
 	}
-}
-
-static std::vector<std::string> supportedSemanticTokenTypes() {
-	return { "namespace",	  "type",	   "class",	   "enum",	   "interface",	 "struct",
-			 "typeParameter", "parameter", "variable", "property", "enumMember", "event",
-			 "function",	  "method",	   "macro",	   "keyword",  "modifier",	 "comment",
-			 "string",		  "number",	   "regexp",   "operator" };
-}
-
-void LSPClientServer::initialize() {
-	json codeAction{
-		{ "codeActionLiteralSupport", json{ { "codeActionKind", json{ { "valueSet", {} } } } } } };
-
-	json semanticTokens{
-		{ "requests", json{ { "range", true }, { "full", json{ { "delta", true } } } } },
-		{ "tokenTypes", supportedSemanticTokenTypes() },
-		{ "tokenModifiers", {} },
-		{ "formats", { "relative" } },
-	};
-
-	json capabilities{
-		{
-			"textDocument",
-			json{ { "documentSymbol", json{ { "hierarchicalDocumentSymbolSupport", true } } },
-				  { "publishDiagnostics", json{ { "relatedInformation", true } } },
-				  { "codeAction", codeAction },
-				  { "semanticTokens", semanticTokens },
-				  { "synchronization", json{ { "didSave", true } } },
-				  { "selectionRange", json{ { "dynamicRegistration", false } } },
-				  { "hover", json{ { "contentFormat", { "plaintext" } } } } },
-		},
-		{ "window", json{ { "workDoneProgress", true } } },
-		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
-
-	json params{ { "processId", Sys::getProcessID() },
-				 { "capabilities", capabilities },
-				 { "initializationOptions", {} } };
-
-	std::string rootPath = mRootPath;
-	if ( rootPath.empty() ) {
-		if ( !mManager->getLSPWorkspaceFolder().uri.empty() )
-			rootPath = mManager->getLSPWorkspaceFolder().uri.getPath();
-		else
-			rootPath = FileSystem::getCurrentWorkingDirectory();
-	}
-
-	std::string uriRootPath = "file://" + rootPath;
-	params["rootPath"] = rootPath;
-	params["rootUri"] = uriRootPath;
-	params["workspaceFolders"] =
-		toJson( { LSPWorkspaceFolder{ uriRootPath, FileSystem::fileNameFromPath( rootPath ) } } );
-	capabilities["workspace"] = json{ { "workspaceFolders", true }, { "configuration", false } };
-
-	write(
-		newRequest( "initialize", params ),
-		[&]( const json& resp ) {
-#ifndef EE_DEBUG
-			try {
-#endif
-				fromJson( mCapabilities, resp["capabilities"] );
-#ifndef EE_DEBUG
-			} catch ( const json::exception& e ) {
-				Log::warning(
-					"LSPClientServer::initialize server %s error parsing capabilities: %s",
-					mLSP.name.c_str(), e.what() );
-			}
-#endif
-
-			mReady = true;
-			write( newRequest( "initialized" ) );
-			sendQueuedMessages();
-		},
-		[&]( const json& ) {} );
 }
 
 void LSPClientServer::sendQueuedMessages() {
@@ -898,6 +1158,59 @@ LSPClientServer::didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder
 											const std::vector<LSPWorkspaceFolder>& removed ) {
 	auto params = changeWorkspaceFoldersParams( added, removed );
 	return send( newRequest( "workspace/didChangeWorkspaceFolders", params ) );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentCodeAction(
+	const URI& document, const TextRange& range, const std::vector<std::string>& kinds,
+	std::vector<LSPDiagnostic> diagnostics, const JsonReplyHandler& h ) {
+	auto params = codeActionParams( document, range, kinds, std::move( diagnostics ) );
+	return send( newRequest( "textDocument/codeAction", params ), h );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentCodeAction(
+	const URI& document, const TextRange& range, const std::vector<std::string>& kinds,
+	std::vector<LSPDiagnostic> diagnostics, const CodeActionHandler& h ) {
+	return documentCodeAction( document, range, kinds, diagnostics, [h]( const json& json ) {
+		if ( h )
+			h( parseCodeAction( json ) );
+	} );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentHover( const URI& document,
+															   const TextPosition& pos,
+															   const JsonReplyHandler& h ) {
+	auto params = textDocumentPositionParams( document, pos );
+	return send( newRequest( "textDocument/hover", params ), h );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentHover( const URI& document,
+															   const TextPosition& pos,
+															   const HoverHandler& h ) {
+	return documentHover( document, pos, [h]( const json& json ) {
+		if ( h )
+			h( parseHover( json ) );
+	} );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentHover( TextDocument* doc,
+															   const HoverHandler& h ) {
+	return documentHover( doc->getURI(), doc->getSelection().start(), h );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentCompletion( const URI& document,
+																	const TextPosition& pos,
+																	const JsonReplyHandler& h ) {
+	auto params = textDocumentPositionParams( document, pos );
+	return send( newRequest( "textDocument/completion", params ), h );
+}
+
+LSPClientServer::RequestHandle LSPClientServer::documentCompletion( const URI& document,
+																	const TextPosition& pos,
+																	const CompletionHandler& h ) {
+	return documentCompletion( document, pos, [h]( const json& json ) {
+		if ( h )
+			h( parseDocumentCompletion( json ) );
+	} );
 }
 
 } // namespace ecode

@@ -539,6 +539,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void showFindReplace();
 
+	TextPosition resolveScreenPosition( const Vector2f& position, bool clamp = true ) const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -715,8 +717,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setScrollY( const Float& val, bool emmitEvent = true );
 
 	void resetCursor();
-
-	TextPosition resolveScreenPosition( const Vector2f& position, bool clamp = true ) const;
 
 	Vector2f getViewPortLineCount() const;
 

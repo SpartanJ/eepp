@@ -87,10 +87,8 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
-		if ( config.contains( "delay_time" ) ) {
-			Time time( Time::fromString( config["delay_time"].get<std::string>() ) );
-			setDelayTime( time );
-		}
+		if ( config.contains( "delay_time" ) )
+			setDelayTime( Time::fromString( config["delay_time"].get<std::string>() ) );
 	}
 
 	if ( !j.contains( "linters" ) )
@@ -563,27 +561,30 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 				auto& matches = matchIt.second;
 				for ( auto& match : matches ) {
 					if ( match.box[editor].contains( localPos ) ) {
-						editor->setTooltipText( match.text );
-						editor->getTooltip()->setDontAutoHideOnMouseMove( true );
-						editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
-						if ( !editor->getTooltip()->isVisible() )
-							editor->runOnMainThread(
-								[&, editor] { editor->getTooltip()->show(); } );
-						return false;
+						mHoveringMatch = true;
+						editor->runOnMainThread( [&, editor] {
+							editor->setTooltipText( match.text );
+							editor->getTooltip()->setDontAutoHideOnMouseMove( true );
+							editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
+							if ( !editor->getTooltip()->isVisible() )
+								editor->getTooltip()->show();
+						} );
+						return true;
 					}
 				}
 			}
 		}
-		if ( editor->getTooltip() && editor->getTooltip()->isVisible() ) {
+		if ( mHoveringMatch && editor->getTooltip() && editor->getTooltip()->isVisible() ) {
 			editor->setTooltipText( "" );
 			editor->getTooltip()->hide();
+			mHoveringMatch = false;
 		}
 	}
 	return false;
 }
 
 bool LinterPlugin::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Uint32& ) {
-	if ( editor->getTooltip() && editor->getTooltip()->isVisible() ) {
+	if ( mHoveringMatch && editor->getTooltip() && editor->getTooltip()->isVisible() ) {
 		editor->setTooltipText( "" );
 		editor->getTooltip()->hide();
 	}

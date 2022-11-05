@@ -716,4 +716,39 @@ void URI::buildPath( const std::vector<std::string>& segments, bool leadingSlash
 		mPath += '/';
 }
 
+bool URI::operator<( const URI& url ) const {
+	int cmp;
+	cmp = mScheme.compare( url.mScheme );
+	if ( mScheme != url.mScheme )
+		return cmp < 0;
+
+	cmp = mUserInfo.compare( url.mUserInfo );
+	if ( cmp != 0 )
+		return cmp < 0;
+
+	cmp = mHost.compare( url.mHost );
+	if ( cmp != 0 )
+		return cmp < 0;
+
+	if ( mPort != url.mPort )
+		return mPort < url.mPort;
+
+	cmp = mPath.compare( url.mPath );
+	if ( cmp != 0 )
+		return cmp < 0;
+
+	if ( mQuery.empty() != url.mQuery.empty() )
+		return !url.mQuery.empty();
+
+	cmp = mQuery.compare( url.mQuery );
+	if ( cmp != 0 )
+		return cmp < 0;
+
+	if ( mFragment.empty() != url.mFragment.empty() )
+		return !url.mFragment.empty();
+
+	cmp = mFragment.compare( url.mFragment );
+	return cmp < 0;
+}
+
 }} // namespace EE::Network

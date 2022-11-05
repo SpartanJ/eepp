@@ -94,6 +94,8 @@ class EE_API URI {
 	/** Parses and assigns an URI from the given string. */
 	URI& operator=( const char* uri );
 
+	bool operator<( const URI& url ) const;
+
 	/** Swaps the URI with another one. */
 	void swap( URI& uri );
 

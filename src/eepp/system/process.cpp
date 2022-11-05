@@ -31,11 +31,11 @@ Process::Process( const std::string& command, const Uint32& options,
 
 Process::~Process() {
 	mShuttingDown = true;
+	destroy();
 	if ( mStdOutThread.joinable() )
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )
 		mStdErrThread.join();
-	destroy();
 	eeFree( mProcess );
 }
 

@@ -78,6 +78,7 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 		auto rootPath = findRootPath( lsp, doc );
 		auto lspName = lsp.name.empty() ? lsp.command : lsp.name;
 		String::HashType id = String::hash( lspName + "|" + lsp.language + "|" + rootPath );
+		Lock l( mClientsMutex );
 		auto clientIt = mClients.find( id );
 		LSPClientServer* server = nullptr;
 		if ( clientIt == mClients.end() ) {
@@ -97,6 +98,7 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 
 void LSPClientServerManager::closeLSPServer( const String::HashType& id ) {
 	mThreadPool->run( [this, id]() {
+		Lock l( mClientsMutex );
 		auto it = mClients.find( id );
 		if ( it != mClients.end() ) {
 			mClients.erase( it );
@@ -145,13 +147,15 @@ const std::shared_ptr<ThreadPool>& LSPClientServerManager::getThreadPool() const
 }
 
 void LSPClientServerManager::updateDirty() {
-	for ( auto& server : mClients ) {
-		server.second->updateDirty();
+	{
+		Lock l( mClientsMutex );
+		for ( auto& server : mClients ) {
+			server.second->updateDirty();
 
-		if ( !server.second->hasDocuments() )
-			mLSPsToClose.push_back( server.first );
+			if ( !server.second->hasDocuments() )
+				mLSPsToClose.push_back( server.first );
+		}
 	}
-
 	if ( !mLSPsToClose.empty() )
 		for ( const auto& server : mLSPsToClose )
 			closeLSPServer( server );
@@ -166,9 +170,9 @@ void LSPClientServerManager::getAndGoToLocation( const std::shared_ptr<TextDocum
 
 void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folder ) {
 	mLSPWorkspaceFolder = { "file://" + folder, FileSystem::fileNameFromPath( folder ) };
-	for ( auto& server : mClients ) {
+	Lock l( mClientsMutex );
+	for ( auto& server : mClients )
 		server.second->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {} );
-	}
 }
 
 const LSPWorkspaceFolder& LSPClientServerManager::getLSPWorkspaceFolder() const {
@@ -182,6 +186,7 @@ std::vector<LSPClientServer*> LSPClientServerManager::getLSPClientServers( UICod
 std::vector<LSPClientServer*>
 LSPClientServerManager::getLSPClientServers( const std::shared_ptr<TextDocument>& doc ) {
 	std::vector<LSPClientServer*> servers;
+	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
 		if ( server.second->hasDocument( doc.get() ) )
 			servers.push_back( server.second.get() );
@@ -195,6 +200,7 @@ LSPClientServer* LSPClientServerManager::getOneLSPClientServer( UICodeEditor* ed
 
 LSPClientServer*
 LSPClientServerManager::getOneLSPClientServer( const std::shared_ptr<TextDocument>& doc ) {
+	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
 		if ( server.second->hasDocument( doc.get() ) )
 			return server.second.get();

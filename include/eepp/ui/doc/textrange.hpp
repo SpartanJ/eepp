@@ -57,6 +57,10 @@ class EE_API TextRange {
 		return true;
 	}
 
+	bool contains( const TextRange& range ) const {
+		return range.start() >= start() && range.end() <= end();
+	}
+
 	bool hasSelection() const { return isValid() && mStart != mEnd; }
 
 	bool inSameLine() const { return isValid() && mStart.line() == mEnd.line(); }

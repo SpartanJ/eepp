@@ -56,6 +56,7 @@ class LSPClientServerManager {
 	std::vector<LSPDefinition> mLSPs;
 	std::vector<String::HashType> mLSPsToClose;
 	LSPWorkspaceFolder mLSPWorkspaceFolder;
+	Mutex mClientsMutex;
 
 	std::vector<LSPDefinition> supportsLSP( const std::shared_ptr<TextDocument>& doc );
 

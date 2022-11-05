@@ -3,6 +3,7 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -97,6 +98,12 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					"path %s, error: ",
 					path.c_str(), e.what() );
 		return;
+	}
+
+	if ( j.contains( "config" ) ) {
+		auto& config = j["config"];
+		if ( config.contains( "hover_delay" ) )
+			setHoverDelay( Time::fromString( config["hover_delay"].get<std::string>() ) );
 	}
 
 	if ( mKeyBindings.empty() )
@@ -304,6 +311,58 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		addFn( "lsp-switch-header-source", "Switch Header/Source" );
 
 	return false;
+}
+
+static void hideTooltip( UICodeEditor* editor ) {
+	if ( editor->getTooltip() && editor->getTooltip()->isVisible() ) {
+		editor->setTooltipText( "" );
+		editor->getTooltip()->hide();
+	}
+}
+
+bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& ) {
+	Uint32 tag = String::hash( editor->getDocument().getFilePath() );
+	editor->removeActionsByTag( tag );
+	editor->runOnMainThread(
+		[&, editor, position]() {
+			TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
+			mThreadPool->run( [&, editor, position, cursorPosition]() {
+				mClientManager.getOneLSPClientServer( editor )->documentHover(
+					editor->getDocument().getURI(), cursorPosition,
+					[&, editor, position]( const LSPHover& resp ) {
+						mCurrentHover = resp;
+						if ( resp.range.isValid() && !resp.contents.empty() ) {
+							editor->runOnMainThread( [editor, resp, position]() {
+								editor->setTooltipText( resp.contents[0].value );
+								editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
+								editor->getTooltip()->setPixelsPosition( position.asFloat() );
+								editor->getTooltip()->setDontAutoHideOnMouseMove( true );
+								if ( editor->hasFocus() && !editor->getTooltip()->isVisible() )
+									editor->getTooltip()->show();
+							} );
+						}
+					} );
+			} );
+		},
+		mHoverDelay, tag );
+
+	TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
+	if ( !mCurrentHover.range.isValid() || !mCurrentHover.range.contains( cursorPosition ) )
+		hideTooltip( editor );
+	return mCurrentHover.range.isValid() && editor->getTooltip() &&
+		   editor->getTooltip()->isVisible();
+}
+
+void LSPClientPlugin::onFocusLoss( UICodeEditor* editor ) {
+	hideTooltip( editor );
+}
+
+const Time& LSPClientPlugin::getHoverDelay() const {
+	return mHoverDelay;
+}
+
+void LSPClientPlugin::setHoverDelay( const Time& hoverDelay ) {
+	mHoverDelay = hoverDelay;
 }
 
 } // namespace ecode

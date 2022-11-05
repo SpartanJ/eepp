@@ -28,6 +28,9 @@ class LSPClientServer {
 	template <typename T> using ReplyHandler = std::function<void( const T& )>;
 
 	using JsonReplyHandler = ReplyHandler<json>;
+	using CodeActionHandler = ReplyHandler<std::vector<LSPCodeAction>>;
+	using HoverHandler = ReplyHandler<LSPHover>;
+	using CompletionHandler = ReplyHandler<std::vector<LSPCompletionItem>>;
 
 	class RequestHandle {
 		friend class LSPClientServer;
@@ -66,6 +69,10 @@ class LSPClientServer {
 
 	LSPClientServer::RequestHandle documentSymbols( const URI& document, const JsonReplyHandler& h,
 													const JsonReplyHandler& eh );
+
+	LSPClientServer::RequestHandle
+	documentSymbols( const URI& document, const ReplyHandler<std::vector<LSPSymbolInformation>>& h,
+					 const ReplyHandler<LSPResponseError>& eh );
 
 	LSPClientServer::RequestHandle didOpen( const URI& document, const std::string& text,
 											int version );
@@ -118,6 +125,30 @@ class LSPClientServer {
 
 	LSPClientServer::RequestHandle switchSourceHeader( const URI& document );
 
+	LSPClientServer::RequestHandle documentCodeAction( const URI& document, const TextRange& range,
+													   const std::vector<std::string>& kinds,
+													   std::vector<LSPDiagnostic> diagnostics,
+													   const JsonReplyHandler& h );
+
+	LSPClientServer::RequestHandle documentCodeAction( const URI& document, const TextRange& range,
+													   const std::vector<std::string>& kinds,
+													   std::vector<LSPDiagnostic> diagnostics,
+													   const CodeActionHandler& h );
+
+	LSPClientServer::RequestHandle documentHover( const URI& document, const TextPosition& pos,
+												  const JsonReplyHandler& h );
+
+	LSPClientServer::RequestHandle documentHover( const URI& document, const TextPosition& pos,
+												  const HoverHandler& h );
+
+	LSPClientServer::RequestHandle documentHover( TextDocument* doc, const HoverHandler& h );
+
+	LSPClientServer::RequestHandle documentCompletion( const URI& document, const TextPosition& pos,
+													   const JsonReplyHandler& h );
+
+	LSPClientServer::RequestHandle documentCompletion( const URI& document, const TextPosition& pos,
+													   const CompletionHandler& h );
+
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;
@@ -128,6 +159,7 @@ class LSPClientServer {
 	std::map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
 	std::map<int, std::pair<JsonReplyHandler, JsonReplyHandler>> mHandlers;
 	Mutex mClientsMutex;
+	Mutex mHandlersMutex;
 	bool mReady{ false };
 	struct QueueMessage {
 		json msg;

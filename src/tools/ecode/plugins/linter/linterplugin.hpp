@@ -106,6 +106,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	bool mReady{ false };
 	bool mShuttingDown{ false };
+	bool mHoveringMatch{ false };
 
 	LinterPlugin( const PluginManager* pluginManager );
 
