@@ -4,8 +4,11 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
 
+using namespace EE::Window;
 using json = nlohmann::json;
 
 namespace ecode {
@@ -320,32 +323,44 @@ static void hideTooltip( UICodeEditor* editor ) {
 	}
 }
 
+TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
+	return editor->resolveScreenPosition(
+		editor->getUISceneNode()->getWindow()->getInput()->getMousePosf() );
+}
+
 bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& ) {
 	Uint32 tag = String::hash( editor->getDocument().getFilePath() );
 	editor->removeActionsByTag( tag );
 	editor->runOnMainThread(
 		[&, editor, position]() {
-			TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
-			mThreadPool->run( [&, editor, position, cursorPosition]() {
+			mThreadPool->run( [&, editor, position]() {
 				mClientManager.getOneLSPClientServer( editor )->documentHover(
-					editor->getDocument().getURI(), cursorPosition,
+					editor->getDocument().getURI(), currentMouseTextPosition( editor ),
 					[&, editor, position]( const LSPHover& resp ) {
-						mCurrentHover = resp;
 						if ( resp.range.isValid() && !resp.contents.empty() ) {
-							editor->runOnMainThread( [editor, resp, position]() {
-								editor->setTooltipText( resp.contents[0].value );
-								editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
-								editor->getTooltip()->setPixelsPosition( position.asFloat() );
-								editor->getTooltip()->setDontAutoHideOnMouseMove( true );
-								if ( editor->hasFocus() && !editor->getTooltip()->isVisible() )
-									editor->getTooltip()->show();
+							editor->runOnMainThread( [editor, resp, position, this]() {
+								TextPosition startCursorPosition =
+									editor->resolveScreenPosition( position.asFloat() );
+								TextPosition currentMousePosition =
+									currentMouseTextPosition( editor );
+								if ( startCursorPosition != currentMousePosition )
+									return;
+								if ( resp.range.isValid() && !resp.contents.empty() &&
+									 resp.range.contains( startCursorPosition ) ) {
+									mCurrentHover = resp;
+									editor->setTooltipText( resp.contents[0].value );
+									editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
+									editor->getTooltip()->setPixelsPosition( position.asFloat() );
+									editor->getTooltip()->setDontAutoHideOnMouseMove( true );
+									if ( editor->hasFocus() && !editor->getTooltip()->isVisible() )
+										editor->getTooltip()->show();
+								}
 							} );
 						}
 					} );
 			} );
 		},
 		mHoverDelay, tag );
-
 	TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
 	if ( !mCurrentHover.range.isValid() || !mCurrentHover.range.contains( cursorPosition ) )
 		hideTooltip( editor );
@@ -355,6 +370,15 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 
 void LSPClientPlugin::onFocusLoss( UICodeEditor* editor ) {
 	hideTooltip( editor );
+}
+
+bool LSPClientPlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
+	if ( event.getSanitizedMod() == 0 && event.getKeyCode() == KEY_ESCAPE && editor->getTooltip() &&
+		 editor->getTooltip()->isVisible() ) {
+		editor->getTooltip()->hide();
+	}
+
+	return false;
 }
 
 const Time& LSPClientPlugin::getHoverDelay() const {

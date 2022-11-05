@@ -871,6 +871,16 @@ TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position, bool
 	return TextPosition( line, getColFromXOffset( line, localPos.x ) );
 }
 
+Rectf UICodeEditor::getScreenPosition( const TextPosition& position ) const {
+	Float lineHeight = getLineHeight();
+	Vector2f screenStart( getScreenStart() );
+	Vector2f start( screenStart.x + getGutterWidth(), screenStart.y );
+	Vector2f startScroll( start - mScroll );
+	return { { startScroll.x + getXOffsetColSanitized( position ),
+			   startScroll.y + lineHeight * position.line() },
+			 { getGlyphWidth(), lineHeight } };
+}
+
 Vector2f UICodeEditor::getViewPortLineCount() const {
 	return Vector2f(
 		eefloor( getViewportWidth() / getGlyphWidth() ),
@@ -1608,7 +1618,7 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 	}
 }
 
-Float UICodeEditor::getXOffsetCol( const TextPosition& position ) {
+Float UICodeEditor::getXOffsetCol( const TextPosition& position ) const {
 	if ( mFont && !mFont->isMonospace() ) {
 		return getLineText( position.line() )
 			.findCharacterPos(
@@ -1657,14 +1667,12 @@ Float UICodeEditor::getTextWidth( const String& line ) const {
 	return x;
 }
 
-Float UICodeEditor::getColXOffset( TextPosition position ) {
+Float UICodeEditor::getXOffsetColSanitized( TextPosition position ) const {
 	position.setLine( eeclamp<Int64>( position.line(), 0L, mDoc->linesCount() - 1 ) );
 	// This is different from sanitizePosition, sinze allows the last character.
 	position.setColumn( eeclamp<Int64>( position.column(), 0L,
 										eemax<Int64>( 0, mDoc->line( position.line() ).size() ) ) );
-	if ( mFont && !mFont->isMonospace() )
-		return getXOffsetCol( position );
-	return getTextWidth( mDoc->line( position.line() ).substr( 0, position.column() ) );
+	return getXOffsetCol( position );
 }
 
 const bool& UICodeEditor::isLocked() const {
@@ -2175,9 +2183,8 @@ void UICodeEditor::resetCursor() {
 
 TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int offset ) {
 	auto& xo = mLastXOffset;
-	if ( xo.position != position ) {
-		xo.offset = getColXOffset( position );
-	}
+	if ( xo.position != position )
+		xo.offset = getXOffsetColSanitized( position );
 	xo.position.setLine( position.line() + offset );
 	xo.position.setColumn( getColFromXOffset( position.line() + offset, xo.offset ) );
 	return xo.position;
@@ -3256,5 +3263,4 @@ void UICodeEditor::invalidateLinesCache() {
 		invalidateDraw();
 	}
 }
-
 }} // namespace EE::UI

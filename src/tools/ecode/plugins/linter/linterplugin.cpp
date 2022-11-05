@@ -554,23 +554,21 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 	auto it = mMatches.find( editor->getDocumentRef().get() );
 	if ( it != mMatches.end() ) {
 		Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
-		auto visibleLineRange = editor->getVisibleLineRange();
-		for ( auto& matchIt : it->second ) {
-			Uint64 matchLine = matchIt.first;
-			if ( matchLine >= visibleLineRange.first && matchLine <= visibleLineRange.second ) {
-				auto& matches = matchIt.second;
-				for ( auto& match : matches ) {
-					if ( match.box[editor].contains( localPos ) ) {
-						mHoveringMatch = true;
-						editor->runOnMainThread( [&, editor] {
-							editor->setTooltipText( match.text );
-							editor->getTooltip()->setDontAutoHideOnMouseMove( true );
-							editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
-							if ( !editor->getTooltip()->isVisible() )
-								editor->getTooltip()->show();
-						} );
-						return true;
-					}
+		TextPosition cursorPosition = editor->resolveScreenPosition( pos.asFloat() );
+		auto matchIt = it->second.find( cursorPosition.line() );
+		if ( matchIt != it->second.end() ) {
+			auto& matches = matchIt->second;
+			for ( auto& match : matches ) {
+				if ( match.box[editor].contains( localPos ) ) {
+					mHoveringMatch = true;
+					editor->runOnMainThread( [&, editor] {
+						editor->setTooltipText( match.text );
+						editor->getTooltip()->setDontAutoHideOnMouseMove( true );
+						editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
+						if ( !editor->getTooltip()->isVisible() )
+							editor->getTooltip()->show();
+					} );
+					return true;
 				}
 			}
 		}

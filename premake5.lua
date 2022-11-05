@@ -249,6 +249,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 	end
 
+	cppdialect "C++17"
 	set_ios_config()
 	set_xcode_config()
 	build_arch_configuration()
@@ -268,7 +269,6 @@ function build_link_configuration( package_name, use_ee_icon )
 		vpaths { ['Resources/*'] = { "ee.rc", "ee.ico" } }
 
 	filter "action:not vs*"
-		cppdialect "C++17"
 		buildoptions { "-Wall" }
 
 	filter { "configurations:debug*", "action:not vs*" }
@@ -589,6 +589,8 @@ function build_eepp( build_name )
 		table.insert( link_list, get_backend_link_name( "freetype" ) )
 	end
 
+	cppdialect "C++17"
+
 	filter "options:use-frameworks"
 		defines { "EE_USE_FRAMEWORKS" }
 
@@ -618,9 +620,6 @@ function build_eepp( build_name )
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
-
-	filter "action:not vs*"
-		cppdialect "C++17"
 end
 
 workspace "eepp"
@@ -785,8 +784,7 @@ workspace "eepp"
 		files { "src/thirdparty/efsw/src/efsw/*.cpp" }
 		build_base_cpp_configuration( "efsw" )
 		defines { "EFSW_USE_CXX11" }
-		filter "action:not vs*"
-			cppdialect "C++17"
+		cppdialect "C++17"
 		filter "system:windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/win/*.cpp" }
 			excludes {
@@ -832,8 +830,8 @@ workspace "eepp"
 		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
 		build_base_cpp_configuration( "eterm" )
+		cppdialect "C++17"
 		filter "action:not vs*"
-			cppdialect "C++17"
 			buildoptions { "-Wall" }
 
 	-- Library

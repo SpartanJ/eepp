@@ -436,9 +436,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
 
-	virtual Float getColXOffset( TextPosition position );
+	virtual Float getXOffsetCol( const TextPosition& position ) const;
 
-	virtual Float getXOffsetCol( const TextPosition& position );
+	Float getXOffsetColSanitized( TextPosition position ) const;
 
 	virtual Float getLineWidth( const Int64& lineIndex );
 
@@ -540,6 +540,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void showFindReplace();
 
 	TextPosition resolveScreenPosition( const Vector2f& position, bool clamp = true ) const;
+
+	Rectf getScreenPosition( const TextPosition& position ) const;
 
   protected:
 	struct LastXOffset {

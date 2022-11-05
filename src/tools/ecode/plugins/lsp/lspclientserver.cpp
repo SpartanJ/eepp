@@ -307,14 +307,6 @@ static bool isPositionValid( const TextPosition& pos ) {
 }
 
 static std::vector<LSPSymbolInformation> parseDocumentSymbols( const json& result ) {
-	// the reply could be old SymbolInformation[] or new (hierarchical) DocumentSymbol[]
-	// try to parse it adaptively in any case
-	// if new style, hierarchy is specified clearly in reply
-	// if old style, it is assumed the values enter linearly, that is;
-	// * a parent/container is listed before its children
-	// * if a name is defined/declared several times and then used as a parent,
-	//   then we try to find such a parent whose range contains current range
-	//   (otherwise fall back to using the last instance as a parent)
 	std::vector<LSPSymbolInformation> ret;
 	std::map<std::string, LSPSymbolInformation*> index;
 
@@ -325,15 +317,11 @@ static std::vector<LSPSymbolInformation> parseDocumentSymbols( const json& resul
 									 : symbol[MEMBER_LOCATION].at( MEMBER_RANGE );
 			auto range = parseRange( mrange );
 			std::map<std::string, LSPSymbolInformation*>::iterator it = index.end();
-			// if flat list, try to find parent by name
 			if ( !parent ) {
 				auto container = symbol.value( "containerName", "" );
 				it = index.find( container );
-				// default to last inserted
-				if ( it != index.end() ) {
+				if ( it != index.end() )
 					parent = it->second;
-				}
-				// but prefer a containing range
 				while ( it != index.end() && it->first == container ) {
 					if ( it->second->range.contains( range ) ) {
 						parent = it->second;
@@ -348,8 +336,7 @@ static std::vector<LSPSymbolInformation> parseDocumentSymbols( const json& resul
 				auto kind = static_cast<LSPSymbolKind>( symbol.at( MEMBER_KIND ).get<int>() );
 				auto detail = symbol.value( MEMBER_DETAIL, "" );
 				list->push_back( { name, kind, range, detail } );
-				index.insert( std::pair( name, &list->back() ) );
-				// proceed recursively
+				index.insert( std::make_pair( name, &list->back() ) );
 				if ( symbol.contains( "children" ) ) {
 					const auto& children = symbol.at( ( "children" ) );
 					for ( const auto& child : children )

@@ -58,7 +58,10 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	virtual void onFocusLoss( UICodeEditor* editor );
 
+	virtual bool onKeyDown( UICodeEditor*, const KeyEvent& );
+
 	const Time& getHoverDelay() const;
+
 	void setHoverDelay( const Time& hoverDelay );
 
   protected:
