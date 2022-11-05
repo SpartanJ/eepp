@@ -22,4 +22,4 @@ jobs:
     - name: Build
       run: |
         ./premake5 --with-mojoAL gmake2
-        make -C make/macosx/ -j`nproc` all
+        make -C make/macosx/ -j$(nproc) all

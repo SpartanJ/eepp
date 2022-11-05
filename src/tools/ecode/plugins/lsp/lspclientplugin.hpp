@@ -70,6 +70,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	Clock mClock;
 	Mutex mDocMutex;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
+	std::unordered_map<UICodeEditor*, std::set<String::HashType>> mEditorsTags;
 	std::set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	LSPClientServerManager mClientManager;

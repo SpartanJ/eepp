@@ -25,13 +25,21 @@ LSPClientPlugin::LSPClientPlugin( const PluginManager* pluginManager ) :
 LSPClientPlugin::~LSPClientPlugin() {
 	mClosing = true;
 	Lock l( mDocMutex );
-	for ( auto editor : mEditors ) {
+	for ( const auto &editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {
 			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
 			if ( editor.first->hasDocument() )
 				editor.first->getDocument().removeCommand( kb.first );
 		}
 		editor.first->unregisterPlugin( this );
+	}
+	if ( nullptr == mManager->getSplitter() )
+		return;
+	for ( const auto& editor : mEditorsTags ) {
+		if ( mManager->getSplitter()->editorExists( editor.first ) ) {
+			for ( const auto& tag : editor.second )
+				editor.first->removeActionsByTag( tag );
+		}
 	}
 }
 
@@ -249,6 +257,7 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	mEditors.insert( { editor, listeners } );
+	mEditorsTags.insert( { editor, {} } );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
 
 	if ( mReady && editor->hasDocument() && editor->getDocument().hasFilepath() )
@@ -272,6 +281,7 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	for ( auto listener : cbs )
 		editor->removeEventListener( listener );
 	mEditors.erase( editor );
+	mEditorsTags.erase( editor );
 	mEditorDocs.erase( editor );
 	for ( auto editor : mEditorDocs )
 		if ( editor.second == doc )
@@ -329,12 +339,17 @@ TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
 }
 
 bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& ) {
-	Uint32 tag = String::hash( editor->getDocument().getFilePath() );
+	String::HashType tag = String::hash( editor->getDocument().getFilePath() );
 	editor->removeActionsByTag( tag );
+	mEditorsTags[editor].insert( tag );
 	editor->runOnMainThread(
-		[&, editor, position]() {
+		[&, editor, position, tag]() {
+			mEditorsTags[editor].erase( tag );
 			mThreadPool->run( [&, editor, position]() {
-				mClientManager.getOneLSPClientServer( editor )->documentHover(
+				auto server = mClientManager.getOneLSPClientServer( editor );
+				if ( server == nullptr )
+					return;
+				server->documentHover(
 					editor->getDocument().getURI(), currentMouseTextPosition( editor ),
 					[&, editor, position]( const LSPHover& resp ) {
 						if ( resp.range.isValid() && !resp.contents.empty() ) {

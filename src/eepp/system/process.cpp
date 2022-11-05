@@ -5,6 +5,9 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/process.hpp>
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#define SUBPROCESS_USE_POSIX_SPAWN
+#endif
 #include <thirdparty/subprocess/subprocess.h>
 #include <vector>
 

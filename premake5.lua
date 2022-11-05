@@ -779,12 +779,12 @@ workspace "eepp"
 	project "efsw-static"
 		kind "StaticLib"
 		language "C++"
+		cppdialect "C++17"
+		defines { "EFSW_USE_CXX11" }
 		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		files { "src/thirdparty/efsw/src/efsw/*.cpp" }
 		build_base_cpp_configuration( "efsw" )
-		defines { "EFSW_USE_CXX11" }
-		cppdialect "C++17"
 		filter "system:windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/win/*.cpp" }
 			excludes {
@@ -826,11 +826,11 @@ workspace "eepp"
 	project "eterm-static"
 		kind "StaticLib"
 		language "C++"
+		cppdialect "C++17"
 		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
 		build_base_cpp_configuration( "eterm" )
-		cppdialect "C++17"
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
