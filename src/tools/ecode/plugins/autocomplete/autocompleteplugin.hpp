@@ -43,10 +43,8 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void onRegister( UICodeEditor* );
 	void onUnregister( UICodeEditor* );
 	bool onKeyDown( UICodeEditor*, const KeyEvent& );
-	bool onKeyUp( UICodeEditor*, const KeyEvent& );
 	bool onTextInput( UICodeEditor*, const TextInputEvent& );
 	void update( UICodeEditor* );
-	void preDraw( UICodeEditor*, const Vector2f&, const Float&, const TextPosition& );
 	void postDraw( UICodeEditor*, const Vector2f& startScroll, const Float& lineHeight,
 				   const TextPosition& cursor );
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& );

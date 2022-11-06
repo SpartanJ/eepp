@@ -532,10 +532,8 @@ App::~App() {
 		delete mFileSystemListener;
 		mFileSystemListener = nullptr;
 	}
+	mPluginManager.reset();
 	eeSAFE_DELETE( mSplitter );
-	eeSAFE_DELETE( mAutoCompletePlugin );
-	eeSAFE_DELETE( mLinterPlugin );
-	eeSAFE_DELETE( mFormatterPlugin );
 	eeSAFE_DELETE( mConsole );
 }
 

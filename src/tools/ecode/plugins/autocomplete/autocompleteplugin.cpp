@@ -170,10 +170,6 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 	return false;
 }
 
-bool AutoCompletePlugin::onKeyUp( UICodeEditor*, const KeyEvent& ) {
-	return false;
-}
-
 bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent& ) {
 	std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
 	if ( partialSymbol.size() >= 3 ) {
@@ -251,9 +247,6 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 		}
 	}
 }
-
-void AutoCompletePlugin::preDraw( UICodeEditor*, const Vector2f&, const Float&,
-								  const TextPosition& ) {}
 
 void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startScroll,
 								   const Float& lineHeight, const TextPosition& cursor ) {

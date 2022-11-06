@@ -25,6 +25,10 @@
       "type": "inplace"
     },
     {
+      "file_patterns": ["%.rs"],
+      "command": "rustfmt --emit stdout --color never $FILENAME"
+    },
+    {
       "file_patterns": ["%.json$", "%.cson$"],
       "command": "json",
       "type": "native"

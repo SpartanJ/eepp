@@ -295,6 +295,8 @@ struct LSPCompletionItem {
 	LSPMarkupContent documentation;
 	std::string sortText;
 	std::string insertText;
+	std::string filterText;
+	LSPTextEdit textEdit;
 	std::vector<LSPTextEdit> additionalTextEdits;
 };
 

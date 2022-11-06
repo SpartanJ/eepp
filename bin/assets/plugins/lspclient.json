@@ -66,9 +66,9 @@
     },
     {
       "language": "rust",
-      "name": "rust-language-server",
-      "url": "https://github.com/rust-lang/rls",
-      "command": "rls",
+      "name": "rust-analyzer",
+      "url": "https://rust-analyzer.github.io",
+      "command": "rust-analyzer",
       "file_patterns": ["%.rs$"]
     },
     {

@@ -104,6 +104,9 @@ class PluginManager {
 
 	void setWorkspaceFolder( const std::string& workspaceFolder );
 
+	void pushNotification( UICodeEditorPlugin* pluginWho, Notification,
+						   const nlohmann::json& ) const;
+
 	void
 	subscribeNotifications( UICodeEditorPlugin* plugin,
 							std::function<void( Notification, const nlohmann::json& )> cb ) const;

@@ -47,10 +47,17 @@ static const char* MEMBER_TARGET_SELECTION_RANGE = "targetSelectionRange";
 // static const char* MEMBER_PREVIOUS_RESULT_ID = "previousResultId";
 // static const char* MEMBER_QUERY = "query";
 
-static json newRequest( const std::string& method, const json& params = {} ) {
+static json newRequest( const std::string& method, const json& params = json{} ) {
 	json j;
 	j[MEMBER_METHOD] = method;
 	j[MEMBER_PARAMS] = params.empty() ? json() : params;
+	return j;
+}
+
+static json newResponse( const std::string& method, const int& id ) {
+	json j;
+	j[MEMBER_METHOD] = method;
+	j[MEMBER_ID] = id;
 	return j;
 }
 
@@ -181,10 +188,10 @@ static void fromJson( std::vector<char>& trigger, const json& json ) {
 
 static void fromJson( LSPCompletionOptions& options, const json& json ) {
 	if ( !json.empty() && json.is_object() ) {
-		auto ob = json;
 		options.provider = true;
-		options.resolveProvider = ob["resolveProvider"].get<bool>();
-		fromJson( options.triggerCharacters, ob["triggerCharacters"] );
+		if ( json.contains( "resolveProvider" ) && !json["resolveProvider"].is_null() )
+			options.resolveProvider = json["resolveProvider"].get<bool>();
+		fromJson( options.triggerCharacters, json["triggerCharacters"] );
 	}
 }
 
@@ -362,15 +369,17 @@ static LSPResponseError parseResponseError( const json& v ) {
 	return ret;
 }
 
-static std::vector<LSPTextEdit> parseTextEdit( const json& result ) {
+static LSPTextEdit parseTextEdit( const json& result ) {
+	LSPTextEdit edit;
+	edit.text = result.at( "newText" ).get<std::string>();
+	edit.range = parseRange( result.at( MEMBER_RANGE ) );
+	return edit;
+}
+
+static std::vector<LSPTextEdit> parseTextEditArray( const json& result ) {
 	std::vector<LSPTextEdit> ret;
-	const auto textEdits = result;
-	for ( const auto& redit : textEdits ) {
-		auto edit = redit;
-		auto text = edit.at( "newText" ).get<std::string>();
-		auto range = parseRange( edit.at( MEMBER_RANGE ) );
-		ret.push_back( { range, text } );
-	}
+	for ( const auto& edit : result )
+		ret.push_back( parseTextEdit( edit ) );
 	return ret;
 }
 
@@ -386,7 +395,7 @@ static LSPTextDocumentEdit parseTextDocumentEdit( const json& result ) {
 	LSPTextDocumentEdit ret;
 	auto ob = result;
 	fromJson( ret.textDocument, ob.at( "textDocument" ) );
-	ret.edits = parseTextEdit( ob.at( "edits" ) );
+	ret.edits = parseTextEditArray( ob.at( "edits" ) );
 	return ret;
 }
 
@@ -395,7 +404,7 @@ static LSPWorkspaceEdit parseWorkSpaceEdit( const json& result ) {
 	auto changes = result.at( "changes" );
 	for ( auto it = changes.begin(); it != changes.end(); ++it ) {
 		ret.changes.insert( std::pair<URI, std::vector<LSPTextEdit>>(
-			URI( it.key() ), parseTextEdit( it.value() ) ) );
+			URI( it.key() ), parseTextEditArray( it.value() ) ) );
 	}
 	auto documentChanges = result.at( "documentChanges" );
 	// resourceOperations not supported for now
@@ -584,40 +593,32 @@ static std::vector<LSPCompletionItem> parseDocumentCompletion( const json& resul
 		LSPMarkupContent doc = item.contains( MEMBER_DOCUMENTATION )
 								   ? parseMarkupContent( item.at( MEMBER_DOCUMENTATION ) )
 								   : LSPMarkupContent{};
-		auto sortText = item.value( "sortText", "" );
-		if ( sortText.empty() )
-			sortText = label;
-		auto insertText = item.value( "insertText", "" );
-		if ( insertText.empty() )
-			insertText = label;
-		if ( item.contains( "textEdit" ) ) {
-			const auto& textEdit = item["textEdit"];
-			if ( !textEdit.empty() ) {
-				auto newText = textEdit.value( "newText", "" );
-				insertText = newText;
-			}
-		}
+		auto filterText = item.value( "filterText", label );
+		auto insertText = item.value( "insertText", label );
+		auto sortText = item.value( "sortText", label );
+		LSPTextEdit textEdit;
+		if ( item.contains( "textEdit" ) )
+			textEdit = parseTextEdit( item["textEdit"] );
 		auto kind = static_cast<LSPCompletionItemKind>( item.value( MEMBER_KIND, 1 ) );
-
 		const std::vector<LSPTextEdit> additionalTextEdits =
 			item.contains( "additionalTextEdits" )
-				? parseTextEdit( item.at( "additionalTextEdits" ) )
+				? parseTextEditArray( item.at( "additionalTextEdits" ) )
 				: std::vector<LSPTextEdit>{};
 
-		ret.push_back( { label, kind, detail, doc, sortText, insertText,
-						 additionalTextEdits /*, textEdit*/ } );
+		ret.push_back( { label, kind, detail, doc, sortText, insertText, filterText, textEdit,
+						 additionalTextEdits } );
 	}
 	return ret;
 }
 
 void LSPClientServer::initialize() {
-	json codeAction{
-		{ "codeActionLiteralSupport", json{ { "codeActionKind", json{ { "valueSet", {} } } } } } };
+	json codeAction{ { "codeActionLiteralSupport",
+					   json{ { "codeActionKind", json{ { "valueSet", json::array() } } } } } };
 
 	json semanticTokens{
 		{ "requests", json{ { "range", true }, { "full", json{ { "delta", true } } } } },
 		{ "tokenTypes", supportedSemanticTokenTypes() },
-		{ "tokenModifiers", {} },
+		{ "tokenModifiers", json::array() },
 		{ "formats", { "relative" } },
 	};
 
@@ -690,7 +691,7 @@ LSPClientServer::~LSPClientServer() {
 
 bool LSPClientServer::start() {
 	bool ret = mProcess.create( mLSP.command, Process::getDefaultOptions(), {}, mRootPath );
-	if ( ret ) {
+	if ( ret && mProcess.isAlive() ) {
 		mProcess.startAsyncRead(
 			[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
 			[this]( const char* bytes, size_t n ) { readStdErr( bytes, n ); } );
@@ -761,6 +762,9 @@ LSPClientServer::RequestHandle LSPClientServer::write( const json& msg, const Js
 			method = msg[MEMBER_METHOD].get<std::string>();
 		else if ( msg.contains( MEMBER_MESSAGE ) )
 			method = msg[MEMBER_MESSAGE];
+		if ( method == "workspace/didChangeWorkspaceFolders" &&
+			 !mCapabilities.workspaceFolders.supported )
+			return ret;
 		Log::info( "LSPClientServer server %s calling %s", mLSP.name.c_str(), method.c_str() );
 		Log::debug( "LSPClientServer server %s sending message:\n%s", mLSP.name.c_str(),
 					sjson.c_str() );
@@ -977,6 +981,10 @@ void LSPClientServer::processRequest( const json& msg ) {
 	auto msgid = msg[MEMBER_ID].get<int>();
 	//	auto params = msg[MEMBER_PARAMS];
 	//	bool handled = false;
+	if ( method == "window/workDoneProgress/create" || method == "client/registerCapability" ) {
+		write( newResponse( method, msgid ) );
+		return;
+	}
 	write( newError( LSPErrorCode::MethodNotFound, method ), nullptr, nullptr, msgid );
 }
 

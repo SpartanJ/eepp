@@ -108,6 +108,13 @@ void PluginManager::setWorkspaceFolder( const std::string& workspaceFolder ) {
 					  json{ { "folder", mWorkspaceFolder } } );
 }
 
+void PluginManager::pushNotification( UICodeEditorPlugin* pluginWho, Notification notification,
+									  const nlohmann::json& json ) const {
+	for ( const auto& plugin : mSubscribedPlugins )
+		if ( pluginWho->getId() != plugin.first )
+			plugin.second( notification, json );
+}
+
 void PluginManager::subscribeNotifications(
 	UICodeEditorPlugin* plugin,
 	std::function<void( Notification, const nlohmann::json& )> cb ) const {

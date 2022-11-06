@@ -255,9 +255,6 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mKeybindingsPath;
 	std::string mResPath;
 	Float mDisplayDPI{ 96 };
-	AutoCompletePlugin* mAutoCompletePlugin{ nullptr };
-	LinterPlugin* mLinterPlugin{ nullptr };
-	FormatterPlugin* mFormatterPlugin{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
 	UITreeView* mProjectTreeView{ nullptr };
