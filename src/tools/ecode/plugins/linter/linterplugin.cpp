@@ -89,6 +89,27 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 		auto& config = j["config"];
 		if ( config.contains( "delay_time" ) )
 			setDelayTime( Time::fromString( config["delay_time"].get<std::string>() ) );
+		if ( config.contains( "enable_lsp_diagnostics" ) &&
+			 config["enable_lsp_diagnostics"].is_boolean() )
+			setEnableLSPDiagnostics( config["enable_lsp_diagnostics"].get<bool>() );
+		if ( config.contains( "disable_lsp_languages" ) &&
+			 config["disable_lsp_languages"].is_array() ) {
+			const auto& langs = config["disable_lsp_languages"];
+			try {
+				mLSPLanguagesDisabled.clear();
+				for ( const auto& lang : langs ) {
+					if ( lang.is_string() ) {
+						std::string lg = lang.get<std::string>();
+						if ( !lg.empty() )
+							mLSPLanguagesDisabled.insert( lg );
+					}
+				}
+			} catch ( const json::exception& e ) {
+				Log::debug(
+					"LinterPlugin::loadLinterConfig: Error parsing disable_lsp_languages: %s",
+					e.what() );
+			}
+		}
 	}
 
 	if ( !j.contains( "linters" ) )
@@ -166,7 +187,107 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 	}
 }
 
+LinterType getLinterTypeFromSeverity( const LSPDiagnosticSeverity& severity ) {
+	switch ( severity ) {
+		case LSPDiagnosticSeverity::Error:
+			return LinterType::Error;
+		case LSPDiagnosticSeverity::Warning:
+			return LinterType::Warning;
+		default:
+			return LinterType::Notice;
+	}
+}
+
+void LinterPlugin::eraseMatchesFromOrigin( TextDocument* doc, const MatchOrigin& origin ) {
+	Lock matchesLock( mMatchesMutex );
+	auto& docMatches = mMatches[doc];
+
+	std::vector<Int64> emptyMatchLines;
+	for ( auto& matchLine : docMatches ) {
+		bool found;
+		do {
+			found = false;
+			auto it = matchLine.second.begin();
+			for ( ; it != matchLine.second.end(); ++it ) {
+				if ( it->origin == origin ) {
+					found = true;
+					break;
+				}
+			}
+			if ( found ) {
+				matchLine.second.erase( it );
+				if ( matchLine.second.empty() )
+					emptyMatchLines.push_back( matchLine.first );
+			}
+		} while ( found );
+	}
+
+	for ( const auto& line : emptyMatchLines )
+		docMatches.erase( line );
+}
+
+void LinterPlugin::insertMatches( TextDocument* doc,
+								  std::map<Int64, std::vector<LinterMatch>>& matches ) {
+	Lock matchesLock( mMatchesMutex );
+	auto& docMatches = mMatches[doc];
+	for ( auto& match : matches ) {
+		std::vector<LinterMatch>& vec = docMatches[match.first];
+		vec.insert( vec.end(), match.second.begin(), match.second.end() );
+	}
+}
+
+void LinterPlugin::setMatches( TextDocument* doc, const MatchOrigin& origin,
+							   std::map<Int64, std::vector<LinterMatch>>& matches ) {
+	if ( !mEnableLSPDiagnostics ) {
+		Lock matchesLock( mMatchesMutex );
+		mMatches[doc] = std::move( matches );
+	} else {
+		eraseMatchesFromOrigin( doc, origin );
+		insertMatches( doc, matches );
+	}
+
+	invalidateEditors( doc );
+}
+
+void LinterPlugin::processNotification( const PluginManager::Notification& notification ) {
+	if ( !mEnableLSPDiagnostics ||
+		 notification.type != PluginManager::NotificationType::PublishDiagnostics ||
+		 notification.format != PluginManager::NotificationFormat::Diagnostics )
+		return;
+	const auto& diags = notification.asDiagnostics();
+	TextDocument* doc = getDocumentFromURI( diags.uri );
+	if ( doc == nullptr )
+		return;
+	if ( mLSPLanguagesDisabled.find( String::toLower(
+			 doc->getSyntaxDefinition().getLSPName() ) ) != mLSPLanguagesDisabled.end() )
+		return;
+
+	std::map<Int64, std::vector<LinterMatch>> matches;
+
+	for ( const auto& diag : diags.diagnostics ) {
+		LinterMatch match;
+		match.range = diag.range;
+		match.text = diag.message;
+		match.type = getLinterTypeFromSeverity( diag.severity );
+		match.lineCache = doc->line( match.range.start().line() ).getHash();
+		match.origin = MatchOrigin::Diagnostics;
+		matches[match.range.start().line()].emplace_back( std::move( match ) );
+	}
+
+	setMatches( doc, MatchOrigin::Diagnostics, matches );
+}
+
+TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
+	for ( TextDocument* doc : mDocs ) {
+		if ( doc->getURI() == uri )
+			return doc;
+	}
+	return nullptr;
+}
+
 void LinterPlugin::load( const PluginManager* pluginManager ) {
+	pluginManager->subscribeNotifications(
+		this, [&]( const auto& notification ) { processNotification( notification ); } );
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/linters.json" );
 	if ( FileSystem::fileExists( path ) )
@@ -272,6 +393,14 @@ const Time& LinterPlugin::getDelayTime() const {
 
 void LinterPlugin::setDelayTime( const Time& delayTime ) {
 	mDelayTime = delayTime;
+}
+
+bool LinterPlugin::getEnableLSPDiagnostics() const {
+	return mEnableLSPDiagnostics;
+}
+
+void LinterPlugin::setEnableLSPDiagnostics( bool enableLSPDiagnostics ) {
+	mEnableLSPDiagnostics = enableLSPDiagnostics;
 }
 
 void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
@@ -395,13 +524,35 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 						if ( linter.columnsStartAtZero )
 							col++;
 					}
-					linterMatch.pos = { line - 1, col > 0 ? col - 1 : 0 };
-					linterMatch.lineCache = doc->line( line - 1 ).getHash();
+					linterMatch.range.setStart( { line - 1, col > 0 ? col - 1 : 0 } );
+
+					const String& text = doc->line( linterMatch.range.start().line() ).getText();
+					size_t minCol =
+						text.find_first_not_of( " \t\f\v\n\r", linterMatch.range.start().column() );
+					if ( minCol == String::InvalidPos )
+						minCol = linterMatch.range.start().column();
+					minCol = std::max( (Int64)minCol, linterMatch.range.start().column() );
+					if ( minCol >= text.size() )
+						minCol = linterMatch.range.start().column();
+					if ( minCol >= text.size() )
+						minCol = text.size() - 1;
+					linterMatch.range.setStart(
+						{ linterMatch.range.start().line(), (Int64)minCol } );
+					TextPosition endPos;
+					endPos = ( minCol < text.size() - 1 )
+								 ? doc->nextWordBoundary(
+									   { linterMatch.range.start().line(), (Int64)minCol } )
+								 : doc->previousWordBoundary(
+									   { linterMatch.range.start().line(), (Int64)minCol } );
+
+					linterMatch.range.setEnd( endPos );
+					linterMatch.range = linterMatch.range.normalized();
+					linterMatch.lineCache = doc->line( linterMatch.range.start().line() ).getHash();
 					bool skip = false;
 
 					if ( linter.deduplicate && matches.find( line - 1 ) != matches.end() ) {
 						for ( auto& match : matches[line - 1] ) {
-							if ( match.pos == linterMatch.pos ) {
+							if ( match.range == linterMatch.range ) {
 								match.text += "\n" + linterMatch.text;
 								skip = true;
 								break;
@@ -433,12 +584,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 			}
 		}
 
-		{
-			Lock matchesLock( mMatchesMutex );
-			mMatches[doc.get()] = std::move( matches );
-		}
-
-		invalidateEditors( doc.get() );
+		setMatches( doc.get(), MatchOrigin::Linter, matches );
 
 		Log::info( "LinterPlugin::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
 				   "Warnings: %d, Notices: %d.",
@@ -481,33 +627,9 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		line.setStyleConfig( editor->getFontStyleConfig() );
 		line.setColor(
 			editor->getColorScheme().getEditorSyntaxStyle( getMatchString( match.type ) ).color );
-		const String& text = doc->line( index ).getText();
-		size_t minCol = text.find_first_not_of( " \t\f\v\n\r", match.pos.column() );
-		if ( minCol == String::InvalidPos )
-			minCol = match.pos.column();
-		minCol = std::max( (Int64)minCol, match.pos.column() );
-		if ( minCol >= text.size() )
-			minCol = match.pos.column();
-		if ( minCol >= text.size() )
-			minCol = text.size() - 1;
 
-		Int64 strSize = 0;
-		TextPosition endPos;
-		Vector2f pos;
-
-		if ( minCol < text.size() - 1 ) {
-			endPos = doc->nextWordBoundary( { match.pos.line(), (Int64)minCol } );
-			strSize = eemax( (Int64)0, static_cast<Int64>( endPos.column() - minCol ) );
-			pos = { position.x + editor->getXOffsetCol( { match.pos.line(), (Int64)minCol } ),
-					position.y };
-		} else {
-			endPos = doc->previousWordBoundary( { match.pos.line(), (Int64)minCol } );
-			strSize = eemax( (Int64)0, static_cast<Int64>( minCol - endPos.column() ) );
-			pos = { position.x +
-						editor->getXOffsetCol( { match.pos.line(), (Int64)endPos.column() } ),
-					position.y };
-		}
-
+		Int64 strSize = match.range.end().column() - match.range.start().column();
+		Vector2f pos = { position.x + editor->getXOffsetCol( match.range.start() ), position.y };
 		if ( strSize == 0 ) {
 			strSize = 1;
 			pos = { position.x, position.y };

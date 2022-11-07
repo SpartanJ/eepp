@@ -30,8 +30,8 @@ class EE_API SyntaxDefinition {
 					  const std::vector<SyntaxPattern>& patterns,
 					  const std::unordered_map<std::string, std::string>& symbols =
 						  std::unordered_map<std::string, std::string>(),
-					  const std::string& comment = "",
-					  const std::vector<std::string> headers = {} );
+					  const std::string& comment = "", const std::vector<std::string> headers = {},
+					  const std::string& lspName = "" );
 
 	const std::string& getLanguageName() const;
 
@@ -72,6 +72,8 @@ class EE_API SyntaxDefinition {
 
 	void clearSymbols();
 
+	const std::string& getLSPName() const;
+
   protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;
@@ -80,6 +82,7 @@ class EE_API SyntaxDefinition {
 	std::unordered_map<std::string, std::string> mSymbols;
 	std::string mComment;
 	std::vector<std::string> mHeaders;
+	std::string mLSPName;
 };
 
 }}} // namespace EE::UI::Doc

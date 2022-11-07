@@ -92,7 +92,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	size_t lspFilePatternPosition( const std::vector<LSPDefinition>& lsps,
 								   const std::vector<std::string>& patterns );
 
-	void processNotification( PluginManager::Notification, const nlohmann::json& );
+	void processNotification( const PluginManager::Notification& notification );
 };
 
 } // namespace ecode

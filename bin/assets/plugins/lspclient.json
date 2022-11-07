@@ -69,7 +69,8 @@
       "name": "rust-analyzer",
       "url": "https://rust-analyzer.github.io",
       "command": "rust-analyzer",
-      "file_patterns": ["%.rs$"]
+      "file_patterns": ["%.rs$"],
+      "rootIndicationFileNames": ["Cargo.lock", "Cargo.toml"]
     },
     {
       "language": "lua",

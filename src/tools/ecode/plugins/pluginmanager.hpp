@@ -1,6 +1,7 @@
 #ifndef ECODE_PLUGINMANAGER_HPP
 #define ECODE_PLUGINMANAGER_HPP
 
+#include "lsp/lspprotocol.hpp"
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -57,7 +58,19 @@ struct PluginDefinition {
 
 class PluginManager {
   public:
-	enum Notification { WorkspaceFolderChanged };
+	enum NotificationType { WorkspaceFolderChanged, PublishDiagnostics };
+	enum NotificationFormat { JSON, Diagnostics };
+	struct Notification {
+		NotificationType type;
+		NotificationFormat format;
+		void* data;
+
+		nlohmann::json& asJSON() const { return *static_cast<nlohmann::json*>( data ); }
+
+		LSPPublishDiagnosticsParams& asDiagnostics() const {
+			return *static_cast<LSPPublishDiagnosticsParams*>( data );
+		}
+	};
 
 	static constexpr int versionNumber( int major, int minor, int patch ) {
 		return ( (major)*1000 + (minor)*100 + ( patch ) );
@@ -104,12 +117,11 @@ class PluginManager {
 
 	void setWorkspaceFolder( const std::string& workspaceFolder );
 
-	void pushNotification( UICodeEditorPlugin* pluginWho, Notification,
-						   const nlohmann::json& ) const;
+	void pushNotification( UICodeEditorPlugin* pluginWho, NotificationType, NotificationFormat,
+						   void* data ) const;
 
-	void
-	subscribeNotifications( UICodeEditorPlugin* plugin,
-							std::function<void( Notification, const nlohmann::json& )> cb ) const;
+	void subscribeNotifications( UICodeEditorPlugin* plugin,
+								 std::function<void( const Notification& )> cb ) const;
 
 	void unsubscribeNotifications( UICodeEditorPlugin* plugin ) const;
 
@@ -123,14 +135,14 @@ class PluginManager {
 	std::map<std::string, PluginDefinition> mDefinitions;
 	std::shared_ptr<ThreadPool> mThreadPool;
 	UICodeEditorSplitter* mSplitter{ nullptr };
-	std::map<std::string, std::function<void( Notification, const nlohmann::json& )>>
-		mSubscribedPlugins;
+	std::map<std::string, std::function<void( const Notification& )>> mSubscribedPlugins;
 
 	bool hasDefinition( const std::string& id );
 
 	void setSplitter( UICodeEditorSplitter* splitter );
 
-	void sendNotification( const Notification& notification, const nlohmann::json& json = {} );
+	void sendNotification( const NotificationType& notification, const NotificationFormat& format,
+						   void* data );
 };
 
 class PluginsModel : public Model {

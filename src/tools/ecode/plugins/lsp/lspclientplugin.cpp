@@ -25,7 +25,7 @@ LSPClientPlugin::LSPClientPlugin( const PluginManager* pluginManager ) :
 LSPClientPlugin::~LSPClientPlugin() {
 	mClosing = true;
 	Lock l( mDocMutex );
-	for ( const auto &editor : mEditors ) {
+	for ( const auto& editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {
 			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
 			if ( editor.first->hasDocument() )
@@ -47,11 +47,10 @@ void LSPClientPlugin::update( UICodeEditor* ) {
 	mClientManager.updateDirty();
 }
 
-void LSPClientPlugin::processNotification( PluginManager::Notification noti,
-										   const nlohmann::json& obj ) {
-	switch ( noti ) {
+void LSPClientPlugin::processNotification( const PluginManager::Notification& notification ) {
+	switch ( notification.type ) {
 		case PluginManager::WorkspaceFolderChanged: {
-			mClientManager.didChangeWorkspaceFolders( obj["folder"] );
+			mClientManager.didChangeWorkspaceFolders( notification.asJSON()["folder"] );
 			break;
 		}
 		default:
@@ -61,7 +60,7 @@ void LSPClientPlugin::processNotification( PluginManager::Notification noti,
 
 void LSPClientPlugin::load( const PluginManager* pluginManager ) {
 	pluginManager->subscribeNotifications(
-		this, [&]( auto noti, auto obj ) { processNotification( noti, obj ); } );
+		this, [&]( const auto& notification ) { processNotification( notification ); } );
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/lspclient.json" );
 	if ( FileSystem::fileExists( path ) )
@@ -137,6 +136,28 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 	auto& servers = j["servers"];
 
 	for ( auto& obj : servers ) {
+		// Allow disabling an LSP by redeclaring it in the user configuration file.
+		if ( obj.contains( "name" ) && obj.contains( "disabled" ) &&
+			 obj.at( "disabled" ).is_boolean() ) {
+			for ( auto& lsp : lsps ) {
+				if ( lsp.name == obj["name"] ) {
+					lsp.disabled = obj["disabled"].get<bool>();
+					break;
+				}
+			}
+		}
+
+		// Allow setting user command paramaters for an already declared LSP
+		if ( obj.contains( "name" ) && obj.contains( "command_parameters" ) &&
+			 obj.at( "command_parameters" ).is_string() ) {
+			for ( auto& lsp : lsps ) {
+				if ( lsp.name == obj["name"] ) {
+					lsp.commandParameters = obj.value( "command_parameters", "" );
+					break;
+				}
+			}
+		}
+
 		if ( !obj.contains( "language" ) || !obj.contains( "file_patterns" ) ) {
 			Log::warning( "LSP server without language or file_patterns, ignored..." );
 			continue;
@@ -173,8 +194,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			lsp.name = obj["name"];
 		}
 
-		if ( obj.contains( "url" ) )
-			lsp.url = obj["url"];
+		lsp.url = obj.value( "url", "" );
+		lsp.commandParameters = obj.value( "command_parameters", lsp.commandParameters );
 
 		auto fp = obj["file_patterns"];
 

@@ -1,4 +1,5 @@
 #include "lspclientserver.hpp"
+#include "lspclientplugin.hpp"
 #include "lspclientservermanager.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
@@ -27,7 +28,7 @@ static const char* MEMBER_RESULT = "result";
 static const char* MEMBER_START = "start";
 static const char* MEMBER_END = "end";
 static const char* MEMBER_POSITION = "position";
-// static const char* MEMBER_POSITIONS = "positions";
+static const char* MEMBER_POSITIONS = "positions";
 static const char* MEMBER_LOCATION = "location";
 static const char* MEMBER_RANGE = "range";
 static const char* MEMBER_LINE = "line";
@@ -44,8 +45,8 @@ static const char* MEMBER_DIAGNOSTICS = "diagnostics";
 static const char* MEMBER_TARGET_URI = "targetUri";
 static const char* MEMBER_TARGET_RANGE = "targetRange";
 static const char* MEMBER_TARGET_SELECTION_RANGE = "targetSelectionRange";
-// static const char* MEMBER_PREVIOUS_RESULT_ID = "previousResultId";
-// static const char* MEMBER_QUERY = "query";
+static const char* MEMBER_PREVIOUS_RESULT_ID = "previousResultId";
+static const char* MEMBER_QUERY = "query";
 
 static json newRequest( const std::string& method, const json& params = json{} ) {
 	json j;
@@ -172,6 +173,20 @@ static json changeWorkspaceFoldersParams( const std::vector<LSPWorkspaceFolder>&
 static json textDocumentPositionParams( const URI& document, TextPosition pos ) {
 	auto params = textDocumentParams( document );
 	params[MEMBER_POSITION] = toJson( pos );
+	return params;
+}
+
+static json toJson( const std::vector<TextPosition>& positions ) {
+	json result;
+	for ( const auto& position : positions )
+		result.push_back( toJson( position ) );
+	return result;
+}
+
+static json textDocumentPositionsParams( const URI& document,
+										 const std::vector<TextPosition>& positions ) {
+	auto params = textDocumentParams( document );
+	params[MEMBER_POSITIONS] = toJson( positions );
 	return params;
 }
 
@@ -356,6 +371,37 @@ static std::vector<LSPSymbolInformation> parseDocumentSymbols( const json& resul
 	for ( const auto& info : symInfos )
 		parseSymbol( info, nullptr );
 	return ret;
+}
+
+static std::vector<LSPSymbolInformation> parseWorkspaceSymbols( const json& res ) {
+	std::vector<LSPSymbolInformation> symbols;
+	symbols.reserve( res.size() );
+
+	std::transform(
+		res.cbegin(), res.cend(), std::back_inserter( symbols ), []( const json& symbol ) {
+			LSPSymbolInformation symInfo;
+
+			const auto location = symbol.at( MEMBER_LOCATION );
+			const auto mrange = symbol.contains( MEMBER_RANGE ) ? symbol.at( MEMBER_RANGE )
+																: location.at( MEMBER_RANGE );
+
+			auto containerName = symbol.value( "containerName", "" );
+			if ( !containerName.empty() )
+				containerName.append( "::" );
+			symInfo.name = containerName + symbol.value( "name", "" );
+			symInfo.kind = (LSPSymbolKind)symbol.value( MEMBER_KIND, 1 );
+			symInfo.range = parseRange( mrange );
+			symInfo.url = URI( location.value( MEMBER_URI, "" ) );
+			symInfo.score = symbol.value( "score", 0.0 );
+			return symInfo;
+		} );
+
+	std::sort( symbols.begin(), symbols.end(),
+			   []( const LSPSymbolInformation& l, const LSPSymbolInformation& r ) {
+				   return l.score > r.score;
+			   } );
+
+	return symbols;
 }
 
 static LSPResponseError parseResponseError( const json& v ) {
@@ -611,6 +657,32 @@ static std::vector<LSPCompletionItem> parseDocumentCompletion( const json& resul
 	return ret;
 }
 
+static std::shared_ptr<LSPSelectionRange> parseSelectionRange( const json& selectionRange ) {
+	auto current = std::make_shared<LSPSelectionRange>( LSPSelectionRange{} );
+	std::shared_ptr<LSPSelectionRange> ret = current;
+	json selRange = std::move( selectionRange );
+
+	while ( selRange.is_object() ) {
+		current->range = parseRange( selRange[MEMBER_RANGE] );
+		if ( !selRange["parent"].is_object() ) {
+			current->parent = nullptr;
+			break;
+		}
+		selRange = selRange["parent"];
+		current->parent = std::make_shared<LSPSelectionRange>( LSPSelectionRange{} );
+		current = current->parent;
+	}
+	return ret;
+}
+
+static std::vector<std::shared_ptr<LSPSelectionRange>>
+parseSelectionRanges( const json& selectionRanges ) {
+	std::vector<std::shared_ptr<LSPSelectionRange>> ret;
+	for ( const auto& selectionRange : selectionRanges )
+		ret.push_back( parseSelectionRange( selectionRange ) );
+	return ret;
+}
+
 void LSPClientServer::initialize() {
 	json codeAction{ { "codeActionLiteralSupport",
 					   json{ { "codeActionKind", json{ { "valueSet", json::array() } } } } } };
@@ -735,7 +807,7 @@ LSPClientServer::RequestHandle LSPClientServer::cancel( int reqid ) {
 LSPClientServer::RequestHandle LSPClientServer::write( const json& msg, const JsonReplyHandler& h,
 													   const JsonReplyHandler& eh, const int id ) {
 	RequestHandle ret;
-	ret.mServer = this;
+	ret.server = this;
 
 	if ( !mProcess.isAlive() )
 		return ret;
@@ -746,7 +818,7 @@ LSPClientServer::RequestHandle LSPClientServer::write( const json& msg, const Js
 	// notification == no handler
 	if ( h ) {
 		ob[MEMBER_ID] = ++mLastMsgId;
-		ret.mId = mLastMsgId;
+		ret.id = mLastMsgId;
 		Lock l( mHandlersMutex );
 		mHandlers[mLastMsgId] = { h, eh };
 	} else if ( id ) {
@@ -907,6 +979,21 @@ LSPClientServer::documentSymbols( const URI& document,
 		} );
 }
 
+LSPClientServer::RequestHandle LSPClientServer::workspaceSymbol( const std::string& querySymbol,
+																 const JsonReplyHandler& h ) {
+	auto params = json{ { MEMBER_QUERY, querySymbol } };
+	return send( newRequest( "workspace/symbol", params ), h );
+}
+
+LSPClientServer::RequestHandle
+LSPClientServer::workspaceSymbol( const std::string& querySymbol,
+								  const SymbolInformationHandler& h ) {
+	return workspaceSymbol( querySymbol, [h]( const json& json ) {
+		if ( h )
+			h( parseWorkspaceSymbols( json ) );
+	} );
+}
+
 void fromJson( LSPWorkDoneProgressValue& value, const json& json ) {
 	if ( !json.empty() ) {
 		auto ob = json;
@@ -942,14 +1029,18 @@ static json newError( const LSPErrorCode& code, const std::string& msg ) {
 }
 
 void LSPClientServer::publishDiagnostics( const json& msg ) {
-	// should emmit event somewhere
-	auto res = parsePublishDiagnostics( msg[MEMBER_PARAMS] );
+	LSPPublishDiagnosticsParams res = parsePublishDiagnostics( msg[MEMBER_PARAMS] );
+	if ( mManager && mManager->getPluginManager() && mManager->getPlugin() ) {
+		mManager->getPluginManager()->pushNotification( mManager->getPlugin(),
+														PluginManager::PublishDiagnostics,
+														PluginManager::Diagnostics, &res );
+	}
 	Log::debug( "LSPClientServer::publishDiagnostics: %s - returned %zu items",
 				res.uri.toString().c_str(), res.diagnostics.size() );
 }
 
 void LSPClientServer::workDoneProgress( const LSPWorkDoneProgressParams& workDoneParams ) {
-	// should emmit event somewhere
+	// should emit event somewhere
 	Log::debug( "LSPClientServer::workDoneProgress: %s",
 				workDoneParams.token.is_string()
 					? workDoneParams.token.get<std::string>().c_str()
@@ -1187,11 +1278,6 @@ LSPClientServer::RequestHandle LSPClientServer::documentHover( const URI& docume
 	} );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentHover( TextDocument* doc,
-															   const HoverHandler& h ) {
-	return documentHover( doc->getURI(), doc->getSelection().start(), h );
-}
-
 LSPClientServer::RequestHandle LSPClientServer::documentCompletion( const URI& document,
 																	const TextPosition& pos,
 																	const JsonReplyHandler& h ) {
@@ -1208,4 +1294,38 @@ LSPClientServer::RequestHandle LSPClientServer::documentCompletion( const URI& d
 	} );
 }
 
+LSPClientServer::RequestHandle
+LSPClientServer::selectionRange( const URI& document, const std::vector<TextPosition>& positions,
+								 const JsonReplyHandler& h ) {
+	auto params = textDocumentPositionsParams( document, positions );
+	return send( newRequest( "textDocument/selectionRange", params ), h );
+}
+
+LSPClientServer::RequestHandle
+LSPClientServer::selectionRange( const URI& document, const std::vector<TextPosition>& positions,
+								 const SelectionRangeHandler& h ) {
+	return selectionRange( document, positions, [h]( const json& json ) {
+		if ( h )
+			h( parseSelectionRanges( json ) );
+	} );
+}
+
+LSPClientServer::RequestHandle
+LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
+											 const std::string& requestId, const TextRange& range,
+											 const JsonReplyHandler& h ) {
+	auto params = textDocumentParams( document );
+	// Delta
+	if ( delta && !requestId.empty() ) {
+		params[MEMBER_PREVIOUS_RESULT_ID] = requestId;
+		return send( newRequest( "textDocument/semanticTokens/full/delta", params ), h );
+	}
+	// Range
+	if ( range.isValid() ) {
+		params[MEMBER_RANGE] = toJson( range );
+		return send( newRequest( "textDocument/semanticTokens/range", params ), h );
+	}
+
+	return send( newRequest( "textDocument/semanticTokens/full", params ), h );
+}
 } // namespace ecode

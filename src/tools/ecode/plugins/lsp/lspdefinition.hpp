@@ -10,8 +10,10 @@ struct LSPDefinition {
 	std::string name;
 	std::vector<std::string> filePatterns;
 	std::string command;
+	std::string commandParameters;
 	std::vector<std::string> rootIndicationFileNames;
 	std::string url;
+	bool disabled{ false };
 };
 
 } // namespace ecode

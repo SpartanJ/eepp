@@ -656,7 +656,7 @@ void SyntaxDefinitionManager::addPython() {
 		   "#",
 		   { "^#!.*[ /]python", "^#!.*[ /]python3" } } );
 }
- void SyntaxDefinitionManager::addBash() {
+void SyntaxDefinitionManager::addBash() {
 	add( { "Bash",
 		   { "%.sh$", "%.bash$", "%.bashrc$", "%.bash_profile$" },
 		   {
@@ -682,7 +682,8 @@ void SyntaxDefinitionManager::addPython() {
 			   { "false", "literal" },
 		   },
 		   "#",
-		   { "^#!.*[ /]bash", "^#!.*[ /]sh" } } );
+		   { "^#!.*[ /]bash", "^#!.*[ /]sh" },
+		   "shellscript" } );
 }
 
 void SyntaxDefinitionManager::addCPP() {
@@ -833,7 +834,9 @@ void SyntaxDefinitionManager::addCPP() {
 			   { "Rectf", "keyword2" },
 			   { "NULL", "literal" },
 		   },
-		   "//" } );
+		   "//",
+		   {},
+		   "cpp" } );
 }
 
 void SyntaxDefinitionManager::addPHP() {
@@ -1352,7 +1355,8 @@ void SyntaxDefinitionManager::addIni() {
 			 { { "[a-z]+" }, "symbol" } },
 		   { { "true", "literal" }, { "false", "literal" } },
 		   "#",
-		   { "^%[.-%]%f[^\n]" } } );
+		   { "^%[.-%]%f[^\n]" },
+		   "ini" } );
 }
 
 void SyntaxDefinitionManager::addMakefile() {
@@ -1424,7 +1428,9 @@ void SyntaxDefinitionManager::addCSharp() {
 			 { "record", "keyword" },	 { "remove", "keyword" },	 { "partial", "keyword" },
 			 { "dynamic", "keyword" },	 { "value", "keyword" },	 { "global", "keyword" },
 			 { "when", "keyword" } },
-		   "//" } );
+		   "//",
+		   {},
+		   "csharp" } );
 }
 
 void SyntaxDefinitionManager::addGo() {
@@ -2170,7 +2176,9 @@ void SyntaxDefinitionManager::addBatchScript() {
 			   { { ":eof" }, "keyword" },
 		   },
 		   prepareBatchSymbols( batchSymTable ),
-		   "rem" } );
+		   "rem",
+		   {},
+		   "bat" } );
 }
 
 void SyntaxDefinitionManager::addDiff() {
@@ -2184,7 +2192,11 @@ void SyntaxDefinitionManager::addDiff() {
 			   { { "^@@.-\n" }, "number" },
 			   { { "^%+.-\n" }, "function" },
 			   { { "^%-.-\n" }, "keyword2" },
-		   } } );
+		   },
+		   {},
+		   "",
+		   {},
+		   "diff" } );
 }
 
 void SyntaxDefinitionManager::addJava() {
@@ -2992,7 +3004,9 @@ void SyntaxDefinitionManager::addContainerfile() {
 			   { "ENTRYPOINT", "function" },
 			   { "CMD", "function" },
 		   },
-		   "#" } );
+		   "#",
+		   {},
+		   "dockerfile" } );
 }
 
 void SyntaxDefinitionManager::addOdin() {

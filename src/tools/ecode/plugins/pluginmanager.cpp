@@ -104,23 +104,24 @@ const std::string& PluginManager::getWorkspaceFolder() const {
 
 void PluginManager::setWorkspaceFolder( const std::string& workspaceFolder ) {
 	mWorkspaceFolder = workspaceFolder;
-	sendNotification( Notification::WorkspaceFolderChanged,
-					  json{ { "folder", mWorkspaceFolder } } );
+	json data{ { "folder", mWorkspaceFolder } };
+	sendNotification( NotificationType::WorkspaceFolderChanged, NotificationFormat::JSON, &data );
 }
 
-void PluginManager::pushNotification( UICodeEditorPlugin* pluginWho, Notification notification,
-									  const nlohmann::json& json ) const {
+void PluginManager::pushNotification( UICodeEditorPlugin* pluginWho, NotificationType notification,
+									  NotificationFormat format, void* data ) const {
 	for ( const auto& plugin : mSubscribedPlugins )
 		if ( pluginWho->getId() != plugin.first )
-			plugin.second( notification, json );
+			plugin.second( { notification, format, data } );
 }
 
-void PluginManager::subscribeNotifications(
-	UICodeEditorPlugin* plugin,
-	std::function<void( Notification, const nlohmann::json& )> cb ) const {
+void PluginManager::subscribeNotifications( UICodeEditorPlugin* plugin,
+											std::function<void( const Notification& )> cb ) const {
 	const_cast<PluginManager*>( this )->mSubscribedPlugins[plugin->getId()] = cb;
-	if ( !mWorkspaceFolder.empty() )
-		cb( Notification::WorkspaceFolderChanged, json{ { "folder", mWorkspaceFolder } } );
+	if ( !mWorkspaceFolder.empty() ) {
+		json data{ { "folder", mWorkspaceFolder } };
+		cb( { NotificationType::WorkspaceFolderChanged, NotificationFormat::JSON, &data } );
+	}
 }
 
 void PluginManager::unsubscribeNotifications( UICodeEditorPlugin* plugin ) const {
@@ -131,10 +132,10 @@ void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {
 	mSplitter = splitter;
 }
 
-void PluginManager::sendNotification( const Notification& notification,
-									  const nlohmann::json& json ) {
+void PluginManager::sendNotification( const NotificationType& notification,
+									  const NotificationFormat& format, void* data ) {
 	for ( const auto& plugin : mSubscribedPlugins )
-		plugin.second( notification, json );
+		plugin.second( { notification, format, data } );
 }
 
 bool PluginManager::hasDefinition( const std::string& id ) {

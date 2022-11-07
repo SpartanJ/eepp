@@ -11,14 +11,16 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 									const std::vector<SyntaxPattern>& patterns,
 									const std::unordered_map<std::string, std::string>& symbols,
 									const std::string& comment,
-									const std::vector<std::string> headers ) :
+									const std::vector<std::string> headers,
+									const std::string& lspName ) :
 	mLanguageName( languageName ),
 	mLanguageId( String::hash( String::toLower( languageName ) ) ),
 	mFiles( files ),
 	mPatterns( patterns ),
 	mSymbols( symbols ),
 	mComment( comment ),
-	mHeaders( headers ) {}
+	mHeaders( headers ),
+	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {}
 
 const std::vector<std::string>& SyntaxDefinition::getFiles() const {
 	return mFiles;
@@ -107,6 +109,10 @@ void SyntaxDefinition::clearPatterns() {
 
 void SyntaxDefinition::clearSymbols() {
 	mSymbols.clear();
+}
+
+const std::string& SyntaxDefinition::getLSPName() const {
+	return mLSPName;
 }
 
 const std::string& SyntaxDefinition::getLanguageName() const {

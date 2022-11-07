@@ -1169,7 +1169,6 @@
 ../../src/tools/ecode/plugins/linter/linterplugin.hpp
 ../../src/tools/ecode/plugins/lsp/lspclientplugin.cpp
 ../../src/tools/ecode/plugins/lsp/lspclientplugin.hpp
-../../src/tools/ecode/plugins/lsp/lspclientprotocol.hpp
 ../../src/tools/ecode/plugins/lsp/lspclientserver.cpp
 ../../src/tools/ecode/plugins/lsp/lspclientserver.hpp
 ../../src/tools/ecode/plugins/lsp/lspclientservermanager.cpp
@@ -1177,6 +1176,7 @@
 ../../src/tools/ecode/plugins/lsp/lspdefinition.hpp
 ../../src/tools/ecode/plugins/lsp/lspdocumentclient.cpp
 ../../src/tools/ecode/plugins/lsp/lspdocumentclient.hpp
+../../src/tools/ecode/plugins/lsp/lspprotocol.hpp
 ../../src/tools/ecode/plugins/pluginmanager.cpp
 ../../src/tools/ecode/plugins/pluginmanager.hpp
 ../../src/tools/ecode/projectdirectorytree.cpp

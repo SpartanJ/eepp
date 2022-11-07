@@ -11,6 +11,7 @@ LSPClientServerManager::LSPClientServerManager() {}
 void LSPClientServerManager::load( LSPClientPlugin* plugin, const PluginManager* pluginManager,
 								   std::vector<LSPDefinition>&& lsps ) {
 	mPlugin = plugin;
+	mPluginManager = pluginManager;
 	mThreadPool = pluginManager->getThreadPool();
 	mLSPs = lsps;
 }
@@ -166,6 +167,14 @@ void LSPClientServerManager::getAndGoToLocation( const std::shared_ptr<TextDocum
 	auto* server = getOneLSPClientServer( doc );
 	if ( server )
 		server->getAndGoToLocation( doc->getURI(), doc->getSelection().start(), search );
+}
+
+const PluginManager* LSPClientServerManager::getPluginManager() const {
+	return mPluginManager;
+}
+
+LSPClientPlugin* LSPClientServerManager::getPlugin() const {
+	return mPlugin;
 }
 
 void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folder ) {

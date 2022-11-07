@@ -9,6 +9,9 @@ using namespace EE;
 using namespace EE::UI::Doc;
 using namespace EE::Network;
 
+// The LSP protocol will be consumed by any plugin, and it's not exclusive to the LSP plugin
+// The protocol should be taken as a reference on how to implement the comunication between plugins
+
 namespace ecode {
 
 enum class LSPErrorCode {
@@ -219,10 +222,6 @@ enum class LSPSymbolKind {
 	TypeParameter = 26,
 };
 
-enum class LSPSymbolTag : Uint8 {
-	Deprecated = 1,
-};
-
 struct LSPSymbolInformation {
 	LSPSymbolInformation() = default;
 	LSPSymbolInformation( const std::string& _name, LSPSymbolKind _kind, TextRange _range,
@@ -230,12 +229,11 @@ struct LSPSymbolInformation {
 		name( _name ), detail( _detail ), kind( _kind ), range( _range ) {}
 	std::string name;
 	std::string detail;
-	LSPSymbolKind kind;
+	LSPSymbolKind kind{ LSPSymbolKind::File };
 	URI url;
 	TextRange range;
 	TextRange selectionRange;
 	double score = 0.0;
-	LSPSymbolTag tags;
 	std::vector<LSPSymbolInformation> children;
 };
 
@@ -258,7 +256,6 @@ struct LSPHover {
 	std::vector<LSPMarkupContent> contents;
 	TextRange range;
 };
-
 
 enum class LSPCompletionItemKind {
 	Text = 1,
@@ -298,6 +295,11 @@ struct LSPCompletionItem {
 	std::string filterText;
 	LSPTextEdit textEdit;
 	std::vector<LSPTextEdit> additionalTextEdits;
+};
+
+struct LSPSelectionRange {
+	TextRange range;
+	std::shared_ptr<LSPSelectionRange> parent;
 };
 
 } // namespace ecode

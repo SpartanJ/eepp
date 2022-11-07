@@ -16,6 +16,8 @@ namespace ecode {
 
 enum class LinterType { Notice, Warning, Error };
 
+enum class MatchOrigin { Linter, Diagnostics };
+
 struct Linter {
 	std::vector<std::string> files;
 	std::vector<std::string> warningPattern;
@@ -36,10 +38,11 @@ struct Linter {
 
 struct LinterMatch {
 	std::string text;
-	TextPosition pos;
-	String::HashType lineCache;
-	std::map<UICodeEditor*, Rectf> box;
+	TextRange range;
 	LinterType type{ LinterType::Error };
+	String::HashType lineCache;
+	MatchOrigin origin{ MatchOrigin::Linter };
+	std::map<UICodeEditor*, Rectf> box;
 };
 
 class LinterPlugin : public UICodeEditorPlugin {
@@ -88,6 +91,10 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	void setDelayTime( const Time& delayTime );
 
+	bool getEnableLSPDiagnostics() const;
+
+	void setEnableLSPDiagnostics( bool enableLSPDiagnostics );
+
   protected:
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Linter> mLinters;
@@ -107,6 +114,8 @@ class LinterPlugin : public UICodeEditorPlugin {
 	bool mReady{ false };
 	bool mShuttingDown{ false };
 	bool mHoveringMatch{ false };
+	bool mEnableLSPDiagnostics{ true };
+	std::set<std::string> mLSPLanguagesDisabled;
 
 	LinterPlugin( const PluginManager* pluginManager );
 
@@ -130,6 +139,17 @@ class LinterPlugin : public UICodeEditorPlugin {
 	void loadLinterConfig( const std::string& path );
 
 	size_t linterFilePatternPosition( const std::vector<std::string>& patterns );
+
+	void processNotification( const PluginManager::Notification& notification );
+
+	TextDocument* getDocumentFromURI( const URI& uri );
+
+	void eraseMatchesFromOrigin( TextDocument* doc, const MatchOrigin& origin );
+
+	void insertMatches( TextDocument* doc, std::map<Int64, std::vector<LinterMatch>>& matches );
+
+	void setMatches( TextDocument* doc, const MatchOrigin& origin,
+					 std::map<Int64, std::vector<LinterMatch>>& matches );
 };
 
 } // namespace ecode
