@@ -203,6 +203,16 @@ LSPClientServerManager::getLSPClientServers( const std::shared_ptr<TextDocument>
 	return servers;
 }
 
+std::vector<LSPClientServer*> LSPClientServerManager::getLSPClientServers( const URI& uri ) {
+	std::vector<LSPClientServer*> servers;
+	Lock l( mClientsMutex );
+	for ( auto& server : mClients ) {
+		if ( server.second->hasDocument( uri ) )
+			servers.push_back( server.second.get() );
+	}
+	return servers;
+}
+
 LSPClientServer* LSPClientServerManager::getOneLSPClientServer( UICodeEditor* editor ) {
 	return getOneLSPClientServer( editor->getDocumentRef() );
 }
@@ -212,6 +222,15 @@ LSPClientServerManager::getOneLSPClientServer( const std::shared_ptr<TextDocumen
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
 		if ( server.second->hasDocument( doc.get() ) )
+			return server.second.get();
+	}
+	return nullptr;
+}
+
+LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const URI& uri ) {
+	Lock l( mClientsMutex );
+	for ( auto& server : mClients ) {
+		if ( server.second->hasDocument( uri ) )
 			return server.second.get();
 	}
 	return nullptr;

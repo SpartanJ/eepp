@@ -288,6 +288,7 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 		fromJson( caps.workspaceFolders, workspace["workspaceFolders"] );
 	}
 	caps.selectionRangeProvider = toBoolOrObject( json, "selectionRangeProvider" );
+	caps.ready = true;
 }
 
 static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
@@ -657,6 +658,54 @@ static std::vector<LSPCompletionItem> parseDocumentCompletion( const json& resul
 	return ret;
 }
 
+static LSPSignatureInformation parseSignatureInformation( const json& json ) {
+	LSPSignatureInformation info;
+
+	info.label = json.value( MEMBER_LABEL, "" );
+	info.documentation = parseMarkupContent( json.value( MEMBER_DOCUMENTATION, {} ) );
+	const auto& params = json.at( "parameters" );
+	for ( const auto& par : params ) {
+		auto label = par.at( MEMBER_LABEL );
+		int begin = -1, end = -1;
+		if ( label.is_array() ) {
+			auto& range = label;
+			if ( range.size() == 2 ) {
+				begin = range[0].get<int>();
+				end = range[1].get<int>();
+				if ( begin > (int)info.label.length() )
+					begin = -1;
+				if ( end > (int)info.label.length() )
+					end = -1;
+			}
+		} else {
+			auto sub = label.get<std::string>();
+			if ( sub.length() ) {
+				begin = info.label.find_first_of( sub );
+				if ( begin >= 0 )
+					end = begin + sub.length();
+			}
+		}
+		info.parameters.push_back( { begin, end } );
+	}
+	return info;
+}
+
+static LSPSignatureHelp parseSignatureHelp( const json& sig ) {
+	LSPSignatureHelp ret;
+	const auto& sigInfos = sig.at( "signatures" );
+	for ( const auto& info : sigInfos )
+		ret.signatures.push_back( parseSignatureInformation( info ) );
+	ret.activeSignature = sig.value( "activeSignature", 0 );
+	ret.activeParameter = sig.value( "activeParameter", 0 );
+	ret.activeSignature = eemin( eemax( ret.activeSignature, 0 ), (int)ret.signatures.size() );
+	ret.activeParameter = eemax( ret.activeParameter, 0 );
+	if ( !ret.signatures.empty() ) {
+		ret.activeParameter = eemin(
+			ret.activeParameter, (int)ret.signatures.at( ret.activeSignature ).parameters.size() );
+	}
+	return ret;
+}
+
 static std::shared_ptr<LSPSelectionRange> parseSelectionRange( const json& selectionRange ) {
 	auto current = std::make_shared<LSPSelectionRange>( LSPSelectionRange{} );
 	std::shared_ptr<LSPSelectionRange> ret = current;
@@ -729,7 +778,7 @@ void LSPClientServer::initialize() {
 
 	write(
 		newRequest( "initialize", params ),
-		[&]( const json& resp ) {
+		[&]( const IdType&, const json& resp ) {
 #ifndef EE_DEBUG
 			try {
 #endif
@@ -746,7 +795,7 @@ void LSPClientServer::initialize() {
 			write( newRequest( "initialized" ) );
 			sendQueuedMessages();
 		},
-		[&]( const json& ) {} );
+		[&]( const IdType&, const json& ) {} );
 }
 
 LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String::HashType& id,
@@ -795,18 +844,20 @@ const LSPServerCapabilities& LSPClientServer::getCapabilities() const {
 	return mCapabilities;
 }
 
-LSPClientServer::RequestHandle LSPClientServer::cancel( int reqid ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::cancel( int reqid ) {
 	Lock l( mHandlersMutex );
 	if ( mHandlers.erase( reqid ) > 0 ) {
 		auto params = json{ MEMBER_ID, reqid };
 		return write( newRequest( "$/cancelRequest", params ) );
 	}
-	return RequestHandle();
+	return LSPRequestHandle();
 }
 
-LSPClientServer::RequestHandle LSPClientServer::write( const json& msg, const JsonReplyHandler& h,
-													   const JsonReplyHandler& eh, const int id ) {
-	RequestHandle ret;
+LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
+														  const JsonReplyHandler& h,
+														  const JsonReplyHandler& eh,
+														  const int id ) {
+	LSPRequestHandle ret;
 	ret.server = this;
 
 	if ( !mProcess.isAlive() )
@@ -818,7 +869,7 @@ LSPClientServer::RequestHandle LSPClientServer::write( const json& msg, const Js
 	// notification == no handler
 	if ( h ) {
 		ob[MEMBER_ID] = ++mLastMsgId;
-		ret.id = mLastMsgId;
+		ret.mId = mLastMsgId;
 		Lock l( mHandlersMutex );
 		mHandlers[mLastMsgId] = { h, eh };
 	} else if ( id ) {
@@ -848,24 +899,24 @@ LSPClientServer::RequestHandle LSPClientServer::write( const json& msg, const Js
 	return ret;
 }
 
-LSPClientServer::RequestHandle LSPClientServer::send( const json& msg, const JsonReplyHandler& h,
-													  const JsonReplyHandler& eh ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::send( const json& msg, const JsonReplyHandler& h,
+														 const JsonReplyHandler& eh ) {
 	if ( mProcess.isAlive() ) {
 		return write( msg, h, eh );
 	} else {
 		Log::debug( "LSPClientServer server %s Send for non-running server: %s", mLSP.name.c_str(),
 					mLSP.name.c_str() );
 	}
-	return RequestHandle();
+	return LSPRequestHandle();
 }
 
-LSPClientServer::RequestHandle LSPClientServer::didOpen( const URI& document,
-														 const std::string& text, int version ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::didOpen( const URI& document,
+															const std::string& text, int version ) {
 	auto params = textDocumentParams( textDocumentItem( document, mLSP.language, text, version ) );
 	return send( newRequest( "textDocument/didOpen", params ) );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::didOpen( TextDocument* doc, int version ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::didOpen( TextDocument* doc, int version ) {
 	if ( doc->isDirty() ) {
 		IOStreamString text;
 		doc->save( text, true );
@@ -877,21 +928,21 @@ LSPClientServer::RequestHandle LSPClientServer::didOpen( TextDocument* doc, int 
 	}
 }
 
-LSPClientServer::RequestHandle LSPClientServer::didSave( const URI& document,
-														 const std::string& text ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::didSave( const URI& document,
+															const std::string& text ) {
 	auto params = textDocumentParams( document );
 	if ( !text.empty() )
 		params["text"] = text;
 	return send( newRequest( "textDocument/didSave", params ) );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::didSave( TextDocument* doc ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::didSave( TextDocument* doc ) {
 	return didSave( doc->getURI(), mCapabilities.textDocumentSync.save.includeText
 									   ? doc->getText().toUtf8()
 									   : "" );
 }
 
-LSPClientServer::RequestHandle
+LSPClientServer::LSPRequestHandle
 LSPClientServer::didChange( const URI& document, int version, const std::string& text,
 							const std::vector<DocumentContentChange>& change ) {
 	auto params = textDocumentParams( document, version );
@@ -899,14 +950,14 @@ LSPClientServer::didChange( const URI& document, int version, const std::string&
 	return send( newRequest( "textDocument/didChange", params ) );
 }
 
-LSPClientServer::RequestHandle
+LSPClientServer::LSPRequestHandle
 LSPClientServer::didChange( TextDocument* doc, const std::vector<DocumentContentChange>& change ) {
 	Lock l( mClientsMutex );
 	auto it = mClients.find( doc );
 	if ( it != mClients.end() )
 		return didChange( doc->getURI(), it->second->getVersion(),
 						  change.empty() ? doc->getText().toUtf8() : "", change );
-	return RequestHandle();
+	return LSPRequestHandle();
 }
 
 void LSPClientServer::updateDirty() {
@@ -928,16 +979,24 @@ bool LSPClientServer::hasDocument( TextDocument* doc ) const {
 	return std::find( mDocs.begin(), mDocs.end(), doc ) != mDocs.end();
 }
 
+bool LSPClientServer::hasDocument( const URI& uri ) const {
+	for ( const auto& doc : mDocs ) {
+		if ( doc->getURI() == uri )
+			return true;
+	}
+	return false;
+}
+
 bool LSPClientServer::hasDocuments() const {
 	return !mDocs.empty();
 }
 
-LSPClientServer::RequestHandle LSPClientServer::didClose( const URI& document ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::didClose( const URI& document ) {
 	auto params = textDocumentParams( document );
 	return send( newRequest( "textDocument/didClose", params ) );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::didClose( TextDocument* doc ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::didClose( TextDocument* doc ) {
 	auto ret = didClose( doc->getURI() );
 	Lock l( mClientsMutex );
 	if ( mClients.erase( doc ) > 0 ) {
@@ -956,41 +1015,41 @@ const std::shared_ptr<ThreadPool>& LSPClientServer::getThreadPool() const {
 	return mManager->getThreadPool();
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentSymbols( const URI& document,
-																 const JsonReplyHandler& h,
-																 const JsonReplyHandler& eh ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::documentSymbols( const URI& document,
+																	const JsonReplyHandler& h,
+																	const JsonReplyHandler& eh ) {
 	auto params = textDocumentParams( document );
 	return send( newRequest( "textDocument/documentSymbol", params ), h, eh );
 }
 
-LSPClientServer::RequestHandle
+LSPClientServer::LSPRequestHandle
 LSPClientServer::documentSymbols( const URI& document,
 								  const ReplyHandler<std::vector<LSPSymbolInformation>>& h,
 								  const ReplyHandler<LSPResponseError>& eh ) {
 	return documentSymbols(
 		document,
-		[h]( const json& json ) {
+		[h]( const IdType& id, const json& json ) {
 			if ( h )
-				h( parseDocumentSymbols( json ) );
+				h( id, parseDocumentSymbols( json ) );
 		},
-		[eh]( const json& json ) {
+		[eh]( const IdType& id, const json& json ) {
 			if ( eh )
-				eh( parseResponseError( json ) );
+				eh( id, parseResponseError( json ) );
 		} );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::workspaceSymbol( const std::string& querySymbol,
-																 const JsonReplyHandler& h ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::workspaceSymbol( const std::string& querySymbol,
+																	const JsonReplyHandler& h ) {
 	auto params = json{ { MEMBER_QUERY, querySymbol } };
 	return send( newRequest( "workspace/symbol", params ), h );
 }
 
-LSPClientServer::RequestHandle
+LSPClientServer::LSPRequestHandle
 LSPClientServer::workspaceSymbol( const std::string& querySymbol,
 								  const SymbolInformationHandler& h ) {
-	return workspaceSymbol( querySymbol, [h]( const json& json ) {
+	return workspaceSymbol( querySymbol, [h]( const IdType& id, const json& json ) {
 		if ( h )
-			h( parseWorkspaceSymbols( json ) );
+			h( id, parseWorkspaceSymbols( json ) );
 	} );
 }
 
@@ -1031,9 +1090,9 @@ static json newError( const LSPErrorCode& code, const std::string& msg ) {
 void LSPClientServer::publishDiagnostics( const json& msg ) {
 	LSPPublishDiagnosticsParams res = parsePublishDiagnostics( msg[MEMBER_PARAMS] );
 	if ( mManager && mManager->getPluginManager() && mManager->getPlugin() ) {
-		mManager->getPluginManager()->pushNotification( mManager->getPlugin(),
-														PluginManager::PublishDiagnostics,
-														PluginManager::Diagnostics, &res );
+		mManager->getPluginManager()->sendBroadcast( mManager->getPlugin(),
+													 PluginMessageType::Diagnostics,
+													 PluginMessageFormat::Diagnostics, &res );
 	}
 	Log::debug( "LSPClientServer::publishDiagnostics: %s - returned %zu items",
 				res.uri.toString().c_str(), res.diagnostics.size() );
@@ -1158,9 +1217,9 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 				auto& h = handler.second.first;
 				auto& eh = handler.second.second;
 				if ( res.contains( MEMBER_ERROR ) && eh ) {
-					eh( res[MEMBER_ERROR] );
+					eh( msgid, res[MEMBER_ERROR] );
 				} else {
-					h( res[MEMBER_RESULT] );
+					h( msgid, res[MEMBER_RESULT] );
 				}
 			} else {
 				Log::debug( "LSPClientServer::readStdOut server %s unexpected reply id: %d",
@@ -1202,36 +1261,37 @@ void LSPClientServer::goToLocation( const json& res ) {
 		mManager->goToLocation( locs.front() );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::getAndGoToLocation( const URI& document,
-																	const TextPosition& pos,
-																	const std::string& search ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::getAndGoToLocation( const URI& document,
+																	   const TextPosition& pos,
+																	   const std::string& search ) {
 	auto params = textDocumentPositionParams( document, pos );
-	return send( newRequest( search, params ), [this]( json res ) { goToLocation( res ); } );
+	return send( newRequest( search, params ),
+				 [this]( const IdType&, const json& res ) { goToLocation( res ); } );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentDefinition( const URI& document,
-																	const TextPosition& pos ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::documentDefinition( const URI& document,
+																	   const TextPosition& pos ) {
 	return getAndGoToLocation( document, pos, "textDocument/definition" );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentDeclaration( const URI& document,
-																	 const TextPosition& pos ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::documentDeclaration( const URI& document,
+																		const TextPosition& pos ) {
 	return getAndGoToLocation( document, pos, "textDocument/declaration" );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentTypeDefinition( const URI& document,
-																		const TextPosition& pos ) {
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentTypeDefinition( const URI& document, const TextPosition& pos ) {
 	return getAndGoToLocation( document, pos, "textDocument/typeDefinition" );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentImplementation( const URI& document,
-																		const TextPosition& pos ) {
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentImplementation( const URI& document, const TextPosition& pos ) {
 	return getAndGoToLocation( document, pos, "textDocument/implementation" );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::switchSourceHeader( const URI& document ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::switchSourceHeader( const URI& document ) {
 	return send( newRequest( "textDocument/switchSourceHeader", textDocumentURI( document ) ),
-				 [this]( json res ) {
+				 [this]( const IdType&, json res ) {
 					 if ( res.is_string() ) {
 						 mManager->goToLocation(
 							 { res.get<std::string>(), TextRange{ { 0, 0 }, { 0, 0 } } } );
@@ -1239,78 +1299,95 @@ LSPClientServer::RequestHandle LSPClientServer::switchSourceHeader( const URI& d
 				 } );
 }
 
-LSPClientServer::RequestHandle
+LSPClientServer::LSPRequestHandle
 LSPClientServer::didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
 											const std::vector<LSPWorkspaceFolder>& removed ) {
 	auto params = changeWorkspaceFoldersParams( added, removed );
 	return send( newRequest( "workspace/didChangeWorkspaceFolders", params ) );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentCodeAction(
+LSPClientServer::LSPRequestHandle LSPClientServer::documentCodeAction(
 	const URI& document, const TextRange& range, const std::vector<std::string>& kinds,
 	std::vector<LSPDiagnostic> diagnostics, const JsonReplyHandler& h ) {
 	auto params = codeActionParams( document, range, kinds, std::move( diagnostics ) );
 	return send( newRequest( "textDocument/codeAction", params ), h );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentCodeAction(
+LSPClientServer::LSPRequestHandle LSPClientServer::documentCodeAction(
 	const URI& document, const TextRange& range, const std::vector<std::string>& kinds,
 	std::vector<LSPDiagnostic> diagnostics, const CodeActionHandler& h ) {
-	return documentCodeAction( document, range, kinds, diagnostics, [h]( const json& json ) {
-		if ( h )
-			h( parseCodeAction( json ) );
-	} );
+	return documentCodeAction( document, range, kinds, diagnostics,
+							   [h]( const IdType& id, const json& json ) {
+								   if ( h )
+									   h( id, parseCodeAction( json ) );
+							   } );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentHover( const URI& document,
-															   const TextPosition& pos,
-															   const JsonReplyHandler& h ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::documentHover( const URI& document,
+																  const TextPosition& pos,
+																  const JsonReplyHandler& h ) {
 	auto params = textDocumentPositionParams( document, pos );
 	return send( newRequest( "textDocument/hover", params ), h );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentHover( const URI& document,
-															   const TextPosition& pos,
-															   const HoverHandler& h ) {
-	return documentHover( document, pos, [h]( const json& json ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::documentHover( const URI& document,
+																  const TextPosition& pos,
+																  const HoverHandler& h ) {
+	return documentHover( document, pos, [h]( const IdType& id, const json& json ) {
 		if ( h )
-			h( parseHover( json ) );
+			h( id, parseHover( json ) );
 	} );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentCompletion( const URI& document,
-																	const TextPosition& pos,
-																	const JsonReplyHandler& h ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::documentCompletion( const URI& document,
+																	   const TextPosition& pos,
+																	   const JsonReplyHandler& h ) {
 	auto params = textDocumentPositionParams( document, pos );
 	return send( newRequest( "textDocument/completion", params ), h );
 }
 
-LSPClientServer::RequestHandle LSPClientServer::documentCompletion( const URI& document,
-																	const TextPosition& pos,
-																	const CompletionHandler& h ) {
-	return documentCompletion( document, pos, [h]( const json& json ) {
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentCompletion( const URI& document, const TextPosition& pos,
+									 const CompletionHandler& h ) {
+	return documentCompletion( document, pos, [h]( const IdType& id, const json& json ) {
 		if ( h )
-			h( parseDocumentCompletion( json ) );
+			h( id, parseDocumentCompletion( json ) );
 	} );
 }
 
-LSPClientServer::RequestHandle
+LSPClientServer::LSPRequestHandle LSPClientServer::signatureHelp( const URI& document,
+																  const TextPosition& pos,
+																  const JsonReplyHandler& h ) {
+	auto params = textDocumentPositionParams( document, pos );
+	return send( newRequest( "textDocument/signatureHelp", params ), h );
+}
+
+LSPClientServer::LSPRequestHandle LSPClientServer::signatureHelp( const URI& document,
+																  const TextPosition& pos,
+																  const SignatureHelpHandler& h ) {
+	return signatureHelp( document, pos, [h]( const IdType& id, const json& json ) {
+		if ( h )
+			h( id, parseSignatureHelp( json ) );
+	} );
+}
+
+LSPClientServer::LSPRequestHandle
 LSPClientServer::selectionRange( const URI& document, const std::vector<TextPosition>& positions,
 								 const JsonReplyHandler& h ) {
 	auto params = textDocumentPositionsParams( document, positions );
 	return send( newRequest( "textDocument/selectionRange", params ), h );
 }
 
-LSPClientServer::RequestHandle
+LSPClientServer::LSPRequestHandle
 LSPClientServer::selectionRange( const URI& document, const std::vector<TextPosition>& positions,
 								 const SelectionRangeHandler& h ) {
-	return selectionRange( document, positions, [h]( const json& json ) {
+	return selectionRange( document, positions, [h]( const IdType& id, const json& json ) {
 		if ( h )
-			h( parseSelectionRanges( json ) );
+			h( id, parseSelectionRanges( json ) );
 	} );
 }
 
-LSPClientServer::RequestHandle
+LSPClientServer::LSPRequestHandle
 LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
 											 const std::string& requestId, const TextRange& range,
 											 const JsonReplyHandler& h ) {

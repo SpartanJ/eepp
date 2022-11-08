@@ -23,6 +23,9 @@ LSPClientPlugin::LSPClientPlugin( const PluginManager* pluginManager ) :
 }
 
 LSPClientPlugin::~LSPClientPlugin() {
+	mManager->sendResponse( this, PluginMessageType::LSPClientPlugin,
+							PluginMessageFormat::LSPClientPlugin, nullptr, -1 );
+
 	mClosing = true;
 	Lock l( mDocMutex );
 	for ( const auto& editor : mEditors ) {
@@ -47,20 +50,62 @@ void LSPClientPlugin::update( UICodeEditor* ) {
 	mClientManager.updateDirty();
 }
 
-void LSPClientPlugin::processNotification( const PluginManager::Notification& notification ) {
-	switch ( notification.type ) {
-		case PluginManager::WorkspaceFolderChanged: {
-			mClientManager.didChangeWorkspaceFolders( notification.asJSON()["folder"] );
+PluginRequestHandle LSPClientPlugin::processCodeCompletionRequest( const PluginMessage& msg ) {
+	if ( !msg.isRequest() || !msg.isJSON() )
+		return {};
+
+	const auto& data = msg.asJSON();
+	if ( !data.contains( "uri" ) || !data.contains( "position" ) )
+		return {};
+
+	TextPosition position( LSPConverter::fromJSON( data["position"] ) );
+	if ( !position.isValid() )
+		return {};
+
+	URI uri( data["uri"] );
+	auto server = mClientManager.getOneLSPClientServer( uri );
+	if ( !server )
+		return {};
+
+	auto ret = server->documentCompletion(
+		uri, position, [&]( const PluginIDType& id, const std::vector<LSPCompletionItem>& items ) {
+			mManager->sendResponse( this, PluginMessageType::CodeCompletion,
+									PluginMessageFormat::CodeCompletion, &items, id );
+		} );
+
+	return ret;
+}
+
+PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) {
+	switch ( msg.type ) {
+		case PluginMessageType::WorkspaceFolderChanged: {
+			mClientManager.didChangeWorkspaceFolders( msg.asJSON()["folder"] );
+			break;
+		}
+		case PluginMessageType::CodeCompletion: {
+			auto ret = processCodeCompletionRequest( msg );
+			if ( !ret.isEmpty() )
+				return ret;
+			break;
+		}
+		case PluginMessageType::LSPClientPlugin: {
+			if ( msg.isRequest() ) {
+				mManager->sendResponse( this, PluginMessageType::LSPClientPlugin,
+										PluginMessageFormat::LSPClientPlugin, this, -1 );
+				return PluginRequestHandle::broadcast();
+			}
 			break;
 		}
 		default:
 			break;
 	}
+	return PluginRequestHandle::empty();
 }
 
 void LSPClientPlugin::load( const PluginManager* pluginManager ) {
-	pluginManager->subscribeNotifications(
-		this, [&]( const auto& notification ) { processNotification( notification ); } );
+	pluginManager->subscribeMessages( this, [&]( const auto& notification ) -> PluginRequestHandle {
+		return processMessage( notification );
+	} );
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/lspclient.json" );
 	if ( FileSystem::fileExists( path ) )
@@ -92,8 +137,12 @@ void LSPClientPlugin::load( const PluginManager* pluginManager ) {
 		if ( mDocs.find( doc.first ) != mDocs.end() )
 			mClientManager.tryRunServer( doc.second );
 	mDelayedDocs.clear();
-	if ( mReady )
+	if ( mReady ) {
 		fireReadyCbs();
+
+		mManager->sendResponse( this, PluginMessageType::LSPClientPlugin,
+								PluginMessageFormat::LSPClientPlugin, this, -1 );
+	}
 }
 
 void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path ) {
@@ -372,7 +421,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 					return;
 				server->documentHover(
 					editor->getDocument().getURI(), currentMouseTextPosition( editor ),
-					[&, editor, position]( const LSPHover& resp ) {
+					[&, editor, position]( const Int64&, const LSPHover& resp ) {
 						if ( resp.range.isValid() && !resp.contents.empty() ) {
 							editor->runOnMainThread( [editor, resp, position, this]() {
 								TextPosition startCursorPosition =
@@ -423,6 +472,10 @@ const Time& LSPClientPlugin::getHoverDelay() const {
 
 void LSPClientPlugin::setHoverDelay( const Time& hoverDelay ) {
 	mHoverDelay = hoverDelay;
+}
+
+const LSPClientServerManager& LSPClientPlugin::getClientManager() const {
+	return mClientManager;
 }
 
 } // namespace ecode

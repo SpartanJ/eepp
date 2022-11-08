@@ -1,9 +1,10 @@
 ﻿#ifndef ECODE_LSPCLIENTSERVER_HPP
 #define ECODE_LSPCLIENTSERVER_HPP
 
-#include "lspprotocol.hpp"
+#include "../pluginmanager.hpp"
 #include "lspdefinition.hpp"
 #include "lspdocumentclient.hpp"
+#include "lspprotocol.hpp"
 #include <eepp/system/process.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/doc/undostack.hpp>
@@ -25,7 +26,8 @@ class LSPClientServerManager;
 
 class LSPClientServer {
   public:
-	template <typename T> using ReplyHandler = std::function<void( const T& )>;
+	using IdType = PluginIDType;
+	template <typename T> using ReplyHandler = std::function<void( const IdType& id, const T& )>;
 
 	using JsonReplyHandler = ReplyHandler<json>;
 	using CodeActionHandler = ReplyHandler<std::vector<LSPCodeAction>>;
@@ -33,19 +35,18 @@ class LSPClientServer {
 	using CompletionHandler = ReplyHandler<std::vector<LSPCompletionItem>>;
 	using SymbolInformationHandler = ReplyHandler<std::vector<LSPSymbolInformation>>;
 	using SelectionRangeHandler = ReplyHandler<std::vector<std::shared_ptr<LSPSelectionRange>>>;
+	using SignatureHelpHandler = ReplyHandler<LSPSignatureHelp>;
 
-	class RequestHandle {
+	class LSPRequestHandle : public PluginRequestHandle {
+	  public:
+		void cancel() {
+			if ( server && mId != 0 )
+				server->cancel( mId );
+		}
+
 	  private:
 		friend class LSPClientServer;
 		LSPClientServer* server;
-		int id = 0;
-
-	  public:
-		RequestHandle& cancel() {
-			if ( server )
-				server->cancel( id );
-			return *this;
-		}
 	};
 
 	LSPClientServer( LSPClientServerManager* manager, const String::HashType& id,
@@ -63,100 +64,111 @@ class LSPClientServer {
 
 	const std::shared_ptr<ThreadPool>& getThreadPool() const;
 
-	RequestHandle cancel( int id );
+	LSPRequestHandle cancel( int id );
 
-	RequestHandle send( const json& msg, const JsonReplyHandler& h = nullptr,
-						const JsonReplyHandler& eh = nullptr );
+	LSPRequestHandle send( const json& msg, const JsonReplyHandler& h = nullptr,
+						   const JsonReplyHandler& eh = nullptr );
 
 	const LSPDefinition& getDefinition() const { return mLSP; }
 
-	RequestHandle documentSymbols( const URI& document, const JsonReplyHandler& h,
-								   const JsonReplyHandler& eh );
+	LSPRequestHandle documentSymbols( const URI& document, const JsonReplyHandler& h,
+									  const JsonReplyHandler& eh );
 
-	RequestHandle documentSymbols( const URI& document,
-								   const ReplyHandler<std::vector<LSPSymbolInformation>>& h,
-								   const ReplyHandler<LSPResponseError>& eh );
+	LSPRequestHandle documentSymbols( const URI& document,
+									  const ReplyHandler<std::vector<LSPSymbolInformation>>& h,
+									  const ReplyHandler<LSPResponseError>& eh );
 
-	RequestHandle didOpen( const URI& document, const std::string& text, int version );
+	LSPRequestHandle didOpen( const URI& document, const std::string& text, int version );
 
-	RequestHandle didOpen( TextDocument* doc, int version );
+	LSPRequestHandle didOpen( TextDocument* doc, int version );
 
-	RequestHandle didSave( const URI& document, const std::string& text );
+	LSPRequestHandle didSave( const URI& document, const std::string& text );
 
-	RequestHandle didSave( TextDocument* doc );
+	LSPRequestHandle didSave( TextDocument* doc );
 
-	RequestHandle didClose( const URI& document );
+	LSPRequestHandle didClose( const URI& document );
 
-	RequestHandle didClose( TextDocument* document );
+	LSPRequestHandle didClose( TextDocument* document );
 
-	RequestHandle didChange( const URI& document, int version, const std::string& text,
-							 const std::vector<DocumentContentChange>& change = {} );
+	LSPRequestHandle didChange( const URI& document, int version, const std::string& text,
+								const std::vector<DocumentContentChange>& change = {} );
 
-	RequestHandle didChange( TextDocument* doc,
-							 const std::vector<DocumentContentChange>& change = {} );
+	LSPRequestHandle didChange( TextDocument* doc,
+								const std::vector<DocumentContentChange>& change = {} );
 
-	RequestHandle documentDefinition( const URI& document, const TextPosition& pos );
+	LSPRequestHandle documentDefinition( const URI& document, const TextPosition& pos );
 
-	RequestHandle documentDeclaration( const URI& document, const TextPosition& pos );
+	LSPRequestHandle documentDeclaration( const URI& document, const TextPosition& pos );
 
-	RequestHandle documentTypeDefinition( const URI& document, const TextPosition& pos );
+	LSPRequestHandle documentTypeDefinition( const URI& document, const TextPosition& pos );
 
-	RequestHandle documentImplementation( const URI& document, const TextPosition& pos );
+	LSPRequestHandle documentImplementation( const URI& document, const TextPosition& pos );
 
 	void updateDirty();
 
 	bool hasDocument( TextDocument* doc ) const;
 
+	bool hasDocument( const URI& uri ) const;
+
 	bool hasDocuments() const;
 
-	RequestHandle didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
-											 const std::vector<LSPWorkspaceFolder>& removed );
+	LSPRequestHandle didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
+												const std::vector<LSPWorkspaceFolder>& removed );
 
 	void publishDiagnostics( const json& msg );
 
 	void workDoneProgress( const LSPWorkDoneProgressParams& workDoneParams );
 
-	RequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
-									  const std::string& search );
+	LSPRequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
+										 const std::string& search );
 
-	RequestHandle switchSourceHeader( const URI& document );
+	LSPRequestHandle switchSourceHeader( const URI& document );
 
-	RequestHandle documentCodeAction( const URI& document, const TextRange& range,
-									  const std::vector<std::string>& kinds,
-									  std::vector<LSPDiagnostic> diagnostics,
-									  const JsonReplyHandler& h );
+	LSPRequestHandle documentCodeAction( const URI& document, const TextRange& range,
+										 const std::vector<std::string>& kinds,
+										 std::vector<LSPDiagnostic> diagnostics,
+										 const JsonReplyHandler& h );
 
-	RequestHandle documentCodeAction( const URI& document, const TextRange& range,
-									  const std::vector<std::string>& kinds,
-									  std::vector<LSPDiagnostic> diagnostics,
-									  const CodeActionHandler& h );
+	LSPRequestHandle documentCodeAction( const URI& document, const TextRange& range,
+										 const std::vector<std::string>& kinds,
+										 std::vector<LSPDiagnostic> diagnostics,
+										 const CodeActionHandler& h );
 
-	RequestHandle documentHover( const URI& document, const TextPosition& pos,
-								 const JsonReplyHandler& h );
+	LSPRequestHandle documentHover( const URI& document, const TextPosition& pos,
+									const JsonReplyHandler& h );
 
-	RequestHandle documentHover( const URI& document, const TextPosition& pos,
-								 const HoverHandler& h );
+	LSPRequestHandle documentHover( const URI& document, const TextPosition& pos,
+									const HoverHandler& h );
 
-	RequestHandle documentCompletion( const URI& document, const TextPosition& pos,
-									  const JsonReplyHandler& h );
+	LSPRequestHandle documentCompletion( const URI& document, const TextPosition& pos,
+										 const JsonReplyHandler& h );
 
-	RequestHandle documentCompletion( const URI& document, const TextPosition& pos,
-									  const CompletionHandler& h );
+	LSPRequestHandle documentCompletion( const URI& document, const TextPosition& pos,
+										 const CompletionHandler& h );
 
-	RequestHandle workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h );
+	LSPRequestHandle workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h );
 
-	RequestHandle workspaceSymbol( const std::string& querySymbol,
-								   const SymbolInformationHandler& h );
+	LSPRequestHandle workspaceSymbol( const std::string& querySymbol,
+									  const SymbolInformationHandler& h );
 
-	RequestHandle selectionRange( const URI& document, const std::vector<TextPosition>& positions,
-								  const JsonReplyHandler& h );
+	LSPRequestHandle selectionRange( const URI& document,
+									 const std::vector<TextPosition>& positions,
+									 const JsonReplyHandler& h );
 
-	RequestHandle selectionRange( const URI& document, const std::vector<TextPosition>& positions,
-								  const SelectionRangeHandler& h );
+	LSPRequestHandle selectionRange( const URI& document,
+									 const std::vector<TextPosition>& positions,
+									 const SelectionRangeHandler& h );
 
-	RequestHandle documentSemanticTokensFull( const URI& document, bool delta,
-											  const std::string& requestId, const TextRange& range,
-											  const JsonReplyHandler& h );
+	LSPRequestHandle documentSemanticTokensFull( const URI& document, bool delta,
+												 const std::string& requestId,
+												 const TextRange& range,
+												 const JsonReplyHandler& h );
+
+	LSPRequestHandle signatureHelp( const URI& document, const TextPosition& pos,
+									const JsonReplyHandler& h );
+
+	LSPRequestHandle signatureHelp( const URI& document, const TextPosition& pos,
+									const SignatureHelpHandler& h );
 
   protected:
 	LSPClientServerManager* mManager{ nullptr };
@@ -186,8 +198,8 @@ class LSPClientServer {
 
 	void readStdErr( const char* bytes, size_t n );
 
-	RequestHandle write( const json& msg, const JsonReplyHandler& h = nullptr,
-						 const JsonReplyHandler& eh = nullptr, const int id = 0 );
+	LSPRequestHandle write( const json& msg, const JsonReplyHandler& h = nullptr,
+							const JsonReplyHandler& eh = nullptr, const int id = 0 );
 
 	void initialize();
 

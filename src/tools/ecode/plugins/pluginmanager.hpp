@@ -56,22 +56,71 @@ struct PluginDefinition {
 	PluginVersion version;
 };
 
+enum class PluginMessageType {
+	WorkspaceFolderChanged, // Broadcast the workspace folder from the application to the plugins
+	Diagnostics,			// Broadcast a document diagnostics from the LSP Client
+	CodeCompletion,	 // Request the LSP Client to start a code completion in the requested document
+					 // and position
+	LSPClientPlugin, // Request and/or Broadcast the LSP Client
+	Undefined
+};
+
+enum class PluginMessageFormat { JSON, Diagnostics, CodeCompletion, LSPClientPlugin };
+
+using PluginIDType = Int64;
+
+class LSPClientPlugin;
+
+struct PluginMessage {
+	PluginMessageType type;
+	PluginMessageFormat format;
+	const void* data;
+	PluginIDType responseID{ 0 }; // 0 if it's not a response;
+
+	const nlohmann::json& asJSON() const { return *static_cast<const nlohmann::json*>( data ); }
+
+	bool isJSON() const { return format == PluginMessageFormat::JSON; }
+
+	const LSPPublishDiagnosticsParams& asDiagnostics() const {
+		return *static_cast<const LSPPublishDiagnosticsParams*>( data );
+	}
+
+	const std::vector<LSPCompletionItem>& asCodeCompletion() const {
+		return *static_cast<const std::vector<LSPCompletionItem>*>( data );
+	}
+
+	const LSPClientPlugin* asLSPClientPlugin() const {
+		return static_cast<const LSPClientPlugin*>( data );
+	}
+
+	bool isResponse() const { return -1 != responseID && 0 != responseID; }
+
+	bool isRequest() const { return -1 != responseID && 0 == responseID; }
+
+	bool isBroadcast() const { return -1 == responseID; }
+};
+
+class PluginRequestHandle {
+  public:
+	static PluginRequestHandle broadcast() { return PluginRequestHandle( -1 ); }
+
+	static PluginRequestHandle empty() { return PluginRequestHandle(); }
+
+	PluginRequestHandle() {}
+	PluginRequestHandle( int id ) : mId( id ) {}
+	virtual PluginIDType id() const { return mId; }
+	virtual void cancel() {}
+
+	bool isEmpty() const { return mId == 0; }
+
+	bool isBroadcast() const { return mId == -1; }
+
+  protected:
+	PluginIDType mId{ 0 };
+};
+
 class PluginManager {
   public:
-	enum NotificationType { WorkspaceFolderChanged, PublishDiagnostics };
-	enum NotificationFormat { JSON, Diagnostics };
-	struct Notification {
-		NotificationType type;
-		NotificationFormat format;
-		void* data;
-
-		nlohmann::json& asJSON() const { return *static_cast<nlohmann::json*>( data ); }
-
-		LSPPublishDiagnosticsParams& asDiagnostics() const {
-			return *static_cast<LSPPublishDiagnosticsParams*>( data );
-		}
-	};
-
 	static constexpr int versionNumber( int major, int minor, int patch ) {
 		return ( (major)*1000 + (minor)*100 + ( patch ) );
 	}
@@ -117,13 +166,23 @@ class PluginManager {
 
 	void setWorkspaceFolder( const std::string& workspaceFolder );
 
-	void pushNotification( UICodeEditorPlugin* pluginWho, NotificationType, NotificationFormat,
-						   void* data ) const;
+	PluginRequestHandle sendRequest( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+									 PluginMessageFormat format, const void* data ) const;
 
-	void subscribeNotifications( UICodeEditorPlugin* plugin,
-								 std::function<void( const Notification& )> cb ) const;
+	void sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+					   PluginMessageFormat format, const void* data,
+					   const PluginIDType& responseID ) const;
 
-	void unsubscribeNotifications( UICodeEditorPlugin* plugin ) const;
+	void sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType, PluginMessageFormat,
+						void* data ) const;
+
+	void sendBroadcast( const PluginMessageType& notification, const PluginMessageFormat& format,
+						void* data );
+
+	void subscribeMessages( UICodeEditorPlugin* plugin,
+							std::function<PluginRequestHandle( const PluginMessage& )> cb ) const;
+
+	void unsubscribeMessages( UICodeEditorPlugin* plugin ) const;
 
   protected:
 	friend class App;
@@ -135,14 +194,16 @@ class PluginManager {
 	std::map<std::string, PluginDefinition> mDefinitions;
 	std::shared_ptr<ThreadPool> mThreadPool;
 	UICodeEditorSplitter* mSplitter{ nullptr };
-	std::map<std::string, std::function<void( const Notification& )>> mSubscribedPlugins;
+	std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>
+		mSubscribedPlugins;
+	bool mClosing{ false };
 
 	bool hasDefinition( const std::string& id );
 
 	void setSplitter( UICodeEditorSplitter* splitter );
 
-	void sendNotification( const NotificationType& notification, const NotificationFormat& format,
-						   void* data );
+	PluginRequestHandle sendRequest( const PluginMessageType& notification,
+									 const PluginMessageFormat& format, void* data );
 };
 
 class PluginsModel : public Model {

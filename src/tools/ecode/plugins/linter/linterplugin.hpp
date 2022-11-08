@@ -140,7 +140,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	size_t linterFilePatternPosition( const std::vector<std::string>& patterns );
 
-	void processNotification( const PluginManager::Notification& notification );
+	PluginRequestHandle processMessage( const PluginMessage& notification );
 
 	TextDocument* getDocumentFromURI( const URI& uri );
 

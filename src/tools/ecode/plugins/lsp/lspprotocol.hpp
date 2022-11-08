@@ -80,6 +80,7 @@ struct LSPWorkspaceFoldersServerCapabilities {
 };
 
 struct LSPServerCapabilities {
+	bool ready = false;
 	LSPTextDocumentSyncOptions textDocumentSync;
 	bool hoverProvider = false;
 	LSPCompletionOptions completionProvider;
@@ -300,6 +301,33 @@ struct LSPCompletionItem {
 struct LSPSelectionRange {
 	TextRange range;
 	std::shared_ptr<LSPSelectionRange> parent;
+};
+
+struct LSPParameterInformation {
+	// offsets into overall signature label
+	// (-1 if invalid)
+	int start;
+	int end;
+};
+
+struct LSPSignatureInformation {
+	std::string label;
+	LSPMarkupContent documentation;
+	std::vector<LSPParameterInformation> parameters;
+};
+
+struct LSPSignatureHelp {
+	std::vector<LSPSignatureInformation> signatures;
+	int activeSignature;
+	int activeParameter;
+};
+
+struct LSPConverter {
+	static TextPosition fromJSON( const nlohmann::json& data ) {
+		if ( data.contains( "line" ) && data.contains( "character" ) )
+			return { data["line"].get<Int64>(), data["character"].get<Int64>() };
+		return {};
+	}
 };
 
 } // namespace ecode

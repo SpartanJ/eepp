@@ -249,18 +249,16 @@ void LinterPlugin::setMatches( TextDocument* doc, const MatchOrigin& origin,
 	invalidateEditors( doc );
 }
 
-void LinterPlugin::processNotification( const PluginManager::Notification& notification ) {
-	if ( !mEnableLSPDiagnostics ||
-		 notification.type != PluginManager::NotificationType::PublishDiagnostics ||
-		 notification.format != PluginManager::NotificationFormat::Diagnostics )
-		return;
+PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notification ) {
+	if ( !mEnableLSPDiagnostics || notification.type != PluginMessageType::Diagnostics ||
+		 notification.format != PluginMessageFormat::Diagnostics )
+		return PluginRequestHandle::empty();
 	const auto& diags = notification.asDiagnostics();
 	TextDocument* doc = getDocumentFromURI( diags.uri );
-	if ( doc == nullptr )
-		return;
-	if ( mLSPLanguagesDisabled.find( String::toLower(
-			 doc->getSyntaxDefinition().getLSPName() ) ) != mLSPLanguagesDisabled.end() )
-		return;
+	if ( doc == nullptr ||
+		 mLSPLanguagesDisabled.find( String::toLower( doc->getSyntaxDefinition().getLSPName() ) ) !=
+			 mLSPLanguagesDisabled.end() )
+		return PluginRequestHandle::empty();
 
 	std::map<Int64, std::vector<LinterMatch>> matches;
 
@@ -275,6 +273,7 @@ void LinterPlugin::processNotification( const PluginManager::Notification& notif
 	}
 
 	setMatches( doc, MatchOrigin::Diagnostics, matches );
+	return PluginRequestHandle::empty();
 }
 
 TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
@@ -286,8 +285,9 @@ TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
 }
 
 void LinterPlugin::load( const PluginManager* pluginManager ) {
-	pluginManager->subscribeNotifications(
-		this, [&]( const auto& notification ) { processNotification( notification ); } );
+	pluginManager->subscribeMessages( this, [&]( const auto& notification ) -> PluginRequestHandle {
+		return processMessage( notification );
+	} );
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/linters.json" );
 	if ( FileSystem::fileExists( path ) )

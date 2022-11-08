@@ -13,6 +13,7 @@ PluginManager::PluginManager( const std::string& resourcesPath, const std::strin
 	mResourcesPath( resourcesPath ), mPluginsPath( pluginsPath ), mThreadPool( pool ) {}
 
 PluginManager::~PluginManager() {
+	mClosing = true;
 	for ( auto& plugin : mPlugins )
 		eeDelete( plugin.second );
 }
@@ -105,26 +106,54 @@ const std::string& PluginManager::getWorkspaceFolder() const {
 void PluginManager::setWorkspaceFolder( const std::string& workspaceFolder ) {
 	mWorkspaceFolder = workspaceFolder;
 	json data{ { "folder", mWorkspaceFolder } };
-	sendNotification( NotificationType::WorkspaceFolderChanged, NotificationFormat::JSON, &data );
+	sendBroadcast( PluginMessageType::WorkspaceFolderChanged, PluginMessageFormat::JSON, &data );
 }
 
-void PluginManager::pushNotification( UICodeEditorPlugin* pluginWho, NotificationType notification,
-									  NotificationFormat format, void* data ) const {
+PluginRequestHandle PluginManager::sendRequest( UICodeEditorPlugin* pluginWho,
+												PluginMessageType type, PluginMessageFormat format,
+												const void* data ) const {
+	if ( mClosing )
+		return PluginRequestHandle::empty();
+	for ( const auto& plugin : mSubscribedPlugins ) {
+		if ( pluginWho->getId() != plugin.first ) {
+			auto handle = plugin.second( { type, format, data } );
+			if ( !handle.isEmpty() )
+				return handle;
+		}
+	}
+	return PluginRequestHandle::empty();
+}
+
+void PluginManager::sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+								  PluginMessageFormat format, const void* data,
+								  const PluginIDType& responseID ) const {
+	if ( mClosing )
+		return;
 	for ( const auto& plugin : mSubscribedPlugins )
 		if ( pluginWho->getId() != plugin.first )
-			plugin.second( { notification, format, data } );
+			plugin.second( { type, format, data, responseID } );
 }
 
-void PluginManager::subscribeNotifications( UICodeEditorPlugin* plugin,
-											std::function<void( const Notification& )> cb ) const {
+void PluginManager::sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+								   PluginMessageFormat format, void* data ) const {
+	if ( mClosing )
+		return;
+	for ( const auto& plugin : mSubscribedPlugins )
+		if ( pluginWho->getId() != plugin.first )
+			plugin.second( { type, format, data, -1 } );
+}
+
+void PluginManager::subscribeMessages(
+	UICodeEditorPlugin* plugin,
+	std::function<PluginRequestHandle( const PluginMessage& )> cb ) const {
 	const_cast<PluginManager*>( this )->mSubscribedPlugins[plugin->getId()] = cb;
 	if ( !mWorkspaceFolder.empty() ) {
 		json data{ { "folder", mWorkspaceFolder } };
-		cb( { NotificationType::WorkspaceFolderChanged, NotificationFormat::JSON, &data } );
+		cb( { PluginMessageType::WorkspaceFolderChanged, PluginMessageFormat::JSON, &data } );
 	}
 }
 
-void PluginManager::unsubscribeNotifications( UICodeEditorPlugin* plugin ) const {
+void PluginManager::unsubscribeMessages( UICodeEditorPlugin* plugin ) const {
 	const_cast<PluginManager*>( this )->mSubscribedPlugins.erase( plugin->getId() );
 }
 
@@ -132,8 +161,10 @@ void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {
 	mSplitter = splitter;
 }
 
-void PluginManager::sendNotification( const NotificationType& notification,
-									  const NotificationFormat& format, void* data ) {
+void PluginManager::sendBroadcast( const PluginMessageType& notification,
+								   const PluginMessageFormat& format, void* data ) {
+	if ( mClosing )
+		return;
 	for ( const auto& plugin : mSubscribedPlugins )
 		plugin.second( { notification, format, data } );
 }

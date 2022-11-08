@@ -41,9 +41,13 @@ class LSPClientServerManager {
 
 	std::vector<LSPClientServer*> getLSPClientServers( const std::shared_ptr<TextDocument>& doc );
 
+	std::vector<LSPClientServer*> getLSPClientServers( const URI& uri );
+
 	LSPClientServer* getOneLSPClientServer( UICodeEditor* editor );
 
 	LSPClientServer* getOneLSPClientServer( const std::shared_ptr<TextDocument>& doc );
+
+	LSPClientServer* getOneLSPClientServer( const URI& uri );
 
 	void getAndGoToLocation( const std::shared_ptr<TextDocument>& doc, const std::string& search );
 

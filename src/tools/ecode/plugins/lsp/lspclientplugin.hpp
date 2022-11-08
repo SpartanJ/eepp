@@ -64,6 +64,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	void setHoverDelay( const Time& hoverDelay );
 
+	const LSPClientServerManager& getClientManager() const;
+
   protected:
 	const PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -92,7 +94,9 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	size_t lspFilePatternPosition( const std::vector<LSPDefinition>& lsps,
 								   const std::vector<std::string>& patterns );
 
-	void processNotification( const PluginManager::Notification& notification );
+	PluginRequestHandle processMessage( const PluginMessage& msg );
+
+	PluginRequestHandle processCodeCompletionRequest( const PluginMessage& msg );
 };
 
 } // namespace ecode
