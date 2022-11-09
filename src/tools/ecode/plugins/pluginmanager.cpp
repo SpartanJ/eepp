@@ -135,7 +135,7 @@ void PluginManager::sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageTy
 }
 
 void PluginManager::sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType type,
-								   PluginMessageFormat format, void* data ) const {
+								   PluginMessageFormat format, const void* data ) const {
 	if ( mClosing )
 		return;
 	for ( const auto& plugin : mSubscribedPlugins )

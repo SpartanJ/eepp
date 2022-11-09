@@ -1,6 +1,7 @@
 #ifndef ECODE_LSPDOCUMENTCLIENT_HPP
 #define ECODE_LSPDOCUMENTCLIENT_HPP
 
+#include "../pluginmanager.hpp"
 #include <eepp/system/clock.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 
@@ -29,11 +30,7 @@ class LSPDocumentClient : public TextDocument::Client {
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* );
 	virtual void onDocumentMoved( TextDocument* );
 
-	bool isDirty() const;
-
 	void notifyOpen();
-
-	void resetDirty();
 
 	TextDocument* getDoc() const;
 
@@ -41,16 +38,10 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	int getVersion() const;
 
-	const std::vector<DocumentContentChange>& getDocChange() const;
-
-	void clearDocChange();
   protected:
 	LSPClientServer* mServer{ nullptr };
 	TextDocument* mDoc{ nullptr };
-	bool mModified{ false };
-	int mVersion{ 0 };
-	Clock mLastModified;
-	std::vector<DocumentContentChange> mDocChange;
+	PluginIDType mVersion{ 0 };
 };
 
 } // namespace ecode

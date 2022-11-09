@@ -12,6 +12,7 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <queue>
 
 using json = nlohmann::json;
 
@@ -96,6 +97,11 @@ class LSPClientServer {
 	LSPRequestHandle didChange( TextDocument* doc,
 								const std::vector<DocumentContentChange>& change = {} );
 
+	void queueDidChange( const URI& document, int version, const std::string& text,
+						 const std::vector<DocumentContentChange>& change = {} );
+
+	void processDidChangeQueue();
+
 	LSPRequestHandle documentDefinition( const URI& document, const TextPosition& pos );
 
 	LSPRequestHandle documentDeclaration( const URI& document, const TextPosition& pos );
@@ -103,8 +109,6 @@ class LSPClientServer {
 	LSPRequestHandle documentTypeDefinition( const URI& document, const TextPosition& pos );
 
 	LSPRequestHandle documentImplementation( const URI& document, const TextPosition& pos );
-
-	void updateDirty();
 
 	bool hasDocument( TextDocument* doc ) const;
 
@@ -191,6 +195,14 @@ class LSPClientServer {
 	std::string mReceive;
 	std::string mReceiveErr;
 	LSPServerCapabilities mCapabilities;
+
+	struct DidChangeQueue {
+		URI uri;
+		IdType version;
+		std::vector<DocumentContentChange> change;
+	};
+	std::queue<DidChangeQueue> mDidChangeQueue;
+	Mutex mDidChangeMutex;
 
 	int mLastMsgId{ -1 };
 

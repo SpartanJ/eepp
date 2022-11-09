@@ -1,6 +1,7 @@
 #ifndef ECODE_AUTOCOMPLETEPLUGIN_HPP
 #define ECODE_AUTOCOMPLETEPLUGIN_HPP
 
+#include "../lsp/lspprotocol.hpp"
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
@@ -73,6 +74,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void setDirty( bool dirty );
 
   protected:
+	const PluginManager* mManager{ nullptr };
 	std::string mSymbolPattern;
 	Rectf mBoxPadding;
 	std::shared_ptr<ThreadPool> mPool;
@@ -99,6 +101,8 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	std::vector<std::string> mSuggestions;
 	Uint32 mSuggestionsMaxVisible{ 8 };
 	UICodeEditor* mSuggestionsEditor{ nullptr };
+	std::map<std::string, LSPServerCapabilities> mCapabilities;
+	Mutex mCapabilitiesMutex;
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
@@ -121,6 +125,10 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void updateLangCache( const std::string& langName );
 
 	void pickSuggestion( UICodeEditor* editor );
+
+	PluginRequestHandle processResponse( const PluginMessage& msg );
+
+	void tryRequestCapabilities( UICodeEditor* editor );
 };
 
 } // namespace ecode

@@ -16,11 +16,11 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 LSPDocumentClient::~LSPDocumentClient() {}
 
 void LSPDocumentClient::onDocumentTextChanged( const DocumentContentChange& change ) {
-	mModified = true;
 	++mVersion;
-	if ( !change.text.empty() || change.range.start() != change.range.end() )
-		mDocChange.push_back( change );
-	mLastModified.restart();
+	// If several change event are being fired, the thread pool can't guaranteed that it will be
+	// executed in FIFO. Se we accumulate the events in a queue and fire them in correct order.
+	mServer->queueDidChange( mDoc->getURI(), mVersion, "", { change } );
+	mServer->getThreadPool()->run( [&, change]() { mServer->processDidChangeQueue(); } );
 }
 
 void LSPDocumentClient::onDocumentUndoRedo( const TextDocument::UndoRedo& /*eventType*/ ) {}
@@ -39,20 +39,12 @@ void LSPDocumentClient::onDocumentSaved( TextDocument* ) {
 }
 
 void LSPDocumentClient::onDocumentClosed( TextDocument* ) {
-	mServer->didClose( mDoc );
+	mServer->getThreadPool()->run( [&]() { mServer->didClose( mDoc ); } );
 }
 
 void LSPDocumentClient::onDocumentDirtyOnFileSystem( TextDocument* ) {}
 
 void LSPDocumentClient::onDocumentMoved( TextDocument* ) {}
-
-bool LSPDocumentClient::isDirty() const {
-	return mModified && mLastModified.getElapsedTime() > Milliseconds( 250.f );
-}
-
-void LSPDocumentClient::resetDirty() {
-	mModified = false;
-}
 
 TextDocument* LSPDocumentClient::getDoc() const {
 	return mDoc;
@@ -64,14 +56,6 @@ LSPClientServer* LSPDocumentClient::getServer() const {
 
 int LSPDocumentClient::getVersion() const {
 	return mVersion;
-}
-
-const std::vector<DocumentContentChange>& LSPDocumentClient::getDocChange() const {
-	return mDocChange;
-}
-
-void LSPDocumentClient::clearDocChange() {
-	mDocChange.clear();
 }
 
 void LSPDocumentClient::notifyOpen() {

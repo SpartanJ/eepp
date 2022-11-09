@@ -23,9 +23,6 @@ LSPClientPlugin::LSPClientPlugin( const PluginManager* pluginManager ) :
 }
 
 LSPClientPlugin::~LSPClientPlugin() {
-	mManager->sendResponse( this, PluginMessageType::LSPClientPlugin,
-							PluginMessageFormat::LSPClientPlugin, nullptr, -1 );
-
 	mClosing = true;
 	Lock l( mDocMutex );
 	for ( const auto& editor : mEditors ) {
@@ -88,11 +85,19 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 				return ret;
 			break;
 		}
-		case PluginMessageType::LSPClientPlugin: {
-			if ( msg.isRequest() ) {
-				mManager->sendResponse( this, PluginMessageType::LSPClientPlugin,
-										PluginMessageFormat::LSPClientPlugin, this, -1 );
-				return PluginRequestHandle::broadcast();
+		case PluginMessageType::LanguageServerCapabilities: {
+			if ( msg.isRequest() && msg.isJSON() ) {
+				const auto& data = msg.asJSON();
+				if ( !data.contains( "language" ) ) {
+					return {};
+				}
+				auto server = mClientManager.getOneLSPClientServer( msg.asJSON()["language"] );
+				if ( server ) {
+					mManager->sendBroadcast( this, PluginMessageType::LanguageServerCapabilities,
+											 PluginMessageFormat::LanguageServerCapabilities,
+											 &server->getCapabilities() );
+					return PluginRequestHandle::broadcast();
+				}
 			}
 			break;
 		}
@@ -137,12 +142,8 @@ void LSPClientPlugin::load( const PluginManager* pluginManager ) {
 		if ( mDocs.find( doc.first ) != mDocs.end() )
 			mClientManager.tryRunServer( doc.second );
 	mDelayedDocs.clear();
-	if ( mReady ) {
+	if ( mReady )
 		fireReadyCbs();
-
-		mManager->sendResponse( this, PluginMessageType::LSPClientPlugin,
-								PluginMessageFormat::LSPClientPlugin, this, -1 );
-	}
 }
 
 void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path ) {

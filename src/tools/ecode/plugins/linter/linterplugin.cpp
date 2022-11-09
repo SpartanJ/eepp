@@ -110,6 +110,22 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 					e.what() );
 			}
 		}
+		if ( config.contains( "disable_languages" ) && config["disable_languages"].is_array() ) {
+			const auto& langs = config["disable_languages"];
+			try {
+				mLanguagesDisabled.clear();
+				for ( const auto& lang : langs ) {
+					if ( lang.is_string() ) {
+						std::string lg = lang.get<std::string>();
+						if ( !lg.empty() )
+							mLanguagesDisabled.insert( lg );
+					}
+				}
+			} catch ( const json::exception& e ) {
+				Log::debug( "LinterPlugin::loadLinterConfig: Error parsing disable_languages: %s",
+							e.what() );
+			}
+		}
 	}
 
 	if ( !j.contains( "linters" ) )
@@ -404,6 +420,11 @@ void LinterPlugin::setEnableLSPDiagnostics( bool enableLSPDiagnostics ) {
 }
 
 void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
+	if ( !mLanguagesDisabled.empty() &&
+		 mLanguagesDisabled.find( doc->getSyntaxDefinition().getLSPName() ) !=
+			 mLanguagesDisabled.end() )
+		return;
+
 	ScopedOp op(
 		[&]() {
 			mWorkMutex.lock();
@@ -627,7 +648,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		auto& match = matches[i];
 
 		bool isDuplicate = false;
-		if ( i > 1 ) {
+		if ( i > 0 ) {
 			for ( size_t p = 0; p < i; ++p ) {
 				if ( matches[p].range == match.range ) {
 					isDuplicate = true;

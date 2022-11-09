@@ -790,7 +790,7 @@ void LSPClientServer::initialize() {
 					mLSP.name.c_str(), e.what() );
 			}
 #endif
-
+			mCapabilities.language = mLSP.language;
 			mReady = true;
 			write( newRequest( "initialized" ) );
 			sendQueuedMessages();
@@ -960,18 +960,18 @@ LSPClientServer::didChange( TextDocument* doc, const std::vector<DocumentContent
 	return LSPRequestHandle();
 }
 
-void LSPClientServer::updateDirty() {
-	Lock l( mClientsMutex );
-	for ( auto& client : mClients ) {
-		if ( client.second->isDirty() ) {
-			TextDocument* doc = client.first;
-			LSPDocumentClient* docClient = client.second.get();
-			mManager->getThreadPool()->run( [this, doc, docClient]() {
-				didChange( doc, docClient->getDocChange() );
-				docClient->clearDocChange();
-			} );
-			client.second->resetDirty();
-		}
+void LSPClientServer::queueDidChange( const URI& document, int version, const std::string&,
+									  const std::vector<DocumentContentChange>& change ) {
+	Lock l( mDidChangeMutex );
+	mDidChangeQueue.push( { document, version, change } );
+}
+
+void LSPClientServer::processDidChangeQueue() {
+	Lock l( mDidChangeMutex );
+	while ( !mDidChangeQueue.empty() ) {
+		auto& change = mDidChangeQueue.front();
+		didChange( change.uri, change.version, "", change.change );
+		mDidChangeQueue.pop();
 	}
 }
 

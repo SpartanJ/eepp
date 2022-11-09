@@ -59,13 +59,14 @@ struct PluginDefinition {
 enum class PluginMessageType {
 	WorkspaceFolderChanged, // Broadcast the workspace folder from the application to the plugins
 	Diagnostics,			// Broadcast a document diagnostics from the LSP Client
-	CodeCompletion,	 // Request the LSP Client to start a code completion in the requested document
-					 // and position
-	LSPClientPlugin, // Request and/or Broadcast the LSP Client
+	CodeCompletion, // Request the LSP Client to start a code completion in the requested document
+					// and position
+	LanguageServerCapabilities, // Request the language server capabilities of a language if there
+								// is any available, it will be returned as a broadcast
 	Undefined
 };
 
-enum class PluginMessageFormat { JSON, Diagnostics, CodeCompletion, LSPClientPlugin };
+enum class PluginMessageFormat { JSON, Diagnostics, CodeCompletion, LanguageServerCapabilities };
 
 using PluginIDType = Int64;
 
@@ -89,8 +90,8 @@ struct PluginMessage {
 		return *static_cast<const std::vector<LSPCompletionItem>*>( data );
 	}
 
-	const LSPClientPlugin* asLSPClientPlugin() const {
-		return static_cast<const LSPClientPlugin*>( data );
+	const LSPServerCapabilities& asLanguageServerCapabilities() const {
+		return *static_cast<const LSPServerCapabilities*>( data );
 	}
 
 	bool isResponse() const { return -1 != responseID && 0 != responseID; }
@@ -174,7 +175,7 @@ class PluginManager {
 					   const PluginIDType& responseID ) const;
 
 	void sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType, PluginMessageFormat,
-						void* data ) const;
+						const void* data ) const;
 
 	void sendBroadcast( const PluginMessageType& notification, const PluginMessageFormat& format,
 						void* data );

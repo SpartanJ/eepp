@@ -151,8 +151,6 @@ void LSPClientServerManager::updateDirty() {
 	{
 		Lock l( mClientsMutex );
 		for ( auto& server : mClients ) {
-			server.second->updateDirty();
-
 			if ( !server.second->hasDocuments() )
 				mLSPsToClose.push_back( server.first );
 		}
@@ -234,6 +232,27 @@ LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const URI& uri )
 			return server.second.get();
 	}
 	return nullptr;
+}
+
+LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const std::string& language ) {
+	std::vector<LSPClientServer*> servers;
+	Lock l( mClientsMutex );
+	for ( auto& server : mClients ) {
+		if ( server.second->getDefinition().language == language )
+			return server.second.get();
+	}
+	return nullptr;
+}
+
+std::vector<LSPClientServer*>
+LSPClientServerManager::getLSPClientServers( const std::string& language ) {
+	std::vector<LSPClientServer*> servers;
+	Lock l( mClientsMutex );
+	for ( auto& server : mClients ) {
+		if ( server.second->getDefinition().language == language )
+			servers.push_back( server.second.get() );
+	}
+	return servers;
 }
 
 } // namespace ecode

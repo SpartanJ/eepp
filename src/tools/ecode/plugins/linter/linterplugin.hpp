@@ -116,6 +116,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 	bool mShuttingDown{ false };
 	bool mHoveringMatch{ false };
 	bool mEnableLSPDiagnostics{ true };
+	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
 
 	LinterPlugin( const PluginManager* pluginManager );

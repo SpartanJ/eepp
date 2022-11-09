@@ -1,11 +1,14 @@
 #include "autocompleteplugin.hpp"
+#include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <nlohmann/json.hpp>
 using namespace EE::Graphics;
 using namespace EE::System;
+using json = nlohmann::json;
 
 namespace ecode {
 
@@ -20,10 +23,15 @@ UICodeEditorPlugin* AutoCompletePlugin::New( const PluginManager* pluginManager 
 }
 
 AutoCompletePlugin::AutoCompletePlugin( const PluginManager* pluginManager ) :
+	mManager( pluginManager ),
 	mSymbolPattern( "[%a_ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_"
 					"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
 	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 4, 4 ) ) ),
-	mPool( pluginManager->getThreadPool() ) {}
+	mPool( pluginManager->getThreadPool() ) {
+	mManager->subscribeMessages( this, [&]( const PluginMessage& msg ) -> PluginRequestHandle {
+		return processResponse( msg );
+	} );
+}
 
 AutoCompletePlugin::~AutoCompletePlugin() {
 	mClosing = true;
@@ -40,8 +48,11 @@ AutoCompletePlugin::~AutoCompletePlugin() {
 void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	std::vector<Uint32> listeners;
-	listeners.push_back( editor->addEventListener( Event::OnDocumentLoaded,
-												   [&]( const Event* ) { mDirty = true; } ) );
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
+			mDirty = true;
+			tryRequestCapabilities( editor );
+		} ) );
 
 	listeners.push_back(
 		editor->addEventListener( Event::OnDocumentClosed, [&]( const Event* event ) {
@@ -170,8 +181,23 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 	return false;
 }
 
-bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent& ) {
+bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent& event ) {
 	std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
+
+	auto lang = editor->getDocumentRef()->getSyntaxDefinition().getLSPName();
+	auto cap = mCapabilities.find( lang );
+	if ( cap != mCapabilities.end() ) {
+		const auto& triggerCharacters = cap->second.completionProvider.triggerCharacters;
+		if ( partialSymbol.size() >= 1 ||
+			 std::find( triggerCharacters.begin(), triggerCharacters.end(), event.getChar() ) !=
+				 triggerCharacters.end() ) {
+			updateSuggestions( partialSymbol, editor );
+		} else {
+			resetSuggestions( editor );
+		}
+		return false;
+	}
+
 	if ( partialSymbol.size() >= 3 ) {
 		updateSuggestions( partialSymbol, editor );
 	} else {
@@ -223,6 +249,43 @@ void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 	editor->getDocument().textInput( mSuggestions[mSuggestionIndex] );
 	mReplacing = false;
 	resetSuggestions( editor );
+}
+
+PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& msg ) {
+	if ( msg.isResponse() && msg.type == PluginMessageType::CodeCompletion ) {
+		auto completion = msg.asCodeCompletion();
+		std::vector<std::string> suggestions;
+		for ( const auto& item : completion ) {
+			if ( !item.textEdit.text.empty() )
+				suggestions.push_back( item.textEdit.text );
+			else if ( !item.label.empty() )
+				suggestions.push_back( item.label );
+			else
+				suggestions.push_back( item.filterText );
+		}
+		if ( suggestions.empty() )
+			return {};
+		Lock l( mSuggestionsMutex );
+		mSuggestions = suggestions;
+	} else if ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerCapabilities ) {
+		if ( msg.asLanguageServerCapabilities().ready ) {
+			LSPServerCapabilities cap = msg.asLanguageServerCapabilities();
+			Lock l( mCapabilitiesMutex );
+			mCapabilities[cap.language] = std::move( cap );
+		}
+	}
+	return {};
+}
+
+void AutoCompletePlugin::tryRequestCapabilities( UICodeEditor* editor ) {
+	const auto& language = editor->getDocumentRef()->getSyntaxDefinition().getLSPName();
+	auto it = mCapabilities.find( language );
+	if ( it != mCapabilities.end() )
+		return;
+	json data;
+	data["language"] = language;
+	mManager->sendRequest( this, PluginMessageType::LanguageServerCapabilities,
+						   PluginMessageFormat::JSON, &data );
 }
 
 std::string AutoCompletePlugin::getPartialSymbol( TextDocument* doc ) {
@@ -440,6 +503,16 @@ static std::vector<std::string> fuzzyMatchSymbols( const AutoCompletePlugin::Sym
 void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
 											   const SymbolsList& symbols, UICodeEditor* editor ) {
 	{
+		tryRequestCapabilities( editor );
+		json data;
+		auto doc = editor->getDocumentRef();
+		auto sel = doc->getSelection();
+		data["uri"] = doc->getURI().toString();
+		data["position"] = { { "line", sel.start().line() },
+							 { "character", sel.start().column() } };
+		mManager->sendRequest( this, PluginMessageType::CodeCompletion, PluginMessageFormat::JSON,
+							   &data );
+
 		Lock l( mLangSymbolsMutex );
 		Lock l2( mSuggestionsMutex );
 		mSuggestions = fuzzyMatchSymbols( symbols, symbol, mSuggestionsMaxVisible );
