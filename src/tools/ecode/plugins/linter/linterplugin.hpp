@@ -96,6 +96,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 	void setEnableLSPDiagnostics( bool enableLSPDiagnostics );
 
   protected:
+	const PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Linter> mLinters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;

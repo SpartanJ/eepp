@@ -27,7 +27,7 @@ UICodeEditorPlugin* LinterPlugin::New( const PluginManager* pluginManager ) {
 }
 
 LinterPlugin::LinterPlugin( const PluginManager* pluginManager ) :
-	mPool( pluginManager->getThreadPool() ) {
+	mManager( pluginManager ), mPool( pluginManager->getThreadPool() ) {
 #if LINTER_THREADED
 	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 #else
@@ -454,7 +454,8 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 	std::string cmd( linter.command );
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
 	Process process;
-	if ( process.create( cmd, Process::getDefaultOptions() | Process::CombinedStdoutStderr ) ) {
+	if ( process.create( cmd, Process::getDefaultOptions() | Process::CombinedStdoutStderr, {},
+						 mManager->getWorkspaceFolder() ) ) {
 		std::string buffer( 1024, '\0' );
 		std::string data;
 		unsigned bytesRead = 0;
@@ -524,7 +525,9 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 						if ( linter.columnsStartAtZero )
 							col++;
 					}
-					linterMatch.range.setStart( { line - 1, col > 0 ? col - 1 : 0 } );
+
+					linterMatch.range.setStart(
+						{ line > 0 ? line - 1 : 0, col > 0 ? col - 1 : 0 } );
 
 					const String& text = doc->line( linterMatch.range.start().line() ).getText();
 					size_t minCol =
@@ -619,9 +622,26 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		return;
 	TextDocument* doc = matchIt->first;
 	std::vector<LinterMatch>& matches = lineIt->second;
-	for ( auto& match : matches ) {
+
+	for ( size_t i = 0; i < matches.size(); ++i ) {
+		auto& match = matches[i];
+
+		bool isDuplicate = false;
+		if ( i > 1 ) {
+			for ( size_t p = 0; p < i; ++p ) {
+				if ( matches[p].range == match.range ) {
+					isDuplicate = true;
+					break;
+				}
+			}
+		}
+
+		if ( isDuplicate )
+			continue;
+
 		if ( match.lineCache != doc->line( index ).getHash() )
 			return;
+
 		Text line( "", editor->getFont(), editor->getFontSize() );
 		line.setTabWidth( editor->getTabWidth() );
 		line.setStyleConfig( editor->getFontStyleConfig() );
