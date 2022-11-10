@@ -155,9 +155,11 @@ void LSPClientServerManager::updateDirty() {
 				mLSPsToClose.push_back( server.first );
 		}
 	}
-	if ( !mLSPsToClose.empty() )
+	if ( !mLSPsToClose.empty() ) {
 		for ( const auto& server : mLSPsToClose )
 			closeLSPServer( server );
+		mLSPsToClose.clear();
+	}
 }
 
 void LSPClientServerManager::getAndGoToLocation( const std::shared_ptr<TextDocument>& doc,

@@ -18,6 +18,29 @@ namespace ecode {
 #define AUTO_COMPLETE_THREADED 0
 #endif
 
+static std::vector<std::string>
+fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& symbolsVec,
+				   const std::string& match, const size_t& max ) {
+	std::multimap<int, std::string, std::greater<int>> matchesMap;
+	std::vector<std::string> matches;
+	int score;
+	for ( const auto& symbols : symbolsVec ) {
+		for ( const auto& symbol : *symbols ) {
+			if ( ( score = String::fuzzyMatch( symbol, match ) ) > 0 ) {
+				matchesMap.insert( { score, symbol } );
+			}
+		}
+	}
+	std::string prevMatch;
+	for ( auto& res : matchesMap ) {
+		if ( matches.size() < max ) {
+			if ( std::find( matches.begin(), matches.end(), res.second ) == matches.end() )
+				matches.emplace_back( res.second );
+		}
+	}
+	return matches;
+}
+
 UICodeEditorPlugin* AutoCompletePlugin::New( const PluginManager* pluginManager ) {
 	return eeNew( AutoCompletePlugin, ( pluginManager ) );
 }
@@ -35,6 +58,7 @@ AutoCompletePlugin::AutoCompletePlugin( const PluginManager* pluginManager ) :
 
 AutoCompletePlugin::~AutoCompletePlugin() {
 	mClosing = true;
+	mManager->unsubscribeMessages( this );
 	Lock l( mDocMutex );
 	Lock l2( mLangSymbolsMutex );
 	Lock l3( mSuggestionsMutex );
@@ -127,21 +151,31 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 
 bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
 	if ( !mSuggestions.empty() ) {
-		int max = eemin<int>( mSuggestionsMaxVisible, mSuggestions.size() );
 		if ( event.getKeyCode() == KEY_DOWN ) {
-			if ( mSuggestionIndex + 1 < max ) {
-				mSuggestionIndex += 1;
+			if ( mSuggestionIndex + 1 < (int)mSuggestions.size() ) {
+				mSuggestionIndex++;
+				if ( mSuggestionIndex < mSuggestionsStartIndex )
+					mSuggestionsStartIndex = mSuggestionIndex;
+				else if ( mSuggestionIndex > mSuggestionsStartIndex + mSuggestionsMaxVisible - 1 ) {
+					mSuggestionsStartIndex =
+						eemax( 0, mSuggestionIndex - ( mSuggestionsMaxVisible - 1 ) );
+				}
 			} else {
 				mSuggestionIndex = 0;
+				mSuggestionsStartIndex = 0;
 			}
 			editor->invalidateDraw();
 			return true;
 		} else if ( event.getKeyCode() == KEY_UP ) {
 			if ( mSuggestionIndex - 1 < 0 ) {
-				mSuggestionIndex = max - 1;
+				mSuggestionIndex = mSuggestions.size() - 1;
+				mSuggestionsStartIndex =
+					eemax( 0, (int)mSuggestions.size() - mSuggestionsMaxVisible );
 			} else {
-				mSuggestionIndex -= 1;
+				mSuggestionIndex--;
 			}
+			if ( mSuggestionIndex < (int)mSuggestionsStartIndex )
+				mSuggestionsStartIndex = mSuggestionIndex;
 			editor->invalidateDraw();
 			return true;
 		} else if ( event.getKeyCode() == KEY_ESCAPE ) {
@@ -150,19 +184,33 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			return true;
 		} else if ( event.getKeyCode() == KEY_HOME ) {
 			mSuggestionIndex = 0;
+			mSuggestionsStartIndex = 0;
 			editor->invalidateDraw();
 			return true;
 		} else if ( event.getKeyCode() == KEY_END ) {
-			mSuggestionIndex = max - 1;
+			mSuggestionIndex = mSuggestions.size() - 1;
+			mSuggestionsStartIndex = eemax( 0, (int)mSuggestions.size() - mSuggestionsMaxVisible );
 			editor->invalidateDraw();
 			return true;
 		} else if ( event.getKeyCode() == KEY_PAGEUP ) {
-			mSuggestionIndex = eemax<int>( mSuggestionIndex - (int)mSuggestionsMaxVisible, 0 );
+			if ( mSuggestionIndex - (int)( mSuggestionsMaxVisible - 1 ) >= 0 ) {
+				mSuggestionIndex -= ( mSuggestionsMaxVisible - 1 );
+				if ( mSuggestionIndex < mSuggestionsStartIndex )
+					mSuggestionsStartIndex = mSuggestionIndex;
+			} else {
+				mSuggestionIndex = 0;
+				mSuggestionsStartIndex = 0;
+			}
 			editor->invalidateDraw();
 			return true;
 		} else if ( event.getKeyCode() == KEY_PAGEDOWN ) {
-			mSuggestionIndex =
-				eemin<int>( mSuggestionIndex + (int)mSuggestionsMaxVisible, max - 1 );
+			if ( mSuggestionIndex + mSuggestionsMaxVisible < (int)mSuggestions.size() ) {
+				mSuggestionIndex += mSuggestionsMaxVisible - 1;
+			} else {
+				mSuggestionIndex = mSuggestions.size() - 1;
+			}
+			mSuggestionsStartIndex =
+				eemax<int>( 0, mSuggestionIndex - ( mSuggestionsMaxVisible - 1 ) );
 			editor->invalidateDraw();
 			return true;
 		} else if ( event.getKeyCode() == KEY_TAB || event.getKeyCode() == KEY_RETURN ||
@@ -173,10 +221,8 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 	} else if ( event.getKeyCode() == KEY_SPACE &&
 				( event.getMod() & KeyMod::getDefaultModifier() ) ) {
 		std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
-		if ( partialSymbol.size() >= 3 ) {
-			updateSuggestions( partialSymbol, editor );
-			return true;
-		}
+		updateSuggestions( partialSymbol, editor );
+		return true;
 	}
 	return false;
 }
@@ -222,7 +268,7 @@ void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
 		lang.clear();
 		for ( const auto& d : mDocCache ) {
 			if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
-				lang.insert( d.second.symbols.begin(), d.second.symbols.end() );
+				lang.insert( lang.end(), d.second.symbols.begin(), d.second.symbols.end() );
 		}
 	}
 	Log::debug( "Dictionary for %s updated in: %.2fms", doc->getFilename().c_str(),
@@ -237,7 +283,7 @@ void AutoCompletePlugin::updateLangCache( const std::string& langName ) {
 	lang.clear();
 	for ( const auto& d : mDocCache ) {
 		if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
-			lang.insert( d.second.symbols.begin(), d.second.symbols.end() );
+			lang.insert( lang.end(), d.second.symbols.begin(), d.second.symbols.end() );
 	}
 	Log::debug( "Lang dictionary for %s updated in: %.2fms", langName.c_str(),
 				clock.getElapsedTime().asMilliseconds() );
@@ -245,7 +291,9 @@ void AutoCompletePlugin::updateLangCache( const std::string& langName ) {
 
 void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 	mReplacing = true;
-	editor->getDocument().execute( "delete-to-previous-word" );
+	std::string symbol( getPartialSymbol( editor->getDocumentRef().get() ) );
+	if ( !symbol.empty() )
+		editor->getDocument().execute( "delete-to-previous-word" );
 	editor->getDocument().textInput( mSuggestions[mSuggestionIndex] );
 	mReplacing = false;
 	resetSuggestions( editor );
@@ -254,19 +302,40 @@ void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& msg ) {
 	if ( msg.isResponse() && msg.type == PluginMessageType::CodeCompletion ) {
 		auto completion = msg.asCodeCompletion();
-		std::vector<std::string> suggestions;
+		SymbolsList suggestions;
 		for ( const auto& item : completion ) {
 			if ( !item.textEdit.text.empty() )
 				suggestions.push_back( item.textEdit.text );
-			else if ( !item.label.empty() )
-				suggestions.push_back( item.label );
+			else if ( !item.insertText.empty() )
+				suggestions.push_back( item.insertText );
 			else
 				suggestions.push_back( item.filterText );
 		}
-		if ( suggestions.empty() )
+		if ( suggestions.empty() || !mSuggestionsEditor )
 			return {};
-		Lock l( mSuggestionsMutex );
-		mSuggestions = suggestions;
+		std::string symbol( getPartialSymbol( mSuggestionsEditor->getDocumentRef().get() ) );
+		const std::string& lang =
+			mSuggestionsEditor->getDocument().getSyntaxDefinition().getLanguageName();
+		Lock l2( mLangSymbolsMutex );
+		auto langSuggestions = mLangCache.find( lang );
+		std::vector<std::string> fuzzySuggestions;
+		if ( symbol.empty() ) {
+			Lock l( mSuggestionsMutex );
+			mSuggestions = suggestions;
+		} else {
+			if ( langSuggestions == mLangCache.end() ) {
+				fuzzySuggestions = fuzzyMatchSymbols( { &suggestions }, symbol,
+													  eemax<size_t>( 100UL, suggestions.size() ) );
+			} else {
+				auto& symbols = langSuggestions->second;
+				fuzzySuggestions = fuzzyMatchSymbols( { &suggestions, &symbols }, symbol,
+													  eemax<size_t>( 100UL, suggestions.size() ) );
+			}
+			Lock l( mSuggestionsMutex );
+			mSuggestions = fuzzySuggestions;
+		}
+
+		mSuggestionsEditor->runOnMainThread( [this] { mSuggestionsEditor->invalidateDraw(); } );
 	} else if ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerCapabilities ) {
 		if ( msg.asLanguageServerCapabilities().ready ) {
 			LSPServerCapabilities cap = msg.asLanguageServerCapabilities();
@@ -277,15 +346,16 @@ PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& ms
 	return {};
 }
 
-void AutoCompletePlugin::tryRequestCapabilities( UICodeEditor* editor ) {
+bool AutoCompletePlugin::tryRequestCapabilities( UICodeEditor* editor ) {
 	const auto& language = editor->getDocumentRef()->getSyntaxDefinition().getLSPName();
 	auto it = mCapabilities.find( language );
 	if ( it != mCapabilities.end() )
-		return;
+		return true;
 	json data;
 	data["language"] = language;
 	mManager->sendRequest( this, PluginMessageType::LanguageServerCapabilities,
 						   PluginMessageFormat::JSON, &data );
+	return false;
 }
 
 std::string AutoCompletePlugin::getPartialSymbol( TextDocument* doc ) {
@@ -332,16 +402,26 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	mRowHeight = lineHeight + mBoxPadding.Top + mBoxPadding.Bottom;
 	const auto& normalStyle = scheme.getEditorSyntaxStyle( "suggestion" );
 	const auto& selectedStyle = scheme.getEditorSyntaxStyle( "suggestion_selected" );
+	const auto& barStyle = scheme.getEditorSyntaxStyle( "suggestion_scrollbar" );
 	if ( cursorPos.y + mRowHeight * max > editor->getPixelsSize().getHeight() )
 		cursorPos.y -= lineHeight + mRowHeight * max;
-	for ( size_t i = 0; i < max; i++ )
+
+	size_t maxIndex =
+		eemin<size_t>( mSuggestionsStartIndex + mSuggestionsMaxVisible, suggestions.size() );
+
+	for ( size_t i = mSuggestionsStartIndex; i < maxIndex; i++ )
 		largestString = eemax<size_t>( largestString, editor->getTextWidth( suggestions[i] ) );
 
-	mBoxRect =
-		Rectf( Vector2f( cursorPos.x, cursorPos.y ) - editor->getScreenPos(),
-			   Sizef( largestString + mBoxPadding.Left + mBoxPadding.Right, mRowHeight * max ) );
+	Sizef bar( PixelDensity::dpToPx( 8 ),
+			   mBoxRect.getSize().getHeight() *
+				   ( mSuggestionsMaxVisible / (Float)suggestions.size() ) );
 
-	for ( size_t i = 0; i < max; i++ ) {
+	mBoxRect = Rectf( Vector2f( cursorPos.x, cursorPos.y ) - editor->getScreenPos(),
+					  Sizef( largestString + mBoxPadding.Left + mBoxPadding.Right + bar.getWidth(),
+							 mRowHeight * max ) );
+
+	size_t count = 0;
+	for ( size_t i = mSuggestionsStartIndex; i < maxIndex; i++ ) {
 		Text text( "", editor->getFont(), editor->getFontSize() );
 		text.setFillColor( mSuggestionIndex == (int)i ? selectedStyle.color : normalStyle.color );
 		text.setStyle( mSuggestionIndex == (int)i ? selectedStyle.style : normalStyle.style );
@@ -350,10 +430,26 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 			Color( mSuggestionIndex == (int)i ? selectedStyle.background : normalStyle.background )
 				.blendAlpha( editor->getAlpha() ) );
 		primitives.drawRectangle(
-			Rectf( Vector2f( cursorPos.x, cursorPos.y + mRowHeight * i ),
-				   Sizef( largestString + mBoxPadding.Left + mBoxPadding.Right, mRowHeight ) ) );
-		text.draw( cursorPos.x + mBoxPadding.Left, cursorPos.y + mRowHeight * i + mBoxPadding.Top );
+			Rectf( Vector2f( cursorPos.x, cursorPos.y + mRowHeight * count ),
+				   Sizef( largestString + mBoxPadding.Left + mBoxPadding.Right + bar.getWidth(),
+						  mRowHeight ) ) );
+		text.draw( cursorPos.x + mBoxPadding.Left,
+				   cursorPos.y + mRowHeight * count + mBoxPadding.Top );
+		count++;
 	}
+
+	if ( max >= suggestions.size() )
+		return;
+
+	primitives.setColor( barStyle.color );
+	Float yPos = mSuggestionsStartIndex > 0
+					 ? mSuggestionsStartIndex /
+						   (Float)( ( suggestions.size() - 1 ) - mSuggestionsMaxVisible )
+					 : 0;
+	primitives.drawRectangle(
+		{ Vector2f( cursorPos.x + mBoxRect.getWidth() - bar.getWidth(),
+					cursorPos.y + ( mBoxRect.getHeight() - bar.getHeight() ) * yPos ),
+		  bar } );
 }
 
 bool AutoCompletePlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position,
@@ -419,7 +515,7 @@ void AutoCompletePlugin::setBoxPadding( const Rectf& boxPadding ) {
 	mBoxPadding = boxPadding;
 }
 
-const Uint32& AutoCompletePlugin::getSuggestionsMaxVisible() const {
+const Int32& AutoCompletePlugin::getSuggestionsMaxVisible() const {
 	return mSuggestionsMaxVisible;
 }
 
@@ -454,6 +550,7 @@ void AutoCompletePlugin::setDirty( bool dirty ) {
 void AutoCompletePlugin::resetSuggestions( UICodeEditor* editor ) {
 	Lock l( mSuggestionsMutex );
 	mSuggestionIndex = 0;
+	mSuggestionsStartIndex = 0;
 	mSuggestionsEditor = nullptr;
 	mSuggestions.clear();
 	if ( editor && editor->hasFocus() )
@@ -475,7 +572,7 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 			// Ignore the symbol if is actually the current symbol being written
 			if ( matchStr.size() < 3 || ( end.line() == i && current == matchStr ) )
 				continue;
-			symbols.insert( std::move( matchStr ) );
+			symbols.push_back( std::move( matchStr ) );
 		}
 		if ( mClosing )
 			break;
@@ -483,40 +580,25 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 	return symbols;
 }
 
-static std::vector<std::string> fuzzyMatchSymbols( const AutoCompletePlugin::SymbolsList& symbols,
-												   const std::string& match, const size_t& max ) {
-	std::multimap<int, std::string, std::greater<int>> matchesMap;
-	std::vector<std::string> matches;
-	int score;
-	for ( const auto& symbol : symbols ) {
-		if ( ( score = String::fuzzyMatch( symbol, match ) ) > 0 ) {
-			matchesMap.insert( { score, symbol } );
-		}
-	}
-	for ( auto& res : matchesMap ) {
-		if ( matches.size() < max )
-			matches.emplace_back( res.second );
-	}
-	return matches;
-}
-
 void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
 											   const SymbolsList& symbols, UICodeEditor* editor ) {
 	{
-		tryRequestCapabilities( editor );
-		json data;
-		auto doc = editor->getDocumentRef();
-		auto sel = doc->getSelection();
-		data["uri"] = doc->getURI().toString();
-		data["position"] = { { "line", sel.start().line() },
-							 { "character", sel.start().column() } };
-		mManager->sendRequest( this, PluginMessageType::CodeCompletion, PluginMessageFormat::JSON,
-							   &data );
-
+		mSuggestionsEditor = editor;
+		if ( tryRequestCapabilities( editor ) ) {
+			json data;
+			auto doc = editor->getDocumentRef();
+			auto sel = doc->getSelection();
+			data["uri"] = doc->getURI().toString();
+			data["position"] = { { "line", sel.start().line() },
+								 { "character", sel.start().column() } };
+			mManager->sendRequest( this, PluginMessageType::CodeCompletion,
+								   PluginMessageFormat::JSON, &data );
+		}
+		if ( symbol.empty() )
+			return;
 		Lock l( mLangSymbolsMutex );
 		Lock l2( mSuggestionsMutex );
-		mSuggestions = fuzzyMatchSymbols( symbols, symbol, mSuggestionsMaxVisible );
-		mSuggestionsEditor = editor;
+		mSuggestions = fuzzyMatchSymbols( { &symbols }, symbol, mSuggestionsMaxVisible );
 	}
 	editor->runOnMainThread( [editor] { editor->invalidateDraw(); } );
 }

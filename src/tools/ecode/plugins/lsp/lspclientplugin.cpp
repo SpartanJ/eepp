@@ -24,6 +24,7 @@ LSPClientPlugin::LSPClientPlugin( const PluginManager* pluginManager ) :
 
 LSPClientPlugin::~LSPClientPlugin() {
 	mClosing = true;
+	mManager->unsubscribeMessages( this );
 	Lock l( mDocMutex );
 	for ( const auto& editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {

@@ -37,6 +37,7 @@ LinterPlugin::LinterPlugin( const PluginManager* pluginManager ) :
 
 LinterPlugin::~LinterPlugin() {
 	mShuttingDown = true;
+	mManager->unsubscribeMessages( this );
 
 	if ( mWorkersCount != 0 ) {
 		std::unique_lock<std::mutex> lock( mWorkMutex );

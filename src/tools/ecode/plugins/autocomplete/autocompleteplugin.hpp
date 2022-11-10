@@ -18,7 +18,7 @@ namespace ecode {
 
 class AutoCompletePlugin : public UICodeEditorPlugin {
   public:
-	typedef std::unordered_set<std::string> SymbolsList;
+	typedef std::vector<std::string> SymbolsList;
 
 	static PluginDefinition Definition() {
 		return { "autocomplete",
@@ -57,7 +57,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 
 	void setBoxPadding( const Rectf& boxPadding );
 
-	const Uint32& getSuggestionsMaxVisible() const;
+	const Int32& getSuggestionsMaxVisible() const;
 
 	void setSuggestionsMaxVisible( const Uint32& suggestionsMaxVisible );
 
@@ -74,6 +74,12 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void setDirty( bool dirty );
 
   protected:
+	struct Suggestion {
+		std::string text;
+		std::string desc;
+		std::string sortText;
+		TextRange range;
+	};
 	const PluginManager* mManager{ nullptr };
 	std::string mSymbolPattern;
 	Rectf mBoxPadding;
@@ -97,10 +103,11 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	std::unordered_map<std::string, SymbolsList> mLangCache;
 	SymbolsList mLangDirty;
 
-	int mSuggestionIndex{ 0 };
 	std::vector<std::string> mSuggestions;
-	Uint32 mSuggestionsMaxVisible{ 8 };
 	UICodeEditor* mSuggestionsEditor{ nullptr };
+	Int32 mSuggestionIndex{ 0 };
+	Int32 mSuggestionsMaxVisible{ 8 };
+	Int32 mSuggestionsStartIndex{ 0 };
 	std::map<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
 
@@ -128,7 +135,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 
 	PluginRequestHandle processResponse( const PluginMessage& msg );
 
-	void tryRequestCapabilities( UICodeEditor* editor );
+	bool tryRequestCapabilities( UICodeEditor* editor );
 };
 
 } // namespace ecode

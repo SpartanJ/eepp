@@ -66,6 +66,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			   { "matching_selection", Color( "#3e596e" ) },
 			   { "matching_search", Color( "#181b1e" ) },
 			   { "suggestion", { Color( "#e1e1e6" ), Color( "#1d1f27" ), Text::Regular } },
+			   { "suggestion_scrollbar", { Color( "#3daee9" ) } },
 			   { "suggestion_selected", { Color( "#ffffff" ), Color( "#2f3240" ), Text::Regular } },
 			   { "error", { Color::Red } },
 			   { "warning", { Color::Yellow } },
@@ -263,6 +264,8 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 		return StyleDefault.getEditorSyntaxStyle( "minimap_highlight" );
 	else if ( type == "minimap_visible_area" )
 		return StyleDefault.getEditorSyntaxStyle( "minimap_visible_area" );
+	else if ( type == "suggestion_scrollbar" )
+		return getEditorSyntaxStyle( "line_highlight" );
 	return StyleEmpty;
 }
 

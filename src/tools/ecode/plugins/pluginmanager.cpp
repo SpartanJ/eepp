@@ -154,7 +154,8 @@ void PluginManager::subscribeMessages(
 }
 
 void PluginManager::unsubscribeMessages( UICodeEditorPlugin* plugin ) const {
-	const_cast<PluginManager*>( this )->mSubscribedPlugins.erase( plugin->getId() );
+	if ( !mClosing )
+		const_cast<PluginManager*>( this )->mSubscribedPlugins.erase( plugin->getId() );
 }
 
 void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {
