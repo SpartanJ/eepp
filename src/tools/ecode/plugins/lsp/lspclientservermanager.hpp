@@ -16,8 +16,7 @@ class LSPClientServerManager {
   public:
 	LSPClientServerManager();
 
-	void load( LSPClientPlugin*, const PluginManager* pluginManager,
-			   std::vector<LSPDefinition>&& lsps );
+	void load( LSPClientPlugin*, PluginManager* pluginManager, std::vector<LSPDefinition>&& lsps );
 
 	// async
 	void run( const std::shared_ptr<TextDocument>& doc );
@@ -55,13 +54,13 @@ class LSPClientServerManager {
 
 	void getAndGoToLocation( const std::shared_ptr<TextDocument>& doc, const std::string& search );
 
-	const PluginManager* getPluginManager() const;
+	PluginManager* getPluginManager() const;
 
 	LSPClientPlugin* getPlugin() const;
 
   protected:
 	friend class LSPClientServer;
-	const PluginManager* mPluginManager{ nullptr };
+	PluginManager* mPluginManager{ nullptr };
 	LSPClientPlugin* mPlugin{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::map<String::HashType, std::unique_ptr<LSPClientServer>> mClients;

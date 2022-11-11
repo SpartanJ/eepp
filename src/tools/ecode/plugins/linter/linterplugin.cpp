@@ -22,11 +22,11 @@ namespace ecode {
 #define LINTER_THREADED 0
 #endif
 
-UICodeEditorPlugin* LinterPlugin::New( const PluginManager* pluginManager ) {
+UICodeEditorPlugin* LinterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager ) );
 }
 
-LinterPlugin::LinterPlugin( const PluginManager* pluginManager ) :
+LinterPlugin::LinterPlugin( PluginManager* pluginManager ) :
 	mManager( pluginManager ), mPool( pluginManager->getThreadPool() ) {
 #if LINTER_THREADED
 	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
@@ -301,7 +301,7 @@ TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
 	return nullptr;
 }
 
-void LinterPlugin::load( const PluginManager* pluginManager ) {
+void LinterPlugin::load( PluginManager* pluginManager ) {
 	pluginManager->subscribeMessages( this, [&]( const auto& notification ) -> PluginRequestHandle {
 		return processMessage( notification );
 	} );
@@ -727,6 +727,7 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 					mHoveringMatch = true;
 					editor->runOnMainThread( [&, editor] {
 						editor->setTooltipText( match.text );
+						editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
 						editor->getTooltip()->setDontAutoHideOnMouseMove( true );
 						editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
 						if ( !editor->getTooltip()->isVisible() )

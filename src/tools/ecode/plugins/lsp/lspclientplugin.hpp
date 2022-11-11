@@ -29,7 +29,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 				 { 0, 0, 1 } };
 	}
 
-	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
+	static UICodeEditorPlugin* New( PluginManager* pluginManager );
 
 	virtual ~LSPClientPlugin();
 
@@ -49,7 +49,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	const std::unordered_map<UICodeEditor*, TextDocument*>& getEditorDocs() { return mEditorDocs; };
 
-	const PluginManager* getManager() const;
+	PluginManager* getManager() const;
 
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );
@@ -67,7 +67,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	const LSPClientServerManager& getClientManager() const;
 
   protected:
-	const PluginManager* mManager{ nullptr };
+	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	Clock mClock;
 	Mutex mDocMutex;
@@ -85,9 +85,9 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	LSPHover mCurrentHover;
 	Time mHoverDelay{ Seconds( 1.f ) };
 
-	LSPClientPlugin( const PluginManager* pluginManager );
+	LSPClientPlugin( PluginManager* pluginManager );
 
-	void load( const PluginManager* pluginManager );
+	void load( PluginManager* pluginManager );
 
 	void loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path );
 
@@ -97,6 +97,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	PluginRequestHandle processMessage( const PluginMessage& msg );
 
 	PluginRequestHandle processCodeCompletionRequest( const PluginMessage& msg );
+
+	PluginRequestHandle processSignatureHelpRequest( const PluginMessage& msg );
 };
 
 } // namespace ecode

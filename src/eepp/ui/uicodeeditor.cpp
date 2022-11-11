@@ -1482,6 +1482,8 @@ void UICodeEditor::onDocumentLineChanged( const Int64& lineNumber ) {
 
 void UICodeEditor::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
 	onDocumentSelectionChange( {} );
+	DocEvent event( this, mDoc.get(), Event::OnDocumentUndoRedo );
+	sendEvent( &event );
 }
 
 void UICodeEditor::onDocumentSaved( TextDocument* doc ) {

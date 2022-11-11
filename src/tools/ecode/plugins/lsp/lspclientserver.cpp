@@ -631,29 +631,33 @@ static std::vector<LSPCompletionItem> parseDocumentCompletion( const json& resul
 	std::vector<LSPCompletionItem> ret;
 	if ( result.empty() )
 		return {};
-	const json& items =
-		( result.is_object() && result.contains( "items" ) ) ? result["items"] : result;
+	try {
+		const json& items =
+			( result.is_object() && result.contains( "items" ) ) ? result["items"] : result;
 
-	for ( const auto& item : items ) {
-		auto label = item.value( MEMBER_LABEL, "" );
-		auto detail = item.value( MEMBER_DETAIL, "" );
-		LSPMarkupContent doc = item.contains( MEMBER_DOCUMENTATION )
-								   ? parseMarkupContent( item.at( MEMBER_DOCUMENTATION ) )
-								   : LSPMarkupContent{};
-		auto filterText = item.value( "filterText", label );
-		auto insertText = item.value( "insertText", label );
-		auto sortText = item.value( "sortText", label );
-		LSPTextEdit textEdit;
-		if ( item.contains( "textEdit" ) )
-			textEdit = parseTextEdit( item["textEdit"] );
-		auto kind = static_cast<LSPCompletionItemKind>( item.value( MEMBER_KIND, 1 ) );
-		const std::vector<LSPTextEdit> additionalTextEdits =
-			item.contains( "additionalTextEdits" )
-				? parseTextEditArray( item.at( "additionalTextEdits" ) )
-				: std::vector<LSPTextEdit>{};
+		for ( const auto& item : items ) {
+			auto label = item.value( MEMBER_LABEL, "" );
+			auto detail = item.value( MEMBER_DETAIL, "" );
+			LSPMarkupContent doc = item.contains( MEMBER_DOCUMENTATION )
+									   ? parseMarkupContent( item.at( MEMBER_DOCUMENTATION ) )
+									   : LSPMarkupContent{};
+			auto filterText = item.value( "filterText", label );
+			auto insertText = item.value( "insertText", label );
+			auto sortText = item.value( "sortText", label );
+			LSPTextEdit textEdit;
+			if ( item.contains( "textEdit" ) )
+				textEdit = parseTextEdit( item["textEdit"] );
+			auto kind = static_cast<LSPCompletionItemKind>( item.value( MEMBER_KIND, 1 ) );
+			const std::vector<LSPTextEdit> additionalTextEdits =
+				item.contains( "additionalTextEdits" )
+					? parseTextEditArray( item.at( "additionalTextEdits" ) )
+					: std::vector<LSPTextEdit>{};
 
-		ret.push_back( { label, kind, detail, doc, sortText, insertText, filterText, textEdit,
-						 additionalTextEdits } );
+			ret.push_back( { label, kind, detail, doc, sortText, insertText, filterText, textEdit,
+							 additionalTextEdits } );
+		}
+	} catch ( const json::exception& err ) {
+		Log::warning( "Error parsing parseDocumentCompletion: %s", err.what() );
 	}
 	return ret;
 }
@@ -662,7 +666,8 @@ static LSPSignatureInformation parseSignatureInformation( const json& json ) {
 	LSPSignatureInformation info;
 
 	info.label = json.value( MEMBER_LABEL, "" );
-	info.documentation = parseMarkupContent( json.value( MEMBER_DOCUMENTATION, {} ) );
+	if ( json.contains( MEMBER_DOCUMENTATION ) )
+		info.documentation = parseMarkupContent( json.at( MEMBER_DOCUMENTATION ) );
 	const auto& params = json.at( "parameters" );
 	for ( const auto& par : params ) {
 		auto label = par.at( MEMBER_LABEL );
@@ -692,16 +697,21 @@ static LSPSignatureInformation parseSignatureInformation( const json& json ) {
 
 static LSPSignatureHelp parseSignatureHelp( const json& sig ) {
 	LSPSignatureHelp ret;
-	const auto& sigInfos = sig.at( "signatures" );
-	for ( const auto& info : sigInfos )
-		ret.signatures.push_back( parseSignatureInformation( info ) );
-	ret.activeSignature = sig.value( "activeSignature", 0 );
-	ret.activeParameter = sig.value( "activeParameter", 0 );
-	ret.activeSignature = eemin( eemax( ret.activeSignature, 0 ), (int)ret.signatures.size() );
-	ret.activeParameter = eemax( ret.activeParameter, 0 );
-	if ( !ret.signatures.empty() ) {
-		ret.activeParameter = eemin(
-			ret.activeParameter, (int)ret.signatures.at( ret.activeSignature ).parameters.size() );
+	try {
+		const auto& sigInfos = sig.at( "signatures" );
+		for ( const auto& info : sigInfos )
+			ret.signatures.push_back( parseSignatureInformation( info ) );
+		ret.activeSignature = sig.value( "activeSignature", 0 );
+		ret.activeParameter = sig.value( "activeParameter", 0 );
+		ret.activeSignature = eemin( eemax( ret.activeSignature, 0 ), (int)ret.signatures.size() );
+		ret.activeParameter = eemax( ret.activeParameter, 0 );
+		if ( !ret.signatures.empty() ) {
+			ret.activeParameter =
+				eemin( ret.activeParameter,
+					   (int)ret.signatures.at( ret.activeSignature ).parameters.size() );
+		}
+	} catch ( const json::exception& err ) {
+		Log::warning( "Error parsing parseSignatureHelp: %s", err.what() );
 	}
 	return ret;
 }
@@ -1293,8 +1303,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::switchSourceHeader( const URI
 	return send( newRequest( "textDocument/switchSourceHeader", textDocumentURI( document ) ),
 				 [this]( const IdType&, json res ) {
 					 if ( res.is_string() ) {
-						 mManager->goToLocation(
-							 { res.get<std::string>(), TextRange{ { 0, 0 }, { 0, 0 } } } );
+						 mManager->goToLocation( { res.get<std::string>(), TextRange() } );
 					 }
 				 } );
 }

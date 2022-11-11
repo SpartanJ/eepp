@@ -29,7 +29,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 				 { 0, 1, 0 } };
 	}
 
-	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
+	static UICodeEditorPlugin* New( PluginManager* pluginManager );
 
 	virtual ~FormatterPlugin();
 
@@ -84,9 +84,9 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	bool mReady{ false };
 	Uint32 mOnDocumentSaveCb{ 0 };
 
-	FormatterPlugin( const PluginManager* pluginManager );
+	FormatterPlugin( PluginManager* pluginManager );
 
-	void load( const PluginManager* pluginManager );
+	void load( PluginManager* pluginManager );
 
 	void loadFormatterConfig( const std::string& path );
 

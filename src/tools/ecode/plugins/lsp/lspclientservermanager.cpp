@@ -8,7 +8,7 @@ namespace ecode {
 
 LSPClientServerManager::LSPClientServerManager() {}
 
-void LSPClientServerManager::load( LSPClientPlugin* plugin, const PluginManager* pluginManager,
+void LSPClientServerManager::load( LSPClientPlugin* plugin, PluginManager* pluginManager,
 								   std::vector<LSPDefinition>&& lsps ) {
 	mPlugin = plugin;
 	mPluginManager = pluginManager;
@@ -117,15 +117,17 @@ void LSPClientServerManager::goToLocation( const LSPLocation& loc ) {
 			std::string path( loc.uri.getPath() );
 			FileInfo fileInfo( path );
 			if ( fileInfo.exists() && fileInfo.isRegularFile() ) {
-				splitter->loadAsyncFileFromPathInNewTab( path, mThreadPool,
-														 [loc]( UICodeEditor* editor, auto ) {
-															 editor->goToLine( loc.range.start() );
-															 editor->setFocus();
-														 } );
+				splitter->loadAsyncFileFromPathInNewTab(
+					path, mThreadPool, [loc]( UICodeEditor* editor, auto ) {
+						if ( loc.range.isValid() )
+							editor->goToLine( loc.range.start() );
+						editor->setFocus();
+					} );
 			}
 		} else {
 			tab->getTabWidget()->setTabSelected( tab );
-			splitter->editorFromTab( tab )->goToLine( loc.range.start() );
+			if ( loc.range.isValid() )
+				splitter->editorFromTab( tab )->goToLine( loc.range.start() );
 			splitter->editorFromTab( tab )->setFocus();
 		}
 	} );
@@ -169,7 +171,7 @@ void LSPClientServerManager::getAndGoToLocation( const std::shared_ptr<TextDocum
 		server->getAndGoToLocation( doc->getURI(), doc->getSelection().start(), search );
 }
 
-const PluginManager* LSPClientServerManager::getPluginManager() const {
+PluginManager* LSPClientServerManager::getPluginManager() const {
 	return mPluginManager;
 }
 

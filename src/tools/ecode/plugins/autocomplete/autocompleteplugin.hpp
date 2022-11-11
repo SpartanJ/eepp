@@ -18,7 +18,38 @@ namespace ecode {
 
 class AutoCompletePlugin : public UICodeEditorPlugin {
   public:
-	typedef std::vector<std::string> SymbolsList;
+	class Suggestion {
+	  public:
+		LSPCompletionItemKind kind{ LSPCompletionItemKind::Text };
+		std::string text;
+		std::string detail;
+		std::string sortText;
+		TextRange range;
+		double score{ 0 };
+
+		void setScore( const double& score ) const {
+			const_cast<Suggestion*>( this )->score = score;
+		}
+
+		Suggestion( const std::string& text ) : text( text ), sortText( text ) {}
+
+		Suggestion( const LSPCompletionItemKind& kind, const std::string& text,
+					const std::string& detail, const std::string& sortText,
+					const TextRange& range = {} ) :
+			kind( kind ),
+			text( text ),
+			detail( detail ),
+			sortText( sortText.empty() ? text : sortText ),
+			range( range ){};
+
+		bool operator<( const Suggestion& other ) { return getCmpStr() < other.getCmpStr(); }
+
+		bool operator==( const Suggestion& other ) { return text == other.text; }
+
+	  protected:
+		const std::string* getCmpStr() const { return !sortText.empty() ? &sortText : &text; }
+	};
+	typedef std::vector<Suggestion> SymbolsList;
 
 	static PluginDefinition Definition() {
 		return { "autocomplete",
@@ -29,7 +60,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 				 { 0, 1, 0 } };
 	}
 
-	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
+	static UICodeEditorPlugin* New( PluginManager* pluginManager );
 
 	virtual ~AutoCompletePlugin();
 
@@ -49,7 +80,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void postDraw( UICodeEditor*, const Vector2f& startScroll, const Float& lineHeight,
 				   const TextPosition& cursor );
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& );
-	bool onMouseClick( UICodeEditor*, const Vector2i&, const Uint32& );
+	bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& );
 	bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& );
 	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& );
 
@@ -74,13 +105,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void setDirty( bool dirty );
 
   protected:
-	struct Suggestion {
-		std::string text;
-		std::string desc;
-		std::string sortText;
-		TextRange range;
-	};
-	const PluginManager* mManager{ nullptr };
+	PluginManager* mManager{ nullptr };
 	std::string mSymbolPattern;
 	Rectf mBoxPadding;
 	std::shared_ptr<ThreadPool> mPool;
@@ -95,6 +120,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	bool mDirty{ false };
 	bool mClosing{ false };
 	bool mReplacing{ false };
+	bool mSignatureHelpVisible{ false };
 	struct DocCache {
 		Uint64 changeId{ static_cast<Uint64>( -1 ) };
 		SymbolsList symbols;
@@ -103,18 +129,22 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	std::unordered_map<std::string, SymbolsList> mLangCache;
 	SymbolsList mLangDirty;
 
-	std::vector<std::string> mSuggestions;
+	std::vector<Suggestion> mSuggestions;
+	Mutex mSuggestionsEditorMutex;
 	UICodeEditor* mSuggestionsEditor{ nullptr };
+	UICodeEditor* mSignatureHelpEditor{ nullptr };
 	Int32 mSuggestionIndex{ 0 };
 	Int32 mSuggestionsMaxVisible{ 8 };
 	Int32 mSuggestionsStartIndex{ 0 };
 	std::map<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
+	LSPSignatureHelp mSignatureHelp;
+	TextPosition mSignatureHelpPosition;
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
 
-	AutoCompletePlugin( const PluginManager* pluginManager );
+	AutoCompletePlugin( PluginManager* pluginManager );
 
 	void resetSuggestions( UICodeEditor* editor );
 
@@ -136,6 +166,16 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	PluginRequestHandle processResponse( const PluginMessage& msg );
 
 	bool tryRequestCapabilities( UICodeEditor* editor );
+
+	void requestCodeCompletion( UICodeEditor* editor );
+
+	void requestSignatureHelp( UICodeEditor* editor );
+
+	PluginRequestHandle processCodeCompletion( const std::vector<LSPCompletionItem>& completion );
+
+	PluginRequestHandle processSignatureHelp( const LSPSignatureHelp& signatureHelp );
+
+	void resetSignatureHelp();
 };
 
 } // namespace ecode

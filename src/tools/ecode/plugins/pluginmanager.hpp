@@ -21,7 +21,7 @@ namespace ecode {
 
 class PluginManager;
 
-typedef std::function<UICodeEditorPlugin*( const PluginManager* pluginManager )> PluginCreatorFn;
+typedef std::function<UICodeEditorPlugin*( PluginManager* pluginManager )> PluginCreatorFn;
 
 #ifdef minor
 #undef minor
@@ -63,10 +63,17 @@ enum class PluginMessageType {
 					// and position
 	LanguageServerCapabilities, // Request the language server capabilities of a language if there
 								// is any available, it will be returned as a broadcast
+	SignatureHelp,				// Request the LSP Client to provide function/method signature help
 	Undefined
 };
 
-enum class PluginMessageFormat { JSON, Diagnostics, CodeCompletion, LanguageServerCapabilities };
+enum class PluginMessageFormat {
+	JSON,
+	Diagnostics,
+	CodeCompletion,
+	LanguageServerCapabilities,
+	SignatureHelp
+};
 
 using PluginIDType = Int64;
 
@@ -92,6 +99,10 @@ struct PluginMessage {
 
 	const LSPServerCapabilities& asLanguageServerCapabilities() const {
 		return *static_cast<const LSPServerCapabilities*>( data );
+	}
+
+	const LSPSignatureHelp& asSignatureHelp() const {
+		return *static_cast<const LSPSignatureHelp*>( data );
 	}
 
 	bool isResponse() const { return -1 != responseID && 0 != responseID; }
@@ -168,24 +179,26 @@ class PluginManager {
 	void setWorkspaceFolder( const std::string& workspaceFolder );
 
 	PluginRequestHandle sendRequest( UICodeEditorPlugin* pluginWho, PluginMessageType type,
-									 PluginMessageFormat format, const void* data ) const;
+									 PluginMessageFormat format, const void* data );
 
 	void sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageType type,
 					   PluginMessageFormat format, const void* data,
-					   const PluginIDType& responseID ) const;
+					   const PluginIDType& responseID );
 
 	void sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType, PluginMessageFormat,
-						const void* data ) const;
+						const void* data );
 
 	void sendBroadcast( const PluginMessageType& notification, const PluginMessageFormat& format,
 						void* data );
 
 	void subscribeMessages( UICodeEditorPlugin* plugin,
-							std::function<PluginRequestHandle( const PluginMessage& )> cb ) const;
+							std::function<PluginRequestHandle( const PluginMessage& )> cb );
 
-	void unsubscribeMessages( UICodeEditorPlugin* plugin ) const;
+	void unsubscribeMessages( UICodeEditorPlugin* plugin );
 
   protected:
+	using SubscribedPlugins =
+		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;
 	friend class App;
 	std::string mResourcesPath;
 	std::string mPluginsPath;
@@ -195,8 +208,8 @@ class PluginManager {
 	std::map<std::string, PluginDefinition> mDefinitions;
 	std::shared_ptr<ThreadPool> mThreadPool;
 	UICodeEditorSplitter* mSplitter{ nullptr };
-	std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>
-		mSubscribedPlugins;
+	Mutex mSubscribedPluginsMutex;
+	SubscribedPlugins mSubscribedPlugins;
 	bool mClosing{ false };
 
 	bool hasDefinition( const std::string& id );

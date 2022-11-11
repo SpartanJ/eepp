@@ -13,11 +13,11 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-UICodeEditorPlugin* LSPClientPlugin::New( const PluginManager* pluginManager ) {
+UICodeEditorPlugin* LSPClientPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LSPClientPlugin, ( pluginManager ) );
 }
 
-LSPClientPlugin::LSPClientPlugin( const PluginManager* pluginManager ) :
+LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager ) :
 	mManager( pluginManager ), mThreadPool( pluginManager->getThreadPool() ) {
 	mThreadPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 }
@@ -48,11 +48,12 @@ void LSPClientPlugin::update( UICodeEditor* ) {
 	mClientManager.updateDirty();
 }
 
-PluginRequestHandle LSPClientPlugin::processCodeCompletionRequest( const PluginMessage& msg ) {
-	if ( !msg.isRequest() || !msg.isJSON() )
-		return {};
+struct LSPPositionAndServer {
+	LSPPosition loc;
+	LSPClientServer* server{ nullptr };
+};
 
-	const auto& data = msg.asJSON();
+LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, const json& data ) {
 	if ( !data.contains( "uri" ) || !data.contains( "position" ) )
 		return {};
 
@@ -61,14 +62,42 @@ PluginRequestHandle LSPClientPlugin::processCodeCompletionRequest( const PluginM
 		return {};
 
 	URI uri( data["uri"] );
-	auto server = mClientManager.getOneLSPClientServer( uri );
+	auto server = manager.getOneLSPClientServer( uri );
 	if ( !server )
 		return {};
+	return { { uri, position }, server };
+}
 
-	auto ret = server->documentCompletion(
-		uri, position, [&]( const PluginIDType& id, const std::vector<LSPCompletionItem>& items ) {
+PluginRequestHandle LSPClientPlugin::processCodeCompletionRequest( const PluginMessage& msg ) {
+	if ( !msg.isRequest() || !msg.isJSON() )
+		return {};
+
+	auto res = getLSPLocationFromJSON( mClientManager, msg.asJSON() );
+	if ( !res.server )
+		return {};
+
+	auto ret = res.server->documentCompletion(
+		res.loc.uri, res.loc.pos,
+		[&]( const PluginIDType& id, const std::vector<LSPCompletionItem>& items ) {
 			mManager->sendResponse( this, PluginMessageType::CodeCompletion,
 									PluginMessageFormat::CodeCompletion, &items, id );
+		} );
+
+	return ret;
+}
+
+PluginRequestHandle LSPClientPlugin::processSignatureHelpRequest( const PluginMessage& msg ) {
+	if ( !msg.isRequest() || !msg.isJSON() )
+		return {};
+
+	auto res = getLSPLocationFromJSON( mClientManager, msg.asJSON() );
+	if ( !res.server )
+		return {};
+
+	auto ret = res.server->signatureHelp(
+		res.loc.uri, res.loc.pos, [&]( const PluginIDType& id, const LSPSignatureHelp& data ) {
+			mManager->sendResponse( this, PluginMessageType::SignatureHelp,
+									PluginMessageFormat::SignatureHelp, &data, id );
 		} );
 
 	return ret;
@@ -82,6 +111,12 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 		}
 		case PluginMessageType::CodeCompletion: {
 			auto ret = processCodeCompletionRequest( msg );
+			if ( !ret.isEmpty() )
+				return ret;
+			break;
+		}
+		case PluginMessageType::SignatureHelp: {
+			auto ret = processSignatureHelpRequest( msg );
 			if ( !ret.isEmpty() )
 				return ret;
 			break;
@@ -108,7 +143,7 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 	return PluginRequestHandle::empty();
 }
 
-void LSPClientPlugin::load( const PluginManager* pluginManager ) {
+void LSPClientPlugin::load( PluginManager* pluginManager ) {
 	pluginManager->subscribeMessages( this, [&]( const auto& notification ) -> PluginRequestHandle {
 		return processMessage( notification );
 	} );
@@ -361,7 +396,7 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	mDocs.erase( doc );
 }
 
-const PluginManager* LSPClientPlugin::getManager() const {
+PluginManager* LSPClientPlugin::getManager() const {
 	return mManager;
 }
 

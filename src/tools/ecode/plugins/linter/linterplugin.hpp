@@ -55,7 +55,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 				 LinterPlugin::New,
 				 { 0, 1, 0 } };
 	}
-	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
+	static UICodeEditorPlugin* New( PluginManager* pluginManager );
 
 	virtual ~LinterPlugin();
 
@@ -96,7 +96,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 	void setEnableLSPDiagnostics( bool enableLSPDiagnostics );
 
   protected:
-	const PluginManager* mManager{ nullptr };
+	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Linter> mLinters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
@@ -119,9 +119,9 @@ class LinterPlugin : public UICodeEditorPlugin {
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
 
-	LinterPlugin( const PluginManager* pluginManager );
+	LinterPlugin( PluginManager* pluginManager );
 
-	void load( const PluginManager* pluginManager );
+	void load( PluginManager* pluginManager );
 
 	void lintDoc( std::shared_ptr<TextDocument> doc );
 

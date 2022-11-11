@@ -41,7 +41,10 @@ bool PluginManager::setEnabled( const std::string& id, bool enable ) {
 	}
 	if ( !enable && plugin != nullptr ) {
 		eeSAFE_DELETE( plugin );
-		mSubscribedPlugins.erase( id );
+		{
+			Lock l( mSubscribedPluginsMutex );
+			mSubscribedPlugins.erase( id );
+		}
 		mPlugins.erase( id );
 	}
 	return false;
@@ -111,10 +114,15 @@ void PluginManager::setWorkspaceFolder( const std::string& workspaceFolder ) {
 
 PluginRequestHandle PluginManager::sendRequest( UICodeEditorPlugin* pluginWho,
 												PluginMessageType type, PluginMessageFormat format,
-												const void* data ) const {
+												const void* data ) {
 	if ( mClosing )
 		return PluginRequestHandle::empty();
-	for ( const auto& plugin : mSubscribedPlugins ) {
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins ) {
 		if ( pluginWho->getId() != plugin.first ) {
 			auto handle = plugin.second( { type, format, data } );
 			if ( !handle.isEmpty() )
@@ -126,36 +134,50 @@ PluginRequestHandle PluginManager::sendRequest( UICodeEditorPlugin* pluginWho,
 
 void PluginManager::sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageType type,
 								  PluginMessageFormat format, const void* data,
-								  const PluginIDType& responseID ) const {
+								  const PluginIDType& responseID ) {
 	if ( mClosing )
 		return;
-	for ( const auto& plugin : mSubscribedPlugins )
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins )
 		if ( pluginWho->getId() != plugin.first )
 			plugin.second( { type, format, data, responseID } );
 }
 
 void PluginManager::sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType type,
-								   PluginMessageFormat format, const void* data ) const {
+								   PluginMessageFormat format, const void* data ) {
 	if ( mClosing )
 		return;
-	for ( const auto& plugin : mSubscribedPlugins )
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins )
 		if ( pluginWho->getId() != plugin.first )
 			plugin.second( { type, format, data, -1 } );
 }
 
 void PluginManager::subscribeMessages(
-	UICodeEditorPlugin* plugin,
-	std::function<PluginRequestHandle( const PluginMessage& )> cb ) const {
-	const_cast<PluginManager*>( this )->mSubscribedPlugins[plugin->getId()] = cb;
+	UICodeEditorPlugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
+	{
+		Lock l( mSubscribedPluginsMutex );
+		mSubscribedPlugins[plugin->getId()] = cb;
+	}
 	if ( !mWorkspaceFolder.empty() ) {
 		json data{ { "folder", mWorkspaceFolder } };
 		cb( { PluginMessageType::WorkspaceFolderChanged, PluginMessageFormat::JSON, &data } );
 	}
 }
 
-void PluginManager::unsubscribeMessages( UICodeEditorPlugin* plugin ) const {
-	if ( !mClosing )
-		const_cast<PluginManager*>( this )->mSubscribedPlugins.erase( plugin->getId() );
+void PluginManager::unsubscribeMessages( UICodeEditorPlugin* plugin ) {
+	if ( !mClosing ) {
+		Lock l( mSubscribedPluginsMutex );
+		mSubscribedPlugins.erase( plugin->getId() );
+	}
 }
 
 void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {
@@ -166,7 +188,12 @@ void PluginManager::sendBroadcast( const PluginMessageType& notification,
 								   const PluginMessageFormat& format, void* data ) {
 	if ( mClosing )
 		return;
-	for ( const auto& plugin : mSubscribedPlugins )
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins )
 		plugin.second( { notification, format, data } );
 }
 

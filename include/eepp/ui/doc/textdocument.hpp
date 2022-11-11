@@ -140,6 +140,10 @@ class EE_API TextDocument {
 
 	String getSelectedText() const;
 
+	String::StringBaseType getPrevChar() const;
+
+	String::StringBaseType getCurrentChar() const;
+
 	String::StringBaseType getChar( const TextPosition& position ) const;
 
 	TextPosition insert( const TextPosition& position, const String& text );

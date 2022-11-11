@@ -31,6 +31,11 @@ enum class LSPErrorCode {
 	ContentModified = -32801
 };
 
+struct LSPPosition {
+	URI uri;
+	TextPosition pos;
+};
+
 struct LSPLocation {
 	URI uri;
 	TextRange range;
@@ -285,6 +290,65 @@ enum class LSPCompletionItemKind {
 	Event = 23,
 	Operator = 24,
 	TypeParameter = 25,
+};
+
+class LSPCompletionItemHelper {
+  public:
+	static std::string toIconString( const LSPCompletionItemKind& kind ) {
+		switch ( kind ) {
+			case LSPCompletionItemKind::Text:
+				return "symbol-text";
+			case LSPCompletionItemKind::Method:
+				return "symbol-method";
+			case LSPCompletionItemKind::Function:
+				return "symbol-function";
+			case LSPCompletionItemKind::Constructor:
+				return "symbol-constructor";
+			case LSPCompletionItemKind::Field:
+				return "symbol-field";
+			case LSPCompletionItemKind::Variable:
+				return "symbol-variable";
+			case LSPCompletionItemKind::Class:
+				return "symbol-class";
+			case LSPCompletionItemKind::Interface:
+				return "symbol-interface";
+			case LSPCompletionItemKind::Module:
+				return "symbol-module";
+			case LSPCompletionItemKind::Property:
+				return "symbol-property";
+			case LSPCompletionItemKind::Unit:
+				return "symbol-unit";
+			case LSPCompletionItemKind::Value:
+				return "symbol-value";
+			case LSPCompletionItemKind::Enum:
+				return "symbol-enum";
+			case LSPCompletionItemKind::Keyword:
+				return "symbol-keyword";
+			case LSPCompletionItemKind::Snippet:
+				return "symbol-snippet";
+			case LSPCompletionItemKind::Color:
+				return "symbol-color";
+			case LSPCompletionItemKind::File:
+				return "symbol-file";
+			case LSPCompletionItemKind::Reference:
+				return "symbol-reference";
+			case LSPCompletionItemKind::Folder:
+				return "symbol-folder";
+			case LSPCompletionItemKind::EnumMember:
+				return "symbol-enum-member";
+			case LSPCompletionItemKind::Constant:
+				return "symbol-constant";
+			case LSPCompletionItemKind::Struct:
+				return "symbol-struct";
+			case LSPCompletionItemKind::Event:
+				return "symbol-event";
+			case LSPCompletionItemKind::Operator:
+				return "symbol-operator";
+			case LSPCompletionItemKind::TypeParameter:
+				return "symbol-type-parameter";
+		}
+		return "symbol-text";
+	}
 };
 
 struct LSPCompletionItem {

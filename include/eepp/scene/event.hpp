@@ -81,6 +81,7 @@ class EE_API Event {
 		OnSelectionChanged,
 		OnNodeDropped,
 		OnDocumentSave,
+		OnDocumentUndoRedo,
 		OnModelEvent,
 		OnResourceChange,
 		OnActiveWidgetChange,

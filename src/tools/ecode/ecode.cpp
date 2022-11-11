@@ -3502,8 +3502,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		FontTrueType* iconFont = loadFont( "icon", "fonts/remixicon.ttf" );
 		FontTrueType* mimeIconFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
+		FontTrueType* codIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
 
-		if ( !mFont || !mFontMono || !iconFont || !mimeIconFont ) {
+		if ( !mFont || !mFontMono || !iconFont || !mimeIconFont || !codIconFont ) {
 			printf( "Font not found!" );
 			Log::error( "Font not found!" );
 			return;
@@ -3870,6 +3871,27 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 			for ( const auto& icon : mimeIcons )
 				iconTheme->add( UIGlyphIcon::New( icon.first, mimeIconFont, icon.second ) );
+		}
+
+		if ( codIconFont && codIconFont->loaded() ) {
+			std::unordered_map<std::string, Uint32> codIcons = {
+				{ "symbol-text", 0xea93 },			 { "symbol-method", 0xea8c },
+				{ "symbol-function", 0xea8c },		 { "symbol-constructor", 0xea8c },
+				{ "symbol-field", 0xeb5f },			 { "symbol-variable", 0xea88 },
+				{ "symbol-class", 0xeb5b },			 { "symbol-interface", 0xeb61 },
+				{ "symbol-module", 0xea8b },		 { "symbol-property", 0xeb65 },
+				{ "symbol-unit", 0xea96 },			 { "symbol-value", 0xea95 },
+				{ "symbol-enum", 0xea95 },			 { "symbol-keyword", 0xeb62 },
+				{ "symbol-snippet", 0xeb66 },		 { "symbol-color", 0xeb5c },
+				{ "symbol-file", 0xeb60 },			 { "symbol-reference", 0xea94 },
+				{ "symbol-folder", 0xea83 },		 { "symbol-enum-member", 0xeb5e },
+				{ "symbol-constant", 0xeb5d },		 { "symbol-struct", 0xea91 },
+				{ "symbol-event", 0xea86 },			 { "symbol-operator", 0xeb64 },
+				{ "symbol-type-parameter", 0xea92 },
+			};
+
+			for ( const auto& icon : codIcons )
+				iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
 		}
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );

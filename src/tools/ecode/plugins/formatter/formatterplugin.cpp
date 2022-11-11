@@ -22,11 +22,11 @@ namespace ecode {
 #define FORMATTER_THREADED 0
 #endif
 
-UICodeEditorPlugin* FormatterPlugin::New( const PluginManager* pluginManager ) {
+UICodeEditorPlugin* FormatterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( FormatterPlugin, ( pluginManager ) );
 }
 
-FormatterPlugin::FormatterPlugin( const PluginManager* pluginManager ) :
+FormatterPlugin::FormatterPlugin( PluginManager* pluginManager ) :
 	mPool( pluginManager->getThreadPool() ) {
 #if FORMATTER_THREADED
 	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
@@ -183,7 +183,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
 	}
 }
 
-void FormatterPlugin::load( const PluginManager* pluginManager ) {
+void FormatterPlugin::load( PluginManager* pluginManager ) {
 	registerNativeFormatters();
 
 	std::vector<std::string> paths;

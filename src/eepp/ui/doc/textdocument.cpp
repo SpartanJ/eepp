@@ -668,6 +668,14 @@ String TextDocument::getSelectedText() const {
 	return getText( getSelection() );
 }
 
+String::StringBaseType TextDocument::getPrevChar() const {
+	return getChar( positionOffset( getSelection().start(), -1 ) );
+}
+
+String::StringBaseType TextDocument::getCurrentChar() const {
+	return getChar( getSelection().start() );
+}
+
 String::StringBaseType TextDocument::getChar( const TextPosition& position ) const {
 	auto pos = sanitizePosition( position );
 	return mLines[pos.line()][pos.column()];
