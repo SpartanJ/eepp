@@ -33,7 +33,7 @@ class LSPClientServer {
 	using JsonReplyHandler = ReplyHandler<json>;
 	using CodeActionHandler = ReplyHandler<std::vector<LSPCodeAction>>;
 	using HoverHandler = ReplyHandler<LSPHover>;
-	using CompletionHandler = ReplyHandler<std::vector<LSPCompletionItem>>;
+	using CompletionHandler = ReplyHandler<LSPCompletionList>;
 	using SymbolInformationHandler = ReplyHandler<std::vector<LSPSymbolInformation>>;
 	using SelectionRangeHandler = ReplyHandler<std::vector<std::shared_ptr<LSPSelectionRange>>>;
 	using SignatureHelpHandler = ReplyHandler<LSPSignatureHelp>;
@@ -88,8 +88,6 @@ class LSPClientServer {
 	LSPRequestHandle didSave( TextDocument* doc );
 
 	LSPRequestHandle didClose( const URI& document );
-
-	LSPRequestHandle didClose( TextDocument* document );
 
 	LSPRequestHandle didChange( const URI& document, int version, const std::string& text,
 								const std::vector<DocumentContentChange>& change = {} );
@@ -173,6 +171,8 @@ class LSPClientServer {
 
 	LSPRequestHandle signatureHelp( const URI& document, const TextPosition& pos,
 									const SignatureHelpHandler& h );
+
+	void removeDoc( TextDocument* doc );
 
   protected:
 	LSPClientServerManager* mManager{ nullptr };

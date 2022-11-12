@@ -39,7 +39,10 @@ void LSPDocumentClient::onDocumentSaved( TextDocument* ) {
 }
 
 void LSPDocumentClient::onDocumentClosed( TextDocument* ) {
-	mServer->getThreadPool()->run( [&]() { mServer->didClose( mDoc ); } );
+	URI uri = mDoc->getURI();
+	LSPClientServer* server = mServer;
+	mServer->getThreadPool()->run( [server, uri]() { server->didClose( uri ); } );
+	mServer->removeDoc( mDoc );
 }
 
 void LSPDocumentClient::onDocumentDirtyOnFileSystem( TextDocument* ) {}

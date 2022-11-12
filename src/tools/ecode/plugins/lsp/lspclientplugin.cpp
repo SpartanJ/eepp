@@ -53,6 +53,11 @@ struct LSPPositionAndServer {
 	LSPClientServer* server{ nullptr };
 };
 
+LSPClientServer* getServerURIFromURI( LSPClientServerManager& manager, const json& data ) {
+	URI uri( data["uri"] );
+	return manager.getOneLSPClientServer( uri );
+}
+
 LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, const json& data ) {
 	if ( !data.contains( "uri" ) || !data.contains( "position" ) )
 		return {};
@@ -78,9 +83,9 @@ PluginRequestHandle LSPClientPlugin::processCodeCompletionRequest( const PluginM
 
 	auto ret = res.server->documentCompletion(
 		res.loc.uri, res.loc.pos,
-		[&]( const PluginIDType& id, const std::vector<LSPCompletionItem>& items ) {
+		[&]( const PluginIDType& id, const LSPCompletionList& completionList ) {
 			mManager->sendResponse( this, PluginMessageType::CodeCompletion,
-									PluginMessageFormat::CodeCompletion, &items, id );
+									PluginMessageFormat::CodeCompletion, &completionList, id );
 		} );
 
 	return ret;
@@ -101,6 +106,17 @@ PluginRequestHandle LSPClientPlugin::processSignatureHelpRequest( const PluginMe
 		} );
 
 	return ret;
+}
+
+PluginRequestHandle LSPClientPlugin::processCancelRequest( const PluginMessage& msg ) {
+	if ( !msg.isBroadcast() || !msg.isJSON() )
+		return {};
+
+	auto server = getServerURIFromURI( mClientManager, msg.asJSON() );
+	if ( !server )
+		return {};
+
+	return server->cancel( msg.asJSON().value( "id", 0 ) );
 }
 
 PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) {
@@ -135,6 +151,10 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 					return PluginRequestHandle::broadcast();
 				}
 			}
+			break;
+		}
+		case PluginMessageType::CancelRequest: {
+			processCancelRequest( msg );
 			break;
 		}
 		default:
@@ -266,6 +286,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					lsp.name = tlsp.name;
 					lsp.rootIndicationFileNames = tlsp.rootIndicationFileNames;
 					lsp.url = tlsp.url;
+					lsp.initializationOptions = tlsp.initializationOptions;
 					break;
 				}
 			}
@@ -282,6 +303,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 
 		lsp.url = obj.value( "url", "" );
 		lsp.commandParameters = obj.value( "command_parameters", lsp.commandParameters );
+		if ( obj.contains( "initializationOptions" ) )
+			lsp.initializationOptions = obj["initializationOptions"];
 
 		auto fp = obj["file_patterns"];
 

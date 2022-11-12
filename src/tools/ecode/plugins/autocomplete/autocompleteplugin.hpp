@@ -42,9 +42,9 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 			sortText( sortText.empty() ? text : sortText ),
 			range( range ){};
 
-		bool operator<( const Suggestion& other ) { return getCmpStr() < other.getCmpStr(); }
+		bool operator<( const Suggestion& other ) const { return getCmpStr() < other.getCmpStr(); }
 
-		bool operator==( const Suggestion& other ) { return text == other.text; }
+		bool operator==( const Suggestion& other ) const { return text == other.text; }
 
 	  protected:
 		const std::string* getCmpStr() const { return !sortText.empty() ? &sortText : &text; }
@@ -140,6 +140,9 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	Mutex mCapabilitiesMutex;
 	LSPSignatureHelp mSignatureHelp;
 	TextPosition mSignatureHelpPosition;
+	Int32 mSignatureHelpSelected{ -1 };
+	Mutex mHandlesMutex;
+	std::map<TextDocument*, std::vector<PluginIDType>> mHandles;
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
@@ -171,7 +174,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 
 	void requestSignatureHelp( UICodeEditor* editor );
 
-	PluginRequestHandle processCodeCompletion( const std::vector<LSPCompletionItem>& completion );
+	PluginRequestHandle processCodeCompletion( const LSPCompletionList& completion );
 
 	PluginRequestHandle processSignatureHelp( const LSPSignatureHelp& signatureHelp );
 

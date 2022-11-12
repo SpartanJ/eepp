@@ -64,6 +64,7 @@ enum class PluginMessageType {
 	LanguageServerCapabilities, // Request the language server capabilities of a language if there
 								// is any available, it will be returned as a broadcast
 	SignatureHelp,				// Request the LSP Client to provide function/method signature help
+	CancelRequest,
 	Undefined
 };
 
@@ -93,8 +94,8 @@ struct PluginMessage {
 		return *static_cast<const LSPPublishDiagnosticsParams*>( data );
 	}
 
-	const std::vector<LSPCompletionItem>& asCodeCompletion() const {
-		return *static_cast<const std::vector<LSPCompletionItem>*>( data );
+	const LSPCompletionList& asCodeCompletion() const {
+		return *static_cast<const LSPCompletionList*>( data );
 	}
 
 	const LSPServerCapabilities& asLanguageServerCapabilities() const {
@@ -104,6 +105,8 @@ struct PluginMessage {
 	const LSPSignatureHelp& asSignatureHelp() const {
 		return *static_cast<const LSPSignatureHelp*>( data );
 	}
+
+	const PluginIDType& asPluginID() const { return *static_cast<const PluginIDType*>( data ); }
 
 	bool isResponse() const { return -1 != responseID && 0 != responseID; }
 
@@ -119,8 +122,8 @@ class PluginRequestHandle {
 	static PluginRequestHandle empty() { return PluginRequestHandle(); }
 
 	PluginRequestHandle() {}
-	PluginRequestHandle( int id ) : mId( id ) {}
-	virtual PluginIDType id() const { return mId; }
+	PluginRequestHandle( PluginIDType id ) : mId( id ) {}
+	virtual const PluginIDType& id() const { return mId; }
 	virtual void cancel() {}
 
 	bool isEmpty() const { return mId == 0; }

@@ -99,6 +99,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	PluginRequestHandle processCodeCompletionRequest( const PluginMessage& msg );
 
 	PluginRequestHandle processSignatureHelpRequest( const PluginMessage& msg );
+
+	PluginRequestHandle processCancelRequest( const PluginMessage& msg );
 };
 
 } // namespace ecode

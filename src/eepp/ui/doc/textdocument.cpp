@@ -745,6 +745,7 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 	if ( !range.isValid() )
 		return;
 
+	TextRange originalRange = range;
 	mUndoStack.pushSelection( undoStack, getSelection(), time );
 	mUndoStack.pushInsert( undoStack, getText( range ), range.start(), time );
 
@@ -800,7 +801,7 @@ void TextDocument::remove( TextRange range, UndoStackContainer& undoStack, const
 	if ( lines().empty() ) {
 		mLines.emplace_back( String( "\n" ) );
 	}
-	notifyTextChanged( { range, "" } );
+	notifyTextChanged( { originalRange, "" } );
 	notifyLineChanged( range.start().line() );
 }
 

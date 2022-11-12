@@ -627,11 +627,13 @@ static std::vector<std::string> supportedSemanticTokenTypes() {
 			 "string",		  "number",	   "regexp",   "operator" };
 }
 
-static std::vector<LSPCompletionItem> parseDocumentCompletion( const json& result ) {
-	std::vector<LSPCompletionItem> ret;
+static LSPCompletionList parseDocumentCompletion( const json& result ) {
+	LSPCompletionList ret;
 	if ( result.empty() )
 		return {};
 	try {
+		ret.isIncomplete =
+			result.contains( "isIncomplete" ) ? result["isIncomplete"].get<bool>() : false;
 		const json& items =
 			( result.is_object() && result.contains( "items" ) ) ? result["items"] : result;
 
@@ -653,8 +655,8 @@ static std::vector<LSPCompletionItem> parseDocumentCompletion( const json& resul
 					? parseTextEditArray( item.at( "additionalTextEdits" ) )
 					: std::vector<LSPTextEdit>{};
 
-			ret.push_back( { label, kind, detail, doc, sortText, insertText, filterText, textEdit,
-							 additionalTextEdits } );
+			ret.items.push_back( { label, kind, detail, doc, sortText, insertText, filterText,
+								   textEdit, additionalTextEdits } );
 		}
 	} catch ( const json::exception& err ) {
 		Log::warning( "Error parsing parseDocumentCompletion: %s", err.what() );
@@ -769,7 +771,7 @@ void LSPClientServer::initialize() {
 
 	json params{ { "processId", Sys::getProcessID() },
 				 { "capabilities", capabilities },
-				 { "initializationOptions", {} } };
+				 { "initializationOptions", mLSP.initializationOptions } };
 
 	std::string rootPath = mRootPath;
 	if ( rootPath.empty() ) {
@@ -855,9 +857,13 @@ const LSPServerCapabilities& LSPClientServer::getCapabilities() const {
 }
 
 LSPClientServer::LSPRequestHandle LSPClientServer::cancel( int reqid ) {
-	Lock l( mHandlersMutex );
-	if ( mHandlers.erase( reqid ) > 0 ) {
-		auto params = json{ MEMBER_ID, reqid };
+	size_t res = 0;
+	{
+		Lock l( mHandlersMutex );
+		res = mHandlers.erase( reqid ) > 0;
+	}
+	if ( res > 0 ) {
+		auto params = json{ { MEMBER_ID, reqid } };
 		return write( newRequest( "$/cancelRequest", params ) );
 	}
 	return LSPRequestHandle();
@@ -1006,15 +1012,13 @@ LSPClientServer::LSPRequestHandle LSPClientServer::didClose( const URI& document
 	return send( newRequest( "textDocument/didClose", params ) );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::didClose( TextDocument* doc ) {
-	auto ret = didClose( doc->getURI() );
+void LSPClientServer::removeDoc( TextDocument* doc ) {
 	Lock l( mClientsMutex );
 	if ( mClients.erase( doc ) > 0 ) {
 		auto it = std::find( mDocs.begin(), mDocs.end(), doc );
 		if ( it != mDocs.end() )
 			mDocs.erase( it );
 	}
-	return ret;
 }
 
 LSPClientServerManager* LSPClientServer::getManager() const {

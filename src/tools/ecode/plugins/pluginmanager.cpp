@@ -194,7 +194,7 @@ void PluginManager::sendBroadcast( const PluginMessageType& notification,
 		subscribedPlugins = mSubscribedPlugins;
 	}
 	for ( const auto& plugin : subscribedPlugins )
-		plugin.second( { notification, format, data } );
+		plugin.second( { notification, format, data, -1 } );
 }
 
 bool PluginManager::hasDefinition( const std::string& id ) {

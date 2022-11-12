@@ -306,4 +306,27 @@ SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& te
 	return std::make_pair( tokens, retState );
 }
 
+Text& SyntaxTokenizer::tokenizeText( const SyntaxDefinition& syntax,
+									 const SyntaxColorScheme& colorScheme, Text& text,
+									 const size_t& startIndex, const size_t& endIndex ) {
+
+	auto tokens = SyntaxTokenizer::tokenize( syntax, text.getString(), SYNTAX_TOKENIZER_STATE_NONE,
+											 startIndex )
+					  .first;
+
+	size_t start = startIndex;
+	for ( auto& token : tokens ) {
+		if ( start < endIndex ) {
+			size_t strSize = String::utf8StringLength( token.text );
+			text.setFillColor( colorScheme.getSyntaxStyle( token.type ).color, start,
+							   std::min( start + strSize, endIndex ) );
+			start += strSize;
+		} else {
+			break;
+		}
+	}
+
+	return text;
+}
+
 }}} // namespace EE::UI::Doc

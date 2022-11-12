@@ -673,12 +673,15 @@ void UIWindow::fixChildsSize() {
 		mWindowDecoration->setPixelsSize(
 			mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.TitlebarSize.getHeight() ) );
 
-	if ( mStyleConfig.BorderAutoSize ) {
-		mBorderBottom->setPixelsSize(
-			mSize.getWidth(), PixelDensity::dpToPx( mBorderBottom->getSkinSize().getHeight() ) );
-	} else {
-		mBorderBottom->setPixelsSize( mSize.getWidth(),
-									  PixelDensity::dpToPx( mStyleConfig.BorderSize.getHeight() ) );
+	if ( mBorderBottom ) {
+		if ( mStyleConfig.BorderAutoSize ) {
+			mBorderBottom->setPixelsSize(
+				mSize.getWidth(),
+				PixelDensity::dpToPx( mBorderBottom->getSkinSize().getHeight() ) );
+		} else {
+			mBorderBottom->setPixelsSize(
+				mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.BorderSize.getHeight() ) );
+		}
 	}
 
 	Uint32 BorderHeight = mSize.getHeight() - PixelDensity::dpToPx( decoSize.getHeight() ) -

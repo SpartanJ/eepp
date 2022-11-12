@@ -1,5 +1,6 @@
 #ifndef ECODE_LSPDEFINITION_HPP
 #define ECODE_LSPDEFINITION_HPP
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -13,6 +14,8 @@ struct LSPDefinition {
 	std::string commandParameters;
 	std::vector<std::string> rootIndicationFileNames;
 	std::string url;
+	nlohmann::json initializationOptions;
+
 	bool disabled{ false };
 };
 

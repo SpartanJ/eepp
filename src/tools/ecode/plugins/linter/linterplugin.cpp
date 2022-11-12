@@ -672,7 +672,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 
 		Int64 strSize = match.range.end().column() - match.range.start().column();
 		Vector2f pos = { position.x + editor->getXOffsetCol( match.range.start() ), position.y };
-		if ( strSize == 0 ) {
+		if ( strSize <= 0 ) {
 			strSize = 1;
 			pos = { position.x, position.y };
 		}

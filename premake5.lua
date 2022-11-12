@@ -370,6 +370,14 @@ function parse_args()
 	if _OPTIONS["with-gles1"] then
 		defines { "EE_GLES1", "SOIL_GLES1" }
 	end
+
+	if _OPTIONS["thread-sanitizer"] then
+		buildoptions { "-fsanitize=thread" }
+		linkoptions { "-fsanitize=thread" }
+		if not os.istarget("macosx") then
+			links { "tsan" }
+		end
+	end
 end
 
 function add_static_links()

@@ -49,7 +49,7 @@ newplatform {
 		cc = "clang",
 		cxx = "clang++",
 		ar = "ar",
-		cppflags = "-MMD "
+		cppflags = "-MMD"
 	}
 }
 
@@ -162,6 +162,7 @@ newoption { trigger = "use-frameworks", description = "In macOS it will try to l
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
+newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanitizer." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -616,6 +617,14 @@ function parse_args()
 
 	if _OPTIONS["with-gles1"] then
 		defines { "EE_GLES1", "SOIL_GLES1" }
+	end
+
+	if _OPTIONS["thread-sanitizer"] then
+		buildoptions { "-fsanitize=thread" }
+		linkoptions { "-fsanitize=thread" }
+		if not os.is_real("macosx") then
+			links { "tsan" }
+		end
 	end
 end
 

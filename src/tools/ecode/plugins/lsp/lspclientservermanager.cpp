@@ -154,13 +154,22 @@ void LSPClientServerManager::updateDirty() {
 		Lock l( mClientsMutex );
 		for ( auto& server : mClients ) {
 			if ( !server.second->hasDocuments() )
-				mLSPsToClose.push_back( server.first );
+				mLSPsToClose.push_back( { std::make_unique<Clock>(), server.first } );
 		}
 	}
 	if ( !mLSPsToClose.empty() ) {
-		for ( const auto& server : mLSPsToClose )
-			closeLSPServer( server );
-		mLSPsToClose.clear();
+		std::vector<String::HashType> removed;
+
+		for ( const auto& server : mLSPsToClose ) {
+			// Kill server only after 60 seconds of inactivity
+			if ( server.first->getElapsedTime() > Seconds( 60.f ) )
+				removed.push_back( server.second );
+		}
+
+		if ( !removed.empty() ) {
+			for ( auto& remove : removed )
+				closeLSPServer( remove );
+		}
 	}
 }
 

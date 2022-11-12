@@ -363,6 +363,11 @@ struct LSPCompletionItem {
 	std::vector<LSPTextEdit> additionalTextEdits;
 };
 
+struct LSPCompletionList {
+	bool isIncomplete{ false };
+	std::vector<LSPCompletionItem> items;
+};
+
 struct LSPSelectionRange {
 	TextRange range;
 	std::shared_ptr<LSPSelectionRange> parent;

@@ -348,7 +348,7 @@ Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32& Flags ) {
 		}
 	}
 
-	if ( NULL != mTileBox ) {
+	if ( NULL != mTileBox && NULL != mMap ) {
 		Vector2i mp( mMap->getMouseTilePos() );
 
 		if ( mLastMouseTilePos != mp ) {

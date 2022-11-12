@@ -8,7 +8,26 @@
       "url": "https://github.com/theia-ide/typescript-language-server",
       "command": "typescript-language-server --stdio",
       "file_patterns": ["%.ts$"],
-      "rootIndicationFileNames": ["package.json", "package-lock.json"]
+      "rootIndicationFileNames": ["package.json", "package-lock.json"],
+      "initializationOptions": {
+        "preferences": {
+          "allowIncompleteCompletions": true,
+          "allowRenameOfImportPath": true,
+          "allowTextChangesInNewFiles": true,
+          "displayPartsForJSDoc": true,
+          "generateReturnInDocTemplate": true,
+          "includeAutomaticOptionalChainCompletions": true,
+          "includeCompletionsForImportStatements": true,
+          "includeCompletionsForModuleExports": true,
+          "includeCompletionsWithClassMemberSnippets": false,
+          "includeCompletionsWithObjectLiteralMethodSnippets": false,
+          "includeCompletionsWithInsertText": false,
+          "includeCompletionsWithSnippetText": false,
+          "jsxAttributeCompletionStyle": "auto",
+          "providePrefixAndSuffixTextForRename": true,
+          "provideRefactorNotApplicableReason": true
+        }
+      }
     },
     {
       "language": "javascript",

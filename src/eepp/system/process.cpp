@@ -130,8 +130,12 @@ size_t Process::readStdErr( char* const buffer, const size_t& size ) {
 
 size_t Process::write( const char* buffer, const size_t& size ) {
 	eeASSERT( mProcess != nullptr );
+	if ( mShuttingDown )
+		return 0;
 	Lock l( mStdInMutex );
 	FILE* stdInFile = subprocess_stdin( PROCESS_PTR );
+	if ( !stdInFile )
+		return 0;
 	int ret = fwrite( buffer, 1, size, stdInFile );
 	fflush( stdInFile );
 	return ret;

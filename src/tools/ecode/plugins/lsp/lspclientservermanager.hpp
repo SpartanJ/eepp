@@ -65,7 +65,7 @@ class LSPClientServerManager {
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::map<String::HashType, std::unique_ptr<LSPClientServer>> mClients;
 	std::vector<LSPDefinition> mLSPs;
-	std::vector<String::HashType> mLSPsToClose;
+	std::vector<std::pair<std::unique_ptr<Clock>, String::HashType>> mLSPsToClose;
 	LSPWorkspaceFolder mLSPWorkspaceFolder;
 	Mutex mClientsMutex;
 
