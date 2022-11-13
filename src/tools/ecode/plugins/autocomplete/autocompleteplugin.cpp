@@ -21,7 +21,10 @@ namespace ecode {
 static json getURIJSON( TextDocument* doc, const PluginIDType& id ) {
 	json data;
 	data["uri"] = doc->getURI().toString();
-	data["id"] = id;
+	if ( id.isInteger() )
+		data["id"] = id.asInt();
+	else
+		data["id"] = id.asString();
 	return data;
 }
 
@@ -55,7 +58,10 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 	}
 
 	std::sort( matches.begin(), matches.end(),
-			   []( const auto& left, const auto& right ) { return left.score > right.score; } );
+			   []( const AutoCompletePlugin::Suggestion& left,
+				   const AutoCompletePlugin::Suggestion& right ) {
+				   return left.score > right.score && left.kind != LSPCompletionItemKind::Text;
+			   } );
 
 	return matches;
 }
@@ -419,11 +425,13 @@ PluginRequestHandle
 AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion ) {
 	SymbolsList suggestions;
 	for ( const auto& item : completion.items ) {
-		if ( !item.textEdit.text.empty() )
+		if ( !item.insertText.empty() )
+			suggestions.push_back(
+				{ item.kind, item.insertText, item.detail, item.sortText, item.textEdit.range } );
+
+		else if ( !item.textEdit.text.empty() )
 			suggestions.push_back( { item.kind, item.textEdit.text, item.detail, item.sortText,
 									 item.textEdit.range } );
-		else if ( !item.insertText.empty() )
-			suggestions.push_back( { item.kind, item.insertText, item.detail, item.sortText } );
 		else
 			suggestions.push_back( { item.kind, item.filterText, item.detail, item.sortText } );
 	}

@@ -27,6 +27,8 @@ class LSPClientServerManager;
 
 class LSPClientServer {
   public:
+	static PluginIDType getID( const json& json );
+
 	using IdType = PluginIDType;
 	template <typename T> using ReplyHandler = std::function<void( const IdType& id, const T& )>;
 
@@ -41,7 +43,7 @@ class LSPClientServer {
 	class LSPRequestHandle : public PluginRequestHandle {
 	  public:
 		void cancel() {
-			if ( server && mId != 0 )
+			if ( server && mId.isValid() )
 				server->cancel( mId );
 		}
 
@@ -65,7 +67,7 @@ class LSPClientServer {
 
 	const std::shared_ptr<ThreadPool>& getThreadPool() const;
 
-	LSPRequestHandle cancel( int id );
+	LSPRequestHandle cancel( const PluginIDType& id );
 
 	LSPRequestHandle send( const json& msg, const JsonReplyHandler& h = nullptr,
 						   const JsonReplyHandler& eh = nullptr );
@@ -182,7 +184,8 @@ class LSPClientServer {
 	Process mProcess;
 	std::vector<TextDocument*> mDocs;
 	std::map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
-	std::map<int, std::pair<JsonReplyHandler, JsonReplyHandler>> mHandlers;
+	using HandlersMap = std::map<PluginIDType, std::pair<JsonReplyHandler, JsonReplyHandler>>;
+	HandlersMap mHandlers;
 	Mutex mClientsMutex;
 	Mutex mHandlersMutex;
 	bool mReady{ false };
@@ -204,7 +207,7 @@ class LSPClientServer {
 	std::queue<DidChangeQueue> mDidChangeQueue;
 	Mutex mDidChangeMutex;
 
-	int mLastMsgId{ -1 };
+	int mLastMsgId{ 0 };
 
 	void readStdOut( const char* bytes, size_t n );
 

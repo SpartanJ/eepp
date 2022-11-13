@@ -1,7 +1,6 @@
 #ifndef ECODE_LSPDOCUMENTCLIENT_HPP
 #define ECODE_LSPDOCUMENTCLIENT_HPP
 
-#include "../pluginmanager.hpp"
 #include <eepp/system/clock.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 
@@ -41,7 +40,7 @@ class LSPDocumentClient : public TextDocument::Client {
   protected:
 	LSPClientServer* mServer{ nullptr };
 	TextDocument* mDoc{ nullptr };
-	PluginIDType mVersion{ 0 };
+	int mVersion{ 0 };
 };
 
 } // namespace ecode

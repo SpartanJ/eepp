@@ -115,6 +115,14 @@ const std::string& SyntaxDefinition::getLSPName() const {
 	return mLSPName;
 }
 
+void SyntaxDefinition::setVisible( bool visible ) {
+	mVisible = visible;
+}
+
+bool SyntaxDefinition::isVisible() const {
+	return mVisible;
+}
+
 const std::string& SyntaxDefinition::getLanguageName() const {
 	return mLanguageName;
 }

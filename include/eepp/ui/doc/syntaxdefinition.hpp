@@ -74,6 +74,10 @@ class EE_API SyntaxDefinition {
 
 	const std::string& getLSPName() const;
 
+	void setVisible( bool visible );
+
+	bool isVisible() const;
+
   protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;
@@ -83,6 +87,7 @@ class EE_API SyntaxDefinition {
 	std::string mComment;
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;
+	bool mVisible{ true };
 };
 
 }}} // namespace EE::UI::Doc

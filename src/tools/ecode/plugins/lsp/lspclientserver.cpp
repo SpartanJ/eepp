@@ -55,10 +55,22 @@ static json newRequest( const std::string& method, const json& params = json{} )
 	return j;
 }
 
-static json newResponse( const std::string& method, const int& id ) {
+static json newID( const PluginIDType& id ) {
+	json j;
+	if ( id.isInteger() )
+		j[MEMBER_ID] = id.asInt();
+	else
+		j[MEMBER_ID] = id.asString();
+	return j;
+}
+
+static json newResponse( const std::string& method, const PluginIDType& id ) {
 	json j;
 	j[MEMBER_METHOD] = method;
-	j[MEMBER_ID] = id;
+	if ( id.isInteger() )
+		j[MEMBER_ID] = id.asInt();
+	else
+		j[MEMBER_ID] = id.asString();
 	return j;
 }
 
@@ -301,8 +313,8 @@ static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
 													? String::toString( diag["code"].get<int>() )
 													: diag.at( "code" ).get<std::string>() )
 											: "";
-		auto source = diag.at( "source" ).get<std::string>();
-		auto message = diag.at( MEMBER_MESSAGE ).get<std::string>();
+		auto source = diag.value( "source", "" );
+		auto message = diag.value( MEMBER_MESSAGE, "" );
 		std::vector<LSPDiagnosticRelatedInformation> relatedInfoList;
 		if ( diag.contains( "relatedInformation" ) ) {
 			const auto relatedInfo = diag.at( "relatedInformation" );
@@ -856,14 +868,14 @@ const LSPServerCapabilities& LSPClientServer::getCapabilities() const {
 	return mCapabilities;
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::cancel( int reqid ) {
+LSPClientServer::LSPRequestHandle LSPClientServer::cancel( const PluginIDType& reqid ) {
 	size_t res = 0;
 	{
 		Lock l( mHandlersMutex );
 		res = mHandlers.erase( reqid ) > 0;
 	}
 	if ( res > 0 ) {
-		auto params = json{ { MEMBER_ID, reqid } };
+		auto params = newID( reqid );
 		return write( newRequest( "$/cancelRequest", params ) );
 	}
 	return LSPRequestHandle();
@@ -1096,6 +1108,19 @@ static LSPWorkDoneProgressParams parseWorkDone( const json& json ) {
 	return parseProgress<LSPWorkDoneProgressValue>( json );
 }
 
+PluginIDType LSPClientServer::getID( const json& json ) {
+	const auto& memberID = json[MEMBER_ID];
+	if ( memberID.is_string() ) {
+		return memberID.get<std::string>();
+	} else if ( memberID.is_number_integer() ) {
+		return memberID.get<int>();
+	} else if ( memberID.is_number_unsigned() ) {
+		return memberID.get<unsigned int>();
+	}
+	eeASSERT( true );
+	return {};
+}
+
 static json newError( const LSPErrorCode& code, const std::string& msg ) {
 	return json{
 		{ MEMBER_ERROR, { { MEMBER_CODE, static_cast<int>( code ) }, { MEMBER_MESSAGE, msg } } } };
@@ -1142,7 +1167,7 @@ void LSPClientServer::processRequest( const json& msg ) {
 	Log::debug( "LSPClientServer::processRequest server %s: %s", mLSP.name.c_str(),
 				msg.dump().c_str() );
 	auto method = msg[MEMBER_METHOD].get<std::string>();
-	auto msgid = msg[MEMBER_ID].get<int>();
+	auto msgid = getID( msg );
 	//	auto params = msg[MEMBER_PARAMS];
 	//	bool handled = false;
 	if ( method == "window/workDoneProgress/create" || method == "client/registerCapability" ) {
@@ -1158,7 +1183,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 	std::string& buffer = mReceive;
 
 	while ( true ) {
-		auto index = buffer.find_first_of( CONTENT_LENGTH_HEADER );
+		auto index = buffer.find( CONTENT_LENGTH_HEADER );
 		if ( index == std::string::npos ) {
 			if ( buffer.size() > ( 1 << 20 ) )
 				buffer.clear();
@@ -1166,8 +1191,8 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 		}
 
 		index += strlen( CONTENT_LENGTH_HEADER );
-		auto endindex = buffer.find_first_of( "\r\n", index );
-		auto msgstart = buffer.find_first_of( "\r\n\r\n", index );
+		auto endindex = buffer.find( "\r\n", index );
+		auto msgstart = buffer.find( "\r\n\r\n", index );
 		if ( endindex == std::string::npos || msgstart == std::string::npos )
 			break;
 
@@ -1207,9 +1232,9 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 #endif
 			auto res = json::parse( payload );
 
-			int msgid = -1;
+			PluginIDType msgid;
 			if ( res.contains( MEMBER_ID ) ) {
-				msgid = res[MEMBER_ID].get<int>();
+				msgid = getID( res );
 			} else {
 				processNotification( res );
 				continue;
@@ -1223,17 +1248,26 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 			Log::debug( "LSPClientServer::readStdOut server %s said: \n%s", mLSP.name.c_str(),
 						res.dump().c_str() );
 
-			Lock l( mHandlersMutex );
-			auto it = mHandlers.find( msgid );
-			if ( it != mHandlers.end() ) {
-				const auto handler = *it;
-				mHandlers.erase( it );
-				auto& h = handler.second.first;
-				auto& eh = handler.second.second;
-				if ( res.contains( MEMBER_ERROR ) && eh ) {
-					eh( msgid, res[MEMBER_ERROR] );
+			HandlersMap::iterator it;
+			HandlersMap::iterator itEnd;
+			JsonReplyHandler handlerOK;
+			JsonReplyHandler handlerErr;
+			{
+				Lock l( mHandlersMutex );
+				it = mHandlers.find( msgid );
+				itEnd = mHandlers.end();
+				if ( it != itEnd ) {
+					handlerOK = it->second.first;
+					handlerErr = it->second.second;
+					mHandlers.erase( it );
+				}
+			}
+
+			if ( it != itEnd ) {
+				if ( res.contains( MEMBER_ERROR ) && handlerErr ) {
+					handlerErr( msgid, res[MEMBER_ERROR] );
 				} else {
-					h( msgid, res[MEMBER_RESULT] );
+					handlerOK( msgid, res[MEMBER_RESULT] );
 				}
 			} else {
 				Log::debug( "LSPClientServer::readStdOut server %s unexpected reply id: %d",

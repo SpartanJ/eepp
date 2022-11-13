@@ -7,6 +7,7 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <limits>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -76,7 +77,44 @@ enum class PluginMessageFormat {
 	SignatureHelp
 };
 
-using PluginIDType = Int64;
+class PluginIDType {
+  public:
+	enum class Type { Integer, String, Invalid };
+
+	PluginIDType() {}
+
+	PluginIDType( Int64 val ) : mType( Type::Integer ), mInt( val ) {}
+
+	PluginIDType( const std::string& val ) : mType( Type::String ), mString( val ) {}
+
+	bool operator==( const PluginIDType& right ) {
+		return mType == right.mType && ( ( mType == Type::Integer && mInt == right.mInt ) ||
+										 ( mType == Type::String && mString == right.mString ) );
+	}
+
+	bool operator!=( const PluginIDType& right ) { return !( *this == right ); }
+
+	bool is( const Type& type ) const { return type == mType; }
+
+	bool isString() const { return Type::String == mType; }
+
+	bool isInteger() const { return Type::Integer == mType; }
+
+	bool isValid() const { return mType != Type::Invalid; }
+
+	operator Int64() const { return mInt; }
+
+	operator std::string() { return mString; }
+
+	const Int64& asInt() const { return mInt; }
+
+	const std::string& asString() const { return mString; }
+
+  protected:
+	Type mType{ Type::Invalid };
+	Int64 mInt{ std::numeric_limits<Int64>::max() };
+	std::string mString;
+};
 
 class LSPClientPlugin;
 

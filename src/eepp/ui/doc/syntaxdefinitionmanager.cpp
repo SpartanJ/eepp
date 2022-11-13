@@ -153,7 +153,7 @@ void SyntaxDefinitionManager::addXML() {
 
 void SyntaxDefinitionManager::addHTML() {
 	add( { "HTML",
-		   { "%.html?$", "%.php$", "%.php3$", "%.php4$", "%.php5$", "%.phtml", "%.handlebars" },
+		   { "%.html?$", "%.phtml", "%.handlebars" },
 		   {
 			   { { "<%s*[sS][cC][rR][iI][pP][tT]%s+[tT][yY][pP][eE]%s*=%s*['\"]%a+/"
 				   "[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]['\"]%s*>",
@@ -166,7 +166,7 @@ void SyntaxDefinitionManager::addHTML() {
 			   { { "<%s*[sS][tT][yY][lL][eE][^>]*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
 				 "function",
 				 "CSS" },
-			   { { "<%?p?h?p?", "%?>" }, "function", "PHP" },
+			   { { "<%?p?h?p?", "%?>" }, "function", "PHPCore" },
 			   { { "<!%-%-", "%-%->" }, "comment" },
 			   { { "%f[^>][^<]", "%f[<]" }, "normal" },
 			   { { "\"", "\"", "\\" }, "string" },
@@ -406,7 +406,7 @@ void SyntaxDefinitionManager::addMarkdown() {
 			   { { "```[Tt]ype[Ss]cript", "```" }, "function", "TypeScript" },
 			   { { "```[Pp]ython", "```" }, "function", "Python" },
 			   { { "```[Bb]ash", "```" }, "function", "Bash" },
-			   { { "```[Pp][Hh][Pp]", "```" }, "function", "PHP" },
+			   { { "```[Pp][Hh][Pp]", "```" }, "function", "PHPCore" },
 			   { { "```[Ss][Qq][Ll]", "```" }, "function", "SQL" },
 			   { { "```[Gg][Ll][Ss][Ll]", "```" }, "function", "GLSL" },
 			   { { "```[Ii][Nn][Ii]", "```" }, "function", "Config File" },
@@ -841,6 +841,38 @@ void SyntaxDefinitionManager::addCPP() {
 
 void SyntaxDefinitionManager::addPHP() {
 	add( { "PHP",
+		   { "%.php$", "%.php3$", "%.php4$", "%.php5$" },
+		   {
+			   { { "<%s*[sS][cC][rR][iI][pP][tT]%s+[tT][yY][pP][eE]%s*=%s*['\"]%a+/"
+				   "[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]['\"]%s*>",
+				   "<%s*/[sS][cC][rR][iI][pP][tT]>" },
+				 "function",
+				 "JavaScript" },
+			   { { "<%s*[sS][cC][rR][iI][pP][tT]%s*>", "<%s*/%s*[sS][cC][rR][iI][pP][tT]>" },
+				 "function",
+				 "JavaScript" },
+			   { { "<%s*[sS][tT][yY][lL][eE][^>]*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
+				 "function",
+				 "CSS" },
+			   { { "<%?p?h?p?", "%?>" }, "function", "PHPCore" },
+			   { { "<!%-%-", "%-%->" }, "comment" },
+			   { { "%f[^>][^<]", "%f[<]" }, "normal" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "0x[%da-fA-F]+" }, "number" },
+			   { { "-?%d+[%d%.]*f?" }, "number" },
+			   { { "-?%.?%d+f?" }, "number" },
+			   { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+			   { { "%f[^<][%a_][%w%_%-]*" }, "function" },
+			   { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
+			   { { "[%a_][%w_]*" }, "keyword" },
+			   { { "[/<>=]" }, "operator" },
+		   },
+		   {},
+		   "",
+		   { "^#!.*[ /]php" } } );
+
+	add( { "PHPCore",
 		   {},
 		   {
 			   { { "<%?p?h?p?" }, "function" },
@@ -900,7 +932,9 @@ void SyntaxDefinitionManager::addPHP() {
 			 { "NULL", "literal" },		   { "parent", "literal" },
 			 { "self", "literal" },		   { "echo", "function" } },
 		   "//",
-		   { "^#!.*[ /]php" } } );
+		   {},
+		   "php" } )
+		.setVisible( false );
 }
 
 void SyntaxDefinitionManager::addSQL() {
@@ -3774,7 +3808,8 @@ SyntaxDefinition& SyntaxDefinitionManager::getByLanguageNameRef( const std::stri
 std::vector<std::string> SyntaxDefinitionManager::getLanguageNames() const {
 	std::vector<std::string> names;
 	for ( auto& style : mDefinitions ) {
-		names.push_back( style.getLanguageName() );
+		if ( style.isVisible() )
+			names.push_back( style.getLanguageName() );
 	}
 	std::sort( names.begin(), names.end() );
 	return names;

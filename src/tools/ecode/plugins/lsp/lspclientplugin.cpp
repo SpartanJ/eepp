@@ -116,7 +116,7 @@ PluginRequestHandle LSPClientPlugin::processCancelRequest( const PluginMessage& 
 	if ( !server )
 		return {};
 
-	return server->cancel( msg.asJSON().value( "id", 0 ) );
+	return server->cancel( LSPClientServer::getID( msg.asJSON() ) );
 }
 
 PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) {
