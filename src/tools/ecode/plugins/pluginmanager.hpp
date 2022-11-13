@@ -102,6 +102,12 @@ class PluginIDType {
 
 	bool isValid() const { return mType != Type::Invalid; }
 
+	std::string toString() {
+		if ( mType == Type::Integer )
+			return String::toString( mInt );
+		return mString;
+	}
+
 	operator Int64() const { return mInt; }
 
 	operator std::string() { return mString; }

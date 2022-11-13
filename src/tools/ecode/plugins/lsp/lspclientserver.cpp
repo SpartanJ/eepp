@@ -1270,8 +1270,8 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 					handlerOK( msgid, res[MEMBER_RESULT] );
 				}
 			} else {
-				Log::debug( "LSPClientServer::readStdOut server %s unexpected reply id: %d",
-							mLSP.name.c_str(), msgid );
+				Log::debug( "LSPClientServer::readStdOut server %s unexpected reply id: %s",
+							mLSP.name.c_str(), msgid.toString().c_str() );
 			}
 #ifndef EE_DEBUG
 		} catch ( const json::exception& e ) {
