@@ -597,8 +597,10 @@ double Sys::getSystemTime() {
 Uint64 Sys::getProcessID() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return GetCurrentProcessId();
-#else
+#elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	return getpid();
+#else
+#warning Sys::getProcessID() not implemented in this platform
 #endif
 }
 

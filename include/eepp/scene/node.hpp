@@ -424,6 +424,8 @@ class EE_API Node : public Transformable {
 
 	const Vector2f& getScreenPos() const;
 
+	Rectf getScreenRect() const;
+
   protected:
 	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;

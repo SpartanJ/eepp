@@ -3,6 +3,7 @@
 # remember to first set the environment
 # source /path/to/emsdk/emsdk_env.sh
 cd $(dirname "$0") || exit
+unset CPLUS_INCLUDE_PATH
 premake4 --file=../../premake4.lua --with-gles2 --with-static-eepp --platform=emscripten --with-backend=SDL2 gmake
 cd ../../make/emscripten/ || exit
 rm -rf ./assets

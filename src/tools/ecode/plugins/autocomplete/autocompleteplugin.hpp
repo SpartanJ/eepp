@@ -179,6 +179,9 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	PluginRequestHandle processSignatureHelp( const LSPSignatureHelp& signatureHelp );
 
 	void resetSignatureHelp();
+
+	void drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
+							const Float& lineHeight, bool drawUp );
 };
 
 } // namespace ecode

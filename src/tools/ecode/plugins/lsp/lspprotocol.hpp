@@ -132,10 +132,35 @@ enum class LSPDiagnosticSeverity {
 	Hint = 4,
 };
 
+using LSPTextEdit = LSPTextDocumentContentChangeEvent;
+
+struct LSPVersionedTextDocumentIdentifier {
+	URI uri;
+	int version = -1;
+};
+
+struct LSPTextDocumentEdit {
+	LSPVersionedTextDocumentIdentifier textDocument;
+	std::vector<LSPTextEdit> edits;
+};
+
+struct LSPWorkspaceEdit {
+	// supported part for now
+	std::map<URI, std::vector<LSPTextEdit>> changes;
+	std::vector<LSPTextDocumentEdit> documentChanges;
+};
+
 struct LSPDiagnosticRelatedInformation {
 	// empty url / invalid range when absent
 	LSPLocation location;
 	std::string message;
+};
+
+struct LSPDiagnosticsCodeAction {
+	std::string title;
+	std::string kind;
+	bool isPreferred{ false };
+	LSPWorkspaceEdit edit;
 };
 
 struct LSPDiagnostic {
@@ -145,6 +170,7 @@ struct LSPDiagnostic {
 	std::string source;
 	std::string message;
 	std::vector<LSPDiagnosticRelatedInformation> relatedInformation;
+	std::vector<LSPDiagnosticsCodeAction> codeActions;
 };
 
 struct LSPPublishDiagnosticsParams {
@@ -157,24 +183,6 @@ struct LSPCommand {
 	std::string command;
 	// pretty opaque
 	nlohmann::json arguments;
-};
-
-struct LSPVersionedTextDocumentIdentifier {
-	URI uri;
-	int version = -1;
-};
-
-using LSPTextEdit = LSPTextDocumentContentChangeEvent;
-
-struct LSPTextDocumentEdit {
-	LSPVersionedTextDocumentIdentifier textDocument;
-	std::vector<LSPTextEdit> edits;
-};
-
-struct LSPWorkspaceEdit {
-	// supported part for now
-	std::map<URI, std::vector<LSPTextEdit>> changes;
-	std::vector<LSPTextDocumentEdit> documentChanges;
 };
 
 struct LSPCodeAction {

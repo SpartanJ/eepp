@@ -303,40 +303,6 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	caps.ready = true;
 }
 
-static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
-	std::vector<LSPDiagnostic> ret;
-	for ( const auto& vdiag : result ) {
-		auto diag = vdiag;
-		auto range = parseRange( diag[MEMBER_RANGE] );
-		auto severity = static_cast<LSPDiagnosticSeverity>( diag["severity"].get<int>() );
-		auto code = diag.contains( "code" ) ? ( diag["code"].is_number_integer()
-													? String::toString( diag["code"].get<int>() )
-													: diag.at( "code" ).get<std::string>() )
-											: "";
-		auto source = diag.value( "source", "" );
-		auto message = diag.value( MEMBER_MESSAGE, "" );
-		std::vector<LSPDiagnosticRelatedInformation> relatedInfoList;
-		if ( diag.contains( "relatedInformation" ) ) {
-			const auto relatedInfo = diag.at( "relatedInformation" );
-			for ( const auto& vrelated : relatedInfo ) {
-				auto related = vrelated;
-				auto relLocation = parseLocation( related.at( MEMBER_LOCATION ) );
-				auto relMessage = related.at( MEMBER_MESSAGE ).get<std::string>();
-				relatedInfoList.push_back( { relLocation, relMessage } );
-			}
-		}
-		ret.push_back( { range, severity, code, source, message, relatedInfoList } );
-	}
-	return ret;
-}
-
-static LSPPublishDiagnosticsParams parsePublishDiagnostics( const json& result ) {
-	LSPPublishDiagnosticsParams ret;
-	ret.uri = URI( result.at( MEMBER_URI ).get<std::string>() );
-	ret.diagnostics = parseDiagnosticsArr( result.at( MEMBER_DIAGNOSTICS ) );
-	return ret;
-}
-
 static bool isPositionValid( const TextPosition& pos ) {
 	return pos.column() >= 0 && pos.line() >= 0;
 }
@@ -460,15 +426,19 @@ static LSPTextDocumentEdit parseTextDocumentEdit( const json& result ) {
 
 static LSPWorkspaceEdit parseWorkSpaceEdit( const json& result ) {
 	LSPWorkspaceEdit ret;
-	auto changes = result.at( "changes" );
-	for ( auto it = changes.begin(); it != changes.end(); ++it ) {
-		ret.changes.insert( std::pair<URI, std::vector<LSPTextEdit>>(
-			URI( it.key() ), parseTextEditArray( it.value() ) ) );
+	if ( result.contains( "changes" ) ) {
+		auto changes = result.at( "changes" );
+		for ( auto it = changes.begin(); it != changes.end(); ++it ) {
+			ret.changes.insert( std::pair<URI, std::vector<LSPTextEdit>>(
+				URI( it.key() ), parseTextEditArray( it.value() ) ) );
+		}
 	}
-	auto documentChanges = result.at( "documentChanges" );
-	// resourceOperations not supported for now
-	for ( auto edit : documentChanges ) {
-		ret.documentChanges.push_back( parseTextDocumentEdit( edit ) );
+	if ( result.contains( "documentChanges" ) ) {
+		auto documentChanges = result.at( "documentChanges" );
+		// resourceOperations not supported for now
+		for ( auto edit : documentChanges ) {
+			ret.documentChanges.push_back( parseTextDocumentEdit( edit ) );
+		}
 	}
 	return ret;
 }
@@ -516,7 +486,7 @@ static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 	for ( const auto& vaction : codeActions ) {
 		auto& action = vaction;
 		// entry could be Command or CodeAction
-		if ( !action.at( MEMBER_COMMAND ).is_string() ) {
+		if ( !action.contains( MEMBER_COMMAND ) || !action.at( MEMBER_COMMAND ).is_string() ) {
 			// CodeAction
 			auto title = action.at( MEMBER_TITLE ).get<std::string>();
 			auto kind = action.value( MEMBER_KIND, "" );
@@ -534,6 +504,24 @@ static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 			// Command
 			auto command = parseCommand( action );
 			ret.push_back( { command.title, std::string(), {}, {}, command } );
+		}
+	}
+	return ret;
+}
+
+static std::vector<LSPDiagnosticsCodeAction> parseDiagnosticsCodeAction( const json& result ) {
+	std::vector<LSPDiagnosticsCodeAction> ret;
+	const auto& codeActions = result;
+	for ( const auto& action : codeActions ) {
+		if ( !action.contains( MEMBER_COMMAND ) || !action.at( MEMBER_COMMAND ).is_string() ) {
+			auto title = action.at( MEMBER_TITLE ).get<std::string>();
+			auto kind = action.value( MEMBER_KIND, "" );
+			auto isPreferred = action.value( "isPreferred", false );
+			auto edit = action.contains( MEMBER_EDIT )
+							? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
+							: LSPWorkspaceEdit{};
+			LSPDiagnosticsCodeAction action = { title, kind, isPreferred, edit };
+			ret.push_back( action );
 		}
 	}
 	return ret;
@@ -639,6 +627,42 @@ static std::vector<std::string> supportedSemanticTokenTypes() {
 			 "string",		  "number",	   "regexp",   "operator" };
 }
 
+static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
+	std::vector<LSPDiagnostic> ret;
+	for ( const auto& diag : result ) {
+		auto range = parseRange( diag[MEMBER_RANGE] );
+		auto severity = static_cast<LSPDiagnosticSeverity>( diag["severity"].get<int>() );
+		auto code = diag.contains( "code" ) ? ( diag["code"].is_number_integer()
+													? String::toString( diag["code"].get<int>() )
+													: diag.at( "code" ).get<std::string>() )
+											: "";
+		auto source = diag.value( "source", "" );
+		auto message = diag.value( MEMBER_MESSAGE, "" );
+		std::vector<LSPDiagnosticRelatedInformation> relatedInfoList;
+		if ( diag.contains( "relatedInformation" ) ) {
+			const auto& relatedInfo = diag.at( "relatedInformation" );
+			for ( const auto& related : relatedInfo ) {
+				auto relLocation = parseLocation( related.at( MEMBER_LOCATION ) );
+				auto relMessage = related.at( MEMBER_MESSAGE ).get<std::string>();
+				relatedInfoList.push_back( { relLocation, relMessage } );
+			}
+		}
+		// clang providers codeActions from diagnostics
+		std::vector<LSPDiagnosticsCodeAction> codeActions;
+		if ( diag.contains( "codeActions" ) )
+			codeActions = parseDiagnosticsCodeAction( diag["codeActions"] );
+		ret.push_back( { range, severity, code, source, message, relatedInfoList, codeActions } );
+	}
+	return ret;
+}
+
+static LSPPublishDiagnosticsParams parsePublishDiagnostics( const json& result ) {
+	LSPPublishDiagnosticsParams ret;
+	ret.uri = URI( result.at( MEMBER_URI ).get<std::string>() );
+	ret.diagnostics = parseDiagnosticsArr( result.at( MEMBER_DIAGNOSTICS ) );
+	return ret;
+}
+
 static LSPCompletionList parseDocumentCompletion( const json& result ) {
 	LSPCompletionList ret;
 	if ( result.empty() )
@@ -699,7 +723,7 @@ static LSPSignatureInformation parseSignatureInformation( const json& json ) {
 		} else {
 			auto sub = label.get<std::string>();
 			if ( sub.length() ) {
-				begin = info.label.find_first_of( sub );
+				begin = info.label.find( sub );
 				if ( begin >= 0 )
 					end = begin + sub.length();
 			}
@@ -771,7 +795,8 @@ void LSPClientServer::initialize() {
 		{
 			"textDocument",
 			json{ { "documentSymbol", json{ { "hierarchicalDocumentSymbolSupport", true } } },
-				  { "publishDiagnostics", json{ { "relatedInformation", true } } },
+				  { "publishDiagnostics",
+					json{ { "relatedInformation", true }, { "codeActionsInline", true } } },
 				  { "codeAction", codeAction },
 				  { "semanticTokens", semanticTokens },
 				  { "synchronization", json{ { "didSave", true } } },

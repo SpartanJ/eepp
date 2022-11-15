@@ -18,6 +18,8 @@ template <typename T> class tRECT {
 
 	tRECT<T> copy() const;
 
+	void setPosition( const Vector2<T>& pos );
+
 	bool intersect( const tRECT<T>& rect ) const;
 
 	bool contains( const tRECT<T>& rect ) const;
@@ -253,6 +255,14 @@ template <typename T> T tRECT<T>::getWidth() const {
 
 template <typename T> T tRECT<T>::getHeight() const {
 	return eeabs( Bottom - Top );
+}
+
+template <typename T> void tRECT<T>::setPosition( const Vector2<T>& pos ) {
+	auto size = getSize();
+	Left = pos.x;
+	Bottom = pos.y + size.y;
+	Right = pos.x + size.x;
+	Top = pos.y;
 }
 
 template <typename T> void tRECT<T>::expand( const tRECT<T>& rect ) {

@@ -550,6 +550,10 @@ const Vector2f& Node::getScreenPos() const {
 	return mScreenPos;
 }
 
+Rectf Node::getScreenRect() const {
+	return Rectf( getScreenPos(), getPixelsSize() );
+}
+
 void Node::clipStart() {
 	if ( mVisible && isClipped() ) {
 		clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );

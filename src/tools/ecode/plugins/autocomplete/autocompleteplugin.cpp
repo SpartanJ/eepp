@@ -539,6 +539,81 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 	}
 }
 
+void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
+											const Float& lineHeight, bool drawUp ) {
+
+	TextDocument& doc = editor->getDocument();
+	Primitives primitives;
+	const SyntaxColorScheme& scheme = editor->getColorScheme();
+	const auto& normalStyle = scheme.getEditorSyntaxStyle( "suggestion" );
+	const auto& selectedStyle = scheme.getEditorSyntaxStyle( "suggestion_selected" );
+	const auto& matchingSelection = scheme.getEditorSyntaxStyle( "matching_selection" );
+
+	auto curSigIdx =
+		mSignatureHelpSelected != -1 ? mSignatureHelpSelected : mSignatureHelp.activeSignature;
+	auto curSig = mSignatureHelp.signatures[curSigIdx];
+	Float vdiff = drawUp ? -mRowHeight : mRowHeight;
+	Vector2f pos( startScroll.x + editor->getXOffsetCol( mSignatureHelpPosition ),
+				  startScroll.y + mSignatureHelpPosition.line() * lineHeight + vdiff );
+	primitives.setColor( Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
+	String str;
+	if ( mSignatureHelp.signatures.size() > 1 ) {
+		str = String::format( "%s (%d of %zu)", curSig.label.c_str(),
+							  mSignatureHelpSelected == -1 ? 1 : mSignatureHelpSelected + 1,
+							  mSignatureHelp.signatures.size() );
+	} else {
+		str = curSig.label;
+	}
+
+	Rectf boxRect( pos, Sizef( editor->getTextWidth( str ) + mBoxPadding.Left + mBoxPadding.Right,
+							   mRowHeight ) );
+	if ( boxRect.getPosition().x + boxRect.getSize().getWidth() >
+		 editor->getScreenPos().x + editor->getPixelsSize().getWidth() ) {
+		boxRect.setPosition(
+			{ eefloor( editor->getScreenPos().x + editor->getPixelsSize().getWidth() -
+					   boxRect.getSize().getWidth() ),
+			  boxRect.getPosition().y } );
+		if ( boxRect.getPosition().x < editor->getScreenPos().x )
+			boxRect.setPosition( { eefloor( editor->getScreenPos().x ), boxRect.getPosition().y } );
+	}
+	auto curParam = curSig.parameters[mSignatureHelp.activeParameter % curSig.parameters.size()];
+	auto curParamRect = Rectf(
+		{ { boxRect.getPosition().x + mBoxPadding.Left + curParam.start * editor->getGlyphWidth(),
+			boxRect.getPosition().y },
+		  { ( curParam.end - curParam.start ) * editor->getGlyphWidth(), mRowHeight } } );
+
+	if ( !editor->getScreenRect().contains(
+			 Rectf{ { curParamRect.getPosition().x +
+						  ( curParam.end - curParam.start ) * editor->getGlyphWidth(),
+					  curParamRect.getPosition().y },
+					curParamRect.getSize() } ) ) {
+		pos = { startScroll.x - curParam.start * editor->getGlyphWidth() +
+					editor->getXOffsetCol( mSignatureHelpPosition ),
+				startScroll.y + mSignatureHelpPosition.line() * lineHeight + vdiff };
+
+		boxRect.setPosition( pos );
+
+		curParamRect.setPosition(
+			{ boxRect.getPosition().x + mBoxPadding.Left + curParam.start * editor->getGlyphWidth(),
+			  boxRect.getPosition().y } );
+	}
+
+	primitives.drawRoundedRectangle( boxRect, 0.f, Vector2f::One, 6 );
+
+	if ( curParam.end - curParam.start > 0 && curParam.end < (int)str.size() ) {
+		primitives.setColor( matchingSelection.color );
+		primitives.drawRoundedRectangle( curParamRect, 0.f, Vector2f::One, 6 );
+	}
+
+	Text text( "", editor->getFont(), editor->getFontSize() );
+	text.setFillColor( normalStyle.color );
+	text.setStyle( normalStyle.style );
+	text.setString( str );
+	SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(), text );
+	text.draw( boxRect.getPosition().x + mBoxPadding.Left,
+			   boxRect.getPosition().y + mBoxPadding.Top );
+}
+
 void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startScroll,
 								   const Float& lineHeight, const TextPosition& cursor ) {
 	bool drawsSuggestions =
@@ -554,38 +629,13 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	const SyntaxColorScheme& scheme = editor->getColorScheme();
 	const auto& normalStyle = scheme.getEditorSyntaxStyle( "suggestion" );
 	const auto& selectedStyle = scheme.getEditorSyntaxStyle( "suggestion_selected" );
+	bool drawUp = true;
 
-	if ( drawsSignature ) {
-		auto cursig =
-			mSignatureHelp
-				.signatures[mSignatureHelpSelected != -1 ? mSignatureHelpSelected
-														 : mSignatureHelp.activeSignature];
-		Vector2f pos( startScroll.x + editor->getXOffsetCol( mSignatureHelpPosition ),
-					  startScroll.y + mSignatureHelpPosition.line() * lineHeight - lineHeight -
-						  mBoxPadding.Top - mBoxPadding.Bottom );
-		primitives.setColor( Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
-		String str;
-		if ( mSignatureHelp.signatures.size() > 1 ) {
-			str = String::format( "%s (%d of %zu)", cursig.label.c_str(),
-								  mSignatureHelpSelected == -1 ? 1 : mSignatureHelpSelected + 1,
-								  mSignatureHelp.signatures.size() );
-		} else {
-			str = cursig.label;
-		}
-		primitives.drawRoundedRectangle(
-			Rectf( pos, Sizef( editor->getTextWidth( str ) + mBoxPadding.Left + mBoxPadding.Right,
-							   mRowHeight ) ),
-			0.f, Vector2f::One, 6 );
-		Text text( "", editor->getFont(), editor->getFontSize() );
-		text.setFillColor( normalStyle.color );
-		text.setStyle( normalStyle.style );
-		text.setString( str );
-		SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(), text );
-		text.draw( pos.x + mBoxPadding.Left, pos.y + mBoxPadding.Top );
-	}
-
-	if ( !drawsSuggestions )
+	if ( !drawsSuggestions ) {
+		if ( drawsSignature )
+			drawSignatureHelp( editor, startScroll, lineHeight, drawUp );
 		return;
+	}
 
 	SymbolsList suggestions;
 	{
@@ -599,8 +649,10 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	size_t max = eemin<size_t>( mSuggestionsMaxVisible, suggestions.size() );
 	mRowHeight = lineHeight + mBoxPadding.Top + mBoxPadding.Bottom;
 	const auto& barStyle = scheme.getEditorSyntaxStyle( "suggestion_scrollbar" );
-	if ( cursorPos.y + mRowHeight * max > editor->getPixelsSize().getHeight() )
+	if ( cursorPos.y + mRowHeight * max > editor->getPixelsSize().getHeight() ) {
 		cursorPos.y -= lineHeight + mRowHeight * max;
+		drawUp = false;
+	}
 
 	size_t maxIndex =
 		eemin<size_t>( mSuggestionsStartIndex + mSuggestionsMaxVisible, suggestions.size() );
@@ -650,6 +702,9 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 		}
 		count++;
 	}
+
+	if ( drawsSignature )
+		drawSignatureHelp( editor, startScroll, lineHeight, drawUp );
 
 	if ( max >= suggestions.size() )
 		return;
@@ -787,8 +842,6 @@ void AutoCompletePlugin::resetSuggestions( UICodeEditor* editor ) {
 
 void AutoCompletePlugin::resetSignatureHelp() {
 	mSignatureHelpVisible = false;
-	mSignatureHelpEditor = nullptr;
-	mSignatureHelpPosition = {};
 	mSignatureHelp.signatures.clear();
 	mSignatureHelp.activeSignature = 0;
 	mSignatureHelp.activeParameter = 0;
