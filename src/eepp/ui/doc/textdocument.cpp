@@ -315,6 +315,7 @@ void TextDocument::toLowerSelection() {
 }
 
 const std::string& TextDocument::getLoadingFilePath() const {
+	Lock l( mLoadingFilePathMutex );
 	return mLoadingFilePath;
 }
 
@@ -346,13 +347,20 @@ bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<T
 									  std::function<void( TextDocument*, bool )> onLoaded ) {
 	mLoading = true;
 	mLoadingAsync = true;
-	mLoadingFilePath = path;
+	{
+		Lock l( mLoadingFilePathMutex );
+		mLoadingFilePath = path;
+	}
 	pool->run(
 		[this, path, onLoaded] {
 			auto loaded = loadFromFile( path );
-			if ( loaded != LoadStatus::Interrupted && onLoaded )
+			if ( loaded != LoadStatus::Interrupted && onLoaded ) {
 				onLoaded( this, loaded == LoadStatus::Loaded );
-			mLoadingFilePath.clear();
+			}
+			{
+				Lock l( mLoadingFilePathMutex );
+				mLoadingFilePath.clear();
+			}
 			mLoadingAsync = false;
 			notifyDocumentLoaded();
 		},

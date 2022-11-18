@@ -1362,32 +1362,37 @@ LSPClientServer::documentImplementation( const URI& document, const TextPosition
 	return getAndGoToLocation( document, pos, "textDocument/implementation" );
 }
 
-static URI switchHeaderSourceName( const URI& uri ) {
+static std::vector<URI> switchHeaderSourceName( const URI& uri ) {
+	std::string basePath( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) );
 	if ( FileSystem::fileExtension( uri.getPath() ) == "cpp" ) {
-		return URI( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) + ".hpp" );
+		return { basePath + ".hpp", basePath + ".h" };
 	} else if ( FileSystem::fileExtension( uri.getPath() ) == "hpp" ) {
-		return URI( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) + ".cpp" );
+		return { basePath + ".cpp" };
 	} else if ( FileSystem::fileExtension( uri.getPath() ) == "c" ) {
-		return URI( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) + ".h" );
+		return { basePath + ".h" };
 	} else if ( FileSystem::fileExtension( uri.getPath() ) == "h" ) {
-		return URI( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) + ".c" );
+		return { basePath + ".c" };
 	}
 	return {};
 }
 
 LSPClientServer::LSPRequestHandle LSPClientServer::switchSourceHeader( const URI& document ) {
-	return send( newRequest( "textDocument/switchSourceHeader", textDocumentURI( document ) ),
-				 [this, document]( const IdType&, json res ) {
-					 URI uri( switchHeaderSourceName( document ) );
-					 std::string name( FileSystem::fileNameFromPath( uri.getPath() ) );
-					 if ( res.is_string() &&
-						  ( uri.empty() ||
-							FileSystem::fileNameFromPath( res.get<std::string>() ) == name ) ) {
-						 mManager->goToLocation( { res.get<std::string>(), TextRange() } );
-					 } else if ( !uri.empty() ) {
-						 mManager->findAndOpenClosestURI( uri );
-					 }
-				 } );
+	return send(
+		newRequest( "textDocument/switchSourceHeader", textDocumentURI( document ) ),
+		[this, document]( const IdType&, json res ) {
+			std::vector<URI> uris( switchHeaderSourceName( document ) );
+			for ( const auto& uri : uris ) {
+				if ( res.is_string() &&
+					 ( uri.empty() || FileSystem::fileNameFromPath( res.get<std::string>() ) ==
+										  FileSystem::fileNameFromPath( uri.getPath() ) ) ) {
+					mManager->goToLocation( { res.get<std::string>(), TextRange() } );
+					break;
+				} else if ( !uri.empty() ) {
+					mManager->findAndOpenClosestURI( uris );
+					break;
+				}
+			}
+		} );
 }
 
 LSPClientServer::LSPRequestHandle

@@ -479,7 +479,8 @@ class EE_API TextDocument {
 	std::map<std::string, DocumentCommand> mCommands;
 	String mNonWordChars;
 	Client* mActiveClient{ nullptr };
-	Mutex mLoadingMutex;
+	mutable Mutex mLoadingMutex;
+	mutable Mutex mLoadingFilePathMutex;
 
 	void initializeCommands();
 

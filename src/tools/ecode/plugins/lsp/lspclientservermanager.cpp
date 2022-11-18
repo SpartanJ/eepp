@@ -188,9 +188,11 @@ LSPClientPlugin* LSPClientServerManager::getPlugin() const {
 	return mPlugin;
 }
 
-void LSPClientServerManager::findAndOpenClosestURI( const URI uri ) {
+void LSPClientServerManager::findAndOpenClosestURI( const std::vector<URI>& uris ) {
 	json data;
-	data["uri"] = uri.toString();
+	data["uri"] = json::array();
+	for ( const auto& uri : uris )
+		data["uri"].push_back( uri.toString() );
 	mPluginManager->sendRequest( mPlugin, PluginMessageType::FindAndOpenClosestURI,
 								 PluginMessageFormat::JSON, &data );
 }

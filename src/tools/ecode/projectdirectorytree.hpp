@@ -102,6 +102,9 @@ class ProjectDirectoryTree {
 			   const std::vector<std::string>& acceptedPatterns = {},
 			   const bool& ignoreHidden = true );
 
+	std::shared_ptr<FileListModel> fuzzyMatchTree( const std::vector<std::string>& matches,
+												   const size_t& max ) const;
+
 	std::shared_ptr<FileListModel> fuzzyMatchTree( const std::string& match,
 												   const size_t& max ) const;
 

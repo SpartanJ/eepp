@@ -2086,8 +2086,10 @@ void App::updateDocInfo( TextDocument& doc ) {
 
 void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
 	if ( mConfig.editor.syncProjectTreeWithEditor && editor != nullptr &&
-		 editor->getDocument().hasFilepath() ) {
-		std::string path = editor->getDocument().getFilePath();
+		 ( editor->getDocument().hasFilepath() ||
+		   !editor->getDocument().getLoadingFilePath().empty() ) ) {
+		std::string loadingPath( editor->getDocument().getLoadingFilePath() );
+		std::string path = !loadingPath.empty() ? loadingPath : editor->getDocument().getFilePath();
 		if ( path.size() >= mCurrentProject.size() ) {
 			path = path.substr( mCurrentProject.size() );
 			mProjectTreeView->setFocusOnSelection( false );

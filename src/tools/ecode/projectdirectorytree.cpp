@@ -2,6 +2,7 @@
 #include "ecode.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
+#include <limits>
 
 namespace ecode {
 
@@ -82,6 +83,29 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				scanComplete( *this );
 		} );
 #endif
+}
+
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches,
+									  const size_t& max ) const {
+	Lock rl( mMatchingMutex );
+	std::multimap<int, int, std::greater<int>> matchesMap;
+	std::vector<std::string> files;
+	std::vector<std::string> names;
+	for ( const auto& match : matches ) {
+		for ( size_t i = 0; i < mNames.size(); i++ ) {
+			int matchName = String::fuzzyMatch( mNames[i], match );
+			int matchPath = String::fuzzyMatch( mFiles[i], match );
+			matchesMap.insert( { std::max( matchName, matchPath ), i } );
+		}
+	}
+	for ( auto& res : matchesMap ) {
+		if ( names.size() < max ) {
+			names.emplace_back( mNames[res.second] );
+			files.emplace_back( mFiles[res.second] );
+		}
+	}
+	return std::make_shared<FileListModel>( files, names );
 }
 
 std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::string& match,
@@ -394,25 +418,50 @@ PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& m
 	if ( !json.contains( "uri" ) )
 		return {};
 
-	URI uri = json.at( "uri" ).get<std::string>();
+	nlohmann::json juris = json.at( "uri" );
+	std::vector<std::string> expectedNames;
+	std::vector<std::string> tentativePaths;
+	for ( const auto& turi : juris ) {
+		std::string path( URI( turi.get<std::string>() ).getPath() );
+		tentativePaths.emplace_back( path );
+		expectedNames.emplace_back( FileSystem::fileNameFromPath( path ) );
+	}
 
-	std::string fileName( FileSystem::fileNameFromPath( uri.getPath() ) );
-	auto model = fuzzyMatchTree( fileName, 10 );
+	auto model = fuzzyMatchTree( expectedNames, 10 );
 
 	size_t rowCount = model->rowCount( {} );
 	if ( rowCount == 0 )
 		return {};
 
+	std::map<int, std::string, std::greater<int>> matchesMap;
+
 	for ( size_t i = 0; i < rowCount; ++i ) {
-		Variant data = model->data( model->index( i, 1 ) );
-		if ( data.is( Variant::Type::cstr ) ) {
-			std::string filePath( data.asCStr() );
-			if ( FileSystem::fileNameFromPath( filePath ) == fileName ) {
-				mApp->getUISceneNode()->runOnMainThread(
-					[this, filePath]() { mApp->loadFileFromPathOrFocus( filePath ); } );
-				break;
+		Variant dataName = model->data( model->index( i, 0 ) );
+		Variant dataPath = model->data( model->index( i, 1 ) );
+		if ( dataName.is( Variant::Type::cstr ) && dataPath.is( Variant::Type::cstr ) ) {
+			std::string fileName( dataName.asCStr() );
+			std::string filePath( dataPath.asCStr() );
+			if ( std::find( expectedNames.begin(), expectedNames.end(), fileName ) !=
+				 expectedNames.end() ) {
+				std::string closestDataPath;
+				int max{ std::numeric_limits<int>::min() };
+				for ( const auto& paths : tentativePaths ) {
+					int res = String::fuzzyMatch( filePath.c_str(), paths.c_str(), true );
+					if ( res > max ) {
+						closestDataPath = filePath;
+						max = res;
+					}
+				}
+				if ( !closestDataPath.empty() )
+					matchesMap[max] = closestDataPath;
 			}
 		}
+	}
+
+	if ( !matchesMap.empty() ) {
+		std::string filePath( matchesMap.begin()->second );
+		mApp->getUISceneNode()->runOnMainThread(
+			[this, filePath]() { mApp->loadFileFromPathOrFocus( filePath ); } );
 	}
 
 	return PluginRequestHandle::broadcast();

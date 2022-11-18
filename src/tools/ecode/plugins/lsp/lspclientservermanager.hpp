@@ -58,7 +58,7 @@ class LSPClientServerManager {
 
 	LSPClientPlugin* getPlugin() const;
 
-	void findAndOpenClosestURI( const URI uri );
+	void findAndOpenClosestURI( const std::vector<URI>& uris );
 
   protected:
 	friend class LSPClientServer;
