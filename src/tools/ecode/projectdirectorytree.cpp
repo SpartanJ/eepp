@@ -1,21 +1,25 @@
 #include "projectdirectorytree.hpp"
+#include "ecode.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
 
 namespace ecode {
 
 ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
-											std::shared_ptr<ThreadPool> threadPool ) :
+											std::shared_ptr<ThreadPool> threadPool, App* app ) :
 	mPath( path ),
 	mPool( threadPool ),
 	mRunning( false ),
 	mIsReady( false ),
 	mIgnoreHidden( true ),
-	mIgnoreMatcher( path ) {
+	mIgnoreMatcher( path ),
+	mApp( app ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
 
 ProjectDirectoryTree::~ProjectDirectoryTree() {
+	mApp->getPluginManager()->unsubscribeMessages( "ProjectDirectoryTree" );
+	Lock rl( mMatchingMutex );
 	if ( mRunning ) {
 		mRunning = false;
 		Lock l( mFilesMutex );
@@ -63,6 +67,10 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			}
 			mIsReady = true;
 			mRunning = false;
+			mApp->getPluginManager()->subscribeMessages(
+				"ProjectDirectoryTree", [&]( const PluginMessage& msg ) -> PluginRequestHandle {
+					return processMessage( msg );
+				} );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )
 			if ( scanComplete )
 				scanComplete( *this );
@@ -78,6 +86,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 
 std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::string& match,
 																	 const size_t& max ) const {
+	Lock rl( mMatchingMutex );
 	std::multimap<int, int, std::greater<int>> matchesMap;
 	std::vector<std::string> files;
 	std::vector<std::string> names;
@@ -97,6 +106,7 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::
 
 std::shared_ptr<FileListModel> ProjectDirectoryTree::matchTree( const std::string& match,
 																const size_t& max ) const {
+	Lock rl( mMatchingMutex );
 	std::vector<std::string> files;
 	std::vector<std::string> names;
 	std::string lowerMatch( String::toLower( match ) );
@@ -374,6 +384,38 @@ size_t ProjectDirectoryTree::findFileIndex( const std::string& path ) {
 			return i;
 	}
 	return std::string::npos;
+}
+
+PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& msg ) {
+	if ( msg.type != PluginMessageType::FindAndOpenClosestURI || !msg.isRequest() || !msg.isJSON() )
+		return {};
+
+	const nlohmann::json& json = msg.asJSON();
+	if ( !json.contains( "uri" ) )
+		return {};
+
+	URI uri = json.at( "uri" ).get<std::string>();
+
+	std::string fileName( FileSystem::fileNameFromPath( uri.getPath() ) );
+	auto model = fuzzyMatchTree( fileName, 10 );
+
+	size_t rowCount = model->rowCount( {} );
+	if ( rowCount == 0 )
+		return {};
+
+	for ( size_t i = 0; i < rowCount; ++i ) {
+		Variant data = model->data( model->index( i, 1 ) );
+		if ( data.is( Variant::Type::cstr ) ) {
+			std::string filePath( data.asCStr() );
+			if ( FileSystem::fileNameFromPath( filePath ) == fileName ) {
+				mApp->getUISceneNode()->runOnMainThread(
+					[this, filePath]() { mApp->loadFileFromPathOrFocus( filePath ); } );
+				break;
+			}
+		}
+	}
+
+	return PluginRequestHandle::broadcast();
 }
 
 } // namespace ecode

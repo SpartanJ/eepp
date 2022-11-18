@@ -2,6 +2,7 @@
 #define ECODE_PROJECTDIRECTORYTREE_HPP
 
 #include "ignorematcher.hpp"
+#include "plugins/pluginmanager.hpp"
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/mutex.hpp>
@@ -21,6 +22,8 @@ using namespace EE::UI;
 using namespace EE::UI::Models;
 
 namespace ecode {
+
+class App;
 
 class FileListModel : public Model {
   public:
@@ -90,7 +93,8 @@ class ProjectDirectoryTree {
 	typedef std::function<void( ProjectDirectoryTree& dirTree )> ScanCompleteEvent;
 	typedef std::function<void( std::shared_ptr<FileListModel> )> MatchResultCb;
 
-	ProjectDirectoryTree( const std::string& path, std::shared_ptr<ThreadPool> threadPool );
+	ProjectDirectoryTree( const std::string& path, std::shared_ptr<ThreadPool> threadPool,
+						  App* app );
 
 	~ProjectDirectoryTree();
 
@@ -134,8 +138,10 @@ class ProjectDirectoryTree {
 	bool mRunning;
 	bool mIsReady;
 	bool mIgnoreHidden;
-	Mutex mFilesMutex;
+	mutable Mutex mFilesMutex;
+	mutable Mutex mMatchingMutex;
 	IgnoreMatcherManager mIgnoreMatcher;
+	App* mApp{ nullptr };
 
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
 							std::string directory, std::set<std::string> currentDirs,
@@ -152,6 +158,8 @@ class ProjectDirectoryTree {
 	IgnoreMatcherManager getIgnoreMatcherFromPath( const std::string& path );
 
 	size_t findFileIndex( const std::string& path );
+
+	PluginRequestHandle processMessage( const PluginMessage& msg );
 };
 
 } // namespace ecode

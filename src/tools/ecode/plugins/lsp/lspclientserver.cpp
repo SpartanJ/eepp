@@ -475,7 +475,7 @@ static std::vector<LSPDiagnostic> parseDiagnostics( const json& result ) {
 				relatedInfoList.push_back( { relLocation, relMessage } );
 			}
 		}
-		ret.push_back( { range, severity, code, source, message, relatedInfoList } );
+		ret.push_back( { range, severity, code, source, message, relatedInfoList, {} } );
 	}
 	return ret;
 }
@@ -1362,11 +1362,30 @@ LSPClientServer::documentImplementation( const URI& document, const TextPosition
 	return getAndGoToLocation( document, pos, "textDocument/implementation" );
 }
 
+static URI switchHeaderSourceName( const URI& uri ) {
+	if ( FileSystem::fileExtension( uri.getPath() ) == "cpp" ) {
+		return URI( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) + ".hpp" );
+	} else if ( FileSystem::fileExtension( uri.getPath() ) == "hpp" ) {
+		return URI( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) + ".cpp" );
+	} else if ( FileSystem::fileExtension( uri.getPath() ) == "c" ) {
+		return URI( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) + ".h" );
+	} else if ( FileSystem::fileExtension( uri.getPath() ) == "h" ) {
+		return URI( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) + ".c" );
+	}
+	return {};
+}
+
 LSPClientServer::LSPRequestHandle LSPClientServer::switchSourceHeader( const URI& document ) {
 	return send( newRequest( "textDocument/switchSourceHeader", textDocumentURI( document ) ),
-				 [this]( const IdType&, json res ) {
-					 if ( res.is_string() ) {
+				 [this, document]( const IdType&, json res ) {
+					 URI uri( switchHeaderSourceName( document ) );
+					 std::string name( FileSystem::fileNameFromPath( uri.getPath() ) );
+					 if ( res.is_string() &&
+						  ( uri.empty() ||
+							FileSystem::fileNameFromPath( res.get<std::string>() ) == name ) ) {
 						 mManager->goToLocation( { res.get<std::string>(), TextRange() } );
+					 } else if ( !uri.empty() ) {
+						 mManager->findAndOpenClosestURI( uri );
 					 }
 				 } );
 }

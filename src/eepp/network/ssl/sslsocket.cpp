@@ -28,6 +28,23 @@ bool SSLSocket::init() {
 	bool ret = false;
 
 	if ( !ssl_initialized ) {
+		const char* certDir = getenv( "SSL_CERT_DIR" );
+		if ( certDir != nullptr ) {
+			std::string certPath( certDir );
+			FileSystem::dirAddSlashAtEnd( certPath );
+			std::initializer_list<const char*> bundleNames{ "ca-bundle.crt", "ca-certificates.crt",
+															"ca-root.crt", "ca-bundle.pem",
+															"cert.pem" };
+
+			for ( auto name : bundleNames ) {
+				std::string fullCertPath = certPath + name;
+				if ( FileSystem::fileExists( fullCertPath ) ) {
+					CertificatesPath = std::move( fullCertPath );
+					break;
+				}
+			}
+		}
+
 		if ( CertificatesPath.empty() ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 			// Debian Systems

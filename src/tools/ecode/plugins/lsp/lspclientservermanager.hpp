@@ -58,6 +58,8 @@ class LSPClientServerManager {
 
 	LSPClientPlugin* getPlugin() const;
 
+	void findAndOpenClosestURI( const URI uri );
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };

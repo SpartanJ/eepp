@@ -591,8 +591,8 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 			}
 		}
 
-		totalMatches = matches.size();
 		for ( const auto& matchLine : matches ) {
+			totalMatches += matchLine.second.size();
 			for ( const auto& match : matchLine.second ) {
 				switch ( match.type ) {
 					case LinterType::Warning:

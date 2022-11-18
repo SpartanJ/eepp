@@ -37,7 +37,7 @@
     {
       "language": "go",
       "name": "gopls",
-      "url": "golang.org/x/tools/gopls",
+      "url": "https://golang.org/x/tools/gopls",
       "command": "gopls",
       "file_patterns": ["%.go$"],
       "rootIndicationFileNames": ["go.mod"]

@@ -12,7 +12,6 @@
 #include "terminalmanager.hpp"
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
-#include <eterm/terminal/terminalcolorscheme.hpp>
 #include <eterm/ui/uiterminal.hpp>
 #include <stack>
 
@@ -211,6 +210,12 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
 		mSplitter->registerSplitterCommands( t );
 	}
+
+	PluginManager* getPluginManager() const;
+
+	void loadFileFromPathOrFocus( const std::string& path );
+
+	UISceneNode* getUISceneNode() const { return mUISceneNode; }
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };

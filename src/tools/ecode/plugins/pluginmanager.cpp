@@ -162,10 +162,11 @@ void PluginManager::sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageT
 }
 
 void PluginManager::subscribeMessages(
-	UICodeEditorPlugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
+	const std::string& uniqueComponentId,
+	std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
 	{
 		Lock l( mSubscribedPluginsMutex );
-		mSubscribedPlugins[plugin->getId()] = cb;
+		mSubscribedPlugins[uniqueComponentId] = cb;
 	}
 	if ( !mWorkspaceFolder.empty() ) {
 		json data{ { "folder", mWorkspaceFolder } };
@@ -173,11 +174,20 @@ void PluginManager::subscribeMessages(
 	}
 }
 
-void PluginManager::unsubscribeMessages( UICodeEditorPlugin* plugin ) {
+void PluginManager::unsubscribeMessages( const std::string& uniqueComponentId ) {
 	if ( !mClosing ) {
 		Lock l( mSubscribedPluginsMutex );
-		mSubscribedPlugins.erase( plugin->getId() );
+		mSubscribedPlugins.erase( uniqueComponentId );
 	}
+}
+
+void PluginManager::subscribeMessages(
+	UICodeEditorPlugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
+	subscribeMessages( plugin->getId(), cb );
+}
+
+void PluginManager::unsubscribeMessages( UICodeEditorPlugin* plugin ) {
+	unsubscribeMessages( plugin->getId() );
 }
 
 void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {

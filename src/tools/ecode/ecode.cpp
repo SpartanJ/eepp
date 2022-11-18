@@ -532,6 +532,7 @@ App::~App() {
 		delete mFileSystemListener;
 		mFileSystemListener = nullptr;
 	}
+	mDirTree.reset();
 	mPluginManager.reset();
 	eeSAFE_DELETE( mSplitter );
 	eeSAFE_DELETE( mConsole );
@@ -702,6 +703,10 @@ void App::setUIScaleFactor() {
 			setFocusEditorOnClose( msg );
 		}
 	} );
+}
+
+PluginManager* App::getPluginManager() const {
+	return mPluginManager.get();
 }
 
 void App::setEditorFontSize() {
@@ -1830,14 +1835,18 @@ void App::updateTerminalMenu() {
 		->setActive( mSplitter->getCurWidget()->asType<UITerminal>()->getExclusiveMode() );
 }
 
+void App::loadFileFromPathOrFocus( const std::string& path ) {
+	UITab* tab = mSplitter->isDocumentOpen( path );
+	if ( !tab ) {
+		loadFileFromPath( path );
+	} else {
+		tab->getTabWidget()->setTabSelected( tab );
+	}
+}
+
 void App::createPluginManagerUI() {
 	UIPluginManager::New( mUISceneNode, mPluginManager.get(), [&]( const std::string& path ) {
-		UITab* tab = mSplitter->isDocumentOpen( path );
-		if ( !tab ) {
-			loadFileFromPath( path );
-		} else {
-			tab->getTabWidget()->setTabSelected( tab );
-		}
+		loadFileFromPathOrFocus( path );
 	} )->showWhenReady();
 }
 
@@ -2907,7 +2916,7 @@ void App::removeFolderWatches() {
 void App::loadDirTree( const std::string& path ) {
 	Clock* clock = eeNew( Clock, () );
 	mDirTreeReady = false;
-	mDirTree = std::make_shared<ProjectDirectoryTree>( path, mThreadPool );
+	mDirTree = std::make_shared<ProjectDirectoryTree>( path, mThreadPool, this );
 	Log::info( "Loading DirTree: %s", path.c_str() );
 	mDirTree->scan(
 		[&, clock]( ProjectDirectoryTree& dirTree ) {

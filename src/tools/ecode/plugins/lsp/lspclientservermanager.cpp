@@ -188,6 +188,13 @@ LSPClientPlugin* LSPClientServerManager::getPlugin() const {
 	return mPlugin;
 }
 
+void LSPClientServerManager::findAndOpenClosestURI( const URI uri ) {
+	json data;
+	data["uri"] = uri.toString();
+	mPluginManager->sendRequest( mPlugin, PluginMessageType::FindAndOpenClosestURI,
+								 PluginMessageFormat::JSON, &data );
+}
+
 void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folder ) {
 	mLSPWorkspaceFolder = { "file://" + folder, FileSystem::fileNameFromPath( folder ) };
 	Lock l( mClientsMutex );

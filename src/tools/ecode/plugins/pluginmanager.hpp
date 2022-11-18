@@ -65,7 +65,8 @@ enum class PluginMessageType {
 	LanguageServerCapabilities, // Request the language server capabilities of a language if there
 								// is any available, it will be returned as a broadcast
 	SignatureHelp,				// Request the LSP Client to provide function/method signature help
-	CancelRequest,
+	CancelRequest,				// Cancel a request ID
+	FindAndOpenClosestURI,		// Request a component to find and open the closest path from an URI
 	Undefined
 };
 
@@ -242,6 +243,11 @@ class PluginManager {
 							std::function<PluginRequestHandle( const PluginMessage& )> cb );
 
 	void unsubscribeMessages( UICodeEditorPlugin* plugin );
+
+	void subscribeMessages( const std::string& uniqueComponentId,
+							std::function<PluginRequestHandle( const PluginMessage& )> cb );
+
+	void unsubscribeMessages( const std::string& uniqueComponentId );
 
   protected:
 	using SubscribedPlugins =
