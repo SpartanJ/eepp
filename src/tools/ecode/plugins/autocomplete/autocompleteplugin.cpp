@@ -197,6 +197,8 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 					mSignatureHelpSelected % (int)mSignatureHelp.signatures.size();
 				editor->invalidateDraw();
 				return true;
+			} else {
+				resetSignatureHelp();
 			}
 		} else if ( event.getKeyCode() == KEY_DOWN ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
@@ -208,6 +210,8 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 				mSignatureHelpSelected = mSignatureHelpSelected % mSignatureHelp.signatures.size();
 				editor->invalidateDraw();
 				return true;
+			} else {
+				resetSignatureHelp();
 			}
 		} else if ( event.getKeyCode() == EE::Window::KEY_BACKSPACE ||
 					event.getKeyCode() == EE::Window::KEY_DELETE ) {
@@ -686,7 +690,14 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 		Text text( "", editor->getFont(), editor->getFontSize() );
 		text.setFillColor( mSuggestionIndex == (int)i ? selectedStyle.color : normalStyle.color );
 		text.setStyle( mSuggestionIndex == (int)i ? selectedStyle.style : normalStyle.style );
-		text.setString( suggestions[i].text );
+
+		auto nlPos = suggestions[i].text.find_first_of( '\n' );
+		if ( nlPos == std::string::npos ) {
+			text.setString( suggestions[i].text );
+		} else {
+			text.setString( suggestions[i].text.substr( 0, nlPos ) );
+		}
+
 		text.draw( cursorPos.x + iconSpace.getWidth() + mBoxPadding.Left,
 				   cursorPos.y + mRowHeight * count + mBoxPadding.Top );
 

@@ -39,7 +39,7 @@ using namespace EE::Graphics;
 using namespace EE::Network;
 using namespace EE::Network::SSL;
 
-// Scnee
+// Scene
 #include <eepp/scene.hpp>
 using namespace EE::Scene;
 

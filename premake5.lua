@@ -11,6 +11,7 @@ newoption { trigger = "windows-mingw-build", description = "This is used to buil
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
+newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanitizer." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -788,7 +789,6 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C++"
 		cppdialect "C++17"
-		defines { "EFSW_USE_CXX11" }
 		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		files { "src/thirdparty/efsw/src/efsw/*.cpp" }
