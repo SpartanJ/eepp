@@ -815,6 +815,11 @@ function set_macos_and_ios_config()
 	end
 end
 
+function eepp_module_maps_add()
+	links { "eepp-maps-static" }
+	includedirs { "src/modules/maps/include/","src/modules/maps/src/" }
+end
+
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
 
@@ -866,9 +871,7 @@ function build_eepp( build_name )
 			"src/eepp/ui/doc/*.cpp",
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
-			"src/eepp/physics/constraints/*.cpp",
-			"src/eepp/maps/*.cpp",
-			"src/eepp/maps/mapeditor/*.cpp"
+			"src/eepp/physics/constraints/*.cpp"
 	}
 
 	check_ssl_support()
@@ -1092,6 +1095,34 @@ solution "eepp"
 
 		build_base_cpp_configuration( "efsw" )
 
+	project "eepp-maps-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
+		files { "src/modules/maps/src/**.cpp" }
+
+		if not is_vs() then
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
+		end
+		build_base_cpp_configuration( "eepp-maps" )
+
+	project "eepp-maps"
+		kind "SharedLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
+		files { "src/modules/maps/src/**.cpp" }
+
+		if not is_vs() then
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
+		end
+		build_base_cpp_configuration( "eepp-maps" )
+
 	project "eterm-static"
 		kind "StaticLib"
 		language "C++"
@@ -1186,6 +1217,7 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/mapeditor/*.cpp" }
+		eepp_module_maps_add()
 		build_link_configuration( "eepp-MapEditor", true )
 
 	project "eepp-uieditor"
@@ -1278,6 +1310,7 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tests/test_all/*.cpp" }
+		eepp_module_maps_add()
 		build_link_configuration( "eepp-test", true )
 
 	project "eepp-ui-perf-test"

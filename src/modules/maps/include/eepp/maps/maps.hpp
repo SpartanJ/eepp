@@ -11,5 +11,6 @@
 #include <eepp/maps/mapobjectlayer.hpp>
 #include <eepp/maps/tilemap.hpp>
 #include <eepp/maps/tilemaplayer.hpp>
+using namespace EE::Maps;
 
 #endif

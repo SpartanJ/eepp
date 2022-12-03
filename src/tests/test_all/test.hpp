@@ -2,6 +2,7 @@
 #define EE_EETEST_HPP
 
 #include <eepp/ee.hpp>
+#include <eepp/maps/maps.hpp>
 
 namespace Demo_Test {
 

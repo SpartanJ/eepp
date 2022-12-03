@@ -24,7 +24,9 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/mojoAL \
 	$(EEPP_THIRD_PARTY_PATH)/efsw/include \
 	$(EEPP_BASE_PATH)/modules/eterm/include \
-	$(EEPP_BASE_PATH)/modules/eterm/src
+	$(EEPP_BASE_PATH)/modules/eterm/src \
+	$(EEPP_BASE_PATH)/modules/maps/include \
+	$(EEPP_BASE_PATH)/modules/maps/src
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -89,9 +91,7 @@ CODE_SRCS				:=  \
 	ui/doc/*.cpp \
 	ui/abstract/*.cpp \
 	ui/models/*.cpp \
-	ui/tools/*.cpp \
-	maps/*.cpp \
-	maps/mapeditor/*.cpp
+	ui/tools/*.cpp
 
 LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
@@ -289,6 +289,25 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBEFSW_SRCS), $(addprefix $(dir $(F)),$(not
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** EFSW ***************
+
+#*************** MAPS ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_MODULES_PATH)
+
+LOCAL_MODULE			:= eepp-maps
+
+LIBMAPS_SRCS			:=  \
+	maps/src/maps/*.cpp \
+	maps/src/maps/mapeditor/*.cpp
+
+LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES) $(EEPP_INC_PATH)
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBMAPS_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** MAPS ***************
 
 #*************** ETERM ***************
 include $(CLEAR_VARS)

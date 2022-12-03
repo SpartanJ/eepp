@@ -544,6 +544,11 @@ function check_ssl_support()
 	defines { "EE_SSL_SUPPORT" }
 end
 
+function eepp_module_maps_add()
+	links { "eepp-maps-static" }
+	incdirs { "src/modules/maps/include/","src/modules/maps/src/" }
+end
+
 function build_eepp( build_name )
 	files { "src/eepp/core/*.cpp",
 			"src/eepp/math/*.cpp",
@@ -564,9 +569,7 @@ function build_eepp( build_name )
 			"src/eepp/ui/doc/*.cpp",
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
-			"src/eepp/physics/constraints/*.cpp",
-			"src/eepp/maps/*.cpp",
-			"src/eepp/maps/mapeditor/*.cpp"
+			"src/eepp/physics/constraints/*.cpp"
 	}
 
 	incdirs {	"include",
@@ -831,6 +834,28 @@ workspace "eepp"
 		filter "system:not windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp" }
 
+	project "eepp-maps-static"
+		kind "StaticLib"
+		language "C++"
+		cppdialect "C++17"
+		targetdir("libs/" .. os.target() .. "/")
+		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
+		files { "src/modules/maps/src/**.cpp" }
+		build_base_cpp_configuration( "eepp-maps" )
+		filter "action:not vs*"
+			buildoptions { "-Wall" }
+
+	project "eepp-maps"
+		kind "SharedLib"
+		language "C++"
+		cppdialect "C++17"
+		targetdir("libs/" .. os.target() .. "/")
+		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
+		files { "src/modules/maps/src/**.cpp" }
+		build_base_cpp_configuration( "eepp-maps" )
+		filter "action:not vs*"
+			buildoptions { "-Wall" }
+
 	project "eterm-static"
 		kind "StaticLib"
 		language "C++"
@@ -923,6 +948,7 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/mapeditor/*.cpp" }
+		eepp_module_maps_add()
 		build_link_configuration( "eepp-MapEditor", true )
 
 	project "eepp-uieditor"
@@ -931,6 +957,7 @@ workspace "eepp"
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
+		eepp_module_maps_add()
 		build_link_configuration( "eepp-UIEditor", true )
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework" }
@@ -1002,6 +1029,7 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tests/test_all/*.cpp" }
+		eepp_module_maps_add()
 		build_link_configuration( "eepp-test", true )
 
 	project "eepp-ui-perf-test"
