@@ -131,6 +131,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 
 	std::vector<Suggestion> mSuggestions;
 	Mutex mSuggestionsEditorMutex;
+	Mutex mSignatureHelpEditorMutex;
 	UICodeEditor* mSuggestionsEditor{ nullptr };
 	UICodeEditor* mSignatureHelpEditor{ nullptr };
 	Int32 mSuggestionIndex{ 0 };

@@ -197,7 +197,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 					mSignatureHelpSelected % (int)mSignatureHelp.signatures.size();
 				editor->invalidateDraw();
 				return true;
-			} else {
+			} else if ( mSuggestions.empty() ) {
 				resetSignatureHelp();
 			}
 		} else if ( event.getKeyCode() == KEY_DOWN ) {
@@ -210,7 +210,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 				mSignatureHelpSelected = mSignatureHelpSelected % mSignatureHelp.signatures.size();
 				editor->invalidateDraw();
 				return true;
-			} else {
+			} else if ( mSuggestions.empty() ) {
 				resetSignatureHelp();
 			}
 		} else if ( event.getKeyCode() == EE::Window::KEY_BACKSPACE ||
@@ -308,7 +308,10 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 }
 
 void AutoCompletePlugin::requestSignatureHelp( UICodeEditor* editor ) {
-	mSignatureHelpEditor = editor;
+	{
+		Lock l( mSignatureHelpEditorMutex );
+		mSignatureHelpEditor = editor;
+	}
 	auto doc = editor->getDocumentRef();
 	mSignatureHelpPosition = editor->getDocumentRef()->getSelection().start();
 
@@ -345,13 +348,15 @@ bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent
 	auto lang = editor->getDocumentRef()->getSyntaxDefinition().getLSPName();
 	auto cap = mCapabilities.find( lang );
 	if ( cap != mCapabilities.end() ) {
+		bool requestedSignatureHelp = false;
 		const auto& signatureTrigger = cap->second.signatureHelpProvider.triggerCharacters;
 		if ( std::find( signatureTrigger.begin(), signatureTrigger.end(), event.getChar() ) !=
 			 signatureTrigger.end() ) {
 			requestSignatureHelp( editor );
+			requestedSignatureHelp = true;
 		}
 
-		if ( mSignatureHelpVisible ) {
+		if ( mSignatureHelpVisible && !requestedSignatureHelp ) {
 			auto doc = editor->getDocumentRef();
 			auto curPos = doc->getSelection().start();
 			if ( curPos.line() != mSignatureHelpPosition.line() ||
@@ -478,10 +483,21 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 
 PluginRequestHandle
 AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp ) {
-	mSignatureHelpVisible = true;
-	mSignatureHelp = signatureHelp;
-	if ( mSignatureHelp.signatures.empty() )
-		resetSignatureHelp();
+	UICodeEditor* editor = nullptr;
+	{
+		Lock l( mSignatureHelpEditorMutex );
+		editor = mSignatureHelpEditor;
+	}
+	if ( !editor )
+		return {};
+	editor->runOnMainThread( [this, editor, signatureHelp] {
+		mSignatureHelpVisible = true;
+		mSignatureHelp = signatureHelp;
+		if ( mSignatureHelp.signatures.empty() )
+			resetSignatureHelp();
+		editor->invalidateDraw();
+	} );
+
 	return {};
 }
 
@@ -501,6 +517,15 @@ PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& ms
 	} else if ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerCapabilities ) {
 		if ( msg.asLanguageServerCapabilities().ready ) {
 			LSPServerCapabilities cap = msg.asLanguageServerCapabilities();
+			auto& trig = cap.signatureHelpProvider.triggerCharacters;
+			static const std::vector<std::pair<char, char>> pairs = {
+				{ '(', ')' }, { '{', '}' }, { '<', '>' } };
+			for ( const auto& pair : pairs ) {
+				if ( std::find( trig.begin(), trig.end(), pair.first ) != trig.end() &&
+					 std::find( trig.begin(), trig.end(), pair.second ) == trig.end() ) {
+					trig.push_back( pair.second );
+				}
+			}
 			Lock l( mCapabilitiesMutex );
 			mCapabilities[cap.language] = std::move( cap );
 		}
@@ -555,6 +580,8 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 
 	auto curSigIdx =
 		mSignatureHelpSelected != -1 ? mSignatureHelpSelected : mSignatureHelp.activeSignature;
+	if ( curSigIdx >= (int)mSignatureHelp.signatures.size() )
+		return;
 	auto curSig = mSignatureHelp.signatures[curSigIdx];
 	Float vdiff = drawUp ? -mRowHeight : mRowHeight;
 	Vector2f pos( startScroll.x + editor->getXOffsetCol( mSignatureHelpPosition ),
@@ -580,31 +607,39 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 		if ( boxRect.getPosition().x < editor->getScreenPos().x )
 			boxRect.setPosition( { eefloor( editor->getScreenPos().x ), boxRect.getPosition().y } );
 	}
-	auto curParam = curSig.parameters[mSignatureHelp.activeParameter % curSig.parameters.size()];
-	auto curParamRect = Rectf(
-		{ { boxRect.getPosition().x + mBoxPadding.Left + curParam.start * editor->getGlyphWidth(),
-			boxRect.getPosition().y },
-		  { ( curParam.end - curParam.start ) * editor->getGlyphWidth(), mRowHeight } } );
 
-	if ( !editor->getScreenRect().contains(
-			 Rectf{ { curParamRect.getPosition().x +
-						  ( curParam.end - curParam.start ) * editor->getGlyphWidth(),
-					  curParamRect.getPosition().y },
-					curParamRect.getSize() } ) ) {
-		pos = { startScroll.x - curParam.start * editor->getGlyphWidth() +
-					editor->getXOffsetCol( mSignatureHelpPosition ),
-				startScroll.y + mSignatureHelpPosition.line() * lineHeight + vdiff };
+	bool hasParams = !curSig.parameters.empty();
+	LSPParameterInformation curParam =
+		hasParams ? curSig.parameters[mSignatureHelp.activeParameter % curSig.parameters.size()]
+				  : LSPParameterInformation{ -1, -1 };
+	Rectf curParamRect;
+	if ( hasParams ) {
+		curParamRect = Rectf(
+			{ { boxRect.getPosition().x + mBoxPadding.Left +
+					curParam.start * editor->getGlyphWidth(),
+				boxRect.getPosition().y },
+			  { ( curParam.end - curParam.start ) * editor->getGlyphWidth(), mRowHeight } } );
 
-		boxRect.setPosition( pos );
+		if ( !editor->getScreenRect().contains(
+				 Rectf{ { curParamRect.getPosition().x +
+							  ( curParam.end - curParam.start ) * editor->getGlyphWidth(),
+						  curParamRect.getPosition().y },
+						curParamRect.getSize() } ) ) {
+			pos = { startScroll.x - curParam.start * editor->getGlyphWidth() +
+						editor->getXOffsetCol( mSignatureHelpPosition ),
+					startScroll.y + mSignatureHelpPosition.line() * lineHeight + vdiff };
 
-		curParamRect.setPosition(
-			{ boxRect.getPosition().x + mBoxPadding.Left + curParam.start * editor->getGlyphWidth(),
-			  boxRect.getPosition().y } );
+			boxRect.setPosition( pos );
+
+			curParamRect.setPosition( { boxRect.getPosition().x + mBoxPadding.Left +
+											curParam.start * editor->getGlyphWidth(),
+										boxRect.getPosition().y } );
+		}
 	}
 
 	primitives.drawRoundedRectangle( boxRect, 0.f, Vector2f::One, 6 );
 
-	if ( curParam.end - curParam.start > 0 && curParam.end < (int)str.size() ) {
+	if ( hasParams && curParam.end - curParam.start > 0 && curParam.end < (int)str.size() ) {
 		primitives.setColor( matchingSelection.color );
 		primitives.drawRoundedRectangle( curParamRect, 0.f, Vector2f::One, 6 );
 	}
@@ -856,6 +891,8 @@ void AutoCompletePlugin::resetSignatureHelp() {
 	mSignatureHelp.signatures.clear();
 	mSignatureHelp.activeSignature = 0;
 	mSignatureHelp.activeParameter = 0;
+	Lock l( mSignatureHelpEditorMutex );
+	mSignatureHelpEditor = nullptr;
 }
 
 AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocument* doc ) {
