@@ -327,8 +327,24 @@ void Input::injectMousePos( const Vector2i& Pos ) {
 	injectMousePos( Pos.x, Pos.y );
 }
 
+bool Input::isLeftControlPressed() const {
+	return ( mInputMod & KEYMOD_LCTRL ) != 0;
+}
+
+bool Input::isRightControlPressed() const {
+	return ( mInputMod & KEYMOD_RCTRL ) != 0;
+}
+
 bool Input::isControlPressed() const {
 	return ( mInputMod & KEYMOD_CTRL ) != 0;
+}
+
+bool Input::isLeftShiftPressed() const {
+	return ( mInputMod & KEYMOD_LSHIFT ) != 0;
+}
+
+bool Input::isRightShiftPressed() const {
+	return ( mInputMod & KEYMOD_RSHIFT ) != 0;
 }
 
 bool Input::isShiftPressed() const {
