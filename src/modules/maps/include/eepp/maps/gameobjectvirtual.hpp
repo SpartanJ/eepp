@@ -10,7 +10,7 @@ namespace EE { namespace Maps {
 
 class MapLayer;
 
-class EE_API GameObjectVirtual : public GameObject {
+class EE_MAPS_API GameObjectVirtual : public GameObject {
   public:
 	GameObjectVirtual( Uint32 getDataId, MapLayer* Layer,
 					   const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC,

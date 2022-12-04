@@ -6,7 +6,7 @@
 
 namespace EE { namespace Maps {
 
-class EE_API GameObjectTextureRegionEx : public GameObjectTextureRegion {
+class EE_MAPS_API GameObjectTextureRegionEx : public GameObjectTextureRegion {
   public:
 	GameObjectTextureRegionEx( const Uint32& Flags, MapLayer* Layer,
 							   Graphics::TextureRegion* TextureRegion = NULL,

@@ -9,7 +9,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
 
-class EE_API GameObjectTextureRegion : public GameObject {
+class EE_MAPS_API GameObjectTextureRegion : public GameObject {
   public:
 	GameObjectTextureRegion( const Uint32& Flags, MapLayer* Layer,
 							 Graphics::TextureRegion* TextureRegion = NULL,

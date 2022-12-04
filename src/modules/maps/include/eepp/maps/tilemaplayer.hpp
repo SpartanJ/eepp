@@ -6,7 +6,7 @@
 
 namespace EE { namespace Maps {
 
-class EE_API TileMapLayer : public MapLayer {
+class EE_MAPS_API TileMapLayer : public MapLayer {
   public:
 	virtual ~TileMapLayer();
 

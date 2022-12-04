@@ -33,7 +33,7 @@ class UIMapLayerNew;
 class UIMap;
 } // namespace Private
 
-class EE_API MapEditor {
+class EE_MAPS_API MapEditor {
   public:
 	typedef std::function<void()> MapEditorCloseCb;
 

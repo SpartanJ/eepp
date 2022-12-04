@@ -9,7 +9,7 @@ namespace EE { namespace Maps {
 
 class TileMap;
 
-class EE_API MapLightManager {
+class EE_MAPS_API MapLightManager {
   public:
 	typedef std::list<MapLight*> LightsList;
 

@@ -9,7 +9,7 @@ namespace EE { namespace Maps {
 
 class TileMap;
 
-class EE_API MapObjectLayer : public MapLayer {
+class EE_MAPS_API MapObjectLayer : public MapLayer {
   public:
 	enum SEARCH_TYPE { SEARCH_OBJECT = 1, SEARCH_POLY, SEARCH_ALL };
 

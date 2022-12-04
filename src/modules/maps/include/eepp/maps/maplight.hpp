@@ -8,7 +8,7 @@ namespace EE { namespace Maps {
 /** @enum MapLightType Define the light spot type */
 enum MapLightType { Normal = 0, Isometric = 1 };
 
-class EE_API MapLight {
+class EE_MAPS_API MapLight {
   public:
 	MapLight();
 

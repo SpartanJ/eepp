@@ -1101,7 +1101,7 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		includedirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
-
+		defines { "EE_MAPS_STATIC" }
 		if not is_vs() then
 			buildoptions{ "-std=c++17" }
 		else
@@ -1116,6 +1116,7 @@ solution "eepp"
 		includedirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		links { "eepp-shared" }
+		defines { "EE_MAPS_EXPORTS" }
 		if not is_vs() then
 			buildoptions{ "-std=c++17" }
 		else

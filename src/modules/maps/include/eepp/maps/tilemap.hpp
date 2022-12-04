@@ -26,7 +26,7 @@ class UIMapNew;
 #define EE_MAP_LAYER_UNKNOWN eeINDEX_NOT_FOUND
 #define EE_MAP_MAGIC ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) )
 
-class EE_API TileMap {
+class EE_MAPS_API TileMap {
   public:
 	typedef std::map<std::string, std::string> PropertiesMap;
 	typedef std::list<std::string> GOTypesList; //! Special object types used in this map

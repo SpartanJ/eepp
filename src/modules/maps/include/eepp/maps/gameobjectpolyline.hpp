@@ -5,7 +5,7 @@
 
 namespace EE { namespace Maps {
 
-class EE_API GameObjectPolyline : public GameObjectPolygon {
+class EE_MAPS_API GameObjectPolyline : public GameObjectPolygon {
   public:
 	GameObjectPolyline( Uint32 DataId, Polygon2f poly, MapLayer* Layer,
 						const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC );

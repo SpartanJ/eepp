@@ -11,7 +11,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
 
-class EE_API GameObject {
+class EE_MAPS_API GameObject {
   public:
 	GameObject( const Uint32& Flags, MapLayer* Layer );
 

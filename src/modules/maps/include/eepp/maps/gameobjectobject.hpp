@@ -10,7 +10,7 @@ namespace EE { namespace Maps {
 
 class MapLayer;
 
-class EE_API GameObjectObject : public GameObject {
+class EE_MAPS_API GameObjectObject : public GameObject {
   public:
 	typedef std::map<std::string, std::string> PropertiesMap;
 

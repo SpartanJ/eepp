@@ -10,7 +10,7 @@ class Sprite;
 
 namespace EE { namespace Maps {
 
-class EE_API GameObjectSprite : public GameObject {
+class EE_MAPS_API GameObjectSprite : public GameObject {
   public:
 	GameObjectSprite( const Uint32& Flags, MapLayer* Layer, Graphics::Sprite* Sprite = NULL );
 

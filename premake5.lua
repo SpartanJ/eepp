@@ -841,6 +841,7 @@ workspace "eepp"
 		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
+		defines { "EE_MAPS_STATIC" }
 		build_base_cpp_configuration( "eepp-maps" )
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
@@ -853,6 +854,7 @@ workspace "eepp"
 		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		links { "eepp-shared" }
+		defines { "EE_MAPS_EXPORTS" }
 		build_base_cpp_configuration( "eepp-maps" )
 		filter "action:not vs*"
 			buildoptions { "-Wall" }

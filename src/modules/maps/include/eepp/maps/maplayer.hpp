@@ -7,7 +7,7 @@ namespace EE { namespace Maps {
 
 class TileMap;
 
-class EE_API MapLayer {
+class EE_MAPS_API MapLayer {
   public:
 	typedef std::map<std::string, std::string> PropertiesMap;
 
