@@ -88,7 +88,7 @@ PluginRequestHandle LSPClientPlugin::processCodeCompletionRequest( const PluginM
 									PluginMessageFormat::CodeCompletion, &completionList, id );
 		} );
 
-	return ret;
+	return std::move( ret );
 }
 
 PluginRequestHandle LSPClientPlugin::processSignatureHelpRequest( const PluginMessage& msg ) {
@@ -105,7 +105,7 @@ PluginRequestHandle LSPClientPlugin::processSignatureHelpRequest( const PluginMe
 									PluginMessageFormat::SignatureHelp, &data, id );
 		} );
 
-	return ret;
+	return std::move( ret );
 }
 
 PluginRequestHandle LSPClientPlugin::processCancelRequest( const PluginMessage& msg ) {

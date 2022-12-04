@@ -10,3 +10,6 @@ make -j`nproc` $@
 cd ../../bin/
 ln -sf ../libs/macosx/libeepp.dylib .
 ln -sf ../libs/macosx/libeepp-debug.dylib .
+if [ -f ../libs/macosx/libeepp-maps-debug.dylib ]; then
+ln -sf ../libs/macosx/libeepp-maps-debug.dylib .
+fi

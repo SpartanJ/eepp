@@ -852,6 +852,7 @@ workspace "eepp"
 		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
+		links { "eepp-shared" }
 		build_base_cpp_configuration( "eepp-maps" )
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
