@@ -27,6 +27,10 @@ Input::Input( EE::Window::Window* window, JoystickManager* joystickmanager ) :
 	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 }
 
+const Uint64& Input::getEventsSentId() const {
+	return mEventsSentId;
+}
+
 Input::~Input() {
 	eeSAFE_DELETE( mJoystickManager );
 }

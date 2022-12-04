@@ -26,7 +26,7 @@ class EE_API Sys {
 
 	/** @return The number of milliseconds since the first call. Note that this value wraps if the
 	 * program runs for more than ~49 days. */
-	static Uint32 getTicks();
+	static Uint64 getTicks();
 
 	/** Wait a specified number of milliseconds before returning. */
 	static void sleep( const Uint32& ms );

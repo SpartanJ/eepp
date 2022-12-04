@@ -817,6 +817,7 @@ end
 
 function eepp_module_maps_add()
 	links { "eepp-maps-static" }
+	defines { "EE_MAPS_STATIC" }
 	includedirs { "src/modules/maps/include/","src/modules/maps/src/" }
 end
 

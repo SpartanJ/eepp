@@ -166,6 +166,7 @@ class EE_API UIConsole : public UIWidget,
 #else
 	Float mQuakeModeHeightPercent{ 0.6f };
 #endif
+	Uint64 mLastExecuteEventId{ 0 };
 
 	UIConsole( Font* Font, const bool& makeDefaultCommands = true, const bool& attachToLog = true,
 			   const unsigned int& maxLogLines = 1024 );

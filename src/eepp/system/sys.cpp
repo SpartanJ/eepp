@@ -402,7 +402,7 @@ static void eeStartTicks() {
 	}
 }
 
-Uint32 Sys::getTicks() {
+Uint64 Sys::getTicks() {
 	eeStartTicks();
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -414,16 +414,16 @@ Uint32 Sys::getTicks() {
 	hires_now.QuadPart *= 1000;
 	hires_now.QuadPart /= hires_ticks_per_second.QuadPart;
 
-	return (DWORD)hires_now.QuadPart;
+	return (Uint64)hires_now.QuadPart;
 #elif defined( EE_PLATFORM_POSIX )
 #ifdef EE_HAVE_CLOCK_GETTIME
-	Uint32 ticks;
+	Uint64 ticks;
 	struct timespec now;
 	clock_gettime( CLOCK_MONOTONIC, &now );
 	ticks = ( now.tv_sec - start.tv_sec ) * 1000 + ( now.tv_nsec - start.tv_nsec ) / 1000000;
 	return ( ticks );
 #else
-	Uint32 ticks;
+	Uint64 ticks;
 	struct timeval now;
 	gettimeofday( &now, NULL );
 	ticks = ( now.tv_sec - start.tv_sec ) * 1000 + ( now.tv_usec - start.tv_usec ) / 1000;

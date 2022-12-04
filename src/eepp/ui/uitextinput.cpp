@@ -155,6 +155,8 @@ Uint32 UITextInput::onFocus() {
 		resetWaitCursor();
 
 		getSceneNode()->getWindow()->startTextInput();
+
+		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 	}
 
 	return 1;
@@ -727,6 +729,7 @@ Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
 		// Allow copy selection on locked mode
 		if ( mAllowEditing ) {
 			mDoc.execute( cmd );
+			mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 			return 1;
 		}
 	}
@@ -739,6 +742,9 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' )
+		return 0;
+
+	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
 		return 0;
 
 	const String& text = event.getText();

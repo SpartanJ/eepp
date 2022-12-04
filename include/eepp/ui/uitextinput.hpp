@@ -130,6 +130,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	Clock mLastDoubleClick;
 	size_t mMenuIconSize{ 16 };
 	UIPopUpMenu* mCurrentMenu{ nullptr };
+	Uint64 mLastExecuteEventId{ 0 };
 
 	void resetWaitCursor();
 

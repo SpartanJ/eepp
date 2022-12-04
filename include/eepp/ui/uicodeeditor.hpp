@@ -640,6 +640,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	};
 	std::vector<PluginGutterSpace> mPluginGutterSpaces;
 	Float mPluginsGutterSpace{ 0 };
+	Uint64 mLastExecuteEventId{ 0 };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );

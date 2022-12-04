@@ -754,6 +754,7 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		mDoc.execute( cmd );
+		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 		return 1;
 	}
 	return UIWidget::onKeyDown( event );
@@ -763,6 +764,9 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' )
+		return 0;
+
+	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
 		return 0;
 
 	const String& text = event.getText();
@@ -835,6 +839,8 @@ Uint32 UIConsole::onFocus() {
 	resetCursor();
 
 	getSceneNode()->getWindow()->startTextInput();
+
+	mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 
 	return 1;
 }

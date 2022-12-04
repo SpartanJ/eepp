@@ -7,6 +7,7 @@
 #include <eepp/window/backend/SDL2/joystickmanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
 #include <eepp/window/engine.hpp>
+#include <limits>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
@@ -22,6 +23,11 @@ InputSDL::~InputSDL() {}
 void InputSDL::update() {
 	SDL_Event SDLEvent;
 	cleanStates();
+
+	++mEventsSentId;
+	if ( mEventsSentId == std::numeric_limits<Uint64>::max() )
+		mEventsSentId = 0;
+
 	if ( !mQueuedEvents.empty() ) {
 		for ( auto prevEvent : mQueuedEvents )
 			sendEvent( prevEvent );
@@ -39,8 +45,10 @@ void InputSDL::waitEvent( const Time& timeout ) {
 	if ( timeout == Time::Zero ) {
 		if ( SDL_WaitEvent( &SDLEvent ) )
 			mQueuedEvents.emplace_back( SDLEvent );
-	} else if ( SDL_WaitEventTimeout( &SDLEvent, (int)timeout.asMilliseconds() ) )
-		mQueuedEvents.emplace_back( SDLEvent );
+	} else if ( SDL_WaitEventTimeout( &SDLEvent, (int)timeout.asMilliseconds() ) ) {
+		if ( SDLEvent.type != SDL_FIRSTEVENT )
+			mQueuedEvents.emplace_back( SDLEvent );
+	}
 }
 
 bool InputSDL::grabInput() {

@@ -792,6 +792,7 @@ void UICodeEditor::invalidateLongestLineWidth() {
 Uint32 UICodeEditor::onFocus() {
 	if ( !mLocked ) {
 		getUISceneNode()->getWindow()->startTextInput();
+		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 		resetCursor();
 		mDoc->setActiveClient( this );
 	}
@@ -820,6 +821,9 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 	if ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' )
 		return 0;
 
+	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
+		return 0;
+
 	mDoc->textInput( event.getText() );
 
 	checkAutoCloseXMLTag( event.getText() );
@@ -844,6 +848,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		// Allow copy selection on locked mode
 		if ( !mLocked || mUnlockedCmd.find( cmd ) != mUnlockedCmd.end() ) {
 			mDoc->execute( cmd );
+			mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 			return 1;
 		}
 	}

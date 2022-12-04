@@ -232,6 +232,9 @@ class EE_API Input {
 	/** Process an input event. Called by the input update. */
 	void processEvent( InputEvent* Event );
 
+	/** @return An id of the current event update processed ( */
+	const Uint64& getEventsSentId() const;
+
   protected:
 	friend class Window;
 
@@ -263,6 +266,7 @@ class EE_API Input {
 	Float mMouseSpeed;
 	bool mInputGrabed;
 	InputFinger mFingers[EE_MAX_FINGERS];
+	Uint64 mEventsSentId{ 0 };
 
 	std::map<Uint32, InputCallback> mCallbacks;
 
