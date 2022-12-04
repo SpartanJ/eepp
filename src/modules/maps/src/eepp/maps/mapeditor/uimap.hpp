@@ -18,7 +18,7 @@ class GameObjectObject;
 
 namespace Private {
 
-class EE_API UIMap : public UIWindow {
+class EE_MAPS_API UIMap : public UIWindow {
   public:
 	static UIMap* New( UITheme* Theme, TileMap* Map = NULL );
 

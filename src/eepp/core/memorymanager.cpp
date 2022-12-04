@@ -66,7 +66,7 @@ void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAlloca
 
 	AllocatedPointerMapIt it = sMapPointers.find( data );
 
-	if ( it->second.mTrack )
+	if ( it != sMapPointers.end() && it->second.mTrack )
 		eePRINTL( "Realloc pointer %p at '%s' %d", data, aAllocatedPointer.mFile.c_str(),
 				  aAllocatedPointer.mLine );
 

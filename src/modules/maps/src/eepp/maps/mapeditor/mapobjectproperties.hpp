@@ -14,7 +14,7 @@ namespace EE { namespace Maps { namespace Private {
 
 class MapEditor;
 
-class MapObjectProperties {
+class EE_MAPS_API MapObjectProperties {
   public:
 	MapObjectProperties( GameObjectObject* Obj );
 

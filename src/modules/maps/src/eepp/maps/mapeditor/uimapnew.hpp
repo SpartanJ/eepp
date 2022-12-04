@@ -13,7 +13,7 @@ using namespace EE::UI;
 
 namespace EE { namespace Maps { namespace Private {
 
-class EE_API UIMapNew {
+class EE_MAPS_API UIMapNew {
   public:
 	UIMapNew( UIMap* Map, std::function<void()> NewMapCb = cb::Callback0<void>(),
 			  bool ResizeMap = false );

@@ -12,7 +12,7 @@ using namespace EE::UI;
 
 namespace EE { namespace Maps { namespace Private {
 
-class EE_API TileMapProperties {
+class EE_MAPS_API TileMapProperties {
   public:
 	TileMapProperties( TileMap* Map );
 

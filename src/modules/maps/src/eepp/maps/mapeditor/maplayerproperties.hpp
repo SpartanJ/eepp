@@ -14,7 +14,7 @@ namespace EE { namespace Maps { namespace Private {
 
 class MapEditor;
 
-class EE_API MapLayerProperties {
+class EE_MAPS_API MapLayerProperties {
   public:
 	typedef std::function<void()> RefreshLayerListCb;
 

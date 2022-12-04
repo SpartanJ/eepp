@@ -10,7 +10,7 @@ using namespace EE::UI;
 
 namespace EE { namespace Maps { namespace Private {
 
-class EE_API UIMapLayerNew {
+class EE_MAPS_API UIMapLayerNew {
   public:
 	typedef std::function<void( UIMapLayerNew* )> NewLayerCb;
 

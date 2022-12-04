@@ -9,7 +9,7 @@ using namespace EE::UI;
 
 namespace EE { namespace Maps { namespace Private {
 
-class EE_API UIGOTypeNew {
+class EE_MAPS_API UIGOTypeNew {
   public:
 	UIGOTypeNew( std::function<void( std::string, Uint32 )> Cb );
 
