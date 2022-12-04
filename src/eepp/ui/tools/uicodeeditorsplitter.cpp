@@ -778,6 +778,10 @@ void UICodeEditorSplitter::closeTab( UIWidget* widget ) {
 			UITabWidget* tabWidget = tabWidgetFromWidget( widget );
 			tabWidget->removeTab( (UITab*)widget->getData() );
 		}
+		if ( mCurEditor == widget )
+			mCurEditor = nullptr;
+		if ( mCurWidget == widget )
+			mCurWidget = nullptr;
 	}
 }
 

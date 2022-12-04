@@ -164,9 +164,19 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 			return nullptr;
 		}
 	}
+	Sizef initialSize( 16, 16 );
+	if ( tabWidget->getContainerNode() ) {
+		initialSize = tabWidget->getContainerNode()->getPixelsSize();
+		if ( Sizef::Zero == initialSize ) {
+			// Minor hack. Force the Scene Node to update the styles and layouts.
+			tabWidget->getUISceneNode()->update( Time::Zero );
+			initialSize = tabWidget->getContainerNode()->getPixelsSize();
+		}
+	}
+	
 	UITerminal* term = UITerminal::New(
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
-		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), Sizef( 16, 16 ),
+		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
 		"", {},
 		!workingDir.empty()
 			? workingDir

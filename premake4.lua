@@ -903,7 +903,6 @@ function set_targetdir( dir )
 end
 
 solution "eepp"
-
 	targetdir("./bin/")
 	configurations { "debug", "release" }
 
@@ -1107,7 +1106,7 @@ solution "eepp"
 		else
 			buildoptions{ "/std:c++17" }
 		end
-		build_base_cpp_configuration( "eepp-maps" )
+		build_base_cpp_configuration( "eepp-maps-static" )
 
 	project "eepp-maps"
 		kind "SharedLib"

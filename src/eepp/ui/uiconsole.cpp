@@ -762,8 +762,7 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
-	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 input->isControlPressed() || input->isMetaPressed() || input->isLeftAltPressed() )
+	if ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' )
 		return 0;
 
 	const String& text = event.getText();
