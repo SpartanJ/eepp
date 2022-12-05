@@ -348,7 +348,12 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 
 std::pair<UITab*, UICodeEditor*>
 UICodeEditorSplitter::loadFileFromPathInNewTab( const std::string& path ) {
-	auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
+	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	if ( d.first == nullptr || d.second == nullptr ) {
+		Log::error( "Couldn't createCodeEditorInTabWidget in "
+					"UICodeEditorSplitter::loadFileFromPathInNewTab" );
+		return { nullptr, nullptr };
+	}
 	UITabWidget* tabWidget = d.first->getTabWidget();
 	loadFileFromPath( path, d.second );
 	tabWidget->setTabSelected( d.first );
@@ -359,6 +364,11 @@ void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 	const std::string& path, std::shared_ptr<ThreadPool> pool,
 	std::function<void( UICodeEditor*, const std::string& )> onLoaded, UITabWidget* tabWidget ) {
 	auto d = createCodeEditorInTabWidget( tabWidget );
+	if ( d.first == nullptr || d.second == nullptr ) {
+		Log::error( "Couldn't createCodeEditorInTabWidget in "
+					"UICodeEditorSplitter::loadAsyncFileFromPathInNewTab" );
+		return;
+	}
 	UITab* addedTab = d.first;
 	loadAsyncFileFromPath( path, pool, d.second, onLoaded );
 	tabWidget->setTabSelected( addedTab );
@@ -367,7 +377,12 @@ void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 	const std::string& path, std::shared_ptr<ThreadPool> pool,
 	std::function<void( UICodeEditor*, const std::string& )> onLoaded ) {
-	auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
+	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	if ( d.first == nullptr || d.second == nullptr ) {
+		Log::error( "Couldn't createCodeEditorInTabWidget in "
+					"UICodeEditorSplitter::loadAsyncFileFromPathInNewTab" );
+		return;
+	}
 	UITabWidget* tabWidget = d.first->getTabWidget();
 	UITab* addedTab = d.first;
 	loadAsyncFileFromPath( path, pool, d.second, onLoaded );
@@ -489,6 +504,11 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
 	auto editorData = createCodeEditorInTabWidget( tabWidget );
+	if ( editorData.first == nullptr || editorData.second == nullptr ) {
+		Log::error( "Couldn't createCodeEditorInTabWidget in "
+					"UICodeEditorSplitter::createEditorWithTabWidget" );
+		return nullptr;
+	}
 	mAboutToAddEditor = editorData.second;
 	// Open same document in the new split
 	if ( openCurEditor && prevCurEditor && prevCurEditor != editorData.second &&
@@ -1092,6 +1112,11 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 		mCurEditor = nullptr;
 		mCurWidget = nullptr;
 		auto d = createCodeEditorInTabWidget( tabWidget );
+		if ( d.first == nullptr || d.second == nullptr ) {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::onTabClosed" );
+			return;
+		}
 		d.first->getTabWidget()->setTabSelected( d.first );
 	} else {
 		if ( tabWidget->getTabSelectedIndex() >= tabWidget->getTabCount() )

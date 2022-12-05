@@ -820,6 +820,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
 		 input->isLeftControlPressed() || input->isMetaPressed() || input->isLeftAltPressed() )
+		return 0;
 
 	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
 		return 0;
@@ -1048,10 +1049,12 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		Input* input = getUISceneNode()->getWindow()->getInput();
 		input->captureMouse( true );
 		setFocus();
-		if ( input->isShiftPressed() ) {
-			mDoc->selectTo( resolveScreenPosition( position.asFloat() ) );
-		} else {
-			mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
+		if ( flags & EE_BUTTON_LMASK ) {
+			if ( input->isShiftPressed() ) {
+				mDoc->selectTo( resolveScreenPosition( position.asFloat() ) );
+			} else {
+				mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
+			}
 		}
 	}
 	return UIWidget::onMouseDown( position, flags );
