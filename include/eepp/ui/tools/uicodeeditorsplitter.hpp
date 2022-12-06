@@ -250,6 +250,8 @@ class EE_API UICodeEditorSplitter {
 
 	UISceneNode* getUISceneNode() const;
 
+	bool curEditorExists() const;
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	UICodeEditor* mCurEditor{ nullptr };
@@ -267,8 +269,6 @@ class EE_API UICodeEditorSplitter {
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  const std::vector<SyntaxColorScheme>& colorSchemes,
 						  const std::string& initColorScheme );
-
-	bool curEditorExists() const;
 
 	bool checkEditorExists( UICodeEditor* ) const;
 

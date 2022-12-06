@@ -1163,6 +1163,18 @@ String App::i18n( const std::string& key, const String& def ) {
 	return mUISceneNode->getTranslatorStringFromKey( key, def );
 }
 
+std::string App::getCurrentWorkingDir() const {
+	if ( !mCurrentProject.empty() )
+		return mCurrentProject;
+
+	if ( mSplitter && mSplitter->curEditorExists() && mSplitter->getCurEditor()->hasDocument() &&
+		 mSplitter->getCurEditor()->getDocument().hasFilepath() ) {
+		return mSplitter->getCurEditor()->getDocument().getFileInfo().getDirectoryPath();
+	}
+
+	return "";
+}
+
 UIMenu* App::createEditMenu() {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->add( i18n( "undo", "Undo" ), findIcon( "undo" ), getKeybind( "undo" ) )->setId( "undo" );

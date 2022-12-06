@@ -13,7 +13,7 @@ using namespace EE::Scene;
 namespace eterm { namespace UI {
 
 UITerminal* UITerminal::New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
-							 std::string program, const std::vector<std::string>& args,
+							 const std::string& program, const std::vector<std::string>& args,
 							 const std::string& workingDir, const size_t& historySize,
 							 IProcessFactory* processFactory, const bool& useFrameBuffer ) {
 	auto win = SceneManager::instance()->getUISceneNode()->getWindow();

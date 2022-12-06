@@ -17,7 +17,8 @@ class UITerminal : public UIWidget {
 	enum ScrollViewType { Inclusive, Exclusive };
 
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
-							std::string program = "", const std::vector<std::string>& args = {},
+							const std::string& program = "",
+							const std::vector<std::string>& args = {},
 							const std::string& workingDir = "", const size_t& historySize = 10000,
 							IProcessFactory* processFactory = nullptr,
 							const bool& useFrameBuffer = false );

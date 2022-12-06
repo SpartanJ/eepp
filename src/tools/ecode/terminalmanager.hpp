@@ -17,7 +17,8 @@ class TerminalManager {
 
 	UITerminal* createNewTerminal( const std::string& title = "",
 								   UITabWidget* inTabWidget = nullptr,
-								   const std::string& workingDir = "" );
+								   const std::string& workingDir = "",
+								   const std::string& program = "" );
 
 	void applyTerminalColorScheme( const TerminalColorScheme& colorScheme );
 

@@ -137,7 +137,8 @@ void TerminalManager::updateMenuColorScheme( UIMenuSubMenu* colorSchemeMenu ) {
 }
 
 UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
-												const std::string& workingDir ) {
+												const std::string& workingDir,
+												const std::string& program ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK,
@@ -173,15 +174,12 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 			initialSize = tabWidget->getContainerNode()->getPixelsSize();
 		}
 	}
-	
+
 	UITerminal* term = UITerminal::New(
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
-		"", {},
-		!workingDir.empty()
-			? workingDir
-			: ( !mApp->getCurrentProject().empty() ? mApp->getCurrentProject() : "" ),
-		10000, nullptr, mUseFrameBuffer );
+		program, {}, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(), 10000,
+		nullptr, mUseFrameBuffer );
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? mApp->i18n( "shell", "Shell" ).toUtf8() : title, true );

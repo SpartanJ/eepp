@@ -120,6 +120,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string& getCurrentProject() const { return mCurrentProject; }
 
+	std::string getCurrentWorkingDir() const;
+
 	Drawable* findIcon( const std::string& name );
 
 	std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
@@ -179,24 +181,28 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
 		t.setCommand( "create-new-terminal", [&] { mTerminalManager->createNewTerminal(); } );
 		t.setCommand( "terminal-split-right", [&] {
+			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Right,
 							  mSplitter->getCurWidget(), false );
-			t.execute( "create-new-terminal" );
+			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "terminal-split-bottom", [&] {
+			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
 							  mSplitter->getCurWidget(), false );
-			t.execute( "create-new-terminal" );
+			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "terminal-split-left", [&] {
+			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Left, mSplitter->getCurWidget(),
 							  false );
-			t.execute( "create-new-terminal" );
+			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "terminal-split-top", [&] {
+			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Top, mSplitter->getCurWidget(),
 							  false );
-			t.execute( "create-new-terminal" );
+			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "reopen-closed-tab", [&] { reopenClosedTab(); } );
 		t.setCommand( "plugin-manager-open", [&] { createPluginManagerUI(); } );
