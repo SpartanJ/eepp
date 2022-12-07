@@ -4074,7 +4074,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag benchmarkMode( parser, "benchmark-mode",
 							  "Render as much as possible to measure the rendering performance.",
 							  { "benchmark-mode" } );
-
+	args::Flag verbose( parser, "verbose", "Print all logs to the standard output.",
+						{ 'v', "verbose" } );
 	try {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		parser.ParseCLI( argc, argv );
@@ -4093,6 +4094,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		std::cerr << parser;
 		return EXIT_FAILURE;
 	}
+
+	if ( verbose.Get() )
+		Log::instance()->setConsoleOutput( true );
 
 	appInstance = eeNew( App, () );
 	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),

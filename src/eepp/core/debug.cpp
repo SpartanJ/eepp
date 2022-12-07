@@ -33,7 +33,8 @@ void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
 		printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 	}
 
-#if defined( EE_COMPILER_GCC ) && !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
+#if defined( EE_COMPILER_GCC ) && !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
+	EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
 	asm( "int3" );
 #else
 	assert( false );

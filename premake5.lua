@@ -202,6 +202,7 @@ function build_base_cpp_configuration( package_name )
 		targetname ( package_name .. "-debug" )
 
 	filter "configurations:release*"
+		defines { "NDEBUG" }
 		optimize "Speed"
 		if _OPTIONS["with-debug-symbols"] then
 			symbols "On"
