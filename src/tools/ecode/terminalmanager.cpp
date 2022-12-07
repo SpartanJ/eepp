@@ -183,7 +183,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? mApp->i18n( "shell", "Shell" ).toUtf8() : title, true );
-	mApp->getSplitter()->removeUnusedTab( tabWidget );
+	mApp->getSplitter()->removeUnusedTab( tabWidget, true, false );
 	ret.first->setIcon( mApp->findIcon( "filetype-bash" ) );
 	term->setTitle( title );
 	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );

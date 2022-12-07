@@ -459,7 +459,8 @@ UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget*
 	return std::make_pair( tab, widget );
 }
 
-void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget ) {
+void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget, bool destroyOwnedNode,
+											bool immediateClose ) {
 	if ( tabWidget && tabWidget->getTabCount() >= 2 &&
 		 tabWidget->getTab( 0 )->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) &&
 		 tabWidget->getTab( 0 )
@@ -467,7 +468,7 @@ void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget ) {
 			 ->asType<UICodeEditor>()
 			 ->getDocument()
 			 .isEmpty() ) {
-		tabWidget->removeTab( (Uint32)0, true, true );
+		tabWidget->removeTab( (Uint32)0, destroyOwnedNode, immediateClose );
 	}
 }
 

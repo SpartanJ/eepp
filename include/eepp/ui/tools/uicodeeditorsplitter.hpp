@@ -107,7 +107,8 @@ class EE_API UICodeEditorSplitter {
 		const std::string& path, std::shared_ptr<ThreadPool> pool,
 		std::function<void( UICodeEditor*, const std::string& )> onLoaded, UITabWidget* tabWidget );
 
-	void removeUnusedTab( UITabWidget* tabWidget );
+	void removeUnusedTab( UITabWidget* tabWidge, bool destroyOwnedNode = true, 
+						  bool immediateCloset = true );
 
 	UITabWidget* createEditorWithTabWidget( Node* parent, bool openCurEditor = true );
 
