@@ -28,6 +28,7 @@ class LSPDocumentClient : public TextDocument::Client {
 	virtual void onDocumentClosed( TextDocument* );
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* );
 	virtual void onDocumentMoved( TextDocument* );
+	virtual void onDocumentReloaded( TextDocument* );
 
 	void notifyOpen();
 

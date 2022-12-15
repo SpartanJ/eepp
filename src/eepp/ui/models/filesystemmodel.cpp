@@ -493,31 +493,7 @@ size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 	return pos;
 }
 
-std::string getFileSystemEventTypeName( FileSystemEventType action ) {
-	switch ( action ) {
-		case FileSystemEventType::Add:
-			return "Add";
-		case FileSystemEventType::Modified:
-			return "Modified";
-		case FileSystemEventType::Delete:
-			return "Delete";
-		case FileSystemEventType::Moved:
-			return "Moved";
-		default:
-			return "Bad Action";
-	}
-}
-
 bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
-	if ( Log::instance() && Log::instance()->getLogLevelThreshold() == LogLevel::Debug ) {
-		std::string txt =
-			"DIR ( " + event.directory + " ) FILE ( " +
-			( ( event.oldFilename.empty() ? "" : "from file " + event.oldFilename + " to " ) +
-			  event.filename ) +
-			" ) has event " + getFileSystemEventTypeName( event.type );
-		Log::debug( txt );
-	}
-
 	switch ( event.type ) {
 		case FileSystemEventType::Add: {
 			FileInfo file( event.directory + event.filename, false );

@@ -2,6 +2,21 @@
 
 namespace ecode {
 
+std::string getFileSystemEventTypeName( FileSystemEventType action ) {
+	switch ( action ) {
+		case FileSystemEventType::Add:
+			return "Add";
+		case FileSystemEventType::Modified:
+			return "Modified";
+		case FileSystemEventType::Delete:
+			return "Delete";
+		case FileSystemEventType::Moved:
+			return "Moved";
+		default:
+			return "Bad Action";
+	}
+}
+
 FileSystemListener::FileSystemListener( UICodeEditorSplitter* splitter,
 										std::shared_ptr<FileSystemModel> fileSystemModel ) :
 	mSplitter( splitter ), mFileSystemModel( fileSystemModel ) {}
@@ -16,6 +31,18 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 		case efsw::Actions::Delete:
 		case efsw::Actions::Moved: {
 			FileEvent event( (FileSystemEventType)action, dir, filename, oldFilename );
+
+			if ( Log::instance() && Log::instance()->getLogLevelThreshold() == LogLevel::Debug ) {
+				std::string txt =
+					"DIR ( " + event.directory + " ) FILE ( " +
+					( ( event.oldFilename.empty() ? ""
+												  : "from file " + event.oldFilename + " to " ) +
+					  event.filename ) +
+					" ) has event " + getFileSystemEventTypeName( event.type );
+
+				Log::debug( txt );
+			}
+
 			mFileSystemModel.get()->handleFileEvent( event );
 
 			if ( mDirTree )
@@ -79,4 +106,4 @@ void FileSystemListener::notifyMove( const FileInfo& oldFile, const FileInfo& ne
 	} );
 }
 
-}
+} // namespace ecode

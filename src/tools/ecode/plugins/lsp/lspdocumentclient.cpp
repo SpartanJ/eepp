@@ -3,6 +3,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/window/engine.hpp>
 
 using namespace EE::System;
 
@@ -49,6 +50,18 @@ void LSPDocumentClient::onDocumentDirtyOnFileSystem( TextDocument* ) {}
 
 void LSPDocumentClient::onDocumentMoved( TextDocument* ) {}
 
+void LSPDocumentClient::onDocumentReloaded( TextDocument* ) {
+	URI uri = mDoc->getURI();
+	TextDocument* doc = mDoc;
+	LSPClientServer* server = mServer;
+	auto version = ++mVersion;
+	mServer->getThreadPool()->run( [server, doc, uri, version]() {
+		server->didClose( uri );
+		server->removeDoc( doc );
+		server->didOpen( doc, version );
+	} );
+}
+
 TextDocument* LSPDocumentClient::getDoc() const {
 	return mDoc;
 }
@@ -63,7 +76,11 @@ int LSPDocumentClient::getVersion() const {
 
 void LSPDocumentClient::notifyOpen() {
 	eeASSERT( mDoc );
-	mServer->didOpen( mDoc, ++mVersion );
+	if ( Engine::instance()->isMainThread() ) {
+		mServer->getThreadPool()->run( [this]() { mServer->didOpen( mDoc, ++mVersion ); } );
+	} else {
+		mServer->didOpen( mDoc, ++mVersion );
+	}
 }
 
 } // namespace ecode

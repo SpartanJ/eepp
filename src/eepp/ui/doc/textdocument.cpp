@@ -169,8 +169,6 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 	if ( mAutoDetectIndentType )
 		guessIndentType();
 
-	notifyTextChanged( { { { 0, 0 }, { 0, 0 } }, "" } );
-
 	if ( mVerbose )
 		Log::info( "Document \"%s\" loaded in %.2fms.", path.c_str(),
 				   clock.getElapsedTime().asMilliseconds() );
@@ -464,7 +462,7 @@ TextDocument::LoadStatus TextDocument::reload() {
 		mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
 													  : FileInfo( mFilePath );
 		resetSyntax();
-		notifyTextChanged( { { { 0, 0 }, { 0, 0 } }, "" } );
+		notifyDocumentReloaded();
 		setSelection( sanitizePosition( selection.start() ) );
 	}
 	return ret;
@@ -2007,6 +2005,12 @@ void TextDocument::notifySelectionChanged() {
 void TextDocument::notifyDocumentLoaded() {
 	for ( auto& client : mClients ) {
 		client->onDocumentLoaded( this );
+	}
+}
+
+void TextDocument::notifyDocumentReloaded() {
+	for ( auto& client : mClients ) {
+		client->onDocumentReloaded( this );
 	}
 }
 

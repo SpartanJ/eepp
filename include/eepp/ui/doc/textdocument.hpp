@@ -60,6 +60,10 @@ class EE_API TextDocument {
 		virtual void onDocumentClosed( TextDocument* ) = 0;
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) = 0;
 		virtual void onDocumentMoved( TextDocument* ) = 0;
+		virtual void onDocumentReloaded( TextDocument* doc ) {
+			onDocumentClosed( doc );
+			onDocumentLoaded( doc );
+		}
 	};
 
 	TextDocument( bool verbose = true );
@@ -487,6 +491,8 @@ class EE_API TextDocument {
 	void cleanChangeId();
 
 	void notifyDocumentLoaded();
+
+	void notifyDocumentReloaded();
 
 	void notifyTextChanged( const DocumentContentChange& );
 
