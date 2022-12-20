@@ -713,7 +713,19 @@ void LinterPlugin::minimapDrawBeforeLineText( UICodeEditor* editor, const Int64&
 	}
 }
 
-bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const Uint32& ) {
+void LinterPlugin::tryHideHoveringMatch( UICodeEditor* editor ) {
+	if ( mHoveringMatch && editor->getTooltip() && editor->getTooltip()->isVisible() ) {
+		editor->setTooltipText( "" );
+		editor->getTooltip()->hide();
+		mHoveringMatch = false;
+	}
+}
+
+bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const Uint32& flags ) {
+	if ( flags != 0 ) {
+		tryHideHoveringMatch( editor );
+		return false;
+	}
 	Lock l( mMatchesMutex );
 	auto it = mMatches.find( editor->getDocumentRef().get() );
 	if ( it != mMatches.end() ) {
@@ -725,11 +737,12 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 			for ( auto& match : matches ) {
 				if ( match.box[editor].contains( localPos ) ) {
 					mHoveringMatch = true;
-					editor->runOnMainThread( [&, editor] {
+					editor->runOnMainThread( [pos, match, editor] {
 						editor->setTooltipText( match.text );
 						editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
 						editor->getTooltip()->setDontAutoHideOnMouseMove( true );
-						editor->getTooltip()->setPixelsPosition( Vector2f( pos.x, pos.y ) );
+						editor->getTooltip()->setPixelsPosition( pos.asFloat() +
+																 PixelDensity::dpToPx( 1.f ) );
 						if ( !editor->getTooltip()->isVisible() )
 							editor->getTooltip()->show();
 					} );
@@ -737,20 +750,13 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 				}
 			}
 		}
-		if ( mHoveringMatch && editor->getTooltip() && editor->getTooltip()->isVisible() ) {
-			editor->setTooltipText( "" );
-			editor->getTooltip()->hide();
-			mHoveringMatch = false;
-		}
+		tryHideHoveringMatch( editor );
 	}
 	return false;
 }
 
 bool LinterPlugin::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Uint32& ) {
-	if ( mHoveringMatch && editor->getTooltip() && editor->getTooltip()->isVisible() ) {
-		editor->setTooltipText( "" );
-		editor->getTooltip()->hide();
-	}
+	tryHideHoveringMatch( editor );
 	return false;
 }
 

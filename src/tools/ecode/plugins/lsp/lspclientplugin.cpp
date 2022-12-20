@@ -468,7 +468,18 @@ TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
 		editor->getUISceneNode()->getWindow()->getInput()->getMousePosf() );
 }
 
-bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& ) {
+void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
+	TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
+	if ( mCurrentHover.range.isValid() && !mCurrentHover.range.contains( cursorPosition ) )
+		hideTooltip( editor );
+}
+
+bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
+								   const Uint32& flags ) {
+	if ( flags != 0 ) {
+		tryHideTooltip( editor, position );
+		return false;
+	}
 	String::HashType tag = String::hash( editor->getDocument().getFilePath() );
 	editor->removeActionsByTag( tag );
 	mEditorsTags[editor].insert( tag );
@@ -495,7 +506,8 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 									mCurrentHover = resp;
 									editor->setTooltipText( resp.contents[0].value );
 									editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
-									editor->getTooltip()->setPixelsPosition( position.asFloat() );
+									editor->getTooltip()->setPixelsPosition(
+										position.asFloat() + PixelDensity::dpToPx( 1.f ) );
 									editor->getTooltip()->setDontAutoHideOnMouseMove( true );
 									if ( editor->hasFocus() && !editor->getTooltip()->isVisible() )
 										editor->getTooltip()->show();
@@ -506,9 +518,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 			} );
 		},
 		mHoverDelay, tag );
-	TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
-	if ( !mCurrentHover.range.isValid() || !mCurrentHover.range.contains( cursorPosition ) )
-		hideTooltip( editor );
+	tryHideTooltip( editor, position );
 	return mCurrentHover.range.isValid() && editor->getTooltip() &&
 		   editor->getTooltip()->isVisible();
 }

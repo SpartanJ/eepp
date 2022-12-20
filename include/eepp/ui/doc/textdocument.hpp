@@ -460,6 +460,7 @@ class EE_API TextDocument {
 	std::vector<TextDocumentLine> mLines;
 	TextRange mSelection;
 	std::unordered_set<Client*> mClients;
+	Mutex mClientsMutex;
 	LineEnding mLineEnding{ LineEnding::LF };
 	std::atomic<bool> mLoading{ false };
 	std::atomic<bool> mLoadingAsync{ false };

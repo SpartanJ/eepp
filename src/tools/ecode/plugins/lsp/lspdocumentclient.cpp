@@ -57,7 +57,6 @@ void LSPDocumentClient::onDocumentReloaded( TextDocument* ) {
 	auto version = ++mVersion;
 	mServer->getThreadPool()->run( [server, doc, uri, version]() {
 		server->didClose( uri );
-		server->removeDoc( doc );
 		server->didOpen( doc, version );
 	} );
 }

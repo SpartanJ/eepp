@@ -101,6 +101,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	PluginRequestHandle processSignatureHelpRequest( const PluginMessage& msg );
 
 	PluginRequestHandle processCancelRequest( const PluginMessage& msg );
+
+	void tryHideTooltip( UICodeEditor* editor, const Vector2i& position );
 };
 
 } // namespace ecode

@@ -1056,12 +1056,14 @@ void TextDocument::textInput( const String& text ) {
 }
 
 void TextDocument::registerClient( Client* client ) {
+	Lock l( mClientsMutex );
 	mClients.insert( client );
 	if ( mActiveClient == nullptr )
 		setActiveClient( client );
 }
 
 void TextDocument::unregisterClient( Client* client ) {
+	Lock l( mClientsMutex );
 	mClients.erase( client );
 	if ( mActiveClient == client )
 		setActiveClient( nullptr );
@@ -1985,72 +1987,84 @@ void TextDocument::setNonWordChars( const String& nonWordChars ) {
 }
 
 void TextDocument::notifyTextChanged( const DocumentContentChange& change ) {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentTextChanged( change );
 	}
 }
 
 void TextDocument::notifyCursorChanged() {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentCursorChange( getSelection().start() );
 	}
 }
 
 void TextDocument::notifySelectionChanged() {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentSelectionChange( getSelection() );
 	}
 }
 
 void TextDocument::notifyDocumentLoaded() {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentLoaded( this );
 	}
 }
 
 void TextDocument::notifyDocumentReloaded() {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentReloaded( this );
 	}
 }
 
 void TextDocument::notifyDocumentSaved() {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentSaved( this );
 	}
 }
 
 void TextDocument::notifyDocumentClosed() {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentClosed( this );
 	}
 }
 
 void TextDocument::notifyLineCountChanged( const size_t& lastCount, const size_t& newCount ) {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentLineCountChange( lastCount, newCount );
 	}
 }
 
 void TextDocument::notifyLineChanged( const Int64& lineIndex ) {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentLineChanged( lineIndex );
 	}
 }
 
 void TextDocument::notifyUndoRedo( const TextDocument::UndoRedo& eventType ) {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentUndoRedo( eventType );
 	}
 }
 
 void TextDocument::notifyDirtyOnFileSystem() {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentDirtyOnFileSystem( this );
 	}
 }
 
 void TextDocument::notifyDocumentMoved() {
+	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentMoved( this );
 	}

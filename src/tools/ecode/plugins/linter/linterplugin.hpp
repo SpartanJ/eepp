@@ -83,7 +83,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	void update( UICodeEditor* );
 
-	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& );
+	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& flags );
 
 	bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& );
 
@@ -152,6 +152,8 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	void setMatches( TextDocument* doc, const MatchOrigin& origin,
 					 std::map<Int64, std::vector<LinterMatch>>& matches );
+
+	void tryHideHoveringMatch( UICodeEditor* editor );
 };
 
 } // namespace ecode

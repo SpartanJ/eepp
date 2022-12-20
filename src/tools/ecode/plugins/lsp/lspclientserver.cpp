@@ -889,6 +889,15 @@ bool LSPClientServer::registerDoc( const std::shared_ptr<TextDocument>& doc ) {
 	return true;
 }
 
+void LSPClientServer::removeDoc( TextDocument* doc ) {
+	Lock l( mClientsMutex );
+	if ( mClients.erase( doc ) > 0 ) {
+		auto it = std::find( mDocs.begin(), mDocs.end(), doc );
+		if ( it != mDocs.end() )
+			mDocs.erase( it );
+	}
+}
+
 const LSPServerCapabilities& LSPClientServer::getCapabilities() const {
 	return mCapabilities;
 }
@@ -1047,15 +1056,6 @@ bool LSPClientServer::hasDocuments() const {
 LSPClientServer::LSPRequestHandle LSPClientServer::didClose( const URI& document ) {
 	auto params = textDocumentParams( document );
 	return send( newRequest( "textDocument/didClose", params ) );
-}
-
-void LSPClientServer::removeDoc( TextDocument* doc ) {
-	Lock l( mClientsMutex );
-	if ( mClients.erase( doc ) > 0 ) {
-		auto it = std::find( mDocs.begin(), mDocs.end(), doc );
-		if ( it != mDocs.end() )
-			mDocs.erase( it );
-	}
 }
 
 LSPClientServerManager* LSPClientServer::getManager() const {
