@@ -431,7 +431,7 @@ bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
 			mSplitter->getCurEditor()->getDocument().execute( cmd );
 			return true;
 		}
-	} else if ( mSplitter->curWidgetExists() &&
+	} else if ( mSplitter->getCurWidget() != nullptr &&
 				mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
 		UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
 		std::string cmd = terminal->getKeyBindings().getCommandFromKeyBind(
