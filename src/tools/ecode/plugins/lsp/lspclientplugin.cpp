@@ -174,7 +174,7 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 	path = pluginManager->getPluginsPath() + "lspclient.json";
 	if ( FileSystem::fileExists( path ) ||
 		 FileSystem::fileWrite(
-			 path, "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"formatters\":[]\n}\n" ) ) {
+			 path, "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"servers\":[]\n}\n" ) ) {
 		mConfigPath = path;
 		paths.emplace_back( path );
 	}
@@ -546,6 +546,14 @@ void LSPClientPlugin::setHoverDelay( const Time& hoverDelay ) {
 
 const LSPClientServerManager& LSPClientPlugin::getClientManager() const {
 	return mClientManager;
+}
+
+bool LSPClientPlugin::hasFileConfig() {
+	return !mConfigPath.empty();
+}
+
+std::string LSPClientPlugin::getFileConfigPath() {
+	return mConfigPath;
 }
 
 } // namespace ecode

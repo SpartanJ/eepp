@@ -66,6 +66,10 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	const LSPClientServerManager& getClientManager() const;
 
+	bool hasFileConfig();
+
+	std::string getFileConfigPath();
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;

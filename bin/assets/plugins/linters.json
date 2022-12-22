@@ -47,7 +47,7 @@
       "command": "solhint $FILENAME"
     },
     {
-      "file_patterns": ["%.cpp$", "%.hpp$", "%.cxx$", "%.hxx$"],
+      "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"],
       "warning_pattern": "$FILENAME:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
       "command": "cppcheck --language=c++ --enable=all --template=gcc $FILENAME"

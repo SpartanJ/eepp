@@ -127,7 +127,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		pluginsEnabled[creator.first] =
 			ini.getValueB( "plugins", creator.first,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
-							   "autoformatter" == creator.first );
+							   "autoformatter" == creator.first || "lspclient" == creator.first );
 	pluginManager->setPluginsEnabled( pluginsEnabled );
 
 	iniInfo = FileInfo( ini.path() );

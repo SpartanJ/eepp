@@ -217,13 +217,22 @@ void UICodeEditor::draw() {
 	int lineNumberDigits = getLineNumberDigits();
 	Float gutterWidth = getGutterWidth();
 	Vector2f screenStart( getScreenStart() );
-	Vector2f start( screenStart.x + gutterWidth, screenStart.y );
+	Vector2f start( screenStart.x + gutterWidth, screenStart.y + getPluginsTopSpace() );
 	Vector2f startScroll( start - mScroll );
 	Primitives primitives;
 	TextPosition cursor( mDoc->getSelection().start() );
 
 	for ( auto& plugin : mPlugins )
 		plugin->preDraw( this, startScroll, lineHeight, cursor );
+
+	if ( mPluginsTopSpace > 0 ) {
+		Float curTopPos = 0.f;
+		for ( auto& plugin : mPluginTopSpaces ) {
+			plugin.plugin->drawTop( this, { screenStart.x, screenStart.y + curTopPos },
+									{ mSize.getWidth(), plugin.space }, charSize );
+			curTopPos += plugin.space;
+		}
+	}
 
 	if ( !mLocked && mHighlightCurrentLine ) {
 		primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
@@ -870,6 +879,7 @@ TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position, bool
 	localPos += mScroll;
 	localPos.x -= mPaddingPx.Left + getGutterWidth();
 	localPos.y -= mPaddingPx.Top;
+	localPos.y -= getPluginsTopSpace();
 	Int64 line = (Int64)eefloor( localPos.y / getLineHeight() );
 	if ( clamp )
 		line = eeclamp<Int64>( line, 0, (Int64)( mDoc->linesCount() - 1 ) );
@@ -886,10 +896,14 @@ Rectf UICodeEditor::getScreenPosition( const TextPosition& position ) const {
 			 { getGlyphWidth(), lineHeight } };
 }
 
+const Float& UICodeEditor::getPluginsTopSpace() const {
+	return mPluginsTopSpace;
+}
+
 Vector2f UICodeEditor::getViewPortLineCount() const {
 	return Vector2f(
 		eefloor( getViewportWidth() / getGlyphWidth() ),
-		eefloor( ( mSize.getHeight() - mPaddingPx.Top -
+		eefloor( ( mSize.getHeight() - mPaddingPx.Top - getPluginsTopSpace() -
 				   ( mHScrollBar->isVisible() ? mHScrollBar->getPixelsSize().getHeight() : 0.f ) ) /
 				 getLineHeight() ) );
 }
@@ -2133,6 +2147,14 @@ bool UICodeEditor::gutterSpaceExists( UICodeEditorPlugin* plugin ) const {
 	return false;
 }
 
+bool UICodeEditor::topSpaceExists( UICodeEditorPlugin* plugin ) const {
+	for ( const auto& space : mPluginTopSpaces ) {
+		if ( space.plugin == plugin )
+			return true;
+	}
+	return false;
+}
+
 bool UICodeEditor::registerGutterSpace( UICodeEditorPlugin* plugin, const Float& pixels,
 										int order ) {
 	if ( gutterSpaceExists( plugin ) )
@@ -2140,7 +2162,7 @@ bool UICodeEditor::registerGutterSpace( UICodeEditorPlugin* plugin, const Float&
 	mPluginGutterSpaces.push_back( { plugin, pixels, order } );
 	mPluginsGutterSpace += pixels;
 	std::sort( mPluginGutterSpaces.begin(), mPluginGutterSpaces.end(),
-			   []( const PluginGutterSpace& left, const PluginGutterSpace& right ) {
+			   []( const PluginRequestedSpace& left, const PluginRequestedSpace& right ) {
 				   return left.order < right.order;
 			   } );
 	return true;
@@ -2151,6 +2173,29 @@ bool UICodeEditor::unregisterGutterSpace( UICodeEditorPlugin* plugin ) {
 		if ( mPluginGutterSpaces[i].plugin == plugin ) {
 			mPluginsGutterSpace -= mPluginGutterSpaces[i].space;
 			mPluginGutterSpaces.erase( mPluginGutterSpaces.begin() + i );
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UICodeEditor::registerTopSpace( UICodeEditorPlugin* plugin, const Float& pixels, int order ) {
+	if ( topSpaceExists( plugin ) )
+		return false;
+	mPluginTopSpaces.push_back( { plugin, pixels, order } );
+	mPluginsTopSpace += pixels;
+	std::sort( mPluginTopSpaces.begin(), mPluginTopSpaces.end(),
+			   []( const PluginRequestedSpace& left, const PluginRequestedSpace& right ) {
+				   return left.order < right.order;
+			   } );
+	return true;
+}
+
+bool UICodeEditor::unregisterTopSpace( UICodeEditorPlugin* plugin ) {
+	for ( size_t i = 0; i < mPluginTopSpaces.size(); ++i ) {
+		if ( mPluginTopSpaces[i].plugin == plugin ) {
+			mPluginsTopSpace -= mPluginTopSpaces[i].space;
+			mPluginTopSpaces.erase( mPluginTopSpaces.begin() + i );
 			return true;
 		}
 	}

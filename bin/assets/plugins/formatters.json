@@ -11,7 +11,7 @@
       "command": "prettier $FILENAME"
     },
     {
-      "file_patterns": ["%.cpp$", "%.h$", "%.hpp$"],
+      "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"],
       "command": "clang-format --style=file $FILENAME"
     },
     {

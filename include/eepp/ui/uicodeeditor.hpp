@@ -84,6 +84,9 @@ class UICodeEditorPlugin {
 							 const Vector2f& /*screenStart*/, const Float& /*lineHeight*/,
 							 const Float& /*gutterWidth*/, const Float& /*fontSize*/ ){};
 
+	virtual void drawTop( UICodeEditor* /*editor*/, const Vector2f& /*screenStart*/,
+						  const Sizef& /*size*/, const Float& /*fontSize*/ ){};
+
 	Uint32 addOnReadyCallback( const OnReadyCb& cb ) {
 		mOnReadyCallbacks[mReadyCbNum++] = cb;
 		return mReadyCbNum;
@@ -537,11 +540,21 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool unregisterGutterSpace( UICodeEditorPlugin* plugin );
 
+	/** Register a top space to be used by a plugin.
+	 * @param plugin Plugin requesting it
+	 * @param pixels Amount of pixels to request in the gutter
+	 * @param order Order goes from left (lower number) to right (bigger number). */
+	bool registerTopSpace( UICodeEditorPlugin* plugin, const Float& pixels, int order );
+
+	bool unregisterTopSpace( UICodeEditorPlugin* plugin );
+
 	void showFindReplace();
 
 	TextPosition resolveScreenPosition( const Vector2f& position, bool clamp = true ) const;
 
 	Rectf getScreenPosition( const TextPosition& position ) const;
+
+	const Float& getPluginsTopSpace() const;
 
   protected:
 	struct LastXOffset {
@@ -633,13 +646,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	};
 	mutable std::map<Int64, TextLine> mTextCache;
 	Tools::UIDocFindReplace* mFindReplace{ nullptr };
-	struct PluginGutterSpace {
+	struct PluginRequestedSpace {
 		UICodeEditorPlugin* plugin;
 		Float space;
 		int order;
 	};
-	std::vector<PluginGutterSpace> mPluginGutterSpaces;
+	std::vector<PluginRequestedSpace> mPluginGutterSpaces;
 	Float mPluginsGutterSpace{ 0 };
+	std::vector<PluginRequestedSpace> mPluginTopSpaces;
+	Float mPluginsTopSpace{ 0 };
 	Uint64 mLastExecuteEventId{ 0 };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
@@ -813,6 +828,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateLineCache( const Int64& lineIndex );
 
 	bool gutterSpaceExists( UICodeEditorPlugin* plugin ) const;
+
+	bool topSpaceExists( UICodeEditorPlugin* plugin ) const;
 };
 
 }} // namespace EE::UI
