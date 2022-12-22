@@ -39,6 +39,7 @@ Process::~Process() {
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )
 		mStdErrThread.join();
+	kill();
 	eeFree( mProcess );
 }
 

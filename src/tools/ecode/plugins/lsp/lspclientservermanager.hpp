@@ -66,9 +66,11 @@ class LSPClientServerManager {
 	LSPClientPlugin* mPlugin{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::map<String::HashType, std::unique_ptr<LSPClientServer>> mClients;
+	std::set<String::HashType> mErasingClients;
 	std::vector<LSPDefinition> mLSPs;
-	std::vector<std::pair<std::unique_ptr<Clock>, String::HashType>> mLSPsToClose;
+	std::map<String::HashType, std::unique_ptr<Clock>> mLSPsToClose;
 	LSPWorkspaceFolder mLSPWorkspaceFolder;
+	Clock mUpdateClock;
 	Mutex mClientsMutex;
 
 	std::vector<LSPDefinition> supportsLSP( const std::shared_ptr<TextDocument>& doc );

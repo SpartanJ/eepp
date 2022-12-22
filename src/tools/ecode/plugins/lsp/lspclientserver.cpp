@@ -852,11 +852,9 @@ LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String:
 	mManager( manager ), mId( id ), mLSP( lsp ), mRootPath( rootPath ) {}
 
 LSPClientServer::~LSPClientServer() {
-	{
-		Lock l( mClientsMutex );
-		for ( const auto& client : mClients )
-			client.first->unregisterClient( client.second.get() );
-	}
+	Lock l( mClientsMutex );
+	for ( const auto& client : mClients )
+		client.first->unregisterClient( client.second.get() );
 }
 
 bool LSPClientServer::start() {

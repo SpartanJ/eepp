@@ -98,11 +98,19 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 }
 
 void LSPClientServerManager::closeLSPServer( const String::HashType& id ) {
+	if ( mErasingClients.find( id ) != mErasingClients.end() )
+		return;
+	mErasingClients.insert( id );
 	mThreadPool->run( [this, id]() {
 		Lock l( mClientsMutex );
 		auto it = mClients.find( id );
 		if ( it != mClients.end() ) {
+			const auto& def = it->second->getDefinition();
+			Log::debug( "Closing LSP server: %s for language %s", def.name.c_str(),
+						def.language.c_str() );
 			mClients.erase( it );
+			mLSPsToClose.erase( id );
+			mErasingClients.erase( id );
 		}
 	} );
 }
@@ -150,22 +158,41 @@ const std::shared_ptr<ThreadPool>& LSPClientServerManager::getThreadPool() const
 }
 
 void LSPClientServerManager::updateDirty() {
+	// Run the check only once per second
+	if ( mUpdateClock.getElapsedTime() < Seconds( 1 ) )
+		return;
+
+	mUpdateClock.restart();
+
 	{
 		Lock l( mClientsMutex );
 		for ( auto& server : mClients ) {
-			if ( !server.second->hasDocuments() )
-				mLSPsToClose.push_back( { std::make_unique<Clock>(), server.first } );
+			if ( !server.second->hasDocuments() &&
+				 mLSPsToClose.find( server.first ) == mLSPsToClose.end() )
+				mLSPsToClose.insert( { server.first, std::make_unique<Clock>() } );
 		}
 	}
+
 	if ( !mLSPsToClose.empty() ) {
 		std::vector<String::HashType> removed;
+		std::vector<String::HashType> invalidatedClose;
 
 		for ( const auto& server : mLSPsToClose ) {
 			// Kill server only after 60 seconds of inactivity
-			if ( server.first->getElapsedTime() > Seconds( 60.f ) )
-				removed.push_back( server.second );
+			if ( server.second->getElapsedTime() > Seconds( 5.f ) ) {
+				// If a document was opened while waiting, remove the server from the queue
+				auto clientServer = mClients.find( server.first );
+				if ( clientServer != mClients.end() && clientServer->second->hasDocuments() ) {
+					invalidatedClose.push_back( server.first );
+				} else {
+					removed.push_back( server.first );
+				}
+			}
 		}
-
+		if ( !invalidatedClose.empty() ) {
+			for ( auto invalided : invalidatedClose )
+				mLSPsToClose.erase( invalided );
+		}
 		if ( !removed.empty() ) {
 			for ( auto& remove : removed )
 				closeLSPServer( remove );
