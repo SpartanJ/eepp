@@ -1284,6 +1284,64 @@ UIMenu* App::createTerminalMenu() {
 	return mTerminalMenu;
 }
 
+void App::setLineBreakingColumn() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_line_breaking_column", "Set Line Breaking Column:\nSet 0 to disable it.\n" )
+			.unescape() );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
+	msgBox->getTextInput()->setText( String::toString( mConfig.doc.lineBreakingColumn ) );
+	msgBox->showWhenReady();
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+		int val;
+		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
+			mConfig.doc.lineBreakingColumn = val;
+			mSplitter->forEachEditor(
+				[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
+			msgBox->closeWindow();
+		}
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
+void App::setLineSpacing() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_line_spacing", "Set Line Spacing:\nSet 0 to disable it.\n" ).unescape() );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setText( mConfig.editor.lineSpacing.toString() );
+	msgBox->showWhenReady();
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+		mConfig.editor.lineSpacing = StyleSheetLength( msgBox->getTextInput()->getText() );
+		mSplitter->forEachEditor(
+			[&]( UICodeEditor* editor ) { editor->setLineSpacing( mConfig.editor.lineSpacing ); } );
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
+void App::setCursorBlinkingTime() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_cursor_blinking_time", "Set Cursor Blinking Time:\nSet 0 to disable it.\n" )
+			.unescape() );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setText( mConfig.editor.cursorBlinkingTime.toString() );
+	msgBox->showWhenReady();
+	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+		mConfig.editor.cursorBlinkingTime =
+			Time::fromString( msgBox->getTextInput()->getText().toUtf8() );
+		mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+			editor->setCursorBlinkTime( mConfig.editor.cursorBlinkingTime );
+		} );
+		msgBox->closeWindow();
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
 UIMenu* App::createDocumentMenu() {
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 
@@ -1558,6 +1616,9 @@ UIMenu* App::createDocumentMenu() {
 
 	globalMenu->add( i18n( "line_spacing", "Line Spacing" ) )->setId( "line_spacing" );
 
+	globalMenu->add( i18n( "cursor_blinking_time", "Cursor Blinking Time" ) )
+		->setId( "cursor_blinking_time" );
+
 	globalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
@@ -1577,41 +1638,11 @@ UIMenu* App::createDocumentMenu() {
 				mConfig.doc.autoDetectIndentType = item->isActive();
 			}
 		} else if ( "line_breaking_column" == id ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT, i18n( "set_line_breaking_column",
-										   "Set Line Breaking Column:\nSet 0 to disable it.\n" )
-										 .unescape() );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
-			msgBox->getTextInput()->setText( String::toString( mConfig.doc.lineBreakingColumn ) );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				int val;
-				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
-					mConfig.doc.lineBreakingColumn = val;
-					mSplitter->forEachEditor(
-						[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
-					msgBox->closeWindow();
-				}
-			} );
-			setFocusEditorOnClose( msgBox );
+			setLineBreakingColumn();
 		} else if ( "line_spacing" == id ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT,
-				i18n( "set_line_spacing", "Set Line Spacing:\nSet 0 to disable it.\n" )
-					.unescape() );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->getTextInput()->setText( mConfig.editor.lineSpacing.toString() );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				mConfig.editor.lineSpacing = StyleSheetLength( msgBox->getTextInput()->getText() );
-				mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-					editor->setLineSpacing( mConfig.editor.lineSpacing );
-				} );
-			} );
-			setFocusEditorOnClose( msgBox );
+			setLineSpacing();
+		} else if ( "cursor_blinking_time" == id ) {
+			setCursorBlinkingTime();
 		}
 	} );
 
@@ -2245,7 +2276,10 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "debug-widget-tree-view",
 			 "debug-draw-highlight-toggle",
 			 "debug-draw-boxes-toggle",
-			 "debug-draw-debug-data" };
+			 "debug-draw-debug-data",
+			 "editor-set-line-breaking-column",
+			 "editor-set-line-spacing",
+			 "editor-set-cursor-blinking-time" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {
@@ -2456,6 +2490,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setMenuIconSize( mMenuIconSize );
 	editor->setAutoCloseXMLTags( config.autoCloseXMLTags );
 	editor->setLineSpacing( config.lineSpacing );
+	editor->setCursorBlinkTime( config.cursorBlinkingTime );
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
 	doc.setLineEnding( docc.windowsLineEndings ? TextDocument::LineEnding::CRLF

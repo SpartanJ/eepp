@@ -21,8 +21,12 @@ bool Time::isValid( const std::string& str ) {
 
 Time Time::fromString( const std::string& str ) {
 	bool isMilliseconds = String::endsWith( str, "ms" );
-	if ( isMilliseconds || String::endsWith( str, "s" ) || String::isNumber( str, true ) ) {
-		size_t to = str.find_last_of( "sm" );
+	bool isSeconds = false;
+	bool isMinutes = false;
+	if ( isMilliseconds || ( isSeconds = String::endsWith( str, "s" ) ) ||
+		 ( isMinutes = String::endsWith( str, "m" ) ) ||
+		 ( isSeconds = String::isNumber( str, true ) ) ) {
+		size_t to = str.find_first_of( "sm" );
 		if ( to == std::string::npos )
 			to = str.size();
 		std::string number;
@@ -35,8 +39,10 @@ Time Time::fromString( const std::string& str ) {
 		}
 		double val;
 		if ( String::fromString( val, number ) ) {
-			if ( !isMilliseconds ) {
+			if ( isSeconds ) {
 				return Seconds( val );
+			} else if ( isMinutes ) {
+				return Minutes( val );
 			} else {
 				return Milliseconds( val );
 			}
@@ -80,6 +86,10 @@ std::string Time::toString() const {
 		minutesLeft = minutesLeft - hoursLeft * 60;
 		return String::format( "%02ldh %02ldm %02lds", hoursLeft, minutesLeft, secondsLeft );
 	}
+}
+
+Time Minutes( double amount ) {
+	return Time( static_cast<Int64>( amount * 1000000 * 60 ) );
 }
 
 Time Seconds( double amount ) {

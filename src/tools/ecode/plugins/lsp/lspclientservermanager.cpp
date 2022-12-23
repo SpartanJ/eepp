@@ -178,8 +178,8 @@ void LSPClientServerManager::updateDirty() {
 		std::vector<String::HashType> invalidatedClose;
 
 		for ( const auto& server : mLSPsToClose ) {
-			// Kill server only after 60 seconds of inactivity
-			if ( server.second->getElapsedTime() > Seconds( 5.f ) ) {
+			// Kill server only after N seconds of inactivity
+			if ( server.second->getElapsedTime() > mLSPDecayTime ) {
 				// If a document was opened while waiting, remove the server from the queue
 				auto clientServer = mClients.find( server.first );
 				if ( clientServer != mClients.end() && clientServer->second->hasDocuments() ) {
@@ -222,6 +222,14 @@ void LSPClientServerManager::findAndOpenClosestURI( const std::vector<URI>& uris
 		data["uri"].push_back( uri.toString() );
 	mPluginManager->sendRequest( mPlugin, PluginMessageType::FindAndOpenClosestURI,
 								 PluginMessageFormat::JSON, &data );
+}
+
+const Time& LSPClientServerManager::getLSPDecayTime() const {
+	return mLSPDecayTime;
+}
+
+void LSPClientServerManager::setLSPDecayTime( const Time& lSPDecayTime ) {
+	mLSPDecayTime = lSPDecayTime;
 }
 
 void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folder ) {

@@ -42,6 +42,7 @@ class EE_API Time {
 	std::string toString() const;
 
   private:
+	friend EE_API Time Minutes( double );
 	friend EE_API Time Seconds( double );
 	friend EE_API Time Milliseconds( double );
 	friend EE_API Time Microseconds( Int64 );
@@ -54,6 +55,13 @@ class EE_API Time {
 
 	Int64 mMicroseconds; ///< Time value stored as microseconds
 };
+
+/// @relates EE::System::Time
+/// @brief Construct a time value from a number of minutes
+/// @param amount Number of minutes
+/// @return Time value constructed from the amount of seconds
+/// @see Milliseconds, Microseconds
+EE_API Time Minutes( double amount );
 
 /// @relates EE::System::Time
 /// @brief Construct a time value from a number of seconds

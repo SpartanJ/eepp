@@ -214,6 +214,9 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "find-replace", [&] { showFindView(); } );
 		t.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
 		t.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
+		t.setCommand( "editor-set-line-breaking-column", [&] { setLineBreakingColumn(); } );
+		t.setCommand( "editor-set-line-spacing", [&] { setLineSpacing(); } );
+		t.setCommand( "editor-set-cursor-blinking-time", [&] { setCursorBlinkingTime(); } );
 		mSplitter->registerSplitterCommands( t );
 	}
 
@@ -222,6 +225,12 @@ class App : public UICodeEditorSplitter::Client {
 	void loadFileFromPathOrFocus( const std::string& path );
 
 	UISceneNode* getUISceneNode() const { return mUISceneNode; }
+
+	void setLineBreakingColumn();
+
+	void setLineSpacing();
+
+	void setCursorBlinkingTime();
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };

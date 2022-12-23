@@ -220,6 +220,10 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		auto& config = j["config"];
 		if ( config.contains( "hover_delay" ) )
 			setHoverDelay( Time::fromString( config["hover_delay"].get<std::string>() ) );
+
+		if ( config.contains( "server_close_after_idle_time" ) )
+			mClientManager.setLSPDecayTime(
+				Time::fromString( config["server_close_after_idle_time"].get<std::string>() ) );
 	}
 
 	if ( mKeyBindings.empty() )

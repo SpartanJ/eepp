@@ -506,9 +506,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setAutoCloseXMLTags( bool autoCloseXMLTags );
 
-	const Time& getBlinkTime() const;
+	const Time& getCursorBlinkTime() const;
 
-	void setBlinkTime( const Time& blinkTime );
+	void setCursorBlinkTime( const Time& blinkTime );
 
 	Int64 getCurrentColumnCount() const;
 

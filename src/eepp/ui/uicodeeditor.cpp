@@ -323,7 +323,7 @@ void UICodeEditor::draw() {
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
 	if ( hasFocus() && getUISceneNode()->getWindow()->hasFocus() ) {
-		if ( mBlinkTimer.getElapsedTime() > mBlinkTime ) {
+		if ( mBlinkTime != Time::Zero && mBlinkTimer.getElapsedTime() > mBlinkTime ) {
 			mCursorVisible = !mCursorVisible;
 			mBlinkTimer.restart();
 			invalidateDraw();
@@ -3217,12 +3217,16 @@ bool UICodeEditor::isMinimapFileTooLarge() const {
 			   eefloor( getMinimapRect( getScreenStart() ).getHeight() / getMinimapLineSpacing() );
 }
 
-const Time& UICodeEditor::getBlinkTime() const {
+const Time& UICodeEditor::getCursorBlinkTime() const {
 	return mBlinkTime;
 }
 
-void UICodeEditor::setBlinkTime( const Time& blinkTime ) {
+void UICodeEditor::setCursorBlinkTime( const Time& blinkTime ) {
 	mBlinkTime = blinkTime;
+	if ( mBlinkTime == Time::Zero && !mCursorVisible && hasFocus() &&
+		 getUISceneNode()->getWindow()->hasFocus() ) {
+		resetCursor();
+	}
 }
 
 bool UICodeEditor::getAutoCloseXMLTags() const {

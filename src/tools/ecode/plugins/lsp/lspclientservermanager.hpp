@@ -60,6 +60,10 @@ class LSPClientServerManager {
 
 	void findAndOpenClosestURI( const std::vector<URI>& uris );
 
+	const Time& getLSPDecayTime() const;
+
+	void setLSPDecayTime( const Time& lSPDecayTime );
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };
@@ -72,6 +76,7 @@ class LSPClientServerManager {
 	LSPWorkspaceFolder mLSPWorkspaceFolder;
 	Clock mUpdateClock;
 	Mutex mClientsMutex;
+	Time mLSPDecayTime{ Minutes( 1 ) };
 
 	std::vector<LSPDefinition> supportsLSP( const std::shared_ptr<TextDocument>& doc );
 

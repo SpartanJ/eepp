@@ -63,6 +63,7 @@ struct CodeEditorConfig {
 	bool syncProjectTreeWithEditor{ true };
 	bool autoCloseXMLTags{ true };
 	std::string autoCloseBrackets{ "" };
+	Time cursorBlinkingTime{ Seconds( 0.5f ) };
 };
 
 struct DocumentConfig {
