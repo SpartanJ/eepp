@@ -16,6 +16,8 @@ class EE_API UITooltip : public UIWidget {
   public:
 	static UITooltip* New();
 
+	static Vector2f getTooltipPosition( UITooltip* toolip, Vector2f requestedPosition );
+
 	UITooltip();
 
 	virtual ~UITooltip();
@@ -107,6 +109,12 @@ class EE_API UITooltip : public UIWidget {
 
 	void setTextTransform( const TextTransform::Value& textTransform );
 
+	Vector2f getTooltipPosition( Vector2f requestedPosition );
+
+	bool getUsingCustomStyling() const;
+
+	void setUsingCustomStyling( bool usingCustomStyling );
+
   protected:
 	Text* mTextCache;
 	UIFontStyleConfig mStyleConfig;
@@ -116,6 +124,7 @@ class EE_API UITooltip : public UIWidget {
 	String mStringBuffer;
 	TextTransform::Value mTextTransform{ TextTransform::None };
 	bool mDontAutoHideOnMouseMove{ false };
+	bool mUsingCustomStyling{ false };
 
 	virtual void onAlphaChange();
 

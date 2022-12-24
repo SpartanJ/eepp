@@ -384,19 +384,38 @@ bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent
 }
 
 void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
-	Lock l( mDocMutex );
+	{
+		Lock lu( mDocsUpdatingMutex );
+		mDocsUpdating[doc] = true;
+	}
 	Clock clock;
-	auto docCache = mDocCache.find( doc );
-	if ( docCache == mDocCache.end() || mClosing )
-		return;
-	auto& cache = docCache->second;
-	cache.changeId = doc->getCurrentChangeId();
-	cache.symbols = getDocumentSymbols( doc );
+	std::unordered_map<TextDocument*, DocCache>::iterator docCache;
+	{
+		Lock l( mDocMutex );
+		docCache = mDocCache.find( doc );
+		if ( docCache == mDocCache.end() || mClosing )
+			return;
+	}
+
+	auto changeId = doc->getCurrentChangeId();
+	auto symbols = getDocumentSymbols( doc );
+
+	{
+		Lock l( mDocMutex );
+		docCache = mDocCache.find( doc );
+		if ( docCache == mDocCache.end() || mClosing )
+			return;
+		auto& cache = docCache->second;
+		cache.changeId = changeId;
+		cache.symbols = std::move( symbols );
+	}
+
 	std::string langName( doc->getSyntaxDefinition().getLanguageName() );
 	{
 		Lock l( mLangSymbolsMutex );
 		auto& lang = mLangCache[langName];
 		lang.clear();
+		Lock l2( mDocMutex );
 		for ( const auto& d : mDocCache ) {
 			if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
 				lang.insert( lang.end(), d.second.symbols.begin(), d.second.symbols.end() );
@@ -404,6 +423,10 @@ void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
 	}
 	Log::debug( "Dictionary for %s updated in: %.2fms", doc->getFilename().c_str(),
 				clock.getElapsedTime().asMilliseconds() );
+	{
+		Lock lu( mDocsUpdatingMutex );
+		mDocsUpdating[doc] = false;
+	}
 }
 
 void AutoCompletePlugin::updateLangCache( const std::string& langName ) {
@@ -558,6 +581,13 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 		Lock l( mDocMutex );
 		for ( auto& doc : mDocs ) {
 			if ( !doc->isLoading() && mDocCache[doc].changeId != doc->getCurrentChangeId() ) {
+				{
+					Lock lu( mDocsUpdatingMutex );
+					auto du = mDocsUpdating.find( doc );
+					// Dont update the document cache if it's still updating the document
+					if ( du != mDocsUpdating.end() && du->second == true )
+						continue;
+				}
 #if AUTO_COMPLETE_THREADED
 				mPool->run( [&, doc] { updateDocCache( doc ); }, [] {} );
 #else
@@ -910,7 +940,11 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 			// Ignore the symbol if is actually the current symbol being written
 			if ( matchStr.size() < 3 || ( end.line() == i && current == matchStr ) )
 				continue;
-			symbols.push_back( std::move( matchStr ) );
+			if ( std::none_of( symbols.begin(), symbols.end(),
+							   [matchStr]( const Suggestion& suggestion ) {
+								   return suggestion.text == matchStr;
+							   } ) )
+				symbols.push_back( std::move( matchStr ) );
 		}
 		if ( mClosing )
 			break;

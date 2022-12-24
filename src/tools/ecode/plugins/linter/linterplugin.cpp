@@ -741,8 +741,8 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 						editor->setTooltipText( match.text );
 						editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
 						editor->getTooltip()->setDontAutoHideOnMouseMove( true );
-						editor->getTooltip()->setPixelsPosition( pos.asFloat() +
-																 PixelDensity::dpToPx( 1.f ) );
+						editor->getTooltip()->setPixelsPosition(
+							editor->getTooltip()->getTooltipPosition( pos.asFloat() ) );
 						if ( !editor->getTooltip()->isVisible() )
 							editor->getTooltip()->show();
 					} );

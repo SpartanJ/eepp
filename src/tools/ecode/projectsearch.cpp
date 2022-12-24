@@ -29,7 +29,7 @@ static String textLine( const std::string& fileText, const size_t& fromPos, size
 		nlStartPtr++;
 	while ( ++endPtr && *endPtr != '\0' && *endPtr != '\n' ) {
 	}
-	relCol = String::utf8StringLength(
+	relCol = String::utf8Length(
 		fileText.substr( nlStartPtr - stringStartPtr, startPtr - nlStartPtr ) );
 	// if the line to substract is massive we only get the fist kilobyte of that line, since the
 	// line is only shared for visual aid.
@@ -68,7 +68,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 			res.push_back(
 				{ str,
 				  { { (Int64)totNl, (Int64)relCol },
-					{ (Int64)totNl, (Int64)( relCol + String::utf8StringLength( text ) ) } },
+					{ (Int64)totNl, (Int64)( relCol + String::utf8Length( text ) ) } },
 				  searchRes,
 				  static_cast<Int64>( searchRes + text.size() ) } );
 			lSearchRes = searchRes;

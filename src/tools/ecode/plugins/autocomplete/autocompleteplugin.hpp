@@ -145,6 +145,9 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	Mutex mHandlesMutex;
 	std::map<TextDocument*, std::vector<PluginIDType>> mHandles;
 
+	std::map<TextDocument*, std::atomic<bool>> mDocsUpdating;
+	Mutex mDocsUpdatingMutex;
+
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
 

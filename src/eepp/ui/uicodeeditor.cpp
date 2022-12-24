@@ -3119,16 +3119,21 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 												   { rect.getWidth(), charHeight }, charSpacing,
 												   gutterWidth );
 
-			auto& tokens = mHighlighter.getLine( index );
-			for ( auto& token : tokens ) {
-				String text( token.text );
+			const auto& tokens = mHighlighter.getLine( index );
+			for ( const auto& token : tokens ) {
 				if ( batchSyntaxType != token.type ) {
 					flushBatch( batchSyntaxType );
 					batchSyntaxType = token.type;
 				}
 
-				for ( size_t i = 0; i < text.size(); ++i ) {
-					String::StringBaseType ch = text[i];
+				if ( token.text.empty() )
+					continue;
+
+				char* str = (char*)token.text.c_str();
+				char* end = str + token.text.size() + 1;
+
+				do {
+					Uint32 ch = String::utf8Next( str );
 					if ( ch == ' ' || ch == '\n' ) {
 						flushBatch( token.type );
 						batchStart += charSpacing;
@@ -3141,7 +3146,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 					} else {
 						batchWidth += charSpacing;
 					}
-				}
+				} while ( str < end );
 			}
 			flushBatch( "normal" );
 

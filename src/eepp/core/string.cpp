@@ -8,6 +8,7 @@
 #include <iterator>
 #include <limits>
 #include <random>
+#include <thirdparty/utf8cpp/utf8.h>
 
 namespace EE {
 
@@ -933,8 +934,12 @@ static inline size_t utf8_length( const char* s, const char* e ) {
 	return i;
 }
 
-size_t String::utf8StringLength( const std::string& utf8String ) {
+size_t String::utf8Length( const std::string& utf8String ) {
 	return utf8_length( utf8String.c_str(), utf8String.c_str() + utf8String.length() );
+}
+
+Uint32 String::utf8Next( char*& utf8String ) {
+	return utf8::unchecked::next( utf8String );
 }
 
 String::operator std::string() const {

@@ -269,29 +269,9 @@ Uint32 UIWidget::onKeyDown( const KeyEvent& event ) {
 }
 
 Vector2f UIWidget::getTooltipPosition() {
-	EventDispatcher* eventDispatcher = getEventDispatcher();
-	UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
-
-	if ( NULL == eventDispatcher || NULL == themeManager )
+	if ( NULL == getEventDispatcher() )
 		return Vector2f::Zero;
-
-	UISceneNode* uiSceneNode = getUISceneNode();
-	Vector2f pos = eventDispatcher->getMousePosf();
-	pos -= uiSceneNode->getScreenPos(); // TODO: Fix UISceneNode inside UISceneNode position
-	pos.x += themeManager->getCursorSize().x;
-	pos.y += themeManager->getCursorSize().y;
-
-	if ( pos.x + mTooltip->getPixelsSize().getWidth() >
-		 eventDispatcher->getSceneNode()->getPixelsSize().getWidth() ) {
-		pos.x = eventDispatcher->getMousePos().x - mTooltip->getPixelsSize().getWidth();
-	}
-
-	if ( pos.y + mTooltip->getPixelsSize().getHeight() >
-		 eventDispatcher->getSceneNode()->getPixelsSize().getHeight() ) {
-		pos.y = eventDispatcher->getMousePos().y - mTooltip->getPixelsSize().getHeight();
-	}
-
-	return pos;
+	return mTooltip->getTooltipPosition( getEventDispatcher()->getMousePosf() );
 }
 
 void UIWidget::createStyle() {

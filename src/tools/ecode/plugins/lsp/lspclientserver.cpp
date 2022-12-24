@@ -74,6 +74,13 @@ static json newResponse( const std::string& method, const PluginIDType& id ) {
 	return j;
 }
 
+static std::string jsonString( const json& container, const std::string& member,
+							   const std::string& def ) {
+	return container.is_object() && container.contains( member ) && container[member].is_string()
+			   ? container.at( member ).get<std::string>()
+			   : def;
+}
+
 static json textDocumentURI( const URI& document ) {
 	return json{ { MEMBER_URI, document.toString() } };
 }
@@ -667,23 +674,25 @@ static LSPCompletionList parseDocumentCompletion( const json& result ) {
 	LSPCompletionList ret;
 	if ( result.empty() )
 		return {};
+#ifndef EE_DEBUG
 	try {
+#endif
 		ret.isIncomplete =
 			result.contains( "isIncomplete" ) ? result["isIncomplete"].get<bool>() : false;
 		const json& items =
 			( result.is_object() && result.contains( "items" ) ) ? result["items"] : result;
 
 		for ( const auto& item : items ) {
-			auto label = item.value( MEMBER_LABEL, "" );
-			auto detail = item.value( MEMBER_DETAIL, "" );
+			auto label = jsonString( item, MEMBER_LABEL, "" );
+			auto detail = jsonString( item, MEMBER_DETAIL, "" );
 			LSPMarkupContent doc = item.contains( MEMBER_DOCUMENTATION )
 									   ? parseMarkupContent( item.at( MEMBER_DOCUMENTATION ) )
 									   : LSPMarkupContent{};
-			auto filterText = item.value( "filterText", label );
-			auto insertText = item.value( "insertText", label );
-			auto sortText = item.value( "sortText", label );
+			auto filterText = jsonString( item, "filterText", label );
+			auto insertText = jsonString( item, "insertText", label );
+			auto sortText = jsonString( item, "sortText", label );
 			LSPTextEdit textEdit;
-			if ( item.contains( "textEdit" ) )
+			if ( item.contains( "textEdit" ) && !item["textEdit"].is_null() )
 				textEdit = parseTextEdit( item["textEdit"] );
 			auto kind = static_cast<LSPCompletionItemKind>( item.value( MEMBER_KIND, 1 ) );
 			const std::vector<LSPTextEdit> additionalTextEdits =
@@ -694,9 +703,11 @@ static LSPCompletionList parseDocumentCompletion( const json& result ) {
 			ret.items.push_back( { label, kind, detail, doc, sortText, insertText, filterText,
 								   textEdit, additionalTextEdits } );
 		}
+#ifndef EE_DEBUG
 	} catch ( const json::exception& err ) {
 		Log::warning( "Error parsing parseDocumentCompletion: %s", err.what() );
 	}
+#endif
 	return ret;
 }
 
@@ -735,7 +746,9 @@ static LSPSignatureInformation parseSignatureInformation( const json& json ) {
 
 static LSPSignatureHelp parseSignatureHelp( const json& sig ) {
 	LSPSignatureHelp ret;
+#ifndef EE_DEBUG
 	try {
+#endif
 		const auto& sigInfos = sig.at( "signatures" );
 		for ( const auto& info : sigInfos )
 			ret.signatures.push_back( parseSignatureInformation( info ) );
@@ -748,9 +761,11 @@ static LSPSignatureHelp parseSignatureHelp( const json& sig ) {
 				eemin( ret.activeParameter,
 					   (int)ret.signatures.at( ret.activeSignature ).parameters.size() );
 		}
+#ifndef EE_DEBUG
 	} catch ( const json::exception& err ) {
 		Log::warning( "Error parsing parseSignatureHelp: %s", err.what() );
 	}
+#endif
 	return ret;
 }
 
@@ -801,7 +816,7 @@ void LSPClientServer::initialize() {
 				  { "semanticTokens", semanticTokens },
 				  { "synchronization", json{ { "didSave", true } } },
 				  { "selectionRange", json{ { "dynamicRegistration", false } } },
-				  { "hover", json{ { "contentFormat", { "plaintext" } } } } },
+				  { "hover", json{ { "contentFormat", { "plaintext", "markdown" } } } } },
 		},
 		{ "window", json{ { "workDoneProgress", true } } },
 		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
@@ -1158,6 +1173,7 @@ void LSPClientServer::publishDiagnostics( const json& msg ) {
 	}
 	Log::debug( "LSPClientServer::publishDiagnostics: %s - returned %zu items",
 				res.uri.toString().c_str(), res.diagnostics.size() );
+	Log::info( "LSPClientServer::publishDiagnostics: %s", msg.dump().c_str() );
 }
 
 void LSPClientServer::workDoneProgress( const LSPWorkDoneProgressParams& workDoneParams ) {

@@ -511,8 +511,21 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 									editor->setTooltipText( resp.contents[0].value );
 									editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
 									editor->getTooltip()->setPixelsPosition(
-										position.asFloat() + PixelDensity::dpToPx( 1.f ) );
+										editor->getTooltip()->getTooltipPosition(
+											position.asFloat() ) );
 									editor->getTooltip()->setDontAutoHideOnMouseMove( true );
+									editor->getTooltip()->setUsingCustomStyling( true );
+
+									const auto& syntaxDef =
+										resp.contents[0].kind == LSPMarkupKind::MarkDown
+											? SyntaxDefinitionManager::instance()->getByLSPName(
+												  "markdown" )
+											: editor->getSyntaxDefinition();
+
+									SyntaxTokenizer::tokenizeText(
+										syntaxDef, editor->getColorScheme(),
+										*editor->getTooltip()->getTextCache() );
+
 									if ( editor->hasFocus() && !editor->getTooltip()->isVisible() )
 										editor->getTooltip()->show();
 								}

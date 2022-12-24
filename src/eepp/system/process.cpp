@@ -34,12 +34,14 @@ Process::Process( const std::string& command, const Uint32& options,
 
 Process::~Process() {
 	mShuttingDown = true;
-	destroy();
+	if ( mProcess )
+		destroy();
 	if ( mStdOutThread.joinable() )
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )
 		mStdErrThread.join();
-	kill();
+	if ( mProcess && isAlive() )
+		kill();
 	eeFree( mProcess );
 }
 
@@ -153,7 +155,7 @@ bool Process::join( int* const returnCodeOut ) {
 
 bool Process::kill() {
 	eeASSERT( mProcess != nullptr );
-	return 0 == subprocess_terminate( PROCESS_PTR );
+	return ( PROCESS_PTR->child != 0 ) ? 0 == subprocess_terminate( PROCESS_PTR ) : false;
 }
 
 bool Process::destroy() {

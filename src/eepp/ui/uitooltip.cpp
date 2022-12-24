@@ -13,6 +13,32 @@ UITooltip* UITooltip::New() {
 	return eeNew( UITooltip, () );
 }
 
+Vector2f UITooltip::getTooltipPosition( UITooltip* toolip, Vector2f requestedPosition ) {
+	UISceneNode* uiSceneNode = toolip->getUISceneNode();
+
+	if ( NULL == uiSceneNode )
+		return Vector2f::Zero;
+
+	UIThemeManager* themeManager = toolip->getUISceneNode()->getUIThemeManager();
+	if ( NULL == themeManager )
+		return Vector2f::Zero;
+
+	Vector2f pos = requestedPosition;
+	pos -= uiSceneNode->getScreenPos(); // TODO: Fix UISceneNode inside UISceneNode position
+	pos.x += themeManager->getCursorSize().x / 2;
+	pos.y += themeManager->getCursorSize().y;
+
+	if ( pos.x + toolip->getPixelsSize().getWidth() > uiSceneNode->getPixelsSize().getWidth() ) {
+		pos.x = requestedPosition.x - toolip->getPixelsSize().getWidth() - 1;
+	}
+
+	if ( pos.y + toolip->getPixelsSize().getHeight() > uiSceneNode->getPixelsSize().getHeight() ) {
+		pos.y = requestedPosition.y - toolip->getPixelsSize().getHeight() - 1;
+	}
+
+	return pos;
+}
+
 UITooltip::UITooltip() :
 	UIWidget( "tooltip" ), mAlignOffset( 0.f, 0.f ), mTooltipTime( Time::Zero ), mTooltipOf() {
 	setFlags( UI_NODE_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
@@ -412,18 +438,33 @@ void UITooltip::setTextTransform( const TextTransform::Value& textTransform ) {
 	}
 }
 
+Vector2f UITooltip::getTooltipPosition( Vector2f requestedPosition ) {
+	return UITooltip::getTooltipPosition( this, requestedPosition );
+}
+
+bool UITooltip::getUsingCustomStyling() const {
+	return mUsingCustomStyling;
+}
+
+void UITooltip::setUsingCustomStyling( bool usingCustomStyling ) {
+	mUsingCustomStyling = usingCustomStyling;
+}
+
 bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::TextTransform:
-			setTextTransform( TextTransform::fromString( attribute.asString() ) );
+			if ( !mUsingCustomStyling )
+				setTextTransform( TextTransform::fromString( attribute.asString() ) );
 		case PropertyId::Color:
-			setFontColor( attribute.asColor() );
+			if ( !mUsingCustomStyling )
+				setFontColor( attribute.asColor() );
 			break;
 		case PropertyId::ShadowColor:
-			setFontShadowColor( attribute.asColor() );
+			if ( !mUsingCustomStyling )
+				setFontShadowColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
 			Font* font = FontManager::instance()->getByName( attribute.asString() );
@@ -437,13 +478,16 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontSize( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::FontStyle:
-			setFontStyle( attribute.asFontStyle() );
+			if ( !mUsingCustomStyling )
+				setFontStyle( attribute.asFontStyle() );
 			break;
 		case PropertyId::TextStrokeWidth:
-			setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+			if ( !mUsingCustomStyling )
+				setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
 			break;
 		case PropertyId::TextStrokeColor:
-			setOutlineColor( attribute.asColor() );
+			if ( !mUsingCustomStyling )
+				setOutlineColor( attribute.asColor() );
 			break;
 		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );

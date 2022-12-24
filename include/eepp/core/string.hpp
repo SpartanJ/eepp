@@ -325,7 +325,10 @@ class EE_API String {
 	static String fromUtf8( const std::string& utf8String );
 
 	/** @return The number of codepoints of the utf8 string. */
-	static size_t utf8StringLength( const std::string& utf8String );
+	static size_t utf8Length( const std::string& utf8String );
+
+	/** @return The next character in a utf8 null terminated string */
+	static Uint32 utf8Next( char*& utf8String );
 
 	/** @brief Default constructor
 	** This constructor creates an empty string.

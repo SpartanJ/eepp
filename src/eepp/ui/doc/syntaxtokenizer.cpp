@@ -317,7 +317,7 @@ Text& SyntaxTokenizer::tokenizeText( const SyntaxDefinition& syntax,
 	size_t start = startIndex;
 	for ( auto& token : tokens ) {
 		if ( start < endIndex ) {
-			size_t strSize = String::utf8StringLength( token.text );
+			size_t strSize = String::utf8Length( token.text );
 			text.setFillColor( colorScheme.getSyntaxStyle( token.type ).color, start,
 							   std::min( start + strSize, endIndex ) );
 			start += strSize;

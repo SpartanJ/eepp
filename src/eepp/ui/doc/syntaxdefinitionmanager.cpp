@@ -123,7 +123,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 }
 
 void SyntaxDefinitionManager::addPlainText() {
-	add( { "Plain Text", { "%.txt$" }, {} } );
+	add( { "Plain Text", { "%.txt$" }, {}, {}, "", {}, "plaintext" } );
 }
 
 void SyntaxDefinitionManager::addXML() {
@@ -656,6 +656,7 @@ void SyntaxDefinitionManager::addPython() {
 		   "#",
 		   { "^#!.*[ /]python", "^#!.*[ /]python3" } } );
 }
+
 void SyntaxDefinitionManager::addBash() {
 	add( { "Bash",
 		   { "%.sh$", "%.bash$", "%.bashrc$", "%.bash_profile$" },
@@ -3787,6 +3788,14 @@ const SyntaxDefinition&
 SyntaxDefinitionManager::getByLanguageName( const std::string& name ) const {
 	for ( auto& style : mDefinitions ) {
 		if ( style.getLanguageName() == name )
+			return style;
+	}
+	return mDefinitions[0];
+}
+
+const SyntaxDefinition& SyntaxDefinitionManager::getByLSPName( const std::string& name ) const {
+	for ( auto& style : mDefinitions ) {
+		if ( style.getLSPName() == name )
 			return style;
 	}
 	return mDefinitions[0];
