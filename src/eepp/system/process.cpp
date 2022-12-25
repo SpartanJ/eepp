@@ -155,7 +155,7 @@ bool Process::join( int* const returnCodeOut ) {
 
 bool Process::kill() {
 	eeASSERT( mProcess != nullptr );
-	return ( PROCESS_PTR->child != 0 ) ? 0 == subprocess_terminate( PROCESS_PTR ) : false;
+	return PROCESS_PTR->alive ? 0 == subprocess_terminate( PROCESS_PTR ) : false;
 }
 
 bool Process::destroy() {

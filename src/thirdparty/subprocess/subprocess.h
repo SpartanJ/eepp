@@ -1022,7 +1022,6 @@ int subprocess_join(struct subprocess_s *const process,
   }
 
   process->alive = 0;
-  process->child = 0;
 
   return 0;
 #else
@@ -1106,7 +1105,6 @@ int subprocess_terminate(struct subprocess_s *const process) {
   windows_call_result =
       TerminateProcess(process->hProcess, killed_process_exit_code);
   success_terminate = (windows_call_result == 0) ? 1 : 0;
-  process->child = 0;
   process->alive = 0;
   return success_terminate;
 #else
@@ -1247,7 +1245,9 @@ int subprocess_alive(struct subprocess_s *const process) {
 
   if (!is_alive) {
     process->alive = 0;
-	process->child = 0;
+    #if !defined(_WIN32)
+    process->child = 0;
+    #endif
   }
 
   return is_alive;
