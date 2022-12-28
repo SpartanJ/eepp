@@ -1,14 +1,17 @@
 #include <eepp/core/memorymanager.hpp>
+#include <eepp/core/string.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 
 namespace EE { namespace System {
 
-IOStreamFile* IOStreamFile::New( const std::string& path, const char* modes ) {
+IOStreamFile* IOStreamFile::New( const std::string& path, const std::string& modes ) {
 	return eeNew( IOStreamFile, ( path, modes ) );
 }
 
-IOStreamFile::IOStreamFile( const std::string& path, const char* modes ) : mFS( NULL ), mSize( 0 ) {
-	mFS = std::fopen( path.c_str(), modes );
+IOStreamFile::IOStreamFile( const std::string& path, const std::string& modes ) :
+	mFS( NULL ), mSize( 0 ) {
+	mFS = FileSystem::fopenUtf8( path, modes );
 }
 
 IOStreamFile::~IOStreamFile() {

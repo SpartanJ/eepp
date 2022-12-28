@@ -1691,6 +1691,9 @@ TextRange TextDocument::find( String text, TextPosition from, const bool& caseSe
 	std::vector<String> textLines = text.split( '\n', true, true );
 
 	if ( !textLines.empty() ) {
+		if ( textLines.size() > mLines.size() )
+			return TextRange();
+
 		from = sanitizePosition( from );
 
 		TextPosition to = endOfDoc();
@@ -1766,6 +1769,9 @@ TextRange TextDocument::findLast( String text, TextPosition from, const bool& ca
 	std::vector<String> textLines = text.split( '\n', true, true );
 
 	if ( !textLines.empty() ) {
+		if ( textLines.size() > mLines.size() )
+			return TextRange();
+
 		from = sanitizePosition( from );
 
 		TextPosition to = startOfDoc();

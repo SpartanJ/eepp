@@ -156,6 +156,12 @@ class EE_API FileSystem {
 
 	/** @returns True if the path provided is relative. */
 	static bool isRelativePath( const std::string& path );
+
+	/** Opens a file path with a path and mode encoded in UTF-8 */
+	static FILE* fopenUtf8( const char* path, const char* mode );
+
+	/** Opens a file path with a path and mode encoded in UTF-8 */
+	static FILE* fopenUtf8( const std::string& path, const std::string& mode );
 };
 
 }} // namespace EE::System

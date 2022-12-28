@@ -399,6 +399,8 @@ class EE_API String {
 	** @param wideString Wide string to convert
 	**/
 	String( const std::wstring& wideString );
+
+	static String fromWide( const wchar_t* wideString );
 #endif
 
 	/** @brief Construct from a null-terminated C-style UTF-32 string

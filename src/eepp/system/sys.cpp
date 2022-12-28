@@ -862,4 +862,39 @@ void* Sys::loadFunction( void* handle, const std::string& name ) {
 #endif
 }
 
+std::vector<std::string> Sys::parseArguments( int argc, char* argv[] ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	int rargc;
+	LPWSTR* argv = CommandLineToArgvW( GetCommandLineW(), &rargc );
+	std::vector<std::string> args;
+	if ( rargc <= 1 )
+		return {};
+	for ( int i = 1; i < rargc; i++ ) {
+		args.emplace_back( String( argv[i] ).toUtf8() );
+	}
+	return args;
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	if ( argc < 1 )
+		return {};
+	std::vector<std::string> args;
+	args.emplace_back( argv[0] );
+	for ( int i = 1; i < argc; i++ ) {
+		auto split = String::split( std::string( argv[i] ), '=' );
+		if ( split.size() == 2 ) {
+			std::string arg( split[0] + "=" + URI::decode( split[1] ) );
+			args.emplace_back( !String::startsWith( arg, "--" ) ? ( std::string( "--" ) + arg )
+																: arg );
+		}
+	}
+	return args;
+#else
+	std::vector<std::string> args;
+	if ( argc > 1 ) {
+		for ( int i = 1; i < argc; i++ )
+			args.push_back( argv[i] );
+	}
+	return args;
+#endif
+}
+
 }} // namespace EE::System

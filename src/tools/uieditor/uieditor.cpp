@@ -1160,25 +1160,6 @@ void App::createAppMenu() {
 	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 }
 
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-std::vector<std::string> parseEmscriptenArgs( int argc, char* argv[] ) {
-	if ( argc < 1 )
-		return {};
-	std::vector<std::string> args;
-	args.emplace_back( argv[0] );
-	for ( int i = 1; i < argc; i++ ) {
-		Log::debug( "argv %d %s", i, argv[i] );
-		auto split = String::split( std::string( argv[i] ), '=' );
-		if ( split.size() == 2 ) {
-			std::string arg( split[0] + "=" + URI::decode( split[1] ) );
-			args.emplace_back( !String::startsWith( arg, "--" ) ? ( std::string( "--" ) + arg )
-																: arg );
-		}
-	}
-	return args;
-}
-#endif
-
 App::App() {}
 
 App::~App() {
@@ -1569,11 +1550,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 							{ 'u', "use-app-theme" } );
 
 	try {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-		parser.ParseCLI( argc, argv );
-#else
-		parser.ParseCLI( parseEmscriptenArgs( argc, argv ) );
-#endif
+		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
 	} catch ( const args::Help& ) {
 		std::cout << parser;
 		return EXIT_SUCCESS;

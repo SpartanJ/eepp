@@ -3,6 +3,7 @@
 
 #include <eepp/system/time.hpp>
 #include <string>
+#include <vector>
 
 namespace EE { namespace System {
 
@@ -70,6 +71,10 @@ class EE_API Sys {
 	**	@param name The name of the function to look up
 	**	@return The pointer to the function or NULL if there was an error */
 	static void* loadFunction( void* handle, const std::string& name );
+
+	/** @return the argument list in a vector of std::strings in UTF-8, ignoring the first argument
+	 * (the binary name) */
+	static std::vector<std::string> parseArguments( int argc, char* argv[] );
 };
 
 }} // namespace EE::System

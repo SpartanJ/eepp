@@ -898,6 +898,10 @@ String::String( const std::wstring& wideString ) {
 	mString.reserve( wideString.length() + 1 );
 	Utf32::fromWide( wideString.begin(), wideString.end(), std::back_inserter( mString ) );
 }
+
+String String::fromWide( const wchar_t* wideString ) {
+	return String( wideString );
+}
 #endif
 
 String::String( const StringBaseType* utf32String ) {
