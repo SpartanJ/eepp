@@ -865,12 +865,12 @@ void* Sys::loadFunction( void* handle, const std::string& name ) {
 std::vector<std::string> Sys::parseArguments( int argc, char* argv[] ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	int rargc;
-	LPWSTR* argv = CommandLineToArgvW( GetCommandLineW(), &rargc );
+	LPWSTR* rargv = CommandLineToArgvW( GetCommandLineW(), &rargc );
 	std::vector<std::string> args;
 	if ( rargc <= 1 )
 		return {};
 	for ( int i = 1; i < rargc; i++ ) {
-		args.emplace_back( String( argv[i] ).toUtf8() );
+		args.emplace_back( String( rargv[i] ).toUtf8() );
 	}
 	return args;
 #elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
