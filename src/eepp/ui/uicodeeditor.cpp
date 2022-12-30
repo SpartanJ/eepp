@@ -3130,7 +3130,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 					continue;
 
 				char* str = (char*)token.text.c_str();
-				char* end = str + token.text.size() + 1;
+				char* end = str + token.text.size();
 
 				do {
 					Uint32 ch = String::utf8Next( str );
