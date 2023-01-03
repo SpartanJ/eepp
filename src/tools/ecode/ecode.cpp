@@ -572,7 +572,7 @@ void App::updateRecentFiles() {
 				if ( ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) ||
 					 String::startsWith( path, "https://" ) ||
 					 String::startsWith( path, "http://" ) ) {
-					loadFileFromPath( path );
+					loadFileFromPathOrFocus( path );
 				}
 			}
 		} );
@@ -2420,10 +2420,23 @@ void App::loadFileFromPath(
 #endif
 		}
 	} else {
-		if ( inNewTab ) {
-			mSplitter->loadAsyncFileFromPathInNewTab( path, mThreadPool, onLoaded );
+		UITab* tab = mSplitter->isDocumentOpen( path );
+
+		if ( tab && tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			if ( inNewTab ) {
+				auto d = mSplitter->loadDocumentInNewTab( editor->getDocumentRef() );
+				updateEditorTitle( d.second );
+			} else {
+				mSplitter->loadDocument( editor->getDocumentRef(), codeEditor );
+				updateEditorTitle( codeEditor );
+			}
 		} else {
-			mSplitter->loadAsyncFileFromPath( path, mThreadPool, codeEditor, onLoaded );
+			if ( inNewTab ) {
+				mSplitter->loadAsyncFileFromPathInNewTab( path, mThreadPool, onLoaded );
+			} else {
+				mSplitter->loadAsyncFileFromPath( path, mThreadPool, codeEditor, onLoaded );
+			}
 		}
 	}
 }

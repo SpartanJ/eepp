@@ -293,6 +293,34 @@ bool UICodeEditorSplitter::editorExists( UICodeEditor* editor ) const {
 	return false;
 }
 
+bool UICodeEditorSplitter::loadDocument( std::shared_ptr<TextDocument> doc,
+										 UICodeEditor* codeEditor ) {
+	if ( nullptr == codeEditor )
+		codeEditor = mCurEditor;
+
+	if ( nullptr == codeEditor )
+		return false;
+
+	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
+	codeEditor->setDocument( doc );
+
+	return true;
+}
+
+std::pair<UITab*, UICodeEditor*>
+UICodeEditorSplitter::loadDocumentInNewTab( std::shared_ptr<TextDocument> doc ) {
+	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	if ( d.first == nullptr || d.second == nullptr ) {
+		Log::error( "Couldn't createCodeEditorInTabWidget in "
+					"UICodeEditorSplitter::loadDocumentInNewTab" );
+		return { nullptr, nullptr };
+	}
+	UITabWidget* tabWidget = d.first->getTabWidget();
+	loadDocument( doc, d.second );
+	tabWidget->setTabSelected( d.first );
+	return d;
+}
+
 bool UICodeEditorSplitter::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) {
 	if ( FileSystem::isDirectory( path ) )
 		return false;

@@ -89,6 +89,10 @@ class EE_API UICodeEditorSplitter {
 
 	void focusSomeEditor( Node* searchFrom = nullptr );
 
+	bool loadDocument( std::shared_ptr<TextDocument> doc, UICodeEditor* codeEditor = nullptr );
+
+	std::pair<UITab*, UICodeEditor*> loadDocumentInNewTab( std::shared_ptr<TextDocument> doc );
+
 	bool loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = nullptr );
 
 	void loadAsyncFileFromPath( const std::string& path, std::shared_ptr<ThreadPool> pool,
@@ -107,7 +111,7 @@ class EE_API UICodeEditorSplitter {
 		const std::string& path, std::shared_ptr<ThreadPool> pool,
 		std::function<void( UICodeEditor*, const std::string& )> onLoaded, UITabWidget* tabWidget );
 
-	void removeUnusedTab( UITabWidget* tabWidge, bool destroyOwnedNode = true, 
+	void removeUnusedTab( UITabWidget* tabWidge, bool destroyOwnedNode = true,
 						  bool immediateCloset = true );
 
 	UITabWidget* createEditorWithTabWidget( Node* parent, bool openCurEditor = true );
