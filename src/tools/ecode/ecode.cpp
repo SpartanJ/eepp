@@ -4106,6 +4106,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 							  { "benchmark-mode" } );
 	args::Flag verbose( parser, "verbose", "Print all logs to the standard output.",
 						{ 'v', "verbose" } );
+	args::Flag version( parser, "version", "Prints version information", { 'V', "version" } );
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
 	} catch ( const args::Help& ) {
@@ -4119,6 +4120,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
 		return EXIT_FAILURE;
+	}
+
+	if ( version.Get() ) {
+		std::cout << ecode::Version::getVersionName() << '\n';
+		return EXIT_SUCCESS;
 	}
 
 	if ( verbose.Get() )

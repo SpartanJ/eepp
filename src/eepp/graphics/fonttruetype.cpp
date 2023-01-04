@@ -466,6 +466,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 	GlyphDrawableTable& drawables = page.drawables;
 
 	Uint32 glyphIndex = 0;
+	Uint32 tGlyphIndex = 0;
 	Uint32 fontInternalId = mFontInternalId;
 
 	if ( mEnableEmojiFallback && Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont &&
@@ -474,14 +475,24 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
-			glyphIndex = fontEmoji->getGlyphIndex( codePoint );
-			fontInternalId = fontEmoji->getFontInternalId();
+			tGlyphIndex = fontEmoji->getGlyphIndex( codePoint );
+			if ( 0 != tGlyphIndex ) {
+				glyphIndex = tGlyphIndex;
+				fontInternalId = fontEmoji->getFontInternalId();
+			} else {
+				glyphIndex = getGlyphIndex( codePoint );
+			}
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
-			glyphIndex = fontEmoji->getGlyphIndex( codePoint );
-			fontInternalId = fontEmoji->getFontInternalId();
+			tGlyphIndex = fontEmoji->getGlyphIndex( codePoint );
+			if ( 0 != tGlyphIndex ) {
+				glyphIndex = tGlyphIndex;
+				fontInternalId = fontEmoji->getFontInternalId();
+			} else {
+				glyphIndex = getGlyphIndex( codePoint );
+			}
 		} else {
 			glyphIndex = getGlyphIndex( codePoint );
 		}
@@ -494,8 +505,13 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
 		FontTrueType* fontFallback =
 			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
-		glyphIndex = fontFallback->getGlyphIndex( codePoint );
-		fontInternalId = fontFallback->getFontInternalId();
+		tGlyphIndex = fontFallback->getGlyphIndex( codePoint );
+		if ( 0 != tGlyphIndex ) {
+			glyphIndex = tGlyphIndex;
+			fontInternalId = fontFallback->getFontInternalId();
+		} else {
+			glyphIndex = getGlyphIndex( codePoint );
+		}
 	}
 
 	Uint64 key = getIndexKey( fontInternalId, glyphIndex, bold, outlineThickness );
