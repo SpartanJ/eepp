@@ -244,7 +244,7 @@ int PseudoTerminal::write( const char* s, size_t n ) {
 
 int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 	DWORD available = 0;
-	DWORD read;
+	DWORD read = 0;
 
 	if ( !block ) {
 		if ( !PeekNamedPipe( mInputHandle.handle(), nullptr, 0, nullptr, &available, nullptr ) ) {
@@ -255,6 +255,9 @@ int PseudoTerminal::read( char* buf, size_t n, bool block ) {
 			return 0;
 		}
 	}
+
+	if ( available > n )
+		available = n;
 
 	if ( !ReadFile( mInputHandle.handle(), buf, available, &read, nullptr ) ) {
 		PrintLastWinApiError();
