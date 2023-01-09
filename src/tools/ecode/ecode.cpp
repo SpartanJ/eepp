@@ -1132,7 +1132,9 @@ UIMenu* App::createViewMenu() {
 			mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 		} else if ( item->getId() == "treeview-single-click-nav" ) {
 			mConfig.editor.singleClickTreeNavigation = item->asType<UIMenuCheckBox>()->isActive();
-			mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
+			if ( mProjectTreeView )
+				mProjectTreeView->setSingleClickNavigation(
+					mConfig.editor.singleClickTreeNavigation );
 		} else if ( item->getId() == "sync-project-tree" ) {
 			mConfig.editor.syncProjectTreeWithEditor = item->asType<UIMenuCheckBox>()->isActive();
 		} else {
@@ -1257,10 +1259,10 @@ UIMenu* App::createTerminalMenu() {
 		mTerminalMenu->addCheckBox( i18n( "exclusive_mode", "Exclusive Mode" ), false,
 									getKeybind( UITerminal::getExclusiveModeToggleCommandName() ) );
 	exclusiveChk
-		->setTooltipText(
-			i18n( "exclusive_mode_tooltip",
-				  "Global Keybindings are disabled when exclusive mode is enabled.\nThis is to "
-				  "avoid keyboard shortcut overlapping between the terminal an the application." ) )
+		->setTooltipText( i18n(
+			"exclusive_mode_tooltip",
+			"Global Keybindings are disabled when exclusive mode is enabled.\nThis is to "
+			"avoid keyboard shortcut overlapping between the terminal and the application." ) )
 		->setId( "exclusive-mode" );
 
 	mTerminalMenu
@@ -2128,7 +2130,7 @@ void App::updateDocInfo( TextDocument& doc ) {
 }
 
 void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
-	if ( mConfig.editor.syncProjectTreeWithEditor && editor != nullptr &&
+	if ( mProjectTreeView && mConfig.editor.syncProjectTreeWithEditor && editor != nullptr &&
 		 ( editor->getDocument().hasFilepath() ||
 		   !editor->getDocument().getLoadingFilePath().empty() ) ) {
 		std::string loadingPath( editor->getDocument().getLoadingFilePath() );
@@ -3114,7 +3116,8 @@ void App::toggleHiddenFiles() {
 	mFileSystemModel = FileSystemModel::New(
 		mFileSystemModel->getRootPath(), FileSystemModel::Mode::FilesAndDirectories,
 		{ true, true, !mFileSystemModel->getDisplayConfig().ignoreHidden } );
-	mProjectTreeView->setModel( mFileSystemModel );
+	if ( mProjectTreeView )
+		mProjectTreeView->setModel( mFileSystemModel );
 }
 
 void App::newFile( const FileInfo& file ) {
@@ -3419,7 +3422,8 @@ void App::loadFolder( const std::string& path ) {
 	mFileSystemModel = FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
 											 { true, true, true } );
 
-	mProjectTreeView->setModel( mFileSystemModel );
+	if ( mProjectTreeView )
+		mProjectTreeView->setModel( mFileSystemModel );
 
 	if ( mFileSystemListener )
 		mFileSystemListener->setFileSystemModel( mFileSystemModel );

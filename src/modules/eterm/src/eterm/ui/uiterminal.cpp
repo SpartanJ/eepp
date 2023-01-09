@@ -6,6 +6,7 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 using namespace EE::Scene;
@@ -406,6 +407,12 @@ bool UITerminal::isUsingCustomTitle() const {
 }
 
 Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
+	Input* input = getUISceneNode()->getWindow()->getInput();
+
+	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
+		 input->isLeftControlPressed() || input->isMetaPressed() || input->isLeftAltPressed() )
+		return 0;
+
 	mTerm->onTextInput( event.getChar() );
 	return 1;
 }

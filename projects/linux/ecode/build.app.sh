@@ -3,7 +3,22 @@ CANONPATH=$(readlink -f "$0")
 DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 cd ../../../ || exit
-premake4 --with-mojoal gmake
+DEBUG_SYMBOLS=""
+for i in "$@"; do
+	case $i in
+		--with-debug-symbols)
+			DEBUG_SYMBOLS="--with-debug-symbols"
+			shift
+			;;
+		-*|--*)
+			echo "Unknown option $i"
+			exit 1
+			;;
+		*)
+			;;
+	esac
+done
+premake4 "$DEBUG_SYMBOLS" --with-mojoal gmake
 cd make/linux || exit
 make -j"$(nproc)" config=release ecode
 cd "$DIRPATH" || exit
@@ -15,8 +30,8 @@ cp AppRun ecode.app/
 cp ecode.desktop ecode.app/
 cp ../../../bin/assets/icon/ee.png ecode.app/ecode.png
 cp ../../../libs/linux/libeepp.so ecode.app/libs/
-cp ../../../bin/ecode ecode.app/
-cp -L $(whereis libSDL2-2.0.so.0 | awk '{print $NF}') ecode.app/libs/
+cp ../../../bin/ecode ecode.app/ecode.bin
+cp -L "$(whereis libSDL2-2.0.so.0 | awk '{print $NF}')" ecode.app/libs/
 strip ecode.app/libs/libSDL2-2.0.so.0
 mkdir -p ecode.app/assets/colorschemes
 mkdir -p ecode.app/assets/fonts
@@ -50,4 +65,26 @@ then
 	chmod +x "$APPIMAGETOOL"
 fi
 
-$APPIMAGETOOL ecode.app ecode-linux-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-"$(arch)".AppImage
+ECODE_NAME=ecode-linux-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-"$(arch)"
+
+if [ -n "$DEBUG_SYMBOLS" ];
+then
+	cp -r ecode.app ecode
+	rm ecode/.DirIcon
+	mv ecode/AppRun ecode/ecode
+	7za a -t7z "$ECODE_NAME"-with-debug-symbols.7z ecode -mx9 -mmt"$(nproc)"
+	rm -rf ecode
+	objcopy -S ecode.app/ecode.bin ecode.app/ecode.bin
+	objcopy -S ecode.app/libs/libeepp.so ecode.app/libs/libeepp.so
+fi
+
+$APPIMAGETOOL ecode.app "$ECODE_NAME".AppImage
+
+rm ecode.app/.DirIcon
+mv ecode.app/AppRun ecode.app/ecode
+mv ecode.app ecode
+
+tar -czf "$ECODE_NAME".tar.gz ecode
+
+mv ecode ecode.app
+
