@@ -9,6 +9,24 @@ Clock secondsCounter;
 Time frameTime{ Time::Zero };
 bool benchmarkMode{ false };
 std::string windowStringData;
+std::map<std::string, TerminalColorScheme> terminalColorSchemes;
+
+void loadColorSchemes( const std::string& resPath ) {
+	auto configPath = Sys::getConfigPath( "eterm" );
+	auto colorSchemes =
+		TerminalColorScheme::loadFromFile( resPath + "colorschemes/terminalcolorschemes.conf" );
+	auto colorSchemesPath = configPath + FileSystem::getOSSlash() + "colorschemes";
+	if ( FileSystem::isDirectory( colorSchemesPath ) ) {
+		auto colorSchemesFiles = FileSystem::filesGetInPath( colorSchemesPath );
+		for ( auto& file : colorSchemesFiles ) {
+			auto colorSchemesInFile = TerminalColorScheme::loadFromFile( file );
+			for ( auto& coloScheme : colorSchemesInFile )
+				colorSchemes.emplace_back( coloScheme );
+		}
+	}
+	for ( auto colorScheme : colorSchemes )
+		terminalColorSchemes.insert( { colorScheme.getName(), colorScheme } );
+}
 
 void inputCallback( InputEvent* event ) {
 	if ( !terminal || event->Type == InputEvent::EventsSent )
@@ -134,6 +152,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<std::string> executeInShell(
 		parser, "execute-in-shell", "execute program in shell", { 'e', "execute" }, "" );
 	args::Flag vsync( parser, "vsync", "Enable vsync", { "vsync" } );
+	args::ValueFlag<std::string> colorScheme( parser, "color-scheme", "Load color scheme",
+											  { "color-scheme" }, "" );
+	args::Flag listColorSchemes( parser, "color-schemes", "Lists color schemes",
+								 { "list-color-schemes" } );
 	args::ValueFlag<Uint32> maxFPS( parser, "max-fps",
 									"Maximum rendering frames per second of the terminal. Default "
 									"value will be the refresh rate of the screen.",
@@ -176,6 +198,16 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #endif
 	resPath += "assets";
 	FileSystem::dirAddSlashAtEnd( resPath );
+
+	if ( listColorSchemes.Get() || colorScheme )
+		loadColorSchemes( resPath );
+
+	if ( listColorSchemes.Get() ) {
+		std::cout << "Color schemes:\n";
+		for ( auto colorScheme : terminalColorSchemes )
+			std::cout << "\t" << colorScheme.first << "\n";
+		return EXIT_SUCCESS;
+	}
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -243,6 +275,12 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					win->close();
 				}
 			} );
+
+			if ( colorScheme ) {
+				auto selColorScheme = terminalColorSchemes.find( colorScheme.Get() );
+				if ( selColorScheme != terminalColorSchemes.end() )
+					terminal->setColorScheme( selColorScheme->second );
+			}
 
 			if ( !executeInShell.Get().empty() )
 				terminal->executeFile( executeInShell.Get() );
