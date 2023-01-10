@@ -469,13 +469,13 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::FontFamily: {
 			Font* font = FontManager::instance()->getByName( attribute.asString() );
 
-			if ( NULL != font && font->loaded() ) {
+			if ( !mUsingCustomStyling && NULL != font && font->loaded() )
 				setFont( font );
-			}
 			break;
 		}
 		case PropertyId::FontSize:
-			setFontSize( attribute.asDpDimensionI() );
+			if ( !mUsingCustomStyling )
+				setFontSize( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::FontStyle:
 			if ( !mUsingCustomStyling )
