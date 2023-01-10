@@ -3718,6 +3718,10 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			margin-bottom: 8dp;
 			opacity: 0.8;
 		}
+		#panel tab::icon {
+			margin-left: 0dp;
+			margin-right: 0dp;
+		}
 		</style>
 		<MainLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">

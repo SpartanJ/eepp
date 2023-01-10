@@ -749,6 +749,8 @@ static LSPSignatureHelp parseSignatureHelp( const json& sig ) {
 #ifndef EE_DEBUG
 	try {
 #endif
+		if ( !sig.contains( "signatures" ) )
+			return ret;
 		const auto& sigInfos = sig.at( "signatures" );
 		for ( const auto& info : sigInfos )
 			ret.signatures.push_back( parseSignatureInformation( info ) );

@@ -384,8 +384,8 @@ struct LSPSelectionRange {
 struct LSPParameterInformation {
 	// offsets into overall signature label
 	// (-1 if invalid)
-	int start;
-	int end;
+	int start{ -1 };
+	int end{ -1 };
 };
 
 struct LSPSignatureInformation {
@@ -396,8 +396,8 @@ struct LSPSignatureInformation {
 
 struct LSPSignatureHelp {
 	std::vector<LSPSignatureInformation> signatures;
-	int activeSignature;
-	int activeParameter;
+	int activeSignature{ 0 };
+	int activeParameter{ 0 };
 };
 
 struct LSPConverter {
