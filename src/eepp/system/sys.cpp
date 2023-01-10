@@ -50,7 +50,9 @@
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#include <eepp/network/uri.hpp>
 #include <emscripten.h>
+using namespace EE::Network;
 #endif
 
 #ifndef PATH_MAX
