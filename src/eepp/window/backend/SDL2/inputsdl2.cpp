@@ -129,6 +129,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 				case SDL_WINDOWEVENT_RESIZED: {
 					event.Type = InputEvent::VideoResize;
 					event.WinID = SDLEvent.window.windowID;
+					mDPIScale = mWindow->getScale();
 					event.resize.w = SDLEvent.window.data1 * mDPIScale;
 					event.resize.h = SDLEvent.window.data2 * mDPIScale;
 					break;

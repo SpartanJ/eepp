@@ -13,15 +13,15 @@
   <key>CFBundleIconFile</key>
   <string>ecode.icns</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.2</string>
+  <string>ECODE_VERSION_STRING</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>IFMajorVersion</key>
-  <integer>0</integer>
+  <integer>ECODE_MAJOR_VERSION</integer>
   <key>IFMinorVersion</key>
-  <integer>1</integer>
+  <integer>ECODE_MINOR_VERSION</integer>
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>NSMainNibFile</key>

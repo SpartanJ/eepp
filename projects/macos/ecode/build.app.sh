@@ -4,7 +4,14 @@ rm -rf ./ecode.app
 mkdir -p ecode.app/Contents/MacOS/
 mkdir -p ecode.app/Contents/Resources/
 cp ../../../bin/assets/icon/ee.icns ecode.app/Contents/Resources/ecode.icns
+VERSIONPATH=../../../src/tools/ecode/version.hpp
+ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
+ECODE_MINOR_VERSION=$(grep "define ECODE_MINOR_VERSION" $VERSIONPATH | awk '{print $3}')
+ECODE_PATCH_LEVEL=$(grep "define ECODE_PATCH_LEVEL" $VERSIONPATH | awk '{print $3}')
+ECODE_VERSION_STRING="$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"
+cat Info.plist.tpl | sed "s/ECODE_VERSION_STRING/${ECODE_VERSION_STRING}/g" | sed "s/ECODE_MAJOR_VERSION/${ECODE_MAJOR_VERSION}/g"  | sed "s/ECODE_MINOR_VERSION/${ECODE_MINOR_VERSION}/g" > Info.plist
 cp Info.plist ecode.app/Contents/
+rm Info.plist
 chmod +x run.sh
 cp run.sh ecode.app/Contents/MacOS
 cp ../../../libs/macosx/libeepp.dylib ecode.app/Contents/MacOS

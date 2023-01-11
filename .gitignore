@@ -38,8 +38,7 @@ external_projects.lua
 src/thirdparty/SDL2/include/SDL2
 projects/ios/eepp.app/assets
 projects/ios/eepp.app/eepp
-bin/libeepp-debug.dylib
-bin/libeepp.dylib
+bin/*.dylib
 *.iml
 .idea/
 eepp.kdev4
