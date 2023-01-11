@@ -37,7 +37,7 @@ class EE_API UIColorPicker {
 	UIColorPicker( UIWindow* attach = NULL, const ColorPickedCb& colorPickedCb = ColorPickedCb(),
 				   const Uint8& modalAlpha = 0 );
 
-	void setColor( const Color& color );
+	void setColor( const Color& color, bool hexColorNeedsUpdate = true );
 
 	const Color& getColor() const;
 
@@ -50,21 +50,22 @@ class EE_API UIColorPicker {
 	void closePicker();
 
   protected:
-	UIWindow* mUIWindow;
-	Node* mUIContainer;
-	UIWidget* mRoot;
+	UIWindow* mUIWindow{ nullptr };
+	Node* mUIContainer{ nullptr };
+	UIWidget* mRoot{ nullptr };
 	ColorPickedCb mPickedCb;
-	UIImage* mColorPicker;
-	UIImage* mHuePicker;
-	UIWidget* mVerticalLine;
-	UIWidget* mHorizontalLine;
-	UIWidget* mHueLine;
-	UIWidget* mCurrentColor;
-	UILinearLayout* mRedContainer;
-	UILinearLayout* mGreenContainer;
-	UILinearLayout* mBlueContainer;
-	UILinearLayout* mAlphaContainer;
-	UILinearLayout* mFooter;
+	UIImage* mColorPicker{ nullptr };
+	UIImage* mHuePicker{ nullptr };
+	UIWidget* mVerticalLine{ nullptr };
+	UIWidget* mHorizontalLine{ nullptr };
+	UIWidget* mHueLine{ nullptr };
+	UIWidget* mCurrentColor{ nullptr };
+	UILinearLayout* mRedContainer{ nullptr };
+	UILinearLayout* mGreenContainer{ nullptr };
+	UILinearLayout* mBlueContainer{ nullptr };
+	UILinearLayout* mAlphaContainer{ nullptr };
+	UILinearLayout* mFooter{ nullptr };
+	UITextInput* mTextInput{ nullptr };
 	Colorf mHsv;
 	Color mRgb;
 	std::string mHexColor;
@@ -97,6 +98,8 @@ class EE_API UIColorPicker {
 	Uint8 getModalAlpha() const;
 
 	void setModalAlpha( const Uint8& modalAlpha );
+
+	void onColorPicked( const std::string& buffer );
 };
 
 }}} // namespace EE::UI::Tools
