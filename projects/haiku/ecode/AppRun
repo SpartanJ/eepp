@@ -1,0 +1,6 @@
+#!/bin/sh
+CANONPATH=$(readlink -f "$0")
+DIRPATH="$(dirname "$CANONPATH")"
+cd "$DIRPATH" || exit
+
+LD_LIBRARY_PATH=./libs ./ecode.bin "$@"
