@@ -40,6 +40,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
+#include <sys/mount.h>
 #include <sys/sysctl.h>
 #endif
 
@@ -950,6 +951,23 @@ std::vector<std::string> Sys::getLogicalDrives() {
 		ret.emplace_back( std::move( mntDir ) );
 	}
 	endmntent( file );
+	return ret;
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_IOS
+	std::vector<std::string> ret;
+	struct statfs* mounts;
+	int numMounts = getmntinfo( &mounts, MNT_NOWAIT );
+	if ( numMounts <= 0 )
+		return ret;
+	for ( int i = 0; i < numMounts; ++i ) {
+		auto mnt = mounts[i];
+		std::string mntType( mnt.f_mntfromname );
+
+		if ( mntType == "devfs" || mntType == "autofs" )
+			continue;
+
+		ret.emplace_back( mnt.f_mntonname );
+	}
 	return ret;
 #else
 	return {};

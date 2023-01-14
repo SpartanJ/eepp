@@ -26,8 +26,11 @@ class EE_API AllocatedPointer {
 typedef std::map<void*, AllocatedPointer> AllocatedPointerMap;
 typedef AllocatedPointerMap::iterator AllocatedPointerMapIt;
 
+
+#if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif
 class EE_API MemoryManager {
   public:
 	static void* addPointer( const AllocatedPointer& aAllocatedPointer );
@@ -65,7 +68,9 @@ class EE_API MemoryManager {
 
 	static const AllocatedPointer& getBiggestAllocation();
 };
+#if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
+#endif
 
 #ifdef EE_MEMORY_MANAGER
 #define eeNewTracked( classType, constructor )                       \
@@ -88,41 +93,53 @@ class EE_API MemoryManager {
 #define eeMalloc( amount )                                                                      \
 	EE::MemoryManager::addPointer( EE::AllocatedPointer( EE::MemoryManager::allocate( amount ), \
 														 __FILE__, __LINE__, amount ) )
+
+#if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif
 #define eeRealloc( ptr, amount )                                                           \
 	EE::MemoryManager::reallocPointer(                                                     \
 		ptr, EE::AllocatedPointer( EE::MemoryManager::reallocate( ptr, amount ), __FILE__, \
 								   __LINE__, amount ) )
+#if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif
 #define eeDelete( data )                                                                       \
 	{                                                                                          \
 		if ( EE::MemoryManager::removePointer( EE::MemoryManager::deletePtr( data ), __FILE__, \
 											   __LINE__ ) == false )                           \
 			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                             \
 	}
+#if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif
+
 #define eeDeleteArray( data )                                                             \
 	{                                                                                     \
 		if ( EE::MemoryManager::removePointer( EE::MemoryManager::deleteArrayPtr( data ), \
 											   __FILE__, __LINE__ ) == false )            \
 			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                        \
 	}
+#if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif
 #define eeFree( data )                                                                    \
 	{                                                                                     \
 		if ( EE::MemoryManager::removePointer( EE::MemoryManager::free( data ), __FILE__, \
 											   __LINE__ ) == false )                      \
 			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                        \
 	}
+#if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
+#endif
 
 #else
 
