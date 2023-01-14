@@ -3120,6 +3120,8 @@ void App::toggleHiddenFiles() {
 		{ true, true, !mFileSystemModel->getDisplayConfig().ignoreHidden } );
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );
+	if ( mFileSystemListener )
+		mFileSystemListener->setFileSystemModel( mFileSystemModel );
 }
 
 void App::newFile( const FileInfo& file ) {
