@@ -396,9 +396,13 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		return files;
 
 	while ( ( dirp = readdir( dp ) ) != NULL ) {
+#if EE_PLATFORM != EE_PLATFORM_HAIKU
 		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
 			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 ) {
-
+#else
+		if ( strcmp( dirp->d_name, ".." ) != 0 &&
+			 strcmp( dirp->d_name, "." ) != 0 ) {
+#endif
 			char* p = &dirp->d_name[0];
 			String tmp;
 
@@ -506,8 +510,13 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 		return files;
 
 	while ( ( dirp = readdir( dp ) ) != NULL ) {
+#if EE_PLATFORM != EE_PLATFORM_HAIKU
 		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
 			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 )
+#else
+		if ( strcmp( dirp->d_name, ".." ) != 0 &&
+			 strcmp( dirp->d_name, "." ) != 0 )
+#endif
 			files.push_back( std::string( dirp->d_name ) );
 	}
 

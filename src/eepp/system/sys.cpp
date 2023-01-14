@@ -34,6 +34,12 @@
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 #include <kernel/OS.h>
 #include <kernel/image.h>
+#include <Directory.h>
+#include <Path.h>
+#include <Volume.h>
+#include <VolumeRoster.h>
+#include <fs_info.h>
+#include <sys/statvfs.h>
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 #include <stdlib.h>
 #endif
@@ -967,6 +973,31 @@ std::vector<std::string> Sys::getLogicalDrives() {
 			continue;
 
 		ret.emplace_back( mnt.f_mntonname );
+	}
+	return ret;
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	std::vector<std::string> ret;
+	BVolumeRoster mounts;
+	BVolume vol;
+	mounts.Rewind();
+	while (mounts.GetNextVolume(&vol) == B_NO_ERROR) {
+		fs_info fsinfo;
+		fs_stat_dev(vol.Device(), &fsinfo);
+		BDirectory directory;
+		BEntry entry;
+		BPath path;
+		status_t rc;
+		rc = vol.GetRootDirectory(&directory);
+		if (rc < B_OK)
+			continue;
+		rc = directory.GetEntry(&entry);
+		if (rc < B_OK)
+			continue;
+		rc = entry.GetPath(&path);
+		if (rc < B_OK)
+			continue;
+		const char *str = path.Path();
+		ret.emplace_back( str );
 	}
 	return ret;
 #else

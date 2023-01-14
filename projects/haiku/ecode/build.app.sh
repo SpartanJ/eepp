@@ -9,13 +9,12 @@ make -j"$(nproc)" config=release ecode
 cd "$DIRPATH" || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/assets
-mkdir -p ecode.app/libs
-cp ./AppRun ecode.app/ecode
+mkdir -p ecode.app/lib
 cp ../../../bin/assets/icon/ee.png ecode.app/ecode.png
-cp ../../../libs/haiku/libeepp.so ecode.app/libs/
-cp ../../../bin/ecode ecode.app/ecode.bin
-cp -L /boot/system/lib/libSDL2-2.0.so.0 ecode.app/libs/
-strip ecode.app/libs/libSDL2-2.0.so.0
+cp ../../../libs/haiku/libeepp.so ecode.app/lib/
+cp ../../../bin/ecode ecode.app/
+cp -L /boot/system/lib/libSDL2-2.0.so.0 ecode.app/lib/
+strip ecode.app/lib/libSDL2-2.0.so.0
 mkdir -p ecode.app/assets/colorschemes
 mkdir -p ecode.app/assets/fonts
 cp -r ../../../bin/assets/colorschemes ecode.app/assets/
