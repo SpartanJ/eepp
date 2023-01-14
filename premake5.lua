@@ -204,10 +204,10 @@ function build_base_cpp_configuration( package_name )
 	filter "configurations:release*"
 		defines { "NDEBUG" }
 		optimize "Speed"
-		if _OPTIONS["with-debug-symbols"] then
-			symbols "On"
-		end
 		targetname ( package_name )
+
+	filter { "configurations:release*", "options:with-debug-symbols" }
+		symbols "On"
 
 	filter "system:emscripten"
 		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
@@ -668,11 +668,12 @@ workspace "eepp"
 	filter "configurations:debug*"
 		defines { "DEBUG" }
 		symbols "On"
+
 	filter "configurations:release*"
 		optimize "Speed"
-		if _OPTIONS["with-debug-symbols"] then
-			symbols "On"
-		end
+
+	filter { "configurations:release*", "options:with-debug-symbols" }
+		symbols "On"
 
 	filter { "system:windows", "action:vs*" }
 		flags { "MultiProcessorCompile" }
@@ -983,10 +984,9 @@ workspace "eepp"
 		filter { "configurations:release*", "action:not vs*" }
 			defines { "NDEBUG" }
 			optimize "Speed"
-			if _OPTIONS["with-debug-symbols"] then
-				symbols "On"
-			end
 			targetname ( "ecode-macos-helper-static" )
+		filter { "configurations:release*", "action:not vs*", "options:with-debug-symbols" }
+			symbols "On"
 
 	project "ecode"
 		set_kind()
@@ -995,18 +995,21 @@ workspace "eepp"
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/" }
 		links { "efsw-static", "eterm-static" }
 		build_link_configuration( "ecode", true )
+		filter "options:with-debug-symbols"
+			defines { "ECODE_USE_BACKWARD" }
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
 			links { "ecode-macos-helper-static" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:linux"
-			if _OPTIONS["with-debug-symbols"] then
-				defines { "ECODE_USE_BACKWARD" }
-				links { "util", "bfd", "dw", "dl" }
-			else
-				links { "util" }
-			end
+			links { "util" }
+		filter { "system:windows", "options:with-debug-symbols" }
+			links { "dbghelp", "psapi" }
+		filter { "system:windows", "options:with-debug-symbols", "options:cc=mingw" }
+			links { "msvcr90" }
+		filter { "system:linux", "options:with-debug-symbols" }
+			links { "bfd", "dw", "dl" }
 		filter "system:haiku"
 			links { "bsd" }
 

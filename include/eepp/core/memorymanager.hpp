@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 
+
 namespace EE {
 
 class EE_API AllocatedPointer {
@@ -25,6 +26,8 @@ class EE_API AllocatedPointer {
 typedef std::map<void*, AllocatedPointer> AllocatedPointerMap;
 typedef AllocatedPointerMap::iterator AllocatedPointerMapIt;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
 class EE_API MemoryManager {
   public:
 	static void* addPointer( const AllocatedPointer& aAllocatedPointer );
@@ -39,52 +42,22 @@ class EE_API MemoryManager {
 
 	template <class T> static T* deletePtr( T* data ) {
 		delete data;
-#if defined( __GNUC__ ) && __GNUC__ >= 12
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuse-after-free"
 		return data;
-#pragma GCC diagnostic pop
-#else
-		return data;
-#endif
 	}
 
 	template <class T> static T* deleteArrayPtr( T* data ) {
 		delete[] data;
-#if defined( __GNUC__ ) && __GNUC__ >= 12
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuse-after-free"
 		return data;
-#pragma GCC diagnostic pop
-#else
-		return data;
-#endif
 	}
 
 	template <class T> static T* free( T* data ) {
 		::free( data );
-#if defined( __GNUC__ ) && __GNUC__ >= 12
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuse-after-free"
 		return data;
-#pragma GCC diagnostic pop
-#else
-		return data;
-#endif
 	}
 
 	inline static void* allocate( size_t size ) { return malloc( size ); }
 
-	inline static void* reallocate( void* ptr, size_t size ) {
-#if defined( __GNUC__ ) && __GNUC__ >= 12
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuse-after-free"
-		return realloc( ptr, size );
-#pragma GCC diagnostic pop
-#else
-		return realloc( ptr, size );
-#endif
-	}
+	inline static void* reallocate( void* ptr, size_t size ) { return realloc( ptr, size ); }
 
 	static size_t getPeakMemoryUsage();
 
@@ -92,6 +65,7 @@ class EE_API MemoryManager {
 
 	static const AllocatedPointer& getBiggestAllocation();
 };
+#pragma GCC diagnostic pop
 
 #ifdef EE_MEMORY_MANAGER
 #define eeNewTracked( classType, constructor )                       \
@@ -114,32 +88,42 @@ class EE_API MemoryManager {
 #define eeMalloc( amount )                                                                      \
 	EE::MemoryManager::addPointer( EE::AllocatedPointer( EE::MemoryManager::allocate( amount ), \
 														 __FILE__, __LINE__, amount ) )
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
 #define eeRealloc( ptr, amount )                                                           \
 	EE::MemoryManager::reallocPointer(                                                     \
 		ptr, EE::AllocatedPointer( EE::MemoryManager::reallocate( ptr, amount ), __FILE__, \
 								   __LINE__, amount ) )
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
 #define eeDelete( data )                                                                       \
 	{                                                                                          \
 		if ( EE::MemoryManager::removePointer( EE::MemoryManager::deletePtr( data ), __FILE__, \
 											   __LINE__ ) == false )                           \
 			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                             \
 	}
+#pragma GCC diagnostic pop
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
 #define eeDeleteArray( data )                                                             \
 	{                                                                                     \
 		if ( EE::MemoryManager::removePointer( EE::MemoryManager::deleteArrayPtr( data ), \
 											   __FILE__, __LINE__ ) == false )            \
 			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                        \
 	}
+#pragma GCC diagnostic pop
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
 #define eeFree( data )                                                                    \
 	{                                                                                     \
 		if ( EE::MemoryManager::removePointer( EE::MemoryManager::free( data ), __FILE__, \
 											   __LINE__ ) == false )                      \
 			printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ );                        \
 	}
+#pragma GCC diagnostic pop
+
 #else
 
 #define eeNewTracked( classType, constructor ) new classType constructor
@@ -161,6 +145,7 @@ class EE_API MemoryManager {
 #define eeFree( data ) free( data )
 
 #endif
+
 
 } // namespace EE
 

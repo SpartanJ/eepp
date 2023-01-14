@@ -122,7 +122,8 @@ class EE_API FileSystem {
 	static bool isDirectory( const String& path );
 
 	/** Creates a new directory */
-	static bool makeDir( const std::string& path, const Uint16& mode = 0770 );
+	static bool makeDir( const std::string& path, bool recursive = false,
+						 const Uint16& mode = 0770 );
 
 	/** @return The absolute path of a relative path */
 	static std::string getRealPath( const std::string& path );

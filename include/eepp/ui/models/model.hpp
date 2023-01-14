@@ -138,9 +138,9 @@ class EE_API Model {
 
 	Mutex& resourceMutex();
 
-	void acquireResourceMutex() { mResourceLock.lock(); }
+	void acquireResourceMutex();
 
-	void releaseResourceMutex() { mResourceLock.unlock(); }
+	void releaseResourceMutex();
 
   protected:
 	Model(){};

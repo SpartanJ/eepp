@@ -33,7 +33,7 @@ bool UIAbstractView::isType( const Uint32& type ) const {
 	return UIAbstractView::getType() == type ? true : UIScrollableWidget::isType( type );
 }
 
-void UIAbstractView::setModel( std::shared_ptr<Model> model ) {
+void UIAbstractView::setModel( const std::shared_ptr<Model>& model ) {
 	if ( model.get() == mModel.get() )
 		return;
 	if ( mModel )

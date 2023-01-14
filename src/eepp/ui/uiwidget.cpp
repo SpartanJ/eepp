@@ -181,6 +181,8 @@ const SizePolicy& UIWidget::getLayoutWidthPolicy() const {
 UIWidget* UIWidget::setLayoutWidthPolicy( const SizePolicy& widthPolicy ) {
 	if ( mWidthPolicy != widthPolicy ) {
 		mWidthPolicy = widthPolicy;
+		if ( mWidthPolicy == SizePolicy::WrapContent )
+			onAutoSize();
 		notifyLayoutAttrChange();
 	}
 
@@ -194,6 +196,8 @@ const SizePolicy& UIWidget::getLayoutHeightPolicy() const {
 UIWidget* UIWidget::setLayoutHeightPolicy( const SizePolicy& heightPolicy ) {
 	if ( mHeightPolicy != heightPolicy ) {
 		mHeightPolicy = heightPolicy;
+		if ( mHeightPolicy == SizePolicy::WrapContent )
+			onAutoSize();
 		notifyLayoutAttrChange();
 	}
 
@@ -205,6 +209,9 @@ UIWidget* UIWidget::setLayoutSizePolicy( const SizePolicy& widthPolicy,
 	if ( mWidthPolicy != widthPolicy || mHeightPolicy != heightPolicy ) {
 		mWidthPolicy = widthPolicy;
 		mHeightPolicy = heightPolicy;
+		if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
+			onAutoSize();
+		}
 		notifyLayoutAttrChange();
 	}
 

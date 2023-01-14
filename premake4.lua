@@ -1272,12 +1272,20 @@ solution "eepp"
 			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
 			links { "ecode-macos-helper-static" }
 		end
+		if _OPTIONS["with-debug-symbols"] then
+			defines { "ECODE_USE_BACKWARD" }
+		end
 		if os.is_real("linux") then
 			if _OPTIONS["with-debug-symbols"] then
-				defines { "ECODE_USE_BACKWARD" }
 				links { "util", "bfd", "dw", "dl" }
 			else
 				links { "util" }
+			end
+		end
+		if (os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64")) and _OPTIONS["with-debug-symbols"] then
+			links { "dbghelp", "psapi" }
+			if os.is_real("mingw32") or os.is_real("mingw64") then
+				links { "msvcr90" }
 			end
 		end
 		if os.is("haiku") then

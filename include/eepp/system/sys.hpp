@@ -75,6 +75,9 @@ class EE_API Sys {
 	/** @return the argument list in a vector of std::strings in UTF-8, ignoring the first argument
 	 * (the binary name) */
 	static std::vector<std::string> parseArguments( int argc, char* argv[] );
+
+	/** @return The OS logical drives */
+	static std::vector<std::string> getLogicalDrives();
 };
 
 }} // namespace EE::System

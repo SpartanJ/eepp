@@ -37,7 +37,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setColumnHidden( const size_t& column, bool hidden );
 
-	void setColumnsHidden( const std::vector<size_t> columns, bool hidden );
+	void setColumnsHidden( const std::vector<size_t>& columns, bool hidden );
 
 	virtual void selectAll();
 
@@ -152,7 +152,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onModelUpdate( unsigned flags );
 
-	virtual void createOrUpdateColumns();
+	virtual void createOrUpdateColumns( bool resetColumnData = false );
 
 	virtual void onSizeChange();
 
@@ -191,6 +191,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	void updateHeaderSize();
 
 	int visibleColumn();
+
+	void updateCellsVisibility();
+
+	void resetColumnData();
 };
 
 }}} // namespace EE::UI::Abstract

@@ -461,7 +461,8 @@ size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 	files.emplace_back( file );
 
 	std::sort( files.begin(), files.end(), []( FileInfo a, FileInfo b ) {
-		return std::strcmp( a.getFileName().c_str(), b.getFileName().c_str() ) < 0;
+		return std::strncmp( a.getFileName().c_str(), b.getFileName().c_str(),
+							 a.getFileName().size() ) < 0;
 	} );
 
 	if ( getDisplayConfig().foldersFirst ) {
@@ -721,6 +722,42 @@ bool FileSystemModel::handleFileEvent( const FileEvent& event ) {
 	onModelUpdate( UpdateFlag::DontInvalidateIndexes );
 
 	return ret;
+}
+
+std::shared_ptr<DiskDrivesModel> DiskDrivesModel::create( const std::vector<std::string>& data ) {
+	return std::shared_ptr<DiskDrivesModel>( new DiskDrivesModel( data ) );
+}
+
+std::shared_ptr<DiskDrivesModel> DiskDrivesModel::create() {
+	return create( Sys::getLogicalDrives() );
+}
+
+UIIcon* DiskDrivesModel::diskIcon() const {
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* d = scene->findIcon( "drive" );
+	if ( !d )
+		d = scene->findIcon( "folder" );
+	return d;
+}
+
+Variant DiskDrivesModel::data( const ModelIndex& index, ModelRole role ) const {
+	eeASSERT( index.row() >= 0 && index.row() < (Int64)mData.size() );
+	if ( role == ModelRole::Display ) {
+		switch ( index.column() ) {
+			case Column::Icon:
+				return diskIcon();
+			case Column::Name:
+				return Variant( mData[index.row()].c_str() );
+		}
+	}
+
+	if ( role == ModelRole::Icon )
+		return diskIcon();
+
+	if ( role == ModelRole::Custom )
+		return Variant( mData[index.row()].c_str() );
+
+	return {};
 }
 
 }}} // namespace EE::UI::Models

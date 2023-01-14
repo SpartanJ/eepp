@@ -160,7 +160,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	UITreeView();
 
-	virtual void createOrUpdateColumns();
+	virtual void createOrUpdateColumns( bool resetColumnData );
 
 	struct MetadataForIndex {
 		bool open{ false };

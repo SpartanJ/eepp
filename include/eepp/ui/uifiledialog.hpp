@@ -136,6 +136,8 @@ class EE_API UIFileDialog : public UIWindow {
 	KeyBindings::Shortcut mCloseShortcut;
 	KeyBindings::Shortcut mOpenShortut{ KEY_RETURN, KeyMod::getDefaultModifier() };
 	std::shared_ptr<FileSystemModel> mModel;
+	std::shared_ptr<DiskDrivesModel> mDiskDrivesModel;
+	bool mDisplayingDrives{ false };
 
 	UIFileDialog( Uint32 dialogFlags = UIFileDialog::DefaultFlags,
 				  const std::string& defaultFilePattern = "*",
@@ -164,6 +166,10 @@ class EE_API UIFileDialog : public UIWindow {
 	void setCurPath( const std::string& path );
 
 	const FileSystemModel::Node* getSelectionNode() const;
+
+	ModelIndex getSelectionModelIndex() const;
+
+	std::string getSelectedDrive() const;
 };
 
 }} // namespace EE::UI

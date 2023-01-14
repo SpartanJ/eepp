@@ -439,7 +439,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		size_t i = 0;
 		std::vector<ProjectPath> paths;
 		do {
-			std::string val( ini.getValue( "files", String::format( "file_name_%lu", i ) ) );
+			std::string val( ini.getValue( "files", String::format( "file_name_%zu", i ) ) );
 			found = !val.empty();
 			if ( found ) {
 				auto pp = ProjectPath::fromString( val );

@@ -378,10 +378,12 @@ void App::loadConfig( const LogLevel& logLevel ) {
 		FileSystem::makeDir( mConfigPath );
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mPluginsPath = mConfigPath + "plugins";
-	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes";
+	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes" +
+						FileSystem::getOSSlash();
 	mTerminalManager = std::make_unique<TerminalManager>( this );
 	mTerminalManager->setTerminalColorSchemesPath( mConfigPath + "terminal" +
-												   FileSystem::getOSSlash() + "colorschemes" );
+												   FileSystem::getOSSlash() + "colorschemes" +
+												   FileSystem::getOSSlash() );
 	mTerminalManager->setUseFrameBuffer( mUseFrameBuffer );
 
 	if ( !FileSystem::fileExists( mPluginsPath ) )
@@ -3872,6 +3874,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			{ "palette", 0xefc5 },
 			{ "file-code", 0xecd1 },
 			{ "cursor-pointer", 0xec09 },
+			{ "drive", 0xedf8 },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
@@ -4007,10 +4010,13 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( FileSystem::isDirectory( mColorSchemesPath ) ) {
 			auto colorSchemesFiles = FileSystem::filesGetInPath( mColorSchemesPath );
 			for ( auto& file : colorSchemesFiles ) {
-				auto colorSchemesInFile = SyntaxColorScheme::loadFromFile( file );
+				auto colorSchemesInFile =
+					SyntaxColorScheme::loadFromFile( mColorSchemesPath + file );
 				for ( auto& coloScheme : colorSchemesInFile )
 					colorSchemes.emplace_back( coloScheme );
 			}
+		} else {
+			FileSystem::makeDir( mColorSchemesPath, true );
 		}
 
 		mTerminalManager->loadTerminalColorSchemes();

@@ -42,7 +42,7 @@ Float UIAbstractTableView::getRowHeight() const {
 void UIAbstractTableView::setRowHeight( const Float& rowHeight ) {
 	if ( mRowHeight != rowHeight ) {
 		mRowHeight = rowHeight;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -51,7 +51,7 @@ void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& w
 		columnData( colIndex ).width = width;
 		updateHeaderSize();
 		onColumnSizeChange( colIndex );
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -77,23 +77,36 @@ void UIAbstractTableView::onModelUpdate( unsigned flags ) {
 	if ( !Engine::instance()->isMainThread() ) {
 		runOnMainThread( [&, flags] {
 			modelUpdate( flags );
-			createOrUpdateColumns();
+			createOrUpdateColumns( true );
 		} );
 	} else {
 		UIAbstractView::onModelUpdate( flags );
-		createOrUpdateColumns();
+		createOrUpdateColumns( true );
 	}
 }
 
-void UIAbstractTableView::createOrUpdateColumns() {
+void UIAbstractTableView::resetColumnData() {
+	Model* model = getModel();
+	if ( !model )
+		return;
+	size_t count = model->columnCount();
+	for ( size_t i = 0; i < count; i++ ) {
+		ColumnData& col = columnData( i );
+		col.minWidth = 0;
+	}
+}
+
+void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	Model* model = getModel();
 	if ( !model )
 		return;
 
 	size_t count = model->columnCount();
 	Float totalWidth = 0;
-
 	auto visibleColCount = visibleColumnCount();
+
+	if ( resetColumnData )
+		this->resetColumnData();
 
 	for ( size_t i = 0; i < count; i++ ) {
 		ColumnData& col = columnData( i );
@@ -223,7 +236,7 @@ void UIAbstractTableView::setHeadersVisible( bool visible ) {
 
 void UIAbstractTableView::onSizeChange() {
 	UIAbstractView::onSizeChange();
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 void UIAbstractTableView::onColumnSizeChange( const size_t&, bool fromUserInteraction ) {
@@ -237,7 +250,7 @@ Float UIAbstractTableView::getMaxColumnContentWidth( const size_t&, bool ) {
 
 void UIAbstractTableView::onColumnResizeToContent( const size_t& colIndex ) {
 	columnData( colIndex ).width = getMaxColumnContentWidth( colIndex, true );
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 void UIAbstractTableView::updateHeaderSize() {
@@ -258,6 +271,17 @@ int UIAbstractTableView::visibleColumn() {
 			return i;
 	}
 	return -1;
+}
+
+void UIAbstractTableView::updateCellsVisibility() {
+	auto colCount = mColumn.size();
+	for ( size_t colIdx = 0; colIdx < colCount; ++colIdx ) {
+		for ( auto row : mWidgets ) {
+			auto rowCol = row.find( colIdx );
+			if ( rowCol != row.end() )
+				rowCol->second->setVisible( mColumn[colIdx].visible );
+		}
+	}
 }
 
 bool UIAbstractTableView::getAutoExpandOnSingleColumn() const {
@@ -334,19 +358,38 @@ bool UIAbstractTableView::isColumnHidden( const size_t& column ) const {
 void UIAbstractTableView::setColumnHidden( const size_t& column, bool hidden ) {
 	if ( columnData( column ).visible != !hidden ) {
 		columnData( column ).visible = !hidden;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
-void UIAbstractTableView::setColumnsHidden( const std::vector<size_t> columns, bool hidden ) {
+void UIAbstractTableView::setColumnsHidden( const std::vector<size_t>& columns, bool hidden ) {
 	for ( auto col : columns )
 		columnData( col ).visible = !hidden;
-	createOrUpdateColumns();
+	updateCellsVisibility();
+	createOrUpdateColumns( false );
 }
 
 void UIAbstractTableView::setColumnsVisible( const std::vector<size_t> columns ) {
 	if ( !getModel() )
 		return;
+
+	// Check if the columns visible are the same
+	if ( !mColumn.empty() && !columns.empty() ) {
+		// TODO: Do not limit the column count to 64
+		Uint64 colFlags = 0;
+		Uint64 newColFlags = 0;
+		for ( size_t i = 0; i < mColumn.size(); ++i ) {
+			if ( mColumn[i].visible )
+				colFlags |= 1 << i;
+		}
+
+		for ( auto col : columns )
+			newColFlags |= 1 << col;
+
+		if ( colFlags == newColFlags )
+			return;
+	}
+
 	for ( size_t i = 0; i < getModel()->columnCount(); i++ )
 		columnData( i ).visible = false;
 
@@ -360,7 +403,9 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t> columns )
 	if ( !foundMainColumn && !columns.empty() )
 		mMainColumn = columns[0];
 
-	createOrUpdateColumns();
+	updateCellsVisibility();
+
+	createOrUpdateColumns( true );
 }
 
 UITableRow* UIAbstractTableView::createRow() {
@@ -452,7 +497,12 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		mWidgets[rowIndex][index.column()] = widget;
 		widget->reloadStyle( true, true, true );
 	}
-	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
+	const auto& colData = columnData( index.column() );
+	if ( !colData.visible ) {
+		widget->setVisible( false );
+		return widget;
+	}
+	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
 	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
 		UITableCell* cell = widget->asType<UITableCell>();

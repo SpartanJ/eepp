@@ -197,9 +197,41 @@ class EE_API FileSystemModel : public Model {
 
 	size_t getFileIndex( Node* parent, const FileInfo& file );
 
-
 	bool handleFileEventLocked( const FileEvent& event );
+};
 
+class EE_API DiskDrivesModel : public Model {
+  public:
+	enum Column {
+		Icon = 0,
+		Name,
+		Count,
+	};
+
+	static std::shared_ptr<DiskDrivesModel> create( const std::vector<std::string>& data );
+
+	static std::shared_ptr<DiskDrivesModel> create();
+
+	virtual ~DiskDrivesModel() {}
+
+	virtual size_t rowCount( const ModelIndex& ) const { return mData.size(); }
+
+	virtual size_t columnCount( const ModelIndex& ) const { return 2; }
+
+	virtual std::string columnName( const size_t& index ) const {
+		return index == 0 ? "Icon" : "Name";
+	}
+
+	UIIcon* diskIcon() const;
+
+	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const;
+
+	virtual void update() { onModelUpdate(); }
+
+  private:
+	explicit DiskDrivesModel( const std::vector<std::string>& data ) : mData( data ) {}
+
+	std::vector<std::string> mData;
 };
 
 }}} // namespace EE::UI::Models

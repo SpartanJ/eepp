@@ -115,7 +115,7 @@ Int8 Pak::checkPack() {
 Int32 Pak::exists( const std::string& path ) {
 	if ( isOpen() ) {
 		for ( Uint32 i = 0; i < mPakFiles.size(); i++ )
-			if ( strcmp( path.c_str(), mPakFiles[i].filename ) == 0 )
+			if ( std::strncmp( path.c_str(), mPakFiles[i].filename, path.size() ) == 0 )
 				return i;
 	}
 

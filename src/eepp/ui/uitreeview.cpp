@@ -84,11 +84,11 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	}
 }
 
-void UITreeView::createOrUpdateColumns() {
+void UITreeView::createOrUpdateColumns( bool resetColumnData ) {
 	updateContentSize();
 	if ( !getModel() )
 		return;
-	UIAbstractTableView::createOrUpdateColumns();
+	UIAbstractTableView::createOrUpdateColumns( resetColumnData );
 }
 
 size_t UITreeView::getItemCount() const {
@@ -124,7 +124,7 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 				if ( getModel()->rowCount( idx ) ) {
 					auto& data = getIndexMetadata( idx );
 					data.open = !data.open;
-					createOrUpdateColumns();
+					createOrUpdateColumns( false );
 					onOpenTreeModelIndex( idx, data.open );
 				} else {
 					onOpenModelIndex( idx, event );
@@ -153,7 +153,7 @@ bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) 
 		if ( !data.open ) {
 			data.open = true;
 			if ( forceUpdate )
-				createOrUpdateColumns();
+				createOrUpdateColumns( false );
 			onOpenTreeModelIndex( index, data.open );
 		}
 		return true;
@@ -186,7 +186,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 					if ( getModel()->rowCount( idx ) ) {
 						auto& data = getIndexMetadata( idx );
 						data.open = !data.open;
-						createOrUpdateColumns();
+						createOrUpdateColumns( false );
 						onOpenTreeModelIndex( idx, data.open );
 					}
 				}
@@ -300,7 +300,7 @@ const Float& UITreeView::getIndentWidth() const {
 void UITreeView::setIndentWidth( const Float& indentWidth ) {
 	if ( mIndentWidth != indentWidth ) {
 		mIndentWidth = indentWidth;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -403,14 +403,14 @@ void UITreeView::expandAll( const ModelIndex& index ) {
 	if ( !getModel() )
 		return;
 	setAllExpanded( index, true );
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 void UITreeView::collapseAll( const ModelIndex& index ) {
 	if ( !getModel() )
 		return;
 	setAllExpanded( index, false );
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 UIIcon* UITreeView::getExpandIcon() const {
@@ -420,7 +420,7 @@ UIIcon* UITreeView::getExpandIcon() const {
 void UITreeView::setExpandedIcon( UIIcon* expandIcon ) {
 	if ( mExpandIcon != expandIcon ) {
 		mExpandIcon = expandIcon;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -435,7 +435,7 @@ UIIcon* UITreeView::getContractIcon() const {
 void UITreeView::setContractedIcon( UIIcon* contractIcon ) {
 	if ( mContractIcon != contractIcon ) {
 		mContractIcon = contractIcon;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -613,7 +613,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				auto& metadata = getIndexMetadata( curIndex );
 				if ( !metadata.open ) {
 					metadata.open = true;
-					createOrUpdateColumns();
+					createOrUpdateColumns( false );
 					return 0;
 				}
 				getSelection().set( getModel()->index( 0, getModel()->treeColumn(), curIndex ) );
@@ -625,7 +625,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				auto& metadata = getIndexMetadata( curIndex );
 				if ( metadata.open ) {
 					metadata.open = false;
-					createOrUpdateColumns();
+					createOrUpdateColumns( false );
 					return 0;
 				}
 			}
@@ -641,7 +641,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				if ( getModel()->rowCount( curIndex ) ) {
 					auto& metadata = getIndexMetadata( curIndex );
 					metadata.open = !metadata.open;
-					createOrUpdateColumns();
+					createOrUpdateColumns( false );
 				} else {
 					onOpenModelIndex( curIndex, &event );
 				}
@@ -791,7 +791,7 @@ void UITreeView::openModelIndexParentTree( const ModelIndex& index ) {
 		indexes.pop();
 	}
 
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 bool UITreeView::getFocusOnSelection() const {

@@ -45,7 +45,7 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	bool isType( const Uint32& type ) const;
 
-	void setModel( std::shared_ptr<Model> );
+	void setModel( const std::shared_ptr<Model>& );
 
 	Model* getModel() { return mModel.get(); }
 

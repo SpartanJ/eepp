@@ -29,6 +29,7 @@
 #undef GetTempPath
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <libgen.h>
+#include <mntent.h>
 #include <unistd.h>
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 #include <kernel/OS.h>
@@ -896,6 +897,62 @@ std::vector<std::string> Sys::parseArguments( int argc, char* argv[] ) {
 			args.push_back( argv[i] );
 	}
 	return args;
+#endif
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+static inline bool isDriveReady( const wchar_t* path ) {
+	DWORD fileSystemFlags;
+	const UINT driveType = GetDriveTypeW( path );
+	return ( driveType != DRIVE_REMOVABLE && driveType != DRIVE_CDROM ) ||
+		   GetVolumeInformationW( path, nullptr, 0, nullptr, nullptr, &fileSystemFlags, nullptr,
+								  0 ) == TRUE;
+}
+#endif
+
+std::vector<std::string> Sys::getLogicalDrives() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::vector<std::string> ret;
+	const UINT oldErrorMode = ::SetErrorMode( SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX );
+	Uint32 driveBits = (Uint32)GetLogicalDrives() & 0x3ffffff;
+	wchar_t driveName[] = L"A:\\";
+
+	while ( driveBits ) {
+		if ( ( driveBits & 1 ) && isDriveReady( driveName ) )
+			ret.emplace_back( String::fromWide( driveName ).toUtf8() );
+		driveName[0]++;
+		driveBits = driveBits >> 1;
+	}
+	::SetErrorMode( oldErrorMode );
+	return ret;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	std::vector<std::string> ret;
+	struct mntent* ent;
+	FILE* file = setmntent( "/etc/mtab", "r" );
+	if ( file == NULL ) {
+		file = setmntent( "/proc/mounts", "r" );
+		if ( file == NULL )
+			return ret;
+	}
+	while ( NULL != ( ent = getmntent( file ) ) ) {
+		std::string mntType( ent->mnt_type );
+		if ( mntType == "rootfs" || mntType == "devtmpfs" || mntType == "tmpfs" ||
+			 mntType == "devpts" || mntType == "hugetlbfs" || mntType == "mqueue" ||
+			 mntType == "ramfs" || mntType == "rpc_pipefs" || mntType == "fuse.gvfsd-fuse" ||
+			 mntType == "fuse.portal" || mntType == "overlay" || mntType == "nsfs" )
+			continue;
+
+		std::string mntDir( ent->mnt_dir );
+		if ( String::startsWith( mntDir, "/proc" ) || String::startsWith( mntDir, "/var/run" ) ||
+			 String::startsWith( mntDir, "/sys" ) || String::startsWith( mntDir, "/var/lock" ) )
+			continue;
+
+		ret.emplace_back( std::move( mntDir ) );
+	}
+	endmntent( file );
+	return ret;
+#else
+	return {};
 #endif
 }
 

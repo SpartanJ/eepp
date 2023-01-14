@@ -37,10 +37,13 @@ void TerminalManager::loadTerminalColorSchemes() {
 	if ( FileSystem::isDirectory( mTerminalColorSchemesPath ) ) {
 		auto colorSchemesFiles = FileSystem::filesGetInPath( mTerminalColorSchemesPath );
 		for ( auto& file : colorSchemesFiles ) {
-			auto colorSchemesInFile = TerminalColorScheme::loadFromFile( file );
+			auto colorSchemesInFile =
+				TerminalColorScheme::loadFromFile( mTerminalColorSchemesPath + file );
 			for ( auto& coloScheme : colorSchemesInFile )
 				colorSchemes.emplace_back( coloScheme );
 		}
+	} else {
+		FileSystem::makeDir( mTerminalColorSchemesPath, true );
 	}
 	for ( const auto& colorScheme : colorSchemes )
 		mTerminalColorSchemes.insert( { colorScheme.getName(), colorScheme } );

@@ -296,8 +296,8 @@ bool FileSystem::isDirectory( const std::string& path ) {
 #endif
 }
 
-bool FileSystem::makeDir( const std::string& path, const Uint16& mode ) {
-	Int16 v;
+static inline bool eepp_mkdir( const std::string& path, const Uint16& mode ) {
+	int v;
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #ifdef EE_COMPILER_MSVC
 	v = _mkdir( path.c_str() );
@@ -308,6 +308,35 @@ bool FileSystem::makeDir( const std::string& path, const Uint16& mode ) {
 	v = mkdir( path.c_str(), mode );
 #endif
 	return v == 0;
+}
+
+bool FileSystem::makeDir( const std::string& path, bool recursive, const Uint16& mode ) {
+	if ( recursive && path.size() > 1 ) {
+		size_t i = path.size() - 1;
+		for ( ; i >= 0; --i ) {
+			if ( path[i] == '/' || path[i] == '\\' ) {
+				if ( FileSystem::isDirectory( path.substr( 0, i ) ) ) {
+					break;
+				}
+			}
+		}
+
+		if ( i == 0 )
+			return false;
+
+		i++;
+		for ( ; i < path.size(); ++i ) {
+			if ( path[i] == '/' || path[i] == '\\' ) {
+				if ( !eepp_mkdir( path.substr( 0, i ), mode ) )
+					return false;
+			}
+		}
+
+		if ( path[path.size() - 1] == '/' || path[path.size() - 1] == '\\' )
+			return true;
+	}
+
+	return eepp_mkdir( path, mode );
 }
 
 std::string FileSystem::getRealPath( const std::string& path ) {
@@ -367,7 +396,8 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		return files;
 
 	while ( ( dirp = readdir( dp ) ) != NULL ) {
-		if ( strcmp( dirp->d_name, ".." ) != 0 && strcmp( dirp->d_name, "." ) != 0 ) {
+		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
+			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 ) {
 
 			char* p = &dirp->d_name[0];
 			String tmp;
@@ -476,7 +506,8 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 		return files;
 
 	while ( ( dirp = readdir( dp ) ) != NULL ) {
-		if ( strcmp( dirp->d_name, ".." ) != 0 && strcmp( dirp->d_name, "." ) != 0 )
+		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
+			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 )
 			files.push_back( std::string( dirp->d_name ) );
 	}
 

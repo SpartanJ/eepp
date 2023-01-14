@@ -307,6 +307,14 @@ Mutex& Model::resourceMutex() {
 	return mResourceLock;
 }
 
+void Model::acquireResourceMutex() {
+	mResourceLock.lock();
+}
+
+void Model::releaseResourceMutex() {
+	mResourceLock.unlock();
+}
+
 void Model::handleMove( Operation const& operation ) {
 	bool isRow = operation.direction == Direction::Row;
 	bool moveWithin = operation.sourceParent == operation.targetParent;
