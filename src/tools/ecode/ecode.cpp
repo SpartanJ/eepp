@@ -595,16 +595,23 @@ void App::updateRecentFolders() {
 			menu->add( file );
 		menu->addSeparator();
 		menu->add( i18n( "clear_menu", "Clear Menu" ) )->setId( "clear-menu" );
+		menu->addCheckBox(
+				i18n( "restore_last_session_at_startup", "Restart last session at startup" ) )
+			->setActive( mConfig.workspace.restoreLastSession )
+			->setId( "restore-last-session-at-startup" );
 		menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			const std::string& id = event->getNode()->asType<UIMenuItem>()->getId();
-			if ( id != "clear-menu" ) {
-				const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
-				loadFolder( txt );
-			} else {
+			if ( id == "clear-menu" ) {
 				mRecentFolders.clear();
 				updateRecentFolders();
+			} else if ( id == "restore-last-session-at-startup" ) {
+				mConfig.workspace.restoreLastSession =
+					event->getNode()->asType<UIMenuCheckBox>()->isActive();
+			} else {
+				const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+				loadFolder( txt );
 			}
 		} );
 	}
@@ -3397,6 +3404,8 @@ void App::initProjectTreeView( const std::string& path ) {
 				}
 			}
 		}
+	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() ) {
+		loadFolder( mRecentFolders[0] );
 	} else if ( !mIsBundledApp ) {
 		loadFolder( "." );
 	}

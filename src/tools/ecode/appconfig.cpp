@@ -123,6 +123,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.fontSize = ini.getValue( "terminal", "font_size", "11dp" );
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 
+	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
+
 	std::map<std::string, bool> pluginsEnabled;
 	const auto& creators = pluginManager->getDefinitions();
 	for ( const auto& creator : creators )
@@ -225,6 +227,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				  Renderer::graphicsLibraryVersionToString( context.Version ) );
 	ini.setValueI( "window", "multisamples", context.Multisamples );
 	ini.setValueI( "window", "frameratelimit", context.FrameRateLimit );
+
+	ini.setValueB( "workspace", "restore_last_session", workspace.restoreLastSession );
 
 	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
 	for ( const auto& plugin : pluginsEnabled )

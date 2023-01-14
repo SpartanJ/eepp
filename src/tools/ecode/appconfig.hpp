@@ -104,6 +104,10 @@ struct TerminalConfig {
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 };
 
+struct WorkspaceConfig {
+	bool restoreLastSession{ false };
+};
+
 struct AppConfig {
 	WindowStateConfig windowState;
 	ContextSettings context;
@@ -117,6 +121,7 @@ struct AppConfig {
 	FileInfo iniInfo;
 	SearchBarConfig searchBarConfig;
 	GlobalSearchBarConfig globalSearchBarConfig;
+	WorkspaceConfig workspace;
 
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,
