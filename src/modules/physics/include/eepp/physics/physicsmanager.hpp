@@ -11,7 +11,7 @@ class Shape;
 class Constraint;
 class Space;
 
-class EE_API PhysicsManager {
+class EE_PHYSICS_API PhysicsManager {
 	SINGLETON_DECLARE_HEADERS( PhysicsManager )
 
   public:

@@ -9,7 +9,6 @@
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
-#include <eepp/physics/physicsmanager.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
@@ -61,8 +60,6 @@ Engine::Engine() :
 }
 
 Engine::~Engine() {
-	Physics::PhysicsManager::destroySingleton();
-
 	GlobalBatchRenderer::destroySingleton();
 
 	TextureAtlasManager::destroySingleton();

@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API PinJoint : public Constraint {
+class EE_PHYSICS_API PinJoint : public Constraint {
   public:
 	PinJoint( Body* a, Body* b, cVect anchr1, cVect anchr2 );
 

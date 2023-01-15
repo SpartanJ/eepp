@@ -441,6 +441,8 @@ void UIWindow::forcedApplyStyle() {
 }
 
 void UIWindow::onWindowReady() {
+	mWindowReady = true;
+
 	forcedApplyStyle();
 
 	if ( mShowWhenReady ) {
@@ -1120,8 +1122,12 @@ bool UIWindow::hide() {
 }
 
 void UIWindow::showWhenReady() {
-	hide();
-	mShowWhenReady = true;
+	if ( mWindowReady ) {
+		show();
+	} else {
+		hide();
+		mShowWhenReady = true;
+	}
 }
 
 void UIWindow::onAlphaChange() {

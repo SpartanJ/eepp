@@ -6,7 +6,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API Constraint {
+class EE_PHYSICS_API Constraint {
   public:
 	static void Free( Constraint* constraint );
 

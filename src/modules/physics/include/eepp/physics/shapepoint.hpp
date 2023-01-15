@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API ShapePoint : public Shape {
+class EE_PHYSICS_API ShapePoint : public Shape {
   public:
 	static ShapePoint* New( Physics::Body* body, cpFloat radius, cVect offset );
 

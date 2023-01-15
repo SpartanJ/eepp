@@ -7,7 +7,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API Arbiter {
+class EE_PHYSICS_API Arbiter {
   public:
 	Arbiter( cpArbiter* arbiter );
 

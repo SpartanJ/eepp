@@ -223,6 +223,7 @@ class EE_API UIWindow : public UIWidget {
 	Vector2f mResizePos;
 
 	bool mFrameBufferBound;
+	bool mWindowReady{ false };
 	bool mShowWhenReady{ false };
 
 	KeyBindings mKeyBindings;

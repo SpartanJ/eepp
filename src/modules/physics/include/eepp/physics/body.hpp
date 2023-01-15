@@ -9,7 +9,7 @@ class Shape;
 class Constraint;
 class Arbiter;
 
-class EE_API Body {
+class EE_PHYSICS_API Body {
   public:
 	typedef std::function<void( Body*, Shape*, void* )> ShapeIteratorFunc;
 	typedef std::function<void( Body*, Constraint*, void* )> ConstraintIteratorFunc;

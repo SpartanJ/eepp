@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API RatchetJoint : public Constraint {
+class EE_PHYSICS_API RatchetJoint : public Constraint {
   public:
 	RatchetJoint( Body* a, Body* b, cpFloat phase, cpFloat ratchet );
 

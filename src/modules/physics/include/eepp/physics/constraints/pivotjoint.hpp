@@ -1,13 +1,15 @@
-#ifndef EE_PHYSICS_CSLIDEJOINT_HPP
-#define EE_PHYSICS_CSLIDEJOINT_HPP
+#ifndef EE_PHYSICS_CPIVOTJOINT_HPP
+#define EE_PHYSICS_CPIVOTJOINT_HPP
 
 #include <eepp/physics/constraints/constraint.hpp>
 
 namespace EE { namespace Physics {
 
-class EE_API SlideJoint : public Constraint {
+class EE_PHYSICS_API PivotJoint : public Constraint {
   public:
-	SlideJoint( Body* a, Body* b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max );
+	PivotJoint( Body* a, Body* b, cVect pivot );
+
+	PivotJoint( Body* a, Body* b, cVect anchr1, cVect anchr2 );
 
 	cVect getAnchr1();
 
@@ -16,14 +18,6 @@ class EE_API SlideJoint : public Constraint {
 	cVect getAnchr2();
 
 	void setAnchr2( const cVect& anchr2 );
-
-	cpFloat getMin();
-
-	void setMin( const cpFloat& min );
-
-	cpFloat getMax();
-
-	void setMax( const cpFloat& max );
 
 	virtual void draw();
 

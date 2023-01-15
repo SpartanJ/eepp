@@ -644,7 +644,6 @@ function add_static_links()
 	end
 
 	links { "SOIL2-static",
-			"chipmunk-static",
 			"libzip-static",
 			"jpeg-compressor-static",
 			"zlib-static",
@@ -818,7 +817,13 @@ end
 function eepp_module_maps_add()
 	links { "eepp-maps-static" }
 	defines { "EE_MAPS_STATIC" }
-	includedirs { "src/modules/maps/include/","src/modules/maps/src/" }
+	includedirs { "src/modules/maps/include/", "src/modules/maps/src/" }
+end
+
+function eepp_module_physics_add()
+	links { "eepp-physics-static", "chipmunk-static" }
+	defines { "EE_PHYSICS_STATIC" }
+	includedirs { "src/modules/physics/include/", "src/modules/physics/src/" }
 end
 
 function build_eepp( build_name )
@@ -870,9 +875,7 @@ function build_eepp( build_name )
 			"src/eepp/ui/models/*.cpp",
 			"src/eepp/ui/css/*.cpp",
 			"src/eepp/ui/doc/*.cpp",
-			"src/eepp/ui/tools/*.cpp",
-			"src/eepp/physics/*.cpp",
-			"src/eepp/physics/constraints/*.cpp"
+			"src/eepp/ui/tools/*.cpp"
 	}
 
 	check_ssl_support()
@@ -1010,7 +1013,7 @@ solution "eepp"
 
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/chipmunk/*.c", "src/thirdparty/chipmunk/constraints/*.c" }
-		includedirs { "include/eepp/thirdparty/chipmunk" }
+		includedirs { "src/modules/physics/include/eepp/thirdparty/chipmunk" }
 		build_base_configuration( "chipmunk" )
 
 	project "jpeg-compressor-static"
@@ -1099,7 +1102,7 @@ solution "eepp"
 		kind "StaticLib"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
-		includedirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
+		includedirs { "include", "src/modules/maps/include/", "src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		defines { "EE_MAPS_STATIC" }
 		if not is_vs() then
@@ -1113,7 +1116,7 @@ solution "eepp"
 		kind "SharedLib"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
-		includedirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
+		includedirs { "include", "src/modules/maps/include/", "src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		links { "eepp-shared" }
 		defines { "EE_MAPS_EXPORTS" }
@@ -1123,6 +1126,35 @@ solution "eepp"
 			buildoptions{ "/std:c++17" }
 		end
 		build_base_cpp_configuration( "eepp-maps" )
+
+	project "eepp-physics-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
+		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
+		defines { "EE_PHYSICS_STATIC" }
+		if not is_vs() then
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
+		end
+		build_base_cpp_configuration( "eepp-physics-static" )
+
+	project "eepp-physics"
+		kind "SharedLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
+		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
+		links { "chipmunk-static", "eepp-shared" }
+		defines { "EE_PHYSICS_EXPORTS" }
+		if not is_vs() then
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
+		end
+		build_base_cpp_configuration( "eepp-physics" )
 
 	project "eterm-static"
 		kind "StaticLib"
@@ -1187,11 +1219,12 @@ solution "eepp"
 		files { "src/examples/vbo_fbo_batch/*.cpp" }
 		build_link_configuration( "eepp-vbo-fbo-batch", true )
 
-	project "eepp-physics"
+	project "eepp-physics-demo"
 		set_kind()
 		language "C++"
 		files { "src/examples/physics/*.cpp" }
-		build_link_configuration( "eepp-physics", true )
+		eepp_module_physics_add()
+		build_link_configuration( "eepp-physics-demo", true )
 
 	project "eepp-http-request"
 		kind "ConsoleApp"
@@ -1320,6 +1353,7 @@ solution "eepp"
 		language "C++"
 		files { "src/tests/test_all/*.cpp" }
 		eepp_module_maps_add()
+		eepp_module_physics_add()
 		build_link_configuration( "eepp-test", true )
 
 	project "eepp-ui-perf-test"

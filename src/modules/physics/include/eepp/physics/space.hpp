@@ -10,7 +10,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API Space {
+class EE_PHYSICS_API Space {
   public:
 	typedef std::function<int( Arbiter*, Space*, void* )> CollisionBeginFunc;
 	typedef std::function<int( Arbiter*, Space*, void* )> CollisionPreSolveFunc;

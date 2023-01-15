@@ -48,7 +48,4 @@ using namespace EE::Scene;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
 
-// Physics
-#include <eepp/physics.hpp>
-using namespace EE::Physics;
 #endif

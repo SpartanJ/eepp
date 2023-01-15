@@ -1,5 +1,5 @@
-#ifndef CSHAPECIRCLESPRITE_HPP
-#define CSHAPECIRCLESPRITE_HPP
+#ifndef EE_PHYSICS_SHAPECIRCLESPRITE_HPP
+#define EE_PHYSICS_SHAPECIRCLESPRITE_HPP
 
 #include <eepp/physics/shapecircle.hpp>
 
@@ -12,7 +12,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Physics {
 
-class EE_API ShapeCircleSprite : public ShapeCircle {
+class EE_PHYSICS_API ShapeCircleSprite : public ShapeCircle {
   public:
 	static ShapeCircleSprite* New( Physics::Body* body, cpFloat radius, cVect offset,
 								   Sprite* Sprite, bool AutoDeleteSprite = false );

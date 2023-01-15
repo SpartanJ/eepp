@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API ShapePoly : public Shape {
+class EE_PHYSICS_API ShapePoly : public Shape {
   public:
 	static ShapePoly* New( Physics::Body* body, int numVerts, cVect* verts, cVect offset );
 

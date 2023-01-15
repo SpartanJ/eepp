@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API ShapeCircle : public Shape {
+class EE_PHYSICS_API ShapeCircle : public Shape {
   public:
 	static ShapeCircle* New( Physics::Body* body, cpFloat radius, cVect offset );
 

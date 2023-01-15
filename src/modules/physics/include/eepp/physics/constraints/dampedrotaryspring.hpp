@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API DampedRotarySpring : public Constraint {
+class EE_PHYSICS_API DampedRotarySpring : public Constraint {
   public:
 	DampedRotarySpring( Body* a, Body* b, cpFloat restAngle, cpFloat stiffness, cpFloat damping );
 

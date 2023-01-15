@@ -29,7 +29,7 @@ using namespace EE::System;
 #define EE_MAPS_API __declspec( dllimport )
 #endif
 #else
-#if ( __GNUC__ >= 4 )
+#if ( __GNUC__ >= 4 ) && !defined( EE_MAPS_API )
 #define EE_MAPS_API __attribute__( ( visibility( "default" ) ) )
 #endif
 #endif

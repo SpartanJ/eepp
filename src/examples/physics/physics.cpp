@@ -1,4 +1,6 @@
 #include <eepp/ee.hpp>
+#include <eepp/physics/physics.hpp>
+using namespace EE::Physics;
 
 /**
 The physics module is a OOP wrapper for Chipmunk Physics.
@@ -664,6 +666,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 		physicsDestroy();
 	}
+
+	PhysicsManager::destroySingleton();
 
 	Engine::destroySingleton();
 

@@ -88,10 +88,6 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 * OpenAL audio engine with extendable file format support. Read and write support for OGG and Wav, and read support for MP3 and FLAC.
 
-### Physics Module
-
-* Full OOP chipmunk physics wrapper.
-
 ### System Module
 
 * Provides all the basics stuffs for the full multi-threading support of the library, file formats support for packing, clocks, resource manager, translator, and much more.
@@ -146,7 +142,11 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 * Programmable actions for nodes ( fade, rotate, move, scale, etc ).
 
-### Maps Module
+### Physics Module (optional)
+
+* Full OOP chipmunk physics wrapper.
+
+### Maps Module (optional)
 
 * Tiled Maps with software dynamic lights.
 

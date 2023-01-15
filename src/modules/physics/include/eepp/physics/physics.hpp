@@ -24,5 +24,6 @@
 #include <eepp/physics/shapepolysprite.hpp>
 #include <eepp/physics/shapesegment.hpp>
 #include <eepp/physics/space.hpp>
+using namespace EE::Physics;
 
 #endif

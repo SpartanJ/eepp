@@ -213,6 +213,8 @@ void EETest::init() {
 		if ( EE->isThreaded() )
 			launch();
 	} else {
+		PhysicsManager::destroySingleton();
+
 		Engine::destroySingleton();
 
 		exit( 0 );
@@ -2548,6 +2550,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 	Test->process();
 
 	eeDelete( Test );
+
+	PhysicsManager::destroySingleton();
 
 	Engine::destroySingleton();
 

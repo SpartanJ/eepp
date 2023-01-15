@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API RotaryLimitJoint : public Constraint {
+class EE_PHYSICS_API RotaryLimitJoint : public Constraint {
   public:
 	RotaryLimitJoint( Body* a, Body* b, cpFloat min, cpFloat max );
 

@@ -217,6 +217,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "editor-set-line-breaking-column", [&] { setLineBreakingColumn(); } );
 		t.setCommand( "editor-set-line-spacing", [&] { setLineSpacing(); } );
 		t.setCommand( "editor-set-cursor-blinking-time", [&] { setCursorBlinkingTime(); } );
+		t.setCommand( "check-for-updates", [&] { checkForUpdates(); } );
 		mSplitter->registerSplitterCommands( t );
 	}
 
@@ -231,6 +232,8 @@ class App : public UICodeEditorSplitter::Client {
 	void setLineSpacing();
 
 	void setCursorBlinkingTime();
+
+	void checkForUpdates();
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };
@@ -432,6 +435,8 @@ class App : public UICodeEditorSplitter::Client {
 	void initPluginManager();
 
 	void onPluginEnabled( UICodeEditorPlugin* plugin );
+
+	void checkForUpdatesResponse( Http::Response response );
 };
 
 } // namespace ecode

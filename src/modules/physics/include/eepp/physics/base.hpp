@@ -21,4 +21,25 @@ using namespace EE::System;
 //! Some helpers for the wrapper ( most of them can be disabled in the settings )
 #include <eepp/physics/physicshelper.hpp>
 
+#ifndef EE_PHYSICS_STATIC
+#if EE_PLATFORM == EE_PLATFORM_WIN
+// Windows platforms
+#ifdef EE_PHYSICS_EXPORTS
+// From DLL side, we must export
+#define EE_PHYSICS_API __declspec( dllexport )
+#else
+// From client application side, we must import
+#define EE_PHYSICS_API __declspec( dllimport )
+#endif
+#else
+#if ( __GNUC__ >= 4 ) && !defined( EE_PHYSICS_API )
+#define EE_PHYSICS_API __attribute__( ( visibility( "default" ) ) )
+#endif
+#endif
+#endif
+
+#endif
+
+#ifndef EE_PHYSICS_API
+#define EE_PHYSICS_API
 #endif

@@ -6,6 +6,8 @@
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 #ifdef ECODE_USE_BACKWARD
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -660,22 +662,97 @@ void App::setUIColorScheme( const ColorSchemePreference& colorScheme ) {
 	mUISceneNode->setColorSchemePreference( colorScheme );
 }
 
+void App::checkForUpdatesResponse( Http::Response response ) {
+	auto updatesError = [&]() {
+		UIMessageBox* msg = UIMessageBox::New(
+			UIMessageBox::OK, i18n( "error_checking_version", "Failed checking for updates." ) );
+		msg->setTitle( "Error" );
+		msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
+		msg->showWhenReady();
+	};
+
+	if ( response.getStatus() != Http::Response::Status::Ok || response.getBody().empty() ) {
+		updatesError();
+		return;
+	}
+
+	json j;
+	try {
+		j = json::parse( response.getBody(), nullptr, true, true );
+
+		if ( j.contains( "tag_name" ) ) {
+			auto tagName( j["tag_name"].get<std::string>() );
+			auto versionNum = ecode::Version::getVersionNumFromTag( tagName );
+			if ( versionNum > ecode::Version::getVersionNum() ) {
+				auto name( j.value( "name", tagName ) );
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK_CANCEL,
+					name + i18n( "ecode_updates_available",
+								 " is available!\nDo you want to download it now?" )
+							   .unescape() );
+				auto url( j.value( "html_url", "https://github.com/SpartanJ/ecode/releases/" ) );
+				msg->addEventListener( Event::MsgBoxConfirmClick, [&, url, msg]( const Event* ) {
+					Engine::instance()->openURI( url );
+					msg->closeWindow();
+				} );
+				msg->setTitle( "ecode" );
+				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
+				msg->showWhenReady();
+			} else if ( versionNum < ecode::Version::getVersionNum() ) {
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK,
+					i18n( "ecode_unreleased_version",
+						  "You are running an unreleased version of ecode!\nCurrent version: " )
+							.unescape() +
+						ecode::Version::getVersionNumString() );
+				msg->setTitle( "ecode" );
+				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
+				msg->showWhenReady();
+			} else {
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK, i18n( "ecode_no_updates_available",
+											"There are currently no updates available." ) );
+				msg->setTitle( "ecode" );
+				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
+				msg->showWhenReady();
+			}
+		} else {
+			updatesError();
+		}
+	} catch ( ... ) {
+		updatesError();
+	}
+}
+
+void App::checkForUpdates() {
+	Http::getAsync(
+		[&]( const Http&, Http::Request&, Http::Response& response ) {
+			mUISceneNode->runOnMainThread(
+				[&, response]() { checkForUpdatesResponse( response ); } );
+		},
+		"https://api.github.com/repos/SpartanJ/ecode/releases/latest", Seconds( 30 ) );
+}
+
 UIMenu* App::createHelpMenu() {
 	UIPopUpMenu* helpMenu = UIPopUpMenu::New();
 	helpMenu->add( i18n( "ecode_source", "ecode source code..." ), findIcon( "github" ) )
-		->setId( "ecode_source" );
-	helpMenu->add( i18n( "about_ecode", "About ecode..." ) )->setId( "about_ecode" );
+		->setId( "ecode-source" );
+	helpMenu->add( i18n( "check_for_updates", "Check for Updates..." ), findIcon( "refresh" ) )
+		->setId( "check-for-updates" );
+	helpMenu->add( i18n( "about_ecode", "About ecode..." ) )->setId( "about-ecode" );
 	helpMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		const std::string& id = event->getNode()->getId();
 
-		if ( "ecode_source" == id ) {
+		if ( "ecode-source" == id ) {
 			Engine::instance()->openURI( "https://github.com/SpartanJ/ecode" );
-		} else if ( "about_ecode" == id ) {
-			String msg( ecode::Version::getVersionName() + " (codename: \"" +
+		} else if ( "about-ecode" == id ) {
+			String msg( ecode::Version::getVersionFullName() + " (codename: \"" +
 						ecode::Version::getCodename() + "\")" );
 			UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
 			msgBox->setTitle( i18n( "about_ecode", "About ecode..." ) );
 			msgBox->show();
+		} else if ( "check-for-updates" == id ) {
+			checkForUpdates();
 		}
 	} );
 	return helpMenu;
@@ -701,14 +778,14 @@ void App::setUIScaleFactor() {
 					UIMessageBox::OK,
 					i18n( "new_ui_scale_factor", "New UI scale factor assigned.\nPlease "
 												 "restart the application." ) );
-				msg->show();
+				msg->showWhenReady();
 				setFocusEditorOnClose( msg );
 			} else if ( mSplitter && mSplitter->getCurWidget() ) {
 				mSplitter->getCurWidget()->setFocus();
 			}
 		} else {
 			UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK, "Invalid value!" );
-			msg->show();
+			msg->showWhenReady();
 			setFocusEditorOnClose( msg );
 		}
 	} );
@@ -2290,7 +2367,9 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "debug-draw-debug-data",
 			 "editor-set-line-breaking-column",
 			 "editor-set-line-spacing",
-			 "editor-set-cursor-blinking-time" };
+			 "editor-set-cursor-blinking-time",
+			 "check-for-updates",
+			 "keybindings" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {
@@ -3531,7 +3610,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mConfig.context.SharedGLContext = true;
 
 	mWindow = engine->createWindow( winSettings, mConfig.context );
-	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionName().c_str(),
+	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName().c_str(),
 			   ecode::Version::getCodename().c_str() );
 
 	if ( mWindow->isOpen() ) {
@@ -3886,6 +3965,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			{ "file-code", 0xecd1 },
 			{ "cursor-pointer", 0xec09 },
 			{ "drive", 0xedf8 },
+			{ "refresh", 0xf064 },
 		};
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
@@ -4148,7 +4228,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	if ( version.Get() ) {
-		std::cout << ecode::Version::getVersionName() << '\n';
+		std::cout << ecode::Version::getVersionFullName() << '\n';
 		return EXIT_SUCCESS;
 	}
 

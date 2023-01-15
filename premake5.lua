@@ -548,7 +548,13 @@ end
 function eepp_module_maps_add()
 	links { "eepp-maps-static" }
 	defines { "EE_MAPS_STATIC" }
-	incdirs { "src/modules/maps/include/","src/modules/maps/src/" }
+	incdirs { "src/modules/maps/include/", "src/modules/maps/src/" }
+end
+
+function eepp_module_physics_add()
+	links { "eepp-physics-static", "chipmunk-static" }
+	defines { "EE_PHYSICS_STATIC" }
+	incdirs { "src/modules/physics/include/", "src/modules/physics/src/" }
 end
 
 function build_eepp( build_name )
@@ -754,7 +760,7 @@ workspace "eepp"
 		kind "StaticLib"
 		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/chipmunk/*.c", "src/thirdparty/chipmunk/constraints/*.c" }
-		incdirs { "include/eepp/thirdparty/chipmunk" }
+		incdirs { "src/modules/physics/include/eepp/thirdparty/chipmunk" }
 		build_base_configuration( "chipmunk" )
 		filter "action:vs*"
 			language "C++"
@@ -862,6 +868,31 @@ workspace "eepp"
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
+	project "eepp-physics-static"
+		kind "StaticLib"
+		language "C++"
+		cppdialect "C++17"
+		targetdir("libs/" .. os.target() .. "/")
+		incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
+		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
+		defines { "EE_PHYSICS_STATIC" }
+		build_base_cpp_configuration( "eepp-physics-static" )
+		filter "action:not vs*"
+			buildoptions { "-Wall" }
+
+	project "eepp-physics"
+		kind "SharedLib"
+		language "C++"
+		cppdialect "C++17"
+		targetdir("libs/" .. os.target() .. "/")
+		incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
+		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
+		links { "chipmunk-static", "eepp-shared" }
+		defines { "EE_PHYSICS_EXPORTS" }
+		build_base_cpp_configuration( "eepp-physics" )
+		filter "action:not vs*"
+			buildoptions { "-Wall" }
+
 	project "eterm-static"
 		kind "StaticLib"
 		language "C++"
@@ -869,6 +900,7 @@ workspace "eepp"
 		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
+		links { "chipmunk-static" }
 		build_base_cpp_configuration( "eterm" )
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
@@ -923,11 +955,12 @@ workspace "eepp"
 		files { "src/examples/vbo_fbo_batch/*.cpp" }
 		build_link_configuration( "eepp-vbo-fbo-batch", true )
 
-	project "eepp-physics"
+	project "eepp-physics-demo"
 		set_kind()
 		language "C++"
 		files { "src/examples/physics/*.cpp" }
-		build_link_configuration( "eepp-physics", true )
+		eepp_module_physics_add()
+		build_link_configuration( "eepp-physics-demo", true )
 
 	project "eepp-http-request"
 		kind "ConsoleApp"
@@ -1038,6 +1071,7 @@ workspace "eepp"
 		language "C++"
 		files { "src/tests/test_all/*.cpp" }
 		eepp_module_maps_add()
+		eepp_module_physics_add()
 		build_link_configuration( "eepp-test", true )
 
 	project "eepp-ui-perf-test"

@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API ShapeSegment : public Shape {
+class EE_PHYSICS_API ShapeSegment : public Shape {
   public:
 	static ShapeSegment* New( Physics::Body* body, cVect a, cVect b, cpFloat radius );
 

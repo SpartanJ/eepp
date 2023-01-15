@@ -12,3 +12,5 @@
 ../../src/modules/eterm/include/
 ../../src/modules/maps/include/
 ../../src/modules/maps/src/
+../../src/modules/physics/include/
+../../src/modules/physics/src/

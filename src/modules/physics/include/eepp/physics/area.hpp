@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API Area {
+class EE_PHYSICS_API Area {
   public:
 	cpFloat forCircle( cpFloat r1, cpFloat r2 );
 

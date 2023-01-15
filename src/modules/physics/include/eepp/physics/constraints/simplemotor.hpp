@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API SimpleMotor : public Constraint {
+class EE_PHYSICS_API SimpleMotor : public Constraint {
   public:
 	SimpleMotor( Body* a, Body* b, cpFloat rate );
 

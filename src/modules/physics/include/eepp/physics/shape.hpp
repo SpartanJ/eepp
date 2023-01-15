@@ -11,7 +11,7 @@ class ShapeSegment;
 class ShapePoly;
 class Space;
 
-class EE_API Shape {
+class EE_PHYSICS_API Shape {
   public:
 	static void resetShapeIdCounter();
 

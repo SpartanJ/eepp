@@ -60,6 +60,7 @@ LOCAL_CFLAGS			:= $(EEPP_C_FLAGS)
 LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 CORE_SRCS				:= tools/ecode/*.cpp \
+							tools/ecode/plugins/*.cpp \
 							tools/ecode/plugins/autocomplete/*.cpp \
 							tools/ecode/plugins/linter/*.cpp \
 							tools/ecode/plugins/formatter/*.cpp \
@@ -111,7 +112,7 @@ CORE_SRCS				:= tests/test_all/*.cpp
 
 LOCAL_SRC_FILES			:= $(SDL_MAIN_PATH) $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= eepp-maps eepp
+LOCAL_STATIC_LIBRARIES	:= eepp-physics eepp-maps eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ full_test ************

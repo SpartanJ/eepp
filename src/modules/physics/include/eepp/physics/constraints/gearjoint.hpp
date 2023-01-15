@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API GearJoint : public Constraint {
+class EE_PHYSICS_API GearJoint : public Constraint {
   public:
 	GearJoint( Body* a, Body* b, cpFloat phase, cpFloat ratio );
 

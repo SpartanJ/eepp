@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API Moment {
+class EE_PHYSICS_API Moment {
   public:
 	static cpFloat forCircle( cpFloat m, cpFloat r1, cpFloat r2, cVect offset );
 

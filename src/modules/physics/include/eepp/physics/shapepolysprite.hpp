@@ -12,7 +12,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Physics {
 
-class EE_API ShapePolySprite : public ShapePoly {
+class EE_PHYSICS_API ShapePolySprite : public ShapePoly {
   public:
 	static ShapePolySprite* New( Physics::Body* body, int numVerts, cVect* verts, cVect offset,
 								 Sprite* Sprite, bool AutoDeleteSprite = false );

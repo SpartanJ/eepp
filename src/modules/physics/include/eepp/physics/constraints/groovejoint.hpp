@@ -5,7 +5,7 @@
 
 namespace EE { namespace Physics {
 
-class EE_API GrooveJoint : public Constraint {
+class EE_PHYSICS_API GrooveJoint : public Constraint {
   public:
 	GrooveJoint( Body* a, Body* b, cVect groove_a, cVect groove_b, cVect anchr2 );
 
