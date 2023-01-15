@@ -7,6 +7,7 @@
 #include <eepp/system/process.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <nlohmann/json.hpp>
 #include <random>
 #define PUGIXML_HEADER_ONLY
@@ -217,6 +218,29 @@ bool FormatterPlugin::hasFileConfig() {
 
 std::string FormatterPlugin::getFileConfigPath() {
 	return mConfigPath;
+}
+
+bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i&,
+										   const Uint32& ) {
+	const auto& patterns = editor->getDocument().getSyntaxDefinition().getFiles();
+	bool found = false;
+	for ( const auto& formatter : mFormatters ) {
+		for ( const auto& pattern : patterns ) {
+			if ( std::find( formatter.files.begin(), formatter.files.end(), pattern ) !=
+				 formatter.files.end() ) {
+				found = true;
+				break;
+			}
+		}
+	}
+	if ( !found )
+		return false;
+
+	menu->add( editor->getUISceneNode()->i18n( "formatter-format-document", "Format Document" ),
+			   nullptr, KeyBindings::keybindFormat( mKeyBindings["format-doc"] ) )
+		->setId( "format-doc" );
+
+	return false;
 }
 
 void FormatterPlugin::formatDoc( UICodeEditor* editor ) {

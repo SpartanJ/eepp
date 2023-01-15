@@ -357,7 +357,7 @@ Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 7
 
 * **[Fonts example](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-fonts.js)**
 
-* **[Physics module demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-physics.js)**
+* **[Physics module demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-physics-demo.js)**
 
 * **[Sprites example](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-sprites.js)**
 

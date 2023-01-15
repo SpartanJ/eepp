@@ -78,6 +78,11 @@ class EE_API Sys {
 
 	/** @return The OS logical drives */
 	static std::vector<std::string> getLogicalDrives();
+
+	/** Finds the location of a binary / executable file.
+	 *  @return The executable file path, or an empty string if not found. */
+	static std::string which( const std::string& exeName,
+							  const std::vector<std::string>& customSearchPaths = {} );
 };
 
 }} // namespace EE::System

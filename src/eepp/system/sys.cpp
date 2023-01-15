@@ -24,6 +24,7 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <stdlib.h>
 #include <windows.h>
 #undef GetDiskFreeSpace
 #undef GetTempPath
@@ -32,13 +33,13 @@
 #include <mntent.h>
 #include <unistd.h>
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
-#include <kernel/OS.h>
-#include <kernel/image.h>
 #include <Directory.h>
 #include <Path.h>
 #include <Volume.h>
 #include <VolumeRoster.h>
 #include <fs_info.h>
+#include <kernel/OS.h>
+#include <kernel/image.h>
 #include <sys/statvfs.h>
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 #include <stdlib.h>
@@ -980,29 +981,97 @@ std::vector<std::string> Sys::getLogicalDrives() {
 	BVolumeRoster mounts;
 	BVolume vol;
 	mounts.Rewind();
-	while (mounts.GetNextVolume(&vol) == B_NO_ERROR) {
+	while ( mounts.GetNextVolume( &vol ) == B_NO_ERROR ) {
 		fs_info fsinfo;
-		fs_stat_dev(vol.Device(), &fsinfo);
+		fs_stat_dev( vol.Device(), &fsinfo );
 		BDirectory directory;
 		BEntry entry;
 		BPath path;
 		status_t rc;
-		rc = vol.GetRootDirectory(&directory);
-		if (rc < B_OK)
+		rc = vol.GetRootDirectory( &directory );
+		if ( rc < B_OK )
 			continue;
-		rc = directory.GetEntry(&entry);
-		if (rc < B_OK)
+		rc = directory.GetEntry( &entry );
+		if ( rc < B_OK )
 			continue;
-		rc = entry.GetPath(&path);
-		if (rc < B_OK)
+		rc = entry.GetPath( &path );
+		if ( rc < B_OK )
 			continue;
-		const char *str = path.Path();
+		const char* str = path.Path();
 		ret.emplace_back( str );
 	}
 	return ret;
 #else
 	return {};
 #endif
+}
+
+static std::string getenv( const std::string& name ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC )
+	wchar_t* envbuf;
+	size_t envsize;
+	_wdupenv_s( &envbuf, &envsize, String( name ).toWideString().c_str() );
+	std::string env;
+	if ( NULL != envbuf )
+		env = String::fromWide( envbuf ).toUtf8();
+	free( envbuf );
+	return env;
+#else
+	char* env = ::getenv( name.c_str() );
+	return NULL == env ? std::string() : std::string( env );
+#endif
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#define PATH_SEP_CHAR ';'
+#else
+#define PATH_SEP_CHAR ':'
+#endif
+std::string Sys::which( const std::string& exeName,
+						const std::vector<std::string>& customSearchPaths ) {
+	std::string PATH = getenv( "PATH" );
+	std::vector<std::string> PATHS = String::split( PATH, PATH_SEP_CHAR );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	static std::vector<std::string> PATHEXTS = String::split( getenv( "PATHEXT" ), PATH_SEP_CHAR );
+	std::string exePath;
+#endif
+
+	if ( !customSearchPaths.empty() ) {
+		for ( const auto& searchPath : customSearchPaths )
+			PATHS.emplace_back( searchPath );
+	}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	bool hasExtension = false;
+	for ( const auto& pathExt : PATHEXTS ) {
+		if ( String::endsWith( exeName, pathExt ) ) {
+			hasExtension = true;
+			break;
+		}
+	}
+#endif
+
+	for ( const auto& path : PATHS ) {
+		std::string fpath( path );
+		FileSystem::dirAddSlashAtEnd( fpath );
+		fpath += exeName;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( hasExtension ) {
+			if ( FileSystem::fileExists( fpath ) )
+				return fpath;
+		} else {
+			for ( const auto& pathext : PATHEXTS ) {
+				exePath = fpath + pathext;
+				if ( FileSystem::fileExists( exePath ) )
+					return exePath;
+			}
+		}
+#else
+		if ( FileSystem::fileExists( fpath ) )
+			return fpath;
+#endif
+	}
+	return "";
 }
 
 }} // namespace EE::System
