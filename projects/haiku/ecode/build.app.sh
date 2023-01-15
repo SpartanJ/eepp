@@ -3,9 +3,9 @@ CANONPATH=$(readlink -f "$0")
 DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 cd ../../../ || exit
-premake4 --with-mojoal gmake
+premake5 --with-mojoal gmake2
 cd make/haiku || exit
-make -j"$(nproc)" config=release ecode
+make -j"$(nproc)" config=release_x86_64 ecode
 cd "$DIRPATH" || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/assets
