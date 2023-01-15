@@ -3566,7 +3566,6 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	}
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	if ( String::contains( mResPath, ".mount_" ) ) {
-		mResPath = FileSystem::getCurrentWorkingDirectory();
 		FileSystem::dirAddSlashAtEnd( mResPath );
 		mIsBundledApp = true;
 	}
