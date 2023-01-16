@@ -32,7 +32,7 @@
     {
       "file_patterns": ["%.py$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
-      "command": "ruff -n --ignore=E402 $FILENAME"
+      "command": "ruff $FILENAME"
     },
     {
       "file_patterns": ["%.sh$"],
