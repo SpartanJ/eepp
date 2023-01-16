@@ -83,11 +83,15 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	std::string mConfigPath;
 	bool mClosing{ false };
 	bool mReady{ false };
+	bool mOldDontAutoHideOnMouseMove{ false };
+	bool mOldUsingCustomStyling{ false };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::map<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
 	Uint32 mHoverWaitCb;
 	LSPHover mCurrentHover;
 	Time mHoverDelay{ Seconds( 1.f ) };
+	Uint32 mOldTextStyle{ 0 };
+	Uint32 mOldTextAlign{ 0 };
 
 	LSPClientPlugin( PluginManager* pluginManager );
 
@@ -107,6 +111,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	PluginRequestHandle processCancelRequest( const PluginMessage& msg );
 
 	void tryHideTooltip( UICodeEditor* editor, const Vector2i& position );
+
+	void hideTooltip( UICodeEditor* editor );
 };
 
 } // namespace ecode

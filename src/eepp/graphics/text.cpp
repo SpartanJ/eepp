@@ -606,128 +606,120 @@ Float Text::getLineSpacing() {
 
 void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
 				 BlendMode effect, const OriginPoint& rotationCenter,
-				 const OriginPoint& scaleCenter ) {
-	if ( NULL != mFont ) {
-		ensureColorUpdate();
-		ensureGeometryUpdate();
+				 const OriginPoint& scaleCenter, const std::vector<Color>& colors,
+				 const std::vector<Color>& outlineColors, const Color& backgroundColor ) {
+	unsigned int numvert = mVertices.size();
 
-		unsigned int numvert = mVertices.size();
+	if ( 0 == numvert )
+		return;
 
-		if ( 0 == numvert )
-			return;
+	GlobalBatchRenderer::instance()->draw();
 
-		if ( mStyle & Shadow ) {
-			mStyle &= ~Shadow;
+	if ( rotation != 0.0f || scale != 1.0f ) {
+		Float cX = (Float)( (Int32)X );
+		Float cY = (Float)( (Int32)Y );
+		Vector2f Center( cX + mCachedWidth * 0.5f, cY + getTextHeight() * 0.5f );
 
-			Color Col = getFillColor();
-			Color Back = getBackgroundColor();
+		GLi->pushMatrix();
 
-			setBackgroundColor( Color::Transparent );
+		Vector2f center = Center;
+		if ( OriginPoint::OriginTopLeft == scaleCenter.OriginType )
+			center = Vector2f( cX, cY );
+		else if ( OriginPoint::OriginCustom == scaleCenter.OriginType )
+			center = Vector2f( scaleCenter.x, scaleCenter.y );
 
-			if ( Col.a != 255 ) {
-				Color ShadowColor = getShadowColor();
-				ShadowColor.a = (Uint8)( (Float)ShadowColor.a * ( (Float)Col.a / (Float)255 ) );
+		GLi->translatef( center.x, center.y, 0.f );
+		GLi->scalef( scale.x, scale.y, 1.0f );
+		GLi->translatef( -center.x, -center.y, 0.f );
 
-				setFillColor( ShadowColor );
-			} else {
-				setFillColor( getShadowColor() );
-			}
+		center = Center;
+		if ( OriginPoint::OriginTopLeft == rotationCenter.OriginType )
+			center = Vector2f( cX, cY );
+		else if ( OriginPoint::OriginCustom == rotationCenter.OriginType )
+			center = Vector2f( rotationCenter.x, rotationCenter.y );
 
-			mColors.assign( mColors.size(), getFillColor() );
+		GLi->translatef( center.x, center.y, 0.f );
+		GLi->rotatef( rotation, 0.0f, 0.0f, 1.0f );
+		GLi->translatef( -center.x + cX, -center.y + cY, 0.f );
+	} else {
+		GLi->translatef( X, Y, 0 );
+	}
 
-			Float pd = PixelDensity::dpToPx( 1 );
+	if ( backgroundColor != Color::Transparent ) {
+		Primitives p;
+		p.setForceDraw( true );
+		p.setColor( backgroundColor );
+		p.drawRectangle( getLocalBounds() );
+	}
 
-			draw( X + pd, Y + pd, scale, rotation, effect );
+	Texture* texture = mFont->getTexture( mRealFontSize );
+	if ( !texture )
+		return;
+	texture->bind();
+	BlendMode::setMode( effect );
 
-			mStyle |= Shadow;
+	Uint32 alloc = numvert * sizeof( VertexCoords );
+	Uint32 allocC = numvert * GLi->quadVertexs();
 
-			setBackgroundColor( Back );
-			setFillColor( Col );
-			mColors.assign( mColors.size(), getFillColor() );
-		}
-
-		GlobalBatchRenderer::instance()->draw();
-
-		if ( rotation != 0.0f || scale != 1.0f ) {
-			Float cX = (Float)( (Int32)X );
-			Float cY = (Float)( (Int32)Y );
-			Vector2f Center( cX + mCachedWidth * 0.5f, cY + getTextHeight() * 0.5f );
-
-			GLi->pushMatrix();
-
-			Vector2f center = Center;
-			if ( OriginPoint::OriginTopLeft == scaleCenter.OriginType )
-				center = Vector2f( cX, cY );
-			else if ( OriginPoint::OriginCustom == scaleCenter.OriginType )
-				center = Vector2f( scaleCenter.x, scaleCenter.y );
-
-			GLi->translatef( center.x, center.y, 0.f );
-			GLi->scalef( scale.x, scale.y, 1.0f );
-			GLi->translatef( -center.x, -center.y, 0.f );
-
-			center = Center;
-			if ( OriginPoint::OriginTopLeft == rotationCenter.OriginType )
-				center = Vector2f( cX, cY );
-			else if ( OriginPoint::OriginCustom == rotationCenter.OriginType )
-				center = Vector2f( rotationCenter.x, rotationCenter.y );
-
-			GLi->translatef( center.x, center.y, 0.f );
-			GLi->rotatef( rotation, 0.0f, 0.0f, 1.0f );
-			GLi->translatef( -center.x + cX, -center.y + cY, 0.f );
-		} else {
-			GLi->translatef( X, Y, 0 );
-		}
-
-		if ( mBackgroundColor != Color::Transparent ) {
-			Primitives p;
-			p.setForceDraw( true );
-			p.setColor( mBackgroundColor );
-			p.drawRectangle( getLocalBounds() );
-		}
-
-		Texture* texture = mFont->getTexture( mRealFontSize );
-		if ( !texture )
-			return;
-		texture->bind();
-		BlendMode::setMode( effect );
-
-		Uint32 alloc = numvert * sizeof( VertexCoords );
-		Uint32 allocC = numvert * GLi->quadVertexs();
-
-		if ( 0 != mOutlineThickness ) {
-			GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
-							   reinterpret_cast<char*>( &mOutlineColors[0] ), allocC );
-			GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
-								  reinterpret_cast<char*>( &mOutlineVertices[0] ), alloc );
-			GLi->vertexPointer(
-				2, GL_FP, sizeof( VertexCoords ),
-				reinterpret_cast<char*>( &mOutlineVertices[0] ) + sizeof( Float ) * 2, alloc );
-
-			if ( GLi->quadsSupported() ) {
-				GLi->drawArrays( GL_QUADS, 0, numvert );
-			} else {
-				GLi->drawArrays( GL_TRIANGLES, 0, numvert );
-			}
-		}
-
-		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &mColors[0] ), allocC );
+	if ( 0 != mOutlineThickness ) {
+		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
+						   reinterpret_cast<const char*>( outlineColors.data() ), allocC );
 		GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
-							  reinterpret_cast<char*>( &mVertices[0] ), alloc );
+							  reinterpret_cast<char*>( &mOutlineVertices[0] ), alloc );
 		GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
-							reinterpret_cast<char*>( &mVertices[0] ) + sizeof( Float ) * 2, alloc );
+							reinterpret_cast<char*>( &mOutlineVertices[0] ) + sizeof( Float ) * 2,
+							alloc );
 
 		if ( GLi->quadsSupported() ) {
 			GLi->drawArrays( GL_QUADS, 0, numvert );
 		} else {
 			GLi->drawArrays( GL_TRIANGLES, 0, numvert );
 		}
-
-		if ( rotation != 0.0f || scale != 1.0f ) {
-			GLi->popMatrix();
-		} else {
-			GLi->translatef( -X, -Y, 0 );
-		}
 	}
+
+	GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const char*>( colors.data() ),
+					   allocC );
+	GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
+						  reinterpret_cast<char*>( &mVertices[0] ), alloc );
+	GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
+						reinterpret_cast<char*>( &mVertices[0] ) + sizeof( Float ) * 2, alloc );
+
+	if ( GLi->quadsSupported() ) {
+		GLi->drawArrays( GL_QUADS, 0, numvert );
+	} else {
+		GLi->drawArrays( GL_TRIANGLES, 0, numvert );
+	}
+
+	if ( rotation != 0.0f || scale != 1.0f ) {
+		GLi->popMatrix();
+	} else {
+		GLi->translatef( -X, -Y, 0 );
+	}
+}
+
+void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
+				 BlendMode effect, const OriginPoint& rotationCenter,
+				 const OriginPoint& scaleCenter ) {
+	if ( NULL == mFont )
+		return;
+
+	ensureColorUpdate();
+	ensureGeometryUpdate();
+
+	if ( mStyle & Shadow ) {
+		std::vector<Color> colors;
+		Color shadowColor( getShadowColor() );
+		if ( getFillColor().a != 255 )
+			shadowColor.a =
+				(Uint8)( (Float)shadowColor.a * ( (Float)getFillColor().a / (Float)255 ) );
+		colors.assign( mColors.size(), shadowColor );
+		Float pd = PixelDensity::dpToPx( 1 );
+		draw( X + pd, Y + pd, scale, rotation, effect, rotationCenter, scaleCenter, colors, {},
+			  Color::Transparent );
+	}
+
+	draw( X, Y, scale, rotation, effect, rotationCenter, scaleCenter, mColors, mOutlineColors,
+		  mBackgroundColor );
 }
 
 void Text::ensureGeometryUpdate() {

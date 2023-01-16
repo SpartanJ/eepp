@@ -218,6 +218,11 @@ class EE_API Text {
 
 	/** Cache the with of the current text */
 	void getWidthInfo();
+
+	void draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
+			   BlendMode effect, const OriginPoint& rotationCenter, const OriginPoint& scaleCenter,
+			   const std::vector<Color>& colors, const std::vector<Color>& outlineColors,
+			   const Color& backgroundColor );
 };
 
 }} // namespace EE::Graphics

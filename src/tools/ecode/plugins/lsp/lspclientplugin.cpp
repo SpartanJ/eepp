@@ -460,10 +460,15 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 	return false;
 }
 
-static void hideTooltip( UICodeEditor* editor ) {
-	if ( editor->getTooltip() && editor->getTooltip()->isVisible() ) {
+void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
+	if ( editor && editor->getTooltip() && editor->getTooltip()->isVisible() ) {
 		editor->setTooltipText( "" );
 		editor->getTooltip()->hide();
+		// Restore old tooltip state
+		editor->getTooltip()->setFontStyle( mOldTextStyle );
+		editor->getTooltip()->setHorizontalAlign( mOldTextAlign );
+		editor->getTooltip()->setUsingCustomStyling( mOldUsingCustomStyling );
+		editor->getTooltip()->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
 	}
 }
 
@@ -509,6 +514,14 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 									 resp.range.contains( startCursorPosition ) ) {
 									mCurrentHover = resp;
 									editor->setTooltipText( resp.contents[0].value );
+									// HACK: Gets the old font style to restore it when the tooltip
+									// is hidden
+									mOldTextStyle = editor->getTooltip()->getFontStyle();
+									mOldTextAlign = editor->getTooltip()->getHorizontalAlign();
+									mOldDontAutoHideOnMouseMove =
+										editor->getTooltip()->dontAutoHideOnMouseMove();
+									mOldUsingCustomStyling =
+										editor->getTooltip()->getUsingCustomStyling();
 									editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
 									editor->getTooltip()->setPixelsPosition(
 										editor->getTooltip()->getTooltipPosition(
@@ -547,7 +560,7 @@ void LSPClientPlugin::onFocusLoss( UICodeEditor* editor ) {
 bool LSPClientPlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
 	if ( event.getSanitizedMod() == 0 && event.getKeyCode() == KEY_ESCAPE && editor->getTooltip() &&
 		 editor->getTooltip()->isVisible() ) {
-		editor->getTooltip()->hide();
+		hideTooltip( editor );
 	}
 
 	return false;
