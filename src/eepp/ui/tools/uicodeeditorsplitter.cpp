@@ -311,9 +311,13 @@ std::pair<UITab*, UICodeEditor*>
 UICodeEditorSplitter::loadDocumentInNewTab( std::shared_ptr<TextDocument> doc ) {
 	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
 	if ( d.first == nullptr || d.second == nullptr ) {
-		Log::error( "Couldn't createCodeEditorInTabWidget in "
-					"UICodeEditorSplitter::loadDocumentInNewTab" );
-		return { nullptr, nullptr };
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			d = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::loadDocumentInNewTab" );
+			return d;
+		}
 	}
 	UITabWidget* tabWidget = d.first->getTabWidget();
 	loadDocument( doc, d.second );
@@ -378,9 +382,13 @@ std::pair<UITab*, UICodeEditor*>
 UICodeEditorSplitter::loadFileFromPathInNewTab( const std::string& path ) {
 	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
 	if ( d.first == nullptr || d.second == nullptr ) {
-		Log::error( "Couldn't createCodeEditorInTabWidget in "
-					"UICodeEditorSplitter::loadFileFromPathInNewTab" );
-		return { nullptr, nullptr };
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			d = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::loadFileFromPathInNewTab" );
+			return d;
+		}
 	}
 	UITabWidget* tabWidget = d.first->getTabWidget();
 	loadFileFromPath( path, d.second );
@@ -393,9 +401,13 @@ void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 	std::function<void( UICodeEditor*, const std::string& )> onLoaded, UITabWidget* tabWidget ) {
 	auto d = createCodeEditorInTabWidget( tabWidget );
 	if ( d.first == nullptr || d.second == nullptr ) {
-		Log::error( "Couldn't createCodeEditorInTabWidget in "
-					"UICodeEditorSplitter::loadAsyncFileFromPathInNewTab" );
-		return;
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			d = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::loadAsyncFileFromPathInNewTab" );
+			return;
+		}
 	}
 	UITab* addedTab = d.first;
 	loadAsyncFileFromPath( path, pool, d.second, onLoaded );
@@ -407,9 +419,13 @@ void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 	std::function<void( UICodeEditor*, const std::string& )> onLoaded ) {
 	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
 	if ( d.first == nullptr || d.second == nullptr ) {
-		Log::error( "Couldn't createCodeEditorInTabWidget in "
-					"UICodeEditorSplitter::loadAsyncFileFromPathInNewTab" );
-		return;
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			d = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::loadAsyncFileFromPathInNewTab" );
+			return;
+		}
 	}
 	UITabWidget* tabWidget = d.first->getTabWidget();
 	UITab* addedTab = d.first;
@@ -534,9 +550,13 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	} );
 	auto editorData = createCodeEditorInTabWidget( tabWidget );
 	if ( editorData.first == nullptr || editorData.second == nullptr ) {
-		Log::error( "Couldn't createCodeEditorInTabWidget in "
-					"UICodeEditorSplitter::createEditorWithTabWidget" );
-		return nullptr;
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			editorData = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::createEditorWithTabWidget" );
+			return nullptr;
+		}
 	}
 	mAboutToAddEditor = editorData.second;
 	// Open same document in the new split
