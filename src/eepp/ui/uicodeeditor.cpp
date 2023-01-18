@@ -1852,6 +1852,11 @@ const Vector2f& UICodeEditor::getFontShadowOffset() const {
 	return mFontStyleConfig.getFontShadowOffset();
 }
 
+void UICodeEditor::setScroll( const Vector2f& val, bool emmitEvent ) {
+	setScrollX( val.x, emmitEvent );
+	setScrollY( val.y, emmitEvent );
+}
+
 UICodeEditor* UICodeEditor::setFontStyle( const Uint32& fontStyle ) {
 	if ( mFontStyleConfig.Style != fontStyle ) {
 		mFontStyleConfig.Style = fontStyle;
@@ -2003,10 +2008,10 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 std::vector<PropertyId> UICodeEditor::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
 	auto local = {
-		PropertyId::Locked,			 PropertyId::Color,			  PropertyId::TextShadowColor,
-		PropertyId::TextShadowOffset,	 PropertyId::SelectionColor,  PropertyId::SelectionBackColor,
-		PropertyId::FontFamily,		 PropertyId::FontSize,		  PropertyId::FontStyle,
-		PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor, PropertyId::TextSelection,
+		PropertyId::Locked,			  PropertyId::Color,		   PropertyId::TextShadowColor,
+		PropertyId::TextShadowOffset, PropertyId::SelectionColor,  PropertyId::SelectionBackColor,
+		PropertyId::FontFamily,		  PropertyId::FontSize,		   PropertyId::FontStyle,
+		PropertyId::TextStrokeWidth,  PropertyId::TextStrokeColor, PropertyId::TextSelection,
 		PropertyId::LineSpacing };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;

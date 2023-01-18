@@ -560,6 +560,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const Vector2f& getFontShadowOffset() const;
 
+	void setScroll( const Vector2f& val, bool emmitEvent = true );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;

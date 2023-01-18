@@ -66,8 +66,12 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 		editor->getDocument().setCommand( "format-doc", [&, editor]() { formatDoc( editor ); } );
 
 	mOnDocumentSaveCb = editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
-		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) )
-			formatDoc( event->getNode()->asType<UICodeEditor>() );
+		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
+			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+			auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
+			if ( isAutoFormatting == mIsAutoFormatting.end() || isAutoFormatting->second == false )
+				formatDoc( editor );
+		}
 	} );
 }
 
@@ -77,6 +81,10 @@ void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 		if ( editor->hasDocument() )
 			editor->getDocument().removeCommand( kb.first );
 	}
+
+	auto afIt = mIsAutoFormatting.find( &editor->getDocument() );
+	if ( afIt != mIsAutoFormatting.end() )
+		mIsAutoFormatting.erase( afIt );
 
 	if ( mOnDocumentSaveCb != 0 )
 		editor->removeEventListener( mOnDocumentSaveCb );
@@ -286,10 +294,17 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 
 			editor->runOnMainThread( [&, data, editor]() {
 				std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
-				TextPosition pos = doc->getSelection().start();
+				auto pos = doc->getSelection();
+				auto scroll = editor->getScroll();
 				doc->selectAll();
 				doc->textInput( data );
 				doc->setSelection( pos );
+				editor->setScroll( scroll );
+				if ( mAutoFormatOnSave ) {
+					mIsAutoFormatting[doc.get()] = true;
+					doc->save();
+					mIsAutoFormatting[doc.get()] = false;
+				}
 			} );
 		}
 
