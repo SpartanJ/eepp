@@ -785,6 +785,20 @@ Sets the hint font stroke (the outline) color.
 
 ---
 
+### hint-shadow-offset
+
+Sets the hint font shadow offset.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
+  (Tooltip)
+* Data Type: [vector2-number](#vector2-number-data-type)
+* Default offset: `1dp 1dp`
+
+---
+
 ### hint-stroke-width
 
 Sets the hint font stroke (the outline) width.
@@ -1549,20 +1563,6 @@ Enables the selection state toggle on element click.
 
 ---
 
-### shadow-color
-
-Sets the text shadow color.
-
-* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
-  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
-  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
-  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
-  (Tooltip)
-* Data Type: [color](#color-data-type)
-* Default color: `#323232E6`
-
----
-
 ### skin
 
 Sets the skin (a.k.a. decoration) to an element. Element skins are automatically applied if there's a specific skin for the element
@@ -1743,6 +1743,34 @@ Enables/disables text selection in any element that contains text.
   EE::UI::UITextEdit (TextEdit)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `true` for TextEdit, TextInput. `false` for any other element.
+
+---
+
+### text-shadow-color
+
+Sets the text shadow color.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
+  (Tooltip)
+* Data Type: [color](#color-data-type)
+* Default color: `#323232E6`
+
+---
+
+### text-shadow-offset
+
+Sets the text shadow offset.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
+  (Tooltip)
+* Data Type: [vector2-number](#vector2-number-data-type)
+* Default offset: `1dp 1dp`
 
 ---
 
@@ -2167,6 +2195,16 @@ Same as the [border-radius](#border-radius) but for the foreground of the node.
 
 ---
 
+### hint-shadow
+
+The hint text shadow, same as text-shadow but for hints.
+
+Read [text-shadow](https://developer.mozilla.org/en-US/docs/Web/CSS/text-shadow) documentation.
+
+blur-radius is not supported.
+
+---
+
 ### margin
 
 Read [margin](https://developer.mozilla.org/en-US/docs/Web/CSS/margin) documentation.
@@ -2227,6 +2265,12 @@ scale-origin-point: 100% 0%;
 ### transition
 
 Read [transition](https://developer.mozilla.org/en-US/docs/Web/CSS/transition) documentation.
+
+### text-shadow
+
+Read [text-shadow](https://developer.mozilla.org/en-US/docs/Web/CSS/text-shadow) documentation.
+
+blur-radius is not supported.
 
 ---
 

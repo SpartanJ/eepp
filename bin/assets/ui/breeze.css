@@ -389,7 +389,6 @@ Tooltip {
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
-	font-style: shadow;
 }
 
 Slider {

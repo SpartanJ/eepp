@@ -556,6 +556,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const Float& getPluginsTopSpace() const;
 
+	UICodeEditor* setFontShadowOffset( const Vector2f& offset );
+
+	const Vector2f& getFontShadowOffset() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position;

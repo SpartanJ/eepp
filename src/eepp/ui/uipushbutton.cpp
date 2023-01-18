@@ -454,7 +454,8 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::Tint:
 			return mIcon->getColor().toHexString();
 		case PropertyId::Color:
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
 		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:
@@ -480,7 +481,8 @@ std::vector<PropertyId> UIPushButton::getPropertiesImplemented() const {
 				   PropertyId::TextAsFallback,
 				   PropertyId::Tint,
 				   PropertyId::Color,
-				   PropertyId::ShadowColor,
+				   PropertyId::TextShadowColor,
+				   PropertyId::TextShadowOffset,
 				   PropertyId::SelectionColor,
 				   PropertyId::SelectionBackColor,
 				   PropertyId::FontFamily,
@@ -545,7 +547,8 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			mIcon->setColor( attribute.asColor() );
 			break;
 		case PropertyId::Color:
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
 		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:

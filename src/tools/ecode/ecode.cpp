@@ -6,8 +6,10 @@
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
+#include <filesystem>
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 #ifdef ECODE_USE_BACKWARD
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -374,7 +376,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
 }
 
-void App::loadConfig( const LogLevel& logLevel ) {
+void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize ) {
 	mConfigPath = Sys::getConfigPath( "ecode" );
 	if ( !FileSystem::fileExists( mConfigPath ) )
 		FileSystem::makeDir( mConfigPath );
@@ -400,7 +402,7 @@ void App::loadConfig( const LogLevel& logLevel ) {
 	initPluginManager();
 
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
-				  mResPath, mDisplayDPI, mPluginManager.get() );
+				  mResPath, mPluginManager.get(), displaySize.asInt() );
 }
 
 void App::saveConfig() {
@@ -3105,11 +3107,15 @@ UIMessageBox* App::fileAlreadyExistsMsgBox() {
 	return errorMsgBox( i18n( "file_already_exists", "File already exists!" ) );
 }
 
-std::string getNewFilePath( const FileInfo& file, UIMessageBox* msgBox ) {
-	auto folderName( msgBox->getTextInput()->getText() );
+std::string getNewFilePath( const FileInfo& file, UIMessageBox* msgBox, bool keepDir = true ) {
+	auto fileName( msgBox->getTextInput()->getText().toUtf8() );
 	auto folderPath( file.getDirectoryPath() );
+	if ( file.isDirectory() && !keepDir ) {
+		FileSystem::dirRemoveSlashAtEnd( folderPath );
+		folderPath = FileSystem::fileRemoveFileName( folderPath );
+	}
 	FileSystem::dirAddSlashAtEnd( folderPath );
-	return folderPath + folderName;
+	return folderPath + fileName;
 }
 
 UIMessageBox* newInputMsgBox( const String& title, const String& msg ) {
@@ -3128,10 +3134,16 @@ void App::renameFile( const FileInfo& file ) {
 						i18n( "enter_new_file_name", "Enter new file name:" ) );
 	msgBox->getTextInput()->setText( file.getFileName() );
 	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
-		auto newFilePath( getNewFilePath( file, msgBox ) );
+		auto newFilePath( getNewFilePath( file, msgBox, false ) );
 		if ( !FileSystem::fileExists( newFilePath ) ) {
-			if ( 0 != std::rename( file.getFilepath().c_str(), newFilePath.c_str() ) )
+			try {
+				std::string fpath( file.getFilepath() );
+				if ( file.isDirectory() )
+					FileSystem::dirRemoveSlashAtEnd( fpath );
+				fs::rename( fpath, newFilePath );
+			} catch ( const fs::filesystem_error& err ) {
 				errorMsgBox( i18n( "error_renaming_file", "Error renaming file." ) );
+			}
 			msgBox->closeWindow();
 		} else {
 			fileAlreadyExistsMsgBox();
@@ -3216,8 +3228,20 @@ void App::newFile( const FileInfo& file ) {
 	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
 		auto newFilePath( getNewFilePath( file, msgBox ) );
 		if ( !FileSystem::fileExists( newFilePath ) ) {
-			if ( !FileSystem::fileWrite( newFilePath, nullptr, 0 ) )
+			if ( !FileSystem::fileWrite( newFilePath, nullptr, 0 ) ) {
 				errorMsgBox( i18n( "couldnt_create_file", "Couldn't create file." ) );
+			} else if ( mProjectTreeView ) {
+				// We wait 100 ms to get the notification from the file system
+				mUISceneNode->runOnMainThread(
+					[&, newFilePath] {
+						if ( !mFileSystemModel || !mProjectTreeView )
+							return;
+						std::string nfp( newFilePath );
+						FileSystem::filePathRemoveBasePath( mFileSystemModel->getRootPath(), nfp );
+						mProjectTreeView->selectRowWithPath( nfp );
+					},
+					Milliseconds( 100 ) );
+			}
 			msgBox->closeWindow();
 		} else {
 			fileAlreadyExistsMsgBox();
@@ -3232,8 +3256,20 @@ void App::newFolder( const FileInfo& file ) {
 	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
 		auto newFolderPath( getNewFilePath( file, msgBox ) );
 		if ( !FileSystem::fileExists( newFolderPath ) ) {
-			if ( !FileSystem::makeDir( newFolderPath ) )
+			if ( !FileSystem::makeDir( newFolderPath ) ) {
 				errorMsgBox( i18n( "couldnt_create_directory", "Couldn't create directory." ) );
+			} else if ( mProjectTreeView ) {
+				// We wait 100 ms to get the notification from the file system
+				mUISceneNode->runOnMainThread(
+					[&, newFolderPath] {
+						if ( !mFileSystemModel || !mProjectTreeView )
+							return;
+						std::string nfp( newFolderPath );
+						FileSystem::filePathRemoveBasePath( mFileSystemModel->getRootPath(), nfp );
+						mProjectTreeView->selectRowWithPath( nfp );
+					},
+					Milliseconds( 100 ) );
+			}
 			msgBox->closeWindow();
 		} else {
 			fileAlreadyExistsMsgBox();
@@ -3319,12 +3355,6 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 		} else if ( "open_file" == id ) {
 			loadFileFromPath( file.getFilepath() );
 		} else if ( "remove" == id ) {
-			if ( file.isDirectory() && !FileSystem::filesGetInPath( file.getFilepath() ).empty() ) {
-				errorMsgBox(
-					i18n( "cannot_remove_non_empty_dir", "Cannot remove non-empty directory." ) );
-				return;
-			}
-
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::OK_CANCEL,
 								   String::format( i18n( "confirm_remove_file",
@@ -3333,12 +3363,24 @@ void App::createProjectTreeMenu( const FileInfo& file ) {
 													   .c_str(),
 												   file.getFileName().c_str() ) );
 			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
-				if ( !FileSystem::fileRemove( file.getFilepath() ) ) {
+				auto errFn = [&, file] {
 					errorMsgBox( String::format(
 						std::string( i18n( "couldnt_remove", "Couldn't remove" ).toUtf8() + "%s." )
 							.c_str(),
 						file.isDirectory() ? i18n( "directory", "directory" ).toUtf8().c_str()
 										   : i18n( "file", "file" ).toUtf8().c_str() ) );
+				};
+
+				if ( file.isDirectory() ) {
+					try {
+						std::string fpath( file.getFilepath() );
+						FileSystem::dirRemoveSlashAtEnd( fpath );
+						fs::remove_all( fpath );
+					} catch ( const fs::filesystem_error& err ) {
+						errFn();
+					}
+				} else if ( !FileSystem::fileRemove( file.getFilepath() ) ) {
+					errFn();
 				}
 				msgBox->closeWindow();
 			} );
@@ -3575,7 +3617,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
-	loadConfig( logLevel );
+	loadConfig( logLevel, currentDisplay->getSize() );
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
 															  displayManager->getDisplayCount()
@@ -3622,6 +3664,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( mConfig.windowState.position != Vector2i( -1, -1 ) &&
 			 mConfig.windowState.displayIndex < displayManager->getDisplayCount() ) {
 			mWindow->setPosition( mConfig.windowState.position.x, mConfig.windowState.position.y );
+		}
+
+		if ( mWindow->isWindowed() && mWindow->getSize() >= currentDisplay->getSize().asInt() ) {
+			mWindow->setPosition( mWindow->getBorderSize().getWidth(),
+								  mWindow->getBorderSize().getHeight() );
 		}
 
 		loadKeybindings();

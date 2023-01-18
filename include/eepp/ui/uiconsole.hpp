@@ -62,6 +62,10 @@ class EE_API UIConsole : public UIWidget,
 
 	const Color& getFontShadowColor() const;
 
+	UIConsole* setFontShadowOffset( const Vector2f& offset );
+
+	const Vector2f& getFontShadowOffset() const;
+
 	UIConsole* setFontStyle( const Uint32& fontStyle );
 
 	UIConsole* setFontOutlineThickness( const Float& outlineThickness );

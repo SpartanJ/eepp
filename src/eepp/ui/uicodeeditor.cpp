@@ -1826,11 +1826,30 @@ bool UICodeEditor::isUnlockedCommand( const std::string& command ) {
 UICodeEditor* UICodeEditor::setFontShadowColor( const Color& color ) {
 	if ( mFontStyleConfig.ShadowColor != color ) {
 		mFontStyleConfig.ShadowColor = color;
+		mFontStyleConfig.Style |= Text::Shadow;
 		invalidateDraw();
 		onFontStyleChanged();
 	}
 
 	return this;
+}
+
+const Color& UICodeEditor::getFontShadowColor() const {
+	return mFontStyleConfig.getFontShadowColor();
+}
+
+UICodeEditor* UICodeEditor::setFontShadowOffset( const Vector2f& offset ) {
+	if ( mFontStyleConfig.ShadowOffset != offset ) {
+		mFontStyleConfig.ShadowOffset = offset;
+		invalidateDraw();
+		onFontStyleChanged();
+	}
+
+	return this;
+}
+
+const Vector2f& UICodeEditor::getFontShadowOffset() const {
+	return mFontStyleConfig.getFontShadowOffset();
 }
 
 UICodeEditor* UICodeEditor::setFontStyle( const Uint32& fontStyle ) {
@@ -1841,10 +1860,6 @@ UICodeEditor* UICodeEditor::setFontStyle( const Uint32& fontStyle ) {
 	}
 
 	return this;
-}
-
-const Color& UICodeEditor::getFontShadowColor() const {
-	return mFontStyleConfig.getFontShadowColor();
 }
 
 const Uint32& UICodeEditor::getFontStyle() const {
@@ -1902,8 +1917,11 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
 			break;
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
 			setFontShadowColor( attribute.asColor() );
+			break;
+		case PropertyId::TextShadowOffset:
+			setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::SelectionColor:
 			setFontSelectedColor( attribute.asColor() );
@@ -1954,8 +1972,11 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 			return isLocked() ? "true" : "false";
 		case PropertyId::Color:
 			return getFontColor().toHexString();
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
 			return getFontShadowColor().toHexString();
+		case PropertyId::TextShadowOffset:
+			return String::fromFloat( getFontShadowOffset().x ) + " " +
+				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::SelectionColor:
 			return getFontSelectedColor().toHexString();
 		case PropertyId::SelectionBackColor:
@@ -1981,18 +2002,12 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 
 std::vector<PropertyId> UICodeEditor::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::Locked,
-				   PropertyId::Color,
-				   PropertyId::ShadowColor,
-				   PropertyId::SelectionColor,
-				   PropertyId::SelectionBackColor,
-				   PropertyId::FontFamily,
-				   PropertyId::FontSize,
-				   PropertyId::FontStyle,
-				   PropertyId::TextStrokeWidth,
-				   PropertyId::TextStrokeColor,
-				   PropertyId::TextSelection,
-				   PropertyId::LineSpacing };
+	auto local = {
+		PropertyId::Locked,			 PropertyId::Color,			  PropertyId::TextShadowColor,
+		PropertyId::TextShadowOffset,	 PropertyId::SelectionColor,  PropertyId::SelectionBackColor,
+		PropertyId::FontFamily,		 PropertyId::FontSize,		  PropertyId::FontStyle,
+		PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor, PropertyId::TextSelection,
+		PropertyId::LineSpacing };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }

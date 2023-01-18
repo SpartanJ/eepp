@@ -64,6 +64,9 @@ class EE_API FileSystem {
 	/** Removes the process path to a file path */
 	static void filePathRemoveProcessPath( std::string& path );
 
+	/** Removes a base path from a file path */
+	static void filePathRemoveBasePath( const std::string& basePath, std::string& path );
+
 	/** Write a file in binary mode and close it. */
 	static bool fileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize );
 

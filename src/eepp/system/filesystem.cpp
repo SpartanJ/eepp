@@ -159,20 +159,18 @@ std::string FileSystem::fileRemoveFileName( const std::string& filepath ) {
 	return filepath.substr( 0, filepath.find_last_of( "/\\" ) + 1 );
 }
 
-void FileSystem::filePathRemoveProcessPath( std::string& path ) {
-	std::string ProcessPath = Sys::getProcessPath();
-
-	if ( String::startsWith( path, ProcessPath ) && ProcessPath.length() < path.size() ) {
-		path = path.substr( ProcessPath.length() );
+void FileSystem::filePathRemoveBasePath( const std::string& basePath, std::string& path ) {
+	if ( String::startsWith( path, basePath ) && basePath.length() < path.size() ) {
+		path = path.substr( basePath.length() );
 	}
 }
 
-void FileSystem::filePathRemoveCurrentWorkingDirectory( std::string& path ) {
-	std::string dirPath = getCurrentWorkingDirectory();
+void FileSystem::filePathRemoveProcessPath( std::string& path ) {
+	return filePathRemoveBasePath( Sys::getProcessPath(), path );
+}
 
-	if ( String::startsWith( path, dirPath ) && dirPath.length() < path.size() ) {
-		path = path.substr( dirPath.length() );
-	}
+void FileSystem::filePathRemoveCurrentWorkingDirectory( std::string& path ) {
+	return filePathRemoveBasePath( getCurrentWorkingDirectory(), path );
 }
 
 bool FileSystem::fileWrite( const std::string& filepath, const Uint8* data,
@@ -400,8 +398,7 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
 			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 ) {
 #else
-		if ( strcmp( dirp->d_name, ".." ) != 0 &&
-			 strcmp( dirp->d_name, "." ) != 0 ) {
+		if ( strcmp( dirp->d_name, ".." ) != 0 && strcmp( dirp->d_name, "." ) != 0 ) {
 #endif
 			char* p = &dirp->d_name[0];
 			String tmp;
@@ -514,8 +511,7 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
 			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 )
 #else
-		if ( strcmp( dirp->d_name, ".." ) != 0 &&
-			 strcmp( dirp->d_name, "." ) != 0 )
+		if ( strcmp( dirp->d_name, ".." ) != 0 && strcmp( dirp->d_name, "." ) != 0 )
 #endif
 			files.push_back( std::string( dirp->d_name ) );
 	}

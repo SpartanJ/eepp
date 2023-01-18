@@ -142,8 +142,11 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
 			break;
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
 			setFontShadowColor( attribute.asColor() );
+			break;
+		case PropertyId::TextShadowOffset:
+			setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::SelectionColor:
 			mFontStyleConfig.FontSelectedColor = attribute.asColor();
@@ -187,8 +190,11 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Color:
 			return getFontColor().toHexString();
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
 			return getFontShadowColor().toHexString();
+		case PropertyId::TextShadowOffset:
+			return String::fromFloat( getFontShadowOffset().x ) + " " +
+				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::SelectionColor:
 			return getFontSelectedColor().toHexString();
 		case PropertyId::SelectionBackColor:
@@ -210,11 +216,11 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 
 std::vector<PropertyId> UIConsole::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::Color,		   PropertyId::ShadowColor,
-				   PropertyId::SelectionColor, PropertyId::SelectionBackColor,
-				   PropertyId::FontFamily,	   PropertyId::FontSize,
-				   PropertyId::FontStyle,	   PropertyId::TextStrokeWidth,
-				   PropertyId::TextStrokeColor };
+	auto local = {
+		PropertyId::Color,			PropertyId::TextShadowColor,	PropertyId::TextShadowOffset,
+		PropertyId::SelectionColor, PropertyId::SelectionBackColor, PropertyId::FontFamily,
+		PropertyId::FontSize,		PropertyId::FontStyle,			PropertyId::TextStrokeWidth,
+		PropertyId::TextStrokeColor };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -276,6 +282,7 @@ const Color& UIConsole::getFontSelectionBackColor() const {
 UIConsole* UIConsole::setFontShadowColor( const Color& color ) {
 	if ( color != mFontStyleConfig.getFontShadowColor() ) {
 		mFontStyleConfig.ShadowColor = color;
+		mFontStyleConfig.Style |= Text::Shadow;
 		onFontStyleChanged();
 	}
 	return this;
@@ -283,6 +290,18 @@ UIConsole* UIConsole::setFontShadowColor( const Color& color ) {
 
 const Color& UIConsole::getFontShadowColor() const {
 	return mFontStyleConfig.ShadowColor;
+}
+
+UIConsole* UIConsole::setFontShadowOffset( const Vector2f& offset ) {
+	if ( offset != mFontStyleConfig.getFontShadowOffset() ) {
+		mFontStyleConfig.ShadowOffset = offset;
+		onFontStyleChanged();
+	}
+	return this;
+}
+
+const Vector2f& UIConsole::getFontShadowOffset() const {
+	return mFontStyleConfig.ShadowOffset;
 }
 
 UIConsole* UIConsole::setFontStyle( const Uint32& fontStyle ) {

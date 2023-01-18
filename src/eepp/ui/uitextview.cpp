@@ -259,8 +259,24 @@ const Color& UITextView::getFontShadowColor() const {
 UITextView* UITextView::setFontShadowColor( const Color& color ) {
 	if ( mFontStyleConfig.ShadowColor != color ) {
 		mFontStyleConfig.ShadowColor = color;
+		mFontStyleConfig.Style |= Text::Shadow;
 		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
 		mTextCache->setShadowColor( newColor );
+		onFontStyleChanged();
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+const Vector2f& UITextView::getFontShadowOffset() const {
+	return mFontStyleConfig.ShadowOffset;
+}
+
+UITextView* UITextView::setFontShadowOffset( const Vector2f& offset ) {
+	if ( mFontStyleConfig.ShadowOffset != offset ) {
+		mFontStyleConfig.ShadowOffset = offset;
+		mTextCache->setShadowOffset( offset );
 		onFontStyleChanged();
 		invalidateDraw();
 	}
@@ -659,8 +675,11 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
 			break;
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
 			setFontShadowColor( attribute.asColor() );
+			break;
+		case PropertyId::TextShadowOffset:
+			setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::SelectionColor:
 			mFontStyleConfig.FontSelectedColor = attribute.asColor();
@@ -736,8 +755,11 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 			return TextTransform::toString( getTextTransform() );
 		case PropertyId::Color:
 			return getFontColor().toHexString();
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
 			return getFontShadowColor().toHexString();
+		case PropertyId::TextShadowOffset:
+			return String::fromFloat( getFontShadowOffset().x ) + " " +
+				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::SelectionColor:
 			return mFontStyleConfig.FontSelectedColor.toHexString();
 		case PropertyId::SelectionBackColor:
@@ -768,12 +790,21 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 
 std::vector<PropertyId> UITextView::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = {
-		PropertyId::Text,		   PropertyId::TextTransform,	PropertyId::Color,
-		PropertyId::ShadowColor,   PropertyId::SelectionColor,	PropertyId::SelectionBackColor,
-		PropertyId::FontFamily,	   PropertyId::FontSize,		PropertyId::FontStyle,
-		PropertyId::Wordwrap,	   PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
-		PropertyId::TextSelection, PropertyId::TextAlign };
+	auto local = { PropertyId::Text,
+				   PropertyId::TextTransform,
+				   PropertyId::Color,
+				   PropertyId::TextShadowColor,
+				   PropertyId::TextShadowOffset,
+				   PropertyId::SelectionColor,
+				   PropertyId::SelectionBackColor,
+				   PropertyId::FontFamily,
+				   PropertyId::FontSize,
+				   PropertyId::FontStyle,
+				   PropertyId::Wordwrap,
+				   PropertyId::TextStrokeWidth,
+				   PropertyId::TextStrokeColor,
+				   PropertyId::TextSelection,
+				   PropertyId::TextAlign };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }

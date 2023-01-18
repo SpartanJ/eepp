@@ -26,10 +26,10 @@ class UIFontStyleConfig : public FontStyleConfig {
 	UIFontStyleConfig( const FontStyleConfig& fontStyleConfig ) :
 		FontStyleConfig( fontStyleConfig ) {}
 
-	UIFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) :
-		FontStyleConfig( fontStyleConfig ),
-		FontSelectedColor( fontStyleConfig.FontSelectedColor ),
-		FontSelectionBackColor( fontStyleConfig.FontSelectionBackColor ) {}
+//	UIFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) :
+//		FontStyleConfig( fontStyleConfig ),
+//		FontSelectedColor( fontStyleConfig.FontSelectedColor ),
+//		FontSelectionBackColor( fontStyleConfig.FontSelectionBackColor ) {}
 
 	virtual void updateStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
 		FontStyleConfig::updateFontStyleConfig( fontStyleConfig );

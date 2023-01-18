@@ -43,7 +43,7 @@ static std::vector<std::string> urlDecode( const std::vector<std::string>& vec )
 void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 					  std::string& initColorScheme, std::vector<std::string>& recentFiles,
 					  std::vector<std::string>& recentFolders, const std::string& resPath,
-					  const Float& displayDPI, PluginManager* pluginManager ) {
+					  PluginManager* pluginManager, const Sizei& displaySize ) {
 	keybindingsPath = confPath + "keybindings.cfg";
 	ini.loadFromFile( confPath + "config.cfg" );
 	iniState.loadFromFile( confPath + "state.cfg" );
@@ -53,10 +53,22 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	recentFolders = urlDecode( String::split( recentFol, ';' ) );
 	initColorScheme = editor.colorScheme = ini.getValue( "editor", "colorscheme", "eepp" );
 	editor.fontSize = ini.getValue( "editor", "font_size", "11dp" );
-	windowState.size.setWidth(
-		iniState.getValueI( "window", "width", displayDPI > 105 ? 1920 : 1280 ) );
-	windowState.size.setHeight(
-		iniState.getValueI( "window", "height", displayDPI > 105 ? 1080 : 720 ) );
+	const Sizei desiredRes( 1280, 720 );
+	Sizei defWinSize( desiredRes.getWidth(), desiredRes.getHeight() );
+	if ( displaySize.getWidth() > desiredRes.getWidth() &&
+		 displaySize.getWidth() - desiredRes.getWidth() > 60 ) {
+		defWinSize.setWidth( desiredRes.getWidth() );
+	} else {
+		defWinSize.setWidth( displaySize.getWidth() - 60 );
+	}
+	if ( displaySize.getHeight() > desiredRes.getHeight() &&
+		 displaySize.getHeight() - desiredRes.getHeight() > 60 ) {
+		defWinSize.setHeight( desiredRes.getHeight() );
+	} else {
+		defWinSize.setHeight( displaySize.getHeight() - 60 );
+	}
+	windowState.size.setWidth( iniState.getValueI( "window", "width", defWinSize.getWidth() ) );
+	windowState.size.setHeight( iniState.getValueI( "window", "height", defWinSize.getHeight() ) );
 	windowState.maximized = iniState.getValueB( "window", "maximized", false );
 	windowState.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
 	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ee.png" );

@@ -528,6 +528,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 											position.asFloat() ) );
 									editor->getTooltip()->setDontAutoHideOnMouseMove( true );
 									editor->getTooltip()->setUsingCustomStyling( true );
+									editor->getTooltip()->setFontStyle( Text::Regular );
 
 									const auto& syntaxDef =
 										resp.contents[0].kind == LSPMarkupKind::MarkDown

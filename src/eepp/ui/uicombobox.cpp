@@ -140,7 +140,8 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Color:
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
 		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:
@@ -159,6 +160,7 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Hint:
 		case PropertyId::HintColor:
 		case PropertyId::HintShadowColor:
+		case PropertyId::HintShadowOffset:
 		case PropertyId::HintFontSize:
 		case PropertyId::HintFontFamily:
 		case PropertyId::HintFontStyle:
@@ -187,7 +189,8 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Color:
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
 		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:
@@ -206,6 +209,7 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::Hint:
 		case PropertyId::HintColor:
 		case PropertyId::HintShadowColor:
+		case PropertyId::HintShadowOffset:
 		case PropertyId::HintFontSize:
 		case PropertyId::HintFontFamily:
 		case PropertyId::HintFontStyle:
@@ -229,7 +233,8 @@ std::vector<PropertyId> UIComboBox::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
 	auto local = {
 		PropertyId::Color,
-		PropertyId::ShadowColor,
+		PropertyId::TextShadowColor,
+		PropertyId::TextShadowOffset,
 		PropertyId::SelectionColor,
 		PropertyId::SelectionBackColor,
 		PropertyId::FontFamily,
@@ -248,6 +253,7 @@ std::vector<PropertyId> UIComboBox::getPropertiesImplemented() const {
 		PropertyId::Hint,
 		PropertyId::HintColor,
 		PropertyId::HintShadowColor,
+		PropertyId::HintShadowOffset,
 		PropertyId::HintFontSize,
 		PropertyId::HintFontFamily,
 		PropertyId::HintFontStyle,

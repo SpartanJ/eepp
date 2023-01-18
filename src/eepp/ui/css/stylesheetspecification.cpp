@@ -195,7 +195,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::Color )
 		.addAlias( "text-color" )
 		.addAlias( "textcolor" );
-	registerProperty( "shadow-color", "" ).setType( PropertyType::Color );
+	registerProperty( "text-shadow-color", "" ).setType( PropertyType::Color );
+	registerProperty( "text-shadow-offset", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "selection-color", "" ).setType( PropertyType::Color );
 	registerProperty( "selection-back-color", "" ).setType( PropertyType::Color );
 	registerProperty( "font-family", "" ).addAlias( "font-name" ).setType( PropertyType::String );
@@ -305,6 +306,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "hint", "" ).setType( PropertyType::String );
 	registerProperty( "hint-color", "" ).setType( PropertyType::Color );
 	registerProperty( "hint-shadow-color", "" ).setType( PropertyType::Color );
+	registerProperty( "hint-shadow-offset", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "hint-font-size", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "hint-font-style", "" ).setType( PropertyType::String );
 	registerProperty( "hint-stroke-width", "" )
@@ -426,6 +428,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerShorthand( "min-size", { "min-width", "min-height" }, "vector2" );
 	registerShorthand( "max-size", { "max-width", "max-height" }, "vector2" );
 	registerShorthand( "border", { "border-width", "border-style", "border-color" }, "border" );
+	registerShorthand( "text-shadow", { "text-shadow-color", "text-shadow-offset" },
+					   "color-vector2" );
+	registerShorthand( "hint-shadow", { "hint-shadow-color", "hint-shadow-offset" },
+					   "color-vector2" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
@@ -900,6 +906,43 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 					}
 				}
 			}
+		}
+
+		return properties;
+	};
+
+	mShorthandParsers["color-vector2"] =
+		[&]( const ShorthandDefinition* shorthand,
+			 std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() || "none" == value )
+			return {};
+
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		std::vector<std::string> tokens = String::split( value, " ", "", "(" );
+		std::vector<std::string> vec;
+
+		for ( auto& tok : tokens ) {
+			String::trimInPlace( tok );
+			String::toLowerInPlace( tok );
+
+			if ( Color::isColorString( tok ) ) {
+				int pos = getIndexEndingWith( propNames, "-color" );
+				if ( pos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[pos], tok ) );
+			} else {
+				int pos = getIndexEndingWith( propNames, "-offset" );
+				if ( pos != -1 )
+					vec.emplace_back( tok );
+			}
+		}
+
+		if ( !vec.empty() ) {
+			int pos = getIndexEndingWith( propNames, "-offset" );
+			if ( pos != -1 )
+				properties.emplace_back(
+					StyleSheetProperty( propNames[pos], String::join( vec, ' ' ) ) );
 		}
 
 		return properties;

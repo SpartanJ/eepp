@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/texttransform.hpp>
 
 namespace EE { namespace Graphics {
@@ -160,6 +161,10 @@ class EE_API Text {
 	 * disable this to improve performance in very specific scenarios. */
 	void setDisableCacheWidth( bool newDisableCacheWidth );
 
+	const Vector2f& getShadowOffset() const;
+
+	void setShadowOffset( const Vector2f& shadowOffset );
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;
@@ -186,7 +191,8 @@ class EE_API Text {
 	Float mCachedWidth;
 	int mNumLines;
 	int mLargestLineCharCount;
-	Color mFontShadowColor;
+	Color mShadowColor;
+	Vector2f mShadowOffset{ PixelDensity::dpToPx( 1 ), PixelDensity::dpToPx( 1 ) };
 	Uint32 mAlign;
 	Uint32 mFontHeight;
 	Uint32 mTabWidth;

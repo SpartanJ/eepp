@@ -1,7 +1,7 @@
 /* Global rules */
 * {
 	color: #E6E6E6FF;
-	shadow-color: #32323296;
+	text-shadow-color: #32323296;
 	selection-color: #000;
 	selection-back-color: #969696FF;
 }

@@ -70,6 +70,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	UITextInput* setHintShadowColor( const Color& shadowColor );
 
+	const Vector2f& getHintShadowOffset() const;
+
+	UITextInput* setHintShadowOffset( const Vector2f& shadowOffset );
+
 	Font* getHintFont() const;
 
 	UITextInput* setHintFont( Font* font );

@@ -59,6 +59,10 @@ class EE_API UITextView : public UIWidget {
 
 	UITextView* setFontShadowColor( const Color& color );
 
+	const Vector2f& getFontShadowOffset() const;
+
+	UITextView* setFontShadowOffset( const Vector2f& offset );
+
 	const Color& getSelectionBackColor() const;
 
 	UITextView* setSelectionBackColor( const Color& color );

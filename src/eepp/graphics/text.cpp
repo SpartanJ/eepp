@@ -97,7 +97,7 @@ Text::Text() :
 	mCachedWidth( 0 ),
 	mNumLines( 0 ),
 	mLargestLineCharCount( 0 ),
-	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
+	mShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign( 0 ),
 	mFontHeight( 0 ),
 	mTabWidth( 4 ) {}
@@ -117,7 +117,7 @@ Text::Text( const String& string, Font* font, unsigned int characterSize ) :
 	mCachedWidth( 0 ),
 	mNumLines( 0 ),
 	mLargestLineCharCount( 0 ),
-	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
+	mShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign( 0 ),
 	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
 	mTabWidth( 4 ) {
@@ -141,7 +141,7 @@ Text::Text( Font* font, unsigned int characterSize ) :
 	mCachedWidth( 0 ),
 	mNumLines( 0 ),
 	mLargestLineCharCount( 0 ),
-	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
+	mShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign( 0 ),
 	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
 	mTabWidth( 4 ) {
@@ -157,6 +157,8 @@ void Text::create( Font* font, const String& text, Color FontColor, Color FontSh
 	mString = text;
 	mFontSize = characterSize;
 	mRealFontSize = PixelDensity::dpToPxI( mFontSize );
+	Float dp = PixelDensity::dpToPx( 1 );
+	mShadowOffset = { dp, dp };
 	setFillColor( FontColor );
 	setShadowColor( FontShadowColor );
 	mGeometryNeedUpdate = true;
@@ -580,6 +582,14 @@ void Text::setDisableCacheWidth( bool newDisableCacheWidth ) {
 	mDisableCacheWidth = newDisableCacheWidth;
 }
 
+const Vector2f& Text::getShadowOffset() const {
+	return mShadowOffset;
+}
+
+void Text::setShadowOffset( const Vector2f& shadowOffset ) {
+	mShadowOffset = shadowOffset;
+}
+
 Rectf Text::getLocalBounds() {
 	ensureGeometryUpdate();
 
@@ -713,9 +723,8 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 			shadowColor.a =
 				(Uint8)( (Float)shadowColor.a * ( (Float)getFillColor().a / (Float)255 ) );
 		colors.assign( mColors.size(), shadowColor );
-		Float pd = PixelDensity::dpToPx( 1 );
-		draw( X + pd, Y + pd, scale, rotation, effect, rotationCenter, scaleCenter, colors, {},
-			  Color::Transparent );
+		draw( X + mShadowOffset.x, Y + mShadowOffset.y, scale, rotation, effect, rotationCenter,
+			  scaleCenter, colors, {}, Color::Transparent );
 	}
 
 	draw( X, Y, scale, rotation, effect, rotationCenter, scaleCenter, mColors, mOutlineColors,
@@ -962,11 +971,12 @@ void Text::ensureColorUpdate() {
 }
 
 const Color& Text::getShadowColor() const {
-	return mFontShadowColor;
+	return mShadowColor;
 }
 
 void Text::setShadowColor( const Color& color ) {
-	mFontShadowColor = color;
+	mShadowColor = color;
+	mStyle |= Text::Shadow;
 }
 
 const int& Text::getNumLines() {

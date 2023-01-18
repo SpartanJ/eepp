@@ -296,6 +296,34 @@ std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromDouble( getValue() );
 		case PropertyId::ClickStep:
 			return String::fromDouble( getClickStep() );
+		case PropertyId::Text:
+		case PropertyId::AllowEditing:
+		case PropertyId::MaxLength:
+		case PropertyId::Numeric:
+		case PropertyId::AllowFloat:
+		case PropertyId::Hint:
+		case PropertyId::HintColor:
+		case PropertyId::HintShadowColor:
+		case PropertyId::HintShadowOffset:
+		case PropertyId::HintFontSize:
+		case PropertyId::HintFontFamily:
+		case PropertyId::HintFontStyle:
+		case PropertyId::HintStrokeWidth:
+		case PropertyId::HintStrokeColor:
+		case PropertyId::Color:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
+		case PropertyId::SelectionColor:
+		case PropertyId::SelectionBackColor:
+		case PropertyId::FontFamily:
+		case PropertyId::FontSize:
+		case PropertyId::FontStyle:
+		case PropertyId::Wordwrap:
+		case PropertyId::TextStrokeWidth:
+		case PropertyId::TextStrokeColor:
+		case PropertyId::TextSelection:
+		case PropertyId::TextAlign:
+			return mInput->getPropertyString( propertyDef, propertyIndex );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -305,7 +333,35 @@ std::vector<PropertyId> UISpinBox::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
 	auto local = { PropertyId::MinValue, PropertyId::MaxValue, PropertyId::Value,
 				   PropertyId::ClickStep };
+	auto input = { PropertyId::Text,
+				   PropertyId::AllowEditing,
+				   PropertyId::MaxLength,
+				   PropertyId::Numeric,
+				   PropertyId::AllowFloat,
+				   PropertyId::Hint,
+				   PropertyId::HintColor,
+				   PropertyId::HintShadowColor,
+				   PropertyId::HintShadowOffset,
+				   PropertyId::HintFontSize,
+				   PropertyId::HintFontFamily,
+				   PropertyId::HintFontStyle,
+				   PropertyId::HintStrokeWidth,
+				   PropertyId::HintStrokeColor,
+				   PropertyId::Color,
+				   PropertyId::TextShadowColor,
+				   PropertyId::TextShadowOffset,
+				   PropertyId::SelectionColor,
+				   PropertyId::SelectionBackColor,
+				   PropertyId::FontFamily,
+				   PropertyId::FontSize,
+				   PropertyId::FontStyle,
+				   PropertyId::Wordwrap,
+				   PropertyId::TextStrokeWidth,
+				   PropertyId::TextStrokeColor,
+				   PropertyId::TextSelection,
+				   PropertyId::TextAlign };
 	props.insert( props.end(), local.begin(), local.end() );
+	props.insert( props.end(), input.begin(), input.end() );
 	return props;
 }
 
@@ -336,13 +392,15 @@ bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Hint:
 		case PropertyId::HintColor:
 		case PropertyId::HintShadowColor:
+		case PropertyId::HintShadowOffset:
 		case PropertyId::HintFontSize:
 		case PropertyId::HintFontFamily:
 		case PropertyId::HintFontStyle:
 		case PropertyId::HintStrokeWidth:
 		case PropertyId::HintStrokeColor:
 		case PropertyId::Color:
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
 		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:

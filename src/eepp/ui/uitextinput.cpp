@@ -452,6 +452,9 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 			return getHintColor().toHexString();
 		case PropertyId::HintShadowColor:
 			return getHintShadowColor().toHexString();
+		case PropertyId::HintShadowOffset:
+			return String::fromFloat( getHintShadowOffset().x ) + " " +
+				   String::fromFloat( getHintShadowOffset().y );
 		case PropertyId::HintFontSize:
 			return String::format( "%ddp", getHintFontSize() );
 		case PropertyId::HintFontFamily:
@@ -469,12 +472,20 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 
 std::vector<PropertyId> UITextInput::getPropertiesImplemented() const {
 	auto props = UITextView::getPropertiesImplemented();
-	auto local = {
-		PropertyId::Text,			PropertyId::AllowEditing,	 PropertyId::MaxLength,
-		PropertyId::Numeric,		PropertyId::AllowFloat,		 PropertyId::Hint,
-		PropertyId::HintColor,		PropertyId::HintShadowColor, PropertyId::HintFontSize,
-		PropertyId::HintFontFamily, PropertyId::HintFontStyle,	 PropertyId::HintStrokeWidth,
-		PropertyId::HintStrokeColor };
+	auto local = { PropertyId::Text,
+				   PropertyId::AllowEditing,
+				   PropertyId::MaxLength,
+				   PropertyId::Numeric,
+				   PropertyId::AllowFloat,
+				   PropertyId::Hint,
+				   PropertyId::HintColor,
+				   PropertyId::HintShadowColor,
+				   PropertyId::HintShadowOffset,
+				   PropertyId::HintFontSize,
+				   PropertyId::HintFontFamily,
+				   PropertyId::HintFontStyle,
+				   PropertyId::HintStrokeWidth,
+				   PropertyId::HintStrokeColor };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -507,6 +518,9 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::HintShadowColor:
 			setHintShadowColor( attribute.asColor() );
+			break;
+		case PropertyId::HintShadowOffset:
+			setHintShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::HintFontSize:
 			setHintFontSize( attribute.asDpDimensionI() );
@@ -583,6 +597,20 @@ UITextInput* UITextInput::setHintShadowColor( const Color& shadowColor ) {
 	if ( shadowColor != mHintStyleConfig.getFontShadowColor() ) {
 		mHintCache->setShadowColor( shadowColor );
 		mHintStyleConfig.ShadowColor = shadowColor;
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+const Vector2f& UITextInput::getHintShadowOffset() const {
+	return mHintStyleConfig.getFontShadowOffset();
+}
+
+UITextInput* UITextInput::setHintShadowOffset( const Vector2f& shadowOffset ) {
+	if ( shadowOffset != mHintStyleConfig.getFontShadowOffset() ) {
+		mHintCache->setShadowOffset( shadowOffset );
+		mHintStyleConfig.ShadowOffset = shadowOffset;
 		invalidateDraw();
 	}
 

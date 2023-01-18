@@ -53,7 +53,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void runCommand( const std::string& command );
 
-	void loadConfig( const LogLevel& logLevel );
+	void loadConfig( const LogLevel& logLevel, const Sizeu& displaySize );
 
 	void saveConfig();
 

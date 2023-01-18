@@ -126,7 +126,7 @@ struct AppConfig {
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,
 			   std::vector<std::string>& recentFolders, const std::string& resPath,
-			   const Float& displayDPI, PluginManager* pluginManager );
+			   PluginManager* pluginManager, const Sizei& displaySize );
 
 	void save( const std::vector<std::string>& recentFiles,
 			   const std::vector<std::string>& recentFolders, const std::string& panelPartition,
