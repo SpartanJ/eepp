@@ -136,6 +136,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
+	workspace.checkForUpdatesAtStartup =
+		ini.getValueB( "workspace", "check_for_updates_at_startup", false );
 
 	std::map<std::string, bool> pluginsEnabled;
 	const auto& creators = pluginManager->getDefinitions();
@@ -241,6 +243,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueI( "window", "frameratelimit", context.FrameRateLimit );
 
 	ini.setValueB( "workspace", "restore_last_session", workspace.restoreLastSession );
+	ini.setValueB( "workspace", "check_for_updates_at_startup",
+				   workspace.checkForUpdatesAtStartup );
 
 	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
 	for ( const auto& plugin : pluginsEnabled )

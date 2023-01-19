@@ -233,7 +233,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void setCursorBlinkingTime();
 
-	void checkForUpdates();
+	void checkForUpdates( bool fromStartup = false );
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };
@@ -436,7 +436,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onPluginEnabled( UICodeEditorPlugin* plugin );
 
-	void checkForUpdatesResponse( Http::Response response );
+	void checkForUpdatesResponse( Http::Response response, bool fromStartup );
 };
 
 } // namespace ecode

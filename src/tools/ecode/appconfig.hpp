@@ -106,6 +106,7 @@ struct TerminalConfig {
 
 struct WorkspaceConfig {
 	bool restoreLastSession{ false };
+	bool checkForUpdatesAtStartup{ false };
 };
 
 struct AppConfig {

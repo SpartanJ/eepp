@@ -664,8 +664,10 @@ void App::setUIColorScheme( const ColorSchemePreference& colorScheme ) {
 	mUISceneNode->setColorSchemePreference( colorScheme );
 }
 
-void App::checkForUpdatesResponse( Http::Response response ) {
-	auto updatesError = [&]() {
+void App::checkForUpdatesResponse( Http::Response response, bool fromStartup ) {
+	auto updatesError = [&, fromStartup]() {
+		if ( fromStartup )
+			return;
 		UIMessageBox* msg = UIMessageBox::New(
 			UIMessageBox::OK, i18n( "error_checking_version", "Failed checking for updates." ) );
 		msg->setTitle( "Error" );
@@ -677,6 +679,31 @@ void App::checkForUpdatesResponse( Http::Response response ) {
 		updatesError();
 		return;
 	}
+
+	auto addStartUpCheckbox = [this]( UIMessageBox* msg ) {
+		msg->setId( "check_for_updates" );
+		msg->addEventListener( Event::OnWindowReady, [this, msg]( const Event* ) {
+			msg->setVisible( false );
+			UICheckBox* cbox = UICheckBox::New();
+			cbox->addClass( "check_at_startup" );
+			cbox->setParent( msg->getLayoutCont()->getFirstChild() );
+			cbox->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+			cbox->setText( i18n( "check_for_new_updates_at_startup",
+								 "Always check for new updates at startup." ) );
+			cbox->setChecked( mConfig.workspace.checkForUpdatesAtStartup );
+			cbox->toPosition( 1 );
+			cbox->runOnMainThread( [msg]() {
+				msg->setMinWindowSize( msg->getLayoutCont()->getSize() );
+				msg->center();
+				msg->runOnMainThread( [msg]() {
+					msg->show();
+				} );
+			} );
+			cbox->addEventListener( Event::OnValueChange, [this, cbox]( const Event* ) {
+				mConfig.workspace.checkForUpdatesAtStartup = cbox->isChecked();
+			} );
+		} );
+	};
 
 	json j;
 	try {
@@ -692,6 +719,7 @@ void App::checkForUpdatesResponse( Http::Response response ) {
 					name + i18n( "ecode_updates_available",
 								 " is available!\nDo you want to download it now?" )
 							   .unescape() );
+
 				auto url( j.value( "html_url", "https://github.com/SpartanJ/ecode/releases/" ) );
 				msg->addEventListener( Event::MsgBoxConfirmClick, [&, url, msg]( const Event* ) {
 					Engine::instance()->openURI( url );
@@ -699,8 +727,10 @@ void App::checkForUpdatesResponse( Http::Response response ) {
 				} );
 				msg->setTitle( "ecode" );
 				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
-				msg->showWhenReady();
+				addStartUpCheckbox( msg );
 			} else if ( versionNum < ecode::Version::getVersionNum() ) {
+				if ( fromStartup )
+					return;
 				UIMessageBox* msg = UIMessageBox::New(
 					UIMessageBox::OK,
 					i18n( "ecode_unreleased_version",
@@ -709,14 +739,16 @@ void App::checkForUpdatesResponse( Http::Response response ) {
 						ecode::Version::getVersionNumString() );
 				msg->setTitle( "ecode" );
 				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
-				msg->showWhenReady();
+				addStartUpCheckbox( msg );
 			} else {
+				if ( fromStartup )
+					return;
 				UIMessageBox* msg = UIMessageBox::New(
 					UIMessageBox::OK, i18n( "ecode_no_updates_available",
 											"There are currently no updates available." ) );
 				msg->setTitle( "ecode" );
 				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
-				msg->showWhenReady();
+				addStartUpCheckbox( msg );
 			}
 		} else {
 			updatesError();
@@ -726,11 +758,11 @@ void App::checkForUpdatesResponse( Http::Response response ) {
 	}
 }
 
-void App::checkForUpdates() {
+void App::checkForUpdates( bool fromStartup ) {
 	Http::getAsync(
-		[&]( const Http&, Http::Request&, Http::Response& response ) {
+		[&, fromStartup]( const Http&, Http::Request&, Http::Response& response ) {
 			mUISceneNode->runOnMainThread(
-				[&, response]() { checkForUpdatesResponse( response ); } );
+				[&, response]() { checkForUpdatesResponse( response, fromStartup ); } );
 		},
 		"https://api.github.com/repos/SpartanJ/ecode/releases/latest", Seconds( 30 ) );
 }
@@ -752,7 +784,7 @@ UIMenu* App::createHelpMenu() {
 						ecode::Version::getCodename() + "\")" );
 			UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
 			msgBox->setTitle( i18n( "about_ecode", "About ecode..." ) );
-			msgBox->show();
+			msgBox->showWhenReady();
 		} else if ( "check-for-updates" == id ) {
 			checkForUpdates();
 		}
@@ -3860,6 +3892,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			margin-left: 0dp;
 			margin-right: 0dp;
 		}
+		#check_for_updates .check_at_startup {
+			margin: 6dp 0dp 6p 0dp;
+		}
 		</style>
 		<MainLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
@@ -4222,6 +4257,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( file.empty() )
 			downloadFileWeb( "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md" );
 #endif
+
+		if ( mConfig.workspace.checkForUpdatesAtStartup )
+			checkForUpdates( true );
 
 		mWindow->runMainLoop( &appLoop, mBenchmarkMode ? 0 : mConfig.context.FrameRateLimit );
 	}

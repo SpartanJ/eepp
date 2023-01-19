@@ -13,6 +13,8 @@ UIMessageBox* UIMessageBox::New( const Type& type, const String& message,
 
 UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags ) :
 	UIWindow(), mMsgBoxType( type ), mTextInput( NULL ), mCloseShortcut( KEY_UNKNOWN ) {
+	mVisible = false;
+
 	mStyleConfig.WinFlags = windowFlags;
 
 	updateWinFlags();
@@ -177,6 +179,10 @@ void UIMessageBox::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey )
 
 UITextInput* UIMessageBox::getTextInput() const {
 	return mTextInput;
+}
+
+UILayout* UIMessageBox::getLayoutCont() const {
+	return mLayoutCont;
 }
 
 void UIMessageBox::onWindowReady() {

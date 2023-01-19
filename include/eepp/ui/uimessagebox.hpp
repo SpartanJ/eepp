@@ -43,7 +43,9 @@ class EE_API UIMessageBox : public UIWindow {
 
 	UITextInput* getTextInput() const;
 
-  protected:
+	UILayout* getLayoutCont() const;
+
+	protected:
 	Type mMsgBoxType;
 	UITextView* mTextBox;
 	UIPushButton* mButtonOK;

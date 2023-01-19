@@ -648,9 +648,8 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 		} else {
 			Uint32 i = 0;
 
-			while ( NULL != nodeLoop->mNext && i < index ) {
+			while ( NULL != nodeLoop->mNext && ++i < index ) {
 				nodeLoop = nodeLoop->mNext;
-				i++;
 			}
 
 			Node* ChildTmp = nodeLoop->mNext;
