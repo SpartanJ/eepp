@@ -1155,8 +1155,7 @@ void MapEditor::fileMenuClick( const Event* Event ) {
 		UIMessageBox* MsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the current map?\nAll changes will be lost." );
-		MsgBox->addEventListener( Event::MsgBoxConfirmClick,
-								  cb::Make1( this, &MapEditor::onMapClose ) );
+		MsgBox->addEventListener( Event::OnConfirm, cb::Make1( this, &MapEditor::onMapClose ) );
 		MsgBox->setTitle( "Close Map?" );
 		MsgBox->center();
 		MsgBox->show();
@@ -1268,7 +1267,7 @@ void MapEditor::mapMenuClick( const Event* Event ) {
 		UIWindow* tWin = UIWindow::New();
 		tWin->setSizeWithDecoration( 1024, 768 );
 		tWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-						   UI_WIN_DRAGABLE_CONTAINER );
+							  UI_WIN_DRAGABLE_CONTAINER );
 		tWin->setMinWindowSize( 1024, 768 );
 
 		eeNew( Tools::TextureAtlasEditor, ( tWin ) );

@@ -213,7 +213,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		msgBox->getTextInput()->setHint( mApp->i18n( "any_name", "Any name..." ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox, term]( const Event* ) {
+		msgBox->addEventListener( Event::OnConfirm, [&, msgBox, term]( const Event* ) {
 			std::string title( msgBox->getTextInput()->getText().toUtf8() );
 			term->setTitle( title );
 			msgBox->close();

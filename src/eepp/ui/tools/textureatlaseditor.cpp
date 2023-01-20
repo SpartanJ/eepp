@@ -310,7 +310,7 @@ void TextureAtlasEditor::fileMenuClick( const Event* Event ) {
 			UIMessageBox* MsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL,
 													  "Do you really want to close the current "
 													  "texture atlas?\nAll changes will be lost." );
-			MsgBox->addEventListener( Event::MsgBoxConfirmClick,
+			MsgBox->addEventListener( Event::OnConfirm,
 									  cb::Make1( this, &TextureAtlasEditor::onTextureAtlasClose ) );
 			MsgBox->setTitle( "Close Texture Atlas?" );
 			MsgBox->center();

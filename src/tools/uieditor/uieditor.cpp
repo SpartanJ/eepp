@@ -859,7 +859,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		UIMessageBox::OK_CANCEL,
 		"Do you really want to close the current file?\nAll changes will be lost." );
 	mMsgBox->setTheme( mTheme );
-	mMsgBox->addEventListener( Event::MsgBoxConfirmClick,
+	mMsgBox->addEventListener( Event::OnConfirm,
 							   [&]( const Event* ) { mWindow->close(); } );
 	mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) { mMsgBox = NULL; } );
 	mMsgBox->setTitle( "Close Editor?" );

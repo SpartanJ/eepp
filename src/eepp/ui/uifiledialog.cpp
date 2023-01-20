@@ -105,7 +105,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 												   "Create new folder" ) );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->show();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+			msgBox->addEventListener( Event::OnConfirm, [&, msgBox]( const Event* ) {
 				auto folderName( msgBox->getTextInput()->getText() );
 				auto newFolderPath( getCurPath() + folderName );
 				if ( !FileSystem::fileExists( newFolderPath ) &&

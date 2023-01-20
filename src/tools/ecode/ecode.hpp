@@ -22,6 +22,7 @@ namespace ecode {
 class AutoCompletePlugin;
 class LinterPlugin;
 class FormatterPlugin;
+class SettingsMenu;
 
 class App : public UICodeEditorSplitter::Client {
   public:
@@ -92,8 +93,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	void showFindView();
 
-	void showProjectTreeMenu();
-
 	void toggleHiddenFiles();
 
 	void newFile( const FileInfo& file );
@@ -132,8 +131,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	void panelPosition( const PanelPosition& panelPosition );
 
-	void toggleSettingsMenu();
-
 	FileLocator* getFileLocator() const { return mFileLocator.get(); }
 
 	TerminalManager* getTerminalManager() const { return mTerminalManager.get(); }
@@ -141,12 +138,6 @@ class App : public UICodeEditorSplitter::Client {
 	UISceneNode* uiSceneNode() const { return mUISceneNode; }
 
 	void reopenClosedTab();
-
-	void updatedReopenClosedFileState();
-
-	void updateDocumentMenu();
-
-	void updateTerminalMenu();
 
 	void createPluginManagerUI();
 
@@ -167,6 +158,12 @@ class App : public UICodeEditorSplitter::Client {
 	void toggleSidePanel();
 
 	UIMainLayout* getMainLayout() const { return mMainLayout; }
+
+	UIMessageBox* errorMsgBox( const String& msg );
+
+	UIMessageBox* fileAlreadyExistsMsgBox();
+
+	void toggleSettingsMenu();
 
 	template <typename T> void registerUnlockedCommands( T& t ) {
 		t.setCommand( "keybindings", [&] { loadFileFromPath( mKeybindingsPath ); } );
@@ -218,6 +215,18 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "editor-set-line-spacing", [&] { setLineSpacing(); } );
 		t.setCommand( "editor-set-cursor-blinking-time", [&] { setCursorBlinkingTime(); } );
 		t.setCommand( "check-for-updates", [&] { checkForUpdates(); } );
+		t.setCommand( "about-ecode", [&] { aboutEcode(); } );
+		t.setCommand( "ecode-source", [&] { ecodeSource(); } );
+		t.setCommand( "ui-scale-factor", [&] { setUIScaleFactor(); } );
+		t.setCommand( "show-side-panel", [&] { switchSidePanel(); } );
+		t.setCommand( "editor-font-size", [&] { setEditorFontSize(); } );
+		t.setCommand( "terminal-font-size", [&] { setTerminalFontSize(); } );
+		t.setCommand( "ui-font-size", [&] { setUIFontSize(); } );
+		t.setCommand( "serif-font", [&] { openFontDialog( mConfig.ui.serifFont, false ); } );
+		t.setCommand( "monospace-font",
+					  [&] { openFontDialog( mConfig.ui.monospaceFont, false ); } );
+		t.setCommand( "terminal-font", [&] { openFontDialog( mConfig.ui.terminalFont, false ); } );
+		t.setCommand( "fallback-font", [&] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
 		mSplitter->registerSplitterCommands( t );
 	}
 
@@ -235,6 +244,55 @@ class App : public UICodeEditorSplitter::Client {
 
 	void checkForUpdates( bool fromStartup = false );
 
+	void aboutEcode();
+
+	void updateRecentFiles();
+
+	void updateRecentFolders();
+
+	const CodeEditorConfig& getCodeEditorConfig() const;
+
+	AppConfig& getConfig();
+
+	void updateDocInfo( TextDocument& doc );
+
+	std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
+	makeAutoClosePairs( const std::string& strPairs );
+
+	ProjectDocumentConfig& getProjectDocConfig();
+
+	const std::string& getWindowTitle() const;
+
+	void setFocusEditorOnClose( UIMessageBox* msgBox );
+
+	void setUIColorScheme( const ColorSchemePreference& colorScheme );
+
+	ColorSchemePreference getUIColorScheme() const;
+
+	EE::Window::Window* getWindow() const;
+
+	UILinearLayout* getDocInfo() const;
+
+	UITreeView* getProjectTreeView() const;
+
+	void loadCurrentDirectory();
+
+	GlobalSearchController* getGlobalSearchController() const;
+
+	const std::shared_ptr<FileSystemModel>& getFileSystemModel() const;
+
+	void renameFile( const FileInfo& file );
+
+	UIMessageBox* newInputMsgBox( const String& title, const String& msg );
+
+	std::string getNewFilePath( const FileInfo& file, UIMessageBox* msgBox, bool keepDir = true );
+
+	const std::stack<std::string>& getRecentClosedFiles() const;
+
+	void updateTerminalMenu();
+
+	void ecodeSource();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -243,27 +301,12 @@ class App : public UICodeEditorSplitter::Client {
 	UIMainLayout* mMainLayout{ nullptr };
 	UILayout* mBaseLayout{ nullptr };
 	UILayout* mImageLayout{ nullptr };
-	UIPopUpMenu* mSettingsMenu{ nullptr };
-	UIPopUpMenu* mRecentFilesMenu{ nullptr };
-	UITextView* mSettingsButton{ nullptr };
-	std::vector<UIPopUpMenu*> mColorSchemeMenues;
-	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
-	std::vector<UIPopUpMenu*> mFileTypeMenues;
-	Float mFileTypeMenuesCreatedWithHeight{ 0 };
 	UILinearLayout* mDocInfo{ nullptr };
 	UITextView* mDocInfoText{ nullptr };
 	std::vector<std::string> mRecentFiles;
 	std::stack<std::string> mRecentClosedFiles;
 	std::vector<std::string> mRecentFolders;
 	AppConfig mConfig;
-	UIPopUpMenu* mDocMenu{ nullptr };
-	UIPopUpMenu* mTerminalMenu{ nullptr };
-	UIPopUpMenu* mViewMenu{ nullptr };
-	UIPopUpMenu* mWindowMenu{ nullptr };
-	UIPopUpMenu* mRendererMenu{ nullptr };
-	UIPopUpMenu* mToolsMenu{ nullptr };
-	UIPopUpMenu* mProjectTreeMenu{ nullptr };
-	UIPopUpMenu* mProjectMenu{ nullptr };
 	UISplitter* mProjectSplitter{ nullptr };
 	UITabWidget* mSidePanel{ nullptr };
 	UICodeEditorSplitter* mSplitter{ nullptr };
@@ -310,6 +353,7 @@ class App : public UICodeEditorSplitter::Client {
 	ColorSchemePreference mUIColorScheme;
 	std::unique_ptr<TerminalManager> mTerminalManager;
 	std::unique_ptr<PluginManager> mPluginManager;
+	std::unique_ptr<SettingsMenu> mSettings;
 
 	void saveAllProcess();
 
@@ -337,41 +381,11 @@ class App : public UICodeEditorSplitter::Client {
 
 	void addRemainingTabWidgets( Node* widget );
 
-	void createSettingsMenu();
-
-	UIMenu* createColorSchemeMenu();
-
-	void updateColorSchemeMenu();
-
-	UIMenu* createFileTypeMenu();
-
-	void updateCurrentFileType();
-
 	void updateEditorState();
 
 	void saveDoc();
 
-	void updateRecentFiles();
-
-	void updateRecentFolders();
-
 	void loadFolder( const std::string& path );
-
-	UIMenu* createViewMenu();
-
-	UIMenu* createEditMenu();
-
-	UIMenu* createWindowMenu();
-
-	UIMenu* createRendererMenu();
-
-	UIMenu* createHelpMenu();
-
-	void updateProjectSettingsMenu();
-
-	UIMenu* createDocumentMenu();
-
-	UIMenu* createTerminalMenu();
 
 	void loadKeybindings();
 
@@ -385,8 +399,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onDocumentLoaded( UICodeEditor* editor, const std::string& path );
 
-	const CodeEditorConfig& getCodeEditorConfig() const;
-
 	void onCodeEditorCreated( UICodeEditor*, TextDocument& doc );
 
 	void onDocumentSelectionChange( UICodeEditor* editor, TextDocument& );
@@ -397,15 +409,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 
-	void updateDocInfo( TextDocument& doc );
-
-	void setFocusEditorOnClose( UIMessageBox* msgBox );
-
-	UIPopUpMenu* createToolsMenu();
-
 	bool trySendUnlockedCmd( const KeyEvent& keyEvent );
-
-	void loadCurrentDirectory();
 
 	FontTrueType* loadFont( const std::string& name, std::string fontPath,
 							const std::string& fallback = "" );
@@ -419,18 +423,6 @@ class App : public UICodeEditorSplitter::Client {
 	void createDocAlert( UICodeEditor* editor );
 
 	void syncProjectTreeWithEditor( UICodeEditor* editor );
-
-	void createProjectTreeMenu( const FileInfo& file );
-
-	void createProjectTreeMenu();
-
-	void setUIColorScheme( const ColorSchemePreference& colorScheme );
-
-	UIMessageBox* errorMsgBox( const String& msg );
-
-	UIMessageBox* fileAlreadyExistsMsgBox();
-
-	void renameFile( const FileInfo& file );
 
 	void initPluginManager();
 

@@ -39,9 +39,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mTextInput->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
 			->setParent( vlay )
-			->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
-				sendCommonEvent( Event::MsgBoxConfirmClick );
-			} );
+			->addEventListener( Event::OnPressEnter,
+								[&]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
 	}
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
@@ -122,10 +121,10 @@ Uint32 UIMessageBox::onMessage( const NodeMessage* Msg ) {
 		case NodeMessage::MouseClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mButtonOK ) {
-					sendCommonEvent( Event::MsgBoxConfirmClick );
+					sendCommonEvent( Event::OnConfirm );
 					closeWindow();
 				} else if ( Msg->getSender() == mButtonCancel ) {
-					sendCommonEvent( Event::MsgBoxCancelClick );
+					sendCommonEvent( Event::OnCancel );
 					closeWindow();
 				}
 			}
@@ -152,7 +151,7 @@ UIPushButton* UIMessageBox::getButtonCancel() const {
 Uint32 UIMessageBox::onKeyUp( const KeyEvent& event ) {
 	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut &&
 		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
-		sendCommonEvent( Event::MsgBoxCancelClick );
+		sendCommonEvent( Event::OnCancel );
 		closeWindow();
 	}
 

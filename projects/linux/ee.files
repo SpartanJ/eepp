@@ -1184,6 +1184,8 @@
 ../../src/tools/ecode/projectsearch.cpp
 ../../src/tools/ecode/projectsearch.hpp
 ../../src/tools/ecode/scopedop.hpp
+../../src/tools/ecode/settingsmenu.cpp
+../../src/tools/ecode/settingsmenu.hpp
 ../../src/tools/ecode/terminalmanager.cpp
 ../../src/tools/ecode/terminalmanager.hpp
 ../../src/tools/ecode/uicodeeditorsplitter.cpp

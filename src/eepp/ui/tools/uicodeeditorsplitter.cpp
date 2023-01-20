@@ -810,7 +810,7 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget ) {
 					"@string/confirm_close_tab",
 					"Do you really want to close this tab?\nAll changes will be lost." ) );
 			mTryCloseMsgBox->addEventListener(
-				Event::MsgBoxConfirmClick, [&, editor]( const Event* ) { closeTab( editor ); } );
+				Event::OnConfirm, [&, editor]( const Event* ) { closeTab( editor ); } );
 			mTryCloseMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
 				mTryCloseMsgBox = nullptr;
 				if ( mCurEditor )
