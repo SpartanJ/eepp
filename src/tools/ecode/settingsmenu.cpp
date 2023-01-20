@@ -1007,6 +1007,9 @@ UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu->addCheckBox( i18n( "show_white_spaces", "Show White Spaces" ) )
 		->setActive( mApp->getConfig().editor.showWhiteSpaces )
 		->setId( "show-white-spaces" );
+	mViewMenu->addCheckBox( i18n( "show_line_endings", "Show Line Endings" ) )
+		->setActive( mApp->getConfig().editor.showLineEndings )
+		->setId( "show-line-endings" );
 	mViewMenu->addCheckBox( i18n( "show_doc_info", "Show Document Info" ) )
 		->setActive( mApp->getConfig().editor.showDocInfo )
 		->setId( "show-doc-info" );
@@ -1074,6 +1077,11 @@ UIMenu* SettingsMenu::createViewMenu() {
 			mApp->getConfig().editor.showWhiteSpaces = item->asType<UIMenuCheckBox>()->isActive();
 			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setShowWhitespaces( mApp->getConfig().editor.showWhiteSpaces );
+			} );
+		} else if ( item->getId() == "show-line-endings" ) {
+			mApp->getConfig().editor.showLineEndings = item->asType<UIMenuCheckBox>()->isActive();
+			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setShowLineEndings( mApp->getConfig().editor.showLineEndings );
 			} );
 		} else if ( item->getId() == "show-doc-info" ) {
 			mApp->getConfig().editor.showDocInfo = item->asType<UIMenuCheckBox>()->isActive();

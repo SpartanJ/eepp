@@ -562,6 +562,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setScroll( const Vector2f& val, bool emmitEvent = true );
 
+	bool getShowLineEndings() const;
+
+	void setShowLineEndings( bool showLineEndings );
+
   protected:
 	struct LastXOffset {
 		TextPosition position;
@@ -578,6 +582,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mMouseDown{ false };
 	bool mShowLineNumber{ true };
 	bool mShowWhitespaces{ true };
+	bool mShowLineEndings{ false };
 	bool mLocked{ false };
 	bool mHighlightCurrentLine{ true };
 	bool mHighlightMatchingBracket{ true };
@@ -766,6 +771,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 								bool ignoreSelectionMatch = false );
 
 	virtual void drawWhitespaces( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
+								  const Float& lineHeight );
+
+	virtual void drawLineEndings( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
 								  const Float& lineHeight );
 
 	virtual void drawTextRange( const TextRange& range, const std::pair<int, int>& lineRange,

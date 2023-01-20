@@ -223,8 +223,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "terminal-font-size", [&] { setTerminalFontSize(); } );
 		t.setCommand( "ui-font-size", [&] { setUIFontSize(); } );
 		t.setCommand( "serif-font", [&] { openFontDialog( mConfig.ui.serifFont, false ); } );
-		t.setCommand( "monospace-font",
-					  [&] { openFontDialog( mConfig.ui.monospaceFont, false ); } );
+		t.setCommand( "monospace-font", [&] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font", [&] { openFontDialog( mConfig.ui.terminalFont, false ); } );
 		t.setCommand( "fallback-font", [&] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
 		mSplitter->registerSplitterCommands( t );

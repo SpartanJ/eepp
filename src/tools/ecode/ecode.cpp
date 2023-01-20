@@ -1576,6 +1576,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setColorScheme( mSplitter->getCurrentColorScheme() );
 	editor->setShowLineNumber( config.showLineNumbers );
 	editor->setShowWhitespaces( config.showWhiteSpaces );
+	editor->setShowLineEndings( config.showLineEndings );
 	editor->setHighlightMatchingBracket( config.highlightMatchingBracket );
 	editor->setVerticalScrollBarEnabled( config.verticalScrollbar );
 	editor->setHorizontalScrollBarEnabled( config.horizontalScrollbar );

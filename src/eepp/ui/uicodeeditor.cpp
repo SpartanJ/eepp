@@ -277,6 +277,10 @@ void UICodeEditor::draw() {
 		drawWhitespaces( lineRange, startScroll, lineHeight );
 	}
 
+	if ( mShowLineEndings ) {
+		drawLineEndings( lineRange, startScroll, lineHeight );
+	}
+
 	for ( unsigned long i = lineRange.first; i <= lineRange.second; i++ ) {
 		Vector2f curScroll(
 			{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) } );
@@ -1349,7 +1353,7 @@ void UICodeEditor::findLongestLine() {
 
 Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
 	if ( mFont && !mFont->isMonospace() )
-		return getLineText( lineIndex ).getTextWidth();
+		return getLineText( lineIndex ).getTextWidth() + getGlyphWidth();
 	return getTextWidth( mDoc->line( lineIndex ).getText() );
 }
 
@@ -1855,6 +1859,17 @@ const Vector2f& UICodeEditor::getFontShadowOffset() const {
 void UICodeEditor::setScroll( const Vector2f& val, bool emmitEvent ) {
 	setScrollX( val.x, emmitEvent );
 	setScrollY( val.y, emmitEvent );
+}
+
+bool UICodeEditor::getShowLineEndings() const {
+	return mShowLineEndings;
+}
+
+void UICodeEditor::setShowLineEndings( bool showLineEndings ) {
+	if ( mShowLineEndings != showLineEndings ) {
+		mShowLineEndings = showLineEndings;
+		invalidateDraw();
+	}
 }
 
 UICodeEditor* UICodeEditor::setFontStyle( const Uint32& fontStyle ) {
@@ -2762,6 +2777,23 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 				position.x += glyphW;
 			}
 		}
+	}
+}
+
+void UICodeEditor::drawLineEndings( const std::pair<int, int>& lineRange,
+									const Vector2f& startScroll, const Float& lineHeight ) {
+
+	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
+	unsigned int fontSize = getCharacterSize();
+	GlyphDrawable* nl = mFont->getGlyphDrawable( L'↴', fontSize );
+	if ( nl->getPixelsSize() == Sizef::Zero )
+		nl = mFont->getGlyphDrawable( L'¬', fontSize );
+	nl->setDrawMode( GlyphDrawable::DrawMode::Text );
+	nl->setColor( color );
+	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
+		Vector2f position( { startScroll.x + getLineWidth( index ) - getGlyphWidth(),
+							 startScroll.y + lineHeight * index } );
+		nl->draw( Vector2f( position.x, position.y ) );
 	}
 }
 

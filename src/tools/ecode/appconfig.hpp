@@ -49,6 +49,7 @@ struct CodeEditorConfig {
 	StyleSheetLength lineSpacing{ 0, StyleSheetLength::Dp };
 	bool showLineNumbers{ true };
 	bool showWhiteSpaces{ true };
+	bool showLineEndings{ false };
 	bool highlightMatchingBracket{ true };
 	bool verticalScrollbar{ true };
 	bool horizontalScrollbar{ true };
