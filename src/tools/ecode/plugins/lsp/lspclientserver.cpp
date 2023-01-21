@@ -51,22 +51,12 @@ static const char* MEMBER_QUERY = "query";
 static json newRequest( const std::string& method, const json& params = json{} ) {
 	json j;
 	j[MEMBER_METHOD] = method;
-	j[MEMBER_PARAMS] = params.empty() ? json() : params;
+	j[MEMBER_PARAMS] = params.empty() ? json( json::value_t::object ) : params;
 	return j;
 }
 
 static json newID( const PluginIDType& id ) {
 	json j;
-	if ( id.isInteger() )
-		j[MEMBER_ID] = id.asInt();
-	else
-		j[MEMBER_ID] = id.asString();
-	return j;
-}
-
-static json newResponse( const std::string& method, const PluginIDType& id ) {
-	json j;
-	j[MEMBER_METHOD] = method;
 	if ( id.isInteger() )
 		j[MEMBER_ID] = id.asInt();
 	else
@@ -252,8 +242,11 @@ static void fromJson( LSPWorkspaceFoldersServerCapabilities& options, const json
 	if ( json.is_object() ) {
 		auto ob = json;
 		options.supported = ob["supported"].get<bool>();
-		auto notify = ob["changeNotifications"].get<bool>();
-		options.changeNotifications = notify;
+		if ( ob["changeNotifications"].is_boolean() ) {
+			options.changeNotifications = ob["changeNotifications"].get<bool>();
+		} else if ( ob["changeNotifications"].is_string() ) {
+			options.changeNotifications = true;
+		}
 	}
 }
 
@@ -798,8 +791,10 @@ parseSelectionRanges( const json& selectionRanges ) {
 }
 
 void LSPClientServer::initialize() {
-	json codeAction{ { "codeActionLiteralSupport",
-					   json{ { "codeActionKind", json{ { "valueSet", json::array() } } } } } };
+	json codeAction{
+		{ "codeActionLiteralSupport",
+		  json{ { "codeActionKind", json{ { "valueSet", json::array( { "quickfix", "refactor",
+																	   "source" } ) } } } } } };
 
 	json semanticTokens{
 		{ "requests", json{ { "range", true }, { "full", json{ { "delta", true } } } } },
@@ -821,6 +816,7 @@ void LSPClientServer::initialize() {
 				  { "hover", json{ { "contentFormat", { "plaintext", "markdown" } } } } },
 		},
 		{ "window", json{ { "workDoneProgress", true } } },
+		{ "workspace", json{ { "workspaceFolders", true }, { "configuration", false } } },
 		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
 
 	json params{ { "processId", Sys::getProcessID() },
@@ -840,7 +836,6 @@ void LSPClientServer::initialize() {
 	params["rootUri"] = uriRootPath;
 	params["workspaceFolders"] =
 		toJson( { LSPWorkspaceFolder{ uriRootPath, FileSystem::fileNameFromPath( rootPath ) } } );
-	capabilities["workspace"] = json{ { "workspaceFolders", true }, { "configuration", false } };
 
 	write(
 		newRequest( "initialize", params ),
@@ -1205,14 +1200,14 @@ void LSPClientServer::processNotification( const json& msg ) {
 }
 
 void LSPClientServer::processRequest( const json& msg ) {
-	Log::debug( "LSPClientServer::processRequest server %s: %s", mLSP.name.c_str(),
+	Log::debug( "LSPClientServer::processRequest server %s:\n%s", mLSP.name.c_str(),
 				msg.dump().c_str() );
 	auto method = msg[MEMBER_METHOD].get<std::string>();
 	auto msgid = getID( msg );
 	//	auto params = msg[MEMBER_PARAMS];
 	//	bool handled = false;
 	if ( method == "window/workDoneProgress/create" || method == "client/registerCapability" ) {
-		write( newResponse( method, msgid ) );
+		write( newID( msgid ) );
 		return;
 	}
 	write( newError( LSPErrorCode::MethodNotFound, method ), nullptr, nullptr, msgid );
@@ -1286,7 +1281,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 				continue;
 			}
 
-			Log::debug( "LSPClientServer::readStdOut server %s said: \n%s", mLSP.name.c_str(),
+			Log::debug( "LSPClientServer::readStdOut server %s said:\n%s", mLSP.name.c_str(),
 						res.dump().c_str() );
 
 			HandlersMap::iterator it;
@@ -1333,7 +1328,7 @@ void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
 	}
 	if ( !msg.message.empty() ) {
 		msg.type = LSPMessageType::Log;
-		Log::debug( "LSPClientServer::readStdErr server %s: %s", mLSP.name.c_str(),
+		Log::debug( "LSPClientServer::readStdErr server %s:\n%s", mLSP.name.c_str(),
 					msg.message.c_str() );
 	}
 }

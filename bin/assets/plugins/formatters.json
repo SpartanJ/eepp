@@ -29,6 +29,10 @@
       "command": "rustfmt --emit stdout --color never $FILENAME"
     },
     {
+      "file_patterns": ["%.go"],
+      "command": "gopls format $FILENAME"
+    },
+    {
       "file_patterns": ["%.json$", "%.cson$"],
       "command": "json",
       "type": "native"
