@@ -98,6 +98,10 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_UP, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-upper" },
 		{ { KEY_DOWN, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-lower" },
 		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
+		{ { KEY_UP, KEYMOD_LALT }, "add-cursor-above" },
+		{ { KEY_DOWN, KEYMOD_LALT }, "add-cursor-below" },
+		{ { KEY_ESCAPE }, "reset-cursor" },
 	};
 }
 
@@ -235,10 +239,13 @@ void UICodeEditor::draw() {
 	}
 
 	if ( !mLocked && mHighlightCurrentLine ) {
-		primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
-		primitives.drawRectangle( Rectf(
-			Vector2f( startScroll.x + mScroll.x, startScroll.y + cursor.line() * lineHeight ),
-			Sizef( mSize.getWidth(), lineHeight ) ) );
+		for ( const auto& cursor : mDoc->getSelections() ) {
+			primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
+			primitives.drawRectangle(
+				Rectf( Vector2f( startScroll.x + mScroll.x,
+								 startScroll.y + cursor.start().line() * lineHeight ),
+					   Sizef( mSize.getWidth(), lineHeight ) ) );
+		}
 	}
 
 	if ( mLineBreakingColumn ) {
@@ -260,8 +267,11 @@ void UICodeEditor::draw() {
 	}
 
 	if ( mDoc->hasSelection() ) {
-		drawTextRange( mDoc->getSelection( true ), lineRange, startScroll, lineHeight,
-					   mFontStyleConfig.getFontSelectionBackColor() );
+		auto selections = mDoc->getSelectionsSorted();
+		for ( const auto& sel : selections ) {
+			drawTextRange( sel, lineRange, startScroll, lineHeight,
+						   mFontStyleConfig.getFontSelectionBackColor() );
+		}
 	}
 
 	if ( mHighlightSelectionMatch && mDoc->hasSelection() && mDoc->getSelection().inSameLine() ) {
@@ -306,7 +316,8 @@ void UICodeEditor::draw() {
 		}
 	}
 
-	drawCursor( startScroll, lineHeight, cursor );
+	for ( const auto& cursor : mDoc->getSelections() )
+		drawCursor( startScroll, lineHeight, cursor.start() );
 
 	if ( mShowLineNumber ) {
 		drawLineNumbers( lineRange, startScroll,
@@ -1467,8 +1478,14 @@ void UICodeEditor::scrollToCursor( bool centered ) {
 
 void UICodeEditor::updateEditor() {
 	mDoc->setPageSize( getVisibleLinesCount() );
-	if ( mDirtyScroll && mDoc->getActiveClient() == this )
-		scrollTo( mDoc->getSelection().start() );
+	if ( mDirtyScroll && mDoc->getActiveClient() == this ) {
+		if ( mDoc->getSelections().size() == 1 ) {
+			scrollTo( mDoc->getSelection().start() );
+		} else {
+			scrollTo( mDoc->getBottomMostCursor().normalize().end() );
+			scrollTo( mDoc->getTopMostCursor().normalize().start() );
+		}
+	}
 	updateScrollBar();
 	mDirtyEditor = false;
 	mDirtyScroll = false;
@@ -2270,8 +2287,9 @@ void UICodeEditor::resetCursor() {
 	mBlinkTimer.restart();
 }
 
-TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int offset ) {
-	auto& xo = mLastXOffset;
+TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int offset,
+											 const size_t& cursorIdx ) {
+	auto& xo = mLastXOffset[cursorIdx];
 	if ( xo.position != position )
 		xo.offset = getXOffsetColSanitized( position );
 	xo.position.setLine( position.line() + offset );
@@ -2280,31 +2298,49 @@ TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int o
 }
 
 void UICodeEditor::moveToPreviousLine() {
-	TextPosition position = mDoc->getSelection().start();
-	if ( position.line() == 0 )
-		return mDoc->moveToStartOfDoc();
-	mDoc->moveTo( moveToLineOffset( position, -1 ) );
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition position = mDoc->getSelections()[i].start();
+		if ( position.line() == 0 ) {
+			mDoc->setSelection( i, mDoc->startOfDoc(), mDoc->startOfDoc() );
+		} else {
+			mDoc->moveTo( i, moveToLineOffset( position, -1, i ) );
+		}
+	}
+	mDoc->mergeSelection();
 }
 
 void UICodeEditor::moveToNextLine() {
-	TextPosition position = mDoc->getSelection().start();
-	if ( position.line() == (Int64)mDoc->linesCount() - 1 )
-		return mDoc->moveToEndOfDoc();
-	mDoc->moveTo( moveToLineOffset( position, 1 ) );
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition position = mDoc->getSelections()[i].start();
+		if ( position.line() == (Int64)mDoc->linesCount() - 1 ) {
+			mDoc->setSelection( i, mDoc->endOfDoc(), mDoc->endOfDoc() );
+		} else {
+			mDoc->moveTo( i, moveToLineOffset( position, 1, i ) );
+		}
+	}
+	mDoc->mergeSelection();
 }
 
 void UICodeEditor::selectToPreviousLine() {
-	TextPosition position = mDoc->getSelection().start();
-	if ( position.line() == 0 )
-		return mDoc->selectToStartOfDoc();
-	mDoc->selectTo( moveToLineOffset( position, -1 ) );
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition position = mDoc->getSelectionIndex( i ).start();
+		if ( position.line() == 0 ) {
+			mDoc->selectTo( i, mDoc->startOfDoc() );
+		} else {
+			mDoc->selectTo( i, moveToLineOffset( position, -1 ) );
+		}
+	}
 }
 
 void UICodeEditor::selectToNextLine() {
-	TextPosition position = mDoc->getSelection().start();
-	if ( position.line() == (Int64)mDoc->linesCount() - 1 )
-		return mDoc->selectToEndOfDoc();
-	mDoc->selectTo( moveToLineOffset( position, 1 ) );
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition position = mDoc->getSelectionIndex( i ).start();
+		if ( position.line() == (Int64)mDoc->linesCount() - 1 ) {
+			mDoc->selectTo( i, mDoc->endOfDoc() );
+		} else {
+			mDoc->selectTo( i, moveToLineOffset( position, 1 ) );
+		}
+	}
 }
 
 void UICodeEditor::moveScrollUp() {

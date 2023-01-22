@@ -57,17 +57,23 @@ bool TextDocument::isEmpty() {
 }
 
 void TextDocument::reset() {
-	auto oldSelection = sanitizeRange( mSelection );
 	mFilePath = mDefaultFileName;
 	mFileRealPath = FileInfo();
-	mSelection.set( { 0, 0 }, { 0, 0 } );
+	mSelection.clear();
+	mSelection.push_back( { { 0, 0 }, { 0, 0 } } );
 	mLines.clear();
 	mLines.emplace_back( String( "\n" ) );
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainStyle();
 	mUndoStack.clear();
 	cleanChangeId();
-	if ( oldSelection.isValid() )
-		notifyTextChanged( { { oldSelection.end(), oldSelection.start() }, "" } );
+	notifyCursorChanged();
+	notifySelectionChanged();
+}
+
+void TextDocument::resetCursor() {
+	auto cursor = sanitizeRange( mSelection.front() );
+	mSelection.clear();
+	mSelection.push_back( cursor );
 	notifyCursorChanged();
 	notifySelectionChanged();
 }
@@ -220,6 +226,10 @@ void TextDocument::guessIndentType() {
 
 	if ( mIndentWidth == 0 )
 		mIndentWidth = 4;
+}
+
+void TextDocument::mergeSelection() {
+	mSelection.merge();
 }
 
 bool TextDocument::hasSyntaxDefinition() const {
@@ -463,7 +473,7 @@ TextDocument::LoadStatus TextDocument::reload() {
 													  : FileInfo( mFilePath );
 		resetSyntax();
 		notifyDocumentReloaded();
-		setSelection( sanitizePosition( selection.start() ) );
+		setSelection( sanitizeRange( selection ) );
 	}
 	return ret;
 }
@@ -564,11 +574,12 @@ bool TextDocument::save() {
 }
 
 void TextDocument::sanitizeCurrentSelection() {
-	auto newSelection =
-		TextRange( sanitizePosition( mSelection.start() ), sanitizePosition( mSelection.end() ) );
-
-	if ( mSelection != newSelection )
-		setSelection( newSelection );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		auto& selection = mSelection[i];
+		auto newSelection = sanitizeRange( selection );
+		if ( selection != newSelection )
+			setSelection( i, newSelection );
+	}
 }
 
 bool TextDocument::isLoading() const {
@@ -587,13 +598,31 @@ std::string TextDocument::getFilename() const {
 	return FileSystem::fileNameFromPath( mFilePath );
 }
 
-void TextDocument::setSelection( TextPosition position ) {
+void TextDocument::setSelection( const TextRanges& selection ) {
+	for ( size_t i = 0; i < selection.size(); ++i ) {
+		if ( i >= mSelection.size() )
+			mSelection.push_back( selection[i] );
+		setSelection( i, selection[i].start(), selection[i].end(), false );
+	}
+}
+
+void TextDocument::setSelection( const TextPosition& position ) {
 	setSelection( position, position );
 }
 
-void TextDocument::setSelection( TextPosition start, TextPosition end, bool swap ) {
-	if ( ( start == mSelection.start() && end == mSelection.end() && !swap ) ||
-		 ( start == mSelection.end() && end == mSelection.start() && swap ) )
+void TextDocument::setSelection( const size_t& cursorIdx, const TextPosition& position ) {
+	setSelection( cursorIdx, position, position );
+}
+
+void TextDocument::setSelection( const size_t& cursorIdx, TextPosition start, TextPosition end,
+								 bool swap ) {
+	eeASSERT( cursorIdx < mSelection.size() );
+	if ( cursorIdx >= mSelection.size() )
+		return;
+
+	if ( ( start == mSelection[cursorIdx].start() && end == mSelection[cursorIdx].end() &&
+		   !swap ) ||
+		 ( start == mSelection[cursorIdx].end() && end == mSelection[cursorIdx].start() && swap ) )
 		return;
 
 	if ( swap ) {
@@ -609,23 +638,47 @@ void TextDocument::setSelection( TextPosition start, TextPosition end, bool swap
 		end = sanitizePosition( end );
 	}
 
-	if ( mSelection != TextRange( start, end ) ) {
-		mSelection.set( start, end );
+	if ( mSelection[cursorIdx] != TextRange( start, end ) ) {
+		mSelection[cursorIdx].set( start, end );
 		notifyCursorChanged();
 		notifySelectionChanged();
 	}
 }
 
-void TextDocument::setSelection( TextRange range ) {
+void TextDocument::setSelection( TextPosition start, TextPosition end, bool swap ) {
+	setSelection( 0, start, end, swap );
+}
+
+void TextDocument::setSelection( const TextRange& range ) {
 	setSelection( range.start(), range.end() );
 }
 
+void TextDocument::setSelection( const size_t& cursorIdx, const TextRange& range ) {
+	setSelection( cursorIdx, range.start(), range.end() );
+}
+
 TextRange TextDocument::getSelection( bool sort ) const {
-	return sort ? mSelection.normalized() : mSelection;
+	return sort ? mSelection.front().normalized() : mSelection.front();
+}
+
+const std::vector<TextRange>& TextDocument::getSelections() const {
+	return mSelection;
+}
+
+std::vector<TextRange> TextDocument::getSelectionsSorted() const {
+	std::vector<TextRange> selections( mSelection );
+	for ( auto& selection : selections )
+		selection.normalize();
+	return selections;
+}
+
+const TextRange& TextDocument::getSelectionIndex( const size_t& index ) const {
+	eeASSERT( index < mSelection.size() );
+	return mSelection[index];
 }
 
 const TextRange& TextDocument::getSelection() const {
-	return mSelection;
+	return mSelection.front();
 }
 
 TextDocumentLine& TextDocument::line( const size_t& index ) {
@@ -641,7 +694,7 @@ size_t TextDocument::linesCount() const {
 }
 
 const TextDocumentLine& TextDocument::getCurrentLine() const {
-	return mLines[mSelection.start().line()];
+	return mLines[mSelection.front().start().line()];
 }
 
 std::vector<TextDocumentLine>& TextDocument::lines() {
@@ -649,7 +702,7 @@ std::vector<TextDocumentLine>& TextDocument::lines() {
 }
 
 bool TextDocument::hasSelection() const {
-	return mSelection.start() != mSelection.end();
+	return mSelection.front().start() != mSelection.front().end();
 }
 
 String TextDocument::getText( const TextRange& range ) const {
@@ -1010,12 +1063,30 @@ void TextDocument::selectTo( int offset ) {
 	setSelection( TextRange( posOffset, range.end() ) );
 }
 
+void TextDocument::selectTo( const size_t& cursorIdx, TextPosition position ) {
+	setSelection( cursorIdx, TextRange( sanitizePosition( position ), getSelection().end() ) );
+}
+
+void TextDocument::selectTo( const size_t& cursorIdx, int offset ) {
+	const TextRange& range = getSelection();
+	TextPosition posOffset = positionOffset( range.start(), offset );
+	setSelection( cursorIdx, TextRange( posOffset, range.end() ) );
+}
+
 void TextDocument::moveTo( TextPosition offset ) {
 	setSelection( offset );
 }
 
 void TextDocument::moveTo( int columnOffset ) {
 	setSelection( positionOffset( getSelection().start(), columnOffset ) );
+}
+
+void TextDocument::moveTo( const size_t& cursorIdx, TextPosition offset ) {
+	setSelection( cursorIdx, offset );
+}
+
+void TextDocument::moveTo( const size_t& cursorIdx, int columnOffset ) {
+	setSelection( cursorIdx, positionOffset( getSelection().start(), columnOffset ) );
 }
 
 void TextDocument::textInput( const String& text ) {
@@ -1070,47 +1141,65 @@ void TextDocument::unregisterClient( Client* client ) {
 }
 
 void TextDocument::moveToPreviousChar() {
-	if ( hasSelection() ) {
-		setSelection( getSelection( true ).start() );
-	} else {
-		setSelection( positionOffset( getSelection().start(), -1 ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		if ( mSelection[i].hasSelection() ) {
+			setSelection( i, mSelection[i].normalize().start() );
+		} else {
+			setSelection( i, positionOffset( mSelection[i].start(), -1 ) );
+		}
 	}
+	mergeSelection();
 }
 
 void TextDocument::moveToNextChar() {
-	if ( hasSelection() ) {
-		setSelection( getSelection( true ).end() );
-	} else {
-		setSelection( positionOffset( getSelection().start(), 1 ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		if ( mSelection[i].hasSelection() ) {
+			setSelection( i, mSelection[i].normalize().end() );
+		} else {
+			setSelection( i, positionOffset( mSelection[i].start(), 1 ) );
+		}
 	}
+	mergeSelection();
 }
 
 void TextDocument::moveToPreviousWord() {
-	if ( hasSelection() ) {
-		setSelection( getSelection( true ).start() );
-	} else {
-		setSelection( previousWordBoundary( getSelection().start() ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		if ( mSelection[i].hasSelection() ) {
+			setSelection( i, mSelection[i].normalize().start() );
+		} else {
+			setSelection( i, previousWordBoundary( mSelection[i].start() ) );
+		}
 	}
+	mergeSelection();
 }
 
 void TextDocument::moveToNextWord() {
-	if ( hasSelection() ) {
-		setSelection( getSelection( true ).end() );
-	} else {
-		setSelection( nextWordBoundary( getSelection().start() ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		if ( mSelection[i].hasSelection() ) {
+			setSelection( i, mSelection[i].normalize().end() );
+		} else {
+			setSelection( i, nextWordBoundary( mSelection[i].start() ) );
+		}
 	}
+	mergeSelection();
 }
 
 void TextDocument::moveToPreviousLine() {
-	TextPosition pos = getSelection().start();
-	pos.setLine( pos.line() - 1 );
-	setSelection( pos );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextPosition pos = mSelection[i].start();
+		pos.setLine( pos.line() - 1 );
+		setSelection( i, pos, pos );
+	}
+	mergeSelection();
 }
 
 void TextDocument::moveToNextLine() {
-	TextPosition pos = getSelection().start();
-	pos.setLine( pos.line() + 1 );
-	setSelection( pos );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextPosition pos = mSelection[i].start();
+		pos.setLine( pos.line() + 1 );
+		setSelection( i, pos, pos );
+	}
+	mergeSelection();
 }
 
 void TextDocument::moveToPreviousPage( Int64 pageSize ) {
@@ -1126,10 +1215,12 @@ void TextDocument::moveToNextPage( Int64 pageSize ) {
 }
 
 void TextDocument::moveToStartOfDoc() {
+	resetCursor();
 	setSelection( startOfDoc() );
 }
 
 void TextDocument::moveToEndOfDoc() {
+	resetCursor();
 	setSelection( endOfDoc() );
 }
 
@@ -1424,6 +1515,17 @@ TextRange TextDocument::sanitizeRange( const TextRange& range ) const {
 	if ( !range.isValid() )
 		return range;
 	return { sanitizePosition( range.start() ), sanitizePosition( range.end() ) };
+}
+
+TextRanges TextDocument::sanitizeRange( const TextRanges& ranges ) const {
+	TextRanges sanitizedRanges;
+	for ( const auto& range : ranges ) {
+		if ( !range.isValid() )
+			return sanitizedRanges;
+		sanitizedRanges.push_back(
+			{ sanitizePosition( range.start() ), sanitizePosition( range.end() ) } );
+	}
+	return sanitizedRanges;
 }
 
 bool TextDocument::getAutoCloseBrackets() const {
@@ -2125,6 +2227,55 @@ void TextDocument::initializeCommands() {
 	mCommands["toggle-line-comments"] = [&] { toggleLineComments(); };
 	mCommands["selection-to-upper"] = [&] { toUpperSelection(); };
 	mCommands["selection-to-lower"] = [&] { toLowerSelection(); };
+	mCommands["reset-cursor"] = [&] { resetCursor(); };
+	mCommands["add-cursor-above"] = [&] { addCursorAbove(); };
+	mCommands["add-cursor-below"] = [&] { addCursorBelow(); };
+}
+
+TextRange TextDocument::getTopMostCursor() {
+	if ( mSelection.size() == 1 )
+		return mSelection.front();
+	TextRange topMost( mSelection[0] );
+	for ( size_t i = 1; i < mSelection.size(); ++i ) {
+		if ( mSelection[i] < topMost )
+			topMost = mSelection[i];
+	}
+	return topMost;
+}
+
+TextRange TextDocument::getBottomMostCursor() {
+	if ( mSelection.size() == 1 )
+		return mSelection.front();
+	TextRange bottomMost( mSelection[0] );
+	for ( size_t i = 1; i < mSelection.size(); ++i ) {
+		if ( mSelection[i] > bottomMost )
+			bottomMost = mSelection[i];
+	}
+	return bottomMost;
+}
+
+void TextDocument::addCursor( const TextRange& cursor ) {
+	mSelection.emplace_back( cursor );
+}
+
+void TextDocument::addCursorAbove() {
+	auto curPos( getTopMostCursor().normalize().start() );
+	if ( curPos.line() == 0 )
+		return;
+	curPos.setLine( curPos.line() - 1 );
+	curPos = sanitizePosition( curPos );
+	addCursor( { curPos, curPos } );
+	notifyCursorChanged();
+}
+
+void TextDocument::addCursorBelow() {
+	auto curPos( getBottomMostCursor().normalize().start() );
+	if ( curPos.line() >= (Int64)linesCount() - 1 )
+		return;
+	curPos.setLine( curPos.line() + 1 );
+	curPos = sanitizePosition( curPos );
+	addCursor( { curPos, curPos } );
+	notifyCursorChanged();
 }
 
 TextDocument::Client::~Client() {}

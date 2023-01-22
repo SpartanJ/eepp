@@ -28,6 +28,13 @@ class EE_API TextRange {
 
 	TextRange normalized() const { return TextRange( normalizedStart(), normalizedEnd() ); }
 
+	TextRange& normalize() {
+		auto normalize( normalized() );
+		mStart = normalize.start();
+		mEnd = normalize.end();
+		return *this;
+	}
+
 	TextRange reversed() { return TextRange( mEnd, mStart ); }
 
 	void setStart( const TextPosition& position ) { mStart = position; }
@@ -45,6 +52,22 @@ class EE_API TextRange {
 
 	bool operator!=( const TextRange& other ) const {
 		return mStart != other.mStart || mEnd != other.mEnd;
+	}
+
+	bool operator<( const TextRange& other ) const {
+		return mStart < other.mStart && mEnd < other.mEnd;
+	}
+
+	bool operator>( const TextRange& other ) const {
+		return mStart > other.mStart && mEnd > other.mEnd;
+	}
+
+	bool operator<=( const TextRange& other ) const {
+		return mStart <= other.mStart && mEnd <= other.mEnd;
+	}
+
+	bool operator>=( const TextRange& other ) const {
+		return mStart >= other.mStart && mEnd >= other.mEnd;
 	}
 
 	bool contains( const TextPosition& position ) const {

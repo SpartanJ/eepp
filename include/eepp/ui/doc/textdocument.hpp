@@ -31,6 +31,36 @@ struct DocumentContentChange {
 	String text;
 };
 
+class EE_API TextRanges : public std::vector<TextRange> {
+  public:
+	bool isValid() {
+		for ( const auto& selection : *this ) {
+			if ( !selection.isValid() )
+				return false;
+		}
+		return true;
+	}
+
+	bool exists( const TextRange& range ) {
+		for ( const auto& r : *this )
+			if ( range == r )
+				return true;
+		return false;
+	}
+
+	TextRanges& merge() {
+		if ( size() <= 1 )
+			return *this;
+		TextRanges newRanges;
+		newRanges.emplace_back( ( *this )[0] );
+		for ( size_t i = 1; i < size(); ++i )
+			if ( !newRanges.exists( ( *this )[i] ) )
+				newRanges.emplace_back( ( *this )[i] );
+		*this = newRanges;
+		return *this;
+	}
+};
+
 class EE_API TextDocument {
   public:
 	typedef std::function<void()> DocumentCommand;
@@ -78,6 +108,8 @@ class EE_API TextDocument {
 
 	void reset();
 
+	void resetCursor();
+
 	LoadStatus loadFromStream( IOStream& path );
 
 	LoadStatus loadFromFile( const std::string& path );
@@ -116,15 +148,22 @@ class EE_API TextDocument {
 
 	std::string getFilename() const;
 
-	void setSelection( TextPosition position );
+	void setSelection( const TextPosition& position );
+
+	void setSelection( const size_t& cursorIdx, TextPosition start, TextPosition end,
+					   bool swap = false );
 
 	void setSelection( TextPosition start, TextPosition end, bool swap = false );
 
-	void setSelection( TextRange range );
+	void setSelection( const TextRange& range );
 
 	TextRange getSelection( bool sort ) const;
 
+	const std::vector<TextRange>& getSelections() const;
+
 	const TextRange& getSelection() const;
+
+	const TextRange& getSelectionIndex( const size_t& index ) const;
 
 	TextDocumentLine& line( const size_t& index );
 
@@ -416,6 +455,8 @@ class EE_API TextDocument {
 
 	TextRange sanitizeRange( const TextRange& range ) const;
 
+	TextRanges sanitizeRange( const TextRanges& ranges ) const;
+
 	bool getAutoCloseBrackets() const;
 
 	void setAutoCloseBrackets( bool autoCloseBrackets );
@@ -451,14 +492,43 @@ class EE_API TextDocument {
 
 	const std::string& getLoadingFilePath() const;
 
+	void setSelection( const TextRanges& selection );
+
+	std::vector<TextRange> getSelectionsSorted() const;
+
+	void addCursorAbove();
+
+	void addCursorBelow();
+
+	void addCursor( const TextRange& cursor );
+
+	TextRange getTopMostCursor();
+
+	TextRange getBottomMostCursor();
+
+	void moveTo( const size_t& cursorIdx, TextPosition offset );
+
+	void moveTo( const size_t& cursorIdx, int columnOffset );
+
+	void setSelection( const size_t& cursorIdx, const TextPosition& position );
+
+	void mergeSelection();
+
+	void selectTo( const size_t& cursorIdx, TextPosition position );
+
+	void selectTo( const size_t& cursorIdx, int offset );
+
+	void setSelection( const size_t& cursorIdx, const TextRange& range );
+
   protected:
 	friend class UndoStack;
+
 	UndoStack mUndoStack;
 	std::string mFilePath;
 	std::string mLoadingFilePath;
 	FileInfo mFileRealPath;
 	std::vector<TextDocumentLine> mLines;
-	TextRange mSelection;
+	TextRanges mSelection;
 	std::unordered_set<Client*> mClients;
 	Mutex mClientsMutex;
 	LineEnding mLineEnding{ LineEnding::LF };
