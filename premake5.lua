@@ -1036,7 +1036,7 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:linux"
-			links { "util" }
+			links { "util", "stdc++fs" }
 		filter { "system:windows", "options:with-debug-symbols" }
 			links { "dbghelp", "psapi" }
 		filter { "system:windows", "options:with-debug-symbols", "options:cc=mingw" }
