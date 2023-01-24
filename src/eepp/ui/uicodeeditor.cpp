@@ -266,16 +266,16 @@ void UICodeEditor::draw() {
 					   mColorScheme.getEditorSyntaxStyle( "selection_region" ).color );
 	}
 
+	if ( mHighlightSelectionMatch && mDoc->hasSelection() && mDoc->getSelection().inSameLine() ) {
+		drawSelectionMatch( lineRange, startScroll, lineHeight );
+	}
+
 	if ( mDoc->hasSelection() ) {
 		auto selections = mDoc->getSelectionsSorted();
 		for ( const auto& sel : selections ) {
 			drawTextRange( sel, lineRange, startScroll, lineHeight,
 						   mFontStyleConfig.getFontSelectionBackColor() );
 		}
-	}
-
-	if ( mHighlightSelectionMatch && mDoc->hasSelection() && mDoc->getSelection().inSameLine() ) {
-		drawSelectionMatch( lineRange, startScroll, lineHeight );
 	}
 
 	if ( !mHighlightWord.empty() ) {

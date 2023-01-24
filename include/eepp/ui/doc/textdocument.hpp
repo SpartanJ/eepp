@@ -33,7 +33,7 @@ struct DocumentContentChange {
 
 class EE_API TextRanges : public std::vector<TextRange> {
   public:
-	bool isValid() {
+	bool isValid() const {
 		for ( const auto& selection : *this ) {
 			if ( !selection.isValid() )
 				return false;
@@ -41,7 +41,7 @@ class EE_API TextRanges : public std::vector<TextRange> {
 		return true;
 	}
 
-	bool exists( const TextRange& range ) {
+	bool exists( const TextRange& range ) const {
 		for ( const auto& r : *this )
 			if ( range == r )
 				return true;
@@ -159,7 +159,7 @@ class EE_API TextDocument {
 
 	TextRange getSelection( bool sort ) const;
 
-	const std::vector<TextRange>& getSelections() const;
+	const TextRanges& getSelections() const;
 
 	const TextRange& getSelection() const;
 
@@ -210,9 +210,10 @@ class EE_API TextDocument {
 
 	TextPosition previousChar( TextPosition position ) const;
 
-	TextPosition previousWordBoundary( TextPosition position ) const;
+	TextPosition previousWordBoundary( TextPosition position,
+									   bool ignoreFirstNonWord = true ) const;
 
-	TextPosition nextWordBoundary( TextPosition position ) const;
+	TextPosition nextWordBoundary( TextPosition position, bool ignoreFirstNonWord = true ) const;
 
 	TextPosition previousSpaceBoundaryInLine( TextPosition position ) const;
 
@@ -519,6 +520,8 @@ class EE_API TextDocument {
 	void selectTo( const size_t& cursorIdx, int offset );
 
 	void setSelection( const size_t& cursorIdx, const TextRange& range );
+
+	void addSelection( const TextRange& selection );
 
   protected:
 	friend class UndoStack;

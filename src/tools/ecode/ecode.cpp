@@ -2652,6 +2652,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 
+		Clock defClock;
+		SyntaxDefinitionManager::createSingleton();
+		Log::info( "Syntax definitions loaded in %.2f ms.",
+				   defClock.getElapsed().asMilliseconds() );
+
 		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );
 		UIWidgetCreator::registerWidget( "globalsearchbar", UIGlobalSearchBar::New );

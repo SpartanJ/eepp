@@ -657,11 +657,18 @@ void TextDocument::setSelection( const size_t& cursorIdx, const TextRange& range
 	setSelection( cursorIdx, range.start(), range.end() );
 }
 
+void TextDocument::addSelection( const TextRange& selection ) {
+	mSelection.emplace_back( selection );
+	mergeSelection();
+	notifyCursorChanged();
+	notifySelectionChanged();
+}
+
 TextRange TextDocument::getSelection( bool sort ) const {
 	return sort ? mSelection.front().normalized() : mSelection.front();
 }
 
-const std::vector<TextRange>& TextDocument::getSelections() const {
+const TextRanges& TextDocument::getSelections() const {
 	return mSelection;
 }
 
@@ -906,9 +913,12 @@ TextPosition TextDocument::previousChar( TextPosition position ) const {
 	return positionOffset( position, TextPosition( 0, -1 ) );
 }
 
-TextPosition TextDocument::previousWordBoundary( TextPosition position ) const {
+TextPosition TextDocument::previousWordBoundary( TextPosition position,
+												 bool ignoreFirstNonWord ) const {
 	auto ch = getChar( positionOffset( position, -1 ) );
 	bool inWord = !isNonWord( ch );
+	if ( !ignoreFirstNonWord && !inWord )
+		return position;
 	String::StringBaseType nextChar = 0;
 	do {
 		TextPosition curPos = position;
@@ -921,9 +931,12 @@ TextPosition TextDocument::previousWordBoundary( TextPosition position ) const {
 	return position;
 }
 
-TextPosition TextDocument::nextWordBoundary( TextPosition position ) const {
+TextPosition TextDocument::nextWordBoundary( TextPosition position,
+											 bool ignoreFirstNonWord ) const {
 	auto ch = getChar( position );
 	bool inWord = !isNonWord( ch );
+	if ( !ignoreFirstNonWord && !inWord )
+		return position;
 	String::StringBaseType nextChar = 0;
 	do {
 		TextPosition curPos = position;
@@ -1064,11 +1077,12 @@ void TextDocument::selectTo( int offset ) {
 }
 
 void TextDocument::selectTo( const size_t& cursorIdx, TextPosition position ) {
-	setSelection( cursorIdx, TextRange( sanitizePosition( position ), getSelection().end() ) );
+	setSelection( cursorIdx,
+				  TextRange( sanitizePosition( position ), getSelectionIndex( cursorIdx ).end() ) );
 }
 
 void TextDocument::selectTo( const size_t& cursorIdx, int offset ) {
-	const TextRange& range = getSelection();
+	const TextRange& range = getSelectionIndex( cursorIdx );
 	TextPosition posOffset = positionOffset( range.start(), offset );
 	setSelection( cursorIdx, TextRange( posOffset, range.end() ) );
 }
@@ -1225,26 +1239,36 @@ void TextDocument::moveToEndOfDoc() {
 }
 
 void TextDocument::moveToStartOfContent() {
-	TextPosition start = getSelection().start();
-	TextPosition indented = startOfContent( getSelection().start() );
-	setSelection( indented.column() == start.column() ? TextPosition( start.line(), 0 )
-													  : indented );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextPosition start = getSelectionIndex( i ).start();
+		TextPosition indented = startOfContent( getSelectionIndex( i ).start() );
+		setSelection( i, indented.column() == start.column() ? TextPosition( start.line(), 0 )
+															 : indented );
+	}
+	mergeSelection();
 }
 
 void TextDocument::selectToStartOfContent() {
-	TextPosition start = getSelection().start();
-	TextPosition indented = startOfContent( getSelection().start() );
-	setSelection(
-		{ indented.column() == start.column() ? TextPosition( start.line(), 0 ) : indented,
-		  getSelection().end() } );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextPosition start = getSelectionIndex( i ).start();
+		TextPosition indented = startOfContent( getSelectionIndex( i ).start() );
+		setSelection(
+			i, { indented.column() == start.column() ? TextPosition( start.line(), 0 ) : indented,
+				 getSelectionIndex( i ).end() } );
+	}
+	mergeSelection();
 }
 
 void TextDocument::moveToStartOfLine() {
-	setSelection( startOfLine( getSelection().start() ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		setSelection( i, startOfLine( getSelectionIndex( i ).start() ) );
+	mergeSelection();
 }
 
 void TextDocument::moveToEndOfLine() {
-	setSelection( endOfLine( getSelection().start() ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		setSelection( i, endOfLine( getSelectionIndex( i ).start() ) );
+	mergeSelection();
 }
 
 void TextDocument::deleteToPreviousChar() {
@@ -1275,54 +1299,86 @@ void TextDocument::deleteCurrentLine() {
 }
 
 void TextDocument::selectToPreviousChar() {
-	selectTo( -1 );
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		selectTo( i, -1 );
+	mergeSelection();
 }
 
 void TextDocument::selectToNextChar() {
-	selectTo( 1 );
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		selectTo( i, 1 );
+	mergeSelection();
 }
 
 void TextDocument::selectToPreviousWord() {
-	setSelection( { previousWordBoundary( getSelection().start() ), getSelection().end() } );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		setSelection( i, { previousWordBoundary( getSelectionIndex( i ).start() ),
+						   getSelectionIndex( i ).end() } );
+	}
+	mergeSelection();
 }
 
 void TextDocument::selectToNextWord() {
-	setSelection( { nextWordBoundary( getSelection().start() ), getSelection().end() } );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		setSelection( i, { nextWordBoundary( getSelectionIndex( i ).start() ),
+						   getSelectionIndex( i ).end() } );
+	}
+	mergeSelection();
 }
 
 void TextDocument::selectWord() {
-	setSelection( { nextWordBoundary( getSelection().start() ),
-					previousWordBoundary( getSelection().start() ) } );
-}
-void TextDocument::selectLine() {
-	if ( getSelection().start().line() + 1 < (Int64)linesCount() ) {
-		setSelection(
-			{ { getSelection().start().line() + 1, 0 }, { getSelection().start().line(), 0 } } );
+	if ( !hasSelection() ) {
+		setSelection( { nextWordBoundary( getSelection().start(), false ),
+						previousWordBoundary( getSelection().start(), false ) } );
 	} else {
-		setSelection( { { getSelection().start().line(),
-						  (Int64)line( getSelection().start().line() ).size() },
-						{ getSelection().start().line(), 0 } } );
+		String text( getSelectedText() );
+		TextRange res( find( text, getBottomMostCursor().normalized().end() ) );
+		if ( res.isValid() )
+			addSelection( res.reversed() );
 	}
 }
 
+void TextDocument::selectLine() {
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		auto sel = getSelectionIndex( i );
+		if ( sel.start().line() + 1 < (Int64)linesCount() ) {
+			setSelection( i, { { sel.start().line() + 1, 0 }, { sel.start().line(), 0 } } );
+		} else {
+			setSelection( i, { { sel.start().line(), (Int64)line( sel.start().line() ).size() },
+							   { sel.start().line(), 0 } } );
+		}
+	}
+	mergeSelection();
+}
+
 void TextDocument::selectToPreviousLine() {
-	TextPosition pos = getSelection().start();
-	pos.setLine( pos.line() - 1 );
-	setSelection( TextRange( pos, getSelection().end() ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextPosition pos = getSelectionIndex( i ).start();
+		pos.setLine( pos.line() - 1 );
+		setSelection( i, TextRange( pos, getSelectionIndex( i ).end() ) );
+	}
+	mergeSelection();
 }
 
 void TextDocument::selectToNextLine() {
-	TextPosition pos = getSelection().start();
-	pos.setLine( pos.line() + 1 );
-	setSelection( TextRange( pos, getSelection().end() ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextPosition pos = getSelectionIndex( i ).start();
+		pos.setLine( pos.line() + 1 );
+		setSelection( i, TextRange( pos, getSelectionIndex( i ).end() ) );
+	}
+	mergeSelection();
 }
 
 void TextDocument::selectToStartOfLine() {
-	selectTo( startOfLine( getSelection().start() ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		selectTo( i, startOfLine( getSelectionIndex( i ).start() ) );
+	mergeSelection();
 }
 
 void TextDocument::selectToEndOfLine() {
-	selectTo( endOfLine( getSelection().start() ) );
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		selectTo( i, endOfLine( getSelectionIndex( i ).start() ) );
+	mergeSelection();
 }
 
 void TextDocument::selectToStartOfDoc() {
