@@ -36,36 +36,47 @@ class EE_API TextUndoCommand {
 
 class EE_API TextUndoCommandInsert : public TextUndoCommand {
   public:
-	TextUndoCommandInsert( const Uint64& id, const String& text, const TextPosition& position,
-						   const Time& timestamp );
+	TextUndoCommandInsert( const Uint64& id, const size_t& cursorIdx, const String& text,
+						   const TextPosition& position, const Time& timestamp );
 
 	const String& getText() const;
 
 	const TextPosition& getPosition() const;
 
+	size_t getCursorIdx() const;
+
   protected:
 	String mText;
 	TextPosition mPosition;
+	size_t mCursorIdx;
 };
 
 class EE_API TextUndoCommandRemove : public TextUndoCommand {
   public:
-	TextUndoCommandRemove( const Uint64& id, const TextRange& range, const Time& timestamp );
+	TextUndoCommandRemove( const Uint64& id, const size_t& cursorIdx, const TextRange& range,
+						   const Time& timestamp );
 
 	const TextRange& getRange() const;
 
+	size_t getCursorIdx() const;
+
   protected:
 	TextRange mRange;
+	size_t mCursorIdx;
 };
 
 class EE_API TextUndoCommandSelection : public TextUndoCommand {
   public:
-	TextUndoCommandSelection( const Uint64& id, const TextRange& selection, const Time& timestamp );
+	TextUndoCommandSelection( const Uint64& id, const size_t& cursorIdx, const TextRange& selection,
+							  const Time& timestamp );
 
 	const TextRange& getSelection() const;
 
+	size_t getCursorIdx() const;
+
   protected:
 	TextRange mSelection;
+	size_t mCursorIdx;
 };
 
 using UndoStackContainer = std::deque<TextUndoCommand*>;
@@ -110,13 +121,14 @@ class EE_API UndoStack {
 
 	void pushUndo( UndoStackContainer& undoStack, TextUndoCommand* cmd );
 
-	void pushInsert( UndoStackContainer& undoStack, const String& string,
+	void pushInsert( UndoStackContainer& undoStack, const String& string, const size_t& cursorIdx,
 					 const TextPosition& position, const Time& time );
 
-	void pushRemove( UndoStackContainer& undoStack, const TextRange& range, const Time& time );
+	void pushRemove( UndoStackContainer& undoStack, const size_t& cursorIdx, const TextRange& range,
+					 const Time& time );
 
-	void pushSelection( UndoStackContainer& undoStack, const TextRange& selection,
-						const Time& time );
+	void pushSelection( UndoStackContainer& undoStack, const size_t& cursorIdx,
+						const TextRange& selection, const Time& time );
 
 	UndoStackContainer& getUndoStackContainer();
 

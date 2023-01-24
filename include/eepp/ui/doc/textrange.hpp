@@ -1,6 +1,7 @@
 #ifndef EE_UI_DOC_TEXTRANGE_HPP
 #define EE_UI_DOC_TEXTRANGE_HPP
 
+#include <algorithm>
 #include <eepp/ui/doc/textposition.hpp>
 
 namespace EE { namespace UI { namespace Doc {
@@ -108,6 +109,40 @@ class EE_API TextRange {
 	TextPosition normalizedStart() const { return mStart < mEnd ? mStart : mEnd; }
 
 	TextPosition normalizedEnd() const { return mStart < mEnd ? mEnd : mStart; }
+};
+
+class EE_API TextRanges : public std::vector<TextRange> {
+  public:
+	bool isValid() const {
+		for ( const auto& selection : *this ) {
+			if ( !selection.isValid() )
+				return false;
+		}
+		return true;
+	}
+
+	bool exists( const TextRange& range ) const {
+		for ( const auto& r : *this )
+			if ( range == r )
+				return true;
+		return false;
+	}
+
+	void sort() { std::sort( begin(), end() ); }
+
+	bool merge() {
+		if ( size() <= 1 )
+			return false;
+		size_t oldSize = size();
+		TextRanges newRanges;
+		newRanges.emplace_back( ( *this )[0] );
+		for ( size_t i = 1; i < size(); ++i )
+			if ( !newRanges.exists( ( *this )[i] ) )
+				newRanges.emplace_back( ( *this )[i] );
+		*this = newRanges;
+		sort();
+		return oldSize != size();
+	}
 };
 
 }}} // namespace EE::UI::Doc

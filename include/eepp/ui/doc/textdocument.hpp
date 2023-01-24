@@ -31,36 +31,6 @@ struct DocumentContentChange {
 	String text;
 };
 
-class EE_API TextRanges : public std::vector<TextRange> {
-  public:
-	bool isValid() const {
-		for ( const auto& selection : *this ) {
-			if ( !selection.isValid() )
-				return false;
-		}
-		return true;
-	}
-
-	bool exists( const TextRange& range ) const {
-		for ( const auto& r : *this )
-			if ( range == r )
-				return true;
-		return false;
-	}
-
-	TextRanges& merge() {
-		if ( size() <= 1 )
-			return *this;
-		TextRanges newRanges;
-		newRanges.emplace_back( ( *this )[0] );
-		for ( size_t i = 1; i < size(); ++i )
-			if ( !newRanges.exists( ( *this )[i] ) )
-				newRanges.emplace_back( ( *this )[i] );
-		*this = newRanges;
-		return *this;
-	}
-};
-
 class EE_API TextDocument {
   public:
 	typedef std::function<void()> DocumentCommand;
@@ -189,11 +159,12 @@ class EE_API TextDocument {
 
 	String::StringBaseType getChar( const TextPosition& position ) const;
 
-	TextPosition insert( const TextPosition& position, const String& text );
+	TextPosition insert( const size_t& cursorIdx, const TextPosition& position,
+						 const String& text );
 
-	void remove( TextPosition position );
+	void remove( const size_t& cursorIdx, TextPosition position );
 
-	void remove( TextRange range );
+	void remove( const size_t& cursorIdx, TextRange range );
 
 	TextPosition positionOffset( TextPosition position, int columnOffset ) const;
 
@@ -235,9 +206,9 @@ class EE_API TextDocument {
 
 	TextRange getDocRange() const;
 
-	void deleteTo( TextPosition position );
+	void deleteTo( const size_t& cursorIdx, TextPosition position );
 
-	void deleteTo( int offset );
+	void deleteTo( const size_t& cursorIdx, int offset );
 
 	void deleteSelection();
 
@@ -495,13 +466,13 @@ class EE_API TextDocument {
 
 	void setSelection( const TextRanges& selection );
 
+	void resetSelection( const TextRanges& selection );
+
 	std::vector<TextRange> getSelectionsSorted() const;
 
 	void addCursorAbove();
 
 	void addCursorBelow();
-
-	void addCursor( const TextRange& cursor );
 
 	TextRange getTopMostCursor();
 
@@ -522,6 +493,10 @@ class EE_API TextDocument {
 	void setSelection( const size_t& cursorIdx, const TextRange& range );
 
 	void addSelection( const TextRange& selection );
+
+	void popSelection();
+
+	void deleteSelection( const size_t& cursorIdx );
 
   protected:
 	friend class UndoStack;
@@ -593,10 +568,12 @@ class EE_API TextDocument {
 	void removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
 										 bool removeExtraSpaces = false );
 
-	void remove( TextRange range, UndoStackContainer& undoStack, const Time& time );
+	void remove( const size_t& cursorIdx, TextRange range, UndoStackContainer& undoStack,
+				 const Time& time, bool fromUndoRedo = false );
 
-	TextPosition insert( TextPosition position, const String& text, UndoStackContainer& undoStack,
-						 const Time& time );
+	TextPosition insert( const size_t& cursorIdx, TextPosition position, const String& text,
+						 UndoStackContainer& undoStack, const Time& time,
+						 bool fromUndoRedo = false );
 
 	void appendLineIfLastLine( Int64 line );
 
@@ -613,6 +590,7 @@ class EE_API TextDocument {
 							const bool& caseSensitive = true, const bool& wholeWord = false,
 							const FindReplaceType& type = FindReplaceType::Normal,
 							TextRange restrictRange = TextRange() );
+
 };
 
 }}} // namespace EE::UI::Doc
