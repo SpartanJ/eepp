@@ -162,9 +162,7 @@ class EE_API TextDocument {
 	TextPosition insert( const size_t& cursorIdx, const TextPosition& position,
 						 const String& text );
 
-	void remove( const size_t& cursorIdx, TextPosition position );
-
-	void remove( const size_t& cursorIdx, TextRange range );
+	size_t remove( const size_t& cursorIdx, TextRange range );
 
 	TextPosition positionOffset( TextPosition position, int columnOffset ) const;
 
@@ -334,10 +332,10 @@ class EE_API TextDocument {
 						const FindReplaceType& type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange() );
 
-	std::vector<TextRange> findAll( const String& text, const bool& caseSensitive = true,
-									const bool& wholeWord = false,
-									const FindReplaceType& type = FindReplaceType::Normal,
-									TextRange restrictRange = TextRange() );
+	TextRanges findAll( const String& text, const bool& caseSensitive = true,
+						const bool& wholeWord = false,
+						const FindReplaceType& type = FindReplaceType::Normal,
+						TextRange restrictRange = TextRange() );
 
 	int replaceAll( const String& text, const String& replace, const bool& caseSensitive = true,
 					const bool& wholeWord = false,
@@ -492,11 +490,13 @@ class EE_API TextDocument {
 
 	void setSelection( const size_t& cursorIdx, const TextRange& range );
 
-	void addSelection( const TextRange& selection );
+	TextRange addSelection( const TextRange& selection );
 
 	void popSelection();
 
 	void deleteSelection( const size_t& cursorIdx );
+
+	String getSelectedText( const size_t& cursorIdx ) const;
 
   protected:
 	friend class UndoStack;
@@ -545,9 +545,9 @@ class EE_API TextDocument {
 
 	void notifyTextChanged( const DocumentContentChange& );
 
-	void notifyCursorChanged();
+	void notifyCursorChanged( TextPosition selection = TextPosition() );
 
-	void notifySelectionChanged();
+	void notifySelectionChanged( TextRange selection = TextRange() );
 
 	void notifyDocumentSaved();
 
@@ -568,8 +568,13 @@ class EE_API TextDocument {
 	void removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
 										 bool removeExtraSpaces = false );
 
-	void remove( const size_t& cursorIdx, TextRange range, UndoStackContainer& undoStack,
-				 const Time& time, bool fromUndoRedo = false );
+	void addLinesSinceCursorIndex( const size_t& cursorIdx, const size_t& numLines );
+
+	void removeLinesSinceCursorIndex( const size_t& cursorIdx, const size_t& numLines );
+
+	/** @return The number of lines removed (complete lines, not modified lines) */
+	size_t remove( const size_t& cursorIdx, TextRange range, UndoStackContainer& undoStack,
+				   const Time& time, bool fromUndoRedo = false );
 
 	TextPosition insert( const size_t& cursorIdx, TextPosition position, const String& text,
 						 UndoStackContainer& undoStack, const Time& time,
@@ -590,7 +595,6 @@ class EE_API TextDocument {
 							const bool& caseSensitive = true, const bool& wholeWord = false,
 							const FindReplaceType& type = FindReplaceType::Normal,
 							TextRange restrictRange = TextRange() );
-
 };
 
 }}} // namespace EE::UI::Doc

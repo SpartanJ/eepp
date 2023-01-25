@@ -299,27 +299,25 @@ void TextDocument::notifyDocumentMoved( const std::string& path ) {
 }
 
 void TextDocument::toUpperSelection() {
-	if ( !hasSelection() )
-		return;
-
-	TextRange selection( getSelection() );
-	String selectedText( getSelectedText() );
-	selectedText.toUpper();
-	deleteSelection();
-	textInput( selectedText );
-	setSelection( selection );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextRange selection( getSelectionIndex( i ) );
+		String selectedText( getSelectedText( i ) );
+		selectedText.toUpper();
+		deleteSelection( i );
+		insert( i, getSelectionIndex( i ).start(), selectedText );
+		setSelection( i, selection );
+	}
 }
 
 void TextDocument::toLowerSelection() {
-	if ( !hasSelection() )
-		return;
-
-	TextRange selection( getSelection() );
-	String selectedText( getSelectedText() );
-	selectedText.toLower();
-	deleteSelection();
-	textInput( selectedText );
-	setSelection( selection );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextRange selection( getSelectionIndex( i ) );
+		String selectedText( getSelectedText( i ) );
+		selectedText.toLower();
+		deleteSelection( i );
+		insert( i, getSelectionIndex( i ).start(), selectedText );
+		setSelection( i, selection );
+	}
 }
 
 const std::string& TextDocument::getLoadingFilePath() const {
@@ -669,12 +667,13 @@ void TextDocument::setSelection( const size_t& cursorIdx, const TextRange& range
 	setSelection( cursorIdx, range.start(), range.end() );
 }
 
-void TextDocument::addSelection( const TextRange& selection ) {
+TextRange TextDocument::addSelection( const TextRange& selection ) {
 	mSelection.push_back( selection );
 	mSelection.sort();
 	mergeSelection();
 	notifyCursorChanged();
 	notifySelectionChanged();
+	return selection;
 }
 
 void TextDocument::popSelection() {
@@ -753,6 +752,10 @@ String TextDocument::getSelectedText() const {
 	return getText( getSelection() );
 }
 
+String TextDocument::getSelectedText( const size_t& cursorIdx ) const {
+	return getText( getSelectionIndex( cursorIdx ) );
+}
+
 String::StringBaseType TextDocument::getPrevChar() const {
 	return getChar( positionOffset( getSelection().start(), -1 ) );
 }
@@ -823,26 +826,21 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	return cursor;
 }
 
-void TextDocument::remove( const size_t& cursorIdx, TextPosition position ) {
-	remove( cursorIdx, TextRange( position, position ) );
-}
-
-void TextDocument::remove( const size_t& cursorIdx, TextRange range ) {
+size_t TextDocument::remove( const size_t& cursorIdx, TextRange range ) {
 	size_t lineCount = mLines.size();
 	mUndoStack.clearRedoStack();
-	range = range.normalized();
-	range.setStart( sanitizePosition( range.start() ) );
-	range.setEnd( sanitizePosition( range.end() ) );
-	remove( cursorIdx, range, mUndoStack.getUndoStackContainer(), mTimer.getElapsedTime() );
+	size_t linesRemoved = remove( cursorIdx, sanitizeRange( range.normalized() ),
+								  mUndoStack.getUndoStackContainer(), mTimer.getElapsedTime() );
 	if ( lineCount != mLines.size() ) {
 		notifyLineCountChanged( lineCount, mLines.size() );
 	}
+	return linesRemoved;
 }
 
-void TextDocument::remove( const size_t& cursorIdx, TextRange range, UndoStackContainer& undoStack,
-						   const Time& time, bool fromUndoRedo ) {
+size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
+							 UndoStackContainer& undoStack, const Time& time, bool fromUndoRedo ) {
 	if ( !range.isValid() )
-		return;
+		return 0;
 
 	if ( fromUndoRedo ) {
 		if ( cursorIdx >= mSelection.size() ) {
@@ -860,11 +858,14 @@ void TextDocument::remove( const size_t& cursorIdx, TextRange range, UndoStackCo
 	mUndoStack.pushSelection( undoStack, cursorIdx, getSelectionIndex( cursorIdx ), time );
 	mUndoStack.pushInsert( undoStack, getText( range ), cursorIdx, range.start(), time );
 
+	size_t linesRemoved = 0;
+
 	// First delete all the lines in between the first and last one.
 	if ( range.start().line() + 1 < range.end().line() ) {
 		mLines.erase( mLines.begin() + range.start().line() + 1,
 					  mLines.begin() + range.end().line() );
 		range.end().setLine( range.start().line() + 1 );
+		linesRemoved = range.end().line() - ( range.start().line() + 1 );
 	}
 
 	if ( range.start().line() == range.end().line() ) {
@@ -907,13 +908,16 @@ void TextDocument::remove( const size_t& cursorIdx, TextRange range, UndoStackCo
 
 		firstLine.setText( beforeSelection + afterSelection );
 		mLines.erase( mLines.begin() + range.end().line() );
+		linesRemoved += 1;
 	}
 
-	if ( lines().empty() ) {
+	if ( lines().empty() )
 		mLines.emplace_back( String( "\n" ) );
-	}
+
 	notifyTextChanged( { originalRange, "" } );
 	notifyLineChanged( range.start().line() );
+
+	return linesRemoved;
 }
 
 TextPosition TextDocument::positionOffset( TextPosition position, int columnOffset ) const {
@@ -1094,21 +1098,24 @@ TextRange TextDocument::getDocRange() const {
 void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
 	eeASSERT( cursorIdx < mSelection.size() );
 	TextPosition cursorPos = mSelection[cursorIdx].normalized().start();
+	size_t linesRemoved = 0;
 	if ( mSelection[cursorIdx].hasSelection() ) {
-		remove( cursorIdx, getSelectionIndex( cursorIdx ) );
+		linesRemoved = remove( cursorIdx, getSelectionIndex( cursorIdx ) );
 	} else {
 		TextPosition delPos = positionOffset( cursorPos, offset );
 		TextRange range( cursorPos, delPos );
-		remove( cursorIdx, range );
+		linesRemoved = remove( cursorIdx, range );
 		range = range.normalized();
 		cursorPos = range.start();
 	}
+	removeLinesSinceCursorIndex( cursorIdx + 1, linesRemoved );
 	setSelection( cursorIdx, cursorPos );
 }
 
 void TextDocument::deleteSelection( const size_t& cursorIdx ) {
 	TextPosition cursorPos = getSelectionIndex( cursorIdx ).normalized().start();
-	remove( cursorIdx, getSelectionIndex( cursorIdx ) );
+	size_t linesRemoved = remove( cursorIdx, getSelectionIndex( cursorIdx ) );
+	removeLinesSinceCursorIndex( cursorIdx + 1, linesRemoved );
 	setSelection( cursorIdx, cursorPos );
 }
 
@@ -1186,10 +1193,16 @@ void TextDocument::textInput( const String& text ) {
 			}
 		}
 	}
+
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		if ( mSelection[i].hasSelection() )
 			deleteTo( i, 0 );
 		setSelection( i, insert( i, getSelectionIndex( i ).start(), text ) );
+
+		if ( i + 1 >= mSelection.size() )
+			continue;
+
+		addLinesSinceCursorIndex( i + 1, text.countChar( '\n' ) );
 	}
 }
 
@@ -1352,11 +1365,12 @@ void TextDocument::deleteCurrentLine() {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		if ( mSelection[i].hasSelection() ) {
 			deleteSelection( i );
-			return;
+			continue;
 		}
 		auto start = startOfLine( getSelectionIndex( i ).start() );
 		auto end = positionOffset( endOfLine( getSelectionIndex( i ).start() ), 1 );
-		remove( i, { start, end } );
+		size_t linesRemoved = remove( i, { start, end } );
+		removeLinesSinceCursorIndex( i + 1, linesRemoved );
 		setSelection( i, start );
 	}
 }
@@ -1396,8 +1410,16 @@ void TextDocument::selectWord() {
 	} else {
 		String text( getSelectedText() );
 		TextRange res( find( text, getBottomMostCursor().normalized().end() ) );
-		if ( res.isValid() )
+		if ( res.isValid() && !mSelection.exists( res.reversed() ) ) {
 			addSelection( res.reversed() );
+		} else {
+			res = findLast( text, getTopMostCursor().normalized().start(), true, false,
+							FindReplaceType::Normal,
+							{ startOfDoc(), getTopMostCursor().normalized().start() } );
+			if ( res.isValid() && !mSelection.exists( res ) ) {
+				addSelection( res );
+			}
+		}
 	}
 }
 
@@ -1548,6 +1570,32 @@ void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skip
 				  TextPosition( range.end().line(), range.end().column() - endRemoved ), swap );
 }
 
+void TextDocument::addLinesSinceCursorIndex( const size_t& cursorIdx, const size_t& numLines ) {
+	if ( cursorIdx >= mSelection.size() || 0 == numLines )
+		return;
+
+	for ( size_t z = cursorIdx; z < mSelection.size(); z++ ) {
+		mSelection[z].setStart( TextPosition( mSelection[z].start().line() + numLines,
+											  mSelection[z].start().column() ) );
+		mSelection[z].setEnd(
+			TextPosition( mSelection[z].end().line() + numLines, mSelection[z].end().column() ) );
+		mSelection[z] = sanitizeRange( mSelection[z] );
+	}
+}
+
+void TextDocument::removeLinesSinceCursorIndex( const size_t& cursorIdx, const size_t& numLines ) {
+	if ( cursorIdx >= mSelection.size() || 0 == numLines )
+		return;
+
+	for ( size_t z = cursorIdx; z < mSelection.size(); z++ ) {
+		mSelection[z].setStart( TextPosition( mSelection[z].start().line() - numLines,
+											  mSelection[z].start().column() ) );
+		mSelection[z].setEnd(
+			TextPosition( mSelection[z].end().line() - numLines, mSelection[z].end().column() ) );
+		mSelection[z] = sanitizeRange( mSelection[z] );
+	}
+}
+
 void TextDocument::indent() {
 	if ( hasSelection() ) {
 		insertAtStartOfSelectedLines( getIndentString(), false );
@@ -1616,14 +1664,16 @@ void TextDocument::setIndentWidth( const Uint32& tabWidth ) {
 
 void TextDocument::deleteTo( const size_t& cursorIdx, TextPosition position ) {
 	TextPosition cursorPos = getSelectionIndex( cursorIdx ).normalized().start();
+	size_t linesRemoved = 0;
 	if ( getSelectionIndex( cursorIdx ).hasSelection() ) {
-		remove( cursorIdx, getSelectionIndex( cursorIdx ) );
+		linesRemoved = remove( cursorIdx, getSelectionIndex( cursorIdx ) );
 	} else {
 		TextRange range( cursorPos, position );
-		remove( cursorIdx, range );
+		linesRemoved = remove( cursorIdx, range );
 		range = range.normalized();
 		cursorPos = range.start();
 	}
+	removeLinesSinceCursorIndex( cursorIdx + 1, linesRemoved );
 	setSelection( cursorIdx, cursorPos );
 }
 
@@ -2063,10 +2113,10 @@ TextRange TextDocument::findLast( String text, TextPosition from, const bool& ca
 	return TextRange();
 }
 
-std::vector<TextRange> TextDocument::findAll( const String& text, const bool& caseSensitive,
-											  const bool& wholeWord, const FindReplaceType& type,
-											  TextRange restrictRange ) {
-	std::vector<TextRange> all;
+TextRanges TextDocument::findAll( const String& text, const bool& caseSensitive,
+								  const bool& wholeWord, const FindReplaceType& type,
+								  TextRange restrictRange ) {
+	TextRanges all;
 	TextRange found;
 	TextPosition from = startOfDoc();
 	if ( restrictRange.isValid() )
@@ -2222,17 +2272,21 @@ void TextDocument::notifyTextChanged( const DocumentContentChange& change ) {
 	}
 }
 
-void TextDocument::notifyCursorChanged() {
+void TextDocument::notifyCursorChanged( TextPosition selection ) {
+	if ( !selection.isValid() )
+		selection = getSelection().start();
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
-		client->onDocumentCursorChange( getSelection().start() );
+		client->onDocumentCursorChange( selection );
 	}
 }
 
-void TextDocument::notifySelectionChanged() {
+void TextDocument::notifySelectionChanged( TextRange selection ) {
+	if ( !selection.isValid() )
+		selection = getSelection();
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
-		client->onDocumentSelectionChange( getSelection() );
+		client->onDocumentSelectionChange( selection );
 	}
 }
 
@@ -2382,7 +2436,7 @@ void TextDocument::addCursorAbove() {
 	curPos.setLine( curPos.line() - 1 );
 	curPos = sanitizePosition( curPos );
 	addSelection( { curPos, curPos } );
-	notifyCursorChanged();
+	notifyCursorChanged( curPos );
 }
 
 void TextDocument::addCursorBelow() {
@@ -2392,7 +2446,7 @@ void TextDocument::addCursorBelow() {
 	curPos.setLine( curPos.line() + 1 );
 	curPos = sanitizePosition( curPos );
 	addSelection( { curPos, curPos } );
-	notifyCursorChanged();
+	notifyCursorChanged( curPos );
 }
 
 TextDocument::Client::~Client() {}
