@@ -3426,4 +3426,5 @@ void UICodeEditor::invalidateLinesCache() {
 		invalidateDraw();
 	}
 }
+
 }} // namespace EE::UI

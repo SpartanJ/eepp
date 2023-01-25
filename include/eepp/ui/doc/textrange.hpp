@@ -158,6 +158,24 @@ class EE_API TextRanges : public std::vector<TextRange> {
 		sort();
 		return oldSize != size();
 	}
+
+	std::string toString() const {
+		std::string str;
+		for ( size_t i = 0; i < size(); ++i ) {
+			str += ( *this )[i].toString();
+			if ( i != size() - 1 )
+				str += ";";
+		}
+		return str;
+	}
+
+	static TextRanges fromString( const std::string& str ) {
+		auto rangesStr = String::split( str, ';' );
+		TextRanges ranges;
+		for ( const auto& rangeStr : rangesStr )
+			ranges.emplace_back( TextRange::fromString( rangeStr ) );
+		return ranges;
+	}
 };
 
 }}} // namespace EE::UI::Doc

@@ -577,10 +577,6 @@ class EE_API TextDocument {
 	void removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
 										 bool removeExtraSpaces = false );
 
-	void addLinesSinceCursorIndex( const size_t& cursorIdx, const size_t& numLines );
-
-	void removeLinesSinceCursorIndex( const size_t& cursorIdx, const size_t& numLines );
-
 	/** @return The number of lines removed (complete lines, not modified lines) */
 	size_t remove( const size_t& cursorIdx, TextRange range, UndoStackContainer& undoStack,
 				   const Time& time, bool fromUndoRedo = false );

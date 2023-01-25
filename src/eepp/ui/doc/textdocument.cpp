@@ -865,11 +865,20 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	if ( mSelection.size() > 1 ) {
 		for ( auto& sel : mSelection ) {
 			auto selNorm( sel.normalized() );
+			if ( selNorm.start().line() < position.line() )
+				continue;
+			Int64 addLines = position.line() < selNorm.start().line() ||
+									 position.column() < selNorm.start().column()
+								 ? linesAdd
+								 : 0;
+			sel.start().setLine( sel.start().line() + addLines );
+			sel.end().setLine( sel.end().line() + addLines );
 			if ( selNorm.start().line() == position.line() &&
 				 selNorm.start().column() >= position.column() ) {
 				sel.start().setColumn( positionOffset( sel.start(), text.size() ).column() );
 				sel.end().setColumn( positionOffset( sel.end(), text.size() ).column() );
 			}
+			sel = sanitizeRange( sel );
 		}
 	}
 
@@ -967,20 +976,23 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	if ( mSelection.size() > 1 ) {
 		for ( auto& sel : mSelection ) {
 			auto selNorm( sel.normalized() );
-			auto ranNorm( range.normalized() );
+			auto ranNorm( originalRange.normalized() );
 
 			if ( selNorm.start().line() < ranNorm.end().line() )
-				break;
-
+				continue;
+			Int64 lineRem = ranNorm.end().line() - ranNorm.start().line();
+			Int64 colRem = 0;
 			if ( selNorm.end().line() == ranNorm.end().line() &&
 				 ranNorm.end().column() < selNorm.start().column() ) {
-				auto colRem = ranNorm.start().line() == ranNorm.end().line()
-								  ? ranNorm.end().column() - ranNorm.start().column()
-								  : ranNorm.end().column();
-				sel.start().setColumn( sel.start().column() - colRem );
-				sel.end().setColumn( sel.end().column() - colRem );
-				sel = sanitizeRange( sel );
+				colRem = ranNorm.start().line() == ranNorm.end().line()
+							 ? ranNorm.end().column() - ranNorm.start().column()
+							 : ranNorm.end().column();
 			}
+			sel.start().setLine( sel.start().line() - lineRem );
+			sel.start().setColumn( sel.start().column() - colRem );
+			sel.end().setLine( sel.end().line() - lineRem );
+			sel.end().setColumn( sel.end().column() - colRem );
+			sel = sanitizeRange( sel );
 		}
 	}
 
@@ -1168,24 +1180,21 @@ TextRange TextDocument::getDocRange() const {
 void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
 	eeASSERT( cursorIdx < mSelection.size() );
 	TextPosition cursorPos = mSelection[cursorIdx].normalized().start();
-	size_t linesRemoved = 0;
 	if ( mSelection[cursorIdx].hasSelection() ) {
-		linesRemoved = remove( cursorIdx, getSelectionIndex( cursorIdx ) );
+		remove( cursorIdx, getSelectionIndex( cursorIdx ) );
 	} else {
 		TextPosition delPos = positionOffset( cursorPos, offset );
 		TextRange range( cursorPos, delPos );
-		linesRemoved = remove( cursorIdx, range );
+		remove( cursorIdx, range );
 		range = range.normalized();
 		cursorPos = range.start();
 	}
-	removeLinesSinceCursorIndex( cursorIdx + 1, linesRemoved );
 	setSelection( cursorIdx, cursorPos );
 }
 
 void TextDocument::deleteSelection( const size_t& cursorIdx ) {
 	TextPosition cursorPos = getSelectionIndex( cursorIdx ).normalized().start();
-	size_t linesRemoved = remove( cursorIdx, getSelectionIndex( cursorIdx ) );
-	removeLinesSinceCursorIndex( cursorIdx + 1, linesRemoved );
+	remove( cursorIdx, getSelectionIndex( cursorIdx ) );
 	setSelection( cursorIdx, cursorPos );
 }
 
@@ -1268,11 +1277,6 @@ void TextDocument::textInput( const String& text ) {
 		if ( mSelection[i].hasSelection() )
 			deleteTo( i, 0 );
 		setSelection( i, insert( i, getSelectionIndex( i ).start(), text ) );
-
-		if ( i + 1 >= mSelection.size() )
-			continue;
-
-		addLinesSinceCursorIndex( i + 1, text.countChar( '\n' ) );
 	}
 }
 
@@ -1439,8 +1443,7 @@ void TextDocument::deleteCurrentLine() {
 		}
 		auto start = startOfLine( getSelectionIndex( i ).start() );
 		auto end = positionOffset( endOfLine( getSelectionIndex( i ).start() ), 1 );
-		size_t linesRemoved = remove( i, { start, end } );
-		removeLinesSinceCursorIndex( i + 1, linesRemoved );
+		remove( i, { start, end } );
 		setSelection( i, start );
 	}
 }
@@ -1640,32 +1643,6 @@ void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skip
 				  TextPosition( range.end().line(), range.end().column() - endRemoved ), swap );
 }
 
-void TextDocument::addLinesSinceCursorIndex( const size_t& cursorIdx, const size_t& numLines ) {
-	if ( cursorIdx >= mSelection.size() || 0 == numLines )
-		return;
-
-	for ( size_t z = cursorIdx; z < mSelection.size(); z++ ) {
-		mSelection[z].setStart( TextPosition( mSelection[z].start().line() + numLines,
-											  mSelection[z].start().column() ) );
-		mSelection[z].setEnd(
-			TextPosition( mSelection[z].end().line() + numLines, mSelection[z].end().column() ) );
-		mSelection[z] = sanitizeRange( mSelection[z] );
-	}
-}
-
-void TextDocument::removeLinesSinceCursorIndex( const size_t& cursorIdx, const size_t& numLines ) {
-	if ( cursorIdx >= mSelection.size() || 0 == numLines )
-		return;
-
-	for ( size_t z = cursorIdx; z < mSelection.size(); z++ ) {
-		mSelection[z].setStart( TextPosition( mSelection[z].start().line() - numLines,
-											  mSelection[z].start().column() ) );
-		mSelection[z].setEnd(
-			TextPosition( mSelection[z].end().line() - numLines, mSelection[z].end().column() ) );
-		mSelection[z] = sanitizeRange( mSelection[z] );
-	}
-}
-
 void TextDocument::indent() {
 	if ( hasSelection() ) {
 		insertAtStartOfSelectedLines( getIndentString(), false );
@@ -1738,16 +1715,14 @@ void TextDocument::setIndentWidth( const Uint32& tabWidth ) {
 
 void TextDocument::deleteTo( const size_t& cursorIdx, TextPosition position ) {
 	TextPosition cursorPos = getSelectionIndex( cursorIdx ).normalized().start();
-	size_t linesRemoved = 0;
 	if ( getSelectionIndex( cursorIdx ).hasSelection() ) {
-		linesRemoved = remove( cursorIdx, getSelectionIndex( cursorIdx ) );
+		remove( cursorIdx, getSelectionIndex( cursorIdx ) );
 	} else {
 		TextRange range( cursorPos, position );
-		linesRemoved = remove( cursorIdx, range );
+		remove( cursorIdx, range );
 		range = range.normalized();
 		cursorPos = range.start();
 	}
-	removeLinesSinceCursorIndex( cursorIdx + 1, linesRemoved );
 	setSelection( cursorIdx, cursorPos );
 }
 
