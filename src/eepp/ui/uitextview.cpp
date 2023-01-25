@@ -675,9 +675,11 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
 			break;
-		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowColor: {
+			mFontStyleConfig.Style |= Text::Shadow;
 			setFontShadowColor( attribute.asColor() );
 			break;
+		}
 		case PropertyId::TextShadowOffset:
 			setFontShadowOffset( attribute.asVector2f() );
 			break;

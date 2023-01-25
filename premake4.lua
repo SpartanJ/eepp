@@ -1310,9 +1310,9 @@ solution "eepp"
 		end
 		if os.is_real("linux") then
 			if _OPTIONS["with-debug-symbols"] then
-				links { "util", "bfd", "dw", "dl" }
+				links { "util", "bfd", "dw", "dl", "stdc++fs" }
 			else
-				links { "util" }
+				links { "util", "stdc++fs" }
 			end
 		end
 		if (os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64")) and _OPTIONS["with-debug-symbols"] then

@@ -976,7 +976,6 @@ const Color& Text::getShadowColor() const {
 
 void Text::setShadowColor( const Color& color ) {
 	mShadowColor = color;
-	mStyle |= Text::Shadow;
 }
 
 const int& Text::getNumLines() {

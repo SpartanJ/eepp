@@ -498,10 +498,13 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( !mUsingCustomStyling )
 				setFontColor( attribute.asColor() );
 			break;
-		case PropertyId::TextShadowColor:
-			if ( !mUsingCustomStyling )
+		case PropertyId::TextShadowColor: {
+			if ( !mUsingCustomStyling ) {
+				mStyleConfig.Style |= Text::Shadow;
 				setFontShadowColor( attribute.asColor() );
+			}
 			break;
+		}
 		case PropertyId::TextShadowOffset:
 			if ( !mUsingCustomStyling )
 				setFontShadowOffset( attribute.asVector2f() );
