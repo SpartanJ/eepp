@@ -36,7 +36,7 @@ class EE_API TextRange {
 		return *this;
 	}
 
-	TextRange reversed() { return TextRange( mEnd, mStart ); }
+	TextRange reversed() const { return TextRange( mEnd, mStart ); }
 
 	void setStart( const TextPosition& position ) { mStart = position; }
 

@@ -59,13 +59,13 @@ size_t TextUndoCommandRemove::getCursorIdx() const {
 }
 
 TextUndoCommandSelection::TextUndoCommandSelection( const Uint64& id, const size_t& cursorIdx,
-													const TextRange& selection,
+													const TextRanges& selection,
 													const Time& timestamp ) :
 	TextUndoCommand( id, TextUndoCommandType::Selection, timestamp ),
 	mSelection( selection ),
 	mCursorIdx( cursorIdx ) {}
 
-const TextRange& TextUndoCommandSelection::getSelection() const {
+const TextRanges& TextUndoCommandSelection::getSelection() const {
 	return mSelection;
 }
 
@@ -124,7 +124,7 @@ void UndoStack::pushRemove( UndoStackContainer& undoStack, const size_t& cursorI
 }
 
 void UndoStack::pushSelection( UndoStackContainer& undoStack, const size_t& cursorIdx,
-							   const TextRange& selection, const Time& time ) {
+							   const TextRanges& selection, const Time& time ) {
 	pushUndo( undoStack, eeNew( TextUndoCommandSelection,
 								( ++mChangeIdCounter, cursorIdx, selection, time ) ) );
 }
@@ -152,7 +152,7 @@ void UndoStack::popUndo( UndoStackContainer& undoStack, UndoStackContainer& redo
 		}
 		case TextUndoCommandType::Selection: {
 			TextUndoCommandSelection* selection = static_cast<TextUndoCommandSelection*>( cmd );
-			mDoc->setSelection( selection->getCursorIdx(), selection->getSelection() );
+			mDoc->resetSelection( selection->getSelection() );
 			break;
 		}
 	}

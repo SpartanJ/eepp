@@ -3297,11 +3297,13 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		}
 	}
 
-	Float selectionY =
-		rect.Top + ( mDoc->getSelection().start().line() - minimapStartLine ) * lineSpacing;
-	primitives.setColor( Color( mMinimapCurrentLineColor ).blendAlpha( mAlpha ) );
-	primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
-
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		Float selectionY =
+			rect.Top +
+			( mDoc->getSelectionIndex( i ).start().line() - minimapStartLine ) * lineSpacing;
+		primitives.setColor( Color( mMinimapCurrentLineColor ).blendAlpha( mAlpha ) );
+		primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
+	}
 	primitives.setForceDraw( true );
 }
 

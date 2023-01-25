@@ -36,7 +36,8 @@ class DocSearchController {
 				 { "mod+w", "change-whole-word" },
 				 { "mod+l", "toggle-lua-pattern" },
 				 { "mod+e", "change-escape-sequence" },
-				 { "mod+shift+g", "find-prev" } };
+				 { "mod+shift+g", "find-prev" },
+				 { "mod+shift+a", "select-all-results" } };
 	}
 
 	DocSearchController( UICodeEditorSplitter*, App* app );
@@ -64,6 +65,8 @@ class DocSearchController {
 	SearchState& getSearchState();
 
 	SearchBarConfig getSearchBarConfig() const;
+
+	void selectAll( SearchState& search );
 
   protected:
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };

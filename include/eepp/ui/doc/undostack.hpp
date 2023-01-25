@@ -67,15 +67,15 @@ class EE_API TextUndoCommandRemove : public TextUndoCommand {
 
 class EE_API TextUndoCommandSelection : public TextUndoCommand {
   public:
-	TextUndoCommandSelection( const Uint64& id, const size_t& cursorIdx, const TextRange& selection,
-							  const Time& timestamp );
+	TextUndoCommandSelection( const Uint64& id, const size_t& cursorIdx,
+							  const TextRanges& selection, const Time& timestamp );
 
-	const TextRange& getSelection() const;
+	const TextRanges& getSelection() const;
 
 	size_t getCursorIdx() const;
 
   protected:
-	TextRange mSelection;
+	TextRanges mSelection;
 	size_t mCursorIdx;
 };
 
@@ -128,7 +128,7 @@ class EE_API UndoStack {
 					 const Time& time );
 
 	void pushSelection( UndoStackContainer& undoStack, const size_t& cursorIdx,
-						const TextRange& selection, const Time& time );
+						const TextRanges& selection, const Time& time );
 
 	UndoStackContainer& getUndoStackContainer();
 

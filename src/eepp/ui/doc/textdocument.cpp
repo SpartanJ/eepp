@@ -685,7 +685,11 @@ TextRange TextDocument::addSelection( const TextPosition& selection ) {
 }
 
 TextRange TextDocument::addSelection( TextRange selection ) {
+	if ( mSelection.exists( selection ) )
+		return {};
 	selection = sanitizeRange( selection );
+	if ( mSelection.exists( selection ) )
+		return {};
 	mSelection.push_back( selection );
 	mSelection.sort();
 	mergeSelection();
@@ -849,7 +853,7 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 
 	TextPosition cursor = positionOffset( position, text.size() );
 
-	mUndoStack.pushSelection( undoStack, cursorIdx, getSelectionIndex( cursorIdx ), time );
+	mUndoStack.pushSelection( undoStack, cursorIdx, mSelection, time );
 	mUndoStack.pushRemove( undoStack, cursorIdx, { position, cursor }, time );
 
 	notifyTextChanged( { { position, position }, text } );
@@ -901,7 +905,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	}
 
 	TextRange originalRange = range;
-	mUndoStack.pushSelection( undoStack, cursorIdx, getSelectionIndex( cursorIdx ), time );
+	mUndoStack.pushSelection( undoStack, cursorIdx, mSelection, time );
 	mUndoStack.pushInsert( undoStack, getText( range ), cursorIdx, range.start(), time );
 
 	size_t linesRemoved = 0;
@@ -959,6 +963,26 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 
 	if ( lines().empty() )
 		mLines.emplace_back( String( "\n" ) );
+
+	if ( mSelection.size() > 1 ) {
+		for ( auto& sel : mSelection ) {
+			auto selNorm( sel.normalized() );
+			auto ranNorm( range.normalized() );
+
+			if ( selNorm.start().line() < ranNorm.end().line() )
+				break;
+
+			if ( selNorm.end().line() == ranNorm.end().line() &&
+				 ranNorm.end().column() < selNorm.start().column() ) {
+				auto colRem = ranNorm.start().line() == ranNorm.end().line()
+								  ? ranNorm.end().column() - ranNorm.start().column()
+								  : ranNorm.end().column();
+				sel.start().setColumn( sel.start().column() - colRem );
+				sel.end().setColumn( sel.end().column() - colRem );
+				sel = sanitizeRange( sel );
+			}
+		}
+	}
 
 	notifyTextChanged( { originalRange, "" } );
 	notifyLineChanged( range.start().line() );
