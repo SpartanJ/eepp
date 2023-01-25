@@ -128,6 +128,21 @@ class EE_API TextRanges : public std::vector<TextRange> {
 		return false;
 	}
 
+	size_t findIndex( const TextRange& range ) const {
+		for ( size_t i = 0; i < size(); ++i ) {
+			if ( ( *this )[i] == range )
+				return i;
+		}
+		return 0;
+	}
+
+	bool hasSelection() const {
+		for ( const auto& r : *this )
+			if ( r.hasSelection() )
+				return true;
+		return false;
+	}
+
 	void sort() { std::sort( begin(), end() ); }
 
 	bool merge() {

@@ -490,13 +490,21 @@ class EE_API TextDocument {
 
 	void setSelection( const size_t& cursorIdx, const TextRange& range );
 
-	TextRange addSelection( const TextRange& selection );
+	TextRange addSelection( TextRange selection );
+
+	TextRange addSelection( const TextPosition& selection );
 
 	void popSelection();
 
 	void deleteSelection( const size_t& cursorIdx );
 
 	String getSelectedText( const size_t& cursorIdx ) const;
+
+	size_t getLastSelection() const;
+
+	bool selectionExists( const TextRange& selection );
+
+	bool selectionExists( const TextPosition& selection );
 
   protected:
 	friend class UndoStack;
@@ -534,6 +542,7 @@ class EE_API TextDocument {
 	Client* mActiveClient{ nullptr };
 	mutable Mutex mLoadingMutex;
 	mutable Mutex mLoadingFilePathMutex;
+	size_t mLastSelection{ 0 };
 
 	void initializeCommands();
 
@@ -580,7 +589,7 @@ class EE_API TextDocument {
 						 UndoStackContainer& undoStack, const Time& time,
 						 bool fromUndoRedo = false );
 
-	void appendLineIfLastLine( Int64 line );
+	void appendLineIfLastLine( const size_t& cursorIdx, Int64 line );
 
 	void guessIndentType();
 

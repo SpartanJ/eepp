@@ -61,6 +61,7 @@ void TextDocument::reset() {
 	mFileRealPath = FileInfo();
 	mSelection.clear();
 	mSelection.push_back( { { 0, 0 }, { 0, 0 } } );
+	mLastSelection = 0;
 	mLines.clear();
 	mLines.emplace_back( String( "\n" ) );
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainStyle();
@@ -74,6 +75,7 @@ void TextDocument::resetCursor() {
 	auto cursor = sanitizeRange( mSelection.front() );
 	mSelection.clear();
 	mSelection.push_back( cursor );
+	mLastSelection = 0;
 	notifyCursorChanged();
 	notifySelectionChanged();
 }
@@ -230,6 +232,8 @@ void TextDocument::guessIndentType() {
 
 void TextDocument::mergeSelection() {
 	mSelection.merge();
+	if ( mLastSelection >= mSelection.size() )
+		mLastSelection = mSelection.size() - 1;
 }
 
 bool TextDocument::hasSyntaxDefinition() const {
@@ -597,6 +601,13 @@ std::string TextDocument::getFilename() const {
 }
 
 void TextDocument::setSelection( const TextRanges& selection ) {
+	if ( selection.empty() ) {
+		mSelection.clear();
+		mSelection.push_back( { { 0, 0 }, { 0, 0 } } );
+		mLastSelection = 0;
+		return;
+	}
+
 	auto prevSelection = mSelection;
 
 	for ( size_t i = 0; i < selection.size(); ++i ) {
@@ -604,7 +615,9 @@ void TextDocument::setSelection( const TextRanges& selection ) {
 			mSelection.push_back( selection[i] );
 		setSelection( i, selection[i] );
 	}
+
 	mSelection.sort();
+	mLastSelection = selection.size() - 1;
 }
 
 void TextDocument::resetSelection( const TextRanges& selection ) {
@@ -650,8 +663,8 @@ void TextDocument::setSelection( const size_t& cursorIdx, TextPosition start, Te
 
 	if ( mSelection[cursorIdx] != TextRange( start, end ) ) {
 		mSelection[cursorIdx].set( start, end );
-		notifyCursorChanged();
-		notifySelectionChanged();
+		notifyCursorChanged( mSelection[cursorIdx].start() );
+		notifySelectionChanged( mSelection[cursorIdx] );
 	}
 }
 
@@ -667,17 +680,25 @@ void TextDocument::setSelection( const size_t& cursorIdx, const TextRange& range
 	setSelection( cursorIdx, range.start(), range.end() );
 }
 
-TextRange TextDocument::addSelection( const TextRange& selection ) {
+TextRange TextDocument::addSelection( const TextPosition& selection ) {
+	return addSelection( { selection, selection } );
+}
+
+TextRange TextDocument::addSelection( TextRange selection ) {
+	selection = sanitizeRange( selection );
 	mSelection.push_back( selection );
 	mSelection.sort();
 	mergeSelection();
-	notifyCursorChanged();
-	notifySelectionChanged();
+	notifyCursorChanged( selection.start() );
+	notifySelectionChanged( selection );
+	mLastSelection = mSelection.findIndex( selection );
 	return selection;
 }
 
 void TextDocument::popSelection() {
 	mSelection.pop_back();
+	if ( mLastSelection >= mSelection.size() )
+		mLastSelection = mSelection.size() - 1;
 	notifyCursorChanged();
 	notifySelectionChanged();
 }
@@ -691,7 +712,7 @@ const TextRanges& TextDocument::getSelections() const {
 }
 
 std::vector<TextRange> TextDocument::getSelectionsSorted() const {
-	std::vector<TextRange> selections( mSelection );
+	auto selections( mSelection );
 	for ( auto& selection : selections )
 		selection.normalize();
 	return selections;
@@ -703,6 +724,8 @@ const TextRange& TextDocument::getSelectionIndex( const size_t& index ) const {
 }
 
 const TextRange& TextDocument::getSelection() const {
+	if ( mLastSelection >= 0 && mLastSelection < mSelection.size() )
+		return mSelection[mLastSelection];
 	return mSelection.front();
 }
 
@@ -727,7 +750,7 @@ std::vector<TextDocumentLine>& TextDocument::lines() {
 }
 
 bool TextDocument::hasSelection() const {
-	return mSelection.front().start() != mSelection.front().end();
+	return mSelection.hasSelection();
 }
 
 String TextDocument::getText( const TextRange& range ) const {
@@ -754,6 +777,18 @@ String TextDocument::getSelectedText() const {
 
 String TextDocument::getSelectedText( const size_t& cursorIdx ) const {
 	return getText( getSelectionIndex( cursorIdx ) );
+}
+
+size_t TextDocument::getLastSelection() const {
+	return mLastSelection;
+}
+
+bool TextDocument::selectionExists( const TextRange& selection ) {
+	return mSelection.exists( selection );
+}
+
+bool TextDocument::selectionExists( const TextPosition& selection ) {
+	return mSelection.exists( { selection, selection } );
 }
 
 String::StringBaseType TextDocument::getPrevChar() const {
@@ -821,6 +856,17 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 
 	if ( lineCount != mLines.size() ) {
 		notifyLineCountChanged( lineCount, mLines.size() );
+	}
+
+	if ( mSelection.size() > 1 ) {
+		for ( auto& sel : mSelection ) {
+			auto selNorm( sel.normalized() );
+			if ( selNorm.start().line() == position.line() &&
+				 selNorm.start().column() >= position.column() ) {
+				sel.start().setColumn( positionOffset( sel.start(), text.size() ).column() );
+				sel.end().setColumn( positionOffset( sel.end(), text.size() ).column() );
+			}
+		}
 	}
 
 	return cursor;
@@ -1609,28 +1655,32 @@ void TextDocument::unindent() {
 }
 
 void TextDocument::moveLinesUp() {
-	TextRange range = getSelection( true );
-	bool swap = getSelection( true ) != getSelection();
-	appendLineIfLastLine( range.end().line() );
-	if ( range.start().line() > 0 ) {
-		auto& text = line( range.start().line() - 1 );
-		insert( 0, { range.end().line() + 1, 0 }, text.getText() );
-		remove( 0, { { range.start().line() - 1, 0 }, { range.start().line(), 0 } } );
-		setSelection( { range.start().line() - 1, range.start().column() },
-					  { range.end().line() - 1, range.end().column() }, swap );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextRange range = getSelectionIndex( i ).normalized();
+		bool swap = getSelectionIndex( i ).normalized() != getSelection();
+		appendLineIfLastLine( i, range.end().line() );
+		if ( range.start().line() > 0 ) {
+			auto& text = line( range.start().line() - 1 );
+			insert( i, { range.end().line() + 1, 0 }, text.getText() );
+			remove( i, { { range.start().line() - 1, 0 }, { range.start().line(), 0 } } );
+			setSelection( i, { range.start().line() - 1, range.start().column() },
+						  { range.end().line() - 1, range.end().column() }, swap );
+		}
 	}
 }
 
 void TextDocument::moveLinesDown() {
-	TextRange range = getSelection( true );
-	bool swap = getSelection( true ) != getSelection();
-	appendLineIfLastLine( range.end().line() + 1 );
-	if ( range.end().line() < (Int64)mLines.size() - 1 ) {
-		auto text = line( range.end().line() + 1 );
-		remove( 0, { { range.end().line() + 1, 0 }, { range.end().line() + 2, 0 } } );
-		insert( 0, { range.start().line(), 0 }, text.getText() );
-		setSelection( { range.start().line() + 1, range.start().column() },
-					  { range.end().line() + 1, range.end().column() }, swap );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		TextRange range = getSelectionIndex( i ).normalized();
+		bool swap = getSelectionIndex( i ).normalized() != getSelection();
+		appendLineIfLastLine( i, range.end().line() + 1 );
+		if ( range.end().line() < (Int64)mLines.size() - 1 ) {
+			auto text = line( range.end().line() + 1 );
+			remove( i, { { range.end().line() + 1, 0 }, { range.end().line() + 2, 0 } } );
+			insert( i, { range.start().line(), 0 }, text.getText() );
+			setSelection( i, { range.start().line() + 1, range.start().column() },
+						  { range.end().line() + 1, range.end().column() }, swap );
+		}
 	}
 }
 
@@ -1642,9 +1692,9 @@ bool TextDocument::hasRedo() const {
 	return mUndoStack.hasRedo();
 }
 
-void TextDocument::appendLineIfLastLine( Int64 line ) {
+void TextDocument::appendLineIfLastLine( const size_t& cursorIdx, Int64 line ) {
 	if ( line >= (Int64)mLines.size() - 1 ) {
-		insert( 0, endOfDoc(), "\n" );
+		insert( cursorIdx, endOfDoc(), "\n" );
 	}
 }
 
