@@ -24,12 +24,13 @@ const Time& TextUndoCommand::getTimestamp() const {
 	return mTimestamp;
 }
 
-TextUndoCommandInsert::TextUndoCommandInsert( const Uint64& id, const String& text,
-											  const TextPosition& position,
+TextUndoCommandInsert::TextUndoCommandInsert( const Uint64& id, const size_t& cursorIdx,
+											  const String& text, const TextPosition& position,
 											  const Time& timestamp ) :
 	TextUndoCommand( id, TextUndoCommandType::Insert, timestamp ),
 	mText( text ),
-	mPosition( position ) {}
+	mPosition( position ),
+	mCursorIdx( cursorIdx ) {}
 
 const String& TextUndoCommandInsert::getText() const {
 	return mText;
@@ -39,20 +40,37 @@ const TextPosition& TextUndoCommandInsert::getPosition() const {
 	return mPosition;
 }
 
-TextUndoCommandRemove::TextUndoCommandRemove( const Uint64& id, const TextRange& range,
-											  const Time& timestamp ) :
-	TextUndoCommand( id, TextUndoCommandType::Remove, timestamp ), mRange( range ) {}
+size_t TextUndoCommandInsert::getCursorIdx() const {
+	return mCursorIdx;
+}
+
+TextUndoCommandRemove::TextUndoCommandRemove( const Uint64& id, const size_t& cursorIdx,
+											  const TextRange& range, const Time& timestamp ) :
+	TextUndoCommand( id, TextUndoCommandType::Remove, timestamp ),
+	mRange( range ),
+	mCursorIdx( cursorIdx ) {}
 
 const TextRange& TextUndoCommandRemove::getRange() const {
 	return mRange;
 }
 
-TextUndoCommandSelection::TextUndoCommandSelection( const Uint64& id, const TextRange& selection,
-													const Time& timestamp ) :
-	TextUndoCommand( id, TextUndoCommandType::Selection, timestamp ), mSelection( selection ) {}
+size_t TextUndoCommandRemove::getCursorIdx() const {
+	return mCursorIdx;
+}
 
-const TextRange& TextUndoCommandSelection::getSelection() const {
+TextUndoCommandSelection::TextUndoCommandSelection( const Uint64& id, const size_t& cursorIdx,
+													const TextRanges& selection,
+													const Time& timestamp ) :
+	TextUndoCommand( id, TextUndoCommandType::Selection, timestamp ),
+	mSelection( selection ),
+	mCursorIdx( cursorIdx ) {}
+
+const TextRanges& TextUndoCommandSelection::getSelection() const {
 	return mSelection;
+}
+
+size_t TextUndoCommandSelection::getCursorIdx() const {
+	return mCursorIdx;
 }
 
 UndoStack::UndoStack( TextDocument* owner, const Uint32& maxStackSize ) :
@@ -93,20 +111,22 @@ void UndoStack::pushUndo( UndoStackContainer& undoStack, TextUndoCommand* cmd ) 
 }
 
 void UndoStack::pushInsert( UndoStackContainer& undoStack, const String& string,
-							const TextPosition& position, const Time& time ) {
-	pushUndo( undoStack,
-			  eeNew( TextUndoCommandInsert, ( ++mChangeIdCounter, string, position, time ) ) );
-}
-
-void UndoStack::pushRemove( UndoStackContainer& undoStack, const TextRange& range,
+							const size_t& cursorIdx, const TextPosition& position,
 							const Time& time ) {
-	pushUndo( undoStack, eeNew( TextUndoCommandRemove, ( ++mChangeIdCounter, range, time ) ) );
+	pushUndo( undoStack, eeNew( TextUndoCommandInsert,
+								( ++mChangeIdCounter, cursorIdx, string, position, time ) ) );
 }
 
-void UndoStack::pushSelection( UndoStackContainer& undoStack, const TextRange& selection,
-							   const Time& time ) {
+void UndoStack::pushRemove( UndoStackContainer& undoStack, const size_t& cursorIdx,
+							const TextRange& range, const Time& time ) {
 	pushUndo( undoStack,
-			  eeNew( TextUndoCommandSelection, ( ++mChangeIdCounter, selection, time ) ) );
+			  eeNew( TextUndoCommandRemove, ( ++mChangeIdCounter, cursorIdx, range, time ) ) );
+}
+
+void UndoStack::pushSelection( UndoStackContainer& undoStack, const size_t& cursorIdx,
+							   const TextRanges& selection, const Time& time ) {
+	pushUndo( undoStack, eeNew( TextUndoCommandSelection,
+								( ++mChangeIdCounter, cursorIdx, selection, time ) ) );
 }
 
 void UndoStack::popUndo( UndoStackContainer& undoStack, UndoStackContainer& redoStack ) {
@@ -120,18 +140,19 @@ void UndoStack::popUndo( UndoStackContainer& undoStack, UndoStackContainer& redo
 	switch ( cmd->getType() ) {
 		case TextUndoCommandType::Insert: {
 			TextUndoCommandInsert* insert = static_cast<TextUndoCommandInsert*>( cmd );
-			mDoc->insert( insert->getPosition(), insert->getText(), redoStack,
-						  cmd->getTimestamp() );
+			mDoc->insert( insert->getCursorIdx(), insert->getPosition(), insert->getText(),
+						  redoStack, cmd->getTimestamp(), true );
 			break;
 		}
 		case TextUndoCommandType::Remove: {
 			TextUndoCommandRemove* remove = static_cast<TextUndoCommandRemove*>( cmd );
-			mDoc->remove( remove->getRange(), redoStack, cmd->getTimestamp() );
+			mDoc->remove( remove->getCursorIdx(), remove->getRange(), redoStack,
+						  cmd->getTimestamp(), true );
 			break;
 		}
 		case TextUndoCommandType::Selection: {
 			TextUndoCommandSelection* selection = static_cast<TextUndoCommandSelection*>( cmd );
-			mDoc->setSelection( selection->getSelection() );
+			mDoc->resetSelection( selection->getSelection() );
 			break;
 		}
 	}

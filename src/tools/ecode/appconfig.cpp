@@ -302,7 +302,7 @@ json saveNode( Node* node ) {
 					json f;
 					f["type"] = "editor";
 					f["path"] = editor->getDocument().getFilePath();
-					f["selection"] = editor->getDocument().getSelection().toString();
+					f["selection"] = editor->getDocument().getSelections().toString();
 					files.emplace_back( f );
 				}
 			} else if ( ownedWidget->isType( UI_TYPE_TERMINAL ) ) {
@@ -365,7 +365,7 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 				std::string path( file["path"] );
 				if ( !FileSystem::fileExists( path ) )
 					return;
-				TextRange selection( TextRange::fromString( file["selection"] ) );
+				TextRanges selection( TextRanges::fromString( file["selection"] ) );
 				UITab* tab = nullptr;
 				if ( ( tab = editorSplitter->isDocumentOpen( path, false, true ) ) != nullptr ) {
 					auto tabAndEditor = editorSplitter->createCodeEditorInTabWidget( curTabWidget );

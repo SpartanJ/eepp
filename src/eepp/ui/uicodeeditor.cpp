@@ -98,6 +98,10 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_UP, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-upper" },
 		{ { KEY_DOWN, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-lower" },
 		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
+		{ { KEY_UP, KEYMOD_LALT }, "add-cursor-above" },
+		{ { KEY_DOWN, KEYMOD_LALT }, "add-cursor-below" },
+		{ { KEY_ESCAPE }, "reset-cursor" },
 	};
 }
 
@@ -235,10 +239,13 @@ void UICodeEditor::draw() {
 	}
 
 	if ( !mLocked && mHighlightCurrentLine ) {
-		primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
-		primitives.drawRectangle( Rectf(
-			Vector2f( startScroll.x + mScroll.x, startScroll.y + cursor.line() * lineHeight ),
-			Sizef( mSize.getWidth(), lineHeight ) ) );
+		for ( const auto& cursor : mDoc->getSelections() ) {
+			primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
+			primitives.drawRectangle(
+				Rectf( Vector2f( startScroll.x + mScroll.x,
+								 startScroll.y + cursor.start().line() * lineHeight ),
+					   Sizef( mSize.getWidth(), lineHeight ) ) );
+		}
 	}
 
 	if ( mLineBreakingColumn ) {
@@ -259,13 +266,16 @@ void UICodeEditor::draw() {
 					   mColorScheme.getEditorSyntaxStyle( "selection_region" ).color );
 	}
 
-	if ( mDoc->hasSelection() ) {
-		drawTextRange( mDoc->getSelection( true ), lineRange, startScroll, lineHeight,
-					   mFontStyleConfig.getFontSelectionBackColor() );
-	}
-
 	if ( mHighlightSelectionMatch && mDoc->hasSelection() && mDoc->getSelection().inSameLine() ) {
 		drawSelectionMatch( lineRange, startScroll, lineHeight );
+	}
+
+	if ( mDoc->hasSelection() ) {
+		auto selections = mDoc->getSelectionsSorted();
+		for ( const auto& sel : selections ) {
+			drawTextRange( sel, lineRange, startScroll, lineHeight,
+						   mFontStyleConfig.getFontSelectionBackColor() );
+		}
 	}
 
 	if ( !mHighlightWord.empty() ) {
@@ -306,7 +316,8 @@ void UICodeEditor::draw() {
 		}
 	}
 
-	drawCursor( startScroll, lineHeight, cursor );
+	for ( const auto& cursor : mDoc->getSelections() )
+		drawCursor( startScroll, lineHeight, cursor.start() );
 
 	if ( mShowLineNumber ) {
 		drawLineNumbers( lineRange, startScroll,
@@ -1068,8 +1079,19 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		input->captureMouse( true );
 		setFocus();
 		if ( flags & EE_BUTTON_LMASK ) {
-			if ( input->isShiftPressed() ) {
+			if ( input->isShiftPressed() && input->isAltPressed() ) {
+				TextRange range( mDoc->getSelection().start(),
+								 resolveScreenPosition( position.asFloat() ) );
+				range.normalize();
+				range = mDoc->sanitizeRange( range );
+				for ( Int64 i = range.start().line(); i < range.end().line(); ++i )
+					mDoc->addSelection( { i, range.start().column() } );
+			} else if ( input->isShiftPressed() ) {
 				mDoc->selectTo( resolveScreenPosition( position.asFloat() ) );
+			} else if ( input->isControlPressed() ) {
+				TextPosition pos( resolveScreenPosition( position.asFloat() ) );
+				if ( !mDoc->selectionExists( pos ) )
+					mDoc->addSelection( { pos, pos } );
 			} else {
 				mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
 			}
@@ -2272,8 +2294,9 @@ void UICodeEditor::resetCursor() {
 	mBlinkTimer.restart();
 }
 
-TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int offset ) {
-	auto& xo = mLastXOffset;
+TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int offset,
+											 const size_t& cursorIdx ) {
+	auto& xo = mLastXOffset[cursorIdx];
 	if ( xo.position != position )
 		xo.offset = getXOffsetColSanitized( position );
 	xo.position.setLine( position.line() + offset );
@@ -2282,31 +2305,49 @@ TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int o
 }
 
 void UICodeEditor::moveToPreviousLine() {
-	TextPosition position = mDoc->getSelection().start();
-	if ( position.line() == 0 )
-		return mDoc->moveToStartOfDoc();
-	mDoc->moveTo( moveToLineOffset( position, -1 ) );
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition position = mDoc->getSelections()[i].start();
+		if ( position.line() == 0 ) {
+			mDoc->setSelection( i, mDoc->startOfDoc(), mDoc->startOfDoc() );
+		} else {
+			mDoc->moveTo( i, moveToLineOffset( position, -1, i ) );
+		}
+	}
+	mDoc->mergeSelection();
 }
 
 void UICodeEditor::moveToNextLine() {
-	TextPosition position = mDoc->getSelection().start();
-	if ( position.line() == (Int64)mDoc->linesCount() - 1 )
-		return mDoc->moveToEndOfDoc();
-	mDoc->moveTo( moveToLineOffset( position, 1 ) );
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition position = mDoc->getSelections()[i].start();
+		if ( position.line() == (Int64)mDoc->linesCount() - 1 ) {
+			mDoc->setSelection( i, mDoc->endOfDoc(), mDoc->endOfDoc() );
+		} else {
+			mDoc->moveTo( i, moveToLineOffset( position, 1, i ) );
+		}
+	}
+	mDoc->mergeSelection();
 }
 
 void UICodeEditor::selectToPreviousLine() {
-	TextPosition position = mDoc->getSelection().start();
-	if ( position.line() == 0 )
-		return mDoc->selectToStartOfDoc();
-	mDoc->selectTo( moveToLineOffset( position, -1 ) );
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition position = mDoc->getSelectionIndex( i ).start();
+		if ( position.line() == 0 ) {
+			mDoc->selectTo( i, mDoc->startOfDoc() );
+		} else {
+			mDoc->selectTo( i, moveToLineOffset( position, -1 ) );
+		}
+	}
 }
 
 void UICodeEditor::selectToNextLine() {
-	TextPosition position = mDoc->getSelection().start();
-	if ( position.line() == (Int64)mDoc->linesCount() - 1 )
-		return mDoc->selectToEndOfDoc();
-	mDoc->selectTo( moveToLineOffset( position, 1 ) );
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition position = mDoc->getSelectionIndex( i ).start();
+		if ( position.line() == (Int64)mDoc->linesCount() - 1 ) {
+			mDoc->selectTo( i, mDoc->endOfDoc() );
+		} else {
+			mDoc->selectTo( i, moveToLineOffset( position, 1 ) );
+		}
+	}
 }
 
 void UICodeEditor::moveScrollUp() {
@@ -3215,8 +3256,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			}
 
 			if ( mDoc->hasSelection() ) {
-				drawTextRange( mDoc->getSelection( true ), index,
-							   Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
+				Color selectionColor( Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
+				auto selections = mDoc->getSelectionsSorted();
+				for ( const auto& sel : selections ) {
+					drawTextRange( sel, index, selectionColor );
+				}
 			}
 
 			lineY = lineY + lineSpacing;
@@ -3253,11 +3297,13 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		}
 	}
 
-	Float selectionY =
-		rect.Top + ( mDoc->getSelection().start().line() - minimapStartLine ) * lineSpacing;
-	primitives.setColor( Color( mMinimapCurrentLineColor ).blendAlpha( mAlpha ) );
-	primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
-
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		Float selectionY =
+			rect.Top +
+			( mDoc->getSelectionIndex( i ).start().line() - minimapStartLine ) * lineSpacing;
+		primitives.setColor( Color( mMinimapCurrentLineColor ).blendAlpha( mAlpha ) );
+		primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
+	}
 	primitives.setForceDraw( true );
 }
 
@@ -3380,4 +3426,5 @@ void UICodeEditor::invalidateLinesCache() {
 		invalidateDraw();
 	}
 }
+
 }} // namespace EE::UI

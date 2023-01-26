@@ -386,7 +386,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setFindLongestLineWidthUpdateFrequency( const Time& findLongestLineWidthUpdateFrequency );
 
 	/** Doc commands executed in this editor. */
-	TextPosition moveToLineOffset( const TextPosition& position, int offset );
+	TextPosition moveToLineOffset( const TextPosition& position, int offset,
+								   const size_t& cursorIdx = 0 );
 
 	void moveToPreviousLine();
 
@@ -568,8 +569,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
   protected:
 	struct LastXOffset {
-		TextPosition position;
-		Float offset;
+		TextPosition position{ 0, 0 };
+		Float offset{ 0.f };
 	};
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
@@ -631,7 +632,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;
 	UIScrollBar* mHScrollBar;
-	LastXOffset mLastXOffset{ { 0, 0 }, 0.f };
+	std::map<size_t, LastXOffset> mLastXOffset;
 	KeyBindings mKeyBindings;
 	std::unordered_set<std::string> mUnlockedCmd;
 	Clock mLastDoubleClick;

@@ -2439,7 +2439,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 					<vbox layout_width="wrap_content" layout_height="wrap_content">
 						<hbox layout_width="wrap_content" layout_height="wrap_content" margin-bottom="2dp">
 							<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text='@string(previous, "Previous")' margin-right="4dp" />
-							<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text='@string(next, "Next")' margin-right="4dp" />
+							<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text='@string(next, "Next")' margin-right="4dp" />"
+							<PushButton id="select_all" layout_width="wrap_content" layout_height="18dp" text='@string(select_all, "Select All")' />
 							<RelativeLayout layout_width="0" layout_weight="1" layout_height="18dp">
 								<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" margin-right="2dp" />
 							</RelativeLayout>
@@ -2651,6 +2652,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		}
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
+
+		Clock defClock;
+		SyntaxDefinitionManager::createSingleton();
+		Log::info( "Syntax definitions loaded in %.2f ms.",
+				   defClock.getElapsed().asMilliseconds() );
 
 		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );

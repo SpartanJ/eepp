@@ -29,7 +29,8 @@ void DocSearchController::initSearchBar(
 	kbind.addKeybindsString(
 		{ { mApp->getKeybind( "repeat-find" ), "repeat-find" },
 		  { mApp->getKeybind( "find-prev" ), "find-prev" },
-		  { mApp->getKeybind( "open-global-search" ), "open-global-search" } } );
+		  { mApp->getKeybind( "open-global-search" ), "open-global-search" },
+		  { mApp->getKeybind( "select-all-results" ), "select-all-results" } } );
 	kbind.addKeybindsStringUnordered( keybindings );
 
 	mFindInput = mSearchBarLayout->find<UITextInput>( "search_find" );
@@ -44,6 +45,7 @@ void DocSearchController::initSearchBar(
 	UIPushButton* findNextButton = mSearchBarLayout->find<UIPushButton>( "find_next" );
 	UIPushButton* replaceButton = mSearchBarLayout->find<UIPushButton>( "replace" );
 	UIPushButton* findReplaceButton = mSearchBarLayout->find<UIPushButton>( "replace_find" );
+	UIPushButton* selectAllButton = mSearchBarLayout->find<UIPushButton>( "select_all" );
 	UIWidget* closeButton = mSearchBarLayout->find<UIWidget>( "searchbar_close" );
 	mCaseSensitiveChk->setChecked( searchBarConfig.caseSensitive );
 	mLuaPatternChk->setChecked( searchBarConfig.luaPattern );
@@ -56,7 +58,7 @@ void DocSearchController::initSearchBar(
 	std::string kbindEscape = kbind.getCommandKeybindString( "change-escape-sequence" );
 	if ( !kbindEscape.empty() )
 		mEscapeSequenceChk->setTooltipText( mEscapeSequenceChk->getTooltipText() + " (" +
-										   kbindEscape + ")" );
+											kbindEscape + ")" );
 
 	mCaseSensitiveChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
 		mSearchState.caseSensitive = mCaseSensitiveChk->isChecked();
@@ -72,7 +74,7 @@ void DocSearchController::initSearchBar(
 
 	mLuaPatternChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
 		mSearchState.type = mLuaPatternChk->isChecked() ? TextDocument::FindReplaceType::LuaPattern
-													   : TextDocument::FindReplaceType::Normal;
+														: TextDocument::FindReplaceType::Normal;
 	} );
 
 	mFindInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
@@ -118,6 +120,7 @@ void DocSearchController::initSearchBar(
 			String::format( "Replaced %zu occurrences.", count ) );
 		mReplaceInput->setFocus();
 	} );
+	mSearchBarLayout->setCommand( "select-all-results", [this] { selectAll( mSearchState ); } );
 	mSearchBarLayout->setCommand(
 		"find-and-replace", [this] { findAndReplace( mSearchState, mReplaceInput->getText() ); } );
 	mSearchBarLayout->setCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
@@ -126,8 +129,8 @@ void DocSearchController::initSearchBar(
 	} );
 	mSearchBarLayout->setCommand(
 		"change-case", [&] { mCaseSensitiveChk->setChecked( !mCaseSensitiveChk->isChecked() ); } );
-	mSearchBarLayout->setCommand( "change-whole-word",
-								  [&] { mWholeWordChk->setChecked( !mWholeWordChk->isChecked() ); } );
+	mSearchBarLayout->setCommand(
+		"change-whole-word", [&] { mWholeWordChk->setChecked( !mWholeWordChk->isChecked() ); } );
 	mSearchBarLayout->setCommand( "change-escape-sequence", [&] {
 		mEscapeSequenceChk->setChecked( !mEscapeSequenceChk->isChecked() );
 	} );
@@ -139,12 +142,13 @@ void DocSearchController::initSearchBar(
 	addReturnListener( mReplaceInput, "find-and-replace" );
 	addClickListener( findPrevButton, "find-prev" );
 	addClickListener( findNextButton, "repeat-find" );
+	addClickListener( selectAllButton, "select-all-results" );
 	addClickListener( replaceButton, "replace-selection" );
 	addClickListener( findReplaceButton, "find-and-replace" );
 	addClickListener( replaceAllButton, "replace-all" );
 	addClickListener( closeButton, "close-searchbar" );
 	mReplaceInput->addEventListener( Event::OnTabNavigate,
-									[&]( const Event* ) { mFindInput->setFocus(); } );
+									 [&]( const Event* ) { mFindInput->setFocus(); } );
 }
 
 void DocSearchController::showFindView() {
@@ -160,7 +164,7 @@ void DocSearchController::showFindView() {
 	mSearchState.wholeWord = mWholeWordChk->isChecked();
 	mSearchState.escapeSequences = mEscapeSequenceChk->isChecked();
 	mSearchState.type = mLuaPatternChk->isChecked() ? TextDocument::FindReplaceType::LuaPattern
-												   : TextDocument::FindReplaceType::Normal;
+													: TextDocument::FindReplaceType::Normal;
 	mSearchBarLayout->setEnabled( true )->setVisible( true );
 
 	mFindInput->getDocument().selectAll();
@@ -272,6 +276,22 @@ bool DocSearchController::replaceSelection( SearchState& search, const String& r
 	search.editor->getDocument().setActiveClient( search.editor );
 	search.editor->getDocument().replaceSelection( replacement );
 	return true;
+}
+
+void DocSearchController::selectAll( SearchState& search ) {
+	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) )
+		return;
+	if ( search.text.empty() )
+		search.text = mLastSearch;
+	if ( search.text.empty() )
+		return;
+	search.editor->getDocument().setActiveClient( search.editor );
+	mLastSearch = search.text;
+	TextDocument& doc = search.editor->getDocument();
+	TextRanges ranges = doc.findAll( search.text, search.caseSensitive, search.wholeWord,
+									 search.type, search.range );
+	for ( const auto& range : ranges )
+		doc.addSelection( range.reversed() );
 }
 
 int DocSearchController::replaceAll( SearchState& search, const String& replace ) {
