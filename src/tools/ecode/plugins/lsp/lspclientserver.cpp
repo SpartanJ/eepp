@@ -64,6 +64,16 @@ static json newID( const PluginIDType& id ) {
 	return j;
 }
 
+static json newEmptyResult( const PluginIDType& id ) {
+	json j;
+	j[MEMBER_RESULT] = json( json::value_t::object );
+	if ( id.isInteger() )
+		j[MEMBER_ID] = id.asInt();
+	else
+		j[MEMBER_ID] = id.asString();
+	return j;
+}
+
 static std::string jsonString( const json& container, const std::string& member,
 							   const std::string& def ) {
 	return container.is_object() && container.contains( member ) && container[member].is_string()
@@ -1207,7 +1217,7 @@ void LSPClientServer::processRequest( const json& msg ) {
 	//	auto params = msg[MEMBER_PARAMS];
 	//	bool handled = false;
 	if ( method == "window/workDoneProgress/create" || method == "client/registerCapability" ) {
-		write( newID( msgid ) );
+		write( newEmptyResult( msgid ) );
 		return;
 	}
 	write( newError( LSPErrorCode::MethodNotFound, method ), nullptr, nullptr, msgid );
