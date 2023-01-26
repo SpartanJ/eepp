@@ -113,6 +113,14 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	void tryHideTooltip( UICodeEditor* editor, const Vector2i& position );
 
 	void hideTooltip( UICodeEditor* editor );
+
+	void tryDisplayTooltip( UICodeEditor* editor, const LSPHover& resp, const Vector2i& position );
+
+	void displayTooltip( UICodeEditor* editor, const LSPHover& resp, const Vector2f& position );
+
+	void getSymbolInfo( UICodeEditor* editor );
+
+	void switchSourceHeader( UICodeEditor* editor );
 };
 
 } // namespace ecode

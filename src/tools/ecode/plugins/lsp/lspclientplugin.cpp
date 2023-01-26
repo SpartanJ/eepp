@@ -226,8 +226,10 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 				Time::fromString( config["server_close_after_idle_time"].get<std::string>() ) );
 	}
 
-	if ( mKeyBindings.empty() )
+	if ( mKeyBindings.empty() ) {
 		mKeyBindings["lsp-go-to-definition"] = "f2";
+		mKeyBindings["lsp-symbol-info"] = "f1";
+	}
 
 	if ( j.contains( "keybindings" ) ) {
 		auto kb = j["keybindings"];
@@ -235,8 +237,9 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			if ( kb.contains( key ) )
 				mKeyBindings[key] = kb[key];
 		};
-		auto list = { "lsp-go-to-definition", "lsp-go-to-declaration", "lsp-go-to-implementation",
-					  "lsp-go-to-type-definition", "lsp-switch-header-source" };
+		auto list = { "lsp-go-to-definition",	  "lsp-go-to-declaration",
+					  "lsp-go-to-implementation", "lsp-go-to-type-definition",
+					  "lsp-switch-header-source", "lsp-symbol-info" };
 		for ( const auto& key : list )
 			bindKey( key );
 	}
@@ -376,11 +379,11 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 											   "textDocument/typeDefinition" );
 		} );
 
-		editor->getDocument().setCommand( "lsp-switch-header-source", [&, editor]() {
-			auto* server = mClientManager.getOneLSPClientServer( editor );
-			if ( server )
-				server->switchSourceHeader( editor->getDocument().getURI() );
-		} );
+		editor->getDocument().setCommand( "lsp-switch-header-source",
+										  [&, editor]() { switchSourceHeader( editor ); } );
+
+		editor->getDocument().setCommand( "lsp-symbol-info",
+										  [&, editor]() { getSymbolInfo( editor ); } );
 	}
 
 	std::vector<Uint32> listeners;
@@ -398,6 +401,31 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		mClientManager.run( editor->getDocumentRef() );
 	if ( !mReady )
 		mDelayedDocs[&editor->getDocument()] = editor->getDocumentRef();
+}
+
+void LSPClientPlugin::switchSourceHeader( UICodeEditor* editor ) {
+	auto* server = mClientManager.getOneLSPClientServer( editor );
+	if ( server )
+		server->switchSourceHeader( editor->getDocument().getURI() );
+}
+
+void LSPClientPlugin::getSymbolInfo( UICodeEditor* editor ) {
+	auto server = mClientManager.getOneLSPClientServer( editor );
+	if ( server == nullptr )
+		return;
+	server->documentHover(
+		editor->getDocument().getURI(), editor->getDocument().getSelection().start(),
+		[&, editor]( const Int64&, const LSPHover& resp ) {
+			if ( resp.range.isValid() && !resp.contents.empty() &&
+				 !resp.contents[0].value.empty() ) {
+				editor->runOnMainThread( [editor, resp, this]() {
+					displayTooltip(
+						editor, resp,
+						editor->getScreenPosition( editor->getDocument().getSelection().start() )
+							.getPosition() );
+				} );
+			}
+		} );
 }
 
 void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
@@ -442,6 +470,8 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 	};
 	auto cap = server->getCapabilities();
 
+	addFn( "lsp-symbol-info", "Symbol Info" );
+
 	if ( cap.definitionProvider )
 		addFn( "lsp-go-to-definition", "Go To Definition" );
 
@@ -461,14 +491,15 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 }
 
 void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
-	if ( editor && editor->getTooltip() && editor->getTooltip()->isVisible() ) {
+	UITooltip* tooltip = nullptr;
+	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() ) {
 		editor->setTooltipText( "" );
-		editor->getTooltip()->hide();
+		tooltip->hide();
 		// Restore old tooltip state
-		editor->getTooltip()->setFontStyle( mOldTextStyle );
-		editor->getTooltip()->setHorizontalAlign( mOldTextAlign );
-		editor->getTooltip()->setUsingCustomStyling( mOldUsingCustomStyling );
-		editor->getTooltip()->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
+		tooltip->setFontStyle( mOldTextStyle );
+		tooltip->setHorizontalAlign( mOldTextAlign );
+		tooltip->setUsingCustomStyling( mOldUsingCustomStyling );
+		tooltip->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
 	}
 }
 
@@ -481,6 +512,45 @@ void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& posi
 	TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
 	if ( mCurrentHover.range.isValid() && !mCurrentHover.range.contains( cursorPosition ) )
 		hideTooltip( editor );
+}
+
+void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp,
+									  const Vector2f& position ) {
+	editor->setTooltipText( resp.contents[0].value );
+	// HACK: Gets the old font style to restore it when the tooltip is hidden
+	UITooltip* tooltip = editor->getTooltip();
+	if ( tooltip == nullptr )
+		return;
+	mOldTextStyle = tooltip->getFontStyle();
+	mOldTextAlign = tooltip->getHorizontalAlign();
+	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
+	mOldUsingCustomStyling = tooltip->getUsingCustomStyling();
+	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
+	tooltip->setPixelsPosition( tooltip->getTooltipPosition( position ) );
+	tooltip->setDontAutoHideOnMouseMove( true );
+	tooltip->setUsingCustomStyling( true );
+	tooltip->setFontStyle( Text::Regular );
+
+	const auto& syntaxDef = resp.contents[0].kind == LSPMarkupKind::MarkDown
+								? SyntaxDefinitionManager::instance()->getByLSPName( "markdown" )
+								: editor->getSyntaxDefinition();
+
+	SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), *tooltip->getTextCache() );
+
+	if ( editor->hasFocus() && !tooltip->isVisible() )
+		tooltip->show();
+}
+
+void LSPClientPlugin::tryDisplayTooltip( UICodeEditor* editor, const LSPHover& resp,
+										 const Vector2i& position ) {
+	TextPosition startCursorPosition = editor->resolveScreenPosition( position.asFloat() );
+	TextPosition currentMousePosition = currentMouseTextPosition( editor );
+	if ( startCursorPosition != currentMousePosition ||
+		 !( resp.range.isValid() && !resp.contents.empty() && !resp.contents[0].value.empty() &&
+			resp.range.contains( startCursorPosition ) ) )
+		return;
+	mCurrentHover = resp;
+	displayTooltip( editor, resp, position.asFloat() );
 }
 
 bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
@@ -502,47 +572,10 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 				server->documentHover(
 					editor->getDocument().getURI(), currentMouseTextPosition( editor ),
 					[&, editor, position]( const Int64&, const LSPHover& resp ) {
-						if ( resp.range.isValid() && !resp.contents.empty() ) {
+						if ( resp.range.isValid() && !resp.contents.empty() &&
+							 !resp.contents[0].value.empty() ) {
 							editor->runOnMainThread( [editor, resp, position, this]() {
-								TextPosition startCursorPosition =
-									editor->resolveScreenPosition( position.asFloat() );
-								TextPosition currentMousePosition =
-									currentMouseTextPosition( editor );
-								if ( startCursorPosition != currentMousePosition )
-									return;
-								if ( resp.range.isValid() && !resp.contents.empty() &&
-									 resp.range.contains( startCursorPosition ) ) {
-									mCurrentHover = resp;
-									editor->setTooltipText( resp.contents[0].value );
-									// HACK: Gets the old font style to restore it when the tooltip
-									// is hidden
-									mOldTextStyle = editor->getTooltip()->getFontStyle();
-									mOldTextAlign = editor->getTooltip()->getHorizontalAlign();
-									mOldDontAutoHideOnMouseMove =
-										editor->getTooltip()->dontAutoHideOnMouseMove();
-									mOldUsingCustomStyling =
-										editor->getTooltip()->getUsingCustomStyling();
-									editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
-									editor->getTooltip()->setPixelsPosition(
-										editor->getTooltip()->getTooltipPosition(
-											position.asFloat() ) );
-									editor->getTooltip()->setDontAutoHideOnMouseMove( true );
-									editor->getTooltip()->setUsingCustomStyling( true );
-									editor->getTooltip()->setFontStyle( Text::Regular );
-
-									const auto& syntaxDef =
-										resp.contents[0].kind == LSPMarkupKind::MarkDown
-											? SyntaxDefinitionManager::instance()->getByLSPName(
-												  "markdown" )
-											: editor->getSyntaxDefinition();
-
-									SyntaxTokenizer::tokenizeText(
-										syntaxDef, editor->getColorScheme(),
-										*editor->getTooltip()->getTextCache() );
-
-									if ( editor->hasFocus() && !editor->getTooltip()->isVisible() )
-										editor->getTooltip()->show();
-								}
+								tryDisplayTooltip( editor, resp, position );
 							} );
 						}
 					} );

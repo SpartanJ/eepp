@@ -357,16 +357,16 @@ Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	return UINode::onMouseLeave( Pos, Flags );
 }
 
-UIWidget* UIWidget::setTooltipText( const String& Text ) {
-	if ( NULL == mTooltip ) { // If the tooltip wasn't created it will avoid to create a new one if
-							  // the string is ""
-		if ( Text.size() ) {
+UIWidget* UIWidget::setTooltipText( const String& text ) {
+	// If the tooltip wasn't created it will avoid to create a new one if the string is ""
+	if ( NULL == mTooltip ) {
+		if ( !text.empty() ) {
 			createTooltip();
 
-			mTooltip->setText( Text );
+			mTooltip->setText( text );
 		}
 	} else { // but if it's created, i will allow it
-		mTooltip->setText( Text );
+		mTooltip->setText( text );
 	}
 
 	return this;

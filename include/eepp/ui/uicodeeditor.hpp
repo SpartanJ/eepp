@@ -845,6 +845,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool gutterSpaceExists( UICodeEditorPlugin* plugin ) const;
 
 	bool topSpaceExists( UICodeEditorPlugin* plugin ) const;
+
+	bool createContextMenu();
 };
 
 }} // namespace EE::UI

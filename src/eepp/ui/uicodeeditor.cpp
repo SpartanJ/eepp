@@ -102,6 +102,7 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_UP, KEYMOD_LALT }, "add-cursor-above" },
 		{ { KEY_DOWN, KEYMOD_LALT }, "add-cursor-below" },
 		{ { KEY_ESCAPE }, "reset-cursor" },
+		{ { KEY_APPLICATION }, "open-context-menu" },
 	};
 }
 
@@ -163,6 +164,11 @@ UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
 	UICodeEditor( "codeeditor", autoRegisterBaseCommands, autoRegisterBaseKeybindings ) {}
 
 UICodeEditor::~UICodeEditor() {
+	if ( mCurrentMenu ) {
+		mCurrentMenu->clearEventListener();
+		mCurrentMenu = nullptr;
+	}
+
 	for ( auto& plugin : mPlugins )
 		plugin->onUnregister( this );
 
@@ -970,6 +976,11 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	}
 }
 
+bool UICodeEditor::createContextMenu() {
+	Rectf pos( getScreenPosition( mDoc->getSelection().start() ) );
+	return onCreateContextMenu( pos.getPosition().asInt(), 0 );
+}
+
 bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& flags ) {
 	if ( mCurrentMenu )
 		return false;
@@ -991,12 +1002,13 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	menu->addEventListener( Event::OnItemClicked, [&, menu]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string txt( item->getId() );
 		mDoc.get()->execute( txt );
+		menu->hide();
 	} );
 
 	Vector2f pos( position.asFloat() );
@@ -1004,6 +1016,10 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
+	menu->addEventListener( Event::OnMenuHide, [&]( const Event* ) {
+		if ( !isClosing() )
+			setFocus();
+	} );
 	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
 	return true;
@@ -2862,6 +2878,7 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "copy-containing-folder-path", [&] { copyContainingFolderPath(); } );
 	mDoc->setCommand( "copy-file-path", [&] { copyFilePath(); } );
 	mDoc->setCommand( "find-replace", [&] { showFindReplace(); } );
+	mDoc->setCommand( "open-context-menu", [&] { createContextMenu(); } );
 	mUnlockedCmd.insert( { "copy", "select-all" } );
 }
 

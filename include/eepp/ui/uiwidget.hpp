@@ -57,7 +57,7 @@ class EE_API UIWidget : public UINode {
 
 	void tooltipRemove();
 
-	UIWidget* setTooltipText( const String& Text );
+	UIWidget* setTooltipText( const String& text );
 
 	String getTooltipText();
 
