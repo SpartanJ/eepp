@@ -72,7 +72,7 @@ void TextDocument::reset() {
 }
 
 void TextDocument::resetCursor() {
-	auto cursor = sanitizeRange( mSelection.front() );
+	auto cursor = sanitizeRange( getSelection() );
 	mSelection.clear();
 	mSelection.push_back( cursor );
 	mLastSelection = 0;
@@ -708,6 +708,8 @@ void TextDocument::popSelection() {
 }
 
 TextRange TextDocument::getSelection( bool sort ) const {
+	if ( mLastSelection >= 0 && mLastSelection < mSelection.size() )
+		return sort ? mSelection[mLastSelection].normalized() : mSelection[mLastSelection];
 	return sort ? mSelection.front().normalized() : mSelection.front();
 }
 
@@ -746,7 +748,7 @@ size_t TextDocument::linesCount() const {
 }
 
 const TextDocumentLine& TextDocument::getCurrentLine() const {
-	return mLines[mSelection.front().start().line()];
+	return mLines[getSelection().start().line()];
 }
 
 std::vector<TextDocumentLine>& TextDocument::lines() {
@@ -1240,36 +1242,66 @@ void TextDocument::moveTo( const size_t& cursorIdx, int columnOffset ) {
 	setSelection( cursorIdx, positionOffset( getSelection().start(), columnOffset ) );
 }
 
-void TextDocument::textInput( const String& text ) {
-	if ( mAutoCloseBrackets && 1 == text.size() && mSelection.size() == 1 ) {
-		size_t pos = 0xFFFFFFFF;
-		for ( size_t i = 0; i < mAutoCloseBracketsPairs.size(); i++ ) {
-			if ( text[0] == mAutoCloseBracketsPairs[i].first ) {
-				pos = i;
-				break;
+std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
+	if ( !mAutoCloseBrackets || 1 != text.size() )
+		return {};
+
+	size_t pos = 0xFFFFFFFF;
+	for ( size_t i = 0; i < mAutoCloseBracketsPairs.size(); i++ ) {
+		if ( text[0] == mAutoCloseBracketsPairs[i].first ) {
+			pos = i;
+			break;
+		}
+	}
+
+	if ( pos == 0xFFFFFFFF )
+		return {};
+
+	std::vector<bool> inserted;
+	inserted.reserve( mSelection.size() );
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		auto& sel = mSelection[i];
+		if ( sel.hasSelection() ) {
+			replaceSelection( i, mAutoCloseBracketsPairs[pos].first + getSelectedText() +
+									 mAutoCloseBracketsPairs[pos].second );
+			inserted.push_back( true );
+		} else {
+			auto closeChar = mAutoCloseBracketsPairs[pos].second;
+			bool mustClose = true;
+
+			if ( sel.start().column() < (Int64)line( sel.start().line() ).size() ) {
+				auto ch = line( sel.start().line() ).getText()[sel.start().column()];
+				if ( ch == closeChar )
+					mustClose = false;
+			}
+
+			if ( mustClose ) {
+				setSelection(
+					i, positionOffset( insert( i, sel.start(), text + String( closeChar ) ), -1 ) );
+				inserted.push_back( true );
+			} else {
+				inserted.push_back( false );
 			}
 		}
-		if ( pos != 0xFFFFFFFF ) {
-			if ( hasSelection() ) {
-				replaceSelection( mAutoCloseBracketsPairs[pos].first + getSelectedText() +
-								  mAutoCloseBracketsPairs[pos].second );
-				return;
-			} else {
-				auto closeChar = mAutoCloseBracketsPairs[pos].second;
-				bool mustClose = true;
-				if ( getSelection().start().column() <
-					 (Int64)line( getSelection().start().line() ).size() ) {
-					auto ch = line( getSelection().start().line() )
-								  .getText()[getSelection().start().column()];
-					if ( ch == closeChar )
-						mustClose = false;
-				}
-				if ( mustClose ) {
-					setSelection( insert( 0, getSelection().start(), text ) );
-					insert( 0, getSelection().start(), String( closeChar ) );
-					return;
-				}
+	}
+
+	return inserted;
+}
+
+void TextDocument::textInput( const String& text ) {
+	if ( mAutoCloseBrackets && 1 == text.size() ) {
+		auto inserted = autoCloseBrackets( text );
+
+		if ( !inserted.empty() ) {
+			for ( size_t i = 0; i < mSelection.size(); ++i ) {
+				if ( inserted[i] || i >= inserted.size() )
+					continue;
+
+				if ( mSelection[i].hasSelection() )
+					deleteTo( i, 0 );
+				setSelection( i, insert( i, getSelectionIndex( i ).start(), text ) );
 			}
+			return;
 		}
 	}
 
@@ -2204,11 +2236,17 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 }
 
 TextPosition TextDocument::replaceSelection( const String& replace ) {
-	if ( hasSelection() ) {
-		deleteTo( 0, 0 );
-		textInput( replace );
+	return replaceSelection( 0, replace );
+}
+
+TextPosition TextDocument::replaceSelection( const size_t& cursorIdx, const String& replace ) {
+	eeASSERT( cursorIdx < mSelection.size() );
+	if ( getSelectionIndex( cursorIdx ).hasSelection() ) {
+		deleteTo( cursorIdx, 0 );
+		setSelection( cursorIdx,
+					  insert( cursorIdx, getSelectionIndex( cursorIdx ).start(), replace ) );
 	}
-	return getSelection( true ).end();
+	return getSelectionIndex( cursorIdx ).normalized().end();
 }
 
 TextPosition TextDocument::replace( String search, const String& replace, TextPosition from,
@@ -2218,7 +2256,7 @@ TextPosition TextDocument::replace( String search, const String& replace, TextPo
 	if ( found.isValid() ) {
 		setSelection( found );
 		deleteTo( 0, 0 );
-		textInput( replace );
+		setSelection( 0, insert( 0, getSelectionIndex( 0 ).start(), replace ) );
 		return found.end();
 	}
 	return TextPosition();

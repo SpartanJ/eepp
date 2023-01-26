@@ -506,6 +506,8 @@ class EE_API TextDocument {
 
 	bool selectionExists( const TextPosition& selection );
 
+	TextPosition replaceSelection( const size_t& cursorIdx, const String& replace );
+
   protected:
 	friend class UndoStack;
 
@@ -588,6 +590,8 @@ class EE_API TextDocument {
 	void appendLineIfLastLine( const size_t& cursorIdx, Int64 line );
 
 	void guessIndentType();
+
+	std::vector<bool> autoCloseBrackets( const String& text );
 
 	LoadStatus loadFromStream( IOStream& file, std::string path, bool callReset );
 
