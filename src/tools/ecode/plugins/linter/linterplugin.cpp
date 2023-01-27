@@ -705,7 +705,8 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			continue;
 
 		Primitives p;
-		line.setString( match.text );
+		auto nlPos = match.text.find_first_of( '\n' );
+		line.setString( nlPos != std::string::npos ? match.text.substr( 0, nlPos ) : match.text );
 		Float txtWidth = line.getTextWidth();
 		Float distWidth = realSpace - txtWidth;
 		if ( txtWidth > spaceWidth )

@@ -825,7 +825,9 @@ class EE_API String {
 							   const bool& pushEmptyString = false,
 							   const bool& keepDelim = false ) const;
 
-	std::pair<bool, int> fuzzyMatch( const String& pattern );
+	static std::string getFirstLine( const std::string& string );
+
+	String getFirstLine();
 
   private:
 	friend EE_API bool operator==( const String& left, const String& right );

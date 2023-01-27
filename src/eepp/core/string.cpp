@@ -367,6 +367,20 @@ std::vector<String> String::split( const StringBaseType& delim, const bool& push
 	return String::split( *this, delim, pushEmptyString, keepDelim );
 }
 
+std::string String::getFirstLine( const std::string& string ) {
+	auto pos = string.find_first_of( '\n' );
+	if ( pos == std::string::npos )
+		return string;
+	return string.substr( 0, pos );
+}
+
+String String::getFirstLine() {
+	auto pos = find_first_of( '\n' );
+	if ( pos == String::InvalidPos )
+		return *this;
+	return substr( 0, pos );
+}
+
 std::vector<std::string> String::split( const std::string& str, const std::string& delims,
 										const std::string& delimsPreserve, const std::string& quote,
 										const bool& removeQuotes ) {

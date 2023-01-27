@@ -138,8 +138,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<std::string> fontPath( parser, "fontpath", "Font path", { 'f', "font" } );
 	args::ValueFlag<std::string> fallbackFontPathF( parser, "fallback-fontpath",
 													"Fallback Font path", { "fallback-font" } );
-	args::ValueFlag<Float> fontSize( parser, "fontsize", "Font size (in dp)", { 's', "fontsize" },
-									 11 );
+	args::ValueFlag<Float> fontSize( parser, "fontsize", "Font size (in dp)", { "fontsize" }, 11 );
 	args::ValueFlag<Float> width( parser, "winwidth", "Window width (in dp)", { "width" }, 1280 );
 	args::ValueFlag<Float> height( parser, "winheight", "Window height (in dp)", { "height" },
 								   720 );
