@@ -1104,7 +1104,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 					mDoc->addSelection( { i, range.start().column() } );
 			} else if ( input->isShiftPressed() ) {
 				mDoc->selectTo( resolveScreenPosition( position.asFloat() ) );
-			} else if ( input->isControlPressed() ) {
+			} else if ( input->isControlPressed() && checkMouseOverLink( position ).empty() ) {
 				TextPosition pos( resolveScreenPosition( position.asFloat() ) );
 				if ( !mDoc->selectionExists( pos ) )
 					mDoc->addSelection( { pos, pos } );

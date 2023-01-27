@@ -149,6 +149,8 @@ class EE_API SyntaxDefinitionManager {
 	void addPerl();
 
 	void addxit();
+
+	void addNelua();
 };
 
 }}} // namespace EE::UI::Doc

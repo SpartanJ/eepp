@@ -14,12 +14,13 @@ struct EE_API SyntaxPattern {
 	std::vector<std::string> types;
 	std::string syntax{ "" };
 
-	SyntaxPattern( std::vector<std::string> patterns, std::string type, std::string syntax = "" ) :
-		patterns( patterns ), types( { type } ), syntax( syntax ) {}
+	SyntaxPattern( std::vector<std::string> _patterns, std::string _type,
+				   std::string _syntax = "" ) :
+		patterns( _patterns ), types( { _type } ), syntax( _syntax ) {}
 
-	SyntaxPattern( std::vector<std::string> patterns, std::vector<std::string> types,
-				   std::string syntax = "" ) :
-		patterns( patterns ), types( types ), syntax( syntax ) {}
+	SyntaxPattern( std::vector<std::string> _patterns, std::vector<std::string> _types,
+				   std::string _syntax = "" ) :
+		patterns( _patterns ), types( _types ), syntax( _syntax ) {}
 };
 
 class EE_API SyntaxDefinition {

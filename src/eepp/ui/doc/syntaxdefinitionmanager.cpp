@@ -120,6 +120,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addPerl();
 
 	addxit();
+
+	addNelua();
 }
 
 void SyntaxDefinitionManager::addPlainText() {
@@ -3774,6 +3776,52 @@ void SyntaxDefinitionManager::addxit() {
 		{},
 		"",
 	} );
+}
+
+void SyntaxDefinitionManager::addNelua() {
+	add( { "Nelua",
+		   { "%.nelua$" },
+		   {
+			   { { "##%[=*%[", "%]=*%]" }, "function", "Lua" },
+			   { { "#|", "|#" }, "function", "Lua" },
+			   { { "##", "\n" }, "function", "Lua" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "%[%[", "%]%]" }, "string" },
+			   { { "%-%-%[=*%[", "%]=*%]" }, "comment" },
+			   { { "%-%-.-\n" }, "comment" },
+			   { { "0x%x+%.%x*[pP][-+]?%d+" }, "number" },
+			   { { "0x%x+%.%x*" }, "number" },
+			   { { "0x%.%x+[pP][-+]?%d+" }, "number" },
+			   { { "0x%.%x+" }, "number" },
+			   { { "0x%x+[pP][-+]?%d+" }, "number" },
+			   { { "0x%x+" }, "number" },
+			   { { "%d%.%d*[eE][-+]?%d+" }, "number" },
+			   { { "%d%.%d*" }, "number" },
+			   { { "%.?%d*[eE][-+]?%d+" }, "number" },
+			   { { "<%S[%w+%._,%s*'\"()<>]-%S>" }, "keyword2" },
+			   { { "%.?%d+" }, "number" },
+			   { { "%.%.%.?" }, "operator" },
+			   { { "[<>~=]=" }, "operator" },
+			   { { "[%+%-=/%*%^%%#<>]" }, "operator" },
+			   { { "([%a_][%w_]*)(%s*%f[(\"'{])" }, { "function", "function", "normal" } },
+			   { { "[%a_][%w_]*" }, "symbol" },
+			   { { "::[%a_][%w_]*::" }, "function" },
+		   },
+		   {
+			   { "if", "keyword" },		  { "then", "keyword" },   { "else", "keyword" },
+			   { "elseif", "keyword" },	  { "end", "keyword" },	   { "do", "keyword" },
+			   { "function", "keyword" }, { "repeat", "keyword" }, { "until", "keyword" },
+			   { "while", "keyword" },	  { "for", "keyword" },	   { "break", "keyword" },
+			   { "return", "keyword" },	  { "local", "keyword" },  { "in", "keyword" },
+			   { "not", "keyword" },	  { "and", "keyword" },	   { "or", "keyword" },
+			   { "goto", "keyword" },	  { "self", "keyword2" },  { "true", "literal" },
+			   { "false", "literal" },	  { "nil", "literal" },	   { "global", "keyword" },
+			   { "switch", "keyword" },	  { "case", "keyword" },   { "defer", "keyword" },
+			   { "continue", "keyword" }, { "nilptr", "keyword" },
+		   },
+		   "--",
+		   { "^#!.*[ /]nelua" } } );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
