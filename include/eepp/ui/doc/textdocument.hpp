@@ -512,6 +512,8 @@ class EE_API TextDocument {
 
 	void selectAllMatches();
 
+	String getAllSelectedText() const;
+
   protected:
 	friend class UndoStack;
 

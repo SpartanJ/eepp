@@ -777,6 +777,19 @@ String TextDocument::getText() const {
 	return getText( getDocRange() );
 }
 
+String TextDocument::getAllSelectedText() const {
+	String text;
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		String sel( getSelectedText( i ) );
+		if ( !sel.empty() ) {
+			text += std::move( sel );
+			if ( i != mSelection.size() - 1 )
+				text += "\n";
+		}
+	}
+	return text;
+}
+
 String TextDocument::getSelectedText() const {
 	return getText( getSelection() );
 }
