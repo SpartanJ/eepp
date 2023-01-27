@@ -102,6 +102,8 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_UP, KEYMOD_LALT }, "add-cursor-above" },
 		{ { KEY_DOWN, KEYMOD_LALT }, "add-cursor-below" },
 		{ { KEY_ESCAPE }, "reset-cursor" },
+		{ { KEY_U, KeyMod::getDefaultModifier() }, "cursor-undo" },
+		{ { KEY_A, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-all-matches" },
 		{ { KEY_APPLICATION }, "open-context-menu" },
 	};
 }

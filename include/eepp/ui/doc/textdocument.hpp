@@ -508,6 +508,10 @@ class EE_API TextDocument {
 
 	TextPosition replaceSelection( const size_t& cursorIdx, const String& replace );
 
+	void cursorUndo();
+
+	void selectAllMatches();
+
   protected:
 	friend class UndoStack;
 

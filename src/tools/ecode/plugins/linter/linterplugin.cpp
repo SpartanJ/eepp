@@ -736,16 +736,18 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 			auto& matches = matchIt->second;
 			for ( auto& match : matches ) {
 				if ( match.box[editor].contains( localPos ) ) {
+					if ( match.text.empty() )
+						return false;
 					mHoveringMatch = true;
-					editor->runOnMainThread( [pos, match, editor] {
-						editor->setTooltipText( match.text );
-						editor->getTooltip()->setHorizontalAlign( UI_HALIGN_LEFT );
-						editor->getTooltip()->setDontAutoHideOnMouseMove( true );
-						editor->getTooltip()->setPixelsPosition(
-							editor->getTooltip()->getTooltipPosition( pos.asFloat() ) );
-						if ( !editor->getTooltip()->isVisible() )
-							editor->getTooltip()->show();
-					} );
+					editor->setTooltipText( match.text );
+					UITooltip* tooltip = editor->getTooltip();
+					if ( tooltip == nullptr )
+						return false;
+					tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
+					tooltip->setDontAutoHideOnMouseMove( true );
+					tooltip->setPixelsPosition( tooltip->getTooltipPosition( pos.asFloat() ) );
+					if ( !tooltip->isVisible() )
+						tooltip->show();
 					return true;
 				}
 			}

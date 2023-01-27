@@ -2249,6 +2249,25 @@ TextPosition TextDocument::replaceSelection( const size_t& cursorIdx, const Stri
 	return getSelectionIndex( cursorIdx ).normalized().end();
 }
 
+void TextDocument::cursorUndo() {
+	mSelection.erase( mSelection.begin() + mLastSelection );
+	mLastSelection = mSelection.size() - 1;
+	notifySelectionChanged();
+	notifyCursorChanged();
+}
+
+void TextDocument::selectAllMatches() {
+	if ( !hasSelection() )
+		return;
+	auto sel = getSelection();
+	TextRanges ranges = findAll( getSelectedText(), true, false );
+	for ( const auto& range : ranges ) {
+		if ( sel == range || sel.normalized() == range )
+			continue;
+		addSelection( range.reversed() );
+	}
+}
+
 TextPosition TextDocument::replace( String search, const String& replace, TextPosition from,
 									const bool& caseSensitive, const bool& wholeWord,
 									const FindReplaceType& type, TextRange restrictRange ) {
@@ -2492,6 +2511,8 @@ void TextDocument::initializeCommands() {
 	mCommands["reset-cursor"] = [&] { resetCursor(); };
 	mCommands["add-cursor-above"] = [&] { addCursorAbove(); };
 	mCommands["add-cursor-below"] = [&] { addCursorBelow(); };
+	mCommands["cursor-undo"] = [&] { cursorUndo(); };
+	mCommands["select-all-matches"] = [&] { selectAllMatches(); };
 }
 
 TextRange TextDocument::getTopMostCursor() {
