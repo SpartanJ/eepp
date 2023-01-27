@@ -93,6 +93,8 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 		if ( config.contains( "enable_lsp_diagnostics" ) &&
 			 config["enable_lsp_diagnostics"].is_boolean() )
 			setEnableLSPDiagnostics( config["enable_lsp_diagnostics"].get<bool>() );
+		if ( config.contains( "enable_error_lens" ) && config["enable_error_lens"].is_boolean() )
+			setErrorLens( config["enable_error_lens"].get<bool>() );
 		if ( config.contains( "disable_lsp_languages" ) &&
 			 config["disable_lsp_languages"].is_array() ) {
 			const auto& langs = config["disable_lsp_languages"];
@@ -420,6 +422,14 @@ void LinterPlugin::setEnableLSPDiagnostics( bool enableLSPDiagnostics ) {
 	mEnableLSPDiagnostics = enableLSPDiagnostics;
 }
 
+bool LinterPlugin::getErrorLens() const {
+	return mErrorLens;
+}
+
+void LinterPlugin::setErrorLens( bool errorLens ) {
+	mErrorLens = errorLens;
+}
+
 void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 	if ( !mLanguagesDisabled.empty() &&
 		 mLanguagesDisabled.find( doc->getSyntaxDefinition().getLSPName() ) !=
@@ -630,7 +640,6 @@ std::string LinterPlugin::getMatchString( const LinterType& type ) {
 	return "error";
 }
 
-// TODO: Implement error lens
 void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 									  const Float& /*fontSize*/, const Float& lineHeight ) {
 	Lock l( mMatchesMutex );
@@ -644,6 +653,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		return;
 	TextDocument* doc = matchIt->first;
 	std::vector<LinterMatch>& matches = lineIt->second;
+	Float sepSpace = PixelDensity::dpToPx( 24.f );
 
 	for ( size_t i = 0; i < matches.size(); ++i ) {
 		auto& match = matches[i];
@@ -665,10 +675,11 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			return;
 
 		Text line( "", editor->getFont(), editor->getFontSize() );
+		Color color(
+			editor->getColorScheme().getEditorSyntaxStyle( getMatchString( match.type ) ).color );
 		line.setTabWidth( editor->getTabWidth() );
 		line.setStyleConfig( editor->getFontStyleConfig() );
-		line.setColor(
-			editor->getColorScheme().getEditorSyntaxStyle( getMatchString( match.type ) ).color );
+		line.setColor( color );
 
 		Int64 strSize = match.range.end().column() - match.range.start().column();
 		Vector2f pos = { position.x + editor->getXOffsetCol( match.range.start() ), position.y };
@@ -683,6 +694,28 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		Rectf box( pos - editor->getScreenPos(), { editor->getTextWidth( string ), lineHeight } );
 		match.box[editor] = box;
 		line.draw( pos.x, pos.y + lineHeight * 0.5f );
+
+		if ( !mErrorLens || i != 0 )
+			continue;
+
+		Float lineWidth = editor->getLineWidth( index ) + sepSpace;
+		Float realSpace = editor->getViewportWidth();
+		Float spaceWidth = realSpace - lineWidth;
+		if ( spaceWidth < sepSpace )
+			continue;
+
+		Primitives p;
+		line.setString( match.text );
+		Float txtWidth = line.getTextWidth();
+		Float distWidth = realSpace - txtWidth;
+		if ( txtWidth > spaceWidth )
+			distWidth = lineWidth;
+
+		Color blendedColor( Color( color, 50 ) );
+		p.drawRectangle( Rectf( { position.x + distWidth, position.y }, { txtWidth, lineHeight } ),
+						 Color::Transparent, Color::Transparent, blendedColor, blendedColor );
+		line.setColor( Color( color, 180 ) );
+		line.draw( position.x + distWidth, position.y );
 	}
 }
 

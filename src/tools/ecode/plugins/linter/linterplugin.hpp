@@ -95,6 +95,10 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	void setEnableLSPDiagnostics( bool enableLSPDiagnostics );
 
+	bool getErrorLens() const;
+
+	void setErrorLens( bool errorLens );
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mPool;
@@ -116,6 +120,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 	bool mShuttingDown{ false };
 	bool mHoveringMatch{ false };
 	bool mEnableLSPDiagnostics{ true };
+	bool mErrorLens{ false };
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
 

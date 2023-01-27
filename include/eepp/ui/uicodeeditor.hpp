@@ -567,6 +567,24 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setShowLineEndings( bool showLineEndings );
 
+	Rectf getMinimapRect( const Vector2f& start ) const;
+
+	Float getMinimapWidth() const;
+
+	void resetCursor();
+
+	Vector2f getViewPortLineCount() const;
+
+	Sizef getMaxScroll() const;
+
+	void setScrollX( const Float& val, bool emmitEvent = true );
+
+	void setScrollY( const Float& val, bool emmitEvent = true );
+
+	Vector2f getScreenStart() const;
+
+	Float getViewportWidth( const bool& forceVScroll = false ) const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -742,16 +760,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
 
-	void setScrollX( const Float& val, bool emmitEvent = true );
-
-	void setScrollY( const Float& val, bool emmitEvent = true );
-
-	void resetCursor();
-
-	Vector2f getViewPortLineCount() const;
-
-	Sizef getMaxScroll() const;
-
 	void updateScrollBar();
 
 	void checkColorPickerAction();
@@ -810,8 +818,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void disableEditorFeatures();
 
-	Float getViewportWidth( const bool& forceVScroll = false ) const;
-
 	void udpateGlyphWidth();
 
 	Drawable* findIcon( const std::string& name );
@@ -824,15 +830,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& lineRange );
 
-	Vector2f getScreenStart() const;
-
 	Float getMinimapLineSpacing() const;
 
 	bool isMinimapFileTooLarge() const;
-
-	Rectf getMinimapRect( const Vector2f& start ) const;
-
-	Float getMinimapWidth() const;
 
 	void updateMipmapHover( const Vector2f& position );
 

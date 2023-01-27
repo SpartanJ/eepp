@@ -1110,11 +1110,6 @@ Tab:not(:selected):hover {
 	color: var(--menu-font-active);
 }
 
-Tooltip {
-	background-color: var(--font)!important;
-	color: var(--back)!important;
-}
-
 tab::icon,
 tab:selected > tab::icon, {
 	tint: var(--icon);
