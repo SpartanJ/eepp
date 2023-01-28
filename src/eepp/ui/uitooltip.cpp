@@ -211,7 +211,10 @@ const Color& UITooltip::getFontShadowColor() const {
 void UITooltip::setFontShadowColor( const Color& color ) {
 	if ( mStyleConfig.ShadowColor != color ) {
 		mStyleConfig.ShadowColor = color;
-		mStyleConfig.Style |= Text::Shadow;
+		if ( mStyleConfig.ShadowColor != Color::Transparent )
+			mStyleConfig.Style |= Text::Shadow;
+		else
+			mStyleConfig.Style &= ~Text::Shadow;
 		mTextCache->setShadowColor( color );
 		onAlphaChange();
 		invalidateDraw();
@@ -509,10 +512,8 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 				setFontColor( attribute.asColor() );
 			break;
 		case PropertyId::TextShadowColor: {
-			if ( !mUsingCustomStyling ) {
-				mStyleConfig.Style |= Text::Shadow;
+			if ( !mUsingCustomStyling )
 				setFontShadowColor( attribute.asColor() );
-			}
 			break;
 		}
 		case PropertyId::TextShadowOffset:

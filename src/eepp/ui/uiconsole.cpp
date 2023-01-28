@@ -143,7 +143,6 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontColor( attribute.asColor() );
 			break;
 		case PropertyId::TextShadowColor: {
-			mFontStyleConfig.Style |= Text::Shadow;
 			setFontShadowColor( attribute.asColor() );
 			break;
 		}
@@ -284,7 +283,10 @@ const Color& UIConsole::getFontSelectionBackColor() const {
 UIConsole* UIConsole::setFontShadowColor( const Color& color ) {
 	if ( color != mFontStyleConfig.getFontShadowColor() ) {
 		mFontStyleConfig.ShadowColor = color;
-		mFontStyleConfig.Style |= Text::Shadow;
+		if ( mFontStyleConfig.ShadowColor != Color::Transparent )
+			mFontStyleConfig.Style |= Text::Shadow;
+		else
+			mFontStyleConfig.Style &= ~Text::Shadow;
 		onFontStyleChanged();
 	}
 	return this;

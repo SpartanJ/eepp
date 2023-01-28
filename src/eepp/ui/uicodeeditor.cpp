@@ -1861,7 +1861,10 @@ bool UICodeEditor::isUnlockedCommand( const std::string& command ) {
 UICodeEditor* UICodeEditor::setFontShadowColor( const Color& color ) {
 	if ( mFontStyleConfig.ShadowColor != color ) {
 		mFontStyleConfig.ShadowColor = color;
-		mFontStyleConfig.Style |= Text::Shadow;
+		if ( mFontStyleConfig.ShadowColor != Color::Transparent )
+			mFontStyleConfig.Style |= Text::Shadow;
+		else
+			mFontStyleConfig.Style &= ~Text::Shadow;
 		invalidateDraw();
 		onFontStyleChanged();
 	}
@@ -1969,7 +1972,6 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontColor( attribute.asColor() );
 			break;
 		case PropertyId::TextShadowColor: {
-			mFontStyleConfig.Style |= Text::Shadow;
 			setFontShadowColor( attribute.asColor() );
 			break;
 		}

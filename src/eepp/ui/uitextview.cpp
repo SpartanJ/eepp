@@ -259,7 +259,10 @@ const Color& UITextView::getFontShadowColor() const {
 UITextView* UITextView::setFontShadowColor( const Color& color ) {
 	if ( mFontStyleConfig.ShadowColor != color ) {
 		mFontStyleConfig.ShadowColor = color;
-		mFontStyleConfig.Style |= Text::Shadow;
+		if ( mFontStyleConfig.ShadowColor != Color::Transparent )
+			mFontStyleConfig.Style |= Text::Shadow;
+		else
+			mFontStyleConfig.Style &= ~Text::Shadow;
 		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
 		mTextCache->setShadowColor( newColor );
 		onFontStyleChanged();
@@ -676,7 +679,6 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontColor( attribute.asColor() );
 			break;
 		case PropertyId::TextShadowColor: {
-			mFontStyleConfig.Style |= Text::Shadow;
 			setFontShadowColor( attribute.asColor() );
 			break;
 		}
