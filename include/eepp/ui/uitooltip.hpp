@@ -119,6 +119,8 @@ class EE_API UITooltip : public UIWidget {
 
 	const Vector2f& getFontShadowOffset() const;
 
+	void notifyTextChangedFromTextCache();
+
   protected:
 	Text* mTextCache;
 	UIFontStyleConfig mStyleConfig;

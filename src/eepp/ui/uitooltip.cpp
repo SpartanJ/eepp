@@ -52,6 +52,10 @@ Vector2f UITooltip::getTooltipPosition( UITooltip* toolip, const Vector2f& reque
 		pos.y = 0;
 	}
 
+	pos.x = eeclamp( pos.x, 0.f,
+					 eemax( 0.f, uiSceneNode->getPixelsSize().getWidth() -
+									 toolip->getPixelsSize().getWidth() ) );
+
 	return pos;
 }
 
@@ -216,6 +220,12 @@ void UITooltip::setFontShadowColor( const Color& color ) {
 
 const Vector2f& UITooltip::getFontShadowOffset() const {
 	return mStyleConfig.ShadowOffset;
+}
+
+void UITooltip::notifyTextChangedFromTextCache() {
+	autoPadding();
+	onAutoSize();
+	autoAlign();
 }
 
 void UITooltip::setFontShadowOffset( const Vector2f& offset ) {

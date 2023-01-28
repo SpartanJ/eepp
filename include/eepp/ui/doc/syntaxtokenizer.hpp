@@ -28,14 +28,15 @@ struct SyntaxState {
 
 class EE_API SyntaxTokenizer {
   public:
-	static std::pair<std::vector<SyntaxToken>, Uint32> tokenize( const SyntaxDefinition& syntax,
-																 const std::string& text,
-																 const Uint32& state,
-																 const size_t& startIndex = 0 );
+	static std::pair<std::vector<SyntaxToken>, Uint32>
+	tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
+			  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
 
 	static Text& tokenizeText( const SyntaxDefinition& syntax, const SyntaxColorScheme& colorScheme,
 							   Text& text, const size_t& startIndex = 0,
-							   const size_t& endIndex = 0xFFFFFFFF );
+							   const size_t& endIndex = 0xFFFFFFFF,
+							   bool skipSubSyntaxSeparator = false,
+							   const std::string& trimChars = "" );
 
 	static SyntaxState retrieveSyntaxState( const SyntaxDefinition& syntax, const Uint32& state );
 };

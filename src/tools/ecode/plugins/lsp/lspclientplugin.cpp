@@ -535,7 +535,10 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 								? SyntaxDefinitionManager::instance()->getByLSPName( "markdown" )
 								: editor->getSyntaxDefinition();
 
-	SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), *tooltip->getTextCache() );
+	SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), *tooltip->getTextCache(), 0,
+								   0xFFFFFFFF, true, "\n\t " );
+
+	tooltip->notifyTextChangedFromTextCache();
 
 	if ( editor->hasFocus() && !tooltip->isVisible() )
 		tooltip->show();
