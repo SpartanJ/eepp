@@ -2595,8 +2595,8 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	for ( auto& token : tokens ) {
 		String text( token.text );
 		Float textWidth = isMonospace ? getTextWidth( text ) : 0;
-		if ( position.x + textWidth >= mScreenPos.x &&
-			 position.x <= mScreenPos.x + mSize.getWidth() ) {
+		if ( !isMonospace || ( position.x + textWidth >= mScreenPos.x &&
+							   position.x <= mScreenPos.x + mSize.getWidth() ) ) {
 			Int64 curCharsWidth = text.size();
 			Int64 curPositionChar = eefloor( mScroll.x / getGlyphWidth() );
 			Float curMaxPositionChar = curPositionChar + maxWidth;
@@ -2692,7 +2692,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 				primitives.drawRectangle( Rectf( position, Sizef( textWidth, lineHeight ) ) );
 			}
 
-			if ( curPositionChar + curChar + curCharsWidth > curMaxPositionChar ) {
+			if ( isMonospace && curPositionChar + curChar + curCharsWidth > curMaxPositionChar ) {
 				if ( curChar < curPositionChar ) {
 					Int64 charsToVisible = curPositionChar - curChar;
 					Int64 start = eemax( (Int64)0, curPositionChar - curChar );
