@@ -85,6 +85,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	bool mReady{ false };
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
+	bool mSymbolInfoShowing{ false };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::map<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
 	Uint32 mHoverWaitCb;

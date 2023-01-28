@@ -393,6 +393,12 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 			mClientManager.run( editor->getDocumentRef() );
 		} ) );
 
+	listeners.push_back(
+		editor->addEventListener( Event::OnCursorPosChange, [&, editor]( const Event* ) {
+			if ( mSymbolInfoShowing )
+				hideTooltip( editor );
+		} ) );
+
 	mEditors.insert( { editor, listeners } );
 	mEditorsTags.insert( { editor, {} } );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
@@ -416,9 +422,9 @@ void LSPClientPlugin::getSymbolInfo( UICodeEditor* editor ) {
 	server->documentHover(
 		editor->getDocument().getURI(), editor->getDocument().getSelection().start(),
 		[&, editor]( const Int64&, const LSPHover& resp ) {
-			if ( resp.range.isValid() && !resp.contents.empty() &&
-				 !resp.contents[0].value.empty() ) {
+			if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
 				editor->runOnMainThread( [editor, resp, this]() {
+					mSymbolInfoShowing = true;
 					displayTooltip(
 						editor, resp,
 						editor->getScreenPosition( editor->getDocument().getSelection().start() )
@@ -491,6 +497,7 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 }
 
 void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
+	mSymbolInfoShowing = false;
 	UITooltip* tooltip = nullptr;
 	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() ) {
 		editor->setTooltipText( "" );
