@@ -39,6 +39,7 @@ class LSPClientServer {
 	using SymbolInformationHandler = ReplyHandler<std::vector<LSPSymbolInformation>>;
 	using SelectionRangeHandler = ReplyHandler<std::vector<std::shared_ptr<LSPSelectionRange>>>;
 	using SignatureHelpHandler = ReplyHandler<LSPSignatureHelp>;
+	using LocationHandler = ReplyHandler<std::vector<LSPLocation>>;
 
 	class LSPRequestHandle : public PluginRequestHandle {
 	  public:
@@ -144,6 +145,9 @@ class LSPClientServer {
 	LSPRequestHandle documentHover( const URI& document, const TextPosition& pos,
 									const HoverHandler& h );
 
+	LSPRequestHandle documentReferences( const URI& document, const TextPosition& pos, bool decl,
+										 const JsonReplyHandler& h );
+
 	LSPRequestHandle documentCompletion( const URI& document, const TextPosition& pos,
 										 const JsonReplyHandler& h );
 
@@ -175,6 +179,10 @@ class LSPClientServer {
 									const SignatureHelpHandler& h );
 
 	void removeDoc( TextDocument* doc );
+
+	LSPClientServer::LSPRequestHandle documentReferences( const URI& document,
+														  const TextPosition& pos, bool decl,
+														  const LocationHandler& h );
 
   protected:
 	LSPClientServerManager* mManager{ nullptr };

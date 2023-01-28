@@ -140,6 +140,27 @@
       "url": "https://github.com/dart-lang/sdk/blob/main/pkg/analysis_server/tool/lsp_spec",
       "command": "dart language-server --client-id ecode",
       "file_patterns": ["%.dart"]
+    },
+    {
+      "language": "bash",
+      "name": "bash-language-server",
+      "url": "https://github.com/bash-lsp/bash-language-server",
+      "command": "bash-language-server start",
+      "file_patterns": ["%.sh", "%.bash"]
+    },
+    {
+      "language": "html",
+      "name": "vscode-html-languageserver",
+      "url": "https://github.com/vscode-langservers/vscode-html-languageserver-bin",
+      "command": "html-languageserver --stdio",
+      "file_patterns": ["%.htm", "%.html"]
+    },
+    {
+      "language": "dockerfile",
+      "name": "docker-langserver",
+      "url": "https://github.com/rcjsuen/dockerfile-language-server-nodejs",
+      "command": "docker-langserver --stdio",
+      "file_patterns": ["^[Cc]ontainerfile$", "^[dD]ockerfile$"]
     }
   ]
 }

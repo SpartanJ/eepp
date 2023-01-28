@@ -355,13 +355,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 
 	if ( mMouseDown ) {
 		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
-			if ( mMinimapDragging ) {
-				mMinimapDragging = false;
-				getEventDispatcher()->setNodeDragging( NULL );
-				mVScrollBar->setEnabled( true );
-				getUISceneNode()->setCursor( Cursor::Arrow );
-				updateMipmapHover( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
-			}
+			stopMinimapDragging( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		} else if ( !isMouseOverMeOrChilds() || mMinimapDragging ) {
@@ -834,6 +828,9 @@ Uint32 UICodeEditor::onFocus() {
 }
 
 Uint32 UICodeEditor::onFocusLoss() {
+	if ( mMouseDown )
+		getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+	stopMinimapDragging( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
 	mMouseDown = false;
 	mCursorVisible = false;
 	getSceneNode()->getWindow()->stopTextInput();
@@ -1199,13 +1196,7 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		mMinimapEnabled && getMinimapRect( getScreenStart() ).contains( position.asFloat() );
 
 	if ( flags & EE_BUTTON_LMASK ) {
-		if ( mMinimapDragging ) {
-			mMinimapDragging = false;
-			getEventDispatcher()->setNodeDragging( NULL );
-			mVScrollBar->setEnabled( true );
-			getUISceneNode()->setCursor( Cursor::Arrow );
-			updateMipmapHover( position.asFloat() );
-		}
+		stopMinimapDragging( position.asFloat() );
 
 		if ( mMouseDown ) {
 			mMouseDown = false;
@@ -3444,6 +3435,18 @@ void UICodeEditor::invalidateLinesCache() {
 		mTextCache.clear();
 		invalidateDraw();
 	}
+}
+
+bool UICodeEditor::stopMinimapDragging( const Vector2f& mousePos ) {
+	if ( mMinimapDragging ) {
+		mMinimapDragging = false;
+		getEventDispatcher()->setNodeDragging( NULL );
+		mVScrollBar->setEnabled( true );
+		getUISceneNode()->setCursor( Cursor::Arrow );
+		updateMipmapHover( mousePos );
+		return true;
+	}
+	return false;
 }
 
 }} // namespace EE::UI

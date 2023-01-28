@@ -847,6 +847,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool topSpaceExists( UICodeEditorPlugin* plugin ) const;
 
 	bool createContextMenu();
+
+	bool stopMinimapDragging( const Vector2f& mousePos );
 };
 
 }} // namespace EE::UI

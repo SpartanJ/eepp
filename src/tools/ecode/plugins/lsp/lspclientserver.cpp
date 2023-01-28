@@ -195,6 +195,12 @@ static json textDocumentPositionParams( const URI& document, TextPosition pos ) 
 	return params;
 }
 
+static json referenceParams( const URI& document, TextPosition pos, bool decl ) {
+	auto params = textDocumentPositionParams( document, pos );
+	params["context"] = json{ { "includeDeclaration", decl } };
+	return params;
+}
+
 static json toJson( const std::vector<TextPosition>& positions ) {
 	json result;
 	for ( const auto& position : positions )
@@ -356,7 +362,7 @@ static std::vector<LSPSymbolInformation> parseDocumentSymbols( const json& resul
 			}
 		};
 
-	const auto symInfos = result;
+	const auto& symInfos = result;
 	for ( const auto& info : symInfos )
 		parseSymbol( info, nullptr );
 	return ret;
@@ -1501,6 +1507,24 @@ LSPClientServer::selectionRange( const URI& document, const std::vector<TextPosi
 	return selectionRange( document, positions, [h]( const IdType& id, const json& json ) {
 		if ( h )
 			h( id, parseSelectionRanges( json ) );
+	} );
+}
+
+LSPClientServer::LSPRequestHandle LSPClientServer::documentReferences( const URI& document,
+																	   const TextPosition& pos,
+																	   bool decl,
+																	   const JsonReplyHandler& h ) {
+	auto params = referenceParams( document, pos, decl );
+	return send( newRequest( "textDocument/references", params ), h );
+}
+
+LSPClientServer::LSPRequestHandle LSPClientServer::documentReferences( const URI& document,
+																	   const TextPosition& pos,
+																	   bool decl,
+																	   const LocationHandler& h ) {
+	return documentReferences( document, pos, decl, [h]( const IdType& id, const json& json ) {
+		if ( h )
+			h( id, parseDocumentLocation( json ) );
 	} );
 }
 

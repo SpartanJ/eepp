@@ -3020,7 +3020,7 @@ void SyntaxDefinitionManager::addJSX() {
 
 void SyntaxDefinitionManager::addContainerfile() {
 	add( { "Containerfile",
-		   { "^[Cc]ontainerfile$", "^[dD]ockerfile$", "%.[cC]ontainerfile$", "%.[dD]ockerfile$" },
+		   { "^[Cc]ontainerfile$", "^[dD]ockerfile$" },
 		   { { { "#.*\n" }, "comment" },
 			 { { "%[", "%]" }, "string" },
 			 { { "%sas%s" }, "literal" },
