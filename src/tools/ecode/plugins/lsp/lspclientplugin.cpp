@@ -517,7 +517,8 @@ TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
 
 void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
 	TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
-	if ( mCurrentHover.range.isValid() && !mCurrentHover.range.contains( cursorPosition ) )
+	if ( !mCurrentHover.range.isValid() ||
+		 ( mCurrentHover.range.isValid() && !mCurrentHover.range.contains( cursorPosition ) ) )
 		hideTooltip( editor );
 }
 
@@ -556,8 +557,9 @@ void LSPClientPlugin::tryDisplayTooltip( UICodeEditor* editor, const LSPHover& r
 	TextPosition startCursorPosition = editor->resolveScreenPosition( position.asFloat() );
 	TextPosition currentMousePosition = currentMouseTextPosition( editor );
 	if ( startCursorPosition != currentMousePosition ||
-		 !( resp.range.isValid() && !resp.contents.empty() && !resp.contents[0].value.empty() &&
-			resp.range.contains( startCursorPosition ) ) )
+		 !( !resp.contents.empty() && !resp.contents[0].value.empty() &&
+			( ( resp.range.isValid() && resp.range.contains( startCursorPosition ) ) ||
+			  !resp.range.isValid() ) ) )
 		return;
 	mCurrentHover = resp;
 	displayTooltip( editor, resp, position.asFloat() );
@@ -582,8 +584,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 				server->documentHover(
 					editor->getDocument().getURI(), currentMouseTextPosition( editor ),
 					[&, editor, position]( const Int64&, const LSPHover& resp ) {
-						if ( resp.range.isValid() && !resp.contents.empty() &&
-							 !resp.contents[0].value.empty() ) {
+						if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
 							editor->runOnMainThread( [editor, resp, position, this]() {
 								tryDisplayTooltip( editor, resp, position );
 							} );
@@ -593,8 +594,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 		},
 		mHoverDelay, tag );
 	tryHideTooltip( editor, position );
-	return mCurrentHover.range.isValid() && editor->getTooltip() &&
-		   editor->getTooltip()->isVisible();
+	return editor->getTooltip() && editor->getTooltip()->isVisible();
 }
 
 void LSPClientPlugin::onFocusLoss( UICodeEditor* editor ) {
