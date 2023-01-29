@@ -50,6 +50,7 @@ mkdir -p ecode.app/assets/icon/
 cp -r ../../../bin/assets/icon/ee.png ecode.app/assets/icon/
 mkdir ecode.app/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/assets/ui/
+cp ../../../bin/assets/ca-bundle.pem ecode.app/assets/ca-bundle.pem
 
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
