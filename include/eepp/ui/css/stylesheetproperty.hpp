@@ -64,7 +64,7 @@ class EE_API StyleSheetProperty {
 
 	void setName( const std::string& name );
 
-	void setValue( const std::string& value );
+	void setValue( const std::string& value, bool updateHash = false );
 
 	const bool& isVolatile() const;
 

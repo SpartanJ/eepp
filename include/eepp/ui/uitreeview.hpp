@@ -142,6 +142,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	bool tryOpenModelIndex( const ModelIndex& index, bool forceUpdate = true );
 
+	void updateContentSize();
+
   protected:
 	enum class IterationDecision {
 		Continue,
@@ -190,8 +192,6 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
 
 	virtual void onSortColumn( const size_t& colIndex );
-
-	void updateContentSize();
 
 	void setAllExpanded( const ModelIndex& index = {}, bool expanded = true );
 

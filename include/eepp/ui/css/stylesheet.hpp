@@ -55,6 +55,11 @@ class EE_API StyleSheet {
 
 	bool markerExists( const Uint32& marker ) const;
 
+	std::vector<std::shared_ptr<StyleSheetStyle>>
+	findStyleFromSelectorName( const std::string& selector );
+
+	bool refreshCacheFromStyles( const std::vector<std::shared_ptr<StyleSheetStyle>>& styles );
+
   protected:
 	Uint32 mMarker{ 0 };
 	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;

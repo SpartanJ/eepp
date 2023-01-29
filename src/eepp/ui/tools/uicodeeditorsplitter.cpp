@@ -203,12 +203,8 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	/* editor commands */
 	doc.setCommand( "switch-to-previous-colorscheme", [&] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
-		auto prev = std::prev( it, 1 );
-		if ( prev != mColorSchemes.end() ) {
-			setColorScheme( prev->first );
-		} else {
-			setColorScheme( mColorSchemes.rbegin()->first );
-		}
+		setColorScheme( it == mColorSchemes.begin() ? mColorSchemes.rbegin()->first
+													: ( --it )->first );
 	} );
 
 	doc.setCommand( "switch-to-next-colorscheme", [&] {

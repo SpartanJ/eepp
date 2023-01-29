@@ -24,6 +24,7 @@ enum class PanelPosition { Left, Right };
 
 struct UIConfig {
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
+	StyleSheetLength panelFontSize{ 11, StyleSheetLength::Dp };
 	bool showSidePanel{ true };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;

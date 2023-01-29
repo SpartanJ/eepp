@@ -805,6 +805,8 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->setId( "ui-scale-factor" );
 	mWindowMenu->add( i18n( "ui_font_size", "UI Font Size" ), findIcon( "font-size" ) )
 		->setId( "ui-font-size" );
+	mWindowMenu->add( i18n( "ui_panel_font_size", "UI Panel Font Size" ), findIcon( "font-size" ) )
+		->setId( "ui-panel-font-size" );
 	mWindowMenu->add( i18n( "editor_font_size", "Editor Font Size" ), findIcon( "font-size" ) )
 		->setId( "editor-font-size" );
 	mWindowMenu->add( i18n( "terminal_font_size", "Terminal Font Size" ), findIcon( "font-size" ) )

@@ -106,6 +106,32 @@ bool StyleSheet::markerExists( const Uint32& marker ) const {
 	return false;
 }
 
+std::vector<std::shared_ptr<StyleSheetStyle>>
+StyleSheet::findStyleFromSelectorName( const std::string& selector ) {
+	std::vector<std::shared_ptr<StyleSheetStyle>> found;
+	for ( const auto& node : mNodes ) {
+		if ( selector == node->getSelector().getName() )
+			found.push_back( node );
+	}
+	return found;
+}
+
+bool StyleSheet::refreshCacheFromStyles(
+	const std::vector<std::shared_ptr<StyleSheetStyle>>& styles ) {
+	bool refreshed = false;
+	for ( const auto& style : styles ) {
+		for ( auto& node : mNodeCache ) {
+			for ( auto& nodeStyle : node.second->getStyles() ) {
+				if ( nodeStyle == style.get() ) {
+					node.second->refresh();
+					refreshed = true;
+				}
+			}
+		}
+	}
+	return refreshed;
+}
+
 bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 	const std::string& id = style->getSelector().getSelectorId();
 	const std::string& tag = style->getSelector().getSelectorTagName();

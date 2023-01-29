@@ -31,8 +31,8 @@ class App : public UICodeEditorSplitter::Client {
 	~App();
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-			   const std::string& colorScheme, bool terminal, bool frameBuffer,
-			   bool benchmarkMode );
+			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
+			   const std::string& css );
 
 	void createWidgetInspector();
 
@@ -222,6 +222,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "editor-font-size", [&] { setEditorFontSize(); } );
 		t.setCommand( "terminal-font-size", [&] { setTerminalFontSize(); } );
 		t.setCommand( "ui-font-size", [&] { setUIFontSize(); } );
+		t.setCommand( "ui-panel-font-size", [&] { setUIPanelFontSize(); } );
 		t.setCommand( "serif-font", [&] { openFontDialog( mConfig.ui.serifFont, false ); } );
 		t.setCommand( "monospace-font", [&] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font", [&] { openFontDialog( mConfig.ui.terminalFont, false ); } );
@@ -291,6 +292,8 @@ class App : public UICodeEditorSplitter::Client {
 	void updateTerminalMenu();
 
 	void ecodeSource();
+
+	void setUIPanelFontSize();
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };

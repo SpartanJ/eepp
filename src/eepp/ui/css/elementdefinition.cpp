@@ -4,32 +4,7 @@ namespace EE { namespace UI { namespace CSS {
 
 ElementDefinition::ElementDefinition( const StyleSheetStyleVector& styleSheetStyles ) :
 	mStyles( styleSheetStyles ), mStructurallyVolatile( false ) {
-	for ( auto& styleSheetStyle : styleSheetStyles ) {
-		const StyleSheetProperties& properties = styleSheetStyle->getProperties();
-
-		if ( styleSheetStyle->getSelector().isStructurallyVolatile() )
-			mStructurallyVolatile = true;
-
-		for ( auto iterator = properties.begin(); iterator != properties.end(); ++iterator ) {
-			const StyleSheetProperty& property = iterator->second;
-			const auto& it = mProperties.find( property.getId() );
-
-			if ( it == mProperties.end() ||
-				 property.getSpecificity() >= it->second.getSpecificity() ) {
-				mProperties[property.getId()] = property;
-			}
-
-			if ( String::startsWith( property.getName(), "transition" ) )
-				mTransitionProperties.push_back( &property );
-			else if ( String::startsWith( property.getName(), "animation" ) )
-				mAnimationProperties.push_back( &property );
-		}
-
-		findVariables( styleSheetStyle );
-	}
-
-	for ( auto& property : mProperties )
-		mPropertyIds.insert( property.first );
+	refresh();
 }
 
 StyleSheetProperty* ElementDefinition::getProperty( const Uint32& id ) {
@@ -63,6 +38,40 @@ bool ElementDefinition::isStructurallyVolatile() const {
 
 const StyleSheetStyleVector& ElementDefinition::getStyles() const {
 	return mStyles;
+}
+
+void ElementDefinition::refresh() {
+	mProperties.clear();
+	mTransitionProperties.clear();
+	mAnimationProperties.clear();
+	mPropertyIds.clear();
+	mStructurallyVolatile = false;
+	for ( auto& styleSheetStyle : mStyles ) {
+		const StyleSheetProperties& properties = styleSheetStyle->getProperties();
+
+		if ( styleSheetStyle->getSelector().isStructurallyVolatile() )
+			mStructurallyVolatile = true;
+
+		for ( auto iterator = properties.begin(); iterator != properties.end(); ++iterator ) {
+			const StyleSheetProperty& property = iterator->second;
+			const auto& it = mProperties.find( property.getId() );
+
+			if ( it == mProperties.end() ||
+				 property.getSpecificity() >= it->second.getSpecificity() ) {
+				mProperties[property.getId()] = property;
+			}
+
+			if ( String::startsWith( property.getName(), "transition" ) )
+				mTransitionProperties.push_back( &property );
+			else if ( String::startsWith( property.getName(), "animation" ) )
+				mAnimationProperties.push_back( &property );
+		}
+
+		findVariables( styleSheetStyle );
+	}
+
+	for ( auto& property : mProperties )
+		mPropertyIds.insert( property.first );
 }
 
 void ElementDefinition::findVariables( const StyleSheetStyle* style ) {

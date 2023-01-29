@@ -289,8 +289,10 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	}
 
 	caps.hoverProvider = toBoolOrObject( json, "hoverProvider" );
-	fromJson( caps.completionProvider, json["completionProvider"] );
-	fromJson( caps.signatureHelpProvider, json["signatureHelpProvider"] );
+	if ( json.contains( "completionProvider" ) )
+		fromJson( caps.completionProvider, json["completionProvider"] );
+	if ( json.contains( "signatureHelpProvider" ) )
+		fromJson( caps.signatureHelpProvider, json["signatureHelpProvider"] );
 	caps.definitionProvider = toBoolOrObject( json, "definitionProvider" );
 	caps.declarationProvider = toBoolOrObject( json, "declarationProvider" );
 	caps.typeDefinitionProvider = toBoolOrObject( json, "typeDefinitionProvider" );

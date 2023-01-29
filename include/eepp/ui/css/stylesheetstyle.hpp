@@ -59,6 +59,8 @@ class EE_API StyleSheetStyle {
 
 	void setMarker( const Uint32& marker );
 
+	bool updatePropertyValue( const std::string& name, const std::string& value );
+
   protected:
 	Uint32 mMarker{ 0 };
 	StyleSheetSelector mSelector;

@@ -78,13 +78,14 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
-	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", true );
+	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
 	editor.highlightMatchingBracket =
 		ini.getValueB( "editor", "highlight_matching_brackets", true );
 	editor.highlightCurrentLine = ini.getValueB( "editor", "highlight_current_line", true );
 	editor.verticalScrollbar = ini.getValueB( "editor", "vertical_scrollbar", true );
 	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", true );
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
+	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
@@ -195,6 +196,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "horizontal_scrollbar", editor.horizontalScrollbar );
 	ini.setValue( "editor", "font_size", editor.fontSize.toString() );
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );
+	ini.setValue( "ui", "panel_font_size", ui.panelFontSize.toString() );
 	ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );

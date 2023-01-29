@@ -897,6 +897,37 @@ void App::setUIFontSize() {
 	setFocusEditorOnClose( msgBox );
 }
 
+void App::setUIPanelFontSize() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT, i18n( "set_side_panel_font_size", "Set side panel font size:" ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( mConfig.ui.panelFontSize.toString() );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->addEventListener( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		mConfig.ui.panelFontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+
+		// Update the CSS
+		auto selsFound = mUISceneNode->getStyleSheet().findStyleFromSelectorName(
+			"#project_view > treeview::row > treeview::cell > treeview::cell::text" );
+		if ( !selsFound.empty() ) {
+			for ( auto sel : selsFound )
+				sel->updatePropertyValue( "font-size", mConfig.ui.panelFontSize.toString() );
+			mUISceneNode->getStyleSheet().refreshCacheFromStyles( selsFound );
+		}
+
+		UITreeView* treeView = mUISceneNode->find<UITreeView>( "project_view" );
+		if ( !treeView ) {
+			msgBox->closeWindow();
+			return;
+		}
+		treeView->reloadStyle( true, true, true, true );
+		treeView->updateContentSize();
+		msgBox->closeWindow();
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
 void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
 	msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
 		if ( mSplitter && mSplitter->getCurWidget() )
@@ -1362,6 +1393,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "editor-font-size",
 			 "terminal-font-size",
 			 "ui-font-size",
+			 "ui-panel-font-size",
 			 "serif-font",
 			 "monospace-font",
 			 "terminal-font",
@@ -2125,8 +2157,8 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 }
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-				const std::string& colorScheme, bool terminal, bool frameBuffer,
-				bool benchmarkMode ) {
+				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
+				const std::string& css ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -2279,6 +2311,20 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			->add( theme );
 
 		mUISceneNode->getRoot()->addClass( "appbackground" );
+
+		if ( !css.empty() && FileSystem::fileExists( css ) ) {
+			CSS::StyleSheetParser parser;
+			if ( parser.loadFromFile( css ) )
+				mUISceneNode->combineStyleSheet( parser.getStyleSheet(), false );
+		}
+
+		std::string panelUI( String::format( R"css(
+		#project_view > treeview::row > treeview::cell > treeview::cell::text {
+			font-size: %s;
+		}
+		)css",
+											 mConfig.ui.panelFontSize.toString().c_str() ) );
+		mUISceneNode->combineStyleSheet( panelUI, false );
 
 		const std::string baseUI = R"html(
 		<style>
@@ -2792,6 +2838,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<std::string> prefersColorScheme(
 		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
 		{ 'c', "prefers-color-scheme" } );
+	args::ValueFlag<std::string> css(
+		parser, "css",
+		"Sets the path for a custom stylesheet to load at the start of the application",
+		{ "css" } );
 	args::Flag terminal( parser, "terminal", "Open a new terminal", { 't', "terminal" } );
 	args::MapFlag<std::string, LogLevel> logLevel(
 		parser, "log-level", "The level of details that the application will emmit logs.",
@@ -2831,7 +2881,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
-					   benchmarkMode.Get() );
+					   benchmarkMode.Get(), css.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

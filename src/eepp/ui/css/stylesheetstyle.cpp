@@ -59,6 +59,17 @@ StyleSheetProperties& StyleSheetStyle::getPropertiesRef() {
 	return mProperties;
 }
 
+bool StyleSheetStyle::updatePropertyValue( const std::string& name, const std::string& value ) {
+	bool updated = false;
+	for ( auto& prop : mProperties ) {
+		if ( prop.second.getName() == name ) {
+			prop.second.setValue( value, true );
+			updated = true;
+		}
+	}
+	return updated;
+}
+
 const StyleSheetVariables& StyleSheetStyle::getVariables() const {
 	return mVariables;
 }
