@@ -143,7 +143,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	std::string getMatchString( const LinterType& type );
 
-	void loadLinterConfig( const std::string& path );
+	void loadLinterConfig( const std::string& path, bool updateConfigFile );
 
 	size_t linterFilePatternPosition( const std::vector<std::string>& patterns );
 

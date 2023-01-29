@@ -72,7 +72,7 @@ size_t LinterPlugin::linterFilePatternPosition( const std::vector<std::string>& 
 	return std::string::npos;
 }
 
-void LinterPlugin::loadLinterConfig( const std::string& path ) {
+void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
@@ -90,11 +90,20 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 		auto& config = j["config"];
 		if ( config.contains( "delay_time" ) )
 			setDelayTime( Time::fromString( config["delay_time"].get<std::string>() ) );
+		else if ( updateConfigFile )
+			config["delay_time"] = getDelayTime().toString();
+
 		if ( config.contains( "enable_lsp_diagnostics" ) &&
 			 config["enable_lsp_diagnostics"].is_boolean() )
 			setEnableLSPDiagnostics( config["enable_lsp_diagnostics"].get<bool>() );
+		else if ( updateConfigFile )
+			config["enable_lsp_diagnostics"] = getEnableLSPDiagnostics();
+
 		if ( config.contains( "enable_error_lens" ) && config["enable_error_lens"].is_boolean() )
 			setErrorLens( config["enable_error_lens"].get<bool>() );
+		else if ( updateConfigFile )
+			config["enable_error_lens"] = getErrorLens();
+
 		if ( config.contains( "disable_lsp_languages" ) &&
 			 config["disable_lsp_languages"].is_array() ) {
 			const auto& langs = config["disable_lsp_languages"];
@@ -112,7 +121,10 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 					"LinterPlugin::loadLinterConfig: Error parsing disable_lsp_languages: %s",
 					e.what() );
 			}
+		} else if ( updateConfigFile ) {
+			config["disable_lsp_languages"] = json::array();
 		}
+
 		if ( config.contains( "disable_languages" ) && config["disable_languages"].is_array() ) {
 			const auto& langs = config["disable_languages"];
 			try {
@@ -128,7 +140,13 @@ void LinterPlugin::loadLinterConfig( const std::string& path ) {
 				Log::debug( "LinterPlugin::loadLinterConfig: Error parsing disable_languages: %s",
 							e.what() );
 			}
+		} else if ( updateConfigFile ) {
+			config["disable_languages"] = json::array();
 		}
+	}
+
+	if ( updateConfigFile ) {
+		FileSystem::fileWrite( path, j.dump( 2 ) );
 	}
 
 	if ( !j.contains( "linters" ) )
@@ -321,7 +339,7 @@ void LinterPlugin::load( PluginManager* pluginManager ) {
 		return;
 	for ( const auto& path : paths ) {
 		try {
-			loadLinterConfig( path );
+			loadLinterConfig( path, mConfigPath == path );
 		} catch ( const json::exception& e ) {
 			Log::error( "Parsing linter \"%s\" failed:\n%s", path.c_str(), e.what() );
 		}

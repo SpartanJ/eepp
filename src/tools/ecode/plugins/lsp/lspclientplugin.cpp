@@ -185,7 +185,7 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 
 	for ( const auto& path : paths ) {
 		try {
-			loadLSPConfig( lsps, path );
+			loadLSPConfig( lsps, path, mConfigPath == path );
 		} catch ( const json::exception& e ) {
 			Log::error( "Parsing LSP \"%s\" failed:\n%s", path.c_str(), e.what() );
 		}
@@ -202,7 +202,8 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 		fireReadyCbs();
 }
 
-void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path ) {
+void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path,
+									 bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
@@ -220,10 +221,14 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		auto& config = j["config"];
 		if ( config.contains( "hover_delay" ) )
 			setHoverDelay( Time::fromString( config["hover_delay"].get<std::string>() ) );
+		else if ( updateConfigFile )
+			config["hover_delay"] = getHoverDelay().toString();
 
 		if ( config.contains( "server_close_after_idle_time" ) )
 			mClientManager.setLSPDecayTime(
 				Time::fromString( config["server_close_after_idle_time"].get<std::string>() ) );
+		else if ( updateConfigFile )
+			config["server_close_after_idle_time"] = mClientManager.getLSPDecayTime().toString();
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -232,16 +237,21 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 	}
 
 	if ( j.contains( "keybindings" ) ) {
-		auto kb = j["keybindings"];
-		auto bindKey = [this, kb]( const std::string& key ) {
-			if ( kb.contains( key ) )
-				mKeyBindings[key] = kb[key];
-		};
+		auto& kb = j["keybindings"];
 		auto list = { "lsp-go-to-definition",	  "lsp-go-to-declaration",
 					  "lsp-go-to-implementation", "lsp-go-to-type-definition",
 					  "lsp-switch-header-source", "lsp-symbol-info" };
-		for ( const auto& key : list )
-			bindKey( key );
+		for ( const auto& key : list ) {
+			if ( kb.contains( key ) ) {
+				if ( !kb[key].empty() )
+					mKeyBindings[key] = kb[key];
+			} else if ( updateConfigFile )
+				kb[key] = mKeyBindings[key];
+		}
+	}
+
+	if ( updateConfigFile ) {
+		FileSystem::fileWrite( path, j.dump( 2 ) );
 	}
 
 	if ( !j.contains( "servers" ) )
@@ -355,7 +365,8 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	mDocs.insert( editor->getDocumentRef().get() );
 
 	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+		if ( !kb.second.empty() )
+			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
 	}
 
 	if ( editor->hasDocument() ) {

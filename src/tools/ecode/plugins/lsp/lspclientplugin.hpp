@@ -98,7 +98,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	void load( PluginManager* pluginManager );
 
-	void loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path );
+	void loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path,
+						bool updateConfigFile );
 
 	size_t lspFilePatternPosition( const std::vector<LSPDefinition>& lsps,
 								   const std::vector<std::string>& patterns );

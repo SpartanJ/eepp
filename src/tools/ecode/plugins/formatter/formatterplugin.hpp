@@ -92,7 +92,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	void load( PluginManager* pluginManager );
 
-	void loadFormatterConfig( const std::string& path );
+	void loadFormatterConfig( const std::string& path, bool updateConfigFile );
 
 	void formatDoc( UICodeEditor* editor );
 

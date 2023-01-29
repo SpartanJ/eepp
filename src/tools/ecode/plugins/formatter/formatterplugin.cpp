@@ -59,7 +59,8 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 	mEditors.insert( editor );
 
 	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+		if ( !kb.first.empty() )
+			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
 	}
 
 	if ( editor->hasDocument() )
@@ -125,7 +126,7 @@ size_t FormatterPlugin::formatterFilePatternPosition( const std::vector<std::str
 	return std::string::npos;
 }
 
-void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
+void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
@@ -144,12 +145,20 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
 		auto& config = j["config"];
 		if ( config.contains( "auto_format_on_save" ) )
 			setAutoFormatOnSave( config["auto_format_on_save"].get<bool>() );
+		else if ( updateConfigFile )
+			config["auto_format_on_save"] = getAutoFormatOnSave();
 	}
 
 	if ( mKeyBindings.empty() )
 		mKeyBindings["format-doc"] = "alt+f";
 	if ( j.contains( "keybindings" ) && j["keybindings"].contains( "format-doc" ) )
 		mKeyBindings["format-doc"] = j["keybindings"]["format-doc"];
+	else if ( updateConfigFile )
+		j["keybindings"]["format-doc"] = mKeyBindings["format-doc"];
+
+	if ( updateConfigFile ) {
+		FileSystem::fileWrite( path, j.dump( 2 ) );
+	}
 
 	if ( !j.contains( "formatters" ) )
 		return;
@@ -210,7 +219,7 @@ void FormatterPlugin::load( PluginManager* pluginManager ) {
 		return;
 	for ( const auto& path : paths ) {
 		try {
-			loadFormatterConfig( path );
+			loadFormatterConfig( path, mConfigPath == path );
 		} catch ( const json::exception& e ) {
 			Log::error( "Parsing formatter \"%s\" failed:\n%s", path.c_str(), e.what() );
 		}
