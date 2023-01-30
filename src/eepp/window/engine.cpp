@@ -144,6 +144,8 @@ EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 												 const ContextSettings& Context ) {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 	return createSDL2Window( Settings, Context );
+#else
+	return NULL;
 #endif
 }
 
@@ -241,6 +243,8 @@ bool Engine::isRunning() const {
 WindowBackend Engine::getDefaultBackend() const {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 	return WindowBackend::SDL2;
+#else
+	return WindowBackend::Default;
 #endif
 }
 
