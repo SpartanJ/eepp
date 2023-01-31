@@ -507,7 +507,6 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 	if ( !stream.isOpen() || mLines.empty() )
 		return false;
 	const std::string whitespaces( " \t\f\v\n\r" );
-	char nl = '\n';
 	if ( mIsBOM ) {
 		unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
 		stream.write( (char*)bom, sizeof( bom ) );
@@ -518,19 +517,13 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 		if ( !keepUndoRedoStatus && mTrimTrailingWhitespaces && text.size() > 1 &&
 			 whitespaces.find( text[text.size() - 2] ) != std::string::npos ) {
 			size_t pos = text.find_last_not_of( whitespaces );
-			size_t oriSize = text.size();
+			Int64 curLine = i;
 			if ( pos != std::string::npos ) {
-				text.erase( pos + 1 );
-				text += nl;
+				remove( 0, { { curLine, static_cast<Int64>( pos + 1 ) },
+							 { curLine, static_cast<Int64>( mLines[i].getText().size() ) } } );
 			} else {
-				text = nl;
+				remove( 0, { startOfLine( { curLine, 0 } ), { endOfLine( { curLine, 0 } ) } } );
 			}
-			mLines[i].setText( text );
-			notifyLineChanged( i );
-			notifyTextChanged(
-				{ { { static_cast<Int64>( i ), static_cast<Int64>( oriSize ) },
-					{ static_cast<Int64>( i ), static_cast<Int64>( text.size() - 1 ) } },
-				  "" } );
 		}
 		if ( i == lastLine ) {
 			if ( !text.empty() && text[text.size() - 1] == '\n' ) {
@@ -542,14 +535,7 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 			if ( !keepUndoRedoStatus && mForceNewLineAtEndOfFile && !text.empty() &&
 				 text[text.size() - 1] != '\n' ) {
 				text += "\n";
-				mLines.emplace_back( TextDocumentLine( "\n" ) );
-				notifyTextChanged( { { TextPosition{ static_cast<Int64>( i ),
-													 static_cast<Int64>( mLines[i].size() - 1 ) },
-									   TextPosition{ static_cast<Int64>( i ),
-													 static_cast<Int64>( mLines[i].size() - 1 ) } },
-									 "\n" } );
-				notifyLineChanged( i );
-				notifyLineCountChanged( lastLine, lastLine + 1 );
+				insert( 0, endOfDoc(), "\n" );
 			}
 		}
 		if ( mLineEnding == LineEnding::CRLF ) {

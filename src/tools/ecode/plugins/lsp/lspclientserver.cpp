@@ -834,7 +834,7 @@ void LSPClientServer::initialize() {
 				  { "hover", json{ { "contentFormat", { "plaintext", "markdown" } } } } },
 		},
 		{ "window", json{ { "workDoneProgress", true } } },
-		{ "workspace", json{ { "workspaceFolders", true }, { "configuration", false } } },
+		//{ "workspace", json{ { "workspaceFolders", true }, { "configuration", false } } },
 		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
 
 	json params{ { "processId", Sys::getProcessID() },

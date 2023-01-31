@@ -43,7 +43,8 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 				Log::debug( txt );
 			}
 
-			mFileSystemModel.get()->handleFileEvent( event );
+			if ( mFileSystemModel )
+				mFileSystemModel.get()->handleFileEvent( event );
 
 			if ( mDirTree )
 				mDirTree.get()->onChange( (ProjectDirectoryTree::Action)action, file, oldFilename );
