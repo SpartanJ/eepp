@@ -770,7 +770,8 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 input->isLeftControlPressed() || input->isMetaPressed() || input->isLeftAltPressed() )
+		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() ||
+		 input->isLeftAltPressed() )
 		return 0;
 
 	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
