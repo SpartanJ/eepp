@@ -266,7 +266,7 @@ class EE_API TextDocument {
 
 	void selectToPreviousWord();
 
-	void selectWord();
+	void selectWord( bool withMulticursor = true );
 
 	void selectLine();
 
@@ -322,13 +322,13 @@ class EE_API TextDocument {
 
 	bool removeCommand( const std::string& command );
 
-	TextRange find( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
-					const bool& wholeWord = false,
+	TextRange find( const String& text, TextPosition from = { 0, 0 },
+					const bool& caseSensitive = true, const bool& wholeWord = false,
 					const FindReplaceType& type = FindReplaceType::Normal,
 					TextRange restrictRange = TextRange() );
 
-	TextRange findLast( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
-						const bool& wholeWord = false,
+	TextRange findLast( const String& text, TextPosition from = { 0, 0 },
+						const bool& caseSensitive = true, const bool& wholeWord = false,
 						const FindReplaceType& type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange() );
 

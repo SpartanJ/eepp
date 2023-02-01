@@ -1,3 +1,4 @@
+
 function newplatform(plf)
 	local name = plf.name
 	local description = plf.description
@@ -214,6 +215,30 @@ if os.is_real("haiku") and not os.is64bit() then
 	premake.gcc.cc = "gcc-x86"
 	premake.gcc.cxx = "g++-x86"
 	premake.gcc.ar = "ar-x86"
+end
+
+function get_dll_extension()
+	if os.is_real("macosx") then
+		return "dylib"
+	elseif os.is_real("windows") or os.is_real("mingw32") then
+		return "dll"
+	else
+		return "so"
+	end
+end
+
+function postsymlinklib(src_path, dst_path, lib)
+	if os.is_real("emscripten") then
+		return
+	end
+	configuration { "release", "windows" }
+		postbuildcommands { "mklink \"" .. dst_path .. lib .. ".dll\"" .. " \"" .. src_path .. lib .. ".dll\" || ver>nul" }
+	configuration { "debug", "windows" }
+		postbuildcommands { "mklink \"" .. dst_path .. lib .. "-debug.dll\"" .. " \"" .. src_path .. lib .. "-debug.dll\" || ver>nul" }
+	configuration { "release", "not windows" }
+		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+	configuration { "debug", "not windows" }
+		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 end
 
 function print_table( table_ref )
@@ -491,6 +516,14 @@ function build_link_configuration( package_name, use_ee_icon )
 
 		if _OPTIONS.platform == "ios-cross-x86_64" then
 			extension = ".x86_64.ios"
+		end
+
+		if os.is_real("linux") or os.is_real("haiku") or os.is_real("bsd") or os.is_real("macosx") then
+			if _ACTION == "gmake" then
+				linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
+			elseif _ACTION == "codeblocks" then
+				linkoptions { "-Wl,-R\\\\$$$ORIGIN" }
+			end
 		end
 	end
 
@@ -1126,6 +1159,7 @@ solution "eepp"
 			buildoptions{ "/std:c++17" }
 		end
 		build_base_cpp_configuration( "eepp-maps" )
+		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-maps" )
 
 	project "eepp-physics-static"
 		kind "StaticLib"
@@ -1155,6 +1189,7 @@ solution "eepp"
 			buildoptions{ "/std:c++17" }
 		end
 		build_base_cpp_configuration( "eepp-physics" )
+		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-physics" )
 
 	project "eterm-static"
 		kind "StaticLib"
@@ -1181,6 +1216,7 @@ solution "eepp"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp" )
+		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp" )
 
 	-- Examples
 	project "eepp-external-shader"
@@ -1324,6 +1360,7 @@ solution "eepp"
 		if os.is("haiku") then
 			links { "bsd" }
 		end
+
 		build_link_configuration( "ecode", true )
 
 	project "eterm"

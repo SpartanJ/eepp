@@ -58,3 +58,6 @@ ecode.dmg
 *.dmg
 /bin/eterm*
 /compile_flags.txt
+/projects/**/*.7z
+/projects/**/*.tar.gz
+/projects/**/*.zip

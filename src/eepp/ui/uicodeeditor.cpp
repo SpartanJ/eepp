@@ -848,8 +848,8 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() || 
-		input->isLeftAltPressed() )
+		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() ||
+		 input->isLeftAltPressed() )
 		return 0;
 
 	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
@@ -1281,7 +1281,7 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 	}
 
 	if ( flags & EE_BUTTON_LMASK ) {
-		mDoc->selectWord();
+		mDoc->selectWord( false );
 		mLastDoubleClick.restart();
 		checkColorPickerAction();
 	}
@@ -2565,8 +2565,10 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 				if ( ignoreSelectionMatch ) {
 					TextRange selection = mDoc->getSelection( true );
 					if ( selection.inSameLine() && selection.start().line() == ln &&
-						 selection.start().column() == (Int64)pos )
-						break;
+						 selection.start().column() == (Int64)pos ) {
+						pos = selection.end().column();
+						continue;
+					}
 				}
 
 				Rectf selRect;

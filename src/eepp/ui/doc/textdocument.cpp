@@ -1507,11 +1507,11 @@ void TextDocument::selectToNextWord() {
 	mergeSelection();
 }
 
-void TextDocument::selectWord() {
+void TextDocument::selectWord( bool withMulticursor ) {
 	if ( !hasSelection() ) {
 		setSelection( { nextWordBoundary( getSelection().start(), false ),
 						previousWordBoundary( getSelection().start(), false ) } );
-	} else {
+	} else if ( withMulticursor ) {
 		String text( getSelectedText() );
 		TextRange res( find( text, getBottomMostCursor().normalized().end() ) );
 		if ( res.isValid() && !mSelection.exists( res.reversed() ) ) {
@@ -2038,156 +2038,152 @@ TextRange TextDocument::findTextLast( String text, TextPosition from, const bool
 	return TextRange();
 }
 
-TextRange TextDocument::find( String text, TextPosition from, const bool& caseSensitive,
+TextRange TextDocument::find( const String& text, TextPosition from, const bool& caseSensitive,
 							  const bool& wholeWord, const FindReplaceType& type,
 							  TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
-	if ( !textLines.empty() ) {
-		if ( textLines.size() > mLines.size() )
+	if ( textLines.empty() || textLines.size() > mLines.size() )
+		return TextRange();
+
+	from = sanitizePosition( from );
+
+	TextPosition to = endOfDoc();
+	if ( restrictRange.isValid() ) {
+		restrictRange = sanitizeRange( restrictRange.normalized() );
+		to = restrictRange.end();
+		if ( from < restrictRange.start() || from >= restrictRange.end() )
 			return TextRange();
+	}
 
-		from = sanitizePosition( from );
+	if ( textLines.size() == 1 )
+		return findText( text, from, caseSensitive, wholeWord, type, restrictRange );
 
-		TextPosition to = endOfDoc();
-		if ( restrictRange.isValid() ) {
-			restrictRange = sanitizeRange( restrictRange.normalized() );
-			to = restrictRange.end();
-			if ( from < restrictRange.start() || from >= restrictRange.end() )
+	TextRange range = findText( textLines[0], from, caseSensitive, false, type, restrictRange );
+
+	if ( !range.isValid() )
+		return TextRange();
+
+	TextPosition initPos( range.end().line(), 0 );
+
+	for ( size_t i = 1; i < textLines.size() - 1; i++ ) {
+		if ( initPos < from || initPos > to )
+			return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+
+		String currentLine( mLines[initPos.line()].getText() );
+
+		if ( TextPosition( initPos.line(), (Int64)currentLine.size() - 1 ) > to )
+			return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+
+		if ( !caseSensitive ) {
+			currentLine.toLower();
+			textLines[i].toLower();
+		}
+
+		if ( currentLine == textLines[i] ) {
+			initPos = TextPosition( initPos.line() + 1, 0 );
+
+			if ( initPos >= restrictRange.end() )
 				return TextRange();
+		} else {
+			return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 		}
+	}
 
-		if ( textLines.size() == 1 )
-			return findText( text, from, caseSensitive, wholeWord, type, restrictRange );
+	if ( initPos < from || initPos > to )
+		return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 
-		TextRange range = findText( textLines[0], from, caseSensitive, false, type, restrictRange );
+	const String& lastLine = mLines[initPos.line()].getText();
+	const String& curSearch = textLines[textLines.size() - 1];
 
-		if ( range.isValid() ) {
-			TextPosition initPos( range.end().line(), 0 );
+	if ( TextPosition( initPos.line(), (Int64)curSearch.size() - 1 ) > to )
+		return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 
-			for ( size_t i = 1; i < textLines.size() - 1; i++ ) {
-				if ( initPos < from || initPos > to )
-					return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+	if ( lastLine.size() < curSearch.size() )
+		return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 
-				String currentLine( mLines[initPos.line()].getText() );
-
-				if ( TextPosition( initPos.line(), (Int64)currentLine.size() - 1 ) > to )
-					return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
-
-				if ( !caseSensitive ) {
-					currentLine.toLower();
-					textLines[i].toLower();
-				}
-
-				if ( currentLine == textLines[i] ) {
-					initPos = TextPosition( initPos.line() + 1, 0 );
-
-					if ( initPos >= restrictRange.end() )
-						return TextRange();
-				} else {
-					return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
-				}
-			}
-
-			if ( initPos < from || initPos > to )
-				return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
-
-			String lastLine( mLines[initPos.line()].getText() );
-			String curSearch( textLines[textLines.size() - 1] );
-
-			if ( TextPosition( initPos.line(), (Int64)curSearch.size() - 1 ) > to )
-				return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
-
-			if ( lastLine.size() < curSearch.size() )
-				return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
-
-			if ( String::startsWith( lastLine, curSearch ) ) {
-				TextRange foundRange( range.start(),
-									  TextPosition( initPos.line(), curSearch.size() ) );
-				if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
-					foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
-				return foundRange;
-			} else {
-				return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
-			}
-		}
+	if ( ( caseSensitive && String::startsWith( lastLine, curSearch ) ) ||
+		 ( !caseSensitive &&
+		   String::startsWith( String( lastLine ).toLower(), String( curSearch ).toLower() ) ) ) {
+		TextRange foundRange( range.start(), TextPosition( initPos.line(), curSearch.size() ) );
+		if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
+			foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
+		return foundRange;
+	} else {
+		return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 	}
 
 	return TextRange();
 }
 
-TextRange TextDocument::findLast( String text, TextPosition from, const bool& caseSensitive,
+TextRange TextDocument::findLast( const String& text, TextPosition from, const bool& caseSensitive,
 								  const bool& wholeWord, const FindReplaceType& type,
 								  TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
-	if ( !textLines.empty() ) {
-		if ( textLines.size() > mLines.size() )
+	if ( textLines.empty() || textLines.size() > mLines.size() )
+		return TextRange();
+
+	from = sanitizePosition( from );
+
+	TextPosition to = startOfDoc();
+	if ( restrictRange.isValid() ) {
+		restrictRange = sanitizeRange( restrictRange.normalized() );
+		to = restrictRange.start();
+		if ( from < restrictRange.start() || from > restrictRange.end() )
 			return TextRange();
+	}
 
-		from = sanitizePosition( from );
+	if ( textLines.size() == 1 )
+		return findTextLast( text, from, caseSensitive, wholeWord, type, restrictRange );
 
-		TextPosition to = startOfDoc();
-		if ( restrictRange.isValid() ) {
-			restrictRange = sanitizeRange( restrictRange.normalized() );
-			to = restrictRange.start();
-			if ( from < restrictRange.start() || from > restrictRange.end() )
-				return TextRange();
+	TextRange range = findTextLast( textLines[0], from, caseSensitive, false, type, restrictRange );
+
+	if ( !range.isValid() )
+		return TextRange();
+
+	TextPosition initPos( range.end().line(), 0 );
+
+	for ( size_t i = 1; i < textLines.size() - 1; i++ ) {
+		if ( initPos < from || initPos > to )
+			return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+
+		String currentLine( mLines[initPos.line()].getText() );
+
+		if ( TextPosition( initPos.line(), (Int64)currentLine.size() - 1 ) > to )
+			return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+
+		if ( !caseSensitive ) {
+			currentLine.toLower();
+			textLines[i].toLower();
 		}
 
-		if ( textLines.size() == 1 )
-			return findTextLast( text, from, caseSensitive, wholeWord, type, restrictRange );
-
-		TextRange range =
-			findTextLast( textLines[0], from, caseSensitive, false, type, restrictRange );
-
-		if ( range.isValid() ) {
-			TextPosition initPos( range.end().line(), 0 );
-
-			for ( size_t i = 1; i < textLines.size() - 1; i++ ) {
-				if ( initPos < from || initPos > to )
-					return findLast( text, range.end(), caseSensitive, wholeWord, type,
-									 restrictRange );
-
-				String currentLine( mLines[initPos.line()].getText() );
-
-				if ( TextPosition( initPos.line(), (Int64)currentLine.size() - 1 ) > to )
-					return findLast( text, range.end(), caseSensitive, wholeWord, type,
-									 restrictRange );
-
-				if ( !caseSensitive ) {
-					currentLine.toLower();
-					textLines[i].toLower();
-				}
-
-				if ( currentLine == textLines[i] ) {
-					initPos = TextPosition( i + 1, 0 );
-				} else {
-					return findLast( text, range.end(), caseSensitive, wholeWord, type,
-									 restrictRange );
-				}
-			}
-
-			if ( initPos < from || initPos > to )
-				return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
-
-			String lastLine( mLines[initPos.line()].getText() );
-			String curSearch( textLines[textLines.size() - 1] );
-
-			if ( TextPosition( initPos.line(), (Int64)curSearch.size() - 1 ) > to )
-				return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
-
-			if ( lastLine.size() < curSearch.size() )
-				return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
-
-			if ( String::startsWith( lastLine, curSearch ) ) {
-				TextRange foundRange( range.start(),
-									  TextPosition( initPos.line(), curSearch.size() ) );
-				if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
-					foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
-				return foundRange;
-			}
+		if ( currentLine == textLines[i] ) {
+			initPos = TextPosition( i + 1, 0 );
+		} else {
+			return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
 		}
+	}
+
+	if ( initPos < from || initPos > to )
+		return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+
+	const String& lastLine = mLines[initPos.line()].getText();
+	const String& curSearch = textLines[textLines.size() - 1];
+
+	if ( TextPosition( initPos.line(), (Int64)curSearch.size() - 1 ) > to )
+		return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+
+	if ( lastLine.size() < curSearch.size() )
+		return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+
+	if ( ( caseSensitive && String::startsWith( lastLine, curSearch ) ) ||
+		 ( !caseSensitive &&
+		   String::startsWith( String( lastLine ).toLower(), String( curSearch ).toLower() ) ) ) {
+		TextRange foundRange( range.start(), TextPosition( initPos.line(), curSearch.size() ) );
+		if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
+			foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
+		return foundRange;
 	}
 
 	return TextRange();

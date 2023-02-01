@@ -20,6 +20,27 @@ newoption {
 	}
 }
 
+function get_dll_extension()
+	if os.target("macosx") then
+		return "dylib"
+	elseif os.target("windows") then
+		return "dll"
+	else
+		return "so"
+	end
+end
+
+function postsymlinklib(src_path, dst_path, lib)
+	filter { "configurations:release*", "system:windows" }
+		postbuildcommands { "mklink \"" .. dst_path .. lib .. ".dll\"" .. " \"" .. src_path .. lib .. ".dll\" || ver>nul" }
+	filter { "configurations:debug*", "system:windows" }
+		postbuildcommands { "mklink \"" .. dst_path .. lib .. "-debug.dll\"" .. " \"" .. src_path .. lib .. "-debug.dll\" || ver>nul" }
+	filter { "configurations:release*", "not system:windows" }
+		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+	filter { "configurations:debug*", "not system:windows" }
+		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+end
+
 function print_table( table_ref )
 	for _, value in pairs( table_ref ) do
 		print(value)
@@ -91,10 +112,10 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.24.2"
-remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.24.2.zip"
-remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.24.2-VC.zip"
-remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.24.2-mingw.zip"
+remote_sdl2_version = "SDL2-2.26.2"
+remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.26.2.zip"
+remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.26.2-VC.zip"
+remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.26.2-mingw.zip"
 
 function incdirs( dirs )
 	if is_xcode() then
@@ -255,6 +276,11 @@ function build_link_configuration( package_name, use_ee_icon )
 	set_ios_config()
 	set_xcode_config()
 	build_arch_configuration()
+
+	filter { "system:linux or system:macosx or system:haiku or system:bsd", "action:not vs*" }
+		if package_name ~= "eepp" and package_name ~= "eepp-static" then
+			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
+		end
 
 	filter { "system:windows", "action:not vs*", "architecture:x86" }
 		if ( true == use_ee_icon ) then
@@ -865,6 +891,7 @@ workspace "eepp"
 		links { "eepp-shared" }
 		defines { "EE_MAPS_EXPORTS" }
 		build_base_cpp_configuration( "eepp-maps" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/", _MAIN_SCRIPT_DIR .. "/bin/", "eepp-maps" )
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -890,6 +917,7 @@ workspace "eepp"
 		links { "chipmunk-static", "eepp-shared" }
 		defines { "EE_PHYSICS_EXPORTS" }
 		build_base_cpp_configuration( "eepp-physics" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/", _MAIN_SCRIPT_DIR .. "/bin/", "eepp-physics" )
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -917,6 +945,7 @@ workspace "eepp"
 		language "C++"
 		targetdir("libs/" .. os.target() .. "/")
 		build_eepp( "eepp" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/", _MAIN_SCRIPT_DIR .. "/bin/", "eepp" )
 
 	-- Examples
 	project "eepp-external-shader"

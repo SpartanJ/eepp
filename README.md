@@ -414,7 +414,7 @@ Download *Visual Studio* or *MinGW* files depending on your needs.
 
 You will need to use premake5 and run:
 
-`premake5.exe vs2019`
+`premake5.exe vs2022`
 
 Then the project files should be found in `make/windows/`. A complete solution
 and all the project will be available. Having installed everything, you'll be
@@ -424,7 +424,7 @@ If you are very new to programming there's an alternative to build the project
 without external dependencies, in order to do that you need to generate the
 project files with the command:
 
-`premake5.exe --windows-vc-build --with-mojoal vs2019`
+`premake5.exe --windows-vc-build --with-mojoal vs2022`
 
 Then just build the solution in Visual Studio or run `MSBuild` manually in a
 console:
@@ -432,9 +432,9 @@ console:
 `"%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m`
 
 Where `%MSBUILD_PATH%` is the MSBuild.exe Visual Studio path, for example for
-_VS2019 Community Edition_ the path usually is:
+_VS2022 Community Edition_ the path usually is:
 
-`C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\`
+`C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\`
 
 #### MinGW
 
@@ -491,7 +491,7 @@ for your project. Notice that there's a `eepp.mk` project file that builds the
 library. That file can be used in you projects.
 
 ### iOS
-
+    
 The project provides two files to build the library and the demos. You can use
 any of them depending on your needs.
 The files are located in `projects/ios`:
@@ -546,6 +546,14 @@ Then there's a script for building the **emscripten** project in
 `projects/emscripten/make.sh`. Before running this script remember to set the
 emsdk enviroment, it should be something like: `source /path/to/emsdk/emsdk_env.sh`.
 That should be enough in **GNU/Linux** or **macOS** ( only tested this on GNU/Linux ).
+
+## How to run the demos and tools?
+
+All the binaries are located at the `bin` directory after built. The binaries requiere two files:
+the eepp library and the SDL2 library. The eepp library will be located in `libs/{OS}/`. The build
+script will try to symlink the eepp library into `bin`, if that fails it should be copied or
+symlinked manually. Regarding the SDL2 library is not provided in the repository, so in order to run
+the demos you'll need to download the correct SDL2 library OS version and architecture.
 
 ## Author comment
 

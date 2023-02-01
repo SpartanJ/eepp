@@ -822,17 +822,18 @@ void LSPClientServer::initialize() {
 	};
 
 	json capabilities{
-		{
-			"textDocument",
-			json{ { "documentSymbol", json{ { "hierarchicalDocumentSymbolSupport", true } } },
-				  { "publishDiagnostics",
-					json{ { "relatedInformation", true }, { "codeActionsInline", true } } },
-				  { "codeAction", codeAction },
-				  { "semanticTokens", semanticTokens },
-				  { "synchronization", json{ { "didSave", true } } },
-				  { "selectionRange", json{ { "dynamicRegistration", false } } },
-				  { "hover", json{ { "contentFormat", { "plaintext", "markdown" } } } } },
-		},
+		{ "textDocument",
+		  json{
+			  { "documentSymbol", json{ { "hierarchicalDocumentSymbolSupport", true } } },
+			  { "publishDiagnostics",
+				json{ { "relatedInformation", true }, { "codeActionsInline", true } } },
+			  { "codeAction", codeAction },
+			  { "semanticTokens", semanticTokens },
+			  { "synchronization", json{ { "didSave", true } } },
+			  { "selectionRange", json{ { "dynamicRegistration", false } } },
+			  { "hover", json{ { "contentFormat", { "plaintext", "markdown" } } } },
+			  { "completion", json{ "completionItem", json{ { "snippetSupport", true } } } },
+		  } },
 		{ "window", json{ { "workDoneProgress", true } } },
 		//{ "workspace", json{ { "workspaceFolders", true }, { "configuration", false } } },
 		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
