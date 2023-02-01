@@ -119,6 +119,8 @@ std::string App::titleFromEditor( UICodeEditor* editor ) {
 }
 
 void App::updateEditorTabTitle( UICodeEditor* editor ) {
+	if ( editor == nullptr )
+		return;
 	std::string title( titleFromEditor( editor ) );
 	if ( editor->getData() ) {
 		UITab* tab = (UITab*)editor->getData();
@@ -127,6 +129,8 @@ void App::updateEditorTabTitle( UICodeEditor* editor ) {
 }
 
 void App::updateEditorTitle( UICodeEditor* editor ) {
+	if ( editor == nullptr )
+		return;
 	std::string title( titleFromEditor( editor ) );
 	updateEditorTabTitle( editor );
 	setAppTitle( title );
@@ -492,8 +496,14 @@ void App::onFileDropped( String file ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
 	UIWidget* widget = mSplitter->getCurWidget();
-	UITab* tab = nullptr;
+	UITab* tab = mSplitter->isDocumentOpen( file );
 	UICodeEditor* codeEditor = nullptr;
+
+	if ( tab ) {
+		tab->getTabWidget()->setTabSelected( tab );
+		return;
+	}
+
 	if ( !node )
 		node = widget;
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
@@ -506,7 +516,16 @@ void App::onFileDropped( String file ) {
 			codeEditor = d.second;
 			tab = d.first;
 		}
+	} else if ( widget && widget->isType( UI_TYPE_TERMINAL ) ) {
+		if ( !Image::isImageExtension( file ) &&
+			 FileSystem::fileExtension( file.toUtf8() ) != "svg" ) {
+			auto d =
+				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( widget ) );
+			codeEditor = d.second;
+			tab = d.first;
+		}
 	}
+
 	loadFileFromPath( file, false, codeEditor, [tab]( UICodeEditor*, const std::string& ) {
 		if ( tab )
 			tab->getTabWidget()->setTabSelected( tab );
@@ -1545,8 +1564,8 @@ void App::loadFileFromPath(
 				auto d = mSplitter->loadDocumentInNewTab( editor->getDocumentRef() );
 				updateEditorTitle( d.second );
 			} else {
-				mSplitter->loadDocument( editor->getDocumentRef(), codeEditor );
-				updateEditorTitle( codeEditor );
+				mSplitter->loadDocument( editor->getDocumentRef(), editor );
+				updateEditorTitle( editor );
 			}
 		} else {
 			if ( inNewTab ) {
