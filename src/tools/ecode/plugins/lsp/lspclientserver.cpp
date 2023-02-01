@@ -821,6 +821,8 @@ void LSPClientServer::initialize() {
 		{ "formats", { "relative" } },
 	};
 
+	json completionItem{ { "snippetSupport", true } };
+
 	json capabilities{
 		{ "textDocument",
 		  json{
@@ -832,7 +834,7 @@ void LSPClientServer::initialize() {
 			  { "synchronization", json{ { "didSave", true } } },
 			  { "selectionRange", json{ { "dynamicRegistration", false } } },
 			  { "hover", json{ { "contentFormat", { "plaintext", "markdown" } } } },
-			  { "completion", json{ "completionItem", json{ { "snippetSupport", true } } } },
+			  { "completion", completionItem },
 		  } },
 		{ "window", json{ { "workDoneProgress", true } } },
 		//{ "workspace", json{ { "workspaceFolders", true }, { "configuration", false } } },
