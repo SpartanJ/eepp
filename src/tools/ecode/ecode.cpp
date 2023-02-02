@@ -190,7 +190,7 @@ void App::openFolderDialog() {
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
 							   UIFileDialog::ShowOnlyFolders,
-						   "*", "." );
+						   "*", !mCurrentProject.empty() ? mCurrentProject : "." );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_folder", "Open Folder" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
