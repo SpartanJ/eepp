@@ -82,10 +82,13 @@ void TextDocument::resetCursor() {
 
 static String ptrGetLine( char* data, const size_t& size, size_t& position ) {
 	position = 0;
-	while ( position < size && data[position] != '\n' )
+	while ( position < size && data[position] != '\n' && data[position] != '\r' )
 		position++;
-	if ( position < size )
+	if ( position < size ) {
+		if ( position + 1 < size && data[position] == '\r' && data[position + 1] == '\n' )
+			position++;
 		position++;
+	}
 	return String( data, position );
 }
 
@@ -132,17 +135,24 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 				bufferPtr += position;
 				consume -= position;
 				size_t lineBufferSize = lineBuffer.size();
+				char lastChar = lineBuffer[lineBufferSize - 1];
 
-				if ( lineBuffer[lineBufferSize - 1] == '\n' || !consume ) {
-					if ( mLines.empty() && lineBufferSize > 1 &&
-						 lineBuffer[lineBufferSize - 2] == '\r' ) {
-						mLineEnding = LineEnding::CRLF;
+				if ( lastChar == '\n' || lastChar == '\r' || !consume ) {
+					if ( mLines.empty() ) {
+						if ( lineBufferSize > 1 && lineBuffer[lineBufferSize - 2] == '\r' &&
+							 lastChar == '\n' ) {
+							mLineEnding = LineEnding::CRLF;
+						} else if ( lastChar == '\r' ) {
+							mLineEnding = LineEnding::CR;
+						}
 					}
 
 					if ( mLineEnding == LineEnding::CRLF && lineBufferSize > 1 &&
-						 lineBuffer[lineBufferSize - 1] == '\n' ) {
+						 lastChar == '\n' ) {
 						lineBuffer[lineBuffer.size() - 2] = '\n';
 						lineBuffer.resize( lineBufferSize - 1 );
+					} else if ( mLineEnding == LineEnding::CR && lineBufferSize > 0 ) {
+						lineBuffer[lineBuffer.size() - 1] = '\n';
 					}
 
 					mLines.push_back( lineBuffer );
@@ -543,6 +553,9 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 				text[text.size() - 1] = '\r';
 				text += "\n";
 			}
+			stream.write( text.c_str(), text.size() );
+		} else if ( mLineEnding == LineEnding::CR ) {
+			text[text.size() - 1] = '\r';
 			stream.write( text.c_str(), text.size() );
 		} else {
 			stream.write( text.c_str(), text.size() );
@@ -1304,10 +1317,23 @@ void TextDocument::textInput( const String& text ) {
 		}
 	}
 
-	for ( size_t i = 0; i < mSelection.size(); ++i ) {
-		if ( mSelection[i].hasSelection() )
-			deleteTo( i, 0 );
-		setSelection( i, insert( i, getSelectionIndex( i ).start(), text ) );
+	auto crPOS = text.find_first_of( '\r' );
+	if ( crPOS != String::InvalidPos ) {
+		String textCpy( text );
+		textCpy.replaceAll( "\r", "" );
+
+		for ( size_t i = 0; i < mSelection.size(); ++i ) {
+			if ( mSelection[i].hasSelection() )
+				deleteTo( i, 0 );
+			setSelection( i, insert( i, getSelectionIndex( i ).start(), textCpy ) );
+		}
+	} else {
+
+		for ( size_t i = 0; i < mSelection.size(); ++i ) {
+			if ( mSelection[i].hasSelection() )
+				deleteTo( i, 0 );
+			setSelection( i, insert( i, getSelectionIndex( i ).start(), text ) );
+		}
 	}
 }
 

@@ -39,11 +39,31 @@ class EE_API TextDocument {
 
 	enum class IndentType { IndentSpaces, IndentTabs };
 
-	enum class LineEnding { LF, CRLF };
+	enum class LineEnding { LF, CRLF, CR };
 
 	enum class FindReplaceType { Normal, LuaPattern };
 
 	enum class LoadStatus { Loaded, Interrupted, Failed };
+
+	static std::string lineEndingToString( const LineEnding& le ) {
+		switch ( le ) {
+			case LineEnding::CRLF:
+				return "CRLF";
+			case LineEnding::CR:
+				return "CR";
+			case LineEnding::LF:
+			default:
+				return "LF";
+		}
+	}
+
+	static LineEnding stringToLineEnding( const std::string& str ) {
+		if ( "CR" == str )
+			return LineEnding::CR;
+		if ( "CRLF" == str )
+			return LineEnding::CRLF;
+		return LineEnding::LF;
+	}
 
 	class EE_API Client {
 	  public:

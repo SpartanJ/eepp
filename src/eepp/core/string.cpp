@@ -707,6 +707,10 @@ void String::replaceAll( String& target, const String& that, const String& with 
 	}
 }
 
+void String::replaceAll( const String& that, const String& with ) {
+	String::replaceAll( *this, that, with );
+}
+
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {
 	std::size_t start_pos = target.find( that );
 	if ( start_pos == std::string::npos )

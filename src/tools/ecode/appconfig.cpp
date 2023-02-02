@@ -103,7 +103,15 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
 	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
-	doc.windowsLineEndings = ini.getValueB( "document", "windows_line_endings", false );
+	doc.lineEndings =
+		TextDocument::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
+	// Migrate old data
+	if ( ini.keyValueExists( "document", "windows_line_endings" ) &&
+		 !ini.keyValueExists( "document", "line_endings" ) &&
+		 ini.getValueB( "document", "windows_line_endings" ) == true ) {
+		doc.lineEndings = TextDocument::LineEnding::CRLF;
+	}
+
 	doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
 	doc.lineBreakingColumn = eemax( 0, ini.getValueI( "document", "line_breaking_column", 100 ) );
 	editor.autoCloseBrackets = ini.getValue( "editor", "auto_close_brackets", "" );
@@ -211,7 +219,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", doc.indentWidth );
 	ini.setValueB( "document", "indent_spaces", doc.indentSpaces );
-	ini.setValueB( "document", "windows_line_endings", doc.windowsLineEndings );
+	ini.setValue( "document", "line_endings", TextDocument::lineEndingToString( doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", doc.tabWidth );
 	ini.setValueI( "document", "line_breaking_column", doc.lineBreakingColumn );
 	ini.setValue( "editor", "auto_close_brackets", editor.autoCloseBrackets );
@@ -348,7 +356,8 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	ini.setValueB( "document", "write_bom", docConfig.doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", docConfig.doc.indentWidth );
 	ini.setValueB( "document", "indent_spaces", docConfig.doc.indentSpaces );
-	ini.setValueB( "document", "windows_line_endings", docConfig.doc.windowsLineEndings );
+	ini.setValue( "document", "line_endings",
+				  TextDocument::lineEndingToString( docConfig.doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", docConfig.doc.tabWidth );
 	ini.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
 	ini.setValue( "nodes", "documents",
@@ -440,7 +449,15 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	docConfig.doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
 	docConfig.doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	docConfig.doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
-	docConfig.doc.windowsLineEndings = ini.getValueB( "document", "windows_line_endings", false );
+	docConfig.doc.lineEndings =
+		TextDocument::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
+	// Migrate old data
+	if ( ini.keyValueExists( "document", "windows_line_endings" ) &&
+		 !ini.keyValueExists( "document", "line_endings" ) &&
+		 ini.getValueB( "document", "windows_line_endings" ) == true ) {
+		docConfig.doc.lineEndings = TextDocument::LineEnding::CRLF;
+	}
+
 	docConfig.doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
 	docConfig.doc.lineBreakingColumn =
 		eemax( 0, ini.getValueI( "document", "line_breaking_column", 100 ) );

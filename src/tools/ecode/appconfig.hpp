@@ -74,7 +74,7 @@ struct DocumentConfig {
 	bool autoDetectIndentType{ true };
 	bool writeUnicodeBOM{ false };
 	bool indentSpaces{ false };
-	bool windowsLineEndings{ false };
+	TextDocument::LineEnding lineEndings{ TextDocument::LineEnding::LF };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };
 	int lineBreakingColumn{ 100 };

@@ -829,6 +829,9 @@ class EE_API String {
 
 	String getFirstLine();
 
+	/** Replace all occurrences of the search string with the replacement string. */
+	void replaceAll( const String& that, const String& with );
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

@@ -282,17 +282,25 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	} );
 
 	UIPopUpMenu* lineEndingsMenu = UIPopUpMenu::New();
-	lineEndingsMenu->addRadioButton( "Windows (CR/LF)", mApp->getConfig().doc.windowsLineEndings )
-		->setId( "windows" );
-	lineEndingsMenu->addRadioButton( "Unix (LF)", !mApp->getConfig().doc.windowsLineEndings )
-		->setId( "unix" );
+	lineEndingsMenu
+		->addRadioButton( "Windows/DOS (CR/LF)",
+						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::CRLF )
+		->setId( "CRLF" );
+	lineEndingsMenu
+		->addRadioButton( "Unix (LF)",
+						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::LF )
+		->setId( "LF" );
+	lineEndingsMenu
+		->addRadioButton( "Macintosh (CR)",
+						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::CR )
+		->setId( "CR" );
 	mDocMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsMenu )
 		->setId( "line_endings_cur" );
 	lineEndingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
+		auto le =
+			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 		if ( mSplitter->curEditorExistsAndFocused() ) {
-			mSplitter->getCurEditor()->getDocument().setLineEnding(
-				winLe ? TextDocument::LineEnding::CRLF : TextDocument::LineEnding::LF );
+			mSplitter->getCurEditor()->getDocument().setLineEnding( le );
 			mApp->updateDocInfo( mSplitter->getCurEditor()->getDocument() );
 		}
 	} );
@@ -394,15 +402,22 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 
 	UIPopUpMenu* lineEndingsGlobalMenu = UIPopUpMenu::New();
 	lineEndingsGlobalMenu
-		->addRadioButton( "Windows (CR/LF)", mApp->getConfig().doc.windowsLineEndings )
-		->setId( "windows" );
-	lineEndingsGlobalMenu->addRadioButton( "Unix (LF)", !mApp->getConfig().doc.windowsLineEndings )
-		->setId( "unix" );
+		->addRadioButton( "Windows/DOS (CR/LF)",
+						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::CRLF )
+		->setId( "CRLF" );
+	lineEndingsGlobalMenu
+		->addRadioButton( "Unix (LF)",
+						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::LF )
+		->setId( "LF" );
+	lineEndingsGlobalMenu
+		->addRadioButton( "Macintosh (CR)",
+						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::CR )
+		->setId( "CR" );
 	globalMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsGlobalMenu )
 		->setId( "line_endings" );
 	lineEndingsGlobalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
-		mApp->getConfig().doc.windowsLineEndings = winLe;
+		mApp->getConfig().doc.lineEndings =
+			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 	} );
 
 	UIPopUpMenu* bracketsMenu = UIPopUpMenu::New();
@@ -589,18 +604,24 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 
 	UIPopUpMenu* lineEndingsProjectMenu = UIPopUpMenu::New();
 	lineEndingsProjectMenu
-		->addRadioButton( "Windows (CR/LF)", mApp->getProjectDocConfig().doc.windowsLineEndings )
-		->setId( "windows" );
+		->addRadioButton( "Windows (CR/LF)", mApp->getProjectDocConfig().doc.lineEndings ==
+												 TextDocument::LineEnding::CRLF )
+		->setId( "CRLF" );
 	lineEndingsProjectMenu
-		->addRadioButton( "Unix (LF)", !mApp->getProjectDocConfig().doc.windowsLineEndings )
-		->setId( "unix" );
+		->addRadioButton( "Unix (LF)", mApp->getProjectDocConfig().doc.lineEndings ==
+										   TextDocument::LineEnding::LF )
+		->setId( "LF" );
+	lineEndingsProjectMenu
+		->addRadioButton( "Macintosh (CR)", mApp->getProjectDocConfig().doc.lineEndings ==
+												TextDocument::LineEnding::CR )
+		->setId( "CR" );
 	mProjectMenu
 		->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsProjectMenu )
 		->setId( "line_endings" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
 	lineEndingsProjectMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
-		mApp->getProjectDocConfig().doc.windowsLineEndings = winLe;
+		mApp->getProjectDocConfig().doc.lineEndings =
+			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 	} );
 
 	mProjectMenu
@@ -1271,7 +1292,7 @@ void SettingsMenu::updateProjectSettingsMenu() {
 	mProjectMenu->find( "line_endings" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
-		->find( mApp->getProjectDocConfig().doc.windowsLineEndings ? "windows" : "unix" )
+		->find( TextDocument::lineEndingToString( mApp->getProjectDocConfig().doc.lineEndings ) )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
@@ -1340,7 +1361,7 @@ void SettingsMenu::updateDocumentMenu() {
 	mDocMenu->find( "line_endings_cur" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
-		->find( doc.getLineEnding() == TextDocument::LineEnding::CRLF ? "windows" : "unix" )
+		->find( TextDocument::lineEndingToString( doc.getLineEnding() ) )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 

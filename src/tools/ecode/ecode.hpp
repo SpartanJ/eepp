@@ -431,6 +431,8 @@ class App : public UICodeEditorSplitter::Client {
 	void onPluginEnabled( UICodeEditorPlugin* plugin );
 
 	void checkForUpdatesResponse( Http::Response response, bool fromStartup );
+
+	std::string getLastUsedFolder();
 };
 
 } // namespace ecode

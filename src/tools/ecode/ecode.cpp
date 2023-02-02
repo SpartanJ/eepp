@@ -186,11 +186,19 @@ void App::openFileDialog() {
 	dialog->show();
 }
 
+std::string App::getLastUsedFolder() {
+	if ( !mCurrentProject.empty() )
+		return mCurrentProject;
+	if ( !mRecentFolders.empty() )
+		return mRecentFolders.front();
+	return ".";
+}
+
 void App::openFolderDialog() {
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
 							   UIFileDialog::ShowOnlyFolders,
-						   "*", !mCurrentProject.empty() ? mCurrentProject : "." );
+						   "*", getLastUsedFolder() );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_folder", "Open Folder" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -1242,7 +1250,7 @@ void App::updateDocInfo( TextDocument& doc ) {
 			doc.getSelection().start().line() + 1, doc.linesCount(),
 			i18n( "col_abbr", "col" ).toUtf8().c_str(),
 			mSplitter->getCurEditor()->getCurrentColumnCount(),
-			doc.getLineEnding() == TextDocument::LineEnding::LF ? "LF" : "CRLF" ) );
+			TextDocument::lineEndingToString( doc.getLineEnding() ).c_str() ) );
 	}
 }
 
@@ -1644,8 +1652,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setCursorBlinkTime( config.cursorBlinkingTime );
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
-	doc.setLineEnding( docc.windowsLineEndings ? TextDocument::LineEnding::CRLF
-											   : TextDocument::LineEnding::LF );
+	doc.setLineEnding( docc.lineEndings );
 	doc.setTrimTrailingWhitespaces( docc.trimTrailingWhitespaces );
 	doc.setForceNewLineAtEndOfFile( docc.forceNewLineAtEndOfFile );
 	doc.setIndentType( docc.indentSpaces ? TextDocument::IndentType::IndentSpaces
