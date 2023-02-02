@@ -122,6 +122,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addxit();
 
 	addNelua();
+
+	addTeal();
 }
 
 void SyntaxDefinitionManager::addPlainText() {
@@ -3822,6 +3824,42 @@ void SyntaxDefinitionManager::addNelua() {
 		   },
 		   "--",
 		   { "^#!.*[ /]nelua" } } );
+}
+
+void SyntaxDefinitionManager::addTeal() {
+	add( { "Teal",
+		   { "%.tl$", "%.d.tl$" },
+		   {
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "%[%[", "%]%]" }, "string" },
+			   { { "%-%-%[%[", "%]%]" }, "comment" },
+			   { { "%-%-.-\n" }, "comment" },
+			   { { "-?0x%x+" }, "number" },
+			   { { "-?%d+[%d%.eE]*" }, "number" },
+			   { { "-?%.?%d+" }, "number" },
+			   { { "<%a+>" }, "keyword2" },
+			   { { "%.%.%.?" }, "operator" },
+			   { { "[<>~=]=" }, "operator" },
+			   { { "[%+%-=/%*%^%%#<>]" }, "operator" },
+			   { { "[%a_][%w_]*%s*%f[(\"{]" }, "function" },
+			   { { "[%a_][%w_]*" }, "symbol" },
+			   { { "::[%a_][%w_]*::" }, "function" },
+		   },
+		   {
+			   { "if", "keyword" },		  { "then", "keyword" },	{ "else", "keyword" },
+			   { "elseif", "keyword" },	  { "end", "keyword" },		{ "do", "keyword" },
+			   { "function", "keyword" }, { "repeat", "keyword" },	{ "until", "keyword" },
+			   { "while", "keyword" },	  { "for", "keyword" },		{ "break", "keyword" },
+			   { "return", "keyword" },	  { "local", "keyword" },	{ "global", "keyword" },
+			   { "in", "keyword" },		  { "not", "keyword" },		{ "and", "keyword" },
+			   { "or", "keyword" },		  { "goto", "keyword" },	{ "enum", "keyword" },
+			   { "record", "keyword" },	  { "any", "keyword2" },	{ "boolean", "keyword2" },
+			   { "number", "keyword2" },  { "string", "keyword2" }, { "thread", "keyword2" },
+			   { "true", "literal" },	  { "false", "literal" },	{ "nil", "literal" },
+		   },
+		   "--",
+		   { "^#!.*[ /]tl" } } );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {

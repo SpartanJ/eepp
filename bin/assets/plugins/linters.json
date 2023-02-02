@@ -80,6 +80,12 @@
       "warning_pattern": "[^:]:(%d+):(%d+):%s([%w%s]*):%s?([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
       "command": "nelua --lint $FILENAME"
+    },
+    {
+      "file_patterns": ["%.tl$"],
+      "warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
+      "command": "tl check $FILENAME",
+      "expected_exitcodes": [0]
     }
   ]
 }

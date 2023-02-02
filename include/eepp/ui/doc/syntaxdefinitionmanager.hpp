@@ -151,6 +151,8 @@ class EE_API SyntaxDefinitionManager {
 	void addxit();
 
 	void addNelua();
+
+	void addTeal();
 };
 
 }}} // namespace EE::UI::Doc
