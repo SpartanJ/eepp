@@ -1375,15 +1375,17 @@ void SettingsMenu::createProjectTreeMenu() {
 				   findIcon( "filetype-bash" ) )
 			->setId( "execute_dir_in_terminal" );
 		mProjectTreeMenu->addSeparator();
+		mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ) )->setId( "collapse-all" );
+		mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ) )->setId( "expand-all" );
+		mProjectTreeMenu->addSeparator();
+		mProjectTreeMenu
+			->addCheckBox( i18n( "show_hidden_files", "Show hidden files" ),
+						   !mApp->getFileSystemModel()->getDisplayConfig().ignoreHidden )
+			->setId( "show_hidden_files" );
+	} else if ( !mApp->getFileSystemModel() ) {
+		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
+			->setId( "open-folder" );
 	}
-
-	mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ) )->setId( "collapse-all" );
-	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ) )->setId( "expand-all" );
-	mProjectTreeMenu->addSeparator();
-	mProjectTreeMenu
-		->addCheckBox( i18n( "show_hidden_files", "Show hidden files" ),
-					   !mApp->getFileSystemModel()->getDisplayConfig().ignoreHidden )
-		->setId( "show_hidden_files" );
 
 	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
@@ -1404,6 +1406,8 @@ void SettingsMenu::createProjectTreeMenu() {
 			mApp->getProjectTreeView()->collapseAll();
 		} else if ( "expand-all" == id ) {
 			mApp->getProjectTreeView()->expandAll();
+		} else if ( "open-folder" == id ) {
+			mApp->openFolderDialog();
 		}
 	} );
 

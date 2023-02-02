@@ -2061,6 +2061,8 @@ void App::initProjectTreeView( const std::string& path ) {
 			mSettings->createProjectTreeMenu();
 	} );
 	mProjectTreeView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+		if ( !mFileSystemModel )
+			return 0;
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( keyEvent->getKeyCode() == KEY_F2 ) {
 			ModelIndex modelIndex = mProjectTreeView->getSelection().first();
