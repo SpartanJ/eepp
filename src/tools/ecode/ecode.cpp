@@ -1452,6 +1452,17 @@ void App::closeEditors() {
 			break;
 	};
 
+	std::vector<UITerminal*> terminals;
+	mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [&terminals]( UIWidget* widget ) {
+		terminals.push_back( widget->asType<UITerminal>() );
+	} );
+
+	for ( UITerminal* terminal : terminals ) {
+		UITabWidget* tabWidget = mSplitter->tabWidgetFromWidget( terminal );
+		if ( tabWidget )
+			tabWidget->removeTab( (UITab*)terminal->getData(), true, true );
+	}
+
 	mCurrentProject = "";
 	mDirTree = nullptr;
 	if ( mFileSystemListener )
