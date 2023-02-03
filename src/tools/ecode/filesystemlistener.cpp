@@ -21,10 +21,16 @@ FileSystemListener::FileSystemListener( UICodeEditorSplitter* splitter,
 										std::shared_ptr<FileSystemModel> fileSystemModel ) :
 	mSplitter( splitter ), mFileSystemModel( fileSystemModel ) {}
 
+
+static inline bool endsWithSlash(const std::string& dir) {
+	return !dir.empty() && ( dir.back() == '\\' || dir.back() == '/' );
+}
+
 void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir,
 										   const std::string& filename, efsw::Action action,
 										   std::string oldFilename ) {
-	FileInfo file( dir + filename );
+
+	FileInfo file( ( endsWithSlash( dir ) ? dir : ( dir + FileSystem::getOSSlash() ) ) + filename );
 
 	switch ( action ) {
 		case efsw::Actions::Add:
