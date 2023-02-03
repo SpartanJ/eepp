@@ -295,6 +295,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void setUIPanelFontSize();
 
+	void refreshFolderView();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };

@@ -130,6 +130,46 @@ ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int colum
 	return {};
 }
 
+FileSystemModel::Node* FileSystemModel::Node::childWithPathExists( const std::string& path ) {
+	for ( auto child : mChildren ) {
+		if ( child->info().getFilepath() == path )
+			return child;
+	}
+	return nullptr;
+}
+
+void FileSystemModel::Node::refresh( const FileSystemModel& model ) {
+	if ( !mInfo.isDirectory() )
+		return;
+
+	auto oldFiles = mChildren;
+	auto files = FileSystem::filesInfoGetInPath(
+		mInfo.getFilepath(), false, model.getDisplayConfig().sortByName,
+		model.getDisplayConfig().foldersFirst, model.getDisplayConfig().ignoreHidden );
+
+	std::vector<Node*> newChildren;
+	Node* node = nullptr;
+
+	for ( auto file : files ) {
+		if ( ( node = childWithPathExists( file.getFilepath() ) ) ) {
+			newChildren.emplace_back( node );
+			auto it = std::find( oldFiles.begin(), oldFiles.end(), node );
+			if ( it != oldFiles.end() )
+				oldFiles.erase( it );
+
+			if ( node->info().isDirectory() && node->mHasTraversed )
+				node->refresh( model );
+		} else {
+			newChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
+		}
+	}
+
+	for ( Node* oldNode : oldFiles )
+		eeDelete( oldNode );
+
+	mChildren = newChildren;
+}
+
 void FileSystemModel::Node::cleanChildren() {
 	for ( size_t i = 0; i < mChildren.size(); ++i )
 		eeDelete( mChildren[i] );
@@ -254,6 +294,12 @@ FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool 
 
 void FileSystemModel::reload() {
 	setRootPath( mRootPath );
+}
+
+void FileSystemModel::refresh() {
+	Lock l( resourceMutex() );
+	mRoot->refresh( *this );
+	onModelUpdate();
 }
 
 void FileSystemModel::update() {

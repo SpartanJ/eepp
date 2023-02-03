@@ -1396,13 +1396,18 @@ void SettingsMenu::createProjectTreeMenu() {
 				   findIcon( "filetype-bash" ) )
 			->setId( "execute_dir_in_terminal" );
 		mProjectTreeMenu->addSeparator();
-		mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ) )->setId( "collapse-all" );
-		mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ) )->setId( "expand-all" );
+		mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ), findIcon( "collapse-all" ) )
+			->setId( "collapse-all" );
+		mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ), findIcon( "expand-all" ) )
+			->setId( "expand-all" );
 		mProjectTreeMenu->addSeparator();
 		mProjectTreeMenu
 			->addCheckBox( i18n( "show_hidden_files", "Show hidden files" ),
 						   !mApp->getFileSystemModel()->getDisplayConfig().ignoreHidden )
-			->setId( "show_hidden_files" );
+			->setId( "show_hidden_fileñs" );
+		mProjectTreeMenu->addSeparator();
+		mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View..." ), findIcon( "refresh" ) )
+			->setId( "refresh-view" );
 	} else if ( !mApp->getFileSystemModel() ) {
 		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
 			->setId( "open-folder" );
@@ -1429,6 +1434,8 @@ void SettingsMenu::createProjectTreeMenu() {
 			mApp->getProjectTreeView()->expandAll();
 		} else if ( "open-folder" == id ) {
 			mApp->openFolderDialog();
+		} else if ( "refresh-view" == id ) {
+			mApp->refreshFolderView();
 		}
 	} );
 
@@ -1489,8 +1496,13 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 		->setId( "show_hidden_files" );
 
 	mProjectTreeMenu->addSeparator();
-	mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ) )->setId( "collapse-all" );
-	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ) )->setId( "expand-all" );
+	mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ), findIcon( "collapse-all" ) )
+		->setId( "collapse-all" );
+	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ), findIcon( "expand-all" ) )
+		->setId( "expand-all" );
+	mProjectTreeMenu->addSeparator();
+	mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View..." ), findIcon( "refresh" ) )
+		->setId( "refresh-view" );
 
 	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&, file]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
@@ -1573,6 +1585,8 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			mApp->getProjectTreeView()->collapseAll();
 		} else if ( "expand-all" == id ) {
 			mApp->getProjectTreeView()->expandAll();
+		} else if ( "refresh-view" == id ) {
+			mApp->refreshFolderView();
 		}
 	} );
 

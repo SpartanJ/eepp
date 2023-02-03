@@ -194,6 +194,12 @@ std::string App::getLastUsedFolder() {
 	return ".";
 }
 
+void App::refreshFolderView() {
+	if ( !mFileSystemModel )
+		return;
+	mThreadPool->run( [this]() { mFileSystemModel->refresh(); } );
+}
+
 void App::openFolderDialog() {
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
@@ -2718,7 +2724,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				{ "symbol-folder", 0xea83 },		 { "symbol-enum-member", 0xeb5e },
 				{ "symbol-constant", 0xeb5d },		 { "symbol-struct", 0xea91 },
 				{ "symbol-event", 0xea86 },			 { "symbol-operator", 0xeb64 },
-				{ "symbol-type-parameter", 0xea92 },
+				{ "symbol-type-parameter", 0xea92 }, { "expand-all", 0xeb95 },
+				{ "collapse-all", 0xeac5 },
 			};
 
 			for ( const auto& icon : codIcons )

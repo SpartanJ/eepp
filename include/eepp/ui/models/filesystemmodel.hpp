@@ -81,10 +81,6 @@ class EE_API FileSystemModel : public Model {
 
 		const FileInfo& info() const { return mInfo; }
 
-		bool isSelected() const { return mSelected; }
-
-		void setSelected( bool selected ) { mSelected = selected; };
-
 		const std::string& fullPath() const;
 
 		const std::string& getMimeType() const { return mMimeType; }
@@ -106,7 +102,11 @@ class EE_API FileSystemModel : public Model {
 		Int64 findChildRowFromName( const std::string& name, const FileSystemModel& model,
 									bool forceRefresh = false );
 
+		void refresh( const FileSystemModel& model );
+
 		~Node();
+
+		FileSystemModel::Node* childWithPathExists( const std::string& path );
 
 	  private:
 		friend class FileSystemModel;
@@ -125,7 +125,6 @@ class EE_API FileSystemModel : public Model {
 		std::vector<Node*> mChildren;
 		bool mHasTraversed{ false };
 		bool mInfoDirty{ true };
-		bool mSelected{ false };
 
 		ModelIndex index( const FileSystemModel& model, int column ) const;
 
@@ -151,6 +150,8 @@ class EE_API FileSystemModel : public Model {
 	Node* getNodeFromPath( std::string path, bool folderNode = false, bool invalidateTree = true );
 
 	void reload();
+
+	void refresh();
 
 	void update();
 
