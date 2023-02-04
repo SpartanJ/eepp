@@ -400,7 +400,7 @@ void SyntaxDefinitionManager::addMarkdown() {
 			   { { "```[Hh][Tt][Mm][Ll]", "```" }, "function", "html" },
 			   { { "```[Cc]++", "```" }, "function", "C++" },
 			   { { "```[Cc][Pp][Pp]", "```" }, "function", "C++" },
-			   { { "```[Cc]%#", "```" }, "function", "C#" },
+			   { { "```[Cc]sharp", "```" }, "function", "C#" },
 			   { { "```[Cc][Ss][Ss]", "```" }, "function", "CSS" },
 			   { { "```[Cc]", "```" }, "function", "C" },
 			   { { "```[Dd][Aa][Rr][Tt]", "```" }, "function", "Dart" },
@@ -440,7 +440,7 @@ void SyntaxDefinitionManager::addMarkdown() {
 			   { { "%*", "[%*\n]", "\\" }, "operator" },
 			   { { "%s%_", "[%_\n]", "\\" }, "keyword2" },
 			   { { "^%_", "[%_\n]", "\\" }, "keyword2" },
-			   { { "#.-\n" }, "keyword" },
+			   { { "^#.-\n" }, "keyword" },
 			   { { "%[!%[([^%]].-)%]%((https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/"
 				   "?[%w_.~!*:@&+$/?%%#=-]*)%)%]%((https?://[%w_.~!*:@&+$/"
 				   "?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*)%)" },
@@ -448,6 +448,7 @@ void SyntaxDefinitionManager::addMarkdown() {
 			   { { "!?%[([^%]].-)%]%((https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/"
 				   "?[%w_.~!*:@&+$/?%%#=-]*)%)" },
 				 { "keyword", "function", "link" } },
+			   { { "!?%[([^%]].-)%]%((%#+[%w-]*)%)" }, { "keyword", "function", "link" } },
 			   { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"
 				   "?%%#=-]*" },
 				 "link" },
@@ -1422,7 +1423,7 @@ void SyntaxDefinitionManager::addMakefile() {
 
 void SyntaxDefinitionManager::addCSharp() {
 	add( { "C#",
-		   { "%.cs$" },
+		   { "%.cs$", "%.csx$" },
 		   {
 			   { { "//.-\n" }, "comment" },
 			   { { "/%*", "%*/" }, "comment" },

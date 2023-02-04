@@ -161,6 +161,14 @@
       "url": "https://github.com/rcjsuen/dockerfile-language-server-nodejs",
       "command": "docker-langserver --stdio",
       "file_patterns": ["^[Cc]ontainerfile$", "^[dD]ockerfile$"]
+    },
+    {
+      "language": "csharp",
+      "name": "OmniSharp",
+      "url": "https://github.com/OmniSharp/omnisharp-roslyn",
+      "command": "OmniSharp -lsp",
+      "file_patterns": ["%.cs$", "%.csx$"],
+      "rootIndicationFileNames": ["%.sln$"]
     }
   ]
 }

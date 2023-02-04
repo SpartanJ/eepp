@@ -59,10 +59,15 @@ std::string LSPClientServerManager::findRootPath( const LSPDefinition& lsp,
 	FileSystem::dirAddSlashAtEnd( rootPath );
 
 	while ( rootPath != lRootPath ) {
-		for ( const auto& fileName : lsp.rootIndicationFileNames )
+		for ( const auto& fileName : lsp.rootIndicationFileNames ) {
 			if ( FileSystem::fileExists( rootPath + fileName ) )
 				return rootPath;
 
+			if ( fileName.find_first_of( "$%" ) != std::string::npos &&
+				 !LuaPattern::matchesAny( FileSystem::filesGetInPath( rootPath ), fileName )
+					  .empty() )
+				return rootPath;
+		}
 		lRootPath = rootPath;
 		rootPath = FileSystem::removeLastFolderFromPath( rootPath );
 	}

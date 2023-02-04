@@ -270,12 +270,18 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			}
 		}
 
-		// Allow setting user command paramaters for an already declared LSP
-		if ( obj.contains( "name" ) && obj.contains( "command_parameters" ) &&
-			 obj.at( "command_parameters" ).is_string() ) {
+		// Allow overriding the command for already defined LSP
+		// And allow adding parameters to the already defined LSP
+		if ( obj.contains( "name" ) &&
+			 ( ( obj.contains( "command" ) && obj.at( "command" ).is_string() ) ||
+			   ( obj.contains( "command_parameters" ) &&
+				 obj.at( "command_parameters" ).is_string() ) ) ) {
 			for ( auto& lsp : lsps ) {
 				if ( lsp.name == obj["name"] ) {
-					lsp.commandParameters = obj.value( "command_parameters", "" );
+					if ( !obj.value( "command", "" ).empty() )
+						lsp.command = obj.value( "command", "" );
+					if ( !obj.value( "command_parameters", "" ).empty() )
+						lsp.commandParameters = obj.value( "command_parameters", "" );
 					break;
 				}
 			}

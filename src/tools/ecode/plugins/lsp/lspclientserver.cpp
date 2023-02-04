@@ -257,7 +257,7 @@ static void fromJson( LSPDocumentOnTypeFormattingOptions& options, const json& j
 static void fromJson( LSPWorkspaceFoldersServerCapabilities& options, const json& json ) {
 	if ( json.is_object() ) {
 		auto ob = json;
-		options.supported = ob["supported"].get<bool>();
+		options.supported = ob.value( "supported", false );
 		if ( ob["changeNotifications"].is_boolean() ) {
 			options.changeNotifications = ob["changeNotifications"].get<bool>();
 		} else if ( ob["changeNotifications"].is_string() ) {
@@ -891,7 +891,8 @@ LSPClientServer::~LSPClientServer() {
 }
 
 bool LSPClientServer::start() {
-	bool ret = mProcess.create( mLSP.command, Process::getDefaultOptions(), {}, mRootPath );
+	bool ret = mProcess.create( mLSP.command + mLSP.commandParameters, Process::getDefaultOptions(),
+								{}, mRootPath );
 	if ( ret && mProcess.isAlive() ) {
 		mProcess.startAsyncRead(
 			[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
