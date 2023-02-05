@@ -53,9 +53,22 @@ struct LSPPositionAndServer {
 	LSPClientServer* server{ nullptr };
 };
 
-LSPClientServer* getServerURIFromURI( LSPClientServerManager& manager, const json& data ) {
+struct LSPURIAndServer {
+	URI uri;
+	LSPClientServer* server{ nullptr };
+};
+
+static LSPClientServer* getServerURIFromURI( LSPClientServerManager& manager, const json& data ) {
 	URI uri( data["uri"] );
 	return manager.getOneLSPClientServer( uri );
+}
+
+static LSPURIAndServer getServerURIFromTextDocumentURI( LSPClientServerManager& manager,
+														const json& data ) {
+	if ( !data.contains( "textDocument" ) || !data["textDocument"].contains( "uri" ) )
+		return {};
+	URI uri( data["textDocument"]["uri"] );
+	return { uri, manager.getOneLSPClientServer( uri ) };
 }
 
 LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, const json& data ) {
@@ -108,6 +121,53 @@ PluginRequestHandle LSPClientPlugin::processSignatureHelpRequest( const PluginMe
 	return std::move( ret );
 }
 
+PluginRequestHandle LSPClientPlugin::processDocumentFormatting( const PluginMessage& msg ) {
+	if ( !msg.isBroadcast() || !msg.isJSON() )
+		return {};
+
+	auto server = getServerURIFromTextDocumentURI( mClientManager, msg.asJSON() );
+	if ( !server.server )
+		return {};
+
+	if ( !msg.asJSON().contains( "options" ) )
+		return {};
+
+	auto ret = server.server->documentFormatting(
+		server.uri, msg.asJSON()["options"],
+		[&, server]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
+			processDocumentFormattingResponse( server.uri, edits );
+		} );
+
+	return std::move( ret );
+}
+
+void LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
+														 const std::vector<LSPTextEdit>& edits ) {
+	auto doc = mManager->getSplitter()->findDocFromPath( uri.getPath() );
+	if ( !doc )
+		return;
+
+	for ( const auto& edit : edits )
+		if ( !edit.range.isValid() || !doc->isValidRange( edit.range ) )
+			return;
+
+	TextRanges ranges = doc->getSelections();
+
+	for ( const auto& edit : edits ) {
+		doc->setSelection( edit.range );
+		if ( edit.text.empty() ) {
+			doc->deleteSelection( 0 );
+		} else {
+			if ( edit.range.hasSelection() )
+				doc->deleteTo( 0, 0 );
+			doc->setSelection( 0,
+							   doc->insert( 0, doc->getSelectionIndex( 0 ).start(), edit.text ) );
+		}
+	}
+
+	doc->setSelection( ranges );
+}
+
 PluginRequestHandle LSPClientPlugin::processCancelRequest( const PluginMessage& msg ) {
 	if ( !msg.isBroadcast() || !msg.isJSON() )
 		return {};
@@ -133,6 +193,12 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 		}
 		case PluginMessageType::SignatureHelp: {
 			auto ret = processSignatureHelpRequest( msg );
+			if ( !ret.isEmpty() )
+				return ret;
+			break;
+		}
+		case PluginMessageType::DocumentFormatting: {
+			auto ret = processDocumentFormatting( msg );
 			if ( !ret.isEmpty() )
 				return ret;
 			break;
@@ -594,20 +660,18 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 	editor->runOnMainThread(
 		[&, editor, position, tag]() {
 			mEditorsTags[editor].erase( tag );
-			mThreadPool->run( [&, editor, position]() {
-				auto server = mClientManager.getOneLSPClientServer( editor );
-				if ( server == nullptr )
-					return;
-				server->documentHover(
-					editor->getDocument().getURI(), currentMouseTextPosition( editor ),
-					[&, editor, position]( const Int64&, const LSPHover& resp ) {
-						if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
-							editor->runOnMainThread( [editor, resp, position, this]() {
-								tryDisplayTooltip( editor, resp, position );
-							} );
-						}
-					} );
-			} );
+			auto server = mClientManager.getOneLSPClientServer( editor );
+			if ( server == nullptr )
+				return;
+			server->documentHover(
+				editor->getDocument().getURI(), currentMouseTextPosition( editor ),
+				[&, editor, position]( const Int64&, const LSPHover& resp ) {
+					if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
+						editor->runOnMainThread( [editor, resp, position, this]() {
+							tryDisplayTooltip( editor, resp, position );
+						} );
+					}
+				} );
 		},
 		mHoverDelay, tag );
 	tryHideTooltip( editor, position );

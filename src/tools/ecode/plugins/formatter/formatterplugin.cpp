@@ -28,12 +28,15 @@ UICodeEditorPlugin* FormatterPlugin::New( PluginManager* pluginManager ) {
 }
 
 FormatterPlugin::FormatterPlugin( PluginManager* pluginManager ) :
-	mPool( pluginManager->getThreadPool() ) {
+	mManager( pluginManager ), mPool( pluginManager->getThreadPool() ) {
 #if FORMATTER_THREADED
 	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 #else
 	load( pluginManager );
 #endif
+	mManager->subscribeMessages( this, [&]( const PluginMessage& msg ) -> PluginRequestHandle {
+		return processResponse( msg );
+	} );
 }
 
 FormatterPlugin::~FormatterPlugin() {
@@ -46,17 +49,17 @@ FormatterPlugin::~FormatterPlugin() {
 
 	for ( auto editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {
-			editor->getKeyBindings().removeCommandKeybind( kb.first );
-			if ( editor->hasDocument() )
-				editor->getDocument().removeCommand( kb.first );
+			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
+			if ( editor.first->hasDocument() )
+				editor.first->getDocument().removeCommand( kb.first );
 		}
 
-		editor->unregisterPlugin( this );
+		editor.first->unregisterPlugin( this );
 	}
 }
 
 void FormatterPlugin::onRegister( UICodeEditor* editor ) {
-	mEditors.insert( editor );
+	std::vector<Uint32> listeners;
 
 	for ( auto& kb : mKeyBindings ) {
 		if ( !kb.first.empty() )
@@ -66,14 +69,22 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 	if ( editor->hasDocument() )
 		editor->getDocument().setCommand( "format-doc", [&, editor]() { formatDoc( editor ); } );
 
-	mOnDocumentSaveCb = editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
+			tryRequestCapabilities( editor );
+		} ) );
+
+	listeners.push_back( editor->addEventListener( Event::OnDocumentSave, [&](
+																			  const Event* event ) {
 		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
 			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 			auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
 			if ( isAutoFormatting == mIsAutoFormatting.end() || isAutoFormatting->second == false )
 				formatDoc( editor );
 		}
-	} );
+	} ) );
+
+	mEditors.insert( { editor, listeners } );
 }
 
 void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
@@ -87,8 +98,9 @@ void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 	if ( afIt != mIsAutoFormatting.end() )
 		mIsAutoFormatting.erase( afIt );
 
-	if ( mOnDocumentSaveCb != 0 )
-		editor->removeEventListener( mOnDocumentSaveCb );
+	auto cbs = mEditors[editor];
+	for ( auto listener : cbs )
+		editor->removeEventListener( listener );
 
 	if ( mShuttingDown )
 		return;
@@ -239,18 +251,9 @@ std::string FormatterPlugin::getFileConfigPath() {
 
 bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i&,
 										   const Uint32& ) {
-	const auto& patterns = editor->getDocument().getSyntaxDefinition().getFiles();
-	bool found = false;
-	for ( const auto& formatter : mFormatters ) {
-		for ( const auto& pattern : patterns ) {
-			if ( std::find( formatter.files.begin(), formatter.files.end(), pattern ) !=
-				 formatter.files.end() ) {
-				found = true;
-				break;
-			}
-		}
-	}
-	if ( !found )
+	tryRequestCapabilities( editor );
+	if ( supportsFormatter( editor->getDocumentRef() ).command.empty() &&
+		 !supportsLSPFormatter( editor->getDocumentRef() ) )
 		return false;
 
 	menu->add( editor->getUISceneNode()->i18n( "formatter-format-document", "Format Document" ),
@@ -277,8 +280,13 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 	Clock clock;
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto formatter = supportsFormatter( doc );
-	if ( formatter.command.empty() || doc->getFilePath().empty() )
+	if ( formatter.command.empty() ) {
+		if ( supportsLSPFormatter( doc ) )
+			formatDocWithLSP( doc );
 		return;
+	} else if ( doc->getFilePath().empty() ) {
+		return;
+	}
 	IOStreamString fileString;
 	std::string path;
 	if ( doc->isDirty() || !doc->hasFilepath() || formatter.type == FormatterType::Inplace ) {
@@ -398,6 +406,33 @@ FormatterPlugin::Formatter FormatterPlugin::supportsFormatter( std::shared_ptr<T
 	return {};
 }
 
+bool FormatterPlugin::supportsLSPFormatter( std::shared_ptr<TextDocument> doc ) {
+	auto lang = doc->getSyntaxDefinition().getLSPName();
+	auto cap = mCapabilities.find( lang );
+	if ( cap != mCapabilities.end() )
+		return cap->second.documentFormattingProvider;
+	return false;
+}
+
+static json getURIJSON( std::shared_ptr<TextDocument> doc ) {
+	json data;
+	json docUri;
+	json options;
+	docUri["uri"] = doc->getURI().toString();
+	data["textDocument"] = docUri;
+	options["tabSize"] = doc->getIndentWidth();
+	options["insertSpaces"] = doc->getIndentType() == TextDocument::IndentType::IndentSpaces;
+	data["options"] = options;
+	return data;
+}
+
+bool FormatterPlugin::formatDocWithLSP( std::shared_ptr<TextDocument> doc ) {
+	json data = getURIJSON( doc );
+	mManager->sendBroadcast( this, PluginMessageType::DocumentFormatting, PluginMessageFormat::JSON,
+							 &data );
+	return false;
+}
+
 void FormatterPlugin::registerNativeFormatters() {
 	if ( !mNativeFormatters.empty() )
 		return;
@@ -447,6 +482,29 @@ void FormatterPlugin::registerNativeFormatters() {
 		std::string res( j.dump( 2 ) );
 		return { !res.empty(), res, "" };
 	};
+}
+
+bool FormatterPlugin::tryRequestCapabilities( UICodeEditor* editor ) {
+	const auto& language = editor->getDocumentRef()->getSyntaxDefinition().getLSPName();
+	auto it = mCapabilities.find( language );
+	if ( it != mCapabilities.end() )
+		return true;
+	json data;
+	data["language"] = language;
+	mManager->sendRequest( this, PluginMessageType::LanguageServerCapabilities,
+						   PluginMessageFormat::JSON, &data );
+	return false;
+}
+
+PluginRequestHandle FormatterPlugin::processResponse( const PluginMessage& msg ) {
+	if ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerCapabilities ) {
+		if ( msg.asLanguageServerCapabilities().ready ) {
+			LSPServerCapabilities cap = msg.asLanguageServerCapabilities();
+			Lock l( mCapabilitiesMutex );
+			mCapabilities[cap.language] = std::move( cap );
+		}
+	}
+	return {};
 }
 
 } // namespace ecode

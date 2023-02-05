@@ -1805,6 +1805,18 @@ TextRanges TextDocument::sanitizeRange( const TextRanges& ranges ) const {
 	return sanitizedRanges;
 }
 
+bool TextDocument::isValidPosition( const TextPosition& position ) const {
+	if ( position.line() < 0 || position.line() > (Int64)mLines.size() - 1 )
+		return false;
+	if ( position.column() < 0 || position.column() > (Int64)mLines[position.line()].size() - 1 )
+		return false;
+	return true;
+}
+
+bool TextDocument::isValidRange( const TextRange& range ) const {
+	return isValidPosition( range.start() ) && isValidPosition( range.end() );
+}
+
 bool TextDocument::getAutoCloseBrackets() const {
 	return mAutoCloseBrackets;
 }

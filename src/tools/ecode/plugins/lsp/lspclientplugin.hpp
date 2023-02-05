@@ -112,6 +112,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	PluginRequestHandle processCancelRequest( const PluginMessage& msg );
 
+	PluginRequestHandle processDocumentFormatting( const PluginMessage& msg );
+
 	void tryHideTooltip( UICodeEditor* editor, const Vector2i& position );
 
 	void hideTooltip( UICodeEditor* editor );
@@ -123,6 +125,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	void getSymbolInfo( UICodeEditor* editor );
 
 	void switchSourceHeader( UICodeEditor* editor );
+
+	void processDocumentFormattingResponse( const URI& uri, const std::vector<LSPTextEdit>& edits );
 };
 
 } // namespace ecode

@@ -71,9 +71,10 @@ class FormatterPlugin : public UICodeEditorPlugin {
 		FormatterType type{ FormatterType::Output };
 	};
 
+	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Formatter> mFormatters;
-	std::set<UICodeEditor*> mEditors;
+	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
 	std::mutex mWorkMutex;
 	std::condition_variable mWorkerCondition;
 	std::map<std::string, std::function<NativeFormatterResult( const std::string& file )>>
@@ -82,11 +83,12 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	std::string mConfigPath;
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::map<TextDocument*, bool> mIsAutoFormatting;
+	std::map<std::string, LSPServerCapabilities> mCapabilities;
+	Mutex mCapabilitiesMutex;
 
 	bool mAutoFormatOnSave{ false };
 	bool mShuttingDown{ false };
 	bool mReady{ false };
-	Uint32 mOnDocumentSaveCb{ 0 };
 
 	FormatterPlugin( PluginManager* pluginManager );
 
@@ -102,7 +104,15 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	FormatterPlugin::Formatter supportsFormatter( std::shared_ptr<TextDocument> doc );
 
+	bool supportsLSPFormatter( std::shared_ptr<TextDocument> doc );
+
+	bool formatDocWithLSP( std::shared_ptr<TextDocument> doc );
+
 	void registerNativeFormatters();
+
+	bool tryRequestCapabilities( UICodeEditor* editor );
+
+	PluginRequestHandle processResponse( const PluginMessage& msg );
 };
 
 } // namespace ecode

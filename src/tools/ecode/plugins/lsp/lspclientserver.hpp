@@ -40,6 +40,7 @@ class LSPClientServer {
 	using SelectionRangeHandler = ReplyHandler<std::vector<std::shared_ptr<LSPSelectionRange>>>;
 	using SignatureHelpHandler = ReplyHandler<LSPSignatureHelp>;
 	using LocationHandler = ReplyHandler<std::vector<LSPLocation>>;
+	using TextEditArrayHandler = ReplyHandler<std::vector<LSPTextEdit>>;
 
 	class LSPRequestHandle : public PluginRequestHandle {
 	  public:
@@ -177,6 +178,12 @@ class LSPClientServer {
 
 	LSPRequestHandle signatureHelp( const URI& document, const TextPosition& pos,
 									const SignatureHelpHandler& h );
+
+	LSPRequestHandle documentFormatting( const URI& document, const json& options,
+										 const JsonReplyHandler& h );
+
+	LSPRequestHandle documentFormatting( const URI& document, const json& options,
+										 const TextEditArrayHandler& h );
 
 	void removeDoc( TextDocument* doc );
 

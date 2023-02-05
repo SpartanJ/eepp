@@ -447,6 +447,10 @@ class EE_API TextDocument {
 
 	TextRanges sanitizeRange( const TextRanges& ranges ) const;
 
+	bool isValidPosition( const TextPosition& position ) const;
+
+	bool isValidRange( const TextRange& range ) const;
+
 	bool getAutoCloseBrackets() const;
 
 	void setAutoCloseBrackets( bool autoCloseBrackets );

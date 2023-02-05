@@ -60,13 +60,14 @@ struct PluginDefinition {
 enum class PluginMessageType {
 	WorkspaceFolderChanged, // Broadcast the workspace folder from the application to the plugins
 	Diagnostics,			// Broadcast a document diagnostics from the LSP Client
-	CodeCompletion, // Request the LSP Client to start a code completion in the requested document
+	CodeCompletion, // Request the LSP Server to start a code completion in the requested document
 					// and position
 	LanguageServerCapabilities, // Request the language server capabilities of a language if there
 								// is any available, it will be returned as a broadcast
-	SignatureHelp,				// Request the LSP Client to provide function/method signature help
+	SignatureHelp,				// Request the LSP Server to provide function/method signature help
 	CancelRequest,				// Cancel a request ID
 	FindAndOpenClosestURI,		// Request a component to find and open the closest path from an URI
+	DocumentFormatting,			// Request the LSP Server to format a document
 	Undefined
 };
 
@@ -75,7 +76,8 @@ enum class PluginMessageFormat {
 	Diagnostics,
 	CodeCompletion,
 	LanguageServerCapabilities,
-	SignatureHelp
+	SignatureHelp,
+	DocumentFormatting
 };
 
 class PluginIDType {

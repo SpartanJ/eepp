@@ -1534,6 +1534,28 @@ LSPClientServer::LSPRequestHandle LSPClientServer::documentReferences( const URI
 	} );
 }
 
+static json textDocumentOptions( const URI& doc, json opts ) {
+	auto params = textDocumentParams( doc );
+	params["options"] = opts;
+	return params;
+}
+
+LSPClientServer::LSPRequestHandle LSPClientServer::documentFormatting( const URI& document,
+																	   const json& options,
+																	   const JsonReplyHandler& h ) {
+	auto params = textDocumentOptions( document, options );
+	return send( newRequest( "textDocument/formatting", params ), h );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentFormatting( const URI& document, const json& options,
+									 const TextEditArrayHandler& h ) {
+	return documentFormatting( document, options, [h]( const IdType& id, const json& json ) {
+		if ( h )
+			h( id, parseTextEditArray( json ) );
+	} );
+}
+
 LSPClientServer::LSPRequestHandle
 LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
 											 const std::string& requestId, const TextRange& range,
