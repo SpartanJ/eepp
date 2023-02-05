@@ -66,6 +66,8 @@ class LSPClientServerManager {
 
 	void getSymbolReferences( std::shared_ptr<TextDocument> doc );
 
+	void memoryUsage( std::shared_ptr<TextDocument> doc );
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };

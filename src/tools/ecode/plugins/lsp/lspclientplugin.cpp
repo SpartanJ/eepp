@@ -71,6 +71,10 @@ static LSPURIAndServer getServerURIFromTextDocumentURI( LSPClientServerManager& 
 	return { uri, manager.getOneLSPClientServer( uri ) };
 }
 
+static void sanitizeCommand( std::string& cmd ) {
+	String::replaceAll( cmd, "$NPROC", String::toString( Sys::getCPUCount() ) );
+}
+
 LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, const json& data ) {
 	if ( !data.contains( "uri" ) || !data.contains( "position" ) )
 		return {};
@@ -307,7 +311,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		auto list = { "lsp-go-to-definition",	  "lsp-go-to-declaration",
 					  "lsp-go-to-implementation", "lsp-go-to-type-definition",
 					  "lsp-switch-header-source", "lsp-symbol-info",
-					  "lsp-symbol-references" };
+					  "lsp-symbol-references",	  "lsp-memory-usage" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -326,33 +330,46 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 	auto& servers = j["servers"];
 
 	for ( auto& obj : servers ) {
+		bool lspOverwritten = false;
 		// Allow disabling an LSP by redeclaring it in the user configuration file.
-		if ( obj.contains( "name" ) && obj.contains( "disabled" ) &&
-			 obj.at( "disabled" ).is_boolean() ) {
-			for ( auto& lsp : lsps ) {
-				if ( lsp.name == obj["name"] ) {
-					lsp.disabled = obj["disabled"].get<bool>();
-					break;
+		if ( updateConfigFile && ( obj.contains( "name" ) || obj.contains( "use" ) ) &&
+			 obj.contains( "disabled" ) && obj.at( "disabled" ).is_boolean() ) {
+			std::string name = obj.contains( "name" ) ? obj["name"] : obj["use"];
+			for ( auto& lspD : lsps ) {
+				if ( lspD.name == name ) {
+					lspD.disabled = obj["disabled"].get<bool>();
+					lspOverwritten = true;
 				}
 			}
 		}
 
 		// Allow overriding the command for already defined LSP
 		// And allow adding parameters to the already defined LSP
-		if ( obj.contains( "name" ) &&
+		if ( updateConfigFile && ( obj.contains( "name" ) || obj.contains( "use" ) ) &&
 			 ( ( obj.contains( "command" ) && obj.at( "command" ).is_string() ) ||
 			   ( obj.contains( "command_parameters" ) &&
 				 obj.at( "command_parameters" ).is_string() ) ) ) {
-			for ( auto& lsp : lsps ) {
-				if ( lsp.name == obj["name"] ) {
-					if ( !obj.value( "command", "" ).empty() )
-						lsp.command = obj.value( "command", "" );
-					if ( !obj.value( "command_parameters", "" ).empty() )
-						lsp.commandParameters = obj.value( "command_parameters", "" );
-					break;
+			for ( auto& lspR : lsps ) {
+				std::string name = obj.contains( "name" ) ? obj["name"] : obj["use"];
+				if ( lspR.name == name ) {
+					lspOverwritten = true;
+					if ( !obj.value( "command", "" ).empty() ) {
+						lspR.command = obj.value( "command", "" );
+						sanitizeCommand( lspR.command );
+					}
+					if ( !obj.value( "command_parameters", "" ).empty() ) {
+						std::string cmdParam( obj.value( "command_parameters", "" ) );
+						if ( !cmdParam.empty() && cmdParam.front() != ' ' )
+							cmdParam = " " + cmdParam;
+						lspR.commandParameters += cmdParam;
+						sanitizeCommand( lspR.commandParameters );
+					}
 				}
 			}
 		}
+
+		if ( lspOverwritten )
+			continue;
 
 		if ( !obj.contains( "language" ) || !obj.contains( "file_patterns" ) ) {
 			Log::warning( "LSP server without language or file_patterns, ignored..." );
@@ -407,6 +424,9 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			for ( auto& fn : fnms )
 				lsp.rootIndicationFileNames.push_back( fn );
 		}
+
+		sanitizeCommand( lsp.command );
+		sanitizeCommand( lsp.commandParameters );
 
 		// If the file pattern is repeated, we will overwrite the previous LSP.
 		// The previous LSP should be the "default" LSP that comes with ecode.
@@ -472,6 +492,10 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 
 		doc.setCommand( "lsp-symbol-references", [&, editor] {
 			mClientManager.getSymbolReferences( editor->getDocumentRef() );
+		} );
+
+		doc.setCommand( "lsp-memory-usage", [&, editor] {
+			mClientManager.memoryUsage( editor->getDocumentRef() );
 		} );
 	}
 
@@ -584,6 +608,11 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
 		addFn( "lsp-switch-header-source", "Switch Header/Source" );
+
+#ifdef EE_DEBUG
+	if ( server->getDefinition().name == "clangd" )
+		addFn( "lsp-memory-usage", "LSP Memory Usage" );
+#endif
 
 	return false;
 }

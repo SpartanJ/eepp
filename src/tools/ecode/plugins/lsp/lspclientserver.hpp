@@ -188,6 +188,11 @@ class LSPClientServer {
 	LSPRequestHandle documentFormatting( const URI& document, const json& options,
 										 const TextEditArrayHandler& h );
 
+
+	LSPRequestHandle memoryUsage( const JsonReplyHandler& h );
+
+	LSPRequestHandle memoryUsage();
+
 	void removeDoc( TextDocument* doc );
 
   protected:

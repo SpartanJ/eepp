@@ -279,6 +279,13 @@ void LSPClientServerManager::getSymbolReferences( std::shared_ptr<TextDocument> 
 		} );
 }
 
+void LSPClientServerManager::memoryUsage( std::shared_ptr<TextDocument> doc ) {
+	auto* server = getOneLSPClientServer( doc );
+	if ( !server )
+		return;
+	server->memoryUsage();
+}
+
 void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folder ) {
 	mLSPWorkspaceFolder = { "file://" + folder, FileSystem::fileNameFromPath( folder ) };
 	Lock l( mClientsMutex );

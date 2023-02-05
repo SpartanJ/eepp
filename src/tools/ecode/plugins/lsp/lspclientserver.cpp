@@ -892,8 +892,13 @@ LSPClientServer::~LSPClientServer() {
 }
 
 bool LSPClientServer::start() {
-	bool ret = mProcess.create( mLSP.command + mLSP.commandParameters, Process::getDefaultOptions(),
-								{}, mRootPath );
+	std::string cmd( mLSP.command );
+	if ( !mLSP.commandParameters.empty() ) {
+		if ( mLSP.commandParameters.front() != ' ' )
+			mLSP.commandParameters = " " + mLSP.commandParameters;
+		cmd += mLSP.commandParameters;
+	}
+	bool ret = mProcess.create( cmd, Process::getDefaultOptions(), {}, mRootPath );
 	if ( ret && mProcess.isAlive() ) {
 		mProcess.startAsyncRead(
 			[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
@@ -1216,7 +1221,6 @@ void LSPClientServer::processNotification( const json& msg ) {
 	} else if ( method == ( "$/progress" ) ) {
 		workDoneProgress( parseWorkDone( msg[MEMBER_PARAMS] ) );
 		return;
-	} else {
 	}
 	Log::debug( "LSPClientServer::processNotification server %s: %s", mLSP.name.c_str(),
 				msg.dump().c_str() );
@@ -1557,6 +1561,16 @@ LSPClientServer::documentFormatting( const URI& document, const json& options,
 	} );
 }
 
+LSPClientServer::LSPRequestHandle LSPClientServer::memoryUsage( const JsonReplyHandler& h ) {
+	return send( newRequest( "$/memoryUsage" ), h );
+}
+
+LSPClientServer::LSPRequestHandle LSPClientServer::memoryUsage() {
+	return memoryUsage( []( const IdType&, const json& json ) {
+		Log::warning( "Received Memory Usage Information:\n%s", json.dump( 2 ).c_str() );
+	} );
+}
+
 LSPClientServer::LSPRequestHandle
 LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
 											 const std::string& requestId, const TextRange& range,
@@ -1575,4 +1589,5 @@ LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
 
 	return send( newRequest( "textDocument/semanticTokens/full", params ), h );
 }
+
 } // namespace ecode
