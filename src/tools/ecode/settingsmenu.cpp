@@ -1404,10 +1404,13 @@ void SettingsMenu::createProjectTreeMenu() {
 		mProjectTreeMenu
 			->addCheckBox( i18n( "show_hidden_files", "Show hidden files" ),
 						   !mApp->getFileSystemModel()->getDisplayConfig().ignoreHidden )
-			->setId( "show_hidden_fileñs" );
+			->setId( "show-hidden-files" );
 		mProjectTreeMenu->addSeparator();
 		mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View..." ), findIcon( "refresh" ) )
 			->setId( "refresh-view" );
+		mProjectTreeMenu->addSeparator();
+		mProjectTreeMenu->add( i18n( "configure_ignore_files", "Configure Ignore Files..." ) )
+			->setId( "configure-ignore-files" );
 	} else if ( !mApp->getFileSystemModel() ) {
 		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
 			->setId( "open-folder" );
@@ -1426,7 +1429,7 @@ void SettingsMenu::createProjectTreeMenu() {
 			Engine::instance()->openURI( mApp->getCurrentProject() );
 		} else if ( "execute_dir_in_terminal" == id ) {
 			mApp->getTerminalManager()->createNewTerminal( "", nullptr, mApp->getCurrentProject() );
-		} else if ( "show_hidden_files" == id ) {
+		} else if ( "show-hidden-files" == id ) {
 			mApp->toggleHiddenFiles();
 		} else if ( "collapse-all" == id ) {
 			mApp->getProjectTreeView()->collapseAll();
@@ -1436,6 +1439,8 @@ void SettingsMenu::createProjectTreeMenu() {
 			mApp->openFolderDialog();
 		} else if ( "refresh-view" == id ) {
 			mApp->refreshFolderView();
+		} else if ( "configure-ignore-files" == id ) {
+			mApp->treeViewConfigureIgnoreFiles();
 		}
 	} );
 
@@ -1493,7 +1498,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 	mProjectTreeMenu
 		->addCheckBox( i18n( "show_hidden_files", "Show hidden files" ),
 					   !mApp->getFileSystemModel()->getDisplayConfig().ignoreHidden )
-		->setId( "show_hidden_files" );
+		->setId( "show-hidden-files" );
 
 	mProjectTreeMenu->addSeparator();
 	mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ), findIcon( "collapse-all" ) )
@@ -1503,6 +1508,12 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 	mProjectTreeMenu->addSeparator();
 	mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View..." ), findIcon( "refresh" ) )
 		->setId( "refresh-view" );
+
+	if ( !mApp->getCurrentProject().empty() ) {
+		mProjectTreeMenu->addSeparator();
+		mProjectTreeMenu->add( i18n( "configure_ignore_files", "Configure Ignore Files..." ) )
+			->setId( "configure-ignore-files" );
+	}
 
 	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&, file]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
@@ -1571,7 +1582,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			Engine::instance()->openURI( file.getDirectoryPath() );
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( file.getFilepath() );
-		} else if ( "show_hidden_files" == id ) {
+		} else if ( "show-hidden-files" == id ) {
 			mApp->toggleHiddenFiles();
 		} else if ( "execute_in_terminal" == id ) {
 			UITerminal* term = mApp->getTerminalManager()->createNewTerminal(
@@ -1587,6 +1598,8 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			mApp->getProjectTreeView()->expandAll();
 		} else if ( "refresh-view" == id ) {
 			mApp->refreshFolderView();
+		} else if ( "configure-ignore-files" == id ) {
+			mApp->treeViewConfigureIgnoreFiles();
 		}
 	} );
 

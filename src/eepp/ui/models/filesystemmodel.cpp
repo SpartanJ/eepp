@@ -138,24 +138,46 @@ FileSystemModel::Node* FileSystemModel::Node::childWithPathExists( const std::st
 	return nullptr;
 }
 
+static bool isAcceptedExtension( const std::vector<std::string>& acceptedExtensions,
+								 const FileInfo& file ) {
+	if ( !acceptedExtensions.empty() && file.isRegularFile() ) {
+		for ( size_t z = 0; z < acceptedExtensions.size(); z++ )
+			if ( acceptedExtensions[z] == FileSystem::fileExtension( file.getFilepath() ) )
+				return true;
+		return false;
+	}
+	return true;
+}
+
 void FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 	if ( !mInfo.isDirectory() )
 		return;
 
 	auto oldFiles = mChildren;
-	auto files = FileSystem::filesInfoGetInPath(
-		mInfo.getFilepath(), false, model.getDisplayConfig().sortByName,
-		model.getDisplayConfig().foldersFirst, model.getDisplayConfig().ignoreHidden );
+
+	const auto& displayCfg = model.getDisplayConfig();
+
+	auto files = FileSystem::filesInfoGetInPath( mInfo.getFilepath(), false, displayCfg.sortByName,
+												 displayCfg.foldersFirst, displayCfg.ignoreHidden );
 
 	std::vector<Node*> newChildren;
 	Node* node = nullptr;
 
 	for ( auto file : files ) {
-		if ( ( node = childWithPathExists( file.getFilepath() ) ) ) {
-			newChildren.emplace_back( node );
+		node = childWithPathExists( file.getFilepath() );
+
+		if ( !isAcceptedExtension( displayCfg.acceptedExtensions, file ) )
+			continue;
+
+		if ( displayCfg.fileIsVisibleFn && !displayCfg.fileIsVisibleFn( file.getFilepath() ) )
+			continue;
+
+		if ( node ) {
 			auto it = std::find( oldFiles.begin(), oldFiles.end(), node );
 			if ( it != oldFiles.end() )
 				oldFiles.erase( it );
+
+			newChildren.emplace_back( node );
 
 			if ( node->info().isDirectory() && node->mHasTraversed )
 				node->refresh( model );
@@ -182,17 +204,21 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	mHasTraversed = true;
 	cleanChildren();
 
-	auto files = FileSystem::filesInfoGetInPath(
-		mInfo.getFilepath(), false, model.getDisplayConfig().sortByName,
-		model.getDisplayConfig().foldersFirst, model.getDisplayConfig().ignoreHidden );
+	const auto& displayCfg = model.getDisplayConfig();
 
-	const auto& patterns = model.getDisplayConfig().acceptedExtensions;
+	auto files = FileSystem::filesInfoGetInPath( mInfo.getFilepath(), false, displayCfg.sortByName,
+												 displayCfg.foldersFirst, displayCfg.ignoreHidden );
+
+	const auto& patterns = displayCfg.acceptedExtensions;
 	bool accepted;
 	for ( auto file : files ) {
 		if ( ( model.getMode() == Mode::DirectoriesOnly &&
 			   ( file.isDirectory() || file.linksToDirectory() ) ) ||
 			 model.getMode() == Mode::FilesAndDirectories ) {
 			if ( file.isDirectory() || file.linksToDirectory() || patterns.empty() ) {
+				if ( displayCfg.fileIsVisibleFn &&
+					 !displayCfg.fileIsVisibleFn( file.getFilepath() ) )
+					continue;
 				mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			} else {
 				accepted = false;
@@ -204,8 +230,14 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 						}
 					}
 				} else {
-					accepted = true;
+					if ( displayCfg.fileIsVisibleFn ) {
+						if ( displayCfg.fileIsVisibleFn( file.getFilepath() ) )
+							accepted = true;
+					} else {
+						accepted = true;
+					}
 				}
+
 				if ( accepted )
 					mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			}

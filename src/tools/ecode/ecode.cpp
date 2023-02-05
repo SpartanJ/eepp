@@ -1430,7 +1430,8 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "serif-font",
 			 "monospace-font",
 			 "terminal-font",
-			 "fallback-font" };
+			 "fallback-font",
+			 "tree-view-configure-ignore-files" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {
@@ -1728,6 +1729,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 				ed->getKeyBindings().reset();
 				ed->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
 			} );
+		} else if ( mFileSystemMatcher && mFileSystemMatcher->getIgnoreFilePath() ==
+											  editor->getDocument().getFilePath() ) {
+			loadFileSystemMatcher( mFileSystemMatcher ? mFileSystemMatcher->getPath()
+													  : mCurrentProject );
+			refreshFolderView();
 		}
 		if ( !editor->getDocument().hasSyntaxDefinition() ) {
 			editor->getDocument().resetSyntax();
@@ -1966,9 +1972,15 @@ void App::renameFile( const FileInfo& file ) {
 }
 
 void App::toggleHiddenFiles() {
-	mFileSystemModel = FileSystemModel::New(
-		mFileSystemModel->getRootPath(), FileSystemModel::Mode::FilesAndDirectories,
-		{ true, true, !mFileSystemModel->getDisplayConfig().ignoreHidden } );
+	mFileSystemModel = FileSystemModel::New( mFileSystemModel->getRootPath(),
+											 FileSystemModel::Mode::FilesAndDirectories,
+											 { true,
+											   true,
+											   !mFileSystemModel->getDisplayConfig().ignoreHidden,
+											   {},
+											   [&]( const std::string& filePath ) -> bool {
+												   return isFileVisibleInTreeView( filePath );
+											   } } );
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );
 	if ( mFileSystemListener )
@@ -2121,8 +2133,13 @@ void App::initProjectTreeView( const std::string& path ) {
 			std::string folderPath( FileSystem::fileRemoveFileName( rpath ) );
 
 			if ( FileSystem::isDirectory( folderPath ) ) {
+				loadFileSystemMatcher( folderPath );
+
 				mFileSystemModel = FileSystemModel::New(
-					folderPath, FileSystemModel::Mode::FilesAndDirectories, { true, true, true } );
+					folderPath, FileSystemModel::Mode::FilesAndDirectories,
+					{ true, true, true, {}, [&]( const std::string& filePath ) -> bool {
+						 return isFileVisibleInTreeView( filePath );
+					 } } );
 
 				mProjectTreeView->setModel( mFileSystemModel );
 
@@ -2152,6 +2169,61 @@ void App::initImageView() {
 	} );
 }
 
+bool App::isFileVisibleInTreeView( const std::string& filePath ) {
+	if ( !mFileSystemMatcher || !mFileSystemMatcher->matcherReady() )
+		return true;
+	auto fpath( filePath );
+	FileSystem::filePathRemoveBasePath( mCurrentProject, fpath );
+	FileSystem::dirRemoveSlashAtEnd( fpath );
+	return !mFileSystemMatcher->match( fpath );
+}
+
+void App::treeViewConfigureIgnoreFiles() {
+	if ( !mFileSystemModel || mFileSystemModel->getRootPath().empty() ) {
+		errorMsgBox( i18n( "open_first_a_folder", "You must first open a folder." ) );
+		return;
+	}
+
+	std::string ignoreFilePath;
+
+	if ( mFileSystemMatcher && !mFileSystemMatcher->getIgnoreFilePath().empty() ) {
+		ignoreFilePath = mFileSystemMatcher->getIgnoreFilePath();
+	} else {
+		ignoreFilePath = mFileSystemModel->getRootPath();
+		FileSystem::dirAddSlashAtEnd( ignoreFilePath );
+		ignoreFilePath += ".ecode/.fstreeviewignore";
+	}
+
+	if ( !FileSystem::fileExists( ignoreFilePath ) ) {
+		bool dirExists = true;
+		std::string dirPath( FileSystem::fileRemoveFileName( ignoreFilePath ) );
+		if ( !FileSystem::fileExists( dirPath ) )
+			dirExists = FileSystem::makeDir( dirPath );
+
+		if ( !dirExists ) {
+			errorMsgBox( i18n( "couldnt_create_ecode_dir",
+							   "Couldn't create .ecode directory in current folder." ) );
+			return;
+		}
+
+		if ( !FileSystem::fileWrite( ignoreFilePath, "\n" ) ) {
+			errorMsgBox( i18n( "couldnt_write_file", "Couldn't write file on disk." ) );
+			return;
+		}
+
+		loadFileSystemMatcher( mFileSystemModel->getRootPath() );
+	}
+
+	loadFileFromPath( ignoreFilePath );
+}
+
+void App::loadFileSystemMatcher( const std::string& folderPath ) {
+	if ( folderPath.empty() )
+		return;
+	mFileSystemMatcher =
+		std::make_shared<GitIgnoreMatcher>( folderPath, ".ecode/.fstreeviewignore" );
+}
+
 void App::loadFolder( const std::string& path ) {
 	if ( !mCurrentProject.empty() )
 		closeEditors();
@@ -2164,8 +2236,13 @@ void App::loadFolder( const std::string& path ) {
 
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, mThreadPool, this );
 
-	mFileSystemModel = FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
-											 { true, true, true } );
+	loadFileSystemMatcher( rpath );
+
+	mFileSystemModel =
+		FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
+							  { true, true, true, {}, [&]( const std::string& filePath ) -> bool {
+								   return isFileVisibleInTreeView( filePath );
+							   } } );
 
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );

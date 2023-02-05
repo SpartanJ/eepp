@@ -37,16 +37,20 @@ class EE_API FileSystemModel : public Model {
 
 	struct DisplayConfig {
 		DisplayConfig() {}
-		DisplayConfig( bool sortByName, bool foldersFirst, bool ignoreHidden,
-					   std::vector<std::string> acceptedExtensions = {} ) :
+		DisplayConfig(
+			bool sortByName, bool foldersFirst, bool ignoreHidden,
+			std::vector<std::string> acceptedExtensions = {},
+			std::function<bool( const std::string& filepath )> fileIsVisibleFn = nullptr ) :
 			sortByName( sortByName ),
 			foldersFirst( foldersFirst ),
 			ignoreHidden( ignoreHidden ),
-			acceptedExtensions( acceptedExtensions ) {}
+			acceptedExtensions( acceptedExtensions ),
+			fileIsVisibleFn( fileIsVisibleFn ) {}
 		bool sortByName{ true };
 		bool foldersFirst{ true };
 		bool ignoreHidden{ false };
 		std::vector<std::string> acceptedExtensions;
+		std::function<bool( const std::string& filepath )> fileIsVisibleFn;
 		bool operator==( const DisplayConfig& other ) {
 			return sortByName == other.sortByName && foldersFirst == other.foldersFirst &&
 				   ignoreHidden == other.ignoreHidden &&

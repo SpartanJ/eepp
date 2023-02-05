@@ -227,6 +227,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "monospace-font", [&] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font", [&] { openFontDialog( mConfig.ui.terminalFont, false ); } );
 		t.setCommand( "fallback-font", [&] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
+		t.setCommand( "tree-view-configure-ignore-files", [&] { treeViewConfigureIgnoreFiles(); } );
 		mSplitter->registerSplitterCommands( t );
 	}
 
@@ -297,6 +298,12 @@ class App : public UICodeEditorSplitter::Client {
 
 	void refreshFolderView();
 
+	bool isFileVisibleInTreeView( const std::string& filePath );
+
+	void treeViewConfigureIgnoreFiles();
+
+	void loadFileSystemMatcher( const std::string& folderPath );
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -329,6 +336,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
 	UITreeView* mProjectTreeView{ nullptr };
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
+	std::shared_ptr<GitIgnoreMatcher> mFileSystemMatcher;
 	size_t mMenuIconSize{ 16 };
 	bool mDirTreeReady{ false };
 	bool mIsBundledApp{ false };

@@ -61,3 +61,4 @@ ecode.dmg
 /projects/**/*.7z
 /projects/**/*.tar.gz
 /projects/**/*.zip
+/.ecode/.fstreeviewignore
