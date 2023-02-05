@@ -976,7 +976,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( !editor )
 		return nullptr;
 	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
+		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*" );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
