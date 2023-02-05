@@ -14,7 +14,7 @@ class Texture;
 
 /** @enum EE::Graphics::ParticleEffect Predefined effects for the particle system. Use Callback when
  * wan't to create a new effect, o set the parameters using NoFx, but it's much more limited. */
-enum class ParticleEffect : Uint32 {
+enum class EE_API ParticleEffect : Uint32 {
 	Nofx = 0, //!< User defined effect
 	BlueBall,
 	Fire,

@@ -145,7 +145,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 	void updateContentSize();
 
   protected:
-	enum class IterationDecision {
+	enum class EE_API IterationDecision {
 		Continue,
 		Break,
 		Stop,

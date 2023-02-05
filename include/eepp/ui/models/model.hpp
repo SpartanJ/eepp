@@ -25,7 +25,7 @@ namespace EE { namespace UI { namespace Models {
 
 class PersistentHandle;
 
-enum class SortOrder { None, Ascending, Descending };
+enum class EE_API SortOrder { None, Ascending, Descending };
 
 class EE_API Model {
   public:
@@ -152,8 +152,8 @@ class EE_API Model {
 	ModelIndex createIndex( int row, int column, const void* data = nullptr,
 							const Int64& internalId = 0 ) const;
 
-	enum class OperationType { Invalid = 0, Insert, Move, Delete, Reset };
-	enum class Direction { Row, Column };
+	enum class EE_API OperationType { Invalid = 0, Insert, Move, Delete, Reset };
+	enum class EE_API Direction { Row, Column };
 
 	struct Operation {
 		OperationType type{ OperationType::Invalid };

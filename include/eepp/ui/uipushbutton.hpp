@@ -7,7 +7,7 @@
 
 namespace EE { namespace UI {
 
-enum class InnerWidgetOrientation { Left, Right, Center };
+enum class EE_API InnerWidgetOrientation { Left, Right, Center };
 
 class EE_API UIPushButton : public UIWidget {
   public:

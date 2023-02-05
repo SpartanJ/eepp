@@ -33,7 +33,7 @@ struct FileEvent {
 
 class EE_API FileSystemModel : public Model {
   public:
-	enum class Mode { DirectoriesOnly, FilesAndDirectories };
+	enum class EE_API Mode { DirectoriesOnly, FilesAndDirectories };
 
 	struct DisplayConfig {
 		DisplayConfig() {}

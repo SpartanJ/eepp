@@ -105,15 +105,15 @@ enum UINodeType {
 	UI_TYPE_USER = 100000
 };
 
-enum class ScrollBarMode : Uint32 { Auto, AlwaysOn, AlwaysOff };
+enum class EE_API ScrollBarMode : Uint32 { Auto, AlwaysOn, AlwaysOff };
 
-enum class UIOrientation : Uint32 { Vertical, Horizontal };
+enum class EE_API UIOrientation : Uint32 { Vertical, Horizontal };
 
-enum class SizePolicy : Uint32 { Fixed, MatchParent, WrapContent };
+enum class EE_API SizePolicy : Uint32 { Fixed, MatchParent, WrapContent };
 
-enum class PositionPolicy : Uint32 { None, LeftOf, RightOf, TopOf, BottomOf };
+enum class EE_API PositionPolicy : Uint32 { None, LeftOf, RightOf, TopOf, BottomOf };
 
-enum class UIScaleType : Uint32 { None, Expand, FitInside };
+enum class EE_API UIScaleType : Uint32 { None, Expand, FitInside };
 
 static const Uint32 UI_NODE_DEFAULT_ALIGN = UI_HALIGN_LEFT | UI_VALIGN_CENTER;
 

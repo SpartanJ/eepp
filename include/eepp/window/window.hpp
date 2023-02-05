@@ -29,7 +29,7 @@ enum WindowStyle {
 #endif
 };
 
-enum class WindowBackend : Uint32 { SDL2, Default };
+enum class EE_API WindowBackend : Uint32 { SDL2, Default };
 
 #ifndef EE_SCREEN_KEYBOARD_ENABLED
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS

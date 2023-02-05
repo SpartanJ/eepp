@@ -8,7 +8,7 @@ namespace EE { namespace Graphics {
 
 class EE_API BlendMode {
   public:
-	enum class Factor {
+	enum class EE_API Factor {
 		Zero,			  /// (0, 0, 0, 0)
 		One,			  /// (1, 1, 1, 1)
 		SrcColor,		  /// (src.r, src.g, src.b, src.a)
@@ -21,7 +21,7 @@ class EE_API BlendMode {
 		OneMinusDstAlpha  /// (1, 1, 1, 1) - (dst.a, dst.a, dst.a, dst.a)
 	};
 
-	enum class Equation {
+	enum class EE_API Equation {
 		Add,			/// Pixel = Src * SrcFactor + Dst * DstFactor
 		Subtract,		/// Pixel = Src * SrcFactor - Dst * DstFactor
 		ReverseSubtract /// Pixel = Dst * DstFactor - Src * SrcFactor

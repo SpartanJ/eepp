@@ -15,7 +15,7 @@ using namespace EE::Math;
 namespace EE { namespace UI {
 class UINode;
 
-enum class BorderType : Uint32 { Inside, Outside, Outline };
+enum class EE_API BorderType : Uint32 { Inside, Outside, Outline };
 
 struct EE_API Border {
 	int width = 0;
