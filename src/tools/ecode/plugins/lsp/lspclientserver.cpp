@@ -168,12 +168,10 @@ static LSPLocation parseLocationLink( const json& loc ) {
 static std::vector<LSPLocation> parseDocumentLocation( const json& result ) {
 	std::vector<LSPLocation> ret;
 	if ( result.is_array() ) {
-		const auto& locs = result;
-		for ( const auto& def : locs ) {
-			const auto& ob = def;
-			ret.push_back( parseLocation( ob ) );
+		for ( const auto& def : result ) {
+			ret.push_back( parseLocation( def ) );
 			if ( ret.back().uri.empty() )
-				ret.back() = parseLocationLink( ob );
+				ret.back() = parseLocationLink( def );
 		}
 	} else if ( result.is_object() ) {
 		ret.push_back( parseLocation( result ) );
@@ -197,7 +195,9 @@ static json textDocumentPositionParams( const URI& document, TextPosition pos ) 
 
 static json referenceParams( const URI& document, TextPosition pos, bool decl ) {
 	auto params = textDocumentPositionParams( document, pos );
-	params["context"] = json{ { "includeDeclaration", decl } };
+	json refCtx;
+	refCtx["includeDeclaration"] = decl;
+	params["context"] = refCtx;
 	return params;
 }
 
@@ -301,6 +301,7 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	caps.documentSymbolProvider = toBoolOrObject( json, "documentSymbolProvider" );
 	caps.documentHighlightProvider = toBoolOrObject( json, "documentHighlightProvider" );
 	caps.documentFormattingProvider = toBoolOrObject( json, "documentFormattingProvider" );
+	caps.workspaceSymbolProvider = toBoolOrObject( json, "workspaceSymbolProvider" );
 	if ( json.contains( "documentRangeFormattingProvider" ) )
 		caps.documentRangeFormattingProvider =
 			toBoolOrObject( json, "documentRangeFormattingProvider" );

@@ -306,7 +306,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		auto& kb = j["keybindings"];
 		auto list = { "lsp-go-to-definition",	  "lsp-go-to-declaration",
 					  "lsp-go-to-implementation", "lsp-go-to-type-definition",
-					  "lsp-switch-header-source", "lsp-symbol-info" };
+					  "lsp-switch-header-source", "lsp-symbol-info",
+					  "lsp-symbol-references" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -442,31 +443,36 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	}
 
 	if ( editor->hasDocument() ) {
-		editor->getDocument().setCommand( "lsp-go-to-definition", [&, editor]() {
+		auto& doc = editor->getDocument();
+
+		doc.setCommand( "lsp-go-to-definition", [&, editor]() {
 			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
 											   "textDocument/definition" );
 		} );
 
-		editor->getDocument().setCommand( "lsp-go-to-declaration", [&, editor]() {
+		doc.setCommand( "lsp-go-to-declaration", [&, editor]() {
 			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
 											   "textDocument/declaration" );
 		} );
 
-		editor->getDocument().setCommand( "lsp-go-to-implementation", [&, editor]() {
+		doc.setCommand( "lsp-go-to-implementation", [&, editor]() {
 			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
 											   "textDocument/implementation" );
 		} );
 
-		editor->getDocument().setCommand( "lsp-go-to-type-definition", [&, editor]() {
+		doc.setCommand( "lsp-go-to-type-definition", [&, editor]() {
 			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
 											   "textDocument/typeDefinition" );
 		} );
 
-		editor->getDocument().setCommand( "lsp-switch-header-source",
-										  [&, editor]() { switchSourceHeader( editor ); } );
+		doc.setCommand( "lsp-switch-header-source",
+						[&, editor]() { switchSourceHeader( editor ); } );
 
-		editor->getDocument().setCommand( "lsp-symbol-info",
-										  [&, editor]() { getSymbolInfo( editor ); } );
+		doc.setCommand( "lsp-symbol-info", [&, editor]() { getSymbolInfo( editor ); } );
+
+		doc.setCommand( "lsp-symbol-references", [&, editor] {
+			mClientManager.getSymbolReferences( editor->getDocumentRef() );
+		} );
 	}
 
 	std::vector<Uint32> listeners;
@@ -572,6 +578,9 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	if ( cap.implementationProvider )
 		addFn( "lsp-go-to-implementation", "Go To Implementation" );
+
+	if ( cap.referencesProvider )
+		addFn( "lsp-symbol-references", "Find References to Symbol Under Cursor" );
 
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
 		addFn( "lsp-switch-header-source", "Switch Header/Source" );

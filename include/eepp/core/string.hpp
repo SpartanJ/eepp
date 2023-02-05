@@ -832,6 +832,12 @@ class EE_API String {
 	/** Replace all occurrences of the search string with the replacement string. */
 	void replaceAll( const String& that, const String& with );
 
+	void pop_back();
+
+	const StringBaseType& front() const;
+
+	const StringBaseType& back() const;
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

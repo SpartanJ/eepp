@@ -1012,16 +1012,19 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 	} );
 
 	Vector2f pos( position.asFloat() );
-	menu->nodeToWorldTranslation( pos );
-	UIMenu::findBestMenuPos( pos, menu );
-	menu->setPixelsPosition( pos );
-	menu->show();
+	runOnMainThread( [this, menu, pos]() {
+		Vector2f npos( pos );
+		menu->nodeToWorldTranslation( npos );
+		UIMenu::findBestMenuPos( npos, menu );
+		menu->setPixelsPosition( npos );
+		menu->show();
+		mCurrentMenu = menu;
+	} );
 	menu->addEventListener( Event::OnMenuHide, [&]( const Event* ) {
 		if ( !isClosing() )
 			setFocus();
 	} );
 	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
-	mCurrentMenu = menu;
 	return true;
 }
 
@@ -1111,6 +1114,8 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			} else {
 				mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
 			}
+		} else {
+			mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
 		}
 	}
 	return UIWidget::onMouseDown( position, flags );

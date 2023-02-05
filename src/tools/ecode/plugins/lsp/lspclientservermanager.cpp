@@ -1,4 +1,5 @@
 #include "lspclientservermanager.hpp"
+#include "../../projectsearch.hpp"
 #include "lspclientplugin.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
@@ -235,6 +236,47 @@ const Time& LSPClientServerManager::getLSPDecayTime() const {
 
 void LSPClientServerManager::setLSPDecayTime( const Time& lSPDecayTime ) {
 	mLSPDecayTime = lSPDecayTime;
+}
+
+void LSPClientServerManager::sendSymbolReferenceBroadcast( const std::vector<LSPLocation>& resp ) {
+	if ( resp.empty() )
+		return;
+
+	std::map<std::string, ProjectSearch::ResultData> res;
+
+	for ( auto& r : resp ) {
+		auto& rd = res[r.uri.getPath()];
+		if ( rd.file.empty() )
+			rd.file = r.uri.getPath();
+		auto curDoc = mPluginManager->getSplitter()->findDocFromPath( r.uri.getPath() );
+		if ( !curDoc )
+			continue;
+
+		ProjectSearch::ResultData::Result rs( curDoc->line( r.range.start().line() ).getText(),
+											  r.range, -1, -1 );
+
+		rd.results.emplace_back( std::move( rs ) );
+	}
+
+	ProjectSearch::Result result;
+	for ( auto& r : res ) {
+		if ( !r.second.results.empty() )
+			result.emplace_back( std::move( r.second ) );
+	}
+
+	mPluginManager->sendBroadcast( PluginMessageType::SymbolReference,
+								   PluginMessageFormat::ProjectSearchResult, &result );
+}
+
+void LSPClientServerManager::getSymbolReferences( std::shared_ptr<TextDocument> doc ) {
+	auto* server = getOneLSPClientServer( doc );
+	if ( !server )
+		return;
+	server->documentReferences(
+		doc->getURI(), doc->getSelection().start(), true,
+		[this]( const PluginIDType&, const std::vector<LSPLocation>& resp ) {
+			sendSymbolReferenceBroadcast( resp );
+		} );
 }
 
 void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folder ) {

@@ -7,7 +7,11 @@ static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 
 GlobalSearchController::GlobalSearchController( UICodeEditorSplitter* editorSplitter,
 												UISceneNode* sceneNode, App* app ) :
-	mEditorSplitter( editorSplitter ), mUISceneNode( sceneNode ), mApp( app ) {}
+	mSplitter( editorSplitter ), mUISceneNode( sceneNode ), mApp( app ) {
+	mApp->getPluginManager()->subscribeMessages(
+		"GlobalSearchController",
+		[&]( const PluginMessage& msg ) -> PluginRequestHandle { return processMessage( msg ); } );
+}
 
 static bool replaceInFile( const std::string& path, const std::string& replaceText,
 						   const std::vector<std::pair<Int64, Int64>>& replacements ) {
@@ -30,8 +34,13 @@ static bool replaceInFile( const std::string& path, const std::string& replaceTe
 
 size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 											   std::shared_ptr<ProjectSearch::ResultModel> model ) {
-	const ProjectSearch::Result& res = model.get()->getResult();
 	size_t count = 0;
+	if ( model->isResultFromSymbolReference() ) {
+		// TODO Implement replacement from result from symbol reference
+		return count;
+	}
+
+	const ProjectSearch::Result& res = model.get()->getResult();
 
 	for ( const auto& fileResult : res ) {
 		std::vector<std::pair<Int64, Int64>> replacements;
@@ -133,8 +142,8 @@ void GlobalSearchController::initGlobalSearchBar(
 	} );
 	mGlobalSearchBarLayout->setCommand( "close-global-searchbar", [&] {
 		hideGlobalSearchBar();
-		if ( mEditorSplitter->getCurWidget() )
-			mEditorSplitter->getCurWidget()->setFocus();
+		if ( mSplitter->getCurWidget() )
+			mSplitter->getCurWidget()->setFocus();
 	} );
 	mGlobalSearchBarLayout->setCommand( "expand-all", [&] {
 		mGlobalSearchTree->expandAll();
@@ -250,9 +259,18 @@ void GlobalSearchController::initGlobalSearchBar(
 				replaceInput->getDocument().selectAll();
 				return;
 			}
-			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
-							wholeWordChk->isChecked(), luaPatternChk->isChecked(),
-							escapeSequenceChk->isChecked(), true );
+
+			// TODO Implement replacement from result from symbol reference
+			/*if ( mGlobalSearchHistory.back().second->isResultFromSymbolReference() ) {
+				mGlobalSearchTreeReplace->setModel( mGlobalSearchHistory.back().second );
+				showGlobalSearch( true );
+				updateGlobalSearchBarResults( mGlobalSearchHistory.back().first,
+											  mGlobalSearchHistory.back().second, true, false );
+			} else*/ {
+				doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
+								wholeWordChk->isChecked(), luaPatternChk->isChecked(),
+								escapeSequenceChk->isChecked(), true );
+			}
 		} );
 	mGlobalSearchBarLayout->setCommand( "replace-in-files", [&, replaceInput, escapeSequenceChk] {
 		auto listBox = mGlobalSearchHistoryList->getListBox();
@@ -270,9 +288,9 @@ void GlobalSearchController::initGlobalSearchBar(
 		}
 	} );
 	mGlobalSearchTreeSearch =
-		UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme(), false );
+		UITreeViewGlobalSearch::New( mSplitter->getCurrentColorScheme(), false );
 	mGlobalSearchTreeReplace =
-		UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme(), true );
+		UITreeViewGlobalSearch::New( mSplitter->getCurrentColorScheme(), true );
 	initGlobalSearchTree( mGlobalSearchTreeSearch );
 	initGlobalSearchTree( mGlobalSearchTreeReplace );
 	mGlobalSearchTreeReplace->addEventListener( Event::KeyDown, [&]( const Event* event ) {
@@ -295,9 +313,9 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 	mGlobalSearchInput->setFocus();
 	mGlobalSearchLayout->setVisible( true );
 	UICheckBox* escapeSequenceChk = mGlobalSearchBarLayout->find<UICheckBox>( "escape_sequence" );
-	if ( mEditorSplitter->curEditorExistsAndFocused() &&
-		 mEditorSplitter->getCurEditor()->getDocument().hasSelection() ) {
-		auto& doc = mEditorSplitter->getCurEditor()->getDocument();
+	if ( mSplitter->curEditorExistsAndFocused() &&
+		 mSplitter->getCurEditor()->getDocument().hasSelection() ) {
+		auto& doc = mSplitter->getCurEditor()->getDocument();
 		String text = doc.getSelectedText();
 		if ( !doc.getSelection().inSameLine() ) {
 			text.escape();
@@ -405,6 +423,40 @@ void GlobalSearchController::updateGlobalSearchBarResults(
 	}
 }
 
+void GlobalSearchController::updateGlobalSearchHistory(
+	std::shared_ptr<ProjectSearch::ResultModel> model, const std::string& search,
+	bool searchReplace, bool searchAgain, bool escapeSequence ) {
+	auto listBox = mGlobalSearchHistoryList->getListBox();
+
+	if ( !searchAgain ) {
+		mGlobalSearchHistory.push_back( std::make_pair( search, model ) );
+		if ( mGlobalSearchHistory.size() > 10 )
+			mGlobalSearchHistory.pop_front();
+
+		std::vector<String> items;
+		for ( auto item = mGlobalSearchHistory.rbegin(); item != mGlobalSearchHistory.rend();
+			  item++ ) {
+			items.push_back( item->first );
+		}
+
+		listBox->clear();
+		listBox->addListBoxItems( items );
+		if ( mGlobalSearchHistoryOnItemSelectedCb )
+			mGlobalSearchHistoryList->removeEventListener( mGlobalSearchHistoryOnItemSelectedCb );
+		listBox->setSelected( 0 );
+		mGlobalSearchHistoryOnItemSelectedCb = mGlobalSearchHistoryList->addEventListener(
+			Event::OnItemSelected, [&, searchReplace]( const Event* ) {
+				auto idx = mGlobalSearchHistoryList->getListBox()->getItemSelectedIndex();
+				auto idxItem = mGlobalSearchHistory.at( mGlobalSearchHistory.size() - 1 - idx );
+				updateGlobalSearchBarResults( idxItem.first, idxItem.second, searchReplace,
+											  escapeSequence );
+			} );
+	} else if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
+		mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 - listBox->getItemSelectedIndex()]
+			.second = model;
+	}
+}
+
 void GlobalSearchController::doGlobalSearch( String text, bool caseSensitive, bool wholeWord,
 											 bool luaPattern, bool escapeSequence,
 											 bool searchReplace, bool searchAgain ) {
@@ -439,41 +491,8 @@ void GlobalSearchController::doGlobalSearch( String text, bool caseSensitive, bo
 				mUISceneNode->runOnMainThread( [&, loader, res, search, searchReplace, searchAgain,
 												escapeSequence] {
 					auto model = ProjectSearch::asModel( res );
-					auto listBox = mGlobalSearchHistoryList->getListBox();
-
-					if ( !searchAgain ) {
-						mGlobalSearchHistory.push_back( std::make_pair( search, model ) );
-						if ( mGlobalSearchHistory.size() > 10 )
-							mGlobalSearchHistory.pop_front();
-
-						std::vector<String> items;
-						for ( auto item = mGlobalSearchHistory.rbegin();
-							  item != mGlobalSearchHistory.rend(); item++ ) {
-							items.push_back( item->first );
-						}
-
-						listBox->clear();
-						listBox->addListBoxItems( items );
-						if ( mGlobalSearchHistoryOnItemSelectedCb )
-							mGlobalSearchHistoryList->removeEventListener(
-								mGlobalSearchHistoryOnItemSelectedCb );
-						listBox->setSelected( 0 );
-						mGlobalSearchHistoryOnItemSelectedCb =
-							mGlobalSearchHistoryList->addEventListener(
-								Event::OnItemSelected, [&, searchReplace]( const Event* ) {
-									auto idx = mGlobalSearchHistoryList->getListBox()
-												   ->getItemSelectedIndex();
-									auto idxItem = mGlobalSearchHistory.at(
-										mGlobalSearchHistory.size() - 1 - idx );
-									updateGlobalSearchBarResults( idxItem.first, idxItem.second,
-																  searchReplace, escapeSequence );
-								} );
-					} else if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
-						mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
-											 listBox->getItemSelectedIndex()]
-							.second = model;
-					}
-
+					updateGlobalSearchHistory( model, search, searchReplace, searchAgain,
+											   escapeSequence );
 					updateGlobalSearchBarResults( search, model, searchReplace, escapeSequence );
 					loader->setVisible( false );
 					loader->close();
@@ -486,11 +505,11 @@ void GlobalSearchController::doGlobalSearch( String text, bool caseSensitive, bo
 }
 
 void GlobalSearchController::onLoadDone( const Variant& lineNum, const Variant& colNum ) {
-	if ( mEditorSplitter->curEditorExistsAndFocused() && lineNum.isValid() && colNum.isValid() &&
+	if ( mSplitter->curEditorExistsAndFocused() && lineNum.isValid() && colNum.isValid() &&
 		 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
 		TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };
-		mEditorSplitter->getCurEditor()->getDocument().setSelection( pos );
-		mEditorSplitter->getCurEditor()->goToLine( pos );
+		mSplitter->getCurEditor()->getDocument().setSelection( pos );
+		mSplitter->getCurEditor()->goToLine( pos );
 		hideGlobalSearchBar();
 	}
 }
@@ -529,7 +548,7 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 										ModelRole::Custom ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				std::string path( vPath.asCStr() );
-				UITab* tab = mEditorSplitter->isDocumentOpen( path );
+				UITab* tab = mSplitter->isDocumentOpen( path );
 				Variant lineNum(
 					model->data( model->index( modelEvent->getModelIndex().row(),
 											   ProjectSearch::ResultModel::FileOrPosition,
@@ -554,6 +573,43 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 			}
 		}
 	} );
+}
+
+PluginRequestHandle GlobalSearchController::processMessage( const PluginMessage& msg ) {
+	if ( msg.type != PluginMessageType::SymbolReference || !msg.isBroadcast() )
+		return {};
+
+	const ProjectSearch::Result& res = msg.asProjectSearchResult();
+	if ( res.empty() )
+		return {};
+	auto model = ProjectSearch::asModel( res );
+	model->removeLastNewLineCharacter();
+	model->setResultFromSymbolReference( true );
+	ProjectSearch::ResultData::Result sample;
+
+	for ( const auto& r : res ) {
+		if ( !r.results.empty() ) {
+			sample = r.results.front();
+			break;
+		}
+	}
+
+	if ( sample.line.empty() )
+		return {};
+
+	if ( sample.position.end().column() - sample.position.start().column() <= 0 )
+		return {};
+
+	auto search =
+		sample.line.substr( sample.position.start().column(),
+							sample.position.end().column() - sample.position.start().column() );
+
+	showGlobalSearch( false );
+	mGlobalSearchInput->setText( search );
+	updateGlobalSearchHistory( model, search, false, false, false );
+	updateGlobalSearchBarResults( search, model, false, false );
+
+	return {};
 }
 
 } // namespace ecode

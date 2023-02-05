@@ -1,6 +1,7 @@
 #ifndef ECODE_PLUGINMANAGER_HPP
 #define ECODE_PLUGINMANAGER_HPP
 
+#include "../projectsearch.hpp"
 #include "lsp/lspprotocol.hpp"
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
@@ -68,6 +69,7 @@ enum class PluginMessageType {
 	CancelRequest,				// Cancel a request ID
 	FindAndOpenClosestURI,		// Request a component to find and open the closest path from an URI
 	DocumentFormatting,			// Request the LSP Server to format a document
+	SymbolReference,			// Request the LSP Server to find a symbol reference in the project
 	Undefined
 };
 
@@ -77,7 +79,7 @@ enum class PluginMessageFormat {
 	CodeCompletion,
 	LanguageServerCapabilities,
 	SignatureHelp,
-	DocumentFormatting
+	ProjectSearchResult
 };
 
 class PluginIDType {
@@ -151,6 +153,10 @@ struct PluginMessage {
 
 	const LSPSignatureHelp& asSignatureHelp() const {
 		return *static_cast<const LSPSignatureHelp*>( data );
+	}
+
+	const ProjectSearch::Result& asProjectSearchResult() const {
+		return *static_cast<const ProjectSearch::Result*>( data );
 	}
 
 	const PluginIDType& asPluginID() const { return *static_cast<const PluginIDType*>( data ); }

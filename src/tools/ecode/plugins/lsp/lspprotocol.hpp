@@ -101,6 +101,7 @@ struct LSPServerCapabilities {
 	bool documentHighlightProvider = false;
 	bool documentFormattingProvider = false;
 	bool documentRangeFormattingProvider = false;
+	bool workspaceSymbolProvider = false;
 	LSPDocumentOnTypeFormattingOptions documentOnTypeFormattingProvider;
 	bool renameProvider = false;
 	// CodeActionOptions not useful/considered at present

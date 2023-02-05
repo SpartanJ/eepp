@@ -149,6 +149,9 @@ class LSPClientServer {
 	LSPRequestHandle documentReferences( const URI& document, const TextPosition& pos, bool decl,
 										 const JsonReplyHandler& h );
 
+	LSPRequestHandle documentReferences( const URI& document, const TextPosition& pos, bool decl,
+										 const LocationHandler& h );
+
 	LSPRequestHandle documentCompletion( const URI& document, const TextPosition& pos,
 										 const JsonReplyHandler& h );
 
@@ -186,10 +189,6 @@ class LSPClientServer {
 										 const TextEditArrayHandler& h );
 
 	void removeDoc( TextDocument* doc );
-
-	LSPClientServer::LSPRequestHandle documentReferences( const URI& document,
-														  const TextPosition& pos, bool decl,
-														  const LocationHandler& h );
 
   protected:
 	LSPClientServerManager* mManager{ nullptr };

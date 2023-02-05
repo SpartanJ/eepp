@@ -64,6 +64,8 @@ class LSPClientServerManager {
 
 	void setLSPDecayTime( const Time& lSPDecayTime );
 
+	void getSymbolReferences( std::shared_ptr<TextDocument> doc );
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };
@@ -89,6 +91,8 @@ class LSPClientServerManager {
 	void closeLSPServer( const String::HashType& id );
 
 	void goToLocation( const LSPLocation& loc );
+
+	void sendSymbolReferenceBroadcast( const std::vector<LSPLocation>& resp );
 };
 
 } // namespace ecode

@@ -711,6 +711,18 @@ void String::replaceAll( const String& that, const String& with ) {
 	String::replaceAll( *this, that, with );
 }
 
+void String::pop_back() {
+	mString.pop_back();
+}
+
+const String::StringBaseType& String::front() const {
+	return mString.front();
+}
+
+const String::StringBaseType& String::back() const {
+	return mString.back();
+}
+
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {
 	std::size_t start_pos = target.find( that );
 	if ( start_pos == std::string::npos )
