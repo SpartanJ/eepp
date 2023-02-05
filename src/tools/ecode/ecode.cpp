@@ -256,7 +256,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 				auto loadMonoFont = [&, newPath]( FontTrueType* fontMono ) {
 					fontPath = newPath;
 					mFontMono = fontMono;
-					mFontMono->setEnableFallbackFont( false );
+					mFontMono->setEnableDynamicMonospace( true );
 					mFontMono->setBoldAdvanceSameAsRegular( true );
 					if ( mSplitter ) {
 						mSplitter->forEachEditor(
@@ -2391,7 +2391,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
 		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
 		if ( mFontMono ) {
-			mFontMono->setEnableFallbackFont( false );
+			mFontMono->setEnableDynamicMonospace( true );
 			mFontMono->setBoldAdvanceSameAsRegular( true );
 		}
 

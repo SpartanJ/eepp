@@ -417,6 +417,8 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
 		FontTrueType* fallbackFont =
 			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
+		if ( mIsMonospace && mEnableDynamicMonospace )
+			mIsMonospace = false;
 		return fallbackFont->getGlyph( codePoint, characterSize, bold, outlineThickness,
 									   getPage( characterSize ), maxWidth );
 	}
@@ -509,6 +511,8 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 		if ( 0 != tGlyphIndex ) {
 			glyphIndex = tGlyphIndex;
 			fontInternalId = fontFallback->getFontInternalId();
+			if ( mIsMonospace && mEnableDynamicMonospace )
+				mIsMonospace = false;
 		} else {
 			glyphIndex = getGlyphIndex( codePoint );
 		}
@@ -1098,6 +1102,14 @@ FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;
+}
+
+bool FontTrueType::getEnableDynamicMonospace() const {
+	return mEnableDynamicMonospace;
+}
+
+void FontTrueType::setEnableDynamicMonospace( bool enableDynamicMonospace ) {
+	mEnableDynamicMonospace = enableDynamicMonospace;
 }
 
 bool FontTrueType::getEnableFallbackFont() const {
