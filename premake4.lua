@@ -558,7 +558,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 		if os.is_real("emscripten") then
-			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1" }
+			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1 -s NO_DISABLE_EXCEPTION_CATCHING" }
 		end
 
 		fix_shared_lib_linking_path( package_name, "libeepp-debug" )

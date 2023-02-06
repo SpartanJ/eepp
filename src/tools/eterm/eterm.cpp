@@ -131,6 +131,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
 	args::ValueFlag<std::string> shell( parser, "shell", "Shell name or path", { 's', "shell" },
 										"" );
+	args::ValueFlag<std::string> shellArgs( parser, "shell-args", "Shell command line arguments",
+											{ "shell-args" }, "" );
 	args::ValueFlag<size_t> historySize( parser, "scrollback", "Maximum history size (lines)",
 										 { 'l', "scrollback" }, 10000 );
 	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
@@ -261,7 +263,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			FileInfo file( wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory() );
 			terminal = TerminalDisplay::create(
 				win, fontMono, PixelDensity::dpToPx( fontSize.Get() ), win->getSize().asFloat(),
-				file.isRegularFile() && file.isExecutable() ? file.getFilepath() : shell.Get(), {},
+				file.isRegularFile() && file.isExecutable() ? file.getFilepath() : shell.Get(),
+				shellArgs ? String::split( shellArgs.Get() ) : std::vector<std::string>(),
 				file.getDirectoryPath(), historySize.Get(), nullptr, fb.Get(),
 				!( file.isRegularFile() && file.isExecutable() ) );
 			terminal->getTerminal()->setAllowMemoryTrimnming( true );
@@ -274,6 +277,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					win->close();
 				}
 			} );
+			if ( shell )
+				terminal->setKeepAlive( false );
 
 			if ( colorScheme ) {
 				auto selColorScheme = terminalColorSchemes.find( colorScheme.Get() );

@@ -387,14 +387,14 @@ static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
 std::shared_ptr<TerminalDisplay>
 TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
 						 const Sizef& pixelsSize, std::string program,
-						 const std::vector<std::string>& args, const std::string& workingDir,
+						 std::vector<std::string> args, const std::string& workingDir,
 						 const size_t& historySize, IProcessFactory* processFactory,
 						 const bool& useFrameBuffer, const bool& keepAlive ) {
 	if ( program.empty() ) {
-#ifdef _WIN32
-		program = "cmd.exe";
-#else
 		const char* shellenv = getenv( "SHELL" );
+#ifdef _WIN32
+		program = shellenv != nullptr ? shellenv : "cmd.exe";
+#else
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 		program = shellenv != nullptr ? shellenv : "/bin/sh";
 #else
@@ -404,15 +404,23 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 #endif
 	}
 
+	if ( program.find_first_of( ' ' ) != std::string::npos ) {
+		auto programSplit = String::split( program, ' ' );
+		if ( !programSplit.empty() ) {
+			program = programSplit[0];
+			for ( size_t i = 1; i < programSplit.size(); ++i )
+				args.push_back( programSplit[i] );
+		}
+	}
+
 	bool freeProcessFactory = processFactory == nullptr;
 	if ( processFactory == nullptr )
 		processFactory = eeNew( ProcessFactory, () );
 
 	Sizei termSize( gridSizeFromTermDimensions( font, fontSize, pixelsSize ) );
 	std::unique_ptr<IPseudoTerminal> pseudoTerminal = nullptr;
-	std::vector<std::string> argsV( args.begin(), args.end() );
 	auto process = processFactory->createWithPseudoTerminal(
-		program, argsV, workingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
+		program, args, workingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
 
 	if ( !pseudoTerminal ) {
 		fprintf( stderr, "Failed to create pseudo terminal\n" );
