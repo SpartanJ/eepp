@@ -14,7 +14,7 @@ class EE_API GlyphDrawable : public DrawableResource {
 	static GlyphDrawable* New( Texture* texture, const Rect& srcRect,
 							   const std::string& resourceName = "" );
 
-	enum class EE_API DrawMode {
+	enum class DrawMode {
 		Image,	   ///< It will be treated as a simple image, no special offset is applied.
 		Text,	   ///< Will add the glyph offset corresponding to that character
 		TextItalic ///< Will add the glyph offset corresponding to that character and simulate

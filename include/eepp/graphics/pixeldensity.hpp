@@ -12,7 +12,7 @@ using namespace EE::Math;
 
 namespace EE { namespace Graphics {
 
-enum class EE_API PixelDensitySize : Uint32 {
+enum class PixelDensitySize : Uint32 {
 	MDPI = 1,	//!< 1dp = 1px
 	HDPI = 2,	//!< 1dp = 1.5px
 	XHDPI = 3,	//!< 1dp = 2px

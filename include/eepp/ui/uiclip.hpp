@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI {
 
-enum class EE_API ClipType : Uint32 { None, ContentBox, PaddingBox, BorderBox };
+enum class ClipType : Uint32 { None, ContentBox, PaddingBox, BorderBox };
 
 class UIClip {
   public:

@@ -4,7 +4,7 @@
 namespace EE { namespace Graphics {
 
 /// VBO default usage type
-enum class EE_API VertexBufferUsageType : int {
+enum class VertexBufferUsageType : int {
 	Static,
 	Dynamic,
 	Stream,

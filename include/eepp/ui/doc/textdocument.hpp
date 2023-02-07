@@ -35,15 +35,15 @@ class EE_API TextDocument {
   public:
 	typedef std::function<void()> DocumentCommand;
 
-	enum class EE_API UndoRedo { Undo, Redo };
+	enum class UndoRedo { Undo, Redo };
 
-	enum class EE_API IndentType { IndentSpaces, IndentTabs };
+	enum class IndentType { IndentSpaces, IndentTabs };
 
-	enum class EE_API LineEnding { LF, CRLF, CR };
+	enum class LineEnding { LF, CRLF, CR };
 
-	enum class EE_API FindReplaceType { Normal, LuaPattern };
+	enum class FindReplaceType { Normal, LuaPattern };
 
-	enum class EE_API LoadStatus { Loaded, Interrupted, Failed };
+	enum class LoadStatus { Loaded, Interrupted, Failed };
 
 	static std::string lineEndingToString( const LineEnding& le ) {
 		switch ( le ) {

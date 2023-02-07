@@ -8,7 +8,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-enum class EE_API ShorthandId : Uint32 {
+enum class ShorthandId : Uint32 {
 	Margin = String::hash( "margin" ),
 	Padding = String::hash( "padding" ),
 	Transition = String::hash( "transition" ),

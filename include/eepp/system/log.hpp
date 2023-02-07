@@ -17,7 +17,7 @@ class LogReaderInterface {
 	virtual void writeLog( const std::string& Text ) = 0;
 };
 
-enum class EE_API LogLevel : int {
+enum class LogLevel : int {
 	Debug,	 ///< Detailed debug information.
 	Info,	 ///< Interesting events in your application.
 	Notice,	 ///< Normal, but significant events in your application.

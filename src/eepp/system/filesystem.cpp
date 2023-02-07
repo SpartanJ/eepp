@@ -198,7 +198,7 @@ bool FileSystem::fileWrite( const std::string& filepath, const std::string& data
 
 bool FileSystem::fileRemove( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return DeleteFile( String( filepath ).toWideString().c_str() );
+	return DeleteFileW( String( filepath ).toWideString().c_str() );
 #else
 	return 0 == remove( filepath.c_str() );
 #endif
@@ -300,7 +300,7 @@ bool FileSystem::isDirectory( const std::string& path ) {
 
 static inline bool eepp_mkdir( const std::string& path, const Uint16& mode ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return 0 != CreateDirectory( String( path ).toWideString().c_str(), NULL );
+	return 0 != CreateDirectoryW( String( path ).toWideString().c_str(), NULL );
 #else
 	int v;
 	v = mkdir( path.c_str(), mode );

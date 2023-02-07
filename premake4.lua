@@ -331,6 +331,12 @@ static_backends = { }
 backend_selected = false
 remote_sdl2_version = "SDL2-2.0.20"
 
+function build_arch_configuration()
+	if os.is_real("mingw32") or os.is_real("mingw64") then
+		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1" }
+	end
+end
+
 function build_base_configuration( package_name )
 	includedirs { "src/thirdparty/zlib" }
 
@@ -344,6 +350,7 @@ function build_base_configuration( package_name )
 
 	set_ios_config()
 	set_xcode_config()
+	build_arch_configuration()
 
 	configuration "debug"
 		defines { "DEBUG" }
@@ -384,6 +391,7 @@ function build_base_cpp_configuration( package_name )
 
 	set_ios_config()
 	set_xcode_config()
+	build_arch_configuration()
 
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
@@ -549,6 +557,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 	end
 
+	set_ios_config()
+	set_xcode_config()
+	build_arch_configuration()
+	
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		flags { "Symbols" }
@@ -608,9 +620,6 @@ function build_link_configuration( package_name, use_ee_icon )
 		if _OPTIONS["with-gles2"] and not _OPTIONS["force-gles1"] then
 			linkoptions{ "-s FULL_ES2=1" }
 		end
-
-	set_ios_config()
-	set_xcode_config()
 end
 
 function generate_os_links()

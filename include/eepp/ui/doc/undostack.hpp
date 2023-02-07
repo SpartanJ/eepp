@@ -14,7 +14,7 @@ namespace EE { namespace UI { namespace Doc {
 
 class TextDocument;
 
-enum class EE_API TextUndoCommandType { Insert, Remove, Selection };
+enum class TextUndoCommandType { Insert, Remove, Selection };
 
 class EE_API TextUndoCommand {
   public:

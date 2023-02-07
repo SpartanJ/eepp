@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-enum class EE_API PropertyId : Uint32 {
+enum class PropertyId : Uint32 {
 	Id = String::hash( "id" ),
 	Class = String::hash( "class" ),
 	X = String::hash( "x" ),
@@ -209,7 +209,7 @@ enum class EE_API PropertyId : Uint32 {
 	GravityOwner = String::hash( "gravity-owner" ),
 };
 
-enum class EE_API PropertyType : Uint32 {
+enum class PropertyType : Uint32 {
 	Undefined,
 	String,
 	Bool,
@@ -227,7 +227,7 @@ enum class EE_API PropertyType : Uint32 {
 	Time
 };
 
-enum class EE_API PropertyRelativeTarget : Uint32 {
+enum class PropertyRelativeTarget : Uint32 {
 	None,
 	ContainingBlockWidth,
 	ContainingBlockHeight,

@@ -13,15 +13,15 @@ namespace EE { namespace Graphics {
 class EE_API Texture : public DrawableResource, public Image, private NonCopyable {
   public:
 	/** @enum TextureFilter Defines the texture filter used. */
-	enum class EE_API Filter : Uint32 {
+	enum class Filter : Uint32 {
 		Linear, //!< Linear filtering (Smoothed Zoom)
 		Nearest //!< No filtering (Pixeled Zoom)
 	};
 
 	/** @enum ClampMode Set the clamp mode of the texture. */
-	enum class EE_API ClampMode : Uint32 { ClampToEdge, ClampRepeat };
+	enum class ClampMode : Uint32 { ClampToEdge, ClampRepeat };
 
-	enum class EE_API CoordinateType : Uint32 {
+	enum class CoordinateType : Uint32 {
 		Normalized, ///< Texture coordinates in range [0 .. 1]
 		Pixels		///< Texture coordinates in range [0 .. size]
 	};

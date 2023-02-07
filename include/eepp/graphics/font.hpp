@@ -17,7 +17,7 @@ class EE_API Glyph {
 	int rsbDelta{ 0 }; //!< Right offset after forced autohint. Internally used by getKerning()
 };
 
-enum class EE_API FontType { TTF, BMF, Sprite };
+enum class FontType { TTF, BMF, Sprite };
 
 enum FontHorizontalAlign {
 	TEXT_ALIGN_LEFT = ( 0 << 0 ),

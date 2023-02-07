@@ -22,7 +22,7 @@ class UIWidget;
 class UILayout;
 class UIIcon;
 
-enum class EE_API ColorSchemePreference { Light, Dark };
+enum class ColorSchemePreference { Light, Dark };
 
 class EE_API UISceneNode : public SceneNode {
   public:

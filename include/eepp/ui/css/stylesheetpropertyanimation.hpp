@@ -16,7 +16,7 @@ class UIWidget;
 
 namespace EE { namespace UI { namespace CSS {
 
-enum class EE_API AnimationOrigin : uint8_t { User, Animation, Transition };
+enum class AnimationOrigin : uint8_t { User, Animation, Transition };
 
 class EE_API StyleSheetPropertyAnimation : public Action {
   public:

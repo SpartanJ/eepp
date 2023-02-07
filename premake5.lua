@@ -177,10 +177,10 @@ end
 
 function build_arch_configuration()
 	filter {"architecture:x86", "options:cc=mingw"}
-		buildoptions { "-B /usr/bin/i686-w64-mingw32-" }
+		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/i686-w64-mingw32-" }
 
 	filter {"architecture:x86_64", "options:cc=mingw"}
-		buildoptions { "-B /usr/bin/x86_64-w64-mingw32-" }
+		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/x86_64-w64-mingw32-" }
 end
 
 function build_base_configuration( package_name )

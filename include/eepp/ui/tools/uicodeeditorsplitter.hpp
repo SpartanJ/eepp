@@ -17,7 +17,7 @@ class EE_API UICodeEditorSplitter {
 
 	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
 
-	enum class EE_API SplitDirection { Left, Right, Top, Bottom };
+	enum class SplitDirection { Left, Right, Top, Bottom };
 
 	class EE_API Client {
 	  public:
