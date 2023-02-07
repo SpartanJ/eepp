@@ -1946,6 +1946,14 @@ UIMessageBox* App::newInputMsgBox( const String& title, const String& msg ) {
 	return msgBox;
 }
 
+static void fsRenameFile( const std::string& fpath, const std::string& newFilePath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	fs::rename( String( fpath ).toWideString(), String(newFilePath).toWideString() );
+#else
+	fs::rename( fpath, newFilePath );
+#endif
+}
+
 void App::renameFile( const FileInfo& file ) {
 	if ( !file.exists() )
 		return;
@@ -1960,7 +1968,7 @@ void App::renameFile( const FileInfo& file ) {
 				std::string fpath( file.getFilepath() );
 				if ( file.isDirectory() )
 					FileSystem::dirRemoveSlashAtEnd( fpath );
-				fs::rename( fpath, newFilePath );
+				fsRenameFile( fpath, newFilePath );
 			} catch ( const fs::filesystem_error& err ) {
 				errorMsgBox( i18n( "error_renaming_file", "Error renaming file." ) );
 			}

@@ -197,7 +197,11 @@ bool FileSystem::fileWrite( const std::string& filepath, const std::string& data
 }
 
 bool FileSystem::fileRemove( const std::string& filepath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return DeleteFile( String( filepath ).toWideString().c_str() );
+#else
 	return 0 == remove( filepath.c_str() );
+#endif
 }
 
 Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
@@ -295,17 +299,13 @@ bool FileSystem::isDirectory( const std::string& path ) {
 }
 
 static inline bool eepp_mkdir( const std::string& path, const Uint16& mode ) {
-	int v;
 #if EE_PLATFORM == EE_PLATFORM_WIN
-#ifdef EE_COMPILER_MSVC
-	v = _mkdir( path.c_str() );
+	return 0 != CreateDirectory( String( path ).toWideString().c_str(), NULL );
 #else
-	v = mkdir( path.c_str() );
-#endif
-#else
+	int v;
 	v = mkdir( path.c_str(), mode );
-#endif
 	return v == 0;
+#endif
 }
 
 bool FileSystem::makeDir( const std::string& path, bool recursive, const Uint16& mode ) {

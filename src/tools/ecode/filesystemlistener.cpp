@@ -70,6 +70,7 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 						notifyMove( oldFile, file );
 				}
 			}
+			break;
 		}
 		case efsw::Actions::Modified: {
 			if ( file.isLink() )

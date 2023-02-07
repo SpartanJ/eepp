@@ -1447,6 +1447,14 @@ void SettingsMenu::createProjectTreeMenu() {
 	showProjectTreeMenu();
 }
 
+static void fsRemoveAll(const std::string& fpath) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	fs::remove_all( std::filesystem::path( String( fpath ).toWideString() ) );
+#else
+	fs::remove_all( fpath );
+#endif
+}
+
 void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
 		mProjectTreeMenu->close();
@@ -1548,7 +1556,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 					try {
 						std::string fpath( file.getFilepath() );
 						FileSystem::dirRemoveSlashAtEnd( fpath );
-						fs::remove_all( fpath );
+						fsRemoveAll( fpath );
 					} catch ( const fs::filesystem_error& err ) {
 						errFn();
 					}
