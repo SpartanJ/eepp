@@ -187,12 +187,15 @@ void Process::startShutdown() {
 	mShuttingDown = true;
 }
 
+const bool& Process::isShootingDown() {
+	return mShuttingDown;
+}
+
 void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	eeASSERT( mProcess != nullptr );
 	mReadStdOutFn = readStdOut;
 	mReadStdErrFn = readStdErr;
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	// TODO: Implement WaitForMultipleObjects
 	void* stdOutFd =
 		SUBPROCESS_PTR_CAST( void*, _get_osfhandle( _fileno( PROCESS_PTR->stdout_file ) ) );
 	void* stdErrFd =
@@ -209,7 +212,8 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 					break;
 				if ( n < static_cast<long>( mBufferSize - 1 ) )
 					buffer[n] = '\0';
-				mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
+				if ( !mShuttingDown )
+					mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
 			}
 		} );
 	}
@@ -225,7 +229,9 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 					break;
 				if ( n < static_cast<long>( mBufferSize - 1 ) )
 					buffer[n] = '\0';
-				mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
+
+				if ( !mShuttingDown  )
+					mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
 			}
 		} );
 	}

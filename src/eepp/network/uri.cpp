@@ -166,6 +166,17 @@ std::string URI::toString() const {
 	return uri;
 }
 
+std::string URI::getAuthorityAndPath() const {
+	std::string uri;
+	std::string auth = getAuthority();
+	if ( !mPath.empty() ) {
+		if ( !auth.empty() && mPath[0] != '/' )
+			uri += '/';
+		encode( mPath, RESERVED_PATH, uri );
+	}
+	return uri;
+}
+
 void URI::setScheme( const std::string& scheme ) {
 	mScheme = scheme;
 	String::toLowerInPlace( mScheme );
@@ -199,7 +210,7 @@ std::string URI::getAuthority() const {
 		auth.append( mUserInfo );
 		auth += '@';
 	}
-	if ( mHost.find( ':' ) != std::string::npos ) {
+	if ( mScheme != "file" && mHost.find( ':' ) != std::string::npos ) {
 		auth += '[';
 		auth += mHost;
 		auth += ']';
@@ -538,7 +549,13 @@ unsigned short URI::getWellKnownPort() const {
 		return 0;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+void URI::parse( const std::string& _uri ) {
+	std::string uri( _uri );
+	String::replaceAll( uri, "\\", "/" );
+#else
 void URI::parse( const std::string& uri ) {
+#endif
 	std::string::const_iterator it = uri.begin();
 	std::string::const_iterator end = uri.end();
 	if ( it == end )
@@ -628,6 +645,10 @@ void URI::parseHostAndPort( std::string::const_iterator& it,
 		mPort = getWellKnownPort();
 	}
 	mHost = host;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( mScheme == "file" && !mHost.empty() && mHost[mHost.size() - 1] != ':' )
+		mHost = "/" + mHost + ":";
+#endif
 	String::toLowerInPlace( mHost );
 }
 

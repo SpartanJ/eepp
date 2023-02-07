@@ -2145,7 +2145,7 @@ void UICodeEditor::checkMatchingBrackets() {
 		const std::vector<String::StringBaseType> open{ '{', '(', '[' };
 		const std::vector<String::StringBaseType> close{ '}', ')', ']' };
 		mMatchingBrackets = TextRange();
-		TextPosition pos = mDoc->getSelection().start();
+		TextPosition pos = mDoc->sanitizePosition( mDoc->getSelection().start() );
 		TextDocumentLine& line = mDoc->line( pos.line() );
 		auto isOpenIt = std::find( open.begin(), open.end(), line[pos.column()] );
 		auto isCloseIt = std::find( close.begin(), close.end(), line[pos.column()] );

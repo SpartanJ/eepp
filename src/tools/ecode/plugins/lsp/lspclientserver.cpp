@@ -845,19 +845,18 @@ void LSPClientServer::initialize() {
 				 { "capabilities", capabilities },
 				 { "initializationOptions", mLSP.initializationOptions } };
 
-	std::string rootPath = mRootPath;
+	URI rootPath( mRootPath );
 	if ( rootPath.empty() ) {
 		if ( !mManager->getLSPWorkspaceFolder().uri.empty() )
-			rootPath = mManager->getLSPWorkspaceFolder().uri.getPath();
+			rootPath = mManager->getLSPWorkspaceFolder().uri;
 		else
-			rootPath = FileSystem::getCurrentWorkingDirectory();
+			rootPath = URI( "file://" + FileSystem::getCurrentWorkingDirectory() );
 	}
-
-	std::string uriRootPath = "file://" + rootPath;
-	params["rootPath"] = rootPath;
-	params["rootUri"] = uriRootPath;
-	params["workspaceFolders"] =
-		toJson( { LSPWorkspaceFolder{ uriRootPath, FileSystem::fileNameFromPath( rootPath ) } } );
+	auto authAndPath = rootPath.getAuthorityAndPath();
+	auto rootUri = rootPath.toString();
+	params["rootPath"] = authAndPath;
+	params["rootUri"] = rootUri;
+	params["workspaceFolders"] = toJson( { LSPWorkspaceFolder{ rootUri, FileSystem::fileNameFromPath( rootUri ) } } );
 
 	write(
 		newRequest( "initialize", params ),
@@ -1245,7 +1244,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 
 	std::string& buffer = mReceive;
 
-	while ( true ) {
+	while ( !mProcess.isShootingDown() ) {
 		auto index = buffer.find( CONTENT_LENGTH_HEADER );
 		if ( index == std::string::npos ) {
 			if ( buffer.size() > ( 1 << 20 ) )
@@ -1311,22 +1310,24 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 			Log::debug( "LSPClientServer::readStdOut server %s said:\n%s", mLSP.name.c_str(),
 						res.dump().c_str() );
 
-			HandlersMap::iterator it;
-			HandlersMap::iterator itEnd;
+			HandlersMap::iterator it = mHandlers.end();
+			HandlersMap::iterator itEnd = mHandlers.end();
 			JsonReplyHandler handlerOK;
 			JsonReplyHandler handlerErr;
+			bool handlerFound = false;
 			{
 				Lock l( mHandlersMutex );
 				it = mHandlers.find( msgid );
 				itEnd = mHandlers.end();
-				if ( it != itEnd ) {
+				handlerFound = it != itEnd;
+				if ( handlerFound ) {
 					handlerOK = it->second.first;
 					handlerErr = it->second.second;
 					mHandlers.erase( it );
 				}
 			}
 
-			if ( it != itEnd ) {
+			if ( handlerFound ) {
 				if ( res.contains( MEMBER_ERROR ) && handlerErr ) {
 					handlerErr( msgid, res[MEMBER_ERROR] );
 				} else {

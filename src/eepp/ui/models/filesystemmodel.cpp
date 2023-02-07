@@ -656,6 +656,9 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			beginDeleteRows( index.parent(), index.row(), index.row() );
 
+			eeDelete( parent->mChildren[index.row()] );
+			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+
 			forEachView( [&]( UIAbstractView* view ) {
 				view->getSelection().removeAllMatching( [&]( auto& selectionIndex ) {
 					Node* node = static_cast<Node*>( index.internalData() );
@@ -680,11 +683,9 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 						newIndexes.emplace_back( selectedIndex );
 					}
 				} );
+
 				view->getSelection().set( newIndexes, false );
 			} );
-
-			eeDelete( parent->mChildren[index.row()] );
-			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
 
 			endDeleteRows();
 
