@@ -200,7 +200,13 @@ class EE_API UICodeEditorSplitter {
 		t.setCommand( "close-tab", [&] { tryTabClose( mCurWidget ); } );
 		t.setCommand( "create-new", [&] {
 			auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
-			d.first->getTabWidget()->setTabSelected( d.first );
+			if ( d.first != nullptr && d.second != nullptr ) {
+				d.first->getTabWidget()->setTabSelected( d.first );
+			} else if ( !mTabWidgets.empty() ) {
+				d = createCodeEditorInTabWidget( mTabWidgets[0] );
+			}
+			if ( d.first == nullptr || d.second == nullptr )
+				Log::error( "Couldn't createCodeEditorInTabWidget in create-new command" );
 		} );
 		t.setCommand( "next-tab", [&] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );

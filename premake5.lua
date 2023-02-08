@@ -366,7 +366,7 @@ end
 
 function generate_os_links()
 	if os.istarget("linux") then
-		multiple_insert( os_links, { "rt", "pthread", "GL", "Xcursor" } )
+		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 
 		if _OPTIONS["with-static-eepp"] then
 			table.insert( os_links, "dl" )

@@ -48,12 +48,16 @@ TextDocument::~TextDocument() {
 		FileSystem::fileRemove( mFilePath );
 }
 
-bool TextDocument::hasFilepath() {
+bool TextDocument::hasFilepath() const {
 	return mDefaultFileName != mFilePath;
 }
 
-bool TextDocument::isEmpty() {
+bool TextDocument::isEmpty() const {
 	return linesCount() == 1 && line( 0 ).size() == 1;
+}
+
+bool TextDocument::isUntitledEmpty() const {
+	return isEmpty() && !hasFilepath();
 }
 
 void TextDocument::reset() {

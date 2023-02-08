@@ -835,8 +835,11 @@ void UICodeEditorSplitter::closeTab( UIWidget* widget ) {
 			if ( tabWidget ) {
 				if ( !( editor->getDocument().isEmpty() &&
 						!tabWidget->getParent()->isType( UI_TYPE_SPLITTER ) &&
-						tabWidget->getTabCount() == 1 ) ) {
+						tabWidget->getTabCount() == 1 ) ||
+					 !editor->getDocument().isUntitledEmpty() ) {
 					tabWidget->removeTab( (UITab*)editor->getData() );
+				} else {
+					return;
 				}
 			}
 		} else {

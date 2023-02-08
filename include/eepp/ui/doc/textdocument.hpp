@@ -92,9 +92,11 @@ class EE_API TextDocument {
 
 	bool isNonWord( String::StringBaseType ch ) const;
 
-	bool hasFilepath();
+	bool hasFilepath() const;
 
-	bool isEmpty();
+	bool isEmpty() const;
+
+	bool isUntitledEmpty() const;
 
 	void reset();
 
