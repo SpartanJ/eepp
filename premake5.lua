@@ -683,7 +683,7 @@ workspace "eepp"
 		platforms { "x86_64", "arm64" }
 	else
 		configurations { "debug", "release" }
-		platforms { "x86_64", "x86" }
+		platforms { "x86_64", "x86", "arm64" }
 	end
 	rtti "On"
 	download_and_extract_dependencies()

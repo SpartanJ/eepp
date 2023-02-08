@@ -99,7 +99,8 @@
 #define EE_COMPILER_GCC
 #endif
 
-#if defined( arm ) || defined( __arm__ )
+#if defined( arm ) || defined( __arm__ ) || defined( __aarch64__ ) || defined( _M_ARM64 ) || \
+	defined( __ARM_ARCH_ISA_A64 ) || defined( __ARM_ARCH_7S__ ) || defined( __ARM_ARCH_7A__ )
 #define EE_ARM
 #endif
 

@@ -27,4 +27,4 @@ jobs:
     - name: Build
       shell: cmd
       run: |
-        "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m
+        "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m /p:Platform="x64"
