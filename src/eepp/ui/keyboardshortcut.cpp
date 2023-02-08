@@ -159,6 +159,10 @@ const ShortcutMap& KeyBindings::getShortcutMap() const {
 	return mShortcuts;
 }
 
+const std::map<std::string, Uint64> KeyBindings::getKeybindings() const {
+	return mKeybindingsInvert;
+}
+
 std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut ) const {
 	std::vector<std::string> mods;
 	std::string keyname( String::toLower( mInput->getKeyName( shortcut.key ) ) );

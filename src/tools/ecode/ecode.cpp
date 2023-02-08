@@ -1377,6 +1377,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
 		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
 		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
 		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
 		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
@@ -1398,6 +1399,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "console-toggle",
 			 "close-app",
 			 "open-locatebar",
+			 "open-command-palette",
 			 "open-global-search",
 			 "menu-toggle",
 			 "switch-side-panel",
@@ -1887,7 +1889,7 @@ void App::loadDirTree( const std::string& path ) {
 			eeDelete( clock );
 			mDirTreeReady = true;
 			mUISceneNode->runOnMainThread( [&] {
-				mFileLocator->updateLocateTable();
+				mFileLocator->updateFilesTable();
 				if ( mSplitter->curEditorExistsAndFocused() )
 					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
 			} );

@@ -1145,6 +1145,8 @@
 ../../src/thirdparty/efsw/src/test/efsw-test.cpp
 ../../src/tools/ecode/appconfig.cpp
 ../../src/tools/ecode/appconfig.hpp
+../../src/tools/ecode/commandpalette.cpp
+../../src/tools/ecode/commandpalette.hpp
 ../../src/tools/ecode/ecode.cpp
 ../../src/tools/ecode/ecode.hpp
 ../../src/tools/ecode/docsearchcontroller.cpp

@@ -838,6 +838,12 @@ class EE_API String {
 
 	const StringBaseType& back() const;
 
+	String& trim( char character = ' ' );
+
+	String& lTrim( char character = ' ' );
+
+	String& rTrim( char character = ' ' );
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

@@ -723,6 +723,21 @@ const String::StringBaseType& String::back() const {
 	return mString.back();
 }
 
+String& String::trim( char character ) {
+	trimInPlace( *this, character );
+	return *this;
+}
+
+String& String::lTrim( char character ) {
+	*this = lTrim( *this, character );
+	return *this;
+}
+
+String& String::rTrim( char character ) {
+	*this = rTrim( *this, character );
+	return *this;
+}
+
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {
 	std::size_t start_pos = target.find( that );
 	if ( start_pos == std::string::npos )

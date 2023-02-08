@@ -1,6 +1,7 @@
 #ifndef ECODE_FILELOCATOR_HPP
 #define ECODE_FILELOCATOR_HPP
 
+#include "commandpalette.hpp"
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
 
@@ -18,9 +19,15 @@ class FileLocator {
 
 	void hideLocateBar();
 
+	void showCommandPalette();
+
 	void goToLine();
 
-	void updateLocateTable();
+	void updateFilesTable();
+
+	void updateCommandPaletteTable();
+
+	void showLocateTable();
 
   protected:
 	UILocateBar* mLocateBarLayout{ nullptr };
@@ -29,8 +36,11 @@ class FileLocator {
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
 	App* mApp{ nullptr };
+	CommandPalette mCommandPalette;
 
 	void updateLocateBar();
+
+	void showBar();
 };
 
 } // namespace ecode

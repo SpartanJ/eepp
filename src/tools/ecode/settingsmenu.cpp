@@ -1190,6 +1190,10 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 		->add( i18n( "locate", "Locate..." ), findIcon( "search" ), getKeybind( "open-locatebar" ) )
 		->setId( "open-locatebar" );
 	mToolsMenu
+		->add( i18n( "command_palette", "Command Palette..." ), findIcon( "search" ),
+			   getKeybind( "open-command-palette" ) )
+		->setId( "open-command-palette" );
+	mToolsMenu
 		->add( i18n( "project_find", "Project Find..." ), findIcon( "search" ),
 			   getKeybind( "open-global-search" ) )
 		->setId( "open-global-search" );
@@ -1447,7 +1451,7 @@ void SettingsMenu::createProjectTreeMenu() {
 	showProjectTreeMenu();
 }
 
-static void fsRemoveAll(const std::string& fpath) {
+static void fsRemoveAll( const std::string& fpath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	fs::remove_all( std::filesystem::path( String( fpath ).toWideString() ) );
 #else

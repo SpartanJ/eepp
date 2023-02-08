@@ -560,7 +560,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	set_ios_config()
 	set_xcode_config()
 	build_arch_configuration()
-	
+
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		flags { "Symbols" }

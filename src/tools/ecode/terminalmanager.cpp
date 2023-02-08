@@ -205,7 +205,8 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	term->getKeyBindings().removeCommandsKeybind(
 		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
 		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
-		  "open-locatebar", "open-global-search", "menu-toggle", "console-toggle", "go-to-line" } );
+		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
+		  "console-toggle", "go-to-line" } );
 	term->setCommand( "terminal-rename", [&, term] {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::INPUT, mApp->i18n( "new_terminal_name", "New terminal name:" ) );
