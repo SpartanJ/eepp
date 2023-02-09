@@ -51,6 +51,7 @@ struct CodeEditorConfig {
 	bool showLineNumbers{ true };
 	bool showWhiteSpaces{ true };
 	bool showLineEndings{ false };
+	bool showIndentationGuides{ false };
 	bool highlightMatchingBracket{ true };
 	bool verticalScrollbar{ true };
 	bool horizontalScrollbar{ true };

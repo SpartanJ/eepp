@@ -1033,6 +1033,9 @@ UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu->addCheckBox( i18n( "show_line_endings", "Show Line Endings" ) )
 		->setActive( mApp->getConfig().editor.showLineEndings )
 		->setId( "show-line-endings" );
+	mViewMenu->addCheckBox( i18n( "show_indentation_guides", "Show Indentation Guides" ) )
+		->setActive( mApp->getConfig().editor.showIndentationGuides )
+		->setId( "show-indentation-guides" );
 	mViewMenu->addCheckBox( i18n( "show_doc_info", "Show Document Info" ) )
 		->setActive( mApp->getConfig().editor.showDocInfo )
 		->setId( "show-doc-info" );
@@ -1105,6 +1108,12 @@ UIMenu* SettingsMenu::createViewMenu() {
 			mApp->getConfig().editor.showLineEndings = item->asType<UIMenuCheckBox>()->isActive();
 			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setShowLineEndings( mApp->getConfig().editor.showLineEndings );
+			} );
+		} else if ( item->getId() == "show-indentation-guides" ) {
+			mApp->getConfig().editor.showIndentationGuides =
+				item->asType<UIMenuCheckBox>()->isActive();
+			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setShowIndentationGuides( mApp->getConfig().editor.showIndentationGuides );
 			} );
 		} else if ( item->getId() == "show-doc-info" ) {
 			mApp->getConfig().editor.showDocInfo = item->asType<UIMenuCheckBox>()->isActive();

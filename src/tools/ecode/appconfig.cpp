@@ -79,6 +79,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
+	editor.showIndentationGuides = ini.getValueB( "editor", "show_indentation_guides", false );
 	editor.highlightMatchingBracket =
 		ini.getValueB( "editor", "highlight_matching_brackets", true );
 	editor.highlightCurrentLine = ini.getValueB( "editor", "highlight_current_line", true );
@@ -197,6 +198,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 					   String::join( urlEncode( recentFolders ), ';' ) );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
+	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );
 	ini.setValueB( "editor", "show_line_endings", editor.showLineEndings );
 	ini.setValueB( "editor", "highlight_matching_brackets", editor.highlightMatchingBracket );
 	ini.setValueB( "editor", "highlight_current_line", editor.highlightCurrentLine );

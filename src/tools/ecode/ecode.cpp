@@ -1656,6 +1656,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setShowLineNumber( config.showLineNumbers );
 	editor->setShowWhitespaces( config.showWhiteSpaces );
 	editor->setShowLineEndings( config.showLineEndings );
+	editor->setShowIndentationGuides( config.showIndentationGuides );
 	editor->setHighlightMatchingBracket( config.highlightMatchingBracket );
 	editor->setVerticalScrollBarEnabled( config.verticalScrollbar );
 	editor->setHorizontalScrollBarEnabled( config.horizontalScrollbar );
@@ -1950,7 +1951,7 @@ UIMessageBox* App::newInputMsgBox( const String& title, const String& msg ) {
 
 static void fsRenameFile( const std::string& fpath, const std::string& newFilePath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	fs::rename( String( fpath ).toWideString(), String(newFilePath).toWideString() );
+	fs::rename( String( fpath ).toWideString(), String( newFilePath ).toWideString() );
 #else
 	fs::rename( fpath, newFilePath );
 #endif

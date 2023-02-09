@@ -585,6 +585,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getViewportWidth( const bool& forceVScroll = false ) const;
 
+	bool getShowIndentationGuides() const;
+
+	void setShowIndentationGuides( bool showIndentationGuides );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -620,6 +624,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mMinimapHover{ false };
 	bool mAutoCloseXMLTags{ false };
 	bool mFindReplaceEnabled{ true };
+	bool mShowIndentationGuides{ false };
 	TextRange mLinkPosition;
 	String mLink;
 	Uint32 mTabWidth;
@@ -781,6 +786,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void drawWhitespaces( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
 								  const Float& lineHeight );
+
+	virtual void drawIndentationGuides( const std::pair<int, int>& lineRange,
+										const Vector2f& startScroll, const Float& lineHeight );
 
 	virtual void drawLineEndings( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
 								  const Float& lineHeight );

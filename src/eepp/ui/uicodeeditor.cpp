@@ -290,6 +290,10 @@ void UICodeEditor::draw() {
 		drawWordMatch( mHighlightWord, lineRange, startScroll, lineHeight );
 	}
 
+	if ( mShowIndentationGuides ) {
+		drawIndentationGuides( lineRange, startScroll, lineHeight );
+	}
+
 	// Draw tab marker
 	if ( mShowWhitespaces ) {
 		drawWhitespaces( lineRange, startScroll, lineHeight );
@@ -572,6 +576,17 @@ Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
 	Float viewWidth = eefloor( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 							   getGutterWidth() - vScrollWidth );
 	return viewWidth;
+}
+
+bool UICodeEditor::getShowIndentationGuides() const {
+	return mShowIndentationGuides;
+}
+
+void UICodeEditor::setShowIndentationGuides( bool showIndentationGuides ) {
+	if ( showIndentationGuides != mShowIndentationGuides ) {
+		mShowIndentationGuides = showIndentationGuides;
+		invalidateDraw();
+	}
 }
 
 UICodeEditor* UICodeEditor::setFontSize( const Float& dpSize ) {
@@ -2811,8 +2826,8 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();
 	// We use the GlyphDrawable since can batch the draw calls instead of Text.
-	GlyphDrawable* adv = mFont->getGlyphDrawable( 187 /*'»'*/, fontSize );
-	GlyphDrawable* cpoint = mFont->getGlyphDrawable( 183 /*'·'*/, fontSize );
+	GlyphDrawable* adv = mFont->getGlyphDrawable( L'»', fontSize );
+	GlyphDrawable* cpoint = mFont->getGlyphDrawable( L'·', fontSize );
 	Float tabCenter = ( tabWidth - adv->getPixelsSize().getWidth() ) * 0.5f;
 	adv->setDrawMode( GlyphDrawable::DrawMode::Text );
 	cpoint->setDrawMode( GlyphDrawable::DrawMode::Text );
@@ -2839,6 +2854,47 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 				position.x += glyphW;
 			}
 		}
+	}
+}
+
+static Int64 getLineSpaces( TextDocument& doc, int line, int dir, int indentSize ) {
+	if ( line < 0 || line >= (int)doc.linesCount() )
+		return -1;
+	const auto& text = doc.line( line ).getText();
+	if ( text.size() <= 1 )
+		return -1;
+	auto s = text.find_first_not_of( " \t\n" );
+	if ( s == std::string::npos )
+		return -getLineSpaces( doc, line + dir, dir, indentSize );
+	int n = 0;
+	for ( size_t i = 0; i < s; ++i )
+		n += text[i] == ' ' ? 1 : indentSize;
+	return n;
+}
+
+static Int64 getLineIndentGuideSpaces( TextDocument& doc, int line, int indentSize ) {
+	if ( doc.line( line ).getText().find_first_not_of( " \t\n" ) == std::string::npos )
+		return eemax( getLineSpaces( doc, line - 1, -1, indentSize ),
+					  getLineSpaces( doc, line + 1, 1, indentSize ) );
+	return getLineSpaces( doc, line, 0, indentSize );
+}
+
+void UICodeEditor::drawIndentationGuides( const std::pair<int, int>& lineRange,
+										  const Vector2f& startScroll, const Float& lineHeight ) {
+	Primitives p;
+	p.setForceDraw( false );
+	Float w = eefloor( PixelDensity::dpToPx( 1 ) );
+	String idt( mDoc->getIndentString() );
+	int spaceW = getTextWidth( " " );
+	p.setColor( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
+	int indentSize = mDoc->getIndentType() == TextDocument::IndentType::IndentTabs
+						 ? getTabWidth()
+						 : mDoc->getIndentWidth();
+	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
+		Vector2f position( { startScroll.x, startScroll.y + lineHeight * index } );
+		int spaces = getLineIndentGuideSpaces( *mDoc.get(), index, indentSize );
+		for ( int i = 0; i < spaces; i += indentSize )
+			p.drawRectangle( Rectf( { position.x + spaceW * i, position.y }, { w, lineHeight } ) );
 	}
 }
 
