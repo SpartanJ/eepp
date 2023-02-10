@@ -524,8 +524,13 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 			if ( nullptr != mItemSelected && nullptr != getEventDispatcher() ) {
 				mItemSelected->sendMouseEvent(
 					Event::MouseClick, getEventDispatcher()->getMousePos(), EE_BUTTON_LMASK );
-				NodeMessage msg( mItemSelected, NodeMessage::MouseUp, EE_BUTTON_LMASK );
-				mItemSelected->messagePost( &msg );
+				if ( mItemSelected ) {
+					NodeMessage msg( mItemSelected, NodeMessage::MouseUp, EE_BUTTON_LMASK );
+					mItemSelected->messagePost( &msg );
+				}
+				if ( mItemSelected ) {
+					mItemSelected->forceKeyDown( event );
+				}
 			}
 			break;
 		default:

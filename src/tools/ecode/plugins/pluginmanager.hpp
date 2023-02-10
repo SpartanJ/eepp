@@ -70,6 +70,8 @@ enum class PluginMessageType {
 	FindAndOpenClosestURI,		// Request a component to find and open the closest path from an URI
 	DocumentFormatting,			// Request the LSP Server to format a document
 	SymbolReference,			// Request the LSP Server to find a symbol reference in the project
+	ShowMessage,  // The LSP server sends a request to the client to show a message on screen
+	ShowDocument, // The LSP server sends a request to the client to show a document
 	Undefined
 };
 
@@ -79,7 +81,9 @@ enum class PluginMessageFormat {
 	CodeCompletion,
 	LanguageServerCapabilities,
 	SignatureHelp,
-	ProjectSearchResult
+	ProjectSearchResult,
+	ShowMessage,
+	ShowDocument,
 };
 
 class PluginIDType {
@@ -157,6 +161,14 @@ struct PluginMessage {
 
 	const ProjectSearch::Result& asProjectSearchResult() const {
 		return *static_cast<const ProjectSearch::Result*>( data );
+	}
+
+	const LSPShowMessageParams& asShowMessage() const {
+		return *static_cast<const LSPShowMessageParams*>( data );
+	}
+
+	const LSPShowDocumentParams& asShowDocument() const {
+		return *static_cast<const LSPShowDocumentParams*>( data );
 	}
 
 	const PluginIDType& asPluginID() const { return *static_cast<const PluginIDType*>( data ); }

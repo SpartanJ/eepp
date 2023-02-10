@@ -37,7 +37,7 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 	UISkin* mSkinActive;
 	UISkin* mSkinInactive;
 
-	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+	Uint32 onMessage( const NodeMessage* msg );
 
 	virtual void onStateChange();
 };

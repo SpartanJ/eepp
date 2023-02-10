@@ -169,6 +169,20 @@
       "command": "OmniSharp -lsp",
       "file_patterns": ["%.cs$", "%.csx$"],
       "rootIndicationFileNames": ["%.sln$"]
+    },
+    {
+      "language": "vue",
+      "name": "vls",
+      "url": "https://github.com/vuejs/vetur/tree/master/server",
+      "command": "vls --stdio",
+      "file_patterns": ["%.vue$"]
+    },
+    {
+      "language": "java",
+      "name": "jdtls",
+      "url": "https://github.com/eclipse/eclipse.jdt.ls",
+      "command": "jdtls",
+      "file_patterns": ["%.java$"]
     }
   ]
 }

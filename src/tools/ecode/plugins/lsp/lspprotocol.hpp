@@ -115,9 +115,14 @@ struct LSPServerCapabilities {
 
 enum class LSPMessageType { Error = 1, Warning = 2, Info = 3, Log = 4 };
 
+struct LSPMessageActionItem {
+	std::string title;
+};
+
 struct LSPShowMessageParams {
-	LSPMessageType type;
+	LSPMessageType type{ LSPMessageType::Log };
 	std::string message;
+	std::vector<LSPMessageActionItem> actions;
 };
 
 struct LSPTextDocumentContentChangeEvent {
@@ -407,6 +412,13 @@ struct LSPConverter {
 			return { data["line"].get<Int64>(), data["character"].get<Int64>() };
 		return {};
 	}
+};
+
+struct LSPShowDocumentParams {
+	URI uri;
+	bool external{ true };
+	bool takeFocus{ false };
+	TextRange selection;
 };
 
 } // namespace ecode

@@ -47,6 +47,7 @@ static const char* MEMBER_TARGET_RANGE = "targetRange";
 static const char* MEMBER_TARGET_SELECTION_RANGE = "targetSelectionRange";
 static const char* MEMBER_PREVIOUS_RESULT_ID = "previousResultId";
 static const char* MEMBER_QUERY = "query";
+static const char* MEMBER_SUCCESS = "success";
 
 static json newRequest( const std::string& method, const json& params = json{} ) {
 	json j;
@@ -67,6 +68,18 @@ static json newID( const PluginIDType& id ) {
 static json newEmptyResult( const PluginIDType& id ) {
 	json j;
 	j[MEMBER_RESULT] = json( json::value_t::object );
+	if ( id.isInteger() )
+		j[MEMBER_ID] = id.asInt();
+	else
+		j[MEMBER_ID] = id.asString();
+	return j;
+}
+
+static json newSuccessResult( const PluginIDType& id, bool success = true ) {
+	json j;
+	json res;
+	res[MEMBER_SUCCESS] = success;
+	j[MEMBER_RESULT] = res;
 	if ( id.isInteger() )
 		j[MEMBER_ID] = id.asInt();
 	else
@@ -809,6 +822,33 @@ parseSelectionRanges( const json& selectionRanges ) {
 	return ret;
 }
 
+static LSPShowMessageParams parseMessageRequest( const json& json ) {
+	LSPShowMessageParams msg;
+	msg.type = (LSPMessageType)json["type"].get<int>();
+	msg.message = json["message"];
+	if ( json.contains( "actions" ) && json["actions"].is_array() ) {
+		LSPMessageActionItem item;
+		auto& actions = json["actions"];
+		for ( const auto& ma : actions ) {
+			if ( ma.contains( "title" ) )
+				item.title = ma["title"];
+		}
+		if ( !item.title.empty() )
+			msg.actions.emplace_back( item );
+	}
+	return msg;
+}
+
+static LSPShowDocumentParams parseShowDocument( const json& json ) {
+	LSPShowDocumentParams params;
+	params.uri = URI( json.value( "uri", "" ) );
+	params.external = json.value<bool>( "external", false );
+	params.takeFocus = json.value<bool>( "takeFocus", false );
+	if ( json.contains( "selection" ) )
+		params.selection = parseRange( json["selection"] );
+	return params;
+}
+
 void LSPClientServer::initialize() {
 	json codeAction{
 		{ "codeActionLiteralSupport",
@@ -824,6 +864,12 @@ void LSPClientServer::initialize() {
 
 	json completionItem{ { "snippetSupport", true } };
 
+	json showMessage;
+	showMessage["messageActionItem"] = json{ { "additionalPropertiesSupport", false } };
+
+	json showDocument;
+	showDocument["support"] = true;
+
 	json capabilities{
 		{ "textDocument",
 		  json{
@@ -837,7 +883,9 @@ void LSPClientServer::initialize() {
 			  { "hover", json{ { "contentFormat", { "plaintext", "markdown" } } } },
 			  { "completion", completionItem },
 		  } },
-		{ "window", json{ { "workDoneProgress", true } } },
+		{ "window", json{ { "workDoneProgress", true },
+						  { "showMessage", showMessage },
+						  { "showDocument", showDocument } } },
 		//{ "workspace", json{ { "workspaceFolders", true }, { "configuration", false } } },
 		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
 
@@ -856,7 +904,8 @@ void LSPClientServer::initialize() {
 	auto rootUri = rootPath.toString();
 	params["rootPath"] = authAndPath;
 	params["rootUri"] = rootUri;
-	params["workspaceFolders"] = toJson( { LSPWorkspaceFolder{ rootUri, FileSystem::fileNameFromPath( rootUri ) } } );
+	params["workspaceFolders"] =
+		toJson( { LSPWorkspaceFolder{ rootUri, FileSystem::fileNameFromPath( rootUri ) } } );
 
 	write(
 		newRequest( "initialize", params ),
@@ -1213,11 +1262,31 @@ void LSPClientServer::processNotification( const json& msg ) {
 	if ( method == "textDocument/publishDiagnostics" ) {
 		publishDiagnostics( msg );
 		return;
-	} else if ( method == ( "window/showMessage" ) ) {
-		// showMessage( msg );
-	} else if ( method == ( "window/logMessage" ) ) {
-		// logMessage( msg );
-	} else if ( method == ( "$/progress" ) ) {
+	} else if ( method == ( "window/showMessage" ) && msg.contains( MEMBER_PARAMS ) ) {
+		auto msgReq = parseMessageRequest( msg[MEMBER_PARAMS] );
+		mManager->getPluginManager()->sendBroadcast( PluginMessageType::ShowMessage,
+													 PluginMessageFormat::ShowMessage, &msgReq );
+		return;
+	} else if ( method == ( "window/logMessage" ) && msg.contains( MEMBER_PARAMS ) ) {
+		auto lm = parseMessageRequest( msg[MEMBER_PARAMS] );
+		if ( !lm.message.empty() ) {
+			switch ( lm.type ) {
+				case LSPMessageType::Log:
+				case LSPMessageType::Info:
+					Log::notice( lm.message );
+					break;
+				case LSPMessageType::Warning:
+					Log::warning( lm.message );
+					break;
+				case LSPMessageType::Error:
+					Log::error( lm.message );
+					break;
+				default:
+					break;
+			}
+		}
+		return;
+	} else if ( method == ( "$/progress" ) && msg.contains( MEMBER_PARAMS ) ) {
 		workDoneProgress( parseWorkDone( msg[MEMBER_PARAMS] ) );
 		return;
 	}
@@ -1230,10 +1299,27 @@ void LSPClientServer::processRequest( const json& msg ) {
 				msg.dump().c_str() );
 	auto method = msg[MEMBER_METHOD].get<std::string>();
 	auto msgid = getID( msg );
-	//	auto params = msg[MEMBER_PARAMS];
-	//	bool handled = false;
 	if ( method == "window/workDoneProgress/create" || method == "client/registerCapability" ) {
 		write( newEmptyResult( msgid ) );
+		return;
+	} else if ( method == "window/showMessageRequest" ) {
+		auto msgReq = parseMessageRequest( msg[MEMBER_PARAMS] );
+		mManager->getPluginManager()->sendBroadcast( PluginMessageType::ShowMessage,
+													 PluginMessageFormat::ShowMessage, &msgReq );
+		write( newEmptyResult( msgid ) );
+		return;
+	} else if ( method == "window/showDocument" ) {
+		auto showDoc = parseShowDocument( msg[MEMBER_PARAMS] );
+		if ( !showDoc.external ) {
+			LSPLocation loc;
+			loc.uri = showDoc.uri;
+			loc.range = showDoc.selection;
+			mManager->goToLocation( loc );
+		} else {
+			mManager->getPluginManager()->sendBroadcast(
+				PluginMessageType::ShowDocument, PluginMessageFormat::ShowDocument, &showDoc );
+		}
+		write( newSuccessResult( msgid ) );
 		return;
 	}
 	write( newError( LSPErrorCode::MethodNotFound, method ), nullptr, nullptr, msgid );

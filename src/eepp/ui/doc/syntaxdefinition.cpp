@@ -115,12 +115,22 @@ const std::string& SyntaxDefinition::getLSPName() const {
 	return mLSPName;
 }
 
-void SyntaxDefinition::setVisible( bool visible ) {
+SyntaxDefinition& SyntaxDefinition::setVisible( bool visible ) {
 	mVisible = visible;
+	return *this;
 }
 
 bool SyntaxDefinition::isVisible() const {
 	return mVisible;
+}
+
+bool SyntaxDefinition::getAutoCloseXMLTags() const {
+	return mAutoCloseXMLTags;
+}
+
+SyntaxDefinition& SyntaxDefinition::setAutoCloseXMLTags( bool autoCloseXMLTags ) {
+	mAutoCloseXMLTags = autoCloseXMLTags;
+	return *this;
 }
 
 const std::string& SyntaxDefinition::getLanguageName() const {

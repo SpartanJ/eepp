@@ -75,11 +75,15 @@ class EE_API SyntaxDefinition {
 
 	const std::string& getLSPName() const;
 
-	void setVisible( bool visible );
+	SyntaxDefinition& setVisible( bool visible );
 
 	bool isVisible() const;
 
-  protected:
+	bool getAutoCloseXMLTags() const;
+
+	SyntaxDefinition& setAutoCloseXMLTags(bool autoCloseXMLTags);
+
+	protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;
@@ -88,6 +92,7 @@ class EE_API SyntaxDefinition {
 	std::string mComment;
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;
+	bool mAutoCloseXMLTags{ false };
 	bool mVisible{ true };
 };
 

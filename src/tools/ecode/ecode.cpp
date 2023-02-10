@@ -2894,7 +2894,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 #endif
 
 		mNotificationCenter = std::make_unique<NotificationCenter>(
-			mUISceneNode->find<UILayout>( "notification_center" ) );
+			mUISceneNode->find<UILayout>( "notification_center" ), mPluginManager.get() );
 
 		mDocSearchController = std::make_unique<DocSearchController>( mSplitter, this );
 		mDocSearchController->initSearchBar( mUISceneNode->find<UISearchBar>( "search_bar" ),

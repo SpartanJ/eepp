@@ -90,14 +90,15 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 		LSPClientServer* server = nullptr;
 		if ( clientIt == mClients.end() ) {
 			std::unique_ptr<LSPClientServer> serverUP = runLSPServer( id, lsp, rootPath );
-			if ( ( server = serverUP.get() ) )
+			if ( ( server = serverUP.get() ) ) {
 				mClients[id] = std::move( serverUP );
+				if ( !mLSPWorkspaceFolder.uri.empty() )
+					server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {} );
+			}
 		} else {
 			server = clientIt->second.get();
 		}
 		if ( server ) {
-			if ( !mLSPWorkspaceFolder.uri.empty() )
-				server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {} );
 			server->registerDoc( doc );
 		}
 	}

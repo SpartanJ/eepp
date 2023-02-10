@@ -3430,11 +3430,8 @@ bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 		return false;
 	if ( line[start.column() - 1] != '>' || ( line.size() > 2 && line[start.column() - 2] == '/' ) )
 		return false;
-	// Only close tags if the current line syntax is XML or HTML
 	const SyntaxDefinition& definition = mHighlighter.getSyntaxDefinitionFromTextPosition( start );
-	const String::HashType xmlType = String::hash( "xml" );
-	const String::HashType htmlType = String::hash( "html" );
-	if ( definition.getLanguageId() != xmlType && definition.getLanguageId() != htmlType )
+	if ( !definition.getAutoCloseXMLTags() )
 		return false;
 	size_t foundOpenPos = line.find_last_of( "<", start.column() - 1 );
 	if ( foundOpenPos == String::InvalidPos || start.column() - foundOpenPos < 1 )
