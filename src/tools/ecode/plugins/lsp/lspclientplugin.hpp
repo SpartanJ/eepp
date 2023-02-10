@@ -127,6 +127,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	void switchSourceHeader( UICodeEditor* editor );
 
 	void processDocumentFormattingResponse( const URI& uri, const std::vector<LSPTextEdit>& edits );
+
+	bool editorExists( UICodeEditor* editor );
 };
 
 } // namespace ecode

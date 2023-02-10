@@ -33,7 +33,7 @@ class FileLocator {
 	UILocateBar* mLocateBarLayout{ nullptr };
 	UITableView* mLocateTable{ nullptr };
 	UITextInput* mLocateInput{ nullptr };
-	UICodeEditorSplitter* mEditorSplitter{ nullptr };
+	UICodeEditorSplitter* mSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
 	App* mApp{ nullptr };
 	CommandPalette mCommandPalette;

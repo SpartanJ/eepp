@@ -793,6 +793,13 @@ String TextDocument::getAllSelectedText() const {
 	return text;
 }
 
+std::vector<std::string> TextDocument::getCommandList() const {
+	std::vector<std::string> cmds;
+	for ( const auto& cmd : mCommands )
+		cmds.push_back( cmd.first );
+	return cmds;
+}
+
 String TextDocument::getSelectedText() const {
 	return getText( getSelection() );
 }

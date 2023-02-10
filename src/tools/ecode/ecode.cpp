@@ -1393,9 +1393,12 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
-	return { "fullscreen-toggle",
+	return { "create-new",
+			 "create-new-terminal",
+			 "fullscreen-toggle",
 			 "open-file",
 			 "open-folder",
+			 "reopen-closed-tab",
 			 "console-toggle",
 			 "close-app",
 			 "open-locatebar",

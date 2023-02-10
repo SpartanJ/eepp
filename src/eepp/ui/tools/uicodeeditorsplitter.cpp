@@ -278,7 +278,8 @@ const std::map<std::string, SyntaxColorScheme>& UICodeEditorSplitter::getColorSc
 	return mColorSchemes;
 }
 
-bool UICodeEditorSplitter::editorExists( UICodeEditor* editor ) const {
+bool UICodeEditorSplitter::editorExists( UICodeEditor* editor ) {
+	Lock l( mTabWidgetMutex );
 	for ( auto tabWidget : mTabWidgets ) {
 		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
 			if ( editor == tabWidget->getTab( i )->getOwnedWidget() ) {
@@ -560,6 +561,7 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 		 !prevCurEditor->getDocument().isEmpty() )
 		editorData.second->setDocument( prevCurEditor->getDocumentRef() );
 	mAboutToAddEditor = nullptr;
+	Lock l( mTabWidgetMutex );
 	mTabWidgets.push_back( tabWidget );
 	return tabWidget;
 }
@@ -1014,6 +1016,7 @@ void UICodeEditorSplitter::closeTabWidgets( UISplitter* splitter ) {
 			auto it =
 				std::find( mTabWidgets.begin(), mTabWidgets.end(), node->asType<UITabWidget>() );
 			if ( it != mTabWidgets.end() ) {
+				Lock l( mTabWidgetMutex );
 				mTabWidgets.erase( it );
 			}
 		} else if ( node->isType( UI_TYPE_SPLITTER ) ) {
@@ -1088,10 +1091,15 @@ UICodeEditor* UICodeEditorSplitter::getCurEditor() const {
 	return mCurEditor;
 }
 
+bool UICodeEditorSplitter::curEditorIsNotNull() const {
+	return mCurEditor != nullptr;
+}
+
 void UICodeEditorSplitter::addRemainingTabWidgets( Node* widget ) {
 	if ( widget->isType( UI_TYPE_TABWIDGET ) ) {
 		if ( std::find( mTabWidgets.begin(), mTabWidgets.end(), widget->asType<UITabWidget>() ) ==
 			 mTabWidgets.end() ) {
+			Lock l( mTabWidgetMutex );
 			mTabWidgets.push_back( widget->asType<UITabWidget>() );
 		}
 	} else if ( widget->isType( UI_TYPE_SPLITTER ) ) {
@@ -1119,6 +1127,7 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 				tabWidget->close();
 				auto itWidget = std::find( mTabWidgets.begin(), mTabWidgets.end(), tabWidget );
 				if ( itWidget != mTabWidgets.end() ) {
+					Lock l( mTabWidgetMutex );
 					mTabWidgets.erase( itWidget );
 				}
 

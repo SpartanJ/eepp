@@ -7,7 +7,7 @@ static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 static int LOCATEBAR_MAX_RESULTS = 100;
 
 FileLocator::FileLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode, App* app ) :
-	mEditorSplitter( editorSplitter ),
+	mSplitter( editorSplitter ),
 	mUISceneNode( sceneNode ),
 	mApp( app ),
 	mCommandPalette( mApp->getThreadPool() ) {}
@@ -25,6 +25,7 @@ void FileLocator::updateFilesTable() {
 				mUISceneNode->runOnMainThread( [&, res] {
 					mLocateTable->setModel( res );
 					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+					mLocateTable->scrollToTop();
 				} );
 			} );
 #else
@@ -43,23 +44,34 @@ void FileLocator::updateCommandPaletteTable() {
 		mCommandPalette.setCommandPalette( mApp->getMainLayout()->getCommandList(),
 										   mApp->getMainLayout()->getKeyBindings() );
 
+	if ( !mCommandPalette.isEditorSet() && mSplitter->curEditorIsNotNull() )
+		mCommandPalette.setEditorCommandPalette(
+			mSplitter->getCurEditor()->getDocumentRef()->getCommandList(),
+			mSplitter->getCurEditor()->getKeyBindings() );
+
+	mCommandPalette.setCurModel( mSplitter->curEditorIsNotNull() ? mCommandPalette.getEditorModel()
+																 : mCommandPalette.getBaseModel() );
+
 	auto txt( mLocateInput->getText() );
 	txt.trim();
 
 	if ( txt.size() > 1 ) {
+
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ), 1000, [&]( auto res ) {
 			mUISceneNode->runOnMainThread( [&, res] {
 				mLocateTable->setModel( res );
 				mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+				mLocateTable->scrollToTop();
 			} );
 		} );
 #else
 		mLocateTable->setModel( mCommandPalette.fuzzyMatch( txt.substr(), 1000 ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 #endif
-	} else {
-		mLocateTable->setModel( mCommandPalette.getBaseModel() );
+	} else if ( mCommandPalette.getCurModel() ) {
+		mLocateTable->setModel( mCommandPalette.getCurModel() );
+
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 
@@ -84,8 +96,9 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
+			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 				mLocateBarLayout->execute( cmd );
+			}
 		} );
 	};
 	mLocateTable = UITableView::New();
@@ -95,13 +108,12 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 	mLocateTable->setVisible( false );
 	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
 		const String& txt = mLocateInput->getText();
-		if ( mEditorSplitter->curEditorExistsAndFocused() &&
-			 String::startsWith( txt, String( "l " ) ) ) {
+		if ( mSplitter->curEditorExistsAndFocused() && String::startsWith( txt, String( "l " ) ) ) {
 			String number( txt.substr( 2 ) );
 			Int64 val;
 			if ( String::fromString( val, number ) && val - 1 >= 0 ) {
-				if ( mEditorSplitter->curEditorExistsAndFocused() )
-					mEditorSplitter->getCurEditor()->goToLine( { val - 1, 0 } );
+				if ( mSplitter->curEditorExistsAndFocused() )
+					mSplitter->getCurEditor()->goToLine( { val - 1, 0 } );
 				mLocateTable->setVisible( false );
 			}
 		} else if ( !txt.empty() && mLocateInput->getText()[0] == '>' ) {
@@ -123,8 +135,8 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 	} );
 	mLocateBarLayout->setCommand( "close-locatebar", [&] {
 		hideLocateBar();
-		if ( mEditorSplitter->getCurWidget() )
-			mEditorSplitter->getCurWidget()->setFocus();
+		if ( mSplitter->getCurWidget() )
+			mSplitter->getCurWidget()->setFocus();
 	} );
 	mLocateBarLayout->getKeyBindings().addKeybindsString( {
 		{ "escape", "close-locatebar" },
@@ -143,8 +155,11 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 				ModelIndex idx(
 					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 2 ) );
 				if ( idx.isValid() ) {
-					mApp->runCommand(
-						modelEvent->getModel()->data( idx, ModelRole::Display ).toString() );
+					auto cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
+					mApp->runCommand( cmd );
+					if ( mSplitter->curEditorIsNotNull() &&
+						 mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
+						mSplitter->getCurEditor()->setFocus();
 				}
 				hideLocateBar();
 			} else {
@@ -153,7 +168,7 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 					ModelRole::Display ) );
 				if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 					std::string path( vPath.asCStr() );
-					UITab* tab = mEditorSplitter->isDocumentOpen( path, true );
+					UITab* tab = mSplitter->isDocumentOpen( path, true );
 					if ( !tab ) {
 						FileInfo fileInfo( path );
 						if ( fileInfo.exists() && fileInfo.isRegularFile() )

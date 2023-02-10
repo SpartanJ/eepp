@@ -29,8 +29,9 @@ class CommandPalette {
 
 	void asyncFuzzyMatch( const std::string& match, const size_t& max, MatchResultCb res ) const;
 
-	std::shared_ptr<CommandPaletteModel> fuzzyMatch( const std::string& match,
-													 const size_t& max ) const;
+	std::shared_ptr<CommandPaletteModel>
+	fuzzyMatch( const std::vector<std::vector<std::string>>& cmdPalette, const std::string& match,
+				const size_t& max ) const;
 
 	void setCommandPalette( const std::vector<std::string>& commandList,
 							const EE::UI::KeyBindings& keybindings );
@@ -41,11 +42,27 @@ class CommandPalette {
 
 	const std::shared_ptr<CommandPaletteModel>& getBaseModel() const;
 
-  protected:
+	bool isEditorSet() const { return !mCommandPaletteEditor.empty(); }
+
+	void setEditorCommandPalette( const std::vector<std::string>& commandList,
+								  const EE::UI::KeyBindings& keybindings );
+
+	const std::shared_ptr<CommandPaletteModel>& getCurModel() const;
+
+	const std::shared_ptr<CommandPaletteModel>& getEditorModel() const;
+
+	void setCommandPaletteEditor(const std::vector<std::vector<std::string> >& commandPaletteEditor);
+
+	void setCurModel(const std::shared_ptr<CommandPaletteModel>& curModel);
+
+	protected:
 	mutable Mutex mMatchingMutex;
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<std::vector<std::string>> mCommandPalette;
+	std::vector<std::vector<std::string>> mCommandPaletteEditor;
+	std::shared_ptr<CommandPaletteModel> mCurModel;
 	std::shared_ptr<CommandPaletteModel> mBaseModel;
+	std::shared_ptr<CommandPaletteModel> mEditorModel;
 };
 
 } // namespace ecode

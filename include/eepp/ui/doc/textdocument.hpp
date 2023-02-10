@@ -540,6 +540,8 @@ class EE_API TextDocument {
 
 	String getAllSelectedText() const;
 
+	std::vector<std::string> getCommandList() const;
+
   protected:
 	friend class UndoStack;
 

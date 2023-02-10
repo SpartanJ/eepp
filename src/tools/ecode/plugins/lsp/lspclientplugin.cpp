@@ -2,6 +2,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/input.hpp>
@@ -170,6 +171,10 @@ void LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 	}
 
 	doc->setSelection( ranges );
+}
+
+bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
+	return mManager->getSplitter()->editorExists( editor );
 }
 
 PluginRequestHandle LSPClientPlugin::processCancelRequest( const PluginMessage& msg ) {
@@ -494,9 +499,8 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 			mClientManager.getSymbolReferences( editor->getDocumentRef() );
 		} );
 
-		doc.setCommand( "lsp-memory-usage", [&, editor] {
-			mClientManager.memoryUsage( editor->getDocumentRef() );
-		} );
+		doc.setCommand( "lsp-memory-usage",
+						[&, editor] { mClientManager.memoryUsage( editor->getDocumentRef() ); } );
 	}
 
 	std::vector<Uint32> listeners;
@@ -698,18 +702,23 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 	editor->runOnMainThread(
 		[&, editor, position, tag]() {
 			mEditorsTags[editor].erase( tag );
-			auto server = mClientManager.getOneLSPClientServer( editor );
-			if ( server == nullptr )
-				return;
-			server->documentHover(
-				editor->getDocument().getURI(), currentMouseTextPosition( editor ),
-				[&, editor, position]( const Int64&, const LSPHover& resp ) {
-					if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
-						editor->runOnMainThread( [editor, resp, position, this]() {
-							tryDisplayTooltip( editor, resp, position );
-						} );
-					}
-				} );
+			mThreadPool->run( [&, editor, position]() {
+				if ( !editorExists( editor ) )
+					return;
+				auto server = mClientManager.getOneLSPClientServer( editor );
+				if ( server == nullptr )
+					return;
+				server->documentHover(
+					editor->getDocument().getURI(), currentMouseTextPosition( editor ),
+					[&, editor, position]( const Int64&, const LSPHover& resp ) {
+						if ( editorExists( editor ) && !resp.contents.empty() &&
+							 !resp.contents[0].value.empty() ) {
+							editor->runOnMainThread( [editor, resp, position, this]() {
+								tryDisplayTooltip( editor, resp, position );
+							} );
+						}
+					} );
+			} );
 		},
 		mHoverDelay, tag );
 	tryHideTooltip( editor, position );

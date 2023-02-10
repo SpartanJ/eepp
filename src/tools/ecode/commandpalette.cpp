@@ -27,6 +27,8 @@ void CommandPalette::setCommandPalette( const std::vector<std::string>& commandL
 										const UI::KeyBindings& keybindings ) {
 	mCommandPalette = build( commandList, keybindings );
 	mBaseModel = CommandPaletteModel::create( 3, mCommandPalette );
+	if ( !mCurModel )
+		mCurModel = mBaseModel;
 }
 
 const std::vector<std::vector<std::string>>& CommandPalette::getCommandPalette() const {
@@ -37,24 +39,50 @@ const std::shared_ptr<CommandPaletteModel>& CommandPalette::getBaseModel() const
 	return mBaseModel;
 }
 
-std::shared_ptr<CommandPaletteModel> CommandPalette::fuzzyMatch( const std::string& match,
-																 const size_t& max ) const {
-	if ( mCommandPalette.empty() )
+void CommandPalette::setEditorCommandPalette( const std::vector<std::string>& commandList,
+											  const UI::KeyBindings& keybindings ) {
+	mCommandPaletteEditor = build( commandList, keybindings );
+	mEditorModel = CommandPaletteModel::create( 3, mCommandPaletteEditor );
+	if ( !mCurModel )
+		mCurModel = mEditorModel;
+}
+
+const std::shared_ptr<CommandPaletteModel>& CommandPalette::getCurModel() const {
+	return mCurModel;
+}
+
+const std::shared_ptr<CommandPaletteModel>& CommandPalette::getEditorModel() const {
+	return mEditorModel;
+}
+
+void CommandPalette::setCommandPaletteEditor(
+	const std::vector<std::vector<std::string>>& commandPaletteEditor ) {
+	mCommandPaletteEditor = commandPaletteEditor;
+}
+
+void CommandPalette::setCurModel( const std::shared_ptr<CommandPaletteModel>& curModel ) {
+	mCurModel = curModel;
+}
+
+std::shared_ptr<CommandPaletteModel>
+CommandPalette::fuzzyMatch( const std::vector<std::vector<std::string>>& cmdPalette,
+							const std::string& match, const size_t& max ) const {
+	if ( cmdPalette.empty() )
 		return {};
 
 	Lock rl( mMatchingMutex );
 	std::multimap<int, int, std::greater<int>> matchesMap;
 	std::vector<std::vector<std::string>> ret;
 
-	for ( size_t i = 0; i < mCommandPalette.size(); i++ ) {
-		int matchName = String::fuzzyMatch( mCommandPalette[i][0], match );
-		int matchKeybind = String::fuzzyMatch( mCommandPalette[i][1], match );
+	for ( size_t i = 0; i < cmdPalette.size(); i++ ) {
+		int matchName = String::fuzzyMatch( cmdPalette[i][0], match );
+		int matchKeybind = String::fuzzyMatch( cmdPalette[i][1], match );
 		matchesMap.insert( { std::max( matchName, matchKeybind ), i } );
 	}
 	for ( auto& res : matchesMap ) {
 		if ( ret.size() < max ) {
-			ret.push_back( { mCommandPalette[res.second][0], mCommandPalette[res.second][1],
-							 mCommandPalette[res.second][2] } );
+			ret.push_back( { cmdPalette[res.second][0], cmdPalette[res.second][1],
+							 cmdPalette[res.second][2] } );
 		}
 	}
 	return CommandPaletteModel::create( 3, ret );
@@ -62,7 +90,14 @@ std::shared_ptr<CommandPaletteModel> CommandPalette::fuzzyMatch( const std::stri
 
 void CommandPalette::asyncFuzzyMatch( const std::string& match, const size_t& max,
 									  MatchResultCb res ) const {
-	mPool->run( [&, match, max, res]() { res( fuzzyMatch( match, max ) ); } );
+	if ( !mCurModel )
+		return;
+
+	mPool->run( [&, match, max, res]() {
+		const std::vector<std::vector<std::string>>& cmdPalette =
+			mCurModel.get() == mBaseModel.get() ? mCommandPalette : mCommandPaletteEditor;
+		res( fuzzyMatch( cmdPalette, match, max ) );
+	} );
 }
 
 } // namespace ecode

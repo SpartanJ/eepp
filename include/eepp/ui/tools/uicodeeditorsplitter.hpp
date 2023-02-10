@@ -155,6 +155,8 @@ class EE_API UICodeEditorSplitter {
 
 	UICodeEditor* getCurEditor() const;
 
+	bool curEditorIsNotNull() const;
+
 	const SyntaxColorScheme& getCurrentColorScheme() const;
 
 	const std::string& getCurrentColorSchemeName() const;
@@ -163,7 +165,7 @@ class EE_API UICodeEditorSplitter {
 
 	const std::map<std::string, SyntaxColorScheme>& getColorSchemes() const;
 
-	bool editorExists( UICodeEditor* editor ) const;
+	bool editorExists( UICodeEditor* editor );
 
 	bool isAnyEditorDirty();
 
@@ -276,6 +278,7 @@ class EE_API UICodeEditorSplitter {
 	bool mFirstCodeEditor{ true };
 	UICodeEditor* mAboutToAddEditor{ nullptr };
 	UIMessageBox* mTryCloseMsgBox{ nullptr };
+	Mutex mTabWidgetMutex;
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  const std::vector<SyntaxColorScheme>& colorSchemes,
