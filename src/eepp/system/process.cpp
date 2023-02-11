@@ -230,7 +230,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 				if ( n < static_cast<long>( mBufferSize - 1 ) )
 					buffer[n] = '\0';
 
-				if ( !mShuttingDown  )
+				if ( !mShuttingDown )
 					mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
 			}
 		} );
@@ -274,8 +274,8 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 									mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
 								else
 									mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
-							} else if ( n < 0 && errno != EINTR && errno != EAGAIN &&
-										errno != EWOULDBLOCK ) {
+							} else if ( n == 0 || ( n < 0 && errno != EINTR && errno != EAGAIN &&
+													errno != EWOULDBLOCK ) ) {
 								pollfds[i].fd = -1;
 								continue;
 							}

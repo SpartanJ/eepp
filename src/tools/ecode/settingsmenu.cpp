@@ -1472,6 +1472,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
 		mProjectTreeMenu->close();
 	mProjectTreeMenu = UIPopUpMenu::New();
+
 	if ( file.isDirectory() ) {
 		mProjectTreeMenu->add( i18n( "new_file", "New File..." ), findIcon( "file-add" ) )
 			->setId( "new_file" );
@@ -1480,6 +1481,17 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
 			->setId( "open_folder" );
 	} else {
+		if ( file.isRegularFile() ) {
+			auto curDir( mApp->getCurrentWorkingDir() );
+			FileSystem::dirAddSlashAtEnd( curDir );
+			if ( curDir == file.getDirectoryPath() ) {
+				mProjectTreeMenu
+					->add( i18n( "new_file_in_file_folder", "New File in File Folder..." ),
+						   findIcon( "file-add" ) )
+					->setId( "new_file" );
+			}
+		}
+
 		mProjectTreeMenu->add( i18n( "open_folder", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu

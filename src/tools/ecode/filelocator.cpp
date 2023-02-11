@@ -205,7 +205,20 @@ void FileLocator::showBar() {
 	mLocateBarLayout->setVisible( true );
 	mLocateInput->setFocus();
 	mLocateTable->setVisible( true );
-	mLocateInput->getDocument().selectAll();
+	const String& text = mLocateInput->getText();
+
+	if ( !text.empty() && text[0] == '>' ) {
+		Int64 selectFrom = 1;
+		if ( text.size() >= 2 && text[1] == ' ' )
+			selectFrom = 2;
+
+		mLocateInput->getDocument().setSelection(
+			{ { 0, selectFrom },
+			  { 0, mLocateInput->getDocument().endOfLine( { 0, 0 } ).column() } } );
+	} else {
+		mLocateInput->getDocument().selectAll();
+	}
+
 	mLocateInput->addEventListener( Event::OnSizeChange,
 									[&]( const Event* ) { updateLocateBar(); } );
 }

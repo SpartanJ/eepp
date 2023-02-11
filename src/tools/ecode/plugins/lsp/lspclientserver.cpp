@@ -244,7 +244,8 @@ static void fromJson( LSPCompletionOptions& options, const json& json ) {
 		options.provider = true;
 		if ( json.contains( "resolveProvider" ) && !json["resolveProvider"].is_null() )
 			options.resolveProvider = json["resolveProvider"].get<bool>();
-		fromJson( options.triggerCharacters, json["triggerCharacters"] );
+		if ( json.contains( "triggerCharacters" ) && !json["triggerCharacters"].is_null() )
+			fromJson( options.triggerCharacters, json["triggerCharacters"] );
 	}
 }
 

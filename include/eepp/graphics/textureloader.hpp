@@ -111,37 +111,37 @@ class EE_API TextureLoader {
 	void load();
 
   protected:
-	Uint32 mLoadType; // From memory, from path, from pack
-	Uint8* mPixels;	  // Texture Info
-	Uint32 mTexId;
-	Int32 mImgWidth;
-	Int32 mImgHeight;
+	Uint32 mLoadType{ 0 };	   // From memory, from path, from pack
+	Uint8* mPixels{ nullptr }; // Texture Info
+	Uint32 mTexId{ 0 };
+	Int32 mImgWidth{ 0 };
+	Int32 mImgHeight{ 0 };
 
 	std::string mFilepath;
-	unsigned int mWidth;
-	unsigned int mHeight;
-	bool mMipmap;
-	Int32 mChannels;
-	Texture::ClampMode mClampMode;
-	bool mCompressTexture;
-	bool mLocalCopy;
-	Pack* mPack;
-	IOStream* mStream;
+	unsigned int mWidth{ 0 };
+	unsigned int mHeight{ 0 };
+	bool mMipmap{ false };
+	Int32 mChannels{ 0 };
+	Texture::ClampMode mClampMode{ Texture::ClampMode::ClampToEdge };
+	bool mCompressTexture{ false };
+	bool mLocalCopy{ false };
+	Pack* mPack{ nullptr };
+	IOStream* mStream{ nullptr };
 
-	const Uint8* mImagePtr;
-	Uint32 mSize;
+	const Uint8* mImagePtr{ nullptr };
+	Uint32 mSize{ 0 };
 
-	RGB* mColorKey;
+	RGB* mColorKey{ nullptr };
 	Image::FormatConfiguration mFormatConfiguration;
 
 	void reset();
 
   private:
-	bool mLoaded;
-	bool mTexLoaded;
-	bool mDirectUpload;
-	int mImgType;
-	int mIsCompressed;
+	bool mLoaded{ false };
+	bool mTexLoaded{ false };
+	bool mDirectUpload{ false };
+	int mImgType{ 0 };
+	int mIsCompressed{ 0 };
 
 	Clock mTE;
 
