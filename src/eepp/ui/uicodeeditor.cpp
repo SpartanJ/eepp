@@ -2826,8 +2826,8 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();
 	// We use the GlyphDrawable since can batch the draw calls instead of Text.
-	GlyphDrawable* adv = mFont->getGlyphDrawable( L'»', fontSize );
-	GlyphDrawable* cpoint = mFont->getGlyphDrawable( L'·', fontSize );
+	GlyphDrawable* adv = mFont->getGlyphDrawable( 187 /*'»'*/, fontSize );
+	GlyphDrawable* cpoint = mFont->getGlyphDrawable( 183 /*'·'*/, fontSize );
 	Float tabCenter = ( tabWidth - adv->getPixelsSize().getWidth() ) * 0.5f;
 	adv->setDrawMode( GlyphDrawable::DrawMode::Text );
 	cpoint->setDrawMode( GlyphDrawable::DrawMode::Text );
@@ -2903,9 +2903,9 @@ void UICodeEditor::drawLineEndings( const std::pair<int, int>& lineRange,
 
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();
-	GlyphDrawable* nl = mFont->getGlyphDrawable( L'↴', fontSize );
+	GlyphDrawable* nl = mFont->getGlyphDrawable( 8628 /*'↴'*/, fontSize );
 	if ( nl->getPixelsSize() == Sizef::Zero )
-		nl = mFont->getGlyphDrawable( L'¬', fontSize );
+		nl = mFont->getGlyphDrawable( 172 /* '¬'*/, fontSize );
 	nl->setDrawMode( GlyphDrawable::DrawMode::Text );
 	nl->setColor( color );
 	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {

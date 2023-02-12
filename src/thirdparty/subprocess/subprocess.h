@@ -201,6 +201,10 @@ subprocess_weak unsigned
 subprocess_read_stderr(struct subprocess_s *const process, char *const buffer,
                        unsigned size);
 
+subprocess_weak unsigned
+subprocess_write_stdin(struct subprocess_s *const process, char *const buffer,
+                       unsigned size);
+
 /// @brief Returns if the subprocess is currently still alive and executing.
 /// @param process The process to check.
 /// @return If the process is still alive non-zero is returned.
@@ -225,6 +229,7 @@ subprocess_weak int subprocess_alive(struct subprocess_s *const process);
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
 #endif
 
 #if defined(_WIN32)
@@ -320,6 +325,8 @@ __declspec(dllimport) void *__stdcall CreateNamedPipeA(
     unsigned long, unsigned long, LPSECURITY_ATTRIBUTES);
 __declspec(dllimport) int __stdcall ReadFile(void *, void *, unsigned long,
                                              unsigned long *, LPOVERLAPPED);
+__declspec(dllimport) int __stdcall WriteFile(void *, const void *, unsigned long,
+                                              unsigned long *, LPOVERLAPPED);
 __declspec(dllimport) unsigned long __stdcall GetCurrentProcessId(void);
 __declspec(dllimport) unsigned long __stdcall GetCurrentThreadId(void);
 __declspec(dllimport) void *__stdcall CreateFileA(const char *, unsigned long,
@@ -342,6 +349,7 @@ __declspec(dllimport) unsigned long __stdcall WaitForMultipleObjects(
     unsigned long, void *const *, int, unsigned long);
 __declspec(dllimport) int __stdcall GetOverlappedResult(void *, LPOVERLAPPED,
                                                         unsigned long *, int);
+__declspec(dllimport) int __stdcall FlushFileBuffers(void *);
 
 #if defined(_DLL)
 #define SUBPROCESS_DLLIMPORT __declspec(dllimport)
@@ -385,6 +393,7 @@ struct subprocess_s {
   void *hProcess;
   void *hStdInput;
   void *hEventOutput;
+  void *hEventInput;
   void *hEventError;
 #else
   pid_t child;
@@ -392,15 +401,18 @@ struct subprocess_s {
 #endif
 
   subprocess_size_t alive;
+  int options;
 };
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
 
 #if defined(_WIN32)
+
 subprocess_weak int subprocess_create_named_pipe_helper(void **rd, void **wr);
 int subprocess_create_named_pipe_helper(void **rd, void **wr) {
   const unsigned long pipeAccessInbound = 0x00000001;
+  const unsigned long pipeAccessOutbound = 0x00000002;
   const unsigned long fileFlagOverlapped = 0x40000000;
   const unsigned long pipeTypeByte = 0x00000000;
   const unsigned long pipeWait = 0x00000000;
@@ -412,8 +424,10 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
   struct subprocess_security_attributes_s saAttr = {sizeof(saAttr),
                                                     SUBPROCESS_NULL, 1};
   char name[256] = {0};
+  char name2[256] = {0};
   __declspec(thread) static long index = 0;
   const long unique = index++;
+  const long unique2 = index++;
 
 #if _MSC_VER < 1900
 #pragma warning(push, 1)
@@ -454,6 +468,22 @@ int subprocess_create(const char *const commandLine[], int options,
   return subprocess_create_ex(commandLine, options, SUBPROCESS_NULL,
                               SUBPROCESS_NULL, out_process);
 }
+
+#if !defined(_WIN32)
+subprocess_weak
+void subprocess_set_async(struct subprocess_s *const out_process) {
+    if (out_process->options & subprocess_option_enable_async) {
+      int stdin_fd = fileno( out_process->stdin_file );
+      fcntl( stdin_fd, F_SETFL, fcntl( stdin_fd, F_GETFL ) | O_NONBLOCK );
+      int stdout_fd = fileno( out_process->stdout_file );
+      fcntl( stdout_fd, F_SETFL, fcntl( stdout_fd, F_GETFL ) | O_NONBLOCK );
+      if (!(out_process->options & subprocess_option_combined_stdout_stderr)) {
+        int stderr_fd = fileno( out_process->stderr_file );
+        fcntl( stderr_fd, F_SETFL, fcntl( stderr_fd, F_GETFL ) | O_NONBLOCK );
+      }
+    }
+}
+#endif
 
 int subprocess_create_ex(const char *const commandLine[], int options,
                          const char *const environment[],
@@ -622,6 +652,9 @@ int subprocess_create_ex(const char *const commandLine[], int options,
   }
 
   if (options & subprocess_option_enable_async) {
+    out_process->hEventInput =
+        CreateEventA(SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr), 1, 1,
+                     SUBPROCESS_NULL);
     out_process->hEventOutput =
         CreateEventA(SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr), 1, 1,
                      SUBPROCESS_NULL);
@@ -629,6 +662,7 @@ int subprocess_create_ex(const char *const commandLine[], int options,
         CreateEventA(SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr), 1, 1,
                      SUBPROCESS_NULL);
   } else {
+    out_process->hEventInput = SUBPROCESS_NULL;
     out_process->hEventOutput = SUBPROCESS_NULL;
     out_process->hEventError = SUBPROCESS_NULL;
   }
@@ -735,6 +769,8 @@ int subprocess_create_ex(const char *const commandLine[], int options,
   }
 
   out_process->alive = 1;
+
+  out_process->options = options;
 
   return 0;
 #else
@@ -894,7 +930,11 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 
   out_process->alive = 1;
 
+  out_process->options = options;
+
   posix_spawn_file_actions_destroy(&actions);
+
+  subprocess_set_async(out_process);
 
   return 0;
 #else
@@ -972,6 +1012,10 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     out_process->child = child;
 
     out_process->alive = 1;
+
+    out_process->options = options;
+
+    subprocess_set_async(out_process);
 
     return 0;
   }
@@ -1080,6 +1124,10 @@ int subprocess_destroy(struct subprocess_s *const process) {
 
     if (process->hStdInput) {
       CloseHandle(process->hStdInput);
+    }
+
+    if (process->hEventInput) {
+      CloseHandle(process->hEventInput);
     }
 
     if (process->hEventOutput) {
@@ -1251,6 +1299,51 @@ int subprocess_alive(struct subprocess_s *const process) {
   }
 
   return is_alive;
+}
+
+subprocess_weak unsigned
+subprocess_write_stdin(struct subprocess_s *const process, char *const buffer,
+                       unsigned size) {
+#if defined(_WIN32)
+    void* handle = SUBPROCESS_PTR_CAST(void *,
+                   _get_osfhandle(_fileno(process->stdin_file)));
+    unsigned long bytes_write = 0;
+    struct subprocess_overlapped_s overlapped = {0, 0, {{0, 0}}, SUBPROCESS_NULL};
+    overlapped.hEvent = process->hEventInput;
+
+    if (!WriteFile(handle, buffer, size, &bytes_write,
+                   SUBPROCESS_PTR_CAST(LPOVERLAPPED, &overlapped))) {
+       const unsigned long errorIoPending = 997;
+       unsigned long error = GetLastError();
+
+       // Means we've got an async write!
+       if (error == errorIoPending) {
+         if (!GetOverlappedResult(handle,
+                                  SUBPROCESS_PTR_CAST(LPOVERLAPPED, &overlapped),
+                                  &bytes_write, 1)) {
+           const unsigned long errorIoIncomplete = 996;
+           const unsigned long errorHandleEOF = 38;
+           error = GetLastError();
+
+           if ((error != errorIoIncomplete) && (error != errorHandleEOF)) {
+             return 0;
+           }
+         }
+       }
+    } else {
+       FlushFileBuffers(handle);
+    }
+    return SUBPROCESS_CAST(unsigned, bytes_write);
+#else
+    const int fd = fileno(process->stdin_file);
+    const ssize_t ret = write(fd, buffer, size);
+    if (ret > 0) {
+       fsync(fd);
+    } else if (ret < 0) {
+       return 0;
+    }
+    return ret;
+#endif
 }
 
 #if defined(__cplusplus)

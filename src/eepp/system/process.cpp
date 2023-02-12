@@ -5,6 +5,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/process.hpp>
+
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 #define SUBPROCESS_USE_POSIX_SPAWN
 #endif
@@ -75,12 +76,13 @@ bool Process::create( const std::string& command, const Uint32& options,
 											  !workingDirectory.empty() ? workingDirectory.c_str()
 																		: nullptr,
 											  PROCESS_PTR );
-
 		return ret;
 	}
-	return 0 == subprocess_create_ex(
-					strings.data(), options, nullptr,
-					!workingDirectory.empty() ? workingDirectory.c_str() : nullptr, PROCESS_PTR );
+	auto ret =
+		0 == subprocess_create_ex( strings.data(), options, nullptr,
+								   !workingDirectory.empty() ? workingDirectory.c_str() : nullptr,
+								   PROCESS_PTR );
+	return ret;
 }
 
 size_t Process::readAllStdOut( std::string& buffer ) {
@@ -136,12 +138,7 @@ size_t Process::write( const char* buffer, const size_t& size ) {
 	if ( mShuttingDown )
 		return 0;
 	Lock l( mStdInMutex );
-	FILE* stdInFile = subprocess_stdin( PROCESS_PTR );
-	if ( !stdInFile )
-		return 0;
-	int ret = fwrite( buffer, 1, size, stdInFile );
-	fflush( stdInFile );
-	return ret;
+	return subprocess_write_stdin( PROCESS_PTR, (char* const)buffer, size );
 }
 
 size_t Process::write( const std::string& buffer ) {

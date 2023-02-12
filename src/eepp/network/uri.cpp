@@ -552,6 +552,11 @@ unsigned short URI::getWellKnownPort() const {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 void URI::parse( const std::string& _uri ) {
 	std::string uri( _uri );
+	// Is a local path without hostname but it's correctly formatted?
+	if ( String::startsWith( uri, "file://" ) && uri.size() >= 9 && uri[7] != '/' &&
+		 uri[8] == ':' ) {
+		uri.insert( uri.begin() + 7, '/' );
+	}
 	String::replaceAll( uri, "\\", "/" );
 #else
 void URI::parse( const std::string& uri ) {
@@ -645,10 +650,6 @@ void URI::parseHostAndPort( std::string::const_iterator& it,
 		mPort = getWellKnownPort();
 	}
 	mHost = host;
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	if ( mScheme == "file" && !mHost.empty() && mHost[mHost.size() - 1] != ':' )
-		mHost = "/" + mHost + ":";
-#endif
 	String::toLowerInPlace( mHost );
 }
 
