@@ -524,12 +524,12 @@ static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 			// CodeAction
 			auto title = action.at( MEMBER_TITLE ).get<std::string>();
 			auto kind = action.value( MEMBER_KIND, "" );
-			auto& command = action.contains( MEMBER_COMMAND )
+			auto command = action.contains( MEMBER_COMMAND )
 							   ? parseCommand( action.at( MEMBER_COMMAND ) )
 							   : LSPCommand{};
-			auto& edit = action.at( MEMBER_EDIT ) ? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
+			auto edit = action.at( MEMBER_EDIT ) ? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
 												 : LSPWorkspaceEdit{};
-			auto& diagnostics = action.contains( MEMBER_DIAGNOSTICS )
+			auto diagnostics = action.contains( MEMBER_DIAGNOSTICS )
 								   ? parseDiagnostics( action.at( MEMBER_DIAGNOSTICS ) )
 								   : std::vector<LSPDiagnostic>{};
 			LSPCodeAction action = { title, kind, diagnostics, edit, command };
@@ -551,7 +551,7 @@ static std::vector<LSPDiagnosticsCodeAction> parseDiagnosticsCodeAction( const j
 			auto title = action.at( MEMBER_TITLE ).get<std::string>();
 			auto kind = action.value( MEMBER_KIND, "" );
 			auto isPreferred = action.value( "isPreferred", false );
-			auto& edit = action.contains( MEMBER_EDIT )
+			auto edit = action.contains( MEMBER_EDIT )
 							? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
 							: LSPWorkspaceEdit{};
 			LSPDiagnosticsCodeAction action = { title, kind, isPreferred, edit };
@@ -666,7 +666,7 @@ static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
 	for ( const auto& diag : result ) {
 		auto range = parseRange( diag[MEMBER_RANGE] );
 		auto severity = static_cast<LSPDiagnosticSeverity>( diag["severity"].get<int>() );
-		auto& code = diag.contains( "code" ) ? ( diag["code"].is_number_integer()
+		auto code = diag.contains( "code" ) ? ( diag["code"].is_number_integer()
 													? String::toString( diag["code"].get<int>() )
 													: diag.at( "code" ).get<std::string>() )
 											: "";

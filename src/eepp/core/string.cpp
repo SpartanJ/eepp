@@ -5,6 +5,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
 #include <functional>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <random>
@@ -308,6 +309,8 @@ bool String::isHexNotation( const std::string& value, const std::string& withPre
 
 std::vector<String> String::split( const String& str, const StringBaseType& delim,
 								   const bool& pushEmptyString, const bool& keepDelim ) {
+	if ( str.empty() )
+		return {};
 	std::vector<String> cont;
 	std::size_t current, previous = 0;
 	current = str.find( delim );
@@ -335,10 +338,19 @@ std::vector<String> String::split( const String& str, const StringBaseType& deli
 
 std::vector<std::string> String::split( const std::string& str, const Int8& delim,
 										const bool& pushEmptyString, const bool& keepDelim ) {
+	if ( str.empty() )
+		return {};
 	std::vector<std::string> cont;
 	std::size_t current, previous = 0;
 	current = str.find( delim );
 	while ( current != std::string::npos ) {
+		if ( (Int64)current - (Int64)previous < 0 ) {
+			std::cerr << "String::split fatal error: current " << current << " previous "
+					  << previous << " with str " << str << " delim " << delim
+					  << " pushEmptyString " << pushEmptyString << " keepDelim " << keepDelim
+					  << "\n";
+			return cont;
+		}
 		std::string substr( str.substr( previous, current - previous ) );
 		if ( pushEmptyString || !substr.empty() )
 			cont.emplace_back( std::move( substr ) );
