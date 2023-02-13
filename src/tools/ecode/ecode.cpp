@@ -2114,13 +2114,19 @@ void App::initProjectTreeView( const std::string& path ) {
 		if ( !mFileSystemModel )
 			return 0;
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_F2 ) {
+		if ( keyEvent->getKeyCode() == KEY_F2 || keyEvent->getKeyCode() == KEY_DELETE ) {
 			ModelIndex modelIndex = mProjectTreeView->getSelection().first();
 			if ( !modelIndex.isValid() )
 				return 0;
 			Variant vPath( mProjectTreeView->getModel()->data( modelIndex, ModelRole::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) )
-				renameFile( FileInfo( vPath.asCStr() ) );
+			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+				FileInfo fileInfo( vPath.asCStr() );
+				if ( keyEvent->getKeyCode() == KEY_F2 ) {
+					renameFile( fileInfo );
+				} else {
+					mSettings->deleteFileDialog( fileInfo );
+				}
+			}
 			return 1;
 		}
 
@@ -2129,10 +2135,11 @@ void App::initProjectTreeView( const std::string& path ) {
 				{ keyEvent->getKeyCode(), keyEvent->getMod() } );
 			if ( !cmd.empty() && mSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
 				mSplitter->getCurEditor()->getDocument().execute( cmd );
+				return 1;
 			}
 		}
 
-		return 1;
+		return 0;
 	} );
 
 	if ( !path.empty() ) {

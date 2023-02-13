@@ -64,6 +64,8 @@ class SettingsMenu {
 
 	void updateRecentFolders();
 
+	void deleteFileDialog( const FileInfo& file );
+
   protected:
 	App* mApp{ nullptr };
 	UIPopUpMenu* mSettingsMenu{ nullptr };
@@ -83,6 +85,7 @@ class SettingsMenu {
 	Float mFileTypeMenuesCreatedWithHeight{ 0 };
 	std::vector<UIPopUpMenu*> mColorSchemeMenues;
 	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
+
 };
 
 } // namespace ecode

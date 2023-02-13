@@ -1561,38 +1561,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 		} else if ( "open_file" == id ) {
 			mApp->loadFileFromPath( file.getFilepath() );
 		} else if ( "remove" == id ) {
-			UIMessageBox* msgBox =
-				UIMessageBox::New( UIMessageBox::OK_CANCEL,
-								   String::format( i18n( "confirm_remove_file",
-														 "Do you really want to remove \"%s\"?" )
-													   .toUtf8()
-													   .c_str(),
-												   file.getFileName().c_str() ) );
-			msgBox->addEventListener( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
-				auto errFn = [&, file] {
-					mApp->errorMsgBox( String::format(
-						std::string( i18n( "couldnt_remove", "Couldn't remove" ).toUtf8() + "%s." )
-							.c_str(),
-						file.isDirectory() ? i18n( "directory", "directory" ).toUtf8().c_str()
-										   : i18n( "file", "file" ).toUtf8().c_str() ) );
-				};
-
-				if ( file.isDirectory() ) {
-					try {
-						std::string fpath( file.getFilepath() );
-						FileSystem::dirRemoveSlashAtEnd( fpath );
-						fsRemoveAll( fpath );
-					} catch ( const fs::filesystem_error& err ) {
-						errFn();
-					}
-				} else if ( !FileSystem::fileRemove( file.getFilepath() ) ) {
-					errFn();
-				}
-				msgBox->closeWindow();
-			} );
-			msgBox->setTitle( i18n( "remove_file_question", "Remove file?" ) );
-			msgBox->center();
-			msgBox->showWhenReady();
+			deleteFileDialog( file );
 		} else if ( "duplicate_file" == id ) {
 			UIMessageBox* msgBox = mApp->newInputMsgBox(
 				String::format( "%s \"%s\"",
@@ -1680,6 +1649,38 @@ UIPopUpMenu* SettingsMenu::getWindowMenu() const {
 
 UIPopUpMenu* SettingsMenu::getSettingsMenu() const {
 	return mSettingsMenu;
+}
+
+void SettingsMenu::deleteFileDialog( const FileInfo& file ) {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		String::format(
+			i18n( "confirm_remove_file", "Do you really want to remove \"%s\"?" ).toUtf8().c_str(),
+			file.getFileName().c_str() ) );
+	msgBox->addEventListener( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
+		auto errFn = [&, file] {
+			mApp->errorMsgBox( String::format(
+				std::string( i18n( "couldnt_remove", "Couldn't remove" ).toUtf8() + "%s." ).c_str(),
+				file.isDirectory() ? i18n( "directory", "directory" ).toUtf8().c_str()
+								   : i18n( "file", "file" ).toUtf8().c_str() ) );
+		};
+
+		if ( file.isDirectory() ) {
+			try {
+				std::string fpath( file.getFilepath() );
+				FileSystem::dirRemoveSlashAtEnd( fpath );
+				fsRemoveAll( fpath );
+			} catch ( const fs::filesystem_error& err ) {
+				errFn();
+			}
+		} else if ( !FileSystem::fileRemove( file.getFilepath() ) ) {
+			errFn();
+		}
+		msgBox->closeWindow();
+	} );
+	msgBox->setTitle( i18n( "remove_file_question", "Remove file?" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
 }
 
 } // namespace ecode
