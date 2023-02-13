@@ -6,6 +6,8 @@
 
 namespace ecode {
 
+#define PRJ_ALLOWED_PATH ".ecode/.prjallowed"
+
 ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 											std::shared_ptr<ThreadPool> threadPool, App* app ) :
 	mPath( path ),
@@ -38,6 +40,10 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			mRunning = true;
 			mIgnoreHidden = ignoreHidden;
 			mDirectories.push_back( mPath );
+
+			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) )
+				mAllowedMatcher = std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH );
+
 			if ( !acceptedPatterns.empty() ) {
 				std::vector<std::string> files;
 				std::vector<std::string> names;
@@ -46,7 +52,8 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 					patterns.emplace_back( LuaPattern( strPattern ) );
 				mAcceptedPatterns = patterns;
 				std::set<std::string> info;
-				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher );
+				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
+								   mAllowedMatcher.get() );
 				size_t namesCount = names.size();
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
@@ -64,7 +71,8 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				}
 			} else {
 				std::set<std::string> info;
-				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher );
+				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher,
+								   mAllowedMatcher.get() );
 			}
 			mIsReady = true;
 			mRunning = false;
@@ -191,12 +199,10 @@ bool ProjectDirectoryTree::isDirInTree( const std::string& dirTree ) const {
 	return std::find( mDirectories.begin(), mDirectories.end(), dir ) != mDirectories.end();
 }
 
-void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
-											  std::vector<std::string>& names,
-											  std::string directory,
-											  std::set<std::string> currentDirs,
-											  const bool& ignoreHidden,
-											  IgnoreMatcherManager& ignoreMatcher ) {
+void ProjectDirectoryTree::getDirectoryFiles(
+	std::vector<std::string>& files, std::vector<std::string>& names, std::string directory,
+	std::set<std::string> currentDirs, const bool& ignoreHidden,
+	IgnoreMatcherManager& ignoreMatcher, GitIgnoreMatcher* allowedMatcher ) {
 	if ( !mRunning )
 		return;
 	currentDirs.insert( directory );
@@ -204,8 +210,15 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 		FileSystem::filesGetInPath( directory, false, false, false );
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
-		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) )
-			continue;
+		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) ) {
+			if ( !allowedMatcher )
+				continue;
+			std::string localPath;
+			if ( String::startsWith( directory, allowedMatcher->getPath() ) )
+				localPath = directory.substr( allowedMatcher->getPath().size() );
+			if ( !allowedMatcher->match( localPath + file ) )
+				continue;
+		}
 		if ( FileSystem::isDirectory( fullpath ) ) {
 			fullpath += FileSystem::getOSSlash();
 			FileInfo dirInfo( fullpath, true );
@@ -227,7 +240,8 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 				childMatch = dirMatcher.popMatcher( 0 );
 				ignoreMatcher.addChild( childMatch );
 			}
-			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden, ignoreMatcher );
+			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden, ignoreMatcher,
+							   allowedMatcher );
 			if ( childMatch ) {
 				ignoreMatcher.removeChild( childMatch );
 				eeSAFE_DELETE( childMatch );
@@ -286,7 +300,8 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 		std::vector<LuaPattern> patterns;
 		std::set<std::string> info;
 		if ( !mAcceptedPatterns.empty() ) {
-			getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher );
+			getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
+							   mAllowedMatcher.get() );
 			size_t namesCount = names.size();
 			bool found;
 			for ( size_t i = 0; i < namesCount; i++ ) {
@@ -303,7 +318,8 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 				}
 			}
 		} else {
-			getDirectoryFiles( mFiles, mNames, mPath, info, false, mIgnoreMatcher );
+			getDirectoryFiles( mFiles, mNames, mPath, info, false, mIgnoreMatcher,
+							   mAllowedMatcher.get() );
 		}
 	} else {
 		tryAddFile( file );

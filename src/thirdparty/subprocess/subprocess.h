@@ -424,10 +424,8 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
   struct subprocess_security_attributes_s saAttr = {sizeof(saAttr),
                                                     SUBPROCESS_NULL, 1};
   char name[256] = {0};
-  char name2[256] = {0};
   __declspec(thread) static long index = 0;
   const long unique = index++;
-  const long unique2 = index++;
 
 #if _MSC_VER < 1900
 #pragma warning(push, 1)

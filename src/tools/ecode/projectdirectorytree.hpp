@@ -138,6 +138,7 @@ class ProjectDirectoryTree {
 	std::vector<std::string> mNames;
 	std::vector<std::string> mDirectories;
 	std::vector<LuaPattern> mAcceptedPatterns;
+	std::unique_ptr<GitIgnoreMatcher> mAllowedMatcher;
 	bool mRunning;
 	bool mIsReady;
 	bool mIgnoreHidden;
@@ -148,7 +149,8 @@ class ProjectDirectoryTree {
 
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
 							std::string directory, std::set<std::string> currentDirs,
-							const bool& ignoreHidden, IgnoreMatcherManager& ignoreMatcher );
+							const bool& ignoreHidden, IgnoreMatcherManager& ignoreMatcher,
+							GitIgnoreMatcher* allowedMatcher );
 
 	void addFile( const FileInfo& file );
 

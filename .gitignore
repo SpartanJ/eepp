@@ -62,3 +62,4 @@ ecode.dmg
 /projects/**/*.tar.gz
 /projects/**/*.zip
 /.ecode/.fstreeviewignore
+/.ecode/.prjallowed

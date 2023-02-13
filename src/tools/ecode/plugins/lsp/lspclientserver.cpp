@@ -948,7 +948,7 @@ bool LSPClientServer::start() {
 		cmd += mLSP.commandParameters;
 	}
 	bool ret =
-		mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync, {}, mRootPath );
+		mProcess.create( cmd, Process::getDefaultOptions(), {}, mRootPath );
 	if ( ret && mProcess.isAlive() ) {
 		mProcess.startAsyncRead(
 			[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
