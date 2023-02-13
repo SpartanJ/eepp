@@ -46,7 +46,6 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 			saveConfig();
 			mWindow->close();
 		} );
-		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
 		msgBox->setTitle( String::format( i18n( "close_title", "Close %s?" ).toUtf8().c_str(),
 										  mWindowTitle.c_str() ) );
 		msgBox->center();
@@ -278,8 +277,6 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 					msgBox->addEventListener( Event::OnCancel, [fontMono]( const Event* ) {
 						FontManager::instance()->remove( fontMono );
 					} );
-					msgBox->addEventListener( Event::OnClose,
-											  [&]( const Event* ) { msgBox = nullptr; } );
 					msgBox->setTitle( i18n( "confirm_loading_font", "Font loading confirmation" ) );
 					msgBox->center();
 					msgBox->showWhenReady();
@@ -560,7 +557,8 @@ void App::onTextDropped( String text ) {
 	}
 }
 
-App::App() : mThreadPool( ThreadPool::createShared( eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
+App::App( const size_t& jobs ) :
+	mThreadPool( ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
 
 App::~App() {
 	mThreadPool.reset();
@@ -1490,7 +1488,6 @@ void App::closeFolder() {
 			i18n( "confirm_close_folder",
 				  "Do you really want to close the folder?\nSome files haven't been saved." ) );
 		msgBox->addEventListener( Event::OnConfirm, [&]( const Event* ) { closeEditors(); } );
-		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
 		msgBox->setTitle( i18n( "close_folder_question", "Close Folder?" ) );
 		msgBox->center();
 		msgBox->showWhenReady();
@@ -2301,7 +2298,7 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-				const std::string& css ) {
+				const std::string& css, const size_t& jobs ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -2928,6 +2925,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mSplitter->createEditorWithTabWidget( mBaseLayout );
 
 		mConsole = UIConsole::NewOpt( mFontMono, true, true, 1024 * 10 );
+		mConsole->setCommand( "hide", [&]( const auto& params ) { consoleToggle(); } );
 		mConsole->setQuakeMode( true );
 		mConsole->setVisible( false );
 
@@ -2998,6 +2996,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag verbose( parser, "verbose", "Print all logs to the standard output.",
 						{ 'v', "verbose" } );
 	args::Flag version( parser, "version", "Prints version information", { 'V', "version" } );
+	args::ValueFlag<size_t> jobs( parser, "jobs",
+							   "Sets the number of background jobs that the application will spawn "
+							   "at the start of the application",
+							   { 'j', "jobs" }, 0 );
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
 	} catch ( const args::Help& ) {
@@ -3021,11 +3023,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	if ( verbose.Get() )
 		Log::instance()->setConsoleOutput( true );
 
-	appInstance = eeNew( App, () );
+	appInstance = eeNew( App, ( jobs ) );
 	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
-					   benchmarkMode.Get(), css.Get() );
+					   benchmarkMode.Get(), css.Get(), jobs.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

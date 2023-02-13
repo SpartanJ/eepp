@@ -78,6 +78,8 @@ class EE_API UIConsole : public UIWidget,
 
 	void addCommand( const std::string& command, const ConsoleCallback& cb );
 
+	void setCommand( const std::string& command, const ConsoleCallback& cb );
+
 	const Uint32& getMaxLogLines() const;
 
 	void setMaxLogLines( const Uint32& maxLogLines );

@@ -353,6 +353,10 @@ void UIConsole::addCommand( const std::string& command, const ConsoleCallback& c
 		mCallbacks[command] = cb;
 }
 
+void UIConsole::setCommand( const std::string& command, const ConsoleCallback& cb ) {
+	mCallbacks[command] = cb;
+}
+
 const Uint32& UIConsole::getMaxLogLines() const {
 	return mMaxLogLines;
 }

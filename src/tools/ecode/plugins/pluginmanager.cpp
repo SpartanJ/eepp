@@ -376,7 +376,9 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		}
 	};
 	tv->addEventListener( Event::OnClose, [&, manager, tv]( const Event* ) {
-		for ( auto& cb : tv->readyCbs ) {
+		if ( tv->readyCbs.empty() )
+			return;
+		for ( const auto& cb : tv->readyCbs ) {
 			auto* plugin = manager->get( cb.first );
 			if ( plugin )
 				plugin->removeReadyCallback( cb.second );

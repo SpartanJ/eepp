@@ -29,7 +29,7 @@ void InputSDL::update() {
 		mEventsSentId = 0;
 
 	if ( !mQueuedEvents.empty() ) {
-		for ( auto prevEvent : mQueuedEvents )
+		for ( const auto& prevEvent : mQueuedEvents )
 			sendEvent( prevEvent );
 		mQueuedEvents.clear();
 	}

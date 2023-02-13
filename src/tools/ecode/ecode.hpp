@@ -26,13 +26,13 @@ class SettingsMenu;
 
 class App : public UICodeEditorSplitter::Client {
   public:
-	App();
+	App( const size_t& jobs = 0 );
 
 	~App();
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-			   const std::string& css );
+			   const std::string& css, const size_t& jobs );
 
 	void createWidgetInspector();
 

@@ -37,12 +37,12 @@ Process::~Process() {
 	mShuttingDown = true;
 	if ( mProcess )
 		destroy();
+	if ( mProcess && isAlive() )
+		kill();
 	if ( mStdOutThread.joinable() )
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )
 		mStdErrThread.join();
-	if ( mProcess && isAlive() )
-		kill();
 	eeFree( mProcess );
 }
 
@@ -199,13 +199,13 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 		SUBPROCESS_PTR_CAST( void*, _get_osfhandle( _fileno( PROCESS_PTR->stderr_file ) ) );
 	if ( stdOutFd ) {
 		mStdOutThread = std::thread( [this, stdOutFd]() {
-			DWORD n;
+			unsigned n;
 			std::string buffer;
 			buffer.resize( mBufferSize );
 			while ( !mShuttingDown ) {
-				BOOL bSuccess = ReadFile( stdOutFd, static_cast<CHAR*>( &buffer[0] ),
-										  static_cast<DWORD>( mBufferSize ), &n, nullptr );
-				if ( !bSuccess || n == 0 )
+				n = subprocess_read_stdout( PROCESS_PTR, static_cast<char* const>( &buffer[0] ),
+										mBufferSize );
+				if ( n == 0 )
 					break;
 				if ( n < static_cast<long>( mBufferSize - 1 ) )
 					buffer[n] = '\0';
@@ -216,13 +216,13 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	}
 	if ( stdErrFd && stdErrFd != stdOutFd ) {
 		mStdErrThread = std::thread( [this, stdErrFd]() {
-			DWORD n;
+			unsigned n;
 			std::string buffer;
 			buffer.resize( mBufferSize );
 			while ( !mShuttingDown ) {
-				BOOL bSuccess = ReadFile( stdErrFd, static_cast<CHAR*>( &buffer[0] ),
-										  static_cast<DWORD>( mBufferSize ), &n, nullptr );
-				if ( !bSuccess || n == 0 )
+				n = subprocess_read_stderr( PROCESS_PTR, static_cast<char* const>( &buffer[0] ),
+											mBufferSize );
+				if ( n == 0 )
 					break;
 				if ( n < static_cast<long>( mBufferSize - 1 ) )
 					buffer[n] = '\0';

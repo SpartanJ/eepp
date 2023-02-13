@@ -171,7 +171,7 @@ static LSPLocation parseLocation( const json& loc ) {
 
 static LSPLocation parseLocationLink( const json& loc ) {
 	auto uri = URI( loc[MEMBER_TARGET_URI].get<std::string>() );
-	auto vrange = loc[MEMBER_TARGET_SELECTION_RANGE];
+	json vrange = loc[MEMBER_TARGET_SELECTION_RANGE];
 	if ( vrange.is_null() )
 		vrange = loc[MEMBER_TARGET_RANGE];
 	auto range = parseRange( vrange );
@@ -230,7 +230,7 @@ static json textDocumentPositionsParams( const URI& document,
 
 static void fromJson( std::vector<char>& trigger, const json& json ) {
 	if ( !json.empty() ) {
-		const auto triggersArray = json;
+		const auto& triggersArray = json;
 		for ( const auto& t : triggersArray ) {
 			auto st = t.get<std::string>();
 			if ( st.length() )
@@ -251,7 +251,7 @@ static void fromJson( LSPCompletionOptions& options, const json& json ) {
 
 static void fromJson( LSPSignatureHelpOptions& options, const json& json ) {
 	if ( !json.empty() && json.is_object() ) {
-		auto ob = json;
+		auto& ob = json;
 		options.provider = true;
 		fromJson( options.triggerCharacters, ob["triggerCharacters"] );
 	}
@@ -259,9 +259,10 @@ static void fromJson( LSPSignatureHelpOptions& options, const json& json ) {
 
 static void fromJson( LSPDocumentOnTypeFormattingOptions& options, const json& json ) {
 	if ( !json.empty() && json.is_object() ) {
-		auto ob = json;
+		auto& ob = json;
 		options.provider = true;
-		fromJson( options.triggerCharacters, ob["moreTriggerCharacter"] );
+		if ( ob.contains( "moreTriggerCharacter" ) )
+			fromJson( options.triggerCharacters, ob["moreTriggerCharacter"] );
 		auto trigger = ob["firstTriggerCharacter"].get<std::string>();
 		if ( trigger.size() )
 			options.triggerCharacters.push_back( trigger.at( 0 ) );
@@ -270,7 +271,7 @@ static void fromJson( LSPDocumentOnTypeFormattingOptions& options, const json& j
 
 static void fromJson( LSPWorkspaceFoldersServerCapabilities& options, const json& json ) {
 	if ( json.is_object() ) {
-		auto ob = json;
+		auto& ob = json;
 		options.supported = ob.value( "supported", false );
 		if ( ob["changeNotifications"].is_boolean() ) {
 			options.changeNotifications = ob["changeNotifications"].get<bool>();
@@ -290,11 +291,11 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 			   ( value[valueName].is_boolean() || value[valueName].is_object() );
 	};
 
-	auto sync = json["textDocumentSync"];
+	auto& sync = json["textDocumentSync"];
 	caps.textDocumentSync.change = static_cast<LSPDocumentSyncKind>(
 		( sync.is_object() ? sync["change"].get<int>() : sync.get<int>() ) );
 	if ( sync.is_object() && sync.contains( "save" ) ) {
-		auto save = sync["save"];
+		auto& save = sync["save"];
 		if ( save.is_boolean() ) {
 			caps.textDocumentSync.save.includeText = save.get<bool>();
 		} else if ( save.is_object() && save.contains( "includeText" ) ) {
@@ -324,12 +325,12 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	caps.renameProvider = toBoolOrObject( json, "renameProvider" );
 	if ( json.contains( "codeActionProvider" ) &&
 		 json["codeActionProvider"].contains( "resolveProvider" ) ) {
-		auto codeActionProvider = json["codeActionProvider"];
-		caps.codeActionProvider = json["codeActionProvider"]["resolveProvider"].get<bool>();
+		auto& codeActionProvider = json["codeActionProvider"];
+		caps.codeActionProvider = codeActionProvider["resolveProvider"].get<bool>();
 	}
 	// fromJson( caps.semanticTokenProvider, json["semanticTokensProvider"] );
 	if ( json.contains( "workspace" ) ) {
-		auto workspace = json["workspace"];
+		auto& workspace = json["workspace"];
 		fromJson( caps.workspaceFolders, workspace["workspaceFolders"] );
 	}
 	caps.selectionRangeProvider = toBoolOrObject( json, "selectionRangeProvider" );
@@ -393,8 +394,8 @@ static std::vector<LSPSymbolInformation> parseWorkspaceSymbols( const json& res 
 		res.cbegin(), res.cend(), std::back_inserter( symbols ), []( const json& symbol ) {
 			LSPSymbolInformation symInfo;
 
-			const auto location = symbol.at( MEMBER_LOCATION );
-			const auto mrange = symbol.contains( MEMBER_RANGE ) ? symbol.at( MEMBER_RANGE )
+			const auto& location = symbol.at( MEMBER_LOCATION );
+			const auto& mrange = symbol.contains( MEMBER_RANGE ) ? symbol.at( MEMBER_RANGE )
 																: location.at( MEMBER_RANGE );
 
 			auto containerName = symbol.value( "containerName", "" );
@@ -443,7 +444,7 @@ static std::vector<LSPTextEdit> parseTextEditArray( const json& result ) {
 
 static void fromJson( LSPVersionedTextDocumentIdentifier& id, const json& json ) {
 	if ( json.is_object() ) {
-		auto ob = json;
+		auto& ob = json;
 		id.uri = URI( ob.at( MEMBER_URI ).get<std::string>() );
 		id.version = ob.contains( MEMBER_VERSION ) ? ob.at( MEMBER_VERSION ).get<int>() : -1;
 	}
@@ -451,7 +452,7 @@ static void fromJson( LSPVersionedTextDocumentIdentifier& id, const json& json )
 
 static LSPTextDocumentEdit parseTextDocumentEdit( const json& result ) {
 	LSPTextDocumentEdit ret;
-	auto ob = result;
+	auto& ob = result;
 	fromJson( ret.textDocument, ob.at( "textDocument" ) );
 	ret.edits = parseTextEditArray( ob.at( "edits" ) );
 	return ret;
@@ -460,16 +461,16 @@ static LSPTextDocumentEdit parseTextDocumentEdit( const json& result ) {
 static LSPWorkspaceEdit parseWorkSpaceEdit( const json& result ) {
 	LSPWorkspaceEdit ret;
 	if ( result.contains( "changes" ) ) {
-		auto changes = result.at( "changes" );
+		auto& changes = result.at( "changes" );
 		for ( auto it = changes.begin(); it != changes.end(); ++it ) {
 			ret.changes.insert( std::pair<URI, std::vector<LSPTextEdit>>(
 				URI( it.key() ), parseTextEditArray( it.value() ) ) );
 		}
 	}
 	if ( result.contains( "documentChanges" ) ) {
-		auto documentChanges = result.at( "documentChanges" );
+		auto& documentChanges = result.at( "documentChanges" );
 		// resourceOperations not supported for now
-		for ( auto edit : documentChanges ) {
+		for ( auto& edit : documentChanges ) {
 			ret.documentChanges.push_back( parseTextDocumentEdit( edit ) );
 		}
 	}
@@ -479,7 +480,7 @@ static LSPWorkspaceEdit parseWorkSpaceEdit( const json& result ) {
 static LSPCommand parseCommand( const json& result ) {
 	auto title = result.at( MEMBER_TITLE ).get<std::string>();
 	auto command = result.at( MEMBER_COMMAND ).get<std::string>();
-	auto args = result.at( MEMBER_ARGUMENTS );
+	auto& args = result.at( MEMBER_ARGUMENTS );
 	return { title, command, args };
 }
 
@@ -523,12 +524,12 @@ static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 			// CodeAction
 			auto title = action.at( MEMBER_TITLE ).get<std::string>();
 			auto kind = action.value( MEMBER_KIND, "" );
-			auto command = action.contains( MEMBER_COMMAND )
+			auto& command = action.contains( MEMBER_COMMAND )
 							   ? parseCommand( action.at( MEMBER_COMMAND ) )
 							   : LSPCommand{};
-			auto edit = action.at( MEMBER_EDIT ) ? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
+			auto& edit = action.at( MEMBER_EDIT ) ? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
 												 : LSPWorkspaceEdit{};
-			auto diagnostics = action.contains( MEMBER_DIAGNOSTICS )
+			auto& diagnostics = action.contains( MEMBER_DIAGNOSTICS )
 								   ? parseDiagnostics( action.at( MEMBER_DIAGNOSTICS ) )
 								   : std::vector<LSPDiagnostic>{};
 			LSPCodeAction action = { title, kind, diagnostics, edit, command };
@@ -550,7 +551,7 @@ static std::vector<LSPDiagnosticsCodeAction> parseDiagnosticsCodeAction( const j
 			auto title = action.at( MEMBER_TITLE ).get<std::string>();
 			auto kind = action.value( MEMBER_KIND, "" );
 			auto isPreferred = action.value( "isPreferred", false );
-			auto edit = action.contains( MEMBER_EDIT )
+			auto& edit = action.contains( MEMBER_EDIT )
 							? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
 							: LSPWorkspaceEdit{};
 			LSPDiagnosticsCodeAction action = { title, kind, isPreferred, edit };
@@ -665,7 +666,7 @@ static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
 	for ( const auto& diag : result ) {
 		auto range = parseRange( diag[MEMBER_RANGE] );
 		auto severity = static_cast<LSPDiagnosticSeverity>( diag["severity"].get<int>() );
-		auto code = diag.contains( "code" ) ? ( diag["code"].is_number_integer()
+		auto& code = diag.contains( "code" ) ? ( diag["code"].is_number_integer()
 													? String::toString( diag["code"].get<int>() )
 													: diag.at( "code" ).get<std::string>() )
 											: "";
@@ -745,7 +746,7 @@ static LSPSignatureInformation parseSignatureInformation( const json& json ) {
 		info.documentation = parseMarkupContent( json.at( MEMBER_DOCUMENTATION ) );
 	const auto& params = json.at( "parameters" );
 	for ( const auto& par : params ) {
-		auto label = par.at( MEMBER_LABEL );
+		auto& label = par.at( MEMBER_LABEL );
 		int begin = -1, end = -1;
 		if ( label.is_array() ) {
 			auto& range = label;
@@ -948,7 +949,7 @@ bool LSPClientServer::start() {
 		cmd += mLSP.commandParameters;
 	}
 	bool ret =
-		mProcess.create( cmd, Process::getDefaultOptions(), {}, mRootPath );
+		mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync, {}, mRootPath );
 	if ( ret && mProcess.isAlive() ) {
 		mProcess.startAsyncRead(
 			[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
@@ -1013,7 +1014,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 	if ( !mProcess.isAlive() )
 		return ret;
 
-	auto ob = msg;
+	json ob = msg;
 	ob["jsonrpc"] = "2.0";
 
 	// notification == no handler
@@ -1192,9 +1193,9 @@ LSPClientServer::workspaceSymbol( const std::string& querySymbol,
 	} );
 }
 
-void fromJson( LSPWorkDoneProgressValue& value, const json& json ) {
-	if ( !json.empty() ) {
-		auto ob = json;
+void fromJson( LSPWorkDoneProgressValue& value, const json& data ) {
+	if ( !data.empty() ) {
+		json ob = data;
 		auto kind = ob["kind"].get<std::string>();
 		if ( kind == "begin" ) {
 			value.kind = LSPWorkDoneProgressKind::Begin;
@@ -1335,7 +1336,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 	while ( !mProcess.isShootingDown() ) {
 		auto index = buffer.find( CONTENT_LENGTH_HEADER );
 		if ( index == std::string::npos ) {
-			if ( buffer.size() > ( 1 << 20 ) )
+			if ( buffer.size() > ( (Uint64)1 << 20 ) )
 				buffer.clear();
 			break;
 		}

@@ -418,14 +418,14 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		if ( obj.contains( "initializationOptions" ) )
 			lsp.initializationOptions = obj["initializationOptions"];
 
-		auto fp = obj["file_patterns"];
+		auto& fp = obj["file_patterns"];
 
 		for ( auto& pattern : fp )
 			lsp.filePatterns.push_back( pattern.get<std::string>() );
 
 		if ( obj.contains( "rootIndicationFileNames" ) ) {
 			lsp.rootIndicationFileNames.clear();
-			auto fnms = obj["rootIndicationFileNames"];
+			auto& fnms = obj["rootIndicationFileNames"];
 			for ( auto& fn : fnms )
 				lsp.rootIndicationFileNames.push_back( fn );
 		}
@@ -562,13 +562,13 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 		return;
 	Lock l( mDocMutex );
 	TextDocument* doc = mEditorDocs[editor];
-	auto cbs = mEditors[editor];
+	auto& cbs = mEditors[editor];
 	for ( auto listener : cbs )
 		editor->removeEventListener( listener );
 	mEditors.erase( editor );
 	mEditorsTags.erase( editor );
 	mEditorDocs.erase( editor );
-	for ( auto editor : mEditorDocs )
+	for ( auto& editor : mEditorDocs )
 		if ( editor.second == doc )
 			return;
 	mDocs.erase( doc );
@@ -591,7 +591,7 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
 			->setId( txtKey );
 	};
-	auto cap = server->getCapabilities();
+	auto& cap = server->getCapabilities();
 
 	addFn( "lsp-symbol-info", "Symbol Info" );
 

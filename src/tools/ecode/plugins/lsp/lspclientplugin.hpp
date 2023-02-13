@@ -88,7 +88,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	bool mSymbolInfoShowing{ false };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::map<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
-	Uint32 mHoverWaitCb;
+	Uint32 mHoverWaitCb{ 0 };
 	LSPHover mCurrentHover;
 	Time mHoverDelay{ Seconds( 1.f ) };
 	Uint32 mOldTextStyle{ 0 };
