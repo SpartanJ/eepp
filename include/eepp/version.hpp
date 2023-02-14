@@ -6,7 +6,7 @@
 
 #define EEPP_MAJOR_VERSION 2
 #define EEPP_MINOR_VERSION 5
-#define EEPP_PATCH_LEVEL 6
+#define EEPP_PATCH_LEVEL 7
 #define EEPP_CODENAME "Bindu"
 
 /** The compiled version of the library */
