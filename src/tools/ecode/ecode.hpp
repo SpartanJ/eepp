@@ -32,7 +32,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-			   const std::string& css, const size_t& jobs );
+			   const std::string& css );
 
 	void createWidgetInspector();
 
@@ -332,6 +332,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mColorSchemesPath;
 	std::string mKeybindingsPath;
 	std::string mResPath;
+	std::string mLanguagesPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;

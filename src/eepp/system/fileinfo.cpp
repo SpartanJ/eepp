@@ -198,6 +198,10 @@ bool FileInfo::isUninitialized() const {
 	return mModificationTime == 0;
 }
 
+std::string FileInfo::getExtension( const bool& lowerExt ) const {
+	return FileSystem::fileExtension( getFilepath(), lowerExt );
+}
+
 bool FileInfo::operator==( const FileInfo& Other ) const {
 	return ( mModificationTime == Other.mModificationTime && mSize == Other.mSize &&
 			 mOwnerId == Other.mOwnerId && mGroupId == Other.mGroupId &&

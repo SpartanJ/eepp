@@ -399,6 +399,7 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize ) {
 		FileSystem::makeDir( mConfigPath );
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mPluginsPath = mConfigPath + "plugins";
+	mLanguagesPath = mConfigPath + "languages";
 	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes" +
 						FileSystem::getOSSlash();
 	mTerminalManager = std::make_unique<TerminalManager>( this );
@@ -410,6 +411,11 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize ) {
 	if ( !FileSystem::fileExists( mPluginsPath ) )
 		FileSystem::makeDir( mPluginsPath );
 	FileSystem::dirAddSlashAtEnd( mPluginsPath );
+
+	if ( !FileSystem::fileExists( mLanguagesPath ) )
+		FileSystem::makeDir( mLanguagesPath );
+	FileSystem::dirAddSlashAtEnd( mLanguagesPath );
+
 #ifndef EE_DEBUG
 	Log::create( mConfigPath + "ecode.log", logLevel, false, true );
 #else
@@ -558,7 +564,8 @@ void App::onTextDropped( String text ) {
 }
 
 App::App( const size_t& jobs ) :
-	mThreadPool( ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
+	mThreadPool(
+		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
 
 App::~App() {
 	mThreadPool.reset();
@@ -2298,7 +2305,7 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-				const std::string& css, const size_t& jobs ) {
+				const std::string& css ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -2886,6 +2893,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			FileSystem::makeDir( mColorSchemesPath, true );
 		}
 
+		Clock customLangsClock;
+		SyntaxDefinitionManager::instance()->loadFromFolder( mLanguagesPath );
+		Log::info( "SyntaxDefinitionManager loaded custom languages in: %.2f ms",
+				   customLangsClock.getElapsedTime().asMilliseconds() );
+
 		mTerminalManager->loadTerminalColorSchemes();
 
 		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, colorSchemes, mInitColorScheme );
@@ -2925,7 +2937,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mSplitter->createEditorWithTabWidget( mBaseLayout );
 
 		mConsole = UIConsole::NewOpt( mFontMono, true, true, 1024 * 10 );
-		mConsole->setCommand( "hide", [&]( const auto& params ) { consoleToggle(); } );
+		mConsole->setCommand( "hide", [&]( const auto& ) { consoleToggle(); } );
 		mConsole->setQuakeMode( true );
 		mConsole->setVisible( false );
 
@@ -2996,10 +3008,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag verbose( parser, "verbose", "Print all logs to the standard output.",
 						{ 'v', "verbose" } );
 	args::Flag version( parser, "version", "Prints version information", { 'V', "version" } );
-	args::ValueFlag<size_t> jobs( parser, "jobs",
-							   "Sets the number of background jobs that the application will spawn "
-							   "at the start of the application",
-							   { 'j', "jobs" }, 0 );
+	args::ValueFlag<size_t> jobs(
+		parser, "jobs",
+		"Sets the number of background jobs that the application will spawn "
+		"at the start of the application",
+		{ 'j', "jobs" }, 0 );
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
 	} catch ( const args::Help& ) {
@@ -3027,7 +3040,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
-					   benchmarkMode.Get(), css.Get(), jobs.Get() );
+					   benchmarkMode.Get(), css.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

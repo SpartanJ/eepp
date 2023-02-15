@@ -1,10 +1,15 @@
+#include "tools/ecode/plugins/lsp/lspclientserver.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace EE::System;
+using json = nlohmann::json;
 
 namespace EE { namespace UI { namespace Doc {
 
@@ -3993,6 +3998,134 @@ SyntaxDefinitionManager::getPtrByLanguageName( const std::string& name ) const {
 const SyntaxDefinition*
 SyntaxDefinitionManager::getPtrByLanguageId( const String::HashType& id ) const {
 	return &getByLanguageId( id );
+}
+
+static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
+	SyntaxDefinition def;
+	try {
+		def.setLanguageName( json.value( "name", "" ) );
+		if ( json.contains( "lsp_name" ) && json["lsp_name"].is_string() )
+			def.setLSPName( json["lsp_name"].get<std::string>() );
+		if ( json.contains( "files" ) && json["files"].is_array() ) {
+			const auto& files = json["files"];
+			for ( const auto& file : files ) {
+				def.addFileType( file );
+			}
+		}
+		def.setComment( json.value( "comment", "" ) );
+		if ( json.contains( "patterns" ) && json["patterns"].is_array() ) {
+			const auto& patterns = json["patterns"];
+			for ( const auto& pattern : patterns ) {
+				auto type = pattern.value( "type", "normal" );
+				auto syntax = pattern.value( "syntax", "" );
+				std::vector<std::string> ptrns;
+				if ( pattern.contains( "pattern" ) ) {
+					if ( pattern["pattern"].is_array() ) {
+						const auto& ptrnIt = pattern["pattern"];
+						for ( const auto& ptrn : ptrnIt )
+							ptrns.emplace_back( ptrn );
+					} else if ( pattern["pattern"].is_string() ) {
+						ptrns.emplace_back( pattern["pattern"] );
+					}
+				}
+				def.addPattern( SyntaxPattern( ptrns, type, syntax ) );
+			}
+		}
+		if ( json.contains( "symbols" ) && json["symbols"].is_array() ) {
+			const auto& symbols = json["symbols"];
+			for ( const auto& symbol : symbols ) {
+				for ( auto& el : symbol.items() ) {
+					def.addSymbol( el.key(), el.value() );
+				}
+			}
+		}
+		if ( json.contains( "headers" ) && json["headers"].is_array() ) {
+			const auto& headers = json["headers"];
+			std::vector<std::string> hds;
+			for ( const auto& header : headers ) {
+				if ( header.is_string() )
+					hds.emplace_back( header.get<std::string>() );
+			}
+			if ( !hds.empty() )
+				def.setHeaders( hds );
+		}
+		if ( json.contains( "visible" ) && json["visible"].is_boolean() )
+			def.setVisible( json["visible"].get<bool>() );
+		if ( json.contains( "auto_close_xml_tags" ) && json["auto_close_xml_tags"].is_boolean() )
+			def.setAutoCloseXMLTags( json["auto_close_xml_tags"].get<bool>() );
+	} catch ( const json::exception& e ) {
+		Log::error( "SyntaxDefinition loadLanguage failed:\n%s", e.what() );
+	}
+	return def;
+}
+
+bool SyntaxDefinitionManager::loadFromStream( IOStream& stream ) {
+	if ( stream.getSize() == 0 )
+		return false;
+	std::string buffer;
+	buffer.resize( stream.getSize() );
+	stream.read( buffer.data(), buffer.size() );
+
+	nlohmann::json j = nlohmann::json::parse( buffer );
+
+	if ( j.is_array() ) {
+		for ( const auto& lang : j ) {
+			auto res = loadLanguage( lang );
+			if ( !res.getLanguageName().empty() ) {
+				mDefinitions.emplace_back( std::move( res ) );
+			}
+		}
+	} else {
+		auto res = loadLanguage( j );
+		if ( !res.getLanguageName().empty() ) {
+			mDefinitions.emplace_back( std::move( res ) );
+		}
+	}
+
+	return true;
+}
+
+bool SyntaxDefinitionManager::loadFromFile( const std::string& fpath ) {
+	if ( FileSystem::fileExists( fpath ) ) {
+		IOStreamFile IOS( fpath );
+
+		return loadFromStream( IOS );
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+		std::string tgPath( fpath );
+
+		Pack* tPack = PackManager::instance()->exists( tgPath );
+
+		if ( NULL != tPack ) {
+			return loadFromPack( tPack, tgPath );
+		}
+	}
+	return false;
+}
+
+bool SyntaxDefinitionManager::loadFromMemory( const Uint8* data, const Uint32& dataSize ) {
+	IOStreamMemory IOS( (const char*)data, dataSize );
+	return loadFromStream( IOS );
+}
+
+bool SyntaxDefinitionManager::loadFromPack( Pack* Pack, const std::string& filePackPath ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( filePackPath ) ) {
+		ScopedBuffer buffer;
+		Pack->extractFileToMemory( filePackPath, buffer );
+		return loadFromMemory( buffer.get(), buffer.length() );
+	}
+	return false;
+}
+
+void SyntaxDefinitionManager::loadFromFolder( const std::string& folderPath ) {
+	if ( !FileSystem::isDirectory( folderPath ) )
+		return;
+	auto files = FileSystem::filesInfoGetInPath( folderPath );
+	if ( files.empty() )
+		return;
+	for ( const auto& file : files ) {
+		if ( file.isRegularFile() && file.isReadable() && file.getExtension() == "json" )
+			loadFromFile( file.getFilepath() );
+	}
 }
 
 const SyntaxDefinition&

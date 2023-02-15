@@ -81,9 +81,13 @@ class EE_API SyntaxDefinition {
 
 	bool getAutoCloseXMLTags() const;
 
-	SyntaxDefinition& setAutoCloseXMLTags(bool autoCloseXMLTags);
+	SyntaxDefinition& setAutoCloseXMLTags( bool autoCloseXMLTags );
 
-	protected:
+	SyntaxDefinition& setLanguageName( const std::string& languageName );
+
+	SyntaxDefinition& setLSPName( const std::string& lSPName );
+
+  protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;

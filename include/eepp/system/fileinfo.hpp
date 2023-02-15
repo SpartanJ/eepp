@@ -74,6 +74,8 @@ class EE_API FileInfo {
 
 	bool isUninitialized() const;
 
+	std::string getExtension( const bool& lowerExt = true ) const;
+
   protected:
 	mutable std::string mFilepath;
 	std::string mFileName;

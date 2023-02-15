@@ -133,6 +133,18 @@ SyntaxDefinition& SyntaxDefinition::setAutoCloseXMLTags( bool autoCloseXMLTags )
 	return *this;
 }
 
+SyntaxDefinition& SyntaxDefinition::setLanguageName( const std::string& languageName ) {
+	mLanguageName = languageName;
+	mLSPName = String::toLower( languageName );
+	mLanguageId = String::hash( mLSPName );
+	return *this;
+}
+
+SyntaxDefinition& SyntaxDefinition::setLSPName( const std::string& lSPName ) {
+	mLSPName = lSPName;
+	return *this;
+}
+
 const std::string& SyntaxDefinition::getLanguageName() const {
 	return mLanguageName;
 }

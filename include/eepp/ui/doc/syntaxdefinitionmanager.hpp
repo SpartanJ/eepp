@@ -2,9 +2,13 @@
 #define EE_UI_DOC_SYNTAXSTYLEMANAGER_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/system/iostream.hpp>
+#include <eepp/system/pack.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <vector>
+
+using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
 
@@ -38,6 +42,16 @@ class EE_API SyntaxDefinitionManager {
 	const SyntaxDefinition* getPtrByLanguageName( const std::string& name ) const;
 
 	const SyntaxDefinition* getPtrByLanguageId( const String::HashType& id ) const;
+
+	bool loadFromStream( IOStream& stream );
+
+	bool loadFromFile( const std::string& fpath );
+
+	bool loadFromMemory( const Uint8* data, const Uint32& dataSize );
+
+	bool loadFromPack( Pack* Pack, const std::string& filePackPath );
+
+	void loadFromFolder( const std::string& folderPath );
 
   protected:
 	SyntaxDefinitionManager();
