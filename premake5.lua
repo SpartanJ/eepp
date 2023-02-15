@@ -674,6 +674,7 @@ function build_eepp( build_name )
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
+		buildoptions { "/bigobj" }
 end
 
 workspace "eepp"

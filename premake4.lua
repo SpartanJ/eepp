@@ -898,6 +898,7 @@ function build_eepp( build_name )
 		buildoptions{ "-std=c++17" }
 	else
 		buildoptions{ "/std:c++17" }
+		buildoptions{ "/bigobj" }
 	end
 
 	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then
