@@ -2,6 +2,7 @@
 #define ECODE_FEATURESHEALTH_HPP
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace ecode {
@@ -10,6 +11,17 @@ class PluginManager;
 
 class FeaturesHealth {
   public:
+	enum class OutputFormat : int { Ascii, Terminal, Markdown, AsciiDoc };
+
+	static std::unordered_map<std::string, OutputFormat> getMapFlag() {
+		return { { "ascii", OutputFormat::Ascii },
+				 { "terminal", OutputFormat::Terminal },
+				 { "markdown", OutputFormat::Markdown },
+				 { "asciidoc", OutputFormat::AsciiDoc } };
+	}
+
+	static OutputFormat getDefaultOutputFormat() { return OutputFormat::Terminal; }
+
 	struct FeatureStatus {
 		std::string name;
 		std::string path;
@@ -23,9 +35,13 @@ class FeaturesHealth {
 		FeatureStatus lsp;
 	};
 
-	static std::vector<LangHealth> getHealth( PluginManager* pluginManager );
+	static std::vector<LangHealth> getHealth( PluginManager* pluginManager,
+											  const std::string& lang = "" );
 
-	static void printHealth( PluginManager* pluginManager );
+	static std::string generateHealthStatus( PluginManager* pluginManager, OutputFormat format );
+
+	static void doHealth( PluginManager* pluginManager, const std::string& lang = "",
+						  const OutputFormat& format = OutputFormat::Terminal );
 };
 
 } // namespace ecode

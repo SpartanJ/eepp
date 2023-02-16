@@ -1210,6 +1210,16 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 		->add( i18n( "go_to_line", "Go to line..." ), findIcon( "go-to-line" ),
 			   getKeybind( "go-to-line" ) )
 		->setId( "go-to-line" );
+
+	mToolsMenu->addSeparator();
+
+	mToolsMenu
+		->add( i18n( "check_languages_health", "Check Languages Health" ), nullptr,
+			   getKeybind( "check-languages-health" ) )
+		->setId( "check-languages-health" );
+
+	mToolsMenu->addSeparator();
+
 	mToolsMenu
 		->add( i18n( "load_cur_dir_as_folder", "Load current document directory as folder" ),
 			   findIcon( "folder" ), getKeybind( "load-current-dir" ) )

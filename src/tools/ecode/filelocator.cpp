@@ -157,9 +157,11 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 				if ( idx.isValid() ) {
 					auto cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
 					mApp->runCommand( cmd );
-					if ( mSplitter->curEditorIsNotNull() &&
-						 mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
-						mSplitter->getCurEditor()->setFocus();
+					if ( !mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
+						if ( mSplitter->curEditorIsNotNull() &&
+							 mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
+							mSplitter->getCurEditor()->setFocus();
+					}
 				}
 				hideLocateBar();
 			} else {

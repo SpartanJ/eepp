@@ -13,16 +13,48 @@ using namespace tabulate;
 
 namespace ecode {
 
-std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager* pluginManager ) {
+inline static bool sortKey( const FeaturesHealth::LangHealth& struct1,
+							const FeaturesHealth::LangHealth& struct2 ) {
+	return ( struct1.lang < struct2.lang );
+}
+
+std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager* pluginManager,
+																   const std::string& lang ) {
 	std::vector<FeaturesHealth::LangHealth> langs;
+	bool ownsLinter = false;
+	bool ownsFormatter = false;
+	bool ownsLSP = false;
 
 	const auto& definitions = SyntaxDefinitionManager::instance()->getDefinitions();
+
 	LinterPlugin* linter = static_cast<LinterPlugin*>( pluginManager->get( "linter" ) );
+
 	FormatterPlugin* formatter =
 		static_cast<FormatterPlugin*>( pluginManager->get( "autoformatter" ) );
+
 	LSPClientPlugin* lsp = static_cast<LSPClientPlugin*>( pluginManager->get( "lspclient" ) );
 
+	if ( !linter ) {
+		ownsLinter = true;
+		linter = static_cast<LinterPlugin*>( LinterPlugin::NewSync( pluginManager ) );
+	}
+
+	if ( !formatter ) {
+		ownsFormatter = true;
+		formatter = static_cast<FormatterPlugin*>( FormatterPlugin::NewSync( pluginManager ) );
+	}
+	if ( !lsp ) {
+		ownsLSP = true;
+		lsp = static_cast<LSPClientPlugin*>( LSPClientPlugin::NewSync( pluginManager ) );
+	}
+
 	for ( const auto& def : definitions ) {
+		if ( !def.isVisible() )
+			continue;
+
+		if ( !lang.empty() && lang != def.getLSPName() )
+			continue;
+
 		FeaturesHealth::LangHealth lang;
 		lang.lang = def.getLSPName();
 		lang.syntaxHighlighting = true;
@@ -62,10 +94,22 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		langs.emplace_back( std::move( lang ) );
 	}
 
+	if ( ownsLinter )
+		eeSAFE_DELETE( linter );
+
+	if ( ownsFormatter )
+		eeSAFE_DELETE( formatter );
+
+	if ( ownsLSP )
+		eeSAFE_DELETE( lsp );
+
+	std::sort( langs.begin(), langs.end(), sortKey );
+
 	return langs;
 }
 
-void FeaturesHealth::printHealth( PluginManager* pluginManager ) {
+std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
+												  OutputFormat format ) {
 	auto status( getHealth( pluginManager ) );
 	Table table;
 	table.format().border_top( "" ).border_bottom( "" ).border_left( "" ).border_right( "" ).corner(
@@ -114,7 +158,64 @@ void FeaturesHealth::printHealth( PluginManager* pluginManager ) {
 		}
 	}
 
-	std::cout << table << "\n";
+	if ( OutputFormat::Markdown == format ) {
+		MarkdownExporter exporter;
+		return exporter.dump( table );
+	} else if ( OutputFormat::AsciiDoc == format ) {
+		AsciiDocExporter exporter;
+		return exporter.dump( table );
+	} else if ( OutputFormat::Terminal == format ) {
+		std::cout << table << "\n";
+		return "";
+	}
+
+	return table.str();
+}
+
+void FeaturesHealth::doHealth( PluginManager* pluginManager, const std::string& lang,
+							   const OutputFormat& format ) {
+	if ( lang.empty() ) {
+		if ( format != FeaturesHealth::OutputFormat::Terminal ) {
+			std::cout << FeaturesHealth::generateHealthStatus( pluginManager, format ) << "\n";
+		} else {
+			FeaturesHealth::generateHealthStatus( pluginManager, format );
+		}
+	} else {
+		auto healthRes = FeaturesHealth::getHealth( pluginManager, lang );
+		if ( healthRes.empty() )
+			return;
+
+		auto& hr = healthRes[0];
+		const std::string notFound = "Not found in $PATH";
+		const std::string none = "None";
+
+		std::string lspName = hr.lsp.name.empty() ? "\033[33mNone" : "\033[32m" + hr.lsp.name;
+		std::string lspBinary = hr.lsp.found ? "\033[32m" + hr.lsp.path : "\033[31m" + notFound;
+
+		std::cout << "Highlight: \033[32mFound\n\033[00m";
+
+		std::cout << "Configured language server: " << lspName << "\n\033[00m";
+		if ( !hr.lsp.name.empty() )
+			std::cout << "Binary for language server: " << lspBinary << "\n\033[00m";
+
+		std::string linterName =
+			hr.linter.name.empty() ? "\033[33mNone" : "\033[32m" + hr.linter.name;
+		std::string linterBinary =
+			hr.linter.found ? "\033[32m" + hr.linter.path : "\033[31m" + notFound;
+
+		std::cout << "Configured linter: " << linterName << "\n\033[00m";
+		if ( !hr.linter.name.empty() )
+			std::cout << "Binary for linter: " << linterBinary << "\n\033[00m";
+
+		std::string formatterName =
+			hr.formatter.name.empty() ? "\033[33mNone" : "\033[32m" + hr.formatter.name;
+		std::string formatterBinary =
+			hr.formatter.found ? "\033[32m" + hr.formatter.path : "\033[31m" + notFound;
+
+		std::cout << "Configured formatter: " << formatterName << "\n\033[00m";
+		if ( !hr.formatter.name.empty() )
+			std::cout << "Binary for formatter: " << formatterBinary << "\n\033[00m";
+	}
 }
 
 } // namespace ecode

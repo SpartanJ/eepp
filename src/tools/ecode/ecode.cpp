@@ -2250,6 +2250,34 @@ void App::loadFileSystemMatcher( const std::string& folderPath ) {
 		std::make_shared<GitIgnoreMatcher>( folderPath, ".ecode/.fstreeviewignore" );
 }
 
+static std::string GetCurrentProcessName() {
+#if defined( __APPLE__ ) || defined( __FreeBSD__ )
+	return getprogname();
+#elif defined( _GNU_SOURCE )
+	return program_invocation_name;
+#elif defined( _WIN32 )
+	return __argv[0];
+#else
+	return "?";
+#endif
+}
+
+void App::checkLanguagesHealth() {
+	auto path( Sys::getProcessPath() );
+	FileSystem::dirAddSlashAtEnd( path );
+	if ( String::startsWith( GetCurrentProcessName(), Sys::getProcessPath() ) ) {
+		auto proc( GetCurrentProcessName() );
+		FileSystem::filePathRemoveProcessPath( proc );
+		path += proc;
+	} else {
+		path += GetCurrentProcessName();
+	}
+	path += " --health";
+	UITerminal* term = mTerminalManager->createNewTerminal();
+	term->setFocus();
+	term->executeFile( path );
+}
+
 void App::loadFolder( const std::string& path ) {
 	if ( !mCurrentProject.empty() )
 		closeEditors();
@@ -2306,7 +2334,8 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-				const std::string& css, bool health ) {
+				const std::string& css, bool health, const std::string& healthLang,
+				FeaturesHealth::OutputFormat healthFormat ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -2334,7 +2363,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	loadConfig( logLevel, currentDisplay->getSize(), health );
 
 	if ( health ) {
-		FeaturesHealth::printHealth( mPluginManager.get() );
+		FeaturesHealth::doHealth( mPluginManager.get(), healthLang, healthFormat );
 		return;
 	}
 
@@ -3020,7 +3049,15 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"at the start of the application",
 		{ 'j', "jobs" }, 0 );
 	args::Flag health( parser, "health", "Checks for potential errors in editor setup.",
-					   { "health" } );
+					   { "health" }, "" );
+	args::ValueFlag<std::string> healthLang( parser, "health-lang",
+											 "Checks for potential errors in editor setup.",
+											 { "health-lang" }, "" );
+	args::MapFlag<std::string, FeaturesHealth::OutputFormat> healthFormat(
+		parser, "health-format", "Checks for potential errors in editor setup.",
+		{ "health-format" }, FeaturesHealth::getMapFlag(),
+		FeaturesHealth::getDefaultOutputFormat() );
+
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
 	} catch ( const args::Help& ) {
@@ -3048,7 +3085,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
-					   benchmarkMode.Get(), css.Get(), health.Get() );
+					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
+					   healthFormat.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

@@ -3,6 +3,7 @@
 
 #include "appconfig.hpp"
 #include "docsearchcontroller.hpp"
+#include "featureshealth.hpp"
 #include "filelocator.hpp"
 #include "filesystemlistener.hpp"
 #include "globalsearchcontroller.hpp"
@@ -32,7 +33,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-			   const std::string& css, bool health );
+			   const std::string& css, bool health, const std::string& healthLang,
+			   ecode::FeaturesHealth::OutputFormat healthFormat );
 
 	void createWidgetInspector();
 
@@ -229,6 +231,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "terminal-font", [&] { openFontDialog( mConfig.ui.terminalFont, false ); } );
 		t.setCommand( "fallback-font", [&] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
 		t.setCommand( "tree-view-configure-ignore-files", [&] { treeViewConfigureIgnoreFiles(); } );
+		t.setCommand( "check-languages-health", [&] { checkLanguagesHealth(); } );
 		mSplitter->registerSplitterCommands( t );
 	}
 
@@ -304,6 +307,8 @@ class App : public UICodeEditorSplitter::Client {
 	void treeViewConfigureIgnoreFiles();
 
 	void loadFileSystemMatcher( const std::string& folderPath );
+
+	void checkLanguagesHealth();
 
   protected:
 	EE::Window::Window* mWindow{ nullptr };

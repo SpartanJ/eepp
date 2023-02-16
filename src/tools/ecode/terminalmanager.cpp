@@ -141,7 +141,8 @@ void TerminalManager::updateMenuColorScheme( UIMenuSubMenu* colorSchemeMenu ) {
 
 UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
 												const std::string& workingDir,
-												const std::string& program ) {
+												const std::string& program,
+												const std::vector<std::string>& args ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK,
@@ -181,7 +182,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	UITerminal* term = UITerminal::New(
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
-		program, {}, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(), 10000,
+		program, args, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(), 10000,
 		nullptr, mUseFrameBuffer );
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
