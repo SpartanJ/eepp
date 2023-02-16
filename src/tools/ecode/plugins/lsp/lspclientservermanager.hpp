@@ -68,6 +68,11 @@ class LSPClientServerManager {
 
 	void memoryUsage( std::shared_ptr<TextDocument> doc );
 
+	const std::vector<LSPDefinition>& getLSPs() const;
+
+	LSPDefinition getLSPForLang( const std::string& lang,
+								 const std::vector<std::string>& extensions ) const;
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };

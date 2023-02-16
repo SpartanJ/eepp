@@ -130,7 +130,7 @@ struct AppConfig {
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,
 			   std::vector<std::string>& recentFolders, const std::string& resPath,
-			   PluginManager* pluginManager, const Sizei& displaySize );
+			   PluginManager* pluginManager, const Sizei& displaySize, bool sync );
 
 	void save( const std::vector<std::string>& recentFiles,
 			   const std::vector<std::string>& recentFolders, const std::string& panelPartition,

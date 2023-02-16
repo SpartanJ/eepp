@@ -23,16 +23,24 @@ namespace ecode {
 #endif
 
 UICodeEditorPlugin* LinterPlugin::New( PluginManager* pluginManager ) {
-	return eeNew( LinterPlugin, ( pluginManager ) );
+	return eeNew( LinterPlugin, ( pluginManager, false ) );
 }
 
-LinterPlugin::LinterPlugin( PluginManager* pluginManager ) :
+UICodeEditorPlugin* LinterPlugin::NewSync( PluginManager* pluginManager ) {
+	return eeNew( LinterPlugin, ( pluginManager, true ) );
+}
+
+LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) :
 	mManager( pluginManager ), mPool( pluginManager->getThreadPool() ) {
+	if ( sync ) {
+		load( pluginManager );
+	} else {
 #if LINTER_THREADED
-	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
+		mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 #else
-	load( pluginManager );
+		load( pluginManager );
 #endif
+	}
 }
 
 LinterPlugin::~LinterPlugin() {
@@ -159,6 +167,19 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 			continue;
 
 		Linter linter;
+
+		if ( obj.contains( "language" ) ) {
+			if ( obj["language"].is_array() ) {
+				const auto& langs = obj["language"];
+				for ( const auto& lang : langs ) {
+					if ( lang.is_string() )
+						linter.languages.push_back( lang.get<std::string>() );
+				}
+			} else if ( obj["language"].is_string() ) {
+				linter.languages.push_back( obj["language"].get<std::string>() );
+			}
+		}
+
 		auto fp = obj["file_patterns"];
 
 		for ( auto& pattern : fp )
@@ -446,6 +467,32 @@ bool LinterPlugin::getErrorLens() const {
 
 void LinterPlugin::setErrorLens( bool errorLens ) {
 	mErrorLens = errorLens;
+}
+
+const std::vector<Linter>& LinterPlugin::getLinters() const {
+	return mLinters;
+}
+
+Linter LinterPlugin::getLinterForLang( const std::string& lang,
+									   const std::vector<std::string>& extensions ) {
+	for ( const auto& linter : mLinters ) {
+		for ( const auto& clang : linter.languages ) {
+			if ( clang == lang ) {
+				return linter;
+			}
+		}
+
+		if ( !linter.files.empty() ) {
+			for ( const auto& file : linter.files ) {
+				for ( const auto& ext : extensions ) {
+					if ( ext == file ) {
+						return linter;
+					}
+				}
+			}
+		}
+	}
+	return {};
 }
 
 void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {

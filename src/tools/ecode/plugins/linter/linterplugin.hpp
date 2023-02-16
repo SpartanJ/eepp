@@ -19,6 +19,7 @@ enum class LinterType { Notice, Warning, Error };
 enum class MatchOrigin { Linter, Diagnostics };
 
 struct Linter {
+	std::vector<std::string> languages;
 	std::vector<std::string> files;
 	std::vector<std::string> warningPattern;
 	bool columnsStartAtZero{ false };
@@ -53,9 +54,13 @@ class LinterPlugin : public UICodeEditorPlugin {
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New,
-				 { 0, 1, 0 } };
+				 { 0, 1, 0 },
+				 LinterPlugin::NewSync };
 	}
+
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+
+	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~LinterPlugin();
 
@@ -99,6 +104,10 @@ class LinterPlugin : public UICodeEditorPlugin {
 
 	void setErrorLens( bool errorLens );
 
+	const std::vector<Linter>& getLinters() const;
+
+	Linter getLinterForLang( const std::string& lang, const std::vector<std::string>& extensions );
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mPool;
@@ -124,7 +133,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
 
-	LinterPlugin( PluginManager* pluginManager );
+	LinterPlugin( PluginManager* pluginManager, bool sync );
 
 	void load( PluginManager* pluginManager );
 

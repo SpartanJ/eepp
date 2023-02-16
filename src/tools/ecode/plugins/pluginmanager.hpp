@@ -56,6 +56,7 @@ struct PluginDefinition {
 	std::string description;
 	PluginCreatorFn creatorFn;
 	PluginVersion version;
+	PluginCreatorFn creatorSyncFn{ nullptr };
 };
 
 enum class PluginMessageType {
@@ -218,7 +219,7 @@ class PluginManager {
 
 	UICodeEditorPlugin* get( const std::string& id );
 
-	bool setEnabled( const std::string& id, bool enable );
+	bool setEnabled( const std::string& id, bool enable, bool sync = false );
 
 	bool isEnabled( const std::string& id ) const;
 
@@ -230,7 +231,7 @@ class PluginManager {
 
 	void onNewEditor( UICodeEditor* editor );
 
-	void setPluginsEnabled( const std::map<std::string, bool>& pluginsEnabled );
+	void setPluginsEnabled( const std::map<std::string, bool>& pluginsEnabled, bool sync );
 
 	const std::shared_ptr<ThreadPool>& getThreadPool() const;
 

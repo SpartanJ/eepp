@@ -32,7 +32,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-			   const std::string& css );
+			   const std::string& css, bool health );
 
 	void createWidgetInspector();
 
@@ -54,7 +54,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void runCommand( const std::string& command );
 
-	void loadConfig( const LogLevel& logLevel, const Sizeu& displaySize );
+	void loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync );
 
 	void saveConfig();
 

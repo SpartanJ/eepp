@@ -22,14 +22,13 @@ namespace ecode {
 class LSPClientPlugin : public UICodeEditorPlugin {
   public:
 	static PluginDefinition Definition() {
-		return { "lspclient",
-				 "LSP Client",
-				 "Language Server Protocol Client.",
-				 LSPClientPlugin::New,
-				 { 0, 0, 1 } };
+		return { "lspclient",		   "LSP Client", "Language Server Protocol Client.",
+				 LSPClientPlugin::New, { 0, 0, 1 },	 LSPClientPlugin::NewSync };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+
+	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~LSPClientPlugin();
 
@@ -94,7 +93,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
 
-	LSPClientPlugin( PluginManager* pluginManager );
+	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 
 	void load( PluginManager* pluginManager );
 

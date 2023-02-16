@@ -53,6 +53,8 @@ class EE_API SyntaxDefinitionManager {
 
 	void loadFromFolder( const std::string& folderPath );
 
+	const std::vector<SyntaxDefinition>& getDefinitions() const;
+
   protected:
 	SyntaxDefinitionManager();
 

@@ -1,4 +1,5 @@
 #include "ecode.hpp"
+#include "featureshealth.hpp"
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
@@ -393,7 +394,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
 }
 
-void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize ) {
+void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync ) {
 	mConfigPath = Sys::getConfigPath( "ecode" );
 	if ( !FileSystem::fileExists( mConfigPath ) )
 		FileSystem::makeDir( mConfigPath );
@@ -425,7 +426,7 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize ) {
 	initPluginManager();
 
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
-				  mResPath, mPluginManager.get(), displaySize.asInt() );
+				  mResPath, mPluginManager.get(), displaySize.asInt(), sync );
 }
 
 void App::saveConfig() {
@@ -2305,7 +2306,7 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-				const std::string& css ) {
+				const std::string& css, bool health ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -2330,7 +2331,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
-	loadConfig( logLevel, currentDisplay->getSize() );
+	loadConfig( logLevel, currentDisplay->getSize(), health );
+
+	if ( health ) {
+		FeaturesHealth::printHealth( mPluginManager.get() );
+		return;
+	}
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
 															  displayManager->getDisplayCount()
@@ -3013,6 +3019,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"Sets the number of background jobs that the application will spawn "
 		"at the start of the application",
 		{ 'j', "jobs" }, 0 );
+	args::Flag health( parser, "health", "Checks for potential errors in editor setup.",
+					   { "health" } );
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
 	} catch ( const args::Help& ) {
@@ -3040,7 +3048,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
-					   benchmarkMode.Get(), css.Get() );
+					   benchmarkMode.Get(), css.Get(), health.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

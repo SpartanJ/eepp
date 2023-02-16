@@ -24,16 +24,24 @@ namespace ecode {
 #endif
 
 UICodeEditorPlugin* FormatterPlugin::New( PluginManager* pluginManager ) {
-	return eeNew( FormatterPlugin, ( pluginManager ) );
+	return eeNew( FormatterPlugin, ( pluginManager, false ) );
 }
 
-FormatterPlugin::FormatterPlugin( PluginManager* pluginManager ) :
+UICodeEditorPlugin* FormatterPlugin::NewSync( PluginManager* pluginManager ) {
+	return eeNew( FormatterPlugin, ( pluginManager, true ) );
+}
+
+FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 	mManager( pluginManager ), mPool( pluginManager->getThreadPool() ) {
+	if ( sync ) {
+		load( pluginManager );
+	} else {
 #if FORMATTER_THREADED
-	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
+		mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
 #else
-	load( pluginManager );
+		load( pluginManager );
 #endif
+	}
 	mManager->subscribeMessages( this, [&]( const PluginMessage& msg ) -> PluginRequestHandle {
 		return processResponse( msg );
 	} );
@@ -180,6 +188,18 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 		Formatter formatter;
 		auto fp = obj["file_patterns"];
 
+		if ( obj.contains( "language" ) ) {
+			if ( obj["language"].is_array() ) {
+				const auto& langs = obj["language"];
+				for ( const auto& lang : langs ) {
+					if ( lang.is_string() )
+						formatter.languages.push_back( lang.get<std::string>() );
+				}
+			} else if ( obj["language"].is_string() ) {
+				formatter.languages.push_back( obj["language"].get<std::string>() );
+			}
+		}
+
 		for ( auto& pattern : fp )
 			formatter.files.push_back( pattern.get<std::string>() );
 
@@ -261,6 +281,33 @@ bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		->setId( "format-doc" );
 
 	return false;
+}
+
+const std::vector<FormatterPlugin::Formatter>& FormatterPlugin::getFormatters() const {
+	return mFormatters;
+}
+
+FormatterPlugin::Formatter
+FormatterPlugin::getFormatterForLang( const std::string& lang,
+									  const std::vector<std::string>& extensions ) {
+	for ( const auto& formatter : mFormatters ) {
+		for ( const auto& clang : formatter.languages ) {
+			if ( clang == lang ) {
+				return formatter;
+			}
+		}
+
+		if ( !formatter.files.empty() ) {
+			for ( const auto& file : formatter.files ) {
+				for ( const auto& ext : extensions ) {
+					if ( ext == file ) {
+						return formatter;
+					}
+				}
+			}
+		}
+	}
+	return {};
 }
 
 void FormatterPlugin::formatDoc( UICodeEditor* editor ) {

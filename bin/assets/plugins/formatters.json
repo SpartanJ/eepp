@@ -7,42 +7,51 @@
   },
   "formatters": [
     {
+      "language": ["javascript", "typescript"],
       "file_patterns": ["%.js$", "%.ts$"],
       "command": "prettier $FILENAME"
     },
     {
+      "language": ["c", "cpp"],
       "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"],
       "command": "clang-format --style=file $FILENAME"
     },
     {
+      "language": "python",
       "file_patterns": ["%.py$", "%.pyw$"],
       "command": "black $FILENAME",
       "type": "inplace"
     },
     {
+      "language": "kotlin",
       "file_patterns": ["%.kt$"],
       "command": "ktlint -F $FILENAME",
       "type": "inplace"
     },
     {
+      "language": "rust",
       "file_patterns": ["%.rs"],
       "command": "rustfmt --emit stdout --color never $FILENAME"
     },
     {
+      "language": "go",
       "file_patterns": ["%.go"],
       "command": "gopls format $FILENAME"
     },
     {
+      "language": "json",
       "file_patterns": ["%.json$", "%.cson$"],
       "command": "json",
       "type": "native"
     },
     {
+      "language": [ "xml", "html" ],
       "file_patterns": ["%.xml", "%.html?$"],
       "command": "xml",
       "type": "native"
     },
     {
+      "language": "css",
       "file_patterns": ["%.css"],
       "command": "css",
       "type": "native"

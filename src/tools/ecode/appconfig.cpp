@@ -43,7 +43,7 @@ static std::vector<std::string> urlDecode( const std::vector<std::string>& vec )
 void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 					  std::string& initColorScheme, std::vector<std::string>& recentFiles,
 					  std::vector<std::string>& recentFolders, const std::string& resPath,
-					  PluginManager* pluginManager, const Sizei& displaySize ) {
+					  PluginManager* pluginManager, const Sizei& displaySize, bool sync ) {
 	keybindingsPath = confPath + "keybindings.cfg";
 	ini.loadFromFile( confPath + "config.cfg" );
 	iniState.loadFromFile( confPath + "state.cfg" );
@@ -157,7 +157,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 			ini.getValueB( "plugins", creator.first,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
 							   "autoformatter" == creator.first || "lspclient" == creator.first );
-	pluginManager->setPluginsEnabled( pluginsEnabled );
+	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 
 	iniInfo = FileInfo( ini.path() );
 }

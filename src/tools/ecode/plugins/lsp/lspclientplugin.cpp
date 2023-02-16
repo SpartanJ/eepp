@@ -15,12 +15,20 @@ using json = nlohmann::json;
 namespace ecode {
 
 UICodeEditorPlugin* LSPClientPlugin::New( PluginManager* pluginManager ) {
-	return eeNew( LSPClientPlugin, ( pluginManager ) );
+	return eeNew( LSPClientPlugin, ( pluginManager, false ) );
 }
 
-LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager ) :
+UICodeEditorPlugin* LSPClientPlugin::NewSync( PluginManager* pluginManager ) {
+	return eeNew( LSPClientPlugin, ( pluginManager, true ) );
+}
+
+LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 	mManager( pluginManager ), mThreadPool( pluginManager->getThreadPool() ) {
-	mThreadPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
+	if ( sync ) {
+		load( pluginManager );
+	} else {
+		mThreadPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
+	}
 }
 
 LSPClientPlugin::~LSPClientPlugin() {

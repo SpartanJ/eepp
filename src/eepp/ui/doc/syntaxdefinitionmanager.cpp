@@ -133,6 +133,10 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addVue();
 }
 
+const std::vector<SyntaxDefinition>& SyntaxDefinitionManager::getDefinitions() const {
+	return mDefinitions;
+}
+
 void SyntaxDefinitionManager::addPlainText() {
 	add( { "Plain Text", { "%.txt$" }, {}, {}, "", {}, "plaintext" } );
 }

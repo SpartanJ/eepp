@@ -1151,6 +1151,8 @@
 ../../src/tools/ecode/ecode.hpp
 ../../src/tools/ecode/docsearchcontroller.cpp
 ../../src/tools/ecode/docsearchcontroller.hpp
+../../src/tools/ecode/featureshealth.cpp
+../../src/tools/ecode/featureshealth.hpp
 ../../src/tools/ecode/filelocator.cpp
 ../../src/tools/ecode/filelocator.hpp
 ../../src/tools/ecode/filesystemlistener.cpp

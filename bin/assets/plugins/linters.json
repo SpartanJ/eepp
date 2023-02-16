@@ -4,12 +4,14 @@
   },
   "linters": [
     {
+      "language": "php",
       "file_patterns": ["%.php$"],
       "warning_pattern": "[%a ]+:%s+(.*)%s+in%s.*on%sline%s+(%d+)",
       "warning_pattern_order": { "line": 2, "col": 0, "message": 1 },
       "command": "php -l $FILENAME"
     },
     {
+      "language": "json",
       "file_patterns": ["%.json$"],
       "warning_pattern": "parse%s(%w*):%s(.*)at%sline%s(%d*),%scolumn%s(%d*)",
       "warning_pattern_order": { "line": 3, "col": 4, "message": 2, "type": 1 },
@@ -19,46 +21,54 @@
       "use_tmp_folder": true
     },
     {
+      "language": ["javascript", "typescript"],
       "file_patterns": ["%.js$", "%.ts$"],
       "warning_pattern": "[^:]:(%d+):(%d+): ([^%[]+)%[([^\n]+)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
       "command": "eslint --no-ignore --format unix $FILENAME"
     },
     {
+      "language": "lua",
       "file_patterns": ["%.lua$"],
       "warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
       "command": "luacheck $FILENAME --formatter=plain -g --no-max-line-length"
     },
     {
+      "language": "python",
       "file_patterns": ["%.py$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
       "command": "ruff $FILENAME"
     },
     {
+      "language": "bash",
       "file_patterns": ["%.sh$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
       "command": "shellcheck -f gcc $FILENAME"
     },
     {
+      "language": "solidity",
       "file_patterns": ["%.sol$"],
       "warning_pattern": "(%d+):(%d+)%s.(%w*)%s.([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
       "command": "solhint $FILENAME"
     },
     {
+      "language": ["c", "cpp"],
       "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"],
       "warning_pattern": "$FILENAME:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
       "command": "cppcheck --language=c++ --enable=all --template=gcc $FILENAME"
     },
     {
+      "language": "kotlin",
       "file_patterns": ["%.kt$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
       "command": "ktlint $FILENAME"
     },
     {
+      "language": "zig",
       "file_patterns": ["%.zig$"],
       "warning_pattern": "[^%s:]:(%d+):(%d+):[%s]?(%w*):([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
@@ -67,6 +77,7 @@
       "expected_exitcodes": [0, 1]
     },
     {
+      "language": "nim",
       "file_patterns": ["%.nim$", "%.nims$"],
       "warning_pattern": "$FILENAME%((%d+), (%d+)%)%s(%w*):%s([^\n]+[^/]*)",
       "command": "nim --listfullpaths --stdout check $FILENAME",
@@ -76,12 +87,14 @@
       "use_tmp_folder": true
     },
     {
+      "language": "nelua",
       "file_patterns": ["%.nelua$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s([%w%s]*):%s?([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
       "command": "nelua --lint $FILENAME"
     },
     {
+      "language": "teal",
       "file_patterns": ["%.tl$"],
       "warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
       "command": "tl check $FILENAME",

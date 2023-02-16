@@ -15,21 +15,30 @@ namespace ecode {
 
 class FormatterPlugin : public UICodeEditorPlugin {
   public:
+	enum class FormatterType { Inplace, Output, Native };
+
 	struct NativeFormatterResult {
 		bool success;
 		std::string result;
 		std::string err;
 	};
 
+	struct Formatter {
+		std::vector<std::string> files;
+		std::string command;
+		FormatterType type{ FormatterType::Output };
+		std::vector<std::string> languages{};
+	};
+
 	static PluginDefinition Definition() {
-		return { "autoformatter",
-				 "Auto Formatter",
-				 "Enables the code formatter/prettifier plugin.",
-				 FormatterPlugin::New,
-				 { 0, 1, 0 } };
+		return {
+			"autoformatter",	  "Auto Formatter", "Enables the code formatter/prettifier plugin.",
+			FormatterPlugin::New, { 0, 1, 0 },		FormatterPlugin::NewSync };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+
+	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~FormatterPlugin();
 
@@ -62,15 +71,11 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );
 
+	const std::vector<Formatter>& getFormatters() const;
+
+	Formatter getFormatterForLang( const std::string& lang, const std::vector<std::string>& ext );
+
   protected:
-	enum class FormatterType { Inplace, Output, Native };
-
-	struct Formatter {
-		std::vector<std::string> files;
-		std::string command;
-		FormatterType type{ FormatterType::Output };
-	};
-
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Formatter> mFormatters;
@@ -90,7 +95,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	bool mShuttingDown{ false };
 	bool mReady{ false };
 
-	FormatterPlugin( PluginManager* pluginManager );
+	FormatterPlugin( PluginManager* pluginManager, bool sync );
 
 	void load( PluginManager* pluginManager );
 

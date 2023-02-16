@@ -29,11 +29,13 @@ UICodeEditorPlugin* ecode::PluginManager::get( const std::string& id ) {
 	return nullptr;
 }
 
-bool PluginManager::setEnabled( const std::string& id, bool enable ) {
+bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) {
 	mPluginsEnabled[id] = enable;
 	UICodeEditorPlugin* plugin = get( id );
 	if ( enable && plugin == nullptr && hasDefinition( id ) ) {
-		UICodeEditorPlugin* newPlugin = mDefinitions[id].creatorFn( this );
+		UICodeEditorPlugin* newPlugin = sync && mDefinitions[id].creatorSyncFn
+											? mDefinitions[id].creatorSyncFn( this )
+											: mDefinitions[id].creatorFn( this );
 		mPlugins.insert( std::pair<std::string, UICodeEditorPlugin*>( id, newPlugin ) );
 		if ( onPluginEnabled )
 			onPluginEnabled( newPlugin );
@@ -71,11 +73,12 @@ void PluginManager::onNewEditor( UICodeEditor* editor ) {
 		editor->registerPlugin( plugin.second );
 }
 
-void PluginManager::setPluginsEnabled( const std::map<std::string, bool>& pluginsEnabled ) {
+void PluginManager::setPluginsEnabled( const std::map<std::string, bool>& pluginsEnabled,
+									   bool sync ) {
 	mPluginsEnabled = pluginsEnabled;
 	for ( const auto& plugin : pluginsEnabled ) {
 		if ( plugin.second && get( plugin.first ) == nullptr )
-			setEnabled( plugin.first, true );
+			setEnabled( plugin.first, true, sync );
 	}
 }
 
