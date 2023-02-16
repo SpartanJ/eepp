@@ -230,6 +230,7 @@ subprocess_weak int subprocess_alive(struct subprocess_s *const process);
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #endif
 
 #if defined(_WIN32)
@@ -1334,13 +1335,26 @@ subprocess_write_stdin(struct subprocess_s *const process, char *const buffer,
     return SUBPROCESS_CAST(unsigned, bytes_write);
 #else
     const int fd = fileno(process->stdin_file);
-    const ssize_t ret = write(fd, buffer, size);
-    if (ret > 0) {
-       fsync(fd);
-    } else if (ret < 0) {
-       return 0;
-    }
-    return ret;
+    int bytes_to_write = size;
+    char* buffer_to_write = buffer;
+    do {
+       const ssize_t ret = write(fd, buffer_to_write, bytes_to_write);
+
+       if (ret > 0) {
+          bytes_to_write -= ret;
+          buffer_to_write += ret;
+          fsync(fd);
+       } else if (ret <= 0) {
+          if (ret == -1) {
+             if ((errno == EAGAIN ) || (errno == EINPROGRESS))
+                continue;
+             return -1;
+          }
+          if (ret == 0)
+             return 0;
+       }
+    } while ( bytes_to_write );
+    return bytes_to_write == 0 ? size : -1;
 #endif
 }
 

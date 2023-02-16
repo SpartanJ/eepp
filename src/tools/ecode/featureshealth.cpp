@@ -76,7 +76,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 										  ? "native"
 										  : String::split( found.command, ' ' )[0];
 				lang.formatter.path = Sys::which( lang.formatter.name );
-				lang.formatter.found = !lang.linter.path.empty() ||
+				lang.formatter.found = !lang.formatter.path.empty() ||
 									   found.type == FormatterPlugin::FormatterType::Native;
 			}
 		}

@@ -55,6 +55,12 @@
       "file_patterns": ["%.css"],
       "command": "css",
       "type": "native"
+    },
+    {
+      "language": "zig",
+      "file_patterns": ["%.zig"],
+      "command": "zig fmt $FILENAME",
+      "type": "inplace"
     }
   ]
 }
