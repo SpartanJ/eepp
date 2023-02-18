@@ -588,7 +588,7 @@ void SyntaxDefinitionManager::addJavaScript() {
 
 void SyntaxDefinitionManager::addJSON() {
 	add( { "JSON",
-		   { "%.json$", "%.cson$" },
+		   { "%.json$", "%.cson$", "%.webmanifest" },
 		   {
 			   { { "(%b\"\")(:)" }, { "normal", "keyword", "operator" } },
 			   { { "\"", "\"", "\\" }, "string" },

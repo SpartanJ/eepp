@@ -509,7 +509,9 @@ std::string String::trim( const std::string& str, char character ) {
 }
 
 void String::trimInPlace( std::string& str, char character ) {
-	str = trim( str, character );
+	// Trim only if there's something to trim
+	if ( !str.empty() && ( str[0] == character || str[str.size() - 1] == character ) )
+		str = trim( str, character );
 }
 
 String String::lTrim( const String& str, char character ) {
