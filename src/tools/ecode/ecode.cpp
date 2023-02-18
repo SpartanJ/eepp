@@ -989,7 +989,7 @@ std::string App::getCurrentWorkingDir() const {
 	if ( !mCurrentProject.empty() )
 		return mCurrentProject;
 
-	if ( mSplitter && mSplitter->curEditorExists() && mSplitter->getCurEditor()->hasDocument() &&
+	if ( mSplitter && mSplitter->curEditorIsNotNull() && mSplitter->getCurEditor()->hasDocument() &&
 		 mSplitter->getCurEditor()->getDocument().hasFilepath() ) {
 		return mSplitter->getCurEditor()->getDocument().getFileInfo().getDirectoryPath();
 	}
