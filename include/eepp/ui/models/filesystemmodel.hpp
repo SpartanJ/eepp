@@ -139,6 +139,8 @@ class EE_API FileSystemModel : public Model {
 		void refreshIfNeeded( const FileSystemModel& );
 
 		bool fetchData( const String& fullPath );
+
+		void updateMimeType();
 	};
 
 	static std::shared_ptr<FileSystemModel>

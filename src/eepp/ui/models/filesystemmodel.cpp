@@ -26,11 +26,7 @@ FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
 	mParent( parent ), mInfo( info ) {
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
-	if ( !mInfo.isDirectory() ) {
-		mMimeType = UIIconThemeManager::getIconNameFromFileName( mName );
-	} else {
-		mMimeType = "folder";
-	}
+	updateMimeType();
 }
 
 const std::string& FileSystemModel::Node::fullPath() const {
@@ -117,6 +113,7 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 void FileSystemModel::Node::rename( const FileInfo& file ) {
 	mInfo = file;
 	mName = file.getFileName();
+	updateMimeType();
 }
 
 ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int column ) const {
@@ -258,6 +255,14 @@ bool FileSystemModel::Node::fetchData( const String& fullPath ) {
 		mInfoDirty = false;
 	}
 	return true;
+}
+
+void FileSystemModel::Node::updateMimeType() {
+	if ( !mInfo.isDirectory() ) {
+		mMimeType = UIIconThemeManager::getIconNameFromFileName( mName );
+	} else {
+		mMimeType = "folder";
+	}
 }
 
 std::shared_ptr<FileSystemModel> FileSystemModel::New( const std::string& rootPath,
@@ -599,6 +604,12 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 				if ( !childNode->getName().empty() ) {
 					size_t pos = getFileIndex( parent, file );
+
+					const auto& displayCfg = getDisplayConfig();
+
+					if ( displayCfg.fileIsVisibleFn &&
+						 !displayCfg.fileIsVisibleFn( file.getFilepath() ) )
+						return false;
 
 					if ( pos == INDEX_ALREADY_EXISTS )
 						return false;
