@@ -752,6 +752,10 @@ String& String::rTrim( char character ) {
 	return *this;
 }
 
+bool String::contains( const String& needle ) {
+	return String::contains( *this, needle );
+}
+
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {
 	std::size_t start_pos = target.find( that );
 	if ( start_pos == std::string::npos )

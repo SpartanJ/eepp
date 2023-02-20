@@ -1518,7 +1518,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 	}
 	mProjectTreeMenu->add( i18n( "rename", "Rename" ), findIcon( "edit" ), "F2" )
 		->setId( "rename" );
-	mProjectTreeMenu->add( i18n( "remove", "Remove..." ), findIcon( "delete-bin" ) )
+	mProjectTreeMenu->add( i18n( "remove", "Remove..." ), findIcon( "delete-bin" ), "Delete" )
 		->setId( "remove" );
 
 	if ( file.isDirectory() || file.isExecutable() ) {

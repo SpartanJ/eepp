@@ -2088,6 +2088,17 @@ void App::newFile( const FileInfo& file ) {
 	msgBox->addEventListener( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
 		auto newFilePath( getNewFilePath( file, msgBox ) );
 		if ( !FileSystem::fileExists( newFilePath ) ) {
+			// Needs to create sub folders?
+			if ( msgBox->getTextInput()->getText().find_first_of( "/\\" ) != String::InvalidPos ) {
+				auto folderPath( FileSystem::removeLastFolderFromPath( newFilePath ) );
+				if ( !FileSystem::makeDir( folderPath, true ) ) {
+					errorMsgBox( i18n( "couldnt_create_folder_of_file",
+									   "Couldn't create folder of file." ) );
+					msgBox->closeWindow();
+					return;
+				}
+			}
+
 			if ( !FileSystem::fileWrite( newFilePath, nullptr, 0 ) ) {
 				errorMsgBox( i18n( "couldnt_create_file", "Couldn't create file." ) );
 			} else if ( mProjectTreeView ) {
@@ -2102,6 +2113,7 @@ void App::newFile( const FileInfo& file ) {
 					},
 					Milliseconds( 100 ) );
 			}
+
 			msgBox->closeWindow();
 		} else {
 			fileAlreadyExistsMsgBox();

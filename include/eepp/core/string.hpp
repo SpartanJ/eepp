@@ -844,6 +844,11 @@ class EE_API String {
 
 	String& rTrim( char character = ' ' );
 
+	/** @return True if a string contains a substring.
+	 * @param needle The searched string.
+	 */
+	bool contains( const String& needle );
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );
