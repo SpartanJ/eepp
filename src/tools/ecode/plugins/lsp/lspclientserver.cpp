@@ -75,6 +75,10 @@ static json newEmptyResult( const PluginIDType& id ) {
 	return j;
 }
 
+static json executeCommandParams( const std::string& command, const json& args ) {
+	return json{ { MEMBER_COMMAND, command }, { MEMBER_ARGUMENTS, args } };
+}
+
 static json newSuccessResult( const PluginIDType& id, bool success = true ) {
 	json j;
 	json res;
@@ -396,7 +400,7 @@ static std::vector<LSPSymbolInformation> parseWorkspaceSymbols( const json& res 
 
 			const auto& location = symbol.at( MEMBER_LOCATION );
 			const auto& mrange = symbol.contains( MEMBER_RANGE ) ? symbol.at( MEMBER_RANGE )
-																: location.at( MEMBER_RANGE );
+																 : location.at( MEMBER_RANGE );
 
 			auto containerName = symbol.value( "containerName", "" );
 			if ( !containerName.empty() )
@@ -1464,10 +1468,23 @@ void LSPClientServer::goToLocation( const json& res ) {
 
 LSPClientServer::LSPRequestHandle LSPClientServer::getAndGoToLocation( const URI& document,
 																	   const TextPosition& pos,
-																	   const std::string& search ) {
+																	   const std::string& search,
+																	   const LocationHandler& h ) {
 	auto params = textDocumentPositionParams( document, pos );
-	return send( newRequest( search, params ),
-				 [this]( const IdType&, const json& res ) { goToLocation( res ); } );
+	return send( newRequest( search, params ), [h]( const IdType& id, const json& json ) {
+		if ( h )
+			h( id, parseDocumentLocation( json ) );
+	} );
+}
+
+LSPClientServer::LSPRequestHandle LSPClientServer::getAndGoToLocation( const URI& document,
+																	   const TextPosition& pos,
+																	   const std::string& search ) {
+	return getAndGoToLocation( document, pos, search,
+							   [&]( const IdType&, const std::vector<LSPLocation>& locs ) {
+								   if ( !locs.empty() )
+									   mManager->goToLocation( locs.front() );
+							   } );
 }
 
 LSPClientServer::LSPRequestHandle LSPClientServer::documentDefinition( const URI& document,
@@ -1659,6 +1676,11 @@ LSPClientServer::LSPRequestHandle LSPClientServer::memoryUsage() {
 	return memoryUsage( []( const IdType&, const json& json ) {
 		Log::warning( "Received Memory Usage Information:\n%s", json.dump( 2 ).c_str() );
 	} );
+}
+
+LSPClientServer::LSPRequestHandle LSPClientServer::executeCommand( const std::string& cmd,
+																   const json& params ) {
+	return send( executeCommandParams( cmd, params ), []( const auto&, const auto& ) {} );
 }
 
 LSPClientServer::LSPRequestHandle

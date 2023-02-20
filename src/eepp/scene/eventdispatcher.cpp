@@ -240,6 +240,13 @@ void EventDispatcher::setFocusNode( Node* node ) {
 
 		mFocusNode->onFocus();
 		sendMsg( mFocusNode, NodeMessage::Focus );
+
+		if ( !mFocusCbs.empty() ) {
+			auto focusCbs = mFocusCbs;
+
+			for ( const auto& cb : focusCbs )
+				cb.second( cb.first, mFocusNode, mLossFocusNode );
+		}
 	}
 }
 
@@ -344,7 +351,20 @@ void EventDispatcher::setDisableMousePress( bool disableMousePress ) {
 	if ( mDisableMousePress && !disableMousePress )
 		mJustDisabledMousePress = true;
 	mDisableMousePress = disableMousePress;
+}
 
+Uint32 EventDispatcher::addFocusEventCallback( const FocusCallback& cb ) {
+	mFocusCbs[++mCurFocusId] = cb;
+	return mCurFocusId;
+}
+
+bool EventDispatcher::removeFocusEventCallback( const Uint32& cbId ) {
+	auto it = mFocusCbs.find( cbId );
+	if ( it != mFocusCbs.end() ) {
+		mFocusCbs.erase( it );
+		return true;
+	}
+	return false;
 }
 
 }} // namespace EE::Scene

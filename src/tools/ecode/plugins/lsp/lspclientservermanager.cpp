@@ -214,6 +214,14 @@ void LSPClientServerManager::getAndGoToLocation( const std::shared_ptr<TextDocum
 		server->getAndGoToLocation( doc->getURI(), doc->getSelection().start(), search );
 }
 
+void LSPClientServerManager::getAndGoToLocation( const std::shared_ptr<TextDocument>& doc,
+												 const std::string& search,
+												 const LSPClientServer::LocationHandler& h ) {
+	auto* server = getOneLSPClientServer( doc );
+	if ( server )
+		server->getAndGoToLocation( doc->getURI(), doc->getSelection().start(), search, h );
+}
+
 PluginManager* LSPClientServerManager::getPluginManager() const {
 	return mPluginManager;
 }

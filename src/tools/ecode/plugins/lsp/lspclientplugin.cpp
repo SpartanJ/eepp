@@ -3,6 +3,8 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/input.hpp>
@@ -183,6 +185,121 @@ void LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 
 bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
 	return mManager->getSplitter()->editorExists( editor );
+}
+
+class LSPLocationModel : public Model {
+  public:
+	enum CustomInfo { URI, TextRange };
+
+	static std::shared_ptr<LSPLocationModel> create( const std::string& workspaceFolder,
+													 const std::vector<LSPLocation>& data ) {
+		return std::make_shared<LSPLocationModel>( workspaceFolder, data );
+	}
+
+	LSPLocationModel( const std::string& workspaceFolder, const std::vector<LSPLocation>& locs ) {
+		createLocs( workspaceFolder, locs );
+	}
+
+	size_t rowCount( const ModelIndex& ) const override { return mLocs.size(); };
+
+	size_t columnCount( const ModelIndex& ) const override { return 1; }
+
+	Variant data( const ModelIndex& index, ModelRole role ) const override {
+		if ( role == ModelRole::Display ) {
+			return Variant( mLocs[index.row()].display.c_str() );
+		} else if ( role == ModelRole::Custom ) {
+			if ( index.column() == CustomInfo::URI ) {
+				return Variant( mLocs[index.row()].loc.uri.toString() );
+			} else if ( index.column() == CustomInfo::TextRange ) {
+				return Variant( mLocs[index.row()].loc.range.toString() );
+			}
+		}
+		return {};
+	}
+
+	void update() override { onModelUpdate(); }
+
+  protected:
+	struct Location {
+		LSPLocation loc;
+		std::string display;
+	};
+	std::vector<Location> mLocs;
+
+	void createLocs( std::string workspaceFolder, const std::vector<LSPLocation> locs ) {
+		FileSystem::dirAddSlashAtEnd( workspaceFolder );
+
+		for ( const auto& loc : locs ) {
+			std::string display = loc.uri.getPath();
+			FileSystem::filePathRemoveBasePath( workspaceFolder, display );
+			display += " - L" + String::toString( loc.range.start().line() );
+			mLocs.push_back( { loc, display } );
+		}
+	}
+};
+
+void LSPClientPlugin::createLocationsView( UICodeEditor* editor,
+										   const std::vector<LSPLocation>& res ) {
+	UICodeEditorSplitter* splitter = getManager()->getSplitter();
+	if ( nullptr == splitter || !editorExists( editor ) )
+		return;
+	editor->runOnMainThread( [&, editor, splitter, res] {
+		UIListView* lv = UIListView::New();
+		lv->setParent( editor );
+		auto pos = editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
+		lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
+		auto model = LSPLocationModel::create( mManager->getWorkspaceFolder(), res );
+		lv->setModel( model );
+		lv->setSelection( model->index( 0, 0 ) );
+		Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
+		lv->setColumnWidth( 0, colWidth );
+		lv->setPixelsSize( { colWidth, lv->getContentSize().y } );
+		lv->setVisible( true );
+		lv->setFocus();
+		Uint32 focusCb = lv->getUISceneNode()->getUIEventDispatcher()->addFocusEventCallback(
+			[lv, splitter, editor]( const auto&, Node* focus, Node* ) {
+				if ( !lv->inParentTreeOf( focus ) && !lv->isClosing() ) {
+					lv->close();
+					if ( splitter->editorExists( editor ) )
+						editor->setFocus();
+				}
+			} );
+		Uint32 cursorCb =
+			editor->on( Event::OnCursorPosChange, [lv, editor, splitter]( const Event* ) {
+				if ( !lv->isClosing() ) {
+					lv->close();
+					if ( splitter->editorExists( editor ) )
+						editor->setFocus();
+				}
+			} );
+		lv->on( Event::KeyDown, [splitter, editor, lv]( const Event* event ) {
+			if ( event->asKeyEvent()->getKeyCode() == EE::Window::KEY_ESCAPE && !lv->isClosing() ) {
+				lv->close();
+				if ( splitter->editorExists( editor ) )
+					editor->setFocus();
+			}
+		} );
+		lv->on( Event::OnModelEvent, [&]( const Event* event ) {
+			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+			if ( modelEvent->getModelEventType() != ModelEventType::Open )
+				return;
+			auto r = modelEvent->getModelIndex().row();
+			Variant uri( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( r, LSPLocationModel::CustomInfo::URI ),
+				ModelRole::Custom ) );
+			Variant range( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( r, LSPLocationModel::CustomInfo::TextRange ),
+				ModelRole::Custom ) );
+			LSPLocation loc;
+			loc.uri = URI( uri.asStdString() );
+			loc.range = TextRange::fromString( range.asStdString() );
+			mClientManager.goToLocation( loc );
+		} );
+		lv->on( Event::OnClose, [lv, editor, cursorCb, focusCb]( const Event* ) {
+			lv->getUISceneNode()->getUIEventDispatcher()->removeFocusEventCallback( focusCb );
+			editor->removeEventListener( cursorCb );
+		} );
+	} );
 }
 
 PluginRequestHandle LSPClientPlugin::processCancelRequest( const PluginMessage& msg ) {
@@ -466,6 +583,20 @@ size_t LSPClientPlugin::lspFilePatternPosition( const std::vector<LSPDefinition>
 	return std::string::npos;
 }
 
+void LSPClientPlugin::getAndGoToLocation( UICodeEditor* editor, const std::string& search ) {
+	mClientManager.getAndGoToLocation(
+		editor->getDocumentRef(), search,
+		[&, editor]( const LSPClientServer::IdType&, const std::vector<LSPLocation>& res ) {
+			if ( res.empty() )
+				return;
+			if ( res.size() == 1 ) {
+				mClientManager.goToLocation( res[0] );
+			} else {
+				createLocationsView( editor, res );
+			}
+		} );
+}
+
 void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	mDocs.insert( editor->getDocumentRef().get() );
@@ -479,23 +610,19 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		auto& doc = editor->getDocument();
 
 		doc.setCommand( "lsp-go-to-definition", [&, editor]() {
-			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
-											   "textDocument/definition" );
+			getAndGoToLocation( editor, "textDocument/definition" );
 		} );
 
 		doc.setCommand( "lsp-go-to-declaration", [&, editor]() {
-			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
-											   "textDocument/declaration" );
+			getAndGoToLocation( editor, "textDocument/declaration" );
 		} );
 
 		doc.setCommand( "lsp-go-to-implementation", [&, editor]() {
-			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
-											   "textDocument/implementation" );
+			getAndGoToLocation( editor, "textDocument/implementation" );
 		} );
 
 		doc.setCommand( "lsp-go-to-type-definition", [&, editor]() {
-			mClientManager.getAndGoToLocation( editor->getDocumentRef(),
-											   "textDocument/typeDefinition" );
+			getAndGoToLocation( editor, "textDocument/typeDefinition" );
 		} );
 
 		doc.setCommand( "lsp-switch-header-source",

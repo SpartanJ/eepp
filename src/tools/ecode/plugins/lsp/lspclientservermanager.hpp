@@ -73,6 +73,11 @@ class LSPClientServerManager {
 	LSPDefinition getLSPForLang( const std::string& lang,
 								 const std::vector<std::string>& extensions ) const;
 
+	void getAndGoToLocation( const std::shared_ptr<TextDocument>& doc, const std::string& search,
+							 const LSPClientServer::LocationHandler& h );
+
+	void goToLocation( const LSPLocation& loc );
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };
@@ -96,8 +101,6 @@ class LSPClientServerManager {
 	std::string findRootPath( const LSPDefinition& lsp, const std::shared_ptr<TextDocument>& doc );
 
 	void closeLSPServer( const String::HashType& id );
-
-	void goToLocation( const LSPLocation& loc );
 
 	void sendSymbolReferenceBroadcast( const std::vector<LSPLocation>& resp );
 };

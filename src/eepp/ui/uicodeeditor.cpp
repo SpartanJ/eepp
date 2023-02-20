@@ -1129,7 +1129,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			} else {
 				mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
 			}
-		} else {
+		} else if ( !mDoc->hasSelection() ) {
 			mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
 		}
 	}
@@ -1370,6 +1370,15 @@ void UICodeEditor::checkColorPickerAction() {
 						setFocus();
 				} );
 	}
+}
+
+Vector2f UICodeEditor::getRelativeScreenPosition( const TextPosition& pos ) {
+	Float gutterWidth = getGutterWidth();
+	Vector2f start( gutterWidth, getPluginsTopSpace() );
+	Vector2f startScroll( start - mScroll );
+	auto lineHeight = getLineHeight();
+	return { startScroll.x + getXOffsetCol( pos ),
+			 startScroll.y + pos.line() * lineHeight + getLineOffset() };
 }
 
 void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHeight,

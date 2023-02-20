@@ -589,6 +589,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setShowIndentationGuides( bool showIndentationGuides );
 
+	Vector2f getRelativeScreenPosition( const TextPosition& pos );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };

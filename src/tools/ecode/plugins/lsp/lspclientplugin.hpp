@@ -128,6 +128,10 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	void processDocumentFormattingResponse( const URI& uri, const std::vector<LSPTextEdit>& edits );
 
 	bool editorExists( UICodeEditor* editor );
+
+	void createLocationsView( UICodeEditor* editor, const std::vector<LSPLocation>& locs );
+
+	void getAndGoToLocation( UICodeEditor* editor, const std::string& search );
 };
 
 } // namespace ecode

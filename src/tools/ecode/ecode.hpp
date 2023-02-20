@@ -129,6 +129,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	std::map<KeyBindings::Shortcut, std::string> getLocalKeybindings();
 
+	std::map<std::string, std::string> getMigrateKeybindings();
+
 	void switchSidePanel();
 
 	void panelPosition( const PanelPosition& panelPosition );

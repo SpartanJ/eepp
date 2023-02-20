@@ -1105,9 +1105,12 @@ void App::debugDrawData() {
 static void updateKeybindings( IniFile& ini, const std::string& group, Input* input,
 							   std::unordered_map<std::string, std::string>& keybindings,
 							   const std::unordered_map<std::string, std::string>& defKeybindings,
-							   bool forceRebind = false ) {
+							   bool forceRebind,
+							   const std::map<std::string, std::string>& migrateKeyindings,
+							   IniFile& iniState ) {
 	KeyBindings bindings( input );
 	bool added = false;
+	bool migrated = false;
 
 	if ( ini.findKey( group ) != IniFile::noID ) {
 		keybindings = ini.getKeyUnorderedMap( group );
@@ -1119,6 +1122,32 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 	std::unordered_map<std::string, std::string> invertedKeybindings;
 	for ( const auto& key : keybindings )
 		invertedKeybindings[key.second] = key.first;
+
+	if ( !added && forceRebind ) {
+		for ( const auto& migrate : migrateKeyindings ) {
+			auto foundCmd = invertedKeybindings.find( migrate.first );
+			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
+				std::string shortcut;
+				for ( const auto& defKb : defKeybindings ) {
+					if ( defKb.second == foundCmd->first ) {
+						shortcut = defKb.first;
+						break;
+					}
+				}
+				if ( !shortcut.empty() &&
+					 !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
+					ini.setValue( group, shortcut, foundCmd->first );
+					ini.deleteValue( group, migrate.second );
+					keybindings.erase( migrate.second );
+					invertedKeybindings[foundCmd->first] = shortcut;
+					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
+									   migrate.second );
+					added = true;
+					migrated = true;
+				}
+			}
+		}
+	}
 
 	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
 		for ( const auto& key : defKeybindings ) {
@@ -1149,6 +1178,9 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 			}
 		}
 	}
+
+	if ( migrated )
+		iniState.writeFile();
 	if ( added )
 		ini.writeFile();
 }
@@ -1157,9 +1189,12 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 							   std::unordered_map<std::string, std::string>& keybindings,
 							   std::unordered_map<std::string, std::string>& invertedKeybindings,
 							   const std::map<KeyBindings::Shortcut, std::string>& defKeybindings,
-							   bool forceRebind = false ) {
+							   bool forceRebind,
+							   const std::map<std::string, std::string>& migrateKeyindings,
+							   IniFile& iniState ) {
 	KeyBindings bindings( input );
 	bool added = false;
+	bool migrated = false;
 
 	if ( ini.findKey( group ) != IniFile::noID ) {
 		keybindings = ini.getKeyUnorderedMap( group );
@@ -1171,12 +1206,40 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 	for ( const auto& key : keybindings )
 		invertedKeybindings[key.second] = key.first;
 
+	if ( !added && forceRebind ) {
+		for ( const auto& migrate : migrateKeyindings ) {
+			auto foundCmd = invertedKeybindings.find( migrate.first );
+			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
+				KeyBindings::Shortcut shortcut;
+				for ( const auto& defKb : defKeybindings ) {
+					if ( defKb.second == foundCmd->first ) {
+						shortcut = defKb.first;
+						break;
+					}
+				}
+				if ( !shortcut.empty() &&
+					 !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
+					auto newShortcutStr = bindings.getShortcutString( shortcut );
+					ini.setValue( group, newShortcutStr, foundCmd->first );
+					ini.deleteValue( group, migrate.second );
+					keybindings.erase( migrate.second );
+					invertedKeybindings[foundCmd->first] = newShortcutStr;
+					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
+									   migrate.second );
+					added = true;
+					migrated = true;
+				}
+			}
+		}
+	}
+
 	bool keybindingsWereEmpty = keybindings.empty();
 
 	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
-		for ( const auto& key : defKeybindings ) {
+		for ( auto& key : defKeybindings ) {
 			auto foundCmd = invertedKeybindings.find( key.second );
 			auto shortcutStr = bindings.getShortcutString( key.first );
+
 			if ( ( foundCmd == invertedKeybindings.end() || keybindingsWereEmpty ) &&
 				 keybindings.find( shortcutStr ) == keybindings.end() ) {
 				keybindings[shortcutStr] = key.second;
@@ -1202,6 +1265,8 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 			}
 		}
 	}
+	if ( migrated )
+		iniState.writeFile();
 	if ( added )
 		ini.writeFile();
 }
@@ -1231,13 +1296,16 @@ void App::loadKeybindings() {
 			KeyMod::setDefaultModifier( defModKeyCode );
 
 		updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings, mKeybindingsInvert,
-						   getDefaultKeybindings(), forceRebind );
+						   getDefaultKeybindings(), forceRebind, getMigrateKeybindings(),
+						   mConfig.iniState );
 
 		updateKeybindings( ini, "global_search", mWindow->getInput(), mGlobalSearchKeybindings,
-						   GlobalSearchController::getDefaultKeybindings(), forceRebind );
+						   GlobalSearchController::getDefaultKeybindings(), forceRebind,
+						   getMigrateKeybindings(), mConfig.iniState );
 
 		updateKeybindings( ini, "document_search", mWindow->getInput(), mDocumentSearchKeybindings,
-						   DocSearchController::getDefaultKeybindings(), forceRebind );
+						   DocSearchController::getDefaultKeybindings(), forceRebind,
+						   getMigrateKeybindings(), mConfig.iniState );
 	}
 }
 
@@ -1372,7 +1440,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
-		{ { KEY_RETURN, KEYMOD_LALT }, "fullscreen-toggle" },
+		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
 		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
 		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
 		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
@@ -1395,6 +1463,14 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_K, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-bottom" },
 		{ { KEY_S, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-swap" },
 		{ { KEY_T, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "reopen-closed-tab" },
+	};
+}
+
+// Old keybindings will be rebinded to the new keybindings of they are still set to the old
+// keybindind
+std::map<std::string, std::string> App::getMigrateKeybindings() {
+	return {
+		{ "fullscreen-toggle", "alt+return" },
 	};
 }
 

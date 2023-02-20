@@ -126,6 +126,9 @@ class LSPClientServer {
 	void workDoneProgress( const LSPWorkDoneProgressParams& workDoneParams );
 
 	LSPRequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
+										 const std::string& search, const LocationHandler& h );
+
+	LSPRequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
 										 const std::string& search );
 
 	LSPRequestHandle switchSourceHeader( const URI& document );
@@ -188,10 +191,11 @@ class LSPClientServer {
 	LSPRequestHandle documentFormatting( const URI& document, const json& options,
 										 const TextEditArrayHandler& h );
 
-
 	LSPRequestHandle memoryUsage( const JsonReplyHandler& h );
 
 	LSPRequestHandle memoryUsage();
+
+	LSPRequestHandle executeCommand( const std::string& cmd, const json& params );
 
 	void removeDoc( TextDocument* doc );
 
