@@ -800,6 +800,14 @@ std::vector<std::string> TextDocument::getCommandList() const {
 	return cmds;
 }
 
+bool TextDocument::isRunningTransaction() const {
+	return mRunningTransaction;
+}
+
+void TextDocument::setRunningTransaction( const bool runningTransaction ) {
+	mRunningTransaction = runningTransaction;
+}
+
 String TextDocument::getSelectedText() const {
 	return getText( getSelection() );
 }
@@ -1877,12 +1885,16 @@ void TextDocument::setIndentType( const IndentType& indentType ) {
 }
 
 void TextDocument::undo() {
+	setRunningTransaction( true );
 	mUndoStack.undo();
+	setRunningTransaction( false );
 	notifyUndoRedo( UndoRedo::Undo );
 }
 
 void TextDocument::redo() {
+	setRunningTransaction( true );
 	mUndoStack.redo();
+	setRunningTransaction( false );
 	notifyUndoRedo( UndoRedo::Redo );
 }
 

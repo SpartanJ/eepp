@@ -79,7 +79,7 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 
 	listeners.push_back(
 		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
-			tryRequestCapabilities( editor );
+			tryRequestCapabilities( editor->getDocumentRef() );
 		} ) );
 
 	listeners.push_back( editor->addEventListener( Event::OnDocumentSave, [&](
@@ -271,7 +271,7 @@ std::string FormatterPlugin::getFileConfigPath() {
 
 bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i&,
 										   const Uint32& ) {
-	tryRequestCapabilities( editor );
+	tryRequestCapabilities( editor->getDocumentRef() );
 	if ( supportsFormatter( editor->getDocumentRef() ).command.empty() &&
 		 !supportsLSPFormatter( editor->getDocumentRef() ) )
 		return false;
@@ -531,8 +531,8 @@ void FormatterPlugin::registerNativeFormatters() {
 	};
 }
 
-bool FormatterPlugin::tryRequestCapabilities( UICodeEditor* editor ) {
-	const auto& language = editor->getDocumentRef()->getSyntaxDefinition().getLSPName();
+bool FormatterPlugin::tryRequestCapabilities( const std::shared_ptr<TextDocument>& doc ) {
+	const auto& language = doc->getSyntaxDefinition().getLSPName();
 	auto it = mCapabilities.find( language );
 	if ( it != mCapabilities.end() )
 		return true;

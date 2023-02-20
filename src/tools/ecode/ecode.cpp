@@ -3105,7 +3105,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	backward::SignalHandling sh;
 #endif
 	args::ArgumentParser parser( "ecode" );
-	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', '?', "help" } );
 	args::Positional<std::string> file( parser, "file", "The file or folder path" );
 	args::ValueFlag<std::string> filePos( parser, "file", "The file or folder path",
 										  { 'f', "file", "folder" } );
@@ -3138,11 +3138,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ 'j', "jobs" }, 0 );
 	args::Flag health( parser, "health", "Checks for potential errors in editor setup.",
 					   { "health" }, "" );
-	args::ValueFlag<std::string> healthLang( parser, "health-lang",
-											 "Checks for potential errors in editor setup.",
-											 { "health-lang" }, "" );
+	args::ValueFlag<std::string> healthLang(
+		parser, "health-lang",
+		"Checks for potential errors in editor setup for a specific language.", { "health-lang" },
+		"" );
 	args::MapFlag<std::string, FeaturesHealth::OutputFormat> healthFormat(
-		parser, "health-format", "Checks for potential errors in editor setup.",
+		parser, "health-format",
+		"Sets the health format report (accepted values: terminal, markdown, ascii, asciidoc)",
 		{ "health-format" }, FeaturesHealth::getMapFlag(),
 		FeaturesHealth::getDefaultOutputFormat() );
 

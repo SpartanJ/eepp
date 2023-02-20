@@ -327,15 +327,13 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	if ( json.contains( "documentOnTypeFormattingProvider" ) )
 		fromJson( caps.documentOnTypeFormattingProvider, json["documentOnTypeFormattingProvider"] );
 	caps.renameProvider = toBoolOrObject( json, "renameProvider" );
-	if ( json.contains( "codeActionProvider" ) &&
-		 json["codeActionProvider"].contains( "resolveProvider" ) ) {
-		auto& codeActionProvider = json["codeActionProvider"];
-		caps.codeActionProvider = codeActionProvider["resolveProvider"].get<bool>();
-	}
+	caps.codeActionProvider = json.contains( "codeActionProvider" );
+	caps.executeCommandProvider = json.contains( "executeCommandProvider" );
 	// fromJson( caps.semanticTokenProvider, json["semanticTokensProvider"] );
 	if ( json.contains( "workspace" ) ) {
 		auto& workspace = json["workspace"];
-		fromJson( caps.workspaceFolders, workspace["workspaceFolders"] );
+		if ( workspace.contains( "workspaceFolders" ) )
+			fromJson( caps.workspaceFolders, workspace["workspaceFolders"] );
 	}
 	caps.selectionRangeProvider = toBoolOrObject( json, "selectionRangeProvider" );
 	caps.ready = true;
@@ -531,8 +529,9 @@ static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 			auto command = action.contains( MEMBER_COMMAND )
 							   ? parseCommand( action.at( MEMBER_COMMAND ) )
 							   : LSPCommand{};
-			auto edit = action.at( MEMBER_EDIT ) ? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
-												 : LSPWorkspaceEdit{};
+			auto edit = action.contains( MEMBER_EDIT )
+							? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
+							: LSPWorkspaceEdit{};
 			auto diagnostics = action.contains( MEMBER_DIAGNOSTICS )
 								   ? parseDiagnostics( action.at( MEMBER_DIAGNOSTICS ) )
 								   : std::vector<LSPDiagnostic>{};
@@ -611,10 +610,9 @@ static json codeActionParams( const URI& document, const TextRange& range,
 	auto params = textDocumentParams( document );
 	params[MEMBER_RANGE] = toJson( range );
 	json context;
-	json diags;
-	for ( const auto& diagnostic : diagnostics ) {
+	json diags = json::array();
+	for ( const auto& diagnostic : diagnostics )
 		diags.push_back( toJson( diagnostic ) );
-	}
 	context[MEMBER_DIAGNOSTICS] = diags;
 	if ( !kinds.empty() )
 		context["only"] = json( kinds );
@@ -855,6 +853,22 @@ static LSPShowDocumentParams parseShowDocument( const json& json ) {
 	return params;
 }
 
+static LSPApplyWorkspaceEditParams parseApplyWorkspaceEditParams( const json& result ) {
+	LSPApplyWorkspaceEditParams ret;
+	ret.label = result.value( MEMBER_LABEL, "" );
+	if ( result.contains( MEMBER_EDIT ) )
+		ret.edit = parseWorkSpaceEdit( result.at( MEMBER_EDIT ) );
+	return ret;
+}
+
+static json applyWorkspaceEditResponse( const PluginIDType& msgid,
+										const LSPApplyWorkspaceEditResponse& response ) {
+	json j = newID( msgid );
+	j[MEMBER_RESULT] =
+		json{ { "applied", response.applied }, { "failureReason", response.failureReason } };
+	return j;
+}
+
 void LSPClientServer::initialize() {
 	json codeAction{
 		{ "codeActionLiteralSupport",
@@ -899,16 +913,18 @@ void LSPClientServer::initialize() {
 				 { "capabilities", capabilities },
 				 { "initializationOptions", mLSP.initializationOptions } };
 
-	URI rootPath( mRootPath );
+	URI rootPath( String::startsWith( mRootPath, "file://" ) ? mRootPath : "file://" + mRootPath );
 	if ( rootPath.empty() ) {
-		if ( !mManager->getLSPWorkspaceFolder().uri.empty() )
+		if ( !mManager->getLSPWorkspaceFolder().uri.empty() ) {
 			rootPath = mManager->getLSPWorkspaceFolder().uri;
-		else
+			if ( rootPath.getScheme().empty() )
+				rootPath = URI( "file://" + mManager->getLSPWorkspaceFolder().uri.toString() );
+		} else {
 			rootPath = URI( "file://" + FileSystem::getCurrentWorkingDirectory() );
+		}
 	}
-	auto authAndPath = rootPath.getAuthorityAndPath();
-	auto rootUri = rootPath.toString();
-	params["rootPath"] = authAndPath;
+	std::string rootUri = rootPath.toString();
+	params["rootPath"] = rootPath.getPath();
 	params["rootUri"] = rootUri;
 	params["workspaceFolders"] =
 		toJson( { LSPWorkspaceFolder{ rootUri, FileSystem::fileNameFromPath( rootUri ) } } );
@@ -931,6 +947,11 @@ void LSPClientServer::initialize() {
 			mReady = true;
 			write( newRequest( "initialized" ) );
 			sendQueuedMessages();
+
+			// Broadcast the language capabilities to all the interested plugins
+			mManager->getPluginManager()->sendBroadcast(
+				mManager->getPlugin(), PluginMessageType::LanguageServerCapabilities,
+				PluginMessageFormat::LanguageServerCapabilities, &mCapabilities );
 		},
 		[&]( const IdType&, const json& ) {} );
 }
@@ -1306,7 +1327,17 @@ void LSPClientServer::processRequest( const json& msg ) {
 				msg.dump().c_str() );
 	auto method = msg[MEMBER_METHOD].get<std::string>();
 	auto msgid = getID( msg );
-	if ( method == "window/workDoneProgress/create" || method == "client/registerCapability" ) {
+	if ( method == "workspace/applyEdit" ) {
+		auto workspaceEdit = parseApplyWorkspaceEditParams( msg[MEMBER_PARAMS] );
+		mManager->applyWorkspaceEdit( workspaceEdit.edit,
+									  [&, msgid]( const LSPApplyWorkspaceEditResponse& res ) {
+										  getThreadPool()->run( [this, msgid, res] {
+											  write( applyWorkspaceEditResponse( msgid, res ) );
+										  } );
+									  } );
+		return;
+	} else if ( method == "window/workDoneProgress/create" ||
+				method == "client/registerCapability" ) {
 		write( newEmptyResult( msgid ) );
 		return;
 	} else if ( method == "window/showMessageRequest" ) {
@@ -1680,7 +1711,8 @@ LSPClientServer::LSPRequestHandle LSPClientServer::memoryUsage() {
 
 LSPClientServer::LSPRequestHandle LSPClientServer::executeCommand( const std::string& cmd,
 																   const json& params ) {
-	return send( executeCommandParams( cmd, params ), []( const auto&, const auto& ) {} );
+	return send( newRequest( "workspace/executeCommand", executeCommandParams( cmd, params ) ),
+				 []( const auto&, const auto& ) {} );
 }
 
 LSPClientServer::LSPRequestHandle

@@ -542,6 +542,10 @@ class EE_API TextDocument {
 
 	std::vector<std::string> getCommandList() const;
 
+	bool isRunningTransaction() const;
+
+	void setRunningTransaction( const bool runningTransaction );
+
   protected:
 	friend class UndoStack;
 
@@ -555,6 +559,7 @@ class EE_API TextDocument {
 	Mutex mClientsMutex;
 	LineEnding mLineEnding{ LineEnding::LF };
 	std::atomic<bool> mLoading{ false };
+	std::atomic<bool> mRunningTransaction{ false };
 	std::atomic<bool> mLoadingAsync{ false };
 	bool mIsBOM{ false };
 	bool mAutoDetectIndentType{ true };

@@ -148,6 +148,41 @@ void LSPClientServerManager::goToLocation( const LSPLocation& loc ) {
 	} );
 }
 
+void LSPClientServerManager::executeCommand( const std::shared_ptr<TextDocument>& doc,
+											 const LSPCommand& cmd ) {
+	if ( cmd.command.empty() )
+		return;
+	auto* server = getOneLSPClientServer( doc );
+	if ( server )
+		server->executeCommand( cmd.command, cmd.arguments );
+}
+
+void LSPClientServerManager::applyWorkspaceEdit(
+	const LSPWorkspaceEdit& edit,
+	const std::function<void( const LSPApplyWorkspaceEditResponse& res )>& resCb ) {
+	mPluginManager->getSplitter()->getUISceneNode()->runOnMainThread( [this, edit, resCb] {
+		bool allDone = true;
+
+		for ( const auto& ed : edit.changes ) {
+			if ( !mPlugin->processDocumentFormattingResponse( ed.first, ed.second ) ) {
+				allDone = false;
+			}
+		}
+
+		for ( const auto& edc : edit.documentChanges ) {
+			if ( !mPlugin->processDocumentFormattingResponse( edc.textDocument.uri, edc.edits ) ) {
+				allDone = false;
+			}
+		}
+
+		if ( resCb ) {
+			LSPApplyWorkspaceEditResponse res;
+			res.applied = allDone;
+			resCb( res );
+		}
+	} );
+}
+
 void LSPClientServerManager::run( const std::shared_ptr<TextDocument>& doc ) {
 	mThreadPool->run( [&, doc]() { tryRunServer( doc ); }, []() {} );
 }
@@ -201,7 +236,7 @@ void LSPClientServerManager::updateDirty() {
 				mLSPsToClose.erase( invalided );
 		}
 		if ( !removed.empty() ) {
-			for ( auto& remove : removed )
+			for ( const auto& remove : removed )
 				closeLSPServer( remove );
 		}
 	}
@@ -286,6 +321,21 @@ void LSPClientServerManager::getSymbolReferences( std::shared_ptr<TextDocument> 
 		[this]( const PluginIDType&, const std::vector<LSPLocation>& resp ) {
 			sendSymbolReferenceBroadcast( resp );
 		} );
+}
+
+void LSPClientServerManager::codeAction( std::shared_ptr<TextDocument> doc,
+										 const LSPClientServer::CodeActionHandler& h ) {
+	auto* server = getOneLSPClientServer( doc );
+	if ( !server )
+		return;
+
+	auto range = doc->getSelection();
+	if ( !doc->hasSelection() ) {
+		range = { doc->startOfLine( range.start() ),
+				  doc->positionOffset( doc->endOfLine( range.end() ), 1 ) };
+	}
+
+	server->documentCodeAction( doc->getURI(), range, {}, {}, h );
 }
 
 void LSPClientServerManager::memoryUsage( std::shared_ptr<TextDocument> doc ) {
@@ -380,7 +430,6 @@ LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const URI& uri )
 }
 
 LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const std::string& language ) {
-	std::vector<LSPClientServer*> servers;
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
 		if ( server.second->getDefinition().language == language )

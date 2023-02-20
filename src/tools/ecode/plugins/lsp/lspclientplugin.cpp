@@ -16,6 +16,97 @@ using json = nlohmann::json;
 
 namespace ecode {
 
+class LSPLocationModel : public Model {
+  public:
+	enum CustomInfo { URI, TextRange };
+
+	static std::shared_ptr<LSPLocationModel> create( const std::string& workspaceFolder,
+													 const std::vector<LSPLocation>& data ) {
+		return std::make_shared<LSPLocationModel>( workspaceFolder, data );
+	}
+
+	LSPLocationModel( const std::string& workspaceFolder, const std::vector<LSPLocation>& locs ) {
+		createLocs( workspaceFolder, locs );
+	}
+
+	size_t rowCount( const ModelIndex& ) const override { return mLocs.size(); };
+
+	size_t columnCount( const ModelIndex& ) const override { return 1; }
+
+	Variant data( const ModelIndex& index, ModelRole role ) const override {
+		if ( index.row() >= (Int64)mLocs.size() )
+			return {};
+		if ( role == ModelRole::Display ) {
+			return Variant( mLocs[index.row()].display.c_str() );
+		} else if ( role == ModelRole::Custom ) {
+			if ( index.column() == CustomInfo::URI ) {
+				return Variant( mLocs[index.row()].loc.uri.toString() );
+			} else if ( index.column() == CustomInfo::TextRange ) {
+				return Variant( mLocs[index.row()].loc.range.toString() );
+			}
+		}
+		return {};
+	}
+
+	void update() override { onModelUpdate(); }
+
+  protected:
+	struct Location {
+		LSPLocation loc;
+		std::string display;
+	};
+	std::vector<Location> mLocs;
+
+	void createLocs( std::string workspaceFolder, const std::vector<LSPLocation>& locs ) {
+		FileSystem::dirAddSlashAtEnd( workspaceFolder );
+
+		for ( const auto& loc : locs ) {
+			std::string display = loc.uri.getPath();
+			FileSystem::filePathRemoveBasePath( workspaceFolder, display );
+			display += " - L" + String::toString( loc.range.start().line() );
+			mLocs.push_back( { loc, display } );
+		}
+	}
+};
+
+class LSPCodeActionModel : public Model {
+  public:
+	static std::shared_ptr<LSPCodeActionModel> create( UISceneNode* sceneNode,
+													   const std::vector<LSPCodeAction>& data ) {
+		return std::make_shared<LSPCodeActionModel>( sceneNode, data );
+	}
+
+	explicit LSPCodeActionModel( UISceneNode* sceneNode, const std::vector<LSPCodeAction>& cas ) :
+		mUISceneNode( sceneNode ), mCodeActions( cas ) {}
+
+	size_t rowCount( const ModelIndex& ) const override {
+		return mCodeActions.empty() ? 1 : mCodeActions.size();
+	};
+
+	size_t columnCount( const ModelIndex& ) const override { return 1; }
+
+	Variant data( const ModelIndex& index, ModelRole role ) const override {
+		if ( role == ModelRole::Display ) {
+			if ( index.row() < (Int64)mCodeActions.size() ) {
+				return Variant( mCodeActions[index.row()].title.c_str() );
+			} else {
+				return Variant( mUISceneNode->i18n( "no_code_action", "No Code Action" ) );
+			}
+		}
+		return {};
+	}
+
+	bool hasCodeActions() const { return !mCodeActions.empty(); }
+
+	void update() override { onModelUpdate(); }
+
+	const LSPCodeAction& getCodeAction( size_t row ) const { return mCodeActions[row]; }
+
+  protected:
+	UISceneNode* mUISceneNode;
+	std::vector<LSPCodeAction> mCodeActions;
+};
+
 UICodeEditorPlugin* LSPClientPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LSPClientPlugin, ( pluginManager, false ) );
 }
@@ -116,7 +207,7 @@ PluginRequestHandle LSPClientPlugin::processCodeCompletionRequest( const PluginM
 									PluginMessageFormat::CodeCompletion, &completionList, id );
 		} );
 
-	return std::move( ret );
+	return ret;
 }
 
 PluginRequestHandle LSPClientPlugin::processSignatureHelpRequest( const PluginMessage& msg ) {
@@ -133,7 +224,7 @@ PluginRequestHandle LSPClientPlugin::processSignatureHelpRequest( const PluginMe
 									PluginMessageFormat::SignatureHelp, &data, id );
 		} );
 
-	return std::move( ret );
+	return ret;
 }
 
 PluginRequestHandle LSPClientPlugin::processDocumentFormatting( const PluginMessage& msg ) {
@@ -150,23 +241,35 @@ PluginRequestHandle LSPClientPlugin::processDocumentFormatting( const PluginMess
 	auto ret = server.server->documentFormatting(
 		server.uri, msg.asJSON()["options"],
 		[&, server]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
-			processDocumentFormattingResponse( server.uri, edits );
+			mManager->getSplitter()->getUISceneNode()->runOnMainThread(
+				[this, server, edits] { processDocumentFormattingResponse( server.uri, edits ); } );
 		} );
 
-	return std::move( ret );
+	return ret;
 }
 
-void LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
-														 const std::vector<LSPTextEdit>& edits ) {
+bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
+														 std::vector<LSPTextEdit> edits ) {
 	auto doc = mManager->getSplitter()->findDocFromPath( uri.getPath() );
-	if ( !doc )
-		return;
+	if ( !doc ) {
+		auto pair = mManager->getSplitter()->loadFileFromPathInNewTab( uri.getPath() );
+		if ( pair.first == nullptr || pair.second == nullptr || !pair.second->getDocumentRef() )
+			return false;
+		doc = pair.second->getDocumentRef();
+	}
 
 	for ( const auto& edit : edits )
-		if ( !edit.range.isValid() || !doc->isValidRange( edit.range ) )
-			return;
+		if ( !edit.range.isValid() )
+			return false;
 
 	TextRanges ranges = doc->getSelections();
+
+	doc->setRunningTransaction( true );
+
+	// Sort from bottom to top, this way we don't have to compute any position deltas
+	std::sort( edits.begin(), edits.end(), []( const LSPTextEdit& left, const LSPTextEdit& right ) {
+		return left.range > right.range;
+	} );
 
 	for ( const auto& edit : edits ) {
 		doc->setSelection( edit.range );
@@ -175,94 +278,56 @@ void LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 		} else {
 			if ( edit.range.hasSelection() )
 				doc->deleteTo( 0, 0 );
-			doc->setSelection( 0,
-							   doc->insert( 0, doc->getSelectionIndex( 0 ).start(), edit.text ) );
+			doc->insert( 0, doc->getSelectionIndex( 0 ).start(), edit.text );
 		}
 	}
 
 	doc->setSelection( ranges );
+
+	doc->setRunningTransaction( false );
+
+	return true;
 }
 
 bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
 	return mManager->getSplitter()->editorExists( editor );
 }
 
-class LSPLocationModel : public Model {
-  public:
-	enum CustomInfo { URI, TextRange };
-
-	static std::shared_ptr<LSPLocationModel> create( const std::string& workspaceFolder,
-													 const std::vector<LSPLocation>& data ) {
-		return std::make_shared<LSPLocationModel>( workspaceFolder, data );
-	}
-
-	LSPLocationModel( const std::string& workspaceFolder, const std::vector<LSPLocation>& locs ) {
-		createLocs( workspaceFolder, locs );
-	}
-
-	size_t rowCount( const ModelIndex& ) const override { return mLocs.size(); };
-
-	size_t columnCount( const ModelIndex& ) const override { return 1; }
-
-	Variant data( const ModelIndex& index, ModelRole role ) const override {
-		if ( role == ModelRole::Display ) {
-			return Variant( mLocs[index.row()].display.c_str() );
-		} else if ( role == ModelRole::Custom ) {
-			if ( index.column() == CustomInfo::URI ) {
-				return Variant( mLocs[index.row()].loc.uri.toString() );
-			} else if ( index.column() == CustomInfo::TextRange ) {
-				return Variant( mLocs[index.row()].loc.range.toString() );
-			}
-		}
-		return {};
-	}
-
-	void update() override { onModelUpdate(); }
-
-  protected:
-	struct Location {
-		LSPLocation loc;
-		std::string display;
-	};
-	std::vector<Location> mLocs;
-
-	void createLocs( std::string workspaceFolder, const std::vector<LSPLocation> locs ) {
-		FileSystem::dirAddSlashAtEnd( workspaceFolder );
-
-		for ( const auto& loc : locs ) {
-			std::string display = loc.uri.getPath();
-			FileSystem::filePathRemoveBasePath( workspaceFolder, display );
-			display += " - L" + String::toString( loc.range.start().line() );
-			mLocs.push_back( { loc, display } );
-		}
-	}
-};
-
-void LSPClientPlugin::createLocationsView( UICodeEditor* editor,
-										   const std::vector<LSPLocation>& res ) {
+void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_ptr<Model>& model,
+									  const ModelEventCallback& onModelEventCb,
+									  const std::function<void( UIListView* )> onCreateCb ) {
 	UICodeEditorSplitter* splitter = getManager()->getSplitter();
 	if ( nullptr == splitter || !editorExists( editor ) )
 		return;
-	editor->runOnMainThread( [&, editor, splitter, res] {
+	editor->runOnMainThread( [model, editor, splitter, onModelEventCb, onCreateCb] {
+		auto lvs = editor->findAllByClass( "editor_listview" );
+		for ( auto* ilv : lvs )
+			ilv->close();
+
 		UIListView* lv = UIListView::New();
 		lv->setParent( editor );
-		auto pos = editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
-		lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
-		auto model = LSPLocationModel::create( mManager->getWorkspaceFolder(), res );
+		lv->addClass( "editor_listview" );
+		auto pos =
+			editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
 		lv->setModel( model );
 		lv->setSelection( model->index( 0, 0 ) );
 		Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
 		lv->setColumnWidth( 0, colWidth );
-		lv->setPixelsSize( { colWidth, lv->getContentSize().y } );
+		lv->setPixelsSize(
+			{ colWidth, std::min( lv->getContentSize().y, lv->getRowHeight() * 8 ) } );
+		lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
+		if ( !lv->getParent()->getLocalBounds().contains(
+				 lv->getLocalBounds().setPosition( lv->getPixelsPosition() ) ) ) {
+			lv->setPixelsPosition( { pos.x, pos.y - lv->getPixelsSize().getHeight() } );
+		}
 		lv->setVisible( true );
+		if ( onCreateCb )
+			onCreateCb( lv );
 		lv->setFocus();
 		Uint32 focusCb = lv->getUISceneNode()->getUIEventDispatcher()->addFocusEventCallback(
-			[lv, splitter, editor]( const auto&, Node* focus, Node* ) {
-				if ( !lv->inParentTreeOf( focus ) && !lv->isClosing() ) {
+			[lv]( const auto&, Node* focus, Node* ) {
+				if ( !lv->inParentTreeOf( focus ) && !lv->isClosing() )
 					lv->close();
-					if ( splitter->editorExists( editor ) )
-						editor->setFocus();
-				}
 			} );
 		Uint32 cursorCb =
 			editor->on( Event::OnCursorPosChange, [lv, editor, splitter]( const Event* ) {
@@ -272,34 +337,79 @@ void LSPClientPlugin::createLocationsView( UICodeEditor* editor,
 						editor->setFocus();
 				}
 			} );
-		lv->on( Event::KeyDown, [splitter, editor, lv]( const Event* event ) {
-			if ( event->asKeyEvent()->getKeyCode() == EE::Window::KEY_ESCAPE && !lv->isClosing() ) {
+		lv->on( Event::KeyDown, [lv, splitter, editor]( const Event* event ) {
+			if ( event->asKeyEvent()->getKeyCode() == EE::Window::KEY_ESCAPE && !lv->isClosing() )
 				lv->close();
-				if ( splitter->editorExists( editor ) )
-					editor->setFocus();
-			}
+			if ( splitter->editorExists( editor ) )
+				editor->setFocus();
 		} );
-		lv->on( Event::OnModelEvent, [&]( const Event* event ) {
+		lv->on( Event::OnModelEvent, [&, onModelEventCb]( const Event* event ) {
 			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-			if ( modelEvent->getModelEventType() != ModelEventType::Open )
-				return;
-			auto r = modelEvent->getModelIndex().row();
-			Variant uri( modelEvent->getModel()->data(
-				modelEvent->getModel()->index( r, LSPLocationModel::CustomInfo::URI ),
-				ModelRole::Custom ) );
-			Variant range( modelEvent->getModel()->data(
-				modelEvent->getModel()->index( r, LSPLocationModel::CustomInfo::TextRange ),
-				ModelRole::Custom ) );
-			LSPLocation loc;
-			loc.uri = URI( uri.asStdString() );
-			loc.range = TextRange::fromString( range.asStdString() );
-			mClientManager.goToLocation( loc );
+			if ( onModelEventCb )
+				onModelEventCb( modelEvent );
 		} );
 		lv->on( Event::OnClose, [lv, editor, cursorCb, focusCb]( const Event* ) {
 			lv->getUISceneNode()->getUIEventDispatcher()->removeFocusEventCallback( focusCb );
 			editor->removeEventListener( cursorCb );
 		} );
 	} );
+}
+
+void LSPClientPlugin::createLocationsView( UICodeEditor* editor,
+										   const std::vector<LSPLocation>& res ) {
+	auto model = LSPLocationModel::create( mManager->getWorkspaceFolder(), res );
+	createListView( editor, model, [&]( const ModelEvent* modelEvent ) {
+		if ( modelEvent->getModelEventType() != ModelEventType::Open )
+			return;
+		auto r = modelEvent->getModelIndex().row();
+		Variant uri( modelEvent->getModel()->data(
+			modelEvent->getModel()->index( r, LSPLocationModel::CustomInfo::URI ),
+			ModelRole::Custom ) );
+		Variant range( modelEvent->getModel()->data(
+			modelEvent->getModel()->index( r, LSPLocationModel::CustomInfo::TextRange ),
+			ModelRole::Custom ) );
+		LSPLocation loc;
+		loc.uri = URI( uri.asStdString() );
+		loc.range = TextRange::fromString( range.asStdString() );
+		mClientManager.goToLocation( loc );
+		modelEvent->getNode()->close();
+	} );
+}
+
+void LSPClientPlugin::createCodeActionsView( UICodeEditor* editor,
+											 const std::vector<LSPCodeAction>& cas ) {
+	auto model = LSPCodeActionModel::create( mManager->getSplitter()->getUISceneNode(), cas );
+	createListView(
+		editor, model,
+		[this, editor]( const ModelEvent* modelEvent ) {
+			if ( modelEvent->getModelEventType() != ModelEventType::Open )
+				return;
+			auto r = modelEvent->getModelIndex().row();
+			const auto cam = static_cast<const LSPCodeActionModel*>( modelEvent->getModel() );
+			if ( cam->hasCodeActions() && editorExists( editor ) ) {
+				const auto& ca = cam->getCodeAction( r );
+				auto server = mClientManager.getOneLSPClientServer( editor->getDocumentRef() );
+				if ( server && server->getCapabilities().executeCommandProvider ) {
+					mClientManager.executeCommand( editor->getDocumentRef(), ca.command );
+				} else {
+					mClientManager.applyWorkspaceEdit( ca.edit, []( const auto& ) {} );
+				}
+				editor->setFocus();
+			}
+			modelEvent->getNode()->close();
+		},
+		[this, cas, editor]( UIListView* lv ) {
+			if ( cas.empty() ) {
+				lv->runOnMainThread(
+					[this, editor] {
+						if ( editorExists( editor ) &&
+							 getManager()->getSplitter()->isCurEditor( editor ) ) {
+							editor->setFocus();
+						}
+					},
+					Seconds( 1 ) );
+			}
+		} );
 }
 
 PluginRequestHandle LSPClientPlugin::processCancelRequest( const PluginMessage& msg ) {
@@ -383,11 +493,11 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 
 	std::vector<LSPDefinition> lsps;
 
-	for ( const auto& path : paths ) {
+	for ( const auto& ipath : paths ) {
 		try {
-			loadLSPConfig( lsps, path, mConfigPath == path );
+			loadLSPConfig( lsps, ipath, mConfigPath == ipath );
 		} catch ( const json::exception& e ) {
-			Log::error( "Parsing LSP \"%s\" failed:\n%s", path.c_str(), e.what() );
+			Log::error( "Parsing LSP \"%s\" failed:\n%s", ipath.c_str(), e.what() );
 		}
 	}
 
@@ -434,14 +544,15 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 	if ( mKeyBindings.empty() ) {
 		mKeyBindings["lsp-go-to-definition"] = "f2";
 		mKeyBindings["lsp-symbol-info"] = "f1";
+		mKeyBindings["lsp-symbol-code-action"] = "alt+return";
 	}
 
 	if ( j.contains( "keybindings" ) ) {
 		auto& kb = j["keybindings"];
-		auto list = { "lsp-go-to-definition",	  "lsp-go-to-declaration",
-					  "lsp-go-to-implementation", "lsp-go-to-type-definition",
-					  "lsp-switch-header-source", "lsp-symbol-info",
-					  "lsp-symbol-references",	  "lsp-memory-usage" };
+		auto list = {
+			"lsp-go-to-definition",		 "lsp-go-to-declaration",	 "lsp-go-to-implementation",
+			"lsp-go-to-type-definition", "lsp-switch-header-source", "lsp-symbol-info",
+			"lsp-symbol-references",	 "lsp-memory-usage",		 "lsp-symbol-code-action" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -597,6 +708,14 @@ void LSPClientPlugin::getAndGoToLocation( UICodeEditor* editor, const std::strin
 		} );
 }
 
+void LSPClientPlugin::codeAction( UICodeEditor* editor ) {
+	mClientManager.codeAction(
+		editor->getDocumentRef(),
+		[&, editor]( const LSPClientServer::IdType&, const std::vector<LSPCodeAction>& res ) {
+			createCodeActionsView( editor, res );
+		} );
+}
+
 void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	mDocs.insert( editor->getDocumentRef().get() );
@@ -633,6 +752,8 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		doc.setCommand( "lsp-symbol-references", [&, editor] {
 			mClientManager.getSymbolReferences( editor->getDocumentRef() );
 		} );
+
+		doc.setCommand( "lsp-symbol-code-action", [&, editor] { codeAction( editor ); } );
 
 		doc.setCommand( "lsp-memory-usage",
 						[&, editor] { mClientManager.memoryUsage( editor->getDocumentRef() ); } );
@@ -697,14 +818,14 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 		return;
 	Lock l( mDocMutex );
 	TextDocument* doc = mEditorDocs[editor];
-	auto& cbs = mEditors[editor];
+	const auto& cbs = mEditors[editor];
 	for ( auto listener : cbs )
 		editor->removeEventListener( listener );
 	mEditors.erase( editor );
 	mEditorsTags.erase( editor );
 	mEditorDocs.erase( editor );
-	for ( auto& editor : mEditorDocs )
-		if ( editor.second == doc )
+	for ( const auto& ieditor : mEditorDocs )
+		if ( ieditor.second == doc )
 			return;
 	mDocs.erase( doc );
 }
@@ -744,6 +865,9 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	if ( cap.referencesProvider )
 		addFn( "lsp-symbol-references", "Find References to Symbol Under Cursor" );
+
+	if ( cap.codeActionProvider )
+		addFn( "lsp-symbol-code-action", "Code Action" );
 
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
 		addFn( "lsp-switch-header-source", "Switch Header/Source" );

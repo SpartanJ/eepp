@@ -18,7 +18,7 @@ template <typename T> class tRECT {
 
 	tRECT<T> copy() const;
 
-	void setPosition( const Vector2<T>& pos );
+	tRECT<T>& setPosition( const Vector2<T>& pos );
 
 	bool intersect( const tRECT<T>& rect ) const;
 
@@ -26,11 +26,11 @@ template <typename T> class tRECT {
 
 	bool contains( const Vector2<T>& Vect ) const;
 
-	void expand( const tRECT<T>& rect );
+	tRECT<T>& expand( const tRECT<T>& rect );
 
-	void shrink( const tRECT<T>& rect );
+	tRECT<T>& shrink( const tRECT<T>& rect );
 
-	void expand( const Vector2<T>& Vect );
+	tRECT<T>& expand( const Vector2<T>& Vect );
 
 	T area() const;
 
@@ -75,13 +75,13 @@ template <typename T> class tRECT {
 
 	tRECT<T> roundDown() const;
 
-	void scale( T scale, const Vector2<T>& center );
+	tRECT<T>& scale( T scale, const Vector2<T>& center );
 
-	void scale( T scale );
+	tRECT<T>& scale( T scale );
 
-	void scale( Vector2<T> scale, const Vector2<T>& center );
+	tRECT<T>& scale( Vector2<T> scale, const Vector2<T>& center );
 
-	void scale( Vector2<T> scale );
+	tRECT<T>& scale( Vector2<T> scale );
 
 	tRECT<Float> asFloat() const;
 
@@ -257,33 +257,37 @@ template <typename T> T tRECT<T>::getHeight() const {
 	return eeabs( Bottom - Top );
 }
 
-template <typename T> void tRECT<T>::setPosition( const Vector2<T>& pos ) {
+template <typename T> tRECT<T>& tRECT<T>::setPosition( const Vector2<T>& pos ) {
 	auto size = getSize();
 	Left = pos.x;
 	Bottom = pos.y + size.y;
 	Right = pos.x + size.x;
 	Top = pos.y;
+	return *this;
 }
 
-template <typename T> void tRECT<T>::expand( const tRECT<T>& rect ) {
+template <typename T> tRECT<T>& tRECT<T>::expand( const tRECT<T>& rect ) {
 	Left = eemin( Left, rect.Left );
 	Bottom = eemax( Bottom, rect.Bottom );
 	Right = eemax( Right, rect.Right );
 	Top = eemin( Top, rect.Top );
+	return *this;
 }
 
-template <typename T> void tRECT<T>::shrink( const tRECT<T>& rect ) {
+template <typename T> tRECT<T>& tRECT<T>::shrink( const tRECT<T>& rect ) {
 	Left = eemax( Left, rect.Left );
 	Top = eemax( Top, rect.Top );
 	Right = eemax( Left, eemin( Right, rect.Right ) );
 	Bottom = eemax( Top, eemin( Bottom, rect.Bottom ) );
+	return *this;
 }
 
-template <typename T> void tRECT<T>::expand( const Vector2<T>& Vect ) {
+template <typename T> tRECT<T>& tRECT<T>::expand( const Vector2<T>& Vect ) {
 	Left = eemin( Left, Vect.x );
 	Bottom = eemax( Bottom, Vect.y );
 	Right = eemax( Right, Vect.x );
 	Top = eemin( Top, Vect.y );
+	return *this;
 }
 
 template <typename T> T tRECT<T>::area() const {
@@ -362,25 +366,26 @@ template <typename T> Vector2<T> tRECT<T>::wrapVector( const Vector2<T>& Vect ) 
 	return Vector2<T>( x + Left, y + Top );
 }
 
-template <typename T> void tRECT<T>::scale( Vector2<T> scale, const Vector2<T>& center ) {
+template <typename T> tRECT<T>& tRECT<T>::scale( Vector2<T> scale, const Vector2<T>& center ) {
 	if ( scale != 1.0f ) {
 		Left = center.x + ( Left - center.x ) * scale.x;
 		Top = center.y + ( Top - center.y ) * scale.y;
 		Right = center.x + ( Right - center.x ) * scale.x;
 		Bottom = center.y + ( Bottom - center.y ) * scale.y;
 	}
+	return *this;
 }
 
-template <typename T> void tRECT<T>::scale( T scale, const Vector2<T>& center ) {
-	scale( Vector2f( scale, scale ), center );
+template <typename T> tRECT<T>& tRECT<T>::scale( T scale, const Vector2<T>& center ) {
+	return scale( Vector2f( scale, scale ), center );
 }
 
-template <typename T> void tRECT<T>::scale( T scale ) {
-	scale( scale, getCenter() );
+template <typename T> tRECT<T>& tRECT<T>::scale( T scale ) {
+	return scale( scale, getCenter() );
 }
 
-template <typename T> void tRECT<T>::scale( Vector2<T> scale ) {
-	scale( scale, getCenter() );
+template <typename T> tRECT<T>& tRECT<T>::scale( Vector2<T> scale ) {
+	return scale( scale, getCenter() );
 }
 
 template <typename T> tRECT<T> tRECT<T>::ceil() const {

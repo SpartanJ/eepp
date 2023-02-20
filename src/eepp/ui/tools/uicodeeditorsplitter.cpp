@@ -1062,6 +1062,10 @@ bool UICodeEditorSplitter::curWidgetExists() const {
 	return found || mCurWidget == nullptr;
 }
 
+bool UICodeEditorSplitter::isCurEditor( UICodeEditor* editor ) {
+	return mCurEditor == editor;
+}
+
 UICodeEditor* UICodeEditorSplitter::getSomeEditor() {
 	UICodeEditor* ed = nullptr;
 	forEachEditorStoppable( [&]( UICodeEditor* editor ) {

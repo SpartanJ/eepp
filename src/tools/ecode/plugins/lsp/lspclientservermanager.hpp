@@ -66,6 +66,9 @@ class LSPClientServerManager {
 
 	void getSymbolReferences( std::shared_ptr<TextDocument> doc );
 
+	void codeAction( std::shared_ptr<TextDocument> doc,
+					 const LSPClientServer::CodeActionHandler& h );
+
 	void memoryUsage( std::shared_ptr<TextDocument> doc );
 
 	const std::vector<LSPDefinition>& getLSPs() const;
@@ -77,6 +80,12 @@ class LSPClientServerManager {
 							 const LSPClientServer::LocationHandler& h );
 
 	void goToLocation( const LSPLocation& loc );
+
+	void executeCommand( const std::shared_ptr<TextDocument>& doc, const LSPCommand& cmd );
+
+	void applyWorkspaceEdit(
+		const LSPWorkspaceEdit& edit,
+		const std::function<void( const LSPApplyWorkspaceEditResponse& res )>& resCb );
 
   protected:
 	friend class LSPClientServer;

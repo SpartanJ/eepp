@@ -191,6 +191,8 @@ class EE_API UICodeEditorSplitter {
 
 	bool curWidgetExists() const;
 
+	bool isCurEditor( UICodeEditor* editor );
+
 	UICodeEditor* getSomeEditor();
 
 	size_t countEditorsOpeningDoc( const TextDocument& doc ) const;

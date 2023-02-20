@@ -115,7 +115,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	void registerNativeFormatters();
 
-	bool tryRequestCapabilities( UICodeEditor* editor );
+	bool tryRequestCapabilities( const std::shared_ptr<TextDocument>& doc );
 
 	PluginRequestHandle processResponse( const PluginMessage& msg );
 };

@@ -386,7 +386,8 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 }
 
 void UICodeEditor::updateLongestLineWidth() {
-	if ( mHorizontalScrollBarEnabled && mDoc && !mDoc->isLoading() ) {
+	if ( mHorizontalScrollBarEnabled && mDoc && !mDoc->isLoading() &&
+		 !mDoc->isRunningTransaction() ) {
 		Float maxWidth = mLongestLineWidth;
 		findLongestLine();
 		mLongestLineWidthLastUpdate.restart();
@@ -2213,9 +2214,8 @@ Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const 
 	Float xOffset = 0;
 	Float tabWidth = glyphWidth * mTabWidth;
 	Float hTab = tabWidth * 0.5f;
-	bool isTab;
 	for ( int i = 0; i < len; i++ ) {
-		isTab = ( line[i] == '\t' );
+		bool isTab = ( line[i] == '\t' );
 		if ( xOffset >= x ) {
 			return xOffset - x > ( isTab ? hTab : glyphWidth * 0.5f ) ? eemax<Int64>( 0, i - 1 )
 																	  : i;

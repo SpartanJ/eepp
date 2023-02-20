@@ -111,6 +111,7 @@ struct LSPServerCapabilities {
 	// (other parts not useful/considered at present)
 	LSPWorkspaceFoldersServerCapabilities workspaceFolders;
 	bool selectionRangeProvider = false;
+	bool executeCommandProvider = false;
 };
 
 enum class LSPMessageType { Error = 1, Warning = 2, Info = 3, Log = 4 };
@@ -419,6 +420,16 @@ struct LSPShowDocumentParams {
 	bool external{ true };
 	bool takeFocus{ false };
 	TextRange selection;
+};
+
+struct LSPApplyWorkspaceEditParams {
+	std::string label;
+	LSPWorkspaceEdit edit;
+};
+
+struct LSPApplyWorkspaceEditResponse {
+	bool applied;
+	std::string failureReason;
 };
 
 } // namespace ecode

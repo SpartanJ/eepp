@@ -8,8 +8,10 @@
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uilistview.hpp>
 #include <set>
 using namespace EE;
 using namespace EE::System;
@@ -69,6 +71,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	std::string getFileConfigPath();
 
+	bool processDocumentFormattingResponse( const URI& uri, std::vector<LSPTextEdit> edits );
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -125,13 +129,21 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	void switchSourceHeader( UICodeEditor* editor );
 
-	void processDocumentFormattingResponse( const URI& uri, const std::vector<LSPTextEdit>& edits );
-
 	bool editorExists( UICodeEditor* editor );
 
 	void createLocationsView( UICodeEditor* editor, const std::vector<LSPLocation>& locs );
 
 	void getAndGoToLocation( UICodeEditor* editor, const std::string& search );
+
+	void codeAction( UICodeEditor* editor );
+
+	void createCodeActionsView( UICodeEditor* editor, const std::vector<LSPCodeAction>& cas );
+
+	typedef std::function<void( const ModelEvent* )> ModelEventCallback;
+
+	void createListView( UICodeEditor* editor, const std::shared_ptr<Model>& model,
+						 const ModelEventCallback& onModelEventCb,
+						 const std::function<void( UIListView* )> onCreateCb = {} );
 };
 
 } // namespace ecode
