@@ -327,6 +327,8 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		match.type = getLinterTypeFromSeverity( diag.severity );
 		match.lineCache = doc->line( match.range.start().line() ).getHash();
 		match.origin = MatchOrigin::Diagnostics;
+		if ( !diag.codeActions.empty() )
+			match.codeActions = diag.codeActions;
 		matches[match.range.start().line()].emplace_back( std::move( match ) );
 	}
 

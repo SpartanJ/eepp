@@ -34,7 +34,7 @@ class App : public UICodeEditorSplitter::Client {
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 			   const std::string& css, bool health, const std::string& healthLang,
-			   ecode::FeaturesHealth::OutputFormat healthFormat );
+			   ecode::FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen );
 
 	void createWidgetInspector();
 
@@ -380,7 +380,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void initLocateBar();
 
-	void initProjectTreeView( const std::string& path );
+	void initProjectTreeView( std::string path );
 
 	void initImageView();
 

@@ -1454,9 +1454,10 @@ void UICodeEditor::updateScrollBar() {
 	setScrollY( mScroll.y );
 }
 
-void UICodeEditor::goToLine( const TextPosition& position, bool centered ) {
+void UICodeEditor::goToLine( const TextPosition& position, bool centered, bool forceExactPosition,
+							 bool scrollX ) {
 	mDoc->setSelection( position );
-	scrollTo( mDoc->getSelection().start(), centered );
+	scrollTo( mDoc->getSelection().start(), centered, forceExactPosition, scrollX );
 }
 
 bool UICodeEditor::getAutoCloseBrackets() const {

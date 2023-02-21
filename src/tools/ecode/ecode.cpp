@@ -30,6 +30,43 @@ bool firstFrame = true;
 bool firstUpdate = true;
 App* appInstance = nullptr;
 
+static bool pathHasPosition( const std::string& path ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return std::count( path.begin(), path.end(), ':' ) > 1;
+#else
+	return std::count( path.begin(), path.end(), ':' ) > 0;
+#endif
+}
+
+static std::pair<std::string, TextPosition> getPathAndPosition( const std::string& path ) {
+	if ( pathHasPosition( path ) ) {
+		auto parts = String::split( path, ':' );
+		if ( parts.size() >= 2 ) {
+			Int64 line = 0;
+			Int64 col = 0;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+			size_t partCount = 4;
+#else
+			size_t partCount = 3;
+#endif
+			int linePos = parts.size() >= partCount ? parts.size() - 2 : parts.size() - 1;
+			int colPos = parts.size() >= partCount ? parts.size() - 1 : -1;
+			if ( String::fromString( line, parts[linePos] ) ) {
+				if ( colPos > 0 )
+					String::fromString( col, parts[colPos] );
+			}
+			std::string npath( parts[0] );
+			if ( parts.size() >= 2 ) {
+				for ( Int64 i = 1; i < linePos; i++ ) {
+					npath += ":" + parts[i];
+				}
+			}
+			return { npath, { eemax( (Int64)0, line - 1 ), col } };
+		}
+	}
+	return { path, { 0, 0 } };
+}
+
 void appLoop() {
 	appInstance->mainLoop();
 }
@@ -2179,7 +2216,7 @@ void App::consoleToggle() {
 		mSplitter->getCurWidget()->setFocus();
 }
 
-void App::initProjectTreeView( const std::string& path ) {
+void App::initProjectTreeView( std::string path ) {
 	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
 	mProjectTreeView->setColumnsHidden(
 		{ FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
@@ -2257,6 +2294,14 @@ void App::initProjectTreeView( const std::string& path ) {
 		return 0;
 	} );
 
+	bool hasPosition = pathHasPosition( path );
+	TextPosition initialPosition;
+	if ( hasPosition ) {
+		auto pathAndPosition = getPathAndPosition( path );
+		path = pathAndPosition.first;
+		initialPosition = pathAndPosition.second;
+	}
+
 	if ( !path.empty() ) {
 		if ( FileSystem::isDirectory( path ) ) {
 			loadFolder( path );
@@ -2282,10 +2327,19 @@ void App::initProjectTreeView( const std::string& path ) {
 				if ( mFileSystemListener )
 					mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
+				std::function<void( UICodeEditor * codeEditor, const std::string& path )>
+					forcePosition;
+				if ( initialPosition.isValid() ) {
+					forcePosition = [initialPosition]( UICodeEditor* editor, const auto& ) {
+						editor->runOnMainThread(
+							[initialPosition, editor] { editor->goToLine( initialPosition ); } );
+					};
+				}
+
 				if ( FileSystem::fileExists( rpath ) ) {
-					loadFileFromPath( rpath, false );
+					loadFileFromPath( rpath, false, nullptr, forcePosition );
 				} else if ( FileSystem::fileCanWrite( folderPath ) ) {
-					loadFileFromPath( path, false );
+					loadFileFromPath( path, false, nullptr, forcePosition );
 				}
 			}
 		}
@@ -2465,7 +2519,7 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 				const std::string& css, bool health, const std::string& healthLang,
-				FeaturesHealth::OutputFormat healthFormat ) {
+				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -3117,11 +3171,48 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			file = "";
 #endif
 
-		if ( terminal && file.empty() ) {
+		if ( terminal && file.empty() && fileToOpen.empty() ) {
 			showSidePanel( false );
 			mTerminalManager->createNewTerminal();
 		} else {
 			initProjectTreeView( file );
+		}
+
+		if ( !fileToOpen.empty() ) {
+			auto fileAndPos = getPathAndPosition( fileToOpen );
+			auto tab = mSplitter->isDocumentOpen( fileAndPos.first, false, true );
+
+			if ( tab ) {
+				tab->getTabWidget()->setTabSelected( tab );
+				if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+					UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+					if ( editor->getDocument().isLoading() ) {
+						Uint32 cb = editor->on(
+							Event::OnDocumentLoaded, [fileAndPos]( const Event* event ) {
+								if ( event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
+									UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+									editor->runOnMainThread( [editor, fileAndPos] {
+										editor->goToLine( fileAndPos.second );
+									} );
+								}
+								event->getNode()->removeEventListener( event->getCallbackId() );
+							} );
+						// Don't listen forever if no event is received
+						editor->runOnMainThread(
+							[editor, cb]() { editor->removeEventListener( cb ); }, Seconds( 4 ) );
+					} else {
+						editor->runOnMainThread(
+							[editor, fileAndPos] { editor->goToLine( fileAndPos.second ); } );
+					}
+				}
+			} else {
+				loadFileFromPath( fileAndPos.first, true, nullptr,
+								  [fileAndPos]( UICodeEditor* editor, const std::string& ) {
+									  editor->runOnMainThread( [editor, fileAndPos] {
+										  editor->goToLine( fileAndPos.second );
+									  } );
+								  } );
+			}
 		}
 
 		Log::info( "Init ProjectTreeView took: %.2f ms",
@@ -3149,9 +3240,17 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #endif
 	args::ArgumentParser parser( "ecode" );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', '?', "help" } );
-	args::Positional<std::string> file( parser, "file", "The file or folder path" );
-	args::ValueFlag<std::string> filePos( parser, "file", "The file or folder path",
-										  { 'f', "file", "folder" } );
+	args::Positional<std::string> fileOrFolderPos( parser, "file_or_folder",
+												   "The file or folder path to open" );
+	args::ValueFlag<std::string> file(
+		parser, "file",
+		"The file path to open. A file path can also contain the line number and column to "
+		"position the cursor when the file is opened. The format is: "
+		"$FILEPATH:$LINE_NUMBER:$COLUMN. Both line number and column are optional (line number can "
+		"be provided without column too).",
+		{ 'f', "file" } );
+	args::ValueFlag<std::string> folder( parser, "folder", "The folder path to open",
+										 { "folder" } );
 	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
@@ -3219,11 +3318,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		Log::instance()->setConsoleOutput( true );
 
 	appInstance = eeNew( App, ( jobs ) );
-	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
+	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
 					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
-					   healthFormat.Get() );
+					   healthFormat.Get(), file.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

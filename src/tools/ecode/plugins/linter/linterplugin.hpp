@@ -44,6 +44,7 @@ struct LinterMatch {
 	String::HashType lineCache;
 	MatchOrigin origin{ MatchOrigin::Linter };
 	std::map<UICodeEditor*, Rectf> box;
+	std::vector<LSPDiagnosticsCodeAction> codeActions;
 };
 
 class LinterPlugin : public UICodeEditorPlugin {

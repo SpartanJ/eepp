@@ -1091,10 +1091,21 @@ static ULONG_PTR GetParentProcessId() {
 	}
 	return (ULONG_PTR)-1;
 }
+
+static bool isWineRunning() {
+	HMODULE hntdll = GetModuleHandle( "ntdll.dll" );
+	if ( !hntdll )
+		return false;
+	void* pwine_get_version = (void*)GetProcAddress( hntdll, "wine_get_version" );
+	return pwine_get_version != NULL;
+}
 #endif
 
 bool Sys::windowAttachConsole() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
+	// WINE doesn't need to attach any console
+	if ( isWineRunning() )
+		return true;
 	ULONG_PTR ppid = GetParentProcessId();
 	if ( ppid == (ULONG_PTR)-1 ) {
 		return false;

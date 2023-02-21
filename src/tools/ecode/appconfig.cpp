@@ -386,8 +386,11 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 					editor->setDocument(
 						tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef() );
 					editorSplitter->removeUnusedTab( curTabWidget );
-					editor->getDocument().setSelection( selection );
-					editor->scrollToCursor();
+					if ( !editor->getDocument().getSelection().isValid() ||
+						 editor->getDocument().getSelection() == TextRange( { 0, 0 }, { 0, 0 } ) ) {
+						editor->getDocument().setSelection( selection );
+						editor->scrollToCursor();
+					}
 					if ( curTabWidget->getTabCount() == totalToLoad )
 						curTabWidget->setTabSelected(
 							eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
@@ -396,8 +399,12 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 						path, pool,
 						[curTabWidget, selection, totalToLoad, currentPage]( UICodeEditor* editor,
 																			 const std::string& ) {
-							editor->getDocument().setSelection( selection );
-							editor->scrollToCursor();
+							if ( !editor->getDocument().getSelection().isValid() ||
+								 editor->getDocument().getSelection() ==
+									 TextRange( { 0, 0 }, { 0, 0 } ) ) {
+								editor->getDocument().setSelection( selection );
+								editor->scrollToCursor();
+							}
 							if ( curTabWidget->getTabCount() == totalToLoad )
 								curTabWidget->setTabSelected( eeclamp<Int32>(
 									currentPage, 0, curTabWidget->getTabCount() - 1 ) );

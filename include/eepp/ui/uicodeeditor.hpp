@@ -460,7 +460,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setColorPreview( bool colorPreview );
 
-	void goToLine( const TextPosition& position, bool centered = true );
+	void goToLine( const TextPosition& position, bool centered = true,
+				   bool forceExactPosition = false, bool scrollX = true );
 
 	bool getAutoCloseBrackets() const;
 
