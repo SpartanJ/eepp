@@ -869,6 +869,31 @@ static json applyWorkspaceEditResponse( const PluginIDType& msgid,
 	return j;
 }
 
+void LSPClientServer::registerCapabilities( const json& jcap ) {
+	if ( !jcap.is_object() || !jcap.contains( "registrations" ) ||
+		 !jcap["registrations"].is_array() )
+		return;
+	bool registered = false;
+	const auto& registrations = jcap["registrations"];
+
+	for ( const auto& reg : registrations ) {
+		if ( reg.contains( "method" ) ) {
+			if ( reg["method"] == "workspace/executeCommand" ) {
+				mCapabilities.executeCommandProvider = true;
+				registered = true;
+			}
+		}
+	}
+
+	if ( !registered )
+		return;
+
+	// Broadcast the new language capabilities to all the interested plugins
+	mManager->getPluginManager()->sendBroadcast(
+		mManager->getPlugin(), PluginMessageType::LanguageServerCapabilities,
+		PluginMessageFormat::LanguageServerCapabilities, &mCapabilities );
+}
+
 void LSPClientServer::initialize() {
 	json codeAction{
 		{ "codeActionLiteralSupport",
@@ -890,6 +915,10 @@ void LSPClientServer::initialize() {
 	json showDocument;
 	showDocument["support"] = true;
 
+	json workspace;
+	workspace["applyEdit"] = true;
+	workspace["executeCommand"] = json{ { "dynamicRegistration", true } };
+
 	json capabilities{
 		{ "textDocument",
 		  json{
@@ -906,7 +935,7 @@ void LSPClientServer::initialize() {
 		{ "window", json{ { "workDoneProgress", true },
 						  { "showMessage", showMessage },
 						  { "showDocument", showDocument } } },
-		//{ "workspace", json{ { "workspaceFolders", true }, { "configuration", false } } },
+		{ "workspace", workspace },
 		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
 
 	json params{ { "processId", Sys::getProcessID() },
@@ -925,7 +954,7 @@ void LSPClientServer::initialize() {
 	}
 	std::string rpath = rootPath.getFSPath();
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	if (rpath.size() > 2 && rpath[1] == ':')
+	if ( rpath.size() > 2 && rpath[1] == ':' )
 		rpath[0] = std::tolower( rpath[0] );
 #endif
 	std::string rootUri = rootPath.toString();
@@ -1341,8 +1370,11 @@ void LSPClientServer::processRequest( const json& msg ) {
 										  } );
 									  } );
 		return;
-	} else if ( method == "window/workDoneProgress/create" ||
-				method == "client/registerCapability" ) {
+	} else if ( method == "window/workDoneProgress/create" ) {
+		write( newEmptyResult( msgid ) );
+		return;
+	} else if ( method == "client/registerCapability" ) {
+		registerCapabilities( msg[MEMBER_PARAMS] );
 		write( newEmptyResult( msgid ) );
 		return;
 	} else if ( method == "window/showMessageRequest" ) {

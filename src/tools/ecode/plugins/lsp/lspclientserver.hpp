@@ -197,6 +197,8 @@ class LSPClientServer {
 
 	LSPRequestHandle executeCommand( const std::string& cmd, const json& params );
 
+	void registerCapabilities( const json& jcap );
+
 	void removeDoc( TextDocument* doc );
 
   protected:
