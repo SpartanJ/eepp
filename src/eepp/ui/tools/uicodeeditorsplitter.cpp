@@ -566,10 +566,14 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	return tabWidget;
 }
 
-UITab* UICodeEditorSplitter::isDocumentOpen( std::string path, bool checkOnlyInCurrentTabWidget,
+UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path, bool checkOnlyInCurrentTabWidget,
 											 bool checkOpeningDocuments ) const {
-	if ( String::startsWith( path, "file://" ) )
-		path = path.substr( 7 );
+	return isDocumentOpen( URI( "file://" + path ), checkOnlyInCurrentTabWidget,
+						   checkOpeningDocuments );
+}
+
+UITab* UICodeEditorSplitter::isDocumentOpen( const URI& uri, bool checkOnlyInCurrentTabWidget,
+											 bool checkOpeningDocuments ) const {
 	if ( checkOnlyInCurrentTabWidget ) {
 		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
 		if ( nullptr == tabWidget )
@@ -580,8 +584,8 @@ UITab* UICodeEditorSplitter::isDocumentOpen( std::string path, bool checkOnlyInC
 				continue;
 			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 
-			if ( editor->getDocument().getFilePath() == path ||
-				 ( checkOpeningDocuments && editor->getDocument().getLoadingFilePath() == path ) ) {
+			if ( editor->getDocument().getURI() == uri ||
+				 ( checkOpeningDocuments && editor->getDocument().getLoadingFilePath() == uri.getFSPath() ) ) {
 				return tab;
 			}
 		}
@@ -593,9 +597,9 @@ UITab* UICodeEditorSplitter::isDocumentOpen( std::string path, bool checkOnlyInC
 					continue;
 				UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 
-				if ( editor->getDocument().getFilePath() == path ||
+				if ( editor->getDocument().getURI() == uri ||
 					 ( checkOpeningDocuments &&
-					   editor->getDocument().getLoadingFilePath() == path ) ) {
+					   editor->getDocument().getLoadingFilePath() == uri.getFSPath() ) ) {
 					return tab;
 				}
 			}
@@ -725,6 +729,16 @@ void UICodeEditorSplitter::forEachDocStoppable( std::function<bool( TextDocument
 			}
 		}
 	}
+}
+
+std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromURI( const URI& uri ) {
+	std::unordered_set<std::shared_ptr<TextDocument>> docs;
+	forEachEditor( [&]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef() ); } );
+	for ( const auto& doc : docs ) {
+		if ( doc->getURI() == uri )
+			return doc;
+	}
+	return {};
 }
 
 std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromPath( const std::string& path ) {

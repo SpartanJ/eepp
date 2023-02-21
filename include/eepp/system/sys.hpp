@@ -83,6 +83,11 @@ class EE_API Sys {
 	 *  @return The executable file path, or an empty string if not found. */
 	static std::string which( const std::string& exeName,
 							  const std::vector<std::string>& customSearchPaths = {} );
+	
+	/* It will attach the console to the parent process console if any. Windows only function.
+	 * Other platforms will do nothing. 
+	*/
+	static bool windowAttachConsole();
 };
 
 }} // namespace EE::System

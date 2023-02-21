@@ -2050,7 +2050,7 @@ void App::renameFile( const FileInfo& file ) {
 	msgBox->getTextInput()->setText( file.getFileName() );
 	msgBox->addEventListener( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
 		auto newFilePath( getNewFilePath( file, msgBox, false ) );
-		if ( !FileSystem::fileExists( newFilePath ) ) {
+		if ( !FileSystem::fileExists( newFilePath ) || file.getFileName() != msgBox->getTextInput()->getText() ) {
 			try {
 				std::string fpath( file.getFilepath() );
 				if ( file.isDirectory() )
@@ -2371,6 +2371,8 @@ void App::loadFolder( const std::string& path ) {
 		closeEditors();
 
 	std::string rpath( FileSystem::getRealPath( path ) );
+	FileSystem::dirAddSlashAtEnd( rpath );
+
 	mCurrentProject = rpath;
 	mPluginManager->setWorkspaceFolder( rpath );
 
@@ -2451,6 +2453,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	loadConfig( logLevel, currentDisplay->getSize(), health );
 
 	if ( health ) {
+		Sys::windowAttachConsole();
 		FeaturesHealth::doHealth( mPluginManager.get(), healthLang, healthFormat );
 		return;
 	}
@@ -3151,19 +3154,23 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
 	} catch ( const args::Help& ) {
+		Sys::windowAttachConsole();
 		std::cout << parser;
 		return EXIT_SUCCESS;
 	} catch ( const args::ParseError& e ) {
+		Sys::windowAttachConsole();
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
 		return EXIT_FAILURE;
 	} catch ( args::ValidationError& e ) {
+		Sys::windowAttachConsole();
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
 		return EXIT_FAILURE;
 	}
 
 	if ( version.Get() ) {
+		Sys::windowAttachConsole();
 		std::cout << ecode::Version::getVersionFullName() << '\n';
 		return EXIT_SUCCESS;
 	}

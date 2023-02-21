@@ -395,7 +395,7 @@ class EE_API TextDocument {
 
 	const std::string& getFilePath() const;
 
-	URI getURI() const;
+	const URI& getURI() const;
 
 	const FileInfo& getFileInfo() const;
 
@@ -488,6 +488,8 @@ class EE_API TextDocument {
 
 	const std::string& getLoadingFilePath() const;
 
+	const URI& getLoadingFileURI() const;
+
 	void setSelection( const TextRanges& selection );
 
 	void resetSelection( const TextRanges& selection );
@@ -552,6 +554,8 @@ class EE_API TextDocument {
 	UndoStack mUndoStack;
 	std::string mFilePath;
 	std::string mLoadingFilePath;
+	URI mFileURI;
+	URI mLoadingFileURI;
 	FileInfo mFileRealPath;
 	std::vector<TextDocumentLine> mLines;
 	TextRanges mSelection;

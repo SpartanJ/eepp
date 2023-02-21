@@ -61,7 +61,7 @@ class LSPLocationModel : public Model {
 		FileSystem::dirAddSlashAtEnd( workspaceFolder );
 
 		for ( const auto& loc : locs ) {
-			std::string display = loc.uri.getPath();
+			std::string display = loc.uri.getFSPath();
 			FileSystem::filePathRemoveBasePath( workspaceFolder, display );
 			display += " - L" + String::toString( loc.range.start().line() );
 			mLocs.push_back( { loc, display } );
@@ -250,9 +250,9 @@ PluginRequestHandle LSPClientPlugin::processDocumentFormatting( const PluginMess
 
 bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 														 std::vector<LSPTextEdit> edits ) {
-	auto doc = mManager->getSplitter()->findDocFromPath( uri.getPath() );
+	auto doc = mManager->getSplitter()->findDocFromURI( uri );
 	if ( !doc ) {
-		auto pair = mManager->getSplitter()->loadFileFromPathInNewTab( uri.getPath() );
+		auto pair = mManager->getSplitter()->loadFileFromPathInNewTab( uri.getFSPath() );
 		if ( pair.first == nullptr || pair.second == nullptr || !pair.second->getDocumentRef() )
 			return false;
 		doc = pair.second->getDocumentRef();

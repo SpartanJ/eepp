@@ -7,6 +7,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 #include <iomanip>
+#include <iostream>
 
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -1071,6 +1072,49 @@ std::string Sys::which( const std::string& exeName,
 #endif
 	}
 	return "";
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+static ULONG_PTR GetParentProcessId() {
+	ULONG_PTR pbi[6];
+	ULONG ulSize = 0;
+	LONG( WINAPI * NtQueryInformationProcess )
+	( HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
+	  ULONG ProcessInformationLength, PULONG ReturnLength );
+	*(FARPROC*)&NtQueryInformationProcess =
+		GetProcAddress( LoadLibraryA( "NTDLL.DLL" ), "NtQueryInformationProcess" );
+	if ( NtQueryInformationProcess ) {
+		if ( NtQueryInformationProcess( GetCurrentProcess(), 0, &pbi, sizeof( pbi ), &ulSize ) >=
+				 0 &&
+			 ulSize == sizeof( pbi ) )
+			return pbi[5];
+	}
+	return (ULONG_PTR)-1;
+}
+#endif
+
+bool Sys::windowAttachConsole() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	ULONG_PTR ppid = GetParentProcessId();
+	if ( ppid == (ULONG_PTR)-1 ) {
+		return false;
+	} else {
+		AttachConsole( ppid );
+	}
+
+	freopen( "CONIN$", "r", stdin );
+	freopen( "CONOUT$", "w", stdout );
+	freopen( "CONOUT$", "w", stderr );
+
+	std::cout.clear();
+	std::cerr.clear();
+	std::cin.clear();
+
+	std::wcout.clear();
+	std::wcerr.clear();
+	std::wcin.clear();
+#endif
+	return true;
 }
 
 }} // namespace EE::System

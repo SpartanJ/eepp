@@ -127,9 +127,9 @@ void LSPClientServerManager::goToLocation( const LSPLocation& loc ) {
 	if ( nullptr == splitter )
 		return;
 	splitter->getUISceneNode()->runOnMainThread( [this, splitter, loc]() {
-		UITab* tab = splitter->isDocumentOpen( loc.uri.toString() );
+		UITab* tab = splitter->isDocumentOpen( loc.uri );
 		if ( !tab ) {
-			std::string path( loc.uri.getPath() );
+			std::string path( loc.uri.getFSPath() );
 			FileInfo fileInfo( path );
 			if ( fileInfo.exists() && fileInfo.isRegularFile() ) {
 				splitter->loadAsyncFileFromPathInNewTab(
@@ -289,10 +289,10 @@ void LSPClientServerManager::sendSymbolReferenceBroadcast( const std::vector<LSP
 	std::map<std::string, ProjectSearch::ResultData> res;
 
 	for ( auto& r : resp ) {
-		auto& rd = res[r.uri.getPath()];
+		auto& rd = res[r.uri.getFSPath()];
 		if ( rd.file.empty() )
-			rd.file = r.uri.getPath();
-		auto curDoc = mPluginManager->getSplitter()->findDocFromPath( r.uri.getPath() );
+			rd.file = r.uri.getFSPath();
+		auto curDoc = mPluginManager->getSplitter()->findDocFromURI( r.uri );
 		if ( !curDoc )
 			continue;
 

@@ -438,7 +438,7 @@ PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& m
 	std::vector<std::string> expectedNames;
 	std::vector<std::string> tentativePaths;
 	for ( const auto& turi : juris ) {
-		std::string path( URI( turi.get<std::string>() ).getPath() );
+		std::string path( URI( turi.get<std::string>() ).getFSPath() );
 		tentativePaths.emplace_back( path );
 		expectedNames.emplace_back( FileSystem::fileNameFromPath( path ) );
 	}

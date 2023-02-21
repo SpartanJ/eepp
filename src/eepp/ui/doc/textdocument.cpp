@@ -62,6 +62,7 @@ bool TextDocument::isUntitledEmpty() const {
 
 void TextDocument::reset() {
 	mFilePath = mDefaultFileName;
+	mFileURI = URI( "file://" + mFilePath );
 	mFileRealPath = FileInfo();
 	mSelection.clear();
 	mSelection.push_back( { { 0, 0 }, { 0, 0 } } );
@@ -311,6 +312,7 @@ bool TextDocument::getBOM() const {
 
 void TextDocument::notifyDocumentMoved( const std::string& path ) {
 	mFilePath = path;
+	mFileURI = URI( "file://" + mFilePath );
 	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
 												  : FileInfo( mFilePath );
 	notifyDocumentMoved();
@@ -343,6 +345,11 @@ const std::string& TextDocument::getLoadingFilePath() const {
 	return mLoadingFilePath;
 }
 
+const URI& TextDocument::getLoadingFileURI() const {
+	Lock l( mLoadingFilePathMutex );
+	return mLoadingFileURI;
+}
+
 TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 	mLoading = true;
 	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
@@ -351,6 +358,7 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 		if ( NULL != pack ) {
 			mFilePath = pathFix;
 			mFileRealPath = FileInfo();
+			mFileURI = URI( "file://" + mFilePath );
 			return loadFromPack( pack, pathFix );
 		}
 	}
@@ -358,6 +366,7 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 	IOStreamFile file( path, "rb" );
 	auto ret = loadFromStream( file, path, true );
 	mFilePath = path;
+	mFileURI = URI( "file://" + mFilePath );
 	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
 												  : FileInfo( mFilePath );
 	resetSyntax();
@@ -374,6 +383,7 @@ bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<T
 	{
 		Lock l( mLoadingFilePathMutex );
 		mLoadingFilePath = path;
+		mLoadingFileURI = URI( "file://" + mLoadingFilePath );
 	}
 	pool->run(
 		[this, path, onLoaded] {
@@ -384,6 +394,7 @@ bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<T
 			{
 				Lock l( mLoadingFilePathMutex );
 				mLoadingFilePath.clear();
+				mLoadingFileURI = URI();
 			}
 			mLoadingAsync = false;
 			notifyDocumentLoaded();
@@ -500,6 +511,7 @@ bool TextDocument::save( const std::string& path ) {
 	if ( FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
 		IOStreamFile file( path, "wb" );
 		mFilePath = path;
+		mFileURI = URI( "file://" + mFilePath );
 		mSaving = true;
 		if ( save( file ) ) {
 			file.close();
@@ -1922,8 +1934,8 @@ const std::string& TextDocument::getFilePath() const {
 	return mFilePath;
 }
 
-URI TextDocument::getURI() const {
-	return URI( "file://" + getFilePath() );
+const URI& TextDocument::getURI() const {
+	return mFileURI;
 }
 
 const FileInfo& TextDocument::getFileInfo() const {

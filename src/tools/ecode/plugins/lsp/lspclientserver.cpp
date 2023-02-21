@@ -924,7 +924,7 @@ void LSPClientServer::initialize() {
 		}
 	}
 	std::string rootUri = rootPath.toString();
-	params["rootPath"] = rootPath.getPath();
+	params["rootPath"] = rootPath.getFSPath();
 	params["rootUri"] = rootUri;
 	params["workspaceFolders"] =
 		toJson( { LSPWorkspaceFolder{ rootUri, FileSystem::fileNameFromPath( rootUri ) } } );
@@ -1539,7 +1539,7 @@ LSPClientServer::documentImplementation( const URI& document, const TextPosition
 }
 
 static std::vector<URI> switchHeaderSourceName( const URI& uri ) {
-	std::string basePath( "file://" + FileSystem::fileRemoveExtension( uri.getPath() ) );
+	std::string basePath( "file://" + FileSystem::fileRemoveExtension( uri.getFSPath() ) );
 	if ( FileSystem::fileExtension( uri.getPath() ) == "cpp" ) {
 		return { basePath + ".hpp", basePath + ".h" };
 	} else if ( FileSystem::fileExtension( uri.getPath() ) == "hpp" ) {
@@ -1560,7 +1560,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::switchSourceHeader( const URI
 			for ( const auto& uri : uris ) {
 				if ( res.is_string() &&
 					 ( uri.empty() || FileSystem::fileNameFromPath( res.get<std::string>() ) ==
-										  FileSystem::fileNameFromPath( uri.getPath() ) ) ) {
+										  FileSystem::fileNameFromPath( uri.getFSPath() ) ) ) {
 					mManager->goToLocation( { res.get<std::string>(), TextRange() } );
 					break;
 				} else if ( !uri.empty() ) {

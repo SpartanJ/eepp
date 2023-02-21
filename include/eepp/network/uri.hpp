@@ -152,6 +152,9 @@ class EE_API URI {
 	/** @returns The path part of the URI. */
 	const std::string& getPath() const;
 
+	/* @returns The file system path of the URI. */
+	std::string getFSPath() const;
+
 	/** @returns The last path segment. */
 	std::string getLastPathSegment() const;
 

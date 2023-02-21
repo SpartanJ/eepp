@@ -116,7 +116,10 @@ class EE_API UICodeEditorSplitter {
 
 	UITabWidget* createEditorWithTabWidget( Node* parent, bool openCurEditor = true );
 
-	UITab* isDocumentOpen( std::string path, bool checkOnlyInCurrentTabWidget = false,
+	UITab* isDocumentOpen( const std::string& path, bool checkOnlyInCurrentTabWidget = false,
+						   bool checkOpeningDocuments = false ) const;
+
+	UITab* isDocumentOpen( const URI& uri, bool checkOnlyInCurrentTabWidget = false,
 						   bool checkOpeningDocuments = false ) const;
 
 	UICodeEditor* editorFromTab( UITab* tab ) const;
@@ -176,6 +179,8 @@ class EE_API UICodeEditorSplitter {
 	void forEachDocStoppable( std::function<bool( TextDocument& )> run ) const;
 
 	std::shared_ptr<TextDocument> findDocFromPath( const std::string& path );
+
+	std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromURI( const URI& uri );
 
 	bool getHideTabBarOnSingleTab() const;
 

@@ -553,9 +553,13 @@ unsigned short URI::getWellKnownPort() const {
 void URI::parse( const std::string& _uri ) {
 	std::string uri( _uri );
 	// Is a local path without hostname but it's correctly formatted?
-	if ( String::startsWith( uri, "file://" ) && uri.size() >= 9 && uri[7] != '/' &&
-		 uri[8] == ':' ) {
-		uri.insert( uri.begin() + 7, '/' );
+	if ( String::startsWith( uri, "file://" ) && uri.size() >= 9 ) {
+		if ( uri[7] != '/' && uri[8] == ':' ) {
+			uri[7] = std::tolower( uri[7] );
+			uri.insert( uri.begin() + 7, '/' );
+		} else if ( uri.size() >= 10 && uri[9] == ':' && uri[7] == '/' ) {
+			uri[8] = std::tolower( uri[8] );
+		}
 	}
 	String::replaceAll( uri, "\\", "/" );
 #else
@@ -736,6 +740,17 @@ void URI::buildPath( const std::vector<std::string>& segments, bool leadingSlash
 	}
 	if ( trailingSlash )
 		mPath += '/';
+}
+
+std::string URI::getFSPath() const {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( mScheme == "file" && !mPath.empty() && mPath[0] == '/' ) {
+		std::string path = mPath.substr( 1 );
+		String::replaceAll( path, "/", "\\" );
+		return path;
+	}
+#endif
+	return mPath;
 }
 
 bool URI::operator<( const URI& url ) const {
