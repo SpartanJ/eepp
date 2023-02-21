@@ -174,6 +174,8 @@ class EE_API SyntaxDefinitionManager {
 	void addTeal();
 
 	void addVue();
+
+	void addElixir();
 };
 
 }}} // namespace EE::UI::Doc

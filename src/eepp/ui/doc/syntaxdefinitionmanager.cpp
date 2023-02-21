@@ -131,6 +131,8 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addTeal();
 
 	addVue();
+
+	addElixir();
 }
 
 const std::vector<SyntaxDefinition>& SyntaxDefinitionManager::getDefinitions() const {
@@ -3994,6 +3996,74 @@ void SyntaxDefinitionManager::addVue() {
 		   {},
 		   "",
 		   {} } );
+}
+
+void SyntaxDefinitionManager::addElixir() {
+	add( { "Elixir",
+		   { "%.ex$", "%.exs$" },
+		   { { { "#.*\n" }, "comment" },
+			 { { ":\"", "\"", "\\" }, "number" },
+			 { { "\"\"\"", "\"\"\"", "\\" }, "string" },
+			 { { "\"", "\"", "\\" }, "string" },
+			 { { "'", "'", "\\" }, "string" },
+			 { { "~%a[/\"|'%(%[%{<]", "[/\"|'%)%]%}>]", "\\" }, "string" },
+			 { { "-?0x%x+" }, "number" },
+			 { { "-?%d+[%d%.eE]*f?" }, "number" },
+			 { { "-?%.?%d+f?" }, "number" },
+			 { { ":\"?[%a_][%w_]*\"?" }, "number" },
+			 { { "[%a][%w_!?]*%f[(]" }, "function" },
+			 { { "%u%w+" }, "normal" },
+			 { { "@[%a_][%w_]*" }, "keyword2" },
+			 { { "_%a[%w_]*" }, "keyword2" },
+			 { { "[%+%-=/%*<>!|&]" }, "operator" },
+			 { { "[%a_][%w_]*" }, "symbol" } },
+		   { { "def", "keyword" },
+			 { "defp", "keyword" },
+			 { "defguard", "keyword" },
+			 { "defguardp", "keyword" },
+			 { "defmodule", "keyword" },
+			 { "defprotocol", "keyword" },
+			 { "defimpl", "keyword" },
+			 { "defrecord", "keyword" },
+			 { "defrecordp", "keyword" },
+			 { "defmacro", "keyword" },
+			 { "defmacrop", "keyword" },
+			 { "defdelegate", "keyword" },
+			 { "defoverridable", "keyword" },
+			 { "defexception", "keyword" },
+			 { "defcallback", "keyword" },
+			 { "defstruct", "keyword" },
+			 { "for", "keyword" },
+			 { "case", "keyword" },
+			 { "when", "keyword" },
+			 { "with", "keyword" },
+			 { "cond", "keyword" },
+			 { "if", "keyword" },
+			 { "unless", "keyword" },
+			 { "try", "keyword" },
+			 { "receive", "keyword" },
+			 { "after", "keyword" },
+			 { "raise", "keyword" },
+			 { "rescue", "keyword" },
+			 { "catch", "keyword" },
+			 { "else", "keyword" },
+			 { "quote", "keyword" },
+			 { "unquote", "keyword" },
+			 { "super", "keyword" },
+			 { "unquote_splicing", "keyword" },
+			 { "do", "keyword" },
+			 { "end", "keyword" },
+			 { "fn", "keyword" },
+			 { "import", "keyword2" },
+			 { "alias", "keyword2" },
+			 { "use", "keyword2" },
+			 { "require", "keyword2" },
+			 { "and", "operator" },
+			 { "or", "operator" },
+			 { "true", "literal" },
+			 { "false", "literal" },
+			 { "nil", "literal" } },
+		   "#" } );
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
