@@ -180,7 +180,7 @@ class EE_API UICodeEditorSplitter {
 
 	std::shared_ptr<TextDocument> findDocFromPath( const std::string& path );
 
-	std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromURI( const URI& uri );
+	std::shared_ptr<TextDocument> findDocFromURI( const URI& uri );
 
 	bool getHideTabBarOnSingleTab() const;
 

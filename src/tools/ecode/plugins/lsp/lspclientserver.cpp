@@ -923,8 +923,13 @@ void LSPClientServer::initialize() {
 			rootPath = URI( "file://" + FileSystem::getCurrentWorkingDirectory() );
 		}
 	}
+	std::string rpath = rootPath.getFSPath();
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if (rpath.size() > 2 && rpath[1] == ':')
+		rpath[0] = std::tolower( rpath[0] );
+#endif
 	std::string rootUri = rootPath.toString();
-	params["rootPath"] = rootPath.getFSPath();
+	params["rootPath"] = rpath;
 	params["rootUri"] = rootUri;
 	params["workspaceFolders"] =
 		toJson( { LSPWorkspaceFolder{ rootUri, FileSystem::fileNameFromPath( rootUri ) } } );

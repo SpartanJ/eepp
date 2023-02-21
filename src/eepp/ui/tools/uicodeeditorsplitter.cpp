@@ -566,7 +566,8 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	return tabWidget;
 }
 
-UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path, bool checkOnlyInCurrentTabWidget,
+UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
+											 bool checkOnlyInCurrentTabWidget,
 											 bool checkOpeningDocuments ) const {
 	return isDocumentOpen( URI( "file://" + path ), checkOnlyInCurrentTabWidget,
 						   checkOpeningDocuments );
@@ -585,7 +586,7 @@ UITab* UICodeEditorSplitter::isDocumentOpen( const URI& uri, bool checkOnlyInCur
 			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 
 			if ( editor->getDocument().getURI() == uri ||
-				 ( checkOpeningDocuments && editor->getDocument().getLoadingFilePath() == uri.getFSPath() ) ) {
+				 ( checkOpeningDocuments && editor->getDocument().getLoadingFileURI() == uri ) ) {
 				return tab;
 			}
 		}
@@ -599,7 +600,7 @@ UITab* UICodeEditorSplitter::isDocumentOpen( const URI& uri, bool checkOnlyInCur
 
 				if ( editor->getDocument().getURI() == uri ||
 					 ( checkOpeningDocuments &&
-					   editor->getDocument().getLoadingFilePath() == uri.getFSPath() ) ) {
+					   editor->getDocument().getLoadingFileURI() == uri ) ) {
 					return tab;
 				}
 			}

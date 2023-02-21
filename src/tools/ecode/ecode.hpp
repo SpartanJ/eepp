@@ -452,6 +452,10 @@ class App : public UICodeEditorSplitter::Client {
 	void checkForUpdatesResponse( Http::Response response, bool fromStartup );
 
 	std::string getLastUsedFolder();
+
+	void cleanUpRecentFolders();
+
+	void cleanUpRecentFiles();
 };
 
 } // namespace ecode

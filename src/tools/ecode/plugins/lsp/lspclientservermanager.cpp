@@ -289,9 +289,10 @@ void LSPClientServerManager::sendSymbolReferenceBroadcast( const std::vector<LSP
 	std::map<std::string, ProjectSearch::ResultData> res;
 
 	for ( auto& r : resp ) {
-		auto& rd = res[r.uri.getFSPath()];
+		auto fspath( r.uri.getFSPath() );
+		auto& rd = res[fspath];
 		if ( rd.file.empty() )
-			rd.file = r.uri.getFSPath();
+			rd.file = fspath;
 		auto curDoc = mPluginManager->getSplitter()->findDocFromURI( r.uri );
 		if ( !curDoc )
 			continue;

@@ -1377,6 +1377,26 @@ void App::onColorSchemeChanged( const std::string& ) {
 						mSplitter->getCurrentColorScheme().getName().c_str() ) );
 }
 
+void App::cleanUpRecentFiles() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	for ( auto& file : mRecentFiles ) {
+		if ( file.size() > 2 && file[1] == ':' )
+			file[0] = std::toupper( file[0] );
+	}
+#endif
+
+	std::vector<std::string> recentFiles;
+
+	for ( const auto& file : mRecentFiles ) {
+		if ( std::none_of( recentFiles.begin(), recentFiles.end(),
+						   [file]( const auto& other ) { return other == file; } ) )
+			recentFiles.emplace_back( file );
+	}
+
+	if ( mRecentFolders.size() != recentFiles.size() )
+		mRecentFiles = recentFiles;
+}
+
 void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	updateEditorTitle( editor );
 	if ( mSplitter->curEditorExistsAndFocused() && editor == mSplitter->getCurEditor() )
@@ -1388,6 +1408,7 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 	mRecentFiles.insert( mRecentFiles.begin(), path );
 	if ( mRecentFiles.size() > 10 )
 		mRecentFiles.resize( 10 );
+	cleanUpRecentFiles();
 	updateRecentFiles();
 	if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() == editor ) {
 		mSettings->updateDocumentMenu();
@@ -2050,7 +2071,8 @@ void App::renameFile( const FileInfo& file ) {
 	msgBox->getTextInput()->setText( file.getFileName() );
 	msgBox->addEventListener( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
 		auto newFilePath( getNewFilePath( file, msgBox, false ) );
-		if ( !FileSystem::fileExists( newFilePath ) || file.getFileName() != msgBox->getTextInput()->getText() ) {
+		if ( !FileSystem::fileExists( newFilePath ) ||
+			 file.getFileName() != msgBox->getTextInput()->getText() ) {
 			try {
 				std::string fpath( file.getFilepath() );
 				if ( file.isDirectory() )
@@ -2346,7 +2368,7 @@ static std::string GetCurrentProcessName() {
 #elif defined( _WIN32 )
 	return __argv[0];
 #else
-	return "?";
+	return "ecode";
 #endif
 }
 
@@ -2364,6 +2386,23 @@ void App::checkLanguagesHealth() {
 	UITerminal* term = mTerminalManager->createNewTerminal();
 	term->setFocus();
 	term->executeFile( path );
+}
+
+void App::cleanUpRecentFolders() {
+	for ( auto& folder : mRecentFolders ) {
+		FileSystem::dirAddSlashAtEnd( folder );
+	}
+
+	std::vector<std::string> recentFolders;
+
+	for ( const auto& folder : mRecentFolders ) {
+		if ( std::none_of( recentFolders.begin(), recentFolders.end(),
+						   [folder]( const auto& other ) { return other == folder; } ) )
+			recentFolders.emplace_back( folder );
+	}
+
+	if ( mRecentFolders.size() != recentFolders.size() )
+		mRecentFolders = recentFolders;
 }
 
 void App::loadFolder( const std::string& path ) {
@@ -2401,6 +2440,7 @@ void App::loadFolder( const std::string& path ) {
 	if ( mRecentFolders.size() > 10 )
 		mRecentFolders.resize( 10 );
 
+	cleanUpRecentFolders();
 	updateRecentFolders();
 	mSettings->updateProjectSettingsMenu();
 

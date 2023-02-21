@@ -747,6 +747,8 @@ std::string URI::getFSPath() const {
 	if ( mScheme == "file" && !mPath.empty() && mPath[0] == '/' ) {
 		std::string path = mPath.substr( 1 );
 		String::replaceAll( path, "/", "\\" );
+		if ( path.size() > 2 && path[1] == ':' )
+			path[0] = std::toupper( path[0] );
 		return path;
 	}
 #endif

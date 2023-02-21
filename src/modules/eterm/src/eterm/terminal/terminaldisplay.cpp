@@ -638,8 +638,10 @@ bool TerminalDisplay::update() {
 void TerminalDisplay::executeFile( const std::string& cmd ) {
 	if ( mTerminal ) {
 		std::string rcmd( cmd + "\r" );
+#if EE_PLATFORM != EE_PLATFORM_WIN
 		char clearLine = 0x15;
 		mTerminal->ttywrite( &clearLine, 1, 1 );
+#endif
 		mTerminal->ttywrite( rcmd.c_str(), rcmd.size(), 1 );
 	}
 }

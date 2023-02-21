@@ -252,10 +252,10 @@ bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 														 std::vector<LSPTextEdit> edits ) {
 	auto doc = mManager->getSplitter()->findDocFromURI( uri );
 	if ( !doc ) {
-		auto pair = mManager->getSplitter()->loadFileFromPathInNewTab( uri.getFSPath() );
-		if ( pair.first == nullptr || pair.second == nullptr || !pair.second->getDocumentRef() )
+		auto te = mManager->getSplitter()->loadFileFromPathInNewTab( uri.getFSPath() );
+		if ( te.first == nullptr || te.second == nullptr || !te.second->getDocumentRef() )
 			return false;
-		doc = pair.second->getDocumentRef();
+		doc = te.second->getDocumentRef();
 	}
 
 	for ( const auto& edit : edits )
