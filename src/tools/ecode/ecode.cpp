@@ -2426,7 +2426,13 @@ static std::string GetCurrentProcessName() {
 #endif
 }
 
-void App::checkLanguagesHealth() {
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#include <libproc.h>
+#include <unistd.h>
+#endif
+
+static std::string getCurrentProcessPath() {
+#if EE_PLATFORM != EE_PLATFORM_MACOSX
 	auto path( Sys::getProcessPath() );
 	FileSystem::dirAddSlashAtEnd( path );
 	if ( String::startsWith( GetCurrentProcessName(), Sys::getProcessPath() ) ) {
@@ -2436,6 +2442,21 @@ void App::checkLanguagesHealth() {
 	} else {
 		path += GetCurrentProcessName();
 	}
+	return path;
+#else
+	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+	pid_t pid = getpid();
+	int ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	if ( ret >= 0 )
+		return std::string( pathbuf );
+	auto path( Sys::getProcessPath() );
+	FileSystem::dirAddSlashAtEnd( path );
+	return path + GetCurrentProcessName();
+#endif
+}
+
+void App::checkLanguagesHealth() {
+	auto path( getCurrentProcessPath() );
 	path += " --health";
 	UITerminal* term = mTerminalManager->createNewTerminal();
 	term->setFocus();
@@ -2529,8 +2550,6 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mResPath = Sys::getProcessPath();
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	if ( String::contains( mResPath, "ecode.app" ) ) {
-		mResPath = FileSystem::getCurrentWorkingDirectory();
-		FileSystem::dirAddSlashAtEnd( mResPath );
 		mIsBundledApp = true;
 	}
 #elif EE_PLATFORM == EE_PLATFORM_LINUX

@@ -20,6 +20,8 @@
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
+#include <libproc.h>
+#include <unistd.h>
 #include <CoreFoundation/CoreFoundation.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef NOMINMAX
@@ -484,6 +486,12 @@ void Sys::sleep( const Time& time ) {
 
 static std::string sGetProcessPath() {
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
+	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+	pid_t pid = getpid();
+	int ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	if ( ret >= 0 )
+		return FileSystem::fileRemoveFileName( std::string( pathbuf ) );
+
 	char exe_file[PATH_MAX + 1];
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
 	if ( mainBundle ) {
