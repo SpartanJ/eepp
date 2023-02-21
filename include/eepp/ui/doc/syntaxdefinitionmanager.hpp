@@ -55,6 +55,9 @@ class EE_API SyntaxDefinitionManager {
 
 	const std::vector<SyntaxDefinition>& getDefinitions() const;
 
+	/* empty = all */
+	bool save( const std::string& path, const std::vector<SyntaxDefinition>& def = {} );
+
   protected:
 	SyntaxDefinitionManager();
 

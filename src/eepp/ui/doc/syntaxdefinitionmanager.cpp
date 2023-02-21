@@ -137,6 +137,69 @@ const std::vector<SyntaxDefinition>& SyntaxDefinitionManager::getDefinitions() c
 	return mDefinitions;
 }
 
+static json toJson( const SyntaxDefinition& def ) {
+	json j;
+	j["name"] = def.getLanguageName();
+	if ( def.getLSPName() != String::toLower( def.getLanguageName() ) )
+		j["lsp_name"] = def.getLSPName();
+	j["files"] = def.getFiles();
+	if ( !def.getComment().empty() )
+		j["comment"] = def.getComment();
+	if ( !def.getPatterns().empty() ) {
+		j["patterns"] = json::array();
+		for ( const auto& ptrn : def.getPatterns() ) {
+			json pattern;
+			if ( ptrn.patterns.size() == 1 ) {
+				pattern["pattern"] = ptrn.patterns[0];
+			} else {
+				pattern["pattern"] = ptrn.patterns;
+			}
+			if ( ptrn.types.size() == 1 ) {
+				pattern["type"] = ptrn.types[0];
+			} else {
+				pattern["type"] = ptrn.types;
+			}
+			if ( !ptrn.syntax.empty() )
+				pattern["syntax"] = ptrn.syntax;
+			j["patterns"].emplace_back( std::move( pattern ) );
+		}
+	}
+	if ( !def.getSymbols().empty() ) {
+		j["symbols"] = json::array();
+		for ( const auto& sym : def.getSymbols() )
+			j["symbols"].emplace_back( json{ json{ sym.first, sym.second } } );
+	}
+
+	if ( !def.getHeaders().empty() )
+		j["headers"] = def.getHeaders();
+
+	if ( def.getAutoCloseXMLTags() )
+		j["auto_close_xml_tags"] = true;
+
+	if ( !def.isVisible() )
+		j["visible"] = false;
+
+	return j;
+}
+
+bool SyntaxDefinitionManager::save( const std::string& path,
+									const std::vector<SyntaxDefinition>& def ) {
+	if ( def.size() == 1 ) {
+		return FileSystem::fileWrite( path, toJson( def[0] ).dump( 2 ) );
+	} else if ( !def.empty() ) {
+		json j = json::array();
+		for ( const auto& d : def )
+			j.emplace_back( toJson( d ) );
+		return FileSystem::fileWrite( path, j.dump( 2 ) );
+	} else {
+		json j = json::array();
+		for ( const auto& d : mDefinitions )
+			j.emplace_back( toJson( d ) );
+		return FileSystem::fileWrite( path, j.dump( 2 ) );
+	}
+	return false;
+}
+
 void SyntaxDefinitionManager::addPlainText() {
 	add( { "Plain Text", { "%.txt$" }, {}, {}, "", {}, "plaintext" } );
 }
@@ -4020,7 +4083,19 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 		if ( json.contains( "patterns" ) && json["patterns"].is_array() ) {
 			const auto& patterns = json["patterns"];
 			for ( const auto& pattern : patterns ) {
-				auto type = pattern.value( "type", "normal" );
+				std::vector<std::string> type;
+				if ( pattern.contains( "type" ) ) {
+					if ( pattern["type"].is_array() ) {
+						for ( const auto& t : pattern["type"] ) {
+							if ( t.is_string() )
+								type.push_back( t.get<std::string>() );
+						}
+					} else if ( pattern["type"].is_string() ) {
+						type.push_back( pattern["type"] );
+					}
+				} else {
+					type.push_back( "normal" );
+				}
 				auto syntax = pattern.value( "syntax", "" );
 				std::vector<std::string> ptrns;
 				if ( pattern.contains( "pattern" ) ) {

@@ -2446,7 +2446,7 @@ static std::string getCurrentProcessPath() {
 #else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pid_t pid = getpid();
-	int ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	int ret = proc_pidpath( pid, pathbuf, sizeof( pathbuf ) );
 	if ( ret >= 0 )
 		return std::string( pathbuf );
 	auto path( Sys::getProcessPath() );
@@ -3249,6 +3249,34 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	}
 }
 
+static void exportLanguages( const std::string& path, const std::string& langs ) {
+	SyntaxDefinitionManager* sdm = SyntaxDefinitionManager::instance();
+	std::vector<SyntaxDefinition> defs;
+
+	if ( !langs.empty() ) {
+		auto langss = String::split( langs, ',' );
+		for ( const auto& l : langss ) {
+			const auto& sd = sdm->getByLSPName( l );
+
+			if ( !sd.getLanguageName().empty() ) {
+				defs.push_back( sd );
+				continue;
+			}
+
+			const auto& sd2 = sdm->getByLanguageName( l );
+
+			if ( !sd2.getLanguageName().empty() )
+				defs.push_back( sd2 );
+		}
+	}
+
+	if ( sdm->save( path, defs ) ) {
+		std::cout << "Language definitions exported!\n";
+	} else {
+		std::cout << "Could not write the file\n";
+	}
+}
+
 } // namespace ecode
 
 using namespace ecode;
@@ -3308,6 +3336,16 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"Sets the health format report (accepted values: terminal, markdown, ascii, asciidoc)",
 		{ "health-format" }, FeaturesHealth::getMapFlag(),
 		FeaturesHealth::getDefaultOutputFormat() );
+	args::ValueFlag<std::string> exportLangPath(
+		parser, "export-lang-path",
+		"Export language definitions to the file path. If no \"export-lang\" is defined it will "
+		"export all languages available.",
+		{ "export-lang-path" }, "" );
+	args::ValueFlag<std::string> exportLang(
+		parser, "export-lang",
+		"Comma separated language names to export its language definitions. \"export-lang-path\" "
+		"must be defined. Retrieved with \"--health\" command.",
+		{ "export-lang" }, "" );
 
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
@@ -3325,6 +3363,12 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
 		return EXIT_FAILURE;
+	}
+
+	if ( exportLangPath && !exportLangPath.Get().empty() ) {
+		Sys::windowAttachConsole();
+		exportLanguages( exportLangPath.Get(), exportLang.Get() );
+		return EXIT_SUCCESS;
 	}
 
 	if ( version.Get() ) {

@@ -1101,7 +1101,7 @@ static ULONG_PTR GetParentProcessId() {
 }
 
 static bool isWineRunning() {
-	HMODULE hntdll = GetModuleHandle( "ntdll.dll" );
+	HMODULE hntdll = GetModuleHandle( TEXT( "ntdll.dll" ) );
 	if ( !hntdll )
 		return false;
 	void* pwine_get_version = (void*)GetProcAddress( hntdll, "wine_get_version" );
