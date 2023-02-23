@@ -564,8 +564,8 @@ void App::onFileDropped( String file ) {
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( ( codeEditor->getDocument().isLoading() || !codeEditor->getDocument().isEmpty() ) &&
-			 !Image::isImageExtension( file ) &&
-			 FileSystem::fileExtension( file.toUtf8() ) != "svg" ) {
+			 ( !Image::isImageExtension( file ) ||
+			   FileSystem::fileExtension( file.toUtf8() ) == "svg" ) ) {
 			auto d = mSplitter->createCodeEditorInTabWidget(
 				mSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
@@ -573,7 +573,8 @@ void App::onFileDropped( String file ) {
 		}
 	} else if ( widget && widget->isType( UI_TYPE_TERMINAL ) ) {
 		if ( !Image::isImageExtension( file ) &&
-			 FileSystem::fileExtension( file.toUtf8() ) != "svg" ) {
+			 ( !Image::isImageExtension( file ) ||
+			   FileSystem::fileExtension( file.toUtf8() ) == "svg" ) ) {
 			auto d =
 				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( widget ) );
 			codeEditor = d.second;
@@ -1432,6 +1433,46 @@ void App::cleanUpRecentFiles() {
 
 	if ( mRecentFolders.size() != recentFiles.size() )
 		mRecentFiles = recentFiles;
+}
+
+void App::loadFileDelayed() {
+	if ( mFileToOpen.empty() )
+		return;
+
+	auto fileAndPos = getPathAndPosition( mFileToOpen );
+	auto tab = mSplitter->isDocumentOpen( fileAndPos.first, false, true );
+
+	if ( tab ) {
+		tab->getTabWidget()->setTabSelected( tab );
+		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			if ( editor->getDocument().isLoading() ) {
+				Uint32 cb =
+					editor->on( Event::OnDocumentLoaded, [fileAndPos]( const Event* event ) {
+						if ( event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
+							UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+							editor->runOnMainThread(
+								[editor, fileAndPos] { editor->goToLine( fileAndPos.second ); } );
+						}
+						event->getNode()->removeEventListener( event->getCallbackId() );
+					} );
+				// Don't listen forever if no event is received
+				editor->runOnMainThread( [editor, cb]() { editor->removeEventListener( cb ); },
+										 Seconds( 4 ) );
+			} else {
+				editor->runOnMainThread(
+					[editor, fileAndPos] { editor->goToLine( fileAndPos.second ); } );
+			}
+		}
+	} else {
+		loadFileFromPath( fileAndPos.first, true, nullptr,
+						  [fileAndPos]( UICodeEditor* editor, const std::string& ) {
+							  editor->runOnMainThread(
+								  [editor, fileAndPos] { editor->goToLine( fileAndPos.second ); } );
+						  } );
+	}
+
+	mFileToOpen.clear();
 }
 
 void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
@@ -3197,42 +3238,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			initProjectTreeView( file );
 		}
 
-		if ( !fileToOpen.empty() ) {
-			auto fileAndPos = getPathAndPosition( fileToOpen );
-			auto tab = mSplitter->isDocumentOpen( fileAndPos.first, false, true );
-
-			if ( tab ) {
-				tab->getTabWidget()->setTabSelected( tab );
-				if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-					UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
-					if ( editor->getDocument().isLoading() ) {
-						Uint32 cb = editor->on(
-							Event::OnDocumentLoaded, [fileAndPos]( const Event* event ) {
-								if ( event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
-									UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-									editor->runOnMainThread( [editor, fileAndPos] {
-										editor->goToLine( fileAndPos.second );
-									} );
-								}
-								event->getNode()->removeEventListener( event->getCallbackId() );
-							} );
-						// Don't listen forever if no event is received
-						editor->runOnMainThread(
-							[editor, cb]() { editor->removeEventListener( cb ); }, Seconds( 4 ) );
-					} else {
-						editor->runOnMainThread(
-							[editor, fileAndPos] { editor->goToLine( fileAndPos.second ); } );
-					}
-				}
-			} else {
-				loadFileFromPath( fileAndPos.first, true, nullptr,
-								  [fileAndPos]( UICodeEditor* editor, const std::string& ) {
-									  editor->runOnMainThread( [editor, fileAndPos] {
-										  editor->goToLine( fileAndPos.second );
-									  } );
-								  } );
-			}
-		}
+		mFileToOpen = fileToOpen;
 
 		Log::info( "Init ProjectTreeView took: %.2f ms",
 				   globalClock.getElapsedTime().asMilliseconds() );
@@ -3348,7 +3354,14 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ "export-lang" }, "" );
 
 	try {
-		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
+		auto args = Sys::parseArguments( argc, argv );
+
+		if ( !args.empty() ) {
+			std::string strargs( String::join( args ) );
+			Log::info( "ecode starting with these command line arguments: %s", strargs.c_str() );
+		}
+
+		parser.ParseCLI( args );
 	} catch ( const args::Help& ) {
 		Sys::windowAttachConsole();
 		std::cout << parser;

@@ -118,6 +118,8 @@ void ClippingMask::setMaskMode( Mode theMode ) {
 }
 
 void ClippingMask::stencilMaskEnable() {
+	GlobalBatchRenderer::instance()->draw();
+
 	GLi->enable( GL_STENCIL_TEST );
 	GLi->stencilMask( 0xFF );
 	GLi->stencilFunc( GL_NEVER, 1, 0xFF );
@@ -131,6 +133,8 @@ void ClippingMask::stencilMaskEnable() {
 
 void ClippingMask::stencilMaskDisable( bool clearMasks ) {
 	GLi->disable( GL_STENCIL_TEST );
+
+	GlobalBatchRenderer::instance()->draw();
 
 	if ( clearMasks )
 		this->clearMasks();

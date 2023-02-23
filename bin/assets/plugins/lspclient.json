@@ -183,6 +183,13 @@
       "url": "https://github.com/eclipse/eclipse.jdt.ls",
       "command": "jdtls",
       "file_patterns": ["%.java$"]
+    },
+    {
+      "language": "solidity",
+      "name": "solc",
+      "url": "https://soliditylang.org",
+      "command": "solc --lsp",
+      "file_patterns": ["%.sol$"]
     }
   ]
 }

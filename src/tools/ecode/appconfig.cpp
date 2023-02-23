@@ -6,7 +6,6 @@
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
 #include <eterm/ui/uiterminal.hpp>
-#include <nlohmann/json.hpp>
 
 using namespace EE::Network;
 using namespace eterm::UI;
@@ -368,16 +367,43 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	ini.writeFile();
 }
 
-static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr<ThreadPool> pool,
-						   json j, UITabWidget* curTabWidget, ecode::App* app ) {
+static void countTotalEditors( json j, size_t& curTotal ) {
+	if ( j["type"] == "tabwidget" ) {
+		for ( const auto& file : j["files"] )
+			if ( !file.contains( "type" ) || file["type"] == "editor" )
+				curTotal++;
+	} else if ( j["type"] == "splitter" ) {
+		countTotalEditors( j["first"], curTotal );
+		countTotalEditors( j["last"], curTotal );
+	}
+}
+
+static int countTotalEditors( json j ) {
+	size_t total = 0;
+	countTotalEditors( j, total );
+	return total;
+}
+
+void AppConfig::editorLoadedCounter( ecode::App* app ) {
+	editorsToLoad--;
+	if ( editorsToLoad <= 0 ) {
+		app->getUISceneNode()->runOnMainThread( [app] { app->loadFileDelayed(); } );
+	}
+}
+
+void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter,
+							   std::shared_ptr<ThreadPool> pool, json j, UITabWidget* curTabWidget,
+							   ecode::App* app ) {
 	if ( j["type"] == "tabwidget" ) {
 		Int64 currentPage = j["current_page"];
 		size_t totalToLoad = j["files"].size();
 		for ( const auto& file : j["files"] ) {
 			if ( !file.contains( "type" ) || file["type"] == "editor" ) {
 				std::string path( file["path"] );
-				if ( !FileSystem::fileExists( path ) )
+				if ( !FileSystem::fileExists( path ) ) {
+					editorLoadedCounter( app );
 					return;
+				}
 				TextRanges selection( TextRanges::fromString( file["selection"] ) );
 				UITab* tab = nullptr;
 				if ( ( tab = editorSplitter->isDocumentOpen( path, false, true ) ) != nullptr ) {
@@ -394,11 +420,13 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 					if ( curTabWidget->getTabCount() == totalToLoad )
 						curTabWidget->setTabSelected(
 							eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+
+					editorLoadedCounter( app );
 				} else {
 					editorSplitter->loadAsyncFileFromPathInNewTab(
 						path, pool,
-						[curTabWidget, selection, totalToLoad, currentPage]( UICodeEditor* editor,
-																			 const std::string& ) {
+						[this, curTabWidget, selection, totalToLoad, currentPage,
+						 app]( UICodeEditor* editor, const std::string& ) {
 							if ( !editor->getDocument().getSelection().isValid() ||
 								 editor->getDocument().getSelection() ==
 									 TextRange( { 0, 0 }, { 0, 0 } ) ) {
@@ -408,6 +436,8 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 							if ( curTabWidget->getTabCount() == totalToLoad )
 								curTabWidget->setTabSelected( eeclamp<Int32>(
 									currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+
+							editorLoadedCounter( app );
 						},
 						curTabWidget );
 				}
@@ -460,12 +490,6 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	docConfig.doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
 	docConfig.doc.lineEndings =
 		TextDocument::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
-	// Migrate old data
-	if ( ini.keyValueExists( "document", "windows_line_endings" ) &&
-		 !ini.keyValueExists( "document", "line_endings" ) &&
-		 ini.getValueB( "document", "windows_line_endings" ) == true ) {
-		docConfig.doc.lineEndings = TextDocument::LineEnding::CRLF;
-	}
 
 	docConfig.doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
 	docConfig.doc.lineBreakingColumn =
@@ -481,40 +505,10 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		}
 		if ( j.is_discarded() )
 			return;
+
+		editorsToLoad = countTotalEditors( j );
 		loadDocuments( editorSplitter, pool, j,
 					   editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() ), app );
-	} else {
-		// Old format
-		bool found;
-		size_t i = 0;
-		std::vector<ProjectPath> paths;
-		do {
-			std::string val( ini.getValue( "files", String::format( "file_name_%zu", i ) ) );
-			found = !val.empty();
-			if ( found ) {
-				auto pp = ProjectPath::fromString( val );
-				if ( FileSystem::fileExists( pp.path ) )
-					paths.emplace_back( pp );
-			}
-			i++;
-		} while ( found );
-
-		Int64 currentPage = ini.getValueI( "files", "current_page" );
-		size_t totalToLoad = paths.size();
-
-		for ( auto& pp : paths ) {
-			editorSplitter->loadAsyncFileFromPathInNewTab(
-				pp.path, pool,
-				[pp, editorSplitter, totalToLoad, currentPage]( UICodeEditor* editor,
-																const std::string& ) {
-					editor->getDocument().setSelection( pp.selection );
-					editor->scrollToCursor();
-
-					if ( !editorSplitter->getTabWidgets().empty() &&
-						 editorSplitter->getTabWidgets()[0]->getTabCount() == totalToLoad )
-						editorSplitter->switchToTab( currentPage );
-				} );
-		}
 	}
 }
 

@@ -1138,68 +1138,68 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const std::string& selector )
 }
 
 std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
-	return {
-		PropertyId::X,
-		PropertyId::Y,
-		PropertyId::Width,
-		PropertyId::Height,
-		PropertyId::MarginLeft,
-		PropertyId::MarginTop,
-		PropertyId::MarginRight,
-		PropertyId::MarginBottom,
-		PropertyId::PaddingLeft,
-		PropertyId::PaddingTop,
-		PropertyId::PaddingRight,
-		PropertyId::PaddingBottom,
-		PropertyId::BackgroundColor,
-		PropertyId::BackgroundTint,
-		PropertyId::ForegroundColor,
-		PropertyId::ForegroundTint,
-		PropertyId::ForegroundRadius,
-		PropertyId::BorderType,
-		PropertyId::SkinColor,
-		PropertyId::Rotation,
-		PropertyId::Scale,
-		PropertyId::Opacity,
-		PropertyId::Cursor,
-		PropertyId::Visible,
-		PropertyId::Enabled,
-		PropertyId::Theme,
-		PropertyId::Skin,
-		PropertyId::Flags,
-		PropertyId::BackgroundSize,
-		PropertyId::ForegroundSize,
-		PropertyId::LayoutWeight,
-		PropertyId::LayoutGravity,
-		PropertyId::LayoutWidth,
-		PropertyId::LayoutHeight,
-		PropertyId::Clip,
-		PropertyId::BackgroundPositionX,
-		PropertyId::BackgroundPositionY,
-		PropertyId::ForegroundPositionX,
-		PropertyId::ForegroundPositionY,
-		PropertyId::RotationOriginPointX,
-		PropertyId::RotationOriginPointY,
-		PropertyId::ScaleOriginPointX,
-		PropertyId::ScaleOriginPointY,
-		PropertyId::BlendMode,
-		PropertyId::MinWidth,
-		PropertyId::MaxWidth,
-		PropertyId::MinHeight,
-		PropertyId::MaxHeight,
-		PropertyId::BorderLeftColor,
-		PropertyId::BorderTopColor,
-		PropertyId::BorderRightColor,
-		PropertyId::BorderBottomColor,
-		PropertyId::BorderLeftWidth,
-		PropertyId::BorderTopWidth,
-		PropertyId::BorderRightWidth,
-		PropertyId::BorderBottomWidth,
-		PropertyId::BorderTopLeftRadius,
-		PropertyId::BorderTopRightRadius,
-		PropertyId::BorderBottomLeftRadius,
-		PropertyId::BorderBottomRightRadius,
-	};
+	return { PropertyId::X,
+			 PropertyId::Y,
+			 PropertyId::Width,
+			 PropertyId::Height,
+			 PropertyId::MarginLeft,
+			 PropertyId::MarginTop,
+			 PropertyId::MarginRight,
+			 PropertyId::MarginBottom,
+			 PropertyId::PaddingLeft,
+			 PropertyId::PaddingTop,
+			 PropertyId::PaddingRight,
+			 PropertyId::PaddingBottom,
+			 PropertyId::BackgroundColor,
+			 PropertyId::BackgroundTint,
+			 PropertyId::ForegroundColor,
+			 PropertyId::ForegroundTint,
+			 PropertyId::ForegroundRadius,
+			 PropertyId::BorderType,
+			 PropertyId::SkinColor,
+			 PropertyId::Rotation,
+			 PropertyId::Scale,
+			 PropertyId::Opacity,
+			 PropertyId::Cursor,
+			 PropertyId::Visible,
+			 PropertyId::Enabled,
+			 PropertyId::Theme,
+			 PropertyId::Skin,
+			 PropertyId::Flags,
+			 PropertyId::BackgroundSize,
+			 PropertyId::ForegroundSize,
+			 PropertyId::LayoutWeight,
+			 PropertyId::LayoutGravity,
+			 PropertyId::LayoutWidth,
+			 PropertyId::LayoutHeight,
+			 PropertyId::Clip,
+			 PropertyId::BackgroundPositionX,
+			 PropertyId::BackgroundPositionY,
+			 PropertyId::ForegroundPositionX,
+			 PropertyId::ForegroundPositionY,
+			 PropertyId::RotationOriginPointX,
+			 PropertyId::RotationOriginPointY,
+			 PropertyId::ScaleOriginPointX,
+			 PropertyId::ScaleOriginPointY,
+			 PropertyId::BlendMode,
+			 PropertyId::MinWidth,
+			 PropertyId::MaxWidth,
+			 PropertyId::MinHeight,
+			 PropertyId::MaxHeight,
+			 PropertyId::BorderLeftColor,
+			 PropertyId::BorderTopColor,
+			 PropertyId::BorderRightColor,
+			 PropertyId::BorderBottomColor,
+			 PropertyId::BorderLeftWidth,
+			 PropertyId::BorderTopWidth,
+			 PropertyId::BorderRightWidth,
+			 PropertyId::BorderBottomWidth,
+			 PropertyId::BorderTopLeftRadius,
+			 PropertyId::BorderTopRightRadius,
+			 PropertyId::BorderBottomLeftRadius,
+			 PropertyId::BorderBottomRightRadius,
+			 PropertyId::BorderSmooth,
+			 PropertyId::BackgroundSmooth };
 }
 
 std::string UIWidget::getPropertyString( const std::string& property ) const {
@@ -1340,6 +1340,12 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::format( "%.2fpx %.2fpx",
 								   setBorderEnabled( true )->getBorders().radius.bottomRight.x,
 								   getBorder()->getBorders().radius.bottomRight.y );
+		case PropertyId::BorderSmooth:
+			return mBorder ? ( mBorder->isSmooth() ? "true" : "false" ) : "false";
+		case PropertyId::BackgroundSmooth:
+			return mBackground
+					   ? ( mBackground->getBackgroundDrawable().isSmooth() ? "true" : "false" )
+					   : "false";
 		default:
 			break;
 	}
@@ -1736,6 +1742,11 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::BorderBottomRightRadius:
 			setBottomRightRadius( attribute.asString() );
 			break;
+		case PropertyId::BorderSmooth:
+			setBorderEnabled( true )->setSmooth( attribute.asBool() );
+		case PropertyId::BackgroundSmooth:
+			setBackgroundFillEnabled( true )->getBackgroundDrawable().setSmooth(
+				attribute.asBool() );
 		default:
 			attributeSet = false;
 			break;

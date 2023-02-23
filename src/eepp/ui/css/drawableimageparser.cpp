@@ -122,9 +122,11 @@ void DrawableImageParser::registerBaseParsers() {
 
 		if ( params.size() >= 3 ) {
 			std::string fillMode( String::toLower( params[2] ) );
-			if ( fillMode == "line" || fillMode == "solid" || fillMode == "fill" ) {
+			if ( fillMode == "line" || fillMode == "solid" || fillMode == "fill" )
 				drawable->setFillMode( fillMode == "line" ? DRAW_LINE : DRAW_FILL );
-			}
+
+			if ( params.size() >= 4 && params[3] == "smooth" )
+				drawable->setSmooth( true );
 		}
 
 		drawable->setOffset( drawable->getSize() / 2.f );

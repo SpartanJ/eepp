@@ -32,6 +32,12 @@ class EE_API PrimitiveDrawable : public Drawable {
 	/** @return The line with to draw primitives */
 	const Float& getLineWidth() const;
 
+	/** @return True if polygon and line smoothing is enabled */
+	bool isSmooth() const;
+
+	/** Enables/Disables polygon and line smoothing */
+	void setSmooth( bool smooth );
+
   protected:
 	PrimitiveDrawable( Type drawableType );
 
@@ -40,6 +46,7 @@ class EE_API PrimitiveDrawable : public Drawable {
 	Float mLineWidth;
 	bool mNeedsUpdate;
 	bool mRecreateVertexBuffer;
+	bool mSmooth{ false };
 	VertexBuffer* mVertexBuffer;
 
 	virtual void onAlphaChange();

@@ -1,4 +1,5 @@
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/ui/uibackgrounddrawable.hpp>
 #include <eepp/ui/uinode.hpp>
@@ -45,9 +46,17 @@ void UIBackgroundDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	}
 
 	if ( hasRadius() && mVertexBuffer ) {
+		bool isPolySmooth = GLi->isPolygonSmooth();
+
+		if ( mSmooth )
+			GLi->polygonSmooth( true );
+
 		mVertexBuffer->bind();
 		mVertexBuffer->draw();
 		mVertexBuffer->unbind();
+
+		if ( mSmooth && !isPolySmooth )
+			GLi->polygonSmooth( isPolySmooth );
 	} else {
 		Primitives primitives;
 		primitives.setColor( getColor() );
@@ -117,6 +126,14 @@ void UIBackgroundDrawable::setBottomRightRadius( const std::string& radius ) {
 		mRadiusesStr.bottomRight = radius;
 		mNeedsRadiusUpdate = true;
 	}
+}
+
+bool UIBackgroundDrawable::isSmooth() const {
+	return mSmooth;
+}
+
+void UIBackgroundDrawable::setSmooth( bool smooth ) {
+	mSmooth = smooth;
 }
 
 Int32 UIBackgroundDrawable::getRadius() const {

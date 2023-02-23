@@ -369,6 +369,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "border-bottom-left-radius", "0" ).setType( PropertyType::RadiusLength );
 	registerProperty( "border-bottom-right-radius", "0" ).setType( PropertyType::RadiusLength );
 
+	registerProperty( "border-smooth", "false" ).setType( PropertyType::Bool );
+	registerProperty( "background-smooth", "false" ).setType( PropertyType::Bool );
+
 	registerProperty( "tabbar-hide-on-single-tab", "false" );
 	registerProperty( "tabbar-allow-rearrange", "false" );
 	registerProperty( "tabbar-allow-drag-and-drop-tabs", "false" );

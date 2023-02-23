@@ -312,6 +312,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void checkLanguagesHealth();
 
+	void loadFileDelayed();
+
   protected:
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -375,6 +377,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<TerminalManager> mTerminalManager;
 	std::unique_ptr<PluginManager> mPluginManager;
 	std::unique_ptr<SettingsMenu> mSettings;
+	std::string mFileToOpen;
 
 	void saveAllProcess();
 

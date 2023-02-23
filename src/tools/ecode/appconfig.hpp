@@ -8,6 +8,9 @@
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/window/window.hpp>
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 using namespace EE;
 using namespace EE::Math;
 using namespace EE::UI;
@@ -112,7 +115,8 @@ struct WorkspaceConfig {
 	bool checkForUpdatesAtStartup{ false };
 };
 
-struct AppConfig {
+class AppConfig {
+  public:
 	WindowStateConfig windowState;
 	ContextSettings context;
 	CodeEditorConfig editor;
@@ -144,6 +148,14 @@ struct AppConfig {
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,
 					  std::shared_ptr<ThreadPool> pool, ecode::App* app );
+
+  protected:
+	Int64 editorsToLoad{ 0 };
+
+	void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr<ThreadPool> pool,
+						json j, UITabWidget* curTabWidget, ecode::App* app );
+
+	void editorLoadedCounter( ecode::App* app );
 };
 
 } // namespace ecode

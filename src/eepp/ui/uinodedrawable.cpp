@@ -310,7 +310,7 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 	if ( mNeedsUpdate )
 		update();
 
-	RGB prevColor = getColorFilter();
+	RGB prevColor = mDrawable->getColorFilter();
 	if ( mColorWasSet )
 		mDrawable->setColorFilter( getColor() );
 	mDrawable->setAlpha( getAlpha() );
