@@ -55,7 +55,8 @@ std::string LSPClientServerManager::findRootPath( const LSPDefinition& lsp,
 												  const std::shared_ptr<TextDocument>& doc ) {
 	if ( lsp.rootIndicationFileNames.empty() || !doc->hasFilepath() )
 		return "";
-	std::string rootPath( doc->getFileInfo().getDirectoryPath() );
+	std::string oriRootPath( doc->getFileInfo().getDirectoryPath() );
+	std::string rootPath( oriRootPath );
 	std::string lRootPath;
 	FileSystem::dirAddSlashAtEnd( rootPath );
 
@@ -73,7 +74,7 @@ std::string LSPClientServerManager::findRootPath( const LSPDefinition& lsp,
 		rootPath = FileSystem::removeLastFolderFromPath( rootPath );
 	}
 
-	return "";
+	return oriRootPath;
 }
 
 void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& doc ) {

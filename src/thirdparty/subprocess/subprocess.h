@@ -1153,6 +1153,7 @@ int subprocess_terminate(struct subprocess_s *const process) {
       TerminateProcess(process->hProcess, killed_process_exit_code);
   success_terminate = (windows_call_result == 0) ? 1 : 0;
   process->alive = 0;
+  process->hProcess = NULL;
   return success_terminate;
 #else
   int result;

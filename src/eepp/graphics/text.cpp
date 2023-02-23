@@ -358,6 +358,9 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool ) const {
 	if ( mString[start] == '\n' && start + 1 < mString.size() ) {
 		start++;
 	}
+	
+	if ( end >= mGlyphCache.size() )
+		end = mGlyphCache.size() - 1;
 
 	for ( std::size_t i = start; i <= end; ++i ) {
 		charCenter.x = mGlyphCache[i].Left;

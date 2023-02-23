@@ -35,8 +35,6 @@ Process::Process( const std::string& command, const Uint32& options,
 
 Process::~Process() {
 	mShuttingDown = true;
-	if ( mProcess )
-		destroy();
 	if ( mProcess && isAlive() )
 		kill();
 	if ( mStdOutThread.joinable() )
