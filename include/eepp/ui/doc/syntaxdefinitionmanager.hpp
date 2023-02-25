@@ -6,6 +6,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
+#include <optional>
 #include <vector>
 
 using namespace EE::System;
@@ -176,6 +177,9 @@ class EE_API SyntaxDefinitionManager {
 	void addVue();
 
 	void addElixir();
+
+	std::optional<size_t> getLanguageIndex( const std::string& langName );
+
 };
 
 }}} // namespace EE::UI::Doc

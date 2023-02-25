@@ -683,7 +683,7 @@ void SyntaxDefinitionManager::addTypeScript() {
 			  { { "-?%d+[%d%.eE]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "[%a_][%w_]*%s*%f[(]" }, "function" },
+			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 		  },
 		  { { "any", "keyword2" },		 { "arguments", "keyword2" }, { "as", "keyword2" },
@@ -799,7 +799,7 @@ void SyntaxDefinitionManager::addCPP() {
 			   { { "-?%d+[%d%.eE]*f?" }, "number" },
 			   { { "-?%.?%d+f?" }, "number" },
 			   { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			   { { "[%a_][%w_]*%s*%f[(]" }, "function" },
+			   { { "[%a_][%w_]*%f[(]" }, "function" },
 			   { { "std%:%:[%w_]*" }, "keyword2" },
 			   { { "[%a_][%w_]*" }, "symbol" },
 		   },
@@ -4066,6 +4066,17 @@ void SyntaxDefinitionManager::addElixir() {
 		   "#" } );
 }
 
+std::optional<size_t> SyntaxDefinitionManager::getLanguageIndex( const std::string& langName ) {
+	size_t pos = 0;
+	for ( const auto& def : mDefinitions ) {
+		if ( def.getLanguageName() == langName ) {
+			return pos;
+		}
+		++pos;
+	}
+	return {};
+}
+
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
 	mDefinitions.emplace_back( std::move( syntaxStyle ) );
 	return mDefinitions.back();
@@ -4180,20 +4191,30 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 				def.addPattern( SyntaxPattern( ptrns, type, syntax ) );
 			}
 		}
-		if ( json.contains( "symbols" ) && json["symbols"].is_array() ) {
-			const auto& symbols = json["symbols"];
-			for ( const auto& symbol : symbols ) {
-				for ( auto& el : symbol.items() ) {
-					def.addSymbol( el.key(), el.value() );
+		if ( json.contains( "symbols" ) ) {
+			if ( json["symbols"].is_array() ) {
+				const auto& symbols = json["symbols"];
+				for ( const auto& symbol : symbols ) {
+					for ( auto& el : symbol.items() ) {
+						def.addSymbol( el.key(), el.value() );
+					}
+				}
+			} else if ( json["symbols"].is_object() ) {
+				for ( const auto& [key, value] : json["symbols"].items() ) {
+					def.addSymbol( key, value );
 				}
 			}
 		}
 		if ( json.contains( "headers" ) && json["headers"].is_array() ) {
 			const auto& headers = json["headers"];
 			std::vector<std::string> hds;
-			for ( const auto& header : headers ) {
-				if ( header.is_string() )
-					hds.emplace_back( header.get<std::string>() );
+			if ( headers.is_array() ) {
+				for ( const auto& header : headers ) {
+					if ( header.is_string() )
+						hds.emplace_back( header.get<std::string>() );
+				}
+			} else if ( headers.is_string() ) {
+				hds.push_back( headers.get<std::string>() );
 			}
 			if ( !hds.empty() )
 				def.setHeaders( hds );
@@ -4221,13 +4242,23 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream ) {
 		for ( const auto& lang : j ) {
 			auto res = loadLanguage( lang );
 			if ( !res.getLanguageName().empty() ) {
-				mDefinitions.emplace_back( std::move( res ) );
+				auto pos = getLanguageIndex( res.getLanguageName() );
+				if ( pos.has_value() ) {
+					mDefinitions[pos.value()] = std::move( res );
+				} else {
+					mDefinitions.emplace_back( std::move( res ) );
+				}
 			}
 		}
 	} else {
 		auto res = loadLanguage( j );
 		if ( !res.getLanguageName().empty() ) {
-			mDefinitions.emplace_back( std::move( res ) );
+			auto pos = getLanguageIndex( res.getLanguageName() );
+			if ( pos.has_value() ) {
+				mDefinitions[pos.value()] = std::move( res );
+			} else {
+				mDefinitions.emplace_back( std::move( res ) );
+			}
 		}
 	}
 
