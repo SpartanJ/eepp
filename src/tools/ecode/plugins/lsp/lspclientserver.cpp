@@ -942,7 +942,9 @@ void LSPClientServer::initialize() {
 				 { "capabilities", capabilities },
 				 { "initializationOptions", mLSP.initializationOptions } };
 
-	URI rootPath( String::startsWith( mRootPath, "file://" ) ? mRootPath : "file://" + mRootPath );
+	URI rootPath( String::startsWith( mRootPath, "file://" ) && mRootPath != "file://"
+					  ? mRootPath
+					  : ( !mRootPath.empty() ? "file://" + mRootPath : "" ) );
 	if ( rootPath.empty() ) {
 		if ( !mManager->getLSPWorkspaceFolder().uri.empty() ) {
 			rootPath = mManager->getLSPWorkspaceFolder().uri;

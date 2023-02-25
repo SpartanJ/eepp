@@ -213,7 +213,7 @@ class EE_API UIWidget : public UINode {
 	void reportStyleStateChangeRecursive( bool disableAnimations = false,
 										  bool forceReApplyStyles = false );
 
-	void createTooltip();
+	UITooltip* createTooltip();
 
 	bool isTabStop() const;
 
@@ -251,6 +251,7 @@ class EE_API UIWidget : public UINode {
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
 	std::vector<std::string> mPseudoClasses;
+	String mTooltipText;
 
 	explicit UIWidget( const std::string& tag );
 

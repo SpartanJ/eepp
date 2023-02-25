@@ -29,10 +29,12 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	UIWidget* cont = sceneNode->loadLayoutFromString( R"xml(
 	<vbox lw="mp" lh="mp">
 		<hbox lw="wc" lh="wc">
-			<pushbutton id="pick_widget" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
+			<PushButton id="pick_widget" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
 			<CheckBox id="debug-draw-highlight" text='@string(debug_draw_highlight, "Highlight Focus & Hover")' margin-left="4dp" lg="center" />
 			<CheckBox id="debug-draw-boxes" text='@string(debug_draw_boxes, "Draw Boxes")' margin-left="4dp" lg="center" />
-			<CheckBox id="debug-draw-debug-data" text='@string(debug_draw_debug_data, "Draw Debug Data")' margin-left="4dp" lg="center" />
+			<CheckBox id="debug-draw-debug-data" text='@string(debug_draw_debug_data, "Draw Debug Data")' margin-left="4dp" lg="center" />"
+			<PushButton id="widget-tree-search-collapse" layout_width="wrap_content" layout_height="18dp" tooltip='@string(collapse_all, "Collapse All")' margin-left="8dp" icon="menu-fold" text-as-fallback="true" />
+			<PushButton id="widget-tree-search-expand" layout_width="wrap_content" layout_height="18dp" tooltip='@string(expand_all, "Expand All")' margin-left="8dp" icon="menu-unfold" text-as-fallback="true" />
 		</hbox>
 		<Splitter layout_width="match_parent" lh="fixed" lw8="1" splitter-partition="50%">
 			<treeview lw="fixed" lh="mp" />
@@ -101,6 +103,20 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 				drawDebugDataToggle();
 			} else {
 				sceneNode->setDrawDebugData( !sceneNode->getDrawDebugData() );
+			}
+		} );
+
+	cont->find<UIPushButton>( "widget-tree-search-collapse" )
+		->addEventListener( Event::MouseClick, [widgetTree]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
+				widgetTree->collapseAll();
+			}
+		} );
+
+	cont->find<UIPushButton>( "widget-tree-search-expand" )
+		->addEventListener( Event::MouseClick, [widgetTree]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
+				widgetTree->expandAll();
 			}
 		} );
 

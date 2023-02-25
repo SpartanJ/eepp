@@ -201,8 +201,8 @@ void GlobalSearchController::initGlobalSearchBar(
 				<TextView class="search_str" layout_width="wrap_content" layout_height="match_parent" />
 				<PushButton id="global_search_again" layout_width="wrap_content" layout_height="18dp" text="Search Again" margin-left="8dp" />
 				<PushButton id="global_search_set_search" layout_width="wrap_content" layout_height="18dp" text="Set Search String" margin-left="8dp" />
-				<PushButton id="global_search_collapse" layout_width="wrap_content" layout_height="18dp" tooltip="Collapse All" margin-left="8dp" icon="menu-fold" />
-				<PushButton id="global_search_expand" layout_width="wrap_content" layout_height="18dp" tooltip="Expand All" margin-left="8dp" icon="menu-unfold" />
+				<PushButton id="global_search_collapse" layout_width="wrap_content" layout_height="18dp" tooltip='@string(collapse_all, "Collapse All")' margin-left="8dp" icon="menu-fold" />
+				<PushButton id="global_search_expand" layout_width="wrap_content" layout_height="18dp" tooltip='@string(expand_all, "Expand All")' margin-left="8dp" icon="menu-unfold" />
 				<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
 				<TextView class="search_total" layout_width="wrap_content" layout_height="match_parent" margin-right="8dp" />
 			</hbox>

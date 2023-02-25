@@ -910,7 +910,7 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 									  const Vector2f& position ) {
 	editor->setTooltipText( resp.contents[0].value );
 	// HACK: Gets the old font style to restore it when the tooltip is hidden
-	UITooltip* tooltip = editor->getTooltip();
+	UITooltip* tooltip = editor->createTooltip();
 	if ( tooltip == nullptr )
 		return;
 	mOldTextStyle = tooltip->getFontStyle();

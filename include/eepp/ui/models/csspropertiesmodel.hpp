@@ -29,7 +29,8 @@ class CSSPropertiesModel final : public Model {
 	}
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
-		if ( mWidget == nullptr )
+		eeASSERT( index.row() < (Int64)mData.size() );
+		if ( mWidget == nullptr || index.row() >= (Int64)mData.size() )
 			return {};
 		PropertyId propId = mData[index.row()];
 		const PropertyDefinition* def = mProps.at( propId );

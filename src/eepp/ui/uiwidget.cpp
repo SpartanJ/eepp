@@ -237,13 +237,16 @@ PositionPolicy UIWidget::getLayoutPositionPolicy() const {
 	return mLayoutPositionPolicy;
 }
 
-void UIWidget::createTooltip() {
+UITooltip* UIWidget::createTooltip() {
 	if ( NULL != mTooltip )
-		return;
+		return mTooltip;
 
 	mTooltip = UITooltip::New();
 	mTooltip->setVisible( false )->setEnabled( false );
 	mTooltip->setTooltipOf( this );
+	if ( !mTooltipText.empty() )
+		mTooltip->setText( mTooltipText );
+	return mTooltip;
 }
 
 void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
@@ -256,7 +259,7 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 		}
 	}
 
-	if ( !isSceneNodeLoading() && mUISceneNode != NULL && mStyle != NULL ) {
+	if ( !isSceneNodeLoading() && mUISceneNode != NULL &&mStyle != NULL ) {
 		// Childs that are structurally volatile can change states when a new
 		// element is added to the parent. We pre-store them and invalidate its
 		// state if that's the case.
@@ -314,13 +317,14 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 			updateDebugData();
 		}
 
-		if ( mVisible && NULL != mTooltip && isTooltipEnabled() && !mTooltip->getText().empty() ) {
+		if ( mVisible && isTooltipEnabled() && !mTooltipText.empty() ) {
 			UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
 
 			if ( NULL == themeManager )
 				return UINode::onMouseOver( position, flags );
 
 			if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {
+				createTooltip();
 				if ( !mTooltip->isVisible() || themeManager->getTooltipFollowMouse() )
 					mTooltip->setPosition( getTooltipPosition() );
 				mTooltip->show();
@@ -329,6 +333,7 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 					[&] {
 						if ( isTooltipEnabled() &&
 							 getEventDispatcher()->getMouseOverNode() == this ) {
+							createTooltip();
 							mTooltip->setPixelsPosition( getTooltipPosition() );
 							mTooltip->show();
 						}
@@ -336,7 +341,7 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 					themeManager->getTooltipTimeToShow() ) );
 			}
 
-			if ( themeManager->getTooltipFollowMouse() ) {
+			if ( mTooltip && themeManager->getTooltipFollowMouse() ) {
 				mTooltip->setPixelsPosition( getTooltipPosition() );
 			}
 		}
@@ -358,25 +363,14 @@ Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 UIWidget* UIWidget::setTooltipText( const String& text ) {
-	// If the tooltip wasn't created it will avoid to create a new one if the string is ""
-	if ( NULL == mTooltip ) {
-		if ( !text.empty() ) {
-			createTooltip();
-
-			mTooltip->setText( text );
-		}
-	} else { // but if it's created, i will allow it
+	mTooltipText = text;
+	if ( mTooltip )
 		mTooltip->setText( text );
-	}
-
 	return this;
 }
 
 String UIWidget::getTooltipText() {
-	if ( NULL != mTooltip )
-		return mTooltip->getText();
-
-	return String();
+	return mTooltipText;
 }
 
 void UIWidget::tooltipRemove() {
