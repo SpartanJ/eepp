@@ -16,6 +16,8 @@ namespace EE { namespace UI { namespace Doc {
 class EE_API SyntaxDefinitionManager {
 	SINGLETON_DECLARE_HEADERS( SyntaxDefinitionManager )
   public:
+	static std::string toCPP( const SyntaxDefinition& def );
+
 	SyntaxDefinition& add( SyntaxDefinition&& syntaxStyle );
 
 	const SyntaxDefinition& getPlainStyle() const;
@@ -43,6 +45,8 @@ class EE_API SyntaxDefinitionManager {
 	const SyntaxDefinition* getPtrByLanguageName( const std::string& name ) const;
 
 	const SyntaxDefinition* getPtrByLanguageId( const String::HashType& id ) const;
+
+	bool loadFromStream( IOStream& stream, std::vector<std::string>* addedLangs );
 
 	bool loadFromStream( IOStream& stream );
 
@@ -177,6 +181,10 @@ class EE_API SyntaxDefinitionManager {
 	void addVue();
 
 	void addElixir();
+
+	void addCrystal();
+
+	void addV();
 
 	std::optional<size_t> getLanguageIndex( const std::string& langName );
 

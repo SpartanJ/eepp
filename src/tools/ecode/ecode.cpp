@@ -3352,6 +3352,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"Comma separated language names to export its language definitions. \"export-lang-path\" "
 		"must be defined. Retrieved with \"--health\" command.",
 		{ "export-lang" }, "" );
+	args::ValueFlag<std::string> convertLangPath(
+		parser, "convert-lang-path",
+		"Convert any JSON language definition to CPP syntax definition (development helper)",
+		{ "convert-lang-path" }, "" );
 
 	try {
 		auto args = Sys::parseArguments( argc, argv );
@@ -3376,6 +3380,22 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
 		return EXIT_FAILURE;
+	}
+
+	if ( convertLangPath && !convertLangPath.Get().empty() ) {
+		Sys::windowAttachConsole();
+		IOStreamFile sfile( convertLangPath.Get() );
+		if ( sfile.isOpen() ) {
+			std::vector<std::string> adedLangs;
+			if ( SyntaxDefinitionManager::instance()->loadFromStream( sfile, &adedLangs ) ) {
+				for ( const auto& lang : adedLangs ) {
+					const auto& def =
+						SyntaxDefinitionManager::instance()->getByLanguageName( lang );
+					std::cout << SyntaxDefinitionManager::toCPP( def ) << "\n";
+				}
+			}
+		}
+		return EXIT_SUCCESS;
 	}
 
 	if ( exportLangPath && !exportLangPath.Get().empty() ) {

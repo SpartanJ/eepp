@@ -133,6 +133,10 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addVue();
 
 	addElixir();
+
+	addCrystal();
+
+	addV();
 }
 
 const std::vector<SyntaxDefinition>& SyntaxDefinitionManager::getDefinitions() const {
@@ -4066,6 +4070,113 @@ void SyntaxDefinitionManager::addElixir() {
 		   "#" } );
 }
 
+void SyntaxDefinitionManager::addCrystal() {
+	add( { "Crystal",
+		   { "%.cr$" },
+		   {
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'" }, "string" },
+			   { { "-?0x%x+" }, "number" },
+			   { { "%#.-\n" }, "comment" },
+			   { { " : [%w_| :]*" }, "comment" },
+			   { { "-?%d+[%d%.eE]*%f[^eE]" }, "number" },
+			   { { "-?%.?%d+f?" }, "number" },
+			   { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			   { { "[%a_][%w_]*%f[(?]" }, "function" },
+			   { { "%.[%a_][%w_]*%f[(%s]" }, "function" },
+			   { { "@?@[%a_][%w_]*" }, "keyword2" },
+			   { { ":-[%u_][%u%d_]*%f[^%w]" }, "keyword2" },
+			   { { "::[%w_]*" }, "symbol" },
+			   { { ":[%w_]*" }, "symbol" },
+			   { { "[%a_][%w_]*:[^:]" }, "keyword2" },
+			   { { "[%a_][%w_]*" }, "symbol" },
+			   { { "%s+" }, "normal" },
+			   { { "%w+%f[%s]" }, "normal" },
+		   },
+		   {
+			   { "yield", "keyword" },		  { "unless", "keyword" },
+			   { "undef", "keyword" },		  { "true", "literal" },
+			   { "then", "keyword" },		  { "super", "keyword2" },
+			   { "return", "keyword" },		  { "responds_to?", "function" },
+			   { "rescue", "keyword" },		  { "private", "keyword2" },
+			   { "puts", "function" },		  { "p!", "function" },
+			   { "out", "function" },		  { "class", "keyword" },
+			   { "break", "keyword" },		  { "self", "keyword2" },
+			   { "alias", "keyword" },		  { "fun", "keyword" },
+			   { "Void", "literal" },		  { "until", "keyword" },
+			   { "abstract", "keyword" },	  { "__LINE__", "keyword" },
+			   { "annotation", "keyword2" },  { "__FILE__", "keyword" },
+			   { "__ENCODING__", "keyword" }, { "case", "keyword" },
+			   { "BEGIN", "keyword" },		  { "END", "keyword" },
+			   { "end", "keyword" },		  { "else", "keyword" },
+			   { "defined?", "keyword" },	  { "require", "keyword" },
+			   { "do", "keyword" },			  { "while", "keyword" },
+			   { "ensure", "keyword" },		  { "include", "keyword" },
+			   { "nil", "literal" },		  { "begin", "keyword" },
+			   { "enum", "keyword2" },		  { "when", "keyword" },
+			   { "extend", "keyword" },		  { "next", "keyword" },
+			   { "if", "keyword" },			  { "false", "literal" },
+			   { "def", "keyword" },		  { "elsif", "keyword" },
+			   { "in", "keyword" },			  { "module", "keyword" },
+
+		   },
+		   "#",
+		   {} } );
+}
+
+void SyntaxDefinitionManager::addV() {
+	add( { "V",
+		   { "%.v$", "%.vsh$" },
+		   {
+			   { { "//.-\n" }, "comment" },
+			   { { "/%*", "%*/" }, "comment" },
+			   { { "\"", "\"", "\\" }, "string" },
+			   { { "'", "'", "\\" }, "string" },
+			   { { "`", "`", "\\" }, "string" },
+			   { { "r'", "'" }, "string" },
+			   { { "r\"", "\"" }, "string" },
+			   { { "0x[%da-fA-F_]+" }, "number" },
+			   { { "0b[01_]+" }, "number" },
+			   { { "00[01234567_]+" }, "number" },
+			   { { "-?%.?%d+" }, "number" },
+			   { { "[%a_][%w_]*%f[(]" }, "function" },
+			   { { "[%+%-%*%/%%%~%&%|%^%!%=]" }, "operator" },
+			   { { "%:%=" }, "operator" },
+			   { { "%.%.%.?" }, "operator" },
+			   { { "[%a_][%w_]*" }, "symbol" },
+			   { { "%$%s?[%a_][%w_]*" }, "keyword2" },
+			   { { "%@%s?[%a_][%w_]*" }, "keyword2" },
+			   { { "%s+" }, "normal" },
+			   { { "%w+%f[%s]" }, "normal" },
+		   },
+		   {
+			   { "voidptr", "keyword2" },  { "unsafe", "keyword" },		{ "u16", "keyword2" },
+			   { "i128", "keyword2" },	   { "goto", "keyword" },		{ "as", "keyword" },
+			   { "go", "keyword" },		   { "for", "keyword" },		{ "import", "keyword" },
+			   { "fn", "keyword" },		   { "if", "keyword" },			{ "i64", "keyword2" },
+			   { "typeof", "keyword" },	   { "f32", "keyword2" },		{ "union", "keyword" },
+			   { "u32", "keyword2" },	   { "const", "keyword" },		{ "char", "keyword2" },
+			   { "continue", "keyword" },  { "byte", "keyword2" },		{ "i16", "keyword2" },
+			   { "assert", "keyword" },	   { "bool", "keyword2" },		{ "atomic", "keyword" },
+			   { "isreftype", "keyword" }, { "u8", "keyword2" },		{ "chan", "keyword2" },
+			   { "u128", "keyword2" },	   { "__offsetof", "keyword" }, { "i8", "keyword2" },
+			   { "int", "keyword2" },	   { "is", "keyword" },			{ "defer", "keyword" },
+			   { "interface", "keyword" }, { "false", "literal" },		{ "or", "keyword" },
+			   { "pub", "keyword" },	   { "lock", "keyword" },		{ "map", "keyword2" },
+			   { "module", "keyword" },	   { "rune", "keyword2" },		{ "shared", "keyword" },
+			   { "mut", "keyword" },	   { "match", "keyword" },		{ "static", "keyword" },
+			   { "asm", "keyword" },	   { "none", "literal" },		{ "return", "keyword" },
+			   { "in", "keyword" },		   { "else", "keyword" },		{ "break", "keyword" },
+			   { "rlock", "keyword" },	   { "select", "keyword" },		{ "enum", "keyword" },
+			   { "f64", "keyword2" },	   { "sizeof", "keyword" },		{ "string", "keyword2" },
+			   { "struct", "keyword" },	   { "thread", "keyword2" },	{ "true", "literal" },
+			   { "type", "keyword" },	   { "u64", "keyword2" },
+		   },
+		   "//",
+		   {}
+	} );
+}
+
 std::optional<size_t> SyntaxDefinitionManager::getLanguageIndex( const std::string& langName ) {
 	size_t pos = 0;
 	for ( const auto& def : mDefinitions ) {
@@ -4075,6 +4186,63 @@ std::optional<size_t> SyntaxDefinitionManager::getLanguageIndex( const std::stri
 		++pos;
 	}
 	return {};
+}
+
+static std::string str( std::string s, const std::string& prepend = "",
+						const std::string& append = "", bool allowEmptyString = true ) {
+	if ( s.empty() && !allowEmptyString )
+		return "";
+	String::replaceAll( s, "\\", "\\\\" );
+	String::replaceAll( s, "\"", "\\\"" );
+	return prepend + "\"" + String::escape( s ) + "\"" + append;
+}
+
+static std::string join( std::vector<std::string> const& vec, bool createCont = true,
+						 bool allowReduce = false, std::string delim = ", " ) {
+	if ( vec.empty() )
+		return "{}";
+	if ( vec.size() == 1 && allowReduce )
+		return str( vec[0] );
+	std::string accum = std::accumulate(
+		vec.begin() + 1, vec.end(), str( vec[0] ),
+		[&delim]( const std::string& a, const std::string& b ) { return a + delim + str( b ); } );
+	return createCont ? "{ " + accum + " }" : accum;
+}
+
+std::string SyntaxDefinitionManager::toCPP( const SyntaxDefinition& def ) {
+	std::string buf = "add( {";
+	// lang name
+	buf += str( def.getLanguageName() ) + ",\n";
+	// file types
+	buf += join( def.getFiles() ) + ",\n";
+	// patterns
+	buf += "{\n";
+	for ( const auto& pattern : def.getPatterns() )
+		buf += "{ " + join( pattern.patterns ) + ", " + join( pattern.types, true, true ) +
+			   str( pattern.syntax, ", ", "", false ) + " },\n";
+	buf += "\n},\n";
+	// symbols
+	buf += "{\n";
+	for ( const auto& symbol : def.getSymbols() )
+		buf += "{ " + str( symbol.first ) + " , " + str( symbol.second ) + " },\n";
+	buf += "\n},\n";
+	buf += str( def.getComment(), "", "", false ) + ",\n";
+	std::string lspName =
+		def.getLSPName().empty() || def.getLSPName() == String::toLower( def.getLanguageName() )
+			? ""
+			: def.getLSPName();
+	// headers
+	buf += join( def.getHeaders() ) + ( lspName.empty() ? "" : "," ) + "\n";
+	// lsp
+	buf += lspName.empty() ? "" : str( def.getLSPName() );
+	buf += "\n}";
+	buf += ")";
+	if ( !def.isVisible() )
+		buf += ".setVisible( false )";
+	if ( def.getAutoCloseXMLTags() )
+		buf += ".setAutoCloseXMLTags( true )";
+	buf += ";";
+	return buf;
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
@@ -4229,7 +4397,8 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 	return def;
 }
 
-bool SyntaxDefinitionManager::loadFromStream( IOStream& stream ) {
+bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
+											  std::vector<std::string>* addedLangs ) {
 	if ( stream.getSize() == 0 )
 		return false;
 	std::string buffer;
@@ -4244,8 +4413,12 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream ) {
 			if ( !res.getLanguageName().empty() ) {
 				auto pos = getLanguageIndex( res.getLanguageName() );
 				if ( pos.has_value() ) {
+					if ( addedLangs )
+						addedLangs->push_back( res.getLanguageName() );
 					mDefinitions[pos.value()] = std::move( res );
 				} else {
+					if ( addedLangs )
+						addedLangs->push_back( res.getLanguageName() );
 					mDefinitions.emplace_back( std::move( res ) );
 				}
 			}
@@ -4255,14 +4428,22 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream ) {
 		if ( !res.getLanguageName().empty() ) {
 			auto pos = getLanguageIndex( res.getLanguageName() );
 			if ( pos.has_value() ) {
+				if ( addedLangs )
+					addedLangs->push_back( res.getLanguageName() );
 				mDefinitions[pos.value()] = std::move( res );
 			} else {
+				if ( addedLangs )
+					addedLangs->push_back( res.getLanguageName() );
 				mDefinitions.emplace_back( std::move( res ) );
 			}
 		}
 	}
 
 	return true;
+}
+
+bool SyntaxDefinitionManager::loadFromStream( IOStream& stream ) {
+	return loadFromStream( stream, nullptr );
 }
 
 bool SyntaxDefinitionManager::loadFromFile( const std::string& fpath ) {
