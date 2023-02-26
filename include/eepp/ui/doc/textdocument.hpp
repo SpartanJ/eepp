@@ -26,6 +26,8 @@ using namespace EE::Network;
 
 namespace EE { namespace UI { namespace Doc {
 
+class SyntaxHighlighter;
+
 struct DocumentContentChange {
 	TextRange range;
 	String text;
@@ -84,6 +86,7 @@ class EE_API TextDocument {
 			onDocumentClosed( doc );
 			onDocumentLoaded( doc );
 		}
+		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
 	};
 
 	TextDocument( bool verbose = true );
@@ -405,14 +408,6 @@ class EE_API TextDocument {
 
 	void setPageSize( const Uint32& pageSize );
 
-	TextPosition findOpenBracket( TextPosition startPosition,
-								  const String::StringBaseType& openBracket,
-								  const String::StringBaseType& closeBracket ) const;
-
-	TextPosition findCloseBracket( TextPosition startPosition,
-								   const String::StringBaseType& openBracket,
-								   const String::StringBaseType& closeBracket ) const;
-
 	const String& getNonWordChars() const;
 
 	void toggleLineComments();
@@ -548,6 +543,11 @@ class EE_API TextDocument {
 
 	void setRunningTransaction( const bool runningTransaction );
 
+	TextPosition getMatchingBracket( TextPosition startPosition,
+									 const String::StringBaseType& openBracket,
+									 const String::StringBaseType& closeBracket, int dir,
+									 SyntaxHighlighter* highlighter = nullptr );
+
   protected:
 	friend class UndoStack;
 
@@ -616,6 +616,8 @@ class EE_API TextDocument {
 	void notifyDirtyOnFileSystem();
 
 	void notifyDocumentMoved();
+
+	void notifySyntaxDefinitionChange();
 
 	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
 

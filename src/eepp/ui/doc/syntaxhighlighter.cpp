@@ -109,4 +109,19 @@ SyntaxHighlighter::getSyntaxDefinitionFromTextPosition( const TextPosition& posi
 	return *state.currentSyntax;
 }
 
+std::string SyntaxHighlighter::getTokenTypeAt( const TextPosition& pos ) {
+	if ( !pos.isValid() || pos.line() < 0 || pos.line() >= (Int64)mDoc->linesCount() )
+		return "normal";
+	const std::vector<SyntaxToken>& tokens = getLine( pos.line() );
+	if ( tokens.empty() )
+		return "normal";
+	Int64 col = 0;
+	for ( const auto& token : tokens ) {
+		col += String::utf8Length( token.text );
+		if ( col > pos.column() )
+			return token.type;
+	}
+	return "normal";
+}
+
 }}} // namespace EE::UI::Doc

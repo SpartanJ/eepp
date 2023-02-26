@@ -9,6 +9,7 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <sstream>
 #include <string>
@@ -72,6 +73,7 @@ void TextDocument::reset() {
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainStyle();
 	mUndoStack.clear();
 	cleanChangeId();
+	notifySyntaxDefinitionChange();
 	notifyCursorChanged();
 	notifySelectionChanged();
 }
@@ -257,7 +259,10 @@ bool TextDocument::hasSyntaxDefinition() const {
 
 void TextDocument::resetSyntax() {
 	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
+	std::string oldDef = mSyntaxDefinition.getLSPName();
 	mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header );
+	if ( mSyntaxDefinition.getLSPName() != oldDef )
+		notifySyntaxDefinitionChange();
 }
 
 bool TextDocument::getAutoDetectIndentType() const {
@@ -1837,11 +1842,9 @@ TextRanges TextDocument::sanitizeRange( const TextRanges& ranges ) const {
 }
 
 bool TextDocument::isValidPosition( const TextPosition& position ) const {
-	if ( position.line() < 0 || position.line() > (Int64)mLines.size() - 1 )
-		return false;
-	if ( position.column() < 0 || position.column() > (Int64)mLines[position.line()].size() - 1 )
-		return false;
-	return true;
+	return !( position.line() < 0 || position.line() > (Int64)mLines.size() - 1 ||
+			  position.column() < 0 ||
+			  position.column() > (Int64)mLines[position.line()].size() - 1 );
 }
 
 bool TextDocument::isValidRange( const TextRange& range ) const {
@@ -1916,6 +1919,7 @@ const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 
 void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
 	mSyntaxDefinition = definition;
+	notifySyntaxDefinitionChange();
 }
 
 Uint64 TextDocument::getCurrentChangeId() const {
@@ -2361,53 +2365,43 @@ void TextDocument::cleanChangeId() {
 	mCleanChangeId = getCurrentChangeId();
 }
 
-TextPosition TextDocument::findOpenBracket( TextPosition startPosition,
-											const String::StringBaseType& openBracket,
-											const String::StringBaseType& closeBracket ) const {
-	int count = 0;
-	Int64 startColumn;
-	Int64 lineLength;
-	for ( Int64 line = startPosition.line(); line >= 0; line-- ) {
-		const String& string = mLines[line].getText();
-		lineLength = string.size();
-		startColumn = ( line == startPosition.line() ) ? startPosition.column() : lineLength - 1;
-		for ( Int64 i = startColumn; i >= 0; i-- ) {
-			if ( string[i] == closeBracket ) {
-				count++;
-			} else if ( string[i] == openBracket ) {
-				count--;
-				if ( 0 == count ) {
-					return { line, i };
-				}
+TextPosition TextDocument::getMatchingBracket( TextPosition sp,
+											   const String::StringBaseType& openBracket,
+											   const String::StringBaseType& closeBracket, int dir,
+											   SyntaxHighlighter* highlighter ) {
+	int depth = 0;
+	while ( sp.isValid() ) {
+		auto byte = getChar( sp );
+		if ( byte == openBracket ) {
+			if ( highlighter ) {
+				auto type = highlighter->getTokenTypeAt( sp );
+				if ( type != "comment" && type != "string" )
+					depth++;
+			} else {
+				depth++;
 			}
-		}
-	}
-	return TextPosition();
-}
 
-TextPosition TextDocument::findCloseBracket( TextPosition startPosition,
-											 const String::StringBaseType& openBracket,
-											 const String::StringBaseType& closeBracket ) const {
-	int count = 0;
-	Int64 linesCount = mLines.size();
-	Int64 startColumn;
-	Int64 lineLength;
-	for ( Int64 line = startPosition.line(); line < linesCount; line++ ) {
-		const String& string = mLines[line].getText();
-		startColumn = ( line == startPosition.line() ) ? startPosition.column() : 0;
-		lineLength = string.size();
-		for ( Int64 i = startColumn; i < lineLength; i++ ) {
-			if ( string[i] == openBracket ) {
-				count++;
-			} else if ( string[i] == closeBracket ) {
-				count--;
-				if ( 0 == count ) {
-					return { line, i };
-				}
+			if ( depth == 0 )
+				return sp;
+		} else if ( byte == closeBracket ) {
+			if ( highlighter ) {
+				auto type = highlighter->getTokenTypeAt( sp );
+				if ( type != "comment" && type != "string" )
+					depth--;
+			} else {
+				depth--;
 			}
+
+			if ( depth == 0 )
+				return sp;
 		}
+
+		auto prevPos = sp;
+		sp = positionOffset( sp, dir );
+		if ( sp == prevPos )
+			return {};
 	}
-	return TextPosition();
+	return {};
 }
 
 const String& TextDocument::getNonWordChars() const {
@@ -2524,6 +2518,13 @@ void TextDocument::notifyDocumentMoved() {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentMoved( this );
+	}
+}
+
+void TextDocument::notifySyntaxDefinitionChange() {
+	Lock l( mClientsMutex );
+	for ( auto& client : mClients ) {
+		client->onDocumentSyntaxDefinitionChange( mSyntaxDefinition );
 	}
 }
 

@@ -37,6 +37,15 @@ std::string SyntaxDefinition::getFileExtension() const {
 	return "";
 }
 
+std::vector<SyntaxPattern> SyntaxDefinition::getPatternsOfType( const std::string& type ) const {
+	std::vector<SyntaxPattern> patterns;
+	for ( const auto& pattern : mPatterns ) {
+		if ( pattern.types.size() == 1 && pattern.types[0] == type )
+			patterns.emplace_back( pattern );
+	}
+	return patterns;
+}
+
 const std::vector<SyntaxPattern>& SyntaxDefinition::getPatterns() const {
 	return mPatterns;
 }

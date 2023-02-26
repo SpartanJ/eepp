@@ -87,6 +87,8 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setLSPName( const std::string& lSPName );
 
+	std::vector<SyntaxPattern> getPatternsOfType( const std::string& type ) const;
+
   protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;

@@ -1353,8 +1353,8 @@ void UICodeEditor::checkColorPickerAction() {
 			} );
 			colorPicker->setColor( Color( '#' + text ) );
 		} else if ( isRgba || isRgb ) {
-			TextPosition position = mDoc->findCloseBracket(
-				{ range.start().line(), static_cast<Int64>( range.end().column() ) }, '(', ')' );
+			TextPosition position = mDoc->getMatchingBracket(
+				{ range.start().line(), static_cast<Int64>( range.end().column() ) }, '(', ')', 1 );
 			if ( position.isValid() ) {
 				mDoc->setSelection( { position.line(), position.column() + 1 }, range.start() );
 				colorPicker = UIColorPicker::NewModal( this, [&, isRgba]( Color color ) {
@@ -2188,13 +2188,15 @@ void UICodeEditor::checkMatchingBrackets() {
 			size_t index = std::distance( open.begin(), isOpenIt );
 			String::StringBaseType openBracket = open[index];
 			String::StringBaseType closeBracket = close[index];
-			TextPosition closePosition = mDoc->findCloseBracket( pos, openBracket, closeBracket );
+			TextPosition closePosition =
+				mDoc->getMatchingBracket( pos, openBracket, closeBracket, 1, &mHighlighter );
 			mMatchingBrackets = { pos, closePosition };
 		} else if ( isCloseIt != close.end() ) {
 			size_t index = std::distance( close.begin(), isCloseIt );
 			String::StringBaseType openBracket = open[index];
 			String::StringBaseType closeBracket = close[index];
-			TextPosition closePosition = mDoc->findOpenBracket( pos, openBracket, closeBracket );
+			TextPosition closePosition =
+				mDoc->getMatchingBracket( pos, openBracket, closeBracket, -1, &mHighlighter );
 			mMatchingBrackets = { pos, closePosition };
 		}
 	}
