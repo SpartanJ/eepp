@@ -1,4 +1,3 @@
-#include "tools/ecode/plugins/lsp/lspclientserver.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreammemory.hpp>
