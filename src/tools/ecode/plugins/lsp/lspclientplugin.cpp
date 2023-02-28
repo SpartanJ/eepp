@@ -248,6 +248,26 @@ PluginRequestHandle LSPClientPlugin::processDocumentFormatting( const PluginMess
 	return ret;
 }
 
+PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage& msg ) {
+	if ( !msg.isRequest() || !msg.isJSON() )
+		return {};
+
+	auto servers = mClientManager.getAllRunningServers();
+	if ( servers.empty() )
+		return {};
+
+	for ( const auto server : servers ) {
+		server->workspaceSymbol(
+			msg.asJSON().value( "query", "" ),
+			[&]( const PluginIDType& id, const std::vector<LSPSymbolInformation>& info ) {
+				mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
+										PluginMessageFormat::SymbolInformation, &info, id );
+			} );
+	}
+
+	return {};
+}
+
 bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 														 std::vector<LSPTextEdit> edits ) {
 	auto doc = mManager->getSplitter()->findDocFromURI( uri );
@@ -465,6 +485,12 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 		}
 		case PluginMessageType::CancelRequest: {
 			processCancelRequest( msg );
+			break;
+		}
+		case PluginMessageType::WorkspaceSymbol: {
+			auto ret = processWorkspaceSymbol( msg );
+			if ( !ret.isEmpty() )
+				return ret;
 			break;
 		}
 		default:

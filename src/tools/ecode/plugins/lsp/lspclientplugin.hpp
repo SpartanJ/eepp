@@ -117,6 +117,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	PluginRequestHandle processDocumentFormatting( const PluginMessage& msg );
 
+	PluginRequestHandle processWorkspaceSymbol( const PluginMessage& msg );
+
 	void tryHideTooltip( UICodeEditor* editor, const Vector2i& position );
 
 	void hideTooltip( UICodeEditor* editor );

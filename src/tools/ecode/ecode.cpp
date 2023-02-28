@@ -3118,7 +3118,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				{ "symbol-constant", 0xeb5d },		 { "symbol-struct", 0xea91 },
 				{ "symbol-event", 0xea86 },			 { "symbol-operator", 0xeb64 },
 				{ "symbol-type-parameter", 0xea92 }, { "expand-all", 0xeb95 },
-				{ "collapse-all", 0xeac5 },
+				{ "symbol-namespace", 0xea8b },		 { "symbol-package", 0xea8b },
+				{ "symbol-string", 0xeb8d },		 { "symbol-number", 0xea90 },
+				{ "symbol-boolean", 0xea8f },		 { "symbol-array", 0xea8a },
+				{ "symbol-object", 0xea8b },		 { "symbol-key", 0xea93 },
+				{ "symbol-null", 0xea8f },			 { "collapse-all", 0xeac5 },
 			};
 
 			for ( const auto& icon : codIcons )

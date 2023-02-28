@@ -3,6 +3,77 @@
 
 namespace ecode {
 
+class LSPSymbolInfoModel : public Model {
+  public:
+	static std::shared_ptr<LSPSymbolInfoModel>
+	create( UISceneNode* uiSceneNode, const std::string& query,
+			const std::vector<LSPSymbolInformation>& data ) {
+		return std::make_shared<LSPSymbolInfoModel>( uiSceneNode, query, data );
+	}
+
+	explicit LSPSymbolInfoModel( UISceneNode* uiSceneNode, const std::string& query,
+								 const std::vector<LSPSymbolInformation>& info ) :
+		mUISceneNode( uiSceneNode ), mQuery( query ), mInfo( info ) {}
+
+	size_t rowCount( const ModelIndex& ) const override { return mInfo.size(); };
+
+	size_t columnCount( const ModelIndex& ) const override { return 2; }
+
+	Variant data( const ModelIndex& index, ModelRole role ) const override {
+		if ( index.row() >= (Int64)mInfo.size() )
+			return {};
+		if ( role == ModelRole::Display ) {
+			switch ( index.column() ) {
+				case 0:
+					return Variant( mInfo[index.row()].name.c_str() );
+				case 1:
+					return Variant( mInfo[index.row()].url.getFSPath() );
+			}
+		} else if ( role == ModelRole::Icon && index.column() == 0 ) {
+			return mUISceneNode->findIcon(
+				LSPSymbolKindHelper::toIconString( mInfo[index.row()].kind ) );
+		} else if ( role == ModelRole::Custom && index.column() == 1 ) {
+			return Variant( mInfo[index.row()].range.toString() );
+		}
+		return {};
+	}
+
+	void update() override { onModelUpdate(); }
+
+	const std::vector<LSPSymbolInformation>& getInfo() const { return mInfo; }
+
+	LSPSymbolInformation at( const size_t& idx ) {
+		eeASSERT( idx < mInfo.size() );
+		return mInfo[idx];
+	}
+
+	const std::string& getQuery() const { return mQuery; }
+
+	void append( const std::vector<LSPSymbolInformation>& res ) {
+		mInfo.insert( mInfo.end(), res.begin(), res.end() );
+		std::sort( mInfo.begin(), mInfo.end(),
+				   []( const LSPSymbolInformation& l, const LSPSymbolInformation& r ) {
+					   return l.score > r.score;
+				   } );
+		onModelUpdate();
+	}
+
+	void setQuery( const std::string& query ) {
+		if ( mQuery != query ) {
+			mQuery = query;
+			clear();
+			onModelUpdate();
+		}
+	}
+
+	void clear() { mInfo.clear(); }
+
+  protected:
+	UISceneNode* mUISceneNode{ nullptr };
+	std::string mQuery;
+	std::vector<LSPSymbolInformation> mInfo;
+};
+
 static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 static int LOCATEBAR_MAX_RESULTS = 100;
 
@@ -10,7 +81,11 @@ FileLocator::FileLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sce
 	mSplitter( editorSplitter ),
 	mUISceneNode( sceneNode ),
 	mApp( app ),
-	mCommandPalette( mApp->getThreadPool() ) {}
+	mCommandPalette( mApp->getThreadPool() ) {
+	mApp->getPluginManager()->subscribeMessages(
+		"universallocator",
+		[&]( const PluginMessage& msg ) -> PluginRequestHandle { return processResponse( msg ); } );
+}
 
 void FileLocator::hideLocateBar() {
 	mLocateBarLayout->setVisible( false );
@@ -32,6 +107,7 @@ void FileLocator::updateFilesTable() {
 		mLocateTable->setModel(
 			mApp->getDirTree()->fuzzyMatchTree( mLocateInput->getText(), LOCATEBAR_MAX_RESULTS ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+		mLocateTable->scrollToTop();
 #endif
 	} else {
 		mLocateTable->setModel( mApp->getDirTree()->asModel( LOCATEBAR_MAX_RESULTS ) );
@@ -56,7 +132,6 @@ void FileLocator::updateCommandPaletteTable() {
 	txt.trim();
 
 	if ( txt.size() > 1 ) {
-
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ), 1000, [&]( auto res ) {
 			mUISceneNode->runOnMainThread( [&, res] {
@@ -68,6 +143,7 @@ void FileLocator::updateCommandPaletteTable() {
 #else
 		mLocateTable->setModel( mCommandPalette.fuzzyMatch( txt.substr(), 1000 ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+		mLocateTable->scrollToTop();
 #endif
 	} else if ( mCommandPalette.getCurModel() ) {
 		mLocateTable->setModel( mCommandPalette.getCurModel() );
@@ -118,6 +194,8 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 			}
 		} else if ( !txt.empty() && mLocateInput->getText()[0] == '>' ) {
 			showCommandPalette();
+		} else if ( !txt.empty() && mLocateInput->getText()[0] == ':' ) {
+			showWorkspaceSymbol();
 		} else {
 			showLocateTable();
 			if ( !mApp->isDirTreeReady() )
@@ -168,15 +246,30 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 				Variant vPath( modelEvent->getModel()->data(
 					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
 					ModelRole::Display ) );
-				if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
-					std::string path( vPath.asCStr() );
+				if ( vPath.isValid() ) {
+					std::string path( vPath.is( Variant::Type::cstr ) ? vPath.asCStr()
+																	  : vPath.asStdString() );
+					Variant rangeStr( modelEvent->getModel()->data(
+						modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
+						ModelRole::Custom ) );
+					auto range = rangeStr.isValid()
+									 ? TextRange::fromString( rangeStr.asStdString() )
+									 : TextRange();
 					UITab* tab = mSplitter->isDocumentOpen( path, true );
 					if ( !tab ) {
 						FileInfo fileInfo( path );
 						if ( fileInfo.exists() && fileInfo.isRegularFile() )
-							mApp->loadFileFromPath( path );
+							mApp->loadFileFromPath( path, true, nullptr,
+													[range]( UICodeEditor* editor, auto ) {
+														if ( range.isValid() )
+															editor->goToLine( range.start() );
+													} );
 					} else {
 						tab->getTabWidget()->setTabSelected( tab );
+						if ( range.isValid() ) {
+							UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+							editor->goToLine( range.start() );
+						}
 					}
 					mLocateBarLayout->execute( "close-locatebar" );
 				}
@@ -209,7 +302,7 @@ void FileLocator::showBar() {
 	mLocateTable->setVisible( true );
 	const String& text = mLocateInput->getText();
 
-	if ( !text.empty() && text[0] == '>' ) {
+	if ( !text.empty() && ( text[0] == '>' || text[0] == ':' ) ) {
 		Int64 selectFrom = 1;
 		if ( text.size() >= 2 && text[1] == ' ' )
 			selectFrom = 2;
@@ -228,7 +321,8 @@ void FileLocator::showBar() {
 void FileLocator::showLocateBar() {
 	showBar();
 
-	if ( !mLocateInput->getText().empty() && mLocateInput->getText()[0] == '>' )
+	if ( !mLocateInput->getText().empty() &&
+		 ( mLocateInput->getText()[0] == '>' || mLocateInput->getText()[0] == ':' ) )
 		mLocateInput->setText( "" );
 
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
@@ -247,6 +341,61 @@ void FileLocator::showCommandPalette() {
 
 	updateCommandPaletteTable();
 	updateLocateBar();
+}
+
+void FileLocator::showWorkspaceSymbol() {
+	showBar();
+
+	if ( mLocateInput->getText().empty() || mLocateInput->getText()[0] != ':' )
+		mLocateInput->setText( ": " );
+
+	requestWorkspaceSymbol();
+	updateLocateBar();
+}
+
+void FileLocator::requestWorkspaceSymbol() {
+	if ( mLocateInput->getText().empty() )
+		return;
+	auto txt( mLocateInput->getText().substr( 1 ).trim() );
+	if ( mWorkspaceSymbolQuery != txt.toUtf8() || mWorkspaceSymbolQuery.empty() ) {
+		mWorkspaceSymbolQuery = txt.toUtf8();
+		if ( mWorkspaceSymbolModel ) {
+			mWorkspaceSymbolModel->setQuery( mWorkspaceSymbolQuery );
+		} else {
+			mWorkspaceSymbolModel =
+				LSPSymbolInfoModel::create( mApp->getUISceneNode(), mWorkspaceSymbolQuery, {} );
+		}
+		json j = json{ json{ "query", mWorkspaceSymbolQuery } };
+		mApp->getPluginManager()->sendRequest( PluginMessageType::WorkspaceSymbol,
+											   PluginMessageFormat::JSON, &j );
+	}
+}
+
+void FileLocator::updateWorkspaceSymbol( const std::vector<LSPSymbolInformation>& res ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+	mUISceneNode->runOnMainThread( [&, res] {
+		if ( !mWorkspaceSymbolModel ) {
+			mWorkspaceSymbolModel =
+				LSPSymbolInfoModel::create( mApp->getUISceneNode(), mWorkspaceSymbolQuery, res );
+		} else {
+			mWorkspaceSymbolModel->append( res );
+		}
+		mLocateTable->setModel( mWorkspaceSymbolModel );
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+		mLocateTable->scrollToTop();
+	} );
+#else
+	mLocateTable->setModel( mWorkspaceSymbolModel );
+	mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	mLocateTable->scrollToTop();
+#endif
+}
+
+PluginRequestHandle FileLocator::processResponse( const PluginMessage& msg ) {
+	if ( msg.isResponse() && msg.type == PluginMessageType::WorkspaceSymbol ) {
+		updateWorkspaceSymbol( msg.asSymbolInformation() );
+	}
+	return {};
 }
 
 } // namespace ecode

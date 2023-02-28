@@ -115,6 +115,23 @@ void PluginManager::setWorkspaceFolder( const std::string& workspaceFolder ) {
 	sendBroadcast( PluginMessageType::WorkspaceFolderChanged, PluginMessageFormat::JSON, &data );
 }
 
+PluginRequestHandle PluginManager::sendRequest( PluginMessageType type, PluginMessageFormat format,
+												const void* data ) {
+	if ( mClosing )
+		return PluginRequestHandle::empty();
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins ) {
+		auto handle = plugin.second( { type, format, data } );
+		if ( !handle.isEmpty() )
+			return handle;
+	}
+	return PluginRequestHandle::empty();
+}
+
 PluginRequestHandle PluginManager::sendRequest( UICodeEditorPlugin* pluginWho,
 												PluginMessageType type, PluginMessageFormat format,
 												const void* data ) {

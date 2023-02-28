@@ -73,6 +73,7 @@ enum class PluginMessageType {
 	SymbolReference,			// Request the LSP Server to find a symbol reference in the project
 	ShowMessage,  // The LSP server sends a request to the client to show a message on screen
 	ShowDocument, // The LSP server sends a request to the client to show a document
+	WorkspaceSymbol,
 	Undefined
 };
 
@@ -85,6 +86,7 @@ enum class PluginMessageFormat {
 	ProjectSearchResult,
 	ShowMessage,
 	ShowDocument,
+	SymbolInformation
 };
 
 class PluginIDType {
@@ -172,6 +174,10 @@ struct PluginMessage {
 		return *static_cast<const LSPShowDocumentParams*>( data );
 	}
 
+	const std::vector<LSPSymbolInformation>& asSymbolInformation() const {
+		return *static_cast<const std::vector<LSPSymbolInformation>*>( data );
+	}
+
 	const PluginIDType& asPluginID() const { return *static_cast<const PluginIDType*>( data ); }
 
 	bool isResponse() const { return -1 != responseID && 0 != responseID; }
@@ -247,6 +253,9 @@ class PluginManager {
 
 	void setWorkspaceFolder( const std::string& workspaceFolder );
 
+	PluginRequestHandle sendRequest( PluginMessageType type, PluginMessageFormat format,
+									 const void* data );
+
 	PluginRequestHandle sendRequest( UICodeEditorPlugin* pluginWho, PluginMessageType type,
 									 PluginMessageFormat format, const void* data );
 
@@ -290,8 +299,6 @@ class PluginManager {
 
 	void setSplitter( UICodeEditorSplitter* splitter );
 
-	PluginRequestHandle sendRequest( const PluginMessageType& notification,
-									 const PluginMessageFormat& format, void* data );
 };
 
 class PluginsModel : public Model {

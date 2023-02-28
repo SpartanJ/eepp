@@ -63,6 +63,8 @@ class LSPClientServer {
 
 	bool registerDoc( const std::shared_ptr<TextDocument>& doc );
 
+	bool isRunning();
+
 	const LSPServerCapabilities& getCapabilities() const;
 
 	LSPClientServerManager* getManager() const;
@@ -161,10 +163,12 @@ class LSPClientServer {
 	LSPRequestHandle documentCompletion( const URI& document, const TextPosition& pos,
 										 const CompletionHandler& h );
 
-	LSPRequestHandle workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h );
+	LSPRequestHandle workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
+									  const size_t& limit = 100 );
 
 	LSPRequestHandle workspaceSymbol( const std::string& querySymbol,
-									  const SymbolInformationHandler& h );
+									  const SymbolInformationHandler& h,
+									  const size_t& limit = 100 );
 
 	LSPRequestHandle selectionRange( const URI& document,
 									 const std::vector<TextPosition>& positions,

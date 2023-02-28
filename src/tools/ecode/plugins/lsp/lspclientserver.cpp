@@ -48,6 +48,7 @@ static const char* MEMBER_TARGET_SELECTION_RANGE = "targetSelectionRange";
 static const char* MEMBER_PREVIOUS_RESULT_ID = "previousResultId";
 static const char* MEMBER_QUERY = "query";
 static const char* MEMBER_SUCCESS = "success";
+static const char* MEMBER_LIMIT = "limit";
 
 static json newRequest( const std::string& method, const json& params = json{} ) {
 	json j;
@@ -392,24 +393,23 @@ static std::vector<LSPSymbolInformation> parseWorkspaceSymbols( const json& res 
 	std::vector<LSPSymbolInformation> symbols;
 	symbols.reserve( res.size() );
 
-	std::transform(
-		res.cbegin(), res.cend(), std::back_inserter( symbols ), []( const json& symbol ) {
-			LSPSymbolInformation symInfo;
+	std::transform( res.cbegin(), res.cend(), std::back_inserter( symbols ),
+					[]( const json& symbol ) {
+						LSPSymbolInformation symInfo;
 
-			const auto& location = symbol.at( MEMBER_LOCATION );
-			const auto& mrange = symbol.contains( MEMBER_RANGE ) ? symbol.at( MEMBER_RANGE )
-																 : location.at( MEMBER_RANGE );
+						const auto& location = symbol.at( MEMBER_LOCATION );
+						const auto& mrange = location.at( MEMBER_RANGE );
 
-			auto containerName = symbol.value( "containerName", "" );
-			if ( !containerName.empty() )
-				containerName.append( "::" );
-			symInfo.name = containerName + symbol.value( "name", "" );
-			symInfo.kind = (LSPSymbolKind)symbol.value( MEMBER_KIND, 1 );
-			symInfo.range = parseRange( mrange );
-			symInfo.url = URI( location.value( MEMBER_URI, "" ) );
-			symInfo.score = symbol.value( "score", 0.0 );
-			return symInfo;
-		} );
+						auto containerName = symbol.value( "containerName", "" );
+						if ( !containerName.empty() )
+							containerName.append( "::" );
+						symInfo.name = containerName + symbol.value( "name", "" );
+						symInfo.kind = (LSPSymbolKind)symbol.value( MEMBER_KIND, 1 );
+						symInfo.range = parseRange( mrange );
+						symInfo.url = URI( location.value( MEMBER_URI, "" ) );
+						symInfo.score = symbol.value( "score", 0.0 );
+						return symInfo;
+					} );
 
 	std::sort( symbols.begin(), symbols.end(),
 			   []( const LSPSymbolInformation& l, const LSPSymbolInformation& r ) {
@@ -1039,6 +1039,10 @@ bool LSPClientServer::registerDoc( const std::shared_ptr<TextDocument>& doc ) {
 	return true;
 }
 
+bool LSPClientServer::isRunning() {
+	return mProcess.isAlive() && !mProcess.isShootingDown();
+}
+
 void LSPClientServer::removeDoc( TextDocument* doc ) {
 	Lock l( mClientsMutex );
 	if ( mClients.erase( doc ) > 0 ) {
@@ -1240,18 +1244,22 @@ LSPClientServer::documentSymbols( const URI& document,
 }
 
 LSPClientServer::LSPRequestHandle LSPClientServer::workspaceSymbol( const std::string& querySymbol,
-																	const JsonReplyHandler& h ) {
-	auto params = json{ { MEMBER_QUERY, querySymbol } };
+																	const JsonReplyHandler& h,
+																	const size_t& limit ) {
+	auto params = json{ { MEMBER_QUERY, querySymbol }, { MEMBER_LIMIT, limit } };
 	return send( newRequest( "workspace/symbol", params ), h );
 }
 
 LSPClientServer::LSPRequestHandle
-LSPClientServer::workspaceSymbol( const std::string& querySymbol,
-								  const SymbolInformationHandler& h ) {
-	return workspaceSymbol( querySymbol, [h]( const IdType& id, const json& json ) {
-		if ( h )
-			h( id, parseWorkspaceSymbols( json ) );
-	} );
+LSPClientServer::workspaceSymbol( const std::string& querySymbol, const SymbolInformationHandler& h,
+								  const size_t& limit ) {
+	return workspaceSymbol(
+		querySymbol,
+		[h]( const IdType& id, const json& json ) {
+			if ( h )
+				h( id, parseWorkspaceSymbols( json ) );
+		},
+		limit );
 }
 
 void fromJson( LSPWorkDoneProgressValue& value, const json& data ) {

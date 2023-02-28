@@ -244,6 +244,68 @@ enum class LSPSymbolKind {
 	TypeParameter = 26,
 };
 
+class LSPSymbolKindHelper {
+  public:
+	// TODO: Complete this list
+	static std::string toIconString( const LSPSymbolKind& kind ) {
+		switch ( kind ) {
+			case LSPSymbolKind::Method:
+				return "symbol-method";
+			case LSPSymbolKind::Function:
+				return "symbol-function";
+			case LSPSymbolKind::Constructor:
+				return "symbol-constructor";
+			case LSPSymbolKind::Field:
+				return "symbol-field";
+			case LSPSymbolKind::Variable:
+				return "symbol-variable";
+			case LSPSymbolKind::Class:
+				return "symbol-class";
+			case LSPSymbolKind::Interface:
+				return "symbol-interface";
+			case LSPSymbolKind::Module:
+				return "symbol-module";
+			case LSPSymbolKind::Property:
+				return "symbol-property";
+			case LSPSymbolKind::Enum:
+				return "symbol-enum";
+			case LSPSymbolKind::File:
+				return "symbol-file";
+			case LSPSymbolKind::EnumMember:
+				return "symbol-enum-member";
+			case LSPSymbolKind::Constant:
+				return "symbol-constant";
+			case LSPSymbolKind::Struct:
+				return "symbol-struct";
+			case LSPSymbolKind::Event:
+				return "symbol-event";
+			case LSPSymbolKind::Operator:
+				return "symbol-operator";
+			case LSPSymbolKind::TypeParameter:
+				return "symbol-type-parameter";
+			case LSPSymbolKind::Namespace:
+				return "symbol-namespace";
+			case LSPSymbolKind::Package:
+				return "symbol-package";
+			case LSPSymbolKind::String:
+				return "symbol-string";
+			case LSPSymbolKind::Number:
+				return "symbol-number";
+			case LSPSymbolKind::Boolean:
+				return "symbol-boolean";
+			case LSPSymbolKind::Array:
+				return "symbol-array";
+			case LSPSymbolKind::Object:
+				return "symbol-object";
+			case LSPSymbolKind::Key:
+				return "symbol-key";
+			case LSPSymbolKind::Null:
+				return "symbol-null";
+		}
+		return "symbol-text";
+	}
+};
+
 struct LSPSymbolInformation {
 	LSPSymbolInformation() = default;
 	LSPSymbolInformation( const std::string& _name, LSPSymbolKind _kind, TextRange _range,

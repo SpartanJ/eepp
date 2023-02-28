@@ -51,11 +51,12 @@ class CommandPalette {
 
 	const std::shared_ptr<CommandPaletteModel>& getEditorModel() const;
 
-	void setCommandPaletteEditor(const std::vector<std::vector<std::string> >& commandPaletteEditor);
+	void
+	setCommandPaletteEditor( const std::vector<std::vector<std::string>>& commandPaletteEditor );
 
-	void setCurModel(const std::shared_ptr<CommandPaletteModel>& curModel);
+	void setCurModel( const std::shared_ptr<CommandPaletteModel>& curModel );
 
-	protected:
+  protected:
 	mutable Mutex mMatchingMutex;
 	std::shared_ptr<ThreadPool> mPool;
 	std::vector<std::vector<std::string>> mCommandPalette;

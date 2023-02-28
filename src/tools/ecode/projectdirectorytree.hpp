@@ -45,10 +45,11 @@ class FileListModel : public Model {
 		switch ( role ) {
 			case ModelRole::Icon:
 				return Variant( iconFor( index ) );
-			default:
 			case ModelRole::Display:
 				return Variant( index.column() == 0 ? mNames[index.row()].c_str()
 													: mFiles[index.row()].c_str() );
+			default:
+				break;
 		}
 
 		return {};

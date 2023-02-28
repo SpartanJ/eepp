@@ -451,4 +451,14 @@ LSPClientServerManager::getLSPClientServers( const std::string& language ) {
 	return servers;
 }
 
+std::vector<LSPClientServer*> LSPClientServerManager::getAllRunningServers() {
+	std::vector<LSPClientServer*> servers;
+	Lock l( mClientsMutex );
+	for ( auto& server : mClients ) {
+		if ( server.second->isRunning() )
+			servers.push_back( server.second.get() );
+	}
+	return servers;
+}
+
 } // namespace ecode
