@@ -17,7 +17,7 @@ using CommandPaletteModel = ItemVectorListOwnerModel<std::string>;
 
 class CommandPalette {
   public:
-	CommandPalette( const std::shared_ptr<ThreadPool>& pool );
+	explicit CommandPalette( const std::shared_ptr<ThreadPool>& pool );
 
 	typedef std::function<void( std::shared_ptr<CommandPaletteModel> )> MatchResultCb;
 

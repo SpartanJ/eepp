@@ -1,8 +1,9 @@
-#ifndef ECODE_FILELOCATOR_HPP
-#define ECODE_FILELOCATOR_HPP
+#ifndef ECODE_UNIVERSALLOCATOR_HPP
+#define ECODE_UNIVERSALLOCATOR_HPP
 
 #include "commandpalette.hpp"
 #include "plugins/pluginmanager.hpp"
+#include "projectdirectorytree.hpp"
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ee.hpp>
 
@@ -11,9 +12,9 @@ namespace ecode {
 class App;
 class LSPSymbolInfoModel;
 
-class FileLocator {
+class UniversalLocator {
   public:
-	FileLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode, App* app );
+	UniversalLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode, App* app );
 
 	void initLocateBar( UILocateBar* locateBar, UITextInput* locateInput );
 
@@ -53,8 +54,10 @@ class FileLocator {
 	void requestWorkspaceSymbol();
 
 	void updateWorkspaceSymbol( const std::vector<LSPSymbolInformation>& info );
+
+	std::vector<ProjectDirectoryTree::CommandInfo> getLocatorCommands() const;
 };
 
 } // namespace ecode
 
-#endif // ECODE_FILELOCATOR_HPP
+#endif // ECODE_UNIVERSALLOCATOR_HPP

@@ -46,6 +46,9 @@ class LSPClientServerManager {
 
 	std::vector<LSPClientServer*> getAllRunningServers();
 
+	std::vector<LSPClientServer*>
+	getFilteredServers( const std::function<bool( LSPClientServer* )>& filter );
+
 	LSPClientServer* getOneLSPClientServer( UICodeEditor* editor );
 
 	LSPClientServer* getOneLSPClientServer( const std::shared_ptr<TextDocument>& doc );

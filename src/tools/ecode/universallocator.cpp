@@ -1,4 +1,4 @@
-#include "filelocator.hpp"
+#include "universallocator.hpp"
 #include "ecode.hpp"
 
 namespace ecode {
@@ -77,7 +77,8 @@ class LSPSymbolInfoModel : public Model {
 static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 static int LOCATEBAR_MAX_RESULTS = 100;
 
-FileLocator::FileLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode, App* app ) :
+UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode,
+									App* app ) :
 	mSplitter( editorSplitter ),
 	mUISceneNode( sceneNode ),
 	mApp( app ),
@@ -87,12 +88,12 @@ FileLocator::FileLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sce
 		[&]( const PluginMessage& msg ) -> PluginRequestHandle { return processResponse( msg ); } );
 }
 
-void FileLocator::hideLocateBar() {
+void UniversalLocator::hideLocateBar() {
 	mLocateBarLayout->setVisible( false );
 	mLocateTable->setVisible( false );
 }
 
-void FileLocator::updateFilesTable() {
+void UniversalLocator::updateFilesTable() {
 	if ( !mLocateInput->getText().empty() ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mApp->getDirTree()->asyncFuzzyMatchTree(
@@ -110,12 +111,13 @@ void FileLocator::updateFilesTable() {
 		mLocateTable->scrollToTop();
 #endif
 	} else {
-		mLocateTable->setModel( mApp->getDirTree()->asModel( LOCATEBAR_MAX_RESULTS ) );
+		mLocateTable->setModel(
+			mApp->getDirTree()->asModel( LOCATEBAR_MAX_RESULTS, getLocatorCommands() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 }
 
-void FileLocator::updateCommandPaletteTable() {
+void UniversalLocator::updateCommandPaletteTable() {
 	if ( !mCommandPalette.isSet() )
 		mCommandPalette.setCommandPalette( mApp->getMainLayout()->getCommandList(),
 										   mApp->getMainLayout()->getKeyBindings() );
@@ -154,19 +156,23 @@ void FileLocator::updateCommandPaletteTable() {
 	mLocateTable->setColumnsVisible( { 0, 1 } );
 }
 
-void FileLocator::showLocateTable() {
+void UniversalLocator::showLocateTable() {
 	mLocateTable->setVisible( true );
 	Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
 	pos.y -= mLocateTable->getPixelsSize().getHeight();
 	mLocateTable->setPixelsPosition( pos );
 }
 
-void FileLocator::goToLine() {
+void UniversalLocator::goToLine() {
 	showLocateBar();
 	mLocateInput->setText( "l " );
 }
 
-void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInput ) {
+static bool isCommand( const std::string& filename ) {
+	return !filename.empty() && ( filename == "> " || filename == ": " || filename == "l " );
+}
+
+void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInput ) {
 	mLocateBarLayout = locateBar;
 	mLocateInput = locateInput;
 	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
@@ -243,12 +249,22 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 				}
 				hideLocateBar();
 			} else {
+				Variant vName( modelEvent->getModel()->data(
+					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 0 ),
+					ModelRole::Display ) );
+				if ( isCommand( vName.toString() ) ) {
+					mLocateInput->setText( vName.toString() );
+					return;
+				}
 				Variant vPath( modelEvent->getModel()->data(
 					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
 					ModelRole::Display ) );
 				if ( vPath.isValid() ) {
 					std::string path( vPath.is( Variant::Type::cstr ) ? vPath.asCStr()
 																	  : vPath.asStdString() );
+					if ( path.empty() )
+						return;
+
 					Variant rangeStr( modelEvent->getModel()->data(
 						modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
 						ModelRole::Custom ) );
@@ -278,7 +294,7 @@ void FileLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInpu
 	} );
 }
 
-void FileLocator::updateLocateBar() {
+void UniversalLocator::updateLocateBar() {
 	mLocateBarLayout->runOnMainThread( [&] {
 		Float width = eeceil( mLocateInput->getPixelsSize().getWidth() );
 		mLocateTable->setPixelsSize( width,
@@ -293,7 +309,7 @@ void FileLocator::updateLocateBar() {
 	} );
 }
 
-void FileLocator::showBar() {
+void UniversalLocator::showBar() {
 	mApp->hideGlobalSearchBar();
 	mApp->hideSearchBar();
 
@@ -318,7 +334,7 @@ void FileLocator::showBar() {
 									[&]( const Event* ) { updateLocateBar(); } );
 }
 
-void FileLocator::showLocateBar() {
+void UniversalLocator::showLocateBar() {
 	showBar();
 
 	if ( !mLocateInput->getText().empty() &&
@@ -326,14 +342,15 @@ void FileLocator::showLocateBar() {
 		mLocateInput->setText( "" );
 
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
-		mLocateTable->setModel( mApp->getDirTree()->asModel( LOCATEBAR_MAX_RESULTS ) );
+		mLocateTable->setModel(
+			mApp->getDirTree()->asModel( LOCATEBAR_MAX_RESULTS, getLocatorCommands() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 
 	updateLocateBar();
 }
 
-void FileLocator::showCommandPalette() {
+void UniversalLocator::showCommandPalette() {
 	showBar();
 
 	if ( mLocateInput->getText().empty() || mLocateInput->getText()[0] != '>' )
@@ -343,7 +360,7 @@ void FileLocator::showCommandPalette() {
 	updateLocateBar();
 }
 
-void FileLocator::showWorkspaceSymbol() {
+void UniversalLocator::showWorkspaceSymbol() {
 	showBar();
 
 	if ( mLocateInput->getText().empty() || mLocateInput->getText()[0] != ':' )
@@ -353,7 +370,7 @@ void FileLocator::showWorkspaceSymbol() {
 	updateLocateBar();
 }
 
-void FileLocator::requestWorkspaceSymbol() {
+void UniversalLocator::requestWorkspaceSymbol() {
 	if ( mLocateInput->getText().empty() )
 		return;
 	auto txt( mLocateInput->getText().substr( 1 ).trim() );
@@ -362,16 +379,22 @@ void FileLocator::requestWorkspaceSymbol() {
 		if ( mWorkspaceSymbolModel ) {
 			mWorkspaceSymbolModel->setQuery( mWorkspaceSymbolQuery );
 		} else {
-			mWorkspaceSymbolModel =
-				LSPSymbolInfoModel::create( mApp->getUISceneNode(), mWorkspaceSymbolQuery, {} );
+			auto defTxt = mUISceneNode->i18n( "no_running_lsp_server", "No running LSP server" );
+			LSPSymbolInformation info;
+			info.name = defTxt.toUtf8();
+			info.url = "";
+			mWorkspaceSymbolModel = LSPSymbolInfoModel::create( mApp->getUISceneNode(),
+																mWorkspaceSymbolQuery, { info } );
 		}
+		mLocateTable->setModel( mWorkspaceSymbolModel );
+
 		json j = json{ json{ "query", mWorkspaceSymbolQuery } };
 		mApp->getPluginManager()->sendRequest( PluginMessageType::WorkspaceSymbol,
 											   PluginMessageFormat::JSON, &j );
 	}
 }
 
-void FileLocator::updateWorkspaceSymbol( const std::vector<LSPSymbolInformation>& res ) {
+void UniversalLocator::updateWorkspaceSymbol( const std::vector<LSPSymbolInformation>& res ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	mUISceneNode->runOnMainThread( [&, res] {
 		if ( !mWorkspaceSymbolModel ) {
@@ -391,7 +414,24 @@ void FileLocator::updateWorkspaceSymbol( const std::vector<LSPSymbolInformation>
 #endif
 }
 
-PluginRequestHandle FileLocator::processResponse( const PluginMessage& msg ) {
+std::vector<ProjectDirectoryTree::CommandInfo> UniversalLocator::getLocatorCommands() const {
+	std::vector<ProjectDirectoryTree::CommandInfo> vec;
+	UIIcon* icon = mUISceneNode->findIcon( "chevron-right" );
+	vec.push_back( { "> ",
+					 mUISceneNode->i18n( "search_in_command_palette", "Search in Command Palette" ),
+					 icon } );
+	vec.push_back(
+		{ ": ",
+		  mUISceneNode->i18n( "search_for_workspace_symbols", "Search for Workspace Symbols" ),
+		  icon } );
+	vec.push_back(
+		{ "l ",
+		  mUISceneNode->i18n( "go_to_line_in_current_document", "Go To Line in Current Document" ),
+		  icon } );
+	return vec;
+}
+
+PluginRequestHandle UniversalLocator::processResponse( const PluginMessage& msg ) {
 	if ( msg.isResponse() && msg.type == PluginMessageType::WorkspaceSymbol ) {
 		updateWorkspaceSymbol( msg.asSymbolInformation() );
 	}

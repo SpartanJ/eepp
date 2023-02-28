@@ -1153,8 +1153,6 @@
 ../../src/tools/ecode/docsearchcontroller.hpp
 ../../src/tools/ecode/featureshealth.cpp
 ../../src/tools/ecode/featureshealth.hpp
-../../src/tools/ecode/filelocator.cpp
-../../src/tools/ecode/filelocator.hpp
 ../../src/tools/ecode/filesystemlistener.cpp
 ../../src/tools/ecode/filesystemlistener.hpp
 ../../src/tools/ecode/globalsearchcontroller.cpp
@@ -1196,6 +1194,8 @@
 ../../src/tools/ecode/uicodeeditorsplitter.hpp
 ../../src/tools/ecode/uitreeviewglobalsearch.cpp
 ../../src/tools/ecode/uitreeviewglobalsearch.hpp
+../../src/tools/ecode/universallocator.cpp
+../../src/tools/ecode/universallocator.hpp
 ../../src/tools/ecode/version.cpp
 ../../src/tools/ecode/version.hpp
 ../../src/tools/ecode/widgetcommandexecuter.hpp

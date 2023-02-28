@@ -163,7 +163,9 @@ void ProjectDirectoryTree::asyncMatchTree( const std::string& match, const size_
 	mPool->run( [&, match, max, res]() { res( matchTree( match, max ) ); }, []() {} );
 }
 
-std::shared_ptr<FileListModel> ProjectDirectoryTree::asModel( const size_t& max ) const {
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::asModel( const size_t& max,
+							   const std::vector<CommandInfo>& prependCommands ) const {
 	if ( mNames.empty() )
 		return std::make_shared<FileListModel>( std::vector<std::string>(),
 												std::vector<std::string>() );
@@ -174,7 +176,22 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::asModel( const size_t& max 
 		files[i] = mFiles[i];
 		names[i] = mNames[i];
 	}
-	return std::make_shared<FileListModel>( files, names );
+	if ( !prependCommands.empty() ) {
+		int count = 0;
+		for ( const auto& cmd : prependCommands ) {
+			names.insert( names.begin() + count, cmd.name );
+			files.insert( files.begin() + count, cmd.desc );
+			count++;
+		}
+	}
+	auto model = std::make_shared<FileListModel>( files, names );
+
+	if ( !prependCommands.empty() ) {
+		for ( size_t i = 0; i < prependCommands.size(); ++i )
+			model->setIcon( i, prependCommands[i].icon );
+	}
+
+	return model;
 }
 
 size_t ProjectDirectoryTree::getFilesCount() const {

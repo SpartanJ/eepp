@@ -461,4 +461,15 @@ std::vector<LSPClientServer*> LSPClientServerManager::getAllRunningServers() {
 	return servers;
 }
 
+std::vector<LSPClientServer*> LSPClientServerManager::getFilteredServers(
+	const std::function<bool( LSPClientServer* )>& filter ) {
+	std::vector<LSPClientServer*> servers;
+	Lock l( mClientsMutex );
+	for ( auto& server : mClients ) {
+		if ( server.second->isRunning() && filter( server.second.get() ) )
+			servers.push_back( server.second.get() );
+	}
+	return servers;
+}
+
 } // namespace ecode

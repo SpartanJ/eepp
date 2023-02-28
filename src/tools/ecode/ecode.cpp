@@ -1797,7 +1797,7 @@ void App::hideSearchBar() {
 }
 
 void App::hideLocateBar() {
-	mFileLocator->hideLocateBar();
+	mUniversalLocator->hideLocateBar();
 }
 
 bool App::isDirTreeReady() const {
@@ -1898,7 +1898,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			mSettings->updateDocumentMenu();
 		}
 	} );
-	doc.setCommand( "go-to-line", [&] { mFileLocator->goToLine(); } );
+	doc.setCommand( "go-to-line", [&] { mUniversalLocator->goToLine(); } );
 	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
 	registerUnlockedCommands( doc );
 
@@ -2073,7 +2073,7 @@ void App::loadDirTree( const std::string& path ) {
 			eeDelete( clock );
 			mDirTreeReady = true;
 			mUISceneNode->runOnMainThread( [&] {
-				mFileLocator->updateFilesTable();
+				mUniversalLocator->updateFilesTable();
 				if ( mSplitter->curEditorExistsAndFocused() )
 					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
 			} );
@@ -3123,7 +3123,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				{ "symbol-boolean", 0xea8f },		 { "symbol-array", 0xea8a },
 				{ "symbol-object", 0xea8b },		 { "symbol-key", 0xea93 },
 				{ "symbol-null", 0xea8f },			 { "collapse-all", 0xeac5 },
-			};
+				{ "chevron-right", 0xeab6 } };
 
 			for ( const auto& icon : codIcons )
 				iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
@@ -3209,9 +3209,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			mUISceneNode->find<UIGlobalSearchBar>( "global_search_bar" ),
 			mConfig.globalSearchBarConfig, mGlobalSearchKeybindings );
 
-		mFileLocator = std::make_unique<FileLocator>( mSplitter, mUISceneNode, this );
-		mFileLocator->initLocateBar( mUISceneNode->find<UILocateBar>( "locate_bar" ),
-									 mUISceneNode->find<UITextInput>( "locate_find" ) );
+		mUniversalLocator = std::make_unique<UniversalLocator>( mSplitter, mUISceneNode, this );
+		mUniversalLocator->initLocateBar( mUISceneNode->find<UILocateBar>( "locate_bar" ),
+										  mUISceneNode->find<UITextInput>( "locate_find" ) );
 
 		initImageView();
 

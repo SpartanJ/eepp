@@ -252,7 +252,9 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 	if ( !msg.isRequest() || !msg.isJSON() )
 		return {};
 
-	auto servers = mClientManager.getAllRunningServers();
+	auto servers = mClientManager.getFilteredServers( []( LSPClientServer* server ) {
+		return server->getCapabilities().workspaceSymbolProvider;
+	} );
 	if ( servers.empty() )
 		return {};
 

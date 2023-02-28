@@ -706,6 +706,7 @@ void UITextInput::paste() {
 		String::replaceAll( pasted, "\n", "" );
 	}
 	mDoc.textInput( pasted );
+	onTextChanged();
 	sendCommonEvent( Event::OnTextPasted );
 }
 

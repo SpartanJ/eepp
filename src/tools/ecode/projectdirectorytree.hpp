@@ -55,6 +55,11 @@ class FileListModel : public Model {
 		return {};
 	}
 
+	void setIcon( size_t idx, UIIcon* icon ) {
+		eeASSERT( idx < mIcons.size() );
+		mIcons[idx] = icon;
+	}
+
 	virtual void update() { onModelUpdate(); }
 
   protected:
@@ -116,7 +121,14 @@ class ProjectDirectoryTree {
 
 	void asyncMatchTree( const std::string& match, const size_t& max, MatchResultCb res ) const;
 
-	std::shared_ptr<FileListModel> asModel( const size_t& max ) const;
+	struct CommandInfo {
+		std::string name;
+		std::string desc;
+		UIIcon* icon{ nullptr };
+	};
+
+	std::shared_ptr<FileListModel>
+	asModel( const size_t& max, const std::vector<CommandInfo>& prependCommands = {} ) const;
 
 	size_t getFilesCount() const;
 

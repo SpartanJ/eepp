@@ -4,13 +4,13 @@
 #include "appconfig.hpp"
 #include "docsearchcontroller.hpp"
 #include "featureshealth.hpp"
-#include "filelocator.hpp"
 #include "filesystemlistener.hpp"
 #include "globalsearchcontroller.hpp"
 #include "notificationcenter.hpp"
 #include "plugins/pluginmanager.hpp"
 #include "projectdirectorytree.hpp"
 #include "terminalmanager.hpp"
+#include "universallocator.hpp"
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
 #include <eterm/ui/uiterminal.hpp>
@@ -135,7 +135,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void panelPosition( const PanelPosition& panelPosition );
 
-	FileLocator* getFileLocator() const { return mFileLocator.get(); }
+	UniversalLocator* getUniversalLocator() const { return mUniversalLocator.get(); }
 
 	TerminalManager* getTerminalManager() const { return mTerminalManager.get(); }
 
@@ -214,8 +214,8 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "console-toggle", [&] { consoleToggle(); } );
 		t.setCommand( "find-replace", [&] { showFindView(); } );
 		t.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
-		t.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
-		t.setCommand( "open-command-palette", [&] { mFileLocator->showCommandPalette(); } );
+		t.setCommand( "open-locatebar", [&] { mUniversalLocator->showLocateBar(); } );
+		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
 		t.setCommand( "editor-set-line-breaking-column", [&] { setLineBreakingColumn(); } );
 		t.setCommand( "editor-set-line-spacing", [&] { setLineSpacing(); } );
 		t.setCommand( "editor-set-cursor-blinking-time", [&] { setCursorBlinkingTime(); } );
@@ -370,7 +370,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unordered_map<std::string, efsw::WatchID> mFilesFolderWatches;
 	std::unique_ptr<GlobalSearchController> mGlobalSearchController;
 	std::unique_ptr<DocSearchController> mDocSearchController;
-	std::unique_ptr<FileLocator> mFileLocator;
+	std::unique_ptr<UniversalLocator> mUniversalLocator;
 	std::unique_ptr<NotificationCenter> mNotificationCenter;
 	std::string mLastFileFolder;
 	ColorSchemePreference mUIColorScheme;
