@@ -21,8 +21,8 @@
       "use_tmp_folder": true
     },
     {
-      "language": ["javascript", "typescript"],
-      "file_patterns": ["%.js$", "%.ts$"],
+      "language": ["javascript", "typescript", "JSX"],
+      "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$"],
       "warning_pattern": "[^:]:(%d+):(%d+): ([^%[]+)%[([^\n]+)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
       "command": "eslint --no-ignore --format unix $FILENAME"

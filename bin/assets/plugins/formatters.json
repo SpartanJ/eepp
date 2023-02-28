@@ -7,8 +7,8 @@
   },
   "formatters": [
     {
-      "language": ["javascript", "typescript"],
-      "file_patterns": ["%.js$", "%.ts$"],
+      "language": ["javascript", "typescript", "JSX"],
+      "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$"],
       "command": "prettier $FILENAME"
     },
     {
