@@ -314,6 +314,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void loadFileDelayed();
 
+	const std::vector<std::string>& getRecentFolders() const;
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -347,11 +349,11 @@ class App : public UICodeEditorSplitter::Client {
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
 	UITreeView* mProjectTreeView{ nullptr };
+	UILinearLayout* mProjectViewEmptyCont{ nullptr };
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	std::shared_ptr<GitIgnoreMatcher> mFileSystemMatcher;
 	size_t mMenuIconSize{ 16 };
 	bool mDirTreeReady{ false };
-	bool mIsBundledApp{ false };
 	bool mUseFrameBuffer{ false };
 	bool mBenchmarkMode{ false };
 	Time mFrameTime{ Time::Zero };
@@ -460,6 +462,8 @@ class App : public UICodeEditorSplitter::Client {
 	void cleanUpRecentFolders();
 
 	void cleanUpRecentFiles();
+
+	void createAndShowRecentFolderPopUpMenu();
 };
 
 } // namespace ecode

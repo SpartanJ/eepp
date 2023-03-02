@@ -1684,6 +1684,9 @@ void App::closeFolder() {
 	} else {
 		closeEditors();
 	}
+
+	mProjectViewEmptyCont->setVisible( true );
+	mFileSystemModel->setRootPath( "" );
 }
 
 void App::createDocAlert( UICodeEditor* editor ) {
@@ -2256,6 +2259,25 @@ void App::newFolder( const FileInfo& file ) {
 	} );
 }
 
+void App::createAndShowRecentFolderPopUpMenu() {
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	if ( mRecentFolders.empty() )
+		return;
+	for ( const auto& file : mRecentFolders )
+		menu->add( file );
+	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+		loadFolder( txt );
+	} );
+	auto recentFolderBut = mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" );
+	auto pos = recentFolderBut->getScreenPos();
+	pos.y += recentFolderBut->getPixelsSize().getHeight();
+	menu->setPixelsPosition( pos );
+	menu->show();
+}
+
 void App::consoleToggle() {
 	mConsole->toggle();
 	bool lock = mConsole->isActive();
@@ -2265,6 +2287,17 @@ void App::consoleToggle() {
 }
 
 void App::initProjectTreeView( std::string path ) {
+	mProjectViewEmptyCont = mUISceneNode->find<UILinearLayout>( "project_view_empty" );
+	mProjectViewEmptyCont->find<UIPushButton>( "open_folder" )
+		->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
+				runCommand( "open-folder" );
+		} );
+	mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" )
+		->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
+				createAndShowRecentFolderPopUpMenu();
+		} );
 	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
 	mProjectTreeView->setColumnsHidden(
 		{ FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
@@ -2393,8 +2426,6 @@ void App::initProjectTreeView( std::string path ) {
 		}
 	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() ) {
 		loadFolder( mRecentFolders[0] );
-	} else if ( !mIsBundledApp ) {
-		loadFolder( "." );
 	}
 
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
@@ -2532,6 +2563,8 @@ void App::loadFolder( const std::string& path ) {
 	if ( !mCurrentProject.empty() )
 		closeEditors();
 
+	mProjectViewEmptyCont->setVisible( false );
+
 	std::string rpath( FileSystem::getRealPath( path ) );
 	FileSystem::dirAddSlashAtEnd( rpath );
 
@@ -2596,15 +2629,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mBenchmarkMode = benchmarkMode;
 
 	mResPath = Sys::getProcessPath();
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
-	if ( String::contains( mResPath, "ecode.app" ) ) {
-		mIsBundledApp = true;
-	}
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
-	if ( String::contains( mResPath, ".mount_" ) ) {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( String::contains( mResPath, ".mount_" ) )
 		FileSystem::dirAddSlashAtEnd( mResPath );
-		mIsBundledApp = true;
-	}
 #elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	mResPath += "ecode/";
 #endif
@@ -2877,12 +2904,26 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		#check_for_updates .check_at_startup {
 			margin: 6dp 0dp 6p 0dp;
 		}
+		#project_view_empty {
+			padding-top: 8dp;
+		}
+		#project_view_empty > * {
+			margin-left: 8dp;
+			margin-right: 8dp;
+		}
 		</style>
 		<MainLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
 			<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
-				<TreeView id="project_view" />
-				<Tab text='@string("project", "Project")' owns="project_view" text-as-fallback="true" icon="icon(folder-open, 12dp)" />
+				<RelativeLayout id="project_view_cont" layout_width="match_parent" layout_height="match_parent">
+					<TreeView id="project_view" layout_width="match_parent" layout_height="match_parent" />
+					<vbox id="project_view_empty" layout_gravity="top|center_horizontal" layout_width="match_parent" layout_height="wrap_content">
+						<TextView text-align="center" layout_width="match_parent" layout_gravity="center" text='@string(you-have-not-yet-opened-a-folder, "You have not yet opened a folder.")' word-wrap="true"  />
+						<PushButton layout_width="match_parent" layout_gravity="center" id="open_folder" text='@string(open_folder, "Open Folder")' margin-top="4dp" />
+						<PushButton layout_width="match_parent" layout_gravity="center" id="open_recent_folder" text='@string(open-recent-folder, "Open Recent Folder...")' margin-top="4dp" />
+					</vbox>
+				</RelativeLayout>
+				<Tab text='@string("project", "Project")' owns="project_view_cont" text-as-fallback="true" icon="icon(folder-open, 12dp)" />
 			</TabWidget>
 			<vbox>
 				<RelativeLayout layout_width="match_parent" layout_height="0" layout_weight="1">
@@ -2933,7 +2974,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 					</vbox>
 				</searchbar>
 				<locatebar id="locate_bar" layout_width="match_parent" layout_height="wrap_content" visible="false">
-					<TextInput id="locate_find" layout_width="0" layout_weight="1" layout_height="18dp" padding="0" margin-bottom="2dp" margin-right="4dp" hint="Search files by name ( append `l ` to go to line )" />
+					<TextInput id="locate_find" layout_width="0" layout_weight="1" layout_height="18dp" padding="0" margin-bottom="2dp" margin-right="4dp" hint='@string(type_to_locate, "Type to Locate")' />
 					<Widget id="locatebar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right"/>
 				</locatebar>
 				<globalsearchbar id="global_search_bar" layout_width="match_parent" layout_height="wrap_content">
