@@ -105,6 +105,10 @@ UICodeEditorSplitter* PluginManager::getSplitter() const {
 	return mSplitter;
 }
 
+UISceneNode* PluginManager::getUISceneNode() const {
+	return mSplitter ? mSplitter->getUISceneNode() : nullptr;
+}
+
 const std::string& PluginManager::getWorkspaceFolder() const {
 	return mWorkspaceFolder;
 }

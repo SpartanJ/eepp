@@ -460,6 +460,11 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	Log::create( mConfigPath + "ecode.log", logLevel, true, true );
 #endif
 
+	if ( !mArgs.empty() ) {
+		std::string strargs( String::join( mArgs ) );
+		Log::info( "ecode starting with these command line arguments: %s", strargs.c_str() );
+	}
+
 	initPluginManager();
 
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
@@ -602,7 +607,8 @@ void App::onTextDropped( String text ) {
 	}
 }
 
-App::App( const size_t& jobs ) :
+App::App( const size_t& jobs, const std::vector<std::string>& args ) :
+	mArgs( args ),
 	mThreadPool(
 		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
 
@@ -1404,6 +1410,7 @@ void App::onWidgetFocusChange( UIWidget* widget ) {
 void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	updateDocInfo( editor->getDocument() );
 	mDocSearchController->onCodeEditorFocusChange( editor );
+	mUniversalLocator->onCodeEditorFocusChange( editor );
 	syncProjectTreeWithEditor( editor );
 }
 
@@ -3361,14 +3368,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"Convert any JSON language definition to CPP syntax definition (development helper)",
 		{ "convert-lang-path" }, "" );
 
+	std::vector<std::string> args;
 	try {
-		auto args = Sys::parseArguments( argc, argv );
-
-		if ( !args.empty() ) {
-			std::string strargs( String::join( args ) );
-			Log::info( "ecode starting with these command line arguments: %s", strargs.c_str() );
-		}
-
+		args = Sys::parseArguments( argc, argv );
 		parser.ParseCLI( args );
 	} catch ( const args::Help& ) {
 		Sys::windowAttachConsole();
@@ -3417,7 +3419,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	if ( verbose.Get() )
 		Log::instance()->setConsoleOutput( true );
 
-	appInstance = eeNew( App, ( jobs ) );
+	appInstance = eeNew( App, ( jobs, args ) );
 	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),

@@ -6,7 +6,12 @@
 
 using namespace EE;
 using namespace EE::System;
+using namespace EE::UI;
 using namespace EE::UI::Doc;
+
+namespace EE { namespace UI {
+class UISceneNode;
+}} // namespace EE::UI
 
 namespace ecode {
 
@@ -32,16 +37,27 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void notifyOpen();
 
+	void requestSymbols();
+
+	void requestSymbolsDelayed();
+
 	TextDocument* getDoc() const;
 
 	LSPClientServer* getServer() const;
 
 	int getVersion() const;
 
+	void onServerInitialized();
+
   protected:
 	LSPClientServer* mServer{ nullptr };
 	TextDocument* mDoc{ nullptr };
+	String::HashType mTag{ 0 };
 	int mVersion{ 0 };
+
+	void refreshTag();
+
+	UISceneNode* getUISceneNode();
 };
 
 } // namespace ecode

@@ -32,11 +32,13 @@ class LSPClientServer {
 	using IdType = PluginIDType;
 	template <typename T> using ReplyHandler = std::function<void( const IdType& id, const T& )>;
 
+	template <typename T> using WReplyHandler = std::function<void( const IdType& id, T&& )>;
+
 	using JsonReplyHandler = ReplyHandler<json>;
 	using CodeActionHandler = ReplyHandler<std::vector<LSPCodeAction>>;
 	using HoverHandler = ReplyHandler<LSPHover>;
 	using CompletionHandler = ReplyHandler<LSPCompletionList>;
-	using SymbolInformationHandler = ReplyHandler<std::vector<LSPSymbolInformation>>;
+	using SymbolInformationHandler = WReplyHandler<LSPSymbolInformationList>;
 	using SelectionRangeHandler = ReplyHandler<std::vector<std::shared_ptr<LSPSelectionRange>>>;
 	using SignatureHelpHandler = ReplyHandler<LSPSignatureHelp>;
 	using LocationHandler = ReplyHandler<std::vector<LSPLocation>>;
@@ -82,8 +84,8 @@ class LSPClientServer {
 									  const JsonReplyHandler& eh );
 
 	LSPRequestHandle documentSymbols( const URI& document,
-									  const ReplyHandler<std::vector<LSPSymbolInformation>>& h,
-									  const ReplyHandler<LSPResponseError>& eh );
+									  const WReplyHandler<LSPSymbolInformationList>& h,
+									  const ReplyHandler<LSPResponseError>& eh = {} );
 
 	LSPRequestHandle didOpen( const URI& document, const std::string& text, int version );
 
@@ -254,6 +256,8 @@ class LSPClientServer {
 	void processRequest( const json& msg );
 
 	void goToLocation( const json& res );
+
+	void notifyServerInitialized();
 };
 
 } // namespace ecode

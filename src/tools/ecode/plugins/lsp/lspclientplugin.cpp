@@ -7,6 +7,7 @@
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
@@ -261,13 +262,49 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 	for ( const auto server : servers ) {
 		server->workspaceSymbol(
 			msg.asJSON().value( "query", "" ),
-			[&]( const PluginIDType& id, const std::vector<LSPSymbolInformation>& info ) {
+			[&]( const PluginIDType& id, const LSPSymbolInformationList& info ) {
 				mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
 										PluginMessageFormat::SymbolInformation, &info, id );
 			} );
 	}
 
 	return {};
+}
+
+PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMessage& msg ) {
+	if ( !msg.isRequest() ||
+		 ( msg.type != PluginMessageType::TextDocumentSymbol &&
+		   msg.type != PluginMessageType::TextDocumentFlattenSymbol ) ||
+		 msg.format != PluginMessageFormat::JSON || !msg.asJSON().contains( "uri" ) )
+		return {};
+
+	URI uri( msg.asJSON().value( "uri", "" ) );
+	if ( uri.empty() )
+		return {};
+
+	const LSPSymbolInformationList& symbols = msg.type == PluginMessageType::TextDocumentSymbol
+												  ? getDocumentSymbols( uri )
+												  : getDocumentFlattenSymbols( uri );
+	if ( !symbols.empty() ) {
+		mManager->sendResponse( this, msg.type, PluginMessageFormat::SymbolInformation, &symbols,
+								uri.toString() );
+		return { uri.toString() };
+	}
+
+	LSPClientServer* server = mClientManager.getOneLSPClientServer( uri );
+	if ( !server || !server->getCapabilities().documentSymbolProvider )
+		return {};
+	auto handler = [uri, this]( const PluginIDType& id, LSPSymbolInformationList&& res ) {
+		setDocumentSymbolsFromResponse( id, uri, std::move( res ) );
+	};
+	if ( Engine::instance()->isMainThread() ) {
+		server->getThreadPool()->run(
+			[server, uri, handler]() { server->documentSymbols( uri, handler ); } );
+	} else {
+		server->documentSymbols( uri, handler );
+	}
+
+	return { uri.toString() };
 }
 
 bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
@@ -309,6 +346,51 @@ bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 	doc->setRunningTransaction( false );
 
 	return true;
+}
+
+void LSPClientPlugin::setDocumentSymbols( const URI& docURI, LSPSymbolInformationList&& res ) {
+	Lock l( mDocSymbolsMutex );
+	mDocFlatSymbols[docURI] = !LSPSymbolInformationListHelper::isFlat( res )
+								  ? LSPSymbolInformationListHelper::flatten( res )
+								  : res;
+	mDocSymbols[docURI] = std::move( res );
+}
+
+void LSPClientPlugin::setDocumentSymbolsFromResponse( const PluginIDType& id, const URI& docURI,
+													  LSPSymbolInformationList&& res ) {
+	setDocumentSymbols( docURI, std::move( res ) );
+	mManager->sendResponse( this, PluginMessageType::TextDocumentSymbol,
+							PluginMessageFormat::SymbolInformation, &getDocumentSymbols( docURI ),
+							id );
+	mManager->sendResponse( this, PluginMessageType::TextDocumentFlattenSymbol,
+							PluginMessageFormat::SymbolInformation,
+							&getDocumentFlattenSymbols( docURI ), id );
+}
+
+const LSPSymbolInformationList& LSPClientPlugin::getDocumentSymbols( const URI& docURI ) {
+	Lock l( mDocSymbolsMutex );
+	auto foundIt = mDocSymbols.find( docURI );
+	if ( foundIt != mDocSymbols.end() )
+		return foundIt->second;
+	mDocSymbols[docURI] = {};
+	return mDocSymbols[docURI];
+}
+
+const LSPSymbolInformationList& LSPClientPlugin::getDocumentFlattenSymbols( const URI& docURI ) {
+	Lock l( mDocSymbolsMutex );
+	auto foundIt = mDocFlatSymbols.find( docURI );
+	if ( foundIt != mDocFlatSymbols.end() )
+		return foundIt->second;
+	mDocFlatSymbols[docURI] = {};
+	return mDocFlatSymbols[docURI];
+}
+
+TextDocument* LSPClientPlugin::getDocumentFromURI( const URI& uri ) {
+	Lock l( mDocMutex );
+	for ( const auto client : mDocs )
+		if ( client->getURI() == uri )
+			return client;
+	return nullptr;
 }
 
 bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
@@ -493,6 +575,11 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 			auto ret = processWorkspaceSymbol( msg );
 			if ( !ret.isEmpty() )
 				return ret;
+			break;
+		}
+		case PluginMessageType::TextDocumentSymbol:
+		case PluginMessageType::TextDocumentFlattenSymbol: {
+			processTextDocumentSymbol( msg );
 			break;
 		}
 		default:
@@ -852,9 +939,17 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	mEditors.erase( editor );
 	mEditorsTags.erase( editor );
 	mEditorDocs.erase( editor );
-	for ( const auto& ieditor : mEditorDocs )
+	for ( const auto& ieditor : mEditorDocs ) {
 		if ( ieditor.second == doc )
 			return;
+	}
+
+	{
+		Lock lds( mDocSymbolsMutex );
+		mDocSymbols.erase( doc->getURI() );
+		mDocFlatSymbols.erase( doc->getURI() );
+	}
+
 	mDocs.erase( doc );
 }
 

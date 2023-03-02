@@ -86,22 +86,23 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 		auto rootPath = findRootPath( lsp, doc );
 		auto lspName = lsp.name.empty() ? lsp.command : lsp.name;
 		String::HashType id = String::hash( lspName + "|" + lsp.language + "|" + rootPath );
-		Lock l( mClientsMutex );
-		auto clientIt = mClients.find( id );
 		LSPClientServer* server = nullptr;
-		if ( clientIt == mClients.end() ) {
-			std::unique_ptr<LSPClientServer> serverUP = runLSPServer( id, lsp, rootPath );
-			if ( ( server = serverUP.get() ) ) {
-				mClients[id] = std::move( serverUP );
-				if ( !mLSPWorkspaceFolder.uri.empty() )
-					server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {} );
+		{
+			Lock l( mClientsMutex );
+			auto clientIt = mClients.find( id );
+			if ( clientIt == mClients.end() ) {
+				std::unique_ptr<LSPClientServer> serverUP = runLSPServer( id, lsp, rootPath );
+				if ( ( server = serverUP.get() ) ) {
+					mClients[id] = std::move( serverUP );
+					if ( !mLSPWorkspaceFolder.uri.empty() )
+						server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {} );
+				}
+			} else {
+				server = clientIt->second.get();
 			}
-		} else {
-			server = clientIt->second.get();
 		}
-		if ( server ) {
+		if ( server )
 			server->registerDoc( doc );
-		}
 	}
 }
 

@@ -34,6 +34,10 @@ class UniversalLocator {
 
 	void showWorkspaceSymbol();
 
+	void showDocumentSymbol();
+
+	void onCodeEditorFocusChange( UICodeEditor* editor );
+
   protected:
 	UILocateBar* mLocateBarLayout{ nullptr };
 	UITableView* mLocateTable{ nullptr };
@@ -44,6 +48,9 @@ class UniversalLocator {
 	std::string mWorkspaceSymbolQuery;
 	App* mApp{ nullptr };
 	CommandPalette mCommandPalette;
+	std::string mCurDocURI;
+	std::string mCurDocQuery;
+	std::shared_ptr<LSPSymbolInfoModel> mTextDocumentSymbolModel{ nullptr };
 
 	void updateLocateBar();
 
@@ -53,9 +60,22 @@ class UniversalLocator {
 
 	void requestWorkspaceSymbol();
 
-	void updateWorkspaceSymbol( const std::vector<LSPSymbolInformation>& info );
+	void updateWorkspaceSymbol( const LSPSymbolInformationList& info );
+
+	void requestDocumentSymbol();
+
+	void updateDocumentSymbol( const LSPSymbolInformationList& info );
+
+	std::string getCurDocURI();
 
 	std::vector<ProjectDirectoryTree::CommandInfo> getLocatorCommands() const;
+
+	std::shared_ptr<LSPSymbolInfoModel> emptyModel( const String& defTxt,
+													const std::string& query = "" );
+
+	void asyncFuzzyMatchTextDocumentSymbol(
+		const LSPSymbolInformationList& list, const std::string& query, const size_t& limit,
+		std::function<void( std::shared_ptr<LSPSymbolInfoModel> )> cb );
 };
 
 } // namespace ecode

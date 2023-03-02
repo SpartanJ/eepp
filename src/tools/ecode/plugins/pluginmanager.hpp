@@ -71,9 +71,11 @@ enum class PluginMessageType {
 	FindAndOpenClosestURI,		// Request a component to find and open the closest path from an URI
 	DocumentFormatting,			// Request the LSP Server to format a document
 	SymbolReference,			// Request the LSP Server to find a symbol reference in the project
-	ShowMessage,  // The LSP server sends a request to the client to show a message on screen
-	ShowDocument, // The LSP server sends a request to the client to show a document
-	WorkspaceSymbol,
+	ShowMessage,		// The LSP server sends a request to the client to show a message on screen
+	ShowDocument,		// The LSP server sends a request to the client to show a document
+	WorkspaceSymbol,	// Request to the LSP server to query workspace symbols
+	TextDocumentSymbol, // Request to the LSP server the document symbols
+	TextDocumentFlattenSymbol, // Request to the LSP server the document symbols flattened
 	Undefined
 };
 
@@ -174,8 +176,8 @@ struct PluginMessage {
 		return *static_cast<const LSPShowDocumentParams*>( data );
 	}
 
-	const std::vector<LSPSymbolInformation>& asSymbolInformation() const {
-		return *static_cast<const std::vector<LSPSymbolInformation>*>( data );
+	const LSPSymbolInformationList& asSymbolInformation() const {
+		return *static_cast<const LSPSymbolInformationList*>( data );
 	}
 
 	const PluginIDType& asPluginID() const { return *static_cast<const PluginIDType*>( data ); }
@@ -249,6 +251,8 @@ class PluginManager {
 
 	UICodeEditorSplitter* getSplitter() const;
 
+	UISceneNode* getUISceneNode() const;
+
 	const std::string& getWorkspaceFolder() const;
 
 	void setWorkspaceFolder( const std::string& workspaceFolder );
@@ -298,7 +302,6 @@ class PluginManager {
 	bool hasDefinition( const std::string& id );
 
 	void setSplitter( UICodeEditorSplitter* splitter );
-
 };
 
 class PluginsModel : public Model {

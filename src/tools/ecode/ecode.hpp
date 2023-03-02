@@ -27,7 +27,7 @@ class SettingsMenu;
 
 class App : public UICodeEditorSplitter::Client {
   public:
-	App( const size_t& jobs = 0 );
+	App( const size_t& jobs = 0, const std::vector<std::string>& args = {} );
 
 	~App();
 
@@ -315,6 +315,7 @@ class App : public UICodeEditorSplitter::Client {
 	void loadFileDelayed();
 
   protected:
+	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
 	UIConsole* mConsole{ nullptr };

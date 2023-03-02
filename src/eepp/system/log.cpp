@@ -31,6 +31,10 @@ Log* Log::create( const std::string& logPath, const LogLevel& level, bool consol
 				  bool liveWrite ) {
 	if ( NULL == ms_singleton ) {
 		ms_singleton = eeNew( Log, ( logPath, level, consoleOutput, liveWrite ) );
+	} else {
+		ms_singleton->setLogLevelThreshold( level );
+		ms_singleton->setConsoleOutput( consoleOutput );
+		ms_singleton->setLiveWrite( liveWrite );
 	}
 	return ms_singleton;
 }
@@ -38,6 +42,10 @@ Log* Log::create( const std::string& logPath, const LogLevel& level, bool consol
 Log* Log::create( const LogLevel& level, bool consoleOutput, bool liveWrite ) {
 	if ( NULL == ms_singleton ) {
 		ms_singleton = eeNew( Log, ( "", level, consoleOutput, liveWrite ) );
+	} else {
+		ms_singleton->setLogLevelThreshold( level );
+		ms_singleton->setConsoleOutput( consoleOutput );
+		ms_singleton->setLiveWrite( liveWrite );
 	}
 	return ms_singleton;
 }

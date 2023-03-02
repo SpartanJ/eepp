@@ -25,7 +25,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
   public:
 	static PluginDefinition Definition() {
 		return { "lspclient",		   "LSP Client", "Language Server Protocol Client.",
-				 LSPClientPlugin::New, { 0, 0, 1 },	 LSPClientPlugin::NewSync };
+				 LSPClientPlugin::New, { 0, 0, 2 },	 LSPClientPlugin::NewSync };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );
@@ -73,14 +73,27 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	bool processDocumentFormattingResponse( const URI& uri, std::vector<LSPTextEdit> edits );
 
+	const LSPSymbolInformationList& getDocumentSymbols( TextDocument* doc );
+
+	const LSPSymbolInformationList& getDocumentSymbols( const URI& uri );
+
+	const LSPSymbolInformationList& getDocumentFlattenSymbols( const URI& uri );
+
+	TextDocument* getDocumentFromURI( const URI& uri );
+
   protected:
+	friend class LSPDocumentClient;
+
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	Clock mClock;
 	Mutex mDocMutex;
+	Mutex mDocSymbolsMutex;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
 	std::unordered_map<UICodeEditor*, std::set<String::HashType>> mEditorsTags;
 	std::set<TextDocument*> mDocs;
+	std::map<URI, LSPSymbolInformationList> mDocSymbols;
+	std::map<URI, LSPSymbolInformationList> mDocFlatSymbols;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	LSPClientServerManager mClientManager;
 	std::string mConfigPath;
@@ -146,6 +159,13 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	void createListView( UICodeEditor* editor, const std::shared_ptr<Model>& model,
 						 const ModelEventCallback& onModelEventCb,
 						 const std::function<void( UIListView* )> onCreateCb = {} );
+
+	PluginRequestHandle processTextDocumentSymbol( const PluginMessage& msg );
+
+	void setDocumentSymbols( const URI& docURI, LSPSymbolInformationList&& res );
+
+	void setDocumentSymbolsFromResponse( const PluginIDType& id, const URI& docURI,
+										 LSPSymbolInformationList&& res );
 };
 
 } // namespace ecode

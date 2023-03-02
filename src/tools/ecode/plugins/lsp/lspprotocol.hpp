@@ -321,6 +321,34 @@ struct LSPSymbolInformation {
 	std::vector<LSPSymbolInformation> children;
 };
 
+using LSPSymbolInformationList = std::vector<LSPSymbolInformation>;
+
+struct LSPSymbolInformationListHelper {
+	static bool isFlat( const LSPSymbolInformationList& list ) {
+		for ( const auto& l : list )
+			if ( !l.children.empty() )
+				return false;
+		return true;
+	}
+
+	static LSPSymbolInformationList flatten( const LSPSymbolInformationList& list ) {
+		LSPSymbolInformationList newList;
+		for ( const auto& l : list ) {
+			if ( l.children.empty() ) {
+				newList.push_back( l );
+			} else {
+				auto nl = l;
+				nl.children.clear();
+				newList.push_back( nl );
+				auto clist = flatten( l.children );
+				for ( const auto& cl : clist )
+					newList.push_back( cl );
+			}
+		}
+		return newList;
+	}
+};
+
 using LSPWorkDoneProgressParams = LSPProgressParams<LSPWorkDoneProgressValue>;
 
 struct LSPResponseError {

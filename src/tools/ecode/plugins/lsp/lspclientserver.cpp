@@ -344,17 +344,47 @@ static bool isPositionValid( const TextPosition& pos ) {
 	return pos.column() >= 0 && pos.line() >= 0;
 }
 
-static std::vector<LSPSymbolInformation> parseDocumentSymbols( const json& result ) {
-	std::vector<LSPSymbolInformation> ret;
-	std::map<std::string, LSPSymbolInformation*> index;
+struct LSPSymbolInformationTmp {
+	LSPSymbolInformationTmp() = default;
+	LSPSymbolInformationTmp( const std::string& _name, LSPSymbolKind _kind, TextRange _range,
+							 const std::string& _detail ) :
+		name( _name ), detail( _detail ), kind( _kind ), range( _range ) {}
+	std::string name;
+	std::string detail;
+	LSPSymbolKind kind{ LSPSymbolKind::File };
+	URI url;
+	TextRange range;
+	TextRange selectionRange;
+	double score = 0.0;
+	std::list<LSPSymbolInformationTmp> children;
+	static LSPSymbolInformation fromTmp( const LSPSymbolInformationTmp& tmp ) {
+		LSPSymbolInformation info;
+		info.name = std::move( tmp.name );
+		info.detail = std::move( tmp.detail );
+		info.kind = std::move( tmp.kind );
+		info.url = std::move( tmp.url );
+		info.range = std::move( tmp.range );
+		info.selectionRange = std::move( tmp.selectionRange );
+		info.score = std::move( tmp.score );
+		for ( const auto& child : tmp.children )
+			info.children.push_back( fromTmp( child ) );
+		return info;
+	}
+};
 
-	std::function<void( const json& symbol, LSPSymbolInformation* parent )> parseSymbol =
-		[&]( const json& symbol, LSPSymbolInformation* parent ) {
+static LSPSymbolInformationList parseDocumentSymbols( const json& result ) {
+	// TODO: Optimize this
+	Clock clock;
+	std::list<LSPSymbolInformationTmp> ret;
+	std::map<std::string, LSPSymbolInformationTmp*> index;
+
+	std::function<void( const json& symbol, LSPSymbolInformationTmp* parent )> parseSymbol =
+		[&]( const json& symbol, LSPSymbolInformationTmp* parent ) {
 			const auto& mrange = symbol.contains( MEMBER_RANGE )
 									 ? symbol.at( MEMBER_RANGE )
 									 : symbol[MEMBER_LOCATION].at( MEMBER_RANGE );
 			auto range = parseRange( mrange );
-			std::map<std::string, LSPSymbolInformation*>::iterator it = index.end();
+			auto it = index.end();
 			if ( !parent ) {
 				auto container = symbol.value( "containerName", "" );
 				it = index.find( container );
@@ -386,12 +416,18 @@ static std::vector<LSPSymbolInformation> parseDocumentSymbols( const json& resul
 	const auto& symInfos = result;
 	for ( const auto& info : symInfos )
 		parseSymbol( info, nullptr );
-	return ret;
+
+	LSPSymbolInformationList rret;
+	for ( const auto& r : ret )
+		rret.push_back( LSPSymbolInformationTmp::fromTmp( r ) );
+
+	Log::debug( "LSPClientServer - parseDocumentSymbols took: %.2fms",
+				clock.getElapsed().asMilliseconds() );
+	return rret;
 }
 
-static std::vector<LSPSymbolInformation> parseWorkspaceSymbols( const json& res ) {
-	std::vector<LSPSymbolInformation> symbols;
-	symbols.reserve( res.size() );
+static LSPSymbolInformationList parseWorkspaceSymbols( const json& res ) {
+	LSPSymbolInformationList symbols;
 
 	std::transform( res.cbegin(), res.cend(), std::back_inserter( symbols ),
 					[]( const json& symbol ) {
@@ -881,6 +917,9 @@ void LSPClientServer::registerCapabilities( const json& jcap ) {
 			if ( reg["method"] == "workspace/executeCommand" ) {
 				mCapabilities.executeCommandProvider = true;
 				registered = true;
+			} else if ( reg["method"] == "textDocument/documentSymbol" ) {
+				mCapabilities.documentSymbolProvider = true;
+				registered = true;
 			}
 		}
 	}
@@ -922,7 +961,8 @@ void LSPClientServer::initialize() {
 	json capabilities{
 		{ "textDocument",
 		  json{
-			  { "documentSymbol", json{ { "hierarchicalDocumentSymbolSupport", true } } },
+			  { "documentSymbol", json{ { "dynamicRegistration", true },
+										{ "hierarchicalDocumentSymbolSupport", true } } },
 			  { "publishDiagnostics",
 				json{ { "relatedInformation", true }, { "codeActionsInline", true } } },
 			  { "codeAction", codeAction },
@@ -983,6 +1023,7 @@ void LSPClientServer::initialize() {
 			mReady = true;
 			write( newRequest( "initialized" ) );
 			sendQueuedMessages();
+			notifyServerInitialized();
 
 			// Broadcast the language capabilities to all the interested plugins
 			mManager->getPluginManager()->sendBroadcast(
@@ -1037,6 +1078,11 @@ bool LSPClientServer::registerDoc( const std::shared_ptr<TextDocument>& doc ) {
 	mDocs.emplace_back( doc.get() );
 	doc->registerClient( mClients[doc.get()].get() );
 	return true;
+}
+
+void LSPClientServer::notifyServerInitialized() {
+	for ( const auto& client : mClients )
+		client.second->onServerInitialized();
 }
 
 bool LSPClientServer::isRunning() {
@@ -1229,7 +1275,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::documentSymbols( const URI& d
 
 LSPClientServer::LSPRequestHandle
 LSPClientServer::documentSymbols( const URI& document,
-								  const ReplyHandler<std::vector<LSPSymbolInformation>>& h,
+								  const WReplyHandler<LSPSymbolInformationList>& h,
 								  const ReplyHandler<LSPResponseError>& eh ) {
 	return documentSymbols(
 		document,
