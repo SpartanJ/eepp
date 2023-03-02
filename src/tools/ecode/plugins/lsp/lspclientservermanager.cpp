@@ -83,7 +83,8 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 		return;
 
 	for ( const auto& lsp : lsps ) {
-		auto rootPath = findRootPath( lsp, doc );
+		std::string rootPath = mLSPWorkspaceFolder.isEmpty() ? findRootPath( lsp, doc )
+															 : mLSPWorkspaceFolder.uri.getFSPath();
 		auto lspName = lsp.name.empty() ? lsp.command : lsp.name;
 		String::HashType id = String::hash( lspName + "|" + lsp.language + "|" + rootPath );
 		LSPClientServer* server = nullptr;
@@ -95,7 +96,7 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 				if ( ( server = serverUP.get() ) ) {
 					mClients[id] = std::move( serverUP );
 					if ( !mLSPWorkspaceFolder.uri.empty() )
-						server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {} );
+						server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {}, true );
 				}
 			} else {
 				server = clientIt->second.get();
@@ -356,9 +357,8 @@ LSPDefinition
 LSPClientServerManager::getLSPForLang( const std::string& lang,
 									   const std::vector<std::string>& extensions ) const {
 	for ( const auto& lsp : mLSPs ) {
-		if ( lsp.language == lang ) {
+		if ( lsp.language == lang )
 			return lsp;
-		}
 
 		if ( !lsp.filePatterns.empty() ) {
 			for ( const auto& file : lsp.filePatterns ) {
@@ -374,10 +374,14 @@ LSPClientServerManager::getLSPForLang( const std::string& lang,
 }
 
 void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folder ) {
+	std::vector<LSPWorkspaceFolder> oldLSPWorkspaceFolder;
+	if ( !mLSPWorkspaceFolder.isEmpty() )
+		oldLSPWorkspaceFolder.emplace_back( mLSPWorkspaceFolder );
 	mLSPWorkspaceFolder = { "file://" + folder, FileSystem::fileNameFromPath( folder ) };
+	std::vector<LSPWorkspaceFolder> newWorkspaceFolder = { mLSPWorkspaceFolder };
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients )
-		server.second->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {} );
+		server.second->didChangeWorkspaceFolders( newWorkspaceFolder, oldLSPWorkspaceFolder, true );
 }
 
 const LSPWorkspaceFolder& LSPClientServerManager::getLSPWorkspaceFolder() const {

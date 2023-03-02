@@ -78,6 +78,9 @@ class LSPClientServer {
 	LSPRequestHandle send( const json& msg, const JsonReplyHandler& h = nullptr,
 						   const JsonReplyHandler& eh = nullptr );
 
+	void sendAsync( const json& msg, const JsonReplyHandler& h = nullptr,
+					const JsonReplyHandler& eh = nullptr );
+
 	const LSPDefinition& getDefinition() const { return mLSP; }
 
 	LSPRequestHandle documentSymbols( const URI& document, const JsonReplyHandler& h,
@@ -123,7 +126,8 @@ class LSPClientServer {
 	bool hasDocuments() const;
 
 	LSPRequestHandle didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
-												const std::vector<LSPWorkspaceFolder>& removed );
+												const std::vector<LSPWorkspaceFolder>& removed,
+												bool async );
 
 	void publishDiagnostics( const json& msg );
 
@@ -229,6 +233,7 @@ class LSPClientServer {
 	std::string mReceive;
 	std::string mReceiveErr;
 	LSPServerCapabilities mCapabilities;
+	URI mWorkspaceFolder;
 
 	struct DidChangeQueue {
 		URI uri;
@@ -258,6 +263,8 @@ class LSPClientServer {
 	void goToLocation( const json& res );
 
 	void notifyServerInitialized();
+
+	bool needsAsync();
 };
 
 } // namespace ecode

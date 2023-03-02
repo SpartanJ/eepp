@@ -99,9 +99,10 @@ LSPSymbolInformationList fuzzyMatchTextDocumentSymbol( const LSPSymbolInformatio
 	while ( matchesMap.size() > limit )
 		matchesMap.erase( std::prev( matchesMap.end() ) );
 
-	for ( const auto& m : matchesMap )
+	for ( auto& m : matchesMap ) {
+		m.second.score = m.first;
 		nl.emplace_back( std::move( m.second ) );
-
+	}
 	return nl;
 }
 
@@ -462,6 +463,8 @@ void UniversalLocator::requestWorkspaceSymbol() {
 		json j = json{ json{ "query", mWorkspaceSymbolQuery } };
 		mApp->getPluginManager()->sendRequest( PluginMessageType::WorkspaceSymbol,
 											   PluginMessageFormat::JSON, &j );
+	} else if ( mWorkspaceSymbolModel && mWorkspaceSymbolModel.get() != mLocateTable->getModel() ) {
+		mLocateTable->setModel( mWorkspaceSymbolModel );
 	}
 }
 

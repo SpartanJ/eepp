@@ -259,10 +259,16 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 	if ( servers.empty() )
 		return {};
 
+	std::string query = msg.asJSON().value( "query", "" );
 	for ( const auto server : servers ) {
 		server->workspaceSymbol(
-			msg.asJSON().value( "query", "" ),
-			[&]( const PluginIDType& id, const LSPSymbolInformationList& info ) {
+			query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
+				if ( !query.empty() ) {
+					for ( auto& i : info ) {
+						if ( i.score == 0.f )
+							i.score = String::fuzzyMatch( i.name, query );
+					}
+				}
 				mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
 										PluginMessageFormat::SymbolInformation, &info, id );
 			} );

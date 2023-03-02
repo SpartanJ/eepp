@@ -8,6 +8,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace ecode {
 
@@ -313,6 +314,7 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 		fromJson( caps.completionProvider, json["completionProvider"] );
 	if ( json.contains( "signatureHelpProvider" ) )
 		fromJson( caps.signatureHelpProvider, json["signatureHelpProvider"] );
+	caps.astProvider = toBoolOrObject( json, "astProvider" );
 	caps.definitionProvider = toBoolOrObject( json, "definitionProvider" );
 	caps.declarationProvider = toBoolOrObject( json, "declarationProvider" );
 	caps.typeDefinitionProvider = toBoolOrObject( json, "typeDefinitionProvider" );
@@ -957,6 +959,7 @@ void LSPClientServer::initialize() {
 	json workspace;
 	workspace["applyEdit"] = true;
 	workspace["executeCommand"] = json{ { "dynamicRegistration", true } };
+	workspace["workspaceFolders"] = true;
 
 	json capabilities{
 		{ "textDocument",
@@ -1004,6 +1007,7 @@ void LSPClientServer::initialize() {
 	params["rootUri"] = rootUri;
 	params["workspaceFolders"] =
 		toJson( { LSPWorkspaceFolder{ rootUri, FileSystem::fileNameFromPath( rootUri ) } } );
+	mWorkspaceFolder = rootUri;
 
 	write(
 		newRequest( "initialize", params ),
@@ -1085,6 +1089,11 @@ void LSPClientServer::notifyServerInitialized() {
 		client.second->onServerInitialized();
 }
 
+bool LSPClientServer::needsAsync() {
+	return Engine::isEngineRunning() &&
+		   Engine::instance()->getMainThreadId() == Thread::getCurrentThreadId();
+}
+
 bool LSPClientServer::isRunning() {
 	return mProcess.isAlive() && !mProcess.isShootingDown();
 }
@@ -1147,9 +1156,6 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 			method = msg[MEMBER_METHOD].get<std::string>();
 		else if ( msg.contains( MEMBER_MESSAGE ) )
 			method = msg[MEMBER_MESSAGE];
-		if ( method == "workspace/didChangeWorkspaceFolders" &&
-			 !mCapabilities.workspaceFolders.supported )
-			return ret;
 		Log::info( "LSPClientServer server %s calling %s", mLSP.name.c_str(), method.c_str() );
 		Log::debug( "LSPClientServer server %s sending message:\n%s", mLSP.name.c_str(),
 					sjson.c_str() );
@@ -1161,8 +1167,16 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 	return ret;
 }
 
+void LSPClientServer::sendAsync( const json& msg, const JsonReplyHandler& h,
+								 const JsonReplyHandler& eh ) {
+	getThreadPool()->run( [this, msg, h, eh] { send( msg, h, eh ); } );
+}
+
 LSPClientServer::LSPRequestHandle LSPClientServer::send( const json& msg, const JsonReplyHandler& h,
 														 const JsonReplyHandler& eh ) {
+#ifdef EE_DEBUG
+	// eeASSERT( !needsAsync() );
+#endif
 	if ( mProcess.isAlive() ) {
 		return write( msg, h, eh );
 	} else {
@@ -1666,9 +1680,23 @@ LSPClientServer::LSPRequestHandle LSPClientServer::switchSourceHeader( const URI
 
 LSPClientServer::LSPRequestHandle
 LSPClientServer::didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
-											const std::vector<LSPWorkspaceFolder>& removed ) {
-	auto params = changeWorkspaceFoldersParams( added, removed );
-	return send( newRequest( "workspace/didChangeWorkspaceFolders", params ) );
+											const std::vector<LSPWorkspaceFolder>& removed,
+											bool async ) {
+	if ( mCapabilities.workspaceFolders.supported ) {
+		// Don't send the didChangeWorkspaceFolder if already in the same directory
+		if ( !added.empty() && mWorkspaceFolder == added[0].uri )
+			return {};
+		auto params = changeWorkspaceFoldersParams( added, removed );
+		// Update CWD
+		if ( !added.empty() )
+			mWorkspaceFolder = added[0].uri;
+		if ( async && needsAsync() ) {
+			sendAsync( newRequest( "workspace/didChangeWorkspaceFolders", params ) );
+			return {};
+		}
+		return send( newRequest( "workspace/didChangeWorkspaceFolders", params ) );
+	}
+	return {};
 }
 
 LSPClientServer::LSPRequestHandle LSPClientServer::documentCodeAction(

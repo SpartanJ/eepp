@@ -1422,7 +1422,7 @@ Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
 void UICodeEditor::updateScrollBar() {
 	int notVisibleLineCount = (int)mDoc->linesCount() - (int)getViewPortLineCount().y;
 
-	if ( mLongestLineWidthDirty ) {
+	if ( mLongestLineWidthDirty && mFont && mFont->isMonospace() ) {
 		updateLongestLineWidth();
 	}
 

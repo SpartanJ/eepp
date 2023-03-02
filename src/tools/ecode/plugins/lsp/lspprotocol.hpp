@@ -44,6 +44,8 @@ struct LSPLocation {
 struct LSPWorkspaceFolder {
 	URI uri;
 	std::string name;
+
+	bool isEmpty() { return uri.empty(); }
 };
 
 enum class LSPDocumentSyncKind { None = 0, Full = 1, Incremental = 2 };
@@ -91,6 +93,7 @@ struct LSPServerCapabilities {
 	bool hoverProvider = false;
 	LSPCompletionOptions completionProvider;
 	LSPSignatureHelpOptions signatureHelpProvider;
+	bool astProvider = false;
 	bool definitionProvider = false;
 	// official extension as of 3.14.0
 	bool declarationProvider = false;
