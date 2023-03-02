@@ -673,6 +673,7 @@ void App::updateRecentFiles() {
 
 void App::updateRecentFolders() {
 	UINode* node = nullptr;
+	updateOpenRecentFolderBtn();
 	if ( mSettings && mSettings->getSettingsMenu() &&
 		 ( node = mSettings->getSettingsMenu()->getItemId( "recent-folders" ) ) ) {
 		UIMenuSubMenu* uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
@@ -1687,6 +1688,7 @@ void App::closeFolder() {
 
 	mProjectViewEmptyCont->setVisible( true );
 	mFileSystemModel->setRootPath( "" );
+	updateOpenRecentFolderBtn();
 }
 
 void App::createDocAlert( UICodeEditor* editor ) {
@@ -2278,6 +2280,14 @@ void App::createAndShowRecentFolderPopUpMenu() {
 	menu->show();
 }
 
+void App::updateOpenRecentFolderBtn() {
+	if ( mProjectViewEmptyCont ) {
+		Node* recentFolderBtn = mProjectViewEmptyCont->find( "open_recent_folder" );
+		if ( recentFolderBtn )
+			recentFolderBtn->setEnabled( !mRecentFolders.empty() );
+	}
+}
+
 void App::consoleToggle() {
 	mConsole->toggle();
 	bool lock = mConsole->isActive();
@@ -2426,6 +2436,8 @@ void App::initProjectTreeView( std::string path ) {
 		}
 	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() ) {
 		loadFolder( mRecentFolders[0] );
+	} else {
+		updateOpenRecentFolderBtn();
 	}
 
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );

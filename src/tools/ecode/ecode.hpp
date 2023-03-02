@@ -464,6 +464,8 @@ class App : public UICodeEditorSplitter::Client {
 	void cleanUpRecentFiles();
 
 	void createAndShowRecentFolderPopUpMenu();
+
+	void updateOpenRecentFolderBtn();
 };
 
 } // namespace ecode
