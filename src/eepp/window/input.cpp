@@ -498,4 +498,23 @@ const Uint32& Input::getModState() const {
 	return mInputMod;
 }
 
+static Uint32 sanitizeMod( const Uint32& mod ) {
+	Uint32 smod = 0;
+	if ( mod & KEYMOD_CTRL )
+		smod |= KEYMOD_CTRL;
+	if ( mod & KEYMOD_SHIFT )
+		smod |= KEYMOD_SHIFT;
+	if ( mod & KEYMOD_META )
+		smod |= KEYMOD_META;
+	if ( mod & KEYMOD_LALT )
+		smod |= KEYMOD_LALT;
+	if ( mod & KEYMOD_RALT )
+		smod |= KEYMOD_RALT;
+	return smod;
+}
+
+Uint32 Input::getSanitizedModState() const {
+	return sanitizeMod( mInputMod );
+}
+
 }} // namespace EE::Window

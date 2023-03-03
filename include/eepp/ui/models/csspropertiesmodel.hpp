@@ -33,7 +33,8 @@ class CSSPropertiesModel final : public Model {
 		if ( mWidget == nullptr || index.row() >= (Int64)mData.size() )
 			return {};
 		PropertyId propId = mData[index.row()];
-		const PropertyDefinition* def = mProps.at( propId );
+		auto propIt = mProps.find( propId );
+		const PropertyDefinition* def = propIt != mProps.end() ? propIt->second : nullptr;
 		if ( !def )
 			return {};
 		if ( role == ModelRole::Display ) {

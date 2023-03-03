@@ -99,7 +99,7 @@ class EE_API Input {
 
 	/** @return If the left Control Key is pressed */
 	bool isLeftControlPressed() const;
-	
+
 	/** @return If the right Control Key is pressed */
 	bool isRightControlPressed() const;
 
@@ -246,6 +246,8 @@ class EE_API Input {
 
 	/** @return An id of the current event update processed ( */
 	const Uint64& getEventsSentId() const;
+
+	Uint32 getSanitizedModState() const;
 
   protected:
 	friend class Window;

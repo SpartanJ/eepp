@@ -226,7 +226,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "tabs-edges-diff-skin", "" ).setType( PropertyType::Bool );
 	registerProperty( "tab-separation", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "tab-height", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "selected", "" ).setType( PropertyType::Bool ).addAlias( "active" );
+	registerProperty( "selected", "" )
+		.setType( PropertyType::Bool )
+		.addAlias( "active" )
+		.addAlias( "checked" );
 	registerProperty( "popup-to-root", "" ).setType( PropertyType::Bool );
 	registerProperty( "max-visible-items", "" ).setType( PropertyType::NumberIntFixed );
 	registerProperty( "selected-index", "" );

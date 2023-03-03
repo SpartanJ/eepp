@@ -131,6 +131,8 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 			for ( size_t i = 0; i < getItemCount(); i++ ) {
 				ModelIndex index( getModel()->index( i, colIndex ) );
 				Variant data( getModel()->data( index ) );
+				if ( !data.isValid() )
+					continue;
 				size_t length =
 					isStdString ? data.asStdString().length()
 								: ( isString ? data.asString().length() : strlen( data.asCStr() ) );
