@@ -399,6 +399,22 @@ TextDocument* LSPClientPlugin::getDocumentFromURI( const URI& uri ) {
 	return nullptr;
 }
 
+bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
+									const Uint32& flags ) {
+	Input* input = editor->getUISceneNode()->getWindow()->getInput();
+	Uint32 mod = input->getSanitizedModState();
+	if ( mod != ( KEYMOD_LALT | KEYMOD_CTRL ) || ( flags & EE_BUTTON_LMASK ) == 0 )
+		return false;
+
+	auto docPos = editor->resolveScreenPosition( pos.asFloat() );
+	if ( !docPos.isValid() || !editor->getDocument().isValidPosition( docPos ) )
+		return false;
+
+	editor->getDocument().execute( "lsp-go-to-definition" );
+
+	return true;
+}
+
 bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
 	return mManager->getSplitter()->editorExists( editor );
 }
@@ -1090,23 +1106,21 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 	editor->runOnMainThread(
 		[&, editor, position, tag]() {
 			mEditorsTags[editor].erase( tag );
-			mThreadPool->run( [&, editor, position]() {
-				if ( !editorExists( editor ) )
-					return;
-				auto server = mClientManager.getOneLSPClientServer( editor );
-				if ( server == nullptr )
-					return;
-				server->documentHover(
-					editor->getDocument().getURI(), currentMouseTextPosition( editor ),
-					[&, editor, position]( const Int64&, const LSPHover& resp ) {
-						if ( editorExists( editor ) && !resp.contents.empty() &&
-							 !resp.contents[0].value.empty() ) {
-							editor->runOnMainThread( [editor, resp, position, this]() {
-								tryDisplayTooltip( editor, resp, position );
-							} );
-						}
-					} );
-			} );
+			if ( !editorExists( editor ) )
+				return;
+			auto server = mClientManager.getOneLSPClientServer( editor );
+			if ( server == nullptr )
+				return;
+			server->documentHover(
+				editor->getDocument().getURI(), currentMouseTextPosition( editor ),
+				[&, editor, position]( const Int64&, const LSPHover& resp ) {
+					if ( editorExists( editor ) && !resp.contents.empty() &&
+						 !resp.contents[0].value.empty() ) {
+						editor->runOnMainThread( [editor, resp, position, this]() {
+							tryDisplayTooltip( editor, resp, position );
+						} );
+					}
+				} );
 		},
 		mHoverDelay, tag );
 	tryHideTooltip( editor, position );

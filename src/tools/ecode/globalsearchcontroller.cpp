@@ -266,7 +266,8 @@ void GlobalSearchController::initGlobalSearchBar(
 				showGlobalSearch( true );
 				updateGlobalSearchBarResults( mGlobalSearchHistory.back().first,
 											  mGlobalSearchHistory.back().second, true, false );
-			} else*/ {
+			} else*/
+			{
 				doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
 								wholeWordChk->isChecked(), luaPatternChk->isChecked(),
 								escapeSequenceChk->isChecked(), true );

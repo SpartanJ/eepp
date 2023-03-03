@@ -249,6 +249,8 @@ class EE_API Input {
 
 	Uint32 getSanitizedModState() const;
 
+	bool isModState( const Uint32& state ) const;
+
   protected:
 	friend class Window;
 

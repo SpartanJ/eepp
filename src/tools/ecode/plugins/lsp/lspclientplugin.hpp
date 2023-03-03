@@ -81,6 +81,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	TextDocument* getDocumentFromURI( const URI& uri );
 
+	virtual bool onMouseClick( UICodeEditor* editor, const Vector2i& pos, const Uint32& flags );
+
   protected:
 	friend class LSPDocumentClient;
 

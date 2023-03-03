@@ -111,13 +111,13 @@ class LSPClientServer {
 
 	void processDidChangeQueue();
 
-	LSPRequestHandle documentDefinition( const URI& document, const TextPosition& pos );
+	void documentDefinition( const URI& document, const TextPosition& pos );
 
-	LSPRequestHandle documentDeclaration( const URI& document, const TextPosition& pos );
+	void documentDeclaration( const URI& document, const TextPosition& pos );
 
-	LSPRequestHandle documentTypeDefinition( const URI& document, const TextPosition& pos );
+	void documentTypeDefinition( const URI& document, const TextPosition& pos );
 
-	LSPRequestHandle documentImplementation( const URI& document, const TextPosition& pos );
+	void documentImplementation( const URI& document, const TextPosition& pos );
 
 	bool hasDocument( TextDocument* doc ) const;
 
@@ -133,35 +133,31 @@ class LSPClientServer {
 
 	void workDoneProgress( const LSPWorkDoneProgressParams& workDoneParams );
 
-	LSPRequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
-										 const std::string& search, const LocationHandler& h );
+	void getAndGoToLocation( const URI& document, const TextPosition& pos,
+							 const std::string& search, const LocationHandler& h );
 
-	LSPRequestHandle getAndGoToLocation( const URI& document, const TextPosition& pos,
-										 const std::string& search );
+	void getAndGoToLocation( const URI& document, const TextPosition& pos,
+							 const std::string& search );
 
-	LSPRequestHandle switchSourceHeader( const URI& document );
+	void switchSourceHeader( const URI& document );
 
-	LSPRequestHandle documentCodeAction( const URI& document, const TextRange& range,
-										 const std::vector<std::string>& kinds,
-										 std::vector<LSPDiagnostic> diagnostics,
-										 const JsonReplyHandler& h );
+	void documentCodeAction( const URI& document, const TextRange& range,
+							 const std::vector<std::string>& kinds,
+							 std::vector<LSPDiagnostic> diagnostics, const JsonReplyHandler& h );
 
-	LSPRequestHandle documentCodeAction( const URI& document, const TextRange& range,
-										 const std::vector<std::string>& kinds,
-										 std::vector<LSPDiagnostic> diagnostics,
-										 const CodeActionHandler& h );
+	void documentCodeAction( const URI& document, const TextRange& range,
+							 const std::vector<std::string>& kinds,
+							 std::vector<LSPDiagnostic> diagnostics, const CodeActionHandler& h );
 
-	LSPRequestHandle documentHover( const URI& document, const TextPosition& pos,
-									const JsonReplyHandler& h );
+	void documentHover( const URI& document, const TextPosition& pos, const JsonReplyHandler& h );
 
-	LSPRequestHandle documentHover( const URI& document, const TextPosition& pos,
-									const HoverHandler& h );
+	void documentHover( const URI& document, const TextPosition& pos, const HoverHandler& h );
 
-	LSPRequestHandle documentReferences( const URI& document, const TextPosition& pos, bool decl,
-										 const JsonReplyHandler& h );
+	void documentReferences( const URI& document, const TextPosition& pos, bool decl,
+							 const JsonReplyHandler& h );
 
-	LSPRequestHandle documentReferences( const URI& document, const TextPosition& pos, bool decl,
-										 const LocationHandler& h );
+	void documentReferences( const URI& document, const TextPosition& pos, bool decl,
+							 const LocationHandler& h );
 
 	LSPRequestHandle documentCompletion( const URI& document, const TextPosition& pos,
 										 const JsonReplyHandler& h );
@@ -169,12 +165,11 @@ class LSPClientServer {
 	LSPRequestHandle documentCompletion( const URI& document, const TextPosition& pos,
 										 const CompletionHandler& h );
 
-	LSPRequestHandle workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
-									  const size_t& limit = 100 );
+	void workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
+						  const size_t& limit = 100 );
 
-	LSPRequestHandle workspaceSymbol( const std::string& querySymbol,
-									  const SymbolInformationHandler& h,
-									  const size_t& limit = 100 );
+	void workspaceSymbol( const std::string& querySymbol, const SymbolInformationHandler& h,
+						  const size_t& limit = 100 );
 
 	LSPRequestHandle selectionRange( const URI& document,
 									 const std::vector<TextPosition>& positions,
@@ -201,11 +196,11 @@ class LSPClientServer {
 	LSPRequestHandle documentFormatting( const URI& document, const json& options,
 										 const TextEditArrayHandler& h );
 
-	LSPRequestHandle memoryUsage( const JsonReplyHandler& h );
+	void memoryUsage( const JsonReplyHandler& h );
 
-	LSPRequestHandle memoryUsage();
+	void memoryUsage();
 
-	LSPRequestHandle executeCommand( const std::string& cmd, const json& params );
+	void executeCommand( const std::string& cmd, const json& params );
 
 	void registerCapabilities( const json& jcap );
 

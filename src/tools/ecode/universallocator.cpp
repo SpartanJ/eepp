@@ -274,15 +274,19 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				ModelIndex idx(
 					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 2 ) );
 				if ( idx.isValid() ) {
-					auto cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
+					String cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
 					mApp->runCommand( cmd );
 					if ( !mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
 						if ( mSplitter->curEditorIsNotNull() &&
 							 mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
 							mSplitter->getCurEditor()->setFocus();
 					}
+					if ( cmd != "open-locatebar" ) {
+						hideLocateBar();
+					} else {
+						mLocateInput->setFocus();
+					}
 				}
-				hideLocateBar();
 			} else {
 				Variant vName( modelEvent->getModel()->data(
 					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 0 ),

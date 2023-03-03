@@ -2414,6 +2414,7 @@ void App::initProjectTreeView( std::string path ) {
 					 } } );
 
 				mProjectTreeView->setModel( mFileSystemModel );
+				mProjectViewEmptyCont->setVisible( false );
 
 				if ( mFileSystemListener )
 					mFileSystemListener->setFileSystemModel( mFileSystemModel );

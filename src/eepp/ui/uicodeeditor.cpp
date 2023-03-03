@@ -1114,16 +1114,17 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		input->captureMouse( true );
 		setFocus();
 		if ( flags & EE_BUTTON_LMASK ) {
-			if ( input->isShiftPressed() && input->isAltPressed() ) {
+			if ( input->isModState( KEYMOD_LALT | KEYMOD_SHIFT ) ) {
 				TextRange range( mDoc->getSelection().start(),
 								 resolveScreenPosition( position.asFloat() ) );
 				range.normalize();
 				range = mDoc->sanitizeRange( range );
 				for ( Int64 i = range.start().line(); i < range.end().line(); ++i )
 					mDoc->addSelection( { i, range.start().column() } );
-			} else if ( input->isShiftPressed() ) {
+			} else if ( input->isModState( KEYMOD_SHIFT ) ) {
 				mDoc->selectTo( resolveScreenPosition( position.asFloat() ) );
-			} else if ( input->isControlPressed() && checkMouseOverLink( position ).empty() ) {
+			} else if ( input->isModState( KEYMOD_CTRL ) &&
+						checkMouseOverLink( position ).empty() ) {
 				TextPosition pos( resolveScreenPosition( position.asFloat() ) );
 				if ( !mDoc->selectionExists( pos ) )
 					mDoc->addSelection( { pos, pos } );

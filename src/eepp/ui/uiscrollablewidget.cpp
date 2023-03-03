@@ -164,9 +164,11 @@ void UIScrollableWidget::onContentSizeChange() {
 
 	if ( size.getWidth() > 0 )
 		mHScroll->setPageStep( size.getWidth() / contentSize.getWidth() );
-	if ( size.getHeight() > 0 )
+	if ( size.getHeight() > 0 ) {
 		mVScroll->setPageStep( size.getHeight() / contentSize.getHeight() );
-
+		if ( mAutoSetClipStep )
+			mVScroll->setClickStep( mVScroll->getPageStep() / 4.f );
+	}
 	updateScroll();
 }
 
@@ -193,6 +195,14 @@ bool UIScrollableWidget::shouldVerticalScrollBeVisible() const {
 	Float totH = getPixelsSize().getHeight() - getPixelsPadding().Top - getPixelsPadding().Bottom -
 				 mHScroll->getPixelsSize().getHeight();
 	return getContentSize().getHeight() > totH;
+}
+
+bool UIScrollableWidget::isAutoSetClipStep() const {
+	return mAutoSetClipStep;
+}
+
+void UIScrollableWidget::setAutoSetClipStep( bool setClipStep ) {
+	mAutoSetClipStep = setClipStep;
 }
 
 void UIScrollableWidget::updateScroll() {

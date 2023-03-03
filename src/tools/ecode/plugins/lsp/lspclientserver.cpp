@@ -1119,7 +1119,11 @@ LSPClientServer::LSPRequestHandle LSPClientServer::cancel( const PluginIDType& r
 	}
 	if ( res > 0 ) {
 		auto params = newID( reqid );
-		return write( newRequest( "$/cancelRequest", params ) );
+		if ( needsAsync() ) {
+			sendAsync( newRequest( "$/cancelRequest", params ) );
+			return {};
+		}
+		return send( newRequest( "$/cancelRequest", params ) );
 	}
 	return LSPRequestHandle();
 }
@@ -1175,7 +1179,7 @@ void LSPClientServer::sendAsync( const json& msg, const JsonReplyHandler& h,
 LSPClientServer::LSPRequestHandle LSPClientServer::send( const json& msg, const JsonReplyHandler& h,
 														 const JsonReplyHandler& eh ) {
 #ifdef EE_DEBUG
-	// eeASSERT( !needsAsync() );
+	eeASSERT( !needsAsync() );
 #endif
 	if ( mProcess.isAlive() ) {
 		return write( msg, h, eh );
@@ -1303,17 +1307,15 @@ LSPClientServer::documentSymbols( const URI& document,
 		} );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::workspaceSymbol( const std::string& querySymbol,
-																	const JsonReplyHandler& h,
-																	const size_t& limit ) {
+void LSPClientServer::workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
+									   const size_t& limit ) {
 	auto params = json{ { MEMBER_QUERY, querySymbol }, { MEMBER_LIMIT, limit } };
-	return send( newRequest( "workspace/symbol", params ), h );
+	sendAsync( newRequest( "workspace/symbol", params ), h );
 }
 
-LSPClientServer::LSPRequestHandle
-LSPClientServer::workspaceSymbol( const std::string& querySymbol, const SymbolInformationHandler& h,
-								  const size_t& limit ) {
-	return workspaceSymbol(
+void LSPClientServer::workspaceSymbol( const std::string& querySymbol,
+									   const SymbolInformationHandler& h, const size_t& limit ) {
+	workspaceSymbol(
 		querySymbol,
 		[h]( const IdType& id, const json& json ) {
 			if ( h )
@@ -1604,45 +1606,38 @@ void LSPClientServer::goToLocation( const json& res ) {
 		mManager->goToLocation( locs.front() );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::getAndGoToLocation( const URI& document,
-																	   const TextPosition& pos,
-																	   const std::string& search,
-																	   const LocationHandler& h ) {
+void LSPClientServer::getAndGoToLocation( const URI& document, const TextPosition& pos,
+										  const std::string& search, const LocationHandler& h ) {
 	auto params = textDocumentPositionParams( document, pos );
-	return send( newRequest( search, params ), [h]( const IdType& id, const json& json ) {
+	sendAsync( newRequest( search, params ), [h]( const IdType& id, const json& json ) {
 		if ( h )
 			h( id, parseDocumentLocation( json ) );
 	} );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::getAndGoToLocation( const URI& document,
-																	   const TextPosition& pos,
-																	   const std::string& search ) {
-	return getAndGoToLocation( document, pos, search,
-							   [&]( const IdType&, const std::vector<LSPLocation>& locs ) {
-								   if ( !locs.empty() )
-									   mManager->goToLocation( locs.front() );
-							   } );
+void LSPClientServer::getAndGoToLocation( const URI& document, const TextPosition& pos,
+										  const std::string& search ) {
+	getAndGoToLocation( document, pos, search,
+						[&]( const IdType&, const std::vector<LSPLocation>& locs ) {
+							if ( !locs.empty() )
+								mManager->goToLocation( locs.front() );
+						} );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentDefinition( const URI& document,
-																	   const TextPosition& pos ) {
-	return getAndGoToLocation( document, pos, "textDocument/definition" );
+void LSPClientServer::documentDefinition( const URI& document, const TextPosition& pos ) {
+	getAndGoToLocation( document, pos, "textDocument/definition" );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentDeclaration( const URI& document,
-																		const TextPosition& pos ) {
-	return getAndGoToLocation( document, pos, "textDocument/declaration" );
+void LSPClientServer::documentDeclaration( const URI& document, const TextPosition& pos ) {
+	getAndGoToLocation( document, pos, "textDocument/declaration" );
 }
 
-LSPClientServer::LSPRequestHandle
-LSPClientServer::documentTypeDefinition( const URI& document, const TextPosition& pos ) {
-	return getAndGoToLocation( document, pos, "textDocument/typeDefinition" );
+void LSPClientServer::documentTypeDefinition( const URI& document, const TextPosition& pos ) {
+	getAndGoToLocation( document, pos, "textDocument/typeDefinition" );
 }
 
-LSPClientServer::LSPRequestHandle
-LSPClientServer::documentImplementation( const URI& document, const TextPosition& pos ) {
-	return getAndGoToLocation( document, pos, "textDocument/implementation" );
+void LSPClientServer::documentImplementation( const URI& document, const TextPosition& pos ) {
+	getAndGoToLocation( document, pos, "textDocument/implementation" );
 }
 
 static std::vector<URI> switchHeaderSourceName( const URI& uri ) {
@@ -1659,8 +1654,8 @@ static std::vector<URI> switchHeaderSourceName( const URI& uri ) {
 	return {};
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::switchSourceHeader( const URI& document ) {
-	return send(
+void LSPClientServer::switchSourceHeader( const URI& document ) {
+	sendAsync(
 		newRequest( "textDocument/switchSourceHeader", textDocumentURI( document ) ),
 		[this, document]( const IdType&, json res ) {
 			std::vector<URI> uris( switchHeaderSourceName( document ) );
@@ -1699,34 +1694,34 @@ LSPClientServer::didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder
 	return {};
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentCodeAction(
-	const URI& document, const TextRange& range, const std::vector<std::string>& kinds,
-	std::vector<LSPDiagnostic> diagnostics, const JsonReplyHandler& h ) {
+void LSPClientServer::documentCodeAction( const URI& document, const TextRange& range,
+										  const std::vector<std::string>& kinds,
+										  std::vector<LSPDiagnostic> diagnostics,
+										  const JsonReplyHandler& h ) {
 	auto params = codeActionParams( document, range, kinds, std::move( diagnostics ) );
-	return send( newRequest( "textDocument/codeAction", params ), h );
+	sendAsync( newRequest( "textDocument/codeAction", params ), h );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentCodeAction(
-	const URI& document, const TextRange& range, const std::vector<std::string>& kinds,
-	std::vector<LSPDiagnostic> diagnostics, const CodeActionHandler& h ) {
-	return documentCodeAction( document, range, kinds, diagnostics,
-							   [h]( const IdType& id, const json& json ) {
-								   if ( h )
-									   h( id, parseCodeAction( json ) );
-							   } );
+void LSPClientServer::documentCodeAction( const URI& document, const TextRange& range,
+										  const std::vector<std::string>& kinds,
+										  std::vector<LSPDiagnostic> diagnostics,
+										  const CodeActionHandler& h ) {
+	documentCodeAction( document, range, kinds, diagnostics,
+						[h]( const IdType& id, const json& json ) {
+							if ( h )
+								h( id, parseCodeAction( json ) );
+						} );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentHover( const URI& document,
-																  const TextPosition& pos,
-																  const JsonReplyHandler& h ) {
+void LSPClientServer::documentHover( const URI& document, const TextPosition& pos,
+									 const JsonReplyHandler& h ) {
 	auto params = textDocumentPositionParams( document, pos );
-	return send( newRequest( "textDocument/hover", params ), h );
+	return sendAsync( newRequest( "textDocument/hover", params ), h );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentHover( const URI& document,
-																  const TextPosition& pos,
-																  const HoverHandler& h ) {
-	return documentHover( document, pos, [h]( const IdType& id, const json& json ) {
+void LSPClientServer::documentHover( const URI& document, const TextPosition& pos,
+									 const HoverHandler& h ) {
+	documentHover( document, pos, [h]( const IdType& id, const json& json ) {
 		if ( h )
 			h( id, parseHover( json ) );
 	} );
@@ -1780,19 +1775,15 @@ LSPClientServer::selectionRange( const URI& document, const std::vector<TextPosi
 	} );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentReferences( const URI& document,
-																	   const TextPosition& pos,
-																	   bool decl,
-																	   const JsonReplyHandler& h ) {
+void LSPClientServer::documentReferences( const URI& document, const TextPosition& pos, bool decl,
+										  const JsonReplyHandler& h ) {
 	auto params = referenceParams( document, pos, decl );
-	return send( newRequest( "textDocument/references", params ), h );
+	sendAsync( newRequest( "textDocument/references", params ), h );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentReferences( const URI& document,
-																	   const TextPosition& pos,
-																	   bool decl,
-																	   const LocationHandler& h ) {
-	return documentReferences( document, pos, decl, [h]( const IdType& id, const json& json ) {
+void LSPClientServer::documentReferences( const URI& document, const TextPosition& pos, bool decl,
+										  const LocationHandler& h ) {
+	documentReferences( document, pos, decl, [h]( const IdType& id, const json& json ) {
 		if ( h )
 			h( id, parseDocumentLocation( json ) );
 	} );
@@ -1820,20 +1811,19 @@ LSPClientServer::documentFormatting( const URI& document, const json& options,
 	} );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::memoryUsage( const JsonReplyHandler& h ) {
-	return send( newRequest( "$/memoryUsage" ), h );
+void LSPClientServer::memoryUsage( const JsonReplyHandler& h ) {
+	return sendAsync( newRequest( "$/memoryUsage" ), h );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::memoryUsage() {
-	return memoryUsage( []( const IdType&, const json& json ) {
+void LSPClientServer::memoryUsage() {
+	memoryUsage( []( const IdType&, const json& json ) {
 		Log::warning( "Received Memory Usage Information:\n%s", json.dump( 2 ).c_str() );
 	} );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::executeCommand( const std::string& cmd,
-																   const json& params ) {
-	return send( newRequest( "workspace/executeCommand", executeCommandParams( cmd, params ) ),
-				 []( const auto&, const auto& ) {} );
+void LSPClientServer::executeCommand( const std::string& cmd, const json& params ) {
+	sendAsync( newRequest( "workspace/executeCommand", executeCommandParams( cmd, params ) ),
+			   []( const auto&, const auto& ) {} );
 }
 
 LSPClientServer::LSPRequestHandle

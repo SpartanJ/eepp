@@ -517,4 +517,8 @@ Uint32 Input::getSanitizedModState() const {
 	return sanitizeMod( mInputMod );
 }
 
+bool Input::isModState( const Uint32& state ) const {
+	return getSanitizedModState() == state;
+}
+
 }} // namespace EE::Window
