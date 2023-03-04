@@ -15,6 +15,7 @@ namespace EE { namespace UI { namespace Doc {
 struct EE_API SyntaxToken {
 	std::string type;
 	std::string text;
+	size_t len{ 0 };
 };
 
 #define SYNTAX_TOKENIZER_STATE_NONE ( 0 )

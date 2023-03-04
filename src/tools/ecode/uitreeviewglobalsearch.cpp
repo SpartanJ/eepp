@@ -160,10 +160,9 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 
 		size_t start = to;
 		for ( auto& token : tokens ) {
-			size_t strSize = String::fromUtf8( token.text ).size();
 			mTextBox->setFontFillColor( pp->getColorScheme().getSyntaxStyle( token.type ).color,
-										start, start + strSize );
-			start += strSize;
+										start, start + token.len );
+			start += token.len;
 		}
 	}
 	return this;

@@ -117,7 +117,7 @@ std::string SyntaxHighlighter::getTokenTypeAt( const TextPosition& pos ) {
 		return "normal";
 	Int64 col = 0;
 	for ( const auto& token : tokens ) {
-		col += String::utf8Length( token.text );
+		col += token.len;
 		if ( col > pos.column() )
 			return token.type;
 	}

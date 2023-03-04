@@ -2625,13 +2625,17 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 								 const Float& lineHeight ) {
 	Vector2f originalPosition( position );
 	auto& tokens = mHighlighter.getLine( line );
+	const String& strLine = mDoc->line( line ).getText();
 	Primitives primitives;
 	Int64 curChar = 0;
 	Int64 maxWidth = eeceil( mSize.getWidth() / getGlyphWidth() + 1 );
 	bool isMonospace = mFont->isMonospace();
 	Float lineOffset = getLineOffset();
-	for ( auto& token : tokens ) {
-		String text( token.text );
+	size_t pos = 0;
+	for ( const auto& token : tokens ) {
+		String text( pos < strLine.size() ? strLine.substr( pos, token.len ) : String() );
+		pos += token.len;
+
 		Float textWidth = isMonospace ? getTextWidth( text ) : 0;
 		if ( !isMonospace || ( position.x + textWidth >= mScreenPos.x &&
 							   position.x <= mScreenPos.x + mSize.getWidth() ) ) {
@@ -3304,20 +3308,20 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 												   gutterWidth );
 
 			const auto& tokens = mHighlighter.getLine( index );
+			const auto& text = mDoc->line( index ).getText();
+			size_t txtPos = 0;
+
 			for ( const auto& token : tokens ) {
 				if ( batchSyntaxType != token.type ) {
 					flushBatch( batchSyntaxType );
 					batchSyntaxType = token.type;
 				}
 
-				if ( token.text.empty() )
-					continue;
+				size_t pos = txtPos;
+				size_t end = pos + token.len <= text.size() ? txtPos + token.len : text.size();
 
-				char* str = (char*)token.text.c_str();
-				char* end = str + token.text.size();
-
-				do {
-					Uint32 ch = String::utf8Next( str );
+				while ( pos < end ) {
+					String::StringBaseType ch = text[pos];
 					if ( ch == ' ' || ch == '\n' ) {
 						flushBatch( token.type );
 						batchStart += charSpacing;
@@ -3330,8 +3334,12 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 					} else {
 						batchWidth += charSpacing;
 					}
-				} while ( str < end );
+					pos++;
+				};
+
+				txtPos += token.len;
 			}
+
 			flushBatch( "normal" );
 
 			for ( auto* plugin : mPlugins )

@@ -841,7 +841,7 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 						return false;
 					mHoveringMatch = true;
 					editor->setTooltipText( match.text );
-					UITooltip* tooltip = editor->getTooltip();
+					UITooltip* tooltip = editor->createTooltip();
 					if ( tooltip == nullptr )
 						return false;
 					tooltip->setHorizontalAlign( UI_HALIGN_LEFT );

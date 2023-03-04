@@ -972,7 +972,7 @@ void LSPClientServer::initialize() {
 			  { "semanticTokens", semanticTokens },
 			  { "synchronization", json{ { "didSave", true } } },
 			  { "selectionRange", json{ { "dynamicRegistration", false } } },
-			  { "hover", json{ { "contentFormat", { "plaintext", "markdown" } } } },
+			  { "hover", json{ { "contentFormat", { "markdown", "plaintext" } } } },
 			  { "completion", completionItem },
 		  } },
 		{ "window", json{ { "workDoneProgress", true },

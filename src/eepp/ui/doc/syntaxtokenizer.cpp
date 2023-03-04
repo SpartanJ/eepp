@@ -1,3 +1,4 @@
+#include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
@@ -30,8 +31,10 @@ static int isInMultiByteCodePoint( const char* text, const size_t& textSize, con
 static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type,
 					   const std::string& text ) {
 	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type ) ) {
-		tokens[tokens.size() - 1].type = type;
-		tokens[tokens.size() - 1].text += text;
+		size_t tpos = tokens.size() - 1;
+		tokens[tpos].type = type;
+		tokens[tpos].text += text;
+		tokens[tpos].len += String::utf8Length( text );
 	} else {
 		if ( text.size() > MAX_TOKEN_SIZE ) {
 			size_t textSize = text.size();
@@ -45,12 +48,14 @@ static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type
 																	   pos + chunkSize ) ) > 0 ) {
 					chunkSize = eemin( textSize, chunkSize + multiByteCodePointPos );
 				}
-				tokens.push_back( { type, text.substr( pos, chunkSize ) } );
+				std::string substr = text.substr( pos, chunkSize );
+				size_t len = String::utf8Length( substr );
+				tokens.push_back( { type, std::move( substr ), len } );
 				textSize -= chunkSize;
 				pos += chunkSize;
 			}
 		} else {
-			tokens.push_back( { type, text } );
+			tokens.push_back( { type, text, String::utf8Length( text ) } );
 		}
 	}
 }
@@ -307,8 +312,18 @@ SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& te
 		}
 
 		if ( !matched && i < text.size() ) {
-			pushToken( tokens, "normal", text.substr( i, 1 ) );
-			i += 1;
+			char* start = (char*)text.c_str() + i;
+			char* end = start;
+			String::utf8Next( end );
+			int dist = end - start;
+			if ( dist > 0 ) {
+				pushToken( tokens, "normal", text.substr( i, dist ) );
+				i += dist;
+			} else {
+				Log::error( "Error parsing \"%s\" using syntax: %s", text.c_str(),
+							syntax.getLSPName().c_str() );
+				break;
+			}
 		}
 	}
 
@@ -353,11 +368,10 @@ Text& SyntaxTokenizer::tokenizeText( const SyntaxDefinition& syntax,
 	size_t start = startIndex;
 	for ( auto& token : tokens ) {
 		if ( start < endIndex ) {
-			size_t strSize = String::utf8Length( token.text );
-			if ( strSize > 0 )
+			if ( token.len > 0 )
 				text.setFillColor( colorScheme.getSyntaxStyle( token.type ).color, start,
-								   std::min( start + strSize, endIndex ) );
-			start += strSize;
+								   std::min( start + token.len, endIndex ) );
+			start += token.len;
 		} else {
 			break;
 		}
