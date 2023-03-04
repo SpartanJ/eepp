@@ -216,6 +216,10 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
 		t.setCommand( "open-locatebar", [&] { mUniversalLocator->showLocateBar(); } );
 		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
+		t.setCommand( "open-workspace-symbol-search",
+					  [&] { mUniversalLocator->showWorkspaceSymbol(); } );
+		t.setCommand( "open-document-symbol-search",
+					  [&] { mUniversalLocator->showDocumentSymbol(); } );
 		t.setCommand( "editor-set-line-breaking-column", [&] { setLineBreakingColumn(); } );
 		t.setCommand( "editor-set-line-spacing", [&] { setLineSpacing(); } );
 		t.setCommand( "editor-set-cursor-blinking-time", [&] { setCursorBlinkingTime(); } );

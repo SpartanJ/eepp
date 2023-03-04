@@ -281,7 +281,8 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 							 mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
 							mSplitter->getCurEditor()->setFocus();
 					}
-					if ( cmd != "open-locatebar" ) {
+					if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
+						 cmd != "open-document-symbol-search" && cmd != "go-to-line" ) {
 						hideLocateBar();
 					} else {
 						mLocateInput->setFocus();
