@@ -35,8 +35,8 @@ static void pushToken( std::vector<SyntaxToken>& tokens, const std::string& type
 	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type ) ) {
 		size_t tpos = tokens.size() - 1;
 		tokens[tpos].type = type;
-		if ( allocateTokenText && tokens[tpos].text )
-			*tokens[tpos].text += text;
+		if ( allocateTokenText )
+			tokens[tpos].text += text;
 		tokens[tpos].len += String::utf8Length( text );
 	} else {
 		if ( text.size() > MAX_TOKEN_SIZE ) {
@@ -349,22 +349,22 @@ Text& SyntaxTokenizer::tokenizeText( const SyntaxDefinition& syntax,
 		size_t c = 0;
 		for ( auto& token : tokens ) {
 			if ( c == 0 ) {
-				auto f = token.text->find_first_not_of( trimChars );
+				auto f = token.text.find_first_not_of( trimChars );
 				if ( f == std::string::npos ) {
-					token.text->clear();
+					token.text.clear();
 				} else if ( f > 0 ) {
-					*token.text = token.text->substr( f );
+					token.text = token.text.substr( f );
 				}
 			} else if ( c == tokens.size() - 1 ) {
-				auto f = token.text->find_last_not_of( trimChars );
+				auto f = token.text.find_last_not_of( trimChars );
 				if ( f == std::string::npos ) {
-					token.text->clear();
-				} else if ( f >= 0 && f + 1 <= token.text->size() ) {
-					*token.text = token.text->substr( 0, f + 1 );
+					token.text.clear();
+				} else if ( f >= 0 && f + 1 <= token.text.size() ) {
+					token.text = token.text.substr( 0, f + 1 );
 				}
 			}
-			if ( token.text->size() )
-				txt += *token.text;
+			if ( !token.text.empty() )
+				txt += token.text;
 			++c;
 		}
 		text.setString( txt );
