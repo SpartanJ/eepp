@@ -138,17 +138,15 @@ void UIDropDownList::showList() {
 
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 
-			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() ) {
-				mListBox->setSize(
-					NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth(),
-					(Int32)( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) +
-						tPadding.Top + tPadding.Bottom );
-			} else {
-				mListBox->setSize( NULL != mFriendNode ? mFriendNode->getSize().getWidth()
-													   : getSize().getWidth(),
-								   (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) +
-									   tPadding.Top + tPadding.Bottom );
-			}
+			mListBox->setSize(
+				NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth(),
+				(Int32)( std::min( mListBox->getCount(), mStyleConfig.MaxNumVisibleItems ) *
+						 mListBox->getRowHeight() ) +
+					tPadding.Top + tPadding.Bottom +
+					( mListBox->getHorizontalScrollBar() &&
+							  mListBox->getHorizontalScrollBar()->isVisible()
+						  ? mListBox->getHorizontalScrollBar()->getSize().getHeight()
+						  : 0.f ) );
 
 			mListBox->getVerticalScrollBar()->setValue( sliderValue );
 
@@ -208,8 +206,9 @@ void UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisibleItems ) {
 		mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
 
 		if ( NULL != mListBox )
-			mListBox->setSize( getSize().getWidth(),
-							   mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() );
+			mListBox->setSize( getSize().getWidth(), std::min( mStyleConfig.MaxNumVisibleItems,
+															   getListBox()->getCount() ) *
+														 mListBox->getRowHeight() );
 	}
 }
 

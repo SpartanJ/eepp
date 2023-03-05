@@ -127,6 +127,10 @@ void TerminalManager::configureTerminalShell() {
 																	: Sys::which( shellEnv ) );
 		if ( !shellEnvStr.empty() )
 			shellCombo->getListBox()->setSelected( shellEnvStr );
+	} else if ( Sys::getPlatform() == "Windows" ) {
+		std::string shellEnvStr( Sys::which( "powershell" ) );
+		if ( !shellEnvStr.empty() )
+			shellCombo->getListBox()->setSelected( shellEnvStr );
 	}
 	auto setShellFn = []( App* app, UIWindow* window, UIComboBox* shellCombo ) {
 		std::string shell( shellCombo->getText().toUtf8() );
