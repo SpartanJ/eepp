@@ -15,7 +15,12 @@ namespace EE { namespace UI { namespace Doc {
 
 struct EE_API SyntaxToken {
 	std::string type;
-	std::string text; // text is optional and must be requested explicitly
+	size_t len{ 0 };
+};
+
+struct EE_API SyntaxTokenComplete {
+	std::string type;
+	std::string text;
 	size_t len{ 0 };
 };
 
@@ -32,8 +37,11 @@ class EE_API SyntaxTokenizer {
   public:
 	static std::pair<std::vector<SyntaxToken>, Uint32>
 	tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
-			  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false,
-			  bool allocateText = false );
+			  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
+
+	static std::pair<std::vector<SyntaxTokenComplete>, Uint32>
+	tokenizeComplete( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
+					  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
 
 	static Text& tokenizeText( const SyntaxDefinition& syntax, const SyntaxColorScheme& colorScheme,
 							   Text& text, const size_t& startIndex = 0,
