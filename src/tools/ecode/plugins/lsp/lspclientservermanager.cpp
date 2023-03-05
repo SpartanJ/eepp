@@ -380,8 +380,14 @@ void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folde
 	mLSPWorkspaceFolder = { "file://" + folder, FileSystem::fileNameFromPath( folder ) };
 	std::vector<LSPWorkspaceFolder> newWorkspaceFolder = { mLSPWorkspaceFolder };
 	Lock l( mClientsMutex );
-	for ( auto& server : mClients )
+	for ( auto& server : mClients ) {
 		server.second->didChangeWorkspaceFolders( newWorkspaceFolder, oldLSPWorkspaceFolder, true );
+		// If there's a workspace folder change, but the server don't support it, we need to close
+		// the server because the current workspace will be broken if we don't reopen the server in
+		// the correct rootUri/rootPath
+		if ( !server.second->getCapabilities().workspaceFolders.supported )
+			closeLSPServer( server.first );
+	}
 }
 
 const LSPWorkspaceFolder& LSPClientServerManager::getLSPWorkspaceFolder() const {

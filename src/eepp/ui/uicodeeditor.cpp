@@ -119,7 +119,6 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
 	mLineNumberPaddingLeft( 8 ),
 	mLineNumberPaddingRight( 8 ),
-	mHighlighter( mDoc.get() ),
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ),
 	mPreviewColor( Color::Transparent ) {
@@ -371,7 +370,8 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 	if ( !mVisible )
 		return;
 
-	if ( mDoc && !mDoc->isLoading() && mHighlighter.updateDirty( getVisibleLinesCount() ) ) {
+	if ( mDoc && !mDoc->isLoading() &&
+		 mDoc->getHighlighter()->updateDirty( getVisibleLinesCount() ) ) {
 		invalidateDraw();
 	}
 
@@ -399,7 +399,7 @@ void UICodeEditor::updateLongestLineWidth() {
 
 void UICodeEditor::reset() {
 	mDoc->reset();
-	mHighlighter.reset();
+	mDoc->getHighlighter()->reset();
 	invalidateDraw();
 }
 
@@ -408,7 +408,6 @@ TextDocument::LoadStatus UICodeEditor::loadFromFile( const std::string& path ) {
 	if ( ret == TextDocument::LoadStatus::Loaded ) {
 		invalidateEditor();
 		updateLongestLineWidth();
-		mHighlighter.changeDoc( mDoc.get() );
 		invalidateDraw();
 		onDocumentLoaded( mDoc.get() );
 	}
@@ -435,7 +434,6 @@ bool UICodeEditor::loadAsyncFromFile(
 											runOnMainThread( [&, onLoaded, wasLocked, success] {
 												invalidateEditor();
 												updateLongestLineWidth();
-												mHighlighter.changeDoc( mDoc.get() );
 												invalidateDraw();
 												if ( !wasLocked )
 													setLocked( false );
@@ -455,7 +453,6 @@ TextDocument::LoadStatus UICodeEditor::loadFromURL( const std::string& url,
 	if ( ret == TextDocument::LoadStatus::Loaded ) {
 		invalidateEditor();
 		updateLongestLineWidth();
-		mHighlighter.changeDoc( mDoc.get() );
 		invalidateDraw();
 		onDocumentLoaded();
 	}
@@ -474,7 +471,6 @@ bool UICodeEditor::loadAsyncFromURL(
 			runOnMainThread( [&, onLoaded, wasLocked] {
 				invalidateEditor();
 				updateLongestLineWidth();
-				mHighlighter.changeDoc( mDoc.get() );
 				invalidateDraw();
 				if ( !wasLocked )
 					setLocked( false );
@@ -810,7 +806,6 @@ void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 			onDocumentClosed( mDoc.get() );
 		mDoc = doc;
 		mDoc->registerClient( this );
-		mHighlighter.changeDoc( mDoc.get() );
 		invalidateEditor();
 		invalidateDraw();
 		onDocumentChanged();
@@ -1564,7 +1559,7 @@ void UICodeEditor::onDocumentLineCountChange( const size_t&, const size_t& ) {
 }
 
 void UICodeEditor::onDocumentLineChanged( const Int64& lineNumber ) {
-	mHighlighter.invalidate( lineNumber );
+	mDoc->getHighlighter()->invalidate( lineNumber );
 	if ( mFont && !mFont->isMonospace() )
 		updateLineCache( lineNumber );
 }
@@ -2156,7 +2151,7 @@ void UICodeEditor::setEnableColorPickerOnSelection( const bool& enableColorPicke
 void UICodeEditor::setSyntaxDefinition( const SyntaxDefinition& definition ) {
 	std::string oldLang( mDoc->getSyntaxDefinition().getLanguageName() );
 	mDoc->setSyntaxDefinition( definition );
-	mHighlighter.reset();
+	mDoc->getHighlighter()->reset();
 	invalidateDraw();
 	DocSyntaxDefEvent event( this, mDoc.get(), Event::OnDocumentSyntaxDefinitionChange, oldLang,
 							 mDoc->getSyntaxDefinition().getLanguageName() );
@@ -2190,14 +2185,14 @@ void UICodeEditor::checkMatchingBrackets() {
 			String::StringBaseType openBracket = open[index];
 			String::StringBaseType closeBracket = close[index];
 			TextPosition closePosition =
-				mDoc->getMatchingBracket( pos, openBracket, closeBracket, 1, &mHighlighter );
+				mDoc->getMatchingBracket( pos, openBracket, closeBracket, 1 );
 			mMatchingBrackets = { pos, closePosition };
 		} else if ( isCloseIt != close.end() ) {
 			size_t index = std::distance( close.begin(), isCloseIt );
 			String::StringBaseType openBracket = open[index];
 			String::StringBaseType closeBracket = close[index];
 			TextPosition closePosition =
-				mDoc->getMatchingBracket( pos, openBracket, closeBracket, -1, &mHighlighter );
+				mDoc->getMatchingBracket( pos, openBracket, closeBracket, -1 );
 			mMatchingBrackets = { pos, closePosition };
 		}
 	}
@@ -2624,7 +2619,7 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Float& fontSize,
 								 const Float& lineHeight ) {
 	Vector2f originalPosition( position );
-	auto& tokens = mHighlighter.getLine( line );
+	auto& tokens = mDoc->getHighlighter()->getLine( line );
 	const String& strLine = mDoc->line( line ).getText();
 	Primitives primitives;
 	Int64 curChar = 0;
@@ -3307,7 +3302,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 												   { rect.getWidth(), charHeight }, charSpacing,
 												   gutterWidth );
 
-			const auto& tokens = mHighlighter.getLine( index );
+			const auto& tokens = mDoc->getHighlighter()->getLine( index );
 			const auto& text = mDoc->line( index ).getText();
 			size_t txtPos = 0;
 
@@ -3451,7 +3446,8 @@ bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 		return false;
 	if ( line[start.column() - 1] != '>' || ( line.size() > 2 && line[start.column() - 2] == '/' ) )
 		return false;
-	const SyntaxDefinition& definition = mHighlighter.getSyntaxDefinitionFromTextPosition( start );
+	const SyntaxDefinition& definition =
+		mDoc->getHighlighter()->getSyntaxDefinitionFromTextPosition( start );
 	if ( !definition.getAutoCloseXMLTags() )
 		return false;
 	size_t foundOpenPos = line.find_last_of( "<", start.column() - 1 );

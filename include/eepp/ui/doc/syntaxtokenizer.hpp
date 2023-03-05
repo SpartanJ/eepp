@@ -6,6 +6,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
+#include <memory>
 #include <string>
 
 using namespace EE::Graphics;
@@ -14,8 +15,13 @@ namespace EE { namespace UI { namespace Doc {
 
 struct EE_API SyntaxToken {
 	std::string type;
-	std::string text;
+	std::unique_ptr<std::string> text; // text is optional and must be requested explicitly
 	size_t len{ 0 };
+
+	SyntaxToken( const std::string& _type, const std::string& _text, const size_t _len ) :
+		type( _type ),
+		text( _text.empty() ? nullptr : std::make_unique<std::string>( _text ) ),
+		len( _len ) {}
 };
 
 #define SYNTAX_TOKENIZER_STATE_NONE ( 0 )
@@ -31,7 +37,8 @@ class EE_API SyntaxTokenizer {
   public:
 	static std::pair<std::vector<SyntaxToken>, Uint32>
 	tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
-			  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
+			  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false,
+			  bool allocateText = false );
 
 	static Text& tokenizeText( const SyntaxDefinition& syntax, const SyntaxColorScheme& colorScheme,
 							   Text& text, const size_t& startIndex = 0,

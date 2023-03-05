@@ -34,7 +34,8 @@ TextDocument::TextDocument( bool verbose ) :
 		{ { '(', ')' }, { '[', ']' }, { '{', '}' }, { '\'', '\'' }, { '"', '"' }, { '`', '`' } } ),
 	mDefaultFileName( "untitled" ),
 	mCleanChangeId( 0 ),
-	mNonWordChars( DEFAULT_NON_WORD_CHARS ) {
+	mNonWordChars( DEFAULT_NON_WORD_CHARS ),
+	mHighlighter( std::make_unique<SyntaxHighlighter>( this ) ) {
 	initializeCommands();
 	reset();
 }
@@ -2367,8 +2368,9 @@ void TextDocument::cleanChangeId() {
 
 TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 											   const String::StringBaseType& openBracket,
-											   const String::StringBaseType& closeBracket, int dir,
-											   SyntaxHighlighter* highlighter ) {
+											   const String::StringBaseType& closeBracket,
+											   int dir ) {
+	SyntaxHighlighter* highlighter = mHighlighter.get();
 	int depth = 0;
 	while ( sp.isValid() ) {
 		auto byte = getChar( sp );
@@ -2402,6 +2404,10 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 			return {};
 	}
 	return {};
+}
+
+SyntaxHighlighter* TextDocument::getHighlighter() const {
+	return mHighlighter.get();
 }
 
 const String& TextDocument::getNonWordChars() const {

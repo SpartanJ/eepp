@@ -545,8 +545,9 @@ class EE_API TextDocument {
 
 	TextPosition getMatchingBracket( TextPosition startPosition,
 									 const String::StringBaseType& openBracket,
-									 const String::StringBaseType& closeBracket, int dir,
-									 SyntaxHighlighter* highlighter = nullptr );
+									 const String::StringBaseType& closeBracket, int dir );
+
+	SyntaxHighlighter* getHighlighter() const;
 
   protected:
 	friend class UndoStack;
@@ -588,6 +589,7 @@ class EE_API TextDocument {
 	mutable Mutex mLoadingMutex;
 	mutable Mutex mLoadingFilePathMutex;
 	size_t mLastSelection{ 0 };
+	std::unique_ptr<SyntaxHighlighter> mHighlighter;
 
 	void initializeCommands();
 

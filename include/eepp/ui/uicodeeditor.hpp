@@ -655,7 +655,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mMinimapSelectionColor;
 	Color mMinimapHighlightColor;
 	SyntaxColorScheme mColorScheme;
-	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;
 	UIScrollBar* mHScrollBar;
 	std::map<size_t, LastXOffset> mLastXOffset;
