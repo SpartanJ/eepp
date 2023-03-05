@@ -106,6 +106,7 @@ struct ProjectDocumentConfig {
 };
 
 struct TerminalConfig {
+	std::string shell;
 	std::string colorScheme{ "eterm" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 };

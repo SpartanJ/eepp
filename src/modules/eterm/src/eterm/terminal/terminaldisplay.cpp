@@ -393,7 +393,7 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 	if ( program.empty() ) {
 		const char* shellenv = getenv( "SHELL" );
 #ifdef _WIN32
-		program = shellenv != nullptr ? shellenv : "cmd.exe";
+		program = shellenv != nullptr ? shellenv : "powershell.exe";
 #else
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 		program = shellenv != nullptr ? shellenv : "/bin/sh";

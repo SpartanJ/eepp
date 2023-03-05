@@ -238,6 +238,10 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "fallback-font", [&] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
 		t.setCommand( "tree-view-configure-ignore-files", [&] { treeViewConfigureIgnoreFiles(); } );
 		t.setCommand( "check-languages-health", [&] { checkLanguagesHealth(); } );
+		t.setCommand( "configure-terminal-shell", [&] {
+			if ( mTerminalManager )
+				mTerminalManager->configureTerminalShell();
+		} );
 		mSplitter->registerSplitterCommands( t );
 	}
 

@@ -1034,7 +1034,8 @@ std::string App::getCurrentWorkingDir() const {
 	if ( !mCurrentProject.empty() )
 		return mCurrentProject;
 
-	if ( mSplitter && mSplitter->curEditorIsNotNull() && mSplitter->getCurEditor()->hasDocument() &&
+	if ( mSplitter && mSplitter->curEditorIsNotNull() && mSplitter->curEditorExists() &&
+		 mSplitter->getCurEditor()->hasDocument() &&
 		 mSplitter->getCurEditor()->getDocument().hasFilepath() ) {
 		return mSplitter->getCurEditor()->getDocument().getFileInfo().getDirectoryPath();
 	}
@@ -3084,7 +3085,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			{ "cursor-pointer", 0xec09 },
 			{ "drive", 0xedf8 },
 			{ "refresh", 0xf064 },
-		};
+			{ "hearth-pulse", 0xee10 } };
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
 

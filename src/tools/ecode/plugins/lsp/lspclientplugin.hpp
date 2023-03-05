@@ -25,7 +25,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
   public:
 	static PluginDefinition Definition() {
 		return { "lspclient",		   "LSP Client", "Language Server Protocol Client.",
-				 LSPClientPlugin::New, { 0, 0, 2 },	 LSPClientPlugin::NewSync };
+				 LSPClientPlugin::New, { 0, 2, 0 },	 LSPClientPlugin::NewSync };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );

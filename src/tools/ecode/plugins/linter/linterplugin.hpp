@@ -55,7 +55,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New,
-				 { 0, 1, 0 },
+				 { 0, 2, 0 },
 				 LinterPlugin::NewSync };
 	}
 

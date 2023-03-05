@@ -142,6 +142,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	globalSearchBarConfig.escapeSequence =
 		ini.getValueB( "global_search_bar", "escape_sequence", false );
 
+	term.shell = ini.getValue( "terminal", "shell" );
 	term.fontSize = ini.getValue( "terminal", "font_size", "11dp" );
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 
@@ -246,6 +247,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "global_search_bar", "whole_word", globalSearchBarConfig.wholeWord );
 	ini.setValueB( "global_search_bar", "escape_sequence", globalSearchBarConfig.escapeSequence );
 
+	ini.setValue( "terminal", "shell", term.shell );
 	ini.setValue( "terminal", "font_size", term.fontSize.toString() );
 	ini.setValue( "terminal", "colorscheme", term.colorScheme );
 

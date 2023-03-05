@@ -1643,7 +1643,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 			setSize( getSize().getWidth(), attribute.asDpDimension( this ) );
 			break;
 		case PropertyId::WindowTitle:
-			setTitle( attribute.asString() );
+			setTitle( getUISceneNode()->getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::WindowOpacity:
 			setWindowOpacity( (Uint8)eemin<Uint32>( (Uint32)attribute.asFloat() * 255.f, 255u ) );

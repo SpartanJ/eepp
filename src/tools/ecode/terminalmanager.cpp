@@ -89,6 +89,72 @@ void TerminalManager::setUseFrameBuffer( bool useFrameBuffer ) {
 	mUseFrameBuffer = useFrameBuffer;
 }
 
+void TerminalManager::configureTerminalShell() {
+	const std::string layout( R"xml(
+		<window layout_width="300dp" layout_height="150dp" window-flags="default|shadow" window-title='@string(shell_configuration, "Shell Configuration")'>
+		<vbox lw="mp" lh="mp" padding="4dp">
+			<vbox lw="mp" lh="0" lw8="1">
+			<textview text='@string(configure_default_shell, "Configure default shell")' font-size="14dp" margin-bottom="8dp" />
+			<ComboBox id="shell_combo" layout_width="match_parent" layout_height="wrap_content" selectedIndex="0" popup-to-root="true"></ComboBox>
+			</vbox>
+			<hbox layout_gravity="right">
+				<pushbutton id="ok" text="@string(msg_box_ok, Ok)" icon="ok" />
+				<pushbutton id="cancel" text="@string(msg_box_cancel, Cancel)" margin-left="8dp" icon="cancel" />
+			</hbox>
+		</vbox>
+		</window>
+	)xml" );
+	UIWindow* window = mApp->getUISceneNode()->loadLayoutFromString( layout )->asType<UIWindow>();
+	UIComboBox* shellCombo = window->find<UIComboBox>( "shell_combo" );
+	UIPushButton* ok = window->find<UIPushButton>( "ok" );
+	UIPushButton* cancel = window->find<UIPushButton>( "cancel" );
+	const std::vector<std::string> list{
+		"bash", "sh", "zsh", "fish", "nu", "csh", "tcsh", "ksh", "dash", "cmd", "powershell",
+	};
+	std::vector<String> found;
+	for ( const auto& i : list ) {
+		std::string f( Sys::which( i ) );
+		if ( !f.empty() )
+			found.emplace_back( std::move( f ) );
+	}
+	shellCombo->getListBox()->addListBoxItems( found );
+	const char* shellEnv = std::getenv( "SHELL" );
+	if ( !mApp->termConfig().shell.empty() ) {
+		shellCombo->getListBox()->setSelected( mApp->termConfig().shell );
+		shellCombo->setText( mApp->termConfig().shell );
+	} else if ( shellEnv ) {
+		std::string shellEnvStr( FileSystem::fileExists( shellEnv ) ? shellEnv
+																	: Sys::which( shellEnv ) );
+		if ( !shellEnvStr.empty() )
+			shellCombo->getListBox()->setSelected( shellEnvStr );
+	}
+	auto setShellFn = []( App* app, UIWindow* window, UIComboBox* shellCombo ) {
+		std::string shell( shellCombo->getText().toUtf8() );
+		if ( !Sys::which( shell ).empty() || FileSystem::fileExists( shell ) ) {
+			app->getConfig().term.shell = shell;
+			window->closeWindow();
+		} else {
+			app->errorMsgBox( app->i18n(
+				"shell_not_found", "The shell selected was not found in the file system.\nMake "
+								   "sure that the shell is visible in your PATH" ) );
+		}
+	};
+	ok->setFocus();
+	ok->addMouseClickListener(
+		[&, window, shellCombo]( const MouseEvent* ) { setShellFn( mApp, window, shellCombo ); },
+		MouseButton::EE_BUTTON_LEFT );
+	cancel->addMouseClickListener( [window]( const MouseEvent* ) { window->closeWindow(); },
+								   EE_BUTTON_LEFT );
+	window->on( Event::KeyDown, [window]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
+			window->closeWindow();
+	} );
+	window->center();
+	window->on( Event::OnWindowReady, [ok] ( const Event* ) {
+		ok->setFocus();
+	} );
+}
+
 UIMenu* TerminalManager::createColorSchemeMenu() {
 	mColorSchemeMenuesCreatedWithHeight = mApp->uiSceneNode()->getPixelsSize().getHeight();
 	size_t maxItems = 19;
@@ -140,8 +206,7 @@ void TerminalManager::updateMenuColorScheme( UIMenuSubMenu* colorSchemeMenu ) {
 }
 
 UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
-												const std::string& workingDir,
-												const std::string& program,
+												const std::string& workingDir, std::string program,
 												const std::vector<std::string>& args ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	UIMessageBox* msgBox = UIMessageBox::New(
@@ -178,6 +243,9 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 			initialSize = tabWidget->getContainerNode()->getPixelsSize();
 		}
 	}
+
+	if ( program.empty() && !mApp->termConfig().shell.empty() )
+		program = mApp->termConfig().shell;
 
 	UITerminal* term = UITerminal::New(
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),

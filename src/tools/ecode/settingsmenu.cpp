@@ -728,6 +728,13 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			   getKeybind( "terminal-rename" ) )
 		->setId( "terminal-rename" );
 
+	mTerminalMenu->addSeparator();
+
+	mTerminalMenu
+		->add( i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
+			   findIcon( "terminal" ), getKeybind( "configure-terminal-shell" ) )
+		->setId( "configure-terminal-shell" );
+
 	mTerminalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
 		if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
@@ -1222,9 +1229,16 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 	mToolsMenu->addSeparator();
 
 	mToolsMenu
-		->add( i18n( "check_languages_health", "Check Languages Health" ), nullptr,
-			   getKeybind( "check-languages-health" ) )
+		->add( i18n( "check_languages_health", "Check Languages Health" ),
+			   findIcon( "hearth-pulse" ), getKeybind( "check-languages-health" ) )
 		->setId( "check-languages-health" );
+
+	mToolsMenu->addSeparator();
+
+	mToolsMenu
+		->add( i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
+			   findIcon( "terminal" ), getKeybind( "configure-terminal-shell" ) )
+		->setId( "configure-terminal-shell" );
 
 	mToolsMenu->addSeparator();
 

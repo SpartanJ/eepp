@@ -27,7 +27,7 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	void clear();
 
-	void addListBoxItems( std::vector<String> Texts );
+	void addListBoxItems( std::vector<String> texts );
 
 	Uint32 addListBoxItem( const String& Text );
 

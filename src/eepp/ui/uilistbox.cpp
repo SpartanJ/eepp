@@ -122,12 +122,12 @@ UIScrollBar* UIListBox::getHorizontalScrollBar() const {
 	return mHScrollBar;
 }
 
-void UIListBox::addListBoxItems( std::vector<String> Texts ) {
-	mItems.reserve( mItems.size() + Texts.size() );
-	mTexts.reserve( mTexts.size() + Texts.size() );
+void UIListBox::addListBoxItems( std::vector<String> texts ) {
+	mItems.reserve( mItems.size() + texts.size() );
+	mTexts.reserve( mTexts.size() + texts.size() );
 
-	for ( Uint32 i = 0; i < Texts.size(); i++ ) {
-		mTexts.push_back( Texts[i] );
+	for ( Uint32 i = 0; i < texts.size(); i++ ) {
+		mTexts.push_back( std::move( texts[i] ) );
 		mItems.push_back( NULL );
 	}
 

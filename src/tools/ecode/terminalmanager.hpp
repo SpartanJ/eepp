@@ -17,8 +17,7 @@ class TerminalManager {
 
 	UITerminal* createNewTerminal( const std::string& title = "",
 								   UITabWidget* inTabWidget = nullptr,
-								   const std::string& workingDir = "",
-								   const std::string& program = "",
+								   const std::string& workingDir = "", std::string program = "",
 								   const std::vector<std::string>& args = {} );
 
 	void applyTerminalColorScheme( const TerminalColorScheme& colorScheme );
@@ -46,6 +45,8 @@ class TerminalManager {
 	bool getUseFrameBuffer() const;
 
 	void setUseFrameBuffer( bool useFrameBuffer );
+
+	void configureTerminalShell();
 
   protected:
 	App* mApp;

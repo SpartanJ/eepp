@@ -507,8 +507,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				setText( static_cast<UISceneNode*>( mSceneNode )
-							 ->getTranslatorString( attribute.asString() ) );
+				setText( getUISceneNode()->getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::Icon: {
 			std::string val = attribute.asString();

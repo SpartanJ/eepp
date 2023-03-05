@@ -67,6 +67,10 @@ const String& UIComboBox::getText() {
 	return mDropDownList->getText();
 }
 
+void UIComboBox::setText( const String& text ) {
+	mDropDownList->setText( text );
+}
+
 void UIComboBox::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
