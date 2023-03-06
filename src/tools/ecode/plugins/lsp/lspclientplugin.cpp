@@ -954,7 +954,7 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	if ( mClosing )
 		return;
 	Lock l( mDocMutex );
-	TextDocument* doc = mEditorDocs[editor];
+	TextDocument* doc = &editor->getDocument();
 	const auto& cbs = mEditors[editor];
 	for ( auto listener : cbs )
 		editor->removeEventListener( listener );
