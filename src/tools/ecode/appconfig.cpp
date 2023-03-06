@@ -145,6 +145,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.shell = ini.getValue( "terminal", "shell" );
 	term.fontSize = ini.getValue( "terminal", "font_size", "11dp" );
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
+	term.newTerminalOrientation = NewTerminalOrientation::fromString(
+		ini.getValue( "terminal", "new_terminal_orientation", "vertical" ) );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
@@ -250,6 +252,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "terminal", "shell", term.shell );
 	ini.setValue( "terminal", "font_size", term.fontSize.toString() );
 	ini.setValue( "terminal", "colorscheme", term.colorScheme );
+	ini.setValue( "terminal", "new_terminal_orientation",
+				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",

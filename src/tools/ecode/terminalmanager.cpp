@@ -143,6 +143,10 @@ void TerminalManager::configureTerminalShell() {
 								   "sure that the shell is visible in your PATH" ) );
 		}
 	};
+	if ( shellCombo->getListBox()->getVerticalScrollBar() &&
+		 found.size() > shellCombo->getDropDownList()->getMaxNumVisibleItems() )
+		shellCombo->getListBox()->getVerticalScrollBar()->setClickStep(
+			shellCombo->getDropDownList()->getMaxNumVisibleItems() / (Float)found.size() );
 	ok->setFocus();
 	ok->addMouseClickListener(
 		[&, window, shellCombo]( const MouseEvent* ) { setShellFn( mApp, window, shellCombo ); },
@@ -154,9 +158,7 @@ void TerminalManager::configureTerminalShell() {
 			window->closeWindow();
 	} );
 	window->center();
-	window->on( Event::OnWindowReady, [ok] ( const Event* ) {
-		ok->setFocus();
-	} );
+	window->on( Event::OnWindowReady, [ok]( const Event* ) { ok->setFocus(); } );
 }
 
 UIMenu* TerminalManager::createColorSchemeMenu() {

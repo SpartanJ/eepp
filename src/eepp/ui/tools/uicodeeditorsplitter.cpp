@@ -1065,6 +1065,25 @@ bool UICodeEditorSplitter::curEditorExists() const {
 	return found || mCurEditor == nullptr || mAboutToAddEditor == mCurEditor || mFirstCodeEditor;
 }
 
+bool UICodeEditorSplitter::hasSplit() const {
+	return mTabWidgets.size() > 1;
+}
+
+UIOrientation UICodeEditorSplitter::getMainSplitOrientation() const {
+	if ( !hasSplit() )
+		return UIOrientation::Vertical;
+
+	UITab* tab = nullptr;
+	if ( mTabWidgets[0]->getTabCount() > 0 && ( tab = mTabWidgets[0]->getTab( 0 ) ) &&
+		 tab->getOwnedWidget() && tab->getOwnedWidget()->isWidget() ) {
+		UISplitter* splitter = splitterFromWidget( tab->getOwnedWidget()->asType<UIWidget>() );
+		if ( splitter )
+			return splitter->getOrientation();
+	}
+
+	return UIOrientation::Vertical;
+}
+
 bool UICodeEditorSplitter::curWidgetExists() const {
 	bool found = false;
 	forEachWidgetStoppable( [&]( UIWidget* widget ) {

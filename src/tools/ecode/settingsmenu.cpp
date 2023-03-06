@@ -347,7 +347,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	} );
 
 	// **** GLOBAL SETTINGS ****
-	mDocMenu->addSeparator();
+	mDocMenu->addSeparator()->setId( "end_current_document" );
 
 	UIPopUpMenu* globalMenu = UIPopUpMenu::New();
 	mDocMenu->addSubMenu( i18n( "global_settings", "Global Settings" ),
@@ -703,19 +703,13 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 UIMenu* SettingsMenu::createTerminalMenu() {
 	mTerminalMenu = UIPopUpMenu::New();
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	UIMenuSubMenu* termColorSchemeMenu = mTerminalMenu->addSubMenu(
-		i18n( "terminal_color_scheme", "Terminal Color Scheme" ), findIcon( "palette" ),
-		mApp->getTerminalManager()->createColorSchemeMenu() );
-	termColorSchemeMenu->addEventListener(
-		Event::OnMenuShow, [&, termColorSchemeMenu]( const Event* ) {
-			mApp->getTerminalManager()->updateMenuColorScheme( termColorSchemeMenu );
-		} );
-#endif
+	mTerminalMenu->add( i18n( "current_terminal", "Current Terminal" ) )
+		->setTextAlign( UI_HALIGN_CENTER );
 
 	UIMenuCheckBox* exclusiveChk =
 		mTerminalMenu->addCheckBox( i18n( "exclusive_mode", "Exclusive Mode" ), false,
 									getKeybind( UITerminal::getExclusiveModeToggleCommandName() ) );
+
 	exclusiveChk
 		->setTooltipText( i18n(
 			"exclusive_mode_tooltip",
@@ -728,12 +722,47 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			   getKeybind( "terminal-rename" ) )
 		->setId( "terminal-rename" );
 
-	mTerminalMenu->addSeparator();
+	mTerminalMenu->addSeparator()->setId( "end_current_terminal" );
+
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	UIMenuSubMenu* termColorSchemeMenu = mTerminalMenu->addSubMenu(
+		i18n( "terminal_color_scheme", "Terminal Color Scheme" ), findIcon( "palette" ),
+		mApp->getTerminalManager()->createColorSchemeMenu() );
+	termColorSchemeMenu->addEventListener(
+		Event::OnMenuShow, [&, termColorSchemeMenu]( const Event* ) {
+			mApp->getTerminalManager()->updateMenuColorScheme( termColorSchemeMenu );
+		} );
+#endif
+
+	UIPopUpMenu* newTerminalBehaviorSubMenu = UIPopUpMenu::New();
+	auto currentOrientation =
+		NewTerminalOrientation::toString( mApp->getConfig().term.newTerminalOrientation );
+
+	newTerminalBehaviorSubMenu
+		->addRadioButton( i18n( "open_in_same_tabbar", "Open In Current Tab Bar" ) )
+		->setActive( currentOrientation == "same" )
+		->setId( "same" );
+	newTerminalBehaviorSubMenu
+		->addRadioButton( i18n( "open_in_vertical_split", "Open In New Vertical Split" ) )
+		->setActive( currentOrientation == "vertical" )
+		->setId( "vertical" );
+	newTerminalBehaviorSubMenu
+		->addRadioButton( i18n( "open_in_horizontal_split", "Open In New Horizontal Split" ) )
+		->setActive( currentOrientation == "horizontal" )
+		->setId( "horizontal" );
+
+	mTerminalMenu->addSubMenu( i18n( "new_terminal_behavior", "New Terminal Behavior" ),
+							   findIcon( "terminal" ), newTerminalBehaviorSubMenu );
 
 	mTerminalMenu
 		->add( i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-shell" ) )
 		->setId( "configure-terminal-shell" );
+
+	newTerminalBehaviorSubMenu->on( Event::OnItemClicked, [&]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		mApp->getConfig().term.newTerminalOrientation = NewTerminalOrientation::fromString( id );
+	} );
 
 	mTerminalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
@@ -745,6 +774,8 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			} else {
 				terminal->execute( id );
 			}
+		} else {
+			runCommand( id );
 		}
 	} );
 
@@ -1236,13 +1267,6 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 	mToolsMenu->addSeparator();
 
 	mToolsMenu
-		->add( i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
-			   findIcon( "terminal" ), getKeybind( "configure-terminal-shell" ) )
-		->setId( "configure-terminal-shell" );
-
-	mToolsMenu->addSeparator();
-
-	mToolsMenu
 		->add( i18n( "load_cur_dir_as_folder", "Load current document directory as folder" ),
 			   findIcon( "folder" ), getKeybind( "load-current-dir" ) )
 		->setId( "load-current-dir" );
@@ -1350,21 +1374,33 @@ void SettingsMenu::updateProjectSettingsMenu() {
 void SettingsMenu::updateTerminalMenu() {
 	bool enabled =
 		mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL );
-	mSettingsMenu->getItemId( "term-menu" )->setEnabled( enabled );
+
+	Node* child = mTerminalMenu->getFirstChild();
+	while ( child && child->getId() != "end_current_terminal" ) {
+		child->setEnabled( enabled );
+		child = child->getNextNode();
+	}
+
 	if ( !enabled )
 		return;
+
 	mTerminalMenu->getItemId( "exclusive-mode" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mSplitter->getCurWidget()->asType<UITerminal>()->getExclusiveMode() );
 }
 
 void SettingsMenu::updateDocumentMenu() {
-	if ( !mSplitter->getCurWidget() || !mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-		mSettingsMenu->getItemId( "doc-menu" )->setEnabled( false );
-		return;
+	bool enabled =
+		mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR );
+
+	Node* child = mDocMenu->getFirstChild();
+	while ( child && child->getId() != "end_current_document" ) {
+		child->setEnabled( enabled );
+		child = child->getNextNode();
 	}
 
-	mSettingsMenu->getItemId( "doc-menu" )->setEnabled( true );
+	if ( !enabled )
+		return;
 
 	const TextDocument& doc = mSplitter->getCurEditor()->getDocument();
 

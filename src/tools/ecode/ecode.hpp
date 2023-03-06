@@ -169,6 +169,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void toggleSettingsMenu();
 
+	void createNewTerminal();
+
 	template <typename T> void registerUnlockedCommands( T& t ) {
 		t.setCommand( "keybindings", [&] { loadFileFromPath( mKeybindingsPath ); } );
 		t.setCommand( "debug-draw-boxes-toggle", [&] { debugDrawBoxesToggle(); } );
@@ -180,7 +182,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "download-file-web", [&] { downloadFileWebDialog(); } );
 		t.setCommand( "move-panel-left", [&] { panelPosition( PanelPosition::Left ); } );
 		t.setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
-		t.setCommand( "create-new-terminal", [&] { mTerminalManager->createNewTerminal(); } );
+		t.setCommand( "create-new-terminal", [&] { createNewTerminal(); } );
 		t.setCommand( "terminal-split-right", [&] {
 			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Right,

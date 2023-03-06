@@ -272,6 +272,10 @@ class EE_API UICodeEditorSplitter {
 
 	bool curEditorExists() const;
 
+	bool hasSplit() const;
+
+	UIOrientation getMainSplitOrientation() const;
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	UICodeEditor* mCurEditor{ nullptr };

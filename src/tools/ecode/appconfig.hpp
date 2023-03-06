@@ -105,10 +105,37 @@ struct ProjectDocumentConfig {
 	ProjectDocumentConfig( const DocumentConfig& doc ) { this->doc = doc; }
 };
 
+class NewTerminalOrientation {
+  public:
+	enum Orientation { Same, Vertical, Horizontal };
+
+	static NewTerminalOrientation::Orientation fromString( const std::string& orientation ) {
+		if ( "same" == orientation )
+			return Orientation::Same;
+		if ( "horizontal" == orientation )
+			return Orientation::Horizontal;
+		return Orientation::Vertical;
+	}
+
+	static std::string toString( const Orientation& orientation ) {
+		switch ( orientation ) {
+			case Orientation::Vertical:
+				return "vertical";
+			case Orientation::Horizontal:
+				return "horizontal";
+			case Orientation::Same:
+			default:
+				return "same";
+		}
+	}
+};
+
 struct TerminalConfig {
 	std::string shell;
 	std::string colorScheme{ "eterm" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
+	NewTerminalOrientation::Orientation newTerminalOrientation{
+		NewTerminalOrientation::Horizontal };
 };
 
 struct WorkspaceConfig {
