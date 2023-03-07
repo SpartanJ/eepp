@@ -856,6 +856,8 @@ UIMenu* SettingsMenu::createWindowMenu() {
 	} );
 	mWindowMenu->addSubMenu( i18n( "ui_prefes_color_scheme", "UI Prefers Color Scheme" ),
 							 findIcon( "color-scheme" ), colorsMenu );
+	mWindowMenu->addSubMenu( i18n( "ui_thene", "UI Theme" ), findIcon( "palette" ),
+							 createThemesMenu() );
 	mWindowMenu->addSubMenu( i18n( "ui_renderer", "Renderer" ), findIcon( "renderer" ),
 							 createRendererMenu() );
 	mWindowMenu
@@ -1289,6 +1291,36 @@ UIMenu* SettingsMenu::createHelpMenu() {
 		runCommand( event->getNode()->getId() );
 	} );
 	return helpMenu;
+}
+
+UIMenu* SettingsMenu::createThemesMenu() {
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+
+	const std::string& curTheme = mApp->getConfig().ui.theme;
+
+	menu->addRadioButton( i18n( "default_theme", "Default Theme" ),
+						  curTheme.empty() || "default_theme" == curTheme )
+		->setId( "default_theme" );
+
+	auto files = FileSystem::filesInfoGetInPath( mApp->getThemesPath(), true, true, true );
+
+	for ( const auto& file : files ) {
+		if ( file.getExtension() != "css" )
+			continue;
+		auto name( FileSystem::fileRemoveExtension( file.getFileName() ) );
+		menu->addRadioButton( name, curTheme == name )->setId( name );
+	}
+
+	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		auto id = event->getNode()->getId();
+		mApp->getConfig().ui.theme = "default_theme" != id ? id : "";
+		std::string path( mApp->getConfig().ui.theme.empty()
+							  ? mApp->getDefaultThemePath()
+							  : mApp->getThemesPath() + id + ".css" );
+		mApp->setTheme( path );
+	} );
+
+	return menu;
 }
 
 void SettingsMenu::toggleSettingsMenu() {

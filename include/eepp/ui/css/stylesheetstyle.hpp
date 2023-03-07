@@ -43,6 +43,8 @@ class EE_API StyleSheetStyle {
 
 	bool hasVariables() const;
 
+	bool hasVariable( const std::string& name ) const;
+
 	StyleSheetVariable getVariableByName( const std::string& name ) const;
 
 	void setVariable( const StyleSheetVariable& variable );

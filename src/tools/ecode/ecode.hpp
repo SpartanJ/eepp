@@ -326,6 +326,14 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::vector<std::string>& getRecentFolders() const;
 
+	const std::string& getThemesPath() const;
+
+	std::string getThemePath() const;
+
+	std::string getDefaultThemePath() const;
+
+	void setTheme( const std::string& path );
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -355,6 +363,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mKeybindingsPath;
 	std::string mResPath;
 	std::string mLanguagesPath;
+	std::string mThemesPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
@@ -391,6 +400,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<PluginManager> mPluginManager;
 	std::unique_ptr<SettingsMenu> mSettings;
 	std::string mFileToOpen;
+	UITheme* mTheme{ nullptr };
 
 	void saveAllProcess();
 

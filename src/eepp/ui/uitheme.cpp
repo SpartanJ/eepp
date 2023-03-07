@@ -317,6 +317,10 @@ UISkin* UITheme::getSkin( const std::string& widgetName ) {
 	return getByName( mAbbr + "_" + widgetName );
 }
 
+CSS::StyleSheet& UITheme::getStyleSheet() {
+	return mStyleSheet;
+}
+
 const CSS::StyleSheet& UITheme::getStyleSheet() const {
 	return mStyleSheet;
 }

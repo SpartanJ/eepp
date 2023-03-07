@@ -152,6 +152,10 @@ bool StyleSheetStyle::hasVariables() const {
 	return !mVariables.empty();
 }
 
+bool StyleSheetStyle::hasVariable( const std::string& name ) const {
+	return !getVariableByName( name ).isEmpty();
+}
+
 StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name ) const {
 	auto it = mVariables.find( String::hash( name ) );
 

@@ -156,6 +156,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	void nodeToWorldTranslation( Vector2f& Pos ) const;
 
+	void reloadStyle( bool disableAnimations = false, bool forceReApplyProperties = false );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -204,8 +206,6 @@ class EE_API UISceneNode : public SceneNode {
 	bool windowExists( UIWindow* win );
 
 	virtual void setInternalSize( const Sizef& size );
-
-	void reloadStyle( const bool& disableAnimations = false );
 
 	bool onMediaChanged( bool forceReApplyStyles = false );
 

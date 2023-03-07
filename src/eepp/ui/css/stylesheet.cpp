@@ -251,6 +251,14 @@ const std::vector<std::shared_ptr<StyleSheetStyle>>& StyleSheet::getStyles() con
 	return mNodes;
 }
 
+std::shared_ptr<StyleSheetStyle>
+StyleSheet::getStyleFromSelector( const std::string& selector ) const {
+	for ( const auto& node : mNodes )
+		if ( node->getSelector().getName() == selector )
+			return node;
+	return {};
+}
+
 bool StyleSheet::updateMediaLists( const MediaFeatures& features ) {
 	if ( mMediaQueryList.empty() )
 		return false;

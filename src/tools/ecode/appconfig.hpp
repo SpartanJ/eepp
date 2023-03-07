@@ -35,6 +35,7 @@ struct UIConfig {
 	std::string terminalFont;
 	std::string fallbackFont;
 	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
+	std::string theme;
 };
 
 struct WindowStateConfig {

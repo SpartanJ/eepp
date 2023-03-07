@@ -387,13 +387,14 @@ bool UISceneNode::hasStyleSheet() {
 	return !mStyleSheet.isEmpty();
 }
 
-void UISceneNode::reloadStyle( const bool& disableAnimations ) {
+void UISceneNode::reloadStyle( bool disableAnimations, bool forceReApplyProperties ) {
 	if ( NULL != mChild ) {
 		Node* child = mChild;
 
 		while ( NULL != child ) {
 			if ( child->isWidget() ) {
-				child->asType<UIWidget>()->reloadStyle( true, disableAnimations );
+				child->asType<UIWidget>()->reloadStyle( true, disableAnimations, true,
+														forceReApplyProperties );
 			}
 
 			child = child->getNextNode();

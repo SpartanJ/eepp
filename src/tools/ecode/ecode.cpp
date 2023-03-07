@@ -438,6 +438,7 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mPluginsPath = mConfigPath + "plugins";
 	mLanguagesPath = mConfigPath + "languages";
+	mThemesPath = mConfigPath + "themes";
 	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes" +
 						FileSystem::getOSSlash();
 	mTerminalManager = std::make_unique<TerminalManager>( this );
@@ -453,6 +454,10 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	if ( !FileSystem::fileExists( mLanguagesPath ) )
 		FileSystem::makeDir( mLanguagesPath );
 	FileSystem::dirAddSlashAtEnd( mLanguagesPath );
+
+	if ( !FileSystem::fileExists( mThemesPath ) )
+		FileSystem::makeDir( mThemesPath );
+	FileSystem::dirAddSlashAtEnd( mThemesPath );
 
 #ifndef EE_DEBUG
 	Log::create( mConfigPath + "ecode.log", logLevel, false, true );
@@ -1482,6 +1487,74 @@ void App::loadFileDelayed() {
 	}
 
 	mFileToOpen.clear();
+}
+
+const std::string& App::getThemesPath() const {
+	return mThemesPath;
+}
+
+std::string App::getThemePath() const {
+	if ( mConfig.ui.theme.empty() || "default_theme" == mConfig.ui.theme )
+		return getDefaultThemePath();
+
+	auto themePath( mThemesPath + mConfig.ui.theme + ".css" );
+	if ( !FileSystem::fileExists( themePath ) )
+		return getDefaultThemePath();
+
+	return themePath;
+}
+
+std::string App::getDefaultThemePath() const {
+	return mResPath + "ui/breeze.css";
+}
+
+void App::setTheme( const std::string& path ) {
+	UITheme* theme = UITheme::load( "uitheme", "uitheme", "", mFont, path );
+	theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+
+	if ( path != getDefaultThemePath() ) {
+		auto style = theme->getStyleSheet().getStyleFromSelector( ":root" );
+		if ( style ) {
+			auto inheritsBaseTheme = style->getVariableByName( "--inherit-base-theme" );
+			if ( !inheritsBaseTheme.isEmpty() ) {
+				StyleSheetParser parser;
+				parser.loadFromFile( getDefaultThemePath() );
+				for ( auto& tstyle : parser.getStyleSheet().getStyles() ) {
+					if ( tstyle->getSelector().getName() != ":root" ) {
+						theme->getStyleSheet().addStyle( tstyle );
+					} else {
+						// Add root variables that arent defined in the custom theme
+						auto root = theme->getStyleSheet().getStyleFromSelector( ":root" );
+						if ( root ) {
+							for ( const auto& var : tstyle->getVariables() ) {
+								if ( !root->hasVariable( var.second.getName() ) )
+									root->setVariable( var.second );
+							}
+						}
+					}
+				}
+				theme->getStyleSheet().addKeyframes( parser.getStyleSheet().getKeyframes() );
+			}
+		}
+	}
+
+	mUISceneNode->setStyleSheet( theme->getStyleSheet() );
+	mUISceneNode
+		->getUIThemeManager()
+		//->setDefaultEffectsEnabled( true )
+		->setDefaultTheme( theme )
+		->setDefaultFont( mFont )
+		->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) )
+		->add( theme );
+
+	mUISceneNode->getRoot()->addClass( "appbackground" );
+
+	if ( mTheme )
+		mUISceneNode->getUIThemeManager()->remove( mTheme );
+
+	mTheme = theme;
+
+	mUISceneNode->reloadStyle( true, true );
 }
 
 void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
@@ -2807,19 +2880,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		SceneManager::instance()->add( mUISceneNode );
 
-		UITheme* theme =
-			UITheme::load( "uitheme", "uitheme", "", mFont, mResPath + "ui/breeze.css" );
-		theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
-		mUISceneNode->setStyleSheet( theme->getStyleSheet() );
-		mUISceneNode
-			->getUIThemeManager()
-			//->setDefaultEffectsEnabled( true )
-			->setDefaultTheme( theme )
-			->setDefaultFont( mFont )
-			->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) )
-			->add( theme );
-
-		mUISceneNode->getRoot()->addClass( "appbackground" );
+		setTheme( getThemePath() );
 
 		if ( !css.empty() && FileSystem::fileExists( css ) ) {
 			CSS::StyleSheetParser parser;
