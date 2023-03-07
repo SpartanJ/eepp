@@ -167,6 +167,7 @@ StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name )
 
 void StyleSheetStyle::setVariable( const StyleSheetVariable& variable ) {
 	mVariables[variable.getNameHash()] = variable;
+	mVariables[variable.getNameHash()].setSpecificity( mSelector.getSpecificity() );
 }
 
 bool StyleSheetStyle::isMediaValid() const {
