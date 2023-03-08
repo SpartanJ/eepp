@@ -556,6 +556,7 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 			} else {
 				remove( 0, { startOfLine( { curLine, 0 } ), { endOfLine( { curLine, 0 } ) } } );
 			}
+			text = mLines[i].toUtf8();
 		}
 		if ( i == lastLine ) {
 			if ( !text.empty() && text[text.size() - 1] == '\n' ) {

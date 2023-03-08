@@ -238,18 +238,12 @@ Color Color::blend( Color src, Color dst ) {
 Color::Color() : tColor<Uint8>() {}
 
 Color::Color( const Color& c ) {
-	r = c.r;
-	g = c.g;
-	b = c.b;
-	a = c.a;
+	Value = c.Value;
 }
 
 Color::Color( const std::string& colorString ) {
 	Color c( fromString( colorString ) );
-	r = c.r;
-	g = c.g;
-	b = c.b;
-	a = c.a;
+	Value = c.Value;
 }
 
 Color::Color( Uint8 r, Uint8 g, Uint8 b, Uint8 a ) : tColor<Uint8>( r, g, b, a ) {}
@@ -265,10 +259,7 @@ Color::Color( const tColor<Uint8>& Col ) : tColor<Uint8>( Col.r, Col.g, Col.b, C
 Color::Color( const Uint32& Col ) : tColor<Uint8>( Col ) {}
 
 Color& Color::operator=( const Color& col ) {
-	r = col.r;
-	g = col.g;
-	b = col.b;
-	a = col.a;
+	Value = col.Value;
 	return *this;
 }
 
