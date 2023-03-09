@@ -61,6 +61,11 @@
       "file_patterns": ["%.zig"],
       "command": "zig fmt $FILENAME",
       "type": "inplace"
+    },
+    {
+      "language": "haskell",
+      "file_patterns": ["%.hs$"],
+      "command": "ornolu $FILENAME"
     }
   ]
 }

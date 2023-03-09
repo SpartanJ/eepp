@@ -3517,6 +3517,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "convert-lang-path",
 		"Convert any JSON language definition to CPP syntax definition (development helper)",
 		{ "convert-lang-path" }, "" );
+	args::ValueFlag<std::string> convertLangOutput(
+		parser, "convert-lang-output",
+		"Sets the directory output path. If not set it will be printed to stdout",
+		{ "convert-lang-output" }, "" );
 
 	std::vector<std::string> args;
 	try {
@@ -3547,7 +3551,20 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				for ( const auto& lang : adedLangs ) {
 					const auto& def =
 						SyntaxDefinitionManager::instance()->getByLanguageName( lang );
-					std::cout << SyntaxDefinitionManager::toCPP( def ) << "\n";
+					auto code = SyntaxDefinitionManager::toCPP( def );
+					if ( convertLangOutput && !convertLangOutput.Get().empty() &&
+						 FileSystem::isDirectory( convertLangOutput.Get() ) ) {
+						std::string output( convertLangOutput.Get() );
+						FileSystem::dirAddSlashAtEnd( output );
+						FileSystem::fileWrite( output + String::toLower( def.getLanguageName() ) +
+												   ".hpp",
+											   code.first );
+						FileSystem::fileWrite( output + String::toLower( def.getLanguageName() ) +
+												   ".cpp",
+											   code.second );
+					} else {
+						std::cout << code.first << code.second << "\n";
+					}
 				}
 			}
 		}

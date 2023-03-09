@@ -90,6 +90,7 @@ CODE_SRCS				:=  \
 	ui/*.cpp \
 	ui/css/*.cpp \
 	ui/doc/*.cpp \
+	ui/doc/languages/*.cpp \
 	ui/abstract/*.cpp \
 	ui/models/*.cpp \
 	ui/tools/*.cpp

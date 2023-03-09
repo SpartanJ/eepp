@@ -609,6 +609,7 @@ function build_eepp( build_name )
 			"src/eepp/ui/models/*.cpp",
 			"src/eepp/ui/css/*.cpp",
 			"src/eepp/ui/doc/*.cpp",
+			"src/eepp/ui/doc/languages/*.cpp",
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
 			"src/eepp/physics/constraints/*.cpp"

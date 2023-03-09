@@ -16,7 +16,7 @@ namespace EE { namespace UI { namespace Doc {
 class EE_API SyntaxDefinitionManager {
 	SINGLETON_DECLARE_HEADERS( SyntaxDefinitionManager )
   public:
-	static std::string toCPP( const SyntaxDefinition& def );
+	static std::pair<std::string, std::string> toCPP( const SyntaxDefinition& def );
 
 	SyntaxDefinition& add( SyntaxDefinition&& syntaxStyle );
 
@@ -69,7 +69,6 @@ class EE_API SyntaxDefinitionManager {
 	std::vector<SyntaxDefinition> mDefinitions;
 
 	std::optional<size_t> getLanguageIndex( const std::string& langName );
-
 };
 
 }}} // namespace EE::UI::Doc

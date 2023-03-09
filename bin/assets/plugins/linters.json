@@ -99,6 +99,13 @@
       "warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
       "command": "tl check $FILENAME",
       "expected_exitcodes": [0]
+    },
+    {
+      "language": "haskell",
+      "file_patterns": ["%.hs$"],
+      "warning_pattern": "$FILENAME:(%d+):(%d+):%s(%w*):%s([^\n]*)",
+      "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
+      "command": "hlint --color=never -j $FILENAME"
     }
   ]
 }
