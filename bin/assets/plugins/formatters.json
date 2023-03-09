@@ -65,7 +65,7 @@
     {
       "language": "haskell",
       "file_patterns": ["%.hs$"],
-      "command": "ornolu $FILENAME"
+      "command": "ormolu $FILENAME"
     }
   ]
 }
