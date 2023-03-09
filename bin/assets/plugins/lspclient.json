@@ -205,6 +205,14 @@
       "url": "https://github.com/elixir-lsp/elixir-ls",
       "command": "elixir-ls",
       "file_patterns": ["%.ex$"]
+    },
+    {
+      "language": "cmake",
+      "name": "cmake-language-server",
+      "url": "https://github.com/regen100/cmake-language-server",
+      "command": "cmake-language-server",
+      "file_patterns": ["%.cmake$", "CMakeLists.txt$"],
+      "rootIndicationFileNames": ["build"]
     }
   ]
 }
