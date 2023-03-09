@@ -198,6 +198,13 @@
       "command": "haskell-language-server-wrapper",
       "file_patterns": ["%.hs$"],
       "rootIndicationFileNames": ["%.cabal$", "stack.yaml", "cabal.project", "package.yaml", "hie.yaml"]
+    },
+    {
+      "language": "elixir",
+      "name": "elixir-ls",
+      "url": "https://github.com/elixir-lsp/elixir-ls",
+      "command": "elixir-ls",
+      "file_patterns": ["%.ex$"]
     }
   ]
 }
