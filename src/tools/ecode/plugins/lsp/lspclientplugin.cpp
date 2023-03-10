@@ -121,7 +121,7 @@ LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
+		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
 	}
 }
 
@@ -174,7 +174,7 @@ static LSPURIAndServer getServerURIFromTextDocumentURI( LSPClientServerManager& 
 	return { uri, manager.getOneLSPClientServer( uri ) };
 }
 
-static void sanitizeCommand( std::string cmd ) {
+static void sanitizeCommand( std::string& cmd ) {
 	String::replaceAll( cmd, "$NPROC", String::toString( Sys::getCPUCount() ) );
 }
 

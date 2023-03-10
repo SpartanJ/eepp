@@ -187,7 +187,7 @@ void LSPClientServerManager::applyWorkspaceEdit(
 }
 
 void LSPClientServerManager::run( const std::shared_ptr<TextDocument>& doc ) {
-	mThreadPool->run( [&, doc]() { tryRunServer( doc ); }, []() {} );
+	mThreadPool->run( [&, doc]() { tryRunServer( doc ); } );
 }
 
 size_t LSPClientServerManager::clientCount() const {

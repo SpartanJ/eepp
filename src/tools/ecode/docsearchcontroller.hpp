@@ -19,6 +19,10 @@ struct SearchState {
 		range = TextRange();
 		text = "";
 	}
+
+	TextSearchParams toTextSearchParams() {
+		return { text, range, caseSensitive, wholeWord, escapeSequences, type };
+	}
 };
 
 class App;

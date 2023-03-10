@@ -53,7 +53,7 @@
       "language": "c",
       "name": "clangd",
       "url": "https://clang.llvm.org/extra/clangd/",
-      "command": "clangd -log=error --background-index --header-insertion=never --limit-results=0 --limit-references=0 --clang-tidy=0 --use-dirty-headers --completion-style=bundled -j=$NPROC",
+      "command": "clangd -log=error --background-index --header-insertion=never --limit-results=0 --limit-references=0 --clang-tidy=0 --use-dirty-headers --completion-style=bundled -j $NPROC",
       "file_patterns": ["%.c$", "%.h$", "%.C$", "%.H$", "%.objc$"]
     },
     {

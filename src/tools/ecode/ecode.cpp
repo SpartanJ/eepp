@@ -1832,24 +1832,22 @@ void App::loadFileFromPath(
 			mImageLayout->setEnabled( true )->setVisible( true );
 			loaderView->setVisible( true );
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-			mThreadPool->run(
-				[&, imageView, loaderView, path]() {
+			mThreadPool->run( [&, imageView, loaderView, path]() {
 #endif
-					Texture* image = TextureFactory::instance()->getTexture(
-						TextureFactory::instance()->loadFromFile( path ) );
-					if ( mImageLayout->isVisible() ) {
-						imageView->runOnMainThread( [imageView, loaderView, image]() {
-							imageView->setDrawable( image, true );
-							loaderView->setVisible( false );
-						} );
-					} else {
-						TextureFactory::instance()->remove( image );
-						imageView->setDrawable( nullptr );
+				Texture* image = TextureFactory::instance()->getTexture(
+					TextureFactory::instance()->loadFromFile( path ) );
+				if ( mImageLayout->isVisible() ) {
+					imageView->runOnMainThread( [imageView, loaderView, image]() {
+						imageView->setDrawable( image, true );
 						loaderView->setVisible( false );
-					}
+					} );
+				} else {
+					TextureFactory::instance()->remove( image );
+					imageView->setDrawable( nullptr );
+					loaderView->setVisible( false );
+				}
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-				},
-				[]() {} );
+			} );
 #endif
 		}
 	} else {
@@ -2841,6 +2839,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			eemax( mWindow->getScale(), mConfig.windowState.pixelDensity ) );
 
 		mUISceneNode = UISceneNode::New();
+		mUISceneNode->setThreadPool( mThreadPool );
 		mUIColorScheme = mConfig.ui.colorScheme;
 		if ( !colorScheme.empty() ) {
 			mUIColorScheme =

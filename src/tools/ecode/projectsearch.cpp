@@ -169,7 +169,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 					findData->res.push_back( { file, fileRes } );
 				}
 			},
-			[result, findData] {
+			[result, findData]( const auto& ) {
 				int count;
 				{
 					Lock l( findData->countMutex );

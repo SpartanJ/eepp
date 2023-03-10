@@ -37,7 +37,7 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 	} else {
 #if FORMATTER_THREADED
-		mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
+		mPool->run( [&, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif

@@ -402,6 +402,18 @@ void UISceneNode::reloadStyle( bool disableAnimations, bool forceReApplyProperti
 	}
 }
 
+bool UISceneNode::hasThreadPool() const {
+	return mThreadPool != nullptr;
+}
+
+std::shared_ptr<ThreadPool> UISceneNode::getThreadPool() {
+	return mThreadPool;
+}
+
+void UISceneNode::setThreadPool( const std::shared_ptr<ThreadPool>& threadPool ) {
+	mThreadPool = threadPool;
+}
+
 UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* parent,
 										   const Uint32& marker ) {
 	if ( FileSystem::fileExists( layoutPath ) ) {

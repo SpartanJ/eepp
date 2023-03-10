@@ -142,12 +142,10 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 			std::string oldLang = event->getOldLang();
 			std::string newLang = event->getNewLang();
 #if AUTO_COMPLETE_THREADED
-			mPool->run(
-				[&, oldLang, newLang] {
-					updateLangCache( oldLang );
-					updateLangCache( newLang );
-				},
-				[] {} );
+			mPool->run( [&, oldLang, newLang] {
+				updateLangCache( oldLang );
+				updateLangCache( newLang );
+			} );
 #else
 			updateLangCache( oldLang );
 			updateLangCache( newLang );
@@ -589,7 +587,7 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 						continue;
 				}
 #if AUTO_COMPLETE_THREADED
-				mPool->run( [&, doc] { updateDocCache( doc ); }, [] {} );
+				mPool->run( [&, doc] { updateDocCache( doc ); } );
 #else
 				updateDocCache( doc );
 #endif
@@ -980,8 +978,7 @@ void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEdi
 	{
 #if AUTO_COMPLETE_THREADED
 		mPool->run(
-			[this, symbol, symbols, editor] { runUpdateSuggestions( symbol, symbols, editor ); },
-			[] {} );
+			[this, symbol, symbols, editor] { runUpdateSuggestions( symbol, symbols, editor ); } );
 #else
 		runUpdateSuggestions( symbol, symbols, editor );
 #endif

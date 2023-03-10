@@ -2,6 +2,7 @@
 #define EE_UISCENENODE_HPP
 
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
@@ -158,6 +159,12 @@ class EE_API UISceneNode : public SceneNode {
 
 	void reloadStyle( bool disableAnimations = false, bool forceReApplyProperties = false );
 
+	bool hasThreadPool() const;
+
+	std::shared_ptr<ThreadPool> getThreadPool();
+
+	void setThreadPool( const std::shared_ptr<ThreadPool>& threadPool );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -184,6 +191,7 @@ class EE_API UISceneNode : public SceneNode {
 	Uint32 mMaxInvalidationDepth{ 2 };
 	Node* mCurParent{ nullptr };
 	Uint32 mCurOnSizeChangeListener{ 0 };
+	std::shared_ptr<ThreadPool> mThreadPool;
 
 	virtual void resizeNode( EE::Window::Window* win );
 

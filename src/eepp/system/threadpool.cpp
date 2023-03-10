@@ -60,7 +60,7 @@ void ThreadPool::threadFunc() {
 		work->func();
 
 		if ( work->callback != nullptr ) {
-			work->callback();
+			work->callback( work->id );
 		}
 	}
 }
@@ -73,18 +73,58 @@ void ThreadPool::setTerminateOnClose( bool terminateOnClose ) {
 	mTerminateOnClose = terminateOnClose;
 }
 
-void ThreadPool::run( const std::function<void()>& func,
-					  const std::function<void()>& doneCallback ) {
+bool ThreadPool::existsIdInQueue( const Uint64& id ) {
+	std::unique_lock<std::mutex> lock( mMutex );
+	return std::any_of( mWork.begin(), mWork.end(),
+						[id]( const std::unique_ptr<Work>& work ) { return work->id == id; } );
+}
+
+bool ThreadPool::existsTagInQueue( const Uint64& tag ) {
+	std::unique_lock<std::mutex> lock( mMutex );
+	return std::any_of( mWork.begin(), mWork.end(),
+						[tag]( const std::unique_ptr<Work>& work ) { return work->tag == tag; } );
+}
+
+bool ThreadPool::removeId( const Uint64& id ) {
+	std::unique_lock<std::mutex> lock( mMutex );
+	for ( auto it = mWork.begin(); it != mWork.end(); ++it ) {
+		if ( it->get()->id == id ) {
+			mWork.erase( it );
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ThreadPool::removeWithTag( const Uint64& tag ) {
+	std::vector<Uint64> ids;
+	{
+		std::unique_lock<std::mutex> lock( mMutex );
+		for ( const auto& work : mWork )
+			if ( work->tag == tag )
+				ids.emplace_back( work->id );
+	}
+	for ( const auto& id : ids )
+		removeId( id );
+	return !ids.empty();
+}
+
+Uint64 ThreadPool::run( const std::function<void()>& func,
+						const std::function<void( const Uint64& )>& doneCallback,
+						const Uint64& tag ) {
+	Uint64 id = ++mLastWorkId;
 	{
 		std::unique_lock<std::mutex> lock( mMutex );
 
 		if ( mShuttingDown )
-			return;
+			return id;
 
-		mWork.emplace_back( new Work{ func, doneCallback } );
+		mWork.emplace_back( new Work{ id, func, doneCallback, tag } );
 	}
 
 	mWorkAvailable.notify_one();
+
+	return id;
 }
 
 Uint32 ThreadPool::numThreads() const {

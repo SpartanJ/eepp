@@ -653,6 +653,30 @@ class EE_API TextDocument {
 							TextRange restrictRange = TextRange() );
 };
 
+struct TextSearchParams {
+	String text;
+	TextRange range = TextRange();
+	bool caseSensitive{ false };
+	bool wholeWord{ false };
+	bool escapeSequences{ false };
+	TextDocument::FindReplaceType type{ TextDocument::FindReplaceType::Normal };
+
+	bool operator==( const TextSearchParams& other ) {
+		return text == other.text && range == other.range && caseSensitive == other.caseSensitive &&
+			   wholeWord == other.wholeWord && escapeSequences == other.escapeSequences &&
+			   type == other.type;
+	}
+
+	bool operator!=( const TextSearchParams& other ) { return !( *this == other ); }
+
+	bool isEmpty() { return text.empty(); }
+
+	void reset() {
+		range = TextRange();
+		text = "";
+	}
+};
+
 }}} // namespace EE::UI::Doc
 
 #endif

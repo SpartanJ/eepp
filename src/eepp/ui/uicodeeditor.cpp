@@ -173,6 +173,10 @@ UICodeEditor::~UICodeEditor() {
 	for ( auto& plugin : mPlugins )
 		plugin->onUnregister( this );
 
+	// TODO: Use a condition variable to wait the thread pool to finish
+	while ( mHighlightWordProcessing )
+		Sys::sleep( Milliseconds( 1 ) );
+
 	if ( mDoc.use_count() == 1 ) {
 		DocEvent event( this, mDoc.get(), Event::OnDocumentClosed );
 		sendEvent( &event );
@@ -285,9 +289,8 @@ void UICodeEditor::draw() {
 		}
 	}
 
-	if ( !mHighlightWord.empty() ) {
-		drawWordMatch( mHighlightWord, lineRange, startScroll, lineHeight );
-	}
+	if ( !mHighlightWord.isEmpty() )
+		drawWordRanges( mHighlightWordCache, lineRange, startScroll, lineHeight, true );
 
 	if ( mShowIndentationGuides ) {
 		drawIndentationGuides( lineRange, startScroll, lineHeight );
@@ -1562,6 +1565,9 @@ void UICodeEditor::onDocumentLineChanged( const Int64& lineNumber ) {
 	mDoc->getHighlighter()->invalidate( lineNumber );
 	if ( mFont && !mFont->isMonospace() )
 		updateLineCache( lineNumber );
+
+	if ( !mHighlightWord.isEmpty() )
+		updateHighlightWordCache();
 }
 
 void UICodeEditor::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
@@ -2470,13 +2476,33 @@ void UICodeEditor::setShowWhitespaces( const bool& showWhitespaces ) {
 	}
 }
 
-const String& UICodeEditor::getHighlightWord() const {
+const TextSearchParams& UICodeEditor::getHighlightWord() const {
 	return mHighlightWord;
 }
 
-void UICodeEditor::setHighlightWord( const String& highlightWord ) {
+void UICodeEditor::updateHighlightWordCache() {
+	if ( getUISceneNode()->hasThreadPool() ) {
+		Uint64 tag = reinterpret_cast<Uint64>( this );
+		getUISceneNode()->getThreadPool()->removeWithTag( tag );
+		getUISceneNode()->getThreadPool()->run(
+			[this]() {
+				mHighlightWordProcessing = true;
+				mHighlightWordCache = mDoc->findAll(
+					mHighlightWord.text, mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
+					mHighlightWord.type, mHighlightWord.range );
+			},
+			[this]( const auto& ) { mHighlightWordProcessing = false; }, tag );
+	} else {
+		mHighlightWordCache =
+			mDoc->findAll( mHighlightWord.text, mHighlightWord.caseSensitive,
+						   mHighlightWord.wholeWord, mHighlightWord.type, mHighlightWord.range );
+	}
+}
+
+void UICodeEditor::setHighlightWord( const TextSearchParams& highlightWord ) {
 	if ( mHighlightWord != highlightWord ) {
 		mHighlightWord = highlightWord;
+		updateHighlightWordCache();
 		invalidateDraw();
 	}
 }
@@ -2570,6 +2596,43 @@ void UICodeEditor::drawSelectionMatch( const std::pair<int, int>& lineRange,
 		if ( !text.empty() )
 			drawWordMatch( text, lineRange, startScroll, lineHeight, true );
 	}
+}
+
+void UICodeEditor::drawWordRanges( const TextRanges& ranges, const std::pair<int, int>& lineRange,
+								   const Vector2f& startScroll, const Float& lineHeight,
+								   bool ignoreSelectionMatch ) {
+	if ( ranges.empty() )
+		return;
+	Primitives primitives;
+	primitives.setForceDraw( false );
+	primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
+	TextRange selection = mDoc->getSelection( true );
+
+	for ( const auto& range : ranges ) {
+		if ( !( range.start().line() >= lineRange.first &&
+				range.end().line() <= lineRange.second ) )
+			continue;
+
+		if ( ignoreSelectionMatch && selection.inSameLine() &&
+			 selection.start().line() == range.start().line() &&
+			 selection.start().column() == range.start().column() ) {
+			continue;
+		}
+
+		if ( !range.inSameLine() )
+			continue;
+
+		Rectf selRect;
+		Int64 startCol = range.start().column();
+		Int64 endCol = range.end().column();
+		selRect.Top = startScroll.y + range.start().line() * lineHeight;
+		selRect.Bottom = selRect.Top + lineHeight;
+		selRect.Left = startScroll.x + getXOffsetCol( { range.start().line(), startCol } );
+		selRect.Right = startScroll.x + getXOffsetCol( { range.start().line(), endCol } );
+		primitives.drawRectangle( selRect );
+	}
+
+	primitives.setForceDraw( true );
 }
 
 void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>& lineRange,
@@ -3267,6 +3330,23 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		primitives.drawRectangle( selRect );
 	};
 
+	auto drawWordRanges = [&]( const TextRanges& ranges ) {
+		primitives.setColor( Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
+
+		for ( const auto& range : ranges ) {
+			if ( !( range.start().line() >= minimapStartLine && range.end().line() <= endidx ) ||
+				 !range.inSameLine() )
+				continue;
+
+			Rectf selRect;
+			selRect.Top = rect.Top + ( range.start().line() - minimapStartLine ) * lineSpacing;
+			selRect.Bottom = selRect.Top + charHeight;
+			selRect.Left = minimapStart + getXOffsetCol( range.start() ) * widthScale;
+			selRect.Right = minimapStart + getXOffsetCol( range.end() ) * widthScale;
+			primitives.drawRectangle( selRect );
+		}
+	};
+
 	String selectionString;
 
 	if ( mDoc->hasSelection() &&
@@ -3285,16 +3365,16 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		}
 	}
 
+	if ( !mHighlightWord.isEmpty() )
+		drawWordRanges( mHighlightWordCache );
+
 	if ( mMinimapConfig.syntaxHighlight ) {
 		for ( int index = minimapStartLine; index <= endidx; index++ ) {
 			batchSyntaxType = "normal";
 			batchStart = rect.Left + gutterWidth;
 			batchWidth = 0;
 
-			if ( !mHighlightWord.empty() )
-				drawWordMatch( mHighlightWord, index );
-
-			if ( !selectionString.empty() )
+			if ( mHighlightWord.isEmpty() && !selectionString.empty() )
 				drawWordMatch( selectionString, index );
 
 			for ( auto* plugin : mPlugins )
@@ -3363,9 +3443,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			batchStart = rect.Left + gutterWidth;
 			batchWidth = 0;
 
-			if ( !mHighlightWord.empty() )
-				drawWordMatch( mHighlightWord, index );
-			if ( !selectionString.empty() )
+			if ( mHighlightWord.isEmpty() && !selectionString.empty() )
 				drawWordMatch( selectionString, index );
 
 			const String& text( mDoc->line( index ).getText() );

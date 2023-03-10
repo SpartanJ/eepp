@@ -1,6 +1,7 @@
 #ifndef EE_SYSTEM_THREADPOOL_HPP
 #define EE_SYSTEM_THREADPOOL_HPP
 
+#include <atomic>
 #include <condition_variable>
 #include <deque>
 #include <eepp/core/noncopyable.hpp>
@@ -27,8 +28,10 @@ class EE_API ThreadPool : NonCopyable {
 
 	virtual ~ThreadPool();
 
-	void run(
-		const std::function<void()>& func, const std::function<void()>& doneCallback = []() {} );
+	Uint64 run(
+		const std::function<void()>& func,
+		const std::function<void( const Uint64& )>& doneCallback = []( const Uint64& ) {},
+		const Uint64& tag = 0 );
 
 	Uint32 numThreads() const;
 
@@ -36,16 +39,27 @@ class EE_API ThreadPool : NonCopyable {
 
 	void setTerminateOnClose( bool terminateOnClose );
 
+	bool existsIdInQueue( const Uint64& id );
+
+	bool existsTagInQueue( const Uint64& tag );
+
+	bool removeId( const Uint64& id );
+
+	bool removeWithTag( const Uint64& tag );
+
   private:
 	struct Work {
+		Uint64 id{ 0 };
 		const std::function<void()> func;
-		const std::function<void()> callback;
+		const std::function<void( const Uint64& )> callback;
+		Uint64 tag{ 0 };
 	};
 
 	void threadFunc();
 
 	std::vector<std::unique_ptr<Thread>> mThreads;
 	std::deque<std::unique_ptr<Work>> mWork;
+	std::atomic<Uint64> mLastWorkId;
 	bool mShuttingDown = false;
 	bool mTerminateOnClose = false;
 	mutable std::mutex mMutex;

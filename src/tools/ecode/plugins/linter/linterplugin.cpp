@@ -36,7 +36,7 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 	} else {
 #if LINTER_THREADED
-		mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
+		mPool->run( [&, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
@@ -440,7 +440,7 @@ void LinterPlugin::update( UICodeEditor* editor ) {
 	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
 #if LINTER_THREADED
-		mPool->run( [&, doc] { lintDoc( doc ); }, [] {} );
+		mPool->run( [&, doc] { lintDoc( doc ); } );
 #else
 		lintDoc( doc );
 #endif

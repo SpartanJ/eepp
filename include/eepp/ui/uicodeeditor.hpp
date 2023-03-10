@@ -426,9 +426,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setShowWhitespaces( const bool& showWhitespaces );
 
-	const String& getHighlightWord() const;
+	const TextSearchParams& getHighlightWord() const;
 
-	void setHighlightWord( const String& highlightWord );
+	void setHighlightWord( const TextSearchParams& highlightWord );
 
 	const TextRange& getHighlightTextRange() const;
 
@@ -628,6 +628,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mAutoCloseXMLTags{ false };
 	bool mFindReplaceEnabled{ true };
 	bool mShowIndentationGuides{ false };
+	std::atomic<bool> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
 	Uint32 mTabWidth;
@@ -666,7 +667,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float mLongestLineWidth{ 0 };
 	Time mFindLongestLineWidthUpdateFrequency;
 	Clock mLongestLineWidthLastUpdate;
-	String mHighlightWord;
+	TextSearchParams mHighlightWord;
+	TextRanges mHighlightWordCache;
 	TextRange mHighlightTextRange;
 	Color mPreviewColor;
 	TextRange mPreviewColorRange;
@@ -859,6 +861,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool createContextMenu();
 
 	bool stopMinimapDragging( const Vector2f& mousePos );
+
+	void drawWordRanges( const TextRanges& ranges, const std::pair<int, int>& lineRange,
+						 const Vector2f& startScroll, const Float& lineHeight,
+						 bool ignoreSelectionMatch );
+
+	void updateHighlightWordCache();
 };
 
 }} // namespace EE::UI

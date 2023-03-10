@@ -391,21 +391,19 @@ bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<T
 		mLoadingFilePath = path;
 		mLoadingFileURI = URI( "file://" + mLoadingFilePath );
 	}
-	pool->run(
-		[this, path, onLoaded] {
-			auto loaded = loadFromFile( path );
-			if ( loaded != LoadStatus::Interrupted && onLoaded ) {
-				onLoaded( this, loaded == LoadStatus::Loaded );
-			}
-			{
-				Lock l( mLoadingFilePathMutex );
-				mLoadingFilePath.clear();
-				mLoadingFileURI = URI();
-			}
-			mLoadingAsync = false;
-			notifyDocumentLoaded();
-		},
-		[] {} );
+	pool->run( [this, path, onLoaded] {
+		auto loaded = loadFromFile( path );
+		if ( loaded != LoadStatus::Interrupted && onLoaded ) {
+			onLoaded( this, loaded == LoadStatus::Loaded );
+		}
+		{
+			Lock l( mLoadingFilePathMutex );
+			mLoadingFilePath.clear();
+			mLoadingFileURI = URI();
+		}
+		mLoadingAsync = false;
+		notifyDocumentLoaded();
+	} );
 	return true;
 }
 
@@ -2032,7 +2030,7 @@ TextRange TextDocument::findText( String text, TextPosition from, const bool& ca
 			return TextRange();
 	}
 
-	if ( !caseSensitive )
+	if ( !caseSensitive && type != FindReplaceType::LuaPattern )
 		text.toLower();
 
 	for ( Int64 i = from.line(); i <= to.line(); i++ ) {
@@ -2081,7 +2079,7 @@ TextRange TextDocument::findTextLast( String text, TextPosition from, const bool
 			return TextRange();
 	}
 
-	if ( !caseSensitive )
+	if ( !caseSensitive && type != FindReplaceType::LuaPattern )
 		text.toLower();
 
 	for ( Int64 i = from.line(); i >= to.line(); i-- ) {
@@ -2279,6 +2277,8 @@ TextRanges TextDocument::findAll( const String& text, const bool& caseSensitive,
 	do {
 		found = find( text, from, caseSensitive, wholeWord, type, restrictRange );
 		if ( found.isValid() ) {
+			if ( !all.empty() && all.back() == found )
+				break;
 			from = found.end();
 			all.push_back( found );
 		}

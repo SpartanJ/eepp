@@ -203,7 +203,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mFindInput->addEventListener( Event::OnTextChanged, [&, editor]( const Event* ) {
 		mSearchState.text = mFindInput->getText();
 		if ( editor )
-			editor->setHighlightWord( mSearchState.text );
+			editor->setHighlightWord( mSearchState );
 		if ( !mSearchState.text.empty() ) {
 			mDoc->setSelection( { 0, 0 } );
 			if ( !findNextText( mSearchState ) ) {
@@ -374,7 +374,7 @@ void UIDocFindReplace::show( bool expanded ) {
 
 	if ( editor ) {
 		editor->setHighlightTextRange( mSearchState.range );
-		editor->setHighlightWord( mSearchState.text );
+		editor->setHighlightWord( mSearchState );
 		mDoc->setActiveClient( editor );
 	}
 }
@@ -391,14 +391,14 @@ void UIDocFindReplace::hide() {
 	mSearchState.range = TextRange();
 	mSearchState.text = "";
 	if ( editor ) {
-		editor->setHighlightWord( "" );
+		editor->setHighlightWord( { "" } );
 		editor->setHighlightTextRange( TextRange() );
 	}
 
 	getParent()->setFocus();
 }
 
-bool UIDocFindReplace::findPrevText( SearchState& search ) {
+bool UIDocFindReplace::findPrevText( TextSearchParams& search ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 
@@ -433,7 +433,7 @@ bool UIDocFindReplace::findPrevText( SearchState& search ) {
 	return false;
 }
 
-bool UIDocFindReplace::findNextText( SearchState& search ) {
+bool UIDocFindReplace::findNextText( TextSearchParams& search ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 
@@ -469,7 +469,7 @@ bool UIDocFindReplace::findNextText( SearchState& search ) {
 	return false;
 }
 
-int UIDocFindReplace::replaceAll( SearchState& search, const String& replace ) {
+int UIDocFindReplace::replaceAll( TextSearchParams& search, const String& replace ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( search.text.empty() )
@@ -495,7 +495,7 @@ Uint32 UIDocFindReplace::onKeyDown( const KeyEvent& event ) {
 	return WidgetCommandExecuter::onKeyDown( event );
 }
 
-bool UIDocFindReplace::findAndReplace( SearchState& search, const String& replace ) {
+bool UIDocFindReplace::findAndReplace( TextSearchParams& search, const String& replace ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( search.text.empty() )

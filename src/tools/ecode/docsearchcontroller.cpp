@@ -80,7 +80,7 @@ void DocSearchController::initSearchBar(
 	mFindInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
 		if ( mSearchState.editor && mEditorSplitter->editorExists( mSearchState.editor ) ) {
 			mSearchState.text = mFindInput->getText();
-			mSearchState.editor->setHighlightWord( mSearchState.text );
+			mSearchState.editor->setHighlightWord( mSearchState.toTextSearchParams() );
 			if ( !mSearchState.text.empty() ) {
 				mSearchState.editor->getDocument().setSelection( { 0, 0 } );
 				if ( !findNextText( mSearchState ) ) {
@@ -108,7 +108,7 @@ void DocSearchController::initSearchBar(
 			mEditorSplitter->getCurWidget()->setFocus();
 		if ( mSearchState.editor ) {
 			if ( mEditorSplitter->editorExists( mSearchState.editor ) ) {
-				mSearchState.editor->setHighlightWord( "" );
+				mSearchState.editor->setHighlightWord( { "" } );
 				mSearchState.editor->setHighlightTextRange( TextRange() );
 			}
 		}
@@ -187,7 +187,7 @@ void DocSearchController::showFindView() {
 	}
 	mSearchState.text = mFindInput->getText();
 	editor->setHighlightTextRange( mSearchState.range );
-	editor->setHighlightWord( mSearchState.text );
+	editor->setHighlightWord( mSearchState.toTextSearchParams() );
 	editor->getDocument().setActiveClient( editor );
 }
 
@@ -350,8 +350,8 @@ void DocSearchController::hideSearchBar() {
 
 void DocSearchController::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	if ( mSearchState.editor && mSearchState.editor != editor ) {
-		String word = mSearchState.editor->getHighlightWord();
-		mSearchState.editor->setHighlightWord( "" );
+		auto word = mSearchState.editor->getHighlightWord();
+		mSearchState.editor->setHighlightWord( { "" } );
 		mSearchState.editor->setHighlightTextRange( TextRange() );
 		mSearchState.text = "";
 		mSearchState.range = TextRange();
