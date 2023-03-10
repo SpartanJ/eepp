@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/system/threadpool.hpp>
 
 namespace EE { namespace System {

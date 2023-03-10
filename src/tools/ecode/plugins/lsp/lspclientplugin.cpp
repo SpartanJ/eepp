@@ -802,9 +802,9 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			lsp.language = obj["language"];
 			lsp.command = parseCommand( obj["command"] );
 			lsp.name = obj["name"];
+			lsp.url = obj.value( "url", "" );
 		}
 
-		lsp.url = obj.value( "url", "" );
 		lsp.commandParameters = obj.value( "command_parameters", lsp.commandParameters );
 		if ( obj.contains( "initializationOptions" ) )
 			lsp.initializationOptions = obj["initializationOptions"];

@@ -72,6 +72,7 @@ class DocSearchController {
 
 	void selectAll( SearchState& search );
 
+	void refreshHighlight();
   protected:
 	UICodeEditorSplitter* mEditorSplitter{ nullptr };
 	UITextInput* mFindInput{ nullptr };

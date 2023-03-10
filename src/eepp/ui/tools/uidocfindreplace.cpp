@@ -200,22 +200,9 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mFindInput->setEscapePastedText( true );
 	UICodeEditor* editor =
 		getParent()->isType( UI_TYPE_CODEEDITOR ) ? getParent()->asType<UICodeEditor>() : nullptr;
-	mFindInput->addEventListener( Event::OnTextChanged, [&, editor]( const Event* ) {
-		mSearchState.text = mFindInput->getText();
-		if ( editor )
-			editor->setHighlightWord( mSearchState );
-		if ( !mSearchState.text.empty() ) {
-			mDoc->setSelection( { 0, 0 } );
-			if ( !findNextText( mSearchState ) ) {
-				mFindInput->addClass( "error" );
-			} else {
-				mFindInput->removeClass( "error" );
-			}
-		} else {
-			mFindInput->removeClass( "error" );
-			mDoc->setSelection( mDoc->getSelection().start() );
-		}
-	} );
+
+	mFindInput->addEventListener( Event::OnTextChanged,
+								  [&, editor]( const Event* ) { refreshHighlight( editor ); } );
 	mFindInput->addEventListener( Event::OnTextPasted, [&]( const Event* ) {
 		if ( mFindInput->getUISceneNode()->getWindow()->getClipboard()->getText().find( '\n' ) !=
 			 String::InvalidPos ) {
@@ -235,14 +222,22 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	setCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
 	setCommand( "replace-selection",
 				[this] { mDoc->replaceSelection( mReplaceInput->getText() ); } );
-	setCommand( "change-case",
-				[&] { mCaseSensitive->setSelected( !mCaseSensitive->isSelected() ); } );
-	setCommand( "change-whole-word",
-				[&] { mWholeWord->setSelected( !mWholeWord->isSelected() ); } );
-	setCommand( "change-escape-sequence",
-				[&] { mEscapeSequences->setSelected( !mEscapeSequences->isSelected() ); } );
-	setCommand( "toggle-lua-pattern",
-				[&] { mLuaPattern->setSelected( !mLuaPattern->isSelected() ); } );
+	setCommand( "change-case", [this, editor] {
+		mCaseSensitive->setSelected( !mCaseSensitive->isSelected() );
+		refreshHighlight( editor );
+	} );
+	setCommand( "change-whole-word", [this, editor] {
+		mWholeWord->setSelected( !mWholeWord->isSelected() );
+		refreshHighlight( editor );
+	} );
+	setCommand( "change-escape-sequence", [this, editor] {
+		mEscapeSequences->setSelected( !mEscapeSequences->isSelected() );
+		refreshHighlight( editor );
+	} );
+	setCommand( "toggle-lua-pattern", [this, editor] {
+		mLuaPattern->setSelected( !mLuaPattern->isSelected() );
+		refreshHighlight( editor );
+	} );
 
 	mCaseSensitive->setTooltipText( mCaseSensitive->getTooltipText() + " (" +
 									getKeyBindings().getCommandKeybindString( "change-case" ) +
@@ -315,6 +310,11 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 		} );
 	mPatternBind = UIDataBind<TextDocument::FindReplaceType>::New( &mSearchState.type, mLuaPattern,
 																   luaPatternConverter );
+
+	auto valueChangeCb = [this, editor]( const auto& ) { refreshHighlight( editor ); };
+	mPatternBind->onValueChangeCb = valueChangeCb;
+	for ( const auto& db : mDataBinds )
+		db->onValueChangeCb = valueChangeCb;
 
 	setVisible( false );
 
@@ -517,5 +517,22 @@ bool UIDocFindReplace::findAndReplace( TextSearchParams& search, const String& r
 		return findNextText( search );
 	}
 }
+
+void UIDocFindReplace::refreshHighlight( UICodeEditor* editor ) {
+	mSearchState.text = mFindInput->getText();
+	if ( editor )
+		editor->setHighlightWord( mSearchState );
+	if ( !mSearchState.text.empty() ) {
+		mDoc->setSelection( { 0, 0 } );
+		if ( !findNextText( mSearchState ) ) {
+			mFindInput->addClass( "error" );
+		} else {
+			mFindInput->removeClass( "error" );
+		}
+	} else {
+		mFindInput->removeClass( "error" );
+		mDoc->setSelection( mDoc->getSelection().start() );
+	}
+};
 
 }}} // namespace EE::UI::Tools

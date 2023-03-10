@@ -2015,8 +2015,8 @@ static std::pair<size_t, size_t> findLastType( const String& str, const String& 
 	}
 }
 
-TextRange TextDocument::findText( String text, TextPosition from, const bool& caseSensitive,
-								  const bool& wholeWord, const FindReplaceType& type,
+TextRange TextDocument::findText( String text, TextPosition from, bool caseSensitive,
+								  bool wholeWord, const FindReplaceType& type,
 								  TextRange restrictRange ) {
 	if ( text.empty() )
 		return TextRange();
@@ -2030,7 +2030,11 @@ TextRange TextDocument::findText( String text, TextPosition from, const bool& ca
 			return TextRange();
 	}
 
-	if ( !caseSensitive && type != FindReplaceType::LuaPattern )
+	if ( type == FindReplaceType::LuaPattern && caseSensitive == false )
+		caseSensitive =
+			true; // Ignore case insensitive request since this is managed at pattern level
+
+	if ( !caseSensitive )
 		text.toLower();
 
 	for ( Int64 i = from.line(); i <= to.line(); i++ ) {
@@ -2064,8 +2068,8 @@ TextRange TextDocument::findText( String text, TextPosition from, const bool& ca
 	return TextRange();
 }
 
-TextRange TextDocument::findTextLast( String text, TextPosition from, const bool& caseSensitive,
-									  const bool& wholeWord, const FindReplaceType& type,
+TextRange TextDocument::findTextLast( String text, TextPosition from, bool caseSensitive,
+									  bool wholeWord, const FindReplaceType& type,
 									  TextRange restrictRange ) {
 	if ( text.empty() )
 		return TextRange();
@@ -2079,7 +2083,11 @@ TextRange TextDocument::findTextLast( String text, TextPosition from, const bool
 			return TextRange();
 	}
 
-	if ( !caseSensitive && type != FindReplaceType::LuaPattern )
+	if ( type == FindReplaceType::LuaPattern && caseSensitive == false )
+		caseSensitive =
+			true; // Ignore case insensitive request since this is managed at pattern level
+
+	if ( !caseSensitive )
 		text.toLower();
 
 	for ( Int64 i = from.line(); i >= to.line(); i-- ) {
@@ -2115,8 +2123,8 @@ TextRange TextDocument::findTextLast( String text, TextPosition from, const bool
 	return TextRange();
 }
 
-TextRange TextDocument::find( const String& text, TextPosition from, const bool& caseSensitive,
-							  const bool& wholeWord, const FindReplaceType& type,
+TextRange TextDocument::find( const String& text, TextPosition from, bool caseSensitive,
+							  bool wholeWord, const FindReplaceType& type,
 							  TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
@@ -2193,8 +2201,8 @@ TextRange TextDocument::find( const String& text, TextPosition from, const bool&
 	return TextRange();
 }
 
-TextRange TextDocument::findLast( const String& text, TextPosition from, const bool& caseSensitive,
-								  const bool& wholeWord, const FindReplaceType& type,
+TextRange TextDocument::findLast( const String& text, TextPosition from, bool caseSensitive,
+								  bool wholeWord, const FindReplaceType& type,
 								  TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
@@ -2266,9 +2274,8 @@ TextRange TextDocument::findLast( const String& text, TextPosition from, const b
 	return TextRange();
 }
 
-TextRanges TextDocument::findAll( const String& text, const bool& caseSensitive,
-								  const bool& wholeWord, const FindReplaceType& type,
-								  TextRange restrictRange ) {
+TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool wholeWord,
+								  const FindReplaceType& type, TextRange restrictRange ) {
 	TextRanges all;
 	TextRange found;
 	TextPosition from = startOfDoc();
@@ -2283,6 +2290,8 @@ TextRanges TextDocument::findAll( const String& text, const bool& caseSensitive,
 			all.push_back( found );
 		}
 	} while ( found.isValid() );
+	if ( !all.empty() )
+		all.setSorted();
 	return all;
 }
 

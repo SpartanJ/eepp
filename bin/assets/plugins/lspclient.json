@@ -199,7 +199,7 @@
     {
       "language": "haskell",
       "name": "haskell-language-server",
-      "url": "https://github.com/haskell/haskell-language-server --lsp",
+      "url": "https://github.com/haskell/haskell-language-server",
       "command": "haskell-language-server-wrapper",
       "file_patterns": ["%.hs$"],
       "rootIndicationFileNames": ["%.cabal$", "stack.yaml", "cabal.project", "package.yaml", "hie.yaml"]

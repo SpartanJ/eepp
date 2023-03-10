@@ -69,6 +69,8 @@ class EE_API UIDocFindReplace : public UILinearLayout, public WidgetCommandExecu
 	int replaceAll( TextSearchParams& search, const String& replace );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	void refreshHighlight( UICodeEditor* editor );
 };
 
 }}} // namespace EE::UI::Tools

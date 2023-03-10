@@ -347,18 +347,16 @@ class EE_API TextDocument {
 
 	bool removeCommand( const std::string& command );
 
-	TextRange find( const String& text, TextPosition from = { 0, 0 },
-					const bool& caseSensitive = true, const bool& wholeWord = false,
-					const FindReplaceType& type = FindReplaceType::Normal,
+	TextRange find( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+					bool wholeWord = false, const FindReplaceType& type = FindReplaceType::Normal,
 					TextRange restrictRange = TextRange() );
 
-	TextRange findLast( const String& text, TextPosition from = { 0, 0 },
-						const bool& caseSensitive = true, const bool& wholeWord = false,
+	TextRange findLast( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+						bool wholeWord = false,
 						const FindReplaceType& type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange() );
 
-	TextRanges findAll( const String& text, const bool& caseSensitive = true,
-						const bool& wholeWord = false,
+	TextRanges findAll( const String& text, bool caseSensitive = true, bool wholeWord = false,
 						const FindReplaceType& type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange() );
 
@@ -642,13 +640,13 @@ class EE_API TextDocument {
 
 	LoadStatus loadFromStream( IOStream& file, std::string path, bool callReset );
 
-	TextRange findText( String text, TextPosition from = { 0, 0 }, const bool& caseSensitive = true,
-						const bool& wholeWord = false,
+	TextRange findText( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+						bool wholeWord = false,
 						const FindReplaceType& type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange() );
 
-	TextRange findTextLast( String text, TextPosition from = { 0, 0 },
-							const bool& caseSensitive = true, const bool& wholeWord = false,
+	TextRange findTextLast( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+							bool wholeWord = false,
 							const FindReplaceType& type = FindReplaceType::Normal,
 							TextRange restrictRange = TextRange() );
 };

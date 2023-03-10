@@ -6,6 +6,25 @@ namespace ecode {
 DocSearchController::DocSearchController( UICodeEditorSplitter* editorSplitter, App* app ) :
 	mEditorSplitter( editorSplitter ), mApp( app ) {}
 
+void DocSearchController::refreshHighlight() {
+	if ( mSearchState.editor && mEditorSplitter->editorExists( mSearchState.editor ) ) {
+		mSearchState.text = mFindInput->getText();
+		mSearchState.editor->setHighlightWord( mSearchState.toTextSearchParams() );
+		if ( !mSearchState.text.empty() ) {
+			mSearchState.editor->getDocument().setSelection( { 0, 0 } );
+			if ( !findNextText( mSearchState ) ) {
+				mFindInput->addClass( "error" );
+			} else {
+				mFindInput->removeClass( "error" );
+			}
+		} else {
+			mFindInput->removeClass( "error" );
+			mSearchState.editor->getDocument().setSelection(
+				mSearchState.editor->getDocument().getSelection().start() );
+		}
+	}
+}
+
 void DocSearchController::initSearchBar(
 	UISearchBar* searchBar, const SearchBarConfig& searchBarConfig,
 	std::unordered_map<std::string, std::string> keybindings ) {
@@ -62,39 +81,27 @@ void DocSearchController::initSearchBar(
 
 	mCaseSensitiveChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
 		mSearchState.caseSensitive = mCaseSensitiveChk->isChecked();
+		refreshHighlight();
 	} );
 
 	mEscapeSequenceChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
 		mSearchState.escapeSequences = mEscapeSequenceChk->isChecked();
+		refreshHighlight();
 	} );
 
 	mWholeWordChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
 		mSearchState.wholeWord = mWholeWordChk->isChecked();
+		refreshHighlight();
 	} );
 
 	mLuaPatternChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
 		mSearchState.type = mLuaPatternChk->isChecked() ? TextDocument::FindReplaceType::LuaPattern
 														: TextDocument::FindReplaceType::Normal;
+		refreshHighlight();
 	} );
 
-	mFindInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
-		if ( mSearchState.editor && mEditorSplitter->editorExists( mSearchState.editor ) ) {
-			mSearchState.text = mFindInput->getText();
-			mSearchState.editor->setHighlightWord( mSearchState.toTextSearchParams() );
-			if ( !mSearchState.text.empty() ) {
-				mSearchState.editor->getDocument().setSelection( { 0, 0 } );
-				if ( !findNextText( mSearchState ) ) {
-					mFindInput->addClass( "error" );
-				} else {
-					mFindInput->removeClass( "error" );
-				}
-			} else {
-				mFindInput->removeClass( "error" );
-				mSearchState.editor->getDocument().setSelection(
-					mSearchState.editor->getDocument().getSelection().start() );
-			}
-		}
-	} );
+	mFindInput->addEventListener( Event::OnTextChanged,
+								  [&]( const Event* ) { refreshHighlight(); } );
 	mFindInput->addEventListener( Event::OnTextPasted, [&]( const Event* ) {
 		if ( mFindInput->getUISceneNode()->getWindow()->getClipboard()->getText().find( '\n' ) !=
 			 String::InvalidPos ) {

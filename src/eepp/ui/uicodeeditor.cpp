@@ -3338,6 +3338,9 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 				 !range.inSameLine() )
 				continue;
 
+			if ( ranges.isSorted() && range.end().line() > endidx )
+				break;
+
 			Rectf selRect;
 			selRect.Top = rect.Top + ( range.start().line() - minimapStartLine ) * lineSpacing;
 			selRect.Bottom = selRect.Top + charHeight;

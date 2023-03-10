@@ -113,6 +113,8 @@ class EE_API TextRange {
 
 class EE_API TextRanges : public std::vector<TextRange> {
   public:
+	bool isSorted() const { return mIsSorted; }
+
 	bool isValid() const {
 		for ( const auto& selection : *this ) {
 			if ( !selection.isValid() )
@@ -143,7 +145,12 @@ class EE_API TextRanges : public std::vector<TextRange> {
 		return false;
 	}
 
-	void sort() { std::sort( begin(), end() ); }
+	void sort() {
+		std::sort( begin(), end() );
+		setSorted();
+	}
+
+	void setSorted() { mIsSorted = true; }
 
 	bool merge() {
 		if ( size() <= 1 )
@@ -176,6 +183,9 @@ class EE_API TextRanges : public std::vector<TextRange> {
 			ranges.emplace_back( TextRange::fromString( rangeStr ) );
 		return ranges;
 	}
+
+  protected:
+	bool mIsSorted{ false };
 };
 
 }}} // namespace EE::UI::Doc

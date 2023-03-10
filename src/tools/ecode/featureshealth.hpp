@@ -25,6 +25,7 @@ class FeaturesHealth {
 	struct FeatureStatus {
 		std::string name;
 		std::string path;
+		std::string url;
 		bool found{ false };
 	};
 	struct LangHealth {

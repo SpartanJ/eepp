@@ -86,6 +86,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 				lsp->getClientManager().getLSPForLang( def.getLSPName(), def.getFiles() );
 			if ( !found.command.empty() ) {
 				lang.lsp.name = found.name;
+				lang.lsp.url = found.url;
 				lang.lsp.path = Sys::which( String::split( found.command, ' ' )[0] );
 				lang.lsp.found = !lang.lsp.path.empty();
 			}
@@ -128,8 +129,12 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 	}
 
 	for ( const auto& ht : status ) {
-		table.add_row( { ht.lang, "✓", ht.lsp.name.empty() ? "None" : ht.lsp.name,
-						 ht.linter.name.empty() ? "None" : ht.linter.name,
+		std::string lspName = ht.lsp.name.empty() ? "None" : ht.lsp.name;
+		if ( OutputFormat::Markdown == format && !ht.lsp.name.empty() && !ht.lsp.url.empty() ) {
+			lspName = "[" + ht.lsp.name + "](" + ht.lsp.url + ")";
+		}
+
+		table.add_row( { ht.lang, "✓", lspName, ht.linter.name.empty() ? "None" : ht.linter.name,
 						 ht.formatter.name.empty() ? "None" : ht.formatter.name } );
 
 		auto& row = table[table.size() - 1];
