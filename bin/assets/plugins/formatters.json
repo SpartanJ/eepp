@@ -12,8 +12,8 @@
       "command": "prettier $FILENAME"
     },
     {
-      "language": ["c", "cpp"],
-      "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"],
+      "language": ["c", "cpp", "objective-c"],
+      "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$", "%.m$"],
       "command": "clang-format --style=file $FILENAME"
     },
     {
@@ -66,6 +66,11 @@
       "language": "haskell",
       "file_patterns": ["%.hs$"],
       "command": "ormolu $FILENAME"
+    },
+    {
+      "language": "v",
+      "file_patterns": ["%.v$"],
+      "command": "v fmt $FILENAME"
     }
   ]
 }

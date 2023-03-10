@@ -62,6 +62,11 @@
       "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"]
     },
     {
+      "language": "objective-c",
+      "use": "clangd",
+      "file_patterns": ["%.m$"]
+    },
+    {
       "language": "d",
       "name": "serve-d",
       "url": "https://github.com/Pure-D/serve-d",
@@ -213,6 +218,53 @@
       "command": "cmake-language-server",
       "file_patterns": ["%.cmake$", "CMakeLists.txt$"],
       "rootIndicationFileNames": ["build"]
+    },
+    {
+      "language": "elm",
+      "name": "elm-language-server",
+      "url": "https://github.com/elm-tooling/elm-language-server",
+      "command": "elm-language-server",
+      "file_patterns": ["%.elm$"],
+      "rootIndicationFileNames": ["elm.json"]
+    },
+    {
+      "language": "crystal",
+      "name": "crystalline",
+      "url": "https://github.com/elbywan/crystalline",
+      "command": "crystalline --stdio",
+      "file_patterns": ["%.cr$"],
+      "rootIndicationFileNames": ["shard.yml"]
+    },
+    {
+      "language": "v",
+      "name": "vls",
+      "url": "https://github.com/vlang/vls",
+      "command": "v ls",
+      "file_patterns": ["%.v$"]
+    },
+    {
+      "language": "scala",
+      "name": "metals",
+      "url": "https://github.com/scalameta/metals",
+      "command": "metals",
+      "file_patterns": ["%.sc$", "%.scala$"]
+    },
+    {
+      "language": "swift",
+      "name": "sourcekit-lsp",
+      "url": "https://github.com/apple/sourcekit-lsp",
+      "command": {
+        "macos": "xcrun sourcekit-lsp",
+        "other": "sourcekit-lsp"
+      },
+      "file_patterns": ["%.swift$"]
+    },
+    {
+      "language": "r",
+      "name": "r languageserver",
+      "url": "https://github.com/REditorSupport/languageserver",
+      "command": "R --slave -e\"languageserver::run()\"",
+      "file_patterns": ["%.r$"]
     }
   ]
 }

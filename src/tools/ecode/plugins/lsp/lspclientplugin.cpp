@@ -174,7 +174,7 @@ static LSPURIAndServer getServerURIFromTextDocumentURI( LSPClientServerManager& 
 	return { uri, manager.getOneLSPClientServer( uri ) };
 }
 
-static void sanitizeCommand( std::string& cmd ) {
+static void sanitizeCommand( std::string cmd ) {
 	String::replaceAll( cmd, "$NPROC", String::toString( Sys::getCPUCount() ) );
 }
 
@@ -649,6 +649,26 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 		fireReadyCbs();
 }
 
+static std::string parseCommand( nlohmann::json cmd ) {
+	std::string command;
+	if ( cmd.is_string() ) {
+		command = cmd.get<std::string>();
+	} else if ( !cmd.is_object() ) {
+		return "";
+	} else {
+		std::string platform( String::toLower( Sys::getPlatform() ) );
+		if ( cmd.contains( platform ) && cmd[platform].is_string() ) {
+			command = cmd[platform].get<std::string>();
+		} else {
+			platform = "other";
+			if ( cmd.contains( platform ) && cmd[platform].is_string() )
+				command = cmd[platform].get<std::string>();
+		}
+	}
+	sanitizeCommand( command );
+	return command;
+}
+
 void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path,
 									 bool updateConfigFile ) {
 	std::string data;
@@ -724,16 +744,14 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		// Allow overriding the command for already defined LSP
 		// And allow adding parameters to the already defined LSP
 		if ( updateConfigFile && ( obj.contains( "name" ) || obj.contains( "use" ) ) &&
-			 ( ( obj.contains( "command" ) && obj.at( "command" ).is_string() ) ||
-			   ( obj.contains( "command_parameters" ) &&
-				 obj.at( "command_parameters" ).is_string() ) ) ) {
+			 ( obj.contains( "command" ) || ( obj.contains( "command_parameters" ) &&
+											  obj.at( "command_parameters" ).is_string() ) ) ) {
 			for ( auto& lspR : lsps ) {
 				std::string name = obj.contains( "name" ) ? obj["name"] : obj["use"];
 				if ( lspR.name == name ) {
 					lspOverwritten = true;
-					if ( !obj.value( "command", "" ).empty() ) {
-						lspR.command = obj.value( "command", "" );
-						sanitizeCommand( lspR.command );
+					if ( obj.contains( "command" ) ) {
+						lspR.command = parseCommand( obj["command"] );
 					}
 					if ( !obj.value( "command_parameters", "" ).empty() ) {
 						std::string cmdParam( obj.value( "command_parameters", "" ) );
@@ -767,7 +785,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 				if ( tlsp.name == use ) {
 					lsp.language = obj["language"];
 					foundTlsp = true;
-					lsp.command = tlsp.command;
+					lsp.command = parseCommand( tlsp.command );
 					lsp.name = tlsp.name;
 					lsp.rootIndicationFileNames = tlsp.rootIndicationFileNames;
 					lsp.url = tlsp.url;
@@ -782,7 +800,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			}
 		} else {
 			lsp.language = obj["language"];
-			lsp.command = obj["command"];
+			lsp.command = parseCommand( obj["command"] );
 			lsp.name = obj["name"];
 		}
 
