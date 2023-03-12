@@ -38,6 +38,11 @@ TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const Uint64&
 }
 
 const std::vector<SyntaxToken>& SyntaxHighlighter::getLine( const size_t& index ) {
+	if ( mDoc->getSyntaxDefinition().getPatterns().empty() ) {
+		static std::vector<SyntaxToken> noHighlightVector = { { "normal", 0 } };
+		noHighlightVector[0].len = mDoc->line( index ).size();
+		return noHighlightVector;
+	}
 	const auto& it = mLines.find( index );
 	if ( it == mLines.end() ||
 		 ( index < mDoc->linesCount() && mDoc->line( index ).getHash() != it->second.hash ) ) {

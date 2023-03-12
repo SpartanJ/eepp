@@ -152,7 +152,8 @@ void TextureAtlasNew::windowClose( const Event* ) {
 }
 
 static bool isValidExtension( const std::string& ext ) {
-	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga" || ext == "jpg";
+	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga" || ext == "jpg" ||
+		   ext == "qoi";
 }
 
 void TextureAtlasNew::textureAtlasSave( const Event* Event ) {

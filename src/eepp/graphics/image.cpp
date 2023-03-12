@@ -265,6 +265,8 @@ std::string Image::saveTypeToExtension( const Int32& Format ) {
 			return "dds";
 		case Image::SaveType::SAVE_TYPE_JPG:
 			return "jpg";
+		case Image::SaveType::SAVE_TYPE_QOI:
+			return "qoi";
 		case Image::SaveType::SAVE_TYPE_UNKNOWN:
 		default:
 			break;
@@ -286,6 +288,8 @@ Image::SaveType Image::extensionToSaveType( const std::string& Extension ) {
 		saveType = SaveType::SAVE_TYPE_DDS;
 	else if ( Extension == "jpg" || Extension == "jpeg" )
 		saveType = SaveType::SAVE_TYPE_JPG;
+	else if ( Extension == "qoi" )
+		saveType = SaveType::SAVE_TYPE_QOI;
 
 	return saveType;
 }
@@ -362,7 +366,7 @@ bool Image::isImageExtension( const std::string& path ) {
 	const std::string ext( FileSystem::fileExtension( path ) );
 	return ( ext == "png" || ext == "tga" || ext == "bmp" || ext == "jpg" || ext == "gif" ||
 			 ext == "jpeg" || ext == "dds" || ext == "psd" || ext == "hdr" || ext == "pic" ||
-			 ext == "pvr" || ext == "pkm" || ext == "svg" );
+			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" );
 }
 
 std::string Image::getLastFailureReason() {

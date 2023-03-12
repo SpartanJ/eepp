@@ -61,7 +61,8 @@ class EE_API Image {
 		SAVE_TYPE_BMP = 1,
 		SAVE_TYPE_PNG = 2,
 		SAVE_TYPE_DDS = 3,
-		SAVE_TYPE_JPG = 4
+		SAVE_TYPE_JPG = 4,
+		SAVE_TYPE_QOI = 5
 	};
 
 	class FormatConfiguration {

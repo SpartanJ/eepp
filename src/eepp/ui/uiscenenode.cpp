@@ -66,6 +66,11 @@ UISceneNode::~UISceneNode() {
 	for ( auto& font : mFontFaces ) {
 		FontManager::instance()->remove( font );
 	}
+
+	// UISceneNode can now destroy the ThreadPool shared to him. If that's the case,
+	// We need to ensure that the childs are destroyed before the thread pool,
+	// since its childs could be consuming it and need to uninitialize gracefully.
+	childDeleteAll();
 }
 
 void UISceneNode::resizeNode( EE::Window::Window* ) {

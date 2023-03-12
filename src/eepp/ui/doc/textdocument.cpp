@@ -138,7 +138,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 				}
 			}
 
-			while ( consume ) {
+			while ( consume && mLoading ) {
 				lineBuffer += ptrGetLine( bufferPtr, consume, position );
 				bufferPtr += position;
 				consume -= position;
@@ -200,10 +200,8 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 				   clock.getElapsedTime().asMilliseconds() );
 
 	bool wasInterrupted = !mLoading;
-	if ( wasInterrupted ) {
-		mLines.clear();
-		mLines.push_back( String( "\n" ) );
-	}
+	if ( wasInterrupted )
+		reset();
 	mLoading = false;
 	return wasInterrupted ? LoadStatus::Interrupted
 						  : ( file.isOpen() ? LoadStatus::Loaded : LoadStatus::Failed );
