@@ -9,34 +9,40 @@
     {
       "language": ["javascript", "typescript", "JSX"],
       "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$"],
-      "command": "prettier $FILENAME"
+      "command": "prettier $FILENAME",
+      "url": "https://prettier.io"
     },
     {
       "language": ["c", "cpp", "objective-c"],
       "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$", "%.m$"],
-      "command": "clang-format --style=file $FILENAME"
+      "command": "clang-format --style=file $FILENAME",
+      "url": "https://clang.llvm.org/docs/ClangFormat.html"
     },
     {
       "language": "python",
       "file_patterns": ["%.py$", "%.pyw$"],
       "command": "black $FILENAME",
-      "type": "inplace"
+      "type": "inplace",
+      "url": "https://black.readthedocs.io/en/stable/"
     },
     {
       "language": "kotlin",
       "file_patterns": ["%.kt$"],
       "command": "ktlint -F $FILENAME",
-      "type": "inplace"
+      "type": "inplace",
+      "url": "https://pinterest.github.io/ktlint/"
     },
     {
       "language": "rust",
       "file_patterns": ["%.rs"],
-      "command": "rustfmt --emit stdout --color never $FILENAME"
+      "command": "rustfmt --emit stdout --color never $FILENAME",
+      "url": "https://rust-lang.github.io/rustfmt/"
     },
     {
       "language": "go",
       "file_patterns": ["%.go"],
-      "command": "gopls format $FILENAME"
+      "command": "gopls format $FILENAME",
+      "url": "https://pkg.go.dev/golang.org/x/tools/gopls"
     },
     {
       "language": "json",
@@ -60,17 +66,20 @@
       "language": "zig",
       "file_patterns": ["%.zig"],
       "command": "zig fmt $FILENAME",
-      "type": "inplace"
+      "type": "inplace",
+      "url": "https://ziglang.org"
     },
     {
       "language": "haskell",
       "file_patterns": ["%.hs$"],
-      "command": "ormolu $FILENAME"
+      "command": "ormolu $FILENAME",
+      "url": "https://github.com/tweag/ormolu"
     },
     {
       "language": "v",
       "file_patterns": ["%.v$"],
-      "command": "v fmt $FILENAME"
+      "command": "v fmt $FILENAME",
+      "url": "https://vlang.io"
     }
   ]
 }

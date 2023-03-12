@@ -204,6 +204,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 			formatter.files.push_back( pattern.get<std::string>() );
 
 		formatter.command = obj["command"].get<std::string>();
+		formatter.url = obj.value( "url", "" );
 
 		if ( obj.contains( "type" ) ) {
 			std::string typeStr( obj["type"].get<std::string>() );

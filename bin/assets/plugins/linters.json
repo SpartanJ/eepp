@@ -8,7 +8,8 @@
       "file_patterns": ["%.php$"],
       "warning_pattern": "[%a ]+:%s+(.*)%s+in%s.*on%sline%s+(%d+)",
       "warning_pattern_order": { "line": 2, "col": 0, "message": 1 },
-      "command": "php -l $FILENAME"
+      "command": "php -l $FILENAME",
+      "url": "https://www.php.net"
     },
     {
       "language": "json",
@@ -18,54 +19,62 @@
       "command": "jq -e . $FILENAME",
       "expected_exitcodes": [1, 2, 3, 4],
       "no_errors_exit_code": 0,
-      "use_tmp_folder": true
+      "use_tmp_folder": true,
+      "url": "https://stedolan.github.io/jq/"
     },
     {
       "language": ["javascript", "typescript", "JSX"],
       "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$"],
       "warning_pattern": "[^:]:(%d+):(%d+): ([^%[]+)%[([^\n]+)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
-      "command": "eslint --no-ignore --format unix $FILENAME"
+      "command": "eslint --no-ignore --format unix $FILENAME",
+      "url": "https://eslint.org"
     },
     {
       "language": "lua",
       "file_patterns": ["%.lua$"],
       "warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
-      "command": "luacheck $FILENAME --formatter=plain -g --no-max-line-length"
+      "command": "luacheck $FILENAME --formatter=plain -g --no-max-line-length",
+      "url": "https://github.com/mpeterv/luacheck"
     },
     {
       "language": "python",
       "file_patterns": ["%.py$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
-      "command": "ruff $FILENAME"
+      "command": "ruff $FILENAME",
+      "url": "https://ruff.rs"
     },
     {
       "language": "bash",
       "file_patterns": ["%.sh$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
-      "command": "shellcheck -f gcc $FILENAME"
+      "command": "shellcheck -f gcc $FILENAME",
+      "url": "https://www.shellcheck.net"
     },
     {
       "language": "solidity",
       "file_patterns": ["%.sol$"],
       "warning_pattern": "(%d+):(%d+)%s.(%w*)%s.([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
-      "command": "solhint $FILENAME"
+      "command": "solhint $FILENAME",
+      "url": "https://protofire.github.io/solhint/"
     },
     {
       "language": ["c", "cpp"],
       "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"],
       "warning_pattern": "$FILENAME:(%d+):(%d+):%s?([^%s]*)([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
-      "command": "cppcheck --language=c++ --enable=all --template=gcc $FILENAME"
+      "command": "cppcheck --language=c++ --enable=all --template=gcc $FILENAME",
+      "url": "https://github.com/danmar/cppcheck"
     },
     {
       "language": "kotlin",
       "file_patterns": ["%.kt$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
-      "command": "ktlint $FILENAME"
+      "command": "ktlint $FILENAME",
+      "url": "https://pinterest.github.io/ktlint/"
     },
     {
       "language": "zig",
@@ -74,7 +83,8 @@
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
       "command": "zig ast-check $FILENAME",
       "deduplicate": true,
-      "expected_exitcodes": [0, 1]
+      "expected_exitcodes": [0, 1],
+      "url": "https://ziglang.org"
     },
     {
       "language": "nim",
@@ -84,28 +94,32 @@
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
       "deduplicate": true,
       "expected_exitcodes": [0, 1],
-      "use_tmp_folder": true
+      "use_tmp_folder": true,
+      "url": "https://nim-lang.org"
     },
     {
       "language": "nelua",
       "file_patterns": ["%.nelua$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s([%w%s]*):%s?([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
-      "command": "nelua --lint $FILENAME"
+      "command": "nelua --lint $FILENAME",
+      "url": "https://nelua.io"
     },
     {
       "language": "teal",
       "file_patterns": ["%.tl$"],
       "warning_pattern": "[^:]:(%d+):(%d+):[%s]?([^\n]+)",
       "command": "tl check $FILENAME",
-      "expected_exitcodes": [0]
+      "expected_exitcodes": [0],
+      "url": "https://github.com/teal-language/tl"
     },
     {
       "language": "haskell",
       "file_patterns": ["%.hs$"],
       "warning_pattern": "$FILENAME:(%d+):(%d+):%s(%w*):%s([^\n]*)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
-      "command": "hlint --color=never -j $FILENAME"
+      "command": "hlint --color=never -j $FILENAME",
+      "url": "https://github.com/ndmitchell/hlint"
     }
   ]
 }

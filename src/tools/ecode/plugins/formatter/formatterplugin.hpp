@@ -28,6 +28,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 		std::string command;
 		FormatterType type{ FormatterType::Output };
 		std::vector<std::string> languages{};
+		std::string url;
 	};
 
 	static PluginDefinition Definition() {

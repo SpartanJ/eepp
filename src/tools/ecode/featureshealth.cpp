@@ -65,6 +65,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 				lang.linter.name = String::split( found.command, ' ' )[0];
 				lang.linter.path = Sys::which( lang.linter.name );
 				lang.linter.found = !lang.linter.path.empty();
+				lang.linter.url = found.url;
 			}
 		}
 
@@ -78,6 +79,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 				lang.formatter.path = Sys::which( lang.formatter.name );
 				lang.formatter.found = !lang.formatter.path.empty() ||
 									   found.type == FormatterPlugin::FormatterType::Native;
+				lang.formatter.url = found.url;
 			}
 		}
 
@@ -133,9 +135,18 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 		if ( OutputFormat::Markdown == format && !ht.lsp.name.empty() && !ht.lsp.url.empty() ) {
 			lspName = "[" + ht.lsp.name + "](" + ht.lsp.url + ")";
 		}
+		std::string linterName = ht.linter.name.empty() ? "None" : ht.linter.name;
+		if ( OutputFormat::Markdown == format && !ht.linter.name.empty() &&
+			 !ht.linter.url.empty() ) {
+			linterName = "[" + ht.linter.name + "](" + ht.linter.url + ")";
+		}
+		std::string formatterName = ht.formatter.name.empty() ? "None" : ht.formatter.name;
+		if ( OutputFormat::Markdown == format && !ht.formatter.name.empty() &&
+			 !ht.formatter.url.empty() ) {
+			formatterName = "[" + ht.formatter.name + "](" + ht.formatter.url + ")";
+		}
 
-		table.add_row( { ht.lang, "✓", lspName, ht.linter.name.empty() ? "None" : ht.linter.name,
-						 ht.formatter.name.empty() ? "None" : ht.formatter.name } );
+		table.add_row( { ht.lang, "✓", lspName, linterName, formatterName } );
 
 		auto& row = table[table.size() - 1];
 

@@ -195,6 +195,7 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 		}
 
 		linter.command = obj["command"].get<std::string>();
+		linter.url = obj.value( "url", "" );
 
 		if ( obj.contains( "expected_exitcodes" ) ) {
 			auto ee = obj["expected_exitcodes"];

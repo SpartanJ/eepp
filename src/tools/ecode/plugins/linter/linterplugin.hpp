@@ -35,6 +35,7 @@ struct Linter {
 	std::string command;
 	std::vector<Int64> expectedExitCodes{};
 	int noErrorsExitCode{ 0 };
+	std::string url;
 };
 
 struct LinterMatch {
