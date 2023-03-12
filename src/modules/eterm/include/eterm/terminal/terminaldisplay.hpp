@@ -288,6 +288,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mAlreadyClickedLButton{ false };
 	bool mAlreadyClickedMButton{ false };
 	bool mKeepAlive{ true };
+	bool mDraggingSel{ false };
 	Clock mClock;
 	Clock mLastDoubleClick;
 	Uint32 mColumns{ 0 };

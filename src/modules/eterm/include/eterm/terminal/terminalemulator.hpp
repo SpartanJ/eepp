@@ -280,6 +280,7 @@ class TerminalEmulator final {
 	void tinsertblank( int );
 	void tinsertblankline( int );
 	int tlinelen( int ) const;
+	int tiswrapped( int );
 	void tmoveto( int, int );
 	void tmoveato( int, int );
 	void tnewline( int );
@@ -304,6 +305,7 @@ class TerminalEmulator final {
 	void tstrsequence( uchar );
 
 	void selnormalize();
+	void selmove( int );
 	void selscroll( int, int );
 	void selsnap( int*, int*, int );
 

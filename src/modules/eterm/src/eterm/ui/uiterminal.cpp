@@ -456,12 +456,6 @@ Uint32 UITerminal::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 	if ( getUISceneNode()->getUIEventDispatcher()->isNodeDragging() )
 		return 0;
 
-	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 mTerm->getTerminal()->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
-		mDraggingSel = true;
-	} else if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
-		return 1;
-	}
 	mTerm->onMouseDown( position, flags );
 	return 1;
 }
@@ -472,9 +466,7 @@ Uint32 UITerminal::onMouseDoubleClick( const Vector2i& position, const Uint32& f
 }
 
 Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
-	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
-		mDraggingSel = false;
-	} else if ( flags & EE_BUTTON_RMASK ) {
+	if ( flags & EE_BUTTON_RMASK ) {
 		onCreateContextMenu( position, flags );
 		return 1;
 	}

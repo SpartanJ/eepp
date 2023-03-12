@@ -112,7 +112,6 @@ class UITerminal : public UIWidget {
   protected:
 	std::string mTitle;
 	bool mIsCustomTitle{ false };
-	bool mDraggingSel{ false };
 	bool mExclusiveMode{ false };
 	bool mCreateDefaultContextMenuOptions{ true };
 	KeyBindings mKeyBindings;

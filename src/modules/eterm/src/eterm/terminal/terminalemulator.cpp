@@ -370,6 +370,12 @@ int TerminalEmulator::tlinelen( int y ) const {
 	return i;
 }
 
+int TerminalEmulator::tiswrapped( int y ) {
+	int len = tlinelen( y );
+
+	return len > 0 && ( TLINE( y )[len - 1].mode & ATTR_WRAP );
+}
+
 TerminalSelectionMode TerminalEmulator::getSelectionMode() const {
 	return (TerminalSelectionMode)mSel.mode;
 }
@@ -465,7 +471,7 @@ void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 			 * Snap around if the word wraps around at the end or
 			 * beginning of a line.
 			 */
-			prevgp = &mTerm.line[*y][*x];
+			prevgp = &TLINE( *y )[*x];
 			prevdelim = ISDELIM( prevgp->u );
 			for ( ;; ) {
 				newx = *x + direction;
@@ -480,14 +486,14 @@ void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 						yt = *y, xt = *x;
 					else
 						yt = newy, xt = newx;
-					if ( !( mTerm.line[yt][xt].mode & ATTR_WRAP ) )
+					if ( !( TLINE( yt )[xt].mode & ATTR_WRAP ) )
 						break;
 				}
 
 				if ( newx >= tlinelen( newy ) )
 					break;
 
-				gp = &mTerm.line[newy][newx];
+				gp = &TLINE( newy )[newx];
 				delim = ISDELIM( gp->u );
 				if ( !( gp->mode & ATTR_WDUMMY ) &&
 					 ( delim != prevdelim || ( delim && gp->u != prevgp->u ) ) )
@@ -508,15 +514,13 @@ void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 			*x = ( direction < 0 ) ? 0 : mTerm.col - 1;
 			if ( direction < 0 ) {
 				for ( ; *y > 0; *y += direction ) {
-					if ( !( mTerm.line[*y - 1][mTerm.col - 1].mode & ATTR_WRAP ) ) {
+					if ( !tiswrapped( *y - 1 ) )
 						break;
-					}
 				}
 			} else if ( direction > 0 ) {
 				for ( ; *y < mTerm.row - 1; *y += direction ) {
-					if ( !( mTerm.line[*y][mTerm.col - 1].mode & ATTR_WRAP ) ) {
+					if ( !tiswrapped( *y ) )
 						break;
-					}
 				}
 			}
 			break;
@@ -652,7 +656,7 @@ void TerminalEmulator::kscrolldown( const TerminalArg* a ) {
 
 	if ( mTerm.scr > 0 ) {
 		mTerm.scr -= n;
-		selscroll( 0, -n );
+		selmove( -n );
 		tfulldirt();
 	}
 }
@@ -674,7 +678,7 @@ void TerminalEmulator::kscrollup( const TerminalArg* a ) {
 
 	if ( mTerm.scr <= mTerm.histsize - n && mTerm.scr + n <= mTerm.histi ) {
 		mTerm.scr += n;
-		selscroll( 0, n );
+		selmove( n );
 		tfulldirt();
 	}
 }
@@ -893,11 +897,11 @@ void TerminalEmulator::resizeHistory() {
 	}
 }
 
-void TerminalEmulator::tscrolldown( int orig, int n, int copyhist ) {
+void TerminalEmulator::tscrolldown( int top, int n, int copyhist ) {
 	int i;
 	Line temp;
 
-	LIMIT( n, 0, mTerm.bot - orig + 1 );
+	LIMIT( n, 0, mTerm.bot - top + 1 );
 	if ( copyhist && mTerm.histsize > 0 ) {
 		mTerm.histi = ( mTerm.histi - 1 + mTerm.histsize ) % mTerm.histsize;
 		resizeHistory();
@@ -906,64 +910,67 @@ void TerminalEmulator::tscrolldown( int orig, int n, int copyhist ) {
 		mTerm.line[mTerm.bot] = temp;
 	}
 
-	tsetdirt( orig, mTerm.bot - n );
+	tsetdirt( top, mTerm.bot - n );
 	tclearregion( 0, mTerm.bot - n + 1, mTerm.col - 1, mTerm.bot );
 
-	for ( i = mTerm.bot; i >= orig + n; i-- ) {
+	for ( i = mTerm.bot; i >= top + n; i-- ) {
 		temp = mTerm.line[i];
 		mTerm.line[i] = mTerm.line[i - n];
 		mTerm.line[i - n] = temp;
 	}
 
 	if ( mTerm.scr == 0 )
-		selscroll( orig, n );
+		selscroll( top, n );
 }
 
-void TerminalEmulator::tscrollup( int orig, int n, int copyhist ) {
+void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 	int i;
 	Line temp;
 
-	LIMIT( n, 0, mTerm.bot - orig + 1 );
+	LIMIT( n, 0, mTerm.bot - top + 1 );
 
 	if ( copyhist && mTerm.histsize > 0 ) {
 		mTerm.histi = ( mTerm.histi + 1 ) % mTerm.histsize;
 		resizeHistory();
 		temp = mTerm.hist[mTerm.histi];
-		mTerm.hist[mTerm.histi] = mTerm.line[orig];
-		mTerm.line[orig] = temp;
+		mTerm.hist[mTerm.histi] = mTerm.line[top];
+		mTerm.line[top] = temp;
 	}
 
 	if ( mTerm.scr > 0 && mTerm.scr < mTerm.histsize )
 		mTerm.scr = MIN( mTerm.scr + n, mTerm.histsize - 1 );
 
-	tclearregion( 0, orig, mTerm.col - 1, orig + n - 1 );
-	tsetdirt( orig + n, mTerm.bot );
+	tclearregion( 0, top, mTerm.col - 1, top + n - 1 );
+	tsetdirt( top + n, mTerm.bot );
 
-	for ( i = orig; i <= mTerm.bot - n; i++ ) {
+	for ( i = top; i <= mTerm.bot - n; i++ ) {
 		temp = mTerm.line[i];
 		mTerm.line[i] = mTerm.line[i + n];
 		mTerm.line[i + n] = temp;
 	}
 
 	if ( mTerm.scr == 0 )
-		selscroll( orig, -n );
+		selscroll( top, -n );
 }
 
-void TerminalEmulator::selscroll( int orig, int n ) {
+void TerminalEmulator::selmove( int n ) {
+	mSel.ob.y += n, mSel.nb.y += n;
+	mSel.oe.y += n, mSel.ne.y += n;
+}
+
+void TerminalEmulator::selscroll( int top, int n ) {
 	if ( mSel.ob.x == -1 )
 		return;
 
-	if ( BETWEEN( mSel.nb.y, orig, mTerm.bot ) != BETWEEN( mSel.ne.y, orig, mTerm.bot ) ) {
+	top += mTerm.scr;
+	int bot = mTerm.bot + mTerm.scr;
+
+	if ( BETWEEN( mSel.nb.y, top, bot ) != BETWEEN( mSel.ne.y, top, bot ) ) {
 		selclear();
-	} else if ( BETWEEN( mSel.nb.y, orig, mTerm.bot ) ) {
-		mSel.ob.y += n;
-		mSel.oe.y += n;
-		if ( mSel.ob.y < mTerm.top || mSel.ob.y > mTerm.bot || mSel.oe.y < mTerm.top ||
-			 mSel.oe.y > mTerm.bot ) {
+	} else if ( BETWEEN( mSel.nb.y, top, bot ) ) {
+		selmove( n );
+		if ( mSel.nb.y < top || mSel.ne.y > bot )
 			selclear();
-		} else {
-			selnormalize();
-		}
 	}
 }
 

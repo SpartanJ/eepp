@@ -813,17 +813,20 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 }
 
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
+		return;
+	}
+
 	auto gridPos{ positionToGrid( pos ) };
 
 	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_LINE );
 	} else if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) ) {
-		if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
+		if ( !mDraggingSel ) {
 			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
+			mDraggingSel = true;
 			invalidateLines();
-		} else if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) {
-			mTerminal->selclear();
 		}
 	} else if ( flags & EE_BUTTON_MMASK ) {
 		if ( !mAlreadyClickedMButton ) {
@@ -853,6 +856,10 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 }
 
 void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
+		mDraggingSel = false;
+	}
+
 	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );
 
 	if ( flags & EE_BUTTON_LMASK )

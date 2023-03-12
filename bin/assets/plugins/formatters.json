@@ -48,19 +48,22 @@
       "language": "json",
       "file_patterns": ["%.json$", "%.cson$"],
       "command": "json",
-      "type": "native"
+      "type": "native",
+      "url": "#native"
     },
     {
       "language": [ "xml", "html" ],
       "file_patterns": ["%.xml", "%.html?$"],
       "command": "xml",
-      "type": "native"
+      "type": "native",
+      "url": "#native"
     },
     {
       "language": "css",
       "file_patterns": ["%.css"],
       "command": "css",
-      "type": "native"
+      "type": "native",
+      "url": "#native"
     },
     {
       "language": "zig",
