@@ -1112,7 +1112,7 @@ void FontTrueType::setEnableDynamicMonospace( bool enableDynamicMonospace ) {
 	mEnableDynamicMonospace = enableDynamicMonospace;
 }
 
-bool FontTrueType::getEnableFallbackFont() const {
+bool FontTrueType::isFallbackFontEnabled() const {
 	return mEnableFallbackFont;
 }
 

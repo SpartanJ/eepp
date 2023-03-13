@@ -555,6 +555,10 @@ class EE_API TextDocument {
 
 	String getWordInPosition();
 
+	bool mightBeBinary() const;
+
+	void setMightBeBinary( bool mightBeBinary );
+
   protected:
 	friend class UndoStack;
 
@@ -581,6 +585,7 @@ class EE_API TextDocument {
 	bool mDirtyOnFileSystem{ false };
 	bool mSaving{ false };
 	bool mDeleteOnClose{ false };
+	bool mMightBeBinary{ false };
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };

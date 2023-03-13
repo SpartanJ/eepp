@@ -85,7 +85,7 @@ class EE_API FontTrueType : public Font {
 
 	const Uint32& getFontInternalId() const;
 
-	bool getEnableFallbackFont() const;
+	bool isFallbackFontEnabled() const;
 
 	void setEnableFallbackFont( bool enableFallbackFont );
 

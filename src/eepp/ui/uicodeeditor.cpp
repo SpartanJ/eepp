@@ -2213,7 +2213,7 @@ void UICodeEditor::checkMatchingBrackets() {
 }
 
 Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const {
-	if ( x <= 0 || !mFont )
+	if ( x <= 0 || !mFont || mDoc->isLoading() )
 		return 0;
 
 	TextPosition pos = mDoc->sanitizePosition( TextPosition( lineNumber, 0 ) );
@@ -2696,8 +2696,17 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	Int64 curChar = 0;
 	Int64 maxWidth = eeceil( mSize.getWidth() / getGlyphWidth() + 1 );
 	bool isMonospace = mFont->isMonospace();
+	bool isFallbackFont = false;
+	bool isEmojiFallbackFont = false;
 	Float lineOffset = getLineOffset();
 	size_t pos = 0;
+	if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {
+		FontTrueType* ttf = static_cast<FontTrueType*>( mFont );
+		isFallbackFont = ttf->isFallbackFontEnabled();
+		isEmojiFallbackFont = ttf->isEmojiFallbackEnabled();
+		ttf->setEnableFallbackFont( false );
+		ttf->setEnableEmojiFallback( false );
+	}
 	for ( const auto& token : tokens ) {
 		String text( pos < strLine.size() ? strLine.substr( pos, token.len ) : String() );
 		pos += token.len;
@@ -2830,6 +2839,12 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 
 		position.x += textWidth;
 		curChar += characterWidth( text );
+	}
+
+	if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {
+		FontTrueType* ttf = static_cast<FontTrueType*>( mFont );
+		ttf->setEnableFallbackFont( isFallbackFont );
+		ttf->setEnableEmojiFallback( isEmojiFallbackFont );
 	}
 }
 
@@ -3063,7 +3078,7 @@ static bool checkHexa( const std::string& hexStr ) {
 }
 
 void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
-	if ( !mColorPreview )
+	if ( !mColorPreview || mDoc->isLoading() )
 		return;
 	TextPosition pos( resolveScreenPosition( position.asFloat() ) );
 	const String& line = mDoc->line( pos.line() ).getText();

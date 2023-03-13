@@ -63,6 +63,10 @@ bool TextDocument::isUntitledEmpty() const {
 }
 
 void TextDocument::reset() {
+	mMightBeBinary = false;
+	mIsBOM = false;
+	mDirtyOnFileSystem = false;
+	mSaving = false;
 	mFilePath = mDefaultFileName;
 	mFileURI = URI( "file://" + mFilePath );
 	mFileRealPath = FileInfo();
@@ -153,6 +157,8 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 						} else if ( lastChar == '\r' ) {
 							mLineEnding = LineEnding::CR;
 						}
+
+						mMightBeBinary = lineBuffer.find_first_of( '\0' ) != String::InvalidPos;
 					}
 
 					if ( mLineEnding == LineEnding::CRLF && lineBufferSize > 1 &&
@@ -1586,6 +1592,14 @@ String TextDocument::getWordInPosition( const TextPosition& pos ) {
 
 String TextDocument::getWordInPosition() {
 	return getWordInPosition( getSelection().start() );
+}
+
+bool TextDocument::mightBeBinary() const {
+	return mMightBeBinary;
+}
+
+void TextDocument::setMightBeBinary( bool mightBeBinary ) {
+	mMightBeBinary = mightBeBinary;
 }
 
 void TextDocument::selectWord( bool withMulticursor ) {
