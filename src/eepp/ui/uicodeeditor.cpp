@@ -1001,10 +1001,10 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
+	createDefaultContextMenuOptions( menu );
+
 	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
 	sendEvent( &event );
-
-	createDefaultContextMenuOptions( menu );
 
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onCreateContextMenu( this, menu, position, flags ) )

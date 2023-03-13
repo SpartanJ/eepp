@@ -869,10 +869,10 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
+	createDefaultContextMenuOptions( menu );
+
 	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
 	sendEvent( &event );
-
-	createDefaultContextMenuOptions( menu );
 
 	if ( menu->getCount() == 0 ) {
 		menu->close();

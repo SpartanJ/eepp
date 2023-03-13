@@ -543,10 +543,10 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
+	createDefaultContextMenuOptions( menu );
+
 	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
 	sendEvent( &event );
-
-	createDefaultContextMenuOptions( menu );
 
 	if ( menu->getCount() == 0 ) {
 		menu->close();

@@ -1821,35 +1821,67 @@ void App::createDocAlert( UICodeEditor* editor ) {
 		} );
 }
 
+void App::loadImageFromMemory( const std::string& content ) {
+	UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
+	UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
+	if ( imageView ) {
+		mImageLayout->setEnabled( true )->setVisible( true );
+		loaderView->setVisible( true );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+		mThreadPool->run( [&, imageView, loaderView, content]() {
+#endif
+			Texture* image =
+				TextureFactory::instance()->getTexture( TextureFactory::instance()->loadFromMemory(
+					reinterpret_cast<const unsigned char*>( content.c_str() ), content.size() ) );
+			if ( mImageLayout->isVisible() ) {
+				imageView->runOnMainThread( [imageView, loaderView, image]() {
+					imageView->setDrawable( image, true );
+					loaderView->setVisible( false );
+				} );
+			} else {
+				TextureFactory::instance()->remove( image );
+				imageView->setDrawable( nullptr );
+				loaderView->setVisible( false );
+			}
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+		} );
+#endif
+	}
+}
+
+void App::loadImageFromPath( const std::string& path ) {
+	UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
+	UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
+	if ( imageView ) {
+		mImageLayout->setEnabled( true )->setVisible( true );
+		loaderView->setVisible( true );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+		mThreadPool->run( [&, imageView, loaderView, path]() {
+#endif
+			Texture* image = TextureFactory::instance()->getTexture(
+				TextureFactory::instance()->loadFromFile( path ) );
+			if ( mImageLayout->isVisible() ) {
+				imageView->runOnMainThread( [imageView, loaderView, image]() {
+					imageView->setDrawable( image, true );
+					loaderView->setVisible( false );
+				} );
+			} else {
+				TextureFactory::instance()->remove( image );
+				imageView->setDrawable( nullptr );
+				loaderView->setVisible( false );
+			}
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+		} );
+#endif
+	}
+}
+
 void App::loadFileFromPath(
 	const std::string& path, bool inNewTab, UICodeEditor* codeEditor,
 	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
 	if ( Image::isImageExtension( path ) && Image::isImage( path ) &&
 		 FileSystem::fileExtension( path ) != "svg" ) {
-		UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
-		UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
-		if ( imageView ) {
-			mImageLayout->setEnabled( true )->setVisible( true );
-			loaderView->setVisible( true );
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-			mThreadPool->run( [&, imageView, loaderView, path]() {
-#endif
-				Texture* image = TextureFactory::instance()->getTexture(
-					TextureFactory::instance()->loadFromFile( path ) );
-				if ( mImageLayout->isVisible() ) {
-					imageView->runOnMainThread( [imageView, loaderView, image]() {
-						imageView->setDrawable( image, true );
-						loaderView->setVisible( false );
-					} );
-				} else {
-					TextureFactory::instance()->remove( image );
-					imageView->setDrawable( nullptr );
-					loaderView->setVisible( false );
-				}
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-			} );
-#endif
-		}
+		loadImageFromPath( path );
 	} else {
 		UITab* tab = mSplitter->isDocumentOpen( path );
 
@@ -2060,7 +2092,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
 	} );
 
-	auto docChanged = [&]( const Event* event ) {
+	auto docChanged = [this]( const Event* event ) {
 		const DocEvent* synEvent = static_cast<const DocEvent*>( event );
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		UIIcon* icon = mUISceneNode->findIcon(
@@ -2072,6 +2104,19 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( editor->getData() ) {
 			UITab* tab = (UITab*)editor->getData();
 			tab->setIcon( icon->getSize( mMenuIconSize ) );
+		}
+
+		if ( editor->getDocument().getFileInfo().getExtension() == "svg" ) {
+			editor->getDocument().setCommand( "show-image-preview", [this, editor]() {
+				loadImageFromMemory( editor->getDocument().getText().toUtf8() );
+			} );
+			editor->addEventListener( Event::OnCreateContextMenu, [this]( const Event* event ) {
+				auto cevent = static_cast<const ContextMenuEvent*>( event );
+				cevent->getMenu()
+					->add( i18n( "show_image_preview", "Show Image Preview" ),
+						   findIcon( "filetype-jpg" ) )
+					->setId( "show-image-preview" );
+			} );
 		}
 	};
 

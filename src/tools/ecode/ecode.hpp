@@ -334,6 +334,10 @@ class App : public UICodeEditorSplitter::Client {
 
 	void setTheme( const std::string& path );
 
+	void loadImageFromPath( const std::string& path );
+
+	void loadImageFromMemory( const std::string& content );
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
