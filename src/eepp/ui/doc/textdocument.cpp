@@ -158,7 +158,8 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 							mLineEnding = LineEnding::CR;
 						}
 
-						mMightBeBinary = lineBuffer.find_first_of( '\0' ) != String::InvalidPos;
+						mMightBeBinary = lineBuffer.find_first_of( (String::StringBaseType)'\0' ) !=
+										 String::InvalidPos;
 					}
 
 					if ( mLineEnding == LineEnding::CRLF && lineBufferSize > 1 &&
