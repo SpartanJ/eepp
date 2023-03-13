@@ -201,6 +201,7 @@ struct LSPCodeAction {
 	std::vector<LSPDiagnostic> diagnostics;
 	LSPWorkspaceEdit edit;
 	LSPCommand command;
+	bool isPreferred{ false };
 };
 
 enum class LSPWorkDoneProgressKind { Begin, Report, End };

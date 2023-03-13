@@ -3279,7 +3279,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				{ "symbol-boolean", 0xea8f },		 { "symbol-array", 0xea8a },
 				{ "symbol-object", 0xea8b },		 { "symbol-key", 0xea93 },
 				{ "symbol-null", 0xea8f },			 { "collapse-all", 0xeac5 },
-				{ "chevron-right", 0xeab6 } };
+				{ "chevron-right", 0xeab6 },		 { "lightbulb-autofix", 0xeb13 } };
 
 			for ( const auto& icon : codIcons )
 				iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );

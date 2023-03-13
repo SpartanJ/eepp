@@ -688,6 +688,7 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 
 	Rectf qScreen( 0.f, 0.f, sceneNode->getPixelsSize().getWidth(),
 				   sceneNode->getPixelsSize().getHeight() );
+	Vector2f oriPos( pos );
 	Rectf qPos( pos.x, pos.y, pos.x + menu->getPixelsSize().getWidth(),
 				pos.y + menu->getPixelsSize().getHeight() );
 
@@ -771,6 +772,23 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 					pos.y += menu->getPixelsSize().getHeight();
 					qPos.Top += menu->getPixelsSize().getHeight();
 					qPos.Bottom += menu->getPixelsSize().getHeight();
+
+					if ( !qScreen.contains( qPos ) ) {
+						pos = oriPos;
+						pos.y -= menu->getPixelsSize().getHeight();
+						qPos.Left = pos.x;
+						qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+						qPos.Top = pos.y;
+						qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
+						if ( !qScreen.contains( qPos ) ) {
+							pos.y = qScreen.Bottom - menu->getPixelsSize().getHeight();
+							qPos.Left = pos.x;
+							qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+							qPos.Top = pos.y;
+							qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+						}
+					}
 				}
 			}
 		}

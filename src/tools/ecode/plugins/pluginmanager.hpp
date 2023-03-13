@@ -76,6 +76,7 @@ enum class PluginMessageType {
 	WorkspaceSymbol,	// Request to the LSP server to query workspace symbols
 	TextDocumentSymbol, // Request to the LSP server the document symbols
 	TextDocumentFlattenSymbol, // Request to the LSP server the document symbols flattened
+	DiagnosticsCodeAction,	   // Request a code action to anyone that can handle it
 	Undefined
 };
 
@@ -88,7 +89,8 @@ enum class PluginMessageFormat {
 	ProjectSearchResult,
 	ShowMessage,
 	ShowDocument,
-	SymbolInformation
+	SymbolInformation,
+	DiagnosticsCodeAction
 };
 
 class PluginIDType {
@@ -178,6 +180,10 @@ struct PluginMessage {
 
 	const LSPSymbolInformationList& asSymbolInformation() const {
 		return *static_cast<const LSPSymbolInformationList*>( data );
+	}
+
+	const LSPDiagnosticsCodeAction& asDiasnosticsCodeAction() const {
+		return *static_cast<const LSPDiagnosticsCodeAction*>( data );
 	}
 
 	const PluginIDType& asPluginID() const { return *static_cast<const PluginIDType*>( data ); }

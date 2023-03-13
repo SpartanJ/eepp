@@ -573,8 +573,9 @@ static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 			auto diagnostics = action.contains( MEMBER_DIAGNOSTICS )
 								   ? parseDiagnostics( action.at( MEMBER_DIAGNOSTICS ) )
 								   : std::vector<LSPDiagnostic>{};
-			LSPCodeAction action = { title, kind, diagnostics, edit, command };
-			ret.push_back( action );
+			auto isPreferred = action.value( "isPreferred", false );
+			LSPCodeAction _action = { title, kind, diagnostics, edit, command, isPreferred };
+			ret.push_back( _action );
 		} else {
 			// Command
 			auto command = parseCommand( action );
@@ -595,8 +596,8 @@ static std::vector<LSPDiagnosticsCodeAction> parseDiagnosticsCodeAction( const j
 			auto edit = action.contains( MEMBER_EDIT )
 							? parseWorkSpaceEdit( action.at( MEMBER_EDIT ) )
 							: LSPWorkspaceEdit{};
-			LSPDiagnosticsCodeAction action = { title, kind, isPreferred, edit };
-			ret.push_back( action );
+			LSPDiagnosticsCodeAction _action = { title, kind, isPreferred, edit };
+			ret.push_back( _action );
 		}
 	}
 	return ret;

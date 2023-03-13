@@ -8,6 +8,7 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/process.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <nlohmann/json.hpp>
 #include <random>
@@ -309,6 +310,38 @@ void LinterPlugin::setMatches( TextDocument* doc, const MatchOrigin& origin,
 }
 
 PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notification ) {
+	if ( notification.type == PluginMessageType::DiagnosticsCodeAction &&
+		 notification.format == PluginMessageFormat::JSON && notification.isRequest() ) {
+		PluginIDType id( std::numeric_limits<Int64>::max() );
+		TextDocument* doc = getDocumentFromURI( notification.asJSON().value( "uri", "" ) );
+		if ( doc ) {
+			Lock l( mMatchesMutex );
+			auto foundMatch = mMatches.find( doc );
+			if ( foundMatch != mMatches.end() ) {
+				auto pos = TextPosition::fromString( notification.asJSON().value( "pos", "" ) );
+				if ( pos.isValid() ) {
+					auto foundLine = foundMatch->second.find( pos.line() );
+					if ( foundLine != foundMatch->second.end() ) {
+						LSPDiagnosticsCodeAction quickFix;
+						for ( const auto& match : foundLine->second ) {
+							if ( !match.codeActions.empty() ) {
+								for ( const auto& ca : match.codeActions ) {
+									quickFix = ca;
+									if ( quickFix.isPreferred )
+										break;
+								}
+							}
+						}
+						mManager->sendResponse( this, PluginMessageType::DiagnosticsCodeAction,
+												PluginMessageFormat::DiagnosticsCodeAction,
+												&quickFix, id );
+					}
+				}
+			}
+		}
+		return {};
+	}
+
 	if ( !mEnableLSPDiagnostics || notification.type != PluginMessageType::Diagnostics ||
 		 notification.format != PluginMessageFormat::Diagnostics )
 		return PluginRequestHandle::empty();
@@ -722,6 +755,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 	TextDocument* doc = matchIt->first;
 	std::vector<LinterMatch>& matches = lineIt->second;
 	Float sepSpace = PixelDensity::dpToPx( 24.f );
+	bool quickFixRendered = false;
 
 	for ( size_t i = 0; i < matches.size(); ++i ) {
 		auto& match = matches[i];
@@ -763,10 +797,32 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		match.box[editor] = box;
 		line.draw( pos.x, pos.y + lineHeight * 0.5f );
 
+		Float rLineWidth = 0;
+
+		if ( !quickFixRendered && doc->getSelection().start().line() == index &&
+			 !match.codeActions.empty() ) {
+			rLineWidth = editor->getLineWidth( index );
+			Color wcolor( editor->getColorScheme().getEditorSyntaxStyle( "warning" ).color );
+			UIIcon* notification =
+				editor->getUISceneNode()->getUIIconThemeManager()->findIcon( "lightbulb-autofix" );
+			Float size = lineHeight;
+			Drawable* drawable = notification->getSize( (int)eefloor( size ) );
+			if ( drawable == nullptr )
+				return;
+
+			Color oldColor( drawable->getColor() );
+			drawable->setColor( wcolor );
+			drawable->draw( { position.x + rLineWidth, position.y } );
+			drawable->setColor( oldColor );
+			quickFixRendered = true;
+		}
+
 		if ( !mErrorLens || i != 0 )
 			continue;
 
-		Float lineWidth = editor->getLineWidth( index ) + sepSpace;
+		if ( rLineWidth == 0 )
+			rLineWidth = editor->getLineWidth( index );
+		Float lineWidth = rLineWidth + sepSpace;
 		Float realSpace = editor->getViewportWidth();
 		Float spaceWidth = realSpace - lineWidth;
 		if ( spaceWidth < sepSpace )
@@ -796,14 +852,14 @@ void LinterPlugin::minimapDrawBeforeLineText( UICodeEditor* editor, const Int64&
 	if ( matchIt == mMatches.end() )
 		return;
 
-	std::map<Int64, std::vector<LinterMatch>>& map = matchIt->second;
+	const std::map<Int64, std::vector<LinterMatch>>& map = matchIt->second;
 	auto lineIt = map.find( index );
 	if ( lineIt == map.end() )
 		return;
 	TextDocument* doc = matchIt->first;
-	std::vector<LinterMatch>& matches = lineIt->second;
+	const std::vector<LinterMatch>& matches = lineIt->second;
 	Primitives p;
-	for ( auto& match : matches ) {
+	for ( const auto& match : matches ) {
 		if ( match.lineCache != doc->line( index ).getHash() )
 			return;
 		Color col(

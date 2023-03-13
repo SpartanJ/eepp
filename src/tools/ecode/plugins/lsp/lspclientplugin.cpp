@@ -504,7 +504,20 @@ void LSPClientPlugin::createLocationsView( UICodeEditor* editor,
 
 void LSPClientPlugin::createCodeActionsView( UICodeEditor* editor,
 											 const std::vector<LSPCodeAction>& cas ) {
-	auto model = LSPCodeActionModel::create( mManager->getSplitter()->getUISceneNode(), cas );
+	bool casEmpty = cas.empty();
+	std::shared_ptr<LSPCodeActionModel> model;
+	if ( mQuickFix.title.empty() && mQuickFix.kind.empty() &&
+		 mQuickFix.edit.documentChanges.empty() && mQuickFix.edit.changes.empty() ) {
+		model = LSPCodeActionModel::create( mManager->getSplitter()->getUISceneNode(), cas );
+	} else {
+		casEmpty = false;
+		auto casN( cas );
+		LSPCodeAction action{ mQuickFix.title,		mQuickFix.kind, {}, mQuickFix.edit, {},
+							  mQuickFix.isPreferred };
+		casN.insert( casN.begin(), action );
+		model = LSPCodeActionModel::create( mManager->getSplitter()->getUISceneNode(), casN );
+	}
+
 	createListView(
 		editor, model,
 		[this, editor]( const ModelEvent* modelEvent ) {
@@ -514,18 +527,21 @@ void LSPClientPlugin::createCodeActionsView( UICodeEditor* editor,
 			const auto cam = static_cast<const LSPCodeActionModel*>( modelEvent->getModel() );
 			if ( cam->hasCodeActions() && editorExists( editor ) ) {
 				const auto& ca = cam->getCodeAction( r );
-				auto server = mClientManager.getOneLSPClientServer( editor->getDocumentRef() );
-				if ( server && server->getCapabilities().executeCommandProvider ) {
-					mClientManager.executeCommand( editor->getDocumentRef(), ca.command );
-				} else {
+
+				if ( !ca.edit.changes.empty() || !ca.edit.documentChanges.empty() )
 					mClientManager.applyWorkspaceEdit( ca.edit, []( const auto& ) {} );
-				}
+
+				auto server = mClientManager.getOneLSPClientServer( editor->getDocumentRef() );
+				if ( server && server->getCapabilities().executeCommandProvider )
+					mClientManager.executeCommand( editor->getDocumentRef(), ca.command );
+				editor->setFocus();
+			} else if ( editorExists( editor ) ) {
 				editor->setFocus();
 			}
 			modelEvent->getNode()->close();
 		},
-		[this, cas, editor]( UIListView* lv ) {
-			if ( cas.empty() ) {
+		[this, casEmpty, editor]( UIListView* lv ) {
+			if ( casEmpty ) {
 				lv->runOnMainThread(
 					[this, editor] {
 						if ( editorExists( editor ) &&
@@ -602,6 +618,10 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 		case PluginMessageType::TextDocumentSymbol:
 		case PluginMessageType::TextDocumentFlattenSymbol: {
 			processTextDocumentSymbol( msg );
+			break;
+		}
+		case PluginMessageType::DiagnosticsCodeAction: {
+			processDiagnosticsCodeAction( msg );
 			break;
 		}
 		default:
@@ -863,7 +883,21 @@ void LSPClientPlugin::getAndGoToLocation( UICodeEditor* editor, const std::strin
 		} );
 }
 
+void LSPClientPlugin::processDiagnosticsCodeAction( const PluginMessage& msg ) {
+	if ( !( msg.isResponse() && msg.type == PluginMessageType::DiagnosticsCodeAction &&
+			msg.format == PluginMessageFormat::DiagnosticsCodeAction ) )
+		return;
+	mQuickFix = msg.asDiasnosticsCodeAction();
+}
+
 void LSPClientPlugin::codeAction( UICodeEditor* editor ) {
+	json j;
+	j["uri"] = editor->getDocument().getURI().toString();
+	j["pos"] = editor->getDocument().getSelection().start().toString();
+	mQuickFix = {};
+	auto req = mManager->sendRequest( PluginMessageType::DiagnosticsCodeAction,
+									  PluginMessageFormat::JSON, &j );
+
 	mClientManager.codeAction(
 		editor->getDocumentRef(),
 		[&, editor]( const LSPClientServer::IdType&, const std::vector<LSPCodeAction>& res ) {

@@ -111,6 +111,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	Time mHoverDelay{ Seconds( 1.f ) };
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
+	LSPDiagnosticsCodeAction mQuickFix;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 
@@ -168,6 +169,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	void setDocumentSymbolsFromResponse( const PluginIDType& id, const URI& docURI,
 										 LSPSymbolInformationList&& res );
+
+	void processDiagnosticsCodeAction( const PluginMessage& msg );
 };
 
 } // namespace ecode
