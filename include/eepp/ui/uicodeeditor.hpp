@@ -592,7 +592,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Vector2f getRelativeScreenPosition( const TextPosition& pos );
 
-  protected:
+	bool getShowLinesRelativePosition() const;
+	void showLinesRelativePosition(bool showLinesRelativePosition);
+
+	protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };
@@ -628,6 +631,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mAutoCloseXMLTags{ false };
 	bool mFindReplaceEnabled{ true };
 	bool mShowIndentationGuides{ false };
+	bool mShowLinesRelativePosition;
 	std::atomic<bool> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;

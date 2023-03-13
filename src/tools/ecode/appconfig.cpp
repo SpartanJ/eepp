@@ -130,6 +130,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.lineSpacing = ini.getValue( "editor", "line_spacing", "0dp" );
 	editor.cursorBlinkingTime =
 		Time::fromString( ini.getValue( "editor", "cursor_blinking_time", "0.5s" ) );
+	editor.linesRelativePosition = ini.getValueB( "editor", "lines_relative_position", false );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
@@ -240,6 +241,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );
 	ini.setValue( "editor", "line_spacing", editor.lineSpacing.toString() );
 	ini.setValue( "editor", "cursor_blinking_time", editor.cursorBlinkingTime.toString() );
+	ini.setValueB( "editor", "lines_relative_position", editor.linesRelativePosition );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );

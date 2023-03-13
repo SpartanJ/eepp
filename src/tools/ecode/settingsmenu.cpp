@@ -1085,6 +1085,9 @@ UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu->addCheckBox( i18n( "highlight_matching_brackets", "Highlight Matching Bracket" ) )
 		->setActive( mApp->getConfig().editor.highlightMatchingBracket )
 		->setId( "highlight-matching-brackets" );
+	mViewMenu->addCheckBox( i18n( "show_lines_relative_position", "Show Lines Relative Position" ) )
+		->setActive( mApp->getConfig().editor.linesRelativePosition )
+		->setId( "show-lines-relative-position" );
 	mViewMenu->addCheckBox( i18n( "highlight_current_line", "Highlight Current Line" ) )
 		->setActive( mApp->getConfig().editor.highlightCurrentLine )
 		->setId( "highlight-current-line" );
@@ -1165,6 +1168,12 @@ UIMenu* SettingsMenu::createViewMenu() {
 			mApp->getConfig().editor.minimap = item->asType<UIMenuCheckBox>()->isActive();
 			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->showMinimap( mApp->getConfig().editor.minimap );
+			} );
+		} else if ( item->getId() == "show-lines-relative-position" ) {
+			mApp->getConfig().editor.linesRelativePosition =
+				item->asType<UIMenuCheckBox>()->isActive();
+			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->showLinesRelativePosition( mApp->getConfig().editor.linesRelativePosition );
 			} );
 		} else if ( item->getId() == "highlight-matching-brackets" ) {
 			mApp->getConfig().editor.highlightMatchingBracket =

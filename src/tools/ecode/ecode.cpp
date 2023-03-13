@@ -2081,6 +2081,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->addEventListener( Event::OnEditorTabReady, docChanged );
 
 	editor->showMinimap( config.minimap );
+	editor->showLinesRelativePosition( config.linesRelativePosition );
 
 	mPluginManager->onNewEditor( editor );
 }

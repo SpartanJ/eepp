@@ -1381,6 +1381,14 @@ Vector2f UICodeEditor::getRelativeScreenPosition( const TextPosition& pos ) {
 			 startScroll.y + pos.line() * lineHeight + getLineOffset() };
 }
 
+bool UICodeEditor::getShowLinesRelativePosition() const {
+	return mShowLinesRelativePosition;
+}
+
+void UICodeEditor::showLinesRelativePosition( bool showLinesRelativePosition ) {
+	mShowLinesRelativePosition = showLinesRelativePosition;
+}
+
 void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHeight,
 							   const TextPosition& cursor ) {
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() ) {
@@ -2871,9 +2879,16 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 	primitives.drawRectangle( Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
 	TextRange selection = mDoc->getSelection( true );
 	Float lineOffset = getLineOffset();
+
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
-		Text line( String( String::toString( i + 1 ) ).padLeft( lineNumberDigits, ' ' ), mFont,
-				   fontSize );
+		String pos;
+		if ( mShowLinesRelativePosition && selection.start().line() != i ) {
+			pos = String( String::toString( eeabs( i - selection.start().line() ) ) )
+					  .padLeft( lineNumberDigits, ' ' );
+		} else {
+			pos = String( String::toString( i + 1 ) ).padLeft( lineNumberDigits, ' ' );
+		}
+		Text line( std::move( pos ), mFont, fontSize );
 		line.setStyleConfig( mFontStyleConfig );
 		line.setColor( ( i >= selection.start().line() && i <= selection.end().line() )
 						   ? mLineNumberActiveFontColor

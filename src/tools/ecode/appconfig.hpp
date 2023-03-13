@@ -69,6 +69,7 @@ struct CodeEditorConfig {
 	bool singleClickTreeNavigation{ false };
 	bool syncProjectTreeWithEditor{ true };
 	bool autoCloseXMLTags{ true };
+	bool linesRelativePosition{ false };
 	std::string autoCloseBrackets{ "" };
 	Time cursorBlinkingTime{ Seconds( 0.5f ) };
 };
