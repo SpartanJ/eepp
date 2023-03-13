@@ -547,6 +547,14 @@ class EE_API TextDocument {
 
 	SyntaxHighlighter* getHighlighter() const;
 
+	TextRange getWordRangeInPosition( const TextPosition& pos );
+
+	TextRange getWordRangeInPosition();
+
+	String getWordInPosition( const TextPosition& pos );
+
+	String getWordInPosition();
+
   protected:
 	friend class UndoStack;
 

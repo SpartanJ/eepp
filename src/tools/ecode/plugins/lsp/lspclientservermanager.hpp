@@ -92,6 +92,8 @@ class LSPClientServerManager {
 		const LSPWorkspaceEdit& edit,
 		const std::function<void( const LSPApplyWorkspaceEditResponse& res )>& resCb );
 
+	void renameSymbol( const URI& uri, const TextPosition& pos, const std::string& newName );
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };

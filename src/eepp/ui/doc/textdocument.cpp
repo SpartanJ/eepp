@@ -1567,6 +1567,27 @@ void TextDocument::selectToNextWord() {
 	mergeSelection();
 }
 
+TextRange TextDocument::getWordRangeInPosition( const TextPosition& pos ) {
+	if ( mHighlighter ) {
+		auto type( mHighlighter->getTokenPositionAt( pos ) );
+		return { { pos.line(), type.pos }, { pos.line(), type.pos + (Int64)type.len } };
+	}
+
+	return { nextWordBoundary( pos, false ), previousWordBoundary( pos, false ) };
+}
+
+TextRange TextDocument::getWordRangeInPosition() {
+	return getWordRangeInPosition( getSelection().start() );
+}
+
+String TextDocument::getWordInPosition( const TextPosition& pos ) {
+	return getText( getWordRangeInPosition( pos ) );
+}
+
+String TextDocument::getWordInPosition() {
+	return getWordInPosition( getSelection().start() );
+}
+
 void TextDocument::selectWord( bool withMulticursor ) {
 	if ( !hasSelection() ) {
 		setSelection( { nextWordBoundary( getSelection().start(), false ),

@@ -129,4 +129,19 @@ std::string SyntaxHighlighter::getTokenTypeAt( const TextPosition& pos ) {
 	return "normal";
 }
 
+SyntaxTokenPosition SyntaxHighlighter::getTokenPositionAt( const TextPosition& pos ) {
+	if ( !pos.isValid() || pos.line() < 0 || pos.line() >= (Int64)mDoc->linesCount() )
+		return {};
+	const std::vector<SyntaxToken>& tokens = getLine( pos.line() );
+	if ( tokens.empty() )
+		return {};
+	Int64 col = 0;
+	for ( const auto& token : tokens ) {
+		col += token.len;
+		if ( col > pos.column() )
+			return { token.type, static_cast<Int64>( col - token.len ), token.len };
+	}
+	return {};
+}
+
 }}} // namespace EE::UI::Doc

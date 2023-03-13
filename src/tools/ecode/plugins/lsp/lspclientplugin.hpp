@@ -171,6 +171,8 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 										 LSPSymbolInformationList&& res );
 
 	void processDiagnosticsCodeAction( const PluginMessage& msg );
+
+	void renameSymbol( UICodeEditor* editor );
 };
 
 } // namespace ecode

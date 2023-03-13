@@ -186,6 +186,17 @@ void LSPClientServerManager::applyWorkspaceEdit(
 	} );
 }
 
+void LSPClientServerManager::renameSymbol( const URI& uri, const TextPosition& pos,
+										   const std::string& newName ) {
+	auto* server = getOneLSPClientServer( uri );
+	if ( !server )
+		return;
+	server->documentRename( uri, pos, newName,
+							[this]( const PluginIDType&, const LSPWorkspaceEdit& edit ) {
+								applyWorkspaceEdit( edit, []( const auto& ) {} );
+							} );
+}
+
 void LSPClientServerManager::run( const std::shared_ptr<TextDocument>& doc ) {
 	mThreadPool->run( [&, doc]() { tryRunServer( doc ); } );
 }

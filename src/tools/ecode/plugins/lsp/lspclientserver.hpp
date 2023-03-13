@@ -43,6 +43,7 @@ class LSPClientServer {
 	using SignatureHelpHandler = ReplyHandler<LSPSignatureHelp>;
 	using LocationHandler = ReplyHandler<std::vector<LSPLocation>>;
 	using TextEditArrayHandler = ReplyHandler<std::vector<LSPTextEdit>>;
+	using WorkspaceEditHandler = ReplyHandler<LSPWorkspaceEdit>;
 
 	class LSPRequestHandle : public PluginRequestHandle {
 	  public:
@@ -195,6 +196,12 @@ class LSPClientServer {
 
 	LSPRequestHandle documentFormatting( const URI& document, const json& options,
 										 const TextEditArrayHandler& h );
+
+	void documentRename( const URI& document, const TextPosition& pos,
+									 const std::string& newName, const JsonReplyHandler& h );
+
+	void documentRename( const URI& document, const TextPosition& pos,
+									 const std::string& newName, const WorkspaceEditHandler& h );
 
 	void memoryUsage( const JsonReplyHandler& h );
 

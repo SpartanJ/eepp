@@ -722,14 +722,16 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		mKeyBindings["lsp-go-to-definition"] = "f2";
 		mKeyBindings["lsp-symbol-info"] = "f1";
 		mKeyBindings["lsp-symbol-code-action"] = "alt+return";
+		mKeyBindings["lsp-rename-symbol-under-cursor"] = "ctrl+shift+r";
 	}
 
 	if ( j.contains( "keybindings" ) ) {
 		auto& kb = j["keybindings"];
-		auto list = {
-			"lsp-go-to-definition",		 "lsp-go-to-declaration",	 "lsp-go-to-implementation",
-			"lsp-go-to-type-definition", "lsp-switch-header-source", "lsp-symbol-info",
-			"lsp-symbol-references",	 "lsp-memory-usage",		 "lsp-symbol-code-action" };
+		auto list = { "lsp-go-to-definition",	  "lsp-go-to-declaration",
+					  "lsp-go-to-implementation", "lsp-go-to-type-definition",
+					  "lsp-switch-header-source", "lsp-symbol-info",
+					  "lsp-symbol-references",	  "lsp-memory-usage",
+					  "lsp-symbol-code-action",	  "lsp-rename-symbol-under-cursor" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -905,6 +907,29 @@ void LSPClientPlugin::codeAction( UICodeEditor* editor ) {
 		} );
 }
 
+void LSPClientPlugin::renameSymbol( UICodeEditor* editor ) {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT, editor->getUISceneNode()->i18n(
+								 "new_symbol_under_cursor_name",
+								 "New name (caution: not all references may be replaced)" ) );
+	msgBox->setTitle( editor->getUISceneNode()->i18n( "rename", "Rename" ) );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	TextPosition pos = editor->getDocument().getSelection().start();
+	msgBox->getTextInput()->setText(
+		editor->getDocument().getWordInPosition( editor->getDocument().getSelection().start() ) );
+	msgBox->getTextInput()->getDocument().selectAll();
+	msgBox->showWhenReady();
+	msgBox->addEventListener( Event::OnConfirm, [this, pos, editor, msgBox]( const Event* ) {
+		String newName( msgBox->getTextInput()->getText() );
+		mClientManager.renameSymbol( editor->getDocumentRef()->getURI(), pos, newName );
+		msgBox->closeWindow();
+	} );
+	msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+		if ( mManager->getSplitter() && mManager->getSplitter()->getCurWidget() )
+			mManager->getSplitter()->getCurWidget()->setFocus();
+	} );
+}
+
 void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	mDocs.insert( editor->getDocumentRef().get() );
@@ -920,6 +945,9 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		doc.setCommand( "lsp-go-to-definition", [&, editor]() {
 			getAndGoToLocation( editor, "textDocument/definition" );
 		} );
+
+		doc.setCommand( "lsp-rename-symbol-under-cursor",
+						[this, editor]() { renameSymbol( editor ); } );
 
 		doc.setCommand( "lsp-go-to-declaration", [&, editor]() {
 			getAndGoToLocation( editor, "textDocument/declaration" );
@@ -1059,6 +1087,9 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	if ( cap.implementationProvider )
 		addFn( "lsp-go-to-implementation", "Go To Implementation" );
+
+	if ( cap.renameProvider )
+		addFn( "lsp-rename-symbol-under-cursor", "Rename Symbol Under Cursor" );
 
 	if ( cap.referencesProvider )
 		addFn( "lsp-symbol-references", "Find References to Symbol Under Cursor" );

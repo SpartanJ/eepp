@@ -36,6 +36,8 @@ class EE_API SyntaxHighlighter {
 
 	std::string getTokenTypeAt( const TextPosition& pos );
 
+	SyntaxTokenPosition getTokenPositionAt( const TextPosition& pos );
+
   protected:
 	TextDocument* mDoc;
 	std::map<size_t, TokenizedLine> mLines;

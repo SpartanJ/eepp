@@ -18,6 +18,12 @@ struct EE_API SyntaxToken {
 	size_t len{ 0 };
 };
 
+struct EE_API SyntaxTokenPosition {
+	std::string type;
+	Int64 pos{ 0 };
+	size_t len{ 0 };
+};
+
 struct EE_API SyntaxTokenComplete {
 	std::string type;
 	std::string text;

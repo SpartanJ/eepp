@@ -508,9 +508,9 @@ static LSPWorkspaceEdit parseWorkSpaceEdit( const json& result ) {
 		}
 	}
 	if ( result.contains( "documentChanges" ) ) {
-		auto& documentChanges = result.at( "documentChanges" );
+		const auto& documentChanges = result.at( "documentChanges" );
 		// resourceOperations not supported for now
-		for ( auto& edit : documentChanges ) {
+		for ( const auto& edit : documentChanges ) {
 			ret.documentChanges.push_back( parseTextDocumentEdit( edit ) );
 		}
 	}
@@ -520,7 +520,7 @@ static LSPWorkspaceEdit parseWorkSpaceEdit( const json& result ) {
 static LSPCommand parseCommand( const json& result ) {
 	auto title = result.at( MEMBER_TITLE ).get<std::string>();
 	auto command = result.at( MEMBER_COMMAND ).get<std::string>();
-	auto& args = result.at( MEMBER_ARGUMENTS );
+	const auto& args = result.at( MEMBER_ARGUMENTS );
 	return { title, command, args };
 }
 
@@ -908,6 +908,13 @@ static json applyWorkspaceEditResponse( const PluginIDType& msgid,
 	return j;
 }
 
+static json renameParams( const URI& document, const TextPosition& pos,
+						  const std::string& newName ) {
+	auto params = textDocumentPositionParams( document, pos );
+	params["newName"] = newName;
+	return params;
+}
+
 void LSPClientServer::registerCapabilities( const json& jcap ) {
 	if ( !jcap.is_object() || !jcap.contains( "registrations" ) ||
 		 !jcap["registrations"].is_array() )
@@ -922,6 +929,9 @@ void LSPClientServer::registerCapabilities( const json& jcap ) {
 				registered = true;
 			} else if ( reg["method"] == "textDocument/documentSymbol" ) {
 				mCapabilities.documentSymbolProvider = true;
+				registered = true;
+			} else if ( reg["method"] == "textDocument/rename" ) {
+				mCapabilities.renameProvider = true;
 				registered = true;
 			}
 		}
@@ -975,6 +985,7 @@ void LSPClientServer::initialize() {
 			  { "selectionRange", json{ { "dynamicRegistration", false } } },
 			  { "hover", json{ { "contentFormat", { "markdown", "plaintext" } } } },
 			  { "completion", completionItem },
+			  { "rename", json{ { "dynamicRegistration", true } } },
 		  } },
 		{ "window", json{ { "workDoneProgress", true },
 						  { "showMessage", showMessage },
@@ -1809,6 +1820,20 @@ LSPClientServer::documentFormatting( const URI& document, const json& options,
 	return documentFormatting( document, options, [h]( const IdType& id, const json& json ) {
 		if ( h )
 			h( id, parseTextEditArray( json ) );
+	} );
+}
+
+void LSPClientServer::documentRename( const URI& document, const TextPosition& pos,
+									  const std::string& newName, const JsonReplyHandler& h ) {
+	auto params = renameParams( document, pos, newName );
+	sendAsync( newRequest( "textDocument/rename", params ), h );
+}
+
+void LSPClientServer::documentRename( const URI& document, const TextPosition& pos,
+									  const std::string& newName, const WorkspaceEditHandler& h ) {
+	documentRename( document, pos, newName, [h]( const IdType& id, const json& json ) {
+		if ( h )
+			h( id, parseWorkSpaceEdit( json ) );
 	} );
 }
 
