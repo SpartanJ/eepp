@@ -2175,6 +2175,9 @@ TextRange TextDocument::find( const String& text, TextPosition from, bool caseSe
 			return TextRange();
 	}
 
+	if ( from == to )
+		return TextRange();
+
 	if ( textLines.size() == 1 )
 		return findText( text, from, caseSensitive, wholeWord, type, restrictRange );
 
@@ -2252,6 +2255,9 @@ TextRange TextDocument::findLast( const String& text, TextPosition from, bool ca
 		if ( from < restrictRange.start() || from > restrictRange.end() )
 			return TextRange();
 	}
+
+	if ( from == to )
+		return TextRange();
 
 	if ( textLines.size() == 1 )
 		return findTextLast( text, from, caseSensitive, wholeWord, type, restrictRange );
