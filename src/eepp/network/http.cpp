@@ -266,10 +266,10 @@ const std::string& Http::Request::getField( const std::string& field ) const {
 
 URI Http::getEnvProxyURI() {
 	char* http_proxy = getenv( "http_proxy" );
-	std::string httpProxy;
 	URI proxy;
 
 	if ( NULL != http_proxy ) {
+		std::string httpProxy;
 		httpProxy = std::string( http_proxy );
 		if ( !httpProxy.empty() && httpProxy.find( "://" ) == std::string::npos )
 			httpProxy = "http://" + httpProxy;
@@ -625,8 +625,6 @@ Http::Http( const std::string& host, unsigned short port, bool useSSL, URI proxy
 }
 
 Http::~Http() {
-	std::list<AsyncRequest*>::iterator itt;
-
 	// First we wait to finish any request pending
 	for ( auto&& itt : mThreads ) {
 		itt->wait();
@@ -947,11 +945,11 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											IOStreamInflate::New( writeTo, compressionMode );
 									}
 
-									IOStream& writeToStream = compressed ? *inflateStream : writeTo;
-
-									if ( chunked )
+									if ( chunked ) {
+										IOStream& writeToStream = compressed ? *inflateStream : writeTo;
 										chunkedStream =
 											eeNew( HttpStreamChunked, ( writeToStream ) );
+									}
 
 									bufferStream = chunked
 													   ? chunkedStream

@@ -334,6 +334,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void setTheme( const std::string& path );
 
+	void loadImageFromMedium( const std::string& path, bool isMemory );
+
 	void loadImageFromPath( const std::string& path );
 
 	void loadImageFromMemory( const std::string& content );

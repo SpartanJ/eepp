@@ -1821,18 +1821,22 @@ void App::createDocAlert( UICodeEditor* editor ) {
 		} );
 }
 
-void App::loadImageFromMemory( const std::string& content ) {
+void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
 	UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
 	UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
 	if ( imageView ) {
 		mImageLayout->setEnabled( true )->setVisible( true );
 		loaderView->setVisible( true );
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-		mThreadPool->run( [&, imageView, loaderView, content]() {
+		mThreadPool->run( [this, imageView, loaderView, path, isMemory]() {
 #endif
-			Texture* image =
-				TextureFactory::instance()->getTexture( TextureFactory::instance()->loadFromMemory(
-					reinterpret_cast<const unsigned char*>( content.c_str() ), content.size() ) );
+			Texture* image = isMemory
+								 ? TextureFactory::instance()->getTexture(
+									   TextureFactory::instance()->loadFromMemory(
+										   reinterpret_cast<const unsigned char*>( path.c_str() ),
+										   path.size() ) )
+								 : TextureFactory::instance()->getTexture(
+									   TextureFactory::instance()->loadFromFile( path ) );
 			if ( mImageLayout->isVisible() ) {
 				imageView->runOnMainThread( [this, imageView, loaderView, image]() {
 					mImageLayout->setFocus();
@@ -1850,32 +1854,12 @@ void App::loadImageFromMemory( const std::string& content ) {
 	}
 }
 
+void App::loadImageFromMemory( const std::string& content ) {
+	loadImageFromMedium( content, true );
+}
+
 void App::loadImageFromPath( const std::string& path ) {
-	UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
-	UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
-	if ( imageView ) {
-		mImageLayout->setEnabled( true )->setVisible( true );
-		loaderView->setVisible( true );
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-		mThreadPool->run( [&, imageView, loaderView, path]() {
-#endif
-			Texture* image = TextureFactory::instance()->getTexture(
-				TextureFactory::instance()->loadFromFile( path ) );
-			if ( mImageLayout->isVisible() ) {
-				imageView->runOnMainThread( [this, imageView, loaderView, image]() {
-					mImageLayout->setFocus();
-					imageView->setDrawable( image, true );
-					loaderView->setVisible( false );
-				} );
-			} else {
-				TextureFactory::instance()->remove( image );
-				imageView->setDrawable( nullptr );
-				loaderView->setVisible( false );
-			}
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-		} );
-#endif
-	}
+	loadImageFromMedium( path, false );
 }
 
 void App::loadFileFromPath(
@@ -2611,6 +2595,8 @@ void App::initImageView() {
 		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE ) {
 			mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
 			mImageLayout->setEnabled( false )->setVisible( false );
+			if ( mSplitter->getCurWidget() )
+				mSplitter->getCurWidget()->setFocus();
 		}
 	} );
 }
@@ -3381,9 +3367,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );
 		if ( FileSystem::isDirectory( mColorSchemesPath ) ) {
 			auto colorSchemesFiles = FileSystem::filesGetInPath( mColorSchemesPath );
-			for ( auto& file : colorSchemesFiles ) {
+			for ( const auto& curFile : colorSchemesFiles ) {
 				auto colorSchemesInFile =
-					SyntaxColorScheme::loadFromFile( mColorSchemesPath + file );
+					SyntaxColorScheme::loadFromFile( mColorSchemesPath + curFile );
 				for ( auto& coloScheme : colorSchemesInFile )
 					colorSchemes.emplace_back( coloScheme );
 			}
