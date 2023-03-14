@@ -1834,7 +1834,8 @@ void App::loadImageFromMemory( const std::string& content ) {
 				TextureFactory::instance()->getTexture( TextureFactory::instance()->loadFromMemory(
 					reinterpret_cast<const unsigned char*>( content.c_str() ), content.size() ) );
 			if ( mImageLayout->isVisible() ) {
-				imageView->runOnMainThread( [imageView, loaderView, image]() {
+				imageView->runOnMainThread( [this, imageView, loaderView, image]() {
+					mImageLayout->setFocus();
 					imageView->setDrawable( image, true );
 					loaderView->setVisible( false );
 				} );
@@ -1861,7 +1862,8 @@ void App::loadImageFromPath( const std::string& path ) {
 			Texture* image = TextureFactory::instance()->getTexture(
 				TextureFactory::instance()->loadFromFile( path ) );
 			if ( mImageLayout->isVisible() ) {
-				imageView->runOnMainThread( [imageView, loaderView, image]() {
+				imageView->runOnMainThread( [this, imageView, loaderView, image]() {
+					mImageLayout->setFocus();
 					imageView->setDrawable( image, true );
 					loaderView->setVisible( false );
 				} );
@@ -2105,7 +2107,9 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			UITab* tab = (UITab*)editor->getData();
 			tab->setIcon( icon->getSize( mMenuIconSize ) );
 		}
+	};
 
+	auto docLoaded = [this, editor, docChanged]( const Event* event ) {
 		if ( editor->getDocument().getFileInfo().getExtension() == "svg" ) {
 			editor->getDocument().setCommand( "show-image-preview", [this, editor]() {
 				loadImageFromMemory( editor->getDocument().getText().toUtf8() );
@@ -2118,9 +2122,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					->setId( "show-image-preview" );
 			} );
 		}
+
+		docChanged( event );
 	};
 
-	editor->addEventListener( Event::OnDocumentLoaded, docChanged );
+	editor->addEventListener( Event::OnDocumentLoaded, docLoaded );
 	editor->addEventListener( Event::OnDocumentChanged, docChanged );
 	editor->addEventListener( Event::OnDocumentSave, docChanged );
 	editor->addEventListener( Event::OnEditorTabReady, docChanged );
@@ -2600,6 +2606,12 @@ void App::initImageView() {
 	mImageLayout->on( Event::MouseClick, [&]( const Event* ) {
 		mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
 		mImageLayout->setEnabled( false )->setVisible( false );
+	} );
+	mImageLayout->on( Event::KeyDown, [this]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE ) {
+			mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
+			mImageLayout->setEnabled( false )->setVisible( false );
+		}
 	} );
 }
 
