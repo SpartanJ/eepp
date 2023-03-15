@@ -294,7 +294,8 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	// so consider an object there as a (good?) sign that the server is suitably capable
 	auto toBoolOrObject = []( const nlohmann::json& value, const std::string& valueName ) {
 		return value.contains( valueName ) &&
-			   ( value[valueName].is_boolean() || value[valueName].is_object() );
+			   ( ( value[valueName].is_boolean() && value.value( valueName, false ) ) ||
+				 value[valueName].is_object() );
 	};
 
 	auto& sync = json["textDocumentSync"];
@@ -1404,6 +1405,11 @@ void LSPClientServer::workDoneProgress( const LSPWorkDoneProgressParams& workDon
 }
 
 void LSPClientServer::processNotification( const json& msg ) {
+	if ( !msg.contains( MEMBER_METHOD ) ) {
+		Log::info( "LSPClientServer::processNotification - Unexpected notification, msg: %s",
+				   msg.dump().c_str() );
+		return;
+	}
 	auto method = msg[MEMBER_METHOD].get<std::string>();
 	if ( method == "textDocument/publishDiagnostics" ) {
 		publishDiagnostics( msg );
@@ -1555,8 +1561,8 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 			Log::debug( "LSPClientServer::readStdOut server %s said:\n%s", mLSP.name.c_str(),
 						res.dump().c_str() );
 
-			HandlersMap::iterator it = mHandlers.end();
-			HandlersMap::iterator itEnd = mHandlers.end();
+			HandlersMap::iterator it;
+			HandlersMap::iterator itEnd;
 			JsonReplyHandler handlerOK;
 			JsonReplyHandler handlerErr;
 			bool handlerFound = false;

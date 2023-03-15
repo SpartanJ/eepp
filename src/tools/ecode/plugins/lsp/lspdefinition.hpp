@@ -1,8 +1,13 @@
 #ifndef ECODE_LSPDEFINITION_HPP
 #define ECODE_LSPDEFINITION_HPP
+#include <eepp/core/string.hpp>
+#include <eepp/system/sys.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
+
+using namespace EE;
+using namespace EE::System;
 
 namespace ecode {
 
@@ -17,6 +22,11 @@ struct LSPDefinition {
 	nlohmann::json initializationOptions;
 
 	bool disabled{ false };
+
+	bool commandAvailable() const {
+		auto cmdp( String::split( command, ' ' ) );
+		return !cmdp.empty() && !Sys::which( cmdp[0] ).empty();
+	}
 };
 
 } // namespace ecode
