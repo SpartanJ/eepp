@@ -5,6 +5,8 @@
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/languages/hlsl.hpp>
 #include <eepp/ui/doc/languages/htaccess.hpp>
+#include <eepp/ui/doc/languages/objeck.hpp>
+#include <eepp/ui/doc/languages/pascal.hpp>
 #include <eepp/ui/doc/languages/pico-8.hpp>
 #include <eepp/ui/doc/languages/postgresql.hpp>
 #include <eepp/ui/doc/languages/x86assembly.hpp>
@@ -4145,8 +4147,10 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addMeson();
 	addNelua();
 	addNim();
+	addObjeck();
 	addObjetiveC();
 	addOdin();
+	addPascal();
 	addPerl();
 	addPICO8();
 	addPHP();

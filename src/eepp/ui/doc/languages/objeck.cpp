@@ -1,0 +1,103 @@
+#include <eepp/ui/doc/languages/x86assembly.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+
+namespace EE { namespace UI { namespace Doc { namespace Language {
+
+void addObjeck() {
+
+	SyntaxDefinitionManager::instance()->add(
+
+		{ "Objeck",
+		  { "%.obs$" },
+		  {
+			  { { "#~", "~#" }, "comment" },
+			  { { "#.*" }, "comment" },
+			  { { "\"", "\"", "\\" }, "string" },
+			  { { "'\\u%x%x%x%x'" }, "string" },
+			  { { "'\\?.'" }, "string" },
+			  { { "-?0x%x+" }, "number" },
+			  { { "-?0b[0-1]+" }, "number" },
+			  { { "-?%d+[%d%.eE]*f?" }, "number" },
+			  { { "-?%.?%d+f?" }, "number" },
+			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			  { { ":=" }, "operator" },
+			  { { "[%a_][%w_]*%f[(]" }, "function" },
+			  { { "@[%a_][%w_]*" }, "function" },
+			  { { "[%a_][%w_]*" }, "symbol" },
+			  { { "%s+" }, "normal" },
+			  { { "%w+%f[%s]" }, "normal" },
+
+		  },
+		  {
+			  { "xor", "keyword" },
+			  { "while", "keyword" },
+			  { "use", "keyword" },
+			  { "alias", "keyword" },
+			  { "String", "keyword2" },
+			  { "New", "keyword" },
+			  { "Parent", "keyword" },
+			  { "IntArrayRef", "keyword2" },
+			  { "class", "keyword" },
+			  { "Nil", "keyword2" },
+			  { "Byte", "keyword2" },
+			  { "consts", "keyword" },
+			  { "return", "keyword" },
+			  { "IntRef", "keyword2" },
+			  { "virtual", "keyword" },
+			  { "select", "keyword" },
+			  { "Int", "keyword2" },
+			  { "FuncRef", "keyword2" },
+			  { "enum", "keyword" },
+			  { "reverse", "keyword" },
+			  { "and", "keyword" },
+			  { "StringArrayRef", "keyword2" },
+			  { "FloatRef", "keyword2" },
+			  { "do", "keyword" },
+			  { "native", "keyword" },
+			  { "As", "keyword" },
+			  { "Bool", "keyword2" },
+			  { "Func2Ref", "keyword2" },
+			  { "ByteRef", "keyword2" },
+			  { "other", "keyword" },
+			  { "CharRef", "keyword2" },
+			  { "abstract", "keyword" },
+			  { "each", "keyword" },
+			  { "BoolArrayRef", "keyword2" },
+			  { "Func3Ref", "keyword2" },
+			  { "BoolRef", "keyword2" },
+			  { "BaseArrayRef", "keyword2" },
+			  { "for", "keyword" },
+			  { "false", "literal" },
+			  { "Func4Ref", "keyword2" },
+			  { "or", "keyword" },
+			  { "FloatArrayRef", "keyword2" },
+			  { "ByteArrayRef", "keyword2" },
+			  { "CharArrayRef", "keyword2" },
+			  { "Char", "keyword2" },
+			  { "bundle", "keyword" },
+			  { "leaving", "keyword" },
+			  { "continue", "keyword" },
+			  { "if", "keyword" },
+			  { "critical", "keyword" },
+			  { "break", "keyword" },
+			  { "else", "keyword" },
+			  { "from", "keyword" },
+			  { "function", "keyword" },
+			  { "interface", "keyword" },
+			  { "implements", "keyword" },
+			  { "label", "keyword" },
+			  { "method", "keyword" },
+			  { "private", "keyword" },
+			  { "Float", "keyword2" },
+			  { "public", "keyword" },
+			  { "static", "keyword" },
+			  { "true", "literal" },
+
+		  },
+		  "#",
+		  {}
+
+		} );
+}
+
+}}}} // namespace EE::UI::Doc::Language
