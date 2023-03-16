@@ -83,7 +83,7 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 		return;
 
 	for ( const auto& lsp : lsps ) {
-		if ( !lsp.commandAvailable() )
+		if ( !lsp.commandAvailable() && lsp.host.empty() )
 			continue;
 		std::string rootPath = mLSPWorkspaceFolder.isEmpty() ? findRootPath( lsp, doc )
 															 : mLSPWorkspaceFolder.uri.getFSPath();

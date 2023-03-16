@@ -1,9 +1,11 @@
 #include <algorithm>
+#include <bitset>
 #include <cstring>
 #include <eepp/network/ipaddress.hpp>
 #include <eepp/network/packet.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <eepp/network/tcpsocket.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/log.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_HAIKU
@@ -31,6 +33,12 @@ TcpSocket* TcpSocket::New() {
 }
 
 TcpSocket::TcpSocket() : Socket( Tcp ) {}
+
+TcpSocket::~TcpSocket() {
+	close();
+	if ( mReadThread.joinable() )
+		mReadThread.join();
+}
 
 unsigned short TcpSocket::getLocalPort() const {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
@@ -335,6 +343,27 @@ void TcpSocket::setReceiveTimeout( SocketHandle /*sock*/, const Time& timeout ) 
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
 		Private::SocketImpl::setReceiveTimeout( getHandle(), timeout );
 	}
+}
+
+void TcpSocket::startAsyncRead( ReadFn readFn ) {
+	mReadThread = std::thread( [this, readFn] {
+		setReceiveTimeout( mSocket, Milliseconds( 100 ) );
+		std::string buffer;
+		buffer.resize( 131072 );
+		Clock clock;
+		while ( mSocket != Private::SocketImpl::invalidSocket() ) {
+			size_t received = 0;
+			clock.restart();
+			while ( receive( buffer.data(), buffer.size(), received ) == Status::Done &&
+					received > 0 )
+				readFn( buffer.c_str(), received );
+			if ( clock.getElapsedTime().asMilliseconds() < 100.f ) {
+				auto ms = 100.f - clock.getElapsedTime().asMilliseconds();
+				Sys::sleep( Milliseconds( ms ) );
+			}
+			clock.restart();
+		}
+	} );
 }
 
 TcpSocket::PendingPacket::PendingPacket() : Size( 0 ), SizeReceived( 0 ), Data() {}

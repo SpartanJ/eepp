@@ -389,7 +389,10 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result ) {
 			auto range = parseRange( mrange );
 			auto it = index.end();
 			if ( !parent ) {
-				auto container = symbol.value( "containerName", "" );
+				auto container =
+					symbol.contains( "containerName" ) && symbol.at( "containerName" ).is_string()
+						? symbol.value( "containerName", "" )
+						: "";
 				it = index.find( container );
 				if ( it != index.end() )
 					parent = it->second;
@@ -1055,9 +1058,25 @@ LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String:
 	mManager( manager ), mId( id ), mLSP( lsp ), mRootPath( rootPath ) {}
 
 LSPClientServer::~LSPClientServer() {
+	eeSAFE_DELETE( mSocket );
 	Lock l( mClientsMutex );
 	for ( const auto& client : mClients )
 		client.first->unregisterClient( client.second.get() );
+}
+
+bool LSPClientServer::socketConnect() {
+	if ( !mLSP.host.empty() && mLSP.port != 0 ) {
+		mSocket = TcpSocket::New();
+		Sys::sleep( Milliseconds( 250 ) ); // We wait a reasonable time, otherwise it seems that
+										   // some servers will not respond correctly
+		if ( Socket::Done == mSocket->connect( mLSP.host, mLSP.port, Seconds( 3 ) ) ) {
+			mSocket->startAsyncRead(
+				[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); } );
+			return true;
+		}
+		eeSAFE_DELETE( mSocket );
+	}
+	return false;
 }
 
 bool LSPClientServer::start() {
@@ -1067,16 +1086,37 @@ bool LSPClientServer::start() {
 			mLSP.commandParameters = " " + mLSP.commandParameters;
 		cmd += mLSP.commandParameters;
 	}
-	bool ret =
-		mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync, {}, mRootPath );
-	if ( ret && mProcess.isAlive() ) {
-		mProcess.startAsyncRead(
-			[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
-			[this]( const char* bytes, size_t n ) { readStdErr( bytes, n ); } );
+	if ( !cmd.empty() ) {
+		bool ret = mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync, {},
+									mRootPath );
+		if ( ret && mProcess.isAlive() ) {
+			mUsingProcess = true;
 
-		initialize();
+			mProcess.startAsyncRead(
+				[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
+				[this]( const char* bytes, size_t n ) { readStdErr( bytes, n ); } );
+
+			if ( mLSP.host.empty() )
+				initialize();
+		}
+
+		if ( ret && !mLSP.host.empty() ) {
+			ret = socketConnect();
+			mUsingSocket = true;
+			if ( ret )
+				initialize();
+		}
+
+		return ret;
+	} else {
+		bool ret = socketConnect();
+		mUsingSocket = true;
+
+		if ( ret )
+			initialize();
+		return ret;
 	}
-	return ret;
+	return false;
 }
 
 bool LSPClientServer::registerDoc( const std::shared_ptr<TextDocument>& doc ) {
@@ -1107,7 +1147,9 @@ bool LSPClientServer::needsAsync() {
 }
 
 bool LSPClientServer::isRunning() {
-	return mProcess.isAlive() && !mProcess.isShootingDown();
+	return mUsingProcess ? ( mProcess.isAlive() && !mProcess.isShootingDown() &&
+							 ( !mUsingSocket || mSocket != nullptr ) )
+						 : ( mUsingSocket && mSocket != nullptr );
 }
 
 void LSPClientServer::removeDoc( TextDocument* doc ) {
@@ -1147,7 +1189,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 	LSPRequestHandle ret;
 	ret.server = this;
 
-	if ( !mProcess.isAlive() )
+	if ( !isRunning() )
 		return ret;
 
 	json ob = msg;
@@ -1175,7 +1217,13 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 		Log::info( "LSPClientServer server %s calling %s", mLSP.name.c_str(), method.c_str() );
 		Log::debug( "LSPClientServer server %s sending message:\n%s", mLSP.name.c_str(),
 					sjson.c_str() );
-		mProcess.write( sjson );
+
+		if ( mSocket ) {
+			size_t sent = 0;
+			mSocket->send( sjson.c_str(), sjson.size(), sent );
+		} else {
+			mProcess.write( sjson );
+		}
 	} else {
 		mQueuedMessages.push_back( { std::move( ob ), h, eh } );
 	}
@@ -1192,7 +1240,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::send( const json& msg, const 
 														 const JsonReplyHandler& eh ) {
 	eeASSERT( !needsAsync() );
 
-	if ( mProcess.isAlive() ) {
+	if ( isRunning() ) {
 		return write( msg, h, eh );
 	} else {
 		Log::debug( "LSPClientServer server %s Send for non-running server: %s", mLSP.name.c_str(),
@@ -1493,7 +1541,8 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 
 	std::string& buffer = mReceive;
 
-	while ( !mProcess.isShootingDown() ) {
+	while ( ( mUsingProcess && !mProcess.isShootingDown() ) ||
+			( mUsingSocket && mSocket != nullptr ) ) {
 		auto index = buffer.find( CONTENT_LENGTH_HEADER );
 		if ( index == std::string::npos ) {
 			if ( buffer.size() > ( (Uint64)1 << 20 ) )

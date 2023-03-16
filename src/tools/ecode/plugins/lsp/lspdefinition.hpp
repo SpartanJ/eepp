@@ -19,6 +19,8 @@ struct LSPDefinition {
 	std::string commandParameters;
 	std::vector<std::string> rootIndicationFileNames;
 	std::string url;
+	std::string host;
+	int port{ 0 };
 	nlohmann::json initializationOptions;
 
 	bool disabled{ false };

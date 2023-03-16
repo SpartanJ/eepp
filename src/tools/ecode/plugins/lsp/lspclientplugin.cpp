@@ -766,8 +766,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		// Allow overriding the command for already defined LSP
 		// And allow adding parameters to the already defined LSP
 		if ( updateConfigFile && ( obj.contains( "name" ) || obj.contains( "use" ) ) &&
-			 ( obj.contains( "command" ) || ( obj.contains( "command_parameters" ) &&
-											  obj.at( "command_parameters" ).is_string() ) ) ) {
+			 ( obj.contains( "command" ) ||
+			   ( obj.contains( "command_parameters" ) &&
+				 obj.at( "command_parameters" ).is_string() ) ||
+			   ( obj.contains( "host" ) && obj.at( "host" ).is_string() &&
+				 obj.contains( "port " ) && obj.at( "port" ).is_number_integer() ) ) ) {
 			for ( auto& lspR : lsps ) {
 				std::string name = obj.contains( "name" ) ? obj["name"] : obj["use"];
 				if ( lspR.name == name ) {
@@ -781,6 +784,10 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 							cmdParam = " " + cmdParam;
 						lspR.commandParameters += cmdParam;
 						sanitizeCommand( lspR.commandParameters );
+					}
+					if ( obj.contains( "host" ) ) {
+						lspR.host = obj.value( "host", "" );
+						lspR.port = obj.value( "port", 0 );
 					}
 				}
 			}
@@ -811,6 +818,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					lsp.name = tlsp.name;
 					lsp.rootIndicationFileNames = tlsp.rootIndicationFileNames;
 					lsp.url = tlsp.url;
+					lsp.host = tlsp.host;
+					lsp.port = tlsp.port;
 					lsp.initializationOptions = tlsp.initializationOptions;
 					break;
 				}
@@ -825,6 +834,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			lsp.command = parseCommand( obj["command"] );
 			lsp.name = obj["name"];
 			lsp.url = obj.value( "url", "" );
+			lsp.host = obj.value( "host", "" );
+			lsp.port = obj.value( "port", 0 );
 		}
 
 		lsp.commandParameters = obj.value( "command_parameters", lsp.commandParameters );

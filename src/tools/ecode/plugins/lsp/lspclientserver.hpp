@@ -5,6 +5,7 @@
 #include "lspdefinition.hpp"
 #include "lspdocumentclient.hpp"
 #include "lspprotocol.hpp"
+#include <eepp/network/tcpsocket.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/doc/undostack.hpp>
@@ -219,6 +220,7 @@ class LSPClientServer {
 	LSPDefinition mLSP;
 	std::string mRootPath;
 	Process mProcess;
+	TcpSocket* mSocket{ nullptr };
 	std::vector<TextDocument*> mDocs;
 	std::map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
 	using HandlersMap = std::map<PluginIDType, std::pair<JsonReplyHandler, JsonReplyHandler>>;
@@ -226,6 +228,8 @@ class LSPClientServer {
 	Mutex mClientsMutex;
 	Mutex mHandlersMutex;
 	bool mReady{ false };
+	bool mUsingProcess{ false };
+	bool mUsingSocket{ false };
 	struct QueueMessage {
 		json msg;
 		JsonReplyHandler h;
@@ -267,6 +271,8 @@ class LSPClientServer {
 	void notifyServerInitialized();
 
 	bool needsAsync();
+
+	bool socketConnect();
 };
 
 } // namespace ecode

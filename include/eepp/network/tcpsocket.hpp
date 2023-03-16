@@ -3,6 +3,7 @@
 
 #include <eepp/network/socket.hpp>
 #include <eepp/system/time.hpp>
+#include <thread>
 using namespace EE::System;
 
 namespace EE { namespace Network {
@@ -18,6 +19,8 @@ class EE_API TcpSocket : public Socket {
 
 	/** @brief Default constructor */
 	TcpSocket();
+
+	virtual ~TcpSocket();
 
 	/** @brief Get the port to which the socket is bound locally
 	**  If the socket is not connected, this function returns 0.
@@ -121,6 +124,11 @@ class EE_API TcpSocket : public Socket {
 	 ** has been initialized ). */
 	void setReceiveTimeout( SocketHandle sock, const Time& timeout );
 
+	typedef std::function<void( const char* bytes, size_t n )> ReadFn;
+
+	/** @brief Starts a new thread to receive all stdout and stderr data */
+	void startAsyncRead( ReadFn readFn = nullptr );
+
   private:
 	friend class TcpListener;
 
@@ -135,6 +143,7 @@ class EE_API TcpSocket : public Socket {
 
 	// Member data
 	PendingPacket mPendingPacket; ///< Temporary data of the packet currently being received
+	std::thread mReadThread;
 };
 
 }} // namespace EE::Network
