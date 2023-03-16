@@ -326,7 +326,7 @@ void Window::updateElapsedTime() {
 		mFrameData.FrameElapsed = eeNew( Clock, () );
 	}
 
-	mFrameData.ElapsedTime = mFrameData.FrameElapsed->getElapsed();
+	mFrameData.ElapsedTime = mFrameData.FrameElapsed->getElapsedTimeAndReset();
 }
 
 const Time& Window::getSleepTimePerSecond() const {
@@ -371,7 +371,7 @@ void Window::limitFps() {
 
 			Sys::sleep( remainingTime );
 
-			Time elapsed = checkElapsed.getElapsed();
+			Time elapsed = checkElapsed.getElapsedTimeAndReset();
 			Time timeDiff = elapsed - remainingTime;
 
 			mFrameData.FPS.SleepTime += elapsed;

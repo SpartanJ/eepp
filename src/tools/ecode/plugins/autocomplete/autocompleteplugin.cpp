@@ -172,8 +172,8 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 		editor->removeEventListener( listener );
 	mEditors.erase( editor );
 	mEditorDocs.erase( editor );
-	for ( auto editor : mEditorDocs )
-		if ( editor.second == doc )
+	for ( auto ceditor : mEditorDocs )
+		if ( ceditor.second == doc )
 			return;
 	mDocs.erase( doc );
 	mDocCache.erase( doc );
@@ -346,29 +346,32 @@ bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent
 	auto lang = editor->getDocumentRef()->getSyntaxDefinition().getLSPName();
 	auto cap = mCapabilities.find( lang );
 	if ( cap != mCapabilities.end() ) {
-		bool requestedSignatureHelp = false;
-		const auto& signatureTrigger = cap->second.signatureHelpProvider.triggerCharacters;
-		if ( std::find( signatureTrigger.begin(), signatureTrigger.end(), event.getChar() ) !=
-			 signatureTrigger.end() ) {
-			requestSignatureHelp( editor );
-			requestedSignatureHelp = true;
+		if ( cap->second.signatureHelpProvider.provider ) {
+			bool requestedSignatureHelp = false;
+			const auto& signatureTrigger = cap->second.signatureHelpProvider.triggerCharacters;
+			if ( std::find( signatureTrigger.begin(), signatureTrigger.end(), event.getChar() ) !=
+				 signatureTrigger.end() ) {
+				requestSignatureHelp( editor );
+				requestedSignatureHelp = true;
+			}
+			if ( mSignatureHelpVisible && !requestedSignatureHelp ) {
+				auto doc = editor->getDocumentRef();
+				auto curPos = doc->getSelection().start();
+				if ( curPos.line() != mSignatureHelpPosition.line() ||
+					 curPos < doc->startOfWord( doc->positionOffset( mSignatureHelpPosition, 1 ) ) )
+					resetSignatureHelp();
+			}
 		}
 
-		if ( mSignatureHelpVisible && !requestedSignatureHelp ) {
-			auto doc = editor->getDocumentRef();
-			auto curPos = doc->getSelection().start();
-			if ( curPos.line() != mSignatureHelpPosition.line() ||
-				 curPos < doc->startOfWord( doc->positionOffset( mSignatureHelpPosition, 1 ) ) )
-				resetSignatureHelp();
-		}
-
-		const auto& triggerCharacters = cap->second.completionProvider.triggerCharacters;
-		if ( partialSymbol.size() >= 1 ||
-			 std::find( triggerCharacters.begin(), triggerCharacters.end(), event.getChar() ) !=
-				 triggerCharacters.end() ) {
-			updateSuggestions( partialSymbol, editor );
-		} else {
-			resetSuggestions( editor );
+		if ( cap->second.completionProvider.provider ) {
+			const auto& triggerCharacters = cap->second.completionProvider.triggerCharacters;
+			if ( partialSymbol.size() >= 1 ||
+				 std::find( triggerCharacters.begin(), triggerCharacters.end(), event.getChar() ) !=
+					 triggerCharacters.end() ) {
+				updateSuggestions( partialSymbol, editor );
+			} else {
+				resetSuggestions( editor );
+			}
 		}
 		return false;
 	}
@@ -906,7 +909,7 @@ void AutoCompletePlugin::resetSuggestions( UICodeEditor* editor ) {
 	mSuggestionIndex = 0;
 	mSuggestionsStartIndex = 0;
 	{
-		Lock l( mSuggestionsEditorMutex );
+		Lock l2( mSuggestionsEditorMutex );
 		mSuggestionsEditor = nullptr;
 	}
 	mSuggestions.clear();
@@ -974,11 +977,11 @@ void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEdi
 	auto langSuggestions = mLangCache.find( lang );
 	if ( langSuggestions == mLangCache.end() )
 		return;
-	auto& symbols = langSuggestions->second;
+	const auto& symbols = langSuggestions->second;
 	{
 #if AUTO_COMPLETE_THREADED
 		mPool->run(
-			[this, symbol, symbols, editor] { runUpdateSuggestions( symbol, symbols, editor ); } );
+			[this, symbol, &symbols, editor] { runUpdateSuggestions( symbol, symbols, editor ); } );
 #else
 		runUpdateSuggestions( symbol, symbols, editor );
 #endif

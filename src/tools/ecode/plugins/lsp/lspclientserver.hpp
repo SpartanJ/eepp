@@ -197,11 +197,11 @@ class LSPClientServer {
 	LSPRequestHandle documentFormatting( const URI& document, const json& options,
 										 const TextEditArrayHandler& h );
 
-	void documentRename( const URI& document, const TextPosition& pos,
-									 const std::string& newName, const JsonReplyHandler& h );
+	void documentRename( const URI& document, const TextPosition& pos, const std::string& newName,
+						 const JsonReplyHandler& h );
 
-	void documentRename( const URI& document, const TextPosition& pos,
-									 const std::string& newName, const WorkspaceEditHandler& h );
+	void documentRename( const URI& document, const TextPosition& pos, const std::string& newName,
+						 const WorkspaceEditHandler& h );
 
 	void memoryUsage( const JsonReplyHandler& h );
 

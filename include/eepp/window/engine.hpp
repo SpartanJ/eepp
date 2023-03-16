@@ -26,6 +26,8 @@ class EE_API Engine {
 
 	static bool isEngineRunning();
 
+	static bool isRunninMainThread();
+
 	/** Creates a new window. */
 	EE::Window::Window* createWindow( WindowSettings Settings,
 									  ContextSettings Context = ContextSettings() );

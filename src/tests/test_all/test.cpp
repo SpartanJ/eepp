@@ -259,7 +259,7 @@ void EETest::onFontLoaded() {
 	TTF = FontManager::instance()->getByName( "NotoSans-Regular" );
 	Font* monospace = FontManager::instance()->getByName( "monospace" );
 
-	Log::info( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
+	Log::info( "Fonts loading time: %4.3f ms.", mFTE.getElapsedTimeAndReset().asMilliseconds() );
 
 	eeASSERT( TTF != NULL );
 	eeASSERT( monospace != NULL );
@@ -600,7 +600,7 @@ void EETest::createUI() {
 
 	createUIThemeTextureAtlas();
 
-	Log::info( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+	Log::info( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsedTimeAndReset().asMilliseconds() );
 
 	mSceneNode = UISceneNode::New();
 
@@ -640,7 +640,7 @@ void EETest::createUI() {
 	createBaseUI();
 	createNewUI();
 
-	Log::info( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+	Log::info( "CreateUI time: %4.3f ms.", TE.getElapsedTimeAndReset().asMilliseconds() );
 }
 
 void EETest::createNewUI() {
@@ -1482,7 +1482,7 @@ void EETest::loadTextures() {
 	mCircleSprite = Sprite::New(
 		GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[1], "thecircle" ) ) );
 
-	Log::info( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+	Log::info( "Textures loading time: %4.3f ms.", TE.getElapsedTimeAndReset().asMilliseconds() );
 
 	Map.loadFromFile( MyPath + "maps/test.eem" );
 	Map.setDrawGrid( false );
@@ -1490,7 +1490,7 @@ void EETest::loadTextures() {
 	Map.setDrawBackground( false );
 	Map.setViewSize( mWindow->getSize().asFloat() );
 
-	Log::info( "Map creation time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+	Log::info( "Map creation time: %4.3f ms.", TE.getElapsedTimeAndReset().asMilliseconds() );
 }
 
 void EETest::run() {
@@ -1506,7 +1506,7 @@ void EETest::particlesThread() {
 
 void EETest::updateParticles() {
 	if ( MultiViewportMode || Screen == 2 ) {
-		PSElapsed = cElapsed.getElapsed();
+		PSElapsed = cElapsed.getElapsedTimeAndReset();
 
 		for ( Uint8 i = 0; i < PS.size(); i++ )
 			PS[i].update( PSElapsed );

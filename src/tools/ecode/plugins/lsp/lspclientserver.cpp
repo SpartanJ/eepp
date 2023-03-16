@@ -425,7 +425,7 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result ) {
 		rret.push_back( LSPSymbolInformationTmp::fromTmp( r ) );
 
 	Log::debug( "LSPClientServer - parseDocumentSymbols took: %.2fms",
-				clock.getElapsed().asMilliseconds() );
+				clock.getElapsedTimeAndReset().asMilliseconds() );
 	return rret;
 }
 
@@ -774,7 +774,7 @@ static LSPCompletionList parseDocumentCompletion( const json& result ) {
 		}
 #ifndef EE_DEBUG
 	} catch ( const json::exception& err ) {
-		Log::warning( "Error parsing parseDocumentCompletion: %s", err.what() );
+		Log::debug( "Error parsing parseDocumentCompletion: %s", err.what() );
 	}
 #endif
 	return ret;
@@ -834,7 +834,7 @@ static LSPSignatureHelp parseSignatureHelp( const json& sig ) {
 		}
 #ifndef EE_DEBUG
 	} catch ( const json::exception& err ) {
-		Log::warning( "Error parsing parseSignatureHelp: %s", err.what() );
+		Log::debug( "Error parsing parseSignatureHelp: %s", err.what() );
 	}
 #endif
 	return ret;
@@ -1103,8 +1103,7 @@ void LSPClientServer::notifyServerInitialized() {
 }
 
 bool LSPClientServer::needsAsync() {
-	return Engine::isEngineRunning() &&
-		   Engine::instance()->getMainThreadId() == Thread::getCurrentThreadId();
+	return Engine::isRunninMainThread();
 }
 
 bool LSPClientServer::isRunning() {
@@ -1191,9 +1190,8 @@ void LSPClientServer::sendAsync( const json& msg, const JsonReplyHandler& h,
 
 LSPClientServer::LSPRequestHandle LSPClientServer::send( const json& msg, const JsonReplyHandler& h,
 														 const JsonReplyHandler& eh ) {
-#ifdef EE_DEBUG
 	eeASSERT( !needsAsync() );
-#endif
+
 	if ( mProcess.isAlive() ) {
 		return write( msg, h, eh );
 	} else {
@@ -1393,7 +1391,7 @@ void LSPClientServer::publishDiagnostics( const json& msg ) {
 	}
 	Log::debug( "LSPClientServer::publishDiagnostics: %s - returned %zu items",
 				res.uri.toString().c_str(), res.diagnostics.size() );
-	Log::info( "LSPClientServer::publishDiagnostics: %s", msg.dump().c_str() );
+	Log::debug( "LSPClientServer::publishDiagnostics: %s", msg.dump().c_str() );
 }
 
 void LSPClientServer::workDoneProgress( const LSPWorkDoneProgressParams& workDoneParams ) {
@@ -1406,8 +1404,8 @@ void LSPClientServer::workDoneProgress( const LSPWorkDoneProgressParams& workDon
 
 void LSPClientServer::processNotification( const json& msg ) {
 	if ( !msg.contains( MEMBER_METHOD ) ) {
-		Log::info( "LSPClientServer::processNotification - Unexpected notification, msg: %s",
-				   msg.dump().c_str() );
+		Log::debug( "LSPClientServer::processNotification - Unexpected notification, msg: %s",
+					msg.dump().c_str() );
 		return;
 	}
 	auto method = msg[MEMBER_METHOD].get<std::string>();

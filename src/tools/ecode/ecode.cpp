@@ -3334,7 +3334,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		Clock defClock;
 		SyntaxDefinitionManager::createSingleton();
 		Log::info( "Syntax definitions loaded in %.2f ms.",
-				   defClock.getElapsed().asMilliseconds() );
+				   defClock.getElapsedTimeAndReset().asMilliseconds() );
 
 		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );

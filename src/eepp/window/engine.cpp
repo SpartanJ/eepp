@@ -236,6 +236,10 @@ bool Engine::isEngineRunning() {
 	return existsSingleton() && Engine::instance()->isRunning();
 }
 
+bool Engine::isRunninMainThread() {
+	return isEngineRunning() && Engine::instance()->isMainThread();
+}
+
 bool Engine::isRunning() const {
 	return NULL != mWindow;
 }

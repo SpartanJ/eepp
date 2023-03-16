@@ -351,10 +351,10 @@ void TextureLoader::loadFromPixels() {
 
 				if ( mFilepath.empty() ) {
 					Log::info( "Texture ID %d loaded in %4.3f ms.", mTexId,
-							   mTE.getElapsed().asMilliseconds() );
+							   mTE.getElapsedTimeAndReset().asMilliseconds() );
 				} else {
 					Log::info( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(),
-							   mTE.getElapsed().asMilliseconds() );
+							   mTE.getElapsedTimeAndReset().asMilliseconds() );
 				}
 			} else {
 				Log::warning( "Failed to create texture. Reason: %s", SOIL_last_result() );

@@ -331,7 +331,7 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 
 		Log::debug( "UISceneNode::loadLayoutNodes loaded nodes%s in: %.2f ms",
 					id.empty() ? "" : std::string( " (id=" + id + ")" ).c_str(),
-					innerClock.getElapsed().asMilliseconds() );
+					innerClock.getElapsedTimeAndReset().asMilliseconds() );
 	}
 
 	for ( auto& widget : widgets )
@@ -339,7 +339,7 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 
 	if ( mVerbose ) {
 		Log::debug( "UISceneNode::loadLayoutNodes reloaded styles in: %.2f ms",
-					innerClock.getElapsed().asMilliseconds() );
+					innerClock.getElapsedTimeAndReset().asMilliseconds() );
 	}
 
 	mIsLoading = false;

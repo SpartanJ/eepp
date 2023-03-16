@@ -51,7 +51,7 @@ void SceneManager::update( const Time& elapsed ) {
 }
 
 void SceneManager::update() {
-	update( mClock.getElapsed() );
+	update( mClock.getElapsedTimeAndReset() );
 }
 
 bool SceneManager::isShootingDown() const {
