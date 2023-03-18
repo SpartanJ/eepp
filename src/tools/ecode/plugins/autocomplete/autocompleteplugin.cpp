@@ -700,6 +700,7 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	const auto& normalStyle = scheme.getEditorSyntaxStyle( "suggestion" );
 	const auto& selectedStyle = scheme.getEditorSyntaxStyle( "suggestion_selected" );
 	bool drawUp = true;
+	mRowHeight = lineHeight + mBoxPadding.Top + mBoxPadding.Bottom;
 
 	if ( !drawsSuggestions ) {
 		if ( drawsSignature )
@@ -717,7 +718,7 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 						startScroll.y + cursor.line() * lineHeight + lineHeight );
 	size_t largestString = 0;
 	size_t max = eemin<size_t>( mSuggestionsMaxVisible, suggestions.size() );
-	mRowHeight = lineHeight + mBoxPadding.Top + mBoxPadding.Bottom;
+
 	const auto& barStyle = scheme.getEditorSyntaxStyle( "suggestion_scrollbar" );
 	if ( cursorPos.y + mRowHeight * max > editor->getPixelsSize().getHeight() ) {
 		cursorPos.y -= lineHeight + mRowHeight * max;
