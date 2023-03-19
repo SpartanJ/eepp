@@ -102,8 +102,17 @@ void App::saveDoc() {
 		return;
 
 	if ( mSplitter->getCurEditor()->getDocument().hasFilepath() ) {
-		if ( mSplitter->getCurEditor()->save() )
+		if ( mSplitter->getCurEditor()->save() ) {
 			updateEditorState();
+		} else {
+			UIMessageBox * msgBox = errorMsgBox( i18n( 
+				"could_not_write_file", "Could not write file to disk.\nPlease check if the file "
+				"is read-only or if ecode does not have permissions to write to that file.\n"
+				"File path is: "
+			) + mSplitter->getCurEditor()->getDocument().getFilePath() );
+
+			setFocusEditorOnClose( msgBox );
+		}
 	} else {
 		saveFileDialog( mSplitter->getCurEditor() );
 	}

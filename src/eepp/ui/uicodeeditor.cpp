@@ -1731,7 +1731,8 @@ Float UICodeEditor::getXOffsetCol( const TextPosition& position ) const {
 	const String& line = mDoc->line( position.line() ).getText();
 	Float glyphWidth = getGlyphWidth();
 	Float x = 0;
-	for ( auto i = 0; i < position.column(); i++ ) {
+	Int64 maxCol = eemin( (Int64)line.size(), position.column() );
+	for ( auto i = 0; i < maxCol; i++ ) {
 		if ( line[i] == '\t' ) {
 			x += glyphWidth * mTabWidth;
 		} else if ( line[i] != '\n' && line[i] != '\r' ) {
