@@ -191,13 +191,33 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 #include <assert.h>
 #include <eterm/terminal/pseudoterminal.hpp>
 #include <eterm/terminal/windowserrors.hpp>
-#define NTDDI_VERSION NTDDI_WIN10_RS5
 #include <windows.h>
+
+typedef HRESULT( WINAPI* _CreatePseudoConsole )( COORD size, HANDLE hInput, HANDLE hOutput,
+												 DWORD dwFlags, HPCON* phPC );
+typedef void( WINAPI* _ClosePseudoConsole )( HPCON hPC );
+typedef HRESULT( WINAPI* _ResizePseudoConsole )( HPCON hPC, COORD size );
+
+static _CreatePseudoConsole pCreatePseudoConsole = NULL;
+static _ClosePseudoConsole pClosePseudoConsole = NULL;
+static _ResizePseudoConsole pResizePseudoConsole = NULL;
+static bool ConsoleFunctionsInit = false;
+
+static void initConsoleFunctions() {
+	HMODULE kernelModule = GetModuleHandle( TEXT( "kernel32.dll" ) );
+	pCreatePseudoConsole =
+		(_CreatePseudoConsole)GetProcAddress( kernelModule, "CreatePseudoConsole" );
+	pClosePseudoConsole = (_ClosePseudoConsole)GetProcAddress( kernelModule, "ClosePseudoConsole" );
+	pResizePseudoConsole =
+		(_ResizePseudoConsole)GetProcAddress( kernelModule, "ResizePseudoConsole" );
+	ConsoleFunctionsInit = true;
+}
 
 namespace eterm { namespace Terminal {
 
 PseudoTerminal::~PseudoTerminal() {
-	ClosePseudoConsole( mPHPC );
+	if ( pCreatePseudoConsole )
+		pClosePseudoConsole( mPHPC );
 }
 
 PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput,
@@ -208,6 +228,8 @@ PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& hInput, Auto
 	mAttached( false ) {
 	mSize.x = (SHORT)columns;
 	mSize.y = (SHORT)rows;
+	if ( !ConsoleFunctionsInit )
+		initConsoleFunctions();
 }
 
 bool PseudoTerminal::isTTY() const {
@@ -215,7 +237,10 @@ bool PseudoTerminal::isTTY() const {
 }
 
 bool PseudoTerminal::resize( int columns, int rows ) {
-	HRESULT hr = ResizePseudoConsole( mPHPC, { (SHORT)columns, (SHORT)rows } );
+	if ( !pResizePseudoConsole )
+		return false;
+
+	HRESULT hr = pResizePseudoConsole( mPHPC, { (SHORT)columns, (SHORT)rows } );
 	if ( hr != S_OK ) {
 		PrintErrorResult( hr );
 		return false;
@@ -275,6 +300,12 @@ int PseudoTerminal::getNumRows() const {
 }
 
 std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) {
+	if ( !ConsoleFunctionsInit )
+		initConsoleFunctions();
+
+	if ( !pCreatePseudoConsole )
+		return {};
+
 	using Pointer = std::unique_ptr<PseudoTerminal>;
 
 	HRESULT hr{ E_UNEXPECTED };
@@ -294,7 +325,7 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 		assert( ptySize.X > 0 );
 		assert( ptySize.Y > 0 );
 
-		hr = CreatePseudoConsole( ptySize, hPipePTYIn.handle(), hPipePTYOut.handle(), 0, &hPC );
+		hr = pCreatePseudoConsole( ptySize, hPipePTYIn.handle(), hPipePTYOut.handle(), 0, &hPC );
 	}
 
 	if ( hr != S_OK ) {

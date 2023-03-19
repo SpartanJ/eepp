@@ -1302,6 +1302,7 @@ static void addIni() {
 		  { { { "%s?#%x%x%x%x%x%x%x%x" }, "string" },
 			{ { "%s?#%x%x%x%x%x%x" }, "string" },
 			{ { "^#.-\n" }, "comment" },
+			{ { "^;.-\n" }, "comment" },
 			{ { "%s#.-\n" }, "comment" },
 			{ { "[%a_][%w-+_%s%p]-%f[=]" }, "keyword" },
 			{ { "\"", "\"", "\\" }, "string" },
