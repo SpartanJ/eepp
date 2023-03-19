@@ -39,8 +39,10 @@ bool UITerminal::isType( const Uint32& type ) const {
 }
 
 void UITerminal::draw() {
-	mTerm->setPosition( mScreenPosi.asFloat() );
-	mTerm->draw();
+	if ( mTerm ) {
+		mTerm->setPosition( mScreenPosi.asFloat() );
+		mTerm->draw();
+	}
 }
 
 UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
@@ -49,6 +51,8 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	mVScroll( UIScrollBar::NewVertical() ),
 	mTerm( terminalDisplay ) {
 	mFlags |= UI_TAB_STOP;
+	if ( !terminalDisplay )
+		return;
 	mTerm->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
 		switch ( event.type ) {
 			case TerminalDisplay::EventType::TITLE: {
@@ -297,6 +301,8 @@ const std::shared_ptr<TerminalDisplay>& UITerminal::getTerm() const {
 }
 
 void UITerminal::scheduledUpdate( const Time& ) {
+	if ( !mTerm )
+		return;
 	mTerm->update();
 
 	if ( mTerm->isDirty() )

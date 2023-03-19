@@ -258,6 +258,15 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
 		program, args, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(), 10000,
 		nullptr, mUseFrameBuffer );
+	if ( term->getTerm() == nullptr ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::OK,
+			mApp->i18n( "feature_not_supported_in_os",
+						"This feature is not supported in this Operating System" ) );
+		msgBox->showWhenReady();
+		return nullptr;
+	}
+
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? mApp->i18n( "shell", "Shell" ).toUtf8() : title, true );
