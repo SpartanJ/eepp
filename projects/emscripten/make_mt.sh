@@ -12,6 +12,6 @@ rm assets/fonts/NotoColorEmoji.ttf assets/fonts/DejaVuSansMonoNerdFontComplete.t
 rm -rf ./ecode
 mkdir ecode
 cp -r ../../bin/assets/ ecode/assets/
-rm ecode/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode/assets/fonts/DroidSansFallbackFull.ttf ecode/assets/fonts/NotoColorEmoji.ttf ecode/assets/test.zip ecode/assets/ca-bundle.pem ecode/assets/icon/ee.icns ecode/assets/icon/ee.rc ecode/assets/icon/ee.res ecode/assets/icon/ee.ico ecode/assets/fonts/*.png ecode/assets/fonts/*.fnt ecode/assets/fonts/OpenSans-Regular.ttf
+rm ecode/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode/assets/fonts/DroidSansFallbackFull.ttf ecode/assets/fonts/NotoColorEmoji.ttf ecode/assets/test.zip ecode/assets/ca-bundle.pem ecode/assets/icon/ee.icns ecode/assets/icon/ee.rc ecode/assets/icon/ee.res ecode/assets/icon/ee.ico ecode/assets/fonts/*.png ecode/assets/fonts/*.fnt ecode/assets/fonts/OpenSans-Regular.ttf ecode/assets/icon/ecode.icns
 rm -r ecode/assets/atlases ecode/assets/screenshots ecode/assets/cursors ecode/assets/layouts ecode/assets/maps ecode/assets/sounds ecode/assets/sprites ecode/assets/tiles ecode/assets/shaders ecode/assets/ui/uitheme*
 emmake make -j"$(nproc)" "$@"
