@@ -1379,8 +1379,10 @@ solution "eepp"
 		if os.is("haiku") then
 			links { "bsd" }
 		end
-
-		build_link_configuration( "ecode", true )
+		if os.is("windows") and not is_vs() then
+			linkoptions { "../../bin/assets/icon/ecode.res" }
+		end
+		build_link_configuration( "ecode", false )
 
 	project "eterm"
 		set_kind()

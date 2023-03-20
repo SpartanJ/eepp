@@ -291,18 +291,20 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 	filter { "system:windows", "action:not vs*", "architecture:x86" }
-		if ( true == use_ee_icon ) then
+		if true == use_ee_icon then
 			linkoptions { "../../bin/assets/icon/ee.res" }
 		end
 
 	filter { "system:windows", "action:not vs*", "architecture:x86_64" }
-		if ( true == use_ee_icon ) then
+		if true == use_ee_icon then
 			linkoptions { "../../bin/assets/icon/ee.x64.res" }
 		end
 
 	filter { "system:windows", "action:vs*" }
-		files { "bin/assets/icon/ee.rc", "bin/assets/icon/ee.ico" }
-		vpaths { ['Resources/*'] = { "ee.rc", "ee.ico" } }
+		if true == use_ee_icon then
+			files { "bin/assets/icon/ee.rc", "bin/assets/icon/ee.ico" }
+			vpaths { ['Resources/*'] = { "ee.rc", "ee.ico" } }
+		end
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
@@ -487,7 +489,7 @@ end
 
 function set_ios_config()
 	if os.istarget("ios") then
-		local toolchainpath = os.getenv("TOOLCHAINPATH")
+		-- local toolchainpath = os.getenv("TOOLCHAINPATH")
 		local iosversion = os.getenv("IOSVERSION")
 		local sysroot_path = os.getenv("SYSROOTPATH")
 
@@ -1066,7 +1068,14 @@ workspace "eepp"
 		files { "src/tools/ecode/**.cpp" }
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/" }
 		links { "efsw-static", "eterm-static" }
-		build_link_configuration( "ecode", true )
+		build_link_configuration( "ecode", false )
+		filter { "system:windows", "action:vs*" }
+			files { "bin/assets/icon/ecode.rc", "bin/assets/icon/ecode.ico" }
+			vpaths { ['Resources/*'] = { "ecode.rc", "ecode.ico" } }
+		filter { "system:windows", "action:not vs*", "architecture:x86" }
+			linkoptions { "../../bin/assets/icon/ecode.res" }
+		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+			linkoptions { "../../bin/assets/icon/ecode.x64.res" }
 		filter "options:with-debug-symbols"
 			defines { "ECODE_USE_BACKWARD" }
 		filter "system:macosx"
