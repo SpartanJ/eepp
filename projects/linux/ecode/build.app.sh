@@ -28,7 +28,7 @@ mkdir -p ecode.app/libs
 chmod +x AppRun
 cp AppRun ecode.app/
 cp ecode.desktop ecode.app/
-cp ../../../bin/assets/icon/ee.png ecode.app/ecode.png
+cp ../../../bin/assets/icon/ecode.png ecode.app/ecode.png
 cp ../../../libs/linux/libeepp.so ecode.app/libs/
 cp ../../../bin/ecode ecode.app/ecode.bin
 cp -L "$(whereis libSDL2-2.0.so.0 | awk '{print $NF}')" ecode.app/libs/
@@ -47,7 +47,7 @@ cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode.app/assets/
 mkdir -p ecode.app/assets/icon/
-cp -r ../../../bin/assets/icon/ee.png ecode.app/assets/icon/
+cp -r ../../../bin/assets/icon/ecode.png ecode.app/assets/icon/
 mkdir ecode.app/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/assets/ui/
 cp ../../../bin/assets/ca-bundle.pem ecode.app/assets/ca-bundle.pem

@@ -10,7 +10,7 @@ cd "$DIRPATH" || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/assets
 mkdir -p ecode.app/lib
-cp ../../../bin/assets/icon/ee.png ecode.app/ecode.png
+cp ../../../bin/assets/icon/ecode.png ecode.app/ecode.png
 cp ../../../libs/haiku/libeepp.so ecode.app/lib/
 cp ../../../bin/ecode ecode.app/
 cp -L /boot/system/lib/libSDL2-2.0.so.0 ecode.app/lib/
@@ -29,7 +29,7 @@ cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode.app/assets/
 mkdir -p ecode.app/assets/icon/
-cp -r ../../../bin/assets/icon/ee.png ecode.app/assets/icon/
+cp -r ../../../bin/assets/icon/ecode.png ecode.app/assets/icon/
 mkdir ecode.app/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/assets/ui/
 

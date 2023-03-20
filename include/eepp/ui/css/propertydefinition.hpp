@@ -209,6 +209,7 @@ enum class PropertyId : Uint32 {
 	SelectOnClick = String::hash( "select-on-click" ),
 	LineSpacing = String::hash( "line-spacing" ),
 	GravityOwner = String::hash( "gravity-owner" ),
+	Href = String::hash( "href" ),
 };
 
 enum class PropertyType : Uint32 {

@@ -54,7 +54,7 @@ cp -r ../../../bin/assets/plugins ecode/assets/
 mkdir ecode/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode/assets/ui/
 mkdir -p ecode/assets/icon
-cp ../../../bin/assets/icon/ee.png ecode/assets/icon/
+cp ../../../bin/assets/icon/ecode.png ecode/assets/icon/
 cp ../../../bin/assets/ca-bundle.pem ecode/assets/ca-bundle.pem
 
 VERSIONPATH=../../../src/tools/ecode/version.hpp

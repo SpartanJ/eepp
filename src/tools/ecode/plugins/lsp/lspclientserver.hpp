@@ -273,6 +273,8 @@ class LSPClientServer {
 	bool needsAsync();
 
 	bool socketConnect();
+
+	void socketInitialize();
 };
 
 } // namespace ecode

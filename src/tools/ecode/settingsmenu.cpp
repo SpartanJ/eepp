@@ -1601,7 +1601,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			}
 		}
 
-		mProjectTreeMenu->add( i18n( "open_folder", "Open File" ), findIcon( "document-open" ) )
+		mProjectTreeMenu->add( i18n( "open_file", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu
 			->add( i18n( "open_containin_folder", "Open Containing Folder..." ),

@@ -95,6 +95,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["menucheckbox"] = UIMenuCheckBox::New;
 		registeredWidget["menuradiobutton"] = UIMenuRadioButton::New;
 		registeredWidget["menuseparator"] = UIMenuSeparator::New;
+		registeredWidget["anchor"] = UIAnchor::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
@@ -109,7 +110,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["button"] = UIPushButton::New;
 		registeredWidget["rlay"] = UIRelativeLayout::New;
 		registeredWidget["tooltip"] = UITooltip::New;
-
+		registeredWidget["tv"] = UITextView::New;
+		registeredWidget["a"] = UIAnchor::New;
 
 		sBaseListCreated = true;
 	}

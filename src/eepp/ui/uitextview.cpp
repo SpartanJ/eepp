@@ -11,6 +11,7 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/clipboard.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI {
 
@@ -173,8 +174,7 @@ UITextView* UITextView::setOutlineColor( const Color& outlineColor ) {
 }
 
 UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
-	if ( mFontStyleConfig.Style != fontStyle ) {
-		mTextCache->setStyle( fontStyle );
+	if ( mFontStyleConfig.Style != fontStyle ) {		mTextCache->setStyle( fontStyle );
 		mFontStyleConfig.Style = fontStyle;
 		recalculate();
 		onFontStyleChanged();
@@ -265,7 +265,9 @@ UITextView* UITextView::setFontShadowColor( const Color& color ) {
 			mFontStyleConfig.Style &= ~Text::Shadow;
 		Color newColor( color.r, color.g, color.b, color.a * mAlpha / 255.f );
 		mTextCache->setShadowColor( newColor );
+		mTextCache->setStyle( mFontStyleConfig.Style );
 		onFontStyleChanged();
+		recalculate();
 		invalidateDraw();
 	}
 
@@ -817,6 +819,76 @@ void UITextView::setTextAlign( const Uint32& align ) {
 	mFlags &= ~( UI_HALIGN_CENTER | UI_HALIGN_RIGHT );
 	mFlags |= align;
 	onAlignChange();
+}
+
+UIAnchor* UIAnchor::New() {
+	return eeNew( UIAnchor, () );
+}
+
+UIAnchor::UIAnchor() : UITextView( "anchor" ) {
+	addMouseClickListener(
+		[this]( const MouseEvent* ) {
+			if ( !mHref.empty() )
+				Engine::instance()->openURI( mHref );
+		},
+		EE_BUTTON_LEFT );
+}
+
+bool UIAnchor::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Href:
+			setHref( attribute.asString() );
+			break;
+		default:
+			UITextView::applyProperty( attribute );
+			break;
+	}
+
+	return true;
+}
+
+void UIAnchor::setHref( const std::string& href ) {
+	if ( href != mHref ) {
+		mHref = href;
+	}
+}
+
+const std::string& UIAnchor::getHref() const {
+	return mHref;
+}
+
+Uint32 UIAnchor::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_KP_ENTER || event.getKeyCode() == KEY_RETURN ) {
+		if ( !mHref.empty() ) {
+			Engine::instance()->openURI( mHref );
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+std::string UIAnchor::getPropertyString( const PropertyDefinition* propertyDef,
+										 const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Href:
+			return mHref;
+		default:
+			return UITextView::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+std::vector<PropertyId> UIAnchor::getPropertiesImplemented() const {
+	auto props = UITextView::getPropertiesImplemented();
+	auto local = { PropertyId::Href };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
 }
 
 }} // namespace EE::UI

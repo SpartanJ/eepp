@@ -114,6 +114,7 @@ TextEdit,
 TextInput,
 TextInputPassword,
 TextView,
+Anchor,
 Tooltip,
 MenuBar::button,
 Window::title,
@@ -125,12 +126,22 @@ listview::cell::text {
 }
 
 TextView,
+Anchor,
 TextEdit,
 TextInput,
 TextInputPassword,
 ComboBox::DropDownList,
 SpinBox::input, {
 	selection-back-color: var(--primary);
+}
+
+Anchor {
+	cursor: arrow;
+}
+
+Anchor:hover {
+	color: var(--primary);
+	cursor: hand;
 }
 
 PushButton,

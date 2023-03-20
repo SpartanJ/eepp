@@ -631,7 +631,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mAutoCloseXMLTags{ false };
 	bool mFindReplaceEnabled{ true };
 	bool mShowIndentationGuides{ false };
-	bool mShowLinesRelativePosition;
+	bool mShowLinesRelativePosition{ false };
 	std::atomic<bool> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;

@@ -70,7 +70,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.size.setHeight( iniState.getValueI( "window", "height", defWinSize.getHeight() ) );
 	windowState.maximized = iniState.getValueB( "window", "maximized", false );
 	windowState.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
-	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ee.png" );
+	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ecode.png" );
 	windowState.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
 	windowState.displayIndex = iniState.getValueI( "window", "display_index", 0 );
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );

@@ -173,6 +173,29 @@ class EE_API UITextView : public UIWidget {
 	void resetSelCache();
 };
 
+class EE_API UIAnchor : public UITextView {
+  public:
+	static UIAnchor* New();
+
+	UIAnchor();
+
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	void setHref( const std::string& href );
+
+	const std::string& getHref() const;
+
+  protected:
+	std::string mHref;
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+};
+
 }} // namespace EE::UI
 
 #endif

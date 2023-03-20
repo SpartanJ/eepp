@@ -1079,6 +1079,15 @@ bool LSPClientServer::socketConnect() {
 	return false;
 }
 
+void LSPClientServer::socketInitialize() {
+	getThreadPool()->run( [this]() {
+		bool ret = socketConnect();
+		mUsingSocket = true;
+		if ( ret )
+			initialize();
+	} );
+}
+
 bool LSPClientServer::start() {
 	std::string cmd( mLSP.command );
 	if ( !mLSP.commandParameters.empty() ) {
@@ -1101,20 +1110,16 @@ bool LSPClientServer::start() {
 		}
 
 		if ( ret && !mLSP.host.empty() ) {
-			ret = socketConnect();
-			mUsingSocket = true;
-			if ( ret )
-				initialize();
+			socketInitialize();
+			ret = true;
 		}
 
 		return ret;
 	} else {
-		bool ret = socketConnect();
-		mUsingSocket = true;
-
-		if ( ret )
-			initialize();
-		return ret;
+		if ( !mLSP.host.empty() && mLSP.port != 0 ) {
+			socketInitialize();
+			return true;
+		}
 	}
 	return false;
 }

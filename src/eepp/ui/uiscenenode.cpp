@@ -852,8 +852,12 @@ void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet ) {
 
 void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	for ( auto& style : styles ) {
-		CSS::StyleSheetProperty familyProp( *style->getPropertyById( PropertyId::FontFamily ) );
-		CSS::StyleSheetProperty srcProp( *style->getPropertyById( PropertyId::Src ) );
+		auto family = style->getPropertyById( PropertyId::FontFamily );
+		auto src = style->getPropertyById( PropertyId::Src );
+		if ( src == nullptr || family == nullptr )
+			return;
+		CSS::StyleSheetProperty familyProp( *family );
+		CSS::StyleSheetProperty srcProp( *src );
 
 		if ( !familyProp.isEmpty() && !srcProp.isEmpty() ) {
 			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );

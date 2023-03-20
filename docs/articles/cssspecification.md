@@ -686,7 +686,7 @@ gravity: center_horizontal|bottom;
 
 ### gravity-owner
 
-Widgets elements can inform that own childs position using a special flag on its implementation 
+Widgets elements can inform that own childs position using a special flag on its implementation
 (UI_OWNS_CHILDS_POSITION). Sometimes some layouts may need to override the parent behavior that uses
 that flag. This flag will let the layout manage his gravity against its parent in all cases.
 
@@ -805,6 +805,16 @@ Sets the hint font stroke (the outline) width.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
 * Data Type: [length](#length-data-type)
+* Default value: `0dp`
+
+---
+
+### href
+
+Specifies the link destination of an Anchor element
+
+* Applicable to: EE::UI::UIAnchor (Anchor)
+* Data Type: [string](#string-data-type)
 * Default value: `0dp`
 
 ---
@@ -1800,7 +1810,7 @@ Sets the text stroke (also known as text outline) width/thickness.
 
 ### text-transform
 
-The text-transform CSS property specifies how to capitalize an element's text. It can be used to 
+The text-transform CSS property specifies how to capitalize an element's text. It can be used to
 make text appear in all-uppercase or all-lowercase, or with each word capitalized.
 
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
@@ -2446,10 +2456,10 @@ Read [position](https://developer.mozilla.org/en-US/docs/Web/CSS/position_value)
 
 For EE::UI::UIImage (Image), background-image, foreground-image (all the examples are valid).
 
-For a EE::UI::UITextureRegion (TextureRegion) only the examples with: @textureregion, @drawable, 
+For a EE::UI::UITextureRegion (TextureRegion) only the examples with: @textureregion, @drawable,
 drawable_resource_name from a texture region resource are valid.
 
-For a EE::UI::UISprite (Sprite) only the examples with: all the examples are valid except for @9p 
+For a EE::UI::UISprite (Sprite) only the examples with: all the examples are valid except for @9p
 and http/s resources.
 
 Valid resources path:

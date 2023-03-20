@@ -43,8 +43,17 @@ void UIRelativeLayout::updateLayout() {
 		if ( getParent()->isWidget() )
 			padding = static_cast<UIWidget*>( getParent() )->getPadding();
 
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left -
-						  mLayoutMargin.Right - padding.Left - padding.Right );
+		Float width = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right -
+					  padding.Left - padding.Right;
+
+		if ( !mMaxWidthEq.empty() || !mMaxHeightEq.empty() ) {
+			Float maxWidth( getMaxSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right -
+							padding.Left - padding.Right );
+			if ( maxWidth > 0 && maxWidth < width )
+				width = maxWidth;
+		}
+
+		setInternalWidth( width );
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
@@ -53,8 +62,17 @@ void UIRelativeLayout::updateLayout() {
 		if ( getParent()->isWidget() )
 			padding = static_cast<UIWidget*>( getParent() )->getPadding();
 
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top -
-						   mLayoutMargin.Bottom - padding.Top - padding.Bottom );
+		Float height = getParent()->getSize().getHeight() - mLayoutMargin.Top -
+					   mLayoutMargin.Bottom - padding.Top - padding.Bottom;
+
+		if ( !mMaxHeightEq.empty() || !mMaxHeightEq.empty() ) {
+			Float maxHeight( getMaxSize().getHeight() - mLayoutMargin.Left - mLayoutMargin.Right -
+							 padding.Left - padding.Right );
+			if ( maxHeight > 0 && maxHeight < height )
+				height = maxHeight;
+		}
+
+		setInternalHeight( height );
 	}
 
 	Node* child = mChild;
