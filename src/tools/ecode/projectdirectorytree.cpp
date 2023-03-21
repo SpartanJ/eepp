@@ -86,7 +86,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 #endif
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		},
-		[scanComplete, this] ( const auto& ) {
+		[scanComplete, this]( const auto& ) {
 			if ( scanComplete )
 				scanComplete( *this );
 		} );
@@ -176,6 +176,28 @@ ProjectDirectoryTree::asModel( const size_t& max,
 		files[i] = mFiles[i];
 		names[i] = mNames[i];
 	}
+	if ( !prependCommands.empty() ) {
+		int count = 0;
+		for ( const auto& cmd : prependCommands ) {
+			names.insert( names.begin() + count, cmd.name );
+			files.insert( files.begin() + count, cmd.desc );
+			count++;
+		}
+	}
+	auto model = std::make_shared<FileListModel>( files, names );
+
+	if ( !prependCommands.empty() ) {
+		for ( size_t i = 0; i < prependCommands.size(); ++i )
+			model->setIcon( i, prependCommands[i].icon );
+	}
+
+	return model;
+}
+
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::emptyModel( const std::vector<CommandInfo>& prependCommands ) {
+	std::vector<std::string> files;
+	std::vector<std::string> names;
 	if ( !prependCommands.empty() ) {
 		int count = 0;
 		for ( const auto& cmd : prependCommands ) {

@@ -125,6 +125,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	Drawable* findIcon( const std::string& name );
 
+	Drawable* findIcon( const std::string& name, const size_t iconSize );
+
 	std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
 
 	std::map<KeyBindings::Shortcut, std::string> getLocalKeybindings();
@@ -244,6 +246,7 @@ class App : public UICodeEditorSplitter::Client {
 			if ( mTerminalManager )
 				mTerminalManager->configureTerminalShell();
 		} );
+		t.setCommand( "check-for-updates", [&] { checkForUpdates( false ); } );
 		mSplitter->registerSplitterCommands( t );
 	}
 
@@ -324,7 +327,9 @@ class App : public UICodeEditorSplitter::Client {
 
 	void loadFileDelayed();
 
-	const std::vector<std::string>& getRecentFolders() const;
+	const std::vector<std::string>& getRecentFolders() const { return mRecentFolders; };
+
+	const std::vector<std::string>& getRecentFiles() const { return mRecentFiles; };
 
 	const std::string& getThemesPath() const;
 
@@ -339,6 +344,10 @@ class App : public UICodeEditorSplitter::Client {
 	void loadImageFromPath( const std::string& path );
 
 	void loadImageFromMemory( const std::string& content );
+
+	void createAndShowRecentFolderPopUpMenu( Node* recentFoldersBut );
+
+	void createAndShowRecentFilesPopUpMenu( Node* recentFilesBut );
 
   protected:
 	std::vector<std::string> mArgs;
@@ -488,8 +497,6 @@ class App : public UICodeEditorSplitter::Client {
 	void cleanUpRecentFolders();
 
 	void cleanUpRecentFiles();
-
-	void createAndShowRecentFolderPopUpMenu();
 
 	void updateOpenRecentFolderBtn();
 };

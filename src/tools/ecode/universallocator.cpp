@@ -126,7 +126,10 @@ void UniversalLocator::hideLocateBar() {
 }
 
 void UniversalLocator::updateFilesTable() {
-	if ( !mLocateInput->getText().empty() ) {
+	if ( !mApp->isDirTreeReady() ) {
+		mLocateTable->setModel( ProjectDirectoryTree::emptyModel( getLocatorCommands() ) );
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	} else if ( !mLocateInput->getText().empty() ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mApp->getDirTree()->asyncFuzzyMatchTree(
 			mLocateInput->getText(), LOCATEBAR_MAX_RESULTS, [&]( auto res ) {
@@ -239,8 +242,6 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 			showDocumentSymbol();
 		} else {
 			showLocateTable();
-			if ( !mApp->isDirTreeReady() )
-				return;
 			updateFilesTable();
 		}
 	} );
@@ -400,6 +401,9 @@ void UniversalLocator::showLocateBar() {
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
 		mLocateTable->setModel(
 			mApp->getDirTree()->asModel( LOCATEBAR_MAX_RESULTS, getLocatorCommands() ) );
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	} else if ( !mLocateTable->getModel() ) {
+		mLocateTable->setModel( ProjectDirectoryTree::emptyModel( getLocatorCommands() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 

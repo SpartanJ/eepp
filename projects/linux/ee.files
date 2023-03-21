@@ -1194,6 +1194,8 @@
 ../../src/tools/ecode/uicodeeditorsplitter.hpp
 ../../src/tools/ecode/uitreeviewglobalsearch.cpp
 ../../src/tools/ecode/uitreeviewglobalsearch.hpp
+../../src/tools/ecode/uiwelcomescreen.cpp
+../../src/tools/ecode/uiwelcomescreen.hpp
 ../../src/tools/ecode/universallocator.cpp
 ../../src/tools/ecode/universallocator.hpp
 ../../src/tools/ecode/version.cpp

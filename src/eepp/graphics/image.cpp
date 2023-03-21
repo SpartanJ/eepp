@@ -358,6 +358,31 @@ bool Image::getInfo( const std::string& path, int* width, int* height, int* chan
 	return res;
 }
 
+bool Image::getInfoFromMemory( const unsigned char* data, const size_t& dataSize, int* width,
+							   int* height, int* channels,
+							   const FormatConfiguration& imageFormatConfiguration ) {
+	bool res = stbi_info_from_memory( data, dataSize, width, height, channels ) != 0;
+
+	if ( !res && svg_test_from_memory( data, dataSize ) ) {
+		ScopedBuffer sdata( dataSize + 1 );
+		memcpy( sdata.get(), data, dataSize );
+		sdata[dataSize] = '\0';
+		NSVGimage* image = nsvgParse( (char*)sdata.get(), "px", 96.0f );
+
+		if ( NULL != image ) {
+			*width = image->width * imageFormatConfiguration.svgScale();
+			*height = image->height * imageFormatConfiguration.svgScale();
+			*channels = 4;
+
+			nsvgDelete( image );
+
+			res = true;
+		}
+	}
+
+	return res;
+}
+
 bool Image::isImage( const std::string& path ) {
 	return STBI_unknown != stbi_test( path.c_str() ) || svg_test( path );
 }

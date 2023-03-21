@@ -85,6 +85,11 @@ class EE_API UICodeEditorSplitter {
 														  const std::string& tabName,
 														  bool focus = true );
 
+	std::vector<std::pair<UITab*, UITabWidget*>> getTabFromOwnedWidgetId( const std::string& id );
+
+	bool removeTabWithOwnedWidgetId( const std::string& id, bool destroyOwnedNode = true,
+									 bool immediateClose = false );
+
 	UICodeEditor* createCodeEditor();
 
 	void focusSomeEditor( Node* searchFrom = nullptr );

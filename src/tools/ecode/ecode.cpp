@@ -5,6 +5,7 @@
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
 #include "settingsmenu.hpp"
+#include "uiwelcomescreen.hpp"
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
@@ -105,11 +106,12 @@ void App::saveDoc() {
 		if ( mSplitter->getCurEditor()->save() ) {
 			updateEditorState();
 		} else {
-			UIMessageBox * msgBox = errorMsgBox( i18n( 
-				"could_not_write_file", "Could not write file to disk.\nPlease check if the file "
-				"is read-only or if ecode does not have permissions to write to that file.\n"
-				"File path is: "
-			) + mSplitter->getCurEditor()->getDocument().getFilePath() );
+			UIMessageBox* msgBox = errorMsgBox(
+				i18n( "could_not_write_file",
+					  "Could not write file to disk.\nPlease check if the file "
+					  "is read-only or if ecode does not have permissions to write to that file.\n"
+					  "File path is: " ) +
+				mSplitter->getCurEditor()->getDocument().getFilePath() );
 
 			setFocusEditorOnClose( msgBox );
 		}
@@ -1034,9 +1036,13 @@ void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
 }
 
 Drawable* App::findIcon( const std::string& name ) {
+	return findIcon( name, mMenuIconSize );
+}
+
+Drawable* App::findIcon( const std::string& name, const size_t iconSize ) {
 	UIIcon* icon = mUISceneNode->findIcon( name );
 	if ( icon )
-		return icon->getSize( mMenuIconSize );
+		return icon->getSize( iconSize );
 	return nullptr;
 }
 
@@ -1719,6 +1725,8 @@ bool App::isUnlockedCommand( const std::string& command ) {
 void App::closeEditors() {
 	mRecentClosedFiles = {};
 
+	mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
+
 	mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
 	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
 	while ( !editors.empty() ) {
@@ -1772,6 +1780,7 @@ void App::closeFolder() {
 	mProjectViewEmptyCont->setVisible( true );
 	mFileSystemModel->setRootPath( "" );
 	updateOpenRecentFolderBtn();
+	UIWelcomeScreen::createWelcomeScreen( this );
 }
 
 void App::createDocAlert( UICodeEditor* editor ) {
@@ -2412,7 +2421,7 @@ void App::newFolder( const FileInfo& file ) {
 	} );
 }
 
-void App::createAndShowRecentFolderPopUpMenu() {
+void App::createAndShowRecentFolderPopUpMenu( Node* recentFolderBut ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	if ( mRecentFolders.empty() )
 		return;
@@ -2424,9 +2433,28 @@ void App::createAndShowRecentFolderPopUpMenu() {
 		const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 		loadFolder( txt );
 	} );
-	auto recentFolderBut = mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" );
 	auto pos = recentFolderBut->getScreenPos();
 	pos.y += recentFolderBut->getPixelsSize().getHeight();
+	UIMenu::findBestMenuPos( pos, menu );
+	menu->setPixelsPosition( pos );
+	menu->show();
+}
+
+void App::createAndShowRecentFilesPopUpMenu( Node* recentFilesBut ) {
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	if ( mRecentFiles.empty() )
+		return;
+	for ( const auto& file : mRecentFiles )
+		menu->add( file );
+	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+		loadFileFromPath( txt );
+	} );
+	auto pos = recentFilesBut->getScreenPos();
+	pos.y += recentFilesBut->getPixelsSize().getHeight();
+	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
 }
@@ -2457,7 +2485,8 @@ void App::initProjectTreeView( std::string path ) {
 	mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" )
 		->addEventListener( Event::MouseClick, [&]( const Event* event ) {
 			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
-				createAndShowRecentFolderPopUpMenu();
+				createAndShowRecentFolderPopUpMenu(
+					mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" ) );
 		} );
 	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
 	mProjectTreeView->setColumnsHidden(
@@ -2590,6 +2619,8 @@ void App::initProjectTreeView( std::string path ) {
 		loadFolder( mRecentFolders[0] );
 	} else {
 		updateOpenRecentFolderBtn();
+
+		UIWelcomeScreen::createWelcomeScreen( this );
 	}
 
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
@@ -2732,8 +2763,11 @@ void App::cleanUpRecentFolders() {
 }
 
 void App::loadFolder( const std::string& path ) {
-	if ( !mCurrentProject.empty() )
+	if ( !mCurrentProject.empty() ) {
 		closeEditors();
+	} else {
+		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
+	}
 
 	mProjectViewEmptyCont->setVisible( false );
 
@@ -3337,6 +3371,20 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			for ( const auto& icon : codIcons )
 				iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
 		}
+
+		iconTheme->add( UISVGIcon::New(
+			"ecode",
+			"<svg width='256' height='256' version='1.1' viewBox='0 0 12.7 12.7' "
+			"xmlns='http://www.w3.org/2000/svg'><g transform='matrix(.80588 0 0 .80588 1.3641 "
+			"1.2538)' fill='none' stroke='#fff' stroke-linecap='round' stroke-width='.8px'><path "
+			"transform='matrix(1 0 0 -1 .19808 11.984)' d='m6.0943 5.9899c0.16457 0.1173 0.0098785 "
+			"0.35997-0.11145 0.43612-0.40848 0.25638-0.89022-0.11622-1.039-0.4965-0.32983-0.84299 "
+			"0.37932-1.6794 1.1646-1.8967 1.4211-0.39338 2.7295 0.77904 3.0093 2.1158 0.36822 "
+			"1.7593-0.79537 3.4576-2.3989 4.1096'/><path transform='matrix(1 0 0 -1 .030284 "
+			"12.252)' d='m6.3163 6.3608c-0.14689-0.18552 0.10611-0.40806 0.26737-0.45419 "
+			"0.54289-0.15532 0.96335 0.42061 1.0068 0.89674 0.096424 1.0555-0.97349 1.7652-1.9275 "
+			"1.7539-1.7263-0.020368-2.8161-1.765-2.6954-3.3595 0.15881-2.0986 2.0205-3.6297 "
+			"4.0363-3.8406'/></g></svg>" ) );
 
 		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 

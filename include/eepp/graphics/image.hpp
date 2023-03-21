@@ -111,6 +111,19 @@ class EE_API Image {
 	getInfo( const std::string& path, int* width, int* height, int* channels,
 			 const FormatConfiguration& imageFormatConfiguration = FormatConfiguration() );
 
+	/** @return True if success to get the info.
+	 * @param data the pointer containing the image raw data
+	 * @param dataSize the point data size
+	 * @param width the var to store the image width
+	 * @param height the var to store the image height
+	 * @param channels the var to store the image channels count
+	 * @param imageFormatConfiguration The specific image format configuration to use when decoding
+	 * the image.
+	 */
+	static bool getInfoFromMemory(
+		const unsigned char* data, const size_t& dataSize, int* width, int* height, int* channels,
+		const FormatConfiguration& imageFormatConfiguration = FormatConfiguration() );
+
 	/** @return True if the file is a valid image ( reads the file header to know if the file is an
 	 * image file format supported )
 	 * @param path the image path

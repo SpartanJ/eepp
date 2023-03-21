@@ -130,6 +130,9 @@ class ProjectDirectoryTree {
 	std::shared_ptr<FileListModel>
 	asModel( const size_t& max, const std::vector<CommandInfo>& prependCommands = {} ) const;
 
+	static std::shared_ptr<FileListModel>
+	emptyModel( const std::vector<CommandInfo>& prependCommands = {} );
+
 	size_t getFilesCount() const;
 
 	const std::vector<std::string>& getFiles() const;

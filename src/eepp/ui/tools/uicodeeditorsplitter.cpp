@@ -500,6 +500,33 @@ UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget*
 	return std::make_pair( tab, widget );
 }
 
+std::vector<std::pair<UITab*, UITabWidget*>>
+UICodeEditorSplitter::getTabFromOwnedWidgetId( const std::string& id ) {
+	std::vector<std::pair<UITab*, UITabWidget*>> ret;
+	forEachTabWidget( [&ret, &id]( UITabWidget* tabWidget ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); ++i ) {
+			UITab* tab = tabWidget->getTab( i );
+			Node* ownedNode = tab->getOwnedWidget();
+			if ( ownedNode->isWidget() && ownedNode->asType<UIWidget>()->getId() == id ) {
+				ret.push_back( { tab, tabWidget } );
+			}
+		}
+	} );
+	return ret;
+}
+
+bool UICodeEditorSplitter::removeTabWithOwnedWidgetId( const std::string& id, bool destroyOwnedNode,
+													   bool immediateClose ) {
+	auto ret = getTabFromOwnedWidgetId( id );
+	if ( ret.empty() )
+		return false;
+
+	for ( const auto& r : ret )
+		r.second->removeTab( r.first, destroyOwnedNode, immediateClose );
+
+	return true;
+}
+
 void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget, bool destroyOwnedNode,
 											bool immediateClose ) {
 	if ( tabWidget && tabWidget->getTabCount() >= 2 &&
@@ -1217,7 +1244,14 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 		if ( tabWidget->getTabSelectedIndex() >= tabWidget->getTabCount() )
 			tabWidget->setTabSelected(
 				eemin( tabWidget->getTabCount() - 1, tabEvent->getTabIndex() ) );
+
+		if ( mCurEditor == widget )
+			mCurEditor = nullptr;
+
+		if ( mCurWidget == widget )
+			mCurWidget = nullptr;
 	}
+
 	if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor )
 		focusSomeEditor( nullptr );
 	eeASSERT( curWidgetExists() );
