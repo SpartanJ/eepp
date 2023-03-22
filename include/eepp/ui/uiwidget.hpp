@@ -219,6 +219,8 @@ class EE_API UIWidget : public UINode {
 
 	void setTabStop();
 
+	UIWidget* getPrevTabWidget() const;
+
 	UIWidget* getNextTabWidget() const;
 
 	bool hasPseudoClass( const std::string& pseudoCls ) const;
@@ -291,7 +293,9 @@ class EE_API UIWidget : public UINode {
 
 	virtual void onTagChange();
 
-	virtual void onTabPress();
+	virtual void onFocusPrevWidget();
+
+	virtual void onFocusNextWidget();
 
 	virtual Uint32 onFocus();
 
@@ -324,6 +328,8 @@ class EE_API UIWidget : public UINode {
 	void disableCSSAnimations();
 
 	void reloadFontFamily();
+
+	UIWidget* getPrevWidget() const;
 
 	UIWidget* getNextWidget() const;
 

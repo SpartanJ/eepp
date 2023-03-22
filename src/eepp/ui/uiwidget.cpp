@@ -259,7 +259,7 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 		}
 	}
 
-	if ( !isSceneNodeLoading() && mUISceneNode != NULL &&mStyle != NULL ) {
+	if ( !isSceneNodeLoading() && mUISceneNode != NULL && mStyle != NULL ) {
 		// Childs that are structurally volatile can change states when a new
 		// element is added to the parent. We pre-store them and invalidate its
 		// state if that's the case.
@@ -1872,6 +1872,26 @@ void UIWidget::setTabStop() {
 	mFlags |= UI_TAB_STOP;
 }
 
+UIWidget* UIWidget::getPrevWidget() const {
+	UIWidget* found = NULL;
+	UIWidget* possible = NULL;
+	Node* child = mChildLast;
+	while ( NULL != child ) {
+		if ( child->isVisible() && child->isEnabled() && child->isWidget() ) {
+			possible = child->asType<UIWidget>();
+			if ( possible->isTabFocusable() ) {
+				return possible;
+			}
+			found = possible->getNextWidget();
+			if ( found ) {
+				return found;
+			}
+		}
+		child = child->getPrevNode();
+	}
+	return NULL;
+}
+
 UIWidget* UIWidget::getNextWidget() const {
 	UIWidget* found = NULL;
 	UIWidget* possible = NULL;
@@ -1899,6 +1919,40 @@ String UIWidget::getTranslatorString( const std::string& str ) {
 String UIWidget::getTranslatorString( const std::string& str, const String& defaultValue ) {
 	return getUISceneNode() != nullptr ? getUISceneNode()->getTranslatorString( str, defaultValue )
 									   : defaultValue;
+}
+
+UIWidget* UIWidget::getPrevTabWidget() const {
+	UIWidget* widget = getPrevWidget();
+	if ( widget ) {
+		return widget;
+	}
+	UIWidget* found = NULL;
+	UIWidget* possible = NULL;
+	const Node* start = this;
+	Node* container = getWindowContainer();
+	while ( start ) {
+		if ( start->isVisible() && start->isEnabled() ) {
+			Node* next = start->getPrevNode();
+			while ( next ) {
+				if ( next->isVisible() && next->isEnabled() && next->isWidget() ) {
+					possible = next->asType<UIWidget>();
+					if ( possible->isTabFocusable() ) {
+						return possible;
+					}
+					found = possible->getPrevWidget();
+					if ( found ) {
+						return found;
+					}
+				}
+				next = next->getPrevNode();
+			}
+			if ( start->getParent() == container && container->getFirstWidget() ) {
+				return container->asType<UIWidget>()->getPrevTabWidget();
+			}
+		}
+		start = start->getParent();
+	}
+	return NULL;
 }
 
 UIWidget* UIWidget::getNextTabWidget() const {
@@ -1935,7 +1989,19 @@ UIWidget* UIWidget::getNextTabWidget() const {
 	return NULL;
 }
 
-void UIWidget::onTabPress() {
+void UIWidget::onFocusPrevWidget() {
+	if ( !isTabStop() ) {
+		Node* node = getPrevTabWidget();
+		if ( NULL != node ) {
+			node->setFocus();
+			sendCommonEvent( Event::OnTabNavigate );
+		}
+	} else {
+		sendCommonEvent( Event::OnTabNavigate );
+	}
+}
+
+void UIWidget::onFocusNextWidget() {
 	if ( !isTabStop() ) {
 		Node* node = getNextTabWidget();
 		if ( NULL != node ) {
