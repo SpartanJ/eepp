@@ -2186,6 +2186,12 @@ box-margin: 10dp 10dp;
 
 ---
 
+### focusable
+
+Set / unset the widget as focusable to navigate with tab / tab + shift navigation
+
+---
+
 ### foreground
 
 Same as the [background](#background) but for the foreground of the node.

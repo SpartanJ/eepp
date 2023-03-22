@@ -9,6 +9,7 @@ const char* LAYOUT = R"xml(
 <style>
 <![CDATA[
 #welcome_ecode TextView {
+	focusable: false;
 	color: var(--font-hint);
 }
 #welcome_ecode TextView.anchor {
@@ -19,12 +20,13 @@ const char* LAYOUT = R"xml(
 	cursor: hand;
 }
 #home_logo {
-	 background-image: icon(ecode,256dp);
-	 background-position: center center;
-	 background-tint: var(--font-hint);
+	focusable: false;
+	background-image: icon(ecode,256dp);
+	background-position: center center;
+	background-tint: var(--font-hint);
 }
 #home_logo:hover {
-	 background-tint: var(--primary);
+	background-tint: var(--primary);
 }
 #home_title {
 	font-size: 24dp;
@@ -41,6 +43,7 @@ const char* LAYOUT = R"xml(
 	border-color: var(--primary);
 }
 #welcome_ecode .separator {
+	focusable: false;
 	background-image: rectangle(solid, var(--tab-line));
 	background-size: 80% 1px;
 	background-position: center;

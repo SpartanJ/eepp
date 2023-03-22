@@ -1738,9 +1738,18 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::BorderSmooth:
 			setBorderEnabled( true )->setSmooth( attribute.asBool() );
+			break;
 		case PropertyId::BackgroundSmooth:
 			setBackgroundFillEnabled( true )->getBackgroundDrawable().setSmooth(
 				attribute.asBool() );
+			break;
+		case PropertyId::Focusable:
+			if ( attribute.asBool() ) {
+				setFlags( UI_TAB_FOCUSABLE );
+			} else {
+				unsetFlags( UI_TAB_FOCUSABLE );
+			}
+			break;
 		default:
 			attributeSet = false;
 			break;

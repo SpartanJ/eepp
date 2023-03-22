@@ -391,6 +391,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "select-on-click", "false" ).setType( PropertyType::Bool );
 	registerProperty( "gravity-owner", "false" ).setType( PropertyType::Bool );
 	registerProperty( "href", "" ).setType( PropertyType::String );
+	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },

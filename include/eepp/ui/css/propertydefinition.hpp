@@ -210,6 +210,7 @@ enum class PropertyId : Uint32 {
 	LineSpacing = String::hash( "line-spacing" ),
 	GravityOwner = String::hash( "gravity-owner" ),
 	Href = String::hash( "href" ),
+	Focusable = String::hash( "focusable" ),
 };
 
 enum class PropertyType : Uint32 {
