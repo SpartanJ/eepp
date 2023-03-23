@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 12.7 12.7"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="drawing24.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   inkscape:export-filename="drawing24-128x128.png"
+   inkscape:export-xdpi="273.96982"
+   inkscape:export-ydpi="273.96982"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="16"
+     inkscape:cx="13.5"
+     inkscape:cy="22.96875"
+     inkscape:window-width="2560"
+     inkscape:window-height="1382"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g1156" />
+  <defs
+     id="defs2">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient924">
+      <stop
+         style="stop-color:#b93de9;stop-opacity:1;"
+         offset="0"
+         id="stop920" />
+      <stop
+         style="stop-color:#662281;stop-opacity:1;"
+         offset="1"
+         id="stop922" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient924"
+       id="linearGradient926"
+       x1="6.4195237"
+       y1="0.59797412"
+       x2="6.3958426"
+       y2="12.191067"
+       gradientUnits="userSpaceOnUse"
+       spreadMethod="pad"
+       gradientTransform="matrix(0.99998251,0,0,1.0232653,-0.025338,-0.19328174)" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <circle
+       style="opacity:1;fill:url(#linearGradient926);fill-opacity:1;stroke-width:1.01156"
+       id="path1730"
+       cy="6.3499999"
+       cx="6.3499999"
+       r="5.9334998" />
+    <g
+       id="g1156"
+       transform="matrix(0.80588472,0,0,0.80588472,1.3641129,1.2537559)">
+      <path
+         sodipodi:type="spiral"
+         style="fill:none;fill-rule:evenodd;stroke:#ffffff;stroke-width:0.8px;stroke-linecap:round;stroke-linejoin:miter;stroke-opacity:1"
+         id="path839"
+         sodipodi:cx="6.0060029"
+         sodipodi:cy="5.9852381"
+         sodipodi:expansion="2"
+         sodipodi:revolution="1.4179463"
+         sodipodi:radius="4.3319278"
+         sodipodi:argument="-7.5037332"
+         sodipodi:t0="0.14288357"
+         d="M 6.0943208,5.9898731 C 6.2588927,6.1071769 6.1041993,6.3498412 5.9828716,6.4259916 5.5743887,6.6823728 5.0926498,6.3097737 4.9438619,5.9294955 4.6140314,5.0865013 5.3231824,4.2501357 6.1084717,4.0327579 7.529564,3.6393819 8.8379977,4.8117974 9.117774,6.148548 9.4859968,7.9078893 8.3224047,9.6061964 6.7188563,10.25811"
+         transform="matrix(1,0,0,-1,0.19807867,11.983836)" />
+      <path
+         sodipodi:type="spiral"
+         style="fill:none;fill-rule:evenodd;stroke:#ffffff;stroke-width:0.8px;stroke-linecap:round;stroke-linejoin:miter;stroke-opacity:1"
+         id="path841"
+         sodipodi:cx="6.4141221"
+         sodipodi:cy="6.3947301"
+         sodipodi:expansion="2"
+         sodipodi:revolution="1.4179463"
+         sodipodi:radius="5.0720696"
+         sodipodi:argument="-10.363478"
+         sodipodi:t0="0.14288357"
+         d="M 6.316304,6.3607564 C 6.169417,6.1752364 6.4224185,5.9526981 6.5836693,5.9065654 7.1265642,5.7512473 7.5470185,6.3271736 7.5905158,6.8033099 7.6869398,7.8588009 6.6170226,8.5684904 5.6630504,8.5572352 3.9367025,8.5368673 2.8469604,6.7922056 2.9676231,5.1977073 3.1264313,3.0991359 4.9881328,1.5680458 7.003875,1.3570638"
+         transform="matrix(1,0,0,-1,0.03028437,12.251636)" />
+    </g>
+  </g>
+</svg>

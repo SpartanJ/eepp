@@ -20,8 +20,8 @@ void loadColorSchemes( const std::string& resPath ) {
 		auto colorSchemesFiles = FileSystem::filesGetInPath( colorSchemesPath );
 		for ( auto& file : colorSchemesFiles ) {
 			auto colorSchemesInFile = TerminalColorScheme::loadFromFile( file );
-			for ( auto& coloScheme : colorSchemesInFile )
-				colorSchemes.emplace_back( coloScheme );
+			std::copy( colorSchemesInFile.begin(), colorSchemesInFile.end(),
+					   std::back_inserter( colorSchemes ) );
 		}
 	}
 	for ( auto colorScheme : colorSchemes )
@@ -205,8 +205,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	if ( listColorSchemes.Get() ) {
 		std::cout << "Color schemes:\n";
-		for ( auto colorScheme : terminalColorSchemes )
-			std::cout << "\t" << colorScheme.first << "\n";
+		for ( const auto& tcs : terminalColorSchemes )
+			std::cout << "\t" << tcs.first << "\n";
 		return EXIT_SUCCESS;
 	}
 
@@ -217,7 +217,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	Sizei winSize( width.Get(), height.Get() );
 	win = Engine::instance()->createWindow(
 		WindowSettings( winSize.getWidth(), winSize.getHeight(), "eterm", WindowStyle::Default,
-						WindowBackend::Default, 32, resPath + "icon/ee.png",
+						WindowBackend::Default, 32, resPath + "icon/eterm.png",
 						pixelDenstiyConf ? pixelDenstiyConf.Get()
 										 : currentDisplay->getPixelDensity() ),
 		ContextSettings( vsync.Get() ) );
