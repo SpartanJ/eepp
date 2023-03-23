@@ -108,11 +108,16 @@ class EE_API EventDispatcher {
 
 	bool removeFocusEventCallback( const Uint32& cbId );
 
+	Node* getLastFocusNode() const;
+
+	void setLastFocusNode( Node* lastFocusNode );
+
   protected:
 	EE::Window::Window* mWindow;
 	Input* mInput;
 	SceneNode* mSceneNode;
 	Node* mFocusNode;
+	Node* mLastFocusNode;
 	Node* mOverNode;
 	Node* mDownNode;
 	Node* mLossFocusNode;

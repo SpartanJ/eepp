@@ -55,6 +55,10 @@ Node::~Node() {
 			eventDispatcher->setFocusNode( mSceneNode );
 		}
 
+		if ( eventDispatcher->getLastFocusNode() == this && mSceneNode != this ) {
+			eventDispatcher->setLastFocusNode( mSceneNode );
+		}
+
 		if ( eventDispatcher->getMouseOverNode() == this && mSceneNode != this ) {
 			eventDispatcher->setMouseOverNode( mSceneNode );
 		}

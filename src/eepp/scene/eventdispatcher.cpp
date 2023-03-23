@@ -17,6 +17,7 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mInput( mWindow->getInput() ),
 	mSceneNode( sceneNode ),
 	mFocusNode( sceneNode ),
+	mLastFocusNode( sceneNode ),
 	mOverNode( NULL ),
 	mDownNode( NULL ),
 	mLossFocusNode( NULL ),
@@ -120,7 +121,7 @@ void EventDispatcher::update( const Time& time ) {
 				// The focused node can change after the MouseUp ( since the node can call
 				// "setFocus()" on other node And the MouseClick would be received by the new
 				// focused node instead of the real one
-				Node* lastFocusNode = mFocusNode;
+				mLastFocusNode = mFocusNode;
 
 				if ( NULL != mOverNode ) {
 					if ( mInput->getReleaseTrigger() & EE_BUTTONS_WUWD ) {
@@ -136,14 +137,14 @@ void EventDispatcher::update( const Time& time ) {
 				}
 
 				if ( mInput->getClickTrigger() ) {
-					lastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
-					sendMsg( lastFocusNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
+					mLastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
+					sendMsg( mLastFocusNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
 
 					if ( mInput->getDoubleClickTrigger() &&
 						 mClickPos.distance( mMousePosi ) < 10 ) {
-						lastFocusNode->onMouseDoubleClick( mMousePosi,
-														   mInput->getDoubleClickTrigger() );
-						sendMsg( lastFocusNode, NodeMessage::MouseDoubleClick,
+						mLastFocusNode->onMouseDoubleClick( mMousePosi,
+															mInput->getDoubleClickTrigger() );
+						sendMsg( mLastFocusNode, NodeMessage::MouseDoubleClick,
 								 mInput->getDoubleClickTrigger() );
 					}
 
@@ -248,6 +249,14 @@ void EventDispatcher::setFocusNode( Node* node ) {
 				cb.second( cb.first, mFocusNode, mLossFocusNode );
 		}
 	}
+}
+
+Node* EventDispatcher::getLastFocusNode() const {
+	return mLastFocusNode;
+}
+
+void EventDispatcher::setLastFocusNode( Node* lastFocusNode ) {
+	mLastFocusNode = lastFocusNode;
 }
 
 Node* EventDispatcher::getMouseDownNode() const {
