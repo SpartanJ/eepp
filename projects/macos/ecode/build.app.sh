@@ -34,7 +34,9 @@ cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/Contents/MacOS/a
 cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode.app/Contents/MacOS/assets/
-cp -r ../../../bin/assets/icon ecode.app/Contents/MacOS/assets/
+# cp -r ../../../bin/assets/icon ecode.app/Contents/MacOS/assets/
+mkdir -p ecode.app/Contents/MacOS/assets/icon
+cp ../../../bin/assets/icon/ecode.png ecode.app/Contents/MacOS/assets/icon
 cp ../../../bin/assets/ca-bundle.pem ecode.app/Contents/MacOS/assets/ca-bundle.pem
 mkdir ecode.app/Contents/MacOS/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/Contents/MacOS/assets/ui/
