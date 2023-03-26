@@ -23,6 +23,20 @@ class EE_API Text {
 
 	static Uint32 stringToStyleFlag( const std::string& str );
 
+	static Float getTextWidth( Font* font, const Uint32& fontSize, const String& string,
+							   const Uint32& style, const Uint32& tabWidth = 4,
+							   const Float& outlineThickness = 0.f );
+
+	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
+									   const Uint32& fontSize, const String& string,
+									   const Uint32& style, const Uint32& tabWidth = 4,
+									   const Float& outlineThickness = 0.f );
+
+	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
+									  const String& string, const Uint32& style,
+									  const Uint32& tabWidth = 4,
+									  const Float& outlineThickness = 0.f );
+
 	static Text* New();
 
 	static Text* New( const String& string, Font* font, unsigned int characterSize = 12 );

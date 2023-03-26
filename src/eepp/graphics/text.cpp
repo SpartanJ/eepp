@@ -358,7 +358,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool ) const {
 	if ( mString[start] == '\n' && start + 1 < mString.size() ) {
 		start++;
 	}
-	
+
 	if ( end >= mGlyphCache.size() )
 		end = mGlyphCache.size() - 1;
 
@@ -409,6 +409,153 @@ void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& initCur, Int
 	if ( initCur == endCur ) {
 		initCur = endCur = -1;
 	}
+}
+
+Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& string,
+						  const Uint32& style, const Uint32& tabWidth,
+						  const Float& outlineThickness ) {
+	if ( NULL == font || string.empty() )
+		return 0;
+	Float width = 0;
+	Float maxWidth = 0;
+	String::StringBaseType rune;
+	Uint32 prevChar = 0;
+	bool bold = ( style & Text::Bold ) != 0;
+	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	for ( std::size_t i = 0; i < string.size(); ++i ) {
+		rune = string.at( i );
+		Glyph glyph = font->getGlyph( rune, fontSize, bold, outlineThickness );
+		if ( rune != '\r' && rune != '\t' ) {
+			width += font->getKerning( prevChar, rune, fontSize, bold );
+			prevChar = rune;
+			width += glyph.advance;
+		} else if ( rune == '\t' ) {
+			width += hspace * tabWidth;
+		} else if ( rune == '\n' ) {
+			width = 0;
+		}
+		maxWidth = eemax( width, maxWidth );
+	}
+	return maxWidth;
+}
+
+Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
+						   const String& string, const Uint32& style, const Uint32& tabWidth,
+						   const Float& outlineThickness ) {
+	// Make sure that we have a valid font
+	if ( !font )
+		return Vector2f();
+
+	// Adjust the index if it's out of range
+	if ( index > string.size() )
+		index = string.size();
+
+	// Precompute the variables needed by the algorithm
+	bool bold = ( style & Text::Bold ) != 0;
+	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	Float vspace = static_cast<Float>( font->getLineSpacing( fontSize ) );
+
+	// Compute the position
+	Vector2f position;
+	Uint32 prevChar = 0;
+	for ( std::size_t i = 0; i < index; ++i ) {
+		String::StringBaseType curChar = string[i];
+
+		// Apply the kerning offset
+		position.x += static_cast<Float>( font->getKerning( prevChar, curChar, fontSize, bold ) );
+		prevChar = curChar;
+
+		// Handle special characters
+		switch ( curChar ) {
+			case ' ':
+				position.x += hspace;
+				continue;
+			case '\t':
+				position.x += hspace * tabWidth;
+				continue;
+			case '\n':
+				position.y += vspace;
+				position.x = 0;
+				continue;
+			case '\r':
+				continue;
+		}
+
+		// For regular characters, add the advance offset of the glyph
+		position.x += static_cast<Float>(
+			font->getGlyph( curChar, fontSize, bold, outlineThickness ).advance );
+	}
+
+	return position;
+}
+
+Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
+								  const Uint32& fontSize, const String& string, const Uint32& style,
+								  const Uint32& tabWidth, const Float& outlineThickness ) {
+	if ( NULL == font )
+		return 0;
+
+	Float vspace = font->getLineSpacing( fontSize );
+	Float width = 0, lWidth = 0, height = vspace, lHeight = 0;
+	Uint32 rune;
+	Uint32 prevChar = 0;
+	Int32 nearest = -1;
+	Int32 minDist = std::numeric_limits<Int32>::max();
+	Int32 curDist = -1;
+	std::size_t tSize = string.size();
+	bool bold = ( style & Text::Bold ) != 0;
+	Vector2f fpos( pos.asFloat() );
+
+	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+
+	for ( std::size_t i = 0; i < tSize; ++i ) {
+		rune = string[i];
+		Glyph glyph = font->getGlyph( rune, fontSize, bold, outlineThickness );
+
+		lWidth = width;
+
+		if ( rune != '\r' && rune != '\t' ) {
+			width += font->getKerning( prevChar, rune, fontSize, bold );
+			prevChar = rune;
+			width += glyph.advance;
+		} else if ( rune == '\t' ) {
+			width += hspace * tabWidth;
+		} else if ( rune == '\n' ) {
+			lWidth = 0;
+			width = 0;
+		}
+
+		if ( pos.x <= width && pos.x >= lWidth && pos.y <= height && pos.y >= lHeight ) {
+			if ( i + 1 < tSize ) {
+				Int32 tcurDist = eeabs( pos.x - lWidth );
+				Int32 nextDist = eeabs( pos.x - width );
+				if ( nextDist < tcurDist )
+					return i + 1;
+			}
+			return i;
+		}
+
+		if ( returnNearest ) {
+			curDist = eeabs( fpos.distance( Vector2f( width - ( width - lWidth ) * 0.5f,
+													  height - ( height - lHeight ) * 0.5f ) ) );
+			if ( curDist < minDist ) {
+				nearest = i;
+				minDist = curDist;
+			}
+		}
+
+		if ( rune == '\n' ) {
+			lHeight = height;
+			height += vspace;
+			if ( pos.x > width && pos.y <= lHeight ) {
+				return i;
+			}
+		}
+	}
+
+	if ( pos.x >= width )
+		return tSize;
+	return nearest;
 }
 
 void Text::getWidthInfo() {

@@ -1422,7 +1422,9 @@ void UICodeEditor::findLongestLine() {
 
 Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
 	if ( mFont && !mFont->isMonospace() )
-		return getLineText( lineIndex ).getTextWidth() + getGlyphWidth();
+		return Text::getTextWidth( mFont, getCharacterSize(), mDoc->line( lineIndex ).getText(),
+								   mFontStyleConfig.Style, mTabWidth ) +
+			   getGlyphWidth();
 	return getTextWidth( mDoc->line( lineIndex ).getText() );
 }
 
@@ -1720,11 +1722,12 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 
 Float UICodeEditor::getXOffsetCol( const TextPosition& position ) const {
 	if ( mFont && !mFont->isMonospace() ) {
-		return getLineText( position.line() )
-			.findCharacterPos(
-				( position.column() == (Int64)mDoc->line( position.line() ).getText().size() )
-					? position.column() - 1
-					: position.column() )
+		return Text::findCharacterPos(
+				   ( position.column() == (Int64)mDoc->line( position.line() ).getText().size() )
+					   ? position.column() - 1
+					   : position.column(),
+				   mFont, getCharacterSize(), mDoc->line( position.line() ).getText(),
+				   mFontStyleConfig.Style, mTabWidth )
 			.x;
 	}
 
@@ -2220,7 +2223,9 @@ Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const 
 	TextPosition pos = mDoc->sanitizePosition( TextPosition( lineNumber, 0 ) );
 
 	if ( mFont && !mFont->isMonospace() )
-		return getLineText( pos.line() ).findCharacterFromPos( Vector2i( x, 0 ) );
+		return Text::findCharacterFromPos( Vector2i( x, 0 ), true, mFont, getCharacterSize(),
+										   mDoc->line( lineNumber ).getText(),
+										   mFontStyleConfig.Style, mTabWidth );
 
 	const String& line = mDoc->line( pos.line() ).getText();
 	Int64 len = line.length();
