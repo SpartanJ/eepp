@@ -43,20 +43,20 @@ template <typename T, typename U> inline T reinterpret( const U& input ) {
 	return output;
 }
 
-// Combine outline thickness, boldness and font glyph index into a single 64-bit key
-EE::Uint64 combine( float outlineThickness, bool bold, EE::Uint32 index,
-					EE::Uint32 fontInternalId ) {
-	return ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( fontInternalId ) ) << 48 ) |
-		   ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( outlineThickness * 100 ) ) << 33 ) |
-		   ( static_cast<EE::Uint64>( bold ) << 32 ) | index;
-}
-
 } // namespace
 
 namespace EE { namespace Graphics {
 
 static std::map<std::string, Uint32> fontsInternalIds;
 static std::atomic<Uint32> fontInternalIdCounter{ 0 };
+
+// Combine outline thickness, boldness and font glyph index into a single 64-bit key
+static inline Uint64 getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold,
+								  Float outlineThickness ) {
+	return ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( fontInternalId ) ) << 48 ) |
+		   ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( outlineThickness * 100 ) ) << 33 ) |
+		   ( static_cast<EE::Uint64>( bold ) << 32 ) | index;
+}
 
 FontTrueType* FontTrueType::New( const std::string& FontName ) {
 	return eeNew( FontTrueType, ( FontName ) );
@@ -346,11 +346,6 @@ bool FontTrueType::loadFromPack( Pack* pack, std::string filePackPath ) {
 
 const FontTrueType::Info& FontTrueType::getInfo() const {
 	return mInfo;
-}
-
-Uint64 FontTrueType::getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold,
-								  Float outlineThickness ) const {
-	return combine( outlineThickness, bold, index, fontInternalId );
 }
 
 void FontTrueType::updateFontInternalId() {

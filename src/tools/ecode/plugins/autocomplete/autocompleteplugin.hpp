@@ -127,7 +127,6 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	};
 	std::unordered_map<TextDocument*, DocCache> mDocCache;
 	std::unordered_map<std::string, SymbolsList> mLangCache;
-	SymbolsList mLangDirty;
 
 	std::vector<Suggestion> mSuggestions;
 	Mutex mSuggestionsEditorMutex;
@@ -137,15 +136,14 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	Int32 mSuggestionIndex{ 0 };
 	Int32 mSuggestionsMaxVisible{ 8 };
 	Int32 mSuggestionsStartIndex{ 0 };
-	std::map<std::string, LSPServerCapabilities> mCapabilities;
+	std::unordered_map<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
 	LSPSignatureHelp mSignatureHelp;
 	TextPosition mSignatureHelpPosition;
 	Int32 mSignatureHelpSelected{ -1 };
 	Mutex mHandlesMutex;
-	std::map<TextDocument*, std::vector<PluginIDType>> mHandles;
-
-	std::map<TextDocument*, std::atomic<bool>> mDocsUpdating;
+	std::unordered_map<TextDocument*, std::vector<PluginIDType>> mHandles;
+	std::unordered_map<TextDocument*, std::atomic<bool>> mDocsUpdating;
 	Mutex mDocsUpdatingMutex;
 
 	Float mRowHeight{ 0 };

@@ -105,11 +105,12 @@ class EE_API FontTrueType : public Font {
 		unsigned int height; ///< Height of the row
 	};
 
-	typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
-	typedef std::map<Uint64, GlyphDrawable*> GlyphDrawableTable;
+	typedef std::unordered_map<Uint64, Glyph>
+		GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef std::unordered_map<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
-		Page( const Uint32 fontInternalId );
+		explicit Page( const Uint32 fontInternalId );
 
 		~Page();
 
@@ -166,11 +167,8 @@ class EE_API FontTrueType : public Font {
 	bool mEnableEmojiFallback{ true };
 	bool mEnableFallbackFont{ true };
 	bool mEnableDynamicMonospace{ false };
-	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
-	mutable std::map<Uint32, Uint32> mCodePointIndexCache;
-
-	Uint64 getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold,
-						Float outlineThickness ) const;
+	mutable std::unordered_map<unsigned int, unsigned int> mClosestCharacterSize;
+	mutable std::unordered_map<Uint32, Uint32> mCodePointIndexCache;
 
 	void updateFontInternalId();
 };

@@ -593,9 +593,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Vector2f getRelativeScreenPosition( const TextPosition& pos );
 
 	bool getShowLinesRelativePosition() const;
-	void showLinesRelativePosition(bool showLinesRelativePosition);
+	void showLinesRelativePosition( bool showLinesRelativePosition );
 
-	protected:
+  protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };
@@ -662,7 +662,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	SyntaxColorScheme mColorScheme;
 	UIScrollBar* mVScrollBar;
 	UIScrollBar* mHScrollBar;
-	std::map<size_t, LastXOffset> mLastXOffset;
+	std::unordered_map<size_t, LastXOffset> mLastXOffset;
 	KeyBindings mKeyBindings;
 	std::unordered_set<std::string> mUnlockedCmd;
 	Clock mLastDoubleClick;
@@ -687,7 +687,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 		Text text;
 		String::HashType hash;
 	};
-	mutable std::map<Int64, TextLine> mTextCache;
+	mutable std::unordered_map<Int64, TextLine> mTextCache;
 	Tools::UIDocFindReplace* mFindReplace{ nullptr };
 	struct PluginRequestedSpace {
 		UICodeEditorPlugin* plugin;
@@ -699,6 +699,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	std::vector<PluginRequestedSpace> mPluginTopSpaces;
 	Float mPluginsTopSpace{ 0 };
 	Uint64 mLastExecuteEventId{ 0 };
+	Text mLineTextCache;
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );

@@ -267,11 +267,11 @@ Node* Node::setParent( Node* parent ) {
 
 bool Node::isParentOf( const Node* node ) const {
 	eeASSERT( NULL != node );
-	Node* tParent = node->getParent();
+	Node* tParent = node->mParentNode;
 	while ( NULL != tParent ) {
 		if ( this == tParent )
 			return true;
-		tParent = tParent->getParent();
+		tParent = tParent->mParentNode;
 	}
 	return false;
 }

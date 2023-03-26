@@ -3,7 +3,7 @@
 
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
-#include <map>
+#include <unordered_map>
 
 namespace EE { namespace UI { namespace Doc {
 
@@ -16,7 +16,7 @@ struct TokenizedLine {
 
 class EE_API SyntaxHighlighter {
   public:
-	SyntaxHighlighter( TextDocument* doc );
+	explicit SyntaxHighlighter( TextDocument* doc );
 
 	void changeDoc( TextDocument* doc );
 
@@ -40,7 +40,7 @@ class EE_API SyntaxHighlighter {
 
   protected:
 	TextDocument* mDoc;
-	std::map<size_t, TokenizedLine> mLines;
+	std::unordered_map<size_t, TokenizedLine> mLines;
 	Int64 mFirstInvalidLine;
 	Int64 mMaxWantedLine;
 	TokenizedLine tokenizeLine( const size_t& line, const Uint64& state );

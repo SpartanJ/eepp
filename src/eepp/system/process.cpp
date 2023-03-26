@@ -65,11 +65,6 @@ bool Process::create( const std::string& command, const Uint32& options,
 		}
 		envStrings.push_back( NULL );
 
-		std::string cwd;
-		if ( !workingDirectory.empty() ) {
-			cwd = FileSystem::getCurrentWorkingDirectory();
-		}
-
 		auto ret = 0 == subprocess_create_ex( strings.data(), options, envStrings.data(),
 											  !workingDirectory.empty() ? workingDirectory.c_str()
 																		: nullptr,

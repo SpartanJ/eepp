@@ -1573,8 +1573,6 @@ void UICodeEditor::onDocumentLineCountChange( const size_t&, const size_t& ) {
 
 void UICodeEditor::onDocumentLineChanged( const Int64& lineNumber ) {
 	mDoc->getHighlighter()->invalidate( lineNumber );
-	if ( mFont && !mFont->isMonospace() )
-		updateLineCache( lineNumber );
 
 	if ( !mHighlightWord.isEmpty() )
 		updateHighlightWordCache();
@@ -1755,12 +1753,8 @@ size_t UICodeEditor::characterWidth( const String& str ) const {
 
 Float UICodeEditor::getTextWidth( const String& line ) const {
 	if ( mFont && !mFont->isMonospace() ) {
-		Float fontSize = PixelDensity::pxToDp( getCharacterSize() );
-		Text txt( "", mFont, fontSize );
-		txt.setTabWidth( mTabWidth );
-		txt.setStyleConfig( mFontStyleConfig );
-		txt.setString( line );
-		return txt.getTextWidth();
+		return Text::getTextWidth( mFont, getCharacterSize(), line, mFontStyleConfig.Style,
+								   mTabWidth );
 	}
 
 	Float glyphWidth = getGlyphWidth();
@@ -2713,6 +2707,9 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 		ttf->setEnableFallbackFont( false );
 		ttf->setEnableEmojiFallback( false );
 	}
+
+	Text& txt = mLineTextCache;
+
 	for ( const auto& token : tokens ) {
 		String text( pos < strLine.size() ? strLine.substr( pos, token.len ) : String() );
 		pos += token.len;
@@ -2723,12 +2720,12 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			Int64 curCharsWidth = text.size();
 			Int64 curPositionChar = eefloor( mScroll.x / getGlyphWidth() );
 			Float curMaxPositionChar = curPositionChar + maxWidth;
-			Text txt( "", mFont, fontSize );
+			txt.setFont( mFont );
+			txt.setFontSize( fontSize );
 			txt.setTabWidth( mTabWidth );
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
 			txt.setStyleConfig( mFontStyleConfig );
-			if ( style.style )
-				txt.setStyle( style.style );
+			txt.setStyle( style.style );
 			txt.setColor( Color( style.color ).blendAlpha( mAlpha ) );
 
 			if ( isMonospace )
