@@ -287,6 +287,36 @@ static void fromJson( LSPWorkspaceFoldersServerCapabilities& options, const json
 	}
 }
 
+static void fromJson( LSPSemanticTokensOptions& options, const json& data ) {
+	if ( data.empty() )
+		return;
+
+	if ( data.contains( "full" ) ) {
+		if ( data["full"].is_object() ) {
+			const auto& full = data["full"];
+			options.fullDelta = full.value( "delta", false );
+		} else if ( data["full"].is_boolean() ) {
+			options.full = data.value( "full", false );
+		}
+	}
+	if ( data.contains( "range" ) ) {
+		options.range = ( data["range"].is_boolean() && data["range"].get<bool>() == true ) ||
+						data["range"].is_object();
+	}
+
+	if ( data.contains( "legend" ) ) {
+		const auto& legend = data["legend"];
+		if ( !legend.contains( "tokenTypes" ) )
+			return;
+		const auto& tokenTypes = legend["tokenTypes"];
+		std::vector<std::string> types;
+		types.reserve( tokenTypes.size() );
+		std::transform( tokenTypes.cbegin(), tokenTypes.cend(), std::back_inserter( types ),
+						[]( const json& jv ) { return jv.get<std::string>(); } );
+		options.legend.tokenTypes = std::move( types );
+	}
+}
+
 static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	// in older protocol versions a support option is simply a boolean
 	// in newer version it may be an object instead;
@@ -333,7 +363,8 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	caps.renameProvider = toBoolOrObject( json, "renameProvider" );
 	caps.codeActionProvider = json.contains( "codeActionProvider" );
 	caps.executeCommandProvider = json.contains( "executeCommandProvider" );
-	// fromJson( caps.semanticTokenProvider, json["semanticTokensProvider"] );
+	if ( json.contains( "semanticTokensProvider" ) )
+		fromJson( caps.semanticTokenProvider, json["semanticTokensProvider"] );
 	if ( json.contains( "workspace" ) ) {
 		auto& workspace = json["workspace"];
 		if ( workspace.contains( "workspaceFolders" ) )
@@ -917,6 +948,31 @@ static json renameParams( const URI& document, const TextPosition& pos,
 	auto params = textDocumentPositionParams( document, pos );
 	params["newName"] = newName;
 	return params;
+}
+
+static LSPSemanticTokensDelta parseSemanticTokensDelta( const json& result ) {
+	LSPSemanticTokensDelta ret;
+	ret.resultId = result.value( "resultId", "" );
+	const auto& edits = result["edits"];
+	for ( const auto& edit : edits ) {
+		if ( !edit.is_object() )
+			continue;
+		LSPSemanticTokensEdit e;
+		e.start = edit.value( "start", 0 );
+		e.deleteCount = edit.value( "deleteCount", 0 );
+		const auto& data = edit["data"];
+		e.data.reserve( data.size() );
+		std::transform( data.cbegin(), data.cend(), std::back_inserter( e.data ),
+						[]( const json& jv ) { return jv.get<int>(); } );
+		ret.edits.push_back( e );
+	}
+
+	auto& data = result["data"];
+	ret.data.reserve( data.size() );
+	std::transform( data.cbegin(), data.cend(), std::back_inserter( ret.data ),
+					[]( const json& jv ) { return jv.get<int>(); } );
+
+	return ret;
 }
 
 void LSPClientServer::registerCapabilities( const json& jcap ) {
@@ -1927,6 +1983,17 @@ LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
 	}
 
 	return send( newRequest( "textDocument/semanticTokens/full", params ), h );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
+											 const std::string& requestId, const TextRange& range,
+											 const SemanticTokensDeltaHandler& h ) {
+	return documentSemanticTokensFull( document, delta, requestId, range,
+									   [h]( const IdType& id, const json& json ) {
+										   if ( h )
+											   h( id, parseSemanticTokensDelta( json ) );
+									   } );
 }
 
 } // namespace ecode

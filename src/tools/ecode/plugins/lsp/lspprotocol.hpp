@@ -74,11 +74,23 @@ struct LSPDocumentOnTypeFormattingOptions : public LSPSignatureHelpOptions {};
 
 // Ref:
 // https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
+struct SemanticTokensLegend {
+	/**
+	 * The token types a server uses.
+	 */
+	std::vector<std::string> tokenTypes;
+
+	/**
+	 * The token modifiers a server uses.
+	 */
+	std::vector<std::string> tokenModifiers;
+};
+
 struct LSPSemanticTokensOptions {
 	bool full = false;
 	bool fullDelta = false;
 	bool range = false;
-	// SemanticTokensLegend legend;
+	SemanticTokensLegend legend;
 };
 
 struct LSPWorkspaceFoldersServerCapabilities {
@@ -524,6 +536,18 @@ struct LSPApplyWorkspaceEditParams {
 struct LSPApplyWorkspaceEditResponse {
 	bool applied;
 	std::string failureReason;
+};
+
+struct LSPSemanticTokensEdit {
+	Uint32 start = 0;
+	Uint32 deleteCount = 0;
+	std::vector<Uint32> data;
+};
+
+struct LSPSemanticTokensDelta {
+	std::string resultId;
+	std::vector<LSPSemanticTokensEdit> edits;
+	std::vector<Uint32> data;
 };
 
 } // namespace ecode

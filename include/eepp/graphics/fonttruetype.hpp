@@ -5,6 +5,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <memory>
+#include <unordered_map>
 
 namespace EE { namespace System {
 class Pack;

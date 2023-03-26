@@ -8,6 +8,7 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <unordered_map>
 
 using namespace EE::Graphics;
 using namespace EE::UI::Doc;

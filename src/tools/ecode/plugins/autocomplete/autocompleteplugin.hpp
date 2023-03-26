@@ -10,6 +10,7 @@
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <set>
+#include <unordered_map>
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;

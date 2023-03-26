@@ -45,6 +45,7 @@ class LSPClientServer {
 	using LocationHandler = ReplyHandler<std::vector<LSPLocation>>;
 	using TextEditArrayHandler = ReplyHandler<std::vector<LSPTextEdit>>;
 	using WorkspaceEditHandler = ReplyHandler<LSPWorkspaceEdit>;
+	using SemanticTokensDeltaHandler = ReplyHandler<LSPSemanticTokensDelta>;
 
 	class LSPRequestHandle : public PluginRequestHandle {
 	  public:
@@ -185,6 +186,11 @@ class LSPClientServer {
 												 const std::string& requestId,
 												 const TextRange& range,
 												 const JsonReplyHandler& h );
+
+	LSPRequestHandle documentSemanticTokensFull( const URI& document, bool delta,
+												 const std::string& requestId,
+												 const TextRange& range,
+												 const SemanticTokensDeltaHandler& h );
 
 	LSPRequestHandle signatureHelp( const URI& document, const TextPosition& pos,
 									const JsonReplyHandler& h );
