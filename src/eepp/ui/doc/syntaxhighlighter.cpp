@@ -178,17 +178,19 @@ void SyntaxHighlighter::mergeLine( const size_t& line, const TokenizedLine& toke
 			const auto ltoken = tline.tokens[i];
 			if ( token.pos >= ltoken.pos && token.pos + token.len <= ltoken.pos + ltoken.len ) {
 				tline.tokens.erase( tline.tokens.begin() + i );
+				int iDiff = i;
 
 				if ( token.pos > ltoken.pos ) {
+					++iDiff;
 					tline.tokens.insert( tline.tokens.begin() + i,
 										 { ltoken.type, ltoken.pos,
 										   static_cast<size_t>( token.pos - ltoken.pos ) } );
 				}
 
-				tline.tokens.insert( tline.tokens.begin() + i, token );
+				tline.tokens.insert( tline.tokens.begin() + iDiff, token );
 
 				if ( token.pos + token.len < ltoken.pos + ltoken.len ) {
-					tline.tokens.insert( tline.tokens.begin() + i,
+					tline.tokens.insert( tline.tokens.begin() + iDiff + 1,
 										 { ltoken.type, static_cast<Int64>( token.pos + token.len ),
 										   static_cast<size_t>( ( ltoken.pos + ltoken.len ) -
 																( token.pos + token.len ) ) } );
