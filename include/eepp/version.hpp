@@ -5,9 +5,9 @@
 #include <string>
 
 #define EEPP_MAJOR_VERSION 2
-#define EEPP_MINOR_VERSION 5
-#define EEPP_PATCH_LEVEL 9
-#define EEPP_CODENAME "Bindu"
+#define EEPP_MINOR_VERSION 6
+#define EEPP_PATCH_LEVEL 0
+#define EEPP_CODENAME "Anathapindika"
 
 /** The compiled version of the library */
 #define EEPP_VERSION( x )                  \
