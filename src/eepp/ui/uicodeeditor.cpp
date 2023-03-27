@@ -1425,6 +1425,8 @@ void UICodeEditor::findLongestLine() {
 }
 
 Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
+	if ( lineIndex >= (Int64)mDoc->linesCount() )
+		return 0;
 	if ( mFont && !mFont->isMonospace() )
 		return Text::getTextWidth( mFont, getCharacterSize(), mDoc->line( lineIndex ).getText(),
 								   mFontStyleConfig.Style, mTabWidth ) +
@@ -2222,7 +2224,7 @@ Int64 UICodeEditor::getColFromXOffset( Int64 lineNumber, const Float& x ) const 
 
 	if ( mFont && !mFont->isMonospace() )
 		return Text::findCharacterFromPos( Vector2i( x, 0 ), true, mFont, getCharacterSize(),
-										   mDoc->line( lineNumber ).getText(),
+										   mDoc->line( pos.line() ).getText(),
 										   mFontStyleConfig.Style, mTabWidth );
 
 	const String& line = mDoc->line( pos.line() ).getText();
