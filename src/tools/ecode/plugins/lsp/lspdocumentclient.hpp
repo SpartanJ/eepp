@@ -55,6 +55,8 @@ class LSPDocumentClient : public TextDocument::Client {
 	int mVersion{ 0 };
 	std::string mSemanticeResultId;
 	LSPSemanticTokensDelta mSemanticTokens;
+	bool mRunningSemanticTokens{ false };
+	bool mShutdown{ false };
 
 	void refreshTag();
 

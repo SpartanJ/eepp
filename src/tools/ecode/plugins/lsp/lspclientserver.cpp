@@ -1432,6 +1432,13 @@ LSPClientServer::documentSymbols( const URI& document,
 		} );
 }
 
+LSPClientServer::LSPRequestHandle LSPClientServer::documentSymbolsBroadcast( const URI& document ) {
+	return documentSymbols( document, [this, document]( const PluginIDType& id,
+												 LSPSymbolInformationList&& res ) {
+		getManager()->getPlugin()->setDocumentSymbolsFromResponse( id, document, std::move( res ) );
+	} );
+}
+
 void LSPClientServer::workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
 									   const size_t& limit ) {
 	auto params = json{ { MEMBER_QUERY, querySymbol }, { MEMBER_LIMIT, limit } };

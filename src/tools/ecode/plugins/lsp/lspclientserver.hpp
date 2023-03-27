@@ -94,6 +94,8 @@ class LSPClientServer {
 									  const WReplyHandler<LSPSymbolInformationList>& h,
 									  const ReplyHandler<LSPResponseError>& eh = {} );
 
+	LSPRequestHandle documentSymbolsBroadcast( const URI& document );
+
 	LSPRequestHandle didOpen( const URI& document, const std::string& text, int version );
 
 	LSPRequestHandle didOpen( TextDocument* doc, int version );
@@ -225,7 +227,7 @@ class LSPClientServer {
 	Process mProcess;
 	TcpSocket* mSocket{ nullptr };
 	std::vector<TextDocument*> mDocs;
-	std::map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
+	std::unordered_map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
 	using HandlersMap = std::map<PluginIDType, std::pair<JsonReplyHandler, JsonReplyHandler>>;
 	HandlersMap mHandlers;
 	Mutex mClientsMutex;

@@ -24,6 +24,11 @@ LSPDocumentClient::~LSPDocumentClient() {
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( nullptr != sceneNode && 0 != mTag )
 		sceneNode->removeActionsByTag( mTag );
+	if ( nullptr != sceneNode && 0 != mTagSemanticTokens )
+		sceneNode->removeActionsByTag( mTagSemanticTokens );
+	mShutdown = true;
+	while ( mRunningSemanticTokens )
+		Sys::sleep( Milliseconds( 0.1f ) );
 }
 
 void LSPDocumentClient::onDocumentLoaded( TextDocument* ) {
@@ -125,9 +130,15 @@ void LSPDocumentClient::requestSemanticHighlighting() {
 		reqId = mSemanticeResultId;
 	}
 
+	LSPDocumentClient* docClient = this;
+	URI uri = mDoc->getURI();
+	LSPClientServer* server = mServer;
 	mServer->documentSemanticTokensFull(
 		mDoc->getURI(), delta, reqId, range,
-		[this]( const auto&, const LSPSemanticTokensDelta& deltas ) { processTokens( deltas ); } );
+		[docClient, uri, server]( const auto&, const LSPSemanticTokensDelta& deltas ) {
+			if ( server->hasDocument( uri ) )
+				docClient->processTokens( deltas );
+		} );
 }
 
 void LSPDocumentClient::requestSemanticHighlightingDelayed() {
@@ -154,7 +165,7 @@ UISceneNode* LSPDocumentClient::getUISceneNode() {
 }
 
 static std::string semanticTokenTypeToSyntaxType( const std::string& type,
-												  const SyntaxDefinition& syn ) {
+												  const SyntaxDefinition& ) {
 	switch ( String::hash( type ) ) {
 		case SemanticTokenTypes::Namespace:
 		case SemanticTokenTypes::Type:
@@ -168,8 +179,6 @@ static std::string semanticTokenTypeToSyntaxType( const std::string& type,
 		case SemanticTokenTypes::Variable:
 			return "symbol";
 		case SemanticTokenTypes::Property:
-			if ( syn.getLSPName() == "typescript" || syn.getLSPName() == "javascript" )
-				return "function";
 			return "symbol";
 		case SemanticTokenTypes::EnumMember:
 		case SemanticTokenTypes::Event:
@@ -201,6 +210,8 @@ static std::string semanticTokenTypeToSyntaxType( const std::string& type,
 }
 
 void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens ) {
+	mRunningSemanticTokens = true;
+
 	if ( !tokens.resultId.empty() )
 		mSemanticeResultId = tokens.resultId;
 
@@ -218,9 +229,13 @@ void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens ) {
 	}
 
 	highlight();
+
+	mRunningSemanticTokens = false;
 }
 
 void LSPDocumentClient::highlight() {
+	if ( mShutdown )
+		return;
 	const auto& data = mSemanticTokens.data;
 
 	if ( data.size() % 5 != 0 ) {
@@ -234,6 +249,8 @@ void LSPDocumentClient::highlight() {
 	Uint32 start = 0;
 	std::map<size_t, TokenizedLine> tokenizedLines;
 	for ( size_t i = 0; i < data.size(); i += 5 ) {
+		if ( mShutdown )
+			return;
 		const Uint32 deltaLine = data[i];
 		const Uint32 deltaStart = data[i + 1];
 		const Uint32 len = data[i + 2];
@@ -255,6 +272,8 @@ void LSPDocumentClient::highlight() {
 	}
 
 	for ( const auto& tline : tokenizedLines ) {
+		if ( mShutdown )
+			return;
 		mDoc->getHighlighter()->mergeLine( tline.first, tline.second );
 	}
 }
@@ -274,15 +293,11 @@ void LSPDocumentClient::requestSymbols() {
 	if ( !server->getCapabilities().documentSymbolProvider )
 		return;
 	URI uri = mDoc->getURI();
-	auto handler = [uri, server]( const PluginIDType& id, LSPSymbolInformationList&& res ) {
-		server->getManager()->getPlugin()->setDocumentSymbolsFromResponse( id, uri,
-																		   std::move( res ) );
-	};
 	if ( Engine::instance()->isMainThread() ) {
 		mServer->getThreadPool()->run(
-			[server, uri, handler]() { server->documentSymbols( uri, handler ); } );
+			[server, uri]() { server->documentSymbolsBroadcast( uri ); } );
 	} else {
-		server->documentSymbols( uri, handler );
+		server->documentSymbolsBroadcast( uri );
 	}
 }
 
@@ -292,7 +307,15 @@ void LSPDocumentClient::requestSymbolsDelayed() {
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
 		sceneNode->removeActionsByTag( mTag );
-		sceneNode->runOnMainThread( [this]() { requestSymbols(); }, Seconds( 1.f ), mTag );
+		LSPDocumentClient* docClient = this;
+		URI uri = mDoc->getURI();
+		LSPClientServer* server = mServer;
+		sceneNode->runOnMainThread(
+			[docClient, server, uri]() {
+				if ( server->hasDocument( uri ) )
+					docClient->requestSymbols();
+			},
+			Seconds( 1.f ), mTag );
 	}
 }
 

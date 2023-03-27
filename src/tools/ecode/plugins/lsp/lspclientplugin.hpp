@@ -89,6 +89,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
   protected:
 	friend class LSPDocumentClient;
+	friend class LSPClientServer;
 
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
