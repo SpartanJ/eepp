@@ -415,6 +415,14 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 	return true;
 }
 
+bool LSPClientPlugin::semanticHighlightingEnabled() const {
+	return mSemanticHighlighting;
+}
+
+void LSPClientPlugin::setSemanticHighlighting( bool semanticHighlighting ) {
+	mSemanticHighlighting = semanticHighlighting;
+}
+
 bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
 	return mManager->getSplitter()->editorExists( editor );
 }
@@ -716,6 +724,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 				Time::fromString( config["server_close_after_idle_time"].get<std::string>() ) );
 		else if ( updateConfigFile )
 			config["server_close_after_idle_time"] = mClientManager.getLSPDecayTime().toString();
+
+		if ( config.contains( "semantic_highlighting" ) )
+			mSemanticHighlighting = config.value( "semantic_highlighting", false );
+		else if ( updateConfigFile )
+			config["semantic_highlighting"] = mSemanticHighlighting;
 	}
 
 	if ( mKeyBindings.empty() ) {

@@ -54,6 +54,11 @@ static void pushToken( std::vector<T>& tokens, const std::string& type, const st
 				size_t len = String::utf8Length( substr );
 				if constexpr ( std::is_same_v<T, SyntaxTokenComplete> ) {
 					tokens.push_back( { type, std::move( substr ), len } );
+				} else if constexpr ( std::is_same_v<T, SyntaxTokenPosition> ) {
+					Int64 tpos = tokens.empty() ? 0
+												: tokens[tokens.size() - 1].pos +
+													  tokens[tokens.size() - 1].len;
+					tokens.push_back( { type, tpos, len } );
 				} else {
 					tokens.push_back( { type, len } );
 				}
@@ -63,6 +68,11 @@ static void pushToken( std::vector<T>& tokens, const std::string& type, const st
 		} else {
 			if constexpr ( std::is_same_v<T, SyntaxTokenComplete> ) {
 				tokens.push_back( { type, text, String::utf8Length( text ) } );
+			} else if constexpr ( std::is_same_v<T, SyntaxTokenPosition> ) {
+				Int64 tpos = tokens.empty()
+								 ? 0
+								 : tokens[tokens.size() - 1].pos + tokens[tokens.size() - 1].len;
+				tokens.push_back( { type, tpos, String::utf8Length( text ) } );
 			} else {
 				tokens.push_back( { type, String::utf8Length( text ) } );
 			}
@@ -345,6 +355,14 @@ SyntaxTokenizer::tokenize( const SyntaxDefinition& syntax, const std::string& te
 						   const Uint32& state, const size_t& startIndex,
 						   bool skipSubSyntaxSeparator ) {
 	return _tokenize<SyntaxToken>( syntax, text, state, startIndex, skipSubSyntaxSeparator );
+}
+
+std::pair<std::vector<SyntaxTokenPosition>, Uint32>
+SyntaxTokenizer::tokenizePosition( const SyntaxDefinition& syntax, const std::string& text,
+								   const Uint32& state, const size_t& startIndex,
+								   bool skipSubSyntaxSeparator ) {
+	return _tokenize<SyntaxTokenPosition>( syntax, text, state, startIndex,
+										   skipSubSyntaxSeparator );
 }
 
 std::pair<std::vector<SyntaxTokenComplete>, Uint32>

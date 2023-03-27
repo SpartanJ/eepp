@@ -5,6 +5,7 @@
 #include "lspdefinition.hpp"
 #include "lspdocumentclient.hpp"
 #include "lspprotocol.hpp"
+#include <atomic>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -182,15 +183,11 @@ class LSPClientServer {
 									 const std::vector<TextPosition>& positions,
 									 const SelectionRangeHandler& h );
 
-	LSPRequestHandle documentSemanticTokensFull( const URI& document, bool delta,
-												 const std::string& requestId,
-												 const TextRange& range,
-												 const JsonReplyHandler& h );
+	void documentSemanticTokensFull( const URI& document, bool delta, const std::string& requestId,
+									 const TextRange& range, const JsonReplyHandler& h );
 
-	LSPRequestHandle documentSemanticTokensFull( const URI& document, bool delta,
-												 const std::string& requestId,
-												 const TextRange& range,
-												 const SemanticTokensDeltaHandler& h );
+	void documentSemanticTokensFull( const URI& document, bool delta, const std::string& requestId,
+									 const TextRange& range, const SemanticTokensDeltaHandler& h );
 
 	LSPRequestHandle signatureHelp( const URI& document, const TextPosition& pos,
 									const JsonReplyHandler& h );
@@ -255,7 +252,7 @@ class LSPClientServer {
 	std::queue<DidChangeQueue> mDidChangeQueue;
 	Mutex mDidChangeMutex;
 
-	int mLastMsgId{ 0 };
+	std::atomic<int> mLastMsgId{ 0 };
 
 	void readStdOut( const char* bytes, size_t n );
 

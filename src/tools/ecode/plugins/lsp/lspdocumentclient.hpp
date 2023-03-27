@@ -1,6 +1,7 @@
 #ifndef ECODE_LSPDOCUMENTCLIENT_HPP
 #define ECODE_LSPDOCUMENTCLIENT_HPP
 
+#include "lspprotocol.hpp"
 #include <eepp/system/clock.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 
@@ -23,6 +24,7 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	~LSPDocumentClient();
 
+	virtual void onDocumentLoaded( TextDocument* );
 	virtual void onDocumentTextChanged( const DocumentContentChange& change );
 	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& eventType );
 	virtual void onDocumentCursorChange( const TextPosition& );
@@ -37,10 +39,6 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void notifyOpen();
 
-	void requestSymbols();
-
-	void requestSymbolsDelayed();
-
 	TextDocument* getDoc() const;
 
 	LSPClientServer* getServer() const;
@@ -53,11 +51,26 @@ class LSPDocumentClient : public TextDocument::Client {
 	LSPClientServer* mServer{ nullptr };
 	TextDocument* mDoc{ nullptr };
 	String::HashType mTag{ 0 };
+	String::HashType mTagSemanticTokens{ 0 };
 	int mVersion{ 0 };
+	std::string mSemanticeResultId;
+	LSPSemanticTokensDelta mSemanticTokens;
 
 	void refreshTag();
 
 	UISceneNode* getUISceneNode();
+
+	void requestSymbols();
+
+	void requestSymbolsDelayed();
+
+	void requestSemanticHighlighting();
+
+	void requestSemanticHighlightingDelayed();
+
+	void processTokens( const LSPSemanticTokensDelta& tokens );
+
+	void highlight();
 };
 
 } // namespace ecode

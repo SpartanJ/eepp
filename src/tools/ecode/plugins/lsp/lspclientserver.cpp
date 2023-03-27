@@ -952,26 +952,30 @@ static json renameParams( const URI& document, const TextPosition& pos,
 
 static LSPSemanticTokensDelta parseSemanticTokensDelta( const json& result ) {
 	LSPSemanticTokensDelta ret;
+	if ( result.is_null() )
+		return ret;
 	ret.resultId = result.value( "resultId", "" );
-	const auto& edits = result["edits"];
-	for ( const auto& edit : edits ) {
-		if ( !edit.is_object() )
-			continue;
-		LSPSemanticTokensEdit e;
-		e.start = edit.value( "start", 0 );
-		e.deleteCount = edit.value( "deleteCount", 0 );
-		const auto& data = edit["data"];
-		e.data.reserve( data.size() );
-		std::transform( data.cbegin(), data.cend(), std::back_inserter( e.data ),
-						[]( const json& jv ) { return jv.get<int>(); } );
-		ret.edits.push_back( e );
+	if ( result.contains( "edits" ) ) {
+		const auto& edits = result["edits"];
+		for ( const auto& edit : edits ) {
+			if ( !edit.is_object() )
+				continue;
+			LSPSemanticTokensEdit e;
+			e.start = edit.value( "start", 0 );
+			e.deleteCount = edit.value( "deleteCount", 0 );
+			const auto& data = edit["data"];
+			e.data.reserve( data.size() );
+			std::transform( data.cbegin(), data.cend(), std::back_inserter( e.data ),
+							[]( const json& jv ) { return jv.get<int>(); } );
+			ret.edits.push_back( e );
+		}
 	}
-
-	auto& data = result["data"];
-	ret.data.reserve( data.size() );
-	std::transform( data.cbegin(), data.cend(), std::back_inserter( ret.data ),
-					[]( const json& jv ) { return jv.get<int>(); } );
-
+	if ( result.contains( "data" ) ) {
+		auto& data = result["data"];
+		ret.data.reserve( data.size() );
+		std::transform( data.cbegin(), data.cend(), std::back_inserter( ret.data ),
+						[]( const json& jv ) { return jv.get<int>(); } );
+	}
 	return ret;
 }
 
@@ -1258,10 +1262,11 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 
 	// notification == no handler
 	if ( h ) {
-		ob[MEMBER_ID] = ++mLastMsgId;
-		ret.mId = mLastMsgId;
+		int msgId = ++mLastMsgId;
+		ob[MEMBER_ID] = msgId;
+		ret.mId = msgId;
 		Lock l( mHandlersMutex );
-		mHandlers[mLastMsgId] = { h, eh };
+		mHandlers[msgId] = { h, eh };
 	} else if ( id ) {
 		ob[MEMBER_ID] = id;
 	}
@@ -1966,34 +1971,36 @@ void LSPClientServer::executeCommand( const std::string& cmd, const json& params
 			   []( const auto&, const auto& ) {} );
 }
 
-LSPClientServer::LSPRequestHandle
-LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
-											 const std::string& requestId, const TextRange& range,
-											 const JsonReplyHandler& h ) {
+void LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
+												  const std::string& requestId,
+												  const TextRange& range,
+												  const JsonReplyHandler& h ) {
 	auto params = textDocumentParams( document );
 	// Delta
 	if ( delta && !requestId.empty() ) {
 		params[MEMBER_PREVIOUS_RESULT_ID] = requestId;
-		return send( newRequest( "textDocument/semanticTokens/full/delta", params ), h );
+		sendAsync( newRequest( "textDocument/semanticTokens/full/delta", params ), h );
+		return;
 	}
 	// Range
 	if ( range.isValid() ) {
 		params[MEMBER_RANGE] = toJson( range );
-		return send( newRequest( "textDocument/semanticTokens/range", params ), h );
+		sendAsync( newRequest( "textDocument/semanticTokens/range", params ), h );
+		return;
 	}
 
-	return send( newRequest( "textDocument/semanticTokens/full", params ), h );
+	sendAsync( newRequest( "textDocument/semanticTokens/full", params ), h );
 }
 
-LSPClientServer::LSPRequestHandle
-LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
-											 const std::string& requestId, const TextRange& range,
-											 const SemanticTokensDeltaHandler& h ) {
-	return documentSemanticTokensFull( document, delta, requestId, range,
-									   [h]( const IdType& id, const json& json ) {
-										   if ( h )
-											   h( id, parseSemanticTokensDelta( json ) );
-									   } );
+void LSPClientServer::documentSemanticTokensFull( const URI& document, bool delta,
+												  const std::string& requestId,
+												  const TextRange& range,
+												  const SemanticTokensDeltaHandler& h ) {
+	documentSemanticTokensFull( document, delta, requestId, range,
+								[h]( const IdType& id, const json& json ) {
+									if ( h )
+										h( id, parseSemanticTokensDelta( json ) );
+								} );
 }
 
 } // namespace ecode

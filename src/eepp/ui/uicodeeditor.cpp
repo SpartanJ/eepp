@@ -306,6 +306,8 @@ void UICodeEditor::draw() {
 	}
 
 	for ( unsigned long i = lineRange.first; i <= lineRange.second; i++ ) {
+		Lock l( mDoc->getHighlighter()->getLinesMutex() );
+
 		Vector2f curScroll(
 			{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) } );
 
@@ -343,8 +345,10 @@ void UICodeEditor::draw() {
 		drawColorPreview( startScroll, lineHeight );
 	}
 
-	if ( mMinimapEnabled )
+	if ( mMinimapEnabled ) {
+		Lock l( mDoc->getHighlighter()->getLinesMutex() );
 		drawMinimap( screenStart, lineRange );
+	}
 
 	for ( auto& plugin : mPlugins )
 		plugin->postDraw( this, startScroll, lineHeight, cursor );

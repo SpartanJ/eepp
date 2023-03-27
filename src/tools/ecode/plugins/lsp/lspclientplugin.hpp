@@ -83,6 +83,10 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	virtual bool onMouseClick( UICodeEditor* editor, const Vector2i& pos, const Uint32& flags );
 
+	bool semanticHighlightingEnabled() const;
+
+	void setSemanticHighlighting( bool semanticHighlighting );
+
   protected:
 	friend class LSPDocumentClient;
 
@@ -104,6 +108,7 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mSymbolInfoShowing{ false };
+	bool mSemanticHighlighting{ false };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::map<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
 	Uint32 mHoverWaitCb{ 0 };

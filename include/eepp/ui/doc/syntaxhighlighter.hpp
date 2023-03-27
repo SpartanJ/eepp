@@ -8,10 +8,10 @@
 namespace EE { namespace UI { namespace Doc {
 
 struct TokenizedLine {
-	Uint64 initState;
+	Uint64 initState{ SYNTAX_TOKENIZER_STATE_NONE };
 	String::HashType hash;
-	std::vector<SyntaxToken> tokens;
-	Uint64 state;
+	std::vector<SyntaxTokenPosition> tokens;
+	Uint64 state{ SYNTAX_TOKENIZER_STATE_NONE };
 };
 
 class EE_API SyntaxHighlighter {
@@ -24,7 +24,7 @@ class EE_API SyntaxHighlighter {
 
 	void invalidate( Int64 lineIndex );
 
-	const std::vector<SyntaxToken>& getLine( const size_t& index );
+	const std::vector<SyntaxTokenPosition>& getLine( const size_t& index );
 
 	Int64 getFirstInvalidLine() const;
 
@@ -38,12 +38,22 @@ class EE_API SyntaxHighlighter {
 
 	SyntaxTokenPosition getTokenPositionAt( const TextPosition& pos );
 
+	void setLine( const size_t& line, const TokenizedLine& tokenization );
+
+	void mergeLine( const size_t& line, const TokenizedLine& tokenization );
+
+	TokenizedLine tokenizeLine( const size_t& line,
+								const Uint64& state = SYNTAX_TOKENIZER_STATE_NONE );
+
+	Mutex& getLinesMutex();
+
   protected:
 	TextDocument* mDoc;
 	std::unordered_map<size_t, TokenizedLine> mLines;
+	std::unordered_map<size_t, TokenizedLine> mTokenizerLines;
+	Mutex mLinesMutex;
 	Int64 mFirstInvalidLine;
 	Int64 mMaxWantedLine;
-	TokenizedLine tokenizeLine( const size_t& line, const Uint64& state );
 };
 
 }}} // namespace EE::UI::Doc

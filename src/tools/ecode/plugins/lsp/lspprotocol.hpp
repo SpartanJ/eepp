@@ -72,6 +72,36 @@ struct LSPSignatureHelpOptions {
 
 struct LSPDocumentOnTypeFormattingOptions : public LSPSignatureHelpOptions {};
 
+struct SemanticTokenTypes {
+	enum : Uint32 {
+		Unknown = String::hash( "unknown" ),
+		Namespace = String::hash( "namespace" ),
+		Type = String::hash( "type" ),
+		Class = String::hash( "class" ),
+		Enum = String::hash( "enum" ),
+		Interface = String::hash( "interface" ),
+		Struct = String::hash( "struct" ),
+		TypeParameter = String::hash( "typeParameter" ),
+		Parameter = String::hash( "parameter" ),
+		Variable = String::hash( "variable" ),
+		Property = String::hash( "property" ),
+		EnumMember = String::hash( "enumMember" ),
+		Event = String::hash( "event" ),
+		Function = String::hash( "function" ),
+		Method = String::hash( "method" ),
+		Macro = String::hash( "macro" ),
+		Keyword = String::hash( "keyword" ),
+		Modifier = String::hash( "modifier" ),
+		Comment = String::hash( "comment" ),
+		Str = String::hash( "string" ),
+		Number = String::hash( "number" ),
+		Regexp = String::hash( "regexp" ),
+		Operator = String::hash( "operator" ),
+		Decorator = String::hash( "decorator" ),
+		Member = String::hash( "member" ),
+	};
+};
+
 // Ref:
 // https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
 struct SemanticTokensLegend {

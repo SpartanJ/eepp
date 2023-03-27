@@ -45,6 +45,10 @@ class EE_API SyntaxTokenizer {
 	tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
 			  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
 
+	static std::pair<std::vector<SyntaxTokenPosition>, Uint32>
+	tokenizePosition( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
+					  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
+
 	static std::pair<std::vector<SyntaxTokenComplete>, Uint32>
 	tokenizeComplete( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
 					  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
