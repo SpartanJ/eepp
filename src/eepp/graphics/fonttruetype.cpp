@@ -412,10 +412,12 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
 		FontTrueType* fallbackFont =
 			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
-		if ( mIsMonospace && mEnableDynamicMonospace )
-			mIsMonospace = false;
-		return fallbackFont->getGlyph( codePoint, characterSize, bold, outlineThickness,
-									   getPage( characterSize ), maxWidth );
+		if ( 0 != fallbackFont->getGlyphIndex( codePoint ) ) {
+			if ( mIsMonospace && mEnableDynamicMonospace )
+				mIsMonospace = false;
+			return fallbackFont->getGlyph( codePoint, characterSize, bold, outlineThickness,
+										   getPage( characterSize ), maxWidth );
+		}
 	}
 
 	return getGlyphByIndex( glyphIndex, characterSize, bold, outlineThickness );
