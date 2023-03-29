@@ -10,6 +10,11 @@ NinePatch* NinePatch::New( const Uint32& TexId, int left, int top, int right, in
 							   bottom, pixelDensity, name ) );
 }
 
+NinePatch* NinePatch::New( Texture* tex, int left, int top, int right, int bottom,
+						   const Float& pixelDensity, const std::string& name ) {
+	return eeNew( NinePatch, ( tex, left, top, right, bottom, pixelDensity, name ) );
+}
+
 NinePatch* NinePatch::New( TextureRegion* textureRegion, int left, int top, int right, int bottom,
 						   const std::string& name ) {
 	return eeNew( NinePatch, ( textureRegion, left, top, right, bottom, name ) );
