@@ -1957,6 +1957,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setEnableColorPickerOnSelection( true );
 	editor->setColorScheme( mSplitter->getCurrentColorScheme() );
 	editor->setShowLineNumber( config.showLineNumbers );
+	editor->setRelativeLineNumber( config.relativeLineNumbers );
 	editor->setShowWhitespaces( config.showWhiteSpaces );
 	editor->setShowLineEndings( config.showLineEndings );
 	editor->setShowIndentationGuides( config.showIndentationGuides );

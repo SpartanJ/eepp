@@ -76,6 +76,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
+	editor.relativeLineNumbers = ini.getValueB( "editor", "relative_line_numbers", false );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
 	editor.showIndentationGuides = ini.getValueB( "editor", "show_indentation_guides", false );
@@ -201,6 +202,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
+	ini.setValueB( "editor", "relative_line_numbers", editor.relativeLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
 	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );
 	ini.setValueB( "editor", "show_line_endings", editor.showLineEndings );

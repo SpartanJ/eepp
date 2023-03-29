@@ -53,6 +53,7 @@ struct CodeEditorConfig {
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	StyleSheetLength lineSpacing{ 0, StyleSheetLength::Dp };
 	bool showLineNumbers{ true };
+	bool relativeLineNumbers{ true };
 	bool showWhiteSpaces{ true };
 	bool showLineEndings{ false };
 	bool showIndentationGuides{ false };

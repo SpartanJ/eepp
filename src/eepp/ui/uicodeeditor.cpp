@@ -336,9 +336,15 @@ void UICodeEditor::draw() {
 		drawCursor( startScroll, lineHeight, cursor.start() );
 
 	if ( mShowLineNumber ) {
-		drawLineNumbers( lineRange, startScroll,
-						 { screenStart.x + mPluginsGutterSpace, screenStart.y }, lineHeight,
-						 getLineNumberWidth(), lineNumberDigits, charSize );
+		if ( mRelativeLineNumber ) {
+			drawRelativeLineNumbers( lineRange, startScroll,
+									 { screenStart.x + mPluginsGutterSpace, screenStart.y },
+									 lineHeight, getLineNumberWidth(), lineNumberDigits, charSize );
+		} else {
+			drawLineNumbers( lineRange, startScroll,
+							 { screenStart.x + mPluginsGutterSpace, screenStart.y }, lineHeight,
+							 getLineNumberWidth(), lineNumberDigits, charSize );
+		}
 	}
 
 	if ( mColorPreview && mPreviewColorRange.isValid() && isMouseOver() && !mMinimapHover ) {
@@ -714,6 +720,17 @@ const bool& UICodeEditor::getShowLineNumber() const {
 void UICodeEditor::setShowLineNumber( const bool& showLineNumber ) {
 	if ( mShowLineNumber != showLineNumber ) {
 		mShowLineNumber = showLineNumber;
+		invalidateDraw();
+	}
+}
+
+const bool& UICodeEditor::getRelativeLineNumber() const {
+	return mRelativeLineNumber;
+}
+
+void UICodeEditor::setRelativeLineNumber( const bool& relativeLineNumber ) {
+	if ( mRelativeLineNumber != relativeLineNumber ) {
+		mRelativeLineNumber = relativeLineNumber;
 		invalidateDraw();
 	}
 }
@@ -2912,6 +2929,33 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 		} else {
 			pos = String( String::toString( i + 1 ) ).padLeft( lineNumberDigits, ' ' );
 		}
+		Text line( std::move( pos ), mFont, fontSize );
+		line.setStyleConfig( mFontStyleConfig );
+		line.setColor( ( i >= selection.start().line() && i <= selection.end().line() )
+						   ? mLineNumberActiveFontColor
+						   : mLineNumberFontColor );
+		line.draw( screenStart.x + mLineNumberPaddingLeft,
+				   startScroll.y + lineHeight * (double)i + lineOffset );
+	}
+}
+
+void UICodeEditor::drawRelativeLineNumbers( const std::pair<int, int>& lineRange,
+											const Vector2f& startScroll,
+											const Vector2f& screenStart, const Float& lineHeight,
+											const Float& lineNumberWidth,
+											const int& lineNumberDigits, const Float& fontSize ) {
+	Primitives primitives;
+	primitives.setColor( Color( mLineNumberBackgroundColor ).blendAlpha( mAlpha ) );
+	primitives.drawRectangle( Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
+	TextRange selection = mDoc->getSelection( true );
+	Float lineOffset = getLineOffset();
+
+	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+		String pos;
+		int distance = eeabs( i - selection.start().line() );
+		pos = String( String::toString( distance == 0 ? i + 1 : distance ) )
+				  .padLeft( lineNumberDigits, ' ' );
+
 		Text line( std::move( pos ), mFont, fontSize );
 		line.setStyleConfig( mFontStyleConfig );
 		line.setColor( ( i >= selection.start().line() && i <= selection.end().line() )

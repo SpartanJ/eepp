@@ -1067,6 +1067,9 @@ UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu->addCheckBox( i18n( "show_line_numbers", "Show Line Numbers" ) )
 		->setActive( mApp->getConfig().editor.showLineNumbers )
 		->setId( "show-line-numbers" );
+	mViewMenu->addCheckBox( i18n( "relative_line_numbers", "Relative Line Numbers" ) )
+		->setActive( mApp->getConfig().editor.relativeLineNumbers )
+		->setId( "relative-line-numbers" );
 	mViewMenu->addCheckBox( i18n( "show_white_spaces", "Show White Spaces" ) )
 		->setActive( mApp->getConfig().editor.showWhiteSpaces )
 		->setId( "show-white-spaces" );
@@ -1141,6 +1144,12 @@ UIMenu* SettingsMenu::createViewMenu() {
 			mApp->getConfig().editor.showLineNumbers = item->asType<UIMenuCheckBox>()->isActive();
 			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
 				editor->setShowLineNumber( mApp->getConfig().editor.showLineNumbers );
+			} );
+		} else if ( item->getId() == "relative-line-numbers" ) {
+			mApp->getConfig().editor.relativeLineNumbers =
+				item->asType<UIMenuCheckBox>()->isActive();
+			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+				editor->setRelativeLineNumber( mApp->getConfig().editor.relativeLineNumbers );
 			} );
 		} else if ( item->getId() == "show-white-spaces" ) {
 			mApp->getConfig().editor.showWhiteSpaces = item->asType<UIMenuCheckBox>()->isActive();

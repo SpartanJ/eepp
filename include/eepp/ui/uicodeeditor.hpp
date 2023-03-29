@@ -254,6 +254,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setShowLineNumber( const bool& showLineNumber );
 
+	const bool& getRelativeLineNumber() const;
+
+	void setRelativeLineNumber( const bool& relativeLineNumber );
+
 	const Color& getLineNumberBackgroundColor() const;
 
 	void setLineNumberBackgroundColor( const Color& lineNumberBackgroundColor );
@@ -611,6 +615,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mCursorVisible{ false };
 	bool mMouseDown{ false };
 	bool mShowLineNumber{ true };
+	bool mRelativeLineNumber{ false };
 	bool mShowWhitespaces{ true };
 	bool mShowLineEndings{ false };
 	bool mLocked{ false };
@@ -811,6 +816,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 								  const Vector2f& screenStart, const Float& lineHeight,
 								  const Float& lineNumberWidth, const int& lineNumberDigits,
 								  const Float& fontSize );
+
+	virtual void drawRelativeLineNumbers( const std::pair<int, int>& lineRange,
+										  const Vector2f& startScroll, const Vector2f& screenStart,
+										  const Float& lineHeight, const Float& lineNumberWidth,
+										  const int& lineNumberDigits, const Float& fontSize );
 
 	virtual void drawColorPreview( const Vector2f& startScroll, const Float& lineHeight );
 
