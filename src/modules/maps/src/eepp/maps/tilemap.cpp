@@ -147,11 +147,9 @@ void TileMap::createEmptyTile() {
 			Img.setPixel( mTileSize.x - 1, y, Col );
 		}
 
-		Uint32 TileTexId = TF->loadFromPixels(
-			Img.getPixelsPtr(), Img.getWidth(), Img.getHeight(), Img.getChannels(), true,
-			Texture::ClampMode::ClampToEdge, false, false, tileName );
-
-		mTileTex = TF->getTexture( TileTexId );
+		mTileTex = TF->loadFromPixels( Img.getPixelsPtr(), Img.getWidth(), Img.getHeight(),
+									   Img.getChannels(), true, Texture::ClampMode::ClampToEdge,
+									   false, false, tileName );
 	} else {
 		mTileTex = Tex;
 	}
@@ -394,8 +392,8 @@ void TileMap::clamp() {
 	if ( totSize.y < mViewSize.y )
 		mOffset.y = 0;
 
-	totSize.x = ( Int32 )( ( Float )( mTileSize.x * mSize.x ) * mScale );
-	totSize.y = ( Int32 )( ( Float )( mTileSize.y * mSize.y ) * mScale );
+	totSize.x = (Int32)( (Float)( mTileSize.x * mSize.x ) * mScale );
+	totSize.y = (Int32)( (Float)( mTileSize.y * mSize.y ) * mScale );
 
 	if ( -mOffset.x + mViewSize.x > totSize.x )
 		mOffset.x = -( totSize.x - mViewSize.x );

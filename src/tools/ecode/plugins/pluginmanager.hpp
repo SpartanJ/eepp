@@ -3,6 +3,7 @@
 
 #include "../projectsearch.hpp"
 #include "lsp/lspprotocol.hpp"
+#include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -22,6 +23,7 @@ using namespace EE::UI::Tools;
 namespace ecode {
 
 class PluginManager;
+class FileSystemListener;
 
 typedef std::function<UICodeEditorPlugin*( PluginManager* pluginManager )> PluginCreatorFn;
 
@@ -77,10 +79,13 @@ enum class PluginMessageType {
 	TextDocumentSymbol, // Request to the LSP server the document symbols
 	TextDocumentFlattenSymbol, // Request to the LSP server the document symbols flattened
 	DiagnosticsCodeAction,	   // Request a code action to anyone that can handle it
+	FileSystemListenerReady,   // Broadcast to inform the plugins that the file system listener is
+							   // available
 	Undefined
 };
 
 enum class PluginMessageFormat {
+	Empty,
 	JSON,
 	Diagnostics,
 	CodeCompletion,
@@ -237,6 +242,8 @@ class PluginManager {
 
 	bool isEnabled( const std::string& id ) const;
 
+	bool reload( const std::string& id );
+
 	const std::string& getResourcesPath() const;
 
 	const std::string& getPluginsPath() const;
@@ -289,6 +296,8 @@ class PluginManager {
 
 	void unsubscribeMessages( const std::string& uniqueComponentId );
 
+	FileSystemListener* getFileSystemListener() const { return mFileSystemListener; };
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;
@@ -301,6 +310,7 @@ class PluginManager {
 	std::map<std::string, PluginDefinition> mDefinitions;
 	std::shared_ptr<ThreadPool> mThreadPool;
 	UICodeEditorSplitter* mSplitter{ nullptr };
+	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mSubscribedPluginsMutex;
 	SubscribedPlugins mSubscribedPlugins;
 	bool mClosing{ false };
@@ -308,6 +318,8 @@ class PluginManager {
 	bool hasDefinition( const std::string& id );
 
 	void setSplitter( UICodeEditorSplitter* splitter );
+
+	void setFileSystemListener( FileSystemListener* listener );
 };
 
 class PluginsModel : public Model {
@@ -346,6 +358,34 @@ class UIPluginManager {
   public:
 	static UIWindow* New( UISceneNode* sceneNode, PluginManager* manager,
 						  std::function<void( const std::string& )> loadFileCb );
+};
+
+class Plugin : public UICodeEditorPlugin {
+  public:
+	explicit Plugin( PluginManager* manager );
+
+	void subscribeFileSystemListener();
+
+	void unsubscribeFileSystemListener();
+
+	bool isReady() const;
+
+	bool isShuttingDown() const;
+
+	virtual bool hasFileConfig();
+
+	virtual std::string getFileConfigPath();
+
+	PluginManager* getManager() const;
+
+  protected:
+	PluginManager* mManager{ nullptr };
+	std::shared_ptr<ThreadPool> mThreadPool;
+	Uint64 mFileSystemListenerCb{ 0 };
+	std::string mConfigPath;
+	FileInfo mConfigFileInfo;
+	bool mReady{ false };
+	bool mShuttingDown{ false };
 };
 
 } // namespace ecode

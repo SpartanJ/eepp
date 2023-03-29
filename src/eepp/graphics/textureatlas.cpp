@@ -56,6 +56,24 @@ TextureRegion* TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, cons
 	return add( TextureRegion::New( TexId, SrcRect, DestSize, Offset, Name ) );
 }
 
+TextureRegion* TextureAtlas::add( Texture* tex, const std::string& Name ) {
+	return add( TextureRegion::New( tex, Name ) );
+}
+
+TextureRegion* TextureAtlas::add( Texture* tex, const Rect& SrcRect, const std::string& Name ) {
+	return add( TextureRegion::New( tex, SrcRect, Name ) );
+}
+
+TextureRegion* TextureAtlas::add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+								  const std::string& Name ) {
+	return add( TextureRegion::New( tex, SrcRect, DestSize, Name ) );
+}
+
+TextureRegion* TextureAtlas::add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+								  const Vector2i& Offset, const std::string& Name ) {
+	return add( TextureRegion::New( tex, SrcRect, DestSize, Offset, Name ) );
+}
+
 Uint32 TextureAtlas::getCount() {
 	return ResourceManager<TextureRegion>::getCount();
 }

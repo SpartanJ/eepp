@@ -1370,7 +1370,7 @@ void UICodeEditor::checkColorPickerAction() {
 		if ( colorPicker )
 			colorPicker->getUIWindow()->addEventListener(
 				Event::OnWindowClose, [&]( const Event* ) {
-					if ( !SceneManager::instance()->isShootingDown() )
+					if ( !SceneManager::instance()->isShuttingDown() )
 						setFocus();
 				} );
 	}

@@ -376,10 +376,8 @@ Texture* UIColorPicker::createHueTexture( const Sizef& size ) {
 	}
 
 	TextureFactory* TF = TextureFactory::instance();
-	Uint32 texId = TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
-									   image.getChannels() );
-
-	return TF->getTexture( texId );
+	return TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
+							   image.getChannels() );
 }
 
 Texture* UIColorPicker::createGridTexture() {
@@ -396,10 +394,8 @@ Texture* UIColorPicker::createGridTexture() {
 	}
 
 	TextureFactory* TF = TextureFactory::instance();
-	Uint32 texId = TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
-									   image.getChannels() );
-
-	return TF->getTexture( texId );
+	return TF->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(),
+							   image.getChannels() );
 }
 
 void UIColorPicker::updateColorPicker() {

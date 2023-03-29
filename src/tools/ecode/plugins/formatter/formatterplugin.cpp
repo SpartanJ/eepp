@@ -32,23 +32,24 @@ UICodeEditorPlugin* FormatterPlugin::NewSync( PluginManager* pluginManager ) {
 }
 
 FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
-	mManager( pluginManager ), mPool( pluginManager->getThreadPool() ) {
+	Plugin( pluginManager ) {
 	if ( sync ) {
 		load( pluginManager );
 	} else {
 #if FORMATTER_THREADED
-		mPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
 	}
 	mManager->subscribeMessages( this, [&]( const PluginMessage& msg ) -> PluginRequestHandle {
-		return processResponse( msg );
+		return processMessage( msg );
 	} );
 }
 
 FormatterPlugin::~FormatterPlugin() {
 	mShuttingDown = true;
+	unsubscribeFileSystemListener();
 
 	if ( mWorkersCount != 0 ) {
 		std::unique_lock<std::mutex> lock( mWorkMutex );
@@ -235,6 +236,9 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 }
 
 void FormatterPlugin::load( PluginManager* pluginManager ) {
+	pluginManager->subscribeMessages( this, [&]( const auto& notification ) -> PluginRequestHandle {
+		return processMessage( notification );
+	} );
 	registerNativeFormatters();
 
 	std::vector<std::string> paths;
@@ -260,14 +264,8 @@ void FormatterPlugin::load( PluginManager* pluginManager ) {
 	mReady = !mFormatters.empty();
 	if ( mReady )
 		fireReadyCbs();
-}
 
-bool FormatterPlugin::hasFileConfig() {
-	return !mConfigPath.empty();
-}
-
-std::string FormatterPlugin::getFileConfigPath() {
-	return mConfigPath;
+	subscribeFileSystemListener();
 }
 
 bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i&,
@@ -544,8 +542,10 @@ bool FormatterPlugin::tryRequestCapabilities( const std::shared_ptr<TextDocument
 	return false;
 }
 
-PluginRequestHandle FormatterPlugin::processResponse( const PluginMessage& msg ) {
-	if ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerCapabilities ) {
+PluginRequestHandle FormatterPlugin::processMessage( const PluginMessage& msg ) {
+	if ( msg.type == PluginMessageType::FileSystemListenerReady ) {
+		subscribeFileSystemListener();
+	} else if ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerCapabilities ) {
 		if ( msg.asLanguageServerCapabilities().ready ) {
 			LSPServerCapabilities cap = msg.asLanguageServerCapabilities();
 			Lock l( mCapabilitiesMutex );

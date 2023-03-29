@@ -17,7 +17,7 @@ using namespace EE::UI;
 
 namespace ecode {
 
-class AutoCompletePlugin : public UICodeEditorPlugin {
+class AutoCompletePlugin : public Plugin {
   public:
 	class Suggestion {
 	  public:
@@ -58,7 +58,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
 				 AutoCompletePlugin::New,
-				 { 0, 2, 0 } };
+				 { 0, 2, 1 } };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );
@@ -106,10 +106,8 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void setDirty( bool dirty );
 
   protected:
-	PluginManager* mManager{ nullptr };
 	std::string mSymbolPattern;
 	Rectf mBoxPadding;
-	std::shared_ptr<ThreadPool> mPool;
 	Clock mClock;
 	Mutex mLangSymbolsMutex;
 	Mutex mSuggestionsMutex;
@@ -119,7 +117,6 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	std::set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	bool mDirty{ false };
-	bool mClosing{ false };
 	bool mReplacing{ false };
 	bool mSignatureHelpVisible{ false };
 	struct DocCache {
@@ -150,7 +147,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
 
-	AutoCompletePlugin( PluginManager* pluginManager );
+	explicit AutoCompletePlugin( PluginManager* pluginManager );
 
 	void resetSuggestions( UICodeEditor* editor );
 

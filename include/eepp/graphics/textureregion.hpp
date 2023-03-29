@@ -24,41 +24,51 @@ class EE_API TextureRegion : public DrawableResource {
 	static TextureRegion* New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize,
 							   const Vector2i& offset, const std::string& name = "" );
 
+	static TextureRegion* New( Texture* tex, const std::string& name = "" );
+
+	static TextureRegion* New( Texture* tex, const Rect& srcRect, const std::string& name = "" );
+
+	static TextureRegion* New( Texture* tex, const Rect& srcRect, const Sizef& destSize,
+							   const std::string& name = "" );
+
+	static TextureRegion* New( Texture* tex, const Rect& srcRect, const Sizef& destSize,
+							   const Vector2i& offset, const std::string& name = "" );
+
 	/** Creates an empty TextureRegion */
 	TextureRegion();
 
 	/** Creates a TextureRegion from a Texture. It will use the full Texture as a TextureRegion.
-	 *	@param TexId The texture id
+	 *	@param tex The texture
 	 *	@param name The texture name ( if any )
 	 */
-	TextureRegion( const Uint32& TexId, const std::string& name = "" );
+	TextureRegion( Texture* tex, const std::string& name = "" );
 
 	/** Creates a TextureRegion of the indicated part of the texture.
-	 *	@param TexId The texture id
+	 *	@param tex The texture
 	 *	@param srcRect The texture part that will be used as the TextureRegion.
 	 *	@param name The texture name ( if any )
 	 */
-	TextureRegion( const Uint32& TexId, const Rect& srcRect, const std::string& name = "" );
+	TextureRegion( Texture* tex, const Rect& srcRect, const std::string& name = "" );
 
 	/** Creates a TextureRegion of the indicated part of the texture.
-	 *	@param TexId The texture id
+	 *	@param tex The texture
 	 *	@param srcRect The texture part that will be used as the TextureRegion.
 	 *	@param destSize The destination size that the TextureRegion will have when rendered.
 	 *	@param name The texture name ( if any )
 	 */
-	TextureRegion( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize,
+	TextureRegion( Texture* tex, const Rect& srcRect, const Sizef& destSize,
 				   const std::string& name = "" );
 
 	/** Creates a TextureRegion of the indicated part of the texture.
-	 *	@param TexId The texture id
+	 *	@param tex The texture
 	 *	@param srcRect The texture part that will be used as the TextureRegion.
 	 *	@param destSize The destination size that the TextureRegion will have when rendered.
 	 *	@param offset The offset that will be added to the position passed when any Draw call is
 	 *used.
 	 *	@param name The texture name ( if any )
 	 */
-	TextureRegion( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize,
-				   const Vector2i& offset, const std::string& name = "" );
+	TextureRegion( Texture* tex, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset,
+				   const std::string& name = "" );
 
 	virtual ~TextureRegion();
 
@@ -92,13 +102,15 @@ class EE_API TextureRegion : public DrawableResource {
 
 	void draw( const Float& X, const Float& Y, const Color& color = Color::White,
 			   const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One,
-			   const BlendMode& Blend = BlendMode::Alpha(), const RenderMode& Effect = RENDER_NORMAL,
+			   const BlendMode& Blend = BlendMode::Alpha(),
+			   const RenderMode& Effect = RENDER_NORMAL,
 			   OriginPoint Center = OriginPoint( OriginPoint::OriginCenter ) );
 
 	void draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale,
 			   const Color& Color0 = Color::White, const Color& Color1 = Color::White,
 			   const Color& Color2 = Color::White, const Color& Color3 = Color::White,
-			   const BlendMode& Blend = BlendMode::Alpha(), const RenderMode& Effect = RENDER_NORMAL,
+			   const BlendMode& Blend = BlendMode::Alpha(),
+			   const RenderMode& Effect = RENDER_NORMAL,
 			   OriginPoint Center = OriginPoint( OriginPoint::OriginCenter ) );
 
 	void draw( const Quad2f Q, const Vector2f& offset = Vector2f(), const Float& Angle = 0.f,

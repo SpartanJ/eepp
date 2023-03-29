@@ -52,7 +52,7 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	std::function<IterationDecision( const ModelIndex& )> traverseIndex =
 		[&]( const ModelIndex& index ) {
 			if ( index.isValid() ) {
-				auto& metadata = getIndexMetadata( index );
+				const auto& metadata = getIndexMetadata( index );
 				rowIndex++;
 				IterationDecision decision = callback( rowIndex, index, indentLevel, yOffset );
 				if ( decision == IterationDecision::Break || decision == IterationDecision::Stop )
@@ -237,11 +237,11 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		bool hasChilds = false;
 
 		if ( widget->isType( UI_TYPE_TREEVIEW_CELL ) ) {
-			UITreeViewCell* cell = widget->asType<UITreeViewCell>();
+			UITreeViewCell* tcell = widget->asType<UITreeViewCell>();
 			UIImage* image = widget->asType<UITreeViewCell>()->getImage();
 
 			Float minIndent =
-				!mExpandersAsIcons
+				!mExpandersAsIcons && mExpandIcon && mContractIcon
 					? eemax( mExpandIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth(),
 							 mContractIcon->getSize( mExpanderIconSize )
 								 ->getPixelsSize()
@@ -250,28 +250,28 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 					: 0;
 
 			if ( index.column() == (Int64)getModel()->treeColumn() )
-				cell->setIndentation( minIndent + getIndentWidth() * indentLevel );
+				tcell->setIndentation( minIndent + getIndentWidth() * indentLevel );
 
 			hasChilds = getModel()->rowCount( index ) > 0;
 
 			if ( hasChilds ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
-				Drawable* drawable = icon->getSize( mExpanderIconSize );
+				Drawable* drawable = icon ? icon->getSize( mExpanderIconSize ) : nullptr;
 
 				image->setVisible( true );
-				image->setPixelsSize( drawable->getPixelsSize() );
+				image->setPixelsSize( drawable ? drawable->getPixelsSize() : Sizef( 0, 0 ) );
 				image->setDrawable( drawable );
 				if ( !mExpandersAsIcons ) {
-					cell->setIndentation( cell->getIndentation() -
-										  image->getPixelsSize().getWidth() -
-										  PixelDensity::dpToPx( image->getLayoutMargin().Right ) );
+					tcell->setIndentation( tcell->getIndentation() -
+										   image->getPixelsSize().getWidth() -
+										   PixelDensity::dpToPx( image->getLayoutMargin().Right ) );
 				}
 			} else {
 				image->setVisible( false );
 			}
 		}
 
-		if ( hasChilds && mExpandersAsIcons ) {
+		if ( hasChilds && mExpandersAsIcons && cell->getIcon() ) {
 			cell->getIcon()->setVisible( false );
 			return widget;
 		}

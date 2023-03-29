@@ -315,7 +315,7 @@ Uint32 UIDropDownList::onKeyDown( const KeyEvent& Event ) {
 }
 
 void UIDropDownList::destroyListBox() {
-	if ( !SceneManager::instance()->isShootingDown() && NULL != mListBox &&
+	if ( !SceneManager::instance()->isShuttingDown() && NULL != mListBox &&
 		 mListBox->getParent() != this ) {
 		mListBox->setParent( this );
 	}

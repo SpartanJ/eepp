@@ -143,7 +143,7 @@ void App::saveAllProcess() {
 				} );
 				dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
-					if ( !SceneManager::instance()->isShootingDown() && !mTmpDocs.empty() )
+					if ( !SceneManager::instance()->isShuttingDown() && !mTmpDocs.empty() )
 						saveAllProcess();
 				} );
 				return true;
@@ -227,7 +227,7 @@ void App::openFileDialog() {
 		loadFileFromPath( file );
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShootingDown() )
+		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->center();
@@ -262,7 +262,7 @@ void App::openFolderDialog() {
 			loadFolder( path );
 	} );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShootingDown() )
+		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->center();
@@ -285,7 +285,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 	dialog->setTitle( i18n( "select_font_file", "Select Font File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShootingDown() )
+		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->addEventListener( Event::OpenFile, [&, loadingMonoFont]( const Event* event ) {
@@ -397,7 +397,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	} );
 	if ( focusOnClose ) {
 		dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
-			if ( editor && !SceneManager::instance()->isShootingDown() )
+			if ( editor && !SceneManager::instance()->isShuttingDown() )
 				editor->setFocus();
 		} );
 	}
@@ -635,14 +635,14 @@ App::~App() {
 		delete mFileWatcher;
 		mFileWatcher = nullptr;
 	}
+	mPluginManager.reset();
+	eeSAFE_DELETE( mSplitter );
+	eeSAFE_DELETE( mConsole );
 	if ( mFileSystemListener ) {
 		delete mFileSystemListener;
 		mFileSystemListener = nullptr;
 	}
 	mDirTree.reset();
-	mPluginManager.reset();
-	eeSAFE_DELETE( mSplitter );
-	eeSAFE_DELETE( mConsole );
 }
 
 void App::updateRecentFiles() {
@@ -890,6 +890,22 @@ void App::aboutEcode() {
 	String msg( ecode::Version::getVersionFullName() + " (codename: \"" +
 				ecode::Version::getCodename() + "\")" );
 	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
+	UIImage* image = UIImage::New();
+	image->setParent( msgBox->getContainer()->getFirstChild() );
+	auto tf = TextureFactory::instance();
+	Texture* tex = tf->getByName( "ecode-logo" );
+	if ( tex == nullptr ) {
+		tex = tf->loadFromFile( mResPath + "icon/ecode.png" );
+		if ( tex )
+			tex->setName( "ecode-logo" );
+	}
+	image->setDrawable( tex );
+	image->setLayoutGravity( UI_NODE_ALIGN_CENTER );
+	image->setGravity( UI_NODE_ALIGN_CENTER );
+	image->setScaleType( UIScaleType::FitInside );
+	image->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	image->setSize( { 128, 128 } );
+	image->toBack();
 	msgBox->setTitle( i18n( "about_ecode", "About ecode..." ) );
 	msgBox->showWhenReady();
 }
@@ -1848,13 +1864,10 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mThreadPool->run( [this, imageView, loaderView, path, isMemory]() {
 #endif
-			Texture* image = isMemory
-								 ? TextureFactory::instance()->getTexture(
-									   TextureFactory::instance()->loadFromMemory(
-										   reinterpret_cast<const unsigned char*>( path.c_str() ),
-										   path.size() ) )
-								 : TextureFactory::instance()->getTexture(
-									   TextureFactory::instance()->loadFromFile( path ) );
+			Texture* image =
+				isMemory ? TextureFactory::instance()->loadFromMemory(
+							   reinterpret_cast<const unsigned char*>( path.c_str() ), path.size() )
+						 : TextureFactory::instance()->loadFromFile( path );
 			if ( mImageLayout->isVisible() ) {
 				imageView->runOnMainThread( [this, imageView, loaderView, image]() {
 					mImageLayout->setFocus();
@@ -3450,7 +3463,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();
 		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel );
+		mFileWatcher->addWatch( mPluginsPath, mFileSystemListener );
 		mFileWatcher->watch();
+		mPluginManager->setFileSystemListener( mFileSystemListener );
 #endif
 
 		mNotificationCenter = std::make_unique<NotificationCenter>(

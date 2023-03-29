@@ -146,9 +146,12 @@ void App::unloadFonts() {
 
 void App::loadImage( std::string path ) {
 	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
-	Uint32 texId = TextureFactory::instance()->loadFromFile( path );
-	TextureRegion* texRegion = GlobalTextureAtlas::instance()->add( texId, filename );
-	mImagesLoaded[texId] = texRegion;
+	Texture* tex = TextureFactory::instance()->loadFromFile( path );
+	if ( tex ) {
+		Uint32 texId = tex->getTextureId();
+		TextureRegion* texRegion = GlobalTextureAtlas::instance()->add( texId, filename );
+		mImagesLoaded[texId] = texRegion;
+	}
 }
 
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
@@ -1017,7 +1020,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	} );
 	if ( focusOnClose ) {
 		dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
-			if ( editor && !SceneManager::instance()->isShootingDown() )
+			if ( editor && !SceneManager::instance()->isShuttingDown() )
 				editor->setFocus();
 		} );
 	}
@@ -1487,7 +1490,7 @@ void App::saveAllProcess() {
 				} );
 				dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
-					if ( !SceneManager::instance()->isShootingDown() && !mTmpDocs.empty() )
+					if ( !SceneManager::instance()->isShuttingDown() && !mTmpDocs.empty() )
 						saveAllProcess();
 				} );
 				return true;

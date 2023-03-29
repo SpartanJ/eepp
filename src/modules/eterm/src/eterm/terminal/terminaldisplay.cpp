@@ -1678,8 +1678,7 @@ void TerminalDisplay::createFrameBuffer() {
 void TerminalDisplay::drawFrameBuffer() {
 	if ( mFrameBuffer ) {
 		Rect r( 0, 0, mSize.getWidth(), mSize.getHeight() );
-		TextureRegion textureRegion( mFrameBuffer->getTexture()->getTextureId(), r,
-									 r.getSize().asFloat() );
+		TextureRegion textureRegion( mFrameBuffer->getTexture(), r, r.getSize().asFloat() );
 		textureRegion.draw( mPosition.floor().x, mPosition.floor().y );
 	}
 }

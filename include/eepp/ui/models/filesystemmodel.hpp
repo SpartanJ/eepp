@@ -39,7 +39,7 @@ class EE_API FileSystemModel : public Model {
 		DisplayConfig() {}
 		DisplayConfig(
 			bool sortByName, bool foldersFirst, bool ignoreHidden,
-			std::vector<std::string> acceptedExtensions = {},
+			const std::vector<std::string>& acceptedExtensions = {},
 			std::function<bool( const std::string& filepath )> fileIsVisibleFn = nullptr ) :
 			sortByName( sortByName ),
 			foldersFirst( foldersFirst ),
@@ -145,7 +145,7 @@ class EE_API FileSystemModel : public Model {
 
 	static std::shared_ptr<FileSystemModel>
 	New( const std::string& rootPath, const Mode& mode = Mode::FilesAndDirectories,
-		 const DisplayConfig displayConfig = DisplayConfig() );
+		 const DisplayConfig& displayConfig = DisplayConfig() );
 
 	const Mode& getMode() const { return mMode; }
 
@@ -200,7 +200,7 @@ class EE_API FileSystemModel : public Model {
 	Node& nodeRef( const ModelIndex& index ) const;
 
 	FileSystemModel( const std::string& rootPath, const Mode& mode,
-					 const DisplayConfig displayConfig );
+					 const DisplayConfig& displayConfig );
 
 	size_t getFileIndex( Node* parent, const FileInfo& file );
 

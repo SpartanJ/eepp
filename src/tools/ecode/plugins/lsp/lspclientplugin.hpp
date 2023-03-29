@@ -21,11 +21,11 @@ namespace ecode {
 
 // Implementation of the LSP Client:
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
-class LSPClientPlugin : public UICodeEditorPlugin {
+class LSPClientPlugin : public Plugin {
   public:
 	static PluginDefinition Definition() {
 		return { "lspclient",		   "LSP Client", "Language Server Protocol Client.",
-				 LSPClientPlugin::New, { 0, 2, 0 },	 LSPClientPlugin::NewSync };
+				 LSPClientPlugin::New, { 0, 2, 1 },	 LSPClientPlugin::NewSync };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );
@@ -42,15 +42,11 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 
 	std::string getDescription() { return Definition().description; }
 
-	bool isReady() const { return true; }
-
 	void onRegister( UICodeEditor* );
 
 	void onUnregister( UICodeEditor* );
 
 	const std::unordered_map<UICodeEditor*, TextDocument*>& getEditorDocs() { return mEditorDocs; };
-
-	PluginManager* getManager() const;
 
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );
@@ -66,10 +62,6 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	void setHoverDelay( const Time& hoverDelay );
 
 	const LSPClientServerManager& getClientManager() const;
-
-	bool hasFileConfig();
-
-	std::string getFileConfigPath();
 
 	bool processDocumentFormattingResponse( const URI& uri, std::vector<LSPTextEdit> edits );
 
@@ -91,8 +83,6 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	friend class LSPDocumentClient;
 	friend class LSPClientServer;
 
-	PluginManager* mManager{ nullptr };
-	std::shared_ptr<ThreadPool> mThreadPool;
 	Clock mClock;
 	Mutex mDocMutex;
 	Mutex mDocSymbolsMutex;
@@ -103,9 +93,6 @@ class LSPClientPlugin : public UICodeEditorPlugin {
 	std::map<URI, LSPSymbolInformationList> mDocFlatSymbols;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	LSPClientServerManager mClientManager;
-	std::string mConfigPath;
-	bool mClosing{ false };
-	bool mReady{ false };
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mSymbolInfoShowing{ false };

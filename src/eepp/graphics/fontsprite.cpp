@@ -140,9 +140,8 @@ bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, 
 
 	img.createMaskFromColor( Color::Fuchsia, 0 );
 
-	Uint32 texId = TextureFactory::instance()->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
+	Texture* texture = TextureFactory::instance()->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
 															   img.getHeight(), img.getChannels() );
-	Texture* texture = TextureFactory::instance()->getTexture( texId );
 	mPages[mFontSize].texture = texture;
 	if ( NULL != texture ) {
 		texture->setFilter( Texture::Filter::Nearest );

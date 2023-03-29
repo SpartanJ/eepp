@@ -31,13 +31,12 @@ UICodeEditorPlugin* LinterPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager, true ) );
 }
 
-LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) :
-	mManager( pluginManager ), mPool( pluginManager->getThreadPool() ) {
+LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( pluginManager ) {
 	if ( sync ) {
 		load( pluginManager );
 	} else {
 #if LINTER_THREADED
-		mPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
@@ -47,6 +46,7 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) :
 LinterPlugin::~LinterPlugin() {
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
+	unsubscribeFileSystemListener();
 
 	if ( mWorkersCount != 0 ) {
 		std::unique_lock<std::mutex> lock( mWorkMutex );
@@ -58,14 +58,6 @@ LinterPlugin::~LinterPlugin() {
 			editor.first->removeEventListener( listener );
 		editor.first->unregisterPlugin( this );
 	}
-}
-
-bool LinterPlugin::hasFileConfig() {
-	return !mConfigPath.empty();
-}
-
-std::string LinterPlugin::getFileConfigPath() {
-	return mConfigPath;
 }
 
 size_t LinterPlugin::linterFilePatternPosition( const std::vector<std::string>& patterns ) {
@@ -310,6 +302,11 @@ void LinterPlugin::setMatches( TextDocument* doc, const MatchOrigin& origin,
 }
 
 PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notification ) {
+	if ( notification.type == PluginMessageType::FileSystemListenerReady ) {
+		subscribeFileSystemListener();
+		return {};
+	}
+
 	if ( notification.type == PluginMessageType::DiagnosticsCodeAction &&
 		 notification.format == PluginMessageFormat::JSON && notification.isRequest() ) {
 		PluginIDType id( std::numeric_limits<Int64>::max() );
@@ -394,16 +391,18 @@ void LinterPlugin::load( PluginManager* pluginManager ) {
 	}
 	if ( paths.empty() )
 		return;
-	for ( const auto& path : paths ) {
+	for ( const auto& tpath : paths ) {
 		try {
-			loadLinterConfig( path, mConfigPath == path );
+			loadLinterConfig( tpath, mConfigPath == tpath );
 		} catch ( const json::exception& e ) {
-			Log::error( "Parsing linter \"%s\" failed:\n%s", path.c_str(), e.what() );
+			Log::error( "Parsing linter \"%s\" failed:\n%s", tpath.c_str(), e.what() );
 		}
 	}
 	mReady = !mLinters.empty();
 	if ( mReady )
 		fireReadyCbs();
+
+	subscribeFileSystemListener();
 }
 
 void LinterPlugin::onRegister( UICodeEditor* editor ) {
@@ -474,7 +473,7 @@ void LinterPlugin::update( UICodeEditor* editor ) {
 	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
 #if LINTER_THREADED
-		mPool->run( [&, doc] { lintDoc( doc ); } );
+		mThreadPool->run( [&, doc] { lintDoc( doc ); } );
 #else
 		lintDoc( doc );
 #endif
@@ -687,9 +686,9 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 					bool skip = false;
 
 					if ( linter.deduplicate && matches.find( line - 1 ) != matches.end() ) {
-						for ( auto& match : matches[line - 1] ) {
-							if ( match.range == linterMatch.range ) {
-								match.text += "\n" + linterMatch.text;
+						for ( auto& tmatch : matches[line - 1] ) {
+							if ( tmatch.range == linterMatch.range ) {
+								tmatch.text += "\n" + linterMatch.text;
 								skip = true;
 								break;
 							}

@@ -31,38 +31,40 @@ TextureFactory::~TextureFactory() {
 	unloadTextures();
 }
 
-Uint32 TextureFactory::createEmptyTexture( const unsigned int& Width, const unsigned int& Height,
-										   const unsigned int& Channels, const Color& DefaultColor,
-										   const bool& Mipmap, const Texture::ClampMode& ClampMode,
-										   const bool& CompressTexture, const bool& KeepLocalCopy,
-										   const std::string& Filename ) {
+Texture* TextureFactory::createEmptyTexture( const unsigned int& Width, const unsigned int& Height,
+											 const unsigned int& Channels,
+											 const Color& DefaultColor, const bool& Mipmap,
+											 const Texture::ClampMode& ClampMode,
+											 const bool& CompressTexture, const bool& KeepLocalCopy,
+											 const std::string& Filename ) {
 	Image TmpImg( Width, Height, Channels, DefaultColor );
 	return loadFromPixels( TmpImg.getPixelsPtr(), Width, Height, Channels, Mipmap, ClampMode,
 						   CompressTexture, KeepLocalCopy, Filename );
 }
 
-Uint32 TextureFactory::loadFromPixels( const unsigned char* Pixels, const unsigned int& Width,
-									   const unsigned int& Height, const unsigned int& Channels,
-									   const bool& Mipmap, const Texture::ClampMode& ClampMode,
-									   const bool& CompressTexture, const bool& KeepLocalCopy,
-									   const std::string& FileName ) {
+Texture* TextureFactory::loadFromPixels( const unsigned char* Pixels, const unsigned int& Width,
+										 const unsigned int& Height, const unsigned int& Channels,
+										 const bool& Mipmap, const Texture::ClampMode& ClampMode,
+										 const bool& CompressTexture, const bool& KeepLocalCopy,
+										 const std::string& FileName ) {
 	TextureLoader myTex( Pixels, Width, Height, Channels, Mipmap, ClampMode, CompressTexture,
 						 KeepLocalCopy, FileName );
 	myTex.load();
-	return myTex.getId();
+	return myTex.getTexture();
 }
 
-Uint32 TextureFactory::loadFromPack( Pack* Pack, const std::string& FilePackPath,
-									 const bool& Mipmap, const Texture::ClampMode& ClampMode,
-									 const bool& CompressTexture, const bool& KeepLocalCopy,
-									 const Image::FormatConfiguration& imageformatConfiguration ) {
+Texture*
+TextureFactory::loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap,
+							  const Texture::ClampMode& ClampMode, const bool& CompressTexture,
+							  const bool& KeepLocalCopy,
+							  const Image::FormatConfiguration& imageformatConfiguration ) {
 	TextureLoader myTex( Pack, FilePackPath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.setFormatConfiguration( imageformatConfiguration );
 	myTex.load();
-	return myTex.getId();
+	return myTex.getTexture();
 }
 
-Uint32
+Texture*
 TextureFactory::loadFromMemory( const unsigned char* ImagePtr, const unsigned int& Size,
 								const bool& Mipmap, const Texture::ClampMode& ClampMode,
 								const bool& CompressTexture, const bool& KeepLocalCopy,
@@ -70,10 +72,10 @@ TextureFactory::loadFromMemory( const unsigned char* ImagePtr, const unsigned in
 	TextureLoader myTex( ImagePtr, Size, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.setFormatConfiguration( imageformatConfiguration );
 	myTex.load();
-	return myTex.getId();
+	return myTex.getTexture();
 }
 
-Uint32
+Texture*
 TextureFactory::loadFromStream( IOStream& Stream, const bool& Mipmap,
 								const Texture::ClampMode& ClampMode, const bool& CompressTexture,
 								const bool& KeepLocalCopy,
@@ -81,17 +83,18 @@ TextureFactory::loadFromStream( IOStream& Stream, const bool& Mipmap,
 	TextureLoader myTex( Stream, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.setFormatConfiguration( imageformatConfiguration );
 	myTex.load();
-	return myTex.getId();
+	return myTex.getTexture();
 }
 
-Uint32 TextureFactory::loadFromFile( const std::string& Filepath, const bool& Mipmap,
-									 const Texture::ClampMode& ClampMode,
-									 const bool& CompressTexture, const bool& KeepLocalCopy,
-									 const Image::FormatConfiguration& imageformatConfiguration ) {
+Texture*
+TextureFactory::loadFromFile( const std::string& Filepath, const bool& Mipmap,
+							  const Texture::ClampMode& ClampMode, const bool& CompressTexture,
+							  const bool& KeepLocalCopy,
+							  const Image::FormatConfiguration& imageformatConfiguration ) {
 	TextureLoader myTex( Filepath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.setFormatConfiguration( imageformatConfiguration );
 	myTex.load();
-	return myTex.getId();
+	return myTex.getTexture();
 }
 
 Uint32 TextureFactory::pushTexture( const std::string& Filepath, const Uint32& TexId,

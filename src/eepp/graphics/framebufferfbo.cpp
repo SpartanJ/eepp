@@ -163,11 +163,11 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 
 	} else {
 		if ( NULL == mTexture ) {
-			Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, channels,
+			Texture* tex = TextureFactory::instance()->createEmptyTexture( Width, Height, channels,
 																		   Color::Transparent );
 
-			if ( TextureFactory::instance()->existsId( TexId ) ) {
-				mTexture = TextureFactory::instance()->getTexture( TexId );
+			if ( tex ) {
+				mTexture = tex;
 			} else {
 				Log::error( "FrameBufferFBO::create: failed to create texture" );
 				return false;
@@ -277,7 +277,7 @@ void FrameBufferFBO::draw( const Vector2f& position, const Sizef& size ) {
 
 void FrameBufferFBO::draw( Rect src, Rect dst ) {
 	if ( NULL != mTexture ) {
-		TextureRegion textureRegion( getTexture()->getTextureId(), src );
+		TextureRegion textureRegion( getTexture(), src );
 		Sizei size( dst.getSize() );
 		textureRegion.setDestSize( Sizef( size.x, size.y ) );
 		textureRegion.draw( dst.Left, dst.Top, Color::White );
@@ -311,13 +311,13 @@ void FrameBufferFBO::bindFrameBuffer() {
 	GLi->bindFramebuffer( GL_FRAMEBUFFER, mFrameBuffer );
 
 	if ( !mDepthBuffer && !mStencilBuffer ) {
-		const GLenum discards[] = {GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT};
+		const GLenum discards[] = { GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT };
 		GLi->discardFramebuffer( GL_FRAMEBUFFER, 2, discards );
 	} else if ( !mDepthBuffer ) {
-		const GLenum discards[] = {GL_DEPTH_ATTACHMENT};
+		const GLenum discards[] = { GL_DEPTH_ATTACHMENT };
 		GLi->discardFramebuffer( GL_FRAMEBUFFER, 1, discards );
 	} else if ( !mStencilBuffer ) {
-		const GLenum discards[] = {GL_STENCIL_ATTACHMENT};
+		const GLenum discards[] = { GL_STENCIL_ATTACHMENT };
 		GLi->discardFramebuffer( GL_FRAMEBUFFER, 1, discards );
 	}
 }

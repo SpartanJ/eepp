@@ -132,13 +132,13 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 					eWinEvent->getNode()->removeEventListener( eWinEvent->getCallbackId() );
 				} );
 			uiWin->addEventListener( Event::OnWindowClose, [sceneNode, winRdCb]( const Event* ) {
-				if ( !SceneManager::instance()->isShootingDown() )
+				if ( !SceneManager::instance()->isShuttingDown() )
 					sceneNode->removeEventListener( winRdCb );
 			} );
 		}
 	} );
 	uiWin->addEventListener( Event::OnWindowClose, [sceneNode, winCb]( const Event* ) {
-		if ( !SceneManager::instance()->isShootingDown() )
+		if ( !SceneManager::instance()->isShuttingDown() )
 			sceneNode->removeEventListener( winCb );
 	} );
 	return uiWin;

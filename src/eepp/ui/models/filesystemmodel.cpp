@@ -267,12 +267,12 @@ void FileSystemModel::Node::updateMimeType() {
 
 std::shared_ptr<FileSystemModel> FileSystemModel::New( const std::string& rootPath,
 													   const FileSystemModel::Mode& mode,
-													   const DisplayConfig displayConfig ) {
+													   const DisplayConfig& displayConfig ) {
 	return std::shared_ptr<FileSystemModel>( new FileSystemModel( rootPath, mode, displayConfig ) );
 }
 
 FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemModel::Mode& mode,
-								  const DisplayConfig displayConfig ) :
+								  const DisplayConfig& displayConfig ) :
 	mRootPath( rootPath ),
 	mRealRootPath( FileSystem::getRealPath( rootPath ) ),
 	mMode( mode ),
@@ -772,7 +772,7 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 						std::vector<ModelIndex> newIndexes = keptSelections[view];
 						int i = 0;
 						for ( const auto& name : names ) {
-							size_t row = parent->findChildRowFromName( name, *this );
+							Int64 row = parent->findChildRowFromName( name, *this );
 							if ( row >= 0 ) {
 								newIndexes.emplace_back(
 									this->index( row, prevSelectionsModelIndex[view][i].column(),

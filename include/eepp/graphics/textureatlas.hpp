@@ -58,6 +58,40 @@ class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	TextureRegion* add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize,
 						const Vector2i& Offset, const std::string& Name = "" );
 
+	/** Creates and add to the texture atlas a TextureRegion from a Texture. It will use the full
+	 *Texture as a TextureRegion.
+	 *	@param tex The texture
+	 *	@param Name The texture name ( if any )
+	 */
+	TextureRegion* add( Texture* tex, const std::string& Name = "" );
+
+	/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
+	 *	@param tex The texture
+	 *	@param SrcRect The texture part that will be used as the TextureRegion.
+	 *	@param Name The texture name ( if any )
+	 */
+	TextureRegion* add( Texture* tex, const Rect& SrcRect, const std::string& Name = "" );
+
+	/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
+	 *	@param tex The texture
+	 *	@param SrcRect The texture part that will be used as the TextureRegion.
+	 *	@param DestSize The destination size that the TextureRegion will have when rendered.
+	 *	@param Name The texture name ( if any )
+	 */
+	TextureRegion* add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+						const std::string& Name = "" );
+
+	/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
+	 *	@param tex The texture
+	 *	@param SrcRect The texture part that will be used as the TextureRegion.
+	 *	@param DestSize The destination size that the TextureRegion will have when rendered.
+	 *	@param Offset The offset that will be added to the position passed when any Draw call is
+	 *used.
+	 *	@param Name The texture name ( if any )
+	 */
+	TextureRegion* add( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
+						const Vector2i& Offset, const std::string& Name = "" );
+
 	/** @return The texture atlas name. */
 	const std::string& getName() const;
 

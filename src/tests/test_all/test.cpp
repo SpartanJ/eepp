@@ -39,7 +39,7 @@ class UIBlurredWindow : public UIWindow {
 				mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
 			}
 
-			TextureRegion textureRegion( curFBO->getTexture()->getTextureId(),
+			TextureRegion textureRegion( curFBO->getTexture(),
 										 Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.x,
 											   mScreenPos.y + mSize.y ) );
 
@@ -600,7 +600,8 @@ void EETest::createUI() {
 
 	createUIThemeTextureAtlas();
 
-	Log::info( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsedTimeAndReset().asMilliseconds() );
+	Log::info( "Texture Atlas Loading Time: %4.3f ms.",
+			   TE.getElapsedTimeAndReset().asMilliseconds() );
 
 	mSceneNode = UISceneNode::New();
 
@@ -1384,11 +1385,11 @@ void EETest::loadTextures() {
 	TNP.resize( 12 );
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toString( i + 1 ) + ".png",
-								  ( i + 1 ) == 7 ? true : false,
-								  ( ( i + 1 ) == 4 ) ? Texture::ClampMode::ClampRepeat
-													 : Texture::ClampMode::ClampToEdge );
-		TNP[i] = TF->getTexture( TN[i] );
+		TNP[i] = TF->loadFromFile( MyPath + "sprites/" + String::toString( i + 1 ) + ".png",
+								   ( i + 1 ) == 7 ? true : false,
+								   ( ( i + 1 ) == 4 ) ? Texture::ClampMode::ClampRepeat
+													  : Texture::ClampMode::ClampToEdge );
+		TN[i] = TNP[i]->getTextureId();
 	}
 
 	Tiles.resize( 10 );
@@ -1401,7 +1402,8 @@ void EETest::loadTextures() {
 			Tiles[i] = SG->getByName( String::toString( i + 1 ) );
 		}
 
-		Tiles[6] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" ), "7" );
+		Tiles[6] =
+			SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" )->getTextureId(), "7" );
 
 #ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
@@ -1453,8 +1455,8 @@ void EETest::loadTextures() {
 		Tex->unlock( false, true );
 	}
 
-	Cursor[0] = TF->loadFromFile( MyPath + "cursors/cursor.tga" );
-	CursorP[0] = TF->getTexture( Cursor[0] );
+	CursorP[0] = TF->loadFromFile( MyPath + "cursors/cursor.tga" );
+	Cursor[0] = CursorP[0]->getTextureId();
 
 	CursorManager* CurMan = mWindow->getCursorManager();
 	CurMan->setVisible( false );

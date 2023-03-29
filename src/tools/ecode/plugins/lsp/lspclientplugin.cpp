@@ -117,7 +117,7 @@ UICodeEditorPlugin* LSPClientPlugin::NewSync( PluginManager* pluginManager ) {
 }
 
 LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
-	mManager( pluginManager ), mThreadPool( pluginManager->getThreadPool() ) {
+	Plugin( pluginManager ) {
 	if ( sync ) {
 		load( pluginManager );
 	} else {
@@ -126,8 +126,9 @@ LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 LSPClientPlugin::~LSPClientPlugin() {
-	mClosing = true;
+	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
+	unsubscribeFileSystemListener();
 	Lock l( mDocMutex );
 	for ( const auto& editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {
@@ -575,6 +576,10 @@ PluginRequestHandle LSPClientPlugin::processCancelRequest( const PluginMessage& 
 
 PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) {
 	switch ( msg.type ) {
+		case PluginMessageType::FileSystemListenerReady: {
+			subscribeFileSystemListener();
+			break;
+		}
 		case PluginMessageType::WorkspaceFolderChanged: {
 			mClientManager.didChangeWorkspaceFolders( msg.asJSON()["folder"] );
 			break;
@@ -675,6 +680,8 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 	mDelayedDocs.clear();
 	if ( mReady )
 		fireReadyCbs();
+
+	subscribeFileSystemListener();
 }
 
 static std::string parseCommand( nlohmann::json cmd ) {
@@ -1055,7 +1062,7 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 			editor->getDocument().removeCommand( kb.first );
 	}
 
-	if ( mClosing )
+	if ( mShuttingDown )
 		return;
 	Lock l( mDocMutex );
 	TextDocument* doc = &editor->getDocument();
@@ -1077,10 +1084,6 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	}
 
 	mDocs.erase( doc );
-}
-
-PluginManager* LSPClientPlugin::getManager() const {
-	return mManager;
 }
 
 bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
@@ -1257,14 +1260,6 @@ void LSPClientPlugin::setHoverDelay( const Time& hoverDelay ) {
 
 const LSPClientServerManager& LSPClientPlugin::getClientManager() const {
 	return mClientManager;
-}
-
-bool LSPClientPlugin::hasFileConfig() {
-	return !mConfigPath.empty();
-}
-
-std::string LSPClientPlugin::getFileConfigPath() {
-	return mConfigPath;
 }
 
 } // namespace ecode

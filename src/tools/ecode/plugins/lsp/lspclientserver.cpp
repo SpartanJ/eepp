@@ -1212,7 +1212,7 @@ bool LSPClientServer::needsAsync() {
 }
 
 bool LSPClientServer::isRunning() {
-	return mUsingProcess ? ( mProcess.isAlive() && !mProcess.isShootingDown() &&
+	return mUsingProcess ? ( mProcess.isAlive() && !mProcess.isShuttingDown() &&
 							 ( !mUsingSocket || mSocket != nullptr ) )
 						 : ( mUsingSocket && mSocket != nullptr );
 }
@@ -1614,7 +1614,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 
 	std::string& buffer = mReceive;
 
-	while ( ( mUsingProcess && !mProcess.isShootingDown() ) ||
+	while ( ( mUsingProcess && !mProcess.isShuttingDown() ) ||
 			( mUsingSocket && mSocket != nullptr ) ) {
 		auto index = buffer.find( CONTENT_LENGTH_HEADER );
 		if ( index == std::string::npos ) {

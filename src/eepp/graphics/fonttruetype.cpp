@@ -1177,10 +1177,9 @@ FontTrueType::Page::Page( const Uint32 fontInternalId ) :
 			image.setPixel( x, y, Color( 255, 255, 255, 255 ) );
 
 	// Create the texture
-	Uint32 texId = TextureFactory::instance()->loadFromPixels(
+	texture = TextureFactory::instance()->loadFromPixels(
 		image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false,
 		Texture::ClampMode::ClampToEdge, false, true );
-	texture = TextureFactory::instance()->getTexture( texId );
 	texture->setCoordinateType( Texture::CoordinateType::Pixels );
 }
 

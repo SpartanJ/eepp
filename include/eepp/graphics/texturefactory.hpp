@@ -28,9 +28,9 @@ class EE_API TextureFactory : protected Mutex {
 	 * display them, will convert RGB to DXT1, RGBA to DXT5 )
 	 * @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 	 * @param Filename A filename to recognize the texture.
-	 * @return Internal Texture Id
+	 * @return The created texture
 	 */
-	Uint32 createEmptyTexture(
+	Texture* createEmptyTexture(
 		const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4,
 		const Color& DefaultColor = Color( 0, 0, 0, 255 ), const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
@@ -49,14 +49,14 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 	 * @param FileName A filename to recognize the texture ( the path in case that was loaded from
 	 * outside the texture factory ).
-	 * @return Internal Texture Id
+	 * @return The texture loaded or null if error
 	 */
-	Uint32 loadFromPixels( const unsigned char* Pixels, const unsigned int& Width,
-						   const unsigned int& Height, const unsigned int& Channels,
-						   const bool& Mipmap = false,
-						   const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
-						   const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
-						   const std::string& FileName = std::string( "" ) );
+	Texture* loadFromPixels( const unsigned char* Pixels, const unsigned int& Width,
+							 const unsigned int& Height, const unsigned int& Channels,
+							 const bool& Mipmap = false,
+							 const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
+							 const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
+							 const std::string& FileName = std::string( "" ) );
 
 	/** Load a texture from Pack file
 	 * @param Pack Pointer to the pack instance
@@ -68,9 +68,9 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 	 * @param imageformatConfiguration The specific image format configuration to use when decoding
 	 * the image.
-	 * @return Internal Texture Id
+	 * @return The texture loaded or null if error
 	 */
-	Uint32 loadFromPack(
+	Texture* loadFromPack(
 		Pack* Pack, const std::string& FilePackPath, const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
@@ -86,9 +86,9 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 	 * @param imageformatConfiguration The specific image format configuration to use when decoding
 	 * the image.
-	 * @return The internal Texture Id
+	 * @return The texture loaded or null if error
 	 */
-	Uint32 loadFromMemory(
+	Texture* loadFromMemory(
 		const unsigned char* ImagePtr, const unsigned int& Size, const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
@@ -103,9 +103,9 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 	 * @param imageformatConfiguration The specific image format configuration to use when decoding
 	 * the image.
-	 * @return The internal Texture Id
+	 * @return The texture loaded or null if error
 	 */
-	Uint32 loadFromStream(
+	Texture* loadFromStream(
 		IOStream& Stream, const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,
@@ -120,9 +120,9 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 	 * @param imageformatConfiguration The specific image format configuration to use when decoding
 	 * the image.
-	 * @return The internal Texture Id
+	 * @return The texture loaded or null if error
 	 */
-	Uint32 loadFromFile(
+	Texture* loadFromFile(
 		const std::string& Filepath, const bool& Mipmap = false,
 		const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge,
 		const bool& CompressTexture = false, const bool& KeepLocalCopy = false,

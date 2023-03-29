@@ -63,7 +63,7 @@ UIWidget::~UIWidget() {
 		 mUISceneNode->getUIEventDispatcher()->getNodeDragging() == this )
 		mUISceneNode->getUIEventDispatcher()->setNodeDragging( nullptr );
 
-	if ( !SceneManager::instance()->isShootingDown() && NULL != mUISceneNode )
+	if ( !SceneManager::instance()->isShuttingDown() && NULL != mUISceneNode )
 		mUISceneNode->onWidgetDelete( this );
 	eeSAFE_DELETE( mStyle );
 	eeSAFE_DELETE( mTooltip );

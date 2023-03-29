@@ -1295,7 +1295,8 @@ UIMenu* SettingsMenu::createHelpMenu() {
 		->setId( "ecode-source" );
 	helpMenu->add( i18n( "check_for_updates", "Check for Updates..." ), findIcon( "refresh" ) )
 		->setId( "check-for-updates" );
-	helpMenu->add( i18n( "about_ecode", "About ecode..." ) )->setId( "about-ecode" );
+	helpMenu->add( i18n( "about_ecode", "About ecode..." ), findIcon( "ecode" ) )
+		->setId( "about-ecode" );
 	helpMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		runCommand( event->getNode()->getId() );
 	} );

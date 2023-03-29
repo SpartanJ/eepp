@@ -32,7 +32,7 @@ Node::Node() :
 	mAlpha( 255.f ) {}
 
 Node::~Node() {
-	if ( !SceneManager::instance()->isShootingDown() && NULL != mSceneNode ) {
+	if ( !SceneManager::instance()->isShuttingDown() && NULL != mSceneNode ) {
 		if ( mSceneNode != this && NULL != mSceneNode->getActionManager() )
 			mSceneNode->getActionManager()->removeAllActionsFromTarget( this );
 

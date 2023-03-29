@@ -118,14 +118,14 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 					}
 				}
 
-				Uint32 texId = TF->loadFromPixels( rgbaImg.getPixelsPtr(), rgbaImg.getWidth(),
+				Texture* tex = TF->loadFromPixels( rgbaImg.getPixelsPtr(), rgbaImg.getWidth(),
 												   rgbaImg.getHeight(), rgbaImg.getChannels() );
 
-				mPages[mFontSize].texture = TF->getTexture( texId );
+				mPages[mFontSize].texture = tex;
 			} else {
-				Uint32 texId = TF->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
+				Texture* tex = TF->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
 												   img.getHeight(), img.getChannels() );
-				mPages[mFontSize].texture = TF->getTexture( texId );
+				mPages[mFontSize].texture = tex;
 			}
 
 			if ( NULL != mPages[mFontSize].texture ) {

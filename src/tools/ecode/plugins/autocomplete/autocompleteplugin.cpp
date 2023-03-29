@@ -71,19 +71,19 @@ UICodeEditorPlugin* AutoCompletePlugin::New( PluginManager* pluginManager ) {
 }
 
 AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager ) :
-	mManager( pluginManager ),
+	Plugin( pluginManager ),
 	mSymbolPattern( "[%a_ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_"
 					"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
-	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 12, 4 ) ) ),
-	mPool( pluginManager->getThreadPool() ) {
+	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 12, 4 ) ) ) {
 	mManager->subscribeMessages( this, [&]( const PluginMessage& msg ) -> PluginRequestHandle {
 		return processResponse( msg );
 	} );
 }
 
 AutoCompletePlugin::~AutoCompletePlugin() {
-	mClosing = true;
+	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
+
 	Lock l( mDocMutex );
 	Lock l2( mLangSymbolsMutex );
 	Lock l3( mSuggestionsMutex );
@@ -142,7 +142,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 			std::string oldLang = event->getOldLang();
 			std::string newLang = event->getNewLang();
 #if AUTO_COMPLETE_THREADED
-			mPool->run( [&, oldLang, newLang] {
+			mThreadPool->run( [&, oldLang, newLang] {
 				updateLangCache( oldLang );
 				updateLangCache( newLang );
 			} );
@@ -159,7 +159,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
-	if ( mClosing )
+	if ( mShuttingDown )
 		return;
 	if ( mSuggestionsEditor == editor )
 		resetSuggestions( editor );
@@ -313,7 +313,7 @@ void AutoCompletePlugin::requestSignatureHelp( UICodeEditor* editor ) {
 	auto doc = editor->getDocumentRef();
 	mSignatureHelpPosition = editor->getDocumentRef()->getSelection().start();
 
-	mPool->run( [&, editor]() {
+	mThreadPool->run( [&, editor]() {
 		json data = getURIAndPositionJSON( editor );
 		mManager->sendRequest( this, PluginMessageType::SignatureHelp, PluginMessageFormat::JSON,
 							   &data );
@@ -394,7 +394,7 @@ void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
 	{
 		Lock l( mDocMutex );
 		docCache = mDocCache.find( doc );
-		if ( docCache == mDocCache.end() || mClosing )
+		if ( docCache == mDocCache.end() || mShuttingDown )
 			return;
 	}
 
@@ -404,7 +404,7 @@ void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
 	{
 		Lock l( mDocMutex );
 		docCache = mDocCache.find( doc );
-		if ( docCache == mDocCache.end() || mClosing )
+		if ( docCache == mDocCache.end() || mShuttingDown )
 			return;
 		auto& cache = docCache->second;
 		cache.changeId = changeId;
@@ -590,7 +590,7 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 						continue;
 				}
 #if AUTO_COMPLETE_THREADED
-				mPool->run( [&, doc] { updateDocCache( doc ); } );
+				mThreadPool->run( [&, doc] { updateDocCache( doc ); } );
 #else
 				updateDocCache( doc );
 #endif
@@ -931,7 +931,7 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 	LuaPattern pattern( mSymbolPattern );
 	AutoCompletePlugin::SymbolsList symbols;
 	Int64 lc = doc->linesCount();
-	if ( lc == 0 || lc > 50000 || mClosing )
+	if ( lc == 0 || lc > 50000 || mShuttingDown )
 		return symbols;
 	std::string current( getPartialSymbol( doc ) );
 	TextPosition end = doc->getSelection().end();
@@ -948,7 +948,7 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 							   } ) )
 				symbols.push_back( std::move( matchStr ) );
 		}
-		if ( mClosing )
+		if ( mShuttingDown )
 			break;
 	}
 	return symbols;
@@ -981,7 +981,7 @@ void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEdi
 	const auto& symbols = langSuggestions->second;
 	{
 #if AUTO_COMPLETE_THREADED
-		mPool->run(
+		mThreadPool->run(
 			[this, symbol, &symbols, editor] { runUpdateSuggestions( symbol, symbols, editor ); } );
 #else
 		runUpdateSuggestions( symbol, symbols, editor );

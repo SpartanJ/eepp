@@ -15,22 +15,43 @@ TextureRegion* TextureRegion::New() {
 }
 
 TextureRegion* TextureRegion::New( const Uint32& TexId, const std::string& name ) {
-	return eeNew( TextureRegion, ( TexId, name ) );
+	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( TexId ), name ) );
 }
 
 TextureRegion* TextureRegion::New( const Uint32& TexId, const Rect& srcRect,
 								   const std::string& name ) {
-	return eeNew( TextureRegion, ( TexId, srcRect, name ) );
+	return eeNew( TextureRegion,
+				  ( TextureFactory::instance()->getTexture( TexId ), srcRect, name ) );
 }
 
 TextureRegion* TextureRegion::New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize,
 								   const std::string& name ) {
-	return eeNew( TextureRegion, ( TexId, srcRect, destSize, name ) );
+	return eeNew( TextureRegion,
+				  ( TextureFactory::instance()->getTexture( TexId ), srcRect, destSize, name ) );
 }
 
 TextureRegion* TextureRegion::New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize,
 								   const Vector2i& offset, const std::string& name ) {
-	return eeNew( TextureRegion, ( TexId, srcRect, destSize, offset, name ) );
+	return eeNew( TextureRegion, ( TextureFactory::instance()->getTexture( TexId ), srcRect,
+								   destSize, offset, name ) );
+}
+
+TextureRegion* TextureRegion::New( Texture* tex, const std::string& name ) {
+	return eeNew( TextureRegion, ( tex, name ) );
+}
+
+TextureRegion* TextureRegion::New( Texture* tex, const Rect& srcRect, const std::string& name ) {
+	return eeNew( TextureRegion, ( tex, srcRect, name ) );
+}
+
+TextureRegion* TextureRegion::New( Texture* tex, const Rect& srcRect, const Sizef& destSize,
+								   const std::string& name ) {
+	return eeNew( TextureRegion, ( tex, srcRect, destSize, name ) );
+}
+
+TextureRegion* TextureRegion::New( Texture* tex, const Rect& srcRect, const Sizef& destSize,
+								   const Vector2i& offset, const std::string& name ) {
+	return eeNew( TextureRegion, ( tex, srcRect, destSize, offset, name ) );
 }
 
 TextureRegion::TextureRegion() :
@@ -44,11 +65,11 @@ TextureRegion::TextureRegion() :
 	mOffset( 0, 0 ),
 	mPixelDensity( 1 ) {}
 
-TextureRegion::TextureRegion( const Uint32& TexId, const std::string& name ) :
+TextureRegion::TextureRegion( Texture* tex, const std::string& name ) :
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
+	mTexture( tex ),
 	mSrcRect( Rect( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0,
 					NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
 	mOriDestSize( PixelDensity::dpToPx( mSrcRect.getSize().asFloat() ) ),
@@ -56,36 +77,36 @@ TextureRegion::TextureRegion( const Uint32& TexId, const std::string& name ) :
 	mOffset( 0, 0 ),
 	mPixelDensity( 1 ) {}
 
-TextureRegion::TextureRegion( const Uint32& TexId, const Rect& SrcRect, const std::string& name ) :
+TextureRegion::TextureRegion( Texture* tex, const Rect& SrcRect, const std::string& name ) :
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
+	mTexture( tex ),
 	mSrcRect( SrcRect ),
-	mOriDestSize( PixelDensity::dpToPx( Sizef( ( Float )( mSrcRect.Right - mSrcRect.Left ),
-											   ( Float )( mSrcRect.Bottom - mSrcRect.Top ) ) ) ),
+	mOriDestSize( PixelDensity::dpToPx( Sizef( (Float)( mSrcRect.Right - mSrcRect.Left ),
+											   (Float)( mSrcRect.Bottom - mSrcRect.Top ) ) ) ),
 	mDestSize( mOriDestSize ),
 	mOffset( 0, 0 ),
 	mPixelDensity( 1 ) {}
 
-TextureRegion::TextureRegion( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize,
+TextureRegion::TextureRegion( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
 							  const std::string& name ) :
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
+	mTexture( tex ),
 	mSrcRect( SrcRect ),
 	mOriDestSize( DestSize ),
 	mDestSize( DestSize ),
 	mOffset( 0, 0 ),
 	mPixelDensity( 1 ) {}
 
-TextureRegion::TextureRegion( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize,
+TextureRegion::TextureRegion( Texture* tex, const Rect& SrcRect, const Sizef& DestSize,
 							  const Vector2i& Offset, const std::string& name ) :
 	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels( NULL ),
 	mAlphaMask( NULL ),
-	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
+	mTexture( tex ),
 	mSrcRect( SrcRect ),
 	mOriDestSize( DestSize ),
 	mDestSize( DestSize ),
@@ -377,19 +398,19 @@ Sizei TextureRegion::getRealSize() {
 }
 
 Sizef TextureRegion::getSize() {
-	return Sizef( ( Float )( ( Int32 )( mOriDestSize.getWidth() / mPixelDensity ) ),
-				  ( Float )( ( Int32 )( mOriDestSize.getHeight() / mPixelDensity ) ) );
+	return Sizef( (Float)( (Int32)( mOriDestSize.getWidth() / mPixelDensity ) ),
+				  (Float)( (Int32)( mOriDestSize.getHeight() / mPixelDensity ) ) );
 }
 
 Sizei TextureRegion::getDpSize() {
-	return Sizei( ( Int32 )( mOriDestSize.getWidth() / mPixelDensity ),
-				  ( Int32 )( mOriDestSize.getHeight() / mPixelDensity ) );
+	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity ),
+				  (Int32)( mOriDestSize.getHeight() / mPixelDensity ) );
 }
 
 Sizef TextureRegion::getPixelsSize() {
 	return Sizef(
-		( Int32 )( mOriDestSize.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ),
-		( Int32 )( mOriDestSize.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
+		(Int32)( mOriDestSize.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ),
+		(Int32)( mOriDestSize.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
 }
 
 const Uint8* TextureRegion::getPixelsPtr() {

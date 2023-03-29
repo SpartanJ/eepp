@@ -27,7 +27,7 @@ UIMenuBar::~UIMenuBar() {
 }
 
 void UIMenuBar::destroyMenues() {
-	if ( !SceneManager::instance()->isShootingDown() ) {
+	if ( !SceneManager::instance()->isShuttingDown() ) {
 		for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 			if ( it->second->getParent() != this ) {
 				// Changing the parent ensures that the menu will be destroyed when the menubar is
@@ -292,7 +292,7 @@ bool UIMenuBar::isPopUpMenuChild( Node* node ) {
 }
 
 void UIMenuBar::autoHeight() {
-	if ( 0 == mMenuHeight && nullptr != getSkin() ) {
+	if ( 0 == mMenuHeight ) {
 		mMenuHeight = getSkinSize().getHeight();
 		setSize( getParent()->getSize().getWidth(), mMenuHeight );
 		updateAnchorsDistances();

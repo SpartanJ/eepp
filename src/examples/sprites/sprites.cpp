@@ -101,8 +101,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 		// Load the rock texture
-		Uint32 PlanetId = TextureFactory::instance()->loadFromFile( "assets/sprites/7.png" );
-		Uint32 RockId = TextureFactory::instance()->loadFromFile( "assets/sprites/5.png" );
+		Texture* PlanetTex = TextureFactory::instance()->loadFromFile( "assets/sprites/7.png" );
+		Texture* RockTex = TextureFactory::instance()->loadFromFile( "assets/sprites/5.png" );
 
 		// Load a previously generated texture atlas that contains the TextureRegions needed to load
 		// an animated sprite
@@ -113,13 +113,13 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		for ( Int32 my = 0; my < 4; my++ ) {
 			for ( Int32 mx = 0; mx < 8; mx++ ) {
 				// DestSize as 0,0 will use the TextureRegion size
-				Rock.addFrame( RockId, Sizef( 0, 0 ), Vector2i( 0, 0 ),
+				Rock.addFrame( RockTex, Sizef( 0, 0 ), Vector2i( 0, 0 ),
 							   Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 			}
 		}
 
 		// Create a static sprite
-		Planet.createStatic( PlanetId );
+		Planet.createStatic( PlanetTex );
 
 		// It will look for a TextureRegion ( in any Texture Atlas loaded, or the GlobalTextureAtlas
 		// ) animation by its name, it will search for "gn00" to "gnXX" to create a new animation

@@ -1,4 +1,5 @@
 #include "pluginmanager.hpp"
+#include "../filesystemlistener.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
@@ -54,6 +55,16 @@ bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) 
 
 bool PluginManager::isEnabled( const std::string& id ) const {
 	return mPluginsEnabled.find( id ) != mPluginsEnabled.end() ? mPluginsEnabled.at( id ) : false;
+}
+
+bool PluginManager::reload( const std::string& id ) {
+	if ( isEnabled( id ) ) {
+		Log::warning( "PluginManager reloading plugin: %s", id.c_str() );
+		setEnabled( id, false );
+		setEnabled( id, true );
+		return true;
+	}
+	return false;
 }
 
 const std::string& PluginManager::getResourcesPath() const {
@@ -216,6 +227,14 @@ void PluginManager::unsubscribeMessages( UICodeEditorPlugin* plugin ) {
 
 void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {
 	mSplitter = splitter;
+}
+
+void PluginManager::setFileSystemListener( FileSystemListener* listener ) {
+	if ( listener == mFileSystemListener )
+		return;
+	mFileSystemListener = listener;
+	sendBroadcast( PluginMessageType::FileSystemListenerReady, PluginMessageFormat::Empty,
+				   nullptr );
 }
 
 void PluginManager::sendBroadcast( const PluginMessageType& notification,
@@ -410,6 +429,54 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 	} );
 	win->center();
 	return win;
+}
+
+Plugin::Plugin( PluginManager* manager ) :
+	mManager( manager ), mThreadPool( manager->getThreadPool() ) {}
+
+void Plugin::subscribeFileSystemListener() {
+	if ( mFileSystemListenerCb != 0 || mManager->getFileSystemListener() == nullptr )
+		return;
+
+	mConfigFileInfo = FileInfo( mConfigPath );
+
+	mFileSystemListenerCb = mManager->getFileSystemListener()->addListener(
+		[this]( const FileEvent& ev, const FileInfo& file ) {
+			if ( ev.type != FileSystemEventType::Modified )
+				return;
+			if ( !mShuttingDown && file.getFilepath() == mConfigPath &&
+				 file.getModificationTime() != mConfigFileInfo.getModificationTime() ) {
+				mConfigFileInfo = file;
+				mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
+				mFileSystemListenerCb = 0;
+				mManager->reload( getId() );
+			}
+		} );
+}
+
+void Plugin::unsubscribeFileSystemListener() {
+	if ( mFileSystemListenerCb != 0 && mManager->getFileSystemListener() )
+		mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
+}
+
+bool Plugin::isReady() const {
+	return mReady;
+}
+
+bool Plugin::isShuttingDown() const {
+	return mShuttingDown;
+}
+
+bool Plugin::hasFileConfig() {
+	return !mConfigPath.empty();
+}
+
+std::string Plugin::getFileConfigPath() {
+	return mConfigPath;
+}
+
+PluginManager* Plugin::getManager() const {
+	return mManager;
 }
 
 } // namespace ecode

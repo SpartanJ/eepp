@@ -21,7 +21,8 @@ ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 }
 
 ProjectDirectoryTree::~ProjectDirectoryTree() {
-	mApp->getPluginManager()->unsubscribeMessages( "ProjectDirectoryTree" );
+	if ( mApp->getPluginManager() )
+		mApp->getPluginManager()->unsubscribeMessages( "ProjectDirectoryTree" );
 	Lock rl( mMatchingMutex );
 	if ( mRunning ) {
 		mRunning = false;

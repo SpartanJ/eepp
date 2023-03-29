@@ -21,8 +21,7 @@ FileSystemListener::FileSystemListener( UICodeEditorSplitter* splitter,
 										std::shared_ptr<FileSystemModel> fileSystemModel ) :
 	mSplitter( splitter ), mFileSystemModel( fileSystemModel ) {}
 
-
-static inline bool endsWithSlash(const std::string& dir) {
+static inline bool endsWithSlash( const std::string& dir ) {
 	return !dir.empty() && ( dir.back() == '\\' || dir.back() == '/' );
 }
 
@@ -70,6 +69,13 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 						notifyMove( oldFile, file );
 				}
 			}
+
+			Lock l( mCbsMutex );
+			if ( !mCbs.empty() ) {
+				auto cbs = mCbs;
+				for ( const auto& cb : cbs )
+					cb.second( event, file );
+			}
 			break;
 		}
 		case efsw::Actions::Modified: {
@@ -77,12 +83,37 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 				file = FileInfo( file.linksTo() );
 			if ( isFileOpen( file ) )
 				notifyChange( file );
+
+			Lock l( mCbsMutex );
+			if ( !mCbs.empty() ) {
+				auto cbs = mCbs;
+				FileEvent event( (FileSystemEventType)action, dir, filename, oldFilename );
+				for ( const auto& cb : cbs )
+					cb.second( event, file );
+			}
 		}
 	}
 }
 
 void FileSystemListener::setDirTree( const std::shared_ptr<ProjectDirectoryTree>& dirTree ) {
 	mDirTree = dirTree;
+}
+
+Uint64 FileSystemListener::addListener( const FileEventFn& fn ) {
+	Lock l( mCbsMutex );
+	Uint64 id = ++mLastId;
+	mCbs[id] = fn;
+	return id;
+}
+
+bool FileSystemListener::removeListener( const Uint64& id ) {
+	Lock l( mCbsMutex );
+	auto it = mCbs.find( id );
+	if ( it != mCbs.end() ) {
+		mCbs.erase( it );
+		return true;
+	}
+	return false;
 }
 
 bool FileSystemListener::isFileOpen( const FileInfo& file ) {

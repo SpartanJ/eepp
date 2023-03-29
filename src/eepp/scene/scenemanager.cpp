@@ -7,10 +7,10 @@ namespace EE { namespace Scene {
 
 SINGLETON_DECLARE_IMPLEMENTATION( SceneManager )
 
-SceneManager::SceneManager() : mUISceneNode( NULL ), mIsShootingDown( false ) {}
+SceneManager::SceneManager() : mUISceneNode( NULL ), mIsShuttingDown( false ) {}
 
 SceneManager::~SceneManager() {
-	mIsShootingDown = true;
+	mIsShuttingDown = true;
 
 	for ( auto& it : mSceneNodes ) {
 		SceneNode* node = it;
@@ -54,8 +54,8 @@ void SceneManager::update() {
 	update( mClock.getElapsedTimeAndReset() );
 }
 
-bool SceneManager::isShootingDown() const {
-	return mIsShootingDown;
+bool SceneManager::isShuttingDown() const {
+	return mIsShuttingDown;
 }
 
 UISceneNode* SceneManager::getUISceneNode() {

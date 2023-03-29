@@ -13,7 +13,7 @@ using namespace EE::UI;
 
 namespace ecode {
 
-class FormatterPlugin : public UICodeEditorPlugin {
+class FormatterPlugin : public Plugin {
   public:
 	enum class FormatterType { Inplace, Output, Native };
 
@@ -34,7 +34,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	static PluginDefinition Definition() {
 		return {
 			"autoformatter",	  "Auto Formatter", "Enables the code formatter/prettifier plugin.",
-			FormatterPlugin::New, { 0, 2, 0 },		FormatterPlugin::NewSync };
+			FormatterPlugin::New, { 0, 2, 1 },		FormatterPlugin::NewSync };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );
@@ -53,8 +53,6 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	void onUnregister( UICodeEditor* );
 
-	bool isReady() const { return mReady; }
-
 	bool getAutoFormatOnSave() const;
 
 	void setAutoFormatOnSave( bool autoFormatOnSave );
@@ -65,10 +63,6 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	void unregisterNativeFormatter( const std::string& cmd );
 
-	bool hasFileConfig();
-
-	std::string getFileConfigPath();
-
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );
 
@@ -77,8 +71,6 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	Formatter getFormatterForLang( const std::string& lang, const std::vector<std::string>& ext );
 
   protected:
-	PluginManager* mManager{ nullptr };
-	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Formatter> mFormatters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
 	std::mutex mWorkMutex;
@@ -86,15 +78,12 @@ class FormatterPlugin : public UICodeEditorPlugin {
 	std::map<std::string, std::function<NativeFormatterResult( const std::string& file )>>
 		mNativeFormatters;
 	Int32 mWorkersCount{ 0 };
-	std::string mConfigPath;
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::map<TextDocument*, bool> mIsAutoFormatting;
 	std::map<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
 
 	bool mAutoFormatOnSave{ false };
-	bool mShuttingDown{ false };
-	bool mReady{ false };
 
 	FormatterPlugin( PluginManager* pluginManager, bool sync );
 
@@ -118,7 +107,7 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	bool tryRequestCapabilities( const std::shared_ptr<TextDocument>& doc );
 
-	PluginRequestHandle processResponse( const PluginMessage& msg );
+	PluginRequestHandle processMessage( const PluginMessage& msg );
 };
 
 } // namespace ecode

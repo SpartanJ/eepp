@@ -48,7 +48,7 @@ struct LinterMatch {
 	std::vector<LSPDiagnosticsCodeAction> codeActions;
 };
 
-class LinterPlugin : public UICodeEditorPlugin {
+class LinterPlugin : public Plugin {
   public:
 	static PluginDefinition Definition() {
 		return { "linter",
@@ -56,7 +56,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New,
-				 { 0, 2, 0 },
+				 { 0, 2, 1 },
 				 LinterPlugin::NewSync };
 	}
 
@@ -71,12 +71,6 @@ class LinterPlugin : public UICodeEditorPlugin {
 	std::string getTitle() { return Definition().name; }
 
 	std::string getDescription() { return Definition().description; }
-
-	bool isReady() const { return mReady; }
-
-	bool hasFileConfig();
-
-	std::string getFileConfigPath();
 
 	void onRegister( UICodeEditor* );
 
@@ -111,8 +105,6 @@ class LinterPlugin : public UICodeEditorPlugin {
 	Linter getLinterForLang( const std::string& lang, const std::vector<std::string>& extensions );
 
   protected:
-	PluginManager* mManager{ nullptr };
-	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Linter> mLinters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
 	std::set<TextDocument*> mDocs;
@@ -125,10 +117,7 @@ class LinterPlugin : public UICodeEditorPlugin {
 	std::mutex mWorkMutex;
 	std::condition_variable mWorkerCondition;
 	Int32 mWorkersCount{ 0 };
-	std::string mConfigPath;
 
-	bool mReady{ false };
-	bool mShuttingDown{ false };
 	bool mHoveringMatch{ false };
 	bool mEnableLSPDiagnostics{ true };
 	bool mErrorLens{ true };

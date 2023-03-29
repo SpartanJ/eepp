@@ -91,10 +91,10 @@ Drawable* UISVGIcon::getSize( const int& size ) const {
 		}
 	}
 	format.svgScale( size / (Float)eemax( mOriSize.x, mOriSize.y ) );
-	Uint32 textId = TextureFactory::instance()->loadFromMemory(
+	Texture* texture = TextureFactory::instance()->loadFromMemory(
 		(const unsigned char*)&mSVGXml[0], mSVGXml.size(), false, Texture::ClampMode::ClampToEdge,
 		false, false, format );
-	Texture* texture = TextureFactory::instance()->getTexture( textId );
+
 	mSVGs[size] = texture;
 	return texture;
 }
