@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 namespace EE { namespace System {
 
