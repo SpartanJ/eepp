@@ -20,6 +20,7 @@ struct LSPDefinition {
 	std::vector<std::string> rootIndicationFileNames;
 	std::string url;
 	std::string host;
+	std::unordered_map<std::string, std::string> env;
 	int port{ 0 };
 	nlohmann::json initializationOptions;
 

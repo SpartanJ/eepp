@@ -704,6 +704,22 @@ static std::string parseCommand( nlohmann::json cmd ) {
 	return command;
 }
 
+static void tryAddEnv( const json& obj, LSPDefinition& lsp ) {
+	if ( obj.contains( "env" ) && obj.is_array() ) {
+		for ( const auto& obje : obj ) {
+			if ( !obje.is_string() )
+				continue;
+			std::string envStr = obje.get<std::string>();
+			if ( !envStr.empty() && envStr.find_first_of( "=" ) != std::string::npos ) {
+				auto envp = String::split( envStr, '=' );
+				if ( envp.size() == 2 ) {
+					lsp.env[envp[0]] = envp[1];
+				}
+			}
+		}
+	}
+}
+
 void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path,
 									 bool updateConfigFile ) {
 	std::string data;
@@ -809,6 +825,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 						lspR.host = obj.value( "host", "" );
 						lspR.port = obj.value( "port", 0 );
 					}
+					tryAddEnv( obj, lspR );
 				}
 			}
 		}
@@ -876,6 +893,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 
 		sanitizeCommand( lsp.command );
 		sanitizeCommand( lsp.commandParameters );
+
+		tryAddEnv( obj, lsp );
 
 		// If the file pattern is repeated, we will overwrite the previous LSP.
 		// The previous LSP should be the "default" LSP that comes with ecode.

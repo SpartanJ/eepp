@@ -1156,8 +1156,8 @@ bool LSPClientServer::start() {
 		cmd += mLSP.commandParameters;
 	}
 	if ( !cmd.empty() ) {
-		bool ret = mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync, {},
-									mRootPath );
+		bool ret = mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync,
+									mLSP.env, mRootPath );
 		if ( ret && mProcess.isAlive() ) {
 			mUsingProcess = true;
 
@@ -1271,27 +1271,32 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 		ob[MEMBER_ID] = id;
 	}
 
-	std::string sjson = ob.dump();
-	sjson = String::format( "Content-Length: %lu\r\n\r\n%s", sjson.length(), sjson.c_str() );
+	try {
+		std::string sjson = ob.dump();
+		sjson = String::format( "Content-Length: %lu\r\n\r\n%s", sjson.length(), sjson.c_str() );
 
-	if ( mReady || msg[MEMBER_METHOD] == "initialize" ) {
-		std::string method;
-		if ( msg.contains( MEMBER_METHOD ) )
-			method = msg[MEMBER_METHOD].get<std::string>();
-		else if ( msg.contains( MEMBER_MESSAGE ) )
-			method = msg[MEMBER_MESSAGE];
-		Log::info( "LSPClientServer server %s calling %s", mLSP.name.c_str(), method.c_str() );
-		Log::debug( "LSPClientServer server %s sending message:\n%s", mLSP.name.c_str(),
-					sjson.c_str() );
+		if ( mReady || msg[MEMBER_METHOD] == "initialize" ) {
+			std::string method;
+			if ( msg.contains( MEMBER_METHOD ) )
+				method = msg[MEMBER_METHOD].get<std::string>();
+			else if ( msg.contains( MEMBER_MESSAGE ) )
+				method = msg[MEMBER_MESSAGE];
+			Log::info( "LSPClientServer server %s calling %s", mLSP.name.c_str(), method.c_str() );
+			Log::debug( "LSPClientServer server %s sending message:\n%s", mLSP.name.c_str(),
+						sjson.c_str() );
 
-		if ( mSocket ) {
-			size_t sent = 0;
-			mSocket->send( sjson.c_str(), sjson.size(), sent );
+			if ( mSocket ) {
+				size_t sent = 0;
+				mSocket->send( sjson.c_str(), sjson.size(), sent );
+			} else {
+				mProcess.write( sjson );
+			}
 		} else {
-			mProcess.write( sjson );
+			mQueuedMessages.push_back( { std::move( ob ), h, eh } );
 		}
-	} else {
-		mQueuedMessages.push_back( { std::move( ob ), h, eh } );
+	} catch ( const json::exception& e ) {
+		Log::debug( "LSPClientServer::write server %s failed. Coudln't dump json err: %s",
+					mLSP.name.c_str(), e.what() );
 	}
 
 	return ret;

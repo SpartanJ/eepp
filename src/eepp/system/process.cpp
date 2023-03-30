@@ -27,7 +27,7 @@ namespace EE { namespace System {
 Process::Process() {}
 
 Process::Process( const std::string& command, const Uint32& options,
-				  const std::map<std::string, std::string>& environment,
+				  const std::unordered_map<std::string, std::string>& environment,
 				  const std::string& workingDirectory, const size_t& bufferSize ) :
 	mBufferSize( bufferSize ) {
 	create( command, options, environment, workingDirectory );
@@ -47,7 +47,7 @@ Process::~Process() {
 }
 
 bool Process::create( const std::string& command, const Uint32& options,
-					  const std::map<std::string, std::string>& environment,
+					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
 	if ( mProcess )
 		return false;
@@ -199,7 +199,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 			buffer.resize( mBufferSize );
 			while ( !mShuttingDown ) {
 				n = subprocess_read_stdout( PROCESS_PTR, static_cast<char* const>( &buffer[0] ),
-										mBufferSize );
+											mBufferSize );
 				if ( n == 0 )
 					break;
 				if ( n < static_cast<long>( mBufferSize - 1 ) )
