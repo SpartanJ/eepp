@@ -1791,7 +1791,7 @@ static std::vector<URI> switchHeaderSourceName( const URI& uri ) {
 	} else if ( FileSystem::fileExtension( uri.getPath() ) == "hh" ) {
 		return { basePath + ".cc" };
 	} else if ( FileSystem::fileExtension( uri.getPath() ) == "h" ) {
-		return { basePath + ".c" };
+		return { basePath + ".c", basePath + ".cpp" };
 	}
 	return {};
 }

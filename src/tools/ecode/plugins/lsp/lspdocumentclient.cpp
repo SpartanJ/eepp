@@ -188,8 +188,8 @@ static std::string semanticTokenTypeToSyntaxType( const std::string& type,
 		case SemanticTokenTypes::Member:
 			return "function";
 		case SemanticTokenTypes::Macro:
-		case SemanticTokenTypes::Keyword:
 			return "keyword2";
+		case SemanticTokenTypes::Keyword:
 		case SemanticTokenTypes::Modifier:
 			return "keyword";
 		case SemanticTokenTypes::Comment:
