@@ -177,6 +177,8 @@ class EE_API UISceneNode : public SceneNode {
 	bool mIsLoading;
 	bool mVerbose;
 	bool mUpdatingLayouts;
+	bool mFirstUpdate{ true };
+	Clock mClock;
 	UIThemeManager* mUIThemeManager{ nullptr };
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
 	std::vector<Font*> mFontFaces;

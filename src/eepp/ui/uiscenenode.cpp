@@ -567,13 +567,27 @@ UISceneNode* UISceneNode::setPixelsSize( const Float& x, const Float& y ) {
 void UISceneNode::update( const Time& elapsed ) {
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
+	if ( mFirstUpdate && mVerbose ) {
+		mClock.restart();
+	}
+
 	SceneManager::instance()->setCurrentUISceneNode( this );
 
 	updateDirtyStyles();
 	updateDirtyStyleStates();
 	updateDirtyLayouts();
 
+	if ( mFirstUpdate && mVerbose ) {
+		Log::debug( "UISceneNode::update first update dirty took: %.2f ms",
+					mClock.getElapsedTime().asMilliseconds() );
+	}
+
 	SceneNode::update( elapsed );
+
+	if ( mFirstUpdate && mVerbose ) {
+		Log::debug( "UISceneNode::update first SceneNode::update update took: %.2f ms",
+					mClock.getElapsedTime().asMilliseconds() );
+	}
 
 	// We process again all the dirty states since the update could have created new dirty states
 	// that we want to process BEFORE drawing the scene, since we can avoid some resizes/animations
@@ -597,6 +611,12 @@ void UISceneNode::update( const Time& elapsed ) {
 	}
 
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
+
+	if ( mFirstUpdate && mVerbose ) {
+		mFirstUpdate = false;
+		Log::debug( "UISceneNode::update first update took: %.2f ms",
+					mClock.getElapsedTime().asMilliseconds() );
+	}
 }
 
 void UISceneNode::onWidgetDelete( Node* node ) {
@@ -749,6 +769,7 @@ void UISceneNode::setIsLoading( bool isLoading ) {
 
 void UISceneNode::updateDirtyLayouts() {
 	if ( !mDirtyLayouts.empty() ) {
+		Clock clock;
 		mUpdatingLayouts = true;
 
 		for ( UILayout* layout : mDirtyLayouts ) {
@@ -757,6 +778,9 @@ void UISceneNode::updateDirtyLayouts() {
 
 		mDirtyLayouts.clear();
 		mUpdatingLayouts = false;
+
+		if ( mVerbose )
+			Log::info( "Layout tree updated in %.2f ms", clock.getElapsedTime().asMilliseconds() );
 	}
 }
 

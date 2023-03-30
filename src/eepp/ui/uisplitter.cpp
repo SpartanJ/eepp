@@ -303,7 +303,7 @@ void UISplitter::updateLayout() {
 	if ( !getParent()->isLayout() &&
 		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
 		bool sizeChanged = false;
-		Sizef size( getSize() );
+		Sizef size( UIWidget::getSize() );
 
 		if ( getLayoutWidthPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
 			Float w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
@@ -313,7 +313,7 @@ void UISplitter::updateLayout() {
 				w = w - pLay->getPadding().Left - pLay->getPadding().Right;
 			}
 
-			if ( (int)w != (int)getSize().getWidth() ) {
+			if ( (int)w != (int)UIWidget::getSize().getWidth() ) {
 				sizeChanged = true;
 				size.setWidth( w );
 			}
@@ -327,7 +327,7 @@ void UISplitter::updateLayout() {
 				h = h - pLay->getPadding().Top - pLay->getPadding().Bottom;
 			}
 
-			if ( (int)h != (int)getSize().getHeight() ) {
+			if ( (int)h != (int)UIWidget::getSize().getHeight() ) {
 				sizeChanged = true;
 				size.setHeight( h );
 			}

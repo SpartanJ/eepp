@@ -2776,6 +2776,7 @@ void App::cleanUpRecentFolders() {
 }
 
 void App::loadFolder( const std::string& path ) {
+	Clock dirTreeClock;
 	if ( !mCurrentProject.empty() ) {
 		closeEditors();
 	} else {
@@ -2792,7 +2793,9 @@ void App::loadFolder( const std::string& path ) {
 
 	loadDirTree( rpath );
 
+	Clock projClock;
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, mThreadPool, this );
+	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
 	loadFileSystemMatcher( rpath );
 

@@ -517,8 +517,9 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 			return;
 
 		editorsToLoad = countTotalEditors( j );
-		loadDocuments( editorSplitter, pool, j,
-					   editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() ), app );
+		UITabWidget* curTabWidget =
+			editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
+		loadDocuments( editorSplitter, pool, j, curTabWidget, app );
 	}
 }
 

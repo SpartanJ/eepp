@@ -210,6 +210,8 @@ subprocess_write_stdin(struct subprocess_s *const process, char *const buffer,
 /// @return If the process is still alive non-zero is returned.
 subprocess_weak int subprocess_alive(struct subprocess_s *const process);
 
+subprocess_weak void subprocess_init_shutdown(struct subprocess_s *const process);
+
 #if defined(__cplusplus)
 #define SUBPROCESS_CAST(type, x) static_cast<type>(x)
 #define SUBPROCESS_PTR_CAST(type, x) reinterpret_cast<type>(x)
@@ -403,6 +405,7 @@ struct subprocess_s {
 
   subprocess_size_t alive;
   int options;
+  int shutting_down;
 };
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -1347,8 +1350,9 @@ subprocess_write_stdin(struct subprocess_s *const process, char *const buffer,
           fsync(fd);
        } else if (ret <= 0) {
           if (ret == -1) {
-             if ((errno == EAGAIN ) || (errno == EINPROGRESS))
+             if (((errno == EAGAIN ) || (errno == EINPROGRESS)) && !process->shutting_down) {
                 continue;
+             }
              return -1;
           }
           if (ret == 0)
@@ -1357,6 +1361,10 @@ subprocess_write_stdin(struct subprocess_s *const process, char *const buffer,
     } while ( bytes_to_write );
     return bytes_to_write == 0 ? size : -1;
 #endif
+}
+
+subprocess_weak void subprocess_init_shutdown(struct subprocess_s *const process) {
+   process->shutting_down = 1;
 }
 
 #if defined(__cplusplus)

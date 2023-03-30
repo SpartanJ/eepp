@@ -1434,7 +1434,7 @@ LSPClientServer::documentSymbols( const URI& document,
 
 LSPClientServer::LSPRequestHandle LSPClientServer::documentSymbolsBroadcast( const URI& document ) {
 	return documentSymbols( document, [this, document]( const PluginIDType& id,
-												 LSPSymbolInformationList&& res ) {
+														LSPSymbolInformationList&& res ) {
 		getManager()->getPlugin()->setDocumentSymbolsFromResponse( id, document, std::move( res ) );
 	} );
 }
@@ -1786,6 +1786,10 @@ static std::vector<URI> switchHeaderSourceName( const URI& uri ) {
 		return { basePath + ".cpp" };
 	} else if ( FileSystem::fileExtension( uri.getPath() ) == "c" ) {
 		return { basePath + ".h" };
+	} else if ( FileSystem::fileExtension( uri.getPath() ) == "cc" ) {
+		return { basePath + ".hh" };
+	} else if ( FileSystem::fileExtension( uri.getPath() ) == "hh" ) {
+		return { basePath + ".cc" };
 	} else if ( FileSystem::fileExtension( uri.getPath() ) == "h" ) {
 		return { basePath + ".c" };
 	}
@@ -1797,16 +1801,20 @@ void LSPClientServer::switchSourceHeader( const URI& document ) {
 		newRequest( "textDocument/switchSourceHeader", textDocumentURI( document ) ),
 		[this, document]( const IdType&, json res ) {
 			std::vector<URI> uris( switchHeaderSourceName( document ) );
-			for ( const auto& uri : uris ) {
-				if ( res.is_string() &&
-					 ( uri.empty() || FileSystem::fileNameFromPath( res.get<std::string>() ) ==
-										  FileSystem::fileNameFromPath( uri.getFSPath() ) ) ) {
-					mManager->goToLocation( { res.get<std::string>(), TextRange() } );
-					break;
-				} else if ( !uri.empty() ) {
-					mManager->findAndOpenClosestURI( uris );
-					break;
+			if ( !uris.empty() ) {
+				for ( const auto& uri : uris ) {
+					if ( res.is_string() &&
+						 ( uri.empty() || FileSystem::fileNameFromPath( res.get<std::string>() ) ==
+											  FileSystem::fileNameFromPath( uri.getFSPath() ) ) ) {
+						mManager->goToLocation( { res.get<std::string>(), TextRange() } );
+						break;
+					} else if ( !uri.empty() ) {
+						mManager->findAndOpenClosestURI( uris );
+						break;
+					}
 				}
+			} else if ( res.is_string() ) {
+				mManager->goToLocation( { res.get<std::string>(), TextRange() } );
 			}
 		} );
 }

@@ -22,7 +22,7 @@
 
 namespace EE { namespace System {
 
-#define PROCESS_PTR ( (struct subprocess_s*)mProcess )
+#define PROCESS_PTR ( static_cast<struct subprocess_s*>( mProcess ) )
 
 Process::Process() {}
 
@@ -35,8 +35,10 @@ Process::Process( const std::string& command, const Uint32& options,
 
 Process::~Process() {
 	mShuttingDown = true;
-	if ( mProcess && isAlive() )
+	if ( mProcess && isAlive() ) {
+		subprocess_init_shutdown( PROCESS_PTR );
 		kill();
+	}
 	if ( mStdOutThread.joinable() )
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )
