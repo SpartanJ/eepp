@@ -357,9 +357,14 @@ void DocSearchController::hideSearchBar() {
 
 void DocSearchController::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	if ( mSearchState.editor && mSearchState.editor != editor ) {
-		auto word = mSearchState.editor->getHighlightWord();
-		mSearchState.editor->setHighlightWord( { "" } );
-		mSearchState.editor->setHighlightTextRange( TextRange() );
+		TextSearchParams word;
+		if ( mEditorSplitter->editorExists( mSearchState.editor ) ) {
+			word = mSearchState.editor->getHighlightWord();
+			mSearchState.editor->setHighlightWord( { "" } );
+			mSearchState.editor->setHighlightTextRange( TextRange() );
+		} else {
+			mSearchState.editor = nullptr;
+		}
 		mSearchState.text = "";
 		mSearchState.range = TextRange();
 		if ( editor ) {

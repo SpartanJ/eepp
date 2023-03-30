@@ -275,6 +275,7 @@ bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		 !supportsLSPFormatter( editor->getDocumentRef() ) )
 		return false;
 
+	menu->addSeparator();
 	menu->add( editor->getUISceneNode()->i18n( "formatter-format-document", "Format Document" ),
 			   nullptr, KeyBindings::keybindFormat( mKeyBindings["format-doc"] ) )
 		->setId( "format-doc" );
