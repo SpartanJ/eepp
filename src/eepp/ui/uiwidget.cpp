@@ -16,6 +16,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 using namespace EE::Window;

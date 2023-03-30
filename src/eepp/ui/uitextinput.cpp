@@ -13,6 +13,7 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {

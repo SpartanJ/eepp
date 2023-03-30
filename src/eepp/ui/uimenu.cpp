@@ -6,6 +6,7 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {

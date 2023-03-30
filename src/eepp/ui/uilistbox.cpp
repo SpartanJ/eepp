@@ -9,6 +9,7 @@
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/input.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {

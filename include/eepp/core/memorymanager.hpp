@@ -58,9 +58,9 @@ class EE_API MemoryManager {
 		return data;
 	}
 
-	inline static void* allocate( size_t size ) { return malloc( size ); }
+	static void* allocate( size_t size );
 
-	inline static void* reallocate( void* ptr, size_t size ) { return realloc( ptr, size ); }
+	static void* reallocate( void* ptr, size_t size );
 
 	static size_t getPeakMemoryUsage();
 

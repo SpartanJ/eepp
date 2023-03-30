@@ -21,6 +21,7 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/window.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 using namespace EE::Network;

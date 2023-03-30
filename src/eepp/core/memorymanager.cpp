@@ -28,6 +28,10 @@ AllocatedPointer::AllocatedPointer( void* data, const std::string& file, int lin
 	mTrack = track;
 }
 
+void* MemoryManager::allocate( size_t size ) { return malloc( size ); }
+
+void* MemoryManager::reallocate( void* ptr, size_t size ) { return realloc( ptr, size ); }
+
 void* MemoryManager::addPointerInPlace( void* place, const AllocatedPointer& aAllocatedPointer ) {
 	AllocatedPointerMapIt it = sMapPointers.find( place );
 

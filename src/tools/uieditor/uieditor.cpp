@@ -1,5 +1,6 @@
 ﻿#include "uieditor.hpp"
 #include <args/args.hxx>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace uieditor {

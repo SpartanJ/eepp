@@ -222,6 +222,10 @@ function build_base_cpp_configuration( package_name )
 	set_xcode_config()
 	build_arch_configuration()
 
+	if _OPTIONS["with-static-eepp"] then
+		defines { "EE_STATIC" }
+	end
+
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
 
@@ -889,6 +893,9 @@ workspace "eepp"
 		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		defines { "EE_MAPS_STATIC" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
 		build_base_cpp_configuration( "eepp-maps-static" )
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
@@ -915,6 +922,9 @@ workspace "eepp"
 		incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
 		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
 		defines { "EE_PHYSICS_STATIC" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
 		build_base_cpp_configuration( "eepp-physics-static" )
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
@@ -940,7 +950,9 @@ workspace "eepp"
 		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
-		links { "chipmunk-static" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
 		build_base_cpp_configuration( "eterm" )
 		filter "action:not vs*"
 			buildoptions { "-Wall" }

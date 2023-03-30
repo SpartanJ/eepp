@@ -1,5 +1,6 @@
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiwidgettable.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {

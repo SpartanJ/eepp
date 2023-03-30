@@ -393,6 +393,10 @@ function build_base_cpp_configuration( package_name )
 	set_xcode_config()
 	build_arch_configuration()
 
+	if _OPTIONS["with-static-eepp"] then
+		defines { "EE_STATIC" }
+	end
+
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		flags { "Symbols" }
@@ -1157,6 +1161,9 @@ solution "eepp"
 		includedirs { "include", "src/modules/maps/include/", "src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		defines { "EE_MAPS_STATIC" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
 		if not is_vs() then
 			buildoptions{ "-std=c++17" }
 		else
@@ -1172,6 +1179,9 @@ solution "eepp"
 		files { "src/modules/maps/src/**.cpp" }
 		links { "eepp-shared" }
 		defines { "EE_MAPS_EXPORTS" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
 		if not is_vs() then
 			buildoptions{ "-std=c++17" }
 		else
@@ -1216,6 +1226,9 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		includedirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
 		if not is_vs() then
 			buildoptions{ "-std=c++17" }
 		else

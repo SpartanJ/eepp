@@ -7,6 +7,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/translator.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace System {
