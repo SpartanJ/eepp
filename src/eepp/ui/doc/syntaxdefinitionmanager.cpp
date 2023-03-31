@@ -9,6 +9,7 @@
 #include <eepp/ui/doc/languages/pascal.hpp>
 #include <eepp/ui/doc/languages/pico-8.hpp>
 #include <eepp/ui/doc/languages/postgresql.hpp>
+#include <eepp/ui/doc/languages/vb.hpp>
 #include <eepp/ui/doc/languages/x86assembly.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -4171,6 +4172,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addToml();
 	addTypeScript();
 	addV();
+	addVisualBasic();
 	addVue();
 	addWren();
 	addX86Assembly();
