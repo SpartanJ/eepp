@@ -227,11 +227,20 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
 		const String& txt = mLocateInput->getText();
 		if ( mSplitter->curEditorExistsAndFocused() && String::startsWith( txt, String( "l " ) ) ) {
-			String number( txt.substr( 2 ) );
-			Int64 val;
-			if ( String::fromString( val, number ) && val - 1 >= 0 ) {
-				if ( mSplitter->curEditorExistsAndFocused() )
-					mSplitter->getCurEditor()->goToLine( { val - 1, 0 } );
+			String txtSubstring( txt.substr( 2 ) );
+			std::vector<String> parts = txtSubstring.split( ':' );
+			Int64 line, column = 0;
+
+			if ( parts.size() > 0 && String::fromString( line, parts[0] ) && line - 1 >= 0 ) {
+				if ( parts.size() > 1 ) {
+					String::fromString( column, parts[1] );
+					if ( column < 0 ) {
+						column = 0;
+					}
+				}
+				if ( mSplitter->curEditorExistsAndFocused() ) {
+					mSplitter->getCurEditor()->goToLine( { line - 1, column } );
+				}
 				mLocateTable->setVisible( false );
 			}
 		} else if ( !txt.empty() && mLocateInput->getText()[0] == '>' ) {
