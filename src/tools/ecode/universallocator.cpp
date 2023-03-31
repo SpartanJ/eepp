@@ -225,10 +225,10 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 	mLocateTable->setHeadersVisible( false );
 	mLocateTable->setVisible( false );
 	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
-		const String& input = mLocateInput->getText();
+		const String& inputTxt = mLocateInput->getText();
 		if ( mSplitter->curEditorExistsAndFocused() &&
-			 String::startsWith( input, String( "l " ) ) ) {
-			String lineColInput( input.substr( 2 ) );
+			 String::startsWith( inputTxt, String( "l " ) ) ) {
+			String lineColInput( inputTxt.substr( 2 ) );
 			std::vector<String> parts = lineColInput.split( ':' );
 			Int64 line, column = 0;
 
@@ -244,11 +244,11 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				}
 				mLocateTable->setVisible( false );
 			}
-		} else if ( !input.empty() && mLocateInput->getText()[0] == '>' ) {
+		} else if ( !inputTxt.empty() && mLocateInput->getText()[0] == '>' ) {
 			showCommandPalette();
-		} else if ( !input.empty() && mLocateInput->getText()[0] == ':' ) {
+		} else if ( !inputTxt.empty() && mLocateInput->getText()[0] == ':' ) {
 			showWorkspaceSymbol();
-		} else if ( String::startsWith( input, ". " ) ) {
+		} else if ( String::startsWith( inputTxt, ". " ) ) {
 			showDocumentSymbol();
 		} else {
 			showLocateTable();
