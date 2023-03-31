@@ -486,6 +486,7 @@ end
 function set_xcode_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F /Library/Frameworks" }
+		buildoptions { "-F /Library/Frameworks" }
 		incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
 		defines { "EE_SDL2_FROM_ROOTPATH" }
 	end
@@ -704,10 +705,12 @@ workspace "eepp"
 	filter "platforms:x86"
 		architecture "x86"
 
-	filter "platforms:arm64 or configurations:debug-arm64 or configurations:release-arm64"
-		architecture "arm64"
+	filter "platforms:arm64"
+		architecture "ARM64"
+		buildoptions { "-arch arm64" }
+		linkoptions { "-arch arm64" }
 
-	filter "platforms:x86_64 or configurations:debug-x64 or configurations:release-x64"
+	filter "platforms:x86_64"
 		architecture "x86_64"
 
 	filter "system:macosx"

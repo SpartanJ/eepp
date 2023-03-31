@@ -1,13 +1,6 @@
 #!/bin/sh
-SDL2_CONFIG=$(which sdl2-config)
-if [ -z $SDL2_CONFIG ]; then
-echo "Building using frameworks"
-../make.sh config=release ecode || exit
-else
-echo "Building using sdl2-config"
-../make_no_fw.sh config=release ecode || exit
-fi
-
+premake5 --file=../../../premake5.lua --with-mojoal --use-frameworks gmake2 || exit
+make -C ../../../make/macosx/ -j$(nproc) -e verbose=true -e config=release_arm64 ecode || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/Contents/MacOS/
 mkdir -p ecode.app/Contents/Resources/
@@ -24,18 +17,10 @@ chmod +x run.sh
 cp run.sh ecode.app/Contents/MacOS
 cp ../../../libs/macosx/libeepp.dylib ecode.app/Contents/MacOS
 cp ../../../bin/ecode ecode.app/Contents/MacOS
-
-if [ -z $SDL2_CONFIG ]; then
 SDL2_LIB_PATH="/Library/SDL2.framework/Versions/A/"
 cp "$SDL2_LIB_PATH/SDL2" ecode.app/Contents/MacOS/SDL2
 install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @executable_path/SDL2 ecode.app/Contents/MacOS/libeepp.dylib
 codesign --force -s - ecode.app/Contents/MacOS/SDL2
-else
-SDL2_LIB_PATH=$(sdl2-config --libs | awk '{ print $1 }' | cut -b 3-)
-cp $SDL2_LIB_PATH/libSDL2-2.0.0.dylib ecode.app/Contents/MacOS
-install_name_tool -change $SDL2_LIB_PATH/libSDL2-2.0.0.dylib @executable_path/libSDL2-2.0.0.dylib ecode.app/Contents/MacOS/libeepp.dylib
-fi
-
 install_name_tool -change libeepp.dylib @executable_path/libeepp.dylib ecode.app/Contents/MacOS/ecode
 #cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
 mkdir -p ecode.app/Contents/MacOS/assets/colorschemes

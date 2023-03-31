@@ -2900,7 +2900,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			winSettings.Icon = mResPath + winSettings.Icon;
 	}
 
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", true );
+#else
 	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", false );
+#endif
+
 	mConfig.context.SharedGLContext = true;
 
 	mWindow = engine->createWindow( winSettings, mConfig.context );
