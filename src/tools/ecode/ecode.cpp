@@ -472,13 +472,12 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	FileSystem::dirAddSlashAtEnd( mThemesPath );
 
 #ifndef EE_DEBUG
-	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, true );
+	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, !disableFileLogs );
 #else
-	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, true );
+	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, !disableFileLogs );
 #endif
 
-	if ( disableFileLogs )
-		Log::instance()->setLiveWrite( false );
+	Log::instance()->setKeepLog( true );
 
 	if ( !mArgs.empty() ) {
 		std::string strargs( String::join( mArgs ) );
@@ -3508,6 +3507,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		registerUnlockedCommands( *mMainLayout );
 		mMainLayout->getKeyBindings().addKeybinds( getDefaultKeybindings() );
 
+		Log::instance()->setKeepLog( false );
 		Log::info( "Complete UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -3607,8 +3607,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag benchmarkMode( parser, "benchmark-mode",
 							  "Render as much as possible to measure the rendering performance.",
 							  { "benchmark-mode" } );
-	args::Flag verbose( parser, "verbose", "Print all logs to the standard output.",
-						{ 'v', "verbose" } );
+	args::Flag verbose( parser, "verbose", "Redirects all logs to stdout.", { 'v', "verbose" } );
 	args::Flag version( parser, "version", "Prints version information", { 'V', "version" } );
 	args::ValueFlag<size_t> jobs(
 		parser, "jobs",
@@ -3644,8 +3643,6 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "convert-lang-output",
 		"Sets the directory output path. If not set it will be printed to stdout",
 		{ "convert-lang-output" }, "" );
-	args::Flag stdOutLogs( parser, "stdout-logs", "Redirects all logs to stdout",
-						   { "stdout-logs" } );
 	args::Flag disableFileLogs( parser, "disable-file-logs", "Disables writing logs to a log file",
 								{ "disable-file-logs" } );
 
@@ -3710,15 +3707,12 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		return EXIT_SUCCESS;
 	}
 
-	if ( verbose.Get() )
-		Log::instance()->setLogToStdOut( true );
-
 	appInstance = eeNew( App, ( jobs, args ) );
 	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
 					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
-					   healthFormat.Get(), file.Get(), stdOutLogs.Get(), disableFileLogs.Get() );
+					   healthFormat.Get(), file.Get(), verbose.Get(), disableFileLogs.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();
