@@ -78,7 +78,7 @@ void EETest::init() {
 	EE = Engine::instance();
 
 	Log::instance()->setLiveWrite( true );
-	Log::instance()->setConsoleOutput( true );
+	Log::instance()->setLogToStdOut( true );
 
 	mTranslator.loadFromString( "<resources language='en'>"
 								"		<string name='app_name'>eepp</string>"

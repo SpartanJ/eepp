@@ -124,7 +124,7 @@ void mainLoop() {
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #ifdef EE_DEBUG
-	Log::instance()->setConsoleOutput( true );
+	Log::instance()->setLogToStdOut( true );
 	Log::instance()->setLiveWrite( true );
 #endif
 	args::ArgumentParser parser( "eterm" );

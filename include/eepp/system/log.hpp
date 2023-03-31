@@ -83,14 +83,14 @@ class EE_API Log : protected Mutex {
 	/** @brief Writes a formated string to the log */
 	void writef( const char* format, ... );
 
-	/** @returns A copy of the current writed log. */
-	std::string getBuffer() const;
+	/** @returns A reference of the current writed log. */
+	const std::string& getBuffer() const;
 
-	/** @returns If the log Writes are outputed to the terminal. */
-	const bool& isConsoleOutput() const;
+	/** @returns If the log Writes are outputed to stdout. */
+	const bool& isLoggingToStdOut() const;
 
-	/** @brief Enabled or disables to output the Writes to the terminal. */
-	void setConsoleOutput( const bool& output );
+	/** @brief Enabled or disables to output the Writes to stdout. */
+	void setLogToStdOut( const bool& output );
 
 	/** @returns If the file is forced to flush the data on every Write call. */
 	const bool& isLiveWrite() const;
@@ -119,13 +119,17 @@ class EE_API Log : protected Mutex {
 	/** Sets the file path of the log file. */
 	void setFilePath( const std::string& filePath );
 
+	/** @return True if the logs are being buffered in memory */
+	bool getKeepLog() const;
+
+	/** Enable/Disable to keep a copy of the logs into memory (disabled by default) */
+	void setKeepLog( bool keepLog );
+
 	static void debug( const std::string& text ) {
 		Log::instance()->writel( LogLevel::Debug, text );
 	}
 
-	static void info( const std::string& text ) {
-		Log::instance()->writel( LogLevel::Info, text );
-	}
+	static void info( const std::string& text ) { Log::instance()->writel( LogLevel::Info, text ); }
 
 	static void notice( const std::string& text ) {
 		Log::instance()->writel( LogLevel::Notice, text );
@@ -185,6 +189,7 @@ class EE_API Log : protected Mutex {
 	bool mSave;
 	bool mConsoleOutput;
 	bool mLiveWrite;
+	bool mKeepLog{ false };
 	LogLevel mLogLevelThreshold{ getDefaultLogLevel() };
 	IOStreamFile* mFS;
 	std::list<LogReaderInterface*> mReaders;

@@ -442,7 +442,8 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
 }
 
-void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync ) {
+void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
+					  bool stdOutLogs, bool disableFileLogs ) {
 	mConfigPath = Sys::getConfigPath( "ecode" );
 	if ( !FileSystem::fileExists( mConfigPath ) )
 		FileSystem::makeDir( mConfigPath );
@@ -471,10 +472,13 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	FileSystem::dirAddSlashAtEnd( mThemesPath );
 
 #ifndef EE_DEBUG
-	Log::create( mConfigPath + "ecode.log", logLevel, false, true );
+	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, true );
 #else
-	Log::create( mConfigPath + "ecode.log", logLevel, true, true );
+	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, true );
 #endif
+
+	if ( disableFileLogs )
+		Log::instance()->setLiveWrite( false );
 
 	if ( !mArgs.empty() ) {
 		std::string strargs( String::join( mArgs ) );
@@ -2843,7 +2847,8 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 				const std::string& css, bool health, const std::string& healthLang,
-				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen ) {
+				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
+				bool stdOutLogs, bool disableFileLogs ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -2860,7 +2865,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
-	loadConfig( logLevel, currentDisplay->getSize(), health );
+	loadConfig( logLevel, currentDisplay->getSize(), health, stdOutLogs, disableFileLogs );
 
 	if ( health ) {
 		Sys::windowAttachConsole();
@@ -3639,6 +3644,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "convert-lang-output",
 		"Sets the directory output path. If not set it will be printed to stdout",
 		{ "convert-lang-output" }, "" );
+	args::Flag stdOutLogs( parser, "stdout-logs", "Redirects all logs to stdout",
+						   { "stdout-logs" } );
+	args::Flag disableFileLogs( parser, "disable-file-logs", "Disables writing logs to a log file",
+								{ "disable-file-logs" } );
 
 	std::vector<std::string> args;
 	try {
@@ -3702,14 +3711,14 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 	if ( verbose.Get() )
-		Log::instance()->setConsoleOutput( true );
+		Log::instance()->setLogToStdOut( true );
 
 	appInstance = eeNew( App, ( jobs, args ) );
 	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
 					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
-					   healthFormat.Get(), file.Get() );
+					   healthFormat.Get(), file.Get(), stdOutLogs.Get(), disableFileLogs.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();
