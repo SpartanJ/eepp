@@ -1112,7 +1112,14 @@ workspace "eepp"
 		incdirs { "src/modules/eterm/include/", "src/thirdparty" }
 		files { "src/tools/eterm/**.cpp" }
 		links { "eterm-static" }
-		build_link_configuration( "eterm", true )
+		build_link_configuration( "eterm", false )
+		filter { "system:windows", "action:vs*" }
+			files { "bin/assets/icon/eterm.rc", "bin/assets/icon/eterm.ico" }
+			vpaths { ['Resources/*'] = { "eterm.rc", "eterm.ico" } }
+		filter { "system:windows", "action:not vs*", "architecture:x86" }
+			linkoptions { "../../bin/assets/icon/eterm.res" }
+		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
+			linkoptions { "../../bin/assets/icon/eterm.x64.res" }
 		filter "system:linux"
 			links { "util" }
 		filter "system:haiku"

@@ -1402,14 +1402,17 @@ solution "eepp"
 		language "C++"
 		files { "src/tools/eterm/**.cpp" }
 		links { "eterm-static" }
+		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
 		if os.is_real("linux") then
 			links { "util" }
 		end
 		if os.is("haiku") then
 			links { "bsd" }
 		end
-		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
-		build_link_configuration( "eterm", true )
+		if os.is("windows") and not is_vs() then
+			linkoptions { "../../bin/assets/icon/eterm.res" }
+		end
+		build_link_configuration( "eterm", false )
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
