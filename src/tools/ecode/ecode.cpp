@@ -2900,7 +2900,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			winSettings.Icon = mResPath + winSettings.Icon;
 	}
 
-	mConfig.context = engine->createContextSettings( &mConfig.ini, "window" );
+	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", false );
 	mConfig.context.SharedGLContext = true;
 
 	mWindow = engine->createWindow( winSettings, mConfig.context );

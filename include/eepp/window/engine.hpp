@@ -109,7 +109,8 @@ class EE_API Engine {
 		@param ini The ini file instance
 		@param iniKeyName The ini key name to search the properties
 	*/
-	ContextSettings createContextSettings( IniFile* ini, std::string iniKeyName = "EEPP" );
+	ContextSettings createContextSettings( IniFile* ini, std::string iniKeyName = "EEPP",
+										   bool vsyncEnabledByDefault = true );
 
 	/** Enabling Shared GL Context allows asynchronous OpenGL resource loading ( only if is
 	 *supported by the backend and the OS, SDL 2 backend is the only one supported ). *	If the

@@ -319,12 +319,13 @@ WindowSettings Engine::createWindowSettings( std::string iniPath, std::string in
 	return createWindowSettings( &Ini, iniKeyName );
 }
 
-ContextSettings Engine::createContextSettings( IniFile* ini, std::string iniKeyName ) {
+ContextSettings Engine::createContextSettings( IniFile* ini, std::string iniKeyName,
+											   bool vsyncEnabledByDefault ) {
 	eeASSERT( NULL != ini );
 
 	ini->readFile();
 
-	bool VSync = ini->getValueB( iniKeyName, "vsync", true );
+	bool VSync = ini->getValueB( iniKeyName, "vsync", vsyncEnabledByDefault );
 	std::string GLVersion = ini->getValue( iniKeyName, "glversion", "0" );
 	int depthBufferSize = ini->getValueI( iniKeyName, "depthbuffersize", 24 );
 	int stencilBufferSize = ini->getValueI( iniKeyName, "stencilbuffersize", 1 );
