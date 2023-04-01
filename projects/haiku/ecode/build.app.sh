@@ -11,7 +11,7 @@ rm -rf ./ecode.app
 mkdir -p ecode.app/assets
 mkdir -p ecode.app/lib
 cp ../../../bin/assets/icon/ecode.png ecode.app/ecode.png
-cp ../../../libs/haiku/libeepp.so ecode.app/lib/
+cp ../../../libs/haiku/x86_64/libeepp.so ecode.app/lib/
 cp ../../../bin/ecode ecode.app/
 cp -L /boot/system/lib/libSDL2-2.0.so.0 ecode.app/lib/
 strip ecode.app/lib/libSDL2-2.0.so.0

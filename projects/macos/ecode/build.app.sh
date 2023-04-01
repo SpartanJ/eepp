@@ -7,7 +7,7 @@ else
 echo "Building using sdl2-config"
 ../make_no_fw.sh config=release ecode || exit
 fi
-
+ARCH=$(uname -m)
 rm -rf ./ecode.app
 mkdir -p ecode.app/Contents/MacOS/
 mkdir -p ecode.app/Contents/Resources/
@@ -30,13 +30,14 @@ SDL2_LIB_PATH="/Library/SDL2.framework/Versions/A/"
 cp "$SDL2_LIB_PATH/SDL2" ecode.app/Contents/MacOS/SDL2
 install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @executable_path/SDL2 ecode.app/Contents/MacOS/libeepp.dylib
 codesign --force -s - ecode.app/Contents/MacOS/SDL2
+install_name_tool -change @rpath/libeepp.dylib @executable_path/libeepp.dylib ecode.app/Contents/MacOS/ecode
 else
 SDL2_LIB_PATH=$(sdl2-config --libs | awk '{ print $1 }' | cut -b 3-)
 cp $SDL2_LIB_PATH/libSDL2-2.0.0.dylib ecode.app/Contents/MacOS
 install_name_tool -change $SDL2_LIB_PATH/libSDL2-2.0.0.dylib @executable_path/libSDL2-2.0.0.dylib ecode.app/Contents/MacOS/libeepp.dylib
+install_name_tool -change libeepp.dylib @executable_path/libeepp.dylib ecode.app/Contents/MacOS/ecode
 fi
 
-install_name_tool -change libeepp.dylib @executable_path/libeepp.dylib ecode.app/Contents/MacOS/ecode
 #cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
 mkdir -p ecode.app/Contents/MacOS/assets/colorschemes
 cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorschemes/

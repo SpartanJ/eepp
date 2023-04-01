@@ -30,22 +30,22 @@ function get_dll_extension()
 	end
 end
 
-function postsymlinklib(src_path, dst_path, lib)
-	filter { "configurations:release*", "system:windows" }
+function postsymlinklib(src_path, dst_path, lib, arch)
+	filter { "configurations:release*", "system:windows", arch }
 		if os.ishost("windows") then
 			postbuildcommands { "mklink \"" .. dst_path .. lib .. ".dll\"" .. " \"" .. src_path .. lib .. ".dll\" || ver>nul" }
 		else
 			postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 		end
-	filter { "configurations:debug*", "system:windows" }
+	filter { "configurations:debug*", "system:windows", arch }
 		if os.ishost("windows") then
 			postbuildcommands { "mklink \"" .. dst_path .. lib .. "-debug.dll\"" .. " \"" .. src_path .. lib .. "-debug.dll\" || ver>nul" }
 		else
 			postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 		end
-	filter { "configurations:release*", "not system:windows" }
+	filter { "configurations:release*", "not system:windows", arch }
 		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
-	filter { "configurations:debug*", "not system:windows" }
+	filter { "configurations:debug*", "not system:windows", arch }
 		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 end
 
@@ -685,6 +685,31 @@ function build_eepp( build_name )
 		buildoptions { "/bigobj" }
 end
 
+function target_dir_lib(path)
+	filter "architecture:x86"
+		targetdir("libs/" .. os.target() .. "/x86/" .. path .. "/")
+	filter "architecture:x86_64"
+		targetdir("libs/" .. os.target() .. "/x86_64/" .. path .. "/")
+	filter "architecture:ARM"
+		targetdir("libs/" .. os.target() .. "/arm/" .. path .. "/")
+	filter "architecture:ARM64"
+		targetdir("libs/" .. os.target() .. "/arm64/" .. path .. "/")
+	filter "architecture:universal"
+		targetdir("libs/" .. os.target() .. "/universal/" .. path .. "/")
+end
+
+function target_dir_thirdparty()
+	target_dir_lib("thirdparty")
+end
+
+function postsymlinklib_arch(name)
+	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:x86" )
+	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86_64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:x86_64" )
+	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM" )
+	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM64" )
+	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:universal" )
+end
+
 workspace "eepp"
 	targetdir("./bin/")
 	if os.istarget("ios") then
@@ -732,81 +757,81 @@ workspace "eepp"
 	project "SOIL2-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/SOIL2/src/SOIL2/*.c" }
 		incdirs { "src/thirdparty/SOIL2" }
 		build_base_configuration( "SOIL2" )
+		target_dir_thirdparty()
 
 	project "glew-static"
 		kind "StaticLib"
 		language "C"
 		defines { "GLEW_NO_GLU", "GLEW_STATIC" }
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/glew/*.c" }
 		incdirs { "include/thirdparty/glew" }
 		build_base_configuration( "glew" )
+		target_dir_thirdparty()
 
 	project "mbedtls-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "src/thirdparty/mbedtls/include/" }
 		files { "src/thirdparty/mbedtls/library/*.c" }
 		build_base_cpp_configuration( "mbedtls" )
+		target_dir_thirdparty()
 
 	project "vorbis-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "src/thirdparty/libvorbis/lib/", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include" }
 		files { "src/thirdparty/libogg/**.c", "src/thirdparty/libvorbis/**.c" }
 		build_base_cpp_configuration( "vorbis" )
+		target_dir_thirdparty()
 
 	project "pugixml-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/pugixml/*.cpp" }
 		build_base_cpp_configuration( "pugixml" )
+		target_dir_thirdparty()
 
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/zlib/*.c" }
 		build_base_configuration( "zlib" )
+		target_dir_thirdparty()
 
 	project "libzip-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/libzip/*.c" }
 		incdirs { "src/thirdparty/zlib" }
 		build_base_configuration( "libzip" )
+		target_dir_thirdparty()
 
 	project "libpng-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/libpng/**.c" }
 		incdirs { "src/thirdparty/libpng/include" }
 		build_base_configuration( "libpng" )
+		target_dir_thirdparty()
 
 	project "freetype-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
 		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
 		build_base_configuration( "freetype" )
+		target_dir_thirdparty()
 
 	project "chipmunk-static"
 		kind "StaticLib"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/chipmunk/*.c", "src/thirdparty/chipmunk/constraints/*.c" }
 		incdirs { "src/modules/physics/include/eepp/thirdparty/chipmunk" }
 		build_base_configuration( "chipmunk" )
+		target_dir_thirdparty()
 		filter "action:vs*"
 			language "C++"
 			buildoptions { "/TP" }
@@ -816,25 +841,25 @@ workspace "eepp"
 	project "jpeg-compressor-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/jpeg-compressor/*.cpp" }
 		build_base_cpp_configuration( "jpeg-compressor" )
+		target_dir_thirdparty()
 
 	project "imageresampler-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		files { "src/thirdparty/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
+		target_dir_thirdparty()
 
 	project "mojoal-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "include/eepp/thirdparty/mojoAL" }
 		defines( "AL_LIBTYPE_STATIC" )
 		files { "src/thirdparty/mojoAL/*.c" }
 		build_base_cpp_configuration( "mojoal" )
+		target_dir_thirdparty()
 		filter "options:windows-vc-build"
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 		filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
@@ -846,10 +871,10 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C++"
 		cppdialect "C++17"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		files { "src/thirdparty/efsw/src/efsw/*.cpp" }
 		build_base_cpp_configuration( "efsw" )
+		target_dir_thirdparty()
 		filter "system:windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/win/*.cpp" }
 			excludes {
@@ -892,7 +917,6 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C++"
 		cppdialect "C++17"
-		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		defines { "EE_MAPS_STATIC" }
@@ -900,6 +924,7 @@ workspace "eepp"
 			defines { "EE_STATIC" }
 		end
 		build_base_cpp_configuration( "eepp-maps-static" )
+		target_dir_lib("eepp-maps")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -907,13 +932,13 @@ workspace "eepp"
 		kind "SharedLib"
 		language "C++"
 		cppdialect "C++17"
-		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		links { "eepp-shared" }
 		defines { "EE_MAPS_EXPORTS" }
 		build_base_cpp_configuration( "eepp-maps" )
-		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/", _MAIN_SCRIPT_DIR .. "/bin/", "eepp-maps" )
+		postsymlinklib_arch( "eepp-maps" )
+		target_dir_lib("eepp-maps")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -921,7 +946,6 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C++"
 		cppdialect "C++17"
-		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
 		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
 		defines { "EE_PHYSICS_STATIC" }
@@ -929,6 +953,7 @@ workspace "eepp"
 			defines { "EE_STATIC" }
 		end
 		build_base_cpp_configuration( "eepp-physics-static" )
+		target_dir_lib("eepp-physics")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -936,13 +961,13 @@ workspace "eepp"
 		kind "SharedLib"
 		language "C++"
 		cppdialect "C++17"
-		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
 		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
 		links { "chipmunk-static", "eepp-shared" }
 		defines { "EE_PHYSICS_EXPORTS" }
 		build_base_cpp_configuration( "eepp-physics" )
-		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/", _MAIN_SCRIPT_DIR .. "/bin/", "eepp-physics" )
+		postsymlinklib_arch( "eepp-physics" )
+		target_dir_lib("eepp-physics")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -950,13 +975,13 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C++"
 		cppdialect "C++17"
-		targetdir("libs/" .. os.target() .. "/")
 		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
 		if _OPTIONS["with-static-eepp"] then
 			defines { "EE_STATIC" }
 		end
 		build_base_cpp_configuration( "eterm" )
+		target_dir_lib("eterm")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -964,15 +989,15 @@ workspace "eepp"
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.target() .. "/")
 		build_eepp( "eepp-static" )
+		target_dir_lib("")
 
 	project "eepp-shared"
 		kind "SharedLib"
 		language "C++"
-		targetdir("libs/" .. os.target() .. "/")
 		build_eepp( "eepp" )
-		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/", _MAIN_SCRIPT_DIR .. "/bin/", "eepp" )
+		postsymlinklib_arch( "eepp" )
+		target_dir_lib("")
 
 	-- Examples
 	project "eepp-external-shader"
@@ -1062,7 +1087,7 @@ workspace "eepp"
 	project "ecode-macos-helper-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.target() .. "/thirdparty/")
+		target_dir_thirdparty()
 		filter "system:macosx"
 			files { "src/tools/ecode/macos/*.m" }
 		filter { "configurations:debug*", "action:not vs*" }
