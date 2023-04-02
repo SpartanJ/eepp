@@ -63,3 +63,5 @@ ecode.dmg
 /projects/**/*.zip
 /.ecode/.fstreeviewignore
 /.ecode/.prjallowed
+/.cache/
+/compile_commands.json

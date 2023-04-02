@@ -1,8 +1,26 @@
+#include <eepp/system/log.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
 
 namespace EE { namespace UI { namespace Doc {
+
+static constexpr void _hash( Uint64& signature, const String::HashType& val ) {
+	Int64 len = sizeof( decltype( val ) );
+	while ( --len >= 0 )
+		signature = ( ( signature << 5 ) + signature ) + ( ( val >> ( len * 8 ) ) & 0xFF );
+}
+
+Uint64 TokenizedLine::calcSignature( const std::vector<SyntaxTokenPosition>& tokens ) {
+	Uint64 signature = 5381;
+	for ( const auto& token : tokens )
+		_hash( signature, String::hash( token.type ) );
+	return signature;
+}
+
+void TokenizedLine::updateSignature() {
+	this->signature = calcSignature( tokens );
+}
 
 SyntaxHighlighter::SyntaxHighlighter( TextDocument* doc ) :
 	mDoc( doc ), mFirstInvalidLine( 0 ), mMaxWantedLine( 0 ) {
@@ -35,11 +53,40 @@ TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const Uint64&
 												  mDoc->line( line ).toUtf8(), state );
 	tokenizedLine.tokens = std::move( res.first );
 	tokenizedLine.state = std::move( res.second );
+	tokenizedLine.updateSignature();
 	return tokenizedLine;
 }
 
 Mutex& SyntaxHighlighter::getLinesMutex() {
 	return mLinesMutex;
+}
+
+void SyntaxHighlighter::moveHighlight( const Int64& fromLine, const Int64& numLines ) {
+	if ( mLines.find( fromLine ) == mLines.end() )
+		return;
+	Int64 linesCount = mDoc->linesCount();
+	if ( numLines > 0 ) {
+		for ( Int64 i = linesCount - 1; i >= fromLine; --i ) {
+			auto lineIt = mLines.find( i - numLines );
+			if ( lineIt != mLines.end() ) {
+				auto& line = lineIt->second;
+				if ( line.hash == mDoc->line( i ).getHash() ) {
+					auto nl = mLines.extract( lineIt );
+					nl.key() = i;
+					mLines.insert( std::move( nl ) );
+				}
+			}
+		}
+	} else if ( numLines < 0 ) {
+		for ( Int64 i = fromLine; i < linesCount; i++ ) {
+			auto lineIt = mLines.find( i - numLines );
+			if ( lineIt != mLines.end() && lineIt->second.hash == mDoc->line( i ).getHash() ) {
+				auto nl = mLines.extract( lineIt );
+				nl.key() = i;
+				mLines[i] = std::move( nl.mapped() );
+			}
+		}
+	}
 }
 
 const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t& index ) {

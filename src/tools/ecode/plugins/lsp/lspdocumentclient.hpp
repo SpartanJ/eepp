@@ -3,6 +3,7 @@
 
 #include "lspprotocol.hpp"
 #include <eepp/system/clock.hpp>
+#include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 
 using namespace EE;
@@ -36,6 +37,7 @@ class LSPDocumentClient : public TextDocument::Client {
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* );
 	virtual void onDocumentMoved( TextDocument* );
 	virtual void onDocumentReloaded( TextDocument* );
+	virtual void onDocumentMoveHighlight( const Int64& fromLine, const Int64& numLines );
 
 	void notifyOpen();
 
@@ -57,6 +59,7 @@ class LSPDocumentClient : public TextDocument::Client {
 	LSPSemanticTokensDelta mSemanticTokens;
 	bool mRunningSemanticTokens{ false };
 	bool mShutdown{ false };
+	std::unordered_map<size_t, TokenizedLine> mTokenizerLines;
 
 	void refreshTag();
 

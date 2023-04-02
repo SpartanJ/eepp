@@ -87,6 +87,8 @@ class EE_API TextDocument {
 			onDocumentLoaded( doc );
 		}
 		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
+		virtual void onDocumentMoveHighlight( const Int64& /*fromLine*/,
+											  const Int64& /*numLines*/ ){};
 	};
 
 	TextDocument( bool verbose = true );
@@ -631,6 +633,8 @@ class EE_API TextDocument {
 	void notifyDocumentMoved();
 
 	void notifySyntaxDefinitionChange();
+
+	void notifiyDocumentMoveHighlight( const Int64& fromLine, const Int64& numLines );
 
 	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
 

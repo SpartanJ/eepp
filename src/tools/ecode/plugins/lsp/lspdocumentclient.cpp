@@ -151,7 +151,7 @@ void LSPDocumentClient::requestSemanticHighlightingDelayed() {
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
 		sceneNode->removeActionsByTag( mTagSemanticTokens );
-		sceneNode->runOnMainThread( [this]() { requestSemanticHighlighting(); }, Seconds( 0.1f ),
+		sceneNode->runOnMainThread( [this]() { requestSemanticHighlighting(); }, Seconds( 0.5f ),
 									mTagSemanticTokens );
 	}
 }
@@ -233,6 +233,31 @@ void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens ) {
 	mRunningSemanticTokens = false;
 }
 
+void LSPDocumentClient::onDocumentMoveHighlight( const Int64& fromLine, const Int64& numLines ) {
+	Int64 linesCount = mDoc->linesCount();
+	if ( numLines > 0 ) {
+		for ( Int64 i = linesCount - 1; i >= fromLine; --i ) {
+			auto lineIt = mTokenizerLines.find( i - numLines );
+			if ( lineIt != mTokenizerLines.end() &&
+				 lineIt->second.hash == mDoc->line( i ).getHash() ) {
+				auto nl = mTokenizerLines.extract( lineIt );
+				nl.key() = i;
+				mTokenizerLines.insert( std::move( nl ) );
+			}
+		}
+	} else if ( numLines < 0 ) {
+		for ( Int64 i = fromLine; i < linesCount; i++ ) {
+			auto lineIt = mTokenizerLines.find( i - numLines );
+			if ( lineIt != mTokenizerLines.end() &&
+				 lineIt->second.hash == mDoc->line( i ).getHash() ) {
+				auto nl = mTokenizerLines.extract( lineIt );
+				nl.key() = i;
+				mTokenizerLines[i] = std::move( nl.mapped() );
+			}
+		}
+	}
+}
+
 void LSPDocumentClient::highlight() {
 	if ( mShutdown )
 		return;
@@ -243,11 +268,13 @@ void LSPDocumentClient::highlight() {
 					  mDoc->getURI().toString().c_str() );
 		return;
 	}
-
+	Clock clock;
 	const auto& caps = mServer->getCapabilities().semanticTokenProvider;
 	Uint32 currentLine = 0;
 	Uint32 start = 0;
-	std::map<size_t, TokenizedLine> tokenizedLines;
+	std::unordered_map<size_t, TokenizedLine> tokenizerLines;
+	Int64 lastLine = 0;
+	TokenizedLine* lastLinePtr = nullptr;
 	for ( size_t i = 0; i < data.size(); i += 5 ) {
 		if ( mShutdown )
 			return;
@@ -264,18 +291,35 @@ void LSPDocumentClient::highlight() {
 			start = deltaStart;
 		}
 
-		auto& line = tokenizedLines[currentLine];
+		auto& line = tokenizerLines[currentLine];
 		const auto& ltype = caps.legend.tokenTypes[type];
 		line.tokens.push_back(
 			{ semanticTokenTypeToSyntaxType( ltype, mDoc->getSyntaxDefinition() ), start, len } );
 		line.hash = mDoc->line( currentLine ).getHash();
+		line.updateSignature();
+
+		if ( lastLine != currentLine && nullptr != lastLinePtr ) {
+			auto lastLineTokIt = mTokenizerLines.find( lastLine );
+			if ( lastLineTokIt != mTokenizerLines.end() &&
+				 lastLinePtr->signature == lastLineTokIt->second.signature ) {
+				tokenizerLines.erase( lastLine );
+			}
+		}
+
+		lastLine = currentLine;
+		lastLinePtr = &line;
 	}
 
-	for ( const auto& tline : tokenizedLines ) {
+	for ( auto& tline : tokenizerLines ) {
 		if ( mShutdown )
 			return;
+
 		mDoc->getHighlighter()->mergeLine( tline.first, tline.second );
+
+		mTokenizerLines[tline.first] = std::move( tline.second );
 	}
+	Log::debug( "LSPDocumentClient::highlight took: %.2f ms",
+				clock.getElapsedTime().asMilliseconds() );
 }
 
 void LSPDocumentClient::notifyOpen() {

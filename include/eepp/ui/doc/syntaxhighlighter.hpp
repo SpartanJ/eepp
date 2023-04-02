@@ -12,6 +12,11 @@ struct TokenizedLine {
 	String::HashType hash;
 	std::vector<SyntaxTokenPosition> tokens;
 	Uint64 state{ SYNTAX_TOKENIZER_STATE_NONE };
+	Uint64 signature { 0 };
+
+	void updateSignature();
+
+	static Uint64 calcSignature( const std::vector<SyntaxTokenPosition>& tokens );
 };
 
 class EE_API SyntaxHighlighter {
@@ -46,6 +51,8 @@ class EE_API SyntaxHighlighter {
 								const Uint64& state = SYNTAX_TOKENIZER_STATE_NONE );
 
 	Mutex& getLinesMutex();
+
+	void moveHighlight( const Int64& fromLine, const Int64& numLines );
 
   protected:
 	TextDocument* mDoc;

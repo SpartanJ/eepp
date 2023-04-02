@@ -915,6 +915,11 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	mUndoStack.pushSelection( undoStack, cursorIdx, mSelection, time );
 	mUndoStack.pushRemove( undoStack, cursorIdx, { position, cursor }, time );
 
+	if ( linesAdd > 0 ) {
+		mHighlighter->moveHighlight( position.line(), linesAdd );
+		notifiyDocumentMoveHighlight( position.line(), linesAdd );
+	}
+
 	notifyTextChanged( { { position, position }, text } );
 
 	if ( lineCount != mLines.size() ) {
@@ -982,8 +987,8 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	if ( range.start().line() + 1 < range.end().line() ) {
 		mLines.erase( mLines.begin() + range.start().line() + 1,
 					  mLines.begin() + range.end().line() );
-		range.end().setLine( range.start().line() + 1 );
 		linesRemoved = range.end().line() - ( range.start().line() + 1 );
+		range.end().setLine( range.start().line() + 1 );
 	}
 
 	if ( range.start().line() == range.end().line() ) {
@@ -1053,6 +1058,11 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 			sel.end().setColumn( sel.end().column() - colRem );
 			sel = sanitizeRange( sel );
 		}
+	}
+
+	if ( linesRemoved > 0 ) {
+		mHighlighter->moveHighlight( range.start().line(), -linesRemoved );
+		notifiyDocumentMoveHighlight( range.start().line(), -linesRemoved );
 	}
 
 	notifyTextChanged( { originalRange, "" } );
@@ -2585,6 +2595,13 @@ void TextDocument::notifySyntaxDefinitionChange() {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentSyntaxDefinitionChange( mSyntaxDefinition );
+	}
+}
+
+void TextDocument::notifiyDocumentMoveHighlight( const Int64& fromLine, const Int64& numLines ) {
+	Lock l( mClientsMutex );
+	for ( auto& client : mClients ) {
+		client->onDocumentMoveHighlight( fromLine, numLines );
 	}
 }
 
