@@ -2929,6 +2929,19 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			   ecode::Version::getCodename().c_str() );
 
 	if ( mWindow->isOpen() ) {
+	// Only verify GPU driver availability on Windows.
+	// macOS will have at least a fallback renderer
+	// Linux will have at least Mesa drivers with LLVM Pipe
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( !GLi->shadersSupported() ) {
+			mWindow->showMessageBox(
+				EE::Window::Window::MessageBoxType::Error, "ecode",
+				"ecode detected that there are no GPU drivers available or that the GPU does not "
+				"support shaders.\nThis will prevent ecode to properly function.\nPlease check "
+				"that your GPU drivers are installed." );
+			return;
+		}
+#endif
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 		macOS_CreateApplicationMenus();
 #endif

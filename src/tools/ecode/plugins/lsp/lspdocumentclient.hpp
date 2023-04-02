@@ -37,7 +37,7 @@ class LSPDocumentClient : public TextDocument::Client {
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* );
 	virtual void onDocumentMoved( TextDocument* );
 	virtual void onDocumentReloaded( TextDocument* );
-	virtual void onDocumentMoveHighlight( const Int64& fromLine, const Int64& numLines );
+	virtual void onDocumentLineMove( const Int64& fromLine, const Int64& numLines );
 
 	void notifyOpen();
 

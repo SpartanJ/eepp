@@ -828,6 +828,28 @@ Float WindowSDL::getScale() {
 	return (Float)realX / (Float)scaledX;
 }
 
+bool WindowSDL::hasNativeMessageBox() const {
+	return true;
+}
+
+Uint32 toSDLMsgBoxType( const Window::MessageBoxType& type ) {
+	switch ( type ) {
+		case Window::MessageBoxType::Error:
+			return SDL_MESSAGEBOX_ERROR;
+		case Window::MessageBoxType::Warning:
+			return SDL_MESSAGEBOX_WARNING;
+		case Window::MessageBoxType::Information:
+			return SDL_MESSAGEBOX_INFORMATION;
+	}
+	return SDL_MESSAGEBOX_INFORMATION;
+}
+
+bool WindowSDL::showMessageBox( const MessageBoxType& type, const std::string& title,
+								const std::string& message ) {
+	return 0 == SDL_ShowSimpleMessageBox( toSDLMsgBoxType( type ), title.c_str(), message.c_str(),
+										  mSDLWindow );
+}
+
 SDL_Window* WindowSDL::GetSDLWindow() const {
 	return mSDLWindow;
 }

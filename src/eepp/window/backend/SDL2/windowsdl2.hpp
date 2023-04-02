@@ -79,6 +79,11 @@ class EE_API WindowSDL : public Window {
 
 	virtual Float getScale();
 
+	virtual bool hasNativeMessageBox() const;
+
+	virtual bool showMessageBox( const MessageBoxType& type, const std::string& title,
+								 const std::string& message );
+
 	SDL_Window* GetSDLWindow() const;
 
 	void startTextInput();

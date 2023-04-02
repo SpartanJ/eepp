@@ -233,7 +233,7 @@ void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens ) {
 	mRunningSemanticTokens = false;
 }
 
-void LSPDocumentClient::onDocumentMoveHighlight( const Int64& fromLine, const Int64& numLines ) {
+void LSPDocumentClient::onDocumentLineMove( const Int64& fromLine, const Int64& numLines ) {
 	Int64 linesCount = mDoc->linesCount();
 	if ( numLines > 0 ) {
 		for ( Int64 i = linesCount - 1; i >= fromLine; --i ) {

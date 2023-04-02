@@ -341,6 +341,10 @@ const Sizei& Window::getLastWindowedSize() const {
 	return mLastWindowedSize;
 }
 
+bool Window::showMessageBox( const MessageBoxType&, const std::string&, const std::string& ) {
+	return false;
+}
+
 void Window::calculateFps() {
 	if ( mFrameData.FPS.LastCheck.getElapsedTime().asSeconds() >= 1.f ) {
 		mFrameData.FPS.Current = mFrameData.FPS.Count;

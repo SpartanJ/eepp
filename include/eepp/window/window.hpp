@@ -463,7 +463,20 @@ class EE_API Window {
 	 * per second. */
 	const System::Time& getRenderTimePerSecond() const;
 
+	/** @return The last windowed size of the window */
 	const Sizei& getLastWindowedSize() const;
+
+	/** @return True if implements native message boxes */
+	virtual bool hasNativeMessageBox() const { return false; };
+
+	/** Native message box types */
+	enum class MessageBoxType { Error, Warning, Information };
+
+	/** Shows a native message box.
+	 *  @return True if message box was shown
+	*/
+	virtual bool showMessageBox( const MessageBoxType& type, const std::string& title,
+								 const std::string& message );
 
   protected:
 	friend class Engine;
