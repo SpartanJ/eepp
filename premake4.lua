@@ -235,13 +235,13 @@ function postsymlinklib(src_path, dst_path, lib)
 		if os.is("windows") then
 			postbuildcommands { "mklink \"" .. dst_path .. lib .. ".dll\"" .. " \"" .. src_path .. lib .. ".dll\" || ver>nul" }
 		else
-			postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 		end
 	configuration { "debug", "windows" }
 		if os.is("windows") then
 			postbuildcommands { "mklink \"" .. dst_path .. lib .. "-debug.dll\"" .. " \"" .. src_path .. lib .. "-debug.dll\" || ver>nul" }
 		else
-			postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 		end
 	configuration { "release", "not windows" }
 		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }

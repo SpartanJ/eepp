@@ -24,6 +24,7 @@ const char* LAYOUT = R"xml(
 	background-image: icon(ecode,256dp);
 	background-position: center center;
 	background-tint: var(--font-hint);
+	background-size: 100% 100%;
 }
 #home_logo:hover {
 	background-tint: var(--primary);

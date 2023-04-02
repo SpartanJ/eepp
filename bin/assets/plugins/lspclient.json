@@ -147,7 +147,7 @@
       "file_patterns": ["%.dart"]
     },
     {
-      "language": "bash",
+      "language": "shellscript",
       "name": "bash-language-server",
       "url": "https://github.com/bash-lsp/bash-language-server",
       "command": "bash-language-server start",

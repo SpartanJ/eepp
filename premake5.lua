@@ -21,9 +21,9 @@ newoption {
 }
 
 function get_dll_extension()
-	if os.target("macosx") then
+	if os.target() == "macosx" then
 		return "dylib"
-	elseif os.target("windows") then
+	elseif os.target() == "windows" then
 		return "dll"
 	else
 		return "so"
@@ -35,13 +35,13 @@ function postsymlinklib(src_path, dst_path, lib, arch)
 		if os.ishost("windows") then
 			postbuildcommands { "mklink \"" .. dst_path .. lib .. ".dll\"" .. " \"" .. src_path .. lib .. ".dll\" || ver>nul" }
 		else
-			postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 		end
 	filter { "configurations:debug*", "system:windows", arch }
 		if os.ishost("windows") then
 			postbuildcommands { "mklink \"" .. dst_path .. lib .. "-debug.dll\"" .. " \"" .. src_path .. lib .. "-debug.dll\" || ver>nul" }
 		else
-			postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 		end
 	filter { "configurations:release*", "not system:windows", arch }
 		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
@@ -924,7 +924,7 @@ workspace "eepp"
 			defines { "EE_STATIC" }
 		end
 		build_base_cpp_configuration( "eepp-maps-static" )
-		target_dir_lib("eepp-maps")
+		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -938,7 +938,7 @@ workspace "eepp"
 		defines { "EE_MAPS_EXPORTS" }
 		build_base_cpp_configuration( "eepp-maps" )
 		postsymlinklib_arch( "eepp-maps" )
-		target_dir_lib("eepp-maps")
+		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -953,7 +953,7 @@ workspace "eepp"
 			defines { "EE_STATIC" }
 		end
 		build_base_cpp_configuration( "eepp-physics-static" )
-		target_dir_lib("eepp-physics")
+		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -967,7 +967,7 @@ workspace "eepp"
 		defines { "EE_PHYSICS_EXPORTS" }
 		build_base_cpp_configuration( "eepp-physics" )
 		postsymlinklib_arch( "eepp-physics" )
-		target_dir_lib("eepp-physics")
+		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 
@@ -981,7 +981,7 @@ workspace "eepp"
 			defines { "EE_STATIC" }
 		end
 		build_base_cpp_configuration( "eterm" )
-		target_dir_lib("eterm")
+		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 

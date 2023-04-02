@@ -2715,7 +2715,7 @@ void App::loadFileSystemMatcher( const std::string& folderPath ) {
 static std::string GetCurrentProcessName() {
 #if defined( __APPLE__ ) || defined( __FreeBSD__ )
 	return getprogname();
-#elif defined( _GNU_SOURCE )
+#elif defined( _GNU_SOURCE ) && EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
 	return program_invocation_name;
 #elif defined( _WIN32 )
 	return __argv[0];
@@ -2730,7 +2730,7 @@ static std::string GetCurrentProcessName() {
 #endif
 
 static std::string getCurrentProcessPath() {
-#if EE_PLATFORM != EE_PLATFORM_MACOSX
+#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_ANDROID
 	auto path( Sys::getProcessPath() );
 	FileSystem::dirAddSlashAtEnd( path );
 	if ( String::startsWith( GetCurrentProcessName(), Sys::getProcessPath() ) ) {
@@ -2741,6 +2741,8 @@ static std::string getCurrentProcessPath() {
 		path += GetCurrentProcessName();
 	}
 	return path;
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	return Sys::getProcessPath();
 #else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pid_t pid = getpid();
@@ -2833,7 +2835,12 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
 	if ( FileSystem::isRelativePath( fontPath ) )
 		fontPath = mResPath + fontPath;
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	if ( fontPath.empty() ||
+		 ( !FileSystem::fileExists( fontPath ) && !PackManager::instance()->exists( fontPath ) ) ) {
+#else
 	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) ) {
+#endif
 		fontPath = fallback;
 		if ( !fontPath.empty() && FileSystem::isRelativePath( fontPath ) )
 			fontPath = mResPath + fontPath;
@@ -2878,11 +2885,20 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 														  : 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	mConfig.windowState.pixelDensity =
+		pidelDensity > 0
+			? pidelDensity
+			: ( mConfig.windowState.pixelDensity > 0	? mConfig.windowState.pixelDensity
+				: currentDisplay->getPixelDensity() > 2 ? currentDisplay->getPixelDensity() / 2
+														: currentDisplay->getPixelDensity() );
+#else
 	mConfig.windowState.pixelDensity =
 		pidelDensity > 0
 			? pidelDensity
 			: ( mConfig.windowState.pixelDensity > 0 ? mConfig.windowState.pixelDensity
 													 : currentDisplay->getPixelDensity() );
+#endif
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
