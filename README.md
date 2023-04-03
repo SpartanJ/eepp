@@ -166,7 +166,7 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 ## Documentation
 
-Documentation is located [here](https://cdn.ensoft.dev/eepp-docs/). I'm currently working
+Documentation is located [here](https://cdn.ensoft.dev/eepp-docs/index.html). I'm currently working
 on improving it. About 50% of the project is currently documented so still needs
 a lot of work. Please check the code examples located in `src/examples` and you
 can also check out the test ( `src/test` ) and tools ( `src/tools` ).
@@ -491,7 +491,7 @@ for your project. Notice that there's a `eepp.mk` project file that builds the
 library. That file can be used in you projects.
 
 ### iOS
-    
+
 The project provides two files to build the library and the demos. You can use
 any of them depending on your needs.
 The files are located in `projects/ios`:
