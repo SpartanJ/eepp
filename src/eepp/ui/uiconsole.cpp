@@ -487,6 +487,7 @@ void UIConsole::createDefaultCommands() {
 	addCommand( "showfps", [&]( const auto& params ) { cmdShowFps( params ); } );
 	addCommand( "gettexturememory", [&]( const auto& ) { cmdGetTextureMemory(); } );
 	addCommand( "hide", [&]( const auto& ) { hide(); } );
+	addCommand( "grep", [&]( const auto& params ) { cmdGrep( params ); } );
 }
 
 void UIConsole::cmdClear() {
@@ -549,6 +550,26 @@ void UIConsole::cmdGetGpuExtensions() {
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			privPushText( tvec[i] );
+	}
+}
+
+void UIConsole::cmdGrep( const std::vector<String>& params ) {
+	if ( params.empty() )
+		return;
+	bool caseSensitive = !std::any_of( params.begin(), params.end(),
+									   []( const auto& other ) { return "-i" == other; } );
+	String search = params[params.size() - 1];
+
+	if ( caseSensitive ) {
+		for ( const auto& cmd : mCmdLog )
+			if ( !cmd.log.empty() && cmd.log[0] != '>' && String::contains( cmd.log, search ) )
+				privPushText( cmd.log );
+	} else {
+		search.toLower();
+		for ( const auto& cmd : mCmdLog )
+			if ( !cmd.log.empty() && cmd.log[0] != '>' &&
+				 String::contains( String::toLower( cmd.log ), search ) )
+				privPushText( cmd.log );
 	}
 }
 

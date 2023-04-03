@@ -286,6 +286,9 @@ class EE_API UIConsole : public UIWidget,
 	/** Add the GPU Extensions supported to the console */
 	void cmdGetGpuExtensions();
 
+	/** Add command to grep the console log */
+	void cmdGrep( const std::vector<String>& params );
+
 	void privPushText( const String& str );
 
 	void writeLog( const std::string& text );

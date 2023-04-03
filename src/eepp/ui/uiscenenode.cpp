@@ -781,7 +781,7 @@ void UISceneNode::updateDirtyLayouts() {
 		mUpdatingLayouts = false;
 
 		if ( mVerbose )
-			Log::info( "Layout tree updated in %.2f ms", clock.getElapsedTime().asMilliseconds() );
+			Log::debug( "Layout tree updated in %.2f ms", clock.getElapsedTime().asMilliseconds() );
 	}
 }
 

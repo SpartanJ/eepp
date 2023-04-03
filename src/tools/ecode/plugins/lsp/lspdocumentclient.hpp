@@ -37,7 +37,6 @@ class LSPDocumentClient : public TextDocument::Client {
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* );
 	virtual void onDocumentMoved( TextDocument* );
 	virtual void onDocumentReloaded( TextDocument* );
-	virtual void onDocumentLineMove( const Int64& fromLine, const Int64& numLines );
 
 	void notifyOpen();
 
@@ -59,7 +58,6 @@ class LSPDocumentClient : public TextDocument::Client {
 	LSPSemanticTokensDelta mSemanticTokens;
 	bool mRunningSemanticTokens{ false };
 	bool mShutdown{ false };
-	std::unordered_map<size_t, TokenizedLine> mTokenizerLines;
 
 	void refreshTag();
 

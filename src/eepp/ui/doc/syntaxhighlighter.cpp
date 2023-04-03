@@ -89,6 +89,14 @@ void SyntaxHighlighter::moveHighlight( const Int64& fromLine, const Int64& numLi
 	}
 }
 
+Uint64 SyntaxHighlighter::getTokenizedLineSignature( const size_t& index ) {
+	Lock l( mLinesMutex );
+	auto line = mLines.find( index );
+	if ( line != mLines.end() )
+		return line->second.signature;
+	return 0;
+}
+
 const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t& index ) {
 	if ( mDoc->getSyntaxDefinition().getPatterns().empty() ) {
 		static std::vector<SyntaxTokenPosition> noHighlightVector = { { "normal", 0 } };
@@ -220,8 +228,9 @@ void SyntaxHighlighter::mergeLine( const size_t& line, const TokenizedLine& toke
 		}
 	}
 
+	size_t lastTokenPos = 0;
 	for ( const auto& token : tokenization.tokens ) {
-		for ( size_t i = 0; i < tline.tokens.size(); ++i ) {
+		for ( size_t i = lastTokenPos; i < tline.tokens.size(); ++i ) {
 			const auto ltoken = tline.tokens[i];
 			if ( token.pos >= ltoken.pos && token.pos + token.len <= ltoken.pos + ltoken.len ) {
 				tline.tokens.erase( tline.tokens.begin() + i );
@@ -243,11 +252,13 @@ void SyntaxHighlighter::mergeLine( const size_t& line, const TokenizedLine& toke
 																( token.pos + token.len ) ) } );
 				}
 
+				lastTokenPos = i;
 				break;
 			}
 		}
 	}
 
+	tline.signature = tokenization.signature;
 	Lock l( mLinesMutex );
 	mLines[line] = std::move( tline );
 }

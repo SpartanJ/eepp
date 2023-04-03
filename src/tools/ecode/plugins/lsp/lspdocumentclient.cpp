@@ -233,31 +233,6 @@ void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens ) {
 	mRunningSemanticTokens = false;
 }
 
-void LSPDocumentClient::onDocumentLineMove( const Int64& fromLine, const Int64& numLines ) {
-	Int64 linesCount = mDoc->linesCount();
-	if ( numLines > 0 ) {
-		for ( Int64 i = linesCount - 1; i >= fromLine; --i ) {
-			auto lineIt = mTokenizerLines.find( i - numLines );
-			if ( lineIt != mTokenizerLines.end() &&
-				 lineIt->second.hash == mDoc->line( i ).getHash() ) {
-				auto nl = mTokenizerLines.extract( lineIt );
-				nl.key() = i;
-				mTokenizerLines.insert( std::move( nl ) );
-			}
-		}
-	} else if ( numLines < 0 ) {
-		for ( Int64 i = fromLine; i < linesCount; i++ ) {
-			auto lineIt = mTokenizerLines.find( i - numLines );
-			if ( lineIt != mTokenizerLines.end() &&
-				 lineIt->second.hash == mDoc->line( i ).getHash() ) {
-				auto nl = mTokenizerLines.extract( lineIt );
-				nl.key() = i;
-				mTokenizerLines[i] = std::move( nl.mapped() );
-			}
-		}
-	}
-}
-
 void LSPDocumentClient::highlight() {
 	if ( mShutdown )
 		return;
@@ -275,6 +250,8 @@ void LSPDocumentClient::highlight() {
 	std::unordered_map<size_t, TokenizedLine> tokenizerLines;
 	Int64 lastLine = 0;
 	TokenizedLine* lastLinePtr = nullptr;
+	Time diff;
+
 	for ( size_t i = 0; i < data.size(); i += 5 ) {
 		if ( mShutdown )
 			return;
@@ -298,28 +275,28 @@ void LSPDocumentClient::highlight() {
 		line.hash = mDoc->line( currentLine ).getHash();
 		line.updateSignature();
 
-		if ( lastLine != currentLine && nullptr != lastLinePtr ) {
-			auto lastLineTokIt = mTokenizerLines.find( lastLine );
-			if ( lastLineTokIt != mTokenizerLines.end() &&
-				 lastLinePtr->signature == lastLineTokIt->second.signature ) {
-				tokenizerLines.erase( lastLine );
-			}
+		auto curSignature = mDoc->getHighlighter()->getTokenizedLineSignature( lastLine );
+		if ( lastLinePtr && lastLinePtr->signature == curSignature ) {
+			tokenizerLines.erase( lastLine );
 		}
 
 		lastLine = currentLine;
 		lastLinePtr = &line;
 	}
 
+	diff = clock.getElapsedTime();
+
 	for ( auto& tline : tokenizerLines ) {
 		if ( mShutdown )
 			return;
 
 		mDoc->getHighlighter()->mergeLine( tline.first, tline.second );
-
-		mTokenizerLines[tline.first] = std::move( tline.second );
 	}
-	Log::debug( "LSPDocumentClient::highlight took: %.2f ms",
-				clock.getElapsedTime().asMilliseconds() );
+
+	Log::debug( "LSPDocumentClient::highlight took: %.2f ms. Diff analysis took: %.2f ms. Updated "
+				"%lld elements",
+				clock.getElapsedTime().asMilliseconds(), diff.asMilliseconds(),
+				tokenizerLines.size() );
 }
 
 void LSPDocumentClient::notifyOpen() {
