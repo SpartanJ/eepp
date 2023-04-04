@@ -11,8 +11,9 @@ namespace EE { namespace Graphics {
 class EE_API Glyph {
   public:
 	Float advance{ 0 }; ///< Offset to move horizontally to the next character
-	Rectf bounds;	   ///< Bounding rectangle of the glyph, in coordinates relative to the baseline
-	Rect textureRect;  ///< Texture coordinates of the glyph inside the font's texture
+	Rectf bounds;	  ///< Bounding rectangle of the glyph, in coordinates relative to the baseline
+	Rect textureRect; ///< Texture coordinates of the glyph inside the font's texture
+	Sizef size;
 	int lsbDelta{ 0 }; //!< Left offset after forced autohint. Internally used by getKerning()
 	int rsbDelta{ 0 }; //!< Right offset after forced autohint. Internally used by getKerning()
 };
@@ -32,6 +33,10 @@ enum FontVerticalAlign {
 	TEXT_ALIGN_MIDDLE = ( 2 << 2 ),
 	TEXT_VALIGN_MASK = ( 3 << 2 )
 };
+
+enum class FontHinting { None, Slight, Full };
+
+enum class FontAntialiasing { None, Grayscale, Subpixel };
 
 /** @brief Font interface class. */
 class EE_API Font {

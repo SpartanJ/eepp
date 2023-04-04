@@ -5,16 +5,17 @@
 
 namespace EE { namespace Graphics {
 
-GlyphDrawable* GlyphDrawable::New( Texture* texture, const Rect& srcRect,
+GlyphDrawable* GlyphDrawable::New( Texture* texture, const Rect& srcRect, const Sizef& destSize,
 								   const std::string& resourceName ) {
-	return eeNew( GlyphDrawable, ( texture, srcRect, resourceName ) );
+	return eeNew( GlyphDrawable, ( texture, srcRect, destSize, resourceName ) );
 }
 
-GlyphDrawable::GlyphDrawable( Texture* texture, const Rect& srcRect,
+GlyphDrawable::GlyphDrawable( Texture* texture, const Rect& srcRect, const Sizef& destSize,
 							  const std::string& resourceName ) :
 	DrawableResource( Drawable::GLYPH, resourceName ),
 	mTexture( texture ),
-	mSrcRect( srcRect.asFloat() ) {
+	mSrcRect( srcRect.asFloat() ),
+	mDestSize( destSize ) {
 	mPixelDensity = PixelDensity::getPixelDensity();
 }
 
@@ -23,7 +24,8 @@ void GlyphDrawable::draw() {
 }
 
 void GlyphDrawable::draw( const Vector2f& position ) {
-	draw( position, Sizef( mSrcRect.Right, mSrcRect.Bottom ) );
+	draw( position,
+		  mDestSize != Sizef::Zero ? mDestSize : Sizef( mSrcRect.Right, mSrcRect.Bottom ) );
 }
 
 void GlyphDrawable::draw( const Vector2f& position, const Sizef& size ) {
@@ -58,9 +60,9 @@ void GlyphDrawable::drawIntoVertexBuffer( VertexBuffer* vbo, const Vector2u& gri
 						   Rectf( mSrcRect.Left, mSrcRect.Top, mSrcRect.Left + mSrcRect.Right,
 								  mSrcRect.Top + mSrcRect.Bottom ),
 						   textureLevel );
-	Sizef size( mSrcRect.Right, mSrcRect.Bottom );
+	Sizef size( mDestSize != Sizef::Zero ? mDestSize : Sizef( mSrcRect.Right, mSrcRect.Bottom ) );
 	if ( mDrawMode == DrawMode::Image ) {
-		vbo->setQuad( gridPos, pos, Sizef( mSrcRect.Right, mSrcRect.Bottom ), mColor );
+		vbo->setQuad( gridPos, pos, size, mColor );
 	} else if ( mDrawMode == DrawMode::TextItalic ) {
 		Float x = pos.x + mGlyphOffset.x;
 		Float y = pos.y + mGlyphOffset.y;
@@ -82,10 +84,14 @@ Texture* GlyphDrawable::getTexture() {
 }
 
 Sizef GlyphDrawable::getSize() {
+	if ( mDestSize != Sizef::Zero )
+		return Sizef( mDestSize.getWidth() / mPixelDensity, mDestSize.getHeight() / mPixelDensity );
 	return Sizef( mSrcRect.Right / mPixelDensity, mSrcRect.Bottom / mPixelDensity );
 }
 
 Sizef GlyphDrawable::getPixelsSize() {
+	if ( mDestSize != Sizef::Zero )
+		return mDestSize;
 	return Sizef( mSrcRect.Right, mSrcRect.Bottom );
 }
 

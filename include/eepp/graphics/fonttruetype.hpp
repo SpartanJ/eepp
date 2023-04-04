@@ -94,6 +94,14 @@ class EE_API FontTrueType : public Font {
 
 	void setEnableDynamicMonospace( bool enableDynamicMonospace );
 
+	FontHinting getHinting() const;
+
+	void setHinting( FontHinting hinting );
+
+	FontAntialiasing getAntialiasing() const;
+
+	void setAntialiasing( FontAntialiasing antialiasing );
+
   protected:
 	explicit FontTrueType( const std::string& FontName );
 
@@ -170,6 +178,8 @@ class EE_API FontTrueType : public Font {
 	bool mEnableDynamicMonospace{ false };
 	mutable std::unordered_map<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable std::unordered_map<Uint32, Uint32> mCodePointIndexCache;
+	FontHinting mHinting{ FontHinting::Full };
+	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 
 	void updateFontInternalId();
 };

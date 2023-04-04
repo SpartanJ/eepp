@@ -140,8 +140,8 @@ bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, 
 
 	img.createMaskFromColor( Color::Fuchsia, 0 );
 
-	Texture* texture = TextureFactory::instance()->loadFromPixels( img.getPixelsPtr(), img.getWidth(),
-															   img.getHeight(), img.getChannels() );
+	Texture* texture = TextureFactory::instance()->loadFromPixels(
+		img.getPixelsPtr(), img.getWidth(), img.getHeight(), img.getChannels() );
 	mPages[mFontSize].texture = texture;
 	if ( NULL != texture ) {
 		texture->setFilter( Texture::Filter::Nearest );
@@ -188,7 +188,7 @@ GlyphDrawable* FontSprite::getGlyphDrawable( Uint32 codePoint, unsigned int char
 		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness );
 		auto& page = mPages[characterSize];
 		GlyphDrawable* region = GlyphDrawable::New(
-			page.texture, glyph.textureRect,
+			page.texture, glyph.textureRect, glyph.bounds.getSize(),
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
 		drawables[codePoint] = region;
 		return region;
@@ -209,6 +209,7 @@ Glyph FontSprite::loadGlyph( Uint32 codePoint, unsigned int characterSize ) cons
 		glyph.textureRect = oriGlyph.textureRect;
 		glyph.bounds = oriGlyph.bounds * scale;
 		glyph.advance = oriGlyph.advance * scale;
+		glyph.size = oriGlyph.textureRect.getSize().asFloat() * scale;
 	}
 
 	return glyph;

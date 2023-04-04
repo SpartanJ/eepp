@@ -37,4 +37,20 @@ void FontManager::setFallbackFont( Font* fallbackFont ) {
 	mFallbackFont = fallbackFont;
 }
 
+FontHinting FontManager::getHinting() const {
+	return mHinting;
+}
+
+void FontManager::setHinting( FontHinting hinting ) {
+	mHinting = hinting;
+}
+
+FontAntialiasing FontManager::getAntialiasing() const {
+	return mAntialiasing;
+}
+
+void FontManager::setAntialiasing( FontAntialiasing antialiasing ) {
+	mAntialiasing = antialiasing;
+}
+
 }} // namespace EE::Graphics

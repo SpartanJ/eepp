@@ -7,6 +7,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 
+#include <freetype/ftlcdfil.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
@@ -76,7 +77,9 @@ FontTrueType::FontTrueType( const std::string& FontName ) :
 	mStroker( NULL ),
 	mRefCount( NULL ),
 	mInfo(),
-	mBoldAdvanceSameAsRegular( false ) {}
+	mBoldAdvanceSameAsRegular( false ),
+	mHinting( FontManager::instance()->getHinting() ),
+	mAntialiasing( FontManager::instance()->getAntialiasing() ) {}
 
 FontTrueType::~FontTrueType() {
 	cleanup();
@@ -523,10 +526,11 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 	} else {
 		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness, maxWidth );
 		GlyphDrawable* region = GlyphDrawable::New(
-			page.texture, glyph.textureRect,
+			page.texture, glyph.textureRect, glyph.size,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
 		region->setGlyphOffset( { glyph.bounds.Left - outlineThickness,
 								  characterSize + glyph.bounds.Top - outlineThickness } );
+
 		drawables[key] = region;
 		return region;
 	}
@@ -705,6 +709,47 @@ void FontTrueType::cleanup() {
 	std::vector<Uint8>().swap( mPixelBuffer );
 }
 
+static int fontSetLoadOptions( FontAntialiasing antialiasing, FontHinting hinting ) {
+	int load_target =
+		antialiasing == FontAntialiasing::None
+			? FT_LOAD_TARGET_MONO
+			: ( hinting == FontHinting::Slight ? FT_LOAD_TARGET_LIGHT : FT_LOAD_TARGET_NORMAL );
+	int hint = hinting == FontHinting::None ? FT_LOAD_NO_HINTING : FT_LOAD_FORCE_AUTOHINT;
+	return load_target | hint;
+}
+
+static constexpr FT_Render_Mode
+fontSetRenderOptions( FT_Library library, FontAntialiasing antialiasing, FontHinting hinting ) {
+	if ( antialiasing == FontAntialiasing::None )
+		return FT_RENDER_MODE_MONO;
+	if ( antialiasing == FontAntialiasing::Subpixel ) {
+		unsigned char weights[] = { 0x10, 0x40, 0x70, 0x40, 0x10 };
+		switch ( hinting ) {
+			case FontHinting::None:
+				FT_Library_SetLcdFilter( library, FT_LCD_FILTER_NONE );
+				break;
+			case FontHinting::Slight:
+			case FontHinting::Full:
+				FT_Library_SetLcdFilterWeights( library, weights );
+				break;
+		}
+		return FT_RENDER_MODE_LCD;
+	} else {
+		switch ( hinting ) {
+			case FontHinting::None:
+				return FT_RENDER_MODE_NORMAL;
+				break;
+			case FontHinting::Slight:
+				return FT_RENDER_MODE_LIGHT;
+				break;
+			case FontHinting::Full:
+				return FT_RENDER_MODE_LIGHT;
+				break;
+		}
+	}
+	return FT_RENDER_MODE_NORMAL;
+}
+
 Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bold,
 							   Float outlineThickness, Page& page, const Float& maxWidth ) const {
 	// The glyph to return
@@ -728,8 +773,12 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 
 	FT_Error err = 0;
 
+	auto loadOptions = fontSetLoadOptions( mAntialiasing, mHinting );
+	auto renderOptions =
+		fontSetRenderOptions( static_cast<FT_Library>( mLibrary ), mAntialiasing, mHinting );
+
 	// Load the glyph corresponding to the code point
-	FT_Int32 flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_COLOR;
+	FT_Int32 flags = loadOptions | FT_LOAD_COLOR;
 	if ( outlineThickness != 0 && !mIsColorEmojiFont )
 		flags |= FT_LOAD_NO_BITMAP;
 	if ( ( err = FT_Load_Glyph( face, index, flags ) ) != 0 ) {
@@ -767,7 +816,7 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 	}
 
 	// Convert the glyph to a bitmap (i.e. rasterize it)
-	FT_Glyph_To_Bitmap( &glyphDesc, FT_RENDER_MODE_NORMAL, 0, 1 );
+	FT_Glyph_To_Bitmap( &glyphDesc, renderOptions, 0, 1 );
 	FT_Bitmap& bitmap = reinterpret_cast<FT_BitmapGlyph>( glyphDesc )->bitmap;
 
 	// Apply bold if necessary -- fallback technique using bitmap (lower quality)
@@ -794,6 +843,9 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 
 	int width = bitmap.width;
 	int height = bitmap.rows;
+
+	if ( mAntialiasing == FontAntialiasing::Subpixel && bitmap.pixel_mode == FT_PIXEL_MODE_LCD )
+		width /= 3;
 
 	if ( ( width > 0 ) && ( height > 0 ) ) {
 		// Leave a small padding around characters, so that filtering doesn't
@@ -867,7 +919,7 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 				pixels += bitmap.pitch;
 			}
 		} else if ( bitmap.pixel_mode == FT_PIXEL_MODE_BGRA ) {
-			Image source( (Uint8*)pixels, bitmap.width, bitmap.rows, 4 );
+			Image source( const_cast<Uint8*>( pixels ), bitmap.width, bitmap.rows, 4 );
 			Image dest( &mPixelBuffer[0], width, height, 4 );
 			source.avoidFreeImage( true );
 			dest.avoidFreeImage( true );
@@ -888,6 +940,19 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 				glyph.bounds.Bottom *= scale;
 				destWidth = dest.getWidth() + 2 * padding;
 				destHeight = dest.getHeight() + 2 * padding;
+			}
+		} else if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD ) {
+			for ( int y = padding; y < height - padding; ++y ) {
+				for ( int x = padding; x < width - padding; ++x ) {
+					const std::size_t index = ( x + y * width ) * 4;
+					const Uint8* px = &pixels[( x - padding ) * 3];
+					mPixelBuffer[index + 0] = px[0];
+					mPixelBuffer[index + 1] = px[1];
+					mPixelBuffer[index + 2] = px[2];
+					mPixelBuffer[index + 3] =
+						(Uint8)( ( (int)px[0] + (int)px[1] + (int)px[2] ) / 3.f );
+				}
+				pixels += bitmap.pitch;
 			}
 		} else {
 			if ( scale < 1.f ) {
@@ -947,6 +1012,8 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 		glyph.textureRect.Top += padding;
 		glyph.textureRect.Right -= 2 * padding;
 		glyph.textureRect.Bottom -= 2 * padding;
+
+		glyph.size = { (Float)glyph.textureRect.Right, (Float)glyph.textureRect.Bottom };
 
 		page.texture->update( pixelPtr, w, h, x, y );
 
@@ -1058,8 +1125,8 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 				if ( it == mClosestCharacterSize.end() ) {
 					Log::warning( "Failed to set bitmap font size to %d", characterSize );
 					Log::warning( "Available sizes are: " );
-					std::string str;
 					if ( face->num_fixed_sizes > 0 ) {
+						std::string str;
 						unsigned int selectedHeight = face->available_sizes[0].height;
 						int curDistance = eeabs( characterSize - selectedHeight );
 						for ( int i = 0; i < face->num_fixed_sizes; ++i ) {
@@ -1099,6 +1166,22 @@ FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;
+}
+
+FontAntialiasing FontTrueType::getAntialiasing() const {
+	return mAntialiasing;
+}
+
+void FontTrueType::setAntialiasing( FontAntialiasing antialiasing ) {
+	mAntialiasing = antialiasing;
+}
+
+FontHinting FontTrueType::getHinting() const {
+	return mHinting;
+}
+
+void FontTrueType::setHinting( FontHinting hinting ) {
+	mHinting = hinting;
 }
 
 bool FontTrueType::getEnableDynamicMonospace() const {
