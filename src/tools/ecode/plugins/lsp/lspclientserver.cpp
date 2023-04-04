@@ -1118,6 +1118,7 @@ LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String:
 	mManager( manager ), mId( id ), mLSP( lsp ), mRootPath( rootPath ) {}
 
 LSPClientServer::~LSPClientServer() {
+	shutdown();
 	eeSAFE_DELETE( mSocket );
 	Lock l( mClientsMutex );
 	for ( const auto& client : mClients )
@@ -2021,6 +2022,18 @@ void LSPClientServer::documentSemanticTokensFull( const URI& document, bool delt
 									if ( h )
 										h( id, parseSemanticTokensDelta( json ) );
 								} );
+}
+
+void LSPClientServer::shutdown() {
+	if ( mReady ) {
+		Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
+		mHandlers.clear();
+		sendAsync( newRequest( "shutdown" ) );
+		Sys::sleep( Milliseconds( 10 ) );
+		sendAsync( newRequest( "exit" ) );
+		Sys::sleep( Milliseconds( 50 ) );
+		mReady = false;
+	}
 }
 
 } // namespace ecode

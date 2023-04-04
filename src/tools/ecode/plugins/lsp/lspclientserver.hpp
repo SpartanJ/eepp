@@ -219,6 +219,8 @@ class LSPClientServer {
 
 	void removeDoc( TextDocument* doc );
 
+	void shutdown();
+
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;

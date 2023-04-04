@@ -43,7 +43,7 @@ bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) 
 		return true;
 	}
 	if ( !enable && plugin != nullptr ) {
-		eeSAFE_DELETE( plugin );
+		mThreadPool->run( [plugin]() { eeDelete( plugin ); } );
 		{
 			Lock l( mSubscribedPluginsMutex );
 			mSubscribedPlugins.erase( id );
