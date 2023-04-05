@@ -894,11 +894,20 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 		Uint8* current = pixelPtr;
 		Uint8* end = current + bufferSize;
 
-		while ( current != end ) {
-			( *current++ ) = 255;
-			( *current++ ) = 255;
-			( *current++ ) = 255;
-			( *current++ ) = 0;
+		if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD ) {
+			while ( current != end ) {
+				( *current++ ) = 0;
+				( *current++ ) = 0;
+				( *current++ ) = 0;
+				( *current++ ) = 0;
+			}
+		} else {
+			while ( current != end ) {
+				( *current++ ) = 255;
+				( *current++ ) = 255;
+				( *current++ ) = 255;
+				( *current++ ) = 0;
+			}
 		}
 
 		// Extract the glyph's pixels from the bitmap

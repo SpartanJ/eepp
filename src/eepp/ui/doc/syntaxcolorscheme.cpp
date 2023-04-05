@@ -43,6 +43,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				 { "comment", Color( "#cd8b00" ) },
 				 { "keyword", { Color( "#ff79c6" ), Color::Transparent, Text::Shadow } },
 				 { "keyword2", { Color( "#8be9fd" ), Color::Transparent, Text::Shadow } },
+				 { "keyword3", { Color( "#ffb86c" ), Color::Transparent, Text::Shadow } },
 				 { "number", Color( "#ffd24a" ) },
 				 { "literal", { Color( "#f1fa8c" ), Color::Transparent, Text::Shadow } },
 				 { "string", Color( "#ffcd8b" ) },
@@ -202,6 +203,8 @@ const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::st
 	auto it = mSyntaxColors.find( type );
 	if ( it != mSyntaxColors.end() )
 		return it->second;
+	else if ( type == "keyword3" )
+		return getSyntaxStyle( "symbol" );
 	else if ( type == "link" || type == "link_hover" )
 		return getSyntaxStyle( "function" );
 	else {

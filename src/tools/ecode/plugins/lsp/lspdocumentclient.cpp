@@ -176,6 +176,7 @@ static std::string semanticTokenTypeToSyntaxType( const std::string& type,
 		case SemanticTokenTypes::TypeParameter:
 			return "keyword2";
 		case SemanticTokenTypes::Parameter:
+			return "keyword3";
 		case SemanticTokenTypes::Variable:
 			return "symbol";
 		case SemanticTokenTypes::Property:
