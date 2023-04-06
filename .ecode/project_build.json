@@ -1,0 +1,48 @@
+{
+  "ecode-debug": {
+    "build": [
+      {
+        "args": "--with-mojoal --with-debug-symbols gmake",
+        "command": "premake4",
+        "working_dir": "${project_root}"
+      },
+      {
+        "args": "-j$(nproc) config=debug ecode",
+        "command": "make",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "clean": [
+      {
+        "args": "config=debug clean",
+        "command": "make",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "config": {
+      "clear_sys_env": false
+    },
+    "var": {
+      "build_dir": "${project_root}/make/linux"
+    },
+    "env": {
+      "SHELL": "fish"
+    },
+    "output_parser": {
+      "config": {
+      	"relative_file_paths": true
+      },
+      "error": [
+        {
+          "pattern": "([^:]*):(%d+):(%d+):%s?[%w%s]*error:%s?([^\n]*)",
+          "pattern_order": {
+            "col": 3,
+            "file": 1,
+            "line": 2,
+            "message": 4
+          }
+        }
+      ]
+    }
+  }
+}
