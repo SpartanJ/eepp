@@ -890,6 +890,10 @@ UIMenu* SettingsMenu::createWindowMenu() {
 					   mApp->getConfig().ui.showSidePanel, getKeybind( "switch-side-panel" ) )
 		->setId( "show-side-panel" );
 	mWindowMenu
+		->addCheckBox( i18n( "show_status_bar", "Show Status Bar" ),
+					   mApp->getConfig().ui.showSidePanel, getKeybind( "toggle-status-bar" ) )
+		->setId( "toggle-status-bar" );
+	mWindowMenu
 		->add( i18n( "move_panel_left", "Move panel to left..." ), findIcon( "layout-left" ),
 			   getKeybind( "layout-left" ) )
 		->setId( "move-panel-left" );

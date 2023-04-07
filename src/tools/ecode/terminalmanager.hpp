@@ -48,6 +48,8 @@ class TerminalManager {
 
 	void configureTerminalShell();
 
+	const std::string& getTerminalCurrentColorScheme() { return mTerminalCurrentColorScheme; }
+
   protected:
 	App* mApp;
 	std::string mTerminalColorSchemesPath;

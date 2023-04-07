@@ -22,6 +22,8 @@ class UniversalLocator {
 
 	void hideLocateBar();
 
+	void toggleLocateBar();
+
 	void showCommandPalette();
 
 	void goToLine();

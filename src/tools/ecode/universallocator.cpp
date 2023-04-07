@@ -123,6 +123,15 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 void UniversalLocator::hideLocateBar() {
 	mLocateBarLayout->setVisible( false );
 	mLocateTable->setVisible( false );
+	mApp->getStatusBar()->updateState();
+}
+
+void UniversalLocator::toggleLocateBar() {
+	if ( mLocateBarLayout->isVisible() ) {
+		mLocateBarLayout->execute( "close-locatebar" );
+	} else {
+		showLocateBar();
+	}
 }
 
 void UniversalLocator::updateFilesTable() {
@@ -379,6 +388,8 @@ void UniversalLocator::updateLocateBar() {
 void UniversalLocator::showBar() {
 	mApp->hideGlobalSearchBar();
 	mApp->hideSearchBar();
+	mApp->hideStatusTerminal();
+	mApp->hideStatusBuildOutput();
 
 	mLocateBarLayout->setVisible( true );
 	mLocateInput->setFocus();
@@ -418,6 +429,7 @@ void UniversalLocator::showLocateBar() {
 	}
 
 	updateLocateBar();
+	mApp->getStatusBar()->updateState();
 }
 
 void UniversalLocator::showCommandPalette() {
@@ -428,6 +440,7 @@ void UniversalLocator::showCommandPalette() {
 
 	updateCommandPaletteTable();
 	updateLocateBar();
+	mApp->getStatusBar()->updateState();
 }
 
 void UniversalLocator::showWorkspaceSymbol() {
@@ -438,6 +451,7 @@ void UniversalLocator::showWorkspaceSymbol() {
 
 	requestWorkspaceSymbol();
 	updateLocateBar();
+	mApp->getStatusBar()->updateState();
 }
 
 void UniversalLocator::showDocumentSymbol() {
@@ -448,6 +462,7 @@ void UniversalLocator::showDocumentSymbol() {
 
 	requestDocumentSymbol();
 	updateLocateBar();
+	mApp->getStatusBar()->updateState();
 }
 
 void UniversalLocator::onCodeEditorFocusChange( UICodeEditor* editor ) {

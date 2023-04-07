@@ -306,6 +306,8 @@ void GlobalSearchController::initGlobalSearchBar(
 void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 	mApp->hideLocateBar();
 	mApp->hideSearchBar();
+	mApp->hideStatusTerminal();
+	mApp->hideStatusBuildOutput();
 	bool wasReplaceTree = mGlobalSearchTreeReplace == mGlobalSearchTree;
 	mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
 	mGlobalSearchTreeSearch->setVisible( !searchReplace );
@@ -339,6 +341,7 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 		}
 	}
 	updateGlobalSearchBar();
+	mApp->getStatusBar()->updateState();
 }
 
 void GlobalSearchController::updateColorScheme( const SyntaxColorScheme& colorScheme ) {
@@ -400,6 +403,15 @@ void GlobalSearchController::hideGlobalSearchBar() {
 	auto* loader = mGlobalSearchTree->getParent()->find( "loader" );
 	if ( loader )
 		loader->setVisible( false );
+	mApp->getStatusBar()->updateState();
+}
+
+void GlobalSearchController::toggleGlobalSearchBar() {
+	if ( mGlobalSearchBarLayout->isVisible() ) {
+		mGlobalSearchBarLayout->execute( "close-global-searchbar" );
+	} else {
+		showGlobalSearch();
+	}
 }
 
 void GlobalSearchController::updateGlobalSearchBarResults(

@@ -8,8 +8,12 @@
 #include "globalsearchcontroller.hpp"
 #include "notificationcenter.hpp"
 #include "plugins/pluginmanager.hpp"
+#include "projectbuild.hpp"
 #include "projectdirectorytree.hpp"
+#include "statusbuildoutputcontroller.hpp"
+#include "statusterminalcontroller.hpp"
 #include "terminalmanager.hpp"
+#include "uistatusbar.hpp"
 #include "universallocator.hpp"
 #include <eepp/ee.hpp>
 #include <efsw/efsw.hpp>
@@ -57,8 +61,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void runCommand( const std::string& command );
 
-	void loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
-					 bool stdOutLogs, bool disableFileLogs );
+	void loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync, bool stdOutLogs,
+					 bool disableFileLogs );
 
 	void saveConfig();
 
@@ -175,6 +179,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void createNewTerminal();
 
+	UIStatusBar* getStatusBar() const { return mStatusBar; }
+
 	template <typename T> void registerUnlockedCommands( T& t ) {
 		t.setCommand( "keybindings", [&] { loadFileFromPath( mKeybindingsPath ); } );
 		t.setCommand( "debug-draw-boxes-toggle", [&] { debugDrawBoxesToggle(); } );
@@ -220,7 +226,13 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "console-toggle", [&] { consoleToggle(); } );
 		t.setCommand( "find-replace", [&] { showFindView(); } );
 		t.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
+		t.setCommand( "toggle-global-search",
+					  [&] { mGlobalSearchController->toggleGlobalSearchBar(); } );
+		t.setCommand( "toggle-status-build-output",
+					  [&] { mStatusBuildOutputController->toggle(); } );
+		t.setCommand( "toggle-status-terminal", [&] { mStatusTerminalController->toggle(); } );
 		t.setCommand( "open-locatebar", [&] { mUniversalLocator->showLocateBar(); } );
+		t.setCommand( "toggle-locatebar", [&] { mUniversalLocator->toggleLocateBar(); } );
 		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
 		t.setCommand( "open-workspace-symbol-search",
 					  [&] { mUniversalLocator->showWorkspaceSymbol(); } );
@@ -234,6 +246,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "ecode-source", [&] { ecodeSource(); } );
 		t.setCommand( "ui-scale-factor", [&] { setUIScaleFactor(); } );
 		t.setCommand( "show-side-panel", [&] { switchSidePanel(); } );
+		t.setCommand( "toggle-status-bar", [&] { switchStatusBar(); } );
 		t.setCommand( "editor-font-size", [&] { setEditorFontSize(); } );
 		t.setCommand( "terminal-font-size", [&] { setTerminalFontSize(); } );
 		t.setCommand( "ui-font-size", [&] { setUIFontSize(); } );
@@ -351,6 +364,20 @@ class App : public UICodeEditorSplitter::Client {
 
 	void createAndShowRecentFilesPopUpMenu( Node* recentFilesBut );
 
+	UISplitter* getMainSplitter() const;
+
+	StatusTerminalController* getStatusTerminalController() const;
+
+	void hideStatusTerminal();
+
+	void hideStatusBuildOutput();
+
+	StatusBuildOutputController* getStatusBuildOutputController() const;
+
+	void switchStatusBar();
+
+	void showStatusBar( bool show );
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -411,6 +438,9 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<DocSearchController> mDocSearchController;
 	std::unique_ptr<UniversalLocator> mUniversalLocator;
 	std::unique_ptr<NotificationCenter> mNotificationCenter;
+	std::unique_ptr<StatusTerminalController> mStatusTerminalController;
+	std::unique_ptr<StatusBuildOutputController> mStatusBuildOutputController;
+	std::unique_ptr<ProjectBuildManager> mProjectBuildManager;
 	std::string mLastFileFolder;
 	ColorSchemePreference mUIColorScheme;
 	std::unique_ptr<TerminalManager> mTerminalManager;
@@ -418,6 +448,8 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<SettingsMenu> mSettings;
 	std::string mFileToOpen;
 	UITheme* mTheme{ nullptr };
+	UIStatusBar* mStatusBar{ nullptr };
+	UISplitter* mMainSplitter{ nullptr };
 
 	void saveAllProcess();
 

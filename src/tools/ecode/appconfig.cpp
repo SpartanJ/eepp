@@ -72,6 +72,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
 	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ecode.png" );
 	windowState.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
+	windowState.statusBarPartition = iniState.getValue( "window", "status_bar_partition", "85%" );
 	windowState.displayIndex = iniState.getValueI( "window", "display_index", 0 );
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
@@ -87,6 +88,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
 	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
+	ui.showStatusBar = ini.getValueB( "ui", "show_status_bar", true );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
@@ -168,8 +170,9 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 
 void AppConfig::save( const std::vector<std::string>& recentFiles,
 					  const std::vector<std::string>& recentFolders,
-					  const std::string& panelPartition, EE::Window::Window* win,
-					  const std::string& colorSchemeName, const SearchBarConfig& searchBarConfig,
+					  const std::string& panelPartition, const std::string& statusBarPartition,
+					  EE::Window::Window* win, const std::string& colorSchemeName,
+					  const SearchBarConfig& searchBarConfig,
 					  const GlobalSearchBarConfig& globalSearchBarConfig,
 					  PluginManager* pluginManager ) {
 
@@ -194,6 +197,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValueB( "window", "maximized", windowState.maximized );
 	iniState.setValueF( "window", "pixeldensity", windowState.pixelDensity );
 	iniState.setValue( "window", "panel_partition", panelPartition );
+	iniState.setValue( "window", "status_bar_partition", statusBarPartition );
 	iniState.setValueI( "window", "display_index", windowState.displayIndex );
 	iniState.setValueI( "window", "x", windowState.position.x );
 	iniState.setValueI( "window", "y", windowState.position.y );
@@ -212,6 +216,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );
 	ini.setValue( "ui", "panel_font_size", ui.panelFontSize.toString() );
 	ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
+	ini.setValueB( "ui", "show_status_bar", ui.showStatusBar );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );

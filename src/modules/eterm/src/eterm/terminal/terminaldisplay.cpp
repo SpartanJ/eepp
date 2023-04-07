@@ -1444,6 +1444,7 @@ void TerminalDisplay::onSizeChange() {
 			mFrameBuffer->resize( fboSize.getWidth(), fboSize.getHeight() );
 		}
 	}
+	invalidateLines();
 }
 
 void TerminalDisplay::onProcessExit( int exitCode ) {

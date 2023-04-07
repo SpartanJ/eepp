@@ -161,6 +161,8 @@ class ProjectBuildManager {
   public:
 	ProjectBuildManager( const std::string& projectRoot, std::shared_ptr<ThreadPool> pool );
 
+	~ProjectBuildManager();
+
 	ProjectBuildCommandsRes generateBuildCommands(
 		const std::string& buildName,
 		std::function<String( const std::string& /*key*/, const String& /*defaultvalue*/ )> i18n,
@@ -183,6 +185,7 @@ class ProjectBuildManager {
 	std::shared_ptr<ThreadPool> mThreadPool;
 	bool mLoaded{ false };
 	bool mLoading{ false };
+	bool mShuttingDown{ false };
 
 	bool load();
 };

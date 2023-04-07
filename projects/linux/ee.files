@@ -1206,10 +1206,16 @@
 ../../src/tools/ecode/scopedop.hpp
 ../../src/tools/ecode/settingsmenu.cpp
 ../../src/tools/ecode/settingsmenu.hpp
+../../src/tools/ecode/statusbuildoutputcontroller.cpp
+../../src/tools/ecode/statusbuildoutputcontroller.hpp
+../../src/tools/ecode/statusterminalcontroller.cpp
+../../src/tools/ecode/statusterminalcontroller.hpp
 ../../src/tools/ecode/terminalmanager.cpp
 ../../src/tools/ecode/terminalmanager.hpp
 ../../src/tools/ecode/uicodeeditorsplitter.cpp
 ../../src/tools/ecode/uicodeeditorsplitter.hpp
+../../src/tools/ecode/uistatusbar.cpp
+../../src/tools/ecode/uistatusbar.hpp
 ../../src/tools/ecode/uitreeviewglobalsearch.cpp
 ../../src/tools/ecode/uitreeviewglobalsearch.hpp
 ../../src/tools/ecode/uiwelcomescreen.cpp

@@ -53,6 +53,12 @@ ProjectBuildManager::ProjectBuildManager( const std::string& projectRoot,
 	} else {
 		load();
 	}
+}
+
+ProjectBuildManager::~ProjectBuildManager() {
+	mShuttingDown = true;
+	while ( mLoading )
+		Sys::sleep( Milliseconds( 0.1f ) );
 };
 
 static bool isValidType( const std::string& typeStr ) {

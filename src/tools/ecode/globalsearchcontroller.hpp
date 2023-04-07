@@ -39,6 +39,8 @@ class GlobalSearchController {
 
 	void hideGlobalSearchBar();
 
+	void toggleGlobalSearchBar();
+
 	void updateGlobalSearchBarResults( const std::string& search,
 									   std::shared_ptr<ProjectSearch::ResultModel> model,
 									   bool searchReplace, bool isEscaped );

@@ -493,7 +493,7 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 void App::saveConfig() {
 	mConfig.save( mRecentFiles, mRecentFolders,
 				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
-				  mWindow,
+				  mMainSplitter ? mMainSplitter->getSplitPartition().toString() : "85%", mWindow,
 				  mSplitter ? mSplitter->getCurrentColorSchemeName() : mConfig.editor.colorScheme,
 				  mDocSearchController->getSearchBarConfig(),
 				  mGlobalSearchController->getGlobalSearchBarConfig(), mPluginManager.get() );
@@ -742,6 +742,12 @@ void App::showSidePanel( bool show ) {
 	}
 }
 
+void App::showStatusBar( bool show ) {
+	if ( show == mStatusBar->isVisible() )
+		return;
+	mStatusBar->setVisible( show );
+}
+
 void App::switchSidePanel() {
 	mConfig.ui.showSidePanel = !mConfig.ui.showSidePanel;
 	mSettings->getWindowMenu()
@@ -749,6 +755,15 @@ void App::switchSidePanel() {
 		->asType<UIMenuCheckBox>()
 		->setActive( mConfig.ui.showSidePanel );
 	showSidePanel( mConfig.ui.showSidePanel );
+}
+
+void App::switchStatusBar() {
+	mConfig.ui.showStatusBar = !mConfig.ui.showStatusBar;
+	mSettings->getWindowMenu()
+		->getItemId( "toggle-status-bar" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mConfig.ui.showStatusBar );
+	showStatusBar( mConfig.ui.showStatusBar );
 }
 
 void App::panelPosition( const PanelPosition& panelPosition ) {
@@ -1678,6 +1693,10 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_K, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-bottom" },
 		{ { KEY_S, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-swap" },
 		{ { KEY_T, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "reopen-closed-tab" },
+		{ { KEY_1, KEYMOD_LALT }, "toggle-locatebar" },
+		{ { KEY_2, KEYMOD_LALT }, "toggle-global-search" },
+		{ { KEY_3, KEYMOD_LALT }, "toggle-status-build-output" },
+		{ { KEY_4, KEYMOD_LALT }, "toggle-status-terminal" },
 	};
 }
 
@@ -1685,7 +1704,12 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 // keybindind
 std::map<std::string, std::string> App::getMigrateKeybindings() {
 	return {
-		{ "fullscreen-toggle", "alt+return" },
+		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
+		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
+		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
+		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
+		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
+		{ "switch-to-last-tab", "alt+0" },
 	};
 }
 
@@ -1701,8 +1725,13 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "open-locatebar",
 			 "open-command-palette",
 			 "open-global-search",
+			 "toggle-locatebar",
+			 "toggle-global-search",
+			 "toggle-status-build-output",
+			 "toggle-status-terminal",
 			 "menu-toggle",
 			 "switch-side-panel",
+			 "toggle-status-bar",
 			 "download-file-web",
 			 "create-new-terminal",
 			 "terminal-split-left",
@@ -1745,6 +1774,7 @@ void App::closeEditors() {
 	mRecentClosedFiles = {};
 
 	mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
+	mStatusBar->setVisible( mConfig.ui.showStatusBar );
 
 	mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
 	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
@@ -1783,6 +1813,9 @@ void App::closeFolder() {
 	if ( mCurrentProject.empty() )
 		return;
 
+	if ( mProjectBuildManager )
+		mProjectBuildManager.reset();
+
 	if ( mSplitter->isAnyEditorDirty() ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
@@ -1800,6 +1833,7 @@ void App::closeFolder() {
 	mFileSystemModel->setRootPath( "" );
 	updateOpenRecentFolderBtn();
 	UIWelcomeScreen::createWelcomeScreen( this );
+	mStatusBar->setVisible( false );
 }
 
 void App::createDocAlert( UICodeEditor* editor ) {
@@ -1934,6 +1968,18 @@ void App::hideSearchBar() {
 
 void App::hideLocateBar() {
 	mUniversalLocator->hideLocateBar();
+}
+
+void App::hideStatusTerminal() {
+	mStatusTerminalController->hide();
+}
+
+void App::hideStatusBuildOutput() {
+	mStatusBuildOutputController->hide();
+}
+
+StatusBuildOutputController* App::getStatusBuildOutputController() const {
+	return mStatusBuildOutputController.get();
 }
 
 bool App::isDirTreeReady() const {
@@ -2475,6 +2521,14 @@ void App::createAndShowRecentFilesPopUpMenu( Node* recentFilesBut ) {
 	menu->show();
 }
 
+UISplitter* App::getMainSplitter() const {
+	return mMainSplitter;
+}
+
+StatusTerminalController* App::getStatusTerminalController() const {
+	return mStatusTerminalController.get();
+}
+
 void App::updateOpenRecentFolderBtn() {
 	if ( mProjectViewEmptyCont ) {
 		Node* recentFolderBtn = mProjectViewEmptyCont->find( "open_recent_folder" );
@@ -2637,6 +2691,7 @@ void App::initProjectTreeView( std::string path ) {
 		updateOpenRecentFolderBtn();
 
 		UIWelcomeScreen::createWelcomeScreen( this );
+		mStatusBar->setVisible( false );
 	}
 
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
@@ -2786,6 +2841,7 @@ void App::loadFolder( const std::string& path ) {
 		closeEditors();
 	} else {
 		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
+		mStatusBar->setVisible( mConfig.ui.showStatusBar );
 	}
 
 	mProjectViewEmptyCont->setVisible( false );
@@ -2795,6 +2851,8 @@ void App::loadFolder( const std::string& path ) {
 
 	mCurrentProject = rpath;
 	mPluginManager->setWorkspaceFolder( rpath );
+
+	mProjectBuildManager = std::make_unique<ProjectBuildManager>( rpath, mThreadPool );
 
 	loadDirTree( rpath );
 
@@ -2929,9 +2987,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			   ecode::Version::getCodename().c_str() );
 
 	if ( mWindow->isOpen() ) {
-	// Only verify GPU driver availability on Windows.
-	// macOS will have at least a fallback renderer
-	// Linux will have at least Mesa drivers with LLVM Pipe
+		// Only verify GPU driver availability on Windows.
+		// macOS will have at least a fallback renderer
+		// Linux will have at least Mesa drivers with LLVM Pipe
 #if EE_PLATFORM == EE_PLATFORM_WIN
 		if ( !GLi->shadersSupported() ) {
 			mWindow->showMessageBox(
@@ -3160,6 +3218,24 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			margin-left: 8dp;
 			margin-right: 8dp;
 		}
+		#status_bar {
+			background-color: var(--list-back);
+			padding-top: 1dp;
+			padding-bottom: 1dp;
+		}
+		#status_bar > TextView {
+			padding-left: 4dp;
+			padding-right: 5dp;
+			background-color: var(--list-back);
+			border-right-color: var(--tab-line);
+			font-size: 10dp;
+		}
+		#status_bar > TextView:hover {
+			background-color: var(--item-hover);
+		}
+		#status_bar > TextView.selected {
+			background-color: var(--primary);
+		}
 		</style>
 		<MainLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
@@ -3175,20 +3251,22 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				<Tab text='@string("project", "Project")' owns="project_view_cont" text-as-fallback="true" icon="icon(folder-open, 12dp)" />
 			</TabWidget>
 			<vbox>
-				<RelativeLayout layout_width="match_parent" layout_height="0" layout_weight="1">
-					<vbox id="code_container" layout_width="match_parent" layout_height="match_parent"></vbox>
-					<hbox id="doc_info" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="bottom|right" enabled="false">
-						<TextView id="doc_info_text" layout_width="wrap_content" layout_height="wrap_content" />
-					</hbox>
-					<RelativeLayout id="image_container" layout_width="match_parent" layout_height="match_parent" visible="false" enabled="false">
-						<Image layout_width="match_parent" layout_height="match_parent" scaleType="fit_inside" gravity="center" enabled="false" layout_gravity="center" />
-						<TextView id="image_close" layout_width="wrap_content" layout_height="wrap_content" text="&#xeb99;" layout_gravity="top|right" enabled="false" />
-						<Loader id="image_loader" layout_width="64dp" layout_height="64dp" outline-thickness="6dp" layout_gravity="center" visible="false" />
+				<Splitter id="main_splitter" layout_width="match_parent" layout_height="0" layout_weight="1" orientation="vertical">
+					<RelativeLayout>
+						<vbox id="code_container" layout_width="match_parent" layout_height="match_parent"></vbox>
+						<hbox id="doc_info" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="bottom|right" enabled="false">
+							<TextView id="doc_info_text" layout_width="wrap_content" layout_height="wrap_content" />
+						</hbox>
+						<RelativeLayout id="image_container" layout_width="match_parent" layout_height="match_parent" visible="false" enabled="false">
+							<Image layout_width="match_parent" layout_height="match_parent" scaleType="fit_inside" gravity="center" enabled="false" layout_gravity="center" />
+							<TextView id="image_close" layout_width="wrap_content" layout_height="wrap_content" text="&#xeb99;" layout_gravity="top|right" enabled="false" />
+							<Loader id="image_loader" layout_width="64dp" layout_height="64dp" outline-thickness="6dp" layout_gravity="center" visible="false" />
+						</RelativeLayout>
+						<vbox id="notification_center" layout_width="256dp" layout_height="wrap_content"
+							  layout_gravity="right|bottom" margin-right="22dp" margin-bottom="56dp">
+						</vbox>
 					</RelativeLayout>
-					<vbox id="notification_center" layout_width="256dp" layout_height="wrap_content"
-						  layout_gravity="right|bottom" margin-right="22dp" margin-bottom="56dp">
-					</vbox>
-				</RelativeLayout>
+				</Splitter>
 				<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
 					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
 						<TextView layout_width="wrap_content" layout_height="18dp" text='@string("find_text", "Find:")' margin-bottom="2dp" />
@@ -3248,6 +3326,13 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 						<Widget id="global_searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" margin-left="4dp" margin-top="4dp" />
 					</hbox>
 				</globalsearchbar>
+				<statusbar layout_width="match_parent" layout_height="wrap_content" id="status_bar">
+					<TextView class="status_but" id="status_locate_bar" text="1 Locate" />
+					<TextView class="status_but" id="status_global_search_bar" text="2 Search" />
+					<TextView class="status_but" id="status_build_output" text="3 Build Output" />
+					<TextView class="status_but" id="status_terminal" text="4 Terminal" />
+					<View layout_width="0" layout_weight="1" layout_height="match_parent" />
+				</statusbar>
 			</vbox>
 		</Splitter>
 		<TextView id="settings" layout_width="wrap_content" layout_height="wrap_content" text="&#xf0e9;" layout_gravity="top|right" />
@@ -3402,25 +3487,46 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		if ( codIconFont && codIconFont->loaded() ) {
 			std::unordered_map<std::string, Uint32> codIcons = {
-				{ "symbol-text", 0xea93 },			 { "symbol-method", 0xea8c },
-				{ "symbol-function", 0xea8c },		 { "symbol-constructor", 0xea8c },
-				{ "symbol-field", 0xeb5f },			 { "symbol-variable", 0xea88 },
-				{ "symbol-class", 0xeb5b },			 { "symbol-interface", 0xeb61 },
-				{ "symbol-module", 0xea8b },		 { "symbol-property", 0xeb65 },
-				{ "symbol-unit", 0xea96 },			 { "symbol-value", 0xea95 },
-				{ "symbol-enum", 0xea95 },			 { "symbol-keyword", 0xeb62 },
-				{ "symbol-snippet", 0xeb66 },		 { "symbol-color", 0xeb5c },
-				{ "symbol-file", 0xeb60 },			 { "symbol-reference", 0xea94 },
-				{ "symbol-folder", 0xea83 },		 { "symbol-enum-member", 0xeb5e },
-				{ "symbol-constant", 0xeb5d },		 { "symbol-struct", 0xea91 },
-				{ "symbol-event", 0xea86 },			 { "symbol-operator", 0xeb64 },
-				{ "symbol-type-parameter", 0xea92 }, { "expand-all", 0xeb95 },
-				{ "symbol-namespace", 0xea8b },		 { "symbol-package", 0xea8b },
-				{ "symbol-string", 0xeb8d },		 { "symbol-number", 0xea90 },
-				{ "symbol-boolean", 0xea8f },		 { "symbol-array", 0xea8a },
-				{ "symbol-object", 0xea8b },		 { "symbol-key", 0xea93 },
-				{ "symbol-null", 0xea8f },			 { "collapse-all", 0xeac5 },
-				{ "chevron-right", 0xeab6 },		 { "lightbulb-autofix", 0xeb13 } };
+				{ "symbol-text", 0xea93 },
+				{ "symbol-method", 0xea8c },
+				{ "symbol-function", 0xea8c },
+				{ "symbol-constructor", 0xea8c },
+				{ "symbol-field", 0xeb5f },
+				{ "symbol-variable", 0xea88 },
+				{ "symbol-class", 0xeb5b },
+				{ "symbol-interface", 0xeb61 },
+				{ "symbol-module", 0xea8b },
+				{ "symbol-property", 0xeb65 },
+				{ "symbol-unit", 0xea96 },
+				{ "symbol-value", 0xea95 },
+				{ "symbol-enum", 0xea95 },
+				{ "symbol-keyword", 0xeb62 },
+				{ "symbol-snippet", 0xeb66 },
+				{ "symbol-color", 0xeb5c },
+				{ "symbol-file", 0xeb60 },
+				{ "symbol-reference", 0xea94 },
+				{ "symbol-folder", 0xea83 },
+				{ "symbol-enum-member", 0xeb5e },
+				{ "symbol-constant", 0xeb5d },
+				{ "symbol-struct", 0xea91 },
+				{ "symbol-event", 0xea86 },
+				{ "symbol-operator", 0xeb64 },
+				{ "symbol-type-parameter", 0xea92 },
+				{ "expand-all", 0xeb95 },
+				{ "symbol-namespace", 0xea8b },
+				{ "symbol-package", 0xea8b },
+				{ "symbol-string", 0xeb8d },
+				{ "symbol-number", 0xea90 },
+				{ "symbol-boolean", 0xea8f },
+				{ "symbol-array", 0xea8a },
+				{ "symbol-object", 0xea8b },
+				{ "symbol-key", 0xea93 },
+				{ "symbol-null", 0xea8f },
+				{ "collapse-all", 0xeac5 },
+				{ "chevron-right", 0xeab6 },
+				{ "lightbulb-autofix", 0xeb13 },
+				{ "layout-sidebar-left-off", 0xec02 },
+				{ "layout-sidebar-left", 0xebf3 } };
 
 			for ( const auto& icon : codIcons )
 				iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
@@ -3451,6 +3557,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );
 		UIWidgetCreator::registerWidget( "globalsearchbar", UIGlobalSearchBar::New );
 		UIWidgetCreator::registerWidget( "mainlayout", UIMainLayout::New );
+		UIWidgetCreator::registerWidget( "statusbar", UIStatusBar::New );
 		mUISceneNode->loadLayoutFromString( baseUI );
 		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );
@@ -3501,6 +3608,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		Log::info( "Base UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
+		mMainSplitter = mUISceneNode->find<UISplitter>( "main_splitter" );
+		mMainSplitter->setSplitPartition(
+			StyleSheetLength( mConfig.windowState.statusBarPartition ) );
+		mStatusBar = mUISceneNode->find<UIStatusBar>( "status_bar" );
+		mStatusBar->setApp( this );
+
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();
 		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel );
@@ -3525,6 +3638,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mUniversalLocator = std::make_unique<UniversalLocator>( mSplitter, mUISceneNode, this );
 		mUniversalLocator->initLocateBar( mUISceneNode->find<UILocateBar>( "locate_bar" ),
 										  mUISceneNode->find<UITextInput>( "locate_find" ) );
+
+		mStatusTerminalController =
+			std::make_unique<StatusTerminalController>( mMainSplitter, mUISceneNode, this );
+
+		mStatusBuildOutputController =
+			std::make_unique<StatusBuildOutputController>( mMainSplitter, mUISceneNode, this );
 
 		initImageView();
 
@@ -3679,6 +3798,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ "convert-lang-output" }, "" );
 	args::Flag disableFileLogs( parser, "disable-file-logs", "Disables writing logs to a log file",
 								{ "disable-file-logs" } );
+	args::ValueFlag<std::string> testBuild( parser, "test-build-path", "Test project build",
+											{ "test-build-path" } );
 
 	std::vector<std::string> args;
 	try {
@@ -3698,6 +3819,23 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
 		return EXIT_FAILURE;
+	}
+
+	if ( !testBuild.Get().empty() ) {
+		ProjectBuildManager bm( testBuild.Get(), {} );
+		auto i18n = []( const std::string&, const String& def ) -> String { return def; };
+		auto res = bm.generateBuildCommands( "ecode", i18n, "debug" );
+		if ( res.isValid() ) {
+			for ( const auto& cmd : res.cmds ) {
+				for ( const auto& env : cmd.envs )
+					std::cout << "export " << env.first << "=" << env.second << "\n";
+				std::cout << cmd.workingDir << " " << cmd.cmd << " " << cmd.args << "\n";
+			}
+		} else {
+			std::cout << res.errorMsg.toUtf8() << "\n";
+		}
+
+		return EXIT_SUCCESS;
 	}
 
 	if ( convertLangPath && !convertLangPath.Get().empty() ) {

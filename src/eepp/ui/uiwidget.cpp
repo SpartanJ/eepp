@@ -97,7 +97,7 @@ const Rectf& UIWidget::getLayoutPixelsMargin() const {
 UIWidget* UIWidget::setLayoutMargin( const Rectf& margin ) {
 	if ( mLayoutMargin != margin ) {
 		mLayoutMargin = margin;
-		mLayoutMarginPx = PixelDensity::dpToPx( mLayoutMargin );
+		mLayoutMarginPx = PixelDensity::dpToPx( mLayoutMargin ).ceil();
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -108,7 +108,7 @@ UIWidget* UIWidget::setLayoutMargin( const Rectf& margin ) {
 UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
 	if ( mLayoutMargin.Left != marginLeft ) {
 		mLayoutMargin.Left = marginLeft;
-		mLayoutMarginPx.Left = PixelDensity::dpToPx( mLayoutMargin.Left );
+		mLayoutMarginPx.Left = eeceil( PixelDensity::dpToPx( mLayoutMargin.Left ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -119,7 +119,7 @@ UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
 UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
 	if ( mLayoutMargin.Right != marginRight ) {
 		mLayoutMargin.Right = marginRight;
-		mLayoutMarginPx.Right = PixelDensity::dpToPx( mLayoutMargin.Right );
+		mLayoutMarginPx.Right = eeceil( PixelDensity::dpToPx( mLayoutMargin.Right ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -130,7 +130,7 @@ UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
 UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
 	if ( mLayoutMargin.Top != marginTop ) {
 		mLayoutMargin.Top = marginTop;
-		mLayoutMarginPx.Top = PixelDensity::dpToPx( mLayoutMargin.Top );
+		mLayoutMarginPx.Top = eeceil( PixelDensity::dpToPx( mLayoutMargin.Top ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -141,7 +141,7 @@ UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
 UIWidget* UIWidget::setLayoutMarginBottom( const Float& marginBottom ) {
 	if ( mLayoutMargin.Bottom != marginBottom ) {
 		mLayoutMargin.Bottom = marginBottom;
-		mLayoutMarginPx.Bottom = PixelDensity::dpToPx( mLayoutMargin.Bottom );
+		mLayoutMarginPx.Bottom = eeceil( PixelDensity::dpToPx( mLayoutMargin.Bottom ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
 	}
@@ -604,7 +604,7 @@ const Rectf& UIWidget::getPixelsPadding() const {
 UIWidget* UIWidget::setPadding( const Rectf& padding ) {
 	if ( padding != mPadding ) {
 		mPadding = padding;
-		mPaddingPx = PixelDensity::dpToPx( mPadding );
+		mPaddingPx = PixelDensity::dpToPx( mPadding ).ceil();
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -616,7 +616,7 @@ UIWidget* UIWidget::setPadding( const Rectf& padding ) {
 UIWidget* UIWidget::setPaddingLeft( const Float& paddingLeft ) {
 	if ( paddingLeft != mPadding.Left ) {
 		mPadding.Left = paddingLeft;
-		mPaddingPx.Left = PixelDensity::dpToPx( mPadding.Left );
+		mPaddingPx.Left = eeceil( PixelDensity::dpToPx( mPadding.Left ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -628,7 +628,7 @@ UIWidget* UIWidget::setPaddingLeft( const Float& paddingLeft ) {
 UIWidget* UIWidget::setPaddingRight( const Float& paddingRight ) {
 	if ( paddingRight != mPadding.Right ) {
 		mPadding.Right = paddingRight;
-		mPaddingPx.Right = PixelDensity::dpToPx( mPadding.Right );
+		mPaddingPx.Right = eeceil( PixelDensity::dpToPx( mPadding.Right ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -640,7 +640,7 @@ UIWidget* UIWidget::setPaddingRight( const Float& paddingRight ) {
 UIWidget* UIWidget::setPaddingTop( const Float& paddingTop ) {
 	if ( paddingTop != mPadding.Top ) {
 		mPadding.Top = paddingTop;
-		mPaddingPx.Top = PixelDensity::dpToPx( mPadding.Top );
+		mPaddingPx.Top = eeceil( PixelDensity::dpToPx( mPadding.Top ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -652,7 +652,7 @@ UIWidget* UIWidget::setPaddingTop( const Float& paddingTop ) {
 UIWidget* UIWidget::setPaddingBottom( const Float& paddingBottom ) {
 	if ( paddingBottom != mPadding.Bottom ) {
 		mPadding.Bottom = paddingBottom;
-		mPaddingPx.Bottom = PixelDensity::dpToPx( mPadding.Bottom );
+		mPaddingPx.Bottom = eeceil( PixelDensity::dpToPx( mPadding.Bottom ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();

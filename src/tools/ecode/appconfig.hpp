@@ -29,6 +29,7 @@ struct UIConfig {
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	StyleSheetLength panelFontSize{ 11, StyleSheetLength::Dp };
 	bool showSidePanel{ true };
+	bool showStatusBar{ true };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;
 	std::string monospaceFont;
@@ -44,6 +45,7 @@ struct WindowStateConfig {
 	std::string winIcon;
 	bool maximized{ false };
 	std::string panelPartition;
+	std::string statusBarPartition;
 	int displayIndex{ 0 };
 	Vector2i position{ -1, -1 };
 };
@@ -168,8 +170,8 @@ class AppConfig {
 
 	void save( const std::vector<std::string>& recentFiles,
 			   const std::vector<std::string>& recentFolders, const std::string& panelPartition,
-			   EE::Window::Window* win, const std::string& colorSchemeName,
-			   const SearchBarConfig& searchBarConfig,
+			   const std::string& statusBarPartition, EE::Window::Window* win,
+			   const std::string& colorSchemeName, const SearchBarConfig& searchBarConfig,
 			   const GlobalSearchBarConfig& globalSearchBarConfig, PluginManager* pluginManager );
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,

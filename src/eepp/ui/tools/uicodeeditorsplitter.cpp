@@ -44,16 +44,6 @@ UICodeEditorSplitter::getLocalDefaultKeybindings() {
 		{ { KEY_8, KeyMod::getDefaultModifier() }, "switch-to-tab-8" },
 		{ { KEY_9, KeyMod::getDefaultModifier() }, "switch-to-tab-9" },
 		{ { KEY_0, KeyMod::getDefaultModifier() }, "switch-to-last-tab" },
-		{ { KEY_1, KEYMOD_LALT }, "switch-to-tab-1" },
-		{ { KEY_2, KEYMOD_LALT }, "switch-to-tab-2" },
-		{ { KEY_3, KEYMOD_LALT }, "switch-to-tab-3" },
-		{ { KEY_4, KEYMOD_LALT }, "switch-to-tab-4" },
-		{ { KEY_5, KEYMOD_LALT }, "switch-to-tab-5" },
-		{ { KEY_6, KEYMOD_LALT }, "switch-to-tab-6" },
-		{ { KEY_7, KEYMOD_LALT }, "switch-to-tab-7" },
-		{ { KEY_8, KEYMOD_LALT }, "switch-to-tab-8" },
-		{ { KEY_9, KEYMOD_LALT }, "switch-to-tab-9" },
-		{ { KEY_0, KEYMOD_LALT }, "switch-to-last-tab" },
 	};
 }
 
