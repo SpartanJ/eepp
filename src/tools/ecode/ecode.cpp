@@ -3006,6 +3006,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		Log::info( "Window creation took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
+		mWindow->setFrameRateLimit( mConfig.context.FrameRateLimit );
+
 		if ( mConfig.windowState.position != Vector2i( -1, -1 ) &&
 			 mConfig.windowState.displayIndex < displayManager->getDisplayCount() ) {
 			mWindow->setPosition( mConfig.windowState.position.x, mConfig.windowState.position.y );

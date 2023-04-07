@@ -305,7 +305,7 @@ void UITerminal::scheduledUpdate( const Time& ) {
 		return;
 	mTerm->update();
 
-	if ( mTerm->isDirty() )
+	if ( mTerm->isDirty() && isVisible() )
 		invalidateDraw();
 
 	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
