@@ -5,44 +5,50 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
+using namespace EE;
 using namespace EE::System;
 
 namespace ecode {
 
 /** reference:
-
 {
   "ecode": {
 	"build": [
 	  {
 		"args": "--with-mojoal --with-debug-symbols gmake",
 		"command": "premake4",
-		"working_dir": "$PROJECT_ROOT"
+		"working_dir": "${project_root}"
 	  },
 	  {
-		"args": "-j$(nproc) config=release ecode",
+		"args": "-j${nproc} config=${build_type} ecode",
 		"command": "make",
 		"working_dir": "${build_dir}"
 	  }
 	],
+	"build_types": [
+	  "debug",
+	  "release"
+	],
 	"clean": [
 	  {
-		"args": "config=release clean",
+		"args": "config=${build_type} clean",
 		"command": "make",
 		"working_dir": "${build_dir}"
 	  }
 	],
 	"config": {
-	  "clear_sys_env": false
-	},
-	"var": {
-	  "build_dir": "$PROJECT_ROOT/make/linux"
+	  "clear_sys_env": false,
+	  "enabled": true
 	},
 	"env": {
 	  "SHELL": "fish"
 	},
+	"os": [
+	  "linux"
+	],
 	"output_parser": {
 	  "config": {
 		"relative_file_paths": true
@@ -58,6 +64,9 @@ namespace ecode {
 		  }
 		}
 	  ]
+	},
+	"var": {
+	  "build_dir": "${project_root}/make/${os}"
 	}
   }
 }
@@ -73,6 +82,7 @@ using ProjectBuildSteps = std::vector<ProjectBuildStep>;
 using ProjectBuildKeyVal = std::unordered_map<std::string, std::string>;
 
 struct ProjectBuildConfig {
+	bool enabled{ true };
 	bool clearSysEnv{ false };
 };
 
@@ -102,11 +112,17 @@ class ProjectBuild {
 	ProjectBuild( const std::string& name, const std::string& projectRoot ) :
 		mName( name ), mProjectRoot( projectRoot ){};
 
+	const ProjectBuildConfig& getConfig() const { return mConfig; }
+
+	bool isOSSupported( const std::string& os ) const;
+
   protected:
 	friend class ProjectBuildManager;
 
 	std::string mName;
 	std::string mProjectRoot;
+	std::unordered_set<std::string> mOS;
+	std::unordered_set<std::string> mBuildTypes;
 	ProjectBuildSteps mBuild;
 	ProjectBuildSteps mClean;
 	ProjectBuildKeyVal mEnvs;
@@ -119,11 +135,36 @@ class ProjectBuild {
 
 using ProjectBuildMap = std::unordered_map<std::string, ProjectBuild>;
 
+struct ProjectBuildCommand : public ProjectBuildStep {
+	ProjectBuildKeyVal envs;
+
+	ProjectBuildCommand( const ProjectBuildStep& step, const ProjectBuildKeyVal& envs ) :
+		ProjectBuildStep( step ), envs( envs ) {}
+};
+
+using ProjectBuildCommands = std::vector<ProjectBuildCommand>;
+
+struct ProjectBuildCommandsRes {
+	String errorMsg;
+	ProjectBuildCommands cmds;
+
+	ProjectBuildCommandsRes() {}
+
+	ProjectBuildCommandsRes( const String& errMsg ) : errorMsg( errMsg ) {}
+
+	ProjectBuildCommandsRes( ProjectBuildCommands&& cmds ) : cmds( cmds ) {}
+
+	bool isValid() { return errorMsg.empty(); }
+};
+
 class ProjectBuildManager {
   public:
 	ProjectBuildManager( const std::string& projectRoot, std::shared_ptr<ThreadPool> pool );
 
-	void run( const std::string& buildName );
+	ProjectBuildCommandsRes generateBuildCommands(
+		const std::string& buildName,
+		std::function<String( const std::string& /*key*/, const String& /*defaultvalue*/ )> i18n,
+		const std::string& buildType = "" );
 
 	const ProjectBuildMap& getBuilds() const { return mBuilds; }
 

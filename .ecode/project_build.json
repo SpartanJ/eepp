@@ -1,5 +1,5 @@
 {
-  "ecode-debug": {
+  "ecode": {
     "build": [
       {
         "args": "--with-mojoal --with-debug-symbols gmake",
@@ -7,30 +7,35 @@
         "working_dir": "${project_root}"
       },
       {
-        "args": "-j$(nproc) config=debug ecode",
+        "args": "-j${nproc} config=${build_type} ecode",
         "command": "make",
         "working_dir": "${build_dir}"
       }
     ],
+    "build_types": [
+      "debug",
+      "release"
+    ],
     "clean": [
       {
-        "args": "config=debug clean",
+        "args": "config=${build_type} clean",
         "command": "make",
         "working_dir": "${build_dir}"
       }
     ],
     "config": {
-      "clear_sys_env": false
-    },
-    "var": {
-      "build_dir": "${project_root}/make/linux"
+      "clear_sys_env": false,
+      "enabled": true
     },
     "env": {
       "SHELL": "fish"
     },
+    "os": [
+      "linux"
+    ],
     "output_parser": {
       "config": {
-      	"relative_file_paths": true
+        "relative_file_paths": true
       },
       "error": [
         {
@@ -43,6 +48,9 @@
           }
         }
       ]
+    },
+    "var": {
+      "build_dir": "${project_root}/make/${os}"
     }
   }
 }

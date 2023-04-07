@@ -392,9 +392,11 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 		editor->runOnMainThread( [&, res, editor]() {
 			std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 			TextPosition pos = doc->getSelection().start();
+			auto scroll = editor->getScroll();
 			doc->selectAll();
 			doc->textInput( res.result );
 			doc->setSelection( pos );
+			editor->setScroll( scroll );
 		} );
 		return;
 	}
@@ -429,9 +431,11 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			editor->runOnMainThread( [&, data, editor]() {
 				std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 				TextPosition pos = doc->getSelection().start();
+				auto scroll = editor->getScroll();
 				doc->selectAll();
 				doc->textInput( data );
 				doc->setSelection( pos );
+				editor->setScroll( scroll );
 			} );
 		}
 	}

@@ -1197,6 +1197,8 @@
 ../../src/tools/ecode/plugins/lsp/lspprotocol.hpp
 ../../src/tools/ecode/plugins/pluginmanager.cpp
 ../../src/tools/ecode/plugins/pluginmanager.hpp
+../../src/tools/ecode/projectbuild.cpp
+../../src/tools/ecode/projectbuild.hpp
 ../../src/tools/ecode/projectdirectorytree.cpp
 ../../src/tools/ecode/projectdirectorytree.hpp
 ../../src/tools/ecode/projectsearch.cpp
