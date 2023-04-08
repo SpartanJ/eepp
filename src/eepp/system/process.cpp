@@ -80,6 +80,41 @@ bool Process::create( const std::string& command, const Uint32& options,
 	return ret;
 }
 
+bool Process::create( const std::string& command, const std::string& args, const Uint32& options,
+					  const std::unordered_map<std::string, std::string>& environment,
+					  const std::string& workingDirectory ) {
+	if ( mProcess )
+		return false;
+	std::vector<std::string> cmdArr = String::split( args, " ", "", "\"", true );
+	std::vector<const char*> strings;
+	strings.push_back( command.c_str() );
+	for ( size_t i = 0; i < cmdArr.size(); ++i )
+		strings.push_back( cmdArr[i].c_str() );
+	strings.push_back( NULL );
+	mProcess = eeMalloc( sizeof( subprocess_s ) );
+	memset( mProcess, 0, sizeof( subprocess_s ) );
+	if ( !environment.empty() ) {
+		std::vector<std::string> envArr;
+		std::vector<const char*> envStrings;
+		for ( const auto& pair : environment ) {
+			envArr.push_back( String::format( "%s=%s", pair.first.c_str(), pair.second.c_str() ) );
+			envStrings.push_back( envArr[envArr.size() - 1].c_str() );
+		}
+		envStrings.push_back( NULL );
+
+		auto ret = 0 == subprocess_create_ex( strings.data(), options, envStrings.data(),
+											  !workingDirectory.empty() ? workingDirectory.c_str()
+																		: nullptr,
+											  PROCESS_PTR );
+		return ret;
+	}
+	auto ret =
+		0 == subprocess_create_ex( strings.data(), options, nullptr,
+								   !workingDirectory.empty() ? workingDirectory.c_str() : nullptr,
+								   PROCESS_PTR );
+	return ret;
+}
+
 size_t Process::readAllStdOut( std::string& buffer ) {
 	size_t bytesRead = 0;
 	size_t totalBytesRead = 0;

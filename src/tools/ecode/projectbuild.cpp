@@ -1,8 +1,10 @@
 #include "projectbuild.hpp"
 #include "scopedop.hpp"
 #include <eepp/core/string.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/process.hpp>
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
@@ -59,6 +61,26 @@ ProjectBuildManager::~ProjectBuildManager() {
 	mShuttingDown = true;
 	while ( mLoading )
 		Sys::sleep( Milliseconds( 0.1f ) );
+	while ( mBuilding )
+		Sys::sleep( Milliseconds( 0.1f ) );
+}
+
+ProjectBuildCommandsRes
+ProjectBuildManager::run( const std::string& buildName,
+						  std::function<String( const std::string&, const String& )> i18n,
+						  const std::string& buildType, const ProjectBuildProgressFn& progressFn,
+						  const ProjectBuildDoneFn& doneFn ) {
+	ProjectBuildCommandsRes res = generateBuildCommands( buildName, i18n, buildType );
+	if ( !res.isValid() )
+		return res;
+	if ( !mThreadPool ) {
+		res.errorMsg = i18n( "no_threads", "Threaded ecode required to compile builds." );
+		return res;
+	}
+
+	mThreadPool->run( [this, res, progressFn, doneFn]() { runBuild( res, progressFn, doneFn ); } );
+
+	return res;
 };
 
 static bool isValidType( const std::string& typeStr ) {
@@ -76,7 +98,7 @@ static ProjectOutputParserTypes outputParserType( const std::string& typeStr ) {
 }
 
 bool ProjectBuildManager::load() {
-	ScopedOp op( [this]() { mLoading = true; }, [this]() { mLoading = false; } );
+	ScopedOp scopedOp( [this]() { mLoading = true; }, [this]() { mLoading = false; } );
 
 	mProjectFile = mProjectRoot + ".ecode/project_build.json";
 	if ( !FileSystem::fileExists( mProjectFile ) )
@@ -155,17 +177,17 @@ bool ProjectBuildManager::load() {
 
 			ProjectBuildOutputParser outputParser;
 
-			for ( const auto& op : op.items() ) {
-				if ( op.key() == "config" ) {
-					const auto& config = op.value();
+			for ( const auto& item : op.items() ) {
+				if ( item.key() == "config" ) {
+					const auto& config = item.value();
 					outputParser.mRelativeFilePaths = config.value( "output_parser", true );
 				} else {
-					auto typeStr = String::toLower( op.key() );
+					auto typeStr = String::toLower( item.key() );
 
 					if ( !isValidType( typeStr ) )
 						continue;
 
-					const auto& ptrnCfgs = op.value();
+					const auto& ptrnCfgs = item.value();
 					if ( ptrnCfgs.is_array() ) {
 						for ( const auto& ptrnCfg : ptrnCfgs ) {
 							ProjectBuildOutputParserConfig opc;
@@ -232,11 +254,55 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands(
 		replaceVar( buildCmd, VAR_NPROC, nproc );
 		if ( !buildType.empty() )
 			replaceVar( buildCmd, VAR_BUILD_TYPE, buildType );
-
+		buildCmd.config = build.mConfig;
 		res.cmds.emplace_back( std::move( buildCmd ) );
 	}
 
 	return res;
+}
+
+void ProjectBuildManager::runBuild( const ProjectBuildCommandsRes& res,
+									const ProjectBuildProgressFn& progressFn,
+									const ProjectBuildDoneFn& doneFn ) {
+	ScopedOp scopedOp( [this]() { mBuilding = true; }, [this]() { mBuilding = false; } );
+	Clock clock;
+	for ( const auto& cmd : res.cmds ) {
+		Process process;
+		auto options = Process::SearchUserPath | Process::NoWindow | Process::CombinedStdoutStderr;
+		if ( !cmd.config.clearSysEnv )
+			options |= Process::InheritEnvironment;
+		if ( process.create( cmd.cmd, cmd.args, options, cmd.envs, cmd.workingDir ) ) {
+			std::string buffer( 1024, '\0' );
+			unsigned bytesRead = 0;
+			int returnCode;
+			do {
+				bytesRead = process.readStdOut( buffer );
+				std::string data( buffer.substr( 0, bytesRead ) );
+				if ( progressFn )
+					progressFn( 50, std::move( data ) );
+			} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown );
+
+			if ( mShuttingDown ) {
+				process.kill();
+				doneFn( EXIT_FAILURE );
+				return;
+			}
+
+			if ( progressFn )
+				progressFn( 90, {} );
+
+			process.join( &returnCode );
+			process.destroy();
+
+			if ( doneFn && returnCode != EXIT_SUCCESS ) {
+				progressFn( 100, {} );
+				doneFn( returnCode );
+				return;
+			}
+		}
+	}
+
+	doneFn( EXIT_SUCCESS );
 }
 
 } // namespace ecode

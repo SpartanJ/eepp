@@ -137,6 +137,7 @@ using ProjectBuildMap = std::unordered_map<std::string, ProjectBuild>;
 
 struct ProjectBuildCommand : public ProjectBuildStep {
 	ProjectBuildKeyVal envs;
+	ProjectBuildConfig config;
 
 	ProjectBuildCommand( const ProjectBuildStep& step, const ProjectBuildKeyVal& envs ) :
 		ProjectBuildStep( step ), envs( envs ) {}
@@ -157,11 +158,20 @@ struct ProjectBuildCommandsRes {
 	bool isValid() { return errorMsg.empty(); }
 };
 
+using ProjectBuildProgressFn = std::function<void( int curProgress, std::string buffer )>;
+using ProjectBuildDoneFn = std::function<void( int exitCode )>;
+
 class ProjectBuildManager {
   public:
 	ProjectBuildManager( const std::string& projectRoot, std::shared_ptr<ThreadPool> pool );
 
 	~ProjectBuildManager();
+
+	ProjectBuildCommandsRes
+	run( const std::string& buildName,
+		 std::function<String( const std::string& /*key*/, const String& /*defaultvalue*/ )> i18n,
+		 const std::string& buildType = "", const ProjectBuildProgressFn& progressFn = {},
+		 const ProjectBuildDoneFn& doneFn = {} );
 
 	ProjectBuildCommandsRes generateBuildCommands(
 		const std::string& buildName,
@@ -178,6 +188,8 @@ class ProjectBuildManager {
 
 	bool loading() const { return mLoading; }
 
+	bool isBuilding() const { return mBuilding; }
+
   protected:
 	std::string mProjectRoot;
 	std::string mProjectFile;
@@ -185,7 +197,12 @@ class ProjectBuildManager {
 	std::shared_ptr<ThreadPool> mThreadPool;
 	bool mLoaded{ false };
 	bool mLoading{ false };
+	bool mBuilding{ false };
 	bool mShuttingDown{ false };
+
+	void runBuild( const ProjectBuildCommandsRes& res,
+				   const ProjectBuildProgressFn& progressFn = {},
+				   const ProjectBuildDoneFn& doneFn = {} );
 
 	bool load();
 };

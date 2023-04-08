@@ -41,6 +41,8 @@ void StatusTerminalController::show() {
 	if ( nullptr == mUITerminal ) {
 		mMainSplitter->updateLayout();
 		mUITerminal = createTerminal();
+		if ( !mUITerminal )
+			return;
 		mUITerminal->setId( "terminal" );
 		mUITerminal->setVisible( false );
 	}

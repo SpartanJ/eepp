@@ -63,6 +63,16 @@ class EE_API Process {
 				 const std::unordered_map<std::string, std::string>& environment = {},
 				 const std::string& workingDirectory = "" );
 
+	/** @brief Create a process.
+	 ** @param command Command line to execute for this process.
+	 ** @param args Command line arguments to execute for this process.
+	 ** @param options A bit field of Options's to pass.
+	 ** @return On success true is returned. */
+	bool create( const std::string& command, const std::string& args,
+				 const Uint32& options = getDefaultOptions(),
+				 const std::unordered_map<std::string, std::string>& environment = {},
+				 const std::string& workingDirectory = "" );
+
 	/** @brief Starts a new thread to receive all stdout and stderr data */
 	void startAsyncRead( ReadFn readStdOut = nullptr, ReadFn readStdErr = nullptr );
 
