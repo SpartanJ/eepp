@@ -93,12 +93,13 @@ void StatusBuildOutputController::run( const std::string& buildName, const std::
 
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*error.*[^\n]+" }, "error" ) );
-	patterns.emplace_back(
-		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*warning.*[^\n]+" }, "error" ) );
+	patterns.emplace_back( SyntaxPattern(
+		{ "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*warning.*[^\n]+" }, "warning" ) );
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 
 	SyntaxDefinition synDef( "custom_build", {}, patterns );
+
 	mContainer->getDocument().setSyntaxDefinition( synDef );
 	mContainer->getVScrollBar()->setValue( 1.f );
 

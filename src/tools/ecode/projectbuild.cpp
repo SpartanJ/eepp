@@ -183,7 +183,7 @@ bool ProjectBuildManager::load() {
 			for ( const auto& item : op.items() ) {
 				if ( item.key() == "config" ) {
 					const auto& config = item.value();
-					outputParser.mRelativeFilePaths = config.value( "output_parser", true );
+					outputParser.mRelativeFilePaths = config.value( "relative_file_paths", true );
 				} else {
 					auto typeStr = String::toLower( item.key() );
 
@@ -214,6 +214,8 @@ bool ProjectBuildManager::load() {
 					}
 				}
 			}
+
+			b.mOutputParser = outputParser;
 		}
 
 		b.replaceVars();

@@ -3216,6 +3216,19 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			margin-left: 0dp;
 			margin-right: 0dp;
 		}
+		#panel tab:selected {
+			border: none;
+			background-color: transparent;
+			background-image: rectangle(solid, var(--primary), 0º, 1dp);
+			background-size: 80% 1dp;
+			background-position-x: center;
+			background-position-y: 90%;
+			border-left-width: 0dp;
+			border-right-width: 0dp;
+			border-top-width: 0dp;
+			border-top-left-radius: 0dp;
+			border-top-right-radius: 0dp;
+		}
 		#check_for_updates .check_at_startup {
 			margin: 6dp 0dp 6p 0dp;
 		}
