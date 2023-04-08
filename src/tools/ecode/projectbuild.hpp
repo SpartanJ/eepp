@@ -100,6 +100,11 @@ struct ProjectBuildOutputParserConfig {
 };
 
 class ProjectBuildOutputParser {
+  public:
+	const std::vector<ProjectBuildOutputParserConfig>& getConfig() const { return mConfig; }
+
+	bool useRelativeFilePaths() const { return mRelativeFilePaths; }
+
   protected:
 	friend class ProjectBuildManager;
 
@@ -160,6 +165,8 @@ struct ProjectBuildCommandsRes {
 
 using ProjectBuildProgressFn = std::function<void( int curProgress, std::string buffer )>;
 using ProjectBuildDoneFn = std::function<void( int exitCode )>;
+using ProjectBuildi18nFn =
+	std::function<String( const std::string& /*key*/, const String& /*defaultvalue*/ )>;
 
 class ProjectBuildManager {
   public:
@@ -167,16 +174,16 @@ class ProjectBuildManager {
 
 	~ProjectBuildManager();
 
-	ProjectBuildCommandsRes
-	run( const std::string& buildName,
-		 std::function<String( const std::string& /*key*/, const String& /*defaultvalue*/ )> i18n,
-		 const std::string& buildType = "", const ProjectBuildProgressFn& progressFn = {},
-		 const ProjectBuildDoneFn& doneFn = {} );
+	ProjectBuildCommandsRes run( const std::string& buildName, const ProjectBuildi18nFn& i18n,
+								 const std::string& buildType = "",
+								 const ProjectBuildProgressFn& progressFn = {},
+								 const ProjectBuildDoneFn& doneFn = {} );
 
-	ProjectBuildCommandsRes generateBuildCommands(
-		const std::string& buildName,
-		std::function<String( const std::string& /*key*/, const String& /*defaultvalue*/ )> i18n,
-		const std::string& buildType = "" );
+	ProjectBuildCommandsRes generateBuildCommands( const std::string& buildName,
+												   const ProjectBuildi18nFn& i18n,
+												   const std::string& buildType = "" );
+
+	ProjectBuildOutputParser getOutputParser( const std::string& buildName );
 
 	const ProjectBuildMap& getBuilds() const { return mBuilds; }
 
@@ -190,6 +197,8 @@ class ProjectBuildManager {
 
 	bool isBuilding() const { return mBuilding; }
 
+	void cancelBuild();
+
   protected:
 	std::string mProjectRoot;
 	std::string mProjectFile;
@@ -199,8 +208,10 @@ class ProjectBuildManager {
 	bool mLoading{ false };
 	bool mBuilding{ false };
 	bool mShuttingDown{ false };
+	bool mCancelBuild{ false };
 
-	void runBuild( const ProjectBuildCommandsRes& res,
+	void runBuild( const std::string& buildName, const std::string& buildType,
+				   const ProjectBuildi18nFn& i18n, const ProjectBuildCommandsRes& res,
 				   const ProjectBuildProgressFn& progressFn = {},
 				   const ProjectBuildDoneFn& doneFn = {} );
 

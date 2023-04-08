@@ -207,6 +207,8 @@ const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::st
 		return getSyntaxStyle( "symbol" );
 	else if ( type == "link" || type == "link_hover" )
 		return getSyntaxStyle( "function" );
+	else if ( type == "error" || type == "warning" || type == "notice" )
+		return getEditorSyntaxStyle( type );
 	else {
 		auto foundIt = mStyleCache.find( type );
 		if ( foundIt != mStyleCache.end() )

@@ -59,17 +59,18 @@ ProjectBuildManager::ProjectBuildManager( const std::string& projectRoot,
 
 ProjectBuildManager::~ProjectBuildManager() {
 	mShuttingDown = true;
+	mCancelBuild = true;
 	while ( mLoading )
 		Sys::sleep( Milliseconds( 0.1f ) );
 	while ( mBuilding )
 		Sys::sleep( Milliseconds( 0.1f ) );
 }
 
-ProjectBuildCommandsRes
-ProjectBuildManager::run( const std::string& buildName,
-						  std::function<String( const std::string&, const String& )> i18n,
-						  const std::string& buildType, const ProjectBuildProgressFn& progressFn,
-						  const ProjectBuildDoneFn& doneFn ) {
+ProjectBuildCommandsRes ProjectBuildManager::run( const std::string& buildName,
+												  const ProjectBuildi18nFn& i18n,
+												  const std::string& buildType,
+												  const ProjectBuildProgressFn& progressFn,
+												  const ProjectBuildDoneFn& doneFn ) {
 	ProjectBuildCommandsRes res = generateBuildCommands( buildName, i18n, buildType );
 	if ( !res.isValid() )
 		return res;
@@ -78,7 +79,9 @@ ProjectBuildManager::run( const std::string& buildName,
 		return res;
 	}
 
-	mThreadPool->run( [this, res, progressFn, doneFn]() { runBuild( res, progressFn, doneFn ); } );
+	mThreadPool->run( [this, res, progressFn, doneFn, i18n, buildName, buildType]() {
+		runBuild( buildName, buildType, i18n, res, progressFn, doneFn );
+	} );
 
 	return res;
 };
@@ -222,10 +225,9 @@ bool ProjectBuildManager::load() {
 	return true;
 }
 
-ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands(
-	const std::string& buildName,
-	std::function<String( const std::string& /*key*/, const String& /*defaultvalue*/ )> i18n,
-	const std::string& buildType ) {
+ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::string& buildName,
+																	const ProjectBuildi18nFn& i18n,
+																	const std::string& buildType ) {
 	if ( !mLoaded )
 		return { i18n( "project_build_not_loaded", "No project build loaded!" ) };
 
@@ -261,17 +263,66 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands(
 	return res;
 }
 
-void ProjectBuildManager::runBuild( const ProjectBuildCommandsRes& res,
+ProjectBuildOutputParser ProjectBuildManager::getOutputParser( const std::string& buildName ) {
+	auto buildIt = mBuilds.find( buildName );
+	if ( buildIt != mBuilds.end() )
+		return buildIt->second.mOutputParser;
+	return {};
+}
+
+void ProjectBuildManager::cancelBuild() {
+	mCancelBuild = true;
+}
+
+void ProjectBuildManager::runBuild( const std::string& buildName, const std::string& buildType,
+									const ProjectBuildi18nFn& i18n,
+									const ProjectBuildCommandsRes& res,
 									const ProjectBuildProgressFn& progressFn,
 									const ProjectBuildDoneFn& doneFn ) {
 	ScopedOp scopedOp( [this]() { mBuilding = true; }, [this]() { mBuilding = false; } );
 	Clock clock;
+
+	auto printElapsed = [&clock, &i18n, &progressFn]() {
+		if ( progressFn ) {
+			progressFn(
+				100, Sys::getDateTimeStr() + ": " +
+						 String::format(
+							 i18n( "build_elapsed_time", "Elapsed Time: %s.\n" ).toUtf8().c_str(),
+							 clock.getElapsedTime().toString().c_str() ) );
+		}
+	};
+
+	if ( progressFn ) {
+		progressFn( 0, Sys::getDateTimeStr() + ": " +
+						   String::format( i18n( "running_steps_for_project",
+												 "Running steps for project %s...\n" )
+											   .toUtf8()
+											   .c_str(),
+										   buildName.c_str() ) );
+
+		if ( !buildType.empty() )
+			progressFn(
+				0, Sys::getDateTimeStr() + ": " +
+					   String::format(
+						   i18n( "using_build_type", "Using build type: %s.\n" ).toUtf8().c_str(),
+						   buildType.c_str() ) );
+	}
+
+	int c = 0;
 	for ( const auto& cmd : res.cmds ) {
+		int progress = c > 0 ? c / (Float)res.cmds.size() : 0;
 		Process process;
 		auto options = Process::SearchUserPath | Process::NoWindow | Process::CombinedStdoutStderr;
 		if ( !cmd.config.clearSysEnv )
 			options |= Process::InheritEnvironment;
 		if ( process.create( cmd.cmd, cmd.args, options, cmd.envs, cmd.workingDir ) ) {
+			if ( progressFn )
+				progressFn( progress,
+							Sys::getDateTimeStr() + ": " +
+								String::format(
+									i18n( "starting_process", "Starting %s %s\n" ).toUtf8().c_str(),
+									cmd.cmd.c_str(), cmd.args.c_str() ) );
+
 			std::string buffer( 1024, '\0' );
 			unsigned bytesRead = 0;
 			int returnCode;
@@ -279,30 +330,57 @@ void ProjectBuildManager::runBuild( const ProjectBuildCommandsRes& res,
 				bytesRead = process.readStdOut( buffer );
 				std::string data( buffer.substr( 0, bytesRead ) );
 				if ( progressFn )
-					progressFn( 50, std::move( data ) );
-			} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown );
+					progressFn( progress, std::move( data ) );
+			} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown && !mCancelBuild );
 
-			if ( mShuttingDown ) {
+			if ( mShuttingDown || mCancelBuild ) {
 				process.kill();
-				doneFn( EXIT_FAILURE );
+				mCancelBuild = false;
+				printElapsed();
+				if ( doneFn )
+					doneFn( EXIT_FAILURE );
 				return;
 			}
-
-			if ( progressFn )
-				progressFn( 90, {} );
 
 			process.join( &returnCode );
 			process.destroy();
 
-			if ( doneFn && returnCode != EXIT_SUCCESS ) {
-				progressFn( 100, {} );
-				doneFn( returnCode );
+			if ( returnCode != EXIT_SUCCESS ) {
+				if ( progressFn ) {
+					progressFn( 100,
+								String::format( i18n( "process_exited_with_errors",
+													  "The process \"%s\" exited with errors.\n" )
+													.toUtf8()
+													.c_str(),
+												cmd.cmd.c_str() ) );
+				}
+				printElapsed();
+				if ( doneFn )
+					doneFn( returnCode );
 				return;
+			} else {
+				if ( progressFn ) {
+					progressFn( progress,
+								String::format( i18n( "process_exited_normally",
+													  "The process \"%s\" exited normally.\n" )
+													.toUtf8()
+													.c_str(),
+												cmd.cmd.c_str() ) );
+				}
 			}
+		} else {
+			printElapsed();
+			if ( doneFn )
+				doneFn( EXIT_FAILURE );
+			return;
 		}
+
+		c++;
 	}
 
-	doneFn( EXIT_SUCCESS );
+	printElapsed();
+	if ( doneFn )
+		doneFn( EXIT_SUCCESS );
 }
 
 } // namespace ecode

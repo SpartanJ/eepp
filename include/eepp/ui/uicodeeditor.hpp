@@ -594,7 +594,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Vector2f getRelativeScreenPosition( const TextPosition& pos );
 
 	bool getShowLinesRelativePosition() const;
+
 	void showLinesRelativePosition( bool showLinesRelativePosition );
+
+	UIScrollBar* getVScrollBar() const;
+
+	UIScrollBar* getHScrollBar() const;
 
   protected:
 	struct LastXOffset {

@@ -748,6 +748,10 @@ void App::showStatusBar( bool show ) {
 	mStatusBar->setVisible( show );
 }
 
+ProjectBuildManager* App::getProjectBuildManager() const {
+	return mProjectBuildManager.get();
+}
+
 void App::switchSidePanel() {
 	mConfig.ui.showSidePanel = !mConfig.ui.showSidePanel;
 	mSettings->getWindowMenu()
@@ -1725,6 +1729,8 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "open-locatebar",
 			 "open-command-palette",
 			 "open-global-search",
+			 "project-build-start",
+			 "project-build-cancel",
 			 "toggle-locatebar",
 			 "toggle-global-search",
 			 "toggle-status-build-output",

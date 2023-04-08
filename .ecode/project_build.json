@@ -27,9 +27,6 @@
       "clear_sys_env": false,
       "enabled": true
     },
-    "env": {
-      "SHELL": "fish"
-    },
     "os": [
       "linux"
     ],
@@ -39,7 +36,29 @@
       },
       "error": [
         {
-          "pattern": "([^:]*):(%d+):(%d+):%s?[%w%s]*error:%s?([^\n]*)",
+          "pattern": "([^:]+):(%d+):(%d+):%s?[%w%s]*error:%s?(.*)",
+          "pattern_order": {
+            "col": 3,
+            "file": 1,
+            "line": 2,
+            "message": 4
+          }
+        }
+      ],
+      "notice": [
+        {
+          "pattern": "([^:]+):(%d+):(%d+):%s?[%w%s]*notice:%s?(.*)",
+          "pattern_order": {
+            "col": 3,
+            "file": 1,
+            "line": 2,
+            "message": 4
+          }
+        }
+      ],
+      "warning": [
+        {
+          "pattern": "([^:]+):(%d+):(%d+):%s?[%w%s]*warning:%s?(.*)",
           "pattern_order": {
             "col": 3,
             "file": 1,

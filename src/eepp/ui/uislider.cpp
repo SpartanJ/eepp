@@ -70,7 +70,10 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	mSlider->setDragEnabled( true );
 	mSlider->setSize( 4, 4 );
 	mSlider->setPosition( 0, 0 );
-	mSlider->addEventListener( Event::OnPositionChange, [&]( const Event* ) { fixSliderPos(); } );
+	mSlider->addEventListener( Event::OnPositionChange, [&]( const Event* ) {
+		if ( !mUpdating && !mOnPosChange )
+			fixSliderPos();
+	} );
 
 	if ( UIOrientation::Horizontal == mOrientation )
 		mSlider->centerVertical();

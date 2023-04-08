@@ -234,6 +234,17 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "open-locatebar", [&] { mUniversalLocator->showLocateBar(); } );
 		t.setCommand( "toggle-locatebar", [&] { mUniversalLocator->toggleLocateBar(); } );
 		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
+		t.setCommand( "project-build-start", [&] {
+			if ( mProjectBuildManager && !mProjectBuildManager->isBuilding() ) {
+				mStatusBuildOutputController->run(
+					"ecode", "debug", mProjectBuildManager->getOutputParser( "ecode" ) );
+			}
+		} );
+		t.setCommand( "project-build-cancel", [&] {
+			if ( mProjectBuildManager && mProjectBuildManager->isBuilding() ) {
+				mProjectBuildManager->cancelBuild();
+			}
+		} );
 		t.setCommand( "open-workspace-symbol-search",
 					  [&] { mUniversalLocator->showWorkspaceSymbol(); } );
 		t.setCommand( "open-document-symbol-search",
@@ -377,6 +388,8 @@ class App : public UICodeEditorSplitter::Client {
 	void switchStatusBar();
 
 	void showStatusBar( bool show );
+
+	ProjectBuildManager* getProjectBuildManager() const;
 
   protected:
 	std::vector<std::string> mArgs;

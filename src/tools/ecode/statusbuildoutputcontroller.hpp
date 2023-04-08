@@ -1,6 +1,7 @@
 #ifndef ECODE_STATUSBUILDOUTPUTCONTROLLER_HPP
 #define ECODE_STATUSBUILDOUTPUTCONTROLLER_HPP
 
+#include "projectbuild.hpp"
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -23,6 +24,9 @@ class StatusBuildOutputController {
 	void hide();
 
 	void show();
+
+	void run( const std::string& buildName, const std::string& buildType,
+			  const ProjectBuildOutputParser& outputParser = {} );
 
   protected:
 	UISplitter* mMainSplitter{ nullptr };

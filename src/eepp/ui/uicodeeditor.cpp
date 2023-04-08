@@ -1392,6 +1392,14 @@ void UICodeEditor::showLinesRelativePosition( bool showLinesRelativePosition ) {
 	mShowLinesRelativePosition = showLinesRelativePosition;
 }
 
+UIScrollBar* UICodeEditor::getVScrollBar() const {
+	return mVScrollBar;
+}
+
+UIScrollBar* UICodeEditor::getHScrollBar() const {
+	return mHScrollBar;
+}
+
 void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHeight,
 							   const TextPosition& cursor ) {
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() ) {
