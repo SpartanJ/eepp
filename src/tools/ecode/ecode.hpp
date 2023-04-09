@@ -235,9 +235,22 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "toggle-locatebar", [&] { mUniversalLocator->toggleLocateBar(); } );
 		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
 		t.setCommand( "project-build-start", [&] {
-			if ( mProjectBuildManager && !mProjectBuildManager->isBuilding() ) {
-				mStatusBuildOutputController->run(
-					"ecode", "debug", mProjectBuildManager->getOutputParser( "ecode" ) );
+			if ( mProjectBuildManager && !mProjectBuildManager->isBuilding() &&
+				 !mProjectBuildManager->getBuilds().empty() ) {
+				std::string os = String::toLower( Sys::getPlatform() );
+				const ProjectBuild* build = nullptr;
+				for ( const auto& buildIt : mProjectBuildManager->getBuilds() ) {
+					if ( buildIt.second.isOSSupported( os ) ) {
+						build = &buildIt.second;
+					}
+				}
+
+				if ( build ) {
+					mStatusBuildOutputController->run(
+						build->getName(),
+						!build->buildTypes().empty() ? *build->buildTypes().begin() : "",
+						mProjectBuildManager->getOutputParser( build->getName() ) );
+				}
 			}
 		} );
 		t.setCommand( "project-build-cancel", [&] {

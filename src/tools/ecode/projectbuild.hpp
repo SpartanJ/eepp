@@ -3,6 +3,7 @@
 
 #include <eepp/system/threadpool.hpp>
 #include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -121,13 +122,19 @@ class ProjectBuild {
 
 	bool isOSSupported( const std::string& os ) const;
 
+	const std::string& getName() const { return mName; }
+
+	const std::set<std::string> buildTypes() const { return mBuildTypes; }
+
+	const ProjectBuildOutputParser& getOutputParser() const { return mOutputParser; }
+
   protected:
 	friend class ProjectBuildManager;
 
 	std::string mName;
 	std::string mProjectRoot;
 	std::unordered_set<std::string> mOS;
-	std::unordered_set<std::string> mBuildTypes;
+	std::set<std::string> mBuildTypes;
 	ProjectBuildSteps mBuild;
 	ProjectBuildSteps mClean;
 	ProjectBuildKeyVal mEnvs;

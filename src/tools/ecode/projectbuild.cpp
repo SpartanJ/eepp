@@ -10,6 +10,33 @@ using json = nlohmann::json;
 
 using namespace EE;
 
+/** @return The process environment variables */
+static std::unordered_map<std::string, std::string> getEnvironmentVariables() {
+	std::unordered_map<std::string, std::string> ret;
+	char** env;
+#if defined( WIN ) && ( _MSC_VER >= 1900 )
+	env = *__p__environ();
+#else
+	extern char** environ;
+	env = environ;
+#endif
+
+	for ( ; *env; ++env ) {
+		auto var = String::split( *env, "=" );
+
+		if ( var.size() == 2 ) {
+			ret[var[0]] = var[1];
+		} else if ( var.size() > 2 ) {
+			auto val( var[1] );
+			for ( size_t i = 2; i < var.size(); ++i )
+				val += var[i];
+			ret[var[0]] = val;
+		}
+	}
+
+	return ret;
+}
+
 namespace ecode {
 
 static const char* VAR_PROJECT_ROOT = "${project_root}";
@@ -315,9 +342,18 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 		int progress = c > 0 ? c / (Float)res.cmds.size() : 0;
 		Process process;
 		auto options = Process::SearchUserPath | Process::NoWindow | Process::CombinedStdoutStderr;
-		if ( !cmd.config.clearSysEnv )
-			options |= Process::InheritEnvironment;
-		if ( process.create( cmd.cmd, cmd.args, options, cmd.envs, cmd.workingDir ) ) {
+		std::unordered_map<std::string, std::string> env;
+		if ( !cmd.config.clearSysEnv ) {
+			if ( !env.empty() ) {
+				env = getEnvironmentVariables();
+				env.insert( cmd.envs.begin(), cmd.envs.end() );
+			} else {
+				options |= Process::InheritEnvironment;
+			}
+		} else {
+			env = cmd.envs;
+		}
+		if ( process.create( cmd.cmd, cmd.args, options, env, cmd.workingDir ) ) {
 			if ( progressFn )
 				progressFn( progress,
 							Sys::getDateTimeStr() + ": " +
