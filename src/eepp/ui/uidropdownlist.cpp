@@ -20,6 +20,7 @@ UIDropDownList* UIDropDownList::New() {
 
 UIDropDownList::UIDropDownList( const std::string& tag ) :
 	UITextInput( tag ), mListBox( NULL ), mFriendNode( NULL ) {
+	mEnabledCreateContextMenu = false;
 	setClipType( ClipType::ContentBox );
 	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
@@ -139,15 +140,18 @@ void UIDropDownList::showList() {
 
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 
+			Float width =
+				NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth();
+
 			mListBox->setSize(
-				NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth(),
-				(Int32)( std::min( mListBox->getCount(), mStyleConfig.MaxNumVisibleItems ) *
-						 mListBox->getRowHeight() ) +
-					tPadding.Top + tPadding.Bottom +
-					( mListBox->getHorizontalScrollBar() &&
-							  mListBox->getHorizontalScrollBar()->isVisible()
-						  ? mListBox->getHorizontalScrollBar()->getSize().getHeight()
-						  : 0.f ) );
+				width, (Int32)( eemin( mListBox->getCount(), mStyleConfig.MaxNumVisibleItems ) *
+								mListBox->getRowHeight() ) +
+						   tPadding.Top + tPadding.Bottom +
+						   ( mListBox->getHorizontalScrollBar() &&
+									 mListBox->getHorizontalScrollBar()->isVisible() &&
+									 PixelDensity::dpToPx( width ) < mListBox->getMaxTextWidth()
+								 ? mListBox->getHorizontalScrollBar()->getSize().getHeight()
+								 : 0.f ) );
 
 			mListBox->getVerticalScrollBar()->setValue( sliderValue );
 
@@ -259,6 +263,7 @@ void UIDropDownList::onItemSelected( const Event* ) {
 	messagePost( &Msg );
 
 	sendCommonEvent( Event::OnItemSelected );
+	sendCommonEvent( Event::OnValueChange );
 }
 
 void UIDropDownList::show() {

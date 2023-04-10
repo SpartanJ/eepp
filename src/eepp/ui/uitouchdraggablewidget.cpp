@@ -137,6 +137,10 @@ Uint32 UITouchDraggableWidget::onMessage( const NodeMessage* msg ) {
 		mTouchDragPoint = getEventDispatcher()->getMousePosf();
 		mTouchDragAcceleration = Vector2f( 0, 0 );
 		return 1;
+	} else if ( msg->getMsg() == NodeMessage::MouseUp && ( msg->getFlags() & EE_BUTTON_LMASK ) && isTouchDragging() && isTouchOverAllowedChilds() ) {
+		setTouchDragging( false );
+		getEventDispatcher()->setNodeDragging( nullptr );
+		return 1;
 	}
 	return 0;
 }

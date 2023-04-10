@@ -127,21 +127,25 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "flags", "" );
 	registerProperty( "margin-top", "0px" )
 		.setType( PropertyType::NumberLength )
+		.addAlias( "margin_top" )
 		.addAlias( "layout-margin-top" )
 		.addAlias( "layout_margintop" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "margin-left", "0px" )
 		.setType( PropertyType::NumberLength )
+		.addAlias( "margin_left" )
 		.addAlias( "layout-margin-left" )
 		.addAlias( "layout_marginleft" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-right", "0px" )
 		.setType( PropertyType::NumberLength )
+		.addAlias( "margin_right" )
 		.addAlias( "layout-margin-right" )
 		.addAlias( "layout_marginright" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-bottom", "0px" )
 		.setType( PropertyType::NumberLength )
+		.addAlias( "margin_bottom" )
 		.addAlias( "layout-margin-bottom" )
 		.addAlias( "layout_marginbottom" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
@@ -392,6 +396,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "gravity-owner", "false" ).setType( PropertyType::Bool );
 	registerProperty( "href", "" ).setType( PropertyType::String );
 	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
+
+	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
+		.setType( PropertyType::String );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },

@@ -1,7 +1,10 @@
 #ifndef ECODE_PROJECTBUILD_HPP
 #define ECODE_PROJECTBUILD_HPP
 
+#include "appconfig.hpp"
+#include <eepp/system/process.hpp>
 #include <eepp/system/threadpool.hpp>
+#include <eepp/ui/uitabwidget.hpp>
 #include <memory>
 #include <set>
 #include <string>
@@ -11,8 +14,12 @@
 
 using namespace EE;
 using namespace EE::System;
+using namespace EE::UI;
 
 namespace ecode {
+
+class App;
+class StatusBuildOutputController;
 
 /** reference:
 {
@@ -133,7 +140,7 @@ class ProjectBuild {
 
 	std::string mName;
 	std::string mProjectRoot;
-	std::unordered_set<std::string> mOS;
+	std::set<std::string> mOS;
 	std::set<std::string> mBuildTypes;
 	ProjectBuildSteps mBuild;
 	ProjectBuildSteps mClean;
@@ -177,7 +184,8 @@ using ProjectBuildi18nFn =
 
 class ProjectBuildManager {
   public:
-	ProjectBuildManager( const std::string& projectRoot, std::shared_ptr<ThreadPool> pool );
+	ProjectBuildManager( const std::string& projectRoot, std::shared_ptr<ThreadPool> pool,
+						 UITabWidget* sidePanel, App* app );
 
 	~ProjectBuildManager();
 
@@ -206,11 +214,23 @@ class ProjectBuildManager {
 
 	void cancelBuild();
 
+	ProjectBuildConfiguration getConfig() const;
+
+	void setConfig( const ProjectBuildConfiguration& config );
+
+	void buildCurrentConfig( StatusBuildOutputController* sboc );
+
   protected:
 	std::string mProjectRoot;
 	std::string mProjectFile;
 	ProjectBuildMap mBuilds;
+	ProjectBuildConfiguration mConfig;
 	std::shared_ptr<ThreadPool> mThreadPool;
+	UITabWidget* mSidePanel{ nullptr };
+	UISceneNode* mUISceneNode{ nullptr };
+	UITab* mTab{ nullptr };
+	App* mApp{ nullptr };
+	std::unique_ptr<Process> mProcess;
 	bool mLoaded{ false };
 	bool mLoading{ false };
 	bool mBuilding{ false };
@@ -223,6 +243,10 @@ class ProjectBuildManager {
 				   const ProjectBuildDoneFn& doneFn = {} );
 
 	bool load();
+
+	void buildSidePanelTab();
+
+	void updateSidePanelTab();
 };
 
 } // namespace ecode

@@ -1,14 +1,20 @@
 #include "projectbuild.hpp"
+#include "ecode.hpp"
 #include "scopedop.hpp"
+#include "statusbuildoutputcontroller.hpp"
 #include <eepp/core/string.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/process.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-using namespace EE;
+using namespace EE::Scene;
 
 /** @return The process environment variables */
 static std::unordered_map<std::string, std::string> getEnvironmentVariables() {
@@ -73,8 +79,9 @@ bool ProjectBuild::isOSSupported( const std::string& os ) const {
 }
 
 ProjectBuildManager::ProjectBuildManager( const std::string& projectRoot,
-										  std::shared_ptr<ThreadPool> pool ) :
-	mProjectRoot( projectRoot ), mThreadPool( pool ) {
+										  std::shared_ptr<ThreadPool> pool, UITabWidget* sidePanel,
+										  App* app ) :
+	mProjectRoot( projectRoot ), mThreadPool( pool ), mSidePanel( sidePanel ), mApp( app ) {
 	FileSystem::dirAddSlashAtEnd( mProjectRoot );
 
 	if ( mThreadPool ) {
@@ -85,6 +92,9 @@ ProjectBuildManager::ProjectBuildManager( const std::string& projectRoot,
 }
 
 ProjectBuildManager::~ProjectBuildManager() {
+	if ( mUISceneNode && !SceneManager::instance()->isShuttingDown() && mSidePanel && mTab ) {
+		mSidePanel->removeTab( mTab );
+	}
 	mShuttingDown = true;
 	mCancelBuild = true;
 	while ( mLoading )
@@ -250,6 +260,10 @@ bool ProjectBuildManager::load() {
 		mBuilds.insert( { build.key(), std::move( b ) } );
 	}
 
+	if ( mSidePanel ) {
+		mSidePanel->runOnMainThread( [this]() { buildSidePanelTab(); } );
+	}
+
 	mLoaded = true;
 	return true;
 }
@@ -301,6 +315,34 @@ ProjectBuildOutputParser ProjectBuildManager::getOutputParser( const std::string
 
 void ProjectBuildManager::cancelBuild() {
 	mCancelBuild = true;
+	if ( mProcess ) {
+		mProcess->destroy();
+		mProcess->kill();
+	}
+}
+
+ProjectBuildConfiguration ProjectBuildManager::getConfig() const {
+	return mConfig;
+}
+
+void ProjectBuildManager::setConfig( const ProjectBuildConfiguration& config ) {
+	mConfig = config;
+}
+
+void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc ) {
+	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
+		std::string os = String::toLower( Sys::getPlatform() );
+		const ProjectBuild* build = nullptr;
+		for ( const auto& buildIt : getBuilds() ) {
+			if ( buildIt.second.getName() == mConfig.buildName ) {
+				build = &buildIt.second;
+			}
+		}
+
+		if ( build ) {
+			sboc->run( build->getName(), mConfig.buildType, getOutputParser( build->getName() ) );
+		}
+	}
 }
 
 void ProjectBuildManager::runBuild( const std::string& buildName, const std::string& buildType,
@@ -340,7 +382,7 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 	int c = 0;
 	for ( const auto& cmd : res.cmds ) {
 		int progress = c > 0 ? c / (Float)res.cmds.size() : 0;
-		Process process;
+		mProcess = std::make_unique<Process>();
 		auto options = Process::SearchUserPath | Process::NoWindow | Process::CombinedStdoutStderr;
 		std::unordered_map<std::string, std::string> env;
 		if ( !cmd.config.clearSysEnv ) {
@@ -353,7 +395,7 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 		} else {
 			env = cmd.envs;
 		}
-		if ( process.create( cmd.cmd, cmd.args, options, env, cmd.workingDir ) ) {
+		if ( mProcess->create( cmd.cmd, cmd.args, options, env, cmd.workingDir ) ) {
 			if ( progressFn )
 				progressFn( progress,
 							Sys::getDateTimeStr() + ": " +
@@ -365,14 +407,14 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 			unsigned bytesRead = 0;
 			int returnCode;
 			do {
-				bytesRead = process.readStdOut( buffer );
+				bytesRead = mProcess->readStdOut( buffer );
 				std::string data( buffer.substr( 0, bytesRead ) );
 				if ( progressFn )
 					progressFn( progress, std::move( data ) );
-			} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown && !mCancelBuild );
+			} while ( bytesRead != 0 && mProcess->isAlive() && !mShuttingDown && !mCancelBuild );
 
 			if ( mShuttingDown || mCancelBuild ) {
-				process.kill();
+				mProcess->kill();
 				mCancelBuild = false;
 				printElapsed();
 				if ( doneFn )
@@ -380,8 +422,8 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 				return;
 			}
 
-			process.join( &returnCode );
-			process.destroy();
+			mProcess->join( &returnCode );
+			mProcess->destroy();
 
 			if ( returnCode != EXIT_SUCCESS ) {
 				if ( progressFn ) {
@@ -419,6 +461,116 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 	printElapsed();
 	if ( doneFn )
 		doneFn( EXIT_SUCCESS );
+}
+
+void ProjectBuildManager::buildSidePanelTab() {
+	mUISceneNode = mSidePanel->getUISceneNode();
+	UIIcon* icon = mUISceneNode->findIcon( "symbol-property" );
+	UIWidget* node = mUISceneNode->loadLayoutFromString(
+		R"html(
+			<style>
+			#build_tab {
+				background-color: var(--list-back);
+			}
+			</style>
+			<ScrollView id="build_tab" lw="mp" lh="mp">
+				<vbox lw="mp" lh="wc" padding="4dp">
+					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" />
+					<TextView text="@string(build_configuration, Build Configuration)" />
+					<DropDownList id="build_list" layout_width="mp" layout_height="wrap_content" margin-bottom="4dp" />
+					<!--
+					<hbox lw="mp" lh="wc">
+						<PushButton lw="0" lw8="0.5" id="build_edit" text="@string(edit_build, Edit Build)" margin-right="2dp" />
+						<PushButton lw="0" lw8="0.5" id="build_add" text="@string(add_build, Add Build)" margin-left="2dp" />
+					</hbox>
+					-->
+					<TextView text="@string(build_target, Build Target)" margin-top="8dp" />
+					<hbox lw="mp" lh="wc">
+						<DropDownList id="build_type_list" layout_width="0" layout_weight="1" layout_height="wrap_content" />
+				<!--	<PushButton id="build_type_add" text="@string(add_build, Add Build)" text-as-fallback="true" icon="icon(add, 12dp)"  margin-left="2dp"/> -->
+					</hbox>
+					<PushButton id="build_button" lw="mp" lh="wc" text="@string(build, Build)" margin-top="8dp" icon="icon(hammer, 12dp)" />
+				</vbox>
+			</ScrollView>
+		)html" );
+	mTab = mSidePanel->add( mUISceneNode->getTranslatorStringFromKey( "build", "Build" ), node,
+							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
+	mTab->setTextAsFallback( true );
+
+	updateSidePanelTab();
+}
+
+void ProjectBuildManager::updateSidePanelTab() {
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
+	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
+	UIPushButton* buildButton = buildTab->find<UIPushButton>( "build_button" );
+
+	buildList->getListBox()->clear();
+
+	String first = mConfig.buildName;
+	std::vector<String> buildNamesItems;
+	for ( const auto& build : mBuilds ) {
+		buildNamesItems.push_back( build.first );
+		if ( first.empty() )
+			first = build.first;
+	}
+
+	buildList->getListBox()->addListBoxItems( buildNamesItems );
+
+	if ( !first.empty() && buildList->getListBox()->getItemIndex( first ) != eeINDEX_NOT_FOUND ) {
+		buildList->getListBox()->setSelected( first );
+		mConfig.buildName = first;
+	} else if ( !buildList->getListBox()->isEmpty() ) {
+		buildList->getListBox()->setSelected( 0L );
+		mConfig.buildName = buildList->getListBox()->getItemSelectedText();
+	}
+
+	buildList->setEnabled( !buildList->getListBox()->isEmpty() );
+
+	UIDropDownList* buildTypeList = buildTab->find<UIDropDownList>( "build_type_list" );
+
+	buildTypeList->getListBox()->clear();
+
+	first = buildList->getListBox()->getItemSelectedText();
+	if ( !first.empty() ) {
+		auto foundIt = mBuilds.find( first );
+		if ( foundIt != mBuilds.end() ) {
+			const auto& buildTypes = foundIt->second.buildTypes();
+			std::vector<String> buildTypesItems;
+			for ( const auto& buildType : buildTypes )
+				buildTypesItems.emplace_back( buildType );
+			buildTypeList->getListBox()->addListBoxItems( buildTypesItems );
+			if ( buildTypeList->getListBox()->getItemIndex( mConfig.buildType ) !=
+				 eeINDEX_NOT_FOUND ) {
+				buildTypeList->getListBox()->setSelected( mConfig.buildType );
+				mConfig.buildType = first;
+			} else if ( !buildTypeList->getListBox()->isEmpty() ) {
+				buildTypeList->getListBox()->setSelected( 0 );
+				mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
+			}
+		}
+	}
+	buildTypeList->setEnabled( !buildTypeList->getListBox()->isEmpty() );
+
+	buildList->removeEventsOfType( Event::OnItemSelected );
+	buildList->addEventListener( Event::OnItemSelected, [this, buildList]( const Event* ) {
+		mConfig.buildName = buildList->getListBox()->getItemSelectedText();
+	} );
+
+	buildTypeList->removeEventsOfType( Event::OnItemSelected );
+	buildTypeList->addEventListener( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
+		mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
+	} );
+
+	buildButton->addMouseClickListener(
+		[this]( const Event* ) {
+			if ( isBuilding() ) {
+				cancelBuild();
+			} else {
+				buildCurrentConfig( mApp->getStatusBuildOutputController() );
+			}
+		},
+		MouseButton::EE_BUTTON_LEFT );
 }
 
 } // namespace ecode

@@ -81,21 +81,23 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 		}
 	}
 
-	setEnabled( false );
-	Node* overFind = getUISceneNode()->overFind( pos );
-	setEnabled( true );
+	if ( tabW->getAllowDragAndDropTabs() ) {
+		setEnabled( false );
+		Node* overFind = getUISceneNode()->overFind( pos );
+		setEnabled( true );
 
-	if ( overFind && overFind->isType( UI_TYPE_WIDGET ) ) {
-		UIWidget* widget = overFind->asType<UIWidget>()->acceptsDropOfWidgetInTree( this );
+		if ( overFind && overFind->isType( UI_TYPE_WIDGET ) ) {
+			UIWidget* widget = overFind->asType<UIWidget>()->acceptsDropOfWidgetInTree( this );
 
-		if ( mCurDropWidget ) {
-			mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 0 );
-			mCurDropWidget = nullptr;
-		}
+			if ( mCurDropWidget ) {
+				mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 0 );
+				mCurDropWidget = nullptr;
+			}
 
-		if ( widget ) {
-			mCurDropWidget = widget;
-			mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 1 );
+			if ( widget ) {
+				mCurDropWidget = widget;
+				mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 1 );
+			}
 		}
 	}
 

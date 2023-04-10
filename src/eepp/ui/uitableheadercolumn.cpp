@@ -8,7 +8,7 @@ UITableHeaderColumn::UITableHeaderColumn( const std::string& parentTag, UIAbstra
 										  const size_t& colIndex ) :
 	UIPushButton( parentTag + "::header::column" ), mView( view ), mColIndex( colIndex ) {
 	setDragEnabled( true );
-	mInnerWidgetOrientation = InnerWidgetOrientation::Right;
+	mInnerWidgetOrientation = InnerWidgetOrientation::IconTextBoxWidget;
 	auto cb = [&]( const Event* ) { updateLayout(); };
 	mImage = UIImage::NewWithTag( mTag + "::arrow" );
 	mImage->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )

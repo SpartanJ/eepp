@@ -38,6 +38,8 @@ class StatusBuildOutputController {
 	UICodeEditor* mContainer{ nullptr };
 
 	UICodeEditor* createContainer();
+
+	UIPushButton* getBuildButton( App* app );
 };
 
 } // namespace ecode

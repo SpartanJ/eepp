@@ -182,7 +182,11 @@ bool Process::join( int* const returnCodeOut ) {
 
 bool Process::kill() {
 	eeASSERT( mProcess != nullptr );
-	return PROCESS_PTR->alive ? 0 == subprocess_terminate( PROCESS_PTR ) : false;
+	if ( PROCESS_PTR->alive ) {
+		destroy();
+		return 0 == subprocess_terminate( PROCESS_PTR );
+	}
+	return false;
 }
 
 bool Process::destroy() {

@@ -72,6 +72,15 @@ static std::string getProjectOutputParserTypeToString( const ProjectOutputParser
 	return "notice";
 }
 
+UIPushButton* StatusBuildOutputController::getBuildButton( App* app ) {
+	if ( app->getSidePanel() ) {
+		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab" );
+		if ( tab )
+			return tab->find<UIPushButton>( "build_button" );
+	}
+	return nullptr;
+}
+
 void StatusBuildOutputController::run( const std::string& buildName, const std::string& buildType,
 									   const ProjectBuildOutputParser& outputParser ) {
 	if ( !mApp->getProjectBuildManager() )
@@ -103,6 +112,10 @@ void StatusBuildOutputController::run( const std::string& buildName, const std::
 	mContainer->getDocument().setSyntaxDefinition( synDef );
 	mContainer->getVScrollBar()->setValue( 1.f );
 
+	UIPushButton* buildButton = getBuildButton( mApp );
+	if ( buildButton )
+		buildButton->setText( mApp->i18n( "cancel_build", "Cancel Build" ) );
+
 	auto res = pbm->run(
 		buildName, [this]( const auto& key, const auto& def ) { return mApp->i18n( key, def ); },
 		buildType,
@@ -131,6 +144,10 @@ void StatusBuildOutputController::run( const std::string& buildName, const std::
 				if ( scrollToBottom )
 					mContainer->setScrollY( mContainer->getMaxScroll().y );
 			} );
+
+			UIPushButton* buildButton = nullptr;
+			if ( ( buildButton = getBuildButton( mApp ) ) )
+				buildButton->setText( mApp->i18n( "build", "Build" ) );
 		} );
 
 	if ( !res.isValid() ) {

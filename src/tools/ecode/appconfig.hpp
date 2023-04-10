@@ -109,6 +109,12 @@ struct ProjectDocumentConfig {
 	ProjectDocumentConfig( const DocumentConfig& doc ) { this->doc = doc; }
 };
 
+struct ProjectBuildConfiguration {
+	ProjectBuildConfiguration() {}
+	std::string buildName;
+	std::string buildType;
+};
+
 class NewTerminalOrientation {
   public:
 	enum Orientation { Same, Vertical, Horizontal };
@@ -175,7 +181,8 @@ class AppConfig {
 			   const GlobalSearchBarConfig& globalSearchBarConfig, PluginManager* pluginManager );
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-					  const std::string& configPath, const ProjectDocumentConfig& docConfig );
+					  const std::string& configPath, const ProjectDocumentConfig& docConfig,
+					  const ProjectBuildConfiguration& buildConfig );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,

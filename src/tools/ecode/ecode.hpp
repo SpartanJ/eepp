@@ -235,22 +235,8 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "toggle-locatebar", [&] { mUniversalLocator->toggleLocateBar(); } );
 		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
 		t.setCommand( "project-build-start", [&] {
-			if ( mProjectBuildManager && !mProjectBuildManager->isBuilding() &&
-				 !mProjectBuildManager->getBuilds().empty() ) {
-				std::string os = String::toLower( Sys::getPlatform() );
-				const ProjectBuild* build = nullptr;
-				for ( const auto& buildIt : mProjectBuildManager->getBuilds() ) {
-					if ( buildIt.second.isOSSupported( os ) ) {
-						build = &buildIt.second;
-					}
-				}
-
-				if ( build ) {
-					mStatusBuildOutputController->run(
-						build->getName(),
-						!build->buildTypes().empty() ? *build->buildTypes().begin() : "",
-						mProjectBuildManager->getOutputParser( build->getName() ) );
-				}
+			if ( mProjectBuildManager && mStatusBuildOutputController ) {
+				mProjectBuildManager->buildCurrentConfig( mStatusBuildOutputController.get() );
 			}
 		} );
 		t.setCommand( "project-build-cancel", [&] {
@@ -403,6 +389,8 @@ class App : public UICodeEditorSplitter::Client {
 	void showStatusBar( bool show );
 
 	ProjectBuildManager* getProjectBuildManager() const;
+
+	UITabWidget* getSidePanel() const;
 
   protected:
 	std::vector<std::string> mArgs;

@@ -81,7 +81,9 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 				.unescape() );
 		msgBox->addEventListener( Event::OnConfirm, [&]( const Event* ) {
 			if ( !mCurrentProject.empty() )
-				mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
+				mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
+									 mProjectBuildManager ? mProjectBuildManager->getConfig()
+														  : ProjectBuildConfiguration() );
 			saveConfig();
 			mWindow->close();
 		} );
@@ -92,7 +94,9 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		return false;
 	} else {
 		if ( !mCurrentProject.empty() )
-			mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
+			mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
+								 mProjectBuildManager ? mProjectBuildManager->getConfig()
+													  : ProjectBuildConfiguration() );
 		saveConfig();
 		return true;
 	}
@@ -750,6 +754,10 @@ void App::showStatusBar( bool show ) {
 
 ProjectBuildManager* App::getProjectBuildManager() const {
 	return mProjectBuildManager.get();
+}
+
+UITabWidget* App::getSidePanel() const {
+	return mSidePanel;
 }
 
 void App::switchSidePanel() {
@@ -1788,7 +1796,9 @@ void App::closeEditors() {
 	mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
 	mStatusBar->setVisible( mConfig.ui.showStatusBar );
 
-	mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
+	mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
+						 mProjectBuildManager ? mProjectBuildManager->getConfig()
+											  : ProjectBuildConfiguration() );
 	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
 	while ( !editors.empty() ) {
 		UICodeEditor* editor = editors[0];
@@ -2864,11 +2874,11 @@ void App::loadFolder( const std::string& path ) {
 	mCurrentProject = rpath;
 	mPluginManager->setWorkspaceFolder( rpath );
 
-	mProjectBuildManager = std::make_unique<ProjectBuildManager>( rpath, mThreadPool );
-
 	loadDirTree( rpath );
 
 	Clock projClock;
+	mProjectBuildManager =
+		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, mThreadPool, this );
 	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
@@ -3432,7 +3442,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			{ "cursor-pointer", 0xec09 },
 			{ "drive", 0xedf8 },
 			{ "refresh", 0xf064 },
-			{ "hearth-pulse", 0xee10 } };
+			{ "hearth-pulse", 0xee10 },
+			{ "add", 0xea12 },
+			{ "hammer", 0xedee } };
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
 
@@ -3825,8 +3837,6 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ "convert-lang-output" }, "" );
 	args::Flag disableFileLogs( parser, "disable-file-logs", "Disables writing logs to a log file",
 								{ "disable-file-logs" } );
-	args::ValueFlag<std::string> testBuild( parser, "test-build-path", "Test project build",
-											{ "test-build-path" } );
 
 	std::vector<std::string> args;
 	try {
@@ -3846,23 +3856,6 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
 		return EXIT_FAILURE;
-	}
-
-	if ( !testBuild.Get().empty() ) {
-		ProjectBuildManager bm( testBuild.Get(), {} );
-		auto i18n = []( const std::string&, const String& def ) -> String { return def; };
-		auto res = bm.generateBuildCommands( "ecode", i18n, "debug" );
-		if ( res.isValid() ) {
-			for ( const auto& cmd : res.cmds ) {
-				for ( const auto& env : cmd.envs )
-					std::cout << "export " << env.first << "=" << env.second << "\n";
-				std::cout << cmd.workingDir << " " << cmd.cmd << " " << cmd.args << "\n";
-			}
-		} else {
-			std::cout << res.errorMsg.toUtf8() << "\n";
-		}
-
-		return EXIT_SUCCESS;
 	}
 
 	if ( convertLangPath && !convertLangPath.Get().empty() ) {

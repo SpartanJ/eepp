@@ -8,6 +8,42 @@
 
 namespace EE { namespace UI {
 
+InnerWidgetOrientation UIPushButton::innerWidgetOrientationFromString( std::string iwo ) {
+	String::toLowerInPlace( iwo );
+	if ( iwo == "widgeticontextbox" )
+		return InnerWidgetOrientation::WidgetIconTextBox;
+	if ( iwo == "widgettextboxicon" )
+		return InnerWidgetOrientation::WidgetTextBoxIcon;
+	if ( iwo == "icontextboxwidget" )
+		return InnerWidgetOrientation::IconTextBoxWidget;
+	if ( iwo == "iconwidgettextbox" )
+		return InnerWidgetOrientation::IconWidgetTextBox;
+	if ( iwo == "textboxiconwidget" )
+		return InnerWidgetOrientation::TextBoxIconWidget;
+	if ( iwo == "textboxwidgeticon" )
+		return InnerWidgetOrientation::TextBoxWidgetIcon;
+	return InnerWidgetOrientation::WidgetIconTextBox;
+}
+
+std::string
+UIPushButton::innerWidgetOrientationToString( const InnerWidgetOrientation& orientation ) {
+	switch ( orientation ) {
+		case InnerWidgetOrientation::WidgetIconTextBox:
+			return "widgeticontextbox";
+		case InnerWidgetOrientation::WidgetTextBoxIcon:
+			return "widgettextboxicon";
+		case InnerWidgetOrientation::IconTextBoxWidget:
+			return "icontextboxwidget";
+		case InnerWidgetOrientation::IconWidgetTextBox:
+			return "iconwidgettextbox";
+		case InnerWidgetOrientation::TextBoxIconWidget:
+			return "textboxiconwidget";
+		case InnerWidgetOrientation::TextBoxWidgetIcon:
+			return "textboxwidgeticon";
+	}
+	return "widgeticontextbox";
+}
+
 UIPushButton* UIPushButton::New() {
 	return eeNew( UIPushButton, () );
 }
@@ -216,21 +252,35 @@ Vector2f UIPushButton::packLayout( const std::vector<UIWidget*>& widgets, const 
 
 UIWidget* UIPushButton::getFirstInnerItem() const {
 	switch ( mInnerWidgetOrientation ) {
-		case InnerWidgetOrientation::Left:
+		case InnerWidgetOrientation::WidgetIconTextBox:
 			return getExtraInnerWidget() && getExtraInnerWidget()->isVisible()
 					   ? getExtraInnerWidget()
 					   : mIcon;
-		case InnerWidgetOrientation::Center:
+		case InnerWidgetOrientation::IconWidgetTextBox:
 			return mIcon->isVisible()
 					   ? mIcon
 					   : ( getExtraInnerWidget() && getExtraInnerWidget()->isVisible()
 							   ? getExtraInnerWidget()
 							   : mTextBox );
-		case InnerWidgetOrientation::Right:
+		case InnerWidgetOrientation::IconTextBoxWidget:
 			if ( mIcon->isVisible() )
 				return mIcon;
 			else
 				return mTextBox;
+		case InnerWidgetOrientation::WidgetTextBoxIcon:
+			return ( getExtraInnerWidget() && getExtraInnerWidget()->isVisible() )
+					   ? getExtraInnerWidget()
+					   : mTextBox;
+		case InnerWidgetOrientation::TextBoxIconWidget:
+			if ( mTextBox->isVisible() )
+				return mTextBox;
+			if ( mIcon->isVisible() )
+				return mIcon;
+			break;
+		case InnerWidgetOrientation::TextBoxWidgetIcon:
+			if ( mTextBox->isVisible() )
+				return mTextBox;
+			break;
 	}
 	return mChild->isWidget() ? mChild->asType<UIWidget>() : nullptr;
 }
@@ -239,14 +289,23 @@ Sizef UIPushButton::updateLayout() {
 	Sizef size;
 	Rectf autoPadding = calculatePadding();
 	switch ( mInnerWidgetOrientation ) {
-		case InnerWidgetOrientation::Left:
+		case InnerWidgetOrientation::WidgetIconTextBox:
 			size = packLayout( { getExtraInnerWidget(), mIcon, mTextBox }, autoPadding );
 			break;
-		case InnerWidgetOrientation::Center:
+		case InnerWidgetOrientation::IconWidgetTextBox:
 			size = packLayout( { mIcon, getExtraInnerWidget(), mTextBox }, autoPadding );
 			break;
-		case InnerWidgetOrientation::Right:
+		case InnerWidgetOrientation::IconTextBoxWidget:
 			size = packLayout( { mIcon, mTextBox, getExtraInnerWidget() }, autoPadding );
+			break;
+		case InnerWidgetOrientation::WidgetTextBoxIcon:
+			size = packLayout( { getExtraInnerWidget(), mTextBox, mIcon }, autoPadding );
+			break;
+		case InnerWidgetOrientation::TextBoxIconWidget:
+			size = packLayout( { mTextBox, mIcon, getExtraInnerWidget() }, autoPadding );
+			break;
+		case InnerWidgetOrientation::TextBoxWidgetIcon:
+			size = packLayout( { mTextBox, getExtraInnerWidget(), mIcon }, autoPadding );
 			break;
 	}
 	return size.ceil();
@@ -401,14 +460,23 @@ Sizef UIPushButton::getContentSize() const {
 	Sizef size;
 	Rectf autoPadding = calculatePadding();
 	switch ( mInnerWidgetOrientation ) {
-		case InnerWidgetOrientation::Left:
+		case InnerWidgetOrientation::WidgetIconTextBox:
 			size = calcLayoutSize( { getExtraInnerWidget(), mIcon, mTextBox }, autoPadding );
 			break;
-		case InnerWidgetOrientation::Center:
+		case InnerWidgetOrientation::IconWidgetTextBox:
 			size = calcLayoutSize( { mIcon, getExtraInnerWidget(), mTextBox }, autoPadding );
 			break;
-		case InnerWidgetOrientation::Right:
+		case InnerWidgetOrientation::IconTextBoxWidget:
 			size = calcLayoutSize( { mIcon, mTextBox, getExtraInnerWidget() }, autoPadding );
+			break;
+		case InnerWidgetOrientation::TextBoxIconWidget:
+			size = calcLayoutSize( { mIcon, mTextBox, getExtraInnerWidget() }, autoPadding );
+			break;
+		case InnerWidgetOrientation::TextBoxWidgetIcon:
+			size = calcLayoutSize( { mTextBox, getExtraInnerWidget(), mIcon }, autoPadding );
+			break;
+		case InnerWidgetOrientation::WidgetTextBoxIcon:
+			size = calcLayoutSize( { getExtraInnerWidget(), mTextBox, mIcon }, autoPadding );
 			break;
 	}
 	if ( getSkin() )
@@ -436,6 +504,8 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::InnerWidgetOrientation:
+			return innerWidgetOrientationToString( mInnerWidgetOrientation );
 		case PropertyId::Text:
 			return getText().toUtf8();
 		case PropertyId::Icon:
@@ -505,6 +575,9 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 	}
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::InnerWidgetOrientation:
+			setInnerWidgetOrientation( innerWidgetOrientationFromString( attribute.asString() ) );
+			break;
 		case PropertyId::Text:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 				setText( getUISceneNode()->getTranslatorString( attribute.asString() ) );

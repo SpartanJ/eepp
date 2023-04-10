@@ -348,8 +348,8 @@ json saveNode( Node* node ) {
 }
 
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-							 const std::string& configPath,
-							 const ProjectDocumentConfig& docConfig ) {
+							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
+							 const ProjectBuildConfiguration& buildConfig ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::vector<UICodeEditor*> editors = editorSplitter->getAllEditors();
 	std::vector<ProjectPath> paths;
@@ -376,6 +376,8 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 				  TextDocument::lineEndingToString( docConfig.doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", docConfig.doc.tabWidth );
 	ini.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
+	ini.setValue( "build", "build_name", buildConfig.buildName );
+	ini.setValue( "build", "build_type", buildConfig.buildType );
 	ini.setValue( "nodes", "documents",
 				  saveNode( editorSplitter->getBaseLayout()->getFirstChild() ).dump() );
 	ini.deleteKey( "files" );
@@ -509,6 +511,13 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	docConfig.doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
 	docConfig.doc.lineBreakingColumn =
 		eemax( 0, ini.getValueI( "document", "line_breaking_column", 100 ) );
+
+	if ( app->getProjectBuildManager() ) {
+		ProjectBuildConfiguration prjCfg;
+		prjCfg.buildName = ini.getValue( "build", "build_name", "" );
+		prjCfg.buildType = ini.getValue( "build", "build_type", "" );
+		app->getProjectBuildManager()->setConfig( prjCfg );
+	}
 
 	if ( ini.keyValueExists( "nodes", "documents" ) ) {
 		json j;

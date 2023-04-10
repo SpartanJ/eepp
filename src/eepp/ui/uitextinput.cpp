@@ -314,7 +314,7 @@ Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		}
-	} else if ( ( flags & EE_BUTTON_RMASK ) ) {
+	} else if ( ( flags & EE_BUTTON_RMASK ) && mEnabledCreateContextMenu ) {
 		onCreateContextMenu( position, flags );
 	}
 	return UITextView::onMouseUp( position, flags );

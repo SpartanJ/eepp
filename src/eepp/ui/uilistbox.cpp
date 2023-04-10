@@ -803,8 +803,12 @@ const Uint32& UIListBox::getRowHeight() const {
 	return mRowHeight;
 }
 
-Uint32 UIListBox::getCount() {
+Uint32 UIListBox::getCount() const {
 	return (Uint32)mItems.size();
+}
+
+bool UIListBox::isEmpty() const {
+	return mItems.empty();
 }
 
 void UIListBox::setSelected( const String& Text ) {
@@ -1062,6 +1066,10 @@ std::vector<PropertyId> UIListBox::getPropertiesImplemented() const {
 				   PropertyId::SelectedText, PropertyId::ScrollBarStyle };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
+}
+
+Uint32 UIListBox::getMaxTextWidth() const {
+	return mMaxTextWidth;
 }
 
 bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {

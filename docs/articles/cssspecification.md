@@ -856,6 +856,26 @@ the load can't be determined.
 
 ---
 
+### inner-widget-orientation
+
+PushButton can contain 3 widgets: the text (textbox), the icon, and a custom extra 
+item. And with these 3 items does its own layouting. This property allows configuring the order
+in which these items are displayed/sorted inside the button.
+
+* Applicable to: EE::UI::UIPushButton (PushButton) and any element that extends it: UIMenuItem, UISelectButton (SelectButton), UITableCell , UITableHeaderColumn.
+* Data Type: [string-list](#string-list-data-type)
+* Value List (Widget is the custom widget):
+  * `widgeticontextbox`: Widget | Icon | TextBox
+  * `widgettextboxicon`: Widget | TextBox | Icon
+  * `icontextboxwidget`: Icon | TextBox | Widget
+  * `iconwidgettextbox`: Icon | Widget | TextBox
+  * `textboxiconwidget`: TextBox | Icon | Widget
+  * `textboxwidgeticon`: TextBox | Widget | Icon
+
+* Default value: `widgeticontextbox`
+
+---
+
 ### layout-gravity
 
 The layout gravity defines how the element gravitates againts its parent (when possible). Gravity

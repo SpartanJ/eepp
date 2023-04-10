@@ -129,6 +129,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	bool mMouseDown;
 	bool mCreateDefaultContextMenuOptions{ true };
 	bool mEscapePastedText{ false };
+	bool mEnabledCreateContextMenu{ true };
 	Uint32 mMaxLength{ 0 };
 	KeyBindings mKeyBindings;
 	Clock mLastDoubleClick;

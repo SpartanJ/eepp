@@ -211,6 +211,7 @@ enum class PropertyId : Uint32 {
 	GravityOwner = String::hash( "gravity-owner" ),
 	Href = String::hash( "href" ),
 	Focusable = String::hash( "focusable" ),
+	InnerWidgetOrientation = String::hash( "inner-widget-orientation" ),
 };
 
 enum class PropertyType : Uint32 {
