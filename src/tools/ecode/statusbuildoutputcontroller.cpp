@@ -138,6 +138,10 @@ void StatusBuildOutputController::run( const std::string& buildName, const std::
 	}
 }
 
+UICodeEditor* StatusBuildOutputController::getContainer() {
+	return mContainer;
+}
+
 UICodeEditor* StatusBuildOutputController::createContainer() {
 	UICodeEditor* editor = UICodeEditor::NewOpt( true, true );
 	editor->setLocked( true );

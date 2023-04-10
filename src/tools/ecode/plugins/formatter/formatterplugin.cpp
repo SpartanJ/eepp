@@ -159,7 +159,11 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 		Log::error( "FormatterPlugin::loadFormatterConfig - Error parsing formatter config from "
 					"path %s, error: ",
 					path.c_str(), e.what() );
-		return;
+		if ( !updateConfigFile )
+			return;
+		// Recreate it
+		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"formatters\":[]\n}\n",
+						 nullptr, true, true );
 	}
 
 	if ( j.contains( "config" ) ) {

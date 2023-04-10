@@ -84,7 +84,10 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 		Log::error( "LinterPlugin::loadLinterConfig - Error parsing linter config from "
 					"path %s, error: ",
 					path.c_str(), e.what() );
-		return;
+		if ( !updateConfigFile )
+			return;
+		// Recreate it
+		j = json::parse( "{\n\"config\":{},\n\"linters\":[]\n}\n", nullptr, true, true );
 	}
 
 	if ( j.contains( "config" ) ) {

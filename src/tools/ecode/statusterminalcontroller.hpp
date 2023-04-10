@@ -25,6 +25,8 @@ class StatusTerminalController {
 
 	void show();
 
+	UITerminal* getUITerminal();
+
   protected:
 	UISplitter* mMainSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };

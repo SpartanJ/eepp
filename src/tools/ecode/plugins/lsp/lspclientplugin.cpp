@@ -732,7 +732,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		Log::error( "LSPClientPlugin::loadLSPConfig - Error parsing LSP config from "
 					"path %s, error: ",
 					path.c_str(), e.what() );
-		return;
+		if ( !updateConfigFile )
+			return;
+		// Recreate it
+		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"servers\":[]\n}\n",
+						 nullptr, true, true );
 	}
 
 	if ( j.contains( "config" ) ) {

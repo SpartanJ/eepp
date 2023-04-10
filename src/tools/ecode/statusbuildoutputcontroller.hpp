@@ -28,6 +28,8 @@ class StatusBuildOutputController {
 	void run( const std::string& buildName, const std::string& buildType,
 			  const ProjectBuildOutputParser& outputParser = {} );
 
+	UICodeEditor* getContainer();
+
   protected:
 	UISplitter* mMainSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };

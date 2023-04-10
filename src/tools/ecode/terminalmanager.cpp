@@ -11,6 +11,11 @@ void TerminalManager::applyTerminalColorScheme( const TerminalColorScheme& color
 		if ( widget->isType( UI_TYPE_TERMINAL ) )
 			widget->asType<UITerminal>()->setColorScheme( colorScheme );
 	} );
+
+	if ( mApp->getStatusTerminalController() &&
+		 mApp->getStatusTerminalController()->getUITerminal() ) {
+		mApp->getStatusTerminalController()->getUITerminal()->setColorScheme( colorScheme );
+	}
 }
 
 void TerminalManager::setTerminalColorScheme( const std::string& name ) {
@@ -36,10 +41,10 @@ void TerminalManager::loadTerminalColorSchemes() {
 		colorSchemes.emplace_back( TerminalColorScheme::getDefault() );
 	if ( FileSystem::isDirectory( mTerminalColorSchemesPath ) ) {
 		auto colorSchemesFiles = FileSystem::filesGetInPath( mTerminalColorSchemesPath );
-		for ( auto& file : colorSchemesFiles ) {
+		for ( const auto& file : colorSchemesFiles ) {
 			auto colorSchemesInFile =
 				TerminalColorScheme::loadFromFile( mTerminalColorSchemesPath + file );
-			for ( auto& coloScheme : colorSchemesInFile )
+			for ( const auto& coloScheme : colorSchemesInFile )
 				colorSchemes.emplace_back( coloScheme );
 		}
 	} else {

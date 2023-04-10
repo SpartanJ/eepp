@@ -62,6 +62,10 @@ void StatusTerminalController::show() {
 	}
 }
 
+UITerminal* StatusTerminalController::getUITerminal() {
+	return mUITerminal;
+}
+
 UITerminal* StatusTerminalController::createTerminal( const std::string& workingDir,
 													  std::string program,
 													  const std::vector<std::string>& args ) {

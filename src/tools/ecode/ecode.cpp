@@ -1477,6 +1477,12 @@ void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 void App::onColorSchemeChanged( const std::string& ) {
 	mSettings->updateColorSchemeMenu();
 	mGlobalSearchController->updateColorScheme( mSplitter->getCurrentColorScheme() );
+
+	if ( mStatusBuildOutputController && mStatusBuildOutputController->getContainer() ) {
+		mStatusBuildOutputController->getContainer()->setColorScheme(
+			mSplitter->getCurrentColorScheme() );
+	}
+
 	mNotificationCenter->addNotification(
 		String::format( i18n( "color_scheme_set", "Color scheme: %s" ).toUtf8().c_str(),
 						mSplitter->getCurrentColorScheme().getName().c_str() ) );
