@@ -418,6 +418,7 @@ Defines where the border box is drawn.
   * `inside`: The border will be drawn inside the content box.
   * `outside`: The border will be drawn outside the content box.
   * `outline`: The border will be drawn in the middle point between the content box and the border width.
+* Default value: `inside`
 
 ---
 

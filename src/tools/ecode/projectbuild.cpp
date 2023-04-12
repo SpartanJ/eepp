@@ -138,7 +138,12 @@ static ProjectOutputParserTypes outputParserType( const std::string& typeStr ) {
 }
 
 bool ProjectBuildManager::load() {
-	ScopedOp scopedOp( [this]() { mLoading = true; }, [this]() { mLoading = false; } );
+	ScopedOp scopedOp( [this]() { mLoading = true; },
+					   [this]() {
+						   mLoading = false;
+						   if ( mSidePanel )
+							   mSidePanel->runOnMainThread( [this]() { buildSidePanelTab(); } );
+					   } );
 
 	mProjectFile = mProjectRoot + ".ecode/project_build.json";
 	if ( !FileSystem::fileExists( mProjectFile ) )
@@ -260,10 +265,6 @@ bool ProjectBuildManager::load() {
 		mBuilds.insert( { build.key(), std::move( b ) } );
 	}
 
-	if ( mSidePanel ) {
-		mSidePanel->runOnMainThread( [this]() { buildSidePanelTab(); } );
-	}
-
 	mLoaded = true;
 	return true;
 }
@@ -331,17 +332,13 @@ void ProjectBuildManager::setConfig( const ProjectBuildConfiguration& config ) {
 
 void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc ) {
 	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
-		std::string os = String::toLower( Sys::getPlatform() );
 		const ProjectBuild* build = nullptr;
-		for ( const auto& buildIt : getBuilds() ) {
-			if ( buildIt.second.getName() == mConfig.buildName ) {
+		for ( const auto& buildIt : getBuilds() )
+			if ( buildIt.second.getName() == mConfig.buildName )
 				build = &buildIt.second;
-			}
-		}
 
-		if ( build ) {
+		if ( build )
 			sboc->run( build->getName(), mConfig.buildType, getOutputParser( build->getName() ) );
-		}
 	}
 }
 
@@ -555,12 +552,16 @@ void ProjectBuildManager::updateSidePanelTab() {
 	buildList->removeEventsOfType( Event::OnItemSelected );
 	buildList->addEventListener( Event::OnItemSelected, [this, buildList]( const Event* ) {
 		mConfig.buildName = buildList->getListBox()->getItemSelectedText();
+		mConfig.buildType = "";
+		updateSidePanelTab();
 	} );
 
 	buildTypeList->removeEventsOfType( Event::OnItemSelected );
 	buildTypeList->addEventListener( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
 		mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
 	} );
+
+	buildButton->setEnabled( !mConfig.buildName.empty() );
 
 	buildButton->addMouseClickListener(
 		[this]( const Event* ) {
