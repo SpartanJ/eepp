@@ -873,6 +873,45 @@ void UISceneNode::onSizeChange() {
 
 void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet ) {
 	loadFontFaces( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::FontFace ) );
+	loadGlyphIcon( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::GlyphIcon ) );
+}
+
+void UISceneNode::loadGlyphIcon( const StyleSheetStyleVector& styles ) {
+	for ( auto& style : styles ) {
+		auto family = style->getPropertyById( PropertyId::FontFamily );
+		auto name = style->getPropertyById( PropertyId::Name );
+		auto glyph = style->getPropertyById( PropertyId::Glyph );
+		if ( name == nullptr || family == nullptr || glyph == nullptr )
+			return;
+		CSS::StyleSheetProperty familyProp( *family );
+		CSS::StyleSheetProperty nameProp( *name );
+		CSS::StyleSheetProperty glyphProp( *glyph );
+
+		if ( !familyProp.isEmpty() && !nameProp.isEmpty() && !glyphProp.isEmpty() ) {
+			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
+
+			if ( nullptr == fontSearch )
+				continue;
+
+			if ( nullptr == getUIIconThemeManager()->getCurrentTheme() ||
+				 fontSearch->getType() != FontType::TTF )
+				break;
+
+			Uint32 codePoint = 0;
+			std::string buffer( glyphProp.asString() );
+			Uint32 value;
+			if ( String::startsWith( buffer, "0x" ) ) {
+				if ( String::fromString( value, buffer, std::hex ) )
+					codePoint = value;
+			} else if ( String::fromString( value, buffer ) ) {
+				codePoint = value;
+			}
+
+			if ( codePoint )
+				getUIIconThemeManager()->getCurrentTheme()->add( UIGlyphIcon::New(
+					nameProp.asString(), static_cast<FontTrueType*>( fontSearch ), codePoint ) );
+		}
+	}
 }
 
 void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {

@@ -227,6 +227,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
 
+	void loadGlyphIcon( const CSS::StyleSheetStyleVector& styles );
+
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	void onWidgetDelete( Node* node );

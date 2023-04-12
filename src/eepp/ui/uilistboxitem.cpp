@@ -92,6 +92,8 @@ void UIListBoxItem::select() {
 
 			LBParent->onSelected();
 		} else {
+			popState( UIState::StateSelected );
+
 			mNodeFlags &= ~NODE_FLAG_SELECTED;
 
 			LBParent->mSelected.remove( LBParent->getItemIndex( this ) );

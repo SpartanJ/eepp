@@ -9,7 +9,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-enum class AtRuleType : Uint32 { None, FontFace };
+enum class AtRuleType : Uint32 { None, FontFace, GlyphIcon };
 
 class EE_API StyleSheetStyle {
   public:

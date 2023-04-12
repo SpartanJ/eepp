@@ -203,6 +203,8 @@ void StyleSheetStyle::setMarker( const Uint32& marker ) {
 AtRuleType StyleSheetStyle::checkAtRule() {
 	if ( mSelector.getName() == "@font-face" ) {
 		return AtRuleType::FontFace;
+	} else if ( mSelector.getName() == "@glyph-icon" ) {
+		return AtRuleType::GlyphIcon;
 	}
 
 	return AtRuleType::None;

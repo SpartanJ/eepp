@@ -251,6 +251,9 @@ bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Value:
 			setChecked( attribute.asBool() );
 			break;
+		case PropertyId::Tooltip:
+			if ( mActiveButton )
+				mActiveButton->applyProperty( attribute );
 		default:
 			return UITextView::applyProperty( attribute );
 	}

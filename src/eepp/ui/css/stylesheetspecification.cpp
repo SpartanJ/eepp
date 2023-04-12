@@ -400,6 +400,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
 		.setType( PropertyType::String );
 
+	registerProperty( "glyph", "" ).setType( PropertyType::String );
+	registerProperty( "name", "" ).setType( PropertyType::String );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );

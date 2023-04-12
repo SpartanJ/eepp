@@ -288,13 +288,9 @@ void StyleSheet::addMediaQueryList( MediaQueryList::ptr list ) {
 
 StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& atRuleType ) const {
 	StyleSheetStyleVector vector;
-
-	for ( auto& node : mNodes ) {
-		if ( node->getAtRuleType() == atRuleType ) {
+	for ( auto& node : mNodes )
+		if ( node->getAtRuleType() == atRuleType )
 			vector.push_back( node.get() );
-		}
-	}
-
 	return vector;
 }
 

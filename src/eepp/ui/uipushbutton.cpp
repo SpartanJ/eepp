@@ -350,8 +350,10 @@ void UIPushButton::onThemeLoaded() {
 }
 
 void UIPushButton::updateTextBox() {
-	if ( mTextBox->isVisible() != ( !getText().empty() && !mTextAsFallback ) ) {
-		mTextBox->setVisible( !getText().empty() && !mTextAsFallback );
+	bool mustBeVisible = ( !getText().empty() && !mTextAsFallback ) ||
+						 ( nullptr == mIcon || nullptr == mIcon->getDrawable() );
+	if ( mTextBox->isVisible() != mustBeVisible ) {
+		mTextBox->setVisible( mustBeVisible );
 		onAutoSize();
 		updateLayout();
 	}
