@@ -105,6 +105,8 @@ class UITerminal : public UIWidget {
 
 	void executeFile( const std::string& cmd );
 
+	void executeBinary( const std::string& binaryPath, const std::string& args = "" );
+
 	const TerminalColorScheme& getColorScheme() const;
 
 	void setColorScheme( const TerminalColorScheme& colorScheme );

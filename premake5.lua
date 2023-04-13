@@ -205,6 +205,7 @@ function build_base_configuration( package_name )
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
+		buildoptions { "/utf-8" }
 
 	filter "system:emscripten"
 		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
@@ -225,6 +226,9 @@ function build_base_cpp_configuration( package_name )
 	if _OPTIONS["with-static-eepp"] then
 		defines { "EE_STATIC" }
 	end
+
+	filter "action:vs*"
+		buildoptions { "/utf-8" }
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
@@ -309,6 +313,9 @@ function build_link_configuration( package_name, use_ee_icon )
 			files { "bin/assets/icon/ee.rc", "bin/assets/icon/ee.ico" }
 			vpaths { ['Resources/*'] = { "ee.rc", "ee.ico" } }
 		end
+
+	filter "action:vs*"
+		buildoptions { "/utf-8" }
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }

@@ -346,6 +346,7 @@ function build_base_configuration( package_name )
 
 	if is_vs() then
 		includedirs { "src/thirdparty/libzip/vs" }
+		buildoptions { "/utf-8" }
 	end
 
 	set_ios_config()
@@ -387,6 +388,10 @@ end
 function build_base_cpp_configuration( package_name )
 	if not os.is("windows") and not os.is_real("emscripten") then
 		buildoptions{ "-fPIC" }
+	end
+
+	if is_vs() then
+		buildoptions { "/utf-8" }
 	end
 
 	set_ios_config()
@@ -490,7 +495,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	if not is_vs() then
 		buildoptions{ "-std=c++17" }
 	else
-		buildoptions{ "/std:c++17" }
+		buildoptions{ "/std:c++17", "/utf-8" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then

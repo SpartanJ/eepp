@@ -177,6 +177,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void executeFile( const std::string& cmd );
 
+	void executeBinary( const std::string& binaryPath, const std::string& args = "" );
+
 	void action( TerminalShortcutAction action );
 
 	bool hasTerminated() const;

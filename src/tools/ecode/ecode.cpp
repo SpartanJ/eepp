@@ -2834,10 +2834,14 @@ static std::string getCurrentProcessPath() {
 
 void App::checkLanguagesHealth() {
 	auto path( getCurrentProcessPath() );
-	path += " --health";
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	UITerminal* term = mTerminalManager->createNewTerminal(
+		"", nullptr, "", Sys::getPlatform() == "Windows" ? "cmd.exe" : "" );
+#else
 	UITerminal* term = mTerminalManager->createNewTerminal();
+#endif
 	term->setFocus();
-	term->executeFile( path );
+	term->executeBinary( path, "--health" );
 }
 
 void App::cleanUpRecentFolders() {

@@ -130,6 +130,12 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 			.font_style( { FontStyle::bold } );
 	}
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::string check = "Yes";
+#else
+	std::string check = "✓";
+#endif
+
 	for ( const auto& ht : status ) {
 		std::string lspName = ht.lsp.name.empty() ? "None" : ht.lsp.name;
 		if ( OutputFormat::Markdown == format && !ht.lsp.name.empty() && !ht.lsp.url.empty() ) {
@@ -146,7 +152,7 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 			formatterName = "[" + ht.formatter.name + "](" + ht.formatter.url + ")";
 		}
 
-		table.add_row( { ht.lang, "✓", lspName, linterName, formatterName } );
+		table.add_row( { ht.lang, check, lspName, linterName, formatterName } );
 
 		auto& row = table[table.size() - 1];
 

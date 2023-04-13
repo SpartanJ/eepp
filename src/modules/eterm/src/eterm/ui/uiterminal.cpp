@@ -244,6 +244,11 @@ void UITerminal::executeFile( const std::string& cmd ) {
 		mTerm->executeFile( cmd );
 }
 
+void UITerminal::executeBinary( const std::string& binaryPath, const std::string& args ) {
+	if ( mTerm )
+		mTerm->executeBinary( binaryPath, args );
+}
+
 const TerminalColorScheme& UITerminal::getColorScheme() const {
 	return mTerm->getColorScheme();
 }
