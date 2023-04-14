@@ -262,6 +262,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32
 						if ( pattern.patterns.size() >= 3 && i > 0 &&
 							 text[i - 1] == pattern.patterns[2][0] )
 							continue;
+						Uint8 lead = ( 0xff & ( text[start] ) );
+						if ( !( lead < 0x80 ) ) {
+							char* strStart = const_cast<char*>( text.c_str() + start );
+							char* strEnd = strStart;
+							String::utf8Next( strEnd );
+							end = start + ( strEnd - strStart );
+						}
 						if ( curMatch == 1 && start > lastStart ) {
 							pushToken(
 								tokens, patternType,
@@ -308,6 +315,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32
 						if ( pattern.patterns.size() >= 3 && i > 0 &&
 							 text[i - 1] == pattern.patterns[2][0] )
 							continue;
+						Uint8 lead = ( 0xff & ( text[start] ) );
+						if ( !( lead < 0x80 ) ) {
+							char* strStart = const_cast<char*>( text.c_str() + start );
+							char* strEnd = strStart;
+							String::utf8Next( strEnd );
+							end = start + ( strEnd - strStart );
+						}
 						std::string patternText( text.substr( start, end - start ) );
 						std::string type = curState.currentSyntax->getSymbol( patternText );
 						if ( !skipSubSyntaxSeparator || pattern.syntax.empty() ) {

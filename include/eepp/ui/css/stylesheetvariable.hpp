@@ -3,7 +3,7 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
-#include <map>
+#include <unordered_map>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -43,7 +43,7 @@ class EE_API StyleSheetVariable {
 	Uint32 mSpecificity;
 };
 
-typedef std::map<Uint32, StyleSheetVariable> StyleSheetVariables;
+typedef std::unordered_map<Uint32, StyleSheetVariable> StyleSheetVariables;
 
 }}} // namespace EE::UI::CSS
 
