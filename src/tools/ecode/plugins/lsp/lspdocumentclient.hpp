@@ -58,6 +58,7 @@ class LSPDocumentClient : public TextDocument::Client {
 	LSPSemanticTokensDelta mSemanticTokens;
 	bool mRunningSemanticTokens{ false };
 	bool mShutdown{ false };
+	bool mFirstHighlight{ true };
 
 	void refreshTag();
 

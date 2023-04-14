@@ -115,17 +115,18 @@ void LSPDocumentClient::requestSemanticHighlighting() {
 	if ( !mServer || !mServer->getManager()->getPlugin()->semanticHighlightingEnabled() )
 		return;
 	const auto& cap = mServer->getCapabilities();
-	if ( !cap.semanticTokenProvider.full && !cap.semanticTokenProvider.fullDelta /*&&
-		 !cap.semanticTokenProvider.range*/ )
+	if ( !cap.semanticTokenProvider.full && !cap.semanticTokenProvider.fullDelta &&
+		 !cap.semanticTokenProvider.range )
 		return;
 
 	TextRange range;
 	std::string reqId;
 	bool delta = false;
-	/*if ( cap.semanticTokenProvider.range ) {
-		range = mDoc->getDocRange();
-	} else */
-	if ( cap.semanticTokenProvider.fullDelta ) {
+	if ( cap.semanticTokenProvider.range && !mFirstHighlight ) {
+		range = mDoc->getActiveClientVisibleRange();
+	} else if ( mFirstHighlight ) {
+		mFirstHighlight = false;
+	} else if ( cap.semanticTokenProvider.fullDelta ) {
 		delta = true;
 		reqId = mSemanticeResultId;
 	}
@@ -145,8 +146,8 @@ void LSPDocumentClient::requestSemanticHighlightingDelayed() {
 	if ( !mServer || !mServer->getManager()->getPlugin()->semanticHighlightingEnabled() )
 		return;
 	const auto& cap = mServer->getCapabilities();
-	if ( !cap.semanticTokenProvider.full && !cap.semanticTokenProvider.fullDelta /*&&
-		 !cap.semanticTokenProvider.range*/ )
+	if ( !cap.semanticTokenProvider.full && !cap.semanticTokenProvider.fullDelta &&
+		 !cap.semanticTokenProvider.range )
 		return;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {

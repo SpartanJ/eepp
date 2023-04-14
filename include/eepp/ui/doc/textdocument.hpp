@@ -88,6 +88,7 @@ class EE_API TextDocument {
 		}
 		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
 		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*numLines*/ ){};
+		virtual TextRange getVisibleRange() const { return {}; };
 	};
 
 	TextDocument( bool verbose = true );
@@ -559,6 +560,8 @@ class EE_API TextDocument {
 	bool mightBeBinary() const;
 
 	void setMightBeBinary( bool mightBeBinary );
+
+	TextRange getActiveClientVisibleRange() const;
 
   protected:
 	friend class UndoStack;

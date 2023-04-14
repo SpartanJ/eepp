@@ -1625,6 +1625,17 @@ std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange() const {
 	return std::make_pair<Uint64, Uint64>( (Uint64)minLine, (Uint64)maxLine );
 }
 
+TextRange UICodeEditor::getVisibleRange() const {
+	auto visibleLineRange = getVisibleLineRange();
+	return mDoc->sanitizeRange( TextRange(
+		TextPosition(
+			visibleLineRange.first,
+			mDoc->endOfLine( { static_cast<Int64>( visibleLineRange.first ), 0 } ).column() ),
+		TextPosition(
+			visibleLineRange.second,
+			mDoc->endOfLine( { static_cast<Int64>( visibleLineRange.second ), 0 } ).column() ) ) );
+}
+
 bool UICodeEditor::isLineVisible( const Uint64& line ) const {
 	auto range = getVisibleLineRange();
 	return line >= range.first && line <= range.second;

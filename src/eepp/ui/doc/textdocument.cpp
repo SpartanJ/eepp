@@ -1617,6 +1617,12 @@ void TextDocument::setMightBeBinary( bool mightBeBinary ) {
 	mMightBeBinary = mightBeBinary;
 }
 
+TextRange TextDocument::getActiveClientVisibleRange() const {
+	if ( mActiveClient )
+		return mActiveClient->getVisibleRange();
+	return {};
+}
+
 void TextDocument::selectWord( bool withMulticursor ) {
 	if ( !hasSelection() ) {
 		setSelection( { nextWordBoundary( getSelection().start(), false ),

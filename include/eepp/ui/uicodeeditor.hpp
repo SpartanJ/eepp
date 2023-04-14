@@ -523,6 +523,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	std::pair<Uint64, Uint64> getVisibleLineRange() const;
 
+	virtual TextRange getVisibleRange() const;
+
 	bool isLineVisible( const Uint64& line ) const;
 
 	int getVisibleLinesCount() const;

@@ -149,7 +149,8 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 				}
 			}
 			const auto& it = mLines.find( index );
-			if ( it == mLines.end() || it->second.initState != state ) {
+			if ( it == mLines.end() || it->second.hash != mDoc->line( index ).getHash() ||
+				 it->second.initState != state ) {
 				mLines[index] = tokenizeLine( index, state );
 				mTokenizerLines[index] = mLines[index];
 				changed = true;
