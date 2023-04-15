@@ -227,18 +227,29 @@ function get_dll_extension()
 	end
 end
 
+function get_host()
+	if os.getenv("MSYSTEM") ~= "" then
+		return "msys"
+	end
+	return os.get()
+end
+
+function os_ishost(host)
+	return get_host() == host
+end
+
 function postsymlinklib(src_path, dst_path, lib)
 	if os.is_real("emscripten") then
 		return
 	end
 	configuration { "release", "windows" }
-		if os.is("windows") then
+		if os_ishost("windows") then
 			postbuildcommands { "mklink \"" .. dst_path .. lib .. ".dll\"" .. " \"" .. src_path .. lib .. ".dll\" || ver>nul" }
 		else
 			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 		end
 	configuration { "debug", "windows" }
-		if os.is("windows") then
+		if os_ishost("windows") then
 			postbuildcommands { "mklink \"" .. dst_path .. lib .. "-debug.dll\"" .. " \"" .. src_path .. lib .. "-debug.dll\" || ver>nul" }
 		else
 			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
@@ -662,7 +673,11 @@ function generate_os_links()
 		if os.is_real("linux") or os.is_real("freebsd") or os.is_real("haiku") or os.is_real("emscripten") then
 			multiple_insert( os_links, { "openal" } )
 		elseif os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
-			multiple_insert( os_links, { "OpenAL32" } )
+			if os_ishost("msys") then
+				multiple_insert( os_links, { "openal" } ) 
+			else
+				multiple_insert( os_links, { "OpenAL32" } )
+			end
 		elseif os.is_real("macosx") or os.is_real("ios") then
 			multiple_insert( os_links, { "OpenAL.framework" } )
 		end
@@ -1234,6 +1249,9 @@ solution "eepp"
 		files { "src/modules/eterm/src/**.cpp" }
 		if _OPTIONS["with-static-eepp"] then
 			defines { "EE_STATIC" }
+		end
+		if os_ishost("msys") then
+			defines { "WINVER=0x0602" }
 		end
 		if not is_vs() then
 			buildoptions{ "-std=c++17" }
