@@ -424,6 +424,12 @@ void LSPClientPlugin::setSemanticHighlighting( bool semanticHighlighting ) {
 	mSemanticHighlighting = semanticHighlighting;
 }
 
+bool LSPClientPlugin::langSupportsSemanticHighlighting( const std::string& lspLang ) {
+	return !std::any_of( mSemanticHighlightingDisabledLangs.begin(),
+						 mSemanticHighlightingDisabledLangs.end(),
+						 [&lspLang]( const auto& other ) { return lspLang == other; } );
+}
+
 bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
 	return mManager->getSplitter()->editorExists( editor );
 }
@@ -756,6 +762,26 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			mSemanticHighlighting = config.value( "semantic_highlighting", false );
 		else if ( updateConfigFile )
 			config["semantic_highlighting"] = mSemanticHighlighting;
+
+		if ( config.contains( "disable_semantic_highlighting_lang" ) ) {
+			try {
+				mSemanticHighlightingDisabledLangs.clear();
+				const auto& langs = config["disable_semantic_highlighting_lang"];
+				for ( const auto& lang : langs ) {
+					if ( lang.is_string() ) {
+						std::string lg = lang.get<std::string>();
+						if ( !lg.empty() )
+							mSemanticHighlightingDisabledLangs.insert( lg );
+					}
+				}
+			} catch ( const json::exception& e ) {
+				Log::debug( "LSPClientPlugin::loadLSPConfig: Error parsing "
+							"disable_semantic_highlighting_lang: %s",
+							e.what() );
+			}
+		} else {
+			config["disable_semantic_highlighting_lang"] = json::array();
+		}
 	}
 
 	if ( mKeyBindings.empty() ) {

@@ -13,6 +13,7 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <set>
+#include <unordered_set>
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
@@ -79,6 +80,8 @@ class LSPClientPlugin : public Plugin {
 
 	void setSemanticHighlighting( bool semanticHighlighting );
 
+	bool langSupportsSemanticHighlighting( const std::string& lspLang );
+
   protected:
 	friend class LSPDocumentClient;
 	friend class LSPClientServer;
@@ -105,6 +108,7 @@ class LSPClientPlugin : public Plugin {
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
 	LSPDiagnosticsCodeAction mQuickFix;
+	std::unordered_set<std::string> mSemanticHighlightingDisabledLangs;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 

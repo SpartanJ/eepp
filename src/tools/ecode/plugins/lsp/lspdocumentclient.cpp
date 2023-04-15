@@ -112,7 +112,9 @@ void LSPDocumentClient::refreshTag() {
 }
 
 void LSPDocumentClient::requestSemanticHighlighting() {
-	if ( !mServer || !mServer->getManager()->getPlugin()->semanticHighlightingEnabled() )
+	if ( !mServer || !mServer->getManager()->getPlugin()->semanticHighlightingEnabled() ||
+		 !mServer->getManager()->getPlugin()->langSupportsSemanticHighlighting(
+			 mServer->getDefinition().language ) )
 		return;
 	const auto& cap = mServer->getCapabilities();
 	if ( !cap.semanticTokenProvider.full && !cap.semanticTokenProvider.fullDelta &&
@@ -143,7 +145,9 @@ void LSPDocumentClient::requestSemanticHighlighting() {
 }
 
 void LSPDocumentClient::requestSemanticHighlightingDelayed() {
-	if ( !mServer || !mServer->getManager()->getPlugin()->semanticHighlightingEnabled() )
+	if ( !mServer || !mServer->getManager()->getPlugin()->semanticHighlightingEnabled() ||
+		 !mServer->getManager()->getPlugin()->langSupportsSemanticHighlighting(
+			 mServer->getDefinition().language ) )
 		return;
 	const auto& cap = mServer->getCapabilities();
 	if ( !cap.semanticTokenProvider.full && !cap.semanticTokenProvider.fullDelta &&
