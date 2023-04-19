@@ -31,6 +31,6 @@ jobs:
         tar xvzf premake-5.0.0-beta1-linux.tar.gz
     - name: Build
       run: |
-        ./premake5 --with-mojoal gmake2
+        ./premake5 gmake2
         cd make/linux
         make all -j$(nproc)

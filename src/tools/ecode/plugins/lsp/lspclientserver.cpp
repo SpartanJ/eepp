@@ -1321,6 +1321,18 @@ LSPClientServer::LSPRequestHandle LSPClientServer::send( const json& msg, const 
 	return LSPRequestHandle();
 }
 
+LSPClientServer::LSPRequestHandle LSPClientServer::sendSync( const json& msg,
+															 const JsonReplyHandler& h,
+															 const JsonReplyHandler& eh ) {
+	if ( isRunning() ) {
+		return write( msg, h, eh );
+	} else {
+		Log::debug( "LSPClientServer server %s Send for non-running server: %s", mLSP.name.c_str(),
+					mLSP.name.c_str() );
+	}
+	return LSPRequestHandle();
+}
+
 LSPClientServer::LSPRequestHandle LSPClientServer::didOpen( const URI& document,
 															const std::string& text, int version ) {
 	auto params = textDocumentParams( textDocumentItem( document, mLSP.language, text, version ) );
@@ -2028,10 +2040,9 @@ void LSPClientServer::shutdown() {
 	if ( mReady ) {
 		Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
 		mHandlers.clear();
-		sendAsync( newRequest( "shutdown" ) );
+		sendSync( newRequest( "shutdown" ) );
 		Sys::sleep( Milliseconds( 10 ) );
-		sendAsync( newRequest( "exit" ) );
-		Sys::sleep( Milliseconds( 50 ) );
+		sendSync( newRequest( "exit" ) );
 		mReady = false;
 	}
 }

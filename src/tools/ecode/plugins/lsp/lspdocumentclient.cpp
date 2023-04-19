@@ -13,7 +13,7 @@ using namespace EE::System;
 namespace ecode {
 
 LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc ) :
-	mServer( server ), mDoc( doc ) {
+	mServer( server ), mServerManager( server->getManager() ), mDoc( doc ) {
 	refreshTag();
 	notifyOpen();
 	requestSymbolsDelayed();
@@ -63,7 +63,11 @@ void LSPDocumentClient::onDocumentSaved( TextDocument* ) {
 void LSPDocumentClient::onDocumentClosed( TextDocument* ) {
 	URI uri = mDoc->getURI();
 	LSPClientServer* server = mServer;
-	mServer->getThreadPool()->run( [server, uri]() { server->didClose( uri ); } );
+	LSPClientServerManager* manager = mServerManager;
+	mServer->getThreadPool()->run( [server, manager, uri]() {
+		if ( manager->isServerRunning( server ) )
+			server->didClose( uri );
+	} );
 	mServer->removeDoc( mDoc );
 }
 

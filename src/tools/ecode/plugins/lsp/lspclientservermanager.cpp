@@ -199,6 +199,17 @@ void LSPClientServerManager::renameSymbol( const URI& uri, const TextPosition& p
 							} );
 }
 
+bool LSPClientServerManager::isServerRunning( const LSPClientServer* server ) {
+	for ( const auto& svr : mClients ) {
+		if ( server == svr.second.get() ) {
+			if ( mErasingClients.find( svr.first ) != mErasingClients.end() )
+				return false;
+			return true;
+		}
+	}
+	return false;
+}
+
 void LSPClientServerManager::run( const std::shared_ptr<TextDocument>& doc ) {
 	mThreadPool->run( [&, doc]() { tryRunServer( doc ); } );
 }

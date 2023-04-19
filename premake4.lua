@@ -158,12 +158,13 @@ newoption { trigger = "with-static-eepp", description = "Force to build the demo
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
-newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
+newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanitizer." }
+newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -646,7 +647,7 @@ function generate_os_links()
 	if os.is_real("linux") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 
-		if not _OPTIONS["with-mojoal"] then
+		if _OPTIONS["without-mojoal"] then
 			table.insert( os_links, "openal" )
 		end
 
@@ -669,12 +670,12 @@ function generate_os_links()
 		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
 	end
 
-	if not _OPTIONS["with-mojoal"] then
+	if _OPTIONS["without-mojoal"] then
 		if os.is_real("linux") or os.is_real("freebsd") or os.is_real("haiku") or os.is_real("emscripten") then
 			multiple_insert( os_links, { "openal" } )
 		elseif os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			if os_ishost("msys") then
-				multiple_insert( os_links, { "openal" } ) 
+				multiple_insert( os_links, { "openal" } )
 			else
 				multiple_insert( os_links, { "OpenAL32" } )
 			end
@@ -698,6 +699,14 @@ function parse_args()
 		linkoptions { "-fsanitize=thread" }
 		if not os.is_real("macosx") then
 			links { "tsan" }
+		end
+	end
+
+	if _OPTIONS["address-sanitizer"] then
+		buildoptions { "-fsanitize=address" }
+		linkoptions { "-fsanitize=address" }
+		if not os.is_real("macosx") then
+			links { "asan" }
 		end
 	end
 end
@@ -726,7 +735,7 @@ function add_static_links()
 			"vorbis-static"
 	}
 
-	if _OPTIONS["with-mojoal"] then
+	if not _OPTIONS["without-mojoal"] then
 		links { "mojoal-static"}
 	end
 
@@ -904,7 +913,7 @@ end
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
 
-	if _OPTIONS["with-mojoal"] then
+	if not _OPTIONS["without-mojoal"] then
 		defines( "AL_LIBTYPE_STATIC" )
 		includedirs { "src/thirdparty/mojoAL" }
 	end
@@ -1107,7 +1116,7 @@ solution "eepp"
 		files { "src/thirdparty/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
 
-	if _OPTIONS["with-mojoal"] then
+	if not _OPTIONS["without-mojoal"] then
 		project "mojoal-static"
 			kind "StaticLib"
 			language "C"

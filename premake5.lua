@@ -4,14 +4,15 @@ newoption { trigger = "with-static-eepp", description = "Force to build the demo
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
-newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
+newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "windows-vc-build", description = "This is used to build the framework in Visual Studio downloading its external dependencies and making them available to the VS project without having to install them manually." }
 newoption { trigger = "windows-mingw-build", description = "This is used to build the framework with mingw downloading its external dependencies." }
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
-newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanitizer." }
+newoption { trigger = "thread-sanitizer", description = "Compile with ThreadSanitizer." }
+newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -411,7 +412,7 @@ function generate_os_links()
 		multiple_insert( os_links, { "GLESv1_CM", "GLESv2", "log" } )
 	end
 
-	if not _OPTIONS["with-mojoal"] then
+	if _OPTIONS["without-mojoal"] then
 		if os.istarget("linux") or os.istarget("bsd") or os.istarget("haiku") or os.istarget("emscripten") then
 			multiple_insert( os_links, { "openal" } )
 		elseif os.istarget("windows") or os.istarget("mingw32") then
@@ -442,6 +443,14 @@ function parse_args()
 			links { "tsan" }
 		end
 	end
+
+	if _OPTIONS["address-sanitizer"] then
+		buildoptions { "-fsanitize=address" }
+		linkoptions { "-fsanitize=address" }
+		if not os.istarget("macosx") then
+			links { "asan" }
+		end
+	end
 end
 
 function add_static_links()
@@ -469,7 +478,7 @@ function add_static_links()
 			"vorbis-static"
 	}
 
-	if _OPTIONS["with-mojoal"] then
+	if not _OPTIONS["without-mojoal"] then
 		links { "mojoal-static"}
 	end
 
@@ -689,7 +698,7 @@ function build_eepp( build_name )
 		files { "src/eepp/system/platform/posix/*.cpp" }
 		files { "src/eepp/network/platform/unix/*.cpp" }
 
-	filter "options:with-mojoal"
+	filter "options:not without-mojoal"
 		defines( "AL_LIBTYPE_STATIC" )
 		incdirs { "src/thirdparty/mojoAL" }
 

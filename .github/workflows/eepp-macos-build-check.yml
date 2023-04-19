@@ -21,5 +21,5 @@ jobs:
         tar -xzf premake-5.0.0-beta1-macosx.tar.gz
     - name: Build
       run: |
-        ./premake5 --with-mojoAL gmake2
+        ./premake5 gmake2
         make -C make/macosx/ all

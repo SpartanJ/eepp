@@ -18,6 +18,7 @@ class UISceneNode;
 namespace ecode {
 
 class LSPClientServer;
+class LSPClientServerManager;
 
 class LSPDocumentClient : public TextDocument::Client {
   public:
@@ -50,6 +51,7 @@ class LSPDocumentClient : public TextDocument::Client {
 
   protected:
 	LSPClientServer* mServer{ nullptr };
+	LSPClientServerManager* mServerManager{ nullptr };
 	TextDocument* mDoc{ nullptr };
 	String::HashType mTag{ 0 };
 	String::HashType mTagSemanticTokens{ 0 };

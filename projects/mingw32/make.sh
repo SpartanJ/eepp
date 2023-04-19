@@ -17,7 +17,7 @@ if [[ "$CONFIG" == *"x86_64"* ]]; then
   ARCH=64
 fi
 
-premake5 --file=../../premake5.lua --os=windows --cc=mingw --with-mojoal --windows-mingw-build gmake2
+premake5 --file=../../premake5.lua --os=windows --cc=mingw --windows-mingw-build gmake2
 cd ../../make/windows/ || exit
 
 mingw"$ARCH"-make "$@"

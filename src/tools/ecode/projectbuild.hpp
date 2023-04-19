@@ -26,7 +26,7 @@ class StatusBuildOutputController;
   "ecode": {
 	"build": [
 	  {
-		"args": "--with-mojoal --with-debug-symbols gmake",
+		"args": "--with-debug-symbols gmake",
 		"command": "premake4",
 		"working_dir": "${project_root}"
 	  },

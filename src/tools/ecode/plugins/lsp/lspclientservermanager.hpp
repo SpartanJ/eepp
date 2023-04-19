@@ -94,6 +94,8 @@ class LSPClientServerManager {
 
 	void renameSymbol( const URI& uri, const TextPosition& pos, const std::string& newName );
 
+	bool isServerRunning( const LSPClientServer* server );
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };

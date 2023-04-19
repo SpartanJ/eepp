@@ -282,6 +282,10 @@ class LSPClientServer {
 	bool socketConnect();
 
 	void socketInitialize();
+
+	LSPClientServer::LSPRequestHandle sendSync( const json& msg,
+												const JsonReplyHandler& h = nullptr,
+												const JsonReplyHandler& eh = nullptr );
 };
 
 } // namespace ecode

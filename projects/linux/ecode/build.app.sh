@@ -18,7 +18,7 @@ for i in "$@"; do
 			;;
 	esac
 done
-premake4 "$DEBUG_SYMBOLS" --with-mojoal gmake
+premake4 "$DEBUG_SYMBOLS" gmake
 cd make/linux || exit
 make -j"$(nproc)" config=release ecode
 cd "$DIRPATH" || exit

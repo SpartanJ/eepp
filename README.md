@@ -365,17 +365,16 @@ Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 7
 
 ## How to build it
 
-The library has very few external dependencies. Most of the time you will only
-need **SDL2** and **OpenAL** libraries with the headers installed. Also
-**premake4** or **premake5** is needed to generate the Makefiles or project
+The library has only one external dependency. You will only need **SDL2** library with the headers
+installed. Also **premake4** or **premake5** is needed to generate the Makefiles or project
 files to build the library. I will assume that you know what you are doing and
 skip the basics.
 
-Notice: OpenAL is not strictly necessary. If you want to avoid it, you
-have the alternative to use [mojoAL](https://icculus.org/mojoAL/). The latter
-is already integrated to the library but not enabled by default. To enable it
-and disable the OpenAL dependency you need to add the parameter `--with-mojoal`
-to any `premake` call ( ex: `premake5 --with-mojoal gmake2` ).
+Notice: eepp uses [mojoAL](https://icculus.org/mojoAL/) by default as an OpenAL drop-in replacement.
+OpenAL is optionally available as an audio backend. If you want to use it, you
+have the alternative to enable it. To enable it and disable the mojoAL drop-in replacemente, you
+need to add the parameter `--without-mojoal` to any `premake` call
+( ex: `premake5 --without-mojoal gmake2` ).
 
 ### GNU/Linux
 
@@ -424,7 +423,7 @@ If you are very new to programming there's an alternative to build the project
 without external dependencies, in order to do that you need to generate the
 project files with the command:
 
-`premake5.exe --windows-vc-build --with-mojoal vs2022`
+`premake5.exe --windows-vc-build vs2022`
 
 Then just build the solution in Visual Studio or run `MSBuild` manually in a
 console:

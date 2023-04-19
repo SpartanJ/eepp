@@ -1,5 +1,5 @@
 #!/bin/sh
-premake5 --file=../../../premake5.lua --with-mojoal --use-frameworks gmake2 || exit
+premake5 --file=../../../premake5.lua --use-frameworks gmake2 || exit
 make -C ../../../make/macosx/ -j$(nproc) -e verbose=true -e config=release_arm64 ecode || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/Contents/MacOS/
