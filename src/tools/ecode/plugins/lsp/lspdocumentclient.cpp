@@ -268,7 +268,7 @@ void LSPDocumentClient::highlight() {
 		const Uint32 deltaLine = data[i];
 		const Uint32 deltaStart = data[i + 1];
 		const Uint32 len = data[i + 2];
-		const Uint32 type = data[i + 3];
+		const int type = data[i + 3];
 		// const Uint32 mod = data[i + 4];
 		currentLine += deltaLine;
 
@@ -279,9 +279,14 @@ void LSPDocumentClient::highlight() {
 		}
 
 		auto& line = tokenizerLines[currentLine];
-		const auto& ltype = caps.legend.tokenTypes[type];
-		line.tokens.push_back(
-			{ semanticTokenTypeToSyntaxType( ltype, mDoc->getSyntaxDefinition() ), start, len } );
+		if ( type >= 0 && type < (int)caps.legend.tokenTypes.size() ) {
+			const auto& ltype = caps.legend.tokenTypes[type];
+			line.tokens.push_back(
+				{ semanticTokenTypeToSyntaxType( ltype, mDoc->getSyntaxDefinition() ), start,
+				  len } );
+		} else {
+			line.tokens.push_back( { "normal", start, len } );
+		}
 		line.hash = mDoc->line( currentLine ).getHash();
 		line.updateSignature();
 

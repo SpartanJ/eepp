@@ -571,13 +571,13 @@ struct LSPApplyWorkspaceEditResponse {
 struct LSPSemanticTokensEdit {
 	Uint32 start = 0;
 	Uint32 deleteCount = 0;
-	std::vector<Uint32> data;
+	std::vector<Int32> data;
 };
 
 struct LSPSemanticTokensDelta {
 	std::string resultId;
 	std::vector<LSPSemanticTokensEdit> edits;
-	std::vector<Uint32> data;
+	std::vector<Int32> data;
 };
 
 } // namespace ecode
