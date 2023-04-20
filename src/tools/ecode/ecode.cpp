@@ -3448,7 +3448,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			{ "refresh", 0xf064 },
 			{ "hearth-pulse", 0xee10 },
 			{ "add", 0xea12 },
-			{ "hammer", 0xedee } };
+			{ "hammer", 0xedee },
+			{ "eraser", 0xec9e } };
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
 

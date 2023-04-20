@@ -135,6 +135,10 @@ class ProjectBuild {
 
 	const ProjectBuildOutputParser& getOutputParser() const { return mOutputParser; }
 
+	bool hasBuild() const { return !mBuild.empty(); }
+
+	bool hasClean() const { return !mClean.empty(); }
+
   protected:
 	friend class ProjectBuildManager;
 
@@ -189,12 +193,21 @@ class ProjectBuildManager {
 
 	~ProjectBuildManager();
 
-	ProjectBuildCommandsRes run( const std::string& buildName, const ProjectBuildi18nFn& i18n,
-								 const std::string& buildType = "",
-								 const ProjectBuildProgressFn& progressFn = {},
-								 const ProjectBuildDoneFn& doneFn = {} );
+	ProjectBuildCommandsRes build( const std::string& buildName, const ProjectBuildi18nFn& i18n,
+								   const std::string& buildType = "",
+								   const ProjectBuildProgressFn& progressFn = {},
+								   const ProjectBuildDoneFn& doneFn = {} );
 
 	ProjectBuildCommandsRes generateBuildCommands( const std::string& buildName,
+												   const ProjectBuildi18nFn& i18n,
+												   const std::string& buildType = "" );
+
+	ProjectBuildCommandsRes clean( const std::string& buildName, const ProjectBuildi18nFn& i18n,
+								   const std::string& buildType = "",
+								   const ProjectBuildProgressFn& progressFn = {},
+								   const ProjectBuildDoneFn& doneFn = {} );
+
+	ProjectBuildCommandsRes generateCleanCommands( const std::string& buildName,
 												   const ProjectBuildi18nFn& i18n,
 												   const std::string& buildType = "" );
 
@@ -205,6 +218,12 @@ class ProjectBuildManager {
 	const std::string& getProjectRoot() const { return mProjectRoot; }
 
 	const std::string& getProjectFile() const { return mProjectFile; }
+
+	bool hasBuild( const std::string& name ) { return mBuilds.find( name ) != mBuilds.end(); }
+
+	bool hasBuildCommands( const std::string& name );
+
+	bool hasCleanCommands( const std::string& name );
 
 	bool loaded() const { return mLoaded; }
 
@@ -219,6 +238,8 @@ class ProjectBuildManager {
 	void setConfig( const ProjectBuildConfiguration& config );
 
 	void buildCurrentConfig( StatusBuildOutputController* sboc );
+
+	void cleanCurrentConfig( StatusBuildOutputController* sboc );
 
   protected:
 	std::string mProjectRoot;

@@ -25,8 +25,11 @@ class StatusBuildOutputController {
 
 	void show();
 
-	void run( const std::string& buildName, const std::string& buildType,
-			  const ProjectBuildOutputParser& outputParser = {} );
+	void runBuild( const std::string& buildName, const std::string& buildType,
+				   const ProjectBuildOutputParser& outputParser = {} );
+
+	void runClean( const std::string& buildName, const std::string& buildType,
+				   const ProjectBuildOutputParser& outputParser = {} );
 
 	UICodeEditor* getContainer();
 
@@ -40,6 +43,8 @@ class StatusBuildOutputController {
 	UICodeEditor* createContainer();
 
 	UIPushButton* getBuildButton( App* app );
+
+	UIPushButton* getCleanButton( App* app );
 };
 
 } // namespace ecode
