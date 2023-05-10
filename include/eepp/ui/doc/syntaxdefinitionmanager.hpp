@@ -22,11 +22,13 @@ class EE_API SyntaxDefinitionManager {
 
 	const SyntaxDefinition& getPlainStyle() const;
 
-	const SyntaxDefinition& getByExtension( const std::string& filePath ) const;
+	const SyntaxDefinition& getByExtension( const std::string& filePath,
+											bool hFileAsCPP = false ) const;
 
-	const SyntaxDefinition& getByHeader( const std::string& header ) const;
+	const SyntaxDefinition& getByHeader( const std::string& header, bool hFileAsCPP = false ) const;
 
-	const SyntaxDefinition& find( const std::string& filePath, const std::string& header );
+	const SyntaxDefinition& find( const std::string& filePath, const std::string& header,
+								  bool hFileAsCPP = false );
 
 	SyntaxDefinition& getByExtensionRef( const std::string& filePath );
 

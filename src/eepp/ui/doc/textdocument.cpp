@@ -266,7 +266,7 @@ bool TextDocument::hasSyntaxDefinition() const {
 void TextDocument::resetSyntax() {
 	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
 	std::string oldDef = mSyntaxDefinition.getLSPName();
-	mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header );
+	mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header, mHAsCpp );
 	if ( mSyntaxDefinition.getLSPName() != oldDef )
 		notifySyntaxDefinitionChange();
 }
@@ -1621,6 +1621,14 @@ TextRange TextDocument::getActiveClientVisibleRange() const {
 	if ( mActiveClient )
 		return mActiveClient->getVisibleRange();
 	return {};
+}
+
+bool TextDocument::hAsCpp() const {
+	return mHAsCpp;
+}
+
+void TextDocument::setHAsCpp( bool hAsCpp ) {
+	mHAsCpp = hAsCpp;
 }
 
 void TextDocument::selectWord( bool withMulticursor ) {

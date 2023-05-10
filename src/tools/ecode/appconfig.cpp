@@ -365,6 +365,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	IniFile ini( projectCfgPath, false );
 	ini.setValue( "path", "folder_path", projectFolder );
 	ini.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
+	ini.setValueB( "document", "h_as_cpp", docConfig.hAsCPP );
 	ini.setValueB( "document", "trim_trailing_whitespaces", docConfig.doc.trimTrailingWhitespaces );
 	ini.setValueB( "document", "force_new_line_at_end_of_file",
 				   docConfig.doc.forceNewLineAtEndOfFile );
@@ -496,6 +497,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	IniFile ini( projectCfgPath );
 
 	docConfig.useGlobalSettings = ini.getValueB( "document", "use_global_settings", true );
+	docConfig.hAsCPP = ini.getValueB( "document", "h_as_cpp", false );
 	docConfig.doc.trimTrailingWhitespaces =
 		ini.getValueB( "document", "trim_trailing_whitespaces", false );
 	docConfig.doc.forceNewLineAtEndOfFile =

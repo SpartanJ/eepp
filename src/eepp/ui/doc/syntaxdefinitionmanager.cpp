@@ -2672,7 +2672,7 @@ static void addCMake() {
 													{ { "#", "[^\\]\n" }, "comment" },
 													{ { "\"", "\"", "\\" }, "string" },
 													{ { "'", "'", "\\" }, "string" },
-													{ { "[%a_][%w_]*%f[(]" }, "function" },
+													{ { "[%a_][%w_]*%s?%f[(]" }, "function" },
 													{ { "CMAKE_[%w%d_]+" }, "keyword" },
 													{ { "CTEST_[%w%d_]+" }, "keyword" },
 													{ { "%u[%u%d_]*_[%u%d_]+" }, "keyword" },
@@ -4611,8 +4611,8 @@ void SyntaxDefinitionManager::loadFromFolder( const std::string& folderPath ) {
 	}
 }
 
-const SyntaxDefinition&
-SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
+const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::string& filePath,
+																 bool hFileAsCPP ) const {
 	std::string extension( FileSystem::fileExtension( filePath ) );
 	std::string fileName( FileSystem::fileNameFromPath( filePath ) );
 
@@ -4627,9 +4627,14 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 					 String::endsWith( ext, "$" ) ) {
 					LuaPattern words( ext );
 					int start, end;
-					if ( words.find( fileName, start, end ) )
+					if ( words.find( fileName, start, end ) ) {
+						if ( hFileAsCPP && style->getLSPName() == "c" && ext == "%.h$" )
+							return getByLSPName( "cpp" );
 						return *style;
+					}
 				} else if ( extension == ext ) {
+					if ( hFileAsCPP && style->getLSPName() == "c" && ext == ".h" )
+						return getByLSPName( "cpp" );
 					return *style;
 				}
 			}
@@ -4638,7 +4643,8 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 	return mDefinitions[0];
 }
 
-const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string& header ) const {
+const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string& header,
+															  bool /*hFileAsCPP*/ ) const {
 	if ( !header.empty() ) {
 		for ( auto style = mDefinitions.rbegin(); style != mDefinitions.rend(); ++style ) {
 			for ( const auto& hdr : style->getHeaders() ) {
@@ -4654,10 +4660,11 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string&
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePath,
-													   const std::string& header ) {
+													   const std::string& header,
+													   bool hFileAsCPP ) {
 	const SyntaxDefinition& def = getByHeader( header );
 	if ( def.getLanguageName() == mDefinitions[0].getLanguageName() )
-		return getByExtension( filePath );
+		return getByExtension( filePath, hFileAsCPP );
 	return def;
 }
 

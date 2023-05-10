@@ -563,6 +563,10 @@ class EE_API TextDocument {
 
 	TextRange getActiveClientVisibleRange() const;
 
+	bool hAsCpp() const;
+
+	void setHAsCpp( bool hAsCpp );
+
   protected:
 	friend class UndoStack;
 
@@ -590,6 +594,7 @@ class EE_API TextDocument {
 	bool mSaving{ false };
 	bool mDeleteOnClose{ false };
 	bool mMightBeBinary{ false };
+	bool mHAsCpp{ false };
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };

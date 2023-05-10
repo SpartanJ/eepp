@@ -104,6 +104,7 @@ struct GlobalSearchBarConfig {
 
 struct ProjectDocumentConfig {
 	bool useGlobalSettings{ true };
+	bool hAsCPP{ false };
 	DocumentConfig doc;
 	ProjectDocumentConfig() {}
 	ProjectDocumentConfig( const DocumentConfig& doc ) { this->doc = doc; }

@@ -2193,6 +2193,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			UITab* tab = (UITab*)editor->getData();
 			tab->setIcon( icon->getSize( mMenuIconSize ) );
 		}
+		editor->getDocument().setHAsCpp( mProjectDocConfig.hAsCPP );
 	};
 
 	auto docLoaded = [this, editor, docChanged]( const Event* event ) {
