@@ -2041,8 +2041,9 @@ void LSPClientServer::shutdown() {
 		Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
 		mHandlers.clear();
 		sendSync( newRequest( "shutdown" ) );
-		Sys::sleep( Milliseconds( 10 ) );
+		Sys::sleep( Milliseconds( 100 ) );
 		sendSync( newRequest( "exit" ) );
+		Sys::sleep( Milliseconds( 100 ) );
 		mReady = false;
 	}
 }
