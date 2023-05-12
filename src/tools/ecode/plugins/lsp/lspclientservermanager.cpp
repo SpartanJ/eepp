@@ -88,7 +88,9 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 		std::string rootPath = mLSPWorkspaceFolder.isEmpty() ? findRootPath( lsp, doc )
 															 : mLSPWorkspaceFolder.uri.getFSPath();
 		auto lspName = lsp.name.empty() ? lsp.command : lsp.name;
-		String::HashType id = String::hash( lspName + "|" + lsp.language + "|" + rootPath );
+		String::HashType id = lsp.shareProcessWithOtherDefinition
+								  ? String::hash( lspName + "|" + rootPath )
+								  : String::hash( lspName + "|" + lsp.language + "|" + rootPath );
 		LSPClientServer* server = nullptr;
 		{
 			Lock l( mClientsMutex );

@@ -2733,15 +2733,20 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	}
 
 	Text& txt = mLineTextCache;
+	String buff;
 
 	for ( const auto& token : tokens ) {
-		String text( pos < strLine.size() ? strLine.substr( pos, token.len ) : String() );
+		const String* text = &strLine;
+		if ( pos < strLine.size() && !( pos == 0 && text->size() == token.len ) ) {
+			buff = strLine.substr( pos, token.len );
+			text = &buff;
+		}
 		pos += token.len;
 
-		Float textWidth = isMonospace ? getTextWidth( text ) : 0;
+		Float textWidth = isMonospace ? getTextWidth( *text ) : 0;
 		if ( !isMonospace || ( position.x + textWidth >= mScreenPos.x &&
 							   position.x <= mScreenPos.x + mSize.getWidth() ) ) {
-			Int64 curCharsWidth = text.size();
+			Int64 curCharsWidth = text->size();
 			Int64 curPositionChar = eefloor( mScroll.x / getGlyphWidth() );
 			Float curMaxPositionChar = curPositionChar + maxWidth;
 			txt.setFont( mFont );
@@ -2759,10 +2764,10 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 				 mLinkPosition.start().line() == line ) {
 				if ( mLinkPosition.start().column() >= curChar &&
 					 mLinkPosition.end().column() <= curChar + curCharsWidth ) {
-					size_t linkPos = text.find( mLink );
+					size_t linkPos = text->find( mLink );
 					if ( linkPos != String::InvalidPos ) {
-						String beforeString( text.substr( 0, linkPos ) );
-						String afterString( text.substr( linkPos + mLink.size() ) );
+						String beforeString( text->substr( 0, linkPos ) );
+						String afterString( text->substr( linkPos + mLink.size() ) );
 
 						Float offset = 0.f;
 						Uint32 lineStyle = txt.getStyle();
@@ -2825,7 +2830,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							textWidth = offset;
 
 						position.x += textWidth;
-						curChar += characterWidth( text );
+						curChar += characterWidth( *text );
 						continue;
 					}
 				}
@@ -2844,17 +2849,17 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 					Int64 totalChars = curCharsWidth - start;
 					Int64 end = eemin( totalChars, minimumCharsToCoverScreen );
 					if ( curCharsWidth >= charsToVisible ) {
-						txt.setString( text.substr( start, end ) );
+						txt.setString( text->substr( start, end ) );
 						txt.draw( position.x + start * getGlyphWidth(), position.y + lineOffset );
 						if ( minimumCharsToCoverScreen == end )
 							break;
 					}
 				} else {
-					txt.setString( text.substr( 0, eemin( curCharsWidth, maxWidth ) ) );
+					txt.setString( text->substr( 0, eemin( curCharsWidth, maxWidth ) ) );
 					txt.draw( position.x, position.y + lineOffset );
 				}
 			} else {
-				txt.setString( text );
+				txt.setString( *text );
 				txt.draw( position.x, position.y + lineOffset );
 			}
 
@@ -2865,7 +2870,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 		}
 
 		position.x += textWidth;
-		curChar += characterWidth( text );
+		curChar += characterWidth( *text );
 	}
 
 	if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {

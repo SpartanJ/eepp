@@ -612,41 +612,13 @@ void ProjectBuildManager::updateSidePanelTab() {
 
 	buildList->setEnabled( !buildList->getListBox()->isEmpty() );
 
-	UIDropDownList* buildTypeList = buildTab->find<UIDropDownList>( "build_type_list" );
-
-	buildTypeList->getListBox()->clear();
-
-	first = buildList->getListBox()->getItemSelectedText();
-	if ( !first.empty() ) {
-		auto foundIt = mBuilds.find( first );
-		if ( foundIt != mBuilds.end() ) {
-			const auto& buildTypes = foundIt->second.buildTypes();
-			std::vector<String> buildTypesItems;
-			for ( const auto& buildType : buildTypes )
-				buildTypesItems.emplace_back( buildType );
-			buildTypeList->getListBox()->addListBoxItems( buildTypesItems );
-			if ( buildTypeList->getListBox()->getItemIndex( mConfig.buildType ) !=
-				 eeINDEX_NOT_FOUND ) {
-				buildTypeList->getListBox()->setSelected( mConfig.buildType );
-				mConfig.buildType = first;
-			} else if ( !buildTypeList->getListBox()->isEmpty() ) {
-				buildTypeList->getListBox()->setSelected( 0 );
-				mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
-			}
-		}
-	}
-	buildTypeList->setEnabled( !buildTypeList->getListBox()->isEmpty() );
+	updateBuildType();
 
 	buildList->removeEventsOfType( Event::OnItemSelected );
 	buildList->addEventListener( Event::OnItemSelected, [this, buildList]( const Event* ) {
 		mConfig.buildName = buildList->getListBox()->getItemSelectedText();
 		mConfig.buildType = "";
-		updateSidePanelTab();
-	} );
-
-	buildTypeList->removeEventsOfType( Event::OnItemSelected );
-	buildTypeList->addEventListener( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
-		mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
+		updateBuildType();
 	} );
 
 	buildButton->setEnabled( !mConfig.buildName.empty() && hasBuild( mConfig.buildName ) &&
@@ -674,6 +646,39 @@ void ProjectBuildManager::updateSidePanelTab() {
 			}
 		},
 		MouseButton::EE_BUTTON_LEFT );
+}
+
+void ProjectBuildManager::updateBuildType() {
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
+	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
+	UIDropDownList* buildTypeList = buildTab->find<UIDropDownList>( "build_type_list" );
+
+	buildTypeList->getListBox()->clear();
+
+	String first = buildList->getListBox()->getItemSelectedText();
+	if ( !first.empty() ) {
+		auto foundIt = mBuilds.find( first );
+		if ( foundIt != mBuilds.end() ) {
+			const auto& buildTypes = foundIt->second.buildTypes();
+			std::vector<String> buildTypesItems;
+			for ( const auto& buildType : buildTypes )
+				buildTypesItems.emplace_back( buildType );
+			buildTypeList->getListBox()->addListBoxItems( buildTypesItems );
+			if ( buildTypeList->getListBox()->getItemIndex( mConfig.buildType ) !=
+				 eeINDEX_NOT_FOUND ) {
+				buildTypeList->getListBox()->setSelected( mConfig.buildType );
+			} else if ( !buildTypeList->getListBox()->isEmpty() ) {
+				buildTypeList->getListBox()->setSelected( 0 );
+				mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
+			}
+		}
+	}
+	buildTypeList->setEnabled( !buildTypeList->getListBox()->isEmpty() );
+
+	buildTypeList->removeEventsOfType( Event::OnItemSelected );
+	buildTypeList->addEventListener( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
+		mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
+	} );
 }
 
 } // namespace ecode

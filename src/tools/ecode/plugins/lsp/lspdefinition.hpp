@@ -24,6 +24,8 @@ struct LSPDefinition {
 	int port{ 0 };
 	nlohmann::json initializationOptions;
 
+	bool usesOtherDefinition{ false };
+	bool shareProcessWithOtherDefinition{ false };
 	bool disabled{ false };
 
 	bool commandAvailable() const {

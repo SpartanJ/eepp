@@ -54,16 +54,19 @@
       "name": "clangd",
       "url": "https://clang.llvm.org/extra/clangd/",
       "command": "clangd -log=error --background-index --header-insertion=never --limit-results=0 --limit-references=0 --clang-tidy=0 --use-dirty-headers --completion-style=bundled -j $NPROC",
+      "share_process": true,
       "file_patterns": ["%.c$", "%.h$", "%.C$", "%.H$", "%.objc$"]
     },
     {
       "language": "cpp",
       "use": "clangd",
+      "share_process": true,
       "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"]
     },
     {
       "language": "objective-c",
       "use": "clangd",
+      "share_process": true,
       "file_patterns": ["%.m$"]
     },
     {

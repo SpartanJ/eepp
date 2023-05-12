@@ -268,6 +268,8 @@ class ProjectBuildManager {
 	void buildSidePanelTab();
 
 	void updateSidePanelTab();
+
+	void updateBuildType();
 };
 
 } // namespace ecode

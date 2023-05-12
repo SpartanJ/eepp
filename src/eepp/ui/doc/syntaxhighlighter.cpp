@@ -46,11 +46,28 @@ void SyntaxHighlighter::invalidate( Int64 lineIndex ) {
 }
 
 TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const Uint64& state ) {
+	auto& ln = mDoc->line( line );
 	TokenizedLine tokenizedLine;
 	tokenizedLine.initState = state;
-	tokenizedLine.hash = mDoc->line( line ).getHash();
-	auto res = SyntaxTokenizer::tokenizePosition( mDoc->getSyntaxDefinition(),
-												  mDoc->line( line ).toUtf8(), state );
+	tokenizedLine.hash = ln.getHash();
+	if ( mMaxTokenizationLength != 0 && (Int64)ln.size() > mMaxTokenizationLength ) {
+		Int64 textSize = ln.size();
+		Int64 pos = 0;
+		while ( textSize > 0 ) {
+			size_t chunkSize =
+				textSize > mMaxTokenizationLength ? mMaxTokenizationLength : textSize;
+			std::string substr = ln.substr( pos, chunkSize );
+			SyntaxTokenPosition token{ "normal", pos, chunkSize };
+			token.len = ln.size();
+			tokenizedLine.tokens.emplace_back( token );
+			textSize -= chunkSize;
+			pos += chunkSize;
+		}
+		tokenizedLine.state = state;
+		tokenizedLine.updateSignature();
+		return tokenizedLine;
+	}
+	auto res = SyntaxTokenizer::tokenizePosition( mDoc->getSyntaxDefinition(), ln.toUtf8(), state );
 	tokenizedLine.tokens = std::move( res.first );
 	tokenizedLine.state = std::move( res.second );
 	tokenizedLine.updateSignature();
@@ -95,6 +112,14 @@ Uint64 SyntaxHighlighter::getTokenizedLineSignature( const size_t& index ) {
 	if ( line != mLines.end() )
 		return line->second.signature;
 	return 0;
+}
+
+const Int64& SyntaxHighlighter::getMaxTokenizationLength() const {
+	return mMaxTokenizationLength;
+}
+
+void SyntaxHighlighter::setMaxTokenizationLength( const Int64& maxTokenizationLength ) {
+	mMaxTokenizationLength = maxTokenizationLength;
 }
 
 const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t& index ) {

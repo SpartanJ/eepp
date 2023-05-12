@@ -56,6 +56,10 @@ class EE_API SyntaxHighlighter {
 
 	Uint64 getTokenizedLineSignature( const size_t& index );
 
+	const Int64& getMaxTokenizationLength() const;
+
+	void setMaxTokenizationLength( const Int64& maxTokenizationLength );
+
   protected:
 	TextDocument* mDoc;
 	std::unordered_map<size_t, TokenizedLine> mLines;
@@ -63,6 +67,7 @@ class EE_API SyntaxHighlighter {
 	Mutex mLinesMutex;
 	Int64 mFirstInvalidLine;
 	Int64 mMaxWantedLine;
+	Int64 mMaxTokenizationLength{ 0 };
 };
 
 }}} // namespace EE::UI::Doc

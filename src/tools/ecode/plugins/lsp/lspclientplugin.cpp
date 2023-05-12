@@ -841,6 +841,10 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 				std::string name = obj.contains( "name" ) ? obj["name"] : obj["use"];
 				if ( lspR.name == name ) {
 					lspOverwritten = true;
+					lspR.usesOtherDefinition = obj.contains( "use" );
+					if ( obj.contains( "share_process" ) && obj["share_process"].is_boolean() ) {
+						lspR.shareProcessWithOtherDefinition = obj["share_process"].get<bool>();
+					}
 					if ( obj.contains( "command" ) ) {
 						lspR.command = parseCommand( obj["command"] );
 					}
@@ -888,6 +892,10 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					lsp.host = tlsp.host;
 					lsp.port = tlsp.port;
 					lsp.initializationOptions = tlsp.initializationOptions;
+					lsp.usesOtherDefinition = true;
+					if ( obj.contains( "share_process" ) && obj["share_process"].is_boolean() ) {
+						lsp.shareProcessWithOtherDefinition = obj["share_process"].get<bool>();
+					}
 					break;
 				}
 			}
@@ -903,6 +911,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			lsp.url = obj.value( "url", "" );
 			lsp.host = obj.value( "host", "" );
 			lsp.port = obj.value( "port", 0 );
+			lsp.shareProcessWithOtherDefinition = obj.value( "share_process", false );
 		}
 
 		lsp.commandParameters = obj.value( "command_parameters", lsp.commandParameters );
