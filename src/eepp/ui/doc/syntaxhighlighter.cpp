@@ -56,7 +56,6 @@ TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const Uint64&
 		while ( textSize > 0 ) {
 			size_t chunkSize =
 				textSize > mMaxTokenizationLength ? mMaxTokenizationLength : textSize;
-			std::string substr = ln.substr( pos, chunkSize );
 			SyntaxTokenPosition token{ "normal", pos, chunkSize };
 			token.len = ln.size();
 			tokenizedLine.tokens.emplace_back( token );
@@ -86,7 +85,7 @@ void SyntaxHighlighter::moveHighlight( const Int64& fromLine, const Int64& numLi
 		for ( Int64 i = linesCount - 1; i >= fromLine; --i ) {
 			auto lineIt = mLines.find( i - numLines );
 			if ( lineIt != mLines.end() ) {
-				auto& line = lineIt->second;
+				const auto& line = lineIt->second;
 				if ( line.hash == mDoc->line( i ).getHash() ) {
 					auto nl = mLines.extract( lineIt );
 					nl.key() = i;

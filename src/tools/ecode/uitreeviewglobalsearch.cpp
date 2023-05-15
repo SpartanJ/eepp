@@ -1,5 +1,5 @@
-#include "uitreeviewglobalsearch.hpp"
 #include "projectsearch.hpp"
+#include "uitreeviewglobalsearch.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
@@ -8,6 +8,26 @@
 #include <eepp/ui/uistyle.hpp>
 
 namespace ecode {
+
+static Float getTextWidth( Float glyphWidth, Uint32 tabWidth, const String& line ) {
+	size_t len = line.length();
+	Float x = 0;
+	for ( size_t i = 0; i < len; i++ )
+		x += ( line[i] == '\t' ) ? glyphWidth * tabWidth : glyphWidth;
+	return x;
+}
+
+static Float getXOffsetCol( Float glyphWidth, Uint32 tabWidth, const String& line, Int64 col ) {
+	Float x = 0;
+	for ( auto i = 0; i < col; i++ ) {
+		if ( line[i] == '\t' ) {
+			x += glyphWidth * tabWidth;
+		} else if ( line[i] != '\n' && line[i] != '\r' ) {
+			x += glyphWidth;
+		}
+	}
+	return x;
+}
 
 UITreeViewGlobalSearch::UITreeViewGlobalSearch( const SyntaxColorScheme& colorScheme,
 												bool searchReplace ) :
@@ -19,7 +39,7 @@ UITreeViewGlobalSearch::UITreeViewGlobalSearch( const SyntaxColorScheme& colorSc
 
 UIWidget* UITreeViewGlobalSearch::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn()
-							  ? UITreeViewCellGlobalSearch::New( mSearchReplace )
+							  ? UITreeViewCellGlobalSearch::New( mSearchReplace, hAsCPP )
 							  : UITableCell::New();
 	return setupCell( widget, rowWidget, index );
 }
@@ -108,8 +128,8 @@ ProjectSearch::ResultData* UITreeViewCellGlobalSearch::getResultDataPtr() {
 
 #define CELL_GLOBAL_SEARCH_PADDING ( 12 )
 
-UITreeViewCellGlobalSearch::UITreeViewCellGlobalSearch( bool selectionEnabled ) :
-	UITreeViewCell( selectionEnabled ? getCheckBoxFn() : nullptr ) {}
+UITreeViewCellGlobalSearch::UITreeViewCellGlobalSearch( bool selectionEnabled, bool hAsCPP ) :
+	UITreeViewCell( selectionEnabled ? getCheckBoxFn() : nullptr ), mHAsCpp( hAsCPP ) {}
 
 UIPushButton* UITreeViewCellGlobalSearch::setText( const String& text ) {
 	auto* result = getResultPtr();
@@ -133,7 +153,8 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 		ProjectSearch::ResultData* res =
 			(ProjectSearch::ResultData*)getCurIndex().parent().internalData();
 
-		auto styleDef = SyntaxDefinitionManager::instance()->getByExtension( res->file );
+		const auto& styleDef =
+			SyntaxDefinitionManager::instance()->getByExtension( res->file, mHAsCpp );
 
 		Uint32 from = text.find_first_not_of( ' ' );
 		Uint32 to = from;
@@ -159,33 +180,13 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE, to ).first;
 
 		size_t start = to;
-		for ( auto& token : tokens ) {
+		for ( const auto& token : tokens ) {
 			mTextBox->setFontFillColor( pp->getColorScheme().getSyntaxStyle( token.type ).color,
 										start, start + token.len );
 			start += token.len;
 		}
 	}
 	return this;
-}
-
-static Float getTextWidth( Float glyphWidth, Uint32 tabWidth, const String& line ) {
-	size_t len = line.length();
-	Float x = 0;
-	for ( size_t i = 0; i < len; i++ )
-		x += ( line[i] == '\t' ) ? glyphWidth * tabWidth : glyphWidth;
-	return x;
-}
-
-static Float getXOffsetCol( Float glyphWidth, Uint32 tabWidth, const String& line, Int64 col ) {
-	Float x = 0;
-	for ( auto i = 0; i < col; i++ ) {
-		if ( line[i] == '\t' ) {
-			x += glyphWidth * tabWidth;
-		} else if ( line[i] != '\n' && line[i] != '\r' ) {
-			x += glyphWidth;
-		}
-	}
-	return x;
 }
 
 void UITreeViewCellGlobalSearch::draw() {
