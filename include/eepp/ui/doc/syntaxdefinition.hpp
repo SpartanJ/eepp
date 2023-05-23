@@ -89,6 +89,8 @@ class EE_API SyntaxDefinition {
 
 	std::vector<SyntaxPattern> getPatternsOfType( const std::string& type ) const;
 
+	SyntaxDefinition& setFileTypes( const std::vector<std::string>& types );
+
   protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;

@@ -7,8 +7,9 @@
       "name": "typescript-language-server",
       "url": "https://github.com/theia-ide/typescript-language-server",
       "command": "typescript-language-server --stdio",
-      "file_patterns": ["%.ts$", "%.tsx$"],
+      "file_patterns": ["%.ts$"],
       "rootIndicationFileNames": ["package.json", "package-lock.json"],
+      "share_process": true,
       "initializationOptions": {
         "preferences": {
           "allowIncompleteCompletions": true,
@@ -30,9 +31,22 @@
       }
     },
     {
+      "language": "tsx",
+      "use": "typescript-language-server",
+      "share_process": true,
+      "file_patterns": ["%.tsx$"]
+    },
+    {
       "language": "javascript",
       "use": "typescript-language-server",
+      "share_process": true,
       "file_patterns": ["%.js$"]
+    },
+    {
+      "language": "jsx",
+      "use": "typescript-language-server",
+      "share_process": true,
+      "file_patterns": ["%.jsx$"]
     },
     {
       "language": "go",

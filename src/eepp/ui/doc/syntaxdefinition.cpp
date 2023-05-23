@@ -46,6 +46,11 @@ std::vector<SyntaxPattern> SyntaxDefinition::getPatternsOfType( const std::strin
 	return patterns;
 }
 
+SyntaxDefinition& SyntaxDefinition::setFileTypes( const std::vector<std::string>& types ) {
+	mFiles = types;
+	return *this;
+}
+
 const std::vector<SyntaxPattern>& SyntaxDefinition::getPatterns() const {
 	return mPatterns;
 }
