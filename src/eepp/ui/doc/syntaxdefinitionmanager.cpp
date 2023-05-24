@@ -441,8 +441,8 @@ static void addJavaScript() {
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
-			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\]", "/[igmsuyd][igmsuyd]?[igmsuyd]?",
-				  "\\" },
+			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\].*%f[/]",
+				  "/[igmsuyd][igmsuyd]?[igmsuyd]?", "\\" },
 				"string" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
@@ -510,8 +510,8 @@ static void addTypeScript() {
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
-			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\]", "/[igmsuyd][igmsuyd]?[igmsuyd]?",
-				  "\\" },
+			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\].*%f[/]",
+				  "/[igmsuyd][igmsuyd]?[igmsuyd]?", "\\" },
 				"string" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
@@ -549,10 +549,18 @@ static void addTypeScript() {
 			{ "with", "keyword" },		 { "yield", "keyword" },	  { "unknown", "keyword2" } },
 		  "//" } );
 
+	const SyntaxDefinition& html = SyntaxDefinitionManager::instance()->getByLSPName( "xml" );
+	SyntaxDefinition tsxml( html );
+	tsxml.setLanguageName( "TSXML" );
+	tsxml.setFileTypes( {} );
+	tsxml.setVisible( false );
+	tsxml.addPatternToFront( { { "%{", "%}", "\\" }, "normal", "JavaScript" } );
+	SyntaxDefinitionManager::instance()->add( std::move( tsxml ) );
+
 	SyntaxDefinition tsx( ts );
 	tsx.setLanguageName( "TSX" );
 	tsx.setFileTypes( { "%.tsx$" } );
-	tsx.addPatternToFront( { { "return%s+%(", "%s*);" }, "keyword", "HTML" } );
+	tsx.addPatternToFront( { { "return%s+%(", "%s*);" }, "keyword", "TSXML" } );
 	SyntaxDefinitionManager::instance()->add( std::move( tsx ) );
 }
 
@@ -4384,6 +4392,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addSwift();
 	addTeal();
 	addToml();
+	addXML();
 	addTypeScript();
 	addV();
 	addVisualBasic();
@@ -4391,7 +4400,6 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addWren();
 	addX86Assembly();
 	addxit();
-	addXML();
 	addYAML();
 	addZig();
 }

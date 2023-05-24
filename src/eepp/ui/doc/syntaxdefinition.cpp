@@ -80,6 +80,11 @@ SyntaxDefinition& SyntaxDefinition::addPattern( const SyntaxPattern& pattern ) {
 	return *this;
 }
 
+SyntaxDefinition& SyntaxDefinition::setPatterns( const std::vector<SyntaxPattern>& patterns ) {
+	mPatterns = patterns;
+	return *this;
+}
+
 SyntaxDefinition& SyntaxDefinition::addPatternToFront( const SyntaxPattern& pattern ) {
 	auto patterns = mPatterns;
 	mPatterns.clear();

@@ -55,6 +55,8 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& addPattern( const SyntaxPattern& pattern );
 
+	SyntaxDefinition& setPatterns( const std::vector<SyntaxPattern>& patterns );
+
 	SyntaxDefinition& addPatternToFront( const SyntaxPattern& pattern );
 
 	SyntaxDefinition& addSymbol( const std::string& symbolName, const std::string& typeName );
