@@ -378,6 +378,8 @@ class Plugin : public UICodeEditorPlugin {
 
 	PluginManager* getManager() const;
 
+	virtual String::HashType getConfigFileHash() { return 0; }
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;

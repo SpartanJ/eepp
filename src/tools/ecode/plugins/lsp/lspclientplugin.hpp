@@ -43,6 +43,8 @@ class LSPClientPlugin : public Plugin {
 
 	std::string getDescription() { return Definition().description; }
 
+	virtual String::HashType getConfigFileHash() { return mConfigHash; }
+
 	void onRegister( UICodeEditor* );
 
 	void onUnregister( UICodeEditor* );
@@ -109,6 +111,7 @@ class LSPClientPlugin : public Plugin {
 	Uint32 mOldTextAlign{ 0 };
 	LSPDiagnosticsCodeAction mQuickFix;
 	std::unordered_set<std::string> mSemanticHighlightingDisabledLangs;
+	String::HashType mConfigHash{ 0 };
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 

@@ -140,11 +140,12 @@ void LSPDocumentClient::requestSemanticHighlighting() {
 	LSPDocumentClient* docClient = this;
 	URI uri = mDoc->getURI();
 	LSPClientServer* server = mServer;
+	Uint64 docModId = mDoc->getModificationId();
 	mServer->documentSemanticTokensFull(
 		mDoc->getURI(), delta, reqId, range,
-		[docClient, uri, server]( const auto&, const LSPSemanticTokensDelta& deltas ) {
+		[docClient, uri, server, docModId]( const auto&, const LSPSemanticTokensDelta& deltas ) {
 			if ( server->hasDocument( uri ) )
-				docClient->processTokens( deltas );
+				docClient->processTokens( deltas, docModId );
 		} );
 }
 
@@ -219,7 +220,13 @@ static std::string semanticTokenTypeToSyntaxType( const std::string& type,
 	return "normal";
 }
 
-void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens ) {
+void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens,
+									   const Uint64& docModificationId ) {
+	// If the document has already being modified after requesting the semantic highlighting,
+	// re-request the changes
+	if ( docModificationId != mDoc->getModificationId() )
+		return requestSemanticHighlightingDelayed();
+
 	mRunningSemanticTokens = true;
 
 	if ( !tokens.resultId.empty() )

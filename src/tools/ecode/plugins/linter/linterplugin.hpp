@@ -72,6 +72,8 @@ class LinterPlugin : public Plugin {
 
 	std::string getDescription() { return Definition().description; }
 
+	virtual String::HashType getConfigFileHash() { return mConfigHash; }
+
 	void onRegister( UICodeEditor* );
 
 	void onUnregister( UICodeEditor* );
@@ -123,6 +125,7 @@ class LinterPlugin : public Plugin {
 	bool mErrorLens{ true };
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
+	String::HashType mConfigHash{ 0 };
 
 	LinterPlugin( PluginManager* pluginManager, bool sync );
 

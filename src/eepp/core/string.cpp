@@ -151,11 +151,18 @@ String String::escape( const String& str ) {
 
 String String::unescape( const String& str ) {
 	String output;
+	bool lastWasEscape = false;
+	bool lastInsertedEscape = false;
+
 	for ( size_t i = 0; i < str.size(); i++ ) {
-		if ( i > 0 && str[i - 1] == '\\' ) {
+		lastWasEscape = lastWasEscape && !lastInsertedEscape;
+		lastInsertedEscape = false;
+
+		if ( lastWasEscape ) {
 			switch ( str[i] ) {
 				case '\\':
 					output.push_back( '\\' );
+					lastInsertedEscape = true;
 					break;
 				case 'r':
 					output.push_back( '\r' );
@@ -250,13 +257,16 @@ String String::unescape( const String& str ) {
 					break;
 				}
 				default: {
-					// Undefined behavior
+					output.push_back( '\\' );
+					output.push_back( str[i] );
 					break;
 				}
 			}
 		} else if ( str[i] != '\\' ) {
 			output.push_back( str[i] );
 		}
+
+		lastWasEscape = str[i] == '\\';
 	}
 	return output;
 }

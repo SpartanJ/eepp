@@ -49,6 +49,8 @@ class FormatterPlugin : public Plugin {
 
 	std::string getDescription() { return Definition().description; }
 
+	virtual String::HashType getConfigFileHash() { return mConfigHash; }
+
 	void onRegister( UICodeEditor* );
 
 	void onUnregister( UICodeEditor* );
@@ -82,6 +84,7 @@ class FormatterPlugin : public Plugin {
 	std::map<TextDocument*, bool> mIsAutoFormatting;
 	std::map<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
+	String::HashType mConfigHash{ 0 };
 
 	bool mAutoFormatOnSave{ false };
 

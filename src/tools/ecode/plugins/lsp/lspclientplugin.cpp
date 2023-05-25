@@ -736,13 +736,17 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		j = json::parse( data, nullptr, true, true );
 	} catch ( const json::exception& e ) {
 		Log::error( "LSPClientPlugin::loadLSPConfig - Error parsing LSP config from "
-					"path %s, error: ",
-					path.c_str(), e.what() );
+					"path %s, error: %s, config file content:\n%s",
+					path.c_str(), e.what(), data.c_str() );
 		if ( !updateConfigFile )
 			return;
 		// Recreate it
 		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"servers\":[]\n}\n",
 						 nullptr, true, true );
+	}
+
+	if ( updateConfigFile ) {
+		mConfigHash = String::hash( data );
 	}
 
 	if ( j.contains( "config" ) ) {

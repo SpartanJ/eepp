@@ -567,9 +567,12 @@ class EE_API TextDocument {
 
 	void setHAsCpp( bool hAsCpp );
 
+	const Uint64& getModificationId() const;
+
   protected:
 	friend class UndoStack;
 
+	Uint64 mModificationId{ 0 };
 	UndoStack mUndoStack;
 	std::string mFilePath;
 	std::string mLoadingFilePath;

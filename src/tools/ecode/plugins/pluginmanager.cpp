@@ -15,8 +15,10 @@ PluginManager::PluginManager( const std::string& resourcesPath, const std::strin
 
 PluginManager::~PluginManager() {
 	mClosing = true;
-	for ( auto& plugin : mPlugins )
+	for ( auto& plugin : mPlugins ) {
+		Log::debug( "PluginManager: unloading plugin %s", plugin.second->getTitle().c_str() );
 		eeDelete( plugin.second );
+	}
 }
 
 void PluginManager::registerPlugin( const PluginDefinition& def ) {
@@ -34,6 +36,7 @@ bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) 
 	mPluginsEnabled[id] = enable;
 	UICodeEditorPlugin* plugin = get( id );
 	if ( enable && plugin == nullptr && hasDefinition( id ) ) {
+		Log::debug( "PluginManager: loading plugin %s", mDefinitions[id].name.c_str() );
 		UICodeEditorPlugin* newPlugin = sync && mDefinitions[id].creatorSyncFn
 											? mDefinitions[id].creatorSyncFn( this )
 											: mDefinitions[id].creatorFn( this );
@@ -43,6 +46,7 @@ bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) 
 		return true;
 	}
 	if ( !enable && plugin != nullptr ) {
+		Log::debug( "PluginManager: unloading plugin %s", mDefinitions[id].name.c_str() );
 		mThreadPool->run( [plugin]() { eeDelete( plugin ); } );
 		{
 			Lock l( mSubscribedPluginsMutex );
@@ -59,7 +63,7 @@ bool PluginManager::isEnabled( const std::string& id ) const {
 
 bool PluginManager::reload( const std::string& id ) {
 	if ( isEnabled( id ) ) {
-		Log::warning( "PluginManager reloading plugin: %s", id.c_str() );
+		Log::warning( "PluginManager: reloading plugin %s", id.c_str() );
 		setEnabled( id, false );
 		setEnabled( id, true );
 		return true;
@@ -446,10 +450,18 @@ void Plugin::subscribeFileSystemListener() {
 				return;
 			if ( !mShuttingDown && file.getFilepath() == mConfigPath &&
 				 file.getModificationTime() != mConfigFileInfo.getModificationTime() ) {
-				mConfigFileInfo = file;
-				mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
-				mFileSystemListenerCb = 0;
-				mManager->reload( getId() );
+				std::string fileContents;
+				FileSystem::fileGet( file.getFilepath(), fileContents );
+				if ( getConfigFileHash() != String::hash( fileContents ) ) {
+					mConfigFileInfo = file;
+					mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
+					mFileSystemListenerCb = 0;
+					mManager->reload( getId() );
+				} else {
+					Log::debug( "Plugin %s: Configuration file has been modified: %s. But contents "
+								"are the same.",
+								getTitle().c_str(), mConfigPath.c_str() );
+				}
 			}
 		} );
 }

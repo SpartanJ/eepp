@@ -2520,14 +2520,18 @@ void UICodeEditor::updateHighlightWordCache() {
 			[this]() {
 				mHighlightWordProcessing = true;
 				mHighlightWordCache = mDoc->findAll(
-					mHighlightWord.text, mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
-					mHighlightWord.type, mHighlightWord.range );
+					mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
+												   : mHighlightWord.text,
+					mHighlightWord.caseSensitive, mHighlightWord.wholeWord, mHighlightWord.type,
+					mHighlightWord.range );
 			},
 			[this]( const auto& ) { mHighlightWordProcessing = false; }, tag );
 	} else {
 		mHighlightWordCache =
-			mDoc->findAll( mHighlightWord.text, mHighlightWord.caseSensitive,
-						   mHighlightWord.wholeWord, mHighlightWord.type, mHighlightWord.range );
+			mDoc->findAll( mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
+														  : mHighlightWord.text,
+						   mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
+						   mHighlightWord.type, mHighlightWord.range );
 	}
 }
 
@@ -2684,7 +2688,8 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 
 		do {
 			pos = line.find( text, pos );
-			if ( pos != String::InvalidPos ) {
+			const auto InvalidPos = String::InvalidPos;
+			if ( pos != InvalidPos ) {
 				if ( ignoreSelectionMatch ) {
 					TextRange selection = mDoc->getSelection( true );
 					if ( selection.inSameLine() && selection.start().line() == ln &&

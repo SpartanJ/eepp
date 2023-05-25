@@ -879,6 +879,9 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 								   const Time& time, bool fromUndoRedo ) {
 	if ( text.empty() )
 		return position;
+
+	mModificationId++;
+
 	if ( fromUndoRedo ) {
 		if ( cursorIdx >= mSelection.size() ) {
 			while ( cursorIdx >= mSelection.size() )
@@ -964,6 +967,8 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 							 UndoStackContainer& undoStack, const Time& time, bool fromUndoRedo ) {
 	if ( !range.isValid() )
 		return 0;
+
+	mModificationId++;
 
 	if ( fromUndoRedo ) {
 		if ( cursorIdx >= mSelection.size() ) {
@@ -1629,6 +1634,10 @@ bool TextDocument::hAsCpp() const {
 
 void TextDocument::setHAsCpp( bool hAsCpp ) {
 	mHAsCpp = hAsCpp;
+}
+
+const Uint64& TextDocument::getModificationId() const {
+	return mModificationId;
 }
 
 void TextDocument::selectWord( bool withMulticursor ) {

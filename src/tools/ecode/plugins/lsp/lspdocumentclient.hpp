@@ -74,7 +74,7 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void requestSemanticHighlightingDelayed();
 
-	void processTokens( const LSPSemanticTokensDelta& tokens );
+	void processTokens( const LSPSemanticTokensDelta& tokens, const Uint64& docModificationId );
 
 	void highlight();
 };

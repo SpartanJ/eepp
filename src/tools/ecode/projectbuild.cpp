@@ -253,8 +253,8 @@ bool ProjectBuildManager::load() {
 		j = json::parse( data, nullptr, true, true );
 	} catch ( const json::exception& e ) {
 		Log::error( "ProjectBuildManager::load - Error parsing project build config from "
-					"path %s, error: ",
-					mProjectFile.c_str(), e.what() );
+					"path %s, error: %s, config file content:\n%s",
+					mProjectFile.c_str(), e.what(), mProjectFile.c_str() );
 		return false;
 	}
 
