@@ -165,6 +165,11 @@ UICodeEditor::UICodeEditor( const bool& autoRegisterBaseCommands,
 	UICodeEditor( "codeeditor", autoRegisterBaseCommands, autoRegisterBaseKeybindings ) {}
 
 UICodeEditor::~UICodeEditor() {
+	if ( getUISceneNode()->hasThreadPool() ) {
+		Uint64 tag = reinterpret_cast<Uint64>( this );
+		getUISceneNode()->getThreadPool()->removeWithTag( tag );
+	}
+
 	if ( mCurrentMenu ) {
 		mCurrentMenu->clearEventListener();
 		mCurrentMenu = nullptr;
@@ -1587,8 +1592,7 @@ void UICodeEditor::onDocumentLineCountChange( const size_t&, const size_t& ) {
 void UICodeEditor::onDocumentLineChanged( const Int64& lineNumber ) {
 	mDoc->getHighlighter()->invalidate( lineNumber );
 
-	if ( !mHighlightWord.isEmpty() )
-		updateHighlightWordCache();
+	updateHighlightWordCache();
 }
 
 void UICodeEditor::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
@@ -2513,11 +2517,16 @@ const TextSearchParams& UICodeEditor::getHighlightWord() const {
 }
 
 void UICodeEditor::updateHighlightWordCache() {
+	if ( mHighlightWord.isEmpty() )
+		return;
+
 	if ( getUISceneNode()->hasThreadPool() ) {
 		Uint64 tag = reinterpret_cast<Uint64>( this );
 		getUISceneNode()->getThreadPool()->removeWithTag( tag );
 		getUISceneNode()->getThreadPool()->run(
 			[this]() {
+				if ( mDoc->isRunningTransaction() )
+					return;
 				mHighlightWordProcessing = true;
 				mHighlightWordCache = mDoc->findAll(
 					mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
@@ -2527,6 +2536,8 @@ void UICodeEditor::updateHighlightWordCache() {
 			},
 			[this]( const auto& ) { mHighlightWordProcessing = false; }, tag );
 	} else {
+		if ( mDoc->isRunningTransaction() )
+			return;
 		mHighlightWordCache =
 			mDoc->findAll( mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
 														  : mHighlightWord.text,

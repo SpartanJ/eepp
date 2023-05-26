@@ -236,6 +236,9 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
 		t.setCommand( "project-build-start", [&] {
 			if ( mProjectBuildManager && mStatusBuildOutputController ) {
+				if ( mProjectBuildManager->isBuilding() ) {
+					mProjectBuildManager->cancelBuild();
+				}
 				mProjectBuildManager->buildCurrentConfig( mStatusBuildOutputController.get() );
 			}
 		} );

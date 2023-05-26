@@ -369,6 +369,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 				auto pos = doc->getSelection();
 				auto scroll = editor->getScroll();
 				doc->selectAll();
+				doc->setRunningTransaction( true );
 				doc->textInput( data );
 				doc->setSelection( pos );
 				editor->setScroll( scroll );
@@ -377,6 +378,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 					doc->save();
 					mIsAutoFormatting[doc.get()] = false;
 				}
+				doc->setRunningTransaction( false );
 			} );
 		}
 
@@ -402,9 +404,11 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			TextPosition pos = doc->getSelection().start();
 			auto scroll = editor->getScroll();
 			doc->selectAll();
+			doc->setRunningTransaction( true );
 			doc->textInput( res.result );
 			doc->setSelection( pos );
 			editor->setScroll( scroll );
+			doc->setRunningTransaction( false );
 		} );
 		return;
 	}
@@ -441,9 +445,11 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 				TextPosition pos = doc->getSelection().start();
 				auto scroll = editor->getScroll();
 				doc->selectAll();
+				doc->setRunningTransaction( true );
 				doc->textInput( data );
 				doc->setSelection( pos );
 				editor->setScroll( scroll );
+				doc->setRunningTransaction( false );
 			} );
 		}
 	}
