@@ -21,6 +21,7 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
+#include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitableview.hpp>
@@ -82,7 +83,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["textureregion"] = UITextureRegion::New;
 		registeredWidget["touchdraggable"] = UITouchDraggableWidget::New;
 		registeredWidget["gridlayout"] = UIGridLayout::New;
-		registeredWidget["layout"] = UILayout::New;
+		registeredWidget["stacklayout"] = UIStackLayout::New;
 		registeredWidget["viewpager"] = UIViewPager::New;
 		registeredWidget["codeeditor"] = UICodeEditor::New;
 		registeredWidget["splitter"] = UISplitter::New;

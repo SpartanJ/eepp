@@ -3,15 +3,6 @@
 
 namespace EE { namespace UI {
 
-UILayout* UILayout::New() {
-	return eeNew( UILayout, () );
-}
-
-UILayout::UILayout() : UIWidget( "layout" ) {
-	mNodeFlags |= NODE_FLAG_LAYOUT;
-	unsetFlags( UI_TAB_FOCUSABLE );
-}
-
 UILayout::UILayout( const std::string& tag ) : UIWidget( tag ) {
 	mNodeFlags |= NODE_FLAG_LAYOUT;
 	unsetFlags( UI_TAB_FOCUSABLE );
@@ -75,6 +66,39 @@ void UILayout::setLayoutDirty() {
 		mUISceneNode->invalidateLayout( this );
 		mDirtyLayout = true;
 	}
+}
+
+Sizef UILayout::getSizeFromLayoutPolicy() {
+	Sizef size( getPixelsSize() );
+
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
+		Float w =
+			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
+
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout* pLay = static_cast<UILayout*>( getParent() );
+			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
+		}
+
+		if ( (int)w != (int)getPixelsSize().getWidth() )
+			size.setWidth( w );
+	}
+
+	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
+		Float h =
+			getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top - mLayoutMarginPx.Bottom;
+
+		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
+			UILayout* pLay = static_cast<UILayout*>( getParent() );
+			h = h - pLay->getPixelsPadding().Top - pLay->getPixelsPadding().Bottom;
+		}
+
+		if ( (int)h != (int)getPixelsSize().getHeight() ) {
+			size.setHeight( h );
+		}
+	}
+
+	return size;
 }
 
 bool UILayout::isGravityOwner() const {

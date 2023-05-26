@@ -461,6 +461,7 @@
 ../../include/eepp/window/window.hpp
 ../../Makefile
 ../../Makefile.base
+../../include/eepp/ui/uistacklayout.hpp
 ../../premake4.lua
 ../../premake5.lua
 ../../src/eepp/audio/alcheck.cpp
@@ -913,6 +914,7 @@
 ../../src/eepp/ui/uispinbox.cpp
 ../../src/eepp/ui/uisplitter.cpp
 ../../src/eepp/ui/uisprite.cpp
+../../src/eepp/ui/uistacklayout.cpp
 ../../src/eepp/ui/uistackwidget.cpp
 ../../src/eepp/ui/uistate.cpp
 ../../src/eepp/ui/uistyle.cpp

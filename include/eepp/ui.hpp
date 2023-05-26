@@ -36,6 +36,7 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
+#include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitableview.hpp>

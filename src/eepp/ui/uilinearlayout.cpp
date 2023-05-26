@@ -50,21 +50,12 @@ UILinearLayout* UILinearLayout::setOrientation( const UIOrientation& orientation
 	return this;
 }
 
-UILinearLayout* UILinearLayout::add( UIWidget* widget ) {
-	widget->setParent( this );
-	return this;
-}
-
 void UILinearLayout::updateLayout() {
 	if ( mOrientation == UIOrientation::Vertical )
 		packVertical();
 	else
 		packHorizontal();
 	mDirtyLayout = false;
-}
-
-bool UILinearLayout::isPacking() const {
-	return mPacking;
 }
 
 void UILinearLayout::applyWidthPolicyOnChilds() {

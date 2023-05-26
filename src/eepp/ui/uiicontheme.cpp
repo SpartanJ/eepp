@@ -15,6 +15,9 @@ UIIconTheme::~UIIconTheme() {
 UIIconTheme::UIIconTheme( const std::string& name ) : mName( name ) {}
 
 UIIconTheme* UIIconTheme::add( UIIcon* icon ) {
+	auto iconExists = mIcons.find( icon->getName() );
+	if ( iconExists != mIcons.end() )
+		eeDelete( iconExists->second );
 	mIcons[icon->getName()] = icon;
 	return this;
 }

@@ -4,6 +4,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/scopedbuffer.hpp>
+#include <map>
 
 namespace EE { namespace System {
 

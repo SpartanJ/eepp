@@ -5,9 +5,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <eepp/config.hpp>
-#include <map>
 #include <string>
-
+#include <unordered_map>
 
 namespace EE {
 
@@ -23,9 +22,8 @@ class EE_API AllocatedPointer {
 	bool mTrack;
 };
 
-typedef std::map<void*, AllocatedPointer> AllocatedPointerMap;
+typedef std::unordered_map<void*, AllocatedPointer> AllocatedPointerMap;
 typedef AllocatedPointerMap::iterator AllocatedPointerMapIt;
-
 
 #if defined( __GNUC__ ) && __GNUC__ >= 12
 #pragma GCC diagnostic push
@@ -162,7 +160,6 @@ class EE_API MemoryManager {
 #define eeFree( data ) free( data )
 
 #endif
-
 
 } // namespace EE
 
