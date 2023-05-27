@@ -214,6 +214,7 @@ enum class PropertyId : Uint32 {
 	InnerWidgetOrientation = String::hash( "inner-widget-orientation" ),
 	Glyph = String::hash( "glyph" ),
 	Name = String::hash( "name" ),
+	RowValign = String::hash( "row-valign" ),
 };
 
 enum class PropertyType : Uint32 {

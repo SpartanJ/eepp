@@ -10,14 +10,12 @@ UIStackLayout* UIStackLayout::New() {
 	return eeNew( UIStackLayout, () );
 }
 
-UIStackLayout::UIStackLayout() : UILayout( "stacklayout" ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
-	setClipType( ClipType::ContentBox );
-}
+UIStackLayout::UIStackLayout() : UIStackLayout( "stacklayout" ) {}
 
 UIStackLayout::UIStackLayout( const std::string& tag ) : UILayout( tag ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
 	setClipType( ClipType::ContentBox );
+	setGravity( UI_HALIGN_LEFT | UI_VALIGN_TOP );
 }
 
 Uint32 UIStackLayout::getType() const {
@@ -80,6 +78,28 @@ void UIStackLayout::applySizePolicyOnChilds() {
 	}
 }
 
+void UIStackLayout::setRowValign( const std::string& rowValign ) {
+	if ( rowValign == "top" ) {
+		setRowValign( UIStackLayout::RowValign::Top );
+	} else if ( rowValign == "center" ) {
+		setRowValign( UIStackLayout::RowValign::Center );
+	} else if ( rowValign == "bottom" ) {
+		setRowValign( UIStackLayout::RowValign::Bottom );
+	}
+}
+
+std::string UIStackLayout::rowValignToStr( const RowValign& rowValign ) {
+	switch ( rowValign ) {
+		case UIStackLayout::RowValign::Top:
+			return "top";
+		case UIStackLayout::RowValign::Center:
+			return "center";
+		case UIStackLayout::RowValign::Bottom:
+		default:
+			return "bottom";
+	}
+}
+
 std::string UIStackLayout::getPropertyString( const PropertyDefinition* propertyDef,
 											  const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
@@ -88,6 +108,8 @@ std::string UIStackLayout::getPropertyString( const PropertyDefinition* property
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::GravityOwner:
 			return isGravityOwner() ? "true" : "false";
+		case PropertyId::RowValign:
+			return rowValignToStr( mRowValign );
 		default:
 			return UILayout::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -95,7 +117,7 @@ std::string UIStackLayout::getPropertyString( const PropertyDefinition* property
 
 std::vector<PropertyId> UIStackLayout::getPropertiesImplemented() const {
 	auto props = UILayout::getPropertiesImplemented();
-	auto local = { PropertyId::GravityOwner };
+	auto local = { PropertyId::GravityOwner, PropertyId::RowValign };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -107,6 +129,10 @@ bool UIStackLayout::applyProperty( const StyleSheetProperty& attribute ) {
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::GravityOwner: {
 			setGravityOwner( attribute.asBool() );
+			break;
+		}
+		case PropertyId::RowValign: {
+			setRowValign( attribute.value() );
 			break;
 		}
 		default:
@@ -200,13 +226,6 @@ void UIStackLayout::updateLayout() {
 	}
 	totHeight += mPaddingPx.Bottom;
 
-	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
-		if ( totHeight != (int)getPixelsSize().getHeight() ) {
-			setInternalPixelsHeight( totHeight );
-			notifyLayoutAttrChangeParent();
-		}
-	}
-
 	for ( const auto& line : lines ) {
 		Float xDisplacement = 0.f;
 		Float yDisplacement = 0.f;
@@ -251,15 +270,16 @@ void UIStackLayout::updateLayout() {
 					break;
 			}
 
-			switch ( Font::getVerticalAlign( widget->getLayoutGravity() ) ) {
-				case UI_VALIGN_CENTER:
+			switch ( mRowValign ) {
+				case UIStackLayout::RowValign::Center:
 					pos.y = yDisplacement + maxY +
 							eeceil( ( line.maxY - widget->getPixelsSize().getHeight() ) * 0.5f );
 					break;
-				case UI_VALIGN_BOTTOM:
-					pos.y = yDisplacement + maxY + line.maxY - widget->getPixelsSize().getHeight();
+				case UIStackLayout::RowValign::Bottom:
+					pos.y = yDisplacement + maxY + line.maxY - widget->getPixelsSize().getHeight() -
+							widget->getLayoutPixelsMargin().Bottom;
 					break;
-				case UI_VALIGN_TOP:
+				case UIStackLayout::RowValign::Top:
 				default:
 					pos.y = yDisplacement + maxY + widget->getLayoutPixelsMargin().Top;
 					break;
@@ -271,6 +291,13 @@ void UIStackLayout::updateLayout() {
 		maxY += line.maxY;
 	}
 
+	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
+		if ( totHeight != (int)getPixelsSize().getHeight() ) {
+			setInternalPixelsHeight( totHeight );
+			notifyLayoutAttrChangeParent();
+		}
+	}
+
 	if ( getParent()->isUINode() &&
 		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
 		alignAgainstLayout();
@@ -278,6 +305,14 @@ void UIStackLayout::updateLayout() {
 
 	mPacking = false;
 	mDirtyLayout = false;
+}
+
+const UIStackLayout::RowValign& UIStackLayout::getRowValign() const {
+	return mRowValign;
+}
+
+void UIStackLayout::setRowValign( const RowValign& rowValign ) {
+	mRowValign = rowValign;
 }
 
 }} // namespace EE::UI

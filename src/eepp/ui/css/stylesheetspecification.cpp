@@ -402,6 +402,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "glyph", "" ).setType( PropertyType::String );
 	registerProperty( "name", "" ).setType( PropertyType::String );
+	registerProperty( "row-valign", "" )
+		.addAlias( "row-vertical-align" )
+		.setType( PropertyType::String );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },

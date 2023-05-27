@@ -7,6 +7,8 @@ namespace EE { namespace UI {
 
 class EE_API UIStackLayout : public UILayout {
   public:
+	enum class RowValign { Top, Center, Bottom };
+
 	static UIStackLayout* New();
 
 	static UIStackLayout* NewWithTag( const std::string& tag = "stacklayout" );
@@ -24,15 +26,24 @@ class EE_API UIStackLayout : public UILayout {
 
 	void updateLayout();
 
-  protected:
-	UIStackLayout();
+	const RowValign& getRowValign() const;
 
-	virtual Uint32 onMessage( const NodeMessage* Msg );
+	void setRowValign( const RowValign& rowValign );
+
+  protected:
+	RowValign mRowValign{ RowValign::Bottom };
+
+	UIStackLayout();
 
 	explicit UIStackLayout( const std::string& tag );
 
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
 	void applySizePolicyOnChilds();
 
+	void setRowValign( const std::string& rowValign );
+
+	static std::string rowValignToStr( const RowValign& rowValign );
 };
 
 }} // namespace EE::UI
