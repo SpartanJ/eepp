@@ -1,3 +1,4 @@
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistacklayout.hpp>
 
 namespace EE { namespace UI {
@@ -16,6 +17,7 @@ UIStackLayout::UIStackLayout( const std::string& tag ) : UILayout( tag ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
 	setClipType( ClipType::ContentBox );
 	setGravity( UI_HALIGN_LEFT | UI_VALIGN_TOP );
+	listenParent();
 }
 
 Uint32 UIStackLayout::getType() const {
@@ -100,6 +102,28 @@ std::string UIStackLayout::rowValignToStr( const RowValign& rowValign ) {
 	}
 }
 
+void UIStackLayout::listenParent() {
+	if ( mParentRef ) {
+		mParentRef->removeEventListener( mParentSizeChangeCb );
+		mParentRef->removeEventListener( mParentCloseCb );
+	}
+
+	mParentRef = getParent();
+	mParentRef->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
+		if ( getLayoutWidthPolicy() == SizePolicy::WrapContent &&
+			 getUISceneNode()->isUpdatingLayouts() && getParent()->getPixelsSize().getWidth() > 0 &&
+			 mSize.x != getMatchParentWidth() ) {
+			runOnMainThread( [this]() { setLayoutDirty(); } );
+		}
+	} );
+	mParentRef->addEventListener( Event::OnClose,
+								  [this]( const Event* ) { mParentRef = nullptr; } );
+}
+
+void UIStackLayout::onParentChange() {
+	listenParent();
+}
+
 std::string UIStackLayout::getPropertyString( const PropertyDefinition* propertyDef,
 											  const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
@@ -164,10 +188,13 @@ void UIStackLayout::updateLayout() {
 		return;
 	mPacking = true;
 
-	Sizef size( getPixelsSize() );
-	Sizef nsize( getSizeFromLayoutPolicy() );
-	if ( size != nsize )
-		setInternalPixelsSize( nsize );
+	Sizef size( getSizeFromLayoutPolicy() );
+
+	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent )
+		size.x = getMatchParentWidth();
+
+	if ( size != getPixelsSize() )
+		setInternalPixelsSize( size );
 
 	applySizePolicyOnChilds();
 
@@ -289,6 +316,13 @@ void UIStackLayout::updateLayout() {
 		}
 
 		maxY += line.maxY;
+	}
+
+	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent && curX < mSize.getWidth() &&
+		 ( ( lines.size() == 1 && !lines[0].nodes.empty() ) ||
+		   ( lines.size() == 2 && lines[1].nodes.empty() ) ) ) {
+		setInternalPixelsWidth( curX );
+		notifyLayoutAttrChangeParent();
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {

@@ -117,15 +117,11 @@ void UIGridLayout::updateLayout() {
 		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 	}
 
-	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left -
-						  mLayoutMargin.Right );
-	}
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent )
+		setInternalPixelsWidth( getMatchParentWidth() );
 
-	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top -
-						   mLayoutMargin.Bottom );
-	}
+	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent )
+		setInternalPixelsHeight( getMatchParentHeight() );
 
 	Node* ChildLoop = mChild;
 

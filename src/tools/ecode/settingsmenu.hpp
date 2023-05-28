@@ -68,6 +68,8 @@ class SettingsMenu {
 
 	void deleteFileDialog( const FileInfo& file );
 
+	void createProjectMenu();
+
   protected:
 	App* mApp{ nullptr };
 	UIPopUpMenu* mSettingsMenu{ nullptr };
@@ -82,12 +84,12 @@ class SettingsMenu {
 	UIPopUpMenu* mRendererMenu{ nullptr };
 	UIPopUpMenu* mToolsMenu{ nullptr };
 	UIPopUpMenu* mProjectTreeMenu{ nullptr };
+	UIPopUpMenu* mProjectDocMenu{ nullptr };
 	UIPopUpMenu* mProjectMenu{ nullptr };
 	std::vector<UIPopUpMenu*> mFileTypeMenues;
 	Float mFileTypeMenuesCreatedWithHeight{ 0 };
 	std::vector<UIPopUpMenu*> mColorSchemeMenues;
 	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
-
 };
 
 } // namespace ecode

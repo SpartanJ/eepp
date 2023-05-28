@@ -94,9 +94,19 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 			colorSchemeMenu->setSubMenu( newMenu );
 		}
 	} );
+
+	mProjectMenu = UIPopUpMenu::New();
+	mSettingsMenu
+		->addSubMenu( i18n( "folder_settings", "Folder/Project Settings" ),
+					  findIcon( "folder-user" ), mProjectMenu )
+		->setId( "project_settings" );
+
 	mSettingsMenu
 		->addSubMenu( i18n( "document", "Document" ), findIcon( "file" ), createDocumentMenu() )
 		->setId( "doc-menu" );
+
+	createProjectMenu();
+
 	mSettingsMenu
 		->addSubMenu( i18n( "terminal", "Terminal" ), findIcon( "terminal" ), createTerminalMenu() )
 		->setId( "term-menu" );
@@ -542,14 +552,14 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	mDocMenu->addSeparator();
 
 	// **** PROJECT SETTINGS ****
-	mProjectMenu = UIPopUpMenu::New();
-	mProjectMenu
+	mProjectDocMenu = UIPopUpMenu::New();
+	mProjectDocMenu
 		->addCheckBox( i18n( "use_global_settings", "Use Global Settings" ),
 					   mApp->getProjectDocConfig().useGlobalSettings )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "use_global_settings" );
 
-	mProjectMenu
+	mProjectDocMenu
 		->addCheckBox(
 			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
 			mApp->getConfig().doc.autoDetectIndentType )
@@ -563,7 +573,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	tabTypeMenuProject->addRadioButton( i18n( "spaces", "Spaces" ) )
 		->setActive( mApp->getProjectDocConfig().doc.indentSpaces )
 		->setId( "spaces" );
-	mProjectMenu
+	mProjectDocMenu
 		->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenuProject )
 		->setId( "indent_type" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
@@ -579,7 +589,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 							  mApp->getProjectDocConfig().doc.indentWidth == w )
 			->setId( String::format( "indent_width_%d", w ) )
 			->setData( w );
-	mProjectMenu
+	mProjectDocMenu
 		->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuProject )
 		->setId( "indent_width" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
@@ -594,7 +604,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			->addRadioButton( String::toString( w ), mApp->getProjectDocConfig().doc.tabWidth == w )
 			->setId( String::format( "tab_width_%d", w ) )
 			->setData( w );
-	mProjectMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuProject )
+	mProjectDocMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuProject )
 		->setId( "tab_width" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
 	tabWidthMenuProject->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
@@ -615,7 +625,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->addRadioButton( "Macintosh (CR)", mApp->getProjectDocConfig().doc.lineEndings ==
 												TextDocument::LineEnding::CR )
 		->setId( "CR" );
-	mProjectMenu
+	mProjectDocMenu
 		->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsProjectMenu )
 		->setId( "line_endings" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
@@ -624,30 +634,30 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 	} );
 
-	mProjectMenu
+	mProjectDocMenu
 		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
 					   mApp->getConfig().doc.trimTrailingWhitespaces )
 		->setId( "trim_whitespaces" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
 
-	mProjectMenu
+	mProjectDocMenu
 		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
 					   mApp->getConfig().doc.forceNewLineAtEndOfFile )
 		->setId( "force_nl" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
 
-	mProjectMenu
+	mProjectDocMenu
 		->addCheckBox( i18n( "write_unicode_bom", "Write Unicode BOM" ),
 					   mApp->getConfig().doc.writeUnicodeBOM )
 		->setId( "write_bom" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
 
-	mProjectMenu->addSeparator();
+	mProjectDocMenu->addSeparator();
 
-	mProjectMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
+	mProjectDocMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
 		->setId( "line_breaking_column" );
 
-	mProjectMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	mProjectDocMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
@@ -694,8 +704,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 
 	mDocMenu
 		->addSubMenu( i18n( "folder_project_settings", "Folder/Project Settings" ),
-					  findIcon( "folder-user" ), mProjectMenu )
-		->setId( "project_settings" );
+					  findIcon( "folder-user" ), mProjectDocMenu )
+		->setId( "project_doc_settings" );
 
 	return mDocMenu;
 }
@@ -1351,11 +1361,18 @@ void SettingsMenu::toggleSettingsMenu() {
 }
 
 void SettingsMenu::updateProjectSettingsMenu() {
-	mDocMenu->getItemId( "project_settings" )->setEnabled( !mApp->getCurrentProject().empty() );
+	mSettingsMenu->getItemId( "project_settings" )
+		->setEnabled( !mApp->getCurrentProject().empty() );
 
-	for ( size_t i = 0; i < mProjectMenu->getCount(); i++ ) {
-		mProjectMenu->getItem( i )->setEnabled( !mApp->getCurrentProject().empty() &&
-												!mApp->getProjectDocConfig().useGlobalSettings );
+	mProjectMenu->getItemId( "h_as_cpp" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mApp->getProjectDocConfig().hAsCPP );
+
+	mDocMenu->getItemId( "project_doc_settings" )->setEnabled( !mApp->getCurrentProject().empty() );
+
+	for ( size_t i = 0; i < mProjectDocMenu->getCount(); i++ ) {
+		mProjectDocMenu->getItem( i )->setEnabled( !mApp->getCurrentProject().empty() &&
+												   !mApp->getProjectDocConfig().useGlobalSettings );
 	}
 
 	mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
@@ -1365,23 +1382,23 @@ void SettingsMenu::updateProjectSettingsMenu() {
 										   : mApp->getConfig().doc.lineBreakingColumn );
 	} );
 
-	mProjectMenu->getItemId( "trim_whitespaces" )
+	mProjectDocMenu->getItemId( "trim_whitespaces" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mApp->getProjectDocConfig().doc.trimTrailingWhitespaces );
 
-	mProjectMenu->getItemId( "force_nl" )
+	mProjectDocMenu->getItemId( "force_nl" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mApp->getProjectDocConfig().doc.forceNewLineAtEndOfFile );
 
-	mProjectMenu->getItemId( "write_bom" )
+	mProjectDocMenu->getItemId( "write_bom" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mApp->getProjectDocConfig().doc.writeUnicodeBOM );
 
-	mProjectMenu->getItemId( "auto_indent" )
+	mProjectDocMenu->getItemId( "auto_indent" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mApp->getProjectDocConfig().doc.autoDetectIndentType );
 
-	auto* curIndent = mProjectMenu->find( "indent_width" )
+	auto* curIndent = mProjectDocMenu->find( "indent_width" )
 						  ->asType<UIMenuSubMenu>()
 						  ->getSubMenu()
 						  ->find( String::format( "indent_width_%d",
@@ -1390,28 +1407,28 @@ void SettingsMenu::updateProjectSettingsMenu() {
 	if ( curIndent )
 		curIndent->asType<UIMenuRadioButton>()->setActive( true );
 
-	mProjectMenu->find( "indent_type" )
+	mProjectDocMenu->find( "indent_type" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
 		->find( !mApp->getProjectDocConfig().doc.indentSpaces ? "tabs" : "spaces" )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
-	mProjectMenu->find( "tab_width" )
+	mProjectDocMenu->find( "tab_width" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
 		->find( String::format( "tab_width_%d", mApp->getProjectDocConfig().doc.tabWidth ) )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
-	mProjectMenu->find( "line_endings" )
+	mProjectDocMenu->find( "line_endings" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
 		->find( TextDocument::lineEndingToString( mApp->getProjectDocConfig().doc.lineEndings ) )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
-	mProjectMenu->getItemId( "use_global_settings" )
+	mProjectDocMenu->getItemId( "use_global_settings" )
 		->setEnabled( true )
 		->asType<UIMenuCheckBox>()
 		->setActive( mApp->getProjectDocConfig().useGlobalSettings );
@@ -1795,6 +1812,41 @@ void SettingsMenu::deleteFileDialog( const FileInfo& file ) {
 	msgBox->setTitle( i18n( "remove_file_question", "Remove file?" ) );
 	msgBox->center();
 	msgBox->showWhenReady();
+}
+
+void SettingsMenu::createProjectMenu() {
+	mProjectMenu
+		->addSubMenu( i18n( "documents_settings", "Documents Settings" ), findIcon( "file" ),
+					  mProjectDocMenu )
+		->setId( "project_doc_settings" );
+
+	mProjectMenu
+		->addCheckBox( i18n( "h_as_cpp", "Treat .h files as C++ code." ),
+					   mApp->getProjectDocConfig().hAsCPP )
+		->setId( "h_as_cpp" );
+
+	mProjectMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		if ( event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
+			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
+			return;
+		const String& id = event->getNode()->getId();
+
+		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
+			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
+			if ( "h_as_cpp" == id ) {
+				mApp->getProjectDocConfig().hAsCPP = item->isActive();
+				mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
+					editor->getDocument().setHAsCpp( mApp->getProjectDocConfig().hAsCPP );
+					if ( editor->getDocument().getFileInfo().getExtension() == "h" ) {
+						editor->resetSyntaxDefinition();
+						if ( mSplitter->isCurEditor( editor ) )
+							updateCurrentFileType();
+					}
+				} );
+				updateProjectSettingsMenu();
+			}
+		}
+	} );
 }
 
 } // namespace ecode

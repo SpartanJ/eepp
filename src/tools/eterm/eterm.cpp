@@ -104,13 +104,12 @@ void mainLoop() {
 	if ( terminal )
 		termNeedsUpdate = !terminal->update();
 
-	if ( terminal && ( benchmarkMode || terminal->isDirty() ) && !termNeedsUpdate ) {
-		if ( lastRender.getElapsedTime() >= frameTime ) {
-			lastRender.restart();
-			win->clear();
-			terminal->draw();
-			win->display();
-		}
+	if ( terminal && ( benchmarkMode || terminal->isDirty() ) &&
+		 ( !termNeedsUpdate || lastRender.getElapsedTime() >= frameTime ) ) {
+		lastRender.restart();
+		win->clear();
+		terminal->draw();
+		win->display();
 	} else if ( !benchmarkMode && !termNeedsUpdate ) {
 		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 	}

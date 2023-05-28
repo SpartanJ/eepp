@@ -32,6 +32,9 @@ class EE_API UIStackLayout : public UILayout {
 
   protected:
 	RowValign mRowValign{ RowValign::Bottom };
+	Node* mParentRef{ nullptr };
+	Uint32 mParentSizeChangeCb{ 0 };
+	Uint32 mParentCloseCb{ 0 };
 
 	UIStackLayout();
 
@@ -44,6 +47,11 @@ class EE_API UIStackLayout : public UILayout {
 	void setRowValign( const std::string& rowValign );
 
 	static std::string rowValignToStr( const RowValign& rowValign );
+
+	virtual void onParentChange();
+
+	void listenParent();
+
 };
 
 }} // namespace EE::UI

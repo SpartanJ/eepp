@@ -2198,6 +2198,18 @@ void UICodeEditor::setSyntaxDefinition( const SyntaxDefinition& definition ) {
 	sendEvent( &event );
 }
 
+void UICodeEditor::resetSyntaxDefinition() {
+	std::string oldLang( mDoc->getSyntaxDefinition().getLanguageName() );
+	mDoc->resetSyntax();
+	if ( oldLang != mDoc->getSyntaxDefinition().getLanguageName() ) {
+		mDoc->getHighlighter()->reset();
+		invalidateDraw();
+		DocSyntaxDefEvent event( this, mDoc.get(), Event::OnDocumentSyntaxDefinitionChange, oldLang,
+								 mDoc->getSyntaxDefinition().getLanguageName() );
+		sendEvent( &event );
+	}
+}
+
 const SyntaxDefinition& UICodeEditor::getSyntaxDefinition() const {
 	return mDoc->getSyntaxDefinition();
 }

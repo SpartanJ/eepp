@@ -275,7 +275,6 @@ bool ProjectBuildManager::load() {
 		}
 
 		if ( buildObj.contains( "config" ) && buildObj["config"].is_object() ) {
-			b.mConfig.enabled = buildObj.value( "enabled", true );
 			b.mConfig.clearSysEnv = buildObj.value( "clear_sys_env", false );
 		}
 
@@ -298,6 +297,7 @@ bool ProjectBuildManager::load() {
 				bstep.cmd = step.value( "command", "" );
 				bstep.args = step.value( "args", "" );
 				bstep.workingDir = step.value( "working_dir", "" );
+				bstep.enabled = step.value( "enabled", true );
 				b.mBuild.emplace_back( std::move( bstep ) );
 			}
 		}
@@ -309,6 +309,7 @@ bool ProjectBuildManager::load() {
 				bstep.cmd = step.value( "command", "" );
 				bstep.args = step.value( "args", "" );
 				bstep.workingDir = step.value( "working_dir", "" );
+				bstep.enabled = step.value( "enabled", true );
 				b.mClean.emplace_back( std::move( bstep ) );
 			}
 		}
@@ -318,11 +319,23 @@ bool ProjectBuildManager::load() {
 
 			ProjectBuildOutputParser outputParser;
 
+			if ( op.contains( "config" ) ) {
+				const auto& config = op["config"];
+				outputParser.mRelativeFilePaths = config.value( "relative_file_paths", true );
+
+				if ( config.contains( "preset" ) ) {
+					auto preset = config.value( "preset", "" );
+					if ( !preset.empty() ) {
+						auto presets = ProjectBuildOutputParser::getPresets();
+						if ( presets.find( preset ) != presets.end() ) {
+							outputParser = presets[preset];
+						}
+					}
+				}
+			}
+
 			for ( const auto& item : op.items() ) {
-				if ( item.key() == "config" ) {
-					const auto& config = item.value();
-					outputParser.mRelativeFilePaths = config.value( "relative_file_paths", true );
-				} else {
+				if ( item.key() != "config" ) {
 					auto typeStr = String::toLower( item.key() );
 
 					if ( !isValidType( typeStr ) )
@@ -463,8 +476,12 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 	}
 
 	int c = 0;
+	int totSteps = 0;
+	for ( const auto& cmd : res.cmds )
+		totSteps += cmd.enabled ? 1 : 0;
+
 	for ( const auto& cmd : res.cmds ) {
-		int progress = c > 0 ? c / (Float)res.cmds.size() : 0;
+		int progress = c > 0 ? c / (Float)totSteps : 0;
 		mProcess = std::make_unique<Process>();
 		auto options = Process::SearchUserPath | Process::NoWindow | Process::CombinedStdoutStderr;
 		std::unordered_map<std::string, std::string> env;
@@ -478,6 +495,12 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 		} else {
 			env = cmd.envs;
 		}
+
+		if ( !cmd.enabled ) {
+			c++;
+			continue;
+		}
+
 		if ( mProcess->create( cmd.cmd, cmd.args, options, env, cmd.workingDir ) ) {
 			if ( progressFn )
 				progressFn( progress,
@@ -679,6 +702,35 @@ void ProjectBuildManager::updateBuildType() {
 	buildTypeList->addEventListener( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
 		mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
 	} );
+}
+
+std::map<std::string, ProjectBuildOutputParser> ProjectBuildOutputParser::getPresets() {
+	std::map<std::string, ProjectBuildOutputParser> presets;
+	presets["generic"] = getGeneric();
+	return presets;
+}
+
+ProjectBuildOutputParser ProjectBuildOutputParser::getGeneric() {
+	ProjectBuildOutputParser parser;
+
+	ProjectBuildOutputParserConfig cfg;
+	cfg.pattern = "([^:]+):(%d+):(%d+):%s?[%w%s]*error:%s?(.*)";
+	cfg.patternOrder.col = 3;
+	cfg.patternOrder.file = 1;
+	cfg.patternOrder.line = 2;
+	cfg.patternOrder.message = 4;
+	cfg.type = ProjectOutputParserTypes::Error;
+	parser.mConfig.push_back( cfg );
+
+	cfg.pattern = "([^:]+):(%d+):(%d+):%s?[%w%s]*warning:%s?(.*)";
+	cfg.type = ProjectOutputParserTypes::Warning;
+	parser.mConfig.push_back( cfg );
+
+	cfg.pattern = "([^:]+):(%d+):(%d+):%s?[%w%s]*notice:%s?(.*)";
+	cfg.type = ProjectOutputParserTypes::Notice;
+	parser.mConfig.emplace_back( cfg );
+
+	return parser;
 }
 
 } // namespace ecode

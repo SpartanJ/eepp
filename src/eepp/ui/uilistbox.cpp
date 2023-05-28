@@ -1141,10 +1141,8 @@ void UIListBox::loadItemsFromXmlNode( const pugi::xml_node& node ) {
 
 	std::vector<String> items;
 	for ( pugi::xml_node item = node.child( "item" ); item; item = item.next_sibling( "item" ) ) {
-		std::string data = item.text().as_string();
-
-		if ( !data.empty() )
-			items.push_back( getTranslatorString( data ) );
+		std::string data( item.text().as_string() );
+		items.push_back( getTranslatorString( data ) );
 	}
 
 	if ( !items.empty() ) {

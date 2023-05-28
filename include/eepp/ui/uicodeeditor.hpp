@@ -372,6 +372,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setSyntaxDefinition( const SyntaxDefinition& definition );
 
+	void resetSyntaxDefinition();
+
 	const SyntaxDefinition& getSyntaxDefinition() const;
 
 	const bool& getHorizontalScrollBarEnabled() const;

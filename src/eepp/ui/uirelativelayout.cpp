@@ -32,48 +32,16 @@ void UIRelativeLayout::updateLayout() {
 	if ( mPacking )
 		return;
 	mPacking = true;
+
 	if ( getParent()->isUINode() &&
 		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
 		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 	}
 
-	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		Rectf padding = Rectf();
+	Sizef s( getSizeFromLayoutPolicy() );
 
-		if ( getParent()->isWidget() )
-			padding = static_cast<UIWidget*>( getParent() )->getPadding();
-
-		Float width = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right -
-					  padding.Left - padding.Right;
-
-		if ( !mMaxWidthEq.empty() || !mMaxHeightEq.empty() ) {
-			Float maxWidth( getMaxSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right -
-							padding.Left - padding.Right );
-			if ( maxWidth > 0 && maxWidth < width )
-				width = maxWidth;
-		}
-
-		setInternalWidth( width );
-	}
-
-	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		Rectf padding = Rectf();
-
-		if ( getParent()->isWidget() )
-			padding = static_cast<UIWidget*>( getParent() )->getPadding();
-
-		Float height = getParent()->getSize().getHeight() - mLayoutMargin.Top -
-					   mLayoutMargin.Bottom - padding.Top - padding.Bottom;
-
-		if ( !mMaxHeightEq.empty() || !mMaxHeightEq.empty() ) {
-			Float maxHeight( getMaxSize().getHeight() - mLayoutMargin.Left - mLayoutMargin.Right -
-							 padding.Left - padding.Right );
-			if ( maxHeight > 0 && maxHeight < height )
-				height = maxHeight;
-		}
-
-		setInternalHeight( height );
-	}
+	if ( s != getPixelsSize() )
+		setInternalPixelsSize( s );
 
 	Node* child = mChild;
 

@@ -260,7 +260,7 @@ void UINode::setMinHeight( const Float& height ) {
 	}
 }
 
-const Sizef& UINode::getMinSize() const {
+const Sizef& UINode::getCurMinSize() const {
 	return mMinSize;
 }
 
@@ -347,7 +347,7 @@ void UINode::setMaxHeightEq( const std::string& maxHeightEq ) {
 	}
 }
 
-Sizef UINode::getMaxSize() {
+Sizef UINode::getMaxSize() const {
 	Sizef s;
 
 	if ( !mMaxWidthEq.empty() ) {
@@ -365,14 +365,26 @@ Sizef UINode::getMaxSize() {
 	return s;
 }
 
-Sizef UINode::getMinSize() {
+Sizef UINode::getMaxSizePx() const {
 	Sizef s;
 
-	if ( s.x < mMinSize.x )
-		s.x = mMinSize.x;
+	if ( !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
 
-	if ( s.y < mMinSize.y )
-		s.y = mMinSize.y;
+	if ( !mMaxHeightEq.empty() ) {
+		Float length =
+			lengthFromValue( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+
+	return s;
+}
+
+Sizef UINode::getMinSize() const {
+	Sizef s;
 
 	if ( !mMinWidthEq.empty() ) {
 		Float length =
@@ -385,6 +397,25 @@ Sizef UINode::getMinSize() {
 			lengthFromValueAsDp( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
 		s.y = eemax( s.y, length );
 	}
+
+	return s;
+}
+
+Sizef UINode::getMinSizePx() const {
+	Sizef s;
+
+	if ( !mMinWidthEq.empty() ) {
+		Float length =
+			lengthFromValue( mMinWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		s.x = eemax( s.x, length );
+	}
+
+	if ( !mMinHeightEq.empty() ) {
+		Float length =
+			lengthFromValue( mMinHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
+		s.y = eemax( s.y, length );
+	}
+
 	return s;
 }
 

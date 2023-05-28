@@ -3715,6 +3715,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		if ( terminal && file.empty() && fileToOpen.empty() ) {
 			showSidePanel( false );
+			showStatusBar( false );
 			mTerminalManager->createNewTerminal();
 		} else {
 			initProjectTreeView( file );
@@ -3796,7 +3797,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "css",
 		"Sets the path for a custom stylesheet to load at the start of the application",
 		{ "css" } );
-	args::Flag terminal( parser, "terminal", "Open a new terminal", { 't', "terminal" } );
+	args::Flag terminal( parser, "terminal", "Open a new terminal / Open ecode in terminal mode",
+						 { 't', "terminal" } );
 	args::MapFlag<std::string, LogLevel> logLevel(
 		parser, "log-level", "The level of details that the application will emmit logs.",
 		{ 'l', "log-level" }, Log::getMapFlag(), Log::getDefaultLogLevel() );

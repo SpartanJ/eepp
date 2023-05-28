@@ -24,49 +24,16 @@
       }
     ],
     "config": {
-      "clear_sys_env": false,
-      "enabled": true
+      "clear_sys_env": false
     },
     "os": [
       "linux"
     ],
     "output_parser": {
       "config": {
+        "preset": "generic",
         "relative_file_paths": true
-      },
-      "error": [
-        {
-          "pattern": "([^:]+):(%d+):(%d+):%s?[%w%s]*error:%s?(.*)",
-          "pattern_order": {
-            "col": 3,
-            "file": 1,
-            "line": 2,
-            "message": 4
-          }
-        }
-      ],
-      "notice": [
-        {
-          "pattern": "([^:]+):(%d+):(%d+):%s?[%w%s]*notice:%s?(.*)",
-          "pattern_order": {
-            "col": 3,
-            "file": 1,
-            "line": 2,
-            "message": 4
-          }
-        }
-      ],
-      "warning": [
-        {
-          "pattern": "([^:]+):(%d+):(%d+):%s?[%w%s]*warning:%s?(.*)",
-          "pattern_order": {
-            "col": 3,
-            "file": 1,
-            "line": 2,
-            "message": 4
-          }
-        }
-      ]
+      }
     },
     "var": {
       "build_dir": "${project_root}/make/${os}"

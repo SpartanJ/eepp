@@ -84,6 +84,7 @@ struct ProjectBuildStep {
 	std::string cmd;
 	std::string args;
 	std::string workingDir;
+	bool enabled{ true };
 };
 
 using ProjectBuildSteps = std::vector<ProjectBuildStep>;
@@ -109,6 +110,10 @@ struct ProjectBuildOutputParserConfig {
 
 class ProjectBuildOutputParser {
   public:
+	static std::map<std::string, ProjectBuildOutputParser> getPresets();
+
+	static ProjectBuildOutputParser getGeneric();
+
 	const std::vector<ProjectBuildOutputParserConfig>& getConfig() const { return mConfig; }
 
 	bool useRelativeFilePaths() const { return mRelativeFilePaths; }

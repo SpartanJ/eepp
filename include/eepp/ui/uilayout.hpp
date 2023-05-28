@@ -24,6 +24,11 @@ class EE_API UILayout : public UIWidget {
   protected:
 	friend class UISceneNode;
 
+	std::unordered_set<UILayout*> mLayouts;
+	bool mDirtyLayout{ false };
+	bool mPacking{ false };
+	bool mGravityOwner{ false };
+
 	explicit UILayout( const std::string& tag );
 
 	virtual void onSizeChange();
@@ -42,12 +47,11 @@ class EE_API UILayout : public UIWidget {
 
 	void setLayoutDirty();
 
-	std::unordered_set<UILayout*> mLayouts;
-	bool mDirtyLayout{ false };
-	bool mPacking{ false };
-	bool mGravityOwner{ false };
-
 	Sizef getSizeFromLayoutPolicy();
+
+	Float getMatchParentWidth() const;
+
+	Float getMatchParentHeight() const;
 };
 
 }} // namespace EE::UI

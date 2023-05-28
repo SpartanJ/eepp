@@ -72,33 +72,58 @@ Sizef UILayout::getSizeFromLayoutPolicy() {
 	Sizef size( getPixelsSize() );
 
 	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		Float w =
-			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
-
-		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
-			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
-		}
+		Float w = getMatchParentWidth();
 
 		if ( (int)w != (int)getPixelsSize().getWidth() )
 			size.setWidth( w );
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		Float h =
-			getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top - mLayoutMarginPx.Bottom;
+		Float h = getMatchParentHeight();
 
-		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
-			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			h = h - pLay->getPixelsPadding().Top - pLay->getPixelsPadding().Bottom;
-		}
-
-		if ( (int)h != (int)getPixelsSize().getHeight() ) {
+		if ( (int)h != (int)getPixelsSize().getHeight() )
 			size.setHeight( h );
-		}
 	}
 
 	return size;
+}
+
+Float UILayout::getMatchParentWidth() const {
+	Rectf padding = Rectf();
+
+	if ( getParent()->isWidget() )
+		padding = static_cast<UIWidget*>( getParent() )->getPixelsPadding();
+
+	Float width = getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left -
+				  mLayoutMarginPx.Right - padding.Left - padding.Right;
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float maxWidth( getMaxSizePx().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right -
+						padding.Left - padding.Right );
+		if ( maxWidth > 0 && maxWidth < width )
+			width = maxWidth;
+	}
+
+	return eemax( 0.f, width );
+}
+
+Float UILayout::getMatchParentHeight() const {
+	Rectf padding = Rectf();
+
+	if ( getParent()->isWidget() )
+		padding = static_cast<UIWidget*>( getParent() )->getPadding();
+
+	Float height = getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top -
+				   mLayoutMarginPx.Bottom - padding.Top - padding.Bottom;
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float maxHeight( getMaxSizePx().getHeight() - mLayoutMarginPx.Left - mLayoutMarginPx.Right -
+						 padding.Left - padding.Right );
+		if ( maxHeight > 0 && maxHeight < height )
+			height = maxHeight;
+	}
+
+	return eemax( 0.f, height );
 }
 
 bool UILayout::isGravityOwner() const {
