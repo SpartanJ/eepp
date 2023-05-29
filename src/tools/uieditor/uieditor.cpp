@@ -863,8 +863,8 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		UIMessageBox::OK_CANCEL,
 		"Do you really want to close the current file?\nAll changes will be lost." );
 	mMsgBox->setTheme( mTheme );
-	mMsgBox->addEventListener( Event::OnConfirm, [&]( const Event* ) { mWindow->close(); } );
-	mMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) { mMsgBox = NULL; } );
+	mMsgBox->addEventListener( Event::OnConfirm, [this]( const Event* ) { mWindow->close(); } );
+	mMsgBox->addEventListener( Event::OnWindowClose, [this]( const Event* ) { mMsgBox = NULL; } );
 	mMsgBox->setTitle( "Close Editor?" );
 	mMsgBox->center();
 	mMsgBox->show();
@@ -1167,6 +1167,9 @@ App::App() {}
 
 App::~App() {
 	saveConfig();
+
+	if ( mMsgBox )
+		mMsgBox->clearEventListener();
 
 	eeSAFE_DELETE( mSplitter );
 

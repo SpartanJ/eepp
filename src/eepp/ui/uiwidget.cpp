@@ -785,6 +785,14 @@ bool UIWidget::hasClass( const std::string& cls ) const {
 	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
 }
 
+void UIWidget::toggleClass( const std::string& cls ) {
+	if ( hasClass( cls ) ) {
+		removeClass( cls );
+	} else {
+		addClass( cls );
+	}
+}
+
 bool UIWidget::hasPseudoClass( const std::string& pseudoCls ) const {
 	return std::find( mPseudoClasses.begin(), mPseudoClasses.end(), pseudoCls ) !=
 		   mPseudoClasses.end();

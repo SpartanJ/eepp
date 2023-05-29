@@ -13,6 +13,8 @@ class EE_API UIStackLayout : public UILayout {
 
 	static UIStackLayout* NewWithTag( const std::string& tag = "stacklayout" );
 
+	virtual ~UIStackLayout();
+
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
@@ -38,6 +40,7 @@ class EE_API UIStackLayout : public UILayout {
 
 	UIStackLayout();
 
+
 	explicit UIStackLayout( const std::string& tag );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
@@ -52,6 +55,7 @@ class EE_API UIStackLayout : public UILayout {
 
 	void listenParent();
 
+	void clearListeners();
 };
 
 }} // namespace EE::UI

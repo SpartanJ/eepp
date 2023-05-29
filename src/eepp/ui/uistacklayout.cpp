@@ -20,6 +20,10 @@ UIStackLayout::UIStackLayout( const std::string& tag ) : UILayout( tag ) {
 	listenParent();
 }
 
+UIStackLayout::~UIStackLayout() {
+	clearListeners();
+}
+
 Uint32 UIStackLayout::getType() const {
 	return UI_TYPE_STACK_LAYOUT;
 }
@@ -41,9 +45,7 @@ void UIStackLayout::applySizePolicyOnChilds() {
 					break;
 				}
 				case SizePolicy::MatchParent: {
-					int w = getPixelsSize().getWidth() - widget->getLayoutPixelsMargin().Left -
-							widget->getLayoutPixelsMargin().Right - mPaddingPx.Left -
-							mPaddingPx.Right;
+					int w = getMatchParentWidth();
 
 					if ( (int)widget->getPixelsSize().getWidth() != w && w > 0 )
 						widget->setPixelsSize( w, widget->getPixelsSize().getHeight() );
@@ -61,9 +63,7 @@ void UIStackLayout::applySizePolicyOnChilds() {
 					break;
 				}
 				case SizePolicy::MatchParent: {
-					int h = getPixelsSize().getHeight() - widget->getLayoutPixelsMargin().Top -
-							widget->getLayoutPixelsMargin().Bottom - mPaddingPx.Top -
-							mPaddingPx.Bottom;
+					int h = getMatchParentHeight();
 
 					if ( h != (int)widget->getPixelsSize().getHeight() && h > 0 )
 						widget->setPixelsSize( widget->getPixelsSize().getWidth(), h );
@@ -102,22 +102,33 @@ std::string UIStackLayout::rowValignToStr( const RowValign& rowValign ) {
 	}
 }
 
-void UIStackLayout::listenParent() {
+void UIStackLayout::clearListeners() {
 	if ( mParentRef ) {
-		mParentRef->removeEventListener( mParentSizeChangeCb );
-		mParentRef->removeEventListener( mParentCloseCb );
+		if ( mParentSizeChangeCb > 0 ) {
+			mParentRef->removeEventListener( mParentSizeChangeCb );
+			mParentSizeChangeCb = 0;
+		}
+		if ( mParentCloseCb > 0 ) {
+			mParentRef->removeEventListener( mParentCloseCb );
+			mParentCloseCb = 0;
+		}
 	}
+}
+
+void UIStackLayout::listenParent() {
+	clearListeners();
 
 	mParentRef = getParent();
-	mParentRef->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
-		if ( getLayoutWidthPolicy() == SizePolicy::WrapContent &&
-			 getUISceneNode()->isUpdatingLayouts() && getParent()->getPixelsSize().getWidth() > 0 &&
-			 mSize.x != getMatchParentWidth() ) {
-			runOnMainThread( [this]() { setLayoutDirty(); } );
-		}
-	} );
-	mParentRef->addEventListener( Event::OnClose,
-								  [this]( const Event* ) { mParentRef = nullptr; } );
+	mParentSizeChangeCb =
+		mParentRef->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
+			if ( getLayoutWidthPolicy() == SizePolicy::WrapContent &&
+				 getUISceneNode()->isUpdatingLayouts() &&
+				 getParent()->getPixelsSize().getWidth() > 0 && mSize.x != getMatchParentWidth() ) {
+				runOnMainThread( [this]() { setLayoutDirty(); } );
+			}
+		} );
+	mParentCloseCb = mParentRef->addEventListener(
+		Event::OnClose, [this]( const Event* ) { mParentRef = nullptr; } );
 }
 
 void UIStackLayout::onParentChange() {
@@ -232,10 +243,12 @@ void UIStackLayout::updateLayout() {
 
 			lines[curLine].nodes.push_back( widget );
 			lines[curLine].width = curX;
-			lines[curLine].maxY =
-				eeceil( eemax( lines[curLine].maxY, ( widget->getPixelsSize().getHeight() +
-													  widget->getLayoutPixelsMargin().Top +
-													  widget->getLayoutPixelsMargin().Bottom ) ) );
+			if ( widget->getLayoutHeightPolicy() != SizePolicy::MatchParent ) {
+				lines[curLine].maxY = eeceil(
+					eemax( lines[curLine].maxY, ( widget->getPixelsSize().getHeight() +
+												  widget->getLayoutPixelsMargin().Top +
+												  widget->getLayoutPixelsMargin().Bottom ) ) );
+			}
 
 			if ( curX > mSize.getWidth() )
 				addLine();
@@ -247,12 +260,15 @@ void UIStackLayout::updateLayout() {
 	Float maxY = mPaddingPx.Top;
 	Float height = 0.f;
 	Float totHeight = maxY;
-	for ( const auto& line : lines ) {
+	for ( auto& line : lines ) {
+		if ( curLine > 0 && line.maxY == 0 )
+			line.maxY = lines[curLine - 1].maxY;
 		height += line.maxY;
 		totHeight += line.maxY;
 	}
 	totHeight += mPaddingPx.Bottom;
 
+	curLine = 0;
 	for ( const auto& line : lines ) {
 		Float xDisplacement = 0.f;
 		Float yDisplacement = 0.f;
@@ -287,6 +303,10 @@ void UIStackLayout::updateLayout() {
 		for ( const auto& widget : line.nodes ) {
 			Vector2f pos( widget->getPixelsPosition() );
 
+			if ( widget->getLayoutHeightPolicy() == SizePolicy::MatchParent &&
+				 widget->getPixelsSize().getHeight() != line.maxY )
+				widget->setPixelsSize( widget->getPixelsSize().getWidth(), line.maxY );
+
 			switch ( Font::getHorizontalAlign( getHorizontalAlign() ) ) {
 				case UI_HALIGN_CENTER:
 				case UI_HALIGN_RIGHT:
@@ -316,6 +336,7 @@ void UIStackLayout::updateLayout() {
 		}
 
 		maxY += line.maxY;
+		curLine++;
 	}
 
 	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent && curX < mSize.getWidth() &&

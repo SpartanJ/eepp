@@ -104,7 +104,7 @@ static void addCSS() {
 					 { { "'", "'", "\\" }, "string" },
 					 { { "^%s*#[%a%_%-][%w%_%-]*" }, "keyword2" },
 					 { { ",%s*#[%a%_%-][%w%_%-]*" }, "keyword2" },
-					 { { "#%x%x?%x?%x?%x?%x?%x?%x?" }, "string" },
+					 { { "#%x%x%x%x?%x?%x?%x?%x?" }, "string" },
 					 { { "#[%a%_%-][%w%_%-]*" }, "keyword2" },
 					 { { "%-%-%a[%w%-%_]*" }, "keyword2" },
 					 { { "-?%d+[%d%.]*p[xt]" }, "number" },

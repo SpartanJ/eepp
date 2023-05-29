@@ -369,7 +369,7 @@ void UIAbstractTableView::setColumnsHidden( const std::vector<size_t>& columns, 
 	createOrUpdateColumns( false );
 }
 
-void UIAbstractTableView::setColumnsVisible( const std::vector<size_t> columns ) {
+void UIAbstractTableView::setColumnsVisible( const std::vector<size_t>& columns ) {
 	if ( !getModel() )
 		return;
 

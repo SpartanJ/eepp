@@ -80,7 +80,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setSortIconSize( const size_t& sortIconSize );
 
-	void setColumnsVisible( const std::vector<size_t> columns );
+	void setColumnsVisible( const std::vector<size_t>& columns );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 

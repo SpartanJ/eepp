@@ -106,6 +106,8 @@ class EE_API UITextView : public UIWidget {
 
 	void setTextTransform( const TextTransform::Value& textTransform );
 
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
+
   protected:
 	Text* mTextCache;
 	String mString;

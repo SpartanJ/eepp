@@ -12,6 +12,8 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
+#define PUGIXML_HEADER_ONLY
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -174,7 +176,8 @@ UITextView* UITextView::setOutlineColor( const Color& outlineColor ) {
 }
 
 UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
-	if ( mFontStyleConfig.Style != fontStyle ) {		mTextCache->setStyle( fontStyle );
+	if ( mFontStyleConfig.Style != fontStyle ) {
+		mTextCache->setStyle( fontStyle );
 		mFontStyleConfig.Style = fontStyle;
 		recalculate();
 		onFontStyleChanged();
@@ -819,6 +822,18 @@ void UITextView::setTextAlign( const Uint32& align ) {
 	mFlags &= ~( UI_HALIGN_CENTER | UI_HALIGN_RIGHT );
 	mFlags |= align;
 	onAlignChange();
+}
+
+void UITextView::loadFromXmlNode( const pugi::xml_node& node ) {
+	beginAttributesTransaction();
+
+	UIWidget::loadFromXmlNode( node );
+
+	if ( !node.text().empty() ) {
+		setText( getTranslatorString( node.text().as_string() ) );
+	}
+
+	endAttributesTransaction();
 }
 
 UIAnchor* UIAnchor::New() {

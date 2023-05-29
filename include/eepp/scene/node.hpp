@@ -445,7 +445,7 @@ class EE_API Node : public Transformable {
 	Node* mPrev;	  //! Pointer to the prev child of the father
 	Uint32 mNodeFlags;
 	BlendMode mBlend;
-	Uint16 mNumCallBacks;
+	Uint32 mNumCallBacks;
 
 	mutable Polygon2f mPoly;
 	mutable Rectf mWorldBounds;

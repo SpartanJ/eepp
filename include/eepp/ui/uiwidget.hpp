@@ -151,6 +151,8 @@ class EE_API UIWidget : public UINode {
 
 	bool hasClass( const std::string& cls ) const;
 
+	void toggleClass( const std::string& cls );
+
 	void setElementTag( const std::string& tag );
 
 	const std::string& getElementTag() const;
