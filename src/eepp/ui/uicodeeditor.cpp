@@ -2534,19 +2534,30 @@ void UICodeEditor::updateHighlightWordCache() {
 
 	if ( getUISceneNode()->hasThreadPool() ) {
 		Uint64 tag = reinterpret_cast<Uint64>( this );
-		getUISceneNode()->getThreadPool()->removeWithTag( tag );
-		getUISceneNode()->getThreadPool()->run(
-			[this]() {
-				if ( mDoc->isRunningTransaction() )
-					return;
-				mHighlightWordProcessing = true;
-				mHighlightWordCache = mDoc->findAll(
-					mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
-												   : mHighlightWord.text,
-					mHighlightWord.caseSensitive, mHighlightWord.wholeWord, mHighlightWord.type,
-					mHighlightWord.range );
+		removeActionsByTag( tag );
+		runOnMainThread(
+			[this, tag]() {
+				getUISceneNode()->getThreadPool()->removeWithTag( tag );
+				getUISceneNode()->getThreadPool()->run(
+					[this]() {
+						if ( mDoc->isRunningTransaction() )
+							return;
+						Clock docSearch;
+						mHighlightWordProcessing = true;
+						mHighlightWordCache = mDoc->findAll(
+							mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
+														   : mHighlightWord.text,
+							mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
+							mHighlightWord.type, mHighlightWord.range );
+						Log::info( "Document search triggered in document: \"%s\", searched for "
+								   "\"%s\" and took %2.f ms",
+								   mDoc->getFilename().c_str(),
+								   mHighlightWord.text.toUtf8().c_str(),
+								   docSearch.getElapsedTime().asMilliseconds() );
+					},
+					[this]( const auto& ) { mHighlightWordProcessing = false; }, tag );
 			},
-			[this]( const auto& ) { mHighlightWordProcessing = false; }, tag );
+			Milliseconds( 0 ), tag );
 	} else {
 		if ( mDoc->isRunningTransaction() )
 			return;

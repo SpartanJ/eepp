@@ -246,6 +246,11 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	}
 	mClient->onCodeEditorCreated( editor, doc );
 
+	if ( mCurEditor == nullptr )
+		mCurEditor = editor;
+	if ( mCurWidget == nullptr )
+		mCurWidget = editor;
+
 	return editor;
 }
 
@@ -317,6 +322,8 @@ bool UICodeEditorSplitter::loadFileFromPath( const std::string& path, UICodeEdit
 		return false;
 	if ( nullptr == codeEditor )
 		codeEditor = mCurEditor;
+	if ( nullptr == codeEditor && !mTabWidgets.empty() )
+		codeEditor = createCodeEditorInTabWidget( mTabWidgets[0] ).second;
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
 	bool isUrl = String::startsWith( path, "https://" ) || String::startsWith( path, "http://" );
 	bool ret = isUrl ? codeEditor->loadAsyncFromURL(
@@ -338,6 +345,8 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 		return;
 	if ( nullptr == codeEditor )
 		codeEditor = mCurEditor;
+	if ( nullptr == codeEditor && !mTabWidgets.empty() )
+		codeEditor = createCodeEditorInTabWidget( mTabWidgets[0] ).second;
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
 	bool isUrl = String::startsWith( path, "https://" ) || String::startsWith( path, "http://" );
 	if ( isUrl ) {
@@ -360,6 +369,8 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 	loadFileFromPath( path, codeEditor );
 	if ( nullptr == codeEditor )
 		codeEditor = mCurEditor;
+	if ( nullptr == codeEditor && !mTabWidgets.empty() )
+		codeEditor = createCodeEditorInTabWidget( mTabWidgets[0] ).second;
 	if ( onLoaded )
 		onLoaded( codeEditor, path );
 #endif

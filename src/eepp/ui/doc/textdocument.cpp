@@ -2377,6 +2377,9 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 							  TextRange restrictRange ) {
 	if ( text.empty() )
 		return 0;
+	bool wasRunningTransaction = isRunningTransaction();
+	if ( wasRunningTransaction )
+		setRunningTransaction( true );
 	int count = 0;
 	TextRange found;
 	TextPosition startedPosition = getSelection().start();
@@ -2391,6 +2394,8 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 			count++;
 		}
 	} while ( found.isValid() && endOfDoc() != found.end() );
+	if ( wasRunningTransaction )
+		setRunningTransaction( false );
 	setSelection( startedPosition );
 	return count;
 }
