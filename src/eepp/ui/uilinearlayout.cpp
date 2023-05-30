@@ -51,10 +51,19 @@ UILinearLayout* UILinearLayout::setOrientation( const UIOrientation& orientation
 }
 
 void UILinearLayout::updateLayout() {
-	if ( mOrientation == UIOrientation::Vertical )
-		packVertical();
-	else
-		packHorizontal();
+	if ( !mVisible ) {
+		if ( mPacking )
+			return;
+		mPacking = true;
+		setInternalPixelsSize( Sizef::Zero );
+		notifyLayoutAttrChangeParent();
+		mPacking = false;
+	} else {
+		if ( mOrientation == UIOrientation::Vertical )
+			packVertical();
+		else
+			packHorizontal();
+	}
 	mDirtyLayout = false;
 }
 
@@ -206,9 +215,10 @@ void UILinearLayout::packVertical() {
 						? getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
 						: getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Bottom -
 							  mLayoutMarginPx.Top - mPaddingPx.Top - mPaddingPx.Bottom;
-				Float size = (Float)( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
+				Float newSize =
+					eeceil( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
 
-				widget->setPixelsSize( widget->getPixelsSize().getWidth(), (Int32)size );
+				widget->setPixelsSize( widget->getPixelsSize().getWidth(), newSize );
 			}
 
 			switch ( Font::getHorizontalAlign( widget->getLayoutGravity() ) ) {
@@ -333,9 +343,9 @@ void UILinearLayout::packHorizontal() {
 						? getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right
 						: getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Right -
 							  mLayoutMarginPx.Left - mPaddingPx.Left - mPaddingPx.Right;
-				Float size = (Float)( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
+				Float newSize = eeceil( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
 
-				widget->setPixelsSize( (Int32)size, widget->getPixelsSize().getHeight() );
+				widget->setPixelsSize( newSize, widget->getPixelsSize().getHeight() );
 			}
 
 			switch ( Font::getVerticalAlign( widget->getLayoutGravity() ) ) {

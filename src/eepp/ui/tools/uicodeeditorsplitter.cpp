@@ -466,6 +466,26 @@ UICodeEditorSplitter::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 }
 
 std::pair<UITab*, UIWidget*>
+UICodeEditorSplitter::createWidget( UIWidget* widget, const std::string& tabName, bool focus ) {
+	UITabWidget* tabWidget = nullptr;
+
+	UIWidget* curWidget = getCurWidget();
+	if ( !curWidget )
+		return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
+	tabWidget = tabWidgetFromWidget( curWidget );
+
+	if ( !tabWidget ) {
+		if ( !getTabWidgets().empty() ) {
+			tabWidget = getTabWidgets()[0];
+		} else {
+			return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
+		}
+	}
+
+	return createWidgetInTabWidget( tabWidget, widget, tabName, focus );
+}
+
+std::pair<UITab*, UIWidget*>
 UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget* widget,
 											   const std::string& tabName, bool focus ) {
 	eeASSERT( curWidgetExists() );

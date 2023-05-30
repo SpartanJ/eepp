@@ -199,6 +199,14 @@ void UIStackLayout::updateLayout() {
 		return;
 	mPacking = true;
 
+	if ( !mVisible ) {
+		setInternalPixelsSize( Sizef::Zero );
+		notifyLayoutAttrChangeParent();
+		mPacking = false;
+		mDirtyLayout = false;
+		return;
+	}
+
 	Sizef size( getSizeFromLayoutPolicy() );
 
 	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent )

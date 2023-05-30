@@ -43,8 +43,8 @@ class EE_API Translator {
 	void setCurrentLanguage( const std::string& currentLanguage );
 
   protected:
-	typedef std::map<std::string, String> StringDictionary;
-	typedef std::map<std::string, StringDictionary> StringLocaleDictionary;
+	typedef std::unordered_map<std::string, String> StringDictionary;
+	typedef std::unordered_map<std::string, StringDictionary> StringLocaleDictionary;
 
 	std::string mDefaultLanguage;
 	std::string mCurrentLanguage;

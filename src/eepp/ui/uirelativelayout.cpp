@@ -33,28 +33,34 @@ void UIRelativeLayout::updateLayout() {
 		return;
 	mPacking = true;
 
-	if ( getParent()->isUINode() &&
-		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
-		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
-	}
+	if ( !mVisible ) {
+		setInternalPixelsSize( Sizef::Zero );
+		notifyLayoutAttrChangeParent();
+	} else {
 
-	Sizef s( getSizeFromLayoutPolicy() );
-
-	if ( s != getPixelsSize() )
-		setInternalPixelsSize( s );
-
-	Node* child = mChild;
-
-	while ( NULL != child ) {
-		if ( child->isWidget() ) {
-			UIWidget* widget = static_cast<UIWidget*>( child );
-
-			fixChildSize( widget );
-
-			fixChildPos( widget );
+		if ( getParent()->isUINode() &&
+			 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
+			setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 		}
 
-		child = child->getNextNode();
+		Sizef s( getSizeFromLayoutPolicy() );
+
+		if ( s != getPixelsSize() )
+			setInternalPixelsSize( s );
+
+		Node* child = mChild;
+
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				UIWidget* widget = static_cast<UIWidget*>( child );
+
+				fixChildSize( widget );
+
+				fixChildPos( widget );
+			}
+
+			child = child->getNextNode();
+		}
 	}
 
 	mDirtyLayout = false;

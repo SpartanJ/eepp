@@ -2,6 +2,7 @@
 #include "ecode.hpp"
 #include "scopedop.hpp"
 #include "statusbuildoutputcontroller.hpp"
+#include "uibuildsettings.hpp"
 #include <eepp/core/string.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/clock.hpp>
@@ -81,7 +82,11 @@ bool ProjectBuild::isOSSupported( const std::string& os ) const {
 ProjectBuildManager::ProjectBuildManager( const std::string& projectRoot,
 										  std::shared_ptr<ThreadPool> pool, UITabWidget* sidePanel,
 										  App* app ) :
-	mProjectRoot( projectRoot ), mThreadPool( pool ), mSidePanel( sidePanel ), mApp( app ) {
+	mProjectRoot( projectRoot ),
+	mThreadPool( pool ),
+	mSidePanel( sidePanel ),
+	mApp( app ),
+	mNewBuild( mApp->i18n( "new_name", "new_name" ), mProjectRoot ) {
 	FileSystem::dirAddSlashAtEnd( mProjectRoot );
 
 	if ( mThreadPool ) {
@@ -583,17 +588,15 @@ void ProjectBuildManager::buildSidePanelTab() {
 				<vbox lw="mp" lh="wc" padding="4dp">
 					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" />
 					<TextView text="@string(build_configuration, Build Configuration)" />
-					<DropDownList id="build_list" layout_width="mp" layout_height="wrap_content" margin-bottom="4dp" />
-					<!--
-					<hbox lw="mp" lh="wc">
-						<PushButton lw="0" lw8="0.5" id="build_edit" text="@string(edit_build, Edit Build)" margin-right="2dp" />
-						<PushButton lw="0" lw8="0.5" id="build_add" text="@string(add_build, Add Build)" margin-left="2dp" />
+					<hbox lw="mp" lh="wc" margin-bottom="4dp">
+						<DropDownList id="build_list" layout_width="0" lw8="1" layout_height="wrap_content" />
+						<PushButton id="build_edit" id="build_edit" text="@string(edit_build, Edit Build)" tooltip="@string(edit_build, Edit Build)"  text-as-fallback="true" icon="icon(file-edit, 12dp)" margin-left="2dp" />
+						<PushButton id="build_add" id="build_add" text="@string(add_build, Add Build)" tooltip="@string(add_build, Add Build)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
 					</hbox>
-					-->
 					<TextView text="@string(build_target, Build Target)" margin-top="8dp" />
 					<hbox lw="mp" lh="wc">
 						<DropDownList id="build_type_list" layout_width="0" layout_weight="1" layout_height="wrap_content" />
-				<!--	<PushButton id="build_type_add" text="@string(add_build, Add Build)" text-as-fallback="true" icon="icon(add, 12dp)"  margin-left="2dp"/> -->
+						<PushButton id="build_type_add" text="@string(add_build_type, Add Build Type)" tooltip="@string(add_build_type, Add Build Type)" text-as-fallback="true" icon="icon(add, 12dp)"  margin-left="2dp"/>
 					</hbox>
 					<PushButton id="build_button" lw="mp" lh="wc" text="@string(build, Build)" margin-top="8dp" icon="icon(hammer, 12dp)" />
 					<PushButton id="clean_button" lw="mp" lh="wc" text="@string(clean, Clean)" margin-top="8dp" icon="icon(eraser, 12dp)" />
@@ -612,6 +615,8 @@ void ProjectBuildManager::updateSidePanelTab() {
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
 	UIPushButton* buildButton = buildTab->find<UIPushButton>( "build_button" );
 	UIPushButton* cleanButton = buildTab->find<UIPushButton>( "clean_button" );
+	UIPushButton* buildAdd = buildTab->find<UIPushButton>( "build_add" );
+	UIPushButton* buildEdit = buildTab->find<UIPushButton>( "build_edit" );
 
 	buildList->getListBox()->clear();
 
@@ -634,13 +639,15 @@ void ProjectBuildManager::updateSidePanelTab() {
 	}
 
 	buildList->setEnabled( !buildList->getListBox()->isEmpty() );
+	buildEdit->setEnabled( !buildList->getListBox()->isEmpty() );
 
 	updateBuildType();
 
 	buildList->removeEventsOfType( Event::OnItemSelected );
-	buildList->addEventListener( Event::OnItemSelected, [this, buildList]( const Event* ) {
+	buildList->addEventListener( Event::OnItemSelected, [this, buildEdit, buildList]( const Event* ) {
 		mConfig.buildName = buildList->getListBox()->getItemSelectedText();
 		mConfig.buildType = "";
+		buildEdit->setEnabled( true );
 		updateBuildType();
 	} );
 
@@ -669,12 +676,37 @@ void ProjectBuildManager::updateSidePanelTab() {
 			}
 		},
 		MouseButton::EE_BUTTON_LEFT );
+
+	buildAdd->addMouseClickListener(
+		[this]( const Event* ) {
+			mNewBuild = ProjectBuild( mApp->i18n( "new_name", "new_name" ), mProjectRoot );
+			auto ret = mApp->getSplitter()->createWidget(
+				UIBuildSettings::New( mNewBuild ),
+				mApp->i18n( "build_settings", "Build Settings" ) );
+			ret.first->setIcon( mApp->findIcon( "hammer" ) );
+		},
+		MouseButton::EE_BUTTON_LEFT );
+
+	buildEdit->addMouseClickListener(
+		[this]( const Event* ) {
+			if ( !mConfig.buildName.empty() ) {
+				auto build = mBuilds.find( mConfig.buildName );
+				if ( build != mBuilds.end() ) {
+					auto ret = mApp->getSplitter()->createWidget(
+						UIBuildSettings::New( build->second ),
+						mApp->i18n( "build_settings", "Build Settings" ) );
+					ret.first->setIcon( mApp->findIcon( "hammer" ) );
+				}
+			}
+		},
+		MouseButton::EE_BUTTON_LEFT );
 }
 
 void ProjectBuildManager::updateBuildType() {
 	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
 	UIDropDownList* buildTypeList = buildTab->find<UIDropDownList>( "build_type_list" );
+	UIPushButton* buildTypeAdd = buildTab->find<UIPushButton>( "build_type_add" );
 
 	buildTypeList->getListBox()->clear();
 
@@ -697,6 +729,7 @@ void ProjectBuildManager::updateBuildType() {
 		}
 	}
 	buildTypeList->setEnabled( !buildTypeList->getListBox()->isEmpty() );
+	buildTypeAdd->setEnabled( !mConfig.buildName.empty() );
 
 	buildTypeList->removeEventsOfType( Event::OnItemSelected );
 	buildTypeList->addEventListener( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {

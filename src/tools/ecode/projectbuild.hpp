@@ -48,8 +48,7 @@ class StatusBuildOutputController;
 	  }
 	],
 	"config": {
-	  "clear_sys_env": false,
-	  "enabled": true
+	  "clear_sys_env": false
 	},
 	"env": {
 	  "SHELL": "fish"
@@ -91,7 +90,6 @@ using ProjectBuildSteps = std::vector<ProjectBuildStep>;
 using ProjectBuildKeyVal = std::unordered_map<std::string, std::string>;
 
 struct ProjectBuildConfig {
-	bool enabled{ true };
 	bool clearSysEnv{ false };
 };
 
@@ -146,6 +144,7 @@ class ProjectBuild {
 
   protected:
 	friend class ProjectBuildManager;
+	friend class UIBuildSettings;
 
 	std::string mName;
 	std::string mProjectRoot;
@@ -257,6 +256,7 @@ class ProjectBuildManager {
 	UITab* mTab{ nullptr };
 	App* mApp{ nullptr };
 	std::unique_ptr<Process> mProcess;
+	ProjectBuild mNewBuild;
 	bool mLoaded{ false };
 	bool mLoading{ false };
 	bool mBuilding{ false };

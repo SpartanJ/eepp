@@ -3278,6 +3278,142 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		#status_bar > TextView.selected {
 			background-color: var(--primary);
 		}
+		.settings_panel {
+			padding: 4dp;
+		}
+		.settings_panel .title {
+			font-size:17dp;
+		}
+		.settings_panel .subtitle {
+			font-size:15dp;
+			margin-top: 12dp;
+		}
+		.settings_panel > .subtitle {
+			margin-top: 4dp;
+		}
+		.settings_panel .advance_opt {
+			font-size:15dp;
+		}
+		.settings_panel .separator {
+			margin-top: 4dp;
+			background-color: var(--font-hint);
+		}
+		.settings_panel PushButton {
+			padding-top: 2dp;
+			padding-bottom: 2dp;
+		}
+		.settings_panel .build_step,
+		.settings_panel .os_select {
+			background-color: var(--list-back);
+			border-width: 1dp;
+			border-color: var(--button-border);
+			padding: 4dp;
+			margin-top: 4dp;
+		}
+		.settings_panel .build_step > LinearLayout > LinearLayout {
+			margin-bottom: 3dp;
+		}
+		.settings_panel .build_step TextInput {
+			padding: 2dp 4dp 2dp 4dp;
+		}
+		.settings_panel .add_build_step {
+			margin-top: 4dp;
+		}
+		.settings_panel .build_steps {
+			margin-bottom: 4dp;
+		}
+		.settings_panel .build_step:first-child .move_up,
+		.settings_panel .build_step:first-child .remove_item {
+			enabled: false;
+		}
+		.settings_panel .build_step:last-child .move_down {
+			enabled: false;
+		}
+		.settings_panel .build_step > .details {
+			margin-top: 2dp;
+		}
+		.settings_panel .build_step > .header > PushButton {
+			margin-left: 2dp;
+		}
+		.settings_panel .build_step > .header > .remove_item:disabled,
+		.settings_panel .build_step > .header > .move_up:disabled,
+		.settings_panel .build_step > .header > .move_down:disabled {
+			tint: var(--icon);
+		}
+		.settings_panel .os_select > CheckBox {
+			margin-right: 8dp;
+		}
+		.settings_panel .save_cont > PushButton {
+			margin: 8dp 0dp 0dp 4dp;
+			padding: 4dp 16dp 4dp 16dp;
+		}
+		.settings_panel .build_types > DropDownList,
+		.settings_panel .output_parser > DropDownList,
+		.settings_panel .span {
+			margin-top: 4dp;
+		}
+		.settings_panel #build_type_list {
+			margin-right: 4dp;
+		}
+		.settings_panel .build_types_cont {
+			row-valign: center;
+		}
+		.settings_panel .inner_box {
+			padding-top: 8dp;
+			visible: false;
+		}
+		.settings_panel .inner_box .build_environment > .subtitle {
+			margin-top: 0dp;
+		}
+		.settings_panel .advanced_options {
+			margin-top: 12dp;
+			border-radius: 4dp;
+			padding: 4dp;
+			background-color: rgba(0,0,0, 0.1);
+		}
+		.settings_panel .advanced_options .title {
+			padding-bottom: 4dp;
+			border-radius: 4dp;
+			background-color: transparent;
+			transition: background-color 100ms;
+		}
+		.settings_panel .advanced_options .title:hover {
+			background-color: var(--primary);
+		}
+		.settings_panel .output_parser .output_parser_rules {
+			background-color: var(--list-back);
+		}
+		.settings_panel .output_parser .output_parser_rules {
+			margin-top: 4dp;
+		}
+		.settings_panel .output_parser .output_parser_rules > TextView {
+			padding-left: 4dp;
+			min-height: 24dp;
+			layout-gravity: center;
+		}
+		.settings_panel .output_parser .output_parser_rules > TextView:first-child {
+			border-width: 1dp;
+			border-right-color: var(--button-border);
+		}
+		.settings_panel .output_parser .output_parser_rules > PushButton {
+			layout-gravity: center;
+		}
+		.settings_panel .details_but {
+			icon: icon(arrow-up-s, 10dp);
+			inner-widget-orientation: widgettextboxicon;
+		}
+		.settings_panel .details_but.contracted {
+			icon: icon(arrow-down-s, 10dp);
+		}
+		.settings_panel > .advanced_options > .title > Image {
+			icon: icon(arrow-down-s, 24dp);
+		}
+		.settings_panel > .advanced_options > .title > Image.expanded {
+			icon: icon(arrow-up-s, 24dp);
+		}
+		.settings_panel > .advanced_options > LinearLayout.inner_box.visible {
+			visible: true;
+		}
 		</style>
 		<MainLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
 		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
@@ -3440,6 +3576,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			{ "arrow-down", 0xea4c },
 			{ "arrow-up", 0xea76 },
 			{ "arrow-down-s", 0xea4e },
+			{ "arrow-up-s", 0xea78 },
 			{ "arrow-right-s", 0xea6e },
 			{ "match-case", 0xed8d },
 			{ "palette", 0xefc5 },

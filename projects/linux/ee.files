@@ -1214,6 +1214,8 @@
 ../../src/tools/ecode/statusterminalcontroller.hpp
 ../../src/tools/ecode/terminalmanager.cpp
 ../../src/tools/ecode/terminalmanager.hpp
+../../src/tools/ecode/uibuildsettings.cpp
+../../src/tools/ecode/uibuildsettings.hpp
 ../../src/tools/ecode/uicodeeditorsplitter.cpp
 ../../src/tools/ecode/uicodeeditorsplitter.hpp
 ../../src/tools/ecode/uistatusbar.cpp

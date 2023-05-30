@@ -1276,7 +1276,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 		std::string sjson = ob.dump();
 		sjson = String::format( "Content-Length: %lu\r\n\r\n%s", sjson.length(), sjson.c_str() );
 
-		if ( mReady || msg[MEMBER_METHOD] == "initialize" ) {
+		if ( mReady || ( msg.contains( MEMBER_METHOD ) && msg[MEMBER_METHOD] == "initialize" ) ) {
 			std::string method;
 			if ( msg.contains( MEMBER_METHOD ) )
 				method = msg[MEMBER_METHOD].get<std::string>();

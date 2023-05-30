@@ -199,7 +199,10 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	}
 
 	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
+	bool visible = mHeader->isVisible();
+	mHeader->setVisible( true );
 	mHeader->updateLayout();
+	mHeader->setVisible( visible );
 
 	updateColumnsWidth();
 }

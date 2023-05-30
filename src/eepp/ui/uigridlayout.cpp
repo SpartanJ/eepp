@@ -110,6 +110,15 @@ void UIGridLayout::updateLayout() {
 	if ( mPacking )
 		return;
 	mPacking = true;
+
+	if ( !mVisible ) {
+		setInternalPixelsSize( Sizef::Zero );
+		notifyLayoutAttrChangeParent();
+		mPacking = false;
+		mDirtyLayout = false;
+		return;
+	}
+
 	Sizef oldSize( getSize() );
 
 	if ( getParent()->isUINode() &&
