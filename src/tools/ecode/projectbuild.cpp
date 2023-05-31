@@ -18,8 +18,8 @@ using json = nlohmann::json;
 using namespace EE::Scene;
 
 /** @return The process environment variables */
-static std::unordered_map<std::string, std::string> getEnvironmentVariables() {
-	std::unordered_map<std::string, std::string> ret;
+static ecode::ProjectBuildKeyVal getEnvironmentVariables() {
+	ecode::ProjectBuildKeyVal ret;
 	char** env;
 #if defined( WIN ) && ( _MSC_VER >= 1900 )
 	env = *__p__environ();
@@ -32,12 +32,12 @@ static std::unordered_map<std::string, std::string> getEnvironmentVariables() {
 		auto var = String::split( *env, "=" );
 
 		if ( var.size() == 2 ) {
-			ret[var[0]] = var[1];
+			ret.push_back( std::make_pair( var[0], var[1] ) );
 		} else if ( var.size() > 2 ) {
 			auto val( var[1] );
 			for ( size_t i = 2; i < var.size(); ++i )
 				val += var[i];
-			ret[var[0]] = val;
+			ret.push_back( std::make_pair( var[0], val ) );
 		}
 	}
 
@@ -59,18 +59,18 @@ static void replaceVar( ProjectBuildStep& s, const std::string& var, const std::
 	String::replaceAll( s.workingDir, slashDup, FileSystem::getOSSlash() );
 }
 
-void ProjectBuild::replaceVars() {
-	const std::vector<ProjectBuildSteps*> steps{ &mBuild, &mClean };
-	for ( auto& step : steps ) {
-		for ( auto& s : *step ) {
-			replaceVar( s, VAR_PROJECT_ROOT, mProjectRoot );
-			for ( auto& var : mVars ) {
-				std::string varKey( "${" + var.first + "}" );
-				String::replaceAll( var.second, VAR_PROJECT_ROOT, mProjectRoot );
-				replaceVar( s, varKey, var.second );
-			}
+ProjectBuildSteps ProjectBuild::replaceVars( const ProjectBuildSteps& steps ) const {
+	ProjectBuildSteps newSteps( steps );
+	for ( auto& s : newSteps ) {
+		replaceVar( s, VAR_PROJECT_ROOT, mProjectRoot );
+		for ( auto& var : mVars ) {
+			std::string varKey( "${" + var.first + "}" );
+			std::string varVal( var.second );
+			String::replaceAll( varVal, VAR_PROJECT_ROOT, mProjectRoot );
+			replaceVar( s, varKey, varVal );
 		}
 	}
+	return newSteps;
 }
 
 bool ProjectBuild::isOSSupported( const std::string& os ) const {
@@ -133,7 +133,9 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 	std::string nproc = String::format( "%d", Sys::getCPUCount() );
 	ProjectBuildCommandsRes res;
 
-	for ( const auto& step : build.mBuild ) {
+	auto finalBuild( build.replaceVars( build.mBuild ) );
+
+	for ( const auto& step : finalBuild ) {
 		ProjectBuildCommand buildCmd( step, build.mEnvs );
 		replaceVar( buildCmd, VAR_OS, currentOS );
 		replaceVar( buildCmd, VAR_NPROC, nproc );
@@ -191,7 +193,9 @@ ProjectBuildCommandsRes ProjectBuildManager::generateCleanCommands( const std::s
 	std::string nproc = String::format( "%d", Sys::getCPUCount() );
 	ProjectBuildCommandsRes res;
 
-	for ( const auto& step : build.mClean ) {
+	auto finalBuild( build.replaceVars( build.mClean ) );
+
+	for ( const auto& step : finalBuild ) {
 		ProjectBuildCommand buildCmd( step, build.mEnvs );
 		replaceVar( buildCmd, VAR_OS, currentOS );
 		replaceVar( buildCmd, VAR_NPROC, nproc );
@@ -286,13 +290,13 @@ bool ProjectBuildManager::load() {
 		if ( buildObj.contains( "var" ) && buildObj["var"].is_object() ) {
 			const auto& vars = buildObj["var"];
 			for ( const auto& var : vars.items() )
-				b.mVars[var.key()] = var.value();
+				b.mVars.push_back( std::make_pair( var.key(), var.value() ) );
 		}
 
 		if ( buildObj.contains( "env" ) && buildObj["env"].is_object() ) {
 			const auto& vars = buildObj["env"];
 			for ( const auto& var : vars.items() )
-				b.mEnvs[var.key()] = var.value();
+				b.mEnvs.push_back( std::make_pair( var.key(), var.value() ) );
 		}
 
 		if ( buildObj.contains( "build" ) && buildObj["build"].is_array() ) {
@@ -374,8 +378,6 @@ bool ProjectBuildManager::load() {
 			b.mOutputParser = outputParser;
 		}
 
-		b.replaceVars();
-
 		mBuilds.insert( { build.key(), std::move( b ) } );
 	}
 
@@ -446,6 +448,14 @@ void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc 
 	}
 }
 
+static std::unordered_map<std::string, std::string>
+toUnorderedMap( const ProjectBuildKeyVal& vec ) {
+	std::unordered_map<std::string, std::string> map;
+	for ( const auto& v : vec )
+		map[v.first] = v.second;
+	return map;
+}
+
 void ProjectBuildManager::runBuild( const std::string& buildName, const std::string& buildType,
 									const ProjectBuildi18nFn& i18n,
 									const ProjectBuildCommandsRes& res,
@@ -489,11 +499,11 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 		int progress = c > 0 ? c / (Float)totSteps : 0;
 		mProcess = std::make_unique<Process>();
 		auto options = Process::SearchUserPath | Process::NoWindow | Process::CombinedStdoutStderr;
-		std::unordered_map<std::string, std::string> env;
+		ProjectBuildKeyVal env;
 		if ( !cmd.config.clearSysEnv ) {
 			if ( !env.empty() ) {
 				env = getEnvironmentVariables();
-				env.insert( cmd.envs.begin(), cmd.envs.end() );
+				env.insert( env.begin(), cmd.envs.begin(), cmd.envs.end() );
 			} else {
 				options |= Process::InheritEnvironment;
 			}
@@ -506,7 +516,8 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 			continue;
 		}
 
-		if ( mProcess->create( cmd.cmd, cmd.args, options, env, cmd.workingDir ) ) {
+		if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( env ),
+							   cmd.workingDir ) ) {
 			if ( progressFn )
 				progressFn( progress,
 							Sys::getDateTimeStr() + ": " +
@@ -644,12 +655,13 @@ void ProjectBuildManager::updateSidePanelTab() {
 	updateBuildType();
 
 	buildList->removeEventsOfType( Event::OnItemSelected );
-	buildList->addEventListener( Event::OnItemSelected, [this, buildEdit, buildList]( const Event* ) {
-		mConfig.buildName = buildList->getListBox()->getItemSelectedText();
-		mConfig.buildType = "";
-		buildEdit->setEnabled( true );
-		updateBuildType();
-	} );
+	buildList->addEventListener(
+		Event::OnItemSelected, [this, buildEdit, buildList]( const Event* ) {
+			mConfig.buildName = buildList->getListBox()->getItemSelectedText();
+			mConfig.buildType = "";
+			buildEdit->setEnabled( true );
+			updateBuildType();
+		} );
 
 	buildButton->setEnabled( !mConfig.buildName.empty() && hasBuild( mConfig.buildName ) &&
 							 hasBuildCommands( mConfig.buildName ) );
@@ -681,7 +693,7 @@ void ProjectBuildManager::updateSidePanelTab() {
 		[this]( const Event* ) {
 			mNewBuild = ProjectBuild( mApp->i18n( "new_name", "new_name" ), mProjectRoot );
 			auto ret = mApp->getSplitter()->createWidget(
-				UIBuildSettings::New( mNewBuild ),
+				UIBuildSettings::New( mNewBuild, mConfig ),
 				mApp->i18n( "build_settings", "Build Settings" ) );
 			ret.first->setIcon( mApp->findIcon( "hammer" ) );
 		},
@@ -693,7 +705,7 @@ void ProjectBuildManager::updateSidePanelTab() {
 				auto build = mBuilds.find( mConfig.buildName );
 				if ( build != mBuilds.end() ) {
 					auto ret = mApp->getSplitter()->createWidget(
-						UIBuildSettings::New( build->second ),
+						UIBuildSettings::New( build->second, mConfig ),
 						mApp->i18n( "build_settings", "Build Settings" ) );
 					ret.first->setIcon( mApp->findIcon( "hammer" ) );
 				}

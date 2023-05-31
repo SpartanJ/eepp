@@ -1,7 +1,11 @@
 #include "uibuildsettings.hpp"
+#include <eepp/ui/models/itemlistmodel.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uitableview.hpp>
+
+using namespace EE::UI::Models;
 
 namespace ecode {
 
@@ -115,9 +119,9 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 				<TextView lw="mp" lh="wc" word-wrap="true" text="@string(build_types_desc, Build types can be used as a dynamic build option represented by the special key ${build_type}. The build type can be switch easily from the editor.)" />
 				<StackLayout class="build_types_cont span" lw="mp" lh="wc">
 					<DropDownList id="build_type_list" layout_width="200dp" layout_height="wc" />
-					<PushButton lh="mp" id="build_type_del" text="@string(delete_selected, Delete Selected)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_selected, Delete Selected)" />
+					<PushButton id="build_type_add" lh="mp" text="@string(add_build_type, Add Build Type)" tooltip="@string(add_build_type, Add Build Type)" text-as-fallback="true" icon="icon(add, 12dp)" />
+					<PushButton id="build_type_del" lh="mp" text="@string(delete_selected, Delete Selected)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_selected, Delete Selected)" />
 				</StackLayout>
-				<PushButton id="build_type_add" class="span" text="@string(add_build_type, Add Build Type)" />
 			</vbox>
 
 			<vbox class="advanced_options" lw="mp" lh="wc">
@@ -128,7 +132,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 				<vbox class="inner_box" lw="mp" lh="wc">
 					<vbox lw="mp" lh="wc" class="build_environment">
 						<TextView class="subtitle" text="@string(build_environment, Build Environment)" />
-						<CheckBox text="@string(clear_system_enviroment, Clear System Environment)" />
+						<CheckBox id="clear_sys_env" text="@string(clear_system_enviroment, Clear System Environment)" />
 					</vbox>
 
 					<vbox lw="mp" lh="wc" class="output_parser">
@@ -151,7 +155,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 						<TextView class="subtitle" text="@string(custom_variables, Custom Variables)" />
 						<TextView lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc, "Custom Variables allow to simplify the build commands steps adding custom variables that can be used over the build settings in commands, arguments, and working directories.")' />
 						<TextView lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_2, "Custom Variables can be invoked using ${variable_name} in any of the commands.)' />
-						<TableView lw="mp" lh="150dp" />
+						<TableView id="table_vars" lw="mp" lh="150dp" />
 						<TextView class="span" lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_3, There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${nproc}: The number of logical processing units.)' />
 					</vbox>
 				</vbox>
@@ -163,11 +167,12 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 	</ScrollView>
 )xml";
 
-UIBuildSettings* UIBuildSettings::New( ProjectBuild& build ) {
-	return eeNew( UIBuildSettings, ( build ) );
+UIBuildSettings* UIBuildSettings::New( ProjectBuild& build, ProjectBuildConfiguration& config ) {
+	return eeNew( UIBuildSettings, ( build, config ) );
 }
 
-UIBuildSettings::UIBuildSettings( ProjectBuild& build ) : mBuild( build ) {
+UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config ) :
+	mBuild( build ), mConfig( config ) {
 	mUISceneNode->loadLayoutFromString( SETTINGS_PANEL_XML, this,
 										String::hash( "build_settings" ) );
 	mDataBindHolder += UIDataBindString::New( &mBuild.mName, find<UITextInput>( "build_name" ) );
@@ -202,7 +207,10 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build ) : mBuild( build ) {
 	for ( const auto& type : mBuild.mBuildTypes )
 		buildTypes.push_back( type );
 	buildTypeDropDown->getListBox()->addListBoxItems( buildTypes );
-	buildTypeDropDown->getListBox()->setSelected( 0 );
+	buildTypeDropDown->getListBox()->setSelected( mConfig.buildType );
+	buildTypeDropDown->on( Event::OnItemSelected, [this, buildTypeDropDown]( const Event* ) {
+		mConfig.buildType = buildTypeDropDown->getListBox()->getItemSelectedText().toUtf8();
+	} );
 
 	auto advTitle = querySelector( ".settings_panel > .advanced_options > .title" );
 	advTitle->addMouseClickListener(
@@ -212,6 +220,16 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build ) : mBuild( build ) {
 			img->toggleClass( "expanded" );
 		},
 		MouseButton::EE_BUTTON_LEFT );
+
+	mDataBindHolder +=
+		UIDataBindBool::New( &mBuild.mConfig.clearSysEnv, find<UIWidget>( "clear_sys_env" ) );
+
+	UITableView* tableVars = find<UITableView>( "table_vars" );
+	auto model = ItemPairListModel<std::string, std::string>::create( mBuild.mVars );
+	model->setColumnName( 0, getTranslatorString( "var_name", "Name" ) );
+	model->setColumnName( 1, getTranslatorString( "var_value", "Value" ) );
+	tableVars->setAutoColumnsWidth( true );
+	tableVars->setModel( model );
 }
 
 void UIBuildSettings::updateOS() {

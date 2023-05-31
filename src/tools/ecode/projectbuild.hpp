@@ -87,7 +87,7 @@ struct ProjectBuildStep {
 };
 
 using ProjectBuildSteps = std::vector<ProjectBuildStep>;
-using ProjectBuildKeyVal = std::unordered_map<std::string, std::string>;
+using ProjectBuildKeyVal = std::vector<std::pair<std::string, std::string>>;
 
 struct ProjectBuildConfig {
 	bool clearSysEnv{ false };
@@ -142,6 +142,8 @@ class ProjectBuild {
 
 	bool hasClean() const { return !mClean.empty(); }
 
+	ProjectBuildSteps replaceVars( const ProjectBuildSteps& steps ) const;
+
   protected:
 	friend class ProjectBuildManager;
 	friend class UIBuildSettings;
@@ -156,8 +158,6 @@ class ProjectBuild {
 	ProjectBuildKeyVal mVars;
 	ProjectBuildConfig mConfig;
 	ProjectBuildOutputParser mOutputParser;
-
-	void replaceVars();
 };
 
 using ProjectBuildMap = std::unordered_map<std::string, ProjectBuild>;

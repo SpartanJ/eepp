@@ -43,6 +43,7 @@ void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	}
 
 	// TODO: Implement color update.
+	// TODO: Optimize position update.
 	if ( mNeedsUpdate || mColorNeedsUpdate ) {
 		update();
 	}

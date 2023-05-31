@@ -179,7 +179,10 @@ void UIScrollView::containerUpdate() {
 	}
 
 	mContainer->setPosition( mPadding.Left, mPadding.Top );
-	mContainer->setSize( size );
+
+	// TODO: Fix layouting to avoid needing this hack.
+	if ( size != mContainer->getSize() )
+		runOnMainThread( [this, size]() { mContainer->setSize( size ); } );
 
 	mVScroll->setPosition( getSize().getWidth() - mVScroll->getSize().getWidth() - mPadding.Right,
 						   mPadding.Top );

@@ -2550,7 +2550,7 @@ void UICodeEditor::updateHighlightWordCache() {
 							mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
 							mHighlightWord.type, mHighlightWord.range );
 						Log::info( "Document search triggered in document: \"%s\", searched for "
-								   "\"%s\" and took %2.f ms",
+								   "\"%s\" and took %.2f ms",
 								   mDoc->getFilename().c_str(),
 								   mHighlightWord.text.toUtf8().c_str(),
 								   docSearch.getElapsedTime().asMilliseconds() );

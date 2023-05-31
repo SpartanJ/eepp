@@ -3352,7 +3352,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .settings_panel .span {
 	margin-top: 4dp;
 }
-.settings_panel #build_type_list {
+.settings_panel #build_type_list,
+.settings_panel #build_type_add {
 	margin-right: 4dp;
 }
 .settings_panel .build_types_cont {
