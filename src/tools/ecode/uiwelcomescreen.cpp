@@ -5,7 +5,7 @@
 
 namespace ecode {
 
-const char* LAYOUT = R"xml(
+static const auto LAYOUT = R"xml(
 <style>
 <![CDATA[
 #welcome_ecode TextView {
@@ -186,7 +186,7 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 		if ( !node )
 			return;
 		node->setTooltipText( getKeyBindings().getCommandKeybindString( id ) );
-		node->addMouseClickListener(
+		node->onClick(
 			[this]( const MouseEvent* event ) { mApp->runCommand( event->getNode()->getId() ); },
 			EE_BUTTON_LEFT );
 	};
@@ -201,7 +201,7 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 
 	auto recentFolders = find( "recent-folders" );
 	if ( !mApp->getRecentFolders().empty() ) {
-		recentFolders->addMouseClickListener(
+		recentFolders->onClick(
 			[this]( const MouseEvent* event ) {
 				mApp->createAndShowRecentFolderPopUpMenu( event->getNode() );
 			},
@@ -212,7 +212,7 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 
 	auto recentFiles = find( "recent-files" );
 	if ( !mApp->getRecentFiles().empty() ) {
-		recentFiles->addMouseClickListener(
+		recentFiles->onClick(
 			[this]( const MouseEvent* event ) {
 				mApp->createAndShowRecentFilesPopUpMenu( event->getNode() );
 			},

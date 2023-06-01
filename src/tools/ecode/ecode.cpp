@@ -1864,7 +1864,7 @@ void App::createDocAlert( UICodeEditor* editor ) {
 	if ( docAlert )
 		return;
 
-	const std::string& msg = R"xml(
+	const auto msg = R"xml(
 	<hbox class="doc_alert" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" gravity-owner="true">
 		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
 			text='@string(reload_current_file, "The file on the disk is more recent that the current buffer.&#xA;Do you want to reload it?")'
@@ -3123,7 +3123,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 											 mConfig.ui.panelFontSize.toString().c_str() ) );
 		mUISceneNode->combineStyleSheet( panelUI, false );
 
-		const std::string baseUI = R"html(
+		const auto baseUI = R"html(
 <style>
 TextInput#search_find,
 TextInput#search_replace,
@@ -3277,6 +3277,9 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar > TextView.selected {
 	background-color: var(--primary);
+}
+#panel > tabwidget::container > * {
+	background-color: var(--list-back);
 }
 .settings_panel {
 	padding: 4dp;

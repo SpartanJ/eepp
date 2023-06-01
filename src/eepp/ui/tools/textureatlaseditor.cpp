@@ -51,7 +51,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 		mUIWindow->getContainer()->addClass( "appbackground" );
 	}
 
-	std::string layout = R"xml(
+	static const auto layout = R"xml(
 	<LinearLayout id="texture_atlas_editor_root" orientation="vertical" layout_width="match_parent" layout_height="match_parent">
 		<MenuBar layout_width="match_parent" layout_height="wrap_content">
 			<Menu id="fileMenu" text="File">

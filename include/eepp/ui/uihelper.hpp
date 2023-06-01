@@ -40,7 +40,8 @@ enum UIFlag {
 	UI_DRAG_VERTICAL = ( 1 << 23 ),
 	UI_DRAG_HORIZONTAL = ( 1 << 24 ),
 	UI_TAB_FOCUSABLE = ( 1 << 25 ),
-	UI_TOOLTIP_ENABLED = ( 1 << 26 )
+	UI_TOOLTIP_ENABLED = ( 1 << 26 ),
+	UI_SCROLLABLE = ( 1 << 27 ),
 };
 
 enum UINodeType {

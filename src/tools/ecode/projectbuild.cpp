@@ -335,9 +335,10 @@ bool ProjectBuildManager::load() {
 				if ( config.contains( "preset" ) ) {
 					auto preset = config.value( "preset", "" );
 					if ( !preset.empty() ) {
+						outputParser.mPreset = preset;
 						auto presets = ProjectBuildOutputParser::getPresets();
 						if ( presets.find( preset ) != presets.end() ) {
-							outputParser = presets[preset];
+							outputParser.mPresetConfig = presets[preset].mConfig;
 						}
 					}
 				}
@@ -590,11 +591,6 @@ void ProjectBuildManager::buildSidePanelTab() {
 	UIIcon* icon = mUISceneNode->findIcon( "symbol-property" );
 	UIWidget* node = mUISceneNode->loadLayoutFromString(
 		R"html(
-			<style>
-			#build_tab {
-				background-color: var(--list-back);
-			}
-			</style>
 			<ScrollView id="build_tab" lw="mp" lh="mp">
 				<vbox lw="mp" lh="wc" padding="4dp">
 					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" />
@@ -605,10 +601,7 @@ void ProjectBuildManager::buildSidePanelTab() {
 						<PushButton id="build_add" id="build_add" text="@string(add_build, Add Build)" tooltip="@string(add_build, Add Build)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
 					</hbox>
 					<TextView text="@string(build_target, Build Target)" margin-top="8dp" />
-					<hbox lw="mp" lh="wc">
-						<DropDownList id="build_type_list" layout_width="0" layout_weight="1" layout_height="wrap_content" />
-						<PushButton id="build_type_add" text="@string(add_build_type, Add Build Type)" tooltip="@string(add_build_type, Add Build Type)" text-as-fallback="true" icon="icon(add, 12dp)"  margin-left="2dp"/>
-					</hbox>
+					<DropDownList lw="mp" id="build_type_list" />
 					<PushButton id="build_button" lw="mp" lh="wc" text="@string(build, Build)" margin-top="8dp" icon="icon(hammer, 12dp)" />
 					<PushButton id="clean_button" lw="mp" lh="wc" text="@string(clean, Clean)" margin-top="8dp" icon="icon(eraser, 12dp)" />
 				</vbox>
@@ -633,10 +626,10 @@ void ProjectBuildManager::updateSidePanelTab() {
 
 	String first = mConfig.buildName;
 	std::vector<String> buildNamesItems;
-	for ( const auto& build : mBuilds ) {
-		buildNamesItems.push_back( build.first );
+	for ( const auto& tbuild : mBuilds ) {
+		buildNamesItems.push_back( tbuild.first );
 		if ( first.empty() )
-			first = build.first;
+			first = tbuild.first;
 	}
 
 	buildList->getListBox()->addListBoxItems( buildNamesItems );
@@ -669,56 +662,62 @@ void ProjectBuildManager::updateSidePanelTab() {
 	cleanButton->setEnabled( !mConfig.buildName.empty() && hasBuild( mConfig.buildName ) &&
 							 hasCleanCommands( mConfig.buildName ) );
 
-	buildButton->addMouseClickListener(
-		[this]( const Event* ) {
-			if ( isBuilding() ) {
-				cancelBuild();
-			} else {
-				buildCurrentConfig( mApp->getStatusBuildOutputController() );
-			}
-		},
-		MouseButton::EE_BUTTON_LEFT );
+	buildButton->onClick( [this]( auto ) {
+		if ( isBuilding() ) {
+			cancelBuild();
+		} else {
+			buildCurrentConfig( mApp->getStatusBuildOutputController() );
+		}
+	} );
 
-	cleanButton->addMouseClickListener(
-		[this]( const Event* ) {
-			if ( isBuilding() ) {
-				cancelBuild();
-			} else {
-				cleanCurrentConfig( mApp->getStatusBuildOutputController() );
-			}
-		},
-		MouseButton::EE_BUTTON_LEFT );
+	cleanButton->onClick( [this]( auto ) {
+		if ( isBuilding() ) {
+			cancelBuild();
+		} else {
+			cleanCurrentConfig( mApp->getStatusBuildOutputController() );
+		}
+	} );
 
-	buildAdd->addMouseClickListener(
-		[this]( const Event* ) {
-			mNewBuild = ProjectBuild( mApp->i18n( "new_name", "new_name" ), mProjectRoot );
-			auto ret = mApp->getSplitter()->createWidget(
-				UIBuildSettings::New( mNewBuild, mConfig ),
-				mApp->i18n( "build_settings", "Build Settings" ) );
-			ret.first->setIcon( mApp->findIcon( "hammer" ) );
-		},
-		MouseButton::EE_BUTTON_LEFT );
+	buildAdd->onClick( [this, buildTab]( auto ) {
+		mNewBuild = ProjectBuild( mApp->i18n( "new_name", "new_name" ), mProjectRoot );
+		UIWidget* widget = nullptr;
+		if ( ( widget = buildTab->getUISceneNode()->getRoot()->querySelector(
+				   "#build_settings_new_name" ) ) ) {
+			widget->asType<UITab>()->select();
+			return;
+		}
+		auto ret =
+			mApp->getSplitter()->createWidget( UIBuildSettings::New( mNewBuild, mConfig ),
+											   mApp->i18n( "build_settings", "Build Settings" ) );
+		ret.second->asType<UIBuildSettings>()->setTab( ret.first );
+		ret.first->setIcon( mApp->findIcon( "hammer" ) );
+	} );
 
-	buildEdit->addMouseClickListener(
-		[this]( const Event* ) {
-			if ( !mConfig.buildName.empty() ) {
-				auto build = mBuilds.find( mConfig.buildName );
-				if ( build != mBuilds.end() ) {
-					auto ret = mApp->getSplitter()->createWidget(
-						UIBuildSettings::New( build->second, mConfig ),
-						mApp->i18n( "build_settings", "Build Settings" ) );
-					ret.first->setIcon( mApp->findIcon( "hammer" ) );
+	buildEdit->onClick( [this, buildTab]( auto ) {
+		if ( !mConfig.buildName.empty() ) {
+			auto build = mBuilds.find( mConfig.buildName );
+			if ( build != mBuilds.end() ) {
+				UIWidget* widget = nullptr;
+				if ( ( widget = buildTab->getUISceneNode()->getRoot()->querySelector(
+						   "#build_settings_" + mConfig.buildName ) ) ) {
+					widget->asType<UITab>()->select();
+					return;
 				}
+				auto ret = mApp->getSplitter()->createWidget(
+					UIBuildSettings::New( build->second, mConfig ),
+					mApp->i18n( "build_settings", "Build Settings" ) );
+				ret.second->asType<UIBuildSettings>()->setTab( ret.first );
+				ret.first->setIcon( mApp->findIcon( "hammer" ) );
 			}
-		},
-		MouseButton::EE_BUTTON_LEFT );
+		}
+	} );
 }
 
 void ProjectBuildManager::updateBuildType() {
 	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
 	UIDropDownList* buildTypeList = buildTab->find<UIDropDownList>( "build_type_list" );
-	UIPushButton* buildTypeAdd = buildTab->find<UIPushButton>( "build_type_add" );
+	// UIPushButton* buildTypeAdd = buildTab->find<UIPushButton>( "build_type_add" );
 
 	buildTypeList->getListBox()->clear();
 
@@ -741,7 +740,7 @@ void ProjectBuildManager::updateBuildType() {
 		}
 	}
 	buildTypeList->setEnabled( !buildTypeList->getListBox()->isEmpty() );
-	buildTypeAdd->setEnabled( !mConfig.buildName.empty() );
+	// buildTypeAdd->setEnabled( !mConfig.buildName.empty() );
 
 	buildTypeList->removeEventsOfType( Event::OnItemSelected );
 	buildTypeList->addEventListener( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
@@ -755,8 +754,14 @@ std::map<std::string, ProjectBuildOutputParser> ProjectBuildOutputParser::getPre
 	return presets;
 }
 
+bool ProjectBuildOutputParser::existsPreset( const std::string& name ) {
+	auto presets = getPresets();
+	return presets.find( name ) != presets.end();
+}
+
 ProjectBuildOutputParser ProjectBuildOutputParser::getGeneric() {
 	ProjectBuildOutputParser parser;
+	parser.mConfig.reserve( 6 );
 
 	ProjectBuildOutputParserConfig cfg;
 	cfg.pattern = "([^:]+):(%d+):(%d+):%s?[%w%s]*error:%s?(.*)";
@@ -767,11 +772,28 @@ ProjectBuildOutputParser ProjectBuildOutputParser::getGeneric() {
 	cfg.type = ProjectOutputParserTypes::Error;
 	parser.mConfig.push_back( cfg );
 
+	cfg.pattern = "([^:]+):(%d+):%s?[%w%s]*error:%s?(.*)";
+	cfg.patternOrder.col = 0;
+	cfg.type = ProjectOutputParserTypes::Error;
+	parser.mConfig.push_back( cfg );
+
 	cfg.pattern = "([^:]+):(%d+):(%d+):%s?[%w%s]*warning:%s?(.*)";
+	cfg.patternOrder.col = 3;
+	cfg.type = ProjectOutputParserTypes::Warning;
+	parser.mConfig.push_back( cfg );
+
+	cfg.pattern = "([^:]+):(%d+):%s?[%w%s]*warning:%s?(.*)";
+	cfg.patternOrder.col = 0;
 	cfg.type = ProjectOutputParserTypes::Warning;
 	parser.mConfig.push_back( cfg );
 
 	cfg.pattern = "([^:]+):(%d+):(%d+):%s?[%w%s]*notice:%s?(.*)";
+	cfg.patternOrder.col = 3;
+	cfg.type = ProjectOutputParserTypes::Notice;
+	parser.mConfig.emplace_back( cfg );
+
+	cfg.pattern = "([^:]+):(%d+):%s?[%w%s]*notice:%s?(.*)";
+	cfg.patternOrder.col = 0;
 	cfg.type = ProjectOutputParserTypes::Notice;
 	parser.mConfig.emplace_back( cfg );
 

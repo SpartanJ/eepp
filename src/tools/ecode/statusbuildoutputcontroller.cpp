@@ -105,9 +105,13 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 	std::vector<SyntaxPattern> patterns;
 
-	for ( const auto& parser : outputParser.getConfig() ) {
-		SyntaxPattern ptn( { parser.pattern }, getProjectOutputParserTypeToString( parser.type ) );
-		patterns.emplace_back( std::move( ptn ) );
+	auto configs = { outputParser.getPresetConfig(), outputParser.getConfig() };
+	for ( const auto& config : configs ) {
+		for ( const auto& parser : config ) {
+			SyntaxPattern ptn( { parser.pattern },
+							   getProjectOutputParserTypeToString( parser.type ) );
+			patterns.emplace_back( std::move( ptn ) );
+		}
 	}
 
 	patterns.emplace_back(

@@ -26,6 +26,7 @@ UITabWidget::UITabWidget() :
 	mAllowSwitchTabsInEmptySpaces( false ),
 	mDroppableHoveringColorWasSet( false ),
 	mTabVerticalDragResistance( PixelDensity::dpToPx( 64 ) ) {
+	mFlags |=  UI_SCROLLABLE;
 	setHorizontalAlign( UI_HALIGN_CENTER );
 	setClipType( ClipType::ContentBox );
 

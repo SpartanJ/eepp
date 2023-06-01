@@ -45,6 +45,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	mClickStep( 0.1f ),
 	mPageStep( 0 ),
 	mOnPosChange( false ) {
+	mFlags |= UI_SCROLLABLE;
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
 		mBackSlider = UIWidget::NewWithTag( mTag + "::hback" );

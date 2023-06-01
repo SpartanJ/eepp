@@ -50,7 +50,7 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mTerm( terminalDisplay ) {
-	mFlags |= UI_TAB_STOP;
+	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
 	if ( !terminalDisplay )
 		return;
 	mTerm->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {

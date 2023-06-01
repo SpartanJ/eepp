@@ -338,6 +338,10 @@ class EE_API UIWidget : public UINode {
 	String getTranslatorString( const std::string& str );
 
 	String getTranslatorString( const std::string& str, const String& defaultValue );
+
+	String i18n( const std::string& str );
+
+	String i18n( const std::string& str, const String& defaultValue );
 };
 
 }} // namespace EE::UI

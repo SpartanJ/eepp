@@ -1,4 +1,5 @@
 #include "uibuildsettings.hpp"
+#include <algorithm>
 #include <eepp/ui/models/itemlistmodel.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
@@ -12,13 +13,38 @@ namespace ecode {
 class UIBuildStep : public UILinearLayout {
   public:
 	static UIBuildStep* New( bool isBuildStep, UIBuildSettings* buildSettings, size_t stepNum,
-							 ProjectBuildStep& buildStep ) {
+							 ProjectBuildStep* buildStep ) {
 		return eeNew( UIBuildStep, ( isBuildStep, buildSettings, stepNum, buildStep ) );
+	}
+
+	void clearBindings() { mDataBindHolder.clear(); }
+
+	void updateStep( size_t stepNum, ProjectBuildStep* buildStep ) {
+		clearBindings();
+
+		removeClass( String::toString( mStepNum ) );
+		mStepNum = stepNum;
+		mStep = buildStep;
+		addClass( String::toString( mStepNum ) );
+
+		findByClass<UITextView>( "step_name" )
+			->setText( String::format( mBuildSettings->getUISceneNode()
+										   ->i18n( "build_step_num", "Step %u: %s" )
+										   .toUtf8()
+										   .c_str(),
+									   mStepNum + 1, mStep->cmd.c_str() ) );
+
+		mDataBindHolder +=
+			UIDataBindBool::New( &mStep->enabled, findByClass( "enabled_checkbox" ) );
+		auto placeholder = UIDataBindString::New( &mStep->cmd, findByClass( "input_cmd" ) );
+		mDataBindHolder += UIDataBindString::New( &mStep->args, findByClass( "input_args" ) );
+		mDataBindHolder +=
+			UIDataBindString::New( &mStep->workingDir, findByClass( "input_working_dir" ) );
 	}
 
   protected:
 	UIBuildStep( bool isBuildStep, UIBuildSettings* buildSettings, size_t stepNum,
-				 ProjectBuildStep& buildStep ) :
+				 ProjectBuildStep* buildStep ) :
 		UILinearLayout( "buildstep", UIOrientation::Vertical ),
 		mIsBuildStep( isBuildStep ),
 		mBuildSettings( buildSettings ),
@@ -26,6 +52,7 @@ class UIBuildStep : public UILinearLayout {
 		mStep( buildStep ) {
 		setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 		addClass( "build_step" );
+		addClass( String::toString( stepNum ) );
 
 		static const auto BUILD_STEP_XML = R"xml(
 <!-- <vbox lw="mp" lh="wc" class="build_step"> -->
@@ -55,38 +82,42 @@ class UIBuildStep : public UILinearLayout {
 )xml";
 
 		getUISceneNode()->loadLayoutFromString( BUILD_STEP_XML, this );
-		findByClass<UITextView>( "step_name" )
-			->setText( String::format( mBuildSettings->getUISceneNode()
-										   ->i18n( "build_step_num", "Step %u" )
-										   .toUtf8()
-										   .c_str(),
-									   stepNum + 1 ) );
-		mDataBindHolder += UIDataBindBool::New( &mStep.enabled, findByClass( "enabled_checkbox" ) );
-		mDataBindHolder += UIDataBindString::New( &mStep.cmd, findByClass( "input_cmd" ) );
-		mDataBindHolder += UIDataBindString::New( &mStep.args, findByClass( "input_args" ) );
-		mDataBindHolder +=
-			UIDataBindString::New( &mStep.workingDir, findByClass( "input_working_dir" ) );
-		findByClass( "details_but" )
-			->addMouseClickListener(
-				[this]( const MouseEvent* event ) {
-					auto me = event->getNode()->asType<UIPushButton>();
-					findByClass( "details" )->setVisible( me->hasClass( "contracted" ) );
-					me->toggleClass( "contracted" );
-				},
-				MouseButton::EE_BUTTON_LEFT );
+
+		findByClass( "details_but" )->onClick( [this]( const MouseEvent* event ) {
+			auto me = event->getNode()->asType<UIPushButton>();
+			findByClass( "details" )->setVisible( me->hasClass( "contracted" ) );
+			me->toggleClass( "contracted" );
+		} );
+
+		findByClass( "move_down" )->onClick( [this]( auto ) {
+			mBuildSettings->moveStepDown( mStepNum, !mIsBuildStep );
+		} );
+
+		findByClass( "move_up" )->onClick( [this]( auto ) {
+			mBuildSettings->moveStepUp( mStepNum, !mIsBuildStep );
+		} );
+
+		findByClass( "remove_item" )->onClick( [this]( auto ) {
+			mBuildSettings->deleteStep( mStepNum, !mIsBuildStep );
+		} );
+
+		updateStep( mStepNum, mStep );
 	}
 
 	bool mIsBuildStep{ true };
 	UIBuildSettings* mBuildSettings{ nullptr };
 	size_t mStepNum{ 0 };
-	ProjectBuildStep& mStep;
+	ProjectBuildStep* mStep;
 	UIDataBindHolder mDataBindHolder;
 };
 
 static const auto SETTINGS_PANEL_XML = R"xml(
 <ScrollView lw="mp" lh="mp">
 		<vbox lw="mp" lh="wc" class="settings_panel" id="build_settings_panel">
-			<TextView class="title" text="@string(build_settings, Build Settings)" />
+			<hbox lw="mp" lh="wc">
+				<TextView lw="0" lw8="1" lh="wc" class="title" text="@string(build_settings, Build Settings)" />
+				<PushButton id="build_del" lh="mp" text="@string(delete_setting, Delete Setting)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_setting, Delete Setting)" />
+			</hbox>
 			<Widget class="separator" lw="mp" lh="1dp" />
 			<TextView class="subtitle" text="@string(build_name, Build Name)" />
 			<Input id="build_name" lw="mp" lh="wc" text="new_name" />
@@ -105,13 +136,13 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 			<vbox lw="mp" lh="wc" class="build_steps">
 				<TextView class="subtitle" text="@string(build_steps, Build Steps)" />
 				<vbox id="build_steps_cont" lw="mp" lh="wc"></vbox>
-				<PushButton class="add_build_step" text="@string(add_build_step, Add Build Step)" />
+				<PushButton id="add_build_step" class="add_build_step" text="@string(add_build_step, Add Build Step)" />
 			</vbox>
 
 			<vbox lw="mp" lh="wc" class="clean_steps">
 				<TextView class="subtitle" text="@string(clean_steps, Clean Steps)" />
 				<vbox id="build_clean_steps_cont" lw="mp" lh="wc"></vbox>
-				<PushButton class="add_build_step" text="@string(add_clean_step, Add Clean Step)" />
+				<PushButton id="add_clean_step" class="add_build_step" text="@string(add_clean_step, Add Clean Step)" />
 			</vbox>
 
 			<vbox lw="mp" lh="wc" class="build_types">
@@ -139,7 +170,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 						<TextView class="subtitle" text="@string(output_parser, Output Parser)" />
 						<TextView lw="mp" lh="wc" word-wrap="true" text="@string(output_parser_desc, Custom output parsers scan command line output for user-provided error patterns to create entries in Issues and highlight those errors on the Build Output)" />
 						<TextView lw="mp" lh="wc" word-wrap="true" text='@string(output_parser_preset, "Presets are provided as generic output parsers, you can select one below, by default a \"generic\" preset will be selected:")' />
-						<DropDownList id="output_parsers_presets_list" layout_width="200dp" layout_height="wc" selected-text="generic">
+						<DropDownList id="output_parsers_presets_list" layout_width="200dp" layout_height="wc">
 							<item></item>
 							<item>generic</item>
 						</DropDownList>
@@ -172,10 +203,26 @@ UIBuildSettings* UIBuildSettings::New( ProjectBuild& build, ProjectBuildConfigur
 }
 
 UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config ) :
-	mBuild( build ), mConfig( config ) {
+	mBuild( build ), mConfig( config ), mOldName( mBuild.getName() ) {
 	mUISceneNode->loadLayoutFromString( SETTINGS_PANEL_XML, this,
 										String::hash( "build_settings" ) );
-	mDataBindHolder += UIDataBindString::New( &mBuild.mName, find<UITextInput>( "build_name" ) );
+	auto buildNameInput = find<UITextInput>( "build_name" );
+	mDataBindHolder += UIDataBindString::New( &mBuild.mName, buildNameInput );
+
+	auto panelBuildNameDDL = getUISceneNode()
+								 ->getRoot()
+								 ->querySelector( " #build_tab #build_list" )
+								 ->asType<UIDropDownList>();
+
+	buildNameInput->on( Event::OnValueChange, [this, panelBuildNameDDL]( auto ) {
+		refreshTab();
+		if ( panelBuildNameDDL ) {
+			auto idx = panelBuildNameDDL->getListBox()->getItemIndex( mOldName );
+			if ( idx != eeINDEX_NOT_FOUND )
+				panelBuildNameDDL->getListBox()->setItemText( idx, mBuild.getName() );
+		}
+		mOldName = mBuild.getName();
+	} );
 
 	auto oses = find<UIWidget>( "os_select" )->querySelectorAll( "CheckBox" );
 	for ( const auto os : oses ) {
@@ -192,34 +239,60 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 
 	auto buildStepsParent = find( "build_steps_cont" );
 	for ( size_t step = 0; step < mBuild.mBuild.size(); ++step ) {
-		auto bs = UIBuildStep::New( true, this, step, mBuild.mBuild[step] );
+		auto bs = UIBuildStep::New( true, this, step, &mBuild.mBuild[step] );
 		bs->setParent( buildStepsParent );
 	}
 
+	find( "add_build_step" )->onClick( [this, buildStepsParent]( const Event* ) {
+		mBuild.mBuild.push_back( {} );
+		auto step = mBuild.mBuild.size() - 1;
+		UIBuildStep::New( true, this, step, &mBuild.mBuild[step] )->setParent( buildStepsParent );
+	} );
+
 	auto buildCleanStepsParent = find( "build_clean_steps_cont" );
 	for ( size_t step = 0; step < mBuild.mClean.size(); ++step ) {
-		auto bs = UIBuildStep::New( false, this, step, mBuild.mClean[step] );
-		bs->setParent( buildCleanStepsParent );
+		UIBuildStep::New( false, this, step, &mBuild.mClean[step] )
+			->setParent( buildCleanStepsParent );
 	}
 
+	find( "add_clean_step" )->onClick( [this, buildCleanStepsParent]( const Event* ) {
+		mBuild.mClean.push_back( {} );
+		auto step = mBuild.mClean.size() - 1;
+		UIBuildStep::New( false, this, step, &mBuild.mClean[step] )
+			->setParent( buildCleanStepsParent );
+	} );
+
 	auto buildTypeDropDown = find<UIDropDownList>( "build_type_list" );
+	auto panelBuildTypeDDL = getUISceneNode()
+								 ->getRoot()
+								 ->querySelector( " #build_tab #build_type_list" )
+								 ->asType<UIDropDownList>();
+
 	std::vector<String> buildTypes;
 	for ( const auto& type : mBuild.mBuildTypes )
 		buildTypes.push_back( type );
 	buildTypeDropDown->getListBox()->addListBoxItems( buildTypes );
 	buildTypeDropDown->getListBox()->setSelected( mConfig.buildType );
-	buildTypeDropDown->on( Event::OnItemSelected, [this, buildTypeDropDown]( const Event* ) {
-		mConfig.buildType = buildTypeDropDown->getListBox()->getItemSelectedText().toUtf8();
-	} );
+	buildTypeDropDown->on(
+		Event::OnItemSelected, [this, buildTypeDropDown, panelBuildTypeDDL]( const Event* ) {
+			mConfig.buildType = buildTypeDropDown->getListBox()->getItemSelectedText().toUtf8();
+			if ( panelBuildTypeDDL )
+				panelBuildTypeDDL->getListBox()->setSelected( mConfig.buildType );
+		} );
+	if ( panelBuildTypeDDL )
+		panelBuildTypeDDL->on(
+			Event::OnItemSelected, [this, buildTypeDropDown, panelBuildTypeDDL]( const Event* ) {
+				mConfig.buildType = panelBuildTypeDDL->getListBox()->getItemSelectedText().toUtf8();
+				if ( buildTypeDropDown )
+					buildTypeDropDown->getListBox()->setSelected( mConfig.buildType );
+			} );
 
 	auto advTitle = querySelector( ".settings_panel > .advanced_options > .title" );
-	advTitle->addMouseClickListener(
-		[this]( const MouseEvent* event ) {
-			auto img = event->getNode()->findByType( UI_TYPE_IMAGE )->asType<UIWidget>();
-			findByClass( "inner_box" )->toggleClass( "visible" );
-			img->toggleClass( "expanded" );
-		},
-		MouseButton::EE_BUTTON_LEFT );
+	advTitle->onClick( [this]( const MouseEvent* event ) {
+		auto img = event->getNode()->findByType( UI_TYPE_IMAGE )->asType<UIWidget>();
+		findByClass( "inner_box" )->toggleClass( "visible" );
+		img->toggleClass( "expanded" );
+	} );
 
 	mDataBindHolder +=
 		UIDataBindBool::New( &mBuild.mConfig.clearSysEnv, find<UIWidget>( "clear_sys_env" ) );
@@ -230,6 +303,62 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 	model->setColumnName( 1, getTranslatorString( "var_value", "Value" ) );
 	tableVars->setAutoColumnsWidth( true );
 	tableVars->setModel( model );
+
+	find( "build_type_add" )->onClick( [this, buildTypeDropDown, panelBuildTypeDDL]( auto ) {
+		UIMessageBox* msgBox =
+			UIMessageBox::New( UIMessageBox::INPUT, i18n( "build_type_name", "Build Type Name:" ) );
+		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->showWhenReady();
+		msgBox->addEventListener(
+			Event::OnConfirm, [this, msgBox, buildTypeDropDown, panelBuildTypeDDL]( const Event* ) {
+				const auto& buildType = msgBox->getTextInput()->getText();
+				mBuild.mBuildTypes.insert( buildType.toUtf8() );
+				buildTypeDropDown->getListBox()->addListBoxItem( buildType );
+				buildTypeDropDown->getListBox()->setSelected( buildType );
+				if ( panelBuildTypeDDL ) {
+					panelBuildTypeDDL->getListBox()->addListBoxItem( buildType );
+					panelBuildTypeDDL->getListBox()->setSelected( buildType );
+				}
+				msgBox->closeWindow();
+			} );
+	} );
+
+	find( "build_type_del" )->onClick( [this, buildTypeDropDown, panelBuildTypeDDL]( auto ) {
+		const auto& txt = buildTypeDropDown->getListBox()->getItemSelectedText();
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL,
+			String::format(
+				i18n( "build_type_name_del", "Delete Build Type: %s?" ).toUtf8().c_str(),
+				txt.toUtf8().c_str() ) );
+		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->showWhenReady();
+		msgBox->addEventListener( Event::OnConfirm, [this, msgBox, buildTypeDropDown,
+													 panelBuildTypeDDL, txt]( const Event* ) {
+			mBuild.mBuildTypes.erase( txt.toUtf8() );
+			buildTypeDropDown->getListBox()->removeListBoxItem( txt );
+			if ( panelBuildTypeDDL ) {
+				panelBuildTypeDDL->getListBox()->removeListBoxItem( txt );
+			}
+			msgBox->closeWindow();
+		} );
+	} );
+
+	auto outputParserPresetsDDL = find<UIDropDownList>( "output_parsers_presets_list" );
+	outputParserPresetsDDL->getListBox()->setSelected( mBuild.mOutputParser.mPreset );
+	outputParserPresetsDDL->on( Event::OnItemSelected, [this]( const Event* event ) {
+		std::string txt( event->getNode()
+							 ->asType<UIDropDownList>()
+							 ->getListBox()
+							 ->getItemSelectedText()
+							 .toUtf8() );
+		mBuild.mOutputParser.mPreset = txt;
+		if ( ProjectBuildOutputParser::existsPreset( txt ) ) {
+			mBuild.mOutputParser.mPresetConfig =
+				ProjectBuildOutputParser::getPresets()[mBuild.mOutputParser.mPreset].mConfig;
+		}
+	} );
 }
 
 void UIBuildSettings::updateOS() {
@@ -239,6 +368,56 @@ void UIBuildSettings::updateOS() {
 		if ( os->asType<UICheckBox>()->isChecked() )
 			mBuild.mOS.insert( os->getId() );
 	}
+}
+
+void UIBuildSettings::setTab( UITab* tab ) {
+	if ( tab != mTab ) {
+		mTab = tab;
+		refreshTab();
+	}
+}
+
+void UIBuildSettings::refreshTab() {
+	if ( !mTab )
+		return;
+	mTab->setText(
+		String::format( ( i18n( "build_seetings", "Build Settings" ) + ": %s" ).toUtf8().c_str(),
+						mBuild.mName.c_str() ) );
+	mTab->setId( "build_settings_" + mBuild.mName );
+}
+
+void UIBuildSettings::moveStepUp( size_t stepNum, bool isClean ) {
+	moveStepDir( stepNum, isClean, -1 );
+}
+
+void UIBuildSettings::moveStepDown( size_t stepNum, bool isClean ) {
+	moveStepDir( stepNum, isClean, 1 );
+}
+
+void UIBuildSettings::moveStepDir( size_t stepNum, bool isClean, int dir ) {
+	ProjectBuildSteps& steps = isClean ? mBuild.mClean : mBuild.mBuild;
+	UIWidget* cont =
+		isClean ? find<UIWidget>( "build_clean_steps_cont" ) : find<UIWidget>( "build_steps_cont" );
+	int newStep = (int)stepNum + dir;
+	std::swap( steps[stepNum], steps[newStep] );
+	auto bs1 = cont->findByClass<UIBuildStep>( String::toString( stepNum ) );
+	auto bs2 = cont->findByClass<UIBuildStep>( String::toString( newStep ) );
+	bs1->updateStep( stepNum, &steps[stepNum] );
+	bs2->updateStep( newStep, &steps[newStep] );
+}
+
+void UIBuildSettings::deleteStep( size_t stepNum, bool isClean ) {
+	ProjectBuildSteps& steps = isClean ? mBuild.mClean : mBuild.mBuild;
+	UIWidget* cont =
+		isClean ? find<UIWidget>( "build_clean_steps_cont" ) : find<UIWidget>( "build_steps_cont" );
+	for ( auto step = stepNum; step < steps.size(); step++ )
+		cont->findByClass<UIBuildStep>( String::toString( step ) )->clearBindings();
+	// cppcheck-suppress mismatchingContainerIterator
+	steps.erase( steps.begin() + stepNum );
+	cont->findByClass<UIBuildStep>( String::toString( stepNum ) )->close();
+	for ( auto step = stepNum + 1; step < steps.size(); step++ )
+		cont->findByClass<UIBuildStep>( String::toString( step ) )
+			->updateStep( step, &steps[step] );
 }
 
 } // namespace ecode

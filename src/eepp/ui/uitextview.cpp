@@ -410,6 +410,7 @@ void UITextView::onSizeChange() {
 
 void UITextView::onTextChanged() {
 	sendCommonEvent( Event::OnTextChanged );
+	sendCommonEvent( Event::OnValueChange );
 	invalidateDraw();
 }
 
@@ -841,7 +842,7 @@ UIAnchor* UIAnchor::New() {
 }
 
 UIAnchor::UIAnchor() : UITextView( "anchor" ) {
-	addMouseClickListener(
+	onClick(
 		[this]( const MouseEvent* ) {
 			if ( !mHref.empty() )
 				Engine::instance()->openURI( mHref );

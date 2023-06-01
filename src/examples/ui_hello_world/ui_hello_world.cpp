@@ -58,7 +58,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 		SceneManager::instance()->add( uiSceneNode );
 
 		// Create a very simple Hello World with a TextView and a PushButton.
-		std::string layout = R"xml(
+		static const char* layout = R"xml(
 			<LinearLayout layout_width="match_parent"
 						  layout_height="match_parent"
 						  orientation="vertical">

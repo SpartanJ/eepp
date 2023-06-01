@@ -122,7 +122,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ),
 	mPreviewColor( Color::Transparent ) {
-	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDS_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
 	setColorScheme( SyntaxColorScheme::getDefault() );
 	mVScrollBar = UIScrollBar::NewVertical();

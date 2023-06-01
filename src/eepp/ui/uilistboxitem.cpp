@@ -97,6 +97,7 @@ void UIListBoxItem::select() {
 			mNodeFlags &= ~NODE_FLAG_SELECTED;
 
 			LBParent->mSelected.remove( LBParent->getItemIndex( this ) );
+			LBParent->sendCommonEvent( Event::OnSelectionChanged );
 		}
 	} else {
 		pushState( UIState::StateSelected );
@@ -113,6 +114,8 @@ void UIListBoxItem::select() {
 
 		if ( !wasSelected ) {
 			LBParent->onSelected();
+		} else {
+			LBParent->sendCommonEvent( Event::OnSelectionChanged );
 		}
 	}
 }

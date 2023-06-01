@@ -61,6 +61,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	Uint32 getItemSelectedIndex() const;
 
+	bool hasSelection() const;
+
 	std::list<Uint32> getItemsSelectedIndex() const;
 
 	std::list<UIListBoxItem*> getItemsSelected();
@@ -107,6 +109,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
 	Uint32 getMaxTextWidth() const;
+
+	void setItemText( const Uint32& index, const String& newText );
 
   protected:
 	friend class UIListBoxItem;

@@ -17,6 +17,7 @@ UISpinBox::UISpinBox() :
 	mValue( 0 ),
 	mClickStep( 1.f ),
 	mModifyingVal( false ) {
+	mFlags |=  UI_SCROLLABLE;
 	mInput = UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );

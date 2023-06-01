@@ -177,7 +177,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		mUIContainer = mUIWindow->getContainer();
 	}
 
-	std::string layout = R"xml(
+	static const auto layout = R"xml(
 	<LinearLayout id="color_picker" class="container" orientation="vertical" layout_width="match_parent" layout_height="wrap_content" clip="none">
 		<LinearLayout class="header" orientation="horizontal" layout_width="match_parent" layout_height="28dp" clip="none">
 			<Widget id="current_color" class="current_color" layout_width="256dp" layout_height="match_parent" />

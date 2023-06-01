@@ -445,20 +445,25 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 	return NULL;
 }
 
-UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, Node* parent,
+UIWidget* UISceneNode::loadLayoutFromString( const char* layoutString, Node* parent,
 											 const Uint32& marker ) {
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_string( layoutString.c_str() );
+	pugi::xml_parse_result result = doc.load_string( layoutString );
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
-		Log::error( "Couldn't load UI Layout from string: %s", layoutString.c_str() );
+		Log::error( "Couldn't load UI Layout from string: %s", layoutString );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
 	}
 
 	return NULL;
+}
+
+UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, Node* parent,
+											 const Uint32& marker ) {
+	return loadLayoutFromString( layoutString.c_str(), parent, marker );
 }
 
 UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent,

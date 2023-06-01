@@ -455,6 +455,10 @@ Sizef UINode::fitMinMaxSizePx( const Sizef& size ) const {
 	return s;
 }
 
+bool UINode::isScrollable() const {
+	return 0 != ( mFlags & UI_SCROLLABLE );
+}
+
 Sizef UINode::fitMinMaxSizeDp( const Sizef& size ) const {
 	Sizef s( size );
 

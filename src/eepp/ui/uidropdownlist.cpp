@@ -22,7 +22,7 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	UITextInput( tag ), mListBox( NULL ), mFriendNode( NULL ) {
 	mEnabledCreateContextMenu = false;
 	setClipType( ClipType::ContentBox );
-	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
+	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING | UI_SCROLLABLE );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
 
 	setAllowEditing( false );
@@ -48,6 +48,15 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::OnClear, cb::Make1( this, &UIDropDownList::onWidgetClear ) );
 	mListBox->addEventListener( Event::OnClose, [&]( const Event* ) { mListBox = nullptr; } );
+	mListBox->addEventListener( Event::OnSelectionChanged, [this]( auto ) {
+		if ( !mListBox->hasSelection() )
+			mListBox->setSelected( 0 );
+		sendCommonEvent( Event::OnSelectionChanged );
+	} );
+	mListBox->addEventListener( Event::OnItemValueChange, [this]( const Event* event ) {
+		if ( mListBox->getItemSelectedIndex() == event->asItemValueEvent()->getItemIndex() )
+			setText( mListBox->getItemSelectedText() );
+	} );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -264,6 +273,7 @@ void UIDropDownList::onItemSelected( const Event* ) {
 
 	sendCommonEvent( Event::OnItemSelected );
 	sendCommonEvent( Event::OnValueChange );
+	sendCommonEvent( Event::OnSelectionChanged );
 }
 
 void UIDropDownList::show() {

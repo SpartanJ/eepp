@@ -1125,7 +1125,7 @@ Uint32 Node::addEventListener( const Uint32& eventType, const EventCallback& cal
 	return mNumCallBacks;
 }
 
-Uint32 Node::addMouseClickListener( const std::function<void( const MouseEvent* )>& callback,
+Uint32 Node::onClick( const std::function<void( const MouseEvent* )>& callback,
 									const MouseButton& button ) {
 	return addEventListener( Event::MouseClick, [callback, button]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & ( EE_BUTTON_MASK( button ) ) ) {

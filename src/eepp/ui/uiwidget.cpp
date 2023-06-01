@@ -1939,6 +1939,14 @@ String UIWidget::getTranslatorString( const std::string& str, const String& defa
 									   : defaultValue;
 }
 
+String UIWidget::i18n( const std::string& str ) {
+	return getTranslatorString( str );
+}
+
+String UIWidget::i18n( const std::string& str, const String& defaultValue ) {
+	return getTranslatorString( str, defaultValue );
+}
+
 UIWidget* UIWidget::getPrevTabWidget() const {
 	UIWidget* widget = getPrevWidget();
 	if ( widget ) {

@@ -26,7 +26,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	uiWin->setId( "widget-tree-view" );
 	uiWin->setMinWindowSize( 600, 400 );
 	uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
-	UIWidget* cont = sceneNode->loadLayoutFromString( R"xml(
+	static const auto WIDGET_LAYOUT = R"xml(
 	<vbox lw="mp" lh="mp">
 		<hbox lw="wc" lh="wc">
 			<PushButton id="pick_widget" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
@@ -41,8 +41,8 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			<tableview lw="fixed" lh="mp" />
 		</Splitter>
 	</vbox>
-	)xml",
-													  uiWin->getContainer() );
+	)xml";
+	UIWidget* cont = sceneNode->loadLayoutFromString( WIDGET_LAYOUT, uiWin->getContainer() );
 	UITreeView* widgetTree = cont->findByType<UITreeView>( UI_TYPE_TREEVIEW );
 	widgetTree->setHeadersVisible( true );
 	widgetTree->setExpanderIconSize( menuIconSize );

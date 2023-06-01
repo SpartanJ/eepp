@@ -19,7 +19,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 								 cb::Make1( this, &TextureAtlasNew::windowClose ) );
 	mUIWindow->setTitle( "New Texture Atlas" );
 
-	std::string layout = R"xml(
+	static const auto layout = R"xml(
 	<LinearLayout id='container' layout_width='match_parent' layout_height='wrap_content' margin='8dp'>
 		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Save File Format:' />

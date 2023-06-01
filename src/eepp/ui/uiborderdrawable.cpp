@@ -32,10 +32,7 @@ void UIBorderDrawable::draw( const Vector2f& position ) {
 }
 
 void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
-	if ( mPosition != position ) {
-		mPosition = position;
-		mNeedsUpdate = true;
-	}
+	mPosition = position;
 
 	if ( mSize != size ) {
 		mSize = size;
@@ -43,7 +40,6 @@ void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	}
 
 	// TODO: Implement color update.
-	// TODO: Optimize position update.
 	if ( mNeedsUpdate || mColorNeedsUpdate ) {
 		update();
 	}
@@ -55,7 +51,9 @@ void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
 			GLi->polygonSmooth( true );
 
 		mVertexBuffer->bind();
+		GLi->translatef( mPosition.x, mPosition.y, 0 );
 		mVertexBuffer->draw();
+		GLi->translatef( -mPosition.x, -mPosition.y, 0 );
 		mVertexBuffer->unbind();
 
 		if ( mSmooth && !isPolySmooth )
@@ -286,7 +284,7 @@ void UIBorderDrawable::update() {
 
 	switch ( mBorderType ) {
 		case BorderType::Outside: {
-			Vector2f pos( mPosition );
+			Vector2f pos( Vector2f::Zero );
 			Sizef size( mSize );
 
 			if ( mBorders.top.width > 0 ) {
@@ -310,11 +308,11 @@ void UIBorderDrawable::update() {
 			break;
 		}
 		case BorderType::Inside: {
-			Borders::createBorders( mVertexBuffer, mBorders, mPosition, mSize );
+			Borders::createBorders( mVertexBuffer, mBorders, Vector2f::Zero, mSize );
 			break;
 		}
 		case BorderType::Outline: {
-			Vector2f pos( mPosition );
+			Vector2f pos( Vector2f::Zero );
 			Sizef size( mSize );
 
 			if ( mBorders.top.width > 0 ) {

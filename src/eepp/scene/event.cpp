@@ -45,4 +45,8 @@ const WindowEvent* Event::asWindowEvent() const {
 	return static_cast<const WindowEvent*>( this );
 }
 
+const ItemValueEvent* Event::asItemValueEvent() const {
+	return static_cast<const ItemValueEvent*>( this );
+}
+
 }} // namespace EE::Scene

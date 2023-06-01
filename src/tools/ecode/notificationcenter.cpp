@@ -44,7 +44,7 @@ UITextView* NotificationCenter::addNotification( const String& text, const Time&
 
 UILinearLayout* NotificationCenter::addShowRequest( const String& uri, const String& actionText,
 													const Time& delay ) {
-	const std::string layout = R"xml(
+	static const auto layout = R"xml(
 	<vbox lw="mp" class="notification">
 		<TextView lw="mp" wordwrap="true" />
 		<hbox lg="right">

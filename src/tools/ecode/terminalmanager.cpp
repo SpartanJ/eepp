@@ -95,7 +95,7 @@ void TerminalManager::setUseFrameBuffer( bool useFrameBuffer ) {
 }
 
 void TerminalManager::configureTerminalShell() {
-	const std::string layout( R"xml(
+	static const auto layout( R"xml(
 		<window layout_width="300dp" layout_height="150dp" window-flags="default|shadow" window-title='@string(shell_configuration, "Shell Configuration")'>
 		<vbox lw="mp" lh="mp" padding="4dp">
 			<vbox lw="mp" lh="0" lw8="1">
@@ -153,11 +153,10 @@ void TerminalManager::configureTerminalShell() {
 		shellCombo->getListBox()->getVerticalScrollBar()->setClickStep(
 			shellCombo->getDropDownList()->getMaxNumVisibleItems() / (Float)found.size() );
 	ok->setFocus();
-	ok->addMouseClickListener(
+	ok->onClick(
 		[&, window, shellCombo]( const MouseEvent* ) { setShellFn( mApp, window, shellCombo ); },
 		MouseButton::EE_BUTTON_LEFT );
-	cancel->addMouseClickListener( [window]( const MouseEvent* ) { window->closeWindow(); },
-								   EE_BUTTON_LEFT );
+	cancel->onClick( [window]( const MouseEvent* ) { window->closeWindow(); }, EE_BUTTON_LEFT );
 	window->on( Event::KeyDown, [window]( const Event* event ) {
 		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
 			window->closeWindow();

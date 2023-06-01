@@ -1342,7 +1342,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 			mUIContainer->setPixelsSize( mUISceneNode->getPixelsSize() );
 		} );
 
-		const std::string& baseUI = R"xml(
+		const auto baseUI = R"xml(
 		<vbox id="main_layout" layout_width="match_parent" layout_height="match_parent">
 			<MenuBar id="menubar" layout_width="match_parent" layout_height="wrap_content" />
 			<Splitter id="project_splitter" layout_width="match_parent" layout_height="0dp" layout_weight="1">

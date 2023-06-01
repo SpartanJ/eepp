@@ -110,16 +110,27 @@ class ProjectBuildOutputParser {
   public:
 	static std::map<std::string, ProjectBuildOutputParser> getPresets();
 
+	static bool existsPreset( const std::string& name );
+
 	static ProjectBuildOutputParser getGeneric();
+
+	const std::vector<ProjectBuildOutputParserConfig>& getPresetConfig() const {
+		return mPresetConfig;
+	}
 
 	const std::vector<ProjectBuildOutputParserConfig>& getConfig() const { return mConfig; }
 
 	bool useRelativeFilePaths() const { return mRelativeFilePaths; }
 
+	const std::string& getPreset() const { return mPreset; }
+
   protected:
 	friend class ProjectBuildManager;
+	friend class UIBuildSettings;
 
 	bool mRelativeFilePaths{ true };
+	std::string mPreset;
+	std::vector<ProjectBuildOutputParserConfig> mPresetConfig;
 	std::vector<ProjectBuildOutputParserConfig> mConfig;
 };
 

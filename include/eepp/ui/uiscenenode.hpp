@@ -67,6 +67,9 @@ class EE_API UISceneNode : public SceneNode {
 	UIWidget* loadLayoutFromString( const std::string& layoutString, Node* parent = NULL,
 									const Uint32& marker = 0 );
 
+	UIWidget* loadLayoutFromString( const char* layoutString, Node* parent = NULL,
+									const Uint32& marker = 0 );
+
 	UIWidget* loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent = NULL,
 									const Uint32& marker = 0 );
 
