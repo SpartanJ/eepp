@@ -1120,9 +1120,11 @@ LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String:
 LSPClientServer::~LSPClientServer() {
 	shutdown();
 	eeSAFE_DELETE( mSocket );
-	Lock l( mClientsMutex );
-	for ( const auto& client : mClients )
-		client.first->unregisterClient( client.second.get() );
+	{
+		Lock l( mClientsMutex );
+		for ( const auto& client : mClients )
+			client.first->unregisterClient( client.second.get() );
+	}
 }
 
 bool LSPClientServer::socketConnect() {

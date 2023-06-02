@@ -549,19 +549,34 @@ static void addTypeScript() {
 			{ "with", "keyword" },		 { "yield", "keyword" },	  { "unknown", "keyword2" } },
 		  "//" } );
 
-	const SyntaxDefinition& html = SyntaxDefinitionManager::instance()->getByLSPName( "xml" );
-	SyntaxDefinition tsxml( html );
-	tsxml.setLanguageName( "TSXML" );
-	tsxml.setFileTypes( {} );
-	tsxml.setVisible( false );
-	tsxml.addPatternToFront( { { "%{", "%}", "\\" }, "normal", "JavaScript" } );
-	SyntaxDefinitionManager::instance()->add( std::move( tsxml ) );
-
-	SyntaxDefinition tsx( ts );
-	tsx.setLanguageName( "TSX" );
-	tsx.setFileTypes( { "%.tsx$" } );
-	tsx.addPatternToFront( { { "return%s+%(", "%s*);" }, "keyword", "TSXML" } );
-	SyntaxDefinitionManager::instance()->add( std::move( tsx ) );
+	SyntaxDefinitionManager::instance()->add(
+		{ "TSX",
+		  { "%.tsx$" },
+		  {
+			  { { "//.-\n" }, "comment" },
+			  { { "/%*", "%*/" }, "comment" },
+			  { { "\"", "\"", "\\" }, "string" },
+			  { { "'", "'", "\\" }, "string" },
+			  { { "`", "`", "\\" }, "string" },
+			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\].*%f[/]",
+				  "/[igmsuyd\n]?[igmsuyd\n]?[igmsuyd\n]?", "\\" },
+				"string" },
+			  { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+			  { { "%f[^<][%a_][%w%_%-]*" }, "function" },
+			  { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
+			  { { "([%a_-][%w-_]*)(%\?\?)(=)%f[%{%\"]" },
+				{ "normal", "keyword", "normal", "operator" } },
+			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			  { { "0x[%da-fA-F]+" }, "number" },
+			  { { "-?%d+[%d%.eE]*" }, "number" },
+			  { { "-?%.?%d+" }, "number" },
+			  { { "(interface%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },
+			  { { "(type%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },
+			  { { "[%a_][%w_$]*%f[(]" }, "function" },
+			  { { "[%a_][%w_]*" }, "symbol" },
+		  },
+		  ts.getSymbols(),
+		  "//" } );
 }
 
 static void addPython() {
@@ -2708,16 +2723,23 @@ static void addJSX() {
 		{ "JSX",
 		  { "%.jsx$" },
 		  {
-			  { { "return%s+%(", "%s*);" }, "keyword", "HTML" },
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
 			  { { "`", "`", "\\" }, "string" },
+			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\].*%f[/]",
+				  "/[igmsuyd\n]?[igmsuyd\n]?[igmsuyd\n]?", "\\" },
+				"string" },
+			  { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+			  { { "%f[^<][%a_][%w%_%-]*" }, "function" },
+			  { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
+			  { { "([%a_-][%w-_]*)(%\?\?)(=)%f[%{%\"]" },
+				{ "normal", "keyword", "normal", "operator" } },
+			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "0x[%da-fA-F]+" }, "number" },
 			  { { "-?%d+[%d%.eE]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
-			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 		  },
@@ -4392,7 +4414,6 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addSwift();
 	addTeal();
 	addToml();
-	addXML();
 	addTypeScript();
 	addV();
 	addVisualBasic();
@@ -4400,6 +4421,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addWren();
 	addX86Assembly();
 	addxit();
+	addXML();
 	addYAML();
 	addZig();
 }

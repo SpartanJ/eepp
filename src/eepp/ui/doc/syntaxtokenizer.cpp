@@ -93,19 +93,16 @@ bool isScaped( const std::string& text, const size_t& startIndex, const std::str
 
 std::pair<int, int> findNonEscaped( const std::string& text, const std::string& pattern, int offset,
 									const std::string& escapeStr ) {
-	while ( true ) {
-		LuaPattern words( pattern );
-		int start, end;
-		if ( words.find( text, start, end, offset ) ) {
-			if ( !escapeStr.empty() && isScaped( text, start, escapeStr ) ) {
-				offset = end;
-			} else {
-				return std::make_pair( start, end );
-			}
+	LuaPattern words( pattern );
+	int start, end;
+	while ( words.find( text, start, end, offset ) ) {
+		if ( !escapeStr.empty() && isScaped( text, start, escapeStr ) ) {
+			offset = end;
 		} else {
-			return std::make_pair( -1, -1 );
+			return std::make_pair( start, end );
 		}
 	}
+	return std::make_pair( -1, -1 );
 }
 
 SyntaxState SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition& syntax,
@@ -179,7 +176,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32
 		curState = SyntaxTokenizer::retrieveSyntaxState( syntax, retState );
 	};
 
-	while ( i < text.size() ) {
+	size_t size = text.size() - 1; // skip last char ( new line char )
+
+	while ( i < size ) {
 		if ( curState.currentPatternIdx != SYNTAX_TOKENIZER_STATE_NONE ) {
 			const SyntaxPattern& pattern =
 				curState.currentSyntax->getPatterns()[curState.currentPatternIdx - 1];

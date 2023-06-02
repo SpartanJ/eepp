@@ -86,11 +86,13 @@ SyntaxDefinition& SyntaxDefinition::setPatterns( const std::vector<SyntaxPattern
 }
 
 SyntaxDefinition& SyntaxDefinition::addPatternToFront( const SyntaxPattern& pattern ) {
-	auto patterns = mPatterns;
-	mPatterns.clear();
-	mPatterns.push_back( pattern );
-	for ( const auto& pa : patterns )
-		mPatterns.push_back( pa );
+	mPatterns.insert( mPatterns.begin(), pattern );
+	return *this;
+}
+
+SyntaxDefinition&
+SyntaxDefinition::addPatternsToFront( const std::vector<SyntaxPattern>& patterns ) {
+	mPatterns.insert( mPatterns.begin(), patterns.begin(), patterns.end() );
 	return *this;
 }
 
