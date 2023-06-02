@@ -163,6 +163,10 @@ UIWidget* UITab::getExtraInnerWidget() const {
 	return mCloseButton;
 }
 
+void UITab::removeTab( bool destroyOwnedNode, bool immediateClose ) {
+	getTabWidget()->removeTab( this, destroyOwnedNode, immediateClose );
+}
+
 void UITab::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 

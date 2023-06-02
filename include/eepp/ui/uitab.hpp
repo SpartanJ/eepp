@@ -40,6 +40,8 @@ class EE_API UITab : public UISelectButton {
 
 	virtual UIWidget* getExtraInnerWidget() const;
 
+	void removeTab( bool destroyOwnedNode = true, bool immediateClose = false );
+
   protected:
 	friend class UITabWidget;
 

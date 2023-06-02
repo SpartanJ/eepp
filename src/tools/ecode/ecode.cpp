@@ -5,6 +5,7 @@
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
 #include "settingsmenu.hpp"
+#include "uibuildsettings.hpp"
 #include "uiwelcomescreen.hpp"
 #include "version.hpp"
 #include <algorithm>
@@ -1653,7 +1654,8 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 		 ( !mDirTree || !mDirTree->isDirInTree( doc.getFileInfo().getFilepath() ) ) ) {
 		std::string dir( FileSystem::fileRemoveFileName( doc.getFileInfo().getFilepath() ) );
 		Lock l( mWatchesLock );
-		mFilesFolderWatches[dir] = mFileWatcher->addWatch( dir, mFileSystemListener );
+		if ( mFileWatcher )
+			mFilesFolderWatches[dir] = mFileWatcher->addWatch( dir, mFileSystemListener );
 	}
 }
 
@@ -1819,6 +1821,10 @@ void App::closeEditors() {
 		if ( tabWidget )
 			tabWidget->removeTab( (UITab*)terminal->getData(), true, true );
 	}
+
+	mSplitter->forEachWidgetClass( "build_settings", []( UIWidget* widget ) {
+		widget->asType<UIBuildSettings>()->getTab()->removeTab( true, true );
+	} );
 
 	mCurrentProject = "";
 	mDirTree = nullptr;
@@ -2265,23 +2271,22 @@ void App::updateEditorState() {
 }
 
 void App::removeFolderWatches() {
-	if ( mFileWatcher ) {
-		std::unordered_set<efsw::WatchID> folderWatches;
-		std::unordered_map<std::string, efsw::WatchID> filesFolderWatches;
-		{
-			Lock l( mWatchesLock );
-			folderWatches = mFolderWatches;
-			filesFolderWatches = mFilesFolderWatches;
-			mFolderWatches.clear();
-			mFilesFolderWatches.clear();
-		}
+	std::unordered_set<efsw::WatchID> folderWatches;
+	std::unordered_map<std::string, efsw::WatchID> filesFolderWatches;
 
-		for ( const auto& dir : folderWatches )
-			mFileWatcher->removeWatch( dir );
+	Lock l( mWatchesLock );
+	if ( !mFileWatcher )
+		return;
+	folderWatches = mFolderWatches;
+	filesFolderWatches = mFilesFolderWatches;
+	mFolderWatches.clear();
+	mFilesFolderWatches.clear();
 
-		for ( const auto& fileFolder : filesFolderWatches )
-			mFileWatcher->removeWatch( fileFolder.second );
-	}
+	for ( const auto& dir : folderWatches )
+		mFileWatcher->removeWatch( dir );
+
+	for ( const auto& fileFolder : filesFolderWatches )
+		mFileWatcher->removeWatch( fileFolder.second );
 }
 
 void App::loadDirTree( const std::string& path ) {
@@ -2300,15 +2305,14 @@ void App::loadDirTree( const std::string& path ) {
 				if ( mSplitter->curEditorExistsAndFocused() )
 					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
 			} );
-			if ( mFileWatcher ) {
-				removeFolderWatches();
-				{
-					Lock l( mWatchesLock );
+			removeFolderWatches();
+			{
+				Lock l( mWatchesLock );
+				if ( mFileWatcher )
 					mFolderWatches.insert(
 						mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true ) );
-				}
-				mFileSystemListener->setDirTree( mDirTree );
 			}
+			mFileSystemListener->setDirTree( mDirTree );
 		},
 		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
 }

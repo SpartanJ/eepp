@@ -13,7 +13,11 @@ class UIBuildSettings : public UIRelativeLayout {
   public:
 	static UIBuildSettings* New( ProjectBuild& build, ProjectBuildConfiguration& config );
 
+	virtual ~UIBuildSettings();
+
 	void setTab( UITab* tab );
+
+	UITab* getTab() const;
 
   protected:
 	friend class UIBuildStep;
@@ -23,6 +27,7 @@ class UIBuildSettings : public UIRelativeLayout {
 	UIDataBindHolder mDataBindHolder;
 	UITab* mTab{ nullptr };
 	String mOldName;
+	std::unordered_map<UIWidget*, std::vector<Uint32>> mCbs;
 
 	explicit UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config );
 

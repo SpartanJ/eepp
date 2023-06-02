@@ -202,8 +202,16 @@ UIBuildSettings* UIBuildSettings::New( ProjectBuild& build, ProjectBuildConfigur
 	return eeNew( UIBuildSettings, ( build, config ) );
 }
 
+UIBuildSettings::~UIBuildSettings() {
+	for ( const auto& cbs : mCbs ) {
+		for ( const auto& cb : cbs.second )
+			cbs.first->removeEventListener( cb );
+	}
+}
+
 UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config ) :
 	mBuild( build ), mConfig( config ), mOldName( mBuild.getName() ) {
+	addClass( "build_settings" );
 	mUISceneNode->loadLayoutFromString( SETTINGS_PANEL_XML, this,
 										String::hash( "build_settings" ) );
 	auto buildNameInput = find<UITextInput>( "build_name" );
@@ -265,7 +273,7 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 	auto buildTypeDropDown = find<UIDropDownList>( "build_type_list" );
 	auto panelBuildTypeDDL = getUISceneNode()
 								 ->getRoot()
-								 ->querySelector( " #build_tab #build_type_list" )
+								 ->querySelector( "#build_tab #build_type_list" )
 								 ->asType<UIDropDownList>();
 
 	std::vector<String> buildTypes;
@@ -279,13 +287,18 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 			if ( panelBuildTypeDDL )
 				panelBuildTypeDDL->getListBox()->setSelected( mConfig.buildType );
 		} );
-	if ( panelBuildTypeDDL )
-		panelBuildTypeDDL->on(
+	if ( panelBuildTypeDDL ) {
+		mCbs[panelBuildTypeDDL].push_back( panelBuildTypeDDL->on(
 			Event::OnItemSelected, [this, buildTypeDropDown, panelBuildTypeDDL]( const Event* ) {
 				mConfig.buildType = panelBuildTypeDDL->getListBox()->getItemSelectedText().toUtf8();
 				if ( buildTypeDropDown )
 					buildTypeDropDown->getListBox()->setSelected( mConfig.buildType );
-			} );
+			} ) );
+		mCbs[panelBuildTypeDDL].push_back(
+			panelBuildTypeDDL->on( Event::OnClose, [this, panelBuildTypeDDL]( auto ) {
+				mCbs.erase( panelBuildTypeDDL );
+			} ) );
+	}
 
 	auto advTitle = querySelector( ".settings_panel > .advanced_options > .title" );
 	advTitle->onClick( [this]( const MouseEvent* event ) {
@@ -375,6 +388,10 @@ void UIBuildSettings::setTab( UITab* tab ) {
 		mTab = tab;
 		refreshTab();
 	}
+}
+
+UITab* UIBuildSettings::getTab() const {
+	return mTab;
 }
 
 void UIBuildSettings::refreshTab() {
