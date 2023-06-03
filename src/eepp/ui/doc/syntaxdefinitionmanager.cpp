@@ -546,7 +546,8 @@ static void addTypeScript() {
 			{ "throw", "keyword" },		 { "true", "literal" },		  { "try", "keyword" },
 			{ "type", "keyword2" },		 { "typeof", "keyword" },	  { "undefined", "literal" },
 			{ "var", "keyword" },		 { "void", "keyword" },		  { "while", "keyword" },
-			{ "with", "keyword" },		 { "yield", "keyword" },	  { "unknown", "keyword2" } },
+			{ "with", "keyword" },		 { "yield", "keyword" },	  { "unknown", "keyword2" },
+			{ "namespace", "keyword" } },
 		  "//" } );
 
 	SyntaxDefinitionManager::instance()->add(

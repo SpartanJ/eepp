@@ -45,7 +45,9 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 	int score;
 	for ( const auto& symbols : symbolsVec ) {
 		for ( const auto& symbol : *symbols ) {
-			if ( ( score = String::fuzzyMatch( symbol.text, match ) ) > 0 ) {
+			if ( ( score = String::fuzzyMatch( symbol.text, match, false,
+											   symbol.kind != LSPCompletionItemKind::Text ) ) >
+				 0 ) {
 				if ( std::find( matches.begin(), matches.end(), symbol ) == matches.end() ) {
 					symbol.setScore( score );
 					matches.push_back( symbol );
@@ -496,6 +498,13 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 			fuzzySuggestions = fuzzyMatchSymbols( { &suggestions, &symbols }, symbol,
 												  eemax<size_t>( 100UL, suggestions.size() ) );
 		}
+
+		if ( fuzzySuggestions.empty() && !suggestions.empty() ) {
+			for ( const auto& suggestion : suggestions )
+				if ( String::startsWith( suggestion.text, symbol ) )
+					fuzzySuggestions.emplace_back( std::move( suggestion ) );
+		}
+
 		Lock l( mSuggestionsMutex );
 		mSuggestions = fuzzySuggestions;
 	}

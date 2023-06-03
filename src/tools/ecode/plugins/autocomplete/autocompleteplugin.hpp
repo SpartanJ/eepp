@@ -58,7 +58,7 @@ class AutoCompletePlugin : public Plugin {
 				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
 				 AutoCompletePlugin::New,
-				 { 0, 2, 1 } };
+				 { 0, 2, 2 } };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );

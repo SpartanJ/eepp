@@ -2513,7 +2513,7 @@ void TextDocument::toggleLineComments() {
 	std::string commentText = comment + " ";
 	TextRange selection = getSelection( true );
 	bool uncomment = true;
-	for ( Int64 i = selection.start().line(); i < selection.end().line(); i++ ) {
+	for ( Int64 i = selection.start().line(); i <= selection.end().line(); i++ ) {
 		const String& text = mLines[i].getText();
 		if ( text.find_first_not_of( " \t\n" ) != std::string::npos &&
 			 text.find( commentText ) == std::string::npos ) {

@@ -640,7 +640,8 @@ String::StringBaseType String::lastChar() const {
 }
 
 // Lite (https://github.com/rxi/lite) fuzzy match implementation
-template <typename T> constexpr int tFuzzyMatch( const T* str, const T* ptn, bool allowUneven ) {
+template <typename T>
+constexpr int tFuzzyMatch( const T* str, const T* ptn, bool allowUneven, bool permissive ) {
 	int score = 0;
 	int run = 0;
 	while ( *str && *ptn ) {
@@ -660,11 +661,12 @@ template <typename T> constexpr int tFuzzyMatch( const T* str, const T* ptn, boo
 	}
 	if ( *ptn && !allowUneven )
 		return INT_MIN;
-	return score - strlen( str );
+	return score - ( permissive ? 0 : strlen( str ) );
 }
 
-int String::fuzzyMatch( const std::string& string, const std::string& pattern, bool allowUneven ) {
-	return tFuzzyMatch<char>( string.c_str(), pattern.c_str(), allowUneven );
+int String::fuzzyMatch( const std::string& string, const std::string& pattern, bool allowUneven,
+						bool permissive ) {
+	return tFuzzyMatch<char>( string.c_str(), pattern.c_str(), allowUneven, permissive );
 }
 
 std::vector<Uint8> String::stringToUint8( const std::string& str ) {

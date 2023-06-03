@@ -664,7 +664,7 @@ void App::updateRecentFiles() {
 		menu->removeEventsOfType( Event::OnItemClicked );
 		if ( mRecentFiles.empty() )
 			return;
-		menu->add( i18n( "reopen_closed_editor", "Reopen Closed Editor" ), nullptr,
+		menu->add( i18n( "reopen_closed_document", "Reopen Closed Document" ), nullptr,
 				   getKeybind( "reopen-closed-tab" ) )
 			->setId( "reopen-closed-tab" )
 			->setEnabled( !mRecentClosedFiles.empty() );
