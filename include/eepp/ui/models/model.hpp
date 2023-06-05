@@ -90,6 +90,8 @@ class EE_API Model {
 
 	virtual std::string dragDataType() const { return {}; }
 
+	virtual bool isEditable( const ModelIndex& ) const { return false; }
+
 	bool isValid( const ModelIndex& index ) const {
 		auto parentIndex = this->parentIndex( index );
 		return index.row() >= 0 && index.row() < (Int64)rowCount( parentIndex ) &&
@@ -205,8 +207,6 @@ class EE_API Model {
 	std::function<void()> mOnUpdate;
 	Mutex mResourceLock;
 };
-
-
 
 }}} // namespace EE::UI::Models
 

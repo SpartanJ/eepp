@@ -164,6 +164,8 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 					<vbox lw="mp" lh="wc" class="build_environment">
 						<TextView class="subtitle" text="@string(build_environment, Build Environment)" />
 						<CheckBox id="clear_sys_env" text="@string(clear_system_enviroment, Clear System Environment)" />
+						<TextView class="subtitle" text="@string(custom_environment_variables, Custom Environment Variables)" />
+						<TableView id="table_envs" lw="mp" lh="150dp" />
 					</vbox>
 
 					<vbox lw="mp" lh="wc" class="output_parser">
@@ -310,12 +312,31 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 	mDataBindHolder +=
 		UIDataBindBool::New( &mBuild.mConfig.clearSysEnv, find<UIWidget>( "clear_sys_env" ) );
 
+	UITableView* tableEnvs = find<UITableView>( "table_vars" );
+	auto modelEnvs = ItemPairListModel<std::string, std::string>::create( mBuild.mEnvs );
+	modelEnvs->setIsEditable( true );
+	modelEnvs->setColumnName( 0, getTranslatorString( "env_name", "Name" ) );
+	modelEnvs->setColumnName( 1, getTranslatorString( "env_value", "Value" ) );
+	tableEnvs->setAutoColumnsWidth( true );
+	tableEnvs->setModel( modelEnvs );
+	tableEnvs->setEditable( true );
+	tableEnvs->setEditTriggers( UIAbstractView::EditTrigger::DoubleClicked );
+	tableEnvs->onCreateEditingDelegate = []( const ModelIndex& ) {
+		return StringModelEditingDelegate::New();
+	};
+
 	UITableView* tableVars = find<UITableView>( "table_vars" );
-	auto model = ItemPairListModel<std::string, std::string>::create( mBuild.mVars );
-	model->setColumnName( 0, getTranslatorString( "var_name", "Name" ) );
-	model->setColumnName( 1, getTranslatorString( "var_value", "Value" ) );
+	auto modelVars = ItemPairListModel<std::string, std::string>::create( mBuild.mVars );
+	modelVars->setColumnName( 0, getTranslatorString( "var_name", "Name" ) );
+	modelVars->setColumnName( 1, getTranslatorString( "var_value", "Value" ) );
+	modelVars->setIsEditable( true );
 	tableVars->setAutoColumnsWidth( true );
-	tableVars->setModel( model );
+	tableVars->setModel( modelVars );
+	tableVars->setEditable( true );
+	tableVars->setEditTriggers( UIAbstractView::EditTrigger::DoubleClicked );
+	tableVars->onCreateEditingDelegate = []( const ModelIndex& ) {
+		return StringModelEditingDelegate::New();
+	};
 
 	find( "build_type_add" )->onClick( [this, buildTypeDropDown, panelBuildTypeDDL]( auto ) {
 		UIMessageBox* msgBox =

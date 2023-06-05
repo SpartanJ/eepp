@@ -1126,7 +1126,7 @@ Uint32 Node::addEventListener( const Uint32& eventType, const EventCallback& cal
 }
 
 Uint32 Node::onClick( const std::function<void( const MouseEvent* )>& callback,
-									const MouseButton& button ) {
+					  const MouseButton& button ) {
 	return addEventListener( Event::MouseClick, [callback, button]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & ( EE_BUTTON_MASK( button ) ) ) {
 			callback( event->asMouseEvent() );
@@ -1143,9 +1143,21 @@ void Node::removeEventsOfType( const Uint32& eventType ) {
 void Node::removeEventListener( const Uint32& callbackId ) {
 	EventsMap::iterator it;
 	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
-		std::map<Uint32, EventCallback>& event = it->second;
+		auto& event = it->second;
 		if ( event.erase( callbackId ) > 0 )
 			break;
+	}
+}
+
+void Node::removeEventListener( const std::vector<Uint32>& callbacksIds ) {
+	for ( auto& event : mEvents ) {
+		auto& events = event.second;
+		for ( auto& cbId : callbacksIds ) {
+			auto it = events.find( cbId );
+			if ( it != events.end() ) {
+				events.erase( it );
+			}
+		}
 	}
 }
 

@@ -113,32 +113,42 @@ void UITreeView::updateContentSize() {
 }
 
 void UITreeView::bindNavigationClick( UIWidget* widget ) {
-	mWidgetsClickCbId[widget] = widget->addEventListener(
-		mSingleClickNavigation ? Event::MouseClick : Event::MouseDoubleClick,
-		[&]( const Event* event ) {
+	auto openTree = [this]( const ModelIndex& idx, const Event* event ) {
+		ConditionalLock l( getModel() != nullptr,
+						   getModel() ? &getModel()->resourceMutex() : nullptr );
+		if ( getModel()->rowCount( idx ) ) {
+			auto& data = getIndexMetadata( idx );
+			data.open = !data.open;
+			createOrUpdateColumns( false );
+			onOpenTreeModelIndex( idx, data.open );
+		} else {
+			onOpenModelIndex( idx, event );
+		}
+	};
+
+	mWidgetsClickCbId[widget].push_back(
+		widget->addEventListener( Event::MouseDoubleClick, [this, openTree]( const Event* event ) {
+			auto mouseEvent = static_cast<const MouseEvent*>( event );
+			auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
+			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
+			if ( isEditable() && ( mEditTriggers & EditTrigger::DoubleClicked ) && getModel() &&
+				 getModel()->isEditable( cellIdx ) ) {
+				beginEditing( cellIdx, mouseEvent->getNode()->asType<UIWidget>() );
+			} else if ( ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) && !mSingleClickNavigation ) {
+				openTree( idx, event );
+			}
+		} ) );
+
+	mWidgetsClickCbId[widget].push_back(
+		widget->addEventListener( Event::MouseClick, [this, openTree]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-				ConditionalLock l( getModel() != nullptr,
-								   getModel() ? &getModel()->resourceMutex() : nullptr );
-				if ( getModel()->rowCount( idx ) ) {
-					auto& data = getIndexMetadata( idx );
-					data.open = !data.open;
-					createOrUpdateColumns( false );
-					onOpenTreeModelIndex( idx, data.open );
-				} else {
-					onOpenModelIndex( idx, event );
-				}
+			if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
+				onOpenMenuModelIndex( idx, event );
+			} else if ( ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) && mSingleClickNavigation ) {
+				openTree( idx, event );
 			}
-		} );
-
-	widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
-		auto mouseEvent = static_cast<const MouseEvent*>( event );
-		auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-		if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
-			onOpenMenuModelIndex( idx, event );
-		}
-	} );
+		} ) );
 }
 
 bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) {

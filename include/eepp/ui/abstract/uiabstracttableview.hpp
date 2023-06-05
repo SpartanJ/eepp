@@ -140,7 +140,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	Action* mSearchTextAction{ nullptr };
 	std::string mSearchText;
 	size_t mMainColumn{ 0 };
-	std::unordered_map<UIWidget*, Uint32> mWidgetsClickCbId;
+	std::unordered_map<UIWidget*, std::vector<Uint32>> mWidgetsClickCbId;
 
 	virtual ~UIAbstractTableView();
 

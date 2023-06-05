@@ -202,6 +202,8 @@ class EE_API Node : public Transformable {
 
 	void removeEventListener( const Uint32& callbackId );
 
+	void removeEventListener( const std::vector<Uint32>& callbacksIds );
+
 	void clearEventListener();
 
 	Node* getFirstChild() const;
@@ -427,7 +429,7 @@ class EE_API Node : public Transformable {
 	Rectf getScreenRect() const;
 
   protected:
-	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
+	typedef std::unordered_map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;
 
 	std::string mId;

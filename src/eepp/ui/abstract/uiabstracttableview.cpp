@@ -453,23 +453,29 @@ void UIAbstractTableView::onScrollChange() {
 }
 
 void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
-	mWidgetsClickCbId[widget] = widget->addEventListener(
-		mSingleClickNavigation ? Event::MouseClick : Event::MouseDoubleClick,
-		[&]( const Event* event ) {
+	mWidgetsClickCbId[widget].push_back(
+		widget->addEventListener( Event::MouseDoubleClick, [this]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
+			auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+			if ( isEditable() && ( mEditTriggers & EditTrigger::DoubleClicked ) && getModel() &&
+				 getModel()->isEditable( cellIdx ) ) {
+				beginEditing( cellIdx, mouseEvent->getNode()->asType<UIWidget>() );
+			} else if ( ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) && !mSingleClickNavigation ) {
 				onOpenModelIndex( idx, event );
 			}
-		} );
+		} ) );
 
-	widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
-		auto mouseEvent = static_cast<const MouseEvent*>( event );
-		auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-		if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
-			onOpenMenuModelIndex( idx, event );
-		}
-	} );
+	mWidgetsClickCbId[widget].push_back(
+		widget->addEventListener( Event::MouseClick, [this]( const Event* event ) {
+			auto mouseEvent = static_cast<const MouseEvent*>( event );
+			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
+			if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
+				onOpenMenuModelIndex( idx, event );
+			} else if ( ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) && mSingleClickNavigation ) {
+				onOpenModelIndex( idx, event );
+			}
+		} ) );
 }
 
 UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {

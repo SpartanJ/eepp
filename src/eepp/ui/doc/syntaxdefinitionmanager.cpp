@@ -1853,7 +1853,7 @@ static void addMeson() {
 
 static void addAngelScript() {
 	SyntaxDefinitionManager::instance()->add(
-		{ "AlgelScript",
+		{ "AngelScript",
 		  { "%.as$", "%.asc$" },
 		  {
 			  { { "//.-\n" }, "comment" },

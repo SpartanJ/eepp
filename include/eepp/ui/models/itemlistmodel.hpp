@@ -23,6 +23,13 @@ template <typename T> class ItemListModel final : public Model {
 
 	virtual std::string columnName( const size_t& ) const { return "Data"; }
 
+	virtual ModelIndex index( int row, int column,
+							  const ModelIndex& parent = ModelIndex() ) const override {
+		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
+			return {};
+		return Model::index( row, column, parent );
+	}
+
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
 		if ( role == ModelRole::Display )
 			return Variant( mData[index.row()] );
@@ -37,11 +44,11 @@ template <typename T> class ItemListModel final : public Model {
 
 template <typename K, typename V> class ItemPairListModel final : public Model {
   public:
-	static std::shared_ptr<ItemPairListModel> create( const std::vector<std::pair<K, V>>& data ) {
+	static std::shared_ptr<ItemPairListModel> create( std::vector<std::pair<K, V>>& data ) {
 		return std::make_shared<ItemPairListModel<K, V>>( data );
 	}
 
-	explicit ItemPairListModel( const std::vector<std::pair<K, V>>& data ) : mData( data ) {}
+	explicit ItemPairListModel( std::vector<std::pair<K, V>>& data ) : mData( data ) {}
 
 	virtual ~ItemPairListModel() {}
 
@@ -59,6 +66,13 @@ template <typename K, typename V> class ItemPairListModel final : public Model {
 		mColumnNames[index] = name;
 	}
 
+	virtual ModelIndex index( int row, int column,
+							  const ModelIndex& parent = ModelIndex() ) const override {
+		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
+			return {};
+		return Model::index( row, column, parent );
+	}
+
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
 		if ( role == ModelRole::Display ) {
 			switch ( index.column() ) {
@@ -74,9 +88,25 @@ template <typename K, typename V> class ItemPairListModel final : public Model {
 
 	virtual void update() { onModelUpdate(); }
 
+	virtual bool isEditable( const ModelIndex& ) const { return mIsEditable; }
+
+	void setIsEditable( bool isEditable ) { mIsEditable = isEditable; }
+
+	// TODO: Fix this
+	virtual void setData( const ModelIndex& index, const Variant& val ) {
+		if ( mIsEditable && index.row() < (int)mData.size() ) {
+			if ( index.column() == 0 ) {
+				mData[index.row()].first = val.toString();
+			} else {
+				mData[index.row()].second = val.toString();
+			}
+		}
+	}
+
   private:
-	const std::vector<std::pair<K, V>>& mData;
+	std::vector<std::pair<K, V>>& mData;
 	std::vector<std::string> mColumnNames{ "Title", "Description" };
+	bool mIsEditable{ false };
 };
 
 template <typename T> class ItemListOwnerModel final : public Model {
@@ -95,6 +125,13 @@ template <typename T> class ItemListOwnerModel final : public Model {
 
 	virtual std::string columnName( const size_t& ) const { return "Data"; }
 
+	virtual ModelIndex index( int row, int column,
+							  const ModelIndex& parent = ModelIndex() ) const override {
+		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
+			return {};
+		return Model::index( row, column, parent );
+	}
+
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
 		if ( role == ModelRole::Display )
 			return Variant( mData[index.row()] );
@@ -103,8 +140,19 @@ template <typename T> class ItemListOwnerModel final : public Model {
 
 	virtual void update() { onModelUpdate(); }
 
+	virtual bool isEditable( const ModelIndex& ) const { return mIsEditable; }
+
+	void setIsEditable( bool isEditable ) { mIsEditable = isEditable; }
+
+	// TODO: Fix this
+	virtual void setData( const ModelIndex& index, const Variant& val ) {
+		if ( mIsEditable && index.row() < (int)mData.size() )
+			mData[index.row()] = val.toString();
+	}
+
   private:
 	std::vector<T> mData;
+	bool mIsEditable{ false };
 };
 
 template <typename K, typename V> class ItemPairListOwnerModel final : public Model {
@@ -132,6 +180,13 @@ template <typename K, typename V> class ItemPairListOwnerModel final : public Mo
 		mColumnNames[index] = name;
 	}
 
+	virtual ModelIndex index( int row, int column,
+							  const ModelIndex& parent = ModelIndex() ) const override {
+		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
+			return {};
+		return Model::index( row, column, parent );
+	}
+
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
 		if ( role == ModelRole::Display ) {
 			switch ( index.column() ) {
@@ -147,9 +202,25 @@ template <typename K, typename V> class ItemPairListOwnerModel final : public Mo
 
 	virtual void update() { onModelUpdate(); }
 
+	virtual bool isEditable( const ModelIndex& ) const { return mIsEditable; }
+
+	void setIsEditable( bool isEditable ) { mIsEditable = isEditable; }
+
+	// TODO: Fix this
+	virtual void setData( const ModelIndex& index, const Variant& val ) {
+		if ( mIsEditable && index.row() < (int)mData.size() ) {
+			if ( index.column() == 0 ) {
+				mData[index.row()].first = val.toString();
+			} else {
+				mData[index.row()].second = val.toString();
+			}
+		}
+	}
+
   private:
 	std::vector<std::pair<K, V>> mData;
 	std::vector<std::string> mColumnNames{ "Title", "Description" };
+	bool mIsEditable{ false };
 };
 
 template <typename V> class ItemVectorListOwnerModel final : public Model {
@@ -181,6 +252,13 @@ template <typename V> class ItemVectorListOwnerModel final : public Model {
 		mColumnNames[index] = name;
 	}
 
+	virtual ModelIndex index( int row, int column,
+							  const ModelIndex& parent = ModelIndex() ) const override {
+		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
+			return {};
+		return Model::index( row, column, parent );
+	}
+
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
 		eeASSERT( index.row() < (Int64)mData.size() );
 		eeASSERT( index.column() < (Int64)mData[index.row()].size() );
@@ -196,9 +274,22 @@ template <typename V> class ItemVectorListOwnerModel final : public Model {
 
 	virtual void update() { onModelUpdate(); }
 
+	virtual bool isEditable( const ModelIndex& ) const { return mIsEditable; }
+
+	void setIsEditable( bool isEditable ) { mIsEditable = isEditable; }
+
+	// TODO: Fix this
+	virtual void setData( const ModelIndex& index, const Variant& val ) {
+		if ( mIsEditable && index.row() < (int)mData.size() &&
+			 index.column() < (int)mData[index.row()].size() ) {
+			mData[index.row()][index.column()] = val.toString();
+		}
+	}
+
   private:
 	std::vector<std::vector<V>> mData;
 	std::vector<std::string> mColumnNames;
+	bool mIsEditable{ false };
 };
 
 }}} // namespace EE::UI::Models

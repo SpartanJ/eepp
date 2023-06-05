@@ -7,7 +7,33 @@ namespace EE { namespace UI { namespace Abstract {
 UIAbstractView::UIAbstractView( const std::string& tag ) :
 	UIScrollableWidget( tag ), mSelection( this ) {}
 
-UIAbstractView::~UIAbstractView() {}
+UIAbstractView::~UIAbstractView() {
+	eeSAFE_DELETE( mEditingDelegate );
+}
+
+KeyBindings::Shortcut UIAbstractView::getEditShortcut() const {
+	return mEditShortcut;
+}
+
+void UIAbstractView::setEditShortcut( const KeyBindings::Shortcut& editShortcut ) {
+	mEditShortcut = editShortcut;
+}
+
+Uint32 UIAbstractView::getEditTriggers() const {
+	return mEditTriggers;
+}
+
+void UIAbstractView::setEditTriggers( Uint32 editTriggers ) {
+	mEditTriggers = editTriggers;
+}
+
+bool UIAbstractView::isEditable() const {
+	return mEditable;
+}
+
+void UIAbstractView::setEditable( bool editable ) {
+	mEditable = editable;
+}
 
 std::function<void( const ModelIndex& )> UIAbstractView::getOnSelection() const {
 	return mOnSelection;
@@ -75,6 +101,49 @@ void UIAbstractView::notifySelectionChange() {
 
 ModelIndex UIAbstractView::findRowWithText( const std::string&, const bool&, const bool& ) const {
 	return {};
+}
+
+void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidget ) {
+	if ( !isEditable() || !mModel || mEditIndex == index || !mModel->isEditable( index ) ||
+		 !onCreateEditingDelegate )
+		return;
+
+	if ( mEditWidget ) {
+		mEditWidget->setVisible( false )->setEnabled( false )->close();
+		mEditWidget = nullptr;
+	}
+	eeSAFE_DELETE( mEditingDelegate );
+
+	mEditIndex = index;
+	mEditingDelegate = onCreateEditingDelegate( index );
+	mEditingDelegate->bind( mModel, index );
+	mEditingDelegate->setValue( index.data() );
+	mEditWidget = mEditingDelegate->getWidget();
+	mEditWidget->setParent( editedWidget );
+	mEditWidget->setSize( editedWidget->getSize() );
+	mEditWidget->setFocus();
+	mEditWidget->toFront();
+	mEditingDelegate->willBeginEditing();
+	mEditingDelegate->onCommit = [this]() {
+		if ( getModel() )
+			getModel()->setData( mEditIndex, mEditingDelegate->getValue() );
+		stopEditing();
+	};
+	mEditingDelegate->onRollback = [this]() { stopEditing(); };
+	mEditingDelegate->onChange = [this, index]() { editingWidgetDidChange( index ); };
+	// mEditWidget->on( Event::OnFocusLoss, [this]( auto ) { mEditingDelegate->onRollback(); } );
+}
+
+void UIAbstractView::stopEditing() {
+	bool recoverFocus = false;
+	mEditIndex = {};
+	if ( mEditWidget ) {
+		recoverFocus = mEditWidget->hasFocusWithin();
+		mEditWidget->setVisible( false )->setEnabled( false )->close();
+		mEditWidget = nullptr;
+	}
+	if ( recoverFocus )
+		setFocus();
 }
 
 }}} // namespace EE::UI::Abstract

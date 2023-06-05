@@ -1013,6 +1013,11 @@ console {
 	border-bottom-width: var(--border-width);
 }
 
+TextInput.table_cell_edit {
+	padding-top: 0!important;
+	padding-bottom: 0!important;
+}
+
 @media (prefers-color-scheme: light) {
 
 :root {
