@@ -49,6 +49,12 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 		AnyKeyPressed = 1 << 2,
 	};
 
+	enum SelectionType { Row, Cell };
+
+	bool isCellSelection() const;
+
+	bool isRowSelection() const;
+
 	Uint32 getType() const;
 
 	bool isType( const Uint32& type ) const;
@@ -98,6 +104,9 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	std::function<ModelEditingDelegate*( const ModelIndex& )> onCreateEditingDelegate;
 
+	SelectionType getSelectionType() const;
+	void setSelectionType( SelectionType selectionType );
+
   protected:
 	friend class EE::UI::Models::Model;
 
@@ -124,6 +133,7 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	Uint32 mEditTriggers{ EditTrigger::None };
 	KeyBindings::Shortcut mEditShortcut{ KEY_F2 };
+	SelectionType mSelectionType{ SelectionType::Row };
 
 	virtual void editingWidgetDidChange( const ModelIndex& ) {}
 };

@@ -906,7 +906,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 				// boder-style is not implemented yet
 				if ( pos != -1 )
 					continue;
-			} else if ( Color::isColorString( tok ) ) {
+			} else if ( Color::isColorString( tok ) || String::startsWith( tok, "var(" ) ) {
 				int pos = getIndexEndingWith( propNames, "-color" );
 				if ( pos != -1 ) {
 					const ShorthandDefinition* shorthand = getShorthand( propNames[pos] );

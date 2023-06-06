@@ -10,6 +10,196 @@ using namespace EE::UI::Models;
 
 namespace ecode {
 
+class OutputParserModel final : public Model {
+  public:
+	static std::shared_ptr<OutputParserModel>
+	create( std::vector<ProjectBuildOutputParserConfig>& data,
+			std::function<String( const std::string&, const String& )> i18n ) {
+		return std::make_shared<OutputParserModel>( data, i18n );
+	}
+
+	explicit OutputParserModel( std::vector<ProjectBuildOutputParserConfig>& data,
+								std::function<String( const std::string&, const String& )> i18n ) :
+		mData( data ), i18n( i18n ) {
+		mColumnNames.push_back( i18n( "type", "Type" ) );
+		mColumnNames.push_back( i18n( "pattern", "Pattern" ) );
+	}
+
+	virtual ~OutputParserModel() {}
+
+	virtual size_t rowCount( const ModelIndex& ) const { return mData.size(); }
+
+	virtual size_t columnCount( const ModelIndex& ) const { return 2; }
+
+	virtual std::string columnName( const size_t& index ) const {
+		eeASSERT( index < 2 );
+		return mColumnNames[index];
+	}
+
+	virtual void setColumnName( const size_t& index, const std::string& name ) {
+		eeASSERT( index < 2 );
+		mColumnNames[index] = name;
+	}
+
+	virtual ModelIndex index( int row, int column, const ModelIndex& parent = ModelIndex() ) const {
+		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
+			return {};
+		return Model::index( row, column, parent );
+	}
+
+	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
+		if ( role == ModelRole::Display ) {
+			switch ( index.column() ) {
+				case 0: {
+					std::string val =
+						ProjectBuildOutputParserConfig::typeToString( mData[index.row()].type );
+					return Variant( i18n( val, String::capitalize( val ) ) );
+				}
+				case 1:
+				default:
+					return Variant( mData[index.row()].pattern );
+			}
+		}
+		return {};
+	}
+
+	virtual void update() { onModelUpdate(); }
+
+  private:
+	std::vector<ProjectBuildOutputParserConfig>& mData;
+	std::function<String( const std::string&, const String& )> i18n;
+	std::vector<std::string> mColumnNames;
+};
+
+class UICustomOutputParserWindow : public UIWindow {
+  public:
+	static UICustomOutputParserWindow* New( ProjectBuildOutputParserConfig& cfg ) {
+		return eeNew( UICustomOutputParserWindow, ( cfg ) );
+	}
+
+	explicit UICustomOutputParserWindow( ProjectBuildOutputParserConfig& cfg ) :
+		UIWindow( SIMPLE_LAYOUT, { UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
+								   UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL } ),
+		mTmpCfg( cfg ),
+		mCfg( cfg ) {
+		static const auto CUSTOM_OUTPUT_PARSER_XML = R"xml(
+<vbox class="custom_output_parser_cont" lw="400dp" lh="wc">
+	<TextView text="@string(type, Type)" />
+	<DropDownList lw="mp" lh="wc" id="custom_parser_type" selectedIndex="0">
+		<item>@string("error", "Error")</item>
+		<item>@string("warning", "Warning")</item>
+		<item>@string("notice", "Notice")</item>
+	</DropDownList>
+	<TextView text="@string(message_capture_pattern, Message Capture Pattern)" />
+	<TextInput lw="mp" lh="wc" id="custom_parser_pattern" hint="@string(lua_pattern, Lua Pattern)" />
+	<TextView text="@string(capture_positions, Capture Positions)" />
+	<hbox lw="mp" lh="wc" class="capture_positions_cont">
+		<vbox lw="0" lw8="0.25" lh="wc">
+			<TextView lw="mp" lh="wc" text="@string(file_name, File Name)" />
+			<SpinBox id="file_name_pos" lw="mp" lh="wc" min-value="0" max-value="4" value="1" />
+		</vbox>
+		<vbox lw="0" lw8="0.25" lh="wc">
+			<TextView lw="mp" lh="wc" text="@string(line_number, Line Number)" />
+			<SpinBox id="line_number_pos" lw="mp" lh="wc" min-value="0" max-value="4" value="2" />
+		</vbox>
+		<vbox lw="0" lw8="0.25" lh="wc">
+			<TextView lw="mp" lh="wc" text="@string(column_position, Column Position)" />
+			<SpinBox id="column_pos" lw="mp" lh="wc" min-value="0" max-value="4" value="3" />
+		</vbox>
+		<vbox lw="0" lw8="0.25" lh="wc">
+			<TextView lw="mp" lh="wc" text="@string(message, Message)" />
+			<SpinBox id="message_pos" lw="mp" lh="wc" min-value="0" max-value="4" value="4" />
+		</vbox>
+	</hbox>
+	<hbox lw="wc" lh="wc" layout_gravity="right">
+		<PushButton id="but_ok" text="@string(msg_box_ok, Ok)" icon="ok" margin-right="4dp" />
+		<PushButton id="but_cancel" text="@string(camsg_box_cancel, Cancel)" icon="cancel" />
+	</hbox>
+</vbox>
+)xml";
+
+		mLayoutCont =
+			getUISceneNode()->loadLayoutFromString( CUSTOM_OUTPUT_PARSER_XML, mContainer );
+
+		setTitle( i18n( "custom_output_parser", "Custom Output Parser" ) );
+
+		auto patternInput = find<UITextInput>( "custom_parser_pattern" );
+
+		mDataBindHolder += UIDataBindString::New( &mTmpCfg.pattern, patternInput );
+
+		UIDropDownList* cpTypeddl = find<UIDropDownList>( "custom_parser_type" );
+		UIDataBind<ProjectOutputParserTypes>::Converter projectOutputParserTypesConverter(
+			[]( const UIDataBind<ProjectOutputParserTypes>* databind, ProjectOutputParserTypes& val,
+				const std::string& str ) -> bool {
+				auto v = StyleSheetProperty( databind->getPropertyDefinition(), str ).asString();
+				Uint32 idx;
+				if ( String::fromString( idx, v ) && idx >= 0 && idx <= 2 ) {
+					val = (ProjectOutputParserTypes)idx;
+					return true;
+				}
+				return false;
+			},
+			[cpTypeddl]( const UIDataBind<ProjectOutputParserTypes>*, std::string& str,
+						 const ProjectOutputParserTypes& val ) -> bool {
+				str = cpTypeddl->getListBox()->getItem( (Uint32)val )->getText();
+				return true;
+			} );
+
+		mOptDb = UIDataBind<ProjectOutputParserTypes>::New(
+			&mTmpCfg.type, cpTypeddl, projectOutputParserTypesConverter, "selected-index" );
+
+		mDataBindHolder +=
+			UIDataBind<int>::New( &mTmpCfg.patternOrder.file, find<UIWidget>( "file_name_pos" ) );
+		mDataBindHolder +=
+			UIDataBind<int>::New( &mTmpCfg.patternOrder.line, find<UIWidget>( "line_number_pos" ) );
+		mDataBindHolder +=
+			UIDataBind<int>::New( &mTmpCfg.patternOrder.col, find<UIWidget>( "column_pos" ) );
+		mDataBindHolder +=
+			UIDataBind<int>::New( &mTmpCfg.patternOrder.message, find<UIWidget>( "message_pos" ) );
+
+		auto butOK = find<UIPushButton>( "but_ok" );
+		butOK->setEnabled( !patternInput->getText().empty() );
+
+		patternInput->on( Event::OnTextChanged, [butOK, patternInput]( auto ) {
+			butOK->setEnabled( !patternInput->getText().empty() );
+		} );
+
+		butOK->onClick( [this]( auto ) {
+			mCfg.pattern = mTmpCfg.pattern;
+			mCfg.patternOrder = mTmpCfg.patternOrder;
+			mCfg.type = mTmpCfg.type;
+			sendCommonEvent( Event::OnConfirm );
+			closeWindow();
+		} );
+
+		find( "but_cancel" )->onClick( [this]( auto ) { closeWindow(); } );
+	}
+
+	virtual ~UICustomOutputParserWindow() {}
+
+  protected:
+	UIWidget* mLayoutCont{ nullptr };
+	ProjectBuildOutputParserConfig mTmpCfg;
+	ProjectBuildOutputParserConfig& mCfg;
+	UIDataBindHolder mDataBindHolder;
+	std::unique_ptr<UIDataBind<ProjectOutputParserTypes>> mOptDb;
+
+	virtual void onWindowReady() {
+		forcedApplyStyle();
+
+		Sizef size( mLayoutCont->getSize() );
+		setMinWindowSize( size );
+		center();
+
+		if ( mShowWhenReady ) {
+			mShowWhenReady = false;
+			show();
+		}
+
+		sendCommonEvent( Event::OnWindowReady );
+	}
+};
+
 class UIBuildStep : public UILinearLayout {
   public:
 	static UIBuildStep* New( bool isBuildStep, UIBuildSettings* buildSettings, size_t stepNum,
@@ -113,91 +303,106 @@ class UIBuildStep : public UILinearLayout {
 
 static const auto SETTINGS_PANEL_XML = R"xml(
 <ScrollView lw="mp" lh="mp">
-		<vbox lw="mp" lh="wc" class="settings_panel" id="build_settings_panel">
-			<hbox lw="mp" lh="wc">
-				<TextView lw="0" lw8="1" lh="wc" class="title" text="@string(build_settings, Build Settings)" />
-				<PushButton id="build_del" lh="mp" text="@string(delete_setting, Delete Setting)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_setting, Delete Setting)" />
-			</hbox>
-			<Widget class="separator" lw="mp" lh="1dp" />
-			<TextView class="subtitle" text="@string(build_name, Build Name)" />
-			<Input id="build_name" lw="mp" lh="wc" text="new_name" />
-			<TextView class="subtitle" text="@string(supported_platforms, Supported Platforms)" />
-			<TextView lw="mp" lh="wc" word-wrap="true" text="@string(supported_platforms_desc, Selecting none means that the build settings will work and be available on any Operating System)" />
-			<StackLayout id="os_select" class="os_select" lw="wc" lh="wc">
-				<CheckBox id="linux" text="Linux" />
-				<CheckBox id="macos" text="macOS" />
-				<CheckBox id="windows" text="Windows" />
-				<CheckBox id="android" text="Android" />
-				<CheckBox id="ios" text="iOS" />
-				<CheckBox id="haiku" text="Haiku" />
-				<CheckBox id="freebsd" text="FreeBSD" />
+	<vbox lw="mp" lh="wc" class="settings_panel" id="build_settings_panel">
+		<hbox lw="mp" lh="wc">
+			<TextView lw="0" lw8="1" lh="wc" class="title" text="@string(build_settings, Build Settings)" />
+			<PushButton id="build_del" lh="mp" text="@string(delete_setting, Delete Setting)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_setting, Delete Setting)" />
+		</hbox>
+		<Widget class="separator" lw="mp" lh="1dp" />
+		<TextView class="subtitle" text="@string(build_name, Build Name)" />
+		<Input id="build_name" lw="mp" lh="wc" text="new_name" />
+		<TextView class="subtitle" text="@string(supported_platforms, Supported Platforms)" />
+		<TextView lw="mp" lh="wc" word-wrap="true" text="@string(supported_platforms_desc, Selecting none means that the build settings will work and be available on any Operating System)" />
+		<StackLayout id="os_select" class="os_select" lw="wc" lh="wc">
+			<CheckBox id="linux" text="Linux" />
+			<CheckBox id="macos" text="macOS" />
+			<CheckBox id="windows" text="Windows" />
+			<CheckBox id="android" text="Android" />
+			<CheckBox id="ios" text="iOS" />
+			<CheckBox id="haiku" text="Haiku" />
+			<CheckBox id="freebsd" text="FreeBSD" />
+		</StackLayout>
+
+		<vbox lw="mp" lh="wc" class="build_steps">
+			<TextView class="subtitle" text="@string(build_steps, Build Steps)" />
+			<vbox id="build_steps_cont" lw="mp" lh="wc"></vbox>
+			<PushButton id="add_build_step" class="add_build_step" text="@string(add_build_step, Add Build Step)" />
+		</vbox>
+
+		<vbox lw="mp" lh="wc" class="clean_steps">
+			<TextView class="subtitle" text="@string(clean_steps, Clean Steps)" />
+			<vbox id="build_clean_steps_cont" lw="mp" lh="wc"></vbox>
+			<PushButton id="add_clean_step" class="add_build_step" text="@string(add_clean_step, Add Clean Step)" />
+		</vbox>
+
+		<vbox lw="mp" lh="wc" class="build_types">
+			<TextView class="subtitle" text="@string(build_types, Build Types)" />
+			<TextView lw="mp" lh="wc" word-wrap="true" text="@string(build_types_desc, Build types can be used as a dynamic build option represented by the special key ${build_type}. The build type can be switch easily from the editor.)" />
+			<StackLayout class="build_types_cont span" lw="mp" lh="wc">
+				<DropDownList id="build_type_list" layout_width="200dp" layout_height="wc" />
+				<PushButton id="build_type_add" lh="mp" text="@string(add_build_type, Add Build Type)" tooltip="@string(add_build_type, Add Build Type)" text-as-fallback="true" icon="icon(add, 12dp)" />
+				<PushButton id="build_type_del" lh="mp" text="@string(delete_selected, Delete Selected)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_selected, Delete Selected)" />
 			</StackLayout>
+		</vbox>
 
-			<vbox lw="mp" lh="wc" class="build_steps">
-				<TextView class="subtitle" text="@string(build_steps, Build Steps)" />
-				<vbox id="build_steps_cont" lw="mp" lh="wc"></vbox>
-				<PushButton id="add_build_step" class="add_build_step" text="@string(add_build_step, Add Build Step)" />
-			</vbox>
+		<vbox class="advanced_options" lw="mp" lh="wc">
+			<hbox class="title advanced_options_title" lw="mp" lh="wc">
+				<TextView enabled="false" lw="0" lw8="1" lh="wc" class="advance_opt" text="@string(advanced_options, Advanced Options)" />
+				<Image enabled="false" lg="center" />
+			</hbox>
+			<vbox class="inner_box" lw="mp" lh="wc">
+				<vbox lw="mp" lh="wc" class="custom_vars">
+					<TextView class="subtitle" text="@string(custom_variables, Custom Variables)" />
+					<TextView lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc, "Custom Variables allow to simplify the build commands steps adding custom variables that can be used over the build settings in commands, arguments, and working directories.")' />
+					<TextView lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_2, "Custom Variables can be invoked using ${variable_name} in any of the commands.)' />
+					<hbox lw="mp" lh="wc">
+						<TableView id="table_vars" lw="0" lw8="1" lh="150dp" />
+						<vbox lw="wc" lh="mp" class="buttons_box">
+							<PushButton id="custom_var_add" icon="icon(add, 12dp)" min-width="20dp" tooltip="@string(add_custom_variable, Add Custom Variable)" lg="center" />
+							<PushButton id="custom_var_del" icon="icon(delete-bin, 12dp)" min-width="20dp" tooltip="@string(del_custom_variable, Delete Selected Variable)" lg="center" />
+						</vbox>
+					</hbox>
+					<TextView class="span" lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_3, There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${nproc}: The number of logical processing units.)' />
+				</vbox>
 
-			<vbox lw="mp" lh="wc" class="clean_steps">
-				<TextView class="subtitle" text="@string(clean_steps, Clean Steps)" />
-				<vbox id="build_clean_steps_cont" lw="mp" lh="wc"></vbox>
-				<PushButton id="add_clean_step" class="add_build_step" text="@string(add_clean_step, Add Clean Step)" />
-			</vbox>
+				<vbox lw="mp" lh="wc" class="build_environment">
+					<TextView class="subtitle" text="@string(build_environment, Build Environment)" />
+					<CheckBox id="clear_sys_env" text="@string(clear_system_enviroment, Clear System Environment)" />
+					<TextView class="subtitle" text="@string(custom_environment_variables, Custom Environment Variables)" />
+					<hbox lw="mp" lh="wc">
+						<TableView id="table_envs" lw="0" lw8="1" lh="150dp" />
+						<vbox lw="wc" lh="mp" class="buttons_box">
+							<PushButton id="custom_env_add" icon="icon(add, 12dp)" min-width="20dp" tooltip="@string(add_custom_variable, Add Custom Environment Variable)" lg="center" />
+							<PushButton id="custom_env_del" icon="icon(delete-bin, 12dp)" min-width="20dp" tooltip="@string(del_custom_variable, Delete Selected Environment Variable)" lg="center" />
+						</vbox>
+					</hbox>
+				</vbox>
 
-			<vbox lw="mp" lh="wc" class="build_types">
-				<TextView class="subtitle" text="@string(build_types, Build Types)" />
-				<TextView lw="mp" lh="wc" word-wrap="true" text="@string(build_types_desc, Build types can be used as a dynamic build option represented by the special key ${build_type}. The build type can be switch easily from the editor.)" />
-				<StackLayout class="build_types_cont span" lw="mp" lh="wc">
-					<DropDownList id="build_type_list" layout_width="200dp" layout_height="wc" />
-					<PushButton id="build_type_add" lh="mp" text="@string(add_build_type, Add Build Type)" tooltip="@string(add_build_type, Add Build Type)" text-as-fallback="true" icon="icon(add, 12dp)" />
-					<PushButton id="build_type_del" lh="mp" text="@string(delete_selected, Delete Selected)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_selected, Delete Selected)" />
-				</StackLayout>
-			</vbox>
-
-			<vbox class="advanced_options" lw="mp" lh="wc">
-				<hbox class="title advanced_options_title" lw="mp" lh="wc">
-					<TextView enabled="false" lw="0" lw8="1" lh="wc" class="advance_opt" text="@string(advanced_options, Advanced Options)" />
-					<Image enabled="false" lg="center" />
-				</hbox>
-				<vbox class="inner_box" lw="mp" lh="wc">
-					<vbox lw="mp" lh="wc" class="build_environment">
-						<TextView class="subtitle" text="@string(build_environment, Build Environment)" />
-						<CheckBox id="clear_sys_env" text="@string(clear_system_enviroment, Clear System Environment)" />
-						<TextView class="subtitle" text="@string(custom_environment_variables, Custom Environment Variables)" />
-						<TableView id="table_envs" lw="mp" lh="150dp" />
-					</vbox>
-
-					<vbox lw="mp" lh="wc" class="output_parser">
-						<TextView class="subtitle" text="@string(output_parser, Output Parser)" />
-						<TextView lw="mp" lh="wc" word-wrap="true" text="@string(output_parser_desc, Custom output parsers scan command line output for user-provided error patterns to create entries in Issues and highlight those errors on the Build Output)" />
-						<TextView lw="mp" lh="wc" word-wrap="true" text='@string(output_parser_preset, "Presets are provided as generic output parsers, you can select one below, by default a \"generic\" preset will be selected:")' />
-						<DropDownList id="output_parsers_presets_list" layout_width="200dp" layout_height="wc">
-							<item></item>
-							<item>generic</item>
-						</DropDownList>
-						<PushButton class="output_parser_custom_rule span" text="@string(output_parser_custom_rule, Add Custom Rule)" />
-						<hbox class="output_parser_rules" lw="mp" lh="wc">
-							<TextView lw="0" lw8="0.2" lh="wc" class="type" text="@string(type, Type)" />
-							<TextView lw="0" lw8="0.8" lh="wc" class="pattern" class="rule" text="@string(pattern, Pattern)" />
-							<PushButton class="remove_item" text="@string(remove item, Remove Item)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(remove_item, Remove Item)" />
-						</hbox>
-					</vbox>
-
-					<vbox lw="mp" lh="wc" class="custom_vars">
-						<TextView class="subtitle" text="@string(custom_variables, Custom Variables)" />
-						<TextView lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc, "Custom Variables allow to simplify the build commands steps adding custom variables that can be used over the build settings in commands, arguments, and working directories.")' />
-						<TextView lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_2, "Custom Variables can be invoked using ${variable_name} in any of the commands.)' />
-						<TableView id="table_vars" lw="mp" lh="150dp" />
-						<TextView class="span" lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_3, There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${nproc}: The number of logical processing units.)' />
-					</vbox>
+				<vbox lw="mp" lh="wc" class="output_parser">
+					<TextView class="subtitle" text="@string(output_parser, Output Parser)" />
+					<TextView lw="mp" lh="wc" word-wrap="true" text="@string(output_parser_desc, Custom output parsers scan command line output for user-provided error patterns to create entries in Issues and highlight those errors on the Build Output)" />
+					<TextView lw="mp" lh="wc" word-wrap="true" text='@string(output_parser_preset, "Presets are provided as generic output parsers, you can select one below, by default a \"generic\" preset will be selected:")' />
+					<DropDownList id="output_parsers_presets_list" layout_width="200dp" layout_height="wc">
+						<item></item>
+						<item>generic</item>
+					</DropDownList>
+					<hbox lw="mp" lh="wc">
+						<TableView id="table_output_parsers" lw="0" lw8="1" lh="150dp" />
+						<vbox lw="wc" lh="mp" class="buttons_box">
+							<PushButton id="custom_op_add" icon="icon(add, 12dp)" min-width="20dp" tooltip="@string(add_custom_output_parser, Add Custom Output Parser)" lg="center" />
+							<PushButton id="custom_op_edit" icon="icon(file-edit, 12dp)" min-width="20dp" tooltip="@string(edit_custom_output_parser, Edit Selected Custom Output Parser)" lg="center" />
+							<PushButton id="custom_op_del" icon="icon(delete-bin, 12dp)" min-width="20dp" tooltip="@string(del_custom_output_parser, Delete Selected Custom Output Parser)" lg="center" />
+						</vbox>
+					</hbox>
 				</vbox>
 
 			</vbox>
 
-			<TextView class="build_settings_clarification span" word-wrap="true" lw="mp" lh="wc" text='@string(build_settings_save_clarification, * All changes are automatically saved)' />
 		</vbox>
-	</ScrollView>
+
+		<TextView class="build_settings_clarification span" word-wrap="true" lw="mp" lh="wc" text='@string(build_settings_save_clarification, * All changes are automatically saved)' />
+	</vbox>
+</ScrollView>
 )xml";
 
 UIBuildSettings* UIBuildSettings::New( ProjectBuild& build, ProjectBuildConfiguration& config ) {
@@ -303,40 +508,19 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 	}
 
 	auto advTitle = querySelector( ".settings_panel > .advanced_options > .title" );
-	advTitle->onClick( [this]( const MouseEvent* event ) {
-		auto img = event->getNode()->findByType( UI_TYPE_IMAGE )->asType<UIWidget>();
-		findByClass( "inner_box" )->toggleClass( "visible" );
-		img->toggleClass( "expanded" );
+	advTitle->onClick( [this, advTitle]( const MouseEvent* event ) {
+		if ( getEventDispatcher()->getMouseDownNode() == advTitle ) {
+			auto img = event->getNode()->findByType( UI_TYPE_IMAGE )->asType<UIWidget>();
+			findByClass( "inner_box" )->toggleClass( "visible" );
+			img->toggleClass( "expanded" );
+		}
 	} );
 
 	mDataBindHolder +=
 		UIDataBindBool::New( &mBuild.mConfig.clearSysEnv, find<UIWidget>( "clear_sys_env" ) );
 
-	UITableView* tableEnvs = find<UITableView>( "table_vars" );
-	auto modelEnvs = ItemPairListModel<std::string, std::string>::create( mBuild.mEnvs );
-	modelEnvs->setIsEditable( true );
-	modelEnvs->setColumnName( 0, getTranslatorString( "env_name", "Name" ) );
-	modelEnvs->setColumnName( 1, getTranslatorString( "env_value", "Value" ) );
-	tableEnvs->setAutoColumnsWidth( true );
-	tableEnvs->setModel( modelEnvs );
-	tableEnvs->setEditable( true );
-	tableEnvs->setEditTriggers( UIAbstractView::EditTrigger::DoubleClicked );
-	tableEnvs->onCreateEditingDelegate = []( const ModelIndex& ) {
-		return StringModelEditingDelegate::New();
-	};
-
-	UITableView* tableVars = find<UITableView>( "table_vars" );
-	auto modelVars = ItemPairListModel<std::string, std::string>::create( mBuild.mVars );
-	modelVars->setColumnName( 0, getTranslatorString( "var_name", "Name" ) );
-	modelVars->setColumnName( 1, getTranslatorString( "var_value", "Value" ) );
-	modelVars->setIsEditable( true );
-	tableVars->setAutoColumnsWidth( true );
-	tableVars->setModel( modelVars );
-	tableVars->setEditable( true );
-	tableVars->setEditTriggers( UIAbstractView::EditTrigger::DoubleClicked );
-	tableVars->onCreateEditingDelegate = []( const ModelIndex& ) {
-		return StringModelEditingDelegate::New();
-	};
+	bindTable( "table_envs", "env", mBuild.mEnvs );
+	bindTable( "table_vars", "var", mBuild.mVars );
 
 	find( "build_type_add" )->onClick( [this, buildTypeDropDown, panelBuildTypeDDL]( auto ) {
 		UIMessageBox* msgBox =
@@ -393,6 +577,42 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 				ProjectBuildOutputParser::getPresets()[mBuild.mOutputParser.mPreset].mConfig;
 		}
 	} );
+
+	UITableView* tableOP = find<UITableView>( "table_output_parsers" );
+	tableOP->setAutoColumnsWidth( true );
+	tableOP->setFitAllColumnsToWidget( true );
+	auto modelOP = OutputParserModel::create( mBuild.mOutputParser.mConfig,
+											  [this]( auto s, auto s2 ) { return i18n( s, s2 ); } );
+	tableOP->setModel( modelOP );
+
+	find( "custom_op_add" )->onClick( [this, modelOP]( auto ) {
+		mTmpOpCfg = {};
+		auto ret = UICustomOutputParserWindow::New( mTmpOpCfg );
+		ret->showWhenReady();
+		ret->on( Event::OnConfirm, [this, modelOP]( auto ) {
+			mBuild.mOutputParser.mConfig.push_back( mTmpOpCfg );
+			modelOP->invalidate();
+		} );
+	} );
+
+	find( "custom_op_edit" )->onClick( [this, tableOP, modelOP]( auto ) {
+		if ( !tableOP->getSelection().isEmpty() && tableOP->getSelection().first().row() >= 0 &&
+			 tableOP->getSelection().first().row() < (int)mBuild.mOutputParser.mConfig.size() ) {
+			auto ret = UICustomOutputParserWindow::New(
+				mBuild.mOutputParser.mConfig[tableOP->getSelection().first().row()] );
+			ret->showWhenReady();
+			ret->on( Event::OnConfirm, [modelOP]( auto ) { modelOP->invalidate(); } );
+		}
+	} );
+
+	find( "custom_op_del" )->onClick( [this, tableOP, modelOP]( auto ) {
+		if ( !tableOP->getSelection().isEmpty() && tableOP->getSelection().first().row() >= 0 &&
+			 tableOP->getSelection().first().row() < (int)mBuild.mOutputParser.mConfig.size() ) {
+			mBuild.mOutputParser.mConfig.erase( mBuild.mOutputParser.mConfig.begin() +
+												tableOP->getSelection().first().row() );
+			modelOP->invalidate();
+		}
+	} );
 }
 
 void UIBuildSettings::updateOS() {
@@ -422,6 +642,45 @@ void UIBuildSettings::refreshTab() {
 		String::format( ( i18n( "build_seetings", "Build Settings" ) + ": %s" ).toUtf8().c_str(),
 						mBuild.mName.c_str() ) );
 	mTab->setId( "build_settings_" + mBuild.mName );
+}
+
+void UIBuildSettings::bindTable( const std::string& name, const std::string& key,
+								 ProjectBuildKeyVal& data ) {
+
+	const auto createInputDelegate = []( const ModelIndex& ) -> ModelEditingDelegate* {
+		auto delegate = StringModelEditingDelegate::New();
+		delegate->onWillBeginEditing = [delegate]() {
+			delegate->getWidget()->asType<UITextInput>()->on(
+				Event::OnFocusLoss, [delegate]( auto ) { delegate->onCommit(); } );
+		};
+		return delegate;
+	};
+
+	UITableView* table = find<UITableView>( name );
+	auto model = ItemPairListModel<std::string, std::string>::create( data );
+	model->setColumnName( 0, getTranslatorString( key + "_name", "Name" ) );
+	model->setColumnName( 1, getTranslatorString( key + "_value", "Value" ) );
+	model->setIsEditable( true );
+	table->setAutoColumnsWidth( true );
+	table->setFitAllColumnsToWidget( true );
+	table->setModel( model );
+	table->setEditable( true );
+	table->setSelectionType( UIAbstractView::SelectionType::Cell );
+	table->setEditTriggers( UIAbstractView::EditTrigger::DoubleClicked |
+							UIAbstractTableView::EditTrigger::EditKeyPressed );
+	table->onCreateEditingDelegate = createInputDelegate;
+
+	find<UIPushButton>( "custom_" + key + "_add" )->onClick( [this, model, &data]( auto ) {
+		data.push_back( { i18n( "new_name", "New Name" ), i18n( "new_value", "New Value" ) } );
+		model->invalidate();
+	} );
+
+	find<UIPushButton>( "custom_" + key + "_del" )->onClick( [model, table, &data]( auto ) {
+		if ( !table->getSelection().isEmpty() ) {
+			data.erase( data.begin() + table->getSelection().first().row() );
+			model->invalidate();
+		}
+	} );
 }
 
 void UIBuildSettings::moveStepUp( size_t stepNum, bool isClean ) {

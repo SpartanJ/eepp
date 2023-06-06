@@ -93,9 +93,21 @@ struct ProjectBuildConfig {
 	bool clearSysEnv{ false };
 };
 
-enum class ProjectOutputParserTypes { Error, Warning, Notice };
+enum class ProjectOutputParserTypes { Error = 0, Warning = 1, Notice = 2 };
 
 struct ProjectBuildOutputParserConfig {
+	static std::string typeToString( ProjectOutputParserTypes type ) {
+		switch ( type ) {
+			case ProjectOutputParserTypes::Notice:
+				return "notice";
+			case ProjectOutputParserTypes::Warning:
+				return "warning";
+			case ProjectOutputParserTypes::Error:
+			default:
+				return "error";
+		}
+	}
+
 	ProjectOutputParserTypes type;
 	std::string pattern;
 	struct {

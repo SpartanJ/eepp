@@ -3367,11 +3367,7 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	row-valign: center;
 }
 .settings_panel .inner_box {
-	padding-top: 8dp;
 	visible: false;
-}
-.settings_panel .inner_box .build_environment > .subtitle {
-	margin-top: 0dp;
 }
 .settings_panel .advanced_options {
 	margin-top: 12dp;
@@ -3421,6 +3417,27 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 .settings_panel > .advanced_options > LinearLayout.inner_box.visible {
 	visible: true;
+}
+.settings_panel .buttons_box {
+	margin-left:4dp;
+	layout-gravity: center_horizontal|top;
+}
+.settings_panel .buttons_box > * {
+	margin-bottom: 4dp;
+}
+.settings_panel TableView {
+	margin-top: 4dp;
+}
+.custom_output_parser_cont > * {
+	margin-bottom: 4dp;
+	padding-top: 4dp;
+}
+.custom_output_parser_cont > .capture_positions_cont {
+	border: 1dp solid var(--tab-line);
+	padding: 4dp;
+}
+.custom_output_parser_cont > .capture_positions_cont > * {
+	padding: 2dp;
 }
 </style>
 <MainLayout id="main_layout" lw="mp" lh="mp">

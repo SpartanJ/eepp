@@ -11,6 +11,20 @@ UIAbstractView::~UIAbstractView() {
 	eeSAFE_DELETE( mEditingDelegate );
 }
 
+UIAbstractView::SelectionType UIAbstractView::getSelectionType() const {
+	return mSelectionType;
+}
+
+void UIAbstractView::setSelectionType( SelectionType selectionType ) {
+	mSelectionType = selectionType;
+
+	if ( selectionType == UIAbstractView::SelectionType::Cell ) {
+		addClass( "selection_type_cell" );
+	} else {
+		removeClass( "selection_type_cell" );
+	}
+}
+
 KeyBindings::Shortcut UIAbstractView::getEditShortcut() const {
 	return mEditShortcut;
 }
@@ -33,6 +47,12 @@ bool UIAbstractView::isEditable() const {
 
 void UIAbstractView::setEditable( bool editable ) {
 	mEditable = editable;
+
+	if ( editable ) {
+		addClass( "editable_cells" );
+	} else {
+		removeClass( "editable_cells" );
+	}
 }
 
 std::function<void( const ModelIndex& )> UIAbstractView::getOnSelection() const {
@@ -49,6 +69,14 @@ std::function<void()> UIAbstractView::getOnSelectionChange() const {
 
 void UIAbstractView::setOnSelectionChange( const std::function<void()>& onSelectionChange ) {
 	mOnSelectionChange = onSelectionChange;
+}
+
+bool UIAbstractView::isCellSelection() const {
+	return mSelectionType == UIAbstractView::SelectionType::Cell;
+}
+
+bool UIAbstractView::isRowSelection() const {
+	return mSelectionType == UIAbstractView::SelectionType::Row;
 }
 
 Uint32 UIAbstractView::getType() const {
@@ -131,7 +159,6 @@ void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidg
 	};
 	mEditingDelegate->onRollback = [this]() { stopEditing(); };
 	mEditingDelegate->onChange = [this, index]() { editingWidgetDidChange( index ); };
-	// mEditWidget->on( Event::OnFocusLoss, [this]( auto ) { mEditingDelegate->onRollback(); } );
 }
 
 void UIAbstractView::stopEditing() {

@@ -904,6 +904,26 @@ treeview::row:selected {
 	background-color: var(--primary);
 }
 
+tableview.selection_type_cell tableview::row:hover,
+treeview.selection_type_cell treeview::row:hover {
+	background-color: transparent;
+}
+
+tableview.selection_type_cell tableview::row:selected,
+treeview.selection_type_cell treeview::row:selected {
+	background-color: transparent;
+}
+
+tableview.selection_type_cell tableview::cell:hover,
+treeview.selection_type_cell treeview::cell:hover {
+	background-color: var(--tab-hover);
+}
+
+tableview.selection_type_cell tableview::cell:selected,
+treeview.selection_type_cell tableview::cell:selected {
+	background-color: var(--primary);
+}
+
 tableview::cell,
 treeview::cell {
 	padding-left: 6dp;

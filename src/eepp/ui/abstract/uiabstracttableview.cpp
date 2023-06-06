@@ -262,7 +262,7 @@ void UIAbstractTableView::updateHeaderSize() {
 	size_t count = getModel()->columnCount();
 	Float totalWidth = 0;
 	for ( size_t i = 0; i < count; i++ ) {
-		ColumnData& col = columnData( i );
+		const ColumnData& col = columnData( i );
 		totalWidth += col.width;
 	}
 	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
@@ -419,7 +419,7 @@ UITableRow* UIAbstractTableView::createRow() {
 	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	rowWidget->reloadStyle( true, true, true );
 	rowWidget->addEventListener( Event::MouseDown, [&]( const Event* event ) {
-		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) )
+		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) || !isRowSelection() )
 			return;
 		getSelection().set( event->getNode()->asType<UITableRow>()->getCurIndex() );
 	} );
@@ -440,10 +440,12 @@ UITableRow* UIAbstractTableView::updateRow( const int& rowIndex, const ModelInde
 	rowWidget->setCurIndex( index );
 	rowWidget->setPixelsSize( getContentSize().getWidth(), getRowHeight() );
 	rowWidget->setPixelsPosition( { -mScrollOffset.x, yOffset - mScrollOffset.y } );
-	if ( getSelection().contains( index ) ) {
-		rowWidget->pushState( UIState::StateSelected );
-	} else {
-		rowWidget->popState( UIState::StateSelected );
+	if ( isRowSelection() ) {
+		if ( getSelection().contains( index ) ) {
+			rowWidget->pushState( UIState::StateSelected );
+		} else {
+			rowWidget->popState( UIState::StateSelected );
+		}
 	}
 	return rowWidget;
 }
@@ -474,6 +476,9 @@ void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
 				onOpenMenuModelIndex( idx, event );
 			} else if ( ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) && mSingleClickNavigation ) {
 				onOpenModelIndex( idx, event );
+			} else if ( isCellSelection() && ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) ) {
+				auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
+				getSelection().set( cellIdx );
 			}
 		} ) );
 }
@@ -543,6 +548,14 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
+	}
+
+	if ( isCellSelection() ) {
+		if ( getSelection().contains( index ) ) {
+			widget->pushState( UIState::StateSelected );
+		} else {
+			widget->popState( UIState::StateSelected );
+		}
 	}
 
 	return widget;
@@ -672,14 +685,14 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 						 String::startsWith( String::toLower( var.toString() ), mSearchText ) ) {
 						setSelection( model->index( next.row(), 0, next.parent() ) );
 					} else {
-						ModelIndex index = findRowWithText( mSearchText );
-						if ( index.isValid() )
-							setSelection( index );
+						ModelIndex fIndex = findRowWithText( mSearchText );
+						if ( fIndex.isValid() )
+							setSelection( fIndex );
 					}
 				} else {
-					ModelIndex index = findRowWithText( mSearchText );
-					if ( index.isValid() )
-						setSelection( index );
+					ModelIndex fIndex = findRowWithText( mSearchText );
+					if ( fIndex.isValid() )
+						setSelection( fIndex );
 				}
 			}
 		}

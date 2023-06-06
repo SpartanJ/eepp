@@ -31,12 +31,16 @@ class EE_API ModelEditingDelegate {
 	std::function<void()> onCommit;
 	std::function<void()> onRollback;
 	std::function<void()> onChange;
+	std::function<void()> onWillBeginEditing;
 
 	virtual Variant getValue() const = 0;
 
 	virtual void setValue( const Variant& ) = 0;
 
-	virtual void willBeginEditing() {}
+	virtual void willBeginEditing() {
+		if ( onWillBeginEditing )
+			onWillBeginEditing();
+	}
 
 	ModelIndex const& index() const { return mIndex; }
 
@@ -95,6 +99,8 @@ class EE_API StringModelEditingDelegate : public ModelEditingDelegate {
 	void willBeginEditing() override {
 		if ( mSelectionBehavior == SelectionBehavior::SelectAll )
 			getWidget()->asType<UITextInput>()->getDocument().selectAll();
+
+		ModelEditingDelegate::willBeginEditing();
 	}
 
   protected:

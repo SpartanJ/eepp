@@ -250,10 +250,12 @@ class UIDataBindString {
 class UIDataBindHolder {
   public:
 	using UIDataBindVariant =
-		std::variant<UIDataBindString::Ptr, UIDataBindBool::Ptr, UIDataBind<Uint32>,
-					 UIDataBind<Int32>, UIDataBind<Uint64>, UIDataBind<Int64>, UIDataBind<Uint8>,
-					 UIDataBind<Int8>, UIDataBind<Uint16>, UIDataBind<Int16>, UIDataBind<float>,
-					 UIDataBind<double>>;
+		std::variant<UIDataBindString::Ptr, UIDataBindBool::Ptr,
+					 std::unique_ptr<UIDataBind<Uint32>>, std::unique_ptr<UIDataBind<Int32>>,
+					 std::unique_ptr<UIDataBind<Uint64>>, std::unique_ptr<UIDataBind<Int64>>,
+					 std::unique_ptr<UIDataBind<Uint8>>, std::unique_ptr<UIDataBind<Int8>>,
+					 std::unique_ptr<UIDataBind<Uint16>>, std::unique_ptr<UIDataBind<Int16>>,
+					 std::unique_ptr<UIDataBind<float>>, std::unique_ptr<UIDataBind<double>>>;
 
 	UIDataBindHolder& hold( UIDataBindVariant&& ptr ) {
 		mHolder.emplace_back( std::move( ptr ) );

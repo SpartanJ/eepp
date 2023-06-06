@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 10.0.1, 2023-05-28T03:09:27. -->
+<!-- Written by QtCreator 10.0.1, 2023-06-06T01:22:08. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -110,7 +110,7 @@
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">{388e5431-b31b-42b3-b9ad-9002d279d75d}</value>
    <value type="qlonglong" key="ProjectExplorer.Target.ActiveBuildConfiguration">10</value>
    <value type="qlonglong" key="ProjectExplorer.Target.ActiveDeployConfiguration">0</value>
-   <value type="qlonglong" key="ProjectExplorer.Target.ActiveRunConfiguration">15</value>
+   <value type="qlonglong" key="ProjectExplorer.Target.ActiveRunConfiguration">19</value>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.0">
     <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">../../make/linux</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
@@ -1107,7 +1107,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-UIEditor-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
-    <value type="QString" key="RunConfiguration.Arguments"> -u --xml=/home/downloads/build_settings.xml</value>
+    <value type="QString" key="RunConfiguration.Arguments"> -u</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>

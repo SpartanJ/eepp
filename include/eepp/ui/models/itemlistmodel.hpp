@@ -23,8 +23,7 @@ template <typename T> class ItemListModel final : public Model {
 
 	virtual std::string columnName( const size_t& ) const { return "Data"; }
 
-	virtual ModelIndex index( int row, int column,
-							  const ModelIndex& parent = ModelIndex() ) const override {
+	virtual ModelIndex index( int row, int column, const ModelIndex& parent = ModelIndex() ) const {
 		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
 			return {};
 		return Model::index( row, column, parent );
@@ -66,8 +65,7 @@ template <typename K, typename V> class ItemPairListModel final : public Model {
 		mColumnNames[index] = name;
 	}
 
-	virtual ModelIndex index( int row, int column,
-							  const ModelIndex& parent = ModelIndex() ) const override {
+	virtual ModelIndex index( int row, int column, const ModelIndex& parent = ModelIndex() ) const {
 		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
 			return {};
 		return Model::index( row, column, parent );
@@ -125,8 +123,7 @@ template <typename T> class ItemListOwnerModel final : public Model {
 
 	virtual std::string columnName( const size_t& ) const { return "Data"; }
 
-	virtual ModelIndex index( int row, int column,
-							  const ModelIndex& parent = ModelIndex() ) const override {
+	virtual ModelIndex index( int row, int column, const ModelIndex& parent = ModelIndex() ) const {
 		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
 			return {};
 		return Model::index( row, column, parent );
@@ -180,8 +177,7 @@ template <typename K, typename V> class ItemPairListOwnerModel final : public Mo
 		mColumnNames[index] = name;
 	}
 
-	virtual ModelIndex index( int row, int column,
-							  const ModelIndex& parent = ModelIndex() ) const override {
+	virtual ModelIndex index( int row, int column, const ModelIndex& parent = ModelIndex() ) const {
 		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
 			return {};
 		return Model::index( row, column, parent );
@@ -252,8 +248,7 @@ template <typename V> class ItemVectorListOwnerModel final : public Model {
 		mColumnNames[index] = name;
 	}
 
-	virtual ModelIndex index( int row, int column,
-							  const ModelIndex& parent = ModelIndex() ) const override {
+	virtual ModelIndex index( int row, int column, const ModelIndex& parent = ModelIndex() ) const {
 		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
 			return {};
 		return Model::index( row, column, parent );

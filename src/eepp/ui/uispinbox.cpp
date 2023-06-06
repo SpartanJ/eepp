@@ -17,7 +17,7 @@ UISpinBox::UISpinBox() :
 	mValue( 0 ),
 	mClickStep( 1.f ),
 	mModifyingVal( false ) {
-	mFlags |=  UI_SCROLLABLE;
+	mFlags |= UI_SCROLLABLE;
 	mInput = UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );
@@ -159,24 +159,23 @@ void UISpinBox::addValue( const double& value ) {
 }
 
 UISpinBox* UISpinBox::setValue( const double& val ) {
-	if ( val != mValue ) {
-		if ( val >= mMinValue && val <= mMaxValue ) {
-			double iValN = (double)(Int64)val;
-			double fValN = (double)iValN;
+	double newVal = eeclamp( val, mMinValue, mMaxValue );
+	double iValN = (double)(Int64)newVal;
+	double fValN = (double)iValN;
+	bool valueChanged = mValue != newVal;
 
-			mValue = val;
+	mValue = newVal;
 
-			mModifyingVal = true;
-			if ( fValN == val ) {
-				mInput->setText( String::toString( (Int64)iValN ) );
-			} else {
-				mInput->setText( String::toString( val ) );
-			}
-			mModifyingVal = false;
-
-			onValueChange();
-		}
+	mModifyingVal = true;
+	if ( fValN == newVal ) {
+		mInput->setText( String::toString( (Int64)iValN ) );
+	} else {
+		mInput->setText( String::toString( newVal ) );
 	}
+	mModifyingVal = false;
+
+	if ( valueChanged )
+		onValueChange();
 	return this;
 }
 
@@ -196,12 +195,8 @@ void UISpinBox::onBufferChange( const Event* ) {
 				mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
 		} else {
 			bool res = String::fromString<double>( val, mInput->getText() );
-
-			if ( res && val != mValue && val >= mMinValue && val <= mMaxValue ) {
-				mValue = val;
-
-				onValueChange();
-			}
+			if ( res && val != mValue )
+				setValue( val );
 		}
 	}
 }
@@ -226,7 +221,7 @@ UISpinBox* UISpinBox::setMinValue( const double& minVal ) {
 	mMinValue = minVal;
 
 	if ( mValue < mMinValue )
-		mValue = mMinValue;
+		setValue( mMinValue );
 
 	return this;
 }
@@ -239,7 +234,7 @@ UISpinBox* UISpinBox::setMaxValue( const double& maxVal ) {
 	mMaxValue = maxVal;
 
 	if ( mValue > mMaxValue )
-		mValue = mMaxValue;
+		setValue( mMaxValue );
 
 	return this;
 }

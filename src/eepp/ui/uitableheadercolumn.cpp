@@ -60,6 +60,7 @@ Uint32 UITableHeaderColumn::onMouseDown( const Vector2i& position, const Uint32&
 		 !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) &&
 		 ( flags & mDragButton ) && isDragEnabled() && !isDragging() &&
 		 localPos.x >= mSize.getWidth() - mView->getDragBorderDistance() ) {
+		setFocus();
 		startDragging( position.asFloat() );
 	}
 	pushState( UIState::StatePressed );

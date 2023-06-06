@@ -28,6 +28,7 @@ class UIBuildSettings : public UIRelativeLayout {
 	UITab* mTab{ nullptr };
 	String mOldName;
 	std::unordered_map<UIWidget*, std::vector<Uint32>> mCbs;
+	ProjectBuildOutputParserConfig mTmpOpCfg;
 
 	explicit UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config );
 
@@ -42,6 +43,8 @@ class UIBuildSettings : public UIRelativeLayout {
 	void updateOS();
 
 	void refreshTab();
+
+	void bindTable( const std::string& name, const std::string& key, ProjectBuildKeyVal& data );
 };
 
 } // namespace ecode
