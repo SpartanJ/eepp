@@ -205,6 +205,10 @@ void UIScrollableWidget::setAutoSetClipStep( bool setClipStep ) {
 	mAutoSetClipStep = setClipStep;
 }
 
+bool UIScrollableWidget::isScrollable() const {
+	return UIWidget::isScrollable() && getScrollableArea().y > 0;
+}
+
 void UIScrollableWidget::updateScroll() {
 	Sizef totalScroll = getScrollableArea();
 	Vector2f initScroll( mScrollOffset );

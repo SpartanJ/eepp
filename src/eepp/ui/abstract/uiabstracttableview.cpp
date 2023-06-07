@@ -132,7 +132,7 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 	}
 
-	if ( mAutoColumnsWidth && visibleColCount > 1 && getModel()->rowCount() > 0 ) {
+	if ( mAutoColumnsWidth && visibleColCount > 1 ) {
 		Float contentWidth = getContentSpaceWidth();
 		bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
 		if ( !mVScroll->isVisible() && shouldVScrollBeVisible )

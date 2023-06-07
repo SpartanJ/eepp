@@ -122,7 +122,8 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 				lWidth = w;
 		}
 	};
-	if ( bestGuess ) {
+	// TODO: Improve best guess
+	if ( bestGuess && getItemCount() > 10 ) {
 		Variant dataTest( getModel()->data( getModel()->index( 0, colIndex ) ) );
 		bool isStdString = dataTest.is( Variant::Type::StdString );
 		bool isString = dataTest.is( Variant::Type::String );

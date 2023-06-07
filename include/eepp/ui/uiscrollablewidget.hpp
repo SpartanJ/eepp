@@ -56,9 +56,12 @@ class EE_API UIScrollableWidget : public UIWidget {
 	bool shouldVerticalScrollBeVisible() const;
 
 	bool isAutoSetClipStep() const;
-	void setAutoSetClipStep(bool setClipStep);
 
-	protected:
+	void setAutoSetClipStep( bool setClipStep );
+
+	virtual bool isScrollable() const;
+
+  protected:
 	ScrollViewType mViewType;
 	ScrollBarMode mVScrollMode;
 	ScrollBarMode mHScrollMode;

@@ -579,6 +579,7 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 	} );
 
 	UITableView* tableOP = find<UITableView>( "table_output_parsers" );
+	tableOP->setMainColumn( 1 );
 	tableOP->setAutoColumnsWidth( true );
 	tableOP->setFitAllColumnsToWidget( true );
 	auto modelOP = OutputParserModel::create( mBuild.mOutputParser.mConfig,
@@ -661,6 +662,7 @@ void UIBuildSettings::bindTable( const std::string& name, const std::string& key
 	model->setColumnName( 0, getTranslatorString( key + "_name", "Name" ) );
 	model->setColumnName( 1, getTranslatorString( key + "_value", "Value" ) );
 	model->setIsEditable( true );
+	table->setMainColumn( 1 );
 	table->setAutoColumnsWidth( true );
 	table->setFitAllColumnsToWidget( true );
 	table->setModel( model );

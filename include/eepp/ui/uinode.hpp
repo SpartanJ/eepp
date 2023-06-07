@@ -320,7 +320,7 @@ class EE_API UINode : public Node {
 
 	Sizef fitMinMaxSizePx( const Sizef& size ) const;
 
-	bool isScrollable() const;
+	virtual bool isScrollable() const;
 
   protected:
 	Vector2f mDpPos;
