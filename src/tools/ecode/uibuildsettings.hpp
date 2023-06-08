@@ -11,7 +11,8 @@ namespace ecode {
 
 class UIBuildSettings : public UIRelativeLayout {
   public:
-	static UIBuildSettings* New( ProjectBuild& build, ProjectBuildConfiguration& config );
+	static UIBuildSettings* New( ProjectBuild& build, ProjectBuildConfiguration& config,
+								 bool isNew );
 
 	virtual ~UIBuildSettings();
 
@@ -29,8 +30,10 @@ class UIBuildSettings : public UIRelativeLayout {
 	String mOldName;
 	std::unordered_map<UIWidget*, std::vector<Uint32>> mCbs;
 	ProjectBuildOutputParserConfig mTmpOpCfg;
+	bool mIsNew{ false };
+	bool mCanceled{ false };
 
-	explicit UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config );
+	explicit UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config, bool isNew );
 
 	void moveStepUp( size_t stepNum, bool isClea );
 

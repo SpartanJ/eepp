@@ -138,6 +138,7 @@ class ProjectBuildOutputParser {
 
   protected:
 	friend class ProjectBuildManager;
+	friend class ProjectBuild;
 	friend class UIBuildSettings;
 
 	bool mRelativeFilePaths{ true };
@@ -148,6 +149,8 @@ class ProjectBuildOutputParser {
 
 class ProjectBuild {
   public:
+	using Map = std::unordered_map<std::string, ProjectBuild>;
+
 	ProjectBuild( const std::string& name, const std::string& projectRoot ) :
 		mName( name ), mProjectRoot( projectRoot ){};
 
@@ -157,15 +160,29 @@ class ProjectBuild {
 
 	const std::string& getName() const { return mName; }
 
-	const std::set<std::string> buildTypes() const { return mBuildTypes; }
+	const std::set<std::string>& buildTypes() const { return mBuildTypes; }
+
+	const std::set<std::string>& os() const { return mOS; }
 
 	const ProjectBuildOutputParser& getOutputParser() const { return mOutputParser; }
+
+	const ProjectBuildSteps& buildSteps() const { return mBuild; }
+
+	const ProjectBuildSteps& cleanSteps() const { return mClean; }
+
+	const ProjectBuildKeyVal& envs() const { return mEnvs; }
+
+	const ProjectBuildKeyVal& vars() const { return mVars; }
 
 	bool hasBuild() const { return !mBuild.empty(); }
 
 	bool hasClean() const { return !mClean.empty(); }
 
 	ProjectBuildSteps replaceVars( const ProjectBuildSteps& steps ) const;
+
+	static json serialize( const ProjectBuild::Map& builds );
+
+	static ProjectBuild::Map deserialize( const json& j, const std::string& projectRoot );
 
   protected:
 	friend class ProjectBuildManager;
@@ -182,8 +199,6 @@ class ProjectBuild {
 	ProjectBuildConfig mConfig;
 	ProjectBuildOutputParser mOutputParser;
 };
-
-using ProjectBuildMap = std::unordered_map<std::string, ProjectBuild>;
 
 struct ProjectBuildCommand : public ProjectBuildStep {
 	ProjectBuildKeyVal envs;
@@ -240,7 +255,7 @@ class ProjectBuildManager {
 
 	ProjectBuildOutputParser getOutputParser( const std::string& buildName );
 
-	const ProjectBuildMap& getBuilds() const { return mBuilds; }
+	const ProjectBuild::Map& getBuilds() const { return mBuilds; }
 
 	const std::string& getProjectRoot() const { return mProjectRoot; }
 
@@ -271,7 +286,7 @@ class ProjectBuildManager {
   protected:
 	std::string mProjectRoot;
 	std::string mProjectFile;
-	ProjectBuildMap mBuilds;
+	ProjectBuild::Map mBuilds;
 	ProjectBuildConfiguration mConfig;
 	std::shared_ptr<ThreadPool> mThreadPool;
 	UITabWidget* mSidePanel{ nullptr };
@@ -285,6 +300,7 @@ class ProjectBuildManager {
 	bool mBuilding{ false };
 	bool mShuttingDown{ false };
 	bool mCancelBuild{ false };
+	std::unordered_map<Node*, std::set<Uint32>> mCbs;
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
 				   const ProjectBuildi18nFn& i18n, const ProjectBuildCommandsRes& res,
@@ -293,11 +309,17 @@ class ProjectBuildManager {
 
 	bool load();
 
+	bool save();
+
+	bool saveAsync();
+
 	void buildSidePanelTab();
 
 	void updateSidePanelTab();
 
 	void updateBuildType();
+
+	void addNewBuild();
 };
 
 } // namespace ecode

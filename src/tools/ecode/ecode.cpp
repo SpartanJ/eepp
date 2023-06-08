@@ -637,6 +637,8 @@ App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
 
 App::~App() {
+	if ( mProjectBuildManager )
+		mProjectBuildManager.reset();
 	mThreadPool.reset();
 	if ( mFileWatcher ) {
 		Lock l( mWatchesLock );

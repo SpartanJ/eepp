@@ -73,6 +73,78 @@ ProjectBuildSteps ProjectBuild::replaceVars( const ProjectBuildSteps& steps ) co
 	return newSteps;
 }
 
+json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
+	json j;
+
+	for ( const auto& buildCfg : builds ) {
+		const auto& curBuild = buildCfg.second;
+		auto& bj = j[buildCfg.first];
+
+		bj["build"] = json::array();
+		auto& jbuild = bj["build"];
+		for ( const auto& build : curBuild.buildSteps() ) {
+			json step;
+			step["working_dir"] = build.workingDir;
+			step["args"] = build.args;
+			step["command"] = build.cmd;
+			if ( !build.enabled )
+				step["enabled"] = build.enabled;
+			jbuild.push_back( step );
+		}
+
+		bj["clean"] = json::array();
+		auto& jclean = bj["clean"];
+		for ( const auto& build : curBuild.cleanSteps() ) {
+			json step;
+			step["working_dir"] = build.workingDir;
+			step["args"] = build.args;
+			step["command"] = build.cmd;
+			if ( !build.enabled )
+				step["enabled"] = build.enabled;
+			jclean.push_back( step );
+		}
+
+		bj["build_types"] = curBuild.buildTypes();
+		bj["config"]["clear_sys_env"] = curBuild.getConfig().clearSysEnv;
+		bj["os"] = curBuild.os();
+
+		if ( !curBuild.vars().empty() ) {
+			auto& var = bj["var"];
+			for ( const auto& v : curBuild.vars() )
+				var[v.first] = v.second;
+		}
+
+		if ( !curBuild.envs().empty() ) {
+			auto& env = bj["env"];
+			for ( const auto& e : curBuild.envs() )
+				env[e.first] = e.second;
+		}
+
+		auto& op = bj["output_parser"];
+		auto& opc = op["config"];
+
+		opc["relative_file_paths"] = curBuild.getOutputParser().useRelativeFilePaths();
+		if ( !curBuild.getOutputParser().getPreset().empty() )
+			opc["preset"] = curBuild.getOutputParser().getPreset();
+
+		for ( const auto& opct : curBuild.getOutputParser().getConfig() ) {
+			std::string type( ProjectBuildOutputParserConfig::typeToString( opct.type ) );
+			if ( !op.contains( type ) )
+				op[type] = json::array();
+			json nopp;
+			auto& po = nopp["pattern_order"];
+			nopp["pattern"] = opct.pattern;
+			po["col"] = opct.patternOrder.col;
+			po["line"] = opct.patternOrder.line;
+			po["file"] = opct.patternOrder.file;
+			po["message"] = opct.patternOrder.message;
+			op[type].push_back( nopp );
+		}
+	}
+
+	return j;
+}
+
 bool ProjectBuild::isOSSupported( const std::string& os ) const {
 	return mOS.empty() || std::any_of( mOS.begin(), mOS.end(), [&]( const auto& oos ) {
 			   return oos == os || oos == "any";
@@ -96,12 +168,27 @@ ProjectBuildManager::ProjectBuildManager( const std::string& projectRoot,
 	}
 }
 
+void ProjectBuildManager::addNewBuild() {
+	std::string name = mNewBuild.getName();
+	ProjectBuild build = mNewBuild;
+	mBuilds.insert(
+		std::make_pair<std::string, ProjectBuild>( std::move( name ), std::move( build ) ) );
+}
+
 ProjectBuildManager::~ProjectBuildManager() {
 	if ( mUISceneNode && !SceneManager::instance()->isShuttingDown() && mSidePanel && mTab ) {
 		mSidePanel->removeTab( mTab );
 	}
+	if ( mUISceneNode && mUISceneNode->getRoot()->querySelector( "#build_settings_new_name" ) )
+		addNewBuild();
+
+	for ( const auto& cbs : mCbs )
+		for ( const auto& cb : cbs.second )
+			cbs.first->removeEventListener( cb );
+
 	mShuttingDown = true;
 	mCancelBuild = true;
+	save();
 	while ( mLoading )
 		Sys::sleep( Milliseconds( 0.1f ) );
 	while ( mBuilding )
@@ -242,33 +329,10 @@ static ProjectOutputParserTypes outputParserType( const std::string& typeStr ) {
 	return ProjectOutputParserTypes::Notice;
 }
 
-bool ProjectBuildManager::load() {
-	ScopedOp scopedOp( [this]() { mLoading = true; },
-					   [this]() {
-						   mLoading = false;
-						   if ( mSidePanel )
-							   mSidePanel->runOnMainThread( [this]() { buildSidePanelTab(); } );
-					   } );
-
-	mProjectFile = mProjectRoot + ".ecode/project_build.json";
-	if ( !FileSystem::fileExists( mProjectFile ) )
-		return false;
-	std::string data;
-	if ( !FileSystem::fileGet( mProjectFile, data ) )
-		return false;
-	json j;
-
-	try {
-		j = json::parse( data, nullptr, true, true );
-	} catch ( const json::exception& e ) {
-		Log::error( "ProjectBuildManager::load - Error parsing project build config from "
-					"path %s, error: %s, config file content:\n%s",
-					mProjectFile.c_str(), e.what(), mProjectFile.c_str() );
-		return false;
-	}
-
+ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& projectRoot ) {
+	ProjectBuild::Map prjBuild;
 	for ( const auto& build : j.items() ) {
-		ProjectBuild b( build.key(), mProjectRoot );
+		ProjectBuild b( build.key(), projectRoot );
 		const auto& buildObj = build.value();
 
 		if ( buildObj.contains( "os" ) && buildObj["os"].is_array() ) {
@@ -379,11 +443,61 @@ bool ProjectBuildManager::load() {
 			b.mOutputParser = outputParser;
 		}
 
-		mBuilds.insert( { build.key(), std::move( b ) } );
+		prjBuild.insert( { build.key(), std::move( b ) } );
 	}
 
+	return prjBuild;
+}
+
+bool ProjectBuildManager::load() {
+	ScopedOp scopedOp( [this]() { mLoading = true; },
+					   [this]() {
+						   mLoading = false;
+						   if ( mSidePanel )
+							   mSidePanel->runOnMainThread( [this]() { buildSidePanelTab(); } );
+					   } );
+
+	mProjectFile = mProjectRoot + ".ecode/project_build.json";
+	if ( !FileSystem::fileExists( mProjectFile ) )
+		return false;
+	std::string data;
+	if ( !FileSystem::fileGet( mProjectFile, data ) )
+		return false;
+	json j;
+
+	try {
+		j = json::parse( data, nullptr, true, true );
+	} catch ( const json::exception& e ) {
+		Log::error( "ProjectBuildManager::load - Error parsing project build config from "
+					"path %s, error: %s, config file content:\n%s",
+					mProjectFile.c_str(), e.what(), mProjectFile.c_str() );
+		return false;
+	}
+
+	mBuilds = ProjectBuild::deserialize( j, mProjectRoot );
 	mLoaded = true;
+
 	return true;
+}
+
+bool ProjectBuildManager::save() {
+	if ( !mLoaded )
+		return false;
+	ScopedOp scopedOp( [this]() { mLoading = true; }, [this]() { mLoading = false; } );
+	json j = ProjectBuild::serialize( mBuilds );
+	std::string data( j.dump( 2 ) );
+	if ( !FileSystem::fileWrite( mProjectFile, data ) )
+		return false;
+	return true;
+}
+
+bool ProjectBuildManager::saveAsync() {
+	if ( mThreadPool ) {
+		mThreadPool->run( [this]() { save(); } );
+		return true;
+	} else {
+		return save();
+	}
 }
 
 ProjectBuildOutputParser ProjectBuildManager::getOutputParser( const std::string& buildName ) {
@@ -687,9 +801,28 @@ void ProjectBuildManager::updateSidePanelTab() {
 			return;
 		}
 		auto ret =
-			mApp->getSplitter()->createWidget( UIBuildSettings::New( mNewBuild, mConfig ),
+			mApp->getSplitter()->createWidget( UIBuildSettings::New( mNewBuild, mConfig, true ),
 											   mApp->i18n( "build_settings", "Build Settings" ) );
-		ret.second->asType<UIBuildSettings>()->setTab( ret.first );
+		auto bs = ret.second->asType<UIBuildSettings>();
+		bs->setTab( ret.first );
+		mCbs[bs].insert( bs->on( Event::OnConfirm, [this, bs]( const Event* event ) {
+			event->getNode()->removeEventListener( event->getCallbackId() );
+			mCbs[bs].erase( event->getCallbackId() );
+			std::string name = mNewBuild.getName();
+			ProjectBuild build = mNewBuild;
+			mBuilds.insert( std::make_pair<std::string, ProjectBuild>( std::move( name ),
+																	   std::move( build ) ) );
+			saveAsync();
+			updateSidePanelTab();
+		} ) );
+		mCbs[bs].insert( bs->on( Event::OnClose, [this, bs]( auto ) { mCbs.erase( bs ); } ) );
+		bs->on( Event::OnClear, [this]( const Event* event ) {
+			if ( mBuilds.erase( event->asTextEvent()->getText() ) > 0 ) {
+				if ( mConfig.buildName == event->asTextEvent()->getText() )
+					mConfig.buildName = mBuilds.empty() ? "" : mBuilds.begin()->first;
+				updateSidePanelTab();
+			}
+		} );
 		ret.first->setIcon( mApp->findIcon( "hammer" ) );
 	} );
 
@@ -704,9 +837,24 @@ void ProjectBuildManager::updateSidePanelTab() {
 					return;
 				}
 				auto ret = mApp->getSplitter()->createWidget(
-					UIBuildSettings::New( build->second, mConfig ),
+					UIBuildSettings::New( build->second, mConfig, false ),
 					mApp->i18n( "build_settings", "Build Settings" ) );
-				ret.second->asType<UIBuildSettings>()->setTab( ret.first );
+				auto bs = ret.second->asType<UIBuildSettings>();
+				bs->setTab( ret.first );
+				mCbs[bs].insert( bs->on( Event::OnConfirm, [this, bs]( const Event* event ) {
+					event->getNode()->removeEventListener( event->getCallbackId() );
+					mCbs[bs].erase( event->getCallbackId() );
+					saveAsync();
+				} ) );
+				mCbs[bs].insert(
+					bs->on( Event::OnClose, [this, bs]( auto ) { mCbs.erase( bs ); } ) );
+				bs->on( Event::OnClear, [this]( const Event* event ) {
+					if ( mBuilds.erase( event->asTextEvent()->getText() ) > 0 ) {
+						if ( mConfig.buildName == event->asTextEvent()->getText() )
+							mConfig.buildName = mBuilds.empty() ? "" : mBuilds.begin()->first;
+						updateSidePanelTab();
+					}
+				} );
 				ret.first->setIcon( mApp->findIcon( "hammer" ) );
 			}
 		}

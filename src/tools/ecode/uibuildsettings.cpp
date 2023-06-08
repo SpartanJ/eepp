@@ -405,8 +405,9 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 </ScrollView>
 )xml";
 
-UIBuildSettings* UIBuildSettings::New( ProjectBuild& build, ProjectBuildConfiguration& config ) {
-	return eeNew( UIBuildSettings, ( build, config ) );
+UIBuildSettings* UIBuildSettings::New( ProjectBuild& build, ProjectBuildConfiguration& config,
+									   bool isNew ) {
+	return eeNew( UIBuildSettings, ( build, config, isNew ) );
 }
 
 UIBuildSettings::~UIBuildSettings() {
@@ -414,10 +415,13 @@ UIBuildSettings::~UIBuildSettings() {
 		for ( const auto& cb : cbs.second )
 			cbs.first->removeEventListener( cb );
 	}
+	if ( !mCanceled )
+		sendCommonEvent( Event::OnConfirm );
 }
 
-UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config ) :
-	mBuild( build ), mConfig( config ), mOldName( mBuild.getName() ) {
+UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config,
+								  bool isNew ) :
+	mBuild( build ), mConfig( config ), mOldName( mBuild.getName() ), mIsNew( isNew ) {
 	addClass( "build_settings" );
 	mUISceneNode->loadLayoutFromString( SETTINGS_PANEL_XML, this,
 										String::hash( "build_settings" ) );
@@ -521,6 +525,23 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 
 	bindTable( "table_envs", "env", mBuild.mEnvs );
 	bindTable( "table_vars", "var", mBuild.mVars );
+
+	find( "build_del" )->onClick( [this]( auto ) {
+		UIMessageBox* msgBox =
+			UIMessageBox::New( UIMessageBox::OK_CANCEL,
+							   i18n( "confirm_build_delete",
+									 "Are you sure you want to delete the build configuration?" ) );
+		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->showWhenReady();
+		msgBox->addEventListener( Event::OnConfirm, [this, msgBox]( const Event* ) {
+			mCanceled = true;
+			sendTextEvent( Event::OnClear, mBuild.getName() );
+			msgBox->closeWindow();
+			if ( mTab )
+				mTab->removeTab();
+		} );
+	} );
 
 	find( "build_type_add" )->onClick( [this, buildTypeDropDown, panelBuildTypeDDL]( auto ) {
 		UIMessageBox* msgBox =
