@@ -141,6 +141,14 @@ class EE_API UIWidget : public UINode {
 
 	const std::vector<std::string>& getStyleSheetPseudoClasses() const;
 
+	void resetClass();
+
+	/** Resets all classes and assign a class */
+	void setClass( const std::string& cls );
+
+	/** Resets all classes and assign vector of classes */
+	void setClasses( const std::vector<std::string>& classes );
+
 	void addClass( const std::string& cls );
 
 	void addClasses( const std::vector<std::string>& classes );

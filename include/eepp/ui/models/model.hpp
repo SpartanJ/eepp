@@ -106,6 +106,8 @@ class EE_API Model {
 
 	virtual void sort( const size_t& /*column*/, const SortOrder& /*order*/ ) {}
 
+	virtual bool classModelRoleEnabled() { return false; }
+
 	void registerView( UIAbstractView* );
 
 	void unregisterView( UIAbstractView* );

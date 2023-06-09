@@ -206,6 +206,10 @@ std::shared_ptr<Model> SortingProxyModel::getSource() const {
 	return mSource;
 }
 
+bool SortingProxyModel::classModelRoleEnabled() {
+	return source().classModelRoleEnabled();
+}
+
 bool SortingProxyModel::isColumnSortable( const size_t& columnIndex ) const {
 	return source().isColumnSortable( columnIndex );
 }

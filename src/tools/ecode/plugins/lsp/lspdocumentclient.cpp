@@ -115,7 +115,7 @@ void LSPDocumentClient::refreshTag() {
 		sceneNode->removeActionsByTag( oldTag );
 }
 
-void LSPDocumentClient::requestSemanticHighlighting() {
+void LSPDocumentClient::requestSemanticHighlighting( bool reqFull ) {
 	if ( !mServer || !mServer->getManager()->getPlugin()->semanticHighlightingEnabled() ||
 		 !mServer->getManager()->getPlugin()->langSupportsSemanticHighlighting(
 			 mServer->getDefinition().language ) )
@@ -128,13 +128,13 @@ void LSPDocumentClient::requestSemanticHighlighting() {
 	TextRange range;
 	std::string reqId;
 	bool delta = false;
-	if ( cap.semanticTokenProvider.range && !mFirstHighlight ) {
+	if ( cap.semanticTokenProvider.range && !mFirstHighlight && !reqFull ) {
 		range = mDoc->getActiveClientVisibleRange();
-	} else if ( mFirstHighlight ) {
+	} else if ( mFirstHighlight || ( reqFull && !cap.semanticTokenProvider.fullDelta ) ) {
 		mFirstHighlight = false;
 	} else if ( cap.semanticTokenProvider.fullDelta ) {
 		delta = true;
-		reqId = mSemanticeResultId;
+		reqId = reqFull ? "" : mSemanticeResultId;
 	}
 
 	LSPDocumentClient* docClient = this;
@@ -149,7 +149,7 @@ void LSPDocumentClient::requestSemanticHighlighting() {
 		} );
 }
 
-void LSPDocumentClient::requestSemanticHighlightingDelayed() {
+void LSPDocumentClient::requestSemanticHighlightingDelayed( bool reqFull ) {
 	if ( !mServer || !mServer->getManager()->getPlugin()->semanticHighlightingEnabled() ||
 		 !mServer->getManager()->getPlugin()->langSupportsSemanticHighlighting(
 			 mServer->getDefinition().language ) )
@@ -161,8 +161,8 @@ void LSPDocumentClient::requestSemanticHighlightingDelayed() {
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
 		sceneNode->removeActionsByTag( mTagSemanticTokens );
-		sceneNode->runOnMainThread( [this]() { requestSemanticHighlighting(); }, Seconds( 0.5f ),
-									mTagSemanticTokens );
+		sceneNode->runOnMainThread( [this, reqFull]() { requestSemanticHighlighting( reqFull ); },
+									Seconds( 0.5f ), mTagSemanticTokens );
 	}
 }
 

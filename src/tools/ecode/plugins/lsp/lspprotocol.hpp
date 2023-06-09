@@ -130,7 +130,7 @@ struct LSPWorkspaceFoldersServerCapabilities {
 
 struct LSPServerCapabilities {
 	bool ready = false;
-	std::string language;
+	std::vector<std::string> languages;
 	LSPTextDocumentSyncOptions textDocumentSync;
 	bool hoverProvider = false;
 	LSPCompletionOptions completionProvider;

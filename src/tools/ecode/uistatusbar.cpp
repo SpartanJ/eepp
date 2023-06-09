@@ -89,11 +89,13 @@ void UIStatusBar::setApp( App* app ) {
 }
 
 void UIStatusBar::onVisibilityChange() {
+	UILinearLayout::onVisibilityChange();
 	if ( isVisible() )
 		updateState();
 }
 
-void UIStatusBar::onChildCountChange( Node*, const bool& ) {
+void UIStatusBar::onChildCountChange( Node* node, const bool& removed ) {
+	UILinearLayout::onChildCountChange( node, removed );
 	if ( mApp )
 		updateState();
 }

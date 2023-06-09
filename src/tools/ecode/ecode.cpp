@@ -786,10 +786,10 @@ void App::switchSidePanel() {
 
 void App::switchStatusBar() {
 	mConfig.ui.showStatusBar = !mConfig.ui.showStatusBar;
-	mSettings->getWindowMenu()
-		->getItemId( "toggle-status-bar" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mConfig.ui.showStatusBar );
+	auto chk =
+		mSettings->getWindowMenu()->getItemId( "toggle-status-bar" )->asType<UIMenuCheckBox>();
+	if ( chk->isActive() != mConfig.ui.showStatusBar )
+		chk->setActive( mConfig.ui.showStatusBar );
 	showStatusBar( mConfig.ui.showStatusBar );
 }
 

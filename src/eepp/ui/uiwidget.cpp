@@ -713,6 +713,45 @@ void UIWidget::updatePseudoClasses() {
 	invalidateDraw();
 }
 
+void UIWidget::resetClass() {
+	if ( !mClasses.empty() ) {
+		mClasses.clear();
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
+
+		onClassChange();
+	}
+}
+
+void UIWidget::setClass( const std::string& cls ) {
+	if ( mClasses.size() != 1 || mClasses[0] != cls ) {
+		mClasses.clear();
+		mClasses.push_back( cls );
+
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
+
+		onClassChange();
+	}
+}
+
+void UIWidget::setClasses( const std::vector<std::string>& classes ) {
+	if ( mClasses != classes ) {
+		mClasses = classes;
+
+		if ( !isSceneNodeLoading() && !isLoadingState() ) {
+			getUISceneNode()->invalidateStyle( this );
+			getUISceneNode()->invalidateStyleState( this );
+		}
+
+		onClassChange();
+	}
+}
+
 void UIWidget::addClass( const std::string& cls ) {
 	if ( !cls.empty() && !hasClass( cls ) ) {
 		mClasses.push_back( cls );

@@ -568,7 +568,8 @@ PluginRequestHandle FormatterPlugin::processMessage( const PluginMessage& msg ) 
 		if ( msg.asLanguageServerCapabilities().ready ) {
 			LSPServerCapabilities cap = msg.asLanguageServerCapabilities();
 			Lock l( mCapabilitiesMutex );
-			mCapabilities[cap.language] = std::move( cap );
+			for ( const auto& lang : cap.languages )
+				mCapabilities[lang] = cap;
 		}
 	}
 	return {};

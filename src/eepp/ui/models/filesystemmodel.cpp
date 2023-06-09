@@ -412,63 +412,68 @@ Variant FileSystemModel::data( const ModelIndex& index, ModelRole role ) const {
 
 	auto& node = this->nodeRef( index );
 
-	if ( role == ModelRole::Custom )
-		return Variant( node.info().getFilepath().c_str() );
-
-	if ( role == ModelRole::Sort ) {
-		switch ( index.column() ) {
-			case Column::Icon:
-				return node.info().isDirectory() ? 0 : 1;
-			case Column::Name:
-				return Variant( node.getName().c_str() );
-			case Column::Size:
-				return node.info().getSize();
-			case Column::Owner:
-				return node.info().getOwnerId();
-			case Column::Group:
-				return node.info().getGroupId();
-			case Column::Permissions:
-				return Variant( permissionString( node.info() ) );
-			case Column::ModificationTime:
-				return node.info().getModificationTime();
-			case Column::Inode:
-				return node.info().getInode();
-			case Column::Path:
-				return Variant( node.info().getFilepath().c_str() );
-			case Column::SymlinkTarget:
-				return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
-			default:
-				eeASSERT( false );
+	switch ( role ) {
+		case ModelRole::Custom: {
+			return Variant( node.info().getFilepath().c_str() );
+		}
+		case ModelRole::Sort: {
+			switch ( index.column() ) {
+				case Column::Icon:
+					return node.info().isDirectory() ? 0 : 1;
+				case Column::Name:
+					return Variant( node.getName().c_str() );
+				case Column::Size:
+					return node.info().getSize();
+				case Column::Owner:
+					return node.info().getOwnerId();
+				case Column::Group:
+					return node.info().getGroupId();
+				case Column::Permissions:
+					return Variant( permissionString( node.info() ) );
+				case Column::ModificationTime:
+					return node.info().getModificationTime();
+				case Column::Inode:
+					return node.info().getInode();
+				case Column::Path:
+					return Variant( node.info().getFilepath().c_str() );
+				case Column::SymlinkTarget:
+					return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
+				default:
+					eeASSERT( false );
+			}
+			break;
+		}
+		case ModelRole::Display: {
+			switch ( index.column() ) {
+				case Column::Icon:
+					return iconFor( node, index );
+				case Column::Name:
+					return Variant( node.getName().c_str() );
+				case Column::Size:
+					return Variant( FileSystem::sizeToString( node.info().getSize() ) );
+				case Column::Owner:
+					return Variant( String::toString( node.info().getOwnerId() ) );
+				case Column::Group:
+					return Variant( String::toString( node.info().getGroupId() ) );
+				case Column::Permissions:
+					return Variant( permissionString( node.info() ) );
+				case Column::ModificationTime:
+					return Variant( Sys::epochToString( node.info().getModificationTime() ) );
+				case Column::Inode:
+					return Variant( String::toString( node.info().getInode() ) );
+				case Column::Path:
+					return Variant( node.info().getFilepath().c_str() );
+				case Column::SymlinkTarget:
+					return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
+			}
+			break;
+		}
+		case ModelRole::Icon: {
+			return iconFor( node, index );
+		}
+		default: {
 		}
 	}
-
-	if ( role == ModelRole::Display ) {
-		switch ( index.column() ) {
-			case Column::Icon:
-				return iconFor( node, index );
-			case Column::Name:
-				return Variant( node.getName().c_str() );
-			case Column::Size:
-				return Variant( FileSystem::sizeToString( node.info().getSize() ) );
-			case Column::Owner:
-				return Variant( String::toString( node.info().getOwnerId() ) );
-			case Column::Group:
-				return Variant( String::toString( node.info().getGroupId() ) );
-			case Column::Permissions:
-				return Variant( permissionString( node.info() ) );
-			case Column::ModificationTime:
-				return Variant( Sys::epochToString( node.info().getModificationTime() ) );
-			case Column::Inode:
-				return Variant( String::toString( node.info().getInode() ) );
-			case Column::Path:
-				return Variant( node.info().getFilepath().c_str() );
-			case Column::SymlinkTarget:
-				return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
-		}
-	}
-
-	if ( role == ModelRole::Icon )
-		return iconFor( node, index );
 
 	return {};
 }

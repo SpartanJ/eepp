@@ -96,6 +96,8 @@ class LSPClientServerManager {
 
 	bool isServerRunning( const LSPClientServer* server );
 
+	void requestSymanticHighlighting( std::shared_ptr<TextDocument> doc );
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };

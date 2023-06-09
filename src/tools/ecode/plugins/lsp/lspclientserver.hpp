@@ -224,6 +224,8 @@ class LSPClientServer {
 
 	bool supportsLanguage( const std::string& lang ) const;
 
+	LSPDocumentClient* getLSPDocumentClient( TextDocument* doc );
+
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;

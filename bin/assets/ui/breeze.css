@@ -43,6 +43,9 @@
 	--highlight-primary: #FFFFFF7A;
 	--disabled-color: #727679;
 	--disabled-border: #43474c;
+	--theme-error: #cc0000;
+	--theme-warning: #cccc00;
+	--theme-success: #00cc00;
 	droppable-hovering-color: #FFFFFF20;
 }
 
@@ -1010,11 +1013,6 @@ ScrollBarMini::hslider:hover ScrollBar::hbutton,
 ScrollBarMini::hbutton:hover {
 	background-color: var(--primary);
 }
-
-.appbackground {
-	background-color: var(--back);
-}
-
 tab::icon {
 	tint: var(--icon);
 }
@@ -1033,9 +1031,32 @@ console {
 	border-bottom-width: var(--border-width);
 }
 
+/* Reserved classes used by themes */
+.appbackground {
+	background-color: var(--back);
+}
+
 TextInput.table_cell_edit {
 	padding-top: 0!important;
 	padding-bottom: 0!important;
+}
+
+.theme-error > tableview::cell::text,
+.theme-error > treeview::cell::text,
+.theme-error > listview::cell::text {
+	color: var(--theme-error);
+}
+
+.theme-warning > tableview::cell::text,
+.theme-warning > treeview::cell::text,
+.theme-warning > listview::cell::text {
+	color: var(--theme-warning);
+}
+
+.theme-success > tableview::cell::text,
+.theme-success > treeview::cell::text,
+.theme-success > listview::cell::text {
+	color: var(--theme-success);
 }
 
 @media (prefers-color-scheme: light) {
@@ -1083,6 +1104,9 @@ TextInput.table_cell_edit {
 	--term-font-color: #232627;
 	--disabled-color: #727679;
 	--disabled-border: #d3d4d5;
+	--theme-error: #cc0000;
+	--theme-warning: #cccc00;
+	--theme-success: #00cc00;
 	droppable-hovering-color: #00000020;
 }
 

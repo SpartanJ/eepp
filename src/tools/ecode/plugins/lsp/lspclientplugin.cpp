@@ -797,11 +797,17 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 
 	if ( j.contains( "keybindings" ) ) {
 		auto& kb = j["keybindings"];
-		auto list = { "lsp-go-to-definition",	  "lsp-go-to-declaration",
-					  "lsp-go-to-implementation", "lsp-go-to-type-definition",
-					  "lsp-switch-header-source", "lsp-symbol-info",
-					  "lsp-symbol-references",	  "lsp-memory-usage",
-					  "lsp-symbol-code-action",	  "lsp-rename-symbol-under-cursor" };
+		auto list = { "lsp-go-to-definition",
+					  "lsp-go-to-declaration",
+					  "lsp-go-to-implementation",
+					  "lsp-go-to-type-definition",
+					  "lsp-switch-header-source",
+					  "lsp-symbol-info",
+					  "lsp-symbol-references",
+					  "lsp-memory-usage",
+					  "lsp-symbol-code-action",
+					  "lsp-rename-symbol-under-cursor",
+					  "lsp-refresh-semantic-highlighting" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -1036,38 +1042,43 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	if ( editor->hasDocument() ) {
 		auto& doc = editor->getDocument();
 
-		doc.setCommand( "lsp-go-to-definition", [&, editor]() {
+		doc.setCommand( "lsp-go-to-definition", [this, editor]() {
 			getAndGoToLocation( editor, "textDocument/definition" );
 		} );
 
 		doc.setCommand( "lsp-rename-symbol-under-cursor",
 						[this, editor]() { renameSymbol( editor ); } );
 
-		doc.setCommand( "lsp-go-to-declaration", [&, editor]() {
+		doc.setCommand( "lsp-go-to-declaration", [this, editor]() {
 			getAndGoToLocation( editor, "textDocument/declaration" );
 		} );
 
-		doc.setCommand( "lsp-go-to-implementation", [&, editor]() {
+		doc.setCommand( "lsp-go-to-implementation", [this, editor]() {
 			getAndGoToLocation( editor, "textDocument/implementation" );
 		} );
 
-		doc.setCommand( "lsp-go-to-type-definition", [&, editor]() {
+		doc.setCommand( "lsp-go-to-type-definition", [this, editor]() {
 			getAndGoToLocation( editor, "textDocument/typeDefinition" );
 		} );
 
 		doc.setCommand( "lsp-switch-header-source",
-						[&, editor]() { switchSourceHeader( editor ); } );
+						[this, editor]() { switchSourceHeader( editor ); } );
 
-		doc.setCommand( "lsp-symbol-info", [&, editor]() { getSymbolInfo( editor ); } );
+		doc.setCommand( "lsp-symbol-info", [this, editor]() { getSymbolInfo( editor ); } );
 
-		doc.setCommand( "lsp-symbol-references", [&, editor] {
+		doc.setCommand( "lsp-symbol-references", [this, editor] {
 			mClientManager.getSymbolReferences( editor->getDocumentRef() );
 		} );
 
-		doc.setCommand( "lsp-symbol-code-action", [&, editor] { codeAction( editor ); } );
+		doc.setCommand( "lsp-symbol-code-action", [this, editor] { codeAction( editor ); } );
 
-		doc.setCommand( "lsp-memory-usage",
-						[&, editor] { mClientManager.memoryUsage( editor->getDocumentRef() ); } );
+		doc.setCommand( "lsp-memory-usage", [this, editor] {
+			mClientManager.memoryUsage( editor->getDocumentRef() );
+		} );
+
+		doc.setCommand( "lsp-refresh-semantic-highlighting", [this, editor] {
+			mClientManager.requestSymanticHighlighting( editor->getDocumentRef() );
+		} );
 	}
 
 	std::vector<Uint32> listeners;
@@ -1186,6 +1197,9 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	if ( cap.codeActionProvider )
 		addFn( "lsp-symbol-code-action", "Code Action" );
+
+	if ( cap.semanticTokenProvider.full || cap.semanticTokenProvider.fullDelta )
+		addFn( "lsp-refresh-semantic-highlighting", "Refresh Semantic Highlighting" );
 
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
 		addFn( "lsp-switch-header-source", "Switch Header/Source" );

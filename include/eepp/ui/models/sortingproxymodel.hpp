@@ -54,6 +54,8 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 
 	std::shared_ptr<Model> getSource() const;
 
+	virtual bool classModelRoleEnabled();
+
   private:
 	// NOTE: The data() of indexes points to the corresponding Mapping object for that index.
 	struct Mapping {

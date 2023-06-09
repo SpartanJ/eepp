@@ -522,6 +522,20 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		UITableCell* cell = widget->asType<UITableCell>();
 		cell->setCurIndex( index );
 
+		if ( getModel()->classModelRoleEnabled() ) {
+			Variant cls( getModel()->data( index, ModelRole::Class ) );
+			if ( cls.isValid() ) {
+				if ( cls.is( Variant::Type::StdString ) )
+					cell->setClass( cls.asStdString() );
+				else if ( cls.is( Variant::Type::String ) )
+					cell->setClass( cls.asString() );
+				else if ( cls.is( Variant::Type::cstr ) )
+					cell->setClass( cls.asCStr() );
+			} else {
+				cell->resetClass();
+			}
+		}
+
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
 		if ( txt.isValid() ) {
 			if ( txt.is( Variant::Type::StdString ) )

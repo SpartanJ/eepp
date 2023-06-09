@@ -109,7 +109,7 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 				std::vector<std::string> languagesSupported;
 				languagesSupported.push_back( rlsp.language );
 				for ( const auto& flsp : mLSPs )
-					if ( flsp.name == lsp.usesLSP )
+					if ( flsp.usesLSP == rlsp.name )
 						languagesSupported.push_back( flsp.language );
 				std::unique_ptr<LSPClientServer> serverUP =
 					runLSPServer( id, rlsp, rootPath, languagesSupported );
@@ -226,6 +226,15 @@ bool LSPClientServerManager::isServerRunning( const LSPClientServer* server ) {
 		}
 	}
 	return false;
+}
+
+void LSPClientServerManager::requestSymanticHighlighting( std::shared_ptr<TextDocument> doc ) {
+	auto* server = getOneLSPClientServer( doc );
+	if ( server ) {
+		LSPDocumentClient* client = server->getLSPDocumentClient( doc.get() );
+		if ( client )
+			client->requestSemanticHighlighting( true );
+	}
 }
 
 void LSPClientServerManager::run( const std::shared_ptr<TextDocument>& doc ) {

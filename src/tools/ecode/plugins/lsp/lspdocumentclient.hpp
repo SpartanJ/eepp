@@ -49,6 +49,14 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void onServerInitialized();
 
+	void requestSymbols();
+
+	void requestSymbolsDelayed();
+
+	void requestSemanticHighlighting( bool reqFull = false );
+
+	void requestSemanticHighlightingDelayed( bool reqFull = false );
+
   protected:
 	LSPClientServer* mServer{ nullptr };
 	LSPClientServerManager* mServerManager{ nullptr };
@@ -65,14 +73,6 @@ class LSPDocumentClient : public TextDocument::Client {
 	void refreshTag();
 
 	UISceneNode* getUISceneNode();
-
-	void requestSymbols();
-
-	void requestSymbolsDelayed();
-
-	void requestSemanticHighlighting();
-
-	void requestSemanticHighlightingDelayed();
 
 	void processTokens( const LSPSemanticTokensDelta& tokens, const Uint64& docModificationId );
 

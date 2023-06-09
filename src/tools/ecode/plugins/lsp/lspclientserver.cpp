@@ -1099,7 +1099,7 @@ void LSPClientServer::initialize() {
 					mLSP.name.c_str(), e.what() );
 			}
 #endif
-			mCapabilities.language = mLSP.language;
+			mCapabilities.languages = mLanguagesSupported;
 			mReady = true;
 			write( newRequest( "initialized" ) );
 			sendQueuedMessages();
@@ -2058,6 +2058,11 @@ void LSPClientServer::shutdown() {
 bool LSPClientServer::supportsLanguage( const std::string& lang ) const {
 	return std::find( mLanguagesSupported.begin(), mLanguagesSupported.end(), lang ) !=
 		   mLanguagesSupported.end();
+}
+
+LSPDocumentClient* LSPClientServer::getLSPDocumentClient( TextDocument* doc ) {
+	auto client = mClients.find( doc );
+	return ( client != mClients.end() ) ? client->second.get() : nullptr;
 }
 
 } // namespace ecode

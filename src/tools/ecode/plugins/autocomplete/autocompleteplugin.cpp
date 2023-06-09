@@ -560,7 +560,8 @@ PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& ms
 				}
 			}
 			Lock l( mCapabilitiesMutex );
-			mCapabilities[cap.language] = std::move( cap );
+			for ( const auto& lang : cap.languages )
+				mCapabilities[lang] = cap;
 		}
 	}
 	return {};
