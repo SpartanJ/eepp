@@ -24,7 +24,7 @@ struct LSPDefinition {
 	int port{ 0 };
 	nlohmann::json initializationOptions;
 
-	bool usesOtherDefinition{ false };
+	std::string usesLSP;
 	bool shareProcessWithOtherDefinition{ false };
 	bool disabled{ false };
 

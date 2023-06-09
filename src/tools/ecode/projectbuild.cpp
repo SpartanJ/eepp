@@ -170,9 +170,113 @@ ProjectBuildManager::ProjectBuildManager( const std::string& projectRoot,
 
 void ProjectBuildManager::addNewBuild() {
 	std::string name = mNewBuild.getName();
-	ProjectBuild build = mNewBuild;
+	ProjectBuild newBuild = mNewBuild;
+	bool found;
+	do {
+		found = false;
+		for ( const auto& b : mBuilds ) {
+			if ( b.first == name ) {
+				name += " (" + mApp->i18n( "copy", "Copy" ) + ")";
+				found = true;
+			}
+		}
+	} while ( found );
+	newBuild.mName = name;
 	mBuilds.insert(
-		std::make_pair<std::string, ProjectBuild>( std::move( name ), std::move( build ) ) );
+		std::make_pair<std::string, ProjectBuild>( std::move( name ), std::move( newBuild ) ) );
+}
+
+bool ProjectBuildManager::cloneBuild( const std::string& build, std::string newBuildName ) {
+	auto oldBuild = mBuilds.find( build );
+	if ( oldBuild == mBuilds.end() )
+		return false;
+	ProjectBuild newBuild = oldBuild->second;
+	newBuild.mName = newBuildName;
+	mBuilds.insert( std::make_pair<std::string, ProjectBuild>( std::move( newBuildName ),
+															   std::move( newBuild ) ) );
+	return true;
+}
+
+void ProjectBuildManager::addBuild( UIWidget* buildTab ) {
+	mNewBuild = ProjectBuild( mApp->i18n( "new_name", "new_name" ), mProjectRoot );
+	std::string hashName = String::toString( String::hash( "new_name" ) );
+	UIWidget* widget = nullptr;
+	if ( ( widget = buildTab->getUISceneNode()->getRoot()->querySelector( "#build_settings_" +
+																		  hashName ) ) ) {
+		widget->asType<UITab>()->select();
+		return;
+	}
+	auto ret =
+		mApp->getSplitter()->createWidget( UIBuildSettings::New( mNewBuild, mConfig, true ),
+										   mApp->i18n( "build_settings", "Build Settings" ) );
+	auto bs = ret.second->asType<UIBuildSettings>();
+	bs->setTab( ret.first );
+	mCbs[bs].insert( bs->on( Event::OnConfirm, [this, bs]( const Event* event ) {
+		event->getNode()->removeEventListener( event->getCallbackId() );
+		mCbs[bs].erase( event->getCallbackId() );
+		addNewBuild();
+		saveAsync();
+		updateSidePanelTab();
+	} ) );
+	mCbs[bs].insert( bs->on( Event::OnClose, [this, bs]( auto ) { mCbs.erase( bs ); } ) );
+	bs->on( Event::OnClear, [this]( const Event* event ) {
+		if ( mBuilds.erase( event->asTextEvent()->getText() ) > 0 ) {
+			if ( mConfig.buildName == event->asTextEvent()->getText() )
+				mConfig.buildName = mBuilds.empty() ? "" : mBuilds.begin()->first;
+			updateSidePanelTab();
+		}
+	} );
+	ret.first->setIcon( mApp->findIcon( "hammer" ) );
+}
+
+void ProjectBuildManager::editBuild( std::string buildName, UIWidget* buildTab ) {
+	if ( buildName.empty() )
+		return;
+
+	auto build = mBuilds.find( buildName );
+	if ( build == mBuilds.end() )
+		return;
+
+	std::string hashName = String::toString( String::hash( buildName ) );
+	UIWidget* widget = nullptr;
+	if ( ( widget = buildTab->getUISceneNode()->getRoot()->querySelector( "#build_settings_" +
+																		  hashName ) ) ) {
+		widget->asType<UITab>()->select();
+		return;
+	}
+	auto ret =
+		mApp->getSplitter()->createWidget( UIBuildSettings::New( build->second, mConfig, false ),
+										   mApp->i18n( "build_settings", "Build Settings" ) );
+	auto bs = ret.second->asType<UIBuildSettings>();
+	bs->setTab( ret.first );
+	mCbs[bs].insert( bs->on( Event::OnConfirm, [this, bs]( const Event* event ) {
+		event->getNode()->removeEventListener( event->getCallbackId() );
+		mCbs[bs].erase( event->getCallbackId() );
+		saveAsync();
+	} ) );
+	mCbs[bs].insert( bs->on( Event::OnClose, [this, bs]( auto ) { mCbs.erase( bs ); } ) );
+	bs->on( Event::OnClear, [this]( const Event* event ) {
+		if ( mBuilds.erase( event->asTextEvent()->getText() ) > 0 ) {
+			if ( mConfig.buildName == event->asTextEvent()->getText() )
+				mConfig.buildName = mBuilds.empty() ? "" : mBuilds.begin()->first;
+			updateSidePanelTab();
+		}
+	} );
+	bs->on( Event::OnCopy, [this, buildName, buildTab]( const Event* event ) {
+		std::string clonedName( event->asTextEvent()->getText() );
+		if ( mBuilds.find( clonedName ) != mBuilds.end() ) {
+			UIMessageBox::New(
+				UIMessageBox::OK,
+				mApp->i18n( "cloned_name_must_be_different",
+							"Cloned name must be different from any existing build name." ) )
+				->show();
+		} else {
+			cloneBuild( buildName, clonedName );
+			updateSidePanelTab();
+			editBuild( clonedName, buildTab );
+		}
+	} );
+	ret.first->setIcon( mApp->findIcon( "hammer" ) );
 }
 
 ProjectBuildManager::~ProjectBuildManager() {
@@ -746,6 +850,8 @@ void ProjectBuildManager::updateSidePanelTab() {
 			first = tbuild.first;
 	}
 
+	std::sort( buildNamesItems.begin(), buildNamesItems.end() );
+
 	buildList->getListBox()->addListBoxItems( buildNamesItems );
 
 	if ( !first.empty() && buildList->getListBox()->getItemIndex( first ) != eeINDEX_NOT_FOUND ) {
@@ -792,80 +898,15 @@ void ProjectBuildManager::updateSidePanelTab() {
 		}
 	} );
 
-	buildAdd->onClick( [this, buildTab]( auto ) {
-		mNewBuild = ProjectBuild( mApp->i18n( "new_name", "new_name" ), mProjectRoot );
-		UIWidget* widget = nullptr;
-		if ( ( widget = buildTab->getUISceneNode()->getRoot()->querySelector(
-				   "#build_settings_new_name" ) ) ) {
-			widget->asType<UITab>()->select();
-			return;
-		}
-		auto ret =
-			mApp->getSplitter()->createWidget( UIBuildSettings::New( mNewBuild, mConfig, true ),
-											   mApp->i18n( "build_settings", "Build Settings" ) );
-		auto bs = ret.second->asType<UIBuildSettings>();
-		bs->setTab( ret.first );
-		mCbs[bs].insert( bs->on( Event::OnConfirm, [this, bs]( const Event* event ) {
-			event->getNode()->removeEventListener( event->getCallbackId() );
-			mCbs[bs].erase( event->getCallbackId() );
-			std::string name = mNewBuild.getName();
-			ProjectBuild build = mNewBuild;
-			mBuilds.insert( std::make_pair<std::string, ProjectBuild>( std::move( name ),
-																	   std::move( build ) ) );
-			saveAsync();
-			updateSidePanelTab();
-		} ) );
-		mCbs[bs].insert( bs->on( Event::OnClose, [this, bs]( auto ) { mCbs.erase( bs ); } ) );
-		bs->on( Event::OnClear, [this]( const Event* event ) {
-			if ( mBuilds.erase( event->asTextEvent()->getText() ) > 0 ) {
-				if ( mConfig.buildName == event->asTextEvent()->getText() )
-					mConfig.buildName = mBuilds.empty() ? "" : mBuilds.begin()->first;
-				updateSidePanelTab();
-			}
-		} );
-		ret.first->setIcon( mApp->findIcon( "hammer" ) );
-	} );
+	buildAdd->onClick( [this, buildTab]( auto ) { addBuild( buildTab ); } );
 
-	buildEdit->onClick( [this, buildTab]( auto ) {
-		if ( !mConfig.buildName.empty() ) {
-			auto build = mBuilds.find( mConfig.buildName );
-			if ( build != mBuilds.end() ) {
-				UIWidget* widget = nullptr;
-				if ( ( widget = buildTab->getUISceneNode()->getRoot()->querySelector(
-						   "#build_settings_" + mConfig.buildName ) ) ) {
-					widget->asType<UITab>()->select();
-					return;
-				}
-				auto ret = mApp->getSplitter()->createWidget(
-					UIBuildSettings::New( build->second, mConfig, false ),
-					mApp->i18n( "build_settings", "Build Settings" ) );
-				auto bs = ret.second->asType<UIBuildSettings>();
-				bs->setTab( ret.first );
-				mCbs[bs].insert( bs->on( Event::OnConfirm, [this, bs]( const Event* event ) {
-					event->getNode()->removeEventListener( event->getCallbackId() );
-					mCbs[bs].erase( event->getCallbackId() );
-					saveAsync();
-				} ) );
-				mCbs[bs].insert(
-					bs->on( Event::OnClose, [this, bs]( auto ) { mCbs.erase( bs ); } ) );
-				bs->on( Event::OnClear, [this]( const Event* event ) {
-					if ( mBuilds.erase( event->asTextEvent()->getText() ) > 0 ) {
-						if ( mConfig.buildName == event->asTextEvent()->getText() )
-							mConfig.buildName = mBuilds.empty() ? "" : mBuilds.begin()->first;
-						updateSidePanelTab();
-					}
-				} );
-				ret.first->setIcon( mApp->findIcon( "hammer" ) );
-			}
-		}
-	} );
+	buildEdit->onClick( [this, buildTab]( auto ) { editBuild( mConfig.buildName, buildTab ); } );
 }
 
 void ProjectBuildManager::updateBuildType() {
 	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
 	UIDropDownList* buildTypeList = buildTab->find<UIDropDownList>( "build_type_list" );
-	// UIPushButton* buildTypeAdd = buildTab->find<UIPushButton>( "build_type_add" );
 
 	buildTypeList->getListBox()->clear();
 
@@ -888,7 +929,6 @@ void ProjectBuildManager::updateBuildType() {
 		}
 	}
 	buildTypeList->setEnabled( !buildTypeList->getListBox()->isEmpty() );
-	// buildTypeAdd->setEnabled( !mConfig.buildName.empty() );
 
 	buildTypeList->removeEventsOfType( Event::OnItemSelected );
 	buildTypeList->addEventListener( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {

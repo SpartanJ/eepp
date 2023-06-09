@@ -133,6 +133,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	Drawable* findIcon( const std::string& name, const size_t iconSize );
 
+	const std::map<KeyBindings::Shortcut, std::string>& getRealDefaultKeybindings();
+
 	std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
 
 	std::map<KeyBindings::Shortcut, std::string> getLocalKeybindings();
@@ -226,13 +228,13 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "console-toggle", [&] { consoleToggle(); } );
 		t.setCommand( "find-replace", [&] { showFindView(); } );
 		t.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
-		t.setCommand( "toggle-global-search",
+		t.setCommand( "toggle-status-global-search-bar",
 					  [&] { mGlobalSearchController->toggleGlobalSearchBar(); } );
 		t.setCommand( "toggle-status-build-output",
 					  [&] { mStatusBuildOutputController->toggle(); } );
 		t.setCommand( "toggle-status-terminal", [&] { mStatusTerminalController->toggle(); } );
 		t.setCommand( "open-locatebar", [&] { mUniversalLocator->showLocateBar(); } );
-		t.setCommand( "toggle-locatebar", [&] { mUniversalLocator->toggleLocateBar(); } );
+		t.setCommand( "toggle-status-locate-bar", [&] { mUniversalLocator->toggleLocateBar(); } );
 		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
 		t.setCommand( "project-build-start", [&] {
 			if ( mProjectBuildManager && mStatusBuildOutputController ) {
@@ -395,7 +397,13 @@ class App : public UICodeEditorSplitter::Client {
 
 	UITabWidget* getSidePanel() const;
 
-  protected:
+	const std::map<KeyBindings::Shortcut, std::string>& getRealLocalKeybindings() const;
+
+	const std::map<KeyBindings::Shortcut, std::string>& getRealSplitterKeybindings() const;
+
+	const std::map<KeyBindings::Shortcut, std::string>& getRealTerminalKeybindings() const;
+
+	protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -418,6 +426,10 @@ class App : public UICodeEditorSplitter::Client {
 	std::unordered_map<std::string, std::string> mKeybindingsInvert;
 	std::unordered_map<std::string, std::string> mGlobalSearchKeybindings;
 	std::unordered_map<std::string, std::string> mDocumentSearchKeybindings;
+	std::map<KeyBindings::Shortcut, std::string> mRealLocalKeybindings;
+	std::map<KeyBindings::Shortcut, std::string> mRealSplitterKeybindings;
+	std::map<KeyBindings::Shortcut, std::string> mRealTerminalKeybindings;
+	std::map<KeyBindings::Shortcut, std::string> mRealDefaultKeybindings;
 	std::string mConfigPath;
 	std::string mPluginsPath;
 	std::string mColorSchemesPath;
@@ -501,6 +513,8 @@ class App : public UICodeEditorSplitter::Client {
 	void loadFolder( const std::string& path );
 
 	void loadKeybindings();
+
+	void reloadKeybindings();
 
 	void onDocumentStateChanged( UICodeEditor*, TextDocument& );
 

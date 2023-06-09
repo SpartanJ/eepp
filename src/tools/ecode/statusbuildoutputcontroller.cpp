@@ -240,10 +240,10 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 
 			if ( EXIT_SUCCESS == exitCode ) {
 				buffer = Sys::getDateTimeStr() + ": " +
-						 mApp->i18n( "build_successful", "Build run successfully\n" );
+						 mApp->i18n( "clean_successful", "Clean run successfully\n" );
 			} else {
 				buffer = Sys::getDateTimeStr() + ": " +
-						 mApp->i18n( "build_failed", "Build run with errors\n" );
+						 mApp->i18n( "clean_failed", "Clean run with errors\n" );
 			}
 
 			mContainer->runOnMainThread( [this, buffer]() {
@@ -278,6 +278,10 @@ UICodeEditor* StatusBuildOutputController::createContainer() {
 	editor->setLocked( true );
 	editor->setLineBreakingColumn( 0 );
 	editor->setShowLineNumber( false );
+	editor->getDocument().reset();
+	editor->getDocument().textInput(
+		mApp->i18n( "no_build_has_been_run", "No build has been run" ) );
+	editor->setScrollY( editor->getMaxScroll().y );
 	return editor;
 }
 

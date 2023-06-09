@@ -178,7 +178,6 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 	setId( "welcome_ecode" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	app->registerUnlockedCommands( *this );
-	getKeyBindings().addKeybinds( app->getDefaultKeybindings() );
 	getUISceneNode()->loadLayoutFromString( LAYOUT, this, String::hash( "UIWelcomeScreen" ) );
 
 	auto bindBtn = [this]( const std::string& id ) {

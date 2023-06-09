@@ -38,5 +38,45 @@
     "var": {
       "build_dir": "${project_root}/make/${os}"
     }
+  },
+  "eepp": {
+    "build": [
+      {
+        "args": "--with-debug-symbols gmake",
+        "command": "premake4",
+        "working_dir": "${project_root}"
+      },
+      {
+        "args": "-j${nproc} config=${build_type}",
+        "command": "make",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "build_types": [
+      "debug",
+      "release"
+    ],
+    "clean": [
+      {
+        "args": "config=${build_type} clean",
+        "command": "make",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "config": {
+      "clear_sys_env": false
+    },
+    "os": [
+      "linux"
+    ],
+    "output_parser": {
+      "config": {
+        "preset": "generic",
+        "relative_file_paths": true
+      }
+    },
+    "var": {
+      "build_dir": "${project_root}/make/${os}"
+    }
   }
 }

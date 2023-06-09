@@ -320,6 +320,12 @@ class ProjectBuildManager {
 	void updateBuildType();
 
 	void addNewBuild();
+
+	bool cloneBuild( const std::string& build, std::string newBuildName );
+
+	void addBuild( UIWidget* buildTab );
+
+	void editBuild( std::string buildName, UIWidget* buildTab );
 };
 
 } // namespace ecode

@@ -785,4 +785,8 @@ void UIAbstractTableView::setFitAllColumnsToWidget( bool fitAllColumnsToWidget )
 	mFitAllColumnsToWidget = fitAllColumnsToWidget;
 }
 
+void UIAbstractTableView::recalculateColumnsWidth() {
+	createOrUpdateColumns( false );
+}
+
 }}} // namespace EE::UI::Abstract

@@ -112,6 +112,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	/** Tries to make all columns visible in the widget content. */
 	void setFitAllColumnsToWidget( bool fitAllColumnsToWidget );
 
+	void recalculateColumnsWidth();
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 

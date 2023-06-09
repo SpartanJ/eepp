@@ -287,15 +287,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 			return;
 		mApp->setAppTitle( event->getNode()->asType<UITerminal>()->getTitle() );
 	} );
-	term->addKeyBinds( mApp->getLocalKeybindings() );
-	term->addKeyBinds( UICodeEditorSplitter::getLocalDefaultKeybindings() );
-	term->addKeyBinds( getTerminalKeybindings() );
-	// Remove the keybinds that are problematic for a terminal
-	term->getKeyBindings().removeCommandsKeybind(
-		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
-		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
-		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
-		  "console-toggle", "go-to-line" } );
+	setKeybindings( term );
 	term->setCommand( "terminal-rename", [&, term] {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::INPUT, mApp->i18n( "new_terminal_name", "New terminal name:" ) );
@@ -334,6 +326,19 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	term->setFocus();
 	return term;
 #endif
+}
+
+void TerminalManager::setKeybindings( UITerminal* term ) {
+	term->getKeyBindings().reset();
+	term->addKeyBinds( mApp->getRealLocalKeybindings() );
+	term->addKeyBinds( mApp->getRealSplitterKeybindings() );
+	term->addKeyBinds( mApp->getRealTerminalKeybindings() );
+	// Remove the keybinds that are problematic for a terminal
+	term->getKeyBindings().removeCommandsKeybind(
+		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
+		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
+		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
+		  "console-toggle", "go-to-line" } );
 }
 
 } // namespace ecode

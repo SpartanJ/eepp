@@ -50,6 +50,8 @@ class TerminalManager {
 
 	const std::string& getTerminalCurrentColorScheme() { return mTerminalCurrentColorScheme; }
 
+	void setKeybindings( UITerminal* term );
+
   protected:
 	App* mApp;
 	std::string mTerminalColorSchemesPath;

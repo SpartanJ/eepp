@@ -14,6 +14,20 @@ UIStatusBar::UIStatusBar() :
 	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
 
 void UIStatusBar::updateState() {
+	forEachChild( [this]( Node* node ) {
+		if ( node->isWidget() && String::startsWith( node->getId(), "status_" ) ) {
+			auto widget = node->asType<UIWidget>();
+			widget->removeClass( "selected" );
+			if ( nullptr == widget->getTooltip() ) {
+				std::string name( widget->getId() );
+				String::replaceAll( name, "_", "-" );
+				auto kb = mApp->getKeybind( "toggle-" + name );
+				if ( !kb.empty() )
+					widget->setTooltipText( kb );
+			}
+		}
+	} );
+
 	getParent()->forEachChild( [this]( Node* node ) {
 		UIWidget* but = find<UIWidget>( "status_" + node->getId() );
 		if ( but && but != this ) {
@@ -25,23 +39,14 @@ void UIStatusBar::updateState() {
 		}
 	} );
 
-	UIWidget* termBut = find<UIWidget>( "status_terminal" );
-	if ( termBut )
-		termBut->removeClass( "selected" );
-	UIWidget* boBut = find<UIWidget>( "status_build_output" );
-	if ( boBut )
-		boBut->removeClass( "selected" );
-
-	if ( mApp->getMainSplitter() ) {
-		if ( mApp->getMainSplitter()->getLastWidget() ) {
-			UIWidget* widget = mApp->getMainSplitter()->getLastWidget();
-			UIWidget* but = find<UIWidget>( "status_" + widget->getId() );
-			if ( but && but != this ) {
-				if ( widget->isVisible() ) {
-					but->addClass( "selected" );
-				} else {
-					but->removeClass( "selected" );
-				}
+	if ( mApp->getMainSplitter() && mApp->getMainSplitter()->getLastWidget() ) {
+		UIWidget* widget = mApp->getMainSplitter()->getLastWidget();
+		UIWidget* but = find<UIWidget>( "status_" + widget->getId() );
+		if ( but && but != this ) {
+			if ( widget->isVisible() ) {
+				but->addClass( "selected" );
+			} else {
+				but->removeClass( "selected" );
 			}
 		}
 	}
@@ -80,10 +85,16 @@ Uint32 UIStatusBar::onMessage( const NodeMessage* msg ) {
 
 void UIStatusBar::setApp( App* app ) {
 	mApp = app;
+	updateState();
 }
 
 void UIStatusBar::onVisibilityChange() {
 	if ( isVisible() )
+		updateState();
+}
+
+void UIStatusBar::onChildCountChange( Node*, const bool& ) {
+	if ( mApp )
 		updateState();
 }
 

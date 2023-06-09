@@ -28,6 +28,8 @@ class UIStatusBar : public UILinearLayout, public WidgetCommandExecuter {
 	App* mApp{ nullptr };
 
 	virtual void onVisibilityChange();
+
+	virtual void onChildCountChange( Node* child, const bool& removed );
 };
 
 } // namespace ecode

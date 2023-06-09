@@ -95,16 +95,7 @@ UITerminal* StatusTerminalController::createTerminal( const std::string& working
 	term->setColorScheme( csIt != terminalColorSchemes.end()
 							  ? terminalColorSchemes.at( currentTerminalColorScheme )
 							  : TerminalColorScheme::getDefault() );
-	term->addKeyBinds( mApp->getLocalKeybindings() );
-	term->addKeyBinds( UICodeEditorSplitter::getLocalDefaultKeybindings() );
-	term->addKeyBinds( { { { KEY_E, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT },
-						   UITerminal::getExclusiveModeToggleCommandName() } } );
-	// Remove the keybinds that are problematic for a terminal
-	term->getKeyBindings().removeCommandsKeybind(
-		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
-		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
-		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
-		  "console-toggle", "go-to-line" } );
+	mApp->getTerminalManager()->setKeybindings( term );
 	term->setCommand( "switch-to-previous-colorscheme", [&] {
 		auto it = mApp->getTerminalManager()->getTerminalColorSchemes().find(
 			mApp->getTerminalManager()->getTerminalCurrentColorScheme() );

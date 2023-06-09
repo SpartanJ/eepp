@@ -45,8 +45,9 @@ LSPClientServerManager::supportsLSP( const std::shared_ptr<TextDocument>& doc ) 
 
 std::unique_ptr<LSPClientServer>
 LSPClientServerManager::runLSPServer( const String::HashType& id, const LSPDefinition& lsp,
-									  const std::string& rootPath ) {
-	auto server = std::make_unique<LSPClientServer>( this, id, lsp, rootPath );
+									  const std::string& rootPath,
+									  std::vector<std::string> languagesSupported ) {
+	auto server = std::make_unique<LSPClientServer>( this, id, lsp, rootPath, languagesSupported );
 	server->start();
 	return server;
 }
@@ -96,7 +97,22 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 			Lock l( mClientsMutex );
 			auto clientIt = mClients.find( id );
 			if ( clientIt == mClients.end() ) {
-				std::unique_ptr<LSPClientServer> serverUP = runLSPServer( id, lsp, rootPath );
+				auto rlsp = lsp;
+				if ( !lsp.usesLSP.empty() ) {
+					for ( const auto& flsp : mLSPs ) {
+						if ( flsp.name == lsp.usesLSP ) {
+							rlsp = flsp;
+							break;
+						}
+					}
+				}
+				std::vector<std::string> languagesSupported;
+				languagesSupported.push_back( rlsp.language );
+				for ( const auto& flsp : mLSPs )
+					if ( flsp.name == lsp.usesLSP )
+						languagesSupported.push_back( flsp.language );
+				std::unique_ptr<LSPClientServer> serverUP =
+					runLSPServer( id, rlsp, rootPath, languagesSupported );
 				if ( ( server = serverUP.get() ) ) {
 					mClients[id] = std::move( serverUP );
 					if ( !mLSPWorkspaceFolder.uri.empty() )
@@ -471,7 +487,7 @@ LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const URI& uri )
 LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const std::string& language ) {
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
-		if ( server.second->getDefinition().language == language )
+		if ( server.second->supportsLanguage( language ) )
 			return server.second.get();
 	}
 	return nullptr;
@@ -482,7 +498,7 @@ LSPClientServerManager::getLSPClientServers( const std::string& language ) {
 	std::vector<LSPClientServer*> servers;
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
-		if ( server.second->getDefinition().language == language )
+		if ( server.second->supportsLanguage( language ) )
 			servers.push_back( server.second.get() );
 	}
 	return servers;

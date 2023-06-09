@@ -114,7 +114,8 @@ class LSPClientServerManager {
 
 	std::unique_ptr<LSPClientServer> runLSPServer( const String::HashType& id,
 												   const LSPDefinition& lsp,
-												   const std::string& rootPath );
+												   const std::string& rootPath,
+												   std::vector<std::string> languagesSupported );
 
 	std::string findRootPath( const LSPDefinition& lsp, const std::shared_ptr<TextDocument>& doc );
 

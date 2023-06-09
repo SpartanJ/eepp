@@ -306,6 +306,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 	<vbox lw="mp" lh="wc" class="settings_panel" id="build_settings_panel">
 		<hbox lw="mp" lh="wc">
 			<TextView lw="0" lw8="1" lh="wc" class="title" text="@string(build_settings, Build Settings)" />
+			<PushButton id="build_clone" lh="mp" text="@string(clone_setting, Clone Setting)" text-as-fallback="true" icon="icon(file-copy, 12dp)" tooltip="@string(clone_setting, Clone Setting)" margin-right="4dp" />
 			<PushButton id="build_del" lh="mp" text="@string(delete_setting, Delete Setting)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_setting, Delete Setting)" />
 		</hbox>
 		<Widget class="separator" lw="mp" lh="1dp" />
@@ -543,6 +544,23 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 		} );
 	} );
 
+	find( "build_clone" )->onClick( [this]( auto ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::INPUT, i18n( "build_cloned_name", "New Cloned Build Name:" ) );
+		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->showWhenReady();
+		msgBox->on( Event::OnWindowReady, [this, msgBox]( auto ) {
+			msgBox->getTextInput()->setText( mBuild.getName() );
+			msgBox->getTextInput()->getDocument().selectAll();
+		} );
+		msgBox->addEventListener( Event::OnConfirm, [msgBox, this]( const Event* ) {
+			const auto& newBuildName = msgBox->getTextInput()->getText();
+			sendTextEvent( Event::OnCopy, newBuildName );
+			msgBox->closeWindow();
+		} );
+	} );
+
 	find( "build_type_add" )->onClick( [this, buildTypeDropDown, panelBuildTypeDDL]( auto ) {
 		UIMessageBox* msgBox =
 			UIMessageBox::New( UIMessageBox::INPUT, i18n( "build_type_name", "Build Type Name:" ) );
@@ -663,23 +681,26 @@ void UIBuildSettings::refreshTab() {
 	mTab->setText(
 		String::format( ( i18n( "build_seetings", "Build Settings" ) + ": %s" ).toUtf8().c_str(),
 						mBuild.mName.c_str() ) );
-	mTab->setId( "build_settings_" + mBuild.mName );
+	std::string hashName = String::toString( String::hash( mIsNew ? "new_name" : mBuild.mName ) );
+	mTab->setId( "build_settings_" + hashName );
 }
 
 void UIBuildSettings::bindTable( const std::string& name, const std::string& key,
 								 ProjectBuildKeyVal& data ) {
 
-	const auto createInputDelegate = []( const ModelIndex& ) -> ModelEditingDelegate* {
+	UITableView* table = find<UITableView>( name );
+	auto model = ItemPairListModel<std::string, std::string>::create( data );
+	const auto createInputDelegate = [table]( const ModelIndex& ) -> ModelEditingDelegate* {
 		auto delegate = StringModelEditingDelegate::New();
-		delegate->onWillBeginEditing = [delegate]() {
-			delegate->getWidget()->asType<UITextInput>()->on(
-				Event::OnFocusLoss, [delegate]( auto ) { delegate->onCommit(); } );
+		delegate->onWillBeginEditing = [delegate, table]() {
+			delegate->getWidget()->asType<UITextInput>()->on( Event::OnFocusLoss,
+															  [delegate, table]( auto ) {
+																  delegate->onCommit();
+																  table->recalculateColumnsWidth();
+															  } );
 		};
 		return delegate;
 	};
-
-	UITableView* table = find<UITableView>( name );
-	auto model = ItemPairListModel<std::string, std::string>::create( data );
 	model->setColumnName( 0, getTranslatorString( key + "_name", "Name" ) );
 	model->setColumnName( 1, getTranslatorString( key + "_value", "Value" ) );
 	model->setIsEditable( true );

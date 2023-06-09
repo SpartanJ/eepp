@@ -1114,8 +1114,13 @@ void LSPClientServer::initialize() {
 }
 
 LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String::HashType& id,
-								  const LSPDefinition& lsp, const std::string& rootPath ) :
-	mManager( manager ), mId( id ), mLSP( lsp ), mRootPath( rootPath ) {}
+								  const LSPDefinition& lsp, const std::string& rootPath,
+								  const std::vector<std::string>& languagesSupported ) :
+	mManager( manager ),
+	mId( id ),
+	mLSP( lsp ),
+	mRootPath( rootPath ),
+	mLanguagesSupported( languagesSupported ) {}
 
 LSPClientServer::~LSPClientServer() {
 	shutdown();
@@ -2048,6 +2053,11 @@ void LSPClientServer::shutdown() {
 		Sys::sleep( Milliseconds( 100 ) );
 		mReady = false;
 	}
+}
+
+bool LSPClientServer::supportsLanguage( const std::string& lang ) const {
+	return std::find( mLanguagesSupported.begin(), mLanguagesSupported.end(), lang ) !=
+		   mLanguagesSupported.end();
 }
 
 } // namespace ecode

@@ -61,7 +61,8 @@ class LSPClientServer {
 	};
 
 	LSPClientServer( LSPClientServerManager* manager, const String::HashType& id,
-					 const LSPDefinition& lsp, const std::string& rootPath );
+					 const LSPDefinition& lsp, const std::string& rootPath,
+					 const std::vector<std::string>& languagesSupported );
 
 	~LSPClientServer();
 
@@ -221,6 +222,8 @@ class LSPClientServer {
 
 	void shutdown();
 
+	bool supportsLanguage( const std::string& lang ) const;
+
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;
@@ -247,6 +250,7 @@ class LSPClientServer {
 	std::string mReceiveErr;
 	LSPServerCapabilities mCapabilities;
 	URI mWorkspaceFolder;
+	std::vector<std::string> mLanguagesSupported;
 
 	struct DidChangeQueue {
 		URI uri;

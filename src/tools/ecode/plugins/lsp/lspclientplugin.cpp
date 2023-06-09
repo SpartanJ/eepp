@@ -845,7 +845,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 				std::string name = obj.contains( "name" ) ? obj["name"] : obj["use"];
 				if ( lspR.name == name ) {
 					lspOverwritten = true;
-					lspR.usesOtherDefinition = obj.contains( "use" );
+					if ( obj.contains( "use" ) && obj["use"].is_string() )
+						lspR.usesLSP = obj["use"].get<std::string>();
 					if ( obj.contains( "share_process" ) && obj["share_process"].is_boolean() ) {
 						lspR.shareProcessWithOtherDefinition = obj["share_process"].get<bool>();
 					}
@@ -896,7 +897,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					lsp.host = tlsp.host;
 					lsp.port = tlsp.port;
 					lsp.initializationOptions = tlsp.initializationOptions;
-					lsp.usesOtherDefinition = true;
+					lsp.usesLSP = use;
 					if ( obj.contains( "share_process" ) && obj["share_process"].is_boolean() ) {
 						lsp.shareProcessWithOtherDefinition = obj["share_process"].get<bool>();
 					}
