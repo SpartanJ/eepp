@@ -353,15 +353,15 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		id="plugin-manager-window"
 		lw="800dp" lh="400dp"
 		padding="8dp"
-		window-title="Plugin Manager"
+		window-title="@string(plugin_manager, Plugin Manager)"
 		window-flags="default|maximize|shadow"
 		window-min-size="300dp 300dp">
 		<vbox lw="mp" lh="mp">
 			<UIPluginManagerTable id="plugin-manager-table" lw="mp" lh="fixed" layout_weight="1" />
 			<vbox lw="mp" lh="wc">
 				<hbox margin-top="4dp" layout-gravity="right">
-					<pushbutton id="plugin-manager-preferences" enabled="false" text="Configuration" />
-					<pushbutton id="plugin-manager-close" text="Close" icon="close" margin-left="4dp" />
+					<pushbutton id="plugin-manager-preferences" enabled="false" text="@string(preferences, Preferences)" />
+					<pushbutton id="plugin-manager-close" text="@string(close, Close)" icon="close" margin-left="4dp" />
 				</hbox>
 			</vbox>
 		</vbox>
@@ -377,8 +377,6 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
 			win->closeWindow();
 	} );
-	prefs->setText( sceneNode->i18n( "preferences", "Preferences" ) );
-	win->setTitle( sceneNode->i18n( "plugin_manager", "Plugin Manager" ) );
 	tv->setModel( PluginsModel::New( manager ) );
 	tv->setColumnsVisible(
 		{ PluginsModel::Title, PluginsModel::Description, PluginsModel::Version } );

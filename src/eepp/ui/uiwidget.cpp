@@ -864,6 +864,10 @@ void UIWidget::setElementTag( const std::string& tag ) {
 	}
 }
 
+const std::vector<std::string> UIWidget::getClasses() const {
+	return mClasses;
+}
+
 const std::string& UIWidget::getElementTag() const {
 	return mTag;
 }

@@ -116,13 +116,15 @@ void UIAbstractView::onModelUpdate( unsigned flags ) {
 }
 
 void UIAbstractView::onModelSelectionChange() {
-	if ( getModel() && mOnSelection && getSelection().first().isValid() )
+	if ( getModel() && mOnSelection && getSelection().first().isValid() ) {
 		mOnSelection( getSelection().first() );
+	}
 	invalidateDraw();
 }
 
 void UIAbstractView::notifySelectionChange() {
 	onModelSelectionChange();
+	sendCommonEvent( Event::OnSelectionChanged );
 	if ( mOnSelectionChange )
 		mOnSelectionChange();
 }

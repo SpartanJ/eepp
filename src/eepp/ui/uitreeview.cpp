@@ -223,25 +223,46 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		mWidgets[rowIndex][index.column()] = widget;
 		widget->reloadStyle( true, true, true );
 	}
-	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
+	const auto& colData = columnData( index.column() );
+	if ( !colData.visible ) {
+		widget->setVisible( false );
+		return widget;
+	}
+	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
-
 	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
 		UITableCell* cell = widget->asType<UITableCell>();
 		cell->setCurIndex( index );
 
 		if ( getModel()->classModelRoleEnabled() ) {
+			bool needsReloadStyle = false;
 			Variant cls( getModel()->data( index, ModelRole::Class ) );
+			cell->setLoadingState( true );
 			if ( cls.isValid() ) {
-				if ( cls.is( Variant::Type::StdString ) )
+				// We analize each case to avoid unnecessary allocations
+				if ( cls.is( Variant::Type::StdString ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asStdString() != cell->getClasses()[0];
 					cell->setClass( cls.asStdString() );
-				else if ( cls.is( Variant::Type::String ) )
+				} else if ( cls.is( Variant::Type::String ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asString().toUtf8() != cell->getClasses()[0];
 					cell->setClass( cls.asString() );
-				else if ( cls.is( Variant::Type::cstr ) )
+				} else if ( cls.is( Variant::Type::cstr ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asCStr() != cell->getClasses()[0];
 					cell->setClass( cls.asCStr() );
+				}
 			} else {
+				needsReloadStyle = !cell->getClasses().empty();
 				cell->resetClass();
 			}
+			cell->setLoadingState( false );
+			if ( needsReloadStyle )
+				cell->reportStyleStateChangeRecursive();
 		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
@@ -312,6 +333,14 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
+	}
+
+	if ( isCellSelection() ) {
+		if ( getSelection().contains( index ) ) {
+			widget->pushState( UIState::StateSelected );
+		} else {
+			widget->popState( UIState::StateSelected );
+		}
 	}
 
 	return widget;

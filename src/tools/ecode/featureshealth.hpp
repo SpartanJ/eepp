@@ -5,6 +5,10 @@
 #include <unordered_map>
 #include <vector>
 
+namespace EE { namespace UI {
+class UISceneNode;
+}} // namespace EE::UI
+
 namespace ecode {
 
 class PluginManager;
@@ -43,6 +47,8 @@ class FeaturesHealth {
 
 	static void doHealth( PluginManager* pluginManager, const std::string& lang = "",
 						  const OutputFormat& format = OutputFormat::Terminal );
+
+	static void displayHealth( PluginManager* pluginManager, EE::UI::UISceneNode* sceneNode );
 };
 
 } // namespace ecode

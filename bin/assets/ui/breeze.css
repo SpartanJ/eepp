@@ -1041,24 +1041,6 @@ TextInput.table_cell_edit {
 	padding-bottom: 0!important;
 }
 
-.theme-error > tableview::cell::text,
-.theme-error > treeview::cell::text,
-.theme-error > listview::cell::text {
-	color: var(--theme-error);
-}
-
-.theme-warning > tableview::cell::text,
-.theme-warning > treeview::cell::text,
-.theme-warning > listview::cell::text {
-	color: var(--theme-warning);
-}
-
-.theme-success > tableview::cell::text,
-.theme-success > treeview::cell::text,
-.theme-success > listview::cell::text {
-	color: var(--theme-success);
-}
-
 @media (prefers-color-scheme: light) {
 
 :root {

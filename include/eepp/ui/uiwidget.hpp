@@ -163,6 +163,8 @@ class EE_API UIWidget : public UINode {
 
 	void setElementTag( const std::string& tag );
 
+	const std::vector<std::string> getClasses() const;
+
 	const std::string& getElementTag() const;
 
 	virtual void pushState( const Uint32& State, bool emitEvent = true );

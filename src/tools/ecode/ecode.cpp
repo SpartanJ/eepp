@@ -2864,59 +2864,8 @@ void App::loadFileSystemMatcher( const std::string& folderPath ) {
 		std::make_shared<GitIgnoreMatcher>( folderPath, ".ecode/.fstreeviewignore" );
 }
 
-static std::string GetCurrentProcessName() {
-#if defined( __APPLE__ ) || defined( __FreeBSD__ )
-	return getprogname();
-#elif defined( _GNU_SOURCE ) && EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
-	return program_invocation_name;
-#elif defined( _WIN32 )
-	return __argv[0];
-#else
-	return "ecode";
-#endif
-}
-
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
-#include <libproc.h>
-#include <unistd.h>
-#endif
-
-static std::string getCurrentProcessPath() {
-#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_ANDROID
-	auto path( Sys::getProcessPath() );
-	FileSystem::dirAddSlashAtEnd( path );
-	if ( String::startsWith( GetCurrentProcessName(), Sys::getProcessPath() ) ) {
-		auto proc( GetCurrentProcessName() );
-		FileSystem::filePathRemoveProcessPath( proc );
-		path += proc;
-	} else {
-		path += GetCurrentProcessName();
-	}
-	return path;
-#elif EE_PLATFORM == EE_PLATFORM_ANDROID
-	return Sys::getProcessPath();
-#else
-	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
-	pid_t pid = getpid();
-	int ret = proc_pidpath( pid, pathbuf, sizeof( pathbuf ) );
-	if ( ret >= 0 )
-		return std::string( pathbuf );
-	auto path( Sys::getProcessPath() );
-	FileSystem::dirAddSlashAtEnd( path );
-	return path + GetCurrentProcessName();
-#endif
-}
-
 void App::checkLanguagesHealth() {
-	auto path( getCurrentProcessPath() );
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	UITerminal* term = mTerminalManager->createNewTerminal(
-		"", nullptr, "", Sys::getPlatform() == "Windows" ? "cmd.exe" : "" );
-#else
-	UITerminal* term = mTerminalManager->createNewTerminal();
-#endif
-	term->setFocus();
-	term->executeBinary( path, "--health" );
+	FeaturesHealth::displayHealth( mPluginManager.get(), mUISceneNode );
 }
 
 void App::cleanUpRecentFolders() {
@@ -3508,6 +3457,37 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 .custom_output_parser_cont > .capture_positions_cont > * {
 	padding: 2dp;
+}
+.theme-error > tableview::cell::text,
+.theme-error > treeview::cell::text,
+.theme-error > listview::cell::text,
+.error {
+	color: var(--theme-error);
+}
+
+.theme-warning > tableview::cell::text,
+.theme-warning > treeview::cell::text,
+.theme-warning > listview::cell::text,
+.warning {
+	color: var(--theme-warning);
+}
+
+.theme-success > tableview::cell::text,
+.theme-success > treeview::cell::text,
+.theme-success > listview::cell::text,
+.success {
+	color: var(--theme-success);
+}
+
+.theme-none > tableview::cell::text,
+.theme-none > treeview::cell::text,
+.theme-none > listview::cell::text,
+.none {
+	color: #b26818;
+}
+Anchor.success:hover,
+Anchor.error:hover {
+	color: var(--primary);
 }
 </style>
 <MainLayout id="main_layout" lw="mp" lh="mp">

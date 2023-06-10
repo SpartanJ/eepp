@@ -523,17 +523,34 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		cell->setCurIndex( index );
 
 		if ( getModel()->classModelRoleEnabled() ) {
+			bool needsReloadStyle = false;
 			Variant cls( getModel()->data( index, ModelRole::Class ) );
+			cell->setLoadingState( true );
 			if ( cls.isValid() ) {
-				if ( cls.is( Variant::Type::StdString ) )
+				// We analize each case to avoid unnecessary allocations
+				if ( cls.is( Variant::Type::StdString ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asStdString() != cell->getClasses()[0];
 					cell->setClass( cls.asStdString() );
-				else if ( cls.is( Variant::Type::String ) )
+				} else if ( cls.is( Variant::Type::String ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asString().toUtf8() != cell->getClasses()[0];
 					cell->setClass( cls.asString() );
-				else if ( cls.is( Variant::Type::cstr ) )
+				} else if ( cls.is( Variant::Type::cstr ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asCStr() != cell->getClasses()[0];
 					cell->setClass( cls.asCStr() );
+				}
 			} else {
+				needsReloadStyle = !cell->getClasses().empty();
 				cell->resetClass();
 			}
+			cell->setLoadingState( false );
+			if ( needsReloadStyle )
+				cell->reportStyleStateChangeRecursive();
 		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
