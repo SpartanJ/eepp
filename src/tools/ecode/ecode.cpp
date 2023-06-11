@@ -3483,11 +3483,29 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .theme-none > treeview::cell::text,
 .theme-none > listview::cell::text,
 .none {
-	color: #b26818;
+	color: #d48838;
 }
 Anchor.success:hover,
 Anchor.error:hover {
 	color: var(--primary);
+}
+.status_build_output_cont > SelectButton {
+	font-size: 11dp;
+	padding: 2dp 8dp 2dp 8dp;
+	border-radius: 0dp;
+	border-width: 1dp;
+	border-color: transparent;
+	transition: all 0.2;
+}
+.status_build_output_cont > SelectButton:hover {
+	border-width: 1dp;
+	border-color: var(--primary);
+}
+#build_output_issues TableView::cell.theme-warning > TableView::cell::icon {
+	tint: var(--theme-warning);
+}
+#build_output_issues TableView::cell.theme-error > TableView::cell::icon {
+	tint: var(--theme-error);
 }
 </style>
 <MainLayout id="main_layout" lw="mp" lh="mp">
@@ -3559,17 +3577,17 @@ Anchor.error:hover {
 		</locatebar>
 		<globalsearchbar id="global_search_bar" lw="mp" lh="wc">
 			<hbox lw="mp" lh="wc">
-				<TextView lw="wc" lh="wc" text='@string(search_for, "Search for:")' margin-right="4dp" />
+				<TextView text='@string(search_for, "Search for:")' margin-right="4dp" />
 				<vbox lw="0" lw8="1" lh="wc">
 					<TextInput id="global_search_find" lw="mp" lh="wc" lh="18dp" padding="0" margin-bottom="2dp" />
 					<hbox lw="mp" lh="wc" margin-bottom="4dp">
-						<CheckBox id="case_sensitive" lw="wc" lh="wc" text='@string(case_sensitive, "Case sensitive")' selected="true" />
-						<CheckBox id="whole_word" lw="wc" lh="wc" text='@string(match_whole_word, "Match Whole Word")' selected="false" margin-left="8dp" />
-						<CheckBox id="lua_pattern" lw="wc" lh="wc" text='@string(lua_pattern, "Lua Pattern")' selected="false" margin-left="8dp" />
-						<CheckBox id="escape_sequence" lw="wc" lh="wc" text='@string(use_escape_sequences, "Use escape sequences")' margin-left="8dp" selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
+						<CheckBox id="case_sensitive" text='@string(case_sensitive, "Case sensitive")' selected="true" />
+						<CheckBox id="whole_word" text='@string(match_whole_word, "Match Whole Word")' selected="false" margin-left="8dp" />
+						<CheckBox id="lua_pattern" text='@string(lua_pattern, "Lua Pattern")' selected="false" margin-left="8dp" />
+						<CheckBox id="escape_sequence" text='@string(use_escape_sequences, "Use escape sequences")' margin-left="8dp" selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
 					</hbox>
 					<hbox lw="mp" lh="wc">
-						<TextView lw="wc" lh="wc" text='@string(history, "History:")' margin-right="4dp" lh="18dp" />
+						<TextView text='@string(history, "History:")' margin-right="4dp" lh="18dp" />
 						<DropDownList id="global_search_history" lw="0" lh="18dp" lw8="1" margin-right="4dp" />
 						<PushButton id="global_search_clear_history" lw="wc" lh="18dp" text='@string(clear_history, "Clear History")' margin-right="4dp" />
 						<PushButton id="global_search" lw="wc" lh="18dp" text='@string(search, "Search")' margin-right="4dp" />
@@ -3583,86 +3601,80 @@ Anchor.error:hover {
 			<TextView class="status_but" id="status_locate_bar" text="@string(locate, Locate)" />
 			<TextView class="status_but" id="status_global_search_bar" text="@string(search, Search)" />
 			<TextView class="status_but" id="status_terminal" text="@string(terminal, Terminal)" />
-			<TextView class="status_but" id="status_build_output" text="@string(build_output, Build Output)" />
+			<TextView class="status_but" id="status_build_output" text="@string(build, Build)" />
 			<View lw="0" lw8="1" lh="mp" />
 		</statusbar>
 	</vbox>
 </Splitter>
-<TextView id="settings" lw="wc" lh="wc" text="&#xf0e9;" lg="top|right" />
+<TextView id="settings" text="&#xf0e9;" lg="top|right" />
 </MainLayout>
 		)html";
 
 		UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		std::unordered_map<std::string, Uint32> icons = {
-			{ "document-new", 0xecc3 },
-			{ "document-open", 0xed70 },
-			{ "document-save", 0xf0b3 },
-			{ "document-save-as", 0xf0b3 },
-			{ "document-close", 0xeb99 },
-			{ "quit", 0xeb97 },
-			{ "undo", 0xea58 },
-			{ "redo", 0xea5a },
-			{ "cut", 0xf0c1 },
-			{ "copy", 0xecd5 },
-			{ "paste", 0xeb91 },
-			{ "edit", 0xec86 },
-			{ "split-horizontal", 0xf17a },
-			{ "split-vertical", 0xf17b },
-			{ "find-replace", 0xed2b },
-			//			{ "folder", 0xed54 },
-			//			{ "folder-open", 0xed70 },
-			{ "folder-add", 0xed5a },
-			//			{ "file", 0xecc3 },
-			{ "file-add", 0xecc9 },
-			{ "file-copy", 0xecd3 },
-			{ "file-code", 0xecd1 },
-			{ "file-edit", 0xecdb },
-			{ "font-size", 0xed8d },
-			{ "delete-bin", 0xec1e },
-			{ "delete-text", 0xec1e },
-			{ "zoom-in", 0xf2db },
-			{ "zoom-out", 0xf2dd },
-			{ "zoom-reset", 0xeb47 },
-			{ "fullscreen", 0xed9c },
-			{ "keybindings", 0xee75 },
-			//			{ "tree-expanded", 0xea50 },
-			//			{ "tree-contracted", 0xea54 },
-			{ "search", 0xf0d1 },
-			{ "go-up", 0xea78 },
-			{ "ok", 0xeb7a },
-			{ "cancel", 0xeb98 },
-			{ "color-picker", 0xf13d },
-			{ "pixel-density", 0xed8c },
-			{ "go-to-line", 0xf1f8 },
-			{ "table-view", 0xf1de },
-			{ "list-view", 0xecf1 },
-			{ "menu-unfold", 0xef40 },
-			{ "menu-fold", 0xef3d },
-			{ "download-cloud", 0xec58 },
-			{ "layout-left", 0xee94 },
-			{ "layout-right", 0xee9b },
-			{ "color-scheme", 0xebd4 },
-			{ "global-settings", 0xedcf },
-			{ "folder-user", 0xed84 },
-			{ "help", 0xf045 },
-			{ "terminal", 0xf1f6 },
-			{ "earth", 0xec7a },
-			{ "arrow-down", 0xea4c },
-			{ "arrow-up", 0xea76 },
-			{ "arrow-down-s", 0xea4e },
-			{ "arrow-up-s", 0xea78 },
-			{ "arrow-right-s", 0xea6e },
-			{ "match-case", 0xed8d },
-			{ "palette", 0xefc5 },
-			{ "file-code", 0xecd1 },
-			{ "cursor-pointer", 0xec09 },
-			{ "drive", 0xedf8 },
-			{ "refresh", 0xf064 },
-			{ "hearth-pulse", 0xee10 },
-			{ "add", 0xea12 },
-			{ "hammer", 0xedee },
-			{ "eraser", 0xec9e } };
+		std::unordered_map<std::string, Uint32> icons = { { "document-new", 0xecc3 },
+														  { "document-open", 0xed70 },
+														  { "document-save", 0xf0b3 },
+														  { "document-save-as", 0xf0b3 },
+														  { "document-close", 0xeb99 },
+														  { "quit", 0xeb97 },
+														  { "undo", 0xea58 },
+														  { "redo", 0xea5a },
+														  { "cut", 0xf0c1 },
+														  { "copy", 0xecd5 },
+														  { "paste", 0xeb91 },
+														  { "edit", 0xec86 },
+														  { "split-horizontal", 0xf17a },
+														  { "split-vertical", 0xf17b },
+														  { "find-replace", 0xed2b },
+														  { "folder-add", 0xed5a },
+														  { "file-add", 0xecc9 },
+														  { "file-copy", 0xecd3 },
+														  { "file-code", 0xecd1 },
+														  { "file-edit", 0xecdb },
+														  { "font-size", 0xed8d },
+														  { "delete-bin", 0xec1e },
+														  { "delete-text", 0xec1e },
+														  { "zoom-in", 0xf2db },
+														  { "zoom-out", 0xf2dd },
+														  { "zoom-reset", 0xeb47 },
+														  { "fullscreen", 0xed9c },
+														  { "keybindings", 0xee75 },
+														  { "search", 0xf0d1 },
+														  { "go-up", 0xea78 },
+														  { "ok", 0xeb7a },
+														  { "cancel", 0xeb98 },
+														  { "color-picker", 0xf13d },
+														  { "pixel-density", 0xed8c },
+														  { "go-to-line", 0xf1f8 },
+														  { "table-view", 0xf1de },
+														  { "list-view", 0xecf1 },
+														  { "menu-unfold", 0xef40 },
+														  { "menu-fold", 0xef3d },
+														  { "download-cloud", 0xec58 },
+														  { "layout-left", 0xee94 },
+														  { "layout-right", 0xee9b },
+														  { "color-scheme", 0xebd4 },
+														  { "global-settings", 0xedcf },
+														  { "folder-user", 0xed84 },
+														  { "help", 0xf045 },
+														  { "terminal", 0xf1f6 },
+														  { "earth", 0xec7a },
+														  { "arrow-down", 0xea4c },
+														  { "arrow-up", 0xea76 },
+														  { "arrow-down-s", 0xea4e },
+														  { "arrow-up-s", 0xea78 },
+														  { "arrow-right-s", 0xea6e },
+														  { "match-case", 0xed8d },
+														  { "palette", 0xefc5 },
+														  { "file-code", 0xecd1 },
+														  { "cursor-pointer", 0xec09 },
+														  { "drive", 0xedf8 },
+														  { "refresh", 0xf064 },
+														  { "hearth-pulse", 0xee10 },
+														  { "add", 0xea12 },
+														  { "hammer", 0xedee },
+														  { "eraser", 0xec9e } };
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
 
@@ -3783,7 +3795,9 @@ Anchor.error:hover {
 				{ "chevron-right", 0xeab6 },
 				{ "lightbulb-autofix", 0xeb13 },
 				{ "layout-sidebar-left-off", 0xec02 },
-				{ "layout-sidebar-left", 0xebf3 } };
+				{ "layout-sidebar-left", 0xebf3 },
+				{ "warning", 0xea6c },
+				{ "error", 0xea87 } };
 
 			for ( const auto& icon : codIcons )
 				iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
@@ -3815,6 +3829,7 @@ Anchor.error:hover {
 		UIWidgetCreator::registerWidget( "globalsearchbar", UIGlobalSearchBar::New );
 		UIWidgetCreator::registerWidget( "mainlayout", UIMainLayout::New );
 		UIWidgetCreator::registerWidget( "statusbar", UIStatusBar::New );
+		UIWidgetCreator::registerWidget( "rellayce", UIRelativeLayoutCommandExecuter::New );
 		mUISceneNode->loadLayoutFromString( baseUI );
 		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );

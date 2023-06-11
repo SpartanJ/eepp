@@ -43,9 +43,9 @@
 	--highlight-primary: #FFFFFF7A;
 	--disabled-color: #727679;
 	--disabled-border: #43474c;
-	--theme-error: #cc0000;
-	--theme-warning: #cccc00;
-	--theme-success: #00cc00;
+	--theme-error: #ff4040;
+	--theme-warning: #ffff40;
+	--theme-success: #40ff40;
 	droppable-hovering-color: #FFFFFF20;
 }
 
@@ -771,6 +771,7 @@ Menu::RadioButton::shortcut {
 	color: var(--menu-font);
 }
 
+PushButton:disabled > PushButton::icon,
 Menu::Item:disabled > Menu::Item::text,
 Menu::Item:disabled > Menu::Item::shortcut,
 Menu::Item:disabled > Menu::Item::icon,

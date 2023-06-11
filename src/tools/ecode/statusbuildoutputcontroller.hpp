@@ -2,10 +2,13 @@
 #define ECODE_STATUSBUILDOUTPUTCONTROLLER_HPP
 
 #include "projectbuild.hpp"
+#include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uisplitter.hpp>
+#include <eepp/ui/uitableview.hpp>
 
 using namespace EE;
 using namespace EE::UI;
@@ -14,6 +17,21 @@ using namespace EE::UI::Tools;
 namespace ecode {
 
 class App;
+
+struct StatusMessage {
+	ProjectOutputParserTypes type;
+	String output;
+	String message;
+	std::string file;
+	std::string fileName;
+	Int64 line{ 0 };
+	Int64 col{ 0 };
+};
+
+struct PatternHolder {
+	LuaPattern pattern;
+	ProjectBuildOutputParserConfig config;
+};
 
 class StatusBuildOutputController {
   public:
@@ -33,18 +51,38 @@ class StatusBuildOutputController {
 
 	UICodeEditor* getContainer();
 
+	void showIssues();
+
+	void showBuildOutput();
+
   protected:
 	UISplitter* mMainSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
 	App* mApp{ nullptr };
 	UICodeEditorSplitter* mSplitter{ nullptr };
-	UICodeEditor* mContainer{ nullptr };
 
-	UICodeEditor* createContainer();
+	UIRelativeLayout* mContainer{ nullptr };
+	UICodeEditor* mBuildOutput{ nullptr };
+	UISelectButton* mButOutput{ nullptr };
+	UISelectButton* mButIssues{ nullptr };
+	UITableView* mTableIssues{ nullptr };
+
+	std::vector<StatusMessage> mStatusResults;
+	std::vector<PatternHolder> mPatternHolder;
+	std::string mCurLineBuffer;
+
+	void createContainer();
 
 	UIPushButton* getBuildButton( App* app );
 
 	UIPushButton* getCleanButton( App* app );
+
+	bool searchFindAndAddStatusResult( const std::vector<PatternHolder>& patterns,
+									   const std::string& text, const ProjectBuildCommand* cmd );
+
+	void onLoadDone( const Variant& lineNum, const Variant& colNum );
+
+	void setHeaderWidth();
 };
 
 } // namespace ecode

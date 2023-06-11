@@ -95,6 +95,13 @@ struct ProjectBuildConfig {
 
 enum class ProjectOutputParserTypes { Error = 0, Warning = 1, Notice = 2 };
 
+struct PatternOrder {
+	int file{ 1 };
+	int line{ 2 };
+	int col{ 3 };
+	int message{ 4 };
+};
+
 struct ProjectBuildOutputParserConfig {
 	static std::string typeToString( ProjectOutputParserTypes type ) {
 		switch ( type ) {
@@ -110,12 +117,7 @@ struct ProjectBuildOutputParserConfig {
 
 	ProjectOutputParserTypes type;
 	std::string pattern;
-	struct {
-		int file{ 1 };
-		int line{ 2 };
-		int col{ 3 };
-		int message{ 4 };
-	} patternOrder;
+	PatternOrder patternOrder;
 };
 
 class ProjectBuildOutputParser {
@@ -223,8 +225,9 @@ struct ProjectBuildCommandsRes {
 	bool isValid() { return errorMsg.empty(); }
 };
 
-using ProjectBuildProgressFn = std::function<void( int curProgress, std::string buffer )>;
-using ProjectBuildDoneFn = std::function<void( int exitCode )>;
+using ProjectBuildProgressFn =
+	std::function<void( int curProgress, std::string buffer, const ProjectBuildCommand* cmd )>;
+using ProjectBuildDoneFn = std::function<void( int exitCode, const ProjectBuildCommand* cmd )>;
 using ProjectBuildi18nFn =
 	std::function<String( const std::string& /*key*/, const String& /*defaultvalue*/ )>;
 

@@ -57,6 +57,7 @@ static void replaceVar( ProjectBuildStep& s, const std::string& var, const std::
 	String::replaceAll( s.cmd, var, val );
 	String::replaceAll( s.args, var, val );
 	String::replaceAll( s.workingDir, slashDup, FileSystem::getOSSlash() );
+	FileSystem::dirAddSlashAtEnd( s.workingDir );
 }
 
 ProjectBuildSteps ProjectBuild::replaceVars( const ProjectBuildSteps& steps ) const {
@@ -686,27 +687,33 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 	auto printElapsed = [&clock, &i18n, &progressFn]() {
 		if ( progressFn ) {
 			progressFn(
-				100, Sys::getDateTimeStr() + ": " +
-						 String::format(
-							 i18n( "build_elapsed_time", "Elapsed Time: %s.\n" ).toUtf8().c_str(),
-							 clock.getElapsedTime().toString().c_str() ) );
+				100,
+				Sys::getDateTimeStr() + ": " +
+					String::format(
+						i18n( "build_elapsed_time", "Elapsed Time: %s.\n" ).toUtf8().c_str(),
+						clock.getElapsedTime().toString().c_str() ),
+				nullptr );
 		}
 	};
 
 	if ( progressFn ) {
-		progressFn( 0, Sys::getDateTimeStr() + ": " +
-						   String::format( i18n( "running_steps_for_project",
-												 "Running steps for project %s...\n" )
-											   .toUtf8()
-											   .c_str(),
-										   buildName.c_str() ) );
+		progressFn( 0,
+					Sys::getDateTimeStr() + ": " +
+						String::format(
+							i18n( "running_steps_for_project", "Running steps for project %s...\n" )
+								.toUtf8()
+								.c_str(),
+							buildName.c_str() ),
+					nullptr );
 
 		if ( !buildType.empty() )
 			progressFn(
-				0, Sys::getDateTimeStr() + ": " +
-					   String::format(
-						   i18n( "using_build_type", "Using build type: %s.\n" ).toUtf8().c_str(),
-						   buildType.c_str() ) );
+				0,
+				Sys::getDateTimeStr() + ": " +
+					String::format(
+						i18n( "using_build_type", "Using build type: %s.\n" ).toUtf8().c_str(),
+						buildType.c_str() ),
+				nullptr );
 	}
 
 	int c = 0;
@@ -742,7 +749,8 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 							Sys::getDateTimeStr() + ": " +
 								String::format(
 									i18n( "starting_process", "Starting %s %s\n" ).toUtf8().c_str(),
-									cmd.cmd.c_str(), cmd.args.c_str() ) );
+									cmd.cmd.c_str(), cmd.args.c_str() ),
+							nullptr );
 
 			std::string buffer( 1024, '\0' );
 			unsigned bytesRead = 0;
@@ -751,7 +759,7 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 				bytesRead = mProcess->readStdOut( buffer );
 				std::string data( buffer.substr( 0, bytesRead ) );
 				if ( progressFn )
-					progressFn( progress, std::move( data ) );
+					progressFn( progress, std::move( data ), &cmd );
 			} while ( bytesRead != 0 && mProcess->isAlive() && !mShuttingDown && !mCancelBuild );
 
 			if ( mShuttingDown || mCancelBuild ) {
@@ -759,7 +767,7 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 				mCancelBuild = false;
 				printElapsed();
 				if ( doneFn )
-					doneFn( EXIT_FAILURE );
+					doneFn( EXIT_FAILURE, &cmd );
 				return;
 			}
 
@@ -773,11 +781,12 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 													  "The process \"%s\" exited with errors.\n" )
 													.toUtf8()
 													.c_str(),
-												cmd.cmd.c_str() ) );
+												cmd.cmd.c_str() ),
+								nullptr );
 				}
 				printElapsed();
 				if ( doneFn )
-					doneFn( returnCode );
+					doneFn( returnCode, &cmd );
 				return;
 			} else {
 				if ( progressFn ) {
@@ -786,22 +795,24 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 													  "The process \"%s\" exited normally.\n" )
 													.toUtf8()
 													.c_str(),
-												cmd.cmd.c_str() ) );
+												cmd.cmd.c_str() ),
+								nullptr );
 				}
 			}
 		} else {
 			printElapsed();
 			if ( doneFn )
-				doneFn( EXIT_FAILURE );
+				doneFn( EXIT_FAILURE, nullptr );
 			return;
 		}
 
 		c++;
+		if ( c == (int)res.cmds.size() ) {
+			printElapsed();
+			if ( doneFn )
+				doneFn( EXIT_SUCCESS, &cmd );
+		}
 	}
-
-	printElapsed();
-	if ( doneFn )
-		doneFn( EXIT_SUCCESS );
 }
 
 void ProjectBuildManager::buildSidePanelTab() {

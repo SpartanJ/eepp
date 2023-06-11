@@ -381,7 +381,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 
 				<vbox lw="mp" lh="wc" class="output_parser">
 					<TextView class="subtitle" text="@string(output_parser, Output Parser)" />
-					<TextView lw="mp" lh="wc" word-wrap="true" text="@string(output_parser_desc, Custom output parsers scan command line output for user-provided error patterns to create entries in Issues and highlight those errors on the Build Output)" />
+					<TextView lw="mp" lh="wc" word-wrap="true" text="@string(output_parser_desc, Custom output parsers scan command line output for user-provided error patterns to create entries in Build Issues and highlight those errors on the Build Output)" />
 					<TextView lw="mp" lh="wc" word-wrap="true" text='@string(output_parser_preset, "Presets are provided as generic output parsers, you can select one below, by default a \"generic\" preset will be selected:")' />
 					<DropDownList id="output_parsers_presets_list" layout_width="200dp" layout_height="wc">
 						<item></item>

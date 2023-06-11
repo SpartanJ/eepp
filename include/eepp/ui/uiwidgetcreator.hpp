@@ -11,8 +11,9 @@ class EE_API UIWidgetCreator {
 	typedef std::function<UIWidget*( std::string )> CustomWidgetCb;
 	typedef std::function<UIWidget*()> RegisterWidgetCb;
 
-	typedef std::map<std::string, UIWidgetCreator::CustomWidgetCb> WidgetCallbackMap;
-	typedef std::map<std::string, UIWidgetCreator::RegisterWidgetCb> RegisteredWidgetCallbackMap;
+	typedef std::unordered_map<std::string, UIWidgetCreator::CustomWidgetCb> WidgetCallbackMap;
+	typedef std::unordered_map<std::string, UIWidgetCreator::RegisterWidgetCb>
+		RegisteredWidgetCallbackMap;
 
 	static UIWidget* createFromName( std::string widgetName );
 

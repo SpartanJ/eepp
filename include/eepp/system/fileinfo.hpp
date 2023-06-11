@@ -48,6 +48,8 @@ class EE_API FileInfo {
 
 	std::string linksTo() const;
 
+	std::string getRealPath() const;
+
 	bool exists() const;
 
 	void getInfo();

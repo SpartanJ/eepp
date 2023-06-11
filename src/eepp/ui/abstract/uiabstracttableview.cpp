@@ -7,6 +7,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 
 namespace EE { namespace UI { namespace Abstract {
 
@@ -421,7 +422,12 @@ UITableRow* UIAbstractTableView::createRow() {
 	rowWidget->addEventListener( Event::MouseDown, [&]( const Event* event ) {
 		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) || !isRowSelection() )
 			return;
-		getSelection().set( event->getNode()->asType<UITableRow>()->getCurIndex() );
+		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
+		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+			getSelection().remove( index );
+		} else {
+			getSelection().set( index );
+		}
 	} );
 	return rowWidget;
 }
@@ -478,7 +484,11 @@ void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
 				onOpenModelIndex( idx, event );
 			} else if ( isCellSelection() && ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) ) {
 				auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
-				getSelection().set( cellIdx );
+				if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+					getSelection().remove( cellIdx );
+				} else {
+					getSelection().set( cellIdx );
+				}
 			}
 		} ) );
 }

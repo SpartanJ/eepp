@@ -373,15 +373,18 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 	table->setFitAllColumnsToWidget( true );
 	table->setModel( model );
 	auto healthLangInfo = win->find( "health-lang-info" );
-	table->setOnSelection( [table, healthLangInfo, sceneNode]( const ModelIndex& index ) {
+	table->setOnSelectionChange( [table, healthLangInfo, sceneNode]() {
+		if ( table->getSelection().isEmpty() || nullptr == table->getModel() ) {
+			healthLangInfo->setVisible( false );
+			return;
+		}
+		ModelIndex index = table->getSelection().first();
 		static const std::string none = sceneNode->i18n( "none", "None" );
 		static const std::string notFound =
 			sceneNode->i18n( "not_found_in_path", "Not found in $PATH" );
 		static const std::string patherr =
 			String::format( "%s: %s", I18N( "path_is", "PATH is" ), std::getenv( "PATH" ) );
 
-		if ( nullptr == table->getModel() )
-			return;
 		HealthModel* model = static_cast<HealthModel*>( table->getModel() );
 		const auto& lang = model->getHealthRow( index.row() );
 		healthLangInfo->childsCloseAll();

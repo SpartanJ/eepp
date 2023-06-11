@@ -44,11 +44,26 @@ class UIGlobalSearchBar : public UILinearLayout, public WidgetCommandExecuter {
 };
 
 class UIMainLayout : public UIRelativeLayout, public WidgetCommandExecuter {
-	public:
+  public:
 	static UIMainLayout* New() { return eeNew( UIMainLayout, () ); }
 
 	UIMainLayout() :
 		UIRelativeLayout( "mainlayout" ),
+		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+
+	virtual Uint32 onKeyDown( const KeyEvent& event ) {
+		return WidgetCommandExecuter::onKeyDown( event );
+	}
+};
+
+class UIRelativeLayoutCommandExecuter : public UIRelativeLayout, public WidgetCommandExecuter {
+  public:
+	static UIRelativeLayoutCommandExecuter* New() {
+		return eeNew( UIRelativeLayoutCommandExecuter, () );
+	}
+
+	UIRelativeLayoutCommandExecuter() :
+		UIRelativeLayout( "rellayce" ),
 		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {

@@ -285,25 +285,25 @@ void LSPDocumentClient::highlight() {
 			start = deltaStart;
 		}
 
-		auto& line = tokenizerLines[currentLine];
+		auto* line = &tokenizerLines[currentLine];
 		if ( type >= 0 && type < (int)caps.legend.tokenTypes.size() ) {
 			const auto& ltype = caps.legend.tokenTypes[type];
-			line.tokens.push_back(
+			line->tokens.push_back(
 				{ semanticTokenTypeToSyntaxType( ltype, mDoc->getSyntaxDefinition() ), start,
 				  len } );
 		} else {
-			line.tokens.push_back( { "normal", start, len } );
+			line->tokens.push_back( { "normal", start, len } );
 		}
-		line.hash = mDoc->line( currentLine ).getHash();
-		line.updateSignature();
+		line->hash = mDoc->line( currentLine ).getHash();
+		line->updateSignature();
 
 		auto curSignature = mDoc->getHighlighter()->getTokenizedLineSignature( lastLine );
-		if ( lastLinePtr && lastLinePtr->signature == curSignature ) {
+		if ( lastLine != currentLine && lastLinePtr && lastLinePtr->signature == curSignature ) {
 			tokenizerLines.erase( lastLine );
 		}
 
 		lastLine = currentLine;
-		lastLinePtr = &line;
+		lastLinePtr = line;
 	}
 
 	diff = clock.getElapsedTime();

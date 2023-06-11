@@ -243,19 +243,14 @@ bool FileInfo::linksToDirectory() const {
 
 std::string FileInfo::linksTo() const {
 #if EE_PLATFORM != EE_PLATFORM_WIN
-	if ( isLink() ) {
-		char* ch = realpath( mFilepath.c_str(), NULL );
-
-		if ( NULL != ch ) {
-			std::string tstr( ch );
-
-			free( ch );
-
-			return tstr;
-		}
-	}
+	if ( isLink() )
+		return getRealPath();
 #endif
 	return std::string( "" );
+}
+
+std::string FileInfo::getRealPath() const {
+	return FileSystem::getRealPath( getFilepath() );
 }
 
 bool FileInfo::exists() const {
