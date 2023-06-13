@@ -790,56 +790,61 @@ void App::loadLayoutFile( std::string layoutPath ) {
 }
 
 void App::loadProject( std::string projectPath ) {
-	if ( FileSystem::fileExists( projectPath ) ) {
-		closeProject();
+	if ( !FileSystem::fileExists( projectPath ) )
+		return;
 
-		mBasePath = FileSystem::fileRemoveFileName( projectPath );
+	closeProject();
 
-		FileSystem::changeWorkingDirectory( mBasePath );
+	mBasePath = FileSystem::fileRemoveFileName( projectPath );
 
-		pugi::xml_document doc;
-		pugi::xml_parse_result result = doc.load_file( projectPath.c_str() );
+	FileSystem::changeWorkingDirectory( mBasePath );
 
-		if ( result ) {
-			loadProjectNodes( doc.first_child() );
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_file( projectPath.c_str() );
 
-			for ( auto pathIt = mRecentProjects.begin(); pathIt != mRecentProjects.end();
-				  pathIt++ ) {
-				if ( *pathIt == projectPath ) {
-					mRecentProjects.erase( pathIt );
-					break;
-				}
+	if ( result ) {
+		loadProjectNodes( doc.first_child() );
+
+		for ( auto pathIt = mRecentProjects.begin(); pathIt != mRecentProjects.end(); pathIt++ ) {
+			if ( *pathIt == projectPath ) {
+				mRecentProjects.erase( pathIt );
+				break;
 			}
-
-			mRecentProjects.insert( mRecentProjects.begin(), projectPath );
-
-			if ( mRecentProjects.size() > 10 )
-				mRecentProjects.resize( 10 );
-
-			updateRecentProjects();
-		} else {
-			Log::error( "Couldn't load UI Layout: %s", projectPath.c_str() );
-			Log::error( "Error description: %s", result.description() );
-			Log::error( "Error offset: %d", result.offset );
 		}
+
+		mRecentProjects.insert( mRecentProjects.begin(), projectPath );
+
+		if ( mRecentProjects.size() > 10 )
+			mRecentProjects.resize( 10 );
+
+		updateRecentProjects();
+	} else {
+		Log::error( "Couldn't load UI Layout: %s", projectPath.c_str() );
+		Log::error( "Error description: %s", result.description() );
+		Log::error( "Error offset: %d", result.offset );
 	}
 }
 
 void App::closeEditors() {
+	UISceneNode* prevUISceneNode = SceneManager::instance()->getUISceneNode();
+	SceneManager::instance()->setCurrentUISceneNode( mSplitter->getUISceneNode() );
 	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
 	while ( !editors.empty() ) {
 		UICodeEditor* editor = editors[0];
 		UITabWidget* tabWidget = mSplitter->tabWidgetFromEditor( editor );
-		tabWidget->removeTab( (UITab*)editor->getData(), true, true );
+		tabWidget->removeTab( (UITab*)editor->getData(), true, false );
 		editors = mSplitter->getAllEditors();
 		if ( editors.size() == 1 && editors[0]->getDocument().isEmpty() )
 			break;
 	};
 	if ( !mSplitter->getTabWidgets().empty() && mSplitter->getTabWidgets()[0]->getTabCount() == 0 )
 		mSplitter->createCodeEditorInTabWidget( mSplitter->getTabWidgets()[0] );
+	SceneManager::instance()->setCurrentUISceneNode( prevUISceneNode );
 }
 
 void App::closeProject() {
+	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
+
 	mCurrentLayout = "";
 	mCurrentStyleSheet = "";
 	mUIContainer->getContainer()->childsCloseAll();
@@ -1373,7 +1378,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mAppUISceneNode->bind( "project_splitter", mProjectSplitter );
 		mSidePanel = mProjectSplitter->getFirstWidget();
 		SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
-		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, colorSchemes, "eepp" );
+		mSplitter = UICodeEditorSplitter::New( this, mAppUISceneNode, colorSchemes, "eepp" );
 		mSplitter->setHideTabBarOnSingleTab( false );
 		mSplitter->createEditorWithTabWidget( mBaseLayout );
 		SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );

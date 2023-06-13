@@ -2,6 +2,7 @@
 #define ECODE_STATUSBUILDOUTPUTCONTROLLER_HPP
 
 #include "projectbuild.hpp"
+#include "widgetcommandexecuter.hpp"
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -61,7 +62,7 @@ class StatusBuildOutputController {
 	App* mApp{ nullptr };
 	UICodeEditorSplitter* mSplitter{ nullptr };
 
-	UIRelativeLayout* mContainer{ nullptr };
+	UIRelativeLayoutCommandExecuter* mContainer{ nullptr };
 	UICodeEditor* mBuildOutput{ nullptr };
 	UISelectButton* mButOutput{ nullptr };
 	UISelectButton* mButIssues{ nullptr };

@@ -559,6 +559,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	std::string getLastUsedFolder();
 
+	void insertRecentFolder( const std::string& rpath );
+
 	void cleanUpRecentFolders();
 
 	void cleanUpRecentFiles();

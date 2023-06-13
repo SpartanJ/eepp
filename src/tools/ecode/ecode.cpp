@@ -247,6 +247,15 @@ std::string App::getLastUsedFolder() {
 	return ".";
 }
 
+void App::insertRecentFolder( const std::string& rpath ) {
+	auto found = std::find( mRecentFolders.begin(), mRecentFolders.end(), rpath );
+	if ( found != mRecentFolders.end() )
+		mRecentFolders.erase( found );
+	mRecentFolders.insert( mRecentFolders.begin(), rpath );
+	if ( mRecentFolders.size() > 10 )
+		mRecentFolders.resize( 10 );
+}
+
 void App::refreshFolderView() {
 	if ( !mFileSystemModel )
 		return;
@@ -2924,13 +2933,7 @@ void App::loadFolder( const std::string& path ) {
 	if ( mFileSystemListener )
 		mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-	auto found = std::find( mRecentFolders.begin(), mRecentFolders.end(), rpath );
-	if ( found != mRecentFolders.end() )
-		mRecentFolders.erase( found );
-	mRecentFolders.insert( mRecentFolders.begin(), rpath );
-	if ( mRecentFolders.size() > 10 )
-		mRecentFolders.resize( 10 );
-
+	insertRecentFolder( rpath );
 	cleanUpRecentFolders();
 	updateRecentFolders();
 	mSettings->updateProjectSettingsMenu();
@@ -3288,17 +3291,20 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	padding-top: 1dp;
 	padding-bottom: 1dp;
 }
-#status_bar > TextView {
-	padding-left: 4dp;
-	padding-right: 5dp;
+#status_bar > * {
+	padding: 0dp 5dp 0dp 4dp;
 	background-color: var(--list-back);
+	border-radius: 0dp;
+	border-left-color: transparent;
+	border-top-color: transparent;
+	border-bottom-color: transparent;
 	border-right-color: var(--tab-line);
 	font-size: 10dp;
 }
-#status_bar > TextView:hover {
+#status_bar > *:hover {
 	background-color: var(--item-hover);
 }
-#status_bar > TextView.selected {
+#status_bar > *.selected {
 	background-color: var(--primary);
 }
 #panel > tabwidget::container > * {
@@ -3598,10 +3604,10 @@ Anchor.error:hover {
 			</hbox>
 		</globalsearchbar>
 		<statusbar lw="mp" lh="wc" id="status_bar">
-			<TextView class="status_but" id="status_locate_bar" text="@string(locate, Locate)" />
-			<TextView class="status_but" id="status_global_search_bar" text="@string(search, Search)" />
-			<TextView class="status_but" id="status_terminal" text="@string(terminal, Terminal)" />
-			<TextView class="status_but" id="status_build_output" text="@string(build, Build)" />
+			<PushButton class="status_but" id="status_locate_bar" text="@string(locate, Locate)" icon="icon(search-fuzzy, 12dp)" />
+			<PushButton class="status_but" id="status_global_search_bar" text="@string(search, Search)" icon="icon(file-search, 12dp)" />
+			<PushButton class="status_but" id="status_terminal" text="@string(terminal, Terminal)" icon="icon(terminal, 12dp)" />
+			<PushButton class="status_but" id="status_build_output" text="@string(build, Build)" icon="icon(symbol-property, 12dp)"  />
 			<View lw="0" lw8="1" lh="mp" />
 		</statusbar>
 	</vbox>
@@ -3674,7 +3680,9 @@ Anchor.error:hover {
 														  { "hearth-pulse", 0xee10 },
 														  { "add", 0xea12 },
 														  { "hammer", 0xedee },
-														  { "eraser", 0xec9e } };
+														  { "eraser", 0xec9e },
+														  { "file-search", 0xed05 } };
+
 		for ( const auto& icon : icons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
 
@@ -3797,7 +3805,8 @@ Anchor.error:hover {
 				{ "layout-sidebar-left-off", 0xec02 },
 				{ "layout-sidebar-left", 0xebf3 },
 				{ "warning", 0xea6c },
-				{ "error", 0xea87 } };
+				{ "error", 0xea87 },
+				{ "search-fuzzy", 0xec0d } };
 
 			for ( const auto& icon : codIcons )
 				iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
