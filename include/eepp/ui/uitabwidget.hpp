@@ -4,6 +4,7 @@
 #include <deque>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <queue>
 
 namespace EE { namespace UI {
 
@@ -25,6 +26,8 @@ class EE_API TabEvent : public Event {
 
 class EE_API UITabWidget : public UIWidget {
   public:
+	enum class FocusTabBehavior { Closest, FocusOrder };
+
 	class StyleConfig {
 	  public:
 		Float TabSeparation = 0;
@@ -166,6 +169,9 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setDroppableHoveringColor( const Color& droppableHoveringColor );
 
+	FocusTabBehavior getFocusTabBehavior() const;
+	void setFocusTabBehavior( FocusTabBehavior focusTabBehavior );
+
   protected:
 	friend class UITab;
 
@@ -184,6 +190,8 @@ class EE_API UITabWidget : public UIWidget {
 	bool mDroppableHoveringColorWasSet{ false };
 	Float mTabVerticalDragResistance;
 	Color mDroppableHoveringColor{ Color::Transparent };
+	FocusTabBehavior mFocusTabBehavior{ FocusTabBehavior::Closest };
+	std::deque<UITab*> mFocusHistory;
 
 	void onThemeLoaded();
 
@@ -223,6 +231,12 @@ class EE_API UITabWidget : public UIWidget {
 	void updateScrollBar();
 
 	void updateScroll();
+
+	void updateTabSelected( FocusTabBehavior tabBehavior );
+
+	void insertFocusHistory( UITab* tab );
+
+	void eraseFocusHistory( UITab* tab );
 };
 
 }} // namespace EE::UI

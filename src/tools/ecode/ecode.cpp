@@ -799,6 +799,7 @@ void App::switchStatusBar() {
 		mSettings->getWindowMenu()->getItemId( "toggle-status-bar" )->asType<UIMenuCheckBox>();
 	if ( chk->isActive() != mConfig.ui.showStatusBar )
 		chk->setActive( mConfig.ui.showStatusBar );
+	updateDocInfoLocation();
 	showStatusBar( mConfig.ui.showStatusBar );
 }
 
@@ -831,7 +832,7 @@ EE::Window::Window* App::getWindow() const {
 	return mWindow;
 }
 
-UILinearLayout* App::getDocInfo() const {
+UITextView* App::getDocInfo() const {
 	return mDocInfo;
 }
 
@@ -1507,11 +1508,25 @@ void App::onDocumentCursorPosChange( UICodeEditor*, TextDocument& doc ) {
 	updateDocInfo( doc );
 }
 
+void App::updateDocInfoLocation() {
+	if ( !mDocInfo )
+		return;
+	if ( mConfig.ui.showStatusBar ) {
+		if ( mStatusBar != mDocInfo->getParent() ) {
+			mDocInfo->setParent( mStatusBar );
+			mDocInfo->setEnabled( true );
+		}
+	} else if ( mStatusBar == mDocInfo->getParent() ) {
+		mDocInfo->setParent( mMainSplitter->find( "main_splitter_cont" ) );
+		mDocInfo->setEnabled( false );
+	}
+}
+
 void App::updateDocInfo( TextDocument& doc ) {
-	if ( mConfig.editor.showDocInfo && mDocInfoText && mSplitter->curEditorExistsAndFocused() ) {
-		if ( mDocInfo )
-			mDocInfo->setVisible( true );
-		mDocInfoText->setText( String::format(
+	if ( mConfig.editor.showDocInfo && mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
+		mDocInfo->setVisible( true );
+		updateDocInfoLocation();
+		mDocInfo->setText( String::format(
 			"%s: %lld / %lu  %s: %lld    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
 			doc.getSelection().start().line() + 1, doc.linesCount(),
 			i18n( "col_abbr", "col" ).toUtf8().c_str(),
@@ -1536,7 +1551,7 @@ void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
 }
 
 void App::onWidgetFocusChange( UIWidget* widget ) {
-	if ( mConfig.editor.showDocInfo && mDocInfoText )
+	if ( mConfig.editor.showDocInfo && mDocInfo )
 		mDocInfo->setVisible( widget && widget->isType( UI_TYPE_CODEEDITOR ) );
 
 	mSettings->updateDocumentMenu();
@@ -3193,15 +3208,26 @@ TextInput.small_input,
 #settings:hover {
 	color: var(--primary);
 }
-#doc_info {
+RelativeLayout > #doc_info {
 	background-color: var(--back);
 	margin-bottom: 22dp;
 	margin-right: 22dp;
 	border-radius: 8dp;
 	padding: 6dp;
 	opacity: 0.8;
+	layout-gravity: bottom|right;
 }
-#doc_info > TextView {
+StatusBar > #doc_info {
+	background-color: transparent;
+	margin-bottom: 0dp;
+	margin-right: 0dp;
+	border-radius: 0dp;
+	border: 0dp solid transparent;
+	padding: 0dp 4dp 0dp 4dp;
+	opacity: 1;
+	layout-gravity: center;
+}
+#doc_info {
 	color: var(--font);
 }
 #search_find.error,
@@ -3291,7 +3317,7 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	padding-top: 1dp;
 	padding-bottom: 1dp;
 }
-#status_bar > * {
+#status_bar > .status_but {
 	padding: 0dp 5dp 0dp 4dp;
 	background-color: var(--list-back);
 	border-radius: 0dp;
@@ -3301,10 +3327,10 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	border-right-color: var(--tab-line);
 	font-size: 10dp;
 }
-#status_bar > *:hover {
+#status_bar > .status_but:hover {
 	background-color: var(--item-hover);
 }
-#status_bar > *.selected {
+#status_bar > .status_but.selected {
 	background-color: var(--primary);
 }
 #panel > tabwidget::container > * {
@@ -3529,11 +3555,9 @@ Anchor.error:hover {
 	</TabWidget>
 	<vbox>
 		<Splitter id="main_splitter" lw="mp" lh="0" lw8="1" orientation="vertical">
-			<RelativeLayout>
+			<RelativeLayout id="main_splitter_cont">
 				<vbox id="code_container" lw="mp" lh="mp"></vbox>
-				<hbox id="doc_info" lw="wc" lh="wc" lg="bottom|right" enabled="false">
-					<TextView id="doc_info_text" lw="wc" lh="wc" />
-				</hbox>
+				<TextView id="doc_info" enabled="false" />
 				<RelativeLayout id="image_container" lw="mp" lh="mp" visible="false" enabled="false">
 					<Image lw="mp" lh="mp" scaleType="fit_inside" gravity="center" enabled="false" lg="center" />
 					<TextView id="image_close" lw="wc" lh="wc" text="&#xeb99;" lg="top|right" enabled="false" />
@@ -3608,7 +3632,7 @@ Anchor.error:hover {
 			<PushButton class="status_but" id="status_global_search_bar" text="@string(search, Search)" icon="icon(file-search, 12dp)" />
 			<PushButton class="status_but" id="status_terminal" text="@string(terminal, Terminal)" icon="icon(terminal, 12dp)" />
 			<PushButton class="status_but" id="status_build_output" text="@string(build, Build)" icon="icon(symbol-property, 12dp)"  />
-			<View lw="0" lw8="1" lh="mp" />
+			<Widget lw="0" lw8="1" lh="1dp" />
 		</statusbar>
 	</vbox>
 </Splitter>
@@ -3844,7 +3868,6 @@ Anchor.error:hover {
 		mUISceneNode->bind( "code_container", mBaseLayout );
 		mUISceneNode->bind( "image_container", mImageLayout );
 		mUISceneNode->bind( "doc_info", mDocInfo );
-		mUISceneNode->bind( "doc_info_text", mDocInfoText );
 		mUISceneNode->bind( "panel", mSidePanel );
 		mUISceneNode->bind( "project_splitter", mProjectSplitter );
 		mUISceneNode->addEventListener( Event::KeyDown, [&]( const Event* event ) {

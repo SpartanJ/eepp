@@ -116,7 +116,9 @@ bool StatusBuildOutputController::searchFindAndAddStatusResult(
 						status.message = subtxt.substr( 0, nl );
 					}
 				} else if ( pattern.config.patternOrder.file == i ) {
-					status.file = FileSystem::getRealPath( cmd->workingDir + subtxt );
+					status.file = !subtxt.empty() && subtxt[0] == '.'
+									  ? FileSystem::getRealPath( cmd->workingDir + subtxt )
+									  : FileSystem::getRealPath( subtxt );
 					status.fileName = FileSystem::fileNameFromPath( status.file );
 				} else if ( pattern.config.patternOrder.line == i ) {
 					int l;

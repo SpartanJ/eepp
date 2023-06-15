@@ -26,7 +26,7 @@ UITabWidget::UITabWidget() :
 	mAllowSwitchTabsInEmptySpaces( false ),
 	mDroppableHoveringColorWasSet( false ),
 	mTabVerticalDragResistance( PixelDensity::dpToPx( 64 ) ) {
-	mFlags |=  UI_SCROLLABLE;
+	mFlags |= UI_SCROLLABLE;
 	setHorizontalAlign( UI_HALIGN_CENTER );
 	setClipType( ClipType::ContentBox );
 
@@ -541,11 +541,60 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool im
 	removeTab( index, destroyOwnedNode, true, immediateClose );
 }
 
+void UITabWidget::updateTabSelected( FocusTabBehavior tabBehavior ) {
+	if ( tabBehavior == FocusTabBehavior::Closest ) {
+		if ( !mTabs.empty() ) {
+			if ( mTabSelectedIndex < mTabs.size() ) {
+				setTabSelected( mTabs[mTabSelectedIndex] );
+			} else {
+				if ( mTabSelectedIndex > 0 && mTabSelectedIndex - 1 < mTabs.size() ) {
+					setTabSelected( mTabs[mTabSelectedIndex - 1] );
+				} else {
+					setTabSelected( mTabs[0] );
+				}
+			}
+		} else {
+			mTabSelected = NULL;
+			mTabSelectedIndex = eeINDEX_NOT_FOUND;
+		}
+	} else {
+		if ( !mFocusHistory.empty() ) {
+			do {
+				auto tab = mFocusHistory.back();
+				mFocusHistory.pop_back();
+				if ( eeINDEX_NOT_FOUND != getTabIndex( tab ) ) {
+					setTabSelected( tab );
+					return;
+				}
+			} while ( !mFocusHistory.empty() );
+			return ( updateTabSelected( FocusTabBehavior::Closest ) );
+		}
+		mTabSelected = NULL;
+		mTabSelectedIndex = eeINDEX_NOT_FOUND;
+	}
+}
+
+void UITabWidget::insertFocusHistory( UITab* tab ) {
+	eraseFocusHistory( tab );
+	mFocusHistory.push_back( tab );
+}
+
+void UITabWidget::eraseFocusHistory( UITab* tab ) {
+	auto it = std::find( mFocusHistory.begin(), mFocusHistory.end(), tab );
+	while ( it != mFocusHistory.end() ) {
+		if ( it != mFocusHistory.end() )
+			mFocusHistory.erase( it );
+		it = std::find( mFocusHistory.begin(), mFocusHistory.end(), tab );
+	};
+}
+
 void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab,
 							 bool immediateClose ) {
 	eeASSERT( index < mTabs.size() );
 
 	UITab* tab = mTabs[index];
+
+	eraseFocusHistory( tab );
 
 	if ( destroyTab && !immediateClose ) {
 		tab->close();
@@ -562,20 +611,7 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool de
 	mTabs.erase( mTabs.begin() + index );
 
 	if ( index == mTabSelectedIndex ) {
-		if ( !mTabs.empty() ) {
-			if ( mTabSelectedIndex < mTabs.size() ) {
-				setTabSelected( mTabs[mTabSelectedIndex] );
-			} else {
-				if ( mTabSelectedIndex > 0 && mTabSelectedIndex - 1 < mTabs.size() ) {
-					setTabSelected( mTabs[mTabSelectedIndex - 1] );
-				} else {
-					setTabSelected( mTabs[0] );
-				}
-			}
-		} else {
-			mTabSelected = NULL;
-			mTabSelectedIndex = eeINDEX_NOT_FOUND;
-		}
+		updateTabSelected( mFocusTabBehavior );
 	} else {
 		mTabSelectedIndex = getTabIndex( mTabSelected );
 	}
@@ -641,6 +677,7 @@ void UITabWidget::removeAllTabs( bool destroyOwnedNode, bool immediateClose ) {
 
 	mTabSelected = NULL;
 	mTabSelectedIndex = eeINDEX_NOT_FOUND;
+	mFocusHistory.clear();
 
 	orderTabs();
 
@@ -693,6 +730,8 @@ UITab* UITabWidget::setTabSelected( UITab* tab ) {
 	}
 
 	tab->select();
+	insertFocusHistory( tab );
+
 	if ( tab->getOwnedWidget() )
 		tab->getOwnedWidget()->setFocus();
 
@@ -787,6 +826,14 @@ const Color& UITabWidget::getDroppableHoveringColor() const {
 void UITabWidget::setDroppableHoveringColor( const Color& droppableHoveringColor ) {
 	mDroppableHoveringColor = droppableHoveringColor;
 	mDroppableHoveringColorWasSet = true;
+}
+
+UITabWidget::FocusTabBehavior UITabWidget::getFocusTabBehavior() const {
+	return mFocusTabBehavior;
+}
+
+void UITabWidget::setFocusTabBehavior( UITabWidget::FocusTabBehavior focusTabBehavior ) {
+	mFocusTabBehavior = focusTabBehavior;
 }
 
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {

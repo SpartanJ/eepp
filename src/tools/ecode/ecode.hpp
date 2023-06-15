@@ -321,7 +321,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	EE::Window::Window* getWindow() const;
 
-	UILinearLayout* getDocInfo() const;
+	UITextView* getDocInfo() const;
 
 	UITreeView* getProjectTreeView() const;
 
@@ -403,7 +403,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::map<KeyBindings::Shortcut, std::string>& getRealTerminalKeybindings() const;
 
-	protected:
+  protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
@@ -412,8 +412,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIMainLayout* mMainLayout{ nullptr };
 	UILayout* mBaseLayout{ nullptr };
 	UILayout* mImageLayout{ nullptr };
-	UILinearLayout* mDocInfo{ nullptr };
-	UITextView* mDocInfoText{ nullptr };
+	UITextView* mDocInfo{ nullptr };
 	std::vector<std::string> mRecentFiles;
 	std::stack<std::string> mRecentClosedFiles;
 	std::vector<std::string> mRecentFolders;
@@ -566,6 +565,8 @@ class App : public UICodeEditorSplitter::Client {
 	void cleanUpRecentFiles();
 
 	void updateOpenRecentFolderBtn();
+
+	void updateDocInfoLocation();
 };
 
 } // namespace ecode
