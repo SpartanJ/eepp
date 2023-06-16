@@ -41,6 +41,12 @@ TextDocument::TextDocument( bool verbose ) :
 }
 
 TextDocument::~TextDocument() {
+	stopActiveFindAll();
+
+	// TODO: Use a condition variable to wait the thread pool to finish
+	while ( !mStopFlags.empty() )
+		Sys::sleep( Milliseconds( 0.1 ) );
+
 	if ( mLoading ) {
 		mLoading = false;
 		Lock l( mLoadingMutex );
@@ -2351,11 +2357,25 @@ TextRange TextDocument::findLast( const String& text, TextPosition from, bool ca
 	return TextRange();
 }
 
+void TextDocument::stopActiveFindAll() {
+	Lock l( mStopFlagsMutex );
+	for ( const auto& stopFlag : mStopFlags )
+		*stopFlag.second.get() = true;
+}
+
 TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool wholeWord,
-								  const FindReplaceType& type, TextRange restrictRange ) {
+								  const FindReplaceType& type, TextRange restrictRange,
+								  size_t maxResults ) {
 	TextRanges all;
 	TextRange found;
 	TextPosition from = startOfDoc();
+	auto stopFlagUP = std::make_unique<bool>( false );
+	bool* stopFlag = stopFlagUP.get();
+	{
+		Lock l( mStopFlagsMutex );
+		mStopFlags.insert( { stopFlag, std::move( stopFlagUP ) } );
+	}
+
 	if ( restrictRange.isValid() )
 		from = restrictRange.normalized().start();
 	do {
@@ -2365,10 +2385,17 @@ TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool w
 				break;
 			from = found.end();
 			all.push_back( found );
+			if ( ( maxResults != 0 && all.size() >= maxResults ) || *stopFlag )
+				break;
 		}
 	} while ( found.isValid() );
 	if ( !all.empty() )
 		all.setSorted();
+
+	{
+		Lock l( mStopFlagsMutex );
+		mStopFlags.erase( stopFlag );
+	}
 	return all;
 }
 
@@ -2732,5 +2759,9 @@ void TextDocument::addCursorBelow() {
 }
 
 TextDocument::Client::~Client() {}
+
+bool TextSearchParams::isEmpty() {
+	return text.empty();
+}
 
 }}} // namespace EE::UI::Doc

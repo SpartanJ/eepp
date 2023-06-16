@@ -669,15 +669,15 @@ void UIMenu::scheduledUpdate( const Time& ) {
 	if ( !mVisible )
 		return;
 	Node* node = getEventDispatcher()->getMouseOverNode();
-	if ( node && ( isChildOfMeOrSubMenu( node ) || getItemSelected() ) )
+	if ( node && ( isChildOrSubMenu( node ) || getItemSelected() ) )
 		mInactiveTime.restart();
 	if ( mInactiveTime.getElapsedTime() > Seconds( 1 ) )
 		hide();
 }
 
-bool UIMenu::isChildOfMeOrSubMenu( Node* node ) {
+bool UIMenu::isChildOrSubMenu( Node* node ) {
 	return isParentOf( node ) || mOwnerNode == node ||
-		   ( mCurrentSubMenu && mCurrentSubMenu->isChildOfMeOrSubMenu( node ) );
+		   ( mCurrentSubMenu && mCurrentSubMenu->isChildOrSubMenu( node ) );
 }
 
 void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,

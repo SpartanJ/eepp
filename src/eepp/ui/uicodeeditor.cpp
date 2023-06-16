@@ -178,9 +178,13 @@ UICodeEditor::~UICodeEditor() {
 	for ( auto& plugin : mPlugins )
 		plugin->onUnregister( this );
 
+	// Remember to stop all the async find jobs
+	mDoc->stopActiveFindAll();
+
 	// TODO: Use a condition variable to wait the thread pool to finish
+	// Wait to end all the async find jobs
 	while ( mHighlightWordProcessing )
-		Sys::sleep( Milliseconds( 1 ) );
+		Sys::sleep( Milliseconds( 0.1 ) );
 
 	if ( mDoc.use_count() == 1 ) {
 		DocEvent event( this, mDoc.get(), Event::OnDocumentClosed );
@@ -294,8 +298,10 @@ void UICodeEditor::draw() {
 		}
 	}
 
-	if ( !mHighlightWord.isEmpty() )
+	if ( !mHighlightWord.isEmpty() ) {
+		Lock l( mHighlightWordCacheMutex );
 		drawWordRanges( mHighlightWordCache, lineRange, startScroll, lineHeight, true );
+	}
 
 	if ( mShowIndentationGuides ) {
 		drawIndentationGuides( lineRange, startScroll, lineHeight );
@@ -2543,21 +2549,29 @@ void UICodeEditor::updateHighlightWordCache() {
 						if ( mDoc->isRunningTransaction() )
 							return;
 						Clock docSearch;
-						mHighlightWordProcessing = true;
-						mHighlightWordCache = mDoc->findAll(
+						mHighlightWordProcessing++;
+						mDoc->stopActiveFindAll();
+
+						auto wordCache = mDoc->findAll(
 							mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
 														   : mHighlightWord.text,
 							mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
 							mHighlightWord.type, mHighlightWord.range );
+
+						{
+							Lock l( mHighlightWordCacheMutex );
+							mHighlightWordCache = std::move( wordCache );
+						}
+
 						Log::info( "Document search triggered in document: \"%s\", searched for "
 								   "\"%s\" and took %.2f ms",
 								   mDoc->getFilename().c_str(),
 								   mHighlightWord.text.toUtf8().c_str(),
 								   docSearch.getElapsedTime().asMilliseconds() );
 					},
-					[this]( const auto& ) { mHighlightWordProcessing = false; }, tag );
+					[this]( const auto& ) { mHighlightWordProcessing--; }, tag );
 			},
-			Milliseconds( 0 ), tag );
+			Milliseconds( 16 ), tag );
 	} else {
 		if ( mDoc->isRunningTransaction() )
 			return;
@@ -2565,7 +2579,7 @@ void UICodeEditor::updateHighlightWordCache() {
 			mDoc->findAll( mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
 														  : mHighlightWord.text,
 						   mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
-						   mHighlightWord.type, mHighlightWord.range );
+						   mHighlightWord.type, mHighlightWord.range, 100 );
 	}
 }
 
@@ -3433,7 +3447,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 
 	auto drawWordRanges = [&]( const TextRanges& ranges ) {
 		primitives.setColor( Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
-
+		Int64 lineSkip = -1;
 		for ( const auto& range : ranges ) {
 			if ( !( range.start().line() >= minimapStartLine && range.end().line() <= endidx ) ||
 				 !range.inSameLine() )
@@ -3442,12 +3456,18 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			if ( ranges.isSorted() && range.end().line() > endidx )
 				break;
 
+			if ( lineSkip == range.start().line() )
+				continue;
+
 			Rectf selRect;
 			selRect.Top = rect.Top + ( range.start().line() - minimapStartLine ) * lineSpacing;
 			selRect.Bottom = selRect.Top + charHeight;
 			selRect.Left = minimapStart + getXOffsetCol( range.start() ) * widthScale;
 			selRect.Right = minimapStart + getXOffsetCol( range.end() ) * widthScale;
 			primitives.drawRectangle( selRect );
+
+			if ( selRect.Left > minimapCutoffX )
+				lineSkip = range.start().line();
 		}
 	};
 
@@ -3469,8 +3489,10 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		}
 	}
 
-	if ( !mHighlightWord.isEmpty() )
+	if ( !mHighlightWord.isEmpty() ) {
+		Lock l( mHighlightWordCacheMutex );
 		drawWordRanges( mHighlightWordCache );
+	}
 
 	if ( mMinimapConfig.syntaxHighlight ) {
 		for ( int index = minimapStartLine; index <= endidx; index++ ) {

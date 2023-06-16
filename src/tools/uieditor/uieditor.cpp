@@ -1212,6 +1212,8 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		ContextSettings( false, GLv_default, true, 24, 1, 0, true ) );
 
 	if ( mWindow->isOpen() ) {
+		mWindow->setFrameRateLimit( displayManager->getDisplayIndex( 0 )->getRefreshRate() );
+
 		PixelDensity::setPixelDensity( eemax( mWindow->getScale(), pixelDensity ) );
 
 		mWindow->setCloseRequestCallback(

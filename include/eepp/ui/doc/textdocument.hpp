@@ -360,7 +360,7 @@ class EE_API TextDocument {
 
 	TextRanges findAll( const String& text, bool caseSensitive = true, bool wholeWord = false,
 						const FindReplaceType& type = FindReplaceType::Normal,
-						TextRange restrictRange = TextRange() );
+						TextRange restrictRange = TextRange(), size_t maxResults = 0 );
 
 	int replaceAll( const String& text, const String& replace, const bool& caseSensitive = true,
 					const bool& wholeWord = false,
@@ -569,6 +569,8 @@ class EE_API TextDocument {
 
 	const Uint64& getModificationId() const;
 
+	void stopActiveFindAll();
+
   protected:
 	friend class UndoStack;
 
@@ -613,6 +615,8 @@ class EE_API TextDocument {
 	mutable Mutex mLoadingFilePathMutex;
 	size_t mLastSelection{ 0 };
 	std::unique_ptr<SyntaxHighlighter> mHighlighter;
+	Mutex mStopFlagsMutex;
+	std::unordered_map<bool*, std::unique_ptr<bool>> mStopFlags;
 
 	void initializeCommands();
 
@@ -694,7 +698,7 @@ struct TextSearchParams {
 
 	bool operator!=( const TextSearchParams& other ) { return !( *this == other ); }
 
-	bool isEmpty() { return text.empty(); }
+	bool isEmpty();
 
 	void reset() {
 		range = TextRange();

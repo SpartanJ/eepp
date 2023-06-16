@@ -642,7 +642,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mFindReplaceEnabled{ true };
 	bool mShowIndentationGuides{ false };
 	bool mShowLinesRelativePosition{ false };
-	std::atomic<bool> mHighlightWordProcessing{ false };
+	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
 	Uint32 mTabWidth;
@@ -683,6 +683,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Clock mLongestLineWidthLastUpdate;
 	TextSearchParams mHighlightWord;
 	TextRanges mHighlightWordCache;
+	Mutex mHighlightWordCacheMutex;
 	TextRange mHighlightTextRange;
 	Color mPreviewColor;
 	TextRange mPreviewColorRange;
