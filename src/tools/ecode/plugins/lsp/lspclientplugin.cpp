@@ -330,6 +330,7 @@ bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 
 	TextRanges ranges = doc->getSelections();
 
+	doc->resetCursor();
 	doc->setRunningTransaction( true );
 
 	// Sort from bottom to top, this way we don't have to compute any position deltas
@@ -1168,8 +1169,12 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	menu->addSeparator();
 
-	auto addFn = [this, editor, menu]( const std::string& txtKey, const std::string& txtVal ) {
-		menu->add( editor->getUISceneNode()->i18n( txtKey, txtVal ), nullptr,
+	auto addFn = [this, editor, menu]( const std::string& txtKey, const std::string& txtVal,
+									   const std::string& icon = "" ) {
+		menu->add( editor->getUISceneNode()->i18n( txtKey, txtVal ),
+				   !icon.empty() ? mManager->getUISceneNode()->findIcon( icon )->getSize(
+									   PixelDensity::dpToPxI( 12 ) )
+								 : nullptr,
 				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
 			->setId( txtKey );
 	};
@@ -1196,13 +1201,13 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		addFn( "lsp-symbol-references", "Find References to Symbol Under Cursor" );
 
 	if ( cap.codeActionProvider )
-		addFn( "lsp-symbol-code-action", "Code Action" );
+		addFn( "lsp-symbol-code-action", "Code Action", "lightbulb-autofix" );
 
 	if ( cap.semanticTokenProvider.full || cap.semanticTokenProvider.fullDelta )
-		addFn( "lsp-refresh-semantic-highlighting", "Refresh Semantic Highlighting" );
+		addFn( "lsp-refresh-semantic-highlighting", "Refresh Semantic Highlighting", "refresh" );
 
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
-		addFn( "lsp-switch-header-source", "Switch Header/Source" );
+		addFn( "lsp-switch-header-source", "Switch Header/Source", "filetype-hpp" );
 
 #ifdef EE_DEBUG
 	if ( server->getDefinition().name == "clangd" )

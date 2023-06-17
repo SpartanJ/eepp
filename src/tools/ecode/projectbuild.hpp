@@ -203,11 +203,10 @@ class ProjectBuild {
 };
 
 struct ProjectBuildCommand : public ProjectBuildStep {
-	ProjectBuildKeyVal envs;
 	ProjectBuildConfig config;
 
-	ProjectBuildCommand( const ProjectBuildStep& step, const ProjectBuildKeyVal& envs ) :
-		ProjectBuildStep( step ), envs( envs ) {}
+	ProjectBuildCommand( const ProjectBuildStep& step ) :
+		ProjectBuildStep( step ) {}
 };
 
 using ProjectBuildCommands = std::vector<ProjectBuildCommand>;
@@ -215,6 +214,7 @@ using ProjectBuildCommands = std::vector<ProjectBuildCommand>;
 struct ProjectBuildCommandsRes {
 	String errorMsg;
 	ProjectBuildCommands cmds;
+	ProjectBuildKeyVal envs;
 
 	ProjectBuildCommandsRes() {}
 

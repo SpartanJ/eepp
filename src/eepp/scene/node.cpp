@@ -1134,6 +1134,10 @@ Uint32 Node::onClick( const std::function<void( const MouseEvent* )>& callback,
 	} );
 }
 
+bool Node::hasEventsOfType( const Uint32& eventType ) const {
+	return mEvents.find( eventType ) != mEvents.end();
+}
+
 void Node::removeEventsOfType( const Uint32& eventType ) {
 	auto it = mEvents.find( eventType );
 	if ( it != mEvents.end() )

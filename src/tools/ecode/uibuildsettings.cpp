@@ -226,7 +226,7 @@ class UIBuildStep : public UILinearLayout {
 
 		mDataBindHolder +=
 			UIDataBindBool::New( &mStep->enabled, findByClass( "enabled_checkbox" ) );
-		auto placeholder = UIDataBindString::New( &mStep->cmd, findByClass( "input_cmd" ) );
+		mDataBindHolder += UIDataBindString::New( &mStep->cmd, findByClass( "input_cmd" ) );
 		mDataBindHolder += UIDataBindString::New( &mStep->args, findByClass( "input_args" ) );
 		mDataBindHolder +=
 			UIDataBindString::New( &mStep->workingDir, findByClass( "input_working_dir" ) );

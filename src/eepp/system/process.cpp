@@ -5,6 +5,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/process.hpp>
+#include <eepp/system/sys.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 #define SUBPROCESS_USE_POSIX_SPAWN
@@ -53,12 +54,18 @@ bool Process::create( const std::string& command, const Uint32& options,
 		return false;
 	std::vector<std::string> cmdArr = String::split( command, " ", "", "\"", true );
 	std::vector<const char*> strings;
-	for ( size_t i = 0; i < cmdArr.size(); ++i )
-		strings.push_back( cmdArr[i].c_str() );
-	strings.push_back( NULL );
 	mProcess = eeMalloc( sizeof( subprocess_s ) );
 	memset( mProcess, 0, sizeof( subprocess_s ) );
 	if ( !environment.empty() ) {
+		std::string rcommand;
+		if ( FileSystem::fileExists( command ) ) {
+			rcommand = command;
+		} else {
+			rcommand = Sys::which( command );
+			if ( rcommand.empty() )
+				return false;
+		}
+		strings.push_back( rcommand.c_str() );
 		std::vector<std::string> envArr;
 		std::vector<const char*> envStrings;
 		for ( const auto& pair : environment ) {
@@ -73,6 +80,9 @@ bool Process::create( const std::string& command, const Uint32& options,
 											  PROCESS_PTR );
 		return ret;
 	}
+	for ( size_t i = 0; i < cmdArr.size(); ++i )
+		strings.push_back( cmdArr[i].c_str() );
+	strings.push_back( NULL );
 	auto ret =
 		0 == subprocess_create_ex( strings.data(), options, nullptr,
 								   !workingDirectory.empty() ? workingDirectory.c_str() : nullptr,
@@ -87,13 +97,22 @@ bool Process::create( const std::string& command, const std::string& args, const
 		return false;
 	std::vector<std::string> cmdArr = String::split( args, " ", "", "\"", true );
 	std::vector<const char*> strings;
-	strings.push_back( command.c_str() );
-	for ( size_t i = 0; i < cmdArr.size(); ++i )
-		strings.push_back( cmdArr[i].c_str() );
-	strings.push_back( NULL );
 	mProcess = eeMalloc( sizeof( subprocess_s ) );
 	memset( mProcess, 0, sizeof( subprocess_s ) );
 	if ( !environment.empty() ) {
+		std::string rcommand;
+		if ( FileSystem::fileExists( command ) ) {
+			rcommand = command;
+		} else {
+			rcommand = Sys::which( command );
+			if ( rcommand.empty() )
+				return false;
+		}
+		strings.push_back( rcommand.c_str() );
+		for ( size_t i = 0; i < cmdArr.size(); ++i )
+			strings.push_back( cmdArr[i].c_str() );
+		strings.push_back( NULL );
+
 		std::vector<std::string> envArr;
 		std::vector<const char*> envStrings;
 		for ( const auto& pair : environment ) {
@@ -108,6 +127,12 @@ bool Process::create( const std::string& command, const std::string& args, const
 											  PROCESS_PTR );
 		return ret;
 	}
+
+	strings.push_back( command.c_str() );
+	for ( size_t i = 0; i < cmdArr.size(); ++i )
+		strings.push_back( cmdArr[i].c_str() );
+	strings.push_back( NULL );
+
 	auto ret =
 		0 == subprocess_create_ex( strings.data(), options, nullptr,
 								   !workingDirectory.empty() ? workingDirectory.c_str() : nullptr,

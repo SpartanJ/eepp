@@ -176,7 +176,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32
 		curState = SyntaxTokenizer::retrieveSyntaxState( syntax, retState );
 	};
 
-	size_t size = text.size() - 1; // skip last char ( new line char )
+	size_t size = !text.empty() ? text.size() - 1 : 0; // skip last char ( new line char )
 
 	while ( i < size ) {
 		if ( curState.currentPatternIdx != SYNTAX_TOKENIZER_STATE_NONE ) {

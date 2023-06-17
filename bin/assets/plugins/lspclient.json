@@ -26,9 +26,7 @@
           "includeCompletionsWithSnippetText": false,
           "jsxAttributeCompletionStyle": "auto",
           "providePrefixAndSuffixTextForRename": true,
-          "provideRefactorNotApplicableReason": true,
-          "importModuleSpecifierPreference": "shortest",
-          "disableSuggestions": false
+          "provideRefactorNotApplicableReason": true
         }
       }
     },

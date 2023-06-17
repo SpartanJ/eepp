@@ -13,6 +13,10 @@ class EE_API MD5 {
 		std::vector<Uint8> digest;
 
 		std::string toHexString() { return MD5::hexDigest( digest ); }
+
+		bool operator==( const Result& other ) { return digest == other.digest; }
+
+		bool operator!=( const Result& other ) { return digest != other.digest; }
 	};
 
 	/** @return Calculates the md5 hash from a stream */

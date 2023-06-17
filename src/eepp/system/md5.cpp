@@ -292,6 +292,8 @@ MD5::Result MD5::fromStream( IOStream& stream ) {
 	Int64 size = (Int64)stream.getSize();
 	char data[512];
 
+	stream.seek( 0 );
+
 	init( &ctx );
 
 	while ( size > 0 ) {

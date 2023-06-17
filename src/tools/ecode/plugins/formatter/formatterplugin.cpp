@@ -1,5 +1,6 @@
 #include "formatterplugin.hpp"
 #include "../../scopedop.hpp"
+#include "eepp/system/md5.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
@@ -342,7 +343,6 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 	} else if ( doc->getFilePath().empty() ) {
 		return;
 	}
-	IOStreamString fileString;
 	std::string path;
 	if ( doc->isDirty() || !doc->hasFilepath() || formatter.type == FormatterType::Inplace ) {
 		std::string tmpPath;
@@ -355,6 +355,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 			tmpPath = fileDir + "." + String::randString( 8 ) + "." + doc->getFilename();
 		}
 
+		IOStreamString fileString;
 		doc->save( fileString, true );
 		FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(),
 							   fileString.getSize() );
@@ -364,22 +365,28 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 			std::string data;
 			FileSystem::fileGet( tmpPath, data );
 
-			editor->runOnMainThread( [&, data, editor]() {
-				std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
-				auto pos = doc->getSelection();
-				auto scroll = editor->getScroll();
-				doc->selectAll();
-				doc->setRunningTransaction( true );
-				doc->textInput( data );
-				doc->setSelection( pos );
-				editor->setScroll( scroll );
-				if ( mAutoFormatOnSave ) {
-					mIsAutoFormatting[doc.get()] = true;
-					doc->save();
-					mIsAutoFormatting[doc.get()] = false;
-				}
-				doc->setRunningTransaction( false );
-			} );
+			auto oldFile = MD5::fromStream( fileString );
+			auto newFile = MD5::fromString( data );
+
+			if ( oldFile != newFile ) {
+				editor->runOnMainThread( [&, data, editor]() {
+					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
+					auto pos = doc->getSelection();
+					auto scroll = editor->getScroll();
+					doc->resetCursor();
+					doc->selectAll();
+					doc->setRunningTransaction( true );
+					doc->textInput( data );
+					doc->setSelection( pos );
+					editor->setScroll( scroll );
+					if ( mAutoFormatOnSave ) {
+						mIsAutoFormatting[doc.get()] = true;
+						doc->save();
+						mIsAutoFormatting[doc.get()] = false;
+					}
+					doc->setRunningTransaction( false );
+				} );
+			}
 		}
 
 		FileSystem::fileRemove( tmpPath );
@@ -403,6 +410,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 			TextPosition pos = doc->getSelection().start();
 			auto scroll = editor->getScroll();
+			doc->resetCursor();
 			doc->selectAll();
 			doc->setRunningTransaction( true );
 			doc->textInput( res.result );
@@ -440,17 +448,26 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			if ( data.empty() )
 				return;
 
-			editor->runOnMainThread( [&, data, editor]() {
-				std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
-				TextPosition pos = doc->getSelection().start();
-				auto scroll = editor->getScroll();
-				doc->selectAll();
-				doc->setRunningTransaction( true );
-				doc->textInput( data );
-				doc->setSelection( pos );
-				editor->setScroll( scroll );
-				doc->setRunningTransaction( false );
-			} );
+			IOStreamString fileString;
+			editor->getDocumentRef()->save( fileString, true );
+
+			auto oldFile = MD5::fromStream( fileString );
+			auto newFile = MD5::fromString( data );
+
+			if ( oldFile != newFile ) {
+				editor->runOnMainThread( [&, data, editor]() {
+					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
+					TextPosition pos = doc->getSelection().start();
+					auto scroll = editor->getScroll();
+					doc->resetCursor();
+					doc->selectAll();
+					doc->setRunningTransaction( true );
+					doc->textInput( data );
+					doc->setSelection( pos );
+					editor->setScroll( scroll );
+					doc->setRunningTransaction( false );
+				} );
+			}
 		}
 	}
 }

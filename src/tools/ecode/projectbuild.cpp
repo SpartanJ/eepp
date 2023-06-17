@@ -303,9 +303,6 @@ ProjectBuildManager::~ProjectBuildManager() {
 ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::string& buildName,
 																	const ProjectBuildi18nFn& i18n,
 																	const std::string& buildType ) {
-	if ( !mLoaded )
-		return { i18n( "project_build_not_loaded", "No project build loaded!" ) };
-
 	const auto& buildIt = mBuilds.find( buildName );
 
 	if ( buildIt == mBuilds.end() )
@@ -328,7 +325,7 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 	auto finalBuild( build.replaceVars( build.mBuild ) );
 
 	for ( const auto& step : finalBuild ) {
-		ProjectBuildCommand buildCmd( step, build.mEnvs );
+		ProjectBuildCommand buildCmd( step );
 		replaceVar( buildCmd, VAR_OS, currentOS );
 		replaceVar( buildCmd, VAR_NPROC, nproc );
 		if ( !buildType.empty() )
@@ -336,6 +333,8 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 		buildCmd.config = build.mConfig;
 		res.cmds.emplace_back( std::move( buildCmd ) );
 	}
+
+	res.envs = build.mEnvs;
 
 	return res;
 }
@@ -363,9 +362,6 @@ ProjectBuildCommandsRes ProjectBuildManager::build( const std::string& buildName
 ProjectBuildCommandsRes ProjectBuildManager::generateCleanCommands( const std::string& buildName,
 																	const ProjectBuildi18nFn& i18n,
 																	const std::string& buildType ) {
-	if ( !mLoaded )
-		return { i18n( "project_build_not_loaded", "No project build loaded!" ) };
-
 	const auto& buildIt = mBuilds.find( buildName );
 
 	if ( buildIt == mBuilds.end() )
@@ -388,7 +384,7 @@ ProjectBuildCommandsRes ProjectBuildManager::generateCleanCommands( const std::s
 	auto finalBuild( build.replaceVars( build.mClean ) );
 
 	for ( const auto& step : finalBuild ) {
-		ProjectBuildCommand buildCmd( step, build.mEnvs );
+		ProjectBuildCommand buildCmd( step );
 		replaceVar( buildCmd, VAR_OS, currentOS );
 		replaceVar( buildCmd, VAR_NPROC, nproc );
 		if ( !buildType.empty() )
@@ -396,6 +392,8 @@ ProjectBuildCommandsRes ProjectBuildManager::generateCleanCommands( const std::s
 		buildCmd.config = build.mConfig;
 		res.cmds.emplace_back( std::move( buildCmd ) );
 	}
+
+	res.envs = build.mEnvs;
 
 	return res;
 }
@@ -586,11 +584,14 @@ bool ProjectBuildManager::load() {
 }
 
 bool ProjectBuildManager::save() {
-	if ( !mLoaded )
-		return false;
 	ScopedOp scopedOp( [this]() { mLoading = true; }, [this]() { mLoading = false; } );
 	json j = ProjectBuild::serialize( mBuilds );
 	std::string data( j.dump( 2 ) );
+	FileInfo file( mProjectFile );
+
+	if ( !file.exists() && !FileSystem::fileExists( file.getDirectoryPath() ) )
+		FileSystem::makeDir( file.getDirectoryPath() );
+
 	if ( !FileSystem::fileWrite( mProjectFile, data ) )
 		return false;
 	return true;
@@ -727,14 +728,14 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 		auto options = Process::SearchUserPath | Process::NoWindow | Process::CombinedStdoutStderr;
 		ProjectBuildKeyVal env;
 		if ( !cmd.config.clearSysEnv ) {
-			if ( !env.empty() ) {
+			if ( !res.envs.empty() ) {
 				env = getEnvironmentVariables();
-				env.insert( env.begin(), cmd.envs.begin(), cmd.envs.end() );
+				env.insert( env.begin(), res.envs.begin(), res.envs.end() );
 			} else {
 				options |= Process::InheritEnvironment;
 			}
 		} else {
-			env = cmd.envs;
+			env = res.envs;
 		}
 
 		if ( !cmd.enabled ) {
@@ -878,14 +879,14 @@ void ProjectBuildManager::updateSidePanelTab() {
 
 	updateBuildType();
 
-	buildList->removeEventsOfType( Event::OnItemSelected );
-	buildList->addEventListener(
-		Event::OnItemSelected, [this, buildEdit, buildList]( const Event* ) {
+	if ( !buildList->hasEventsOfType( Event::OnItemSelected ) ) {
+		buildList->on( Event::OnItemSelected, [this, buildEdit, buildList]( const Event* ) {
 			mConfig.buildName = buildList->getListBox()->getItemSelectedText();
 			mConfig.buildType = "";
 			buildEdit->setEnabled( true );
 			updateBuildType();
 		} );
+	}
 
 	buildButton->setEnabled( !mConfig.buildName.empty() && hasBuild( mConfig.buildName ) &&
 							 hasBuildCommands( mConfig.buildName ) );
@@ -893,25 +894,34 @@ void ProjectBuildManager::updateSidePanelTab() {
 	cleanButton->setEnabled( !mConfig.buildName.empty() && hasBuild( mConfig.buildName ) &&
 							 hasCleanCommands( mConfig.buildName ) );
 
-	buildButton->onClick( [this]( auto ) {
-		if ( isBuilding() ) {
-			cancelBuild();
-		} else {
-			buildCurrentConfig( mApp->getStatusBuildOutputController() );
-		}
-	} );
+	if ( !buildButton->hasEventsOfType( Event::MouseClick ) ) {
+		buildButton->onClick( [this]( auto ) {
+			if ( isBuilding() ) {
+				cancelBuild();
+			} else {
+				buildCurrentConfig( mApp->getStatusBuildOutputController() );
+			}
+		} );
+	}
 
-	cleanButton->onClick( [this]( auto ) {
-		if ( isBuilding() ) {
-			cancelBuild();
-		} else {
-			cleanCurrentConfig( mApp->getStatusBuildOutputController() );
-		}
-	} );
+	if ( !cleanButton->hasEventsOfType( Event::MouseClick ) ) {
+		cleanButton->onClick( [this]( auto ) {
+			if ( isBuilding() ) {
+				cancelBuild();
+			} else {
+				cleanCurrentConfig( mApp->getStatusBuildOutputController() );
+			}
+		} );
+	}
 
-	buildAdd->onClick( [this, buildTab]( auto ) { addBuild( buildTab ); } );
+	if ( !buildAdd->hasEventsOfType( Event::MouseClick ) ) {
+		buildAdd->onClick( [this, buildTab]( auto ) { addBuild( buildTab ); } );
+	}
 
-	buildEdit->onClick( [this, buildTab]( auto ) { editBuild( mConfig.buildName, buildTab ); } );
+	if ( !buildEdit->hasEventsOfType( Event::MouseClick ) ) {
+		buildEdit->onClick(
+			[this, buildTab]( auto ) { editBuild( mConfig.buildName, buildTab ); } );
+	}
 }
 
 void ProjectBuildManager::updateBuildType() {
@@ -941,10 +951,10 @@ void ProjectBuildManager::updateBuildType() {
 	}
 	buildTypeList->setEnabled( !buildTypeList->getListBox()->isEmpty() );
 
-	buildTypeList->removeEventsOfType( Event::OnItemSelected );
-	buildTypeList->addEventListener( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
-		mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
-	} );
+	if ( !buildTypeList->hasEventsOfType( Event::OnItemSelected ) )
+		buildTypeList->on( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
+			mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
+		} );
 }
 
 std::map<std::string, ProjectBuildOutputParser> ProjectBuildOutputParser::getPresets() {
