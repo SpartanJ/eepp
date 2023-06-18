@@ -34,10 +34,15 @@ App* appInstance = nullptr;
 
 static bool pathHasPosition( const std::string& path ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return std::count( path.begin(), path.end(), ':' ) > 1;
+	bool countedSep = std::count( path.begin(), path.end(), ':' ) > 1;
 #else
-	return std::count( path.begin(), path.end(), ':' ) > 0;
+	bool countedSep = std::count( path.begin(), path.end(), ':' ) > 0;
 #endif
+	if ( countedSep ) {
+		auto seps = String::split( path, ':' );
+		return String::isNumber( seps.back() );
+	}
+	return false;
 }
 
 static std::pair<std::string, TextPosition> getPathAndPosition( const std::string& path ) {
