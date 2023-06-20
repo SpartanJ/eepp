@@ -1001,6 +1001,9 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 				 "copy-containing-folder-path" );
 
 		menuAdd( menu, "copy_file_path", "Copy File Path", "copy", "copy-file-path" );
+
+		menuAdd( menu, "copy_file_path_and_position", "Copy File Path and Position", "copy",
+				 "copy-file-path-and-position" );
 	}
 }
 
@@ -1553,8 +1556,12 @@ void UICodeEditor::copyContainingFolderPath() {
 		mDoc->getFileInfo().getDirectoryPath() );
 }
 
-void UICodeEditor::copyFilePath() {
-	getUISceneNode()->getWindow()->getClipboard()->setText( mDoc->getFilePath() );
+void UICodeEditor::copyFilePath( bool copyPosition ) {
+	auto clipboard = getUISceneNode()->getWindow()->getClipboard();
+	if ( copyPosition )
+		clipboard->setText( mDoc->getFilePath() + mDoc->getSelection().start().toPositionString() );
+	else
+		clipboard->setText( mDoc->getFilePath() );
 }
 
 void UICodeEditor::scrollToCursor( bool centered ) {
@@ -3126,6 +3133,7 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "open-containing-folder", [&] { openContainingFolder(); } );
 	mDoc->setCommand( "copy-containing-folder-path", [&] { copyContainingFolderPath(); } );
 	mDoc->setCommand( "copy-file-path", [&] { copyFilePath(); } );
+	mDoc->setCommand( "copy-file-path-and-position", [&] { copyFilePath( true ); } );
 	mDoc->setCommand( "find-replace", [&] { showFindReplace(); } );
 	mDoc->setCommand( "open-context-menu", [&] { createContextMenu(); } );
 	mUnlockedCmd.insert( { "copy", "select-all" } );
