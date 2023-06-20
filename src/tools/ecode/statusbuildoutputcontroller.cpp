@@ -491,29 +491,66 @@ void StatusBuildOutputController::createContainer() {
 	mTableIssues->on( Event::OnModelEvent, [this]( const Event* event ) {
 		auto modelEvent = static_cast<const ModelEvent*>( event );
 		auto idx = modelEvent->getModelIndex();
-		if ( modelEvent->getModel() && modelEvent->getModelEventType() == ModelEventType::Open &&
-			 idx.isValid() ) {
+		if ( modelEvent->getModel() && idx.isValid() ) {
 			auto model = modelEvent->getModel();
-			Variant vPath( model->data( idx, ModelRole::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
-				std::string path( vPath.asCStr() );
-				UITab* tab = mSplitter->isDocumentOpen( path );
-				Variant lineNum( model->data( model->index( modelEvent->getModelIndex().row(), 1 ),
-											  ModelRole::Custom ) );
-				Variant colNum( model->data( model->index( modelEvent->getModelIndex().row(), 2 ),
-											 ModelRole::Custom ) );
-				if ( !tab ) {
-					FileInfo fileInfo( path );
-					if ( fileInfo.exists() && fileInfo.isRegularFile() )
-						mApp->loadFileFromPath(
-							path, true, nullptr,
-							[&, lineNum, colNum]( UICodeEditor*, const std::string& ) {
-								onLoadDone( lineNum, colNum );
-							} );
-				} else {
-					tab->getTabWidget()->setTabSelected( tab );
-					onLoadDone( lineNum, colNum );
+			if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+				Variant vPath( model->data( idx, ModelRole::Custom ) );
+				if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+					std::string path( vPath.asCStr() );
+					UITab* tab = mSplitter->isDocumentOpen( path );
+					Variant lineNum( model->data(
+						model->index( modelEvent->getModelIndex().row(), 1 ), ModelRole::Custom ) );
+					Variant colNum( model->data(
+						model->index( modelEvent->getModelIndex().row(), 2 ), ModelRole::Custom ) );
+					if ( !tab ) {
+						FileInfo fileInfo( path );
+						if ( fileInfo.exists() && fileInfo.isRegularFile() )
+							mApp->loadFileFromPath(
+								path, true, nullptr,
+								[&, lineNum, colNum]( UICodeEditor*, const std::string& ) {
+									onLoadDone( lineNum, colNum );
+								} );
+					} else {
+						tab->getTabWidget()->setTabSelected( tab );
+						onLoadDone( lineNum, colNum );
+					}
 				}
+			} else if ( modelEvent->getModelEventType() == ModelEventType::OpenMenu ) {
+				UIPopUpMenu* menu = UIPopUpMenu::New();
+				menu->add( mApp->i18n( "copy_error_message", "Copy Error Message" ),
+						   mApp->findIcon( "copy" ) )
+					->setId( "copy-error-message" );
+				menu->add( mApp->i18n( "copy_file_path", "Copy File Path" ),
+						   mApp->findIcon( "copy" ) )
+					->setId( "copy-file-path" );
+				menu->on(
+					Event::OnItemClicked, [this, model, modelEvent, idx]( const Event* event ) {
+						UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+						std::string id( item->getId() );
+						if ( id == "copy-error-message" ) {
+							Variant msg(
+								model->data( model->index( modelEvent->getModelIndex().row(), 0 ),
+											 ModelRole::Display ) );
+							mApp->getWindow()->getClipboard()->setText( msg.toString() );
+						} else if ( id == "copy-file-path" ) {
+							Variant msg( model->data( idx, ModelRole::Custom ) );
+							mApp->getWindow()->getClipboard()->setText( msg.toString() );
+						}
+					} );
+				UITableCell* cell = mTableIssues->getCellFromIndex( idx );
+				if ( modelEvent->getTriggerEvent()->getType() == Event::MouseClick ||
+					 cell == nullptr ) {
+					Vector2f pos( mApp->getWindow()->getInput()->getMousePosf() );
+					menu->nodeToWorldTranslation( pos );
+					UIMenu::findBestMenuPos( pos, menu );
+					menu->setPixelsPosition( pos );
+				} else {
+					Vector2f pos( 0, cell->getPixelsSize().getHeight() );
+					cell->nodeToWorldTranslation( pos );
+					UIMenu::findBestMenuPos( pos, menu );
+					menu->setPixelsPosition( pos );
+				}
+				menu->show();
 			}
 		}
 	} );

@@ -830,4 +830,16 @@ void UIAbstractTableView::recalculateColumnsWidth() {
 	createOrUpdateColumns( false );
 }
 
+UITableCell* UIAbstractTableView::getCellFromIndex( const ModelIndex& index ) const {
+	for ( const auto& row : mWidgets ) {
+		for ( const auto& widget : row ) {
+			if ( widget.second->isType( UI_TYPE_TABLECELL ) &&
+				 widget.second->asType<UITableCell>()->getCurIndex() == index ) {
+				return widget.second->asType<UITableCell>();
+			}
+		}
+	}
+	return nullptr;
+}
+
 }}} // namespace EE::UI::Abstract

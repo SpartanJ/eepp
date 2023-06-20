@@ -701,7 +701,8 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 			}
 			return 1;
 		}
-		case KEY_MENU: {
+		case KEY_MENU:
+		case KEY_APPLICATION: {
 			if ( curIndex.isValid() )
 				onOpenMenuModelIndex( curIndex, &event );
 			return 1;

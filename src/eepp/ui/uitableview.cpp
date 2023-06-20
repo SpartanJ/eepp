@@ -271,7 +271,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 				onOpenModelIndex( curIndex, &event );
 			return 1;
 		}
-		case KEY_MENU: {
+		case KEY_MENU:
+		case KEY_APPLICATION: {
 			if ( curIndex.isValid() )
 				onOpenMenuModelIndex( curIndex, &event );
 			return 1;

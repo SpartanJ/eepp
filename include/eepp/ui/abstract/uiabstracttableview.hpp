@@ -113,6 +113,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	void setFitAllColumnsToWidget( bool fitAllColumnsToWidget );
 
 	void recalculateColumnsWidth();
+
+	UITableCell* getCellFromIndex( const ModelIndex& index ) const;
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
