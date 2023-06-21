@@ -11,6 +11,7 @@ namespace ecode {
 
 class App;
 class LSPSymbolInfoModel;
+class OpenDocumentsModel;
 
 class UniversalLocator {
   public:
@@ -40,6 +41,8 @@ class UniversalLocator {
 
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 
+	void showOpenDocuments();
+
   protected:
 	UILocateBar* mLocateBarLayout{ nullptr };
 	UITableView* mLocateTable{ nullptr };
@@ -53,6 +56,7 @@ class UniversalLocator {
 	std::string mCurDocURI;
 	std::string mCurDocQuery;
 	std::shared_ptr<LSPSymbolInfoModel> mTextDocumentSymbolModel{ nullptr };
+	std::shared_ptr<OpenDocumentsModel> mOpenDocumentsModel{ nullptr };
 
 	void updateLocateBar();
 
@@ -78,6 +82,10 @@ class UniversalLocator {
 	void asyncFuzzyMatchTextDocumentSymbol(
 		const LSPSymbolInformationList& list, const std::string& query, const size_t& limit,
 		std::function<void( std::shared_ptr<LSPSymbolInfoModel> )> cb );
+
+	void updateOpenDocumentsTable();
+
+	std::shared_ptr<FileListModel> openDocumentsModel( const std::string& match );
 };
 
 } // namespace ecode

@@ -1822,6 +1822,11 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
 		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
 		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+		{ { KEY_K, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
+		{ { KEY_P, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-document-symbol-search" },
 	};
 }
 
@@ -1889,7 +1894,10 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "monospace-font",
 			 "terminal-font",
 			 "fallback-font",
-			 "tree-view-configure-ignore-files" };
+			 "tree-view-configure-ignore-files",
+			 "show-open-documents",
+			 "open-workspace-symbol-search",
+			 "open-document-symbol-search" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {

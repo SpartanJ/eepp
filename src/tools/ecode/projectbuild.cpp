@@ -207,9 +207,9 @@ void ProjectBuildManager::addBuild( UIWidget* buildTab ) {
 		widget->asType<UITab>()->select();
 		return;
 	}
-	auto ret =
-		mApp->getSplitter()->createWidget( UIBuildSettings::New( mNewBuild, mConfig, true ),
-										   mApp->i18n( "build_settings", "Build Settings" ) );
+	auto ret = mApp->getSplitter()->createWidget(
+		UIBuildSettings::New( mNewBuild, mConfig, true, nullptr ),
+		mApp->i18n( "build_settings", "Build Settings" ) );
 	auto bs = ret.second->asType<UIBuildSettings>();
 	bs->setTab( ret.first );
 	mCbs[bs].insert( bs->on( Event::OnConfirm, [this, bs]( const Event* event ) {
@@ -245,9 +245,17 @@ void ProjectBuildManager::editBuild( std::string buildName, UIWidget* buildTab )
 		widget->asType<UITab>()->select();
 		return;
 	}
-	auto ret =
-		mApp->getSplitter()->createWidget( UIBuildSettings::New( build->second, mConfig, false ),
-										   mApp->i18n( "build_settings", "Build Settings" ) );
+	auto ret = mApp->getSplitter()->createWidget(
+		UIBuildSettings::New( build->second, mConfig, false,
+							  [this]( const std::string& oldName, const std::string& newName ) {
+								  auto buildIt = mBuilds.find( oldName );
+								  if ( buildIt != mBuilds.end() ) {
+									  auto build = mBuilds.extract( buildIt );
+									  build.key() = newName;
+									  mBuilds.insert( std::move( build ) );
+								  }
+							  } ),
+		mApp->i18n( "build_settings", "Build Settings" ) );
 	auto bs = ret.second->asType<UIBuildSettings>();
 	bs->setTab( ret.first );
 	mCbs[bs].insert( bs->on( Event::OnConfirm, [this, bs]( const Event* event ) {
@@ -328,6 +336,8 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 		ProjectBuildCommand buildCmd( step );
 		replaceVar( buildCmd, VAR_OS, currentOS );
 		replaceVar( buildCmd, VAR_NPROC, nproc );
+		if ( buildCmd.workingDir.empty() )
+			buildCmd.workingDir = mProjectRoot;
 		if ( !buildType.empty() )
 			replaceVar( buildCmd, VAR_BUILD_TYPE, buildType );
 		buildCmd.config = build.mConfig;

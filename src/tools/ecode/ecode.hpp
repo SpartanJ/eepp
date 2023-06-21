@@ -236,6 +236,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "open-locatebar", [&] { mUniversalLocator->showLocateBar(); } );
 		t.setCommand( "toggle-status-locate-bar", [&] { mUniversalLocator->toggleLocateBar(); } );
 		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
+		t.setCommand( "show-open-documents", [&] { mUniversalLocator->showOpenDocuments(); } );
 		t.setCommand( "project-build-start", [&] {
 			if ( mProjectBuildManager && mStatusBuildOutputController ) {
 				if ( mProjectBuildManager->isBuilding() ) {

@@ -1270,6 +1270,10 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 			   getKeybind( "open-global-search" ) )
 		->setId( "open-global-search" );
 	mToolsMenu
+		->add( i18n( "show_open_documents", "Show Open Documents..." ), findIcon( "search" ),
+			   getKeybind( "show-open-documents" ) )
+		->setId( "show-open-documents" );
+	mToolsMenu
 		->add( i18n( "workspace_symbol_find", "Search Worskspace Symbol..." ), findIcon( "search" ),
 			   getKeybind( "open-workspace-symbol-search" ) )
 		->setId( "open-workspace-symbol-search" );

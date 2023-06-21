@@ -105,7 +105,11 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 	std::function<ModelEditingDelegate*( const ModelIndex& )> onCreateEditingDelegate;
 
 	SelectionType getSelectionType() const;
+
 	void setSelectionType( SelectionType selectionType );
+
+	Uint32 onModelEvent( const std::function<void( const ModelEvent* )>& callback,
+						 const Event::EventType& triggerEventType = Event::EventType::NoEvent );
 
   protected:
 	friend class EE::UI::Models::Model;

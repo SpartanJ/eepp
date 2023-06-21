@@ -11,8 +11,10 @@ namespace ecode {
 
 class UIBuildSettings : public UIRelativeLayout {
   public:
-	static UIBuildSettings* New( ProjectBuild& build, ProjectBuildConfiguration& config,
-								 bool isNew );
+	static UIBuildSettings*
+
+	New( ProjectBuild& build, ProjectBuildConfiguration& config, bool isNew,
+		 const std::function<void( const std::string& oldName, const std::string& newName )> onBuildNameChange );
 
 	virtual ~UIBuildSettings();
 
@@ -32,8 +34,10 @@ class UIBuildSettings : public UIRelativeLayout {
 	ProjectBuildOutputParserConfig mTmpOpCfg;
 	bool mIsNew{ false };
 	bool mCanceled{ false };
+	std::function<void( const std::string& oldName, const std::string& newName )> mNewNameFn;
 
-	explicit UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config, bool isNew );
+	explicit UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config, bool isNew,
+		 const std::function<void( const std::string& oldName, const std::string& newName )> onBuildNameChange );
 
 	void moveStepUp( size_t stepNum, bool isClea );
 

@@ -406,9 +406,10 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 </ScrollView>
 )xml";
 
-UIBuildSettings* UIBuildSettings::New( ProjectBuild& build, ProjectBuildConfiguration& config,
-									   bool isNew ) {
-	return eeNew( UIBuildSettings, ( build, config, isNew ) );
+UIBuildSettings* UIBuildSettings::New(
+	ProjectBuild& build, ProjectBuildConfiguration& config, bool isNew,
+	const std::function<void( const std::string&, const std::string& )> onBuildNameChange ) {
+	return eeNew( UIBuildSettings, ( build, config, isNew, onBuildNameChange ) );
 }
 
 UIBuildSettings::~UIBuildSettings() {
@@ -420,9 +421,14 @@ UIBuildSettings::~UIBuildSettings() {
 		sendCommonEvent( Event::OnConfirm );
 }
 
-UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config,
-								  bool isNew ) :
-	mBuild( build ), mConfig( config ), mOldName( mBuild.getName() ), mIsNew( isNew ) {
+UIBuildSettings::UIBuildSettings(
+	ProjectBuild& build, ProjectBuildConfiguration& config, bool isNew,
+	const std::function<void( const std::string&, const std::string& )> onBuildNameChange ) :
+	mBuild( build ),
+	mConfig( config ),
+	mOldName( mBuild.getName() ),
+	mIsNew( isNew ),
+	mNewNameFn( onBuildNameChange ) {
 	addClass( "build_settings" );
 	mUISceneNode->loadLayoutFromString( SETTINGS_PANEL_XML, this,
 										String::hash( "build_settings" ) );
@@ -441,6 +447,10 @@ UIBuildSettings::UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration
 			if ( idx != eeINDEX_NOT_FOUND )
 				panelBuildNameDDL->getListBox()->setItemText( idx, mBuild.getName() );
 		}
+		if ( mOldName == mConfig.buildName )
+			mConfig.buildName = mBuild.getName();
+		if ( mNewNameFn )
+			mNewNameFn( mOldName, mBuild.getName() );
 		mOldName = mBuild.getName();
 	} );
 

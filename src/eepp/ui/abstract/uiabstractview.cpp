@@ -25,6 +25,19 @@ void UIAbstractView::setSelectionType( SelectionType selectionType ) {
 	}
 }
 
+Uint32 UIAbstractView::onModelEvent( const std::function<void( const ModelEvent* )>& callback,
+									 const Event::EventType& triggerEventType ) {
+	return addEventListener(
+		Event::OnModelEvent, [callback, triggerEventType]( const Event* event ) {
+			auto modelEvent = static_cast<const ModelEvent*>( event );
+			if ( modelEvent->getModel() && modelEvent->getModelIndex().isValid() &&
+				 ( triggerEventType == Event::EventType::NoEvent ||
+				   modelEvent->getTriggerEvent()->getType() == triggerEventType ) ) {
+				callback( modelEvent );
+			}
+		} );
+}
+
 KeyBindings::Shortcut UIAbstractView::getEditShortcut() const {
 	return mEditShortcut;
 }

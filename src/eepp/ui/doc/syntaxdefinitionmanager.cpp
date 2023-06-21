@@ -1505,7 +1505,7 @@ static void addRust() {
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "`", "`", "\\" }, "string" },
 			  { { "'.'" }, "string" },
-			  { { "'%a+" }, "keyword2" },
+			  { { "[%a_][%a%d_]*" }, "keyword2" },
 			  { { "0[oO_][0-7]+" }, "number" },
 			  { { "-?0x[%x_]+" }, "number" },
 			  { { "-?%d+_%d" }, "number" },

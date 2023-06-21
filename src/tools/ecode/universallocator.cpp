@@ -213,8 +213,8 @@ void UniversalLocator::goToLine() {
 }
 
 static bool isCommand( const std::string& filename ) {
-	return !filename.empty() &&
-		   ( filename == "> " || filename == ": " || filename == "l " || filename == ". " );
+	return !filename.empty() && ( filename == "> " || filename == ": " || filename == "l " ||
+								  filename == ". " || filename == "o " );
 }
 
 void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInput ) {
@@ -257,6 +257,8 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 			showCommandPalette();
 		} else if ( !inputTxt.empty() && mLocateInput->getText()[0] == ':' ) {
 			showWorkspaceSymbol();
+		} else if ( String::startsWith( inputTxt, "o " ) ) {
+			showOpenDocuments();
 		} else if ( String::startsWith( inputTxt, ". " ) ) {
 			showDocumentSymbol();
 		} else {
@@ -302,7 +304,8 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 							mSplitter->getCurEditor()->setFocus();
 					}
 					if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
-						 cmd != "open-document-symbol-search" && cmd != "go-to-line" ) {
+						 cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
+						 cmd != "show-open-documents" ) {
 						hideLocateBar();
 					} else {
 						mLocateInput->setFocus();
@@ -396,7 +399,7 @@ void UniversalLocator::showBar() {
 	mLocateTable->setVisible( true );
 	const String& text = mLocateInput->getText();
 
-	if ( !text.empty() && ( text[0] == '>' || text[0] == ':' ) ) {
+	if ( !text.empty() && ( text[0] == '>' || text[0] == ':' || text[0] == '.' ) ) {
 		Int64 selectFrom = 1;
 		if ( text.size() >= 2 && text[1] == ' ' )
 			selectFrom = 2;
@@ -463,6 +466,65 @@ void UniversalLocator::showDocumentSymbol() {
 	requestDocumentSymbol();
 	updateLocateBar();
 	mApp->getStatusBar()->updateState();
+}
+
+void UniversalLocator::showOpenDocuments() {
+	showBar();
+
+	if ( mLocateInput->getText().empty() || mLocateInput->getText()[0] != 'o' )
+		mLocateInput->setText( "o " );
+
+	if ( mLocateInput->getText().size() >= 2 )
+		updateOpenDocumentsTable();
+	updateLocateBar();
+	mApp->getStatusBar()->updateState();
+}
+
+std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::string& match ) {
+	std::map<std::string, std::string> docs;
+
+	mApp->getSplitter()->forEachDoc( [&docs]( TextDocument& doc ) {
+		if ( doc.hasFilepath() ) {
+			docs.insert( { FileSystem::fileNameFromPath( doc.getFilePath() ), doc.getFilePath() } );
+		}
+	} );
+
+	std::vector<std::string> files;
+	std::vector<std::string> names;
+
+	for ( const auto& doc : docs ) {
+		names.emplace_back( std::move( doc.first ) );
+		files.emplace_back( std::move( doc.second ) );
+	}
+
+	if ( match.empty() )
+		return std::make_shared<FileListModel>( files, names );
+
+	std::multimap<int, int, std::greater<int>> matchesMap;
+
+	for ( size_t i = 0; i < names.size(); i++ ) {
+		int matchName = String::fuzzyMatch( names[i], match );
+		int matchPath = String::fuzzyMatch( files[i], match );
+		matchesMap.insert( { std::max( matchName, matchPath ), i } );
+	}
+
+	std::vector<std::string> ffiles;
+	std::vector<std::string> fnames;
+
+	for ( auto& res : matchesMap ) {
+		fnames.emplace_back( std::move( names[res.second] ) );
+		ffiles.emplace_back( std::move( files[res.second] ) );
+	}
+
+	return std::make_shared<FileListModel>( ffiles, fnames );
+}
+
+void UniversalLocator::updateOpenDocumentsTable() {
+	mLocateTable->setModel(
+		openDocumentsModel( mLocateInput->getText().substr( 2 ).trim().toUtf8() ) );
+	if ( mLocateTable->getModel()->rowCount() > 0 )
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	mLocateTable->scrollToTop();
 }
 
 void UniversalLocator::onCodeEditorFocusChange( UICodeEditor* editor ) {
@@ -633,6 +695,7 @@ std::vector<ProjectDirectoryTree::CommandInfo> UniversalLocator::getLocatorComma
 		{ "l ",
 		  mUISceneNode->i18n( "go_to_line_in_current_document", "Go To Line in Current Document" ),
 		  icon } );
+	vec.push_back( { "o ", mUISceneNode->i18n( "open_documents", "Open Documents" ), icon } );
 	return vec;
 }
 
