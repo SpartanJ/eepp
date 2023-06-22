@@ -314,20 +314,8 @@ PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMess
 	return { uri.toString() };
 }
 
-bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
-														 std::vector<LSPTextEdit> edits ) {
-	auto doc = mManager->getSplitter()->findDocFromURI( uri );
-	if ( !doc ) {
-		auto te = mManager->getSplitter()->loadFileFromPathInNewTab( uri.getFSPath() );
-		if ( te.first == nullptr || te.second == nullptr || !te.second->getDocumentRef() )
-			return false;
-		doc = te.second->getDocumentRef();
-	}
-
-	for ( const auto& edit : edits )
-		if ( !edit.range.isValid() )
-			return false;
-
+void processFormattingResponse( const std::shared_ptr<TextDocument>& doc,
+								std::vector<LSPTextEdit> edits ) {
 	TextRanges ranges = doc->getSelections();
 
 	doc->resetCursor();
@@ -352,6 +340,25 @@ bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 	doc->setSelection( ranges );
 
 	doc->setRunningTransaction( false );
+}
+
+bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
+														 std::vector<LSPTextEdit> edits ) {
+	for ( const auto& edit : edits )
+		if ( !edit.range.isValid() )
+			return false;
+
+	auto doc = mManager->getSplitter()->findDocFromURI( uri );
+	if ( !doc ) {
+		mManager->getLoadFileFn()( uri.getFSPath(), [this, edits]( UICodeEditor* editor, auto ) {
+			auto documentRef = editor->getDocumentRef();
+			mManager->getSplitter()->getUISceneNode()->runOnMainThread(
+				[documentRef, edits]() { processFormattingResponse( documentRef, edits ); } );
+		} );
+		return false;
+	}
+
+	processFormattingResponse( doc, edits );
 
 	return true;
 }

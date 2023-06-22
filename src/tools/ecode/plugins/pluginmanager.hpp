@@ -229,8 +229,11 @@ class PluginManager {
 		return String::format( "%d.%d.%.d", major, minor, patch );
 	}
 
+	using OnFileLoadedCb = std::function<void( UICodeEditor*, const std::string& )>;
+	using OnLoadFileCb = std::function<void( const std::string&, const OnFileLoadedCb& )>;
+
 	PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
-				   std::shared_ptr<ThreadPool> pool );
+				   std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb );
 
 	~PluginManager();
 
@@ -298,6 +301,8 @@ class PluginManager {
 
 	FileSystemListener* getFileSystemListener() const { return mFileSystemListener; };
 
+	const OnLoadFileCb& getLoadFileFn() const;
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;
@@ -313,6 +318,7 @@ class PluginManager {
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mSubscribedPluginsMutex;
 	SubscribedPlugins mSubscribedPlugins;
+	OnLoadFileCb mLoadFileFn;
 	bool mClosing{ false };
 
 	bool hasDefinition( const std::string& id );
@@ -386,6 +392,7 @@ class Plugin : public UICodeEditorPlugin {
 	Uint64 mFileSystemListenerCb{ 0 };
 	std::string mConfigPath;
 	FileInfo mConfigFileInfo;
+
 	bool mReady{ false };
 	bool mShuttingDown{ false };
 };

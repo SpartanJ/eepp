@@ -443,7 +443,16 @@ void App::onPluginEnabled( UICodeEditorPlugin* plugin ) {
 }
 
 void App::initPluginManager() {
-	mPluginManager = std::make_unique<PluginManager>( mResPath, mPluginsPath, mThreadPool );
+	mPluginManager = std::make_unique<PluginManager>(
+		mResPath, mPluginsPath, mThreadPool, [this]( const std::string& path, const auto& cb ) {
+			UITab* tab = mSplitter->isDocumentOpen( path );
+			if ( !tab ) {
+				loadFileFromPath( path, true, nullptr, cb );
+			} else {
+				tab->getTabWidget()->setTabSelected( tab );
+				cb( tab->getOwnedWidget()->asType<UICodeEditor>(), path );
+			}
+		} );
 	mPluginManager->onPluginEnabled = [&]( UICodeEditorPlugin* plugin ) {
 		if ( nullptr == mUISceneNode || plugin->isReady() ) {
 			onPluginEnabled( plugin );
@@ -1226,7 +1235,7 @@ void App::loadFileFromPathOrFocus( const std::string& path ) {
 }
 
 void App::createPluginManagerUI() {
-	UIPluginManager::New( mUISceneNode, mPluginManager.get(), [&]( const std::string& path ) {
+	UIPluginManager::New( mUISceneNode, mPluginManager.get(), [this]( const std::string& path ) {
 		loadFileFromPathOrFocus( path );
 	} )->showWhenReady();
 }

@@ -1,5 +1,6 @@
 #include "universallocator.hpp"
 #include "ecode.hpp"
+#include <algorithm>
 
 namespace ecode {
 
@@ -481,20 +482,25 @@ void UniversalLocator::showOpenDocuments() {
 }
 
 std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::string& match ) {
-	std::map<std::string, std::string> docs;
+	std::vector<std::string> docs;
 
 	mApp->getSplitter()->forEachDoc( [&docs]( TextDocument& doc ) {
-		if ( doc.hasFilepath() ) {
-			docs.insert( { FileSystem::fileNameFromPath( doc.getFilePath() ), doc.getFilePath() } );
+		if ( doc.hasFilepath() &&
+			 std::find( docs.begin(), docs.end(), doc.getFilePath() ) == docs.end() ) {
+			docs.push_back( doc.getFilePath() );
 		}
+	} );
+
+	std::sort( docs.begin(), docs.end(), []( const auto& left, const auto& right ) {
+		return FileSystem::fileNameFromPath( left ) < FileSystem::fileNameFromPath( right );
 	} );
 
 	std::vector<std::string> files;
 	std::vector<std::string> names;
 
 	for ( const auto& doc : docs ) {
-		names.emplace_back( std::move( doc.first ) );
-		files.emplace_back( std::move( doc.second ) );
+		names.emplace_back( FileSystem::fileNameFromPath( doc ) );
+		files.emplace_back( std::move( doc ) );
 	}
 
 	if ( match.empty() )
@@ -503,8 +509,8 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 	std::multimap<int, int, std::greater<int>> matchesMap;
 
 	for ( size_t i = 0; i < names.size(); i++ ) {
-		int matchName = String::fuzzyMatch( names[i], match );
-		int matchPath = String::fuzzyMatch( files[i], match );
+		int matchName = String::fuzzyMatch( names[i], match, true, true );
+		int matchPath = String::fuzzyMatch( files[i], match, true, true );
 		matchesMap.insert( { std::max( matchName, matchPath ), i } );
 	}
 

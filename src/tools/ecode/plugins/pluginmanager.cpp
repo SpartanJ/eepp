@@ -10,8 +10,11 @@ using json = nlohmann::json;
 namespace ecode {
 
 PluginManager::PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
-							  std::shared_ptr<ThreadPool> pool ) :
-	mResourcesPath( resourcesPath ), mPluginsPath( pluginsPath ), mThreadPool( pool ) {}
+							  std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb ) :
+	mResourcesPath( resourcesPath ),
+	mPluginsPath( pluginsPath ),
+	mThreadPool( pool ),
+	mLoadFileFn( loadFileCb ) {}
 
 PluginManager::~PluginManager() {
 	mClosing = true;
@@ -218,6 +221,10 @@ void PluginManager::unsubscribeMessages( const std::string& uniqueComponentId ) 
 		Lock l( mSubscribedPluginsMutex );
 		mSubscribedPlugins.erase( uniqueComponentId );
 	}
+}
+
+const PluginManager::OnLoadFileCb& PluginManager::getLoadFileFn() const {
+	return mLoadFileFn;
 }
 
 void PluginManager::subscribeMessages(
