@@ -86,6 +86,8 @@ class UniversalLocator {
 	void updateOpenDocumentsTable();
 
 	std::shared_ptr<FileListModel> openDocumentsModel( const std::string& match );
+
+	void focusOrLoadFile( const std::string& path, const TextRange& range = {} );
 };
 
 } // namespace ecode

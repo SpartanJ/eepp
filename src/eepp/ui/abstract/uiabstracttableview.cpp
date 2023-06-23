@@ -76,10 +76,14 @@ size_t UIAbstractTableView::getItemCount() const {
 
 void UIAbstractTableView::onModelUpdate( unsigned flags ) {
 	if ( !Engine::instance()->isMainThread() ) {
-		runOnMainThread( [&, flags] {
-			modelUpdate( flags );
-			createOrUpdateColumns( true );
-		} );
+		static constexpr String::HashType tag = String::hash( "onModelUpdate" );
+		removeActionsByTag( tag );
+		runOnMainThread(
+			[&, flags] {
+				modelUpdate( flags );
+				createOrUpdateColumns( true );
+			},
+			Time::Zero, tag );
 	} else {
 		UIAbstractView::onModelUpdate( flags );
 		createOrUpdateColumns( true );

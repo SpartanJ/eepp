@@ -1,5 +1,6 @@
 #include "ecode.hpp"
 #include "featureshealth.hpp"
+#include "pathhelper.hpp"
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
@@ -31,48 +32,6 @@ Clock globalClock;
 bool firstFrame = true;
 bool firstUpdate = true;
 App* appInstance = nullptr;
-
-static bool pathHasPosition( const std::string& path ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	bool countedSep = std::count( path.begin(), path.end(), ':' ) > 1;
-#else
-	bool countedSep = std::count( path.begin(), path.end(), ':' ) > 0;
-#endif
-	if ( countedSep ) {
-		auto seps = String::split( path, ':' );
-		return String::isNumber( seps.back() );
-	}
-	return false;
-}
-
-static std::pair<std::string, TextPosition> getPathAndPosition( const std::string& path ) {
-	if ( pathHasPosition( path ) ) {
-		auto parts = String::split( path, ':' );
-		if ( parts.size() >= 2 ) {
-			Int64 line = 0;
-			Int64 col = 0;
-#if EE_PLATFORM == EE_PLATFORM_WIN
-			size_t partCount = 4;
-#else
-			size_t partCount = 3;
-#endif
-			int linePos = parts.size() >= partCount ? parts.size() - 2 : parts.size() - 1;
-			int colPos = parts.size() >= partCount ? parts.size() - 1 : -1;
-			if ( String::fromString( line, parts[linePos] ) ) {
-				if ( colPos > 0 )
-					String::fromString( col, parts[colPos] );
-			}
-			std::string npath( parts[0] );
-			if ( parts.size() >= 2 ) {
-				for ( Int64 i = 1; i < linePos; i++ ) {
-					npath += ":" + parts[i];
-				}
-			}
-			return { npath, { eemax( (Int64)0, line - 1 ), col } };
-		}
-	}
-	return { path, { 0, 0 } };
-}
 
 void appLoop() {
 	appInstance->mainLoop();

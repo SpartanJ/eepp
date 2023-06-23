@@ -517,6 +517,8 @@ void Window::hide() {}
 
 void Window::raise() {}
 
+void Window::flash( WindowFlashOperation ) {}
+
 void Window::show() {}
 
 void Window::setPosition( int, int ) {}

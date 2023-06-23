@@ -257,6 +257,9 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 				if ( cleanButton )
 					cleanButton->setEnabled( true );
 			}
+
+			if ( !mApp->getWindow()->hasFocus() )
+				mApp->getWindow()->flash( WindowFlashOperation::Briefly );
 		} );
 
 	if ( !res.isValid() ) {
@@ -344,6 +347,9 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 				if ( buildButton )
 					buildButton->setEnabled( true );
 			}
+
+			if ( !mApp->getWindow()->hasFocus() )
+				mApp->getWindow()->flash( WindowFlashOperation::Briefly );
 		} );
 
 	if ( !res.isValid() ) {

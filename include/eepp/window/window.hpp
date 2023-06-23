@@ -29,6 +29,12 @@ enum WindowStyle {
 #endif
 };
 
+enum class WindowFlashOperation {
+	Cancel,
+	Briefly,
+	UntilFocused,
+};
+
 enum class WindowBackend : Uint32 { SDL2, Default };
 
 #ifndef EE_SCREEN_KEYBOARD_ENABLED
@@ -194,6 +200,9 @@ class EE_API Window {
 
 	/** This will attempt to raise the window */
 	virtual void raise();
+
+	/** Request a window to demand attention from the user. */
+	virtual void flash( WindowFlashOperation op );
 
 	/** This will attempt to show the window */
 	virtual void show();
@@ -474,7 +483,7 @@ class EE_API Window {
 
 	/** Shows a native message box.
 	 *  @return True if message box was shown
-	*/
+	 */
 	virtual bool showMessageBox( const MessageBoxType& type, const std::string& title,
 								 const std::string& message );
 

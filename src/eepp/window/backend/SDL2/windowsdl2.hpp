@@ -67,6 +67,8 @@ class EE_API WindowSDL : public Window {
 
 	virtual void raise();
 
+	virtual void flash( WindowFlashOperation op );
+
 	virtual void show();
 
 	virtual void setPosition( int Left, int Top );

@@ -1,5 +1,6 @@
 #include "universallocator.hpp"
 #include "ecode.hpp"
+#include "pathhelper.hpp"
 #include <algorithm>
 
 namespace ecode {
@@ -136,22 +137,28 @@ void UniversalLocator::toggleLocateBar() {
 }
 
 void UniversalLocator::updateFilesTable() {
+	auto text = mLocateInput->getText();
+
+	if ( pathHasPosition( text ) ) {
+		auto pathAndPos = getPathAndPosition( text );
+		text = pathAndPos.first;
+	}
+
 	if ( !mApp->isDirTreeReady() ) {
 		mLocateTable->setModel( ProjectDirectoryTree::emptyModel( getLocatorCommands() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} else if ( !mLocateInput->getText().empty() ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mApp->getDirTree()->asyncFuzzyMatchTree(
-			mLocateInput->getText(), LOCATEBAR_MAX_RESULTS, [&]( auto res ) {
-				mUISceneNode->runOnMainThread( [&, res] {
+			text, LOCATEBAR_MAX_RESULTS, [this, text]( auto res ) {
+				mUISceneNode->runOnMainThread( [this, res] {
 					mLocateTable->setModel( res );
 					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 					mLocateTable->scrollToTop();
 				} );
 			} );
 #else
-		mLocateTable->setModel(
-			mApp->getDirTree()->fuzzyMatchTree( mLocateInput->getText(), LOCATEBAR_MAX_RESULTS ) );
+		mLocateTable->setModel( mApp->getDirTree()->fuzzyMatchTree( text, LOCATEBAR_MAX_RESULTS ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 		mLocateTable->scrollToTop();
 #endif
@@ -335,22 +342,13 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 					auto range = rangeStr.isValid()
 									 ? TextRange::fromString( rangeStr.asStdString() )
 									 : TextRange();
-					UITab* tab = mSplitter->isDocumentOpen( path, true );
-					if ( !tab ) {
-						FileInfo fileInfo( path );
-						if ( fileInfo.exists() && fileInfo.isRegularFile() )
-							mApp->loadFileFromPath( path, true, nullptr,
-													[range]( UICodeEditor* editor, auto ) {
-														if ( range.isValid() )
-															editor->goToLine( range.start() );
-													} );
-					} else {
-						tab->getTabWidget()->setTabSelected( tab );
-						if ( range.isValid() ) {
-							UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
-							editor->goToLine( range.start() );
-						}
+					if ( !range.isValid() && !FileSystem::isRelativePath( path ) &&
+						 pathHasPosition( mLocateInput->getText() ) &&
+						 String::startsWith( mLocateInput->getText().toUtf8(), path ) ) {
+						auto pathAndPos = getPathAndPosition( mLocateInput->getText() );
+						range = { pathAndPos.second, pathAndPos.second };
 					}
+					focusOrLoadFile( path, range );
 					mLocateBarLayout->execute( "close-locatebar" );
 				} else {
 					Variant rangeStr( modelEvent->getModel()->data(
@@ -523,6 +521,24 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 	}
 
 	return std::make_shared<FileListModel>( ffiles, fnames );
+}
+
+void UniversalLocator::focusOrLoadFile( const std::string& path, const TextRange& range ) {
+	UITab* tab = mSplitter->isDocumentOpen( path, true );
+	if ( !tab ) {
+		FileInfo fileInfo( path );
+		if ( fileInfo.exists() && fileInfo.isRegularFile() )
+			mApp->loadFileFromPath( path, true, nullptr, [range]( UICodeEditor* editor, auto ) {
+				if ( range.isValid() )
+					editor->goToLine( range.start() );
+			} );
+	} else {
+		tab->getTabWidget()->setTabSelected( tab );
+		if ( range.isValid() ) {
+			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			editor->goToLine( range.start() );
+		}
+	}
 }
 
 void UniversalLocator::updateOpenDocumentsTable() {

@@ -785,6 +785,15 @@ void WindowSDL::raise() {
 	SDL_RaiseWindow( mSDLWindow );
 }
 
+void WindowSDL::flash( WindowFlashOperation op ) {
+	SDL_FlashOperation sdlOp = SDL_FlashOperation::SDL_FLASH_BRIEFLY;
+	if ( op == WindowFlashOperation::Cancel )
+		sdlOp = SDL_FlashOperation::SDL_FLASH_CANCEL;
+	else if ( op == WindowFlashOperation::UntilFocused )
+		sdlOp = SDL_FlashOperation::SDL_FLASH_UNTIL_FOCUSED;
+	SDL_FlashWindow( mSDLWindow, sdlOp );
+}
+
 void WindowSDL::show() {
 	SDL_ShowWindow( mSDLWindow );
 }
