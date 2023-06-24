@@ -54,6 +54,11 @@ LinterPlugin::~LinterPlugin() {
 	}
 
 	for ( const auto& editor : mEditors ) {
+		for ( auto& kb : mKeyBindings ) {
+			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
+			if ( editor.first->hasDocument() )
+				editor.first->getDocument().removeCommand( kb.first );
+		}
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
 		editor.first->unregisterPlugin( this );
@@ -87,7 +92,8 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 		if ( !updateConfigFile )
 			return;
 		// Recreate it
-		j = json::parse( "{\n\"config\":{},\n\"linters\":[]\n}\n", nullptr, true, true );
+		j = json::parse( "{\n\"config\":{},\n  \"keybindings\":{},\n\"linters\":[]\n}\n", nullptr,
+						 true, true );
 	}
 
 	if ( updateConfigFile ) {
@@ -151,6 +157,28 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 		} else if ( updateConfigFile ) {
 			config["disable_languages"] = json::array();
 		}
+
+		if ( config.contains( "go-to-ignore-warnings" ) &&
+			 config["go-to-ignore-warnings"].is_boolean() ) {
+			mGoToIgnoreWarnings = config["go-to-ignore-warnings"].get<bool>();
+		} else if ( updateConfigFile ) {
+			config["go-to-ignore-warnings"] = false;
+		}
+	}
+
+	if ( mKeyBindings.empty() ) {
+		mKeyBindings["linter-go-to-next-error"] = "mod+shift+n";
+		mKeyBindings["linter-go-to-previous-error"] = "mod+shift+alt+n";
+	}
+
+	auto& kb = j["keybindings"];
+	auto list = { "linter-go-to-next-error", "linter-go-to-previous-error" };
+	for ( const auto& key : list ) {
+		if ( kb.contains( key ) ) {
+			if ( !kb[key].empty() )
+				mKeyBindings[key] = kb[key];
+		} else if ( updateConfigFile )
+			kb[key] = mKeyBindings[key];
 	}
 
 	if ( updateConfigFile ) {
@@ -450,12 +478,32 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 	listeners.push_back( editor->addEventListener(
 		Event::OnTextChanged, [&, editor]( const Event* ) { setDocDirty( editor ); } ) );
 
+	for ( auto& kb : mKeyBindings ) {
+		if ( !kb.second.empty() )
+			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+	}
+
+	if ( editor->hasDocument() ) {
+		auto& doc = editor->getDocument();
+
+		doc.setCommand( "linter-go-to-next-error", [this, editor]() { goToNextError( editor ); } );
+
+		doc.setCommand( "linter-go-to-previous-error",
+						[this, editor]() { goToPrevError( editor ); } );
+	}
+
 	mEditors.insert( { editor, listeners } );
 	mDocs.insert( editor->getDocumentRef().get() );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
 }
 
 void LinterPlugin::onUnregister( UICodeEditor* editor ) {
+	for ( auto& kb : mKeyBindings ) {
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+		if ( editor->hasDocument() )
+			editor->getDocument().removeCommand( kb.first );
+	}
+
 	if ( mShuttingDown )
 		return;
 	Lock l( mDocMutex );
@@ -465,8 +513,8 @@ void LinterPlugin::onUnregister( UICodeEditor* editor ) {
 		editor->removeEventListener( listener );
 	mEditors.erase( editor );
 	mEditorDocs.erase( editor );
-	for ( auto editor : mEditorDocs )
-		if ( editor.second == doc )
+	for ( auto editorIt : mEditorDocs )
+		if ( editorIt.second == doc )
 			return;
 	mDocs.erase( doc );
 	mDirtyDoc.erase( doc );
@@ -882,6 +930,112 @@ void LinterPlugin::tryHideHoveringMatch( UICodeEditor* editor ) {
 		editor->setTooltipText( "" );
 		editor->getTooltip()->hide();
 		mHoveringMatch = false;
+	}
+}
+
+void LinterPlugin::goToNextError( UICodeEditor* editor ) {
+	if ( nullptr == editor || !editor->hasDocument() )
+		return;
+	TextDocument* doc = &editor->getDocument();
+	auto pos = doc->getSelection().start();
+
+	Lock l( mMatchesMutex );
+	auto fMatch = mMatches.find( doc );
+	if ( fMatch == mMatches.end() )
+		return;
+	const auto& matches = fMatch->second;
+	if ( matches.empty() )
+		return;
+
+	const LinterMatch* matched = nullptr;
+	for ( const auto& match : matches ) {
+		if ( match.first > pos.line() ) {
+			if ( mGoToIgnoreWarnings ) {
+				for ( const auto& m : match.second ) {
+					if ( m.type == LinterType::Error ) {
+						matched = &m;
+						break;
+					}
+				}
+			} else {
+				matched = &match.second.front();
+				break;
+			}
+		}
+	}
+
+	if ( matched != nullptr ) {
+		editor->goToLine( matched->range.start() );
+	} else {
+		if ( mGoToIgnoreWarnings ) {
+			for ( const auto& m : matches ) {
+				if ( m.first < pos.line() ) {
+					for ( const auto& lm : m.second ) {
+						if ( lm.type == LinterType::Error ) {
+							editor->goToLine( lm.range.start() );
+							break;
+						}
+					}
+				} else {
+					break;
+				}
+			}
+		} else if ( matches.begin()->second.front().range.start().line() != pos.line() ) {
+			editor->goToLine( matches.begin()->second.front().range.start() );
+		}
+	}
+}
+
+void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
+	if ( nullptr == editor || !editor->hasDocument() )
+		return;
+	TextDocument* doc = &editor->getDocument();
+	auto pos = doc->getSelection().start();
+
+	Lock l( mMatchesMutex );
+	auto fMatch = mMatches.find( doc );
+	if ( fMatch == mMatches.end() )
+		return;
+	auto& matches = fMatch->second;
+	if ( matches.empty() )
+		return;
+
+	const LinterMatch* matched = nullptr;
+	for ( auto match = matches.rbegin(); match != matches.rend(); ++match ) {
+		if ( match->first < pos.line() ) {
+			if ( mGoToIgnoreWarnings ) {
+				for ( const auto& m : match->second ) {
+					if ( m.type == LinterType::Error ) {
+						matched = &m;
+						break;
+					}
+				}
+			} else {
+				matched = &match->second.front();
+				break;
+			}
+		}
+	}
+
+	if ( matched != nullptr ) {
+		editor->goToLine( matched->range.start() );
+	} else {
+		if ( mGoToIgnoreWarnings ) {
+			for ( auto m = matches.rbegin(); m != matches.rend(); ++m ) {
+				if ( m->first > pos.line() ) {
+					for ( const auto& lm : m->second ) {
+						if ( lm.type == LinterType::Error ) {
+							editor->goToLine( lm.range.start() );
+							break;
+						}
+					}
+				} else {
+					break;
+				}
+			}
+		} else if ( matches.rbegin()->second.front().range.start().line() != pos.line() ) {
+			editor->goToLine( matches.rbegin()->second.front().range.start() );
+		}
 	}
 }
 

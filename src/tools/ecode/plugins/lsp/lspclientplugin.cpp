@@ -800,7 +800,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		mKeyBindings["lsp-go-to-definition"] = "f2";
 		mKeyBindings["lsp-symbol-info"] = "f1";
 		mKeyBindings["lsp-symbol-code-action"] = "alt+return";
-		mKeyBindings["lsp-rename-symbol-under-cursor"] = "ctrl+shift+r";
+		mKeyBindings["lsp-rename-symbol-under-cursor"] = "mod+shift+r";
 	}
 
 	if ( j.contains( "keybindings" ) ) {

@@ -119,10 +119,12 @@ class LinterPlugin : public Plugin {
 	std::mutex mWorkMutex;
 	std::condition_variable mWorkerCondition;
 	Int32 mWorkersCount{ 0 };
+	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 
 	bool mHoveringMatch{ false };
 	bool mEnableLSPDiagnostics{ true };
 	bool mErrorLens{ true };
+	bool mGoToIgnoreWarnings{ false };
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
 	String::HashType mConfigHash{ 0 };
@@ -162,6 +164,10 @@ class LinterPlugin : public Plugin {
 					 std::map<Int64, std::vector<LinterMatch>>& matches );
 
 	void tryHideHoveringMatch( UICodeEditor* editor );
+
+	void goToNextError( UICodeEditor* editor );
+
+	void goToPrevError( UICodeEditor* editor );
 };
 
 } // namespace ecode

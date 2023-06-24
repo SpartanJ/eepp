@@ -23,7 +23,7 @@ inline static bool sortKey( const FeaturesHealth::LangHealth& struct1,
 }
 
 std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager* pluginManager,
-																   const std::string& lang ) {
+																   const std::string& langFilter ) {
 	std::vector<FeaturesHealth::LangHealth> langs;
 	bool ownsLinter = false;
 	bool ownsFormatter = false;
@@ -56,7 +56,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		if ( !def.isVisible() )
 			continue;
 
-		if ( !lang.empty() && lang != def.getLSPName() )
+		if ( !langFilter.empty() && langFilter != def.getLSPName() )
 			continue;
 
 		FeaturesHealth::LangHealth lang;
@@ -213,7 +213,6 @@ void FeaturesHealth::doHealth( PluginManager* pluginManager, const std::string& 
 
 		auto& hr = healthRes[0];
 		const std::string notFound = "Not found in $PATH";
-		const std::string none = "None";
 
 		std::string lspName = hr.lsp.name.empty() ? "\033[33mNone" : "\033[32m" + hr.lsp.name;
 		std::string lspBinary = hr.lsp.found ? "\033[32m" + hr.lsp.path : "\033[31m" + notFound;

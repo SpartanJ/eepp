@@ -259,7 +259,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 			}
 
 			if ( !mApp->getWindow()->hasFocus() )
-				mApp->getWindow()->flash( WindowFlashOperation::Briefly );
+				mApp->getWindow()->flash( WindowFlashOperation::UntilFocused );
 		} );
 
 	if ( !res.isValid() ) {
@@ -349,7 +349,7 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 			}
 
 			if ( !mApp->getWindow()->hasFocus() )
-				mApp->getWindow()->flash( WindowFlashOperation::Briefly );
+				mApp->getWindow()->flash( WindowFlashOperation::UntilFocused );
 		} );
 
 	if ( !res.isValid() ) {
