@@ -453,6 +453,8 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 		healthLangInfo->setVisible( true );
 	} );
 
+	win->setKeyBindingCommand( "close-window", [win]() { win->closeWindow(); } );
+	win->addKeyBinding( { KEY_ESCAPE }, "close-window" );
 	win->showWhenReady();
 	win->center();
 }

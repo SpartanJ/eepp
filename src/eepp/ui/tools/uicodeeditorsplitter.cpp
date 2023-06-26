@@ -1298,7 +1298,7 @@ void UICodeEditorSplitter::goForwardInNavigationHistory() {
 		}
 	}
 	if ( mNavigationHistoryPos >= mNavigationHistory.size() )
-		mNavigationHistoryPos = eemax( mNavigationHistory.size(), 0UL );
+		mNavigationHistoryPos = eemax( mNavigationHistory.size(), (size_t)0 );
 }
 
 void UICodeEditorSplitter::clearNavigationHistory() {

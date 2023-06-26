@@ -2803,6 +2803,8 @@ void App::initProjectTreeView( std::string path ) {
 				} else if ( FileSystem::fileCanWrite( folderPath ) ) {
 					loadFileFromPath( path, false, nullptr, forcePosition );
 				}
+
+				mSettings->updateProjectSettingsMenu();
 			}
 		}
 	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() ) {
