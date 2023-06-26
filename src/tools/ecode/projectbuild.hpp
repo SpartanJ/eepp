@@ -270,7 +270,7 @@ class ProjectBuildManager {
 
 	bool hasCleanCommands( const std::string& name );
 
-	bool loaded() const { return mLoaded; }
+	bool loaded() const { return mLoadedWithBuilds; }
 
 	bool loading() const { return mLoading; }
 
@@ -298,7 +298,7 @@ class ProjectBuildManager {
 	App* mApp{ nullptr };
 	std::unique_ptr<Process> mProcess;
 	ProjectBuild mNewBuild;
-	bool mLoaded{ false };
+	bool mLoadedWithBuilds{ false };
 	bool mLoading{ false };
 	bool mBuilding{ false };
 	bool mShuttingDown{ false };

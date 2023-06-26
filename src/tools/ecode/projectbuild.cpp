@@ -588,7 +588,7 @@ bool ProjectBuildManager::load() {
 	}
 
 	mBuilds = ProjectBuild::deserialize( j, mProjectRoot );
-	mLoaded = true;
+	mLoadedWithBuilds = !mBuilds.empty();
 
 	return true;
 }
@@ -596,13 +596,14 @@ bool ProjectBuildManager::load() {
 bool ProjectBuildManager::save() {
 	ScopedOp scopedOp( [this]() { mLoading = true; }, [this]() { mLoading = false; } );
 	json j = ProjectBuild::serialize( mBuilds );
-	std::string data( j.dump( 2 ) );
+	std::string data( j.empty() ? "{}" : j.dump( 2 ) );
 	FileInfo file( mProjectFile );
+	bool shouldSave = mLoadedWithBuilds || !mBuilds.empty();
 
-	if ( !file.exists() && !FileSystem::fileExists( file.getDirectoryPath() ) )
+	if ( shouldSave && !file.exists() && !FileSystem::fileExists( file.getDirectoryPath() ) )
 		FileSystem::makeDir( file.getDirectoryPath() );
 
-	if ( !FileSystem::fileWrite( mProjectFile, data ) )
+	if ( shouldSave && !FileSystem::fileWrite( mProjectFile, data ) )
 		return false;
 	return true;
 }
