@@ -162,7 +162,7 @@ UIWidget* UIMenu::add( UIWidget* widget ) {
 	widget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top + mNextPosY );
 	mNextPosY += widget->getPixelsSize().getHeight();
 	mItems.push_back( widget );
-	auto cb = [&]( const Event* ) {
+	auto cb = [this]( const Event* ) {
 		if ( !mResizing ) {
 			widgetsSetPos();
 			widgetsResize();
@@ -189,7 +189,7 @@ UIMenuSeparator* UIMenu::addSeparator() {
 	mNextPosY += separator->getPixelsSize().getHeight();
 	mItems.push_back( separator );
 	resizeMe();
-	separator->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+	separator->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
 		if ( !mResizing ) {
 			widgetsSetPos();
 			widgetsResize();

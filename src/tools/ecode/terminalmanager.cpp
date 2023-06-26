@@ -168,7 +168,7 @@ void TerminalManager::configureTerminalShell() {
 UIMenu* TerminalManager::createColorSchemeMenu() {
 	mColorSchemeMenuesCreatedWithHeight = mApp->uiSceneNode()->getPixelsSize().getHeight();
 	size_t maxItems = 19;
-	auto cb = [&]( const Event* event ) {
+	auto cb = [this]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		const String& name = item->getText();
 		setTerminalColorScheme( name );
@@ -282,7 +282,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	term->setColorScheme( csIt != mTerminalColorSchemes.end()
 							  ? mTerminalColorSchemes.at( mTerminalCurrentColorScheme )
 							  : TerminalColorScheme::getDefault() );
-	term->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
+	term->addEventListener( Event::OnTitleChange, [this]( const Event* event ) {
 		if ( event->getNode() != mApp->getSplitter()->getCurWidget() )
 			return;
 		mApp->setAppTitle( event->getNode()->asType<UITerminal>()->getTitle() );
@@ -302,7 +302,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 			term->setFocus();
 		} );
 	} );
-	term->setCommand( "switch-to-previous-colorscheme", [&] {
+	term->setCommand( "switch-to-previous-colorscheme", [this] {
 		auto it = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
 		auto prev = std::prev( it, 1 );
 		if ( prev != mTerminalColorSchemes.end() ) {
@@ -311,7 +311,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 			setTerminalColorScheme( mTerminalColorSchemes.rbegin()->first );
 		}
 	} );
-	term->setCommand( "switch-to-next-colorscheme", [&] {
+	term->setCommand( "switch-to-next-colorscheme", [this] {
 		auto it = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
 		setTerminalColorScheme( ++it != mTerminalColorSchemes.end()
 									? it->first

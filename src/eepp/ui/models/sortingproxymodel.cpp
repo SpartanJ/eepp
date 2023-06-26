@@ -25,8 +25,8 @@ void SortingProxyModel::invalidate( unsigned int flags ) {
 		mMappings.clear();
 
 		// FIXME: This is really harsh, but without precise invalidation, not much we can do.
-		forEachView( [&]( UIAbstractView* view ) { view->getSelection().clear( false ); } );
-		forEachView( [&]( UIAbstractView* view ) { view->notifySelectionChange(); } );
+		forEachView( []( UIAbstractView* view ) { view->getSelection().clear( false ); } );
+		forEachView( []( UIAbstractView* view ) { view->notifySelectionChange(); } );
 	}
 	onModelUpdate( flags );
 }

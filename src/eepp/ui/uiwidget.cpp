@@ -331,7 +331,7 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 				mTooltip->show();
 			} else {
 				runAction( Actions::Runnable::New(
-					[&] {
+					[this] {
 						if ( isTooltipEnabled() &&
 							 getEventDispatcher()->getMouseOverNode() == this ) {
 							createTooltip();

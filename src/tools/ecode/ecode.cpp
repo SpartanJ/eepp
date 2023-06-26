@@ -44,7 +44,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 			i18n( "confirm_ecode_exit",
 				  "Do you really want to close the code editor?\nAll changes will be lost." )
 				.unescape() );
-		msgBox->addEventListener( Event::OnConfirm, [&]( const Event* ) {
+		msgBox->addEventListener( Event::OnConfirm, [this]( const Event* ) {
 			if ( !mCurrentProject.empty() )
 				mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
 									 mProjectBuildManager ? mProjectBuildManager->getConfig()
@@ -93,7 +93,7 @@ void App::saveAllProcess() {
 	if ( mTmpDocs.empty() )
 		return;
 
-	mSplitter->forEachEditorStoppable( [&]( UICodeEditor* editor ) {
+	mSplitter->forEachEditorStoppable( [this]( UICodeEditor* editor ) {
 		if ( editor->getDocument().isDirty() &&
 			 std::find( mTmpDocs.begin(), mTmpDocs.end(), &editor->getDocument() ) !=
 				 mTmpDocs.end() ) {
@@ -123,7 +123,7 @@ void App::saveAllProcess() {
 }
 
 void App::saveAll() {
-	mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 		if ( editor->isDirty() )
 			mTmpDocs.insert( &editor->getDocument() );
 	} );
@@ -190,12 +190,12 @@ void App::openFileDialog() {
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
+	dialog->addEventListener( Event::OpenFile, [this]( const Event* event ) {
 		auto file = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		mLastFileFolder = FileSystem::fileRemoveFileName( file );
 		loadFileFromPath( file );
 	} );
-	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
+	dialog->addEventListener( Event::OnWindowClose, [this]( const Event* ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
@@ -234,12 +234,12 @@ void App::openFolderDialog() {
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_folder", "Open Folder" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
+	dialog->addEventListener( Event::OpenFile, [this]( const Event* event ) {
 		String path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 		if ( FileSystem::isDirectory( path ) )
 			loadFolder( path );
 	} );
-	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
+	dialog->addEventListener( Event::OnWindowClose, [this]( const Event* ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
@@ -262,7 +262,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "select_font_file", "Select Font File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
+	dialog->addEventListener( Event::OnWindowClose, [this]( const Event* ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
@@ -286,7 +286,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 					mFontMono->setBoldAdvanceSameAsRegular( true );
 					if ( mSplitter ) {
 						mSplitter->forEachEditor(
-							[&]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+							[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
 					}
 				};
 				if ( !fontMono->isMonospace() ) {
@@ -398,7 +398,7 @@ void App::runCommand( const std::string& command ) {
 void App::onPluginEnabled( UICodeEditorPlugin* plugin ) {
 	if ( mSplitter )
 		mSplitter->forEachEditor(
-			[&]( UICodeEditor* editor ) { editor->registerPlugin( plugin ); } );
+			[plugin]( UICodeEditor* editor ) { editor->registerPlugin( plugin ); } );
 }
 
 void App::initPluginManager() {
@@ -412,12 +412,12 @@ void App::initPluginManager() {
 				cb( tab->getOwnedWidget()->asType<UICodeEditor>(), path );
 			}
 		} );
-	mPluginManager->onPluginEnabled = [&]( UICodeEditorPlugin* plugin ) {
+	mPluginManager->onPluginEnabled = [this]( UICodeEditorPlugin* plugin ) {
 		if ( nullptr == mUISceneNode || plugin->isReady() ) {
 			onPluginEnabled( plugin );
 		} else {
 			// If plugin loads asynchronously and is not ready, delay the plugin enabled callback
-			plugin->addOnReadyCallback( [&]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
+			plugin->addOnReadyCallback( [this]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
 				mUISceneNode->runOnMainThread( [&, plugin]() { onPluginEnabled( plugin ); } );
 				plugin->removeReadyCallback( cbId );
 			} );
@@ -657,7 +657,7 @@ void App::updateRecentFiles() {
 			menu->add( file );
 		menu->addSeparator();
 		menu->add( i18n( "clear_menu", "Clear Menu" ) )->setId( "clear-menu" );
-		menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			const std::string& id = event->getNode()->asType<UIMenuItem>()->getId();
@@ -699,7 +699,7 @@ void App::updateRecentFolders() {
 				i18n( "restore_last_session_at_startup", "Restart last session at startup" ) )
 			->setActive( mConfig.workspace.restoreLastSession )
 			->setId( "restore-last-session-at-startup" );
-		menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			const std::string& id = event->getNode()->asType<UIMenuItem>()->getId();
@@ -755,6 +755,10 @@ const std::map<KeyBindings::Shortcut, std::string>& App::getRealSplitterKeybindi
 
 const std::map<KeyBindings::Shortcut, std::string>& App::getRealTerminalKeybindings() const {
 	return mRealTerminalKeybindings;
+}
+
+const std::string& App::getFileToOpen() const {
+	return mFileToOpen;
 }
 
 void App::switchSidePanel() {
@@ -988,7 +992,7 @@ void App::setEditorFontSize() {
 	msgBox->showWhenReady();
 	msgBox->addEventListener( Event::OnConfirm, [&, msgBox]( const Event* ) {
 		mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 			editor->setFontSize( mConfig.editor.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
 		} );
 	} );
@@ -1004,7 +1008,7 @@ void App::setTerminalFontSize() {
 	msgBox->showWhenReady();
 	msgBox->addEventListener( Event::OnConfirm, [&, msgBox]( const Event* ) {
 		mConfig.term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		mSplitter->forEachWidget( [&]( UIWidget* widget ) {
+		mSplitter->forEachWidget( [this]( UIWidget* widget ) {
 			if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
 				widget->asType<UITerminal>()->setFontSize(
 					mConfig.term.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
@@ -1026,7 +1030,7 @@ void App::setUIFontSize() {
 		UIThemeManager* manager = mUISceneNode->getUIThemeManager();
 		manager->setDefaultFontSize( fontSize );
 		manager->getDefaultTheme()->setDefaultFontSize( fontSize );
-		mUISceneNode->forEachNode( [&]( Node* node ) {
+		mUISceneNode->forEachNode( [this]( Node* node ) {
 			if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
 				UITextView* textView = node->asType<UITextView>();
 				if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
@@ -1073,7 +1077,7 @@ void App::setUIPanelFontSize() {
 }
 
 void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
-	msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+	msgBox->addEventListener( Event::OnClose, [this]( const Event* ) {
 		if ( mSplitter && mSplitter->getCurWidget() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
@@ -1158,8 +1162,9 @@ void App::setLineSpacing() {
 	msgBox->showWhenReady();
 	msgBox->addEventListener( Event::OnConfirm, [&, msgBox]( const Event* ) {
 		mConfig.editor.lineSpacing = StyleSheetLength( msgBox->getTextInput()->getText() );
-		mSplitter->forEachEditor(
-			[&]( UICodeEditor* editor ) { editor->setLineSpacing( mConfig.editor.lineSpacing ); } );
+		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+			editor->setLineSpacing( mConfig.editor.lineSpacing );
+		} );
 	} );
 	setFocusEditorOnClose( msgBox );
 }
@@ -1176,7 +1181,7 @@ void App::setCursorBlinkingTime() {
 	msgBox->addEventListener( Event::OnConfirm, [&, msgBox]( const Event* ) {
 		mConfig.editor.cursorBlinkingTime =
 			Time::fromString( msgBox->getTextInput()->getText().toUtf8() );
-		mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 			editor->setCursorBlinkTime( mConfig.editor.cursorBlinkingTime );
 		} );
 		msgBox->closeWindow();
@@ -1458,7 +1463,7 @@ void App::reloadKeybindings() {
 	mRealTerminalKeybindings.clear();
 	mRealDefaultKeybindings.clear();
 	loadKeybindings();
-	mSplitter->forEachEditor( [&]( UICodeEditor* ed ) {
+	mSplitter->forEachEditor( [this]( UICodeEditor* ed ) {
 		ed->getKeyBindings().reset();
 		ed->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
 	} );
@@ -1500,7 +1505,7 @@ void App::updateDocInfo( TextDocument& doc ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
 		mDocInfo->setText( String::format(
-			"%s: %lld / %lu  %s: %lld    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
+			"%s: %lld / %zu  %s: %lld    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
 			doc.getSelection().start().line() + 1, doc.linesCount(),
 			i18n( "col_abbr", "col" ).toUtf8().c_str(),
 			mSplitter->getCurEditor()->getCurrentColumnCount(),
@@ -1591,11 +1596,13 @@ void App::loadFileDelayed() {
 			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 			if ( editor->getDocument().isLoading() ) {
 				Uint32 cb =
-					editor->on( Event::OnDocumentLoaded, [fileAndPos]( const Event* event ) {
+					editor->on( Event::OnDocumentLoaded, [this, fileAndPos]( const Event* event ) {
 						if ( event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
 							UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-							editor->runOnMainThread(
-								[editor, fileAndPos] { editor->goToLine( fileAndPos.second ); } );
+							editor->runOnMainThread( [this, editor, fileAndPos] {
+								editor->goToLine( fileAndPos.second );
+								mSplitter->addEditorPositionToNavigationHistory( editor );
+							} );
 						}
 						event->getNode()->removeEventListener( event->getCallbackId() );
 					} );
@@ -1603,15 +1610,19 @@ void App::loadFileDelayed() {
 				editor->runOnMainThread( [editor, cb]() { editor->removeEventListener( cb ); },
 										 Seconds( 4 ) );
 			} else {
-				editor->runOnMainThread(
-					[editor, fileAndPos] { editor->goToLine( fileAndPos.second ); } );
+				editor->runOnMainThread( [this, editor, fileAndPos] {
+					editor->goToLine( fileAndPos.second );
+					mSplitter->addEditorPositionToNavigationHistory( editor );
+				} );
 			}
 		}
 	} else {
 		loadFileFromPath( fileAndPos.first, true, nullptr,
-						  [fileAndPos]( UICodeEditor* editor, const std::string& ) {
-							  editor->runOnMainThread(
-								  [editor, fileAndPos] { editor->goToLine( fileAndPos.second ); } );
+						  [this, fileAndPos]( UICodeEditor* editor, const std::string& ) {
+							  editor->runOnMainThread( [this, editor, fileAndPos] {
+								  editor->goToLine( fileAndPos.second );
+								  mSplitter->addEditorPositionToNavigationHistory( editor );
+							  } );
 						  } );
 	}
 
@@ -1877,6 +1888,7 @@ void App::closeEditors() {
 	mRecentClosedFiles = {};
 
 	mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
+	mSplitter->clearNavigationHistory();
 	mStatusBar->setVisible( mConfig.ui.showStatusBar );
 
 	mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
@@ -1930,7 +1942,7 @@ void App::closeFolder() {
 			UIMessageBox::OK_CANCEL,
 			i18n( "confirm_close_folder",
 				  "Do you really want to close the folder?\nSome files haven't been saved." ) );
-		msgBox->addEventListener( Event::OnConfirm, [&]( const Event* ) { closeEditors(); } );
+		msgBox->addEventListener( Event::OnConfirm, [this]( const Event* ) { closeEditors(); } );
 		msgBox->setTitle( i18n( "close_folder_question", "Close Folder?" ) );
 		msgBox->center();
 		msgBox->showWhenReady();
@@ -2059,9 +2071,9 @@ void App::loadFileFromPath(
 			}
 		} else {
 			if ( inNewTab ) {
-				mSplitter->loadAsyncFileFromPathInNewTab( path, mThreadPool, onLoaded );
+				mSplitter->loadAsyncFileFromPathInNewTab( path, onLoaded );
 			} else {
-				mSplitter->loadAsyncFileFromPath( path, mThreadPool, codeEditor, onLoaded );
+				mSplitter->loadAsyncFileFromPath( path, codeEditor, onLoaded );
 			}
 		}
 	}
@@ -2158,42 +2170,42 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	editor->addKeyBinds( getLocalKeybindings() );
 	editor->addUnlockedCommands( getUnlockedCommands() );
-	doc.setCommand( "save-doc", [&] { saveDoc(); } );
-	doc.setCommand( "save-as-doc", [&] {
+	doc.setCommand( "save-doc", [this] { saveDoc(); } );
+	doc.setCommand( "save-as-doc", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() )
 			saveFileDialog( mSplitter->getCurEditor() );
 	} );
-	doc.setCommand( "save-all", [&] { saveAll(); } );
-	doc.setCommand( "repeat-find", [&] {
+	doc.setCommand( "save-all", [this] { saveAll(); } );
+	doc.setCommand( "repeat-find", [this] {
 		mDocSearchController->findNextText( mDocSearchController->getSearchState() );
 	} );
-	doc.setCommand( "find-prev", [&] {
+	doc.setCommand( "find-prev", [this] {
 		mDocSearchController->findPrevText( mDocSearchController->getSearchState() );
 	} );
-	doc.setCommand( "close-folder", [&] { closeFolder(); } );
-	doc.setCommand( "lock", [&] {
+	doc.setCommand( "close-folder", [this] { closeFolder(); } );
+	doc.setCommand( "lock", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( true );
 			mSettings->updateDocumentMenu();
 		}
 	} );
-	doc.setCommand( "unlock", [&] {
+	doc.setCommand( "unlock", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( false );
 			mSettings->updateDocumentMenu();
 		}
 	} );
-	doc.setCommand( "lock-toggle", [&] {
+	doc.setCommand( "lock-toggle", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( !mSplitter->getCurEditor()->isLocked() );
 			mSettings->updateDocumentMenu();
 		}
 	} );
-	doc.setCommand( "go-to-line", [&] { mUniversalLocator->goToLine(); } );
-	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
+	doc.setCommand( "go-to-line", [this] { mUniversalLocator->goToLine(); } );
+	doc.setCommand( "load-current-dir", [this] { loadCurrentDirectory(); } );
 	registerUnlockedCommands( doc );
 
-	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnDocumentSave, [this]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		updateEditorTabTitle( editor );
 		if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() == editor )
@@ -2233,7 +2245,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		editor->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
 	}
 
-	editor->addEventListener( Event::OnDocumentClosed, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
 		if ( !appInstance )
 			return;
 		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
@@ -2252,7 +2264,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		}
 	} );
 
-	editor->addEventListener( Event::OnDocumentMoved, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnDocumentMoved, [this]( const Event* event ) {
 		if ( !appInstance )
 			return;
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -2298,6 +2310,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->addEventListener( Event::OnDocumentChanged, docChanged );
 	editor->addEventListener( Event::OnDocumentSave, docChanged );
 	editor->addEventListener( Event::OnEditorTabReady, docChanged );
+
+	editor->addEventListener( Event::OnCursorPosChangeInteresting, [this, editor]( auto ) {
+		mSplitter->addEditorPositionToNavigationHistory( editor );
+	} );
 
 	editor->showMinimap( config.minimap );
 	editor->showLinesRelativePosition( config.linesRelativePosition );
@@ -2375,7 +2391,7 @@ void App::loadDirTree( const std::string& path ) {
 					   clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
 			eeDelete( clock );
 			mDirTreeReady = true;
-			mUISceneNode->runOnMainThread( [&] {
+			mUISceneNode->runOnMainThread( [this] {
 				mUniversalLocator->updateFilesTable();
 				if ( mSplitter->curEditorExistsAndFocused() )
 					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
@@ -2509,7 +2525,7 @@ void App::toggleHiddenFiles() {
 											   true,
 											   !mFileSystemModel->getDisplayConfig().ignoreHidden,
 											   {},
-											   [&]( const std::string& filePath ) -> bool {
+											   [this]( const std::string& filePath ) -> bool {
 												   return isFileVisibleInTreeView( filePath );
 											   } } );
 	if ( mProjectTreeView )
@@ -2591,7 +2607,7 @@ void App::createAndShowRecentFolderPopUpMenu( Node* recentFolderBut ) {
 		return;
 	for ( const auto& file : mRecentFolders )
 		menu->add( file );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
@@ -2610,7 +2626,7 @@ void App::createAndShowRecentFilesPopUpMenu( Node* recentFilesBut ) {
 		return;
 	for ( const auto& file : mRecentFiles )
 		menu->add( file );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
@@ -2650,12 +2666,12 @@ void App::consoleToggle() {
 void App::initProjectTreeView( std::string path ) {
 	mProjectViewEmptyCont = mUISceneNode->find<UILinearLayout>( "project_view_empty" );
 	mProjectViewEmptyCont->find<UIPushButton>( "open_folder" )
-		->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		->addEventListener( Event::MouseClick, [this]( const Event* event ) {
 			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
 				runCommand( "open-folder" );
 		} );
 	mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" )
-		->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		->addEventListener( Event::MouseClick, [this]( const Event* event ) {
 			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
 				createAndShowRecentFolderPopUpMenu(
 					mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" ) );
@@ -2673,7 +2689,7 @@ void App::initProjectTreeView( std::string path ) {
 	mProjectTreeView->setHeadersVisible( false );
 	mProjectTreeView->setExpandersAsIcons( true );
 	mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
-	mProjectTreeView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+	mProjectTreeView->addEventListener( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		ModelEventType type = modelEvent->getModelEventType();
 		if ( type == ModelEventType::Open || type == ModelEventType::OpenMenu ) {
@@ -2700,12 +2716,12 @@ void App::initProjectTreeView( std::string path ) {
 			}
 		}
 	} );
-	mProjectTreeView->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+	mProjectTreeView->addEventListener( Event::MouseClick, [this]( const Event* event ) {
 		const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 		if ( mouseEvent->getFlags() & EE_BUTTON_RMASK )
 			mSettings->createProjectTreeMenu();
 	} );
-	mProjectTreeView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+	mProjectTreeView->addEventListener( Event::KeyDown, [this]( const Event* event ) {
 		if ( !mFileSystemModel )
 			return 0;
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
@@ -2761,7 +2777,7 @@ void App::initProjectTreeView( std::string path ) {
 
 				mFileSystemModel = FileSystemModel::New(
 					folderPath, FileSystemModel::Mode::FilesAndDirectories,
-					{ true, true, true, {}, [&]( const std::string& filePath ) -> bool {
+					{ true, true, true, {}, [this]( const std::string& filePath ) -> bool {
 						 return isFileVisibleInTreeView( filePath );
 					 } } );
 
@@ -2774,9 +2790,11 @@ void App::initProjectTreeView( std::string path ) {
 				std::function<void( UICodeEditor * codeEditor, const std::string& path )>
 					forcePosition;
 				if ( initialPosition.isValid() ) {
-					forcePosition = [initialPosition]( UICodeEditor* editor, const auto& ) {
-						editor->runOnMainThread(
-							[initialPosition, editor] { editor->goToLine( initialPosition ); } );
+					forcePosition = [this, initialPosition]( UICodeEditor* editor, const auto& ) {
+						editor->runOnMainThread( [this, initialPosition, editor] {
+							editor->goToLine( initialPosition );
+							mSplitter->addEditorPositionToNavigationHistory( editor );
+						} );
 					};
 				}
 
@@ -2800,7 +2818,7 @@ void App::initProjectTreeView( std::string path ) {
 }
 
 void App::initImageView() {
-	mImageLayout->on( Event::MouseClick, [&]( const Event* ) {
+	mImageLayout->on( Event::MouseClick, [this]( const Event* ) {
 		mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
 		mImageLayout->setEnabled( false )->setVisible( false );
 	} );
@@ -2917,11 +2935,11 @@ void App::loadFolder( const std::string& path ) {
 
 	loadFileSystemMatcher( rpath );
 
-	mFileSystemModel =
-		FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
-							  { true, true, true, {}, [&]( const std::string& filePath ) -> bool {
-								   return isFileVisibleInTreeView( filePath );
-							   } } );
+	mFileSystemModel = FileSystemModel::New(
+		rpath, FileSystemModel::Mode::FilesAndDirectories,
+		{ true, true, true, {}, [this]( const std::string& filePath ) -> bool {
+			 return isFileVisibleInTreeView( filePath );
+		 } } );
 
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );
@@ -3075,9 +3093,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			mWindow->maximize();
 
 		mWindow->setCloseRequestCallback(
-			[&]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
+			[this]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
 
-		mWindow->getInput()->pushCallback( [&]( InputEvent* event ) {
+		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
 			if ( event->Type == InputEvent::FileDropped ) {
 				onFileDropped( event->file.file );
 			} else if ( event->Type == InputEvent::TextDropped ) {
@@ -3620,8 +3638,8 @@ Anchor.error:hover {
 </MainLayout>
 		)html";
 
-		UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
+		UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
 		std::unordered_map<std::string, Uint32> icons = { { "document-new", 0xecc3 },
 														  { "document-open", 0xed70 },
 														  { "document-save", 0xf0b3 },
@@ -3850,7 +3868,7 @@ Anchor.error:hover {
 		mUISceneNode->bind( "doc_info", mDocInfo );
 		mUISceneNode->bind( "panel", mSidePanel );
 		mUISceneNode->bind( "project_splitter", mProjectSplitter );
-		mUISceneNode->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+		mUISceneNode->addEventListener( Event::KeyDown, [this]( const Event* event ) {
 			trySendUnlockedCmd( *static_cast<const KeyEvent*>( event ) );
 		} );
 		if ( logLevel == LogLevel::Debug )
@@ -3886,7 +3904,8 @@ Anchor.error:hover {
 
 		mTerminalManager->loadTerminalColorSchemes();
 
-		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, colorSchemes, mInitColorScheme );
+		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, colorSchemes,
+											   mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 		mPluginManager->setSplitter( mSplitter );
 
@@ -3938,7 +3957,7 @@ Anchor.error:hover {
 		mSplitter->createEditorWithTabWidget( mBaseLayout );
 
 		mConsole = UIConsole::NewOpt( mFontMono, true, true, 1024 * 10 );
-		mConsole->setCommand( "hide", [&]( const auto& ) { consoleToggle(); } );
+		mConsole->setCommand( "hide", [this]( const auto& ) { consoleToggle(); } );
 		mConsole->setQuakeMode( true );
 		mConsole->setVisible( false );
 

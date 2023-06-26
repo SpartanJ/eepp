@@ -147,7 +147,7 @@ void UISceneNode::onParentChange() {
 	setPixelsSize( getParent()->getPixelsSize() );
 
 	mCurOnSizeChangeListener =
-		getParent()->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+		getParent()->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
 			setDirty();
 			setPixelsSize( getParent()->getPixelsSize() );
 			onMediaChanged();
@@ -948,7 +948,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					font->loadFromFile( filePath );
 
 					mFontFaces.push_back( font );
-					runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
+					runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
 				} else if ( String::startsWith( path, "http://" ) ||
 							String::startsWith( path, "https://" ) ) {
 					std::string familyName = familyProp.getValue();
@@ -961,7 +961,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 								font->loadFromMemory( &response.getBody()[0],
 													  response.getBody().size() );
 								mFontFaces.push_back( font );
-								runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
+								runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
 							}
 						},
 						URI( path ), Seconds( 5 ) );
@@ -974,7 +974,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					font->loadFromStream( *stream );
 
 					mFontFaces.push_back( font );
-					runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
+					runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
 				}
 			}
 		}

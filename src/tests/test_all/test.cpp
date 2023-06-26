@@ -1029,13 +1029,13 @@ void EETest::createETGEditor() {
 	windowStyleConfig.MinWindowSize = tWin->getSizeWithoutDecoration();
 	tWin->setStyleConfig( windowStyleConfig );
 
-	mETGEditor = Tools::TextureAtlasEditor::New( tWin, [&] { mETGEditor = NULL; } );
+	mETGEditor = Tools::TextureAtlasEditor::New( tWin, [this] { mETGEditor = NULL; } );
 	tWin->center();
 	tWin->show();
 }
 
 void EETest::createColorPicker( Node* node ) {
-	mColorPicker = Tools::UIColorPicker::NewModal( node, [&]( Color color ) {
+	mColorPicker = Tools::UIColorPicker::NewModal( node, []( Color color ) {
 		UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, color.toHexString() );
 		msgBox->center();
 		msgBox->show();
@@ -1139,7 +1139,7 @@ void EETest::createDecoratedWindow() {
 		->setParent( lay );
 	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
-	mUIWindow->setKeyBindingCommand( "button-click", [&] { addFlyingIcon(); } );
+	mUIWindow->setKeyBindingCommand( "button-click", [this] { addFlyingIcon(); } );
 	mUIWindow->addKeyBinding( { KEY_C, KEYMOD_LALT }, "button-click" );
 
 	UITabWidget* TabWidget = UITabWidget::New();

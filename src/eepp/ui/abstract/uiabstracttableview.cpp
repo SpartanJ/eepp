@@ -423,7 +423,7 @@ UITableRow* UIAbstractTableView::createRow() {
 	rowWidget->setParent( this );
 	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	rowWidget->reloadStyle( true, true, true );
-	rowWidget->addEventListener( Event::MouseDown, [&]( const Event* event ) {
+	rowWidget->addEventListener( Event::MouseDown, [this]( const Event* event ) {
 		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) || !isRowSelection() )
 			return;
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
@@ -701,7 +701,7 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 	if ( mSearchTextAction )
 		removeAction( mSearchTextAction );
 	mSearchTextAction = Actions::Runnable::New(
-		[&] {
+		[this] {
 			mSearchTextAction = nullptr;
 			mSearchText = "";
 		},

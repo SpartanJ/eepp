@@ -53,7 +53,7 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
 	if ( !terminalDisplay )
 		return;
-	mTerm->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
+	mTerm->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
 		switch ( event.type ) {
 			case TerminalDisplay::EventType::TITLE: {
 				if ( !mIsCustomTitle && mTitle != event.eventData ) {
@@ -77,28 +77,28 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	} );
 
 	mVScroll->setParent( this );
-	mVScroll->addEventListener( Event::OnValueChange, [&]( const Event* ) { updateScroll(); } );
+	mVScroll->addEventListener( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
 
 	setCommand( "terminal-scroll-up-screen",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
 	setCommand( "terminal-scroll-down-screen",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_SCREEN ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_SCREEN ); } );
 	setCommand( "terminal-scroll-up-row",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_ROW ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_ROW ); } );
 	setCommand( "terminal-scroll-down-row",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_ROW ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_ROW ); } );
 	setCommand( "terminal-scroll-up-history",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_HISTORY ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_HISTORY ); } );
 	setCommand( "terminal-scroll-down-history",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_HISTORY ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_HISTORY ); } );
 	setCommand( "terminal-font-size-grow",
-				[&] { mTerm->action( TerminalShortcutAction::FONTSIZE_GROW ); } );
+				[this] { mTerm->action( TerminalShortcutAction::FONTSIZE_GROW ); } );
 	setCommand( "terminal-font-size-shrink",
-				[&] { mTerm->action( TerminalShortcutAction::FONTSIZE_SHRINK ); } );
-	setCommand( "terminal-paste", [&] { mTerm->action( TerminalShortcutAction::PASTE ); } );
-	setCommand( "terminal-copy", [&] { mTerm->action( TerminalShortcutAction::COPY ); } );
+				[this] { mTerm->action( TerminalShortcutAction::FONTSIZE_SHRINK ); } );
+	setCommand( "terminal-paste", [this] { mTerm->action( TerminalShortcutAction::PASTE ); } );
+	setCommand( "terminal-copy", [this] { mTerm->action( TerminalShortcutAction::COPY ); } );
 	setCommand( "terminal-open-link",
-				[&] { Engine::instance()->openURI( mTerm->getTerminal()->getSelection() ); } );
+				[this] { Engine::instance()->openURI( mTerm->getTerminal()->getSelection() ); } );
 	subscribeScheduledUpdate();
 }
 
@@ -565,7 +565,7 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -578,7 +578,7 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
-	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
 	return true;
 }

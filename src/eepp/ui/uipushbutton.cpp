@@ -73,7 +73,7 @@ UIPushButton::UIPushButton( const std::string& tag,
 		->setVisible( true )
 		->setEnabled( false );
 
-	auto cb = [&]( const Event* ) { onSizeChange(); };
+	auto cb = [this]( const Event* ) { onSizeChange(); };
 
 	mIcon->addEventListener( Event::OnPaddingChange, cb );
 	mIcon->addEventListener( Event::OnMarginChange, cb );

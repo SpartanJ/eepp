@@ -60,7 +60,7 @@ void UIViewPager::onChildCountChange( Node* child, const bool& removed ) {
 	}
 
 	if ( !removed && child != mContainer ) {
-		child->addEventListener( Event::OnPositionChange, [&]( const Event* ) { updateChilds(); } );
+		child->on( Event::OnPositionChange, [this]( const Event* ) { updateChilds(); } );
 	}
 
 	UIWidget::onChildCountChange( child, removed );
@@ -216,7 +216,7 @@ void UIViewPager::moveToPage( const Int32& pageNum, bool animate ) {
 				mOrientation == UIOrientation::Horizontal ? Actions::MoveCoordinate::CoordinateX
 														  : Actions::MoveCoordinate::CoordinateY,
 				Actions::MoveCoordinate::CoordinateType::PixelPosition );
-			action->addEventListener( Action::OnDone, [&]( Action*, const Action::ActionType& ) {
+			action->on( Action::OnDone, [this]( Action*, const Action::ActionType& ) {
 				sendCommonEvent( Event::OnPageChanged );
 			} );
 			mContainer->runAction( action );

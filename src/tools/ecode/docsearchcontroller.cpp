@@ -4,10 +4,10 @@
 namespace ecode {
 
 DocSearchController::DocSearchController( UICodeEditorSplitter* editorSplitter, App* app ) :
-	mEditorSplitter( editorSplitter ), mApp( app ) {}
+	mSplitter( editorSplitter ), mApp( app ) {}
 
 void DocSearchController::refreshHighlight() {
-	if ( mSearchState.editor && mEditorSplitter->editorExists( mSearchState.editor ) ) {
+	if ( mSearchState.editor && mSplitter->editorExists( mSearchState.editor ) ) {
 		mSearchState.text = mFindInput->getText();
 		mSearchState.editor->setHighlightWord( mSearchState.toTextSearchParams() );
 		if ( !mSearchState.text.empty() ) {
@@ -30,7 +30,7 @@ void DocSearchController::initSearchBar(
 	std::unordered_map<std::string, std::string> keybindings ) {
 	mSearchBarLayout = searchBar;
 	mSearchBarLayout->setVisible( false )->setEnabled( false );
-	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
+	auto addClickListener = [this]( UIWidget* widget, std::string cmd ) {
 		widget->setTooltipText( mSearchBarLayout->getKeyBindings().getCommandKeybindString( cmd ) );
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
@@ -38,7 +38,7 @@ void DocSearchController::initSearchBar(
 				mSearchBarLayout->execute( cmd );
 		} );
 	};
-	auto addReturnListener = [&]( UIWidget* widget, std::string cmd ) {
+	auto addReturnListener = [this]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::OnPressEnter, [this, cmd]( const Event* ) {
 			mSearchBarLayout->execute( cmd );
 		} );
@@ -79,42 +79,42 @@ void DocSearchController::initSearchBar(
 		mEscapeSequenceChk->setTooltipText( mEscapeSequenceChk->getTooltipText() + " (" +
 											kbindEscape + ")" );
 
-	mCaseSensitiveChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
+	mCaseSensitiveChk->addEventListener( Event::OnValueChange, [this]( const Event* ) {
 		mSearchState.caseSensitive = mCaseSensitiveChk->isChecked();
 		refreshHighlight();
 	} );
 
-	mEscapeSequenceChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
+	mEscapeSequenceChk->addEventListener( Event::OnValueChange, [this]( const Event* ) {
 		mSearchState.escapeSequences = mEscapeSequenceChk->isChecked();
 		refreshHighlight();
 	} );
 
-	mWholeWordChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
+	mWholeWordChk->addEventListener( Event::OnValueChange, [this]( const Event* ) {
 		mSearchState.wholeWord = mWholeWordChk->isChecked();
 		refreshHighlight();
 	} );
 
-	mLuaPatternChk->addEventListener( Event::OnValueChange, [&]( const Event* ) {
+	mLuaPatternChk->addEventListener( Event::OnValueChange, [this]( const Event* ) {
 		mSearchState.type = mLuaPatternChk->isChecked() ? TextDocument::FindReplaceType::LuaPattern
 														: TextDocument::FindReplaceType::Normal;
 		refreshHighlight();
 	} );
 
 	mFindInput->addEventListener( Event::OnTextChanged,
-								  [&]( const Event* ) { refreshHighlight(); } );
-	mFindInput->addEventListener( Event::OnTextPasted, [&]( const Event* ) {
+								  [this]( const Event* ) { refreshHighlight(); } );
+	mFindInput->addEventListener( Event::OnTextPasted, [this]( const Event* ) {
 		if ( mFindInput->getUISceneNode()->getWindow()->getClipboard()->getText().find( '\n' ) !=
 			 String::InvalidPos ) {
 			if ( !mEscapeSequenceChk->isChecked() )
 				mEscapeSequenceChk->setChecked( true );
 		}
 	} );
-	mSearchBarLayout->setCommand( "close-searchbar", [&] {
+	mSearchBarLayout->setCommand( "close-searchbar", [this] {
 		hideSearchBar();
-		if ( mEditorSplitter->getCurWidget() )
-			mEditorSplitter->getCurWidget()->setFocus();
+		if ( mSplitter->getCurWidget() )
+			mSplitter->getCurWidget()->setFocus();
 		if ( mSearchState.editor ) {
-			if ( mEditorSplitter->editorExists( mSearchState.editor ) ) {
+			if ( mSplitter->editorExists( mSearchState.editor ) ) {
 				mSearchState.editor->setHighlightWord( { "" } );
 				mSearchState.editor->setHighlightTextRange( TextRange() );
 			}
@@ -134,16 +134,19 @@ void DocSearchController::initSearchBar(
 	mSearchBarLayout->setCommand( "replace-selection", [this] {
 		replaceSelection( mSearchState, mReplaceInput->getText() );
 	} );
-	mSearchBarLayout->setCommand(
-		"change-case", [&] { mCaseSensitiveChk->setChecked( !mCaseSensitiveChk->isChecked() ); } );
-	mSearchBarLayout->setCommand(
-		"change-whole-word", [&] { mWholeWordChk->setChecked( !mWholeWordChk->isChecked() ); } );
-	mSearchBarLayout->setCommand( "change-escape-sequence", [&] {
-		mEscapeSequenceChk->setChecked( !mEscapeSequenceChk->isChecked() );
+	mSearchBarLayout->setCommand( "change-case", [this] {
+		mCaseSensitiveChk->setChecked( !mCaseSensitiveChk->isChecked() );
 	} );
 	mSearchBarLayout->setCommand(
-		"toggle-lua-pattern", [&] { mLuaPatternChk->setChecked( !mLuaPatternChk->isChecked() ); } );
-	mSearchBarLayout->setCommand( "open-global-search", [&] { mApp->showGlobalSearch( false ); } );
+		"change-whole-word", [this] { mWholeWordChk->setChecked( !mWholeWordChk->isChecked() ); } );
+	mSearchBarLayout->setCommand( "change-escape-sequence", [this] {
+		mEscapeSequenceChk->setChecked( !mEscapeSequenceChk->isChecked() );
+	} );
+	mSearchBarLayout->setCommand( "toggle-lua-pattern", [this] {
+		mLuaPatternChk->setChecked( !mLuaPatternChk->isChecked() );
+	} );
+	mSearchBarLayout->setCommand( "open-global-search",
+								  [this] { mApp->showGlobalSearch( false ); } );
 
 	addReturnListener( mFindInput, "repeat-find" );
 	addReturnListener( mReplaceInput, "find-and-replace" );
@@ -155,16 +158,16 @@ void DocSearchController::initSearchBar(
 	addClickListener( replaceAllButton, "replace-all" );
 	addClickListener( closeButton, "close-searchbar" );
 	mReplaceInput->addEventListener( Event::OnTabNavigate,
-									 [&]( const Event* ) { mFindInput->setFocus(); } );
+									 [this]( const Event* ) { mFindInput->setFocus(); } );
 }
 
 void DocSearchController::showFindView() {
 	mApp->hideLocateBar();
 	mApp->hideGlobalSearchBar();
-	if ( !mEditorSplitter->curEditorExistsAndFocused() )
+	if ( !mSplitter->curEditorExistsAndFocused() )
 		return;
 
-	UICodeEditor* editor = mEditorSplitter->getCurEditor();
+	UICodeEditor* editor = mSplitter->getCurEditor();
 	mSearchState.editor = editor;
 	mSearchState.range = TextRange();
 	mSearchState.caseSensitive = mCaseSensitiveChk->isChecked();
@@ -201,7 +204,7 @@ void DocSearchController::showFindView() {
 bool DocSearchController::findPrevText( SearchState& search ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) || search.text.empty() )
+	if ( !search.editor || !mSplitter->editorExists( search.editor ) || search.text.empty() )
 		return false;
 
 	search.editor->getDocument().setActiveClient( search.editor );
@@ -222,6 +225,7 @@ bool DocSearchController::findPrevText( SearchState& search ) {
 									search.range );
 	if ( found.isValid() ) {
 		doc.setSelection( found );
+		mSplitter->addEditorPositionToNavigationHistory( search.editor );
 		mFindInput->removeClass( "error" );
 		return true;
 	} else {
@@ -229,6 +233,7 @@ bool DocSearchController::findPrevText( SearchState& search ) {
 							  range );
 		if ( found.isValid() ) {
 			doc.setSelection( found );
+			mSplitter->addEditorPositionToNavigationHistory( search.editor );
 			mFindInput->removeClass( "error" );
 			return true;
 		}
@@ -240,7 +245,7 @@ bool DocSearchController::findPrevText( SearchState& search ) {
 bool DocSearchController::findNextText( SearchState& search ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) || search.text.empty() )
+	if ( !search.editor || !mSplitter->editorExists( search.editor ) || search.text.empty() )
 		return false;
 
 	search.editor->getDocument().setActiveClient( search.editor );
@@ -261,6 +266,7 @@ bool DocSearchController::findNextText( SearchState& search ) {
 		doc.find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
 	if ( found.isValid() ) {
 		doc.setSelection( found.reversed() );
+		mSplitter->addEditorPositionToNavigationHistory( search.editor );
 		mFindInput->removeClass( "error" );
 		return true;
 	} else {
@@ -268,6 +274,7 @@ bool DocSearchController::findNextText( SearchState& search ) {
 						  range );
 		if ( found.isValid() ) {
 			doc.setSelection( found.reversed() );
+			mSplitter->addEditorPositionToNavigationHistory( search.editor );
 			mFindInput->removeClass( "error" );
 			return true;
 		}
@@ -277,7 +284,7 @@ bool DocSearchController::findNextText( SearchState& search ) {
 }
 
 bool DocSearchController::replaceSelection( SearchState& search, const String& replacement ) {
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) ||
+	if ( !search.editor || !mSplitter->editorExists( search.editor ) ||
 		 !search.editor->getDocument().hasSelection() )
 		return false;
 	search.editor->getDocument().setActiveClient( search.editor );
@@ -286,7 +293,7 @@ bool DocSearchController::replaceSelection( SearchState& search, const String& r
 }
 
 void DocSearchController::selectAll( SearchState& search ) {
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) )
+	if ( !search.editor || !mSplitter->editorExists( search.editor ) )
 		return;
 	if ( search.text.empty() )
 		search.text = mLastSearch;
@@ -302,7 +309,7 @@ void DocSearchController::selectAll( SearchState& search ) {
 }
 
 int DocSearchController::replaceAll( SearchState& search, const String& replace ) {
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) )
+	if ( !search.editor || !mSplitter->editorExists( search.editor ) )
 		return 0;
 	if ( search.text.empty() )
 		search.text = mLastSearch;
@@ -327,7 +334,7 @@ int DocSearchController::replaceAll( SearchState& search, const String& replace 
 }
 
 bool DocSearchController::findAndReplace( SearchState& search, const String& replace ) {
-	if ( !search.editor || !mEditorSplitter->editorExists( search.editor ) )
+	if ( !search.editor || !mSplitter->editorExists( search.editor ) )
 		return false;
 	if ( search.text.empty() )
 		search.text = mLastSearch;
@@ -358,7 +365,7 @@ void DocSearchController::hideSearchBar() {
 void DocSearchController::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	if ( mSearchState.editor && mSearchState.editor != editor ) {
 		TextSearchParams word;
-		if ( mEditorSplitter->editorExists( mSearchState.editor ) ) {
+		if ( mSplitter->editorExists( mSearchState.editor ) ) {
 			word = mSearchState.editor->getHighlightWord();
 			mSearchState.editor->setHighlightWord( { "" } );
 			mSearchState.editor->setHighlightTextRange( TextRange() );

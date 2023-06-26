@@ -1087,7 +1087,7 @@ void LSPClientServer::initialize() {
 
 	write(
 		newRequest( "initialize", params ),
-		[&]( const IdType&, const json& resp ) {
+		[this]( const IdType&, const json& resp ) {
 #ifndef EE_DEBUG
 			try {
 #endif
@@ -1110,7 +1110,7 @@ void LSPClientServer::initialize() {
 				mManager->getPlugin(), PluginMessageType::LanguageServerCapabilities,
 				PluginMessageFormat::LanguageServerCapabilities, &mCapabilities );
 		},
-		[&]( const IdType&, const json& ) {} );
+		[]( const IdType&, const json& ) {} );
 }
 
 LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String::HashType& id,
@@ -1781,7 +1781,7 @@ void LSPClientServer::getAndGoToLocation( const URI& document, const TextPositio
 void LSPClientServer::getAndGoToLocation( const URI& document, const TextPosition& pos,
 										  const std::string& search ) {
 	getAndGoToLocation( document, pos, search,
-						[&]( const IdType&, const std::vector<LSPLocation>& locs ) {
+						[this]( const IdType&, const std::vector<LSPLocation>& locs ) {
 							if ( !locs.empty() )
 								mManager->goToLocation( locs.front() );
 						} );

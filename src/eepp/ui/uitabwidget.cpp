@@ -45,8 +45,8 @@ UITabWidget::UITabWidget() :
 	mTabScroll = UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
 	mTabScroll->setParent( this );
 	mTabScroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
-	mTabScroll->addEventListener( Event::OnSizeChange, [&]( const Event* ) { updateScrollBar(); } );
-	mTabScroll->addEventListener( Event::OnValueChange, [&]( const Event* ) { updateScroll(); } );
+	mTabScroll->on( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
+	mTabScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
 
 	onSizeChange();
 

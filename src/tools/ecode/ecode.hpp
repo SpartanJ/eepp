@@ -184,60 +184,61 @@ class App : public UICodeEditorSplitter::Client {
 	UIStatusBar* getStatusBar() const { return mStatusBar; }
 
 	template <typename T> void registerUnlockedCommands( T& t ) {
-		t.setCommand( "keybindings", [&] { loadFileFromPath( mKeybindingsPath ); } );
-		t.setCommand( "debug-draw-boxes-toggle", [&] { debugDrawBoxesToggle(); } );
-		t.setCommand( "debug-draw-highlight-toggle", [&] { debugDrawHighlightToggle(); } );
-		t.setCommand( "debug-draw-debug-data", [&] { debugDrawData(); } );
-		t.setCommand( "debug-widget-tree-view", [&] { createWidgetInspector(); } );
-		t.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
-		t.setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
-		t.setCommand( "download-file-web", [&] { downloadFileWebDialog(); } );
-		t.setCommand( "move-panel-left", [&] { panelPosition( PanelPosition::Left ); } );
-		t.setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
-		t.setCommand( "create-new-terminal", [&] { createNewTerminal(); } );
-		t.setCommand( "terminal-split-right", [&] {
+		t.setCommand( "keybindings", [this] { loadFileFromPath( mKeybindingsPath ); } );
+		t.setCommand( "debug-draw-boxes-toggle", [this] { debugDrawBoxesToggle(); } );
+		t.setCommand( "debug-draw-highlight-toggle", [this] { debugDrawHighlightToggle(); } );
+		t.setCommand( "debug-draw-debug-data", [this] { debugDrawData(); } );
+		t.setCommand( "debug-widget-tree-view", [this] { createWidgetInspector(); } );
+		t.setCommand( "menu-toggle", [this] { toggleSettingsMenu(); } );
+		t.setCommand( "switch-side-panel", [this] { switchSidePanel(); } );
+		t.setCommand( "download-file-web", [this] { downloadFileWebDialog(); } );
+		t.setCommand( "move-panel-left", [this] { panelPosition( PanelPosition::Left ); } );
+		t.setCommand( "move-panel-right", [this] { panelPosition( PanelPosition::Right ); } );
+		t.setCommand( "create-new-terminal", [this] { createNewTerminal(); } );
+		t.setCommand( "terminal-split-right", [this] {
 			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Right,
 							  mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
-		t.setCommand( "terminal-split-bottom", [&] {
+		t.setCommand( "terminal-split-bottom", [this] {
 			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
 							  mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
-		t.setCommand( "terminal-split-left", [&] {
+		t.setCommand( "terminal-split-left", [this] {
 			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Left, mSplitter->getCurWidget(),
 							  false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
-		t.setCommand( "terminal-split-top", [&] {
+		t.setCommand( "terminal-split-top", [this] {
 			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Top, mSplitter->getCurWidget(),
 							  false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
-		t.setCommand( "reopen-closed-tab", [&] { reopenClosedTab(); } );
-		t.setCommand( "plugin-manager-open", [&] { createPluginManagerUI(); } );
-		t.setCommand( "close-app", [&] { closeApp(); } );
-		t.setCommand( "fullscreen-toggle", [&]() { fullscreenToggle(); } );
-		t.setCommand( "open-file", [&] { openFileDialog(); } );
-		t.setCommand( "open-folder", [&] { openFolderDialog(); } );
-		t.setCommand( "console-toggle", [&] { consoleToggle(); } );
-		t.setCommand( "find-replace", [&] { showFindView(); } );
-		t.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
+		t.setCommand( "reopen-closed-tab", [this] { reopenClosedTab(); } );
+		t.setCommand( "plugin-manager-open", [this] { createPluginManagerUI(); } );
+		t.setCommand( "close-app", [this] { closeApp(); } );
+		t.setCommand( "fullscreen-toggle", [this]() { fullscreenToggle(); } );
+		t.setCommand( "open-file", [this] { openFileDialog(); } );
+		t.setCommand( "open-folder", [this] { openFolderDialog(); } );
+		t.setCommand( "console-toggle", [this] { consoleToggle(); } );
+		t.setCommand( "find-replace", [this] { showFindView(); } );
+		t.setCommand( "open-global-search", [this] { showGlobalSearch( false ); } );
 		t.setCommand( "toggle-status-global-search-bar",
-					  [&] { mGlobalSearchController->toggleGlobalSearchBar(); } );
+					  [this] { mGlobalSearchController->toggleGlobalSearchBar(); } );
 		t.setCommand( "toggle-status-build-output",
-					  [&] { mStatusBuildOutputController->toggle(); } );
-		t.setCommand( "toggle-status-terminal", [&] { mStatusTerminalController->toggle(); } );
-		t.setCommand( "open-locatebar", [&] { mUniversalLocator->showLocateBar(); } );
-		t.setCommand( "toggle-status-locate-bar", [&] { mUniversalLocator->toggleLocateBar(); } );
-		t.setCommand( "open-command-palette", [&] { mUniversalLocator->showCommandPalette(); } );
-		t.setCommand( "show-open-documents", [&] { mUniversalLocator->showOpenDocuments(); } );
-		t.setCommand( "project-build-start", [&] {
+					  [this] { mStatusBuildOutputController->toggle(); } );
+		t.setCommand( "toggle-status-terminal", [this] { mStatusTerminalController->toggle(); } );
+		t.setCommand( "open-locatebar", [this] { mUniversalLocator->showLocateBar(); } );
+		t.setCommand( "toggle-status-locate-bar",
+					  [this] { mUniversalLocator->toggleLocateBar(); } );
+		t.setCommand( "open-command-palette", [this] { mUniversalLocator->showCommandPalette(); } );
+		t.setCommand( "show-open-documents", [this] { mUniversalLocator->showOpenDocuments(); } );
+		t.setCommand( "project-build-start", [this] {
 			if ( mProjectBuildManager && mStatusBuildOutputController ) {
 				if ( mProjectBuildManager->isBuilding() ) {
 					mProjectBuildManager->cancelBuild();
@@ -245,39 +246,43 @@ class App : public UICodeEditorSplitter::Client {
 				mProjectBuildManager->buildCurrentConfig( mStatusBuildOutputController.get() );
 			}
 		} );
-		t.setCommand( "project-build-cancel", [&] {
+		t.setCommand( "project-build-cancel", [this] {
 			if ( mProjectBuildManager && mProjectBuildManager->isBuilding() ) {
 				mProjectBuildManager->cancelBuild();
 			}
 		} );
 		t.setCommand( "open-workspace-symbol-search",
-					  [&] { mUniversalLocator->showWorkspaceSymbol(); } );
+					  [this] { mUniversalLocator->showWorkspaceSymbol(); } );
 		t.setCommand( "open-document-symbol-search",
-					  [&] { mUniversalLocator->showDocumentSymbol(); } );
-		t.setCommand( "editor-set-line-breaking-column", [&] { setLineBreakingColumn(); } );
-		t.setCommand( "editor-set-line-spacing", [&] { setLineSpacing(); } );
-		t.setCommand( "editor-set-cursor-blinking-time", [&] { setCursorBlinkingTime(); } );
-		t.setCommand( "check-for-updates", [&] { checkForUpdates(); } );
-		t.setCommand( "about-ecode", [&] { aboutEcode(); } );
-		t.setCommand( "ecode-source", [&] { ecodeSource(); } );
-		t.setCommand( "ui-scale-factor", [&] { setUIScaleFactor(); } );
-		t.setCommand( "show-side-panel", [&] { switchSidePanel(); } );
-		t.setCommand( "toggle-status-bar", [&] { switchStatusBar(); } );
-		t.setCommand( "editor-font-size", [&] { setEditorFontSize(); } );
-		t.setCommand( "terminal-font-size", [&] { setTerminalFontSize(); } );
-		t.setCommand( "ui-font-size", [&] { setUIFontSize(); } );
-		t.setCommand( "ui-panel-font-size", [&] { setUIPanelFontSize(); } );
-		t.setCommand( "serif-font", [&] { openFontDialog( mConfig.ui.serifFont, false ); } );
-		t.setCommand( "monospace-font", [&] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
-		t.setCommand( "terminal-font", [&] { openFontDialog( mConfig.ui.terminalFont, false ); } );
-		t.setCommand( "fallback-font", [&] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
-		t.setCommand( "tree-view-configure-ignore-files", [&] { treeViewConfigureIgnoreFiles(); } );
-		t.setCommand( "check-languages-health", [&] { checkLanguagesHealth(); } );
-		t.setCommand( "configure-terminal-shell", [&] {
+					  [this] { mUniversalLocator->showDocumentSymbol(); } );
+		t.setCommand( "editor-set-line-breaking-column", [this] { setLineBreakingColumn(); } );
+		t.setCommand( "editor-set-line-spacing", [this] { setLineSpacing(); } );
+		t.setCommand( "editor-set-cursor-blinking-time", [this] { setCursorBlinkingTime(); } );
+		t.setCommand( "check-for-updates", [this] { checkForUpdates(); } );
+		t.setCommand( "about-ecode", [this] { aboutEcode(); } );
+		t.setCommand( "ecode-source", [this] { ecodeSource(); } );
+		t.setCommand( "ui-scale-factor", [this] { setUIScaleFactor(); } );
+		t.setCommand( "show-side-panel", [this] { switchSidePanel(); } );
+		t.setCommand( "toggle-status-bar", [this] { switchStatusBar(); } );
+		t.setCommand( "editor-font-size", [this] { setEditorFontSize(); } );
+		t.setCommand( "terminal-font-size", [this] { setTerminalFontSize(); } );
+		t.setCommand( "ui-font-size", [this] { setUIFontSize(); } );
+		t.setCommand( "ui-panel-font-size", [this] { setUIPanelFontSize(); } );
+		t.setCommand( "serif-font", [this] { openFontDialog( mConfig.ui.serifFont, false ); } );
+		t.setCommand( "monospace-font",
+					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
+		t.setCommand( "terminal-font",
+					  [this] { openFontDialog( mConfig.ui.terminalFont, false ); } );
+		t.setCommand( "fallback-font",
+					  [this] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
+		t.setCommand( "tree-view-configure-ignore-files",
+					  [this] { treeViewConfigureIgnoreFiles(); } );
+		t.setCommand( "check-languages-health", [this] { checkLanguagesHealth(); } );
+		t.setCommand( "configure-terminal-shell", [this] {
 			if ( mTerminalManager )
 				mTerminalManager->configureTerminalShell();
 		} );
-		t.setCommand( "check-for-updates", [&] { checkForUpdates( false ); } );
+		t.setCommand( "check-for-updates", [this] { checkForUpdates( false ); } );
 		mSplitter->registerSplitterCommands( t );
 	}
 
@@ -403,6 +408,8 @@ class App : public UICodeEditorSplitter::Client {
 	const std::map<KeyBindings::Shortcut, std::string>& getRealSplitterKeybindings() const;
 
 	const std::map<KeyBindings::Shortcut, std::string>& getRealTerminalKeybindings() const;
+
+	const std::string& getFileToOpen() const;
 
   protected:
 	std::vector<std::string> mArgs;

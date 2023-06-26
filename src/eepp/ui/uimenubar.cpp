@@ -55,7 +55,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 	button->setText( buttonText );
 	button->setVisible( true );
 	button->setEnabled( true );
-	button->addEventListener( Event::OnSizeChange, [&]( const Event* ) { refreshButtons(); } );
+	button->addEventListener( Event::OnSizeChange, [this]( const Event* ) { refreshButtons(); } );
 	button->addEventListener( Event::OnFocus, [&, button]( const Event* ) {
 		if ( getEventDispatcher()->getReleaseTrigger() & EE_BUTTON_LMASK ) {
 			getMenuFromButton( button )->setFocus();
@@ -75,7 +75,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 			button->unselect();
 		}
 	} );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* ) {
+	menu->addEventListener( Event::OnItemClicked, [this]( const Event* ) {
 		mWaitingUp = nullptr;
 		mCurrentMenu = nullptr;
 	} );

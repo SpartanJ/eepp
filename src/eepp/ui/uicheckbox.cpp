@@ -17,7 +17,7 @@ UICheckBox::UICheckBox() : UICheckBox( "checkbox" ) {}
 
 UICheckBox::UICheckBox( const std::string& tag ) :
 	UITextView( tag ), mChecked( false ), mTextSeparation( 4 ) {
-	auto cb = [&]( const Event* ) { onAutoSize(); };
+	auto cb = [this]( const Event* ) { onAutoSize(); };
 
 	mActiveButton = UIWidget::NewWithTag( tag + "::active" );
 	mActiveButton->setVisible( false );

@@ -405,13 +405,18 @@ static int countTotalEditors( json j ) {
 void AppConfig::editorLoadedCounter( ecode::App* app ) {
 	editorsToLoad--;
 	if ( editorsToLoad <= 0 ) {
-		app->getUISceneNode()->runOnMainThread( [app] { app->loadFileDelayed(); } );
+		app->getUISceneNode()->runOnMainThread( [app] {
+			if ( !app->getFileToOpen().empty() ) {
+				app->loadFileDelayed();
+			} else {
+				app->getSplitter()->addCurrentPositionToNavigationHistory();
+			}
+		} );
 	}
 }
 
-void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter,
-							   std::shared_ptr<ThreadPool> pool, json j, UITabWidget* curTabWidget,
-							   ecode::App* app ) {
+void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
+							   UITabWidget* curTabWidget, ecode::App* app ) {
 	if ( j["type"] == "tabwidget" ) {
 		Int64 currentPage = j["current_page"];
 		size_t totalToLoad = j["files"].size();
@@ -442,7 +447,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter,
 					editorLoadedCounter( app );
 				} else {
 					editorSplitter->loadAsyncFileFromPathInNewTab(
-						path, pool,
+						path,
 						[this, curTabWidget, selection, totalToLoad, currentPage,
 						 app]( UICodeEditor* editor, const std::string& ) {
 							if ( !editor->getDocument().getSelection().isValid() ||
@@ -477,9 +482,9 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter,
 		if ( nullptr == splitter )
 			return;
 
-		loadDocuments( editorSplitter, pool, j["first"], curTabWidget, app );
+		loadDocuments( editorSplitter, j["first"], curTabWidget, app );
 		UITabWidget* tabWidget = splitter->getLastWidget()->asType<UITabWidget>();
-		loadDocuments( editorSplitter, pool, j["last"], tabWidget, app );
+		loadDocuments( editorSplitter, j["last"], tabWidget, app );
 
 		splitter->setSplitPartition( StyleSheetLength( j["split"] ) );
 	}
@@ -535,7 +540,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		editorsToLoad = countTotalEditors( j );
 		UITabWidget* curTabWidget =
 			editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
-		loadDocuments( editorSplitter, pool, j, curTabWidget, app );
+		loadDocuments( editorSplitter, j, curTabWidget, app );
 	}
 }
 

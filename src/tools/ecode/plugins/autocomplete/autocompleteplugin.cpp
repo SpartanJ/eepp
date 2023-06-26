@@ -77,7 +77,7 @@ AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager ) :
 	mSymbolPattern( "[%a_ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_"
 					"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
 	mBoxPadding( PixelDensity::dpToPx( Rectf( 4, 4, 12, 4 ) ) ) {
-	mManager->subscribeMessages( this, [&]( const PluginMessage& msg ) -> PluginRequestHandle {
+	mManager->subscribeMessages( this, [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 		return processResponse( msg );
 	} );
 }
@@ -106,7 +106,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentClosed, [&]( const Event* event ) {
+		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
 			Lock l( mDocMutex );
 			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 			TextDocument* doc = docEvent->getDoc();
@@ -116,7 +116,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
 			TextDocument* oldDoc = mEditorDocs[editor];
 			TextDocument* newDoc = editor->getDocumentRef().get();
 			Lock l( mDocMutex );
@@ -127,19 +127,19 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnCursorPosChange, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 			if ( !mReplacing )
 				resetSuggestions( editor );
 		} ) );
 
 	listeners.push_back( editor->addEventListener(
-		Event::OnFocusLoss, [&]( const Event* ) { resetSignatureHelp(); } ) );
+		Event::OnFocusLoss, [this]( const Event* ) { resetSignatureHelp(); } ) );
 
 	listeners.push_back( editor->addEventListener(
-		Event::OnDocumentUndoRedo, [&]( const Event* ) { resetSignatureHelp(); } ) );
+		Event::OnDocumentUndoRedo, [this]( const Event* ) { resetSignatureHelp(); } ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentSyntaxDefinitionChange, [&]( const Event* ev ) {
+	listeners.push_back( editor->addEventListener(
+		Event::OnDocumentSyntaxDefinitionChange, [this]( const Event* ev ) {
 			const DocSyntaxDefEvent* event = static_cast<const DocSyntaxDefEvent*>( ev );
 			std::string oldLang = event->getOldLang();
 			std::string newLang = event->getNewLang();

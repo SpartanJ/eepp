@@ -93,7 +93,7 @@ void UITreeView::createOrUpdateColumns( bool resetColumnData ) {
 
 size_t UITreeView::getItemCount() const {
 	size_t count = 0;
-	traverseTree( [&]( const int&, const ModelIndex&, const size_t&, const Float& ) {
+	traverseTree( [&count]( const int&, const ModelIndex&, const size_t&, const Float& ) {
 		count++;
 		return IterationDecision::Continue;
 	} );
@@ -181,7 +181,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 	widget->setCurIndex( index );
 	if ( index.column() == (Int64)getModel()->treeColumn() ) {
 		bindNavigationClick( widget );
-		widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		widget->addEventListener( Event::MouseClick, [this]( const Event* event ) {
 			if ( mSingleClickNavigation )
 				return;
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
@@ -364,8 +364,8 @@ Sizef UITreeView::getContentSize() const {
 void UITreeView::drawChilds() {
 	int realIndex = 0;
 
-	traverseTree( [&]( const int&, const ModelIndex& index, const size_t& indentLevel,
-					   const Float& yOffset ) {
+	traverseTree( [this, &realIndex]( const int&, const ModelIndex& index,
+									  const size_t& indentLevel, const Float& yOffset ) {
 		if ( yOffset - mScrollOffset.y > mSize.getHeight() )
 			return IterationDecision::Stop;
 		if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )

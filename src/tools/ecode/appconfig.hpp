@@ -192,8 +192,8 @@ class AppConfig {
   protected:
 	Int64 editorsToLoad{ 0 };
 
-	void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr<ThreadPool> pool,
-						json j, UITabWidget* curTabWidget, ecode::App* app );
+	void loadDocuments( UICodeEditorSplitter* editorSplitter, json j, UITabWidget* curTabWidget,
+						ecode::App* app );
 
 	void editorLoadedCounter( ecode::App* app );
 };

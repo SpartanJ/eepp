@@ -773,6 +773,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
 
+	virtual void onDocumentInterestingCursorChange( const TextPosition& );
+
 	virtual void onDocumentLineChanged( const Int64& lineNumber );
 
 	virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& );

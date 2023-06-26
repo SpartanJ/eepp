@@ -712,10 +712,10 @@ void UITextInput::paste() {
 }
 
 void UITextInput::registerCommands() {
-	mDoc.setCommand( "copy", [&] { copy(); } );
-	mDoc.setCommand( "cut", [&] { cut(); } );
-	mDoc.setCommand( "paste", [&] { paste(); } );
-	mDoc.setCommand( "press-enter", [&] { onPressEnter(); } );
+	mDoc.setCommand( "copy", [this] { copy(); } );
+	mDoc.setCommand( "cut", [this] { cut(); } );
+	mDoc.setCommand( "paste", [this] { paste(); } );
+	mDoc.setCommand( "press-enter", [this] { onPressEnter(); } );
 }
 
 void UITextInput::registerKeybindings() {
@@ -881,7 +881,7 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -896,7 +896,7 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
-	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
 	selCurInit( init );
 	selCurEnd( end );

@@ -74,6 +74,7 @@ class EE_API TextDocument {
 		virtual void onDocumentTextChanged( const DocumentContentChange& ) = 0;
 		virtual void onDocumentUndoRedo( const UndoRedo& eventType ) = 0;
 		virtual void onDocumentCursorChange( const TextPosition& ) = 0;
+		virtual void onDocumentInterestingCursorChange( const TextPosition& ){};
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
 		virtual void onDocumentLineCountChange( const size_t& lastCount,
 												const size_t& newCount ) = 0;
@@ -245,7 +246,7 @@ class EE_API TextDocument {
 
 	void moveTo( int columnOffset );
 
-	void textInput( const String& text );
+	void textInput( const String& text, bool mightBeInteresting = true );
 
 	void registerClient( Client* client );
 
@@ -600,6 +601,8 @@ class EE_API TextDocument {
 	bool mDeleteOnClose{ false };
 	bool mMightBeBinary{ false };
 	bool mHAsCpp{ false };
+	bool mLastCursorChangeWasInteresting{ false };
+	bool mDoingTextInput{ false };
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };
@@ -649,6 +652,8 @@ class EE_API TextDocument {
 	void notifySyntaxDefinitionChange();
 
 	void notifiyDocumenLineMove( const Int64& fromLine, const Int64& numLines );
+
+	void notifyInterstingCursorChange( TextPosition selection );
 
 	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
 

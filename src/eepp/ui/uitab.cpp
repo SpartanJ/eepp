@@ -14,7 +14,7 @@ UITab::UITab() :
 	UISelectButton( "tab" ), mOwnedWidget( NULL ), mDragTotalDiff( 0.f ), mTabWidget( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
 	mIcon->setElementTag( mTag + "::icon" );
-	auto cb = [&]( const Event* ) { onSizeChange(); };
+	auto cb = [this]( const Event* ) { onSizeChange(); };
 	mTextBox->addEventListener( Event::OnSizeChange, cb );
 	mIcon->addEventListener( Event::OnSizeChange, cb );
 	mCloseButton = UIWidget::NewWithTag( mTag + "::close" );
@@ -397,6 +397,11 @@ void UITab::setOwnedWidget( Node* ownedWidget ) {
 		if ( NULL == tTabW->mTabSelected )
 			tTabW->setTabSelected( this );
 	}
+}
+
+void UITab::setTabSelected() {
+	if ( getTabWidget() )
+		getTabWidget()->setTabSelected( this );
 }
 
 }} // namespace EE::UI

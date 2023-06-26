@@ -204,7 +204,7 @@ PluginRequestHandle LSPClientPlugin::processCodeCompletionRequest( const PluginM
 
 	auto ret = res.server->documentCompletion(
 		res.loc.uri, res.loc.pos,
-		[&]( const PluginIDType& id, const LSPCompletionList& completionList ) {
+		[this]( const PluginIDType& id, const LSPCompletionList& completionList ) {
 			mManager->sendResponse( this, PluginMessageType::CodeCompletion,
 									PluginMessageFormat::CodeCompletion, &completionList, id );
 		} );
@@ -221,7 +221,7 @@ PluginRequestHandle LSPClientPlugin::processSignatureHelpRequest( const PluginMe
 		return {};
 
 	auto ret = res.server->signatureHelp(
-		res.loc.uri, res.loc.pos, [&]( const PluginIDType& id, const LSPSignatureHelp& data ) {
+		res.loc.uri, res.loc.pos, [this]( const PluginIDType& id, const LSPSignatureHelp& data ) {
 			mManager->sendResponse( this, PluginMessageType::SignatureHelp,
 									PluginMessageFormat::SignatureHelp, &data, id );
 		} );
@@ -507,7 +507,7 @@ void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_pt
 void LSPClientPlugin::createLocationsView( UICodeEditor* editor,
 										   const std::vector<LSPLocation>& res ) {
 	auto model = LSPLocationModel::create( mManager->getWorkspaceFolder(), res );
-	createListView( editor, model, [&]( const ModelEvent* modelEvent ) {
+	createListView( editor, model, [this]( const ModelEvent* modelEvent ) {
 		if ( modelEvent->getModelEventType() != ModelEventType::Open )
 			return;
 		auto r = modelEvent->getModelIndex().row();
@@ -658,9 +658,10 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 }
 
 void LSPClientPlugin::load( PluginManager* pluginManager ) {
-	pluginManager->subscribeMessages( this, [&]( const auto& notification ) -> PluginRequestHandle {
-		return processMessage( notification );
-	} );
+	pluginManager->subscribeMessages( this,
+									  [this]( const auto& notification ) -> PluginRequestHandle {
+										  return processMessage( notification );
+									  } );
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/lspclient.json" );
 	if ( FileSystem::fileExists( path ) )
@@ -798,6 +799,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 
 	if ( mKeyBindings.empty() ) {
 		mKeyBindings["lsp-go-to-definition"] = "f2";
+		mKeyBindings["lsp-go-to-implementation"] = "shift+f2";
 		mKeyBindings["lsp-symbol-info"] = "f1";
 		mKeyBindings["lsp-symbol-code-action"] = "alt+return";
 		mKeyBindings["lsp-rename-symbol-under-cursor"] = "mod+shift+r";
@@ -1032,7 +1034,7 @@ void LSPClientPlugin::renameSymbol( UICodeEditor* editor ) {
 		mClientManager.renameSymbol( editor->getDocumentRef()->getURI(), pos, newName );
 		msgBox->closeWindow();
 	} );
-	msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+	msgBox->addEventListener( Event::OnClose, [this]( const Event* ) {
 		if ( mManager->getSplitter() && mManager->getSplitter()->getCurWidget() )
 			mManager->getSplitter()->getCurWidget()->setFocus();
 	} );

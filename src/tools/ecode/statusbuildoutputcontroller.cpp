@@ -207,7 +207,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		[this]( auto, std::string buffer, const ProjectBuildCommand* cmd ) {
 			mBuildOutput->runOnMainThread( [this, buffer]() {
 				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer );
+				mBuildOutput->getDocument().textInput( buffer, false );
 				if ( scrollToBottom )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
@@ -243,7 +243,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
 				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer );
+				mBuildOutput->getDocument().textInput( buffer, false );
 				if ( scrollToBottom )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
@@ -315,7 +315,7 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 		[this]( auto, auto buffer, auto ) {
 			mBuildOutput->runOnMainThread( [this, buffer]() {
 				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer );
+				mBuildOutput->getDocument().textInput( buffer, false );
 				if ( scrollToBottom )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
@@ -333,7 +333,7 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
 				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer );
+				mBuildOutput->getDocument().textInput( buffer, false );
 				if ( scrollToBottom )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
@@ -452,6 +452,7 @@ void StatusBuildOutputController::onLoadDone( const Variant& lineNum, const Vari
 		TextPosition pos{ lineNum.asInt64() > 0 ? lineNum.asInt64() - 1 : 0, colNum.asInt64() };
 		mSplitter->getCurEditor()->getDocument().setSelection( pos );
 		mSplitter->getCurEditor()->goToLine( pos );
+		mSplitter->addCurrentPositionToNavigationHistory();
 	}
 }
 
@@ -491,7 +492,7 @@ void StatusBuildOutputController::createContainer() {
 	editor->setShowLineNumber( false );
 	editor->getDocument().reset();
 	editor->getDocument().textInput(
-		mApp->i18n( "no_build_has_been_run", "No build has been run" ) );
+		mApp->i18n( "no_build_has_been_run", "No build has been run" ), false );
 	editor->setScrollY( editor->getMaxScroll().y );
 	mButOutput = mContainer->find<UISelectButton>( "but_build_output_output" );
 	mButIssues = mContainer->find<UISelectButton>( "but_build_output_issues" );

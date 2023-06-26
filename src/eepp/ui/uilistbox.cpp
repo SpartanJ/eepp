@@ -41,7 +41,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mSmoothScroll( true ) {
 	setFlags( UI_AUTO_PADDING );
 
-	auto cb = [&]( const Event* ) { containerResize(); };
+	auto cb = [this]( const Event* ) { containerResize(); };
 
 	mContainer = eeNew( UIItemContainer<UIListBox>, () );
 	mContainer->setParent( this );

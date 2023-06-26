@@ -111,7 +111,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	mUIWindow->find<UIPushButton>( "cancelButton" )
 		->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
 
-	container->addEventListener( Event::OnLayoutUpdate, [&]( const Event* event ) {
+	container->addEventListener( Event::OnLayoutUpdate, [this]( const Event* event ) {
 		mUIWindow->setMinWindowSize( event->getNode()->getSize() );
 		mUIWindow->center();
 		mUIWindow->show();

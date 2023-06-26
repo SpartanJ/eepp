@@ -63,7 +63,7 @@ class EE_API UITreeViewCell : public UITableCell {
 		mTextBox->setElementTag( mTag + "::text" );
 		mIcon->setElementTag( mTag + "::icon" );
 		mInnerWidgetOrientation = InnerWidgetOrientation::WidgetIconTextBox;
-		auto cb = [&]( const Event* ) { updateLayout(); };
+		auto cb = [this]( const Event* ) { updateLayout(); };
 		mImage = UIImage::NewWithTag( mTag + "::expander" );
 		mImage->setScaleType( UIScaleType::FitInside )
 			->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )

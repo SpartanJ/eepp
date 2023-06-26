@@ -98,7 +98,7 @@ void UIMenuItem::createShortcutView() {
 	mShortcutView = UITextView::NewWithTag( mTag + "::shortcut" );
 	mShortcutView->setParent( this )->setVisible( true )->setEnabled( false );
 	mShortcutView->setFlags( UI_AUTO_SIZE | UI_HALIGN_RIGHT );
-	auto cb = [&]( const Event* ) { onSizeChange(); };
+	auto cb = [this]( const Event* ) { onSizeChange(); };
 	mShortcutView->addEventListener( Event::OnPaddingChange, cb );
 	mShortcutView->addEventListener( Event::OnMarginChange, cb );
 	mShortcutView->addEventListener( Event::OnSizeChange, cb );

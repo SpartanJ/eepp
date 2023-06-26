@@ -78,7 +78,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			mIsReady = true;
 			mRunning = false;
 			mApp->getPluginManager()->subscribeMessages(
-				"ProjectDirectoryTree", [&]( const PluginMessage& msg ) -> PluginRequestHandle {
+				"ProjectDirectoryTree", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 					return processMessage( msg );
 				} );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )

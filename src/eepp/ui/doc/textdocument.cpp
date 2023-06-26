@@ -8,6 +8,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -551,6 +552,7 @@ bool TextDocument::save( const std::string& path ) {
 bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 	if ( !stream.isOpen() || mLines.empty() )
 		return false;
+	BoolScopedOp op( mDoingTextInput, true );
 	const std::string whitespaces( " \t\f\v\n\r" );
 	if ( mIsBOM ) {
 		unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
@@ -700,6 +702,11 @@ void TextDocument::setSelection( const size_t& cursorIdx, TextPosition start, Te
 		mSelection[cursorIdx].set( start, end );
 		notifyCursorChanged( mSelection[cursorIdx].start() );
 		notifySelectionChanged( mSelection[cursorIdx] );
+
+		if ( !mDoingTextInput && mLastCursorChangeWasInteresting ) {
+			notifyInterstingCursorChange( mSelection[cursorIdx].start() );
+			mLastCursorChangeWasInteresting = false;
+		}
 	}
 }
 
@@ -1105,7 +1112,7 @@ bool TextDocument::replaceLine( const Int64& lineNum, const String& text ) {
 	if ( lineNum >= 0 && lineNum < (Int64)mLines.size() ) {
 		TextRange oldSelection = getSelection();
 		setSelection( { startOfLine( { lineNum, 0 } ), endOfLine( { lineNum, 0 } ) } );
-		textInput( text );
+		textInput( text, false );
 		setSelection( oldSelection );
 		return true;
 	}
@@ -1259,6 +1266,7 @@ TextRange TextDocument::getDocRange() const {
 
 void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
 	eeASSERT( cursorIdx < mSelection.size() );
+	BoolScopedOp op( mDoingTextInput, true );
 	TextPosition cursorPos = mSelection[cursorIdx].normalized().start();
 	if ( mSelection[cursorIdx].hasSelection() ) {
 		remove( cursorIdx, getSelectionIndex( cursorIdx ) );
@@ -1273,6 +1281,7 @@ void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
 }
 
 void TextDocument::deleteSelection( const size_t& cursorIdx ) {
+	BoolScopedOp op( mDoingTextInput, true );
 	TextPosition cursorPos = getSelectionIndex( cursorIdx ).normalized().start();
 	remove( cursorIdx, getSelectionIndex( cursorIdx ) );
 	setSelection( cursorIdx, cursorPos );
@@ -1366,7 +1375,9 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 	return inserted;
 }
 
-void TextDocument::textInput( const String& text ) {
+void TextDocument::textInput( const String& text, bool mightBeInteresting ) {
+	BoolScopedOp op( mDoingTextInput, true );
+
 	if ( mAutoCloseBrackets && 1 == text.size() ) {
 		auto inserted = autoCloseBrackets( text );
 
@@ -1379,6 +1390,7 @@ void TextDocument::textInput( const String& text ) {
 					deleteTo( i, 0 );
 				setSelection( i, insert( i, getSelectionIndex( i ).start(), text ) );
 			}
+
 			return;
 		}
 	}
@@ -1401,6 +1413,9 @@ void TextDocument::textInput( const String& text ) {
 			setSelection( i, insert( i, getSelectionIndex( i ).start(), text ) );
 		}
 	}
+
+	if ( mightBeInteresting )
+		mLastCursorChangeWasInteresting = true;
 }
 
 void TextDocument::registerClient( Client* client ) {
@@ -1559,6 +1574,7 @@ void TextDocument::deleteToNextWord() {
 }
 
 void TextDocument::deleteCurrentLine() {
+	BoolScopedOp op( mDoingTextInput, true );
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		if ( mSelection[i].hasSelection() ) {
 			deleteSelection( i );
@@ -1755,6 +1771,7 @@ void TextDocument::newLineAbove() {
 }
 
 void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEmpty ) {
+	BoolScopedOp op( mDoingTextInput, true );
 	TextPosition prevStart = getSelection().start();
 	TextRange range = getSelection( true );
 	bool swap = prevStart != range.start();
@@ -1770,6 +1787,7 @@ void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEm
 
 void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
 												   bool removeExtraSpaces ) {
+	BoolScopedOp op( mDoingTextInput, true );
 	TextPosition prevStart = getSelection().start();
 	TextRange range = getSelection( true );
 	bool swap = prevStart != range.start();
@@ -1826,6 +1844,7 @@ void TextDocument::unindent() {
 }
 
 void TextDocument::moveLinesUp() {
+	BoolScopedOp op( mDoingTextInput, true );
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		TextRange range = getSelectionIndex( i ).normalized();
 		bool swap = getSelectionIndex( i ).normalized() != getSelection();
@@ -1841,6 +1860,7 @@ void TextDocument::moveLinesUp() {
 }
 
 void TextDocument::moveLinesDown() {
+	BoolScopedOp op( mDoingTextInput, true );
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		TextRange range = getSelectionIndex( i ).normalized();
 		bool swap = getSelectionIndex( i ).normalized() != getSelection();
@@ -1884,6 +1904,7 @@ void TextDocument::setIndentWidth( const Uint32& tabWidth ) {
 }
 
 void TextDocument::deleteTo( const size_t& cursorIdx, TextPosition position ) {
+	BoolScopedOp op( mDoingTextInput, true );
 	TextPosition cursorPos = getSelectionIndex( cursorIdx ).normalized().start();
 	if ( getSelectionIndex( cursorIdx ).hasSelection() ) {
 		remove( cursorIdx, getSelectionIndex( cursorIdx ) );
@@ -2571,6 +2592,15 @@ void TextDocument::notifyCursorChanged( TextPosition selection ) {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentCursorChange( selection );
+	}
+}
+
+void TextDocument::notifyInterstingCursorChange( TextPosition selection ) {
+	if ( !selection.isValid() )
+		selection = getSelection().start();
+	Lock l( mClientsMutex );
+	for ( auto& client : mClients ) {
+		client->onDocumentInterestingCursorChange( selection );
 	}
 }
 

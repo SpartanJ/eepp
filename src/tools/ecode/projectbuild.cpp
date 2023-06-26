@@ -1,6 +1,5 @@
 #include "projectbuild.hpp"
 #include "ecode.hpp"
-#include "scopedop.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "uibuildsettings.hpp"
 #include <eepp/core/string.hpp>
@@ -9,6 +8,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/process.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -147,7 +147,7 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 }
 
 bool ProjectBuild::isOSSupported( const std::string& os ) const {
-	return mOS.empty() || std::any_of( mOS.begin(), mOS.end(), [&]( const auto& oos ) {
+	return mOS.empty() || std::any_of( mOS.begin(), mOS.end(), [&os]( const auto& oos ) {
 			   return oos == os || oos == "any";
 		   } );
 }
@@ -692,7 +692,7 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 									const ProjectBuildCommandsRes& res,
 									const ProjectBuildProgressFn& progressFn,
 									const ProjectBuildDoneFn& doneFn ) {
-	ScopedOp scopedOp( [this]() { mBuilding = true; }, [this]() { mBuilding = false; } );
+	BoolScopedOp scopedOp( mBuilding, true );
 	Clock clock;
 
 	auto printElapsed = [&clock, &i18n, &progressFn]() {

@@ -55,7 +55,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 		mSlider = UIWidget::NewWithTag( mTag + "::vbutton" );
 	}
 
-	auto cb = [&]( const Event* ) {
+	auto cb = [this]( const Event* ) {
 		if ( !mUpdating )
 			adjustChilds();
 	};
@@ -71,7 +71,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	mSlider->setDragEnabled( true );
 	mSlider->setSize( 4, 4 );
 	mSlider->setPosition( 0, 0 );
-	mSlider->addEventListener( Event::OnPositionChange, [&]( const Event* ) {
+	mSlider->addEventListener( Event::OnPositionChange, [this]( const Event* ) {
 		if ( !mUpdating && !mOnPosChange )
 			fixSliderPos();
 	} );

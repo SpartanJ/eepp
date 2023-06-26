@@ -23,7 +23,7 @@ UISpinBox::UISpinBox() :
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
-	auto cb = [&]( const Event* ) { adjustChilds(); };
+	auto cb = [this]( const Event* ) { adjustChilds(); };
 
 	mPushUp = UIWidget::NewWithTag( "spinbox::btnup" );
 	mPushUp->setVisible( true );

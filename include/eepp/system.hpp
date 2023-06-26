@@ -31,6 +31,7 @@
 #include <eepp/system/resourceloader.hpp>
 #include <eepp/system/resourcemanager.hpp>
 #include <eepp/system/scopedbuffer.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/thread.hpp>

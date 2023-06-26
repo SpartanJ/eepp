@@ -9,7 +9,7 @@ UITableHeaderColumn::UITableHeaderColumn( const std::string& parentTag, UIAbstra
 	UIPushButton( parentTag + "::header::column" ), mView( view ), mColIndex( colIndex ) {
 	setDragEnabled( true );
 	mInnerWidgetOrientation = InnerWidgetOrientation::IconTextBoxWidget;
-	auto cb = [&]( const Event* ) { updateLayout(); };
+	auto cb = [this]( const Event* ) { updateLayout(); };
 	mImage = UIImage::NewWithTag( mTag + "::arrow" );
 	mImage->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )

@@ -339,7 +339,7 @@ void App::reloadStyleSheet() {
 			UICodeEditor* editor = mSplitter->findEditorFromPath( mCurrentStyleSheet );
 			if ( !editor )
 				return;
-			saveTmpDocument( editor->getDocument(), [&]( const std::string& tmpPath ) {
+			saveTmpDocument( editor->getDocument(), [this]( const std::string& tmpPath ) {
 				loadStyleSheet( tmpPath, false );
 			} );
 			break;
@@ -397,8 +397,9 @@ void App::reloadLayout() {
 			UICodeEditor* editor = mSplitter->findEditorFromPath( mCurrentLayout );
 			if ( !editor )
 				return;
-			saveTmpDocument( editor->getDocument(),
-							 [&]( const std::string& tmpPath ) { loadLayout( tmpPath, false ); } );
+			saveTmpDocument( editor->getDocument(), [this]( const std::string& tmpPath ) {
+				loadLayout( tmpPath, false );
+			} );
 			break;
 		}
 		case InvalidationType::FileSystem:
@@ -489,7 +490,7 @@ void App::updateRecentFiles() {
 			menu->removeEventListener( mRecentFilesEventClickId );
 
 		mRecentFilesEventClickId = menu->addEventListener(
-			Event::OnItemClicked, [&]( const Event* event ) { onRecentFilesClick( event ); } );
+			Event::OnItemClicked, [this]( const Event* event ) { onRecentFilesClick( event ); } );
 	}
 
 	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
@@ -518,7 +519,7 @@ void App::updateRecentProjects() {
 			menu->removeEventListener( mRecentProjectEventClickId );
 
 		mRecentProjectEventClickId = menu->addEventListener(
-			Event::OnItemClicked, [&]( const Event* event ) { onRecentProjectClick( event ); } );
+			Event::OnItemClicked, [this]( const Event* event ) { onRecentProjectClick( event ); } );
 	}
 
 	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
@@ -631,7 +632,7 @@ void App::refreshLayoutList() {
 			mUIMenuBar->addMenuButton( "Layouts", uiLayoutsMenu );
 
 			uiLayoutsMenu->addEventListener(
-				Event::OnItemClicked, [&]( const Event* event ) { onLayoutSelected( event ); } );
+				Event::OnItemClicked, [this]( const Event* event ) { onLayoutSelected( event ); } );
 		} else {
 			uiLayoutsMenu = mUIMenuBar->getPopUpMenu( "Layouts" );
 		}
@@ -702,7 +703,7 @@ void App::loadProjectNodes( pugi::xml_node node ) {
 				for ( auto it = mWidgetRegistered.begin(); it != mWidgetRegistered.end(); ++it ) {
 					if ( !UIWidgetCreator::existsCustomWidgetCallback( it->first ) )
 						UIWidgetCreator::addCustomWidgetCallback(
-							it->first, [&]( std::string widgetName ) -> UIWidget* {
+							it->first, [this]( std::string widgetName ) -> UIWidget* {
 								return createWidget( widgetName );
 							} );
 				}
@@ -1061,26 +1062,26 @@ void App::fileMenuClick( const Event* event ) {
 		createNewLayout();
 	} else if ( "open-project" == id ) {
 		showFileDialog(
-			"Open project...", [&]( const Event* event ) { projectOpen( event ); }, "*.xml" );
+			"Open project...", [this]( const Event* event ) { projectOpen( event ); }, "*.xml" );
 	} else if ( "open-layout" == id ) {
 		showFileDialog(
-			"Open layout...", [&]( const Event* event ) { layoutOpen( event ); }, "*.xml" );
+			"Open layout...", [this]( const Event* event ) { layoutOpen( event ); }, "*.xml" );
 	} else if ( "close" == id ) {
 		closeProject();
 	} else if ( "quit" == id ) {
 		onCloseRequestCallback( mWindow );
 	} else if ( "load-images-from-path" == id ) {
 		showFileDialog(
-			"Open images from folder...", [&]( const Event* event ) { imagePathOpen( event ); },
+			"Open images from folder...", [this]( const Event* event ) { imagePathOpen( event ); },
 			"*", UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect );
 	} else if ( "load-fonts-from-path" == id ) {
 		showFileDialog(
-			"Open fonts from folder...", [&]( const Event* event ) { fontPathOpen( event ); }, "*",
-			UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect );
+			"Open fonts from folder...", [this]( const Event* event ) { fontPathOpen( event ); },
+			"*", UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect );
 	} else if ( "load-css-from-path" == id ) {
 		showFileDialog(
 			"Open style sheet from path...",
-			[&]( const Event* event ) { styleSheetPathOpen( event ); }, "*.css" );
+			[this]( const Event* event ) { styleSheetPathOpen( event ); }, "*.css" );
 	} else if ( "toggle-console" == id ) {
 		mConsole->toggle();
 	} else if ( "toggle-editor" == id ) {
@@ -1135,7 +1136,7 @@ void App::createAppMenu() {
 
 	mUIMenuBar->addMenuButton( "File", uiPopMenu );
 	uiPopMenu->addEventListener( Event::OnItemClicked,
-								 [&]( const Event* event ) { fileMenuClick( event ); } );
+								 [this]( const Event* event ) { fileMenuClick( event ); } );
 
 	UIPopUpMenu* uiResourceMenu = UIPopUpMenu::New();
 	uiResourceMenu->add( "Load images from path...", findIcon( "document-open" ) )
@@ -1148,7 +1149,7 @@ void App::createAppMenu() {
 		->setId( "load-css-from-path" );
 	mUIMenuBar->addMenuButton( "Resources", uiResourceMenu );
 	uiResourceMenu->addEventListener( Event::OnItemClicked,
-									  [&]( const Event* event ) { fileMenuClick( event ); } );
+									  [this]( const Event* event ) { fileMenuClick( event ); } );
 
 	UIPopUpMenu* viewMenu = UIPopUpMenu::New();
 	viewMenu->add( "Highlight Focus & Hover", nullptr, "F6" )->setId( "highlight-focus" );
@@ -1160,7 +1161,7 @@ void App::createAppMenu() {
 	viewMenu->add( "Toggle Editor", findIcon( "editor" ), "F9" )->setId( "toggle-editor" );
 	mUIMenuBar->addMenuButton( "View", viewMenu );
 	viewMenu->addEventListener( Event::OnItemClicked,
-								[&]( const Event* event ) { fileMenuClick( event ); } );
+								[this]( const Event* event ) { fileMenuClick( event ); } );
 	mConsole = UIConsole::New();
 	mConsole->setQuakeMode( true );
 	mConsole->setVisible( false );
@@ -1217,7 +1218,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		PixelDensity::setPixelDensity( eemax( mWindow->getScale(), pixelDensity ) );
 
 		mWindow->setCloseRequestCallback(
-			[&]( auto* window ) -> bool { return onCloseRequestCallback( window ); } );
+			[this]( auto* window ) -> bool { return onCloseRequestCallback( window ); } );
 
 		mResPath = Sys::getProcessPath();
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -1345,7 +1346,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mUIContainer = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winStyle );
 		mUIContainer->setId( "appContainer" )->setSize( mUISceneNode->getSize() );
 		mUIContainer->setParent( mUISceneNode->getRoot() );
-		mUISceneNode->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+		mUISceneNode->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
 			mUIContainer->setPixelsSize( mUISceneNode->getPixelsSize() );
 		} );
 
@@ -1380,7 +1381,8 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mAppUISceneNode->bind( "project_splitter", mProjectSplitter );
 		mSidePanel = mProjectSplitter->getFirstWidget();
 		SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
-		mSplitter = UICodeEditorSplitter::New( this, mAppUISceneNode, colorSchemes, "eepp" );
+		mSplitter =
+			UICodeEditorSplitter::New( this, mAppUISceneNode, nullptr, colorSchemes, "eepp" );
 		mSplitter->setHideTabBarOnSingleTab( false );
 		mSplitter->createEditorWithTabWidget( mBaseLayout );
 		SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
@@ -1392,7 +1394,8 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 
 		resizeCb();
 
-		mUISceneNode->addEventListener( Event::OnSizeChange, [&]( const Event* ) { resizeCb(); } );
+		mUISceneNode->addEventListener( Event::OnSizeChange,
+										[this]( const Event* ) { resizeCb(); } );
 
 		mUseDefaultTheme = useAppTheme;
 
@@ -1482,7 +1485,7 @@ void App::saveAllProcess() {
 	if ( mTmpDocs.empty() )
 		return;
 
-	mSplitter->forEachEditorStoppable( [&]( UICodeEditor* editor ) {
+	mSplitter->forEachEditorStoppable( [this]( UICodeEditor* editor ) {
 		if ( editor->getDocument().isDirty() &&
 			 std::find( mTmpDocs.begin(), mTmpDocs.end(), &editor->getDocument() ) !=
 				 mTmpDocs.end() ) {
@@ -1519,7 +1522,7 @@ void App::saveDoc() {
 }
 
 void App::saveAll() {
-	mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 		if ( editor->isDirty() )
 			mTmpDocs.insert( &editor->getDocument() );
 	} );
@@ -1529,13 +1532,13 @@ void App::saveAll() {
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setAutoCloseXMLTags( true );
 	editor->setColorPreview( true );
-	doc.setCommand( "save-doc", [&] { saveDoc(); } );
-	doc.setCommand( "save-as-doc", [&] {
+	doc.setCommand( "save-doc", [this] { saveDoc(); } );
+	doc.setCommand( "save-as-doc", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() )
 			saveFileDialog( mSplitter->getCurEditor() );
 	} );
-	doc.setCommand( "save-all", [&] { saveAll(); } );
-	doc.setCommand( "create-new", [&] { createNewLayout(); } );
+	doc.setCommand( "save-all", [this] { saveAll(); } );
+	doc.setCommand( "create-new", [this] { createNewLayout(); } );
 }
 
 void App::onCodeEditorFocusChange( UICodeEditor* editor ) {

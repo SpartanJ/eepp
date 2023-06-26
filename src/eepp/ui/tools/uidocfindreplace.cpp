@@ -180,8 +180,8 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 	mReplaceBox = querySelector( ".replace_box" );
 	mToggle = querySelector( ".find_replace_toggle" );
-	mToggle->addEventListener( Event::MouseClick, [&]( const Event* event ) {
-		if ( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_LMASK ) {
+	mToggle->addEventListener( Event::MouseClick, [this]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
 			if ( mToggle->hasClass( "enabled" ) ) {
 				mToggle->removeClass( "enabled" );
 				mReplaceBox->removeClass( "enabled" );
@@ -203,7 +203,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 	mFindInput->addEventListener( Event::OnTextChanged,
 								  [&, editor]( const Event* ) { refreshHighlight( editor ); } );
-	mFindInput->addEventListener( Event::OnTextPasted, [&]( const Event* ) {
+	mFindInput->addEventListener( Event::OnTextPasted, [this]( const Event* ) {
 		if ( mFindInput->getUISceneNode()->getWindow()->getClipboard()->getText().find( '\n' ) !=
 			 String::InvalidPos ) {
 			if ( !mEscapeSequences->isSelected() )
@@ -254,7 +254,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 	mReplaceInput = querySelector<UITextInput>( ".input-replace" );
 
-	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
+	auto addClickListener = [this]( UIWidget* widget, std::string cmd ) {
 		if ( !widget )
 			return;
 		widget->setTooltipText( getKeyBindings().getCommandKeybindString( cmd ) );
@@ -264,7 +264,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 				execute( cmd );
 		} );
 	};
-	auto addReturnListener = [&]( UIWidget* widget, std::string cmd ) {
+	auto addReturnListener = [this]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::OnPressEnter,
 								  [this, cmd]( const Event* ) { execute( cmd ); } );
 	};
@@ -280,7 +280,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mFindInput->setTabStop();
 	mReplaceInput->setTabStop();
 
-	mFindInput->addEventListener( Event::OnTabNavigate, [&]( const Event* ) {
+	mFindInput->addEventListener( Event::OnTabNavigate, [this]( const Event* ) {
 		if ( !mToggle->hasClass( "enabled" ) ) {
 			mToggle->addClass( "enabled" );
 			mReplaceBox->addClass( "enabled" );
@@ -289,7 +289,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	} );
 
 	mReplaceInput->addEventListener( Event::OnTabNavigate,
-									 [&]( const Event* ) { mFindInput->setFocus(); } );
+									 [this]( const Event* ) { mFindInput->setFocus(); } );
 
 	mDataBinds.emplace_back( UIDataBindBool::New( &mSearchState.caseSensitive, mCaseSensitive ) );
 	mDataBinds.emplace_back( UIDataBindBool::New( &mSearchState.wholeWord, mWholeWord ) );
@@ -318,9 +318,9 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 	setVisible( false );
 
-	runOnMainThread( [&] { mReady = true; } );
+	runOnMainThread( [this] { mReady = true; } );
 
-	getParent()->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+	getParent()->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
 		Float startX = eemax( 0.f, getParent()->getSize().getWidth() - getSize().getWidth() );
 		setPosition( startX, getPosition().y );
 	} );
@@ -328,7 +328,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 void UIDocFindReplace::show( bool expanded ) {
 	if ( !mReady ) {
-		runOnMainThread( [&] { show(); } );
+		runOnMainThread( [this] { show(); } );
 		return;
 	}
 

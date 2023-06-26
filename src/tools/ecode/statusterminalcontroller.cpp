@@ -96,7 +96,7 @@ UITerminal* StatusTerminalController::createTerminal( const std::string& working
 							  ? terminalColorSchemes.at( currentTerminalColorScheme )
 							  : TerminalColorScheme::getDefault() );
 	mApp->getTerminalManager()->setKeybindings( term );
-	term->setCommand( "switch-to-previous-colorscheme", [&] {
+	term->setCommand( "switch-to-previous-colorscheme", [this] {
 		auto it = mApp->getTerminalManager()->getTerminalColorSchemes().find(
 			mApp->getTerminalManager()->getTerminalCurrentColorScheme() );
 		auto prev = std::prev( it, 1 );
@@ -107,7 +107,7 @@ UITerminal* StatusTerminalController::createTerminal( const std::string& working
 				mApp->getTerminalManager()->getTerminalColorSchemes().rbegin()->first );
 		}
 	} );
-	term->setCommand( "switch-to-next-colorscheme", [&] {
+	term->setCommand( "switch-to-next-colorscheme", [this] {
 		auto it = mApp->getTerminalManager()->getTerminalColorSchemes().find(
 			mApp->getTerminalManager()->getTerminalCurrentColorScheme() );
 		mApp->getTerminalManager()->setTerminalColorScheme(

@@ -128,16 +128,16 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );
 	mVScrollBar->addEventListener( Event::OnSizeChange,
-								   [&]( const Event* ) { updateScrollBar(); } );
-	mVScrollBar->addEventListener( Event::OnValueChange, [&]( const Event* ) {
+								   [this]( const Event* ) { updateScrollBar(); } );
+	mVScrollBar->addEventListener( Event::OnValueChange, [this]( const Event* ) {
 		setScrollY( mVScrollBar->getValue() * getMaxScroll().y, false );
 	} );
 
 	mHScrollBar = UIScrollBar::NewHorizontal();
 	mHScrollBar->setParent( this );
 	mHScrollBar->addEventListener( Event::OnSizeChange,
-								   [&]( const Event* ) { updateScrollBar(); } );
-	mHScrollBar->addEventListener( Event::OnValueChange, [&]( const Event* ) {
+								   [this]( const Event* ) { updateScrollBar(); } );
+	mHScrollBar->addEventListener( Event::OnValueChange, [this]( const Event* ) {
 		setScrollX( mHScrollBar->getValue() * getMaxScroll().x, false );
 	} );
 
@@ -496,10 +496,11 @@ bool UICodeEditor::loadAsyncFromURL(
 					onLoaded( mDoc, success );
 			} );
 		},
-		[&]( const Http&, const Http::Request&, const Http::Response&,
-			 const Http::Request::Status& status, size_t /*totalBytes*/, size_t /*currentBytes*/ ) {
+		[this]( const Http&, const Http::Request&, const Http::Response&,
+				const Http::Request::Status& status, size_t /*totalBytes*/,
+				size_t /*currentBytes*/ ) {
 			if ( status == Http::Request::ContentReceived ) {
-				runOnMainThread( [&] { invalidateDraw(); } );
+				runOnMainThread( [this] { invalidateDraw(); } );
 			}
 			return true;
 		} );
@@ -1051,11 +1052,11 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 		menu->show();
 		mCurrentMenu = menu;
 	} );
-	menu->addEventListener( Event::OnMenuHide, [&]( const Event* ) {
+	menu->addEventListener( Event::OnMenuHide, [this]( const Event* ) {
 		if ( !isClosing() )
 			setFocus();
 	} );
-	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	return true;
 }
 
@@ -1364,7 +1365,7 @@ void UICodeEditor::checkColorPickerAction() {
 	if ( isHash || isRgb || isRgba ) {
 		UIColorPicker* colorPicker = NULL;
 		if ( isHash ) {
-			colorPicker = UIColorPicker::NewModal( this, [&]( Color color ) {
+			colorPicker = UIColorPicker::NewModal( this, [this]( Color color ) {
 				mDoc->replaceSelection( color.toHexString( false ) );
 			} );
 			colorPicker->setColor( Color( '#' + text ) );
@@ -1382,7 +1383,7 @@ void UICodeEditor::checkColorPickerAction() {
 		}
 		if ( colorPicker )
 			colorPicker->getUIWindow()->addEventListener(
-				Event::OnWindowClose, [&]( const Event* ) {
+				Event::OnWindowClose, [this]( const Event* ) {
 					if ( !SceneManager::instance()->isShuttingDown() )
 						setFocus();
 				} );
@@ -1590,6 +1591,11 @@ void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
 	invalidateEditor();
 	invalidateDraw();
 	onCursorPosChange();
+}
+
+void UICodeEditor::onDocumentInterestingCursorChange( const TextPosition& ) {
+	sendCommonEvent( Event::OnCursorPosChangeInteresting );
+	invalidateDraw();
 }
 
 void UICodeEditor::onDocumentSelectionChange( const Doc::TextRange& ) {
@@ -3113,29 +3119,29 @@ void UICodeEditor::drawLineEndings( const std::pair<int, int>& lineRange,
 }
 
 void UICodeEditor::registerCommands() {
-	mDoc->setCommand( "move-to-previous-line", [&] { moveToPreviousLine(); } );
-	mDoc->setCommand( "move-to-next-line", [&] { moveToNextLine(); } );
-	mDoc->setCommand( "select-to-previous-line", [&] { selectToPreviousLine(); } );
-	mDoc->setCommand( "select-to-next-line", [&] { selectToNextLine(); } );
-	mDoc->setCommand( "move-scroll-up", [&] { moveScrollUp(); } );
-	mDoc->setCommand( "move-scroll-down", [&] { moveScrollDown(); } );
-	mDoc->setCommand( "indent", [&] { indent(); } );
-	mDoc->setCommand( "unindent", [&] { unindent(); } );
-	mDoc->setCommand( "copy", [&] { copy(); } );
-	mDoc->setCommand( "cut", [&] { cut(); } );
-	mDoc->setCommand( "paste", [&] { paste(); } );
-	mDoc->setCommand( "font-size-grow", [&] { fontSizeGrow(); } );
-	mDoc->setCommand( "font-size-shrink", [&] { fontSizeShrink(); } );
-	mDoc->setCommand( "font-size-reset", [&] { fontSizeReset(); } );
-	mDoc->setCommand( "lock", [&] { setLocked( true ); } );
-	mDoc->setCommand( "unlock", [&] { setLocked( false ); } );
-	mDoc->setCommand( "lock-toggle", [&] { setLocked( !isLocked() ); } );
-	mDoc->setCommand( "open-containing-folder", [&] { openContainingFolder(); } );
-	mDoc->setCommand( "copy-containing-folder-path", [&] { copyContainingFolderPath(); } );
-	mDoc->setCommand( "copy-file-path", [&] { copyFilePath(); } );
-	mDoc->setCommand( "copy-file-path-and-position", [&] { copyFilePath( true ); } );
-	mDoc->setCommand( "find-replace", [&] { showFindReplace(); } );
-	mDoc->setCommand( "open-context-menu", [&] { createContextMenu(); } );
+	mDoc->setCommand( "move-to-previous-line", [this] { moveToPreviousLine(); } );
+	mDoc->setCommand( "move-to-next-line", [this] { moveToNextLine(); } );
+	mDoc->setCommand( "select-to-previous-line", [this] { selectToPreviousLine(); } );
+	mDoc->setCommand( "select-to-next-line", [this] { selectToNextLine(); } );
+	mDoc->setCommand( "move-scroll-up", [this] { moveScrollUp(); } );
+	mDoc->setCommand( "move-scroll-down", [this] { moveScrollDown(); } );
+	mDoc->setCommand( "indent", [this] { indent(); } );
+	mDoc->setCommand( "unindent", [this] { unindent(); } );
+	mDoc->setCommand( "copy", [this] { copy(); } );
+	mDoc->setCommand( "cut", [this] { cut(); } );
+	mDoc->setCommand( "paste", [this] { paste(); } );
+	mDoc->setCommand( "font-size-grow", [this] { fontSizeGrow(); } );
+	mDoc->setCommand( "font-size-shrink", [this] { fontSizeShrink(); } );
+	mDoc->setCommand( "font-size-reset", [this] { fontSizeReset(); } );
+	mDoc->setCommand( "lock", [this] { setLocked( true ); } );
+	mDoc->setCommand( "unlock", [this] { setLocked( false ); } );
+	mDoc->setCommand( "lock-toggle", [this] { setLocked( !isLocked() ); } );
+	mDoc->setCommand( "open-containing-folder", [this] { openContainingFolder(); } );
+	mDoc->setCommand( "copy-containing-folder-path", [this] { copyContainingFolderPath(); } );
+	mDoc->setCommand( "copy-file-path", [this] { copyFilePath(); } );
+	mDoc->setCommand( "copy-file-path-and-position", [this] { copyFilePath( true ); } );
+	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
+	mDoc->setCommand( "open-context-menu", [this] { createContextMenu(); } );
 	mUnlockedCmd.insert( { "copy", "select-all" } );
 }
 

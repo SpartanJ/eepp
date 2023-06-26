@@ -162,7 +162,7 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 
 		if ( !mSkipResourceLoad ) {
 			mIsLoading = true;
-			mRL.load( [&]( ResourceLoader* ) {
+			mRL.load( [this]( ResourceLoader* ) {
 				if ( !mLoaded ) {
 					createTextureRegions();
 				}

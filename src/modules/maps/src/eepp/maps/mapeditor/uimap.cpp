@@ -50,7 +50,7 @@ UIMap::UIMap( UITheme* Theme, TileMap* Map ) :
 
 	onUpdateScreenPos();
 
-	addEventListener( Event::OnUpdateScreenPosition, [&]( const Event* ) { onUpdateScreenPos(); } );
+	on( Event::OnUpdateScreenPosition, [this]( const Event* ) { onUpdateScreenPos(); } );
 
 	getUIStyle()->setDisableAnimations( false );
 }

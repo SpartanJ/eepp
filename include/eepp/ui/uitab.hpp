@@ -17,6 +17,8 @@ class EE_API UITab : public UISelectButton {
 
 	void setOwnedWidget( Node* ownedWidget );
 
+	void setTabSelected();
+
 	virtual ~UITab();
 
 	virtual Uint32 getType() const;

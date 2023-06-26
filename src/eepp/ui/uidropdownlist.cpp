@@ -47,7 +47,7 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 								cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::OnClear, cb::Make1( this, &UIDropDownList::onWidgetClear ) );
-	mListBox->addEventListener( Event::OnClose, [&]( const Event* ) { mListBox = nullptr; } );
+	mListBox->addEventListener( Event::OnClose, [this]( const Event* ) { mListBox = nullptr; } );
 	mListBox->addEventListener( Event::OnSelectionChanged, [this]( auto ) {
 		if ( !mListBox->hasSelection() )
 			mListBox->setSelected( 0 );

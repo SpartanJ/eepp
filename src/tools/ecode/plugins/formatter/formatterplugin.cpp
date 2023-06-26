@@ -1,11 +1,11 @@
 #include "formatterplugin.hpp"
-#include "../../scopedop.hpp"
 #include "eepp/system/md5.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/process.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -43,7 +43,7 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 #endif
 	}
-	mManager->subscribeMessages( this, [&]( const PluginMessage& msg ) -> PluginRequestHandle {
+	mManager->subscribeMessages( this, [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 		return processMessage( msg );
 	} );
 }
@@ -54,7 +54,7 @@ FormatterPlugin::~FormatterPlugin() {
 
 	if ( mWorkersCount != 0 ) {
 		std::unique_lock<std::mutex> lock( mWorkMutex );
-		mWorkerCondition.wait( lock, [&]() { return mWorkersCount <= 0; } );
+		mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
 	}
 
 	for ( auto editor : mEditors ) {
@@ -84,7 +84,7 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 			tryRequestCapabilities( editor->getDocumentRef() );
 		} ) );
 
-	listeners.push_back( editor->addEventListener( Event::OnDocumentSave, [&](
+	listeners.push_back( editor->addEventListener( Event::OnDocumentSave, [this](
 																			  const Event* event ) {
 		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
 			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -245,9 +245,10 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 }
 
 void FormatterPlugin::load( PluginManager* pluginManager ) {
-	pluginManager->subscribeMessages( this, [&]( const auto& notification ) -> PluginRequestHandle {
-		return processMessage( notification );
-	} );
+	pluginManager->subscribeMessages( this,
+									  [this]( const auto& notification ) -> PluginRequestHandle {
+										  return processMessage( notification );
+									  } );
 	registerNativeFormatters();
 
 	std::vector<std::string> paths;
@@ -321,11 +322,11 @@ FormatterPlugin::getFormatterForLang( const std::string& lang,
 
 void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 	ScopedOp op(
-		[&]() {
+		[this]() {
 			mWorkMutex.lock();
 			mWorkersCount++;
 		},
-		[&]() {
+		[this]() {
 			mWorkersCount--;
 			mWorkMutex.unlock();
 			mWorkerCondition.notify_all();
@@ -376,7 +377,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 					doc->resetCursor();
 					doc->selectAll();
 					doc->setRunningTransaction( true );
-					doc->textInput( data );
+					doc->textInput( data, false );
 					doc->setSelection( pos );
 					editor->setScroll( scroll );
 					if ( mAutoFormatOnSave ) {
@@ -413,7 +414,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			doc->resetCursor();
 			doc->selectAll();
 			doc->setRunningTransaction( true );
-			doc->textInput( res.result );
+			doc->textInput( res.result, false );
 			doc->setSelection( pos );
 			editor->setScroll( scroll );
 			doc->setRunningTransaction( false );
@@ -462,7 +463,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 					doc->resetCursor();
 					doc->selectAll();
 					doc->setRunningTransaction( true );
-					doc->textInput( data );
+					doc->textInput( data, false );
 					doc->setSelection( pos );
 					editor->setScroll( scroll );
 					doc->setRunningTransaction( false );

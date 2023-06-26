@@ -17,13 +17,14 @@ UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButto
 	mDropDownList->setTextSelection( true );
 	mDropDownList->addEventListener( Event::OnPaddingChange,
 									 [this]( const Event* ) { onPaddingChange(); } );
-	mDropDownList->addEventListener( Event::OnSizeChange, [&]( const Event* ) { onSizeChange(); } );
+	mDropDownList->addEventListener( Event::OnSizeChange,
+									 [this]( const Event* ) { onSizeChange(); } );
 
 	mButton = UIWidget::NewWithTag( "combobox::button" );
 	mButton->setParent( this );
 	mButton->setVisible( true );
 	mButton->setEnabled( true );
-	mButton->addEventListener( Event::OnSizeChange, [&]( const Event* ) { onSizeChange(); } );
+	mButton->addEventListener( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
 
 	applyDefaultTheme();
 }

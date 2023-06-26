@@ -74,7 +74,7 @@ class DocSearchController {
 
 	void refreshHighlight();
   protected:
-	UICodeEditorSplitter* mEditorSplitter{ nullptr };
+	UICodeEditorSplitter* mSplitter{ nullptr };
 	UITextInput* mFindInput{ nullptr };
 	UITextInput* mReplaceInput{ nullptr };
 	UISearchBar* mSearchBarLayout{ nullptr };

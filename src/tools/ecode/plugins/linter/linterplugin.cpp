@@ -1,5 +1,4 @@
 ﻿#include "linterplugin.hpp"
-#include "../../scopedop.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -8,6 +7,7 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/process.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <nlohmann/json.hpp>
@@ -50,7 +50,7 @@ LinterPlugin::~LinterPlugin() {
 
 	if ( mWorkersCount != 0 ) {
 		std::unique_lock<std::mutex> lock( mWorkMutex );
-		mWorkerCondition.wait( lock, [&]() { return mWorkersCount <= 0; } );
+		mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
 	}
 
 	for ( const auto& editor : mEditors ) {
@@ -411,9 +411,10 @@ TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
 }
 
 void LinterPlugin::load( PluginManager* pluginManager ) {
-	pluginManager->subscribeMessages( this, [&]( const auto& notification ) -> PluginRequestHandle {
-		return processMessage( notification );
-	} );
+	pluginManager->subscribeMessages( this,
+									  [this]( const auto& notification ) -> PluginRequestHandle {
+										  return processMessage( notification );
+									  } );
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/linters.json" );
 	if ( FileSystem::fileExists( path ) )
@@ -446,14 +447,14 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 	std::vector<Uint32> listeners;
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [&]( const Event* event ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this]( const Event* event ) {
 			Lock l( mDocMutex );
 			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 			setDocDirty( docEvent->getDoc() );
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentClosed, [&]( const Event* event ) {
+		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
 			Lock l( mDocMutex );
 			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 			TextDocument* doc = docEvent->getDoc();
@@ -592,11 +593,11 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 		return;
 
 	ScopedOp op(
-		[&]() {
+		[this]() {
 			mWorkMutex.lock();
 			mWorkersCount++;
 		},
-		[&]() {
+		[this]() {
 			mWorkersCount--;
 			mWorkMutex.unlock();
 			mWorkerCondition.notify_all();
@@ -966,6 +967,7 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 
 	if ( matched != nullptr ) {
 		editor->goToLine( matched->range.start() );
+		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
 	} else {
 		if ( mGoToIgnoreWarnings ) {
 			for ( const auto& m : matches ) {
@@ -973,6 +975,7 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 					for ( const auto& lm : m.second ) {
 						if ( lm.type == LinterType::Error ) {
 							editor->goToLine( lm.range.start() );
+							mManager->getSplitter()->addCurrentPositionToNavigationHistory();
 							break;
 						}
 					}
@@ -982,6 +985,7 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 			}
 		} else if ( matches.begin()->second.front().range.start().line() != pos.line() ) {
 			editor->goToLine( matches.begin()->second.front().range.start() );
+			mManager->getSplitter()->addCurrentPositionToNavigationHistory();
 		}
 	}
 }
@@ -1019,6 +1023,7 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 
 	if ( matched != nullptr ) {
 		editor->goToLine( matched->range.start() );
+		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
 	} else {
 		if ( mGoToIgnoreWarnings ) {
 			for ( auto m = matches.rbegin(); m != matches.rend(); ++m ) {
@@ -1026,6 +1031,7 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 					for ( const auto& lm : m->second ) {
 						if ( lm.type == LinterType::Error ) {
 							editor->goToLine( lm.range.start() );
+							mManager->getSplitter()->addCurrentPositionToNavigationHistory();
 							break;
 						}
 					}
@@ -1035,6 +1041,7 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 			}
 		} else if ( matches.rbegin()->second.front().range.start().line() != pos.line() ) {
 			editor->goToLine( matches.rbegin()->second.front().range.start() );
+			mManager->getSplitter()->addCurrentPositionToNavigationHistory();
 		}
 	}
 }

@@ -40,7 +40,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
 			->setParent( vlay )
 			->addEventListener( Event::OnPressEnter,
-								[&]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
+								[this]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
 	}
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();

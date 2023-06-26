@@ -263,6 +263,7 @@
 ../../include/eepp/system/resourceloader.hpp
 ../../include/eepp/system/resourcemanager.hpp
 ../../include/eepp/system/scopedbuffer.hpp
+../../include/eepp/system/scopedop.hpp
 ../../include/eepp/system/singleton.hpp
 ../../include/eepp/system/sys.hpp
 ../../include/eepp/system/thread.hpp
@@ -1206,7 +1207,6 @@
 ../../src/tools/ecode/projectdirectorytree.hpp
 ../../src/tools/ecode/projectsearch.cpp
 ../../src/tools/ecode/projectsearch.hpp
-../../src/tools/ecode/scopedop.hpp
 ../../src/tools/ecode/settingsmenu.cpp
 ../../src/tools/ecode/settingsmenu.hpp
 ../../src/tools/ecode/statusbuildoutputcontroller.cpp

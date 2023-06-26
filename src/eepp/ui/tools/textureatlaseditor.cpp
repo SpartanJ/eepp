@@ -456,7 +456,7 @@ void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader* textureAtlasL
 	mTextureAtlasLoader = textureAtlasLoader;
 
 	if ( mTextureAtlasLoader->isLoaded() ) {
-		mUIContainer->runOnMainThread( [&] { updateWidgets(); } );
+		mUIContainer->runOnMainThread( [this] { updateWidgets(); } );
 	}
 }
 

@@ -472,22 +472,22 @@ void UIConsole::draw() {
 
 // CMDS
 void UIConsole::createDefaultCommands() {
-	addCommand( "clear", [&]( const auto& ) { cmdClear(); } );
-	addCommand( "quit", [&]( const auto& ) { getUISceneNode()->getWindow()->close(); } );
-	addCommand( "cmdlist", [&]( const auto& ) { cmdCmdList(); } );
-	addCommand( "help", [&]( const auto& ) { cmdCmdList(); } );
-	addCommand( "showcursor", [&]( const auto& params ) { cmdShowCursor( params ); } );
-	addCommand( "setfpslimit", [&]( const auto& params ) { cmdFrameLimit( params ); } );
-	addCommand( "getlog", [&]( const auto& ) { cmdGetLog(); } );
-	addCommand( "setgamma", [&]( const auto& params ) { cmdSetGamma( params ); } );
-	addCommand( "setvolume", [&]( const auto& params ) { cmdSetVolume( params ); } );
-	addCommand( "getgpuextensions", [&]( const auto& ) { cmdGetGpuExtensions(); } );
-	addCommand( "dir", [&]( const auto& params ) { cmdDir( params ); } );
-	addCommand( "ls", [&]( const auto& params ) { cmdDir( params ); } );
-	addCommand( "showfps", [&]( const auto& params ) { cmdShowFps( params ); } );
-	addCommand( "gettexturememory", [&]( const auto& ) { cmdGetTextureMemory(); } );
-	addCommand( "hide", [&]( const auto& ) { hide(); } );
-	addCommand( "grep", [&]( const auto& params ) { cmdGrep( params ); } );
+	addCommand( "clear", [this]( const auto& ) { cmdClear(); } );
+	addCommand( "quit", [this]( const auto& ) { getUISceneNode()->getWindow()->close(); } );
+	addCommand( "cmdlist", [this]( const auto& ) { cmdCmdList(); } );
+	addCommand( "help", [this]( const auto& ) { cmdCmdList(); } );
+	addCommand( "showcursor", [this]( const auto& params ) { cmdShowCursor( params ); } );
+	addCommand( "setfpslimit", [this]( const auto& params ) { cmdFrameLimit( params ); } );
+	addCommand( "getlog", [this]( const auto& ) { cmdGetLog(); } );
+	addCommand( "setgamma", [this]( const auto& params ) { cmdSetGamma( params ); } );
+	addCommand( "setvolume", [this]( const auto& params ) { cmdSetVolume( params ); } );
+	addCommand( "getgpuextensions", [this]( const auto& ) { cmdGetGpuExtensions(); } );
+	addCommand( "dir", [this]( const auto& params ) { cmdDir( params ); } );
+	addCommand( "ls", [this]( const auto& params ) { cmdDir( params ); } );
+	addCommand( "showfps", [this]( const auto& params ) { cmdShowFps( params ); } );
+	addCommand( "gettexturememory", [this]( const auto& ) { cmdGetTextureMemory(); } );
+	addCommand( "hide", [this]( const auto& ) { hide(); } );
+	addCommand( "grep", [this]( const auto& params ) { cmdGrep( params ); } );
 }
 
 void UIConsole::cmdClear() {
@@ -837,10 +837,10 @@ Uint32 UIConsole::onPressEnter() {
 	return 0;
 }
 void UIConsole::registerCommands() {
-	mDoc.setCommand( "copy", [&] { copy(); } );
-	mDoc.setCommand( "cut", [&] { cut(); } );
-	mDoc.setCommand( "paste", [&] { paste(); } );
-	mDoc.setCommand( "press-enter", [&] { onPressEnter(); } );
+	mDoc.setCommand( "copy", [this] { copy(); } );
+	mDoc.setCommand( "cut", [this] { cut(); } );
+	mDoc.setCommand( "paste", [this] { paste(); } );
+	mDoc.setCommand( "press-enter", [this] { onPressEnter(); } );
 }
 
 void UIConsole::registerKeybindings() {
@@ -1247,7 +1247,7 @@ void UIConsole::show() {
 	auto* spawn = Actions::Spawn::New(
 		{ Actions::FadeIn::New( Seconds( .25f ) ),
 		  Actions::Move::New( { 0, -getSize().getHeight() }, { 0, 0 }, Seconds( .25f ) ) } );
-	runAction( Actions::Sequence::New( { spawn, Actions::Runnable::New( [&] {
+	runAction( Actions::Sequence::New( { spawn, Actions::Runnable::New( [this] {
 											 setVisible( true );
 											 setEnabled( true );
 											 mFading = false;
@@ -1270,7 +1270,7 @@ void UIConsole::hide() {
 	auto* spawn = Actions::Spawn::New(
 		{ Actions::FadeOut::New( Seconds( .25f ) ),
 		  Actions::Move::New( { 0, 0 }, { 0, -getSize().getHeight() }, Seconds( .25f ) ) } );
-	runAction( Actions::Sequence::New( { spawn, Actions::Runnable::New( [&] {
+	runAction( Actions::Sequence::New( { spawn, Actions::Runnable::New( [this] {
 											 setVisible( false );
 											 setEnabled( false );
 											 mHiding = false;

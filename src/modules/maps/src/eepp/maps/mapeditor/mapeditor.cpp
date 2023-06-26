@@ -158,10 +158,11 @@ void MapEditor::createMenuBar() {
 			  PU3->getUISceneNode()->findIconDrawable( "zoom-out", PixelDensity::dpToPxI( 16 ) ) );
 	PU3->add( "Normal Size", PU3->getUISceneNode()->findIconDrawable(
 								 "zoom-original", PixelDensity::dpToPxI( 16 ) ) );
-	addShortcut( { KEY_KP_PLUS, KeyMod::getDefaultModifier() }, "zoom-in", [&] { zoomIn(); } );
-	addShortcut( { KEY_KP_MINUS, KeyMod::getDefaultModifier() }, "zoom-out", [&] { zoomOut(); } );
+	addShortcut( { KEY_KP_PLUS, KeyMod::getDefaultModifier() }, "zoom-in", [this] { zoomIn(); } );
+	addShortcut( { KEY_KP_MINUS, KeyMod::getDefaultModifier() }, "zoom-out",
+				 [this] { zoomOut(); } );
 	addShortcut( { KEY_0, KeyMod::getDefaultModifier() }, "zoom-reset",
-				 [&] { mUIMap->Map()->setScale( 1 ); } );
+				 [this] { mUIMap->Map()->setScale( 1 ); } );
 
 	PU3->addSeparator();
 

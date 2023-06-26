@@ -54,7 +54,7 @@ Drawable* UIGlyphIcon::getSize( const int& size ) const {
 UIGlyphIcon::UIGlyphIcon( const std::string& name, FontTrueType* font, const Uint32& codePoint ) :
 	UIIcon( name ), mFont( font ), mCodePoint( codePoint ) {
 	eeASSERT( mFont );
-	mCloseCb = mFont->pushFontEventCallback( [&]( Uint32, Font::Event event, Font* ) {
+	mCloseCb = mFont->pushFontEventCallback( [this]( Uint32, Font::Event event, Font* ) {
 		if ( event == Font::Event::Unload )
 			mFont = nullptr;
 	} );

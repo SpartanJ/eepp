@@ -45,6 +45,7 @@ class EE_API UICodeEditorSplitter {
 	static std::vector<std::string> getUnlockedCommands();
 
 	static UICodeEditorSplitter* New( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
+									  std::shared_ptr<ThreadPool> = nullptr,
 									  const std::vector<SyntaxColorScheme>& colorSchemes = {},
 									  const std::string& initColorScheme = "" );
 
@@ -72,6 +73,8 @@ class EE_API UICodeEditorSplitter {
 	void setCurrentEditor( UICodeEditor* editor );
 
 	UITabWidget* tabWidgetFromEditor( UICodeEditor* editor ) const;
+
+	UITab* tabFromEditor( UICodeEditor* editor ) const;
 
 	UITabWidget* tabWidgetFromWidget( UIWidget* widget ) const;
 
@@ -103,21 +106,19 @@ class EE_API UICodeEditorSplitter {
 
 	bool loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = nullptr );
 
-	void loadAsyncFileFromPath( const std::string& path, std::shared_ptr<ThreadPool> pool,
-								UICodeEditor* codeEditor = nullptr,
+	void loadAsyncFileFromPath( const std::string& path, UICodeEditor* codeEditor = nullptr,
 								std::function<void( UICodeEditor*, const std::string& )> onLoaded =
 									std::function<void( UICodeEditor*, const std::string& )>() );
 
 	std::pair<UITab*, UICodeEditor*> loadFileFromPathInNewTab( const std::string& path );
 
 	void loadAsyncFileFromPathInNewTab(
-		const std::string& path, std::shared_ptr<ThreadPool> pool,
-		std::function<void( UICodeEditor*, const std::string& )> onLoaded =
-			std::function<void( UICodeEditor*, const std::string& )>() );
+		const std::string& path, std::function<void( UICodeEditor*, const std::string& )> onLoaded =
+									 std::function<void( UICodeEditor*, const std::string& )>() );
 
 	void loadAsyncFileFromPathInNewTab(
-		const std::string& path, std::shared_ptr<ThreadPool> pool,
-		std::function<void( UICodeEditor*, const std::string& )> onLoaded, UITabWidget* tabWidget );
+		const std::string& path, std::function<void( UICodeEditor*, const std::string& )> onLoaded,
+		UITabWidget* tabWidget );
 
 	void removeUnusedTab( UITabWidget* tabWidge, bool destroyOwnedNode = true,
 						  bool immediateCloset = true );
@@ -215,10 +216,10 @@ class EE_API UICodeEditorSplitter {
 
 	// T must implement setCommand( const std::string& command, const std::function<void()>& func )
 	template <typename T> void registerSplitterCommands( T& t ) {
-		t.setCommand( "switch-to-previous-split", [&] { switchPreviousSplit( mCurWidget ); } );
-		t.setCommand( "switch-to-next-split", [&] { switchNextSplit( mCurWidget ); } );
-		t.setCommand( "close-tab", [&] { tryTabClose( mCurWidget ); } );
-		t.setCommand( "create-new", [&] {
+		t.setCommand( "switch-to-previous-split", [this] { switchPreviousSplit( mCurWidget ); } );
+		t.setCommand( "switch-to-next-split", [this] { switchNextSplit( mCurWidget ); } );
+		t.setCommand( "close-tab", [this] { tryTabClose( mCurWidget ); } );
+		t.setCommand( "create-new", [this] {
 			auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
 			if ( d.first != nullptr && d.second != nullptr ) {
 				d.first->getTabWidget()->setTabSelected( d.first );
@@ -228,7 +229,7 @@ class EE_API UICodeEditorSplitter {
 			if ( d.first == nullptr || d.second == nullptr )
 				Log::error( "Couldn't createCodeEditorInTabWidget in create-new command" );
 		} );
-		t.setCommand( "next-tab", [&] {
+		t.setCommand( "next-tab", [this] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 			if ( tabWidget && tabWidget->getTabCount() > 1 ) {
 				UITab* tab = (UITab*)mCurWidget->getData();
@@ -236,7 +237,7 @@ class EE_API UICodeEditorSplitter {
 				switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
 			}
 		} );
-		t.setCommand( "previous-tab", [&] {
+		t.setCommand( "previous-tab", [this] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 			if ( tabWidget && tabWidget->getTabCount() > 1 ) {
 				UITab* tab = (UITab*)mCurWidget->getData();
@@ -249,31 +250,31 @@ class EE_API UICodeEditorSplitter {
 		for ( int i = 1; i <= 10; i++ )
 			t.setCommand( String::format( "switch-to-tab-%d", i ),
 						  [&, i] { switchToTab( i - 1 ); } );
-		t.setCommand( "switch-to-first-tab", [&] {
+		t.setCommand( "switch-to-first-tab", [this] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 			if ( tabWidget && tabWidget->getTabCount() ) {
 				switchToTab( 0 );
 			}
 		} );
-		t.setCommand( "switch-to-last-tab", [&] {
+		t.setCommand( "switch-to-last-tab", [this] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 			if ( tabWidget && tabWidget->getTabCount() ) {
 				switchToTab( tabWidget->getTabCount() - 1 );
 			}
 		} );
-		t.setCommand( "split-right", [&] {
+		t.setCommand( "split-right", [this] {
 			split( SplitDirection::Right, mCurWidget, curEditorExistsAndFocused() );
 		} );
-		t.setCommand( "split-bottom", [&] {
+		t.setCommand( "split-bottom", [this] {
 			split( SplitDirection::Bottom, mCurWidget, curEditorExistsAndFocused() );
 		} );
-		t.setCommand( "split-left", [&] {
+		t.setCommand( "split-left", [this] {
 			split( SplitDirection::Left, mCurWidget, curEditorExistsAndFocused() );
 		} );
-		t.setCommand( "split-top", [&] {
+		t.setCommand( "split-top", [this] {
 			split( SplitDirection::Top, mCurWidget, curEditorExistsAndFocused() );
 		} );
-		t.setCommand( "split-swap", [&] {
+		t.setCommand( "split-swap", [this] {
 			if ( UISplitter* splitter = splitterFromWidget( mCurWidget ) )
 				splitter->swap();
 		} );
@@ -287,8 +288,25 @@ class EE_API UICodeEditorSplitter {
 
 	UIOrientation getMainSplitOrientation() const;
 
+	void addCurrentPositionToNavigationHistory();
+
+	void addEditorPositionToNavigationHistory( UICodeEditor* editor );
+
+	void updateCurrentPositionInNavigationHistory();
+
+	void goBackInNavigationHistory();
+
+	void goForwardInNavigationHistory();
+
+	void clearNavigationHistory();
+
+	std::shared_ptr<ThreadPool> getThreadPool() const;
+
+	void setThreadPool( const std::shared_ptr<ThreadPool>& threadPool );
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
+	std::shared_ptr<ThreadPool> mThreadPool;
 	UICodeEditor* mCurEditor{ nullptr };
 	UIWidget* mCurWidget{ nullptr };
 	std::map<std::string, SyntaxColorScheme> mColorSchemes;
@@ -301,8 +319,16 @@ class EE_API UICodeEditorSplitter {
 	UICodeEditor* mAboutToAddEditor{ nullptr };
 	UIMessageBox* mTryCloseMsgBox{ nullptr };
 	Mutex mTabWidgetMutex;
+	struct NavigationRecord {
+		std::string path;
+		TextPosition pos;
+	};
+	size_t mNavigationHistoryMaxSize{ 100 };
+	std::vector<NavigationRecord> mNavigationHistory;
+	size_t mNavigationHistoryPos{ std::numeric_limits<size_t>::max() };
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
+						  std::shared_ptr<ThreadPool> threadPool,
 						  const std::vector<SyntaxColorScheme>& colorSchemes,
 						  const std::string& initColorScheme );
 

@@ -842,8 +842,9 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		return properties;
 	};
 
-	mShorthandParsers["background"] = [&]( const ShorthandDefinition* shorthand,
-										   std::string value ) -> std::vector<StyleSheetProperty> {
+	mShorthandParsers["background"] =
+		[this]( const ShorthandDefinition* shorthand,
+				std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
 		if ( value.empty() || "none" == value )
 			return {};
@@ -888,8 +889,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		return properties;
 	};
 
-	mShorthandParsers["border"] = [&]( const ShorthandDefinition* shorthand,
-									   std::string value ) -> std::vector<StyleSheetProperty> {
+	mShorthandParsers["border"] = [this]( const ShorthandDefinition* shorthand,
+										  std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
 		if ( value.empty() || "none" == value )
 			return {};
@@ -933,8 +934,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	};
 
 	mShorthandParsers["color-vector2"] =
-		[&]( const ShorthandDefinition* shorthand,
-			 std::string value ) -> std::vector<StyleSheetProperty> {
+		[]( const ShorthandDefinition* shorthand,
+			std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
 		if ( value.empty() || "none" == value )
 			return {};

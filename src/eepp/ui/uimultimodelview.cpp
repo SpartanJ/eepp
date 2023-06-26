@@ -11,15 +11,15 @@ UIMultiModelView* UIMultiModelView::NewWithTag( const std::string& tag ) {
 }
 
 UIMultiModelView::UIMultiModelView( const std::string& tag ) : UIStackWidget( tag ) {
-	auto modelEvent = [&]( const Event* event ) {
+	auto modelEvent = [this]( const Event* event ) {
 		const ModelEvent* mevent = static_cast<const ModelEvent*>( event );
 		sendEvent( mevent );
 	};
-	auto selectionChange = [&]() {
+	auto selectionChange = [this]() {
 		if ( mOnSelectionChange )
 			mOnSelectionChange();
 	};
-	auto selection = [&]( const ModelIndex& index ) {
+	auto selection = [this]( const ModelIndex& index ) {
 		if ( mOnSelection )
 			mOnSelection( index );
 	};

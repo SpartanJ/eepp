@@ -98,6 +98,7 @@ class EE_API Event {
 		OnWindowAdded,
 		OnWindowRemoved,
 		OnItemValueChange,
+		OnCursorPosChangeInteresting,
 		OnCopy,
 		NoEvent = eeINDEX_NOT_FOUND
 	};

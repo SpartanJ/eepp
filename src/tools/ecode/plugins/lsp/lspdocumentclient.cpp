@@ -57,7 +57,7 @@ void LSPDocumentClient::onDocumentLineCountChange( const size_t& /*lastCount*/,
 void LSPDocumentClient::onDocumentLineChanged( const Int64& /*lineIndex*/ ) {}
 
 void LSPDocumentClient::onDocumentSaved( TextDocument* ) {
-	mServer->getThreadPool()->run( [&]() { mServer->didSave( mDoc ); } );
+	mServer->getThreadPool()->run( [this]() { mServer->didSave( mDoc ); } );
 }
 
 void LSPDocumentClient::onDocumentClosed( TextDocument* ) {

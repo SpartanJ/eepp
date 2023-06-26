@@ -89,7 +89,7 @@ void RendererGL3::init() {
 		mShaders[EEGL3_SHADER_BASE] =
 			ShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		mShaders[EEGL3_SHADER_BASE]->setReloadCb(
-			[&]( ShaderProgram* sp ) { reloadShader( sp ); } );
+			[this]( ShaderProgram* sp ) { reloadShader( sp ); } );
 
 		Shader::ensure( true );
 

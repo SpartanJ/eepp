@@ -94,9 +94,8 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
-	mButtonNewFolder->addEventListener( Event::MouseClick, [&]( const Event* event ) {
-		const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-		if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+	mButtonNewFolder->addEventListener( Event::MouseClick, [this]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
 			UIMessageBox* msgBox = UIMessageBox::New(
 				UIMessageBox::INPUT,
 				getTranslatorString( "@string/uifiledialog_enter_new_folder_name",
@@ -105,7 +104,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 												   "Create new folder" ) );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->show();
-			msgBox->addEventListener( Event::OnConfirm, [&, msgBox]( const Event* ) {
+			msgBox->addEventListener( Event::OnConfirm, [this, msgBox]( const Event* ) {
 				auto folderName( msgBox->getTextInput()->getText() );
 				auto newFolderPath( getCurPath() + folderName );
 				if ( !FileSystem::fileExists( newFolderPath ) &&
@@ -143,9 +142,8 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mMultiView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) );
-	mMultiView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* kevent = reinterpret_cast<const KeyEvent*>( event );
-		if ( kevent->getKeyCode() == KEY_BACKSPACE )
+	mMultiView->addEventListener( Event::KeyDown, [this]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() == KEY_BACKSPACE )
 			goFolderUp();
 	} );
 	mMultiView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
@@ -167,7 +165,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 			}
 		}
 	} );
-	mMultiView->setOnSelectionChange( [&] {
+	mMultiView->setOnSelectionChange( [this] {
 		if ( mMultiView->getSelection().isEmpty() || mDisplayingDrives )
 			return;
 		const FileSystemModel::Node* node = getSelectionNode();

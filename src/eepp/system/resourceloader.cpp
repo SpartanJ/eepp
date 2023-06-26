@@ -109,7 +109,7 @@ void ResourceLoader::taskRunner() {
 		auto pool = ThreadPool::createUnique( eemin( mThreads, (Uint32)mTasks.size() ) );
 
 		for ( auto& task : mTasks ) {
-			pool->run( task, [&]( const auto& ) { mTotalLoaded++; } );
+			pool->run( task, [this]( const auto& ) { mTotalLoaded++; } );
 		}
 	}
 

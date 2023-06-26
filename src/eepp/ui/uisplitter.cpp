@@ -18,22 +18,21 @@ UISplitter::UISplitter() :
 	mFlags |= UI_OWNS_CHILDS_POSITION;
 	mSplitter = UIWidget::NewWithTag( "splitter::separator" );
 	mSplitter->setDragEnabled( true );
-	mSplitter->addEventListener( Event::OnDragStart, [&]( const Event* ) {
-		mSplitter->pushState( UIState::StateSelected );
-	} );
-	mSplitter->addEventListener(
-		Event::OnDragStop, [&]( const Event* ) { mSplitter->popState( UIState::StateSelected ); } );
+	mSplitter->on( Event::OnDragStart,
+				   [this]( const Event* ) { mSplitter->pushState( UIState::StateSelected ); } );
+	mSplitter->on( Event::OnDragStop,
+				   [this]( const Event* ) { mSplitter->popState( UIState::StateSelected ); } );
 	mSplitter->setParent( this );
 	mSplitter->setMinWidth( 4 );
 	mSplitter->setMinHeight( 4 );
-	mSplitter->addEventListener( Event::OnSizeChange, [&]( const Event* ) { setLayoutDirty(); } );
-	mSplitter->addEventListener( Event::MouseOver, [&]( const Event* ) {
+	mSplitter->on( Event::OnSizeChange, [this]( const Event* ) { setLayoutDirty(); } );
+	mSplitter->on( Event::MouseOver, [this]( const Event* ) {
 		getUISceneNode()->setCursor( mOrientation == UIOrientation::Horizontal ? Cursor::SizeWE
 																			   : Cursor::SizeNS );
 	} );
-	mSplitter->addEventListener(
-		Event::MouseLeave, [&]( const Event* ) { getUISceneNode()->setCursor( Cursor::Arrow ); } );
-	mSplitter->addEventListener( Event::OnPositionChange, [&]( const Event* ) {
+	mSplitter->on( Event::MouseLeave,
+				   [this]( const Event* ) { getUISceneNode()->setCursor( Cursor::Arrow ); } );
+	mSplitter->on( Event::OnPositionChange, [this]( const Event* ) {
 		if ( mSplitter->isDragging() && !mDirtyLayout )
 			updateFromDrag();
 	} );

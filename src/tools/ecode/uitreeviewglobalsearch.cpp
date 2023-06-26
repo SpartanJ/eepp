@@ -1,5 +1,5 @@
-#include "projectsearch.hpp"
 #include "uitreeviewglobalsearch.hpp"
+#include "projectsearch.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
@@ -79,7 +79,7 @@ void UITreeViewCellGlobalSearch::toggleSelected() {
 }
 
 std::function<UITextView*( UIPushButton* )> UITreeViewCellGlobalSearch::getCheckBoxFn() {
-	return [&]( UIPushButton* ) -> UITextView* {
+	return [this]( UIPushButton* ) -> UITextView* {
 		UICheckBox* chk = UICheckBox::New();
 		addEventListener( Event::MouseClick, [&, chk]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );

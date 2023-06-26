@@ -149,23 +149,30 @@ void LSPClientServerManager::goToLocation( const LSPLocation& loc ) {
 	UICodeEditorSplitter* splitter = mPlugin->getManager()->getSplitter();
 	if ( nullptr == splitter )
 		return;
-	splitter->getUISceneNode()->runOnMainThread( [this, splitter, loc]() {
+	splitter->getUISceneNode()->runOnMainThread( [splitter, loc]() {
 		UITab* tab = splitter->isDocumentOpen( loc.uri );
 		if ( !tab ) {
 			std::string path( loc.uri.getFSPath() );
 			FileInfo fileInfo( path );
 			if ( fileInfo.exists() && fileInfo.isRegularFile() ) {
+				splitter->addCurrentPositionToNavigationHistory();
 				splitter->loadAsyncFileFromPathInNewTab(
-					path, mThreadPool, [loc]( UICodeEditor* editor, auto ) {
-						if ( loc.range.isValid() )
+					path, [loc, splitter]( UICodeEditor* editor, auto ) {
+						if ( loc.range.isValid() ) {
 							editor->goToLine( loc.range.start() );
+							splitter->addEditorPositionToNavigationHistory( editor );
+						}
 						editor->setFocus();
 					} );
 			}
 		} else {
-			tab->getTabWidget()->setTabSelected( tab );
 			if ( loc.range.isValid() )
+				splitter->addCurrentPositionToNavigationHistory();
+			tab->getTabWidget()->setTabSelected( tab );
+			if ( loc.range.isValid() ) {
 				splitter->editorFromTab( tab )->goToLine( loc.range.start() );
+				splitter->addCurrentPositionToNavigationHistory();
+			}
 			splitter->editorFromTab( tab )->setFocus();
 		}
 	} );

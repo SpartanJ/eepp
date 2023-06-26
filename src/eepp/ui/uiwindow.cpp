@@ -89,7 +89,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 
 	applyDefaultTheme();
 
-	runOnMainThread( [&]() { onWindowReady(); } );
+	runOnMainThread( [this]() { onWindowReady(); } );
 
 	mUISceneNode->setIsLoading( loading );
 }
@@ -158,7 +158,7 @@ void UIWindow::updateWinFlags() {
 			mWindowDecoration->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
-		auto cb = [&]( const Event* ) { onSizeChange(); };
+		auto cb = [this]( const Event* ) { onSizeChange(); };
 
 		mWindowDecoration->setParent( this );
 		mWindowDecoration->setVisible( true );

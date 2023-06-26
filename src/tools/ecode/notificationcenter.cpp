@@ -5,7 +5,7 @@ namespace ecode {
 NotificationCenter::NotificationCenter( UILayout* layout, PluginManager* pluginManager ) :
 	mLayout( layout ), mPluginManager( pluginManager ) {
 	mPluginManager->subscribeMessages(
-		"notificationcenter", [&]( const PluginMessage& msg ) -> PluginRequestHandle {
+		"notificationcenter", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 			if ( !msg.isBroadcast() )
 				return {};
 			if ( msg.type == PluginMessageType::ShowMessage ) {

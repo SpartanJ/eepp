@@ -118,8 +118,9 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 	mApp( app ),
 	mCommandPalette( mApp->getThreadPool() ) {
 	mApp->getPluginManager()->subscribeMessages(
-		"universallocator",
-		[&]( const PluginMessage& msg ) -> PluginRequestHandle { return processResponse( msg ); } );
+		"universallocator", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
+			return processResponse( msg );
+		} );
 }
 
 void UniversalLocator::hideLocateBar() {
@@ -187,7 +188,7 @@ void UniversalLocator::updateCommandPaletteTable() {
 
 	if ( txt.size() > 1 ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ), 1000, [&]( auto res ) {
+		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ), 1000, [this]( auto res ) {
 			mUISceneNode->runOnMainThread( [&, res] {
 				mLocateTable->setModel( res );
 				mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
@@ -228,7 +229,7 @@ static bool isCommand( const std::string& filename ) {
 void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInput ) {
 	mLocateBarLayout = locateBar;
 	mLocateInput = locateInput;
-	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
+	auto addClickListener = [this]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
@@ -241,7 +242,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 	mLocateTable->setParent( mUISceneNode->getRoot() );
 	mLocateTable->setHeadersVisible( false );
 	mLocateTable->setVisible( false );
-	mLocateInput->addEventListener( Event::OnTextChanged, [&]( const Event* ) {
+	mLocateInput->addEventListener( Event::OnTextChanged, [this]( const Event* ) {
 		const String& inputTxt = mLocateInput->getText();
 		if ( mSplitter->curEditorExistsAndFocused() &&
 			 String::startsWith( inputTxt, String( "l " ) ) ) {
@@ -258,6 +259,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				}
 				if ( mSplitter->curEditorExistsAndFocused() ) {
 					mSplitter->getCurEditor()->goToLine( { line - 1, column } );
+					mSplitter->addCurrentPositionToNavigationHistory();
 				}
 				mLocateTable->setVisible( false );
 			}
@@ -274,15 +276,15 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 			updateFilesTable();
 		}
 	} );
-	mLocateInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
+	mLocateInput->addEventListener( Event::OnPressEnter, [this]( const Event* ) {
 		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
 		mLocateTable->forceKeyDown( keyEvent );
 	} );
-	mLocateInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+	mLocateInput->addEventListener( Event::KeyDown, [this]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		mLocateTable->forceKeyDown( *keyEvent );
 	} );
-	mLocateBarLayout->setCommand( "close-locatebar", [&] {
+	mLocateBarLayout->setCommand( "close-locatebar", [this] {
 		hideLocateBar();
 		if ( mSplitter->getCurWidget() )
 			mSplitter->getCurWidget()->setFocus();
@@ -290,13 +292,13 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 	mLocateBarLayout->getKeyBindings().addKeybindsString( {
 		{ "escape", "close-locatebar" },
 	} );
-	mLocateTable->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+	mLocateTable->addEventListener( Event::KeyDown, [this]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
 			mLocateBarLayout->execute( "close-locatebar" );
 	} );
 	addClickListener( mLocateBarLayout->find<UIWidget>( "locatebar_close" ), "close-locatebar" );
-	mLocateTable->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+	mLocateTable->addEventListener( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			// Keep it simple for now, command palette has 3 columns
@@ -364,6 +366,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 						tab->getTabWidget()->setTabSelected( tab );
 						UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 						editor->goToLine( range.start() );
+						mSplitter->addEditorPositionToNavigationHistory( editor );
 						mLocateBarLayout->execute( "close-locatebar" );
 					}
 				}
@@ -373,7 +376,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 }
 
 void UniversalLocator::updateLocateBar() {
-	mLocateBarLayout->runOnMainThread( [&] {
+	mLocateBarLayout->runOnMainThread( [this] {
 		Float width = eeceil( mLocateInput->getPixelsSize().getWidth() );
 		mLocateTable->setPixelsSize( width,
 									 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
@@ -411,7 +414,7 @@ void UniversalLocator::showBar() {
 	}
 
 	mLocateInput->addEventListener( Event::OnSizeChange,
-									[&]( const Event* ) { updateLocateBar(); } );
+									[this]( const Event* ) { updateLocateBar(); } );
 }
 
 void UniversalLocator::showLocateBar() {
@@ -528,15 +531,19 @@ void UniversalLocator::focusOrLoadFile( const std::string& path, const TextRange
 	if ( !tab ) {
 		FileInfo fileInfo( path );
 		if ( fileInfo.exists() && fileInfo.isRegularFile() )
-			mApp->loadFileFromPath( path, true, nullptr, [range]( UICodeEditor* editor, auto ) {
-				if ( range.isValid() )
-					editor->goToLine( range.start() );
-			} );
+			mApp->loadFileFromPath(
+				path, true, nullptr, [this, range]( UICodeEditor* editor, auto ) {
+					if ( range.isValid() ) {
+						editor->goToLine( range.start() );
+						mSplitter->addEditorPositionToNavigationHistory( editor );
+					}
+				} );
 	} else {
 		tab->getTabWidget()->setTabSelected( tab );
 		if ( range.isValid() ) {
 			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 			editor->goToLine( range.start() );
+			mSplitter->addEditorPositionToNavigationHistory( editor );
 		}
 	}
 }
@@ -645,9 +652,9 @@ void UniversalLocator::updateDocumentSymbol( const LSPSymbolInformationList& res
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 		mLocateTable->scrollToTop();
 	} else {
-		asyncFuzzyMatchTextDocumentSymbol( res, mCurDocQuery, 100, [&]( const auto model ) {
+		asyncFuzzyMatchTextDocumentSymbol( res, mCurDocQuery, 100, [this]( const auto model ) {
 			mTextDocumentSymbolModel = model;
-			mUISceneNode->runOnMainThread( [&] {
+			mUISceneNode->runOnMainThread( [this] {
 				mLocateTable->setModel( mTextDocumentSymbolModel );
 				mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 				mLocateTable->scrollToTop();
