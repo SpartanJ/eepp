@@ -12,8 +12,14 @@
 #include <algorithm>
 #include <args/args.hxx>
 #include <filesystem>
-#include <malloc.h>
 #include <nlohmann/json.hpp>
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+// For malloc_trim, which is a GNU extension
+extern "C" {
+#include <malloc.h>
+}
+#endif
+
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
