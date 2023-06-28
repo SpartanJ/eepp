@@ -251,6 +251,14 @@ class EE_API Input {
 
 	bool isModState( const Uint32& state ) const;
 
+	Time getElapsedSinceLastEvent() const;
+
+	Time getElapsedSinceLastKeyboardEvent() const;
+
+	Time getElapsedSinceLastMouseEvent() const;
+
+	Time getElapsedSinceLastKeyboardOrMouseEvent() const;
+
   protected:
 	friend class Window;
 
@@ -283,6 +291,9 @@ class EE_API Input {
 	bool mInputGrabed;
 	InputFinger mFingers[EE_MAX_FINGERS];
 	Uint64 mEventsSentId{ 0 };
+	Clock mLastEvent;
+	Clock mLastKeyboardEvent;
+	Clock mLastMouseEvent;
 
 	std::map<Uint32, InputCallback> mCallbacks;
 

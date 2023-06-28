@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <args/args.hxx>
 #include <filesystem>
+#include <malloc.h>
 #include <nlohmann/json.hpp>
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -533,7 +534,8 @@ void App::closeApp() {
 void App::mainLoop() {
 	mWindow->getInput()->update();
 	SceneManager::instance()->update();
-	if ( firstUpdate ) {
+
+	if ( unlikely( firstUpdate ) ) {
 		Log::info( "First update took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 		firstUpdate = false;
 	}
@@ -542,7 +544,7 @@ void App::mainLoop() {
 		mWindow->clear();
 		SceneManager::instance()->draw();
 		mWindow->display();
-		if ( firstFrame ) {
+		if ( unlikely( firstFrame ) ) {
 			Log::info( "First frame took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 			firstFrame = false;
 		}
@@ -2559,9 +2561,7 @@ void App::newFile( const FileInfo& file ) {
 					[&, newFilePath] {
 						if ( !mFileSystemModel || !mProjectTreeView )
 							return;
-						std::string nfp( newFilePath );
-						FileSystem::filePathRemoveBasePath( mFileSystemModel->getRootPath(), nfp );
-						mProjectTreeView->selectRowWithPath( nfp );
+						loadFileFromPathOrFocus( newFilePath );
 					},
 					Milliseconds( 100 ) );
 			}
@@ -3994,6 +3994,18 @@ Anchor.error:hover {
 
 		if ( mConfig.workspace.checkForUpdatesAtStartup )
 			checkForUpdates( true );
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+		mUISceneNode->setInterval(
+			[this] {
+				if ( mWindow && mThreadPool &&
+					 mWindow->getInput()->getElapsedSinceLastKeyboardOrMouseEvent().asSeconds() <
+						 60.f ) {
+					mThreadPool->run( [] { malloc_trim( 0 ); } );
+				}
+			},
+			Seconds( 60.f ) );
+#endif
 
 		mWindow->runMainLoop( &appLoop, mBenchmarkMode ? 0 : mConfig.context.FrameRateLimit );
 	}

@@ -653,37 +653,39 @@ UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
 						   checkOpeningDocuments );
 }
 
+UITab* findDocument( UITabWidget* tabWidget, const URI& uri, bool checkOpeningDocuments ) {
+	if ( nullptr == tabWidget )
+		return nullptr;
+	for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+		UITab* tab = tabWidget->getTab( i );
+		if ( !tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
+			continue;
+		UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+
+		if ( editor->getDocument().getURI() == uri ||
+			 ( checkOpeningDocuments && editor->getDocument().getLoadingFileURI() == uri ) ) {
+			return tab;
+		}
+	}
+	return nullptr;
+}
+
 UITab* UICodeEditorSplitter::isDocumentOpen( const URI& uri, bool checkOnlyInCurrentTabWidget,
 											 bool checkOpeningDocuments ) const {
 	if ( checkOnlyInCurrentTabWidget ) {
-		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
-		if ( nullptr == tabWidget )
-			return nullptr;
-		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
-			UITab* tab = tabWidget->getTab( i );
-			if ( !tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
-				continue;
-			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
-
-			if ( editor->getDocument().getURI() == uri ||
-				 ( checkOpeningDocuments && editor->getDocument().getLoadingFileURI() == uri ) ) {
-				return tab;
-			}
-		}
+		return findDocument( tabWidgetFromEditor( mCurEditor ), uri, checkOpeningDocuments );
 	} else {
-		for ( auto tabWidget : mTabWidgets ) {
-			for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
-				UITab* tab = tabWidget->getTab( i );
-				if ( !tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
-					continue;
-				UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+		// First check in the current tab widget
+		UITabWidget* curTabWidget = tabWidgetFromEditor( mCurEditor );
+		UITab* tab = nullptr;
+		if ( ( tab = findDocument( curTabWidget, uri, checkOpeningDocuments ) ) )
+			return tab;
 
-				if ( editor->getDocument().getURI() == uri ||
-					 ( checkOpeningDocuments &&
-					   editor->getDocument().getLoadingFileURI() == uri ) ) {
-					return tab;
-				}
-			}
+		for ( auto tabWidget : mTabWidgets ) {
+			if ( tabWidget == curTabWidget )
+				continue;
+			if ( ( tab = findDocument( tabWidget, uri, checkOpeningDocuments ) ) )
+				return tab;
 		}
 	}
 	return nullptr;

@@ -25,7 +25,7 @@ void ActionManager::addAction( Action* action ) {
 		mActions.emplace_back( action );
 }
 
-Action* ActionManager::getActionByTag( const Uint32& tag ) {
+Action* ActionManager::getActionByTag( const Action::UniqueID& tag ) {
 	Lock l( mMutex );
 
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
@@ -54,7 +54,7 @@ std::vector<Action*> ActionManager::getActionsFromTarget( Node* target ) {
 }
 
 std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target,
-															   const String::HashType& tag ) {
+															   const Action::UniqueID& tag ) {
 	Lock l( mMutex );
 	std::vector<Action*> actions;
 
@@ -68,11 +68,11 @@ std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target,
 	return actions;
 }
 
-void ActionManager::removeActionByTag( const Uint32& tag ) {
+void ActionManager::removeActionByTag( const Action::UniqueID& tag ) {
 	removeAction( getActionByTag( tag ) );
 }
 
-void ActionManager::removeActionsByTagFromTarget( Node* target, const String::HashType& tag ) {
+void ActionManager::removeActionsByTagFromTarget( Node* target, const Action::UniqueID& tag ) {
 	std::vector<Action*> removeList;
 
 	{

@@ -3,8 +3,6 @@
 
 namespace EE { namespace Scene {
 
-Action::Action() : mNode( NULL ), mFlags( 0 ), mTag( 0 ), mNumCallBacks( 0 ), mId( 0 ) {}
-
 Action::~Action() {
 	sendEvent( ActionType::OnDelete );
 }
@@ -17,11 +15,11 @@ void Action::setFlags( const Uint32& flags ) {
 	mFlags = flags;
 }
 
-String::HashType Action::getTag() const {
+Action::UniqueID Action::getTag() const {
 	return mTag;
 }
 
-void Action::setTag( const Uint32& tag ) {
+void Action::setTag( const Action::UniqueID& tag ) {
 	mTag = tag;
 }
 
@@ -32,11 +30,11 @@ void Action::setTarget( Node* target ) {
 	}
 }
 
-void Action::setId( const Uint32& id ) {
+void Action::setId( const UniqueID& id ) {
 	mId = id;
 }
 
-const Uint32& Action::getId() {
+const Action::UniqueID& Action::getId() {
 	return mId;
 }
 

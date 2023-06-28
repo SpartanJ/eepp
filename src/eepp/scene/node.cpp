@@ -1519,9 +1519,23 @@ void Node::clearActions() {
 }
 
 void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-							const Uint32& tag ) {
-	Action* action = Actions::Runnable::New( runnable, delay );
-	action->setTag( tag );
+							const Uint32& uniqueIdentifier ) {
+	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
+	action->setTag( uniqueIdentifier );
+	runAction( action );
+}
+
+void Node::setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay,
+					   const Uint32& uniqueIdentifier ) {
+	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
+	action->setTag( uniqueIdentifier );
+	runAction( action );
+}
+
+void Node::setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
+						const Uint32& uniqueIdentifier ) {
+	Action* action = Actions::Runnable::New( std::move( runnable ), interval, true );
+	action->setTag( uniqueIdentifier );
 	runAction( action );
 }
 

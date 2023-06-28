@@ -27,10 +27,6 @@ Input::Input( EE::Window::Window* window, JoystickManager* joystickmanager ) :
 	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 }
 
-const Uint64& Input::getEventsSentId() const {
-	return mEventsSentId;
-}
-
 Input::~Input() {
 	eeSAFE_DELETE( mJoystickManager );
 }
@@ -54,6 +50,8 @@ void Input::sendEvent( InputEvent* Event ) {
 }
 
 void Input::processEvent( InputEvent* Event ) {
+	mLastEvent.restart();
+
 	switch ( Event->Type ) {
 		case InputEvent::Window: {
 			if ( Event->window.type == InputEvent::WindowClose )
@@ -69,6 +67,8 @@ void Input::processEvent( InputEvent* Event ) {
 
 			BitOp::writeBitKey( &mScancodeDown[Event->key.keysym.scancode / 8],
 								Event->key.keysym.scancode % 8, 1 );
+
+			mLastKeyboardEvent.restart();
 			break;
 		}
 		case InputEvent::KeyUp: {
@@ -82,6 +82,8 @@ void Input::processEvent( InputEvent* Event ) {
 								Event->key.keysym.scancode % 8, 0 );
 			BitOp::writeBitKey( &mScancodeUp[Event->key.keysym.scancode / 8],
 								Event->key.keysym.scancode % 8, 1 );
+
+			mLastKeyboardEvent.restart();
 			break;
 		}
 		case InputEvent::MouseMotion: {
@@ -105,11 +107,12 @@ void Input::processEvent( InputEvent* Event ) {
 				mMousePos.y = 0;
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::MouseButtonDown: {
 			mPressTrigger |= EE_BUTTON_MASK( Event->button.button );
-
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::MouseButtonUp: {
@@ -153,6 +156,7 @@ void Input::processEvent( InputEvent* Event ) {
 				}
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::FingerDown: {
@@ -170,6 +174,7 @@ void Input::processEvent( InputEvent* Event ) {
 				mPressTrigger |= EE_BUTTON_LMASK;
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::FingerUp: {
@@ -188,6 +193,7 @@ void Input::processEvent( InputEvent* Event ) {
 				mPressTrigger &= ~EE_BUTTON_LMASK;
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::FingerMotion: {
@@ -205,6 +211,7 @@ void Input::processEvent( InputEvent* Event ) {
 				mPressTrigger |= EE_BUTTON_LMASK;
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::VideoResize: {
@@ -519,6 +526,26 @@ Uint32 Input::getSanitizedModState() const {
 
 bool Input::isModState( const Uint32& state ) const {
 	return getSanitizedModState() == state;
+}
+
+Time Input::getElapsedSinceLastMouseEvent() const {
+	return mLastMouseEvent.getElapsedTime();
+}
+
+Time Input::getElapsedSinceLastKeyboardOrMouseEvent() const {
+	return eemin( getElapsedSinceLastMouseEvent(), getElapsedSinceLastKeyboardEvent() );
+}
+
+Time Input::getElapsedSinceLastKeyboardEvent() const {
+	return mLastKeyboardEvent.getElapsedTime();
+}
+
+Time Input::getElapsedSinceLastEvent() const {
+	return mLastEvent.getElapsedTime();
+}
+
+const Uint64& Input::getEventsSentId() const {
+	return mEventsSentId;
 }
 
 }} // namespace EE::Window
