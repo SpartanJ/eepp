@@ -241,6 +241,17 @@ class EE_API UIWidget : public UINode {
 
 	void setTooltipEnabled( bool enabled );
 
+	UIWidget* getPrevWidget() const;
+
+	UIWidget* getNextWidget() const;
+
+	String getTranslatorString( const std::string& str );
+
+	String getTranslatorString( const std::string& str, const String& defaultValue );
+
+	String i18n( const std::string& str );
+
+	String i18n( const std::string& str, const String& defaultValue );
   protected:
 	friend class UIManager;
 	friend class UISceneNode;
@@ -341,17 +352,6 @@ class EE_API UIWidget : public UINode {
 
 	void reloadFontFamily();
 
-	UIWidget* getPrevWidget() const;
-
-	UIWidget* getNextWidget() const;
-
-	String getTranslatorString( const std::string& str );
-
-	String getTranslatorString( const std::string& str, const String& defaultValue );
-
-	String i18n( const std::string& str );
-
-	String i18n( const std::string& str, const String& defaultValue );
 };
 
 }} // namespace EE::UI

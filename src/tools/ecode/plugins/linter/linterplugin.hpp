@@ -106,6 +106,9 @@ class LinterPlugin : public Plugin {
 
 	Linter getLinterForLang( const std::string& lang, const std::vector<std::string>& extensions );
 
+	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
+									  const Vector2i& position, const Uint32& flags );
+
   protected:
 	std::vector<Linter> mLinters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
@@ -128,6 +131,8 @@ class LinterPlugin : public Plugin {
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
 	String::HashType mConfigHash{ 0 };
+	UIIcon* mLightbulbIcon{ nullptr };
+	std::string mErrorMsg;
 
 	LinterPlugin( PluginManager* pluginManager, bool sync );
 

@@ -52,10 +52,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 				  "Do you really want to close the code editor?\nAll changes will be lost." )
 				.unescape() );
 		msgBox->addEventListener( Event::OnConfirm, [this]( const Event* ) {
-			if ( !mCurrentProject.empty() )
-				mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
-									 mProjectBuildManager ? mProjectBuildManager->getConfig()
-														  : ProjectBuildConfiguration() );
+			saveProject();
 			saveConfig();
 			mWindow->close();
 		} );
@@ -65,10 +62,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		msgBox->showWhenReady();
 		return false;
 	} else {
-		if ( !mCurrentProject.empty() )
-			mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
-								 mProjectBuildManager ? mProjectBuildManager->getConfig()
-													  : ProjectBuildConfiguration() );
+		saveProject();
 		saveConfig();
 		return true;
 	}
@@ -1892,6 +1886,13 @@ bool App::isUnlockedCommand( const std::string& command ) {
 	return std::find( cmds.begin(), cmds.end(), command ) != cmds.end();
 }
 
+void App::saveProject() {
+	if ( !mCurrentProject.empty() )
+		mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
+							 mProjectBuildManager ? mProjectBuildManager->getConfig()
+												  : ProjectBuildConfiguration() );
+}
+
 void App::closeEditors() {
 	mRecentClosedFiles = {};
 
@@ -1899,9 +1900,8 @@ void App::closeEditors() {
 	mSplitter->clearNavigationHistory();
 	mStatusBar->setVisible( mConfig.ui.showStatusBar );
 
-	mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
-						 mProjectBuildManager ? mProjectBuildManager->getConfig()
-											  : ProjectBuildConfiguration() );
+	saveProject();
+
 	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
 	while ( !editors.empty() ) {
 		UICodeEditor* editor = editors[0];
@@ -2938,7 +2938,7 @@ void App::loadFolder( const std::string& path ) {
 	Clock projClock;
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
-	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, mThreadPool, this );
+	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this );
 	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
 	loadFileSystemMatcher( rpath );
@@ -4001,17 +4001,18 @@ Anchor.error:hover {
 		if ( mConfig.workspace.checkForUpdatesAtStartup )
 			checkForUpdates( true );
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
 		mUISceneNode->setInterval(
 			[this] {
 				if ( mWindow && mThreadPool &&
 					 mWindow->getInput()->getElapsedSinceLastKeyboardOrMouseEvent().asSeconds() <
 						 60.f ) {
+					saveProject();
+#if EE_PLATFORM == EE_PLATFORM_LINUX
 					mThreadPool->run( [] { malloc_trim( 0 ); } );
+#endif
 				}
 			},
 			Seconds( 60.f ) );
-#endif
 
 		mWindow->runMainLoop( &appLoop, mBenchmarkMode ? 0 : mConfig.context.FrameRateLimit );
 	}

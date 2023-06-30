@@ -9,7 +9,10 @@
 #include <eepp/system/process.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/window/clipboard.hpp>
+#include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
 #include <random>
 
@@ -487,10 +490,14 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 	if ( editor->hasDocument() ) {
 		auto& doc = editor->getDocument();
 
-		doc.setCommand( "linter-go-to-next-error", [this, editor]() { goToNextError( editor ); } );
+		doc.setCommand( "linter-go-to-next-error", [this, editor] { goToNextError( editor ); } );
 
 		doc.setCommand( "linter-go-to-previous-error",
-						[this, editor]() { goToPrevError( editor ); } );
+						[this, editor] { goToPrevError( editor ); } );
+
+		doc.setCommand( "linter-copy-error-message", [this, editor] {
+			editor->getUISceneNode()->getWindow()->getClipboard()->setText( mErrorMsg );
+		} );
 	}
 
 	mEditors.insert( { editor, listeners } );
@@ -858,18 +865,21 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			 !match.codeActions.empty() ) {
 			rLineWidth = editor->getLineWidth( index );
 			Color wcolor( editor->getColorScheme().getEditorSyntaxStyle( "warning" ).color );
-			UIIcon* notification =
-				editor->getUISceneNode()->getUIIconThemeManager()->findIcon( "lightbulb-autofix" );
-			Float size = lineHeight;
-			Drawable* drawable = notification->getSize( (int)eefloor( size ) );
-			if ( drawable == nullptr )
-				return;
+			if ( nullptr == mLightbulbIcon ) {
+				mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
+					"lightbulb-autofix" );
+			}
+			if ( nullptr != mLightbulbIcon ) {
+				Drawable* drawable = mLightbulbIcon->getSize( (int)eefloor( lineHeight ) );
+				if ( drawable == nullptr )
+					return;
 
-			Color oldColor( drawable->getColor() );
-			drawable->setColor( wcolor );
-			drawable->draw( { position.x + rLineWidth, position.y } );
-			drawable->setColor( oldColor );
-			quickFixRendered = true;
+				Color oldColor( drawable->getColor() );
+				drawable->setColor( wcolor );
+				drawable->draw( { position.x + rLineWidth, position.y } );
+				drawable->setColor( oldColor );
+				quickFixRendered = true;
+			}
 		}
 
 		if ( !mErrorLens || i != 0 )
@@ -1118,6 +1128,35 @@ void LinterPlugin::invalidateEditors( TextDocument* doc ) {
 		if ( it.second == doc )
 			it.first->invalidateDraw();
 	}
+}
+
+bool LinterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
+										const Vector2i& pos, const Uint32& /*flags*/ ) {
+	Lock l( mMatchesMutex );
+	auto it = mMatches.find( editor->getDocumentRef().get() );
+	if ( it == mMatches.end() )
+		return false;
+
+	Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
+	TextPosition cursorPosition = editor->resolveScreenPosition( pos.asFloat() );
+	auto matchIt = it->second.find( cursorPosition.line() );
+	if ( matchIt == it->second.end() )
+		return false;
+
+	auto& matches = matchIt->second;
+	for ( auto& match : matches ) {
+		if ( match.box[editor].contains( localPos ) ) {
+			menu->addSeparator();
+			menu->add( editor->i18n( "copy_error_message", "Copy Error Message" ),
+					   mManager->getUISceneNode()->findIcon( "copy" )->getSize(
+						   PixelDensity::dpToPxI( 12 ) ) )
+				->setId( "linter-copy-error-message" );
+			mErrorMsg = match.text;
+			break;
+		}
+	}
+
+	return false;
 }
 
 } // namespace ecode

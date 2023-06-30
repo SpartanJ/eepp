@@ -411,6 +411,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string& getFileToOpen() const;
 
+	void saveProject();
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };

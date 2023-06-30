@@ -351,38 +351,32 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
 							 const ProjectBuildConfiguration& buildConfig ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
-	std::vector<UICodeEditor*> editors = editorSplitter->getAllEditors();
-	std::vector<ProjectPath> paths;
-	for ( auto editor : editors )
-		if ( editor->getDocument().hasFilepath() )
-			paths.emplace_back( ProjectPath{ editor->getDocument().getFilePath(),
-											 editor->getDocument().getSelection() } );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
 		FileSystem::makeDir( projectsPath );
 	MD5::Result hash = MD5::fromString( projectFolder );
 	std::string projectCfgPath( projectsPath + hash.toHexString() + ".cfg" );
-	IniFile ini( projectCfgPath, false );
-	ini.setValue( "path", "folder_path", projectFolder );
-	ini.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
-	ini.setValueB( "document", "h_as_cpp", docConfig.hAsCPP );
-	ini.setValueB( "document", "trim_trailing_whitespaces", docConfig.doc.trimTrailingWhitespaces );
-	ini.setValueB( "document", "force_new_line_at_end_of_file",
+	IniFile cfg( projectCfgPath, false );
+	cfg.setValue( "path", "folder_path", projectFolder );
+	cfg.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
+	cfg.setValueB( "document", "h_as_cpp", docConfig.hAsCPP );
+	cfg.setValueB( "document", "trim_trailing_whitespaces", docConfig.doc.trimTrailingWhitespaces );
+	cfg.setValueB( "document", "force_new_line_at_end_of_file",
 				   docConfig.doc.forceNewLineAtEndOfFile );
-	ini.setValueB( "document", "auto_detect_indent_type", docConfig.doc.autoDetectIndentType );
-	ini.setValueB( "document", "write_bom", docConfig.doc.writeUnicodeBOM );
-	ini.setValueI( "document", "indent_width", docConfig.doc.indentWidth );
-	ini.setValueB( "document", "indent_spaces", docConfig.doc.indentSpaces );
-	ini.setValue( "document", "line_endings",
+	cfg.setValueB( "document", "auto_detect_indent_type", docConfig.doc.autoDetectIndentType );
+	cfg.setValueB( "document", "write_bom", docConfig.doc.writeUnicodeBOM );
+	cfg.setValueI( "document", "indent_width", docConfig.doc.indentWidth );
+	cfg.setValueB( "document", "indent_spaces", docConfig.doc.indentSpaces );
+	cfg.setValue( "document", "line_endings",
 				  TextDocument::lineEndingToString( docConfig.doc.lineEndings ) );
-	ini.setValueI( "document", "tab_width", docConfig.doc.tabWidth );
-	ini.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
-	ini.setValue( "build", "build_name", buildConfig.buildName );
-	ini.setValue( "build", "build_type", buildConfig.buildType );
-	ini.setValue( "nodes", "documents",
+	cfg.setValueI( "document", "tab_width", docConfig.doc.tabWidth );
+	cfg.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
+	cfg.setValue( "build", "build_name", buildConfig.buildName );
+	cfg.setValue( "build", "build_type", buildConfig.buildType );
+	cfg.setValue( "nodes", "documents",
 				  saveNode( editorSplitter->getBaseLayout()->getFirstChild() ).dump() );
-	ini.deleteKey( "files" );
-	ini.writeFile();
+	cfg.deleteKey( "files" );
+	cfg.writeFile();
 }
 
 static void countTotalEditors( json j, size_t& curTotal ) {
@@ -431,14 +425,15 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 				UITab* tab = nullptr;
 				if ( ( tab = editorSplitter->isDocumentOpen( path, false, true ) ) != nullptr ) {
 					auto tabAndEditor = editorSplitter->createCodeEditorInTabWidget( curTabWidget );
-					UICodeEditor* editor = tabAndEditor.second;
-					editor->setDocument(
+					UICodeEditor* teditor = tabAndEditor.second;
+					teditor->setDocument(
 						tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef() );
 					editorSplitter->removeUnusedTab( curTabWidget );
-					if ( !editor->getDocument().getSelection().isValid() ||
-						 editor->getDocument().getSelection() == TextRange( { 0, 0 }, { 0, 0 } ) ) {
-						editor->getDocument().setSelection( selection );
-						editor->scrollToCursor();
+					if ( !teditor->getDocument().getSelection().isValid() ||
+						 teditor->getDocument().getSelection() ==
+							 TextRange( { 0, 0 }, { 0, 0 } ) ) {
+						teditor->getDocument().setSelection( selection );
+						teditor->scrollToCursor();
 					}
 					if ( curTabWidget->getTabCount() == totalToLoad )
 						curTabWidget->setTabSelected(
@@ -492,44 +487,44 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectDocumentConfig& docConfig,
-							 std::shared_ptr<ThreadPool> pool, ecode::App* app ) {
+							 ecode::App* app ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
 	std::string projectCfgPath( projectsPath + hash.toHexString() + ".cfg" );
 	if ( !FileSystem::fileExists( projectCfgPath ) )
 		return;
-	IniFile ini( projectCfgPath );
+	IniFile cfg( projectCfgPath );
 
-	docConfig.useGlobalSettings = ini.getValueB( "document", "use_global_settings", true );
-	docConfig.hAsCPP = ini.getValueB( "document", "h_as_cpp", false );
+	docConfig.useGlobalSettings = cfg.getValueB( "document", "use_global_settings", true );
+	docConfig.hAsCPP = cfg.getValueB( "document", "h_as_cpp", false );
 	docConfig.doc.trimTrailingWhitespaces =
-		ini.getValueB( "document", "trim_trailing_whitespaces", false );
+		cfg.getValueB( "document", "trim_trailing_whitespaces", false );
 	docConfig.doc.forceNewLineAtEndOfFile =
-		ini.getValueB( "document", "force_new_line_at_end_of_file", false );
+		cfg.getValueB( "document", "force_new_line_at_end_of_file", false );
 	docConfig.doc.autoDetectIndentType =
-		ini.getValueB( "document", "auto_detect_indent_type", true );
-	docConfig.doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
-	docConfig.doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
-	docConfig.doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
+		cfg.getValueB( "document", "auto_detect_indent_type", true );
+	docConfig.doc.writeUnicodeBOM = cfg.getValueB( "document", "write_bom", false );
+	docConfig.doc.indentWidth = cfg.getValueI( "document", "indent_width", 4 );
+	docConfig.doc.indentSpaces = cfg.getValueB( "document", "indent_spaces", false );
 	docConfig.doc.lineEndings =
-		TextDocument::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
+		TextDocument::stringToLineEnding( cfg.getValue( "document", "line_endings", "LF" ) );
 
-	docConfig.doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
+	docConfig.doc.tabWidth = eemax( 2, cfg.getValueI( "document", "tab_width", 4 ) );
 	docConfig.doc.lineBreakingColumn =
-		eemax( 0, ini.getValueI( "document", "line_breaking_column", 100 ) );
+		eemax( 0, cfg.getValueI( "document", "line_breaking_column", 100 ) );
 
 	if ( app->getProjectBuildManager() ) {
 		ProjectBuildConfiguration prjCfg;
-		prjCfg.buildName = ini.getValue( "build", "build_name", "" );
-		prjCfg.buildType = ini.getValue( "build", "build_type", "" );
+		prjCfg.buildName = cfg.getValue( "build", "build_name", "" );
+		prjCfg.buildType = cfg.getValue( "build", "build_type", "" );
 		app->getProjectBuildManager()->setConfig( prjCfg );
 	}
 
-	if ( ini.keyValueExists( "nodes", "documents" ) ) {
+	if ( cfg.keyValueExists( "nodes", "documents" ) ) {
 		json j;
 		try {
-			j = json::parse( ini.getValue( "nodes", "documents" ) );
+			j = json::parse( cfg.getValue( "nodes", "documents" ) );
 		} catch ( const json::exception& e ) {
 			Log::error( "AppConfig::loadProject: error loading project: %s", e.what() );
 			return;

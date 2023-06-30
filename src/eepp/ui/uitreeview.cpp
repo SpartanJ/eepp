@@ -16,7 +16,7 @@ UITreeView* UITreeView::New() {
 
 UITreeView::UITreeView() :
 	UIAbstractTableView( "treeview" ),
-	mIndentWidth( PixelDensity::dpToPx( 12 ) ),
+	mIndentWidth( PixelDensity::dpToPx( 6 ) ),
 	mExpanderIconSize( PixelDensity::dpToPxI( 12 ) ) {
 	setClipType( ClipType::ContentBox );
 	mExpandIcon = getUISceneNode()->findIcon( "tree-expanded" );

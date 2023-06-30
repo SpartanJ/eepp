@@ -187,7 +187,7 @@ class AppConfig {
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,
-					  std::shared_ptr<ThreadPool> pool, ecode::App* app );
+					  ecode::App* app );
 
   protected:
 	Int64 editorsToLoad{ 0 };
