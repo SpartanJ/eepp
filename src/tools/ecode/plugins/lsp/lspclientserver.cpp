@@ -69,7 +69,7 @@ static json newID( const PluginIDType& id ) {
 
 static json newEmptyResult( const PluginIDType& id ) {
 	json j;
-	j[MEMBER_RESULT] = json( json::value_t::object );
+	j[MEMBER_RESULT] = nullptr;
 	if ( id.isInteger() )
 		j[MEMBER_ID] = id.asInt();
 	else
@@ -1751,7 +1751,6 @@ void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
 		mReceiveErr.erase( 0, lastNewLineIndex + 1 );
 	}
 	if ( !msg.message.empty() ) {
-		msg.type = LSPMessageType::Log;
 		Log::debug( "LSPClientServer::readStdErr server %s:\n%s", mLSP.name.c_str(),
 					msg.message.c_str() );
 	}

@@ -151,6 +151,8 @@ struct PluginMessage {
 	const void* data;
 	PluginIDType responseID{ 0 }; // 0 if it's not a response;
 
+	const void* asData() const { return data; }
+
 	const nlohmann::json& asJSON() const { return *static_cast<const nlohmann::json*>( data ); }
 
 	bool isJSON() const { return format == PluginMessageFormat::JSON; }
@@ -195,7 +197,7 @@ struct PluginMessage {
 
 	bool isResponse() const { return -1 != responseID && 0 != responseID; }
 
-	bool isRequest() const { return -1 != responseID && 0 == responseID; }
+	bool isRequest() const { return 0 == responseID; }
 
 	bool isBroadcast() const { return -1 == responseID; }
 };

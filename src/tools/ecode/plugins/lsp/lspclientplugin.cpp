@@ -803,6 +803,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		mKeyBindings["lsp-symbol-info"] = "f1";
 		mKeyBindings["lsp-symbol-code-action"] = "alt+return";
 		mKeyBindings["lsp-rename-symbol-under-cursor"] = "mod+shift+r";
+		mKeyBindings["lsp-symbol-references"] = "mod+shift+u";
 	}
 
 	if ( j.contains( "keybindings" ) ) {

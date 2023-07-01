@@ -348,20 +348,39 @@ void LSPClientServerManager::sendSymbolReferenceBroadcast( const std::vector<LSP
 		return;
 
 	std::map<std::string, ProjectSearch::ResultData> res;
+	std::unordered_map<std::string, std::unique_ptr<TextDocument>> tmpDocs;
 
 	for ( auto& r : resp ) {
-		auto fspath( r.uri.getFSPath() );
+		std::string fspath( r.uri.getFSPath() );
 		auto& rd = res[fspath];
 		if ( rd.file.empty() )
 			rd.file = fspath;
+
 		auto curDoc = mPluginManager->getSplitter()->findDocFromURI( r.uri );
-		if ( !curDoc )
-			continue;
+		if ( curDoc ) {
+			ProjectSearch::ResultData::Result rs( curDoc->line( r.range.start().line() ).getText(),
+												  r.range, -1, -1 );
 
-		ProjectSearch::ResultData::Result rs( curDoc->line( r.range.start().line() ).getText(),
-											  r.range, -1, -1 );
+			rd.results.emplace_back( std::move( rs ) );
+		} else {
+			String lineText;
+			auto foundDoc = tmpDocs.find( fspath );
+			if ( foundDoc == tmpDocs.end() ) {
+				std::unique_ptr<TextDocument> doc = std::make_unique<TextDocument>();
+				if ( TextDocument::LoadStatus::Loaded != doc->loadFromFile( fspath ) )
+					continue;
 
-		rd.results.emplace_back( std::move( rs ) );
+				lineText = doc->line( r.range.start().line() ).getText();
+
+				tmpDocs.insert( { std::move( fspath ), std::move( doc ) } );
+			} else {
+				lineText = foundDoc->second->line( r.range.start().line() ).getText();
+			}
+
+			ProjectSearch::ResultData::Result rs( lineText, r.range, -1, -1 );
+
+			rd.results.emplace_back( std::move( rs ) );
+		}
 	}
 
 	ProjectSearch::Result result;

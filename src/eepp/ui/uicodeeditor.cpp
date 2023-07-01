@@ -51,10 +51,12 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_RETURN, 0 }, "new-line" },
 		{ { KEY_UP, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "move-lines-up" },
 		{ { KEY_UP, KeyMod::getDefaultModifier() }, "move-scroll-up" },
+		{ { KEY_PAGEUP, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "jump-lines-up" },
 		{ { KEY_UP, KEYMOD_SHIFT }, "select-to-previous-line" },
 		{ { KEY_UP, 0 }, "move-to-previous-line" },
 		{ { KEY_DOWN, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "move-lines-down" },
 		{ { KEY_DOWN, KeyMod::getDefaultModifier() }, "move-scroll-down" },
+		{ { KEY_PAGEDOWN, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "jump-lines-down" },
 		{ { KEY_DOWN, KEYMOD_SHIFT }, "select-to-next-line" },
 		{ { KEY_DOWN, 0 }, "move-to-next-line" },
 		{ { KEY_LEFT, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-to-previous-word" },
@@ -2418,27 +2420,43 @@ TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int o
 }
 
 void UICodeEditor::moveToPreviousLine() {
+	jumpLinesUp( -1 );
+}
+
+void UICodeEditor::moveToNextLine() {
+	jumpLinesDown( 1 );
+}
+
+void UICodeEditor::jumpLinesUp( int offset ) {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition position = mDoc->getSelections()[i].start();
 		if ( position.line() == 0 ) {
 			mDoc->setSelection( i, mDoc->startOfDoc(), mDoc->startOfDoc() );
 		} else {
-			mDoc->moveTo( i, moveToLineOffset( position, -1, i ) );
+			mDoc->moveTo( i, moveToLineOffset( position, offset, i ) );
 		}
 	}
 	mDoc->mergeSelection();
 }
 
-void UICodeEditor::moveToNextLine() {
+void UICodeEditor::jumpLinesDown( int offset ) {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition position = mDoc->getSelections()[i].start();
-		if ( position.line() == (Int64)mDoc->linesCount() - 1 ) {
+		if ( position.line() >= (Int64)mDoc->linesCount() - offset ) {
 			mDoc->setSelection( i, mDoc->endOfDoc(), mDoc->endOfDoc() );
 		} else {
-			mDoc->moveTo( i, moveToLineOffset( position, 1, i ) );
+			mDoc->moveTo( i, moveToLineOffset( position, offset, i ) );
 		}
 	}
 	mDoc->mergeSelection();
+}
+
+void UICodeEditor::jumpLinesUp() {
+	jumpLinesDown( -mJumpLinesLength );
+}
+
+void UICodeEditor::jumpLinesDown() {
+	jumpLinesDown( mJumpLinesLength );
 }
 
 void UICodeEditor::selectToPreviousLine() {
@@ -2469,6 +2487,14 @@ void UICodeEditor::moveScrollUp() {
 
 void UICodeEditor::moveScrollDown() {
 	setScrollY( mScroll.y + getLineHeight() );
+}
+
+size_t UICodeEditor::getJumpLinesLength() const {
+	return mJumpLinesLength;
+}
+
+void UICodeEditor::setJumpLinesLength( size_t jumpLinesLength ) {
+	mJumpLinesLength = jumpLinesLength;
 }
 
 void UICodeEditor::indent() {
@@ -3125,6 +3151,8 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "select-to-next-line", [this] { selectToNextLine(); } );
 	mDoc->setCommand( "move-scroll-up", [this] { moveScrollUp(); } );
 	mDoc->setCommand( "move-scroll-down", [this] { moveScrollDown(); } );
+	mDoc->setCommand( "jump-lines-up", [this] { jumpLinesUp(); } );
+	mDoc->setCommand( "jump-lines-down", [this] { jumpLinesDown(); } );
 	mDoc->setCommand( "indent", [this] { indent(); } );
 	mDoc->setCommand( "unindent", [this] { unindent(); } );
 	mDoc->setCommand( "copy", [this] { copy(); } );

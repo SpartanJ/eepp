@@ -661,9 +661,11 @@ void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc 
 			if ( buildIt.second.getName() == mConfig.buildName )
 				build = &buildIt.second;
 
-		if ( build )
+		if ( build ) {
+			mApp->saveAll();
 			sboc->runBuild( build->getName(), mConfig.buildType,
 							getOutputParser( build->getName() ) );
+		}
 	}
 }
 

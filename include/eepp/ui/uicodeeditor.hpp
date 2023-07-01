@@ -408,6 +408,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void moveScrollDown();
 
+	void jumpLinesUp();
+
+	void jumpLinesDown();
+
+	void jumpLinesUp( int offset );
+
+	void jumpLinesDown( int offset );
+
 	void indent();
 
 	void unindent();
@@ -605,7 +613,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	UIScrollBar* getHScrollBar() const;
 
-  protected:
+	size_t getJumpLinesLength() const;
+
+	void setJumpLinesLength(size_t jumpLinesLength);
+
+	protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };
@@ -711,6 +723,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float mPluginsTopSpace{ 0 };
 	Uint64 mLastExecuteEventId{ 0 };
 	Text mLineTextCache;
+	size_t mJumpLinesLength{ 5 };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );

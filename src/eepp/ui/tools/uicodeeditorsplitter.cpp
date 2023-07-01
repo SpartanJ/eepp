@@ -156,6 +156,14 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 		if ( mCurEditor )
 			mCurEditor->moveScrollDown();
 	} );
+	doc.setCommand( "jump-lines-up", [this] {
+		if ( mCurEditor )
+			mCurEditor->jumpLinesUp();
+	} );
+	doc.setCommand( "jump-lines-down", [this] {
+		if ( mCurEditor )
+			mCurEditor->jumpLinesDown();
+	} );
 	doc.setCommand( "indent", [this] {
 		if ( mCurEditor )
 			mCurEditor->indent();
