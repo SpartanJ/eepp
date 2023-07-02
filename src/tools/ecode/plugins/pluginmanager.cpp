@@ -453,7 +453,7 @@ void Plugin::subscribeFileSystemListener() {
 		[this]( const FileEvent& ev, const FileInfo& file ) {
 			if ( ev.type != FileSystemEventType::Modified )
 				return;
-			if ( !mShuttingDown && file.getFilepath() == mConfigPath &&
+			if ( !mShuttingDown && !mLoading && file.getFilepath() == mConfigPath &&
 				 file.getModificationTime() != mConfigFileInfo.getModificationTime() ) {
 				std::string fileContents;
 				FileSystem::fileGet( file.getFilepath(), fileContents );

@@ -245,6 +245,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 }
 
 void FormatterPlugin::load( PluginManager* pluginManager ) {
+	BoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );

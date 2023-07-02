@@ -81,6 +81,8 @@ enum class PluginMessageType {
 	DiagnosticsCodeAction,	   // Request a code action to anyone that can handle it
 	FileSystemListenerReady,   // Broadcast to inform the plugins that the file system listener is
 							   // available
+	GetErrorOrWarning, // Request a component to provide the information of an error or warning in a
+					   // particular document location
 	Undefined
 };
 
@@ -146,9 +148,9 @@ class PluginIDType {
 class LSPClientPlugin;
 
 struct PluginMessage {
-	PluginMessageType type;
-	PluginMessageFormat format;
-	const void* data;
+	PluginMessageType type{ PluginMessageType::Undefined };
+	PluginMessageFormat format{ PluginMessageFormat::Empty };
+	const void* data{ nullptr };
 	PluginIDType responseID{ 0 }; // 0 if it's not a response;
 
 	const void* asData() const { return data; }
@@ -202,6 +204,11 @@ struct PluginMessage {
 	bool isBroadcast() const { return -1 == responseID; }
 };
 
+struct PluginInmediateResponse {
+	PluginMessageType type{ PluginMessageType::Undefined };
+	nlohmann::json data;
+};
+
 class PluginRequestHandle {
   public:
 	static PluginRequestHandle broadcast() { return PluginRequestHandle( -1 ); }
@@ -209,16 +216,28 @@ class PluginRequestHandle {
 	static PluginRequestHandle empty() { return PluginRequestHandle(); }
 
 	PluginRequestHandle() {}
-	PluginRequestHandle( PluginIDType id ) : mId( id ) {}
+
+	PluginRequestHandle( PluginIDType id ) : mId( std::move( id ) ) {}
+
+	explicit PluginRequestHandle( PluginInmediateResponse msg ) :
+		mId( -2 ), mResponse( std::move( msg ) ) {}
+
 	virtual const PluginIDType& id() const { return mId; }
+
 	virtual void cancel() {}
 
 	bool isEmpty() const { return mId == 0; }
 
 	bool isBroadcast() const { return mId == -1; }
 
+	const PluginInmediateResponse& getResponse() const { return mResponse; }
+
+	bool isResponse() const { return mId == -2 && !mResponse.data.empty(); }
+
   protected:
 	PluginIDType mId{ 0 };
+	PluginInmediateResponse
+		mResponse; //! Some requests can be responded inmediatly, so the message comes in the handle
 };
 
 class PluginManager {
@@ -378,6 +397,8 @@ class Plugin : public UICodeEditorPlugin {
 
 	bool isReady() const;
 
+	bool isLoading() const { return mLoading; }
+
 	bool isShuttingDown() const;
 
 	virtual bool hasFileConfig();
@@ -396,6 +417,7 @@ class Plugin : public UICodeEditorPlugin {
 	FileInfo mConfigFileInfo;
 
 	bool mReady{ false };
+	bool mLoading{ false };
 	bool mShuttingDown{ false };
 };
 

@@ -2,6 +2,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uilistview.hpp>
@@ -658,6 +659,7 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 }
 
 void LSPClientPlugin::load( PluginManager* pluginManager ) {
+	BoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
@@ -1128,11 +1130,45 @@ void LSPClientPlugin::getSymbolInfo( UICodeEditor* editor ) {
 	server->documentHover(
 		editor->getDocument().getURI(), editor->getDocument().getSelection().start(),
 		[&, editor]( const Int64&, const LSPHover& resp ) {
+			json j;
+			auto& doc = editor->getDocument();
+			j["uri"] = doc.getURI().toString();
+			j["line"] = doc.getSelection().start().line();
+			j["character"] = doc.getSelection().start().column();
+			auto errResp = mManager->sendRequest( PluginMessageType::GetErrorOrWarning,
+												  PluginMessageFormat::JSON, &j );
 			if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
-				editor->runOnMainThread( [editor, resp, this]() {
+				editor->runOnMainThread( [editor, resp, errResp, this]() {
+					mSymbolInfoShowing = true;
+					if ( errResp.isResponse() ) {
+						LSPHover cresp( resp );
+						cresp.contents[0].value =
+							errResp.getResponse().data["text"].get<std::string>() + "\n\n" +
+							cresp.contents[0].value;
+						displayTooltip(
+							editor, cresp,
+							editor
+								->getScreenPosition( editor->getDocument().getSelection().start() )
+								.getPosition() );
+					} else {
+						displayTooltip(
+							editor, resp,
+							editor
+								->getScreenPosition( editor->getDocument().getSelection().start() )
+								.getPosition() );
+					}
+				} );
+			} else if ( errResp.isResponse() ) {
+				LSPHover tresp;
+				tresp.range =
+					TextRange::fromString( errResp.getResponse().data["range"].get<std::string>() );
+				tresp.contents.push_back(
+					{ LSPMarkupKind::MarkDown,
+					  errResp.getResponse().data["text"].get<std::string>() } );
+				editor->runOnMainThread( [editor, tresp, this]() {
 					mSymbolInfoShowing = true;
 					displayTooltip(
-						editor, resp,
+						editor, tresp,
 						editor->getScreenPosition( editor->getDocument().getSelection().start() )
 							.getPosition() );
 				} );

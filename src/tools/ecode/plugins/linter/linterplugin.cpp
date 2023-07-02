@@ -374,6 +374,49 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 				}
 			}
 		}
+
+		return {};
+	}
+
+	if ( notification.type == PluginMessageType::GetErrorOrWarning &&
+		 notification.format == PluginMessageFormat::JSON && notification.isRequest() ) {
+		const json& j = notification.asJSON();
+		if ( !j.contains( "uri" ) || !j.contains( "line" ) || !j.contains( "character" ) )
+			return {};
+		URI uri( j["uri"].get<std::string>() );
+		TextDocument* doc = getDocumentFromURI( uri );
+		if ( nullptr == doc )
+			return {};
+
+		Lock l( mMatchesMutex );
+		auto found = mMatches.find( doc );
+		if ( found == mMatches.end() )
+			return {};
+
+		TextPosition pos( LSPConverter::fromJSON( j ) );
+
+		const auto& docMatches = found->second;
+
+		auto foundLine = docMatches.find( pos.line() );
+		if ( foundLine == docMatches.end() )
+			return {};
+
+		const auto& matches = foundLine->second;
+
+		for ( const auto& match : matches ) {
+			if ( pos.column() >= match.range.start().column() &&
+				 pos.column() <= match.range.end().column() ) {
+				PluginInmediateResponse msg;
+				msg.type = PluginMessageType::GetErrorOrWarning;
+				json rj;
+				rj["text"] = match.text;
+				rj["type"] = match.type == LinterType::Error ? "error" : "warning";
+				rj["range"] = match.range.toString();
+				msg.data = std::move( rj );
+				return PluginRequestHandle( msg );
+			}
+		}
+
 		return {};
 	}
 
@@ -414,6 +457,7 @@ TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
 }
 
 void LinterPlugin::load( PluginManager* pluginManager ) {
+	BoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
