@@ -99,7 +99,7 @@ class EE_MAPS_API MapEditor {
 	Int32 mLastSelButtonY;
 	bool mMouseScrolling;
 
-	std::list<UISelectButton*> mObjContButton;
+	std::vector<UISelectButton*> mObjContButton;
 
 	void onRedChange( const Event* Event );
 

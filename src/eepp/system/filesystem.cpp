@@ -3,7 +3,6 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
-#include <list>
 #include <sys/stat.h>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN

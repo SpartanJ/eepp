@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/gameobjectpolygon.hpp>
 #include <eepp/maps/mapobjectlayer.hpp>
@@ -26,6 +27,9 @@ void MapObjectLayer::deallocateLayer() {
 }
 
 void MapObjectLayer::draw( const Vector2f& Offset ) {
+	if ( Offset != mOffset )
+		mOffset = Offset;
+
 	GlobalBatchRenderer::instance()->draw();
 
 	ObjList::iterator it;
@@ -72,8 +76,9 @@ void MapObjectLayer::addGameObject( GameObject* obj ) {
 }
 
 void MapObjectLayer::removeGameObject( GameObject* obj ) {
-	mObjects.remove( obj );
-
+	auto found = std::find( mObjects.begin(), mObjects.end(), obj );
+	if ( found != mObjects.end() )
+		mObjects.erase( found );
 	eeSAFE_DELETE( obj );
 }
 

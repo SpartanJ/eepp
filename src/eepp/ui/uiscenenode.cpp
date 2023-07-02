@@ -231,13 +231,16 @@ void UISceneNode::setFocusLastWindow( UIWindow* window ) {
 
 void UISceneNode::windowAdd( UIWindow* win ) {
 	if ( !windowExists( win ) ) {
-		mWindowsList.push_front( win );
+		mWindowsList.insert( mWindowsList.begin(), win );
 		WindowEvent wevent( this, win, Event::OnWindowAdded );
 		sendEvent( &wevent );
 	} else {
 		//! Send to front
-		mWindowsList.remove( win );
-		mWindowsList.push_front( win );
+		auto found = std::find( mWindowsList.begin(), mWindowsList.end(), win );
+		if ( found != mWindowsList.end() ) {
+			mWindowsList.erase( found );
+			mWindowsList.insert( mWindowsList.begin(), win );
+		}
 	}
 }
 
@@ -245,7 +248,9 @@ void UISceneNode::windowRemove( UIWindow* win ) {
 	if ( windowExists( win ) ) {
 		WindowEvent wevent( this, win, Event::OnWindowRemoved );
 		sendEvent( &wevent );
-		mWindowsList.remove( win );
+		auto found = std::find( mWindowsList.begin(), mWindowsList.end(), win );
+		if ( found != mWindowsList.end() )
+			mWindowsList.erase( found );
 	}
 }
 

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/maps/maplightmanager.hpp>
 #include <eepp/maps/tilemap.hpp>
 
@@ -162,18 +163,27 @@ void MapLightManager::addLight( MapLight* Light ) {
 }
 
 void MapLightManager::removeLight( MapLight* Light ) {
-	mLights.remove( Light );
+	auto found = std::find( mLights.begin(), mLights.end(), Light );
+	if ( found != mLights.end() )
+		mLights.erase( found );
 }
 
 void MapLightManager::removeLight( const Vector2f& OverPos ) {
+	std::vector<MapLight*> toRemove;
 	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); ++it ) {
 		MapLight* Light = ( *it );
 
 		if ( Light->getAABB().contains( OverPos ) ) {
-			mLights.remove( Light );
+			toRemove.push_back( Light );
 			eeSAFE_DELETE( Light );
 			break;
 		}
+	}
+
+	for ( const auto& rem : toRemove ) {
+		auto found = std::find( mLights.begin(), mLights.end(), rem );
+		if ( found != mLights.end() )
+			mLights.erase( found );
 	}
 }
 

@@ -9,6 +9,7 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
+#include <list>
 
 namespace ecode {
 

@@ -1120,14 +1120,18 @@ void Node::updateCenter() {
 }
 
 Uint32 Node::addEventListener( const Uint32& eventType, const EventCallback& callback ) {
-	mNumCallBacks++;
-	mEvents[eventType][mNumCallBacks] = callback;
+	mEvents[eventType][++mNumCallBacks] = callback;
+	return mNumCallBacks;
+}
+
+Uint32 Node::on( const Uint32& eventType, const EventCallback& callback ) {
+	mEvents[eventType][++mNumCallBacks] = callback;
 	return mNumCallBacks;
 }
 
 Uint32 Node::onClick( const std::function<void( const MouseEvent* )>& callback,
 					  const MouseButton& button ) {
-	return addEventListener( Event::MouseClick, [callback, button]( const Event* event ) {
+	return on( Event::MouseClick, [callback, button]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & ( EE_BUTTON_MASK( button ) ) ) {
 			callback( event->asMouseEvent() );
 		}

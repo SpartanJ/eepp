@@ -31,7 +31,6 @@
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <list>
 
 namespace EE { namespace Graphics {
 
@@ -184,7 +183,7 @@ class EE_API TexturePacker {
   protected:
 	enum PackStrategy { PackBig, PackTiny, PackFail };
 
-	std::list<TexturePackerTex*> mTextures;
+	std::vector<TexturePackerTex*> mTextures;
 
 	Int32 mTotalArea;
 	TexturePackerNode* mFreeList;
@@ -212,7 +211,7 @@ class EE_API TexturePacker {
 
 	TexturePacker* getParent() const;
 
-	std::list<TexturePackerTex*>* getTexturePackPtr();
+	std::vector<TexturePackerTex*>* getTexturePackPtr();
 
 	void childSave( const Image::SaveType& Format );
 

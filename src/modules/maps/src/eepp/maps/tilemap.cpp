@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/gameobjectpolygon.hpp>
 #include <eepp/maps/gameobjectpolyline.hpp>
@@ -786,12 +787,14 @@ TileMap::PropertiesMap& TileMap::getProperties() {
 }
 
 void TileMap::addVirtualObjectType( const std::string& name ) {
-	mObjTypes.push_back( name );
-	mObjTypes.unique();
+	if ( std::find( mObjTypes.begin(), mObjTypes.end(), name ) == mObjTypes.end() )
+		mObjTypes.push_back( name );
 }
 
 void TileMap::removeVirtualObjectType( const std::string& name ) {
-	mObjTypes.remove( name );
+	auto found = std::find( mObjTypes.begin(), mObjTypes.end(), name );
+	if ( found == mObjTypes.end() )
+		mObjTypes.erase( found );
 }
 
 void TileMap::clearVirtualObjectTypes() {

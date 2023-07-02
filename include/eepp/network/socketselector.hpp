@@ -120,7 +120,7 @@ TcpListener listener;
 listener.listen(55001);
 
 // Create a list to store the future clients
-std::list<TcpSocket*> clients;
+std::vector<TcpSocket*> clients;
 
 // Create a selector
 SocketSelector selector;
@@ -149,7 +149,7 @@ while (running) {
 			 }
 		 } else {
 			 // The listener socket is not ready, test all other sockets (the clients)
-			 for (std::list<TcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it) {
+			 for (std::vector<TcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it) {
 				 TcpSocket& client = **it;
 				 if (selector.isReady(client)) {
 					 // The client has sent some data, we can receive it

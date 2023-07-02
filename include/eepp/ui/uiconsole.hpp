@@ -299,7 +299,7 @@ class EE_API UIConsole : public UIWidget,
 
 	void printCommandsStartingWith( const String& start );
 
-	String getLastCommonSubStr( std::list<String>& cmds );
+	String getLastCommonSubStr( std::vector<String>& cmds );
 
 	void processLine();
 

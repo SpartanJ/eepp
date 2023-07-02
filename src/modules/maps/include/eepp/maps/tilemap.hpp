@@ -29,7 +29,7 @@ class UIMapNew;
 class EE_MAPS_API TileMap {
   public:
 	typedef std::map<std::string, std::string> PropertiesMap;
-	typedef std::list<std::string> GOTypesList; //! Special object types used in this map
+	typedef std::vector<std::string> GOTypesList; //! Special object types used in this map
 	typedef std::function<GameObject*( const Uint32&, const Uint32&, MapLayer*, const Uint32& )>
 		CreateGOCb;
 	typedef std::function<void()> MapDrawCb;

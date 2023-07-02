@@ -6,7 +6,6 @@
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
-#include <list>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -175,7 +174,7 @@ class EE_API UISceneNode : public SceneNode {
 	Sizef mDpSize;
 	Uint32 mFlags;
 	Translator mTranslator;
-	std::list<UIWindow*> mWindowsList;
+	std::vector<UIWindow*> mWindowsList;
 	CSS::StyleSheet mStyleSheet;
 	bool mIsLoading;
 	bool mVerbose;

@@ -3,7 +3,6 @@
 
 #include <eepp/maps/gameobject.hpp>
 #include <eepp/maps/maplayer.hpp>
-#include <list>
 
 namespace EE { namespace Maps {
 
@@ -13,7 +12,7 @@ class EE_MAPS_API MapObjectLayer : public MapLayer {
   public:
 	enum SEARCH_TYPE { SEARCH_OBJECT = 1, SEARCH_POLY, SEARCH_ALL };
 
-	typedef std::list<GameObject*> ObjList;
+	typedef std::vector<GameObject*> ObjList;
 
 	virtual ~MapObjectLayer();
 

@@ -946,7 +946,8 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 									}
 
 									if ( chunked ) {
-										IOStream& writeToStream = compressed ? *inflateStream : writeTo;
+										IOStream& writeToStream =
+											compressed ? *inflateStream : writeTo;
 										chunkedStream =
 											eeNew( HttpStreamChunked, ( writeToStream ) );
 									}
@@ -1151,26 +1152,24 @@ void Http::AsyncRequest::run() {
 }
 
 void Http::removeOldThreads() {
-	std::list<AsyncRequest*> remove;
+	std::vector<AsyncRequest*> remove;
 
-	std::list<AsyncRequest*>::iterator it = mThreads.begin();
+	for ( AsyncRequest* ar : mThreads ) {
+		if ( ar->mRunning )
+			continue;
+		// We need to be sure, since the state is set in the thread, this will not block the
+		// thread anyway
+		ar->wait();
 
-	for ( ; it != mThreads.end(); ++it ) {
-		AsyncRequest* ar = ( *it );
+		eeDelete( ar );
 
-		if ( !ar->mRunning ) {
-			// We need to be sure, since the state is set in the thread, this will not block the
-			// thread anyway
-			ar->wait();
-
-			eeDelete( ar );
-
-			remove.push_back( ar );
-		}
+		remove.push_back( ar );
 	}
 
-	for ( it = remove.begin(); it != remove.end(); ++it ) {
-		mThreads.remove( ( *it ) );
+	for ( auto rem : remove ) {
+		auto found = std::find( mThreads.begin(), mThreads.end(), rem );
+		if ( found != mThreads.end() )
+			mThreads.erase( found );
 	}
 }
 

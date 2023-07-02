@@ -1176,6 +1176,8 @@
 ../../src/tools/ecode/filesystemlistener.hpp
 ../../src/tools/ecode/globalsearchcontroller.cpp
 ../../src/tools/ecode/globalsearchcontroller.hpp
+../../src/tools/ecode/iconmanager.cpp
+../../src/tools/ecode/iconmanager.hpp
 ../../src/tools/ecode/ignorematcher.cpp
 ../../src/tools/ecode/ignorematcher.hpp
 ../../src/tools/ecode/macos/macos.hpp

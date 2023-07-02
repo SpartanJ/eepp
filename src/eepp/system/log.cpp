@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdarg>
 #include <eepp/system/log.hpp>
 #include <iostream>
@@ -394,7 +395,9 @@ void Log::addLogReader( LogReaderInterface* reader ) {
 }
 
 void Log::removeLogReader( LogReaderInterface* reader ) {
-	mReaders.remove( reader );
+	auto found = std::find( mReaders.begin(), mReaders.end(), reader );
+	if ( found != mReaders.end() )
+		mReaders.erase( found );
 }
 
 void Log::writeToReaders( const std::string& text ) {

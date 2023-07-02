@@ -652,8 +652,7 @@ void MapEditor::onObjectModeSel( const Event* Event ) {
 	UISelectButton* Button = static_cast<UISelectButton*>( Event->getNode() );
 	UISelectButton* ButtonT = NULL;
 
-	for ( std::list<UISelectButton*>::iterator it = mObjContButton.begin();
-		  it != mObjContButton.end(); ++it ) {
+	for ( auto it = mObjContButton.begin(); it != mObjContButton.end(); ++it ) {
 		ButtonT = *it;
 
 		ButtonT->unselect();

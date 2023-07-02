@@ -3734,7 +3734,8 @@ const Vector2f& UICodeEditor::getScroll() const {
 
 Text& UICodeEditor::getLineText( const Int64& lineNumber ) const {
 	auto it = mTextCache.find( lineNumber );
-	if ( it == mTextCache.end() || it->second.hash != mDoc->line( lineNumber ).getHash() ) {
+	if ( it == mTextCache.end() || it->second.hash != mDoc->line( lineNumber ).getHash() ||
+		 !it->second.text.hasSameFontStyleConfig( mFontStyleConfig ) ) {
 		Float fontSize = PixelDensity::pxToDp( getCharacterSize() );
 		Text txt( "", mFont, fontSize );
 		txt.setTabWidth( mTabWidth );

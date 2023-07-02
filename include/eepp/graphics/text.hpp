@@ -179,6 +179,8 @@ class EE_API Text {
 
 	void setShadowOffset( const Vector2f& shadowOffset );
 
+	bool hasSameFontStyleConfig( const FontStyleConfig& styleConfig );
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;

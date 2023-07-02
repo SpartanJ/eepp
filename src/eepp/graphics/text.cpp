@@ -440,8 +440,8 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& stri
 }
 
 Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
-						   const String& string, const Uint32& style, const Uint32& tabWidth,
-						   const Float& outlineThickness ) {
+								 const String& string, const Uint32& style, const Uint32& tabWidth,
+								 const Float& outlineThickness ) {
 	// Make sure that we have a valid font
 	if ( !font )
 		return Vector2f();
@@ -1174,6 +1174,14 @@ void Text::setStyleConfig( const FontStyleConfig& styleConfig ) {
 	setOutlineThickness( styleConfig.OutlineThickness );
 	setOutlineColor( styleConfig.OutlineColor );
 	setShadowColor( styleConfig.ShadowColor );
+}
+
+bool Text::hasSameFontStyleConfig( const FontStyleConfig& styleConfig ) {
+	return styleConfig.Font == mFont && styleConfig.CharacterSize == mFontSize &&
+		   styleConfig.Style == mStyle && styleConfig.FontColor == mFillColor &&
+		   styleConfig.OutlineColor == mOutlineColor && styleConfig.ShadowColor == mShadowColor &&
+		   styleConfig.ShadowOffset == mShadowOffset &&
+		   styleConfig.OutlineThickness == mOutlineThickness;
 }
 
 void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {

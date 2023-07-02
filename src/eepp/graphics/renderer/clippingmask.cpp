@@ -140,11 +140,11 @@ void ClippingMask::stencilMaskDisable( bool clearMasks ) {
 		this->clearMasks();
 }
 
-std::list<Rectf> ClippingMask::getScissorsClipped() const {
+const std::vector<Rectf>& ClippingMask::getScissorsClipped() const {
 	return mScissorsClipped;
 }
 
-void ClippingMask::setScissorsClipped( const std::list<Rectf>& scissorsClipped ) {
+void ClippingMask::setScissorsClipped( const std::vector<Rectf>& scissorsClipped ) {
 	mScissorsClipped = scissorsClipped;
 
 	if ( !mScissorsClipped.empty() ) {
@@ -155,11 +155,11 @@ void ClippingMask::setScissorsClipped( const std::list<Rectf>& scissorsClipped )
 	}
 }
 
-std::list<Rectf> ClippingMask::getPlanesClipped() const {
+const std::vector<Rectf>& ClippingMask::getPlanesClipped() const {
 	return mPlanesClipped;
 }
 
-void ClippingMask::setPlanesClipped( const std::list<Rectf>& planesClipped ) {
+void ClippingMask::setPlanesClipped( const std::vector<Rectf>& planesClipped ) {
 	mPlanesClipped = planesClipped;
 
 	if ( !mPlanesClipped.empty() ) {

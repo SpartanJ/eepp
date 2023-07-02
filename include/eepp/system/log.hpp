@@ -5,7 +5,6 @@
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/system/sys.hpp>
-#include <list>
 #include <unordered_map>
 
 namespace EE { namespace System {
@@ -192,7 +191,7 @@ class EE_API Log : protected Mutex {
 	bool mKeepLog{ false };
 	LogLevel mLogLevelThreshold{ getDefaultLogLevel() };
 	IOStreamFile* mFS;
-	std::list<LogReaderInterface*> mReaders;
+	std::vector<LogReaderInterface*> mReaders;
 
 	void openFS();
 

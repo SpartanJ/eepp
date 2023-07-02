@@ -3,8 +3,6 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <list>
-
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/singleton.hpp>
@@ -266,7 +264,7 @@ class EE_API TextureFactory : protected Mutex {
 
 	unsigned int mMemSize;
 
-	std::list<Uint32> mVectorFreeSlots;
+	std::vector<Uint32> mVectorFreeSlots;
 
 	Texture::CoordinateType mLastCoordinateType;
 

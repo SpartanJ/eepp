@@ -133,10 +133,10 @@ Uint32 TextureFactory::pushTexture( const std::string& Filepath, const Uint32& T
 }
 
 Uint32 TextureFactory::findFreeSlot() {
-	if ( mVectorFreeSlots.size() ) {
+	if ( !mVectorFreeSlots.empty() ) {
 		Uint32 Pos = mVectorFreeSlots.front();
 
-		mVectorFreeSlots.pop_front();
+		mVectorFreeSlots.erase( mVectorFreeSlots.begin() );
 
 		return Pos;
 	}

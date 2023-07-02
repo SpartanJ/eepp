@@ -63,9 +63,9 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	bool hasSelection() const;
 
-	std::list<Uint32> getItemsSelectedIndex() const;
+	std::vector<Uint32> getItemsSelectedIndex() const;
 
-	std::list<UIListBoxItem*> getItemsSelected();
+	std::vector<UIListBoxItem*> getItemsSelected();
 
 	Rectf getContainerPadding() const;
 
@@ -134,7 +134,7 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	bool mSmoothScroll;
 
-	std::list<Uint32> mSelected;
+	std::vector<Uint32> mSelected;
 	std::vector<UIListBoxItem*> mItems;
 	std::vector<String> mTexts;
 

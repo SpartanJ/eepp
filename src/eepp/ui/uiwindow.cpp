@@ -1257,7 +1257,7 @@ void UIWindow::nodeDraw() {
 
 		ClippingMask* clippingMask = GLi->getClippingMask();
 
-		std::list<Rectf> clips = clippingMask->getPlanesClipped();
+		const std::vector<Rectf>& clips = clippingMask->getPlanesClipped();
 
 		if ( !clips.empty() )
 			clippingMask->clipPlaneDisable();

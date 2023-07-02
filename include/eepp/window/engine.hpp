@@ -5,7 +5,6 @@
 #include <eepp/window/displaymanager.hpp>
 #include <eepp/window/platformhelper.hpp>
 #include <eepp/window/window.hpp>
-#include <list>
 
 namespace EE { namespace System {
 class IniFile;

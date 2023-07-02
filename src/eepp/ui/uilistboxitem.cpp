@@ -96,7 +96,10 @@ void UIListBoxItem::select() {
 
 			mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-			LBParent->mSelected.remove( LBParent->getItemIndex( this ) );
+			auto found = std::find( LBParent->mSelected.begin(), LBParent->mSelected.end(),
+									LBParent->getItemIndex( this ) );
+			if ( found != LBParent->mSelected.end() )
+				LBParent->mSelected.erase( found );
 			LBParent->sendCommonEvent( Event::OnSelectionChanged );
 		}
 	} else {

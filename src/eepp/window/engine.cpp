@@ -193,8 +193,6 @@ void Engine::destroyWindow( EE::Window::Window* window ) {
 }
 
 bool Engine::existsWindow( EE::Window::Window* window ) {
-	std::list<Window*>::iterator it;
-
 	for ( auto& it : mWindows ) {
 		if ( it.second == window )
 			return true;

@@ -995,11 +995,11 @@ void UIConsole::onSelectionChange() {
 	invalidateDraw();
 }
 
-String UIConsole::getLastCommonSubStr( std::list<String>& cmds ) {
+String UIConsole::getLastCommonSubStr( std::vector<String>& cmds ) {
 	String lastCommon( mDoc.getCurrentLine().getTextWithoutNewLine() );
 	String strTry( lastCommon );
 
-	std::list<String>::iterator ite;
+	std::vector<String>::iterator ite;
 
 	bool found = false;
 
@@ -1034,7 +1034,7 @@ String UIConsole::getLastCommonSubStr( std::list<String>& cmds ) {
 }
 
 void UIConsole::printCommandsStartingWith( const String& start ) {
-	std::list<String> cmds;
+	std::vector<String> cmds;
 
 	for ( auto it = mCallbacks.begin(); it != mCallbacks.end(); ++it ) {
 		if ( String::startsWith( it->first, start ) ) {
@@ -1045,7 +1045,7 @@ void UIConsole::printCommandsStartingWith( const String& start ) {
 	if ( cmds.size() > 1 ) {
 		privPushText( "> " + mDoc.getCurrentLine().getTextWithoutNewLine() );
 
-		std::list<String>::iterator ite;
+		std::vector<String>::iterator ite;
 
 		for ( ite = cmds.begin(); ite != cmds.end(); ++ite )
 			privPushText( ( *ite ) );

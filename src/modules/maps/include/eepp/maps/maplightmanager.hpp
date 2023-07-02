@@ -3,7 +3,6 @@
 
 #include <eepp/maps/base.hpp>
 #include <eepp/maps/maplight.hpp>
-#include <list>
 
 namespace EE { namespace Maps {
 
@@ -11,7 +10,7 @@ class TileMap;
 
 class EE_MAPS_API MapLightManager {
   public:
-	typedef std::list<MapLight*> LightsList;
+	typedef std::vector<MapLight*> LightsList;
 
 	MapLightManager( TileMap* Map, bool ByVertex );
 

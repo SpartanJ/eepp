@@ -428,7 +428,7 @@ void UIListBox::createItemIndex( const Uint32& i ) {
 
 		itemUpdateSize( mItems[i] );
 
-		for ( std::list<Uint32>::iterator it = mSelected.begin(); it != mSelected.end(); ++it ) {
+		for ( auto it = mSelected.begin(); it != mSelected.end(); ++it ) {
 			if ( *it == i ) {
 				mItems[i]->select();
 
@@ -727,13 +727,13 @@ String UIListBox::getItemSelectedText() const {
 	return tstr;
 }
 
-std::list<Uint32> UIListBox::getItemsSelectedIndex() const {
+std::vector<Uint32> UIListBox::getItemsSelectedIndex() const {
 	return mSelected;
 }
 
-std::list<UIListBoxItem*> UIListBox::getItemsSelected() {
-	std::list<UIListBoxItem*> tItems;
-	std::list<Uint32>::iterator it;
+std::vector<UIListBoxItem*> UIListBox::getItemsSelected() {
+	std::vector<UIListBoxItem*> tItems;
+	std::vector<Uint32>::iterator it;
 
 	for ( it = mSelected.begin(); it != mSelected.end(); ++it ) {
 		if ( NULL == mItems[*it] )
@@ -810,8 +810,7 @@ void UIListBox::setSelected( Uint32 Index ) {
 
 	if ( Index < mItems.size() ) {
 		if ( isMultiSelect() ) {
-			for ( std::list<Uint32>::iterator it = mSelected.begin(); it != mSelected.end();
-				  ++it ) {
+			for ( auto it = mSelected.begin(); it != mSelected.end(); ++it ) {
 				if ( *it == Index )
 					return;
 			}
