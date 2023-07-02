@@ -26,7 +26,7 @@ class EE_API TabEvent : public Event {
 
 class EE_API UITabWidget : public UIWidget {
   public:
-	enum class FocusTabBehavior { Closest, FocusOrder };
+	enum class FocusTabBehavior { Closest, FocusOrder, Default };
 
 	class StyleConfig {
 	  public:
@@ -41,7 +41,7 @@ class EE_API UITabWidget : public UIWidget {
 										 //! border tab ) are different from the central tabs.
 	};
 
-	typedef std::function<bool( UITab* )> TabTryCloseCallback;
+	typedef std::function<bool( UITab*, FocusTabBehavior )> TabTryCloseCallback;
 
 	static UITabWidget* New();
 
@@ -67,10 +67,11 @@ class EE_API UITabWidget : public UIWidget {
 
 	Uint32 getTabCount() const;
 
-	void removeTab( const Uint32& index, bool destroyOwnedNode = true,
-					bool immediateClose = false );
+	void removeTab( const Uint32& index, bool destroyOwnedNode = true, bool immediateClose = false,
+					FocusTabBehavior focusTabBehavior = FocusTabBehavior::Default );
 
-	void removeTab( UITab* tab, bool destroyOwnedNode = true, bool immediateClose = false );
+	void removeTab( UITab* tab, bool destroyOwnedNode = true, bool immediateClose = false,
+					FocusTabBehavior focusTabBehavior = FocusTabBehavior::Default );
 
 	void removeAllTabs( bool destroyOwnedNode = true, bool immediateClose = false );
 
@@ -170,6 +171,7 @@ class EE_API UITabWidget : public UIWidget {
 	void setDroppableHoveringColor( const Color& droppableHoveringColor );
 
 	FocusTabBehavior getFocusTabBehavior() const;
+
 	void setFocusTabBehavior( FocusTabBehavior focusTabBehavior );
 
   protected:
@@ -198,9 +200,11 @@ class EE_API UITabWidget : public UIWidget {
 	UITab* createTab( const String& text, UINode* nodeOwned, Drawable* icon );
 
 	void removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab,
-					bool immediateClose );
+					bool immediateClose,
+					FocusTabBehavior focusTabBehavior = FocusTabBehavior::Default );
 
-	void removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab, bool immediateClose );
+	void removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab, bool immediateClose,
+					FocusTabBehavior focusTabBehavior = FocusTabBehavior::Default );
 
 	virtual void onSizeChange();
 
@@ -224,7 +228,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	void refreshOwnedWidget( UITab* tab );
 
-	void tryCloseTab( UITab* tab );
+	void tryCloseTab( UITab* tab, FocusTabBehavior focustTabBehavior = FocusTabBehavior::Default );
 
 	void swapTabs( UITab* left, UITab* right );
 

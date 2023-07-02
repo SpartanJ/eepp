@@ -51,6 +51,7 @@ static const char* MEMBER_PREVIOUS_RESULT_ID = "previousResultId";
 static const char* MEMBER_QUERY = "query";
 static const char* MEMBER_SUCCESS = "success";
 static const char* MEMBER_LIMIT = "limit";
+static const char* MEMBER_OPTIONS = "options";
 
 static json newRequest( const std::string& method, const json& params = json{} ) {
 	json j;
@@ -998,6 +999,12 @@ void LSPClientServer::registerCapabilities( const json& jcap ) {
 			} else if ( reg["method"] == "textDocument/rename" ) {
 				mCapabilities.renameProvider = true;
 				registered = true;
+			} else if ( reg["method"] == "textDocument/formatting" ) {
+				mCapabilities.documentFormattingProvider = true;
+				registered = true;
+			} else if ( reg["method"] == "textDocument/rangeFormatting" ) {
+				mCapabilities.documentRangeFormattingProvider = true;
+				registered = true;
 			}
 		}
 	}
@@ -1051,6 +1058,8 @@ void LSPClientServer::initialize() {
 			  { "hover", json{ { "contentFormat", { "markdown", "plaintext" } } } },
 			  { "completion", completionItem },
 			  { "rename", json{ { "dynamicRegistration", true } } },
+			  { "formatting", json{ { "dynamicRegistration", true } } },
+			  { "rangeFormatting", json{ { "dynamicRegistration", true } } },
 		  } },
 		{ "window", json{ { "workDoneProgress", true },
 						  { "showMessage", showMessage },
@@ -1960,9 +1969,11 @@ void LSPClientServer::documentReferences( const URI& document, const TextPositio
 	} );
 }
 
-static json textDocumentOptions( const URI& doc, json opts ) {
+static json textDocumentOptions( const URI& doc, json opts, TextRange range = TextRange() ) {
 	auto params = textDocumentParams( doc );
-	params["options"] = opts;
+	if ( range.isValid() )
+		params[MEMBER_RANGE] = toJson( range );
+	params[MEMBER_OPTIONS] = opts;
 	return params;
 }
 
@@ -1980,6 +1991,23 @@ LSPClientServer::documentFormatting( const URI& document, const json& options,
 		if ( h )
 			h( id, parseTextEditArray( json ) );
 	} );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentRangeFormatting( const URI& document, const TextRange& range,
+										  const json& options, const JsonReplyHandler& h ) {
+	auto params = textDocumentOptions( document, options, range );
+	return send( newRequest( "textDocument/rangeFormatting", params ), h );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentRangeFormatting( const URI& document, const TextRange& range,
+										  const json& options, const TextEditArrayHandler& h ) {
+	return documentRangeFormatting( document, range, options,
+									[h]( const IdType& id, const json& json ) {
+										if ( h )
+											h( id, parseTextEditArray( json ) );
+									} );
 }
 
 void LSPClientServer::documentRename( const URI& document, const TextPosition& pos,

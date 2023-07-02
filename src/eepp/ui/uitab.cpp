@@ -337,7 +337,7 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 			if ( flags & EE_BUTTON_LMASK && message->getSender() != mCloseButton ) {
 				tTabW->setTabSelected( this );
 			} else if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
-				tTabW->tryCloseTab( this );
+				tTabW->tryCloseTab( this, UITabWidget::FocusTabBehavior::Closest );
 			} else if ( flags & EE_BUTTONS_WUWD ) {
 				if ( flags & EE_BUTTON_WUMASK ) {
 					tTabW->selectPreviousTab();
@@ -349,7 +349,7 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 		}
 		case NodeMessage::MouseClick: {
 			if ( flags & EE_BUTTON_LMASK && message->getSender() == mCloseButton ) {
-				tTabW->tryCloseTab( this );
+				tTabW->tryCloseTab( this, UITabWidget::FocusTabBehavior::Closest );
 			}
 			break;
 		}

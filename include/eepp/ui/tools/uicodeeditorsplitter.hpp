@@ -51,9 +51,9 @@ class EE_API UICodeEditorSplitter {
 
 	virtual ~UICodeEditorSplitter();
 
-	virtual bool tryTabClose( UIWidget* widget );
+	virtual bool tryTabClose( UIWidget* widget, UITabWidget::FocusTabBehavior focusTabBehavior );
 
-	void closeTab( UIWidget* widget );
+	void closeTab( UIWidget* widget, UITabWidget::FocusTabBehavior focusTabBehavior );
 
 	bool curEditorExistsAndFocused() const;
 
@@ -218,7 +218,9 @@ class EE_API UICodeEditorSplitter {
 	template <typename T> void registerSplitterCommands( T& t ) {
 		t.setCommand( "switch-to-previous-split", [this] { switchPreviousSplit( mCurWidget ); } );
 		t.setCommand( "switch-to-next-split", [this] { switchNextSplit( mCurWidget ); } );
-		t.setCommand( "close-tab", [this] { tryTabClose( mCurWidget ); } );
+		t.setCommand( "close-tab", [this] {
+			tryTabClose( mCurWidget, UITabWidget::FocusTabBehavior::Default );
+		} );
 		t.setCommand( "create-new", [this] {
 			auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
 			if ( d.first != nullptr && d.second != nullptr ) {

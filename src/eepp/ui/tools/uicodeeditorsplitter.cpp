@@ -623,13 +623,14 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 			setCurrentWidget( tabWidget->getTabSelected()->getOwnedWidget()->asType<UIWidget>() );
 		}
 	} );
-	tabWidget->setTabTryCloseCallback( [this]( UITab* tab ) -> bool {
-		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-			tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>() );
-			return false;
-		}
-		return true;
-	} );
+	tabWidget->setTabTryCloseCallback(
+		[this]( UITab* tab, UITabWidget::FocusTabBehavior focusTabBehavior ) -> bool {
+			if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+				tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>(), focusTabBehavior );
+				return false;
+			}
+			return true;
+		} );
 	tabWidget->addEventListener( Event::OnTabClosed, [this]( const Event* event ) {
 		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
@@ -913,7 +914,8 @@ void UICodeEditorSplitter::zoomReset() {
 	forEachEditor( []( UICodeEditor* editor ) { editor->fontSizeReset(); } );
 }
 
-bool UICodeEditorSplitter::tryTabClose( UIWidget* widget ) {
+bool UICodeEditorSplitter::tryTabClose( UIWidget* widget,
+										UITabWidget::FocusTabBehavior focusTabBehavior ) {
 	if ( !widget )
 		return false;
 
@@ -928,8 +930,9 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget ) {
 				widget->getUISceneNode()->getTranslatorString(
 					"@string/confirm_close_tab",
 					"Do you really want to close this tab?\nAll changes will be lost." ) );
-			mTryCloseMsgBox->addEventListener(
-				Event::OnConfirm, [&, editor]( const Event* ) { closeTab( editor ); } );
+			mTryCloseMsgBox->addEventListener( Event::OnConfirm, [&, editor]( const Event* ) {
+				closeTab( editor, focusTabBehavior );
+			} );
 			mTryCloseMsgBox->addEventListener( Event::OnClose, [this]( const Event* ) {
 				mTryCloseMsgBox = nullptr;
 				if ( mCurEditor )
@@ -941,16 +944,17 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget ) {
 			mTryCloseMsgBox->show();
 			return false;
 		} else {
-			closeTab( editor );
+			closeTab( editor, focusTabBehavior );
 			return true;
 		}
 	} else {
-		closeTab( widget );
+		closeTab( widget, focusTabBehavior );
 		return true;
 	}
 }
 
-void UICodeEditorSplitter::closeTab( UIWidget* widget ) {
+void UICodeEditorSplitter::closeTab( UIWidget* widget,
+									 UITabWidget::FocusTabBehavior focusTabBehavior ) {
 	if ( widget ) {
 		if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
 			UICodeEditor* editor = widget->asType<UICodeEditor>();
@@ -960,14 +964,15 @@ void UICodeEditorSplitter::closeTab( UIWidget* widget ) {
 						!tabWidget->getParent()->isType( UI_TYPE_SPLITTER ) &&
 						tabWidget->getTabCount() == 1 ) ||
 					 !editor->getDocument().isUntitledEmpty() ) {
-					tabWidget->removeTab( (UITab*)editor->getData() );
+					tabWidget->removeTab( (UITab*)editor->getData(), true, false,
+										  focusTabBehavior );
 				} else {
 					return;
 				}
 			}
 		} else {
 			UITabWidget* tabWidget = tabWidgetFromWidget( widget );
-			tabWidget->removeTab( (UITab*)widget->getData() );
+			tabWidget->removeTab( (UITab*)widget->getData(), true, false, focusTabBehavior );
 		}
 		if ( mCurEditor == widget )
 			mCurEditor = nullptr;

@@ -806,6 +806,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		mKeyBindings["lsp-symbol-code-action"] = "alt+return";
 		mKeyBindings["lsp-rename-symbol-under-cursor"] = "mod+shift+r";
 		mKeyBindings["lsp-symbol-references"] = "mod+shift+u";
+		mKeyBindings["lsp-format-range"] = "alt+shift+f";
 	}
 
 	if ( j.contains( "keybindings" ) ) {
@@ -820,7 +821,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					  "lsp-memory-usage",
 					  "lsp-symbol-code-action",
 					  "lsp-rename-symbol-under-cursor",
-					  "lsp-refresh-semantic-highlighting" };
+					  "lsp-refresh-semantic-highlighting",
+					  "lsp-format-range" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -1092,6 +1094,10 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		doc.setCommand( "lsp-refresh-semantic-highlighting", [this, editor] {
 			mClientManager.requestSymanticHighlighting( editor->getDocumentRef() );
 		} );
+
+		doc.setCommand( "lsp-format-range", [this, editor] {
+			mClientManager.rangeFormatting( editor->getDocumentRef() );
+		} );
 	}
 
 	std::vector<Uint32> listeners;
@@ -1248,6 +1254,10 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	if ( cap.codeActionProvider )
 		addFn( "lsp-symbol-code-action", "Code Action", "lightbulb-autofix" );
+
+	if ( cap.documentRangeFormattingProvider &&
+		 editor->getDocument().getSelection().hasSelection() )
+		addFn( "lsp-format-range", "Format Selected Range" );
 
 	if ( cap.semanticTokenProvider.full || cap.semanticTokenProvider.fullDelta )
 		addFn( "lsp-refresh-semantic-highlighting", "Refresh Semantic Highlighting", "refresh" );

@@ -537,11 +537,15 @@ Uint32 UITabWidget::getTabCount() const {
 	return mTabs.size();
 }
 
-void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool immediateClose ) {
-	removeTab( index, destroyOwnedNode, true, immediateClose );
+void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool immediateClose,
+							 FocusTabBehavior focusTabBehavior ) {
+	removeTab( index, destroyOwnedNode, true, immediateClose, focusTabBehavior );
 }
 
 void UITabWidget::updateTabSelected( FocusTabBehavior tabBehavior ) {
+	if ( tabBehavior == FocusTabBehavior::Default )
+		tabBehavior = mFocusTabBehavior;
+
 	if ( tabBehavior == FocusTabBehavior::Closest ) {
 		if ( !mTabs.empty() ) {
 			if ( mTabSelectedIndex < mTabs.size() ) {
@@ -589,7 +593,7 @@ void UITabWidget::eraseFocusHistory( UITab* tab ) {
 }
 
 void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab,
-							 bool immediateClose ) {
+							 bool immediateClose, FocusTabBehavior focusTabBehavior ) {
 	eeASSERT( index < mTabs.size() );
 
 	UITab* tab = mTabs[index];
@@ -611,7 +615,7 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool de
 	mTabs.erase( mTabs.begin() + index );
 
 	if ( index == mTabSelectedIndex ) {
-		updateTabSelected( mFocusTabBehavior );
+		updateTabSelected( focusTabBehavior );
 	} else {
 		mTabSelectedIndex = getTabIndex( mTabSelected );
 	}
@@ -633,13 +637,14 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool de
 	}
 }
 
-void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool immediateClose ) {
-	removeTab( getTabIndex( tab ), destroyOwnedNode, true, immediateClose );
+void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool immediateClose,
+							 FocusTabBehavior focusTabBehavior ) {
+	removeTab( getTabIndex( tab ), destroyOwnedNode, true, immediateClose, focusTabBehavior );
 }
 
 void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab,
-							 bool immediateClose ) {
-	removeTab( getTabIndex( tab ), destroyOwnedNode, destroyTab, immediateClose );
+							 bool immediateClose, FocusTabBehavior focusTabBehavior ) {
+	removeTab( getTabIndex( tab ), destroyOwnedNode, destroyTab, immediateClose, focusTabBehavior );
 }
 
 void UITabWidget::removeAllTabs( bool destroyOwnedNode, bool immediateClose ) {
@@ -833,6 +838,8 @@ UITabWidget::FocusTabBehavior UITabWidget::getFocusTabBehavior() const {
 }
 
 void UITabWidget::setFocusTabBehavior( UITabWidget::FocusTabBehavior focusTabBehavior ) {
+	if ( focusTabBehavior == FocusTabBehavior::Default )
+		focusTabBehavior = FocusTabBehavior::Closest;
 	mFocusTabBehavior = focusTabBehavior;
 }
 
@@ -853,10 +860,10 @@ void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	}
 }
 
-void UITabWidget::tryCloseTab( UITab* tab ) {
-	if ( mTabTryCloseCallback && !mTabTryCloseCallback( tab ) )
+void UITabWidget::tryCloseTab( UITab* tab, FocusTabBehavior focusTabBehavior ) {
+	if ( mTabTryCloseCallback && !mTabTryCloseCallback( tab, focusTabBehavior ) )
 		return;
-	removeTab( tab );
+	removeTab( tab, true, false, focusTabBehavior );
 }
 
 void UITabWidget::swapTabs( UITab* left, UITab* right ) {

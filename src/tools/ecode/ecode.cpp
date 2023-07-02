@@ -3102,7 +3102,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		if ( mConfig.windowState.maximized ) {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
 			mThreadPool->run( [this] { mWindow->maximize(); } );
+#else
+			mWindow->maximize();
+#endif
 		}
 #endif
 

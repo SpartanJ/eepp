@@ -204,6 +204,12 @@ class LSPClientServer {
 	LSPRequestHandle documentFormatting( const URI& document, const json& options,
 										 const TextEditArrayHandler& h );
 
+	LSPRequestHandle documentRangeFormatting( const URI& document, const TextRange& range,
+											  const json& options, const JsonReplyHandler& h );
+
+	LSPRequestHandle documentRangeFormatting( const URI& document, const TextRange& range,
+											  const json& options, const TextEditArrayHandler& h );
+
 	void documentRename( const URI& document, const TextPosition& pos, const std::string& newName,
 						 const JsonReplyHandler& h );
 

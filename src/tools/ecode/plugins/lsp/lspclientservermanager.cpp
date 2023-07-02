@@ -244,6 +244,37 @@ void LSPClientServerManager::requestSymanticHighlighting( std::shared_ptr<TextDo
 	}
 }
 
+static json getURIJSON( std::shared_ptr<TextDocument> doc ) {
+	json data;
+	json docUri;
+	json options;
+	docUri["uri"] = doc->getURI().toString();
+	data["textDocument"] = docUri;
+	options["tabSize"] = doc->getIndentWidth();
+	options["insertSpaces"] = doc->getIndentType() == TextDocument::IndentType::IndentSpaces;
+	data["options"] = options;
+	return data;
+}
+
+void LSPClientServerManager::rangeFormatting( std::shared_ptr<TextDocument> doc ) {
+	if ( !doc->getSelection().hasSelection() )
+		return;
+	mThreadPool->run( [this, doc] {
+		auto* server = getOneLSPClientServer( doc );
+		if ( server ) {
+			URI uri( doc->getURI() );
+			server->documentRangeFormatting(
+				uri, doc->getSelection(), getURIJSON( doc ),
+				[this, uri]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
+					mPluginManager->getSplitter()->getUISceneNode()->runOnMainThread(
+						[this, edits, uri] {
+							mPlugin->processDocumentFormattingResponse( uri, edits );
+						} );
+				} );
+		}
+	} );
+}
+
 void LSPClientServerManager::run( const std::shared_ptr<TextDocument>& doc ) {
 	mThreadPool->run( [&, doc]() { tryRunServer( doc ); } );
 }
