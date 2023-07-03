@@ -591,7 +591,11 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 		if os.is_real("emscripten") then
-			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1 -s NO_DISABLE_EXCEPTION_CATCHING" }
+			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1 -s NO_DISABLE_EXCEPTION_CATCHING -sALLOW_MEMORY_GROWTH=1" }
+			if _OPTIONS["with-emscripten-pthreads"] then
+				buildoptions { "-s USE_PTHREADS=1" }
+				linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
+			end
 		end
 
 		fix_shared_lib_linking_path( package_name, "libeepp-debug" )
@@ -625,13 +629,12 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions { "-s TOTAL_MEMORY=67108864" }
-		linkoptions { "-s USE_SDL=2" }
+		linkoptions { "-s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
 		buildoptions { "-s USE_SDL=2" }
 
 		if _OPTIONS["with-emscripten-pthreads"] then
 			buildoptions { "-s USE_PTHREADS=1" }
-			linkoptions { "-s USE_PTHREADS=1" }
+			linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 		end
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then

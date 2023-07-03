@@ -371,13 +371,12 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter "system:emscripten"
 		targetname ( package_name .. extension )
-		linkoptions { "-O3 -s TOTAL_MEMORY=67108864" }
-		linkoptions { "-s USE_SDL=2" }
+		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
 		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
 
 		if _OPTIONS["with-emscripten-pthreads"] then
 			buildoptions { "-s USE_PTHREADS=1" }
-			linkoptions { "-s USE_PTHREADS=1" }
+			linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 		end
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then

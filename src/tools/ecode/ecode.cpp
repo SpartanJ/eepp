@@ -618,8 +618,15 @@ void App::onTextDropped( String text ) {
 
 App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 	mArgs( args ),
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	mThreadPool(
-		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
+		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) ) {
+}
+#elif defined( __EMSCRIPTEN_PTHREADS__ )
+	mThreadPool(
+		ThreadPool::createShared( jobs > 0 ? jobs : eemin<int>( 8, Sys::getCPUCount() ) ) ) {
+}
+#endif
 
 App::~App() {
 	if ( mProjectBuildManager )

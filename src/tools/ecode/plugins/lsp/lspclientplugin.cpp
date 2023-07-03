@@ -1183,14 +1183,12 @@ void LSPClientPlugin::getSymbolInfo( UICodeEditor* editor ) {
 }
 
 void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
-	for ( auto& kb : mKeyBindings ) {
+	for ( auto& kb : mKeyBindings )
 		editor->getKeyBindings().removeCommandKeybind( kb.first );
-		if ( editor->hasDocument() )
-			editor->getDocument().removeCommand( kb.first );
-	}
 
 	if ( mShuttingDown )
 		return;
+
 	Lock l( mDocMutex );
 	TextDocument* doc = &editor->getDocument();
 	const auto& cbs = mEditors[editor];
@@ -1202,6 +1200,11 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	for ( const auto& ieditor : mEditorDocs ) {
 		if ( ieditor.second == doc )
 			return;
+	}
+
+	if ( editor->hasDocument() ) {
+		for ( auto& kb : mKeyBindings )
+			editor->getDocument().removeCommand( kb.first );
 	}
 
 	{

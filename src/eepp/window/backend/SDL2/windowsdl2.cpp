@@ -405,10 +405,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	}
 
 	/// Init the clipboard after the window creation
-	reinterpret_cast<ClipboardSDL*>( mClipboard )->init();
+	static_cast<ClipboardSDL*>( mClipboard )->init();
 
 	/// Init the input after the window creation
-	reinterpret_cast<InputSDL*>( mInput )->init();
+	static_cast<InputSDL*>( mInput )->init();
 
 	mCursorManager->set( Cursor::SysArrow );
 
