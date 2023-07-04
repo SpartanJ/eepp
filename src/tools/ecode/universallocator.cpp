@@ -156,6 +156,7 @@ void UniversalLocator::updateFilesTable() {
 					mLocateTable->setModel( res );
 					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 					mLocateTable->scrollToTop();
+					updateLocateBarSync();
 				} );
 			} );
 #else
@@ -202,11 +203,8 @@ void UniversalLocator::updateCommandPaletteTable() {
 #endif
 	} else if ( mCommandPalette.getCurModel() ) {
 		mLocateTable->setModel( mCommandPalette.getCurModel() );
-
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
-
-	mLocateTable->setColumnsVisible( { 0, 1 } );
 }
 
 void UniversalLocator::showLocateTable() {
@@ -214,6 +212,7 @@ void UniversalLocator::showLocateTable() {
 	Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
 	pos.y -= mLocateTable->getPixelsSize().getHeight();
 	mLocateTable->setPixelsPosition( pos );
+	updateFilesTable();
 }
 
 void UniversalLocator::goToLine() {
@@ -222,8 +221,9 @@ void UniversalLocator::goToLine() {
 }
 
 static bool isCommand( const std::string& filename ) {
-	return !filename.empty() && ( filename == "> " || filename == ": " || filename == "l " ||
-								  filename == ". " || filename == "o " );
+	return !filename.empty() &&
+		   ( filename == "> " || filename == ": " || filename == "l " || filename == ". " ||
+			 filename == "o " || filename == "sb " || filename == "sbt " );
 }
 
 void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInput ) {
@@ -271,10 +271,14 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 			showOpenDocuments();
 		} else if ( String::startsWith( inputTxt, ". " ) ) {
 			showDocumentSymbol();
+		} else if ( String::startsWith( inputTxt, "sb " ) ) {
+			showSwitchBuild();
+		} else if ( String::startsWith( inputTxt, "sbt " ) ) {
+			showSwitchBuildType();
 		} else {
 			showLocateTable();
-			updateFilesTable();
 		}
+		updateLocateBarSync();
 	} );
 	mLocateInput->addEventListener( Event::OnPressEnter, [this]( const Event* ) {
 		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
@@ -329,6 +333,32 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 					mLocateInput->setText( vName.toString() );
 					return;
 				}
+
+				if ( String::startsWith( mLocateInput->getText(), "sb " ) ) {
+					auto pbm = mApp->getProjectBuildManager();
+					auto cfg = pbm->getConfig();
+					std::string buildName = vName.toString();
+					if ( pbm->hasBuild( buildName ) ) {
+						cfg.buildName = buildName;
+						pbm->setConfig( cfg );
+						mLocateBarLayout->execute( "close-locatebar" );
+					}
+					return;
+				} else if ( String::startsWith( mLocateInput->getText(), "sbt " ) ) {
+					auto pbm = mApp->getProjectBuildManager();
+					auto cfg = pbm->getConfig();
+					auto build = pbm->getBuild( cfg.buildName );
+					if ( build != nullptr ) {
+						std::string buildType = vName.toString();
+						if ( build->buildTypes().find( buildType ) != build->buildTypes().end() ) {
+							cfg.buildType = buildType;
+							pbm->setConfig( cfg );
+							mLocateBarLayout->execute( "close-locatebar" );
+						}
+					}
+					return;
+				}
+
 				Variant vPath( modelEvent->getModel()->data(
 					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
 					ModelRole::Display ) );
@@ -375,19 +405,26 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 	} );
 }
 
-void UniversalLocator::updateLocateBar() {
-	mLocateBarLayout->runOnMainThread( [this] {
-		Float width = eeceil( mLocateInput->getPixelsSize().getWidth() );
-		mLocateTable->setPixelsSize( width,
-									 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
-		width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
+void UniversalLocator::updateLocateBarSync() {
+	Float width = eeceil( mLocateInput->getPixelsSize().getWidth() );
+	mLocateTable->setPixelsSize( width,
+								 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
+	width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
+	if ( mLocateTable->getModel()->columnCount() == 2 ) {
 		mLocateTable->setColumnsVisible( { 0, 1 } );
 		mLocateTable->setColumnWidth( 0, eeceil( width * 0.5 ) );
 		mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );
-		Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
-		pos.y -= mLocateTable->getPixelsSize().getHeight();
-		mLocateTable->setPixelsPosition( pos );
-	} );
+	} else {
+		mLocateTable->setColumnsVisible( { 0 } );
+		mLocateTable->setColumnWidth( 0, width );
+	}
+	Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
+	pos.y -= mLocateTable->getPixelsSize().getHeight();
+	mLocateTable->setPixelsPosition( pos );
+}
+
+void UniversalLocator::updateLocateBar() {
+	mLocateBarLayout->runOnMainThread( [this] { updateLocateBarSync(); } );
 }
 
 void UniversalLocator::showBar() {
@@ -421,7 +458,10 @@ void UniversalLocator::showLocateBar() {
 	showBar();
 
 	if ( !mLocateInput->getText().empty() &&
-		 ( mLocateInput->getText()[0] == '>' || mLocateInput->getText()[0] == ':' ) )
+		 ( mLocateInput->getText()[0] == '>' || mLocateInput->getText()[0] == ':' ||
+		   mLocateInput->getText()[0] == '.' ||
+		   String::startsWith( mLocateInput->getText(), "sb " ) ||
+		   String::startsWith( mLocateInput->getText(), "sbt " ) ) )
 		mLocateInput->setText( "" );
 
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
@@ -554,6 +594,94 @@ void UniversalLocator::updateOpenDocumentsTable() {
 	if ( mLocateTable->getModel()->rowCount() > 0 )
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	mLocateTable->scrollToTop();
+}
+
+void UniversalLocator::showSwitchBuild() {
+	showBar();
+
+	if ( mLocateInput->getText().empty() || !String::startsWith( mLocateInput->getText(), "sb " ) )
+		mLocateInput->setText( "sb " );
+
+	if ( mLocateInput->getText().size() >= 3 )
+		updateSwitchBuildTable();
+	updateLocateBar();
+	mApp->getStatusBar()->updateState();
+}
+
+std::shared_ptr<ItemListOwnerModel<std::string>>
+UniversalLocator::openBuildModel( const std::string& match ) {
+	const auto& builds = mApp->getProjectBuildManager()->getBuilds();
+	std::vector<std::string> buildNames;
+	if ( builds.empty() )
+		return ItemListOwnerModel<std::string>::create( {} );
+	buildNames.reserve( builds.size() );
+	for ( const auto& build : builds ) {
+		if ( match.empty() ||
+			 String::startsWith( String::toLower( build.first ), String::toLower( match ) ) )
+			buildNames.push_back( build.first );
+	}
+	std::stable_sort( buildNames.begin(), buildNames.end() );
+	return ItemListOwnerModel<std::string>::create( buildNames );
+}
+
+void UniversalLocator::updateSwitchBuildTable() {
+	mLocateTable->setModel( openBuildModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
+	if ( mLocateTable->getModel()->rowCount() > 0 ) {
+		ModelIndex idx =
+			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildName );
+		mLocateTable->getSelection().set( idx.isValid() ? idx
+														: mLocateTable->getModel()->index( 0 ) );
+	}
+	mLocateTable->scrollToTop();
+}
+
+void UniversalLocator::showSwitchBuildType() {
+	showBar();
+
+	if ( mLocateInput->getText().empty() || !String::startsWith( mLocateInput->getText(), "sbt " ) )
+		mLocateInput->setText( "sbt " );
+
+	if ( mLocateInput->getText().size() >= 4 )
+		updateSwitchBuildTypeTable();
+	updateLocateBar();
+	mApp->getStatusBar()->updateState();
+}
+
+std::shared_ptr<ItemListOwnerModel<std::string>>
+UniversalLocator::openBuildTypeModel( const std::string& match ) {
+	const auto& builds = mApp->getProjectBuildManager()->getBuilds();
+	const auto& cfg = mApp->getProjectBuildManager()->getConfig();
+
+	auto buildIt = builds.find( cfg.buildName );
+	if ( buildIt == builds.end() )
+		return ItemListOwnerModel<std::string>::create( {} );
+	const auto& build = buildIt->second;
+	const auto& buildTypes = build.buildTypes();
+	if ( buildTypes.empty() )
+		return ItemListOwnerModel<std::string>::create( {} );
+
+	std::vector<std::string> buildTypeNames;
+	buildTypeNames.reserve( builds.size() );
+	for ( const auto& build : buildTypes ) {
+		if ( match.empty() ||
+			 String::startsWith( String::toLower( build ), String::toLower( match ) ) )
+			buildTypeNames.push_back( build );
+	}
+	std::stable_sort( buildTypeNames.begin(), buildTypeNames.end() );
+	return ItemListOwnerModel<std::string>::create( buildTypeNames );
+}
+
+void UniversalLocator::updateSwitchBuildTypeTable() {
+	mLocateTable->setModel(
+		openBuildTypeModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
+	if ( mLocateTable->getModel()->rowCount() > 0 ) {
+		ModelIndex idx =
+			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildType );
+		mLocateTable->getSelection().set( idx.isValid() ? idx
+														: mLocateTable->getModel()->index( 0 ) );
+	}
+	mLocateTable->scrollToTop();
+	mLocateTable->setColumnsVisible( { 0 } );
 }
 
 void UniversalLocator::onCodeEditorFocusChange( UICodeEditor* editor ) {
@@ -725,6 +853,9 @@ std::vector<ProjectDirectoryTree::CommandInfo> UniversalLocator::getLocatorComma
 		  mUISceneNode->i18n( "go_to_line_in_current_document", "Go To Line in Current Document" ),
 		  icon } );
 	vec.push_back( { "o ", mUISceneNode->i18n( "open_documents", "Open Documents" ), icon } );
+	vec.push_back( { "sb ", mUISceneNode->i18n( "switch_build", "Switch Build" ), icon } );
+	vec.push_back(
+		{ "sbt ", mUISceneNode->i18n( "switch_build_type", "Switch Build Type" ), icon } );
 	return vec;
 }
 

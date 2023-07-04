@@ -183,6 +183,10 @@ class App : public UICodeEditorSplitter::Client {
 
 	UIStatusBar* getStatusBar() const { return mStatusBar; }
 
+	void showFolderTreeViewTab();
+
+	void showBuildTab();
+
 	template <typename T> void registerUnlockedCommands( T& t ) {
 		t.setCommand( "keybindings", [this] { loadFileFromPath( mKeybindingsPath ); } );
 		t.setCommand( "debug-draw-boxes-toggle", [this] { debugDrawBoxesToggle(); } );
@@ -251,6 +255,8 @@ class App : public UICodeEditorSplitter::Client {
 				mProjectBuildManager->cancelBuild();
 			}
 		} );
+		t.setCommand( "show-folder-treeview-tab", [this] { showFolderTreeViewTab(); } );
+		t.setCommand( "show-build-tab", [this] { showBuildTab(); } );
 		t.setCommand( "open-workspace-symbol-search",
 					  [this] { mUniversalLocator->showWorkspaceSymbol(); } );
 		t.setCommand( "open-document-symbol-search",

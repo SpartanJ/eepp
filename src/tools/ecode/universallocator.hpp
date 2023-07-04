@@ -43,6 +43,10 @@ class UniversalLocator {
 
 	void showOpenDocuments();
 
+	void showSwitchBuild();
+
+	void showSwitchBuildType();
+
   protected:
 	UILocateBar* mLocateBarLayout{ nullptr };
 	UITableView* mLocateTable{ nullptr };
@@ -60,17 +64,25 @@ class UniversalLocator {
 
 	void updateLocateBar();
 
+	void updateLocateBarSync();
+
 	void showBar();
 
 	PluginRequestHandle processResponse( const PluginMessage& msg );
 
-	void requestWorkspaceSymbol();
-
 	void updateWorkspaceSymbol( const LSPSymbolInformationList& info );
 
-	void requestDocumentSymbol();
-
 	void updateDocumentSymbol( const LSPSymbolInformationList& info );
+
+	void updateOpenDocumentsTable();
+
+	void updateSwitchBuildTable();
+
+	void updateSwitchBuildTypeTable();
+
+	void requestWorkspaceSymbol();
+
+	void requestDocumentSymbol();
 
 	std::string getCurDocURI();
 
@@ -83,11 +95,13 @@ class UniversalLocator {
 		const LSPSymbolInformationList& list, const std::string& query, const size_t& limit,
 		std::function<void( std::shared_ptr<LSPSymbolInfoModel> )> cb );
 
-	void updateOpenDocumentsTable();
-
 	std::shared_ptr<FileListModel> openDocumentsModel( const std::string& match );
 
 	void focusOrLoadFile( const std::string& path, const TextRange& range = {} );
+
+	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildModel( const std::string& match );
+
+	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildTypeModel( const std::string& match );
 };
 
 } // namespace ecode

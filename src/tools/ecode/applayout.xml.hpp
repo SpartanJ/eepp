@@ -384,7 +384,7 @@ Anchor.error:hover {
 				<PushButton lw="mp" lg="center" id="open_recent_folder" text='@string(open-recent-folder, "Open Recent Folder...")' margin-top="4dp" />
 			</vbox>
 		</RelativeLayout>
-		<Tab text='@string("project", "Project")' owns="project_view_cont" text-as-fallback="true" icon="icon(folder-open, 12dp)" />
+		<Tab id="treeview_tab" text='@string("project", "Project")' owns="project_view_cont" text-as-fallback="true" icon="icon(folder-open, 12dp)" />
 	</TabWidget>
 	<vbox>
 		<Splitter id="main_splitter" lw="mp" lh="0" lw8="1" orientation="vertical">

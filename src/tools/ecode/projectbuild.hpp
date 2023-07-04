@@ -205,8 +205,7 @@ class ProjectBuild {
 struct ProjectBuildCommand : public ProjectBuildStep {
 	ProjectBuildConfig config;
 
-	ProjectBuildCommand( const ProjectBuildStep& step ) :
-		ProjectBuildStep( step ) {}
+	ProjectBuildCommand( const ProjectBuildStep& step ) : ProjectBuildStep( step ) {}
 };
 
 using ProjectBuildCommands = std::vector<ProjectBuildCommand>;
@@ -263,6 +262,8 @@ class ProjectBuildManager {
 	const std::string& getProjectRoot() const { return mProjectRoot; }
 
 	const std::string& getProjectFile() const { return mProjectFile; }
+
+	ProjectBuild* getBuild( const std::string& buildName );
 
 	bool hasBuild( const std::string& name ) { return mBuilds.find( name ) != mBuilds.end(); }
 

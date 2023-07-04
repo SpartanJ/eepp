@@ -1886,7 +1886,9 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "tree-view-configure-ignore-files",
 			 "show-open-documents",
 			 "open-workspace-symbol-search",
-			 "open-document-symbol-search" };
+			 "open-document-symbol-search",
+			 "show-folder-treeview-tab",
+			 "show-build-tab" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {
@@ -2470,6 +2472,18 @@ void App::createNewTerminal() {
 			}
 		}
 	}
+}
+
+void App::showFolderTreeViewTab() {
+	UITab* tab = mSidePanel->find<UITab>( "treeview_tab" );
+	if ( tab )
+		tab->setTabSelected();
+}
+
+void App::showBuildTab() {
+	UITab* tab = mSidePanel->find<UITab>( "build_tab" );
+	if ( tab )
+		tab->setTabSelected();
 }
 
 std::string App::getNewFilePath( const FileInfo& file, UIMessageBox* msgBox, bool keepDir ) {

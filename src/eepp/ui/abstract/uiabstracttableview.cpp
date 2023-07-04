@@ -109,6 +109,7 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	size_t count = model->columnCount();
 	Float totalWidth = 0;
 	auto visibleColCount = visibleColumnCount();
+	bool requiresUpdateCellVisibility = false;
 
 	if ( resetColumnData )
 		this->resetColumnData();
@@ -121,7 +122,10 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			col.widget->setEnabled( true );
 			col.widget->setVisible( true );
 		}
+		bool wasVisible = col.visible;
 		col.visible = !isColumnHidden( i );
+		if ( wasVisible != col.visible )
+			requiresUpdateCellVisibility = true;
 		col.widget->setVisible( col.visible );
 		if ( !col.visible )
 			continue;
@@ -196,6 +200,7 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			ColumnData& col = columnData( i );
 			col.width = 0;
 			col.visible = false;
+			requiresUpdateCellVisibility = true;
 			if ( col.widget ) {
 				col.widget->close();
 				col.widget = nullptr;
@@ -208,6 +213,9 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	mHeader->setVisible( true );
 	mHeader->updateLayout();
 	mHeader->setVisible( visible );
+
+	if ( requiresUpdateCellVisibility )
+		updateCellsVisibility();
 
 	updateColumnsWidth();
 }

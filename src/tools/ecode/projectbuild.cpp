@@ -624,6 +624,13 @@ ProjectBuildOutputParser ProjectBuildManager::getOutputParser( const std::string
 	return {};
 }
 
+ProjectBuild* ProjectBuildManager::getBuild( const std::string& buildName ) {
+	auto buildIt = mBuilds.find( buildName );
+	if ( buildIt != mBuilds.end() )
+		return &buildIt->second;
+	return nullptr;
+}
+
 bool ProjectBuildManager::hasBuildCommands( const std::string& name ) {
 	auto buildIt = mBuilds.find( name );
 	if ( buildIt != mBuilds.end() )
@@ -651,7 +658,25 @@ ProjectBuildConfiguration ProjectBuildManager::getConfig() const {
 }
 
 void ProjectBuildManager::setConfig( const ProjectBuildConfiguration& config ) {
-	mConfig = config;
+	bool buildNameChanged = false;
+	bool buildTypeChanged = false;
+
+	if ( mConfig.buildName != config.buildName ) {
+		mConfig.buildName = config.buildName;
+		buildNameChanged = true;
+		updateSidePanelTab();
+	}
+
+	if ( mConfig.buildType != config.buildType ) {
+		mConfig.buildType = config.buildType;
+		buildTypeChanged = true;
+		updateBuildType();
+	}
+
+	if ( buildNameChanged )
+		updateSidePanelTab();
+	else if ( buildTypeChanged )
+		updateBuildType();
 }
 
 void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc ) {
@@ -852,13 +877,18 @@ void ProjectBuildManager::buildSidePanelTab() {
 		)html" );
 	mTab = mSidePanel->add( mUISceneNode->getTranslatorStringFromKey( "build", "Build" ), node,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
+	mTab->setId( "build_tab" );
 	mTab->setTextAsFallback( true );
 
 	updateSidePanelTab();
 }
 
 void ProjectBuildManager::updateSidePanelTab() {
+	if ( mTab == nullptr )
+		return;
 	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
+	if ( buildTab == nullptr )
+		return;
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
 	UIPushButton* buildButton = buildTab->find<UIPushButton>( "build_button" );
 	UIPushButton* cleanButton = buildTab->find<UIPushButton>( "clean_button" );
@@ -938,7 +968,11 @@ void ProjectBuildManager::updateSidePanelTab() {
 }
 
 void ProjectBuildManager::updateBuildType() {
+	if ( mTab == nullptr )
+		return;
 	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
+	if ( buildTab == nullptr )
+		return;
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
 	UIDropDownList* buildTypeList = buildTab->find<UIDropDownList>( "build_type_list" );
 
