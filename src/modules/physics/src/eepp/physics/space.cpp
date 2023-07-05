@@ -29,15 +29,15 @@ Space::Space() : mData( NULL ) {
 Space::~Space() {
 	cpSpaceFree( mSpace );
 
-	std::list<Constraint*>::iterator itc = mConstraints.begin();
+	std::vector<Constraint*>::iterator itc = mConstraints.begin();
 	for ( ; itc != mConstraints.end(); ++itc )
 		eeSAFE_DELETE( *itc );
 
-	std::list<Shape*>::iterator its = mShapes.begin();
+	std::vector<Shape*>::iterator its = mShapes.begin();
 	for ( ; its != mShapes.end(); ++its )
 		eeSAFE_DELETE( *its );
 
-	std::list<Body*>::iterator itb = mBodys.begin();
+	std::vector<Body*>::iterator itb = mBodys.begin();
 	for ( ; itb != mBodys.end(); ++itb )
 		eeSAFE_DELETE( *itb );
 
@@ -200,17 +200,21 @@ void Space::removeShape( Shape* shape ) {
 	if ( NULL != shape ) {
 		cpSpaceRemoveShape( mSpace, shape->getShape() );
 
-		mShapes.remove( shape );
+		auto foundIt = std::find( mShapes.begin(), mShapes.end(), shape );
+		if ( foundIt != mShapes.end() )
+			mShapes.erase( foundIt );
 
 		PhysicsManager::instance()->addShapeFree( shape );
 	}
 }
 
-void Space::removeStatiShape( Shape* shape ) {
+void Space::removeStaticShape( Shape* shape ) {
 	if ( NULL != shape ) {
 		cpSpaceRemoveStaticShape( mSpace, shape->getShape() );
 
-		mShapes.remove( shape );
+		auto foundIt = std::find( mShapes.begin(), mShapes.end(), shape );
+		if ( foundIt != mShapes.end() )
+			mShapes.erase( foundIt );
 
 		PhysicsManager::instance()->addShapeFree( shape );
 	}
@@ -220,7 +224,9 @@ void Space::removeBody( Body* body ) {
 	if ( NULL != body ) {
 		cpSpaceRemoveBody( mSpace, body->getBody() );
 
-		mBodys.remove( body );
+		auto foundIt = std::find( mBodys.begin(), mBodys.end(), body );
+		if ( foundIt != mBodys.end() )
+			mBodys.erase( foundIt );
 
 		PhysicsManager::instance()->removeBodyFree( body );
 	}
@@ -230,7 +236,9 @@ void Space::removeConstraint( Constraint* constraint ) {
 	if ( NULL != constraint ) {
 		cpSpaceRemoveConstraint( mSpace, constraint->getConstraint() );
 
-		mConstraints.remove( constraint );
+		auto foundIt = std::find( mConstraints.begin(), mConstraints.end(), constraint );
+		if ( foundIt != mConstraints.end() )
+			mConstraints.erase( foundIt );
 
 		PhysicsManager::instance()->addConstraintFree( constraint );
 	}
@@ -503,7 +511,10 @@ void Space::onPostStepCallback( void* obj, void* data ) {
 		Cb->Callback( this, obj, Cb->Data );
 	}
 
-	mPostStepCallbacks.remove( Cb );
+	auto foundIt = std::find( mPostStepCallbacks.begin(), mPostStepCallbacks.end(), Cb );
+	if ( foundIt != mPostStepCallbacks.end() )
+		mPostStepCallbacks.erase( foundIt );
+
 	eeSAFE_DELETE( Cb );
 }
 

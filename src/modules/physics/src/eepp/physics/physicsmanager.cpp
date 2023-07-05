@@ -15,19 +15,19 @@ PhysicsManager::~PhysicsManager() {
 	if ( mMemoryManager ) {
 		mMemoryManager = false;
 
-		std::list<Space*>::iterator its = mSpaces.begin();
+		std::vector<Space*>::iterator its = mSpaces.begin();
 		for ( ; its != mSpaces.end(); ++its )
 			eeSAFE_DELETE( *its );
 
-		std::list<Body*>::iterator itb = mBodysFree.begin();
+		std::vector<Body*>::iterator itb = mBodysFree.begin();
 		for ( ; itb != mBodysFree.end(); ++itb )
 			eeSAFE_DELETE( *itb );
 
-		std::list<Shape*>::iterator itp = mShapesFree.begin();
+		std::vector<Shape*>::iterator itp = mShapesFree.begin();
 		for ( ; itp != mShapesFree.end(); ++itp )
 			eeSAFE_DELETE( *itp );
 
-		std::list<Constraint*>::iterator itc = mConstraintFree.begin();
+		std::vector<Constraint*>::iterator itc = mConstraintFree.begin();
 		for ( ; itc != mConstraintFree.end(); ++itc )
 			eeSAFE_DELETE( *itc );
 	}
@@ -54,7 +54,9 @@ void PhysicsManager::addBodyFree( Body* body ) {
 
 void PhysicsManager::removeBodyFree( Body* body ) {
 	if ( mMemoryManager ) {
-		mBodysFree.remove( body );
+		auto foundIt = std::find( mBodysFree.begin(), mBodysFree.end(), body );
+		if ( foundIt != mBodysFree.end() )
+			mBodysFree.erase( foundIt );
 	}
 }
 
@@ -67,7 +69,9 @@ void PhysicsManager::addShapeFree( Shape* shape ) {
 
 void PhysicsManager::removeShapeFree( Shape* shape ) {
 	if ( mMemoryManager ) {
-		mShapesFree.remove( shape );
+		auto foundIt = std::find( mShapesFree.begin(), mShapesFree.end(), shape );
+		if ( foundIt != mShapesFree.end() )
+			mShapesFree.erase( foundIt );
 	}
 }
 
@@ -81,7 +85,9 @@ void PhysicsManager::addConstraintFree( Constraint* constraint ) {
 
 void PhysicsManager::removeConstraintFree( Constraint* constraint ) {
 	if ( mMemoryManager ) {
-		mConstraintFree.remove( constraint );
+		auto foundIt = std::find( mConstraintFree.begin(), mConstraintFree.end(), constraint );
+		if ( foundIt != mConstraintFree.end() )
+			mConstraintFree.erase( foundIt );
 	}
 }
 
@@ -94,7 +100,9 @@ void PhysicsManager::addSpace( Space* space ) {
 
 void PhysicsManager::removeSpace( Space* space ) {
 	if ( mMemoryManager ) {
-		mSpaces.remove( space );
+		auto foundIt = std::find( mSpaces.begin(), mSpaces.end(), space );
+		if ( foundIt != mSpaces.end() )
+			mSpaces.erase( foundIt );
 	}
 }
 

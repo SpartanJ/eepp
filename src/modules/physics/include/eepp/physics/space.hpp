@@ -167,7 +167,7 @@ class EE_PHYSICS_API Space {
 
 	void removeShape( Shape* shape );
 
-	void removeStatiShape( Shape* shape );
+	void removeStaticShape( Shape* shape );
 
 	void removeBody( Body* body );
 
@@ -243,12 +243,12 @@ class EE_PHYSICS_API Space {
 	cpSpace* mSpace;
 	Body* mStatiBody;
 	void* mData;
-	std::list<Body*> mBodys;
-	std::list<Shape*> mShapes;
-	std::list<Constraint*> mConstraints;
+	std::vector<Body*> mBodys;
+	std::vector<Shape*> mShapes;
+	std::vector<Constraint*> mConstraints;
 	std::map<cpHashValue, CollisionHandler> mCollisions;
 	CollisionHandler mCollisionsDefault;
-	std::list<PostStepCallbackCont*> mPostStepCallbacks;
+	std::vector<PostStepCallbackCont*> mPostStepCallbacks;
 };
 
 }} // namespace EE::Physics

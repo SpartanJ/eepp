@@ -61,10 +61,10 @@ class EE_PHYSICS_API PhysicsManager {
 	friend class Space;
 
 	bool mMemoryManager;
-	std::list<Body*> mBodysFree;
-	std::list<Shape*> mShapesFree;
-	std::list<Constraint*> mConstraintFree;
-	std::list<Space*> mSpaces;
+	std::vector<Body*> mBodysFree;
+	std::vector<Shape*> mShapesFree;
+	std::vector<Constraint*> mConstraintFree;
+	std::vector<Space*> mSpaces;
 
 	PhysicsManager();
 
