@@ -57,6 +57,10 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void requestSemanticHighlightingDelayed( bool reqFull = false );
 
+	bool isRunningSemanticTokens() const;
+
+	bool isWaitingSemanticTokensResponse() const;
+
   protected:
 	LSPClientServer* mServer{ nullptr };
 	LSPClientServerManager* mServerManager{ nullptr };
@@ -67,6 +71,7 @@ class LSPDocumentClient : public TextDocument::Client {
 	std::string mSemanticeResultId;
 	LSPSemanticTokensDelta mSemanticTokens;
 	bool mRunningSemanticTokens{ false };
+	bool mWaitingSemanticTokensResponse{ false };
 	bool mShutdown{ false };
 	bool mFirstHighlight{ true };
 

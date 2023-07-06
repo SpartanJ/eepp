@@ -125,16 +125,17 @@ void LSPDocumentClient::requestSemanticHighlighting( bool reqFull ) {
 		 !cap.semanticTokenProvider.range )
 		return;
 
+	mWaitingSemanticTokensResponse = true;
 	TextRange range;
 	std::string reqId;
 	bool delta = false;
-	if ( cap.semanticTokenProvider.range && !mFirstHighlight && !reqFull ) {
-		range = mDoc->getActiveClientVisibleRange();
-	} else if ( mFirstHighlight || ( reqFull && !cap.semanticTokenProvider.fullDelta ) ) {
-		mFirstHighlight = false;
-	} else if ( cap.semanticTokenProvider.fullDelta ) {
+	if ( cap.semanticTokenProvider.fullDelta ) {
 		delta = true;
 		reqId = reqFull ? "" : mSemanticeResultId;
+	} else if ( cap.semanticTokenProvider.range && !mFirstHighlight && !reqFull ) {
+		range = mDoc->getActiveClientVisibleRange();
+	} else if ( mFirstHighlight || reqFull ) {
+		mFirstHighlight = false;
 	}
 
 	LSPDocumentClient* docClient = this;
@@ -144,8 +145,10 @@ void LSPDocumentClient::requestSemanticHighlighting( bool reqFull ) {
 	mServer->documentSemanticTokensFull(
 		mDoc->getURI(), delta, reqId, range,
 		[docClient, uri, server, docModId]( const auto&, const LSPSemanticTokensDelta& deltas ) {
-			if ( server->hasDocument( uri ) )
+			if ( server->hasDocument( uri ) ) {
+				docClient->mWaitingSemanticTokensResponse = false;
 				docClient->processTokens( deltas, docModId );
+			}
 		} );
 }
 
@@ -160,10 +163,19 @@ void LSPDocumentClient::requestSemanticHighlightingDelayed( bool reqFull ) {
 		return;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
+		mWaitingSemanticTokensResponse = true;
 		sceneNode->removeActionsByTag( mTagSemanticTokens );
 		sceneNode->runOnMainThread( [this, reqFull]() { requestSemanticHighlighting( reqFull ); },
 									Seconds( 0.5f ), mTagSemanticTokens );
 	}
+}
+
+bool LSPDocumentClient::isRunningSemanticTokens() const {
+	return mRunningSemanticTokens;
+}
+
+bool LSPDocumentClient::isWaitingSemanticTokensResponse() const {
+	return mWaitingSemanticTokensResponse;
 }
 
 UISceneNode* LSPDocumentClient::getUISceneNode() {

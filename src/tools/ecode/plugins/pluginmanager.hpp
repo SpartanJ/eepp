@@ -421,6 +421,39 @@ class Plugin : public UICodeEditorPlugin {
 	bool mShuttingDown{ false };
 };
 
+class PluginBase : public Plugin {
+  public:
+	virtual void onRegister( UICodeEditor* );
+
+	virtual void onUnregister( UICodeEditor* );
+
+  protected:
+	//! Keep track of the registered editors + all the listeners registered to each editor
+	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
+	//! Keep track of the documents opened
+	std::set<TextDocument*> mDocs;
+	//! Documents and Editors mutex
+	Mutex mMutex;
+	//! Keep track of the document pointer of each editor
+	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
+
+	virtual void onDocumentLoaded( TextDocument* ){};
+
+	virtual void onDocumentClosed( TextDocument* ){};
+
+	virtual void onDocumentChanged( UICodeEditor*, TextDocument* /*oldDoc*/ ){};
+
+	virtual void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& /*listeners*/ ){};
+
+	//! Usually used to remove keybindings in an editor
+	virtual void onBeforeUnregister( UICodeEditor* ){};
+
+	virtual void onUnregisterEditor( UICodeEditor* ){};
+
+	//! Usually used to unregister commands in a document
+	virtual void onUnregisterDocument( TextDocument* ){};
+};
+
 } // namespace ecode
 
 #endif // ECODE_PLUGINMANAGER_HPP

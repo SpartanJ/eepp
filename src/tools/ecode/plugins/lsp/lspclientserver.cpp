@@ -1043,6 +1043,7 @@ void LSPClientServer::initialize() {
 	workspace["applyEdit"] = true;
 	workspace["executeCommand"] = json{ { "dynamicRegistration", true } };
 	workspace["workspaceFolders"] = true;
+	workspace["semanticTokens"] = json{ { "refreshSupport", true } };
 
 	json capabilities{
 		{ "textDocument",
@@ -1350,6 +1351,15 @@ LSPClientServer::LSPRequestHandle LSPClientServer::sendSync( const json& msg,
 	return LSPRequestHandle();
 }
 
+void LSPClientServer::refreshSmenaticHighlighting() {
+	Lock l( mClientsMutex );
+	for ( const auto& client : mClients ) {
+		if ( !client.second->isWaitingSemanticTokensResponse() &&
+			 !client.second->isRunningSemanticTokens() )
+			client.second->requestSemanticHighlighting();
+	}
+}
+
 LSPClientServer::LSPRequestHandle LSPClientServer::didOpen( const URI& document,
 															const std::string& text, int version ) {
 	auto params = textDocumentParams( textDocumentItem( document, mLSP.language, text, version ) );
@@ -1615,6 +1625,10 @@ void LSPClientServer::processRequest( const json& msg ) {
 									  } );
 		return;
 	} else if ( method == "window/workDoneProgress/create" ) {
+		write( newEmptyResult( msgid ) );
+		return;
+	} else if ( method == "workspace/semanticTokens/refresh" ) {
+		refreshSmenaticHighlighting();
 		write( newEmptyResult( msgid ) );
 		return;
 	} else if ( method == "client/registerCapability" ) {

@@ -298,6 +298,8 @@ class LSPClientServer {
 	LSPClientServer::LSPRequestHandle sendSync( const json& msg,
 												const JsonReplyHandler& h = nullptr,
 												const JsonReplyHandler& eh = nullptr );
+
+	void refreshSmenaticHighlighting();
 };
 
 } // namespace ecode

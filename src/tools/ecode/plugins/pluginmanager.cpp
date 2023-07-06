@@ -496,4 +496,63 @@ PluginManager* Plugin::getManager() const {
 	return mManager;
 }
 
+void PluginBase::onRegister( UICodeEditor* editor ) {
+	Lock l( mMutex );
+
+	std::vector<Uint32> listeners;
+
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentLoaded, [this]( const Event* event ) {
+			Lock l( mMutex );
+			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+			onDocumentLoaded( docEvent->getDoc() );
+		} ) );
+
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
+			{
+				Lock l( mMutex );
+				const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+				TextDocument* doc = docEvent->getDoc();
+				mDocs.erase( doc );
+				onDocumentClosed( doc );
+			}
+		} ) );
+
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentChanged, [&, editor]( const Event* ) {
+			TextDocument* oldDoc = mEditorDocs[editor];
+			TextDocument* newDoc = editor->getDocumentRef().get();
+			Lock l( mMutex );
+			mDocs.erase( oldDoc );
+			mEditorDocs[editor] = newDoc;
+			onDocumentChanged( editor, oldDoc );
+		} ) );
+
+	onRegisterListeners( editor, listeners );
+
+	mEditors.insert( { editor, listeners } );
+	mDocs.insert( editor->getDocumentRef().get() );
+	mEditorDocs[editor] = editor->getDocumentRef().get();
+}
+
+void PluginBase::onUnregister( UICodeEditor* editor ) {
+	onBeforeUnregister( editor );
+	if ( mShuttingDown )
+		return;
+	Lock l( mMutex );
+	TextDocument* doc = mEditorDocs[editor];
+	auto cbs = mEditors[editor];
+	for ( auto listener : cbs )
+		editor->removeEventListener( listener );
+	onUnregisterEditor( editor );
+	mEditors.erase( editor );
+	mEditorDocs.erase( editor );
+	for ( auto editorIt : mEditorDocs )
+		if ( editorIt.second == doc )
+			return;
+	onUnregisterDocument( doc );
+	mDocs.erase( doc );
+}
+
 } // namespace ecode
