@@ -100,6 +100,10 @@ bool StyleSheetParser::parse( std::string& css, std::vector<std::string>& import
 	std::size_t pos = 0;
 	std::string buffer;
 
+	// Check UTF-8 BOM header
+	if ( css.size() >= 3 && (char)0xef == css[0] && (char)0xbb == css[1] && (char)0xbf == css[2] )
+		pos = 3; // skip BOM header
+
 	while ( pos < css.size() ) {
 		switch ( rs ) {
 			case ReadingSelector: {

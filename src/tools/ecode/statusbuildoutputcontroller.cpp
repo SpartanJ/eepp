@@ -149,7 +149,7 @@ bool StatusBuildOutputController::searchFindAndAddStatusResult(
 void StatusBuildOutputController::runBuild( const std::string& buildName,
 											const std::string& buildType,
 											const ProjectBuildOutputParser& outputParser ) {
-	if ( !mApp->getProjectBuildManager() )
+	if ( nullptr == mApp->getProjectBuildManager() )
 		return;
 
 	auto pbm = mApp->getProjectBuildManager();
@@ -272,7 +272,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 void StatusBuildOutputController::runClean( const std::string& buildName,
 											const std::string& buildType,
 											const ProjectBuildOutputParser& outputParser ) {
-	if ( !mApp->getProjectBuildManager() )
+	if ( nullptr == mApp->getProjectBuildManager() )
 		return;
 
 	auto pbm = mApp->getProjectBuildManager();

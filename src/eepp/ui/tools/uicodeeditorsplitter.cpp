@@ -647,8 +647,10 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	mAboutToAddEditor = editorData.second;
 	// Open same document in the new split
 	if ( openCurEditor && prevCurEditor && prevCurEditor != editorData.second &&
-		 !prevCurEditor->getDocument().isEmpty() )
+		 !prevCurEditor->getDocument().isEmpty() ) {
 		editorData.second->setDocument( prevCurEditor->getDocumentRef() );
+		editorData.second->goToLine( prevCurEditor->getDocument().getSelection().start() );
+	}
 	mAboutToAddEditor = nullptr;
 	Lock l( mTabWidgetMutex );
 	mTabWidgets.push_back( tabWidget );

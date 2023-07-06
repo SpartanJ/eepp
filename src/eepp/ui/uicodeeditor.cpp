@@ -1496,7 +1496,7 @@ void UICodeEditor::updateScrollBar() {
 void UICodeEditor::goToLine( const TextPosition& position, bool centered, bool forceExactPosition,
 							 bool scrollX ) {
 	mDoc->setSelection( position );
-	scrollTo( mDoc->getSelection().start(), centered, forceExactPosition, scrollX );
+	scrollTo( mDoc->getSelection(), centered, forceExactPosition, scrollX );
 }
 
 bool UICodeEditor::getAutoCloseBrackets() const {
@@ -1568,13 +1568,13 @@ void UICodeEditor::copyFilePath( bool copyPosition ) {
 }
 
 void UICodeEditor::scrollToCursor( bool centered ) {
-	scrollTo( mDoc->getSelection().start(), centered );
+	scrollTo( mDoc->getSelection(), centered );
 }
 
 void UICodeEditor::updateEditor() {
 	mDoc->setPageSize( getVisibleLinesCount() );
 	if ( mDirtyScroll && mDoc->getActiveClient() == this )
-		scrollTo( mDoc->getSelection().start() );
+		scrollTo( mDoc->getSelection() );
 	updateScrollBar();
 	mDirtyEditor = false;
 	mDirtyScroll = false;
@@ -1682,34 +1682,42 @@ void UICodeEditor::setLineSpacing( const StyleSheetLength& lineSpace ) {
 	}
 }
 
-void UICodeEditor::scrollTo( const TextPosition& position, bool centered, bool forceExactPosition,
+void UICodeEditor::scrollTo( TextPosition position, bool centered, bool forceExactPosition,
 							 bool scrollX ) {
+	scrollTo( { position, position }, centered, forceExactPosition, scrollX );
+}
+
+void UICodeEditor::scrollTo( TextRange position, bool centered, bool forceExactPosition,
+							 bool scrollX ) {
+	position.normalize();
 	auto lineRange = getVisibleLineRange();
 
 	Int64 minDistance = mHScrollBar->isVisible() ? 3 : 2;
 
-	if ( forceExactPosition || position.line() <= (Int64)lineRange.first ||
-		 position.line() >= (Int64)lineRange.second - minDistance ) {
+	if ( forceExactPosition || position.start().line() <= (Int64)lineRange.first ||
+		 position.start().line() >= (Int64)lineRange.second - minDistance ) {
 		// Vertical Scroll
 		Float lineHeight = getLineHeight();
-		Float min = eefloor( lineHeight * ( eemax<Float>( 0, position.line() - 1 ) ) );
-		Float max = eefloor( lineHeight * ( position.line() + minDistance ) - mSize.getHeight() );
+		Float min = eefloor( lineHeight * ( eemax<Float>( 0, position.start().line() - 1 ) ) );
+		Float max =
+			eefloor( lineHeight * ( position.start().line() + minDistance ) - mSize.getHeight() );
 		Float halfScreenLines = eefloor( mSize.getHeight() / lineHeight * 0.5f );
 
 		if ( forceExactPosition ) {
-			setScrollY(
-				lineHeight *
-				( eemax<Float>( 0, position.line() - 1 - ( centered ? halfScreenLines : 0 ) ) ) );
+			setScrollY( lineHeight *
+						( eemax<Float>( 0, position.start().line() - 1 -
+											   ( centered ? halfScreenLines : 0 ) ) ) );
 		} else if ( min < mScroll.y ) {
 			if ( centered ) {
-				if ( position.line() - 1 - halfScreenLines >= 0 )
-					min = eefloor( lineHeight *
-								   ( eemax<Float>( 0, position.line() - 1 - halfScreenLines ) ) );
+				if ( position.start().line() - 1 - halfScreenLines >= 0 )
+					min = eefloor( lineHeight * ( eemax<Float>( 0, position.start().line() - 1 -
+																	   halfScreenLines ) ) );
 			}
 			setScrollY( min );
 		} else if ( max > mScroll.y ) {
 			if ( centered ) {
-				max = eefloor( lineHeight * ( position.line() + minDistance + halfScreenLines ) -
+				max = eefloor( lineHeight *
+								   ( position.start().line() + minDistance + halfScreenLines ) -
 							   mSize.getHeight() );
 				max = eemin( max, getMaxScroll().y );
 			}
@@ -1720,14 +1728,18 @@ void UICodeEditor::scrollTo( const TextPosition& position, bool centered, bool f
 	// Horizontal Scroll
 	if ( !scrollX )
 		return;
-	Float offsetX = getXOffsetCol( position );
-	Float glyphSize = getGlyphWidth();
-	Float minVisibility = glyphSize;
+	Float offsetXEnd = getXOffsetCol( position.end() );
+	Float minVisibility = getGlyphWidth();
 	Float viewPortWidth = getViewportWidth();
-	if ( offsetX + minVisibility > mScroll.x + viewPortWidth ) {
-		setScrollX( eefloor( eemax( 0.f, offsetX + minVisibility - viewPortWidth ) ) );
-	} else if ( offsetX < mScroll.x ) {
-		setScrollX( eefloor( eemax( 0.f, offsetX - minVisibility ) ) );
+	if ( offsetXEnd + minVisibility > mScroll.x + viewPortWidth ) {
+		setScrollX( eefloor( eemax( 0.f, offsetXEnd + minVisibility - viewPortWidth ) ) );
+	} else if ( offsetXEnd < mScroll.x ) {
+		if ( offsetXEnd - minVisibility < viewPortWidth )
+			setScrollX( 0.f );
+		else {
+			Float offsetXStart = getXOffsetCol( position.start() );
+			setScrollX( eefloor( eemax( 0.f, offsetXStart - minVisibility ) ) );
+		}
 	}
 }
 

@@ -504,8 +504,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void scrollToCursor( bool centered = true );
 
-	void scrollTo( const TextPosition& position, bool centered = false,
-				   bool forceExactPosition = false, bool scrollX = true );
+	void scrollTo( TextRange position, bool centered = false, bool forceExactPosition = false,
+				   bool scrollX = true );
+
+	void scrollTo( TextPosition position, bool centered = false, bool forceExactPosition = false,
+				   bool scrollX = true );
 
 	const MinimapConfig& getMinimapConfig() const;
 
@@ -615,9 +618,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	size_t getJumpLinesLength() const;
 
-	void setJumpLinesLength(size_t jumpLinesLength);
+	void setJumpLinesLength( size_t jumpLinesLength );
 
-	protected:
+  protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };

@@ -20,7 +20,7 @@ struct EE_API SyntaxToken {
 
 struct EE_API SyntaxTokenPosition {
 	// TODO: type should be the hash of the name of the type. Using std::string takes at least
-	// 40 bytes per token vs 4 bytes. It's much easier to debug a string than a hash and that's
+	// 32 bytes per token vs 4 bytes. It's much easier to debug a string than a hash and that's
 	// the reason why we keep it for the moment.
 	std::string type;
 	Int64 pos{ 0 };

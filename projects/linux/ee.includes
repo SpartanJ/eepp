@@ -6,8 +6,6 @@
 ../../src/thirdparty/efsw/src
 ../../src/thirdparty/libvorbis/include
 ../../src/thirdparty/mbedtls/include
-/usr/include/freetype2/
-/usr/lib64/gcc/x86_64-suse-linux/10/include
 ../../src/modules/eterm/src/
 ../../src/modules/eterm/include/
 ../../src/modules/maps/include/
@@ -15,3 +13,4 @@
 ../../src/modules/physics/include/
 ../../src/modules/physics/src/
 ../../src/tools/ecode
+/usr/include/freetype2/

@@ -748,7 +748,7 @@ void App::showStatusBar( bool show ) {
 }
 
 ProjectBuildManager* App::getProjectBuildManager() const {
-	return mProjectBuildManager.get();
+	return mProjectBuildManager ? mProjectBuildManager.get() : nullptr;
 }
 
 UITabWidget* App::getSidePanel() const {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 10.0.1, 2023-06-06T01:22:08. -->
+<!-- Written by QtCreator 10.0.2, 2023-07-06T00:10:20. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -236,6 +236,7 @@
      </valuemap>
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.1">
       <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">-e config=release -e verbose=true</value>
+      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeCommand">make</value>
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">GenericProjectManager.GenericMakeStep</value>
      </valuemap>

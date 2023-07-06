@@ -336,6 +336,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 
 				if ( String::startsWith( mLocateInput->getText(), "sb " ) ) {
 					auto pbm = mApp->getProjectBuildManager();
+					if ( nullptr == pbm ) return;
 					auto cfg = pbm->getConfig();
 					std::string buildName = vName.toString();
 					if ( pbm->hasBuild( buildName ) ) {
@@ -346,6 +347,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 					return;
 				} else if ( String::startsWith( mLocateInput->getText(), "sbt " ) ) {
 					auto pbm = mApp->getProjectBuildManager();
+					if ( nullptr == pbm ) return;
 					auto cfg = pbm->getConfig();
 					auto build = pbm->getBuild( cfg.buildName );
 					if ( build != nullptr ) {
@@ -410,7 +412,7 @@ void UniversalLocator::updateLocateBarSync() {
 	mLocateTable->setPixelsSize( width,
 								 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
 	width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
-	if ( mLocateTable->getModel()->columnCount() == 2 ) {
+	if ( mLocateTable->getModel()->columnCount() >= 2 ) {
 		mLocateTable->setColumnsVisible( { 0, 1 } );
 		mLocateTable->setColumnWidth( 0, eeceil( width * 0.5 ) );
 		mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );
@@ -610,6 +612,8 @@ void UniversalLocator::showSwitchBuild() {
 
 std::shared_ptr<ItemListOwnerModel<std::string>>
 UniversalLocator::openBuildModel( const std::string& match ) {
+	if ( nullptr == mApp->getProjectBuildManager() )
+		return ItemListOwnerModel<std::string>::create( {} );
 	const auto& builds = mApp->getProjectBuildManager()->getBuilds();
 	std::vector<std::string> buildNames;
 	if ( builds.empty() )
@@ -649,6 +653,8 @@ void UniversalLocator::showSwitchBuildType() {
 
 std::shared_ptr<ItemListOwnerModel<std::string>>
 UniversalLocator::openBuildTypeModel( const std::string& match ) {
+	if ( nullptr == mApp->getProjectBuildManager() )
+		return ItemListOwnerModel<std::string>::create( {} );
 	const auto& builds = mApp->getProjectBuildManager()->getBuilds();
 	const auto& cfg = mApp->getProjectBuildManager()->getConfig();
 
@@ -674,7 +680,7 @@ UniversalLocator::openBuildTypeModel( const std::string& match ) {
 void UniversalLocator::updateSwitchBuildTypeTable() {
 	mLocateTable->setModel(
 		openBuildTypeModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 ) {
+	if ( mLocateTable->getModel()->rowCount() > 0 && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildType );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
