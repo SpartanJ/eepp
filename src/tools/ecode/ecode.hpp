@@ -31,7 +31,7 @@ class SettingsMenu;
 
 class App : public UICodeEditorSplitter::Client {
   public:
-	App( const size_t& jobs = 0, const std::vector<std::string>& args = {} );
+	explicit App( const size_t& jobs = 0, const std::vector<std::string>& args = {} );
 
 	~App();
 
@@ -39,7 +39,7 @@ class App : public UICodeEditorSplitter::Client {
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 			   const std::string& css, bool health, const std::string& healthLang,
 			   ecode::FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
-			   bool stdOutLogs, bool disableFileLogs );
+			   bool stdOutLogs, bool disableFileLogs, bool openClean );
 
 	void createWidgetInspector();
 
@@ -499,7 +499,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void initLocateBar();
 
-	void initProjectTreeView( std::string path );
+	void initProjectTreeView( std::string path, bool openClean );
 
 	void initImageView();
 

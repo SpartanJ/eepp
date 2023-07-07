@@ -149,6 +149,7 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 #status_bar {
 	background-color: var(--list-back);
 	padding-top: 1dp;
+	min-height: 16dp;
 }
 #status_bar > .status_but {
 	padding: 0dp 5dp 0dp 4dp;

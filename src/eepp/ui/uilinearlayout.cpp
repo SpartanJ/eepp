@@ -278,10 +278,12 @@ void UILinearLayout::packVertical() {
 		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Horizontal ) ) {
-			setInternalPixelsWidth( maxX );
-			mPacking = false;
-			packVertical();
-			notifyLayoutAttrChangeParent();
+			if ( mMinWidthEq.empty() || PixelDensity::dpToPx( mMinSize.getWidth() ) < maxX ) {
+				setInternalPixelsWidth( maxX );
+				mPacking = false;
+				packVertical();
+				notifyLayoutAttrChangeParent();
+			}
 		}
 	}
 
@@ -399,10 +401,12 @@ void UILinearLayout::packHorizontal() {
 		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Vertical ) ) {
-			setInternalPixelsHeight( maxY );
-			mPacking = false;
-			packHorizontal();
-			notifyLayoutAttrChangeParent();
+			if ( mMinHeightEq.empty() || PixelDensity::dpToPx( mMinSize.getHeight() ) < maxY ) {
+				setInternalPixelsHeight( maxY );
+				mPacking = false;
+				packHorizontal();
+				notifyLayoutAttrChangeParent();
+			}
 		}
 	}
 

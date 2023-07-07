@@ -2690,7 +2690,7 @@ void App::consoleToggle() {
 		mSplitter->getCurWidget()->setFocus();
 }
 
-void App::initProjectTreeView( std::string path ) {
+void App::initProjectTreeView( std::string path, bool openClean ) {
 	mProjectViewEmptyCont = mUISceneNode->find<UILinearLayout>( "project_view_empty" );
 	mProjectViewEmptyCont->find<UIPushButton>( "open_folder" )
 		->on( Event::MouseClick, [this]( const Event* event ) {
@@ -2834,7 +2834,7 @@ void App::initProjectTreeView( std::string path ) {
 				mSettings->updateProjectSettingsMenu();
 			}
 		}
-	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() ) {
+	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() && !openClean ) {
 		loadFolder( mRecentFolders[0] );
 	} else {
 		updateOpenRecentFolderBtn();
@@ -3008,7 +3008,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 				const std::string& css, bool health, const std::string& healthLang,
 				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
-				bool stdOutLogs, bool disableFileLogs ) {
+				bool stdOutLogs, bool disableFileLogs, bool openClean ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -3336,7 +3336,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			showStatusBar( false );
 			mTerminalManager->createNewTerminal();
 		} else {
-			initProjectTreeView( file );
+			initProjectTreeView( file, openClean );
 		}
 
 		mFileToOpen = fileToOpen;
@@ -3476,6 +3476,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ "convert-lang-output" }, "" );
 	args::Flag disableFileLogs( parser, "disable-file-logs", "Disables writing logs to a log file",
 								{ "disable-file-logs" } );
+	args::Flag openClean( parser, "open-clean",
+						  "Open a new instance of ecode without recovering the last session",
+						  { "open-clean", 'x' } );
 
 	std::vector<std::string> args;
 	try {
@@ -3543,7 +3546,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
 					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
-					   healthFormat.Get(), file.Get(), verbose.Get(), disableFileLogs.Get() );
+					   healthFormat.Get(), file.Get(), verbose.Get(), disableFileLogs.Get(),
+					   openClean.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();
