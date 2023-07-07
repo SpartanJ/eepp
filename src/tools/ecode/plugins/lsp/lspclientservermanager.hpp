@@ -71,7 +71,7 @@ class LSPClientServerManager {
 
 	void getSymbolReferences( std::shared_ptr<TextDocument> doc );
 
-	void codeAction( std::shared_ptr<TextDocument> doc,
+	void codeAction( std::shared_ptr<TextDocument> doc, const nlohmann::json& diagnostics,
 					 const LSPClientServer::CodeActionHandler& h );
 
 	void memoryUsage( std::shared_ptr<TextDocument> doc );
@@ -99,6 +99,7 @@ class LSPClientServerManager {
 	void requestSymanticHighlighting( std::shared_ptr<TextDocument> doc );
 
 	void rangeFormatting( std::shared_ptr<TextDocument> doc );
+
   protected:
 	friend class LSPClientServer;
 	PluginManager* mPluginManager{ nullptr };

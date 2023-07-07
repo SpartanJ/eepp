@@ -289,6 +289,12 @@ static void fromJson( LSPWorkspaceFoldersServerCapabilities& options, const json
 	}
 }
 
+static void fromJson( LSPCodeLensOptions& options, const json& json ) {
+	options.supported = true;
+	if ( json.is_object() )
+		options.resolveProvider = json.value( "resolveProvider", false );
+}
+
 static void fromJson( LSPSemanticTokensOptions& options, const json& data ) {
 	if ( data.empty() )
 		return;
@@ -373,6 +379,8 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 			fromJson( caps.workspaceFolders, workspace["workspaceFolders"] );
 	}
 	caps.selectionRangeProvider = toBoolOrObject( json, "selectionRangeProvider" );
+	if ( json.contains( "codeLensProvider" ) )
+		fromJson( caps.codeLensProvider, json["codeLensProvider"] );
 	caps.ready = true;
 }
 
@@ -586,7 +594,17 @@ static std::vector<LSPDiagnostic> parseDiagnostics( const json& result ) {
 				relatedInfoList.push_back( { relLocation, relMessage } );
 			}
 		}
-		ret.push_back( { range, severity, code, source, message, relatedInfoList, {} } );
+		json data;
+		if ( diag.contains( "data" ) )
+			data = diag["data"];
+		ret.push_back( { std::move( range ),
+						 std::move( severity ),
+						 std::move( code ),
+						 std::move( source ),
+						 std::move( message ),
+						 std::move( relatedInfoList ),
+						 {},
+						 std::move( data ) } );
 	}
 	return ret;
 }
@@ -640,59 +658,39 @@ static std::vector<LSPDiagnosticsCodeAction> parseDiagnosticsCodeAction( const j
 	return ret;
 }
 
-static json toJson( const LSPLocation& location ) {
-	if ( !location.uri.empty() ) {
-		return json{ { MEMBER_URI, location.uri.toString() },
-					 { MEMBER_RANGE, toJson( location.range ) } };
-	}
-	return json();
-}
+static std::vector<LSPCodeLens> parseCodeLens( const json& result ) {
+	if ( result.empty() || !result.is_array() )
+		return {};
 
-static json toJson( const LSPDiagnosticRelatedInformation& related ) {
-	auto loc = toJson( related.location );
-	if ( loc.is_object() ) {
-		return json{ { MEMBER_LOCATION, toJson( related.location ) },
-					 { MEMBER_MESSAGE, related.message } };
-	}
-	return json();
-}
+	std::vector<LSPCodeLens> codeLens;
 
-static json toJson( const LSPDiagnostic& diagnostic ) {
-	// required
-	auto result = json();
-	result[MEMBER_RANGE] = toJson( diagnostic.range );
-	result[MEMBER_MESSAGE] = diagnostic.message;
-	// optional
-	if ( !diagnostic.code.empty() )
-		result[( "code" )] = diagnostic.code;
-	if ( diagnostic.severity != LSPDiagnosticSeverity::Unknown )
-		result[( "severity" )] = static_cast<int>( diagnostic.severity );
-	if ( !diagnostic.source.empty() )
-		result[( "source" )] = diagnostic.source;
-	json relatedInfo;
-	for ( const auto& vrelated : diagnostic.relatedInformation ) {
-		auto related = toJson( vrelated );
-		if ( related.is_object() ) {
-			relatedInfo.push_back( related );
-		}
+	for ( const auto& codeLen : result ) {
+		if ( !codeLen.contains( "range" ) )
+			continue;
+		LSPCodeLens cl;
+		cl.range = parseRange( codeLen["range"] );
+		if ( codeLen.contains( "command" ) )
+			cl.command = parseCommand( codeLen["command"] );
+		if ( codeLen.contains( "data" ) )
+			cl.data = codeLen["data"];
+
+		codeLens.emplace_back( cl );
 	}
-	result[( "relatedInformation" )] = relatedInfo;
-	return result;
+
+	return codeLens;
 }
 
 static json codeActionParams( const URI& document, const TextRange& range,
-							  const std::vector<std::string>& kinds,
-							  const std::vector<LSPDiagnostic>& diagnostics ) {
+							  const std::vector<std::string>& kinds, const json& diagnostics ) {
 	auto params = textDocumentParams( document );
 	params[MEMBER_RANGE] = toJson( range );
 	json context;
 	json diags = json::array();
-	for ( const auto& diagnostic : diagnostics )
-		diags.push_back( toJson( diagnostic ) );
 	context[MEMBER_DIAGNOSTICS] = diags;
 	if ( !kinds.empty() )
 		context["only"] = json( kinds );
-	params["context"] = context;
+	if ( !diagnostics.empty() )
+		params["context"] = diagnostics;
 	return params;
 }
 
@@ -763,7 +761,12 @@ static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
 		std::vector<LSPDiagnosticsCodeAction> codeActions;
 		if ( diag.contains( "codeActions" ) )
 			codeActions = parseDiagnosticsCodeAction( diag["codeActions"] );
-		ret.push_back( { range, severity, code, source, message, relatedInfoList, codeActions } );
+		nlohmann::json data;
+		if ( diag.contains( "data" ) )
+			data = diag["data"];
+		ret.push_back( { std::move( range ), std::move( severity ), std::move( code ),
+						 std::move( source ), std::move( message ), std::move( relatedInfoList ),
+						 std::move( codeActions ), std::move( data ) } );
 	}
 	return ret;
 }
@@ -990,20 +993,29 @@ void LSPClientServer::registerCapabilities( const json& jcap ) {
 
 	for ( const auto& reg : registrations ) {
 		if ( reg.contains( "method" ) ) {
-			if ( reg["method"] == "workspace/executeCommand" ) {
+			const auto& method = reg["method"];
+			if ( method == "workspace/executeCommand" ) {
 				mCapabilities.executeCommandProvider = true;
 				registered = true;
-			} else if ( reg["method"] == "textDocument/documentSymbol" ) {
+			} else if ( method == "textDocument/documentSymbol" ) {
 				mCapabilities.documentSymbolProvider = true;
 				registered = true;
-			} else if ( reg["method"] == "textDocument/rename" ) {
+			} else if ( method == "textDocument/rename" ) {
 				mCapabilities.renameProvider = true;
 				registered = true;
-			} else if ( reg["method"] == "textDocument/formatting" ) {
+			} else if ( method == "textDocument/formatting" ) {
 				mCapabilities.documentFormattingProvider = true;
 				registered = true;
-			} else if ( reg["method"] == "textDocument/rangeFormatting" ) {
+			} else if ( method == "textDocument/rangeFormatting" ) {
 				mCapabilities.documentRangeFormattingProvider = true;
+				registered = true;
+			} else if ( method == "textDocument/codeLens" ) {
+				mCapabilities.codeLensProvider.supported = true;
+				if ( reg.contains( "registerOptions" ) )
+					fromJson( mCapabilities.codeLensProvider, reg["registerOptions"] );
+				registered = true;
+			} else if ( method == "textDocument/codeAction" ) {
+				mCapabilities.codeActionProvider = true;
 				registered = true;
 			}
 		}
@@ -1023,6 +1035,9 @@ void LSPClientServer::initialize() {
 		{ "codeActionLiteralSupport",
 		  json{ { "codeActionKind", json{ { "valueSet", json::array( { "quickfix", "refactor",
 																	   "source" } ) } } } } } };
+	codeAction["dataSupport"] = true;
+	codeAction["isPreferredSupport"] = true;
+	codeAction["dynamicRegistration"] = true;
 
 	json semanticTokens{
 		{ "requests", json{ { "range", true }, { "full", json{ { "delta", true } } } } },
@@ -1044,6 +1059,7 @@ void LSPClientServer::initialize() {
 	workspace["executeCommand"] = json{ { "dynamicRegistration", true } };
 	workspace["workspaceFolders"] = true;
 	workspace["semanticTokens"] = json{ { "refreshSupport", true } };
+	workspace["codeLens"] = json{ { "refreshSupport", true } };
 
 	json capabilities{
 		{ "textDocument",
@@ -1061,6 +1077,7 @@ void LSPClientServer::initialize() {
 			  { "rename", json{ { "dynamicRegistration", true } } },
 			  { "formatting", json{ { "dynamicRegistration", true } } },
 			  { "rangeFormatting", json{ { "dynamicRegistration", true } } },
+			  { "codeLens", json{ { "dynamicRegistration", true } } },
 		  } },
 		{ "window", json{ { "workDoneProgress", true },
 						  { "showMessage", showMessage },
@@ -1360,6 +1377,12 @@ void LSPClientServer::refreshSmenaticHighlighting() {
 	}
 }
 
+void LSPClientServer::refreshCodeLens() {
+	Lock l( mClientsMutex );
+	for ( const auto& client : mClients )
+		client.second->requestCodeLens();
+}
+
 LSPClientServer::LSPRequestHandle LSPClientServer::didOpen( const URI& document,
 															const std::string& text, int version ) {
 	auto params = textDocumentParams( textDocumentItem( document, mLSP.language, text, version ) );
@@ -1631,6 +1654,10 @@ void LSPClientServer::processRequest( const json& msg ) {
 		refreshSmenaticHighlighting();
 		write( newEmptyResult( msgid ) );
 		return;
+	} else if ( method == "workspace/codeLens/refresh" ) {
+		refreshCodeLens();
+		write( newEmptyResult( msgid ) );
+		return;
 	} else if ( method == "client/registerCapability" ) {
 		registerCapabilities( msg[MEMBER_PARAMS] );
 		write( newEmptyResult( msgid ) );
@@ -1890,21 +1917,32 @@ LSPClientServer::didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder
 
 void LSPClientServer::documentCodeAction( const URI& document, const TextRange& range,
 										  const std::vector<std::string>& kinds,
-										  std::vector<LSPDiagnostic> diagnostics,
+										  const nlohmann::json& diagnostics,
 										  const JsonReplyHandler& h ) {
-	auto params = codeActionParams( document, range, kinds, std::move( diagnostics ) );
+	auto params = codeActionParams( document, range, kinds, diagnostics );
 	sendAsync( newRequest( "textDocument/codeAction", params ), h );
 }
 
 void LSPClientServer::documentCodeAction( const URI& document, const TextRange& range,
 										  const std::vector<std::string>& kinds,
-										  std::vector<LSPDiagnostic> diagnostics,
+										  const nlohmann::json& diagnostics,
 										  const CodeActionHandler& h ) {
 	documentCodeAction( document, range, kinds, diagnostics,
 						[h]( const IdType& id, const json& json ) {
 							if ( h )
 								h( id, parseCodeAction( json ) );
 						} );
+}
+
+void LSPClientServer::documentCodeLens( const URI& document, const JsonReplyHandler& h ) {
+	sendAsync( newRequest( "textDocument/codeLens", textDocumentParams( document ) ), h );
+}
+
+void LSPClientServer::documentCodeLens( const URI& document, const CodeLensHandler& h ) {
+	documentCodeLens( document, [h]( const IdType& id, const json& json ) {
+		if ( h )
+			h( id, parseCodeLens( json ) );
+	} );
 }
 
 void LSPClientServer::documentHover( const URI& document, const TextPosition& pos,

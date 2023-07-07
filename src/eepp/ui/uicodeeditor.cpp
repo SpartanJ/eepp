@@ -1694,30 +1694,30 @@ void UICodeEditor::scrollTo( TextRange position, bool centered, bool forceExactP
 
 	Int64 minDistance = mHScrollBar->isVisible() ? 3 : 2;
 
-	if ( forceExactPosition || position.start().line() <= (Int64)lineRange.first ||
-		 position.start().line() >= (Int64)lineRange.second - minDistance ) {
+	if ( forceExactPosition || position.end().line() <= (Int64)lineRange.first ||
+		 position.end().line() >= (Int64)lineRange.second - minDistance ) {
 		// Vertical Scroll
 		Float lineHeight = getLineHeight();
-		Float min = eefloor( lineHeight * ( eemax<Float>( 0, position.start().line() - 1 ) ) );
+		Float min = eefloor( lineHeight * ( eemax<Float>( 0, position.end().line() - 1 ) ) );
 		Float max =
-			eefloor( lineHeight * ( position.start().line() + minDistance ) - mSize.getHeight() );
+			eefloor( lineHeight * ( position.end().line() + minDistance ) - mSize.getHeight() );
 		Float halfScreenLines = eefloor( mSize.getHeight() / lineHeight * 0.5f );
 
 		if ( forceExactPosition ) {
 			setScrollY( lineHeight *
-						( eemax<Float>( 0, position.start().line() - 1 -
+						( eemax<Float>( 0, position.end().line() - 1 -
 											   ( centered ? halfScreenLines : 0 ) ) ) );
 		} else if ( min < mScroll.y ) {
 			if ( centered ) {
-				if ( position.start().line() - 1 - halfScreenLines >= 0 )
-					min = eefloor( lineHeight * ( eemax<Float>( 0, position.start().line() - 1 -
+				if ( position.end().line() - 1 - halfScreenLines >= 0 )
+					min = eefloor( lineHeight * ( eemax<Float>( 0, position.end().line() - 1 -
 																	   halfScreenLines ) ) );
 			}
 			setScrollY( min );
 		} else if ( max > mScroll.y ) {
 			if ( centered ) {
 				max = eefloor( lineHeight *
-								   ( position.start().line() + minDistance + halfScreenLines ) -
+								   ( position.end().line() + minDistance + halfScreenLines ) -
 							   mSize.getHeight() );
 				max = eemin( max, getMaxScroll().y );
 			}

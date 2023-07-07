@@ -128,6 +128,11 @@ struct LSPWorkspaceFoldersServerCapabilities {
 	bool changeNotifications = false;
 };
 
+struct LSPCodeLensOptions {
+	bool supported = false;
+	bool resolveProvider = false;
+};
+
 struct LSPServerCapabilities {
 	bool ready = false;
 	std::vector<std::string> languages;
@@ -146,6 +151,7 @@ struct LSPServerCapabilities {
 	bool documentHighlightProvider = false;
 	bool documentFormattingProvider = false;
 	bool documentRangeFormattingProvider = false;
+	LSPCodeLensOptions codeLensProvider;
 	bool workspaceSymbolProvider = false;
 	LSPDocumentOnTypeFormattingOptions documentOnTypeFormattingProvider;
 	bool renameProvider = false;
@@ -217,12 +223,13 @@ struct LSPDiagnosticsCodeAction {
 
 struct LSPDiagnostic {
 	TextRange range;
-	LSPDiagnosticSeverity severity;
+	LSPDiagnosticSeverity severity{ LSPDiagnosticSeverity::Unknown };
 	std::string code;
 	std::string source;
 	std::string message;
 	std::vector<LSPDiagnosticRelatedInformation> relatedInformation;
 	std::vector<LSPDiagnosticsCodeAction> codeActions;
+	nlohmann::json data;
 };
 
 struct LSPPublishDiagnosticsParams {
@@ -244,6 +251,12 @@ struct LSPCodeAction {
 	LSPWorkspaceEdit edit;
 	LSPCommand command;
 	bool isPreferred{ false };
+};
+
+struct LSPCodeLens {
+	TextRange range;
+	LSPCommand command;
+	nlohmann::json data;
 };
 
 enum class LSPWorkDoneProgressKind { Begin, Report, End };
@@ -544,10 +557,18 @@ struct LSPSignatureHelp {
 };
 
 struct LSPConverter {
-	static TextPosition fromJSON( const nlohmann::json& data ) {
+	static TextPosition parsePosition( const nlohmann::json& data ) {
 		if ( data.contains( "line" ) && data.contains( "character" ) )
 			return { data["line"].get<Int64>(), data["character"].get<Int64>() };
 		return {};
+	}
+
+	static TextRange parseRange( const nlohmann::json& range ) {
+		if ( !range.contains( "start" ) || !range.contains( "end" ) )
+			return {};
+		auto startpos = parsePosition( range["start"] );
+		auto endpos = parsePosition( range["end"] );
+		return { startpos, endpos };
 	}
 };
 

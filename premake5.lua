@@ -1212,3 +1212,7 @@ workspace "eepp"
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
 end
+
+if os.isfile("external_projects_premake5.lua") then
+	dofile("external_projects_premake5.lua")
+end

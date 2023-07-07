@@ -339,6 +339,56 @@ void LinterPlugin::setMatches( TextDocument* doc, const MatchOrigin& origin,
 	invalidateEditors( doc );
 }
 
+// TODO: Clean up this
+static json toJson( const TextPosition& pos ) {
+	return json{ { "line", pos.line() }, { "character", pos.column() } };
+}
+
+static json toJson( const TextRange& pos ) {
+	return json{ { "start", toJson( pos.start() ) }, { "end", toJson( pos.end() ) } };
+}
+
+static json toJson( const LSPLocation& location ) {
+	if ( !location.uri.empty() ) {
+		return json{ { "uri", location.uri.toString() }, { "range", toJson( location.range ) } };
+	}
+	return json();
+}
+
+static json toJson( const LSPDiagnosticRelatedInformation& related ) {
+	auto loc = toJson( related.location );
+	if ( loc.is_object() ) {
+		return json{ { "location", toJson( related.location ) }, { "message", related.message } };
+	}
+	return json();
+}
+
+static json toJson( const LSPDiagnostic& diagnostic ) {
+	// required
+	auto result = json();
+	result["range"] = toJson( diagnostic.range );
+	result["message"] = diagnostic.message;
+	// optional
+	if ( !diagnostic.code.empty() )
+		result["code"] = diagnostic.code;
+	if ( diagnostic.severity != LSPDiagnosticSeverity::Unknown )
+		result["severity"] = static_cast<int>( diagnostic.severity );
+	if ( !diagnostic.source.empty() )
+		result["source"] = diagnostic.source;
+	json relatedInfo;
+	for ( const auto& vrelated : diagnostic.relatedInformation ) {
+		auto related = toJson( vrelated );
+		if ( related.is_object() ) {
+			relatedInfo.push_back( related );
+		}
+	}
+	if ( !relatedInfo.empty() )
+		result["relatedInformation"] = relatedInfo;
+	if ( !diagnostic.data.empty() )
+		result["data"] = diagnostic.data;
+	return result;
+}
+
 PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notification ) {
 	if ( notification.type == PluginMessageType::FileSystemListenerReady ) {
 		subscribeFileSystemListener();
@@ -352,27 +402,30 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		if ( doc ) {
 			Lock l( mMatchesMutex );
 			auto foundMatch = mMatches.find( doc );
-			if ( foundMatch != mMatches.end() ) {
-				auto pos = TextPosition::fromString( notification.asJSON().value( "pos", "" ) );
-				if ( pos.isValid() ) {
-					auto foundLine = foundMatch->second.find( pos.line() );
-					if ( foundLine != foundMatch->second.end() ) {
-						LSPDiagnosticsCodeAction quickFix;
-						for ( const auto& match : foundLine->second ) {
-							if ( !match.codeActions.empty() ) {
-								for ( const auto& ca : match.codeActions ) {
-									quickFix = ca;
-									if ( quickFix.isPreferred )
-										break;
-								}
-							}
-						}
-						mManager->sendResponse( this, PluginMessageType::DiagnosticsCodeAction,
-												PluginMessageFormat::DiagnosticsCodeAction,
-												&quickFix, id );
+			if ( foundMatch == mMatches.end() )
+				return {};
+
+			auto pos = TextPosition::fromString( notification.asJSON().value( "pos", "" ) );
+			if ( !pos.isValid() )
+				return {};
+
+			auto foundLine = foundMatch->second.find( pos.line() );
+			if ( foundLine == foundMatch->second.end() )
+				return {};
+
+			LSPDiagnosticsCodeAction quickFix;
+			for ( const auto& match : foundLine->second ) {
+				if ( !match.diagnostic.codeActions.empty() ) {
+					for ( const auto& ca : match.diagnostic.codeActions ) {
+						quickFix = ca;
+						if ( quickFix.isPreferred )
+							break;
 					}
 				}
 			}
+
+			mManager->sendResponse( this, PluginMessageType::DiagnosticsCodeAction,
+									PluginMessageFormat::DiagnosticsCodeAction, &quickFix, id );
 		}
 
 		return {};
@@ -393,7 +446,7 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		if ( found == mMatches.end() )
 			return {};
 
-		TextPosition pos( LSPConverter::fromJSON( j ) );
+		TextPosition pos( LSPConverter::parsePosition( j ) );
 
 		const auto& docMatches = found->second;
 
@@ -412,6 +465,46 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 				rj["text"] = match.text;
 				rj["type"] = match.type == LinterType::Error ? "error" : "warning";
 				rj["range"] = match.range.toString();
+				msg.data = std::move( rj );
+				return PluginRequestHandle( msg );
+			}
+		}
+
+		return {};
+	}
+
+	if ( notification.type == PluginMessageType::GetDiagnostics &&
+		 notification.format == PluginMessageFormat::JSON && notification.isRequest() ) {
+		const json& j = notification.asJSON();
+		if ( !j.contains( "uri" ) || !j.contains( "line" ) || !j.contains( "character" ) )
+			return {};
+		URI uri( j["uri"].get<std::string>() );
+		TextDocument* doc = getDocumentFromURI( uri );
+		if ( nullptr == doc )
+			return {};
+
+		Lock l( mMatchesMutex );
+		auto found = mMatches.find( doc );
+		if ( found == mMatches.end() )
+			return {};
+
+		TextPosition pos( LSPConverter::parsePosition( j ) );
+
+		const auto& docMatches = found->second;
+
+		auto foundLine = docMatches.find( pos.line() );
+		if ( foundLine == docMatches.end() )
+			return {};
+
+		const auto& matches = foundLine->second;
+
+		for ( const auto& match : matches ) {
+			if ( pos.column() >= match.range.start().column() &&
+				 pos.column() <= match.range.end().column() ) {
+				PluginInmediateResponse msg;
+				msg.type = PluginMessageType::GetDiagnostics;
+				json rj;
+				rj["diagnostics"] = json::array( { toJson( match.diagnostic ) } );
 				msg.data = std::move( rj );
 				return PluginRequestHandle( msg );
 			}
@@ -439,8 +532,7 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		match.type = getLinterTypeFromSeverity( diag.severity );
 		match.lineCache = doc->line( match.range.start().line() ).getHash();
 		match.origin = MatchOrigin::Diagnostics;
-		if ( !diag.codeActions.empty() )
-			match.codeActions = diag.codeActions;
+		match.diagnostic = std::move( diag );
 		matches[match.range.start().line()].emplace_back( std::move( match ) );
 	}
 
@@ -906,7 +998,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		Float rLineWidth = 0;
 
 		if ( !quickFixRendered && doc->getSelection().start().line() == index &&
-			 !match.codeActions.empty() ) {
+			 !match.diagnostic.codeActions.empty() ) {
 			rLineWidth = editor->getLineWidth( index );
 			Color wcolor( editor->getColorScheme().getEditorSyntaxStyle( "warning" ).color );
 			if ( nullptr == mLightbulbIcon ) {

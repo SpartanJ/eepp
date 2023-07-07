@@ -83,6 +83,7 @@ enum class PluginMessageType {
 							   // available
 	GetErrorOrWarning, // Request a component to provide the information of an error or warning in a
 					   // particular document location
+	GetDiagnostics, // Request the diagnostic information from a cursor position
 	Undefined
 };
 

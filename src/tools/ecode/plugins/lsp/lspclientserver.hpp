@@ -38,6 +38,7 @@ class LSPClientServer {
 
 	using JsonReplyHandler = ReplyHandler<json>;
 	using CodeActionHandler = ReplyHandler<std::vector<LSPCodeAction>>;
+	using CodeLensHandler = ReplyHandler<std::vector<LSPCodeLens>>;
 	using HoverHandler = ReplyHandler<LSPHover>;
 	using CompletionHandler = ReplyHandler<LSPCompletionList>;
 	using SymbolInformationHandler = WReplyHandler<LSPSymbolInformationList>;
@@ -150,11 +151,15 @@ class LSPClientServer {
 
 	void documentCodeAction( const URI& document, const TextRange& range,
 							 const std::vector<std::string>& kinds,
-							 std::vector<LSPDiagnostic> diagnostics, const JsonReplyHandler& h );
+							 const nlohmann::json& diagnostics, const JsonReplyHandler& h );
 
 	void documentCodeAction( const URI& document, const TextRange& range,
 							 const std::vector<std::string>& kinds,
-							 std::vector<LSPDiagnostic> diagnostics, const CodeActionHandler& h );
+							 const nlohmann::json& diagnostics, const CodeActionHandler& h );
+
+	void documentCodeLens( const URI& document, const JsonReplyHandler& h );
+
+	void documentCodeLens( const URI& document, const CodeLensHandler& h );
 
 	void documentHover( const URI& document, const TextPosition& pos, const JsonReplyHandler& h );
 
@@ -300,6 +305,8 @@ class LSPClientServer {
 												const JsonReplyHandler& eh = nullptr );
 
 	void refreshSmenaticHighlighting();
+
+	void refreshCodeLens();
 };
 
 } // namespace ecode

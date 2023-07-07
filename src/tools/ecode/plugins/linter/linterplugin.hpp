@@ -42,10 +42,10 @@ struct LinterMatch {
 	std::string text;
 	TextRange range;
 	LinterType type{ LinterType::Error };
-	String::HashType lineCache;
+	String::HashType lineCache{ 0 };
 	MatchOrigin origin{ MatchOrigin::Linter };
 	std::map<UICodeEditor*, Rectf> box;
-	std::vector<LSPDiagnosticsCodeAction> codeActions;
+	LSPDiagnostic diagnostic;
 };
 
 class LinterPlugin : public Plugin {

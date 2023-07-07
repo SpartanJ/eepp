@@ -436,18 +436,23 @@ void LSPClientServerManager::getSymbolReferences( std::shared_ptr<TextDocument> 
 }
 
 void LSPClientServerManager::codeAction( std::shared_ptr<TextDocument> doc,
+										 const nlohmann::json& diagnostics,
 										 const LSPClientServer::CodeActionHandler& h ) {
 	auto* server = getOneLSPClientServer( doc );
 	if ( !server )
 		return;
 
 	auto range = doc->getSelection();
-	if ( !doc->hasSelection() ) {
+	if ( !diagnostics.empty() && diagnostics.contains( "diagnostics" ) &&
+		 diagnostics["diagnostics"].is_array() && !diagnostics["diagnostics"].empty() &&
+		 diagnostics["diagnostics"][0].contains( "range" ) ) {
+		range = LSPConverter::parseRange( diagnostics["diagnostics"][0]["range"] );
+	} else if ( !doc->hasSelection() ) {
 		range = { doc->startOfLine( range.start() ),
 				  doc->positionOffset( doc->endOfLine( range.end() ), 1 ) };
 	}
 
-	server->documentCodeAction( doc->getURI(), range, {}, {}, h );
+	server->documentCodeAction( doc->getURI(), range, {}, diagnostics, h );
 }
 
 void LSPClientServerManager::memoryUsage( std::shared_ptr<TextDocument> doc ) {

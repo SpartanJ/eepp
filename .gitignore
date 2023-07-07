@@ -28,7 +28,7 @@ bin/eepp-*
 bin/ecode*
 ee.tag
 log.log
-external_projects.lua
+/external_projects*.lua
 *.user
 *.filters
 *.suo

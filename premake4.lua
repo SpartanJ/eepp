@@ -1476,3 +1476,7 @@ solution "eepp"
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
 end
+
+if os.isfile("external_projects_premake4.lua") then
+	dofile("external_projects_premake4.lua")
+end

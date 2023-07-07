@@ -184,7 +184,7 @@ LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, co
 	if ( !data.contains( "uri" ) || !data.contains( "position" ) )
 		return {};
 
-	TextPosition position( LSPConverter::fromJSON( data["position"] ) );
+	TextPosition position( LSPConverter::parsePosition( data["position"] ) );
 	if ( !position.isValid() )
 		return {};
 
@@ -1004,19 +1004,33 @@ void LSPClientPlugin::processDiagnosticsCodeAction( const PluginMessage& msg ) {
 	if ( !( msg.isResponse() && msg.type == PluginMessageType::DiagnosticsCodeAction &&
 			msg.format == PluginMessageFormat::DiagnosticsCodeAction ) )
 		return;
+
 	mQuickFix = msg.asDiasnosticsCodeAction();
 }
 
 void LSPClientPlugin::codeAction( UICodeEditor* editor ) {
-	json j;
+	// It seems that we don't require this hack anymore
+	// TODO: Check if this is needed in some situation
+	/*json j;
 	j["uri"] = editor->getDocument().getURI().toString();
 	j["pos"] = editor->getDocument().getSelection().start().toString();
 	mQuickFix = {};
 	auto req = mManager->sendRequest( PluginMessageType::DiagnosticsCodeAction,
-									  PluginMessageFormat::JSON, &j );
+									  PluginMessageFormat::JSON, &j );*/
+
+	json j2;
+	j2["uri"] = editor->getDocument().getURI().toString();
+	j2["line"] = editor->getDocument().getSelection().start().line();
+	j2["character"] = editor->getDocument().getSelection().start().column();
+
+	auto resp =
+		mManager->sendRequest( PluginMessageType::GetDiagnostics, PluginMessageFormat::JSON, &j2 );
+	nlohmann::json diagnostics;
+	if ( resp.isResponse() )
+		diagnostics = std::move( resp.getResponse().data );
 
 	mClientManager.codeAction(
-		editor->getDocumentRef(),
+		editor->getDocumentRef(), diagnostics,
 		[&, editor]( const LSPClientServer::IdType&, const std::vector<LSPCodeAction>& res ) {
 			createCodeActionsView( editor, res );
 		} );

@@ -61,6 +61,8 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	bool isWaitingSemanticTokensResponse() const;
 
+	void requestCodeLens();
+
   protected:
 	LSPClientServer* mServer{ nullptr };
 	LSPClientServerManager* mServerManager{ nullptr };
@@ -70,6 +72,7 @@ class LSPDocumentClient : public TextDocument::Client {
 	int mVersion{ 0 };
 	std::string mSemanticeResultId;
 	LSPSemanticTokensDelta mSemanticTokens;
+	std::vector<LSPCodeLens> mCodeLens;
 	bool mRunningSemanticTokens{ false };
 	bool mWaitingSemanticTokensResponse{ false };
 	bool mShutdown{ false };

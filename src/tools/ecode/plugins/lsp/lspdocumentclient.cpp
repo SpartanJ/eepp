@@ -33,6 +33,7 @@ LSPDocumentClient::~LSPDocumentClient() {
 
 void LSPDocumentClient::onDocumentLoaded( TextDocument* ) {
 	requestSemanticHighlightingDelayed();
+	// requestCodeLens();
 }
 
 void LSPDocumentClient::onDocumentTextChanged( const DocumentContentChange& change ) {
@@ -104,6 +105,7 @@ int LSPDocumentClient::getVersion() const {
 void LSPDocumentClient::onServerInitialized() {
 	requestSymbols();
 	requestSemanticHighlighting();
+	// requestCodeLens();
 }
 
 void LSPDocumentClient::refreshTag() {
@@ -176,6 +178,21 @@ bool LSPDocumentClient::isRunningSemanticTokens() const {
 
 bool LSPDocumentClient::isWaitingSemanticTokensResponse() const {
 	return mWaitingSemanticTokensResponse;
+}
+
+void LSPDocumentClient::requestCodeLens() {
+	if ( !mServer || !mServer->getCapabilities().codeLensProvider.supported )
+		return;
+
+	URI uri = mDoc->getURI();
+	LSPClientServer* server = mServer;
+	LSPDocumentClient* docClient = this;
+	mServer->documentCodeLens(
+		uri, [uri, server, docClient]( const auto&, const std::vector<LSPCodeLens>& codeLens ) {
+			if ( server->hasDocument( uri ) ) {
+				docClient->mCodeLens = codeLens;
+			}
+		} );
 }
 
 UISceneNode* LSPDocumentClient::getUISceneNode() {
