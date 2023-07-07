@@ -1496,7 +1496,7 @@ void UICodeEditor::updateScrollBar() {
 void UICodeEditor::goToLine( const TextPosition& position, bool centered, bool forceExactPosition,
 							 bool scrollX ) {
 	mDoc->setSelection( position );
-	scrollTo( mDoc->getSelection(), centered, forceExactPosition, scrollX );
+	scrollTo( mDoc->getSelection().start(), centered, forceExactPosition, scrollX );
 }
 
 bool UICodeEditor::getAutoCloseBrackets() const {
@@ -1568,13 +1568,14 @@ void UICodeEditor::copyFilePath( bool copyPosition ) {
 }
 
 void UICodeEditor::scrollToCursor( bool centered ) {
-	scrollTo( mDoc->getSelection(), centered );
+	scrollTo( mDoc->getSelection().start(), centered );
 }
 
 void UICodeEditor::updateEditor() {
 	mDoc->setPageSize( getVisibleLinesCount() );
 	if ( mDirtyScroll && mDoc->getActiveClient() == this )
-		scrollTo( mDoc->getSelection() );
+		scrollTo( mDoc->getSelection().start() );
+
 	updateScrollBar();
 	mDirtyEditor = false;
 	mDirtyScroll = false;

@@ -536,9 +536,18 @@ void LSPClientPlugin::createCodeActionsView( UICodeEditor* editor,
 	} else {
 		casEmpty = false;
 		auto casN( cas );
-		LSPCodeAction action{ mQuickFix.title,		mQuickFix.kind, {}, mQuickFix.edit, {},
-							  mQuickFix.isPreferred };
-		casN.insert( casN.begin(), action );
+		bool foundRepeated = false;
+		for ( const auto& c : casN ) {
+			if ( mQuickFix.title == c.title ) {
+				foundRepeated = true;
+				break;
+			}
+		}
+		if ( !foundRepeated ) {
+			LSPCodeAction action{ mQuickFix.title,		mQuickFix.kind, {}, mQuickFix.edit, {},
+								  mQuickFix.isPreferred };
+			casN.insert( casN.begin(), action );
+		}
 		model = LSPCodeActionModel::create( mManager->getSplitter()->getUISceneNode(), casN );
 	}
 
@@ -1009,14 +1018,12 @@ void LSPClientPlugin::processDiagnosticsCodeAction( const PluginMessage& msg ) {
 }
 
 void LSPClientPlugin::codeAction( UICodeEditor* editor ) {
-	// It seems that we don't require this hack anymore
-	// TODO: Check if this is needed in some situation
-	/*json j;
+	json j;
 	j["uri"] = editor->getDocument().getURI().toString();
 	j["pos"] = editor->getDocument().getSelection().start().toString();
 	mQuickFix = {};
 	auto req = mManager->sendRequest( PluginMessageType::DiagnosticsCodeAction,
-									  PluginMessageFormat::JSON, &j );*/
+									  PluginMessageFormat::JSON, &j );
 
 	json j2;
 	j2["uri"] = editor->getDocument().getURI().toString();

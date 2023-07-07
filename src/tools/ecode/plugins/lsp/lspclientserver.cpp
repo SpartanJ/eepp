@@ -2048,7 +2048,7 @@ LSPClientServer::documentFormatting( const URI& document, const json& options,
 LSPClientServer::LSPRequestHandle
 LSPClientServer::documentRangeFormatting( const URI& document, const TextRange& range,
 										  const json& options, const JsonReplyHandler& h ) {
-	auto params = textDocumentOptions( document, options, range );
+	auto params = textDocumentOptions( document, options, range.normalized() );
 	return send( newRequest( "textDocument/rangeFormatting", params ), h );
 }
 
