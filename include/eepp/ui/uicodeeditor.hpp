@@ -696,6 +696,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float mLongestLineWidth{ 0 };
 	Time mFindLongestLineWidthUpdateFrequency;
 	Clock mLongestLineWidthLastUpdate;
+	Clock mLastActivity;
 	TextSearchParams mHighlightWord;
 	TextRanges mHighlightWordCache;
 	Mutex mHighlightWordCacheMutex;

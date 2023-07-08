@@ -170,6 +170,19 @@ const std::string& SyntaxDefinition::getLanguageName() const {
 	return mLanguageName;
 }
 
+std::string SyntaxDefinition::getLanguageNameForFileSystem() const {
+	std::string lang( mLanguageName );
+	String::replaceAll( lang, " ", "" );
+	String::replaceAll( lang, ".", "" );
+	String::replaceAll( lang, "!", "" );
+	String::replaceAll( lang, "[", "" );
+	String::replaceAll( lang, "]", "" );
+	String::replaceAll( lang, "+", "p" );
+	String::replaceAll( lang, "#", "sharp" );
+	String::toLowerInPlace( lang );
+	return lang;
+}
+
 const String::HashType& SyntaxDefinition::getLanguageId() const {
 	return mLanguageId;
 }

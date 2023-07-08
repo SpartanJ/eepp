@@ -261,11 +261,11 @@ void UICodeEditor::draw() {
 	}
 
 	if ( !mLocked && mHighlightCurrentLine ) {
-		for ( const auto& cursor : mDoc->getSelections() ) {
+		for ( const auto& sel : mDoc->getSelections() ) {
 			primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
 			primitives.drawRectangle(
 				Rectf( Vector2f( startScroll.x + mScroll.x,
-								 startScroll.y + cursor.start().line() * lineHeight ),
+								 startScroll.y + sel.start().line() * lineHeight ),
 					   Sizef( mSize.getWidth(), lineHeight ) ) );
 		}
 	}
@@ -335,8 +335,8 @@ void UICodeEditor::draw() {
 		if ( mPluginsGutterSpace > 0 ) {
 			Float curGutterPos = 0.f;
 			for ( auto& plugin : mPluginGutterSpaces ) {
-				for ( unsigned long i = lineRange.first; i <= lineRange.second; i++ ) {
-					plugin.plugin->drawGutter( this, i,
+				for ( unsigned long gi = lineRange.first; gi <= lineRange.second; gi++ ) {
+					plugin.plugin->drawGutter( this, gi,
 											   { screenStart.x + curGutterPos, curScroll.y },
 											   lineHeight, plugin.space, charSize );
 				}
@@ -345,8 +345,8 @@ void UICodeEditor::draw() {
 		}
 	}
 
-	for ( const auto& cursor : mDoc->getSelections() )
-		drawCursor( startScroll, lineHeight, cursor.start() );
+	for ( const auto& sel : mDoc->getSelections() )
+		drawCursor( startScroll, lineHeight, sel.start() );
 
 	if ( mShowLineNumber ) {
 		drawLineNumbers( lineRange, startScroll,
@@ -368,7 +368,12 @@ void UICodeEditor::draw() {
 }
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
-	if ( hasFocus() && getUISceneNode()->getWindow()->hasFocus() ) {
+	if ( mLastActivity.getElapsedTime() > Seconds(60) ) {
+		if (!mCursorVisible) {
+			mCursorVisible = true;
+			invalidateDraw();
+		}
+	} else if ( hasFocus() && getUISceneNode()->getWindow()->hasFocus() ) {
 		if ( mBlinkTime != Time::Zero && mBlinkTimer.getElapsedTime() > mBlinkTime ) {
 			mCursorVisible = !mCursorVisible;
 			mBlinkTimer.restart();
@@ -855,6 +860,7 @@ Uint32 UICodeEditor::onFocus() {
 	}
 	for ( auto& plugin : mPlugins )
 		plugin->onFocus( this );
+	mLastActivity.restart();
 	return UIWidget::onFocus();
 }
 
@@ -870,10 +876,13 @@ Uint32 UICodeEditor::onFocusLoss() {
 		mDoc->setActiveClient( nullptr );
 	for ( auto& plugin : mPlugins )
 		plugin->onFocusLoss( this );
+	mLastActivity.restart();
 	return UIWidget::onFocusLoss();
 }
 
 Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
+	mLastActivity.restart();
+
 	if ( mLocked || NULL == mFont )
 		return 0;
 	Input* input = getUISceneNode()->getWindow()->getInput();
@@ -898,6 +907,8 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 }
 
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
+	mLastActivity.restart();
+
 	if ( NULL == mFont || mUISceneNode->getUIEventDispatcher()->justGainedFocus() )
 		return 0;
 
@@ -918,6 +929,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
+	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onKeyUp( this, event ) )
 			return 1;
@@ -1087,6 +1099,7 @@ Int64 UICodeEditor::calculateMinimapClickedLine( const Vector2i& position ) {
 }
 
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseDown( this, position, flags ) )
 			return UIWidget::onMouseDown( position, flags );
@@ -1188,6 +1201,7 @@ void UICodeEditor::updateMipmapHover( const Vector2f& position ) {
 }
 
 Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseMove( this, position, flags ) )
 			return UIWidget::onMouseMove( position, flags );
@@ -1226,6 +1240,7 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseUp( this, position, flags ) )
 			return UIWidget::onMouseUp( position, flags );
@@ -1271,6 +1286,7 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 }
 
 Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags ) {
+	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseClick( this, position, flags ) )
 			return UIWidget::onMouseClick( position, flags );
@@ -1307,6 +1323,7 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 }
 
 Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
+	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseDoubleClick( this, position, flags ) )
 			return UIWidget::onMouseDoubleClick( position, flags );
@@ -1329,6 +1346,7 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 }
 
 Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags ) {
+	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseOver( this, position, flags ) )
 			return UIWidget::onMouseOver( position, flags );
@@ -1338,6 +1356,7 @@ Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags 
 }
 
 Uint32 UICodeEditor::onMouseLeave( const Vector2i& position, const Uint32& flags ) {
+	mLastActivity.restart();
 	if ( mMinimapHover ) {
 		mMinimapHover = false;
 		invalidateDraw();
@@ -3206,6 +3225,7 @@ void UICodeEditor::registerKeybindings() {
 }
 
 void UICodeEditor::onCursorPosChange() {
+	mLastActivity.restart();
 	sendCommonEvent( Event::OnCursorPosChange );
 	invalidateDraw();
 }

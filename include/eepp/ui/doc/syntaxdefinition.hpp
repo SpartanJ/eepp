@@ -36,6 +36,8 @@ class EE_API SyntaxDefinition {
 
 	const std::string& getLanguageName() const;
 
+	std::string getLanguageNameForFileSystem() const;
+
 	const String::HashType& getLanguageId() const;
 
 	const std::vector<std::string>& getFiles() const;

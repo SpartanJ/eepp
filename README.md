@@ -366,7 +366,7 @@ Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 7
 ## How to build it
 
 The library has only one external dependency. You will only need **SDL2** library with the headers
-installed. Also **premake4** or **premake5** is needed to generate the Makefiles or project
+installed. Also **premake5** or **premake4** is needed to generate the Makefiles or project
 files to build the library. I will assume that you know what you are doing and
 skip the basics.
 
@@ -381,15 +381,15 @@ need to add the parameter `--without-mojoal` to any `premake` call
 In a Ubuntu system it would be something like ( also you will need gcc but it
 will be installed anyways ):
 
-`sudo apt-get install premake4 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev`
+`sudo apt-get install premake5 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev`
 
 Clone the repository and run on the repository root directory:
 
-`premake4 gmake`
-
-or if you have premake5 installed you can run:
-
 `premake5 gmake2`
+
+or if you have premake4 installed you can run:
+
+`premake4 gmake`
 
 Then just build the library:
 
@@ -402,7 +402,7 @@ That's it. That will build the whole project.
 You have two options: build with [Visual Studio](https://visualstudio.microsoft.com/)
 or with [MinGW](https://sourceforge.net/projects/mingw-w64/).
 To be able to build the project with any of these options first you will need to
-generate the project files with [premake4 or premake5](https://premake.github.io/download.html).
+generate the project files with [premake4 or premake5](https://premake.github.io/download).
 Then you will need to add the binary file to any of the executable paths defined
 in `PATH` ( or add one, or use it from a local path ). Also you will need to
 install the prebuild binaries and development libraries of [SDL2](http://libsdl.org/download-2.0.php)
@@ -437,9 +437,9 @@ _VS2022 Community Edition_ the path usually is:
 
 #### MinGW
 
-`premake4.exe gmake`
+`premake5.exe gmake2`
 
- Then just build the project located in `make/windows/` with `mingw32-make.exe`
+ Then just build the project located in `make/windows/` with `mingw32-make.exe` or `mingw64-make.exe` (depending on your target architecture)
  or any equivalent:
 
 `mingw32-make.exe -C make\windows`

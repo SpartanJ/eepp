@@ -3503,26 +3503,23 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	if ( convertLangPath && !convertLangPath.Get().empty() ) {
 		Sys::windowAttachConsole();
 		IOStreamFile sfile( convertLangPath.Get() );
-		if ( sfile.isOpen() ) {
-			std::vector<std::string> adedLangs;
-			if ( SyntaxDefinitionManager::instance()->loadFromStream( sfile, &adedLangs ) ) {
-				for ( const auto& lang : adedLangs ) {
-					const auto& def =
-						SyntaxDefinitionManager::instance()->getByLanguageName( lang );
-					auto code = SyntaxDefinitionManager::toCPP( def );
-					if ( convertLangOutput && !convertLangOutput.Get().empty() &&
-						 FileSystem::isDirectory( convertLangOutput.Get() ) ) {
-						std::string output( convertLangOutput.Get() );
-						FileSystem::dirAddSlashAtEnd( output );
-						FileSystem::fileWrite( output + String::toLower( def.getLanguageName() ) +
-												   ".hpp",
-											   code.first );
-						FileSystem::fileWrite( output + String::toLower( def.getLanguageName() ) +
-												   ".cpp",
-											   code.second );
-					} else {
-						std::cout << code.first << code.second << "\n";
-					}
+		if ( !sfile.isOpen() )
+			return EXIT_FAILURE;
+		std::vector<std::string> adedLangs;
+		if ( SyntaxDefinitionManager::instance()->loadFromStream( sfile, &adedLangs ) ) {
+			for ( const auto& lang : adedLangs ) {
+				const auto& def =
+					SyntaxDefinitionManager::instance()->getByLanguageName( lang );
+				auto code = SyntaxDefinitionManager::toCPP( def );
+				if ( convertLangOutput && !convertLangOutput.Get().empty() &&
+					 FileSystem::isDirectory( convertLangOutput.Get() ) ) {
+					std::string output( convertLangOutput.Get() );
+					FileSystem::dirAddSlashAtEnd( output );
+					std::string fileName( def.getLanguageNameForFileSystem() );
+					FileSystem::fileWrite( output + fileName + ".hpp", code.first );
+					FileSystem::fileWrite( output + fileName + ".cpp", code.second );
+				} else {
+					std::cout << code.first << code.second << "\n";
 				}
 			}
 		}
