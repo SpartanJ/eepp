@@ -58,9 +58,9 @@
     },
     {
       "language": "php",
-      "name": "intelephense",
-      "url": "https://intelephense.com/",
-      "command": "intelephense --stdio",
+      "name": "phpactor",
+      "url": "https://phpactor.readthedocs.io",
+      "command": "phpactor language-server",
       "file_patterns": ["%.php$", "%.php%d$"]
     },
     {

@@ -8,7 +8,7 @@ void addGLSL() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "GLSL",
-		  { "%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$" },
+		  { "%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$", "%.tesc", "%.tese" },
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },

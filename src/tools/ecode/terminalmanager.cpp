@@ -338,7 +338,7 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
 		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
 		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
-		  "console-toggle", "go-to-line" } );
+		  "console-toggle", "go-to-line", "editor-go-back", "editor-go-forward" } );
 }
 
 } // namespace ecode
