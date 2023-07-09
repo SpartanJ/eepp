@@ -368,8 +368,8 @@ void UICodeEditor::draw() {
 }
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
-	if ( mLastActivity.getElapsedTime() > Seconds(60) ) {
-		if (!mCursorVisible) {
+	if ( mLastActivity.getElapsedTime() > Seconds( 60 ) ) {
+		if ( !mCursorVisible ) {
 			mCursorVisible = true;
 			invalidateDraw();
 		}
@@ -1392,7 +1392,8 @@ void UICodeEditor::checkColorPickerAction() {
 			colorPicker->setColor( Color( '#' + text ) );
 		} else if ( isRgba || isRgb ) {
 			TextPosition position = mDoc->getMatchingBracket(
-				{ range.start().line(), static_cast<Int64>( range.end().column() ) }, '(', ')', 1 );
+				{ range.start().line(), static_cast<Int64>( range.end().column() ) }, '(', ')',
+				TextDocument::MatchDirection::Forward );
 			if ( position.isValid() ) {
 				mDoc->setSelection( { position.line(), position.column() + 1 }, range.start() );
 				colorPicker = UIColorPicker::NewModal( this, [&, isRgba]( Color color ) {
@@ -2269,8 +2270,8 @@ const SyntaxDefinition& UICodeEditor::getSyntaxDefinition() const {
 
 void UICodeEditor::checkMatchingBrackets() {
 	if ( mHighlightMatchingBracket ) {
-		const std::vector<String::StringBaseType> open{ '{', '(', '[' };
-		const std::vector<String::StringBaseType> close{ '}', ')', ']' };
+		static const std::vector<String::StringBaseType> open{ '{', '(', '[' };
+		static const std::vector<String::StringBaseType> close{ '}', ')', ']' };
 		mMatchingBrackets = TextRange();
 		TextPosition pos = mDoc->sanitizePosition( mDoc->getSelection().start() );
 		TextDocumentLine& line = mDoc->line( pos.line() );
@@ -2289,15 +2290,15 @@ void UICodeEditor::checkMatchingBrackets() {
 			size_t index = std::distance( open.begin(), isOpenIt );
 			String::StringBaseType openBracket = open[index];
 			String::StringBaseType closeBracket = close[index];
-			TextPosition closePosition =
-				mDoc->getMatchingBracket( pos, openBracket, closeBracket, 1 );
+			TextPosition closePosition = mDoc->getMatchingBracket(
+				pos, openBracket, closeBracket, TextDocument::MatchDirection::Forward );
 			mMatchingBrackets = { pos, closePosition };
 		} else if ( isCloseIt != close.end() ) {
 			size_t index = std::distance( close.begin(), isCloseIt );
 			String::StringBaseType openBracket = open[index];
 			String::StringBaseType closeBracket = close[index];
-			TextPosition closePosition =
-				mDoc->getMatchingBracket( pos, openBracket, closeBracket, -1 );
+			TextPosition closePosition = mDoc->getMatchingBracket(
+				pos, openBracket, closeBracket, TextDocument::MatchDirection::Backward );
 			mMatchingBrackets = { pos, closePosition };
 		}
 	}

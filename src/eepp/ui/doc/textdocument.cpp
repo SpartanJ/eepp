@@ -2506,44 +2506,159 @@ void TextDocument::cleanChangeId() {
 	mCleanChangeId = getCurrentChangeId();
 }
 
+static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, const TextPosition& pos,
+								int dir ) {
+	if ( highlighter ) {
+		auto type = highlighter->getTokenTypeAt( pos );
+		if ( type != "comment" && type != "string" )
+			depth += dir;
+	} else {
+		depth += dir;
+	}
+}
+
 TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 											   const String::StringBaseType& openBracket,
 											   const String::StringBaseType& closeBracket,
-											   int dir ) {
-	SyntaxHighlighter* highlighter = mHighlighter.get();
+											   MatchDirection dir ) {
+	SyntaxHighlighter* highlighter = getHighlighter();
 	int depth = 0;
 	while ( sp.isValid() ) {
 		auto byte = getChar( sp );
 		if ( byte == openBracket ) {
-			if ( highlighter ) {
-				auto type = highlighter->getTokenTypeAt( sp );
-				if ( type != "comment" && type != "string" )
-					depth++;
-			} else {
-				depth++;
-			}
-
+			changeDepth( highlighter, depth, sp, 1 );
 			if ( depth == 0 )
 				return sp;
 		} else if ( byte == closeBracket ) {
-			if ( highlighter ) {
-				auto type = highlighter->getTokenTypeAt( sp );
-				if ( type != "comment" && type != "string" )
-					depth--;
-			} else {
-				depth--;
-			}
-
+			changeDepth( highlighter, depth, sp, -1 );
 			if ( depth == 0 )
 				return sp;
 		}
 
 		auto prevPos = sp;
-		sp = positionOffset( sp, dir );
+		sp = positionOffset( sp, dir == MatchDirection::Forward ? 1 : -1 );
 		if ( sp == prevPos )
 			return {};
 	}
 	return {};
+}
+
+TextRange TextDocument::getMatchingBracket( TextPosition sp, const String& openBracket,
+											const String& closeBracket, MatchDirection dir ) {
+	if ( !sp.isValid() )
+		return {};
+	SyntaxHighlighter* highlighter = getHighlighter();
+	if ( dir == MatchDirection::Forward ) {
+		{
+			TextPosition end( positionOffset( sp, openBracket.size() ) );
+			// Skip the open string if the start position is from there. Always start with depth 1
+			if ( end.isValid() ) {
+				String text = getText( { sp, end } );
+				if ( text == openBracket )
+					sp = end;
+			}
+		}
+
+		// Ensure there's a close bracket
+		auto foundClose = find( closeBracket, sp );
+		if ( !foundClose.isValid() )
+			return {}; // Not found, exit
+
+		TextRange foundOpen = { sp, sp };
+		int depth = 1;
+
+		do {
+			foundOpen = find( openBracket, foundOpen.end(), true, false,
+							  TextDocument::FindReplaceType::Normal,
+							  { foundOpen.end(), foundClose.start() } );
+			if ( foundOpen.isValid() )
+				changeDepth( highlighter, depth, foundOpen.start(), 1 );
+		} while ( foundOpen.isValid() );
+
+		// Didn't fint more open brackets, the depth is the same, we found the close correct bracket
+		if ( depth == 1 )
+			return foundClose;
+
+		// Start balanced search from the first close bracket found
+		sp = foundClose.end();
+		do {
+			auto findOpen = find( openBracket, sp );
+			if ( findOpen.isValid() ) {
+				changeDepth( highlighter, depth, findOpen.start(), 1 );
+				sp = findOpen.end();
+				foundClose = find( closeBracket, sp );
+				if ( foundClose.isValid() ) {
+					changeDepth( highlighter, depth, foundClose.start(), -1 );
+				} else {
+					break; // Unexpected, fail
+				}
+			} else {
+				foundClose = find( closeBracket, sp );
+				if ( foundClose.isValid() ) {
+					changeDepth( highlighter, depth, foundClose.start(), -1 );
+					sp = foundClose.end();
+				} else {
+					break; // Unexpected, fail
+				}
+			}
+		} while ( depth > 0 );
+		return foundClose;
+	} else {
+		{
+			TextPosition end( positionOffset( sp, -closeBracket.size() ) );
+			// Skip the cloes string if the start position is from there. Always start with depth 1
+			if ( end.isValid() ) {
+				String text = getText( { end, sp } );
+				if ( text == closeBracket )
+					sp = end;
+			}
+		}
+
+		// Ensure there's an open bracket
+		auto foundOpen = findLast( openBracket, sp );
+		if ( !foundOpen.isValid() )
+			return {}; // Not found, exit
+
+		TextRange foundClose = { sp, sp };
+		int depth = 1;
+
+		do {
+			foundClose = findLast( closeBracket, foundClose.end(), true, false,
+								   TextDocument::FindReplaceType::Normal,
+								   { foundClose.end(), foundOpen.start() } );
+			if ( foundClose.isValid() )
+				changeDepth( highlighter, depth, foundClose.start(), 1 );
+		} while ( foundClose.isValid() );
+
+		// Didn't fint more open brackets, the depth is the same, we found the close correct bracket
+		if ( depth == 1 )
+			return foundOpen;
+
+		// Start balanced search from the first open bracket found
+		sp = foundOpen.end();
+		do {
+			auto findClose = findLast( closeBracket, sp );
+			if ( findClose.isValid() ) {
+				changeDepth( highlighter, depth, findClose.start(), 1 );
+				sp = findClose.end();
+				foundOpen = findLast( openBracket, sp );
+				if ( foundOpen.isValid() ) {
+					changeDepth( highlighter, depth, foundOpen.start(), -1 );
+				} else {
+					break; // Unexpected, fail
+				}
+			} else {
+				foundOpen = findLast( openBracket, sp );
+				if ( foundOpen.isValid() ) {
+					changeDepth( highlighter, depth, foundOpen.start(), -1 );
+					sp = foundOpen.end();
+				} else {
+					break; // Unexpected, fail
+				}
+			}
+		} while ( depth > 0 );
+		return foundOpen;
+	}
 }
 
 SyntaxHighlighter* TextDocument::getHighlighter() const {

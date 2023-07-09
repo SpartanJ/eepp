@@ -47,6 +47,8 @@ class EE_API TextDocument {
 
 	enum class LoadStatus { Loaded, Interrupted, Failed };
 
+	enum class MatchDirection { Forward, Backward };
+
 	static std::string lineEndingToString( const LineEnding& le ) {
 		switch ( le ) {
 			case LineEnding::CRLF:
@@ -546,7 +548,11 @@ class EE_API TextDocument {
 
 	TextPosition getMatchingBracket( TextPosition startPosition,
 									 const String::StringBaseType& openBracket,
-									 const String::StringBaseType& closeBracket, int dir );
+									 const String::StringBaseType& closeBracket,
+									 MatchDirection dir );
+
+	TextRange getMatchingBracket( TextPosition startPosition, const String& openBracket,
+								  const String& closeBracket, MatchDirection dir );
 
 	SyntaxHighlighter* getHighlighter() const;
 
