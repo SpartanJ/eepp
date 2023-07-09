@@ -162,7 +162,6 @@ class EE_API FontTrueType : public Font {
 					  ///< implementation details)
 	void* mStroker;	  ///< Pointer to the stroker (it is typeless to avoid exposing implementation
 					  ///< details)
-	int* mRefCount;	  ///< Reference counter used by implicit sharing
 	mutable ScopedBuffer mMemCopy; ///< If loaded from memory, this is the file copy in memory
 	Font::Info mInfo;			   ///< Information about the font
 	Uint32 mFontInternalId{ 0 };

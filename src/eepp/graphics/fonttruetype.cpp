@@ -75,7 +75,6 @@ FontTrueType::FontTrueType( const std::string& FontName ) :
 	mFace( NULL ),
 	mStreamRec( NULL ),
 	mStroker( NULL ),
-	mRefCount( NULL ),
 	mInfo(),
 	mBoldAdvanceSameAsRegular( false ),
 	mHinting( FontManager::instance()->getHinting() ),
@@ -109,7 +108,6 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 
 	// Cleanup the previous resources
 	cleanup();
-	mRefCount = new int( 1 );
 
 	// Initialize FreeType
 	FT_Library library;
@@ -184,7 +182,6 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 
 	// Cleanup the previous resources
 	cleanup();
-	mRefCount = new int( 1 );
 
 	// Initialize FreeType
 	FT_Library library;
@@ -249,7 +246,6 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 bool FontTrueType::loadFromStream( IOStream& stream ) {
 	// Cleanup the previous resources
 	cleanup();
-	mRefCount = new int( 1 );
 
 	// Initialize FreeType
 	FT_Library library;
@@ -655,7 +651,6 @@ FontTrueType& FontTrueType::operator=( const FontTrueType& right ) {
 	std::swap( mFace, temp.mFace );
 	std::swap( mStreamRec, temp.mStreamRec );
 	std::swap( mStroker, temp.mStroker );
-	std::swap( mRefCount, temp.mRefCount );
 	std::swap( mInfo, temp.mInfo );
 	std::swap( mPages, temp.mPages );
 	std::swap( mPixelBuffer, temp.mPixelBuffer );
@@ -671,40 +666,27 @@ void FontTrueType::cleanup() {
 	mCallbacks.clear();
 	mNumCallBacks = 0;
 
-	// Check if we must destroy the FreeType pointers
-	if ( mRefCount ) {
-		// Decrease the reference counter
-		( *mRefCount )--;
+	// Destroy the stroker
+	if ( mStroker )
+		FT_Stroker_Done( static_cast<FT_Stroker>( mStroker ) );
 
-		// Free the resources only if we are the last owner
-		if ( *mRefCount == 0 ) {
-			// Delete the reference counter
-			delete mRefCount;
+	// Destroy the font face
+	if ( mFace )
+		FT_Done_Face( static_cast<FT_Face>( mFace ) );
 
-			// Destroy the stroker
-			if ( mStroker )
-				FT_Stroker_Done( static_cast<FT_Stroker>( mStroker ) );
+	// Destroy the stream rec instance, if any (must be done after FT_Done_Face!)
+	if ( mStreamRec )
+		delete static_cast<FT_StreamRec*>( mStreamRec );
 
-			// Destroy the font face
-			if ( mFace )
-				FT_Done_Face( static_cast<FT_Face>( mFace ) );
-
-			// Destroy the stream rec instance, if any (must be done after FT_Done_Face!)
-			if ( mStreamRec )
-				delete static_cast<FT_StreamRec*>( mStreamRec );
-
-			// Close the library
-			if ( mLibrary )
-				FT_Done_FreeType( static_cast<FT_Library>( mLibrary ) );
-		}
-	}
+	// Close the library
+	if ( mLibrary )
+		FT_Done_FreeType( static_cast<FT_Library>( mLibrary ) );
 
 	// Reset members
 	mLibrary = NULL;
 	mFace = NULL;
 	mStroker = NULL;
 	mStreamRec = NULL;
-	mRefCount = NULL;
 	mPages.clear();
 	std::vector<Uint8>().swap( mPixelBuffer );
 }
@@ -789,7 +771,8 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 
 	// Retrieve the glyph
 	FT_Glyph glyphDesc;
-	if ( FT_Get_Glyph( face->glyph, &glyphDesc ) != 0 ) {
+	FT_GlyphSlot slot = face->glyph;
+	if ( FT_Get_Glyph( slot, &glyphDesc ) != 0 ) {
 		Log::error( "FT_Get_Glyph failed for: codePoint %d characterSize: %d font: %s", index,
 					characterSize, mFontName.c_str() );
 		return glyph;
@@ -829,8 +812,7 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 	}
 
 	// Compute the glyph's advance offset
-	glyph.advance =
-		static_cast<Float>( face->glyph->metrics.horiAdvance ) / static_cast<Float>( 1 << 6 );
+	glyph.advance = static_cast<Float>( slot->metrics.horiAdvance ) / static_cast<Float>( 1 << 6 );
 
 	if ( maxWidth > 0.f )
 		glyph.advance = maxWidth;
@@ -838,8 +820,8 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 	if ( bold && !mBoldAdvanceSameAsRegular )
 		glyph.advance += static_cast<Float>( weight ) / static_cast<Float>( 1 << 6 );
 
-	glyph.lsbDelta = static_cast<int>( face->glyph->lsb_delta );
-	glyph.rsbDelta = static_cast<int>( face->glyph->rsb_delta );
+	glyph.lsbDelta = static_cast<int>( slot->lsb_delta );
+	glyph.rsbDelta = static_cast<int>( slot->rsb_delta );
 
 	int width = bitmap.width;
 	int height = bitmap.rows;
@@ -876,14 +858,14 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 
 		// Compute the glyph's bounding box
 		glyph.bounds.Left =
-			static_cast<Float>( face->glyph->metrics.horiBearingX ) / static_cast<Float>( 1 << 6 );
+			static_cast<Float>( slot->metrics.horiBearingX ) / static_cast<Float>( 1 << 6 );
 		glyph.bounds.Top =
-			-static_cast<Float>( face->glyph->metrics.horiBearingY ) / static_cast<Float>( 1 << 6 );
+			-static_cast<Float>( slot->metrics.horiBearingY ) / static_cast<Float>( 1 << 6 );
 		glyph.bounds.Right =
-			static_cast<Float>( face->glyph->metrics.width ) / static_cast<Float>( 1 << 6 ) +
+			static_cast<Float>( slot->metrics.width ) / static_cast<Float>( 1 << 6 ) +
 			outlineThickness * 2;
 		glyph.bounds.Bottom =
-			static_cast<Float>( face->glyph->metrics.height ) / static_cast<Float>( 1 << 6 ) +
+			static_cast<Float>( slot->metrics.height ) / static_cast<Float>( 1 << 6 ) +
 			outlineThickness * 2;
 
 		// Resize the pixel buffer to the new size and fill it with transparent white pixels
