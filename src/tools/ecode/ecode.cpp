@@ -6,6 +6,7 @@
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
+#include "plugins/xmltools/xmltoolsplugin.hpp"
 #include "settingsmenu.hpp"
 #include "uibuildsettings.hpp"
 #include "uiwelcomescreen.hpp"
@@ -429,6 +430,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );
 	mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
+	mPluginManager->registerPlugin( XMLToolsPlugin::Definition() );
 }
 
 void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
@@ -3508,8 +3510,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		std::vector<std::string> adedLangs;
 		if ( SyntaxDefinitionManager::instance()->loadFromStream( sfile, &adedLangs ) ) {
 			for ( const auto& lang : adedLangs ) {
-				const auto& def =
-					SyntaxDefinitionManager::instance()->getByLanguageName( lang );
+				const auto& def = SyntaxDefinitionManager::instance()->getByLanguageName( lang );
 				auto code = SyntaxDefinitionManager::toCPP( def );
 				if ( convertLangOutput && !convertLangOutput.Get().empty() &&
 					 FileSystem::isDirectory( convertLangOutput.Get() ) ) {

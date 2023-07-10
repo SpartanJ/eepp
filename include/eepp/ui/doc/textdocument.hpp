@@ -556,13 +556,13 @@ class EE_API TextDocument {
 
 	SyntaxHighlighter* getHighlighter() const;
 
-	TextRange getWordRangeInPosition( const TextPosition& pos );
+	TextRange getWordRangeInPosition( const TextPosition& pos, bool basedOnHighlighter = true );
 
-	TextRange getWordRangeInPosition();
+	TextRange getWordRangeInPosition( bool basedOnHighlighter = true );
 
-	String getWordInPosition( const TextPosition& pos );
+	String getWordInPosition( const TextPosition& pos, bool basedOnHighlighter = true );
 
-	String getWordInPosition();
+	String getWordInPosition( bool basedOnHighlighter = true );
 
 	bool mightBeBinary() const;
 
@@ -577,6 +577,10 @@ class EE_API TextDocument {
 	const Uint64& getModificationId() const;
 
 	void stopActiveFindAll();
+
+	bool isDoingTextInput() const;
+
+	bool isInsertingText() const;
 
   protected:
 	friend class UndoStack;
@@ -609,6 +613,7 @@ class EE_API TextDocument {
 	bool mHAsCpp{ false };
 	bool mLastCursorChangeWasInteresting{ false };
 	bool mDoingTextInput{ false };
+	bool mInsertingText{ false };
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };

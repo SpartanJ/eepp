@@ -83,7 +83,7 @@ enum class PluginMessageType {
 							   // available
 	GetErrorOrWarning, // Request a component to provide the information of an error or warning in a
 					   // particular document location
-	GetDiagnostics, // Request the diagnostic information from a cursor position
+	GetDiagnostics,	   // Request the diagnostic information from a cursor position
 	Undefined
 };
 
@@ -424,9 +424,15 @@ class Plugin : public UICodeEditorPlugin {
 
 class PluginBase : public Plugin {
   public:
-	virtual void onRegister( UICodeEditor* );
+	explicit PluginBase( PluginManager* manager ) : Plugin( manager ) {}
 
-	virtual void onUnregister( UICodeEditor* );
+	virtual ~PluginBase();
+
+	virtual void onRegister( UICodeEditor* ) override;
+
+	virtual void onUnregister( UICodeEditor* ) override;
+
+	virtual String::HashType getConfigFileHash() override { return mConfigHash; }
 
   protected:
 	//! Keep track of the registered editors + all the listeners registered to each editor
@@ -437,6 +443,10 @@ class PluginBase : public Plugin {
 	Mutex mMutex;
 	//! Keep track of the document pointer of each editor
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
+	//! Keep track of the key bindings managed by the plugin
+	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
+	//! If the configuration is stored in a file, keep track of the config hash
+	String::HashType mConfigHash{ 0 };
 
 	virtual void onDocumentLoaded( TextDocument* ){};
 
@@ -448,6 +458,8 @@ class PluginBase : public Plugin {
 
 	//! Usually used to remove keybindings in an editor
 	virtual void onBeforeUnregister( UICodeEditor* ){};
+
+	virtual void onRegisterDocument( TextDocument* ){};
 
 	virtual void onUnregisterEditor( UICodeEditor* ){};
 

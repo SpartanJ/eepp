@@ -1266,7 +1266,7 @@ TextRange TextDocument::getDocRange() const {
 
 void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
 	eeASSERT( cursorIdx < mSelection.size() );
-	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
 	TextPosition cursorPos = mSelection[cursorIdx].normalized().start();
 	if ( mSelection[cursorIdx].hasSelection() ) {
 		remove( cursorIdx, getSelectionIndex( cursorIdx ) );
@@ -1281,7 +1281,7 @@ void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
 }
 
 void TextDocument::deleteSelection( const size_t& cursorIdx ) {
-	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
 	TextPosition cursorPos = getSelectionIndex( cursorIdx ).normalized().start();
 	remove( cursorIdx, getSelectionIndex( cursorIdx ) );
 	setSelection( cursorIdx, cursorPos );
@@ -1377,6 +1377,7 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 
 void TextDocument::textInput( const String& text, bool mightBeInteresting ) {
 	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOp op2( mInsertingText, true );
 
 	if ( mAutoCloseBrackets && 1 == text.size() ) {
 		auto inserted = autoCloseBrackets( text );
@@ -1574,7 +1575,7 @@ void TextDocument::deleteToNextWord() {
 }
 
 void TextDocument::deleteCurrentLine() {
-	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		if ( mSelection[i].hasSelection() ) {
 			deleteSelection( i );
@@ -1615,8 +1616,8 @@ void TextDocument::selectToNextWord() {
 	mergeSelection();
 }
 
-TextRange TextDocument::getWordRangeInPosition( const TextPosition& pos ) {
-	if ( mHighlighter ) {
+TextRange TextDocument::getWordRangeInPosition( const TextPosition& pos, bool basedOnHighlighter ) {
+	if ( mHighlighter && basedOnHighlighter ) {
 		auto type( mHighlighter->getTokenPositionAt( pos ) );
 		return { { pos.line(), type.pos }, { pos.line(), type.pos + (Int64)type.len } };
 	}
@@ -1624,16 +1625,16 @@ TextRange TextDocument::getWordRangeInPosition( const TextPosition& pos ) {
 	return { nextWordBoundary( pos, false ), previousWordBoundary( pos, false ) };
 }
 
-TextRange TextDocument::getWordRangeInPosition() {
-	return getWordRangeInPosition( getSelection().start() );
+TextRange TextDocument::getWordRangeInPosition( bool basedOnHighlighter ) {
+	return getWordRangeInPosition( getSelection().start(), basedOnHighlighter );
 }
 
-String TextDocument::getWordInPosition( const TextPosition& pos ) {
-	return getText( getWordRangeInPosition( pos ) );
+String TextDocument::getWordInPosition( const TextPosition& pos, bool basedOnHighlighter ) {
+	return getText( getWordRangeInPosition( pos, basedOnHighlighter ) );
 }
 
-String TextDocument::getWordInPosition() {
-	return getWordInPosition( getSelection().start() );
+String TextDocument::getWordInPosition( bool basedOnHighlighter ) {
+	return getWordInPosition( getSelection().start(), basedOnHighlighter );
 }
 
 bool TextDocument::mightBeBinary() const {
@@ -1771,7 +1772,7 @@ void TextDocument::newLineAbove() {
 }
 
 void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEmpty ) {
-	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
 	TextPosition prevStart = getSelection().start();
 	TextRange range = getSelection( true );
 	bool swap = prevStart != range.start();
@@ -1787,7 +1788,7 @@ void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEm
 
 void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
 												   bool removeExtraSpaces ) {
-	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
 	TextPosition prevStart = getSelection().start();
 	TextRange range = getSelection( true );
 	bool swap = prevStart != range.start();
@@ -1904,7 +1905,7 @@ void TextDocument::setIndentWidth( const Uint32& tabWidth ) {
 }
 
 void TextDocument::deleteTo( const size_t& cursorIdx, TextPosition position ) {
-	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
 	TextPosition cursorPos = getSelectionIndex( cursorIdx ).normalized().start();
 	if ( getSelectionIndex( cursorIdx ).hasSelection() ) {
 		remove( cursorIdx, getSelectionIndex( cursorIdx ) );
@@ -2384,6 +2385,14 @@ void TextDocument::stopActiveFindAll() {
 		*stopFlag.second.get() = true;
 }
 
+bool TextDocument::isDoingTextInput() const {
+	return mDoingTextInput;
+}
+
+bool TextDocument::isInsertingText() const {
+	return mInsertingText;
+}
+
 TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool wholeWord,
 								  const FindReplaceType& type, TextRange restrictRange,
 								  size_t maxResults ) {
@@ -2543,120 +2552,97 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 	return {};
 }
 
-TextRange TextDocument::getMatchingBracket( TextPosition sp, const String& openBracket,
+TextRange TextDocument::getMatchingBracket( TextPosition start, const String& openBracket,
 											const String& closeBracket, MatchDirection dir ) {
-	if ( !sp.isValid() )
+	if ( !start.isValid() )
 		return {};
 	SyntaxHighlighter* highlighter = getHighlighter();
 	if ( dir == MatchDirection::Forward ) {
 		{
-			TextPosition end( positionOffset( sp, openBracket.size() ) );
+			TextPosition end( positionOffset( start, openBracket.size() ) );
 			// Skip the open string if the start position is from there. Always start with depth 1
 			if ( end.isValid() ) {
-				String text = getText( { sp, end } );
+				String text = getText( { start, end } );
 				if ( text == openBracket )
-					sp = end;
+					start = end;
 			}
 		}
 
 		// Ensure there's a close bracket
-		auto foundClose = find( closeBracket, sp );
+		auto foundClose = find( closeBracket, start );
 		if ( !foundClose.isValid() )
 			return {}; // Not found, exit
 
-		TextRange foundOpen = { sp, sp };
+		TextRange foundOpen = { start, start };
 		int depth = 1;
 
 		do {
-			foundOpen = find( openBracket, foundOpen.end(), true, false,
-							  TextDocument::FindReplaceType::Normal,
-							  { foundOpen.end(), foundClose.start() } );
-			if ( foundOpen.isValid() )
-				changeDepth( highlighter, depth, foundOpen.start(), 1 );
-		} while ( foundOpen.isValid() );
-
-		// Didn't fint more open brackets, the depth is the same, we found the close correct bracket
-		if ( depth == 1 )
-			return foundClose;
-
-		// Start balanced search from the first close bracket found
-		sp = foundClose.end();
-		do {
-			auto findOpen = find( openBracket, sp );
-			if ( findOpen.isValid() ) {
-				changeDepth( highlighter, depth, findOpen.start(), 1 );
-				sp = findOpen.end();
-				foundClose = find( closeBracket, sp );
-				if ( foundClose.isValid() ) {
-					changeDepth( highlighter, depth, foundClose.start(), -1 );
+			// Find all the open brackets between the first open bracket and the first close bracket
+			do {
+				foundOpen =
+					find( openBracket, start, true, false, TextDocument::FindReplaceType::Normal,
+						  { start, foundClose.start() } );
+				if ( foundOpen.isValid() ) {
+					start = foundOpen.end();
+					changeDepth( highlighter, depth, start, 1 );
 				} else {
-					break; // Unexpected, fail
+					start = foundClose.end();
+					changeDepth( highlighter, depth, start, -1 );
 				}
-			} else {
-				foundClose = find( closeBracket, sp );
-				if ( foundClose.isValid() ) {
-					changeDepth( highlighter, depth, foundClose.start(), -1 );
-					sp = foundClose.end();
-				} else {
-					break; // Unexpected, fail
-				}
+			} while ( foundOpen.isValid() );
+
+			if ( depth > 0 ) {
+				// Find the next close bracket from the last close bracket
+				foundClose = find( closeBracket, start );
+				if ( !foundClose.isValid() )
+					break;
 			}
 		} while ( depth > 0 );
+
 		return foundClose;
 	} else {
 		{
-			TextPosition end( positionOffset( sp, -closeBracket.size() ) );
-			// Skip the cloes string if the start position is from there. Always start with depth 1
+			TextPosition end( positionOffset( start, -closeBracket.size() ) );
+			// Skip the close string if the start position is from there. Always start with depth 1
 			if ( end.isValid() ) {
-				String text = getText( { end, sp } );
+				String text = getText( { end, start } );
 				if ( text == closeBracket )
-					sp = end;
+					start = end;
 			}
 		}
 
 		// Ensure there's an open bracket
-		auto foundOpen = findLast( openBracket, sp );
+		auto foundOpen = findLast( openBracket, start );
 		if ( !foundOpen.isValid() )
 			return {}; // Not found, exit
 
-		TextRange foundClose = { sp, sp };
+		TextRange foundClose = { start, start };
 		int depth = 1;
 
 		do {
-			foundClose = findLast( closeBracket, foundClose.end(), true, false,
-								   TextDocument::FindReplaceType::Normal,
-								   { foundClose.end(), foundOpen.start() } );
-			if ( foundClose.isValid() )
-				changeDepth( highlighter, depth, foundClose.start(), 1 );
-		} while ( foundClose.isValid() );
-
-		// Didn't fint more open brackets, the depth is the same, we found the close correct bracket
-		if ( depth == 1 )
-			return foundOpen;
-
-		// Start balanced search from the first open bracket found
-		sp = foundOpen.end();
-		do {
-			auto findClose = findLast( closeBracket, sp );
-			if ( findClose.isValid() ) {
-				changeDepth( highlighter, depth, findClose.start(), 1 );
-				sp = findClose.end();
-				foundOpen = findLast( openBracket, sp );
-				if ( foundOpen.isValid() ) {
-					changeDepth( highlighter, depth, foundOpen.start(), -1 );
+			// Find all the close brackets between the first close bracket and the first open
+			// bracket
+			do {
+				foundClose =
+					findLast( closeBracket, start, true, false,
+							  TextDocument::FindReplaceType::Normal, { start, foundOpen.start() } );
+				if ( foundClose.isValid() ) {
+					start = foundClose.end();
+					changeDepth( highlighter, depth, start, 1 );
 				} else {
-					break; // Unexpected, fail
+					start = foundOpen.end();
+					changeDepth( highlighter, depth, start, -1 );
 				}
-			} else {
-				foundOpen = findLast( openBracket, sp );
-				if ( foundOpen.isValid() ) {
-					changeDepth( highlighter, depth, foundOpen.start(), -1 );
-					sp = foundOpen.end();
-				} else {
-					break; // Unexpected, fail
-				}
+			} while ( foundClose.isValid() );
+
+			if ( depth > 0 ) {
+				// Find the next open bracket from the last open bracket
+				foundOpen = findLast( openBracket, start );
+				if ( !foundOpen.isValid() )
+					break;
 			}
 		} while ( depth > 0 );
+
 		return foundOpen;
 	}
 }

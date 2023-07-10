@@ -496,6 +496,17 @@ PluginManager* Plugin::getManager() const {
 	return mManager;
 }
 
+PluginBase::~PluginBase() {
+	mShuttingDown = true;
+	unsubscribeFileSystemListener();
+	for ( auto editor : mEditors ) {
+		onBeforeUnregister( editor.first );
+		for ( auto listener : editor.second )
+			editor.first->removeEventListener( listener );
+		editor.first->unregisterPlugin( this );
+	}
+}
+
 void PluginBase::onRegister( UICodeEditor* editor ) {
 	Lock l( mMutex );
 
@@ -514,8 +525,9 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 				Lock l( mMutex );
 				const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 				TextDocument* doc = docEvent->getDoc();
-				mDocs.erase( doc );
 				onDocumentClosed( doc );
+				onUnregisterDocument( doc );
+				mDocs.erase( doc );
 			}
 		} ) );
 
@@ -532,7 +544,10 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 	onRegisterListeners( editor, listeners );
 
 	mEditors.insert( { editor, listeners } );
-	mDocs.insert( editor->getDocumentRef().get() );
+	if ( mDocs.count( editor->getDocumentRef().get() ) == 0 ) {
+		mDocs.insert( editor->getDocumentRef().get() );
+		onRegisterDocument( editor->getDocumentRef().get() );
+	}
 	mEditorDocs[editor] = editor->getDocumentRef().get();
 }
 

@@ -36,6 +36,26 @@ class BoolScopedOp {
 	bool& boolRef;
 };
 
+class BoolScopedOpOptional {
+  public:
+	explicit BoolScopedOpOptional( bool cond, bool& boolRef ) : cond( cond ), boolRef( boolRef ) {}
+
+	explicit BoolScopedOpOptional( bool cond, bool& boolRef, bool initialVal ) :
+		cond( cond ), boolRef( boolRef ) {
+		if ( cond )
+			boolRef = initialVal;
+	}
+
+	~BoolScopedOpOptional() {
+		if ( cond )
+			boolRef = !boolRef;
+	}
+
+  private:
+	bool cond;
+	bool& boolRef;
+};
+
 }} // namespace EE::System
 
 #endif // EE_SYSTEM_SCOPEDOP_HPP

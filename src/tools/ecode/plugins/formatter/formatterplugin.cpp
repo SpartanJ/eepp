@@ -43,9 +43,6 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 #endif
 	}
-	mManager->subscribeMessages( this, [this]( const PluginMessage& msg ) -> PluginRequestHandle {
-		return processMessage( msg );
-	} );
 }
 
 FormatterPlugin::~FormatterPlugin() {
@@ -187,7 +184,9 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 		j["keybindings"]["format-doc"] = mKeyBindings["format-doc"];
 
 	if ( updateConfigFile ) {
-		FileSystem::fileWrite( path, j.dump( 2 ) );
+		data = j.dump( 2 );
+		FileSystem::fileWrite( path, data );
+		mConfigHash = String::hash( data );
 	}
 
 	if ( !j.contains( "formatters" ) )
@@ -265,11 +264,11 @@ void FormatterPlugin::load( PluginManager* pluginManager ) {
 	}
 	if ( paths.empty() )
 		return;
-	for ( const auto& path : paths ) {
+	for ( const auto& fpath : paths ) {
 		try {
-			loadFormatterConfig( path, mConfigPath == path );
+			loadFormatterConfig( fpath, mConfigPath == fpath );
 		} catch ( const json::exception& e ) {
-			Log::error( "Parsing formatter \"%s\" failed:\n%s", path.c_str(), e.what() );
+			Log::error( "Parsing formatter \"%s\" failed:\n%s", fpath.c_str(), e.what() );
 		}
 	}
 	mReady = !mFormatters.empty();
