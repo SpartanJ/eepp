@@ -3,7 +3,7 @@ CANONPATH=$(readlink -f "$0")
 DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 cd ../../../ || exit
-DEBUG_SYMBOLS=""
+DEBUG_SYMBOLS=
 for i in "$@"; do
 	case $i in
 		--with-debug-symbols)
@@ -18,9 +18,9 @@ for i in "$@"; do
 			;;
 	esac
 done
-premake4 "$DEBUG_SYMBOLS" gmake
+premake4 $DEBUG_SYMBOLS gmake || exit
 cd make/linux || exit
-make -j"$(nproc)" config=release ecode
+make -j"$(nproc)" config=release ecode || exit
 cd "$DIRPATH" || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/assets
