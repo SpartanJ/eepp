@@ -26,7 +26,7 @@ XMLToolsPlugin::XMLToolsPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if FORMATTER_THREADED
+#if defined( XMLTOOLS_THREADED ) && XMLTOOLS_THREADED == 1
 		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
@@ -98,7 +98,9 @@ void XMLToolsPlugin::load( PluginManager* pluginManager ) {
 		mConfigHash = String::hash( data );
 	}
 
+	mReady = true;
 	fireReadyCbs();
+
 	subscribeFileSystemListener();
 }
 
@@ -146,6 +148,20 @@ static bool isClosedTag( TextDocument* doc, TextPosition start ) {
 	return false;
 }
 
+void XMLToolsPlugin::XMLToolsClient::updateCurrentMatch( XMLToolsPlugin::ClientMatch& match,
+														 int translation ) {
+	TextRange& open = match.open();
+	TextRange& close = match.close();
+	if ( match.isSameLine() ) {
+		open.end().setColumn( open.end().column() + translation );
+		close.start().setColumn( close.start().column() + translation );
+		close.end().setColumn( close.end().column() + translation * 2 );
+	} else {
+		open.end().setColumn( open.end().column() + translation );
+		close.end().setColumn( close.end().column() + translation );
+	}
+}
+
 void XMLToolsPlugin::XMLToolsClient::onDocumentTextChanged(
 	const DocumentContentChange& docChange ) {
 	if ( mAutoInserting || !mParent->getAutoEditMatch() ||
@@ -153,70 +169,51 @@ void XMLToolsPlugin::XMLToolsClient::onDocumentTextChanged(
 		 mDoc->getSelections().size() > 1 )
 		return;
 	ClientMatch& match = mParent->mMatches[mDoc];
-	if ( !match.currentBracket.contains( docChange.range ) )
+	if ( !match.currentBracket.contains( docChange.range ) && !mWaitingText )
 		return;
 	mAutoInserting = true;
+	mWaitingText = false;
 	auto sel = mDoc->getSelections();
 	auto diff = docChange.range.start() - match.currentBracket.start() +
-				( match.currentIsClose ? TextPosition( 0, 0 ) : TextPosition( 0, 1 ) );
+				( match.currentIsClose ? TextPosition( 0, -1 ) : TextPosition( 0, 1 ) );
 	auto translatedPos = match.matchBracket.normalize().start() + diff;
-	if ( match.currentIsClose ) {
-		translatedPos = mDoc->positionOffset( translatedPos, -1 );
-	}
 	mDoc->setSelection( 0, translatedPos );
 	auto translation =
 		docChange.range.normalized().end().column() - docChange.range.normalized().start().column();
+	updateCurrentMatch( match, translation * ( docChange.text.empty() ? -1 : 1 ) );
 	if ( docChange.text.empty() ) {
-		if ( match.currentBracket.start().line() == match.matchBracket.start().line() ) {
-			if ( !match.currentIsClose ) {
-				translatedPos = mDoc->positionOffset( translatedPos, -translation );
-			}
-		}
+		if ( match.isSameLine() && !match.currentIsClose )
+			translatedPos = mDoc->positionOffset( translatedPos, -translation );
 		mDoc->remove(
 			0, { translatedPos, { translatedPos.line(), translatedPos.column() + translation } } );
+		if ( match.isSameLine() && match.currentIsClose ) {
+			for ( auto& s : sel ) {
+				int amount = sel[0].start().column() > docChange.range.start().column() ? 2 : 1;
+				s.start().setColumn( s.start().column() - translation * amount );
+				s.setEnd( s.start() );
+			}
+			mForceSelections = 2;
+			mSelections = sel;
+		}
 		if ( mDoc->isInsertingText() ) {
 			mWaitingText = true;
 		} else {
-			TextRange range = match.currentIsClose ? match.currentBracket : match.matchBracket;
-			range.normalize();
-			if ( match.isSameLine() && !match.currentIsClose ) {
-				range.setStart( mDoc->positionOffset( range.start(), -translation + 1 ) );
-			}
-			auto closeText =
-				mDoc->getText( { range.start(), mDoc->positionOffset( range.start(), 3 ) } );
-			if ( closeText == "</>" ) {
+			auto closeText = mDoc->getText( { match.close() } );
+			if ( closeText == "</" )
 				mJustDeletedWholeWord = true;
-				if ( match.isSameLine() ) {
-					match.currentBracket = { match.currentBracket.start(),
-											 mDoc->positionOffset( match.currentBracket.start(),
-																   match.currentIsClose ? 2 : 1 ) };
-					match.matchBracket = {
-						match.matchBracket.start(),
-						mDoc->positionOffset( match.matchBracket.start(),
-											  match.currentIsClose ? 1 : 1 - translation ) };
-				} else {
-					match.currentBracket = { match.currentBracket.start(),
-											 mDoc->positionOffset( match.currentBracket.start(),
-																   match.currentIsClose ? 2 : 1 ) };
-					match.matchBracket = { match.matchBracket.start(),
-										   mDoc->positionOffset( match.matchBracket.start(),
-																 match.currentIsClose ? 1 : 2 ) };
-				}
-			}
 		}
 	} else {
-		if ( match.isSameLine() && !match.currentIsClose ) {
+		if ( match.isSameLine() && !match.currentIsClose )
 			translatedPos =
 				mDoc->positionOffset( translatedPos, translation + docChange.text.size() );
-		}
 		mDoc->insert( 0, translatedPos, docChange.text );
 		mWaitingText = false;
 		if ( match.isSameLine() && match.currentIsClose ) {
 			for ( auto& s : sel ) {
-				s.start().setColumn( s.start().column() + docChange.text.size() * 2 + 1 );
-				s.end().setColumn( s.end().column() + docChange.text.size() * 2 + 1 );
+				s.start().setColumn( s.start().column() + docChange.text.size() * 2 );
+				s.end().setColumn( s.end().column() + docChange.text.size() * 2 );
 			}
-			mForceSelections = true;
+			mForceSelections = 2;
 			mSelections = sel;
 		}
 	}
@@ -268,7 +265,7 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 	}
 
 	if ( found.isValid() ) {
-		ClientMatch match{ range, found, isCloseBracket };
+		ClientMatch match{ range.normalized(), found.normalized(), isCloseBracket };
 		mParent->mMatches[mDoc] = std::move( match );
 	} else {
 		clearMatch();
@@ -276,12 +273,19 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 }
 
 void XMLToolsPlugin::XMLToolsClient::onDocumentSelectionChange( const TextRange& sel ) {
-	if ( mForceSelections ) {
-		mDoc->setSelection( mSelections );
-		mForceSelections = false;
+	if ( mForceSelections > 0 ) {
+		if ( --mForceSelections == 0 ) {
+			mDoc->setSelection( mSelections );
+			mForceSelections = false;
+			return;
+		}
 	}
-	if ( mAutoInserting || mWaitingText )
+	if ( mWaitingText ) {
 		return;
+	}
+	if ( mAutoInserting ) {
+		return;
+	}
 	if ( mJustDeletedWholeWord ) {
 		mJustDeletedWholeWord = false;
 		return;

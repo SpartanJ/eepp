@@ -37,7 +37,7 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if FORMATTER_THREADED
+#if defined( FORMATTER_THREADED ) && FORMATTER_THREADED == 1
 		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );

@@ -143,7 +143,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 			const DocSyntaxDefEvent* event = static_cast<const DocSyntaxDefEvent*>( ev );
 			std::string oldLang = event->getOldLang();
 			std::string newLang = event->getNewLang();
-#if AUTO_COMPLETE_THREADED
+#if defined( AUTO_COMPLETE_THREADED ) && AUTO_COMPLETE_THREADED == 1
 			mThreadPool->run( [&, oldLang, newLang] {
 				updateLangCache( oldLang );
 				updateLangCache( newLang );

@@ -38,7 +38,7 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( 
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if LINTER_THREADED
+#if defined( LINTER_THREADED ) && LINTER_THREADED == 1
 		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );

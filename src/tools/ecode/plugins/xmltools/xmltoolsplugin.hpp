@@ -51,6 +51,20 @@ class XMLToolsPlugin : public PluginBase {
 	bool mAutoEditMatch{ true };
 	Mutex mClientsMutex;
 
+	struct ClientMatch {
+		TextRange currentBracket;
+		TextRange matchBracket;
+		bool currentIsClose;
+
+		bool isSameLine() const {
+			return currentBracket.start().line() == matchBracket.start().line();
+		}
+
+		TextRange& open() { return currentIsClose ? matchBracket : currentBracket; }
+
+		TextRange& close() { return currentIsClose ? currentBracket : matchBracket; }
+	};
+
 	class XMLToolsClient : public TextDocument::Client {
 	  public:
 		explicit XMLToolsClient( XMLToolsPlugin* parent, TextDocument* doc ) :
@@ -74,25 +88,18 @@ class XMLToolsPlugin : public PluginBase {
 		bool mAutoInserting{ false };
 		bool mWaitingText{ false };
 		bool mJustDeletedWholeWord{ false };
-		bool mForceSelections{ false };
+		int mForceSelections{ 0 };
 		TextRanges mSelections;
 
 		void updateMatch( const TextRange& range );
 
 		void clearMatch();
+
+		void updateCurrentMatch( ClientMatch& match, int translation );
 	};
 
 	using ClientsMap = std::unordered_map<TextDocument*, std::unique_ptr<XMLToolsClient>>;
 	ClientsMap mClients;
-	struct ClientMatch {
-		TextRange currentBracket;
-		TextRange matchBracket;
-		bool currentIsClose;
-
-		bool isSameLine() const {
-			return currentBracket.start().line() == matchBracket.start().line();
-		}
-	};
 	using ClientsMatches = std::unordered_map<TextDocument*, ClientMatch>;
 	ClientsMatches mMatches;
 
