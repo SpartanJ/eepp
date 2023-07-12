@@ -6,6 +6,7 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -161,7 +162,7 @@ UIWidget* UIMenu::add( UIWidget* widget ) {
 	widget->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top + mNextPosY );
 	mNextPosY += widget->getPixelsSize().getHeight();
 	mItems.push_back( widget );
-	auto cb = [&]( const Event* ) {
+	auto cb = [this]( const Event* ) {
 		if ( !mResizing ) {
 			widgetsSetPos();
 			widgetsResize();
@@ -188,7 +189,7 @@ UIMenuSeparator* UIMenu::addSeparator() {
 	mNextPosY += separator->getPixelsSize().getHeight();
 	mItems.push_back( separator );
 	resizeMe();
-	separator->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+	separator->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
 		if ( !mResizing ) {
 			widgetsSetPos();
 			widgetsResize();
@@ -524,8 +525,13 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 			if ( nullptr != mItemSelected && nullptr != getEventDispatcher() ) {
 				mItemSelected->sendMouseEvent(
 					Event::MouseClick, getEventDispatcher()->getMousePos(), EE_BUTTON_LMASK );
-				NodeMessage msg( mItemSelected, NodeMessage::MouseUp, EE_BUTTON_LMASK );
-				mItemSelected->messagePost( &msg );
+				if ( mItemSelected ) {
+					NodeMessage msg( mItemSelected, NodeMessage::MouseUp, EE_BUTTON_LMASK );
+					mItemSelected->messagePost( &msg );
+				}
+				if ( mItemSelected ) {
+					mItemSelected->forceKeyDown( event );
+				}
 			}
 			break;
 		default:
@@ -663,15 +669,15 @@ void UIMenu::scheduledUpdate( const Time& ) {
 	if ( !mVisible )
 		return;
 	Node* node = getEventDispatcher()->getMouseOverNode();
-	if ( node && ( isChildOfMeOrSubMenu( node ) || getItemSelected() ) )
+	if ( node && ( isChildOrSubMenu( node ) || getItemSelected() ) )
 		mInactiveTime.restart();
 	if ( mInactiveTime.getElapsedTime() > Seconds( 1 ) )
 		hide();
 }
 
-bool UIMenu::isChildOfMeOrSubMenu( Node* node ) {
+bool UIMenu::isChildOrSubMenu( Node* node ) {
 	return isParentOf( node ) || mOwnerNode == node ||
-		   ( mCurrentSubMenu && mCurrentSubMenu->isChildOfMeOrSubMenu( node ) );
+		   ( mCurrentSubMenu && mCurrentSubMenu->isChildOrSubMenu( node ) );
 }
 
 void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
@@ -683,6 +689,7 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 
 	Rectf qScreen( 0.f, 0.f, sceneNode->getPixelsSize().getWidth(),
 				   sceneNode->getPixelsSize().getHeight() );
+	Vector2f oriPos( pos );
 	Rectf qPos( pos.x, pos.y, pos.x + menu->getPixelsSize().getWidth(),
 				pos.y + menu->getPixelsSize().getHeight() );
 
@@ -766,6 +773,23 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 					pos.y += menu->getPixelsSize().getHeight();
 					qPos.Top += menu->getPixelsSize().getHeight();
 					qPos.Bottom += menu->getPixelsSize().getHeight();
+
+					if ( !qScreen.contains( qPos ) ) {
+						pos = oriPos;
+						pos.y -= menu->getPixelsSize().getHeight();
+						qPos.Left = pos.x;
+						qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+						qPos.Top = pos.y;
+						qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
+						if ( !qScreen.contains( qPos ) ) {
+							pos.y = qScreen.Bottom - menu->getPixelsSize().getHeight();
+							qPos.Left = pos.x;
+							qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+							qPos.Top = pos.y;
+							qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+						}
+					}
 				}
 			}
 		}

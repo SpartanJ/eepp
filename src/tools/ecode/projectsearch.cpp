@@ -29,8 +29,8 @@ static String textLine( const std::string& fileText, const size_t& fromPos, size
 		nlStartPtr++;
 	while ( ++endPtr && *endPtr != '\0' && *endPtr != '\n' ) {
 	}
-	relCol = String::utf8StringLength(
-		fileText.substr( nlStartPtr - stringStartPtr, startPtr - nlStartPtr ) );
+	relCol =
+		String::utf8Length( fileText.substr( nlStartPtr - stringStartPtr, startPtr - nlStartPtr ) );
 	// if the line to substract is massive we only get the fist kilobyte of that line, since the
 	// line is only shared for visual aid.
 	return fileText.substr( nlStartPtr - stringStartPtr,
@@ -65,12 +65,11 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 			totNl += countNewLines( fileText, lSearchRes, searchRes );
 			String str(
 				textLine( caseSensitive ? fileText : fileTextOriginal, searchRes, relCol ) );
-			res.push_back(
-				{ str,
-				  { { (Int64)totNl, (Int64)relCol },
-					{ (Int64)totNl, (Int64)( relCol + String::utf8StringLength( text ) ) } },
-				  searchRes,
-				  static_cast<Int64>( searchRes + text.size() ) } );
+			res.push_back( { str,
+							 { { (Int64)totNl, (Int64)relCol },
+							   { (Int64)totNl, (Int64)( relCol + String::utf8Length( text ) ) } },
+							 searchRes,
+							 static_cast<Int64>( searchRes + text.size() ) } );
 			lSearchRes = searchRes;
 			searchRes += text.size();
 		}
@@ -170,7 +169,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 					findData->res.push_back( { file, fileRes } );
 				}
 			},
-			[result, findData] {
+			[result, findData]( const auto& ) {
 				int count;
 				{
 					Lock l( findData->countMutex );
@@ -182,6 +181,14 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 					eeDelete( findData );
 				}
 			} );
+	}
+}
+
+void ProjectSearch::ResultModel::removeLastNewLineCharacter() {
+	for ( auto& r : mResult ) {
+		for ( auto& r2 : r.results )
+			if ( !r2.line.empty() && r2.line.back() == '\n' )
+				r2.line.pop_back();
 	}
 }
 

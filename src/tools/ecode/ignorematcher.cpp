@@ -148,18 +148,29 @@ IgnoreMatcher::IgnoreMatcher( const std::string& rootPath ) : mPath( rootPath ) 
 
 IgnoreMatcher::~IgnoreMatcher() {}
 
-GitIgnoreMatcher::GitIgnoreMatcher( const std::string& rootPath ) : IgnoreMatcher( rootPath ) {
-	if ( canMatch() )
-		parse();
+GitIgnoreMatcher::GitIgnoreMatcher( const std::string& rootPath,
+									const std::string& ignoreFileName ) :
+	IgnoreMatcher( rootPath ),
+	mIgnoreFileName( ignoreFileName ),
+	mIgnoreFilePath( mPath + mIgnoreFileName ) {
+	if ( canMatch() ) {
+		if ( parse() ) {
+			mMatcherReady = true;
+		}
+	}
 }
 
 bool GitIgnoreMatcher::canMatch() {
-	return FileSystem::fileExists( mPath + ".gitignore" );
+	return FileSystem::fileExists( mIgnoreFilePath );
+}
+
+const std::string& GitIgnoreMatcher::getIgnoreFilePath() const {
+	return mIgnoreFilePath;
 }
 
 bool GitIgnoreMatcher::parse() {
 	std::string patternFile;
-	FileSystem::fileGet( mPath + ".gitignore", patternFile );
+	FileSystem::fileGet( mPath + mIgnoreFileName, patternFile );
 	std::vector<std::string> patterns = String::split( patternFile );
 	for ( auto& pattern : patterns ) {
 		bool negates = false;
@@ -182,13 +193,11 @@ bool GitIgnoreMatcher::parse() {
 }
 
 bool GitIgnoreMatcher::match( const std::string& value ) const {
+	if ( mPatterns.empty() )
+		return false;
 	bool match = false;
 	for ( size_t i = 0; i < mPatterns.size(); i++ ) {
 		auto& pattern = mPatterns[i];
-		if ( String::contains( pattern.first, "Tarballs" ) &&
-			 String::contains( value, "Tarballs" ) ) {
-			String::toLower( pattern.first );
-		}
 		match = gitignore_glob_match( value, pattern.first );
 		if ( pattern.second )
 			match = !match;

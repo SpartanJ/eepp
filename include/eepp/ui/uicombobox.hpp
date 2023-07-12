@@ -27,6 +27,8 @@ class EE_API UIComboBox : public UIWidget {
 
 	const String& getText();
 
+	void setText( const String& text );
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,

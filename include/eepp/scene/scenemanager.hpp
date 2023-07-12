@@ -35,7 +35,7 @@ class EE_API SceneManager {
 
 	void update();
 
-	bool isShootingDown() const;
+	bool isShuttingDown() const;
 
 	UISceneNode* getUISceneNode();
 
@@ -46,7 +46,7 @@ class EE_API SceneManager {
   protected:
 	Clock mClock;
 	UISceneNode* mUISceneNode;
-	bool mIsShootingDown;
+	bool mIsShuttingDown;
 	std::vector<SceneNode*> mSceneNodes;
 };
 

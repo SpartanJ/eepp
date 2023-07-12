@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/framebufferfbo.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
@@ -10,7 +11,7 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-static std::list<const View*> sFBOActiveViews;
+static std::vector<const View*> sFBOActiveViews;
 
 FrameBuffer* FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool StencilBuffer,
 							   bool DepthBuffer, bool useColorBuffer, const Uint32& channels,
@@ -82,7 +83,9 @@ void FrameBuffer::setBufferView() {
 void FrameBuffer::recoverView() {
 	GlobalBatchRenderer::instance()->draw();
 
-	sFBOActiveViews.remove( &mView );
+	auto found = std::find( sFBOActiveViews.begin(), sFBOActiveViews.end(), &mView );
+	if ( found != sFBOActiveViews.end() )
+		sFBOActiveViews.erase( found );
 
 	if ( sFBOActiveViews.empty() ) {
 		mWindow->setView( mWindow->getView(), true );

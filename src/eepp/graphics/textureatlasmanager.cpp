@@ -52,8 +52,6 @@ TextureRegion* TextureAtlasManager::getTextureRegionByName( const std::string& N
 }
 
 TextureRegion* TextureAtlasManager::getTextureRegionById( const String::HashType& Id ) {
-	std::list<TextureAtlas*>::iterator it;
-
 	TextureAtlas* tSG = NULL;
 	TextureRegion* tTextureRegion = NULL;
 

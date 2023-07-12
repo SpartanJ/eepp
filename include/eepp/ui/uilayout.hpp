@@ -7,10 +7,6 @@ namespace EE { namespace UI {
 
 class EE_API UILayout : public UIWidget {
   public:
-	static UILayout* New();
-
-	UILayout();
-
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
@@ -23,10 +19,17 @@ class EE_API UILayout : public UIWidget {
 
 	void setGravityOwner( bool gravityOwner );
 
+	bool isPacking() const { return mPacking; }
+
   protected:
 	friend class UISceneNode;
 
-	UILayout( const std::string& tag );
+	std::unordered_set<UILayout*> mLayouts;
+	bool mDirtyLayout{ false };
+	bool mPacking{ false };
+	bool mGravityOwner{ false };
+
+	explicit UILayout( const std::string& tag );
 
 	virtual void onSizeChange();
 
@@ -44,10 +47,11 @@ class EE_API UILayout : public UIWidget {
 
 	void setLayoutDirty();
 
-	std::unordered_set<UILayout*> mLayouts;
-	bool mDirtyLayout{ false };
-	bool mPacking{ false };
-	bool mGravityOwner{ false };
+	Sizef getSizeFromLayoutPolicy();
+
+	Float getMatchParentWidth() const;
+
+	Float getMatchParentHeight() const;
 };
 
 }} // namespace EE::UI

@@ -1,6 +1,7 @@
 #ifndef ECODE_AUTOCOMPLETEPLUGIN_HPP
 #define ECODE_AUTOCOMPLETEPLUGIN_HPP
 
+#include "../lsp/lspprotocol.hpp"
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
@@ -9,15 +10,47 @@
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <set>
+#include <unordered_map>
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 
 namespace ecode {
 
-class AutoCompletePlugin : public UICodeEditorPlugin {
+class AutoCompletePlugin : public Plugin {
   public:
-	typedef std::unordered_set<std::string> SymbolsList;
+	class Suggestion {
+	  public:
+		LSPCompletionItemKind kind{ LSPCompletionItemKind::Text };
+		std::string text;
+		std::string detail;
+		std::string sortText;
+		TextRange range;
+		double score{ 0 };
+
+		void setScore( const double& score ) const {
+			const_cast<Suggestion*>( this )->score = score;
+		}
+
+		Suggestion( const std::string& text ) : text( text ), sortText( text ) {}
+
+		Suggestion( const LSPCompletionItemKind& kind, const std::string& text,
+					const std::string& detail, const std::string& sortText,
+					const TextRange& range = {} ) :
+			kind( kind ),
+			text( text ),
+			detail( detail ),
+			sortText( sortText.empty() ? text : sortText ),
+			range( range ){};
+
+		bool operator<( const Suggestion& other ) const { return getCmpStr() < other.getCmpStr(); }
+
+		bool operator==( const Suggestion& other ) const { return text == other.text; }
+
+	  protected:
+		const std::string* getCmpStr() const { return !sortText.empty() ? &sortText : &text; }
+	};
+	typedef std::vector<Suggestion> SymbolsList;
 
 	static PluginDefinition Definition() {
 		return { "autocomplete",
@@ -25,10 +58,10 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
 				 AutoCompletePlugin::New,
-				 { 0, 1, 0 } };
+				 { 0, 2, 2 } };
 	}
 
-	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
+	static UICodeEditorPlugin* New( PluginManager* pluginManager );
 
 	virtual ~AutoCompletePlugin();
 
@@ -43,14 +76,12 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void onRegister( UICodeEditor* );
 	void onUnregister( UICodeEditor* );
 	bool onKeyDown( UICodeEditor*, const KeyEvent& );
-	bool onKeyUp( UICodeEditor*, const KeyEvent& );
 	bool onTextInput( UICodeEditor*, const TextInputEvent& );
 	void update( UICodeEditor* );
-	void preDraw( UICodeEditor*, const Vector2f&, const Float&, const TextPosition& );
 	void postDraw( UICodeEditor*, const Vector2f& startScroll, const Float& lineHeight,
 				   const TextPosition& cursor );
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& );
-	bool onMouseClick( UICodeEditor*, const Vector2i&, const Uint32& );
+	bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& );
 	bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& );
 	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& );
 
@@ -58,7 +89,7 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 
 	void setBoxPadding( const Rectf& boxPadding );
 
-	const Uint32& getSuggestionsMaxVisible() const;
+	const Int32& getSuggestionsMaxVisible() const;
 
 	void setSuggestionsMaxVisible( const Uint32& suggestionsMaxVisible );
 
@@ -77,7 +108,6 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
   protected:
 	std::string mSymbolPattern;
 	Rectf mBoxPadding;
-	std::shared_ptr<ThreadPool> mPool;
 	Clock mClock;
 	Mutex mLangSymbolsMutex;
 	Mutex mSuggestionsMutex;
@@ -87,25 +117,37 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	std::set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	bool mDirty{ false };
-	bool mClosing{ false };
 	bool mReplacing{ false };
+	bool mSignatureHelpVisible{ false };
 	struct DocCache {
 		Uint64 changeId{ static_cast<Uint64>( -1 ) };
 		SymbolsList symbols;
 	};
 	std::unordered_map<TextDocument*, DocCache> mDocCache;
 	std::unordered_map<std::string, SymbolsList> mLangCache;
-	SymbolsList mLangDirty;
 
-	int mSuggestionIndex{ 0 };
-	std::vector<std::string> mSuggestions;
-	Uint32 mSuggestionsMaxVisible{ 8 };
+	std::vector<Suggestion> mSuggestions;
+	Mutex mSuggestionsEditorMutex;
+	Mutex mSignatureHelpEditorMutex;
 	UICodeEditor* mSuggestionsEditor{ nullptr };
+	UICodeEditor* mSignatureHelpEditor{ nullptr };
+	Int32 mSuggestionIndex{ 0 };
+	Int32 mSuggestionsMaxVisible{ 8 };
+	Int32 mSuggestionsStartIndex{ 0 };
+	std::unordered_map<std::string, LSPServerCapabilities> mCapabilities;
+	Mutex mCapabilitiesMutex;
+	LSPSignatureHelp mSignatureHelp;
+	TextPosition mSignatureHelpPosition;
+	Int32 mSignatureHelpSelected{ -1 };
+	Mutex mHandlesMutex;
+	std::unordered_map<TextDocument*, std::vector<PluginIDType>> mHandles;
+	std::unordered_map<TextDocument*, std::atomic<bool>> mDocsUpdating;
+	Mutex mDocsUpdatingMutex;
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
 
-	AutoCompletePlugin( const PluginManager* pluginManager );
+	explicit AutoCompletePlugin( PluginManager* pluginManager );
 
 	void resetSuggestions( UICodeEditor* editor );
 
@@ -123,6 +165,23 @@ class AutoCompletePlugin : public UICodeEditorPlugin {
 	void updateLangCache( const std::string& langName );
 
 	void pickSuggestion( UICodeEditor* editor );
+
+	PluginRequestHandle processResponse( const PluginMessage& msg );
+
+	bool tryRequestCapabilities( UICodeEditor* editor );
+
+	void requestCodeCompletion( UICodeEditor* editor );
+
+	void requestSignatureHelp( UICodeEditor* editor );
+
+	PluginRequestHandle processCodeCompletion( const LSPCompletionList& completion );
+
+	PluginRequestHandle processSignatureHelp( const LSPSignatureHelp& signatureHelp );
+
+	void resetSignatureHelp();
+
+	void drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
+							const Float& lineHeight, bool drawUp );
 };
 
 } // namespace ecode

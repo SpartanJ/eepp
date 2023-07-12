@@ -23,7 +23,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag resume( parser, "continue", "Resume getting a partially-downloaded file",
 					   { 'c', "continue" } );
 	args::Flag compressed( parser, "compressed", "Request compressed response", { "compressed" } );
-	args::ValueFlag<std::string> postData( parser, "data", "HTTP POST data", { 'd', "data" } );
+	args::ValueFlag<std::string> postData( parser, "data", "HTTP POST data",
+										   { 'd', "data", "data-raw" } );
 	args::ValueFlagList<std::string> multipartData(
 		parser, "multipart-data", "Specify multipart MIME data", { 'F', "form" } );
 	args::ValueFlagList<std::string> headers( parser, "header", "Pass custom header(s) to server",

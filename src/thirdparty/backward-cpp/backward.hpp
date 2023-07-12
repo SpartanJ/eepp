@@ -221,6 +221,13 @@
 #include <sys/stat.h>
 #include <syscall.h>
 #include <unistd.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#undef _GNU_SOURCE
+#else
+#include <dlfcn.h>
+#endif
 
 #if BACKWARD_HAS_BFD == 1
 //              NOTE: defining PACKAGE{,_VERSION} is required before including
@@ -233,13 +240,6 @@
 #define PACKAGE_VERSION
 #endif
 #include <bfd.h>
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <dlfcn.h>
-#undef _GNU_SOURCE
-#else
-#include <dlfcn.h>
-#endif
 #endif
 
 #if BACKWARD_HAS_DW == 1
@@ -254,13 +254,6 @@
 #include <libdwarf.h>
 #include <libelf.h>
 #include <map>
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <dlfcn.h>
-#undef _GNU_SOURCE
-#else
-#include <dlfcn.h>
-#endif
 #endif
 
 #if (BACKWARD_HAS_BACKTRACE == 1) || (BACKWARD_HAS_BACKTRACE_SYMBOL == 1)
@@ -734,6 +727,7 @@ public:
   }
   size_t thread_id() const { return 0; }
   void skip_n_firsts(size_t) {}
+  void *const *begin() const { return nullptr; }
 };
 
 class StackTraceImplBase {
@@ -817,7 +811,12 @@ public:
     _index = -1;
     _depth = depth;
     _Unwind_Backtrace(&this->backtrace_trampoline, this);
-    return static_cast<size_t>(_index);
+    if (_index == -1) {
+      // _Unwind_Backtrace has failed to obtain any backtraces
+      return 0;
+    } else {
+      return static_cast<size_t>(_index);
+    }
   }
 
 private:
@@ -3621,10 +3620,12 @@ public:
     symOptions |= SYMOPT_LOAD_LINES | SYMOPT_UNDNAME;
     SymSetOptions(symOptions);
     EnumProcessModules(process, &module_handles[0],
-                       module_handles.size() * sizeof(HMODULE), &cbNeeded);
+                       static_cast<DWORD>(module_handles.size() * sizeof(HMODULE)),
+		       &cbNeeded);
     module_handles.resize(cbNeeded / sizeof(HMODULE));
     EnumProcessModules(process, &module_handles[0],
-                       module_handles.size() * sizeof(HMODULE), &cbNeeded);
+                       static_cast<DWORD>(module_handles.size() * sizeof(HMODULE)),
+		       &cbNeeded);
     std::transform(module_handles.begin(), module_handles.end(),
                    std::back_inserter(modules), get_mod_info(process));
     void *base = modules[0].base_address;
@@ -3808,11 +3809,18 @@ public:
   }
 #endif
 
+  // Allow adding to paths gotten from BACKWARD_CXX_SOURCE_PREFIXES after loading the
+  // library; this can be useful when the library is loaded when the locations are unknown
+  // Warning: Because this edits the static paths variable, it is *not* intrinsiclly thread safe
+  static void add_paths_to_env_variable_impl(const std::string & to_add) {
+    get_mutable_paths_from_env_variable().push_back(to_add);
+  }
+
 private:
   details::handle<std::ifstream *, details::default_delete<std::ifstream *> >
       _file;
 
-  std::vector<std::string> get_paths_from_env_variable_impl() {
+  static std::vector<std::string> get_paths_from_env_variable_impl() {
     std::vector<std::string> paths;
     const char *prefixes_str = std::getenv("BACKWARD_CXX_SOURCE_PREFIXES");
     if (prefixes_str && prefixes_str[0]) {
@@ -3821,9 +3829,13 @@ private:
     return paths;
   }
 
-  const std::vector<std::string> &get_paths_from_env_variable() {
-    static std::vector<std::string> paths = get_paths_from_env_variable_impl();
-    return paths;
+  static std::vector<std::string> &get_mutable_paths_from_env_variable() {
+    static volatile std::vector<std::string> paths = get_paths_from_env_variable_impl();
+    return const_cast<std::vector<std::string>&>(paths);
+  }
+
+  static const std::vector<std::string> &get_paths_from_env_variable() {
+    return get_mutable_paths_from_env_variable();
   }
 
 #ifdef BACKWARD_ATLEAST_CXX11
@@ -3991,10 +4003,12 @@ public:
   bool object;
   int inliner_context_size;
   int trace_context_size;
+  bool reverse;
 
   Printer()
       : snippet(true), color_mode(ColorMode::automatic), address(false),
-        object(false), inliner_context_size(5), trace_context_size(7) {}
+        object(false), inliner_context_size(5), trace_context_size(7),
+        reverse(true) {}
 
   template <typename ST> FILE *print(ST &st, FILE *fp = stderr) {
     cfile_streambuf obuf(fp);
@@ -4041,8 +4055,14 @@ private:
   void print_stacktrace(ST &st, std::ostream &os, Colorize &colorize) {
     print_header(os, st.thread_id());
     _resolver.load_stacktrace(st);
-    for (size_t trace_idx = st.size(); trace_idx > 0; --trace_idx) {
-      print_trace(os, _resolver.resolve(st[trace_idx - 1]), colorize);
+    if ( reverse ) {
+      for (size_t trace_idx = st.size(); trace_idx > 0; --trace_idx) {
+        print_trace(os, _resolver.resolve(st[trace_idx - 1]), colorize);
+      }
+    } else {
+      for (size_t trace_idx = 0; trace_idx < st.size(); ++trace_idx) {
+        print_trace(os, _resolver.resolve(st[trace_idx]), colorize);
+      }
     }
   }
 

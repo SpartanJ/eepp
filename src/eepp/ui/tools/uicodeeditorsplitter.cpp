@@ -44,16 +44,8 @@ UICodeEditorSplitter::getLocalDefaultKeybindings() {
 		{ { KEY_8, KeyMod::getDefaultModifier() }, "switch-to-tab-8" },
 		{ { KEY_9, KeyMod::getDefaultModifier() }, "switch-to-tab-9" },
 		{ { KEY_0, KeyMod::getDefaultModifier() }, "switch-to-last-tab" },
-		{ { KEY_1, KEYMOD_LALT }, "switch-to-tab-1" },
-		{ { KEY_2, KEYMOD_LALT }, "switch-to-tab-2" },
-		{ { KEY_3, KEYMOD_LALT }, "switch-to-tab-3" },
-		{ { KEY_4, KEYMOD_LALT }, "switch-to-tab-4" },
-		{ { KEY_5, KEYMOD_LALT }, "switch-to-tab-5" },
-		{ { KEY_6, KEYMOD_LALT }, "switch-to-tab-6" },
-		{ { KEY_7, KEYMOD_LALT }, "switch-to-tab-7" },
-		{ { KEY_8, KEYMOD_LALT }, "switch-to-tab-8" },
-		{ { KEY_9, KEYMOD_LALT }, "switch-to-tab-9" },
-		{ { KEY_0, KEYMOD_LALT }, "switch-to-last-tab" },
+		{ { KEY_LEFT, KEYMOD_LALT }, "editor-go-back" },
+		{ { KEY_RIGHT, KEYMOD_LALT }, "editor-go-forward" },
 	};
 }
 
@@ -77,16 +69,19 @@ std::vector<std::string> UICodeEditorSplitter::getUnlockedCommands() {
 
 UICodeEditorSplitter* UICodeEditorSplitter::New( UICodeEditorSplitter::Client* client,
 												 UISceneNode* sceneNode,
+												 std::shared_ptr<ThreadPool> threadPool,
 												 const std::vector<SyntaxColorScheme>& colorSchemes,
 												 const std::string& initColorScheme ) {
-	return eeNew( UICodeEditorSplitter, ( client, sceneNode, colorSchemes, initColorScheme ) );
+	return eeNew( UICodeEditorSplitter,
+				  ( client, sceneNode, threadPool, colorSchemes, initColorScheme ) );
 }
 
 UICodeEditorSplitter::UICodeEditorSplitter( UICodeEditorSplitter::Client* client,
 											UISceneNode* sceneNode,
+											std::shared_ptr<ThreadPool> threadPool,
 											const std::vector<SyntaxColorScheme>& colorSchemes,
 											const std::string& initColorScheme ) :
-	mUISceneNode( sceneNode ), mClient( client ) {
+	mUISceneNode( sceneNode ), mThreadPool( threadPool ), mClient( client ) {
 	if ( !colorSchemes.empty() ) {
 		for ( auto& colorScheme : colorSchemes )
 			mColorSchemes.insert( std::make_pair( colorScheme.getName(), colorScheme ) );
@@ -104,6 +99,12 @@ UICodeEditorSplitter::~UICodeEditorSplitter() {}
 UITabWidget* UICodeEditorSplitter::tabWidgetFromEditor( UICodeEditor* editor ) const {
 	if ( editor )
 		return ( (UITab*)editor->getData() )->getTabWidget();
+	return nullptr;
+}
+
+UITab* UICodeEditorSplitter::tabFromEditor( UICodeEditor* editor ) const {
+	if ( editor )
+		return (UITab*)editor->getData();
 	return nullptr;
 }
 
@@ -130,67 +131,75 @@ UISplitter* UICodeEditorSplitter::splitterFromWidget( UIWidget* widget ) const {
 UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	UICodeEditor* editor = UICodeEditor::NewOpt( true, true );
 	TextDocument& doc = editor->getDocument();
-	/* global commands */
-	doc.setCommand( "move-to-previous-line", [&] {
+	/* document commands */
+	doc.setCommand( "move-to-previous-line", [this] {
 		if ( mCurEditor )
 			mCurEditor->moveToPreviousLine();
 	} );
-	doc.setCommand( "move-to-next-line", [&] {
+	doc.setCommand( "move-to-next-line", [this] {
 		if ( mCurEditor )
 			mCurEditor->moveToNextLine();
 	} );
-	doc.setCommand( "select-to-previous-line", [&] {
+	doc.setCommand( "select-to-previous-line", [this] {
 		if ( mCurEditor )
 			mCurEditor->selectToPreviousLine();
 	} );
-	doc.setCommand( "select-to-next-line", [&] {
+	doc.setCommand( "select-to-next-line", [this] {
 		if ( mCurEditor )
 			mCurEditor->selectToNextLine();
 	} );
-	doc.setCommand( "move-scroll-up", [&] {
+	doc.setCommand( "move-scroll-up", [this] {
 		if ( mCurEditor )
 			mCurEditor->moveScrollUp();
 	} );
-	doc.setCommand( "move-scroll-down", [&] {
+	doc.setCommand( "move-scroll-down", [this] {
 		if ( mCurEditor )
 			mCurEditor->moveScrollDown();
 	} );
-	doc.setCommand( "indent", [&] {
+	doc.setCommand( "jump-lines-up", [this] {
+		if ( mCurEditor )
+			mCurEditor->jumpLinesUp();
+	} );
+	doc.setCommand( "jump-lines-down", [this] {
+		if ( mCurEditor )
+			mCurEditor->jumpLinesDown();
+	} );
+	doc.setCommand( "indent", [this] {
 		if ( mCurEditor )
 			mCurEditor->indent();
 	} );
-	doc.setCommand( "unindent", [&] {
+	doc.setCommand( "unindent", [this] {
 		if ( mCurEditor )
 			mCurEditor->unindent();
 	} );
-	doc.setCommand( "copy", [&] {
+	doc.setCommand( "copy", [this] {
 		if ( mCurEditor )
 			mCurEditor->copy();
 	} );
-	doc.setCommand( "cut", [&] {
+	doc.setCommand( "cut", [this] {
 		if ( mCurEditor )
 			mCurEditor->cut();
 	} );
-	doc.setCommand( "paste", [&] {
+	doc.setCommand( "paste", [this] {
 		if ( mCurEditor )
 			mCurEditor->paste();
 	} );
-	doc.setCommand( "font-size-grow", [&] { zoomIn(); } );
-	doc.setCommand( "font-size-shrink", [&] { zoomOut(); } );
-	doc.setCommand( "font-size-reset", [&] { zoomReset(); } );
-	doc.setCommand( "lock", [&] {
+	doc.setCommand( "font-size-grow", [this] { zoomIn(); } );
+	doc.setCommand( "font-size-shrink", [this] { zoomOut(); } );
+	doc.setCommand( "font-size-reset", [this] { zoomReset(); } );
+	doc.setCommand( "lock", [this] {
 		if ( mCurEditor ) {
 			mCurEditor->setLocked( true );
 			mClient->onDocumentStateChanged( mCurEditor, mCurEditor->getDocument() );
 		}
 	} );
-	doc.setCommand( "unlock", [&] {
+	doc.setCommand( "unlock", [this] {
 		if ( mCurEditor ) {
 			mCurEditor->setLocked( false );
 			mClient->onDocumentStateChanged( mCurEditor, mCurEditor->getDocument() );
 		}
 	} );
-	doc.setCommand( "lock-toggle", [&] {
+	doc.setCommand( "lock-toggle", [this] {
 		if ( mCurEditor ) {
 			mCurEditor->setLocked( !mCurEditor->isLocked() );
 			mClient->onDocumentStateChanged( mCurEditor, mCurEditor->getDocument() );
@@ -198,18 +207,16 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	} );
 	editor->addUnlockedCommand( "copy" );
 	editor->addUnlockedCommand( "select-all" );
-	/* global commands */
+	/* document commands */
 
-	doc.setCommand( "switch-to-previous-colorscheme", [&] {
+	/* editor commands */
+	doc.setCommand( "switch-to-previous-colorscheme", [this] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
-		auto prev = std::prev( it, 1 );
-		if ( prev != mColorSchemes.end() ) {
-			setColorScheme( prev->first );
-		} else {
-			setColorScheme( mColorSchemes.rbegin()->first );
-		}
+		setColorScheme( it == mColorSchemes.begin() ? mColorSchemes.rbegin()->first
+													: ( --it )->first );
 	} );
-	doc.setCommand( "switch-to-next-colorscheme", [&] {
+
+	doc.setCommand( "switch-to-next-colorscheme", [this] {
 		auto it = mColorSchemes.find( mCurrentColorScheme );
 		if ( ++it != mColorSchemes.end() )
 			mCurrentColorScheme = it->first;
@@ -217,85 +224,35 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			mCurrentColorScheme = mColorSchemes.begin()->first;
 		applyColorScheme( mColorSchemes[mCurrentColorScheme] );
 	} );
-
-	/* Splitter commands */
-	doc.setCommand( "switch-to-previous-split", [&] { switchPreviousSplit( mCurWidget ); } );
-	doc.setCommand( "switch-to-next-split", [&] { switchNextSplit( mCurWidget ); } );
-	doc.setCommand( "close-tab", [&] { tryTabClose( mCurWidget ); } );
-	doc.setCommand( "create-new", [&] {
-		auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
-		d.first->getTabWidget()->setTabSelected( d.first );
-	} );
-	doc.setCommand( "next-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mCurWidget->getData();
-			Uint32 tabIndex = tabWidget->getTabIndex( tab );
-			switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
-		}
-	} );
-	doc.setCommand( "previous-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-		if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-			UITab* tab = (UITab*)mCurWidget->getData();
-			Uint32 tabIndex = tabWidget->getTabIndex( tab );
-			Int32 newTabIndex = (Int32)tabIndex - 1;
-			switchToTab( newTabIndex < 0 ? tabWidget->getTabCount() - newTabIndex : newTabIndex );
-		}
-	} );
-	for ( int i = 1; i <= 10; i++ )
-		doc.setCommand( String::format( "switch-to-tab-%d", i ), [&, i] { switchToTab( i - 1 ); } );
-	doc.setCommand( "switch-to-first-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-		if ( tabWidget && tabWidget->getTabCount() ) {
-			switchToTab( 0 );
-		}
-	} );
-	doc.setCommand( "switch-to-last-tab", [&] {
-		UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-		if ( tabWidget && tabWidget->getTabCount() ) {
-			switchToTab( tabWidget->getTabCount() - 1 );
-		}
-	} );
-	doc.setCommand( "split-right", [&] {
-		split( SplitDirection::Right, mCurWidget, curEditorExistsAndFocused() );
-	} );
-	doc.setCommand( "split-bottom", [&] {
-		split( SplitDirection::Bottom, mCurWidget, curEditorExistsAndFocused() );
-	} );
-	doc.setCommand( "split-left", [&] {
-		split( SplitDirection::Left, mCurWidget, curEditorExistsAndFocused() );
-	} );
-	doc.setCommand( "split-top", [&] {
-		split( SplitDirection::Top, mCurWidget, curEditorExistsAndFocused() );
-	} );
-	doc.setCommand( "split-swap", [&] {
-		if ( UISplitter* splitter = splitterFromWidget( mCurWidget ) )
-			splitter->swap();
-	} );
-	/* Splitter commands */
-
-	doc.setCommand( "open-containing-folder", [&] {
+	doc.setCommand( "open-containing-folder", [this] {
 		if ( mCurEditor )
 			mCurEditor->openContainingFolder();
 	} );
-	doc.setCommand( "copy-file-path", [&] {
+	doc.setCommand( "copy-file-path", [this] {
 		if ( mCurEditor )
 			mCurEditor->copyFilePath();
 	} );
-	editor->addEventListener( Event::OnFocus, [&]( const Event* event ) {
+	doc.setCommand( "editor-go-back", [this] { goBackInNavigationHistory(); } );
+	doc.setCommand( "editor-go-forward", [this] { goForwardInNavigationHistory(); } );
+	/* editor commands */
+
+	/* Splitter commands */
+	registerSplitterCommands( doc );
+	/* Splitter commands */
+
+	editor->addEventListener( Event::OnFocus, [this]( const Event* event ) {
 		setCurrentWidget( event->getNode()->asType<UICodeEditor>() );
 	} );
-	editor->addEventListener( Event::OnTextChanged, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnTextChanged, [this]( const Event* event ) {
 		mClient->onDocumentModified( event->getNode()->asType<UICodeEditor>(),
 									 event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	editor->addEventListener( Event::OnSelectionChanged, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnSelectionChanged, [this]( const Event* event ) {
 		mClient->onDocumentSelectionChange(
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	editor->addEventListener( Event::OnCursorPosChange, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnCursorPosChange, [this]( const Event* event ) {
 		mClient->onDocumentCursorPosChange(
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
@@ -309,6 +266,11 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 		mAboutToAddEditor = nullptr;
 	}
 	mClient->onCodeEditorCreated( editor, doc );
+
+	if ( mCurEditor == nullptr )
+		mCurEditor = editor;
+	if ( mCurWidget == nullptr )
+		mCurWidget = editor;
 
 	return editor;
 }
@@ -332,7 +294,8 @@ const std::map<std::string, SyntaxColorScheme>& UICodeEditorSplitter::getColorSc
 	return mColorSchemes;
 }
 
-bool UICodeEditorSplitter::editorExists( UICodeEditor* editor ) const {
+bool UICodeEditorSplitter::editorExists( UICodeEditor* editor ) {
+	Lock l( mTabWidgetMutex );
 	for ( auto tabWidget : mTabWidgets ) {
 		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
 			if ( editor == tabWidget->getTab( i )->getOwnedWidget() ) {
@@ -343,11 +306,45 @@ bool UICodeEditorSplitter::editorExists( UICodeEditor* editor ) const {
 	return false;
 }
 
+bool UICodeEditorSplitter::loadDocument( std::shared_ptr<TextDocument> doc,
+										 UICodeEditor* codeEditor ) {
+	if ( nullptr == codeEditor )
+		codeEditor = mCurEditor;
+
+	if ( nullptr == codeEditor )
+		return false;
+
+	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
+	codeEditor->setDocument( doc );
+
+	return true;
+}
+
+std::pair<UITab*, UICodeEditor*>
+UICodeEditorSplitter::loadDocumentInNewTab( std::shared_ptr<TextDocument> doc ) {
+	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	if ( d.first == nullptr || d.second == nullptr ) {
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			d = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::loadDocumentInNewTab" );
+			return d;
+		}
+	}
+	UITabWidget* tabWidget = d.first->getTabWidget();
+	loadDocument( doc, d.second );
+	tabWidget->setTabSelected( d.first );
+	return d;
+}
+
 bool UICodeEditorSplitter::loadFileFromPath( const std::string& path, UICodeEditor* codeEditor ) {
 	if ( FileSystem::isDirectory( path ) )
 		return false;
 	if ( nullptr == codeEditor )
 		codeEditor = mCurEditor;
+	if ( nullptr == codeEditor && !mTabWidgets.empty() )
+		codeEditor = createCodeEditorInTabWidget( mTabWidgets[0] ).second;
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
 	bool isUrl = String::startsWith( path, "https://" ) || String::startsWith( path, "http://" );
 	bool ret = isUrl ? codeEditor->loadAsyncFromURL(
@@ -362,13 +359,21 @@ bool UICodeEditorSplitter::loadFileFromPath( const std::string& path, UICodeEdit
 }
 
 void UICodeEditorSplitter::loadAsyncFileFromPath(
-	const std::string& path, std::shared_ptr<ThreadPool> pool, UICodeEditor* codeEditor,
+	const std::string& path, UICodeEditor* codeEditor,
 	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+	if ( !mThreadPool ) {
+		Log::error( "UICodeEditorSplitter::loadAsyncFileFromPath loading file async "
+					"without thread pool." );
+		loadFileFromPath( path );
+		return;
+	}
 	if ( FileSystem::isDirectory( path ) )
 		return;
 	if ( nullptr == codeEditor )
 		codeEditor = mCurEditor;
+	if ( nullptr == codeEditor && !mTabWidgets.empty() )
+		codeEditor = createCodeEditorInTabWidget( mTabWidgets[0] ).second;
 	codeEditor->setColorScheme( mColorSchemes[mCurrentColorScheme] );
 	bool isUrl = String::startsWith( path, "https://" ) || String::startsWith( path, "http://" );
 	if ( isUrl ) {
@@ -381,7 +386,8 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 			} );
 	} else {
 		codeEditor->loadAsyncFromFile(
-			path, pool, [&, codeEditor, path, onLoaded]( std::shared_ptr<TextDocument>, bool ) {
+			path, mThreadPool,
+			[&, codeEditor, path, onLoaded]( std::shared_ptr<TextDocument>, bool ) {
 				mClient->onDocumentLoaded( codeEditor, path );
 				if ( onLoaded )
 					onLoaded( codeEditor, path );
@@ -391,6 +397,8 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 	loadFileFromPath( path, codeEditor );
 	if ( nullptr == codeEditor )
 		codeEditor = mCurEditor;
+	if ( nullptr == codeEditor && !mTabWidgets.empty() )
+		codeEditor = createCodeEditorInTabWidget( mTabWidgets[0] ).second;
 	if ( onLoaded )
 		onLoaded( codeEditor, path );
 #endif
@@ -398,7 +406,16 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 
 std::pair<UITab*, UICodeEditor*>
 UICodeEditorSplitter::loadFileFromPathInNewTab( const std::string& path ) {
-	auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
+	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	if ( d.first == nullptr || d.second == nullptr ) {
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			d = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::loadFileFromPathInNewTab" );
+			return d;
+		}
+	}
 	UITabWidget* tabWidget = d.first->getTabWidget();
 	loadFileFromPath( path, d.second );
 	tabWidget->setTabSelected( d.first );
@@ -406,21 +423,50 @@ UICodeEditorSplitter::loadFileFromPathInNewTab( const std::string& path ) {
 }
 
 void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
-	const std::string& path, std::shared_ptr<ThreadPool> pool,
-	std::function<void( UICodeEditor*, const std::string& )> onLoaded, UITabWidget* tabWidget ) {
+	const std::string& path, std::function<void( UICodeEditor*, const std::string& )> onLoaded,
+	UITabWidget* tabWidget ) {
+	if ( !mThreadPool ) {
+		Log::error( "UICodeEditorSplitter::loadAsyncFileFromPathInNewTab loading file async "
+					"without thread pool." );
+		loadFileFromPathInNewTab( path );
+		return;
+	}
 	auto d = createCodeEditorInTabWidget( tabWidget );
+	if ( d.first == nullptr || d.second == nullptr ) {
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			d = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::loadAsyncFileFromPathInNewTab" );
+			return;
+		}
+	}
 	UITab* addedTab = d.first;
-	loadAsyncFileFromPath( path, pool, d.second, onLoaded );
+	loadAsyncFileFromPath( path, d.second, onLoaded );
 	tabWidget->setTabSelected( addedTab );
 }
 
 void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
-	const std::string& path, std::shared_ptr<ThreadPool> pool,
-	std::function<void( UICodeEditor*, const std::string& )> onLoaded ) {
-	auto d = createCodeEditorInTabWidget( tabWidgetFromEditor( mCurEditor ) );
+	const std::string& path, std::function<void( UICodeEditor*, const std::string& )> onLoaded ) {
+	if ( !mThreadPool ) {
+		Log::error( "UICodeEditorSplitter::loadAsyncFileFromPathInNewTab loading file async "
+					"without thread pool." );
+		loadFileFromPathInNewTab( path );
+		return;
+	}
+	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	if ( d.first == nullptr || d.second == nullptr ) {
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			d = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::loadAsyncFileFromPathInNewTab" );
+			return;
+		}
+	}
 	UITabWidget* tabWidget = d.first->getTabWidget();
 	UITab* addedTab = d.first;
-	loadAsyncFileFromPath( path, pool, d.second, onLoaded );
+	loadAsyncFileFromPath( path, d.second, onLoaded );
 	tabWidget->setTabSelected( addedTab );
 }
 
@@ -456,7 +502,7 @@ UICodeEditorSplitter::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 		return std::make_pair( (UITab*)nullptr, (UICodeEditor*)nullptr );
 	UICodeEditor* editor = createCodeEditor();
 	mAboutToAddEditor = editor;
-	editor->addEventListener( Event::OnDocumentChanged, [&]( const Event* event ) {
+	editor->addEventListener( Event::OnDocumentChanged, [this]( const Event* event ) {
 		mClient->onDocumentStateChanged( event->getNode()->asType<UICodeEditor>(),
 										 event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
@@ -470,6 +516,26 @@ UICodeEditorSplitter::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 }
 
 std::pair<UITab*, UIWidget*>
+UICodeEditorSplitter::createWidget( UIWidget* widget, const std::string& tabName, bool focus ) {
+	UITabWidget* tabWidget = nullptr;
+
+	UIWidget* curWidget = getCurWidget();
+	if ( !curWidget )
+		return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
+	tabWidget = tabWidgetFromWidget( curWidget );
+
+	if ( !tabWidget ) {
+		if ( !getTabWidgets().empty() ) {
+			tabWidget = getTabWidgets()[0];
+		} else {
+			return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
+		}
+	}
+
+	return createWidgetInTabWidget( tabWidget, widget, tabName, focus );
+}
+
+std::pair<UITab*, UIWidget*>
 UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget* widget,
 											   const std::string& tabName, bool focus ) {
 	eeASSERT( curWidgetExists() );
@@ -477,10 +543,10 @@ UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget*
 		return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
 	UITab* tab = tabWidget->add( tabName, widget );
 	widget->setData( (UintPtr)tab );
-	widget->addEventListener( Event::OnFocus, [&]( const Event* event ) {
+	widget->addEventListener( Event::OnFocus, [this]( const Event* event ) {
 		setCurrentWidget( event->getNode()->asType<UIWidget>() );
 	} );
-	widget->addEventListener( Event::OnTitleChange, [&]( const Event* event ) {
+	widget->addEventListener( Event::OnTitleChange, [this]( const Event* event ) {
 		const TextEvent* tevent = static_cast<const TextEvent*>( event );
 		UIWidget* widget = event->getNode()->asType<UIWidget>();
 		UITabWidget* tabWidget = tabWidgetFromWidget( widget );
@@ -494,7 +560,35 @@ UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget*
 	return std::make_pair( tab, widget );
 }
 
-void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget ) {
+std::vector<std::pair<UITab*, UITabWidget*>>
+UICodeEditorSplitter::getTabFromOwnedWidgetId( const std::string& id ) {
+	std::vector<std::pair<UITab*, UITabWidget*>> ret;
+	forEachTabWidget( [&ret, &id]( UITabWidget* tabWidget ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); ++i ) {
+			UITab* tab = tabWidget->getTab( i );
+			Node* ownedNode = tab->getOwnedWidget();
+			if ( ownedNode->isWidget() && ownedNode->asType<UIWidget>()->getId() == id ) {
+				ret.push_back( { tab, tabWidget } );
+			}
+		}
+	} );
+	return ret;
+}
+
+bool UICodeEditorSplitter::removeTabWithOwnedWidgetId( const std::string& id, bool destroyOwnedNode,
+													   bool immediateClose ) {
+	auto ret = getTabFromOwnedWidgetId( id );
+	if ( ret.empty() )
+		return false;
+
+	for ( const auto& r : ret )
+		r.second->removeTab( r.first, destroyOwnedNode, immediateClose );
+
+	return true;
+}
+
+void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget, bool destroyOwnedNode,
+											bool immediateClose ) {
 	if ( tabWidget && tabWidget->getTabCount() >= 2 &&
 		 tabWidget->getTab( 0 )->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) &&
 		 tabWidget->getTab( 0 )
@@ -502,7 +596,7 @@ void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget ) {
 			 ->asType<UICodeEditor>()
 			 ->getDocument()
 			 .isEmpty() ) {
-		tabWidget->removeTab( (Uint32)0, true, true );
+		tabWidget->removeTab( (Uint32)0, destroyOwnedNode, immediateClose );
 	}
 }
 
@@ -519,7 +613,8 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	tabWidget->setAllowRearrangeTabs( true );
 	tabWidget->setAllowDragAndDropTabs( true );
 	tabWidget->setAllowSwitchTabsInEmptySpaces( true );
-	tabWidget->addEventListener( Event::OnTabSelected, [&]( const Event* event ) {
+	tabWidget->setFocusTabBehavior( UITabWidget::FocusTabBehavior::FocusOrder );
+	tabWidget->addEventListener( Event::OnTabSelected, [this]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		if ( tabWidget->getTabSelected()->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 			setCurrentEditor(
@@ -528,23 +623,36 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 			setCurrentWidget( tabWidget->getTabSelected()->getOwnedWidget()->asType<UIWidget>() );
 		}
 	} );
-	tabWidget->setTabTryCloseCallback( [&]( UITab* tab ) -> bool {
-		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-			tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>() );
-			return false;
-		}
-		return true;
-	} );
-	tabWidget->addEventListener( Event::OnTabClosed, [&]( const Event* event ) {
+	tabWidget->setTabTryCloseCallback(
+		[this]( UITab* tab, UITabWidget::FocusTabBehavior focusTabBehavior ) -> bool {
+			if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+				tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>(), focusTabBehavior );
+				return false;
+			}
+			return true;
+		} );
+	tabWidget->addEventListener( Event::OnTabClosed, [this]( const Event* event ) {
 		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
 	auto editorData = createCodeEditorInTabWidget( tabWidget );
+	if ( editorData.first == nullptr || editorData.second == nullptr ) {
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			editorData = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::createEditorWithTabWidget" );
+			return nullptr;
+		}
+	}
 	mAboutToAddEditor = editorData.second;
 	// Open same document in the new split
 	if ( openCurEditor && prevCurEditor && prevCurEditor != editorData.second &&
-		 !prevCurEditor->getDocument().isEmpty() )
+		 !prevCurEditor->getDocument().isEmpty() ) {
 		editorData.second->setDocument( prevCurEditor->getDocumentRef() );
+		editorData.second->goToLine( prevCurEditor->getDocument().getSelection().start() );
+	}
 	mAboutToAddEditor = nullptr;
+	Lock l( mTabWidgetMutex );
 	mTabWidgets.push_back( tabWidget );
 	return tabWidget;
 }
@@ -552,38 +660,52 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 UITab* UICodeEditorSplitter::isDocumentOpen( const std::string& path,
 											 bool checkOnlyInCurrentTabWidget,
 											 bool checkOpeningDocuments ) const {
-	if ( checkOnlyInCurrentTabWidget ) {
-		UITabWidget* tabWidget = tabWidgetFromEditor( mCurEditor );
-		if ( nullptr == tabWidget )
-			return nullptr;
-		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
-			UITab* tab = tabWidget->getTab( i );
-			if ( !tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
-				continue;
-			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+	return isDocumentOpen( URI( "file://" + path ), checkOnlyInCurrentTabWidget,
+						   checkOpeningDocuments );
+}
 
-			if ( editor->getDocument().getFilePath() == path ||
-				 ( checkOpeningDocuments && editor->getDocument().getLoadingFilePath() == path ) ) {
-				return tab;
-			}
-		}
-	} else {
-		for ( auto tabWidget : mTabWidgets ) {
-			for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
-				UITab* tab = tabWidget->getTab( i );
-				if ( !tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
-					continue;
-				UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+UITab* findDocument( UITabWidget* tabWidget, const URI& uri, bool checkOpeningDocuments ) {
+	if ( nullptr == tabWidget )
+		return nullptr;
+	for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+		UITab* tab = tabWidget->getTab( i );
+		if ( !tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
+			continue;
+		UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
 
-				if ( editor->getDocument().getFilePath() == path ||
-					 ( checkOpeningDocuments &&
-					   editor->getDocument().getLoadingFilePath() == path ) ) {
-					return tab;
-				}
-			}
+		if ( editor->getDocument().getURI() == uri ||
+			 ( checkOpeningDocuments && editor->getDocument().getLoadingFileURI() == uri ) ) {
+			return tab;
 		}
 	}
 	return nullptr;
+}
+
+UITab* UICodeEditorSplitter::isDocumentOpen( const URI& uri, bool checkOnlyInCurrentTabWidget,
+											 bool checkOpeningDocuments ) const {
+	if ( checkOnlyInCurrentTabWidget ) {
+		return findDocument( tabWidgetFromEditor( mCurEditor ), uri, checkOpeningDocuments );
+	} else {
+		// First check in the current tab widget
+		UITabWidget* curTabWidget = tabWidgetFromEditor( mCurEditor );
+		UITab* tab = nullptr;
+		if ( ( tab = findDocument( curTabWidget, uri, checkOpeningDocuments ) ) )
+			return tab;
+
+		for ( auto tabWidget : mTabWidgets ) {
+			if ( tabWidget == curTabWidget )
+				continue;
+			if ( ( tab = findDocument( tabWidget, uri, checkOpeningDocuments ) ) )
+				return tab;
+		}
+	}
+	return nullptr;
+}
+
+UICodeEditor* UICodeEditorSplitter::editorFromTab( UITab* tab ) const {
+	return tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR )
+			   ? tab->getOwnedWidget()->asType<UICodeEditor>()
+			   : nullptr;
 }
 
 UICodeEditor* UICodeEditorSplitter::findEditorFromPath( const std::string& path ) {
@@ -602,6 +724,22 @@ void UICodeEditorSplitter::applyColorScheme( const SyntaxColorScheme& colorSchem
 	forEachEditor(
 		[colorScheme]( UICodeEditor* editor ) { editor->setColorScheme( colorScheme ); } );
 	mClient->onColorSchemeChanged( mCurrentColorScheme );
+}
+
+void UICodeEditorSplitter::forEachWidgetClass( const std::string& className,
+											   std::function<void( UIWidget* )> run ) const {
+	Node* node;
+	UIWidget* widget;
+	for ( auto tabWidget : mTabWidgets ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+			node = tabWidget->getTab( i )->getOwnedWidget();
+			if ( node && node->isWidget() ) {
+				widget = node->asType<UIWidget>();
+				if ( widget->hasClass( className ) )
+					run( widget );
+			}
+		}
+	}
 }
 
 void UICodeEditorSplitter::forEachWidgetType( const UINodeType& nodeType,
@@ -703,6 +841,16 @@ void UICodeEditorSplitter::forEachDocStoppable( std::function<bool( TextDocument
 	}
 }
 
+std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromURI( const URI& uri ) {
+	std::unordered_set<std::shared_ptr<TextDocument>> docs;
+	forEachEditor( [&]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef() ); } );
+	for ( const auto& doc : docs ) {
+		if ( doc->getURI() == uri )
+			return doc;
+	}
+	return {};
+}
+
 std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromPath( const std::string& path ) {
 	std::unordered_set<std::shared_ptr<TextDocument>> docs;
 	forEachEditor( [&]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef() ); } );
@@ -768,7 +916,8 @@ void UICodeEditorSplitter::zoomReset() {
 	forEachEditor( []( UICodeEditor* editor ) { editor->fontSizeReset(); } );
 }
 
-bool UICodeEditorSplitter::tryTabClose( UIWidget* widget ) {
+bool UICodeEditorSplitter::tryTabClose( UIWidget* widget,
+										UITabWidget::FocusTabBehavior focusTabBehavior ) {
 	if ( !widget )
 		return false;
 
@@ -783,9 +932,10 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget ) {
 				widget->getUISceneNode()->getTranslatorString(
 					"@string/confirm_close_tab",
 					"Do you really want to close this tab?\nAll changes will be lost." ) );
-			mTryCloseMsgBox->addEventListener(
-				Event::MsgBoxConfirmClick, [&, editor]( const Event* ) { closeTab( editor ); } );
-			mTryCloseMsgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+			mTryCloseMsgBox->addEventListener( Event::OnConfirm, [&, editor]( const Event* ) {
+				closeTab( editor, focusTabBehavior );
+			} );
+			mTryCloseMsgBox->addEventListener( Event::OnClose, [this]( const Event* ) {
 				mTryCloseMsgBox = nullptr;
 				if ( mCurEditor )
 					mCurEditor->setFocus();
@@ -796,16 +946,17 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget ) {
 			mTryCloseMsgBox->show();
 			return false;
 		} else {
-			closeTab( editor );
+			closeTab( editor, focusTabBehavior );
 			return true;
 		}
 	} else {
-		closeTab( widget );
+		closeTab( widget, focusTabBehavior );
 		return true;
 	}
 }
 
-void UICodeEditorSplitter::closeTab( UIWidget* widget ) {
+void UICodeEditorSplitter::closeTab( UIWidget* widget,
+									 UITabWidget::FocusTabBehavior focusTabBehavior ) {
 	if ( widget ) {
 		if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
 			UICodeEditor* editor = widget->asType<UICodeEditor>();
@@ -813,14 +964,22 @@ void UICodeEditorSplitter::closeTab( UIWidget* widget ) {
 			if ( tabWidget ) {
 				if ( !( editor->getDocument().isEmpty() &&
 						!tabWidget->getParent()->isType( UI_TYPE_SPLITTER ) &&
-						tabWidget->getTabCount() == 1 ) ) {
-					tabWidget->removeTab( (UITab*)editor->getData() );
+						tabWidget->getTabCount() == 1 ) ||
+					 !editor->getDocument().isUntitledEmpty() ) {
+					tabWidget->removeTab( (UITab*)editor->getData(), true, false,
+										  focusTabBehavior );
+				} else {
+					return;
 				}
 			}
 		} else {
 			UITabWidget* tabWidget = tabWidgetFromWidget( widget );
-			tabWidget->removeTab( (UITab*)widget->getData() );
+			tabWidget->removeTab( (UITab*)widget->getData(), true, false, focusTabBehavior );
 		}
+		if ( mCurEditor == widget )
+			mCurEditor = nullptr;
+		if ( mCurWidget == widget )
+			mCurWidget = nullptr;
 	}
 }
 
@@ -985,6 +1144,7 @@ void UICodeEditorSplitter::closeTabWidgets( UISplitter* splitter ) {
 			auto it =
 				std::find( mTabWidgets.begin(), mTabWidgets.end(), node->asType<UITabWidget>() );
 			if ( it != mTabWidgets.end() ) {
+				Lock l( mTabWidgetMutex );
 				mTabWidgets.erase( it );
 			}
 		} else if ( node->isType( UI_TYPE_SPLITTER ) ) {
@@ -1018,6 +1178,159 @@ bool UICodeEditorSplitter::curEditorExists() const {
 	return found || mCurEditor == nullptr || mAboutToAddEditor == mCurEditor || mFirstCodeEditor;
 }
 
+bool UICodeEditorSplitter::hasSplit() const {
+	return mTabWidgets.size() > 1;
+}
+
+UIOrientation UICodeEditorSplitter::getMainSplitOrientation() const {
+	if ( !hasSplit() )
+		return UIOrientation::Vertical;
+
+	UITab* tab = nullptr;
+	if ( mTabWidgets[0]->getTabCount() > 0 && ( tab = mTabWidgets[0]->getTab( 0 ) ) &&
+		 tab->getOwnedWidget() && tab->getOwnedWidget()->isWidget() ) {
+		UISplitter* splitter = splitterFromWidget( tab->getOwnedWidget()->asType<UIWidget>() );
+		if ( splitter )
+			return splitter->getOrientation();
+	}
+
+	return UIOrientation::Vertical;
+}
+
+void UICodeEditorSplitter::addCurrentPositionToNavigationHistory() {
+	addEditorPositionToNavigationHistory( mCurEditor );
+}
+
+void UICodeEditorSplitter::addEditorPositionToNavigationHistory( UICodeEditor* editor ) {
+	if ( editor == nullptr || !editor->hasDocument() )
+		return;
+
+	auto doc = editor->getDocumentRef();
+	if ( doc->isLoading() || doc->isUntitledEmpty() )
+		return;
+
+	if ( !mNavigationHistory.empty() &&
+		 doc->getFilePath() == mNavigationHistory[mNavigationHistory.size() - 1].path &&
+		 doc->getSelection().start() == mNavigationHistory[mNavigationHistory.size() - 1].pos ) {
+		return;
+	}
+
+	NavigationRecord rec{ doc->getFilePath(), doc->getSelection().start() };
+	mNavigationHistory.emplace_back( std::move( rec ) );
+	mNavigationHistoryPos = mNavigationHistory.size() - 1;
+
+	while ( mNavigationHistory.size() >= mNavigationHistoryMaxSize ) {
+		if ( mNavigationHistoryPos > mNavigationHistoryMaxSize / 2 ) {
+			mNavigationHistory.erase( mNavigationHistory.begin() );
+			mNavigationHistoryPos--;
+		} else {
+			mNavigationHistory.pop_back();
+		}
+	}
+}
+
+void UICodeEditorSplitter::updateCurrentPositionInNavigationHistory() {
+	if ( mCurEditor == nullptr || !mCurEditor->hasDocument() )
+		return;
+
+	auto doc = mCurEditor->getDocumentRef();
+	if ( doc->isLoading() || doc->isUntitledEmpty() )
+		return;
+
+	NavigationRecord* rec;
+	if ( mNavigationHistoryPos < mNavigationHistory.size() ) {
+		rec = &mNavigationHistory[mNavigationHistoryPos];
+	} else {
+		mNavigationHistory.push_back( {} );
+		rec = &mNavigationHistory[mNavigationHistory.size() - 1];
+	}
+
+	if ( ( mNavigationHistoryPos > 0 && mNavigationHistory.size() > 1 &&
+		   doc->getSelection().start() == mNavigationHistory[mNavigationHistoryPos - 1].pos ) ||
+		 ( mNavigationHistoryPos < mNavigationHistory.size() - 1 &&
+		   doc->getSelection().start() == mNavigationHistory[mNavigationHistoryPos + 1].pos ) ) {
+		return; // shouldn't happen
+	}
+
+	rec->path = doc->getFilePath();
+	rec->pos = doc->getSelection().start();
+}
+
+void UICodeEditorSplitter::goBackInNavigationHistory() {
+	updateCurrentPositionInNavigationHistory();
+	while ( mNavigationHistoryPos > 0 ) {
+		mNavigationHistoryPos--;
+
+		const auto& rec = mNavigationHistory[mNavigationHistoryPos];
+		auto editor = findEditorFromPath( rec.path );
+		if ( editor ) {
+			if ( !editor->hasDocument() || editor->getDocument().isLoading() )
+				break;
+			editor->goToLine( rec.pos );
+			auto tab = tabFromEditor( editor );
+			if ( tab )
+				tab->setTabSelected();
+			break;
+		} else {
+			if ( !FileSystem::fileExists( rec.path ) ) {
+				mNavigationHistory.erase( mNavigationHistory.begin() + mNavigationHistoryPos );
+				continue;
+			} else {
+				auto pos = rec.pos;
+				loadAsyncFileFromPathInNewTab(
+					rec.path, [pos]( UICodeEditor* editor, auto ) { editor->goToLine( pos ); } );
+				break;
+			}
+		}
+	}
+}
+
+void UICodeEditorSplitter::goForwardInNavigationHistory() {
+	updateCurrentPositionInNavigationHistory();
+	if ( mNavigationHistoryPos >= mNavigationHistory.size() - 1 )
+		return;
+	mNavigationHistoryPos++;
+	while ( mNavigationHistoryPos < mNavigationHistory.size() ) {
+		const auto& rec = mNavigationHistory[mNavigationHistoryPos];
+		auto editor = findEditorFromPath( rec.path );
+
+		if ( editor ) {
+			if ( !editor->hasDocument() || editor->getDocument().isLoading() )
+				break;
+			editor->goToLine( rec.pos );
+			auto tab = tabFromEditor( editor );
+			if ( tab )
+				tab->setTabSelected();
+			break;
+		} else {
+			if ( !FileSystem::fileExists( rec.path ) ) {
+				mNavigationHistory.erase( mNavigationHistory.begin() + mNavigationHistoryPos );
+				continue;
+			} else {
+				auto pos = rec.pos;
+				loadAsyncFileFromPathInNewTab(
+					rec.path, [pos]( UICodeEditor* editor, auto ) { editor->goToLine( pos ); } );
+				break;
+			}
+		}
+	}
+	if ( mNavigationHistoryPos >= mNavigationHistory.size() )
+		mNavigationHistoryPos = eemax( mNavigationHistory.size(), (size_t)0 );
+}
+
+void UICodeEditorSplitter::clearNavigationHistory() {
+	mNavigationHistory.clear();
+	mNavigationHistoryPos = std::numeric_limits<size_t>::max();
+}
+
+std::shared_ptr<ThreadPool> UICodeEditorSplitter::getThreadPool() const {
+	return mThreadPool;
+}
+
+void UICodeEditorSplitter::setThreadPool( const std::shared_ptr<ThreadPool>& threadPool ) {
+	mThreadPool = threadPool;
+}
+
 bool UICodeEditorSplitter::curWidgetExists() const {
 	bool found = false;
 	forEachWidgetStoppable( [&]( UIWidget* widget ) {
@@ -1028,6 +1341,10 @@ bool UICodeEditorSplitter::curWidgetExists() const {
 		return false;
 	} );
 	return found || mCurWidget == nullptr;
+}
+
+bool UICodeEditorSplitter::isCurEditor( UICodeEditor* editor ) {
+	return mCurEditor == editor;
 }
 
 UICodeEditor* UICodeEditorSplitter::getSomeEditor() {
@@ -1050,15 +1367,24 @@ size_t UICodeEditorSplitter::countEditorsOpeningDoc( const TextDocument& doc ) c
 	return count;
 }
 
+UISceneNode* UICodeEditorSplitter::getUISceneNode() const {
+	return mUISceneNode;
+}
+
 UICodeEditor* UICodeEditorSplitter::getCurEditor() const {
 	eeASSERT( curEditorExists() );
 	return mCurEditor;
+}
+
+bool UICodeEditorSplitter::curEditorIsNotNull() const {
+	return mCurEditor != nullptr;
 }
 
 void UICodeEditorSplitter::addRemainingTabWidgets( Node* widget ) {
 	if ( widget->isType( UI_TYPE_TABWIDGET ) ) {
 		if ( std::find( mTabWidgets.begin(), mTabWidgets.end(), widget->asType<UITabWidget>() ) ==
 			 mTabWidgets.end() ) {
+			Lock l( mTabWidgetMutex );
 			mTabWidgets.push_back( widget->asType<UITabWidget>() );
 		}
 	} else if ( widget->isType( UI_TYPE_SPLITTER ) ) {
@@ -1086,6 +1412,7 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 				tabWidget->close();
 				auto itWidget = std::find( mTabWidgets.begin(), mTabWidgets.end(), tabWidget );
 				if ( itWidget != mTabWidgets.end() ) {
+					Lock l( mTabWidgetMutex );
 					mTabWidgets.erase( itWidget );
 				}
 
@@ -1127,12 +1454,24 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 		mCurEditor = nullptr;
 		mCurWidget = nullptr;
 		auto d = createCodeEditorInTabWidget( tabWidget );
+		if ( d.first == nullptr || d.second == nullptr ) {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::onTabClosed" );
+			return;
+		}
 		d.first->getTabWidget()->setTabSelected( d.first );
 	} else {
 		if ( tabWidget->getTabSelectedIndex() >= tabWidget->getTabCount() )
 			tabWidget->setTabSelected(
 				eemin( tabWidget->getTabCount() - 1, tabEvent->getTabIndex() ) );
+
+		if ( mCurEditor == widget )
+			mCurEditor = nullptr;
+
+		if ( mCurWidget == widget )
+			mCurWidget = nullptr;
 	}
+
 	if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor )
 		focusSomeEditor( nullptr );
 	eeASSERT( curWidgetExists() );

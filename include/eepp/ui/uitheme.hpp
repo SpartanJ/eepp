@@ -68,6 +68,8 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 
 	void setDefaultFont( Font* font );
 
+	CSS::StyleSheet& getStyleSheet();
+
 	const CSS::StyleSheet& getStyleSheet() const;
 
 	void setStyleSheet( const CSS::StyleSheet& styleSheet );

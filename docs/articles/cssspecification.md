@@ -418,6 +418,7 @@ Defines where the border box is drawn.
   * `inside`: The border will be drawn inside the content box.
   * `outside`: The border will be drawn outside the content box.
   * `outline`: The border will be drawn in the middle point between the content box and the border width.
+* Default value: `inside`
 
 ---
 
@@ -686,7 +687,7 @@ gravity: center_horizontal|bottom;
 
 ### gravity-owner
 
-Widgets elements can inform that own childs position using a special flag on its implementation 
+Widgets elements can inform that own childs position using a special flag on its implementation
 (UI_OWNS_CHILDS_POSITION). Sometimes some layouts may need to override the parent behavior that uses
 that flag. This flag will let the layout manage his gravity against its parent in all cases.
 
@@ -785,12 +786,36 @@ Sets the hint font stroke (the outline) color.
 
 ---
 
+### hint-shadow-offset
+
+Sets the hint font shadow offset.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
+  (Tooltip)
+* Data Type: [vector2-number](#vector2-number-data-type)
+* Default offset: `1dp 1dp`
+
+---
+
 ### hint-stroke-width
 
 Sets the hint font stroke (the outline) width.
 
 * Applicable to: EE::UI::UITextInput (TextInput)
 * Data Type: [length](#length-data-type)
+* Default value: `0dp`
+
+---
+
+### href
+
+Specifies the link destination of an Anchor element
+
+* Applicable to: EE::UI::UIAnchor (Anchor)
+* Data Type: [string](#string-data-type)
 * Default value: `0dp`
 
 ---
@@ -829,6 +854,26 @@ the load can't be determined.
 * Applicable to: EE::UI::UILoader (Loader)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
+
+---
+
+### inner-widget-orientation
+
+PushButton can contain 3 widgets: the text (textbox), the icon, and a custom extra 
+item. And with these 3 items does its own layouting. This property allows configuring the order
+in which these items are displayed/sorted inside the button.
+
+* Applicable to: EE::UI::UIPushButton (PushButton) and any element that extends it: UIMenuItem, UISelectButton (SelectButton), UITableCell , UITableHeaderColumn.
+* Data Type: [string-list](#string-list-data-type)
+* Value List (Widget is the custom widget):
+  * `widgeticontextbox`: Widget | Icon | TextBox
+  * `widgettextboxicon`: Widget | TextBox | Icon
+  * `icontextboxwidget`: Icon | TextBox | Widget
+  * `iconwidgettextbox`: Icon | Widget | TextBox
+  * `textboxiconwidget`: TextBox | Icon | Widget
+  * `textboxwidgeticon`: TextBox | Widget | Icon
+
+* Default value: `widgeticontextbox`
 
 ---
 
@@ -1549,20 +1594,6 @@ Enables the selection state toggle on element click.
 
 ---
 
-### shadow-color
-
-Sets the text shadow color.
-
-* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
-  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
-  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
-  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
-  (Tooltip)
-* Data Type: [color](#color-data-type)
-* Default color: `#323232E6`
-
----
-
 ### skin
 
 Sets the skin (a.k.a. decoration) to an element. Element skins are automatically applied if there's a specific skin for the element
@@ -1746,6 +1777,34 @@ Enables/disables text selection in any element that contains text.
 
 ---
 
+### text-shadow-color
+
+Sets the text shadow color.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
+  (Tooltip)
+* Data Type: [color](#color-data-type)
+* Default color: `#323232E6`
+
+---
+
+### text-shadow-offset
+
+Sets the text shadow offset.
+
+* Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
+  TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
+  (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
+  EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
+  (Tooltip)
+* Data Type: [vector2-number](#vector2-number-data-type)
+* Default offset: `1dp 1dp`
+
+---
+
 ### text-stroke-color
 
 Sets the text stroke (also known as text outline) color.
@@ -1772,7 +1831,7 @@ Sets the text stroke (also known as text outline) width/thickness.
 
 ### text-transform
 
-The text-transform CSS property specifies how to capitalize an element's text. It can be used to 
+The text-transform CSS property specifies how to capitalize an element's text. It can be used to
 make text appear in all-uppercase or all-lowercase, or with each word capitalized.
 
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
@@ -2148,6 +2207,12 @@ box-margin: 10dp 10dp;
 
 ---
 
+### focusable
+
+Set / unset the widget as focusable to navigate with tab / tab + shift navigation
+
+---
+
 ### foreground
 
 Same as the [background](#background) but for the foreground of the node.
@@ -2164,6 +2229,16 @@ Same as the [background-position](#background-position) but for the foreground o
 ### foreground-radius
 
 Same as the [border-radius](#border-radius) but for the foreground of the node.
+
+---
+
+### hint-shadow
+
+The hint text shadow, same as text-shadow but for hints.
+
+Read [text-shadow](https://developer.mozilla.org/en-US/docs/Web/CSS/text-shadow) documentation.
+
+blur-radius is not supported.
 
 ---
 
@@ -2227,6 +2302,12 @@ scale-origin-point: 100% 0%;
 ### transition
 
 Read [transition](https://developer.mozilla.org/en-US/docs/Web/CSS/transition) documentation.
+
+### text-shadow
+
+Read [text-shadow](https://developer.mozilla.org/en-US/docs/Web/CSS/text-shadow) documentation.
+
+blur-radius is not supported.
 
 ---
 
@@ -2402,10 +2483,10 @@ Read [position](https://developer.mozilla.org/en-US/docs/Web/CSS/position_value)
 
 For EE::UI::UIImage (Image), background-image, foreground-image (all the examples are valid).
 
-For a EE::UI::UITextureRegion (TextureRegion) only the examples with: @textureregion, @drawable, 
+For a EE::UI::UITextureRegion (TextureRegion) only the examples with: @textureregion, @drawable,
 drawable_resource_name from a texture region resource are valid.
 
-For a EE::UI::UISprite (Sprite) only the examples with: all the examples are valid except for @9p 
+For a EE::UI::UISprite (Sprite) only the examples with: all the examples are valid except for @9p
 and http/s resources.
 
 Valid resources path:

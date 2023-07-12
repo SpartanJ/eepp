@@ -1,6 +1,7 @@
 #ifndef EE_UI_DOC_TEXTRANGE_HPP
 #define EE_UI_DOC_TEXTRANGE_HPP
 
+#include <algorithm>
 #include <eepp/ui/doc/textposition.hpp>
 
 namespace EE { namespace UI { namespace Doc {
@@ -28,7 +29,14 @@ class EE_API TextRange {
 
 	TextRange normalized() const { return TextRange( normalizedStart(), normalizedEnd() ); }
 
-	TextRange reversed() { return TextRange( mEnd, mStart ); }
+	TextRange& normalize() {
+		auto normalize( normalized() );
+		mStart = normalize.start();
+		mEnd = normalize.end();
+		return *this;
+	}
+
+	TextRange reversed() const { return TextRange( mEnd, mStart ); }
 
 	void setStart( const TextPosition& position ) { mStart = position; }
 
@@ -47,6 +55,38 @@ class EE_API TextRange {
 		return mStart != other.mStart || mEnd != other.mEnd;
 	}
 
+	bool operator<( const TextRange& other ) const {
+		return mStart < other.mStart && mEnd < other.mEnd;
+	}
+
+	bool operator>( const TextRange& other ) const {
+		return mStart > other.mStart && mEnd > other.mEnd;
+	}
+
+	bool operator<=( const TextRange& other ) const {
+		return mStart <= other.mStart && mEnd <= other.mEnd;
+	}
+
+	bool operator>=( const TextRange& other ) const {
+		return mStart >= other.mStart && mEnd >= other.mEnd;
+	}
+
+	TextRange operator+( const TextRange& other ) const {
+		return TextRange( mStart + other.mStart, mEnd + other.mEnd );
+	}
+
+	TextRange operator+=( const TextRange& other ) const {
+		return TextRange( mStart + other.mStart, mEnd + other.mEnd );
+	}
+
+	TextRange operator-( const TextRange& other ) const {
+		return TextRange( mStart - other.mStart, mEnd - other.mEnd );
+	}
+
+	TextRange operator-=( const TextRange& other ) const {
+		return TextRange( mStart - other.mStart, mEnd - other.mEnd );
+	}
+
 	bool contains( const TextPosition& position ) const {
 		if ( !( position.line() > mStart.line() ||
 				( position.line() == mStart.line() && position.column() >= mStart.column() ) ) )
@@ -55,6 +95,10 @@ class EE_API TextRange {
 				( position.line() == mEnd.line() && position.column() <= mEnd.column() ) ) )
 			return false;
 		return true;
+	}
+
+	bool contains( const TextRange& range ) const {
+		return range.start() >= start() && range.end() <= end();
 	}
 
 	bool hasSelection() const { return isValid() && mStart != mEnd; }
@@ -81,6 +125,83 @@ class EE_API TextRange {
 	TextPosition normalizedStart() const { return mStart < mEnd ? mStart : mEnd; }
 
 	TextPosition normalizedEnd() const { return mStart < mEnd ? mEnd : mStart; }
+};
+
+class EE_API TextRanges : public std::vector<TextRange> {
+  public:
+	bool isSorted() const { return mIsSorted; }
+
+	bool isValid() const {
+		for ( const auto& selection : *this ) {
+			if ( !selection.isValid() )
+				return false;
+		}
+		return true;
+	}
+
+	bool exists( const TextRange& range ) const {
+		for ( const auto& r : *this )
+			if ( range == r )
+				return true;
+		return false;
+	}
+
+	size_t findIndex( const TextRange& range ) const {
+		for ( size_t i = 0; i < size(); ++i ) {
+			if ( ( *this )[i] == range )
+				return i;
+		}
+		return 0;
+	}
+
+	bool hasSelection() const {
+		for ( const auto& r : *this )
+			if ( r.hasSelection() )
+				return true;
+		return false;
+	}
+
+	void sort() {
+		std::sort( begin(), end() );
+		setSorted();
+	}
+
+	void setSorted() { mIsSorted = true; }
+
+	bool merge() {
+		if ( size() <= 1 )
+			return false;
+		size_t oldSize = size();
+		TextRanges newRanges;
+		newRanges.emplace_back( ( *this )[0] );
+		for ( size_t i = 1; i < size(); ++i )
+			if ( !newRanges.exists( ( *this )[i] ) )
+				newRanges.emplace_back( ( *this )[i] );
+		*this = newRanges;
+		sort();
+		return oldSize != size();
+	}
+
+	std::string toString() const {
+		std::string str;
+		for ( size_t i = 0; i < size(); ++i ) {
+			str += ( *this )[i].toString();
+			if ( i != size() - 1 )
+				str += ";";
+		}
+		return str;
+	}
+
+	static TextRanges fromString( const std::string& str ) {
+		auto rangesStr = String::split( str, ';' );
+		TextRanges ranges;
+		for ( const auto& rangeStr : rangesStr )
+			ranges.emplace_back( TextRange::fromString( rangeStr ) );
+		return ranges;
+	}
+
+  protected:
+	bool mIsSorted{ false };
 };
 
 }}} // namespace EE::UI::Doc

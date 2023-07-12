@@ -17,17 +17,17 @@ const bool& UIEventDispatcher::justGainedFocus() const {
 	return mJustGainedFocus;
 }
 
-void UIEventDispatcher::inputCallback( InputEvent* Event ) {
-	EventDispatcher::inputCallback( Event );
+void UIEventDispatcher::inputCallback( InputEvent* event ) {
+	EventDispatcher::inputCallback( event );
 
-	switch ( Event->Type ) {
+	switch ( event->Type ) {
 		case InputEvent::Window:
-			if ( Event->window.type == InputEvent::WindowKeyboardFocusGain ) {
+			if ( event->window.type == InputEvent::WindowKeyboardFocusGain ) {
 				mJustGainedFocus = true;
 			}
 			break;
 		case InputEvent::KeyDown:
-			checkTabPress( Event->key.keysym.sym );
+			checkTabPress( event->key.keysym.sym, event->key.keysym.mod );
 			break;
 		case InputEvent::EventsSent:
 			mJustGainedFocus = false;
@@ -35,12 +35,16 @@ void UIEventDispatcher::inputCallback( InputEvent* Event ) {
 	}
 }
 
-void UIEventDispatcher::checkTabPress( const Uint32& KeyCode ) {
+void UIEventDispatcher::checkTabPress( const Uint32& KeyCode, const Uint32& mod ) {
 	eeASSERT( NULL != mFocusNode );
 	if ( KeyCode == KEY_TAB ) {
 		Window::Window* win = mFocusNode->getSceneNode()->getWindow();
 		if ( mFocusNode->isWidget() && NULL != win && !mJustGainedFocus ) {
-			mFocusNode->asType<UIWidget>()->onTabPress();
+			if ( mod & KEYMOD_SHIFT ) {
+				mFocusNode->asType<UIWidget>()->onFocusPrevWidget();
+			} else {
+				mFocusNode->asType<UIWidget>()->onFocusNextWidget();
+			}
 		}
 	}
 }

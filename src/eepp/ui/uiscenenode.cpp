@@ -21,6 +21,7 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/window.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 using namespace EE::Network;
@@ -66,6 +67,11 @@ UISceneNode::~UISceneNode() {
 	for ( auto& font : mFontFaces ) {
 		FontManager::instance()->remove( font );
 	}
+
+	// UISceneNode can now destroy the ThreadPool shared to him. If that's the case,
+	// We need to ensure that the childs are destroyed before the thread pool,
+	// since its childs could be consuming it and need to uninitialize gracefully.
+	childDeleteAll();
 }
 
 void UISceneNode::resizeNode( EE::Window::Window* ) {
@@ -141,7 +147,7 @@ void UISceneNode::onParentChange() {
 	setPixelsSize( getParent()->getPixelsSize() );
 
 	mCurOnSizeChangeListener =
-		getParent()->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+		getParent()->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
 			setDirty();
 			setPixelsSize( getParent()->getPixelsSize() );
 			onMediaChanged();
@@ -225,13 +231,16 @@ void UISceneNode::setFocusLastWindow( UIWindow* window ) {
 
 void UISceneNode::windowAdd( UIWindow* win ) {
 	if ( !windowExists( win ) ) {
-		mWindowsList.push_front( win );
+		mWindowsList.insert( mWindowsList.begin(), win );
 		WindowEvent wevent( this, win, Event::OnWindowAdded );
 		sendEvent( &wevent );
 	} else {
 		//! Send to front
-		mWindowsList.remove( win );
-		mWindowsList.push_front( win );
+		auto found = std::find( mWindowsList.begin(), mWindowsList.end(), win );
+		if ( found != mWindowsList.end() ) {
+			mWindowsList.erase( found );
+			mWindowsList.insert( mWindowsList.begin(), win );
+		}
 	}
 }
 
@@ -239,7 +248,9 @@ void UISceneNode::windowRemove( UIWindow* win ) {
 	if ( windowExists( win ) ) {
 		WindowEvent wevent( this, win, Event::OnWindowRemoved );
 		sendEvent( &wevent );
-		mWindowsList.remove( win );
+		auto found = std::find( mWindowsList.begin(), mWindowsList.end(), win );
+		if ( found != mWindowsList.end() )
+			mWindowsList.erase( found );
 	}
 }
 
@@ -291,7 +302,6 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 
 			uiwidget->onWidgetCreated();
 		} else if ( String::toLower( std::string( widget.name() ) ) == "style" ) {
-			// combineStyleSheet( widget.text().as_string(), false );
 			CSS::StyleSheetParser parser;
 
 			if ( parser.loadFromString( widget.text().as_string() ) ) {
@@ -327,7 +337,7 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 
 		Log::debug( "UISceneNode::loadLayoutNodes loaded nodes%s in: %.2f ms",
 					id.empty() ? "" : std::string( " (id=" + id + ")" ).c_str(),
-					innerClock.getElapsed().asMilliseconds() );
+					innerClock.getElapsedTimeAndReset().asMilliseconds() );
 	}
 
 	for ( auto& widget : widgets )
@@ -335,7 +345,7 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 
 	if ( mVerbose ) {
 		Log::debug( "UISceneNode::loadLayoutNodes reloaded styles in: %.2f ms",
-					innerClock.getElapsed().asMilliseconds() );
+					innerClock.getElapsedTimeAndReset().asMilliseconds() );
 	}
 
 	mIsLoading = false;
@@ -388,18 +398,31 @@ bool UISceneNode::hasStyleSheet() {
 	return !mStyleSheet.isEmpty();
 }
 
-void UISceneNode::reloadStyle( const bool& disableAnimations ) {
+void UISceneNode::reloadStyle( bool disableAnimations, bool forceReApplyProperties ) {
 	if ( NULL != mChild ) {
 		Node* child = mChild;
 
 		while ( NULL != child ) {
 			if ( child->isWidget() ) {
-				child->asType<UIWidget>()->reloadStyle( true, disableAnimations );
+				child->asType<UIWidget>()->reloadStyle( true, disableAnimations, true,
+														forceReApplyProperties );
 			}
 
 			child = child->getNextNode();
 		}
 	}
+}
+
+bool UISceneNode::hasThreadPool() const {
+	return mThreadPool != nullptr;
+}
+
+std::shared_ptr<ThreadPool> UISceneNode::getThreadPool() {
+	return mThreadPool;
+}
+
+void UISceneNode::setThreadPool( const std::shared_ptr<ThreadPool>& threadPool ) {
+	mThreadPool = threadPool;
 }
 
 UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* parent,
@@ -427,20 +450,25 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 	return NULL;
 }
 
-UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, Node* parent,
+UIWidget* UISceneNode::loadLayoutFromString( const char* layoutString, Node* parent,
 											 const Uint32& marker ) {
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_string( layoutString.c_str() );
+	pugi::xml_parse_result result = doc.load_string( layoutString );
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
-		Log::error( "Couldn't load UI Layout from string: %s", layoutString.c_str() );
+		Log::error( "Couldn't load UI Layout from string: %s", layoutString );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
 	}
 
 	return NULL;
+}
+
+UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, Node* parent,
+											 const Uint32& marker ) {
+	return loadLayoutFromString( layoutString.c_str(), parent, marker );
 }
 
 UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent,
@@ -550,13 +578,27 @@ UISceneNode* UISceneNode::setPixelsSize( const Float& x, const Float& y ) {
 void UISceneNode::update( const Time& elapsed ) {
 	UISceneNode* uiSceneNode = SceneManager::instance()->getUISceneNode();
 
+	if ( mFirstUpdate && mVerbose ) {
+		mClock.restart();
+	}
+
 	SceneManager::instance()->setCurrentUISceneNode( this );
 
 	updateDirtyStyles();
 	updateDirtyStyleStates();
 	updateDirtyLayouts();
 
+	if ( mFirstUpdate && mVerbose ) {
+		Log::debug( "UISceneNode::update first update dirty took: %.2f ms",
+					mClock.getElapsedTime().asMilliseconds() );
+	}
+
 	SceneNode::update( elapsed );
+
+	if ( mFirstUpdate && mVerbose ) {
+		Log::debug( "UISceneNode::update first SceneNode::update update took: %.2f ms",
+					mClock.getElapsedTime().asMilliseconds() );
+	}
 
 	// We process again all the dirty states since the update could have created new dirty states
 	// that we want to process BEFORE drawing the scene, since we can avoid some resizes/animations
@@ -580,6 +622,12 @@ void UISceneNode::update( const Time& elapsed ) {
 	}
 
 	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
+
+	if ( mFirstUpdate && mVerbose ) {
+		mFirstUpdate = false;
+		Log::debug( "UISceneNode::update first update took: %.2f ms",
+					mClock.getElapsedTime().asMilliseconds() );
+	}
 }
 
 void UISceneNode::onWidgetDelete( Node* node ) {
@@ -732,6 +780,7 @@ void UISceneNode::setIsLoading( bool isLoading ) {
 
 void UISceneNode::updateDirtyLayouts() {
 	if ( !mDirtyLayouts.empty() ) {
+		Clock clock;
 		mUpdatingLayouts = true;
 
 		for ( UILayout* layout : mDirtyLayouts ) {
@@ -740,6 +789,9 @@ void UISceneNode::updateDirtyLayouts() {
 
 		mDirtyLayouts.clear();
 		mUpdatingLayouts = false;
+
+		if ( mVerbose )
+			Log::debug( "Layout tree updated in %.2f ms", clock.getElapsedTime().asMilliseconds() );
 	}
 }
 
@@ -831,12 +883,55 @@ void UISceneNode::onSizeChange() {
 
 void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet ) {
 	loadFontFaces( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::FontFace ) );
+	loadGlyphIcon( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::GlyphIcon ) );
+}
+
+void UISceneNode::loadGlyphIcon( const StyleSheetStyleVector& styles ) {
+	for ( auto& style : styles ) {
+		auto family = style->getPropertyById( PropertyId::FontFamily );
+		auto name = style->getPropertyById( PropertyId::Name );
+		auto glyph = style->getPropertyById( PropertyId::Glyph );
+		if ( name == nullptr || family == nullptr || glyph == nullptr )
+			return;
+		CSS::StyleSheetProperty familyProp( *family );
+		CSS::StyleSheetProperty nameProp( *name );
+		CSS::StyleSheetProperty glyphProp( *glyph );
+
+		if ( !familyProp.isEmpty() && !nameProp.isEmpty() && !glyphProp.isEmpty() ) {
+			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
+
+			if ( nullptr == fontSearch )
+				continue;
+
+			if ( nullptr == getUIIconThemeManager()->getCurrentTheme() ||
+				 fontSearch->getType() != FontType::TTF )
+				break;
+
+			Uint32 codePoint = 0;
+			std::string buffer( glyphProp.asString() );
+			Uint32 value;
+			if ( String::startsWith( buffer, "0x" ) ) {
+				if ( String::fromString( value, buffer, std::hex ) )
+					codePoint = value;
+			} else if ( String::fromString( value, buffer ) ) {
+				codePoint = value;
+			}
+
+			if ( codePoint )
+				getUIIconThemeManager()->getCurrentTheme()->add( UIGlyphIcon::New(
+					nameProp.asString(), static_cast<FontTrueType*>( fontSearch ), codePoint ) );
+		}
+	}
 }
 
 void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	for ( auto& style : styles ) {
-		CSS::StyleSheetProperty familyProp( *style->getPropertyById( PropertyId::FontFamily ) );
-		CSS::StyleSheetProperty srcProp( *style->getPropertyById( PropertyId::Src ) );
+		auto family = style->getPropertyById( PropertyId::FontFamily );
+		auto src = style->getPropertyById( PropertyId::Src );
+		if ( src == nullptr || family == nullptr )
+			return;
+		CSS::StyleSheetProperty familyProp( *family );
+		CSS::StyleSheetProperty srcProp( *src );
 
 		if ( !familyProp.isEmpty() && !srcProp.isEmpty() ) {
 			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
@@ -858,7 +953,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					font->loadFromFile( filePath );
 
 					mFontFaces.push_back( font );
-					runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
+					runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
 				} else if ( String::startsWith( path, "http://" ) ||
 							String::startsWith( path, "https://" ) ) {
 					std::string familyName = familyProp.getValue();
@@ -871,7 +966,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 								font->loadFromMemory( &response.getBody()[0],
 													  response.getBody().size() );
 								mFontFaces.push_back( font );
-								runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
+								runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
 							}
 						},
 						URI( path ), Seconds( 5 ) );
@@ -884,7 +979,7 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 					font->loadFromStream( *stream );
 
 					mFontFaces.push_back( font );
-					runOnMainThread( [&] { mRoot->reloadFontFamily(); } );
+					runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
 				}
 			}
 		}

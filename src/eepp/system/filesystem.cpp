@@ -3,7 +3,6 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
-#include <list>
 #include <sys/stat.h>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -159,20 +158,18 @@ std::string FileSystem::fileRemoveFileName( const std::string& filepath ) {
 	return filepath.substr( 0, filepath.find_last_of( "/\\" ) + 1 );
 }
 
-void FileSystem::filePathRemoveProcessPath( std::string& path ) {
-	std::string ProcessPath = Sys::getProcessPath();
-
-	if ( String::startsWith( path, ProcessPath ) && ProcessPath.length() < path.size() ) {
-		path = path.substr( ProcessPath.length() );
+void FileSystem::filePathRemoveBasePath( const std::string& basePath, std::string& path ) {
+	if ( String::startsWith( path, basePath ) && basePath.length() < path.size() ) {
+		path = path.substr( basePath.length() );
 	}
 }
 
-void FileSystem::filePathRemoveCurrentWorkingDirectory( std::string& path ) {
-	std::string dirPath = getCurrentWorkingDirectory();
+void FileSystem::filePathRemoveProcessPath( std::string& path ) {
+	return filePathRemoveBasePath( Sys::getProcessPath(), path );
+}
 
-	if ( String::startsWith( path, dirPath ) && dirPath.length() < path.size() ) {
-		path = path.substr( dirPath.length() );
-	}
+void FileSystem::filePathRemoveCurrentWorkingDirectory( std::string& path ) {
+	return filePathRemoveBasePath( getCurrentWorkingDirectory(), path );
 }
 
 bool FileSystem::fileWrite( const std::string& filepath, const Uint8* data,
@@ -199,7 +196,11 @@ bool FileSystem::fileWrite( const std::string& filepath, const std::string& data
 }
 
 bool FileSystem::fileRemove( const std::string& filepath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return DeleteFileW( String( filepath ).toWideString().c_str() );
+#else
 	return 0 == remove( filepath.c_str() );
+#endif
 }
 
 Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
@@ -214,13 +215,8 @@ Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
 
 bool FileSystem::fileCanWrite( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-#if UNICODE
-	auto attrs = GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() );
+	auto attrs = GetFileAttributesW( String::fromUtf8( filepath ).toWideString().c_str() );
 	return attrs != INVALID_FILE_ATTRIBUTES && 0 == ( attrs & FILE_ATTRIBUTE_READONLY );
-#else
-	auto attrs = GetFileAttributes( (LPCTSTR)filepath.c_str() );
-	return attrs != INVALID_FILE_ATTRIBUTES && 0 == ( attrs & FILE_ATTRIBUTE_READONLY );
-#endif
 #else
 	struct stat st;
 	if ( stat( filepath.c_str(), &st ) == 0 ) {
@@ -239,13 +235,8 @@ bool FileSystem::fileCanWrite( const std::string& filepath ) {
 
 bool FileSystem::fileIsHidden( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-#if UNICODE
-	auto attrs = GetFileAttributes( String::fromUtf8( filepath ).toWideString().c_str() );
+	auto attrs = GetFileAttributesW( String::fromUtf8( filepath ).toWideString().c_str() );
 	return attrs != INVALID_FILE_ATTRIBUTES && 0 != ( attrs & FILE_ATTRIBUTE_HIDDEN );
-#else
-	auto attrs = GetFileAttributes( (LPCTSTR)filepath.c_str() );
-	return attrs != INVALID_FILE_ATTRIBUTES && 0 != ( attrs & FILE_ATTRIBUTE_HIDDEN );
-#endif
 #else
 	std::string filename( fileNameFromPath( filepath ) );
 	return filename.empty() ? false : filename[0] == '.';
@@ -297,32 +288,52 @@ bool FileSystem::isDirectory( const String& path ) {
 }
 
 bool FileSystem::isDirectory( const std::string& path ) {
-#ifndef EE_COMPILER_MSVC
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	auto attrs = GetFileAttributesW( String::fromUtf8( path ).toWideString().c_str() );
+	return attrs != INVALID_FILE_ATTRIBUTES && 0 != ( attrs & FILE_ATTRIBUTE_DIRECTORY );
+#else
 	struct stat st;
 	return ( stat( path.c_str(), &st ) == 0 ) && S_ISDIR( st.st_mode );
-#else
-#if UNICODE
-	auto attrs = GetFileAttributes( String::fromUtf8( path ).toWideString().c_str() );
-	return attrs != INVALID_FILE_ATTRIBUTES && 0 != ( attrs & FILE_ATTRIBUTE_DIRECTORY );
-#else
-	auto attrs = GetFileAttributes( (LPCTSTR)path.c_str() );
-	return attrs != INVALID_FILE_ATTRIBUTES && 0 != ( attrs & FILE_ATTRIBUTE_DIRECTORY );
-#endif
 #endif
 }
 
-bool FileSystem::makeDir( const std::string& path, const Uint16& mode ) {
-	Int16 v;
+static inline bool eepp_mkdir( const std::string& path, const Uint16& mode ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-#ifdef EE_COMPILER_MSVC
-	v = _mkdir( path.c_str() );
+	return 0 != CreateDirectoryW( String( path ).toWideString().c_str(), NULL );
 #else
-	v = mkdir( path.c_str() );
-#endif
-#else
+	int v;
 	v = mkdir( path.c_str(), mode );
-#endif
 	return v == 0;
+#endif
+}
+
+bool FileSystem::makeDir( const std::string& path, bool recursive, const Uint16& mode ) {
+	if ( recursive && path.size() > 1 ) {
+		size_t i = path.size() - 1;
+		for ( ; i >= 0; --i ) {
+			if ( path[i] == '/' || path[i] == '\\' ) {
+				if ( FileSystem::isDirectory( path.substr( 0, i ) ) ) {
+					break;
+				}
+			}
+		}
+
+		if ( i == 0 )
+			return false;
+
+		i++;
+		for ( ; i < path.size(); ++i ) {
+			if ( path[i] == '/' || path[i] == '\\' ) {
+				if ( !eepp_mkdir( path.substr( 0, i ), mode ) )
+					return false;
+			}
+		}
+
+		if ( path[path.size() - 1] == '/' || path[path.size() - 1] == '\\' )
+			return true;
+	}
+
+	return eepp_mkdir( path, mode );
 }
 
 std::string FileSystem::getRealPath( const std::string& path ) {
@@ -332,16 +343,10 @@ std::string FileSystem::getRealPath( const std::string& path ) {
 	realpath( path.c_str(), &dir[0] );
 	realPath = std::string( dir );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-#if defined( UNICODE ) && !defined( EE_NO_WIDECHAR )
 	wchar_t dir[_MAX_PATH + 1];
-	GetFullPathName( String::fromUtf8( path.c_str() ).toWideString().c_str(), _MAX_PATH, &dir[0],
-					 nullptr );
+	GetFullPathNameW( String::fromUtf8( path.c_str() ).toWideString().c_str(), _MAX_PATH, &dir[0],
+					  nullptr );
 	realPath = String( dir ).toUtf8();
-#else
-	char dir[_MAX_PATH + 1];
-	GetFullPathName( path.c_str(), _MAX_PATH, &dir[0], nullptr );
-	realPath = std::string( dir );
-#endif
 #else
 #warning FileSystem::getRealPath() not implemented on this platform.
 #endif
@@ -353,8 +358,7 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 												const bool& ignoreHidden ) {
 	std::vector<String> files;
 
-#ifdef EE_COMPILER_MSVC
-#ifdef UNICODE
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	String widePath( path );
 
 	if ( widePath[widePath.size() - 1] == '/' || widePath[widePath.size() - 1] == '\\' ) {
@@ -363,8 +367,8 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		widePath += "\\*";
 	}
 
-	WIN32_FIND_DATA findFileData;
-	HANDLE hFind = FindFirstFile( widePath.toWideString().c_str(), &findFileData );
+	WIN32_FIND_DATAW findFileData;
+	HANDLE hFind = FindFirstFileW( widePath.toWideString().c_str(), &findFileData );
 
 	if ( hFind != INVALID_HANDLE_VALUE ) {
 		String tmpstr( findFileData.cFileName );
@@ -372,7 +376,7 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		if ( tmpstr != "." && tmpstr != ".." )
 			files.push_back( tmpstr );
 
-		while ( FindNextFile( hFind, &findFileData ) ) {
+		while ( FindNextFileW( hFind, &findFileData ) ) {
 			tmpstr = String( findFileData.cFileName );
 
 			if ( tmpstr != "." && tmpstr != ".." )
@@ -382,34 +386,6 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		FindClose( hFind );
 	}
 #else
-	String mPath( path );
-
-	if ( mPath[mPath.size() - 1] == '/' || mPath[mPath.size() - 1] == '\\' ) {
-		mPath += "*";
-	} else {
-		mPath += "\\*";
-	}
-
-	WIN32_FIND_DATA findFileData;
-	HANDLE hFind = FindFirstFile( (LPCTSTR)mPath.toAnsiString().c_str(), &findFileData );
-
-	if ( hFind != INVALID_HANDLE_VALUE ) {
-		String tmpstr( String::fromUtf8( findFileData.cFileName ) );
-
-		if ( tmpstr != "." && tmpstr != ".." )
-			files.push_back( tmpstr );
-
-		while ( FindNextFile( hFind, &findFileData ) ) {
-			tmpstr = String::fromUtf8( findFileData.cFileName );
-
-			if ( tmpstr != "." && tmpstr != ".." )
-				files.push_back( tmpstr );
-		}
-
-		FindClose( hFind );
-	}
-#endif
-#else
 	DIR* dp;
 	struct dirent* dirp;
 
@@ -417,8 +393,12 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		return files;
 
 	while ( ( dirp = readdir( dp ) ) != NULL ) {
+#if EE_PLATFORM != EE_PLATFORM_HAIKU
+		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
+			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 ) {
+#else
 		if ( strcmp( dirp->d_name, ".." ) != 0 && strcmp( dirp->d_name, "." ) != 0 ) {
-
+#endif
 			char* p = &dirp->d_name[0];
 			String tmp;
 
@@ -491,8 +471,7 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 													 const bool& ignoreHidden ) {
 	std::vector<std::string> files;
 
-#ifdef EE_COMPILER_MSVC
-#ifdef UNICODE
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	String widePath( path );
 
 	if ( widePath[widePath.size() - 1] == '/' || widePath[widePath.size() - 1] == '\\' ) {
@@ -501,8 +480,8 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 		widePath += "\\*";
 	}
 
-	WIN32_FIND_DATA findFileData;
-	HANDLE hFind = FindFirstFile( widePath.toWideString().c_str(), &findFileData );
+	WIN32_FIND_DATAW findFileData;
+	HANDLE hFind = FindFirstFileW( widePath.toWideString().c_str(), &findFileData );
 
 	if ( hFind != INVALID_HANDLE_VALUE ) {
 		String tmpstr( findFileData.cFileName );
@@ -510,7 +489,7 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 		if ( tmpstr != "." && tmpstr != ".." )
 			files.push_back( tmpstr.toUtf8() );
 
-		while ( FindNextFile( hFind, &findFileData ) ) {
+		while ( FindNextFileW( hFind, &findFileData ) ) {
 			tmpstr = String( findFileData.cFileName );
 
 			if ( tmpstr != "." && tmpstr != ".." )
@@ -520,34 +499,6 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 		FindClose( hFind );
 	}
 #else
-	std::string mPath( path );
-
-	if ( mPath[mPath.size() - 1] == '/' || mPath[mPath.size() - 1] == '\\' ) {
-		mPath += "*";
-	} else {
-		mPath += "\\*";
-	}
-
-	WIN32_FIND_DATA findFileData;
-	HANDLE hFind = FindFirstFile( (LPCTSTR)mPath.c_str(), &findFileData );
-
-	if ( hFind != INVALID_HANDLE_VALUE ) {
-		std::string tmpstr( findFileData.cFileName );
-
-		if ( tmpstr != "." && tmpstr != ".." )
-			files.push_back( tmpstr );
-
-		while ( FindNextFile( hFind, &findFileData ) ) {
-			tmpstr = std::string( findFileData.cFileName );
-
-			if ( tmpstr != "." && tmpstr != ".." )
-				files.push_back( std::string( findFileData.cFileName ) );
-		}
-
-		FindClose( hFind );
-	}
-#endif
-#else
 	DIR* dp;
 	struct dirent* dirp;
 
@@ -555,7 +506,12 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 		return files;
 
 	while ( ( dirp = readdir( dp ) ) != NULL ) {
+#if EE_PLATFORM != EE_PLATFORM_HAIKU
+		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
+			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 )
+#else
 		if ( strcmp( dirp->d_name, ".." ) != 0 && strcmp( dirp->d_name, "." ) != 0 )
+#endif
 			files.push_back( std::string( dirp->d_name ) );
 	}
 
@@ -741,6 +697,18 @@ bool FileSystem::isRelativePath( const std::string& path ) {
 #endif
 	}
 	return true;
+}
+
+FILE* FileSystem::fopenUtf8( const char* path, const char* mode ) {
+#if defined( _WIN32 )
+	return _wfopen( String( path ).toWideString().c_str(), String( mode ).toWideString().c_str() );
+#else
+	return std::fopen( path, mode );
+#endif
+}
+
+FILE* FileSystem::fopenUtf8( const std::string& path, const std::string& mode ) {
+	return fopenUtf8( path.c_str(), mode.c_str() );
 }
 
 }} // namespace EE::System

@@ -1,18 +1,23 @@
 #ifndef ECODE_NOTIFICATIONCENTER_HPP
 #define ECODE_NOTIFICATIONCENTER_HPP
 
+#include "plugins/pluginmanager.hpp"
 #include <eepp/ee.hpp>
 
 namespace ecode {
 
 class NotificationCenter {
   public:
-	NotificationCenter( UILayout* layout );
+	NotificationCenter( UILayout* layout, PluginManager* pluginManager );
 
-	UITextView* addNotification( const String& text );
+	UITextView* addNotification( const String& text, const Time& delay = Seconds( 2.5 ) );
+
+	UILinearLayout* addShowRequest( const String& uri, const String& actionText,
+									const Time& delay = Seconds( 2.5 ) );
 
   protected:
 	UILayout* mLayout{ nullptr };
+	PluginManager* mPluginManager{ nullptr };
 };
 
 } // namespace ecode

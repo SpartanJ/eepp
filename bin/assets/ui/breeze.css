@@ -43,6 +43,9 @@
 	--highlight-primary: #FFFFFF7A;
 	--disabled-color: #727679;
 	--disabled-border: #43474c;
+	--theme-error: #ff4040;
+	--theme-warning: #ffff40;
+	--theme-success: #40ff40;
 	droppable-hovering-color: #FFFFFF20;
 }
 
@@ -114,6 +117,7 @@ TextEdit,
 TextInput,
 TextInputPassword,
 TextView,
+Anchor,
 Tooltip,
 MenuBar::button,
 Window::title,
@@ -125,12 +129,22 @@ listview::cell::text {
 }
 
 TextView,
+Anchor,
 TextEdit,
 TextInput,
 TextInputPassword,
 ComboBox::DropDownList,
 SpinBox::input, {
 	selection-back-color: var(--primary);
+}
+
+Anchor {
+	cursor: arrow;
+}
+
+Anchor:hover {
+	color: var(--primary);
+	cursor: hand;
 }
 
 PushButton,
@@ -389,7 +403,6 @@ Tooltip {
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
-	font-style: shadow;
 }
 
 Slider {
@@ -758,6 +771,7 @@ Menu::RadioButton::shortcut {
 	color: var(--menu-font);
 }
 
+PushButton:disabled > PushButton::icon,
 Menu::Item:disabled > Menu::Item::text,
 Menu::Item:disabled > Menu::Item::shortcut,
 Menu::Item:disabled > Menu::Item::icon,
@@ -894,6 +908,26 @@ treeview::row:selected {
 	background-color: var(--primary);
 }
 
+tableview.selection_type_cell tableview::row:hover,
+treeview.selection_type_cell treeview::row:hover {
+	background-color: transparent;
+}
+
+tableview.selection_type_cell tableview::row:selected,
+treeview.selection_type_cell treeview::row:selected {
+	background-color: transparent;
+}
+
+tableview.selection_type_cell tableview::cell:hover,
+treeview.selection_type_cell treeview::cell:hover {
+	background-color: var(--tab-hover);
+}
+
+tableview.selection_type_cell tableview::cell:selected,
+treeview.selection_type_cell tableview::cell:selected {
+	background-color: var(--primary);
+}
+
 tableview::cell,
 treeview::cell {
 	padding-left: 6dp;
@@ -980,11 +1014,6 @@ ScrollBarMini::hslider:hover ScrollBar::hbutton,
 ScrollBarMini::hbutton:hover {
 	background-color: var(--primary);
 }
-
-.appbackground {
-	background-color: var(--back);
-}
-
 tab::icon {
 	tint: var(--icon);
 }
@@ -1001,6 +1030,16 @@ console {
 	font-size: 11dp;
 	border-bottom-color: var(--separator);
 	border-bottom-width: var(--border-width);
+}
+
+/* Reserved classes used by themes */
+.appbackground {
+	background-color: var(--back);
+}
+
+TextInput.table_cell_edit {
+	padding-top: 0!important;
+	padding-bottom: 0!important;
 }
 
 @media (prefers-color-scheme: light) {
@@ -1048,6 +1087,9 @@ console {
 	--term-font-color: #232627;
 	--disabled-color: #727679;
 	--disabled-border: #d3d4d5;
+	--theme-error: #cc0000;
+	--theme-warning: #cccc00;
+	--theme-success: #00cc00;
 	droppable-hovering-color: #00000020;
 }
 
@@ -1109,11 +1151,6 @@ Tab:pressed {
 
 Tab:not(:selected):hover {
 	color: var(--menu-font-active);
-}
-
-Tooltip {
-	background-color: var(--font)!important;
-	color: var(--back)!important;
 }
 
 tab::icon,

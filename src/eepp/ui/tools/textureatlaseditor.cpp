@@ -51,7 +51,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 		mUIWindow->getContainer()->addClass( "appbackground" );
 	}
 
-	std::string layout = R"xml(
+	static const auto layout = R"xml(
 	<LinearLayout id="texture_atlas_editor_root" orientation="vertical" layout_width="match_parent" layout_height="match_parent">
 		<MenuBar layout_width="match_parent" layout_height="wrap_content">
 			<Menu id="fileMenu" text="File">
@@ -310,7 +310,7 @@ void TextureAtlasEditor::fileMenuClick( const Event* Event ) {
 			UIMessageBox* MsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL,
 													  "Do you really want to close the current "
 													  "texture atlas?\nAll changes will be lost." );
-			MsgBox->addEventListener( Event::MsgBoxConfirmClick,
+			MsgBox->addEventListener( Event::OnConfirm,
 									  cb::Make1( this, &TextureAtlasEditor::onTextureAtlasClose ) );
 			MsgBox->setTitle( "Close Texture Atlas?" );
 			MsgBox->center();
@@ -456,7 +456,7 @@ void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader* textureAtlasL
 	mTextureAtlasLoader = textureAtlasLoader;
 
 	if ( mTextureAtlasLoader->isLoaded() ) {
-		mUIContainer->runOnMainThread( [&] { updateWidgets(); } );
+		mUIContainer->runOnMainThread( [this] { updateWidgets(); } );
 	}
 }
 

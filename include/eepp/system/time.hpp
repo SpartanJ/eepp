@@ -7,9 +7,6 @@
 
 namespace EE { namespace System {
 
-/* Based on the SFML2 implementation ( not the same, this version uses doubles for seconds and
- * milliseconds ) */
-
 /** Represents a time value */
 class EE_API Time {
   public:
@@ -19,22 +16,22 @@ class EE_API Time {
 
 	/** @brief Default constructor
 	**	Sets the time value to zero. */
-	Time();
+	constexpr Time();
 
 	/** @brief Return the time value as a number of seconds
 	**	@return Time in seconds
 	**	@see AsMilliseconds, AsMicroseconds */
-	double asSeconds() const;
+	constexpr double asSeconds() const;
 
 	/** @brief Return the time value as a number of milliseconds
 	**	@return Time in milliseconds
 	**	@see AsSeconds, AsMicroseconds */
-	double asMilliseconds() const;
+	constexpr double asMilliseconds() const;
 
 	/** @brief Return the time value as a number of microseconds
 	**	@return Time in microseconds
 	**	@see asSeconds, asMilliseconds */
-	Int64 asMicroseconds() const;
+	constexpr Int64 asMicroseconds() const;
 
 	static const Time Zero; ///< Predefined "zero" time value
 
@@ -42,220 +39,155 @@ class EE_API Time {
 	std::string toString() const;
 
   private:
-	friend EE_API Time Seconds( double );
-	friend EE_API Time Milliseconds( double );
-	friend EE_API Time Microseconds( Int64 );
+	friend EE_API constexpr Time Minutes( double );
+	friend EE_API constexpr Time Seconds( double );
+	friend EE_API constexpr Time Milliseconds( double );
+	friend EE_API constexpr Time Microseconds( Int64 );
 
 	/** @brief Construct from a number of microseconds
 	**  This function is internal. To construct time values,
 	**  use Seconds, Milliseconds or Microseconds instead.
 	** @param microseconds Number of microseconds */
-	explicit Time( Int64 microseconds );
+	constexpr explicit Time( Int64 microseconds );
 
 	Int64 mMicroseconds; ///< Time value stored as microseconds
 };
 
-/// @relates EE::System::Time
-/// @brief Construct a time value from a number of seconds
-/// @param amount Number of seconds
-/// @return Time value constructed from the amount of seconds
-/// @see Milliseconds, Microseconds
-EE_API Time Seconds( double amount );
+constexpr Time::Time() : mMicroseconds( 0 ) {}
 
-/// @relates EE::System::Time
-/// @brief Construct a time value from a number of milliseconds
-/// @param amount Number of milliseconds
-/// @return Time value constructed from the amount of milliseconds
-/// @see Seconds, Microseconds
-EE_API Time Milliseconds( double amount );
+constexpr Time::Time( Int64 Microseconds ) : mMicroseconds( Microseconds ) {}
 
-/// @relates EE::System::Time
-/// @brief Construct a time value from a number of microseconds
-/// @param amount Number of microseconds
-/// @return Time value constructed from the amount of microseconds
-/// @see Seconds, Milliseconds
-EE_API Time Microseconds( Int64 amount );
+constexpr double Time::asSeconds() const {
+	return mMicroseconds / 1000000.0;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of == operator to compare two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return True if both time values are equal
-EE_API bool operator==( Time left, Time right );
+constexpr double Time::asMilliseconds() const {
+	return mMicroseconds / 1000.0;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of != operator to compare two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return True if both time values are different
-EE_API bool operator!=( Time left, Time right );
+constexpr Int64 Time::asMicroseconds() const {
+	return mMicroseconds;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of < operator to compare two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return True if @a left is lesser than @a right
-EE_API bool operator<( Time left, Time right );
+constexpr Time Minutes( double amount ) {
+	return Time( static_cast<Int64>( amount * 1000000 * 60 ) );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of > operator to compare two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return True if @a left is greater than @a right
-EE_API bool operator>( Time left, Time right );
+constexpr Time Seconds( double amount ) {
+	return Time( static_cast<Int64>( amount * 1000000 ) );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of <= operator to compare two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return True if @a left is lesser or equal than @a right
-EE_API bool operator<=( Time left, Time right );
+constexpr Time Milliseconds( double amount ) {
+	return Time( static_cast<Int64>( amount * 1000 ) );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of >= operator to compare two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return True if @a left is greater or equal than @a right
-EE_API bool operator>=( Time left, Time right );
+constexpr Time Microseconds( Int64 amount ) {
+	return Time( amount );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of unary - operator to negate a time value
-/// @param right Right operand (a time)
-/// @return Opposite of the time value
-EE_API Time operator-( Time right );
+constexpr bool operator==( Time left, Time right ) {
+	return left.asMicroseconds() == right.asMicroseconds();
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary + operator to add two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return Sum of the two times values
-EE_API Time operator+( Time left, Time right );
+constexpr bool operator!=( Time left, Time right ) {
+	return left.asMicroseconds() != right.asMicroseconds();
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary += operator to add/assign two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return Sum of the two times values
-EE_API Time& operator+=( Time& left, Time right );
+constexpr bool operator<( Time left, Time right ) {
+	return left.asMicroseconds() < right.asMicroseconds();
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary - operator to subtract two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return Difference of the two times values
-EE_API Time operator-( Time left, Time right );
+constexpr bool operator>( Time left, Time right ) {
+	return left.asMicroseconds() > right.asMicroseconds();
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary -= operator to subtract/assign two time values
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return Difference of the two times values
-EE_API Time& operator-=( Time& left, Time right );
+constexpr bool operator<=( Time left, Time right ) {
+	return left.asMicroseconds() <= right.asMicroseconds();
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary * operator to scale a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a number)
-/// @return @a left multiplied by @a right
-EE_API Time operator*( Time left, Time right );
+constexpr bool operator>=( Time left, Time right ) {
+	return left.asMicroseconds() >= right.asMicroseconds();
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary * operator to scale a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a number)
-/// @return @a left multiplied by @a right
-EE_API Time operator*( Time left, double right );
+constexpr Time operator-( Time right ) {
+	return Microseconds( -right.asMicroseconds() );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary * operator to scale a time value
-/// @param left  Left operand (a number)
-/// @param right Right operand (a time)
-/// @return @a left multiplied by @a right
-EE_API Time operator*( double left, Time right );
+constexpr Time operator+( Time left, Time right ) {
+	return Microseconds( left.asMicroseconds() + right.asMicroseconds() );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary * operator to scale a time value
-/// @param left  Left operand (a number)
-/// @param right Right operand (a time)
-/// @return @a left multiplied by @a right
-EE_API Time operator*( Int64 left, Time right );
+constexpr Time& operator+=( Time& left, Time right ) {
+	return left = left + right;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary * operator to scale a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a number)
-/// @return @a left multiplied by @a right
-EE_API Time operator*( Time left, Int64 right );
+constexpr Time operator-( Time left, Time right ) {
+	return Microseconds( left.asMicroseconds() - right.asMicroseconds() );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary *= operator to scale/assign a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a number)
-/// @return @a left multiplied by @a right
-EE_API Time& operator*=( Time& left, double right );
+constexpr Time& operator-=( Time& left, Time right ) {
+	return left = left - right;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary *= operator to scale/assign a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a number)
-/// @return @a left multiplied by @a right
-EE_API Time& operator*=( Time& left, Int64 right );
+constexpr Time operator*( Time left, Time right ) {
+	return Microseconds( left.asMicroseconds() * right.asMicroseconds() );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary *= operator to scale/assign a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return @a left multiplied by @a right
-EE_API Time& operator*=( Time& left, Time right );
+constexpr Time operator*( Time left, double right ) {
+	return Seconds( left.asSeconds() * right );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary / operator to scale a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return @a left divided by @a right
-EE_API Time operator/( Time left, Time right );
+constexpr Time operator*( double left, Time right ) {
+	return right * left;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary / operator to scale a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a number)
-/// @return @a left divided by @a right
-EE_API Time operator/( Time left, double right );
+constexpr Time operator*( Time left, Int64 right ) {
+	return Microseconds( left.asMicroseconds() * right );
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary / operator to scale a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a number)
-/// @return @a left divided by @a right
-EE_API Time operator/( Time left, Int64 right );
+constexpr Time operator*( Int64 left, Time right ) {
+	return right * left;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary /= operator to scale/assign a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a number)
-/// @return @a left divided by @a right
-EE_API Time& operator/=( Time& left, Int64 right );
+constexpr Time& operator*=( Time& left, Time right ) {
+	return left = left * right;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary /= operator to scale/assign a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return @a left divided by @a right
-EE_API Time& operator/=( Time& left, Time right );
+constexpr Time& operator*=( Time& left, double right ) {
+	return left = left * right;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary % operator to compute remainder of a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return @a left modulo @a right
-EE_API Time operator%( Time left, Time right );
+constexpr Time& operator*=( Time& left, Int64 right ) {
+	return left = left * right;
+}
 
-/// @relates EE::System::Time
-/// @brief Overload of binary %= operator to compute/assign remainder of a time value
-/// @param left  Left operand (a time)
-/// @param right Right operand (a time)
-/// @return @a left modulo @a right
-EE_API Time& operator%=( Time& left, Time right );
+constexpr Time operator/( Time left, Time right ) {
+	return Microseconds( left.asMicroseconds() / right.asMicroseconds() );
+}
+
+constexpr Time operator/( Time left, double right ) {
+	return Seconds( left.asSeconds() / right );
+}
+
+constexpr Time operator/( Time left, Int64 right ) {
+	return Microseconds( left.asMicroseconds() / right );
+}
+
+constexpr Time& operator/=( Time& left, Time right ) {
+	return left = left / right;
+}
+
+constexpr Time& operator/=( Time& left, Int64 right ) {
+	return left = left / right;
+}
+
+constexpr Time operator%( Time left, Time right ) {
+	return Microseconds( left.asMicroseconds() % right.asMicroseconds() );
+}
+
+constexpr Time& operator%=( Time& left, Time right ) {
+	return left = left % right;
+}
 
 }} // namespace EE::System
 

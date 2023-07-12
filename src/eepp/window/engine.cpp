@@ -9,7 +9,6 @@
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
-#include <eepp/physics/physicsmanager.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
@@ -61,8 +60,6 @@ Engine::Engine() :
 }
 
 Engine::~Engine() {
-	Physics::PhysicsManager::destroySingleton();
-
 	GlobalBatchRenderer::destroySingleton();
 
 	TextureAtlasManager::destroySingleton();
@@ -147,6 +144,8 @@ EE::Window::Window* Engine::createDefaultWindow( const WindowSettings& Settings,
 												 const ContextSettings& Context ) {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 	return createSDL2Window( Settings, Context );
+#else
+	return NULL;
 #endif
 }
 
@@ -194,8 +193,6 @@ void Engine::destroyWindow( EE::Window::Window* window ) {
 }
 
 bool Engine::existsWindow( EE::Window::Window* window ) {
-	std::list<Window*>::iterator it;
-
 	for ( auto& it : mWindows ) {
 		if ( it.second == window )
 			return true;
@@ -237,6 +234,10 @@ bool Engine::isEngineRunning() {
 	return existsSingleton() && Engine::instance()->isRunning();
 }
 
+bool Engine::isRunninMainThread() {
+	return isEngineRunning() && Engine::instance()->isMainThread();
+}
+
 bool Engine::isRunning() const {
 	return NULL != mWindow;
 }
@@ -244,6 +245,8 @@ bool Engine::isRunning() const {
 WindowBackend Engine::getDefaultBackend() const {
 #if DEFAULT_BACKEND == BACKEND_SDL2
 	return WindowBackend::SDL2;
+#else
+	return WindowBackend::Default;
 #endif
 }
 
@@ -314,12 +317,13 @@ WindowSettings Engine::createWindowSettings( std::string iniPath, std::string in
 	return createWindowSettings( &Ini, iniKeyName );
 }
 
-ContextSettings Engine::createContextSettings( IniFile* ini, std::string iniKeyName ) {
+ContextSettings Engine::createContextSettings( IniFile* ini, std::string iniKeyName,
+											   bool vsyncEnabledByDefault ) {
 	eeASSERT( NULL != ini );
 
 	ini->readFile();
 
-	bool VSync = ini->getValueB( iniKeyName, "vsync", true );
+	bool VSync = ini->getValueB( iniKeyName, "vsync", vsyncEnabledByDefault );
 	std::string GLVersion = ini->getValue( iniKeyName, "glversion", "0" );
 	int depthBufferSize = ini->getValueI( iniKeyName, "depthbuffersize", 24 );
 	int stencilBufferSize = ini->getValueI( iniKeyName, "stencilbuffersize", 1 );

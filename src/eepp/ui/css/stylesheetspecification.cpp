@@ -127,21 +127,25 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "flags", "" );
 	registerProperty( "margin-top", "0px" )
 		.setType( PropertyType::NumberLength )
+		.addAlias( "margin_top" )
 		.addAlias( "layout-margin-top" )
 		.addAlias( "layout_margintop" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
 	registerProperty( "margin-left", "0px" )
 		.setType( PropertyType::NumberLength )
+		.addAlias( "margin_left" )
 		.addAlias( "layout-margin-left" )
 		.addAlias( "layout_marginleft" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-right", "0px" )
 		.setType( PropertyType::NumberLength )
+		.addAlias( "margin_right" )
 		.addAlias( "layout-margin-right" )
 		.addAlias( "layout_marginright" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockWidth );
 	registerProperty( "margin-bottom", "0px" )
 		.setType( PropertyType::NumberLength )
+		.addAlias( "margin_bottom" )
 		.addAlias( "layout-margin-bottom" )
 		.addAlias( "layout_marginbottom" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
@@ -195,7 +199,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::Color )
 		.addAlias( "text-color" )
 		.addAlias( "textcolor" );
-	registerProperty( "shadow-color", "" ).setType( PropertyType::Color );
+	registerProperty( "text-shadow-color", "" ).setType( PropertyType::Color );
+	registerProperty( "text-shadow-offset", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "selection-color", "" ).setType( PropertyType::Color );
 	registerProperty( "selection-back-color", "" ).setType( PropertyType::Color );
 	registerProperty( "font-family", "" ).addAlias( "font-name" ).setType( PropertyType::String );
@@ -225,7 +230,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "tabs-edges-diff-skin", "" ).setType( PropertyType::Bool );
 	registerProperty( "tab-separation", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "tab-height", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "selected", "" ).setType( PropertyType::Bool ).addAlias( "active" );
+	registerProperty( "selected", "" )
+		.setType( PropertyType::Bool )
+		.addAlias( "active" )
+		.addAlias( "checked" );
 	registerProperty( "popup-to-root", "" ).setType( PropertyType::Bool );
 	registerProperty( "max-visible-items", "" ).setType( PropertyType::NumberIntFixed );
 	registerProperty( "selected-index", "" );
@@ -305,6 +313,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "hint", "" ).setType( PropertyType::String );
 	registerProperty( "hint-color", "" ).setType( PropertyType::Color );
 	registerProperty( "hint-shadow-color", "" ).setType( PropertyType::Color );
+	registerProperty( "hint-shadow-offset", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "hint-font-size", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "hint-font-style", "" ).setType( PropertyType::String );
 	registerProperty( "hint-stroke-width", "" )
@@ -367,6 +376,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "border-bottom-left-radius", "0" ).setType( PropertyType::RadiusLength );
 	registerProperty( "border-bottom-right-radius", "0" ).setType( PropertyType::RadiusLength );
 
+	registerProperty( "border-smooth", "false" ).setType( PropertyType::Bool );
+	registerProperty( "background-smooth", "false" ).setType( PropertyType::Bool );
+
 	registerProperty( "tabbar-hide-on-single-tab", "false" );
 	registerProperty( "tabbar-allow-rearrange", "false" );
 	registerProperty( "tabbar-allow-drag-and-drop-tabs", "false" );
@@ -382,6 +394,17 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "text-as-fallback", "false" ).setType( PropertyType::Bool );
 	registerProperty( "select-on-click", "false" ).setType( PropertyType::Bool );
 	registerProperty( "gravity-owner", "false" ).setType( PropertyType::Bool );
+	registerProperty( "href", "" ).setType( PropertyType::String );
+	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
+
+	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
+		.setType( PropertyType::String );
+
+	registerProperty( "glyph", "" ).setType( PropertyType::String );
+	registerProperty( "name", "" ).setType( PropertyType::String );
+	registerProperty( "row-valign", "" )
+		.addAlias( "row-vertical-align" )
+		.setType( PropertyType::String );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
@@ -426,6 +449,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerShorthand( "min-size", { "min-width", "min-height" }, "vector2" );
 	registerShorthand( "max-size", { "max-width", "max-height" }, "vector2" );
 	registerShorthand( "border", { "border-width", "border-style", "border-color" }, "border" );
+	registerShorthand( "text-shadow", { "text-shadow-color", "text-shadow-offset" },
+					   "color-vector2" );
+	registerShorthand( "hint-shadow", { "hint-shadow-color", "hint-shadow-offset" },
+					   "color-vector2" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
@@ -815,8 +842,9 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		return properties;
 	};
 
-	mShorthandParsers["background"] = [&]( const ShorthandDefinition* shorthand,
-										   std::string value ) -> std::vector<StyleSheetProperty> {
+	mShorthandParsers["background"] =
+		[this]( const ShorthandDefinition* shorthand,
+				std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
 		if ( value.empty() || "none" == value )
 			return {};
@@ -861,8 +889,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		return properties;
 	};
 
-	mShorthandParsers["border"] = [&]( const ShorthandDefinition* shorthand,
-									   std::string value ) -> std::vector<StyleSheetProperty> {
+	mShorthandParsers["border"] = [this]( const ShorthandDefinition* shorthand,
+										  std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
 		if ( value.empty() || "none" == value )
 			return {};
@@ -879,7 +907,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 				// boder-style is not implemented yet
 				if ( pos != -1 )
 					continue;
-			} else if ( Color::isColorString( tok ) ) {
+			} else if ( Color::isColorString( tok ) || String::startsWith( tok, "var(" ) ) {
 				int pos = getIndexEndingWith( propNames, "-color" );
 				if ( pos != -1 ) {
 					const ShorthandDefinition* shorthand = getShorthand( propNames[pos] );
@@ -900,6 +928,43 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 					}
 				}
 			}
+		}
+
+		return properties;
+	};
+
+	mShorthandParsers["color-vector2"] =
+		[]( const ShorthandDefinition* shorthand,
+			std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() || "none" == value )
+			return {};
+
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		std::vector<std::string> tokens = String::split( value, " ", "", "(" );
+		std::vector<std::string> vec;
+
+		for ( auto& tok : tokens ) {
+			String::trimInPlace( tok );
+			String::toLowerInPlace( tok );
+
+			if ( Color::isColorString( tok ) ) {
+				int pos = getIndexEndingWith( propNames, "-color" );
+				if ( pos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[pos], tok ) );
+			} else {
+				int pos = getIndexEndingWith( propNames, "-offset" );
+				if ( pos != -1 )
+					vec.emplace_back( tok );
+			}
+		}
+
+		if ( !vec.empty() ) {
+			int pos = getIndexEndingWith( propNames, "-offset" );
+			if ( pos != -1 )
+				properties.emplace_back(
+					StyleSheetProperty( propNames[pos], String::join( vec, ' ' ) ) );
 		}
 
 		return properties;

@@ -198,6 +198,10 @@ bool FileInfo::isUninitialized() const {
 	return mModificationTime == 0;
 }
 
+std::string FileInfo::getExtension( const bool& lowerExt ) const {
+	return FileSystem::fileExtension( getFilepath(), lowerExt );
+}
+
 bool FileInfo::operator==( const FileInfo& Other ) const {
 	return ( mModificationTime == Other.mModificationTime && mSize == Other.mSize &&
 			 mOwnerId == Other.mOwnerId && mGroupId == Other.mGroupId &&
@@ -239,19 +243,14 @@ bool FileInfo::linksToDirectory() const {
 
 std::string FileInfo::linksTo() const {
 #if EE_PLATFORM != EE_PLATFORM_WIN
-	if ( isLink() ) {
-		char* ch = realpath( mFilepath.c_str(), NULL );
-
-		if ( NULL != ch ) {
-			std::string tstr( ch );
-
-			free( ch );
-
-			return tstr;
-		}
-	}
+	if ( isLink() )
+		return getRealPath();
 #endif
 	return std::string( "" );
+}
+
+std::string FileInfo::getRealPath() const {
+	return FileSystem::getRealPath( getFilepath() );
 }
 
 bool FileInfo::exists() const {

@@ -15,7 +15,7 @@ UIRadioButton::UIRadioButton() :
 	mInactiveButton( NULL ),
 	mActive( false ),
 	mTextSeparation( 4 ) {
-	auto cb = [&]( const Event* event ) { onAutoSize(); };
+	auto cb = [this]( const Event* ) { onAutoSize(); };
 
 	mActiveButton = UIWidget::NewWithTag( "radiobutton::active" );
 	mActiveButton->setVisible( false );

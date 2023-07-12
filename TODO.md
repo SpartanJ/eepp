@@ -7,9 +7,15 @@
 
 ## UI Module
 
-* Implement a "float" layout.
+* Implement a Rich Text View.
 
-* Implement a rich text view.
+* Implement a Flex layout.
+
+* Implement support for very simple state-changes from the XML file (ex: onclick="toggleclass(x)").
+
+* Implement TableView and TreeView properties.
+
+* Implement support for setting and creating a model from the XML.
 
 ### CSS
 

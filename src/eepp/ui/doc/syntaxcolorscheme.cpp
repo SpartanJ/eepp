@@ -43,6 +43,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 				 { "comment", Color( "#cd8b00" ) },
 				 { "keyword", { Color( "#ff79c6" ), Color::Transparent, Text::Shadow } },
 				 { "keyword2", { Color( "#8be9fd" ), Color::Transparent, Text::Shadow } },
+				 { "keyword3", { Color( "#ffb86c" ), Color::Transparent, Text::Shadow } },
 				 { "number", Color( "#ffd24a" ) },
 				 { "literal", { Color( "#f1fa8c" ), Color::Transparent, Text::Shadow } },
 				 { "string", Color( "#ffcd8b" ) },
@@ -66,6 +67,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			   { "matching_selection", Color( "#3e596e" ) },
 			   { "matching_search", Color( "#181b1e" ) },
 			   { "suggestion", { Color( "#e1e1e6" ), Color( "#1d1f27" ), Text::Regular } },
+			   { "suggestion_scrollbar", { Color( "#3daee9" ) } },
 			   { "suggestion_selected", { Color( "#ffffff" ), Color( "#2f3240" ), Text::Regular } },
 			   { "error", { Color::Red } },
 			   { "warning", { Color::Yellow } },
@@ -201,8 +203,12 @@ const SyntaxColorScheme::Style& SyntaxColorScheme::getSyntaxStyle( const std::st
 	auto it = mSyntaxColors.find( type );
 	if ( it != mSyntaxColors.end() )
 		return it->second;
+	else if ( type == "keyword3" )
+		return getSyntaxStyle( "symbol" );
 	else if ( type == "link" || type == "link_hover" )
 		return getSyntaxStyle( "function" );
+	else if ( type == "error" || type == "warning" || type == "notice" )
+		return getEditorSyntaxStyle( type );
 	else {
 		auto foundIt = mStyleCache.find( type );
 		if ( foundIt != mStyleCache.end() )
@@ -263,6 +269,8 @@ SyntaxColorScheme::getEditorSyntaxStyle( const std::string& type ) const {
 		return StyleDefault.getEditorSyntaxStyle( "minimap_highlight" );
 	else if ( type == "minimap_visible_area" )
 		return StyleDefault.getEditorSyntaxStyle( "minimap_visible_area" );
+	else if ( type == "suggestion_scrollbar" )
+		return getEditorSyntaxStyle( "line_highlight" );
 	return StyleEmpty;
 }
 

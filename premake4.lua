@@ -1,3 +1,4 @@
+
 function newplatform(plf)
 	local name = plf.name
 	local description = plf.description
@@ -49,7 +50,7 @@ newplatform {
 		cc = "clang",
 		cxx = "clang++",
 		ar = "ar",
-		cppflags = "-MMD "
+		cppflags = "-MMD"
 	}
 }
 
@@ -157,11 +158,13 @@ newoption { trigger = "with-static-eepp", description = "Force to build the demo
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
-newoption { trigger = "with-mojoal", description = "Compile with mojoAL as OpenAL implementation instead of using openal-soft (requires SDL2 backend)" }
+newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
 newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
+newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanitizer." }
+newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -213,6 +216,49 @@ if os.is_real("haiku") and not os.is64bit() then
 	premake.gcc.cc = "gcc-x86"
 	premake.gcc.cxx = "g++-x86"
 	premake.gcc.ar = "ar-x86"
+end
+
+function get_dll_extension()
+	if os.is_real("macosx") then
+		return "dylib"
+	elseif os.is_real("windows") or os.is_real("mingw32") then
+		return "dll"
+	else
+		return "so"
+	end
+end
+
+function get_host()
+	if os.getenv("MSYSTEM") ~= "" then
+		return "msys"
+	end
+	return os.get()
+end
+
+function os_ishost(host)
+	return get_host() == host
+end
+
+function postsymlinklib(src_path, dst_path, lib)
+	if os.is_real("emscripten") then
+		return
+	end
+	configuration { "release", "windows" }
+		if os_ishost("windows") then
+			postbuildcommands { "mklink \"" .. dst_path .. lib .. ".dll\"" .. " \"" .. src_path .. lib .. ".dll\" || ver>nul" }
+		else
+			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+		end
+	configuration { "debug", "windows" }
+		if os_ishost("windows") then
+			postbuildcommands { "mklink \"" .. dst_path .. lib .. "-debug.dll\"" .. " \"" .. src_path .. lib .. "-debug.dll\" || ver>nul" }
+		else
+			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+		end
+	configuration { "release", "not windows" }
+		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+	configuration { "debug", "not windows" }
+		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 end
 
 function print_table( table_ref )
@@ -297,6 +343,12 @@ static_backends = { }
 backend_selected = false
 remote_sdl2_version = "SDL2-2.0.20"
 
+function build_arch_configuration()
+	if os.is_real("mingw32") or os.is_real("mingw64") then
+		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1" }
+	end
+end
+
 function build_base_configuration( package_name )
 	includedirs { "src/thirdparty/zlib" }
 
@@ -306,10 +358,12 @@ function build_base_configuration( package_name )
 
 	if is_vs() then
 		includedirs { "src/thirdparty/libzip/vs" }
+		buildoptions { "/utf-8" }
 	end
 
 	set_ios_config()
 	set_xcode_config()
+	build_arch_configuration()
 
 	configuration "debug"
 		defines { "DEBUG" }
@@ -348,8 +402,17 @@ function build_base_cpp_configuration( package_name )
 		buildoptions{ "-fPIC" }
 	end
 
+	if is_vs() then
+		buildoptions { "/utf-8" }
+	end
+
 	set_ios_config()
 	set_xcode_config()
+	build_arch_configuration()
+
+	if _OPTIONS["with-static-eepp"] then
+		defines { "EE_STATIC" }
+	end
 
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
@@ -442,7 +505,9 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++14" }
+		buildoptions{ "-std=c++17" }
+	else
+		buildoptions{ "/std:c++17", "/utf-8" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -489,6 +554,14 @@ function build_link_configuration( package_name, use_ee_icon )
 		if _OPTIONS.platform == "ios-cross-x86_64" then
 			extension = ".x86_64.ios"
 		end
+
+		if os.is_real("linux") or os.is_real("haiku") or os.is_real("bsd") or os.is_real("macosx") then
+			if _ACTION == "gmake" then
+				linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
+			elseif _ACTION == "codeblocks" then
+				linkoptions { "-Wl,-R\\\\$$$ORIGIN" }
+			end
+		end
 	end
 
 	if _OPTIONS["with-mold-linker"] then
@@ -505,6 +578,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 	end
 
+	set_ios_config()
+	set_xcode_config()
+	build_arch_configuration()
+
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		flags { "Symbols" }
@@ -514,7 +591,11 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 		if os.is_real("emscripten") then
-			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1" }
+			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1 -s NO_DISABLE_EXCEPTION_CATCHING -sALLOW_MEMORY_GROWTH=1" }
+			if _OPTIONS["with-emscripten-pthreads"] then
+				buildoptions { "-s USE_PTHREADS=1" }
+				linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
+			end
 		end
 
 		fix_shared_lib_linking_path( package_name, "libeepp-debug" )
@@ -548,14 +629,12 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 
 	configuration "emscripten"
-		linkoptions { "-s TOTAL_MEMORY=67108864" }
-		linkoptions { "-s USE_SDL=2" }
+		linkoptions { "-s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
 		buildoptions { "-s USE_SDL=2" }
-		defines { "NO_POSIX_SPAWN" }
 
 		if _OPTIONS["with-emscripten-pthreads"] then
 			buildoptions { "-s USE_PTHREADS=1" }
-			linkoptions { "-s USE_PTHREADS=1" }
+			linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 		end
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
@@ -565,16 +644,13 @@ function build_link_configuration( package_name, use_ee_icon )
 		if _OPTIONS["with-gles2"] and not _OPTIONS["force-gles1"] then
 			linkoptions{ "-s FULL_ES2=1" }
 		end
-
-	set_ios_config()
-	set_xcode_config()
 end
 
 function generate_os_links()
 	if os.is_real("linux") then
 		multiple_insert( os_links, { "rt", "pthread", "GL" } )
 
-		if not _OPTIONS["with-mojoal"] then
+		if _OPTIONS["without-mojoal"] then
 			table.insert( os_links, "openal" )
 		end
 
@@ -597,11 +673,15 @@ function generate_os_links()
 		multiple_insert( os_links, { "OpenGLES.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework", "CoreMotion.framework", "AVFoundation.framework", "GameController.framework" } )
 	end
 
-	if not _OPTIONS["with-mojoal"] then
+	if _OPTIONS["without-mojoal"] then
 		if os.is_real("linux") or os.is_real("freebsd") or os.is_real("haiku") or os.is_real("emscripten") then
 			multiple_insert( os_links, { "openal" } )
 		elseif os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
-			multiple_insert( os_links, { "OpenAL32" } )
+			if os_ishost("msys") then
+				multiple_insert( os_links, { "openal" } )
+			else
+				multiple_insert( os_links, { "OpenAL32" } )
+			end
 		elseif os.is_real("macosx") or os.is_real("ios") then
 			multiple_insert( os_links, { "OpenAL.framework" } )
 		end
@@ -615,6 +695,22 @@ function parse_args()
 
 	if _OPTIONS["with-gles1"] then
 		defines { "EE_GLES1", "SOIL_GLES1" }
+	end
+
+	if _OPTIONS["thread-sanitizer"] then
+		buildoptions { "-fsanitize=thread" }
+		linkoptions { "-fsanitize=thread" }
+		if not os.is_real("macosx") then
+			links { "tsan" }
+		end
+	end
+
+	if _OPTIONS["address-sanitizer"] then
+		buildoptions { "-fsanitize=address" }
+		linkoptions { "-fsanitize=address" }
+		if not os.is_real("macosx") then
+			links { "asan" }
+		end
 	end
 end
 
@@ -634,7 +730,6 @@ function add_static_links()
 	end
 
 	links { "SOIL2-static",
-			"chipmunk-static",
 			"libzip-static",
 			"jpeg-compressor-static",
 			"zlib-static",
@@ -643,7 +738,7 @@ function add_static_links()
 			"vorbis-static"
 	}
 
-	if _OPTIONS["with-mojoal"] then
+	if not _OPTIONS["without-mojoal"] then
 		links { "mojoal-static"}
 	end
 
@@ -683,7 +778,8 @@ end
 
 function set_xcode_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
-		linkoptions { "-F/Library/Frameworks" }
+		linkoptions { "-F /Library/Frameworks" }
+		buildoptions { "-F /Library/Frameworks" }
 		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
 		defines { "EE_SDL2_FROM_ROOTPATH" }
 	end
@@ -805,10 +901,22 @@ function set_macos_and_ios_config()
 	end
 end
 
+function eepp_module_maps_add()
+	links { "eepp-maps-static" }
+	defines { "EE_MAPS_STATIC" }
+	includedirs { "src/modules/maps/include/", "src/modules/maps/src/" }
+end
+
+function eepp_module_physics_add()
+	links { "eepp-physics-static", "chipmunk-static" }
+	defines { "EE_PHYSICS_STATIC" }
+	includedirs { "src/modules/physics/include/", "src/modules/physics/src/" }
+end
+
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
 
-	if _OPTIONS["with-mojoal"] then
+	if not _OPTIONS["without-mojoal"] then
 		defines( "AL_LIBTYPE_STATIC" )
 		includedirs { "src/thirdparty/mojoAL" }
 	end
@@ -824,7 +932,10 @@ function build_eepp( build_name )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++14" }
+		buildoptions{ "-std=c++17" }
+	else
+		buildoptions{ "/std:c++17" }
+		buildoptions{ "/bigobj" }
 	end
 
 	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then
@@ -852,11 +963,8 @@ function build_eepp( build_name )
 			"src/eepp/ui/models/*.cpp",
 			"src/eepp/ui/css/*.cpp",
 			"src/eepp/ui/doc/*.cpp",
-			"src/eepp/ui/tools/*.cpp",
-			"src/eepp/physics/*.cpp",
-			"src/eepp/physics/constraints/*.cpp",
-			"src/eepp/maps/*.cpp",
-			"src/eepp/maps/mapeditor/*.cpp"
+			"src/eepp/ui/doc/languages/*.cpp",
+			"src/eepp/ui/tools/*.cpp"
 	}
 
 	check_ssl_support()
@@ -888,7 +996,6 @@ function set_targetdir( dir )
 end
 
 solution "eepp"
-
 	targetdir("./bin/")
 	configurations { "debug", "release" }
 
@@ -995,7 +1102,7 @@ solution "eepp"
 
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/chipmunk/*.c", "src/thirdparty/chipmunk/constraints/*.c" }
-		includedirs { "include/eepp/thirdparty/chipmunk" }
+		includedirs { "src/modules/physics/include/eepp/thirdparty/chipmunk" }
 		build_base_configuration( "chipmunk" )
 
 	project "jpeg-compressor-static"
@@ -1012,7 +1119,7 @@ solution "eepp"
 		files { "src/thirdparty/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
 
-	if _OPTIONS["with-mojoal"] then
+	if not _OPTIONS["without-mojoal"] then
 		project "mojoal-static"
 			kind "StaticLib"
 			language "C"
@@ -1028,9 +1135,10 @@ solution "eepp"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
-		defines { "EFSW_USE_CXX11" }
 		if not is_vs() then
-			buildoptions{ "-std=c++14" }
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
 		end
 
 		if os.is("windows") then
@@ -1079,14 +1187,88 @@ solution "eepp"
 
 		build_base_cpp_configuration( "efsw" )
 
+	project "eepp-maps-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/maps/include/", "src/modules/maps/src/" }
+		files { "src/modules/maps/src/**.cpp" }
+		defines { "EE_MAPS_STATIC" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
+		if not is_vs() then
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
+		end
+		build_base_cpp_configuration( "eepp-maps-static" )
+
+	project "eepp-maps"
+		kind "SharedLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/maps/include/", "src/modules/maps/src/" }
+		files { "src/modules/maps/src/**.cpp" }
+		links { "eepp-shared" }
+		defines { "EE_MAPS_EXPORTS" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
+		if not is_vs() then
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
+		end
+		build_base_cpp_configuration( "eepp-maps" )
+		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-maps" )
+
+	project "eepp-physics-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
+		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
+		defines { "EE_PHYSICS_STATIC" }
+		if not is_vs() then
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
+		end
+		build_base_cpp_configuration( "eepp-physics-static" )
+
+	project "eepp-physics"
+		kind "SharedLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
+		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
+		links { "chipmunk-static", "eepp-shared" }
+		defines { "EE_PHYSICS_EXPORTS" }
+		if not is_vs() then
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
+		end
+		build_base_cpp_configuration( "eepp-physics" )
+		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-physics" )
+
 	project "eterm-static"
 		kind "StaticLib"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		includedirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
+		if os_ishost("msys") then
+			defines { "WINVER=0x0602" }
+		end
 		if not is_vs() then
-			buildoptions{ "-std=c++14" }
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
 		end
 		build_base_cpp_configuration( "eterm" )
 
@@ -1102,6 +1284,7 @@ solution "eepp"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp" )
+		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp" )
 
 	-- Examples
 	project "eepp-external-shader"
@@ -1140,11 +1323,12 @@ solution "eepp"
 		files { "src/examples/vbo_fbo_batch/*.cpp" }
 		build_link_configuration( "eepp-vbo-fbo-batch", true )
 
-	project "eepp-physics"
+	project "eepp-physics-demo"
 		set_kind()
 		language "C++"
 		files { "src/examples/physics/*.cpp" }
-		build_link_configuration( "eepp-physics", true )
+		eepp_module_physics_add()
+		build_link_configuration( "eepp-physics-demo", true )
 
 	project "eepp-http-request"
 		kind "ConsoleApp"
@@ -1171,6 +1355,7 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/mapeditor/*.cpp" }
+		eepp_module_maps_add()
 		build_link_configuration( "eepp-MapEditor", true )
 
 	project "eepp-uieditor"
@@ -1224,32 +1409,46 @@ solution "eepp"
 			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
 			links { "ecode-macos-helper-static" }
 		end
+		if _OPTIONS["with-debug-symbols"] then
+			defines { "ECODE_USE_BACKWARD" }
+		end
 		if os.is_real("linux") then
 			if _OPTIONS["with-debug-symbols"] then
-				defines { "ECODE_USE_BACKWARD" }
-				links { "util", "bfd", "dw", "dl" }
+				links { "util", "bfd", "dw", "dl", "stdc++fs" }
 			else
-				links { "util" }
+				links { "util", "stdc++fs" }
+			end
+		end
+		if (os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64")) and _OPTIONS["with-debug-symbols"] then
+			links { "dbghelp", "psapi" }
+			if os.is_real("mingw32") or os.is_real("mingw64") then
+				links { "msvcr90" }
 			end
 		end
 		if os.is("haiku") then
 			links { "bsd" }
 		end
-		build_link_configuration( "ecode", true )
+		if os.is("windows") and not is_vs() then
+			linkoptions { "../../bin/assets/icon/ecode.res" }
+		end
+		build_link_configuration( "ecode", false )
 
 	project "eterm"
 		set_kind()
 		language "C++"
 		files { "src/tools/eterm/**.cpp" }
 		links { "eterm-static" }
+		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
 		if os.is_real("linux") then
 			links { "util" }
 		end
 		if os.is("haiku") then
 			links { "bsd" }
 		end
-		includedirs { "src/modules/eterm/include/", "src/thirdparty" }
-		build_link_configuration( "eterm", true )
+		if os.is("windows") and not is_vs() then
+			linkoptions { "../../bin/assets/icon/eterm.res" }
+		end
+		build_link_configuration( "eterm", false )
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
@@ -1263,6 +1462,8 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tests/test_all/*.cpp" }
+		eepp_module_maps_add()
+		eepp_module_physics_add()
 		build_link_configuration( "eepp-test", true )
 
 	project "eepp-ui-perf-test"
@@ -1274,4 +1475,8 @@ solution "eepp"
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
+end
+
+if os.isfile("external_projects_premake4.lua") then
+	dofile("external_projects_premake4.lua")
 end

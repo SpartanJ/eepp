@@ -11,7 +11,6 @@
 #include <eepp/system/thread.hpp>
 #include <eepp/system/threadlocalptr.hpp>
 #include <eepp/system/time.hpp>
-#include <list>
 #include <map>
 #include <string>
 
@@ -717,7 +716,7 @@ class EE_API Http : NonCopyable {
 	IpAddress mHost;							///< Web host address
 	std::string mHostName;						///< Web host name
 	unsigned short mPort;						///< Port used for connection with host
-	std::list<AsyncRequest*> mThreads;
+	std::vector<AsyncRequest*> mThreads;
 	Mutex mThreadsMutex;
 	bool mIsSSL;
 	bool mHostSolved;

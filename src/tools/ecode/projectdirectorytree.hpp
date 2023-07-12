@@ -2,6 +2,7 @@
 #define ECODE_PROJECTDIRECTORYTREE_HPP
 
 #include "ignorematcher.hpp"
+#include "plugins/pluginmanager.hpp"
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/mutex.hpp>
@@ -21,6 +22,8 @@ using namespace EE::UI;
 using namespace EE::UI::Models;
 
 namespace ecode {
+
+class App;
 
 class FileListModel : public Model {
   public:
@@ -42,13 +45,19 @@ class FileListModel : public Model {
 		switch ( role ) {
 			case ModelRole::Icon:
 				return Variant( iconFor( index ) );
-			default:
 			case ModelRole::Display:
 				return Variant( index.column() == 0 ? mNames[index.row()].c_str()
 													: mFiles[index.row()].c_str() );
+			default:
+				break;
 		}
 
 		return {};
+	}
+
+	void setIcon( size_t idx, UIIcon* icon ) {
+		eeASSERT( idx < mIcons.size() );
+		mIcons[idx] = icon;
 	}
 
 	virtual void update() { onModelUpdate(); }
@@ -90,13 +99,17 @@ class ProjectDirectoryTree {
 	typedef std::function<void( ProjectDirectoryTree& dirTree )> ScanCompleteEvent;
 	typedef std::function<void( std::shared_ptr<FileListModel> )> MatchResultCb;
 
-	ProjectDirectoryTree( const std::string& path, std::shared_ptr<ThreadPool> threadPool );
+	ProjectDirectoryTree( const std::string& path, std::shared_ptr<ThreadPool> threadPool,
+						  App* app );
 
 	~ProjectDirectoryTree();
 
 	void scan( const ScanCompleteEvent& scanComplete,
 			   const std::vector<std::string>& acceptedPatterns = {},
 			   const bool& ignoreHidden = true );
+
+	std::shared_ptr<FileListModel> fuzzyMatchTree( const std::vector<std::string>& matches,
+												   const size_t& max ) const;
 
 	std::shared_ptr<FileListModel> fuzzyMatchTree( const std::string& match,
 												   const size_t& max ) const;
@@ -108,7 +121,17 @@ class ProjectDirectoryTree {
 
 	void asyncMatchTree( const std::string& match, const size_t& max, MatchResultCb res ) const;
 
-	std::shared_ptr<FileListModel> asModel( const size_t& max ) const;
+	struct CommandInfo {
+		std::string name;
+		std::string desc;
+		UIIcon* icon{ nullptr };
+	};
+
+	std::shared_ptr<FileListModel>
+	asModel( const size_t& max, const std::vector<CommandInfo>& prependCommands = {} ) const;
+
+	static std::shared_ptr<FileListModel>
+	emptyModel( const std::vector<CommandInfo>& prependCommands = {} );
 
 	size_t getFilesCount() const;
 
@@ -131,15 +154,19 @@ class ProjectDirectoryTree {
 	std::vector<std::string> mNames;
 	std::vector<std::string> mDirectories;
 	std::vector<LuaPattern> mAcceptedPatterns;
+	std::unique_ptr<GitIgnoreMatcher> mAllowedMatcher;
 	bool mRunning;
 	bool mIsReady;
 	bool mIgnoreHidden;
-	Mutex mFilesMutex;
+	mutable Mutex mFilesMutex;
+	mutable Mutex mMatchingMutex;
 	IgnoreMatcherManager mIgnoreMatcher;
+	App* mApp{ nullptr };
 
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
 							std::string directory, std::set<std::string> currentDirs,
-							const bool& ignoreHidden, IgnoreMatcherManager& ignoreMatcher );
+							const bool& ignoreHidden, IgnoreMatcherManager& ignoreMatcher,
+							GitIgnoreMatcher* allowedMatcher );
 
 	void addFile( const FileInfo& file );
 
@@ -152,6 +179,8 @@ class ProjectDirectoryTree {
 	IgnoreMatcherManager getIgnoreMatcherFromPath( const std::string& path );
 
 	size_t findFileIndex( const std::string& path );
+
+	PluginRequestHandle processMessage( const PluginMessage& msg );
 };
 
 } // namespace ecode

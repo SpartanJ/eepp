@@ -11,14 +11,16 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 									const std::vector<SyntaxPattern>& patterns,
 									const std::unordered_map<std::string, std::string>& symbols,
 									const std::string& comment,
-									const std::vector<std::string> headers ) :
+									const std::vector<std::string> headers,
+									const std::string& lspName ) :
 	mLanguageName( languageName ),
 	mLanguageId( String::hash( String::toLower( languageName ) ) ),
 	mFiles( files ),
 	mPatterns( patterns ),
 	mSymbols( symbols ),
 	mComment( comment ),
-	mHeaders( headers ) {}
+	mHeaders( headers ),
+	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {}
 
 const std::vector<std::string>& SyntaxDefinition::getFiles() const {
 	return mFiles;
@@ -33,6 +35,20 @@ std::string SyntaxDefinition::getFileExtension() const {
 		return ext;
 	}
 	return "";
+}
+
+std::vector<SyntaxPattern> SyntaxDefinition::getPatternsOfType( const std::string& type ) const {
+	std::vector<SyntaxPattern> patterns;
+	for ( const auto& pattern : mPatterns ) {
+		if ( pattern.types.size() == 1 && pattern.types[0] == type )
+			patterns.emplace_back( pattern );
+	}
+	return patterns;
+}
+
+SyntaxDefinition& SyntaxDefinition::setFileTypes( const std::vector<std::string>& types ) {
+	mFiles = types;
+	return *this;
 }
 
 const std::vector<SyntaxPattern>& SyntaxDefinition::getPatterns() const {
@@ -64,12 +80,19 @@ SyntaxDefinition& SyntaxDefinition::addPattern( const SyntaxPattern& pattern ) {
 	return *this;
 }
 
+SyntaxDefinition& SyntaxDefinition::setPatterns( const std::vector<SyntaxPattern>& patterns ) {
+	mPatterns = patterns;
+	return *this;
+}
+
 SyntaxDefinition& SyntaxDefinition::addPatternToFront( const SyntaxPattern& pattern ) {
-	auto patterns = mPatterns;
-	mPatterns.clear();
-	mPatterns.push_back( pattern );
-	for ( const auto& pa : patterns )
-		mPatterns.push_back( pa );
+	mPatterns.insert( mPatterns.begin(), pattern );
+	return *this;
+}
+
+SyntaxDefinition&
+SyntaxDefinition::addPatternsToFront( const std::vector<SyntaxPattern>& patterns ) {
+	mPatterns.insert( mPatterns.begin(), patterns.begin(), patterns.end() );
 	return *this;
 }
 
@@ -109,8 +132,55 @@ void SyntaxDefinition::clearSymbols() {
 	mSymbols.clear();
 }
 
+const std::string& SyntaxDefinition::getLSPName() const {
+	return mLSPName;
+}
+
+SyntaxDefinition& SyntaxDefinition::setVisible( bool visible ) {
+	mVisible = visible;
+	return *this;
+}
+
+bool SyntaxDefinition::isVisible() const {
+	return mVisible;
+}
+
+bool SyntaxDefinition::getAutoCloseXMLTags() const {
+	return mAutoCloseXMLTags;
+}
+
+SyntaxDefinition& SyntaxDefinition::setAutoCloseXMLTags( bool autoCloseXMLTags ) {
+	mAutoCloseXMLTags = autoCloseXMLTags;
+	return *this;
+}
+
+SyntaxDefinition& SyntaxDefinition::setLanguageName( const std::string& languageName ) {
+	mLanguageName = languageName;
+	mLSPName = String::toLower( languageName );
+	mLanguageId = String::hash( mLSPName );
+	return *this;
+}
+
+SyntaxDefinition& SyntaxDefinition::setLSPName( const std::string& lSPName ) {
+	mLSPName = lSPName;
+	return *this;
+}
+
 const std::string& SyntaxDefinition::getLanguageName() const {
 	return mLanguageName;
+}
+
+std::string SyntaxDefinition::getLanguageNameForFileSystem() const {
+	std::string lang( mLanguageName );
+	String::replaceAll( lang, " ", "" );
+	String::replaceAll( lang, ".", "" );
+	String::replaceAll( lang, "!", "" );
+	String::replaceAll( lang, "[", "" );
+	String::replaceAll( lang, "]", "" );
+	String::replaceAll( lang, "+", "p" );
+	String::replaceAll( lang, "#", "sharp" );
+	String::toLowerInPlace( lang );
+	return lang;
 }
 
 const String::HashType& SyntaxDefinition::getLanguageId() const {

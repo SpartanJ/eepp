@@ -131,11 +131,16 @@ void UITouchDraggableWidget::scheduledUpdate( const Time& time ) {
 Uint32 UITouchDraggableWidget::onMessage( const NodeMessage* msg ) {
 	if ( msg->getMsg() == NodeMessage::MouseDown && ( msg->getFlags() & EE_BUTTON_LMASK ) &&
 		 !isTouchDragging() && isTouchOverAllowedChilds() &&
-		 !getEventDispatcher()->isNodeDragging() ) {
+		 !getEventDispatcher()->isNodeDragging() && isTouchDragEnabled() ) {
 		setTouchDragging( true );
 		getEventDispatcher()->setNodeDragging( this );
 		mTouchDragPoint = getEventDispatcher()->getMousePosf();
 		mTouchDragAcceleration = Vector2f( 0, 0 );
+		return 1;
+	} else if ( msg->getMsg() == NodeMessage::MouseUp && ( msg->getFlags() & EE_BUTTON_LMASK ) &&
+				isTouchDragging() && isTouchOverAllowedChilds() ) {
+		setTouchDragging( false );
+		getEventDispatcher()->setNodeDragging( nullptr );
 		return 1;
 	}
 	return 0;

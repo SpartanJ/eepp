@@ -63,6 +63,8 @@ class EE_API TextPosition {
 		return { mLine - other.line(), mColumn - other.column() };
 	}
 
+	std::string toPositionString() const { return String::format( ":%lld:%lld", mLine, mColumn ); }
+
 	std::string toString() const { return String::format( "L%lld,C%lld", mLine, mColumn ); }
 
 	static TextPosition fromString( const std::string& pos ) {

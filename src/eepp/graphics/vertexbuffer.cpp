@@ -178,7 +178,8 @@ void VertexBuffer::addQuad( const Vector2f& pos, const Sizef& size, const Color&
 void VertexBuffer::setQuad( const Vector2u& gridPos, const Vector2f& pos, const Sizef& size,
 							const Color& color ) {
 	eeASSERT( mDrawType == PrimitiveType::PRIMITIVE_QUADS ||
-			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP );
+			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP ||
+			  mDrawType == PrimitiveType::PRIMITIVE_TRIANGLES );
 	eeASSERT( mGridSize != Sizei::Zero );
 	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
 								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
@@ -214,7 +215,8 @@ void VertexBuffer::setQuad( const Vector2u& gridPos, const Vector2f& pos, const 
 
 void VertexBuffer::setQuadColor( const Vector2u& gridPos, const Color& color ) {
 	eeASSERT( mDrawType == PrimitiveType::PRIMITIVE_QUADS ||
-			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP );
+			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP ||
+			  mDrawType == PrimitiveType::PRIMITIVE_TRIANGLES );
 	eeASSERT( mGridSize != Sizei::Zero );
 	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
 								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
@@ -241,7 +243,8 @@ void VertexBuffer::setQuadColor( const Vector2u& gridPos, const Color& color ) {
 void VertexBuffer::setQuadFree( const Vector2u& gridPos, const Vector2f& pos0, const Vector2f& pos1,
 								const Vector2f& pos2, const Vector2f& pos3, const Color& color ) {
 	eeASSERT( mDrawType == PrimitiveType::PRIMITIVE_QUADS ||
-			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP );
+			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP ||
+			  mDrawType == PrimitiveType::PRIMITIVE_TRIANGLES );
 	eeASSERT( mGridSize != Sizei::Zero );
 	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
 								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
@@ -278,7 +281,8 @@ void VertexBuffer::setQuadFree( const Vector2u& gridPos, const Vector2f& pos0, c
 void VertexBuffer::setQuadTexCoords( const Vector2u& gridPos, const Rectf& coords,
 									 const Uint32& textureLevel ) {
 	eeASSERT( mDrawType == PrimitiveType::PRIMITIVE_QUADS ||
-			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP );
+			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP ||
+			  mDrawType == PrimitiveType::PRIMITIVE_TRIANGLES );
 	eeASSERT( mGridSize != Sizei::Zero );
 	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
 								   gridPos.y * mGridSize.x * GLi->quadVertexs() +

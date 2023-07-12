@@ -19,7 +19,7 @@ UIScrollView::UIScrollView() :
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 ),
 	mPosChangeCb( 0 ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDS_POSITION | UI_SCROLLABLE;
 	enableReportSizeChangeToChilds();
 
 	mVScroll->setParent( this );
@@ -179,7 +179,10 @@ void UIScrollView::containerUpdate() {
 	}
 
 	mContainer->setPosition( mPadding.Left, mPadding.Top );
-	mContainer->setSize( size );
+
+	// TODO: Fix layouting to avoid needing this hack.
+	if ( size != mContainer->getSize() )
+		runOnMainThread( [this, size]() { mContainer->setSize( size ); } );
 
 	mVScroll->setPosition( getSize().getWidth() - mVScroll->getSize().getWidth() - mPadding.Right,
 						   mPadding.Top );
@@ -346,7 +349,9 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 Uint32 UIScrollView::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseUp: {
-			if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() ) {
+			if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() &&
+				 isTouchOverAllowedChilds() && Msg->getSender()->isUINode() &&
+				 !Msg->getSender()->asType<UINode>()->isScrollable() ) {
 				if ( Msg->getFlags() & EE_BUTTON_WUMASK ) {
 					mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
 					return 1;

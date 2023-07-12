@@ -3,6 +3,9 @@
 
 #include <eepp/core/core.hpp>
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/texture.hpp>
+#include <memory>
+#include <unordered_map>
 
 namespace EE { namespace Graphics {
 class FontTrueType;
@@ -43,7 +46,24 @@ class EE_API UIGlyphIcon : public UIIcon {
 
 	mutable FontTrueType* mFont;
 	Uint32 mCodePoint;
-	Uint32 mCloseCb{0};
+	Uint32 mCloseCb{ 0 };
+};
+
+class EE_API UISVGIcon : public UIIcon {
+  public:
+	static UIIcon* New( const std::string& name, const std::string& svgXML );
+
+	virtual ~UISVGIcon();
+
+	virtual Drawable* getSize( const int& size ) const;
+
+  protected:
+	UISVGIcon( const std::string& name, const std::string& svgXML );
+
+	std::string mSVGXml;
+	mutable std::unordered_map<int, Texture*> mSVGs;
+	mutable Sizei mOriSize;
+	mutable int mOriChannels{ 0 };
 };
 
 }} // namespace EE::UI

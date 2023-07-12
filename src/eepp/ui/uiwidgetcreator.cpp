@@ -21,6 +21,7 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uisprite.hpp>
+#include <eepp/ui/uistacklayout.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitableview.hpp>
@@ -82,7 +83,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["textureregion"] = UITextureRegion::New;
 		registeredWidget["touchdraggable"] = UITouchDraggableWidget::New;
 		registeredWidget["gridlayout"] = UIGridLayout::New;
-		registeredWidget["layout"] = UILayout::New;
+		registeredWidget["stacklayout"] = UIStackLayout::New;
 		registeredWidget["viewpager"] = UIViewPager::New;
 		registeredWidget["codeeditor"] = UICodeEditor::New;
 		registeredWidget["splitter"] = UISplitter::New;
@@ -91,6 +92,11 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["listview"] = UIListView::New;
 		registeredWidget["stackwidget"] = UIStackWidget::New;
 		registeredWidget["console"] = UIConsole::New;
+		// registeredWidget["menu"] = UIMenu::New;
+		registeredWidget["menucheckbox"] = UIMenuCheckBox::New;
+		registeredWidget["menuradiobutton"] = UIMenuRadioButton::New;
+		registeredWidget["menuseparator"] = UIMenuSeparator::New;
+		registeredWidget["anchor"] = UIAnchor::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
@@ -105,6 +111,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["button"] = UIPushButton::New;
 		registeredWidget["rlay"] = UIRelativeLayout::New;
 		registeredWidget["tooltip"] = UITooltip::New;
+		registeredWidget["tv"] = UITextView::New;
+		registeredWidget["a"] = UIAnchor::New;
 
 		sBaseListCreated = true;
 	}

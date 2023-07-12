@@ -4,7 +4,6 @@
 #include <eepp/core.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/math/rect.hpp>
-#include <list>
 
 namespace EE { namespace Graphics {
 
@@ -44,17 +43,17 @@ class EE_API ClippingMask {
 
 	void stencilMaskDisable( bool clearMasks = false );
 
-	std::list<Rectf> getScissorsClipped() const;
+	const std::vector<Rectf>& getScissorsClipped() const;
 
-	void setScissorsClipped( const std::list<Rectf>& scissorsClipped );
+	void setScissorsClipped( const std::vector<Rectf>& scissorsClipped );
 
-	std::list<Rectf> getPlanesClipped() const;
+	const std::vector<Rectf>& getPlanesClipped() const;
 
-	void setPlanesClipped( const std::list<Rectf>& planesClipped );
+	void setPlanesClipped( const std::vector<Rectf>& planesClipped );
 
   protected:
-	std::list<Rectf> mScissorsClipped;
-	std::list<Rectf> mPlanesClipped;
+	std::vector<Rectf> mScissorsClipped;
+	std::vector<Rectf> mPlanesClipped;
 	bool mPushScissorClip;
 	bool mPushClip;
 

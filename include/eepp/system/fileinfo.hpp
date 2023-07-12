@@ -48,6 +48,8 @@ class EE_API FileInfo {
 
 	std::string linksTo() const;
 
+	std::string getRealPath() const;
+
 	bool exists() const;
 
 	void getInfo();
@@ -73,6 +75,8 @@ class EE_API FileInfo {
 	const Uint64& getInode() const;
 
 	bool isUninitialized() const;
+
+	std::string getExtension( const bool& lowerExt = true ) const;
 
   protected:
 	mutable std::string mFilepath;

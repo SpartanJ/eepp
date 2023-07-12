@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
@@ -9,6 +10,7 @@
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/input.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -39,7 +41,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mSmoothScroll( true ) {
 	setFlags( UI_AUTO_PADDING );
 
-	auto cb = [&]( const Event* ) { containerResize(); };
+	auto cb = [this]( const Event* ) { containerResize(); };
 
 	mContainer = eeNew( UIItemContainer<UIListBox>, () );
 	mContainer->setParent( this );
@@ -122,12 +124,12 @@ UIScrollBar* UIListBox::getHorizontalScrollBar() const {
 	return mHScrollBar;
 }
 
-void UIListBox::addListBoxItems( std::vector<String> Texts ) {
-	mItems.reserve( mItems.size() + Texts.size() );
-	mTexts.reserve( mTexts.size() + Texts.size() );
+void UIListBox::addListBoxItems( std::vector<String> texts ) {
+	mItems.reserve( mItems.size() + texts.size() );
+	mTexts.reserve( mTexts.size() + texts.size() );
 
-	for ( Uint32 i = 0; i < Texts.size(); i++ ) {
-		mTexts.push_back( Texts[i] );
+	for ( Uint32 i = 0; i < texts.size(); i++ ) {
+		mTexts.push_back( std::move( texts[i] ) );
 		mItems.push_back( NULL );
 	}
 
@@ -187,49 +189,31 @@ Uint32 UIListBox::removeListBoxItem( UIListBoxItem* Item ) {
 }
 
 void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
-	if ( ItemsIndex.size() && eeINDEX_NOT_FOUND != ItemsIndex[0] ) {
-		std::vector<UIListBoxItem*> ItemsCpy;
-		mTexts.clear();
+	if ( ItemsIndex.empty() || eeINDEX_NOT_FOUND == ItemsIndex[0] )
+		return;
 
-		for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-			bool erase = false;
+	size_t selectedSize = mSelected.size();
 
-			for ( Uint32 z = 0; z < ItemsIndex.size(); z++ ) {
-				if ( ItemsIndex[z] == i ) {
-					for ( std::list<Uint32>::iterator it = mSelected.begin(); it != mSelected.end();
-						  ++it ) {
-						if ( *it == ItemsIndex[z] ) {
-							mSelected.erase( it );
-
-							break;
-						}
-					}
-
-					ItemsIndex.erase( ItemsIndex.begin() + z );
-
-					erase = true;
-
-					break;
-				}
-			}
-
-			if ( !erase ) {
-				ItemsCpy.push_back( mItems[i] );
-				mTexts.push_back( mItems[i]->getText() );
-			} else if ( NULL != mItems[i] ) {
-				mItems[i]->close();
-				mItems[i]->setVisible( false );
-				mItems[i]->setEnabled( false );
-				mItems[i] = NULL;
-			}
+	for ( Uint32 z = 0; z < ItemsIndex.size(); z++ ) {
+		auto idx = ItemsIndex[z];
+		auto selIt = std::find( mSelected.begin(), mSelected.end(), idx );
+		if ( selIt != mSelected.end() )
+			mSelected.erase( selIt );
+		if ( idx < mItems.size() && NULL != mItems[idx] ) {
+			mItems[idx]->close();
+			mItems[idx]->setVisible( false );
+			mItems[idx]->setEnabled( false );
 		}
-
-		mItems = ItemsCpy;
-
-		findMaxWidth();
-		updateScroll();
-		updateListBoxItemsSize();
+		mItems.erase( mItems.begin() + idx );
+		mTexts.erase( mTexts.begin() + idx );
 	}
+
+	findMaxWidth();
+	updateScroll();
+	updateListBoxItemsSize();
+
+	if ( selectedSize != mSelected.size() )
+		sendCommonEvent( Event::OnSelectionChanged );
 }
 
 void UIListBox::clear() {
@@ -243,6 +227,7 @@ void UIListBox::clear() {
 	updateListBoxItemsSize();
 
 	sendCommonEvent( Event::OnClear );
+	sendCommonEvent( Event::OnSelectionChanged );
 }
 
 Uint32 UIListBox::removeListBoxItem( Uint32 ItemIndex ) {
@@ -255,7 +240,7 @@ Uint32 UIListBox::getListBoxItemIndex( const String& Name ) {
 	Uint32 size = (Uint32)mItems.size();
 
 	for ( Uint32 i = 0; i < size; i++ ) {
-		if ( Name == mItems[i]->getText() )
+		if ( Name == mTexts[i] )
 			return i;
 	}
 
@@ -443,7 +428,7 @@ void UIListBox::createItemIndex( const Uint32& i ) {
 
 		itemUpdateSize( mItems[i] );
 
-		for ( std::list<Uint32>::iterator it = mSelected.begin(); it != mSelected.end(); ++it ) {
+		for ( auto it = mSelected.begin(); it != mSelected.end(); ++it ) {
 			if ( *it == i ) {
 				mItems[i]->select();
 
@@ -688,6 +673,7 @@ Uint32 UIListBox::onSelected() {
 	NodeMessage tMsg( this, NodeMessage::Selected, 0 );
 	messagePost( &tMsg );
 
+	sendCommonEvent( Event::OnSelectionChanged );
 	sendCommonEvent( Event::OnItemSelected );
 
 	return 1;
@@ -705,9 +691,9 @@ bool UIListBox::isMultiSelect() const {
 }
 
 UIListBoxItem* UIListBox::getItem( const Uint32& Index ) const {
-	eeASSERT( Index < mItems.size() )
+	eeASSERT( Index < mItems.size() );
 
-		return mItems[Index];
+	return mItems[Index];
 }
 
 UIListBoxItem* UIListBox::getItemSelected() {
@@ -728,6 +714,10 @@ Uint32 UIListBox::getItemSelectedIndex() const {
 	return eeINDEX_NOT_FOUND;
 }
 
+bool UIListBox::hasSelection() const {
+	return !mSelected.empty();
+}
+
 String UIListBox::getItemSelectedText() const {
 	String tstr;
 
@@ -737,13 +727,13 @@ String UIListBox::getItemSelectedText() const {
 	return tstr;
 }
 
-std::list<Uint32> UIListBox::getItemsSelectedIndex() const {
+std::vector<Uint32> UIListBox::getItemsSelectedIndex() const {
 	return mSelected;
 }
 
-std::list<UIListBoxItem*> UIListBox::getItemsSelected() {
-	std::list<UIListBoxItem*> tItems;
-	std::list<Uint32>::iterator it;
+std::vector<UIListBoxItem*> UIListBox::getItemsSelected() {
+	std::vector<UIListBoxItem*> tItems;
+	std::vector<Uint32>::iterator it;
 
 	for ( it = mSelected.begin(); it != mSelected.end(); ++it ) {
 		if ( NULL == mItems[*it] )
@@ -802,8 +792,12 @@ const Uint32& UIListBox::getRowHeight() const {
 	return mRowHeight;
 }
 
-Uint32 UIListBox::getCount() {
+Uint32 UIListBox::getCount() const {
 	return (Uint32)mItems.size();
+}
+
+bool UIListBox::isEmpty() const {
+	return mItems.empty();
 }
 
 void UIListBox::setSelected( const String& Text ) {
@@ -811,10 +805,12 @@ void UIListBox::setSelected( const String& Text ) {
 }
 
 void UIListBox::setSelected( Uint32 Index ) {
+	if ( std::find( mSelected.begin(), mSelected.end(), Index ) != mSelected.end() )
+		return;
+
 	if ( Index < mItems.size() ) {
 		if ( isMultiSelect() ) {
-			for ( std::list<Uint32>::iterator it = mSelected.begin(); it != mSelected.end();
-				  ++it ) {
+			for ( auto it = mSelected.begin(); it != mSelected.end(); ++it ) {
 				if ( *it == Index )
 					return;
 			}
@@ -834,6 +830,7 @@ void UIListBox::setSelected( Uint32 Index ) {
 			mItems[Index]->select();
 		} else {
 			updateScroll();
+			onSelected();
 		}
 	}
 }
@@ -1063,6 +1060,20 @@ std::vector<PropertyId> UIListBox::getPropertiesImplemented() const {
 	return props;
 }
 
+Uint32 UIListBox::getMaxTextWidth() const {
+	return mMaxTextWidth;
+}
+
+void UIListBox::setItemText( const Uint32& index, const String& newText ) {
+	if ( index < mTexts.size() ) {
+		mTexts[index] = newText;
+		if ( nullptr != mItems[index] )
+			mItems[index]->setText( newText );
+		ItemValueEvent event( this, Event::OnItemValueChange, index );
+		sendEvent( &event );
+	}
+}
+
 bool UIListBox::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
@@ -1132,10 +1143,8 @@ void UIListBox::loadItemsFromXmlNode( const pugi::xml_node& node ) {
 
 	std::vector<String> items;
 	for ( pugi::xml_node item = node.child( "item" ); item; item = item.next_sibling( "item" ) ) {
-		std::string data = item.text().as_string();
-
-		if ( !data.empty() )
-			items.push_back( getTranslatorString( data ) );
+		std::string data( item.text().as_string() );
+		items.push_back( getTranslatorString( data ) );
 	}
 
 	if ( !items.empty() ) {

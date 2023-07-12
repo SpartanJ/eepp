@@ -7,6 +7,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 
 namespace EE { namespace UI { namespace Abstract {
 
@@ -42,7 +43,7 @@ Float UIAbstractTableView::getRowHeight() const {
 void UIAbstractTableView::setRowHeight( const Float& rowHeight ) {
 	if ( mRowHeight != rowHeight ) {
 		mRowHeight = rowHeight;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -51,7 +52,7 @@ void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& w
 		columnData( colIndex ).width = width;
 		updateHeaderSize();
 		onColumnSizeChange( colIndex );
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -75,25 +76,43 @@ size_t UIAbstractTableView::getItemCount() const {
 
 void UIAbstractTableView::onModelUpdate( unsigned flags ) {
 	if ( !Engine::instance()->isMainThread() ) {
-		runOnMainThread( [&, flags] {
-			modelUpdate( flags );
-			createOrUpdateColumns();
-		} );
+		static constexpr String::HashType tag = String::hash( "onModelUpdate" );
+		removeActionsByTag( tag );
+		runOnMainThread(
+			[&, flags] {
+				modelUpdate( flags );
+				createOrUpdateColumns( true );
+			},
+			Time::Zero, tag );
 	} else {
 		UIAbstractView::onModelUpdate( flags );
-		createOrUpdateColumns();
+		createOrUpdateColumns( true );
 	}
 }
 
-void UIAbstractTableView::createOrUpdateColumns() {
+void UIAbstractTableView::resetColumnData() {
+	Model* model = getModel();
+	if ( !model )
+		return;
+	size_t count = model->columnCount();
+	for ( size_t i = 0; i < count; i++ ) {
+		ColumnData& col = columnData( i );
+		col.minWidth = 0;
+	}
+}
+
+void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	Model* model = getModel();
 	if ( !model )
 		return;
 
 	size_t count = model->columnCount();
 	Float totalWidth = 0;
-
 	auto visibleColCount = visibleColumnCount();
+	bool requiresUpdateCellVisibility = false;
+
+	if ( resetColumnData )
+		this->resetColumnData();
 
 	for ( size_t i = 0; i < count; i++ ) {
 		ColumnData& col = columnData( i );
@@ -103,7 +122,10 @@ void UIAbstractTableView::createOrUpdateColumns() {
 			col.widget->setEnabled( true );
 			col.widget->setVisible( true );
 		}
+		bool wasVisible = col.visible;
 		col.visible = !isColumnHidden( i );
+		if ( wasVisible != col.visible )
+			requiresUpdateCellVisibility = true;
 		col.widget->setVisible( col.visible );
 		if ( !col.visible )
 			continue;
@@ -119,7 +141,7 @@ void UIAbstractTableView::createOrUpdateColumns() {
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 	}
 
-	if ( mAutoColumnsWidth && visibleColCount > 1 && getModel()->rowCount() > 0 ) {
+	if ( mAutoColumnsWidth && visibleColCount > 1 ) {
 		Float contentWidth = getContentSpaceWidth();
 		bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
 		if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
@@ -178,6 +200,7 @@ void UIAbstractTableView::createOrUpdateColumns() {
 			ColumnData& col = columnData( i );
 			col.width = 0;
 			col.visible = false;
+			requiresUpdateCellVisibility = true;
 			if ( col.widget ) {
 				col.widget->close();
 				col.widget = nullptr;
@@ -186,7 +209,13 @@ void UIAbstractTableView::createOrUpdateColumns() {
 	}
 
 	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
+	bool visible = mHeader->isVisible();
+	mHeader->setVisible( true );
 	mHeader->updateLayout();
+	mHeader->setVisible( visible );
+
+	if ( requiresUpdateCellVisibility )
+		updateCellsVisibility();
 
 	updateColumnsWidth();
 }
@@ -223,7 +252,7 @@ void UIAbstractTableView::setHeadersVisible( bool visible ) {
 
 void UIAbstractTableView::onSizeChange() {
 	UIAbstractView::onSizeChange();
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 void UIAbstractTableView::onColumnSizeChange( const size_t&, bool fromUserInteraction ) {
@@ -237,7 +266,7 @@ Float UIAbstractTableView::getMaxColumnContentWidth( const size_t&, bool ) {
 
 void UIAbstractTableView::onColumnResizeToContent( const size_t& colIndex ) {
 	columnData( colIndex ).width = getMaxColumnContentWidth( colIndex, true );
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 void UIAbstractTableView::updateHeaderSize() {
@@ -246,7 +275,7 @@ void UIAbstractTableView::updateHeaderSize() {
 	size_t count = getModel()->columnCount();
 	Float totalWidth = 0;
 	for ( size_t i = 0; i < count; i++ ) {
-		ColumnData& col = columnData( i );
+		const ColumnData& col = columnData( i );
 		totalWidth += col.width;
 	}
 	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
@@ -258,6 +287,17 @@ int UIAbstractTableView::visibleColumn() {
 			return i;
 	}
 	return -1;
+}
+
+void UIAbstractTableView::updateCellsVisibility() {
+	auto colCount = mColumn.size();
+	for ( size_t colIdx = 0; colIdx < colCount; ++colIdx ) {
+		for ( auto row : mWidgets ) {
+			auto rowCol = row.find( colIdx );
+			if ( rowCol != row.end() )
+				rowCol->second->setVisible( mColumn[colIdx].visible );
+		}
+	}
 }
 
 bool UIAbstractTableView::getAutoExpandOnSingleColumn() const {
@@ -334,19 +374,38 @@ bool UIAbstractTableView::isColumnHidden( const size_t& column ) const {
 void UIAbstractTableView::setColumnHidden( const size_t& column, bool hidden ) {
 	if ( columnData( column ).visible != !hidden ) {
 		columnData( column ).visible = !hidden;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
-void UIAbstractTableView::setColumnsHidden( const std::vector<size_t> columns, bool hidden ) {
+void UIAbstractTableView::setColumnsHidden( const std::vector<size_t>& columns, bool hidden ) {
 	for ( auto col : columns )
 		columnData( col ).visible = !hidden;
-	createOrUpdateColumns();
+	updateCellsVisibility();
+	createOrUpdateColumns( false );
 }
 
-void UIAbstractTableView::setColumnsVisible( const std::vector<size_t> columns ) {
+void UIAbstractTableView::setColumnsVisible( const std::vector<size_t>& columns ) {
 	if ( !getModel() )
 		return;
+
+	// Check if the columns visible are the same
+	if ( !mColumn.empty() && !columns.empty() ) {
+		// TODO: Do not limit the column count to 64
+		Uint64 colFlags = 0;
+		Uint64 newColFlags = 0;
+		for ( size_t i = 0; i < mColumn.size(); ++i ) {
+			if ( mColumn[i].visible )
+				colFlags |= 1 << i;
+		}
+
+		for ( auto col : columns )
+			newColFlags |= 1 << col;
+
+		if ( colFlags == newColFlags )
+			return;
+	}
+
 	for ( size_t i = 0; i < getModel()->columnCount(); i++ )
 		columnData( i ).visible = false;
 
@@ -360,7 +419,9 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t> columns )
 	if ( !foundMainColumn && !columns.empty() )
 		mMainColumn = columns[0];
 
-	createOrUpdateColumns();
+	updateCellsVisibility();
+
+	createOrUpdateColumns( true );
 }
 
 UITableRow* UIAbstractTableView::createRow() {
@@ -370,10 +431,15 @@ UITableRow* UIAbstractTableView::createRow() {
 	rowWidget->setParent( this );
 	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	rowWidget->reloadStyle( true, true, true );
-	rowWidget->addEventListener( Event::MouseDown, [&]( const Event* event ) {
-		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) )
+	rowWidget->addEventListener( Event::MouseDown, [this]( const Event* event ) {
+		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) || !isRowSelection() )
 			return;
-		getSelection().set( event->getNode()->asType<UITableRow>()->getCurIndex() );
+		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
+		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+			getSelection().remove( index );
+		} else {
+			getSelection().set( index );
+		}
 	} );
 	return rowWidget;
 }
@@ -392,10 +458,12 @@ UITableRow* UIAbstractTableView::updateRow( const int& rowIndex, const ModelInde
 	rowWidget->setCurIndex( index );
 	rowWidget->setPixelsSize( getContentSize().getWidth(), getRowHeight() );
 	rowWidget->setPixelsPosition( { -mScrollOffset.x, yOffset - mScrollOffset.y } );
-	if ( getSelection().contains( index ) ) {
-		rowWidget->pushState( UIState::StateSelected );
-	} else {
-		rowWidget->popState( UIState::StateSelected );
+	if ( isRowSelection() ) {
+		if ( getSelection().contains( index ) ) {
+			rowWidget->pushState( UIState::StateSelected );
+		} else {
+			rowWidget->popState( UIState::StateSelected );
+		}
 	}
 	return rowWidget;
 }
@@ -405,23 +473,36 @@ void UIAbstractTableView::onScrollChange() {
 }
 
 void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
-	mWidgetsClickCbId[widget] = widget->addEventListener(
-		mSingleClickNavigation ? Event::MouseClick : Event::MouseDoubleClick,
-		[&]( const Event* event ) {
+	mWidgetsClickCbId[widget].push_back(
+		widget->addEventListener( Event::MouseDoubleClick, [this]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
+			auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+			if ( isEditable() && ( mEditTriggers & EditTrigger::DoubleClicked ) && getModel() &&
+				 getModel()->isEditable( cellIdx ) ) {
+				beginEditing( cellIdx, mouseEvent->getNode()->asType<UIWidget>() );
+			} else if ( ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) && !mSingleClickNavigation ) {
 				onOpenModelIndex( idx, event );
 			}
-		} );
+		} ) );
 
-	widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
-		auto mouseEvent = static_cast<const MouseEvent*>( event );
-		auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-		if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
-			onOpenMenuModelIndex( idx, event );
-		}
-	} );
+	mWidgetsClickCbId[widget].push_back(
+		widget->addEventListener( Event::MouseClick, [this]( const Event* event ) {
+			auto mouseEvent = static_cast<const MouseEvent*>( event );
+			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
+			if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
+				onOpenMenuModelIndex( idx, event );
+			} else if ( ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) && mSingleClickNavigation ) {
+				onOpenModelIndex( idx, event );
+			} else if ( isCellSelection() && ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) ) {
+				auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
+				if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+					getSelection().remove( cellIdx );
+				} else {
+					getSelection().set( cellIdx );
+				}
+			}
+		} ) );
 }
 
 UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
@@ -452,11 +533,47 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		mWidgets[rowIndex][index.column()] = widget;
 		widget->reloadStyle( true, true, true );
 	}
-	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
+	const auto& colData = columnData( index.column() );
+	if ( !colData.visible ) {
+		widget->setVisible( false );
+		return widget;
+	}
+	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
 	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
 		UITableCell* cell = widget->asType<UITableCell>();
 		cell->setCurIndex( index );
+
+		if ( getModel()->classModelRoleEnabled() ) {
+			bool needsReloadStyle = false;
+			Variant cls( getModel()->data( index, ModelRole::Class ) );
+			cell->setLoadingState( true );
+			if ( cls.isValid() ) {
+				// We analize each case to avoid unnecessary allocations
+				if ( cls.is( Variant::Type::StdString ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asStdString() != cell->getClasses()[0];
+					cell->setClass( cls.asStdString() );
+				} else if ( cls.is( Variant::Type::String ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asString().toUtf8() != cell->getClasses()[0];
+					cell->setClass( cls.asString() );
+				} else if ( cls.is( Variant::Type::cstr ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asCStr() != cell->getClasses()[0];
+					cell->setClass( cls.asCStr() );
+				}
+			} else {
+				needsReloadStyle = !cell->getClasses().empty();
+				cell->resetClass();
+			}
+			cell->setLoadingState( false );
+			if ( needsReloadStyle )
+				cell->reportStyleStateChangeRecursive();
+		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
 		if ( txt.isValid() ) {
@@ -484,6 +601,14 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
+	}
+
+	if ( isCellSelection() ) {
+		if ( getSelection().contains( index ) ) {
+			widget->pushState( UIState::StateSelected );
+		} else {
+			widget->popState( UIState::StateSelected );
+		}
 	}
 
 	return widget;
@@ -584,7 +709,7 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 	if ( mSearchTextAction )
 		removeAction( mSearchTextAction );
 	mSearchTextAction = Actions::Runnable::New(
-		[&] {
+		[this] {
 			mSearchTextAction = nullptr;
 			mSearchText = "";
 		},
@@ -613,14 +738,14 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 						 String::startsWith( String::toLower( var.toString() ), mSearchText ) ) {
 						setSelection( model->index( next.row(), 0, next.parent() ) );
 					} else {
-						ModelIndex index = findRowWithText( mSearchText );
-						if ( index.isValid() )
-							setSelection( index );
+						ModelIndex fIndex = findRowWithText( mSearchText );
+						if ( fIndex.isValid() )
+							setSelection( fIndex );
 					}
 				} else {
-					ModelIndex index = findRowWithText( mSearchText );
-					if ( index.isValid() )
-						setSelection( index );
+					ModelIndex fIndex = findRowWithText( mSearchText );
+					if ( fIndex.isValid() )
+						setSelection( fIndex );
 				}
 			}
 		}
@@ -711,6 +836,22 @@ bool UIAbstractTableView::getFitAllColumnsToWidget() const {
 
 void UIAbstractTableView::setFitAllColumnsToWidget( bool fitAllColumnsToWidget ) {
 	mFitAllColumnsToWidget = fitAllColumnsToWidget;
+}
+
+void UIAbstractTableView::recalculateColumnsWidth() {
+	createOrUpdateColumns( false );
+}
+
+UITableCell* UIAbstractTableView::getCellFromIndex( const ModelIndex& index ) const {
+	for ( const auto& row : mWidgets ) {
+		for ( const auto& widget : row ) {
+			if ( widget.second->isType( UI_TYPE_TABLECELL ) &&
+				 widget.second->asType<UITableCell>()->getCurIndex() == index ) {
+				return widget.second->asType<UITableCell>();
+			}
+		}
+	}
+	return nullptr;
 }
 
 }}} // namespace EE::UI::Abstract

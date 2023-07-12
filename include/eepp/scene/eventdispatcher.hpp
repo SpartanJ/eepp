@@ -24,6 +24,8 @@ class SceneNode;
 
 class EE_API EventDispatcher {
   public:
+	typedef std::function<void( const Uint32& cbId, Node* focus, Node* focusLoss )> FocusCallback;
+
 	static EventDispatcher* New( SceneNode* sceneNode );
 
 	EventDispatcher( SceneNode* sceneNode );
@@ -102,11 +104,20 @@ class EE_API EventDispatcher {
 
 	void setDisableMousePress( bool disableMousePress );
 
+	Uint32 addFocusEventCallback( const FocusCallback& cb );
+
+	bool removeFocusEventCallback( const Uint32& cbId );
+
+	Node* getLastFocusNode() const;
+
+	void setLastFocusNode( Node* lastFocusNode );
+
   protected:
 	EE::Window::Window* mWindow;
 	Input* mInput;
 	SceneNode* mSceneNode;
 	Node* mFocusNode;
+	Node* mLastFocusNode;
 	Node* mOverNode;
 	Node* mDownNode;
 	Node* mLossFocusNode;
@@ -122,6 +133,8 @@ class EE_API EventDispatcher {
 	Node* mNodeWasDragging;
 	Node* mNodeDragging;
 	Time mElapsed;
+	Uint32 mCurFocusId{ 0 };
+	std::map<Uint32, FocusCallback> mFocusCbs;
 
 	virtual void inputCallback( InputEvent* event );
 };

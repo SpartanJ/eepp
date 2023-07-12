@@ -29,7 +29,7 @@ void mainLoop() {
 }
 
 // EE_MAIN_FUNC is needed by some platforms to be able to find the real application main
-EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+EE_MAIN_FUNC int main( int, char*[] ) {
 	// Create a new window with vsync enabled
 	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Empty Window" ),
 											ContextSettings( true ) );

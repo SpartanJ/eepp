@@ -9,7 +9,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-enum class AtRuleType : Uint32 { None, FontFace };
+enum class AtRuleType : Uint32 { None, FontFace, GlyphIcon };
 
 class EE_API StyleSheetStyle {
   public:
@@ -43,6 +43,8 @@ class EE_API StyleSheetStyle {
 
 	bool hasVariables() const;
 
+	bool hasVariable( const std::string& name ) const;
+
 	StyleSheetVariable getVariableByName( const std::string& name ) const;
 
 	void setVariable( const StyleSheetVariable& variable );
@@ -58,6 +60,8 @@ class EE_API StyleSheetStyle {
 	const Uint32& getMarker() const;
 
 	void setMarker( const Uint32& marker );
+
+	bool updatePropertyValue( const std::string& name, const std::string& value );
 
   protected:
 	Uint32 mMarker{ 0 };

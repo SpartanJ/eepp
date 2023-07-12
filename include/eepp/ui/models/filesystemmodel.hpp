@@ -37,16 +37,20 @@ class EE_API FileSystemModel : public Model {
 
 	struct DisplayConfig {
 		DisplayConfig() {}
-		DisplayConfig( bool sortByName, bool foldersFirst, bool ignoreHidden,
-					   std::vector<std::string> acceptedExtensions = {} ) :
+		DisplayConfig(
+			bool sortByName, bool foldersFirst, bool ignoreHidden,
+			const std::vector<std::string>& acceptedExtensions = {},
+			std::function<bool( const std::string& filepath )> fileIsVisibleFn = nullptr ) :
 			sortByName( sortByName ),
 			foldersFirst( foldersFirst ),
 			ignoreHidden( ignoreHidden ),
-			acceptedExtensions( acceptedExtensions ) {}
+			acceptedExtensions( acceptedExtensions ),
+			fileIsVisibleFn( fileIsVisibleFn ) {}
 		bool sortByName{ true };
 		bool foldersFirst{ true };
 		bool ignoreHidden{ false };
 		std::vector<std::string> acceptedExtensions;
+		std::function<bool( const std::string& filepath )> fileIsVisibleFn;
 		bool operator==( const DisplayConfig& other ) {
 			return sortByName == other.sortByName && foldersFirst == other.foldersFirst &&
 				   ignoreHidden == other.ignoreHidden &&
@@ -81,10 +85,6 @@ class EE_API FileSystemModel : public Model {
 
 		const FileInfo& info() const { return mInfo; }
 
-		bool isSelected() const { return mSelected; }
-
-		void setSelected( bool selected ) { mSelected = selected; };
-
 		const std::string& fullPath() const;
 
 		const std::string& getMimeType() const { return mMimeType; }
@@ -106,7 +106,11 @@ class EE_API FileSystemModel : public Model {
 		Int64 findChildRowFromName( const std::string& name, const FileSystemModel& model,
 									bool forceRefresh = false );
 
+		void refresh( const FileSystemModel& model );
+
 		~Node();
+
+		FileSystemModel::Node* childWithPathExists( const std::string& path );
 
 	  private:
 		friend class FileSystemModel;
@@ -125,7 +129,6 @@ class EE_API FileSystemModel : public Model {
 		std::vector<Node*> mChildren;
 		bool mHasTraversed{ false };
 		bool mInfoDirty{ true };
-		bool mSelected{ false };
 
 		ModelIndex index( const FileSystemModel& model, int column ) const;
 
@@ -136,11 +139,13 @@ class EE_API FileSystemModel : public Model {
 		void refreshIfNeeded( const FileSystemModel& );
 
 		bool fetchData( const String& fullPath );
+
+		void updateMimeType();
 	};
 
 	static std::shared_ptr<FileSystemModel>
 	New( const std::string& rootPath, const Mode& mode = Mode::FilesAndDirectories,
-		 const DisplayConfig displayConfig = DisplayConfig() );
+		 const DisplayConfig& displayConfig = DisplayConfig() );
 
 	const Mode& getMode() const { return mMode; }
 
@@ -151,6 +156,8 @@ class EE_API FileSystemModel : public Model {
 	Node* getNodeFromPath( std::string path, bool folderNode = false, bool invalidateTree = true );
 
 	void reload();
+
+	void refresh();
 
 	void update();
 
@@ -193,13 +200,45 @@ class EE_API FileSystemModel : public Model {
 	Node& nodeRef( const ModelIndex& index ) const;
 
 	FileSystemModel( const std::string& rootPath, const Mode& mode,
-					 const DisplayConfig displayConfig );
+					 const DisplayConfig& displayConfig );
 
 	size_t getFileIndex( Node* parent, const FileInfo& file );
 
-
 	bool handleFileEventLocked( const FileEvent& event );
+};
 
+class EE_API DiskDrivesModel : public Model {
+  public:
+	enum Column {
+		Icon = 0,
+		Name,
+		Count,
+	};
+
+	static std::shared_ptr<DiskDrivesModel> create( const std::vector<std::string>& data );
+
+	static std::shared_ptr<DiskDrivesModel> create();
+
+	virtual ~DiskDrivesModel() {}
+
+	virtual size_t rowCount( const ModelIndex& ) const { return mData.size(); }
+
+	virtual size_t columnCount( const ModelIndex& ) const { return 2; }
+
+	virtual std::string columnName( const size_t& index ) const {
+		return index == 0 ? "Icon" : "Name";
+	}
+
+	UIIcon* diskIcon() const;
+
+	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const;
+
+	virtual void update() { onModelUpdate(); }
+
+  private:
+	explicit DiskDrivesModel( const std::vector<std::string>& data ) : mData( data ) {}
+
+	std::vector<std::string> mData;
 };
 
 }}} // namespace EE::UI::Models

@@ -155,7 +155,7 @@ class EE_API UIMenu : public UIWidget {
 
 	virtual void scheduledUpdate( const Time& time );
 
-	bool isChildOfMeOrSubMenu( Node* node );
+	bool isChildOrSubMenu( Node* node );
 
 	void unselectSelected();
 };

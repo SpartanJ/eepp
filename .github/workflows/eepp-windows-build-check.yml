@@ -4,9 +4,9 @@ on: [push, pull_request]
 
 jobs:
   Windows:
-    runs-on: windows-2019
+    runs-on: windows-latest
     env:
-      MSBUILD_PATH: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\
+      MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -18,13 +18,13 @@ jobs:
     - name: Install dependencies
       shell: powershell
       run: |
-        Invoke-WebRequest -Uri "https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-windows.zip" -OutFile "premake-5.0.0-alpha14-windows.zip"
-        Expand-Archive -DestinationPath . -Path premake-5.0.0-alpha14-windows.zip
+        Invoke-WebRequest -Uri "https://github.com/premake/premake-core/releases/download/v5.0.0-beta1/premake-5.0.0-beta1-windows.zip" -OutFile "premake-5.0.0-beta1-windows.zip"
+        Expand-Archive -DestinationPath . -Path premake-5.0.0-beta1-windows.zip
     - name: Create project
       shell: powershell
       run: |
-        ./premake5.exe --windows-vc-build --with-mojoal vs2019
+        ./premake5.exe --windows-vc-build vs2022
     - name: Build
       shell: cmd
       run: |
-        "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m
+        "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m /p:Platform="x64"

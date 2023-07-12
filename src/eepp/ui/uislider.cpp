@@ -45,6 +45,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	mClickStep( 0.1f ),
 	mPageStep( 0 ),
 	mOnPosChange( false ) {
+	mFlags |= UI_SCROLLABLE;
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
 		mBackSlider = UIWidget::NewWithTag( mTag + "::hback" );
@@ -54,7 +55,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 		mSlider = UIWidget::NewWithTag( mTag + "::vbutton" );
 	}
 
-	auto cb = [&]( const Event* ) {
+	auto cb = [this]( const Event* ) {
 		if ( !mUpdating )
 			adjustChilds();
 	};
@@ -70,7 +71,10 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	mSlider->setDragEnabled( true );
 	mSlider->setSize( 4, 4 );
 	mSlider->setPosition( 0, 0 );
-	mSlider->addEventListener( Event::OnPositionChange, [&]( const Event* ) { fixSliderPos(); } );
+	mSlider->addEventListener( Event::OnPositionChange, [this]( const Event* ) {
+		if ( !mUpdating && !mOnPosChange )
+			fixSliderPos();
+	} );
 
 	if ( UIOrientation::Horizontal == mOrientation )
 		mSlider->centerVertical();

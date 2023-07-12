@@ -279,12 +279,25 @@ bool Sprite::createStatic( TextureRegion* TextureRegion ) {
 	return true;
 }
 
-bool Sprite::createStatic( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset,
+bool Sprite::createStatic( const Uint32& TexId, const Sizef& DestSize, const Vector2i& offset,
 						   const Rect& TexSector ) {
 	if ( TextureFactory::instance()->existsId( TexId ) ) {
 		reset();
 
-		addFrame( TexId, DestSize, Offset, TexSector );
+		addFrame( TexId, DestSize, offset, TexSector );
+
+		return true;
+	}
+
+	return false;
+}
+
+bool Sprite::createStatic( Texture* tex, const Sizef& DestSize, const Vector2i& offset,
+						   const Rect& TexSector ) {
+	if ( tex ) {
+		reset();
+
+		addFrame( tex->getTextureId(), DestSize, offset, TexSector );
 
 		return true;
 	}
@@ -392,6 +405,25 @@ unsigned int Sprite::addFrame( const Uint32& TexId, const Sizef& DestSize, const
 		return id;
 
 	return 0;
+}
+
+unsigned int Sprite::addFrame( Texture* tex, const Sizef& DestSize, const Vector2i& offset,
+							   const Rect& TexSector ) {
+	unsigned int id = framePos();
+
+	if ( addSubFrame( tex, id, mCurrentSubFrame, DestSize, offset, TexSector ) )
+		return id;
+
+	return 0;
+}
+
+bool Sprite::addSubFrame( Texture* tex, const unsigned int& NumFrame,
+						  const unsigned int& NumSubFrame, const Sizef& DestSize,
+						  const Vector2i& Offset, const Rect& TexSector ) {
+	if ( tex )
+		return addSubFrame( tex->getTextureId(), NumFrame, NumSubFrame, DestSize, Offset,
+							TexSector );
+	return false;
 }
 
 bool Sprite::addSubFrame( const Uint32& TexId, const unsigned int& NumFrame,

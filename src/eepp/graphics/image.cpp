@@ -265,6 +265,8 @@ std::string Image::saveTypeToExtension( const Int32& Format ) {
 			return "dds";
 		case Image::SaveType::SAVE_TYPE_JPG:
 			return "jpg";
+		case Image::SaveType::SAVE_TYPE_QOI:
+			return "qoi";
 		case Image::SaveType::SAVE_TYPE_UNKNOWN:
 		default:
 			break;
@@ -286,6 +288,8 @@ Image::SaveType Image::extensionToSaveType( const std::string& Extension ) {
 		saveType = SaveType::SAVE_TYPE_DDS;
 	else if ( Extension == "jpg" || Extension == "jpeg" )
 		saveType = SaveType::SAVE_TYPE_JPG;
+	else if ( Extension == "qoi" )
+		saveType = SaveType::SAVE_TYPE_QOI;
 
 	return saveType;
 }
@@ -354,6 +358,31 @@ bool Image::getInfo( const std::string& path, int* width, int* height, int* chan
 	return res;
 }
 
+bool Image::getInfoFromMemory( const unsigned char* data, const size_t& dataSize, int* width,
+							   int* height, int* channels,
+							   const FormatConfiguration& imageFormatConfiguration ) {
+	bool res = stbi_info_from_memory( data, dataSize, width, height, channels ) != 0;
+
+	if ( !res && svg_test_from_memory( data, dataSize ) ) {
+		ScopedBuffer sdata( dataSize + 1 );
+		memcpy( sdata.get(), data, dataSize );
+		sdata[dataSize] = '\0';
+		NSVGimage* image = nsvgParse( (char*)sdata.get(), "px", 96.0f );
+
+		if ( NULL != image ) {
+			*width = image->width * imageFormatConfiguration.svgScale();
+			*height = image->height * imageFormatConfiguration.svgScale();
+			*channels = 4;
+
+			nsvgDelete( image );
+
+			res = true;
+		}
+	}
+
+	return res;
+}
+
 bool Image::isImage( const std::string& path ) {
 	return STBI_unknown != stbi_test( path.c_str() ) || svg_test( path );
 }
@@ -362,7 +391,7 @@ bool Image::isImageExtension( const std::string& path ) {
 	const std::string ext( FileSystem::fileExtension( path ) );
 	return ( ext == "png" || ext == "tga" || ext == "bmp" || ext == "jpg" || ext == "gif" ||
 			 ext == "jpeg" || ext == "dds" || ext == "psd" || ext == "hdr" || ext == "pic" ||
-			 ext == "pvr" || ext == "pkm" || ext == "svg" );
+			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" );
 }
 
 std::string Image::getLastFailureReason() {

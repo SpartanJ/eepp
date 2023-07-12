@@ -16,7 +16,7 @@ UITreeView* UITreeView::New() {
 
 UITreeView::UITreeView() :
 	UIAbstractTableView( "treeview" ),
-	mIndentWidth( PixelDensity::dpToPx( 12 ) ),
+	mIndentWidth( PixelDensity::dpToPx( 6 ) ),
 	mExpanderIconSize( PixelDensity::dpToPxI( 12 ) ) {
 	setClipType( ClipType::ContentBox );
 	mExpandIcon = getUISceneNode()->findIcon( "tree-expanded" );
@@ -52,7 +52,7 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	std::function<IterationDecision( const ModelIndex& )> traverseIndex =
 		[&]( const ModelIndex& index ) {
 			if ( index.isValid() ) {
-				auto& metadata = getIndexMetadata( index );
+				const auto& metadata = getIndexMetadata( index );
 				rowIndex++;
 				IterationDecision decision = callback( rowIndex, index, indentLevel, yOffset );
 				if ( decision == IterationDecision::Break || decision == IterationDecision::Stop )
@@ -84,16 +84,16 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	}
 }
 
-void UITreeView::createOrUpdateColumns() {
+void UITreeView::createOrUpdateColumns( bool resetColumnData ) {
 	updateContentSize();
 	if ( !getModel() )
 		return;
-	UIAbstractTableView::createOrUpdateColumns();
+	UIAbstractTableView::createOrUpdateColumns( resetColumnData );
 }
 
 size_t UITreeView::getItemCount() const {
 	size_t count = 0;
-	traverseTree( [&]( const int&, const ModelIndex&, const size_t&, const Float& ) {
+	traverseTree( [&count]( const int&, const ModelIndex&, const size_t&, const Float& ) {
 		count++;
 		return IterationDecision::Continue;
 	} );
@@ -113,32 +113,42 @@ void UITreeView::updateContentSize() {
 }
 
 void UITreeView::bindNavigationClick( UIWidget* widget ) {
-	mWidgetsClickCbId[widget] = widget->addEventListener(
-		mSingleClickNavigation ? Event::MouseClick : Event::MouseDoubleClick,
-		[&]( const Event* event ) {
+	auto openTree = [this]( const ModelIndex& idx, const Event* event ) {
+		ConditionalLock l( getModel() != nullptr,
+						   getModel() ? &getModel()->resourceMutex() : nullptr );
+		if ( getModel()->rowCount( idx ) ) {
+			auto& data = getIndexMetadata( idx );
+			data.open = !data.open;
+			createOrUpdateColumns( false );
+			onOpenTreeModelIndex( idx, data.open );
+		} else {
+			onOpenModelIndex( idx, event );
+		}
+	};
+
+	mWidgetsClickCbId[widget].push_back(
+		widget->addEventListener( Event::MouseDoubleClick, [this, openTree]( const Event* event ) {
+			auto mouseEvent = static_cast<const MouseEvent*>( event );
+			auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
+			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
+			if ( isEditable() && ( mEditTriggers & EditTrigger::DoubleClicked ) && getModel() &&
+				 getModel()->isEditable( cellIdx ) ) {
+				beginEditing( cellIdx, mouseEvent->getNode()->asType<UIWidget>() );
+			} else if ( ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) && !mSingleClickNavigation ) {
+				openTree( idx, event );
+			}
+		} ) );
+
+	mWidgetsClickCbId[widget].push_back(
+		widget->addEventListener( Event::MouseClick, [this, openTree]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-				ConditionalLock l( getModel() != nullptr,
-								   getModel() ? &getModel()->resourceMutex() : nullptr );
-				if ( getModel()->rowCount( idx ) ) {
-					auto& data = getIndexMetadata( idx );
-					data.open = !data.open;
-					createOrUpdateColumns();
-					onOpenTreeModelIndex( idx, data.open );
-				} else {
-					onOpenModelIndex( idx, event );
-				}
+			if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
+				onOpenMenuModelIndex( idx, event );
+			} else if ( ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) && mSingleClickNavigation ) {
+				openTree( idx, event );
 			}
-		} );
-
-	widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
-		auto mouseEvent = static_cast<const MouseEvent*>( event );
-		auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-		if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
-			onOpenMenuModelIndex( idx, event );
-		}
-	} );
+		} ) );
 }
 
 bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) {
@@ -153,7 +163,7 @@ bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) 
 		if ( !data.open ) {
 			data.open = true;
 			if ( forceUpdate )
-				createOrUpdateColumns();
+				createOrUpdateColumns( false );
 			onOpenTreeModelIndex( index, data.open );
 		}
 		return true;
@@ -171,7 +181,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 	widget->setCurIndex( index );
 	if ( index.column() == (Int64)getModel()->treeColumn() ) {
 		bindNavigationClick( widget );
-		widget->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+		widget->addEventListener( Event::MouseClick, [this]( const Event* event ) {
 			if ( mSingleClickNavigation )
 				return;
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
@@ -186,7 +196,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 					if ( getModel()->rowCount( idx ) ) {
 						auto& data = getIndexMetadata( idx );
 						data.open = !data.open;
-						createOrUpdateColumns();
+						createOrUpdateColumns( false );
 						onOpenTreeModelIndex( idx, data.open );
 					}
 				}
@@ -213,12 +223,47 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		mWidgets[rowIndex][index.column()] = widget;
 		widget->reloadStyle( true, true, true );
 	}
-	widget->setPixelsSize( columnData( index.column() ).width, getRowHeight() );
+	const auto& colData = columnData( index.column() );
+	if ( !colData.visible ) {
+		widget->setVisible( false );
+		return widget;
+	}
+	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
-
 	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
 		UITableCell* cell = widget->asType<UITableCell>();
 		cell->setCurIndex( index );
+
+		if ( getModel()->classModelRoleEnabled() ) {
+			bool needsReloadStyle = false;
+			Variant cls( getModel()->data( index, ModelRole::Class ) );
+			cell->setLoadingState( true );
+			if ( cls.isValid() ) {
+				// We analize each case to avoid unnecessary allocations
+				if ( cls.is( Variant::Type::StdString ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asStdString() != cell->getClasses()[0];
+					cell->setClass( cls.asStdString() );
+				} else if ( cls.is( Variant::Type::String ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asString().toUtf8() != cell->getClasses()[0];
+					cell->setClass( cls.asString() );
+				} else if ( cls.is( Variant::Type::cstr ) ) {
+					needsReloadStyle = cell->getClasses().empty() ||
+									   cell->getClasses().size() != 1 ||
+									   cls.asCStr() != cell->getClasses()[0];
+					cell->setClass( cls.asCStr() );
+				}
+			} else {
+				needsReloadStyle = !cell->getClasses().empty();
+				cell->resetClass();
+			}
+			cell->setLoadingState( false );
+			if ( needsReloadStyle )
+				cell->reportStyleStateChangeRecursive();
+		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
 		if ( txt.isValid() ) {
@@ -237,11 +282,11 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		bool hasChilds = false;
 
 		if ( widget->isType( UI_TYPE_TREEVIEW_CELL ) ) {
-			UITreeViewCell* cell = widget->asType<UITreeViewCell>();
+			UITreeViewCell* tcell = widget->asType<UITreeViewCell>();
 			UIImage* image = widget->asType<UITreeViewCell>()->getImage();
 
 			Float minIndent =
-				!mExpandersAsIcons
+				!mExpandersAsIcons && mExpandIcon && mContractIcon
 					? eemax( mExpandIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth(),
 							 mContractIcon->getSize( mExpanderIconSize )
 								 ->getPixelsSize()
@@ -250,28 +295,28 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 					: 0;
 
 			if ( index.column() == (Int64)getModel()->treeColumn() )
-				cell->setIndentation( minIndent + getIndentWidth() * indentLevel );
+				tcell->setIndentation( minIndent + getIndentWidth() * indentLevel );
 
 			hasChilds = getModel()->rowCount( index ) > 0;
 
 			if ( hasChilds ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
-				Drawable* drawable = icon->getSize( mExpanderIconSize );
+				Drawable* drawable = icon ? icon->getSize( mExpanderIconSize ) : nullptr;
 
 				image->setVisible( true );
-				image->setPixelsSize( drawable->getPixelsSize() );
+				image->setPixelsSize( drawable ? drawable->getPixelsSize() : Sizef( 0, 0 ) );
 				image->setDrawable( drawable );
 				if ( !mExpandersAsIcons ) {
-					cell->setIndentation( cell->getIndentation() -
-										  image->getPixelsSize().getWidth() -
-										  PixelDensity::dpToPx( image->getLayoutMargin().Right ) );
+					tcell->setIndentation( tcell->getIndentation() -
+										   image->getPixelsSize().getWidth() -
+										   PixelDensity::dpToPx( image->getLayoutMargin().Right ) );
 				}
 			} else {
 				image->setVisible( false );
 			}
 		}
 
-		if ( hasChilds && mExpandersAsIcons ) {
+		if ( hasChilds && mExpandersAsIcons && cell->getIcon() ) {
 			cell->getIcon()->setVisible( false );
 			return widget;
 		}
@@ -290,6 +335,14 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		cell->updateCell( getModel() );
 	}
 
+	if ( isCellSelection() ) {
+		if ( getSelection().contains( index ) ) {
+			widget->pushState( UIState::StateSelected );
+		} else {
+			widget->popState( UIState::StateSelected );
+		}
+	}
+
 	return widget;
 }
 
@@ -300,7 +353,7 @@ const Float& UITreeView::getIndentWidth() const {
 void UITreeView::setIndentWidth( const Float& indentWidth ) {
 	if ( mIndentWidth != indentWidth ) {
 		mIndentWidth = indentWidth;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -311,8 +364,8 @@ Sizef UITreeView::getContentSize() const {
 void UITreeView::drawChilds() {
 	int realIndex = 0;
 
-	traverseTree( [&]( const int&, const ModelIndex& index, const size_t& indentLevel,
-					   const Float& yOffset ) {
+	traverseTree( [this, &realIndex]( const int&, const ModelIndex& index,
+									  const size_t& indentLevel, const Float& yOffset ) {
 		if ( yOffset - mScrollOffset.y > mSize.getHeight() )
 			return IterationDecision::Stop;
 		if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
@@ -403,14 +456,14 @@ void UITreeView::expandAll( const ModelIndex& index ) {
 	if ( !getModel() )
 		return;
 	setAllExpanded( index, true );
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 void UITreeView::collapseAll( const ModelIndex& index ) {
 	if ( !getModel() )
 		return;
 	setAllExpanded( index, false );
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 UIIcon* UITreeView::getExpandIcon() const {
@@ -420,7 +473,7 @@ UIIcon* UITreeView::getExpandIcon() const {
 void UITreeView::setExpandedIcon( UIIcon* expandIcon ) {
 	if ( mExpandIcon != expandIcon ) {
 		mExpandIcon = expandIcon;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -435,7 +488,7 @@ UIIcon* UITreeView::getContractIcon() const {
 void UITreeView::setContractedIcon( UIIcon* contractIcon ) {
 	if ( mContractIcon != contractIcon ) {
 		mContractIcon = contractIcon;
-		createOrUpdateColumns();
+		createOrUpdateColumns( false );
 	}
 }
 
@@ -613,7 +666,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				auto& metadata = getIndexMetadata( curIndex );
 				if ( !metadata.open ) {
 					metadata.open = true;
-					createOrUpdateColumns();
+					createOrUpdateColumns( false );
 					return 0;
 				}
 				getSelection().set( getModel()->index( 0, getModel()->treeColumn(), curIndex ) );
@@ -625,7 +678,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				auto& metadata = getIndexMetadata( curIndex );
 				if ( metadata.open ) {
 					metadata.open = false;
-					createOrUpdateColumns();
+					createOrUpdateColumns( false );
 					return 0;
 				}
 			}
@@ -641,14 +694,15 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 				if ( getModel()->rowCount( curIndex ) ) {
 					auto& metadata = getIndexMetadata( curIndex );
 					metadata.open = !metadata.open;
-					createOrUpdateColumns();
+					createOrUpdateColumns( false );
 				} else {
 					onOpenModelIndex( curIndex, &event );
 				}
 			}
 			return 1;
 		}
-		case KEY_MENU: {
+		case KEY_MENU:
+		case KEY_APPLICATION: {
 			if ( curIndex.isValid() )
 				onOpenMenuModelIndex( curIndex, &event );
 			return 1;
@@ -791,7 +845,7 @@ void UITreeView::openModelIndexParentTree( const ModelIndex& index ) {
 		indexes.pop();
 	}
 
-	createOrUpdateColumns();
+	createOrUpdateColumns( false );
 }
 
 bool UITreeView::getFocusOnSelection() const {

@@ -24,7 +24,12 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/mojoAL \
 	$(EEPP_THIRD_PARTY_PATH)/efsw/include \
 	$(EEPP_BASE_PATH)/modules/eterm/include \
-	$(EEPP_BASE_PATH)/modules/eterm/src
+	$(EEPP_BASE_PATH)/modules/eterm/src \
+	$(EEPP_BASE_PATH)/modules/maps/include \
+	$(EEPP_BASE_PATH)/modules/maps/src \
+	$(EEPP_BASE_PATH)/modules/physics/include \
+	$(EEPP_BASE_PATH)/modules/physics/src \
+	$(EEPP_BASE_PATH)/modules/physics/include/eepp/thirdparty/chipmunk/
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -39,7 +44,6 @@ EEPP_C_FLAGS				:= \
 	-DEE_MBEDTLS \
 	-D$(EE_SDL_VERSION) \
 	-DAL_LIBTYPE_STATIC \
-	-DNO_POSIX_SPAWN \
 	-I$(EEPP_INC_PATH) \
 	-I$(EEPP_BASE_PATH)
 
@@ -81,24 +85,21 @@ CODE_SRCS				:=  \
 	window/backend/SDL2/*.cpp \
 	graphics/*.cpp \
 	graphics/renderer/*.cpp \
-	physics/*.cpp \
-	physics/constraints/*.cpp \
 	scene/*.cpp \
 	scene/actions/*.cpp \
 	ui/*.cpp \
 	ui/css/*.cpp \
 	ui/doc/*.cpp \
+	ui/doc/languages/*.cpp \
 	ui/abstract/*.cpp \
 	ui/models/*.cpp \
-	ui/tools/*.cpp \
-	maps/*.cpp \
-	maps/mapeditor/*.cpp
+	ui/tools/*.cpp
 
 LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= chipmunk freetype libpng
+LOCAL_STATIC_LIBRARIES	:= freetype libpng
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
@@ -290,6 +291,45 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBEFSW_SRCS), $(addprefix $(dir $(F)),$(not
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** EFSW ***************
+
+#*************** MAPS ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_MODULES_PATH)
+
+LOCAL_MODULE			:= eepp-maps
+
+LIBMAPS_SRCS			:=  \
+	maps/src/eepp/maps/*.cpp \
+	maps/src/eepp/maps/mapeditor/*.cpp
+
+LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES) $(EEPP_INC_PATH)
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBMAPS_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** MAPS ***************
+
+#*************** PHYSICS ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_MODULES_PATH)
+
+LOCAL_MODULE			:= eepp-physics
+
+LIBMAPS_SRCS			:=  \
+	physics/src/eepp/physics/*.cpp \
+	physics/src/eepp/physics/constraints/*.cpp
+
+LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES) $(EEPP_INC_PATH)
+LOCAL_CFLAGS			:= -Os
+LOCAL_STATIC_LIBRARIES	:= chipmunk
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBMAPS_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** PHYSICS ***************
 
 #*************** ETERM ***************
 include $(CLEAR_VARS)

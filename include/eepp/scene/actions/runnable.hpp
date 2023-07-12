@@ -10,7 +10,8 @@ class EE_API Runnable : public Delay {
   public:
 	typedef std::function<void()> RunnableFunc;
 
-	static Runnable* New( RunnableFunc callback, const Time& time = Seconds( 0 ) );
+	static Runnable* New( RunnableFunc callback, const Time& time = Seconds( 0 ),
+						  bool loop = false );
 
 	void update( const Time& time ) override;
 
@@ -23,8 +24,9 @@ class EE_API Runnable : public Delay {
   protected:
 	RunnableFunc mCallback;
 	bool mCalled{ false };
+	bool mLoop{ false };
 
-	explicit Runnable( RunnableFunc callback, const Time& time = Seconds( 0 ) );
+	explicit Runnable( RunnableFunc callback, const Time& time = Seconds( 0 ), bool loop = false );
 
 	void onStart() override;
 };

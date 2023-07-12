@@ -50,21 +50,21 @@ UILinearLayout* UILinearLayout::setOrientation( const UIOrientation& orientation
 	return this;
 }
 
-UILinearLayout* UILinearLayout::add( UIWidget* widget ) {
-	widget->setParent( this );
-	return this;
-}
-
 void UILinearLayout::updateLayout() {
-	if ( mOrientation == UIOrientation::Vertical )
-		packVertical();
-	else
-		packHorizontal();
+	if ( !mVisible ) {
+		if ( mPacking )
+			return;
+		mPacking = true;
+		setInternalPixelsSize( Sizef::Zero );
+		notifyLayoutAttrChangeParent();
+		mPacking = false;
+	} else {
+		if ( mOrientation == UIOrientation::Vertical )
+			packVertical();
+		else
+			packHorizontal();
+	}
 	mDirtyLayout = false;
-}
-
-bool UILinearLayout::isPacking() const {
-	return mPacking;
 }
 
 void UILinearLayout::applyWidthPolicyOnChilds() {
@@ -172,40 +172,25 @@ void UILinearLayout::packVertical() {
 	Sizef size( getPixelsSize() );
 
 	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
-		Float w =
-			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
-
-		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
-			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
-		}
+		Float w = getMatchParentWidth();
 
 		if ( (int)w != (int)getPixelsSize().getWidth() ) {
 			sizeChanged = true;
-
 			size.setWidth( w );
 		}
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		Float h =
-			getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top - mLayoutMarginPx.Bottom;
-
-		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
-			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			h = h - pLay->getPixelsPadding().Top - pLay->getPixelsPadding().Bottom;
-		}
+		Float h = getMatchParentHeight();
 
 		if ( (int)h != (int)getPixelsSize().getHeight() ) {
 			sizeChanged = true;
-
 			size.setHeight( h );
 		}
 	}
 
-	if ( sizeChanged ) {
+	if ( sizeChanged )
 		setInternalPixelsSize( size );
-	}
 
 	applyWidthPolicyOnChilds();
 
@@ -230,9 +215,10 @@ void UILinearLayout::packVertical() {
 						? getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
 						: getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Bottom -
 							  mLayoutMarginPx.Top - mPaddingPx.Top - mPaddingPx.Bottom;
-				Float size = (Float)( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
+				Float newSize =
+					eeceil( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
 
-				widget->setPixelsSize( widget->getPixelsSize().getWidth(), (Int32)size );
+				widget->setPixelsSize( widget->getPixelsSize().getWidth(), newSize );
 			}
 
 			switch ( Font::getHorizontalAlign( widget->getLayoutGravity() ) ) {
@@ -292,10 +278,12 @@ void UILinearLayout::packVertical() {
 		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Horizontal ) ) {
-			setInternalPixelsWidth( maxX );
-			mPacking = false;
-			packVertical();
-			notifyLayoutAttrChangeParent();
+			if ( mMinWidthEq.empty() || PixelDensity::dpToPx( mMinSize.getWidth() ) < maxX ) {
+				setInternalPixelsWidth( maxX );
+				mPacking = false;
+				packVertical();
+				notifyLayoutAttrChangeParent();
+			}
 		}
 	}
 
@@ -314,40 +302,25 @@ void UILinearLayout::packHorizontal() {
 	Sizef size( getPixelsSize() );
 
 	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		Float w =
-			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
-
-		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
-			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
-		}
+		Float w = getMatchParentWidth();
 
 		if ( (int)w != (int)getPixelsSize().getWidth() ) {
 			sizeChanged = true;
-
 			size.setWidth( w );
 		}
 	}
 
 	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
-		Float h =
-			getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top - mLayoutMarginPx.Bottom;
-
-		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
-			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			h = h - pLay->getPixelsPadding().Top - pLay->getPixelsPadding().Bottom;
-		}
+		Float h = getMatchParentHeight();
 
 		if ( (int)h != (int)getPixelsSize().getHeight() ) {
 			sizeChanged = true;
-
 			size.setHeight( h );
 		}
 	}
 
-	if ( sizeChanged ) {
+	if ( sizeChanged )
 		setInternalPixelsSize( size );
-	}
 
 	applyHeightPolicyOnChilds();
 
@@ -372,9 +345,9 @@ void UILinearLayout::packHorizontal() {
 						? getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right
 						: getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Right -
 							  mLayoutMarginPx.Left - mPaddingPx.Left - mPaddingPx.Right;
-				Float size = (Float)( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
+				Float newSize = eeceil( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
 
-				widget->setPixelsSize( (Int32)size, widget->getPixelsSize().getHeight() );
+				widget->setPixelsSize( newSize, widget->getPixelsSize().getHeight() );
 			}
 
 			switch ( Font::getVerticalAlign( widget->getLayoutGravity() ) ) {
@@ -418,14 +391,7 @@ void UILinearLayout::packHorizontal() {
 			notifyLayoutAttrChangeParent();
 		}
 	} else if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		int w =
-			getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right;
-
-		if ( getParent()->isType( UI_TYPE_LAYOUT ) ) {
-			UILayout* pLay = static_cast<UILayout*>( getParent() );
-			w = w - pLay->getPixelsPadding().Left - pLay->getPixelsPadding().Right;
-		}
-
+		int w = getMatchParentWidth();
 		if ( w != (int)getPixelsSize().getWidth() )
 			setInternalPixelsWidth( w );
 	}
@@ -435,10 +401,12 @@ void UILinearLayout::packHorizontal() {
 		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
 				getParent()->asType<UILinearLayout>()->getOrientation() ==
 					UIOrientation::Vertical ) ) {
-			setInternalPixelsHeight( maxY );
-			mPacking = false;
-			packHorizontal();
-			notifyLayoutAttrChangeParent();
+			if ( mMinHeightEq.empty() || PixelDensity::dpToPx( mMinSize.getHeight() ) < maxY ) {
+				setInternalPixelsHeight( maxY );
+				mPacking = false;
+				packHorizontal();
+				notifyLayoutAttrChangeParent();
+			}
 		}
 	}
 

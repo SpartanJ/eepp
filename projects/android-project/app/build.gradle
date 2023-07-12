@@ -13,12 +13,12 @@ def getProcessesCountArg() {
 }
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.3"
+    compileSdkVersion 33
+    buildToolsVersion "33.0.0"
     defaultConfig {
         applicationId "com.ensoft.eepp"
-        minSdkVersion 14
-        targetSdkVersion 30
+        minSdk 27
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
         ndk {
@@ -75,7 +75,7 @@ android {
             externalNativeBuild {
                 ndkBuild {
                     arguments "APP_CFLAGS=-g -DDEBUG -DEE_DEBUG"
-                    arguments "APP_CPPFLAGS=-std=c++14 -frtti -fexceptions"
+                    arguments "APP_CPPFLAGS=-std=c++17 -frtti -fexceptions"
                     arguments "APP_OPTIM=debug"
                 }
             }
@@ -84,7 +84,7 @@ android {
             externalNativeBuild {
                 ndkBuild {
                     arguments "APP_CFLAGS=-fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math"
-                    arguments "APP_CPPFLAGS=-std=c++14 -frtti -fexceptions"
+                    arguments "APP_CPPFLAGS=-std=c++17 -frtti -fexceptions"
                 }
             }
             minifyEnabled false
@@ -102,6 +102,11 @@ android {
     lintOptions {
         abortOnError false
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    ndkVersion '25.1.8937393'
 }
 
 dependencies {

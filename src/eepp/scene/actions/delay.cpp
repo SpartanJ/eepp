@@ -21,7 +21,7 @@ void Delay::stop() {
 	sendEvent( ActionType::OnStop );
 }
 
-void Delay::update( const Time& time ) {}
+void Delay::update( const Time& ) {}
 
 bool Delay::isDone() {
 	return mClock.getElapsedTime() >= mTime;

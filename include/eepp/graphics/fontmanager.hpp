@@ -35,10 +35,21 @@ class EE_API FontManager : public ResourceManager<Font> {
 
 	void setFallbackFont( Font* fallbackFont );
 
+	FontHinting getHinting() const;
+
+	void setHinting( FontHinting hinting );
+
+	FontAntialiasing getAntialiasing() const;
+
+	void setAntialiasing( FontAntialiasing antialiasing );
+
   protected:
 	Font* mColorEmojiFont{ nullptr };
 	Font* mEmojiFont{ nullptr };
 	Font* mFallbackFont{ nullptr };
+	FontHinting mHinting{ FontHinting::Full };
+	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
+
 	FontManager();
 };
 

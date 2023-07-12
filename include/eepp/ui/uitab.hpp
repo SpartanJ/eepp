@@ -17,6 +17,8 @@ class EE_API UITab : public UISelectButton {
 
 	void setOwnedWidget( Node* ownedWidget );
 
+	void setTabSelected();
+
 	virtual ~UITab();
 
 	virtual Uint32 getType() const;
@@ -39,6 +41,8 @@ class EE_API UITab : public UISelectButton {
 	UITabWidget* getTabWidget() const;
 
 	virtual UIWidget* getExtraInnerWidget() const;
+
+	void removeTab( bool destroyOwnedNode = true, bool immediateClose = false );
 
   protected:
 	friend class UITabWidget;

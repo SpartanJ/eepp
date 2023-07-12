@@ -1,21 +1,29 @@
 #include "projectdirectorytree.hpp"
+#include "ecode.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
+#include <limits>
 
 namespace ecode {
 
+#define PRJ_ALLOWED_PATH ".ecode/.prjallowed"
+
 ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
-											std::shared_ptr<ThreadPool> threadPool ) :
+											std::shared_ptr<ThreadPool> threadPool, App* app ) :
 	mPath( path ),
 	mPool( threadPool ),
 	mRunning( false ),
 	mIsReady( false ),
 	mIgnoreHidden( true ),
-	mIgnoreMatcher( path ) {
+	mIgnoreMatcher( path ),
+	mApp( app ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
 
 ProjectDirectoryTree::~ProjectDirectoryTree() {
+	if ( mApp->getPluginManager() )
+		mApp->getPluginManager()->unsubscribeMessages( "ProjectDirectoryTree" );
+	Lock rl( mMatchingMutex );
 	if ( mRunning ) {
 		mRunning = false;
 		Lock l( mFilesMutex );
@@ -33,6 +41,10 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			mRunning = true;
 			mIgnoreHidden = ignoreHidden;
 			mDirectories.push_back( mPath );
+
+			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) )
+				mAllowedMatcher = std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH );
+
 			if ( !acceptedPatterns.empty() ) {
 				std::vector<std::string> files;
 				std::vector<std::string> names;
@@ -41,7 +53,8 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 					patterns.emplace_back( LuaPattern( strPattern ) );
 				mAcceptedPatterns = patterns;
 				std::set<std::string> info;
-				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher );
+				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
+								   mAllowedMatcher.get() );
 				size_t namesCount = names.size();
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
@@ -59,25 +72,54 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				}
 			} else {
 				std::set<std::string> info;
-				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher );
+				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher,
+								   mAllowedMatcher.get() );
 			}
 			mIsReady = true;
 			mRunning = false;
+			mApp->getPluginManager()->subscribeMessages(
+				"ProjectDirectoryTree", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
+					return processMessage( msg );
+				} );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )
 			if ( scanComplete )
 				scanComplete( *this );
 #endif
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		},
-		[scanComplete, this] {
+		[scanComplete, this]( const auto& ) {
 			if ( scanComplete )
 				scanComplete( *this );
 		} );
 #endif
 }
 
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches,
+									  const size_t& max ) const {
+	Lock rl( mMatchingMutex );
+	std::multimap<int, int, std::greater<int>> matchesMap;
+	std::vector<std::string> files;
+	std::vector<std::string> names;
+	for ( const auto& match : matches ) {
+		for ( size_t i = 0; i < mNames.size(); i++ ) {
+			int matchName = String::fuzzyMatch( mNames[i], match );
+			int matchPath = String::fuzzyMatch( mFiles[i], match );
+			matchesMap.insert( { std::max( matchName, matchPath ), i } );
+		}
+	}
+	for ( auto& res : matchesMap ) {
+		if ( names.size() < max ) {
+			names.emplace_back( mNames[res.second] );
+			files.emplace_back( mFiles[res.second] );
+		}
+	}
+	return std::make_shared<FileListModel>( files, names );
+}
+
 std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::string& match,
 																	 const size_t& max ) const {
+	Lock rl( mMatchingMutex );
 	std::multimap<int, int, std::greater<int>> matchesMap;
 	std::vector<std::string> files;
 	std::vector<std::string> names;
@@ -97,6 +139,7 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::
 
 std::shared_ptr<FileListModel> ProjectDirectoryTree::matchTree( const std::string& match,
 																const size_t& max ) const {
+	Lock rl( mMatchingMutex );
 	std::vector<std::string> files;
 	std::vector<std::string> names;
 	std::string lowerMatch( String::toLower( match ) );
@@ -113,15 +156,17 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::matchTree( const std::strin
 
 void ProjectDirectoryTree::asyncFuzzyMatchTree( const std::string& match, const size_t& max,
 												ProjectDirectoryTree::MatchResultCb res ) const {
-	mPool->run( [&, match, max, res]() { res( fuzzyMatchTree( match, max ) ); }, []() {} );
+	mPool->run( [&, match, max, res]() { res( fuzzyMatchTree( match, max ) ); } );
 }
 
 void ProjectDirectoryTree::asyncMatchTree( const std::string& match, const size_t& max,
 										   ProjectDirectoryTree::MatchResultCb res ) const {
-	mPool->run( [&, match, max, res]() { res( matchTree( match, max ) ); }, []() {} );
+	mPool->run( [&, match, max, res]() { res( matchTree( match, max ) ); } );
 }
 
-std::shared_ptr<FileListModel> ProjectDirectoryTree::asModel( const size_t& max ) const {
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::asModel( const size_t& max,
+							   const std::vector<CommandInfo>& prependCommands ) const {
 	if ( mNames.empty() )
 		return std::make_shared<FileListModel>( std::vector<std::string>(),
 												std::vector<std::string>() );
@@ -132,7 +177,44 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::asModel( const size_t& max 
 		files[i] = mFiles[i];
 		names[i] = mNames[i];
 	}
-	return std::make_shared<FileListModel>( files, names );
+	if ( !prependCommands.empty() ) {
+		int count = 0;
+		for ( const auto& cmd : prependCommands ) {
+			names.insert( names.begin() + count, cmd.name );
+			files.insert( files.begin() + count, cmd.desc );
+			count++;
+		}
+	}
+	auto model = std::make_shared<FileListModel>( files, names );
+
+	if ( !prependCommands.empty() ) {
+		for ( size_t i = 0; i < prependCommands.size(); ++i )
+			model->setIcon( i, prependCommands[i].icon );
+	}
+
+	return model;
+}
+
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::emptyModel( const std::vector<CommandInfo>& prependCommands ) {
+	std::vector<std::string> files;
+	std::vector<std::string> names;
+	if ( !prependCommands.empty() ) {
+		int count = 0;
+		for ( const auto& cmd : prependCommands ) {
+			names.insert( names.begin() + count, cmd.name );
+			files.insert( files.begin() + count, cmd.desc );
+			count++;
+		}
+	}
+	auto model = std::make_shared<FileListModel>( files, names );
+
+	if ( !prependCommands.empty() ) {
+		for ( size_t i = 0; i < prependCommands.size(); ++i )
+			model->setIcon( i, prependCommands[i].icon );
+	}
+
+	return model;
 }
 
 size_t ProjectDirectoryTree::getFilesCount() const {
@@ -157,12 +239,10 @@ bool ProjectDirectoryTree::isDirInTree( const std::string& dirTree ) const {
 	return std::find( mDirectories.begin(), mDirectories.end(), dir ) != mDirectories.end();
 }
 
-void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
-											  std::vector<std::string>& names,
-											  std::string directory,
-											  std::set<std::string> currentDirs,
-											  const bool& ignoreHidden,
-											  IgnoreMatcherManager& ignoreMatcher ) {
+void ProjectDirectoryTree::getDirectoryFiles(
+	std::vector<std::string>& files, std::vector<std::string>& names, std::string directory,
+	std::set<std::string> currentDirs, const bool& ignoreHidden,
+	IgnoreMatcherManager& ignoreMatcher, GitIgnoreMatcher* allowedMatcher ) {
 	if ( !mRunning )
 		return;
 	currentDirs.insert( directory );
@@ -170,8 +250,15 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 		FileSystem::filesGetInPath( directory, false, false, false );
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
-		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) )
-			continue;
+		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) ) {
+			if ( !allowedMatcher )
+				continue;
+			std::string localPath;
+			if ( String::startsWith( directory, allowedMatcher->getPath() ) )
+				localPath = directory.substr( allowedMatcher->getPath().size() );
+			if ( !allowedMatcher->match( localPath + file ) )
+				continue;
+		}
 		if ( FileSystem::isDirectory( fullpath ) ) {
 			fullpath += FileSystem::getOSSlash();
 			FileInfo dirInfo( fullpath, true );
@@ -193,7 +280,8 @@ void ProjectDirectoryTree::getDirectoryFiles( std::vector<std::string>& files,
 				childMatch = dirMatcher.popMatcher( 0 );
 				ignoreMatcher.addChild( childMatch );
 			}
-			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden, ignoreMatcher );
+			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden, ignoreMatcher,
+							   allowedMatcher );
 			if ( childMatch ) {
 				ignoreMatcher.removeChild( childMatch );
 				eeSAFE_DELETE( childMatch );
@@ -252,7 +340,8 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 		std::vector<LuaPattern> patterns;
 		std::set<std::string> info;
 		if ( !mAcceptedPatterns.empty() ) {
-			getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher );
+			getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
+							   mAllowedMatcher.get() );
 			size_t namesCount = names.size();
 			bool found;
 			for ( size_t i = 0; i < namesCount; i++ ) {
@@ -269,7 +358,8 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 				}
 			}
 		} else {
-			getDirectoryFiles( mFiles, mNames, mPath, info, false, mIgnoreMatcher );
+			getDirectoryFiles( mFiles, mNames, mPath, info, false, mIgnoreMatcher,
+							   mAllowedMatcher.get() );
 		}
 	} else {
 		tryAddFile( file );
@@ -374,6 +464,63 @@ size_t ProjectDirectoryTree::findFileIndex( const std::string& path ) {
 			return i;
 	}
 	return std::string::npos;
+}
+
+PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& msg ) {
+	if ( msg.type != PluginMessageType::FindAndOpenClosestURI || !msg.isRequest() || !msg.isJSON() )
+		return {};
+
+	const nlohmann::json& json = msg.asJSON();
+	if ( !json.contains( "uri" ) )
+		return {};
+
+	nlohmann::json juris = json.at( "uri" );
+	std::vector<std::string> expectedNames;
+	std::vector<std::string> tentativePaths;
+	for ( const auto& turi : juris ) {
+		std::string path( URI( turi.get<std::string>() ).getFSPath() );
+		tentativePaths.emplace_back( path );
+		expectedNames.emplace_back( FileSystem::fileNameFromPath( path ) );
+	}
+
+	auto model = fuzzyMatchTree( expectedNames, 10 );
+
+	size_t rowCount = model->rowCount( {} );
+	if ( rowCount == 0 )
+		return {};
+
+	std::map<int, std::string, std::greater<int>> matchesMap;
+
+	for ( size_t i = 0; i < rowCount; ++i ) {
+		Variant dataName = model->data( model->index( i, 0 ) );
+		Variant dataPath = model->data( model->index( i, 1 ) );
+		if ( dataName.is( Variant::Type::cstr ) && dataPath.is( Variant::Type::cstr ) ) {
+			std::string fileName( dataName.asCStr() );
+			std::string filePath( dataPath.asCStr() );
+			if ( std::find( expectedNames.begin(), expectedNames.end(), fileName ) !=
+				 expectedNames.end() ) {
+				std::string closestDataPath;
+				int max{ std::numeric_limits<int>::min() };
+				for ( const auto& paths : tentativePaths ) {
+					int res = String::fuzzyMatch( filePath.c_str(), paths.c_str(), true );
+					if ( res > max ) {
+						closestDataPath = filePath;
+						max = res;
+					}
+				}
+				if ( !closestDataPath.empty() )
+					matchesMap[max] = closestDataPath;
+			}
+		}
+	}
+
+	if ( !matchesMap.empty() ) {
+		std::string filePath( matchesMap.begin()->second );
+		mApp->getUISceneNode()->runOnMainThread(
+			[this, filePath]() { mApp->loadFileFromPathOrFocus( filePath ); } );
+	}
+
+	return PluginRequestHandle::broadcast();
 }
 
 } // namespace ecode

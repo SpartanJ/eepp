@@ -143,7 +143,7 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 	}
 
 	Log::info( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )",
-			   TE.getElapsed().asMilliseconds() );
+			   TE.getElapsedTimeAndReset().asMilliseconds() );
 
 	return tTheme;
 }
@@ -251,7 +251,7 @@ UITheme* UITheme::loadFromDirectroy( UITheme* tTheme, const std::string& Path,
 	else
 		eeSAFE_DELETE( tSG );
 
-	Log::info( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsed().asMilliseconds() );
+	Log::info( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsedTimeAndReset().asMilliseconds() );
 
 	return tTheme;
 }
@@ -315,6 +315,10 @@ UIIcon* UITheme::getIconByName( const std::string& name ) {
 
 UISkin* UITheme::getSkin( const std::string& widgetName ) {
 	return getByName( mAbbr + "_" + widgetName );
+}
+
+CSS::StyleSheet& UITheme::getStyleSheet() {
+	return mStyleSheet;
 }
 
 const CSS::StyleSheet& UITheme::getStyleSheet() const {

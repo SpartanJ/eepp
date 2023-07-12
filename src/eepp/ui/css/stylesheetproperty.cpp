@@ -154,9 +154,10 @@ void StyleSheetProperty::setName( const std::string& name ) {
 	mNameHash = String::hash( mName );
 }
 
-void StyleSheetProperty::setValue( const std::string& value ) {
+void StyleSheetProperty::setValue( const std::string& value, bool updateHash ) {
 	mValue = value;
-	// mValueHash = String::hash( value );
+	if ( updateHash )
+		mValueHash = String::hash( value );
 	mIsVarValue = String::startsWith( mValue, "var(" );
 	createIndexed();
 }

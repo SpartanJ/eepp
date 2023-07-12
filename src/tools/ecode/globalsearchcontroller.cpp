@@ -7,7 +7,12 @@ static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
 
 GlobalSearchController::GlobalSearchController( UICodeEditorSplitter* editorSplitter,
 												UISceneNode* sceneNode, App* app ) :
-	mEditorSplitter( editorSplitter ), mUISceneNode( sceneNode ), mApp( app ) {}
+	mSplitter( editorSplitter ), mUISceneNode( sceneNode ), mApp( app ) {
+	mApp->getPluginManager()->subscribeMessages(
+		"GlobalSearchController", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
+			return processMessage( msg );
+		} );
+}
 
 static bool replaceInFile( const std::string& path, const std::string& replaceText,
 						   const std::vector<std::pair<Int64, Int64>>& replacements ) {
@@ -30,8 +35,13 @@ static bool replaceInFile( const std::string& path, const std::string& replaceTe
 
 size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 											   std::shared_ptr<ProjectSearch::ResultModel> model ) {
-	const ProjectSearch::Result& res = model.get()->getResult();
 	size_t count = 0;
+	if ( model->isResultFromSymbolReference() ) {
+		// TODO Implement replacement from result from symbol reference
+		return count;
+	}
+
+	const ProjectSearch::Result& res = model.get()->getResult();
 
 	for ( const auto& fileResult : res ) {
 		std::vector<std::pair<Int64, Int64>> replacements;
@@ -56,7 +66,7 @@ void GlobalSearchController::initGlobalSearchBar(
 	std::unordered_map<std::string, std::string> keybindings ) {
 	mGlobalSearchBarLayout = globalSearchBar;
 	mGlobalSearchBarLayout->setVisible( false )->setEnabled( false );
-	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
+	auto addClickListener = [this]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
@@ -105,21 +115,14 @@ void GlobalSearchController::initGlobalSearchBar(
 
 	mGlobalSearchHistoryList =
 		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
-	mGlobalSearchBarLayout->addCommand( "global-search-clear-history", [&] { clearHistory(); } );
-	mGlobalSearchBarLayout->addCommand(
+	mGlobalSearchBarLayout->setCommand( "global-search-clear-history", [this] { clearHistory(); } );
+	mGlobalSearchBarLayout->setCommand(
 		"search-in-files", [&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
 			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
 							wholeWordChk->isChecked(), luaPatternChk->isChecked(),
 							escapeSequenceChk->isChecked(), false );
 		} );
-	mGlobalSearchBarLayout->addCommand(
-		"search-replace-in-files",
-		[&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
-			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
-							wholeWordChk->isChecked(), luaPatternChk->isChecked(),
-							escapeSequenceChk->isChecked(), true );
-		} );
-	mGlobalSearchBarLayout->addCommand(
+	mGlobalSearchBarLayout->setCommand(
 		"search-again", [&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
 			auto listBox = mGlobalSearchHistoryList->getListBox();
 			if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
@@ -131,40 +134,40 @@ void GlobalSearchController::initGlobalSearchBar(
 								mGlobalSearchTreeReplace == mGlobalSearchTree, true );
 			}
 		} );
-	mGlobalSearchBarLayout->addCommand( "search-set-string", [&] {
+	mGlobalSearchBarLayout->setCommand( "search-set-string", [this] {
 		auto listBox = mGlobalSearchHistoryList->getListBox();
 		mGlobalSearchInput->setText(
 			mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 - listBox->getItemSelectedIndex()]
 				.first );
 		;
 	} );
-	mGlobalSearchBarLayout->addCommand( "close-global-searchbar", [&] {
+	mGlobalSearchBarLayout->setCommand( "close-global-searchbar", [this] {
 		hideGlobalSearchBar();
-		if ( mEditorSplitter->getCurWidget() )
-			mEditorSplitter->getCurWidget()->setFocus();
+		if ( mSplitter->getCurWidget() )
+			mSplitter->getCurWidget()->setFocus();
 	} );
-	mGlobalSearchBarLayout->addCommand( "expand-all", [&] {
+	mGlobalSearchBarLayout->setCommand( "expand-all", [this] {
 		mGlobalSearchTree->expandAll();
 		mGlobalSearchTree->setFocus();
 	} );
-	mGlobalSearchBarLayout->addCommand( "collapse-all", [&] {
+	mGlobalSearchBarLayout->setCommand( "collapse-all", [this] {
 		mGlobalSearchTree->collapseAll();
 		mGlobalSearchTree->setFocus();
 	} );
-	mGlobalSearchBarLayout->addCommand( "change-case", [&, caseSensitiveChk] {
+	mGlobalSearchBarLayout->setCommand( "change-case", [&, caseSensitiveChk] {
 		caseSensitiveChk->setChecked( !caseSensitiveChk->isChecked() );
 	} );
-	mGlobalSearchBarLayout->addCommand( "change-whole-word", [&, wholeWordChk] {
+	mGlobalSearchBarLayout->setCommand( "change-whole-word", [&, wholeWordChk] {
 		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
 	} );
-	mGlobalSearchBarLayout->addCommand( "toggle-lua-pattern", [&, luaPatternChk] {
+	mGlobalSearchBarLayout->setCommand( "toggle-lua-pattern", [&, luaPatternChk] {
 		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
 	} );
-	mGlobalSearchBarLayout->addCommand( "change-escape-sequence", [&, escapeSequenceChk] {
+	mGlobalSearchBarLayout->setCommand( "change-escape-sequence", [&, escapeSequenceChk] {
 		escapeSequenceChk->setChecked( !escapeSequenceChk->isChecked() );
 	} );
-	mGlobalSearchBarLayout->addCommand( "find-replace", [&] { mApp->showFindView(); } );
-	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
+	mGlobalSearchBarLayout->setCommand( "find-replace", [this] { mApp->showFindView(); } );
+	mGlobalSearchInput->addEventListener( Event::OnPressEnter, [this]( const Event* ) {
 		if ( mGlobalSearchInput->hasFocus() ) {
 			mGlobalSearchBarLayout->execute( "search-in-files" );
 		} else {
@@ -173,7 +176,7 @@ void GlobalSearchController::initGlobalSearchBar(
 			mGlobalSearchTree->forceKeyDown( keyEvent );
 		}
 	} );
-	mGlobalSearchInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+	auto switchInputToTree = [this]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		Uint32 keyCode = keyEvent->getKeyCode();
 		if ( ( keyCode == KEY_UP || keyCode == KEY_DOWN || keyCode == KEY_PAGEUP ||
@@ -181,8 +184,9 @@ void GlobalSearchController::initGlobalSearchBar(
 			 mGlobalSearchTree->forceKeyDown( *keyEvent ) && !mGlobalSearchTree->hasFocus() ) {
 			mGlobalSearchTree->setFocus();
 		}
-	} );
-	mGlobalSearchInput->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+	};
+	mGlobalSearchInput->addEventListener( Event::KeyDown, switchInputToTree );
+	mGlobalSearchInput->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
 		if ( mGlobalSearchBarLayout->isVisible() )
 			updateGlobalSearchBar();
 	} );
@@ -198,8 +202,8 @@ void GlobalSearchController::initGlobalSearchBar(
 				<TextView class="search_str" layout_width="wrap_content" layout_height="match_parent" />
 				<PushButton id="global_search_again" layout_width="wrap_content" layout_height="18dp" text="Search Again" margin-left="8dp" />
 				<PushButton id="global_search_set_search" layout_width="wrap_content" layout_height="18dp" text="Set Search String" margin-left="8dp" />
-				<PushButton id="global_search_collapse" layout_width="wrap_content" layout_height="18dp" tooltip="Collapse All" margin-left="8dp" icon="menu-fold" />
-				<PushButton id="global_search_expand" layout_width="wrap_content" layout_height="18dp" tooltip="Expand All" margin-left="8dp" icon="menu-unfold" />
+				<PushButton id="global_search_collapse" layout_width="wrap_content" layout_height="18dp" tooltip='@string(collapse_all, "Collapse All")' margin-left="8dp" icon="menu-fold" />
+				<PushButton id="global_search_expand" layout_width="wrap_content" layout_height="18dp" tooltip='@string(expand_all, "Expand All")' margin-left="8dp" icon="menu-unfold" />
 				<Widget layout_width="0" layout_weight="1" layout_height="match_parent" />
 				<TextView class="search_total" layout_width="wrap_content" layout_height="match_parent" margin-right="8dp" />
 			</hbox>
@@ -239,12 +243,38 @@ void GlobalSearchController::initGlobalSearchBar(
 		if ( replaceInput->hasFocus() )
 			mGlobalSearchBarLayout->execute( "replace-in-files" );
 	} );
-	replaceInput->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+	replaceInput->addEventListener( Event::KeyDown, switchInputToTree );
+	mGlobalSearchLayout->addEventListener( Event::KeyDown, [this]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
+		if ( keyEvent->getKeyCode() == KEY_ESCAPE ) {
 			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
+			return;
+		}
+		mGlobalSearchBarLayout->forceKeyDown( *keyEvent );
 	} );
-	mGlobalSearchBarLayout->addCommand( "replace-in-files", [&, replaceInput, escapeSequenceChk] {
+	mGlobalSearchBarLayout->setCommand(
+		"search-replace-in-files",
+		[&, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk, replaceInput] {
+			if ( mGlobalSearchTreeReplace == mGlobalSearchTree ) {
+				replaceInput->setFocus();
+				replaceInput->getDocument().selectAll();
+				return;
+			}
+
+			// TODO Implement replacement from result from symbol reference
+			/*if ( mGlobalSearchHistory.back().second->isResultFromSymbolReference() ) {
+				mGlobalSearchTreeReplace->setModel( mGlobalSearchHistory.back().second );
+				showGlobalSearch( true );
+				updateGlobalSearchBarResults( mGlobalSearchHistory.back().first,
+											  mGlobalSearchHistory.back().second, true, false );
+			} else*/
+			{
+				doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
+								wholeWordChk->isChecked(), luaPatternChk->isChecked(),
+								escapeSequenceChk->isChecked(), true );
+			}
+		} );
+	mGlobalSearchBarLayout->setCommand( "replace-in-files", [&, replaceInput, escapeSequenceChk] {
 		auto listBox = mGlobalSearchHistoryList->getListBox();
 		if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
 			const auto& replaceData = mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
@@ -260,17 +290,25 @@ void GlobalSearchController::initGlobalSearchBar(
 		}
 	} );
 	mGlobalSearchTreeSearch =
-		UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme(), false );
+		UITreeViewGlobalSearch::New( mSplitter->getCurrentColorScheme(), false );
 	mGlobalSearchTreeReplace =
-		UITreeViewGlobalSearch::New( mEditorSplitter->getCurrentColorScheme(), true );
+		UITreeViewGlobalSearch::New( mSplitter->getCurrentColorScheme(), true );
 	initGlobalSearchTree( mGlobalSearchTreeSearch );
 	initGlobalSearchTree( mGlobalSearchTreeReplace );
+	mGlobalSearchTreeReplace->addEventListener( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		if ( keyEvent->getSanitizedMod() == KeyMod::getDefaultModifier() &&
+			 keyEvent->getKeyCode() == KEY_RETURN )
+			mGlobalSearchBarLayout->execute( "replace-in-files" );
+	} );
 	mGlobalSearchTree = mGlobalSearchTreeSearch;
 }
 
 void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 	mApp->hideLocateBar();
 	mApp->hideSearchBar();
+	mApp->hideStatusTerminal();
+	mApp->hideStatusBuildOutput();
 	bool wasReplaceTree = mGlobalSearchTreeReplace == mGlobalSearchTree;
 	mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
 	mGlobalSearchTreeSearch->setVisible( !searchReplace );
@@ -279,9 +317,9 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 	mGlobalSearchInput->setFocus();
 	mGlobalSearchLayout->setVisible( true );
 	UICheckBox* escapeSequenceChk = mGlobalSearchBarLayout->find<UICheckBox>( "escape_sequence" );
-	if ( mEditorSplitter->curEditorExistsAndFocused() &&
-		 mEditorSplitter->getCurEditor()->getDocument().hasSelection() ) {
-		auto& doc = mEditorSplitter->getCurEditor()->getDocument();
+	if ( mSplitter->curEditorExistsAndFocused() &&
+		 mSplitter->getCurEditor()->getDocument().hasSelection() ) {
+		auto& doc = mSplitter->getCurEditor()->getDocument();
 		String text = doc.getSelectedText();
 		if ( !doc.getSelection().inSameLine() ) {
 			text.escape();
@@ -304,6 +342,7 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 		}
 	}
 	updateGlobalSearchBar();
+	mApp->getStatusBar()->updateState();
 }
 
 void GlobalSearchController::updateColorScheme( const SyntaxColorScheme& colorScheme ) {
@@ -342,7 +381,7 @@ GlobalSearchBarConfig GlobalSearchController::getGlobalSearchBarConfig() const {
 }
 
 void GlobalSearchController::updateGlobalSearchBar() {
-	mGlobalSearchBarLayout->runOnMainThread( [&] {
+	mGlobalSearchBarLayout->runOnMainThread( [this] {
 		Float width = eeceil( mGlobalSearchInput->getPixelsSize().getWidth() );
 		Float rowHeight = mGlobalSearchTree->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS;
 		mGlobalSearchLayout->setPixelsSize( width, 0 );
@@ -365,12 +404,22 @@ void GlobalSearchController::hideGlobalSearchBar() {
 	auto* loader = mGlobalSearchTree->getParent()->find( "loader" );
 	if ( loader )
 		loader->setVisible( false );
+	mApp->getStatusBar()->updateState();
+}
+
+void GlobalSearchController::toggleGlobalSearchBar() {
+	if ( mGlobalSearchBarLayout->isVisible() ) {
+		mGlobalSearchBarLayout->execute( "close-global-searchbar" );
+	} else {
+		showGlobalSearch();
+	}
 }
 
 void GlobalSearchController::updateGlobalSearchBarResults(
 	const std::string& search, std::shared_ptr<ProjectSearch::ResultModel> model,
 	bool searchReplace, bool isEscaped ) {
 	updateGlobalSearchBar();
+	mGlobalSearchTree->hAsCPP = mApp->getProjectDocConfig().hAsCPP;
 	mGlobalSearchTree->setSearchStr( search );
 	mGlobalSearchTree->setModel( model );
 	if ( mGlobalSearchTree->getModel()->rowCount() < 50 )
@@ -386,6 +435,40 @@ void GlobalSearchController::updateGlobalSearchBarResults(
 		replaceInput->setText( isEscaped ? String( search ).escape().toUtf8() : search );
 		replaceInput->getDocument().selectAll();
 		replaceInput->setFocus();
+	}
+}
+
+void GlobalSearchController::updateGlobalSearchHistory(
+	std::shared_ptr<ProjectSearch::ResultModel> model, const std::string& search,
+	bool searchReplace, bool searchAgain, bool escapeSequence ) {
+	auto listBox = mGlobalSearchHistoryList->getListBox();
+
+	if ( !searchAgain ) {
+		mGlobalSearchHistory.push_back( std::make_pair( search, model ) );
+		if ( mGlobalSearchHistory.size() > 10 )
+			mGlobalSearchHistory.pop_front();
+
+		std::vector<String> items;
+		for ( auto item = mGlobalSearchHistory.rbegin(); item != mGlobalSearchHistory.rend();
+			  item++ ) {
+			items.push_back( item->first );
+		}
+
+		listBox->clear();
+		listBox->addListBoxItems( items );
+		if ( mGlobalSearchHistoryOnItemSelectedCb )
+			mGlobalSearchHistoryList->removeEventListener( mGlobalSearchHistoryOnItemSelectedCb );
+		listBox->setSelected( 0 );
+		mGlobalSearchHistoryOnItemSelectedCb = mGlobalSearchHistoryList->addEventListener(
+			Event::OnItemSelected, [&, searchReplace]( const Event* ) {
+				auto idx = mGlobalSearchHistoryList->getListBox()->getItemSelectedIndex();
+				auto idxItem = mGlobalSearchHistory.at( mGlobalSearchHistory.size() - 1 - idx );
+				updateGlobalSearchBarResults( idxItem.first, idxItem.second, searchReplace,
+											  escapeSequence );
+			} );
+	} else if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
+		mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 - listBox->getItemSelectedIndex()]
+			.second = model;
 	}
 }
 
@@ -423,41 +506,8 @@ void GlobalSearchController::doGlobalSearch( String text, bool caseSensitive, bo
 				mUISceneNode->runOnMainThread( [&, loader, res, search, searchReplace, searchAgain,
 												escapeSequence] {
 					auto model = ProjectSearch::asModel( res );
-					auto listBox = mGlobalSearchHistoryList->getListBox();
-
-					if ( !searchAgain ) {
-						mGlobalSearchHistory.push_back( std::make_pair( search, model ) );
-						if ( mGlobalSearchHistory.size() > 10 )
-							mGlobalSearchHistory.pop_front();
-
-						std::vector<String> items;
-						for ( auto item = mGlobalSearchHistory.rbegin();
-							  item != mGlobalSearchHistory.rend(); item++ ) {
-							items.push_back( item->first );
-						}
-
-						listBox->clear();
-						listBox->addListBoxItems( items );
-						if ( mGlobalSearchHistoryOnItemSelectedCb )
-							mGlobalSearchHistoryList->removeEventListener(
-								mGlobalSearchHistoryOnItemSelectedCb );
-						listBox->setSelected( 0 );
-						mGlobalSearchHistoryOnItemSelectedCb =
-							mGlobalSearchHistoryList->addEventListener(
-								Event::OnItemSelected, [&, searchReplace]( const Event* ) {
-									auto idx = mGlobalSearchHistoryList->getListBox()
-												   ->getItemSelectedIndex();
-									auto idxItem = mGlobalSearchHistory.at(
-										mGlobalSearchHistory.size() - 1 - idx );
-									updateGlobalSearchBarResults( idxItem.first, idxItem.second,
-																  searchReplace, escapeSequence );
-								} );
-					} else if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
-						mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
-											 listBox->getItemSelectedIndex()]
-							.second = model;
-					}
-
+					updateGlobalSearchHistory( model, search, searchReplace, searchAgain,
+											   escapeSequence );
 					updateGlobalSearchBarResults( search, model, searchReplace, escapeSequence );
 					loader->setVisible( false );
 					loader->close();
@@ -470,11 +520,12 @@ void GlobalSearchController::doGlobalSearch( String text, bool caseSensitive, bo
 }
 
 void GlobalSearchController::onLoadDone( const Variant& lineNum, const Variant& colNum ) {
-	if ( mEditorSplitter->curEditorExistsAndFocused() && lineNum.isValid() && colNum.isValid() &&
+	if ( mSplitter->curEditorExistsAndFocused() && lineNum.isValid() && colNum.isValid() &&
 		 lineNum.is( Variant::Type::Int64 ) && colNum.is( Variant::Type::Int64 ) ) {
 		TextPosition pos{ lineNum.asInt64(), colNum.asInt64() };
-		mEditorSplitter->getCurEditor()->getDocument().setSelection( pos );
-		mEditorSplitter->getCurEditor()->goToLine( pos );
+		mSplitter->getCurEditor()->getDocument().setSelection( pos );
+		mSplitter->getCurEditor()->goToLine( pos );
+		mSplitter->addCurrentPositionToNavigationHistory();
 		hideGlobalSearchBar();
 	}
 }
@@ -488,12 +539,7 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 	searchTree->setHeadersVisible( false );
 	searchTree->setColumnsHidden(
 		{ ProjectSearch::ResultModel::Line, ProjectSearch::ResultModel::ColumnStart }, true );
-	searchTree->addEventListener( Event::KeyDown, [&]( const Event* event ) {
-		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
-			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
-	} );
-	searchTree->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+	searchTree->addEventListener( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			const Model* model = modelEvent->getModel();
@@ -518,7 +564,7 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 										ModelRole::Custom ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				std::string path( vPath.asCStr() );
-				UITab* tab = mEditorSplitter->isDocumentOpen( path );
+				UITab* tab = mSplitter->isDocumentOpen( path );
 				Variant lineNum(
 					model->data( model->index( modelEvent->getModelIndex().row(),
 											   ProjectSearch::ResultModel::FileOrPosition,
@@ -543,6 +589,43 @@ void GlobalSearchController::initGlobalSearchTree( UITreeViewGlobalSearch* searc
 			}
 		}
 	} );
+}
+
+PluginRequestHandle GlobalSearchController::processMessage( const PluginMessage& msg ) {
+	if ( msg.type != PluginMessageType::SymbolReference || !msg.isBroadcast() )
+		return {};
+
+	const ProjectSearch::Result& res = msg.asProjectSearchResult();
+	if ( res.empty() )
+		return {};
+	auto model = ProjectSearch::asModel( res );
+	model->removeLastNewLineCharacter();
+	model->setResultFromSymbolReference( true );
+	ProjectSearch::ResultData::Result sample;
+
+	for ( const auto& r : res ) {
+		if ( !r.results.empty() ) {
+			sample = r.results.front();
+			break;
+		}
+	}
+
+	if ( sample.line.empty() )
+		return {};
+
+	if ( sample.position.end().column() - sample.position.start().column() <= 0 )
+		return {};
+
+	auto search =
+		sample.line.substr( sample.position.start().column(),
+							sample.position.end().column() - sample.position.start().column() );
+
+	showGlobalSearch( false );
+	mGlobalSearchInput->setText( search );
+	updateGlobalSearchHistory( model, search, false, false, false );
+	updateGlobalSearchBarResults( search, model, false, false );
+
+	return {};
 }
 
 } // namespace ecode

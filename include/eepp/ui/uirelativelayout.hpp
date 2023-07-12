@@ -9,8 +9,6 @@ class EE_API UIRelativeLayout : public UILayout {
   public:
 	static UIRelativeLayout* New();
 
-	UIRelativeLayout();
-
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
@@ -20,6 +18,10 @@ class EE_API UIRelativeLayout : public UILayout {
 	virtual void updateLayout();
 
   protected:
+	UIRelativeLayout( const std::string& tagName );
+
+	UIRelativeLayout();
+
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
 	void fixChildPos( UIWidget* widget );

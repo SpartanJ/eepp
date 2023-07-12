@@ -55,6 +55,12 @@ class EE_API UIScrollableWidget : public UIWidget {
 
 	bool shouldVerticalScrollBeVisible() const;
 
+	bool isAutoSetClipStep() const;
+
+	void setAutoSetClipStep( bool setClipStep );
+
+	virtual bool isScrollable() const;
+
   protected:
 	ScrollViewType mViewType;
 	ScrollBarMode mVScrollMode;
@@ -64,6 +70,7 @@ class EE_API UIScrollableWidget : public UIWidget {
 	Uint32 mSizeChangeCb;
 	Uint32 mPosChangeCb;
 	Vector2f mScrollOffset;
+	bool mAutoSetClipStep{ true };
 
 	UIScrollableWidget( const std::string& tag );
 

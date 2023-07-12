@@ -520,6 +520,27 @@ bool Renderer::isLineSmooth() {
 	return BitOp::readBitKey( &mStateFlags, RSF_LINE_SMOOTH );
 }
 
+void Renderer::polygonSmooth( const bool& Enable ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && defined( GL_POLYGON_SMOOTH ) && \
+	!defined( EE_GLES1 ) && !defined( EE_GLES2 ) && !defined( EE_GLES_BOTH )
+	if ( Enable ) {
+		enable( GL_POLYGON_SMOOTH );
+	} else {
+		disable( GL_POLYGON_SMOOTH );
+	}
+
+	BitOp::writeBitKey( &mStateFlags, RSF_POLYGON_SMOOTH, Enable ? 1 : 0 );
+#endif
+}
+
+void Renderer::polygonSmooth() {
+	polygonSmooth( isPolygonSmooth() );
+}
+
+bool Renderer::isPolygonSmooth() {
+	return BitOp::readBitKey( &mStateFlags, RSF_POLYGON_SMOOTH );
+}
+
 void Renderer::lineSmooth() {
 	lineSmooth( isLineSmooth() );
 }
@@ -527,9 +548,9 @@ void Renderer::lineSmooth() {
 void Renderer::lineSmooth( const bool& Enable ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( Enable ) {
-		GLi->enable( GL_LINE_SMOOTH );
+		enable( GL_LINE_SMOOTH );
 	} else {
-		GLi->disable( GL_LINE_SMOOTH );
+		disable( GL_LINE_SMOOTH );
 	}
 
 	BitOp::writeBitKey( &mStateFlags, RSF_LINE_SMOOTH, Enable ? 1 : 0 );

@@ -36,6 +36,21 @@ const Uint32& KeyEvent::getMod() const {
 	return mMod;
 }
 
+Uint32 KeyEvent::getSanitizedMod() const {
+	Uint32 mod = 0;
+	if ( mMod & KEYMOD_CTRL )
+		mod |= KEYMOD_CTRL;
+	if ( mMod & KEYMOD_SHIFT )
+		mod |= KEYMOD_SHIFT;
+	if ( mMod & KEYMOD_META )
+		mod |= KEYMOD_META;
+	if ( mMod & KEYMOD_LALT )
+		mod |= KEYMOD_LALT;
+	if ( mMod & KEYMOD_RALT )
+		mod |= KEYMOD_RALT;
+	return mod;
+}
+
 TextInputEvent::TextInputEvent( Node* node, const Uint32& eventNum, const Uint32& chr,
 								const Uint32& timestamp ) :
 	Event( node, eventNum ), mChar( chr ), mTimestamp( timestamp ) {}

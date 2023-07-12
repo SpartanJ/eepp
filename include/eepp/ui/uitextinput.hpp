@@ -70,6 +70,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	UITextInput* setHintShadowColor( const Color& shadowColor );
 
+	const Vector2f& getHintShadowOffset() const;
+
+	UITextInput* setHintShadowOffset( const Vector2f& shadowOffset );
+
 	Font* getHintFont() const;
 
 	UITextInput* setHintFont( Font* font );
@@ -125,11 +129,13 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	bool mMouseDown;
 	bool mCreateDefaultContextMenuOptions{ true };
 	bool mEscapePastedText{ false };
+	bool mEnabledCreateContextMenu{ true };
 	Uint32 mMaxLength{ 0 };
 	KeyBindings mKeyBindings;
 	Clock mLastDoubleClick;
 	size_t mMenuIconSize{ 16 };
 	UIPopUpMenu* mCurrentMenu{ nullptr };
+	Uint64 mLastExecuteEventId{ 0 };
 
 	void resetWaitCursor();
 
@@ -179,7 +185,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual Int32 selCurEnd();
 
-	virtual void onDocumentTextChanged();
+	virtual void onDocumentTextChanged( const DocumentContentChange& );
 
 	virtual void onDocumentCursorChange( const TextPosition& );
 

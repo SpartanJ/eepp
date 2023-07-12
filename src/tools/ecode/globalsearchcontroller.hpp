@@ -2,6 +2,7 @@
 #define ECODE_GLOBALSEARCHCONTROLLER_HPP
 
 #include "appconfig.hpp"
+#include "plugins/pluginmanager.hpp"
 #include "projectsearch.hpp"
 #include <eepp/ee.hpp>
 
@@ -38,6 +39,8 @@ class GlobalSearchController {
 
 	void hideGlobalSearchBar();
 
+	void toggleGlobalSearchBar();
+
 	void updateGlobalSearchBarResults( const std::string& search,
 									   std::shared_ptr<ProjectSearch::ResultModel> model,
 									   bool searchReplace, bool isEscaped );
@@ -63,7 +66,7 @@ class GlobalSearchController {
 	GlobalSearchBarConfig getGlobalSearchBarConfig() const;
 
   protected:
-	UICodeEditorSplitter* mEditorSplitter{ nullptr };
+	UICodeEditorSplitter* mSplitter{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
 	App* mApp{ nullptr };
 
@@ -79,6 +82,12 @@ class GlobalSearchController {
 		mGlobalSearchHistory;
 
 	void onLoadDone( const Variant& lineNum, const Variant& colNum );
+
+	PluginRequestHandle processMessage( const PluginMessage& msg );
+
+	void updateGlobalSearchHistory( std::shared_ptr<ProjectSearch::ResultModel> model,
+									const std::string& search, bool searchReplace, bool searchAgain,
+									bool escapeSequence );
 };
 
 } // namespace ecode

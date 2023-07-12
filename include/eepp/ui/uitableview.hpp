@@ -31,7 +31,7 @@ class EE_API UITableView : public UIAbstractTableView {
 
 	UITableView( const std::string& tag );
 
-	virtual void createOrUpdateColumns();
+	virtual void createOrUpdateColumns( bool resetColumnData );
 
 	void updateContentSize();
 

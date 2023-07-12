@@ -10,7 +10,7 @@
 #include <eepp/system/color.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
-#include <map>
+#include <unordered_map>
 #include <string>
 
 using namespace EE::System;
@@ -64,7 +64,7 @@ class EE_API StyleSheetProperty {
 
 	void setName( const std::string& name );
 
-	void setValue( const std::string& value );
+	void setValue( const std::string& value, bool updateHash = false );
 
 	const bool& isVolatile() const;
 
@@ -204,7 +204,7 @@ class EE_API StyleSheetProperty {
 	std::vector<VariableFunctionCache> checkVars( const std::string& value );
 };
 
-typedef std::map<Uint32, StyleSheetProperty> StyleSheetProperties;
+typedef std::unordered_map<Uint32, StyleSheetProperty> StyleSheetProperties;
 
 }}} // namespace EE::UI::CSS
 

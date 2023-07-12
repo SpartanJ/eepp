@@ -26,21 +26,23 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	uiWin->setId( "widget-tree-view" );
 	uiWin->setMinWindowSize( 600, 400 );
 	uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
-	UIWidget* cont = sceneNode->loadLayoutFromString( R"xml(
+	static const auto WIDGET_LAYOUT = R"xml(
 	<vbox lw="mp" lh="mp">
 		<hbox lw="wc" lh="wc">
-			<pushbutton id="pick_widget" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
+			<PushButton id="pick_widget" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
 			<CheckBox id="debug-draw-highlight" text='@string(debug_draw_highlight, "Highlight Focus & Hover")' margin-left="4dp" lg="center" />
 			<CheckBox id="debug-draw-boxes" text='@string(debug_draw_boxes, "Draw Boxes")' margin-left="4dp" lg="center" />
-			<CheckBox id="debug-draw-debug-data" text='@string(debug_draw_debug_data, "Draw Debug Data")' margin-left="4dp" lg="center" />
+			<CheckBox id="debug-draw-debug-data" text='@string(debug_draw_debug_data, "Draw Debug Data")' margin-left="4dp" lg="center" />"
+			<PushButton id="widget-tree-search-collapse" layout_width="wrap_content" layout_height="18dp" tooltip='@string(collapse_all, "Collapse All")' margin-left="8dp" icon="menu-fold" text-as-fallback="true" />
+			<PushButton id="widget-tree-search-expand" layout_width="wrap_content" layout_height="18dp" tooltip='@string(expand_all, "Expand All")' margin-left="8dp" icon="menu-unfold" text-as-fallback="true" />
 		</hbox>
 		<Splitter layout_width="match_parent" lh="fixed" lw8="1" splitter-partition="50%">
 			<treeview lw="fixed" lh="mp" />
 			<tableview lw="fixed" lh="mp" />
 		</Splitter>
 	</vbox>
-	)xml",
-													  uiWin->getContainer() );
+	)xml";
+	UIWidget* cont = sceneNode->loadLayoutFromString( WIDGET_LAYOUT, uiWin->getContainer() );
 	UITreeView* widgetTree = cont->findByType<UITreeView>( UI_TYPE_TREEVIEW );
 	widgetTree->setHeadersVisible( true );
 	widgetTree->setExpanderIconSize( menuIconSize );
@@ -104,6 +106,20 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 			}
 		} );
 
+	cont->find<UIPushButton>( "widget-tree-search-collapse" )
+		->addEventListener( Event::MouseClick, [widgetTree]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
+				widgetTree->collapseAll();
+			}
+		} );
+
+	cont->find<UIPushButton>( "widget-tree-search-expand" )
+		->addEventListener( Event::MouseClick, [widgetTree]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
+				widgetTree->expandAll();
+			}
+		} );
+
 	uiWin->center();
 
 	Uint32 winCb = sceneNode->addEventListener( Event::OnWindowAdded, [&, sceneNode, uiWin](
@@ -116,13 +132,13 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 					eWinEvent->getNode()->removeEventListener( eWinEvent->getCallbackId() );
 				} );
 			uiWin->addEventListener( Event::OnWindowClose, [sceneNode, winRdCb]( const Event* ) {
-				if ( !SceneManager::instance()->isShootingDown() )
+				if ( !SceneManager::instance()->isShuttingDown() )
 					sceneNode->removeEventListener( winRdCb );
 			} );
 		}
 	} );
 	uiWin->addEventListener( Event::OnWindowClose, [sceneNode, winCb]( const Event* ) {
-		if ( !SceneManager::instance()->isShootingDown() )
+		if ( !SceneManager::instance()->isShuttingDown() )
 			sceneNode->removeEventListener( winCb );
 	} );
 	return uiWin;

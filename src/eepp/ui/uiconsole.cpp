@@ -39,7 +39,7 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 					  const unsigned int& maxLogLines ) :
 	UIWidget( "console" ), mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {
 	setFlags( UI_AUTO_PADDING );
-	mFlags |= UI_TAB_STOP;
+	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
 	setClipType( ClipType::ContentBox );
 
 	setBackgroundColor( 0x201F1FEE );
@@ -142,8 +142,12 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
 			break;
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor: {
 			setFontShadowColor( attribute.asColor() );
+			break;
+		}
+		case PropertyId::TextShadowOffset:
+			setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::SelectionColor:
 			mFontStyleConfig.FontSelectedColor = attribute.asColor();
@@ -187,8 +191,11 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Color:
 			return getFontColor().toHexString();
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
 			return getFontShadowColor().toHexString();
+		case PropertyId::TextShadowOffset:
+			return String::fromFloat( getFontShadowOffset().x ) + " " +
+				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::SelectionColor:
 			return getFontSelectedColor().toHexString();
 		case PropertyId::SelectionBackColor:
@@ -210,11 +217,11 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 
 std::vector<PropertyId> UIConsole::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::Color,		   PropertyId::ShadowColor,
-				   PropertyId::SelectionColor, PropertyId::SelectionBackColor,
-				   PropertyId::FontFamily,	   PropertyId::FontSize,
-				   PropertyId::FontStyle,	   PropertyId::TextStrokeWidth,
-				   PropertyId::TextStrokeColor };
+	auto local = {
+		PropertyId::Color,			PropertyId::TextShadowColor,	PropertyId::TextShadowOffset,
+		PropertyId::SelectionColor, PropertyId::SelectionBackColor, PropertyId::FontFamily,
+		PropertyId::FontSize,		PropertyId::FontStyle,			PropertyId::TextStrokeWidth,
+		PropertyId::TextStrokeColor };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -276,6 +283,10 @@ const Color& UIConsole::getFontSelectionBackColor() const {
 UIConsole* UIConsole::setFontShadowColor( const Color& color ) {
 	if ( color != mFontStyleConfig.getFontShadowColor() ) {
 		mFontStyleConfig.ShadowColor = color;
+		if ( mFontStyleConfig.ShadowColor != Color::Transparent )
+			mFontStyleConfig.Style |= Text::Shadow;
+		else
+			mFontStyleConfig.Style &= ~Text::Shadow;
 		onFontStyleChanged();
 	}
 	return this;
@@ -283,6 +294,18 @@ UIConsole* UIConsole::setFontShadowColor( const Color& color ) {
 
 const Color& UIConsole::getFontShadowColor() const {
 	return mFontStyleConfig.ShadowColor;
+}
+
+UIConsole* UIConsole::setFontShadowOffset( const Vector2f& offset ) {
+	if ( offset != mFontStyleConfig.getFontShadowOffset() ) {
+		mFontStyleConfig.ShadowOffset = offset;
+		onFontStyleChanged();
+	}
+	return this;
+}
+
+const Vector2f& UIConsole::getFontShadowOffset() const {
+	return mFontStyleConfig.ShadowOffset;
 }
 
 UIConsole* UIConsole::setFontStyle( const Uint32& fontStyle ) {
@@ -330,6 +353,10 @@ void UIConsole::addCommand( const std::string& command, const ConsoleCallback& c
 		mCallbacks[command] = cb;
 }
 
+void UIConsole::setCommand( const std::string& command, const ConsoleCallback& cb ) {
+	mCallbacks[command] = cb;
+}
+
 const Uint32& UIConsole::getMaxLogLines() const {
 	return mMaxLogLines;
 }
@@ -340,7 +367,7 @@ void UIConsole::setMaxLogLines( const Uint32& maxLogLines ) {
 
 void UIConsole::privPushText( const String& str ) {
 	Lock l( mMutex );
-	mCmdLog.push_back( str );
+	mCmdLog.push_back( { str, String::hash( str ) } );
 	invalidateDraw();
 	if ( mCmdLog.size() >= mMaxLogLines )
 		mCmdLog.pop_front();
@@ -367,6 +394,8 @@ void UIConsole::draw() {
 	size_t pos = 0;
 	Float curY;
 	Float lineHeight = getLineHeight();
+	Float cw =
+		mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false ).advance;
 
 	mCon.min = eemax( 0, (Int32)mCmdLog.size() - linesInScreen );
 	mCon.max = (int)mCmdLog.size() - 1;
@@ -381,10 +410,19 @@ void UIConsole::draw() {
 		if ( i < (int)mCmdLog.size() && i >= 0 ) {
 			curY = mScreenPos.y + getPixelsSize().getHeight() - mPaddingPx.Bottom -
 				   pos * lineHeight - lineHeight * 2 - 1;
-			Text& text = mTextCache[pos];
+			Text& text = mTextCache[pos].text;
 			text.setStyleConfig( mFontStyleConfig );
 			text.setFillColor( fontColor );
-			text.setString( mCmdLog[i] );
+			if ( mCmdLog[i].hash != mTextCache[pos].hash ) {
+				if ( mCmdLog[i].log.size() * cw <= mSize.getWidth() ) {
+					text.setString( mCmdLog[i].log );
+					mTextCache[pos].hash = mCmdLog[i].hash;
+				} else {
+					auto substr = mCmdLog[i].log.substr( 0, ( mSize.getWidth() + 8 * cw ) / cw );
+					mTextCache[pos].hash = String::hash( substr );
+					text.setString( substr );
+				}
+			}
 			text.draw( mScreenPos.x + mPaddingPx.Left, curY );
 			pos++;
 		}
@@ -392,13 +430,13 @@ void UIConsole::draw() {
 
 	curY = mScreenPos.y + getPixelsSize().getHeight() - mPaddingPx.Bottom - lineHeight - 1;
 
-	Text& text = mTextCache[mTextCache.size() - 1];
+	Text& text = mTextCache[mTextCache.size() - 1].text;
 	text.setStyleConfig( mFontStyleConfig );
 	text.setFillColor( fontColor );
 	text.setString( "> " + mDoc.getCurrentLine().getTextWithoutNewLine() );
 	text.draw( mScreenPos.x + mPaddingPx.Left, curY );
 
-	Text& text2 = mTextCache[mTextCache.size() - 2];
+	Text& text2 = mTextCache[mTextCache.size() - 2].text;
 	text2.setStyleConfig( mFontStyleConfig );
 	text2.setFillColor( fontColor );
 
@@ -420,7 +458,7 @@ void UIConsole::draw() {
 	if ( mShowFps ) {
 		Float cw =
 			mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false ).advance;
-		Text& text = mTextCache[mTextCache.size() - 3];
+		Text& text = mTextCache[mTextCache.size() - 3].text;
 		Color OldColor1( text.getColor() );
 		text.setStyleConfig( mFontStyleConfig );
 		text.setFillColor( fontColor );
@@ -434,21 +472,22 @@ void UIConsole::draw() {
 
 // CMDS
 void UIConsole::createDefaultCommands() {
-	addCommand( "clear", [&]( const auto& ) { cmdClear(); } );
-	addCommand( "quit", [&]( const auto& ) { getUISceneNode()->getWindow()->close(); } );
-	addCommand( "cmdlist", [&]( const auto& ) { cmdCmdList(); } );
-	addCommand( "help", [&]( const auto& ) { cmdCmdList(); } );
-	addCommand( "showcursor", [&]( const auto& params ) { cmdShowCursor( params ); } );
-	addCommand( "setfpslimit", [&]( const auto& params ) { cmdFrameLimit( params ); } );
-	addCommand( "getlog", [&]( const auto& ) { cmdGetLog(); } );
-	addCommand( "setgamma", [&]( const auto& params ) { cmdSetGamma( params ); } );
-	addCommand( "setvolume", [&]( const auto& params ) { cmdSetVolume( params ); } );
-	addCommand( "getgpuextensions", [&]( const auto& ) { cmdGetGpuExtensions(); } );
-	addCommand( "dir", [&]( const auto& params ) { cmdDir( params ); } );
-	addCommand( "ls", [&]( const auto& params ) { cmdDir( params ); } );
-	addCommand( "showfps", [&]( const auto& params ) { cmdShowFps( params ); } );
-	addCommand( "gettexturememory", [&]( const auto& ) { cmdGetTextureMemory(); } );
-	addCommand( "hide", [&]( const auto& ) { hide(); } );
+	addCommand( "clear", [this]( const auto& ) { cmdClear(); } );
+	addCommand( "quit", [this]( const auto& ) { getUISceneNode()->getWindow()->close(); } );
+	addCommand( "cmdlist", [this]( const auto& ) { cmdCmdList(); } );
+	addCommand( "help", [this]( const auto& ) { cmdCmdList(); } );
+	addCommand( "showcursor", [this]( const auto& params ) { cmdShowCursor( params ); } );
+	addCommand( "setfpslimit", [this]( const auto& params ) { cmdFrameLimit( params ); } );
+	addCommand( "getlog", [this]( const auto& ) { cmdGetLog(); } );
+	addCommand( "setgamma", [this]( const auto& params ) { cmdSetGamma( params ); } );
+	addCommand( "setvolume", [this]( const auto& params ) { cmdSetVolume( params ); } );
+	addCommand( "getgpuextensions", [this]( const auto& ) { cmdGetGpuExtensions(); } );
+	addCommand( "dir", [this]( const auto& params ) { cmdDir( params ); } );
+	addCommand( "ls", [this]( const auto& params ) { cmdDir( params ); } );
+	addCommand( "showfps", [this]( const auto& params ) { cmdShowFps( params ); } );
+	addCommand( "gettexturememory", [this]( const auto& ) { cmdGetTextureMemory(); } );
+	addCommand( "hide", [this]( const auto& ) { hide(); } );
+	addCommand( "grep", [this]( const auto& params ) { cmdGrep( params ); } );
 }
 
 void UIConsole::cmdClear() {
@@ -511,6 +550,26 @@ void UIConsole::cmdGetGpuExtensions() {
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			privPushText( tvec[i] );
+	}
+}
+
+void UIConsole::cmdGrep( const std::vector<String>& params ) {
+	if ( params.empty() )
+		return;
+	bool caseSensitive = !std::any_of( params.begin(), params.end(),
+									   []( const auto& other ) { return "-i" == other; } );
+	String search = params[params.size() - 1];
+
+	if ( caseSensitive ) {
+		for ( const auto& cmd : mCmdLog )
+			if ( !cmd.log.empty() && cmd.log[0] != '>' && String::contains( cmd.log, search ) )
+				privPushText( cmd.log );
+	} else {
+		search.toLower();
+		for ( const auto& cmd : mCmdLog )
+			if ( !cmd.log.empty() && cmd.log[0] != '>' &&
+				 String::contains( String::toLower( cmd.log ), search ) )
+				privPushText( cmd.log );
 	}
 }
 
@@ -743,6 +802,7 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		mDoc.execute( cmd );
+		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 		return 1;
 	}
 	return UIWidget::onKeyDown( event );
@@ -752,7 +812,11 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 input->isControlPressed() || input->isMetaPressed() || input->isLeftAltPressed() )
+		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() ||
+		 input->isLeftAltPressed() )
+		return 0;
+
+	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
 		return 0;
 
 	const String& text = event.getText();
@@ -773,10 +837,10 @@ Uint32 UIConsole::onPressEnter() {
 	return 0;
 }
 void UIConsole::registerCommands() {
-	mDoc.setCommand( "copy", [&] { copy(); } );
-	mDoc.setCommand( "cut", [&] { cut(); } );
-	mDoc.setCommand( "paste", [&] { paste(); } );
-	mDoc.setCommand( "press-enter", [&] { onPressEnter(); } );
+	mDoc.setCommand( "copy", [this] { copy(); } );
+	mDoc.setCommand( "cut", [this] { cut(); } );
+	mDoc.setCommand( "paste", [this] { paste(); } );
+	mDoc.setCommand( "press-enter", [this] { onPressEnter(); } );
 }
 
 void UIConsole::registerKeybindings() {
@@ -825,6 +889,8 @@ Uint32 UIConsole::onFocus() {
 	resetCursor();
 
 	getSceneNode()->getWindow()->startTextInput();
+
+	mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 
 	return 1;
 }
@@ -892,7 +958,7 @@ Uint32 UIConsole::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	return UIWidget::onMouseLeave( Pos, Flags );
 }
 
-void UIConsole::onDocumentTextChanged() {
+void UIConsole::onDocumentTextChanged( const DocumentContentChange& ) {
 	resetCursor();
 
 	invalidateDraw();
@@ -929,11 +995,11 @@ void UIConsole::onSelectionChange() {
 	invalidateDraw();
 }
 
-String UIConsole::getLastCommonSubStr( std::list<String>& cmds ) {
+String UIConsole::getLastCommonSubStr( std::vector<String>& cmds ) {
 	String lastCommon( mDoc.getCurrentLine().getTextWithoutNewLine() );
 	String strTry( lastCommon );
 
-	std::list<String>::iterator ite;
+	std::vector<String>::iterator ite;
 
 	bool found = false;
 
@@ -968,7 +1034,7 @@ String UIConsole::getLastCommonSubStr( std::list<String>& cmds ) {
 }
 
 void UIConsole::printCommandsStartingWith( const String& start ) {
-	std::list<String> cmds;
+	std::vector<String> cmds;
 
 	for ( auto it = mCallbacks.begin(); it != mCallbacks.end(); ++it ) {
 		if ( String::startsWith( it->first, start ) ) {
@@ -979,7 +1045,7 @@ void UIConsole::printCommandsStartingWith( const String& start ) {
 	if ( cmds.size() > 1 ) {
 		privPushText( "> " + mDoc.getCurrentLine().getTextWithoutNewLine() );
 
-		std::list<String>::iterator ite;
+		std::vector<String>::iterator ite;
 
 		for ( ite = cmds.begin(); ite != cmds.end(); ++ite )
 			privPushText( ( *ite ) );
@@ -1181,7 +1247,7 @@ void UIConsole::show() {
 	auto* spawn = Actions::Spawn::New(
 		{ Actions::FadeIn::New( Seconds( .25f ) ),
 		  Actions::Move::New( { 0, -getSize().getHeight() }, { 0, 0 }, Seconds( .25f ) ) } );
-	runAction( Actions::Sequence::New( { spawn, Actions::Runnable::New( [&] {
+	runAction( Actions::Sequence::New( { spawn, Actions::Runnable::New( [this] {
 											 setVisible( true );
 											 setEnabled( true );
 											 mFading = false;
@@ -1204,7 +1270,7 @@ void UIConsole::hide() {
 	auto* spawn = Actions::Spawn::New(
 		{ Actions::FadeOut::New( Seconds( .25f ) ),
 		  Actions::Move::New( { 0, 0 }, { 0, -getSize().getHeight() }, Seconds( .25f ) ) } );
-	runAction( Actions::Sequence::New( { spawn, Actions::Runnable::New( [&] {
+	runAction( Actions::Sequence::New( { spawn, Actions::Runnable::New( [this] {
 											 setVisible( false );
 											 setEnabled( false );
 											 mHiding = false;

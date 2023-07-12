@@ -64,6 +64,9 @@ class EE_API FileSystem {
 	/** Removes the process path to a file path */
 	static void filePathRemoveProcessPath( std::string& path );
 
+	/** Removes a base path from a file path */
+	static void filePathRemoveBasePath( const std::string& basePath, std::string& path );
+
 	/** Write a file in binary mode and close it. */
 	static bool fileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize );
 
@@ -122,7 +125,8 @@ class EE_API FileSystem {
 	static bool isDirectory( const String& path );
 
 	/** Creates a new directory */
-	static bool makeDir( const std::string& path, const Uint16& mode = 0770 );
+	static bool makeDir( const std::string& path, bool recursive = false,
+						 const Uint16& mode = 0770 );
 
 	/** @return The absolute path of a relative path */
 	static std::string getRealPath( const std::string& path );
@@ -156,6 +160,12 @@ class EE_API FileSystem {
 
 	/** @returns True if the path provided is relative. */
 	static bool isRelativePath( const std::string& path );
+
+	/** Opens a file path with a path and mode encoded in UTF-8 */
+	static FILE* fopenUtf8( const char* path, const char* mode );
+
+	/** Opens a file path with a path and mode encoded in UTF-8 */
+	static FILE* fopenUtf8( const std::string& path, const std::string& mode );
 };
 
 }} // namespace EE::System

@@ -25,7 +25,7 @@ class EE_API Clock {
 	/** Time in time elapsed between this call and the last call to Elapsed()
 	 * This is the equivalent to call GetElapsedTime() and then Restart().
 	 */
-	Time getElapsed();
+	Time getElapsedTimeAndReset();
 
   private:
 	Platform::ClockImpl* mClockImpl;

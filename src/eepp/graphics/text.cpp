@@ -97,7 +97,7 @@ Text::Text() :
 	mCachedWidth( 0 ),
 	mNumLines( 0 ),
 	mLargestLineCharCount( 0 ),
-	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
+	mShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign( 0 ),
 	mFontHeight( 0 ),
 	mTabWidth( 4 ) {}
@@ -117,7 +117,7 @@ Text::Text( const String& string, Font* font, unsigned int characterSize ) :
 	mCachedWidth( 0 ),
 	mNumLines( 0 ),
 	mLargestLineCharCount( 0 ),
-	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
+	mShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign( 0 ),
 	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
 	mTabWidth( 4 ) {
@@ -141,7 +141,7 @@ Text::Text( Font* font, unsigned int characterSize ) :
 	mCachedWidth( 0 ),
 	mNumLines( 0 ),
 	mLargestLineCharCount( 0 ),
-	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
+	mShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign( 0 ),
 	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
 	mTabWidth( 4 ) {
@@ -157,6 +157,8 @@ void Text::create( Font* font, const String& text, Color FontColor, Color FontSh
 	mString = text;
 	mFontSize = characterSize;
 	mRealFontSize = PixelDensity::dpToPxI( mFontSize );
+	Float dp = PixelDensity::dpToPx( 1 );
+	mShadowOffset = { dp, dp };
 	setFillColor( FontColor );
 	setShadowColor( FontShadowColor );
 	mGeometryNeedUpdate = true;
@@ -357,6 +359,9 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool ) const {
 		start++;
 	}
 
+	if ( end >= mGlyphCache.size() )
+		end = mGlyphCache.size() - 1;
+
 	for ( std::size_t i = start; i <= end; ++i ) {
 		charCenter.x = mGlyphCache[i].Left;
 		charCenter.y = mGlyphCache[i].Top + mGlyphCache[i].getHeight();
@@ -404,6 +409,153 @@ void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& initCur, Int
 	if ( initCur == endCur ) {
 		initCur = endCur = -1;
 	}
+}
+
+Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& string,
+						  const Uint32& style, const Uint32& tabWidth,
+						  const Float& outlineThickness ) {
+	if ( NULL == font || string.empty() )
+		return 0;
+	Float width = 0;
+	Float maxWidth = 0;
+	String::StringBaseType rune;
+	Uint32 prevChar = 0;
+	bool bold = ( style & Text::Bold ) != 0;
+	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	for ( std::size_t i = 0; i < string.size(); ++i ) {
+		rune = string.at( i );
+		Glyph glyph = font->getGlyph( rune, fontSize, bold, outlineThickness );
+		if ( rune != '\r' && rune != '\t' ) {
+			width += font->getKerning( prevChar, rune, fontSize, bold );
+			prevChar = rune;
+			width += glyph.advance;
+		} else if ( rune == '\t' ) {
+			width += hspace * tabWidth;
+		} else if ( rune == '\n' ) {
+			width = 0;
+		}
+		maxWidth = eemax( width, maxWidth );
+	}
+	return maxWidth;
+}
+
+Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
+								 const String& string, const Uint32& style, const Uint32& tabWidth,
+								 const Float& outlineThickness ) {
+	// Make sure that we have a valid font
+	if ( !font )
+		return Vector2f();
+
+	// Adjust the index if it's out of range
+	if ( index > string.size() )
+		index = string.size();
+
+	// Precompute the variables needed by the algorithm
+	bool bold = ( style & Text::Bold ) != 0;
+	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	Float vspace = static_cast<Float>( font->getLineSpacing( fontSize ) );
+
+	// Compute the position
+	Vector2f position;
+	Uint32 prevChar = 0;
+	for ( std::size_t i = 0; i < index; ++i ) {
+		String::StringBaseType curChar = string[i];
+
+		// Apply the kerning offset
+		position.x += static_cast<Float>( font->getKerning( prevChar, curChar, fontSize, bold ) );
+		prevChar = curChar;
+
+		// Handle special characters
+		switch ( curChar ) {
+			case ' ':
+				position.x += hspace;
+				continue;
+			case '\t':
+				position.x += hspace * tabWidth;
+				continue;
+			case '\n':
+				position.y += vspace;
+				position.x = 0;
+				continue;
+			case '\r':
+				continue;
+		}
+
+		// For regular characters, add the advance offset of the glyph
+		position.x += static_cast<Float>(
+			font->getGlyph( curChar, fontSize, bold, outlineThickness ).advance );
+	}
+
+	return position;
+}
+
+Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
+								  const Uint32& fontSize, const String& string, const Uint32& style,
+								  const Uint32& tabWidth, const Float& outlineThickness ) {
+	if ( NULL == font )
+		return 0;
+
+	Float vspace = font->getLineSpacing( fontSize );
+	Float width = 0, lWidth = 0, height = vspace, lHeight = 0;
+	Uint32 rune;
+	Uint32 prevChar = 0;
+	Int32 nearest = -1;
+	Int32 minDist = std::numeric_limits<Int32>::max();
+	Int32 curDist = -1;
+	std::size_t tSize = string.size();
+	bool bold = ( style & Text::Bold ) != 0;
+	Vector2f fpos( pos.asFloat() );
+
+	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+
+	for ( std::size_t i = 0; i < tSize; ++i ) {
+		rune = string[i];
+		Glyph glyph = font->getGlyph( rune, fontSize, bold, outlineThickness );
+
+		lWidth = width;
+
+		if ( rune != '\r' && rune != '\t' ) {
+			width += font->getKerning( prevChar, rune, fontSize, bold );
+			prevChar = rune;
+			width += glyph.advance;
+		} else if ( rune == '\t' ) {
+			width += hspace * tabWidth;
+		} else if ( rune == '\n' ) {
+			lWidth = 0;
+			width = 0;
+		}
+
+		if ( pos.x <= width && pos.x >= lWidth && pos.y <= height && pos.y >= lHeight ) {
+			if ( i + 1 < tSize ) {
+				Int32 tcurDist = eeabs( pos.x - lWidth );
+				Int32 nextDist = eeabs( pos.x - width );
+				if ( nextDist < tcurDist )
+					return i + 1;
+			}
+			return i;
+		}
+
+		if ( returnNearest ) {
+			curDist = eeabs( fpos.distance( Vector2f( width - ( width - lWidth ) * 0.5f,
+													  height - ( height - lHeight ) * 0.5f ) ) );
+			if ( curDist < minDist ) {
+				nearest = i;
+				minDist = curDist;
+			}
+		}
+
+		if ( rune == '\n' ) {
+			lHeight = height;
+			height += vspace;
+			if ( pos.x > width && pos.y <= lHeight ) {
+				return i;
+			}
+		}
+	}
+
+	if ( pos.x >= width )
+		return tSize;
+	return nearest;
 }
 
 void Text::getWidthInfo() {
@@ -580,6 +732,14 @@ void Text::setDisableCacheWidth( bool newDisableCacheWidth ) {
 	mDisableCacheWidth = newDisableCacheWidth;
 }
 
+const Vector2f& Text::getShadowOffset() const {
+	return mShadowOffset;
+}
+
+void Text::setShadowOffset( const Vector2f& shadowOffset ) {
+	mShadowOffset = shadowOffset;
+}
+
 Rectf Text::getLocalBounds() {
 	ensureGeometryUpdate();
 
@@ -606,128 +766,119 @@ Float Text::getLineSpacing() {
 
 void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
 				 BlendMode effect, const OriginPoint& rotationCenter,
-				 const OriginPoint& scaleCenter ) {
-	if ( NULL != mFont ) {
-		ensureColorUpdate();
-		ensureGeometryUpdate();
+				 const OriginPoint& scaleCenter, const std::vector<Color>& colors,
+				 const std::vector<Color>& outlineColors, const Color& backgroundColor ) {
+	unsigned int numvert = mVertices.size();
 
-		unsigned int numvert = mVertices.size();
+	if ( 0 == numvert )
+		return;
 
-		if ( 0 == numvert )
-			return;
+	GlobalBatchRenderer::instance()->draw();
 
-		if ( mStyle & Shadow ) {
-			mStyle &= ~Shadow;
+	if ( rotation != 0.0f || scale != 1.0f ) {
+		Float cX = (Float)( (Int32)X );
+		Float cY = (Float)( (Int32)Y );
+		Vector2f Center( cX + mCachedWidth * 0.5f, cY + getTextHeight() * 0.5f );
 
-			Color Col = getFillColor();
-			Color Back = getBackgroundColor();
+		GLi->pushMatrix();
 
-			setBackgroundColor( Color::Transparent );
+		Vector2f center = Center;
+		if ( OriginPoint::OriginTopLeft == scaleCenter.OriginType )
+			center = Vector2f( cX, cY );
+		else if ( OriginPoint::OriginCustom == scaleCenter.OriginType )
+			center = Vector2f( scaleCenter.x, scaleCenter.y );
 
-			if ( Col.a != 255 ) {
-				Color ShadowColor = getShadowColor();
-				ShadowColor.a = (Uint8)( (Float)ShadowColor.a * ( (Float)Col.a / (Float)255 ) );
+		GLi->translatef( center.x, center.y, 0.f );
+		GLi->scalef( scale.x, scale.y, 1.0f );
+		GLi->translatef( -center.x, -center.y, 0.f );
 
-				setFillColor( ShadowColor );
-			} else {
-				setFillColor( getShadowColor() );
-			}
+		center = Center;
+		if ( OriginPoint::OriginTopLeft == rotationCenter.OriginType )
+			center = Vector2f( cX, cY );
+		else if ( OriginPoint::OriginCustom == rotationCenter.OriginType )
+			center = Vector2f( rotationCenter.x, rotationCenter.y );
 
-			mColors.assign( mColors.size(), getFillColor() );
+		GLi->translatef( center.x, center.y, 0.f );
+		GLi->rotatef( rotation, 0.0f, 0.0f, 1.0f );
+		GLi->translatef( -center.x + cX, -center.y + cY, 0.f );
+	} else {
+		GLi->translatef( X, Y, 0 );
+	}
 
-			Float pd = PixelDensity::dpToPx( 1 );
+	if ( backgroundColor != Color::Transparent ) {
+		Primitives p;
+		p.setForceDraw( true );
+		p.setColor( backgroundColor );
+		p.drawRectangle( getLocalBounds() );
+	}
 
-			draw( X + pd, Y + pd, scale, rotation, effect );
+	Texture* texture = mFont->getTexture( mRealFontSize );
+	if ( !texture )
+		return;
+	texture->bind();
+	BlendMode::setMode( effect );
 
-			mStyle |= Shadow;
+	Uint32 alloc = numvert * sizeof( VertexCoords );
+	Uint32 allocC = numvert * GLi->quadVertexs();
 
-			setBackgroundColor( Back );
-			setFillColor( Col );
-			mColors.assign( mColors.size(), getFillColor() );
-		}
-
-		GlobalBatchRenderer::instance()->draw();
-
-		if ( rotation != 0.0f || scale != 1.0f ) {
-			Float cX = (Float)( (Int32)X );
-			Float cY = (Float)( (Int32)Y );
-			Vector2f Center( cX + mCachedWidth * 0.5f, cY + getTextHeight() * 0.5f );
-
-			GLi->pushMatrix();
-
-			Vector2f center = Center;
-			if ( OriginPoint::OriginTopLeft == scaleCenter.OriginType )
-				center = Vector2f( cX, cY );
-			else if ( OriginPoint::OriginCustom == scaleCenter.OriginType )
-				center = Vector2f( scaleCenter.x, scaleCenter.y );
-
-			GLi->translatef( center.x, center.y, 0.f );
-			GLi->scalef( scale.x, scale.y, 1.0f );
-			GLi->translatef( -center.x, -center.y, 0.f );
-
-			center = Center;
-			if ( OriginPoint::OriginTopLeft == rotationCenter.OriginType )
-				center = Vector2f( cX, cY );
-			else if ( OriginPoint::OriginCustom == rotationCenter.OriginType )
-				center = Vector2f( rotationCenter.x, rotationCenter.y );
-
-			GLi->translatef( center.x, center.y, 0.f );
-			GLi->rotatef( rotation, 0.0f, 0.0f, 1.0f );
-			GLi->translatef( -center.x + cX, -center.y + cY, 0.f );
-		} else {
-			GLi->translatef( X, Y, 0 );
-		}
-
-		if ( mBackgroundColor != Color::Transparent ) {
-			Primitives p;
-			p.setForceDraw( true );
-			p.setColor( mBackgroundColor );
-			p.drawRectangle( getLocalBounds() );
-		}
-
-		Texture* texture = mFont->getTexture( mRealFontSize );
-		if ( !texture )
-			return;
-		texture->bind();
-		BlendMode::setMode( effect );
-
-		Uint32 alloc = numvert * sizeof( VertexCoords );
-		Uint32 allocC = numvert * GLi->quadVertexs();
-
-		if ( 0 != mOutlineThickness ) {
-			GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
-							   reinterpret_cast<char*>( &mOutlineColors[0] ), allocC );
-			GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
-								  reinterpret_cast<char*>( &mOutlineVertices[0] ), alloc );
-			GLi->vertexPointer(
-				2, GL_FP, sizeof( VertexCoords ),
-				reinterpret_cast<char*>( &mOutlineVertices[0] ) + sizeof( Float ) * 2, alloc );
-
-			if ( GLi->quadsSupported() ) {
-				GLi->drawArrays( GL_QUADS, 0, numvert );
-			} else {
-				GLi->drawArrays( GL_TRIANGLES, 0, numvert );
-			}
-		}
-
-		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &mColors[0] ), allocC );
+	if ( 0 != mOutlineThickness ) {
+		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
+						   reinterpret_cast<const char*>( outlineColors.data() ), allocC );
 		GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
-							  reinterpret_cast<char*>( &mVertices[0] ), alloc );
+							  reinterpret_cast<char*>( &mOutlineVertices[0] ), alloc );
 		GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
-							reinterpret_cast<char*>( &mVertices[0] ) + sizeof( Float ) * 2, alloc );
+							reinterpret_cast<char*>( &mOutlineVertices[0] ) + sizeof( Float ) * 2,
+							alloc );
 
 		if ( GLi->quadsSupported() ) {
 			GLi->drawArrays( GL_QUADS, 0, numvert );
 		} else {
 			GLi->drawArrays( GL_TRIANGLES, 0, numvert );
 		}
-
-		if ( rotation != 0.0f || scale != 1.0f ) {
-			GLi->popMatrix();
-		} else {
-			GLi->translatef( -X, -Y, 0 );
-		}
 	}
+
+	GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const char*>( colors.data() ),
+					   allocC );
+	GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
+						  reinterpret_cast<char*>( &mVertices[0] ), alloc );
+	GLi->vertexPointer( 2, GL_FP, sizeof( VertexCoords ),
+						reinterpret_cast<char*>( &mVertices[0] ) + sizeof( Float ) * 2, alloc );
+
+	if ( GLi->quadsSupported() ) {
+		GLi->drawArrays( GL_QUADS, 0, numvert );
+	} else {
+		GLi->drawArrays( GL_TRIANGLES, 0, numvert );
+	}
+
+	if ( rotation != 0.0f || scale != 1.0f ) {
+		GLi->popMatrix();
+	} else {
+		GLi->translatef( -X, -Y, 0 );
+	}
+}
+
+void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
+				 BlendMode effect, const OriginPoint& rotationCenter,
+				 const OriginPoint& scaleCenter ) {
+	if ( NULL == mFont )
+		return;
+
+	ensureColorUpdate();
+	ensureGeometryUpdate();
+
+	if ( mStyle & Shadow ) {
+		std::vector<Color> colors;
+		Color shadowColor( getShadowColor() );
+		if ( getFillColor().a != 255 )
+			shadowColor.a =
+				(Uint8)( (Float)shadowColor.a * ( (Float)getFillColor().a / (Float)255 ) );
+		colors.assign( mColors.size(), shadowColor );
+		draw( X + mShadowOffset.x, Y + mShadowOffset.y, scale, rotation, effect, rotationCenter,
+			  scaleCenter, colors, {}, Color::Transparent );
+	}
+
+	draw( X, Y, scale, rotation, effect, rotationCenter, scaleCenter, mColors, mOutlineColors,
+		  mBackgroundColor );
 }
 
 void Text::ensureGeometryUpdate() {
@@ -970,11 +1121,11 @@ void Text::ensureColorUpdate() {
 }
 
 const Color& Text::getShadowColor() const {
-	return mFontShadowColor;
+	return mShadowColor;
 }
 
 void Text::setShadowColor( const Color& color ) {
-	mFontShadowColor = color;
+	mShadowColor = color;
 }
 
 const int& Text::getNumLines() {
@@ -1023,6 +1174,14 @@ void Text::setStyleConfig( const FontStyleConfig& styleConfig ) {
 	setOutlineThickness( styleConfig.OutlineThickness );
 	setOutlineColor( styleConfig.OutlineColor );
 	setShadowColor( styleConfig.ShadowColor );
+}
+
+bool Text::hasSameFontStyleConfig( const FontStyleConfig& styleConfig ) {
+	return styleConfig.Font == mFont && styleConfig.CharacterSize == mFontSize &&
+		   styleConfig.Style == mStyle && styleConfig.FontColor == mFillColor &&
+		   styleConfig.OutlineColor == mOutlineColor && styleConfig.ShadowColor == mShadowColor &&
+		   styleConfig.ShadowOffset == mShadowOffset &&
+		   styleConfig.OutlineThickness == mOutlineThickness;
 }
 
 void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {

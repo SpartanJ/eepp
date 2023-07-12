@@ -310,7 +310,7 @@ void UINodeDrawable::LayerDrawable::draw( const Vector2f& position, const Sizef&
 	if ( mNeedsUpdate )
 		update();
 
-	RGB prevColor = getColorFilter();
+	RGB prevColor = mDrawable->getColorFilter();
 	if ( mColorWasSet )
 		mDrawable->setColorFilter( getColor() );
 	mDrawable->setAlpha( getAlpha() );
@@ -408,7 +408,7 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
 		mResourceChangeCbId = reinterpret_cast<DrawableResource*>( mDrawable )
 								  ->pushResourceChangeCallback(
-									  [&]( DrawableResource::Event event, DrawableResource* ) {
+									  [this]( DrawableResource::Event event, DrawableResource* ) {
 										  invalidate();
 										  if ( event == DrawableResource::Event::Unload ) {
 											  mResourceChangeCbId = 0;

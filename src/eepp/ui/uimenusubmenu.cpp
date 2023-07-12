@@ -18,8 +18,8 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
 	applyDefaultTheme();
-	mArrow->addEventListener( Event::OnSizeChange, [&]( const Event* ) { onSizeChange(); } );
-	mArrow->addEventListener( Event::OnMarginChange, [&]( const Event* ) { onSizeChange(); } );
+	mArrow->addEventListener( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
+	mArrow->addEventListener( Event::OnMarginChange, [this]( const Event* ) { onSizeChange(); } );
 	mArrow->setVisible( true );
 	mArrow->setEnabled( false );
 }
@@ -105,7 +105,7 @@ void UIMenuSubMenu::showSubMenu() {
 Uint32 UIMenuSubMenu::onMouseOver( const Vector2i& pos, const Uint32& flags ) {
 	if ( nullptr == mCurWait ) {
 		mCurWait = Actions::Runnable::New(
-			[&] {
+			[this] {
 				if ( isMouseOver() )
 					showSubMenu();
 				mCurWait = nullptr;

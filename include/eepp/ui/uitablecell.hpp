@@ -37,7 +37,7 @@ class EE_API UITableCell : public UIPushButton {
 
 	void setTheme( UITheme* Theme ) {
 		UIPushButton::setTheme( Theme );
-		setThemeSkin( Theme, "tablerow" );
+		setThemeSkin( Theme, "tablecell" );
 		onThemeLoaded();
 	}
 

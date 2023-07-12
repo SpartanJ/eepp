@@ -67,6 +67,8 @@ class EE_API WindowSDL : public Window {
 
 	virtual void raise();
 
+	virtual void flash( WindowFlashOperation op );
+
 	virtual void show();
 
 	virtual void setPosition( int Left, int Top );
@@ -78,6 +80,11 @@ class EE_API WindowSDL : public Window {
 	virtual Rect getBorderSize();
 
 	virtual Float getScale();
+
+	virtual bool hasNativeMessageBox() const;
+
+	virtual bool showMessageBox( const MessageBoxType& type, const std::string& title,
+								 const std::string& message );
 
 	SDL_Window* GetSDLWindow() const;
 

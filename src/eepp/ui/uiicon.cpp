@@ -1,4 +1,5 @@
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/ui/uiicon.hpp>
 
 namespace EE { namespace UI {
@@ -21,11 +22,11 @@ Drawable* UIIcon::getSize( const int& size ) const {
 		return it->second;
 	int distance = UINT32_MAX;
 	Drawable* closest = nullptr;
-	for ( auto& it : mSizes ) {
-		int diff = abs( it.first - size );
+	for ( const auto& sit : mSizes ) {
+		int diff = abs( sit.first - size );
 		if ( diff < distance ) {
 			distance = diff;
-			closest = it.second;
+			closest = sit.second;
 		}
 	}
 	return closest;
@@ -53,7 +54,7 @@ Drawable* UIGlyphIcon::getSize( const int& size ) const {
 UIGlyphIcon::UIGlyphIcon( const std::string& name, FontTrueType* font, const Uint32& codePoint ) :
 	UIIcon( name ), mFont( font ), mCodePoint( codePoint ) {
 	eeASSERT( mFont );
-	mCloseCb = mFont->pushFontEventCallback( [&]( Uint32, Font::Event event, Font* ) {
+	mCloseCb = mFont->pushFontEventCallback( [this]( Uint32, Font::Event event, Font* ) {
 		if ( event == Font::Event::Unload )
 			mFont = nullptr;
 	} );
@@ -66,5 +67,39 @@ UIGlyphIcon::~UIGlyphIcon() {
 		mCloseCb = 0;
 	}
 }
+
+UIIcon* UISVGIcon::New( const std::string& name, const std::string& svgXML ) {
+	return eeNew( UISVGIcon, ( name, svgXML ) );
+}
+
+UISVGIcon::~UISVGIcon() {}
+
+Drawable* UISVGIcon::getSize( const int& size ) const {
+	auto it = mSVGs.find( size );
+	if ( it != mSVGs.end() )
+		return it->second;
+
+	Image::FormatConfiguration format;
+	if ( mOriSize == Sizei::Zero ) {
+		int w, h, c;
+		if ( Image::getInfoFromMemory( (const unsigned char*)mSVGXml.data(), mSVGXml.size(), &w, &h,
+									   &c, format ) ) {
+			mOriSize = { w, h };
+			mOriChannels = c;
+		} else {
+			return nullptr;
+		}
+	}
+	format.svgScale( size / (Float)eemax( mOriSize.x, mOriSize.y ) );
+	Texture* texture = TextureFactory::instance()->loadFromMemory(
+		(const unsigned char*)&mSVGXml[0], mSVGXml.size(), false, Texture::ClampMode::ClampToEdge,
+		false, false, format );
+
+	mSVGs[size] = texture;
+	return texture;
+}
+
+UISVGIcon::UISVGIcon( const std::string& name, const std::string& svgXML ) :
+	UIIcon( name ), mSVGXml( svgXML ) {}
 
 }} // namespace EE::UI

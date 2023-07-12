@@ -32,7 +32,7 @@ Node::Node() :
 	mAlpha( 255.f ) {}
 
 Node::~Node() {
-	if ( !SceneManager::instance()->isShootingDown() && NULL != mSceneNode ) {
+	if ( !SceneManager::instance()->isShuttingDown() && NULL != mSceneNode ) {
 		if ( mSceneNode != this && NULL != mSceneNode->getActionManager() )
 			mSceneNode->getActionManager()->removeAllActionsFromTarget( this );
 
@@ -53,6 +53,10 @@ Node::~Node() {
 	if ( NULL != eventDispatcher ) {
 		if ( eventDispatcher->getFocusNode() == this && mSceneNode != this ) {
 			eventDispatcher->setFocusNode( mSceneNode );
+		}
+
+		if ( eventDispatcher->getLastFocusNode() == this && mSceneNode != this ) {
+			eventDispatcher->setLastFocusNode( mSceneNode );
 		}
 
 		if ( eventDispatcher->getMouseOverNode() == this && mSceneNode != this ) {
@@ -263,11 +267,11 @@ Node* Node::setParent( Node* parent ) {
 
 bool Node::isParentOf( const Node* node ) const {
 	eeASSERT( NULL != node );
-	Node* tParent = node->getParent();
+	Node* tParent = node->mParentNode;
 	while ( NULL != tParent ) {
 		if ( this == tParent )
 			return true;
-		tParent = tParent->getParent();
+		tParent = tParent->mParentNode;
 	}
 	return false;
 }
@@ -550,6 +554,10 @@ const Vector2f& Node::getScreenPos() const {
 	return mScreenPos;
 }
 
+Rectf Node::getScreenRect() const {
+	return Rectf( getScreenPos(), getPixelsSize() );
+}
+
 void Node::clipStart() {
 	if ( mVisible && isClipped() ) {
 		clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
@@ -644,9 +652,8 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 		} else {
 			Uint32 i = 0;
 
-			while ( NULL != nodeLoop->mNext && i < index ) {
+			while ( NULL != nodeLoop->mNext && ++i < index ) {
 				nodeLoop = nodeLoop->mNext;
-				i++;
 			}
 
 			Node* ChildTmp = nodeLoop->mNext;
@@ -1113,18 +1120,26 @@ void Node::updateCenter() {
 }
 
 Uint32 Node::addEventListener( const Uint32& eventType, const EventCallback& callback ) {
-	mNumCallBacks++;
-	mEvents[eventType][mNumCallBacks] = callback;
+	mEvents[eventType][++mNumCallBacks] = callback;
 	return mNumCallBacks;
 }
 
-Uint32 Node::addMouseClickListener( const std::function<void( const MouseEvent* )>& callback,
-									const MouseButton& button ) {
-	return addEventListener( Event::MouseClick, [callback, button]( const Event* event ) {
+Uint32 Node::on( const Uint32& eventType, const EventCallback& callback ) {
+	mEvents[eventType][++mNumCallBacks] = callback;
+	return mNumCallBacks;
+}
+
+Uint32 Node::onClick( const std::function<void( const MouseEvent* )>& callback,
+					  const MouseButton& button ) {
+	return on( Event::MouseClick, [callback, button]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & ( EE_BUTTON_MASK( button ) ) ) {
 			callback( event->asMouseEvent() );
 		}
 	} );
+}
+
+bool Node::hasEventsOfType( const Uint32& eventType ) const {
+	return mEvents.find( eventType ) != mEvents.end();
 }
 
 void Node::removeEventsOfType( const Uint32& eventType ) {
@@ -1136,9 +1151,21 @@ void Node::removeEventsOfType( const Uint32& eventType ) {
 void Node::removeEventListener( const Uint32& callbackId ) {
 	EventsMap::iterator it;
 	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
-		std::map<Uint32, EventCallback>& event = it->second;
+		auto& event = it->second;
 		if ( event.erase( callbackId ) > 0 )
 			break;
+	}
+}
+
+void Node::removeEventListener( const std::vector<Uint32>& callbacksIds ) {
+	for ( auto& event : mEvents ) {
+		auto& events = event.second;
+		for ( auto& cbId : callbacksIds ) {
+			auto it = events.find( cbId );
+			if ( it != events.end() ) {
+				events.erase( it );
+			}
+		}
 	}
 }
 
@@ -1496,9 +1523,23 @@ void Node::clearActions() {
 }
 
 void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-							const Uint32& tag ) {
-	Action* action = Actions::Runnable::New( runnable, delay );
-	action->setTag( tag );
+							const Uint32& uniqueIdentifier ) {
+	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
+	action->setTag( uniqueIdentifier );
+	runAction( action );
+}
+
+void Node::setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay,
+					   const Uint32& uniqueIdentifier ) {
+	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
+	action->setTag( uniqueIdentifier );
+	runAction( action );
+}
+
+void Node::setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
+						const Uint32& uniqueIdentifier ) {
+	Action* action = Actions::Runnable::New( std::move( runnable ), interval, true );
+	action->setTag( uniqueIdentifier );
 	runAction( action );
 }
 

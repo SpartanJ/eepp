@@ -3,12 +3,16 @@
 
 #include <eepp/system/time.hpp>
 #include <string>
+#include <vector>
 
 namespace EE { namespace System {
 
 class EE_API Sys {
   public:
-	/** Returns the current date time */
+	/** @return The current process id */
+	static Uint64 getProcessID();
+
+	/** @return the current date time */
 	static std::string getDateTimeStr();
 
 	/** Converts any epoch timestmap to a formatted string. */
@@ -23,7 +27,7 @@ class EE_API Sys {
 
 	/** @return The number of milliseconds since the first call. Note that this value wraps if the
 	 * program runs for more than ~49 days. */
-	static Uint32 getTicks();
+	static Uint64 getTicks();
 
 	/** Wait a specified number of milliseconds before returning. */
 	static void sleep( const Uint32& ms );
@@ -67,6 +71,23 @@ class EE_API Sys {
 	**	@param name The name of the function to look up
 	**	@return The pointer to the function or NULL if there was an error */
 	static void* loadFunction( void* handle, const std::string& name );
+
+	/** @return the argument list in a vector of std::strings in UTF-8, ignoring the first argument
+	 * (the binary name) */
+	static std::vector<std::string> parseArguments( int argc, char* argv[] );
+
+	/** @return The OS logical drives */
+	static std::vector<std::string> getLogicalDrives();
+
+	/** Finds the location of a binary / executable file.
+	 *  @return The executable file path, or an empty string if not found. */
+	static std::string which( const std::string& exeName,
+							  const std::vector<std::string>& customSearchPaths = {} );
+	
+	/* It will attach the console to the parent process console if any. Windows only function.
+	 * Other platforms will do nothing. 
+	*/
+	static bool windowAttachConsole();
 };
 
 }} // namespace EE::System

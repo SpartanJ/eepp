@@ -71,7 +71,7 @@ void UITextEdit::wrapText( const Float& maxWidth ) {
 }
 
 String UITextEdit::getText() const {
-	return mDoc->getText( { mDoc->startOfDoc(), mDoc->endOfDoc() } );
+	return mDoc->getText();
 }
 
 void UITextEdit::setText( const String& text ) {
@@ -92,7 +92,10 @@ void UITextEdit::onDocumentLineChanged( const Int64& lineIndex ) {
 }
 
 void UITextEdit::drawLineText( const Int64& index, Vector2f position, const Float&, const Float& ) {
+	Color fontColor( mFontStyleConfig.FontColor );
+	mFontStyleConfig.FontColor.blendAlpha( mAlpha );
 	getLineText( index ).draw( position.x, position.y );
+	mFontStyleConfig.FontColor = fontColor;
 }
 
 bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {

@@ -71,7 +71,7 @@ static Drawable* parseDataURI( const std::string& name ) {
 			}
 		}
 
-		Uint32 texId = 0;
+		Texture* tex = nullptr;
 		if ( !format.empty() &&
 			 ( Image::isImageExtension( "." + format ) || format == "svg+xml" ) ) {
 			Image::FormatConfiguration format;
@@ -85,22 +85,21 @@ static Drawable* parseDataURI( const std::string& name ) {
 				ScopedBuffer buffer( bufSize );
 				int len = Base64::decode( base64Size, &name[fileStart], bufSize, buffer.get() );
 				if ( len > 0 )
-					texId = TextureFactory::instance()->loadFromMemory(
+					tex = TextureFactory::instance()->loadFromMemory(
 						buffer.get(), len, false, Texture::ClampMode::ClampToEdge, false, false,
 						format );
 			} else if ( decodingType == "urldecode" ) {
 				int fileStart = formatAndEncSep + 1;
 				std::string decoded( URI::decode( name.substr( fileStart ) ) );
 				if ( !decoded.empty() ) {
-					texId = TextureFactory::instance()->loadFromMemory(
+					tex = TextureFactory::instance()->loadFromMemory(
 						(const unsigned char*)decoded.c_str(), decoded.size(), false,
 						Texture::ClampMode::ClampToEdge, false, false, format );
 				}
 			}
 		}
 
-		if ( texId > 0 ) {
-			Texture* tex = TextureFactory::instance()->getTexture( texId );
+		if ( tex ) {
 			tex->setName( hash );
 			drawable = tex;
 		}
@@ -151,21 +150,19 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 			drawable = TextureFactory::instance()->getByName( filePath );
 
 			if ( NULL == drawable ) {
-				Uint32 texId = TextureFactory::instance()->loadFromFile( filePath );
+				Texture* tex = TextureFactory::instance()->loadFromFile( filePath );
 
-				if ( texId > 0 )
-					drawable = TextureFactory::instance()->getTexture( texId );
+				if ( tex )
+					drawable = tex;
 			}
 		} else if ( String::startsWith( name, "http://" ) ||
 					String::startsWith( name, "https://" ) ) {
 			Texture* texture = TextureFactory::instance()->getByName( name );
 
 			if ( NULL == texture && Engine::instance()->isSharedGLContextEnabled() ) {
-				Uint32 texId = TextureFactory::instance()->createEmptyTexture(
+				texture = TextureFactory::instance()->createEmptyTexture(
 					1, 1, 4, Color::Transparent, false, Texture::ClampMode::ClampToEdge, false,
 					false, name );
-
-				texture = TextureFactory::instance()->getTexture( texId );
 
 				Http::getAsync(
 					[=]( const Http&, Http::Request&, Http::Response& response ) {

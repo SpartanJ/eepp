@@ -9,7 +9,7 @@ void Model::onModelUpdate( unsigned flags ) {
 		mOnUpdate();
 	for ( auto& client : mClients )
 		client->onModelUpdated( flags );
-	forEachView( [&]( UIAbstractView* view ) { view->onModelUpdate( flags ); } );
+	forEachView( [flags]( UIAbstractView* view ) { view->onModelUpdate( flags ); } );
 }
 
 void Model::forEachView( std::function<void( UIAbstractView* )> callback ) {
@@ -30,7 +30,7 @@ void Model::unregisterClient( Model::Client* client ) {
 }
 
 void Model::refreshView() {
-	forEachView( [&]( UIAbstractView* view ) { view->invalidateDraw(); } );
+	forEachView( []( UIAbstractView* view ) { view->invalidateDraw(); } );
 }
 
 void Model::registerView( UIAbstractView* view ) {
@@ -305,6 +305,14 @@ void Model::handleDelete( Operation const& operation ) {
 
 Mutex& Model::resourceMutex() {
 	return mResourceLock;
+}
+
+void Model::acquireResourceMutex() {
+	mResourceLock.lock();
+}
+
+void Model::releaseResourceMutex() {
+	mResourceLock.unlock();
 }
 
 void Model::handleMove( Operation const& operation ) {

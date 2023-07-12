@@ -3,14 +3,34 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
+#include <memory>
 #include <string>
+
+using namespace EE::Graphics;
 
 namespace EE { namespace UI { namespace Doc {
 
 struct EE_API SyntaxToken {
 	std::string type;
+	size_t len{ 0 };
+};
+
+struct EE_API SyntaxTokenPosition {
+	// TODO: type should be the hash of the name of the type. Using std::string takes at least
+	// 32 bytes per token vs 4 bytes. It's much easier to debug a string than a hash and that's
+	// the reason why we keep it for the moment.
+	std::string type;
+	Int64 pos{ 0 };
+	size_t len{ 0 };
+};
+
+struct EE_API SyntaxTokenComplete {
+	std::string type;
 	std::string text;
+	size_t len{ 0 };
 };
 
 #define SYNTAX_TOKENIZER_STATE_NONE ( 0 )
@@ -24,10 +44,23 @@ struct SyntaxState {
 
 class EE_API SyntaxTokenizer {
   public:
-	static std::pair<std::vector<SyntaxToken>, Uint32> tokenize( const SyntaxDefinition& syntax,
-																 const std::string& text,
-																 const Uint32& state,
-																 const size_t& startIndex = 0 );
+	static std::pair<std::vector<SyntaxToken>, Uint32>
+	tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
+			  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
+
+	static std::pair<std::vector<SyntaxTokenPosition>, Uint32>
+	tokenizePosition( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
+					  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
+
+	static std::pair<std::vector<SyntaxTokenComplete>, Uint32>
+	tokenizeComplete( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
+					  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
+
+	static Text& tokenizeText( const SyntaxDefinition& syntax, const SyntaxColorScheme& colorScheme,
+							   Text& text, const size_t& startIndex = 0,
+							   const size_t& endIndex = 0xFFFFFFFF,
+							   bool skipSubSyntaxSeparator = false,
+							   const std::string& trimChars = "" );
 
 	static SyntaxState retrieveSyntaxState( const SyntaxDefinition& syntax, const Uint32& state );
 };

@@ -22,10 +22,11 @@ class ProjectSearch {
 		struct Result {
 			Result( const String& line, const TextRange& pos, Int64 s, Int64 e ) :
 				line( line ), position( pos ), start( s ), end( e ) {}
+			Result() {}
 			String line;
 			TextRange position;
-			Int64 start;
-			Int64 end;
+			Int64 start{ 0 };
+			Int64 end{ 0 };
 			bool selected{ true };
 		};
 		std::string file;
@@ -185,8 +186,15 @@ class ProjectSearch {
 
 		const Result& getResult() const { return mResult; }
 
+		void removeLastNewLineCharacter();
+
+		void setResultFromSymbolReference( bool ref ) { mResultFromSymbolReference = ref; }
+
+		bool isResultFromSymbolReference() const { return mResultFromSymbolReference; }
+
 	  protected:
 		Result mResult;
+		bool mResultFromSymbolReference{ false };
 	};
 
 	static std::shared_ptr<ResultModel> asModel( const Result& result ) {

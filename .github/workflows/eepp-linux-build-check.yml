@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   Linux:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -15,12 +15,22 @@ jobs:
         git submodule update --init --recursive
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y wget g++-8 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev
-        wget https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-linux.tar.gz
-        tar xvzf premake-5.0.0-alpha14-linux.tar.gz
+        sudo add-apt-repository universe
+        sudo add-apt-repository multiverse
+        sudo apt update
+        sudo apt install gcc-12 g++-12 wget libsdl2-2.0-0 libsdl2-dev
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 10
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 10
+        sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
+        sudo update-alternatives --set cc /usr/bin/gcc
+        sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30
+        sudo update-alternatives --set c++ /usr/bin/g++
+        sudo update-alternatives --config gcc
+        sudo update-alternatives --config g++
+        wget https://github.com/premake/premake-core/releases/download/v5.0.0-beta1/premake-5.0.0-beta1-linux.tar.gz
+        tar xvzf premake-5.0.0-beta1-linux.tar.gz
     - name: Build
       run: |
         ./premake5 gmake2
         cd make/linux
-        make all $* CC=gcc-8 CPP=g++-8 CXX=g++-8 CC=gcc-8 -j`nproc`
+        make all -j$(nproc)

@@ -4,6 +4,7 @@
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -27,7 +28,7 @@ UIMenuBar::~UIMenuBar() {
 }
 
 void UIMenuBar::destroyMenues() {
-	if ( !SceneManager::instance()->isShootingDown() ) {
+	if ( !SceneManager::instance()->isShuttingDown() ) {
 		for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 			if ( it->second->getParent() != this ) {
 				// Changing the parent ensures that the menu will be destroyed when the menubar is
@@ -54,7 +55,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 	button->setText( buttonText );
 	button->setVisible( true );
 	button->setEnabled( true );
-	button->addEventListener( Event::OnSizeChange, [&]( const Event* ) { refreshButtons(); } );
+	button->addEventListener( Event::OnSizeChange, [this]( const Event* ) { refreshButtons(); } );
 	button->addEventListener( Event::OnFocus, [&, button]( const Event* ) {
 		if ( getEventDispatcher()->getReleaseTrigger() & EE_BUTTON_LMASK ) {
 			getMenuFromButton( button )->setFocus();
@@ -74,7 +75,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 			button->unselect();
 		}
 	} );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* ) {
+	menu->addEventListener( Event::OnItemClicked, [this]( const Event* ) {
 		mWaitingUp = nullptr;
 		mCurrentMenu = nullptr;
 	} );
@@ -292,7 +293,7 @@ bool UIMenuBar::isPopUpMenuChild( Node* node ) {
 }
 
 void UIMenuBar::autoHeight() {
-	if ( 0 == mMenuHeight && nullptr != getSkin() ) {
+	if ( 0 == mMenuHeight ) {
 		mMenuHeight = getSkinSize().getHeight();
 		setSize( getParent()->getSize().getWidth(), mMenuHeight );
 		updateAnchorsDistances();

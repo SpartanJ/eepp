@@ -17,7 +17,8 @@ class UITerminal : public UIWidget {
 	enum ScrollViewType { Inclusive, Exclusive };
 
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
-							std::string program = "", const std::vector<std::string>& args = {},
+							const std::string& program = "",
+							const std::vector<std::string>& args = {},
 							const std::string& workingDir = "", const size_t& historySize = 10000,
 							IProcessFactory* processFactory = nullptr,
 							const bool& useFrameBuffer = false );
@@ -104,6 +105,8 @@ class UITerminal : public UIWidget {
 
 	void executeFile( const std::string& cmd );
 
+	void executeBinary( const std::string& binaryPath, const std::string& args = "" );
+
 	const TerminalColorScheme& getColorScheme() const;
 
 	void setColorScheme( const TerminalColorScheme& colorScheme );
@@ -111,7 +114,6 @@ class UITerminal : public UIWidget {
   protected:
 	std::string mTitle;
 	bool mIsCustomTitle{ false };
-	bool mDraggingSel{ false };
 	bool mExclusiveMode{ false };
 	bool mCreateDefaultContextMenuOptions{ true };
 	KeyBindings mKeyBindings;

@@ -6,6 +6,7 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/input.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 using namespace EE::Scene;
@@ -13,7 +14,7 @@ using namespace EE::Scene;
 namespace eterm { namespace UI {
 
 UITerminal* UITerminal::New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
-							 std::string program, const std::vector<std::string>& args,
+							 const std::string& program, const std::vector<std::string>& args,
 							 const std::string& workingDir, const size_t& historySize,
 							 IProcessFactory* processFactory, const bool& useFrameBuffer ) {
 	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
@@ -38,8 +39,10 @@ bool UITerminal::isType( const Uint32& type ) const {
 }
 
 void UITerminal::draw() {
-	mTerm->setPosition( mScreenPosi.asFloat() );
-	mTerm->draw();
+	if ( mTerm ) {
+		mTerm->setPosition( mScreenPosi.asFloat() );
+		mTerm->draw();
+	}
 }
 
 UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
@@ -47,8 +50,10 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mTerm( terminalDisplay ) {
-	mFlags |= UI_TAB_STOP;
-	mTerm->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
+	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
+	if ( !terminalDisplay )
+		return;
+	mTerm->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
 		switch ( event.type ) {
 			case TerminalDisplay::EventType::TITLE: {
 				if ( !mIsCustomTitle && mTitle != event.eventData ) {
@@ -72,28 +77,28 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	} );
 
 	mVScroll->setParent( this );
-	mVScroll->addEventListener( Event::OnValueChange, [&]( const Event* ) { updateScroll(); } );
+	mVScroll->addEventListener( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
 
 	setCommand( "terminal-scroll-up-screen",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
 	setCommand( "terminal-scroll-down-screen",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_SCREEN ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_SCREEN ); } );
 	setCommand( "terminal-scroll-up-row",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_ROW ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_ROW ); } );
 	setCommand( "terminal-scroll-down-row",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_ROW ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_ROW ); } );
 	setCommand( "terminal-scroll-up-history",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLUP_HISTORY ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_HISTORY ); } );
 	setCommand( "terminal-scroll-down-history",
-				[&] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_HISTORY ); } );
+				[this] { mTerm->action( TerminalShortcutAction::SCROLLDOWN_HISTORY ); } );
 	setCommand( "terminal-font-size-grow",
-				[&] { mTerm->action( TerminalShortcutAction::FONTSIZE_GROW ); } );
+				[this] { mTerm->action( TerminalShortcutAction::FONTSIZE_GROW ); } );
 	setCommand( "terminal-font-size-shrink",
-				[&] { mTerm->action( TerminalShortcutAction::FONTSIZE_SHRINK ); } );
-	setCommand( "terminal-paste", [&] { mTerm->action( TerminalShortcutAction::PASTE ); } );
-	setCommand( "terminal-copy", [&] { mTerm->action( TerminalShortcutAction::COPY ); } );
+				[this] { mTerm->action( TerminalShortcutAction::FONTSIZE_SHRINK ); } );
+	setCommand( "terminal-paste", [this] { mTerm->action( TerminalShortcutAction::PASTE ); } );
+	setCommand( "terminal-copy", [this] { mTerm->action( TerminalShortcutAction::COPY ); } );
 	setCommand( "terminal-open-link",
-				[&] { Engine::instance()->openURI( mTerm->getTerminal()->getSelection() ); } );
+				[this] { Engine::instance()->openURI( mTerm->getTerminal()->getSelection() ); } );
 	subscribeScheduledUpdate();
 }
 
@@ -239,6 +244,11 @@ void UITerminal::executeFile( const std::string& cmd ) {
 		mTerm->executeFile( cmd );
 }
 
+void UITerminal::executeBinary( const std::string& binaryPath, const std::string& args ) {
+	if ( mTerm )
+		mTerm->executeBinary( binaryPath, args );
+}
+
 const TerminalColorScheme& UITerminal::getColorScheme() const {
 	return mTerm->getColorScheme();
 }
@@ -296,9 +306,11 @@ const std::shared_ptr<TerminalDisplay>& UITerminal::getTerm() const {
 }
 
 void UITerminal::scheduledUpdate( const Time& ) {
+	if ( !mTerm )
+		return;
 	mTerm->update();
 
-	if ( mTerm->isDirty() )
+	if ( mTerm->isDirty() && isVisible() )
 		invalidateDraw();
 
 	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
@@ -406,6 +418,13 @@ bool UITerminal::isUsingCustomTitle() const {
 }
 
 Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
+	Input* input = getUISceneNode()->getWindow()->getInput();
+
+	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
+		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() ||
+		 input->isLeftAltPressed() )
+		return 0;
+
 	mTerm->onTextInput( event.getChar() );
 	return 1;
 }
@@ -448,12 +467,6 @@ Uint32 UITerminal::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 	if ( getUISceneNode()->getUIEventDispatcher()->isNodeDragging() )
 		return 0;
 
-	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 mTerm->getTerminal()->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
-		mDraggingSel = true;
-	} else if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
-		return 1;
-	}
 	mTerm->onMouseDown( position, flags );
 	return 1;
 }
@@ -464,9 +477,7 @@ Uint32 UITerminal::onMouseDoubleClick( const Vector2i& position, const Uint32& f
 }
 
 Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
-	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
-		mDraggingSel = false;
-	} else if ( flags & EE_BUTTON_RMASK ) {
+	if ( flags & EE_BUTTON_RMASK ) {
 		onCreateContextMenu( position, flags );
 		return 1;
 	}
@@ -543,10 +554,10 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
+	createDefaultContextMenuOptions( menu );
+
 	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
 	sendEvent( &event );
-
-	createDefaultContextMenuOptions( menu );
 
 	if ( menu->getCount() == 0 ) {
 		menu->close();
@@ -554,7 +565,7 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -567,7 +578,7 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
-	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
 	return true;
 }

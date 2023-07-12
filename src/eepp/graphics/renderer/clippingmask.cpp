@@ -118,6 +118,8 @@ void ClippingMask::setMaskMode( Mode theMode ) {
 }
 
 void ClippingMask::stencilMaskEnable() {
+	GlobalBatchRenderer::instance()->draw();
+
 	GLi->enable( GL_STENCIL_TEST );
 	GLi->stencilMask( 0xFF );
 	GLi->stencilFunc( GL_NEVER, 1, 0xFF );
@@ -132,15 +134,17 @@ void ClippingMask::stencilMaskEnable() {
 void ClippingMask::stencilMaskDisable( bool clearMasks ) {
 	GLi->disable( GL_STENCIL_TEST );
 
+	GlobalBatchRenderer::instance()->draw();
+
 	if ( clearMasks )
 		this->clearMasks();
 }
 
-std::list<Rectf> ClippingMask::getScissorsClipped() const {
+const std::vector<Rectf>& ClippingMask::getScissorsClipped() const {
 	return mScissorsClipped;
 }
 
-void ClippingMask::setScissorsClipped( const std::list<Rectf>& scissorsClipped ) {
+void ClippingMask::setScissorsClipped( const std::vector<Rectf>& scissorsClipped ) {
 	mScissorsClipped = scissorsClipped;
 
 	if ( !mScissorsClipped.empty() ) {
@@ -151,11 +155,11 @@ void ClippingMask::setScissorsClipped( const std::list<Rectf>& scissorsClipped )
 	}
 }
 
-std::list<Rectf> ClippingMask::getPlanesClipped() const {
+const std::vector<Rectf>& ClippingMask::getPlanesClipped() const {
 	return mPlanesClipped;
 }
 
-void ClippingMask::setPlanesClipped( const std::list<Rectf>& planesClipped ) {
+void ClippingMask::setPlanesClipped( const std::vector<Rectf>& planesClipped ) {
 	mPlanesClipped = planesClipped;
 
 	if ( !mPlanesClipped.empty() ) {

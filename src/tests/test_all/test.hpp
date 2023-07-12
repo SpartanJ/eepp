@@ -2,6 +2,8 @@
 #define EE_EETEST_HPP
 
 #include <eepp/ee.hpp>
+#include <eepp/maps/maps.hpp>
+#include <eepp/physics/physics.hpp>
 
 namespace Demo_Test {
 

@@ -7,10 +7,21 @@
 
 namespace EE { namespace UI {
 
-enum class InnerWidgetOrientation { Left, Right, Center };
+enum class InnerWidgetOrientation {
+	WidgetIconTextBox,
+	WidgetTextBoxIcon,
+	IconTextBoxWidget,
+	IconWidgetTextBox,
+	TextBoxIconWidget,
+	TextBoxWidgetIcon,
+};
 
 class EE_API UIPushButton : public UIWidget {
   public:
+	static InnerWidgetOrientation innerWidgetOrientationFromString( std::string iwo );
+
+	static std::string innerWidgetOrientationToString( const InnerWidgetOrientation& orientation );
+
 	static UIPushButton* New();
 
 	static UIPushButton* NewWithTag( const std::string& tag );
@@ -70,7 +81,7 @@ class EE_API UIPushButton : public UIWidget {
 	UIImage* mIcon;
 	UITextView* mTextBox;
 	Sizei mIconMinSize;
-	InnerWidgetOrientation mInnerWidgetOrientation{ InnerWidgetOrientation::Right };
+	InnerWidgetOrientation mInnerWidgetOrientation{ InnerWidgetOrientation::IconTextBoxWidget };
 	bool mTextAsFallback{ false };
 
 	UIPushButton();

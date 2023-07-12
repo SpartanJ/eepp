@@ -7,9 +7,9 @@
 using namespace EE;
 
 #define ECODE_MAJOR_VERSION 0
-#define ECODE_MINOR_VERSION 3
-#define ECODE_PATCH_LEVEL 1
-#define ECODE_CODENAME "Mūlādhāra"
+#define ECODE_MINOR_VERSION 4
+#define ECODE_PATCH_LEVEL 9
+#define ECODE_CODENAME "Vajra"
 
 /** The compiled version of the library */
 #define ECODE_VERSION( x )                  \
@@ -30,9 +30,9 @@ namespace ecode {
 
 class Version {
   public:
-	Uint8 major; /**< major version */
-	Uint8 minor; /**< minor version */
-	Uint8 patch; /**< update version */
+	Uint32 major; /**< major version */
+	Uint32 minor; /**< minor version */
+	Uint32 patch; /**< update version */
 
 	/** @return The linked version of the library */
 	static Version getVersion();
@@ -40,17 +40,24 @@ class Version {
 	/** @return The linked version number of the library */
 	static Uint32 getVersionNum();
 
-	/** @return The library version name: "eepp version major.minor.patch" */
-	static std::string getVersionName();
+	/** @return The linked version number of the library */
+	static std::string getVersionNumString();
+
+	/** @return The library version name: "ecode version major.minor.patch" */
+	static std::string getVersionFullName();
+
+	/** @return The library release tag name: "ecode-major.minor.patch" */
+	static std::string getTagName();
 
 	/** @return The version codename */
 	static std::string getCodename();
 
 	/** @return The build time of the library */
-
 	static inline std::string getBuildTime() {
 		return std::string( __DATE__ ) + " " + std::string( __TIME__ );
 	}
+
+	static Uint32 getVersionNumFromTag( const std::string& tag );
 };
 
 } // namespace ecode

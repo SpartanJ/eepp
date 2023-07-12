@@ -5,6 +5,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <memory>
+#include <unordered_map>
 
 namespace EE { namespace System {
 class Pack;
@@ -85,9 +86,21 @@ class EE_API FontTrueType : public Font {
 
 	const Uint32& getFontInternalId() const;
 
-	bool getEnableFallbackFont() const;
+	bool isFallbackFontEnabled() const;
 
 	void setEnableFallbackFont( bool enableFallbackFont );
+
+	bool getEnableDynamicMonospace() const;
+
+	void setEnableDynamicMonospace( bool enableDynamicMonospace );
+
+	FontHinting getHinting() const;
+
+	void setHinting( FontHinting hinting );
+
+	FontAntialiasing getAntialiasing() const;
+
+	void setAntialiasing( FontAntialiasing antialiasing );
 
   protected:
 	explicit FontTrueType( const std::string& FontName );
@@ -101,11 +114,12 @@ class EE_API FontTrueType : public Font {
 		unsigned int height; ///< Height of the row
 	};
 
-	typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
-	typedef std::map<Uint64, GlyphDrawable*> GlyphDrawableTable;
+	typedef std::unordered_map<Uint64, Glyph>
+		GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef std::unordered_map<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
-		Page( const Uint32 fontInternalId );
+		explicit Page( const Uint32 fontInternalId );
 
 		~Page();
 
@@ -148,7 +162,6 @@ class EE_API FontTrueType : public Font {
 					  ///< implementation details)
 	void* mStroker;	  ///< Pointer to the stroker (it is typeless to avoid exposing implementation
 					  ///< details)
-	int* mRefCount;	  ///< Reference counter used by implicit sharing
 	mutable ScopedBuffer mMemCopy; ///< If loaded from memory, this is the file copy in memory
 	Font::Info mInfo;			   ///< Information about the font
 	Uint32 mFontInternalId{ 0 };
@@ -158,14 +171,14 @@ class EE_API FontTrueType : public Font {
 	bool mBoldAdvanceSameAsRegular;
 	bool mIsColorEmojiFont{ false };
 	bool mIsEmojiFont{ false };
-	bool mIsMonospace{ false };
+	mutable bool mIsMonospace{ false };
 	bool mEnableEmojiFallback{ true };
 	bool mEnableFallbackFont{ true };
-	mutable std::map<unsigned int, unsigned int> mClosestCharacterSize;
-	mutable std::map<Uint32, Uint32> mCodePointIndexCache;
-
-	Uint64 getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold,
-						Float outlineThickness ) const;
+	bool mEnableDynamicMonospace{ false };
+	mutable std::unordered_map<unsigned int, unsigned int> mClosestCharacterSize;
+	mutable std::unordered_map<Uint32, Uint32> mCodePointIndexCache;
+	FontHinting mHinting{ FontHinting::Full };
+	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 
 	void updateFontInternalId();
 };

@@ -97,8 +97,20 @@ class EE_API Input {
 	/** Inject the mouse button as released */
 	void injectButtonRelease( const Uint32& Button );
 
+	/** @return If the left Control Key is pressed */
+	bool isLeftControlPressed() const;
+
+	/** @return If the right Control Key is pressed */
+	bool isRightControlPressed() const;
+
 	/** @return If the Control Key is pressed */
 	bool isControlPressed() const;
+
+	/** @return If the left Shift Key is pressed */
+	bool isLeftShiftPressed() const;
+
+	/** @return If the right Shift Key is pressed */
+	bool isRightShiftPressed() const;
 
 	/** @return If the Shift Key is pressed */
 	bool isShiftPressed() const;
@@ -109,7 +121,7 @@ class EE_API Input {
 	/** @return If the left Alt Key is pressed */
 	bool isLeftAltPressed() const;
 
-	/** @return If the left Alt Key is pressed */
+	/** @return If the right Alt Key is pressed */
 	bool isAltGrPressed() const;
 
 	/** @return If the Meta Key is pressed */
@@ -232,6 +244,21 @@ class EE_API Input {
 	/** Process an input event. Called by the input update. */
 	void processEvent( InputEvent* Event );
 
+	/** @return An id of the current event update processed ( */
+	const Uint64& getEventsSentId() const;
+
+	Uint32 getSanitizedModState() const;
+
+	bool isModState( const Uint32& state ) const;
+
+	Time getElapsedSinceLastEvent() const;
+
+	Time getElapsedSinceLastKeyboardEvent() const;
+
+	Time getElapsedSinceLastMouseEvent() const;
+
+	Time getElapsedSinceLastKeyboardOrMouseEvent() const;
+
   protected:
 	friend class Window;
 
@@ -263,6 +290,10 @@ class EE_API Input {
 	Float mMouseSpeed;
 	bool mInputGrabed;
 	InputFinger mFingers[EE_MAX_FINGERS];
+	Uint64 mEventsSentId{ 0 };
+	Clock mLastEvent;
+	Clock mLastKeyboardEvent;
+	Clock mLastMouseEvent;
 
 	std::map<Uint32, InputCallback> mCallbacks;
 

@@ -19,7 +19,7 @@ Time Clock::getElapsedTime() const {
 	return Microseconds( mClockImpl->getElapsedTime() );
 }
 
-Time Clock::getElapsed() {
+Time Clock::getElapsedTimeAndReset() {
 	Time r = getElapsedTime();
 	restart();
 	return r;

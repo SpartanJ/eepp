@@ -17,8 +17,7 @@ UIPopUpMenu::UIPopUpMenu() : UIMenu() {
 	applyDefaultTheme();
 }
 
-UIPopUpMenu::~UIPopUpMenu() {
-}
+UIPopUpMenu::~UIPopUpMenu() {}
 
 Uint32 UIPopUpMenu::getType() const {
 	return UI_TYPE_POPUPMENU;
@@ -67,7 +66,7 @@ bool UIPopUpMenu::hide() {
 				Actions::FadeOut::New(
 					getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ),
-									 Actions::Runnable::New( [&] {
+									 Actions::Runnable::New( [this] {
 										 mHidingAction = nullptr;
 										 if ( mCloseOnHide )
 											 close();

@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/texttransform.hpp>
 
 namespace EE { namespace Graphics {
@@ -21,6 +22,20 @@ class EE_API Text {
 	static std::string styleFlagToString( const Uint32& flags );
 
 	static Uint32 stringToStyleFlag( const std::string& str );
+
+	static Float getTextWidth( Font* font, const Uint32& fontSize, const String& string,
+							   const Uint32& style, const Uint32& tabWidth = 4,
+							   const Float& outlineThickness = 0.f );
+
+	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
+									   const Uint32& fontSize, const String& string,
+									   const Uint32& style, const Uint32& tabWidth = 4,
+									   const Float& outlineThickness = 0.f );
+
+	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
+									  const String& string, const Uint32& style,
+									  const Uint32& tabWidth = 4,
+									  const Float& outlineThickness = 0.f );
 
 	static Text* New();
 
@@ -160,6 +175,12 @@ class EE_API Text {
 	 * disable this to improve performance in very specific scenarios. */
 	void setDisableCacheWidth( bool newDisableCacheWidth );
 
+	const Vector2f& getShadowOffset() const;
+
+	void setShadowOffset( const Vector2f& shadowOffset );
+
+	bool hasSameFontStyleConfig( const FontStyleConfig& styleConfig );
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;
@@ -186,7 +207,8 @@ class EE_API Text {
 	Float mCachedWidth;
 	int mNumLines;
 	int mLargestLineCharCount;
-	Color mFontShadowColor;
+	Color mShadowColor;
+	Vector2f mShadowOffset{ PixelDensity::dpToPx( 1 ), PixelDensity::dpToPx( 1 ) };
 	Uint32 mAlign;
 	Uint32 mFontHeight;
 	Uint32 mTabWidth;
@@ -218,6 +240,11 @@ class EE_API Text {
 
 	/** Cache the with of the current text */
 	void getWidthInfo();
+
+	void draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
+			   BlendMode effect, const OriginPoint& rotationCenter, const OriginPoint& scaleCenter,
+			   const std::vector<Color>& colors, const std::vector<Color>& outlineColors,
+			   const Color& backgroundColor );
 };
 
 }} // namespace EE::Graphics

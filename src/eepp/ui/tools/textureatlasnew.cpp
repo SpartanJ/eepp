@@ -19,7 +19,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 								 cb::Make1( this, &TextureAtlasNew::windowClose ) );
 	mUIWindow->setTitle( "New Texture Atlas" );
 
-	std::string layout = R"xml(
+	static const auto layout = R"xml(
 	<LinearLayout id='container' layout_width='match_parent' layout_height='wrap_content' margin='8dp'>
 		<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' margin-bottom='8dp'>
 			<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Save File Format:' />
@@ -111,7 +111,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	mUIWindow->find<UIPushButton>( "cancelButton" )
 		->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
 
-	container->addEventListener( Event::OnLayoutUpdate, [&]( const Event* event ) {
+	container->addEventListener( Event::OnLayoutUpdate, [this]( const Event* event ) {
 		mUIWindow->setMinWindowSize( event->getNode()->getSize() );
 		mUIWindow->center();
 		mUIWindow->show();
@@ -152,7 +152,8 @@ void TextureAtlasNew::windowClose( const Event* ) {
 }
 
 static bool isValidExtension( const std::string& ext ) {
-	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga" || ext == "jpg";
+	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga" || ext == "jpg" ||
+		   ext == "qoi";
 }
 
 void TextureAtlasNew::textureAtlasSave( const Event* Event ) {

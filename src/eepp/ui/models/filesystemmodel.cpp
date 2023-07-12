@@ -26,11 +26,7 @@ FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
 	mParent( parent ), mInfo( info ) {
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
-	if ( !mInfo.isDirectory() ) {
-		mMimeType = UIIconThemeManager::getIconNameFromFileName( mName );
-	} else {
-		mMimeType = "folder";
-	}
+	updateMimeType();
 }
 
 const std::string& FileSystemModel::Node::fullPath() const {
@@ -117,6 +113,7 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 void FileSystemModel::Node::rename( const FileInfo& file ) {
 	mInfo = file;
 	mName = file.getFileName();
+	updateMimeType();
 }
 
 ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int column ) const {
@@ -128,6 +125,68 @@ ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int colum
 	}
 	eeASSERT( false );
 	return {};
+}
+
+FileSystemModel::Node* FileSystemModel::Node::childWithPathExists( const std::string& path ) {
+	for ( auto child : mChildren ) {
+		if ( child->info().getFilepath() == path )
+			return child;
+	}
+	return nullptr;
+}
+
+static bool isAcceptedExtension( const std::vector<std::string>& acceptedExtensions,
+								 const FileInfo& file ) {
+	if ( !acceptedExtensions.empty() && file.isRegularFile() ) {
+		for ( size_t z = 0; z < acceptedExtensions.size(); z++ )
+			if ( acceptedExtensions[z] == FileSystem::fileExtension( file.getFilepath() ) )
+				return true;
+		return false;
+	}
+	return true;
+}
+
+void FileSystemModel::Node::refresh( const FileSystemModel& model ) {
+	if ( !mInfo.isDirectory() )
+		return;
+
+	auto oldFiles = mChildren;
+
+	const auto& displayCfg = model.getDisplayConfig();
+
+	auto files = FileSystem::filesInfoGetInPath( mInfo.getFilepath(), false, displayCfg.sortByName,
+												 displayCfg.foldersFirst, displayCfg.ignoreHidden );
+
+	std::vector<Node*> newChildren;
+	Node* node = nullptr;
+
+	for ( auto file : files ) {
+		node = childWithPathExists( file.getFilepath() );
+
+		if ( !isAcceptedExtension( displayCfg.acceptedExtensions, file ) )
+			continue;
+
+		if ( displayCfg.fileIsVisibleFn && !displayCfg.fileIsVisibleFn( file.getFilepath() ) )
+			continue;
+
+		if ( node ) {
+			auto it = std::find( oldFiles.begin(), oldFiles.end(), node );
+			if ( it != oldFiles.end() )
+				oldFiles.erase( it );
+
+			newChildren.emplace_back( node );
+
+			if ( node->info().isDirectory() && node->mHasTraversed )
+				node->refresh( model );
+		} else {
+			newChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
+		}
+	}
+
+	for ( Node* oldNode : oldFiles )
+		eeDelete( oldNode );
+
+	mChildren = newChildren;
 }
 
 void FileSystemModel::Node::cleanChildren() {
@@ -142,17 +201,21 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	mHasTraversed = true;
 	cleanChildren();
 
-	auto files = FileSystem::filesInfoGetInPath(
-		mInfo.getFilepath(), false, model.getDisplayConfig().sortByName,
-		model.getDisplayConfig().foldersFirst, model.getDisplayConfig().ignoreHidden );
+	const auto& displayCfg = model.getDisplayConfig();
 
-	const auto& patterns = model.getDisplayConfig().acceptedExtensions;
+	auto files = FileSystem::filesInfoGetInPath( mInfo.getFilepath(), false, displayCfg.sortByName,
+												 displayCfg.foldersFirst, displayCfg.ignoreHidden );
+
+	const auto& patterns = displayCfg.acceptedExtensions;
 	bool accepted;
 	for ( auto file : files ) {
 		if ( ( model.getMode() == Mode::DirectoriesOnly &&
 			   ( file.isDirectory() || file.linksToDirectory() ) ) ||
 			 model.getMode() == Mode::FilesAndDirectories ) {
 			if ( file.isDirectory() || file.linksToDirectory() || patterns.empty() ) {
+				if ( displayCfg.fileIsVisibleFn &&
+					 !displayCfg.fileIsVisibleFn( file.getFilepath() ) )
+					continue;
 				mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			} else {
 				accepted = false;
@@ -164,8 +227,14 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 						}
 					}
 				} else {
-					accepted = true;
+					if ( displayCfg.fileIsVisibleFn ) {
+						if ( displayCfg.fileIsVisibleFn( file.getFilepath() ) )
+							accepted = true;
+					} else {
+						accepted = true;
+					}
 				}
+
 				if ( accepted )
 					mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			}
@@ -188,21 +257,29 @@ bool FileSystemModel::Node::fetchData( const String& fullPath ) {
 	return true;
 }
 
+void FileSystemModel::Node::updateMimeType() {
+	if ( !mInfo.isDirectory() ) {
+		mMimeType = UIIconThemeManager::getIconNameFromFileName( mName );
+	} else {
+		mMimeType = "folder";
+	}
+}
+
 std::shared_ptr<FileSystemModel> FileSystemModel::New( const std::string& rootPath,
 													   const FileSystemModel::Mode& mode,
-													   const DisplayConfig displayConfig ) {
+													   const DisplayConfig& displayConfig ) {
 	return std::shared_ptr<FileSystemModel>( new FileSystemModel( rootPath, mode, displayConfig ) );
 }
 
 FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemModel::Mode& mode,
-								  const DisplayConfig displayConfig ) :
+								  const DisplayConfig& displayConfig ) :
 	mRootPath( rootPath ),
 	mRealRootPath( FileSystem::getRealPath( rootPath ) ),
 	mMode( mode ),
 	mDisplayConfig( displayConfig ) {
 	mRoot = std::make_unique<Node>( mRootPath, *this );
 	mInitOK = true;
-	onModelUpdate();
+	invalidate();
 }
 
 FileSystemModel::~FileSystemModel() {
@@ -240,8 +317,7 @@ FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool 
 	if ( !folders.empty() ) {
 		for ( size_t i = 0; i < folders.size(); i++ ) {
 			auto& part = folders[i];
-			if ( ( foundNode = curNode->findChildName(
-					   part, *this, invalidateTree || i == folders.size() - 1 ) ) ) {
+			if ( ( foundNode = curNode->findChildName( part, *this, invalidateTree ) ) ) {
 				curNode = foundNode;
 			} else {
 				return nullptr;
@@ -256,9 +332,15 @@ void FileSystemModel::reload() {
 	setRootPath( mRootPath );
 }
 
+void FileSystemModel::refresh() {
+	Lock l( resourceMutex() );
+	mRoot->refresh( *this );
+	invalidate();
+}
+
 void FileSystemModel::update() {
 	mRoot = std::make_unique<Node>( mRootPath, *this );
-	onModelUpdate();
+	invalidate();
 }
 
 const FileSystemModel::Node& FileSystemModel::node( const ModelIndex& index ) const {
@@ -329,63 +411,68 @@ Variant FileSystemModel::data( const ModelIndex& index, ModelRole role ) const {
 
 	auto& node = this->nodeRef( index );
 
-	if ( role == ModelRole::Custom )
-		return Variant( node.info().getFilepath().c_str() );
-
-	if ( role == ModelRole::Sort ) {
-		switch ( index.column() ) {
-			case Column::Icon:
-				return node.info().isDirectory() ? 0 : 1;
-			case Column::Name:
-				return Variant( node.getName().c_str() );
-			case Column::Size:
-				return node.info().getSize();
-			case Column::Owner:
-				return node.info().getOwnerId();
-			case Column::Group:
-				return node.info().getGroupId();
-			case Column::Permissions:
-				return Variant( permissionString( node.info() ) );
-			case Column::ModificationTime:
-				return node.info().getModificationTime();
-			case Column::Inode:
-				return node.info().getInode();
-			case Column::Path:
-				return Variant( node.info().getFilepath().c_str() );
-			case Column::SymlinkTarget:
-				return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
-			default:
-				eeASSERT( false );
+	switch ( role ) {
+		case ModelRole::Custom: {
+			return Variant( node.info().getFilepath().c_str() );
+		}
+		case ModelRole::Sort: {
+			switch ( index.column() ) {
+				case Column::Icon:
+					return node.info().isDirectory() ? 0 : 1;
+				case Column::Name:
+					return Variant( node.getName().c_str() );
+				case Column::Size:
+					return node.info().getSize();
+				case Column::Owner:
+					return node.info().getOwnerId();
+				case Column::Group:
+					return node.info().getGroupId();
+				case Column::Permissions:
+					return Variant( permissionString( node.info() ) );
+				case Column::ModificationTime:
+					return node.info().getModificationTime();
+				case Column::Inode:
+					return node.info().getInode();
+				case Column::Path:
+					return Variant( node.info().getFilepath().c_str() );
+				case Column::SymlinkTarget:
+					return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
+				default:
+					eeASSERT( false );
+			}
+			break;
+		}
+		case ModelRole::Display: {
+			switch ( index.column() ) {
+				case Column::Icon:
+					return iconFor( node, index );
+				case Column::Name:
+					return Variant( node.getName().c_str() );
+				case Column::Size:
+					return Variant( FileSystem::sizeToString( node.info().getSize() ) );
+				case Column::Owner:
+					return Variant( String::toString( node.info().getOwnerId() ) );
+				case Column::Group:
+					return Variant( String::toString( node.info().getGroupId() ) );
+				case Column::Permissions:
+					return Variant( permissionString( node.info() ) );
+				case Column::ModificationTime:
+					return Variant( Sys::epochToString( node.info().getModificationTime() ) );
+				case Column::Inode:
+					return Variant( String::toString( node.info().getInode() ) );
+				case Column::Path:
+					return Variant( node.info().getFilepath().c_str() );
+				case Column::SymlinkTarget:
+					return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
+			}
+			break;
+		}
+		case ModelRole::Icon: {
+			return iconFor( node, index );
+		}
+		default: {
 		}
 	}
-
-	if ( role == ModelRole::Display ) {
-		switch ( index.column() ) {
-			case Column::Icon:
-				return iconFor( node, index );
-			case Column::Name:
-				return Variant( node.getName().c_str() );
-			case Column::Size:
-				return Variant( FileSystem::sizeToString( node.info().getSize() ) );
-			case Column::Owner:
-				return Variant( String::toString( node.info().getOwnerId() ) );
-			case Column::Group:
-				return Variant( String::toString( node.info().getGroupId() ) );
-			case Column::Permissions:
-				return Variant( permissionString( node.info() ) );
-			case Column::ModificationTime:
-				return Variant( Sys::epochToString( node.info().getModificationTime() ) );
-			case Column::Inode:
-				return Variant( String::toString( node.info().getInode() ) );
-			case Column::Path:
-				return Variant( node.info().getFilepath().c_str() );
-			case Column::SymlinkTarget:
-				return node.info().isLink() ? Variant( node.info().linksTo() ) : Variant( "" );
-		}
-	}
-
-	if ( role == ModelRole::Icon )
-		return iconFor( node, index );
 
 	return {};
 }
@@ -461,7 +548,8 @@ size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 	files.emplace_back( file );
 
 	std::sort( files.begin(), files.end(), []( FileInfo a, FileInfo b ) {
-		return std::strcmp( a.getFileName().c_str(), b.getFileName().c_str() ) < 0;
+		return std::strncmp( a.getFileName().c_str(), b.getFileName().c_str(),
+							 a.getFileName().size() ) < 0;
 	} );
 
 	if ( getDisplayConfig().foldersFirst ) {
@@ -493,31 +581,7 @@ size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 	return pos;
 }
 
-std::string getFileSystemEventTypeName( FileSystemEventType action ) {
-	switch ( action ) {
-		case FileSystemEventType::Add:
-			return "Add";
-		case FileSystemEventType::Modified:
-			return "Modified";
-		case FileSystemEventType::Delete:
-			return "Delete";
-		case FileSystemEventType::Moved:
-			return "Moved";
-		default:
-			return "Bad Action";
-	}
-}
-
 bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
-	if ( Log::instance() && Log::instance()->getLogLevelThreshold() == LogLevel::Debug ) {
-		std::string txt =
-			"DIR ( " + event.directory + " ) FILE ( " +
-			( ( event.oldFilename.empty() ? "" : "from file " + event.oldFilename + " to " ) +
-			  event.filename ) +
-			" ) has event " + getFileSystemEventTypeName( event.type );
-		Log::debug( txt );
-	}
-
 	switch ( event.type ) {
 		case FileSystemEventType::Add: {
 			FileInfo file( event.directory + event.filename, false );
@@ -534,52 +598,58 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 								   : file.getDirectoryPath(),
 				true, false );
 
-			if ( parent ) {
-				auto* childNodeExists =
-					getNodeFromPath( file.getFilepath(), file.isDirectory(), false );
-				if ( childNodeExists )
-					return false;
+			if ( !parent )
+				return false;
 
-				Node* childNode = parent->createChild( file.getFileName(), *this );
+			auto* childNodeExists =
+				getNodeFromPath( file.getFilepath(), file.isDirectory(), false );
+			if ( childNodeExists )
+				return false;
 
-				if ( !childNode->getName().empty() ) {
-					size_t pos = getFileIndex( parent, file );
+			Node* childNode = parent->createChild( file.getFileName(), *this );
 
-					if ( pos == INDEX_ALREADY_EXISTS )
-						return false;
+			if ( childNode->getName().empty() )
+				return false;
 
-					beginInsertRows( parent->index( *this, 0 ), pos, pos );
+			size_t pos = getFileIndex( parent, file );
 
-					if ( pos >= parent->mChildren.size() ) {
-						parent->mChildren.emplace_back( childNode );
-					} else {
-						parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
-					}
+			const auto& displayCfg = getDisplayConfig();
 
-					endInsertRows();
+			if ( displayCfg.fileIsVisibleFn && !displayCfg.fileIsVisibleFn( file.getFilepath() ) )
+				return false;
 
-					forEachView( [&]( UIAbstractView* view ) {
-						std::vector<ModelIndex> newIndexes;
-						view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
-							Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
-							if ( curNode->getParent() == parent ) {
-								if ( selectedIndex.row() >= (Int64)pos ) {
-									newIndexes.emplace_back( this->index(
-										selectedIndex.row() + 1, selectedIndex.column(),
-										selectedIndex.parent() ) );
-								} else {
-									newIndexes.emplace_back( selectedIndex );
-								}
-							} else {
-								newIndexes.emplace_back( selectedIndex );
-							}
-						} );
-						view->getSelection().set( newIndexes, false );
-					} );
-				} else {
-					return false;
-				}
+			if ( pos == INDEX_ALREADY_EXISTS )
+				return false;
+
+			beginInsertRows( parent->index( *this, 0 ), pos, pos );
+
+			if ( pos >= parent->mChildren.size() ) {
+				parent->mChildren.emplace_back( childNode );
+			} else {
+				parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
 			}
+
+			endInsertRows();
+
+			forEachView( [&]( UIAbstractView* view ) {
+				std::vector<ModelIndex> newIndexes;
+				view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
+					Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
+					if ( curNode->getParent() == parent ) {
+						if ( selectedIndex.row() >= (Int64)pos ) {
+							newIndexes.emplace_back( this->index( selectedIndex.row() + 1,
+																  selectedIndex.column(),
+																  selectedIndex.parent() ) );
+						} else {
+							newIndexes.emplace_back( selectedIndex );
+						}
+					} else {
+						newIndexes.emplace_back( selectedIndex );
+					}
+				} );
+				view->getSelection().set( newIndexes, false );
+			} );
+
 			break;
 		}
 		case FileSystemEventType::Delete: {
@@ -598,8 +668,6 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 				return false;
 
 			Int64 pos = index.row();
-
-			beginDeleteRows( index.parent(), index.row(), index.row() );
 
 			forEachView( [&]( UIAbstractView* view ) {
 				view->getSelection().removeAllMatching( [&]( auto& selectionIndex ) {
@@ -625,8 +693,11 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 						newIndexes.emplace_back( selectedIndex );
 					}
 				} );
+
 				view->getSelection().set( newIndexes, false );
 			} );
+
+			beginDeleteRows( index.parent(), index.row(), index.row() );
 
 			eeDelete( parent->mChildren[index.row()] );
 			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
@@ -638,92 +709,91 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 		case FileSystemEventType::Moved: {
 			FileInfo file( event.directory + event.filename, false );
 
-			if ( file.exists() ) {
-				auto* node = getNodeFromPath( event.directory + event.oldFilename, false, false );
-				if ( node ) {
-					ModelIndex index = node->index( *this, 0 );
-					if ( !index.isValid() )
-						return false;
+			if ( !file.exists() )
+				return false;
 
-					Node* parent = node->mParent;
-					if ( !parent )
-						return false;
-
-					if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) )
-						return false;
-
-					if ( !node->info().isHidden() && getDisplayConfig().ignoreHidden &&
-						 file.isHidden() ) {
-						return handleFileEventLocked(
-							{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
-					}
-
-					Node* childNode = parent->mChildren[index.row()];
-					childNode->rename( file );
-					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
-
-					size_t pos = getFileIndex( node->getParent(), file );
-
-					// Don't add the file if already exists (if moved an old file to another old
-					// file)
-					if ( pos == INDEX_ALREADY_EXISTS ) {
-						eeDelete( childNode );
-						return false;
-					}
-
-					std::map<UIAbstractView*, std::vector<ModelIndex>> keptSelections;
-					std::map<UIAbstractView*, std::vector<std::string>> prevSelections;
-					std::map<UIAbstractView*, std::vector<ModelIndex>> prevSelectionsModelIndex;
-
-					forEachView( [&]( UIAbstractView* view ) {
-						view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
-							Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
-							if ( curNode->mParent == parent ) {
-								prevSelectionsModelIndex[view].emplace_back( selectedIndex );
-								prevSelections[view].emplace_back(
-									( curNode->getName() == event.oldFilename )
-										? event.filename
-										: curNode->getName() );
-							} else {
-								keptSelections[view].emplace_back( selectedIndex );
-							}
-						} );
-					} );
-
-					beginMoveRows( index.parent(), index.row(), index.row(), index.parent(), pos );
-
-					if ( pos >= parent->mChildren.size() ) {
-						parent->mChildren.emplace_back( childNode );
-					} else {
-						parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
-					}
-
-					endMoveRows();
-
-					forEachView( [&]( UIAbstractView* view ) {
-						std::vector<std::string> names = prevSelections[view];
-						std::vector<ModelIndex> newIndexes = keptSelections[view];
-						int i = 0;
-						for ( const auto& name : names ) {
-							size_t row = parent->findChildRowFromName( name, *this );
-							if ( row >= 0 ) {
-								newIndexes.emplace_back(
-									this->index( row, prevSelectionsModelIndex[view][i].column(),
-												 prevSelectionsModelIndex[view][i].parent() ) );
-							}
-							++i;
-						}
-						view->getSelection().set( newIndexes, false );
-					} );
-				} else {
-					return handleFileEventLocked(
-						{ FileSystemEventType::Add, event.directory, event.filename } );
-				}
+			auto* node = getNodeFromPath( event.directory + event.oldFilename, false, false );
+			if ( !node ) {
+				return handleFileEventLocked(
+					{ FileSystemEventType::Add, event.directory, event.filename } );
 			}
+
+			ModelIndex index = node->index( *this, 0 );
+			if ( !index.isValid() )
+				return false;
+
+			Node* parent = node->mParent;
+			if ( !parent )
+				return false;
+
+			if ( ( getMode() == Mode::DirectoriesOnly && !file.isDirectory() ) )
+				return false;
+
+			if ( !node->info().isHidden() && getDisplayConfig().ignoreHidden && file.isHidden() ) {
+				return handleFileEventLocked(
+					{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
+			}
+
+			Node* childNode = parent->mChildren[index.row()];
+			childNode->rename( file );
+			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+
+			size_t pos = getFileIndex( node->getParent(), file );
+
+			// Don't add the file if already exists (if moved an old file to another old
+			// file)
+			if ( pos == INDEX_ALREADY_EXISTS ) {
+				eeDelete( childNode );
+				return false;
+			}
+
+			std::map<UIAbstractView*, std::vector<ModelIndex>> keptSelections;
+			std::map<UIAbstractView*, std::vector<std::string>> prevSelections;
+			std::map<UIAbstractView*, std::vector<ModelIndex>> prevSelectionsModelIndex;
+
+			forEachView( [&]( UIAbstractView* view ) {
+				view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
+					Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
+					if ( curNode->mParent == parent ) {
+						prevSelectionsModelIndex[view].emplace_back( selectedIndex );
+						prevSelections[view].emplace_back(
+							( curNode->getName() == event.oldFilename ) ? event.filename
+																		: curNode->getName() );
+					} else {
+						keptSelections[view].emplace_back( selectedIndex );
+					}
+				} );
+			} );
+
+			beginMoveRows( index.parent(), index.row(), index.row(), index.parent(), pos );
+
+			if ( pos >= parent->mChildren.size() ) {
+				parent->mChildren.emplace_back( childNode );
+			} else {
+				parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+			}
+
+			endMoveRows();
+
+			forEachView( [&]( UIAbstractView* view ) {
+				std::vector<std::string> names = prevSelections[view];
+				std::vector<ModelIndex> newIndexes = keptSelections[view];
+				int i = 0;
+				for ( const auto& name : names ) {
+					Int64 row = parent->findChildRowFromName( name, *this );
+					if ( row >= 0 ) {
+						newIndexes.emplace_back(
+							this->index( row, prevSelectionsModelIndex[view][i].column(),
+										 prevSelectionsModelIndex[view][i].parent() ) );
+					}
+					++i;
+				}
+				view->getSelection().set( newIndexes, false );
+			} );
 			break;
 		}
 		case FileSystemEventType::Modified: {
-			break;
+			return false;
 		}
 	}
 
@@ -742,9 +812,46 @@ bool FileSystemModel::handleFileEvent( const FileEvent& event ) {
 		ret = handleFileEventLocked( event );
 	}
 
-	onModelUpdate( UpdateFlag::DontInvalidateIndexes );
+	if ( ret )
+		invalidate( UpdateFlag::DontInvalidateIndexes );
 
 	return ret;
+}
+
+std::shared_ptr<DiskDrivesModel> DiskDrivesModel::create( const std::vector<std::string>& data ) {
+	return std::shared_ptr<DiskDrivesModel>( new DiskDrivesModel( data ) );
+}
+
+std::shared_ptr<DiskDrivesModel> DiskDrivesModel::create() {
+	return create( Sys::getLogicalDrives() );
+}
+
+UIIcon* DiskDrivesModel::diskIcon() const {
+	auto* scene = SceneManager::instance()->getUISceneNode();
+	auto* d = scene->findIcon( "drive" );
+	if ( !d )
+		d = scene->findIcon( "folder" );
+	return d;
+}
+
+Variant DiskDrivesModel::data( const ModelIndex& index, ModelRole role ) const {
+	eeASSERT( index.row() >= 0 && index.row() < (Int64)mData.size() );
+	if ( role == ModelRole::Display ) {
+		switch ( index.column() ) {
+			case Column::Icon:
+				return diskIcon();
+			case Column::Name:
+				return Variant( mData[index.row()].c_str() );
+		}
+	}
+
+	if ( role == ModelRole::Icon )
+		return diskIcon();
+
+	if ( role == ModelRole::Custom )
+		return Variant( mData[index.row()].c_str() );
+
+	return {};
 }
 
 }}} // namespace EE::UI::Models

@@ -189,7 +189,7 @@ void mainLoop() {
 	GLi->drawArrays( PRIMITIVE_LINES, 0, ParticlesNum );
 
 	/// Stop the simulation if the window is not visible
-	while ( !win->isVisible() ) {
+	while ( !win->isVisible() && win->isOpen() ) {
 		imp->update(); /// To get the real state of the window you need to update the window input
 		Sys::sleep( Milliseconds( 100 ) );
 	}

@@ -135,6 +135,7 @@ static void execshell( const char* cmd, const char* const* args, std::string wor
 	setenv( "SHELL", sh, 1 );
 	setenv( "HOME", pw->pw_dir, 1 );
 	setenv( "TERM", "xterm-256color", 1 );
+	setenv( "COLORTERM", "24bit", 1 );
 
 	signal( SIGCHLD, SIG_DFL );
 	signal( SIGHUP, SIG_DFL );
@@ -402,6 +403,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 								   Terminal::PseudoTerminal& pseudoTerminal ) {
 	SetEnvironmentVariableA( "WSLENV", "TERM/u" );
 	SetEnvironmentVariableA( "TERM", "xterm-256color" );
+	SetEnvironmentVariableA( "COLORTERM", "24bit" );
 
 	HRESULT hr{ E_UNEXPECTED };
 

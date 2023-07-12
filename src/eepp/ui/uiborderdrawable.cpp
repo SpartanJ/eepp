@@ -1,4 +1,5 @@
 #include <eepp/core.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/ui/uiborderdrawable.hpp>
 #include <eepp/ui/uinode.hpp>
@@ -31,10 +32,7 @@ void UIBorderDrawable::draw( const Vector2f& position ) {
 }
 
 void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
-	if ( mPosition != position ) {
-		mPosition = position;
-		mNeedsUpdate = true;
-	}
+	mPosition = position;
 
 	if ( mSize != size ) {
 		mSize = size;
@@ -47,9 +45,19 @@ void UIBorderDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	}
 
 	if ( mHasBorder ) {
+		bool isPolySmooth = GLi->isPolygonSmooth();
+
+		if ( mSmooth )
+			GLi->polygonSmooth( true );
+
 		mVertexBuffer->bind();
+		GLi->translatef( mPosition.x, mPosition.y, 0 );
 		mVertexBuffer->draw();
+		GLi->translatef( -mPosition.x, -mPosition.y, 0 );
 		mVertexBuffer->unbind();
+
+		if ( mSmooth && !isPolySmooth )
+			GLi->polygonSmooth( isPolySmooth );
 	}
 }
 
@@ -263,12 +271,20 @@ Rectf UIBorderDrawable::getBorderBoxDiff() const {
 	return bd;
 }
 
+bool UIBorderDrawable::isSmooth() const {
+	return mSmooth;
+}
+
+void UIBorderDrawable::setSmooth( bool smooth ) {
+	mSmooth = smooth;
+}
+
 void UIBorderDrawable::update() {
 	updateBorders();
 
 	switch ( mBorderType ) {
 		case BorderType::Outside: {
-			Vector2f pos( mPosition );
+			Vector2f pos( Vector2f::Zero );
 			Sizef size( mSize );
 
 			if ( mBorders.top.width > 0 ) {
@@ -292,11 +308,11 @@ void UIBorderDrawable::update() {
 			break;
 		}
 		case BorderType::Inside: {
-			Borders::createBorders( mVertexBuffer, mBorders, mPosition, mSize );
+			Borders::createBorders( mVertexBuffer, mBorders, Vector2f::Zero, mSize );
 			break;
 		}
 		case BorderType::Outline: {
-			Vector2f pos( mPosition );
+			Vector2f pos( Vector2f::Zero );
 			Sizef size( mSize );
 
 			if ( mBorders.top.width > 0 ) {

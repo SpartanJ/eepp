@@ -44,6 +44,7 @@ cp -r ../../../bin/assets/colorschemes ecode/assets/
 cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/nonicons.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/codicon.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/remixicon.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode/assets/fonts/
@@ -53,7 +54,8 @@ cp -r ../../../bin/assets/plugins ecode/assets/
 mkdir ecode/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode/assets/ui/
 mkdir -p ecode/assets/icon
-cp ../../../bin/assets/icon/ee.png ecode/assets/icon/
+cp ../../../bin/assets/icon/ecode.png ecode/assets/icon/
+cp ../../../bin/assets/ca-bundle.pem ecode/assets/ca-bundle.pem
 
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')

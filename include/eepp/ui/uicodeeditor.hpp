@@ -8,6 +8,7 @@
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <unordered_map>
 
 using namespace EE::Graphics;
 using namespace EE::UI::Doc;
@@ -64,7 +65,8 @@ class UICodeEditorPlugin {
 	}
 	virtual bool onMouseOver( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
 	virtual bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& ) { return false; }
-	virtual bool onCreateContextMenu( UICodeEditor*, const Vector2i&, const Uint32& ) {
+	virtual bool onCreateContextMenu( UICodeEditor*, UIPopUpMenu* /*menu*/,
+									  const Vector2i& /*position*/, const Uint32& /*flags*/ ) {
 		return false;
 	}
 	virtual void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
@@ -82,6 +84,9 @@ class UICodeEditorPlugin {
 	virtual void drawGutter( UICodeEditor* /*editor*/, const Int64& /*index*/,
 							 const Vector2f& /*screenStart*/, const Float& /*lineHeight*/,
 							 const Float& /*gutterWidth*/, const Float& /*fontSize*/ ){};
+
+	virtual void drawTop( UICodeEditor* /*editor*/, const Vector2f& /*screenStart*/,
+						  const Sizef& /*size*/, const Float& /*fontSize*/ ){};
 
 	Uint32 addOnReadyCallback( const OnReadyCb& cb ) {
 		mOnReadyCallbacks[mReadyCbNum++] = cb;
@@ -367,6 +372,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setSyntaxDefinition( const SyntaxDefinition& definition );
 
+	void resetSyntaxDefinition();
+
 	const SyntaxDefinition& getSyntaxDefinition() const;
 
 	const bool& getHorizontalScrollBarEnabled() const;
@@ -382,7 +389,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setFindLongestLineWidthUpdateFrequency( const Time& findLongestLineWidthUpdateFrequency );
 
 	/** Doc commands executed in this editor. */
-	TextPosition moveToLineOffset( const TextPosition& position, int offset );
+	TextPosition moveToLineOffset( const TextPosition& position, int offset,
+								   const size_t& cursorIdx = 0 );
 
 	void moveToPreviousLine();
 
@@ -399,6 +407,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void moveScrollUp();
 
 	void moveScrollDown();
+
+	void jumpLinesUp();
+
+	void jumpLinesDown();
+
+	void jumpLinesUp( int offset );
+
+	void jumpLinesDown( int offset );
 
 	void indent();
 
@@ -421,9 +437,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setShowWhitespaces( const bool& showWhitespaces );
 
-	const String& getHighlightWord() const;
+	const TextSearchParams& getHighlightWord() const;
 
-	void setHighlightWord( const String& highlightWord );
+	void setHighlightWord( const TextSearchParams& highlightWord );
 
 	const TextRange& getHighlightTextRange() const;
 
@@ -435,9 +451,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
 
-	virtual Float getColXOffset( TextPosition position );
+	virtual Float getXOffsetCol( const TextPosition& position ) const;
 
-	virtual Float getXOffsetCol( const TextPosition& position );
+	Float getXOffsetColSanitized( TextPosition position ) const;
 
 	virtual Float getLineWidth( const Int64& lineIndex );
 
@@ -455,7 +471,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setColorPreview( bool colorPreview );
 
-	void goToLine( const TextPosition& position, bool centered = true );
+	void goToLine( const TextPosition& position, bool centered = true,
+				   bool forceExactPosition = false, bool scrollX = true );
 
 	bool getAutoCloseBrackets() const;
 
@@ -483,12 +500,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void copyContainingFolderPath();
 
-	void copyFilePath();
+	void copyFilePath( bool copyPosition = false );
 
 	void scrollToCursor( bool centered = true );
 
-	void scrollTo( const TextPosition& position, bool centered = false,
-				   bool forceExactPosition = false, bool scrollX = true );
+	void scrollTo( TextRange position, bool centered = false, bool forceExactPosition = false,
+				   bool scrollX = true );
+
+	void scrollTo( TextPosition position, bool centered = false, bool forceExactPosition = false,
+				   bool scrollX = true );
 
 	const MinimapConfig& getMinimapConfig() const;
 
@@ -502,9 +522,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setAutoCloseXMLTags( bool autoCloseXMLTags );
 
-	const Time& getBlinkTime() const;
+	const Time& getCursorBlinkTime() const;
 
-	void setBlinkTime( const Time& blinkTime );
+	void setCursorBlinkTime( const Time& blinkTime );
 
 	Int64 getCurrentColumnCount() const;
 
@@ -515,6 +535,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	const Vector2f& getScroll() const;
 
 	std::pair<Uint64, Uint64> getVisibleLineRange() const;
+
+	virtual TextRange getVisibleRange() const;
 
 	bool isLineVisible( const Uint64& line ) const;
 
@@ -536,12 +558,72 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool unregisterGutterSpace( UICodeEditorPlugin* plugin );
 
+	/** Register a top space to be used by a plugin.
+	 * @param plugin Plugin requesting it
+	 * @param pixels Amount of pixels to request in the gutter
+	 * @param order Order goes from left (lower number) to right (bigger number). */
+	bool registerTopSpace( UICodeEditorPlugin* plugin, const Float& pixels, int order );
+
+	bool unregisterTopSpace( UICodeEditorPlugin* plugin );
+
 	void showFindReplace();
+
+	TextPosition resolveScreenPosition( const Vector2f& position, bool clamp = true ) const;
+
+	Rectf getScreenPosition( const TextPosition& position ) const;
+
+	const Float& getPluginsTopSpace() const;
+
+	UICodeEditor* setFontShadowOffset( const Vector2f& offset );
+
+	const Vector2f& getFontShadowOffset() const;
+
+	void setScroll( const Vector2f& val, bool emmitEvent = true );
+
+	bool getShowLineEndings() const;
+
+	void setShowLineEndings( bool showLineEndings );
+
+	Rectf getMinimapRect( const Vector2f& start ) const;
+
+	Float getMinimapWidth() const;
+
+	void resetCursor();
+
+	Vector2f getViewPortLineCount() const;
+
+	Sizef getMaxScroll() const;
+
+	void setScrollX( const Float& val, bool emmitEvent = true );
+
+	void setScrollY( const Float& val, bool emmitEvent = true );
+
+	Vector2f getScreenStart() const;
+
+	Float getViewportWidth( const bool& forceVScroll = false ) const;
+
+	bool getShowIndentationGuides() const;
+
+	void setShowIndentationGuides( bool showIndentationGuides );
+
+	Vector2f getRelativeScreenPosition( const TextPosition& pos );
+
+	bool getShowLinesRelativePosition() const;
+
+	void showLinesRelativePosition( bool showLinesRelativePosition );
+
+	UIScrollBar* getVScrollBar() const;
+
+	UIScrollBar* getHScrollBar() const;
+
+	size_t getJumpLinesLength() const;
+
+	void setJumpLinesLength( size_t jumpLinesLength );
 
   protected:
 	struct LastXOffset {
-		TextPosition position;
-		Float offset;
+		TextPosition position{ 0, 0 };
+		Float offset{ 0.f };
 	};
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
@@ -554,6 +636,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mMouseDown{ false };
 	bool mShowLineNumber{ true };
 	bool mShowWhitespaces{ true };
+	bool mShowLineEndings{ false };
 	bool mLocked{ false };
 	bool mHighlightCurrentLine{ true };
 	bool mHighlightMatchingBracket{ true };
@@ -572,6 +655,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mMinimapHover{ false };
 	bool mAutoCloseXMLTags{ false };
 	bool mFindReplaceEnabled{ true };
+	bool mShowIndentationGuides{ false };
+	bool mShowLinesRelativePosition{ false };
+	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
 	Uint32 mTabWidth;
@@ -599,10 +685,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mMinimapSelectionColor;
 	Color mMinimapHighlightColor;
 	SyntaxColorScheme mColorScheme;
-	SyntaxHighlighter mHighlighter;
 	UIScrollBar* mVScrollBar;
 	UIScrollBar* mHScrollBar;
-	LastXOffset mLastXOffset{ { 0, 0 }, 0.f };
+	std::unordered_map<size_t, LastXOffset> mLastXOffset;
 	KeyBindings mKeyBindings;
 	std::unordered_set<std::string> mUnlockedCmd;
 	Clock mLastDoubleClick;
@@ -611,7 +696,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float mLongestLineWidth{ 0 };
 	Time mFindLongestLineWidthUpdateFrequency;
 	Clock mLongestLineWidthLastUpdate;
-	String mHighlightWord;
+	Clock mLastActivity;
+	TextSearchParams mHighlightWord;
+	TextRanges mHighlightWordCache;
+	Mutex mHighlightWordCacheMutex;
 	TextRange mHighlightTextRange;
 	Color mPreviewColor;
 	TextRange mPreviewColorRange;
@@ -626,15 +714,20 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 		Text text;
 		String::HashType hash;
 	};
-	mutable std::map<Int64, TextLine> mTextCache;
+	mutable std::unordered_map<Int64, TextLine> mTextCache;
 	Tools::UIDocFindReplace* mFindReplace{ nullptr };
-	struct PluginGutterSpace {
+	struct PluginRequestedSpace {
 		UICodeEditorPlugin* plugin;
 		Float space;
 		int order;
 	};
-	std::vector<PluginGutterSpace> mPluginGutterSpaces;
+	std::vector<PluginRequestedSpace> mPluginGutterSpaces;
 	Float mPluginsGutterSpace{ 0 };
+	std::vector<PluginRequestedSpace> mPluginTopSpaces;
+	Float mPluginsTopSpace{ 0 };
+	Uint64 mLastExecuteEventId{ 0 };
+	Text mLineTextCache;
+	size_t mJumpLinesLength{ 5 };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -689,13 +782,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void updateEditor();
 
-	virtual void onDocumentTextChanged();
+	virtual void onDocumentTextChanged( const DocumentContentChange& );
 
 	virtual void onDocumentCursorChange( const TextPosition& );
 
 	virtual void onDocumentSelectionChange( const TextRange& );
 
 	virtual void onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount );
+
+	virtual void onDocumentInterestingCursorChange( const TextPosition& );
 
 	virtual void onDocumentLineChanged( const Int64& lineNumber );
 
@@ -708,18 +803,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void onDocumentClosed( TextDocument* doc );
 
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
-
-	void setScrollX( const Float& val, bool emmitEvent = true );
-
-	void setScrollY( const Float& val, bool emmitEvent = true );
-
-	void resetCursor();
-
-	TextPosition resolveScreenPosition( const Vector2f& position, bool clamp = true ) const;
-
-	Vector2f getViewPortLineCount() const;
-
-	Sizef getMaxScroll() const;
 
 	void updateScrollBar();
 
@@ -743,6 +826,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void drawWhitespaces( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
 								  const Float& lineHeight );
 
+	virtual void drawIndentationGuides( const std::pair<int, int>& lineRange,
+										const Vector2f& startScroll, const Float& lineHeight );
+
+	virtual void drawLineEndings( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
+								  const Float& lineHeight );
+
 	virtual void drawTextRange( const TextRange& range, const std::pair<int, int>& lineRange,
 								const Vector2f& startScroll, const Float& lineHeight,
 								const Color& backgroundColor );
@@ -757,6 +846,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void onFontChanged();
 
 	virtual void onFontStyleChanged();
+
+	virtual void onDocumentLoaded( TextDocument* doc );
 
 	virtual void onDocumentLoaded();
 
@@ -774,8 +865,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void disableEditorFeatures();
 
-	Float getViewportWidth( const bool& forceVScroll = false ) const;
-
 	void udpateGlyphWidth();
 
 	Drawable* findIcon( const std::string& name );
@@ -788,15 +877,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& lineRange );
 
-	Vector2f getScreenStart() const;
-
 	Float getMinimapLineSpacing() const;
 
 	bool isMinimapFileTooLarge() const;
-
-	Rectf getMinimapRect( const Vector2f& start ) const;
-
-	Float getMinimapWidth() const;
 
 	void updateMipmapHover( const Vector2f& position );
 
@@ -807,6 +890,18 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateLineCache( const Int64& lineIndex );
 
 	bool gutterSpaceExists( UICodeEditorPlugin* plugin ) const;
+
+	bool topSpaceExists( UICodeEditorPlugin* plugin ) const;
+
+	bool createContextMenu();
+
+	bool stopMinimapDragging( const Vector2f& mousePos );
+
+	void drawWordRanges( const TextRanges& ranges, const std::pair<int, int>& lineRange,
+						 const Vector2f& startScroll, const Float& lineHeight,
+						 bool ignoreSelectionMatch );
+
+	void updateHighlightWordCache();
 };
 
 }} // namespace EE::UI

@@ -1,0 +1,287 @@
+{
+  "config": {
+  },
+  "servers": [
+    {
+      "language": "typescript",
+      "name": "typescript-language-server",
+      "url": "https://github.com/theia-ide/typescript-language-server",
+      "command": "typescript-language-server --stdio",
+      "file_patterns": ["%.ts$"],
+      "rootIndicationFileNames": ["package.json", "package-lock.json"],
+      "share_process": true,
+      "initializationOptions": {
+        "preferences": {
+          "allowIncompleteCompletions": true,
+          "allowRenameOfImportPath": true,
+          "allowTextChangesInNewFiles": true,
+          "displayPartsForJSDoc": true,
+          "generateReturnInDocTemplate": true,
+          "includeAutomaticOptionalChainCompletions": true,
+          "includeCompletionsForImportStatements": true,
+          "includeCompletionsForModuleExports": true,
+          "includeCompletionsWithClassMemberSnippets": false,
+          "includeCompletionsWithObjectLiteralMethodSnippets": false,
+          "includeCompletionsWithInsertText": false,
+          "includeCompletionsWithSnippetText": false,
+          "jsxAttributeCompletionStyle": "auto",
+          "providePrefixAndSuffixTextForRename": true,
+          "provideRefactorNotApplicableReason": true
+        }
+      }
+    },
+    {
+      "language": "tsx",
+      "use": "typescript-language-server",
+      "share_process": true,
+      "file_patterns": ["%.tsx$"]
+    },
+    {
+      "language": "javascript",
+      "use": "typescript-language-server",
+      "share_process": true,
+      "file_patterns": ["%.js$"]
+    },
+    {
+      "language": "jsx",
+      "use": "typescript-language-server",
+      "share_process": true,
+      "file_patterns": ["%.jsx$"]
+    },
+    {
+      "language": "go",
+      "name": "gopls",
+      "url": "https://golang.org/x/tools/gopls",
+      "command": "gopls",
+      "file_patterns": ["%.go$"],
+      "rootIndicationFileNames": ["go.work", "go.mod", ".git"]
+    },
+    {
+      "language": "php",
+      "name": "phpactor",
+      "url": "https://phpactor.readthedocs.io",
+      "command": "phpactor language-server",
+      "file_patterns": ["%.php$", "%.php%d$"]
+    },
+    {
+      "language": "c",
+      "name": "clangd",
+      "url": "https://clangd.llvm.org/",
+      "command": "clangd -log=error --background-index --header-insertion=never --limit-results=0 --limit-references=0 --clang-tidy=0 --completion-style=bundled -j $NPROC",
+      "share_process": true,
+      "file_patterns": ["%.c$", "%.h$", "%.C$", "%.H$", "%.objc$"]
+    },
+    {
+      "language": "cpp",
+      "use": "clangd",
+      "share_process": true,
+      "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$"]
+    },
+    {
+      "language": "objective-c",
+      "use": "clangd",
+      "share_process": true,
+      "file_patterns": ["%.m$"]
+    },
+    {
+      "language": "d",
+      "name": "serve-d",
+      "url": "https://github.com/Pure-D/serve-d",
+      "command": "serve-d",
+      "file_patterns": ["%.d$"],
+      "rootIndicationFileNames": ["dub.json"]
+    },
+    {
+      "language": "zig",
+      "name": "zls",
+      "url": "https://github.com/zigtools/zls",
+      "command": "zls",
+      "file_patterns": ["%.zig$"]
+    },
+    {
+      "language": "odin",
+      "name": "ols",
+      "url": "https://github.com/DanielGavin/ols",
+      "command": "ols",
+      "file_patterns": ["%.odin$"]
+    },
+    {
+      "language": "python",
+      "name": "pylsp",
+      "url": "https://github.com/python-lsp/python-lsp-server",
+      "command": "pylsp --check-parent-process",
+      "file_patterns": ["%.py$"]
+    },
+    {
+      "language": "rust",
+      "name": "rust-analyzer",
+      "url": "https://rust-analyzer.github.io",
+      "command": "rust-analyzer",
+      "file_patterns": ["%.rs$"],
+      "rootIndicationFileNames": ["Cargo.lock", "Cargo.toml"]
+    },
+    {
+      "language": "lua",
+      "name": "lua-language-server",
+      "url": "https://github.com/sumneko/lua-language-server",
+      "command": "lua-language-server",
+      "file_patterns": ["%.lua"]
+    },
+    {
+      "language": "kotlin",
+      "name": "kotlin-language-server",
+      "url": "https://github.com/fwcd/kotlin-language-server",
+      "command": "kotlin-language-server",
+      "file_patterns": ["%.kt"]
+    },
+    {
+      "language": "nim",
+      "name": "nimlsp",
+      "url": "https://github.com/PMunch/nimlsp",
+      "command": "nimlsp",
+      "file_patterns": ["%.nim"]
+    },
+    {
+      "language": "ruby",
+      "name": "solargraph",
+      "url": "https://solargraph.org",
+      "command": "solargraph stdio",
+      "rootIndicationFileNames": ["Gemfile", "Gemfile.lock", "gems.rb", "gems.lock", "Rakefile"],
+      "file_patterns": ["%.rb"]
+    },
+    {
+      "language": "yaml",
+      "name": "yaml-language-server",
+      "url": "https://github.com/redhat-developer/yaml-language-server",
+      "command": "yaml-language-server --stdio",
+      "file_patterns": ["%.yaml", "%.yml"]
+    },
+    {
+      "language": "dart",
+      "name": "dart language-server",
+      "url": "https://github.com/dart-lang/sdk/blob/main/pkg/analysis_server/tool/lsp_spec",
+      "command": "dart language-server --client-id ecode",
+      "file_patterns": ["%.dart"]
+    },
+    {
+      "language": "shellscript",
+      "name": "bash-language-server",
+      "url": "https://github.com/bash-lsp/bash-language-server",
+      "command": "bash-language-server start",
+      "file_patterns": ["%.sh", "%.bash"]
+    },
+    {
+      "language": "html",
+      "name": "vscode-html-languageserver",
+      "url": "https://github.com/vscode-langservers/vscode-html-languageserver-bin",
+      "command": "html-languageserver --stdio",
+      "file_patterns": ["%.htm", "%.html"]
+    },
+    {
+      "language": "dockerfile",
+      "name": "docker-langserver",
+      "url": "https://github.com/rcjsuen/dockerfile-language-server-nodejs",
+      "command": "docker-langserver --stdio",
+      "file_patterns": ["^[Cc]ontainerfile$", "^[dD]ockerfile$"]
+    },
+    {
+      "language": "csharp",
+      "name": "OmniSharp",
+      "url": "https://github.com/OmniSharp/omnisharp-roslyn",
+      "command": "OmniSharp -lsp",
+      "file_patterns": ["%.cs$", "%.csx$"],
+      "rootIndicationFileNames": ["%.sln$"]
+    },
+    {
+      "language": "vue",
+      "name": "vls",
+      "url": "https://github.com/vuejs/vetur/tree/master/server",
+      "command": "vls --stdio",
+      "file_patterns": ["%.vue$"]
+    },
+    {
+      "language": "java",
+      "name": "jdtls",
+      "url": "https://github.com/eclipse/eclipse.jdt.ls",
+      "command": "jdtls",
+      "file_patterns": ["%.java$"]
+    },
+    {
+      "language": "solidity",
+      "name": "solc",
+      "url": "https://soliditylang.org",
+      "command": "solc --lsp",
+      "file_patterns": ["%.sol$"]
+    },
+    {
+      "language": "haskell",
+      "name": "haskell-language-server",
+      "url": "https://github.com/haskell/haskell-language-server",
+      "command": "haskell-language-server-wrapper",
+      "file_patterns": ["%.hs$"],
+      "rootIndicationFileNames": ["%.cabal$", "stack.yaml", "cabal.project", "package.yaml", "hie.yaml"]
+    },
+    {
+      "language": "elixir",
+      "name": "elixir-ls",
+      "url": "https://github.com/elixir-lsp/elixir-ls",
+      "command": "elixir-ls",
+      "file_patterns": ["%.ex$"]
+    },
+    {
+      "language": "cmake",
+      "name": "cmake-language-server",
+      "url": "https://github.com/regen100/cmake-language-server",
+      "command": "cmake-language-server",
+      "file_patterns": ["%.cmake$", "CMakeLists.txt$"],
+      "rootIndicationFileNames": ["build"]
+    },
+    {
+      "language": "elm",
+      "name": "elm-language-server",
+      "url": "https://github.com/elm-tooling/elm-language-server",
+      "command": "elm-language-server",
+      "file_patterns": ["%.elm$"],
+      "rootIndicationFileNames": ["elm.json"]
+    },
+    {
+      "language": "crystal",
+      "name": "crystalline",
+      "url": "https://github.com/elbywan/crystalline",
+      "command": "crystalline --stdio",
+      "file_patterns": ["%.cr$"],
+      "rootIndicationFileNames": ["shard.yml"]
+    },
+    {
+      "language": "v",
+      "name": "vls",
+      "url": "https://github.com/vlang/vls",
+      "command": "v ls",
+      "file_patterns": ["%.v$"]
+    },
+    {
+      "language": "scala",
+      "name": "metals",
+      "url": "https://github.com/scalameta/metals",
+      "command": "metals",
+      "file_patterns": ["%.sc$", "%.scala$"]
+    },
+    {
+      "language": "swift",
+      "name": "sourcekit-lsp",
+      "url": "https://github.com/apple/sourcekit-lsp",
+      "command": {
+        "macos": "xcrun sourcekit-lsp",
+        "other": "sourcekit-lsp"
+      },
+      "file_patterns": ["%.swift$"]
+    },
+    {
+      "language": "r",
+      "name": "r languageserver",
+      "url": "https://github.com/REditorSupport/languageserver",
+      "command": "R --slave -e\"languageserver::run()\"",
+      "file_patterns": ["%.r$"]
+    }
+  ]
+}

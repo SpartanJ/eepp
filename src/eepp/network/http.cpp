@@ -266,10 +266,10 @@ const std::string& Http::Request::getField( const std::string& field ) const {
 
 URI Http::getEnvProxyURI() {
 	char* http_proxy = getenv( "http_proxy" );
-	std::string httpProxy;
 	URI proxy;
 
 	if ( NULL != http_proxy ) {
+		std::string httpProxy;
 		httpProxy = std::string( http_proxy );
 		if ( !httpProxy.empty() && httpProxy.find( "://" ) == std::string::npos )
 			httpProxy = "http://" + httpProxy;
@@ -625,8 +625,6 @@ Http::Http( const std::string& host, unsigned short port, bool useSSL, URI proxy
 }
 
 Http::~Http() {
-	std::list<AsyncRequest*>::iterator itt;
-
 	// First we wait to finish any request pending
 	for ( auto&& itt : mThreads ) {
 		itt->wait();
@@ -947,11 +945,12 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											IOStreamInflate::New( writeTo, compressionMode );
 									}
 
-									IOStream& writeToStream = compressed ? *inflateStream : writeTo;
-
-									if ( chunked )
+									if ( chunked ) {
+										IOStream& writeToStream =
+											compressed ? *inflateStream : writeTo;
 										chunkedStream =
 											eeNew( HttpStreamChunked, ( writeToStream ) );
+									}
 
 									bufferStream = chunked
 													   ? chunkedStream
@@ -1153,26 +1152,24 @@ void Http::AsyncRequest::run() {
 }
 
 void Http::removeOldThreads() {
-	std::list<AsyncRequest*> remove;
+	std::vector<AsyncRequest*> remove;
 
-	std::list<AsyncRequest*>::iterator it = mThreads.begin();
+	for ( AsyncRequest* ar : mThreads ) {
+		if ( ar->mRunning )
+			continue;
+		// We need to be sure, since the state is set in the thread, this will not block the
+		// thread anyway
+		ar->wait();
 
-	for ( ; it != mThreads.end(); ++it ) {
-		AsyncRequest* ar = ( *it );
+		eeDelete( ar );
 
-		if ( !ar->mRunning ) {
-			// We need to be sure, since the state is set in the thread, this will not block the
-			// thread anyway
-			ar->wait();
-
-			eeDelete( ar );
-
-			remove.push_back( ar );
-		}
+		remove.push_back( ar );
 	}
 
-	for ( it = remove.begin(); it != remove.end(); ++it ) {
-		mThreads.remove( ( *it ) );
+	for ( auto rem : remove ) {
+		auto found = std::find( mThreads.begin(), mThreads.end(), rem );
+		if ( found != mThreads.end() )
+			mThreads.erase( found );
 	}
 }
 

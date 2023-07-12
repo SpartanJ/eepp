@@ -99,7 +99,8 @@
 #define EE_COMPILER_GCC
 #endif
 
-#if defined( arm ) || defined( __arm__ )
+#if defined( arm ) || defined( __arm__ ) || defined( __aarch64__ ) || defined( _M_ARM64 ) || \
+	defined( __ARM_ARCH_ISA_A64 ) || defined( __ARM_ARCH_7S__ ) || defined( __ARM_ARCH_7A__ )
 #define EE_ARM
 #endif
 
@@ -144,11 +145,12 @@
 
 #ifndef EE_ENDIAN
 
-#if defined( __386__ ) || defined( i386 ) || defined( __i386__ ) || defined( __X86 ) ||     \
-	defined( _M_IX86 ) || defined( _M_X64 ) || defined( __x86_64__ ) || defined( alpha ) || \
-	defined( __alpha ) || defined( __alpha__ ) || defined( _M_ALPHA ) || defined( ARM ) ||  \
-	defined( _ARM ) || defined( __arm__ ) || defined( WIN32 ) || defined( _WIN32 ) ||       \
-	defined( __WIN32__ ) || defined( _WIN32_WCE ) || defined( __NT__ ) || defined( __MIPSEL__ )
+#if defined( __386__ ) || defined( i386 ) || defined( __i386__ ) || defined( __X86 ) ||            \
+	defined( _M_IX86 ) || defined( _M_X64 ) || defined( __x86_64__ ) || defined( alpha ) ||        \
+	defined( __alpha ) || defined( __alpha__ ) || defined( _M_ALPHA ) || defined( ARM ) ||         \
+	defined( _ARM ) || defined( __arm__ ) || defined( WIN32 ) || defined( _WIN32 ) ||              \
+	defined( __WIN32__ ) || defined( _WIN32_WCE ) || defined( __NT__ ) || defined( __MIPSEL__ ) || \
+	defined( EE_ARM )
 #define EE_ENDIAN EE_LITTLE_ENDIAN
 #else
 #define EE_ENDIAN EE_BIG_ENDIAN
@@ -220,6 +222,22 @@
 		}                        \
 	}
 #define eeINDEX_NOT_FOUND 0xFFFFFFFF
+
+#ifndef likely
+#if defined( __GNUC__ ) || defined( __clang__ )
+#define likely( x ) __builtin_expect( !!( x ), 1 )
+#else
+#define likely( x ) ( x )
+#endif
+#endif
+
+#ifndef unlikely
+#if defined( __GNUC__ ) || defined( __clang__ )
+#define unlikely( x ) __builtin_expect( !!( x ), 0 )
+#else
+#define unlikely( x ) ( x )
+#endif
+#endif
 
 namespace EE {
 #ifdef EE_USE_DOUBLES

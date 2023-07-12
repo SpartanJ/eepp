@@ -11,6 +11,10 @@ UIRelativeLayout::UIRelativeLayout() : UILayout( "relativelayout" ) {
 	mFlags |= UI_OWNS_CHILDS_POSITION;
 }
 
+UIRelativeLayout::UIRelativeLayout( const std::string& tagName ) : UILayout( tagName ) {
+	mFlags |= UI_OWNS_CHILDS_POSITION;
+}
+
 Uint32 UIRelativeLayout::getType() const {
 	return UI_TYPE_RELATIVE_LAYOUT;
 }
@@ -28,43 +32,35 @@ void UIRelativeLayout::updateLayout() {
 	if ( mPacking )
 		return;
 	mPacking = true;
-	if ( getParent()->isUINode() &&
-		 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
-		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
-	}
 
-	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		Rectf padding = Rectf();
+	if ( !mVisible ) {
+		setInternalPixelsSize( Sizef::Zero );
+		notifyLayoutAttrChangeParent();
+	} else {
 
-		if ( getParent()->isWidget() )
-			padding = static_cast<UIWidget*>( getParent() )->getPadding();
-
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left -
-						  mLayoutMargin.Right - padding.Left - padding.Right );
-	}
-
-	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		Rectf padding = Rectf();
-
-		if ( getParent()->isWidget() )
-			padding = static_cast<UIWidget*>( getParent() )->getPadding();
-
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top -
-						   mLayoutMargin.Bottom - padding.Top - padding.Bottom );
-	}
-
-	Node* child = mChild;
-
-	while ( NULL != child ) {
-		if ( child->isWidget() ) {
-			UIWidget* widget = static_cast<UIWidget*>( child );
-
-			fixChildSize( widget );
-
-			fixChildPos( widget );
+		if ( getParent()->isUINode() &&
+			 ( !getParent()->asType<UINode>()->ownsChildPosition() || isGravityOwner() ) ) {
+			setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 		}
 
-		child = child->getNextNode();
+		Sizef s( getSizeFromLayoutPolicy() );
+
+		if ( s != getPixelsSize() )
+			setInternalPixelsSize( s );
+
+		Node* child = mChild;
+
+		while ( NULL != child ) {
+			if ( child->isWidget() ) {
+				UIWidget* widget = static_cast<UIWidget*>( child );
+
+				fixChildSize( widget );
+
+				fixChildPos( widget );
+			}
+
+			child = child->getNextNode();
+		}
 	}
 
 	mDirtyLayout = false;

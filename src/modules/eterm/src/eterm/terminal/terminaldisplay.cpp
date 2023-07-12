@@ -387,14 +387,14 @@ static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
 std::shared_ptr<TerminalDisplay>
 TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
 						 const Sizef& pixelsSize, std::string program,
-						 const std::vector<std::string>& args, const std::string& workingDir,
+						 std::vector<std::string> args, const std::string& workingDir,
 						 const size_t& historySize, IProcessFactory* processFactory,
 						 const bool& useFrameBuffer, const bool& keepAlive ) {
 	if ( program.empty() ) {
-#ifdef _WIN32
-		program = "cmd.exe";
-#else
 		const char* shellenv = getenv( "SHELL" );
+#ifdef _WIN32
+		program = shellenv != nullptr ? shellenv : "powershell.exe";
+#else
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 		program = shellenv != nullptr ? shellenv : "/bin/sh";
 #else
@@ -404,15 +404,23 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 #endif
 	}
 
+	if ( program.find_first_of( ' ' ) != std::string::npos ) {
+		auto programSplit = String::split( program, ' ' );
+		if ( !programSplit.empty() ) {
+			program = programSplit[0];
+			for ( size_t i = 1; i < programSplit.size(); ++i )
+				args.push_back( programSplit[i] );
+		}
+	}
+
 	bool freeProcessFactory = processFactory == nullptr;
 	if ( processFactory == nullptr )
 		processFactory = eeNew( ProcessFactory, () );
 
 	Sizei termSize( gridSizeFromTermDimensions( font, fontSize, pixelsSize ) );
 	std::unique_ptr<IPseudoTerminal> pseudoTerminal = nullptr;
-	std::vector<std::string> argsV( args.begin(), args.end() );
 	auto process = processFactory->createWithPseudoTerminal(
-		program, argsV, workingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
+		program, args, workingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
 
 	if ( !pseudoTerminal ) {
 		fprintf( stderr, "Failed to create pseudo terminal\n" );
@@ -630,8 +638,21 @@ bool TerminalDisplay::update() {
 void TerminalDisplay::executeFile( const std::string& cmd ) {
 	if ( mTerminal ) {
 		std::string rcmd( cmd + "\r" );
+#if EE_PLATFORM != EE_PLATFORM_WIN
 		char clearLine = 0x15;
 		mTerminal->ttywrite( &clearLine, 1, 1 );
+#endif
+		mTerminal->ttywrite( rcmd.c_str(), rcmd.size(), 1 );
+	}
+}
+
+void TerminalDisplay::executeBinary( const std::string& binaryPath, const std::string& args ) {
+	if ( mTerminal ) {
+		std::string rcmd( "\"" + binaryPath + "\"" + " " + args + "\r" );
+#if EE_PLATFORM != EE_PLATFORM_WIN
+		char clearLine = 0x15;
+		mTerminal->ttywrite( &clearLine, 1, 1 );
+#endif
 		mTerminal->ttywrite( rcmd.c_str(), rcmd.size(), 1 );
 	}
 }
@@ -803,17 +824,20 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 }
 
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
+		return;
+	}
+
 	auto gridPos{ positionToGrid( pos ) };
 
 	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_LINE );
 	} else if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) ) {
-		if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) {
+		if ( !mDraggingSel ) {
 			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
+			mDraggingSel = true;
 			invalidateLines();
-		} else if ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) {
-			mTerminal->selclear();
 		}
 	} else if ( flags & EE_BUTTON_MMASK ) {
 		if ( !mAlreadyClickedMButton ) {
@@ -843,6 +867,10 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 }
 
 void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
+		mDraggingSel = false;
+	}
+
 	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );
 
 	if ( flags & EE_BUTTON_LMASK )
@@ -1427,6 +1455,7 @@ void TerminalDisplay::onSizeChange() {
 			mFrameBuffer->resize( fboSize.getWidth(), fboSize.getHeight() );
 		}
 	}
+	invalidateLines();
 }
 
 void TerminalDisplay::onProcessExit( int exitCode ) {
@@ -1661,8 +1690,7 @@ void TerminalDisplay::createFrameBuffer() {
 void TerminalDisplay::drawFrameBuffer() {
 	if ( mFrameBuffer ) {
 		Rect r( 0, 0, mSize.getWidth(), mSize.getHeight() );
-		TextureRegion textureRegion( mFrameBuffer->getTexture()->getTextureId(), r,
-									 r.getSize().asFloat() );
+		TextureRegion textureRegion( mFrameBuffer->getTexture(), r, r.getSize().asFloat() );
 		textureRegion.draw( mPosition.floor().x, mPosition.floor().y );
 	}
 }

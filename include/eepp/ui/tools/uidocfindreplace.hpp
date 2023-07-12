@@ -40,19 +40,6 @@ class EE_API UIDocFindReplace : public UILinearLayout, public WidgetCommandExecu
 	virtual void hide();
 
   protected:
-	struct SearchState {
-		String text;
-		TextRange range = TextRange();
-		bool caseSensitive{ false };
-		bool wholeWord{ false };
-		bool escapeSequences{ false };
-		TextDocument::FindReplaceType type{ TextDocument::FindReplaceType::Normal };
-		void reset() {
-			range = TextRange();
-			text = "";
-		}
-	};
-
 	bool mReady{ false };
 	UITextInput* mFindInput{ nullptr };
 	UITextInput* mReplaceInput{ nullptr };
@@ -70,18 +57,20 @@ class EE_API UIDocFindReplace : public UILinearLayout, public WidgetCommandExecu
 		UIWidget* parent, const std::shared_ptr<Doc::TextDocument>& doc,
 		std::unordered_map<std::string, std::string> keybindings = getDefaultKeybindings() );
 
-	SearchState mSearchState;
+	TextSearchParams mSearchState;
 	String mLastSearch;
 
-	bool findAndReplace( SearchState& search, const String& replace );
+	bool findAndReplace( TextSearchParams& search, const String& replace );
 
-	bool findPrevText( SearchState& search );
+	bool findPrevText( TextSearchParams& search );
 
-	bool findNextText( SearchState& search );
+	bool findNextText( TextSearchParams& search );
 
-	int replaceAll( SearchState& search, const String& replace );
+	int replaceAll( TextSearchParams& search, const String& replace );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	void refreshHighlight( UICodeEditor* editor );
 };
 
 }}} // namespace EE::UI::Tools

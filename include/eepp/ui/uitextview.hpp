@@ -59,6 +59,10 @@ class EE_API UITextView : public UIWidget {
 
 	UITextView* setFontShadowColor( const Color& color );
 
+	const Vector2f& getFontShadowOffset() const;
+
+	UITextView* setFontShadowOffset( const Vector2f& offset );
+
 	const Color& getSelectionBackColor() const;
 
 	UITextView* setSelectionBackColor( const Color& color );
@@ -101,6 +105,8 @@ class EE_API UITextView : public UIWidget {
 	const TextTransform::Value& getTextTransform() const;
 
 	void setTextTransform( const TextTransform::Value& textTransform );
+
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
   protected:
 	Text* mTextCache;
@@ -167,6 +173,29 @@ class EE_API UITextView : public UIWidget {
 	void recalculate();
 
 	void resetSelCache();
+};
+
+class EE_API UIAnchor : public UITextView {
+  public:
+	static UIAnchor* New();
+
+	UIAnchor();
+
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	void setHref( const std::string& href );
+
+	const std::string& getHref() const;
+
+  protected:
+	std::string mHref;
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
 };
 
 }} // namespace EE::UI

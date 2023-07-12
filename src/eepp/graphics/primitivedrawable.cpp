@@ -1,5 +1,6 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitivedrawable.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
 
 namespace EE { namespace Graphics {
@@ -17,7 +18,7 @@ PrimitiveDrawable::~PrimitiveDrawable() {
 	eeSAFE_DELETE( mVertexBuffer );
 }
 
-void PrimitiveDrawable::draw( const Vector2f& position, const Sizef& size ) {
+void PrimitiveDrawable::draw( const Vector2f& position, const Sizef& ) {
 	if ( mPosition != position ) {
 		mPosition = position;
 		mNeedsUpdate = true;
@@ -29,6 +30,14 @@ void PrimitiveDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	if ( NULL != mVertexBuffer ) {
 		BatchRenderer* BR = GlobalBatchRenderer::instance();
 
+		bool isPolySmooth = GLi->isPolygonSmooth();
+		bool isLineSmooth = GLi->isLineSmooth();
+
+		if ( mSmooth ) {
+			GLi->polygonSmooth( true );
+			GLi->lineSmooth( true );
+		}
+
 		BR->draw();
 
 		Float lw = BR->getLineWidth();
@@ -39,6 +48,14 @@ void PrimitiveDrawable::draw( const Vector2f& position, const Sizef& size ) {
 		mVertexBuffer->unbind();
 
 		BR->setLineWidth( lw );
+
+		if ( mSmooth ) {
+			if ( !isPolySmooth )
+				GLi->polygonSmooth( isPolySmooth );
+
+			if ( !isLineSmooth )
+				GLi->lineSmooth( isLineSmooth );
+		}
 	}
 }
 
@@ -66,6 +83,14 @@ void PrimitiveDrawable::setLineWidth( const Float& width ) {
 
 const Float& PrimitiveDrawable::getLineWidth() const {
 	return mLineWidth;
+}
+
+bool PrimitiveDrawable::isSmooth() const {
+	return mSmooth;
+}
+
+void PrimitiveDrawable::setSmooth( bool smooth ) {
+	mSmooth = smooth;
 }
 
 void PrimitiveDrawable::onAlphaChange() {

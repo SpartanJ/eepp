@@ -8,8 +8,8 @@ UITableHeaderColumn::UITableHeaderColumn( const std::string& parentTag, UIAbstra
 										  const size_t& colIndex ) :
 	UIPushButton( parentTag + "::header::column" ), mView( view ), mColIndex( colIndex ) {
 	setDragEnabled( true );
-	mInnerWidgetOrientation = InnerWidgetOrientation::Right;
-	auto cb = [&]( const Event* ) { updateLayout(); };
+	mInnerWidgetOrientation = InnerWidgetOrientation::IconTextBoxWidget;
+	auto cb = [this]( const Event* ) { updateLayout(); };
 	mImage = UIImage::NewWithTag( mTag + "::arrow" );
 	mImage->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
@@ -60,6 +60,7 @@ Uint32 UITableHeaderColumn::onMouseDown( const Vector2i& position, const Uint32&
 		 !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) &&
 		 ( flags & mDragButton ) && isDragEnabled() && !isDragging() &&
 		 localPos.x >= mSize.getWidth() - mView->getDragBorderDistance() ) {
+		setFocus();
 		startDragging( position.asFloat() );
 	}
 	pushState( UIState::StatePressed );

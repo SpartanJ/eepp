@@ -17,12 +17,13 @@ UISpinBox::UISpinBox() :
 	mValue( 0 ),
 	mClickStep( 1.f ),
 	mModifyingVal( false ) {
+	mFlags |= UI_SCROLLABLE;
 	mInput = UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
-	auto cb = [&]( const Event* ) { adjustChilds(); };
+	auto cb = [this]( const Event* ) { adjustChilds(); };
 
 	mPushUp = UIWidget::NewWithTag( "spinbox::btnup" );
 	mPushUp->setVisible( true );
@@ -158,24 +159,23 @@ void UISpinBox::addValue( const double& value ) {
 }
 
 UISpinBox* UISpinBox::setValue( const double& val ) {
-	if ( val != mValue ) {
-		if ( val >= mMinValue && val <= mMaxValue ) {
-			double iValN = (double)(Int64)val;
-			double fValN = (double)iValN;
+	double newVal = eeclamp( val, mMinValue, mMaxValue );
+	double iValN = (double)(Int64)newVal;
+	double fValN = (double)iValN;
+	bool valueChanged = mValue != newVal;
 
-			mValue = val;
+	mValue = newVal;
 
-			mModifyingVal = true;
-			if ( fValN == val ) {
-				mInput->setText( String::toString( (Int64)iValN ) );
-			} else {
-				mInput->setText( String::toString( val ) );
-			}
-			mModifyingVal = false;
-
-			onValueChange();
-		}
+	mModifyingVal = true;
+	if ( fValN == newVal ) {
+		mInput->setText( String::toString( (Int64)iValN ) );
+	} else {
+		mInput->setText( String::toString( newVal ) );
 	}
+	mModifyingVal = false;
+
+	if ( valueChanged )
+		onValueChange();
 	return this;
 }
 
@@ -195,12 +195,8 @@ void UISpinBox::onBufferChange( const Event* ) {
 				mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
 		} else {
 			bool res = String::fromString<double>( val, mInput->getText() );
-
-			if ( res && val != mValue && val >= mMinValue && val <= mMaxValue ) {
-				mValue = val;
-
-				onValueChange();
-			}
+			if ( res && val != mValue )
+				setValue( val );
 		}
 	}
 }
@@ -225,7 +221,7 @@ UISpinBox* UISpinBox::setMinValue( const double& minVal ) {
 	mMinValue = minVal;
 
 	if ( mValue < mMinValue )
-		mValue = mMinValue;
+		setValue( mMinValue );
 
 	return this;
 }
@@ -238,7 +234,7 @@ UISpinBox* UISpinBox::setMaxValue( const double& maxVal ) {
 	mMaxValue = maxVal;
 
 	if ( mValue > mMaxValue )
-		mValue = mMaxValue;
+		setValue( mMaxValue );
 
 	return this;
 }
@@ -296,6 +292,34 @@ std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromDouble( getValue() );
 		case PropertyId::ClickStep:
 			return String::fromDouble( getClickStep() );
+		case PropertyId::Text:
+		case PropertyId::AllowEditing:
+		case PropertyId::MaxLength:
+		case PropertyId::Numeric:
+		case PropertyId::AllowFloat:
+		case PropertyId::Hint:
+		case PropertyId::HintColor:
+		case PropertyId::HintShadowColor:
+		case PropertyId::HintShadowOffset:
+		case PropertyId::HintFontSize:
+		case PropertyId::HintFontFamily:
+		case PropertyId::HintFontStyle:
+		case PropertyId::HintStrokeWidth:
+		case PropertyId::HintStrokeColor:
+		case PropertyId::Color:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
+		case PropertyId::SelectionColor:
+		case PropertyId::SelectionBackColor:
+		case PropertyId::FontFamily:
+		case PropertyId::FontSize:
+		case PropertyId::FontStyle:
+		case PropertyId::Wordwrap:
+		case PropertyId::TextStrokeWidth:
+		case PropertyId::TextStrokeColor:
+		case PropertyId::TextSelection:
+		case PropertyId::TextAlign:
+			return mInput->getPropertyString( propertyDef, propertyIndex );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -305,7 +329,35 @@ std::vector<PropertyId> UISpinBox::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
 	auto local = { PropertyId::MinValue, PropertyId::MaxValue, PropertyId::Value,
 				   PropertyId::ClickStep };
+	auto input = { PropertyId::Text,
+				   PropertyId::AllowEditing,
+				   PropertyId::MaxLength,
+				   PropertyId::Numeric,
+				   PropertyId::AllowFloat,
+				   PropertyId::Hint,
+				   PropertyId::HintColor,
+				   PropertyId::HintShadowColor,
+				   PropertyId::HintShadowOffset,
+				   PropertyId::HintFontSize,
+				   PropertyId::HintFontFamily,
+				   PropertyId::HintFontStyle,
+				   PropertyId::HintStrokeWidth,
+				   PropertyId::HintStrokeColor,
+				   PropertyId::Color,
+				   PropertyId::TextShadowColor,
+				   PropertyId::TextShadowOffset,
+				   PropertyId::SelectionColor,
+				   PropertyId::SelectionBackColor,
+				   PropertyId::FontFamily,
+				   PropertyId::FontSize,
+				   PropertyId::FontStyle,
+				   PropertyId::Wordwrap,
+				   PropertyId::TextStrokeWidth,
+				   PropertyId::TextStrokeColor,
+				   PropertyId::TextSelection,
+				   PropertyId::TextAlign };
 	props.insert( props.end(), local.begin(), local.end() );
+	props.insert( props.end(), input.begin(), input.end() );
 	return props;
 }
 
@@ -336,13 +388,15 @@ bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Hint:
 		case PropertyId::HintColor:
 		case PropertyId::HintShadowColor:
+		case PropertyId::HintShadowOffset:
 		case PropertyId::HintFontSize:
 		case PropertyId::HintFontFamily:
 		case PropertyId::HintFontStyle:
 		case PropertyId::HintStrokeWidth:
 		case PropertyId::HintStrokeColor:
 		case PropertyId::Color:
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
 		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:

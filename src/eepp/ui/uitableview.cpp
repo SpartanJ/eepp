@@ -40,10 +40,8 @@ void UITableView::drawChilds() {
 		if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
 			continue;
 		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
-			if ( columnData( colIndex ).visible ) {
-				updateCell( realIndex, getModel()->index( index.row(), colIndex, index.parent() ),
-							0, yOffset );
-			}
+			updateCell( realIndex, getModel()->index( index.row(), colIndex, index.parent() ), 0,
+						yOffset );
 		}
 		updateRow( realIndex, index, yOffset )->nodeDraw();
 		realIndex++;
@@ -124,7 +122,8 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 				lWidth = w;
 		}
 	};
-	if ( bestGuess ) {
+	// TODO: Improve best guess
+	if ( bestGuess && getItemCount() > 10 ) {
 		Variant dataTest( getModel()->data( getModel()->index( 0, colIndex ) ) );
 		bool isStdString = dataTest.is( Variant::Type::StdString );
 		bool isString = dataTest.is( Variant::Type::String );
@@ -133,6 +132,8 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 			for ( size_t i = 0; i < getItemCount(); i++ ) {
 				ModelIndex index( getModel()->index( i, colIndex ) );
 				Variant data( getModel()->data( index ) );
+				if ( !data.isValid() )
+					continue;
 				size_t length =
 					isStdString ? data.asStdString().length()
 								: ( isString ? data.asString().length() : strlen( data.asCStr() ) );
@@ -155,12 +156,12 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 	return lWidth;
 }
 
-void UITableView::createOrUpdateColumns() {
+void UITableView::createOrUpdateColumns( bool resetColumnData ) {
 	if ( !getModel() ) {
 		updateContentSize();
 		return;
 	}
-	UIAbstractTableView::createOrUpdateColumns();
+	UIAbstractTableView::createOrUpdateColumns( resetColumnData );
 	updateContentSize();
 }
 
@@ -181,7 +182,7 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 	int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
-	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
+
 	switch ( event.getKeyCode() ) {
 		case KEY_PAGEUP: {
 			if ( curIndex.row() - pageSize < 0 ) {
@@ -270,7 +271,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 				onOpenModelIndex( curIndex, &event );
 			return 1;
 		}
-		case KEY_MENU: {
+		case KEY_MENU:
+		case KEY_APPLICATION: {
 			if ( curIndex.isValid() )
 				onOpenMenuModelIndex( curIndex, &event );
 			return 1;

@@ -246,7 +246,8 @@ class EE_API String {
 	 */
 	static bool contains( const String& haystack, const String& needle );
 
-	static int fuzzyMatch( const std::string& string, const std::string& pattern );
+	static int fuzzyMatch( const std::string& string, const std::string& pattern,
+						   bool allowUneven = false, bool permissive = false );
 
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( std::string& target, const std::string& that, const std::string& with );
@@ -324,7 +325,10 @@ class EE_API String {
 	static String fromUtf8( const std::string& utf8String );
 
 	/** @return The number of codepoints of the utf8 string. */
-	static size_t utf8StringLength( const std::string& utf8String );
+	static size_t utf8Length( const std::string& utf8String );
+
+	/** @return The next character in a utf8 null terminated string */
+	static Uint32 utf8Next( char*& utf8String );
 
 	/** @brief Default constructor
 	** This constructor creates an empty string.
@@ -395,6 +399,8 @@ class EE_API String {
 	** @param wideString Wide string to convert
 	**/
 	String( const std::wstring& wideString );
+
+	static String fromWide( const wchar_t* wideString );
 #endif
 
 	/** @brief Construct from a null-terminated C-style UTF-32 string
@@ -819,7 +825,29 @@ class EE_API String {
 							   const bool& pushEmptyString = false,
 							   const bool& keepDelim = false ) const;
 
-	std::pair<bool, int> fuzzyMatch( const String& pattern );
+	static std::string getFirstLine( const std::string& string );
+
+	String getFirstLine();
+
+	/** Replace all occurrences of the search string with the replacement string. */
+	void replaceAll( const String& that, const String& with );
+
+	void pop_back();
+
+	const StringBaseType& front() const;
+
+	const StringBaseType& back() const;
+
+	String& trim( char character = ' ' );
+
+	String& lTrim( char character = ' ' );
+
+	String& rTrim( char character = ' ' );
+
+	/** @return True if a string contains a substring.
+	 * @param needle The searched string.
+	 */
+	bool contains( const String& needle );
 
   private:
 	friend EE_API bool operator==( const String& left, const String& right );

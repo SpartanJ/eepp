@@ -1,10 +1,29 @@
 #include "ecode.hpp"
+#include "featureshealth.hpp"
+#include "iconmanager.hpp"
+#include "pathhelper.hpp"
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
+#include "plugins/lsp/lspclientplugin.hpp"
+#include "plugins/xmltools/xmltoolsplugin.hpp"
+#include "settingsmenu.hpp"
+#include "uibuildsettings.hpp"
+#include "uiwelcomescreen.hpp"
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
+#include <filesystem>
+#include <nlohmann/json.hpp>
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+// For malloc_trim, which is a GNU extension
+extern "C" {
+#include <malloc.h>
+}
+#endif
+
+namespace fs = std::filesystem;
+using json = nlohmann::json;
 
 #ifdef ECODE_USE_BACKWARD
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -34,21 +53,18 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 			i18n( "confirm_ecode_exit",
 				  "Do you really want to close the code editor?\nAll changes will be lost." )
 				.unescape() );
-		msgBox->addEventListener( Event::MsgBoxConfirmClick, [&]( const Event* ) {
-			if ( !mCurrentProject.empty() )
-				mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
+		msgBox->on( Event::OnConfirm, [this]( const Event* ) {
+			saveProject();
 			saveConfig();
 			mWindow->close();
 		} );
-		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
 		msgBox->setTitle( String::format( i18n( "close_title", "Close %s?" ).toUtf8().c_str(),
 										  mWindowTitle.c_str() ) );
 		msgBox->center();
 		msgBox->showWhenReady();
 		return false;
 	} else {
-		if ( !mCurrentProject.empty() )
-			mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
+		saveProject();
 		saveConfig();
 		return true;
 	}
@@ -59,8 +75,18 @@ void App::saveDoc() {
 		return;
 
 	if ( mSplitter->getCurEditor()->getDocument().hasFilepath() ) {
-		if ( mSplitter->getCurEditor()->save() )
+		if ( mSplitter->getCurEditor()->save() ) {
 			updateEditorState();
+		} else {
+			UIMessageBox* msgBox = errorMsgBox(
+				i18n( "could_not_write_file",
+					  "Could not write file to disk.\nPlease check if the file "
+					  "is read-only or if ecode does not have permissions to write to that file.\n"
+					  "File path is: " ) +
+				mSplitter->getCurEditor()->getDocument().getFilePath() );
+
+			setFocusEditorOnClose( msgBox );
+		}
 	} else {
 		saveFileDialog( mSplitter->getCurEditor() );
 	}
@@ -70,7 +96,7 @@ void App::saveAllProcess() {
 	if ( mTmpDocs.empty() )
 		return;
 
-	mSplitter->forEachEditorStoppable( [&]( UICodeEditor* editor ) {
+	mSplitter->forEachEditorStoppable( [this]( UICodeEditor* editor ) {
 		if ( editor->getDocument().isDirty() &&
 			 std::find( mTmpDocs.begin(), mTmpDocs.end(), &editor->getDocument() ) !=
 				 mTmpDocs.end() ) {
@@ -82,14 +108,14 @@ void App::saveAllProcess() {
 				mTmpDocs.erase( &editor->getDocument() );
 			} else {
 				UIFileDialog* dialog = saveFileDialog( editor, false );
-				dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* ) {
+				dialog->on( Event::SaveFile, [&, editor]( const Event* ) {
 					updateEditorTabTitle( editor );
 					if ( mSplitter->getCurEditor() == editor )
 						updateEditorTitle( editor );
 				} );
-				dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+				dialog->on( Event::OnWindowClose, [&, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
-					if ( !SceneManager::instance()->isShootingDown() && !mTmpDocs.empty() )
+					if ( !SceneManager::instance()->isShuttingDown() && !mTmpDocs.empty() )
 						saveAllProcess();
 				} );
 				return true;
@@ -100,7 +126,7 @@ void App::saveAllProcess() {
 }
 
 void App::saveAll() {
-	mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
+	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 		if ( editor->isDirty() )
 			mTmpDocs.insert( &editor->getDocument() );
 	} );
@@ -113,6 +139,8 @@ std::string App::titleFromEditor( UICodeEditor* editor ) {
 }
 
 void App::updateEditorTabTitle( UICodeEditor* editor ) {
+	if ( editor == nullptr )
+		return;
 	std::string title( titleFromEditor( editor ) );
 	if ( editor->getData() ) {
 		UITab* tab = (UITab*)editor->getData();
@@ -121,6 +149,8 @@ void App::updateEditorTabTitle( UICodeEditor* editor ) {
 }
 
 void App::updateEditorTitle( UICodeEditor* editor ) {
+	if ( editor == nullptr )
+		return;
 	std::string title( titleFromEditor( editor ) );
 	updateEditorTabTitle( editor );
 	setAppTitle( title );
@@ -163,34 +193,57 @@ void App::openFileDialog() {
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
+	dialog->on( Event::OpenFile, [this]( const Event* event ) {
 		auto file = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		mLastFileFolder = FileSystem::fileRemoveFileName( file );
 		loadFileFromPath( file );
 	} );
-	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShootingDown() )
+	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
+		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->center();
 	dialog->show();
 }
 
+std::string App::getLastUsedFolder() {
+	if ( !mCurrentProject.empty() )
+		return mCurrentProject;
+	if ( !mRecentFolders.empty() )
+		return mRecentFolders.front();
+	return ".";
+}
+
+void App::insertRecentFolder( const std::string& rpath ) {
+	auto found = std::find( mRecentFolders.begin(), mRecentFolders.end(), rpath );
+	if ( found != mRecentFolders.end() )
+		mRecentFolders.erase( found );
+	mRecentFolders.insert( mRecentFolders.begin(), rpath );
+	if ( mRecentFolders.size() > 10 )
+		mRecentFolders.resize( 10 );
+}
+
+void App::refreshFolderView() {
+	if ( !mFileSystemModel )
+		return;
+	mThreadPool->run( [this]() { mFileSystemModel->refresh(); } );
+}
+
 void App::openFolderDialog() {
 	UIFileDialog* dialog =
 		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
 							   UIFileDialog::ShowOnlyFolders,
-						   "*", "." );
+						   "*", getLastUsedFolder() );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_folder", "Open Folder" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	dialog->addEventListener( Event::OpenFile, [&]( const Event* event ) {
+	dialog->on( Event::OpenFile, [this]( const Event* event ) {
 		String path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 		if ( FileSystem::isDirectory( path ) )
 			loadFolder( path );
 	} );
-	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShootingDown() )
+	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
+		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->center();
@@ -202,7 +255,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
 	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff; *.otb; *.bdf",
+		UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff; *.otb; *.bdf; *.ttc",
 						   FileSystem::fileRemoveFileName( absoluteFontPath ) );
 	ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
 		FileSystem::fileNameFromPath( fontPath ), true, true );
@@ -212,11 +265,11 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "select_font_file", "Select Font File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
-	dialog->addEventListener( Event::OnWindowClose, [&]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShootingDown() )
+	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
+		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
-	dialog->addEventListener( Event::OpenFile, [&, loadingMonoFont]( const Event* event ) {
+	dialog->on( Event::OpenFile, [&, loadingMonoFont]( const Event* event ) {
 		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		if ( String::startsWith( newPath, mResPath ) )
 			newPath = newPath.substr( mResPath.size() );
@@ -232,11 +285,11 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 				auto loadMonoFont = [&, newPath]( FontTrueType* fontMono ) {
 					fontPath = newPath;
 					mFontMono = fontMono;
-					mFontMono->setEnableFallbackFont( false );
+					mFontMono->setEnableDynamicMonospace( true );
 					mFontMono->setBoldAdvanceSameAsRegular( true );
 					if ( mSplitter ) {
 						mSplitter->forEachEditor(
-							[&]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+							[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
 					}
 				};
 				if ( !fontMono->isMonospace() ) {
@@ -248,14 +301,12 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 							"flagged as monospace.\nDo you want to load it anyways?\nPerformance "
 							"and memory usage will be awful without a monospaced font." )
 							.unescape() );
-					msgBox->addEventListener(
-						Event::MsgBoxConfirmClick,
-						[&, loadMonoFont, fontMono]( const Event* ) { loadMonoFont( fontMono ); } );
-					msgBox->addEventListener( Event::MsgBoxCancelClick, [fontMono]( const Event* ) {
+					msgBox->on( Event::OnConfirm, [&, loadMonoFont, fontMono]( const Event* ) {
+						loadMonoFont( fontMono );
+					} );
+					msgBox->on( Event::OnCancel, [fontMono]( const Event* ) {
 						FontManager::instance()->remove( fontMono );
 					} );
-					msgBox->addEventListener( Event::OnClose,
-											  [&]( const Event* ) { msgBox = nullptr; } );
 					msgBox->setTitle( i18n( "confirm_loading_font", "Font loading confirmation" ) );
 					msgBox->center();
 					msgBox->showWhenReady();
@@ -277,7 +328,7 @@ void App::downloadFileWebDialog() {
 	msgBox->getTextInput()->setHint( i18n( "any_https_or_http_url", "Any https or http URL" ) );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->showWhenReady();
-	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
 		std::string url( msgBox->getTextInput()->getText().toUtf8() );
 		downloadFileWeb( url );
 		if ( mSplitter->getCurWidget() )
@@ -294,7 +345,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( !editor )
 		return nullptr;
 	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "." );
+		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*" );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -302,7 +353,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
 		filename += editor->getSyntaxDefinition().getFileExtension();
 	dialog->setFileName( filename );
-	dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* event ) {
+	dialog->on( Event::SaveFile, [&, editor]( const Event* event ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
@@ -326,8 +377,8 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		}
 	} );
 	if ( focusOnClose ) {
-		dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
-			if ( editor && !SceneManager::instance()->isShootingDown() )
+		dialog->on( Event::OnWindowClose, [&, editor]( const Event* ) {
+			if ( editor && !SceneManager::instance()->isShuttingDown() )
 				editor->setFocus();
 		} );
 	}
@@ -337,29 +388,39 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 }
 
 void App::runCommand( const std::string& command ) {
-	if ( mSplitter->getCurWidget() ) {
-		if ( mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-			mSplitter->getCurWidget()->asType<UICodeEditor>()->getDocument().execute( command );
-		} else if ( mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
-			mSplitter->getCurWidget()->asType<UITerminal>()->execute( command );
-		}
+	if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+		mSplitter->getCurWidget()->asType<UICodeEditor>()->getDocument().execute( command );
+	} else if ( mSplitter->getCurWidget() &&
+				mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
+		mSplitter->getCurWidget()->asType<UITerminal>()->execute( command );
+	} else {
+		mMainLayout->execute( command );
 	}
 }
 
 void App::onPluginEnabled( UICodeEditorPlugin* plugin ) {
 	if ( mSplitter )
 		mSplitter->forEachEditor(
-			[&]( UICodeEditor* editor ) { editor->registerPlugin( plugin ); } );
+			[plugin]( UICodeEditor* editor ) { editor->registerPlugin( plugin ); } );
 }
 
 void App::initPluginManager() {
-	mPluginManager = std::make_unique<PluginManager>( mResPath, mPluginsPath, mThreadPool );
-	mPluginManager->onPluginEnabled = [&]( UICodeEditorPlugin* plugin ) {
+	mPluginManager = std::make_unique<PluginManager>(
+		mResPath, mPluginsPath, mThreadPool, [this]( const std::string& path, const auto& cb ) {
+			UITab* tab = mSplitter->isDocumentOpen( path );
+			if ( !tab ) {
+				loadFileFromPath( path, true, nullptr, cb );
+			} else {
+				tab->getTabWidget()->setTabSelected( tab );
+				cb( tab->getOwnedWidget()->asType<UICodeEditor>(), path );
+			}
+		} );
+	mPluginManager->onPluginEnabled = [this]( UICodeEditorPlugin* plugin ) {
 		if ( nullptr == mUISceneNode || plugin->isReady() ) {
 			onPluginEnabled( plugin );
 		} else {
 			// If plugin loads asynchronously and is not ready, delay the plugin enabled callback
-			plugin->addOnReadyCallback( [&]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
+			plugin->addOnReadyCallback( [this]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
 				mUISceneNode->runOnMainThread( [&, plugin]() { onPluginEnabled( plugin ); } );
 				plugin->removeReadyCallback( cbId );
 			} );
@@ -368,64 +429,71 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( LinterPlugin::Definition() );
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );
+	mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
+	mPluginManager->registerPlugin( XMLToolsPlugin::Definition() );
 }
 
-void App::loadConfig( const LogLevel& logLevel ) {
+void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
+					  bool stdOutLogs, bool disableFileLogs ) {
 	mConfigPath = Sys::getConfigPath( "ecode" );
 	if ( !FileSystem::fileExists( mConfigPath ) )
 		FileSystem::makeDir( mConfigPath );
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mPluginsPath = mConfigPath + "plugins";
-	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes";
+	mLanguagesPath = mConfigPath + "languages";
+	mThemesPath = mConfigPath + "themes";
+	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes" +
+						FileSystem::getOSSlash();
 	mTerminalManager = std::make_unique<TerminalManager>( this );
 	mTerminalManager->setTerminalColorSchemesPath( mConfigPath + "terminal" +
-												   FileSystem::getOSSlash() + "colorschemes" );
+												   FileSystem::getOSSlash() + "colorschemes" +
+												   FileSystem::getOSSlash() );
 	mTerminalManager->setUseFrameBuffer( mUseFrameBuffer );
 
 	if ( !FileSystem::fileExists( mPluginsPath ) )
 		FileSystem::makeDir( mPluginsPath );
 	FileSystem::dirAddSlashAtEnd( mPluginsPath );
+
+	if ( !FileSystem::fileExists( mLanguagesPath ) )
+		FileSystem::makeDir( mLanguagesPath );
+	FileSystem::dirAddSlashAtEnd( mLanguagesPath );
+
+	if ( !FileSystem::fileExists( mThemesPath ) )
+		FileSystem::makeDir( mThemesPath );
+	FileSystem::dirAddSlashAtEnd( mThemesPath );
+
 #ifndef EE_DEBUG
-	Log::create( mConfigPath + "ecode.log", logLevel, false, true );
+	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, !disableFileLogs );
 #else
-	Log::create( mConfigPath + "ecode.log", logLevel, true, true );
+	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, !disableFileLogs );
 #endif
+
+	Log::instance()->setKeepLog( true );
+
+	if ( !mArgs.empty() ) {
+		std::string strargs( String::join( mArgs ) );
+		Log::info( "ecode starting with these command line arguments: %s", strargs.c_str() );
+	}
 
 	initPluginManager();
 
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
-				  mResPath, mDisplayDPI, mPluginManager.get() );
+				  mResPath, mPluginManager.get(), displaySize.asInt(), sync );
 }
 
 void App::saveConfig() {
 	mConfig.save( mRecentFiles, mRecentFolders,
 				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
-				  mWindow,
+				  mMainSplitter ? mMainSplitter->getSplitPartition().toString() : "85%", mWindow,
 				  mSplitter ? mSplitter->getCurrentColorSchemeName() : mConfig.editor.colorScheme,
 				  mDocSearchController->getSearchBarConfig(),
 				  mGlobalSearchController->getGlobalSearchBarConfig(), mPluginManager.get() );
 }
 
-static std::string keybindFormat( std::string str ) {
-	if ( !str.empty() ) {
-		String::replace( str, "mod", KeyMod::getDefaultModifierString() );
-		str[0] = std::toupper( str[0] );
-		size_t found = str.find_first_of( '+' );
-		while ( found != std::string::npos ) {
-			if ( found + 1 < str.size() ) {
-				str[found + 1] = std::toupper( str[found + 1] );
-			}
-			found = str.find_first_of( '+', found + 1 );
-		}
-		return str;
-	}
-	return "";
-}
-
 std::string App::getKeybind( const std::string& command ) {
 	auto it = mKeybindingsInvert.find( command );
 	if ( it != mKeybindingsInvert.end() )
-		return keybindFormat( it->second );
+		return KeyBindings::keybindFormat( it->second );
 	return "";
 }
 
@@ -445,13 +513,18 @@ bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
 			mSplitter->getCurEditor()->getDocument().execute( cmd );
 			return true;
 		}
-	} else if ( mSplitter->curWidgetExists() &&
+	} else if ( mSplitter->getCurWidget() != nullptr &&
 				mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
 		UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
 		std::string cmd = terminal->getKeyBindings().getCommandFromKeyBind(
 			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
 		if ( !cmd.empty() )
 			terminal->execute( cmd );
+	} else {
+		std::string cmd = mMainLayout->getKeyBindings().getCommandFromKeyBind(
+			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
+		if ( !cmd.empty() )
+			mMainLayout->execute( cmd );
 	}
 	return false;
 }
@@ -464,7 +537,8 @@ void App::closeApp() {
 void App::mainLoop() {
 	mWindow->getInput()->update();
 	SceneManager::instance()->update();
-	if ( firstUpdate ) {
+
+	if ( unlikely( firstUpdate ) ) {
 		Log::info( "First update took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 		firstUpdate = false;
 	}
@@ -473,7 +547,7 @@ void App::mainLoop() {
 		mWindow->clear();
 		SceneManager::instance()->draw();
 		mWindow->display();
-		if ( firstFrame ) {
+		if ( unlikely( firstFrame ) ) {
 			Log::info( "First frame took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 			firstFrame = false;
 		}
@@ -493,21 +567,37 @@ void App::onFileDropped( String file ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
 	UIWidget* widget = mSplitter->getCurWidget();
-	UITab* tab = nullptr;
+	UITab* tab = mSplitter->isDocumentOpen( file );
 	UICodeEditor* codeEditor = nullptr;
+
+	if ( tab ) {
+		tab->getTabWidget()->setTabSelected( tab );
+		return;
+	}
+
 	if ( !node )
 		node = widget;
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( ( codeEditor->getDocument().isLoading() || !codeEditor->getDocument().isEmpty() ) &&
-			 !Image::isImageExtension( file ) &&
-			 FileSystem::fileExtension( file.toUtf8() ) != "svg" ) {
+			 ( !Image::isImageExtension( file ) ||
+			   FileSystem::fileExtension( file.toUtf8() ) == "svg" ) ) {
 			auto d = mSplitter->createCodeEditorInTabWidget(
 				mSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
 			tab = d.first;
 		}
+	} else if ( widget && widget->isType( UI_TYPE_TERMINAL ) ) {
+		if ( !Image::isImageExtension( file ) &&
+			 ( !Image::isImageExtension( file ) ||
+			   FileSystem::fileExtension( file.toUtf8() ) == "svg" ) ) {
+			auto d =
+				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( widget ) );
+			codeEditor = d.second;
+			tab = d.first;
+		}
 	}
+
 	loadFileFromPath( file, false, codeEditor, [tab]( UICodeEditor*, const std::string& ) {
 		if ( tab )
 			tab->getTabWidget()->setTabSelected( tab );
@@ -528,29 +618,41 @@ void App::onTextDropped( String text ) {
 	}
 }
 
-App::App() : mThreadPool( ThreadPool::createShared( eemax<int>( 2, Sys::getCPUCount() ) ) ) {}
+App::App( const size_t& jobs, const std::vector<std::string>& args ) :
+	mArgs( args ),
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	mThreadPool(
+		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) ) {
+}
+#elif defined( __EMSCRIPTEN_PTHREADS__ )
+	mThreadPool(
+		ThreadPool::createShared( jobs > 0 ? jobs : eemin<int>( 8, Sys::getCPUCount() ) ) ) {
+}
+#endif
 
 App::~App() {
+	if ( mProjectBuildManager )
+		mProjectBuildManager.reset();
 	mThreadPool.reset();
 	if ( mFileWatcher ) {
 		Lock l( mWatchesLock );
 		delete mFileWatcher;
 		mFileWatcher = nullptr;
 	}
+	mPluginManager.reset();
+	eeSAFE_DELETE( mSplitter );
+	eeSAFE_DELETE( mConsole );
 	if ( mFileSystemListener ) {
 		delete mFileSystemListener;
 		mFileSystemListener = nullptr;
 	}
-	eeSAFE_DELETE( mSplitter );
-	eeSAFE_DELETE( mAutoCompletePlugin );
-	eeSAFE_DELETE( mLinterPlugin );
-	eeSAFE_DELETE( mFormatterPlugin );
-	eeSAFE_DELETE( mConsole );
+	mDirTree.reset();
 }
 
 void App::updateRecentFiles() {
 	UINode* node = nullptr;
-	if ( mSettingsMenu && ( node = mSettingsMenu->getItemId( "menu-recent-files" ) ) ) {
+	if ( mSettings && mSettings->getSettingsMenu() &&
+		 ( node = mSettings->getSettingsMenu()->getItemId( "menu-recent-files" ) ) ) {
 		UIMenuSubMenu* uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
 		UIMenu* menu = uiMenuSubMenu->getSubMenu();
 		uiMenuSubMenu->setEnabled( !mRecentFiles.empty() );
@@ -558,7 +660,7 @@ void App::updateRecentFiles() {
 		menu->removeEventsOfType( Event::OnItemClicked );
 		if ( mRecentFiles.empty() )
 			return;
-		menu->add( i18n( "reopen_closed_editor", "Reopen Closed Editor" ), nullptr,
+		menu->add( i18n( "reopen_closed_document", "Reopen Closed Document" ), nullptr,
 				   getKeybind( "reopen-closed-tab" ) )
 			->setId( "reopen-closed-tab" )
 			->setEnabled( !mRecentClosedFiles.empty() );
@@ -567,7 +669,7 @@ void App::updateRecentFiles() {
 			menu->add( file );
 		menu->addSeparator();
 		menu->add( i18n( "clear_menu", "Clear Menu" ) )->setId( "clear-menu" );
-		menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			const std::string& id = event->getNode()->asType<UIMenuItem>()->getId();
@@ -582,7 +684,7 @@ void App::updateRecentFiles() {
 				if ( ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) ||
 					 String::startsWith( path, "https://" ) ||
 					 String::startsWith( path, "http://" ) ) {
-					loadFileFromPath( path );
+					loadFileFromPathOrFocus( path );
 				}
 			}
 		} );
@@ -591,7 +693,9 @@ void App::updateRecentFiles() {
 
 void App::updateRecentFolders() {
 	UINode* node = nullptr;
-	if ( mSettingsMenu && ( node = mSettingsMenu->getItemId( "recent-folders" ) ) ) {
+	updateOpenRecentFolderBtn();
+	if ( mSettings && mSettings->getSettingsMenu() &&
+		 ( node = mSettings->getSettingsMenu()->getItemId( "recent-folders" ) ) ) {
 		UIMenuSubMenu* uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
 		UIMenu* menu = uiMenuSubMenu->getSubMenu();
 		uiMenuSubMenu->setEnabled( !mRecentFolders.empty() );
@@ -603,16 +707,23 @@ void App::updateRecentFolders() {
 			menu->add( file );
 		menu->addSeparator();
 		menu->add( i18n( "clear_menu", "Clear Menu" ) )->setId( "clear-menu" );
-		menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+		menu->addCheckBox(
+				i18n( "restore_last_session_at_startup", "Restart last session at startup" ) )
+			->setActive( mConfig.workspace.restoreLastSession )
+			->setId( "restore-last-session-at-startup" );
+		menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			const std::string& id = event->getNode()->asType<UIMenuItem>()->getId();
-			if ( id != "clear-menu" ) {
-				const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
-				loadFolder( txt );
-			} else {
+			if ( id == "clear-menu" ) {
 				mRecentFolders.clear();
 				updateRecentFolders();
+			} else if ( id == "restore-last-session-at-startup" ) {
+				mConfig.workspace.restoreLastSession =
+					event->getNode()->asType<UIMenuCheckBox>()->isActive();
+			} else {
+				const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+				loadFolder( txt );
 			}
 		} );
 	}
@@ -632,12 +743,53 @@ void App::showSidePanel( bool show ) {
 	}
 }
 
+void App::showStatusBar( bool show ) {
+	if ( show == mStatusBar->isVisible() )
+		return;
+	mStatusBar->setVisible( show );
+}
+
+ProjectBuildManager* App::getProjectBuildManager() const {
+	return mProjectBuildManager ? mProjectBuildManager.get() : nullptr;
+}
+
+UITabWidget* App::getSidePanel() const {
+	return mSidePanel;
+}
+
+const std::map<KeyBindings::Shortcut, std::string>& App::getRealLocalKeybindings() const {
+	return mRealLocalKeybindings;
+}
+
+const std::map<KeyBindings::Shortcut, std::string>& App::getRealSplitterKeybindings() const {
+	return mRealSplitterKeybindings;
+}
+
+const std::map<KeyBindings::Shortcut, std::string>& App::getRealTerminalKeybindings() const {
+	return mRealTerminalKeybindings;
+}
+
+const std::string& App::getFileToOpen() const {
+	return mFileToOpen;
+}
+
 void App::switchSidePanel() {
 	mConfig.ui.showSidePanel = !mConfig.ui.showSidePanel;
-	mWindowMenu->getItemId( "show-side-panel" )
+	mSettings->getWindowMenu()
+		->getItemId( "show-side-panel" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mConfig.ui.showSidePanel );
 	showSidePanel( mConfig.ui.showSidePanel );
+}
+
+void App::switchStatusBar() {
+	mConfig.ui.showStatusBar = !mConfig.ui.showStatusBar;
+	auto chk =
+		mSettings->getWindowMenu()->getItemId( "toggle-status-bar" )->asType<UIMenuCheckBox>();
+	if ( chk->isActive() != mConfig.ui.showStatusBar )
+		chk->setActive( mConfig.ui.showStatusBar );
+	updateDocInfoLocation();
+	showStatusBar( mConfig.ui.showStatusBar );
 }
 
 void App::panelPosition( const PanelPosition& panelPosition ) {
@@ -661,495 +813,296 @@ void App::setUIColorScheme( const ColorSchemePreference& colorScheme ) {
 	mUISceneNode->setColorSchemePreference( colorScheme );
 }
 
-UIMenu* App::createHelpMenu() {
-	UIPopUpMenu* helpMenu = UIPopUpMenu::New();
-	helpMenu->add( i18n( "ecode_source", "ecode source code..." ), findIcon( "github" ) )
-		->setId( "ecode_source" );
-	helpMenu->add( i18n( "about_ecode", "About ecode..." ) )->setId( "about_ecode" );
-	helpMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		const std::string& id = event->getNode()->getId();
-
-		if ( "ecode_source" == id ) {
-			Engine::instance()->openURI( "https://github.com/SpartanJ/ecode" );
-		} else if ( "about_ecode" == id ) {
-			String msg( ecode::Version::getVersionName() + " (codename: \"" +
-						ecode::Version::getCodename() + "\")" );
-			UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
-			msgBox->setTitle( i18n( "about_ecode", "About ecode..." ) );
-			msgBox->show();
-		}
-	} );
-	return helpMenu;
+ColorSchemePreference App::getUIColorScheme() const {
+	return mUIColorScheme;
 }
 
-UIMenu* App::createWindowMenu() {
-	mWindowMenu = UIPopUpMenu::New();
-	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
-	colorsMenu
-		->addRadioButton( i18n( "light", "Light" ), mUIColorScheme == ColorSchemePreference::Light )
-		->setId( "light" );
-	colorsMenu
-		->addRadioButton( i18n( "dark", "Dark" ), mUIColorScheme == ColorSchemePreference::Dark )
-		->setId( "dark" );
-	colorsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+EE::Window::Window* App::getWindow() const {
+	return mWindow;
+}
+
+UITextView* App::getDocInfo() const {
+	return mDocInfo;
+}
+
+UITreeView* App::getProjectTreeView() const {
+	return mProjectTreeView;
+}
+
+void App::checkForUpdatesResponse( Http::Response response, bool fromStartup ) {
+	auto updatesError = [&, fromStartup]() {
+		if ( fromStartup )
 			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		setUIColorScheme( item->getId() == "light" ? ColorSchemePreference::Light
-												   : ColorSchemePreference::Dark );
-	} );
-	mWindowMenu->addSubMenu( i18n( "ui_prefes_color_scheme", "UI Prefers Color Scheme" ),
-							 findIcon( "color-scheme" ), colorsMenu );
-	mWindowMenu->addSubMenu( i18n( "ui_renderer", "Renderer" ), findIcon( "renderer" ),
-							 createRendererMenu() );
-	mWindowMenu
-		->add( i18n( "ui_scale_factor", "UI Scale Factor (Pixel Density)" ),
-			   findIcon( "pixel-density" ) )
-		->setId( "ui-scale-factor" );
-	mWindowMenu->add( i18n( "ui_font_size", "UI Font Size" ), findIcon( "font-size" ) )
-		->setId( "ui-font-size" );
-	mWindowMenu->add( i18n( "editor_font_size", "Editor Font Size" ), findIcon( "font-size" ) )
-		->setId( "editor-font-size" );
-	mWindowMenu->add( i18n( "terminal_font_size", "Terminal Font Size" ), findIcon( "font-size" ) )
-		->setId( "terminal-font-size" );
-	mWindowMenu->add( i18n( "serif_font", "Serif Font..." ), findIcon( "font-size" ) )
-		->setId( "serif-font" );
-	mWindowMenu->add( i18n( "monospace_font", "Monospace Font..." ), findIcon( "font-size" ) )
-		->setId( "monospace-font" );
-	mWindowMenu->add( i18n( "terminal_font", "Terminal Font..." ), findIcon( "font-size" ) )
-		->setId( "terminal-font" );
-	mWindowMenu->add( i18n( "fallback_font", "Fallback Font..." ), findIcon( "font-size" ) )
-		->setId( "fallback-font" );
-	mWindowMenu->addSeparator();
-	mWindowMenu
-		->addCheckBox( i18n( "fullscreen_mode", "Full Screen Mode" ), false,
-					   getKeybind( "fullscreen-toggle" ) )
-		->setId( "fullscreen-toggle" );
-	mWindowMenu
-		->addCheckBox( i18n( "show_side_panel", "Show Side Panel" ), mConfig.ui.showSidePanel,
-					   getKeybind( "switch-side-panel" ) )
-		->setId( "show-side-panel" );
-	mWindowMenu
-		->add( i18n( "move_panel_left", "Move panel to left..." ), findIcon( "layout-left" ),
-			   getKeybind( "layout-left" ) )
-		->setId( "move-panel-left" );
-	mWindowMenu
-		->add( i18n( "move_panel_right", "Move panel to right..." ), findIcon( "layout-right" ),
-			   getKeybind( "layout-rigth" ) )
-		->setId( "move-panel-right" );
-	mWindowMenu->addSeparator();
-	mWindowMenu
-		->add( i18n( "split_left", "Split Left" ), findIcon( "split-horizontal" ),
-			   getKeybind( "split-left" ) )
-		->setId( "split-left" );
-	mWindowMenu
-		->add( i18n( "split_right", "Split Right" ), findIcon( "split-horizontal" ),
-			   getKeybind( "split-right" ) )
-		->setId( "split-right" );
-	mWindowMenu
-		->add( i18n( "split_top", "Split Top" ), findIcon( "split-vertical" ),
-			   getKeybind( "split-top" ) )
-		->setId( "split-top" );
-	mWindowMenu
-		->add( i18n( "split_bottom", "Split Bottom" ), findIcon( "split-vertical" ),
-			   getKeybind( "split-bottom" ) )
-		->setId( "split-bottom" );
-	mWindowMenu->addSeparator();
-	mWindowMenu
-		->add( i18n( "terminal_split_left", "Split Terminal Left" ), findIcon( "split-horizontal" ),
-			   getKeybind( "terminal-split-left" ) )
-		->setId( "terminal-split-left" );
-	mWindowMenu
-		->add( i18n( "terminal_split_right", "Split Terminal Right" ),
-			   findIcon( "split-horizontal" ), getKeybind( "terminal-split-right" ) )
-		->setId( "terminal-split-right" );
-	mWindowMenu
-		->add( i18n( "terminal_split_top", "Split Terminal Top" ), findIcon( "split-vertical" ),
-			   getKeybind( "terminal-split-top" ) )
-		->setId( "terminal-split-top" );
-	mWindowMenu
-		->add( i18n( "terminal_split_bottom", "Split Terminal Bottom" ),
-			   findIcon( "split-vertical" ), getKeybind( "terminal-split-bottom" ) )
-		->setId( "terminal-split-bottom" );
-	mWindowMenu->addSeparator();
-	mWindowMenu
-		->add( i18n( "zoom_in", "Zoom In" ), findIcon( "zoom-in" ), getKeybind( "font-size-grow" ) )
-		->setId( "zoom-in" );
-	mWindowMenu
-		->add( i18n( "zoom_out", "Zoom Out" ), findIcon( "zoom-out" ),
-			   getKeybind( "font-size-shrink" ) )
-		->setId( "zoom-out" );
-	mWindowMenu
-		->add( i18n( "zoom_reset", "Zoom Reset" ), findIcon( "zoom-reset" ),
-			   getKeybind( "font-size-reset" ) )
-		->setId( "zoom-reset" );
-	mWindowMenu->addSeparator();
-	mWindowMenu
-		->add( i18n( "show_console", "Show Console" ), findIcon( "terminal" ),
-			   getKeybind( "console-toggle" ) )
-		->setId( "console-toggle" );
-	mWindowMenu
-		->add( i18n( "inspect_widgets", "Inspect Widgets" ), findIcon( "package" ),
-			   getKeybind( "debug-widget-tree-view" ) )
-		->setId( "debug-widget-tree-view" );
-	mWindowMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		if ( item->getId() == "show-side-panel" ) {
-			mConfig.ui.showSidePanel = item->asType<UIMenuCheckBox>()->isActive();
-			showSidePanel( mConfig.ui.showSidePanel );
-		} else if ( item->getId() == "ui-scale-factor" ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT,
-				i18n( "set_ui_scale_factor",
-					  "Set the UI scale factor (pixel density):\nMinimum value is "
-					  "1, and maximum 6. Requires restart." ) );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setText(
-				String::format( "%.2f", mConfig.windowState.pixelDensity ) );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				msgBox->closeWindow();
-				Float val;
-				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 1 &&
-					 val <= 6 ) {
-					if ( mConfig.windowState.pixelDensity != val ) {
-						mConfig.windowState.pixelDensity = val;
-						UIMessageBox* msg = UIMessageBox::New(
-							UIMessageBox::OK,
-							i18n( "new_ui_scale_factor", "New UI scale factor assigned.\nPlease "
-														 "restart the application." ) );
-						msg->show();
-						setFocusEditorOnClose( msg );
-					} else if ( mSplitter && mSplitter->getCurWidget() ) {
-						mSplitter->getCurWidget()->setFocus();
-					}
-				} else {
-					UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK, "Invalid value!" );
-					msg->show();
-					setFocusEditorOnClose( msg );
-				}
+		UIMessageBox* msg = UIMessageBox::New(
+			UIMessageBox::OK, i18n( "error_checking_version", "Failed checking for updates." ) );
+		msg->setTitle( "Error" );
+		msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
+		msg->showWhenReady();
+	};
+
+	if ( response.getStatus() != Http::Response::Status::Ok || response.getBody().empty() ) {
+		updatesError();
+		return;
+	}
+
+	auto addStartUpCheckbox = [this]( UIMessageBox* msg ) {
+		msg->setId( "check_for_updates" );
+		msg->on( Event::OnWindowReady, [this, msg]( const Event* ) {
+			msg->setVisible( false );
+			UICheckBox* cbox = UICheckBox::New();
+			cbox->addClass( "check_at_startup" );
+			cbox->setParent( msg->getLayoutCont()->getFirstChild() );
+			cbox->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+			cbox->setText( i18n( "check_for_new_updates_at_startup",
+								 "Always check for new updates at startup." ) );
+			cbox->setChecked( mConfig.workspace.checkForUpdatesAtStartup );
+			cbox->toPosition( 1 );
+			cbox->runOnMainThread( [msg]() {
+				msg->setMinWindowSize( msg->getLayoutCont()->getSize() );
+				msg->center();
+				msg->show();
 			} );
-		} else if ( item->getId() == "editor-font-size" ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT, i18n( "set_editor_font_size", "Set the editor font size:" ) );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				mConfig.term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-				mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-					editor->setFontSize( mConfig.editor.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+			cbox->on( Event::OnValueChange, [this, cbox]( const Event* ) {
+				mConfig.workspace.checkForUpdatesAtStartup = cbox->isChecked();
+			} );
+		} );
+	};
+
+	json j;
+	try {
+		j = json::parse( response.getBody(), nullptr, true, true );
+
+		if ( j.contains( "tag_name" ) ) {
+			auto tagName( j["tag_name"].get<std::string>() );
+			auto versionNum = ecode::Version::getVersionNumFromTag( tagName );
+			if ( versionNum > ecode::Version::getVersionNum() ) {
+				auto name( j.value( "name", tagName ) );
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK_CANCEL,
+					name + i18n( "ecode_updates_available",
+								 " is available!\nDo you want to download it now?" )
+							   .unescape() );
+
+				auto url( j.value( "html_url", "https://github.com/SpartanJ/ecode/releases/" ) );
+				msg->on( Event::OnConfirm, [&, url, msg]( const Event* ) {
+					Engine::instance()->openURI( url );
+					msg->closeWindow();
 				} );
-			} );
-			setFocusEditorOnClose( msgBox );
-		} else if ( item->getId() == "terminal-font-size" ) {
-			UIMessageBox* msgBox =
-				UIMessageBox::New( UIMessageBox::INPUT, i18n( "set_terminal_font_size",
-															  "Set the terminal font size:" ) );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setText( mConfig.term.fontSize.toString() );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				mConfig.term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-				mSplitter->forEachWidget( [&]( UIWidget* widget ) {
-					if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
-						widget->asType<UITerminal>()->setFontSize(
-							mConfig.term.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
-				} );
-			} );
-			setFocusEditorOnClose( msgBox );
-		} else if ( item->getId() == "ui-font-size" ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT, i18n( "set_ui_font_size", "Set the UI font size:" ) );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-				Float fontSize = mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI );
-				UIThemeManager* manager = mUISceneNode->getUIThemeManager();
-				manager->setDefaultFontSize( fontSize );
-				manager->getDefaultTheme()->setDefaultFontSize( fontSize );
-				mUISceneNode->forEachNode( [&]( Node* node ) {
-					if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
-						UITextView* textView = node->asType<UITextView>();
-						if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
-							textView->setFontSize( mConfig.ui.fontSize.asDp(
-								node->getParent()->getPixelsSize().getWidth(), Sizef(),
-								mUISceneNode->getDPI() ) );
-						}
-					}
-				} );
-				msgBox->closeWindow();
-			} );
-			setFocusEditorOnClose( msgBox );
-		} else if ( item->getId() == "serif-font" ) {
-			openFontDialog( mConfig.ui.serifFont, false );
-		} else if ( item->getId() == "monospace-font" ) {
-			openFontDialog( mConfig.ui.monospaceFont, true );
-		} else if ( item->getId() == "terminal-font" ) {
-			openFontDialog( mConfig.ui.terminalFont, false );
-		} else if ( item->getId() == "fallback-font" ) {
-			openFontDialog( mConfig.ui.fallbackFont, false );
-		} else if ( "zoom-in" == item->getId() ) {
-			mSplitter->zoomIn();
-		} else if ( "zoom-out" == item->getId() ) {
-			mSplitter->zoomOut();
-		} else if ( "zoom-reset" == item->getId() ) {
-			mSplitter->zoomReset();
+				msg->setTitle( "ecode" );
+				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
+				addStartUpCheckbox( msg );
+			} else if ( versionNum < ecode::Version::getVersionNum() ) {
+				if ( fromStartup )
+					return;
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK,
+					i18n( "ecode_unreleased_version",
+						  "You are running an unreleased version of ecode!\nCurrent version: " )
+							.unescape() +
+						ecode::Version::getVersionNumString() );
+				msg->setTitle( "ecode" );
+				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
+				addStartUpCheckbox( msg );
+			} else {
+				if ( fromStartup )
+					return;
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK, i18n( "ecode_no_updates_available",
+											"There are currently no updates available." ) );
+				msg->setTitle( "ecode" );
+				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
+				addStartUpCheckbox( msg );
+			}
 		} else {
-			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
-			String::replaceAll( text, " ", "-" );
-			String::replaceAll( text, "/", "-" );
-			runCommand( text );
+			updatesError();
 		}
-	} );
-	return mWindowMenu;
+	} catch ( ... ) {
+		updatesError();
+	}
 }
 
-UIMenu* App::createRendererMenu() {
-	mRendererMenu = UIPopUpMenu::New();
-
-	mRendererMenu->addCheckBox( i18n( "vsync", "VSync" ), mConfig.context.VSync )->setId( "vsync" );
-	mRendererMenu->add( i18n( "frame_rate_limit", "Frame Rate Limit" ), findIcon( "fps" ) )
-		->setId( "frame_rate_limit" );
-
-	mRendererMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		if ( "vsync" == item->getId() ) {
-			mConfig.context.VSync = item->asType<UIMenuCheckBox>()->isActive();
-			saveConfig();
-			mNotificationCenter->addNotification(
-				i18n( "vsync_changed",
-					  "Vsync configuration changed.\nRestart ecode to see the changes." )
-					.unescape() );
-		} else if ( "frame_rate_limit" == item->getId() ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT,
-				i18n( "set_frame_rate_limit", "Set Frame Rate Limit:\nSet 0 to disable it.\n" )
-					.unescape() );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
-			msgBox->getTextInput()->setText( String::toString( mConfig.context.FrameRateLimit ) );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				int val;
-				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
-					mConfig.context.FrameRateLimit = val;
-					saveConfig();
-					mWindow->setFrameRateLimit( val );
-					mNotificationCenter->addNotification(
-						i18n( "frame_rate_limit_applied", "Frame Rate Limit Applied" ) );
-					msgBox->closeWindow();
-				}
-			} );
-			setFocusEditorOnClose( msgBox );
-		}
-	} );
-
-	UIPopUpMenu* glVersion = UIPopUpMenu::New();
-	std::vector<GraphicsLibraryVersion> versions = Renderer::getAvailableGraphicsLibraryVersions();
-	for ( const auto& ver : versions )
-		glVersion
-			->addRadioButton( Renderer::graphicsLibraryVersionToString( ver ),
-							  GLi->version() == ver )
-			->setData( ver );
-	glVersion->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		mConfig.context.Version = static_cast<GraphicsLibraryVersion>( item->getData() );
-		saveConfig();
-		mNotificationCenter->addNotification(
-			i18n( "glversion_changed",
-				  "Renderer version changed.\nRestart ecode to see the changes." )
-				.unescape() );
-	} );
-	mRendererMenu->addSubMenu( i18n( "ui_renderer_version", "Renderer Version" ),
-							   findIcon( "renderer" ), glVersion );
-
-	UIPopUpMenu* multisampleLvl = UIPopUpMenu::New();
-	const std::vector<Uint32> msaaVals = { 0, 2, 4, 8, 16 };
-	for ( const auto& val : msaaVals )
-		multisampleLvl
-			->addRadioButton( String::toString( val ), mConfig.context.Multisamples == val )
-			->setData( val );
-	mRendererMenu->addSubMenu( i18n( "ui_multisamples_level", "Multisample Anti-Aliasing Level" ),
-							   findIcon( "multisamples" ), multisampleLvl );
-	multisampleLvl->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		mConfig.context.Multisamples = item->getData();
-		saveConfig();
-		mNotificationCenter->addNotification(
-			i18n( "multisamples_changed",
-				  "Multisample Anti-Aliasing Level applied.\nRestart ecode to see the changes." )
-				.unescape() );
-	} );
-
-	return mRendererMenu;
+void App::checkForUpdates( bool fromStartup ) {
+	Http::getAsync(
+		[&, fromStartup]( const Http&, Http::Request&, Http::Response& response ) {
+			mUISceneNode->runOnMainThread(
+				[&, response]() { checkForUpdatesResponse( response, fromStartup ); } );
+		},
+		"https://api.github.com/repos/SpartanJ/ecode/releases/latest", Seconds( 30 ) );
 }
 
-UIMenu* App::createViewMenu() {
-	mViewMenu = UIPopUpMenu::New();
-	mViewMenu->addCheckBox( i18n( "show_line_numbers", "Show Line Numbers" ) )
-		->setActive( mConfig.editor.showLineNumbers )
-		->setId( "show-line-numbers" );
-	mViewMenu->addCheckBox( i18n( "show_white_spaces", "Show White Spaces" ) )
-		->setActive( mConfig.editor.showWhiteSpaces )
-		->setId( "show-white-spaces" );
-	mViewMenu->addCheckBox( i18n( "show_doc_info", "Show Document Info" ) )
-		->setActive( mConfig.editor.showDocInfo )
-		->setId( "show-doc-info" );
-	mViewMenu->addCheckBox( i18n( "show_minimap", "Show Minimap" ) )
-		->setActive( mConfig.editor.minimap )
-		->setId( "show-minimap" );
-	mViewMenu->addCheckBox( i18n( "highlight_matching_brackets", "Highlight Matching Bracket" ) )
-		->setActive( mConfig.editor.highlightMatchingBracket )
-		->setId( "highlight-matching-brackets" );
-	mViewMenu->addCheckBox( i18n( "highlight_current_line", "Highlight Current Line" ) )
-		->setActive( mConfig.editor.highlightCurrentLine )
-		->setId( "highlight-current-line" );
-	mViewMenu->addCheckBox( i18n( "highlight_selection_match", "Highlight Selection Match" ) )
-		->setActive( mConfig.editor.highlightSelectionMatch )
-		->setId( "highlight-selection-match" );
-	mViewMenu->addCheckBox( i18n( "enable-vertical-scrollbar", "Enable Vertical ScrollBar" ) )
-		->setActive( mConfig.editor.verticalScrollbar )
-		->setId( "enable-vertical-scrollbar" );
-	mViewMenu->addCheckBox( i18n( "enable_horizontal_scrollbar", "Enable Horizontal ScrollBar" ) )
-		->setActive( mConfig.editor.horizontalScrollbar )
-		->setId( "enable-horizontal-scrollbar" );
-	mViewMenu->addCheckBox( i18n( "enable_color_preview", "Enable Color Preview" ) )
-		->setActive( mConfig.editor.colorPreview )
-		->setTooltipText( i18n( "enable_color_preview_tooltip",
-								"Enables a quick preview of a color when the mouse\n"
-								"is hover a word that represents a color." ) )
-		->setId( "enable-color-preview" );
-	mViewMenu->addCheckBox( i18n( "enable_color_picker", "Enable Color Picker" ) )
-		->setActive( mConfig.editor.colorPickerSelection )
-		->setTooltipText( i18n( "enable_color_picker_tooltip",
-								"Enables the color picker tool when a double click selection\n"
-								"is done over a word representing a color." ) )
-		->setId( "enable-color-picker" );
-	mViewMenu->addCheckBox( i18n( "hide_tabbar_on_single_tab", "Hide tabbar on single tab" ) )
-		->setActive( mConfig.editor.hideTabBarOnSingleTab )
-		->setTooltipText(
-			i18n( "hide_tabbar_on_single_tab_tooltip",
-				  "Hides the tabbar if there's only one element in the tab widget." ) )
-		->setId( "hide-tabbar-on-single-tab" );
-	mViewMenu
-		->addCheckBox( i18n( "treeview_single_click_nav", "Single Click Navigation in Tree View" ) )
-		->setActive( mConfig.editor.singleClickTreeNavigation )
-		->setTooltipText( i18n(
-			"treeview_single_click_nav_tooltip",
-			"Uses single click to open files and expand subfolders in\nthe directory tree." ) )
-		->setId( "treeview-single-click-nav" );
-	mViewMenu->addCheckBox( i18n( "sync_project_tree", "Synchronize project tree with editor" ) )
-		->setActive( mConfig.editor.syncProjectTreeWithEditor )
-		->setTooltipText(
-			i18n( "sync_project_tree_tooltip",
-				  "Syncronizes the current focused document as the selected\nfile in the "
-				  "directory tree." ) )
-		->setId( "sync-project-tree" );
+void App::aboutEcode() {
+	String msg( ecode::Version::getVersionFullName() + " (codename: \"" +
+				ecode::Version::getCodename() + "\")" );
+	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
+	UIImage* image = UIImage::New();
+	image->setParent( msgBox->getContainer()->getFirstChild() );
+	auto tf = TextureFactory::instance();
+	Texture* tex = tf->getByName( "ecode-logo" );
+	if ( tex == nullptr ) {
+		tex = tf->loadFromFile( mResPath + "icon/ecode.png" );
+		if ( tex )
+			tex->setName( "ecode-logo" );
+	}
+	image->setDrawable( tex );
+	image->setLayoutGravity( UI_NODE_ALIGN_CENTER );
+	image->setGravity( UI_NODE_ALIGN_CENTER );
+	image->setScaleType( UIScaleType::FitInside );
+	image->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	image->setSize( { 128, 128 } );
+	image->toBack();
+	msgBox->setTitle( i18n( "about_ecode", "About ecode..." ) );
+	msgBox->showWhenReady();
+}
 
-	mViewMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		if ( item->getId() == "show-line-numbers" ) {
-			mConfig.editor.showLineNumbers = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setShowLineNumber( mConfig.editor.showLineNumbers );
-			} );
-		} else if ( item->getId() == "show-white-spaces" ) {
-			mConfig.editor.showWhiteSpaces = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setShowWhitespaces( mConfig.editor.showWhiteSpaces );
-			} );
-		} else if ( item->getId() == "show-doc-info" ) {
-			mConfig.editor.showDocInfo = item->asType<UIMenuCheckBox>()->isActive();
-			if ( mDocInfo )
-				mDocInfo->setVisible( mConfig.editor.showDocInfo );
-			if ( mSplitter->curEditorExistsAndFocused() )
-				updateDocInfo( mSplitter->getCurEditor()->getDocument() );
-		} else if ( item->getId() == "show-minimap" ) {
-			mConfig.editor.minimap = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor(
-				[&]( UICodeEditor* editor ) { editor->showMinimap( mConfig.editor.minimap ); } );
-		} else if ( item->getId() == "highlight-matching-brackets" ) {
-			mConfig.editor.highlightMatchingBracket = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setHighlightMatchingBracket( mConfig.editor.highlightMatchingBracket );
-			} );
-		} else if ( item->getId() == "highlight-current-line" ) {
-			mConfig.editor.highlightCurrentLine = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setHighlightCurrentLine( mConfig.editor.highlightCurrentLine );
-			} );
-		} else if ( item->getId() == "highlight-selection-match" ) {
-			mConfig.editor.highlightSelectionMatch = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setHighlightSelectionMatch( mConfig.editor.highlightSelectionMatch );
-			} );
-		} else if ( item->getId() == "enable-vertical-scrollbar" ) {
-			mConfig.editor.verticalScrollbar = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setVerticalScrollBarEnabled( mConfig.editor.verticalScrollbar );
-			} );
-		} else if ( item->getId() == "enable-horizontal-scrollbar" ) {
-			mConfig.editor.horizontalScrollbar = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setHorizontalScrollBarEnabled( mConfig.editor.horizontalScrollbar );
-			} );
-		} else if ( item->getId() == "enable-color-preview" ) {
-			mConfig.editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPreview );
-			} );
-		} else if ( item->getId() == "enable-color-picker" ) {
-			mConfig.editor.colorPickerSelection = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-				editor->setEnableColorPickerOnSelection( mConfig.editor.colorPickerSelection );
-			} );
-		} else if ( item->getId() == "hide-tabbar-on-single-tab" ) {
-			mConfig.editor.hideTabBarOnSingleTab = item->asType<UIMenuCheckBox>()->isActive();
-			mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
-		} else if ( item->getId() == "treeview-single-click-nav" ) {
-			mConfig.editor.singleClickTreeNavigation = item->asType<UIMenuCheckBox>()->isActive();
-			mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
-		} else if ( item->getId() == "sync-project-tree" ) {
-			mConfig.editor.syncProjectTreeWithEditor = item->asType<UIMenuCheckBox>()->isActive();
+void App::ecodeSource() {
+	Engine::instance()->openURI( "https://github.com/SpartanJ/ecode" );
+}
+
+void App::setUIScaleFactor() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_ui_scale_factor", "Set the UI scale factor (pixel density):\nMinimum value is "
+									 "1, and maximum 6. Requires restart." ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( String::format( "%.2f", mConfig.windowState.pixelDensity ) );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		msgBox->closeWindow();
+		Float val;
+		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 1 &&
+			 val <= 6 ) {
+			if ( mConfig.windowState.pixelDensity != val ) {
+				mConfig.windowState.pixelDensity = val;
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK,
+					i18n( "new_ui_scale_factor", "New UI scale factor assigned.\nPlease "
+												 "restart the application." ) );
+				msg->showWhenReady();
+				setFocusEditorOnClose( msg );
+			} else if ( mSplitter && mSplitter->getCurWidget() ) {
+				mSplitter->getCurWidget()->setFocus();
+			}
 		} else {
-			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
-			String::replaceAll( text, " ", "-" );
-			String::replaceAll( text, "/", "-" );
-			runCommand( text );
+			UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK, "Invalid value!" );
+			msg->showWhenReady();
+			setFocusEditorOnClose( msg );
 		}
 	} );
-	return mViewMenu;
+}
+
+PluginManager* App::getPluginManager() const {
+	return mPluginManager.get();
+}
+
+void App::setEditorFontSize() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT, i18n( "set_editor_font_size", "Set the editor font size:" ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+			editor->setFontSize( mConfig.editor.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+		} );
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
+void App::setTerminalFontSize() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT, i18n( "set_terminal_font_size", "Set the terminal font size:" ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( mConfig.term.fontSize.toString() );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		mConfig.term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+		mSplitter->forEachWidget( [this]( UIWidget* widget ) {
+			if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
+				widget->asType<UITerminal>()->setFontSize(
+					mConfig.term.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
+		} );
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
+void App::setUIFontSize() {
+	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
+											  i18n( "set_ui_font_size", "Set the UI font size:" ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+		Float fontSize = mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI );
+		UIThemeManager* manager = mUISceneNode->getUIThemeManager();
+		manager->setDefaultFontSize( fontSize );
+		manager->getDefaultTheme()->setDefaultFontSize( fontSize );
+		mUISceneNode->forEachNode( [this]( Node* node ) {
+			if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
+				UITextView* textView = node->asType<UITextView>();
+				if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
+					textView->setFontSize(
+						mConfig.ui.fontSize.asDp( node->getParent()->getPixelsSize().getWidth(),
+												  Sizef(), mUISceneNode->getDPI() ) );
+				}
+			}
+		} );
+		msgBox->closeWindow();
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
+void App::setUIPanelFontSize() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT, i18n( "set_side_panel_font_size", "Set side panel font size:" ) );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->getTextInput()->setText( mConfig.ui.panelFontSize.toString() );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		mConfig.ui.panelFontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
+
+		// Update the CSS
+		auto selsFound = mUISceneNode->getStyleSheet().findStyleFromSelectorName(
+			"#project_view > treeview::row > treeview::cell > treeview::cell::text" );
+		if ( !selsFound.empty() ) {
+			for ( auto sel : selsFound )
+				sel->updatePropertyValue( "font-size", mConfig.ui.panelFontSize.toString() );
+			mUISceneNode->getStyleSheet().refreshCacheFromStyles( selsFound );
+		}
+
+		UITreeView* treeView = mUISceneNode->find<UITreeView>( "project_view" );
+		if ( !treeView ) {
+			msgBox->closeWindow();
+			return;
+		}
+		treeView->reloadStyle( true, true, true, true );
+		treeView->updateContentSize();
+		msgBox->closeWindow();
+	} );
+	setFocusEditorOnClose( msgBox );
 }
 
 void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
-	msgBox->addEventListener( Event::OnClose, [&]( const Event* ) {
+	msgBox->on( Event::OnClose, [this]( const Event* ) {
 		if ( mSplitter && mSplitter->getCurWidget() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
 }
 
 Drawable* App::findIcon( const std::string& name ) {
+	return findIcon( name, mMenuIconSize );
+}
+
+Drawable* App::findIcon( const std::string& name, const size_t iconSize ) {
 	UIIcon* icon = mUISceneNode->findIcon( name );
 	if ( icon )
-		return icon->getSize( mMenuIconSize );
+		return icon->getSize( iconSize );
 	return nullptr;
 }
 
@@ -1157,62 +1110,21 @@ String App::i18n( const std::string& key, const String& def ) {
 	return mUISceneNode->getTranslatorStringFromKey( key, def );
 }
 
-UIMenu* App::createEditMenu() {
-	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->add( i18n( "undo", "Undo" ), findIcon( "undo" ), getKeybind( "undo" ) )->setId( "undo" );
-	menu->add( i18n( "redo", "Redo" ), findIcon( "redo" ), getKeybind( "redo" ) )->setId( "redo" );
-	menu->addSeparator();
-	menu->add( i18n( "cut", "Cut" ), findIcon( "cut" ), getKeybind( "cut" ) )->setId( "cut" );
-	menu->add( i18n( "copy", "Copy" ), findIcon( "copy" ), getKeybind( "copy" ) )->setId( "copy" );
-	menu->add( i18n( "paste", "Paste" ), findIcon( "paste" ), getKeybind( "paste" ) )
-		->setId( "paste" );
-	menu->add( i18n( "delete", "Delete" ), findIcon( "delete-text" ),
-			   getKeybind( "delete-to-next-char" ) )
-		->setId( "delete-to-next-char" );
-	menu->addSeparator();
-	menu->add( i18n( "select_all", "Select All" ), findIcon( "select-all" ),
-			   getKeybind( "select-all" ) )
-		->setId( "select-all" );
-	menu->addSeparator();
-	menu->add( i18n( "find_replace", "Find/Replace" ), findIcon( "find-replace" ),
-			   getKeybind( "find-replace" ) )
-		->setId( "find-replace" );
-	menu->addSeparator();
-	menu->add( i18n( "open_containing_folder", "Open Containing Folder..." ),
-			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
-		->setId( "open-containing-folder" );
-	menu->add( i18n( "copy_containing_folder_path", "Copy Containing Folder Path..." ),
-			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
-		->setId( "copy-containing-folder-path" );
-	menu->add( i18n( "copy_file_path", "Copy File Path" ), findIcon( "copy" ),
-			   getKeybind( "copy-file-path" ) )
-		->setId( "copy-file-path" );
-	UIMenuSeparator* fileSep = menu->addSeparator();
-	menu->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
-			   getKeybind( "keybindings" ) )
-		->setId( "keybindings" );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		runCommand( event->getNode()->getId() );
-	} );
-	menu->addEventListener( Event::OnMenuShow, [&, menu, fileSep]( const Event* ) {
-		if ( !mSplitter->curEditorExistsAndFocused() )
-			return;
-		auto doc = mSplitter->getCurEditor()->getDocumentRef();
-		menu->getItemId( "undo" )->setEnabled( doc->hasUndo() );
-		menu->getItemId( "redo" )->setEnabled( doc->hasRedo() );
-		menu->getItemId( "copy" )->setEnabled( doc->hasSelection() );
-		menu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
-		menu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
-		menu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
-		fileSep->setVisible( doc->hasFilepath() );
-	} );
-	return menu;
+std::string App::getCurrentWorkingDir() const {
+	if ( !mCurrentProject.empty() )
+		return mCurrentProject;
+
+	if ( mSplitter && mSplitter->curEditorIsNotNull() && mSplitter->curEditorExists() &&
+		 mSplitter->getCurEditor()->hasDocument() &&
+		 mSplitter->getCurEditor()->getDocument().hasFilepath() ) {
+		return mSplitter->getCurEditor()->getDocument().getFileInfo().getDirectoryPath();
+	}
+
+	return "";
 }
 
-static std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
-makeAutoClosePairs( const std::string& strPairs ) {
+std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
+App::makeAutoClosePairs( const std::string& strPairs ) {
 	auto curPairs = String::split( strPairs, ',' );
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> pairs;
 	for ( auto pair : curPairs ) {
@@ -1222,621 +1134,85 @@ makeAutoClosePairs( const std::string& strPairs ) {
 	return pairs;
 }
 
-UIMenu* App::createTerminalMenu() {
-	mTerminalMenu = UIPopUpMenu::New();
+ProjectDocumentConfig& App::getProjectDocConfig() {
+	return mProjectDocConfig;
+}
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	UIMenuSubMenu* termColorSchemeMenu = mTerminalMenu->addSubMenu(
-		i18n( "terminal_color_scheme", "Terminal Color Scheme" ), findIcon( "palette" ),
-		mTerminalManager->createColorSchemeMenu() );
-	termColorSchemeMenu->addEventListener(
-		Event::OnMenuShow, [&, termColorSchemeMenu]( const Event* ) {
-			mTerminalManager->updateMenuColorScheme( termColorSchemeMenu );
+const std::string& App::getWindowTitle() const {
+	return mWindowTitle;
+}
+
+void App::setLineBreakingColumn() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_line_breaking_column", "Set Line Breaking Column:\nSet 0 to disable it.\n" )
+			.unescape() );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
+	msgBox->getTextInput()->setText( String::toString( mConfig.doc.lineBreakingColumn ) );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		int val;
+		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
+			mConfig.doc.lineBreakingColumn = val;
+			mSplitter->forEachEditor(
+				[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
+			msgBox->closeWindow();
+		}
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
+void App::setLineSpacing() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_line_spacing", "Set Line Spacing:\nSet 0 to disable it.\n" ).unescape() );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setText( mConfig.editor.lineSpacing.toString() );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		mConfig.editor.lineSpacing = StyleSheetLength( msgBox->getTextInput()->getText() );
+		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+			editor->setLineSpacing( mConfig.editor.lineSpacing );
 		} );
-#endif
-
-	UIMenuCheckBox* exclusiveChk =
-		mTerminalMenu->addCheckBox( i18n( "exclusive_mode", "Exclusive Mode" ), false,
-									getKeybind( UITerminal::getExclusiveModeToggleCommandName() ) );
-	exclusiveChk
-		->setTooltipText(
-			i18n( "exclusive_mode_tooltip",
-				  "Global Keybindings are disabled when exclusive mode is enabled.\nThis is to "
-				  "avoid keyboard shortcut overlapping between the terminal an the application." ) )
-		->setId( "exclusive-mode" );
-
-	mTerminalMenu
-		->add( i18n( "rename_session", "Rename Session" ), nullptr,
-			   getKeybind( "terminal-rename" ) )
-		->setId( "terminal-rename" );
-
-	mTerminalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		const std::string& id( event->getNode()->getId() );
-		if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
-			UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
-			if ( "exclusive-mode" == id ) {
-				terminal->setExclusiveMode(
-					event->getNode()->asType<UIMenuCheckBox>()->isActive() );
-			} else {
-				terminal->execute( id );
-			}
-		}
 	} );
-
-	return mTerminalMenu;
+	setFocusEditorOnClose( msgBox );
 }
 
-UIMenu* App::createDocumentMenu() {
-	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
-
-	mDocMenu = UIPopUpMenu::New();
-
-	// **** CURRENT DOCUMENT ****
-	mDocMenu->add( i18n( "current_document", "Current Document" ) )
-		->setTextAlign( UI_HALIGN_CENTER );
-
-	mDocMenu
-		->addCheckBox(
-			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
-			mConfig.doc.autoDetectIndentType )
-		->setId( "auto_indent_cur" );
-
-	UIPopUpMenu* tabTypeMenu = UIPopUpMenu::New();
-	tabTypeMenu->addRadioButton( i18n( "tabs", "Tabs" ) )->setId( "tabs" );
-	tabTypeMenu->addRadioButton( i18n( "spaces", "Spaces" ) )->setId( "spaces" );
-	mDocMenu->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenu )
-		->setId( "indent_type_cur" );
-	tabTypeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
-		if ( mSplitter->curEditorExistsAndFocused() ) {
-			TextDocument::IndentType indentType = text == "tabs"
-													  ? TextDocument::IndentType::IndentTabs
-													  : TextDocument::IndentType::IndentSpaces;
-			mSplitter->getCurEditor()->getDocument().setIndentType( indentType );
-		}
+void App::setCursorBlinkingTime() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_cursor_blinking_time", "Set Cursor Blinking Time:\nSet 0 to disable it.\n" )
+			.unescape() );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setText( mConfig.editor.cursorBlinkingTime.toString() );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		mConfig.editor.cursorBlinkingTime =
+			Time::fromString( msgBox->getTextInput()->getText().toUtf8() );
+		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+			editor->setCursorBlinkTime( mConfig.editor.cursorBlinkingTime );
+		} );
+		msgBox->closeWindow();
 	} );
-
-	UIPopUpMenu* indentWidthMenu = UIPopUpMenu::New();
-	for ( size_t w = 2; w <= 12; w++ )
-		indentWidthMenu
-			->addRadioButton( String::toString( w ),
-							  mSplitter->curEditorExistsAndFocused() &&
-								  mSplitter->getCurEditor()->getDocument().getIndentWidth() == w )
-			->setId( String::format( "indent_width_%zu", w ) )
-			->setData( w );
-	mDocMenu->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenu )
-		->setId( "indent_width_cur" );
-	indentWidthMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( mSplitter->curEditorExistsAndFocused() ) {
-			int width = event->getNode()->getData();
-			mSplitter->getCurEditor()->getDocument().setIndentWidth( width );
-		}
-	} );
-
-	UIPopUpMenu* tabWidthMenu = UIPopUpMenu::New();
-	for ( size_t w = 2; w <= 12; w++ )
-		tabWidthMenu
-			->addRadioButton( String::toString( w ),
-							  mSplitter->curEditorExistsAndFocused() &&
-								  mSplitter->getCurEditor()->getTabWidth() == w )
-			->setId( String::format( "tab_width_%zu", w ) )
-			->setData( w );
-	mDocMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenu )
-		->setId( "tab_width_cur" );
-	tabWidthMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( mSplitter->curEditorExistsAndFocused() ) {
-			int width = event->getNode()->getData();
-			mSplitter->getCurEditor()->setTabWidth( width );
-		}
-	} );
-
-	UIPopUpMenu* lineEndingsMenu = UIPopUpMenu::New();
-	lineEndingsMenu->addRadioButton( "Windows (CR/LF)", mConfig.doc.windowsLineEndings )
-		->setId( "windows" );
-	lineEndingsMenu->addRadioButton( "Unix (LF)", !mConfig.doc.windowsLineEndings )
-		->setId( "unix" );
-	mDocMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsMenu )
-		->setId( "line_endings_cur" );
-	lineEndingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
-		if ( mSplitter->curEditorExistsAndFocused() ) {
-			mSplitter->getCurEditor()->getDocument().setLineEnding(
-				winLe ? TextDocument::LineEnding::CRLF : TextDocument::LineEnding::LF );
-			updateDocInfo( mSplitter->getCurEditor()->getDocument() );
-		}
-	} );
-
-	mDocMenu->addCheckBox( i18n( "read_only", "Read Only" ) )->setId( "read_only" );
-
-	mDocMenu
-		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
-					   mConfig.doc.trimTrailingWhitespaces )
-		->setId( "trim_whitespaces_cur" );
-
-	mDocMenu
-		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
-					   mConfig.doc.forceNewLineAtEndOfFile )
-		->setId( "force_nl_cur" );
-
-	mDocMenu
-		->addCheckBox( i18n( "write_unicode_bom", "Write Unicode BOM" ),
-					   mConfig.doc.writeUnicodeBOM )
-		->setId( "write_bom_cur" );
-
-	mDocMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !mSplitter->curEditorExistsAndFocused() ||
-			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
-			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
-			return;
-		const String& id = event->getNode()->getId();
-		TextDocument& doc = mSplitter->getCurEditor()->getDocument();
-
-		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
-			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
-			if ( "auto_indent_cur" == id ) {
-				doc.setAutoDetectIndentType( item->isActive() );
-			} else if ( "trim_whitespaces_cur" == id ) {
-				doc.setTrimTrailingWhitespaces( item->isActive() );
-			} else if ( "force_nl_cur" == id ) {
-				doc.setForceNewLineAtEndOfFile( item->isActive() );
-			} else if ( "write_bom_cur" == id ) {
-				doc.setBOM( item->isActive() );
-			} else if ( "read_only" == id ) {
-				mSplitter->getCurEditor()->setLocked( item->isActive() );
-			}
-		}
-	} );
-
-	// **** GLOBAL SETTINGS ****
-	mDocMenu->addSeparator();
-
-	UIPopUpMenu* globalMenu = UIPopUpMenu::New();
-	mDocMenu->addSubMenu( i18n( "global_settings", "Global Settings" ),
-						  findIcon( "global-settings" ), globalMenu );
-
-	globalMenu
-		->addCheckBox(
-			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
-			mConfig.doc.autoDetectIndentType )
-		->setId( "auto_indent" );
-
-	UIPopUpMenu* tabTypeMenuGlobal = UIPopUpMenu::New();
-	tabTypeMenuGlobal->addRadioButton( i18n( "tabs", "Tabs" ) )
-		->setActive( !mConfig.doc.indentSpaces )
-		->setId( "tabs" );
-	tabTypeMenuGlobal->addRadioButton( i18n( "spaces", "Spaces" ) )
-		->setActive( mConfig.doc.indentSpaces )
-		->setId( "spaces" );
-	globalMenu
-		->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenuGlobal )
-		->setId( "indent_type" );
-	tabTypeMenuGlobal->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
-		mConfig.doc.indentSpaces = text != "tabs";
-	} );
-
-	UIPopUpMenu* indentWidthMenuGlobal = UIPopUpMenu::New();
-	for ( int w = 2; w <= 12; w++ )
-		indentWidthMenuGlobal->addRadioButton( String::toString( w ), mConfig.doc.indentWidth == w )
-			->setId( String::format( "indent_width_%d", w ) )
-			->setData( w );
-	globalMenu->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuGlobal )
-		->setId( "indent_width" );
-	indentWidthMenuGlobal->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		int width = event->getNode()->getData();
-		mConfig.doc.indentWidth = width;
-	} );
-
-	UIPopUpMenu* tabWidthMenuGlobal = UIPopUpMenu::New();
-	for ( int w = 2; w <= 12; w++ )
-		tabWidthMenuGlobal->addRadioButton( String::toString( w ), mConfig.doc.tabWidth == w )
-			->setId( String::format( "tab_width_%d", w ) )
-			->setData( w );
-	globalMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuGlobal )
-		->setId( "tab_width_cur" );
-	tabWidthMenuGlobal->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		int width = event->getNode()->getData();
-		mConfig.doc.tabWidth = width;
-	} );
-
-	UIPopUpMenu* lineEndingsGlobalMenu = UIPopUpMenu::New();
-	lineEndingsGlobalMenu->addRadioButton( "Windows (CR/LF)", mConfig.doc.windowsLineEndings )
-		->setId( "windows" );
-	lineEndingsGlobalMenu->addRadioButton( "Unix (LF)", !mConfig.doc.windowsLineEndings )
-		->setId( "unix" );
-	globalMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsGlobalMenu )
-		->setId( "line_endings" );
-	lineEndingsGlobalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
-		mConfig.doc.windowsLineEndings = winLe;
-	} );
-
-	UIPopUpMenu* bracketsMenu = UIPopUpMenu::New();
-	globalMenu->addSubMenu( i18n( "auto_close_brackets_and_tags", "Auto-Close Brackets & Tags" ),
-							nullptr, bracketsMenu );
-	auto& closeBrackets = mConfig.editor.autoCloseBrackets;
-	bracketsMenu
-		->addCheckBox( i18n( "brackets", "Brackets ()" ),
-					   closeBrackets.find( '(' ) != std::string::npos )
-		->setOnShouldCloseCb( shouldCloseCb )
-		->setId( "()" );
-	bracketsMenu
-		->addCheckBox( i18n( "curly_brackets", "Curly Brackets {}" ),
-					   closeBrackets.find( '{' ) != std::string::npos )
-		->setOnShouldCloseCb( shouldCloseCb )
-		->setId( "{}" );
-	bracketsMenu
-		->addCheckBox( i18n( "square_brakcets", "Square Brackets []" ),
-					   closeBrackets.find( '[' ) != std::string::npos )
-		->setOnShouldCloseCb( shouldCloseCb )
-		->setId( "[]" );
-	bracketsMenu
-		->addCheckBox( i18n( "single_quotes", "Single Quotes ''" ),
-					   closeBrackets.find( '\'' ) != std::string::npos )
-		->setOnShouldCloseCb( shouldCloseCb )
-		->setId( "''" );
-	bracketsMenu
-		->addCheckBox( i18n( "double_quotes", "Double Quotes \"\"" ),
-					   closeBrackets.find( '"' ) != std::string::npos )
-		->setOnShouldCloseCb( shouldCloseCb )
-		->setId( "\"\"" );
-	bracketsMenu
-		->addCheckBox( i18n( "back_quotes", "Back Quotes ``" ),
-					   closeBrackets.find( '`' ) != std::string::npos )
-		->setOnShouldCloseCb( shouldCloseCb )
-		->setId( "``" );
-	bracketsMenu
-		->addCheckBox( i18n( "auto_close_xml_tags", "Auto Close XML Tags" ),
-					   mConfig.editor.autoCloseXMLTags )
-		->setOnShouldCloseCb( shouldCloseCb )
-		->setId( "XML" );
-	bracketsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		std::string id = event->getNode()->getId();
-		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
-			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
-			if ( item->getId() == "XML" ) {
-				mConfig.editor.autoCloseXMLTags = item->isActive();
-				mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-					editor->setAutoCloseXMLTags( mConfig.editor.autoCloseXMLTags );
-				} );
-				return;
-			}
-			auto curPairs = String::split( mConfig.editor.autoCloseBrackets, ',' );
-			auto found = std::find( curPairs.begin(), curPairs.end(), id );
-			if ( item->isActive() ) {
-				if ( found == curPairs.end() )
-					curPairs.push_back( id );
-			} else if ( found != curPairs.end() ) {
-				curPairs.erase( found );
-			}
-			mConfig.editor.autoCloseBrackets = String::join( curPairs, ',' );
-			auto pairs = makeAutoClosePairs( mConfig.editor.autoCloseBrackets );
-			mSplitter->forEachEditor( [&, pairs]( UICodeEditor* editor ) {
-				editor->getDocument().setAutoCloseBrackets( !pairs.empty() );
-				editor->getDocument().setAutoCloseBracketsPairs( pairs );
-			} );
-		}
-	} );
-
-	globalMenu
-		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
-					   mConfig.doc.trimTrailingWhitespaces )
-		->setId( "trim_whitespaces" );
-
-	globalMenu
-		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
-					   mConfig.doc.forceNewLineAtEndOfFile )
-		->setId( "force_nl" );
-
-	globalMenu
-		->addCheckBox( i18n( "write_unicode_bom", "Write Unicode BOM" ),
-					   mConfig.doc.writeUnicodeBOM )
-		->setId( "write_bom" );
-
-	globalMenu->addSeparator();
-
-	globalMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
-		->setId( "line_breaking_column" );
-
-	globalMenu->add( i18n( "line_spacing", "Line Spacing" ) )->setId( "line_spacing" );
-
-	globalMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !mSplitter->curEditorExistsAndFocused() ||
-			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
-			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
-			return;
-		const String& id = event->getNode()->getId();
-
-		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
-			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
-			if ( "trim_whitespaces" == id ) {
-				mConfig.doc.trimTrailingWhitespaces = item->isActive();
-			} else if ( "force_nl" == id ) {
-				mConfig.doc.forceNewLineAtEndOfFile = item->isActive();
-			} else if ( "write_bom" == id ) {
-				mConfig.doc.writeUnicodeBOM = item->isActive();
-			} else if ( "auto_indent" == id ) {
-				mConfig.doc.autoDetectIndentType = item->isActive();
-			}
-		} else if ( "line_breaking_column" == id ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT, i18n( "set_line_breaking_column",
-										   "Set Line Breaking Column:\nSet 0 to disable it.\n" )
-										 .unescape() );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
-			msgBox->getTextInput()->setText( String::toString( mConfig.doc.lineBreakingColumn ) );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				int val;
-				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
-					mConfig.doc.lineBreakingColumn = val;
-					mSplitter->forEachEditor(
-						[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
-					msgBox->closeWindow();
-				}
-			} );
-			setFocusEditorOnClose( msgBox );
-		} else if ( "line_spacing" == id ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT,
-				i18n( "set_line_spacing", "Set Line Spacing:\nSet 0 to disable it.\n" )
-					.unescape() );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->getTextInput()->setText( mConfig.editor.lineSpacing.toString() );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				mConfig.editor.lineSpacing = StyleSheetLength( msgBox->getTextInput()->getText() );
-				mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-					editor->setLineSpacing( mConfig.editor.lineSpacing );
-				} );
-			} );
-			setFocusEditorOnClose( msgBox );
-		}
-	} );
-
-	mDocMenu->addSeparator();
-
-	// **** PROJECT SETTINGS ****
-	mProjectDocConfig = mConfig.doc;
-	mProjectMenu = UIPopUpMenu::New();
-	mProjectMenu
-		->addCheckBox( i18n( "use_global_settings", "Use Global Settings" ),
-					   mProjectDocConfig.useGlobalSettings )
-		->setOnShouldCloseCb( shouldCloseCb )
-		->setId( "use_global_settings" );
-
-	mProjectMenu
-		->addCheckBox(
-			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
-			mConfig.doc.autoDetectIndentType )
-		->setId( "auto_indent" )
-		->setEnabled( !mProjectDocConfig.useGlobalSettings );
-
-	UIPopUpMenu* tabTypeMenuProject = UIPopUpMenu::New();
-	tabTypeMenuProject->addRadioButton( i18n( "tabs", "Tabs" ) )
-		->setActive( !mProjectDocConfig.doc.indentSpaces )
-		->setId( "tabs" );
-	tabTypeMenuProject->addRadioButton( i18n( "spaces", "Spaces" ) )
-		->setActive( mProjectDocConfig.doc.indentSpaces )
-		->setId( "spaces" );
-	mProjectMenu
-		->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenuProject )
-		->setId( "indent_type" )
-		->setEnabled( !mProjectDocConfig.useGlobalSettings );
-	tabTypeMenuProject->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
-		mProjectDocConfig.doc.indentSpaces = text != "tabs";
-	} );
-
-	UIPopUpMenu* indentWidthMenuProject = UIPopUpMenu::New();
-	for ( int w = 2; w <= 12; w++ )
-		indentWidthMenuProject
-			->addRadioButton( String::toString( w ), mProjectDocConfig.doc.indentWidth == w )
-			->setId( String::format( "indent_width_%d", w ) )
-			->setData( w );
-	mProjectMenu
-		->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuProject )
-		->setId( "indent_width" )
-		->setEnabled( !mProjectDocConfig.useGlobalSettings );
-	indentWidthMenuProject->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		int width = event->getNode()->getData();
-		mProjectDocConfig.doc.indentWidth = width;
-	} );
-
-	UIPopUpMenu* tabWidthMenuProject = UIPopUpMenu::New();
-	for ( int w = 2; w <= 12; w++ )
-		tabWidthMenuProject
-			->addRadioButton( String::toString( w ), mProjectDocConfig.doc.tabWidth == w )
-			->setId( String::format( "tab_width_%d", w ) )
-			->setData( w );
-	mProjectMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuProject )
-		->setId( "tab_width" )
-		->setEnabled( !mProjectDocConfig.useGlobalSettings );
-	tabWidthMenuProject->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		int width = event->getNode()->getData();
-		mProjectDocConfig.doc.tabWidth = width;
-	} );
-
-	UIPopUpMenu* lineEndingsProjectMenu = UIPopUpMenu::New();
-	lineEndingsProjectMenu
-		->addRadioButton( "Windows (CR/LF)", mProjectDocConfig.doc.windowsLineEndings )
-		->setId( "windows" );
-	lineEndingsProjectMenu->addRadioButton( "Unix (LF)", !mProjectDocConfig.doc.windowsLineEndings )
-		->setId( "unix" );
-	mProjectMenu
-		->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsProjectMenu )
-		->setId( "line_endings" )
-		->setEnabled( !mProjectDocConfig.useGlobalSettings );
-	lineEndingsProjectMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		bool winLe = event->getNode()->asType<UIRadioButton>()->getId() == "windows";
-		mProjectDocConfig.doc.windowsLineEndings = winLe;
-	} );
-
-	mProjectMenu
-		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
-					   mConfig.doc.trimTrailingWhitespaces )
-		->setId( "trim_whitespaces" )
-		->setEnabled( !mProjectDocConfig.useGlobalSettings );
-
-	mProjectMenu
-		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
-					   mConfig.doc.forceNewLineAtEndOfFile )
-		->setId( "force_nl" )
-		->setEnabled( !mProjectDocConfig.useGlobalSettings );
-
-	mProjectMenu
-		->addCheckBox( i18n( "write_unicode_bom", "Write Unicode BOM" ),
-					   mConfig.doc.writeUnicodeBOM )
-		->setId( "write_bom" )
-		->setEnabled( !mProjectDocConfig.useGlobalSettings );
-
-	mProjectMenu->addSeparator();
-
-	mProjectMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
-		->setId( "line_breaking_column" );
-
-	mProjectMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !mSplitter->curEditorExistsAndFocused() ||
-			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
-			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
-			return;
-		const String& id = event->getNode()->getId();
-
-		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
-			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
-			if ( "use_global_settings" == id ) {
-				mProjectDocConfig.useGlobalSettings = item->isActive();
-				updateProjectSettingsMenu();
-			} else if ( "trim_whitespaces" == id ) {
-				mProjectDocConfig.doc.trimTrailingWhitespaces = item->isActive();
-			} else if ( "force_nl" == id ) {
-				mProjectDocConfig.doc.forceNewLineAtEndOfFile = item->isActive();
-			} else if ( "write_bom" == id ) {
-				mProjectDocConfig.doc.writeUnicodeBOM = item->isActive();
-			} else if ( "auto_indent" == id ) {
-				mProjectDocConfig.doc.autoDetectIndentType = item->isActive();
-			}
-		} else if ( "line_breaking_column" == id ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT, i18n( "set_line_breaking_column",
-										   "Set Line Breaking Column:\nSet 0 to disable it.\n" )
-										 .unescape() );
-			msgBox->setTitle( mWindowTitle );
-			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
-			msgBox->getTextInput()->setText(
-				String::toString( mProjectDocConfig.doc.lineBreakingColumn ) );
-			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, msgBox]( const Event* ) {
-				int val;
-				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
-					mProjectDocConfig.doc.lineBreakingColumn = val;
-					mSplitter->forEachEditor(
-						[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
-					msgBox->closeWindow();
-				}
-			} );
-			setFocusEditorOnClose( msgBox );
-		}
-	} );
-
-	mDocMenu
-		->addSubMenu( i18n( "folder_project_settings", "Folder/Project Settings" ),
-					  findIcon( "folder-user" ), mProjectMenu )
-		->setId( "project_settings" );
-
-	return mDocMenu;
+	setFocusEditorOnClose( msgBox );
 }
 
-void App::updateProjectSettingsMenu() {
-	mDocMenu->getItemId( "project_settings" )->setEnabled( !mCurrentProject.empty() );
-
-	for ( size_t i = 0; i < mProjectMenu->getCount(); i++ ) {
-		mProjectMenu->getItem( i )->setEnabled( !mCurrentProject.empty() &&
-												!mProjectDocConfig.useGlobalSettings );
+void App::loadFileFromPathOrFocus( const std::string& path ) {
+	UITab* tab = mSplitter->isDocumentOpen( path );
+	if ( !tab ) {
+		loadFileFromPath( path );
+	} else {
+		tab->getTabWidget()->setTabSelected( tab );
 	}
-
-	mSplitter->forEachEditor( [&]( UICodeEditor* editor ) {
-		editor->setLineBreakingColumn( !mCurrentProject.empty() &&
-											   !mProjectDocConfig.useGlobalSettings
-										   ? mProjectDocConfig.doc.lineBreakingColumn
-										   : mConfig.doc.lineBreakingColumn );
-	} );
-
-	mProjectMenu->getItemId( "trim_whitespaces" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mProjectDocConfig.doc.trimTrailingWhitespaces );
-
-	mProjectMenu->getItemId( "force_nl" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mProjectDocConfig.doc.forceNewLineAtEndOfFile );
-
-	mProjectMenu->getItemId( "write_bom" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mProjectDocConfig.doc.writeUnicodeBOM );
-
-	mProjectMenu->getItemId( "auto_indent" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mProjectDocConfig.doc.autoDetectIndentType );
-
-	auto* curIndent =
-		mProjectMenu->find( "indent_width" )
-			->asType<UIMenuSubMenu>()
-			->getSubMenu()
-			->find( String::format( "indent_width_%d", mProjectDocConfig.doc.indentWidth ) );
-
-	if ( curIndent )
-		curIndent->asType<UIMenuRadioButton>()->setActive( true );
-
-	mProjectMenu->find( "indent_type" )
-		->asType<UIMenuSubMenu>()
-		->getSubMenu()
-		->find( !mProjectDocConfig.doc.indentSpaces ? "tabs" : "spaces" )
-		->asType<UIMenuRadioButton>()
-		->setActive( true );
-
-	mProjectMenu->find( "tab_width" )
-		->asType<UIMenuSubMenu>()
-		->getSubMenu()
-		->find( String::format( "tab_width_%d", mProjectDocConfig.doc.tabWidth ) )
-		->asType<UIMenuRadioButton>()
-		->setActive( true );
-
-	mProjectMenu->find( "line_endings" )
-		->asType<UIMenuSubMenu>()
-		->getSubMenu()
-		->find( mProjectDocConfig.doc.windowsLineEndings ? "windows" : "unix" )
-		->asType<UIMenuRadioButton>()
-		->setActive( true );
-
-	mProjectMenu->getItemId( "use_global_settings" )
-		->setEnabled( true )
-		->asType<UIMenuCheckBox>()
-		->setActive( mProjectDocConfig.useGlobalSettings );
-}
-
-void App::updateTerminalMenu() {
-	bool enabled =
-		mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL );
-	mSettingsMenu->getItemId( "term-menu" )->setEnabled( enabled );
-	if ( !enabled )
-		return;
-	mTerminalMenu->getItemId( "exclusive-mode" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mSplitter->getCurWidget()->asType<UITerminal>()->getExclusiveMode() );
 }
 
 void App::createPluginManagerUI() {
-	UIPluginManager::New( mUISceneNode, mPluginManager.get(), [&]( const std::string& path ) {
-		UITab* tab = mSplitter->isDocumentOpen( path );
-		if ( !tab ) {
-			loadFileFromPath( path );
-		} else {
-			tab->getTabWidget()->setTabSelected( tab );
-		}
+	UIPluginManager::New( mUISceneNode, mPluginManager.get(), [this]( const std::string& path ) {
+		loadFileFromPathOrFocus( path );
 	} )->showWhenReady();
 }
 
@@ -1853,69 +1229,15 @@ void App::debugDrawData() {
 	mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
 }
 
-void App::updateDocumentMenu() {
-	if ( !mSplitter->getCurWidget() || !mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-		mSettingsMenu->getItemId( "doc-menu" )->setEnabled( false );
-		return;
-	}
-
-	mSettingsMenu->getItemId( "doc-menu" )->setEnabled( true );
-
-	const TextDocument& doc = mSplitter->getCurEditor()->getDocument();
-
-	mDocMenu->find( "auto_indent_cur" )
-		->asType<UIMenuCheckBox>()
-		->setActive( doc.getAutoDetectIndentType() );
-
-	auto* curIndent = mDocMenu->find( "indent_width_cur" )
-						  ->asType<UIMenuSubMenu>()
-						  ->getSubMenu()
-						  ->find( String::format( "indent_width_%d", doc.getIndentWidth() ) );
-	if ( curIndent )
-		curIndent->asType<UIMenuRadioButton>()->setActive( true );
-
-	mDocMenu->find( "indent_type_cur" )
-		->asType<UIMenuSubMenu>()
-		->getSubMenu()
-		->find( doc.getIndentType() == TextDocument::IndentType::IndentTabs ? "tabs" : "spaces" )
-		->asType<UIMenuRadioButton>()
-		->setActive( true );
-
-	mDocMenu->find( "tab_width_cur" )
-		->asType<UIMenuSubMenu>()
-		->getSubMenu()
-		->find( String::format( "tab_width_%d", mSplitter->getCurEditor()->getTabWidth() ) )
-		->asType<UIMenuRadioButton>()
-		->setActive( true );
-
-	mDocMenu->find( "trim_whitespaces_cur" )
-		->asType<UIMenuCheckBox>()
-		->setActive( doc.getTrimTrailingWhitespaces() );
-
-	mDocMenu->find( "force_nl_cur" )
-		->asType<UIMenuCheckBox>()
-		->setActive( doc.getForceNewLineAtEndOfFile() );
-
-	mDocMenu->find( "write_bom_cur" )->asType<UIMenuCheckBox>()->setActive( doc.getBOM() );
-
-	mDocMenu->find( "line_endings_cur" )
-		->asType<UIMenuSubMenu>()
-		->getSubMenu()
-		->find( doc.getLineEnding() == TextDocument::LineEnding::CRLF ? "windows" : "unix" )
-		->asType<UIMenuRadioButton>()
-		->setActive( true );
-
-	mDocMenu->find( "read_only" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mSplitter->getCurEditor()->isLocked() );
-}
-
 static void updateKeybindings( IniFile& ini, const std::string& group, Input* input,
 							   std::unordered_map<std::string, std::string>& keybindings,
 							   const std::unordered_map<std::string, std::string>& defKeybindings,
-							   bool forceRebind = false ) {
+							   bool forceRebind,
+							   const std::map<std::string, std::string>& migrateKeyindings,
+							   IniFile& iniState ) {
 	KeyBindings bindings( input );
 	bool added = false;
+	bool migrated = false;
 
 	if ( ini.findKey( group ) != IniFile::noID ) {
 		keybindings = ini.getKeyUnorderedMap( group );
@@ -1927,6 +1249,32 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 	std::unordered_map<std::string, std::string> invertedKeybindings;
 	for ( const auto& key : keybindings )
 		invertedKeybindings[key.second] = key.first;
+
+	if ( !added && forceRebind ) {
+		for ( const auto& migrate : migrateKeyindings ) {
+			auto foundCmd = invertedKeybindings.find( migrate.first );
+			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
+				std::string shortcut;
+				for ( const auto& defKb : defKeybindings ) {
+					if ( defKb.second == foundCmd->first ) {
+						shortcut = defKb.first;
+						break;
+					}
+				}
+				if ( !shortcut.empty() &&
+					 !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
+					ini.setValue( group, shortcut, foundCmd->first );
+					ini.deleteValue( group, migrate.second );
+					keybindings.erase( migrate.second );
+					invertedKeybindings[foundCmd->first] = shortcut;
+					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
+									   migrate.second );
+					added = true;
+					migrated = true;
+				}
+			}
+		}
+	}
 
 	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
 		for ( const auto& key : defKeybindings ) {
@@ -1957,6 +1305,9 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 			}
 		}
 	}
+
+	if ( migrated )
+		iniState.writeFile();
 	if ( added )
 		ini.writeFile();
 }
@@ -1965,9 +1316,12 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 							   std::unordered_map<std::string, std::string>& keybindings,
 							   std::unordered_map<std::string, std::string>& invertedKeybindings,
 							   const std::map<KeyBindings::Shortcut, std::string>& defKeybindings,
-							   bool forceRebind = false ) {
+							   bool forceRebind,
+							   const std::map<std::string, std::string>& migrateKeyindings,
+							   IniFile& iniState ) {
 	KeyBindings bindings( input );
 	bool added = false;
+	bool migrated = false;
 
 	if ( ini.findKey( group ) != IniFile::noID ) {
 		keybindings = ini.getKeyUnorderedMap( group );
@@ -1979,12 +1333,40 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 	for ( const auto& key : keybindings )
 		invertedKeybindings[key.second] = key.first;
 
+	if ( !added && forceRebind ) {
+		for ( const auto& migrate : migrateKeyindings ) {
+			auto foundCmd = invertedKeybindings.find( migrate.first );
+			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
+				KeyBindings::Shortcut shortcut;
+				for ( const auto& defKb : defKeybindings ) {
+					if ( defKb.second == foundCmd->first ) {
+						shortcut = defKb.first;
+						break;
+					}
+				}
+				if ( !shortcut.empty() &&
+					 !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
+					auto newShortcutStr = bindings.getShortcutString( shortcut );
+					ini.setValue( group, newShortcutStr, foundCmd->first );
+					ini.deleteValue( group, migrate.second );
+					keybindings.erase( migrate.second );
+					invertedKeybindings[foundCmd->first] = newShortcutStr;
+					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
+									   migrate.second );
+					added = true;
+					migrated = true;
+				}
+			}
+		}
+	}
+
 	bool keybindingsWereEmpty = keybindings.empty();
 
 	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
-		for ( const auto& key : defKeybindings ) {
+		for ( auto& key : defKeybindings ) {
 			auto foundCmd = invertedKeybindings.find( key.second );
 			auto shortcutStr = bindings.getShortcutString( key.first );
+
 			if ( ( foundCmd == invertedKeybindings.end() || keybindingsWereEmpty ) &&
 				 keybindings.find( shortcutStr ) == keybindings.end() ) {
 				keybindings[shortcutStr] = key.second;
@@ -2010,43 +1392,98 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 			}
 		}
 	}
+	if ( migrated )
+		iniState.writeFile();
 	if ( added )
 		ini.writeFile();
 }
 
 void App::loadKeybindings() {
-	if ( mKeybindings.empty() ) {
-		KeyBindings bindings( mWindow->getInput() );
-		IniFile ini( mKeybindingsPath );
+	if ( !mKeybindings.empty() )
+		return;
 
-		std::string defMod = ini.getValue( "modifier", "mod", "" );
-		if ( defMod.empty() ) {
-			defMod = KeyMod::getDefaultModifierString();
-			ini.setValue( "modifier", "mod", defMod );
-			ini.writeFile();
-		}
+	KeyBindings bindings( mWindow->getInput() );
+	IniFile ini( mKeybindingsPath );
 
-		bool forceRebind = false;
-		auto version = ini.getValueU( "version", "version", 0 );
-		if ( version != ecode::Version::getVersionNum() ) {
-			ini.setValueU( "version", "version", ecode::Version::getVersionNum() );
-			ini.writeFile();
-			forceRebind = true;
-		}
-
-		Uint32 defModKeyCode = KeyMod::getKeyMod( defMod );
-		if ( KEYMOD_NONE != defModKeyCode )
-			KeyMod::setDefaultModifier( defModKeyCode );
-
-		updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings, mKeybindingsInvert,
-						   getDefaultKeybindings(), forceRebind );
-
-		updateKeybindings( ini, "global_search", mWindow->getInput(), mGlobalSearchKeybindings,
-						   GlobalSearchController::getDefaultKeybindings(), forceRebind );
-
-		updateKeybindings( ini, "document_search", mWindow->getInput(), mDocumentSearchKeybindings,
-						   DocSearchController::getDefaultKeybindings(), forceRebind );
+	std::string defMod = ini.getValue( "modifier", "mod", "" );
+	if ( defMod.empty() ) {
+		defMod = KeyMod::getDefaultModifierString();
+		ini.setValue( "modifier", "mod", defMod );
+		ini.writeFile();
 	}
+
+	bool forceRebind = false;
+	auto version = ini.getValueU( "version", "version", 0 );
+	if ( version != ecode::Version::getVersionNum() ) {
+		ini.setValueU( "version", "version", ecode::Version::getVersionNum() );
+		ini.writeFile();
+		forceRebind = true;
+	}
+
+	Uint32 defModKeyCode = KeyMod::getKeyMod( defMod );
+	if ( KEYMOD_NONE != defModKeyCode )
+		KeyMod::setDefaultModifier( defModKeyCode );
+
+	updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings, mKeybindingsInvert,
+					   getDefaultKeybindings(), forceRebind, getMigrateKeybindings(),
+					   mConfig.iniState );
+
+	updateKeybindings( ini, "global_search", mWindow->getInput(), mGlobalSearchKeybindings,
+					   GlobalSearchController::getDefaultKeybindings(), forceRebind,
+					   getMigrateKeybindings(), mConfig.iniState );
+
+	updateKeybindings( ini, "document_search", mWindow->getInput(), mDocumentSearchKeybindings,
+					   DocSearchController::getDefaultKeybindings(), forceRebind,
+					   getMigrateKeybindings(), mConfig.iniState );
+
+	auto localKeybindings = getLocalKeybindings();
+	for ( const auto& kb : localKeybindings ) {
+		auto found = mKeybindingsInvert.find( kb.second );
+		if ( found != mKeybindingsInvert.end() ) {
+			mRealLocalKeybindings[bindings.getShortcutFromString( found->second )] = kb.second;
+		} else {
+			mRealLocalKeybindings[kb.first] = kb.second;
+		}
+	}
+
+	auto localSplitterKeybindings = UICodeEditorSplitter::getLocalDefaultKeybindings();
+	for ( const auto& kb : localSplitterKeybindings ) {
+		auto found = mKeybindingsInvert.find( kb.second );
+		if ( found != mKeybindingsInvert.end() ) {
+			mRealSplitterKeybindings[bindings.getShortcutFromString( found->second )] = kb.second;
+		} else {
+			mRealSplitterKeybindings[kb.first] = kb.second;
+		}
+	}
+
+	auto localTerminalKeybindings = TerminalManager::getTerminalKeybindings();
+	for ( const auto& kb : localTerminalKeybindings ) {
+		auto found = mKeybindingsInvert.find( kb.second );
+		if ( found != mKeybindingsInvert.end() ) {
+			mRealTerminalKeybindings[bindings.getShortcutFromString( found->second )] = kb.second;
+		} else {
+			mRealTerminalKeybindings[kb.first] = kb.second;
+		}
+	}
+}
+
+void App::reloadKeybindings() {
+	mKeybindings.clear();
+	mKeybindingsInvert.clear();
+	mRealLocalKeybindings.clear();
+	mRealSplitterKeybindings.clear();
+	mRealTerminalKeybindings.clear();
+	mRealDefaultKeybindings.clear();
+	loadKeybindings();
+	mSplitter->forEachEditor( [this]( UICodeEditor* ed ) {
+		ed->getKeyBindings().reset();
+		ed->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
+	} );
+	mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
+		mTerminalManager->setKeybindings( widget->asType<UITerminal>() );
+	} );
+	mMainLayout->getKeyBindings().reset();
+	mMainLayout->getKeyBindings().addKeybinds( getRealDefaultKeybindings() );
 }
 
 void App::onDocumentStateChanged( UICodeEditor*, TextDocument& ) {
@@ -2061,23 +1498,39 @@ void App::onDocumentCursorPosChange( UICodeEditor*, TextDocument& doc ) {
 	updateDocInfo( doc );
 }
 
+void App::updateDocInfoLocation() {
+	if ( !mDocInfo )
+		return;
+	if ( mConfig.ui.showStatusBar ) {
+		if ( mStatusBar != mDocInfo->getParent() ) {
+			mDocInfo->setParent( mStatusBar );
+			mDocInfo->setEnabled( true );
+		}
+	} else if ( mStatusBar == mDocInfo->getParent() ) {
+		mDocInfo->setParent( mMainSplitter->find( "main_splitter_cont" ) );
+		mDocInfo->setEnabled( false );
+	}
+}
+
 void App::updateDocInfo( TextDocument& doc ) {
-	if ( mConfig.editor.showDocInfo && mDocInfoText && mSplitter->curEditorExistsAndFocused() ) {
-		if ( mDocInfo )
-			mDocInfo->setVisible( true );
-		mDocInfoText->setText( String::format(
-			"%s: %lld / %lu  %s: %lld    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
+	if ( mConfig.editor.showDocInfo && mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
+		mDocInfo->setVisible( true );
+		updateDocInfoLocation();
+		mDocInfo->setText( String::format(
+			"%s: %lld / %zu  %s: %lld    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
 			doc.getSelection().start().line() + 1, doc.linesCount(),
 			i18n( "col_abbr", "col" ).toUtf8().c_str(),
 			mSplitter->getCurEditor()->getCurrentColumnCount(),
-			doc.getLineEnding() == TextDocument::LineEnding::LF ? "LF" : "CRLF" ) );
+			TextDocument::lineEndingToString( doc.getLineEnding() ).c_str() ) );
 	}
 }
 
 void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
-	if ( mConfig.editor.syncProjectTreeWithEditor && editor != nullptr &&
-		 editor->getDocument().hasFilepath() ) {
-		std::string path = editor->getDocument().getFilePath();
+	if ( mProjectTreeView && mConfig.editor.syncProjectTreeWithEditor && editor != nullptr &&
+		 ( editor->getDocument().hasFilepath() ||
+		   !editor->getDocument().getLoadingFilePath().empty() ) ) {
+		std::string loadingPath( editor->getDocument().getLoadingFilePath() );
+		std::string path = !loadingPath.empty() ? loadingPath : editor->getDocument().getFilePath();
 		if ( path.size() >= mCurrentProject.size() ) {
 			path = path.substr( mCurrentProject.size() );
 			mProjectTreeView->setFocusOnSelection( false );
@@ -2088,11 +1541,11 @@ void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
 }
 
 void App::onWidgetFocusChange( UIWidget* widget ) {
-	if ( mConfig.editor.showDocInfo && mDocInfoText )
+	if ( mConfig.editor.showDocInfo && mDocInfo )
 		mDocInfo->setVisible( widget && widget->isType( UI_TYPE_CODEEDITOR ) );
 
-	updateDocumentMenu();
-	updateTerminalMenu();
+	mSettings->updateDocumentMenu();
+	mSettings->updateTerminalMenu();
 	if ( widget && !widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		if ( widget->isType( UI_TYPE_TERMINAL ) )
 			setAppTitle( widget->asType<UITerminal>()->getTitle() );
@@ -2104,21 +1557,162 @@ void App::onWidgetFocusChange( UIWidget* widget ) {
 void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	updateDocInfo( editor->getDocument() );
 	mDocSearchController->onCodeEditorFocusChange( editor );
+	mUniversalLocator->onCodeEditorFocusChange( editor );
 	syncProjectTreeWithEditor( editor );
 }
 
 void App::onColorSchemeChanged( const std::string& ) {
-	updateColorSchemeMenu();
+	mSettings->updateColorSchemeMenu();
 	mGlobalSearchController->updateColorScheme( mSplitter->getCurrentColorScheme() );
+
+	if ( mStatusBuildOutputController && mStatusBuildOutputController->getContainer() ) {
+		mStatusBuildOutputController->getContainer()->setColorScheme(
+			mSplitter->getCurrentColorScheme() );
+	}
+
 	mNotificationCenter->addNotification(
 		String::format( i18n( "color_scheme_set", "Color scheme: %s" ).toUtf8().c_str(),
 						mSplitter->getCurrentColorScheme().getName().c_str() ) );
 }
 
+void App::cleanUpRecentFiles() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	for ( auto& file : mRecentFiles ) {
+		if ( file.size() > 2 && file[1] == ':' )
+			file[0] = std::toupper( file[0] );
+	}
+#endif
+
+	std::vector<std::string> recentFiles;
+
+	for ( const auto& file : mRecentFiles ) {
+		if ( std::none_of( recentFiles.begin(), recentFiles.end(),
+						   [file]( const auto& other ) { return other == file; } ) )
+			recentFiles.emplace_back( file );
+	}
+
+	if ( mRecentFolders.size() != recentFiles.size() )
+		mRecentFiles = recentFiles;
+}
+
+void App::loadFileDelayed() {
+	if ( mFileToOpen.empty() )
+		return;
+
+	auto fileAndPos = getPathAndPosition( mFileToOpen );
+	auto tab = mSplitter->isDocumentOpen( fileAndPos.first, false, true );
+
+	if ( tab ) {
+		tab->getTabWidget()->setTabSelected( tab );
+		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			if ( editor->getDocument().isLoading() ) {
+				Uint32 cb =
+					editor->on( Event::OnDocumentLoaded, [this, fileAndPos]( const Event* event ) {
+						if ( event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
+							UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+							editor->runOnMainThread( [this, editor, fileAndPos] {
+								editor->goToLine( fileAndPos.second );
+								mSplitter->addEditorPositionToNavigationHistory( editor );
+							} );
+						}
+						event->getNode()->removeEventListener( event->getCallbackId() );
+					} );
+				// Don't listen forever if no event is received
+				editor->runOnMainThread( [editor, cb]() { editor->removeEventListener( cb ); },
+										 Seconds( 4 ) );
+			} else {
+				editor->runOnMainThread( [this, editor, fileAndPos] {
+					editor->goToLine( fileAndPos.second );
+					mSplitter->addEditorPositionToNavigationHistory( editor );
+				} );
+			}
+		}
+	} else {
+		loadFileFromPath( fileAndPos.first, true, nullptr,
+						  [this, fileAndPos]( UICodeEditor* editor, const std::string& ) {
+							  editor->runOnMainThread( [this, editor, fileAndPos] {
+								  editor->goToLine( fileAndPos.second );
+								  mSplitter->addEditorPositionToNavigationHistory( editor );
+							  } );
+						  } );
+	}
+
+	mFileToOpen.clear();
+}
+
+const std::string& App::getThemesPath() const {
+	return mThemesPath;
+}
+
+std::string App::getThemePath() const {
+	if ( mConfig.ui.theme.empty() || "default_theme" == mConfig.ui.theme )
+		return getDefaultThemePath();
+
+	auto themePath( mThemesPath + mConfig.ui.theme + ".css" );
+	if ( !FileSystem::fileExists( themePath ) )
+		return getDefaultThemePath();
+
+	return themePath;
+}
+
+std::string App::getDefaultThemePath() const {
+	return mResPath + "ui/breeze.css";
+}
+
+void App::setTheme( const std::string& path ) {
+	UITheme* theme = UITheme::load( "uitheme", "uitheme", "", mFont, path );
+	theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+
+	if ( path != getDefaultThemePath() ) {
+		auto style = theme->getStyleSheet().getStyleFromSelector( ":root" );
+		if ( style ) {
+			auto inheritsBaseTheme = style->getVariableByName( "--inherit-base-theme" );
+			if ( !inheritsBaseTheme.isEmpty() ) {
+				StyleSheetParser parser;
+				parser.loadFromFile( getDefaultThemePath() );
+				for ( auto& tstyle : parser.getStyleSheet().getStyles() ) {
+					if ( tstyle->getSelector().getName() != ":root" ) {
+						theme->getStyleSheet().addStyle( tstyle );
+					} else {
+						// Add root variables that arent defined in the custom theme
+						auto root = theme->getStyleSheet().getStyleFromSelector( ":root" );
+						if ( root ) {
+							for ( const auto& var : tstyle->getVariables() ) {
+								if ( !root->hasVariable( var.second.getName() ) )
+									root->setVariable( var.second );
+							}
+						}
+					}
+				}
+				theme->getStyleSheet().addKeyframes( parser.getStyleSheet().getKeyframes() );
+			}
+		}
+	}
+
+	mUISceneNode->setStyleSheet( theme->getStyleSheet() );
+	mUISceneNode
+		->getUIThemeManager()
+		//->setDefaultEffectsEnabled( true )
+		->setDefaultTheme( theme )
+		->setDefaultFont( mFont )
+		->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) )
+		->add( theme );
+
+	mUISceneNode->getRoot()->addClass( "appbackground" );
+
+	if ( mTheme )
+		mUISceneNode->getUIThemeManager()->remove( mTheme );
+
+	mTheme = theme;
+
+	mUISceneNode->reloadStyle( true, true );
+}
+
 void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	updateEditorTitle( editor );
 	if ( mSplitter->curEditorExistsAndFocused() && editor == mSplitter->getCurEditor() )
-		updateCurrentFileType();
+		mSettings->updateCurrentFileType();
 	mSplitter->removeUnusedTab( mSplitter->tabWidgetFromEditor( editor ) );
 	auto found = std::find( mRecentFiles.begin(), mRecentFiles.end(), path );
 	if ( found != mRecentFiles.end() )
@@ -2126,9 +1720,10 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 	mRecentFiles.insert( mRecentFiles.begin(), path );
 	if ( mRecentFiles.size() > 10 )
 		mRecentFiles.resize( 10 );
+	cleanUpRecentFiles();
 	updateRecentFiles();
 	if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() == editor ) {
-		updateDocumentMenu();
+		mSettings->updateDocumentMenu();
 		updateDocInfo( editor->getDocument() );
 	}
 
@@ -2143,7 +1738,8 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 		 ( !mDirTree || !mDirTree->isDirInTree( doc.getFileInfo().getFilepath() ) ) ) {
 		std::string dir( FileSystem::fileRemoveFileName( doc.getFileInfo().getFilepath() ) );
 		Lock l( mWatchesLock );
-		mFilesFolderWatches[dir] = mFileWatcher->addWatch( dir, mFileSystemListener );
+		if ( mFileWatcher )
+			mFilesFolderWatches[dir] = mFileWatcher->addWatch( dir, mFileSystemListener );
 	}
 }
 
@@ -2163,6 +1759,22 @@ const CodeEditorConfig& App::getCodeEditorConfig() const {
 	return mConfig.editor;
 }
 
+AppConfig& App::getConfig() {
+	return mConfig;
+}
+
+const std::map<KeyBindings::Shortcut, std::string>& App::getRealDefaultKeybindings() {
+	if ( mRealDefaultKeybindings.empty() ) {
+		mRealDefaultKeybindings.insert( mRealLocalKeybindings.begin(),
+										mRealLocalKeybindings.end() );
+		mRealDefaultKeybindings.insert( mRealSplitterKeybindings.begin(),
+										mRealSplitterKeybindings.end() );
+		mRealDefaultKeybindings.insert( mRealTerminalKeybindings.begin(),
+										mRealTerminalKeybindings.end() );
+	}
+	return mRealDefaultKeybindings;
+}
+
 std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 	auto bindings = UICodeEditorSplitter::getDefaultKeybindings();
 	auto local = getLocalKeybindings();
@@ -2174,7 +1786,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
-		{ { KEY_RETURN, KEYMOD_LALT }, "fullscreen-toggle" },
+		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
 		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
 		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
 		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
@@ -2185,6 +1797,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
 		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
 		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
 		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
 		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
@@ -2196,19 +1809,52 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_K, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-bottom" },
 		{ { KEY_S, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-swap" },
 		{ { KEY_T, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "reopen-closed-tab" },
+		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
+		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
+		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+		{ { KEY_K, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
+		{ { KEY_P, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-document-symbol-search" },
+	};
+}
+
+// Old keybindings will be rebinded to the new keybindings of they are still set to the old
+// keybindind
+std::map<std::string, std::string> App::getMigrateKeybindings() {
+	return {
+		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
+		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
+		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
+		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
+		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
+		{ "switch-to-last-tab", "alt+0" },
 	};
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
-	return { "fullscreen-toggle",
+	return { "create-new",
+			 "create-new-terminal",
+			 "fullscreen-toggle",
 			 "open-file",
 			 "open-folder",
+			 "reopen-closed-tab",
 			 "console-toggle",
 			 "close-app",
 			 "open-locatebar",
+			 "open-command-palette",
 			 "open-global-search",
+			 "project-build-start",
+			 "project-build-cancel",
+			 "toggle-status-locate-bar",
+			 "toggle-status-global-search-bar",
+			 "toggle-status-build-output",
+			 "toggle-status-terminal",
 			 "menu-toggle",
 			 "switch-side-panel",
+			 "toggle-status-bar",
 			 "download-file-web",
 			 "create-new-terminal",
 			 "terminal-split-left",
@@ -2221,7 +1867,30 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "debug-widget-tree-view",
 			 "debug-draw-highlight-toggle",
 			 "debug-draw-boxes-toggle",
-			 "debug-draw-debug-data" };
+			 "debug-draw-debug-data",
+			 "editor-set-line-breaking-column",
+			 "editor-set-line-spacing",
+			 "editor-set-cursor-blinking-time",
+			 "check-for-updates",
+			 "keybindings",
+			 "about-ecode",
+			 "ecode-source",
+			 "ui-scale-factor",
+			 "show-side-panel",
+			 "editor-font-size",
+			 "terminal-font-size",
+			 "ui-font-size",
+			 "ui-panel-font-size",
+			 "serif-font",
+			 "monospace-font",
+			 "terminal-font",
+			 "fallback-font",
+			 "tree-view-configure-ignore-files",
+			 "show-open-documents",
+			 "open-workspace-symbol-search",
+			 "open-document-symbol-search",
+			 "show-folder-treeview-tab",
+			 "show-build-tab" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {
@@ -2229,10 +1898,22 @@ bool App::isUnlockedCommand( const std::string& command ) {
 	return std::find( cmds.begin(), cmds.end(), command ) != cmds.end();
 }
 
+void App::saveProject() {
+	if ( !mCurrentProject.empty() )
+		mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
+							 mProjectBuildManager ? mProjectBuildManager->getConfig()
+												  : ProjectBuildConfiguration() );
+}
+
 void App::closeEditors() {
 	mRecentClosedFiles = {};
 
-	mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig );
+	mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
+	mSplitter->clearNavigationHistory();
+	mStatusBar->setVisible( mConfig.ui.showStatusBar );
+
+	saveProject();
+
 	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
 	while ( !editors.empty() ) {
 		UICodeEditor* editor = editors[0];
@@ -2243,13 +1924,28 @@ void App::closeEditors() {
 			break;
 	};
 
+	std::vector<UITerminal*> terminals;
+	mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [&terminals]( UIWidget* widget ) {
+		terminals.push_back( widget->asType<UITerminal>() );
+	} );
+
+	for ( UITerminal* terminal : terminals ) {
+		UITabWidget* tabWidget = mSplitter->tabWidgetFromWidget( terminal );
+		if ( tabWidget )
+			tabWidget->removeTab( (UITab*)terminal->getData(), true, true );
+	}
+
+	mSplitter->forEachWidgetClass( "build_settings", []( UIWidget* widget ) {
+		widget->asType<UIBuildSettings>()->getTab()->removeTab( true, true );
+	} );
+
 	mCurrentProject = "";
 	mDirTree = nullptr;
 	if ( mFileSystemListener )
 		mFileSystemListener->setDirTree( mDirTree );
 
 	mProjectDocConfig = ProjectDocumentConfig( mConfig.doc );
-	updateProjectSettingsMenu();
+	mSettings->updateProjectSettingsMenu();
 	if ( !mSplitter->getTabWidgets().empty() && mSplitter->getTabWidgets()[0]->getTabCount() == 0 )
 		mSplitter->createCodeEditorInTabWidget( mSplitter->getTabWidgets()[0] );
 }
@@ -2258,20 +1954,27 @@ void App::closeFolder() {
 	if ( mCurrentProject.empty() )
 		return;
 
+	if ( mProjectBuildManager )
+		mProjectBuildManager.reset();
+
 	if ( mSplitter->isAnyEditorDirty() ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			i18n( "confirm_close_folder",
 				  "Do you really want to close the folder?\nSome files haven't been saved." ) );
-		msgBox->addEventListener( Event::MsgBoxConfirmClick,
-								  [&]( const Event* ) { closeEditors(); } );
-		msgBox->addEventListener( Event::OnClose, [&]( const Event* ) { msgBox = nullptr; } );
+		msgBox->on( Event::OnConfirm, [this]( const Event* ) { closeEditors(); } );
 		msgBox->setTitle( i18n( "close_folder_question", "Close Folder?" ) );
 		msgBox->center();
 		msgBox->showWhenReady();
 	} else {
 		closeEditors();
 	}
+
+	mProjectViewEmptyCont->setVisible( true );
+	mFileSystemModel->setRootPath( "" );
+	updateOpenRecentFolderBtn();
+	UIWelcomeScreen::createWelcomeScreen( this );
+	mStatusBar->setVisible( false );
 }
 
 void App::createDocAlert( UICodeEditor* editor ) {
@@ -2280,7 +1983,7 @@ void App::createDocAlert( UICodeEditor* editor ) {
 	if ( docAlert )
 		return;
 
-	const std::string& msg = R"xml(
+	const auto msg = R"xml(
 	<hbox class="doc_alert" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" gravity-owner="true">
 		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
 			text='@string(reload_current_file, "The file on the disk is more recent that the current buffer.&#xA;Do you want to reload it?")'
@@ -2298,7 +2001,7 @@ void App::createDocAlert( UICodeEditor* editor ) {
 	editor->enableReportSizeChangeToChilds();
 
 	docAlert->find( "file_reload" )
-		->addEventListener( Event::MouseClick, [editor, docAlert]( const Event* event ) {
+		->on( Event::MouseClick, [editor, docAlert]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 				editor->getDocument().reload();
@@ -2309,7 +2012,7 @@ void App::createDocAlert( UICodeEditor* editor ) {
 		} );
 
 	docAlert->find( "file_overwrite" )
-		->addEventListener( Event::MouseClick, [editor, docAlert]( const Event* event ) {
+		->on( Event::MouseClick, [editor, docAlert]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 				editor->getDocument().save();
@@ -2320,7 +2023,7 @@ void App::createDocAlert( UICodeEditor* editor ) {
 		} );
 
 	docAlert->find( "file_ignore" )
-		->addEventListener( Event::MouseClick, [docAlert, editor]( const Event* event ) {
+		->on( Event::MouseClick, [docAlert, editor]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 				editor->disableReportSizeChangeToChilds();
@@ -2330,42 +2033,68 @@ void App::createDocAlert( UICodeEditor* editor ) {
 		} );
 }
 
+void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
+	UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
+	UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
+	if ( imageView ) {
+		mImageLayout->setEnabled( true )->setVisible( true );
+		loaderView->setVisible( true );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+		mThreadPool->run( [this, imageView, loaderView, path, isMemory]() {
+#endif
+			Texture* image =
+				isMemory ? TextureFactory::instance()->loadFromMemory(
+							   reinterpret_cast<const unsigned char*>( path.c_str() ), path.size() )
+						 : TextureFactory::instance()->loadFromFile( path );
+			if ( mImageLayout->isVisible() ) {
+				imageView->runOnMainThread( [this, imageView, loaderView, image]() {
+					mImageLayout->setFocus();
+					imageView->setDrawable( image, true );
+					loaderView->setVisible( false );
+				} );
+			} else {
+				TextureFactory::instance()->remove( image );
+				imageView->setDrawable( nullptr );
+				loaderView->setVisible( false );
+			}
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+		} );
+#endif
+	}
+}
+
+void App::loadImageFromMemory( const std::string& content ) {
+	loadImageFromMedium( content, true );
+}
+
+void App::loadImageFromPath( const std::string& path ) {
+	loadImageFromMedium( path, false );
+}
+
 void App::loadFileFromPath(
 	const std::string& path, bool inNewTab, UICodeEditor* codeEditor,
 	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
 	if ( Image::isImageExtension( path ) && Image::isImage( path ) &&
 		 FileSystem::fileExtension( path ) != "svg" ) {
-		UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
-		UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
-		if ( imageView ) {
-			mImageLayout->setEnabled( true )->setVisible( true );
-			loaderView->setVisible( true );
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-			mThreadPool->run(
-				[&, imageView, loaderView, path]() {
-#endif
-					Texture* image = TextureFactory::instance()->getTexture(
-						TextureFactory::instance()->loadFromFile( path ) );
-					if ( mImageLayout->isVisible() ) {
-						imageView->runOnMainThread( [imageView, loaderView, image]() {
-							imageView->setDrawable( image, true );
-							loaderView->setVisible( false );
-						} );
-					} else {
-						TextureFactory::instance()->remove( image );
-						imageView->setDrawable( nullptr );
-						loaderView->setVisible( false );
-					}
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-				},
-				[]() {} );
-#endif
-		}
+		loadImageFromPath( path );
 	} else {
-		if ( inNewTab ) {
-			mSplitter->loadAsyncFileFromPathInNewTab( path, mThreadPool, onLoaded );
+		UITab* tab = mSplitter->isDocumentOpen( path );
+
+		if ( tab && tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			if ( inNewTab ) {
+				auto d = mSplitter->loadDocumentInNewTab( editor->getDocumentRef() );
+				updateEditorTitle( d.second );
+			} else {
+				mSplitter->loadDocument( editor->getDocumentRef(), editor );
+				updateEditorTitle( editor );
+			}
 		} else {
-			mSplitter->loadAsyncFileFromPath( path, mThreadPool, codeEditor, onLoaded );
+			if ( inNewTab ) {
+				mSplitter->loadAsyncFileFromPathInNewTab( path, onLoaded );
+			} else {
+				mSplitter->loadAsyncFileFromPath( path, codeEditor, onLoaded );
+			}
 		}
 	}
 }
@@ -2379,7 +2108,19 @@ void App::hideSearchBar() {
 }
 
 void App::hideLocateBar() {
-	mFileLocator->hideLocateBar();
+	mUniversalLocator->hideLocateBar();
+}
+
+void App::hideStatusTerminal() {
+	mStatusTerminalController->hide();
+}
+
+void App::hideStatusBuildOutput() {
+	mStatusBuildOutputController->hide();
+}
+
+StatusBuildOutputController* App::getStatusBuildOutputController() const {
+	return mStatusBuildOutputController.get();
 }
 
 bool App::isDirTreeReady() const {
@@ -2392,7 +2133,8 @@ NotificationCenter* App::getNotificationCenter() const {
 
 void App::fullscreenToggle() {
 	mWindow->toggleFullscreen();
-	mWindowMenu->find( "fullscreen-toggle" )
+	mSettings->getWindowMenu()
+		->find( "fullscreen-toggle" )
 		->asType<UIMenuCheckBox>()
 		->setActive( !mWindow->isWindowed() );
 }
@@ -2419,6 +2161,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setColorScheme( mSplitter->getCurrentColorScheme() );
 	editor->setShowLineNumber( config.showLineNumbers );
 	editor->setShowWhitespaces( config.showWhiteSpaces );
+	editor->setShowLineEndings( config.showLineEndings );
+	editor->setShowIndentationGuides( config.showIndentationGuides );
 	editor->setHighlightMatchingBracket( config.highlightMatchingBracket );
 	editor->setVerticalScrollBarEnabled( config.verticalScrollbar );
 	editor->setHorizontalScrollBarEnabled( config.horizontalScrollbar );
@@ -2432,10 +2176,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setMenuIconSize( mMenuIconSize );
 	editor->setAutoCloseXMLTags( config.autoCloseXMLTags );
 	editor->setLineSpacing( config.lineSpacing );
+	editor->setCursorBlinkTime( config.cursorBlinkingTime );
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
-	doc.setLineEnding( docc.windowsLineEndings ? TextDocument::LineEnding::CRLF
-											   : TextDocument::LineEnding::LF );
+	doc.setLineEnding( docc.lineEndings );
 	doc.setTrimTrailingWhitespaces( docc.trimTrailingWhitespaces );
 	doc.setForceNewLineAtEndOfFile( docc.forceNewLineAtEndOfFile );
 	doc.setIndentType( docc.indentSpaces ? TextDocument::IndentType::IndentSpaces
@@ -2446,94 +2190,53 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	editor->addKeyBinds( getLocalKeybindings() );
 	editor->addUnlockedCommands( getUnlockedCommands() );
-	doc.setCommand( "save-doc", [&] { saveDoc(); } );
-	doc.setCommand( "save-as-doc", [&] {
+	doc.setCommand( "save-doc", [this] { saveDoc(); } );
+	doc.setCommand( "save-as-doc", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() )
 			saveFileDialog( mSplitter->getCurEditor() );
 	} );
-	doc.setCommand( "save-all", [&] { saveAll(); } );
-	doc.setCommand( "find-replace", [&] { showFindView(); } );
-	doc.setCommand( "open-global-search", [&] { showGlobalSearch( false ); } );
-	doc.setCommand( "open-locatebar", [&] { mFileLocator->showLocateBar(); } );
-	doc.setCommand( "repeat-find", [&] {
+	doc.setCommand( "save-all", [this] { saveAll(); } );
+	doc.setCommand( "repeat-find", [this] {
 		mDocSearchController->findNextText( mDocSearchController->getSearchState() );
 	} );
-	doc.setCommand( "find-prev", [&] {
+	doc.setCommand( "find-prev", [this] {
 		mDocSearchController->findPrevText( mDocSearchController->getSearchState() );
 	} );
-	doc.setCommand( "close-folder", [&] { closeFolder(); } );
-	doc.setCommand( "close-app", [&] { closeApp(); } );
-	doc.setCommand( "fullscreen-toggle", [&]() { fullscreenToggle(); } );
-	doc.setCommand( "open-file", [&] { openFileDialog(); } );
-	doc.setCommand( "open-folder", [&] { openFolderDialog(); } );
-	doc.setCommand( "console-toggle", [&] { consoleToggle(); } );
-	doc.setCommand( "lock", [&] {
+	doc.setCommand( "close-folder", [this] { closeFolder(); } );
+	doc.setCommand( "lock", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( true );
-			updateDocumentMenu();
+			mSettings->updateDocumentMenu();
 		}
 	} );
-	doc.setCommand( "unlock", [&] {
+	doc.setCommand( "unlock", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( false );
-			updateDocumentMenu();
+			mSettings->updateDocumentMenu();
 		}
 	} );
-	doc.setCommand( "lock-toggle", [&] {
+	doc.setCommand( "lock-toggle", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( !mSplitter->getCurEditor()->isLocked() );
-			updateDocumentMenu();
+			mSettings->updateDocumentMenu();
 		}
 	} );
-	doc.setCommand( "keybindings", [&] { loadFileFromPath( mKeybindingsPath ); } );
-	doc.setCommand( "debug-draw-boxes-toggle", [&] { debugDrawBoxesToggle(); } );
-	doc.setCommand( "debug-draw-highlight-toggle", [&] { debugDrawHighlightToggle(); } );
-	doc.setCommand( "debug-draw-debug-data", [&] { debugDrawData(); } );
-	doc.setCommand( "debug-widget-tree-view", [&] { createWidgetInspector(); } );
-	doc.setCommand( "go-to-line", [&] { mFileLocator->goToLine(); } );
-	doc.setCommand( "load-current-dir", [&] { loadCurrentDirectory(); } );
-	doc.setCommand( "menu-toggle", [&] { toggleSettingsMenu(); } );
-	doc.setCommand( "switch-side-panel", [&] { switchSidePanel(); } );
-	doc.setCommand( "download-file-web", [&] { downloadFileWebDialog(); } );
-	doc.setCommand( "move-panel-left", [&] { panelPosition( PanelPosition::Left ); } );
-	doc.setCommand( "move-panel-right", [&] { panelPosition( PanelPosition::Right ); } );
-	doc.setCommand( "create-new-terminal", [&] { mTerminalManager->createNewTerminal(); } );
-	doc.setCommand( "terminal-split-right", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Right, mSplitter->getCurWidget(),
-						  false );
-		doc.execute( "create-new-terminal" );
-	} );
-	doc.setCommand( "terminal-split-bottom", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom, mSplitter->getCurWidget(),
-						  false );
-		doc.execute( "create-new-terminal" );
-	} );
-	doc.setCommand( "terminal-split-left", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Left, mSplitter->getCurWidget(),
-						  false );
-		doc.execute( "create-new-terminal" );
-	} );
-	doc.setCommand( "terminal-split-top", [&] {
-		mSplitter->split( UICodeEditorSplitter::SplitDirection::Top, mSplitter->getCurWidget(),
-						  false );
-		doc.execute( "create-new-terminal" );
-	} );
-	doc.setCommand( "reopen-closed-tab", [&] { reopenClosedTab(); } );
-	doc.setCommand( "plugin-manager-open", [&] { createPluginManagerUI(); } );
+	doc.setCommand( "go-to-line", [this] { mUniversalLocator->goToLine(); } );
+	doc.setCommand( "load-current-dir", [this] { loadCurrentDirectory(); } );
+	registerUnlockedCommands( doc );
 
-	editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
+	editor->on( Event::OnDocumentSave, [this]( const Event* event ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		updateEditorTabTitle( editor );
 		if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() == editor )
 			editor->setFocus();
 		if ( editor->getDocument().getFilePath() == mKeybindingsPath ) {
-			mKeybindings.clear();
-			mKeybindingsInvert.clear();
-			loadKeybindings();
-			mSplitter->forEachEditor( [&]( UICodeEditor* ed ) {
-				ed->getKeyBindings().reset();
-				ed->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
-			} );
+			reloadKeybindings();
+		} else if ( mFileSystemMatcher && mFileSystemMatcher->getIgnoreFilePath() ==
+											  editor->getDocument().getFilePath() ) {
+			loadFileSystemMatcher( mFileSystemMatcher ? mFileSystemMatcher->getPath()
+													  : mCurrentProject );
+			refreshFolderView();
 		}
 		if ( !editor->getDocument().hasSyntaxDefinition() ) {
 			editor->getDocument().resetSyntax();
@@ -2541,28 +2244,27 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		}
 	} );
 
-	editor->addEventListener(
-		Event::OnDocumentDirtyOnFileSysten, [&, editor]( const Event* event ) {
-			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
-			FileInfo file( docEvent->getDoc()->getFileInfo().getFilepath() );
-			TextDocument* doc = docEvent->getDoc();
-			if ( doc->getFileInfo() != file ) {
-				if ( doc->isDirty() ) {
-					editor->runOnMainThread( [&, editor]() { createDocAlert( editor ); } );
-				} else {
-					auto hash = String::hash( docEvent->getDoc()->getFilePath() );
-					editor->removeActionsByTag( hash );
-					editor->runOnMainThread( [doc]() { doc->reload(); }, Seconds( 0.5f ), hash );
-				}
+	editor->on( Event::OnDocumentDirtyOnFileSysten, [&, editor]( const Event* event ) {
+		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+		FileInfo file( docEvent->getDoc()->getFileInfo().getFilepath() );
+		TextDocument* doc = docEvent->getDoc();
+		if ( doc->getFileInfo() != file ) {
+			if ( doc->isDirty() ) {
+				editor->runOnMainThread( [&, editor]() { createDocAlert( editor ); } );
+			} else {
+				auto hash = String::hash( docEvent->getDoc()->getFilePath() );
+				editor->removeActionsByTag( hash );
+				editor->runOnMainThread( [doc]() { doc->reload(); }, Seconds( 0.5f ), hash );
 			}
-		} );
+		}
+	} );
 
 	if ( !mKeybindings.empty() ) {
 		editor->getKeyBindings().reset();
 		editor->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
 	}
 
-	editor->addEventListener( Event::OnDocumentClosed, [&]( const Event* event ) {
+	editor->on( Event::OnDocumentClosed, [this]( const Event* event ) {
 		if ( !appInstance )
 			return;
 		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
@@ -2570,7 +2272,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( dir.empty() )
 			return;
 		mRecentClosedFiles.push( docEvent->getDoc()->getFilePath() );
-		updatedReopenClosedFileState();
+		mSettings->updatedReopenClosedFileState();
 		Lock l( mWatchesLock );
 		auto itWatch = mFilesFolderWatches.find( dir );
 		if ( mFileWatcher && itWatch != mFilesFolderWatches.end() ) {
@@ -2581,7 +2283,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		}
 	} );
 
-	editor->addEventListener( Event::OnDocumentMoved, [&]( const Event* event ) {
+	editor->on( Event::OnDocumentMoved, [this]( const Event* event ) {
 		if ( !appInstance )
 			return;
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -2590,7 +2292,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
 	} );
 
-	auto docChanged = [&]( const Event* event ) {
+	auto docChanged = [this]( const Event* event ) {
 		const DocEvent* synEvent = static_cast<const DocEvent*>( event );
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		UIIcon* icon = mUISceneNode->findIcon(
@@ -2603,14 +2305,37 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			UITab* tab = (UITab*)editor->getData();
 			tab->setIcon( icon->getSize( mMenuIconSize ) );
 		}
+		editor->getDocument().setHAsCpp( mProjectDocConfig.hAsCPP );
 	};
 
-	editor->addEventListener( Event::OnDocumentLoaded, docChanged );
-	editor->addEventListener( Event::OnDocumentChanged, docChanged );
-	editor->addEventListener( Event::OnDocumentSave, docChanged );
-	editor->addEventListener( Event::OnEditorTabReady, docChanged );
+	auto docLoaded = [this, editor, docChanged]( const Event* event ) {
+		if ( editor->getDocument().getFileInfo().getExtension() == "svg" ) {
+			editor->getDocument().setCommand( "show-image-preview", [this, editor]() {
+				loadImageFromMemory( editor->getDocument().getText().toUtf8() );
+			} );
+			editor->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
+				auto cevent = static_cast<const ContextMenuEvent*>( event );
+				cevent->getMenu()
+					->add( i18n( "show_image_preview", "Show Image Preview" ),
+						   findIcon( "filetype-jpg" ) )
+					->setId( "show-image-preview" );
+			} );
+		}
+
+		docChanged( event );
+	};
+
+	editor->on( Event::OnDocumentLoaded, docLoaded );
+	editor->on( Event::OnDocumentChanged, docChanged );
+	editor->on( Event::OnDocumentSave, docChanged );
+	editor->on( Event::OnEditorTabReady, docChanged );
+
+	editor->on( Event::OnCursorPosChangeInteresting, [this, editor]( auto ) {
+		mSplitter->addEditorPositionToNavigationHistory( editor );
+	} );
 
 	editor->showMinimap( config.minimap );
+	editor->showLinesRelativePosition( config.linesRelativePosition );
 
 	mPluginManager->onNewEditor( editor );
 }
@@ -2627,60 +2352,12 @@ void App::loadCurrentDirectory() {
 	loadFolder( path );
 }
 
-UIPopUpMenu* App::createToolsMenu() {
-	mToolsMenu = UIPopUpMenu::New();
-	mToolsMenu
-		->add( i18n( "locate", "Locate..." ), findIcon( "search" ), getKeybind( "open-locatebar" ) )
-		->setId( "open-locatebar" );
-	mToolsMenu
-		->add( i18n( "project_find", "Project Find..." ), findIcon( "search" ),
-			   getKeybind( "open-global-search" ) )
-		->setId( "open-global-search" );
-	mToolsMenu
-		->add( i18n( "go_to_line", "Go to line..." ), findIcon( "go-to-line" ),
-			   getKeybind( "go-to-line" ) )
-		->setId( "go-to-line" );
-	mToolsMenu
-		->add( i18n( "load_cur_dir_as_folder", "Load current document directory as folder" ),
-			   findIcon( "folder" ), getKeybind( "load-current-dir" ) )
-		->setId( "load-current-dir" );
-	mToolsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		std::string id( item->getId() );
-		if ( id == "open-locatebar" ) {
-			mFileLocator->showLocateBar();
-		} else if ( id == "open-global-search" ) {
-			mGlobalSearchController->showGlobalSearch( false );
-		} else if ( id == "go-to-line" ) {
-			mFileLocator->goToLine();
-		} else if ( id == "load-current-dir" ) {
-			loadCurrentDirectory();
-		}
-	} );
-	return mToolsMenu;
+GlobalSearchController* App::getGlobalSearchController() const {
+	return mGlobalSearchController.get();
 }
 
-void App::toggleSettingsMenu() {
-	if ( ( !mSettingsMenu->isVisible() || mSettingsMenu->isHiding() ) &&
-		 mSettingsMenu->getInactiveTime().getElapsedTime().asMilliseconds() > 1 ) {
-		Vector2f pos( mSettingsButton->getPixelsPosition() );
-		mSettingsButton->nodeToWorldTranslation( pos );
-		UIMenu::findBestMenuPos( pos, mSettingsMenu );
-		mSettingsMenu->setPixelsPosition( pos );
-		mSettingsMenu->show();
-	} else {
-		mSettingsMenu->hide();
-	}
-}
-
-void App::updatedReopenClosedFileState() {
-	if ( mRecentFilesMenu ) {
-		auto* reopenBtn = mRecentFilesMenu->find( "reopen-closed-tab" );
-		if ( reopenBtn )
-			reopenBtn->setEnabled( !mRecentClosedFiles.empty() );
-	}
+const std::shared_ptr<FileSystemModel>& App::getFileSystemModel() const {
+	return mFileSystemModel;
 }
 
 void App::reopenClosedTab() {
@@ -2690,263 +2367,42 @@ void App::reopenClosedTab() {
 	auto prevTabPath = mRecentClosedFiles.top();
 	mRecentClosedFiles.pop();
 
-	updatedReopenClosedFileState();
+	mSettings->updatedReopenClosedFileState();
 
 	loadFileFromPath( prevTabPath );
-}
-
-void App::createSettingsMenu() {
-	Clock clock;
-	mSettingsMenu = UIPopUpMenu::New();
-	mSettingsMenu->setId( "settings_menu" );
-	mSettingsMenu
-		->add( i18n( "new_file", "New File" ), findIcon( "document-new" ),
-			   getKeybind( "create-new" ) )
-		->setId( "create-new" );
-	mSettingsMenu
-		->add( i18n( "new_terminal", "New Terminal" ), findIcon( "terminal" ),
-			   getKeybind( "create-new-terminal" ) )
-		->setId( "create-new-terminal" );
-	mSettingsMenu
-		->add( i18n( "open_file", "Open File..." ), findIcon( "document-open" ),
-			   getKeybind( "open-file" ) )
-		->setId( "open-file" );
-	mSettingsMenu
-		->add( i18n( "open_folder", "Open Folder..." ), findIcon( "document-open" ),
-			   getKeybind( "open-folder" ) )
-		->setId( "open-folder" );
-	mSettingsMenu
-		->add( i18n( "open_file_from_web", "Open File from Web..." ), findIcon( "download-cloud" ),
-			   getKeybind( "download-file-web" ) )
-		->setId( "download-file-web" );
-	mSettingsMenu
-		->addSubMenu( i18n( "recent_files", "Recent Files" ), findIcon( "document-recent" ),
-					  ( mRecentFilesMenu = UIPopUpMenu::New() ) )
-		->setId( "menu-recent-files" );
-	mSettingsMenu
-		->addSubMenu( i18n( "recent_folders", "Recent Folders" ), findIcon( "document-recent" ),
-					  UIPopUpMenu::New() )
-		->setId( "recent-folders" );
-	mSettingsMenu->addSeparator();
-	mSettingsMenu
-		->add( i18n( "save", "Save" ), findIcon( "document-save" ), getKeybind( "save-doc" ) )
-		->setId( "save-doc" );
-	mSettingsMenu
-		->add( i18n( "save_as", "Save as..." ), findIcon( "document-save-as" ),
-			   getKeybind( "save-as-doc" ) )
-		->setId( "save-as-doc" );
-	mSettingsMenu
-		->add( i18n( "save_all", "Save All" ), findIcon( "document-save-as" ),
-			   getKeybind( "save-all" ) )
-		->setId( "save-all" );
-	mSettingsMenu->addSeparator();
-	UIMenuSubMenu* fileTypeMenu = mSettingsMenu->addSubMenu(
-		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu() );
-	fileTypeMenu->addEventListener( Event::OnMenuShow, [&, fileTypeMenu]( const Event* ) {
-		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
-			for ( UIPopUpMenu* menu : mFileTypeMenues )
-				menu->close();
-			mFileTypeMenues.clear();
-			auto* newMenu = createFileTypeMenu();
-			newMenu->reloadStyle( true, true );
-			fileTypeMenu->setSubMenu( newMenu );
-		}
-	} );
-	UIMenuSubMenu* colorSchemeMenu =
-		mSettingsMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
-								   findIcon( "palette" ), createColorSchemeMenu() );
-	colorSchemeMenu->addEventListener( Event::OnMenuShow, [&, colorSchemeMenu]( const Event* ) {
-		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
-			for ( UIPopUpMenu* menu : mColorSchemeMenues )
-				menu->close();
-			mColorSchemeMenues.clear();
-			auto* newMenu = createColorSchemeMenu();
-			newMenu->reloadStyle( true, true );
-			colorSchemeMenu->setSubMenu( newMenu );
-		}
-	} );
-	mSettingsMenu
-		->addSubMenu( i18n( "document", "Document" ), findIcon( "file" ), createDocumentMenu() )
-		->setId( "doc-menu" );
-	mSettingsMenu
-		->addSubMenu( i18n( "terminal", "Terminal" ), findIcon( "terminal" ), createTerminalMenu() )
-		->setId( "term-menu" );
-	mSettingsMenu->addSubMenu( i18n( "edit", "Edit" ), nullptr, createEditMenu() );
-	mSettingsMenu->addSubMenu( i18n( "view", "View" ), nullptr, createViewMenu() );
-	mSettingsMenu->addSubMenu( i18n( "tools", "Tools" ), nullptr, createToolsMenu() );
-	mSettingsMenu->addSubMenu( i18n( "window", "Window" ), nullptr, createWindowMenu() );
-	mSettingsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "package" ) )
-		->setId( "plugin-manager-open" );
-	mSettingsMenu->addSubMenu( i18n( "help", "Help" ), findIcon( "help" ), createHelpMenu() );
-	mSettingsMenu->addSeparator();
-	mSettingsMenu
-		->add( i18n( "close", "Close" ), findIcon( "document-close" ), getKeybind( "close-tab" ) )
-		->setId( "close-tab" );
-	mSettingsMenu
-		->add( i18n( "close_folder", "Close Folder" ), findIcon( "document-close" ),
-			   getKeybind( "close-folder" ) )
-		->setId( "close-folder" );
-	mSettingsMenu->addSeparator();
-	mSettingsMenu->add( i18n( "quit", "Quit" ), findIcon( "quit" ), getKeybind( "close-app" ) )
-		->setId( "close-app" );
-	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
-	mSettingsButton->addEventListener( Event::MouseClick,
-									   [&]( const Event* ) { toggleSettingsMenu(); } );
-	mSettingsMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		const String& id = event->getNode()->asType<UIMenuItem>()->getId();
-		runCommand( id );
-	} );
-	updateRecentFiles();
-	updateRecentFolders();
-	Log::info( "Settings Menu took: %.2f ms", clock.getElapsedTime().asMilliseconds() );
-}
-
-void App::updateColorSchemeMenu() {
-	for ( UIPopUpMenu* menu : mColorSchemeMenues ) {
-		for ( size_t i = 0; i < menu->getCount(); i++ ) {
-			UIWidget* widget = menu->getItem( i );
-			if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
-				auto* menuItem = widget->asType<UIMenuRadioButton>();
-				menuItem->setActive( mSplitter->getCurrentColorSchemeName() ==
-									 menuItem->getText() );
-			}
-		}
-	}
-}
-
-UIMenu* App::createColorSchemeMenu() {
-	mColorSchemeMenuesCreatedWithHeight = mUISceneNode->getPixelsSize().getHeight();
-	size_t maxItems = 19;
-	auto cb = [&]( const Event* event ) {
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		const String& name = item->getText();
-		mSplitter->setColorScheme( name );
-	};
-
-	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->addEventListener( Event::OnItemClicked, cb );
-	mColorSchemeMenues.push_back( menu );
-	size_t total = 0;
-	const auto& colorSchemes = mSplitter->getColorSchemes();
-
-	for ( auto& colorScheme : colorSchemes ) {
-		menu->addRadioButton( colorScheme.first,
-							  mSplitter->getCurrentColorSchemeName() == colorScheme.first );
-
-		if ( mColorSchemeMenues.size() == 1 && menu->getCount() == 1 ) {
-			menu->reloadStyle( true, true );
-			Float height = menu->getPixelsSize().getHeight();
-			Float tHeight = mUISceneNode->getPixelsSize().getHeight();
-			maxItems = (int)eeceil( tHeight / height ) - 2;
-		}
-
-		total++;
-
-		if ( menu->getCount() == maxItems && colorSchemes.size() - total > 1 ) {
-			UIPopUpMenu* newMenu = UIPopUpMenu::New();
-			menu->addSubMenu( i18n( "more...", "More..." ), nullptr, newMenu );
-			newMenu->addEventListener( Event::OnItemClicked, cb );
-			mColorSchemeMenues.push_back( newMenu );
-			menu = newMenu;
-		}
-	}
-
-	return mColorSchemeMenues[0];
-}
-
-UIMenu* App::createFileTypeMenu() {
-	mFileTypeMenuesCreatedWithHeight = mUISceneNode->getPixelsSize().getHeight();
-	size_t maxItems = 19;
-	auto* dM = SyntaxDefinitionManager::instance();
-	auto names = dM->getLanguageNames();
-	auto cb = [&, dM]( const Event* event ) {
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		const String& name = item->getText();
-		if ( mSplitter->curEditorExistsAndFocused() ) {
-			mSplitter->getCurEditor()->setSyntaxDefinition( dM->getStyleByLanguageName( name ) );
-			updateCurrentFileType();
-		}
-	};
-
-	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->addEventListener( Event::OnItemClicked, cb );
-	mFileTypeMenues.push_back( menu );
-	size_t total = 0;
-
-	for ( const auto& name : names ) {
-		menu->addRadioButton(
-			name, mSplitter->curEditorExistsAndFocused() &&
-					  mSplitter->getCurEditor()->getSyntaxDefinition().getLanguageName() == name );
-
-		if ( mFileTypeMenues.size() == 1 && menu->getCount() == 1 ) {
-			menu->reloadStyle( true, true );
-			Float height = menu->getPixelsSize().getHeight();
-			Float tHeight = mUISceneNode->getPixelsSize().getHeight();
-			maxItems = (int)eeceil( tHeight / height ) - 2;
-		}
-
-		total++;
-
-		if ( menu->getCount() == maxItems && names.size() - total > 1 ) {
-			UIPopUpMenu* newMenu = UIPopUpMenu::New();
-			menu->addSubMenu( i18n( "more...", "More..." ), nullptr, newMenu );
-			newMenu->addEventListener( Event::OnItemClicked, cb );
-			mFileTypeMenues.push_back( newMenu );
-			menu = newMenu;
-		}
-	}
-
-	return mFileTypeMenues[0];
-}
-
-void App::updateCurrentFileType() {
-	if ( !mSplitter->curEditorExistsAndFocused() )
-		return;
-	std::string curLang( mSplitter->getCurEditor()->getSyntaxDefinition().getLanguageName() );
-	for ( UIPopUpMenu* menu : mFileTypeMenues ) {
-		for ( size_t i = 0; i < menu->getCount(); i++ ) {
-			if ( menu->getItem( i )->isType( UI_TYPE_MENURADIOBUTTON ) ) {
-				UIMenuRadioButton* menuItem = menu->getItem( i )->asType<UIMenuRadioButton>();
-				menuItem->setActive( curLang == menuItem->getText() );
-			}
-		}
-	}
 }
 
 void App::updateEditorState() {
 	if ( mSplitter->curEditorExistsAndFocused() ) {
 		updateEditorTitle( mSplitter->getCurEditor() );
-		updateCurrentFileType();
-		updateDocumentMenu();
+		mSettings->updateCurrentFileType();
+		mSettings->updateDocumentMenu();
 	}
 }
 
 void App::removeFolderWatches() {
-	if ( mFileWatcher ) {
-		std::unordered_set<efsw::WatchID> folderWatches;
-		std::unordered_map<std::string, efsw::WatchID> filesFolderWatches;
-		{
-			Lock l( mWatchesLock );
-			folderWatches = mFolderWatches;
-			filesFolderWatches = mFilesFolderWatches;
-			mFolderWatches.clear();
-			mFilesFolderWatches.clear();
-		}
+	std::unordered_set<efsw::WatchID> folderWatches;
+	std::unordered_map<std::string, efsw::WatchID> filesFolderWatches;
 
-		for ( const auto& dir : folderWatches )
-			mFileWatcher->removeWatch( dir );
+	Lock l( mWatchesLock );
+	if ( !mFileWatcher )
+		return;
+	folderWatches = mFolderWatches;
+	filesFolderWatches = mFilesFolderWatches;
+	mFolderWatches.clear();
+	mFilesFolderWatches.clear();
 
-		for ( const auto& fileFolder : filesFolderWatches )
-			mFileWatcher->removeWatch( fileFolder.second );
-	}
+	for ( const auto& dir : folderWatches )
+		mFileWatcher->removeWatch( dir );
+
+	for ( const auto& fileFolder : filesFolderWatches )
+		mFileWatcher->removeWatch( fileFolder.second );
 }
 
 void App::loadDirTree( const std::string& path ) {
 	Clock* clock = eeNew( Clock, () );
 	mDirTreeReady = false;
-	mDirTree = std::make_shared<ProjectDirectoryTree>( path, mThreadPool );
+	mDirTree = std::make_shared<ProjectDirectoryTree>( path, mThreadPool, this );
 	Log::info( "Loading DirTree: %s", path.c_str() );
 	mDirTree->scan(
 		[&, clock]( ProjectDirectoryTree& dirTree ) {
@@ -2954,20 +2410,19 @@ void App::loadDirTree( const std::string& path ) {
 					   clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
 			eeDelete( clock );
 			mDirTreeReady = true;
-			mUISceneNode->runOnMainThread( [&] {
-				mFileLocator->updateLocateTable();
+			mUISceneNode->runOnMainThread( [this] {
+				mUniversalLocator->updateFilesTable();
 				if ( mSplitter->curEditorExistsAndFocused() )
 					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
 			} );
-			if ( mFileWatcher ) {
-				removeFolderWatches();
-				{
-					Lock l( mWatchesLock );
+			removeFolderWatches();
+			{
+				Lock l( mWatchesLock );
+				if ( mFileWatcher )
 					mFolderWatches.insert(
 						mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true ) );
-				}
-				mFileSystemListener->setDirTree( mDirTree );
 			}
+			mFileSystemListener->setDirTree( mDirTree );
 		},
 		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
 }
@@ -2983,19 +2438,89 @@ UIMessageBox* App::fileAlreadyExistsMsgBox() {
 	return errorMsgBox( i18n( "file_already_exists", "File already exists!" ) );
 }
 
-std::string getNewFilePath( const FileInfo& file, UIMessageBox* msgBox ) {
-	auto folderName( msgBox->getTextInput()->getText() );
-	auto folderPath( file.getDirectoryPath() );
-	FileSystem::dirAddSlashAtEnd( folderPath );
-	return folderPath + folderName;
+void App::toggleSettingsMenu() {
+	mSettings->toggleSettingsMenu();
 }
 
-UIMessageBox* newInputMsgBox( const String& title, const String& msg ) {
+void App::createNewTerminal() {
+	if ( mSplitter->hasSplit() ) {
+		if ( mSplitter->getTabWidgets().size() == 2 ) {
+			UIOrientation orientation = mSplitter->getMainSplitOrientation();
+			if ( mConfig.term.newTerminalOrientation == NewTerminalOrientation::Vertical &&
+				 orientation == UIOrientation::Horizontal ) {
+				mTerminalManager->createNewTerminal( "", mSplitter->getTabWidgets()[1] );
+				return;
+			}
+			if ( mConfig.term.newTerminalOrientation == NewTerminalOrientation::Horizontal &&
+				 orientation == UIOrientation::Vertical ) {
+				mTerminalManager->createNewTerminal( "", mSplitter->getTabWidgets()[1] );
+				return;
+			}
+		}
+		mTerminalManager->createNewTerminal();
+	} else {
+		switch ( mConfig.term.newTerminalOrientation ) {
+			case NewTerminalOrientation::Vertical: {
+				runCommand( "terminal-split-right" );
+				break;
+			}
+			case NewTerminalOrientation::Horizontal: {
+				runCommand( "terminal-split-bottom" );
+				break;
+			}
+			case NewTerminalOrientation::Same: {
+				mTerminalManager->createNewTerminal();
+				break;
+			}
+		}
+	}
+}
+
+void App::showFolderTreeViewTab() {
+	UITab* tab = mSidePanel->find<UITab>( "treeview_tab" );
+	if ( tab )
+		tab->setTabSelected();
+}
+
+void App::showBuildTab() {
+	UITab* tab = mSidePanel->find<UITab>( "build_tab" );
+	if ( tab )
+		tab->setTabSelected();
+}
+
+std::string App::getNewFilePath( const FileInfo& file, UIMessageBox* msgBox, bool keepDir ) {
+	auto fileName( msgBox->getTextInput()->getText().toUtf8() );
+	auto folderPath( file.getDirectoryPath() );
+	if ( file.isDirectory() && !keepDir ) {
+		FileSystem::dirRemoveSlashAtEnd( folderPath );
+		folderPath = FileSystem::fileRemoveFileName( folderPath );
+	}
+	FileSystem::dirAddSlashAtEnd( folderPath );
+	return folderPath + fileName;
+}
+
+const std::stack<std::string>& App::getRecentClosedFiles() const {
+	return mRecentClosedFiles;
+}
+
+void App::updateTerminalMenu() {
+	mSettings->updateTerminalMenu();
+}
+
+UIMessageBox* App::newInputMsgBox( const String& title, const String& msg ) {
 	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT, msg );
 	msgBox->setTitle( title );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
 	return msgBox;
+}
+
+static void fsRenameFile( const std::string& fpath, const std::string& newFilePath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	fs::rename( String( fpath ).toWideString(), String( newFilePath ).toWideString() );
+#else
+	fs::rename( fpath, newFilePath );
+#endif
 }
 
 void App::renameFile( const FileInfo& file ) {
@@ -3005,11 +2530,18 @@ void App::renameFile( const FileInfo& file ) {
 		newInputMsgBox( i18n( "rename_file", "Rename file" ) + " \"" + file.getFileName() + "\"",
 						i18n( "enter_new_file_name", "Enter new file name:" ) );
 	msgBox->getTextInput()->setText( file.getFileName() );
-	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
-		auto newFilePath( getNewFilePath( file, msgBox ) );
-		if ( !FileSystem::fileExists( newFilePath ) ) {
-			if ( 0 != std::rename( file.getFilepath().c_str(), newFilePath.c_str() ) )
+	msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
+		auto newFilePath( getNewFilePath( file, msgBox, false ) );
+		if ( !FileSystem::fileExists( newFilePath ) ||
+			 file.getFileName() != msgBox->getTextInput()->getText() ) {
+			try {
+				std::string fpath( file.getFilepath() );
+				if ( file.isDirectory() )
+					FileSystem::dirRemoveSlashAtEnd( fpath );
+				fsRenameFile( fpath, newFilePath );
+			} catch ( const fs::filesystem_error& err ) {
 				errorMsgBox( i18n( "error_renaming_file", "Error renaming file." ) );
+			}
 			msgBox->closeWindow();
 		} else {
 			fileAlreadyExistsMsgBox();
@@ -3017,82 +2549,52 @@ void App::renameFile( const FileInfo& file ) {
 	} );
 }
 
-void App::showProjectTreeMenu() {
-	Vector2f pos( mWindow->getInput()->getMousePosf() );
-	mProjectTreeMenu->nodeToWorldTranslation( pos );
-	UIMenu::findBestMenuPos( pos, mProjectTreeMenu );
-	mProjectTreeMenu->setPixelsPosition( pos );
-	mProjectTreeMenu->show();
-}
-
-void App::createProjectTreeMenu() {
-	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
-		mProjectTreeMenu->close();
-
-	mProjectTreeMenu = UIPopUpMenu::New();
-
-	if ( !mCurrentProject.empty() ) {
-		mProjectTreeMenu->add( i18n( "new_file", "New File..." ), findIcon( "file-add" ) )
-			->setId( "new_file" );
-		mProjectTreeMenu->add( i18n( "new_folder", "New Folder..." ), findIcon( "folder-add" ) )
-			->setId( "new_folder" );
-		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
-			->setId( "open_folder" );
-		mProjectTreeMenu
-			->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
-				   findIcon( "filetype-bash" ) )
-			->setId( "execute_dir_in_terminal" );
-		mProjectTreeMenu->addSeparator();
-	}
-
-	mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ) )->setId( "collapse-all" );
-	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ) )->setId( "expand-all" );
-	mProjectTreeMenu->addSeparator();
-	mProjectTreeMenu
-		->addCheckBox( i18n( "show_hidden_files", "Show hidden files" ),
-					   !mFileSystemModel->getDisplayConfig().ignoreHidden )
-		->setId( "show_hidden_files" );
-
-	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		std::string id( item->getId() );
-		if ( "new_file" == id || "new_file_in_place" == id ) {
-			newFile( FileInfo( mCurrentProject ) );
-		} else if ( "new_folder" == id ) {
-			newFolder( FileInfo( mCurrentProject ) );
-		} else if ( "open_folder" == id ) {
-			Engine::instance()->openURI( mCurrentProject );
-		} else if ( "execute_dir_in_terminal" == id ) {
-			mTerminalManager->createNewTerminal( "", nullptr, mCurrentProject );
-		} else if ( "show_hidden_files" == id ) {
-			toggleHiddenFiles();
-		} else if ( "collapse-all" == id ) {
-			mProjectTreeView->collapseAll();
-		} else if ( "expand-all" == id ) {
-			mProjectTreeView->expandAll();
-		}
-	} );
-
-	showProjectTreeMenu();
-}
-
 void App::toggleHiddenFiles() {
-	mFileSystemModel = FileSystemModel::New(
-		mFileSystemModel->getRootPath(), FileSystemModel::Mode::FilesAndDirectories,
-		{ true, true, !mFileSystemModel->getDisplayConfig().ignoreHidden } );
-	mProjectTreeView->setModel( mFileSystemModel );
+	mFileSystemModel = FileSystemModel::New( mFileSystemModel->getRootPath(),
+											 FileSystemModel::Mode::FilesAndDirectories,
+											 { true,
+											   true,
+											   !mFileSystemModel->getDisplayConfig().ignoreHidden,
+											   {},
+											   [this]( const std::string& filePath ) -> bool {
+												   return isFileVisibleInTreeView( filePath );
+											   } } );
+	if ( mProjectTreeView )
+		mProjectTreeView->setModel( mFileSystemModel );
+	if ( mFileSystemListener )
+		mFileSystemListener->setFileSystemModel( mFileSystemModel );
 }
 
 void App::newFile( const FileInfo& file ) {
 	UIMessageBox* msgBox = newInputMsgBox( i18n( "create_new_file", "Create new file" ),
 										   i18n( "enter_new_file_name", "Enter new file name:" ) );
-	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
 		auto newFilePath( getNewFilePath( file, msgBox ) );
 		if ( !FileSystem::fileExists( newFilePath ) ) {
-			if ( !FileSystem::fileWrite( newFilePath, nullptr, 0 ) )
+			// Needs to create sub folders?
+			if ( msgBox->getTextInput()->getText().find_first_of( "/\\" ) != String::InvalidPos ) {
+				auto folderPath( FileSystem::removeLastFolderFromPath( newFilePath ) );
+				if ( !FileSystem::makeDir( folderPath, true ) ) {
+					errorMsgBox( i18n( "couldnt_create_folder_of_file",
+									   "Couldn't create folder of file." ) );
+					msgBox->closeWindow();
+					return;
+				}
+			}
+
+			if ( !FileSystem::fileWrite( newFilePath, nullptr, 0 ) ) {
 				errorMsgBox( i18n( "couldnt_create_file", "Couldn't create file." ) );
+			} else if ( mProjectTreeView ) {
+				// We wait 100 ms to get the notification from the file system
+				mUISceneNode->runOnMainThread(
+					[&, newFilePath] {
+						if ( !mFileSystemModel || !mProjectTreeView )
+							return;
+						loadFileFromPathOrFocus( newFilePath );
+					},
+					Milliseconds( 100 ) );
+			}
+
 			msgBox->closeWindow();
 		} else {
 			fileAlreadyExistsMsgBox();
@@ -3104,11 +2606,23 @@ void App::newFolder( const FileInfo& file ) {
 	UIMessageBox* msgBox =
 		newInputMsgBox( i18n( "create_new_folder", "Create new folder" ),
 						i18n( "enter_new_folder_name", "Enter new folder name:" ) );
-	msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
 		auto newFolderPath( getNewFilePath( file, msgBox ) );
 		if ( !FileSystem::fileExists( newFolderPath ) ) {
-			if ( !FileSystem::makeDir( newFolderPath ) )
+			if ( !FileSystem::makeDir( newFolderPath ) ) {
 				errorMsgBox( i18n( "couldnt_create_directory", "Couldn't create directory." ) );
+			} else if ( mProjectTreeView ) {
+				// We wait 100 ms to get the notification from the file system
+				mUISceneNode->runOnMainThread(
+					[&, newFolderPath] {
+						if ( !mFileSystemModel || !mProjectTreeView )
+							return;
+						std::string nfp( newFolderPath );
+						FileSystem::filePathRemoveBasePath( mFileSystemModel->getRootPath(), nfp );
+						mProjectTreeView->selectRowWithPath( nfp );
+					},
+					Milliseconds( 100 ) );
+			}
 			msgBox->closeWindow();
 		} else {
 			fileAlreadyExistsMsgBox();
@@ -3116,151 +2630,81 @@ void App::newFolder( const FileInfo& file ) {
 	} );
 }
 
+void App::createAndShowRecentFolderPopUpMenu( Node* recentFolderBut ) {
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	if ( mRecentFolders.empty() )
+		return;
+	for ( const auto& file : mRecentFolders )
+		menu->add( file );
+	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+		loadFolder( txt );
+	} );
+	auto pos = recentFolderBut->getScreenPos();
+	pos.y += recentFolderBut->getPixelsSize().getHeight();
+	UIMenu::findBestMenuPos( pos, menu );
+	menu->setPixelsPosition( pos );
+	menu->show();
+}
+
+void App::createAndShowRecentFilesPopUpMenu( Node* recentFilesBut ) {
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	if ( mRecentFiles.empty() )
+		return;
+	for ( const auto& file : mRecentFiles )
+		menu->add( file );
+	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
+		loadFileFromPath( txt );
+	} );
+	auto pos = recentFilesBut->getScreenPos();
+	pos.y += recentFilesBut->getPixelsSize().getHeight();
+	UIMenu::findBestMenuPos( pos, menu );
+	menu->setPixelsPosition( pos );
+	menu->show();
+}
+
+UISplitter* App::getMainSplitter() const {
+	return mMainSplitter;
+}
+
+StatusTerminalController* App::getStatusTerminalController() const {
+	return mStatusTerminalController.get();
+}
+
+void App::updateOpenRecentFolderBtn() {
+	if ( mProjectViewEmptyCont ) {
+		Node* recentFolderBtn = mProjectViewEmptyCont->find( "open_recent_folder" );
+		if ( recentFolderBtn )
+			recentFolderBtn->setEnabled( !mRecentFolders.empty() );
+	}
+}
+
 void App::consoleToggle() {
 	mConsole->toggle();
 	bool lock = mConsole->isActive();
 	mSplitter->forEachEditor( [lock]( UICodeEditor* editor ) { editor->setLocked( lock ); } );
+	if ( !lock && mSplitter->getCurWidget() )
+		mSplitter->getCurWidget()->setFocus();
 }
 
-void App::createProjectTreeMenu( const FileInfo& file ) {
-	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
-		mProjectTreeMenu->close();
-	mProjectTreeMenu = UIPopUpMenu::New();
-	if ( file.isDirectory() ) {
-		mProjectTreeMenu->add( i18n( "new_file", "New File..." ), findIcon( "file-add" ) )
-			->setId( "new_file" );
-		mProjectTreeMenu->add( i18n( "new_folder", "New Folder..." ), findIcon( "folder-add" ) )
-			->setId( "new_folder" );
-		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
-			->setId( "open_folder" );
-	} else {
-		mProjectTreeMenu->add( i18n( "open_folder", "Open File" ), findIcon( "document-open" ) )
-			->setId( "open_file" );
-		mProjectTreeMenu
-			->add( i18n( "open_containin_folder", "Open Containing Folder..." ),
-				   findIcon( "folder-open" ) )
-			->setId( "open_containing_folder" );
-		mProjectTreeMenu
-			->add( i18n( "new_file_in_directory", "New File in directory..." ),
-				   findIcon( "file-add" ) )
-			->setId( "new_file_in_place" );
-		mProjectTreeMenu
-			->add( i18n( "duplicate_file", "Duplicate File..." ), findIcon( "file-copy" ) )
-			->setId( "duplicate_file" );
-	}
-	mProjectTreeMenu->add( i18n( "rename", "Rename" ), findIcon( "edit" ), "F2" )
-		->setId( "rename" );
-	mProjectTreeMenu->add( i18n( "remove", "Remove..." ), findIcon( "delete-bin" ) )
-		->setId( "remove" );
-
-	if ( file.isDirectory() || file.isExecutable() ) {
-		mProjectTreeMenu->addSeparator();
-
-		if ( file.isDirectory() ) {
-			mProjectTreeMenu
-				->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
-					   findIcon( "filetype-bash" ) )
-				->setId( "execute_dir_in_terminal" );
-		} else if ( file.isExecutable() ) {
-			mProjectTreeMenu
-				->add( i18n( "execute_in_terminal", "Execute in terminal" ),
-					   findIcon( "filetype-bash" ) )
-				->setId( "execute_in_terminal" );
-		}
-	}
-
-	mProjectTreeMenu->addSeparator();
-	mProjectTreeMenu
-		->addCheckBox( i18n( "show_hidden_files", "Show hidden files" ),
-					   !mFileSystemModel->getDisplayConfig().ignoreHidden )
-		->setId( "show_hidden_files" );
-
-	mProjectTreeMenu->addSeparator();
-	mProjectTreeMenu->add( i18n( "collapse_all", "Collapse All" ) )->setId( "collapse-all" );
-	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ) )->setId( "expand-all" );
-
-	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&, file]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		std::string id( item->getId() );
-
-		if ( "new_file" == id || "new_file_in_place" == id ) {
-			newFile( file );
-		} else if ( "new_folder" == id ) {
-			newFolder( file );
-		} else if ( "open_file" == id ) {
-			loadFileFromPath( file.getFilepath() );
-		} else if ( "remove" == id ) {
-			if ( file.isDirectory() && !FileSystem::filesGetInPath( file.getFilepath() ).empty() ) {
-				errorMsgBox(
-					i18n( "cannot_remove_non_empty_dir", "Cannot remove non-empty directory." ) );
-				return;
-			}
-
-			UIMessageBox* msgBox =
-				UIMessageBox::New( UIMessageBox::OK_CANCEL,
-								   String::format( i18n( "confirm_remove_file",
-														 "Do you really want to remove \"%s\"?" )
-													   .toUtf8()
-													   .c_str(),
-												   file.getFileName().c_str() ) );
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
-				if ( !FileSystem::fileRemove( file.getFilepath() ) ) {
-					errorMsgBox( String::format(
-						std::string( i18n( "couldnt_remove", "Couldn't remove" ).toUtf8() + "%s." )
-							.c_str(),
-						file.isDirectory() ? i18n( "directory", "directory" ).toUtf8().c_str()
-										   : i18n( "file", "file" ).toUtf8().c_str() ) );
-				}
-				msgBox->closeWindow();
-			} );
-			msgBox->setTitle( i18n( "remove_file_question", "Remove file?" ) );
-			msgBox->center();
-			msgBox->showWhenReady();
-		} else if ( "duplicate_file" == id ) {
-			UIMessageBox* msgBox = newInputMsgBox(
-				String::format( "%s \"%s\"",
-								i18n( "duplicate_file", "Duplicate file" ).toUtf8().c_str(),
-								file.getFileName().c_str() ),
-				i18n( "enter_duplicate_file_name", "Enter duplicate file name:" ) );
-			msgBox->addEventListener( Event::MsgBoxConfirmClick, [&, file, msgBox]( const Event* ) {
-				auto newFilePath( getNewFilePath( file, msgBox ) );
-				if ( !FileSystem::fileExists( newFilePath ) ) {
-					if ( !FileSystem::fileCopy( file.getFilepath(), newFilePath ) )
-						errorMsgBox( i18n( "error_copying_file", "Error copying file." ) );
-					msgBox->closeWindow();
-				} else {
-					fileAlreadyExistsMsgBox();
-				}
-			} );
-		} else if ( "rename" == id ) {
-			renameFile( file );
-		} else if ( "open_containing_folder" == id ) {
-			Engine::instance()->openURI( file.getDirectoryPath() );
-		} else if ( "open_folder" == id ) {
-			Engine::instance()->openURI( file.getFilepath() );
-		} else if ( "show_hidden_files" == id ) {
-			toggleHiddenFiles();
-		} else if ( "execute_in_terminal" == id ) {
-			UITerminal* term =
-				mTerminalManager->createNewTerminal( "", nullptr, file.getDirectoryPath() );
-			if ( !term )
-				return;
-			term->executeFile( file.getFilepath() );
-		} else if ( "execute_dir_in_terminal" == id ) {
-			mTerminalManager->createNewTerminal( "", nullptr, file.getDirectoryPath() );
-		} else if ( "collapse-all" == id ) {
-			mProjectTreeView->collapseAll();
-		} else if ( "expand-all" == id ) {
-			mProjectTreeView->expandAll();
-		}
-	} );
-
-	showProjectTreeMenu();
-}
-
-void App::initProjectTreeView( const std::string& path ) {
+void App::initProjectTreeView( std::string path, bool openClean ) {
+	mProjectViewEmptyCont = mUISceneNode->find<UILinearLayout>( "project_view_empty" );
+	mProjectViewEmptyCont->find<UIPushButton>( "open_folder" )
+		->on( Event::MouseClick, [this]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
+				runCommand( "open-folder" );
+		} );
+	mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" )
+		->on( Event::MouseClick, [this]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
+				createAndShowRecentFolderPopUpMenu(
+					mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" ) );
+		} );
 	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
 	mProjectTreeView->setColumnsHidden(
 		{ FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
@@ -3274,7 +2718,7 @@ void App::initProjectTreeView( const std::string& path ) {
 	mProjectTreeView->setHeadersVisible( false );
 	mProjectTreeView->setExpandersAsIcons( true );
 	mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
-	mProjectTreeView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+	mProjectTreeView->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		ModelEventType type = modelEvent->getModelEventType();
 		if ( type == ModelEventType::Open || type == ModelEventType::OpenMenu ) {
@@ -3296,25 +2740,33 @@ void App::initProjectTreeView( const std::string& path ) {
 					mProjectTreeView->setFocusOnSelection( false );
 					mProjectTreeView->getSelection().set( modelEvent->getModelIndex() );
 					mProjectTreeView->setFocusOnSelection( focusOnSelection );
-					createProjectTreeMenu( FileInfo( path ) );
+					mSettings->createProjectTreeMenu( FileInfo( path ) );
 				}
 			}
 		}
 	} );
-	mProjectTreeView->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+	mProjectTreeView->on( Event::MouseClick, [this]( const Event* event ) {
 		const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 		if ( mouseEvent->getFlags() & EE_BUTTON_RMASK )
-			createProjectTreeMenu();
+			mSettings->createProjectTreeMenu();
 	} );
-	mProjectTreeView->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+	mProjectTreeView->on( Event::KeyDown, [this]( const Event* event ) {
+		if ( !mFileSystemModel )
+			return 0;
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_F2 ) {
+		if ( keyEvent->getKeyCode() == KEY_F2 || keyEvent->getKeyCode() == KEY_DELETE ) {
 			ModelIndex modelIndex = mProjectTreeView->getSelection().first();
 			if ( !modelIndex.isValid() )
 				return 0;
 			Variant vPath( mProjectTreeView->getModel()->data( modelIndex, ModelRole::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) )
-				renameFile( FileInfo( vPath.asCStr() ) );
+			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+				FileInfo fileInfo( vPath.asCStr() );
+				if ( keyEvent->getKeyCode() == KEY_F2 ) {
+					renameFile( fileInfo );
+				} else {
+					mSettings->deleteFileDialog( fileInfo );
+				}
+			}
 			return 1;
 		}
 
@@ -3323,11 +2775,20 @@ void App::initProjectTreeView( const std::string& path ) {
 				{ keyEvent->getKeyCode(), keyEvent->getMod() } );
 			if ( !cmd.empty() && mSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
 				mSplitter->getCurEditor()->getDocument().execute( cmd );
+				return 1;
 			}
 		}
 
-		return 1;
+		return 0;
 	} );
+
+	bool hasPosition = pathHasPosition( path );
+	TextPosition initialPosition;
+	if ( hasPosition ) {
+		auto pathAndPosition = getPathAndPosition( path );
+		path = pathAndPosition.first;
+		initialPosition = pathAndPosition.second;
+	}
 
 	if ( !path.empty() ) {
 		if ( FileSystem::isDirectory( path ) ) {
@@ -3341,62 +2802,186 @@ void App::initProjectTreeView( const std::string& path ) {
 			std::string folderPath( FileSystem::fileRemoveFileName( rpath ) );
 
 			if ( FileSystem::isDirectory( folderPath ) ) {
+				loadFileSystemMatcher( folderPath );
+
 				mFileSystemModel = FileSystemModel::New(
-					folderPath, FileSystemModel::Mode::FilesAndDirectories, { true, true, true } );
+					folderPath, FileSystemModel::Mode::FilesAndDirectories,
+					{ true, true, true, {}, [this]( const std::string& filePath ) -> bool {
+						 return isFileVisibleInTreeView( filePath );
+					 } } );
 
 				mProjectTreeView->setModel( mFileSystemModel );
+				mProjectViewEmptyCont->setVisible( false );
 
 				if ( mFileSystemListener )
 					mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-				if ( FileSystem::fileExists( rpath ) ) {
-					loadFileFromPath( rpath, false );
-				} else if ( FileSystem::fileCanWrite( folderPath ) ) {
-					loadFileFromPath( path, false );
+				std::function<void( UICodeEditor * codeEditor, const std::string& path )>
+					forcePosition;
+				if ( initialPosition.isValid() ) {
+					forcePosition = [this, initialPosition]( UICodeEditor* editor, const auto& ) {
+						editor->runOnMainThread( [this, initialPosition, editor] {
+							editor->goToLine( initialPosition );
+							mSplitter->addEditorPositionToNavigationHistory( editor );
+						} );
+					};
 				}
+
+				if ( FileSystem::fileExists( rpath ) ) {
+					loadFileFromPath( rpath, false, nullptr, forcePosition );
+				} else if ( FileSystem::fileCanWrite( folderPath ) ) {
+					loadFileFromPath( path, false, nullptr, forcePosition );
+				}
+
+				mSettings->updateProjectSettingsMenu();
 			}
 		}
-	} else if ( !mIsBundledApp ) {
-		loadFolder( "." );
+	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() && !openClean ) {
+		loadFolder( mRecentFolders[0] );
+	} else {
+		updateOpenRecentFolderBtn();
+
+		UIWelcomeScreen::createWelcomeScreen( this );
+		mStatusBar->setVisible( false );
 	}
 
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
 }
 
 void App::initImageView() {
-	mImageLayout->on( Event::MouseClick, [&]( const Event* ) {
+	mImageLayout->on( Event::MouseClick, [this]( const Event* ) {
 		mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
 		mImageLayout->setEnabled( false )->setVisible( false );
 	} );
+	mImageLayout->on( Event::KeyDown, [this]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE ) {
+			mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
+			mImageLayout->setEnabled( false )->setVisible( false );
+			if ( mSplitter->getCurWidget() )
+				mSplitter->getCurWidget()->setFocus();
+		}
+	} );
+}
+
+bool App::isFileVisibleInTreeView( const std::string& filePath ) {
+	if ( !mFileSystemMatcher || !mFileSystemMatcher->matcherReady() )
+		return true;
+	auto fpath( filePath );
+	FileSystem::filePathRemoveBasePath( mCurrentProject, fpath );
+	FileSystem::dirRemoveSlashAtEnd( fpath );
+	return !mFileSystemMatcher->match( fpath );
+}
+
+void App::treeViewConfigureIgnoreFiles() {
+	if ( !mFileSystemModel || mFileSystemModel->getRootPath().empty() ) {
+		errorMsgBox( i18n( "open_first_a_folder", "You must first open a folder." ) );
+		return;
+	}
+
+	std::string ignoreFilePath;
+
+	if ( mFileSystemMatcher && !mFileSystemMatcher->getIgnoreFilePath().empty() ) {
+		ignoreFilePath = mFileSystemMatcher->getIgnoreFilePath();
+	} else {
+		ignoreFilePath = mFileSystemModel->getRootPath();
+		FileSystem::dirAddSlashAtEnd( ignoreFilePath );
+		ignoreFilePath += ".ecode/.fstreeviewignore";
+	}
+
+	if ( !FileSystem::fileExists( ignoreFilePath ) ) {
+		bool dirExists = true;
+		std::string dirPath( FileSystem::fileRemoveFileName( ignoreFilePath ) );
+		if ( !FileSystem::fileExists( dirPath ) )
+			dirExists = FileSystem::makeDir( dirPath );
+
+		if ( !dirExists ) {
+			errorMsgBox( i18n( "couldnt_create_ecode_dir",
+							   "Couldn't create .ecode directory in current folder." ) );
+			return;
+		}
+
+		if ( !FileSystem::fileWrite( ignoreFilePath, "\n" ) ) {
+			errorMsgBox( i18n( "couldnt_write_file", "Couldn't write file on disk." ) );
+			return;
+		}
+
+		loadFileSystemMatcher( mFileSystemModel->getRootPath() );
+	}
+
+	loadFileFromPath( ignoreFilePath );
+}
+
+void App::loadFileSystemMatcher( const std::string& folderPath ) {
+	if ( folderPath.empty() )
+		return;
+	mFileSystemMatcher =
+		std::make_shared<GitIgnoreMatcher>( folderPath, ".ecode/.fstreeviewignore" );
+}
+
+void App::checkLanguagesHealth() {
+	FeaturesHealth::displayHealth( mPluginManager.get(), mUISceneNode );
+}
+
+void App::cleanUpRecentFolders() {
+	for ( auto& folder : mRecentFolders ) {
+		FileSystem::dirAddSlashAtEnd( folder );
+	}
+
+	std::vector<std::string> recentFolders;
+
+	for ( const auto& folder : mRecentFolders ) {
+		if ( std::none_of( recentFolders.begin(), recentFolders.end(),
+						   [folder]( const auto& other ) { return other == folder; } ) )
+			recentFolders.emplace_back( folder );
+	}
+
+	if ( mRecentFolders.size() != recentFolders.size() )
+		mRecentFolders = recentFolders;
 }
 
 void App::loadFolder( const std::string& path ) {
-	if ( !mCurrentProject.empty() )
+	Clock dirTreeClock;
+	if ( !mCurrentProject.empty() ) {
 		closeEditors();
+	} else {
+		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
+		mStatusBar->setVisible( mConfig.ui.showStatusBar );
+	}
+
+	mProjectViewEmptyCont->setVisible( false );
 
 	std::string rpath( FileSystem::getRealPath( path ) );
+	FileSystem::dirAddSlashAtEnd( rpath );
+
 	mCurrentProject = rpath;
+	mPluginManager->setWorkspaceFolder( rpath );
+
 	loadDirTree( rpath );
 
-	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, mThreadPool, this );
+	Clock projClock;
+	mProjectBuildManager =
+		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
+	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this );
+	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
-	mFileSystemModel = FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
-											 { true, true, true } );
+	loadFileSystemMatcher( rpath );
 
-	mProjectTreeView->setModel( mFileSystemModel );
+	mFileSystemModel = FileSystemModel::New(
+		rpath, FileSystemModel::Mode::FilesAndDirectories,
+		{ true, true, true, {}, [this]( const std::string& filePath ) -> bool {
+			 return isFileVisibleInTreeView( filePath );
+		 } } );
+
+	if ( mProjectTreeView )
+		mProjectTreeView->setModel( mFileSystemModel );
 
 	if ( mFileSystemListener )
 		mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-	auto found = std::find( mRecentFolders.begin(), mRecentFolders.end(), rpath );
-	if ( found != mRecentFolders.end() )
-		mRecentFolders.erase( found );
-	mRecentFolders.insert( mRecentFolders.begin(), rpath );
-	if ( mRecentFolders.size() > 10 )
-		mRecentFolders.resize( 10 );
-
+	insertRecentFolder( rpath );
+	cleanUpRecentFolders();
 	updateRecentFolders();
-	updateProjectSettingsMenu();
+	mSettings->updateProjectSettingsMenu();
 
 	if ( mSplitter->getCurWidget() )
 		mSplitter->getCurWidget()->setFocus();
@@ -3406,7 +2991,12 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
 	if ( FileSystem::isRelativePath( fontPath ) )
 		fontPath = mResPath + fontPath;
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	if ( fontPath.empty() ||
+		 ( !FileSystem::fileExists( fontPath ) && !PackManager::instance()->exists( fontPath ) ) ) {
+#else
 	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) ) {
+#endif
 		fontPath = fallback;
 		if ( !fontPath.empty() && FileSystem::isRelativePath( fontPath ) )
 			fontPath = mResPath + fontPath;
@@ -3417,8 +3007,10 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 }
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-				const std::string& colorScheme, bool terminal, bool frameBuffer,
-				bool benchmarkMode ) {
+				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
+				const std::string& css, bool health, const std::string& healthLang,
+				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
+				bool stdOutLogs, bool disableFileLogs, bool openClean ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mDisplayDPI = currentDisplay->getDPI();
@@ -3426,25 +3018,22 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mBenchmarkMode = benchmarkMode;
 
 	mResPath = Sys::getProcessPath();
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
-	if ( String::contains( mResPath, "ecode.app" ) ) {
-		mResPath = FileSystem::getCurrentWorkingDirectory();
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( String::contains( mResPath, ".mount_" ) )
 		FileSystem::dirAddSlashAtEnd( mResPath );
-		mIsBundledApp = true;
-	}
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
-	if ( String::contains( mResPath, ".mount_" ) ) {
-		mResPath = FileSystem::getCurrentWorkingDirectory();
-		FileSystem::dirAddSlashAtEnd( mResPath );
-		mIsBundledApp = true;
-	}
 #elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	mResPath += "ecode/";
 #endif
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
-	loadConfig( logLevel );
+	loadConfig( logLevel, currentDisplay->getSize(), health, stdOutLogs, disableFileLogs );
+
+	if ( health ) {
+		Sys::windowAttachConsole();
+		FeaturesHealth::doHealth( mPluginManager.get(), healthLang, healthFormat );
+		return;
+	}
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
 															  displayManager->getDisplayCount()
@@ -3452,11 +3041,20 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 														  : 0 );
 	mDisplayDPI = currentDisplay->getDPI();
 
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	mConfig.windowState.pixelDensity =
+		pidelDensity > 0
+			? pidelDensity
+			: ( mConfig.windowState.pixelDensity > 0	? mConfig.windowState.pixelDensity
+				: currentDisplay->getPixelDensity() > 2 ? currentDisplay->getPixelDensity() / 2
+														: currentDisplay->getPixelDensity() );
+#else
 	mConfig.windowState.pixelDensity =
 		pidelDensity > 0
 			? pidelDensity
 			: ( mConfig.windowState.pixelDensity > 0 ? mConfig.windowState.pixelDensity
 													 : currentDisplay->getPixelDensity() );
+#endif
 
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -3474,36 +3072,71 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			winSettings.Icon = mResPath + winSettings.Icon;
 	}
 
-	mConfig.context = engine->createContextSettings( &mConfig.ini, "window" );
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", true );
+#else
+	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", false );
+#endif
+
 	mConfig.context.SharedGLContext = true;
 
 	mWindow = engine->createWindow( winSettings, mConfig.context );
-	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionName().c_str(),
+	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName().c_str(),
 			   ecode::Version::getCodename().c_str() );
 
 	if ( mWindow->isOpen() ) {
+		// Only verify GPU driver availability on Windows.
+		// macOS will have at least a fallback renderer
+		// Linux will have at least Mesa drivers with LLVM Pipe
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( !GLi->shadersSupported() ) {
+			mWindow->showMessageBox(
+				EE::Window::Window::MessageBoxType::Error, "ecode",
+				"ecode detected that there are no GPU drivers available or that the GPU does not "
+				"support shaders.\nThis will prevent ecode to properly function.\nPlease check "
+				"that your GPU drivers are installed." );
+			return;
+		}
+#endif
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 		macOS_CreateApplicationMenus();
 #endif
 
 		Log::info( "Window creation took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
+		mWindow->setFrameRateLimit( mConfig.context.FrameRateLimit );
+
 		if ( mConfig.windowState.position != Vector2i( -1, -1 ) &&
 			 mConfig.windowState.displayIndex < displayManager->getDisplayCount() ) {
-			mWindow->setPosition( mConfig.windowState.position.x, mConfig.windowState.position.y );
+			// 1 px offset to avoid a bug in SDL2 2.28 when maximazing windows
+			mWindow->setPosition( mConfig.windowState.position.x +
+									  ( mConfig.windowState.maximized ? -1 : 0 ),
+								  mConfig.windowState.position.y );
+		}
+
+		if ( mWindow->isWindowed() && mWindow->getSize() >= currentDisplay->getSize().asInt() ) {
+			mWindow->setPosition( mWindow->getBorderSize().getWidth(),
+								  mWindow->getBorderSize().getHeight() );
 		}
 
 		loadKeybindings();
 
 		PixelDensity::setPixelDensity( mConfig.windowState.pixelDensity );
 
-		if ( mConfig.windowState.maximized )
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		if ( mConfig.windowState.maximized ) {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+			mThreadPool->run( [this] { mWindow->maximize(); } );
+#else
 			mWindow->maximize();
+#endif
+		}
+#endif
 
 		mWindow->setCloseRequestCallback(
-			[&]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
+			[this]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
 
-		mWindow->getInput()->pushCallback( [&]( InputEvent* event ) {
+		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
 			if ( event->Type == InputEvent::FileDropped ) {
 				onFileDropped( event->file.file );
 			} else if ( event->Type == InputEvent::TextDropped ) {
@@ -3515,6 +3148,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			eemax( mWindow->getScale(), mConfig.windowState.pixelDensity ) );
 
 		mUISceneNode = UISceneNode::New();
+		mUISceneNode->setThreadPool( mThreadPool );
 		mUIColorScheme = mConfig.ui.colorScheme;
 		if ( !colorScheme.empty() ) {
 			mUIColorScheme =
@@ -3525,7 +3159,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
 		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
 		if ( mFontMono ) {
-			mFontMono->setEnableFallbackFont( false );
+			mFontMono->setEnableDynamicMonospace( true );
 			mFontMono->setBoldAdvanceSameAsRegular( true );
 		}
 
@@ -3537,8 +3171,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		FontTrueType* iconFont = loadFont( "icon", "fonts/remixicon.ttf" );
 		FontTrueType* mimeIconFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
+		FontTrueType* codIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
 
-		if ( !mFont || !mFontMono || !iconFont || !mimeIconFont ) {
+		if ( !mFont || !mFontMono || !iconFont || !mimeIconFont || !codIconFont ) {
 			printf( "Font not found!" );
 			Log::error( "Font not found!" );
 			return;
@@ -3553,374 +3188,48 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		SceneManager::instance()->add( mUISceneNode );
 
-		UITheme* theme =
-			UITheme::load( "uitheme", "uitheme", "", mFont, mResPath + "ui/breeze.css" );
-		theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
-		mUISceneNode->setStyleSheet( theme->getStyleSheet() );
-		mUISceneNode
-			->getUIThemeManager()
-			//->setDefaultEffectsEnabled( true )
-			->setDefaultTheme( theme )
-			->setDefaultFont( mFont )
-			->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) )
-			->add( theme );
+		setTheme( getThemePath() );
 
-		mUISceneNode->getRoot()->addClass( "appbackground" );
+		if ( !css.empty() && FileSystem::fileExists( css ) ) {
+			CSS::StyleSheetParser parser;
+			if ( parser.loadFromFile( css ) )
+				mUISceneNode->combineStyleSheet( parser.getStyleSheet(), false );
+		}
 
-		const std::string baseUI = R"html(
-		<style>
-		TextInput#search_find,
-		TextInput#search_replace,
-		TextInput#locate_find,
-		TextInput#global_search_find,
-		TextInput.small_input,
-		.search_str {
-			padding-top: 0;
-			padding-bottom: 0;
-			font-family: monospace;
+		std::string panelUI( String::format( R"css(
+		#project_view > treeview::row > treeview::cell > treeview::cell::text {
+			font-size: %s;
 		}
-		#search_bar,
-		#global_search_bar,
-		#locate_bar {
-			padding-left: 4dp;
-			padding-right: 4dp;
-			padding-bottom: 3dp;
-			margin-bottom: 2dp;
-			margin-top: 2dp;
-		}
-		.close_button {
-			width: 12dp;
-			height: 12dp;
-			border-radius: 6dp;
-			background-color: var(--icon-back-hover);
-			foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 6dp 6dp"), poly(line, var(--icon-line-hover), "6dp 0dp, 0dp 6dp");
-			foreground-position: 3dp 3dp, 3dp 3dp;
-			transition: all 0.15s;
-		}
-		.close_button:hover {
-			background-color: var(--icon-back-alert);
-		}
-		#settings {
-			color: var(--floating-icon);
-			font-family: icon;
-			font-size: 16dp;
-			margin-top: 6dp;
-			margin-right: 22dp;
-			transition: all 0.15s;
-		}
-		#settings:hover {
-			color: var(--primary);
-		}
-		#doc_info {
-			background-color: var(--back);
-			margin-bottom: 22dp;
-			margin-right: 22dp;
-			border-radius: 8dp;
-			padding: 6dp;
-			opacity: 0.8;
-		}
-		#doc_info > TextView {
-			color: var(--font);
-		}
-		#search_find.error,
-		#search_replace.error {
-			border-color: #ff4040;
-		}
-		TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2) {
-			color: var(--font-hint);
-		}
-		TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2) {
-			color: var(--font);
-		}
-		.search_tree treeview::cell {
-			font-family: monospace;
-		}
-		#global_search_history {
-			padding-top: 0dp;
-			padding-bottom: 0dp;
-		}
-		.doc_alert {
-			padding: 16dp;
-			border-width: 2dp;
-			border-radius: 4dp;
-			border-color: var(--primary);
-			background-color: var(--back);
-			margin-right: 24dp;
-			margin-top: 24dp;
-			cursor: arrow;
-		}
-		#image_container {
-			background-color: #00000066;
-		}
-		#image_close {
-			color: var(--floating-icon);
-			font-family: icon;
-			font-size: 22dp;
-			margin-top: 32dp;
-			margin-right: 22dp;
-		}
-		#global_search_layout {
-			background-color: var(--back);
-		}
-		#global_search_layout > .status_box,
-		#global_search_layout > .replace_box {
-			padding: 4dp;
-		}
-		.notification {
-			background-color: var(--button-back);
-			border-color: var(--button-border);
-			border-width: 1dp;
-			border-radius: 8dp;
-			color: var(--font);
-			padding: 4dp;
-			min-height: 48dp;
-			margin-bottom: 8dp;
-			opacity: 0.8;
-		}
-		</style>
-		<RelativeLayout id="main_layout" layout_width="match_parent" layout_height="match_parent">
-		<Splitter id="project_splitter" layout_width="match_parent" layout_height="match_parent">
-			<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
-				<TreeView id="project_view" />
-				<Tab text='@string("project", "Project")' owns="project_view" text-as-fallback="true" icon="icon(folder-open, 12dp)" />
-			</TabWidget>
-			<vbox>
-				<RelativeLayout layout_width="match_parent" layout_height="0" layout_weight="1">
-					<vbox id="code_container" layout_width="match_parent" layout_height="match_parent"></vbox>
-					<hbox id="doc_info" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="bottom|right" enabled="false">
-						<TextView id="doc_info_text" layout_width="wrap_content" layout_height="wrap_content" />
-					</hbox>
-					<RelativeLayout id="image_container" layout_width="match_parent" layout_height="match_parent" visible="false" enabled="false">
-						<Image layout_width="match_parent" layout_height="match_parent" scaleType="fit_inside" gravity="center" enabled="false" layout_gravity="center" />
-						<TextView id="image_close" layout_width="wrap_content" layout_height="wrap_content" text="&#xeb99;" layout_gravity="top|right" enabled="false" />
-						<Loader id="image_loader" layout_width="64dp" layout_height="64dp" outline-thickness="6dp" layout_gravity="center" visible="false" />
-					</RelativeLayout>
-					<vbox id="notification_center" layout_width="256dp" layout_height="wrap_content"
-						  layout_gravity="right|bottom" margin-right="22dp" margin-bottom="56dp">
-					</vbox>
-				</RelativeLayout>
-				<searchbar id="search_bar" layout_width="match_parent" layout_height="wrap_content">
-					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
-						<TextView layout_width="wrap_content" layout_height="18dp" text='@string("find_text", "Find:")' margin-bottom="2dp" />
-						<TextView layout_width="wrap_content" layout_height="18dp" text='@string("replace_with_text", "Replace with:")' />
-					</vbox>
-					<vbox layout_width="0" layout_weight="1" layout_height="wrap_content" margin-right="4dp">
-						<TextInput id="search_find" layout_width="match_parent" layout_height="18dp" padding="0" margin-bottom="2dp" />
-						<TextInput id="search_replace" layout_width="match_parent" layout_height="18dp" padding="0" />
-					</vbox>
-					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
-						<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text='@string(case_sensitive, "Case sensitive")' selected="false" />
-						<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text='@string(lua_pattern, "Lua Pattern")' selected="false" />
-					</vbox>
-					<vbox layout_width="wrap_content" layout_height="wrap_content" margin-right="4dp">
-						<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text='@string(match_whole_word, "Match Whole Word")' selected="false" />
-						<CheckBox id="escape_sequence" layout_width="wrap_content" layout_height="wrap_content" text='@string(use_escape_sequences, "Use escape sequences")' selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
-					</vbox>
-					<vbox layout_width="wrap_content" layout_height="wrap_content">
-						<hbox layout_width="wrap_content" layout_height="wrap_content" margin-bottom="2dp">
-							<PushButton id="find_prev" layout_width="wrap_content" layout_height="18dp" text='@string(previous, "Previous")' margin-right="4dp" />
-							<PushButton id="find_next" layout_width="wrap_content" layout_height="18dp" text='@string(next, "Next")' margin-right="4dp" />
-							<RelativeLayout layout_width="0" layout_weight="1" layout_height="18dp">
-								<Widget id="searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right" margin-right="2dp" />
-							</RelativeLayout>
-						</hbox>
-						<hbox layout_width="wrap_content" layout_height="wrap_content">
-							<PushButton id="replace" layout_width="wrap_content" layout_height="18dp" text='@string(replace, "Replace")' margin-right="4dp" />
-							<PushButton id="replace_find" layout_width="wrap_content" layout_height="18dp" text='@string(replace_and_find, "Replace & Find")' margin-right="4dp" />
-							<PushButton id="replace_all" layout_width="wrap_content" layout_height="18dp" text='@string(replace_all, "Replace All")' />
-						</hbox>
-					</vbox>
-				</searchbar>
-				<locatebar id="locate_bar" layout_width="match_parent" layout_height="wrap_content" visible="false">
-					<TextInput id="locate_find" layout_width="0" layout_weight="1" layout_height="18dp" padding="0" margin-bottom="2dp" margin-right="4dp" hint="Search files by name ( append `l ` to go to line )" />
-					<Widget id="locatebar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="center_vertical|right"/>
-				</locatebar>
-				<globalsearchbar id="global_search_bar" layout_width="match_parent" layout_height="wrap_content">
-					<hbox layout_width="match_parent" layout_height="wrap_content">
-						<TextView layout_width="wrap_content" layout_height="wrap_content" text='@string(search_for, "Search for:")' margin-right="4dp" />
-						<vbox layout_width="0" layout_weight="1" layout_height="wrap_content">
-							<TextInput id="global_search_find" layout_width="match_parent" layout_height="wrap_content" layout_height="18dp" padding="0" margin-bottom="2dp" />
-							<hbox layout_width="match_parent" layout_height="wrap_content" margin-bottom="4dp">
-								<CheckBox id="case_sensitive" layout_width="wrap_content" layout_height="wrap_content" text='@string(case_sensitive, "Case sensitive")' selected="true" />
-								<CheckBox id="whole_word" layout_width="wrap_content" layout_height="wrap_content" text='@string(match_whole_word, "Match Whole Word")' selected="false" margin-left="8dp" />
-								<CheckBox id="lua_pattern" layout_width="wrap_content" layout_height="wrap_content" text='@string(lua_pattern, "Lua Pattern")' selected="false" margin-left="8dp" />
-								<CheckBox id="escape_sequence" layout_width="wrap_content" layout_height="wrap_content" text='@string(use_escape_sequences, "Use escape sequences")' margin-left="8dp" selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
-							</hbox>
-							<hbox layout_width="match_parent" layout_height="wrap_content">
-								<TextView layout_width="wrap_content" layout_height="wrap_content" text='@string(history, "History:")' margin-right="4dp" layout_height="18dp" />
-								<DropDownList id="global_search_history" layout_width="0" layout_height="18dp" layout_weight="1" margin-right="4dp" />
-								<PushButton id="global_search_clear_history" layout_width="wrap_content" layout_height="18dp" text='@string(clear_history, "Clear History")' margin-right="4dp" />
-								<PushButton id="global_search" layout_width="wrap_content" layout_height="18dp" text='@string(search, "Search")' margin-right="4dp" />
-								<PushButton id="global_search_replace" layout_width="wrap_content" layout_height="18dp" text='@string(search_and_replace, "Search & Replace")' />
-							</hbox>
-						</vbox>
-						<Widget id="global_searchbar_close" class="close_button" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" margin-left="4dp" margin-top="4dp" />
-					</hbox>
-				</globalsearchbar>
-			</vbox>
-		</Splitter>
-		<TextView id="settings" layout_width="wrap_content" layout_height="wrap_content" text="&#xf0e9;" layout_gravity="top|right" />
-		</RelativeLayout>
-		)html";
+		)css",
+											 mConfig.ui.panelFontSize.toString().c_str() ) );
+		mUISceneNode->combineStyleSheet( panelUI, false );
 
-		UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
+		const auto baseUI = (
+#include "applayout.xml.hpp"
+		);
+
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		std::unordered_map<std::string, Uint32> icons = {
-			{ "document-new", 0xecc3 },
-			{ "document-open", 0xed70 },
-			{ "document-save", 0xf0b3 },
-			{ "document-save-as", 0xf0b3 },
-			{ "document-close", 0xeb99 },
-			{ "quit", 0xeb97 },
-			{ "undo", 0xea58 },
-			{ "redo", 0xea5a },
-			{ "cut", 0xf0c1 },
-			{ "copy", 0xecd5 },
-			{ "paste", 0xeb91 },
-			{ "edit", 0xec86 },
-			{ "split-horizontal", 0xf17a },
-			{ "split-vertical", 0xf17b },
-			{ "find-replace", 0xed2b },
-			//			{ "folder", 0xed54 },
-			//			{ "folder-open", 0xed70 },
-			{ "folder-add", 0xed5a },
-			//			{ "file", 0xecc3 },
-			{ "file-add", 0xecc9 },
-			{ "file-copy", 0xecd3 },
-			{ "file-code", 0xecd1 },
-			{ "file-edit", 0xecdb },
-			{ "font-size", 0xed8d },
-			{ "delete-bin", 0xec1e },
-			{ "delete-text", 0xec1e },
-			{ "zoom-in", 0xf2db },
-			{ "zoom-out", 0xf2dd },
-			{ "zoom-reset", 0xeb47 },
-			{ "fullscreen", 0xed9c },
-			{ "keybindings", 0xee75 },
-			//			{ "tree-expanded", 0xea50 },
-			//			{ "tree-contracted", 0xea54 },
-			{ "search", 0xf0d1 },
-			{ "go-up", 0xea78 },
-			{ "ok", 0xeb7a },
-			{ "cancel", 0xeb98 },
-			{ "color-picker", 0xf13d },
-			{ "pixel-density", 0xed8c },
-			{ "go-to-line", 0xf1f8 },
-			{ "table-view", 0xf1de },
-			{ "list-view", 0xecf1 },
-			{ "menu-unfold", 0xef40 },
-			{ "menu-fold", 0xef3d },
-			{ "download-cloud", 0xec58 },
-			{ "layout-left", 0xee94 },
-			{ "layout-right", 0xee9b },
-			{ "color-scheme", 0xebd4 },
-			{ "global-settings", 0xedcf },
-			{ "folder-user", 0xed84 },
-			{ "help", 0xf045 },
-			{ "terminal", 0xf1f6 },
-			{ "earth", 0xec7a },
-			{ "arrow-down", 0xea4c },
-			{ "arrow-up", 0xea76 },
-			{ "arrow-down-s", 0xea4e },
-			{ "arrow-right-s", 0xea6e },
-			{ "match-case", 0xed8d },
-			{ "palette", 0xefc5 },
-			{ "file-code", 0xecd1 },
-			{ "cursor-pointer", 0xec09 },
-		};
-		for ( const auto& icon : icons )
-			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
+		IconManager::init( mUISceneNode, iconFont, mimeIconFont, codIconFont );
 
-		if ( mimeIconFont && mimeIconFont->loaded() ) {
-			std::unordered_map<std::string, Uint32> mimeIcons =
-
-				{ { "filetype-lua", 61826 },
-				  { "filetype-c", 61718 },
-				  { "filetype-h", 61792 },
-				  { "filetype-cs", 61720 },
-				  { "filetype-cpp", 61719 },
-				  { "filetype-hpp", 61719 },
-				  { "filetype-css", 61743 },
-				  { "filetype-conf", 61781 },
-				  { "filetype-cfg", 61781 },
-				  { "filetype-desktop", 61781 },
-				  { "filetype-service", 61781 },
-				  { "filetype-env", 61781 },
-				  { "filetype-properties", 61781 },
-				  { "filetype-ini", 61781 },
-				  { "filetype-dart", 61744 },
-				  { "filetype-diff", 61752 },
-				  { "filetype-zip", 61775 },
-				  { "filetype-go", 61789 },
-				  { "filetype-htm", 61799 },
-				  { "filetype-html", 61799 },
-				  { "filetype-java", 61809 },
-				  { "filetype-js", 61810 },
-				  { "filetype-json", 61811 },
-				  { "filetype-kt", 61814 },
-				  { "filetype-md", 61829 },
-				  { "filetype-perl", 61853 },
-				  { "filetype-php", 61855 },
-				  { "filetype-py", 61863 },
-				  { "filetype-pyc", 61863 },
-				  { "filetype-pyd", 61863 },
-				  { "filetype-swift", 61906 },
-				  { "filetype-rb", 61880 },
-				  { "filetype-rs", 61881 },
-				  { "filetype-ts", 61923 },
-				  { "filetype-yaml", 61945 },
-				  { "filetype-yml", 61945 },
-				  { "filetype-jpg", 61801 },
-				  { "filetype-png", 61801 },
-				  { "filetype-jpeg", 61801 },
-				  { "filetype-bmp", 61801 },
-				  { "filetype-tga", 61801 },
-				  { "filetype-sh", 61911 },
-				  { "filetype-bash", 61911 },
-				  { "filetype-fish", 61911 },
-				  { "filetype-scala", 61882 },
-				  { "filetype-r", 61866 },
-				  { "filetype-rake", 61880 },
-				  { "filetype-rss", 61879 },
-				  { "filetype-sql", 61746 },
-				  { "filetype-elm", 61763 },
-				  { "filetype-ex", 61971 },
-				  { "filetype-exs", 61971 },
-				  { "filetype-awk", 61971 },
-				  { "filetype-nim", 61734 },
-				  { "filetype-xml", 61769 },
-				  { "filetype-dockerfile", 61758 },
-				  { "filetype-ruby", 61880 },
-				  { "filetype-scala", 61882 },
-				  { "filetype-perl", 61853 },
-				  { "file", 61766 },
-				  { "file-symlink", 61774 },
-				  { "folder", 0xF23B },
-				  { "folder-open", 0xF23C },
-				  { "tree-expanded", 0xF11E },
-				  { "tree-contracted", 0xF120 },
-				  { "github", 0xF184 },
-				  { "package", 61846 },
-				  { "tab-close", 61944 } };
-
-			for ( const auto& icon : mimeIcons )
-				iconTheme->add( UIGlyphIcon::New( icon.first, mimeIconFont, icon.second ) );
-		}
-
-		mUISceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
+		Clock defClock;
+		SyntaxDefinitionManager::createSingleton();
+		Log::info( "Syntax definitions loaded in %.2f ms.",
+				   defClock.getElapsedTimeAndReset().asMilliseconds() );
 
 		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );
 		UIWidgetCreator::registerWidget( "globalsearchbar", UIGlobalSearchBar::New );
+		UIWidgetCreator::registerWidget( "mainlayout", UIMainLayout::New );
+		UIWidgetCreator::registerWidget( "statusbar", UIStatusBar::New );
+		UIWidgetCreator::registerWidget( "rellayce", UIRelativeLayoutCommandExecuter::New );
 		mUISceneNode->loadLayoutFromString( baseUI );
 		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );
 		mUISceneNode->bind( "image_container", mImageLayout );
 		mUISceneNode->bind( "doc_info", mDocInfo );
-		mUISceneNode->bind( "doc_info_text", mDocInfoText );
 		mUISceneNode->bind( "panel", mSidePanel );
 		mUISceneNode->bind( "project_splitter", mProjectSplitter );
-		mUISceneNode->addEventListener( Event::KeyDown, [&]( const Event* event ) {
+		mUISceneNode->on( Event::KeyDown, [this]( const Event* event ) {
 			trySendUnlockedCmd( *static_cast<const KeyEvent*>( event ) );
 		} );
 		if ( logLevel == LogLevel::Debug )
@@ -3939,28 +3248,45 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );
 		if ( FileSystem::isDirectory( mColorSchemesPath ) ) {
 			auto colorSchemesFiles = FileSystem::filesGetInPath( mColorSchemesPath );
-			for ( auto& file : colorSchemesFiles ) {
-				auto colorSchemesInFile = SyntaxColorScheme::loadFromFile( file );
+			for ( const auto& curFile : colorSchemesFiles ) {
+				auto colorSchemesInFile =
+					SyntaxColorScheme::loadFromFile( mColorSchemesPath + curFile );
 				for ( auto& coloScheme : colorSchemesInFile )
 					colorSchemes.emplace_back( coloScheme );
 			}
+		} else {
+			FileSystem::makeDir( mColorSchemesPath, true );
 		}
+
+		Clock customLangsClock;
+		SyntaxDefinitionManager::instance()->loadFromFolder( mLanguagesPath );
+		Log::info( "SyntaxDefinitionManager loaded custom languages in: %.2f ms",
+				   customLangsClock.getElapsedTime().asMilliseconds() );
 
 		mTerminalManager->loadTerminalColorSchemes();
 
-		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, colorSchemes, mInitColorScheme );
+		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, colorSchemes,
+											   mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
+		mPluginManager->setSplitter( mSplitter );
 
 		Log::info( "Base UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
+
+		mMainSplitter = mUISceneNode->find<UISplitter>( "main_splitter" );
+		mMainSplitter->setSplitPartition(
+			StyleSheetLength( mConfig.windowState.statusBarPartition ) );
+		mStatusBar = mUISceneNode->find<UIStatusBar>( "status_bar" );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();
 		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel );
+		mFileWatcher->addWatch( mPluginsPath, mFileSystemListener );
 		mFileWatcher->watch();
+		mPluginManager->setFileSystemListener( mFileSystemListener );
 #endif
 
 		mNotificationCenter = std::make_unique<NotificationCenter>(
-			mUISceneNode->find<UILayout>( "notification_center" ) );
+			mUISceneNode->find<UILayout>( "notification_center" ), mPluginManager.get() );
 
 		mDocSearchController = std::make_unique<DocSearchController>( mSplitter, this );
 		mDocSearchController->initSearchBar( mUISceneNode->find<UISearchBar>( "search_bar" ),
@@ -3972,20 +3298,34 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			mUISceneNode->find<UIGlobalSearchBar>( "global_search_bar" ),
 			mConfig.globalSearchBarConfig, mGlobalSearchKeybindings );
 
-		mFileLocator = std::make_unique<FileLocator>( mSplitter, mUISceneNode, this );
-		mFileLocator->initLocateBar( mUISceneNode->find<UILocateBar>( "locate_bar" ),
-									 mUISceneNode->find<UITextInput>( "locate_find" ) );
+		mUniversalLocator = std::make_unique<UniversalLocator>( mSplitter, mUISceneNode, this );
+		mUniversalLocator->initLocateBar( mUISceneNode->find<UILocateBar>( "locate_bar" ),
+										  mUISceneNode->find<UITextInput>( "locate_find" ) );
+
+		mStatusTerminalController =
+			std::make_unique<StatusTerminalController>( mMainSplitter, mUISceneNode, this );
+
+		mStatusBuildOutputController =
+			std::make_unique<StatusBuildOutputController>( mMainSplitter, mUISceneNode, this );
 
 		initImageView();
 
-		createSettingsMenu();
+		mStatusBar->setApp( this );
+
+		mSettings = std::make_unique<SettingsMenu>();
+		mSettings->createSettingsMenu( this );
 
 		mSplitter->createEditorWithTabWidget( mBaseLayout );
 
 		mConsole = UIConsole::NewOpt( mFontMono, true, true, 1024 * 10 );
+		mConsole->setCommand( "hide", [this]( const auto& ) { consoleToggle(); } );
 		mConsole->setQuakeMode( true );
 		mConsole->setVisible( false );
 
+		registerUnlockedCommands( *mMainLayout );
+		mMainLayout->getKeyBindings().addKeybinds( getRealDefaultKeybindings() );
+
+		Log::instance()->setKeepLog( false );
 		Log::info( "Complete UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -3993,12 +3333,15 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			file = "";
 #endif
 
-		if ( terminal && file.empty() ) {
+		if ( terminal && file.empty() && fileToOpen.empty() ) {
 			showSidePanel( false );
+			showStatusBar( false );
 			mTerminalManager->createNewTerminal();
 		} else {
-			initProjectTreeView( file );
+			initProjectTreeView( file, openClean );
 		}
+
+		mFileToOpen = fileToOpen;
 
 		Log::info( "Init ProjectTreeView took: %.2f ms",
 				   globalClock.getElapsedTime().asMilliseconds() );
@@ -4008,7 +3351,51 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			downloadFileWeb( "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md" );
 #endif
 
+		if ( mConfig.workspace.checkForUpdatesAtStartup )
+			checkForUpdates( true );
+
+		mUISceneNode->setInterval(
+			[this] {
+				if ( mWindow && mThreadPool &&
+					 mWindow->getInput()->getElapsedSinceLastKeyboardOrMouseEvent().asSeconds() <
+						 60.f ) {
+					saveProject();
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+					mThreadPool->run( [] { malloc_trim( 0 ); } );
+#endif
+				}
+			},
+			Seconds( 60.f ) );
+
 		mWindow->runMainLoop( &appLoop, mBenchmarkMode ? 0 : mConfig.context.FrameRateLimit );
+	}
+}
+
+static void exportLanguages( const std::string& path, const std::string& langs ) {
+	SyntaxDefinitionManager* sdm = SyntaxDefinitionManager::instance();
+	std::vector<SyntaxDefinition> defs;
+
+	if ( !langs.empty() ) {
+		auto langss = String::split( langs, ',' );
+		for ( const auto& l : langss ) {
+			const auto& sd = sdm->getByLSPName( l );
+
+			if ( !sd.getLanguageName().empty() ) {
+				defs.push_back( sd );
+				continue;
+			}
+
+			const auto& sd2 = sdm->getByLanguageName( l );
+
+			if ( !sd2.getLanguageName().empty() )
+				defs.push_back( sd2 );
+		}
+	}
+
+	if ( sdm->save( path, defs ) ) {
+		std::cout << "Language definitions exported!\n";
+	} else {
+		std::cout << "Could not write the file\n";
 	}
 }
 
@@ -4016,40 +3403,35 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 using namespace ecode;
 
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-std::vector<std::string> parseEmscriptenArgs( int argc, char* argv[] ) {
-	if ( argc < 1 )
-		return {};
-	std::vector<std::string> args;
-	args.emplace_back( argv[0] );
-	for ( int i = 1; i < argc; i++ ) {
-		auto split = String::split( std::string( argv[i] ), '=' );
-		if ( split.size() == 2 ) {
-			std::string arg( split[0] + "=" + URI::decode( split[1] ) );
-			args.emplace_back( !String::startsWith( arg, "--" ) ? ( std::string( "--" ) + arg )
-																: arg );
-		}
-	}
-	return args;
-}
-#endif
-
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #ifdef ECODE_USE_BACKWARD
 	backward::SignalHandling sh;
 #endif
 	args::ArgumentParser parser( "ecode" );
-	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
-	args::Positional<std::string> file( parser, "file", "The file or folder path" );
-	args::ValueFlag<std::string> filePos( parser, "file", "The file or folder path",
-										  { 'f', "file", "folder" } );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', '?', "help" } );
+	args::Positional<std::string> fileOrFolderPos( parser, "file_or_folder",
+												   "The file or folder path to open" );
+	args::ValueFlag<std::string> file(
+		parser, "file",
+		"The file path to open. A file path can also contain the line number and column to "
+		"position the cursor when the file is opened. The format is: "
+		"$FILEPATH:$LINE_NUMBER:$COLUMN. Both line number and column are optional (line number can "
+		"be provided without column too).",
+		{ 'f', "file" } );
+	args::ValueFlag<std::string> folder( parser, "folder", "The folder path to open",
+										 { "folder" } );
 	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
 	args::ValueFlag<std::string> prefersColorScheme(
 		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
 		{ 'c', "prefers-color-scheme" } );
-	args::Flag terminal( parser, "terminal", "Open a new terminal", { 't', "terminal" } );
+	args::ValueFlag<std::string> css(
+		parser, "css",
+		"Sets the path for a custom stylesheet to load at the start of the application",
+		{ "css" } );
+	args::Flag terminal( parser, "terminal", "Open a new terminal / Open ecode in terminal mode",
+						 { 't', "terminal" } );
 	args::MapFlag<std::string, LogLevel> logLevel(
 		parser, "log-level", "The level of details that the application will emmit logs.",
 		{ 'l', "log-level" }, Log::getMapFlag(), Log::getDefaultLogLevel() );
@@ -4058,31 +3440,112 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag benchmarkMode( parser, "benchmark-mode",
 							  "Render as much as possible to measure the rendering performance.",
 							  { "benchmark-mode" } );
+	args::Flag verbose( parser, "verbose", "Redirects all logs to stdout.", { 'v', "verbose" } );
+	args::Flag version( parser, "version", "Prints version information", { 'V', "version" } );
+	args::ValueFlag<size_t> jobs(
+		parser, "jobs",
+		"Sets the number of background jobs that the application will spawn "
+		"at the start of the application",
+		{ 'j', "jobs" }, 0 );
+	args::Flag health( parser, "health", "Checks for potential errors in editor setup.",
+					   { "health" }, "" );
+	args::ValueFlag<std::string> healthLang(
+		parser, "health-lang",
+		"Checks for potential errors in editor setup for a specific language.", { "health-lang" },
+		"" );
+	args::MapFlag<std::string, FeaturesHealth::OutputFormat> healthFormat(
+		parser, "health-format",
+		"Sets the health format report (accepted values: terminal, markdown, ascii, asciidoc)",
+		{ "health-format" }, FeaturesHealth::getMapFlag(),
+		FeaturesHealth::getDefaultOutputFormat() );
+	args::ValueFlag<std::string> exportLangPath(
+		parser, "export-lang-path",
+		"Export language definitions to the file path. If no \"export-lang\" is defined it will "
+		"export all languages available.",
+		{ "export-lang-path" }, "" );
+	args::ValueFlag<std::string> exportLang(
+		parser, "export-lang",
+		"Comma separated language names to export its language definitions. \"export-lang-path\" "
+		"must be defined. Retrieved with \"--health\" command.",
+		{ "export-lang" }, "" );
+	args::ValueFlag<std::string> convertLangPath(
+		parser, "convert-lang-path",
+		"Convert any JSON language definition to CPP syntax definition (development helper)",
+		{ "convert-lang-path" }, "" );
+	args::ValueFlag<std::string> convertLangOutput(
+		parser, "convert-lang-output",
+		"Sets the directory output path. If not set it will be printed to stdout",
+		{ "convert-lang-output" }, "" );
+	args::Flag disableFileLogs( parser, "disable-file-logs", "Disables writing logs to a log file",
+								{ "disable-file-logs" } );
+	args::Flag openClean( parser, "open-clean",
+						  "Open a new instance of ecode without recovering the last session",
+						  { "open-clean", 'x' } );
 
+	std::vector<std::string> args;
 	try {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-		parser.ParseCLI( argc, argv );
-#else
-		parser.ParseCLI( parseEmscriptenArgs( argc, argv ) );
-#endif
+		args = Sys::parseArguments( argc, argv );
+		parser.ParseCLI( args );
 	} catch ( const args::Help& ) {
+		Sys::windowAttachConsole();
 		std::cout << parser;
 		return EXIT_SUCCESS;
 	} catch ( const args::ParseError& e ) {
+		Sys::windowAttachConsole();
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
 		return EXIT_FAILURE;
 	} catch ( args::ValidationError& e ) {
+		Sys::windowAttachConsole();
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
 		return EXIT_FAILURE;
 	}
 
-	appInstance = eeNew( App, () );
-	appInstance->init( logLevel.Get(), filePos ? filePos.Get() : file.Get(),
+	if ( convertLangPath && !convertLangPath.Get().empty() ) {
+		Sys::windowAttachConsole();
+		IOStreamFile sfile( convertLangPath.Get() );
+		if ( !sfile.isOpen() )
+			return EXIT_FAILURE;
+		std::vector<std::string> adedLangs;
+		if ( SyntaxDefinitionManager::instance()->loadFromStream( sfile, &adedLangs ) ) {
+			for ( const auto& lang : adedLangs ) {
+				const auto& def = SyntaxDefinitionManager::instance()->getByLanguageName( lang );
+				auto code = SyntaxDefinitionManager::toCPP( def );
+				if ( convertLangOutput && !convertLangOutput.Get().empty() &&
+					 FileSystem::isDirectory( convertLangOutput.Get() ) ) {
+					std::string output( convertLangOutput.Get() );
+					FileSystem::dirAddSlashAtEnd( output );
+					std::string fileName( def.getLanguageNameForFileSystem() );
+					FileSystem::fileWrite( output + fileName + ".hpp", code.first );
+					FileSystem::fileWrite( output + fileName + ".cpp", code.second );
+				} else {
+					std::cout << code.first << code.second << "\n";
+				}
+			}
+		}
+		return EXIT_SUCCESS;
+	}
+
+	if ( exportLangPath && !exportLangPath.Get().empty() ) {
+		Sys::windowAttachConsole();
+		exportLanguages( exportLangPath.Get(), exportLang.Get() );
+		return EXIT_SUCCESS;
+	}
+
+	if ( version.Get() ) {
+		Sys::windowAttachConsole();
+		std::cout << ecode::Version::getVersionFullName() << '\n';
+		return EXIT_SUCCESS;
+	}
+
+	appInstance = eeNew( App, ( jobs, args ) );
+	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
-					   benchmarkMode.Get() );
+					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
+					   healthFormat.Get(), file.Get(), verbose.Get(), disableFileLogs.Get(),
+					   openClean.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

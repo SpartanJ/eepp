@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <eepp/core.hpp>
 #include <eepp/system/time.hpp>
+#include <map>
 using namespace EE::System;
 
 namespace EE { namespace Scene {
@@ -16,7 +17,9 @@ class EE_API Action {
 
 	typedef std::function<void( Action*, const ActionType& )> ActionCallback;
 
-	Action();
+	using UniqueID = Uint64;
+
+	Action() = default;
 
 	virtual ~Action();
 
@@ -52,10 +55,10 @@ class EE_API Action {
 	void setFlags( const Uint32& flags );
 
 	/** @return The action tag. */
-	String::HashType getTag() const;
+	UniqueID getTag() const;
 
 	/** Sets a tag to identify and filter actions. */
-	void setTag( const Uint32& tag );
+	void setTag( const UniqueID& tag );
 
 	/** The target node that the action is being applied. */
 	Node* getTarget() const;
@@ -83,20 +86,20 @@ class EE_API Action {
 	void setTarget( Node* target );
 
 	/** Sets a unique ID to identify the action. */
-	void setId( const Uint32& id );
+	void setId( const Action::UniqueID& id );
 
 	/** @return The unique action ID. */
-	const Uint32& getId();
+	const Action::UniqueID& getId();
 
   protected:
 	friend class Node;
 	typedef std::map<ActionType, std::map<Uint32, ActionCallback>> ActionCallbackMap;
 
-	Node* mNode;
-	Uint32 mFlags;
-	String::HashType mTag;
-	Uint32 mNumCallBacks;
-	Uint32 mId;
+	Node* mNode{ nullptr };
+	Action::UniqueID mId{ 0 };
+	Action::UniqueID mTag{ 0 };
+	Uint32 mFlags{ 0 };
+	Uint32 mNumCallBacks{ 0 };
 	ActionCallbackMap mCallbacks;
 
 	virtual void onStart();

@@ -1,6 +1,7 @@
 #ifndef EE_UI_UIABSTRACTVIEW_HPP
 #define EE_UI_UIABSTRACTVIEW_HPP
 
+#include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/models/modeleditingdelegate.hpp>
 #include <eepp/ui/models/modelselection.hpp>
@@ -41,11 +42,24 @@ class EE_API ModelEvent : public Event {
 
 class EE_API UIAbstractView : public UIScrollableWidget {
   public:
+	enum EditTrigger {
+		None = 0,
+		DoubleClicked = 1 << 0,
+		EditKeyPressed = 1 << 1,
+		AnyKeyPressed = 1 << 2,
+	};
+
+	enum SelectionType { Row, Cell };
+
+	bool isCellSelection() const;
+
+	bool isRowSelection() const;
+
 	Uint32 getType() const;
 
 	bool isType( const Uint32& type ) const;
 
-	void setModel( std::shared_ptr<Model> );
+	void setModel( const std::shared_ptr<Model>& );
 
 	Model* getModel() { return mModel.get(); }
 
@@ -72,6 +86,31 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 	virtual ModelIndex findRowWithText( const std::string& text, const bool& caseSensitive = false,
 										const bool& exactMatch = false ) const;
 
+	bool isEditable() const;
+
+	void setEditable( bool editable );
+
+	Uint32 getEditTriggers() const;
+
+	void setEditTriggers( Uint32 editTriggers );
+
+	KeyBindings::Shortcut getEditShortcut() const;
+
+	void setEditShortcut( const KeyBindings::Shortcut& editShortcut );
+
+	void beginEditing( const ModelIndex& index, UIWidget* editedWidget );
+
+	void stopEditing();
+
+	std::function<ModelEditingDelegate*( const ModelIndex& )> onCreateEditingDelegate;
+
+	SelectionType getSelectionType() const;
+
+	void setSelectionType( SelectionType selectionType );
+
+	Uint32 onModelEvent( const std::function<void( const ModelEvent* )>& callback,
+						 const Event::EventType& triggerEventType = Event::EventType::NoEvent );
+
   protected:
 	friend class EE::UI::Models::Model;
 
@@ -87,15 +126,20 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	bool mEditable{ false };
 	ModelIndex mEditIndex;
-	UIWidget* mEditWidget;
-	Rect mEditWidgetContentRect;
+	UIWidget* mEditWidget{ nullptr };
 
 	std::shared_ptr<Model> mModel;
-	std::unique_ptr<ModelEditingDelegate> mEditingDelegate;
+	ModelEditingDelegate* mEditingDelegate{ nullptr };
 	ModelSelection mSelection;
 
 	std::function<void()> mOnSelectionChange;
 	std::function<void( const ModelIndex& )> mOnSelection;
+
+	Uint32 mEditTriggers{ EditTrigger::None };
+	KeyBindings::Shortcut mEditShortcut{ KEY_F2 };
+	SelectionType mSelectionType{ SelectionType::Row };
+
+	virtual void editingWidgetDidChange( const ModelIndex& ) {}
 };
 
 }}} // namespace EE::UI::Abstract

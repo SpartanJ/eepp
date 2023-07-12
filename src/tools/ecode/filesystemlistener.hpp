@@ -2,11 +2,13 @@
 #define ECODE_FILESYSTEMLISTENER_HPP
 
 #include "projectdirectorytree.hpp"
+#include <atomic>
 #include <eepp/system/fileinfo.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <efsw/efsw.hpp>
+#include <unordered_map>
 
 using namespace EE::System;
 using namespace EE::UI;
@@ -17,6 +19,8 @@ namespace ecode {
 
 class FileSystemListener : public efsw::FileWatchListener {
   public:
+	typedef std::function<void( const FileEvent&, const FileInfo& )> FileEventFn;
+
 	FileSystemListener( UICodeEditorSplitter* codeSplitter,
 						std::shared_ptr<FileSystemModel> fileSystemModel );
 
@@ -29,10 +33,17 @@ class FileSystemListener : public efsw::FileWatchListener {
 
 	void setDirTree( const std::shared_ptr<ProjectDirectoryTree>& dirTree );
 
+	Uint64 addListener( const FileEventFn& fn );
+
+	bool removeListener( const Uint64& id );
+
   protected:
 	UICodeEditorSplitter* mSplitter;
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
+	std::atomic<Uint64> mLastId{ 0 };
+	std::unordered_map<Uint64, FileEventFn> mCbs;
+	Mutex mCbsMutex;
 
 	bool isFileOpen( const FileInfo& file );
 

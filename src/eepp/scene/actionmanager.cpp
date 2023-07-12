@@ -25,7 +25,7 @@ void ActionManager::addAction( Action* action ) {
 		mActions.emplace_back( action );
 }
 
-Action* ActionManager::getActionByTag( const Uint32& tag ) {
+Action* ActionManager::getActionByTag( const Action::UniqueID& tag ) {
 	Lock l( mMutex );
 
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
@@ -54,7 +54,7 @@ std::vector<Action*> ActionManager::getActionsFromTarget( Node* target ) {
 }
 
 std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target,
-															   const String::HashType& tag ) {
+															   const Action::UniqueID& tag ) {
 	Lock l( mMutex );
 	std::vector<Action*> actions;
 
@@ -68,11 +68,11 @@ std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target,
 	return actions;
 }
 
-void ActionManager::removeActionByTag( const Uint32& tag ) {
+void ActionManager::removeActionByTag( const Action::UniqueID& tag ) {
 	removeAction( getActionByTag( tag ) );
 }
 
-void ActionManager::removeActionsByTagFromTarget( Node* target, const String::HashType& tag ) {
+void ActionManager::removeActionsByTagFromTarget( Node* target, const Action::UniqueID& tag ) {
 	std::vector<Action*> removeList;
 
 	{
@@ -96,28 +96,28 @@ void ActionManager::update( const Time& time ) {
 
 	std::vector<Action*> removeList;
 
+	mUpdating = true;
+
+	// Actions can be added during action updates, we need to only iterate the current actions
+	std::vector<Action*> actions;
 	{
-		mUpdating = true;
-
 		Lock l( mMutex );
-
-		// Actions can be added during action updates, we need to only iterate the current actions
-		auto actions = mActions;
-
-		for ( auto it = actions.begin(); it != actions.end(); ++it ) {
-			Action* action = *it;
-
-			action->update( time );
-
-			if ( action->isDone() ) {
-				action->sendEvent( Action::ActionType::OnDone );
-
-				removeList.emplace_back( action );
-			}
-		}
-
-		mUpdating = false;
+		actions = mActions;
 	}
+
+	for ( auto it = actions.begin(); it != actions.end(); ++it ) {
+		Action* action = *it;
+
+		action->update( time );
+
+		if ( action->isDone() ) {
+			action->sendEvent( Action::ActionType::OnDone );
+
+			removeList.emplace_back( action );
+		}
+	}
+
+	mUpdating = false;
 
 	for ( auto it = mActionsRemoveList.begin(); it != mActionsRemoveList.end(); ++it )
 		removeAction( *it );

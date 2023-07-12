@@ -17,13 +17,14 @@ UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButto
 	mDropDownList->setTextSelection( true );
 	mDropDownList->addEventListener( Event::OnPaddingChange,
 									 [this]( const Event* ) { onPaddingChange(); } );
-	mDropDownList->addEventListener( Event::OnSizeChange, [&]( const Event* ) { onSizeChange(); } );
+	mDropDownList->addEventListener( Event::OnSizeChange,
+									 [this]( const Event* ) { onSizeChange(); } );
 
 	mButton = UIWidget::NewWithTag( "combobox::button" );
 	mButton->setParent( this );
 	mButton->setVisible( true );
 	mButton->setEnabled( true );
-	mButton->addEventListener( Event::OnSizeChange, [&]( const Event* ) { onSizeChange(); } );
+	mButton->addEventListener( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
 
 	applyDefaultTheme();
 }
@@ -65,6 +66,10 @@ UIListBox* UIComboBox::getListBox() {
 
 const String& UIComboBox::getText() {
 	return mDropDownList->getText();
+}
+
+void UIComboBox::setText( const String& text ) {
+	mDropDownList->setText( text );
 }
 
 void UIComboBox::loadFromXmlNode( const pugi::xml_node& node ) {
@@ -140,7 +145,8 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Color:
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
 		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:
@@ -159,6 +165,7 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Hint:
 		case PropertyId::HintColor:
 		case PropertyId::HintShadowColor:
+		case PropertyId::HintShadowOffset:
 		case PropertyId::HintFontSize:
 		case PropertyId::HintFontFamily:
 		case PropertyId::HintFontStyle:
@@ -187,7 +194,8 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Color:
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
+		case PropertyId::TextShadowOffset:
 		case PropertyId::SelectionColor:
 		case PropertyId::SelectionBackColor:
 		case PropertyId::FontFamily:
@@ -206,6 +214,7 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::Hint:
 		case PropertyId::HintColor:
 		case PropertyId::HintShadowColor:
+		case PropertyId::HintShadowOffset:
 		case PropertyId::HintFontSize:
 		case PropertyId::HintFontFamily:
 		case PropertyId::HintFontStyle:
@@ -229,7 +238,8 @@ std::vector<PropertyId> UIComboBox::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
 	auto local = {
 		PropertyId::Color,
-		PropertyId::ShadowColor,
+		PropertyId::TextShadowColor,
+		PropertyId::TextShadowOffset,
 		PropertyId::SelectionColor,
 		PropertyId::SelectionBackColor,
 		PropertyId::FontFamily,
@@ -248,6 +258,7 @@ std::vector<PropertyId> UIComboBox::getPropertiesImplemented() const {
 		PropertyId::Hint,
 		PropertyId::HintColor,
 		PropertyId::HintShadowColor,
+		PropertyId::HintShadowOffset,
 		PropertyId::HintFontSize,
 		PropertyId::HintFontFamily,
 		PropertyId::HintFontStyle,

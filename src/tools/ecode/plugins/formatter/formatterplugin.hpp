@@ -13,23 +13,33 @@ using namespace EE::UI;
 
 namespace ecode {
 
-class FormatterPlugin : public UICodeEditorPlugin {
+class FormatterPlugin : public Plugin {
   public:
+	enum class FormatterType { Inplace, Output, Native };
+
 	struct NativeFormatterResult {
 		bool success;
 		std::string result;
 		std::string err;
 	};
 
+	struct Formatter {
+		std::vector<std::string> files;
+		std::string command;
+		FormatterType type{ FormatterType::Output };
+		std::vector<std::string> languages{};
+		std::string url;
+	};
+
 	static PluginDefinition Definition() {
-		return { "autoformatter",
-				 "Auto Formatter",
-				 "Enables the code formatter/prettifier plugin.",
-				 FormatterPlugin::New,
-				 { 0, 1, 0 } };
+		return {
+			"autoformatter",	  "Auto Formatter", "Enables the code formatter/prettifier plugin.",
+			FormatterPlugin::New, { 0, 2, 2 },		FormatterPlugin::NewSync };
 	}
 
-	static UICodeEditorPlugin* New( const PluginManager* pluginManager );
+	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+
+	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~FormatterPlugin();
 
@@ -39,11 +49,11 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	std::string getDescription() { return Definition().description; }
 
+	virtual String::HashType getConfigFileHash() { return mConfigHash; }
+
 	void onRegister( UICodeEditor* );
 
 	void onUnregister( UICodeEditor* );
-
-	bool isReady() const { return mReady; }
 
 	bool getAutoFormatOnSave() const;
 
@@ -55,41 +65,34 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	void unregisterNativeFormatter( const std::string& cmd );
 
-	bool hasFileConfig();
+	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
+									  const Vector2i& position, const Uint32& flags );
 
-	std::string getFileConfigPath();
+	const std::vector<Formatter>& getFormatters() const;
+
+	Formatter getFormatterForLang( const std::string& lang, const std::vector<std::string>& ext );
 
   protected:
-	enum class FormatterType { Inplace, Output, Native };
-
-	struct Formatter {
-		std::vector<std::string> files;
-		std::string command;
-		FormatterType type{ FormatterType::Output };
-	};
-
-	std::shared_ptr<ThreadPool> mPool;
 	std::vector<Formatter> mFormatters;
-	std::set<UICodeEditor*> mEditors;
+	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
 	std::mutex mWorkMutex;
 	std::condition_variable mWorkerCondition;
 	std::map<std::string, std::function<NativeFormatterResult( const std::string& file )>>
 		mNativeFormatters;
 	Int32 mWorkersCount{ 0 };
-	std::string mConfigPath;
-	/* cmd, shortcut */
-	std::map<std::string, std::string> mKeyBindings;
+	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
+	std::map<TextDocument*, bool> mIsAutoFormatting;
+	std::map<std::string, LSPServerCapabilities> mCapabilities;
+	Mutex mCapabilitiesMutex;
+	String::HashType mConfigHash{ 0 };
 
 	bool mAutoFormatOnSave{ false };
-	bool mShuttingDown{ false };
-	bool mReady{ false };
-	Uint32 mOnDocumentSaveCb{ 0 };
 
-	FormatterPlugin( const PluginManager* pluginManager );
+	FormatterPlugin( PluginManager* pluginManager, bool sync );
 
-	void load( const PluginManager* pluginManager );
+	void load( PluginManager* pluginManager );
 
-	void loadFormatterConfig( const std::string& path );
+	void loadFormatterConfig( const std::string& path, bool updateConfigFile );
 
 	void formatDoc( UICodeEditor* editor );
 
@@ -99,7 +102,15 @@ class FormatterPlugin : public UICodeEditorPlugin {
 
 	FormatterPlugin::Formatter supportsFormatter( std::shared_ptr<TextDocument> doc );
 
+	bool supportsLSPFormatter( std::shared_ptr<TextDocument> doc );
+
+	bool formatDocWithLSP( std::shared_ptr<TextDocument> doc );
+
 	void registerNativeFormatters();
+
+	bool tryRequestCapabilities( const std::shared_ptr<TextDocument>& doc );
+
+	PluginRequestHandle processMessage( const PluginMessage& msg );
 };
 
 } // namespace ecode

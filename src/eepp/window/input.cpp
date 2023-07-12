@@ -50,6 +50,8 @@ void Input::sendEvent( InputEvent* Event ) {
 }
 
 void Input::processEvent( InputEvent* Event ) {
+	mLastEvent.restart();
+
 	switch ( Event->Type ) {
 		case InputEvent::Window: {
 			if ( Event->window.type == InputEvent::WindowClose )
@@ -65,6 +67,8 @@ void Input::processEvent( InputEvent* Event ) {
 
 			BitOp::writeBitKey( &mScancodeDown[Event->key.keysym.scancode / 8],
 								Event->key.keysym.scancode % 8, 1 );
+
+			mLastKeyboardEvent.restart();
 			break;
 		}
 		case InputEvent::KeyUp: {
@@ -78,6 +82,8 @@ void Input::processEvent( InputEvent* Event ) {
 								Event->key.keysym.scancode % 8, 0 );
 			BitOp::writeBitKey( &mScancodeUp[Event->key.keysym.scancode / 8],
 								Event->key.keysym.scancode % 8, 1 );
+
+			mLastKeyboardEvent.restart();
 			break;
 		}
 		case InputEvent::MouseMotion: {
@@ -101,11 +107,12 @@ void Input::processEvent( InputEvent* Event ) {
 				mMousePos.y = 0;
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::MouseButtonDown: {
 			mPressTrigger |= EE_BUTTON_MASK( Event->button.button );
-
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::MouseButtonUp: {
@@ -149,6 +156,7 @@ void Input::processEvent( InputEvent* Event ) {
 				}
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::FingerDown: {
@@ -166,6 +174,7 @@ void Input::processEvent( InputEvent* Event ) {
 				mPressTrigger |= EE_BUTTON_LMASK;
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::FingerUp: {
@@ -184,6 +193,7 @@ void Input::processEvent( InputEvent* Event ) {
 				mPressTrigger &= ~EE_BUTTON_LMASK;
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::FingerMotion: {
@@ -201,6 +211,7 @@ void Input::processEvent( InputEvent* Event ) {
 				mPressTrigger |= EE_BUTTON_LMASK;
 			}
 
+			mLastMouseEvent.restart();
 			break;
 		}
 		case InputEvent::VideoResize: {
@@ -323,8 +334,24 @@ void Input::injectMousePos( const Vector2i& Pos ) {
 	injectMousePos( Pos.x, Pos.y );
 }
 
+bool Input::isLeftControlPressed() const {
+	return ( mInputMod & KEYMOD_LCTRL ) != 0;
+}
+
+bool Input::isRightControlPressed() const {
+	return ( mInputMod & KEYMOD_RCTRL ) != 0;
+}
+
 bool Input::isControlPressed() const {
 	return ( mInputMod & KEYMOD_CTRL ) != 0;
+}
+
+bool Input::isLeftShiftPressed() const {
+	return ( mInputMod & KEYMOD_LSHIFT ) != 0;
+}
+
+bool Input::isRightShiftPressed() const {
+	return ( mInputMod & KEYMOD_RSHIFT ) != 0;
 }
 
 bool Input::isShiftPressed() const {
@@ -476,6 +503,49 @@ std::vector<InputFinger*> Input::getFingersWasDown() {
 
 const Uint32& Input::getModState() const {
 	return mInputMod;
+}
+
+static Uint32 sanitizeMod( const Uint32& mod ) {
+	Uint32 smod = 0;
+	if ( mod & KEYMOD_CTRL )
+		smod |= KEYMOD_CTRL;
+	if ( mod & KEYMOD_SHIFT )
+		smod |= KEYMOD_SHIFT;
+	if ( mod & KEYMOD_META )
+		smod |= KEYMOD_META;
+	if ( mod & KEYMOD_LALT )
+		smod |= KEYMOD_LALT;
+	if ( mod & KEYMOD_RALT )
+		smod |= KEYMOD_RALT;
+	return smod;
+}
+
+Uint32 Input::getSanitizedModState() const {
+	return sanitizeMod( mInputMod );
+}
+
+bool Input::isModState( const Uint32& state ) const {
+	return getSanitizedModState() == state;
+}
+
+Time Input::getElapsedSinceLastMouseEvent() const {
+	return mLastMouseEvent.getElapsedTime();
+}
+
+Time Input::getElapsedSinceLastKeyboardOrMouseEvent() const {
+	return eemin( getElapsedSinceLastMouseEvent(), getElapsedSinceLastKeyboardEvent() );
+}
+
+Time Input::getElapsedSinceLastKeyboardEvent() const {
+	return mLastKeyboardEvent.getElapsedTime();
+}
+
+Time Input::getElapsedSinceLastEvent() const {
+	return mLastEvent.getElapsedTime();
+}
+
+const Uint64& Input::getEventsSentId() const {
+	return mEventsSentId;
 }
 
 }} // namespace EE::Window

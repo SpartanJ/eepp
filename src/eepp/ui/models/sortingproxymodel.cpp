@@ -25,8 +25,8 @@ void SortingProxyModel::invalidate( unsigned int flags ) {
 		mMappings.clear();
 
 		// FIXME: This is really harsh, but without precise invalidation, not much we can do.
-		forEachView( [&]( UIAbstractView* view ) { view->getSelection().clear( false ); } );
-		forEachView( [&]( UIAbstractView* view ) { view->notifySelectionChange(); } );
+		forEachView( []( UIAbstractView* view ) { view->getSelection().clear( false ); } );
+		forEachView( []( UIAbstractView* view ) { view->notifySelectionChange(); } );
 	}
 	onModelUpdate( flags );
 }
@@ -204,6 +204,10 @@ bool SortingProxyModel::isSortingCaseSensitive() {
 
 std::shared_ptr<Model> SortingProxyModel::getSource() const {
 	return mSource;
+}
+
+bool SortingProxyModel::classModelRoleEnabled() {
+	return source().classModelRoleEnabled();
 }
 
 bool SortingProxyModel::isColumnSortable( const size_t& columnIndex ) const {

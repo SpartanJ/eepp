@@ -27,13 +27,14 @@ void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
 	if ( PrintDebugInLog ) {
 		Log::instance()->writef( LogLevel::Assert, "%s file:%s line:%d", Exp, File, Line );
 
-		if ( !Log::instance()->isConsoleOutput() )
+		if ( !Log::instance()->isLoggingToStdOut() )
 			printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 	} else {
 		printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 	}
 
-#if defined( EE_COMPILER_GCC ) && !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
+#if defined( EE_COMPILER_GCC ) && !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \
+	EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
 	asm( "int3" );
 #else
 	assert( false );
@@ -51,7 +52,7 @@ static void printBuffer( std::string& buf, bool newLine ) {
 #ifdef EE_COMPILER_MSVC
 	OutputDebugStringA( buf.c_str() );
 #else
-	if ( PrintDebugInLog && Log::instance()->isConsoleOutput() ) {
+	if ( PrintDebugInLog && Log::instance()->isLoggingToStdOut() ) {
 		Log::instance()->write( buf );
 		return;
 	} else {

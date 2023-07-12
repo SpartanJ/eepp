@@ -117,6 +117,13 @@ class EE_API Renderer {
 
 	bool isLineSmooth();
 
+	void polygonSmooth( const bool& enable );
+
+	/** Reapply the polygon smooth state */
+	void polygonSmooth();
+
+	bool isPolygonSmooth();
+
 	/** Set the polygon fill mode ( wireframe or filled ) */
 	void polygonMode( const PrimitiveFillMode& Mode );
 
@@ -271,7 +278,7 @@ class EE_API Renderer {
   protected:
 	static Renderer* sSingleton;
 
-	enum RendererStateFlags { RSF_LINE_SMOOTH = 0, RSF_POLYGON_MODE };
+	enum RendererStateFlags { RSF_LINE_SMOOTH = 0, RSF_POLYGON_MODE, RSF_POLYGON_SMOOTH };
 
 	Uint32 mExtensions;
 	Uint32 mStateFlags;

@@ -10,3 +10,5 @@
 /usr/lib64/gcc/x86_64-suse-linux/10/include
 ../../src/modules/eterm/src/
 ../../src/modules/eterm/include/
+../../src/modules/maps/include/
+../../src/modules/maps/src/

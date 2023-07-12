@@ -56,6 +56,10 @@ class EE_API UIBackgroundDrawable : public Drawable {
 
 	void setBottomRightRadius( const std::string& radius );
 
+	bool isSmooth() const;
+
+	void setSmooth( bool smooth );
+
   protected:
 	const UINode* mOwner;
 	BorderRadiuseStr mRadiusesStr;
@@ -65,6 +69,7 @@ class EE_API UIBackgroundDrawable : public Drawable {
 	bool mNeedsUpdate;
 	bool mNeedsRadiusUpdate;
 	bool mColorNeedsUpdate;
+	bool mSmooth{ false };
 
 	virtual void onAlphaChange();
 

@@ -94,6 +94,8 @@ class EE_API URI {
 	/** Parses and assigns an URI from the given string. */
 	URI& operator=( const char* uri );
 
+	bool operator<( const URI& url ) const;
+
 	/** Swaps the URI with another one. */
 	void swap( URI& uri );
 
@@ -149,6 +151,9 @@ class EE_API URI {
 
 	/** @returns The path part of the URI. */
 	const std::string& getPath() const;
+
+	/* @returns The file system path of the URI. */
+	std::string getFSPath() const;
 
 	/** @returns The last path segment. */
 	std::string getLastPathSegment() const;
@@ -225,6 +230,9 @@ class EE_API URI {
 
 	/** @return The last path segment if any */
 	std::string getLastPathSegment();
+
+	/** @return The authority and path */
+	std::string getAuthorityAndPath() const;
 
 	/** URI-encodes the given string by escaping reserved and non-ASCII
 	 * characters. The encoded string is appended to encodedStr. */

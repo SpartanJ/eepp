@@ -152,7 +152,7 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	static std::shared_ptr<TerminalDisplay>
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
-			std::string program = "", const std::vector<std::string>& args = {},
+			std::string program = "", std::vector<std::string> args = {},
 			const std::string& workingDir = "", const size_t& historySize = 10000,
 			IProcessFactory* processFactory = nullptr, const bool& useFrameBuffer = false,
 			const bool& keepAlive = true );
@@ -176,6 +176,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	virtual bool update();
 
 	void executeFile( const std::string& cmd );
+
+	void executeBinary( const std::string& binaryPath, const std::string& args = "" );
 
 	void action( TerminalShortcutAction action );
 
@@ -288,6 +290,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mAlreadyClickedLButton{ false };
 	bool mAlreadyClickedMButton{ false };
 	bool mKeepAlive{ true };
+	bool mDraggingSel{ false };
 	Clock mClock;
 	Clock mLastDoubleClick;
 	Uint32 mColumns{ 0 };

@@ -28,6 +28,8 @@ class EE_API ElementDefinition : NonCopyable {
 
 	const StyleSheetStyleVector& getStyles() const;
 
+	void refresh();
+
   protected:
 	StyleSheetStyleVector mStyles;
 	StyleSheetProperties mProperties;

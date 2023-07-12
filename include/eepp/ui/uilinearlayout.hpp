@@ -15,10 +15,6 @@ class EE_API UILinearLayout : public UILayout {
 
 	static UILinearLayout* NewHorizontal();
 
-	UILinearLayout();
-
-	UILinearLayout( const std::string& tag, const UIOrientation& orientation );
-
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
@@ -26,8 +22,6 @@ class EE_API UILinearLayout : public UILayout {
 	UIOrientation getOrientation() const;
 
 	UILinearLayout* setOrientation( const UIOrientation& getOrientation );
-
-	UILinearLayout* add( UIWidget* widget );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -38,10 +32,12 @@ class EE_API UILinearLayout : public UILayout {
 
 	void updateLayout();
 
-	bool isPacking() const;
-
   protected:
 	UIOrientation mOrientation;
+
+	UILinearLayout();
+
+	UILinearLayout( const std::string& tag, const UIOrientation& orientation );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 

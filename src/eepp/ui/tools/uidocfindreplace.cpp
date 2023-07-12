@@ -180,8 +180,8 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 	mReplaceBox = querySelector( ".replace_box" );
 	mToggle = querySelector( ".find_replace_toggle" );
-	mToggle->addEventListener( Event::MouseClick, [&]( const Event* event ) {
-		if ( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_LMASK ) {
+	mToggle->addEventListener( Event::MouseClick, [this]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
 			if ( mToggle->hasClass( "enabled" ) ) {
 				mToggle->removeClass( "enabled" );
 				mReplaceBox->removeClass( "enabled" );
@@ -200,23 +200,10 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mFindInput->setEscapePastedText( true );
 	UICodeEditor* editor =
 		getParent()->isType( UI_TYPE_CODEEDITOR ) ? getParent()->asType<UICodeEditor>() : nullptr;
-	mFindInput->addEventListener( Event::OnTextChanged, [&, editor]( const Event* ) {
-		mSearchState.text = mFindInput->getText();
-		if ( editor )
-			editor->setHighlightWord( mSearchState.text );
-		if ( !mSearchState.text.empty() ) {
-			mDoc->setSelection( { 0, 0 } );
-			if ( !findNextText( mSearchState ) ) {
-				mFindInput->addClass( "error" );
-			} else {
-				mFindInput->removeClass( "error" );
-			}
-		} else {
-			mFindInput->removeClass( "error" );
-			mDoc->setSelection( mDoc->getSelection().start() );
-		}
-	} );
-	mFindInput->addEventListener( Event::OnTextPasted, [&]( const Event* ) {
+
+	mFindInput->addEventListener( Event::OnTextChanged,
+								  [&, editor]( const Event* ) { refreshHighlight( editor ); } );
+	mFindInput->addEventListener( Event::OnTextPasted, [this]( const Event* ) {
 		if ( mFindInput->getUISceneNode()->getWindow()->getClipboard()->getText().find( '\n' ) !=
 			 String::InvalidPos ) {
 			if ( !mEscapeSequences->isSelected() )
@@ -224,25 +211,33 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 		}
 	} );
 
-	addCommand( "close-find-replace", [this] { hide(); } );
-	addCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
-	addCommand( "replace-all", [this] {
+	setCommand( "close-find-replace", [this] { hide(); } );
+	setCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
+	setCommand( "replace-all", [this] {
 		/*size_t count = */ replaceAll( mSearchState, mReplaceInput->getText() );
 		mReplaceInput->setFocus();
 	} );
-	addCommand( "find-and-replace",
+	setCommand( "find-and-replace",
 				[this] { findAndReplace( mSearchState, mReplaceInput->getText() ); } );
-	addCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
-	addCommand( "replace-selection",
+	setCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
+	setCommand( "replace-selection",
 				[this] { mDoc->replaceSelection( mReplaceInput->getText() ); } );
-	addCommand( "change-case",
-				[&] { mCaseSensitive->setSelected( !mCaseSensitive->isSelected() ); } );
-	addCommand( "change-whole-word",
-				[&] { mWholeWord->setSelected( !mWholeWord->isSelected() ); } );
-	addCommand( "change-escape-sequence",
-				[&] { mEscapeSequences->setSelected( !mEscapeSequences->isSelected() ); } );
-	addCommand( "toggle-lua-pattern",
-				[&] { mLuaPattern->setSelected( !mLuaPattern->isSelected() ); } );
+	setCommand( "change-case", [this, editor] {
+		mCaseSensitive->setSelected( !mCaseSensitive->isSelected() );
+		refreshHighlight( editor );
+	} );
+	setCommand( "change-whole-word", [this, editor] {
+		mWholeWord->setSelected( !mWholeWord->isSelected() );
+		refreshHighlight( editor );
+	} );
+	setCommand( "change-escape-sequence", [this, editor] {
+		mEscapeSequences->setSelected( !mEscapeSequences->isSelected() );
+		refreshHighlight( editor );
+	} );
+	setCommand( "toggle-lua-pattern", [this, editor] {
+		mLuaPattern->setSelected( !mLuaPattern->isSelected() );
+		refreshHighlight( editor );
+	} );
 
 	mCaseSensitive->setTooltipText( mCaseSensitive->getTooltipText() + " (" +
 									getKeyBindings().getCommandKeybindString( "change-case" ) +
@@ -259,7 +254,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 	mReplaceInput = querySelector<UITextInput>( ".input-replace" );
 
-	auto addClickListener = [&]( UIWidget* widget, std::string cmd ) {
+	auto addClickListener = [this]( UIWidget* widget, std::string cmd ) {
 		if ( !widget )
 			return;
 		widget->setTooltipText( getKeyBindings().getCommandKeybindString( cmd ) );
@@ -269,7 +264,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 				execute( cmd );
 		} );
 	};
-	auto addReturnListener = [&]( UIWidget* widget, std::string cmd ) {
+	auto addReturnListener = [this]( UIWidget* widget, std::string cmd ) {
 		widget->addEventListener( Event::OnPressEnter,
 								  [this, cmd]( const Event* ) { execute( cmd ); } );
 	};
@@ -285,7 +280,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mFindInput->setTabStop();
 	mReplaceInput->setTabStop();
 
-	mFindInput->addEventListener( Event::OnTabNavigate, [&]( const Event* ) {
+	mFindInput->addEventListener( Event::OnTabNavigate, [this]( const Event* ) {
 		if ( !mToggle->hasClass( "enabled" ) ) {
 			mToggle->addClass( "enabled" );
 			mReplaceBox->addClass( "enabled" );
@@ -294,7 +289,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	} );
 
 	mReplaceInput->addEventListener( Event::OnTabNavigate,
-									 [&]( const Event* ) { mFindInput->setFocus(); } );
+									 [this]( const Event* ) { mFindInput->setFocus(); } );
 
 	mDataBinds.emplace_back( UIDataBindBool::New( &mSearchState.caseSensitive, mCaseSensitive ) );
 	mDataBinds.emplace_back( UIDataBindBool::New( &mSearchState.wholeWord, mWholeWord ) );
@@ -316,11 +311,16 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mPatternBind = UIDataBind<TextDocument::FindReplaceType>::New( &mSearchState.type, mLuaPattern,
 																   luaPatternConverter );
 
+	auto valueChangeCb = [this, editor]( const auto& ) { refreshHighlight( editor ); };
+	mPatternBind->onValueChangeCb = valueChangeCb;
+	for ( const auto& db : mDataBinds )
+		db->onValueChangeCb = valueChangeCb;
+
 	setVisible( false );
 
-	runOnMainThread( [&] { mReady = true; } );
+	runOnMainThread( [this] { mReady = true; } );
 
-	getParent()->addEventListener( Event::OnSizeChange, [&]( const Event* ) {
+	getParent()->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
 		Float startX = eemax( 0.f, getParent()->getSize().getWidth() - getSize().getWidth() );
 		setPosition( startX, getPosition().y );
 	} );
@@ -328,7 +328,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 void UIDocFindReplace::show( bool expanded ) {
 	if ( !mReady ) {
-		runOnMainThread( [&] { show(); } );
+		runOnMainThread( [this] { show(); } );
 		return;
 	}
 
@@ -374,7 +374,7 @@ void UIDocFindReplace::show( bool expanded ) {
 
 	if ( editor ) {
 		editor->setHighlightTextRange( mSearchState.range );
-		editor->setHighlightWord( mSearchState.text );
+		editor->setHighlightWord( mSearchState );
 		mDoc->setActiveClient( editor );
 	}
 }
@@ -391,14 +391,14 @@ void UIDocFindReplace::hide() {
 	mSearchState.range = TextRange();
 	mSearchState.text = "";
 	if ( editor ) {
-		editor->setHighlightWord( "" );
+		editor->setHighlightWord( { "" } );
 		editor->setHighlightTextRange( TextRange() );
 	}
 
 	getParent()->setFocus();
 }
 
-bool UIDocFindReplace::findPrevText( SearchState& search ) {
+bool UIDocFindReplace::findPrevText( TextSearchParams& search ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 
@@ -433,7 +433,7 @@ bool UIDocFindReplace::findPrevText( SearchState& search ) {
 	return false;
 }
 
-bool UIDocFindReplace::findNextText( SearchState& search ) {
+bool UIDocFindReplace::findNextText( TextSearchParams& search ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 
@@ -469,7 +469,7 @@ bool UIDocFindReplace::findNextText( SearchState& search ) {
 	return false;
 }
 
-int UIDocFindReplace::replaceAll( SearchState& search, const String& replace ) {
+int UIDocFindReplace::replaceAll( TextSearchParams& search, const String& replace ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( search.text.empty() )
@@ -495,7 +495,7 @@ Uint32 UIDocFindReplace::onKeyDown( const KeyEvent& event ) {
 	return WidgetCommandExecuter::onKeyDown( event );
 }
 
-bool UIDocFindReplace::findAndReplace( SearchState& search, const String& replace ) {
+bool UIDocFindReplace::findAndReplace( TextSearchParams& search, const String& replace ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( search.text.empty() )
@@ -517,5 +517,22 @@ bool UIDocFindReplace::findAndReplace( SearchState& search, const String& replac
 		return findNextText( search );
 	}
 }
+
+void UIDocFindReplace::refreshHighlight( UICodeEditor* editor ) {
+	mSearchState.text = mFindInput->getText();
+	if ( editor )
+		editor->setHighlightWord( mSearchState );
+	if ( !mSearchState.text.empty() ) {
+		mDoc->setSelection( { 0, 0 } );
+		if ( !findNextText( mSearchState ) ) {
+			mFindInput->addClass( "error" );
+		} else {
+			mFindInput->removeClass( "error" );
+		}
+	} else {
+		mFindInput->removeClass( "error" );
+		mDoc->setSelection( mDoc->getSelection().start() );
+	}
+};
 
 }}} // namespace EE::UI::Tools

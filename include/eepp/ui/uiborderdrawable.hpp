@@ -2,6 +2,7 @@
 #define EE_UI_UIBORDERDRAWABLE_HPP
 
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/math/rect.hpp>
 #include <eepp/ui/border.hpp>
 
 namespace EE { namespace UI {
@@ -80,6 +81,10 @@ class EE_API UIBorderDrawable : public Drawable {
 
 	Rectf getBorderBoxDiff() const;
 
+	bool isSmooth() const;
+
+	void setSmooth( bool smooth );
+
   protected:
 	const UINode* mOwner;
 	VertexBuffer* mVertexBuffer;
@@ -90,6 +95,7 @@ class EE_API UIBorderDrawable : public Drawable {
 	bool mNeedsUpdate;
 	bool mColorNeedsUpdate;
 	bool mHasBorder;
+	bool mSmooth{ false };
 
 	virtual void onAlphaChange();
 

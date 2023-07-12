@@ -29,10 +29,12 @@ class CSSPropertiesModel final : public Model {
 	}
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
-		if ( mWidget == nullptr )
+		eeASSERT( index.row() < (Int64)mData.size() );
+		if ( mWidget == nullptr || index.row() >= (Int64)mData.size() )
 			return {};
 		PropertyId propId = mData[index.row()];
-		const PropertyDefinition* def = mProps.at( propId );
+		auto propIt = mProps.find( propId );
+		const PropertyDefinition* def = propIt != mProps.end() ? propIt->second : nullptr;
 		if ( !def )
 			return {};
 		if ( role == ModelRole::Display ) {

@@ -17,6 +17,7 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mInput( mWindow->getInput() ),
 	mSceneNode( sceneNode ),
 	mFocusNode( sceneNode ),
+	mLastFocusNode( sceneNode ),
 	mOverNode( NULL ),
 	mDownNode( NULL ),
 	mLossFocusNode( NULL ),
@@ -109,6 +110,19 @@ void EventDispatcher::update( const Time& time ) {
 			sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getPressTrigger() );
 		}
 	}
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+	else if ( NULL != mOverNode && mInput->getReleaseTrigger() &&
+			  !( mInput->getPressTrigger() & mInput->getReleaseTrigger() ) &&
+			  !( mInput->getLastPressTrigger() & mInput->getReleaseTrigger() ) ) {
+		if ( !mFirstPress ) {
+			mDownNode = mOverNode;
+			mMouseDownPos = mMousePosi;
+			mFirstPress = true;
+		}
+		mOverNode->onMouseDown( mMousePosi, mInput->getReleaseTrigger() );
+		sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getReleaseTrigger() );
+	}
+#endif
 
 	if ( mInput->getReleaseTrigger() ) {
 		if ( NULL != mFocusNode ) {
@@ -120,7 +134,7 @@ void EventDispatcher::update( const Time& time ) {
 				// The focused node can change after the MouseUp ( since the node can call
 				// "setFocus()" on other node And the MouseClick would be received by the new
 				// focused node instead of the real one
-				Node* lastFocusNode = mFocusNode;
+				mLastFocusNode = mFocusNode;
 
 				if ( NULL != mOverNode ) {
 					if ( mInput->getReleaseTrigger() & EE_BUTTONS_WUWD ) {
@@ -130,20 +144,21 @@ void EventDispatcher::update( const Time& time ) {
 							sendMsg( mOverNode, NodeMessage::MouseDown,
 									 mInput->getReleaseTrigger() & EE_BUTTONS_WUWD );
 					}
+
 					mOverNode->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
 					if ( NULL != mOverNode )
 						sendMsg( mOverNode, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
 				}
 
 				if ( mInput->getClickTrigger() ) {
-					lastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
-					sendMsg( lastFocusNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
+					mLastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
+					sendMsg( mLastFocusNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
 
 					if ( mInput->getDoubleClickTrigger() &&
 						 mClickPos.distance( mMousePosi ) < 10 ) {
-						lastFocusNode->onMouseDoubleClick( mMousePosi,
-														   mInput->getDoubleClickTrigger() );
-						sendMsg( lastFocusNode, NodeMessage::MouseDoubleClick,
+						mLastFocusNode->onMouseDoubleClick( mMousePosi,
+															mInput->getDoubleClickTrigger() );
+						sendMsg( mLastFocusNode, NodeMessage::MouseDoubleClick,
 								 mInput->getDoubleClickTrigger() );
 					}
 
@@ -240,7 +255,22 @@ void EventDispatcher::setFocusNode( Node* node ) {
 
 		mFocusNode->onFocus();
 		sendMsg( mFocusNode, NodeMessage::Focus );
+
+		if ( !mFocusCbs.empty() ) {
+			auto focusCbs = mFocusCbs;
+
+			for ( const auto& cb : focusCbs )
+				cb.second( cb.first, mFocusNode, mLossFocusNode );
+		}
 	}
+}
+
+Node* EventDispatcher::getLastFocusNode() const {
+	return mLastFocusNode;
+}
+
+void EventDispatcher::setLastFocusNode( Node* lastFocusNode ) {
+	mLastFocusNode = lastFocusNode;
 }
 
 Node* EventDispatcher::getMouseDownNode() const {
@@ -344,7 +374,20 @@ void EventDispatcher::setDisableMousePress( bool disableMousePress ) {
 	if ( mDisableMousePress && !disableMousePress )
 		mJustDisabledMousePress = true;
 	mDisableMousePress = disableMousePress;
+}
 
+Uint32 EventDispatcher::addFocusEventCallback( const FocusCallback& cb ) {
+	mFocusCbs[++mCurFocusId] = cb;
+	return mCurFocusId;
+}
+
+bool EventDispatcher::removeFocusEventCallback( const Uint32& cbId ) {
+	auto it = mFocusCbs.find( cbId );
+	if ( it != mFocusCbs.end() ) {
+		mFocusCbs.erase( it );
+		return true;
+	}
+	return false;
 }
 
 }} // namespace EE::Scene

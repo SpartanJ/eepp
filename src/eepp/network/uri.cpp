@@ -166,6 +166,17 @@ std::string URI::toString() const {
 	return uri;
 }
 
+std::string URI::getAuthorityAndPath() const {
+	std::string uri;
+	std::string auth = getAuthority();
+	if ( !mPath.empty() ) {
+		if ( !auth.empty() && mPath[0] != '/' )
+			uri += '/';
+		encode( mPath, RESERVED_PATH, uri );
+	}
+	return uri;
+}
+
 void URI::setScheme( const std::string& scheme ) {
 	mScheme = scheme;
 	String::toLowerInPlace( mScheme );
@@ -199,7 +210,7 @@ std::string URI::getAuthority() const {
 		auth.append( mUserInfo );
 		auth += '@';
 	}
-	if ( mHost.find( ':' ) != std::string::npos ) {
+	if ( mScheme != "file" && mHost.find( ':' ) != std::string::npos ) {
 		auth += '[';
 		auth += mHost;
 		auth += ']';
@@ -538,7 +549,22 @@ unsigned short URI::getWellKnownPort() const {
 		return 0;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+void URI::parse( const std::string& _uri ) {
+	std::string uri( _uri );
+	// Is a local path without hostname but it's correctly formatted?
+	if ( String::startsWith( uri, "file://" ) && uri.size() >= 9 ) {
+		if ( uri[7] != '/' && uri[8] == ':' ) {
+			uri[7] = std::tolower( uri[7] );
+			uri.insert( uri.begin() + 7, '/' );
+		} else if ( uri.size() >= 10 && uri[9] == ':' && uri[7] == '/' ) {
+			uri[8] = std::tolower( uri[8] );
+		}
+	}
+	String::replaceAll( uri, "\\", "/" );
+#else
 void URI::parse( const std::string& uri ) {
+#endif
 	std::string::const_iterator it = uri.begin();
 	std::string::const_iterator end = uri.end();
 	if ( it == end )
@@ -714,6 +740,54 @@ void URI::buildPath( const std::vector<std::string>& segments, bool leadingSlash
 	}
 	if ( trailingSlash )
 		mPath += '/';
+}
+
+std::string URI::getFSPath() const {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( mScheme == "file" && !mPath.empty() && mPath[0] == '/' ) {
+		std::string path = mPath.substr( 1 );
+		String::replaceAll( path, "/", "\\" );
+		if ( path.size() > 2 && path[1] == ':' )
+			path[0] = std::toupper( path[0] );
+		return path;
+	}
+#endif
+	return mPath;
+}
+
+bool URI::operator<( const URI& url ) const {
+	int cmp;
+	cmp = mScheme.compare( url.mScheme );
+	if ( mScheme != url.mScheme )
+		return cmp < 0;
+
+	cmp = mUserInfo.compare( url.mUserInfo );
+	if ( cmp != 0 )
+		return cmp < 0;
+
+	cmp = mHost.compare( url.mHost );
+	if ( cmp != 0 )
+		return cmp < 0;
+
+	if ( mPort != url.mPort )
+		return mPort < url.mPort;
+
+	cmp = mPath.compare( url.mPath );
+	if ( cmp != 0 )
+		return cmp < 0;
+
+	if ( mQuery.empty() != url.mQuery.empty() )
+		return !url.mQuery.empty();
+
+	cmp = mQuery.compare( url.mQuery );
+	if ( cmp != 0 )
+		return cmp < 0;
+
+	if ( mFragment.empty() != url.mFragment.empty() )
+		return !url.mFragment.empty();
+
+	cmp = mFragment.compare( url.mFragment );
+	return cmp < 0;
 }
 
 }} // namespace EE::Network

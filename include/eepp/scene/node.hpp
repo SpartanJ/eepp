@@ -191,16 +191,16 @@ class EE_API Node : public Transformable {
 
 	Uint32 addEventListener( const Uint32& eventType, const EventCallback& callback );
 
-	Uint32 on( const Uint32& eventType, const EventCallback& callback ) {
-		return addEventListener( eventType, callback );
-	}
+	Uint32 on( const Uint32& eventType, const EventCallback& callback );
 
-	Uint32 addMouseClickListener( const std::function<void( const MouseEvent* )>& callback,
-								  const MouseButton& button );
+	Uint32 onClick( const std::function<void( const MouseEvent* )>& callback,
+					const MouseButton& button = MouseButton::EE_BUTTON_LEFT );
 
 	void removeEventsOfType( const Uint32& eventType );
 
 	void removeEventListener( const Uint32& callbackId );
+
+	void removeEventListener( const std::vector<Uint32>& callbacksIds );
 
 	void clearEventListener();
 
@@ -389,7 +389,13 @@ class EE_API Node : public Transformable {
 	Uint32 getNodeOfTypeIndex() const;
 
 	void runOnMainThread( Actions::Runnable::RunnableFunc runnable,
-						  const Time& delay = Seconds( 0 ), const Uint32& tag = 0 );
+						  const Time& delay = Seconds( 0 ), const Uint32& uniqueIdentifier = 0 );
+
+	void setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay = Seconds( 0 ),
+					 const Uint32& uniqueIdentifier = 0 );
+
+	void setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
+					  const Uint32& uniqueIdentifier = 0 );
 
 	bool isChild( Node* child ) const;
 
@@ -424,8 +430,12 @@ class EE_API Node : public Transformable {
 
 	const Vector2f& getScreenPos() const;
 
+	Rectf getScreenRect() const;
+
+	bool hasEventsOfType( const Uint32& eventType ) const;
+
   protected:
-	typedef std::map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
+	typedef std::unordered_map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;
 
 	std::string mId;
@@ -443,7 +453,7 @@ class EE_API Node : public Transformable {
 	Node* mPrev;	  //! Pointer to the prev child of the father
 	Uint32 mNodeFlags;
 	BlendMode mBlend;
-	Uint16 mNumCallBacks;
+	Uint32 mNumCallBacks;
 
 	mutable Polygon2f mPoly;
 	mutable Rectf mWorldBounds;

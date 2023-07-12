@@ -1,6 +1,7 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
+#include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitheme.hpp>
@@ -25,8 +26,7 @@ bool onCloseRequestCallback( EE::Window::Window* ) {
 		MsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the texture atlas editor?\nAll changes will be lost." );
-		MsgBox->addEventListener( Event::MsgBoxConfirmClick,
-								  []( const Event* ) { win->close(); } );
+		MsgBox->addEventListener( Event::OnConfirm, []( const Event* ) { win->close(); } );
 		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
 		MsgBox->setTitle( "Close Texture Atlas Editor?" );
 		MsgBox->center();
@@ -58,6 +58,10 @@ void mainLoop() {
 
 	if ( win->getInput()->isKeyUp( KEY_F8 ) ) {
 		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
+	}
+
+	if ( win->getInput()->isKeyUp( KEY_F12 ) ) {
+		UIWidgetInspector::create( uiSceneNode, PixelDensity::dpToPx( 16 ) );
 	}
 
 	SceneManager::instance()->update();

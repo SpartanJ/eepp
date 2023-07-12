@@ -201,6 +201,17 @@ class EE_API Sprite : public Drawable {
 					   const Vector2i& offset = Vector2i( 0, 0 ),
 					   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
+	/** Creates an static sprite (no animation). It creates a new TextureRegion.
+	 * @param tex The texture
+	 * @param DestSize The destination size of the TextureRegion created
+	 * @param offset The offset added to the position of the frame ( the TextureRegion )
+	 * @param TexSector The texture sector to be rendered ( default all the texture )
+	 * @return True if success
+	 */
+	bool createStatic( Texture* tex, const Sizef& DestSize = Sizef( 0, 0 ),
+					   const Vector2i& offset = Vector2i( 0, 0 ),
+					   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
+
 	/** Creates an animated sprite
 	 * @param SubFramesNum The number of subframes of the sprite
 	 */
@@ -214,6 +225,17 @@ class EE_API Sprite : public Drawable {
 	 * @return The frame position or 0 if fails
 	 */
 	unsigned int addFrame( const Uint32& TexId, const Sizef& DestSize = Sizef( 0, 0 ),
+						   const Vector2i& offset = Vector2i( 0, 0 ),
+						   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
+
+	/** Add a frame to the sprite (on the current sub frame)
+	 * @param tex The texture
+	 * @param DestSize The destination size of the frame
+	 * @param offset The offset added to the position of the frame
+	 * @param TexSector The texture sector to be rendered ( default all the texture )
+	 * @return The frame position or 0 if fails
+	 */
+	unsigned int addFrame( Texture* tex, const Sizef& DestSize = Sizef( 0, 0 ),
 						   const Vector2i& offset = Vector2i( 0, 0 ),
 						   const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
@@ -234,6 +256,20 @@ class EE_API Sprite : public Drawable {
 
 	bool addFramesByPatternId( const Uint32& TextureRegionId, const std::string& extension,
 							   TextureAtlas* SearchInTextureAtlas );
+
+	/** Add a frame on an specific subframe to the sprite
+	 * @param tex The texture
+	 * @param NumFrame The Frame Number
+	 * @param NumSubFrame The Sub Frame Number
+	 * @param DestSize The destination size of the frame
+	 * @param offset The offset added to the x position of the frame
+	 * @param TexSector The texture sector to be rendered ( default all the texture )
+	 * @return True if success
+	 */
+	bool addSubFrame( Texture* tex, const unsigned int& NumFrame, const unsigned int& NumSubFrame,
+					  const Sizef& DestSize = Sizef( 0, 0 ),
+					  const Vector2i& offset = Vector2i( 0, 0 ),
+					  const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
 
 	/** Add a frame on an specific subframe to the sprite
 	 * @param TexId The internal Texture Id

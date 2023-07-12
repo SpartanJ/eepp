@@ -78,7 +78,7 @@ class EE_API Variant {
 				eeSAFE_DELETE( mValue.asStdString );
 				break;
 			case Type::String:
-				eeSAFE_DELETE( mValue.asStdString );
+				eeSAFE_DELETE( mValue.asString );
 				break;
 			case Type::Drawable:
 				if ( mOwnsObject )

@@ -4,9 +4,9 @@
 **eepp** is an open source cross-platform game and application development
 framework heavily focused on the development of rich graphical user interfaces.
 
-[![Linux status](https://img.shields.io/github/workflow/status/SpartanJ/eepp/Linux/develop?label=Linux)](https://github.com/SpartanJ/eepp/actions?query=workflow%3ALinux)
-[![Windows status](https://img.shields.io/github/workflow/status/SpartanJ/eepp/Windows/develop?label=Windows)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AWindows)
-[![macOS status](https://img.shields.io/github/workflow/status/SpartanJ/eepp/macOS/develop?label=macOS)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AmacOS)
+[![Linux status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-linux-build-check.yml?branch=develop&label=Linux)](https://github.com/SpartanJ/eepp/actions?query=workflow%3ALinux)
+[![Windows status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-windows-build-check.yml?branch=develop&label=Windows)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AWindows)
+[![macOS status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-macos-build-check.yml?branch=develop&label=macOS)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AmacOS)
 
 ## Features
 
@@ -88,10 +88,6 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 * OpenAL audio engine with extendable file format support. Read and write support for OGG and Wav, and read support for MP3 and FLAC.
 
-### Physics Module
-
-* Full OOP chipmunk physics wrapper.
-
 ### System Module
 
 * Provides all the basics stuffs for the full multi-threading support of the library, file formats support for packing, clocks, resource manager, translator, and much more.
@@ -146,7 +142,11 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 * Programmable actions for nodes ( fade, rotate, move, scale, etc ).
 
-### Maps Module
+### Physics Module (optional)
+
+* Full OOP chipmunk physics wrapper.
+
+### Maps Module (optional)
 
 * Tiled Maps with software dynamic lights.
 
@@ -166,7 +166,7 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 ## Documentation
 
-Documentation is located [here](https://cdn.ensoft.dev/eepp-docs/). I'm currently working
+Documentation is located [here](https://cdn.ensoft.dev/eepp-docs/index.html). I'm currently working
 on improving it. About 50% of the project is currently documented so still needs
 a lot of work. Please check the code examples located in `src/examples` and you
 can also check out the test ( `src/test` ) and tools ( `src/tools` ).
@@ -357,7 +357,7 @@ Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 7
 
 * **[Fonts example](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-fonts.js)**
 
-* **[Physics module demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-physics.js)**
+* **[Physics module demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-physics-demo.js)**
 
 * **[Sprites example](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-sprites.js)**
 
@@ -365,32 +365,31 @@ Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 7
 
 ## How to build it
 
-The library has very few external dependencies. Most of the time you will only
-need **SDL2** and **OpenAL** libraries with the headers installed. Also
-**premake4** or **premake5** is needed to generate the Makefiles or project
+The library has only one external dependency. You will only need **SDL2** library with the headers
+installed. Also **premake5** or **premake4** is needed to generate the Makefiles or project
 files to build the library. I will assume that you know what you are doing and
 skip the basics.
 
-Notice: OpenAL is not strictly necessary. If you want to avoid it, you
-have the alternative to use [mojoAL](https://icculus.org/mojoAL/). The latter
-is already integrated to the library but not enabled by default. To enable it
-and disable the OpenAL dependency you need to add the parameter `--with-mojoal`
-to any `premake` call ( ex: `premake5 --with-mojoal gmake2` ).
+Notice: eepp uses [mojoAL](https://icculus.org/mojoAL/) by default as an OpenAL drop-in replacement.
+OpenAL is optionally available as an audio backend. If you want to use it, you
+have the alternative to enable it. To enable it and disable the mojoAL drop-in replacemente, you
+need to add the parameter `--without-mojoal` to any `premake` call
+( ex: `premake5 --without-mojoal gmake2` ).
 
 ### GNU/Linux
 
 In a Ubuntu system it would be something like ( also you will need gcc but it
 will be installed anyways ):
 
-`sudo apt-get install premake4 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev`
+`sudo apt-get install premake5 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev`
 
 Clone the repository and run on the repository root directory:
 
-`premake4 gmake`
-
-or if you have premake5 installed you can run:
-
 `premake5 gmake2`
+
+or if you have premake4 installed you can run:
+
+`premake4 gmake`
 
 Then just build the library:
 
@@ -403,7 +402,7 @@ That's it. That will build the whole project.
 You have two options: build with [Visual Studio](https://visualstudio.microsoft.com/)
 or with [MinGW](https://sourceforge.net/projects/mingw-w64/).
 To be able to build the project with any of these options first you will need to
-generate the project files with [premake4 or premake5](https://premake.github.io/download.html).
+generate the project files with [premake4 or premake5](https://premake.github.io/download).
 Then you will need to add the binary file to any of the executable paths defined
 in `PATH` ( or add one, or use it from a local path ). Also you will need to
 install the prebuild binaries and development libraries of [SDL2](http://libsdl.org/download-2.0.php)
@@ -414,7 +413,7 @@ Download *Visual Studio* or *MinGW* files depending on your needs.
 
 You will need to use premake5 and run:
 
-`premake5.exe vs2019`
+`premake5.exe vs2022`
 
 Then the project files should be found in `make/windows/`. A complete solution
 and all the project will be available. Having installed everything, you'll be
@@ -424,7 +423,7 @@ If you are very new to programming there's an alternative to build the project
 without external dependencies, in order to do that you need to generate the
 project files with the command:
 
-`premake5.exe --windows-vc-build --with-mojoal vs2019`
+`premake5.exe --windows-vc-build vs2022`
 
 Then just build the solution in Visual Studio or run `MSBuild` manually in a
 console:
@@ -432,15 +431,15 @@ console:
 `"%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m`
 
 Where `%MSBUILD_PATH%` is the MSBuild.exe Visual Studio path, for example for
-_VS2019 Community Edition_ the path usually is:
+_VS2022 Community Edition_ the path usually is:
 
-`C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\`
+`C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\`
 
 #### MinGW
 
-`premake4.exe gmake`
+`premake5.exe gmake2`
 
- Then just build the project located in `make/windows/` with `mingw32-make.exe`
+ Then just build the project located in `make/windows/` with `mingw32-make.exe` or `mingw64-make.exe` (depending on your target architecture)
  or any equivalent:
 
 `mingw32-make.exe -C make\windows`
@@ -546,6 +545,14 @@ Then there's a script for building the **emscripten** project in
 `projects/emscripten/make.sh`. Before running this script remember to set the
 emsdk enviroment, it should be something like: `source /path/to/emsdk/emsdk_env.sh`.
 That should be enough in **GNU/Linux** or **macOS** ( only tested this on GNU/Linux ).
+
+## How to run the demos and tools?
+
+All the binaries are located at the `bin` directory after built. The binaries requiere two files:
+the eepp library and the SDL2 library. The eepp library will be located in `libs/{OS}/`. The build
+script will try to symlink the eepp library into `bin`, if that fails it should be copied or
+symlinked manually. Regarding the SDL2 library is not provided in the repository, so in order to run
+the demos you'll need to download the correct SDL2 library OS version and architecture.
 
 ## Author comment
 

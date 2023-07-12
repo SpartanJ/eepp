@@ -27,6 +27,8 @@ class EE_API StyleSheet {
 
 	const std::vector<std::shared_ptr<StyleSheetStyle>>& getStyles() const;
 
+	std::shared_ptr<StyleSheetStyle> getStyleFromSelector( const std::string& selector ) const;
+
 	bool updateMediaLists( const MediaFeatures& features );
 
 	bool isMediaQueryListEmpty() const;
@@ -54,6 +56,11 @@ class EE_API StyleSheet {
 	void removeAllWithMarker( const Uint32& marker );
 
 	bool markerExists( const Uint32& marker ) const;
+
+	std::vector<std::shared_ptr<StyleSheetStyle>>
+	findStyleFromSelectorName( const std::string& selector );
+
+	bool refreshCacheFromStyles( const std::vector<std::shared_ptr<StyleSheetStyle>>& styles );
 
   protected:
 	Uint32 mMarker{ 0 };

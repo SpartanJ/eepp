@@ -405,10 +405,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	}
 
 	/// Init the clipboard after the window creation
-	reinterpret_cast<ClipboardSDL*>( mClipboard )->init();
+	static_cast<ClipboardSDL*>( mClipboard )->init();
 
 	/// Init the input after the window creation
-	reinterpret_cast<InputSDL*>( mInput )->init();
+	static_cast<InputSDL*>( mInput )->init();
 
 	mCursorManager->set( Cursor::SysArrow );
 
@@ -785,6 +785,17 @@ void WindowSDL::raise() {
 	SDL_RaiseWindow( mSDLWindow );
 }
 
+void WindowSDL::flash( WindowFlashOperation op ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	SDL_FlashOperation sdlOp = SDL_FlashOperation::SDL_FLASH_BRIEFLY;
+	if ( op == WindowFlashOperation::Cancel )
+		sdlOp = SDL_FlashOperation::SDL_FLASH_CANCEL;
+	else if ( op == WindowFlashOperation::UntilFocused )
+		sdlOp = SDL_FlashOperation::SDL_FLASH_UNTIL_FOCUSED;
+	SDL_FlashWindow( mSDLWindow, sdlOp );
+#endif
+}
+
 void WindowSDL::show() {
 	SDL_ShowWindow( mSDLWindow );
 }
@@ -826,6 +837,28 @@ Float WindowSDL::getScale() {
 	SDL_GL_GetDrawableSize( mSDLWindow, &realX, &realY );
 	SDL_GetWindowSize( mSDLWindow, &scaledX, &scaledY );
 	return (Float)realX / (Float)scaledX;
+}
+
+bool WindowSDL::hasNativeMessageBox() const {
+	return true;
+}
+
+Uint32 toSDLMsgBoxType( const Window::MessageBoxType& type ) {
+	switch ( type ) {
+		case Window::MessageBoxType::Error:
+			return SDL_MESSAGEBOX_ERROR;
+		case Window::MessageBoxType::Warning:
+			return SDL_MESSAGEBOX_WARNING;
+		case Window::MessageBoxType::Information:
+			return SDL_MESSAGEBOX_INFORMATION;
+	}
+	return SDL_MESSAGEBOX_INFORMATION;
+}
+
+bool WindowSDL::showMessageBox( const MessageBoxType& type, const std::string& title,
+								const std::string& message ) {
+	return 0 == SDL_ShowSimpleMessageBox( toSDLMsgBoxType( type ), title.c_str(), message.c_str(),
+										  mSDLWindow );
 }
 
 SDL_Window* WindowSDL::GetSDLWindow() const {

@@ -13,6 +13,7 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -155,6 +156,8 @@ Uint32 UITextInput::onFocus() {
 		resetWaitCursor();
 
 		getSceneNode()->getWindow()->startTextInput();
+
+		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 	}
 
 	return 1;
@@ -311,7 +314,7 @@ Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		}
-	} else if ( ( flags & EE_BUTTON_RMASK ) ) {
+	} else if ( ( flags & EE_BUTTON_RMASK ) && mEnabledCreateContextMenu ) {
 		onCreateContextMenu( position, flags );
 	}
 	return UITextView::onMouseUp( position, flags );
@@ -376,7 +379,7 @@ Int32 UITextInput::selCurEnd() {
 	return mDoc.getSelection().end().column();
 }
 
-void UITextInput::onDocumentTextChanged() {
+void UITextInput::onDocumentTextChanged( const DocumentContentChange& ) {
 	Vector2f offSet = mRealAlignOffset;
 
 	const String& text = mDoc.line( 0 ).getText();
@@ -450,6 +453,9 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 			return getHintColor().toHexString();
 		case PropertyId::HintShadowColor:
 			return getHintShadowColor().toHexString();
+		case PropertyId::HintShadowOffset:
+			return String::fromFloat( getHintShadowOffset().x ) + " " +
+				   String::fromFloat( getHintShadowOffset().y );
 		case PropertyId::HintFontSize:
 			return String::format( "%ddp", getHintFontSize() );
 		case PropertyId::HintFontFamily:
@@ -467,12 +473,20 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 
 std::vector<PropertyId> UITextInput::getPropertiesImplemented() const {
 	auto props = UITextView::getPropertiesImplemented();
-	auto local = {
-		PropertyId::Text,			PropertyId::AllowEditing,	 PropertyId::MaxLength,
-		PropertyId::Numeric,		PropertyId::AllowFloat,		 PropertyId::Hint,
-		PropertyId::HintColor,		PropertyId::HintShadowColor, PropertyId::HintFontSize,
-		PropertyId::HintFontFamily, PropertyId::HintFontStyle,	 PropertyId::HintStrokeWidth,
-		PropertyId::HintStrokeColor };
+	auto local = { PropertyId::Text,
+				   PropertyId::AllowEditing,
+				   PropertyId::MaxLength,
+				   PropertyId::Numeric,
+				   PropertyId::AllowFloat,
+				   PropertyId::Hint,
+				   PropertyId::HintColor,
+				   PropertyId::HintShadowColor,
+				   PropertyId::HintShadowOffset,
+				   PropertyId::HintFontSize,
+				   PropertyId::HintFontFamily,
+				   PropertyId::HintFontStyle,
+				   PropertyId::HintStrokeWidth,
+				   PropertyId::HintStrokeColor };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -505,6 +519,9 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::HintShadowColor:
 			setHintShadowColor( attribute.asColor() );
+			break;
+		case PropertyId::HintShadowOffset:
+			setHintShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::HintFontSize:
 			setHintFontSize( attribute.asDpDimensionI() );
@@ -581,6 +598,20 @@ UITextInput* UITextInput::setHintShadowColor( const Color& shadowColor ) {
 	if ( shadowColor != mHintStyleConfig.getFontShadowColor() ) {
 		mHintCache->setShadowColor( shadowColor );
 		mHintStyleConfig.ShadowColor = shadowColor;
+		invalidateDraw();
+	}
+
+	return this;
+}
+
+const Vector2f& UITextInput::getHintShadowOffset() const {
+	return mHintStyleConfig.getFontShadowOffset();
+}
+
+UITextInput* UITextInput::setHintShadowOffset( const Vector2f& shadowOffset ) {
+	if ( shadowOffset != mHintStyleConfig.getFontShadowOffset() ) {
+		mHintCache->setShadowOffset( shadowOffset );
+		mHintStyleConfig.ShadowOffset = shadowOffset;
 		invalidateDraw();
 	}
 
@@ -676,14 +707,15 @@ void UITextInput::paste() {
 		String::replaceAll( pasted, "\n", "" );
 	}
 	mDoc.textInput( pasted );
+	onTextChanged();
 	sendCommonEvent( Event::OnTextPasted );
 }
 
 void UITextInput::registerCommands() {
-	mDoc.setCommand( "copy", [&] { copy(); } );
-	mDoc.setCommand( "cut", [&] { cut(); } );
-	mDoc.setCommand( "paste", [&] { paste(); } );
-	mDoc.setCommand( "press-enter", [&] { onPressEnter(); } );
+	mDoc.setCommand( "copy", [this] { copy(); } );
+	mDoc.setCommand( "cut", [this] { cut(); } );
+	mDoc.setCommand( "paste", [this] { paste(); } );
+	mDoc.setCommand( "press-enter", [this] { onPressEnter(); } );
 }
 
 void UITextInput::registerKeybindings() {
@@ -727,6 +759,7 @@ Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
 		// Allow copy selection on locked mode
 		if ( mAllowEditing ) {
 			mDoc.execute( cmd );
+			mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 			return 1;
 		}
 	}
@@ -739,7 +772,11 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 input->isControlPressed() || input->isMetaPressed() || input->isLeftAltPressed() )
+		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() ||
+		 input->isLeftAltPressed() )
+		return 0;
+
+	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
 		return 0;
 
 	const String& text = event.getText();
@@ -833,10 +870,10 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
+	createDefaultContextMenuOptions( menu );
+
 	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
 	sendEvent( &event );
-
-	createDefaultContextMenuOptions( menu );
 
 	if ( menu->getCount() == 0 ) {
 		menu->close();
@@ -844,7 +881,7 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [&]( const Event* event ) {
+	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -859,7 +896,7 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
-	menu->addEventListener( Event::OnClose, [&]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
 	selCurInit( init );
 	selCurEnd( end );

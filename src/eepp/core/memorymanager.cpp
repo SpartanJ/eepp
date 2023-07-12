@@ -28,6 +28,10 @@ AllocatedPointer::AllocatedPointer( void* data, const std::string& file, int lin
 	mTrack = track;
 }
 
+void* MemoryManager::allocate( size_t size ) { return malloc( size ); }
+
+void* MemoryManager::reallocate( void* ptr, size_t size ) { return realloc( ptr, size ); }
+
 void* MemoryManager::addPointerInPlace( void* place, const AllocatedPointer& aAllocatedPointer ) {
 	AllocatedPointerMapIt it = sMapPointers.find( place );
 
@@ -66,7 +70,7 @@ void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAlloca
 
 	AllocatedPointerMapIt it = sMapPointers.find( data );
 
-	if ( it->second.mTrack )
+	if ( it != sMapPointers.end() && it->second.mTrack )
 		eePRINTL( "Realloc pointer %p at '%s' %d", data, aAllocatedPointer.mFile.c_str(),
 				  aAllocatedPointer.mLine );
 

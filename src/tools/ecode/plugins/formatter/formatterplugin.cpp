@@ -1,13 +1,15 @@
 #include "formatterplugin.hpp"
-#include "../../scopedop.hpp"
-#include "../../thirdparty/json.hpp"
-#include "../../thirdparty/subprocess.h"
+#include "eepp/system/md5.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/process.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
+#include <nlohmann/json.hpp>
 #include <random>
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -22,52 +24,74 @@ namespace ecode {
 #define FORMATTER_THREADED 0
 #endif
 
-UICodeEditorPlugin* FormatterPlugin::New( const PluginManager* pluginManager ) {
-	return eeNew( FormatterPlugin, ( pluginManager ) );
+UICodeEditorPlugin* FormatterPlugin::New( PluginManager* pluginManager ) {
+	return eeNew( FormatterPlugin, ( pluginManager, false ) );
 }
 
-FormatterPlugin::FormatterPlugin( const PluginManager* pluginManager ) :
-	mPool( pluginManager->getThreadPool() ) {
-#if FORMATTER_THREADED
-	mPool->run( [&, pluginManager] { load( pluginManager ); }, [] {} );
+UICodeEditorPlugin* FormatterPlugin::NewSync( PluginManager* pluginManager ) {
+	return eeNew( FormatterPlugin, ( pluginManager, true ) );
+}
+
+FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
+	Plugin( pluginManager ) {
+	if ( sync ) {
+		load( pluginManager );
+	} else {
+#if defined( FORMATTER_THREADED ) && FORMATTER_THREADED == 1
+		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
 #else
-	load( formattersPath );
+		load( pluginManager );
 #endif
+	}
 }
 
 FormatterPlugin::~FormatterPlugin() {
 	mShuttingDown = true;
+	unsubscribeFileSystemListener();
 
 	if ( mWorkersCount != 0 ) {
 		std::unique_lock<std::mutex> lock( mWorkMutex );
-		mWorkerCondition.wait( lock, [&]() { return mWorkersCount <= 0; } );
+		mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
 	}
 
 	for ( auto editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {
-			editor->getKeyBindings().removeCommandKeybind( kb.first );
-			if ( editor->hasDocument() )
-				editor->getDocument().removeCommand( kb.first );
+			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
+			if ( editor.first->hasDocument() )
+				editor.first->getDocument().removeCommand( kb.first );
 		}
 
-		editor->unregisterPlugin( this );
+		editor.first->unregisterPlugin( this );
 	}
 }
 
 void FormatterPlugin::onRegister( UICodeEditor* editor ) {
-	mEditors.insert( editor );
+	std::vector<Uint32> listeners;
 
 	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+		if ( !kb.first.empty() )
+			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
 	}
 
 	if ( editor->hasDocument() )
 		editor->getDocument().setCommand( "format-doc", [&, editor]() { formatDoc( editor ); } );
 
-	mOnDocumentSaveCb = editor->addEventListener( Event::OnDocumentSave, [&]( const Event* event ) {
-		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) )
-			formatDoc( event->getNode()->asType<UICodeEditor>() );
-	} );
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
+			tryRequestCapabilities( editor->getDocumentRef() );
+		} ) );
+
+	listeners.push_back( editor->addEventListener( Event::OnDocumentSave, [this](
+																			  const Event* event ) {
+		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
+			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+			auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
+			if ( isAutoFormatting == mIsAutoFormatting.end() || isAutoFormatting->second == false )
+				formatDoc( editor );
+		}
+	} ) );
+
+	mEditors.insert( { editor, listeners } );
 }
 
 void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
@@ -77,8 +101,13 @@ void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 			editor->getDocument().removeCommand( kb.first );
 	}
 
-	if ( mOnDocumentSaveCb != 0 )
-		editor->removeEventListener( mOnDocumentSaveCb );
+	auto afIt = mIsAutoFormatting.find( &editor->getDocument() );
+	if ( afIt != mIsAutoFormatting.end() )
+		mIsAutoFormatting.erase( afIt );
+
+	auto cbs = mEditors[editor];
+	for ( auto listener : cbs )
+		editor->removeEventListener( listener );
 
 	if ( mShuttingDown )
 		return;
@@ -116,28 +145,49 @@ size_t FormatterPlugin::formatterFilePatternPosition( const std::vector<std::str
 	return std::string::npos;
 }
 
-void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
+void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
 	json j;
 
+	if ( updateConfigFile ) {
+		mConfigHash = String::hash( data );
+	}
+
 	try {
 		j = json::parse( data, nullptr, true, true );
-	} catch ( ... ) {
-		return;
+	} catch ( const json::exception& e ) {
+		Log::error( "FormatterPlugin::loadFormatterConfig - Error parsing formatter config from "
+					"path %s, error: %s, config file content:\n%s",
+					path.c_str(), e.what(), data.c_str() );
+		if ( !updateConfigFile )
+			return;
+		// Recreate it
+		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"formatters\":[]\n}\n",
+						 nullptr, true, true );
 	}
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
 		if ( config.contains( "auto_format_on_save" ) )
 			setAutoFormatOnSave( config["auto_format_on_save"].get<bool>() );
+		else if ( updateConfigFile )
+			config["auto_format_on_save"] = getAutoFormatOnSave();
 	}
 
 	if ( mKeyBindings.empty() )
 		mKeyBindings["format-doc"] = "alt+f";
 	if ( j.contains( "keybindings" ) && j["keybindings"].contains( "format-doc" ) )
 		mKeyBindings["format-doc"] = j["keybindings"]["format-doc"];
+	else if ( updateConfigFile )
+		j["keybindings"]["format-doc"] = mKeyBindings["format-doc"];
+
+	if ( updateConfigFile ) {
+		data = j.dump( 2 );
+		FileSystem::fileWrite( path, data );
+		mConfigHash = String::hash( data );
+	}
 
 	if ( !j.contains( "formatters" ) )
 		return;
@@ -147,10 +197,23 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
 		Formatter formatter;
 		auto fp = obj["file_patterns"];
 
+		if ( obj.contains( "language" ) ) {
+			if ( obj["language"].is_array() ) {
+				const auto& langs = obj["language"];
+				for ( const auto& lang : langs ) {
+					if ( lang.is_string() )
+						formatter.languages.push_back( lang.get<std::string>() );
+				}
+			} else if ( obj["language"].is_string() ) {
+				formatter.languages.push_back( obj["language"].get<std::string>() );
+			}
+		}
+
 		for ( auto& pattern : fp )
 			formatter.files.push_back( pattern.get<std::string>() );
 
 		formatter.command = obj["command"].get<std::string>();
+		formatter.url = obj.value( "url", "" );
 
 		if ( obj.contains( "type" ) ) {
 			std::string typeStr( obj["type"].get<std::string>() );
@@ -180,7 +243,12 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path ) {
 	}
 }
 
-void FormatterPlugin::load( const PluginManager* pluginManager ) {
+void FormatterPlugin::load( PluginManager* pluginManager ) {
+	BoolScopedOp loading( mLoading, true );
+	pluginManager->subscribeMessages( this,
+									  [this]( const auto& notification ) -> PluginRequestHandle {
+										  return processMessage( notification );
+									  } );
 	registerNativeFormatters();
 
 	std::vector<std::string> paths;
@@ -189,39 +257,76 @@ void FormatterPlugin::load( const PluginManager* pluginManager ) {
 		paths.emplace_back( path );
 	path = pluginManager->getPluginsPath() + "formatters.json";
 	if ( FileSystem::fileExists( path ) ||
-		 FileSystem::fileWrite( path, "{\n\"config\":{},\n\"formatters\":[]\n}\n" ) ) {
+		 FileSystem::fileWrite(
+			 path, "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"formatters\":[]\n}\n" ) ) {
 		mConfigPath = path;
 		paths.emplace_back( path );
 	}
 	if ( paths.empty() )
 		return;
-	for ( const auto& path : paths ) {
+	for ( const auto& fpath : paths ) {
 		try {
-			loadFormatterConfig( path );
-		} catch ( json::exception& e ) {
-			Log::error( "Parsing formatter \"%s\" failed:\n%s", path.c_str(), e.what() );
+			loadFormatterConfig( fpath, mConfigPath == fpath );
+		} catch ( const json::exception& e ) {
+			Log::error( "Parsing formatter \"%s\" failed:\n%s", fpath.c_str(), e.what() );
 		}
 	}
 	mReady = !mFormatters.empty();
 	if ( mReady )
 		fireReadyCbs();
+
+	subscribeFileSystemListener();
 }
 
-bool FormatterPlugin::hasFileConfig() {
-	return !mConfigPath.empty();
+bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i&,
+										   const Uint32& ) {
+	tryRequestCapabilities( editor->getDocumentRef() );
+	if ( supportsFormatter( editor->getDocumentRef() ).command.empty() &&
+		 !supportsLSPFormatter( editor->getDocumentRef() ) )
+		return false;
+
+	menu->addSeparator();
+	menu->add( editor->getUISceneNode()->i18n( "formatter-format-document", "Format Document" ),
+			   nullptr, KeyBindings::keybindFormat( mKeyBindings["format-doc"] ) )
+		->setId( "format-doc" );
+
+	return false;
 }
 
-std::string FormatterPlugin::getFileConfigPath() {
-	return mConfigPath;
+const std::vector<FormatterPlugin::Formatter>& FormatterPlugin::getFormatters() const {
+	return mFormatters;
+}
+
+FormatterPlugin::Formatter
+FormatterPlugin::getFormatterForLang( const std::string& lang,
+									  const std::vector<std::string>& extensions ) {
+	for ( const auto& formatter : mFormatters ) {
+		for ( const auto& clang : formatter.languages ) {
+			if ( clang == lang ) {
+				return formatter;
+			}
+		}
+
+		if ( !formatter.files.empty() ) {
+			for ( const auto& file : formatter.files ) {
+				for ( const auto& ext : extensions ) {
+					if ( ext == file ) {
+						return formatter;
+					}
+				}
+			}
+		}
+	}
+	return {};
 }
 
 void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 	ScopedOp op(
-		[&]() {
+		[this]() {
 			mWorkMutex.lock();
 			mWorkersCount++;
 		},
-		[&]() {
+		[this]() {
 			mWorkersCount--;
 			mWorkMutex.unlock();
 			mWorkerCondition.notify_all();
@@ -232,9 +337,13 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 	Clock clock;
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto formatter = supportsFormatter( doc );
-	if ( formatter.command.empty() || doc->getFilePath().empty() )
+	if ( formatter.command.empty() ) {
+		if ( supportsLSPFormatter( doc ) )
+			formatDocWithLSP( doc );
 		return;
-	IOStreamString fileString;
+	} else if ( doc->getFilePath().empty() ) {
+		return;
+	}
 	std::string path;
 	if ( doc->isDirty() || !doc->hasFilepath() || formatter.type == FormatterType::Inplace ) {
 		std::string tmpPath;
@@ -247,6 +356,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 			tmpPath = fileDir + "." + String::randString( 8 ) + "." + doc->getFilename();
 		}
 
+		IOStreamString fileString;
 		doc->save( fileString, true );
 		FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(),
 							   fileString.getSize() );
@@ -256,13 +366,28 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 			std::string data;
 			FileSystem::fileGet( tmpPath, data );
 
-			editor->runOnMainThread( [&, data, editor]() {
-				std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
-				TextPosition pos = doc->getSelection().start();
-				doc->selectAll();
-				doc->textInput( data );
-				doc->setSelection( pos );
-			} );
+			auto oldFile = MD5::fromStream( fileString );
+			auto newFile = MD5::fromString( data );
+
+			if ( oldFile != newFile ) {
+				editor->runOnMainThread( [&, data, editor]() {
+					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
+					auto pos = doc->getSelection();
+					auto scroll = editor->getScroll();
+					doc->resetCursor();
+					doc->selectAll();
+					doc->setRunningTransaction( true );
+					doc->textInput( data, false );
+					doc->setSelection( pos );
+					editor->setScroll( scroll );
+					if ( mAutoFormatOnSave ) {
+						mIsAutoFormatting[doc.get()] = true;
+						doc->save();
+						mIsAutoFormatting[doc.get()] = false;
+					}
+					doc->setRunningTransaction( false );
+				} );
+			}
 		}
 
 		FileSystem::fileRemove( tmpPath );
@@ -285,43 +410,38 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 		editor->runOnMainThread( [&, res, editor]() {
 			std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 			TextPosition pos = doc->getSelection().start();
+			auto scroll = editor->getScroll();
+			doc->resetCursor();
 			doc->selectAll();
-			doc->textInput( res.result );
+			doc->setRunningTransaction( true );
+			doc->textInput( res.result, false );
 			doc->setSelection( pos );
+			editor->setScroll( scroll );
+			doc->setRunningTransaction( false );
 		} );
 		return;
 	}
 
 	std::string cmd( formatter.command );
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
-	std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
-	std::vector<const char*> strings;
-	for ( size_t i = 0; i < cmdArr.size(); ++i )
-		strings.push_back( cmdArr[i].c_str() );
-	strings.push_back( NULL );
-	struct subprocess_s subprocess;
-	int result =
-		subprocess_create( strings.data(),
-						   subprocess_option_search_user_path |
-							   subprocess_option_inherit_environment | subprocess_option_no_window,
-						   &subprocess );
-	if ( 0 == result ) {
+	Process process;
+	if ( process.create( cmd ) ) {
 		std::string buffer( 1024, '\0' );
 		std::string data;
 		unsigned bytesRead = 0;
 		int returnCode;
 		do {
-			bytesRead = subprocess_read_stdout( &subprocess, &buffer[0], buffer.size() );
+			bytesRead = process.readStdOut( buffer );
 			data += buffer.substr( 0, bytesRead );
-		} while ( bytesRead != 0 && subprocess_alive( &subprocess ) && !mShuttingDown );
+		} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown );
 
 		if ( mShuttingDown ) {
-			subprocess_terminate( &subprocess );
+			process.kill();
 			return;
 		}
 
-		subprocess_join( &subprocess, &returnCode );
-		subprocess_destroy( &subprocess );
+		process.join( &returnCode );
+		process.destroy();
 
 		// Log::info( "Formatter result:\n%s", data.c_str() );
 
@@ -329,13 +449,26 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			if ( data.empty() )
 				return;
 
-			editor->runOnMainThread( [&, data, editor]() {
-				std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
-				TextPosition pos = doc->getSelection().start();
-				doc->selectAll();
-				doc->textInput( data );
-				doc->setSelection( pos );
-			} );
+			IOStreamString fileString;
+			editor->getDocumentRef()->save( fileString, true );
+
+			auto oldFile = MD5::fromStream( fileString );
+			auto newFile = MD5::fromString( data );
+
+			if ( oldFile != newFile ) {
+				editor->runOnMainThread( [&, data, editor]() {
+					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
+					TextPosition pos = doc->getSelection().start();
+					auto scroll = editor->getScroll();
+					doc->resetCursor();
+					doc->selectAll();
+					doc->setRunningTransaction( true );
+					doc->textInput( data, false );
+					doc->setSelection( pos );
+					editor->setScroll( scroll );
+					doc->setRunningTransaction( false );
+				} );
+			}
 		}
 	}
 }
@@ -354,6 +487,33 @@ FormatterPlugin::Formatter FormatterPlugin::supportsFormatter( std::shared_ptr<T
 		}
 	}
 	return {};
+}
+
+bool FormatterPlugin::supportsLSPFormatter( std::shared_ptr<TextDocument> doc ) {
+	auto lang = doc->getSyntaxDefinition().getLSPName();
+	auto cap = mCapabilities.find( lang );
+	if ( cap != mCapabilities.end() )
+		return cap->second.documentFormattingProvider;
+	return false;
+}
+
+static json getURIJSON( std::shared_ptr<TextDocument> doc ) {
+	json data;
+	json docUri;
+	json options;
+	docUri["uri"] = doc->getURI().toString();
+	data["textDocument"] = docUri;
+	options["tabSize"] = doc->getIndentWidth();
+	options["insertSpaces"] = doc->getIndentType() == TextDocument::IndentType::IndentSpaces;
+	data["options"] = options;
+	return data;
+}
+
+bool FormatterPlugin::formatDocWithLSP( std::shared_ptr<TextDocument> doc ) {
+	json data = getURIJSON( doc );
+	mManager->sendBroadcast( this, PluginMessageType::DocumentFormatting, PluginMessageFormat::JSON,
+							 &data );
+	return false;
 }
 
 void FormatterPlugin::registerNativeFormatters() {
@@ -405,6 +565,32 @@ void FormatterPlugin::registerNativeFormatters() {
 		std::string res( j.dump( 2 ) );
 		return { !res.empty(), res, "" };
 	};
+}
+
+bool FormatterPlugin::tryRequestCapabilities( const std::shared_ptr<TextDocument>& doc ) {
+	const auto& language = doc->getSyntaxDefinition().getLSPName();
+	auto it = mCapabilities.find( language );
+	if ( it != mCapabilities.end() )
+		return true;
+	json data;
+	data["language"] = language;
+	mManager->sendRequest( this, PluginMessageType::LanguageServerCapabilities,
+						   PluginMessageFormat::JSON, &data );
+	return false;
+}
+
+PluginRequestHandle FormatterPlugin::processMessage( const PluginMessage& msg ) {
+	if ( msg.type == PluginMessageType::FileSystemListenerReady ) {
+		subscribeFileSystemListener();
+	} else if ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerCapabilities ) {
+		if ( msg.asLanguageServerCapabilities().ready ) {
+			LSPServerCapabilities cap = msg.asLanguageServerCapabilities();
+			Lock l( mCapabilitiesMutex );
+			for ( const auto& lang : cap.languages )
+				mCapabilities[lang] = cap;
+		}
+	}
+	return {};
 }
 
 } // namespace ecode

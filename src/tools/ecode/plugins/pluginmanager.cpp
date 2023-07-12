@@ -1,18 +1,27 @@
 #include "pluginmanager.hpp"
+#include "../filesystemlistener.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 
+using json = nlohmann::json;
+
 namespace ecode {
 
 PluginManager::PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
-							  std::shared_ptr<ThreadPool> pool ) :
-	mResourcesPath( resourcesPath ), mPluginsPath( pluginsPath ), mThreadPool( pool ) {}
+							  std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb ) :
+	mResourcesPath( resourcesPath ),
+	mPluginsPath( pluginsPath ),
+	mThreadPool( pool ),
+	mLoadFileFn( loadFileCb ) {}
 
 PluginManager::~PluginManager() {
-	for ( auto& plugin : mPlugins )
+	mClosing = true;
+	for ( auto& plugin : mPlugins ) {
+		Log::debug( "PluginManager: unloading plugin %s", plugin.second->getTitle().c_str() );
 		eeDelete( plugin.second );
+	}
 }
 
 void PluginManager::registerPlugin( const PluginDefinition& def ) {
@@ -26,18 +35,26 @@ UICodeEditorPlugin* ecode::PluginManager::get( const std::string& id ) {
 	return nullptr;
 }
 
-bool PluginManager::setEnabled( const std::string& id, bool enable ) {
+bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) {
 	mPluginsEnabled[id] = enable;
 	UICodeEditorPlugin* plugin = get( id );
 	if ( enable && plugin == nullptr && hasDefinition( id ) ) {
-		UICodeEditorPlugin* newPlugin = mDefinitions[id].creatorFn( this );
+		Log::debug( "PluginManager: loading plugin %s", mDefinitions[id].name.c_str() );
+		UICodeEditorPlugin* newPlugin = sync && mDefinitions[id].creatorSyncFn
+											? mDefinitions[id].creatorSyncFn( this )
+											: mDefinitions[id].creatorFn( this );
 		mPlugins.insert( std::pair<std::string, UICodeEditorPlugin*>( id, newPlugin ) );
 		if ( onPluginEnabled )
 			onPluginEnabled( newPlugin );
 		return true;
 	}
 	if ( !enable && plugin != nullptr ) {
-		eeSAFE_DELETE( plugin );
+		Log::debug( "PluginManager: unloading plugin %s", mDefinitions[id].name.c_str() );
+		mThreadPool->run( [plugin]() { eeDelete( plugin ); } );
+		{
+			Lock l( mSubscribedPluginsMutex );
+			mSubscribedPlugins.erase( id );
+		}
 		mPlugins.erase( id );
 	}
 	return false;
@@ -45,6 +62,16 @@ bool PluginManager::setEnabled( const std::string& id, bool enable ) {
 
 bool PluginManager::isEnabled( const std::string& id ) const {
 	return mPluginsEnabled.find( id ) != mPluginsEnabled.end() ? mPluginsEnabled.at( id ) : false;
+}
+
+bool PluginManager::reload( const std::string& id ) {
+	if ( isEnabled( id ) ) {
+		Log::warning( "PluginManager: reloading plugin %s", id.c_str() );
+		setEnabled( id, false );
+		setEnabled( id, true );
+		return true;
+	}
+	return false;
 }
 
 const std::string& PluginManager::getResourcesPath() const {
@@ -64,11 +91,12 @@ void PluginManager::onNewEditor( UICodeEditor* editor ) {
 		editor->registerPlugin( plugin.second );
 }
 
-void PluginManager::setPluginsEnabled( const std::map<std::string, bool>& pluginsEnabled ) {
+void PluginManager::setPluginsEnabled( const std::map<std::string, bool>& pluginsEnabled,
+									   bool sync ) {
 	mPluginsEnabled = pluginsEnabled;
 	for ( const auto& plugin : pluginsEnabled ) {
 		if ( plugin.second && get( plugin.first ) == nullptr )
-			setEnabled( plugin.first, true );
+			setEnabled( plugin.first, true, sync );
 	}
 }
 
@@ -89,6 +117,148 @@ const PluginDefinition* PluginManager::getDefinitionIndex( const Int64& index ) 
 		++i;
 	}
 	return def;
+}
+
+UICodeEditorSplitter* PluginManager::getSplitter() const {
+	return mSplitter;
+}
+
+UISceneNode* PluginManager::getUISceneNode() const {
+	return mSplitter ? mSplitter->getUISceneNode() : nullptr;
+}
+
+const std::string& PluginManager::getWorkspaceFolder() const {
+	return mWorkspaceFolder;
+}
+
+void PluginManager::setWorkspaceFolder( const std::string& workspaceFolder ) {
+	mWorkspaceFolder = workspaceFolder;
+	json data{ { "folder", mWorkspaceFolder } };
+	sendBroadcast( PluginMessageType::WorkspaceFolderChanged, PluginMessageFormat::JSON, &data );
+}
+
+PluginRequestHandle PluginManager::sendRequest( PluginMessageType type, PluginMessageFormat format,
+												const void* data ) {
+	if ( mClosing )
+		return PluginRequestHandle::empty();
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins ) {
+		auto handle = plugin.second( { type, format, data } );
+		if ( !handle.isEmpty() )
+			return handle;
+	}
+	return PluginRequestHandle::empty();
+}
+
+PluginRequestHandle PluginManager::sendRequest( UICodeEditorPlugin* pluginWho,
+												PluginMessageType type, PluginMessageFormat format,
+												const void* data ) {
+	if ( mClosing )
+		return PluginRequestHandle::empty();
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins ) {
+		if ( pluginWho->getId() != plugin.first ) {
+			auto handle = plugin.second( { type, format, data } );
+			if ( !handle.isEmpty() )
+				return handle;
+		}
+	}
+	return PluginRequestHandle::empty();
+}
+
+void PluginManager::sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+								  PluginMessageFormat format, const void* data,
+								  const PluginIDType& responseID ) {
+	if ( mClosing )
+		return;
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins )
+		if ( pluginWho->getId() != plugin.first )
+			plugin.second( { type, format, data, responseID } );
+}
+
+void PluginManager::sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+								   PluginMessageFormat format, const void* data ) {
+	if ( mClosing )
+		return;
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins )
+		if ( pluginWho->getId() != plugin.first )
+			plugin.second( { type, format, data, -1 } );
+}
+
+void PluginManager::subscribeMessages(
+	const std::string& uniqueComponentId,
+	std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
+	{
+		Lock l( mSubscribedPluginsMutex );
+		mSubscribedPlugins[uniqueComponentId] = cb;
+	}
+	if ( !mWorkspaceFolder.empty() ) {
+		json data{ { "folder", mWorkspaceFolder } };
+		cb( { PluginMessageType::WorkspaceFolderChanged, PluginMessageFormat::JSON, &data } );
+	}
+}
+
+void PluginManager::unsubscribeMessages( const std::string& uniqueComponentId ) {
+	if ( !mClosing ) {
+		Lock l( mSubscribedPluginsMutex );
+		mSubscribedPlugins.erase( uniqueComponentId );
+	}
+}
+
+const PluginManager::OnLoadFileCb& PluginManager::getLoadFileFn() const {
+	return mLoadFileFn;
+}
+
+void PluginManager::subscribeMessages(
+	UICodeEditorPlugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
+	subscribeMessages( plugin->getId(), cb );
+}
+
+void PluginManager::unsubscribeMessages( UICodeEditorPlugin* plugin ) {
+	unsubscribeMessages( plugin->getId() );
+}
+
+void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {
+	mSplitter = splitter;
+}
+
+void PluginManager::setFileSystemListener( FileSystemListener* listener ) {
+	if ( listener == mFileSystemListener )
+		return;
+	mFileSystemListener = listener;
+	sendBroadcast( PluginMessageType::FileSystemListenerReady, PluginMessageFormat::Empty,
+				   nullptr );
+}
+
+void PluginManager::sendBroadcast( const PluginMessageType& notification,
+								   const PluginMessageFormat& format, void* data ) {
+	if ( mClosing )
+		return;
+	SubscribedPlugins subscribedPlugins;
+	{
+		Lock l( mSubscribedPluginsMutex );
+		subscribedPlugins = mSubscribedPlugins;
+	}
+	for ( const auto& plugin : subscribedPlugins )
+		plugin.second( { notification, format, data, -1 } );
 }
 
 bool PluginManager::hasDefinition( const std::string& id ) {
@@ -190,15 +360,15 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		id="plugin-manager-window"
 		lw="800dp" lh="400dp"
 		padding="8dp"
-		window-title="Plugin Manager"
+		window-title="@string(plugin_manager, Plugin Manager)"
 		window-flags="default|maximize|shadow"
 		window-min-size="300dp 300dp">
 		<vbox lw="mp" lh="mp">
 			<UIPluginManagerTable id="plugin-manager-table" lw="mp" lh="fixed" layout_weight="1" />
 			<vbox lw="mp" lh="wc">
 				<hbox margin-top="4dp" layout-gravity="right">
-					<pushbutton id="plugin-manager-preferences" enabled="false" text="Configuration" />
-					<pushbutton id="plugin-manager-close" text="Close" icon="close" margin-left="4dp" />
+					<pushbutton id="plugin-manager-preferences" enabled="false" text="@string(preferences, Preferences)" />
+					<pushbutton id="plugin-manager-close" text="@string(close, Close)" icon="close" margin-left="4dp" />
 				</hbox>
 			</vbox>
 		</vbox>
@@ -214,8 +384,6 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
 			win->closeWindow();
 	} );
-	prefs->setText( sceneNode->i18n( "preferences", "Preferences" ) );
-	win->setTitle( sceneNode->i18n( "plugin_manager", "Plugin Manager" ) );
 	tv->setModel( PluginsModel::New( manager ) );
 	tv->setColumnsVisible(
 		{ PluginsModel::Title, PluginsModel::Description, PluginsModel::Version } );
@@ -260,7 +428,9 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		}
 	};
 	tv->addEventListener( Event::OnClose, [&, manager, tv]( const Event* ) {
-		for ( auto& cb : tv->readyCbs ) {
+		if ( tv->readyCbs.empty() )
+			return;
+		for ( const auto& cb : tv->readyCbs ) {
 			auto* plugin = manager->get( cb.first );
 			if ( plugin )
 				plugin->removeReadyCallback( cb.second );
@@ -268,6 +438,136 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 	} );
 	win->center();
 	return win;
+}
+
+Plugin::Plugin( PluginManager* manager ) :
+	mManager( manager ), mThreadPool( manager->getThreadPool() ) {}
+
+void Plugin::subscribeFileSystemListener() {
+	if ( mFileSystemListenerCb != 0 || mManager->getFileSystemListener() == nullptr )
+		return;
+
+	mConfigFileInfo = FileInfo( mConfigPath );
+
+	mFileSystemListenerCb = mManager->getFileSystemListener()->addListener(
+		[this]( const FileEvent& ev, const FileInfo& file ) {
+			if ( ev.type != FileSystemEventType::Modified )
+				return;
+			if ( !mShuttingDown && !mLoading && file.getFilepath() == mConfigPath &&
+				 file.getModificationTime() != mConfigFileInfo.getModificationTime() ) {
+				std::string fileContents;
+				FileSystem::fileGet( file.getFilepath(), fileContents );
+				if ( getConfigFileHash() != String::hash( fileContents ) ) {
+					mConfigFileInfo = file;
+					mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
+					mFileSystemListenerCb = 0;
+					mManager->reload( getId() );
+				} else {
+					Log::debug( "Plugin %s: Configuration file has been modified: %s. But contents "
+								"are the same.",
+								getTitle().c_str(), mConfigPath.c_str() );
+				}
+			}
+		} );
+}
+
+void Plugin::unsubscribeFileSystemListener() {
+	if ( mFileSystemListenerCb != 0 && mManager->getFileSystemListener() )
+		mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
+}
+
+bool Plugin::isReady() const {
+	return mReady;
+}
+
+bool Plugin::isShuttingDown() const {
+	return mShuttingDown;
+}
+
+bool Plugin::hasFileConfig() {
+	return !mConfigPath.empty();
+}
+
+std::string Plugin::getFileConfigPath() {
+	return mConfigPath;
+}
+
+PluginManager* Plugin::getManager() const {
+	return mManager;
+}
+
+PluginBase::~PluginBase() {
+	mShuttingDown = true;
+	unsubscribeFileSystemListener();
+	for ( auto editor : mEditors ) {
+		onBeforeUnregister( editor.first );
+		for ( auto listener : editor.second )
+			editor.first->removeEventListener( listener );
+		editor.first->unregisterPlugin( this );
+	}
+}
+
+void PluginBase::onRegister( UICodeEditor* editor ) {
+	Lock l( mMutex );
+
+	std::vector<Uint32> listeners;
+
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentLoaded, [this]( const Event* event ) {
+			Lock l( mMutex );
+			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+			onDocumentLoaded( docEvent->getDoc() );
+		} ) );
+
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
+			{
+				Lock l( mMutex );
+				const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+				TextDocument* doc = docEvent->getDoc();
+				onDocumentClosed( doc );
+				onUnregisterDocument( doc );
+				mDocs.erase( doc );
+			}
+		} ) );
+
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentChanged, [&, editor]( const Event* ) {
+			TextDocument* oldDoc = mEditorDocs[editor];
+			TextDocument* newDoc = editor->getDocumentRef().get();
+			Lock l( mMutex );
+			mDocs.erase( oldDoc );
+			mEditorDocs[editor] = newDoc;
+			onDocumentChanged( editor, oldDoc );
+		} ) );
+
+	onRegisterListeners( editor, listeners );
+
+	mEditors.insert( { editor, listeners } );
+	if ( mDocs.count( editor->getDocumentRef().get() ) == 0 ) {
+		mDocs.insert( editor->getDocumentRef().get() );
+		onRegisterDocument( editor->getDocumentRef().get() );
+	}
+	mEditorDocs[editor] = editor->getDocumentRef().get();
+}
+
+void PluginBase::onUnregister( UICodeEditor* editor ) {
+	onBeforeUnregister( editor );
+	if ( mShuttingDown )
+		return;
+	Lock l( mMutex );
+	TextDocument* doc = mEditorDocs[editor];
+	auto cbs = mEditors[editor];
+	for ( auto listener : cbs )
+		editor->removeEventListener( listener );
+	onUnregisterEditor( editor );
+	mEditors.erase( editor );
+	mEditorDocs.erase( editor );
+	for ( auto editorIt : mEditorDocs )
+		if ( editorIt.second == doc )
+			return;
+	onUnregisterDocument( doc );
+	mDocs.erase( doc );
 }
 
 } // namespace ecode

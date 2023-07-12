@@ -7,6 +7,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
 #include <iomanip>
+#include <iostream>
 
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -19,26 +20,37 @@
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
+#include <libproc.h>
+#include <unistd.h>
 #include <CoreFoundation/CoreFoundation.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <stdlib.h>
 #include <windows.h>
 #undef GetDiskFreeSpace
 #undef GetTempPath
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <libgen.h>
+#include <mntent.h>
 #include <unistd.h>
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
+#include <Directory.h>
+#include <Path.h>
+#include <Volume.h>
+#include <VolumeRoster.h>
+#include <fs_info.h>
 #include <kernel/OS.h>
 #include <kernel/image.h>
+#include <sys/statvfs.h>
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 #include <stdlib.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
+#include <sys/mount.h>
 #include <sys/sysctl.h>
 #endif
 
@@ -50,7 +62,9 @@
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#include <eepp/network/uri.hpp>
 #include <emscripten.h>
+using namespace EE::Network;
 #endif
 
 #ifndef PATH_MAX
@@ -402,7 +416,7 @@ static void eeStartTicks() {
 	}
 }
 
-Uint32 Sys::getTicks() {
+Uint64 Sys::getTicks() {
 	eeStartTicks();
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -414,16 +428,16 @@ Uint32 Sys::getTicks() {
 	hires_now.QuadPart *= 1000;
 	hires_now.QuadPart /= hires_ticks_per_second.QuadPart;
 
-	return (DWORD)hires_now.QuadPart;
+	return (Uint64)hires_now.QuadPart;
 #elif defined( EE_PLATFORM_POSIX )
 #ifdef EE_HAVE_CLOCK_GETTIME
-	Uint32 ticks;
+	Uint64 ticks;
 	struct timespec now;
 	clock_gettime( CLOCK_MONOTONIC, &now );
 	ticks = ( now.tv_sec - start.tv_sec ) * 1000 + ( now.tv_nsec - start.tv_nsec ) / 1000000;
 	return ( ticks );
 #else
-	Uint32 ticks;
+	Uint64 ticks;
 	struct timeval now;
 	gettimeofday( &now, NULL );
 	ticks = ( now.tv_sec - start.tv_sec ) * 1000 + ( now.tv_usec - start.tv_usec ) / 1000;
@@ -472,6 +486,12 @@ void Sys::sleep( const Time& time ) {
 
 static std::string sGetProcessPath() {
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
+	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+	pid_t pid = getpid();
+	int ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	if ( ret >= 0 )
+		return FileSystem::fileRemoveFileName( std::string( pathbuf ) );
+
 	char exe_file[PATH_MAX + 1];
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
 	if ( mainBundle ) {
@@ -591,6 +611,16 @@ double Sys::getSystemTime() {
 	gettimeofday( &Time, NULL );
 
 	return Time.tv_sec + Time.tv_usec / 1000000.;
+#endif
+}
+
+Uint64 Sys::getProcessID() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return GetCurrentProcessId();
+#elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	return getpid();
+#else
+#warning Sys::getProcessID() not implemented in this platform
 #endif
 }
 
@@ -850,6 +880,260 @@ void* Sys::loadFunction( void* handle, const std::string& name ) {
 #else
 #warning Sys::loadFunction not implemented in this platform
 #endif
+}
+
+std::vector<std::string> Sys::parseArguments( int argc, char* argv[] ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	int rargc;
+	LPWSTR* rargv = CommandLineToArgvW( GetCommandLineW(), &rargc );
+	std::vector<std::string> args;
+	if ( rargc <= 1 )
+		return {};
+	for ( int i = 1; i < rargc; i++ ) {
+		args.emplace_back( String( rargv[i] ).toUtf8() );
+	}
+	return args;
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	if ( argc < 1 )
+		return {};
+	std::vector<std::string> args;
+	for ( int i = 1; i < argc; i++ ) {
+		auto split = String::split( std::string( argv[i] ), '=' );
+		if ( split.size() == 2 ) {
+			std::string arg( split[0] + "=" + URI::decode( split[1] ) );
+			args.emplace_back( !String::startsWith( arg, "--" ) ? ( std::string( "--" ) + arg )
+																: arg );
+		}
+	}
+	return args;
+#else
+	std::vector<std::string> args;
+	if ( argc > 1 ) {
+		for ( int i = 1; i < argc; i++ )
+			args.push_back( argv[i] );
+	}
+	return args;
+#endif
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+static inline bool isDriveReady( const wchar_t* path ) {
+	DWORD fileSystemFlags;
+	const UINT driveType = GetDriveTypeW( path );
+	return ( driveType != DRIVE_REMOVABLE && driveType != DRIVE_CDROM ) ||
+		   GetVolumeInformationW( path, nullptr, 0, nullptr, nullptr, &fileSystemFlags, nullptr,
+								  0 ) == TRUE;
+}
+#endif
+
+std::vector<std::string> Sys::getLogicalDrives() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::vector<std::string> ret;
+	const UINT oldErrorMode = ::SetErrorMode( SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX );
+	Uint32 driveBits = (Uint32)GetLogicalDrives() & 0x3ffffff;
+	wchar_t driveName[] = L"A:\\";
+
+	while ( driveBits ) {
+		if ( ( driveBits & 1 ) && isDriveReady( driveName ) )
+			ret.emplace_back( String::fromWide( driveName ).toUtf8() );
+		driveName[0]++;
+		driveBits = driveBits >> 1;
+	}
+	::SetErrorMode( oldErrorMode );
+	return ret;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	std::vector<std::string> ret;
+	struct mntent* ent;
+	FILE* file = setmntent( "/etc/mtab", "r" );
+	if ( file == NULL ) {
+		file = setmntent( "/proc/mounts", "r" );
+		if ( file == NULL )
+			return ret;
+	}
+	while ( NULL != ( ent = getmntent( file ) ) ) {
+		std::string mntType( ent->mnt_type );
+		if ( mntType == "rootfs" || mntType == "devtmpfs" || mntType == "tmpfs" ||
+			 mntType == "devpts" || mntType == "hugetlbfs" || mntType == "mqueue" ||
+			 mntType == "ramfs" || mntType == "rpc_pipefs" || mntType == "fuse.gvfsd-fuse" ||
+			 mntType == "fuse.portal" || mntType == "overlay" || mntType == "nsfs" )
+			continue;
+
+		std::string mntDir( ent->mnt_dir );
+		if ( String::startsWith( mntDir, "/proc" ) || String::startsWith( mntDir, "/var/run" ) ||
+			 String::startsWith( mntDir, "/sys" ) || String::startsWith( mntDir, "/var/lock" ) )
+			continue;
+
+		ret.emplace_back( std::move( mntDir ) );
+	}
+	endmntent( file );
+	return ret;
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
+	EE_PLATFORM == EE_PLATFORM_IOS
+	std::vector<std::string> ret;
+	struct statfs* mounts;
+	int numMounts = getmntinfo( &mounts, MNT_NOWAIT );
+	if ( numMounts <= 0 )
+		return ret;
+	for ( int i = 0; i < numMounts; ++i ) {
+		auto mnt = mounts[i];
+		std::string mntType( mnt.f_mntfromname );
+
+		if ( mntType == "devfs" || mntType == "autofs" )
+			continue;
+
+		ret.emplace_back( mnt.f_mntonname );
+	}
+	return ret;
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	std::vector<std::string> ret;
+	BVolumeRoster mounts;
+	BVolume vol;
+	mounts.Rewind();
+	while ( mounts.GetNextVolume( &vol ) == B_NO_ERROR ) {
+		fs_info fsinfo;
+		fs_stat_dev( vol.Device(), &fsinfo );
+		BDirectory directory;
+		BEntry entry;
+		BPath path;
+		status_t rc;
+		rc = vol.GetRootDirectory( &directory );
+		if ( rc < B_OK )
+			continue;
+		rc = directory.GetEntry( &entry );
+		if ( rc < B_OK )
+			continue;
+		rc = entry.GetPath( &path );
+		if ( rc < B_OK )
+			continue;
+		const char* str = path.Path();
+		ret.emplace_back( str );
+	}
+	return ret;
+#else
+	return {};
+#endif
+}
+
+static std::string getenv( const std::string& name ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC )
+	wchar_t* envbuf;
+	size_t envsize;
+	_wdupenv_s( &envbuf, &envsize, String( name ).toWideString().c_str() );
+	std::string env;
+	if ( NULL != envbuf )
+		env = String::fromWide( envbuf ).toUtf8();
+	free( envbuf );
+	return env;
+#else
+	char* env = ::getenv( name.c_str() );
+	return NULL == env ? std::string() : std::string( env );
+#endif
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#define PATH_SEP_CHAR ';'
+#else
+#define PATH_SEP_CHAR ':'
+#endif
+std::string Sys::which( const std::string& exeName,
+						const std::vector<std::string>& customSearchPaths ) {
+	std::string PATH = getenv( "PATH" );
+	std::vector<std::string> PATHS = String::split( PATH, PATH_SEP_CHAR );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	static std::vector<std::string> PATHEXTS = String::split( getenv( "PATHEXT" ), PATH_SEP_CHAR );
+	std::string exePath;
+#endif
+
+	if ( !customSearchPaths.empty() ) {
+		for ( const auto& searchPath : customSearchPaths )
+			PATHS.emplace_back( searchPath );
+	}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	bool hasExtension = false;
+	for ( const auto& pathExt : PATHEXTS ) {
+		if ( String::endsWith( exeName, pathExt ) ) {
+			hasExtension = true;
+			break;
+		}
+	}
+#endif
+
+	for ( const auto& path : PATHS ) {
+		std::string fpath( path );
+		FileSystem::dirAddSlashAtEnd( fpath );
+		fpath += exeName;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if ( hasExtension ) {
+			if ( FileSystem::fileExists( fpath ) )
+				return fpath;
+		} else {
+			for ( const auto& pathext : PATHEXTS ) {
+				exePath = fpath + pathext;
+				if ( FileSystem::fileExists( exePath ) )
+					return exePath;
+			}
+		}
+#else
+		if ( FileSystem::fileExists( fpath ) )
+			return fpath;
+#endif
+	}
+	return "";
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+static ULONG_PTR GetParentProcessId() {
+	ULONG_PTR pbi[6];
+	ULONG ulSize = 0;
+	LONG( WINAPI * NtQueryInformationProcess )
+	( HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
+	  ULONG ProcessInformationLength, PULONG ReturnLength );
+	*(FARPROC*)&NtQueryInformationProcess =
+		GetProcAddress( LoadLibraryA( "NTDLL.DLL" ), "NtQueryInformationProcess" );
+	if ( NtQueryInformationProcess ) {
+		if ( NtQueryInformationProcess( GetCurrentProcess(), 0, &pbi, sizeof( pbi ), &ulSize ) >=
+				 0 &&
+			 ulSize == sizeof( pbi ) )
+			return pbi[5];
+	}
+	return (ULONG_PTR)-1;
+}
+
+static bool isWineRunning() {
+	HMODULE hntdll = GetModuleHandle( TEXT( "ntdll.dll" ) );
+	if ( !hntdll )
+		return false;
+	void* pwine_get_version = (void*)GetProcAddress( hntdll, "wine_get_version" );
+	return pwine_get_version != NULL;
+}
+#endif
+
+bool Sys::windowAttachConsole() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// WINE doesn't need to attach any console
+	if ( isWineRunning() )
+		return true;
+	ULONG_PTR ppid = GetParentProcessId();
+	if ( ppid == (ULONG_PTR)-1 ) {
+		return false;
+	} else {
+		AttachConsole( ppid );
+	}
+
+	freopen( "CONIN$", "r", stdin );
+	freopen( "CONOUT$", "w", stdout );
+	freopen( "CONOUT$", "w", stderr );
+
+	std::cout.clear();
+	std::cerr.clear();
+	std::cin.clear();
+
+	std::wcout.clear();
+	std::wcerr.clear();
+	std::wcin.clear();
+#endif
+	return true;
 }
 
 }} // namespace EE::System

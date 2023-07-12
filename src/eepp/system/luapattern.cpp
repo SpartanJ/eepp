@@ -28,6 +28,18 @@ std::string LuaPattern::match( const std::string& string, const std::string& pat
 	return "";
 }
 
+std::string LuaPattern::matchesAny( const std::vector<std::string>& stringvec,
+								  const std::string& pattern ) {
+	LuaPattern matcher( pattern );
+	int start = 0, end = 0;
+	for ( const auto& str : stringvec ) {
+		if ( matcher.find( str, start, end ) ) {
+			return str.substr( start, end - start );
+		}
+	}
+	return "";
+}
+
 LuaPattern::Range LuaPattern::find( const std::string& string, const std::string& pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;

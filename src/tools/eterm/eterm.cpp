@@ -9,6 +9,24 @@ Clock secondsCounter;
 Time frameTime{ Time::Zero };
 bool benchmarkMode{ false };
 std::string windowStringData;
+std::map<std::string, TerminalColorScheme> terminalColorSchemes;
+
+void loadColorSchemes( const std::string& resPath ) {
+	auto configPath = Sys::getConfigPath( "eterm" );
+	auto colorSchemes =
+		TerminalColorScheme::loadFromFile( resPath + "colorschemes/terminalcolorschemes.conf" );
+	auto colorSchemesPath = configPath + FileSystem::getOSSlash() + "colorschemes";
+	if ( FileSystem::isDirectory( colorSchemesPath ) ) {
+		auto colorSchemesFiles = FileSystem::filesGetInPath( colorSchemesPath );
+		for ( auto& file : colorSchemesFiles ) {
+			auto colorSchemesInFile = TerminalColorScheme::loadFromFile( file );
+			std::copy( colorSchemesInFile.begin(), colorSchemesInFile.end(),
+					   std::back_inserter( colorSchemes ) );
+		}
+	}
+	for ( auto colorScheme : colorSchemes )
+		terminalColorSchemes.insert( { colorScheme.getName(), colorScheme } );
+}
 
 void inputCallback( InputEvent* event ) {
 	if ( !terminal || event->Type == InputEvent::EventsSent )
@@ -86,13 +104,12 @@ void mainLoop() {
 	if ( terminal )
 		termNeedsUpdate = !terminal->update();
 
-	if ( terminal && ( benchmarkMode || terminal->isDirty() ) && !termNeedsUpdate ) {
-		if ( lastRender.getElapsedTime() >= frameTime ) {
-			lastRender.restart();
-			win->clear();
-			terminal->draw();
-			win->display();
-		}
+	if ( terminal && ( benchmarkMode || terminal->isDirty() ) &&
+		 ( !termNeedsUpdate || lastRender.getElapsedTime() >= frameTime ) ) {
+		lastRender.restart();
+		win->clear();
+		terminal->draw();
+		win->display();
 	} else if ( !benchmarkMode && !termNeedsUpdate ) {
 		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 	}
@@ -106,13 +123,15 @@ void mainLoop() {
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #ifdef EE_DEBUG
-	Log::instance()->setConsoleOutput( true );
+	Log::instance()->setLogToStdOut( true );
 	Log::instance()->setLiveWrite( true );
 #endif
 	args::ArgumentParser parser( "eterm" );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
 	args::ValueFlag<std::string> shell( parser, "shell", "Shell name or path", { 's', "shell" },
 										"" );
+	args::ValueFlag<std::string> shellArgs( parser, "shell-args", "Shell command line arguments",
+											{ "shell-args" }, "" );
 	args::ValueFlag<size_t> historySize( parser, "scrollback", "Maximum history size (lines)",
 										 { 'l', "scrollback" }, 10000 );
 	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
@@ -120,8 +139,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<std::string> fontPath( parser, "fontpath", "Font path", { 'f', "font" } );
 	args::ValueFlag<std::string> fallbackFontPathF( parser, "fallback-fontpath",
 													"Fallback Font path", { "fallback-font" } );
-	args::ValueFlag<Float> fontSize( parser, "fontsize", "Font size (in dp)", { 's', "fontsize" },
-									 11 );
+	args::ValueFlag<Float> fontSize( parser, "fontsize", "Font size (in dp)", { "fontsize" }, 11 );
 	args::ValueFlag<Float> width( parser, "winwidth", "Window width (in dp)", { "width" }, 1280 );
 	args::ValueFlag<Float> height( parser, "winheight", "Window height (in dp)", { "height" },
 								   720 );
@@ -134,6 +152,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<std::string> executeInShell(
 		parser, "execute-in-shell", "execute program in shell", { 'e', "execute" }, "" );
 	args::Flag vsync( parser, "vsync", "Enable vsync", { "vsync" } );
+	args::ValueFlag<std::string> colorScheme( parser, "color-scheme", "Load color scheme",
+											  { "color-scheme" }, "" );
+	args::Flag listColorSchemes( parser, "color-schemes", "Lists color schemes",
+								 { "list-color-schemes" } );
 	args::ValueFlag<Uint32> maxFPS( parser, "max-fps",
 									"Maximum rendering frames per second of the terminal. Default "
 									"value will be the refresh rate of the screen.",
@@ -177,6 +199,16 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	resPath += "assets";
 	FileSystem::dirAddSlashAtEnd( resPath );
 
+	if ( listColorSchemes.Get() || colorScheme )
+		loadColorSchemes( resPath );
+
+	if ( listColorSchemes.Get() ) {
+		std::cout << "Color schemes:\n";
+		for ( const auto& tcs : terminalColorSchemes )
+			std::cout << "\t" << tcs.first << "\n";
+		return EXIT_SUCCESS;
+	}
+
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
 	displayManager->disableBypassCompositor();
@@ -184,7 +216,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	Sizei winSize( width.Get(), height.Get() );
 	win = Engine::instance()->createWindow(
 		WindowSettings( winSize.getWidth(), winSize.getHeight(), "eterm", WindowStyle::Default,
-						WindowBackend::Default, 32, resPath + "icon/ee.png",
+						WindowBackend::Default, 32, resPath + "icon/eterm.png",
 						pixelDenstiyConf ? pixelDenstiyConf.Get()
 										 : currentDisplay->getPixelDensity() ),
 		ContextSettings( vsync.Get() ) );
@@ -230,7 +262,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			FileInfo file( wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory() );
 			terminal = TerminalDisplay::create(
 				win, fontMono, PixelDensity::dpToPx( fontSize.Get() ), win->getSize().asFloat(),
-				file.isRegularFile() && file.isExecutable() ? file.getFilepath() : shell.Get(), {},
+				file.isRegularFile() && file.isExecutable() ? file.getFilepath() : shell.Get(),
+				shellArgs ? String::split( shellArgs.Get() ) : std::vector<std::string>(),
 				file.getDirectoryPath(), historySize.Get(), nullptr, fb.Get(),
 				!( file.isRegularFile() && file.isExecutable() ) );
 			terminal->getTerminal()->setAllowMemoryTrimnming( true );
@@ -243,6 +276,14 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					win->close();
 				}
 			} );
+			if ( shell )
+				terminal->setKeepAlive( false );
+
+			if ( colorScheme ) {
+				auto selColorScheme = terminalColorSchemes.find( colorScheme.Get() );
+				if ( selColorScheme != terminalColorSchemes.end() )
+					terminal->setColorScheme( selColorScheme->second );
+			}
 
 			if ( !executeInShell.Get().empty() )
 				terminal->executeFile( executeInShell.Get() );

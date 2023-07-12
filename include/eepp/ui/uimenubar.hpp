@@ -39,7 +39,7 @@ class EE_API UIMenuBar : public UIWidget {
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
   protected:
-	typedef std::list<std::pair<UISelectButton*, UIPopUpMenu*>> MenuBarList;
+	typedef std::vector<std::pair<UISelectButton*, UIPopUpMenu*>> MenuBarList;
 
 	Uint32 mMenuHeight;
 	UIPopUpMenu* mCurrentMenu;

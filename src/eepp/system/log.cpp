@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdarg>
 #include <eepp/system/log.hpp>
 #include <iostream>
@@ -31,6 +32,10 @@ Log* Log::create( const std::string& logPath, const LogLevel& level, bool consol
 				  bool liveWrite ) {
 	if ( NULL == ms_singleton ) {
 		ms_singleton = eeNew( Log, ( logPath, level, consoleOutput, liveWrite ) );
+	} else {
+		ms_singleton->setLogLevelThreshold( level );
+		ms_singleton->setLogToStdOut( consoleOutput );
+		ms_singleton->setLiveWrite( liveWrite );
 	}
 	return ms_singleton;
 }
@@ -38,6 +43,10 @@ Log* Log::create( const std::string& logPath, const LogLevel& level, bool consol
 Log* Log::create( const LogLevel& level, bool consoleOutput, bool liveWrite ) {
 	if ( NULL == ms_singleton ) {
 		ms_singleton = eeNew( Log, ( "", level, consoleOutput, liveWrite ) );
+	} else {
+		ms_singleton->setLogLevelThreshold( level );
+		ms_singleton->setLogToStdOut( consoleOutput );
+		ms_singleton->setLiveWrite( liveWrite );
 	}
 	return ms_singleton;
 }
@@ -56,6 +65,14 @@ Log::Log( const std::string& logPath, const LogLevel& level, bool consoleOutput,
 	writel( LogLevel::Info, "eepp initialized" );
 }
 
+bool Log::getKeepLog() const {
+	return mKeepLog;
+}
+
+void Log::setKeepLog( bool keepLog ) {
+	mKeepLog = keepLog;
+}
+
 const std::string& Log::getFilePath() const {
 	return mFilePath;
 }
@@ -70,7 +87,7 @@ void Log::setFilePath( const std::string& filePath ) {
 Log::~Log() {
 	writel( LogLevel::Info, "eepp stoped\n" );
 
-	if ( mSave && !mLiveWrite ) {
+	if ( mSave && !mLiveWrite && mKeepLog ) {
 		openFS();
 
 		mFS->write( mData.c_str(), mData.size() );
@@ -98,9 +115,11 @@ void Log::save( const std::string& filepath ) {
 }
 
 void Log::write( const std::string& text ) {
-	lock();
-	mData += text;
-	unlock();
+	if ( mKeepLog ) {
+		lock();
+		mData += text;
+		unlock();
+	}
 
 	writeToReaders( text );
 
@@ -160,10 +179,12 @@ void Log::write( const LogLevel& level, const std::string& text ) {
 }
 
 void Log::writel( const std::string& text ) {
-	lock();
-	mData += text;
-	mData += "\n";
-	unlock();
+	if ( mKeepLog ) {
+		lock();
+		mData += text;
+		mData += "\n";
+		unlock();
+	}
 
 	writeToReaders( text );
 	writeToReaders( "\n" );
@@ -228,9 +249,11 @@ void Log::writef( const char* format, ... ) {
 			tstr.resize( n );
 			tstr += '\n';
 
-			lock();
-			mData += tstr;
-			unlock();
+			if ( mKeepLog ) {
+				lock();
+				mData += tstr;
+				unlock();
+			}
 
 			writeToReaders( tstr );
 
@@ -293,9 +316,11 @@ void Log::writef( const LogLevel& level, const char* format, ... ) {
 				first = false;
 			}
 
-			lock();
-			mData += tstr;
-			unlock();
+			if ( mKeepLog ) {
+				lock();
+				mData += tstr;
+				unlock();
+			}
 
 			writeToReaders( tstr );
 
@@ -335,22 +360,22 @@ void Log::writef( const LogLevel& level, const char* format, ... ) {
 	}
 }
 
-std::string Log::getBuffer() const {
+const std::string& Log::getBuffer() const {
 	return mData;
 }
 
-const bool& Log::isConsoleOutput() const {
+const bool& Log::isLoggingToStdOut() const {
 	return mConsoleOutput;
 }
 
-void Log::setConsoleOutput( const bool& output ) {
+void Log::setLogToStdOut( const bool& output ) {
 	bool OldOutput = mConsoleOutput;
 
 	mConsoleOutput = output;
 
-	if ( !OldOutput && output ) {
+	if ( !OldOutput && output && !mData.empty() ) {
 		lock();
-		std::string data( mData );
+		std::string data( std::move( mData ) );
 		mData = "";
 		unlock();
 		write( data );
@@ -370,14 +395,14 @@ void Log::addLogReader( LogReaderInterface* reader ) {
 }
 
 void Log::removeLogReader( LogReaderInterface* reader ) {
-	mReaders.remove( reader );
+	auto found = std::find( mReaders.begin(), mReaders.end(), reader );
+	if ( found != mReaders.end() )
+		mReaders.erase( found );
 }
 
 void Log::writeToReaders( const std::string& text ) {
-	for ( std::list<LogReaderInterface*>::iterator it = mReaders.begin(); it != mReaders.end();
-		  ++it ) {
-		( *it )->writeLog( text );
-	}
+	for ( const auto& reader : mReaders )
+		reader->writeLog( text );
 }
 
 }} // namespace EE::System

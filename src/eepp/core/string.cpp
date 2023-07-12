@@ -5,9 +5,11 @@
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
 #include <functional>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <random>
+#include <thirdparty/utf8cpp/utf8.h>
 
 namespace EE {
 
@@ -149,11 +151,18 @@ String String::escape( const String& str ) {
 
 String String::unescape( const String& str ) {
 	String output;
+	bool lastWasEscape = false;
+	bool lastInsertedEscape = false;
+
 	for ( size_t i = 0; i < str.size(); i++ ) {
-		if ( i > 0 && str[i - 1] == '\\' ) {
+		lastWasEscape = lastWasEscape && !lastInsertedEscape;
+		lastInsertedEscape = false;
+
+		if ( lastWasEscape ) {
 			switch ( str[i] ) {
 				case '\\':
 					output.push_back( '\\' );
+					lastInsertedEscape = true;
 					break;
 				case 'r':
 					output.push_back( '\r' );
@@ -248,13 +257,16 @@ String String::unescape( const String& str ) {
 					break;
 				}
 				default: {
-					// Undefined behavior
+					output.push_back( '\\' );
+					output.push_back( str[i] );
 					break;
 				}
 			}
 		} else if ( str[i] != '\\' ) {
 			output.push_back( str[i] );
 		}
+
+		lastWasEscape = str[i] == '\\';
 	}
 	return output;
 }
@@ -307,6 +319,8 @@ bool String::isHexNotation( const std::string& value, const std::string& withPre
 
 std::vector<String> String::split( const String& str, const StringBaseType& delim,
 								   const bool& pushEmptyString, const bool& keepDelim ) {
+	if ( str.empty() )
+		return {};
 	std::vector<String> cont;
 	std::size_t current, previous = 0;
 	current = str.find( delim );
@@ -334,10 +348,19 @@ std::vector<String> String::split( const String& str, const StringBaseType& deli
 
 std::vector<std::string> String::split( const std::string& str, const Int8& delim,
 										const bool& pushEmptyString, const bool& keepDelim ) {
+	if ( str.empty() )
+		return {};
 	std::vector<std::string> cont;
 	std::size_t current, previous = 0;
 	current = str.find( delim );
 	while ( current != std::string::npos ) {
+		if ( (Int64)current - (Int64)previous < 0 ) {
+			std::cerr << "String::split fatal error: current " << current << " previous "
+					  << previous << " with str " << str << " delim " << delim
+					  << " pushEmptyString " << pushEmptyString << " keepDelim " << keepDelim
+					  << "\n";
+			return cont;
+		}
 		std::string substr( str.substr( previous, current - previous ) );
 		if ( pushEmptyString || !substr.empty() )
 			cont.emplace_back( std::move( substr ) );
@@ -364,6 +387,20 @@ std::vector<std::string> String::split( const std::string& str, const Int8& deli
 std::vector<String> String::split( const StringBaseType& delim, const bool& pushEmptyString,
 								   const bool& keepDelim ) const {
 	return String::split( *this, delim, pushEmptyString, keepDelim );
+}
+
+std::string String::getFirstLine( const std::string& string ) {
+	auto pos = string.find_first_of( '\n' );
+	if ( pos == std::string::npos )
+		return string;
+	return string.substr( 0, pos );
+}
+
+String String::getFirstLine() {
+	auto pos = find_first_of( '\n' );
+	if ( pos == String::InvalidPos )
+		return *this;
+	return substr( 0, pos );
 }
 
 std::vector<std::string> String::split( const std::string& str, const std::string& delims,
@@ -482,7 +519,9 @@ std::string String::trim( const std::string& str, char character ) {
 }
 
 void String::trimInPlace( std::string& str, char character ) {
-	str = trim( str, character );
+	// Trim only if there's something to trim
+	if ( !str.empty() && ( str[0] == character || str[str.size() - 1] == character ) )
+		str = trim( str, character );
 }
 
 String String::lTrim( const String& str, char character ) {
@@ -601,7 +640,8 @@ String::StringBaseType String::lastChar() const {
 }
 
 // Lite (https://github.com/rxi/lite) fuzzy match implementation
-template <typename T> constexpr int tFuzzyMatch( const T* str, const T* ptn ) {
+template <typename T>
+constexpr int tFuzzyMatch( const T* str, const T* ptn, bool allowUneven, bool permissive ) {
 	int score = 0;
 	int run = 0;
 	while ( *str && *ptn ) {
@@ -619,13 +659,14 @@ template <typename T> constexpr int tFuzzyMatch( const T* str, const T* ptn ) {
 		}
 		str++;
 	}
-	if ( *ptn )
+	if ( *ptn && !allowUneven )
 		return INT_MIN;
-	return score - strlen( str );
+	return score - ( permissive ? 0 : strlen( str ) );
 }
 
-int String::fuzzyMatch( const std::string& string, const std::string& pattern ) {
-	return tFuzzyMatch<char>( string.c_str(), pattern.c_str() );
+int String::fuzzyMatch( const std::string& string, const std::string& pattern, bool allowUneven,
+						bool permissive ) {
+	return tFuzzyMatch<char>( string.c_str(), pattern.c_str(), allowUneven, permissive );
 }
 
 std::vector<Uint8> String::stringToUint8( const std::string& str ) {
@@ -690,6 +731,41 @@ void String::replaceAll( String& target, const String& that, const String& with 
 		target.insert( pos, with );
 		pos += with.length();
 	}
+}
+
+void String::replaceAll( const String& that, const String& with ) {
+	String::replaceAll( *this, that, with );
+}
+
+void String::pop_back() {
+	mString.pop_back();
+}
+
+const String::StringBaseType& String::front() const {
+	return mString.front();
+}
+
+const String::StringBaseType& String::back() const {
+	return mString.back();
+}
+
+String& String::trim( char character ) {
+	trimInPlace( *this, character );
+	return *this;
+}
+
+String& String::lTrim( char character ) {
+	*this = lTrim( *this, character );
+	return *this;
+}
+
+String& String::rTrim( char character ) {
+	*this = rTrim( *this, character );
+	return *this;
+}
+
+bool String::contains( const String& needle ) {
+	return String::contains( *this, needle );
 }
 
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {
@@ -897,6 +973,10 @@ String::String( const std::wstring& wideString ) {
 	mString.reserve( wideString.length() + 1 );
 	Utf32::fromWide( wideString.begin(), wideString.end(), std::back_inserter( mString ) );
 }
+
+String String::fromWide( const wchar_t* wideString ) {
+	return String( wideString );
+}
 #endif
 
 String::String( const StringBaseType* utf32String ) {
@@ -933,8 +1013,12 @@ static inline size_t utf8_length( const char* s, const char* e ) {
 	return i;
 }
 
-size_t String::utf8StringLength( const std::string& utf8String ) {
+size_t String::utf8Length( const std::string& utf8String ) {
 	return utf8_length( utf8String.c_str(), utf8String.c_str() + utf8String.length() );
+}
+
+Uint32 String::utf8Next( char*& utf8String ) {
+	return utf8::unchecked::next( utf8String );
 }
 
 String::operator std::string() const {

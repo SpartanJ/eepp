@@ -85,7 +85,7 @@ const Vector2f& ScrollParallax::getPosition() const {
 void ScrollParallax::draw() {
 	if ( NULL != mTextureRegion && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom &&
 		 0 != mColor.a ) {
-		mPos += mSpeed * (Float)mElapsed.getElapsed().asSeconds();
+		mPos += mSpeed * (Float)mElapsed.getElapsedTimeAndReset().asSeconds();
 
 		if ( mPos.x > mAABB.Left + mRealSize.getWidth() ||
 			 mPos.x < mAABB.Left - mRealSize.getWidth() )

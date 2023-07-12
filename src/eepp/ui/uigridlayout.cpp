@@ -110,6 +110,15 @@ void UIGridLayout::updateLayout() {
 	if ( mPacking )
 		return;
 	mPacking = true;
+
+	if ( !mVisible ) {
+		setInternalPixelsSize( Sizef::Zero );
+		notifyLayoutAttrChangeParent();
+		mPacking = false;
+		mDirtyLayout = false;
+		return;
+	}
+
 	Sizef oldSize( getSize() );
 
 	if ( getParent()->isUINode() &&
@@ -117,15 +126,11 @@ void UIGridLayout::updateLayout() {
 		setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 	}
 
-	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left -
-						  mLayoutMargin.Right );
-	}
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent )
+		setInternalPixelsWidth( getMatchParentWidth() );
 
-	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top -
-						   mLayoutMargin.Bottom );
-	}
+	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent )
+		setInternalPixelsHeight( getMatchParentHeight() );
 
 	Node* ChildLoop = mChild;
 

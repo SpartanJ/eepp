@@ -62,8 +62,8 @@ class EE_API UITreeViewCell : public UITableCell {
 		UITableCell( "treeview::cell", newTextViewCb ) {
 		mTextBox->setElementTag( mTag + "::text" );
 		mIcon->setElementTag( mTag + "::icon" );
-		mInnerWidgetOrientation = InnerWidgetOrientation::Left;
-		auto cb = [&]( const Event* ) { updateLayout(); };
+		mInnerWidgetOrientation = InnerWidgetOrientation::WidgetIconTextBox;
+		auto cb = [this]( const Event* ) { updateLayout(); };
 		mImage = UIImage::NewWithTag( mTag + "::expander" );
 		mImage->setScaleType( UIScaleType::FitInside )
 			->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
@@ -142,6 +142,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	bool tryOpenModelIndex( const ModelIndex& index, bool forceUpdate = true );
 
+	void updateContentSize();
+
   protected:
 	enum class IterationDecision {
 		Continue,
@@ -160,7 +162,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	UITreeView();
 
-	virtual void createOrUpdateColumns();
+	virtual void createOrUpdateColumns( bool resetColumnData );
 
 	struct MetadataForIndex {
 		bool open{ false };
@@ -190,8 +192,6 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
 
 	virtual void onSortColumn( const size_t& colIndex );
-
-	void updateContentSize();
 
 	void setAllExpanded( const ModelIndex& index = {}, bool expanded = true );
 

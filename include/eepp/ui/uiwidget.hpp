@@ -57,7 +57,7 @@ class EE_API UIWidget : public UINode {
 
 	void tooltipRemove();
 
-	UIWidget* setTooltipText( const String& Text );
+	UIWidget* setTooltipText( const String& text );
 
 	String getTooltipText();
 
@@ -141,6 +141,14 @@ class EE_API UIWidget : public UINode {
 
 	const std::vector<std::string>& getStyleSheetPseudoClasses() const;
 
+	void resetClass();
+
+	/** Resets all classes and assign a class */
+	void setClass( const std::string& cls );
+
+	/** Resets all classes and assign vector of classes */
+	void setClasses( const std::vector<std::string>& classes );
+
 	void addClass( const std::string& cls );
 
 	void addClasses( const std::vector<std::string>& classes );
@@ -151,7 +159,11 @@ class EE_API UIWidget : public UINode {
 
 	bool hasClass( const std::string& cls ) const;
 
+	void toggleClass( const std::string& cls );
+
 	void setElementTag( const std::string& tag );
+
+	const std::vector<std::string> getClasses() const;
 
 	const std::string& getElementTag() const;
 
@@ -213,11 +225,13 @@ class EE_API UIWidget : public UINode {
 	void reportStyleStateChangeRecursive( bool disableAnimations = false,
 										  bool forceReApplyStyles = false );
 
-	void createTooltip();
+	UITooltip* createTooltip();
 
 	bool isTabStop() const;
 
 	void setTabStop();
+
+	UIWidget* getPrevTabWidget() const;
 
 	UIWidget* getNextTabWidget() const;
 
@@ -227,6 +241,17 @@ class EE_API UIWidget : public UINode {
 
 	void setTooltipEnabled( bool enabled );
 
+	UIWidget* getPrevWidget() const;
+
+	UIWidget* getNextWidget() const;
+
+	String getTranslatorString( const std::string& str );
+
+	String getTranslatorString( const std::string& str, const String& defaultValue );
+
+	String i18n( const std::string& str );
+
+	String i18n( const std::string& str, const String& defaultValue );
   protected:
 	friend class UIManager;
 	friend class UISceneNode;
@@ -251,6 +276,7 @@ class EE_API UIWidget : public UINode {
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
 	std::vector<std::string> mPseudoClasses;
+	String mTooltipText;
 
 	explicit UIWidget( const std::string& tag );
 
@@ -290,7 +316,9 @@ class EE_API UIWidget : public UINode {
 
 	virtual void onTagChange();
 
-	virtual void onTabPress();
+	virtual void onFocusPrevWidget();
+
+	virtual void onFocusNextWidget();
 
 	virtual Uint32 onFocus();
 
@@ -324,11 +352,6 @@ class EE_API UIWidget : public UINode {
 
 	void reloadFontFamily();
 
-	UIWidget* getNextWidget() const;
-
-	String getTranslatorString( const std::string& str );
-
-	String getTranslatorString( const std::string& str, const String& defaultValue );
 };
 
 }} // namespace EE::UI

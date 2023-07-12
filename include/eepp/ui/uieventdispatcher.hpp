@@ -10,7 +10,7 @@ class EE_API UIEventDispatcher : public EventDispatcher {
   public:
 	static UIEventDispatcher* New( SceneNode* sceneNode );
 
-	UIEventDispatcher( SceneNode* sceneNode );
+	explicit UIEventDispatcher( SceneNode* sceneNode );
 
 	const bool& justGainedFocus() const;
 
@@ -19,7 +19,7 @@ class EE_API UIEventDispatcher : public EventDispatcher {
 
 	void inputCallback( InputEvent* Event );
 
-	void checkTabPress( const Uint32& KeyCode );
+	void checkTabPress( const Uint32& KeyCode, const Uint32& mod );
 };
 
 }} // namespace EE::UI

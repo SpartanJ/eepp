@@ -270,7 +270,7 @@ class EE_API UINode : public Node {
 
 	void setMinSize( const Sizef& size );
 
-	const Sizef& getMinSize() const;
+	const Sizef& getCurMinSize() const;
 
 	Rectf getLocalDpBounds() const;
 
@@ -308,13 +308,19 @@ class EE_API UINode : public Node {
 
 	void setMaxHeightEq( const std::string& maxHeightEq );
 
-	Sizef getMinSize();
+	Sizef getMinSize() const;
 
-	Sizef getMaxSize();
+	Sizef getMaxSize() const;
+
+	Sizef getMinSizePx() const;
+
+	Sizef getMaxSizePx() const;
 
 	Sizef fitMinMaxSizeDp( const Sizef& size ) const;
 
 	Sizef fitMinMaxSizePx( const Sizef& size ) const;
+
+	virtual bool isScrollable() const;
 
   protected:
 	Vector2f mDpPos;

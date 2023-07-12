@@ -3,6 +3,7 @@
 
 #include <eepp/core.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
+#include <stdint.h>
 
 namespace EE { namespace UI {
 class UIWidget;

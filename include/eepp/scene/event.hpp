@@ -13,6 +13,7 @@ class DropEvent;
 class TextEvent;
 class TextInputEvent;
 class WindowEvent;
+class ItemValueEvent;
 
 class EE_API Event {
   public:
@@ -60,8 +61,8 @@ class EE_API Event {
 		OpenFile,
 		SaveFile,
 		OnClear,
-		MsgBoxConfirmClick,
-		MsgBoxCancelClick,
+		OnConfirm,
+		OnCancel,
 		OnTabSelected,
 		OnTabAdded,
 		OnTabClosed,
@@ -81,6 +82,7 @@ class EE_API Event {
 		OnSelectionChanged,
 		OnNodeDropped,
 		OnDocumentSave,
+		OnDocumentUndoRedo,
 		OnModelEvent,
 		OnResourceChange,
 		OnActiveWidgetChange,
@@ -95,6 +97,9 @@ class EE_API Event {
 		OnTitleChange,
 		OnWindowAdded,
 		OnWindowRemoved,
+		OnItemValueChange,
+		OnCursorPosChangeInteresting,
+		OnCopy,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 
@@ -119,6 +124,8 @@ class EE_API Event {
 	const TextInputEvent* asTextInputEvent() const;
 
 	const WindowEvent* asWindowEvent() const;
+
+	const ItemValueEvent* asItemValueEvent() const;
 
   protected:
 	friend class Node;
@@ -156,6 +163,16 @@ class EE_API WindowEvent : public Event {
 
   protected:
 	Node* window;
+};
+
+class EE_API ItemValueEvent : public Event {
+  public:
+	ItemValueEvent( Node* node, const Uint32& eventType, const Uint32& itemIndex ) :
+		Event( node, eventType ), itemIndex( itemIndex ) {}
+	const Uint32& getItemIndex() const { return itemIndex; }
+
+  protected:
+	Uint32 itemIndex;
 };
 
 }} // namespace EE::Scene

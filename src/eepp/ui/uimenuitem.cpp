@@ -1,5 +1,8 @@
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenuitem.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI {
 
@@ -69,8 +72,10 @@ Uint32 UIMenuItem::onMouseLeave( const Vector2i& pos, const Uint32& flags ) {
 }
 
 Uint32 UIMenuItem::onMouseClick( const Vector2i&, const Uint32& flags ) {
-	if ( ( flags & EE_BUTTON_LMASK ) && ( !mOnShouldCloseCb || mOnShouldCloseCb( this ) ) )
+	if ( !getUISceneNode()->getWindow()->getInput()->isShiftPressed() &&
+		 ( flags & EE_BUTTON_LMASK ) && ( !mOnShouldCloseCb || mOnShouldCloseCb( this ) ) ) {
 		getParent()->asType<UIMenu>()->backpropagateHide();
+	}
 	return 1;
 }
 
@@ -93,7 +98,7 @@ void UIMenuItem::createShortcutView() {
 	mShortcutView = UITextView::NewWithTag( mTag + "::shortcut" );
 	mShortcutView->setParent( this )->setVisible( true )->setEnabled( false );
 	mShortcutView->setFlags( UI_AUTO_SIZE | UI_HALIGN_RIGHT );
-	auto cb = [&]( const Event* ) { onSizeChange(); };
+	auto cb = [this]( const Event* ) { onSizeChange(); };
 	mShortcutView->addEventListener( Event::OnPaddingChange, cb );
 	mShortcutView->addEventListener( Event::OnMarginChange, cb );
 	mShortcutView->addEventListener( Event::OnSizeChange, cb );

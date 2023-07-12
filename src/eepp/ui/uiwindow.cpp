@@ -14,6 +14,7 @@
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -88,13 +89,13 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 
 	applyDefaultTheme();
 
-	runOnMainThread( [&]() { onWindowReady(); } );
+	runOnMainThread( [this]() { onWindowReady(); } );
 
 	mUISceneNode->setIsLoading( loading );
 }
 
 UIWindow::~UIWindow() {
-	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShootingDown() ) {
+	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShuttingDown() ) {
 		if ( NULL != mModalNode ) {
 			mModalNode->setEnabled( false );
 			mModalNode->setVisible( false );
@@ -157,7 +158,7 @@ void UIWindow::updateWinFlags() {
 			mWindowDecoration->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
-		auto cb = [&]( const Event* ) { onSizeChange(); };
+		auto cb = [this]( const Event* ) { onSizeChange(); };
 
 		mWindowDecoration->setParent( this );
 		mWindowDecoration->setVisible( true );
@@ -330,8 +331,7 @@ void UIWindow::drawFrameBuffer() {
 									  mScreenPos.y + mSize.getHeight() ) );
 		} else {
 			Rect r( 0, 0, mSize.getWidth(), mSize.getHeight() );
-			TextureRegion textureRegion( mFrameBuffer->getTexture()->getTextureId(), r,
-										 r.getSize().asFloat() );
+			TextureRegion textureRegion( mFrameBuffer->getTexture(), r, r.getSize().asFloat() );
 			textureRegion.draw( mScreenPosi.x, mScreenPosi.y, Color::White, getRotation(),
 								getScale() );
 		}
@@ -441,6 +441,8 @@ void UIWindow::forcedApplyStyle() {
 }
 
 void UIWindow::onWindowReady() {
+	mWindowReady = true;
+
 	forcedApplyStyle();
 
 	if ( mShowWhenReady ) {
@@ -673,12 +675,15 @@ void UIWindow::fixChildsSize() {
 		mWindowDecoration->setPixelsSize(
 			mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.TitlebarSize.getHeight() ) );
 
-	if ( mStyleConfig.BorderAutoSize ) {
-		mBorderBottom->setPixelsSize(
-			mSize.getWidth(), PixelDensity::dpToPx( mBorderBottom->getSkinSize().getHeight() ) );
-	} else {
-		mBorderBottom->setPixelsSize( mSize.getWidth(),
-									  PixelDensity::dpToPx( mStyleConfig.BorderSize.getHeight() ) );
+	if ( mBorderBottom ) {
+		if ( mStyleConfig.BorderAutoSize ) {
+			mBorderBottom->setPixelsSize(
+				mSize.getWidth(),
+				PixelDensity::dpToPx( mBorderBottom->getSkinSize().getHeight() ) );
+		} else {
+			mBorderBottom->setPixelsSize(
+				mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.BorderSize.getHeight() ) );
+		}
 	}
 
 	Uint32 BorderHeight = mSize.getHeight() - PixelDensity::dpToPx( decoSize.getHeight() ) -
@@ -1117,8 +1122,12 @@ bool UIWindow::hide() {
 }
 
 void UIWindow::showWhenReady() {
-	hide();
-	mShowWhenReady = true;
+	if ( mWindowReady ) {
+		show();
+	} else {
+		hide();
+		mShowWhenReady = true;
+	}
 }
 
 void UIWindow::onAlphaChange() {
@@ -1248,7 +1257,7 @@ void UIWindow::nodeDraw() {
 
 		ClippingMask* clippingMask = GLi->getClippingMask();
 
-		std::list<Rectf> clips = clippingMask->getPlanesClipped();
+		const std::vector<Rectf>& clips = clippingMask->getPlanesClipped();
 
 		if ( !clips.empty() )
 			clippingMask->clipPlaneDisable();
@@ -1634,7 +1643,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 			setSize( getSize().getWidth(), attribute.asDpDimension( this ) );
 			break;
 		case PropertyId::WindowTitle:
-			setTitle( attribute.asString() );
+			setTitle( getUISceneNode()->getTranslatorString( attribute.asString() ) );
 			break;
 		case PropertyId::WindowOpacity:
 			setWindowOpacity( (Uint8)eemin<Uint32>( (Uint32)attribute.asFloat() * 255.f, 255u ) );

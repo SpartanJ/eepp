@@ -25,10 +25,13 @@ class EE_API NinePatch : public DrawableResource {
 	static NinePatch* New( const Uint32& TexId, int left, int top, int right, int bottom,
 						   const Float& pixelDensity = 1, const std::string& name = "" );
 
+	static NinePatch* New( Texture* tex, int left, int top, int right, int bottom,
+						   const Float& pixelDensity = 1, const std::string& name = "" );
+
 	static NinePatch* New( TextureRegion* textureRegion, int left, int top, int right, int bottom,
 						   const std::string& name = "" );
 
-	NinePatch( const Uint32& TexId, int left, int top, int right, int bottom,
+	NinePatch( Texture* tex, int left, int top, int right, int bottom,
 			   const Float& pixelDensity = 1, const std::string& name = "" );
 
 	NinePatch( TextureRegion* textureRegion, int left, int top, int right, int bottom,
@@ -58,7 +61,7 @@ class EE_API NinePatch : public DrawableResource {
 	Sizef mDestSize;
 	Float mPixelDensity;
 
-	void createFromTexture( const Uint32& TexId, int left, int top, int right, int bottom );
+	void createFromTexture( Texture* tex, int left, int top, int right, int bottom );
 
 	virtual void onAlphaChange();
 

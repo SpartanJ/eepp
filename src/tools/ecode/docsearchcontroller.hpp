@@ -19,6 +19,10 @@ struct SearchState {
 		range = TextRange();
 		text = "";
 	}
+
+	TextSearchParams toTextSearchParams() {
+		return { text, range, caseSensitive, wholeWord, escapeSequences, type };
+	}
 };
 
 class App;
@@ -36,7 +40,8 @@ class DocSearchController {
 				 { "mod+w", "change-whole-word" },
 				 { "mod+l", "toggle-lua-pattern" },
 				 { "mod+e", "change-escape-sequence" },
-				 { "mod+shift+g", "find-prev" } };
+				 { "mod+shift+g", "find-prev" },
+				 { "mod+shift+a", "select-all-results" } };
 	}
 
 	DocSearchController( UICodeEditorSplitter*, App* app );
@@ -65,8 +70,11 @@ class DocSearchController {
 
 	SearchBarConfig getSearchBarConfig() const;
 
+	void selectAll( SearchState& search );
+
+	void refreshHighlight();
   protected:
-	UICodeEditorSplitter* mEditorSplitter{ nullptr };
+	UICodeEditorSplitter* mSplitter{ nullptr };
 	UITextInput* mFindInput{ nullptr };
 	UITextInput* mReplaceInput{ nullptr };
 	UISearchBar* mSearchBarLayout{ nullptr };

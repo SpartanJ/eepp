@@ -59,6 +59,17 @@ StyleSheetProperties& StyleSheetStyle::getPropertiesRef() {
 	return mProperties;
 }
 
+bool StyleSheetStyle::updatePropertyValue( const std::string& name, const std::string& value ) {
+	bool updated = false;
+	for ( auto& prop : mProperties ) {
+		if ( prop.second.getName() == name ) {
+			prop.second.setValue( value, true );
+			updated = true;
+		}
+	}
+	return updated;
+}
+
 const StyleSheetVariables& StyleSheetStyle::getVariables() const {
 	return mVariables;
 }
@@ -141,6 +152,10 @@ bool StyleSheetStyle::hasVariables() const {
 	return !mVariables.empty();
 }
 
+bool StyleSheetStyle::hasVariable( const std::string& name ) const {
+	return !getVariableByName( name ).isEmpty();
+}
+
 StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name ) const {
 	auto it = mVariables.find( String::hash( name ) );
 
@@ -152,6 +167,7 @@ StyleSheetVariable StyleSheetStyle::getVariableByName( const std::string& name )
 
 void StyleSheetStyle::setVariable( const StyleSheetVariable& variable ) {
 	mVariables[variable.getNameHash()] = variable;
+	mVariables[variable.getNameHash()].setSpecificity( mSelector.getSpecificity() );
 }
 
 bool StyleSheetStyle::isMediaValid() const {
@@ -187,6 +203,8 @@ void StyleSheetStyle::setMarker( const Uint32& marker ) {
 AtRuleType StyleSheetStyle::checkAtRule() {
 	if ( mSelector.getName() == "@font-face" ) {
 		return AtRuleType::FontFace;
+	} else if ( mSelector.getName() == "@glyph-icon" ) {
+		return AtRuleType::GlyphIcon;
 	}
 
 	return AtRuleType::None;

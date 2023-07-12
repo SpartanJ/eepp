@@ -2,10 +2,10 @@
 #define EE_UISCENENODE_HPP
 
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
-#include <list>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -64,6 +64,9 @@ class EE_API UISceneNode : public SceneNode {
 								  const Uint32& marker = 0 );
 
 	UIWidget* loadLayoutFromString( const std::string& layoutString, Node* parent = NULL,
+									const Uint32& marker = 0 );
+
+	UIWidget* loadLayoutFromString( const char* layoutString, Node* parent = NULL,
 									const Uint32& marker = 0 );
 
 	UIWidget* loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent = NULL,
@@ -156,6 +159,14 @@ class EE_API UISceneNode : public SceneNode {
 
 	void nodeToWorldTranslation( Vector2f& Pos ) const;
 
+	void reloadStyle( bool disableAnimations = false, bool forceReApplyProperties = false );
+
+	bool hasThreadPool() const;
+
+	std::shared_ptr<ThreadPool> getThreadPool();
+
+	void setThreadPool( const std::shared_ptr<ThreadPool>& threadPool );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -163,11 +174,13 @@ class EE_API UISceneNode : public SceneNode {
 	Sizef mDpSize;
 	Uint32 mFlags;
 	Translator mTranslator;
-	std::list<UIWindow*> mWindowsList;
+	std::vector<UIWindow*> mWindowsList;
 	CSS::StyleSheet mStyleSheet;
 	bool mIsLoading;
 	bool mVerbose;
 	bool mUpdatingLayouts;
+	bool mFirstUpdate{ true };
+	Clock mClock;
 	UIThemeManager* mUIThemeManager{ nullptr };
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
 	std::vector<Font*> mFontFaces;
@@ -182,6 +195,7 @@ class EE_API UISceneNode : public SceneNode {
 	Uint32 mMaxInvalidationDepth{ 2 };
 	Node* mCurParent{ nullptr };
 	Uint32 mCurOnSizeChangeListener{ 0 };
+	std::shared_ptr<ThreadPool> mThreadPool;
 
 	virtual void resizeNode( EE::Window::Window* win );
 
@@ -205,8 +219,6 @@ class EE_API UISceneNode : public SceneNode {
 
 	virtual void setInternalSize( const Sizef& size );
 
-	void reloadStyle( const bool& disableAnimations = false );
-
 	bool onMediaChanged( bool forceReApplyStyles = false );
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
@@ -216,6 +228,8 @@ class EE_API UISceneNode : public SceneNode {
 	void processStyleSheetAtRules( const CSS::StyleSheet& styleSheet );
 
 	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
+
+	void loadGlyphIcon( const CSS::StyleSheetStyleVector& styles );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 

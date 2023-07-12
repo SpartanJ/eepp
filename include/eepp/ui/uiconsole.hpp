@@ -62,6 +62,10 @@ class EE_API UIConsole : public UIWidget,
 
 	const Color& getFontShadowColor() const;
 
+	UIConsole* setFontShadowOffset( const Vector2f& offset );
+
+	const Vector2f& getFontShadowOffset() const;
+
 	UIConsole* setFontStyle( const Uint32& fontStyle );
 
 	UIConsole* setFontOutlineThickness( const Float& outlineThickness );
@@ -73,6 +77,8 @@ class EE_API UIConsole : public UIWidget,
 	const Color& getFontOutlineColor() const;
 
 	void addCommand( const std::string& command, const ConsoleCallback& cb );
+
+	void setCommand( const std::string& command, const ConsoleCallback& cb );
 
 	const Uint32& getMaxLogLines() const;
 
@@ -125,11 +131,19 @@ class EE_API UIConsole : public UIWidget,
 	void setBlinkTime( const Time& blinkTime );
 
   protected:
+	struct TextCache {
+		Text text;
+		String::HashType hash;
+	};
+	struct CommandLogCache {
+		String log;
+		String::HashType hash;
+	};
 	Mutex mMutex;
 	std::map<String, ConsoleCallback> mCallbacks;
-	std::deque<String> mCmdLog;
+	std::deque<CommandLogCache> mCmdLog;
 	std::deque<String> mLastCommands;
-	std::vector<Text> mTextCache;
+	std::vector<TextCache> mTextCache;
 	UIFontStyleConfig mFontStyleConfig;
 	Uint32 mMaxLogLines{ 8192 };
 	TextDocument mDoc;
@@ -158,6 +172,7 @@ class EE_API UIConsole : public UIWidget,
 #else
 	Float mQuakeModeHeightPercent{ 0.6f };
 #endif
+	Uint64 mLastExecuteEventId{ 0 };
 
 	UIConsole( Font* Font, const bool& makeDefaultCommands = true, const bool& attachToLog = true,
 			   const unsigned int& maxLogLines = 1024 );
@@ -193,7 +208,7 @@ class EE_API UIConsole : public UIWidget,
 
 	virtual Uint32 onFocusLoss();
 
-	virtual void onDocumentTextChanged();
+	virtual void onDocumentTextChanged( const DocumentContentChange& );
 
 	virtual void onDocumentCursorChange( const TextPosition& );
 
@@ -271,6 +286,9 @@ class EE_API UIConsole : public UIWidget,
 	/** Add the GPU Extensions supported to the console */
 	void cmdGetGpuExtensions();
 
+	/** Add command to grep the console log */
+	void cmdGrep( const std::vector<String>& params );
+
 	void privPushText( const String& str );
 
 	void writeLog( const std::string& text );
@@ -281,7 +299,7 @@ class EE_API UIConsole : public UIWidget,
 
 	void printCommandsStartingWith( const String& start );
 
-	String getLastCommonSubStr( std::list<String>& cmds );
+	String getLastCommonSubStr( std::vector<String>& cmds );
 
 	void processLine();
 

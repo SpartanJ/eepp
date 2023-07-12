@@ -13,6 +13,52 @@ UITooltip* UITooltip::New() {
 	return eeNew( UITooltip, () );
 }
 
+Vector2f UITooltip::getTooltipPosition( UITooltip* toolip, const Vector2f& requestedPosition ) {
+	UISceneNode* uiSceneNode = toolip->getUISceneNode();
+
+	if ( NULL == uiSceneNode )
+		return Vector2f::Zero;
+
+	UIThemeManager* themeManager = toolip->getUISceneNode()->getUIThemeManager();
+	if ( NULL == themeManager )
+		return Vector2f::Zero;
+
+	Vector2f pos = requestedPosition;
+	pos -= uiSceneNode->getScreenPos(); // TODO: Fix UISceneNode inside UISceneNode position
+	pos.x += themeManager->getCursorSize().x / 2;
+	pos.y += themeManager->getCursorSize().y;
+
+	if ( pos.x + toolip->getPixelsSize().getWidth() > uiSceneNode->getPixelsSize().getWidth() ) {
+		pos.x = requestedPosition.x - toolip->getPixelsSize().getWidth() - 1;
+	}
+
+	if ( pos.y + toolip->getPixelsSize().getHeight() > uiSceneNode->getPixelsSize().getHeight() ) {
+		pos.y = requestedPosition.y - toolip->getPixelsSize().getHeight() - 1;
+	}
+
+	if ( pos.x < 0 &&
+		 toolip->getPixelsSize().getWidth() < uiSceneNode->getPixelsSize().getWidth() ) {
+		auto distLeft = std::abs( std::max( 0.f, pos.x ) - requestedPosition.x );
+		auto distRight = std::abs( uiSceneNode->getPixelsSize().getWidth() - requestedPosition.x );
+		if ( distLeft < distRight ) {
+			pos.x = 0;
+		} else {
+			pos.x = uiSceneNode->getPixelsSize().getWidth() - toolip->getPixelsSize().getWidth();
+		}
+	}
+
+	if ( pos.y < 0 &&
+		 toolip->getPixelsSize().getHeight() < uiSceneNode->getPixelsSize().getHeight() ) {
+		pos.y = 0;
+	}
+
+	pos.x = eeclamp( pos.x, 0.f,
+					 eemax( 0.f, uiSceneNode->getPixelsSize().getWidth() -
+									 toolip->getPixelsSize().getWidth() ) );
+
+	return pos;
+}
+
 UITooltip::UITooltip() :
 	UIWidget( "tooltip" ), mAlignOffset( 0.f, 0.f ), mTooltipTime( Time::Zero ), mTooltipOf() {
 	setFlags( UI_NODE_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
@@ -152,6 +198,7 @@ const Color& UITooltip::getFontColor() const {
 void UITooltip::setFontColor( const Color& color ) {
 	if ( mStyleConfig.FontColor != color ) {
 		mStyleConfig.FontColor = color;
+		mTextCache->setColor( color );
 		onAlphaChange();
 		invalidateDraw();
 	}
@@ -164,7 +211,30 @@ const Color& UITooltip::getFontShadowColor() const {
 void UITooltip::setFontShadowColor( const Color& color ) {
 	if ( mStyleConfig.ShadowColor != color ) {
 		mStyleConfig.ShadowColor = color;
+		if ( mStyleConfig.ShadowColor != Color::Transparent )
+			mStyleConfig.Style |= Text::Shadow;
+		else
+			mStyleConfig.Style &= ~Text::Shadow;
+		mTextCache->setShadowColor( color );
 		onAlphaChange();
+		invalidateDraw();
+	}
+}
+
+const Vector2f& UITooltip::getFontShadowOffset() const {
+	return mStyleConfig.ShadowOffset;
+}
+
+void UITooltip::notifyTextChangedFromTextCache() {
+	autoPadding();
+	onAutoSize();
+	autoAlign();
+}
+
+void UITooltip::setFontShadowOffset( const Vector2f& offset ) {
+	if ( mStyleConfig.ShadowOffset != offset ) {
+		mStyleConfig.ShadowOffset = offset;
+		mTextCache->setShadowOffset( offset );
 		invalidateDraw();
 	}
 }
@@ -316,6 +386,7 @@ const Color& UITooltip::getOutlineColor() const {
 
 UITooltip* UITooltip::setOutlineColor( const Color& outlineColor ) {
 	if ( mStyleConfig.OutlineColor != outlineColor ) {
+		mStyleConfig.OutlineColor = outlineColor;
 		mTextCache->setOutlineColor( outlineColor );
 		onAlphaChange();
 		invalidateDraw();
@@ -345,8 +416,11 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 			return TextTransform::toString( getTextTransform() );
 		case PropertyId::Color:
 			return getFontColor().toHexString();
-		case PropertyId::ShadowColor:
+		case PropertyId::TextShadowColor:
 			return getFontShadowColor().toHexString();
+		case PropertyId::TextShadowOffset:
+			return String::fromFloat( getFontShadowOffset().x ) + " " +
+				   String::fromFloat( getFontShadowOffset().y );
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
@@ -369,10 +443,11 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 
 std::vector<PropertyId> UITooltip::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = {
-		PropertyId::TextTransform,	 PropertyId::Color,			  PropertyId::ShadowColor,
-		PropertyId::FontFamily,		 PropertyId::FontSize,		  PropertyId::FontStyle,
-		PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor, PropertyId::TextAlign };
+	auto local = { PropertyId::TextTransform,	PropertyId::Color,
+				   PropertyId::TextShadowColor, PropertyId::TextShadowOffset,
+				   PropertyId::FontFamily,		PropertyId::FontSize,
+				   PropertyId::FontStyle,		PropertyId::TextStrokeWidth,
+				   PropertyId::TextStrokeColor, PropertyId::TextAlign };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -412,38 +487,61 @@ void UITooltip::setTextTransform( const TextTransform::Value& textTransform ) {
 	}
 }
 
+Vector2f UITooltip::getTooltipPosition( const Vector2f& requestedPosition ) {
+	return UITooltip::getTooltipPosition( this, requestedPosition );
+}
+
+bool UITooltip::getUsingCustomStyling() const {
+	return mUsingCustomStyling;
+}
+
+void UITooltip::setUsingCustomStyling( bool usingCustomStyling ) {
+	mUsingCustomStyling = usingCustomStyling;
+}
+
 bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::TextTransform:
-			setTextTransform( TextTransform::fromString( attribute.asString() ) );
+			if ( !mUsingCustomStyling )
+				setTextTransform( TextTransform::fromString( attribute.asString() ) );
 		case PropertyId::Color:
-			setFontColor( attribute.asColor() );
+			if ( !mUsingCustomStyling )
+				setFontColor( attribute.asColor() );
 			break;
-		case PropertyId::ShadowColor:
-			setFontShadowColor( attribute.asColor() );
+		case PropertyId::TextShadowColor: {
+			if ( !mUsingCustomStyling )
+				setFontShadowColor( attribute.asColor() );
+			break;
+		}
+		case PropertyId::TextShadowOffset:
+			if ( !mUsingCustomStyling )
+				setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::FontFamily: {
 			Font* font = FontManager::instance()->getByName( attribute.asString() );
 
-			if ( NULL != font && font->loaded() ) {
+			if ( !mUsingCustomStyling && NULL != font && font->loaded() )
 				setFont( font );
-			}
 			break;
 		}
 		case PropertyId::FontSize:
-			setFontSize( attribute.asDpDimensionI() );
+			if ( !mUsingCustomStyling )
+				setFontSize( attribute.asDpDimensionI() );
 			break;
 		case PropertyId::FontStyle:
-			setFontStyle( attribute.asFontStyle() );
+			if ( !mUsingCustomStyling )
+				setFontStyle( attribute.asFontStyle() );
 			break;
 		case PropertyId::TextStrokeWidth:
-			setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
+			if ( !mUsingCustomStyling )
+				setOutlineThickness( PixelDensity::dpToPx( attribute.asDpDimension() ) );
 			break;
 		case PropertyId::TextStrokeColor:
-			setOutlineColor( attribute.asColor() );
+			if ( !mUsingCustomStyling )
+				setOutlineColor( attribute.asColor() );
 			break;
 		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );

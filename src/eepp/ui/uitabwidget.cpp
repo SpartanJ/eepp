@@ -23,7 +23,10 @@ UITabWidget::UITabWidget() :
 	mHideTabBarOnSingleTab( false ),
 	mAllowRearrangeTabs( false ),
 	mAllowDragAndDropTabs( false ),
+	mAllowSwitchTabsInEmptySpaces( false ),
+	mDroppableHoveringColorWasSet( false ),
 	mTabVerticalDragResistance( PixelDensity::dpToPx( 64 ) ) {
+	mFlags |= UI_SCROLLABLE;
 	setHorizontalAlign( UI_HALIGN_CENTER );
 	setClipType( ClipType::ContentBox );
 
@@ -42,8 +45,8 @@ UITabWidget::UITabWidget() :
 	mTabScroll = UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
 	mTabScroll->setParent( this );
 	mTabScroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
-	mTabScroll->addEventListener( Event::OnSizeChange, [&]( const Event* ) { updateScrollBar(); } );
-	mTabScroll->addEventListener( Event::OnValueChange, [&]( const Event* ) { updateScroll(); } );
+	mTabScroll->on( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
+	mTabScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
 
 	onSizeChange();
 
@@ -534,15 +537,68 @@ Uint32 UITabWidget::getTabCount() const {
 	return mTabs.size();
 }
 
-void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool immediateClose ) {
-	removeTab( index, destroyOwnedNode, true, immediateClose );
+void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool immediateClose,
+							 FocusTabBehavior focusTabBehavior ) {
+	removeTab( index, destroyOwnedNode, true, immediateClose, focusTabBehavior );
+}
+
+void UITabWidget::updateTabSelected( FocusTabBehavior tabBehavior ) {
+	if ( tabBehavior == FocusTabBehavior::Default )
+		tabBehavior = mFocusTabBehavior;
+
+	if ( tabBehavior == FocusTabBehavior::Closest ) {
+		if ( !mTabs.empty() ) {
+			if ( mTabSelectedIndex < mTabs.size() ) {
+				setTabSelected( mTabs[mTabSelectedIndex] );
+			} else {
+				if ( mTabSelectedIndex > 0 && mTabSelectedIndex - 1 < mTabs.size() ) {
+					setTabSelected( mTabs[mTabSelectedIndex - 1] );
+				} else {
+					setTabSelected( mTabs[0] );
+				}
+			}
+		} else {
+			mTabSelected = NULL;
+			mTabSelectedIndex = eeINDEX_NOT_FOUND;
+		}
+	} else {
+		if ( !mFocusHistory.empty() ) {
+			do {
+				auto tab = mFocusHistory.back();
+				mFocusHistory.pop_back();
+				if ( eeINDEX_NOT_FOUND != getTabIndex( tab ) ) {
+					setTabSelected( tab );
+					return;
+				}
+			} while ( !mFocusHistory.empty() );
+			return ( updateTabSelected( FocusTabBehavior::Closest ) );
+		}
+		mTabSelected = NULL;
+		mTabSelectedIndex = eeINDEX_NOT_FOUND;
+	}
+}
+
+void UITabWidget::insertFocusHistory( UITab* tab ) {
+	eraseFocusHistory( tab );
+	mFocusHistory.push_back( tab );
+}
+
+void UITabWidget::eraseFocusHistory( UITab* tab ) {
+	auto it = std::find( mFocusHistory.begin(), mFocusHistory.end(), tab );
+	while ( it != mFocusHistory.end() ) {
+		if ( it != mFocusHistory.end() )
+			mFocusHistory.erase( it );
+		it = std::find( mFocusHistory.begin(), mFocusHistory.end(), tab );
+	};
 }
 
 void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool destroyTab,
-							 bool immediateClose ) {
+							 bool immediateClose, FocusTabBehavior focusTabBehavior ) {
 	eeASSERT( index < mTabs.size() );
 
 	UITab* tab = mTabs[index];
+
+	eraseFocusHistory( tab );
 
 	if ( destroyTab && !immediateClose ) {
 		tab->close();
@@ -559,20 +615,7 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool de
 	mTabs.erase( mTabs.begin() + index );
 
 	if ( index == mTabSelectedIndex ) {
-		if ( !mTabs.empty() ) {
-			if ( mTabSelectedIndex < mTabs.size() ) {
-				setTabSelected( mTabs[mTabSelectedIndex] );
-			} else {
-				if ( mTabSelectedIndex > 0 && mTabSelectedIndex - 1 < mTabs.size() ) {
-					setTabSelected( mTabs[mTabSelectedIndex - 1] );
-				} else {
-					setTabSelected( mTabs[0] );
-				}
-			}
-		} else {
-			mTabSelected = NULL;
-			mTabSelectedIndex = eeINDEX_NOT_FOUND;
-		}
+		updateTabSelected( focusTabBehavior );
 	} else {
 		mTabSelectedIndex = getTabIndex( mTabSelected );
 	}
@@ -594,13 +637,14 @@ void UITabWidget::removeTab( const Uint32& index, bool destroyOwnedNode, bool de
 	}
 }
 
-void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool immediateClose ) {
-	removeTab( getTabIndex( tab ), destroyOwnedNode, true, immediateClose );
+void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool immediateClose,
+							 FocusTabBehavior focusTabBehavior ) {
+	removeTab( getTabIndex( tab ), destroyOwnedNode, true, immediateClose, focusTabBehavior );
 }
 
 void UITabWidget::removeTab( UITab* tab, bool destroyOwnedNode, bool destroyTab,
-							 bool immediateClose ) {
-	removeTab( getTabIndex( tab ), destroyOwnedNode, destroyTab, immediateClose );
+							 bool immediateClose, FocusTabBehavior focusTabBehavior ) {
+	removeTab( getTabIndex( tab ), destroyOwnedNode, destroyTab, immediateClose, focusTabBehavior );
 }
 
 void UITabWidget::removeAllTabs( bool destroyOwnedNode, bool immediateClose ) {
@@ -638,6 +682,7 @@ void UITabWidget::removeAllTabs( bool destroyOwnedNode, bool immediateClose ) {
 
 	mTabSelected = NULL;
 	mTabSelectedIndex = eeINDEX_NOT_FOUND;
+	mFocusHistory.clear();
 
 	orderTabs();
 
@@ -690,6 +735,8 @@ UITab* UITabWidget::setTabSelected( UITab* tab ) {
 	}
 
 	tab->select();
+	insertFocusHistory( tab );
+
 	if ( tab->getOwnedWidget() )
 		tab->getOwnedWidget()->setFocus();
 
@@ -786,6 +833,16 @@ void UITabWidget::setDroppableHoveringColor( const Color& droppableHoveringColor
 	mDroppableHoveringColorWasSet = true;
 }
 
+UITabWidget::FocusTabBehavior UITabWidget::getFocusTabBehavior() const {
+	return mFocusTabBehavior;
+}
+
+void UITabWidget::setFocusTabBehavior( UITabWidget::FocusTabBehavior focusTabBehavior ) {
+	if ( focusTabBehavior == FocusTabBehavior::Default )
+		focusTabBehavior = FocusTabBehavior::Closest;
+	mFocusTabBehavior = focusTabBehavior;
+}
+
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	if ( NULL != tab && NULL != tab->getOwnedWidget() ) {
 		tab->getOwnedWidget()->setParent( mNodeContainer );
@@ -803,10 +860,10 @@ void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	}
 }
 
-void UITabWidget::tryCloseTab( UITab* tab ) {
-	if ( mTabTryCloseCallback && !mTabTryCloseCallback( tab ) )
+void UITabWidget::tryCloseTab( UITab* tab, FocusTabBehavior focusTabBehavior ) {
+	if ( mTabTryCloseCallback && !mTabTryCloseCallback( tab, focusTabBehavior ) )
 		return;
-	removeTab( tab );
+	removeTab( tab, true, false, focusTabBehavior );
 }
 
 void UITabWidget::swapTabs( UITab* left, UITab* right ) {
@@ -899,7 +956,7 @@ Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 		const NodeDropMessage* dropMsg = static_cast<const NodeDropMessage*>( msg );
 		if ( dropMsg->getDroppedNode()->isType( UI_TYPE_TAB ) ) {
 			UITab* tab = dropMsg->getDroppedNode()->asType<UITab>();
-			if ( tab->getTabWidget() != this ) {
+			if ( tab->getTabWidget() != this && tab->getTabWidget()->getAllowDragAndDropTabs() ) {
 				tab->getTabWidget()->removeTab( tab, false, false, false );
 				add( tab );
 				setTabSelected( tab );

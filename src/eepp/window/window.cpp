@@ -326,7 +326,7 @@ void Window::updateElapsedTime() {
 		mFrameData.FrameElapsed = eeNew( Clock, () );
 	}
 
-	mFrameData.ElapsedTime = mFrameData.FrameElapsed->getElapsed();
+	mFrameData.ElapsedTime = mFrameData.FrameElapsed->getElapsedTimeAndReset();
 }
 
 const Time& Window::getSleepTimePerSecond() const {
@@ -339,6 +339,10 @@ const Time& Window::getRenderTimePerSecond() const {
 
 const Sizei& Window::getLastWindowedSize() const {
 	return mLastWindowedSize;
+}
+
+bool Window::showMessageBox( const MessageBoxType&, const std::string&, const std::string& ) {
+	return false;
 }
 
 void Window::calculateFps() {
@@ -371,7 +375,7 @@ void Window::limitFps() {
 
 			Sys::sleep( remainingTime );
 
-			Time elapsed = checkElapsed.getElapsed();
+			Time elapsed = checkElapsed.getElapsedTimeAndReset();
 			Time timeDiff = elapsed - remainingTime;
 
 			mFrameData.FPS.SleepTime += elapsed;
@@ -512,6 +516,8 @@ bool Window::isMaximized() {
 void Window::hide() {}
 
 void Window::raise() {}
+
+void Window::flash( WindowFlashOperation ) {}
 
 void Window::show() {}
 

@@ -39,7 +39,7 @@ using namespace EE::Graphics;
 using namespace EE::Network;
 using namespace EE::Network::SSL;
 
-// Scnee
+// Scene
 #include <eepp/scene.hpp>
 using namespace EE::Scene;
 
@@ -48,11 +48,4 @@ using namespace EE::Scene;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
 
-// Maps
-#include <eepp/maps.hpp>
-using namespace EE::Maps;
-
-// Physics
-#include <eepp/physics.hpp>
-using namespace EE::Physics;
 #endif

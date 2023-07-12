@@ -14,12 +14,13 @@ struct EE_API SyntaxPattern {
 	std::vector<std::string> types;
 	std::string syntax{ "" };
 
-	SyntaxPattern( std::vector<std::string> patterns, std::string type, std::string syntax = "" ) :
-		patterns( patterns ), types( { type } ), syntax( syntax ) {}
+	SyntaxPattern( std::vector<std::string> _patterns, std::string _type,
+				   std::string _syntax = "" ) :
+		patterns( _patterns ), types( { _type } ), syntax( _syntax ) {}
 
-	SyntaxPattern( std::vector<std::string> patterns, std::vector<std::string> types,
-				   std::string syntax = "" ) :
-		patterns( patterns ), types( types ), syntax( syntax ) {}
+	SyntaxPattern( std::vector<std::string> _patterns, std::vector<std::string> _types,
+				   std::string _syntax = "" ) :
+		patterns( _patterns ), types( _types ), syntax( _syntax ) {}
 };
 
 class EE_API SyntaxDefinition {
@@ -30,10 +31,12 @@ class EE_API SyntaxDefinition {
 					  const std::vector<SyntaxPattern>& patterns,
 					  const std::unordered_map<std::string, std::string>& symbols =
 						  std::unordered_map<std::string, std::string>(),
-					  const std::string& comment = "",
-					  const std::vector<std::string> headers = {} );
+					  const std::string& comment = "", const std::vector<std::string> headers = {},
+					  const std::string& lspName = "" );
 
 	const std::string& getLanguageName() const;
+
+	std::string getLanguageNameForFileSystem() const;
 
 	const String::HashType& getLanguageId() const;
 
@@ -54,7 +57,11 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& addPattern( const SyntaxPattern& pattern );
 
+	SyntaxDefinition& setPatterns( const std::vector<SyntaxPattern>& patterns );
+
 	SyntaxDefinition& addPatternToFront( const SyntaxPattern& pattern );
+
+	SyntaxDefinition& addPatternsToFront( const std::vector<SyntaxPattern>& patterns );
 
 	SyntaxDefinition& addSymbol( const std::string& symbolName, const std::string& typeName );
 
@@ -72,6 +79,24 @@ class EE_API SyntaxDefinition {
 
 	void clearSymbols();
 
+	const std::string& getLSPName() const;
+
+	SyntaxDefinition& setVisible( bool visible );
+
+	bool isVisible() const;
+
+	bool getAutoCloseXMLTags() const;
+
+	SyntaxDefinition& setAutoCloseXMLTags( bool autoCloseXMLTags );
+
+	SyntaxDefinition& setLanguageName( const std::string& languageName );
+
+	SyntaxDefinition& setLSPName( const std::string& lSPName );
+
+	std::vector<SyntaxPattern> getPatternsOfType( const std::string& type ) const;
+
+	SyntaxDefinition& setFileTypes( const std::vector<std::string>& types );
+
   protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;
@@ -80,6 +105,9 @@ class EE_API SyntaxDefinition {
 	std::unordered_map<std::string, std::string> mSymbols;
 	std::string mComment;
 	std::vector<std::string> mHeaders;
+	std::string mLSPName;
+	bool mAutoCloseXMLTags{ false };
+	bool mVisible{ true };
 };
 
 }}} // namespace EE::UI::Doc

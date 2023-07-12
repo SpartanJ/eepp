@@ -14,7 +14,7 @@ UITab::UITab() :
 	UISelectButton( "tab" ), mOwnedWidget( NULL ), mDragTotalDiff( 0.f ), mTabWidget( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
 	mIcon->setElementTag( mTag + "::icon" );
-	auto cb = [&]( const Event* ) { onSizeChange(); };
+	auto cb = [this]( const Event* ) { onSizeChange(); };
 	mTextBox->addEventListener( Event::OnSizeChange, cb );
 	mIcon->addEventListener( Event::OnSizeChange, cb );
 	mCloseButton = UIWidget::NewWithTag( mTag + "::close" );
@@ -81,21 +81,23 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 		}
 	}
 
-	setEnabled( false );
-	Node* overFind = getUISceneNode()->overFind( pos );
-	setEnabled( true );
+	if ( tabW->getAllowDragAndDropTabs() ) {
+		setEnabled( false );
+		Node* overFind = getUISceneNode()->overFind( pos );
+		setEnabled( true );
 
-	if ( overFind && overFind->isType( UI_TYPE_WIDGET ) ) {
-		UIWidget* widget = overFind->asType<UIWidget>()->acceptsDropOfWidgetInTree( this );
+		if ( overFind && overFind->isType( UI_TYPE_WIDGET ) ) {
+			UIWidget* widget = overFind->asType<UIWidget>()->acceptsDropOfWidgetInTree( this );
 
-		if ( mCurDropWidget ) {
-			mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 0 );
-			mCurDropWidget = nullptr;
-		}
+			if ( mCurDropWidget ) {
+				mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 0 );
+				mCurDropWidget = nullptr;
+			}
 
-		if ( widget ) {
-			mCurDropWidget = widget;
-			mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 1 );
+			if ( widget ) {
+				mCurDropWidget = widget;
+				mCurDropWidget->writeNodeFlag( NODE_FLAG_DROPPABLE_HOVERING, 1 );
+			}
 		}
 	}
 
@@ -159,6 +161,10 @@ void UITab::onSizeChange() {
 
 UIWidget* UITab::getExtraInnerWidget() const {
 	return mCloseButton;
+}
+
+void UITab::removeTab( bool destroyOwnedNode, bool immediateClose ) {
+	getTabWidget()->removeTab( this, destroyOwnedNode, immediateClose );
 }
 
 void UITab::setTheme( UITheme* Theme ) {
@@ -331,7 +337,7 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 			if ( flags & EE_BUTTON_LMASK && message->getSender() != mCloseButton ) {
 				tTabW->setTabSelected( this );
 			} else if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
-				tTabW->tryCloseTab( this );
+				tTabW->tryCloseTab( this, UITabWidget::FocusTabBehavior::Closest );
 			} else if ( flags & EE_BUTTONS_WUWD ) {
 				if ( flags & EE_BUTTON_WUMASK ) {
 					tTabW->selectPreviousTab();
@@ -343,7 +349,7 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 		}
 		case NodeMessage::MouseClick: {
 			if ( flags & EE_BUTTON_LMASK && message->getSender() == mCloseButton ) {
-				tTabW->tryCloseTab( this );
+				tTabW->tryCloseTab( this, UITabWidget::FocusTabBehavior::Closest );
 			}
 			break;
 		}
@@ -391,6 +397,11 @@ void UITab::setOwnedWidget( Node* ownedWidget ) {
 		if ( NULL == tTabW->mTabSelected )
 			tTabW->setTabSelected( this );
 	}
+}
+
+void UITab::setTabSelected() {
+	if ( getTabWidget() )
+		getTabWidget()->setTabSelected( this );
 }
 
 }} // namespace EE::UI

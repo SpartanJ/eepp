@@ -5,6 +5,7 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -19,8 +20,9 @@ UIDropDownList* UIDropDownList::New() {
 
 UIDropDownList::UIDropDownList( const std::string& tag ) :
 	UITextInput( tag ), mListBox( NULL ), mFriendNode( NULL ) {
+	mEnabledCreateContextMenu = false;
 	setClipType( ClipType::ContentBox );
-	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
+	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING | UI_SCROLLABLE );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
 
 	setAllowEditing( false );
@@ -45,7 +47,16 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 								cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
 	mListBox->addEventListener( Event::OnClear, cb::Make1( this, &UIDropDownList::onWidgetClear ) );
-	mListBox->addEventListener( Event::OnClose, [&]( const Event* ) { mListBox = nullptr; } );
+	mListBox->addEventListener( Event::OnClose, [this]( const Event* ) { mListBox = nullptr; } );
+	mListBox->addEventListener( Event::OnSelectionChanged, [this]( auto ) {
+		if ( !mListBox->hasSelection() )
+			mListBox->setSelected( 0 );
+		sendCommonEvent( Event::OnSelectionChanged );
+	} );
+	mListBox->addEventListener( Event::OnItemValueChange, [this]( const Event* event ) {
+		if ( mListBox->getItemSelectedIndex() == event->asItemValueEvent()->getItemIndex() )
+			setText( mListBox->getItemSelectedText() );
+	} );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -138,17 +149,18 @@ void UIDropDownList::showList() {
 
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 
-			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() ) {
-				mListBox->setSize(
-					NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth(),
-					(Int32)( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) +
-						tPadding.Top + tPadding.Bottom );
-			} else {
-				mListBox->setSize( NULL != mFriendNode ? mFriendNode->getSize().getWidth()
-													   : getSize().getWidth(),
-								   (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) +
-									   tPadding.Top + tPadding.Bottom );
-			}
+			Float width =
+				NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth();
+
+			mListBox->setSize(
+				width, (Int32)( eemin( mListBox->getCount(), mStyleConfig.MaxNumVisibleItems ) *
+								mListBox->getRowHeight() ) +
+						   tPadding.Top + tPadding.Bottom +
+						   ( mListBox->getHorizontalScrollBar() &&
+									 mListBox->getHorizontalScrollBar()->isVisible() &&
+									 PixelDensity::dpToPx( width ) < mListBox->getMaxTextWidth()
+								 ? mListBox->getHorizontalScrollBar()->getSize().getHeight()
+								 : 0.f ) );
 
 			mListBox->getVerticalScrollBar()->setValue( sliderValue );
 
@@ -208,8 +220,9 @@ void UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisibleItems ) {
 		mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
 
 		if ( NULL != mListBox )
-			mListBox->setSize( getSize().getWidth(),
-							   mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() );
+			mListBox->setSize( getSize().getWidth(), std::min( mStyleConfig.MaxNumVisibleItems,
+															   getListBox()->getCount() ) *
+														 mListBox->getRowHeight() );
 	}
 }
 
@@ -259,6 +272,8 @@ void UIDropDownList::onItemSelected( const Event* ) {
 	messagePost( &Msg );
 
 	sendCommonEvent( Event::OnItemSelected );
+	sendCommonEvent( Event::OnValueChange );
+	sendCommonEvent( Event::OnSelectionChanged );
 }
 
 void UIDropDownList::show() {
@@ -316,7 +331,7 @@ Uint32 UIDropDownList::onKeyDown( const KeyEvent& Event ) {
 }
 
 void UIDropDownList::destroyListBox() {
-	if ( !SceneManager::instance()->isShootingDown() && NULL != mListBox &&
+	if ( !SceneManager::instance()->isShuttingDown() && NULL != mListBox &&
 		 mListBox->getParent() != this ) {
 		mListBox->setParent( this );
 	}

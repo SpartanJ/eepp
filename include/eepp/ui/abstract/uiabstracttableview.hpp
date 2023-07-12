@@ -37,7 +37,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setColumnHidden( const size_t& column, bool hidden );
 
-	void setColumnsHidden( const std::vector<size_t> columns, bool hidden );
+	void setColumnsHidden( const std::vector<size_t>& columns, bool hidden );
 
 	virtual void selectAll();
 
@@ -80,7 +80,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setSortIconSize( const size_t& sortIconSize );
 
-	void setColumnsVisible( const std::vector<size_t> columns );
+	void setColumnsVisible( const std::vector<size_t>& columns );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -112,6 +112,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	/** Tries to make all columns visible in the widget content. */
 	void setFitAllColumnsToWidget( bool fitAllColumnsToWidget );
 
+	void recalculateColumnsWidth();
+
+	UITableCell* getCellFromIndex( const ModelIndex& index ) const;
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -140,7 +144,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	Action* mSearchTextAction{ nullptr };
 	std::string mSearchText;
 	size_t mMainColumn{ 0 };
-	std::unordered_map<UIWidget*, Uint32> mWidgetsClickCbId;
+	std::unordered_map<UIWidget*, std::vector<Uint32>> mWidgetsClickCbId;
 
 	virtual ~UIAbstractTableView();
 
@@ -152,7 +156,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onModelUpdate( unsigned flags );
 
-	virtual void createOrUpdateColumns();
+	virtual void createOrUpdateColumns( bool resetColumnData = false );
 
 	virtual void onSizeChange();
 
@@ -191,6 +195,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	void updateHeaderSize();
 
 	int visibleColumn();
+
+	void updateCellsVisibility();
+
+	void resetColumnData();
 };
 
 }}} // namespace EE::UI::Abstract

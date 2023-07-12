@@ -13,6 +13,8 @@ UIMessageBox* UIMessageBox::New( const Type& type, const String& message,
 
 UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags ) :
 	UIWindow(), mMsgBoxType( type ), mTextInput( NULL ), mCloseShortcut( KEY_UNKNOWN ) {
+	mVisible = false;
+
 	mStyleConfig.WinFlags = windowFlags;
 
 	updateWinFlags();
@@ -37,9 +39,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mTextInput->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
 			->setParent( vlay )
-			->addEventListener( Event::OnPressEnter, [&]( const Event* ) {
-				sendCommonEvent( Event::MsgBoxConfirmClick );
-			} );
+			->addEventListener( Event::OnPressEnter,
+								[this]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
 	}
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
@@ -120,10 +121,10 @@ Uint32 UIMessageBox::onMessage( const NodeMessage* Msg ) {
 		case NodeMessage::MouseClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mButtonOK ) {
-					sendCommonEvent( Event::MsgBoxConfirmClick );
+					sendCommonEvent( Event::OnConfirm );
 					closeWindow();
 				} else if ( Msg->getSender() == mButtonCancel ) {
-					sendCommonEvent( Event::MsgBoxCancelClick );
+					sendCommonEvent( Event::OnCancel );
 					closeWindow();
 				}
 			}
@@ -150,7 +151,7 @@ UIPushButton* UIMessageBox::getButtonCancel() const {
 Uint32 UIMessageBox::onKeyUp( const KeyEvent& event ) {
 	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut &&
 		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
-		sendCommonEvent( Event::MsgBoxCancelClick );
+		sendCommonEvent( Event::OnCancel );
 		closeWindow();
 	}
 
@@ -177,6 +178,10 @@ void UIMessageBox::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey )
 
 UITextInput* UIMessageBox::getTextInput() const {
 	return mTextInput;
+}
+
+UILayout* UIMessageBox::getLayoutCont() const {
+	return mLayoutCont;
 }
 
 void UIMessageBox::onWindowReady() {

@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <eepp/config.hpp>
+#include <eepp/scene/action.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/time.hpp>
 #include <vector>
@@ -23,9 +24,9 @@ class EE_API ActionManager {
 
 	void addAction( Action* action );
 
-	Action* getActionByTag( const Uint32& tag );
+	Action* getActionByTag( const Action::UniqueID& tag );
 
-	void removeActionByTag( const Uint32& tag );
+	void removeActionByTag( const Action::UniqueID& tag );
 
 	void removeAction( Action* action );
 
@@ -33,11 +34,11 @@ class EE_API ActionManager {
 
 	void removeAllActionsFromTarget( Node* target );
 
-	void removeActionsByTagFromTarget( Node* target, const String::HashType& tag );
+	void removeActionsByTagFromTarget( Node* target, const Action::UniqueID& tag );
 
 	std::vector<Action*> getActionsFromTarget( Node* target );
 
-	std::vector<Action*> getActionsByTagFromTarget( Node* target, const String::HashType& tag );
+	std::vector<Action*> getActionsByTagFromTarget( Node* target, const Action::UniqueID& tag );
 
 	void update( const Time& time );
 

@@ -94,6 +94,9 @@ class EE_API LuaPattern {
 		size_t mLength{ 0 };
 	};
 
+	static std::string matchesAny( const std::vector<std::string>& stringvec,
+								 const std::string& pattern );
+
 	static std::string match( const std::string& string, const std::string& pattern );
 
 	static Range find( const std::string& string, const std::string& pattern );

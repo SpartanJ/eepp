@@ -1,7 +1,6 @@
 #include "appconfig.hpp"
 #include "ecode.hpp"
 #include "plugins/pluginmanager.hpp"
-#include "thirdparty/json.hpp"
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
@@ -43,7 +42,7 @@ static std::vector<std::string> urlDecode( const std::vector<std::string>& vec )
 void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 					  std::string& initColorScheme, std::vector<std::string>& recentFiles,
 					  std::vector<std::string>& recentFolders, const std::string& resPath,
-					  const Float& displayDPI, PluginManager* pluginManager ) {
+					  PluginManager* pluginManager, const Sizei& displaySize, bool sync ) {
 	keybindingsPath = confPath + "keybindings.cfg";
 	ini.loadFromFile( confPath + "config.cfg" );
 	iniState.loadFromFile( confPath + "state.cfg" );
@@ -53,32 +52,50 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	recentFolders = urlDecode( String::split( recentFol, ';' ) );
 	initColorScheme = editor.colorScheme = ini.getValue( "editor", "colorscheme", "eepp" );
 	editor.fontSize = ini.getValue( "editor", "font_size", "11dp" );
-	windowState.size.setWidth(
-		iniState.getValueI( "window", "width", displayDPI > 105 ? 1920 : 1280 ) );
-	windowState.size.setHeight(
-		iniState.getValueI( "window", "height", displayDPI > 105 ? 1080 : 720 ) );
+	const Sizei desiredRes( 1280, 720 );
+	Sizei defWinSize( desiredRes.getWidth(), desiredRes.getHeight() );
+	if ( displaySize.getWidth() > desiredRes.getWidth() &&
+		 displaySize.getWidth() - desiredRes.getWidth() > 60 ) {
+		defWinSize.setWidth( desiredRes.getWidth() );
+	} else {
+		defWinSize.setWidth( displaySize.getWidth() - 60 );
+	}
+	if ( displaySize.getHeight() > desiredRes.getHeight() &&
+		 displaySize.getHeight() - desiredRes.getHeight() > 60 ) {
+		defWinSize.setHeight( desiredRes.getHeight() );
+	} else {
+		defWinSize.setHeight( displaySize.getHeight() - 60 );
+	}
+	windowState.size.setWidth( iniState.getValueI( "window", "width", defWinSize.getWidth() ) );
+	windowState.size.setHeight( iniState.getValueI( "window", "height", defWinSize.getHeight() ) );
 	windowState.maximized = iniState.getValueB( "window", "maximized", false );
 	windowState.pixelDensity = iniState.getValueF( "window", "pixeldensity" );
-	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ee.png" );
+	windowState.winIcon = ini.getValue( "window", "winicon", resPath + "icon/ecode.png" );
 	windowState.panelPartition = iniState.getValue( "window", "panel_partition", "15%" );
+	windowState.statusBarPartition = iniState.getValue( "window", "status_bar_partition", "85%" );
 	windowState.displayIndex = iniState.getValueI( "window", "display_index", 0 );
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
+	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
+	editor.showIndentationGuides = ini.getValueB( "editor", "show_indentation_guides", false );
 	editor.highlightMatchingBracket =
 		ini.getValueB( "editor", "highlight_matching_brackets", true );
 	editor.highlightCurrentLine = ini.getValueB( "editor", "highlight_current_line", true );
 	editor.verticalScrollbar = ini.getValueB( "editor", "vertical_scrollbar", true );
 	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", true );
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
+	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
+	ui.showStatusBar = ini.getValueB( "ui", "show_status_bar", true );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
 	ui.terminalFont =
 		ini.getValue( "ui", "terminal_font", "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 	ui.fallbackFont = ini.getValue( "ui", "fallback_font", "fonts/DroidSansFallbackFull.ttf" );
+	ui.theme = ini.getValue( "ui", "theme" );
 	ui.colorScheme = ini.getValue( "ui", "ui_color_scheme", "dark" ) == "light"
 						 ? ColorSchemePreference::Light
 						 : ColorSchemePreference::Dark;
@@ -89,7 +106,15 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
 	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
-	doc.windowsLineEndings = ini.getValueB( "document", "windows_line_endings", false );
+	doc.lineEndings =
+		TextDocument::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
+	// Migrate old data
+	if ( ini.keyValueExists( "document", "windows_line_endings" ) &&
+		 !ini.keyValueExists( "document", "line_endings" ) &&
+		 ini.getValueB( "document", "windows_line_endings" ) == true ) {
+		doc.lineEndings = TextDocument::LineEnding::CRLF;
+	}
+
 	doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
 	doc.lineBreakingColumn = eemax( 0, ini.getValueI( "document", "line_breaking_column", 100 ) );
 	editor.autoCloseBrackets = ini.getValue( "editor", "auto_close_brackets", "" );
@@ -105,6 +130,9 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValueB( "editor", "sync_project_tree_with_editor", true );
 	editor.autoCloseXMLTags = ini.getValueB( "editor", "auto_close_xml_tags", true );
 	editor.lineSpacing = ini.getValue( "editor", "line_spacing", "0dp" );
+	editor.cursorBlinkingTime =
+		Time::fromString( ini.getValue( "editor", "cursor_blinking_time", "0.5s" ) );
+	editor.linesRelativePosition = ini.getValueB( "editor", "lines_relative_position", false );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
@@ -118,8 +146,15 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	globalSearchBarConfig.escapeSequence =
 		ini.getValueB( "global_search_bar", "escape_sequence", false );
 
+	term.shell = ini.getValue( "terminal", "shell" );
 	term.fontSize = ini.getValue( "terminal", "font_size", "11dp" );
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
+	term.newTerminalOrientation = NewTerminalOrientation::fromString(
+		ini.getValue( "terminal", "new_terminal_orientation", "vertical" ) );
+
+	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
+	workspace.checkForUpdatesAtStartup =
+		ini.getValueB( "workspace", "check_for_updates_at_startup", false );
 
 	std::map<std::string, bool> pluginsEnabled;
 	const auto& creators = pluginManager->getDefinitions();
@@ -127,16 +162,17 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		pluginsEnabled[creator.first] =
 			ini.getValueB( "plugins", creator.first,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
-							   "autoformatter" == creator.first );
-	pluginManager->setPluginsEnabled( pluginsEnabled );
+							   "autoformatter" == creator.first || "lspclient" == creator.first );
+	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 
 	iniInfo = FileInfo( ini.path() );
 }
 
 void AppConfig::save( const std::vector<std::string>& recentFiles,
 					  const std::vector<std::string>& recentFolders,
-					  const std::string& panelPartition, EE::Window::Window* win,
-					  const std::string& colorSchemeName, const SearchBarConfig& searchBarConfig,
+					  const std::string& panelPartition, const std::string& statusBarPartition,
+					  EE::Window::Window* win, const std::string& colorSchemeName,
+					  const SearchBarConfig& searchBarConfig,
 					  const GlobalSearchBarConfig& globalSearchBarConfig,
 					  PluginManager* pluginManager ) {
 
@@ -161,6 +197,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValueB( "window", "maximized", windowState.maximized );
 	iniState.setValueF( "window", "pixeldensity", windowState.pixelDensity );
 	iniState.setValue( "window", "panel_partition", panelPartition );
+	iniState.setValue( "window", "status_bar_partition", statusBarPartition );
 	iniState.setValueI( "window", "display_index", windowState.displayIndex );
 	iniState.setValueI( "window", "x", windowState.position.x );
 	iniState.setValueI( "window", "y", windowState.position.y );
@@ -169,17 +206,22 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 					   String::join( urlEncode( recentFolders ), ';' ) );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
+	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );
+	ini.setValueB( "editor", "show_line_endings", editor.showLineEndings );
 	ini.setValueB( "editor", "highlight_matching_brackets", editor.highlightMatchingBracket );
 	ini.setValueB( "editor", "highlight_current_line", editor.highlightCurrentLine );
 	ini.setValueB( "editor", "vertical_scrollbar", editor.verticalScrollbar );
 	ini.setValueB( "editor", "horizontal_scrollbar", editor.horizontalScrollbar );
 	ini.setValue( "editor", "font_size", editor.fontSize.toString() );
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );
+	ini.setValue( "ui", "panel_font_size", ui.panelFontSize.toString() );
 	ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
+	ini.setValueB( "ui", "show_status_bar", ui.showStatusBar );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
 	ini.setValue( "ui", "terminal_font", ui.terminalFont );
+	ini.setValue( "ui", "theme", ui.theme );
 	ini.setValue( "ui", "fallback_font", ui.fallbackFont );
 	ini.setValue( "ui", "ui_color_scheme",
 				  ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" );
@@ -189,7 +231,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", doc.indentWidth );
 	ini.setValueB( "document", "indent_spaces", doc.indentSpaces );
-	ini.setValueB( "document", "windows_line_endings", doc.windowsLineEndings );
+	ini.setValue( "document", "line_endings", TextDocument::lineEndingToString( doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", doc.tabWidth );
 	ini.setValueI( "document", "line_breaking_column", doc.lineBreakingColumn );
 	ini.setValue( "editor", "auto_close_brackets", editor.autoCloseBrackets );
@@ -203,6 +245,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );
 	ini.setValue( "editor", "line_spacing", editor.lineSpacing.toString() );
+	ini.setValue( "editor", "cursor_blinking_time", editor.cursorBlinkingTime.toString() );
+	ini.setValueB( "editor", "lines_relative_position", editor.linesRelativePosition );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );
@@ -214,14 +258,21 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "global_search_bar", "whole_word", globalSearchBarConfig.wholeWord );
 	ini.setValueB( "global_search_bar", "escape_sequence", globalSearchBarConfig.escapeSequence );
 
+	ini.setValue( "terminal", "shell", term.shell );
 	ini.setValue( "terminal", "font_size", term.fontSize.toString() );
 	ini.setValue( "terminal", "colorscheme", term.colorScheme );
+	ini.setValue( "terminal", "new_terminal_orientation",
+				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",
 				  Renderer::graphicsLibraryVersionToString( context.Version ) );
 	ini.setValueI( "window", "multisamples", context.Multisamples );
 	ini.setValueI( "window", "frameratelimit", context.FrameRateLimit );
+
+	ini.setValueB( "workspace", "restore_last_session", workspace.restoreLastSession );
+	ini.setValueB( "workspace", "check_for_updates_at_startup",
+				   workspace.checkForUpdatesAtStartup );
 
 	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
 	for ( const auto& plugin : pluginsEnabled )
@@ -277,7 +328,7 @@ json saveNode( Node* node ) {
 					json f;
 					f["type"] = "editor";
 					f["path"] = editor->getDocument().getFilePath();
-					f["selection"] = editor->getDocument().getSelection().toString();
+					f["selection"] = editor->getDocument().getSelections().toString();
 					files.emplace_back( f );
 				}
 			} else if ( ownedWidget->isType( UI_TYPE_TERMINAL ) ) {
@@ -297,72 +348,114 @@ json saveNode( Node* node ) {
 }
 
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-							 const std::string& configPath,
-							 const ProjectDocumentConfig& docConfig ) {
+							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
+							 const ProjectBuildConfiguration& buildConfig ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
-	std::vector<UICodeEditor*> editors = editorSplitter->getAllEditors();
-	std::vector<ProjectPath> paths;
-	for ( auto editor : editors )
-		if ( editor->getDocument().hasFilepath() )
-			paths.emplace_back( ProjectPath{ editor->getDocument().getFilePath(),
-											 editor->getDocument().getSelection() } );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
 		FileSystem::makeDir( projectsPath );
 	MD5::Result hash = MD5::fromString( projectFolder );
 	std::string projectCfgPath( projectsPath + hash.toHexString() + ".cfg" );
-	IniFile ini( projectCfgPath, false );
-	ini.setValue( "path", "folder_path", projectFolder );
-	ini.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
-	ini.setValueB( "document", "trim_trailing_whitespaces", docConfig.doc.trimTrailingWhitespaces );
-	ini.setValueB( "document", "force_new_line_at_end_of_file",
+	IniFile cfg( projectCfgPath, false );
+	cfg.setValue( "path", "folder_path", projectFolder );
+	cfg.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
+	cfg.setValueB( "document", "h_as_cpp", docConfig.hAsCPP );
+	cfg.setValueB( "document", "trim_trailing_whitespaces", docConfig.doc.trimTrailingWhitespaces );
+	cfg.setValueB( "document", "force_new_line_at_end_of_file",
 				   docConfig.doc.forceNewLineAtEndOfFile );
-	ini.setValueB( "document", "auto_detect_indent_type", docConfig.doc.autoDetectIndentType );
-	ini.setValueB( "document", "write_bom", docConfig.doc.writeUnicodeBOM );
-	ini.setValueI( "document", "indent_width", docConfig.doc.indentWidth );
-	ini.setValueB( "document", "indent_spaces", docConfig.doc.indentSpaces );
-	ini.setValueB( "document", "windows_line_endings", docConfig.doc.windowsLineEndings );
-	ini.setValueI( "document", "tab_width", docConfig.doc.tabWidth );
-	ini.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
-	ini.setValue( "nodes", "documents",
+	cfg.setValueB( "document", "auto_detect_indent_type", docConfig.doc.autoDetectIndentType );
+	cfg.setValueB( "document", "write_bom", docConfig.doc.writeUnicodeBOM );
+	cfg.setValueI( "document", "indent_width", docConfig.doc.indentWidth );
+	cfg.setValueB( "document", "indent_spaces", docConfig.doc.indentSpaces );
+	cfg.setValue( "document", "line_endings",
+				  TextDocument::lineEndingToString( docConfig.doc.lineEndings ) );
+	cfg.setValueI( "document", "tab_width", docConfig.doc.tabWidth );
+	cfg.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
+	cfg.setValue( "build", "build_name", buildConfig.buildName );
+	cfg.setValue( "build", "build_type", buildConfig.buildType );
+	cfg.setValue( "nodes", "documents",
 				  saveNode( editorSplitter->getBaseLayout()->getFirstChild() ).dump() );
-	ini.deleteKey( "files" );
-	ini.writeFile();
+	cfg.deleteKey( "files" );
+	cfg.writeFile();
 }
 
-static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr<ThreadPool> pool,
-						   json j, UITabWidget* curTabWidget, ecode::App* app ) {
+static void countTotalEditors( json j, size_t& curTotal ) {
+	if ( j["type"] == "tabwidget" ) {
+		for ( const auto& file : j["files"] )
+			if ( !file.contains( "type" ) || file["type"] == "editor" )
+				curTotal++;
+	} else if ( j["type"] == "splitter" ) {
+		countTotalEditors( j["first"], curTotal );
+		countTotalEditors( j["last"], curTotal );
+	}
+}
+
+static int countTotalEditors( json j ) {
+	size_t total = 0;
+	countTotalEditors( j, total );
+	return total;
+}
+
+void AppConfig::editorLoadedCounter( ecode::App* app ) {
+	editorsToLoad--;
+	if ( editorsToLoad <= 0 ) {
+		app->getUISceneNode()->runOnMainThread( [app] {
+			if ( !app->getFileToOpen().empty() ) {
+				app->loadFileDelayed();
+			} else {
+				app->getSplitter()->addCurrentPositionToNavigationHistory();
+			}
+		} );
+	}
+}
+
+void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
+							   UITabWidget* curTabWidget, ecode::App* app ) {
 	if ( j["type"] == "tabwidget" ) {
 		Int64 currentPage = j["current_page"];
 		size_t totalToLoad = j["files"].size();
 		for ( const auto& file : j["files"] ) {
 			if ( !file.contains( "type" ) || file["type"] == "editor" ) {
 				std::string path( file["path"] );
-				if ( !FileSystem::fileExists( path ) )
+				if ( !FileSystem::fileExists( path ) ) {
+					editorLoadedCounter( app );
 					return;
-				TextRange selection( TextRange::fromString( file["selection"] ) );
+				}
+				TextRanges selection( TextRanges::fromString( file["selection"] ) );
 				UITab* tab = nullptr;
 				if ( ( tab = editorSplitter->isDocumentOpen( path, false, true ) ) != nullptr ) {
 					auto tabAndEditor = editorSplitter->createCodeEditorInTabWidget( curTabWidget );
-					UICodeEditor* editor = tabAndEditor.second;
-					editor->setDocument(
+					UICodeEditor* teditor = tabAndEditor.second;
+					teditor->setDocument(
 						tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef() );
 					editorSplitter->removeUnusedTab( curTabWidget );
-					editor->getDocument().setSelection( selection );
-					editor->scrollToCursor();
+					if ( !teditor->getDocument().getSelection().isValid() ||
+						 teditor->getDocument().getSelection() ==
+							 TextRange( { 0, 0 }, { 0, 0 } ) ) {
+						teditor->getDocument().setSelection( selection );
+						teditor->scrollToCursor();
+					}
 					if ( curTabWidget->getTabCount() == totalToLoad )
 						curTabWidget->setTabSelected(
 							eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+
+					editorLoadedCounter( app );
 				} else {
 					editorSplitter->loadAsyncFileFromPathInNewTab(
-						path, pool,
-						[curTabWidget, selection, totalToLoad, currentPage]( UICodeEditor* editor,
-																			 const std::string& ) {
-							editor->getDocument().setSelection( selection );
-							editor->scrollToCursor();
+						path,
+						[this, curTabWidget, selection, totalToLoad, currentPage,
+						 app]( UICodeEditor* editor, const std::string& ) {
+							if ( !editor->getDocument().getSelection().isValid() ||
+								 editor->getDocument().getSelection() ==
+									 TextRange( { 0, 0 }, { 0, 0 } ) ) {
+								editor->getDocument().setSelection( selection );
+								editor->scrollToCursor();
+							}
 							if ( curTabWidget->getTabCount() == totalToLoad )
 								curTabWidget->setTabSelected( eeclamp<Int32>(
 									currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+
+							editorLoadedCounter( app );
 						},
 						curTabWidget );
 				}
@@ -384,9 +477,9 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 		if ( nullptr == splitter )
 			return;
 
-		loadDocuments( editorSplitter, pool, j["first"], curTabWidget, app );
+		loadDocuments( editorSplitter, j["first"], curTabWidget, app );
 		UITabWidget* tabWidget = splitter->getLastWidget()->asType<UITabWidget>();
-		loadDocuments( editorSplitter, pool, j["last"], tabWidget, app );
+		loadDocuments( editorSplitter, j["last"], tabWidget, app );
 
 		splitter->setSplitPartition( StyleSheetLength( j["split"] ) );
 	}
@@ -394,73 +487,55 @@ static void loadDocuments( UICodeEditorSplitter* editorSplitter, std::shared_ptr
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectDocumentConfig& docConfig,
-							 std::shared_ptr<ThreadPool> pool, ecode::App* app ) {
+							 ecode::App* app ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
 	std::string projectCfgPath( projectsPath + hash.toHexString() + ".cfg" );
 	if ( !FileSystem::fileExists( projectCfgPath ) )
 		return;
-	IniFile ini( projectCfgPath );
+	IniFile cfg( projectCfgPath );
 
-	docConfig.useGlobalSettings = ini.getValueB( "document", "use_global_settings", true );
+	docConfig.useGlobalSettings = cfg.getValueB( "document", "use_global_settings", true );
+	docConfig.hAsCPP = cfg.getValueB( "document", "h_as_cpp", false );
 	docConfig.doc.trimTrailingWhitespaces =
-		ini.getValueB( "document", "trim_trailing_whitespaces", false );
+		cfg.getValueB( "document", "trim_trailing_whitespaces", false );
 	docConfig.doc.forceNewLineAtEndOfFile =
-		ini.getValueB( "document", "force_new_line_at_end_of_file", false );
+		cfg.getValueB( "document", "force_new_line_at_end_of_file", false );
 	docConfig.doc.autoDetectIndentType =
-		ini.getValueB( "document", "auto_detect_indent_type", true );
-	docConfig.doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
-	docConfig.doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
-	docConfig.doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
-	docConfig.doc.windowsLineEndings = ini.getValueB( "document", "windows_line_endings", false );
-	docConfig.doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
-	docConfig.doc.lineBreakingColumn =
-		eemax( 0, ini.getValueI( "document", "line_breaking_column", 100 ) );
+		cfg.getValueB( "document", "auto_detect_indent_type", true );
+	docConfig.doc.writeUnicodeBOM = cfg.getValueB( "document", "write_bom", false );
+	docConfig.doc.indentWidth = cfg.getValueI( "document", "indent_width", 4 );
+	docConfig.doc.indentSpaces = cfg.getValueB( "document", "indent_spaces", false );
+	docConfig.doc.lineEndings =
+		TextDocument::stringToLineEnding( cfg.getValue( "document", "line_endings", "LF" ) );
 
-	if ( ini.keyValueExists( "nodes", "documents" ) ) {
+	docConfig.doc.tabWidth = eemax( 2, cfg.getValueI( "document", "tab_width", 4 ) );
+	docConfig.doc.lineBreakingColumn =
+		eemax( 0, cfg.getValueI( "document", "line_breaking_column", 100 ) );
+
+	if ( app->getProjectBuildManager() ) {
+		ProjectBuildConfiguration prjCfg;
+		prjCfg.buildName = cfg.getValue( "build", "build_name", "" );
+		prjCfg.buildType = cfg.getValue( "build", "build_type", "" );
+		app->getProjectBuildManager()->setConfig( prjCfg );
+	}
+
+	if ( cfg.keyValueExists( "nodes", "documents" ) ) {
 		json j;
 		try {
-			j = json::parse( ini.getValue( "nodes", "documents" ) );
-		} catch ( ... ) {
+			j = json::parse( cfg.getValue( "nodes", "documents" ) );
+		} catch ( const json::exception& e ) {
+			Log::error( "AppConfig::loadProject: error loading project: %s", e.what() );
 			return;
 		}
 		if ( j.is_discarded() )
 			return;
-		loadDocuments( editorSplitter, pool, j,
-					   editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() ), app );
-	} else {
-		// Old format
-		bool found;
-		size_t i = 0;
-		std::vector<ProjectPath> paths;
-		do {
-			std::string val( ini.getValue( "files", String::format( "file_name_%lu", i ) ) );
-			found = !val.empty();
-			if ( found ) {
-				auto pp = ProjectPath::fromString( val );
-				if ( FileSystem::fileExists( pp.path ) )
-					paths.emplace_back( pp );
-			}
-			i++;
-		} while ( found );
 
-		Int64 currentPage = ini.getValueI( "files", "current_page" );
-		size_t totalToLoad = paths.size();
-
-		for ( auto& pp : paths ) {
-			editorSplitter->loadAsyncFileFromPathInNewTab(
-				pp.path, pool,
-				[pp, editorSplitter, totalToLoad, currentPage]( UICodeEditor* editor,
-																const std::string& ) {
-					editor->getDocument().setSelection( pp.selection );
-					editor->scrollToCursor();
-
-					if ( !editorSplitter->getTabWidgets().empty() &&
-						 editorSplitter->getTabWidgets()[0]->getTabCount() == totalToLoad )
-						editorSplitter->switchToTab( currentPage );
-				} );
-		}
+		editorsToLoad = countTotalEditors( j );
+		UITabWidget* curTabWidget =
+			editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
+		loadDocuments( editorSplitter, j, curTabWidget, app );
 	}
 }
 

@@ -458,7 +458,7 @@ void RendererGLES2::texCoordPointer( int size, unsigned int type, int stride, co
 }
 
 int RendererGLES2::getStateIndex( const Uint32& State ) {
-	eeASSERT( State < EEGL_ARRAY_STATES_COUNT );
+	eeASSERT( State < EEGL_ARRAY_STATES_COUNT || State == EEGL_TEXTURE_COORD_ARRAY );
 
 	if ( EEGL_TEXTURE_COORD_ARRAY == State )
 		return mTextureUnits[mCurActiveTex];
