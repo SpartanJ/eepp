@@ -67,7 +67,7 @@
       "language": "c",
       "name": "clangd",
       "url": "https://clangd.llvm.org/",
-      "command": "clangd -log=error --background-index --header-insertion=never --limit-results=0 --limit-references=0 --clang-tidy=0 --use-dirty-headers --completion-style=bundled -j $NPROC",
+      "command": "clangd -log=error --background-index --header-insertion=never --limit-results=0 --limit-references=0 --clang-tidy=0 --completion-style=bundled -j $NPROC",
       "share_process": true,
       "file_patterns": ["%.c$", "%.h$", "%.C$", "%.H$", "%.objc$"]
     },

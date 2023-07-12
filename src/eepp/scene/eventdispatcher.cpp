@@ -110,6 +110,19 @@ void EventDispatcher::update( const Time& time ) {
 			sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getPressTrigger() );
 		}
 	}
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+	else if ( NULL != mOverNode && mInput->getReleaseTrigger() &&
+			  !( mInput->getPressTrigger() & mInput->getReleaseTrigger() ) &&
+			  !( mInput->getLastPressTrigger() & mInput->getReleaseTrigger() ) ) {
+		if ( !mFirstPress ) {
+			mDownNode = mOverNode;
+			mMouseDownPos = mMousePosi;
+			mFirstPress = true;
+		}
+		mOverNode->onMouseDown( mMousePosi, mInput->getReleaseTrigger() );
+		sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getReleaseTrigger() );
+	}
+#endif
 
 	if ( mInput->getReleaseTrigger() ) {
 		if ( NULL != mFocusNode ) {
@@ -131,6 +144,7 @@ void EventDispatcher::update( const Time& time ) {
 							sendMsg( mOverNode, NodeMessage::MouseDown,
 									 mInput->getReleaseTrigger() & EE_BUTTONS_WUWD );
 					}
+
 					mOverNode->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
 					if ( NULL != mOverNode )
 						sendMsg( mOverNode, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
