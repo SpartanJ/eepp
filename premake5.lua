@@ -762,6 +762,9 @@ workspace "eepp"
 
 	filter "platforms:arm64"
 		architecture "ARM64"
+
+	filter { "platforms:arm64", "system:macosx" }
+		architecture "ARM64"
 		buildoptions { "-arch arm64" }
 		linkoptions { "-arch arm64" }
 
