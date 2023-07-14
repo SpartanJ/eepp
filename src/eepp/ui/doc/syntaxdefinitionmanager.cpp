@@ -21,6 +21,7 @@
 #include <eepp/ui/doc/languages/sql.hpp>
 #include <eepp/ui/doc/languages/swift.hpp>
 #include <eepp/ui/doc/languages/vb.hpp>
+#include <eepp/ui/doc/languages/verilog.hpp>
 #include <eepp/ui/doc/languages/x86assembly.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -2585,7 +2586,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 64 );
+	mDefinitions.reserve( 65 );
 
 	// Register some languages support.
 	addPlainText();
@@ -2652,6 +2653,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addToml();
 	addTypeScript();
 	addV();
+	addVerilog();
 	addVisualBasic();
 	addVue();
 	addWren();

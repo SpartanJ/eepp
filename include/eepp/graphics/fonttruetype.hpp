@@ -181,6 +181,8 @@ class EE_API FontTrueType : public Font {
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 
 	void updateFontInternalId();
+
+	bool setFontFace( void* face );
 };
 
 }} // namespace EE::Graphics

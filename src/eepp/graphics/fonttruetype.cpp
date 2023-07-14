@@ -126,49 +126,7 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 		return false;
 	}
 
-	mFace = face;
-	mIsMonospace = FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
-	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
-	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
-
-	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
-		FontManager::instance()->setColorEmojiFont( this );
-
-	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
-		FontManager::instance()->setEmojiFont( this );
-
-	FT_Stroker stroker = nullptr;
-	if ( !mIsColorEmojiFont ) {
-		// Load the stroker that will be used to outline the font
-		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-			Log::error( "Failed to load font \"%s\" (failed to create the stroker)",
-						filename.c_str() );
-			FT_Done_Face( face );
-			return false;
-		}
-
-		// Store the loaded font in our ugly void* :)
-		mStroker = stroker;
-	}
-
-	// Select the unicode character map
-	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
-		Log::error( "Failed to load font \"%s\" (failed to set the Unicode character set)",
-					filename.c_str() );
-		if ( stroker )
-			FT_Stroker_Done( stroker );
-		FT_Done_Face( face );
-		return false;
-	}
-
-	// Store the font information
-	mInfo.family = face->family_name ? face->family_name : std::string();
-
-	updateFontInternalId();
-
-	sendEvent( Event::Load );
-
-	return true;
+	return setFontFace( face );
 }
 
 bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bool copyData ) {
@@ -200,47 +158,7 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 		return false;
 	}
 
-	mFace = face;
-	mIsMonospace = FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
-	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
-	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
-
-	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
-		FontManager::instance()->setColorEmojiFont( this );
-
-	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
-		FontManager::instance()->setEmojiFont( this );
-
-	// Load the stroker that will be used to outline the font
-	FT_Stroker stroker = nullptr;
-	if ( !mIsColorEmojiFont ) {
-		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-			Log::error( "Failed to load font from memory (failed to create the stroker)" );
-			FT_Done_Face( face );
-			return false;
-		}
-	}
-
-	// Select the Unicode character map
-	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
-		Log::error( "Failed to load font from memory (failed to set the Unicode character set)" );
-		if ( stroker )
-			FT_Stroker_Done( stroker );
-		FT_Done_Face( face );
-		return false;
-	}
-
-	// Store the loaded font in our ugly void* :)
-	mStroker = stroker;
-
-	// Store the font information
-	mInfo.family = face->family_name ? face->family_name : std::string();
-
-	updateFontInternalId();
-
-	sendEvent( Event::Load );
-
-	return true;
+	return setFontFace( face );
 }
 
 bool FontTrueType::loadFromStream( IOStream& stream ) {
@@ -282,50 +200,11 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 		return false;
 	}
 
-	mFace = face;
-	mIsMonospace = FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
-	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
-	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
-	FT_Stroker stroker = nullptr;
+	bool res = setFontFace( face );
+	if ( res )
+		mStreamRec = rec;
 
-	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
-		FontManager::instance()->setColorEmojiFont( this );
-
-	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
-		FontManager::instance()->setEmojiFont( this );
-
-	if ( !mIsColorEmojiFont ) {
-		// Load the stroker that will be used to outline the font
-		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-			Log::error( "Failed to load font from stream (failed to create the stroker)" );
-			FT_Done_Face( face );
-			delete rec;
-			return false;
-		}
-	}
-
-	// Select the Unicode character map
-	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
-		Log::error( "Failed to load font from stream (failed to set the Unicode character set)" );
-		if ( stroker )
-			FT_Stroker_Done( stroker );
-		FT_Done_Face( face );
-		delete rec;
-		return false;
-	}
-
-	// Store the loaded font in our ugly void* :)
-	mStroker = stroker;
-	mStreamRec = rec;
-
-	// Store the font information
-	mInfo.family = face->family_name ? face->family_name : std::string();
-
-	updateFontInternalId();
-
-	sendEvent( Event::Load );
-
-	return true;
+	return res;
 }
 
 bool FontTrueType::loadFromPack( Pack* pack, std::string filePackPath ) {
@@ -341,6 +220,51 @@ bool FontTrueType::loadFromPack( Pack* pack, std::string filePackPath ) {
 	}
 
 	return Ret;
+}
+
+bool FontTrueType::setFontFace( void* _face ) {
+	FT_Face face = (FT_Face)_face;
+	mFace = face;
+	mIsMonospace = FT_IS_FIXED_WIDTH( face );
+	mIsColorEmojiFont = checkIsColorEmojiFont( face );
+	mIsEmojiFont = FT_Get_Char_Index( face, 0x1F600 ) != 0;
+
+	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
+		FontManager::instance()->setColorEmojiFont( this );
+
+	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
+		FontManager::instance()->setEmojiFont( this );
+
+	// Load the stroker that will be used to outline the font
+	FT_Stroker stroker = nullptr;
+	if ( !mIsColorEmojiFont ) {
+		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
+			Log::error( "Failed to load font from memory (failed to create the stroker)" );
+			FT_Done_Face( face );
+			return false;
+		}
+	}
+
+	// Select the Unicode character map
+	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
+		Log::error( "Failed to load font from memory (failed to set the Unicode character set)" );
+		if ( stroker )
+			FT_Stroker_Done( stroker );
+		FT_Done_Face( face );
+		return false;
+	}
+
+	// Store the loaded font in our ugly void* :)
+	mStroker = stroker;
+
+	// Store the font information
+	mInfo.family = face->family_name ? face->family_name : std::string();
+
+	updateFontInternalId();
+
+	sendEvent( Event::Load );
+
+	return true;
 }
 
 const FontTrueType::Info& FontTrueType::getInfo() const {

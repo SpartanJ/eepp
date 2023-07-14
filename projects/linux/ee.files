@@ -874,6 +874,8 @@
 ../../src/eepp/ui/doc/languages/swift.hpp
 ../../src/eepp/ui/doc/languages/vb.cpp
 ../../src/eepp/ui/doc/languages/vb.hpp
+../../src/eepp/ui/doc/languages/verilog.cpp
+../../src/eepp/ui/doc/languages/verilog.hpp
 ../../src/eepp/ui/doc/languages/x86assembly.cpp
 ../../src/eepp/ui/doc/syntaxcolorscheme.cpp
 ../../src/eepp/ui/doc/syntaxdefinition.cpp
