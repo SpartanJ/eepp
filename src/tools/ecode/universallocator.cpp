@@ -412,7 +412,7 @@ void UniversalLocator::updateLocateBarSync() {
 	mLocateTable->setPixelsSize( width,
 								 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
 	width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
-	if ( mLocateTable->getModel()->columnCount() >= 2 ) {
+	if ( mLocateTable->getModel() && mLocateTable->getModel()->columnCount() >= 2 ) {
 		mLocateTable->setColumnsVisible( { 0, 1 } );
 		mLocateTable->setColumnWidth( 0, eeceil( width * 0.5 ) );
 		mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );
@@ -719,7 +719,8 @@ void UniversalLocator::requestWorkspaceSymbol() {
 		}
 		mLocateTable->setModel( mWorkspaceSymbolModel );
 
-		json j = json{ json{ "query", mWorkspaceSymbolQuery } };
+		json j;
+		j["query"] = mWorkspaceSymbolQuery;
 		mApp->getPluginManager()->sendRequest( PluginMessageType::WorkspaceSymbol,
 											   PluginMessageFormat::JSON, &j );
 	} else if ( mWorkspaceSymbolModel && mWorkspaceSymbolModel.get() != mLocateTable->getModel() ) {

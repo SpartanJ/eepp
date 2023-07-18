@@ -170,7 +170,9 @@ void App::setAppTitle( const std::string& title ) {
 	if ( mBenchmarkMode )
 		fullTitle += " - " + String::toString( mWindow->getFPS() ) + " FPS";
 
-	mWindow->setTitle( fullTitle );
+	mUISceneNode->runOnMainThread( [this, fullTitle] {
+		mWindow->setTitle( fullTitle );
+	} );
 }
 
 void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {

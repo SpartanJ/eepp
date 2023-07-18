@@ -271,7 +271,8 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 	if ( servers.empty() )
 		return {};
 
-	std::string query = msg.asJSON().value( "query", "" );
+	json jmsg = msg.asJSON();
+	std::string query = jmsg.value( "query", "" );
 	for ( const auto server : servers ) {
 		server->workspaceSymbol(
 			query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
