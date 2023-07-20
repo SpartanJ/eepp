@@ -47,9 +47,15 @@ macOS_CreateApplicationMenus(void)
 	[NSApp setAppleMenu:appleMenu];
 
 	windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
+
+	menuItem = [[NSMenuItem alloc] initWithTitle:@"Minimize" action:@selector(miniaturize:) keyEquivalent:@"m"];
+	[menuItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
+	[windowMenu addItem:menuItem];
+
 	menuItem = [[NSMenuItem alloc] initWithTitle:@"Toggle Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"];
 	[menuItem setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
 	[windowMenu addItem:menuItem];
+
 	menuItem = [[NSMenuItem alloc] initWithTitle:@"Window" action:nil keyEquivalent:@""];
 	[menuItem setSubmenu:windowMenu];
 

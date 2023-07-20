@@ -1802,7 +1802,11 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
 		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
 		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+#else
 		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+#endif
 		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
 		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
 		{ { KEY_J, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-left" },
@@ -1833,6 +1837,9 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
 		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
 		{ "switch-to-last-tab", "alt+0" },
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+		{ "menu-toggle", "mod+shift+m" },
+#endif
 	};
 }
 
