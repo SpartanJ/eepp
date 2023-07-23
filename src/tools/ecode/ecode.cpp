@@ -600,9 +600,14 @@ void App::onFileDropped( String file ) {
 		}
 	}
 
-	loadFileFromPath( file, false, codeEditor, [tab]( UICodeEditor*, const std::string& ) {
+	loadFileFromPath( file, false, codeEditor, [this, tab]( UICodeEditor* editor, const std::string& ) {
 		if ( tab )
-			tab->getTabWidget()->setTabSelected( tab );
+			tab->setTabSelected();
+		else {
+			UITab* tab = mSplitter->tabFromEditor( editor );
+			if ( tab )
+				tab->setTabSelected();
+		}
 	} );
 }
 
@@ -1636,6 +1641,8 @@ void App::loadFileDelayed() {
 							  editor->runOnMainThread( [this, editor, fileAndPos] {
 								  editor->goToLine( fileAndPos.second );
 								  mSplitter->addEditorPositionToNavigationHistory( editor );
+								  UITab* tab = mSplitter->tabFromEditor( editor );
+								  if (tab) tab->setTabSelected();
 							  } );
 						  } );
 	}
