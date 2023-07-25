@@ -70,12 +70,19 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 				}
 			}
 
+			if ( file.isLink() )
+				file = FileInfo( file.linksTo() );
+
+			if ( isFileOpen( file ) )
+				notifyChange( file );
+
 			Lock l( mCbsMutex );
 			if ( !mCbs.empty() ) {
 				auto cbs = mCbs;
 				for ( const auto& cb : cbs )
 					cb.second( event, file );
 			}
+
 			break;
 		}
 		case efsw::Actions::Modified: {
