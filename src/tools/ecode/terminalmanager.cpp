@@ -60,9 +60,9 @@ void TerminalManager::loadTerminalColorSchemes() {
 std::map<KeyBindings::Shortcut, std::string> TerminalManager::getTerminalKeybindings() {
 	return {
 		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "create-new-terminal" },
-		{ { KEY_E, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT },
+		{ { KEY_E, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
 		  UITerminal::getExclusiveModeToggleCommandName() },
-		{ { KEY_S, KEYMOD_LALT | KEYMOD_CTRL }, "terminal-rename" },
+		{ { KEY_S, KEYMOD_LALT | KeyMod::getDefaultModifier() }, "terminal-rename" },
 	};
 }
 
