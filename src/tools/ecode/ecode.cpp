@@ -170,9 +170,7 @@ void App::setAppTitle( const std::string& title ) {
 	if ( mBenchmarkMode )
 		fullTitle += " - " + String::toString( mWindow->getFPS() ) + " FPS";
 
-	mUISceneNode->runOnMainThread( [this, fullTitle] {
-		mWindow->setTitle( fullTitle );
-	} );
+	mUISceneNode->runOnMainThread( [this, fullTitle] { mWindow->setTitle( fullTitle ); } );
 }
 
 void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {
@@ -435,11 +433,14 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( XMLToolsPlugin::Definition() );
 }
 
-void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
+bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
 					  bool stdOutLogs, bool disableFileLogs ) {
 	mConfigPath = Sys::getConfigPath( "ecode" );
-	if ( !FileSystem::fileExists( mConfigPath ) )
+	bool firstRun = false;
+	if ( !FileSystem::fileExists( mConfigPath ) ) {
 		FileSystem::makeDir( mConfigPath );
+		firstRun = true;
+	}
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mPluginsPath = mConfigPath + "plugins";
 	mLanguagesPath = mConfigPath + "languages";
@@ -481,6 +482,8 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
 				  mResPath, mPluginManager.get(), displaySize.asInt(), sync );
+
+	return firstRun;
 }
 
 void App::saveConfig() {
@@ -600,15 +603,16 @@ void App::onFileDropped( String file ) {
 		}
 	}
 
-	loadFileFromPath( file, false, codeEditor, [this, tab]( UICodeEditor* editor, const std::string& ) {
-		if ( tab )
-			tab->setTabSelected();
-		else {
-			UITab* tab = mSplitter->tabFromEditor( editor );
-			if ( tab )
-				tab->setTabSelected();
-		}
-	} );
+	loadFileFromPath( file, false, codeEditor,
+					  [this, tab]( UICodeEditor* editor, const std::string& ) {
+						  if ( tab )
+							  tab->setTabSelected();
+						  else {
+							  UITab* tab = mSplitter->tabFromEditor( editor );
+							  if ( tab )
+								  tab->setTabSelected();
+						  }
+					  } );
 }
 
 void App::onTextDropped( String text ) {
@@ -1642,7 +1646,8 @@ void App::loadFileDelayed() {
 								  editor->goToLine( fileAndPos.second );
 								  mSplitter->addEditorPositionToNavigationHistory( editor );
 								  UITab* tab = mSplitter->tabFromEditor( editor );
-								  if (tab) tab->setTabSelected();
+								  if ( tab )
+									  tab->setTabSelected();
 							  } );
 						  } );
 	}
@@ -1796,41 +1801,48 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
-		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
-		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
-		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+			{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
-		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
-		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-		{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-left" },
-		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-right" },
-		{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-top" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-bottom" },
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-swap" },
-		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT }, "reopen-closed-tab" },
-		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
-		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
-		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+			{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
+			{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-left" },
+			{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-right" },
+			{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-top" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-bottom" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-swap" },
+			{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "reopen-closed-tab" },
+			{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
+			{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
+			{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+			{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+			{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-workspace-symbol-search" },
+			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-document-symbol-search" },
 	};
 }
 
@@ -1839,13 +1851,13 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 std::map<std::string, std::string> App::getMigrateKeybindings() {
 	return {
 		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
-		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
-		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
-		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
-		{ "switch-to-last-tab", "alt+0" },
+			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
+			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
+			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
+			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
+			{ "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
-		{ "menu-toggle", "mod+shift+m" },
+			{ "menu-toggle", "mod+shift+m" },
 #endif
 	};
 }
@@ -3043,7 +3055,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
-	loadConfig( logLevel, currentDisplay->getSize(), health, stdOutLogs, disableFileLogs );
+	bool firstRun =
+		loadConfig( logLevel, currentDisplay->getSize(), health, stdOutLogs, disableFileLogs );
 
 	if ( health ) {
 		Sys::windowAttachConsole();
@@ -3093,6 +3106,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 #else
 	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", false );
 #endif
+
+	if ( firstRun )
+		mConfig.context.FrameRateLimit = currentDisplay->getRefreshRate();
 
 	mConfig.context.SharedGLContext = true;
 
@@ -3382,6 +3398,34 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				}
 			},
 			Seconds( 60.f ) );
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+		// Is the process running from flatpak isolation for the first time?
+		if ( firstRun && getenv( "FLATPAK_ISOLATION" ) != NULL ) {
+			static const auto FLATPAK_WARN = R"xml(
+<window id="win_flatpak_warning" windowFlags="default|maximize|shadow" lw="440dp" lh="150dp" window-title="ecode - Flatpak Warning">
+	<vbox lw="mp" lh="mp" padding="4dp">
+		<StackLayout lw="mp" lh="0" lw8="1">
+			<TextView lw="mp" lh="wc" word-wrap="true">You are running flatpak version of ecode. This version is running inside of a container and is therefore not able to access tools on your host system.</TextView>
+			<TextView lw="wc" lh="wc">Please read carefully the following guide at: </TextView>
+			<Anchor href="https://github.com/flathub/dev.ensoft.ecode/blob/master/ECODE_FIRST_RUN.md">https://github.com/flathub/dev.ensoft.ecode/blob/master/ECODE_FIRST_RUN.md</Anchor>
+		</StackLayout>
+		<PushButton id="win_flatpak_warning_ok" text="OK" lg="right" />
+	</vbox>
+</window>
+			)xml";
+
+			UIWindow* flatpakWarnWindow =
+				static_cast<UIWindow*>( mUISceneNode->loadLayoutFromString( FLATPAK_WARN ) );
+			flatpakWarnWindow->find( "win_flatpak_warning_ok" )
+				->onClick( [flatpakWarnWindow]( auto ) { flatpakWarnWindow->closeWindow(); } );
+			flatpakWarnWindow->on( Event::KeyDown, [flatpakWarnWindow]( const Event* event ) {
+				if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
+					flatpakWarnWindow->closeWindow();
+			} );
+			flatpakWarnWindow->center();
+		}
+#endif
 
 		mWindow->runMainLoop( &appLoop, mBenchmarkMode ? 0 : mConfig.context.FrameRateLimit );
 	}

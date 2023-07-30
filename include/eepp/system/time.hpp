@@ -39,10 +39,10 @@ class EE_API Time {
 	std::string toString() const;
 
   private:
-	friend EE_API constexpr Time Minutes( double );
-	friend EE_API constexpr Time Seconds( double );
-	friend EE_API constexpr Time Milliseconds( double );
-	friend EE_API constexpr Time Microseconds( Int64 );
+	friend constexpr Time Minutes( double );
+	friend constexpr Time Seconds( double );
+	friend constexpr Time Milliseconds( double );
+	friend constexpr Time Microseconds( Int64 );
 
 	/** @brief Construct from a number of microseconds
 	**  This function is internal. To construct time values,
