@@ -73,7 +73,7 @@ static std::string getProjectOutputParserTypeToString( const ProjectOutputParser
 
 UIPushButton* StatusBuildOutputController::getBuildButton( App* app ) {
 	if ( app->getSidePanel() ) {
-		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab" );
+		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab_view" );
 		if ( tab )
 			return tab->find<UIPushButton>( "build_button" );
 	}
@@ -82,7 +82,7 @@ UIPushButton* StatusBuildOutputController::getBuildButton( App* app ) {
 
 UIPushButton* StatusBuildOutputController::getCleanButton( App* app ) {
 	if ( app->getSidePanel() ) {
-		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab" );
+		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab_view" );
 		if ( tab )
 			return tab->find<UIPushButton>( "clean_button" );
 	}

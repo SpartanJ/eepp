@@ -859,7 +859,7 @@ void ProjectBuildManager::buildSidePanelTab() {
 	UIIcon* icon = mUISceneNode->findIcon( "symbol-property" );
 	UIWidget* node = mUISceneNode->loadLayoutFromString(
 		R"html(
-			<ScrollView id="build_tab" lw="mp" lh="mp">
+			<ScrollView id="build_tab_view" lw="mp" lh="mp">
 				<vbox lw="mp" lh="wc" padding="4dp">
 					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" />
 					<TextView text="@string(build_configuration, Build Configuration)" />
@@ -886,7 +886,7 @@ void ProjectBuildManager::buildSidePanelTab() {
 void ProjectBuildManager::updateSidePanelTab() {
 	if ( mTab == nullptr )
 		return;
-	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab_view" );
 	if ( buildTab == nullptr )
 		return;
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
@@ -970,7 +970,7 @@ void ProjectBuildManager::updateSidePanelTab() {
 void ProjectBuildManager::updateBuildType() {
 	if ( mTab == nullptr )
 		return;
-	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab_view" );
 	if ( buildTab == nullptr )
 		return;
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
