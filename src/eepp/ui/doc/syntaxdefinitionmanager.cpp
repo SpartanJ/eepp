@@ -7,6 +7,7 @@
 #include <eepp/ui/doc/languages/css.hpp>
 #include <eepp/ui/doc/languages/d.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
+#include <eepp/ui/doc/languages/hare.hpp>
 #include <eepp/ui/doc/languages/hlsl.hpp>
 #include <eepp/ui/doc/languages/htaccess.hpp>
 #include <eepp/ui/doc/languages/objeck.hpp>
@@ -2611,6 +2612,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addGLSL();
 	addGo();
 	addHaskell();
+	addHare();
 	addHaxe();
 	addHLSL();
 	addHtaccessFile();

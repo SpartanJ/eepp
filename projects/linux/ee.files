@@ -626,6 +626,8 @@
 ../../src/eepp/ui/doc/languages/css.hpp
 ../../src/eepp/ui/doc/languages/d.cpp
 ../../src/eepp/ui/doc/languages/d.hpp
+../../src/eepp/ui/doc/languages/hare.cpp
+../../src/eepp/ui/doc/languages/hare.hpp
 ../../src/eepp/ui/doc/languages/htaccess.hpp
 ../../src/eepp/ui/doc/languages/objeck.hpp
 ../../src/eepp/ui/doc/languages/odin.cpp
