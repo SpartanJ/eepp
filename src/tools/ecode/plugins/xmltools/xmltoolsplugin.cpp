@@ -231,7 +231,7 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 	if ( !def.getAutoCloseXMLTags() ) // getAutoCloseXMLTags means that it supports XML element tags
 		return clearMatch();
 	TextRange range = mDoc->getWordRangeInPosition( sel.start(), false );
-	if ( !range.isValid() )
+	if ( !range.isValid() || !range.hasSelection() )
 		return clearMatch();
 	range.normalize();
 	if ( range.start().column() == 0 || line.size() <= 1 )
@@ -250,21 +250,41 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 			return; // Moving inside match
 	}
 	String tag( mDoc->getText( range ) );
-
 	TextRange found;
+
+	const auto ensureMatchesWord = [&]( int offset ) {
+		if ( found.isValid() && found.hasSelection() ) {
+			found.normalize();
+			auto start( mDoc->positionOffset( found.start(), offset ) );
+			TextRange wordRange = mDoc->getWordRangeInPosition( start, false );
+			if ( !wordRange.isValid() ||
+				 wordRange.normalized() != TextRange( start, found.end() ).normalized() ) {
+				found = TextRange();
+			}
+		}
+	};
+
 	if ( isCloseBracket ) {
 		String openBracket( tag );
 		openBracket.erase( 1 );
 		found = mDoc->getMatchingBracket( range.start(), openBracket, tag,
-										  TextDocument::MatchDirection::Backward );
+										  TextDocument::MatchDirection::Backward, true );
+		ensureMatchesWord( 1 );
 	} else {
+		// Ensure the current bracket is closed, otherwise don't try to match
+		TextPosition matchClose( mDoc->getMatchingBracket(
+			range.start(), '<', '>', TextDocument::MatchDirection::Forward, false ) );
+		if ( !matchClose.isValid() )
+			return;
+
 		String closeBracket( tag );
 		closeBracket.insert( 1, '/' );
 		found = mDoc->getMatchingBracket( range.start(), tag, closeBracket,
-										  TextDocument::MatchDirection::Forward );
+										  TextDocument::MatchDirection::Forward, true );
+		ensureMatchesWord( 2 );
 	}
 
-	if ( found.isValid() ) {
+	if ( found.isValid() && found.hasSelection() ) {
 		ClientMatch match{ range.normalized(), found.normalized(), isCloseBracket };
 		mParent->mMatches[mDoc] = std::move( match );
 	} else {

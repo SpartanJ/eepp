@@ -2529,7 +2529,7 @@ static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, cons
 TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 											   const String::StringBaseType& openBracket,
 											   const String::StringBaseType& closeBracket,
-											   MatchDirection dir ) {
+											   MatchDirection dir, bool allowDepth ) {
 	SyntaxHighlighter* highlighter = getHighlighter();
 	int depth = 0;
 	while ( sp.isValid() ) {
@@ -2538,10 +2538,14 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 			changeDepth( highlighter, depth, sp, 1 );
 			if ( depth == 0 )
 				return sp;
+			if ( !allowDepth && depth > 1 )
+				return {};
 		} else if ( byte == closeBracket ) {
 			changeDepth( highlighter, depth, sp, -1 );
 			if ( depth == 0 )
 				return sp;
+			if ( !allowDepth && depth > 1 )
+				return {};
 		}
 
 		auto prevPos = sp;
@@ -2553,7 +2557,8 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 }
 
 TextRange TextDocument::getMatchingBracket( TextPosition start, const String& openBracket,
-											const String& closeBracket, MatchDirection dir ) {
+											const String& closeBracket, MatchDirection dir,
+											bool matchingXMLTags ) {
 	if ( !start.isValid() )
 		return {};
 	SyntaxHighlighter* highlighter = getHighlighter();
@@ -2579,9 +2584,34 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 		do {
 			// Find all the open brackets between the first open bracket and the first close bracket
 			do {
-				foundOpen =
-					find( openBracket, start, true, false, TextDocument::FindReplaceType::Normal,
-						  { start, foundClose.start() } );
+				if ( matchingXMLTags ) {
+					// Ignore closed XML tags
+					do {
+						foundOpen = find( openBracket, start, true, false,
+										  TextDocument::FindReplaceType::Normal,
+										  { start, foundClose.start() } );
+
+						if ( foundOpen.isValid() ) {
+							TextPosition closePosition =
+								getMatchingBracket( foundOpen.start(), openBracket[0], '>',
+													MatchDirection::Forward, false );
+							if ( closePosition.isValid() ) {
+								if ( getChar( positionOffset( closePosition, -1 ) ) != '/' ) {
+									break;
+								} else {
+									start = closePosition;
+								}
+							} else {
+								break;
+							}
+						}
+					} while ( foundOpen.isValid() );
+				} else {
+					foundOpen = find( openBracket, start, true, false,
+									  TextDocument::FindReplaceType::Normal,
+									  { start, foundClose.start() } );
+				}
+
 				if ( foundOpen.isValid() ) {
 					start = foundOpen.end();
 					changeDepth( highlighter, depth, start, 1 );
@@ -2612,7 +2642,28 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 		}
 
 		// Ensure there's an open bracket
-		auto foundOpen = findLast( openBracket, start );
+		TextRange foundOpen;
+		if ( matchingXMLTags ) {
+			do {
+				foundOpen = findLast( openBracket, start );
+				if ( foundOpen.isValid() ) {
+					TextPosition closePosition =
+						getMatchingBracket( foundOpen.normalized().start(), openBracket[0], '>',
+											MatchDirection::Forward, false );
+					if ( closePosition.isValid() ) {
+						if ( getChar( positionOffset( closePosition, -1 ) ) != '/' ) {
+							break;
+						} else {
+							start = foundOpen.normalized().start();
+						}
+					} else {
+						break;
+					}
+				}
+			} while ( foundOpen.isValid() );
+		} else {
+			foundOpen = findLast( openBracket, start );
+		}
 		if ( !foundOpen.isValid() )
 			return {}; // Not found, exit
 
@@ -2637,7 +2688,28 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 
 			if ( depth > 0 ) {
 				// Find the next open bracket from the last open bracket
-				foundOpen = findLast( openBracket, start );
+				if ( matchingXMLTags ) {
+					do {
+						foundOpen = findLast( openBracket, start );
+						if ( foundOpen.isValid() ) {
+							TextPosition closePosition =
+								getMatchingBracket( foundOpen.normalized().start(), openBracket[0],
+													'>', MatchDirection::Forward, false );
+							if ( closePosition.isValid() ) {
+								if ( getChar( positionOffset( closePosition, -1 ) ) != '/' ) {
+									break;
+								} else {
+									start = foundOpen.normalized().start();
+								}
+							} else {
+								break;
+							}
+						}
+					} while ( foundOpen.isValid() );
+				} else {
+					foundOpen = findLast( openBracket, start );
+				}
+
 				if ( !foundOpen.isValid() )
 					break;
 			}

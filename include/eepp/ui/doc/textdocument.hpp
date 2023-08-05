@@ -548,11 +548,12 @@ class EE_API TextDocument {
 
 	TextPosition getMatchingBracket( TextPosition startPosition,
 									 const String::StringBaseType& openBracket,
-									 const String::StringBaseType& closeBracket,
-									 MatchDirection dir );
+									 const String::StringBaseType& closeBracket, MatchDirection dir,
+									 bool allowDepth = true );
 
 	TextRange getMatchingBracket( TextPosition startPosition, const String& openBracket,
-								  const String& closeBracket, MatchDirection dir );
+								  const String& closeBracket, MatchDirection dir,
+								  bool matchingXMLTags = false );
 
 	SyntaxHighlighter* getHighlighter() const;
 

@@ -254,9 +254,9 @@
     },
     {
       "language": "v",
-      "name": "vls",
-      "url": "https://github.com/vlang/vls",
-      "command": "v ls",
+      "name": "v-analyzer",
+      "url": "https://github.com/v-analyzer/v-analyzer",
+      "command": "v-analyzer --stdio",
       "file_patterns": ["%.v$"]
     },
     {
