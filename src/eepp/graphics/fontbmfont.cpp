@@ -237,7 +237,7 @@ Glyph FontBMFont::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool,
 	return glyph;
 }
 
-Float FontBMFont::getKerning( Uint32, Uint32, unsigned int, bool, bool ) const {
+Float FontBMFont::getKerning( Uint32, Uint32, unsigned int, bool, bool, Float ) const {
 	return 0;
 }
 

@@ -215,7 +215,7 @@ Glyph FontSprite::loadGlyph( Uint32 codePoint, unsigned int characterSize ) cons
 	return glyph;
 }
 
-Float FontSprite::getKerning( Uint32, Uint32, unsigned int, bool, bool ) const {
+Float FontSprite::getKerning( Uint32, Uint32, unsigned int, bool, bool, Float ) const {
 	return 0;
 }
 

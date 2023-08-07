@@ -43,7 +43,7 @@ class EE_API FontTrueType : public Font {
 									 Float outlineThickness = 0, const Float& maxWidth = 0 ) const;
 
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
-					  bool italic ) const;
+					  bool italic, Float outlineThickness = 0 ) const;
 
 	Float getLineSpacing( unsigned int characterSize ) const;
 

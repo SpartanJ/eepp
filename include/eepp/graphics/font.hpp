@@ -98,7 +98,7 @@ class EE_API Font {
 											 const Float& forzeSize = 0 ) const = 0;
 
 	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
-							  bool italic ) const = 0;
+							  bool italic, Float outlineThickness = 0 ) const = 0;
 
 	virtual Float getLineSpacing( unsigned int characterSize ) const = 0;
 
