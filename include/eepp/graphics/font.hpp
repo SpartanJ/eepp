@@ -87,16 +87,18 @@ class EE_API Font {
 	virtual const Info& getInfo() const = 0;
 
 	virtual const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-								   Float outlineThickness = 0, Float maxWidth = 0 ) const = 0;
+								   bool italic, Float outlineThickness = 0,
+								   Float maxWidth = 0 ) const = 0;
 
 	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
 	 * allocation is managed by the font. */
 	virtual GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											 bool bold = false, Float outlineThickness = 0,
+											 bool bold = false, bool italic = false,
+											 Float outlineThickness = 0,
 											 const Float& forzeSize = 0 ) const = 0;
 
-	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize,
-							  bool bold ) const = 0;
+	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
+							  bool italic ) const = 0;
 
 	virtual Float getLineSpacing( unsigned int characterSize ) const = 0;
 
@@ -105,6 +107,18 @@ class EE_API Font {
 	virtual Float getUnderlineThickness( unsigned int characterSize ) const = 0;
 
 	virtual Texture* getTexture( unsigned int characterSize ) const = 0;
+
+	virtual bool isBold() const { return false; }
+
+	virtual bool isItalic() const { return false; }
+
+	virtual bool isBoldItalic() const { return false; }
+
+	virtual bool hasBold() { return false; }
+
+	virtual bool hasItalic() { return false; }
+
+	virtual bool hasBoldItalic() { return false; }
 
 	virtual bool loaded() const = 0;
 

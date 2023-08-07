@@ -135,7 +135,7 @@ class EE_API IniFile {
 	double getValueF( std::string const keyname, std::string const valuename,
 					  double const defValue = 0.0 ) const;
 
-	/** This is a variable length formatted GetValue routine. All these voids
+	/** This is a variable length formatted getValue routine. All these voids
 	** are required because there is no vsscanf() like there is a vsprintf().
 	** Only a maximum of 8 variable can be read. */
 	unsigned getValueV( std::string const keyname, std::string const valuename, char* format,

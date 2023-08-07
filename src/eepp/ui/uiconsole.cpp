@@ -394,8 +394,8 @@ void UIConsole::draw() {
 	size_t pos = 0;
 	Float curY;
 	Float lineHeight = getLineHeight();
-	Float cw =
-		mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false ).advance;
+	Float cw = mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false, false )
+				   .advance;
 
 	mCon.min = eemax( 0, (Int32)mCmdLog.size() - linesInScreen );
 	mCon.max = (int)mCmdLog.size() - 1;
@@ -457,7 +457,8 @@ void UIConsole::draw() {
 
 	if ( mShowFps ) {
 		Float cw =
-			mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false ).advance;
+			mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false, false )
+				.advance;
 		Text& text = mTextCache[mTextCache.size() - 3].text;
 		Color OldColor1( text.getColor() );
 		text.setStyleConfig( mFontStyleConfig );

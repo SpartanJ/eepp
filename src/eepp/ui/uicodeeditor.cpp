@@ -2418,7 +2418,7 @@ Float UICodeEditor::getGlyphWidth() const {
 }
 
 void UICodeEditor::udpateGlyphWidth() {
-	mGlyphWidth = mFont->getGlyph( '@', getCharacterSize(), false ).advance;
+	mGlyphWidth = mFont->getGlyph( '@', getCharacterSize(), false, false ).advance;
 	invalidateLongestLineWidth();
 }
 

@@ -421,12 +421,13 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& stri
 	String::StringBaseType rune;
 	Uint32 prevChar = 0;
 	bool bold = ( style & Text::Bold ) != 0;
-	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	bool italic = ( style & Text::Italic ) != 0;
+	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold, italic ).advance );
 	for ( std::size_t i = 0; i < string.size(); ++i ) {
 		rune = string.at( i );
-		Glyph glyph = font->getGlyph( rune, fontSize, bold, outlineThickness );
+		Glyph glyph = font->getGlyph( rune, fontSize, bold, italic, outlineThickness );
 		if ( rune != '\r' && rune != '\t' ) {
-			width += font->getKerning( prevChar, rune, fontSize, bold );
+			width += font->getKerning( prevChar, rune, fontSize, bold, italic );
 			prevChar = rune;
 			width += glyph.advance;
 		} else if ( rune == '\t' ) {
@@ -452,7 +453,8 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 
 	// Precompute the variables needed by the algorithm
 	bool bold = ( style & Text::Bold ) != 0;
-	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	bool italic = ( style & Italic ) != 0;
+	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold, italic ).advance );
 	Float vspace = static_cast<Float>( font->getLineSpacing( fontSize ) );
 
 	// Compute the position
@@ -462,7 +464,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 		String::StringBaseType curChar = string[i];
 
 		// Apply the kerning offset
-		position.x += static_cast<Float>( font->getKerning( prevChar, curChar, fontSize, bold ) );
+		position.x += static_cast<Float>( font->getKerning( prevChar, curChar, fontSize, bold, italic ) );
 		prevChar = curChar;
 
 		// Handle special characters
@@ -504,9 +506,10 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 	Int32 curDist = -1;
 	std::size_t tSize = string.size();
 	bool bold = ( style & Text::Bold ) != 0;
+	bool italic = ( style & Italic ) != 0;
 	Vector2f fpos( pos.asFloat() );
 
-	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold, italic ).advance );
 
 	for ( std::size_t i = 0; i < tSize; ++i ) {
 		rune = string[i];
@@ -515,7 +518,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 		lWidth = width;
 
 		if ( rune != '\r' && rune != '\t' ) {
-			width += font->getKerning( prevChar, rune, fontSize, bold );
+			width += font->getKerning( prevChar, rune, fontSize, bold, italic );
 			prevChar = rune;
 			width += glyph.advance;
 		} else if ( rune == '\t' ) {
@@ -572,17 +575,18 @@ void Text::getWidthInfo() {
 	Uint32 prevChar = 0;
 	mLargestLineCharCount = 0;
 	bool bold = ( mStyle & Bold ) != 0;
+	bool italic = ( mStyle & Italic ) != 0;
 
 	mLinesStartIndex.push_back( 0 );
 
-	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );
+	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold, italic ).advance );
 
 	for ( std::size_t i = 0; i < mString.size(); ++i ) {
 		CharID = static_cast<Int32>( mString.at( i ) );
 		Glyph glyph = mFont->getGlyph( CharID, mRealFontSize, bold, mOutlineThickness );
 
 		if ( CharID != '\r' && CharID != '\t' ) {
-			Width += mFont->getKerning( prevChar, CharID, mRealFontSize, bold );
+			Width += mFont->getKerning( prevChar, CharID, mRealFontSize, bold, italic );
 			prevChar = CharID;
 			Width += glyph.advance;
 		}
@@ -629,8 +633,9 @@ void Text::wrapText( const Uint32& maxWidth ) {
 	String::StringBaseType* tLastSpace = NULL;
 	Uint32 prevChar = 0;
 	bool bold = ( mStyle & Bold ) != 0;
+	bool italic = ( mStyle & Italic ) != 0;
 
-	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );
+	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold, italic ).advance );
 
 	while ( *tChar ) {
 		Glyph pChar = mFont->getGlyph( *tChar, mRealFontSize, bold, mOutlineThickness );
@@ -646,7 +651,7 @@ void Text::wrapText( const Uint32& maxWidth ) {
 		tWordWidth += fCharWidth;
 
 		if ( *tChar != '\r' ) {
-			tWordWidth += mFont->getKerning( prevChar, *tChar, mRealFontSize, bold );
+			tWordWidth += mFont->getKerning( prevChar, *tChar, mRealFontSize, bold, italic );
 			prevChar = *tChar;
 		}
 
@@ -904,9 +909,10 @@ void Text::ensureGeometryUpdate() {
 
 	// Compute values related to the text style
 	bool bold = ( mStyle & Bold ) != 0;
+	bool reqItalic = ( mStyle & Italic ) != 0;
 	bool underlined = ( mStyle & Underlined ) != 0;
 	bool strikeThrough = ( mStyle & StrikeThrough ) != 0;
-	Float italic = ( mStyle & Italic ) ? 0.208f : 0.f; // 12 degrees
+	Float italic = reqItalic && !mFont->hasItalic() ? 0.208f : 0.f; // 12 degrees
 	Float underlineOffset = mFont->getUnderlinePosition( mRealFontSize );
 	Float underlineThickness = mFont->getUnderlineThickness( mRealFontSize );
 
@@ -915,12 +921,13 @@ void Text::ensureGeometryUpdate() {
 	// We reuse the underline thickness as the thickness of the strike through as well
 	Float strikeThroughOffset = 0;
 	if ( strikeThrough ) {
-		Rectf xBounds = mFont->getGlyph( L'x', mRealFontSize, bold ).bounds;
+		Rectf xBounds = mFont->getGlyph( L'x', mRealFontSize, bold, reqItalic ).bounds;
 		strikeThroughOffset = xBounds.Top + xBounds.Bottom / 2.f;
 	}
 
 	// Precompute the variables needed by the algorithm
-	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );
+	Float hspace = static_cast<Float>(
+		mFont->getGlyph( L' ', mRealFontSize, bold, reqItalic ).advance );
 	Float vspace = static_cast<Float>( mFont->getLineSpacing( mRealFontSize ) );
 	Float x = 0.f;
 	Float y = static_cast<Float>( mRealFontSize );
@@ -950,7 +957,7 @@ void Text::ensureGeometryUpdate() {
 		Uint32 curChar = mString[i];
 
 		// Apply the kerning offset
-		x += mFont->getKerning( prevChar, curChar, mRealFontSize, bold );
+		x += mFont->getKerning( prevChar, curChar, mRealFontSize, bold, reqItalic );
 		prevChar = curChar;
 
 		// If we're using the underlined style and there's a new line, draw a line
@@ -1042,7 +1049,7 @@ void Text::ensureGeometryUpdate() {
 		}
 
 		// Extract the current glyph's description
-		const Glyph& glyph = mFont->getGlyph( curChar, mRealFontSize, bold );
+		const Glyph& glyph = mFont->getGlyph( curChar, mRealFontSize, bold, reqItalic );
 
 		// Add the glyph to the vertices
 		addGlyphQuad( mVertices, Vector2f( x, y ), glyph, italic, 0, centerDiffX );
@@ -1114,7 +1121,7 @@ void Text::ensureColorUpdate() {
 
 		if ( mContainsColorEmoji ) {
 			auto positions = Font::emojiCodePointsPositions( mString );
-			for ( auto& position : positions )
+			for ( const auto& position : positions )
 				setFillColor( Color( 255, 255, 255, mFillColor.a ), position, position );
 		}
 	}

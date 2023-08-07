@@ -377,7 +377,7 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
 										 const Sizef& pixelsSize ) {
 	auto fontHeight = (Float)font->getFontHeight( fontSize );
-	auto spaceCharAdvanceX = font->getGlyph( 'A', fontSize, false ).advance;
+	auto spaceCharAdvanceX = font->getGlyph( 'A', fontSize, false, false ).advance;
 	auto clipColumns =
 		(int)std::floor( std::max( 1.0f, pixelsSize.getWidth() / spaceCharAdvanceX ) );
 	auto clipRows = (int)std::floor( std::max( 1.0f, pixelsSize.getHeight() / fontHeight ) );
@@ -1081,7 +1081,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		mFrameBuffer->bind();
 
 	auto fontSize = mFont->getFontHeight( mFontSize );
-	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false ).advance;
+	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
 
 	float x = 0.0f;
 	float y = pos.y;
@@ -1089,7 +1089,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 	auto defaultFg = mColorScheme.getForeground();
 	auto defaultBg = mColorScheme.getBackground();
 	auto cursorThickness = Math::roundDown( PixelDensity::dpToPx( 1.f ) );
-	Rectf xBounds = mFont->getGlyph( L'x', mFontSize, false ).bounds;
+	Rectf xBounds = mFont->getGlyph( L'x', mFontSize, false, false ).bounds;
 	Float strikeThroughOffset = lineHeight + xBounds.Top + cursorThickness;
 
 	mPrimitives.setForceDraw( false );
@@ -1236,7 +1236,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				if ( mVBForeground )
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
 			} else {
-				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD, 0,
+				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD, glyph.mode & ATTR_ITALIC, 0,
 													advanceX );
 
 				if ( ( glyph.mode & ATTR_EMOJI ) && FontManager::instance()->getColorEmojiFont() ) {
@@ -1412,7 +1412,7 @@ Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
 	int mouseY = 0;
 
 	auto fontSize = (Float)mFont->getFontHeight( mFontSize );
-	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false ).advance;
+	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
 
 	auto clipColumns = (int)std::floor( std::max( 1.0f, mSize.getWidth() / spaceCharAdvanceX ) );
 	auto clipRows = (int)std::floor( std::max( 1.0f, mSize.getHeight() / fontSize ) );

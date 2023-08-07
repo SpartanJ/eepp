@@ -330,7 +330,7 @@ bool IniFile::setValueV( std::string const keyname, std::string const valuename,
 #ifdef EE_COMPILER_MSVC
 	vsprintf_s( value, MAX_VALUEDATA, format, args );
 #else
-	vsprintf( value, format, args );
+	vsnprintf( value, MAX_VALUEDATA, format, args );
 #endif
 	va_end( args );
 	return setValue( keyname, valuename, value );
