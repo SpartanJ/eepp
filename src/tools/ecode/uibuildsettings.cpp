@@ -437,7 +437,7 @@ UIBuildSettings::UIBuildSettings(
 
 	auto panelBuildNameDDL = getUISceneNode()
 								 ->getRoot()
-								 ->querySelector( " #build_tab #build_list" )
+								 ->querySelector( "#build_tab_view #build_list" )
 								 ->asType<UIDropDownList>();
 
 	buildNameInput->on( Event::OnValueChange, [this, panelBuildNameDDL]( auto ) {
@@ -495,7 +495,7 @@ UIBuildSettings::UIBuildSettings(
 	auto buildTypeDropDown = find<UIDropDownList>( "build_type_list" );
 	auto panelBuildTypeDDL = getUISceneNode()
 								 ->getRoot()
-								 ->querySelector( "#build_tab #build_type_list" )
+								 ->querySelector( "#build_tab_view #build_type_list" )
 								 ->asType<UIDropDownList>();
 
 	std::vector<String> buildTypes;

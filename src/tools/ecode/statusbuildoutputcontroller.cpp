@@ -203,6 +203,18 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		enableCleanButton = true;
 	}
 
+	const auto updateBuildButton = [this, enableCleanButton]() {
+		UIPushButton* buildButton = getBuildButton( mApp );
+		if ( buildButton )
+			buildButton->setText( mApp->i18n( "build", "Build" ) );
+
+		if ( enableCleanButton ) {
+			UIPushButton* cleanButton = getCleanButton( mApp );
+			if ( cleanButton )
+				cleanButton->setEnabled( true );
+		}
+	};
+
 	auto res = pbm->build(
 		buildName, [this]( const auto& key, const auto& def ) { return mApp->i18n( key, def ); },
 		buildType,
@@ -230,7 +242,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 				}
 			} while ( !buffer.empty() );
 		},
-		[this, enableCleanButton]( auto exitCode, const ProjectBuildCommand* cmd ) {
+		[this, updateBuildButton]( auto exitCode, const ProjectBuildCommand* cmd ) {
 			if ( !mCurLineBuffer.empty() && nullptr != cmd )
 				searchFindAndAddStatusResult( mPatternHolder, mCurLineBuffer, cmd );
 			String buffer;
@@ -250,15 +262,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
 
-			UIPushButton* buildButton = getBuildButton( mApp );
-			if ( buildButton )
-				buildButton->setText( mApp->i18n( "build", "Build" ) );
-
-			if ( enableCleanButton ) {
-				UIPushButton* cleanButton = getCleanButton( mApp );
-				if ( cleanButton )
-					cleanButton->setEnabled( true );
-			}
+			updateBuildButton();
 
 			if ( !mApp->getWindow()->hasFocus() )
 				mApp->getWindow()->flash( WindowFlashOperation::UntilFocused );
@@ -266,6 +270,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 	if ( !res.isValid() ) {
 		mApp->getNotificationCenter()->addNotification( res.errorMsg );
+		updateBuildButton();
 	}
 }
 
