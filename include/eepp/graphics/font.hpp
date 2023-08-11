@@ -47,6 +47,8 @@ class EE_API Font {
 
 	struct Info {
 		std::string family; ///< The font family
+		std::string fontpath; ///< The directory path of the font
+		std::string filename; ///< The file name
 	};
 
 	static inline Uint32 getHorizontalAlign( const Uint32& flags ) {

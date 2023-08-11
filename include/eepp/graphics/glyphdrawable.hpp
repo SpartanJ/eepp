@@ -58,6 +58,10 @@ class EE_API GlyphDrawable : public DrawableResource {
 
 	void setDrawMode( const DrawMode& drawMode );
 
+	bool isItalic() const { return mIsItalic; }
+
+	void setIsItalic( bool isItalic );
+
   protected:
 	Texture* mTexture;
 	Rectf mSrcRect;
@@ -65,6 +69,7 @@ class EE_API GlyphDrawable : public DrawableResource {
 	Float mPixelDensity;
 	Vector2f mGlyphOffset;
 	DrawMode mDrawMode{ DrawMode::Image };
+	bool mIsItalic{ false };
 };
 
 }} // namespace EE::Graphics

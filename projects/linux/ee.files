@@ -59,6 +59,7 @@
 ../../include/eepp/graphics/drawablesearcher.hpp
 ../../include/eepp/graphics/fontbmfont.hpp
 ../../include/eepp/graphics/font.hpp
+../../include/eepp/graphics/fontfamily.hpp
 ../../include/eepp/graphics/fontmanager.hpp
 ../../include/eepp/graphics/fontsprite.hpp
 ../../include/eepp/graphics/fontstyleconfig.hpp
@@ -543,6 +544,7 @@
 ../../src/eepp/graphics/drawablesearcher.cpp
 ../../src/eepp/graphics/fontbmfont.cpp
 ../../src/eepp/graphics/font.cpp
+../../src/eepp/graphics/fontfamily.cpp
 ../../src/eepp/graphics/fontmanager.cpp
 ../../src/eepp/graphics/fontsprite.cpp
 ../../src/eepp/graphics/fonttruetype.cpp

@@ -117,6 +117,12 @@ class EE_API FontTrueType : public Font {
 
 	virtual bool hasBoldItalic() { return isBoldItalic() || mFontBoldItalic; }
 
+	FontTrueType* getBoldFont() const { return mFontBold; }
+
+	FontTrueType* getItalicFont() const { return mFontItalic; }
+
+	FontTrueType* getBoldItalicFont() const { return mFontBoldItalic; }
+
 	void setBoldFont( FontTrueType* fontBold );
 
 	void setItalicFont( FontTrueType* fontItalic );

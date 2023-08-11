@@ -13,6 +13,7 @@
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
+#include <eepp/graphics/fontfamily.hpp>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -287,6 +288,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 					mFontMono = fontMono;
 					mFontMono->setEnableDynamicMonospace( true );
 					mFontMono->setBoldAdvanceSameAsRegular( true );
+					FontFamily::loadFromRegular( mFontMono );
 					if ( mSplitter ) {
 						mSplitter->forEachEditor(
 							[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
@@ -3193,6 +3195,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( mFontMono ) {
 			mFontMono->setEnableDynamicMonospace( true );
 			mFontMono->setBoldAdvanceSameAsRegular( true );
+			FontFamily::loadFromRegular( mFontMono );
 		}
 
 		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
@@ -3213,6 +3216,15 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mTerminalFont = loadFont( "monospace-nerdfont", mConfig.ui.terminalFont,
 								  "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+		if ( ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == "DejaVuSansMono NF" &&
+			   mFontMono->getInfo().family == "DejaVu Sans Mono" ) ||
+			 mTerminalFont->getInfo().family == mFontMono->getInfo().family ) {
+			mTerminalFont->setBoldFont( mFontMono->getBoldFont() );
+			mTerminalFont->setItalicFont( mFontMono->getItalicFont() );
+			mTerminalFont->setBoldItalicFont( mFontMono->getBoldItalicFont() );
+		} else {
+			FontFamily::loadFromRegular( mTerminalFont );
+		}
 
 		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
 		if ( mFallbackFont )
