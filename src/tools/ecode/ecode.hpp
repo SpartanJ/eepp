@@ -424,6 +424,7 @@ class App : public UICodeEditorSplitter::Client {
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
 	UIConsole* mConsole{ nullptr };
+	std::string mCurWindowTitle;
 	std::string mWindowTitle{ "ecode" };
 	UIMainLayout* mMainLayout{ nullptr };
 	UILayout* mBaseLayout{ nullptr };
@@ -469,6 +470,7 @@ class App : public UICodeEditorSplitter::Client {
 	ProjectDocumentConfig mProjectDocConfig;
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;
+	std::string mCurrentProjectName;
 	FontTrueType* mFont{ nullptr };
 	FontTrueType* mFontMono{ nullptr };
 	FontTrueType* mTerminalFont{ nullptr };

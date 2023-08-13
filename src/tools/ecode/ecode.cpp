@@ -159,11 +159,8 @@ void App::updateEditorTitle( UICodeEditor* editor ) {
 
 void App::setAppTitle( const std::string& title ) {
 	std::string fullTitle( mWindowTitle );
-	if ( !mCurrentProject.empty() ) {
-		std::string currentProject( FileSystem::fileNameFromPath( mCurrentProject ) );
-		if ( !currentProject.empty() )
-			fullTitle += " - " + currentProject;
-	}
+	if ( !mCurrentProjectName.empty() )
+		fullTitle += " - " + mCurrentProjectName;
 
 	if ( !title.empty() )
 		fullTitle += " - " + title;
@@ -171,13 +168,19 @@ void App::setAppTitle( const std::string& title ) {
 	if ( mBenchmarkMode )
 		fullTitle += " - " + String::toString( mWindow->getFPS() ) + " FPS";
 
-	mUISceneNode->runOnMainThread( [this, fullTitle] { mWindow->setTitle( fullTitle ); } );
+	if ( mCurWindowTitle != fullTitle ) {
+		mCurWindowTitle = fullTitle;
+		if ( Engine::isRunninMainThread() ) {
+			mWindow->setTitle( fullTitle );
+		} else {
+			mUISceneNode->runOnMainThread( [this, fullTitle] { mWindow->setTitle( fullTitle ); } );
+		}
+	}
 }
 
 void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {
 	bool isDirty = editor->getDocument().isDirty();
-	bool wasDirty =
-		!mWindow->getTitle().empty() && mWindow->getTitle()[mWindow->getTitle().size() - 1] == '*';
+	bool wasDirty = !mCurWindowTitle.empty() && mCurWindowTitle[mCurWindowTitle.size() - 1] == '*';
 
 	if ( isDirty != wasDirty )
 		setAppTitle( titleFromEditor( editor ) );
@@ -1526,7 +1529,8 @@ void App::updateDocInfoLocation() {
 }
 
 void App::updateDocInfo( TextDocument& doc ) {
-	if ( mConfig.editor.showDocInfo && mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
+	if ( !doc.isRunningTransaction() && mConfig.editor.showDocInfo && mDocInfo &&
+		 mSplitter->curEditorExistsAndFocused() ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
 		mDocInfo->setText( String::format(
@@ -1970,6 +1974,7 @@ void App::closeEditors() {
 	} );
 
 	mCurrentProject = "";
+	mCurrentProjectName = "";
 	mDirTree = nullptr;
 	if ( mFileSystemListener )
 		mFileSystemListener->setDirTree( mDirTree );
@@ -2984,6 +2989,7 @@ void App::loadFolder( const std::string& path ) {
 	FileSystem::dirAddSlashAtEnd( rpath );
 
 	mCurrentProject = rpath;
+	mCurrentProjectName = FileSystem::fileNameFromPath( mCurrentProject );
 	mPluginManager->setWorkspaceFolder( rpath );
 
 	loadDirTree( rpath );

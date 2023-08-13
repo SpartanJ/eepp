@@ -7,7 +7,8 @@ namespace EE { namespace Graphics {
 
 class EE_API FontFamily {
   public:
-	static void loadFromRegular( FontTrueType* font );
+	static void loadFromRegular( FontTrueType* font, std::string overwriteFontName = "" );
+
   private:
 	static std::string findType( const std::string& fontpath, const std::string& fontname,
 								 const std::string& ext, const std::vector<std::string>& names );

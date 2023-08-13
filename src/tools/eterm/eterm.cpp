@@ -230,12 +230,16 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		if ( fontPath && FileSystem::fileExists( fontPath.Get() ) ) {
 			FileInfo file( fontPath.Get() );
 			fontMono = FontTrueType::New( "monospace" );
-			if ( !fontMono->loadFromFile( file.getFilepath() ) )
+			if ( fontMono->loadFromFile( file.getFilepath() ) ) {
+				FontFamily::loadFromRegular( fontMono );
+			} else {
 				fontMono = nullptr;
+			}
 		}
 		if ( fontMono == nullptr ) {
 			fontMono = FontTrueType::New( "monospace" );
 			fontMono->loadFromFile( resPath + "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+			FontFamily::loadFromRegular( fontMono, "DejaVuSansMono" );
 		}
 
 		if ( FileSystem::fileExists( resPath + "fonts/NotoColorEmoji.ttf" ) ) {

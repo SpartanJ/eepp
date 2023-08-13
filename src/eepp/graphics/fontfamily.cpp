@@ -3,7 +3,7 @@
 
 namespace EE { namespace Graphics {
 
-void FontFamily::loadFromRegular( FontTrueType* font ) {
+void FontFamily::loadFromRegular( FontTrueType* font, std::string overwriteFontName ) {
 	if ( font == nullptr || font->getInfo().fontpath.empty() || font->getInfo().filename.empty() )
 		return;
 
@@ -11,7 +11,9 @@ void FontFamily::loadFromRegular( FontTrueType* font ) {
 	if ( ext.empty() )
 		return;
 
-	std::string fontname( FileSystem::fileRemoveExtension( font->getInfo().filename ) );
+	std::string fontname( overwriteFontName.empty()
+							  ? FileSystem::fileRemoveExtension( font->getInfo().filename )
+							  : overwriteFontName );
 	if ( String::endsWith( fontname, "-Regular" ) ) {
 		auto pos( fontname.find_last_of( '-' ) );
 		fontname.resize( pos );
