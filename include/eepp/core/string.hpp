@@ -501,6 +501,8 @@ class EE_API String {
 	**/
 	String& operator=( const String& right );
 
+	String& operator=( String&& right );
+
 	String& operator=( const StringBaseType& right );
 
 	/** @brief Overload of += operator to append an UTF-32 string

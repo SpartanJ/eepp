@@ -1080,6 +1080,11 @@ String& String::operator=( const String& right ) {
 	return *this;
 }
 
+String& String::operator=( String&& right ) {
+	mString = std::move( right.mString );
+	return *this;
+}
+
 String& String::operator=( const StringBaseType& right ) {
 	mString = right;
 	return *this;
