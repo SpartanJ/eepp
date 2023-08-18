@@ -588,7 +588,8 @@ void Text::getWidthInfo() {
 
 	for ( std::size_t i = 0; i < mString.size(); ++i ) {
 		CharID = static_cast<Int32>( mString.at( i ) );
-		Glyph glyph = mFont->getGlyph( CharID, mRealFontSize, bold, italic, mOutlineThickness );
+		const Glyph& glyph =
+			mFont->getGlyph( CharID, mRealFontSize, bold, italic, mOutlineThickness );
 
 		if ( CharID != '\r' && CharID != '\t' ) {
 			Width += mFont->getKerning( prevChar, CharID, mRealFontSize, bold, italic,
@@ -911,6 +912,12 @@ void Text::ensureGeometryUpdate() {
 	mOutlineVertices.clear();
 	mBounds = Rectf();
 
+	mVertices.reserve( mString.size() * GLi->quadVertexs() );
+	mGlyphCache.reserve( mString.size() );
+
+	if ( mOutlineThickness != 0.f )
+		mOutlineVertices.reserve( mString.size() * GLi->quadVertexs() );
+
 	// No font or text: nothing to draw
 	if ( !mFont || mString.empty() )
 		return;
@@ -1172,7 +1179,7 @@ void Text::cacheWidth() {
 	if ( !mCachedWidthNeedUpdate )
 		return;
 
-	if ( NULL != mFont && mString.size() ) {
+	if ( NULL != mFont && !mString.empty() ) {
 		getWidthInfo();
 		mCachedWidthNeedUpdate = false;
 	} else {

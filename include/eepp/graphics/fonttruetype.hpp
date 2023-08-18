@@ -5,7 +5,6 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <memory>
-#include <unordered_map>
 
 namespace EE { namespace System {
 class Pack;
@@ -141,9 +140,8 @@ class EE_API FontTrueType : public Font {
 		unsigned int height; ///< Height of the row
 	};
 
-	typedef std::unordered_map<Uint64, Glyph>
-		GlyphTable; ///< Table mapping a codepoint to its glyph
-	typedef std::unordered_map<Uint64, GlyphDrawable*> GlyphDrawableTable;
+	typedef UnorderedMap<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef UnorderedMap<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
 		explicit Page( const Uint32 fontInternalId );
@@ -206,8 +204,8 @@ class EE_API FontTrueType : public Font {
 	bool mEnableDynamicMonospace{ false };
 	bool mIsBold{ false };
 	bool mIsItalic{ false };
-	mutable std::unordered_map<unsigned int, unsigned int> mClosestCharacterSize;
-	mutable std::unordered_map<Uint32, Uint32> mCodePointIndexCache;
+	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
+	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
 	FontHinting mHinting{ FontHinting::Full };
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 	FontTrueType* mFontBold{ nullptr };

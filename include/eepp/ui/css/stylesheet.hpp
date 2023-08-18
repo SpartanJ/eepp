@@ -65,10 +65,10 @@ class EE_API StyleSheet {
   protected:
 	Uint32 mMarker{ 0 };
 	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;
-	std::unordered_map<size_t, StyleSheetStyleVector> mNodeIndex;
+	UnorderedMap<size_t, StyleSheetStyleVector> mNodeIndex;
 	MediaQueryList::vector mMediaQueryList;
 	KeyframesDefinitionMap mKeyframesMap;
-	using ElementDefinitionCache = std::unordered_map<size_t, std::shared_ptr<ElementDefinition>>;
+	using ElementDefinitionCache = UnorderedMap<size_t, std::shared_ptr<ElementDefinition>>;
 	mutable ElementDefinitionCache mNodeCache;
 
 	void addMediaQueryList( MediaQueryList::ptr list );

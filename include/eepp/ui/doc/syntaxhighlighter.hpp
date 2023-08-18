@@ -63,7 +63,7 @@ class EE_API SyntaxHighlighter {
   protected:
 	TextDocument* mDoc;
 	std::unordered_map<size_t, TokenizedLine> mLines;
-	std::unordered_map<size_t, TokenizedLine> mTokenizerLines;
+	UnorderedMap<size_t, TokenizedLine> mTokenizerLines;
 	Mutex mLinesMutex;
 	Int64 mFirstInvalidLine;
 	Int64 mMaxWantedLine;

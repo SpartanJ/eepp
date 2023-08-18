@@ -38,6 +38,7 @@
 ../../include/eepp/audio/soundsource.hpp
 ../../include/eepp/audio/soundstream.hpp
 ../../include/eepp/config.hpp
+../../include/eepp/core/containers.hpp
 ../../include/eepp/core/core.hpp
 ../../include/eepp/core/debug.hpp
 ../../include/eepp/core.hpp

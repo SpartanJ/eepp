@@ -204,7 +204,7 @@ class EE_API StyleSheetProperty {
 	std::vector<VariableFunctionCache> checkVars( const std::string& value );
 };
 
-typedef std::unordered_map<Uint32, StyleSheetProperty> StyleSheetProperties;
+typedef UnorderedMap<Uint32, StyleSheetProperty> StyleSheetProperties;
 
 }}} // namespace EE::UI::CSS
 

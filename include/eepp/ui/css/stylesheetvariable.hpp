@@ -2,6 +2,7 @@
 #define EE_UI_CSS_STYLESHEETVARIABLE_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/containers.hpp>
 #include <eepp/core/string.hpp>
 #include <unordered_map>
 
@@ -43,7 +44,7 @@ class EE_API StyleSheetVariable {
 	Uint32 mSpecificity;
 };
 
-typedef std::unordered_map<Uint32, StyleSheetVariable> StyleSheetVariables;
+typedef UnorderedMap<Uint32, StyleSheetVariable> StyleSheetVariables;
 
 }}} // namespace EE::UI::CSS
 

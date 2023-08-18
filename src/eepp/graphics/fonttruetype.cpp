@@ -403,7 +403,7 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 		Glyph glyph =
 			loadGlyph( index, characterSize, bold, italic, outlineThickness, page, maxWidth );
 
-		return glyphs.insert( std::make_pair( key, glyph ) ).first->second;
+		return glyphs.emplace( key, glyph ).first->second;
 	}
 }
 
