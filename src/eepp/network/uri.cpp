@@ -6,7 +6,7 @@ static void AppendHex( std::string& str, int value, int width ) {
 	eeASSERT( width > 0 && width < 64 );
 
 	char buffer[64];
-	std::sprintf( buffer, "%0*X", width, value );
+	std::snprintf( buffer, 64, "%0*X", width, value );
 	str.append( buffer );
 }
 

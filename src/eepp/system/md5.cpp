@@ -183,9 +183,8 @@ std::string MD5::hexDigest( std::vector<Uint8>& digest ) {
 	char buf[33];
 	size_t size = digest.size();
 
-	for ( size_t i = 0; i < size; i++ ) {
-		sprintf( buf + i * 2, "%02x", digest[i] );
-	}
+	for ( size_t i = 0; i < size; i++ )
+		snprintf( buf + i * 2, size - i + 2, "%02x", digest[i] );
 
 	buf[32] = 0;
 
