@@ -12,7 +12,7 @@ namespace EE {
 
 #ifdef EEPP_NO_THIRDPARTY_CONTAINERS
 
-template <typename Key, typename Value> using UnorderedMap = std::ununordered_map<Key, Value>;
+template <typename Key, typename Value> using UnorderedMap = std::unordered_map<Key, Value>;
 
 template <typename Key, typename Value> using UnorderedSet = std::unordered_set<Key, Value>;
 

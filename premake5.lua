@@ -125,6 +125,7 @@ function set_kind()
 	else
 		kind("WindowedApp")
 	end
+	cppdialect "C++17"
 end
 
 link_list = { }
@@ -386,6 +387,9 @@ function build_link_configuration( package_name, use_ee_icon )
 		if _OPTIONS["with-gles2"] and not _OPTIONS["force-gles1"] then
 			linkoptions{ "-s FULL_ES2=1" }
 		end
+
+	filter { "action:export-compile-commands", "system:macosx" }
+		buildoptions { "-std=c++17" }
 end
 
 function generate_os_links()
@@ -713,6 +717,9 @@ function build_eepp( build_name )
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
 		buildoptions { "/bigobj" }
+
+	filter { "action:export-compile-commands", "system:macosx" }
+		buildoptions { "-std=c++17" }
 end
 
 function target_dir_lib(path)
@@ -1020,6 +1027,8 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
+		filter { "action:export-compile-commands", "system:macosx" }
+			buildoptions { "-std=c++17" }
 
 	-- Library
 	project "eepp-static"
