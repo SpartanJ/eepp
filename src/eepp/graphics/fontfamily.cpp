@@ -14,7 +14,7 @@ void FontFamily::loadFromRegular( FontTrueType* font, std::string overwriteFontN
 	std::string fontname( overwriteFontName.empty()
 							  ? FileSystem::fileRemoveExtension( font->getInfo().filename )
 							  : overwriteFontName );
-	if ( String::endsWith( fontname, "-Regular" ) ) {
+	if ( String::endsWith( fontname, "-Regular" ) || String::endsWith( fontname, "-regular" ) ) {
 		auto pos( fontname.find_last_of( '-' ) );
 		fontname.resize( pos );
 	}

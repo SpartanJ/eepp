@@ -319,7 +319,6 @@ void UICodeEditor::draw() {
 	}
 
 	for ( unsigned long i = lineRange.first; i <= lineRange.second; i++ ) {
-		Lock l( mDoc->getHighlighter()->getLinesMutex() );
 
 		Vector2f curScroll(
 			{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) } );
@@ -327,7 +326,10 @@ void UICodeEditor::draw() {
 		for ( auto& plugin : mPlugins )
 			plugin->drawBeforeLineText( this, i, curScroll, charSize, lineHeight );
 
-		drawLineText( i, curScroll, charSize, lineHeight );
+		{
+			Lock l( mDoc->getHighlighter()->getLinesMutex() );
+			drawLineText( i, curScroll, charSize, lineHeight );
+		}
 
 		for ( auto& plugin : mPlugins )
 			plugin->drawAfterLineText( this, i, curScroll, charSize, lineHeight );
