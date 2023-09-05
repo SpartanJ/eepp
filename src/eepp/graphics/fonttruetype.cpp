@@ -6,6 +6,8 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/window/engine.hpp>
+using namespace EE::Window;
 
 #include <freetype/ftlcdfil.h>
 #include <ft2build.h>
@@ -18,7 +20,6 @@
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
-#include <eepp/window/engine.hpp>
 
 namespace {
 
@@ -388,7 +389,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
 											bool italic, Float outlineThickness, Page& page,
 											const Float& maxWidth ) const {
-	eeASSERT( Window::Engine::isRunninMainThread() );
+	eeASSERT( Engine::isRunninMainThread() );
 
 	// Get the page corresponding to the character size
 	GlyphTable& glyphs = page.glyphs;
