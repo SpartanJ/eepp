@@ -21,6 +21,7 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 }
 
 LSPDocumentClient::~LSPDocumentClient() {
+	mDoc = nullptr;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( nullptr != sceneNode && 0 != mTag )
 		sceneNode->removeActionsByTag( mTag );
@@ -32,6 +33,7 @@ LSPDocumentClient::~LSPDocumentClient() {
 }
 
 void LSPDocumentClient::onDocumentLoaded( TextDocument* ) {
+	refreshTag();
 	requestSemanticHighlightingDelayed();
 	// requestCodeLens();
 }
@@ -251,6 +253,9 @@ static std::string semanticTokenTypeToSyntaxType( const std::string& type,
 
 void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens,
 									   const Uint64& docModificationId ) {
+	if ( mDoc == nullptr || mServer == nullptr )
+		return;
+
 	// If the document has already being modified after requesting the semantic highlighting,
 	// re-request the changes
 	if ( docModificationId != mDoc->getModificationId() )

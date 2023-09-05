@@ -18,6 +18,7 @@
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
+#include <eepp/window/engine.hpp>
 
 namespace {
 
@@ -387,6 +388,8 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
 											bool italic, Float outlineThickness, Page& page,
 											const Float& maxWidth ) const {
+	eeASSERT( Window::Engine::isRunninMainThread() );
+
 	// Get the page corresponding to the character size
 	GlyphTable& glyphs = page.glyphs;
 

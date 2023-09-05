@@ -620,10 +620,12 @@ PluginRequestHandle GlobalSearchController::processMessage( const PluginMessage&
 		sample.line.substr( sample.position.start().column(),
 							sample.position.end().column() - sample.position.start().column() );
 
-	showGlobalSearch( false );
-	mGlobalSearchInput->setText( search );
-	updateGlobalSearchHistory( model, search, false, false, false );
-	updateGlobalSearchBarResults( search, model, false, false );
+	mUISceneNode->runOnMainThread( [this, search, model] {
+		showGlobalSearch( false );
+		mGlobalSearchInput->setText( search );
+		updateGlobalSearchHistory( model, search, false, false, false );
+		updateGlobalSearchBarResults( search, model, false, false );
+	} );
 
 	return {};
 }

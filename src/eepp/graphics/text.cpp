@@ -912,15 +912,15 @@ void Text::ensureGeometryUpdate() {
 	mOutlineVertices.clear();
 	mBounds = Rectf();
 
+	// No font or text: nothing to draw
+	if ( !mFont || mString.empty() )
+		return;
+
 	mVertices.reserve( mString.size() * GLi->quadVertexs() );
 	mGlyphCache.reserve( mString.size() );
 
 	if ( mOutlineThickness != 0.f )
 		mOutlineVertices.reserve( mString.size() * GLi->quadVertexs() );
-
-	// No font or text: nothing to draw
-	if ( !mFont || mString.empty() )
-		return;
 
 	// Compute values related to the text style
 	bool bold = ( mStyle & Bold ) != 0;
@@ -955,16 +955,18 @@ void Text::ensureGeometryUpdate() {
 	Uint32 prevChar = 0;
 
 	Float centerDiffX = 0;
-	unsigned int Line = 0;
+	unsigned int line = 0;
 
 	switch ( Font::getHorizontalAlign( mAlign ) ) {
 		case TEXT_ALIGN_CENTER:
-			centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[Line] ) * 0.5f ) );
-			Line++;
+			centerDiffX = line < mLinesWidth.size()
+							  ? (Float)( (Int32)( ( mCachedWidth - mLinesWidth[line] ) * 0.5f ) )
+							  : 0.f;
+			line++;
 			break;
 		case TEXT_ALIGN_RIGHT:
-			centerDiffX = mCachedWidth - mLinesWidth[Line];
-			Line++;
+			centerDiffX = line < mLinesWidth.size() ? mCachedWidth - mLinesWidth[line] : 0.f;
+			line++;
 			break;
 	}
 
@@ -998,14 +1000,18 @@ void Text::ensureGeometryUpdate() {
 		if ( curChar == L'\n' ) {
 			switch ( Font::getHorizontalAlign( mAlign ) ) {
 				case TEXT_ALIGN_CENTER:
-					centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[Line] ) * 0.5f ) );
+					centerDiffX =
+						line < mLinesWidth.size()
+							? (Float)( (Int32)( ( mCachedWidth - mLinesWidth[line] ) * 0.5f ) )
+							: 0.f;
 					break;
 				case TEXT_ALIGN_RIGHT:
-					centerDiffX = mCachedWidth - mLinesWidth[Line];
+					centerDiffX =
+						line < mLinesWidth.size() ? mCachedWidth - mLinesWidth[line] : 0.f;
 					break;
 			}
 
-			Line++;
+			line++;
 		}
 
 		// Handle special characters
@@ -1017,17 +1023,17 @@ void Text::ensureGeometryUpdate() {
 
 			switch ( curChar ) {
 				case ' ':
-					mGlyphCache.push_back(
+					mGlyphCache.emplace_back(
 						Rectf( Vector2f( x, y - mRealFontSize ), Sizef( hspace, vspace ) ) );
 					x += hspace;
 					break;
 				case '\t':
-					mGlyphCache.push_back( Rectf( Vector2f( x, y - mRealFontSize ),
-												  Sizef( hspace * mTabWidth, vspace ) ) );
+					mGlyphCache.emplace_back( Rectf( Vector2f( x, y - mRealFontSize ),
+													 Sizef( hspace * mTabWidth, vspace ) ) );
 					x += hspace * mTabWidth;
 					break;
 				case '\n':
-					mGlyphCache.push_back(
+					mGlyphCache.emplace_back(
 						Rectf( Vector2f( x, y - mRealFontSize ), Sizef( 0, vspace ) ) );
 					y += vspace;
 					x = 0;
@@ -1084,14 +1090,14 @@ void Text::ensureGeometryUpdate() {
 			maxY = std::max( maxY, y + bottom );
 		}
 
-		mGlyphCache.push_back(
+		mGlyphCache.emplace_back(
 			Rectf( Vector2f( x, y - mRealFontSize ), Sizef( glyph.advance, vspace ) ) );
 
 		// Advance to the next character
 		x += glyph.advance;
 	}
 
-	mGlyphCache.push_back( Rectf( Vector2f( x, y - mRealFontSize ), Sizef( 0, vspace ) ) );
+	mGlyphCache.emplace_back( Rectf( Vector2f( x, y - mRealFontSize ), Sizef( 0, vspace ) ) );
 
 	// If we're using the underlined style, add the last line
 	if ( underlined && ( x > 0 ) ) {

@@ -1578,7 +1578,7 @@ void LSPClientServer::publishDiagnostics( const json& msg ) {
 													 PluginMessageType::Diagnostics,
 													 PluginMessageFormat::Diagnostics, &res );
 	}
-	Log::debug( "LSPClientServer::publishDiagnostics: %s - returned %zu items",
+	Log::info( "LSPClientServer::publishDiagnostics: %s - returned %zu items",
 				res.uri.toString().c_str(), res.diagnostics.size() );
 	Log::debug( "LSPClientServer::publishDiagnostics: %s", msg.dump().c_str() );
 }

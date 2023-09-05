@@ -1533,12 +1533,13 @@ void App::updateDocInfo( TextDocument& doc ) {
 		 mSplitter->curEditorExistsAndFocused() ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
-		mDocInfo->setText( String::format(
+		String infoStr( String::format(
 			"%s: %lld / %zu  %s: %lld    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
 			doc.getSelection().start().line() + 1, doc.linesCount(),
 			i18n( "col_abbr", "col" ).toUtf8().c_str(),
 			mSplitter->getCurEditor()->getCurrentColumnCount(),
 			TextDocument::lineEndingToString( doc.getLineEnding() ).c_str() ) );
+		mDocInfo->runOnMainThread( [this, infoStr] { mDocInfo->setText( infoStr ); } );
 	}
 }
 

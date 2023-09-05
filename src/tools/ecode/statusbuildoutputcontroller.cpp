@@ -205,13 +205,16 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 	const auto updateBuildButton = [this, enableCleanButton]() {
 		UIPushButton* buildButton = getBuildButton( mApp );
-		if ( buildButton )
-			buildButton->setText( mApp->i18n( "build", "Build" ) );
+		if ( buildButton ) {
+			buildButton->runOnMainThread(
+				[this, buildButton] { buildButton->setText( mApp->i18n( "build", "Build" ) ); } );
+		}
 
 		if ( enableCleanButton ) {
 			UIPushButton* cleanButton = getCleanButton( mApp );
-			if ( cleanButton )
-				cleanButton->setEnabled( true );
+			if ( cleanButton ) {
+				cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
+			}
 		}
 	};
 
