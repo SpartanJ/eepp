@@ -98,7 +98,7 @@ Text::Text() :
 	mNumLines( 0 ),
 	mLargestLineCharCount( 0 ),
 	mShadowColor( Color( 0, 0, 0, 255 ) ),
-	mAlign( 0 ),
+	mAlign( TEXT_ALIGN_LEFT ),
 	mFontHeight( 0 ),
 	mTabWidth( 4 ) {}
 
@@ -118,7 +118,7 @@ Text::Text( const String& string, Font* font, unsigned int characterSize ) :
 	mNumLines( 0 ),
 	mLargestLineCharCount( 0 ),
 	mShadowColor( Color( 0, 0, 0, 255 ) ),
-	mAlign( 0 ),
+	mAlign( TEXT_ALIGN_LEFT ),
 	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
 	mTabWidth( 4 ) {
 	if ( !mFont->isScalable() ) {
@@ -142,7 +142,7 @@ Text::Text( Font* font, unsigned int characterSize ) :
 	mNumLines( 0 ),
 	mLargestLineCharCount( 0 ),
 	mShadowColor( Color( 0, 0, 0, 255 ) ),
-	mAlign( 0 ),
+	mAlign( TEXT_ALIGN_LEFT ),
 	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
 	mTabWidth( 4 ) {
 	if ( !mFont->isScalable() ) {

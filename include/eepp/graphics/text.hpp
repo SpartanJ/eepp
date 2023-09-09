@@ -209,7 +209,7 @@ class EE_API Text {
 	int mLargestLineCharCount;
 	Color mShadowColor;
 	Vector2f mShadowOffset{ PixelDensity::dpToPx( 1 ), PixelDensity::dpToPx( 1 ) };
-	Uint32 mAlign;
+	Uint32 mAlign{ TEXT_ALIGN_LEFT };
 	Uint32 mFontHeight;
 	Uint32 mTabWidth;
 

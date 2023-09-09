@@ -362,7 +362,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
-				 FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+				 FileSystem::fileWrite( path, "" ) ) {
 				if ( editor->getDocument().save( path ) ) {
 					updateEditorState();
 				} else {
@@ -2865,7 +2865,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 
 				if ( FileSystem::fileExists( rpath ) ) {
 					loadFileFromPath( rpath, false, nullptr, forcePosition );
-				} else if ( FileSystem::fileCanWrite( folderPath ) ) {
+				} else if ( FileSystem::fileWrite( path, "" ) ) {
 					loadFileFromPath( path, false, nullptr, forcePosition );
 				}
 

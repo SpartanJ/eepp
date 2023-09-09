@@ -524,7 +524,7 @@ TextDocument::LoadStatus TextDocument::reload() {
 bool TextDocument::save( const std::string& path ) {
 	if ( path.empty() || mDefaultFileName == path )
 		return false;
-	if ( FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+	if ( FileSystem::fileWrite( path, "" ) ) {
 		IOStreamFile file( path, "wb" );
 		std::string oldFilePath( mFilePath );
 		URI oldFileURI( mFileURI );

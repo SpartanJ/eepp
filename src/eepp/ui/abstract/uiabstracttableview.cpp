@@ -37,7 +37,7 @@ Float UIAbstractTableView::getRowHeight() const {
 	return mRowHeight != 0 ? mRowHeight
 						   : ( eeceil( columnData( 0 ).widget
 										   ? columnData( 0 ).widget->getPixelsSize().getHeight()
-										   : 16 ) );
+										   : PixelDensity::dpToPx( 16 ) ) );
 }
 
 void UIAbstractTableView::setRowHeight( const Float& rowHeight ) {

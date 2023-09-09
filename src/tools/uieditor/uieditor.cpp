@@ -997,7 +997,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
-				 FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+				 FileSystem::fileWrite( path, "" ) ) {
 				std::string oldPath( editor->getDocument().getFilePath() );
 				if ( editor->getDocument().save( path ) ) {
 					editor->getDocument().setDeleteOnClose( false );
