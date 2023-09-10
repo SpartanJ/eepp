@@ -61,6 +61,7 @@ class UniversalLocator {
 	std::string mCurDocQuery;
 	std::shared_ptr<LSPSymbolInfoModel> mTextDocumentSymbolModel{ nullptr };
 	std::shared_ptr<OpenDocumentsModel> mOpenDocumentsModel{ nullptr };
+	PluginIDType mQueryWorkspaceLastId;
 
 	void updateLocateBar();
 
@@ -102,6 +103,12 @@ class UniversalLocator {
 	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildModel( const std::string& match );
 
 	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildTypeModel( const std::string& match );
+
+	bool findCapability( PluginCapability );
+
+	String getDefQueryText( PluginCapability );
+
+	nlohmann::json pluginID( const PluginIDType& id );
 };
 
 } // namespace ecode

@@ -273,21 +273,37 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 
 	json jmsg = msg.asJSON();
 	std::string query = jmsg.value( "query", "" );
+	PluginRequestHandle hdl;
+
 	for ( const auto server : servers ) {
-		server->workspaceSymbol(
-			query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
-				if ( !query.empty() ) {
-					for ( auto& i : info ) {
-						if ( i.score == 0.f )
-							i.score = String::fuzzyMatch( i.name, query );
+		if ( Engine::instance()->isMainThread() ) {
+			server->workspaceSymbolAsync(
+				query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
+					if ( !query.empty() ) {
+						for ( auto& i : info ) {
+							if ( i.score == 0.f )
+								i.score = String::fuzzyMatch( i.name, query );
+						}
 					}
-				}
-				mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
-										PluginMessageFormat::SymbolInformation, &info, id );
-			} );
+					mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
+											PluginMessageFormat::SymbolInformation, &info, id );
+				} );
+		} else {
+			hdl = server->workspaceSymbol(
+				query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
+					if ( !query.empty() ) {
+						for ( auto& i : info ) {
+							if ( i.score == 0.f )
+								i.score = String::fuzzyMatch( i.name, query );
+						}
+					}
+					mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
+											PluginMessageFormat::SymbolInformation, &info, id );
+				} );
+		}
 	}
 
-	return {};
+	return hdl;
 }
 
 PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMessage& msg ) {
@@ -635,6 +651,38 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 			auto ret = processDocumentFormatting( msg );
 			if ( !ret.isEmpty() )
 				return ret;
+			break;
+		}
+		case PluginMessageType::QueryPluginCapability: {
+			if ( msg.isRequest() && msg.isJSON() ) {
+				const auto& data = msg.asJSON();
+				if ( !data.contains( "capability" ) || !data["capability"].is_number_integer() ||
+					 data["capability"].get<int>() < 0 ||
+					 data["capability"].get<int>() >= static_cast<int>( PluginCapability::Max ) )
+					return {};
+				PluginCapability capability = data["capability"].get<PluginCapability>();
+				URI uri;
+				if ( data.contains( "uri" ) && data["uri"].is_string() )
+					uri = data["uri"];
+				PluginInmediateResponse rmsg;
+				rmsg.type = PluginMessageType::QueryPluginCapability;
+				auto servers = mClientManager.getFilteredServers(
+					[capability, uri]( LSPClientServer* server ) {
+						if ( !uri.empty() && !server->hasDocument( uri ) )
+							return false;
+						switch ( capability ) {
+							case PluginCapability::WorkspaceSymbol:
+								return server->getCapabilities().workspaceSymbolProvider;
+							case PluginCapability::TextDocumentSymbol:
+								return server->getCapabilities().documentSymbolProvider;
+							default: {
+							}
+						}
+						return false;
+					} );
+				rmsg.data = !servers.empty();
+				return PluginRequestHandle( rmsg );
+			}
 			break;
 		}
 		case PluginMessageType::LanguageServerCapabilities: {

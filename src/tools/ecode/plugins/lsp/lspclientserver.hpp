@@ -177,11 +177,18 @@ class LSPClientServer {
 	LSPRequestHandle documentCompletion( const URI& document, const TextPosition& pos,
 										 const CompletionHandler& h );
 
-	void workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
-						  const size_t& limit = 100 );
+	void workspaceSymbolAsync( const std::string& querySymbol, const JsonReplyHandler& h,
+							   const size_t& limit = 100 );
 
-	void workspaceSymbol( const std::string& querySymbol, const SymbolInformationHandler& h,
-						  const size_t& limit = 100 );
+	void workspaceSymbolAsync( const std::string& querySymbol, const SymbolInformationHandler& h,
+							   const size_t& limit = 100 );
+
+	LSPRequestHandle workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
+									  const size_t& limit = 100 );
+
+	LSPRequestHandle workspaceSymbol( const std::string& querySymbol,
+									  const SymbolInformationHandler& h,
+									  const size_t& limit = 100 );
 
 	LSPRequestHandle selectionRange( const URI& document,
 									 const std::vector<TextPosition>& positions,

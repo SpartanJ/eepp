@@ -1507,15 +1507,35 @@ LSPClientServer::LSPRequestHandle LSPClientServer::documentSymbolsBroadcast( con
 	} );
 }
 
-void LSPClientServer::workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
-									   const size_t& limit ) {
+void LSPClientServer::workspaceSymbolAsync( const std::string& querySymbol,
+											const JsonReplyHandler& h, const size_t& limit ) {
 	auto params = json{ { MEMBER_QUERY, querySymbol }, { MEMBER_LIMIT, limit } };
 	sendAsync( newRequest( "workspace/symbol", params ), h );
 }
 
-void LSPClientServer::workspaceSymbol( const std::string& querySymbol,
-									   const SymbolInformationHandler& h, const size_t& limit ) {
-	workspaceSymbol(
+void LSPClientServer::workspaceSymbolAsync( const std::string& querySymbol,
+											const SymbolInformationHandler& h,
+											const size_t& limit ) {
+	workspaceSymbolAsync(
+		querySymbol,
+		[h]( const IdType& id, const json& json ) {
+			if ( h )
+				h( id, parseWorkspaceSymbols( json ) );
+		},
+		limit );
+}
+
+LSPClientServer::LSPRequestHandle LSPClientServer::workspaceSymbol( const std::string& querySymbol,
+																	const JsonReplyHandler& h,
+																	const size_t& limit ) {
+	auto params = json{ { MEMBER_QUERY, querySymbol }, { MEMBER_LIMIT, limit } };
+	return send( newRequest( "workspace/symbol", params ), h );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::workspaceSymbol( const std::string& querySymbol, const SymbolInformationHandler& h,
+								  const size_t& limit ) {
+	return workspaceSymbol(
 		querySymbol,
 		[h]( const IdType& id, const json& json ) {
 			if ( h )
@@ -1579,7 +1599,7 @@ void LSPClientServer::publishDiagnostics( const json& msg ) {
 													 PluginMessageFormat::Diagnostics, &res );
 	}
 	Log::info( "LSPClientServer::publishDiagnostics: %s - returned %zu items",
-				res.uri.toString().c_str(), res.diagnostics.size() );
+			   res.uri.toString().c_str(), res.diagnostics.size() );
 	Log::debug( "LSPClientServer::publishDiagnostics: %s", msg.dump().c_str() );
 }
 
