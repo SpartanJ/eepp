@@ -3420,7 +3420,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 		// Is the process running from flatpak isolation for the first time?
-		if ( firstRun && getenv( "FLATPAK_ISOLATION" ) != NULL ) {
+		if ( firstRun && getenv( "FLATPAK_ID" ) != NULL ) {
 			static const auto FLATPAK_WARN = R"xml(
 <window id="win_flatpak_warning" windowFlags="default|maximize|shadow" lw="440dp" lh="150dp" window-title="ecode - Flatpak Warning">
 	<vbox lw="mp" lh="mp" padding="4dp">
