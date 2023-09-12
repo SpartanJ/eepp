@@ -312,7 +312,7 @@ Float UITooltip::getTextHeight() {
 	return mTextCache->getTextHeight();
 }
 
-const int& UITooltip::getNumLines() const {
+Uint32 UITooltip::getNumLines() {
 	return mTextCache->getNumLines();
 }
 

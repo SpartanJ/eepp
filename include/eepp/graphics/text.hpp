@@ -134,7 +134,7 @@ class EE_API Text {
 	const Uint32& getAlign() const;
 
 	/** @return The number of lines that the cached text contains */
-	const int& getNumLines();
+	Uint32 getNumLines();
 
 	void setStyleConfig( const FontStyleConfig& styleConfig );
 
@@ -188,39 +188,26 @@ class EE_API Text {
 	};
 
 	String mString;			///< String to display
-	Font* mFont{ nullptr }; ///< FontTrueType used to display the string
-	unsigned int mFontSize; ///< Base size of characters, in pixels
-	unsigned int mRealFontSize;
-	Uint32 mStyle;		 ///< Text style (see Style enum)
-	Color mFillColor;	 ///< Text fill color
-	Color mOutlineColor; ///< Text outline color
+	FontStyleConfig mFontStyleConfig;
+	Uint32 mRealFontSize;
 	Color mBackgroundColor{ Color::Transparent };
-	Float mOutlineThickness; ///< Thickness of the text's outline
 
 	mutable Rectf mBounds;			  ///< Bounding rectangle of the text (in local coordinates)
-	mutable bool mGeometryNeedUpdate; ///< Does the geometry need to be recomputed?
-	mutable bool mCachedWidthNeedUpdate;
-	mutable bool mColorsNeedUpdate;
+	mutable bool mGeometryNeedUpdate{ false }; ///< Does the geometry need to be recomputed?
+	mutable bool mCachedWidthNeedUpdate{ false };
+	mutable bool mColorsNeedUpdate{ false };
 	mutable bool mContainsColorEmoji{ false };
-	bool mDisableCacheWidth{ false };
 
-	Float mCachedWidth;
-	int mNumLines;
-	int mLargestLineCharCount;
-	Color mShadowColor;
-	Vector2f mShadowOffset{ PixelDensity::dpToPx( 1 ), PixelDensity::dpToPx( 1 ) };
+	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
-	Uint32 mFontHeight;
-	Uint32 mTabWidth;
+	Uint32 mFontHeight{ 0 };
+	Uint32 mTabWidth{ 4 };
 
 	std::vector<VertexCoords> mVertices;
-	std::vector<Rectf> mGlyphCache;
 	std::vector<Color> mColors;
-
 	std::vector<VertexCoords> mOutlineVertices;
 	std::vector<Color> mOutlineColors;
 	std::vector<Float> mLinesWidth;
-	std::vector<Uint32> mLinesStartIndex;
 
 	void ensureGeometryUpdate();
 
@@ -239,7 +226,7 @@ class EE_API Text {
 	Uint32 getTotalVertices();
 
 	/** Cache the with of the current text */
-	void getWidthInfo();
+	void updateWidthCache();
 
 	void draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
 			   BlendMode effect, const OriginPoint& rotationCenter, const OriginPoint& scaleCenter,

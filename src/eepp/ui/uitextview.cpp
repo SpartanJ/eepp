@@ -86,7 +86,7 @@ void UITextView::draw() {
 								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
-			mTextCache->setAlign( getFlags() );
+			mTextCache->setAlign( Font::getHorizontalAlign( getFlags() ) );
 			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
@@ -454,7 +454,7 @@ Float UITextView::getTextHeight() {
 	return mTextCache->getTextHeight();
 }
 
-const int& UITextView::getNumLines() const {
+Uint32 UITextView::getNumLines() {
 	return mTextCache->getNumLines();
 }
 

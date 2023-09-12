@@ -73,7 +73,7 @@ class EE_API UITextView : public UIWidget {
 
 	Float getTextHeight();
 
-	const int& getNumLines() const;
+	Uint32 getNumLines();
 
 	Vector2f getAlignOffset() const;
 

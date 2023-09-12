@@ -2884,9 +2884,6 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			txt.setStyle( style.style );
 			txt.setColor( Color( style.color ).blendAlpha( mAlpha ) );
 
-			if ( isMonospace )
-				txt.setDisableCacheWidth( true );
-
 			if ( mHandShown && mLinkPosition.isValid() && mLinkPosition.inSameLine() &&
 				 mLinkPosition.start().line() == line ) {
 				if ( mLinkPosition.start().column() >= curChar &&
