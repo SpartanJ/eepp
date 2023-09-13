@@ -373,6 +373,15 @@ Anchor.error:hover {
 #build_output_issues TableView::cell.theme-error > TableView::cell::icon {
 	tint: var(--theme-error);
 }
+#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::text {
+	color: var(--font);
+}
+#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::icon {
+	tint: var(--font);
+}
+.texture-preview {
+	border: 1dp solid var(--list-back);
+}
 </style>
 <MainLayout id="main_layout" lw="mp" lh="mp">
 <Splitter id="project_splitter" lw="mp" lh="mp">

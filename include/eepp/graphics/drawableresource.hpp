@@ -8,11 +8,11 @@ namespace EE { namespace Graphics {
 
 class EE_API DrawableResource : public Drawable {
   public:
-	enum Event { Load, Change, Unload };
+	enum Event { Change, Unload };
 
 	virtual ~DrawableResource();
 
-	typedef std::function<void( Event, DrawableResource* )> OnResourceChangeCallback;
+	typedef std::function<void( Uint32, Event, DrawableResource* )> OnResourceChangeCallback;
 
 	/** @return The DrawableResource Id. The Id is the String::hash of the name. */
 	const String::HashType& getId() const;
@@ -32,13 +32,13 @@ class EE_API DrawableResource : public Drawable {
 	Uint32 pushResourceChangeCallback( const OnResourceChangeCallback& cb );
 
 	/** Pop the on resource change callback id indicated. */
-	void popResourceChangeCallback( const Uint32& callbackId );
+	bool popResourceChangeCallback( const Uint32& callbackId );
 
   protected:
 	std::string mName;
 	String::HashType mId;
 	Uint32 mNumCallBacks;
-	std::map<Uint32, OnResourceChangeCallback> mCallbacks;
+	UnorderedMap<Uint32, OnResourceChangeCallback> mCallbacks;
 
 	explicit DrawableResource( Type drawableType );
 

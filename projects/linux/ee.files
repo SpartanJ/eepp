@@ -962,6 +962,8 @@
 ../../src/eepp/ui/tools/uicodeeditorsplitter.cpp
 ../../src/eepp/ui/tools/uicolorpicker.cpp
 ../../src/eepp/ui/tools/uidocfindreplace.cpp
+../../src/eepp/ui/tools/uitextureviewer.cpp
+../../src/eepp/ui/tools/uitextureviewer.hpp
 ../../src/eepp/ui/tools/uiwidgetinspector.cpp
 ../../src/eepp/ui/uiabstractview.cpp
 ../../src/eepp/ui/uibackgrounddrawable.cpp

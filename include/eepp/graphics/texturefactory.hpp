@@ -230,12 +230,12 @@ class EE_API TextureFactory : protected Mutex {
 	 * @param MemSize The size of the texture in memory ( just if you need to specify the real size
 	 * in memory, just useful to calculate the total texture memory ).
 	 */
-	Uint32 pushTexture( const std::string& Filepath, const Uint32& TexId, const unsigned int& Width,
-						const unsigned int& Height, const unsigned int& ImgWidth,
-						const unsigned int& ImgHeight, const bool& Mipmap,
-						const unsigned int& Channels, const Texture::ClampMode& ClampMode,
-						const bool& CompressTexture, const bool& LocalCopy = false,
-						const Uint32& MemSize = 0 );
+	Texture* pushTexture( const std::string& Filepath, const Uint32& TexId,
+						  const unsigned int& Width, const unsigned int& Height,
+						  const unsigned int& ImgWidth, const unsigned int& ImgHeight,
+						  const bool& Mipmap, const unsigned int& Channels,
+						  const Texture::ClampMode& ClampMode, const bool& CompressTexture,
+						  const bool& LocalCopy = false, const Uint32& MemSize = 0 );
 
 	/** Return a texture by it file path name
 	 * @param Name File path name

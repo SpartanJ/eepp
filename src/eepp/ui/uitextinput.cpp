@@ -111,7 +111,7 @@ void UITextInput::drawWaitingCursor() {
 		primitives.setColor( Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle( Rectf(
 			cursor, Sizef( PixelDensity::dpToPx( 1 ), mTextCache->getFont()->getFontHeight(
-														  mTextCache->getCharacterSizePx() ) ) ) );
+														  mTextCache->getCharacterSize() ) ) ) );
 	}
 }
 
@@ -524,7 +524,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setHintShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::HintFontSize:
-			setHintFontSize( attribute.asDpDimensionI() );
+			setHintFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::HintFontFamily:
 			setHintFont( FontManager::instance()->getByName( attribute.asString() ) );

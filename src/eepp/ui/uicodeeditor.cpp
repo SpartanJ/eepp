@@ -238,7 +238,7 @@ void UICodeEditor::draw() {
 
 	Color col;
 	auto lineRange = getVisibleLineRange();
-	Float charSize = PixelDensity::pxToDp( getCharacterSize() );
+	Float charSize = getCharacterSize();
 	Float lineHeight = getLineHeight();
 	int lineNumberDigits = getLineNumberDigits();
 	Float gutterWidth = getGutterWidth();
@@ -613,11 +613,11 @@ void UICodeEditor::setShowIndentationGuides( bool showIndentationGuides ) {
 	}
 }
 
-UICodeEditor* UICodeEditor::setFontSize( const Float& dpSize ) {
-	if ( mFontStyleConfig.CharacterSize != dpSize ) {
+UICodeEditor* UICodeEditor::setFontSize( const Float& size ) {
+	if ( mFontStyleConfig.CharacterSize != size ) {
 		mFontStyleConfig.CharacterSize =
-			eeabs( dpSize - (int)dpSize ) == 0.5f || (int)dpSize == dpSize ? dpSize
-																		   : eefloor( dpSize );
+			eeabs( size - (int)size ) == 0.5f || (int)size == size ? size
+																		   : eefloor( size );
 		mFontSize = mFontStyleConfig.CharacterSize;
 		udpateGlyphWidth();
 		invalidateDraw();
@@ -2116,7 +2116,7 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
-			setFontSize( lengthFromValueAsDp( attribute ) );
+			setFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::FontStyle: {
 			setFontStyle( attribute.asFontStyle() );
@@ -2163,7 +2163,7 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%.2fdp", getFontSize() );
+			return String::format( "%.2fpx", getFontSize() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -2412,7 +2412,7 @@ bool UICodeEditor::unregisterTopSpace( UICodeEditorPlugin* plugin ) {
 }
 
 Float UICodeEditor::getCharacterSize() const {
-	return PixelDensity::dpToPx( mFontStyleConfig.getFontCharacterSize() );
+	return mFontStyleConfig.getFontCharacterSize();
 }
 
 Float UICodeEditor::getGlyphWidth() const {

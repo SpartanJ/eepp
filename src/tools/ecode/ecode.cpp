@@ -1021,7 +1021,7 @@ void App::setEditorFontSize() {
 	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
 		mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
 		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setFontSize( mConfig.editor.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+			editor->setFontSize( mConfig.editor.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
 		} );
 	} );
 	setFocusEditorOnClose( msgBox );
@@ -1054,7 +1054,7 @@ void App::setUIFontSize() {
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
 		mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		Float fontSize = mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI );
+		Float fontSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
 		UIThemeManager* manager = mUISceneNode->getUIThemeManager();
 		manager->setDefaultFontSize( fontSize );
 		manager->getDefaultTheme()->setDefaultFontSize( fontSize );
@@ -1063,8 +1063,8 @@ void App::setUIFontSize() {
 				UITextView* textView = node->asType<UITextView>();
 				if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
 					textView->setFontSize(
-						mConfig.ui.fontSize.asDp( node->getParent()->getPixelsSize().getWidth(),
-												  Sizef(), mUISceneNode->getDPI() ) );
+						mConfig.ui.fontSize.asPixels( node->getParent()->getPixelsSize().getWidth(),
+													  Sizef(), mUISceneNode->getDPI() ) );
 				}
 			}
 		} );
@@ -1683,7 +1683,7 @@ std::string App::getDefaultThemePath() const {
 
 void App::setTheme( const std::string& path ) {
 	UITheme* theme = UITheme::load( "uitheme", "uitheme", "", mFont, path );
-	theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+	theme->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
 
 	if ( path != getDefaultThemePath() ) {
 		auto style = theme->getStyleSheet().getStyleFromSelector( ":root" );
@@ -1717,7 +1717,7 @@ void App::setTheme( const std::string& path ) {
 		//->setDefaultEffectsEnabled( true )
 		->setDefaultTheme( theme )
 		->setDefaultFont( mFont )
-		->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) )
+		->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) )
 		->add( theme );
 
 	mUISceneNode->getRoot()->addClass( "appbackground" );
@@ -2192,7 +2192,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const DocumentConfig& docc = !mCurrentProject.empty() && !mProjectDocConfig.useGlobalSettings
 									 ? mProjectDocConfig.doc
 									 : mConfig.doc;
-	editor->setFontSize( config.fontSize.asDp( 0, Sizef(), mUISceneNode->getDPI() ) );
+	editor->setFontSize( config.fontSize.asPixels( 0, Sizef(), mUISceneNode->getDPI() ) );
 	editor->setEnableColorPickerOnSelection( true );
 	editor->setColorScheme( mSplitter->getCurrentColorScheme() );
 	editor->setShowLineNumber( config.showLineNumbers );

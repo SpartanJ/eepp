@@ -29,12 +29,13 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	static const auto WIDGET_LAYOUT = R"xml(
 	<vbox lw="mp" lh="mp">
 		<hbox lw="wc" lh="wc">
-			<PushButton id="pick_widget" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
+			<PushButton id="pick_widget" lh="18dp" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
 			<CheckBox id="debug-draw-highlight" text='@string(debug_draw_highlight, "Highlight Focus & Hover")' margin-left="4dp" lg="center" />
 			<CheckBox id="debug-draw-boxes" text='@string(debug_draw_boxes, "Draw Boxes")' margin-left="4dp" lg="center" />
 			<CheckBox id="debug-draw-debug-data" text='@string(debug_draw_debug_data, "Draw Debug Data")' margin-left="4dp" lg="center" />"
 			<PushButton id="widget-tree-search-collapse" layout_width="wrap_content" layout_height="18dp" tooltip='@string(collapse_all, "Collapse All")' margin-left="8dp" icon="menu-fold" text-as-fallback="true" />
 			<PushButton id="widget-tree-search-expand" layout_width="wrap_content" layout_height="18dp" tooltip='@string(expand_all, "Expand All")' margin-left="8dp" icon="menu-unfold" text-as-fallback="true" />
+			<PushButton id="open-texture-viewer" lh="18dp" text="@string(texture_viewer, Texture Viewer)" margin-left="8dp" />
 		</hbox>
 		<Splitter layout_width="match_parent" lh="fixed" lw8="1" splitter-partition="50%">
 			<treeview lw="fixed" lh="mp" />
@@ -119,6 +120,14 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 				widgetTree->expandAll();
 			}
 		} );
+
+	cont->find<UIPushButton>( "open-texture-viewer" )->onClick( []( auto ) {
+		SceneManager::instance()->getUISceneNode()->loadLayoutFromString( R"xml(
+		<window layout_width="800dp" layout_height="600dp" winflags="default|maximize|shadow">
+			<TextureViewer layout_width="match_parent" layout_height="match_parent" />
+		</window>
+	)xml" )->center();
+	} );
 
 	uiWin->center();
 

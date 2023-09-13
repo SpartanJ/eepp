@@ -1744,10 +1744,11 @@ void EETest::screen3() {
 }
 
 void EETest::screen4() {
-	if ( NULL != mFBO ) {
-		mFBO->bind();
-		mFBO->clear();
-	}
+	if ( NULL == mFBO )
+		return;
+
+	mFBO->bind();
+	mFBO->clear();
 
 	if ( NULL != mVBO ) {
 		mBlindy.setPosition( Vector2f( 128 - 16, 128 - 16 ) );
@@ -1776,15 +1777,13 @@ void EETest::screen4() {
 	p.drawCircle( center, 32 );
 	GLi->getClippingMask()->stencilMaskDisable();
 
-	if ( NULL != mFBO ) {
-		mFBO->unbind();
+	mFBO->unbind();
 
-		if ( NULL != mFBO->getTexture() ) {
-			mFBO->getTexture()->draw(
-				(Float)mWindow->getWidth() * 0.5f - (Float)mFBO->getWidth() * 0.5f,
-				(Float)mWindow->getHeight() * 0.5f - (Float)mFBO->getHeight() * 0.5f, Ang );
-			GlobalBatchRenderer::instance()->draw();
-		}
+	if ( NULL != mFBO->getTexture() ) {
+		mFBO->getTexture()->draw(
+			(Float)mWindow->getWidth() * 0.5f - (Float)mFBO->getWidth() * 0.5f,
+			(Float)mWindow->getHeight() * 0.5f - (Float)mFBO->getHeight() * 0.5f, Ang );
+		GlobalBatchRenderer::instance()->draw();
 	}
 }
 

@@ -42,7 +42,7 @@ class EE_API UIConsole : public UIWidget,
 
 	UIConsole* setFont( Font* font );
 
-	UIConsole* setFontSize( const Float& dpSize );
+	UIConsole* setFontSize( const Float& size );
 
 	const Float& getFontSize() const;
 

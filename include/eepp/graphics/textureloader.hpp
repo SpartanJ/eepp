@@ -1,9 +1,10 @@
 #ifndef EE_GRAPHICS_TEXTURELOADER
 #define EE_GRAPHICS_TEXTURELOADER
 
+#include <atomic>
+
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
-
 #include <eepp/system/clock.hpp>
 #include <eepp/system/pack.hpp>
 using namespace EE::System;
@@ -13,6 +14,12 @@ namespace EE { namespace Graphics {
 /** @brief The Texture loader loads a texture in synchronous or asynchronous mode. */
 class EE_API TextureLoader {
   public:
+	typedef std::function<void( Uint32, Texture* )> OnTextureLoaded;
+
+	static Uint32 pushLoadedCallback( const OnTextureLoaded& cb );
+
+	static void popLoadedCallback( const Uint32& cbId );
+
 	/** Load a Texture from stream
 	 * @param Stream The io stream instance
 	 * @param Mipmap Use mipmaps?
@@ -98,7 +105,7 @@ class EE_API TextureLoader {
 	const std::string& getFilepath() const;
 
 	/** @return The texture internal id  */
-	const Uint32& getId() const;
+	Uint32 getId() const;
 
 	/** @return The texture instance ( if it was loaded ). */
 	Texture* getTexture() const;
@@ -113,7 +120,7 @@ class EE_API TextureLoader {
   protected:
 	Uint32 mLoadType{ 0 };	   // From memory, from path, from pack
 	Uint8* mPixels{ nullptr }; // Texture Info
-	Uint32 mTexId{ 0 };
+	Texture* mTexture{ nullptr };
 	Int32 mImgWidth{ 0 };
 	Int32 mImgHeight{ 0 };
 
@@ -137,6 +144,9 @@ class EE_API TextureLoader {
 	void reset();
 
   private:
+	static UnorderedMap<Uint32, OnTextureLoaded> sCbs;
+	static std::atomic<Uint32> sNumCbs;
+
 	bool mLoaded{ false };
 	bool mTexLoaded{ false };
 	bool mDirectUpload{ false };
@@ -151,6 +161,8 @@ class EE_API TextureLoader {
 	void loadFromPack();
 	void loadFromPixels();
 	void loadFromStream();
+
+	void notifyLoaded();
 };
 
 }} // namespace EE::Graphics

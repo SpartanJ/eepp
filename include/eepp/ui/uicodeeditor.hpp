@@ -194,7 +194,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	UICodeEditor* setFont( Font* font );
 
-	UICodeEditor* setFontSize( const Float& dpSize );
+	UICodeEditor* setFontSize( const Float& size );
 
 	const Float& getFontSize() const;
 

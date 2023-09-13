@@ -1157,7 +1157,14 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 	auto pageIt = mPages.find( characterSize );
 	if ( pageIt == mPages.end() ) {
-		mPages.insert( std::make_pair( characterSize, std::make_unique<Page>( mFontInternalId ) ) );
+		std::string name =
+			String::format( "@font:TrueType:%s:%d", mInfo.family.c_str(), characterSize );
+		if ( mIsBold )
+			name += ":bold";
+		if ( mIsItalic )
+			name += ":italic";
+		mPages.insert(
+			std::make_pair( characterSize, std::make_unique<Page>( mFontInternalId, name ) ) );
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;
@@ -1311,7 +1318,7 @@ void FontTrueType::setBoldItalicFont( FontTrueType* fontBoldItalic ) {
 	updateMonospaceState();
 }
 
-FontTrueType::Page::Page( const Uint32 fontInternalId ) :
+FontTrueType::Page::Page( const Uint32 fontInternalId, const std::string& pageName ) :
 	texture( NULL ), nextRow( 3 ), fontInternalId( fontInternalId ) {
 	// Make sure that the texture is initialized by default
 	Image image;
@@ -1327,6 +1334,7 @@ FontTrueType::Page::Page( const Uint32 fontInternalId ) :
 		image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false,
 		Texture::ClampMode::ClampToEdge, false, true );
 	texture->setCoordinateType( Texture::CoordinateType::Pixels );
+	texture->setName( pageName );
 }
 
 FontTrueType::Page::~Page() {

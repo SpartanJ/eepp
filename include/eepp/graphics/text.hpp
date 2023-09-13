@@ -80,8 +80,6 @@ class EE_API Text {
 
 	unsigned int getCharacterSize() const;
 
-	unsigned int getCharacterSizePx() const;
-
 	const Uint32& getFontHeight() const;
 
 	Uint32 getStyle() const;
@@ -189,7 +187,6 @@ class EE_API Text {
 
 	String mString;			///< String to display
 	FontStyleConfig mFontStyleConfig;
-	Uint32 mRealFontSize;
 	Color mBackgroundColor{ Color::Transparent };
 
 	mutable Rectf mBounds;			  ///< Bounding rectangle of the text (in local coordinates)

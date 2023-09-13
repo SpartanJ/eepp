@@ -144,7 +144,7 @@ class EE_API FontTrueType : public Font {
 	typedef UnorderedMap<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
-		explicit Page( const Uint32 fontInternalId );
+		explicit Page( const Uint32 fontInternalId, const std::string& pageName );
 
 		~Page();
 

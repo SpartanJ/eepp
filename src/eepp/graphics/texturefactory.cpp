@@ -97,13 +97,13 @@ TextureFactory::loadFromFile( const std::string& Filepath, const bool& Mipmap,
 	return myTex.getTexture();
 }
 
-Uint32 TextureFactory::pushTexture( const std::string& Filepath, const Uint32& TexId,
-									const unsigned int& Width, const unsigned int& Height,
-									const unsigned int& ImgWidth, const unsigned int& ImgHeight,
-									const bool& Mipmap, const unsigned int& Channels,
-									const Texture::ClampMode& ClampMode,
-									const bool& CompressTexture, const bool& LocalCopy,
-									const Uint32& MemSize ) {
+Texture* TextureFactory::pushTexture( const std::string& Filepath, const Uint32& TexId,
+									  const unsigned int& Width, const unsigned int& Height,
+									  const unsigned int& ImgWidth, const unsigned int& ImgHeight,
+									  const bool& Mipmap, const unsigned int& Channels,
+									  const Texture::ClampMode& ClampMode,
+									  const bool& CompressTexture, const bool& LocalCopy,
+									  const Uint32& MemSize ) {
 	lock();
 
 	Texture* Tex = NULL;
@@ -129,7 +129,7 @@ Uint32 TextureFactory::pushTexture( const std::string& Filepath, const Uint32& T
 
 	unlock();
 
-	return Pos;
+	return Tex;
 }
 
 Uint32 TextureFactory::findFreeSlot() {

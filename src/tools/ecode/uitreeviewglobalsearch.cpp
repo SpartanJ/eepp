@@ -194,9 +194,8 @@ void UITreeViewCellGlobalSearch::draw() {
 	if ( getCurIndex().internalId() != -1 && mSearchStrPos.first != std::string::npos &&
 		 mSearchStrPos.second > 0 && mSearchStrPos.second <= mTextBox->getText().length() ) {
 		UITreeViewGlobalSearch* pp = getParent()->getParent()->asType<UITreeViewGlobalSearch>();
-		auto hspace = mTextBox->getFont()
-						  ->getGlyph( L' ', mTextBox->getPixelsFontSize(), false, false )
-						  .advance;
+		auto hspace =
+			mTextBox->getFont()->getGlyph( L' ', mTextBox->getFontSize(), false, false ).advance;
 		Primitives p;
 		p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection" ).color );
 		Vector2f screenPos( mScreenPos );

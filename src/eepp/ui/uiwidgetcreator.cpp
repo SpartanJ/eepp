@@ -1,3 +1,4 @@
+#include <eepp/ui/tools/uitextureviewer.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
@@ -97,6 +98,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["menuradiobutton"] = UIMenuRadioButton::New;
 		registeredWidget["menuseparator"] = UIMenuSeparator::New;
 		registeredWidget["anchor"] = UIAnchor::New;
+		registeredWidget["textureviewer"] = Tools::UITextureViewer::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;

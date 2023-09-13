@@ -406,16 +406,17 @@ void UINodeDrawable::LayerDrawable::setDrawable( Drawable* drawable, const bool&
 	invalidate();
 
 	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
-		mResourceChangeCbId = reinterpret_cast<DrawableResource*>( mDrawable )
-								  ->pushResourceChangeCallback(
-									  [this]( DrawableResource::Event event, DrawableResource* ) {
-										  invalidate();
-										  if ( event == DrawableResource::Event::Unload ) {
-											  mResourceChangeCbId = 0;
-											  mDrawable = NULL;
-											  mOwnsDrawable = false;
-										  }
-									  } );
+		mResourceChangeCbId =
+			reinterpret_cast<DrawableResource*>( mDrawable )
+				->pushResourceChangeCallback(
+					[this]( Uint32, DrawableResource::Event event, DrawableResource* ) {
+						invalidate();
+						if ( event == DrawableResource::Event::Unload ) {
+							mResourceChangeCbId = 0;
+							mDrawable = NULL;
+							mOwnsDrawable = false;
+						}
+					} );
 	}
 }
 

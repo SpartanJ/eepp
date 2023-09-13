@@ -164,7 +164,7 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
-			setFontSize( lengthFromValueAsDp( attribute ) );
+			setFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::FontStyle: {
 			setFontStyle( attribute.asFontStyle() );
@@ -203,7 +203,7 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%.2fdp", getFontSize() );
+			return String::format( "%.2fpx", getFontSize() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyleConfig().getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -226,11 +226,10 @@ std::vector<PropertyId> UIConsole::getPropertiesImplemented() const {
 	return props;
 }
 
-UIConsole* UIConsole::setFontSize( const Float& dpSize ) {
-	if ( mFontStyleConfig.CharacterSize != dpSize ) {
+UIConsole* UIConsole::setFontSize( const Float& size ) {
+	if ( mFontStyleConfig.CharacterSize != size ) {
 		mFontStyleConfig.CharacterSize =
-			eeabs( dpSize - (int)dpSize ) == 0.5f || (int)dpSize == dpSize ? dpSize
-																		   : eefloor( dpSize );
+			eeabs( size - (int)size ) == 0.5f || (int)size == size ? size : eefloor( size );
 		invalidateDraw();
 		onFontChanged();
 	}
@@ -1208,8 +1207,7 @@ void UIConsole::pushText( const char* format, ... ) {
 }
 
 Float UIConsole::getLineHeight() const {
-	return mFontStyleConfig.Font->getFontHeight(
-		PixelDensity::dpToPx( mFontStyleConfig.CharacterSize ) );
+	return mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
 }
 
 bool UIConsole::getQuakeMode() const {
