@@ -177,6 +177,10 @@ class EE_API TextDocument {
 
 	bool hasSelection() const;
 
+	const std::array<Uint8, 16>& getHash() const;
+
+	std::string getHashHexString() const;
+
 	String getText( const TextRange& range ) const;
 
 	String getText() const;
@@ -590,6 +594,7 @@ class EE_API TextDocument {
 	UndoStack mUndoStack;
 	std::string mFilePath;
 	std::string mLoadingFilePath;
+	std::array<Uint8, 16> mHash;
 	URI mFileURI;
 	URI mLoadingFileURI;
 	FileInfo mFileRealPath;

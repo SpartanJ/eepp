@@ -122,11 +122,12 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 		} );
 
 	cont->find<UIPushButton>( "open-texture-viewer" )->onClick( []( auto ) {
-		SceneManager::instance()->getUISceneNode()->loadLayoutFromString( R"xml(
+		auto win = SceneManager::instance()->getUISceneNode()->loadLayoutFromString( R"xml(
 		<window layout_width="800dp" layout_height="600dp" winflags="default|maximize|shadow">
 			<TextureViewer layout_width="match_parent" layout_height="match_parent" />
 		</window>
-	)xml" )->center();
+	)xml" );
+		win->center()->runOnMainThread( [win] { win->toFront(); }, Milliseconds( 1 ) );
 	} );
 
 	uiWin->center();

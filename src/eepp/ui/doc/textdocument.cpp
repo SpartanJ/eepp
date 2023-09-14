@@ -7,6 +7,7 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/md5.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -70,6 +71,7 @@ bool TextDocument::isUntitledEmpty() const {
 }
 
 void TextDocument::reset() {
+	mHash = {};
 	mMightBeBinary = false;
 	mIsBOM = false;
 	mDirtyOnFileSystem = false;
@@ -123,6 +125,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 	if ( callReset )
 		reset();
 	mLines.clear();
+	MD5::Context md5Ctx;
 	if ( file.isOpen() ) {
 		const size_t BLOCK_SIZE = EE_1MB;
 		size_t total = file.getSize();
@@ -134,10 +137,14 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 		int consume;
 		char* bufferPtr;
 		TScopedBuffer<char> data( blockSize );
+		MD5::init( md5Ctx );
+
 		while ( pending && mLoading ) {
 			read = file.read( data.get(), blockSize );
 			bufferPtr = data.get();
 			consume = read;
+
+			MD5::update( md5Ctx, data.get(), read );
 
 			if ( pending == total ) {
 				// Check UTF-8 BOM header
@@ -216,7 +223,10 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 	bool wasInterrupted = !mLoading;
 	if ( wasInterrupted )
 		reset();
+
+	mHash = MD5::result( md5Ctx ).digest;
 	mLoading = false;
+
 	return wasInterrupted ? LoadStatus::Interrupted
 						  : ( file.isOpen() ? LoadStatus::Loaded : LoadStatus::Failed );
 }
@@ -554,9 +564,12 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 		return false;
 	BoolScopedOp op( mDoingTextInput, true );
 	const std::string whitespaces( " \t\f\v\n\r" );
+	MD5::Context md5Ctx;
+	MD5::init( md5Ctx );
 	if ( mIsBOM ) {
 		unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
 		stream.write( (char*)bom, sizeof( bom ) );
+		MD5::update( md5Ctx, bom, sizeof( bom ) );
 	}
 	size_t lastLine = mLines.size() - 1;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
@@ -592,11 +605,14 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 				text += "\n";
 			}
 			stream.write( text.c_str(), text.size() );
+			MD5::update( md5Ctx, text.data(), text.size() );
 		} else if ( mLineEnding == LineEnding::CR ) {
 			text[text.size() - 1] = '\r';
 			stream.write( text.c_str(), text.size() );
+			MD5::update( md5Ctx, text.data(), text.size() );
 		} else {
 			stream.write( text.c_str(), text.size() );
+			MD5::update( md5Ctx, text.data(), text.size() );
 		}
 	}
 
@@ -604,6 +620,8 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 
 	if ( !keepUndoRedoStatus )
 		cleanChangeId();
+
+	mHash = MD5::result( md5Ctx ).digest;
 
 	return true;
 }
@@ -799,6 +817,14 @@ std::vector<TextDocumentLine>& TextDocument::lines() {
 
 bool TextDocument::hasSelection() const {
 	return mSelection.hasSelection();
+}
+
+const std::array<Uint8, 16>& TextDocument::getHash() const {
+	return mHash;
+}
+
+std::string TextDocument::getHashHexString() const {
+	return MD5::Result{ mHash }.toHexString();
 }
 
 String TextDocument::getText( const TextRange& range ) const {

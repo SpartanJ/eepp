@@ -44,6 +44,9 @@ cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorsch
 #cp -r ../../../bin/assets/fonts ecode.app/Contents/MacOS/assets/
 mkdir -p ecode.app/Contents/MacOS/assets/fonts
 cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode.app/Contents/MacOS/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Oblique.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-BoldOblique.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/fonts/nonicons.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/fonts/codicon.ttf ecode.app/Contents/MacOS/assets/fonts/

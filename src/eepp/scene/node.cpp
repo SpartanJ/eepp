@@ -430,17 +430,19 @@ const BlendMode& Node::getBlendMode() const {
 	return mBlend;
 }
 
-void Node::toFront() {
+Node* Node::toFront() {
 	if ( NULL != mParentNode && mParentNode->mChildLast != this ) {
 		mParentNode->childRemove( this );
 		mParentNode->childAdd( this );
 	}
+	return this;
 }
 
-void Node::toBack() {
+Node* Node::toBack() {
 	if ( NULL != mParentNode ) {
 		mParentNode->childAddAt( this, 0 );
 	}
+	return this;
 }
 
 void Node::toPosition( const Uint32& Pos ) {
@@ -1658,27 +1660,31 @@ void Node::disableReportSizeChangeToChilds() {
 	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS, 0 );
 }
 
-void Node::centerHorizontal() {
+Node* Node::centerHorizontal() {
 	Node* node = getParent();
 	if ( NULL != node ) {
 		setPosition( eefloor( ( node->getSize().getWidth() - getSize().getWidth() ) * 0.5f ),
 					 getPosition().y );
 	}
+	return this;
 }
 
-void Node::centerVertical() {
+Node* Node::centerVertical() {
 	Node* node = getParent();
 	if ( NULL != node ) {
 		setPosition( getPosition().x,
 					 eefloor( node->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
 	}
+	return this;
 }
 
-void Node::center() {
+Node* Node::center() {
 	Node* node = getParent();
-	if ( NULL != node )
+	if ( NULL != node ) {
 		setPosition( eefloor( ( node->getSize().getWidth() - getSize().getWidth() ) * 0.5f ),
 					 eefloor( node->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
+	}
+	return this;
 }
 
 Node* Node::clipEnable() {

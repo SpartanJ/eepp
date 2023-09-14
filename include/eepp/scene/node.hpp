@@ -144,9 +144,9 @@ class EE_API Node : public Transformable {
 
 	const BlendMode& getBlendMode() const;
 
-	void toFront();
+	Node* toFront();
 
-	void toBack();
+	Node* toBack();
 
 	void toPosition( const Uint32& position );
 
@@ -356,11 +356,11 @@ class EE_API Node : public Transformable {
 
 	bool reportSizeChangeToChilds() const;
 
-	void centerHorizontal();
+	Node* centerHorizontal();
 
-	void centerVertical();
+	Node* centerVertical();
 
-	void center();
+	Node* center();
 
 	Node* clipEnable();
 

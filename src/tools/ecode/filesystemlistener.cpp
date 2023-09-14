@@ -1,4 +1,5 @@
 #include "filesystemlistener.hpp"
+#include <eepp/system/md5.hpp>
 
 namespace ecode {
 
@@ -139,8 +140,11 @@ void FileSystemListener::notifyChange( const FileInfo& file ) {
 	mSplitter->forEachDoc( [&]( TextDocument& doc ) {
 		if ( file.getFilepath() == doc.getFileInfo().getFilepath() &&
 			 file.getModificationTime() != doc.getFileInfo().getModificationTime() &&
-			 !doc.isSaving() )
-			doc.setDirtyOnFileSystem( true );
+			 !doc.isSaving() ) {
+			MD5::Digest curHash = MD5::fromFile( file.getFilepath() ).digest;
+			if ( curHash != doc.getHash() )
+				doc.setDirtyOnFileSystem( true );
+		}
 	} );
 }
 

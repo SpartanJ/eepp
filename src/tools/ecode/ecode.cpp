@@ -2067,6 +2067,14 @@ void App::createDocAlert( UICodeEditor* editor ) {
 				editor->setFocus();
 			}
 		} );
+
+	docAlert->runOnMainThread(
+		[docAlert, editor] {
+			editor->disableReportSizeChangeToChilds();
+			docAlert->close();
+			editor->setFocus();
+		},
+		Seconds( 10.f ) );
 }
 
 void App::loadImageFromMedium( const std::string& path, bool isMemory ) {

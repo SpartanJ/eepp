@@ -42,6 +42,9 @@ mkdir -p ecode/assets/colorschemes
 mkdir -p ecode/assets/fonts
 cp -r ../../../bin/assets/colorschemes ecode/assets/
 cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Oblique.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-BoldOblique.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/nonicons.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/codicon.ttf ecode/assets/fonts/
