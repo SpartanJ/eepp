@@ -3,7 +3,7 @@
 
 #include <eepp/core.hpp>
 #include <eepp/system/iostream.hpp>
-#include <vector>
+#include <array>
 
 namespace EE { namespace System {
 

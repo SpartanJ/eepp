@@ -1,6 +1,7 @@
 #ifndef EE_UI_DOC_TEXTDOCUMENT
 #define EE_UI_DOC_TEXTDOCUMENT
 
+#include <array>
 #include <atomic>
 #include <eepp/core/string.hpp>
 #include <eepp/network/http.hpp>
