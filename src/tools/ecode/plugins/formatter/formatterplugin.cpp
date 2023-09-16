@@ -81,6 +81,12 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 			tryRequestCapabilities( editor->getDocumentRef() );
 		} ) );
 
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentChanged, [&, editor]( const Event* ) {
+			TextDocument* newDoc = editor->getDocumentRef().get();
+			mEditorDocs[editor] = newDoc;
+		} ) );
+
 	listeners.push_back( editor->addEventListener( Event::OnDocumentSave, [this](
 																			  const Event* event ) {
 		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
@@ -92,15 +98,10 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 	} ) );
 
 	mEditors.insert( { editor, listeners } );
+	mEditorDocs[editor] = editor->getDocumentRef().get();
 }
 
 void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
-	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-		if ( editor->hasDocument() )
-			editor->getDocument().removeCommand( kb.first );
-	}
-
 	auto afIt = mIsAutoFormatting.find( &editor->getDocument() );
 	if ( afIt != mIsAutoFormatting.end() )
 		mIsAutoFormatting.erase( afIt );
@@ -112,6 +113,18 @@ void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 	if ( mShuttingDown )
 		return;
 	mEditors.erase( editor );
+	mEditorDocs.erase( editor );
+
+	TextDocument* doc = &editor->getDocument();
+	for ( auto editorIt : mEditorDocs )
+		if ( editorIt.second == doc )
+			return;
+
+	for ( auto& kb : mKeyBindings ) {
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+		if ( editor->hasDocument() )
+			editor->getDocument().removeCommand( kb.first );
+	}
 }
 
 bool FormatterPlugin::getAutoFormatOnSave() const {

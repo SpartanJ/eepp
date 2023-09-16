@@ -927,19 +927,32 @@ String::String( const char* utf8String ) {
 }
 
 String::String( const char* utf8String, const size_t& utf8StringSize ) {
-	if ( utf8String ) {
-		if ( utf8StringSize > 0 ) {
-			mString.reserve( utf8StringSize + 1 );
+	if ( utf8String && utf8StringSize > 0 ) {
+		mString.reserve( utf8StringSize + 1 );
 
-			Utf8::toUtf32( utf8String, utf8String + utf8StringSize, std::back_inserter( mString ) );
+		int skip = 0;
+		// Skip BOM
+		if ( utf8StringSize >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+			 (char)0xbf == utf8String[2] ) {
+			skip = 3;
 		}
+
+		Utf8::toUtf32( utf8String + skip, utf8String + utf8StringSize,
+					   std::back_inserter( mString ) );
 	}
 }
 
 String::String( const std::string& utf8String ) {
 	mString.reserve( utf8String.length() + 1 );
 
-	Utf8::toUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( mString ) );
+	int skip = 0;
+	// Skip BOM
+	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+		 (char)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
 }
 
 String::String( const char* ansiString, const std::locale& locale ) {
@@ -991,9 +1004,16 @@ String::String( const String& str ) : mString( str.mString ) {}
 String String::fromUtf8( const std::string& utf8String ) {
 	String::StringType utf32;
 
+	// Skip BOM
+	int skip = 0;
+	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+		 (char)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
 	utf32.reserve( utf8String.length() + 1 );
 
-	Utf8::toUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( utf32 ) );
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( utf32 ) );
 
 	return String( utf32 );
 }

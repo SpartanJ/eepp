@@ -1282,10 +1282,9 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 			return;
 	}
 
-	if ( editor->hasDocument() ) {
+	if ( editor->hasDocument() )
 		for ( auto& kb : mKeyBindings )
 			editor->getDocument().removeCommand( kb.first );
-	}
 
 	{
 		Lock lds( mDocSymbolsMutex );

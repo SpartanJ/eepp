@@ -75,6 +75,7 @@ class FormatterPlugin : public Plugin {
   protected:
 	std::vector<Formatter> mFormatters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
+	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	std::mutex mWorkMutex;
 	std::condition_variable mWorkerCondition;
 	std::map<std::string, std::function<NativeFormatterResult( const std::string& file )>>

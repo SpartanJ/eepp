@@ -2331,9 +2331,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( !appInstance )
 			return;
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-		updateEditorTabTitle( editor );
-		editor->getDocument().resetSyntax();
-		editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
+		editor->runOnMainThread( [this, editor] {
+			updateEditorTabTitle( editor );
+			editor->getDocument().resetSyntax();
+			editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
+		} );
 	} );
 
 	auto docChanged = [this]( const Event* event ) {

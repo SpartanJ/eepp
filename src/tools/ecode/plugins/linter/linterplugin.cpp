@@ -642,14 +642,9 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void LinterPlugin::onUnregister( UICodeEditor* editor ) {
-	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-		if ( editor->hasDocument() )
-			editor->getDocument().removeCommand( kb.first );
-	}
-
 	if ( mShuttingDown )
 		return;
+
 	Lock l( mDocMutex );
 	TextDocument* doc = mEditorDocs[editor];
 	auto cbs = mEditors[editor];
@@ -660,6 +655,13 @@ void LinterPlugin::onUnregister( UICodeEditor* editor ) {
 	for ( auto editorIt : mEditorDocs )
 		if ( editorIt.second == doc )
 			return;
+
+	for ( auto& kb : mKeyBindings ) {
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+		if ( editor->hasDocument() )
+			editor->getDocument().removeCommand( kb.first );
+	}
+
 	mDocs.erase( doc );
 	mDirtyDoc.erase( doc );
 	Lock matchesLock( mMatchesMutex );
