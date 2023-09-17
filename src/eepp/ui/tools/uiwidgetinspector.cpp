@@ -123,7 +123,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 
 	cont->find<UIPushButton>( "open-texture-viewer" )->onClick( []( auto ) {
 		auto win = SceneManager::instance()->getUISceneNode()->loadLayoutFromString( R"xml(
-		<window layout_width="800dp" layout_height="600dp" winflags="default|maximize|shadow">
+		<window layout_width="830dp" layout_height="600dp" winflags="default|maximize|shadow" window-title="@string(texture_viewer, Texture Viewer)">
 			<TextureViewer layout_width="match_parent" layout_height="match_parent" />
 		</window>
 	)xml" );

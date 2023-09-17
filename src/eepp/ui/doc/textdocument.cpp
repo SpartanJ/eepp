@@ -532,8 +532,9 @@ TextDocument::LoadStatus TextDocument::reload() {
 }
 
 bool TextDocument::save( const std::string& path ) {
-	if ( path.empty() || mDefaultFileName == path )
+	if ( path.empty() || mDefaultFileName == path  || mSaving )
 		return false;
+	mSaving = true;
 	if ( FileSystem::fileWrite( path, "" ) ) {
 		IOStreamFile file( path, "wb" );
 		std::string oldFilePath( mFilePath );
@@ -541,7 +542,6 @@ bool TextDocument::save( const std::string& path ) {
 		FileInfo oldFileInfo( mFileRealPath );
 		mFilePath = path;
 		mFileURI = URI( "file://" + mFilePath );
-		mSaving = true;
 		if ( save( file ) ) {
 			file.close();
 			mFileRealPath =

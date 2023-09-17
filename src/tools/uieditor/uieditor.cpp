@@ -1522,6 +1522,7 @@ void App::saveDoc() {
 }
 
 void App::saveAll() {
+	mTmpDocs.clear();
 	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 		if ( editor->isDirty() )
 			mTmpDocs.insert( &editor->getDocument() );
