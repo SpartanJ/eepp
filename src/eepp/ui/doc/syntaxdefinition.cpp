@@ -51,6 +51,14 @@ SyntaxDefinition& SyntaxDefinition::setFileTypes( const std::vector<std::string>
 	return *this;
 }
 
+bool SyntaxDefinition::hasExtensionPriority() const {
+	return mHasExtensionPriority;
+}
+
+void SyntaxDefinition::setExtensionPriority( bool hasExtensionPriority ) {
+	mHasExtensionPriority = hasExtensionPriority;
+}
+
 const std::vector<SyntaxPattern>& SyntaxDefinition::getPatterns() const {
 	return mPatterns;
 }

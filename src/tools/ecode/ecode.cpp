@@ -1655,6 +1655,7 @@ void App::loadFileDelayed() {
 								  UITab* tab = mSplitter->tabFromEditor( editor );
 								  if ( tab )
 									  tab->setTabSelected();
+								  updateEditorTabTitle( editor );
 							  } );
 						  } );
 	}
@@ -2013,7 +2014,7 @@ void App::closeFolder() {
 	mStatusBar->setVisible( false );
 }
 
-void App::createDocAlert( UICodeEditor* editor ) {
+void App::createDocDirtyAlert( UICodeEditor* editor ) {
 	UILinearLayout* docAlert = editor->findByClass<UILinearLayout>( "doc_alert" );
 
 	if ( docAlert )
@@ -2075,6 +2076,61 @@ void App::createDocAlert( UICodeEditor* editor ) {
 			editor->setFocus();
 		},
 		Seconds( 10.f ) );
+}
+
+void App::createDocManyLangsAlert( UICodeEditor* editor ) {
+	UILinearLayout* docAlert = editor->findByClass<UILinearLayout>( "doc_alert_manylangs" );
+
+	if ( docAlert )
+		return;
+
+	auto ext = editor->getDocument().getFileInfo().getExtension();
+	auto langs = SyntaxDefinitionManager::instance()->languagesThatSupportExtension( ext );
+
+	if ( langs.size() <= 1 )
+		return;
+
+	const auto msg = R"xml(
+	<vbox class="doc_alert doc_alert_manylangs" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" gravity-owner="true">
+		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
+			text='@string(reload_current_file, "The current document uses an extension that can be interpreted as more than one languages.&#xA;Which language is this document?")'
+		/>
+		<StackLayout class="languages" layout_width="200dp" layout_height="wrap_content" margin-right="24dp" margin-top="8dp"></StackLayout>
+		<TextView font-size="9dp" text='@string(lang_selected_default, The language selected will be set as the default language for this file extension.)' margin-top="8dp" />
+	</vbox>
+	)xml";
+	docAlert = mUISceneNode->loadLayoutFromString( msg, editor )->asType<UILinearLayout>();
+
+	UIStackLayout* stack = docAlert->findByClass<UIStackLayout>( "languages" );
+
+	if ( !stack ) {
+		docAlert->close();
+		return;
+	}
+
+	for ( const auto& lang : langs ) {
+		UIPushButton* btn = UIPushButton::New();
+		btn->setParent( stack );
+		btn->setText( lang->getLanguageName() );
+		btn->setLayoutMarginRight( PixelDensity::dpToPx( 8 ) );
+		btn->onClick( [this, editor, lang, docAlert, ext]( auto ) {
+			editor->getDocument().setSyntaxDefinition( *lang );
+			editor->disableReportSizeChangeToChilds();
+			docAlert->close();
+			editor->setFocus();
+			mConfig.languagesExtensions.priorities[ext] = lang->getLSPName();
+		} );
+	}
+
+	editor->enableReportSizeChangeToChilds();
+
+	docAlert->runOnMainThread(
+		[docAlert, editor] {
+			editor->disableReportSizeChangeToChilds();
+			docAlert->close();
+			editor->setFocus();
+		},
+		Seconds( 30.f ) );
 }
 
 void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
@@ -2294,7 +2350,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		TextDocument* doc = docEvent->getDoc();
 		if ( doc->getFileInfo() != file ) {
 			if ( doc->isDirty() ) {
-				editor->runOnMainThread( [&, editor]() { createDocAlert( editor ); } );
+				editor->runOnMainThread( [&, editor]() { createDocDirtyAlert( editor ); } );
 			} else {
 				auto hash = String::hash( docEvent->getDoc()->getFilePath() );
 				editor->removeActionsByTag( hash );
@@ -2352,6 +2408,19 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			tab->setIcon( icon->getSize( mMenuIconSize ) );
 		}
 		editor->getDocument().setHAsCpp( mProjectDocConfig.hAsCPP );
+
+		auto ext = editor->getDocument().getFileInfo().getExtension();
+		if ( SyntaxDefinitionManager::instance()->extensionCanRepresentManyLanguages( ext ) ) {
+			auto hasConfig = mConfig.languagesExtensions.priorities.find( ext );
+			const SyntaxDefinition* def = nullptr;
+			if ( hasConfig != mConfig.languagesExtensions.priorities.end() &&
+				 ( def = SyntaxDefinitionManager::instance()->getPtrByLSPName(
+					   hasConfig->second ) ) ) {
+				editor->getDocument().setSyntaxDefinition( *def );
+			} else {
+				createDocManyLangsAlert( editor );
+			}
+		}
 	};
 
 	auto docLoaded = [this, editor, docChanged]( const Event* event ) {

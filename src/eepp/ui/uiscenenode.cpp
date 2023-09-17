@@ -681,7 +681,7 @@ void UISceneNode::invalidateStyle( UIWidget* node ) {
 		}
 	}
 
-	std::vector<std::unordered_set<UIWidget*>::iterator> itEraseList;
+	std::vector<UnorderedSet<UIWidget*>::iterator> itEraseList;
 
 	for ( auto it = mDirtyStyle.begin(); it != mDirtyStyle.end(); ++it ) {
 		itNode = *it;
@@ -715,7 +715,7 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 		}
 	}
 
-	std::vector<std::unordered_set<UIWidget*>::iterator> itEraseList;
+	std::vector<UnorderedSet<UIWidget*>::iterator> itEraseList;
 
 	for ( auto it = mDirtyStyleState.begin(); it != mDirtyStyleState.end(); ++it ) {
 		itNode = *it;
@@ -754,7 +754,7 @@ void UISceneNode::invalidateLayout( UILayout* node ) {
 			}
 		}
 
-		std::vector<std::unordered_set<UILayout*>::iterator> itEraseList;
+		std::vector<UnorderedSet<UILayout*>::iterator> itEraseList;
 
 		for ( auto it = mDirtyLayouts.begin(); it != mDirtyLayouts.end(); ++it ) {
 			itNode = *it;

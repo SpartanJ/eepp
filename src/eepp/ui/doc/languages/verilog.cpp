@@ -8,7 +8,7 @@ void addVerilog() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Verilog",
-		  { "%.V$", "%.vl$", "%.vh$" },
+		  { "%.V$", "%.vl$", "%.vh$", "%.v$" },
 		  {
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "-?0x%x+" }, "number" },

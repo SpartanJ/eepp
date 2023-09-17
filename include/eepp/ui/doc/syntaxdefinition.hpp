@@ -97,6 +97,10 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setFileTypes( const std::vector<std::string>& types );
 
+	bool hasExtensionPriority() const;
+
+	void setExtensionPriority( bool hasExtensionPriority );
+
   protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;
@@ -108,6 +112,7 @@ class EE_API SyntaxDefinition {
 	std::string mLSPName;
 	bool mAutoCloseXMLTags{ false };
 	bool mVisible{ true };
+	bool mHasExtensionPriority{ false };
 };
 
 }}} // namespace EE::UI::Doc

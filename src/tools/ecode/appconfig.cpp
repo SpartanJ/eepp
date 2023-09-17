@@ -165,6 +165,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 							   "autoformatter" == creator.first || "lspclient" == creator.first );
 	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 
+	languagesExtensions.priorities = ini.getKeyMap( "languages_extensions" );
+
 	iniInfo = FileInfo( ini.path() );
 }
 
@@ -277,6 +279,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
 	for ( const auto& plugin : pluginsEnabled )
 		ini.setValueB( "plugins", plugin.first, plugin.second );
+
+	for ( const auto& langExt : languagesExtensions.priorities )
+		ini.setValue( "languages_extensions", langExt.first, langExt.second );
 
 	ini.writeFile();
 	iniState.writeFile();

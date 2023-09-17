@@ -1958,12 +1958,28 @@ std::vector<std::string> SyntaxDefinitionManager::getExtensionsPatternsSupported
 
 const SyntaxDefinition*
 SyntaxDefinitionManager::getPtrByLanguageName( const std::string& name ) const {
-	return &getByLanguageName( name );
+	for ( const auto& style : mDefinitions ) {
+		if ( style.getLanguageName() == name )
+			return &style;
+	}
+	return nullptr;
+}
+
+const SyntaxDefinition* SyntaxDefinitionManager::getPtrByLSPName( const std::string& name ) const {
+	for ( const auto& style : mDefinitions ) {
+		if ( style.getLSPName() == name )
+			return &style;
+	}
+	return nullptr;
 }
 
 const SyntaxDefinition*
 SyntaxDefinitionManager::getPtrByLanguageId( const String::HashType& id ) const {
-	return &getByLanguageId( id );
+	for ( const auto& style : mDefinitions ) {
+		if ( style.getLanguageId() == id )
+			return &style;
+	}
+	return nullptr;
 }
 
 static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
@@ -2145,14 +2161,71 @@ void SyntaxDefinitionManager::loadFromFolder( const std::string& folderPath ) {
 	}
 }
 
+std::vector<const SyntaxDefinition*>
+SyntaxDefinitionManager::languagesThatSupportExtension( std::string extension ) const {
+	std::vector<const SyntaxDefinition*> langs;
+	if ( extension.empty() )
+		return {};
+
+	if ( extension[0] != '.' )
+		extension = '.' + extension;
+
+	for ( const auto& style : mDefinitions ) {
+		for ( const auto& ext : style.getFiles() ) {
+			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+				 String::endsWith( ext, "$" ) ) {
+				LuaPattern words( ext );
+				int start, end;
+				if ( words.find( extension, start, end ) )
+					langs.push_back( &style );
+			} else if ( extension == ext ) {
+				langs.push_back( &style );
+			}
+		}
+	}
+	return langs;
+}
+
+bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string extension ) const {
+	if ( extension.empty() )
+		return false;
+	if ( extension[0] != '.' )
+		extension = '.' + extension;
+
+	int count = 0;
+	for ( const auto& style : mDefinitions ) {
+		for ( const auto& ext : style.getFiles() ) {
+			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+				 String::endsWith( ext, "$" ) ) {
+				LuaPattern words( ext );
+				int start, end;
+				if ( words.find( extension, start, end ) ) {
+					count++;
+					if ( count > 1 )
+						return true;
+				}
+			} else if ( extension == ext ) {
+				count++;
+				if ( count > 1 )
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
 const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::string& filePath,
 																 bool hFileAsCPP ) const {
 	std::string extension( FileSystem::fileExtension( filePath ) );
 	std::string fileName( FileSystem::fileNameFromPath( filePath ) );
 
+	bool extHasMultipleLangs = extensionCanRepresentManyLanguages( extension );
+
 	// Use the filename instead
 	if ( extension.empty() )
 		extension = FileSystem::fileNameFromPath( filePath );
+
+	const SyntaxDefinition* def = nullptr;
 
 	if ( !extension.empty() ) {
 		for ( const auto& style : mDefinitions ) {
@@ -2164,17 +2237,30 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 					if ( words.find( fileName, start, end ) ) {
 						if ( hFileAsCPP && style.getLSPName() == "c" && ext == "%.h$" )
 							return getByLSPName( "cpp" );
+
+						if ( extHasMultipleLangs && !style.hasExtensionPriority() ) {
+							def = &style;
+							continue;
+						}
+
 						return style;
 					}
 				} else if ( extension == ext ) {
 					if ( hFileAsCPP && style.getLSPName() == "c" && ext == ".h" )
 						return getByLSPName( "cpp" );
+
+					if ( extHasMultipleLangs && !style.hasExtensionPriority() ) {
+						def = &style;
+						continue;
+					}
+
 					return style;
 				}
 			}
 		}
 	}
-	return mDefinitions[0];
+
+	return def != nullptr ? *def : mDefinitions[0];
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string& header,

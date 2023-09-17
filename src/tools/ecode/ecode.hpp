@@ -564,7 +564,9 @@ class App : public UICodeEditorSplitter::Client {
 
 	void removeFolderWatches();
 
-	void createDocAlert( UICodeEditor* editor );
+	void createDocDirtyAlert( UICodeEditor* editor );
+
+	void createDocManyLangsAlert( UICodeEditor* editor );
 
 	void syncProjectTreeWithEditor( UICodeEditor* editor );
 

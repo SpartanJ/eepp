@@ -622,6 +622,7 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 		cleanChangeId();
 
 	mHash = MD5::result( md5Ctx ).digest;
+	mDirtyOnFileSystem = false;
 
 	return true;
 }
@@ -2043,8 +2044,10 @@ const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 }
 
 void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
-	mSyntaxDefinition = definition;
-	notifySyntaxDefinitionChange();
+	if ( &mSyntaxDefinition != &definition ) {
+		mSyntaxDefinition = definition;
+		notifySyntaxDefinitionChange();
+	}
 }
 
 Uint64 TextDocument::getCurrentChangeId() const {

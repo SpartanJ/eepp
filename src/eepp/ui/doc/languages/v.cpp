@@ -59,7 +59,7 @@ void addV() {
 		  "//",
 		  {}
 
-		} );
+		} ).setExtensionPriority( true );
 }
 
 }}}} // namespace EE::UI::Doc::Language

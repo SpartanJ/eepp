@@ -179,7 +179,7 @@ void UIStyle::removeStructurallyVolatileChild( UIWidget* widget ) {
 	mStructurallyVolatileChilds.erase( widget );
 }
 
-std::unordered_set<UIWidget*>& UIStyle::getStructurallyVolatileChilds() {
+UnorderedSet<UIWidget*>& UIStyle::getStructurallyVolatileChilds() {
 	return mStructurallyVolatileChilds;
 }
 

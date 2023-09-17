@@ -601,7 +601,7 @@ class EE_API TextDocument {
 	FileInfo mFileRealPath;
 	std::vector<TextDocumentLine> mLines;
 	TextRanges mSelection;
-	std::unordered_set<Client*> mClients;
+	UnorderedSet<Client*> mClients;
 	Mutex mClientsMutex;
 	LineEnding mLineEnding{ LineEnding::LF };
 	std::atomic<bool> mLoading{ false };

@@ -154,6 +154,10 @@ struct WorkspaceConfig {
 	bool checkForUpdatesAtStartup{ false };
 };
 
+struct LanguagesExtensions {
+	std::map<std::string, std::string> priorities;
+};
+
 class AppConfig {
   public:
 	WindowStateConfig windowState;
@@ -161,7 +165,6 @@ class AppConfig {
 	CodeEditorConfig editor;
 	DocumentConfig doc;
 	TerminalConfig term;
-	std::map<std::string, bool> pluginsConfig;
 	UIConfig ui;
 	IniFile ini;
 	IniFile iniState;
@@ -169,6 +172,7 @@ class AppConfig {
 	SearchBarConfig searchBarConfig;
 	GlobalSearchBarConfig globalSearchBarConfig;
 	WorkspaceConfig workspace;
+	LanguagesExtensions languagesExtensions;
 
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,

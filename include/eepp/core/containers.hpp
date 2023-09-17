@@ -14,15 +14,15 @@ namespace EE {
 
 template <typename Key, typename Value> using UnorderedMap = std::unordered_map<Key, Value>;
 
-template <typename Key, typename Value> using UnorderedSet = std::unordered_set<Key, Value>;
+template <typename Key> using UnorderedSet = std::unordered_set<Key>;
 
 #else
 
 template <typename Key, typename Value>
 using UnorderedMap = robin_hood::unordered_flat_map<Key, Value>;
 
-template <typename Key, typename Value>
-using UnorderedSet = robin_hood::unordered_flat_set<Key, Value>;
+template <typename Key>
+using UnorderedSet = robin_hood::unordered_flat_set<Key>;
 
 #endif
 
