@@ -16,7 +16,7 @@
 
 #if ( defined( _MSCVER ) || defined( _MSC_VER ) )
 #define EE_COMPILER_MSVC
-
+#pragma warning( disable : 4267 )
 #pragma warning( disable : 4251 )
 #pragma warning( disable : 4244 )
 #pragma warning( disable : 4996 )

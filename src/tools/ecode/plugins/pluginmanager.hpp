@@ -42,9 +42,9 @@ struct PluginVersion {
 		patch( patch ),
 		string( String::format( "%d.%d.%d", major, minor, patch ) ) {}
 
-	Uint8 major; /**< major version */
-	Uint8 minor; /**< minor version */
-	Uint8 patch; /**< update version */
+	Uint8 major{ 0 }; /**< major version */
+	Uint8 minor{ 0 }; /**< minor version */
+	Uint8 patch{ 0 }; /**< update version */
 	std::string string;
 
 	Uint32 getVersion() const { return major * 1000 + minor * 100 + patch; }
