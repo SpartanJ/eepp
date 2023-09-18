@@ -1,6 +1,7 @@
 #ifndef EE_SYSTEMTRESOURCEMANAGER_HPP
 #define EE_SYSTEMTRESOURCEMANAGER_HPP
 
+#include <eepp/core/containers.hpp>
 #include <eepp/core/string.hpp>
 #include <string>
 #include <unordered_map>
@@ -65,13 +66,39 @@ template <class T> class ResourceManager {
 	void printNames();
 
 	/** @returns A reference to the resources list of the manager. */
-	std::unordered_map<String::HashType, T*>& getResources();
+	UnorderedMap<String::HashType, T*>& getResources();
 
 	/** @brief Indicates if the resource manager is destroy the resources. */
 	const bool& isDestroying() const;
 
+	template <typename Predicate> void each( Predicate pred ) const {
+		for ( const auto& res : mResources )
+			pred( res );
+	}
+
+	template <typename Predicate> void each( Predicate pred ) {
+		for ( auto& res : mResources )
+			pred( res );
+	}
+
+	template <typename Predicate>
+	T* findIf( Predicate pred ) const {
+		for ( const auto& res : mResources )
+			if ( pred( res ) )
+				return res.second;
+		return nullptr;
+	}
+
+	template <typename Predicate>
+	T* findIf( Predicate pred ) {
+		for ( auto& res : mResources )
+			if ( pred( res ) )
+				return res.second;
+		return nullptr;
+	}
+
   protected:
-	std::unordered_map<String::HashType, T*> mResources;
+	UnorderedMap<String::HashType, T*> mResources;
 	bool mIsDestroying;
 };
 
@@ -98,7 +125,7 @@ template <class T> void ResourceManager<T>::destroy() {
 	mIsDestroying = false;
 }
 
-template <class T> std::unordered_map<String::HashType, T*>& ResourceManager<T>::getResources() {
+template <class T> UnorderedMap<String::HashType, T*>& ResourceManager<T>::getResources() {
 	return mResources;
 }
 

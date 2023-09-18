@@ -709,22 +709,11 @@ const std::vector<Linter>& LinterPlugin::getLinters() const {
 	return mLinters;
 }
 
-Linter LinterPlugin::getLinterForLang( const std::string& lang,
-									   const std::vector<std::string>& extensions ) {
+Linter LinterPlugin::getLinterForLang( const std::string& lang ) {
 	for ( const auto& linter : mLinters ) {
 		for ( const auto& clang : linter.languages ) {
 			if ( clang == lang ) {
 				return linter;
-			}
-		}
-
-		if ( !linter.files.empty() ) {
-			for ( const auto& file : linter.files ) {
-				for ( const auto& ext : extensions ) {
-					if ( ext == file ) {
-						return linter;
-					}
-				}
 			}
 		}
 	}

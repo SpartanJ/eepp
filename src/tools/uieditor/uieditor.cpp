@@ -1210,7 +1210,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 	mWindow = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default,
 						32, mResPath + "assets/icon/ee.png", pixelDensity ),
-		ContextSettings( false, GLv_default, true, 24, 1, 0, true ) );
+		ContextSettings( false, GLv_default, true, 24, 1, 4, true ) );
 
 	if ( mWindow->isOpen() ) {
 		mWindow->setFrameRateLimit( displayManager->getDisplayIndex( 0 )->getRefreshRate() );

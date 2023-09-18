@@ -78,8 +78,7 @@ class LSPClientServerManager {
 
 	const std::vector<LSPDefinition>& getLSPs() const;
 
-	LSPDefinition getLSPForLang( const std::string& lang,
-								 const std::vector<std::string>& extensions ) const;
+	LSPDefinition getLSPForLang( const std::string& lang ) const;
 
 	void getAndGoToLocation( const std::shared_ptr<TextDocument>& doc, const std::string& search,
 							 const LSPClientServer::LocationHandler& h );

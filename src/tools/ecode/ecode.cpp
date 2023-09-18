@@ -3278,6 +3278,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
 		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
+		FontFamily::loadFromRegular( mFont );
+
 		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
 		if ( mFontMono ) {
 			mFontMono->setEnableDynamicMonospace( true );

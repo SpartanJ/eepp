@@ -311,22 +311,11 @@ const std::vector<FormatterPlugin::Formatter>& FormatterPlugin::getFormatters() 
 }
 
 FormatterPlugin::Formatter
-FormatterPlugin::getFormatterForLang( const std::string& lang,
-									  const std::vector<std::string>& extensions ) {
+FormatterPlugin::getFormatterForLang( const std::string& lang ) {
 	for ( const auto& formatter : mFormatters ) {
 		for ( const auto& clang : formatter.languages ) {
 			if ( clang == lang ) {
 				return formatter;
-			}
-		}
-
-		if ( !formatter.files.empty() ) {
-			for ( const auto& file : formatter.files ) {
-				for ( const auto& ext : extensions ) {
-					if ( ext == file ) {
-						return formatter;
-					}
-				}
 			}
 		}
 	}

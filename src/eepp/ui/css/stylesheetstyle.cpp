@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 
 namespace EE { namespace UI { namespace CSS {
@@ -146,6 +147,20 @@ void StyleSheetStyle::clearProperties() {
 
 bool StyleSheetStyle::hasProperties() const {
 	return !mProperties.empty();
+}
+
+bool StyleSheetStyle::hasProperty( PropertyId id ) const {
+	return std::find_if( mProperties.begin(), mProperties.end(), [&id]( const auto& prop ) {
+			   return prop.second.getPropertyDefinition() &&
+					  prop.second.getPropertyDefinition()->getPropertyId() == id;
+		   } ) != mProperties.end();
+}
+
+bool StyleSheetStyle::hasProperty( const std::string& name ) const {
+	return std::find_if( mProperties.begin(), mProperties.end(), [&name]( const auto& prop ) {
+			   return prop.second.getPropertyDefinition() &&
+					  prop.second.getPropertyDefinition()->getName() == name;
+		   } ) != mProperties.end();
 }
 
 bool StyleSheetStyle::hasVariables() const {

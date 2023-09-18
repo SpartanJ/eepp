@@ -318,7 +318,8 @@ static void addBash() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Shell script",
-		  { "%.sh$", "%.bash$", "^%.bashrc$", "^%.bash_profile$", "^%.profile$" },
+		  { "%.sh$", "%.bash$", "^%.bashrc$", "^%.bash_profile$", "^%.profile$", "%.zsh$",
+			"%.fish$" },
 		  {
 			  { { "$[%a_@*#][%w_]*" }, "keyword2" },
 			  { { "#.*\n" }, "comment" },

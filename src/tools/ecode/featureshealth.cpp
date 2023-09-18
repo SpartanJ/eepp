@@ -64,7 +64,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		lang.syntaxHighlighting = true;
 
 		if ( linter ) {
-			Linter found = linter->getLinterForLang( def.getLSPName(), def.getFiles() );
+			Linter found = linter->getLinterForLang( def.getLSPName() );
 			if ( !found.command.empty() ) {
 				lang.linter.name = String::split( found.command, ' ' )[0];
 				lang.linter.path = Sys::which( lang.linter.name );
@@ -75,7 +75,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 
 		if ( formatter ) {
 			FormatterPlugin::Formatter found =
-				formatter->getFormatterForLang( def.getLSPName(), def.getFiles() );
+				formatter->getFormatterForLang( def.getLSPName() );
 			if ( !found.command.empty() ) {
 				lang.formatter.name = found.type == FormatterPlugin::FormatterType::Native
 										  ? "native"
@@ -89,7 +89,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 
 		if ( lsp ) {
 			LSPDefinition found =
-				lsp->getClientManager().getLSPForLang( def.getLSPName(), def.getFiles() );
+				lsp->getClientManager().getLSPForLang( def.getLSPName() );
 			if ( !found.command.empty() ) {
 				lang.lsp.name = found.name;
 				lang.lsp.url = found.url;
@@ -392,7 +392,7 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 							   : String::format( "Anchor href='%s'", lang.lsp.url.c_str() );
 		std::string l = String::format(
 			R"xml(
-			<hbox><TextView text='%s: ' /><TextView text='%s' style="font-style: bold" /></hbox>
+			<hbox><TextView text='%s: ' /><TextView text='%s' font-style="bold" /></hbox>
 			<hbox><TextView text='%s: ' /><TextView text='%s' class="success" /></hbox>
 			<hbox><TextView text='%s: ' /><%s text='%s' class='%s' /></hbox>
 		)xml",

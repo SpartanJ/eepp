@@ -53,6 +53,9 @@ cp -r ../../../bin/assets/fonts/codicon.ttf ecode.app/Contents/MacOS/assets/font
 cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/Contents/MacOS/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Bold.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Italic.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-BoldItalic.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode.app/Contents/MacOS/assets/fonts/
 cp -r ../../../bin/assets/plugins ecode.app/Contents/MacOS/assets/

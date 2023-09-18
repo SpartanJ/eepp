@@ -46,7 +46,7 @@ class EE_API Font {
 	typedef std::function<void( Uint32, Event, Font* )> FontEventCallback;
 
 	struct Info {
-		std::string family; ///< The font family
+		std::string family;	  ///< The font family
 		std::string fontpath; ///< The directory path of the font
 		std::string filename; ///< The file name
 	};
@@ -110,17 +110,21 @@ class EE_API Font {
 
 	virtual Texture* getTexture( unsigned int characterSize ) const = 0;
 
+	virtual Uint32 getFontStyle() const;
+
+	virtual bool isRegular() const { return !isBold() && !isItalic(); }
+
 	virtual bool isBold() const { return false; }
 
 	virtual bool isItalic() const { return false; }
 
 	virtual bool isBoldItalic() const { return false; }
 
-	virtual bool hasBold() { return false; }
+	virtual bool hasBold() const { return false; }
 
-	virtual bool hasItalic() { return false; }
+	virtual bool hasItalic() const { return false; }
 
-	virtual bool hasBoldItalic() { return false; }
+	virtual bool hasBoldItalic() const { return false; }
 
 	virtual bool loaded() const = 0;
 

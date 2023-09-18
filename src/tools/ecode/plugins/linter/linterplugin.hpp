@@ -104,7 +104,7 @@ class LinterPlugin : public Plugin {
 
 	const std::vector<Linter>& getLinters() const;
 
-	Linter getLinterForLang( const std::string& lang, const std::vector<std::string>& extensions );
+	Linter getLinterForLang( const std::string& lang );
 
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );

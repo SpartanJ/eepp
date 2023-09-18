@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 11.0.2, 2023-09-13T15:08:33. -->
+<!-- Written by QtCreator 11.0.2, 2023-09-18T00:32:02. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1114,10 +1114,9 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-UIEditor-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
-    <value type="QString" key="RunConfiguration.Arguments"> -u</value>
-    <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>
-    <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">false</value>
-    <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
+    <value type="QString" key="RunConfiguration.Arguments"> -u --css=assets/layouts/test.css --xml=assets/layouts/test.xml</value>
+    <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
+    <value type="int" key="RunConfiguration.UseQmlDebugger">1</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">false</value>
     <value type="bool" key="RunConfiguration.UseTerminal">false</value>
     <value type="QString" key="RunConfiguration.WorkingDirectory">%{buildDir}../../../bin/</value>

@@ -70,7 +70,7 @@ class FormatterPlugin : public Plugin {
 
 	const std::vector<Formatter>& getFormatters() const;
 
-	Formatter getFormatterForLang( const std::string& lang, const std::vector<std::string>& ext );
+	Formatter getFormatterForLang( const std::string& lang );
 
   protected:
 	std::vector<Formatter> mFormatters;

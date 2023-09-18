@@ -925,63 +925,87 @@ void UISceneNode::loadGlyphIcon( const StyleSheetStyleVector& styles ) {
 }
 
 void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
+	auto loadFont = [this]( const std::string& familyName, const CSS::StyleSheetProperty& srcProp,
+							Font* fontFamily, Uint32 fontStyle ) {
+		auto trySetFontFamily = []( Font* fontFamily, Uint32 fontStyle, FontTrueType* font ) {
+			if ( fontFamily && fontFamily->getType() == FontType::TTF && fontStyle ) {
+				FontTrueType* ttf = static_cast<FontTrueType*>( fontFamily );
+				if ( fontStyle == ( Text::Italic | Text::Bold ) ) {
+					ttf->setBoldItalicFont( font );
+				} else if ( fontStyle == Text::Italic ) {
+					ttf->setItalicFont( font );
+				} else if ( fontStyle == Text::Bold ) {
+					ttf->setBoldFont( font );
+				}
+			}
+		};
+
+		std::string path( srcProp.getValue() );
+		FunctionString func( FunctionString::parse( path ) );
+
+		if ( !func.getParameters().empty() && func.getName() == "url" )
+			path = func.getParameters().at( 0 );
+
+		if ( String::startsWith( path, "file://" ) ) {
+			std::string filePath( path.substr( 7 ) );
+
+			FontTrueType* font = FontTrueType::New( familyName );
+
+			font->loadFromFile( filePath );
+			trySetFontFamily( fontFamily, fontStyle, font );
+
+			mFontFaces.push_back( font );
+			runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
+		} else if ( String::startsWith( path, "http://" ) ||
+					String::startsWith( path, "https://" ) ) {
+			Http::getAsync(
+				[this, fontStyle, familyName, fontFamily,
+				 trySetFontFamily]( const Http&, Http::Request&, Http::Response& response ) {
+					FontTrueType* font = FontTrueType::New( familyName );
+
+					if ( !response.getBody().empty() ) {
+						font->loadFromMemory( &response.getBody()[0], response.getBody().size() );
+						trySetFontFamily( fontFamily, fontStyle, font );
+						mFontFaces.push_back( font );
+						runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
+					}
+				},
+				URI( path ), Seconds( 5 ) );
+		} else if ( VFS::instance()->fileExists( path ) ) {
+			FontTrueType* font = FontTrueType::New( familyName );
+
+			IOStream* stream = VFS::instance()->getFileFromPath( path );
+			font->loadFromStream( *stream );
+			trySetFontFamily( fontFamily, fontStyle, font );
+
+			mFontFaces.push_back( font );
+			runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
+		}
+	};
+
 	for ( auto& style : styles ) {
 		auto family = style->getPropertyById( PropertyId::FontFamily );
 		auto src = style->getPropertyById( PropertyId::Src );
 		if ( src == nullptr || family == nullptr )
 			return;
+		auto fontStyleProp = style->getPropertyById( PropertyId::FontStyle );
+		Uint32 fontStyle = fontStyleProp ? fontStyleProp->asFontStyle() : 0;
+
 		CSS::StyleSheetProperty familyProp( *family );
 		CSS::StyleSheetProperty srcProp( *src );
 
-		if ( !familyProp.isEmpty() && !srcProp.isEmpty() ) {
-			Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
+		if ( familyProp.isEmpty() || srcProp.isEmpty() )
+			return;
 
-			if ( NULL == fontSearch ) {
-				std::string path( srcProp.getValue() );
-				FunctionString func( FunctionString::parse( path ) );
+		Font* fontSearch = FontManager::instance()->getByName( familyProp.getValue() );
+		std::string fontFamily( String::trim( familyProp.getValue(), '"' ) );
+		if ( fontStyle )
+			fontFamily += "#" + Text::styleFlagToString( fontStyle );
 
-				if ( !func.getParameters().empty() && func.getName() == "url" ) {
-					path = func.getParameters().at( 0 );
-				}
-
-				if ( String::startsWith( path, "file://" ) ) {
-					std::string filePath( path.substr( 7 ) );
-
-					FontTrueType* font =
-						FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
-
-					font->loadFromFile( filePath );
-
-					mFontFaces.push_back( font );
-					runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
-				} else if ( String::startsWith( path, "http://" ) ||
-							String::startsWith( path, "https://" ) ) {
-					std::string familyName = familyProp.getValue();
-					Http::getAsync(
-						[&, familyName]( const Http&, Http::Request&, Http::Response& response ) {
-							FontTrueType* font =
-								FontTrueType::New( String::trim( familyName, '"' ) );
-
-							if ( !response.getBody().empty() ) {
-								font->loadFromMemory( &response.getBody()[0],
-													  response.getBody().size() );
-								mFontFaces.push_back( font );
-								runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
-							}
-						},
-						URI( path ), Seconds( 5 ) );
-				} else if ( VFS::instance()->fileExists( path ) ) {
-					FontTrueType* font =
-						FontTrueType::New( String::trim( familyProp.getValue(), '"' ) );
-
-					IOStream* stream = VFS::instance()->getFileFromPath( path );
-
-					font->loadFromStream( *stream );
-
-					mFontFaces.push_back( font );
-					runOnMainThread( [this] { mRoot->reloadFontFamily(); } );
-				}
-			}
+		if ( nullptr == fontSearch ) {
+			loadFont( fontFamily, srcProp, nullptr, fontStyle );
+		} else if ( fontSearch->isRegular() && fontSearch->getFontStyle() != fontStyle ) {
+			loadFont( fontFamily, srcProp, fontSearch, fontStyle );
 		}
 	}
 }

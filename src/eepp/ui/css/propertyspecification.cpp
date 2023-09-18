@@ -14,7 +14,7 @@ PropertyDefinition& PropertySpecification::registerProperty( const std::string& 
 	PropertyDefinition* property = const_cast<PropertyDefinition*>( getProperty( propertyVame ) );
 
 	if ( nullptr != property ) {
-		Log::warning( "Property %s already registered.", propertyVame.c_str() );
+		Log::warning( "Property \"%s\" already registered.", propertyVame.c_str() );
 		return *property;
 	}
 

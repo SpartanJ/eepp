@@ -102,19 +102,17 @@ class EE_API FontTrueType : public Font {
 
 	void setAntialiasing( FontAntialiasing antialiasing );
 
-	bool isRegular() const { return !mIsBold && !mIsItalic; }
-
 	virtual bool isBold() const { return mIsBold && !mIsItalic; }
 
 	virtual bool isItalic() const { return mIsItalic && !mIsBold; }
 
 	virtual bool isBoldItalic() const { return mIsBold && mIsItalic; }
 
-	virtual bool hasBold() { return mIsBold || mFontBold != nullptr; }
+	virtual bool hasBold() const { return mIsBold || mFontBold != nullptr; }
 
-	virtual bool hasItalic() { return mIsItalic || mFontItalic != nullptr; }
+	virtual bool hasItalic() const { return mIsItalic || mFontItalic != nullptr; }
 
-	virtual bool hasBoldItalic() { return isBoldItalic() || mFontBoldItalic; }
+	virtual bool hasBoldItalic() const { return isBoldItalic() || mFontBoldItalic; }
 
 	FontTrueType* getBoldFont() const { return mFontBold; }
 

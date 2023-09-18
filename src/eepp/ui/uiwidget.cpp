@@ -1165,7 +1165,7 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector
 
 bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
 	if ( property.getPropertyDefinition() == NULL ) {
-		Log::warning( "applyProperty: Property %s not defined!", property.getName().c_str() );
+		Log::warning( "applyProperty: Property \"%s\" not defined!", property.getName().c_str() );
 		return false;
 	}
 	return true;
