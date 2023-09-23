@@ -369,7 +369,9 @@ Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
 	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
 	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this )
-		sendMouseEvent( Event::MouseOver, Pos, Flags );
+		sendMouseEvent( Event::MouseEnter, Pos, Flags );
+
+	sendMouseEvent( Event::MouseOver, Pos, Flags );
 
 	return 1;
 }
@@ -384,6 +386,8 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 
 	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this )
 		sendMouseEvent( Event::MouseLeave, Pos, Flags );
+
+	sendMouseEvent( Event::MouseOut, Pos, Flags );
 
 	return 1;
 }
@@ -1220,6 +1224,7 @@ void Node::onParentSizeChange( const Vector2f& ) {
 }
 
 void Node::onChildCountChange( Node*, const bool& ) {
+	sendCommonEvent( Event::OnChildCountChanged );
 	invalidateDraw();
 }
 

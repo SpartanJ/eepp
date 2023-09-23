@@ -186,6 +186,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onOpenMenuModelIndex( const ModelIndex& index,
 									   const Event* triggerEvent = nullptr );
 
+	virtual void onRowCreated( UITableRow* row );
+
 	virtual void onSortColumn( const size_t& colIndex );
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );

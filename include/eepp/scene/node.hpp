@@ -435,7 +435,7 @@ class EE_API Node : public Transformable {
 	bool hasEventsOfType( const Uint32& eventType ) const;
 
   protected:
-	typedef std::unordered_map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
+	typedef UnorderedMap<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;
 
 	std::string mId;

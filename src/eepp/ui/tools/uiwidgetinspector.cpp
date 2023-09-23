@@ -45,6 +45,17 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	)xml";
 	UIWidget* cont = sceneNode->loadLayoutFromString( WIDGET_LAYOUT, uiWin->getContainer() );
 	UITreeView* widgetTree = cont->findByType<UITreeView>( UI_TYPE_TREEVIEW );
+	widgetTree->on( Event::OnRowCreated, []( const Event* event ) {
+		UITableRow* row = event->asRowCreatedEvent()->getRow();
+		row->on( Event::MouseOver, [row]( const Event* ) {
+			if ( row->getCurIndex().internalData() && row->getCurIndex().ref<Node>()->isUINode() )
+				row->getCurIndex().ref<UINode>()->setFlags( UI_HIGHLIGHT );
+		} );
+		row->on( Event::MouseLeave, [row]( const Event* ) {
+			if ( row->getCurIndex().internalData() && row->getCurIndex().ref<Node>()->isUINode() )
+				row->getCurIndex().ref<UINode>()->unsetFlags( UI_HIGHLIGHT );
+		} );
+	} );
 	widgetTree->setHeadersVisible( true );
 	widgetTree->setExpanderIconSize( menuIconSize );
 	widgetTree->setAutoColumnsWidth( true );

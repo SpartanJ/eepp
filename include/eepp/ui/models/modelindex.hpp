@@ -25,6 +25,8 @@ class EE_API ModelIndex {
 
 	void* internalData() const { return mData; }
 
+	template <typename T> T* ref() const { return static_cast<T*>( mData ); }
+
 	Int64 internalId() const { return mInternalId; }
 
 	ModelIndex parent() const;

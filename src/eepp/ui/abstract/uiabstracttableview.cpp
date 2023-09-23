@@ -391,19 +391,33 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t>& columns 
 
 	// Check if the columns visible are the same
 	if ( !mColumn.empty() && !columns.empty() ) {
-		// TODO: Do not limit the column count to 64
-		Uint64 colFlags = 0;
-		Uint64 newColFlags = 0;
-		for ( size_t i = 0; i < mColumn.size(); ++i ) {
-			if ( mColumn[i].visible )
-				colFlags |= 1 << i;
+		if ( mColumn.size() < 64 ) {
+			Uint64 colFlags = 0;
+			Uint64 newColFlags = 0;
+			for ( size_t i = 0; i < mColumn.size(); ++i ) {
+				if ( mColumn[i].visible )
+					colFlags |= 1 << i;
+			}
+
+			for ( auto col : columns )
+				newColFlags |= 1 << col;
+
+			if ( colFlags == newColFlags )
+				return;
+		} else {
+			// Should use a dynamic_bitset
+			std::vector<bool> colFlags( mColumn.size() );
+			std::vector<bool> newColFlags( mColumn.size() );
+
+			for ( size_t i = 0; i < mColumn.size(); ++i )
+				colFlags[i] = mColumn[i].visible;
+
+			for ( size_t col : columns )
+				newColFlags[col] = true;
+
+			if ( colFlags == newColFlags )
+				return;
 		}
-
-		for ( auto col : columns )
-			newColFlags |= 1 << col;
-
-		if ( colFlags == newColFlags )
-			return;
 	}
 
 	for ( size_t i = 0; i < getModel()->columnCount(); i++ )
@@ -431,7 +445,7 @@ UITableRow* UIAbstractTableView::createRow() {
 	rowWidget->setParent( this );
 	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	rowWidget->reloadStyle( true, true, true );
-	rowWidget->addEventListener( Event::MouseDown, [this]( const Event* event ) {
+	rowWidget->on( Event::MouseDown, [this]( const Event* event ) {
 		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) || !isRowSelection() )
 			return;
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
@@ -440,7 +454,9 @@ UITableRow* UIAbstractTableView::createRow() {
 		} else {
 			getSelection().set( index );
 		}
+
 	} );
+	onRowCreated( rowWidget );
 	return rowWidget;
 }
 
@@ -669,6 +685,11 @@ void UIAbstractTableView::onOpenMenuModelIndex( const ModelIndex& index,
 												const Event* triggerEvent ) {
 	ModelEvent event( getModel(), index, this, ModelEventType::OpenMenu, triggerEvent );
 	sendEvent( &event );
+}
+
+void UIAbstractTableView::onRowCreated( UITableRow* row ) {
+	RowCreatedEvent rowEvent( this, Event::OnRowCreated, row );
+	sendEvent( &rowEvent );
 }
 
 void UIAbstractTableView::onSortColumn( const size_t& colIndex ) {

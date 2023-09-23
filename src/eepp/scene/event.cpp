@@ -49,4 +49,8 @@ const ItemValueEvent* Event::asItemValueEvent() const {
 	return static_cast<const ItemValueEvent*>( this );
 }
 
+const RowCreatedEvent* Event::asRowCreatedEvent() const {
+	return static_cast<const RowCreatedEvent*>( this );
+}
+
 }} // namespace EE::Scene
