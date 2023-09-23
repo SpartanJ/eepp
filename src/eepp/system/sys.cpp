@@ -1014,22 +1014,6 @@ std::vector<std::string> Sys::getLogicalDrives() {
 #endif
 }
 
-static std::string getenv( const std::string& name ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC )
-	wchar_t* envbuf;
-	size_t envsize;
-	_wdupenv_s( &envbuf, &envsize, String( name ).toWideString().c_str() );
-	std::string env;
-	if ( NULL != envbuf )
-		env = String::fromWide( envbuf ).toUtf8();
-	free( envbuf );
-	return env;
-#else
-	char* env = ::getenv( name.c_str() );
-	return NULL == env ? std::string() : std::string( env );
-#endif
-}
-
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #define PATH_SEP_CHAR ';'
 #else
@@ -1037,10 +1021,9 @@ static std::string getenv( const std::string& name ) {
 #endif
 std::string Sys::which( const std::string& exeName,
 						const std::vector<std::string>& customSearchPaths ) {
-	std::string PATH = getenv( "PATH" );
-	std::vector<std::string> PATHS = String::split( PATH, PATH_SEP_CHAR );
+	std::vector<std::string> PATHS = getEnvSplitted( "PATH" );
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	static std::vector<std::string> PATHEXTS = String::split( getenv( "PATHEXT" ), PATH_SEP_CHAR );
+	static std::vector<std::string> PATHEXTS = getEnvSplitted( "PATHEXT" );
 	std::string exePath;
 #endif
 
@@ -1080,6 +1063,26 @@ std::string Sys::which( const std::string& exeName,
 #endif
 	}
 	return "";
+}
+
+std::string Sys::getEnv( const std::string& name ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC )
+	wchar_t* envbuf;
+	size_t envsize;
+	_wdupenv_s( &envbuf, &envsize, String( name ).toWideString().c_str() );
+	std::string env;
+	if ( NULL != envbuf )
+		env = String::fromWide( envbuf ).toUtf8();
+	free( envbuf );
+	return env;
+#else
+	char* env = ::getenv( name.c_str() );
+	return NULL == env ? std::string() : std::string( env );
+#endif
+}
+
+std::vector<std::string> Sys::getEnvSplitted( const std::string& name ) {
+	return String::split( getEnv( name.c_str() ), PATH_SEP_CHAR );
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN

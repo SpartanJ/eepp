@@ -21,6 +21,8 @@
 #include <windows.h>
 #endif
 
+#define CHUNK_SIZE 4096
+
 namespace EE { namespace System {
 
 #define PROCESS_PTR ( static_cast<struct subprocess_s*>( mProcess ) )
@@ -141,16 +143,16 @@ bool Process::create( const std::string& command, const std::string& args, const
 }
 
 size_t Process::readAllStdOut( std::string& buffer ) {
+	if ( buffer.empty() )
+		buffer.resize( CHUNK_SIZE );
 	size_t bytesRead = 0;
 	size_t totalBytesRead = 0;
-	const size_t chunkSize = mBufferSize;
 	totalBytesRead = bytesRead = readStdOut( (char* const)buffer.c_str(), buffer.size() );
 	while ( bytesRead != 0 && isAlive() && !mShuttingDown ) {
-		bytesRead = readStdOut( (char* const)buffer.c_str() + bytesRead, chunkSize );
-		if ( bytesRead ) {
-			totalBytesRead += bytesRead;
-			buffer.resize( totalBytesRead + chunkSize );
-		}
+		if ( totalBytesRead + CHUNK_SIZE > buffer.size() )
+			buffer.resize( totalBytesRead + CHUNK_SIZE );
+		bytesRead = readStdOut( (char* const)buffer.c_str() + totalBytesRead, CHUNK_SIZE );
+		totalBytesRead += bytesRead;
 	}
 	return totalBytesRead;
 }
@@ -165,16 +167,16 @@ size_t Process::readStdOut( char* const buffer, const size_t& size ) {
 }
 
 size_t Process::readAllStdErr( std::string& buffer ) {
+	if ( buffer.empty() )
+		buffer.resize( CHUNK_SIZE );
 	size_t bytesRead = 0;
-	size_t totalBytesRead = 0;
-	const size_t chunkSize = 4096;
+	size_t totalBytesRead = 0;	
 	totalBytesRead = bytesRead = readStdErr( (char* const)buffer.c_str(), buffer.size() );
 	while ( bytesRead != 0 && isAlive() && !mShuttingDown ) {
-		bytesRead = readStdErr( (char* const)buffer.c_str() + bytesRead, chunkSize );
-		if ( bytesRead ) {
-			totalBytesRead += bytesRead;
-			buffer.resize( totalBytesRead + chunkSize );
-		}
+		if ( totalBytesRead + CHUNK_SIZE > buffer.size() )
+			buffer.resize( totalBytesRead + CHUNK_SIZE );
+		bytesRead = readStdErr( (char* const)buffer.c_str() + totalBytesRead, CHUNK_SIZE );
+		totalBytesRead += bytesRead;
 	}
 	return totalBytesRead;
 }
