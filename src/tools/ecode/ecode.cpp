@@ -3104,6 +3104,7 @@ void App::loadFolder( const std::string& path ) {
 		mSplitter->getCurWidget()->setFocus();
 }
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 static std::string getDefaultShell() {
 	std::string shell = Sys::getEnv( "SHELL" );
 	if ( !shell.empty() )
@@ -3141,6 +3142,7 @@ static std::string getShellEnv( const std::string& env, const std::string& defSh
 	}
 	return "";
 }
+#endif
 
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
@@ -3297,8 +3299,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		}
 
 		if ( mWindow->isWindowed() && mWindow->getSize() >= currentDisplay->getSize().asInt() ) {
-			mWindow->setPosition( mWindow->getBorderSize().getWidth(),
-								  mWindow->getBorderSize().getHeight() );
+			auto borderSize( mWindow->getBorderSize() );
+			mWindow->setPosition( borderSize.getWidth(), borderSize.getHeight() );
 		}
 
 		loadKeybindings();
@@ -3317,6 +3319,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mWindow->setCloseRequestCallback(
 			[this]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
+
+		mWindow->setQuitCallback( [this]( EE::Window::Window* win ) {
+			if ( mWindow->isOpen() )
+				onCloseRequestCallback( win );
+		} );
 
 		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
 			if ( event->Type == InputEvent::FileDropped ) {

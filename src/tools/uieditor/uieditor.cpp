@@ -1220,6 +1220,11 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mWindow->setCloseRequestCallback(
 			[this]( auto* window ) -> bool { return onCloseRequestCallback( window ); } );
 
+		mWindow->setQuitCallback( [this]( EE::Window::Window* win ) {
+			if ( mWindow->isOpen() )
+				onCloseRequestCallback( win );
+		} );
+
 		mResPath = Sys::getProcessPath();
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 		if ( String::contains( mResPath, "eepp-UIEditor.app" ) ) {

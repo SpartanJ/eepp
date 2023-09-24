@@ -219,7 +219,7 @@ void Input::processEvent( InputEvent* Event ) {
 			break;
 		}
 		case InputEvent::Quit: {
-			mWindow->onCloseRequest();
+			mWindow->onQuit();
 			break;
 		}
 	}

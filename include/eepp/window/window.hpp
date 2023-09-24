@@ -160,6 +160,7 @@ class EE_API Window {
   public:
 	typedef std::function<void( Window* )> WindowResizeCallback;
 	typedef std::function<bool( Window* )> WindowRequestCloseCallback;
+	typedef std::function<void( Window* )> WindowQuitCallback;
 
 	Window( WindowSettings Settings, ContextSettings Context, Clipboard* Clipboard, Input* Input,
 			CursorManager* CursorManager );
@@ -464,6 +465,8 @@ class EE_API Window {
 
 	void setCloseRequestCallback( const WindowRequestCloseCallback& closeRequestCallback );
 
+	void setQuitCallback( const WindowQuitCallback& quitCallback );
+
 	/** In case of a frame rate limit is set, this will return the time spent sleeping per second.
 	 */
 	const System::Time& getSleepTimePerSecond() const;
@@ -500,6 +503,7 @@ class EE_API Window {
 	Uint32 mNumCallBacks;
 	std::map<Uint32, WindowResizeCallback> mCallbacks;
 	WindowRequestCloseCallback mCloseRequestCallback;
+	WindowQuitCallback mQuitCallback;
 	Sizei mLastWindowedSize;
 
 	class FrameData {
@@ -559,6 +563,8 @@ class EE_API Window {
 	void logFailureInit( const std::string& ClassName, const std::string& BackendName );
 
 	void onCloseRequest();
+
+	void onQuit();
 };
 
 }} // namespace EE::Window

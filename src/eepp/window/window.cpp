@@ -142,6 +142,10 @@ void Window::setCloseRequestCallback( const WindowRequestCloseCallback& closeReq
 	mCloseRequestCallback = closeRequestCallback;
 }
 
+void Window::setQuitCallback( const WindowQuitCallback& quitCallback ) {
+	mQuitCallback = quitCallback;
+}
+
 void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width,
 						  const Uint32& Height ) {
 	GLi->viewport( x, getHeight() - ( y + Height ), Width, Height );
@@ -476,11 +480,15 @@ void Window::logFailureInit( const std::string& ClassName, const std::string& Ba
 }
 
 void Window::onCloseRequest() {
-	if ( mCloseRequestCallback && !mCloseRequestCallback( this ) ) {
+	if ( mCloseRequestCallback && !mCloseRequestCallback( this ) )
 		return;
-	}
 
 	close();
+}
+
+void Window::onQuit() {
+	if ( mQuitCallback )
+		mQuitCallback( this );
 }
 
 std::string Window::getTitle() {
