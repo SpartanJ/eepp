@@ -3266,7 +3266,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			// that the environment is more friendly for any new user
 			std::string path( Sys::getEnv( "PATH" ) );
 			std::string shellPath( getShellEnv( "PATH", mConfig.term.shell ) );
-			if ( String::hash( path ) != String::hash( shellPath ) ) {
+			if ( !shellPath.empty() && String::hash( path ) != String::hash( shellPath ) ) {
 				auto pathSpl = String::split( path, ':' );
 				auto shellPathSpl = String::split( shellPath, ':' );
 				std::vector<std::string> paths;
@@ -3276,8 +3276,10 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 					if ( std::find( paths.begin(), paths.end(), shellPath ) == paths.end() )
 						paths.emplace_back( std::move( shellPath ) );
 				}
-				std::string newPath = String::join( paths, ':' );
-				setenv( "PATH", newPath.c_str(), 1 );
+				if ( pathSpl.size() != paths.size() ) {
+					std::string newPath = String::join( paths, ':' );
+					setenv( "PATH", newPath.c_str(), 1 );
+				}
 			}
 		} );
 #endif
