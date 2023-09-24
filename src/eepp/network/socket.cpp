@@ -57,7 +57,7 @@ void Socket::create( SocketHandle handle ) {
 			}
 
 // On Mac OS X, disable the SIGPIPE signal on disconnection
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 			if ( setsockopt( mSocket, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<char*>( &yes ),
 							 sizeof( yes ) ) == -1 ) {
 				Log::error( "Failed to set socket option \"SO_NOSIGPIPE\"" );

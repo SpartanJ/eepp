@@ -10,7 +10,7 @@ struct __glXContextRec;
 #else
 struct __GLXcontextRec;
 #endif
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
 struct __AGLContextRec;
 #endif
 #endif
@@ -32,7 +32,7 @@ typedef struct __GLXcontextRec* GLXContext;
 
 typedef GLXContext eeWindowContex;
 
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
 
 typedef struct __AGLContextRec* AGLContext;
 

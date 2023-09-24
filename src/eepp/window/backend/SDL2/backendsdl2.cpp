@@ -21,7 +21,7 @@ WindowBackendSDL2::WindowBackendSDL2() : WindowBackendLibrary() {
 }
 
 WindowBackendSDL2::~WindowBackendSDL2() {
-#if EE_PLATFORM != EE_PLATFORM_MACOSX
+#if EE_PLATFORM != EE_PLATFORM_MACOS
 	SDL_Quit();
 #endif
 }

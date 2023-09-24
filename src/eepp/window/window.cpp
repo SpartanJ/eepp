@@ -490,7 +490,7 @@ std::string Window::getTitle() {
 eeWindowContex Window::getContext() const {
 #if defined( EE_GLEW_AVAILABLE ) &&                                   \
 	( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || \
-	  EE_PLATFORM == EE_PLATFORM_MACOSX )
+	  EE_PLATFORM == EE_PLATFORM_MACOS )
 	return mWindow.Context;
 #else
 	return 0;

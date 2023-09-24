@@ -21,7 +21,7 @@
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || \
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
 	EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #define SDL2_THREADED_GLCONTEXT
@@ -272,7 +272,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, mWindow.ContextConfig.Multisamples );
 	}
 
-#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_IOS && \
+#if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_IOS && \
 	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	mWindow.WindowConfig.Width *= mWindow.WindowConfig.PixelDensity;
 	mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;

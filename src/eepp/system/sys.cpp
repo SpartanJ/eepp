@@ -19,7 +19,7 @@
 #include <sys/utsname.h>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 #include <libproc.h>
 #include <unistd.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -48,7 +48,7 @@
 #include <stdlib.h>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
 #include <sys/mount.h>
 #include <sys/sysctl.h>
@@ -386,7 +386,7 @@ std::string Sys::getPlatform() {
 	return "Haiku";
 #elif EE_PLATFORM == EE_PLATFORM_IOS
 	return "iOS";
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
 	return "macOS";
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 	return "Solaris";
@@ -485,7 +485,7 @@ void Sys::sleep( const Time& time ) {
 }
 
 static std::string sGetProcessPath() {
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pid_t pid = getpid();
 	int ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
@@ -674,7 +674,7 @@ std::string Sys::getConfigPath( const std::string& appname ) {
 	_snprintf( path, EE_MAX_CFG_PATH_LEN, "%s\\%s", home, appname.c_str() );
 
 #endif
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
 	char* home = getenv( "HOME" );
 
 	if ( NULL == home ) {
@@ -771,7 +771,7 @@ int Sys::getCPUCount() {
 	nprocs = sysconf( _SC_NPROCESSORS_ONLN );
 #elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	return EM_ASM_INT( { return navigator.hardwareConcurrency; } );
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
 	int mib[2];
 	int maxproc = 1;
@@ -967,7 +967,7 @@ std::vector<std::string> Sys::getLogicalDrives() {
 	}
 	endmntent( file );
 	return ret;
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
 	std::vector<std::string> ret;
 	struct statfs* mounts;
@@ -1021,6 +1021,10 @@ std::vector<std::string> Sys::getLogicalDrives() {
 #endif
 std::string Sys::which( const std::string& exeName,
 						const std::vector<std::string>& customSearchPaths ) {
+	if ( exeName.find_first_of( FileSystem::getOSSlash() ) != std::string::npos &&
+		 FileSystem::fileExists( exeName ) )
+		return exeName;
+
 	std::vector<std::string> PATHS = getEnvSplitted( "PATH" );
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	static std::vector<std::string> PATHEXTS = getEnvSplitted( "PATHEXT" );

@@ -32,7 +32,7 @@ using json = nlohmann::json;
 #endif
 #include <backward-cpp/backward.hpp>
 #endif
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 #include "macos/macos.hpp"
 #endif
 
@@ -1822,7 +1822,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
 			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
 			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
 			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
@@ -1865,7 +1865,7 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
 			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
 			{ "switch-to-last-tab", "alt+0" },
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 			{ "menu-toggle", "mod+shift+m" },
 #endif
 	};
@@ -3104,6 +3104,44 @@ void App::loadFolder( const std::string& path ) {
 		mSplitter->getCurWidget()->setFocus();
 }
 
+static std::string getDefaultShell() {
+	std::string shell = Sys::getEnv( "SHELL" );
+	if ( !shell.empty() )
+		return shell;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return "cmd";
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	return "zsh";
+#else
+	return "bash";
+#endif
+}
+
+static std::string getShellEnv( const std::string& env, const std::string& defShell = "" ) {
+	std::string shell = defShell.empty() ? Sys::which( getDefaultShell() ) : defShell;
+	Process process;
+	if ( process.create( shell, "-c env", Process::getDefaultOptions() ) ) {
+		size_t envLen = env.size();
+		std::string buf( 32 * 1024, '\0' );
+		process.readAllStdOut( buf );
+		auto pathPos = buf.find( "\n" + env + "=" );
+		bool startsWithPath = false;
+		if ( pathPos == std::string::npos && buf.substr( 0, envLen + 1 ) == env + "=" )
+			startsWithPath = true;
+		if ( pathPos != std::string::npos || startsWithPath ) {
+			pathPos += startsWithPath ? envLen + 1 : envLen + 2; // Remove \n + env + "="
+			auto endPathPos = buf.find_first_of( "\r\n", pathPos );
+			if ( endPathPos != std::string::npos ) {
+				size_t len = endPathPos - pathPos;
+				return buf.substr( pathPos, len );
+			} else {
+				return buf.substr( pathPos );
+			}
+		}
+	}
+	return "";
+}
+
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
 	if ( FileSystem::isRelativePath( fontPath ) )
@@ -3190,7 +3228,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			winSettings.Icon = mResPath + winSettings.Icon;
 	}
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", true );
 #else
 	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", false );
@@ -3219,8 +3257,29 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			return;
 		}
 #endif
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 		macOS_CreateApplicationMenus();
+
+		mThreadPool->run( [this]() {
+			// Checks if the default shell path contains more paths
+			// than the current environment, and adds them to ensure
+			// that the environment is more friendly for any new user
+			std::string path( Sys::getEnv( "PATH" ) );
+			std::string shellPath( getShellEnv( "PATH", mConfig.term.shell ) );
+			if ( String::hash( path ) != String::hash( shellPath ) ) {
+				auto pathSpl = String::split( path, ':' );
+				auto shellPathSpl = String::split( shellPath, ':' );
+				std::vector<std::string> paths;
+				for ( auto& path : pathSpl )
+					paths.emplace_back( std::move( path ) );
+				for ( auto& shellPath : shellPathSpl ) {
+					if ( std::find( paths.begin(), paths.end(), shellPath ) == paths.end() )
+						paths.emplace_back( std::move( shellPath ) );
+				}
+				std::string newPath = String::join( paths, ':' );
+				setenv( "PATH", newPath.c_str(), 1 );
+			}
+		} );
 #endif
 
 		Log::info( "Window creation took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );

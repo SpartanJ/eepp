@@ -110,7 +110,7 @@ void EventDispatcher::update( const Time& time ) {
 			sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getPressTrigger() );
 		}
 	}
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 	else if ( NULL != mOverNode && mInput->getReleaseTrigger() &&
 			  !( mInput->getPressTrigger() & mInput->getReleaseTrigger() ) &&
 			  !( mInput->getLastPressTrigger() & mInput->getReleaseTrigger() ) ) {

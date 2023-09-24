@@ -9,7 +9,7 @@
 #include <eepp/window/backend/SDL2/wminfo.hpp>
 #include <eepp/window/window.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || \
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
 	EE_PLATFORM == EE_PLATFORM_ANDROID
 #define EE_USE_WMINFO

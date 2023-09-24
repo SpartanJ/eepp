@@ -1221,7 +1221,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 			[this]( auto* window ) -> bool { return onCloseRequestCallback( window ); } );
 
 		mResPath = Sys::getProcessPath();
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 		if ( String::contains( mResPath, "eepp-UIEditor.app" ) ) {
 			mResPath = FileSystem::getCurrentWorkingDirectory();
 			FileSystem::dirAddSlashAtEnd( mResPath );

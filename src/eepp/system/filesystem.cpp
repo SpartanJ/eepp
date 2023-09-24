@@ -639,7 +639,7 @@ Int64 FileSystem::getDiskFreeSpace( const std::string& path ) {
 #if defined( EE_PLATFORM_POSIX )
 	struct statvfs data;
 	statvfs( path.c_str(), &data );
-#if EE_PLATFORM != EE_PLATFORM_MACOSX
+#if EE_PLATFORM != EE_PLATFORM_MACOS
 	return (Int64)data.f_bsize * (Int64)data.f_bfree;
 #else
 	return (Int64)data.f_frsize * (Int64)data.f_bfree;

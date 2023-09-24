@@ -18,7 +18,7 @@ sockaddr_in SocketImpl::createAddress( Uint32 address, unsigned short port ) {
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons( port );
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_IOS
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 	addr.sin_len = sizeof( addr );
 #endif
 

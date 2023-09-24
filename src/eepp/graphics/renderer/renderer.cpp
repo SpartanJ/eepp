@@ -230,7 +230,7 @@ void Renderer::writeExtension( Uint8 Pos, Uint32 BitWrite ) {
 
 void Renderer::init() {
 #ifdef EE_GLEW_AVAILABLE
-#if EE_PLATFORM != EE_PLATFORM_MACOSX
+#if EE_PLATFORM != EE_PLATFORM_MACOS
 	glewExperimental = 1;
 #endif
 	bool glewOn = ( GLEW_OK == glewInit() );
@@ -377,7 +377,7 @@ std::string Renderer::getExtensions() {
 	std::string exts;
 
 #if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || \
-	EE_PLATFORM == EE_PLATFORM_MACOSX
+	EE_PLATFORM == EE_PLATFORM_MACOS
 	if ( GLv_3 == version() || GLv_3CP == version() ) {
 		static pglGetStringiFunc eeglGetStringiFunc = NULL;
 

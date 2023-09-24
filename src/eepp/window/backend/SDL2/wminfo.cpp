@@ -2,7 +2,7 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || \
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
 	EE_PLATFORM_ANDROID == EE_PLATFORM
 #define EE_WMINFO
@@ -42,7 +42,7 @@ X11Window WMInfo::getWindow() {
 
 eeWindowHandle WMInfo::getWindowHandler() {
 #if EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || \
-	EE_PLATFORM == EE_PLATFORM_MACOSX
+	EE_PLATFORM == EE_PLATFORM_MACOS
 	SDL_SysWMinfo* info = static_cast<SDL_SysWMinfo*>( mWMInfo );
 #endif
 
@@ -50,7 +50,7 @@ eeWindowHandle WMInfo::getWindowHandler() {
 	return info->info.win.window;
 #elif defined( EE_X11_PLATFORM )
 	return info->info.x11.display;
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
 	return info->info.cocoa.window;
 #else
 	return 0;

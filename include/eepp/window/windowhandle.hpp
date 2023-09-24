@@ -22,7 +22,7 @@ typedef unsigned long X11Cursor;
 
 typedef struct _XDisplay* eeWindowHandle;
 
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
 typedef void* eeWindowHandle; // NSWindow *
 #else
 typedef unsigned int eeWindowHandle; //! Fallback

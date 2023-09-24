@@ -12,7 +12,7 @@
 #ifndef EE_GLES
 //! GL2 and GL3 ( PC platform )
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 #include <OpenGL/gl.h>
 #else
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -26,7 +26,7 @@
 #ifndef EE_GLEW_AVAILABLE
 #if defined( EE_X11_PLATFORM )
 #include <GL/glext.h>
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
 #include <OpenGL/glext.h>
 #endif
 #endif

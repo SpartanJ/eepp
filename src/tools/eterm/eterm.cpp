@@ -183,7 +183,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 
 	std::string resPath = Sys::getProcessPath();
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 	if ( String::contains( resPath, "ecode.app" ) ) {
 		resPath = FileSystem::getCurrentWorkingDirectory();
 		FileSystem::dirAddSlashAtEnd( resPath );
