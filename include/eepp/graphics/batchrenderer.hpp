@@ -93,8 +93,7 @@ class EE_API BatchRenderer {
 
 	/** Add to the batch a quad ( this will change your batch rendering method to PRIMITIVE_QUADS,
 	 * so if you were using another one will Draw all the batched vertexs first ) */
-	void batchQuad( const Float& x, const Float& y, const Float& width, const Float& height,
-					const Float& angle = 0.0f );
+	void batchQuad( const Float& x, const Float& y, const Float& width, const Float& height );
 
 	/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering
 	 * method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched vertexs

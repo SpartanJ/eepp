@@ -82,6 +82,133 @@ Text* Text::New( Font* font, unsigned int characterSize ) {
 	return eeNew( Text, ( font, characterSize ) );
 }
 
+Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
+				  const Color& fontColor, Uint32 style, Float outlineThickness,
+				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
+				  const Uint32& tabWidth ) {
+	Vector2f cpos{ pos };
+	String::StringBaseType ch;
+	String::StringBaseType prevChar = 0;
+	bool isBold = ( style & Text::Bold ) != 0;
+	bool isItalic = ( style & Text::Italic ) != 0;
+	Float kerning = 0;
+	Float width = 0;
+	Float height = font->getFontHeight( fontSize );
+	Sizef size{ 0, height };
+	size_t ssize = string.size();
+	BatchRenderer* BR = GlobalBatchRenderer::instance();
+	BR->setBlendMode( BlendMode::Alpha() );
+
+	auto drawUnderline = [&]() {
+		Float underlineOffset = font->getUnderlinePosition( fontSize );
+		Float underlineThickness = font->getUnderlineThickness( fontSize );
+		Float top =
+			cpos.y + std::floor( fontSize + underlineOffset - ( underlineThickness / 2 ) + 0.5f );
+		Float bottom = top + std::floor( underlineThickness + 0.5f );
+		Primitives p;
+		p.setColor( fontColor );
+		p.drawRectangle( Rectf( pos.x, top, pos.x + width, bottom ) );
+	};
+
+	auto drawStrikeThrough = [&]() {
+		Rectf xBounds = font->getGlyph( L'x', fontSize, isBold, isItalic ).bounds;
+		Float strikeThroughOffset = xBounds.Top + xBounds.Bottom / 2.f;
+		Float underlineThickness = font->getUnderlineThickness( fontSize );
+		Float top = cpos.y + strikeThroughOffset;
+		Float bottom = top + std::floor( underlineThickness + 0.5f );
+		Primitives p;
+		p.setColor( fontColor );
+		p.drawRectangle( Rectf( pos.x, top, pos.x + width, bottom ) );
+	};
+
+	for ( size_t i = 0; i < ssize; ++i ) {
+		ch = string[i];
+
+		if ( '\t' == ch ) {
+			Float advance = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance * tabWidth;
+			width += advance;
+			cpos.x += advance;
+			prevChar = ch;
+			continue;
+		}
+
+		if ( ' ' == ch ) {
+			Float advance = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
+			width += advance;
+			cpos.x += advance;
+			prevChar = ch;
+			continue;
+		}
+
+		if ( '\n' == ch ) {
+			if ( style & Text::Underlined )
+				drawUnderline();
+			if ( style & Text::StrikeThrough )
+				drawStrikeThrough();
+
+			size.x = eemax( width, cpos.x );
+			width = 0;
+			cpos.y += height;
+			if ( i != ssize - 1 )
+				size.y += height;
+			continue;
+		}
+
+		if ( style & Text::Shadow ) {
+			auto* gds = font->getGlyphDrawable( ch, fontSize, isBold, isItalic, outlineThickness );
+			gds->setDrawMode( isItalic ? GlyphDrawable::DrawMode::TextItalic
+									   : GlyphDrawable::DrawMode::Text );
+			gds->setPosition( cpos + shadowOffset );
+			gds->setColor( shadowColor );
+			gds->draw();
+		}
+
+		if ( outlineThickness != 0.f ) {
+			auto* gdo = font->getGlyphDrawable( ch, fontSize, isBold, isItalic, outlineThickness );
+			gdo->setDrawMode( isItalic ? GlyphDrawable::DrawMode::TextItalic
+									   : GlyphDrawable::DrawMode::Text );
+			gdo->setPosition( cpos );
+			gdo->setColor( outlineColor );
+			gdo->draw();
+		}
+
+		auto* gd = font->getGlyphDrawable( ch, fontSize, isBold, isItalic );
+		gd->setDrawMode( isItalic ? GlyphDrawable::DrawMode::TextItalic
+								  : GlyphDrawable::DrawMode::Text );
+		gd->setPosition( cpos );
+		gd->setColor( fontColor );
+		gd->draw();
+
+		cpos.x += gd->getAdvance();
+		width += gd->getAdvance();
+
+		if ( !font->isMonospace() ) {
+			kerning =
+				font->getKerning( prevChar, ch, fontSize, isBold, isItalic, outlineThickness );
+			cpos.x += kerning;
+			width += kerning;
+		}
+
+		prevChar = ch;
+	}
+
+	if ( ( style & Text::Underlined ) && width != 0 )
+		drawUnderline();
+
+	if ( ( style & Text::StrikeThrough ) && width != 0 )
+		drawStrikeThrough();
+
+	size.x = eemax( width, size.x );
+	return size;
+}
+
+Sizef Text::draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
+				  const Uint32& tabWidth ) {
+	return draw( string, pos, config.Font, config.CharacterSize, config.FontColor, config.Style,
+				 config.OutlineThickness, config.OutlineColor, config.ShadowColor,
+				 config.ShadowOffset, tabWidth );
+}
+
 Text::Text() {}
 
 Text::Text( const String& string, Font* font, unsigned int characterSize ) :

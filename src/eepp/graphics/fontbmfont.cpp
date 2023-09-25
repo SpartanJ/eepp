@@ -212,6 +212,7 @@ GlyphDrawable* FontBMFont::getGlyphDrawable( Uint32 codePoint, unsigned int char
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.bounds.getSize(),
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
+		region->setAdvance( glyph.bounds.getSize().getWidth() );
 		drawables[codePoint] = region;
 		return region;
 	}

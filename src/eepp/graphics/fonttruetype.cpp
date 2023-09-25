@@ -511,7 +511,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 
 		region->setGlyphOffset( { glyph.bounds.Left - outlineThickness,
 								  characterSize + glyph.bounds.Top - outlineThickness } );
-
+		region->setAdvance( glyph.advance );
 		region->setIsItalic( isItalic );
 
 		drawables[key] = region;

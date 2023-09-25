@@ -15,7 +15,8 @@ GlyphDrawable::GlyphDrawable( Texture* texture, const Rect& srcRect, const Sizef
 	DrawableResource( Drawable::GLYPH, resourceName ),
 	mTexture( texture ),
 	mSrcRect( srcRect.asFloat() ),
-	mDestSize( destSize ) {
+	mDestSize( destSize ),
+	mAdvance( destSize.getWidth() ) {
 	mPixelDensity = PixelDensity::getPixelDensity();
 }
 
@@ -83,6 +84,14 @@ Texture* GlyphDrawable::getTexture() {
 	return mTexture;
 }
 
+const Rectf& GlyphDrawable::getSrcRect() const {
+	return mSrcRect;
+}
+
+const Sizef& GlyphDrawable::getDestSize() const {
+	return mDestSize;
+}
+
 Sizef GlyphDrawable::getSize() {
 	if ( mDestSize != Sizef::Zero )
 		return Sizef( mDestSize.getWidth() / mPixelDensity, mDestSize.getHeight() / mPixelDensity );
@@ -121,6 +130,14 @@ void GlyphDrawable::setDrawMode( const DrawMode& drawMode ) {
 
 void GlyphDrawable::setIsItalic( bool isItalic ) {
 	mIsItalic = isItalic;
+}
+
+const Float& GlyphDrawable::getAdvance() const {
+	return mAdvance;
+}
+
+void GlyphDrawable::setAdvance( Float advance ) {
+	mAdvance = advance;
 }
 
 }} // namespace EE::Graphics

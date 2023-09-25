@@ -43,6 +43,15 @@ class EE_API Text {
 
 	static Text* New( Font* font, unsigned int characterSize = 12 );
 
+	static Sizef draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
+					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
+					   const Color& outlineColor = Color::Black,
+					   const Color& shadowColor = Color::Black,
+					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4 );
+
+	static Sizef draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
+					   const Uint32& tabWidth = 4 );
+
 	Text();
 
 	Text( const String& string, Font* font, unsigned int characterSize = 12 );
@@ -187,11 +196,11 @@ class EE_API Text {
 		Vector2f position;
 	};
 
-	String mString;			///< String to display
+	String mString; ///< String to display
 	FontStyleConfig mFontStyleConfig;
 	Color mBackgroundColor{ Color::Transparent };
 
-	mutable Rectf mBounds;			  ///< Bounding rectangle of the text (in local coordinates)
+	mutable Rectf mBounds; ///< Bounding rectangle of the text (in local coordinates)
 	mutable bool mGeometryNeedUpdate{ false }; ///< Does the geometry need to be recomputed?
 	mutable bool mCachedWidthNeedUpdate{ false };
 	mutable bool mColorsNeedUpdate{ false };
