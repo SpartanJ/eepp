@@ -283,15 +283,15 @@ void UIListBox::setRowHeight() {
 	Uint32 tOldRowHeight = mRowHeight;
 
 	if ( 0 == mRowHeight ) {
-		Uint32 FontSize = PixelDensity::dpToPxI( 12 );
+		Uint32 fontSize = 12;
 
 		const FontStyleConfig& fontStyleConfig = mDummyItem->getFontStyleConfig();
 
 		if ( NULL != fontStyleConfig.getFont() )
-			FontSize = fontStyleConfig.getFont()->getFontHeight(
-				PixelDensity::dpToPxI( fontStyleConfig.getFontCharacterSize() ) );
+			fontSize =
+				fontStyleConfig.getFont()->getFontHeight( fontStyleConfig.getFontCharacterSize() );
 
-		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize + 4 );
+		mRowHeight = PixelDensity::pxToDp( fontSize ) + PixelDensity::dpToPx( 4 );
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {

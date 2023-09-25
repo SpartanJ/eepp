@@ -124,34 +124,37 @@ Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float f
 	for ( size_t i = 0; i < ssize; ++i ) {
 		ch = string[i];
 
-		if ( '\t' == ch ) {
-			Float advance = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance * tabWidth;
-			width += advance;
-			cpos.x += advance;
-			prevChar = ch;
-			continue;
-		}
+		switch ( ch ) {
+			case '\r':
+				continue;
+			case '\t': {
+				Float advance =
+					font->getGlyph( ' ', fontSize, isBold, isItalic ).advance * tabWidth;
+				width += advance;
+				cpos.x += advance;
+				prevChar = ch;
+				continue;
+			}
+			case ' ': {
+				Float advance = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
+				width += advance;
+				cpos.x += advance;
+				prevChar = ch;
+				continue;
+			}
+			case '\n': {
+				if ( style & Text::Underlined )
+					drawUnderline();
+				if ( style & Text::StrikeThrough )
+					drawStrikeThrough();
 
-		if ( ' ' == ch ) {
-			Float advance = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
-			width += advance;
-			cpos.x += advance;
-			prevChar = ch;
-			continue;
-		}
-
-		if ( '\n' == ch ) {
-			if ( style & Text::Underlined )
-				drawUnderline();
-			if ( style & Text::StrikeThrough )
-				drawStrikeThrough();
-
-			size.x = eemax( width, cpos.x );
-			width = 0;
-			cpos.y += height;
-			if ( i != ssize - 1 )
-				size.y += height;
-			continue;
+				size.x = eemax( width, cpos.x );
+				width = 0;
+				cpos.y += height;
+				if ( i != ssize - 1 )
+					size.y += height;
+				continue;
+			}
 		}
 
 		if ( style & Text::Shadow ) {

@@ -10,7 +10,10 @@ namespace EE { namespace Graphics {
 static GlobalBatchRenderer* sBR = NULL;
 
 Primitives::Primitives() :
-	mFillMode( DRAW_FILL ), mBlendMode( BlendMode::Alpha() ), mLineWidth( 1.f ), mForceDraw( true ) {
+	mFillMode( DRAW_FILL ),
+	mBlendMode( BlendMode::Alpha() ),
+	mLineWidth( 1.f ),
+	mForceDraw( true ) {
 	if ( NULL == sBR ) {
 		sBR = GlobalBatchRenderer::instance();
 	}
@@ -201,10 +204,7 @@ void Primitives::drawRectangle( const Rectf& R, const Color& TopLeft, const Colo
 		case DRAW_FILL: {
 			sBR->quadsBegin();
 			sBR->quadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
-
-			Sizef size = const_cast<Rectf*>( &R )->getSize();
-
-			sBR->batchQuadEx( R.Left, R.Top, size.getWidth(), size.getHeight(), Angle, Scale );
+			sBR->batchQuadEx( R.Left, R.Top, R.getWidth(), R.getHeight(), Angle, Scale );
 			break;
 		}
 		case DRAW_LINE: {
@@ -239,6 +239,30 @@ void Primitives::drawRectangle( const Rectf& R, const Color& TopLeft, const Colo
 
 void Primitives::drawRectangle( const Rectf& R, const Float& Angle, const Vector2f& Scale ) {
 	drawRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale );
+}
+
+void Primitives::drawRectangle( const Rectf& R ) {
+	sBR->setTexture( NULL );
+	sBR->setBlendMode( mBlendMode );
+
+	switch ( mFillMode ) {
+		case DRAW_FILL: {
+			sBR->quadsBegin();
+			sBR->quadsSetColor( mColor );
+			sBR->batchQuad( R.Left, R.Top, R.getWidth(), R.getHeight() );
+			break;
+		}
+		case DRAW_LINE: {
+			sBR->setLineWidth( mLineWidth );
+			sBR->lineLoopBegin();
+			sBR->lineLoopSetColor( mColor );
+			sBR->batchLineLoop( R.Left, R.Top, R.Left, R.Bottom );
+			sBR->batchLineLoop( R.Right, R.Bottom, R.Right, R.Top );
+			break;
+		}
+	}
+
+	drawBatch();
 }
 
 void Primitives::drawRoundedRectangle( const Rectf& R, const Color& TopLeft,
