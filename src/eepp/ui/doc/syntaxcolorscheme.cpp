@@ -84,7 +84,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 
 SyntaxColorScheme::Style parseStyle(
 	const std::string& value, bool* colorWasSet = nullptr,
-	const std::unordered_map<std::string, SyntaxColorScheme::Style>* syntaxColors = nullptr ) {
+	const UnorderedMap<std::string, SyntaxColorScheme::Style>* syntaxColors = nullptr ) {
 	auto values = String::split( value, ',' );
 	SyntaxColorScheme::Style style;
 	bool colorSet = false;
@@ -192,8 +192,8 @@ std::vector<SyntaxColorScheme> SyntaxColorScheme::loadFromPack( Pack* pack,
 SyntaxColorScheme::SyntaxColorScheme() {}
 
 SyntaxColorScheme::SyntaxColorScheme( const std::string& name,
-									  const std::unordered_map<std::string, Style>& syntaxColors,
-									  const std::unordered_map<std::string, Style>& editorColors ) :
+									  const UnorderedMap<std::string, Style>& syntaxColors,
+									  const UnorderedMap<std::string, Style>& editorColors ) :
 	mName( name ), mSyntaxColors( syntaxColors ), mEditorColors( editorColors ) {}
 
 static const SyntaxColorScheme::Style StyleEmpty = { Color::Transparent };
@@ -230,7 +230,7 @@ bool SyntaxColorScheme::hasSyntaxStyle( const std::string& type ) const {
 	return mSyntaxColors.find( type ) != mSyntaxColors.end();
 }
 
-void SyntaxColorScheme::setSyntaxStyles( const std::unordered_map<std::string, Style>& styles ) {
+void SyntaxColorScheme::setSyntaxStyles( const UnorderedMap<std::string, Style>& styles ) {
 	mSyntaxColors.insert( styles.begin(), styles.end() );
 }
 
@@ -279,7 +279,7 @@ const Color& SyntaxColorScheme::getEditorColor( const std::string& type ) const 
 }
 
 void SyntaxColorScheme::setEditorSyntaxStyles(
-	const std::unordered_map<std::string, Style>& styles ) {
+	const UnorderedMap<std::string, Style>& styles ) {
 	mEditorColors.insert( styles.begin(), styles.end() );
 }
 

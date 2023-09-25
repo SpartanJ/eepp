@@ -112,20 +112,31 @@ void Text::create( Font* font, const String& text, Color FontColor, Color FontSh
 	invalidate();
 }
 
+void Text::onNewString() {
+	mColorsNeedUpdate = true;
+	mGeometryNeedUpdate = true;
+	mCachedWidthNeedUpdate = true;
+	mContainsColorEmoji = false;
+	if ( FontManager::instance()->getColorEmojiFont() != nullptr ) {
+		if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
+			FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+			if ( fontTrueType->isColorEmojiFont() || !fontTrueType->isEmojiFont() )
+				mContainsColorEmoji = Font::containsEmojiCodePoint( mString );
+		}
+	}
+}
+
 void Text::setString( const String& string ) {
 	if ( mString != string ) {
 		mString = string;
-		mColorsNeedUpdate = true;
-		mGeometryNeedUpdate = true;
-		mCachedWidthNeedUpdate = true;
-		mContainsColorEmoji = false;
-		if ( FontManager::instance()->getColorEmojiFont() != nullptr ) {
-			if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
-				FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
-				if ( fontTrueType->isColorEmojiFont() || !fontTrueType->isEmojiFont() )
-					mContainsColorEmoji = Font::containsEmojiCodePoint( string );
-			}
-		}
+		onNewString();
+	}
+}
+
+void Text::setString( String&& string ) {
+	if ( mString != string ) {
+		mString = std::move( string );
+		onNewString();
 	}
 }
 

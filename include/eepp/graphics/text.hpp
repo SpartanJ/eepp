@@ -56,6 +56,8 @@ class EE_API Text {
 
 	void setString( const String& string );
 
+	void setString( String&& string );
+
 	void setFont( Font* font );
 
 	void setFontSize( unsigned int size );
@@ -229,6 +231,8 @@ class EE_API Text {
 			   BlendMode effect, const OriginPoint& rotationCenter, const OriginPoint& scaleCenter,
 			   const std::vector<Color>& colors, const std::vector<Color>& outlineColors,
 			   const Color& backgroundColor );
+
+	void onNewString();
 };
 
 }} // namespace EE::Graphics

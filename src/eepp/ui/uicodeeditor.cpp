@@ -616,8 +616,7 @@ void UICodeEditor::setShowIndentationGuides( bool showIndentationGuides ) {
 UICodeEditor* UICodeEditor::setFontSize( const Float& size ) {
 	if ( mFontStyleConfig.CharacterSize != size ) {
 		mFontStyleConfig.CharacterSize =
-			eeabs( size - (int)size ) == 0.5f || (int)size == size ? size
-																		   : eefloor( size );
+			eeabs( size - (int)size ) == 0.5f || (int)size == size ? size : eefloor( size );
 		mFontSize = mFontStyleConfig.CharacterSize;
 		udpateGlyphWidth();
 		invalidateDraw();
@@ -3050,6 +3049,7 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 	primitives.drawRectangle( Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
 	TextRange selection = mDoc->getSelection( true );
 	Float lineOffset = getLineOffset();
+	Text& line = mLineTextCache;
 
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
 		String pos;
@@ -3059,11 +3059,12 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 		} else {
 			pos = String( String::toString( i + 1 ) ).padLeft( lineNumberDigits, ' ' );
 		}
-		Text line( std::move( pos ), mFont, fontSize );
 		line.setStyleConfig( mFontStyleConfig );
+		line.setFontSize( fontSize );
 		line.setColor( ( i >= selection.start().line() && i <= selection.end().line() )
 						   ? mLineNumberActiveFontColor
 						   : mLineNumberFontColor );
+		line.setString( std::move( pos ) );
 		line.draw( screenStart.x + mLineNumberPaddingLeft,
 				   startScroll.y + lineHeight * (double)i + lineOffset );
 	}

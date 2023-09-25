@@ -52,14 +52,14 @@ class EE_API SyntaxColorScheme {
 	SyntaxColorScheme();
 
 	SyntaxColorScheme( const std::string& name,
-					   const std::unordered_map<std::string, Style>& syntaxColors,
-					   const std::unordered_map<std::string, Style>& editorColors );
+					   const UnorderedMap<std::string, Style>& syntaxColors,
+					   const UnorderedMap<std::string, Style>& editorColors );
 
 	const Style& getSyntaxStyle( const std::string& type ) const;
 
 	bool hasSyntaxStyle( const std::string& type ) const;
 
-	void setSyntaxStyles( const std::unordered_map<std::string, Style>& styles );
+	void setSyntaxStyles( const UnorderedMap<std::string, Style>& styles );
 
 	void setSyntaxStyle( const std::string& type, const Style& style );
 
@@ -67,7 +67,7 @@ class EE_API SyntaxColorScheme {
 
 	const Color& getEditorColor( const std::string& type ) const;
 
-	void setEditorSyntaxStyles( const std::unordered_map<std::string, Style>& styles );
+	void setEditorSyntaxStyles( const UnorderedMap<std::string, Style>& styles );
 
 	void setEditorSyntaxStyle( const std::string& type, const Style& style );
 
@@ -77,9 +77,9 @@ class EE_API SyntaxColorScheme {
 
   protected:
 	std::string mName;
-	std::unordered_map<std::string, Style> mSyntaxColors;
-	std::unordered_map<std::string, Style> mEditorColors;
-	mutable std::unordered_map<std::string, Style> mStyleCache;
+	UnorderedMap<std::string, Style> mSyntaxColors;
+	UnorderedMap<std::string, Style> mEditorColors;
+	mutable UnorderedMap<std::string, Style> mStyleCache;
 };
 
 }}} // namespace EE::UI::Doc
