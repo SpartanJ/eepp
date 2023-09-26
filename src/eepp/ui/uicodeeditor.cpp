@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -3415,20 +3416,22 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		minimapStartLine = eemax( 0, eemin( minimapStartLine, lineCount - maxMinmapLines ) );
 	}
 
-	Primitives primitives;
-	primitives.setForceDraw( false );
+	GlobalBatchRenderer* BR = GlobalBatchRenderer::instance();
+	BR->setTexture( nullptr );
+	BR->setBlendMode( BlendMode::Alpha() );
+	BR->quadsBegin();
 
 	if ( mMinimapConfig.drawBackground ) {
-		primitives.setColor( Color( mMinimapBackgroundColor ).blendAlpha( mAlpha ) );
-		primitives.drawRectangle( rect );
+		BR->quadsSetColor( Color( mMinimapBackgroundColor ).blendAlpha( mAlpha ) );
+		BR->batchQuad( rect );
 	}
 
-	primitives.setColor( Color( mMinimapVisibleAreaColor ).blendAlpha( mAlpha ) );
-	primitives.drawRectangle(
+	BR->quadsSetColor( Color( mMinimapVisibleAreaColor ).blendAlpha( mAlpha ) );
+	BR->batchQuad(
 		{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
 	if ( mMinimapHover || mMinimapDragging ) {
-		primitives.setColor( Color( mMinimapHoverColor ).blendAlpha( mAlpha ) );
-		primitives.drawRectangle(
+		BR->quadsSetColor( Color( mMinimapHoverColor ).blendAlpha( mAlpha ) );
+		BR->batchQuad(
 			{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
 	}
 
@@ -3452,8 +3455,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		}
 
 		if ( batchWidth > 0 ) {
-			primitives.setColor( color.blendAlpha( mAlpha ) );
-			primitives.drawRectangle( { { batchStart, lineY }, { batchWidth, charHeight } } );
+			BR->quadsSetColor( color.blendAlpha( mAlpha ) );
+			BR->batchQuad( { { batchStart, lineY }, { batchWidth, charHeight } } );
 		}
 
 		batchSyntaxType = &type;
@@ -3469,7 +3472,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		const String& line( mDoc->line( ln ).getText() );
 		if ( line.size() > 300 )
 			return;
-		primitives.setColor( Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
+		BR->quadsSetColor( Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
 
 		do {
 			pos = line.find( text, pos );
@@ -3482,7 +3485,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 				selRect.Left = batchStart + getXOffsetCol( { ln, startCol } ) * widthScale;
 				selRect.Right = batchStart + getXOffsetCol( { ln, endCol } ) * widthScale;
 				if ( selRect.Left < minimapCutoffX )
-					primitives.drawRectangle( selRect );
+					BR->batchQuad( selRect );
 				pos = endCol;
 			} else {
 				break;
@@ -3496,7 +3499,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		if ( !( ln >= range.start().line() && ln <= range.end().line() ) )
 			return;
 
-		primitives.setColor( backgroundColor );
+		BR->quadsSetColor( backgroundColor );
 
 		const String& line = mDoc->line( ln ).getText();
 		Rectf selRect;
@@ -3524,11 +3527,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 				getXOffsetCol( { ln, static_cast<Int64>( line.length() ) } ) * widthScale;
 		}
 
-		primitives.drawRectangle( selRect );
+		BR->batchQuad( selRect );
 	};
 
 	auto drawWordRanges = [&]( const TextRanges& ranges ) {
-		primitives.setColor( Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
+		BR->quadsSetColor( Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
 		Int64 lineSkip = -1;
 		for ( const auto& range : ranges ) {
 			if ( !( range.start().line() >= minimapStartLine && range.end().line() <= endidx ) ||
@@ -3546,7 +3549,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			selRect.Bottom = selRect.Top + charHeight;
 			selRect.Left = minimapStart + getXOffsetCol( range.start() ) * widthScale;
 			selRect.Right = minimapStart + getXOffsetCol( range.end() ) * widthScale;
-			primitives.drawRectangle( selRect );
+			BR->batchQuad( selRect );
 
 			if ( selRect.Left > minimapCutoffX )
 				lineSkip = range.start().line();
@@ -3679,10 +3682,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		Float selectionY =
 			rect.Top +
 			( mDoc->getSelectionIndex( i ).start().line() - minimapStartLine ) * lineSpacing;
-		primitives.setColor( Color( mMinimapCurrentLineColor ).blendAlpha( mAlpha ) );
-		primitives.drawRectangle( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
+		BR->quadsSetColor( Color( mMinimapCurrentLineColor ).blendAlpha( mAlpha ) );
+		BR->batchQuad( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
 	}
-	primitives.setForceDraw( true );
+
+	BR->draw();
 }
 
 Vector2f UICodeEditor::getScreenStart() const {

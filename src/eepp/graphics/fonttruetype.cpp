@@ -49,6 +49,7 @@ template <typename T, typename U> inline T reinterpret( const U& input ) {
 } // namespace
 
 namespace EE { namespace Graphics {
+using std::move;
 
 static std::unordered_map<std::string, Uint32> fontsInternalIds;
 static std::atomic<Uint32> fontInternalIdCounter{ 0 };
@@ -1163,8 +1164,7 @@ FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 			name += ":bold";
 		if ( mIsItalic )
 			name += ":italic";
-		mPages.insert(
-			std::make_pair( characterSize, std::make_unique<Page>( mFontInternalId, name ) ) );
+		mPages[characterSize] = std::make_unique<Page>( mFontInternalId, name );
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;

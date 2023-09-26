@@ -230,6 +230,77 @@ void BatchRenderer::batchQuad( const Float& x, const Float& y, const Float& widt
 	}
 }
 
+void BatchRenderer::batchQuad( const Rectf& rect ) {
+	if ( mNumVertex + ( GLi->quadsSupported() ? 3 : 5 ) >= mVertexSize )
+		return;
+
+	setDrawMode( PRIMITIVE_QUADS, mForceBlendMode );
+
+	if ( GLi->quadsSupported() ) {
+		mTVertex = &mVertex[mNumVertex];
+		mTVertex->pos.x = rect.Left;
+		mTVertex->pos.y = rect.Top;
+		mTVertex->tex = mTexCoord[0];
+		mTVertex->color = mVerColor[0];
+
+		mTVertex = &mVertex[mNumVertex + 1];
+		mTVertex->pos.x = rect.Left;
+		mTVertex->pos.y = rect.Bottom;
+		mTVertex->tex = mTexCoord[1];
+		mTVertex->color = mVerColor[1];
+
+		mTVertex = &mVertex[mNumVertex + 2];
+		mTVertex->pos.x = rect.Right;
+		mTVertex->pos.y = rect.Bottom;
+		mTVertex->tex = mTexCoord[2];
+		mTVertex->color = mVerColor[2];
+
+		mTVertex = &mVertex[mNumVertex + 3];
+		mTVertex->pos.x = rect.Right;
+		mTVertex->pos.y = rect.Top;
+		mTVertex->tex = mTexCoord[3];
+		mTVertex->color = mVerColor[3];
+
+		addVertexs( 4 );
+	} else {
+		mTVertex = &mVertex[mNumVertex];
+		mTVertex->pos.x = rect.Left;
+		mTVertex->pos.y = rect.Bottom;
+		mTVertex->tex = mTexCoord[1];
+		mTVertex->color = mVerColor[1];
+
+		mTVertex = &mVertex[mNumVertex + 1];
+		mTVertex->pos.x = rect.Left;
+		mTVertex->pos.y = rect.Top;
+		mTVertex->tex = mTexCoord[0];
+		mTVertex->color = mVerColor[0];
+
+		mTVertex = &mVertex[mNumVertex + 2];
+		mTVertex->pos.x = rect.Right;
+		mTVertex->pos.y = rect.Top;
+		mTVertex->tex = mTexCoord[3];
+		mTVertex->color = mVerColor[3];
+
+		mTVertex = &mVertex[mNumVertex + 3];
+		mTVertex->pos = mVertex[mNumVertex].pos;
+		mTVertex->tex = mTexCoord[1];
+		mTVertex->color = mVerColor[1];
+
+		mTVertex = &mVertex[mNumVertex + 4];
+		mTVertex->pos.x = rect.Right;
+		mTVertex->pos.y = rect.Bottom;
+		mTVertex->tex = mTexCoord[2];
+		mTVertex->color = mVerColor[2];
+
+		mTVertex = &mVertex[mNumVertex + 5];
+		mTVertex->pos = mVertex[mNumVertex + 2].pos;
+		mTVertex->tex = mTexCoord[3];
+		mTVertex->color = mVerColor[3];
+
+		addVertexs( 6 );
+	}
+}
+
 void BatchRenderer::batchQuadEx( Float x, Float y, Float width, Float height, Float angle,
 								 Vector2f scale, OriginPoint originPoint ) {
 	if ( mNumVertex + ( GLi->quadsSupported() ? 3 : 5 ) >= mVertexSize )

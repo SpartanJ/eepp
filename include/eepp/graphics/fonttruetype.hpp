@@ -174,7 +174,7 @@ class EE_API FontTrueType : public Font {
 
 	Page& getPage( unsigned int characterSize ) const;
 
-	typedef std::map<unsigned int, std::unique_ptr<Page>>
+	typedef UnorderedMap<unsigned int, std::unique_ptr<Page>>
 		PageTable; ///< Table mapping a character size to its page (texture)
 
 	void* mLibrary; ///< Pointer to the internal library interface (it is typeless to avoid exposing
