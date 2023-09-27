@@ -276,8 +276,9 @@ static void addTypeScript() {
 					 { { "[%a_][%w_$]*%f[(]" }, "function" },
 					 { { "[%a_][%w_]*" }, "symbol" },
 				 },
-				 ts.getSymbols(),
+				 {},
 				 "//" } )
+		.setSymbols( ts.getSymbols() )
 		.setAutoCloseXMLTags( true );
 	;
 }
@@ -1781,7 +1782,7 @@ static json toJson( const SyntaxDefinition& def ) {
 	}
 	if ( !def.getSymbols().empty() ) {
 		j["symbols"] = json::array();
-		for ( const auto& sym : def.getSymbols() )
+		for ( const auto& sym : def.getSymbolNames() )
 			j["symbols"].emplace_back( json{ json{ sym.first, sym.second } } );
 	}
 
@@ -1879,12 +1880,12 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 	// patterns
 	buf += "{\n";
 	for ( const auto& pattern : def.getPatterns() )
-		buf += "{ " + join( pattern.patterns ) + ", " + join( pattern.types, true, true ) +
+		buf += "{ " + join( pattern.patterns ) + ", " + join( pattern.typesNames, true, true ) +
 			   str( pattern.syntax, ", ", "", false ) + " },\n";
 	buf += "\n},\n";
 	// symbols
 	buf += "{\n";
-	for ( const auto& symbol : def.getSymbols() )
+	for ( const auto& symbol : def.getSymbolNames() )
 		buf += "{ " + str( symbol.first ) + " , " + str( symbol.second ) + " },\n";
 	buf += "\n},\n";
 	buf += str( def.getComment(), "", "", true ) + ",\n";

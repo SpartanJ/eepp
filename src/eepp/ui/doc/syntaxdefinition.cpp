@@ -17,10 +17,14 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 	mLanguageId( String::hash( String::toLower( languageName ) ) ),
 	mFiles( files ),
 	mPatterns( patterns ),
-	mSymbols( symbols ),
+	mSymbolNames( symbols ),
 	mComment( comment ),
 	mHeaders( headers ),
-	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {}
+	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {
+	mSymbols.reserve( symbols.size() );
+	for ( const auto& symbol : symbols )
+		mSymbols.insert( { symbol.first, toSyntaxStyleType( symbol.second ) } );
+}
 
 const std::vector<std::string>& SyntaxDefinition::getFiles() const {
 	return mFiles;
@@ -37,7 +41,8 @@ std::string SyntaxDefinition::getFileExtension() const {
 	return "";
 }
 
-std::vector<SyntaxPattern> SyntaxDefinition::getPatternsOfType( const std::string& type ) const {
+std::vector<SyntaxPattern>
+SyntaxDefinition::getPatternsOfType( const SyntaxStyleType& type ) const {
 	std::vector<SyntaxPattern> patterns;
 	for ( const auto& pattern : mPatterns ) {
 		if ( pattern.types.size() == 1 && pattern.types[0] == type )
@@ -59,6 +64,10 @@ void SyntaxDefinition::setExtensionPriority( bool hasExtensionPriority ) {
 	mHasExtensionPriority = hasExtensionPriority;
 }
 
+std::unordered_map<std::string, std::string> SyntaxDefinition::getSymbolNames() const {
+	return mSymbolNames;
+}
+
 const std::vector<SyntaxPattern>& SyntaxDefinition::getPatterns() const {
 	return mPatterns;
 }
@@ -67,15 +76,15 @@ const std::string& SyntaxDefinition::getComment() const {
 	return mComment;
 }
 
-const std::unordered_map<std::string, std::string>& SyntaxDefinition::getSymbols() const {
+const std::unordered_map<std::string, SyntaxStyleType>& SyntaxDefinition::getSymbols() const {
 	return mSymbols;
 }
 
-std::string SyntaxDefinition::getSymbol( const std::string& symbol ) const {
+SyntaxStyleType SyntaxDefinition::getSymbol( const std::string& symbol ) const {
 	auto it = mSymbols.find( symbol );
 	if ( it != mSymbols.end() )
 		return it->second;
-	return "";
+	return SyntaxStyleEmpty();
 }
 
 SyntaxDefinition& SyntaxDefinition::addFileType( const std::string& fileType ) {
@@ -105,16 +114,21 @@ SyntaxDefinition::addPatternsToFront( const std::vector<SyntaxPattern>& patterns
 }
 
 SyntaxDefinition& SyntaxDefinition::addSymbol( const std::string& symbolName,
-											   const std::string& typeName ) {
+											   const SyntaxStyleType& typeName ) {
 	mSymbols[symbolName] = typeName;
 	return *this;
 }
 
 SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& symbolNames,
-												const std::string& typeName ) {
-	for ( auto& symbol : symbolNames ) {
+												const SyntaxStyleType& typeName ) {
+	for ( auto& symbol : symbolNames )
 		addSymbol( symbol, typeName );
-	}
+	return *this;
+}
+
+SyntaxDefinition&
+SyntaxDefinition::setSymbols( const std::unordered_map<std::string, SyntaxStyleType>& symbols ) {
+	mSymbols = symbols;
 	return *this;
 }
 

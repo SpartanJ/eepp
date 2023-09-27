@@ -197,7 +197,7 @@ void UITreeViewCellGlobalSearch::draw() {
 		auto hspace =
 			mTextBox->getFont()->getGlyph( L' ', mTextBox->getFontSize(), false, false ).advance;
 		Primitives p;
-		p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection" ).color );
+		p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection"_sst ).color );
 		Vector2f screenPos( mScreenPos );
 		if ( mTextBox->isType( UI_TYPE_CHECKBOX ) ) {
 			UICheckBox* chk = mTextBox->asType<UICheckBox>();

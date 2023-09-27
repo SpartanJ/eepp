@@ -151,7 +151,7 @@ class LinterPlugin : public Plugin {
 
 	void invalidateEditors( TextDocument* doc );
 
-	std::string getMatchString( const LinterType& type );
+	SyntaxStyleType getMatchString( const LinterType& type );
 
 	void loadLinterConfig( const std::string& path, bool updateConfigFile );
 

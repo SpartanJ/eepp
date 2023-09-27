@@ -31,7 +31,8 @@ static int isInMultiByteCodePoint( const char* text, const size_t& textSize, con
 }
 
 template <typename T>
-static void pushToken( std::vector<T>& tokens, const std::string& type, const std::string& text ) {
+static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
+					   const std::string& text ) {
 	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type ) ) {
 		size_t tpos = tokens.size() - 1;
 		tokens[tpos].type = type;
@@ -145,7 +146,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32
 	size_t numMatches;
 
 	if ( syntax.getPatterns().empty() ) {
-		pushToken( tokens, "normal", text );
+		pushToken( tokens, SyntaxStyleTypes::Normal, text );
 		return std::make_pair( std::move( tokens ), SYNTAX_TOKENIZER_STATE_NONE );
 	}
 
@@ -278,13 +279,14 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32
 						}
 
 						std::string patternText( text.substr( start, end - start ) );
-						std::string type = curState.currentSyntax->getSymbol( patternText );
+						SyntaxStyleType type = curState.currentSyntax->getSymbol( patternText );
 						if ( !skipSubSyntaxSeparator || pattern.syntax.empty() ) {
 							pushToken( tokens,
-									   type.empty() ? ( curMatch < pattern.types.size()
-															? pattern.types[curMatch]
-															: pattern.types[0] )
-													: type,
+									   type == SyntaxStyleEmpty()
+										   ? ( curMatch < pattern.types.size()
+												   ? pattern.types[curMatch]
+												   : pattern.types[0] )
+										   : type,
 									   patternText );
 						}
 
@@ -322,13 +324,14 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32
 							end = start + ( strEnd - strStart );
 						}
 						std::string patternText( text.substr( start, end - start ) );
-						std::string type = curState.currentSyntax->getSymbol( patternText );
+						SyntaxStyleType type = curState.currentSyntax->getSymbol( patternText );
 						if ( !skipSubSyntaxSeparator || pattern.syntax.empty() ) {
 							pushToken( tokens,
-									   type.empty() ? ( curMatch < pattern.types.size()
-															? pattern.types[curMatch]
-															: pattern.types[0] )
-													: type,
+									   type == SyntaxStyleEmpty()
+										   ? ( curMatch < pattern.types.size()
+												   ? pattern.types[curMatch]
+												   : pattern.types[0] )
+										   : type,
 									   patternText );
 						}
 						if ( !pattern.syntax.empty() ) {
@@ -350,7 +353,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32
 			String::utf8Next( strEnd );
 			int dist = strEnd - strStart;
 			if ( dist > 0 ) {
-				pushToken( tokens, "normal", text.substr( i, dist ) );
+				pushToken( tokens, SyntaxStyleTypes::Normal, text.substr( i, dist ) );
 				i += dist;
 			} else {
 				Log::error( "Error parsing \"%s\" using syntax: %s", text.c_str(),

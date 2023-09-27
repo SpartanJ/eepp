@@ -3,24 +3,50 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/ui/doc/syntaxcolorscheme.hpp>
+#include <iostream>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
 namespace EE { namespace UI { namespace Doc {
 
+template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) noexcept {
+	if constexpr ( std::is_same_v<SyntaxStyleType, std::string> &&
+				   std::is_same_v<T, std::string> ) {
+		return s;
+	} else if constexpr ( std::is_same_v<SyntaxStyleType, String::HashType> &&
+						  std::is_same_v<T, std::string> ) {
+		std::vector<SyntaxStyleType> v;
+		v.reserve( s.size() );
+		for ( const auto& sv : s )
+			v.push_back( String::hash( sv ) );
+		return v;
+	} else
+		return std::vector<SyntaxStyleType>{};
+}
+
 struct EE_API SyntaxPattern {
 	std::vector<std::string> patterns;
-	std::vector<std::string> types;
+	std::vector<SyntaxStyleType> types;
+	std::vector<std::string> typesNames;
+
 	std::string syntax{ "" };
 
-	SyntaxPattern( std::vector<std::string> _patterns, std::string _type,
-				   std::string _syntax = "" ) :
-		patterns( _patterns ), types( { _type } ), syntax( _syntax ) {}
+	SyntaxPattern( const std::vector<std::string>& _patterns, const std::string& _type,
+				   const std::string& _syntax = "" ) :
+		patterns( _patterns ),
+		types( toSyntaxStyleTypeV( std::vector{ _type } ) ),
+		typesNames( { _type } ),
+		syntax( _syntax ) {}
 
-	SyntaxPattern( std::vector<std::string> _patterns, std::vector<std::string> _types,
-				   std::string _syntax = "" ) :
-		patterns( _patterns ), types( _types ), syntax( _syntax ) {}
+	SyntaxPattern( const std::vector<std::string>& _patterns,
+				   const std::vector<std::string>& _types, const std::string& _syntax = "" ) :
+		patterns( _patterns ),
+		types( toSyntaxStyleTypeV( _types ) ),
+		typesNames( _types ),
+		syntax( _syntax ) {}
 };
 
 class EE_API SyntaxDefinition {
@@ -29,8 +55,7 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition( const std::string& languageName, const std::vector<std::string>& files,
 					  const std::vector<SyntaxPattern>& patterns,
-					  const std::unordered_map<std::string, std::string>& symbols =
-						  std::unordered_map<std::string, std::string>(),
+					  const std::unordered_map<std::string, std::string>& symbols = {},
 					  const std::string& comment = "", const std::vector<std::string> headers = {},
 					  const std::string& lspName = "" );
 
@@ -48,9 +73,9 @@ class EE_API SyntaxDefinition {
 
 	const std::string& getComment() const;
 
-	const std::unordered_map<std::string, std::string>& getSymbols() const;
+	const std::unordered_map<std::string, SyntaxStyleType>& getSymbols() const;
 
-	std::string getSymbol( const std::string& symbol ) const;
+	SyntaxStyleType getSymbol( const std::string& symbol ) const;
 
 	/** Accepts lua patterns and file extensions. */
 	SyntaxDefinition& addFileType( const std::string& fileType );
@@ -63,10 +88,12 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& addPatternsToFront( const std::vector<SyntaxPattern>& patterns );
 
-	SyntaxDefinition& addSymbol( const std::string& symbolName, const std::string& typeName );
+	SyntaxDefinition& addSymbol( const std::string& symbolName, const SyntaxStyleType& typeName );
 
 	SyntaxDefinition& addSymbols( const std::vector<std::string>& symbolNames,
-								  const std::string& typeName );
+								  const SyntaxStyleType& typeName );
+
+	SyntaxDefinition& setSymbols( const std::unordered_map<std::string, SyntaxStyleType>& symbols );
 
 	/** Sets the comment string used for auto-comment functionality. */
 	SyntaxDefinition& setComment( const std::string& comment );
@@ -93,7 +120,7 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setLSPName( const std::string& lSPName );
 
-	std::vector<SyntaxPattern> getPatternsOfType( const std::string& type ) const;
+	std::vector<SyntaxPattern> getPatternsOfType( const SyntaxStyleType& type ) const;
 
 	SyntaxDefinition& setFileTypes( const std::vector<std::string>& types );
 
@@ -101,12 +128,15 @@ class EE_API SyntaxDefinition {
 
 	void setExtensionPriority( bool hasExtensionPriority );
 
+	std::unordered_map<std::string, std::string> getSymbolNames() const;
+
   protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;
-	std::unordered_map<std::string, std::string> mSymbols;
+	std::unordered_map<std::string, SyntaxStyleType> mSymbols;
+	std::unordered_map<std::string, std::string> mSymbolNames;
 	std::string mComment;
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;

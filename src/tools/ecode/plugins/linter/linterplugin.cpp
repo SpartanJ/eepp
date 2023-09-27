@@ -918,16 +918,16 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 	}
 }
 
-std::string LinterPlugin::getMatchString( const LinterType& type ) {
+SyntaxStyleType LinterPlugin::getMatchString( const LinterType& type ) {
 	switch ( type ) {
 		case LinterType::Warning:
-			return "warning";
+			return "warning"_sst;
 		case LinterType::Notice:
-			return "notice";
+			return "notice"_sst;
 		default:
 			break;
 	}
-	return "error";
+	return "error"_sst;
 }
 
 void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
@@ -991,7 +991,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		if ( !quickFixRendered && doc->getSelection().start().line() == index &&
 			 !match.diagnostic.codeActions.empty() ) {
 			rLineWidth = editor->getLineWidth( index );
-			Color wcolor( editor->getColorScheme().getEditorSyntaxStyle( "warning" ).color );
+			Color wcolor( editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
 			if ( nullptr == mLightbulbIcon ) {
 				mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
 					"lightbulb-autofix" );

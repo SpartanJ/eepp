@@ -615,9 +615,9 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 	TextDocument& doc = editor->getDocument();
 	Primitives primitives;
 	const SyntaxColorScheme& scheme = editor->getColorScheme();
-	const auto& normalStyle = scheme.getEditorSyntaxStyle( "suggestion" );
-	const auto& selectedStyle = scheme.getEditorSyntaxStyle( "suggestion_selected" );
-	const auto& matchingSelection = scheme.getEditorSyntaxStyle( "matching_selection" );
+	const auto& normalStyle = scheme.getEditorSyntaxStyle( "suggestion"_sst );
+	const auto& selectedStyle = scheme.getEditorSyntaxStyle( "suggestion_selected"_sst );
+	const auto& matchingSelection = scheme.getEditorSyntaxStyle( "matching_selection"_sst );
 
 	auto curSigIdx =
 		mSignatureHelpSelected != -1 ? mSignatureHelpSelected : mSignatureHelp.activeSignature;
@@ -707,8 +707,8 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	TextPosition start = doc.startOfWord( editor->getDocument().startOfWord( cursor ) );
 	Primitives primitives;
 	const SyntaxColorScheme& scheme = editor->getColorScheme();
-	const auto& normalStyle = scheme.getEditorSyntaxStyle( "suggestion" );
-	const auto& selectedStyle = scheme.getEditorSyntaxStyle( "suggestion_selected" );
+	const auto& normalStyle = scheme.getEditorSyntaxStyle( "suggestion"_sst );
+	const auto& selectedStyle = scheme.getEditorSyntaxStyle( "suggestion_selected"_sst );
 	bool drawUp = true;
 	mRowHeight = lineHeight + mBoxPadding.Top + mBoxPadding.Bottom;
 
@@ -729,7 +729,7 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	size_t largestString = 0;
 	size_t max = eemin<size_t>( mSuggestionsMaxVisible, suggestions.size() );
 
-	const auto& barStyle = scheme.getEditorSyntaxStyle( "suggestion_scrollbar" );
+	const auto& barStyle = scheme.getEditorSyntaxStyle( "suggestion_scrollbar"_sst );
 	if ( cursorPos.y + mRowHeight * max > editor->getPixelsSize().getHeight() ) {
 		cursorPos.y -= lineHeight + mRowHeight * max;
 		drawUp = false;

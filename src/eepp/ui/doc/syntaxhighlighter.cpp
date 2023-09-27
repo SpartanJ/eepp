@@ -14,7 +14,7 @@ static constexpr void _hash( Uint64& signature, const String::HashType& val ) {
 Uint64 TokenizedLine::calcSignature( const std::vector<SyntaxTokenPosition>& tokens ) {
 	Uint64 signature = 5381;
 	for ( const auto& token : tokens )
-		_hash( signature, String::hash( token.type ) );
+		_hash( signature, SyntaxStyleTypeHash( token.type ) );
 	return signature;
 }
 
@@ -56,7 +56,7 @@ TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const Uint64&
 		while ( textSize > 0 ) {
 			size_t chunkSize =
 				textSize > mMaxTokenizationLength ? mMaxTokenizationLength : textSize;
-			SyntaxTokenPosition token{ "normal", pos, chunkSize };
+			SyntaxTokenPosition token{ SyntaxStyleTypes::Normal, pos, chunkSize };
 			token.len = ln.size();
 			tokenizedLine.tokens.emplace_back( token );
 			textSize -= chunkSize;
@@ -123,7 +123,7 @@ void SyntaxHighlighter::setMaxTokenizationLength( const Int64& maxTokenizationLe
 
 const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t& index ) {
 	if ( mDoc->getSyntaxDefinition().getPatterns().empty() ) {
-		static std::vector<SyntaxTokenPosition> noHighlightVector = { { "normal", 0 } };
+		static std::vector<SyntaxTokenPosition> noHighlightVector = { { SyntaxStyleTypes::Normal, 0 } };
 		noHighlightVector[0].len = mDoc->line( index ).size();
 		return noHighlightVector;
 	}
@@ -204,19 +204,19 @@ SyntaxHighlighter::getSyntaxDefinitionFromTextPosition( const TextPosition& posi
 	return *state.currentSyntax;
 }
 
-std::string SyntaxHighlighter::getTokenTypeAt( const TextPosition& pos ) {
+SyntaxStyleType SyntaxHighlighter::getTokenTypeAt( const TextPosition& pos ) {
 	if ( !pos.isValid() || pos.line() < 0 || pos.line() >= (Int64)mDoc->linesCount() )
-		return "normal";
+		return SyntaxStyleTypes::Normal;
 	auto tokens = getLine( pos.line() );
 	if ( tokens.empty() )
-		return "normal";
+		return SyntaxStyleTypes::Normal;
 	Int64 col = 0;
 	for ( const auto& token : tokens ) {
 		col += token.len;
 		if ( col > pos.column() )
 			return token.type;
 	}
-	return "normal";
+	return SyntaxStyleTypes::Normal;
 }
 
 SyntaxTokenPosition SyntaxHighlighter::getTokenPositionAt( const TextPosition& pos ) {

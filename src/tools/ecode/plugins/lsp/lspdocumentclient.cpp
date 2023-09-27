@@ -205,8 +205,8 @@ UISceneNode* LSPDocumentClient::getUISceneNode() {
 	return server->getManager()->getPluginManager()->getUISceneNode();
 }
 
-static std::string semanticTokenTypeToSyntaxType( const std::string& type,
-												  const SyntaxDefinition& ) {
+static SyntaxStyleType semanticTokenTypeToSyntaxType( const std::string& type,
+													  const SyntaxDefinition& ) {
 	switch ( String::hash( type ) ) {
 		case SemanticTokenTypes::Namespace:
 		case SemanticTokenTypes::Type:
@@ -215,40 +215,40 @@ static std::string semanticTokenTypeToSyntaxType( const std::string& type,
 		case SemanticTokenTypes::Interface:
 		case SemanticTokenTypes::Struct:
 		case SemanticTokenTypes::TypeParameter:
-			return "keyword2";
+			return "keyword2"_sst;
 		case SemanticTokenTypes::Parameter:
-			return "keyword3";
+			return "keyword3"_sst;
 		case SemanticTokenTypes::Variable:
-			return "symbol";
+			return "symbol"_sst;
 		case SemanticTokenTypes::Property:
-			return "symbol";
+			return "symbol"_sst;
 		case SemanticTokenTypes::EnumMember:
 		case SemanticTokenTypes::Event:
-			return "keyword2";
+			return "keyword2"_sst;
 		case SemanticTokenTypes::Function:
 		case SemanticTokenTypes::Method:
 		case SemanticTokenTypes::Member:
-			return "function";
+			return "function"_sst;
 		case SemanticTokenTypes::Macro:
-			return "keyword2";
+			return "keyword2"_sst;
 		case SemanticTokenTypes::Keyword:
 		case SemanticTokenTypes::Modifier:
-			return "keyword";
+			return "keyword"_sst;
 		case SemanticTokenTypes::Comment:
-			return "comment";
+			return "comment"_sst;
 		case SemanticTokenTypes::Str:
-			return "string";
+			return "string"_sst;
 		case SemanticTokenTypes::Number:
 		case SemanticTokenTypes::Regexp:
-			return "number";
+			return "number"_sst;
 		case SemanticTokenTypes::Operator:
-			return "operator";
+			return "operator"_sst;
 		case SemanticTokenTypes::Decorator:
-			return "literal";
+			return "literal"_sst;
 		case SemanticTokenTypes::Unknown:
 			break;
 	};
-	return "normal";
+	return SyntaxStyleTypes::Normal;
 }
 
 void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens,
@@ -326,7 +326,7 @@ void LSPDocumentClient::highlight() {
 				{ semanticTokenTypeToSyntaxType( ltype, mDoc->getSyntaxDefinition() ), start,
 				  len } );
 		} else {
-			line->tokens.push_back( { "normal", start, len } );
+			line->tokens.push_back( { SyntaxStyleTypes::Normal, start, len } );
 		}
 		line->hash = mDoc->line( currentLine ).getHash();
 		line->updateSignature();

@@ -286,7 +286,7 @@ void UICodeEditor::draw() {
 
 	if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
 		drawTextRange( mHighlightTextRange, lineRange, startScroll, lineHeight,
-					   mColorScheme.getEditorSyntaxStyle( "selection_region" ).color );
+					   mColorScheme.getEditorSyntaxStyle( "selection_region"_sst ).color );
 	}
 
 	if ( mHighlightSelectionMatch && mDoc->hasSelection() && mDoc->getSelection().inSameLine() ) {
@@ -783,24 +783,24 @@ const SyntaxColorScheme& UICodeEditor::getColorScheme() const {
 }
 
 void UICodeEditor::updateColorScheme() {
-	setBackgroundColor( mColorScheme.getEditorColor( "background" ) );
-	setFontColor( mColorScheme.getEditorColor( "text" ) );
-	mFontStyleConfig.setFontSelectionBackColor( mColorScheme.getEditorColor( "selection" ) );
-	mLineNumberFontColor = mColorScheme.getEditorColor( "line_number" );
-	mLineNumberActiveFontColor = mColorScheme.getEditorColor( "line_number2" );
-	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "gutter_background" );
-	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight" );
-	mCaretColor = mColorScheme.getEditorColor( "caret" );
-	mWhitespaceColor = mColorScheme.getEditorColor( "whitespace" );
-	mLineBreakColumnColor = mColorScheme.getEditorColor( "line_break_column" );
-	mMatchingBracketColor = mColorScheme.getEditorColor( "matching_bracket" );
-	mSelectionMatchColor = mColorScheme.getEditorColor( "matching_selection" );
-	mMinimapBackgroundColor = mColorScheme.getEditorColor( "minimap_background" );
-	mMinimapVisibleAreaColor = mColorScheme.getEditorColor( "minimap_visible_area" );
-	mMinimapCurrentLineColor = mColorScheme.getEditorColor( "minimap_current_line" );
-	mMinimapHoverColor = mColorScheme.getEditorColor( "minimap_hover" );
-	mMinimapHighlightColor = mColorScheme.getEditorColor( "minimap_highlight" );
-	mMinimapSelectionColor = mColorScheme.getEditorColor( "minimap_selection" );
+	setBackgroundColor( mColorScheme.getEditorColor( "background"_sst ) );
+	setFontColor( mColorScheme.getEditorColor( "text"_sst ) );
+	mFontStyleConfig.setFontSelectionBackColor( mColorScheme.getEditorColor( "selection"_sst ) );
+	mLineNumberFontColor = mColorScheme.getEditorColor( "line_number"_sst );
+	mLineNumberActiveFontColor = mColorScheme.getEditorColor( "line_number2"_sst );
+	mLineNumberBackgroundColor = mColorScheme.getEditorColor( "gutter_background"_sst );
+	mCurrentLineBackgroundColor = mColorScheme.getEditorColor( "line_highlight"_sst );
+	mCaretColor = mColorScheme.getEditorColor( "caret"_sst );
+	mWhitespaceColor = mColorScheme.getEditorColor( "whitespace"_sst );
+	mLineBreakColumnColor = mColorScheme.getEditorColor( "line_break_column"_sst );
+	mMatchingBracketColor = mColorScheme.getEditorColor( "matching_bracket"_sst );
+	mSelectionMatchColor = mColorScheme.getEditorColor( "matching_selection"_sst );
+	mMinimapBackgroundColor = mColorScheme.getEditorColor( "minimap_background"_sst );
+	mMinimapVisibleAreaColor = mColorScheme.getEditorColor( "minimap_visible_area"_sst );
+	mMinimapCurrentLineColor = mColorScheme.getEditorColor( "minimap_current_line"_sst );
+	mMinimapHoverColor = mColorScheme.getEditorColor( "minimap_hover"_sst );
+	mMinimapHighlightColor = mColorScheme.getEditorColor( "minimap_highlight"_sst );
+	mMinimapSelectionColor = mColorScheme.getEditorColor( "minimap_selection"_sst );
 }
 
 void UICodeEditor::setColorScheme( const SyntaxColorScheme& colorScheme ) {
@@ -2909,8 +2909,8 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 
 						SyntaxColorScheme::Style linkStyle = style;
 
-						if ( mColorScheme.hasSyntaxStyle( "link_hover" ) ) {
-							linkStyle = mColorScheme.getSyntaxStyle( "link_hover" );
+						if ( mColorScheme.hasSyntaxStyle( "link_hover"_sst ) ) {
+							linkStyle = mColorScheme.getSyntaxStyle( "link_hover"_sst );
 							if ( linkStyle.color != Color::Transparent ) {
 								fontStyle.FontColor = Color( linkStyle.color ).blendAlpha( mAlpha );
 							}
@@ -3387,7 +3387,7 @@ Rectf UICodeEditor::getMinimapRect( const Vector2f& start ) const {
 		Sizef( w, h ) );
 }
 
-static const std::string SYNTAX_NORMAL = "normal";
+static const SyntaxStyleType SYNTAX_NORMAL = SyntaxStyleTypes::Normal;
 
 void UICodeEditor::drawMinimap( const Vector2f& start,
 								const std::pair<Uint64, Uint64>& lineRange ) {
@@ -3427,25 +3427,23 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 	}
 
 	BR->quadsSetColor( Color( mMinimapVisibleAreaColor ).blendAlpha( mAlpha ) );
-	BR->batchQuad(
-		{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
+	BR->batchQuad( { { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
 	if ( mMinimapHover || mMinimapDragging ) {
 		BR->quadsSetColor( Color( mMinimapHoverColor ).blendAlpha( mAlpha ) );
-		BR->batchQuad(
-			{ { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
+		BR->batchQuad( { { rect.Left, visibleY }, Sizef( rect.getWidth(), scrollerHeight ) } );
 	}
 
 	Float gutterWidth = PixelDensity::dpToPx( mMinimapConfig.gutterWidth );
 	Float lineY = rect.Top;
 
-	const std::string* batchSyntaxType = &SYNTAX_NORMAL;
+	const auto* batchSyntaxType = &SYNTAX_NORMAL;
 	Color color = mColorScheme.getSyntaxStyle( *batchSyntaxType ).color;
 	color.a *= 0.5f;
 	Float batchWidth = 0;
 	Float batchStart = rect.Left;
 	Float minimapCutoffX = rect.Left + rect.getWidth();
 	Float widthScale = charSpacing / getGlyphWidth();
-	auto flushBatch = [&]( const std::string& type ) {
+	auto flushBatch = [&]( const SyntaxStyleType& type ) {
 		Color oldColor = color;
 		color = mColorScheme.getSyntaxStyle( *batchSyntaxType ).color;
 		if ( mMinimapConfig.syntaxHighlight && color != Color::Transparent ) {

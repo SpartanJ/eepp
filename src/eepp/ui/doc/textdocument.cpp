@@ -532,7 +532,7 @@ TextDocument::LoadStatus TextDocument::reload() {
 }
 
 bool TextDocument::save( const std::string& path ) {
-	if ( path.empty() || mDefaultFileName == path  || mSaving )
+	if ( path.empty() || mDefaultFileName == path || mSaving )
 		return false;
 	mSaving = true;
 	if ( FileSystem::fileWrite( path, "" ) ) {
@@ -2548,7 +2548,7 @@ static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, cons
 								int dir ) {
 	if ( highlighter ) {
 		auto type = highlighter->getTokenTypeAt( pos );
-		if ( type != "comment" && type != "string" )
+		if ( type != "comment"_sst && type != "string"_sst )
 			depth += dir;
 	} else {
 		depth += dir;

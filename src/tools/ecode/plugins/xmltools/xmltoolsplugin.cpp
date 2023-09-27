@@ -139,7 +139,7 @@ static bool isClosedTag( TextDocument* doc, TextPosition start ) {
 		String::StringBaseType ch = doc->getChar( start );
 		if ( ch == '>' ) {
 			auto tokenType = highlighter->getTokenTypeAt( start );
-			if ( tokenType != "comment" && tokenType != "string" )
+			if ( tokenType != "comment"_sst && tokenType != "string"_sst )
 				return prevChar == '/';
 		}
 		start = doc->positionOffset( start, 1 );
@@ -328,7 +328,7 @@ void XMLToolsPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& inde
 	if ( !isOverMatch( &editor->getDocument(), index ) )
 		return;
 	Primitives p;
-	Color color( editor->getColorScheme().getEditorSyntaxStyle( "matching_bracket" ).color );
+	Color color( editor->getColorScheme().getEditorSyntaxStyle( "matching_bracket"_sst ).color );
 	Color blendedColor( Color( color, 50 ) );
 	p.setColor( blendedColor );
 
@@ -349,7 +349,7 @@ void XMLToolsPlugin::minimapDrawAfterLineText( UICodeEditor* editor, const Int64
 	if ( !isOverMatch( &editor->getDocument(), index ) )
 		return;
 	Primitives p;
-	Color color( editor->getColorScheme().getEditorSyntaxStyle( "matching_bracket" ).color );
+	Color color( editor->getColorScheme().getEditorSyntaxStyle( "matching_bracket"_sst ).color );
 	Color blendedColor( Color( color, 50 ) );
 	p.setColor( blendedColor );
 

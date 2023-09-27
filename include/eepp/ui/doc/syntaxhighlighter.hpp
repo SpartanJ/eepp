@@ -39,7 +39,7 @@ class EE_API SyntaxHighlighter {
 
 	const SyntaxDefinition& getSyntaxDefinitionFromTextPosition( const TextPosition& position );
 
-	std::string getTokenTypeAt( const TextPosition& pos );
+	SyntaxStyleType getTokenTypeAt( const TextPosition& pos );
 
 	SyntaxTokenPosition getTokenPositionAt( const TextPosition& pos );
 
