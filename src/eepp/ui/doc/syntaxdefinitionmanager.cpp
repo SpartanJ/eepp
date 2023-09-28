@@ -1009,7 +1009,7 @@ static void addDart() {
 
 static void addNim() {
 	std::vector<SyntaxPattern> nim_patterns;
-	std::unordered_map<std::string, std::string> nim_symbols;
+	UnorderedMap<std::string, std::string> nim_symbols;
 
 	const std::vector<std::string> nim_number_patterns = {
 		"0[bB][01][01_]*",	  "0o[0-7][0-7_]*",
@@ -1083,14 +1083,14 @@ static void addNim() {
 	SyntaxDefinitionManager::instance()->add( {
 		"Nim",
 		{ "%.nim$", "%.nims$", "%.nimble$" },
-		nim_patterns,
-		nim_symbols,
+		std::move( nim_patterns ),
+		std::move( nim_symbols ),
 		"#",
 	} );
 }
 
 static void addCMake() {
-	std::unordered_map<std::string, std::string> cmake_symbols;
+	UnorderedMap<std::string, std::string> cmake_symbols;
 	const std::vector<std::string> cmake_keywords{
 		"ANDROID",		  "APPLE",	   "BORLAND",		 "CACHE",	   "CYGWIN",	  "ENV",
 		"GHSMULTI",		  "IOS",	   "MINGW",			 "MSVC",	   "MSVC10",	  "MSVC11",
@@ -1134,7 +1134,7 @@ static void addCMake() {
 													{ { "%${[%a_][%w_]*%}" }, "keyword2" },
 													{ { "[%a_][%w_]*" }, "symbol" },
 												},
-												cmake_symbols,
+												std::move( cmake_symbols ),
 												"//" } );
 }
 
@@ -2041,7 +2041,7 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 						ptrns.emplace_back( pattern["pattern"] );
 					}
 				}
-				def.addPattern( SyntaxPattern( ptrns, type, syntax ) );
+				def.addPattern( SyntaxPattern( std::move( ptrns ), std::move( type ), syntax ) );
 			}
 		}
 		if ( json.contains( "symbols" ) ) {

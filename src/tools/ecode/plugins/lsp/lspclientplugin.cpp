@@ -830,6 +830,12 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
+
+		if ( config.contains( "silent" ) )
+			mSilence = config.value( "silent", false );
+		else if ( updateConfigFile )
+			config["silent"] = mSilence;
+
 		if ( config.contains( "hover_delay" ) )
 			setHoverDelay( Time::fromString( config["hover_delay"].get<std::string>() ) );
 		else if ( updateConfigFile )

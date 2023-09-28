@@ -314,6 +314,8 @@ class LSPClientServer {
 	void refreshSmenaticHighlighting();
 
 	void refreshCodeLens();
+
+	bool isSilent() const;
 };
 
 } // namespace ecode

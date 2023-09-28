@@ -6,7 +6,6 @@
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
-#include <eepp/system/process.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -727,13 +726,15 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 		return;
 
 	ScopedOp op(
-		[this]() {
-			mWorkMutex.lock();
+		[this, doc]() {
+			std::lock_guard l( mWorkMutex );
 			mWorkersCount++;
 		},
 		[this]() {
-			mWorkersCount--;
-			mWorkMutex.unlock();
+			{
+				std::lock_guard l( mWorkMutex );
+				mWorkersCount--;
+			}
 			mWorkerCondition.notify_all();
 		} );
 	if ( !mReady )
@@ -776,16 +777,26 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 	std::string cmd( linter.command );
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
 	Process process;
+	TextDocument* docPtr = doc.get();
+	ScopedOp op(
+		[this, &process, &docPtr] {
+			std::lock_guard l( mRunningProcessesMutex );
+			auto found = mRunningProcesses.find( docPtr );
+			if ( found != mRunningProcesses.end() )
+				found->second->kill();
+			mRunningProcesses[docPtr] = &process;
+		},
+		[this, &docPtr] {
+			std::lock_guard l( mRunningProcessesMutex );
+			mRunningProcesses.erase( docPtr );
+		} );
+	;
+
 	if ( process.create( cmd, Process::getDefaultOptions() | Process::CombinedStdoutStderr, {},
 						 mManager->getWorkspaceFolder() ) ) {
-		std::string buffer( 1024, '\0' );
-		std::string data;
-		unsigned bytesRead = 0;
 		int returnCode;
-		do {
-			bytesRead = process.readStdOut( buffer );
-			data += buffer.substr( 0, bytesRead );
-		} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown );
+		std::string data;
+		process.readAllStdOut( data );
 
 		if ( mShuttingDown ) {
 			process.kill();

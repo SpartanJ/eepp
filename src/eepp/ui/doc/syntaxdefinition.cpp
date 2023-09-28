@@ -7,22 +7,21 @@ namespace EE { namespace UI { namespace Doc {
 SyntaxDefinition::SyntaxDefinition() {}
 
 SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
-									const std::vector<std::string>& files,
-									const std::vector<SyntaxPattern>& patterns,
-									const std::unordered_map<std::string, std::string>& symbols,
-									const std::string& comment,
-									const std::vector<std::string> headers,
+									std::vector<std::string>&& files,
+									std::vector<SyntaxPattern>&& patterns,
+									UnorderedMap<std::string, std::string>&& symbols,
+									const std::string& comment, std::vector<std::string>&& headers,
 									const std::string& lspName ) :
 	mLanguageName( languageName ),
 	mLanguageId( String::hash( String::toLower( languageName ) ) ),
-	mFiles( files ),
-	mPatterns( patterns ),
-	mSymbolNames( symbols ),
+	mFiles( std::move( files ) ),
+	mPatterns( std::move( patterns ) ),
+	mSymbolNames( std::move( symbols ) ),
 	mComment( comment ),
-	mHeaders( headers ),
+	mHeaders( std::move( headers ) ),
 	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {
-	mSymbols.reserve( symbols.size() );
-	for ( const auto& symbol : symbols )
+	mSymbols.reserve( mSymbolNames.size() );
+	for ( const auto& symbol : mSymbolNames )
 		mSymbols.insert( { symbol.first, toSyntaxStyleType( symbol.second ) } );
 }
 
@@ -64,7 +63,7 @@ void SyntaxDefinition::setExtensionPriority( bool hasExtensionPriority ) {
 	mHasExtensionPriority = hasExtensionPriority;
 }
 
-std::unordered_map<std::string, std::string> SyntaxDefinition::getSymbolNames() const {
+UnorderedMap<std::string, std::string> SyntaxDefinition::getSymbolNames() const {
 	return mSymbolNames;
 }
 
@@ -76,7 +75,7 @@ const std::string& SyntaxDefinition::getComment() const {
 	return mComment;
 }
 
-const std::unordered_map<std::string, SyntaxStyleType>& SyntaxDefinition::getSymbols() const {
+const UnorderedMap<std::string, SyntaxStyleType>& SyntaxDefinition::getSymbols() const {
 	return mSymbols;
 }
 
@@ -127,7 +126,7 @@ SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& 
 }
 
 SyntaxDefinition&
-SyntaxDefinition::setSymbols( const std::unordered_map<std::string, SyntaxStyleType>& symbols ) {
+SyntaxDefinition::setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols ) {
 	mSymbols = symbols;
 	return *this;
 }

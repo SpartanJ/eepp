@@ -310,8 +310,7 @@ const std::vector<FormatterPlugin::Formatter>& FormatterPlugin::getFormatters() 
 	return mFormatters;
 }
 
-FormatterPlugin::Formatter
-FormatterPlugin::getFormatterForLang( const std::string& lang ) {
+FormatterPlugin::Formatter FormatterPlugin::getFormatterForLang( const std::string& lang ) {
 	for ( const auto& formatter : mFormatters ) {
 		for ( const auto& clang : formatter.languages ) {
 			if ( clang == lang ) {
@@ -428,14 +427,9 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
 	Process process;
 	if ( process.create( cmd ) ) {
-		std::string buffer( 1024, '\0' );
-		std::string data;
-		unsigned bytesRead = 0;
 		int returnCode;
-		do {
-			bytesRead = process.readStdOut( buffer );
-			data += buffer.substr( 0, bytesRead );
-		} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown );
+		std::string data;
+		process.readAllStdOut( data );
 
 		if ( mShuttingDown ) {
 			process.kill();

@@ -187,7 +187,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 
-	SyntaxDefinition synDef( "custom_build", {}, patterns );
+	SyntaxDefinition synDef( "custom_build", {}, std::move( patterns ) );
 
 	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
@@ -304,7 +304,7 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 
-	SyntaxDefinition synDef( "custom_build", {}, patterns );
+	SyntaxDefinition synDef( "custom_build", {}, std::move( patterns ) );
 
 	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );

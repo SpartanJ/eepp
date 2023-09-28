@@ -4,6 +4,7 @@
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
+#include <eepp/system/process.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <memory>
@@ -123,6 +124,8 @@ class LinterPlugin : public Plugin {
 	std::condition_variable mWorkerCondition;
 	Int32 mWorkersCount{ 0 };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
+	std::mutex mRunningProcessesMutex;
+	std::unordered_map<TextDocument*, Process*> mRunningProcesses;
 
 	bool mHoveringMatch{ false };
 	bool mEnableLSPDiagnostics{ true };

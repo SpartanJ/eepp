@@ -148,6 +148,21 @@ static bool isClosedTag( TextDocument* doc, TextPosition start ) {
 	return false;
 }
 
+static bool isAlreadyClosedTag( TextDocument* doc, TextPosition start ) {
+	SyntaxHighlighter* highlighter = doc->getHighlighter();
+	TextPosition endOfDoc = doc->endOfDoc();
+	do {
+		String::StringBaseType ch = doc->getChar( start );
+		if ( ch == '>' ) {
+			auto tokenType = highlighter->getTokenTypeAt( start );
+			if ( tokenType != "comment"_sst && tokenType != "string"_sst )
+				return true;
+		}
+		start = doc->positionOffset( start, 1 );
+	} while ( start.isValid() && start != endOfDoc );
+	return false;
+}
+
 void XMLToolsPlugin::XMLToolsClient::updateCurrentMatch( XMLToolsPlugin::ClientMatch& match,
 														 int translation ) {
 	TextRange& open = match.open();
@@ -206,7 +221,10 @@ void XMLToolsPlugin::XMLToolsClient::onDocumentTextChanged(
 		if ( match.isSameLine() && !match.currentIsClose )
 			translatedPos =
 				mDoc->positionOffset( translatedPos, translation + docChange.text.size() );
-		mDoc->insert( 0, translatedPos, docChange.text );
+		if ( !( ">" == docChange.text && isAlreadyClosedTag( mDoc, match.matchBracket.start() ) ) &&
+			 !( " " == docChange.text && docChange.range.end() == match.currentBracket.end() ) ) {
+			mDoc->insert( 0, translatedPos, docChange.text );
+		}
 		mWaitingText = false;
 		if ( match.isSameLine() && match.currentIsClose ) {
 			for ( auto& s : sel ) {

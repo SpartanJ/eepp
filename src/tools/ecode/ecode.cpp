@@ -3321,7 +3321,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			[this]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
 
 		mWindow->setQuitCallback( [this]( EE::Window::Window* win ) {
-			if ( mWindow->isOpen() )
+			if ( win->isOpen() )
 				closeApp();
 		} );
 

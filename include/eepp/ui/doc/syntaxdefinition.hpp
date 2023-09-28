@@ -15,7 +15,7 @@ namespace EE { namespace UI { namespace Doc {
 template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) noexcept {
 	if constexpr ( std::is_same_v<SyntaxStyleType, std::string> &&
 				   std::is_same_v<T, std::string> ) {
-		return s;
+		return std::vector<T>( s );
 	} else if constexpr ( std::is_same_v<SyntaxStyleType, String::HashType> &&
 						  std::is_same_v<T, std::string> ) {
 		std::vector<SyntaxStyleType> v;
@@ -34,18 +34,18 @@ struct EE_API SyntaxPattern {
 
 	std::string syntax{ "" };
 
-	SyntaxPattern( const std::vector<std::string>& _patterns, const std::string& _type,
+	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
 				   const std::string& _syntax = "" ) :
-		patterns( _patterns ),
-		types( toSyntaxStyleTypeV( std::vector{ _type } ) ),
+		patterns( std::move( _patterns ) ),
+		types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
 		typesNames( { _type } ),
 		syntax( _syntax ) {}
 
-	SyntaxPattern( const std::vector<std::string>& _patterns,
-				   const std::vector<std::string>& _types, const std::string& _syntax = "" ) :
-		patterns( _patterns ),
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   const std::string& _syntax = "" ) :
+		patterns( std::move( _patterns ) ),
 		types( toSyntaxStyleTypeV( _types ) ),
-		typesNames( _types ),
+		typesNames( std::move( _types ) ),
 		syntax( _syntax ) {}
 };
 
@@ -53,10 +53,10 @@ class EE_API SyntaxDefinition {
   public:
 	SyntaxDefinition();
 
-	SyntaxDefinition( const std::string& languageName, const std::vector<std::string>& files,
-					  const std::vector<SyntaxPattern>& patterns,
-					  const std::unordered_map<std::string, std::string>& symbols = {},
-					  const std::string& comment = "", const std::vector<std::string> headers = {},
+	SyntaxDefinition( const std::string& languageName, std::vector<std::string>&& files,
+					  std::vector<SyntaxPattern>&& patterns,
+					  UnorderedMap<std::string, std::string>&& symbols = {},
+					  const std::string& comment = "", std::vector<std::string>&& headers = {},
 					  const std::string& lspName = "" );
 
 	const std::string& getLanguageName() const;
@@ -73,7 +73,7 @@ class EE_API SyntaxDefinition {
 
 	const std::string& getComment() const;
 
-	const std::unordered_map<std::string, SyntaxStyleType>& getSymbols() const;
+	const UnorderedMap<std::string, SyntaxStyleType>& getSymbols() const;
 
 	SyntaxStyleType getSymbol( const std::string& symbol ) const;
 
@@ -93,7 +93,7 @@ class EE_API SyntaxDefinition {
 	SyntaxDefinition& addSymbols( const std::vector<std::string>& symbolNames,
 								  const SyntaxStyleType& typeName );
 
-	SyntaxDefinition& setSymbols( const std::unordered_map<std::string, SyntaxStyleType>& symbols );
+	SyntaxDefinition& setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols );
 
 	/** Sets the comment string used for auto-comment functionality. */
 	SyntaxDefinition& setComment( const std::string& comment );
@@ -128,15 +128,15 @@ class EE_API SyntaxDefinition {
 
 	void setExtensionPriority( bool hasExtensionPriority );
 
-	std::unordered_map<std::string, std::string> getSymbolNames() const;
+	UnorderedMap<std::string, std::string> getSymbolNames() const;
 
   protected:
 	std::string mLanguageName;
 	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;
-	std::unordered_map<std::string, SyntaxStyleType> mSymbols;
-	std::unordered_map<std::string, std::string> mSymbolNames;
+	UnorderedMap<std::string, SyntaxStyleType> mSymbols;
+	UnorderedMap<std::string, std::string> mSymbolNames;
 	std::string mComment;
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;

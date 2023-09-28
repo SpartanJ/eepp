@@ -84,6 +84,10 @@ class LSPClientPlugin : public Plugin {
 
 	bool langSupportsSemanticHighlighting( const std::string& lspLang );
 
+	bool isSilent() const { return mSilence; }
+
+	void setSilent( bool silence = true ) { mSilence = silence; }
+
   protected:
 	friend class LSPDocumentClient;
 	friend class LSPClientServer;
@@ -102,6 +106,7 @@ class LSPClientPlugin : public Plugin {
 	bool mOldUsingCustomStyling{ false };
 	bool mSymbolInfoShowing{ false };
 	bool mSemanticHighlighting{ false };
+	bool mSilence{ false };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::map<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
 	Uint32 mHoverWaitCb{ 0 };
