@@ -34,7 +34,7 @@ class FormatterPlugin : public Plugin {
 	static PluginDefinition Definition() {
 		return {
 			"autoformatter",	  "Auto Formatter", "Enables the code formatter/prettifier plugin.",
-			FormatterPlugin::New, { 0, 2, 2 },		FormatterPlugin::NewSync };
+			FormatterPlugin::New, { 0, 2, 3 },		FormatterPlugin::NewSync };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );
