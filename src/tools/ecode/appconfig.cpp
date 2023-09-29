@@ -151,7 +151,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 	term.newTerminalOrientation = NewTerminalOrientation::fromString(
 		ini.getValue( "terminal", "new_terminal_orientation", "vertical" ) );
-	term.shell = ini.getValueI( "terminal", "scrollback", 10000 );
+	term.scrollback = ini.getValueI( "terminal", "scrollback", 10000 );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
