@@ -165,6 +165,25 @@ void TerminalManager::configureTerminalShell() {
 	window->on( Event::OnWindowReady, [ok]( const Event* ) { ok->setFocus(); } );
 }
 
+void TerminalManager::configureTerminalScrollback() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		mApp->i18n( "configure_terminal_scrollback", "Configure terminal scrollback:" ) );
+	msgBox->setTitle( mApp->getWindowTitle() );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
+	msgBox->getTextInput()->setText( String::toString( mApp->getConfig().term.scrollback ) );
+	msgBox->center();
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+		int val;
+		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
+			mApp->getConfig().term.scrollback = val;
+			msgBox->closeWindow();
+		}
+	} );
+}
+
 UIMenu* TerminalManager::createColorSchemeMenu() {
 	mColorSchemeMenuesCreatedWithHeight = mApp->uiSceneNode()->getPixelsSize().getHeight();
 	size_t maxItems = 19;
@@ -260,8 +279,8 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	UITerminal* term = UITerminal::New(
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
-		program, args, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(), 10000,
-		nullptr, mUseFrameBuffer );
+		program, args, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(),
+		mApp->termConfig().scrollback, nullptr, mUseFrameBuffer );
 	if ( term->getTerm() == nullptr ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK,
@@ -291,7 +310,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	term->setCommand( "terminal-rename", [&, term] {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::INPUT, mApp->i18n( "new_terminal_name", "New terminal name:" ) );
-		msgBox->setTitle( "ecode" );
+		msgBox->setTitle( mApp->getWindowTitle() );
 		msgBox->getTextInput()->setHint( mApp->i18n( "any_name", "Any name..." ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();

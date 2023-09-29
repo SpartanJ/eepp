@@ -288,6 +288,10 @@ class App : public UICodeEditorSplitter::Client {
 			if ( mTerminalManager )
 				mTerminalManager->configureTerminalShell();
 		} );
+		t.setCommand( "configure-terminal-scrollback", [this] {
+			if ( mTerminalManager )
+				mTerminalManager->configureTerminalScrollback();
+		} );
 		t.setCommand( "check-for-updates", [this] { checkForUpdates( false ); } );
 		mSplitter->registerSplitterCommands( t );
 	}

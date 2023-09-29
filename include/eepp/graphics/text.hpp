@@ -39,9 +39,10 @@ class EE_API Text {
 
 	static Text* New();
 
-	static Text* New( const String& string, Font* font, unsigned int characterSize = 12 );
+	static Text* New( const String& string, Font* font,
+					  unsigned int characterSize = PixelDensity::dpToPx( 12 ) );
 
-	static Text* New( Font* font, unsigned int characterSize = 12 );
+	static Text* New( Font* font, unsigned int characterSize = PixelDensity::dpToPx( 12 ) );
 
 	static Sizef draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
 					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
@@ -54,14 +55,16 @@ class EE_API Text {
 
 	Text();
 
-	Text( const String& string, Font* font, unsigned int characterSize = 12 );
+	Text( const String& string, Font* font,
+		  unsigned int characterSize = PixelDensity::dpToPx( 12 ) );
 
-	Text( Font* font, unsigned int characterSize = 12 );
+	Text( Font* font, unsigned int characterSize = PixelDensity::dpToPx( 12 ) );
 
 	/** Create a text from a font */
 	void create( Graphics::Font* font, const String& text = "",
 				 Color FontColor = Color( 255, 255, 255, 255 ),
-				 Color FontShadowColor = Color( 0, 0, 0, 255 ), Uint32 characterSize = 12 );
+				 Color FontShadowColor = Color( 0, 0, 0, 255 ),
+				 Uint32 characterSize = PixelDensity::dpToPx( 12 ) );
 
 	void setString( const String& string );
 

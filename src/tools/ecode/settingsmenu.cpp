@@ -769,6 +769,11 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-shell" ) )
 		->setId( "configure-terminal-shell" );
 
+	mTerminalMenu
+		->add( i18n( "configure_terminal_scrollback", "Configure Terminal Scrollback" ),
+			   findIcon( "terminal" ), getKeybind( "configure-terminal-scrollback" ) )
+		->setId( "configure-terminal-scrollback" );
+
 	newTerminalBehaviorSubMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
 		mApp->getConfig().term.newTerminalOrientation = NewTerminalOrientation::fromString( id );
