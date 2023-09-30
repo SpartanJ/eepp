@@ -148,10 +148,10 @@ void LSPDocumentClient::requestSemanticHighlighting( bool reqFull ) {
 	Uint64 docModId = mDoc->getModificationId();
 	mServer->documentSemanticTokensFull(
 		mDoc->getURI(), delta, reqId, range,
-		[docClient, uri, server, docModId]( const auto&, const LSPSemanticTokensDelta& deltas ) {
+		[docClient, uri, server, docModId]( const auto&, LSPSemanticTokensDelta&& deltas ) {
 			if ( server->hasDocument( uri ) ) {
 				docClient->mWaitingSemanticTokensResponse = false;
-				docClient->processTokens( deltas, docModId );
+				docClient->processTokens( std::move( deltas ), docModId );
 			}
 		} );
 }
@@ -251,7 +251,7 @@ static SyntaxStyleType semanticTokenTypeToSyntaxType( const std::string& type,
 	return SyntaxStyleTypes::Normal;
 }
 
-void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens,
+void LSPDocumentClient::processTokens( LSPSemanticTokensDelta&& tokens,
 									   const Uint64& docModificationId ) {
 	if ( mDoc == nullptr || mServer == nullptr )
 		return;
@@ -276,7 +276,7 @@ void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens,
 	}
 
 	if ( !tokens.data.empty() ) {
-		mSemanticTokens = tokens;
+		mSemanticTokens = std::move( tokens );
 	}
 
 	highlight();

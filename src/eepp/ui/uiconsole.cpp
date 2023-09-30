@@ -95,6 +95,16 @@ void UIConsole::setTheme( UITheme* Theme ) {
 }
 
 void UIConsole::scheduledUpdate( const Time& ) {
+	if ( mMouseDown ) {
+		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+			mMouseDown = false;
+			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+		} else {
+			onMouseDown( getUISceneNode()->getEventDispatcher()->getMousePos(),
+						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
+		}
+	}
+
 	if ( hasFocus() && getUISceneNode()->getWindow()->hasFocus() ) {
 		if ( mBlinkTime != Time::Zero && mBlinkTimer.getElapsedTime() > mBlinkTime ) {
 			mCursorVisible = !mCursorVisible;
@@ -910,7 +920,7 @@ Uint32 UIConsole::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	UIWidget::onMouseDown( position, flags );
 
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
-		 getEventDispatcher()->getMouseDownNode() == this ) {
+		 getEventDispatcher()->getMouseDownNode() == this && !mMouseDown ) {
 		getUISceneNode()->getWindow()->getInput()->captureMouse( true );
 		mMouseDown = true;
 	}
@@ -940,22 +950,6 @@ Uint32 UIConsole::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 		// onCreateContextMenu( position, flags );
 	}
 	return UIWidget::onMouseUp( position, flags );
-}
-
-Uint32 UIConsole::onMouseClick( const Vector2i& position, const Uint32& flags ) {
-	return UIWidget::onMouseClick( position, flags );
-}
-
-Uint32 UIConsole::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
-	return UIWidget::onMouseDoubleClick( Pos, Flags );
-}
-
-Uint32 UIConsole::onMouseOver( const Vector2i& position, const Uint32& flags ) {
-	return UIWidget::onMouseOver( position, flags );
-}
-
-Uint32 UIConsole::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	return UIWidget::onMouseLeave( Pos, Flags );
 }
 
 void UIConsole::onDocumentTextChanged( const DocumentContentChange& ) {

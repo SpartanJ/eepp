@@ -5,17 +5,12 @@
 
 namespace EE { namespace UI { namespace Doc {
 
-static constexpr void _hash( Uint64& signature, const String::HashType& val ) {
-	Int64 len = sizeof( decltype( val ) );
-	while ( --len >= 0 )
-		signature = ( ( signature << 5 ) + signature ) + ( ( val >> ( len * 8 ) ) & 0xFF );
-}
-
 Uint64 TokenizedLine::calcSignature( const std::vector<SyntaxTokenPosition>& tokens ) {
-	Uint64 signature = 5381;
-	for ( const auto& token : tokens )
-		_hash( signature, SyntaxStyleTypeHash( token.type ) );
-	return signature;
+	if ( !tokens.empty() ) {
+		return String::hash( reinterpret_cast<const char*>( tokens.data() ),
+							 sizeof( SyntaxTokenPosition ) * tokens.size() );
+	}
+	return 0;
 }
 
 void TokenizedLine::updateSignature() {
@@ -52,9 +47,9 @@ TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const Uint64&
 	tokenizedLine.hash = ln.getHash();
 	if ( mMaxTokenizationLength != 0 && (Int64)ln.size() > mMaxTokenizationLength ) {
 		Int64 textSize = ln.size();
-		Int64 pos = 0;
+		SyntaxTokenLen pos = 0;
 		while ( textSize > 0 ) {
-			size_t chunkSize =
+			SyntaxTokenLen chunkSize =
 				textSize > mMaxTokenizationLength ? mMaxTokenizationLength : textSize;
 			SyntaxTokenPosition token{ SyntaxStyleTypes::Normal, pos, chunkSize };
 			token.len = ln.size();
@@ -123,7 +118,8 @@ void SyntaxHighlighter::setMaxTokenizationLength( const Int64& maxTokenizationLe
 
 const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t& index ) {
 	if ( mDoc->getSyntaxDefinition().getPatterns().empty() ) {
-		static std::vector<SyntaxTokenPosition> noHighlightVector = { { SyntaxStyleTypes::Normal, 0 } };
+		static std::vector<SyntaxTokenPosition> noHighlightVector = {
+			{ SyntaxStyleTypes::Normal, 0, 0 } };
 		noHighlightVector[0].len = mDoc->line( index ).size();
 		return noHighlightVector;
 	}
@@ -221,17 +217,17 @@ SyntaxStyleType SyntaxHighlighter::getTokenTypeAt( const TextPosition& pos ) {
 
 SyntaxTokenPosition SyntaxHighlighter::getTokenPositionAt( const TextPosition& pos ) {
 	if ( !pos.isValid() || pos.line() < 0 || pos.line() >= (Int64)mDoc->linesCount() )
-		return {};
+		return { SyntaxStyleTypes::Normal, 0, 0 };
 	auto tokens = getLine( pos.line() );
 	if ( tokens.empty() )
-		return {};
+		return { SyntaxStyleTypes::Normal, 0, 0 };
 	Int64 col = 0;
 	for ( const auto& token : tokens ) {
 		col += token.len;
 		if ( col > pos.column() )
-			return { token.type, static_cast<Int64>( col - token.len ), token.len };
+			return { token.type, static_cast<SyntaxStyleType>( col - token.len ), token.len };
 	}
-	return {};
+	return { SyntaxStyleTypes::Normal, 0, 0 };
 }
 
 void SyntaxHighlighter::setLine( const size_t& line, const TokenizedLine& tokenization ) {
@@ -263,18 +259,20 @@ void SyntaxHighlighter::mergeLine( const size_t& line, const TokenizedLine& toke
 
 				if ( token.pos > ltoken.pos ) {
 					++iDiff;
-					tline.tokens.insert( tline.tokens.begin() + i,
-										 { ltoken.type, ltoken.pos,
-										   static_cast<size_t>( token.pos - ltoken.pos ) } );
+					tline.tokens.insert(
+						tline.tokens.begin() + i,
+						{ ltoken.type, ltoken.pos,
+						  static_cast<SyntaxTokenLen>( token.pos - ltoken.pos ) } );
 				}
 
 				tline.tokens.insert( tline.tokens.begin() + iDiff, token );
 
 				if ( token.pos + token.len < ltoken.pos + ltoken.len ) {
-					tline.tokens.insert( tline.tokens.begin() + iDiff + 1,
-										 { ltoken.type, static_cast<Int64>( token.pos + token.len ),
-										   static_cast<size_t>( ( ltoken.pos + ltoken.len ) -
-																( token.pos + token.len ) ) } );
+					tline.tokens.insert(
+						tline.tokens.begin() + iDiff + 1,
+						{ ltoken.type, static_cast<SyntaxTokenLen>( token.pos + token.len ),
+						  static_cast<SyntaxTokenLen>( ( ltoken.pos + ltoken.len ) -
+													   ( token.pos + token.len ) ) } );
 				}
 
 				lastTokenPos = i;

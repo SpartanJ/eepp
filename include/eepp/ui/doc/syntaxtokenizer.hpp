@@ -13,21 +13,31 @@ using namespace EE::Graphics;
 
 namespace EE { namespace UI { namespace Doc {
 
+using SyntaxTokenLen = Uint32;
+
 struct EE_API SyntaxToken {
 	SyntaxStyleType type;
-	size_t len{ 0 };
+	SyntaxTokenLen len{ 0 };
+
+	SyntaxToken( SyntaxStyleType type, SyntaxTokenLen len ) : type( type ), len( len ) {}
 };
 
 struct EE_API SyntaxTokenPosition {
 	SyntaxStyleType type;
-	Int64 pos{ 0 };
-	size_t len{ 0 };
+	SyntaxTokenLen pos{ 0 };
+	SyntaxTokenLen len{ 0 };
+
+	SyntaxTokenPosition( SyntaxStyleType type, SyntaxTokenLen pos, SyntaxTokenLen len ) :
+		type( type ), pos( pos ), len( len ) {}
 };
 
 struct EE_API SyntaxTokenComplete {
-	SyntaxStyleType type;
 	std::string text;
-	size_t len{ 0 };
+	SyntaxStyleType type;
+	SyntaxTokenLen len{ 0 };
+
+	SyntaxTokenComplete( SyntaxStyleType type, const std::string& text, SyntaxTokenLen len ) :
+		text( text ), type( type ), len( len ) {}
 };
 
 #define SYNTAX_TOKENIZER_STATE_NONE ( 0 )

@@ -52,13 +52,13 @@ static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
 					chunkSize = eemin( textSize, chunkSize + multiByteCodePointPos );
 				}
 				std::string substr = text.substr( pos, chunkSize );
-				size_t len = String::utf8Length( substr );
+				SyntaxStyleType len = String::utf8Length( substr );
 				if constexpr ( std::is_same_v<T, SyntaxTokenComplete> ) {
 					tokens.push_back( { type, std::move( substr ), len } );
 				} else if constexpr ( std::is_same_v<T, SyntaxTokenPosition> ) {
-					Int64 tpos = tokens.empty() ? 0
-												: tokens[tokens.size() - 1].pos +
-													  tokens[tokens.size() - 1].len;
+					SyntaxStyleType tpos = tokens.empty() ? 0
+														  : tokens[tokens.size() - 1].pos +
+																tokens[tokens.size() - 1].len;
 					tokens.push_back( { type, tpos, len } );
 				} else {
 					tokens.push_back( { type, len } );
@@ -68,14 +68,17 @@ static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
 			}
 		} else {
 			if constexpr ( std::is_same_v<T, SyntaxTokenComplete> ) {
-				tokens.push_back( { type, text, String::utf8Length( text ) } );
+				tokens.push_back(
+					{ type, text, static_cast<SyntaxTokenLen>( String::utf8Length( text ) ) } );
 			} else if constexpr ( std::is_same_v<T, SyntaxTokenPosition> ) {
-				Int64 tpos = tokens.empty()
-								 ? 0
-								 : tokens[tokens.size() - 1].pos + tokens[tokens.size() - 1].len;
-				tokens.push_back( { type, tpos, String::utf8Length( text ) } );
+				SyntaxStyleType tpos =
+					tokens.empty() ? 0
+								   : tokens[tokens.size() - 1].pos + tokens[tokens.size() - 1].len;
+				tokens.push_back(
+					{ type, tpos, static_cast<SyntaxTokenLen>( String::utf8Length( text ) ) } );
 			} else {
-				tokens.push_back( { type, String::utf8Length( text ) } );
+				tokens.push_back(
+					{ type, static_cast<SyntaxTokenLen>( String::utf8Length( text ) ) } );
 			}
 		}
 	}

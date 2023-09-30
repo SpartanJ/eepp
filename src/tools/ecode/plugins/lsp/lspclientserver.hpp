@@ -47,7 +47,7 @@ class LSPClientServer {
 	using LocationHandler = ReplyHandler<std::vector<LSPLocation>>;
 	using TextEditArrayHandler = ReplyHandler<std::vector<LSPTextEdit>>;
 	using WorkspaceEditHandler = ReplyHandler<LSPWorkspaceEdit>;
-	using SemanticTokensDeltaHandler = ReplyHandler<LSPSemanticTokensDelta>;
+	using SemanticTokensDeltaHandler = WReplyHandler<LSPSemanticTokensDelta>;
 
 	class LSPRequestHandle : public PluginRequestHandle {
 	  public:

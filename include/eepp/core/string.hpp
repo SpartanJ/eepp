@@ -69,6 +69,20 @@ class EE_API String {
 		return 0;
 	}
 
+	static constexpr String::HashType hashCombine( String::HashType& hash, const char* str,
+												   Int64 len ) {
+		while ( --len >= 0 )
+			hash = ( ( hash << 5 ) + hash ) + *str++;
+		return hash;
+	}
+
+	static constexpr String::HashType hash( const char* str, Int64 len ) {
+		String::HashType hash = 5381;
+		while ( --len >= 0 )
+			hash = ( ( hash << 5 ) + hash ) + *str++;
+		return hash;
+	}
+
 	/** Escape string sequence */
 	static String escape( const String& str );
 

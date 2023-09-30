@@ -20,6 +20,13 @@ void addOdin() {
 			  { { "0[dz][%d_]+" }, "number" },
 			  { { "0x[%da-fA-F_]+" }, "number" },
 			  { { "-?%d+[%d%._e]*i?" }, "number" },
+			  { { "([%a_][%w_]+)(%s+::%s+)(proc%s*)%f[(]" },
+				{ "normal", "function", "operator", "keyword" } },
+			  { { "([%a_][%w_]+)(%s+::%s+)%f[(]" }, { "normal", "function", "operator" } },
+			  { { "([%a_][%w_]+)(%s+::%s+)(struct%s*)%f[{]" },
+				{ "normal", "keyword2", "operator", "keyword" } },
+			  { { "([%a_][%w_]+)(%s+::%s+)(enum%s*)(%w+%s*)%f[{]" },
+				{ "normal", "keyword2", "operator", "keyword", "keyword2" } },
 			  { { "[<>~=+-*/]=" }, "operator" },
 			  { { "[%+%-=/%*%^%%<>!~|&:]" }, "operator" },
 			  { { "%$[%a_][%w_]*" }, "operator" },
@@ -136,7 +143,8 @@ void addOdin() {
 			  { "in", "keyword" },
 			  { "break", "keyword" },
 			  { "else", "keyword" },
-
+			  { "or_break", "keyword" },
+			  { "or_continue", "keyword" },
 		  },
 		  "//",
 		  {}
