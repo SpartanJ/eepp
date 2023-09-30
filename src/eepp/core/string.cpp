@@ -518,6 +518,23 @@ std::string String::trim( const std::string& str, char character ) {
 					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
 }
 
+std::string_view String::lTrim( const std::string_view& str, char character ) {
+	std::string::size_type pos1 = str.find_first_not_of( character );
+	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+}
+
+std::string_view String::rTrim( const std::string_view& str, char character ) {
+	std::string::size_type pos1 = str.find_last_not_of( character );
+	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+}
+
+std::string_view String::trim( const std::string_view& str, char character ) {
+	std::string::size_type pos1 = str.find_first_not_of( character );
+	std::string::size_type pos2 = str.find_last_not_of( character );
+	return str.substr( pos1 == std::string::npos ? 0 : pos1,
+					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+}
+
 void String::trimInPlace( std::string& str, char character ) {
 	// Trim only if there's something to trim
 	if ( !str.empty() && ( str[0] == character || str[str.size() - 1] == character ) )

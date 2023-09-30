@@ -141,6 +141,15 @@ class EE_API String {
 	/** Removes all spaces ( or the specified character ) on the string */
 	static std::string trim( const std::string& str, char character = ' ' );
 
+	/** Removes the trailing prefix. */
+	static std::string_view lTrim( const std::string_view& str, char character = ' ' );
+
+	/** Removes the trailing suffix. */
+	static std::string_view rTrim( const std::string_view& str, char character );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static std::string_view trim( const std::string_view& str, char character = ' ' );
+
 	/** Removes all spaces ( or the specified character ) on the string */
 	static void trimInPlace( std::string& str, char character = ' ' );
 

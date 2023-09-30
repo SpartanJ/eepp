@@ -10,6 +10,7 @@
 using namespace EE::Network;
 using namespace eterm::UI;
 using json = nlohmann::json;
+using namespace std::literals;
 
 namespace ecode {
 
@@ -226,8 +227,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "terminal_font", ui.terminalFont );
 	ini.setValue( "ui", "theme", ui.theme );
 	ini.setValue( "ui", "fallback_font", ui.fallbackFont );
-	ini.setValue( "ui", "ui_color_scheme",
-				  ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" );
+	ini.setValue(
+		"ui", "ui_color_scheme",
+		std::string_view{ ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" } );
 	ini.setValueB( "document", "trim_trailing_whitespaces", doc.trimTrailingWhitespaces );
 	ini.setValueB( "document", "force_new_line_at_end_of_file", doc.forceNewLineAtEndOfFile );
 	ini.setValueB( "document", "auto_detect_indent_type", doc.autoDetectIndentType );
