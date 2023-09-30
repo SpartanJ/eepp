@@ -17,6 +17,7 @@
 #include <eepp/ui/doc/languages/hlsl.hpp>
 #include <eepp/ui/doc/languages/htaccess.hpp>
 #include <eepp/ui/doc/languages/html.hpp>
+#include <eepp/ui/doc/languages/jai.hpp>
 #include <eepp/ui/doc/languages/julia.hpp>
 #include <eepp/ui/doc/languages/kotlin.hpp>
 #include <eepp/ui/doc/languages/markdown.hpp>
@@ -1702,6 +1703,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addHTML();
 	addIgnore();
 	addIni();
+	addJai();
 	addJava();
 	addJavaScript();
 	addJulia();

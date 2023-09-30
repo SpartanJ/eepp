@@ -651,6 +651,8 @@
 ../../src/eepp/ui/doc/languages/htaccess.hpp
 ../../src/eepp/ui/doc/languages/html.cpp
 ../../src/eepp/ui/doc/languages/html.hpp
+../../src/eepp/ui/doc/languages/jai.cpp
+../../src/eepp/ui/doc/languages/jai.hpp
 ../../src/eepp/ui/doc/languages/julia.cpp
 ../../src/eepp/ui/doc/languages/julia.hpp
 ../../src/eepp/ui/doc/languages/kotlin.cpp
