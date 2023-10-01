@@ -120,6 +120,83 @@ Text* Text::New( Font* font, unsigned int characterSize ) {
 	return eeNew( Text, ( font, characterSize ) );
 }
 
+static inline void drawGlyph( BatchRenderer* BR, GlyphDrawable* gd, const Vector2f& position,
+							  const Color& color, bool isItalic ) {
+	BR->quadsSetColor( color );
+	BR->quadsSetTexCoord( gd->getSrcRect().Left, gd->getSrcRect().Top,
+						  gd->getSrcRect().Left + gd->getSrcRect().Right,
+						  gd->getSrcRect().Top + gd->getSrcRect().Bottom );
+	if ( isItalic && !gd->isItalic() ) {
+		Float x = position.x + gd->getGlyphOffset().x;
+		Float y = position.y + gd->getGlyphOffset().y;
+		Float italic = 0.208f * gd->getDestSize().getWidth(); // 12 degrees
+		BR->batchQuadFree( x + italic, y, x, y + gd->getDestSize().getHeight(),
+						   x + gd->getDestSize().getWidth(), y + gd->getDestSize().getHeight(),
+						   x + gd->getDestSize().getWidth() + italic, y );
+	} else {
+		BR->batchQuad( position.x + gd->getGlyphOffset().x, position.y + gd->getGlyphOffset().y,
+					   gd->getDestSize().getWidth(), gd->getDestSize().getHeight() );
+	}
+};
+
+static inline void drawUnderline( Font* font, Float fontSize, const Color& fontColor,
+								  const Vector2f& cpos, const Uint32& style, BatchRenderer* BR,
+								  Float outlineThickness, const Vector2f& pos, Float width,
+								  const Color& shadowColor, const Vector2f& shadowOffset,
+								  const Color& outlineColor ) {
+	Float underlineOffset = font->getUnderlinePosition( fontSize );
+	Float underlineThickness = font->getUnderlineThickness( fontSize );
+	Float top =
+		cpos.y + std::floor( fontSize + underlineOffset - ( underlineThickness / 2 ) + 0.5f );
+	Float bottom = top + std::floor( underlineThickness + 0.5f );
+
+	if ( style & Text::Shadow ) {
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( shadowColor );
+		BR->batchQuad( Rectf( pos.x + shadowOffset.x, top + shadowOffset.y,
+							  pos.x + width + shadowOffset.x, bottom + shadowOffset.y ) );
+	}
+
+	if ( outlineThickness ) {
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( outlineColor );
+		BR->batchQuad( Rectf( pos.x - outlineThickness, top - outlineThickness,
+							  pos.x + width + outlineThickness, bottom + outlineThickness ) );
+	}
+
+	BR->quadsSetTexCoord( 0, 0, 1, 1 );
+	BR->quadsSetColor( fontColor );
+	BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
+}
+
+static inline void drawStrikeThrough( Font* font, Float fontSize, const Color& fontColor,
+									  const Vector2f& cpos, const Uint32& style, BatchRenderer* BR,
+									  Float outlineThickness, const Vector2f& pos, Float width,
+									  const Color& shadowColor, const Vector2f& shadowOffset,
+									  const Color& outlineColor, bool isBold, bool isItalic ) {
+	Rectf xBounds = font->getGlyph( L'x', fontSize, isBold, isItalic ).bounds;
+	Float strikeThroughOffset = xBounds.Top + xBounds.Bottom * 0.5f;
+	Float underlineThickness = font->getUnderlineThickness( fontSize );
+	Float top =
+		std::floor( cpos.y + fontSize + strikeThroughOffset - ( underlineThickness / 2 ) + 0.5f );
+	Float bottom = top + std::floor( underlineThickness + 0.5f );
+	if ( style & Text::Shadow ) {
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( shadowColor );
+		BR->batchQuad( Rectf( pos.x + shadowOffset.x, top + shadowOffset.y,
+							  pos.x + width + shadowOffset.x, bottom + +shadowOffset.y ) );
+	}
+	if ( outlineThickness ) {
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( outlineColor );
+		BR->batchQuad( Rectf( pos.x - outlineThickness, top - outlineThickness,
+							  pos.x + width + outlineThickness, bottom + outlineThickness ) );
+	}
+	BR->quadsSetTexCoord( 0, 0, 1, 1 );
+	BR->quadsSetColor( fontColor );
+	BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
+}
+
 template <typename StringType>
 Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
@@ -136,54 +213,10 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	Sizef size{ 0, height };
 	size_t ssize = string.size();
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
+	Texture* fontTexture = font->getTexture( fontSize );
 	BR->setBlendMode( BlendMode::Alpha() );
-
-	auto drawUnderline = [&]() {
-		Float underlineOffset = font->getUnderlinePosition( fontSize );
-		Float underlineThickness = font->getUnderlineThickness( fontSize );
-		Float top =
-			cpos.y + std::floor( fontSize + underlineOffset - ( underlineThickness / 2 ) + 0.5f );
-		Float bottom = top + std::floor( underlineThickness + 0.5f );
-		if ( style & Text::Shadow ) {
-			BR->quadsSetTexCoord( 0, 0, 1, 1 );
-			BR->quadsSetColor( shadowColor );
-			BR->batchQuad( Rectf( pos.x + shadowOffset.x, top + shadowOffset.y,
-								  pos.x + width + shadowOffset.x, bottom + +shadowOffset.y ) );
-		}
-		if ( outlineThickness ) {
-			BR->quadsSetTexCoord( 0, 0, 1, 1 );
-			BR->quadsSetColor( outlineColor );
-			BR->batchQuad( Rectf( pos.x - outlineThickness, top - outlineThickness,
-								  pos.x + width + outlineThickness, bottom + outlineThickness ) );
-		}
-		BR->quadsSetTexCoord( 0, 0, 1, 1 );
-		BR->quadsSetColor( fontColor );
-		BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
-	};
-
-	auto drawStrikeThrough = [&]() {
-		Rectf xBounds = font->getGlyph( L'x', fontSize, isBold, isItalic ).bounds;
-		Float strikeThroughOffset = xBounds.Top + xBounds.Bottom * 0.5f;
-		Float underlineThickness = font->getUnderlineThickness( fontSize );
-		Float top = std::floor( cpos.y + fontSize + strikeThroughOffset -
-								( underlineThickness / 2 ) + 0.5f );
-		Float bottom = top + std::floor( underlineThickness + 0.5f );
-		if ( style & Text::Shadow ) {
-			BR->quadsSetTexCoord( 0, 0, 1, 1 );
-			BR->quadsSetColor( shadowColor );
-			BR->batchQuad( Rectf( pos.x + shadowOffset.x, top + shadowOffset.y,
-								  pos.x + width + shadowOffset.x, bottom + +shadowOffset.y ) );
-		}
-		if ( outlineThickness ) {
-			BR->quadsSetTexCoord( 0, 0, 1, 1 );
-			BR->quadsSetColor( outlineColor );
-			BR->batchQuad( Rectf( pos.x - outlineThickness, top - outlineThickness,
-								  pos.x + width + outlineThickness, bottom + outlineThickness ) );
-		}
-		BR->quadsSetTexCoord( 0, 0, 1, 1 );
-		BR->quadsSetColor( fontColor );
-		BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
-	};
+	BR->quadsBegin();
+	BR->setTexture( fontTexture, fontTexture->getCoordinateType() );
 
 	for ( size_t i = 0; i < ssize; ++i ) {
 		ch = string[i];
@@ -207,11 +240,15 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 				continue;
 			}
 			case '\n': {
-				if ( style & Text::Underlined )
-					drawUnderline();
-				if ( style & Text::StrikeThrough )
-					drawStrikeThrough();
-
+				if ( style & Text::Underlined ) {
+					drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
+								   pos, width, shadowColor, shadowOffset, outlineColor );
+				}
+				if ( style & Text::StrikeThrough ) {
+					drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
+									   pos, width, shadowColor, shadowOffset, outlineColor, isBold,
+									   isItalic );
+				}
 				size.x = eemax( width, cpos.x );
 				width = 0;
 				cpos.y += height;
@@ -223,49 +260,48 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 
 		if ( style & Text::Shadow ) {
 			auto* gds = font->getGlyphDrawable( ch, fontSize, isBold, isItalic, outlineThickness );
-			gds->setDrawMode( isItalic ? GlyphDrawable::DrawMode::TextItalic
-									   : GlyphDrawable::DrawMode::Text );
-			gds->setPosition( cpos + shadowOffset );
-			gds->setColor( shadowColor );
-			gds->draw();
+			if ( gds )
+				drawGlyph( BR, gds, cpos, shadowColor, isItalic );
 		}
 
 		if ( outlineThickness != 0.f ) {
 			auto* gdo = font->getGlyphDrawable( ch, fontSize, isBold, isItalic, outlineThickness );
-			gdo->setDrawMode( isItalic ? GlyphDrawable::DrawMode::TextItalic
-									   : GlyphDrawable::DrawMode::Text );
-			gdo->setPosition( cpos );
-			gdo->setColor( outlineColor );
-			gdo->draw();
+			if ( gdo )
+				drawGlyph( BR, gdo, cpos, outlineColor, isItalic );
 		}
 
 		auto* gd = font->getGlyphDrawable( ch, fontSize, isBold, isItalic );
-		gd->setDrawMode( isItalic ? GlyphDrawable::DrawMode::TextItalic
-								  : GlyphDrawable::DrawMode::Text );
-		gd->setPosition( cpos );
-		gd->setColor( fontColor );
-		gd->draw();
+		if ( gd ) {
+			drawGlyph( BR, gd, cpos, fontColor, isItalic );
 
-		cpos.x += gd->getAdvance();
-		width += gd->getAdvance();
+			cpos.x += gd->getAdvance();
+			width += gd->getAdvance();
 
-		if ( !font->isMonospace() ) {
-			kerning =
-				font->getKerning( prevChar, ch, fontSize, isBold, isItalic, outlineThickness );
-			cpos.x += kerning;
-			width += kerning;
+			if ( !font->isMonospace() ) {
+				kerning =
+					font->getKerning( prevChar, ch, fontSize, isBold, isItalic, outlineThickness );
+				cpos.x += kerning;
+				width += kerning;
+			}
 		}
 
 		prevChar = ch;
 	}
 
-	if ( ( style & Text::Underlined ) && width != 0 )
-		drawUnderline();
+	if ( ( style & Text::Underlined ) && width != 0 ) {
+		drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos, width,
+					   shadowColor, shadowOffset, outlineColor );
+	}
 
-	if ( ( style & Text::StrikeThrough ) && width != 0 )
-		drawStrikeThrough();
+	if ( ( style & Text::StrikeThrough ) && width != 0 ) {
+		drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos, width,
+						   shadowColor, shadowOffset, outlineColor, isBold, isItalic );
+	}
 
 	size.x = eemax( width, size.x );
+
+	BR->drawOpt();
+
 	return size;
 }
 

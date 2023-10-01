@@ -67,8 +67,8 @@ class EE_API FontSprite : public Font {
   protected:
 	FontSprite( const std::string FontName );
 
-	typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
-	typedef std::map<Uint64, GlyphDrawable*> GlyphDrawableTable;
+	typedef UnorderedMap<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef UnorderedMap<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
 		~Page();
@@ -81,7 +81,7 @@ class EE_API FontSprite : public Font {
 
 	void cleanup();
 
-	typedef std::map<unsigned int, Page>
+	typedef UnorderedMap<unsigned int, Page>
 		PageTable; ///< Table mapping a character size to its page (texture)
 
 	Font::Info mInfo;		  ///< Information about the font

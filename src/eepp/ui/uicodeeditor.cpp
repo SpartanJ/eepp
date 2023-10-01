@@ -3462,7 +3462,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 	Float batchStart = rect.Left;
 	Float minimapCutoffX = rect.Left + rect.getWidth();
 	Float widthScale = charSpacing / getGlyphWidth();
-	auto flushBatch = [&]( const SyntaxStyleType& type ) {
+	auto flushBatch = [this, &color, &batchSyntaxType, &batchStart, &batchWidth, &lineY, &BR,
+					   &charHeight]( const SyntaxStyleType& type ) {
 		Color oldColor = color;
 		color = mColorScheme.getSyntaxStyle( *batchSyntaxType ).color;
 		if ( mMinimapConfig.syntaxHighlight && color != Color::Transparent ) {
@@ -3484,7 +3485,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 	int endidx = minimapStartLine + maxMinmapLines;
 	endidx = eemin( endidx, lineCount - 1 );
 
-	auto drawWordMatch = [&]( const String& text, const Int64& ln ) {
+	auto drawWordMatch = [this, &lineY, &BR, &batchStart, &charHeight, &minimapCutoffX,
+						  &widthScale]( const String& text, const Int64& ln ) {
 		size_t pos = 0;
 		const String& line( mDoc->line( ln ).getText() );
 		if ( line.size() > 300 )
@@ -3511,8 +3513,9 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 	};
 
 	Float minimapStart = rect.Left + gutterWidth;
-	auto drawTextRange = [&]( const TextRange& range, const Int64& ln,
-							  const Color& backgroundColor ) {
+	auto drawTextRange = [this, &lineY, &BR, &minimapStart, &charHeight,
+						  &widthScale]( const TextRange& range, const Int64& ln,
+										const Color& backgroundColor ) {
 		if ( !( ln >= range.start().line() && ln <= range.end().line() ) )
 			return;
 
@@ -3547,7 +3550,9 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		BR->batchQuad( selRect );
 	};
 
-	auto drawWordRanges = [&]( const TextRanges& ranges ) {
+	auto drawWordRanges = [this, &BR, &minimapStart, &charHeight, &minimapStartLine, &lineSpacing,
+						   &rect, &minimapCutoffX, &widthScale,
+						   &endidx]( const TextRanges& ranges ) {
 		BR->quadsSetColor( Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
 		Int64 lineSkip = -1;
 		for ( const auto& range : ranges ) {
@@ -3671,6 +3676,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 			batchStart = rect.Left + gutterWidth;
 			batchWidth = 0;
 
+			for ( auto* plugin : mPlugins )
+				plugin->minimapDrawBeforeLineText( this, index, { rect.Left, lineY },
+												   { rect.getWidth(), charHeight }, charSpacing,
+												   gutterWidth );
+
 			if ( mHighlightWord.isEmpty() && !selectionString.empty() )
 				drawWordMatch( selectionString, index );
 
@@ -3691,6 +3701,25 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 				}
 			}
 			flushBatch( SYNTAX_NORMAL );
+
+			for ( auto* plugin : mPlugins )
+				plugin->minimapDrawAfterLineText( this, index, { rect.Left, lineY },
+												  { rect.getWidth(), charHeight }, charSpacing,
+												  gutterWidth );
+
+			if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
+				drawTextRange( mHighlightTextRange, index,
+							   Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
+			}
+
+			if ( mDoc->hasSelection() ) {
+				Color selectionColor( Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
+				auto selections = mDoc->getSelectionsSorted();
+				for ( const auto& sel : selections ) {
+					drawTextRange( sel, index, selectionColor );
+				}
+			}
+
 			lineY = lineY + lineSpacing;
 		}
 	}

@@ -63,8 +63,8 @@ class EE_API FontBMFont : public Font {
   protected:
 	FontBMFont( const std::string FontName );
 
-	typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
-	typedef std::map<Uint64, GlyphDrawable*> GlyphDrawableTable;
+	typedef UnorderedMap<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef UnorderedMap<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
 		~Page();
