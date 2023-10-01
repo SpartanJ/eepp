@@ -1826,7 +1826,7 @@ Float UICodeEditor::getXOffsetCol( const TextPosition& position ) const {
 	return x;
 }
 
-size_t UICodeEditor::characterWidth( const String& str ) const {
+template <typename StringType> size_t UICodeEditor::characterWidth( const StringType& str ) const {
 	Int64 cc = str.size();
 	Int64 count = 0;
 	for ( Int64 i = 0; i < cc; i++ )
@@ -1834,7 +1834,23 @@ size_t UICodeEditor::characterWidth( const String& str ) const {
 	return count;
 }
 
-Float UICodeEditor::getTextWidth( const String& line ) const {
+size_t UICodeEditor::characterWidth( const String& str ) const {
+	return characterWidth<String>( str );
+}
+
+Float UICodeEditor::getTextWidth( const String& text ) const {
+	return getTextWidth<String>( text );
+}
+
+size_t UICodeEditor::characterWidth( const String::View& str ) const {
+	return characterWidth<String::View>( str );
+}
+
+Float UICodeEditor::getTextWidth( const String::View& text ) const {
+	return getTextWidth<String::View>( text );
+}
+
+template <typename StringType> Float UICodeEditor::getTextWidth( const StringType& line ) const {
 	if ( mFont && !mFont->isMonospace() ) {
 		return Text::getTextWidth( mFont, getCharacterSize(), line, mFontStyleConfig.Style,
 								   mTabWidth );
@@ -2858,23 +2874,23 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 		ttf->setEnableEmojiFallback( false );
 	}
 
-	String buff;
+	String::View buff;
 	Sizef size;
 	FontStyleConfig fontStyle( mFontStyleConfig );
 	fontStyle.CharacterSize = fontSize;
 
 	for ( const auto& token : tokens ) {
-		const String* text = &strLine;
-		if ( pos < strLine.size() && !( pos == 0 && text->size() == token.len ) ) {
-			buff = strLine.substr( pos, token.len );
-			text = &buff;
+		String::View text = strLine.view();
+		if ( pos < strLine.size() && !( pos == 0 && text.size() == token.len ) ) {
+			buff = strLine.view().substr( pos, token.len );
+			text = buff;
 		}
 		pos += token.len;
 
-		Float textWidth = isMonospace ? getTextWidth( *text ) : 0;
+		Float textWidth = isMonospace ? getTextWidth( text ) : 0;
 		if ( !isMonospace || ( position.x + textWidth >= mScreenPos.x &&
 							   position.x <= mScreenPos.x + mSize.getWidth() ) ) {
-			Int64 curCharsWidth = text->size();
+			Int64 curCharsWidth = text.size();
 			Int64 curPositionChar = eefloor( mScroll.x / getGlyphWidth() );
 			Float curMaxPositionChar = curPositionChar + maxWidth;
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
@@ -2885,10 +2901,10 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 				 mLinkPosition.start().line() == line ) {
 				if ( mLinkPosition.start().column() >= curChar &&
 					 mLinkPosition.end().column() <= curChar + curCharsWidth ) {
-					size_t linkPos = text->find( mLink );
+					size_t linkPos = text.find( mLink.view() );
 					if ( linkPos != String::InvalidPos ) {
-						String beforeString( text->substr( 0, linkPos ) );
-						String afterString( text->substr( linkPos + mLink.size() ) );
+						String::View beforeString( text.substr( 0, linkPos ) );
+						String::View afterString( text.substr( linkPos + mLink.size() ) );
 
 						Float offset = 0.f;
 						Uint32 lineStyle = fontStyle.Style;
@@ -2953,7 +2969,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							textWidth = offset;
 
 						position.x += textWidth;
-						curChar += characterWidth( *text );
+						curChar += characterWidth( text );
 						continue;
 					}
 				}
@@ -2973,7 +2989,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 					Int64 end = eemin( totalChars, minimumCharsToCoverScreen );
 					if ( curCharsWidth >= charsToVisible ) {
 						size = Text::draw(
-							text->substr( start, end ),
+							text.substr( start, end ),
 							{ position.x + start * getGlyphWidth(), position.y + lineOffset },
 							fontStyle, mTabWidth );
 						if ( minimumCharsToCoverScreen == end )
@@ -2981,11 +2997,11 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 					}
 				} else {
 					size =
-						Text::draw( text->substr( 0, eemin( curCharsWidth, maxWidth ) ),
+						Text::draw( text.substr( 0, eemin( curCharsWidth, maxWidth ) ),
 									{ position.x, position.y + lineOffset }, fontStyle, mTabWidth );
 				}
 			} else {
-				size = Text::draw( *text, { position.x, position.y + lineOffset }, fontStyle,
+				size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
 								   mTabWidth );
 			}
 
@@ -2996,7 +3012,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 		}
 
 		position.x += textWidth;
-		curChar += characterWidth( *text );
+		curChar += characterWidth( text );
 	}
 
 	if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {
@@ -3087,7 +3103,7 @@ void UICodeEditor::drawColorPreview( const Vector2f& startScroll, const Float& l
 
 void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 									const Vector2f& startScroll, const Float& lineHeight ) {
-	Float tabWidth = getTextWidth( "\t" );
+	Float tabWidth = getTextWidth( String( "\t" ) );
 	Float glyphW = getGlyphWidth();
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();
@@ -3151,7 +3167,7 @@ void UICodeEditor::drawIndentationGuides( const std::pair<int, int>& lineRange,
 	p.setForceDraw( false );
 	Float w = eefloor( PixelDensity::dpToPx( 1 ) );
 	String idt( mDoc->getIndentString() );
-	int spaceW = getTextWidth( " " );
+	int spaceW = getTextWidth( String( " " ) );
 	p.setColor( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	int indentSize = mDoc->getIndentType() == TextDocument::IndentType::IndentTabs
 						 ? getTabWidth()

@@ -461,6 +461,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getTextWidth( const String& text ) const;
 
+	size_t characterWidth( const String::View& str ) const;
+
+	Float getTextWidth( const String::View& text ) const;
+
 	Float getLineHeight() const;
 
 	Float getCharacterSize() const;
@@ -902,6 +906,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 						 bool ignoreSelectionMatch );
 
 	void updateHighlightWordCache();
+
+	template <typename StringType> size_t characterWidth( const StringType& str ) const;
+
+	template <typename StringType> Float getTextWidth( const StringType& text ) const;
+
 };
 
 }} // namespace EE::UI

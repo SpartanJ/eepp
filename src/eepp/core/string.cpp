@@ -276,7 +276,8 @@ String::HashType String::hash( const std::string& str ) {
 }
 
 String::HashType String::hash( const String& str ) {
-	return std::hash<std::u32string>{}( str.mString );
+	return String::hash( reinterpret_cast<const char*>( str.mString.data() ),
+						 str.size() * sizeof( String::StringBaseType ) );
 }
 
 bool String::isCharacter( const int& value ) {
@@ -783,6 +784,10 @@ String& String::rTrim( char character ) {
 
 bool String::contains( const String& needle ) {
 	return String::contains( *this, needle );
+}
+
+String::View String::view() const {
+	return String::View( mString );
 }
 
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {

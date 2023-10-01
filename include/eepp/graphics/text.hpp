@@ -27,6 +27,28 @@ class EE_API Text {
 							   const Uint32& style, const Uint32& tabWidth = 4,
 							   const Float& outlineThickness = 0.f );
 
+	static Float getTextWidth( Font* font, const Uint32& fontSize, const String::View& string,
+							   const Uint32& style, const Uint32& tabWidth = 4,
+							   const Float& outlineThickness = 0.f );
+
+	static Sizef draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
+					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
+					   const Color& outlineColor = Color::Black,
+					   const Color& shadowColor = Color::Black,
+					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4 );
+
+	static Sizef draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
+					   const Uint32& tabWidth = 4 );
+
+	static Sizef draw( const String::View& string, const Vector2f& pos, Font* font, Float fontSize,
+					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
+					   const Color& outlineColor = Color::Black,
+					   const Color& shadowColor = Color::Black,
+					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4 );
+
+	static Sizef draw( const String::View& string, const Vector2f& pos,
+					   const FontStyleConfig& config, const Uint32& tabWidth = 4 );
+
 	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
 									   const Uint32& fontSize, const String& string,
 									   const Uint32& style, const Uint32& tabWidth = 4,
@@ -43,15 +65,6 @@ class EE_API Text {
 					  unsigned int characterSize = PixelDensity::dpToPx( 12 ) );
 
 	static Text* New( Font* font, unsigned int characterSize = PixelDensity::dpToPx( 12 ) );
-
-	static Sizef draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
-					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
-					   const Color& outlineColor = Color::Black,
-					   const Color& shadowColor = Color::Black,
-					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4 );
-
-	static Sizef draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
-					   const Uint32& tabWidth = 4 );
 
 	Text();
 
@@ -245,6 +258,22 @@ class EE_API Text {
 			   const Color& backgroundColor );
 
 	void onNewString();
+
+	template <typename StringType>
+	static Float getTextWidth( Font* font, const Uint32& fontSize, const StringType& string,
+							   const Uint32& style, const Uint32& tabWidth = 4,
+							   const Float& outlineThickness = 0.f );
+
+	template <typename StringType>
+	static Sizef draw( const StringType& string, const Vector2f& pos, Font* font, Float fontSize,
+					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
+					   const Color& outlineColor = Color::Black,
+					   const Color& shadowColor = Color::Black,
+					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4 );
+
+	template <typename StringType>
+	static Sizef draw( const StringType& string, const Vector2f& pos, const FontStyleConfig& config,
+					   const Uint32& tabWidth = 4 );
 };
 
 }} // namespace EE::Graphics

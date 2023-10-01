@@ -739,7 +739,8 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 		eemin<size_t>( mSuggestionsStartIndex + mSuggestionsMaxVisible, suggestions.size() );
 
 	for ( size_t i = mSuggestionsStartIndex; i < maxIndex; i++ )
-		largestString = eemax<size_t>( largestString, editor->getTextWidth( suggestions[i].text ) );
+		largestString =
+			eemax<size_t>( largestString, editor->getTextWidth( String{ suggestions[i].text } ) );
 
 	Sizef bar( PixelDensity::dpToPxI( 6 ),
 			   eemax( PixelDensity::dpToPx( 8 ),

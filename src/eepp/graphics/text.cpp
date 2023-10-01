@@ -70,6 +70,44 @@ Uint32 Text::stringToStyleFlag( const std::string& str ) {
 	return flags;
 }
 
+Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& string,
+						  const Uint32& style, const Uint32& tabWidth,
+						  const Float& outlineThickness ) {
+	return getTextWidth<String>( font, fontSize, string, style, tabWidth, outlineThickness );
+}
+
+Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String::View& string,
+						  const Uint32& style, const Uint32& tabWidth,
+						  const Float& outlineThickness ) {
+	return getTextWidth<String::View>( font, fontSize, string, style, tabWidth, outlineThickness );
+}
+
+Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
+				  const Color& fontColor, Uint32 style, Float outlineThickness,
+				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
+				  const Uint32& tabWidth ) {
+	return draw<String>( string, pos, font, fontSize, fontColor, style, outlineThickness,
+						 outlineColor, shadowColor, shadowOffset, tabWidth );
+}
+
+Sizef Text::draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
+				  const Uint32& tabWidth ) {
+	return draw<String>( string, pos, config, tabWidth );
+}
+
+Sizef Text::draw( const String::View& string, const Vector2f& pos, Font* font, Float fontSize,
+				  const Color& fontColor, Uint32 style, Float outlineThickness,
+				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
+				  const Uint32& tabWidth ) {
+	return draw<String::View>( string, pos, font, fontSize, fontColor, style, outlineThickness,
+							   outlineColor, shadowColor, shadowOffset, tabWidth );
+}
+
+Sizef Text::draw( const String::View& string, const Vector2f& pos, const FontStyleConfig& config,
+				  const Uint32& tabWidth ) {
+	return draw<String::View>( string, pos, config, tabWidth );
+}
+
 Text* Text::New() {
 	return eeNew( Text, () );
 }
@@ -82,7 +120,8 @@ Text* Text::New( Font* font, unsigned int characterSize ) {
 	return eeNew( Text, ( font, characterSize ) );
 }
 
-Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
+template <typename StringType>
+Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
 				  const Uint32& tabWidth ) {
@@ -105,20 +144,45 @@ Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float f
 		Float top =
 			cpos.y + std::floor( fontSize + underlineOffset - ( underlineThickness / 2 ) + 0.5f );
 		Float bottom = top + std::floor( underlineThickness + 0.5f );
-		Primitives p;
-		p.setColor( fontColor );
-		p.drawRectangle( Rectf( pos.x, top, pos.x + width, bottom ) );
+		if ( style & Text::Shadow ) {
+			BR->quadsSetTexCoord( 0, 0, 1, 1 );
+			BR->quadsSetColor( shadowColor );
+			BR->batchQuad( Rectf( pos.x + shadowOffset.x, top + shadowOffset.y,
+								  pos.x + width + shadowOffset.x, bottom + +shadowOffset.y ) );
+		}
+		if ( outlineThickness ) {
+			BR->quadsSetTexCoord( 0, 0, 1, 1 );
+			BR->quadsSetColor( outlineColor );
+			BR->batchQuad( Rectf( pos.x - outlineThickness, top - outlineThickness,
+								  pos.x + width + outlineThickness, bottom + outlineThickness ) );
+		}
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( fontColor );
+		BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
 	};
 
 	auto drawStrikeThrough = [&]() {
 		Rectf xBounds = font->getGlyph( L'x', fontSize, isBold, isItalic ).bounds;
-		Float strikeThroughOffset = xBounds.Top + xBounds.Bottom / 2.f;
+		Float strikeThroughOffset = xBounds.Top + xBounds.Bottom * 0.5f;
 		Float underlineThickness = font->getUnderlineThickness( fontSize );
-		Float top = cpos.y + strikeThroughOffset;
+		Float top = std::floor( cpos.y + fontSize + strikeThroughOffset -
+								( underlineThickness / 2 ) + 0.5f );
 		Float bottom = top + std::floor( underlineThickness + 0.5f );
-		Primitives p;
-		p.setColor( fontColor );
-		p.drawRectangle( Rectf( pos.x, top, pos.x + width, bottom ) );
+		if ( style & Text::Shadow ) {
+			BR->quadsSetTexCoord( 0, 0, 1, 1 );
+			BR->quadsSetColor( shadowColor );
+			BR->batchQuad( Rectf( pos.x + shadowOffset.x, top + shadowOffset.y,
+								  pos.x + width + shadowOffset.x, bottom + +shadowOffset.y ) );
+		}
+		if ( outlineThickness ) {
+			BR->quadsSetTexCoord( 0, 0, 1, 1 );
+			BR->quadsSetColor( outlineColor );
+			BR->batchQuad( Rectf( pos.x - outlineThickness, top - outlineThickness,
+								  pos.x + width + outlineThickness, bottom + outlineThickness ) );
+		}
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( fontColor );
+		BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
 	};
 
 	for ( size_t i = 0; i < ssize; ++i ) {
@@ -205,11 +269,12 @@ Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float f
 	return size;
 }
 
-Sizef Text::draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
+template <typename StringType>
+Sizef Text::draw( const StringType& string, const Vector2f& pos, const FontStyleConfig& config,
 				  const Uint32& tabWidth ) {
-	return draw( string, pos, config.Font, config.CharacterSize, config.FontColor, config.Style,
-				 config.OutlineThickness, config.OutlineColor, config.ShadowColor,
-				 config.ShadowOffset, tabWidth );
+	return draw<StringType>( string, pos, config.Font, config.CharacterSize, config.FontColor,
+							 config.Style, config.OutlineThickness, config.OutlineColor,
+							 config.ShadowColor, config.ShadowOffset, tabWidth );
 }
 
 Text::Text() {}
@@ -450,7 +515,8 @@ void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& initCur, Int
 	}
 }
 
-Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& string,
+template <typename StringType>
+Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& string,
 						  const Uint32& style, const Uint32& tabWidth,
 						  const Float& outlineThickness ) {
 	if ( NULL == font || string.empty() )

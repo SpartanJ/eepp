@@ -9,6 +9,7 @@
 #include <locale>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace EE {
@@ -29,6 +30,7 @@ class EE_API String {
 	typedef StringType::reverse_iterator ReverseIterator;			 //! Reverse Iterator type
 	typedef StringType::const_reverse_iterator ConstReverseIterator; //! Constant iterator type
 	typedef Uint32 HashType;
+	typedef std::basic_string_view<StringBaseType> View;
 
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
@@ -873,6 +875,8 @@ class EE_API String {
 	 * @param needle The searched string.
 	 */
 	bool contains( const String& needle );
+
+	String::View view() const;
 
   private:
 	friend EE_API bool operator==( const String& left, const String& right );

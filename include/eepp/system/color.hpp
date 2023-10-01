@@ -2,6 +2,7 @@
 #define EE_SYSTEMCCOLORS_H
 
 #include <eepp/config.hpp>
+#include <eepp/core/containers.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/bitop.hpp>
 #include <map>
@@ -366,8 +367,8 @@ class EE_API Color : public tColor<Uint8> {
 	static const Color yellowgreen;
 
   private:
-	static std::map<std::string, Color> sColors;
-	static std::map<String::HashType, Color> sColorMap;
+	static UnorderedMap<std::string, Color> sColors;
+	static UnorderedMap<String::HashType, Color> sColorMap;
 
 	static void initColorMap();
 };
