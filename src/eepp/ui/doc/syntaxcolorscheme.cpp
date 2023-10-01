@@ -2,6 +2,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/functionstring.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
@@ -86,7 +87,8 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 SyntaxColorScheme::Style
 parseStyle( const std::string& value, bool* colorWasSet = nullptr,
 			const UnorderedMap<std::string, SyntaxColorScheme::Style>* syntaxColors = nullptr ) {
-	auto values = String::split( value, ',' );
+	static const std::string outline = "outline";
+	auto values = String::split( value, ",", "", "()" );
 	SyntaxColorScheme::Style style;
 	bool colorSet = false;
 	for ( auto& val : values ) {
@@ -112,11 +114,24 @@ parseStyle( const std::string& value, bool* colorWasSet = nullptr,
 				style.style |= Text::StrikeThrough;
 			else if ( "shadow" == val )
 				style.style |= Text::Shadow;
-			else if ( syntaxColors &&
-					  ( "normal" == val || "symbol" == val || "comment" == val ||
-						"keyword" == val || "keyword2" == val || "number" == val ||
-						"literal" == val || "string" == val || "opetaror" == val ||
-						"function" == val || "link" == val || "link_hover" == val ) ) {
+			else if ( String::startsWith( val, outline ) ) {
+				auto res = FunctionString::parse( val );
+				if ( !res.isEmpty() ) {
+					for ( const auto& param : res.getParameters() ) {
+						if ( Color::isColorString( param ) ) {
+							style.outlineColor = Color::fromString( param );
+						} else if ( String::isNumber( param, true ) ) {
+							Float f;
+							if ( String::fromString( f, param ) )
+								style.outlineThickness = f;
+						}
+					}
+				}
+			} else if ( syntaxColors &&
+						( "normal" == val || "symbol" == val || "comment" == val ||
+						  "keyword" == val || "keyword2" == val || "number" == val ||
+						  "literal" == val || "string" == val || "opetaror" == val ||
+						  "function" == val || "link" == val || "link_hover" == val ) ) {
 				auto styleIt = ( *syntaxColors ).find( val );
 				if ( styleIt != ( *syntaxColors ).end() ) {
 					style = styleIt->second;

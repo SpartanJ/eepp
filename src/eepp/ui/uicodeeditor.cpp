@@ -2896,6 +2896,9 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
 			fontStyle.Style = style.style;
 			fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
+			fontStyle.OutlineThickness = style.outlineThickness;
+			if ( fontStyle.OutlineThickness )
+				fontStyle.OutlineColor = style.outlineColor;
 
 			if ( mHandShown && mLinkPosition.isValid() && mLinkPosition.inSameLine() &&
 				 mLinkPosition.start().line() == line ) {

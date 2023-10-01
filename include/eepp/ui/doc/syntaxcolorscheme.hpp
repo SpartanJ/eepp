@@ -222,6 +222,8 @@ class EE_API SyntaxColorScheme {
 		Color color{ Color::White };
 		Color background{ Color::Transparent };
 		Uint32 style{ 0 };
+		Color outlineColor{ Color::Black };
+		Float outlineThickness{ 0.f };
 	};
 
 	SyntaxColorScheme();
