@@ -414,7 +414,12 @@ void UniversalLocator::updateLocateBarSync() {
 	mLocateTable->setPixelsSize( width,
 								 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
 	width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
-	if ( mLocateTable->getModel() && mLocateTable->getModel()->columnCount() >= 2 ) {
+	if ( mLocateTable->getModel() && mLocateTable->getModel()->columnCount() >= 3 ) {
+		mLocateTable->setColumnsVisible( { 0, 1, 2 } );
+		mLocateTable->setColumnWidth( 0, eefloor( width * 0.5 ) );
+		mLocateTable->setColumnWidth( 1, eefloor( width * 0.25 ) );
+		mLocateTable->setColumnWidth( 2, eefloor( width * 0.25 ) );
+	} else if ( mLocateTable->getModel() && mLocateTable->getModel()->columnCount() >= 2 ) {
 		mLocateTable->setColumnsVisible( { 0, 1 } );
 		mLocateTable->setColumnWidth( 0, eeceil( width * 0.5 ) );
 		mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );

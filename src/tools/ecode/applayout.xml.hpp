@@ -68,10 +68,12 @@ StatusBar > #doc_info {
 #search_replace.error {
 	border-color: #ff4040;
 }
-TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2) {
+TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2),
+TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) {
 	color: var(--font-hint);
 }
-TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2) {
+TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2),
+TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(3) {
 	color: var(--font);
 }
 .search_tree treeview::cell {

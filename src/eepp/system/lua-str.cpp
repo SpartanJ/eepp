@@ -239,8 +239,10 @@ static const char* min_expand( MatchState* ms, const char* s, const char* p, con
 static const char* start_capture( MatchState* ms, const char* s, const char* p, int what ) {
 	const char* res;
 	int level = ms->level;
-	if ( level >= LUA_MAXCAPTURES )
+	if ( level >= LUA_MAXCAPTURES ) {
 		throw_error( "too many captures" );
+		return NULL;
+	}
 	ms->capture[level].init = s;
 	ms->capture[level].len = what;
 	ms->level = level + 1;
@@ -262,7 +264,7 @@ static const char* match_capture( MatchState* ms, const char* s, int l ) {
 	size_t len;
 	l = check_capture( ms, l );
 	len = ms->capture[l].len;
-	if ( ( size_t )( ms->src_end - s ) >= len && memcmp( ms->capture[l].init, s, len ) == 0 )
+	if ( (size_t)( ms->src_end - s ) >= len && memcmp( ms->capture[l].init, s, len ) == 0 )
 		return s + len;
 	else
 		return NULL;
