@@ -326,10 +326,7 @@ void UICodeEditor::draw() {
 		for ( auto& plugin : mPlugins )
 			plugin->drawBeforeLineText( this, i, curScroll, charSize, lineHeight );
 
-		{
-			Lock l( mDoc->getHighlighter()->getLinesMutex() );
-			drawLineText( i, curScroll, charSize, lineHeight );
-		}
+		drawLineText( i, curScroll, charSize, lineHeight );
 
 		for ( auto& plugin : mPlugins )
 			plugin->drawAfterLineText( this, i, curScroll, charSize, lineHeight );
@@ -360,10 +357,8 @@ void UICodeEditor::draw() {
 		drawColorPreview( startScroll, lineHeight );
 	}
 
-	if ( mMinimapEnabled ) {
-		Lock l( mDoc->getHighlighter()->getLinesMutex() );
+	if ( mMinimapEnabled )
 		drawMinimap( screenStart, lineRange );
-	}
 
 	for ( auto& plugin : mPlugins )
 		plugin->postDraw( this, startScroll, lineHeight, cursor );
@@ -447,27 +442,29 @@ bool UICodeEditor::loadAsyncFromFile(
 	bool wasLocked = isLocked();
 	if ( !wasLocked )
 		setLocked( true );
-	bool ret = mDoc->loadAsyncFromFile( path, pool,
-										[this, onLoaded, wasLocked]( TextDocument*, bool success ) {
-											if ( !success ) {
-												runOnMainThread( [&, onLoaded, wasLocked, success] {
-													if ( !wasLocked )
-														setLocked( false );
-													if ( onLoaded )
-														onLoaded( mDoc, success );
-												} );
-												return;
-											}
-											runOnMainThread( [&, onLoaded, wasLocked, success] {
-												invalidateEditor();
-												invalidateDraw();
-												if ( !wasLocked )
-													setLocked( false );
-												onDocumentLoaded();
-												if ( onLoaded )
-													onLoaded( mDoc, success );
-											} );
-										} );
+	bool ret = mDoc->loadAsyncFromFile(
+		path, pool, [this, onLoaded, wasLocked]( TextDocument*, bool success ) {
+			if ( !success ) {
+				runOnMainThread( [&, onLoaded, wasLocked, success] {
+					if ( !wasLocked )
+						setLocked( false );
+					if ( onLoaded )
+						onLoaded( mDoc, success );
+				} );
+				return;
+			}
+			if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() )
+				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool() );
+			runOnMainThread( [&, onLoaded, wasLocked, success] {
+				invalidateEditor();
+				invalidateDraw();
+				if ( !wasLocked )
+					setLocked( false );
+				onDocumentLoaded();
+				if ( onLoaded )
+					onLoaded( mDoc, success );
+			} );
+		} );
 	if ( !ret && !wasLocked )
 		setLocked( false );
 	return ret;
@@ -494,6 +491,8 @@ bool UICodeEditor::loadAsyncFromURL(
 	bool ret = mDoc->loadAsyncFromURL(
 		url, headers,
 		[this, onLoaded, wasLocked]( TextDocument*, bool success ) {
+			if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() )
+				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool() );
 			runOnMainThread( [&, onLoaded, wasLocked] {
 				invalidateEditor();
 				updateLongestLineWidth();
@@ -3615,7 +3614,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 												   { rect.getWidth(), charHeight }, charSpacing,
 												   gutterWidth );
 
-			const auto& tokens = mDoc->getHighlighter()->getLine( index );
+			const auto& tokens = mDoc->getHighlighter()->getLine( index, false );
 			const auto& text = mDoc->line( index ).getText();
 			size_t txtPos = 0;
 

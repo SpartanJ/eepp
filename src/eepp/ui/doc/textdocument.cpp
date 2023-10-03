@@ -13,7 +13,6 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
-#include <sstream>
 #include <string>
 
 using namespace EE::Network;
@@ -44,6 +43,9 @@ TextDocument::TextDocument( bool verbose ) :
 
 TextDocument::~TextDocument() {
 	stopActiveFindAll();
+
+	if ( mHighlighter->isTokenizingAsync() )
+		mHighlighter->setStopTokenizingAsync();
 
 	// TODO: Use a condition variable to wait the thread pool to finish
 	while ( !mStopFlags.empty() )

@@ -23,13 +23,16 @@ class EE_API SyntaxHighlighter {
   public:
 	explicit SyntaxHighlighter( TextDocument* doc );
 
+	~SyntaxHighlighter();
+
 	void changeDoc( TextDocument* doc );
 
 	void reset();
 
 	void invalidate( Int64 lineIndex );
 
-	const std::vector<SyntaxTokenPosition>& getLine( const size_t& index );
+	const std::vector<SyntaxTokenPosition>& getLine( const size_t& index,
+													 bool mustTokenize = true );
 
 	Int64 getFirstInvalidLine() const;
 
@@ -60,6 +63,12 @@ class EE_API SyntaxHighlighter {
 
 	void setMaxTokenizationLength( const Int64& maxTokenizationLength );
 
+	void tokenizeAsync( std::shared_ptr<ThreadPool> pool );
+
+	bool isTokenizingAsync() const { return mTokenizeAsync; }
+
+	void setStopTokenizingAsync() { mStopTokenizing = true; }
+
   protected:
 	TextDocument* mDoc;
 	std::unordered_map<size_t, TokenizedLine> mLines;
@@ -68,6 +77,8 @@ class EE_API SyntaxHighlighter {
 	Int64 mFirstInvalidLine;
 	Int64 mMaxWantedLine;
 	Int64 mMaxTokenizationLength{ 0 };
+	bool mTokenizeAsync{ false };
+	bool mStopTokenizing{ false };
 };
 
 }}} // namespace EE::UI::Doc
