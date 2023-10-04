@@ -457,6 +457,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mResPath;
 	std::string mLanguagesPath;
 	std::string mThemesPath;
+	std::string mLogsPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;

@@ -19,8 +19,9 @@ std::string getFileSystemEventTypeName( FileSystemEventType action ) {
 }
 
 FileSystemListener::FileSystemListener( UICodeEditorSplitter* splitter,
-										std::shared_ptr<FileSystemModel> fileSystemModel ) :
-	mSplitter( splitter ), mFileSystemModel( fileSystemModel ) {}
+										std::shared_ptr<FileSystemModel> fileSystemModel,
+										const std::vector<std::string>& ignoreFiles ) :
+	mSplitter( splitter ), mFileSystemModel( fileSystemModel ), mIgnoredFiles( ignoreFiles ) {}
 
 static inline bool endsWithSlash( const std::string& dir ) {
 	return !dir.empty() && ( dir.back() == '\\' || dir.back() == '/' );
@@ -138,7 +139,8 @@ bool FileSystemListener::isFileOpen( const FileInfo& file ) {
 
 void FileSystemListener::notifyChange( const FileInfo& file ) {
 	mSplitter->forEachDoc( [&]( TextDocument& doc ) {
-		if ( file.getFilepath() == doc.getFileInfo().getFilepath() &&
+		if ( !isIgnored( file.getFilepath() ) &&
+			 file.getFilepath() == doc.getFileInfo().getFilepath() &&
 			 file.getModificationTime() != doc.getFileInfo().getModificationTime() &&
 			 !doc.isSaving() ) {
 			MD5::Digest curHash = MD5::fromFile( file.getFilepath() ).digest;
@@ -161,6 +163,10 @@ void FileSystemListener::notifyMove( const FileInfo& oldFile, const FileInfo& ne
 		if ( oldFile.getFilepath() == doc.getFileInfo().getFilepath() )
 			doc.notifyDocumentMoved( newFile.getFilepath() );
 	} );
+}
+
+bool FileSystemListener::isIgnored( const std::string& path ) {
+	return std::find( mIgnoredFiles.begin(), mIgnoredFiles.end(), path ) != mIgnoredFiles.end();
 }
 
 } // namespace ecode

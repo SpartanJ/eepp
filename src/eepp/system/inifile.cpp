@@ -91,8 +91,16 @@ bool IniFile::readFile() {
 	if ( mIniReaded )
 		return true;
 
+	bool isBOM = false;
+	if ( mBuffer.size() >= 3 && (char)0xef == mBuffer[0] && (char)0xbb == mBuffer[1] &&
+		 (char)0xbf == mBuffer[2] ) {
+		isBOM = true;
+	}
+
 	// ini_parse_string( mBuffer.c_str(), ValueHandler, this );
 	std::string_view buffer( mBuffer );
+	if ( isBOM )
+		buffer = std::string_view( mBuffer.data() + 3, mBuffer.size() - 3 );
 	std::string_view line;
 	std::string_view keyname, valuename, value;
 	std::string::size_type pLeft, pRight;

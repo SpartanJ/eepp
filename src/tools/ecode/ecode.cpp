@@ -471,10 +471,12 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 		FileSystem::makeDir( mThemesPath );
 	FileSystem::dirAddSlashAtEnd( mThemesPath );
 
+	mLogsPath = mConfigPath + "ecode.log";
+
 #ifndef EE_DEBUG
-	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, !disableFileLogs );
+	Log::create( mLogsPath, logLevel, stdOutLogs, !disableFileLogs );
 #else
-	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, !disableFileLogs );
+	Log::create( mLogsPath, logLevel, stdOutLogs, !disableFileLogs );
 #endif
 
 	Log::instance()->setKeepLog( true );
@@ -3480,7 +3482,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();
-		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel );
+		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel, { mLogsPath } );
 		mFileWatcher->addWatch( mPluginsPath, mFileSystemListener );
 		mFileWatcher->watch();
 		mPluginManager->setFileSystemListener( mFileSystemListener );

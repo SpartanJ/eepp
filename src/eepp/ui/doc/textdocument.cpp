@@ -22,7 +22,7 @@ namespace EE { namespace UI { namespace Doc {
 // Text document is loosely based on the SerenityOS (https://github.com/SerenityOS/serenity)
 // TextDocument and the lite editor (https://github.com/rxi/lite) implementations.
 
-const char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
+static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
 
 bool TextDocument::isNonWord( String::StringBaseType ch ) const {
 	return mNonWordChars.find_first_of( ch ) != String::InvalidPos;

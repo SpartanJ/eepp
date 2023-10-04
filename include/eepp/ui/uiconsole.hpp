@@ -15,6 +15,9 @@ using namespace EE::UI::Doc;
 
 namespace EE { namespace UI {
 
+class UIPopUpMenu;
+class UIMenuItem;
+
 class EE_API UIConsole : public UIWidget,
 						 protected LogReaderInterface,
 						 public TextDocument::Client {
@@ -130,6 +133,10 @@ class EE_API UIConsole : public UIWidget,
 
 	void setBlinkTime( const Time& blinkTime );
 
+	size_t getMenuIconSize() const;
+
+	void setMenuIconSize( size_t menuIconSize );
+
   protected:
 	struct TextCache {
 		Text text;
@@ -148,6 +155,7 @@ class EE_API UIConsole : public UIWidget,
 	Uint32 mMaxLogLines{ 8192 };
 	TextDocument mDoc;
 	KeyBindings mKeyBindings;
+	TextRange mSelection;
 
 	struct sCon {
 		int min{ 0 };
@@ -173,6 +181,8 @@ class EE_API UIConsole : public UIWidget,
 	Float mQuakeModeHeightPercent{ 0.6f };
 #endif
 	Uint64 mLastExecuteEventId{ 0 };
+	UIPopUpMenu* mCurrentMenu{ nullptr };
+	size_t mMenuIconSize{ 16 };
 
 	UIConsole( Font* Font, const bool& makeDefaultCommands = true, const bool& attachToLog = true,
 			   const unsigned int& maxLogLines = 1024 );
@@ -193,6 +203,10 @@ class EE_API UIConsole : public UIWidget,
 	virtual void onFontStyleChanged();
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
+
+	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
@@ -215,6 +229,8 @@ class EE_API UIConsole : public UIWidget,
 	virtual void onDocumentSaved( TextDocument* );
 
 	virtual void onDocumentMoved( TextDocument* );
+
+	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
 
 	void onDocumentClosed( TextDocument* ){};
 
@@ -298,6 +314,16 @@ class EE_API UIConsole : public UIWidget,
 	Int32 maxLinesOnScreen();
 
 	void updateQuakeMode();
+
+	TextPosition getPositionOnScreen( Vector2f position );
+
+	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+						 const String& translateString, const std::string& icon,
+						 const std::string& cmd );
+
+	Drawable* findIcon( const std::string& name );
+
+	void copySelection();
 };
 
 }} // namespace EE::UI
