@@ -8,10 +8,10 @@
 namespace EE { namespace UI { namespace Doc {
 
 struct EE_API TokenizedLine {
-	Uint64 initState{ SYNTAX_TOKENIZER_STATE_NONE };
+	SyntaxState initState;
 	String::HashType hash;
 	std::vector<SyntaxTokenPosition> tokens;
-	Uint64 state{ SYNTAX_TOKENIZER_STATE_NONE };
+	SyntaxState state;
 	Uint64 signature{ 0 };
 
 	void updateSignature();
@@ -50,8 +50,7 @@ class EE_API SyntaxHighlighter {
 
 	void mergeLine( const size_t& line, const TokenizedLine& tokenization );
 
-	TokenizedLine tokenizeLine( const size_t& line,
-								const Uint64& state = SYNTAX_TOKENIZER_STATE_NONE );
+	TokenizedLine tokenizeLine( const size_t& line, const SyntaxState& state = SyntaxState{} );
 
 	Mutex& getLinesMutex();
 

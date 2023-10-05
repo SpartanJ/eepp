@@ -176,8 +176,7 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 			mResultStr = "";
 		}
 
-		auto tokens =
-			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE, to ).first;
+		auto tokens = SyntaxTokenizer::tokenize( styleDef, text, SyntaxState{}, to ).first;
 
 		size_t start = to;
 		for ( const auto& token : tokens ) {

@@ -10,12 +10,6 @@
 
 namespace EE { namespace System {
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
-#define iniEOL std::endl
-#else
-#define iniEOL '\r' << std::endl
-#endif
-
 IniFile::IniFile( const std::string& iniPath, bool autoLoad ) {
 	if ( autoLoad )
 		loadFromFile( iniPath );
@@ -97,7 +91,6 @@ bool IniFile::readFile() {
 		isBOM = true;
 	}
 
-	// ini_parse_string( mBuffer.c_str(), ValueHandler, this );
 	std::string_view buffer( mBuffer );
 	if ( isBOM )
 		buffer = std::string_view( mBuffer.data() + 3, mBuffer.size() - 3 );

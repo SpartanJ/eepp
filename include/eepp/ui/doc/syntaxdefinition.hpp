@@ -4,10 +4,8 @@
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
-#include <iostream>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 namespace EE { namespace UI { namespace Doc {
@@ -28,11 +26,13 @@ template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) 
 }
 
 struct EE_API SyntaxPattern {
+	using DynamicSyntax = std::function<std::string( const SyntaxPattern&, const std::string& )>;
+
 	std::vector<std::string> patterns;
 	std::vector<SyntaxStyleType> types;
 	std::vector<std::string> typesNames;
-
 	std::string syntax{ "" };
+	DynamicSyntax dynSyntax;
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
 				   const std::string& _syntax = "" ) :
@@ -47,6 +47,22 @@ struct EE_API SyntaxPattern {
 		types( toSyntaxStyleTypeV( _types ) ),
 		typesNames( std::move( _types ) ),
 		syntax( _syntax ) {}
+
+	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
+				   DynamicSyntax&& _syntax ) :
+		patterns( std::move( _patterns ) ),
+		types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
+		typesNames( { _type } ),
+		dynSyntax( std::move( _syntax ) ) {}
+
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   DynamicSyntax&& _syntax ) :
+		patterns( std::move( _patterns ) ),
+		types( toSyntaxStyleTypeV( _types ) ),
+		typesNames( std::move( _types ) ),
+		dynSyntax( std::move( _syntax ) ) {}
+
+	bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
 };
 
 class EE_API SyntaxDefinition {

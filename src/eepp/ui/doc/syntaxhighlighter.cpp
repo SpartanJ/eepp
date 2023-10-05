@@ -46,7 +46,7 @@ void SyntaxHighlighter::invalidate( Int64 lineIndex ) {
 	mMaxWantedLine = eemin<Int64>( mMaxWantedLine, (Int64)mDoc->linesCount() - 1 );
 }
 
-TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const Uint64& state ) {
+TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const SyntaxState& state ) {
 	auto& ln = mDoc->line( line );
 	TokenizedLine tokenizedLine;
 	tokenizedLine.initState = state;
@@ -161,7 +161,7 @@ const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t
 		return noHighlightVector;
 	}
 
-	int prevState = SYNTAX_TOKENIZER_STATE_NONE;
+	SyntaxState prevState;
 	if ( index > 0 ) {
 		Lock l( mLinesMutex );
 		auto prevIt = mLines.find( index - 1 );
@@ -195,7 +195,7 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 		Int64 max = eemax( 0LL, eemin( mFirstInvalidLine + visibleLinesCount, mMaxWantedLine ) );
 
 		for ( Int64 index = mFirstInvalidLine; index <= max; index++ ) {
-			Uint64 state = SYNTAX_TOKENIZER_STATE_NONE;
+			SyntaxState state;
 			Lock l( mLinesMutex );
 			if ( index > 0 ) {
 				auto prevIt = mLines.find( index - 1 );
@@ -223,14 +223,14 @@ SyntaxHighlighter::getSyntaxDefinitionFromTextPosition( const TextPosition& posi
 	Lock l( mLinesMutex );
 	auto found = mLines.find( position.line() );
 	if ( found == mLines.end() )
-		return SyntaxDefinitionManager::instance()->getPlainStyle();
+		return SyntaxDefinitionManager::instance()->getPlainDefinition();
 
 	TokenizedLine& line = found->second;
-	SyntaxState state =
+	SyntaxStateRestored state =
 		SyntaxTokenizer::retrieveSyntaxState( mDoc->getSyntaxDefinition(), line.state );
 
 	if ( nullptr == state.currentSyntax )
-		return SyntaxDefinitionManager::instance()->getPlainStyle();
+		return SyntaxDefinitionManager::instance()->getPlainDefinition();
 
 	return *state.currentSyntax;
 }

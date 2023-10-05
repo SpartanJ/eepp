@@ -86,7 +86,7 @@ void TextDocument::reset() {
 	mLastSelection = 0;
 	mLines.clear();
 	mLines.emplace_back( String( "\n" ) );
-	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainStyle();
+	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainDefinition();
 	mUndoStack.clear();
 	cleanChangeId();
 	notifySyntaxDefinitionChange();

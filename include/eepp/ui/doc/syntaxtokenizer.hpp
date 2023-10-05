@@ -6,7 +6,6 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
-#include <memory>
 #include <string>
 
 using namespace EE::Graphics;
@@ -42,26 +41,39 @@ struct EE_API SyntaxTokenComplete {
 
 #define SYNTAX_TOKENIZER_STATE_NONE ( 0 )
 
-struct SyntaxState {
+struct SyntaxStateRestored {
 	const SyntaxDefinition* currentSyntax{ nullptr };
 	const SyntaxPattern* subsyntaxInfo{ nullptr };
 	Uint32 currentPatternIdx{ 0 };
 	Uint32 currentLevel{ 0 };
 };
 
+struct SyntaxState {
+	Uint32 state{ SYNTAX_TOKENIZER_STATE_NONE };
+	String::HashType hash{ 0 };
+
+	bool operator==( const SyntaxState& other ) {
+		return state == other.state && hash == other.hash;
+	}
+
+	bool operator!=( const SyntaxState& other ) { return !( *this == other ); }
+};
+
 class EE_API SyntaxTokenizer {
   public:
-	static std::pair<std::vector<SyntaxToken>, Uint32>
-	tokenize( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
+	static std::pair<std::vector<SyntaxToken>, SyntaxState>
+	tokenize( const SyntaxDefinition& syntax, const std::string& text, const SyntaxState& state,
 			  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
 
-	static std::pair<std::vector<SyntaxTokenPosition>, Uint32>
-	tokenizePosition( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
-					  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
+	static std::pair<std::vector<SyntaxTokenPosition>, SyntaxState>
+	tokenizePosition( const SyntaxDefinition& syntax, const std::string& text,
+					  const SyntaxState& state, const size_t& startIndex = 0,
+					  bool skipSubSyntaxSeparator = false );
 
-	static std::pair<std::vector<SyntaxTokenComplete>, Uint32>
-	tokenizeComplete( const SyntaxDefinition& syntax, const std::string& text, const Uint32& state,
-					  const size_t& startIndex = 0, bool skipSubSyntaxSeparator = false );
+	static std::pair<std::vector<SyntaxTokenComplete>, SyntaxState>
+	tokenizeComplete( const SyntaxDefinition& syntax, const std::string& text,
+					  const SyntaxState& state, const size_t& startIndex = 0,
+					  bool skipSubSyntaxSeparator = false );
 
 	static Text& tokenizeText( const SyntaxDefinition& syntax, const SyntaxColorScheme& colorScheme,
 							   Text& text, const size_t& startIndex = 0,
@@ -69,7 +81,8 @@ class EE_API SyntaxTokenizer {
 							   bool skipSubSyntaxSeparator = false,
 							   const std::string& trimChars = "" );
 
-	static SyntaxState retrieveSyntaxState( const SyntaxDefinition& syntax, const Uint32& state );
+	static SyntaxStateRestored retrieveSyntaxState( const SyntaxDefinition& syntax,
+													const SyntaxState& state );
 };
 
 }}} // namespace EE::UI::Doc

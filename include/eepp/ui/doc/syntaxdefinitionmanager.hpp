@@ -20,7 +20,7 @@ class EE_API SyntaxDefinitionManager {
 
 	SyntaxDefinition& add( SyntaxDefinition&& syntaxStyle );
 
-	const SyntaxDefinition& getPlainStyle() const;
+	const SyntaxDefinition& getPlainDefinition() const;
 
 	std::vector<const SyntaxDefinition*>
 	languagesThatSupportExtension( std::string extension ) const;
@@ -35,9 +35,13 @@ class EE_API SyntaxDefinitionManager {
 	const SyntaxDefinition& find( const std::string& filePath, const std::string& header,
 								  bool hFileAsCPP = false );
 
+	const SyntaxDefinition& findFromString( const std::string& str ) const;
+
 	SyntaxDefinition& getByExtensionRef( const std::string& filePath );
 
 	const SyntaxDefinition& getByLanguageName( const std::string& name ) const;
+
+	const SyntaxDefinition& getByLanguageNameInsensitive( std::string name ) const;
 
 	const SyntaxDefinition& getByLSPName( const std::string& name ) const;
 

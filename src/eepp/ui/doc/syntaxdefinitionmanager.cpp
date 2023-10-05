@@ -1915,7 +1915,7 @@ SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle )
 	return mDefinitions.back();
 }
 
-const SyntaxDefinition& SyntaxDefinitionManager::getPlainStyle() const {
+const SyntaxDefinition& SyntaxDefinitionManager::getPlainDefinition() const {
 	return mDefinitions[0];
 }
 
@@ -1927,6 +1927,16 @@ const SyntaxDefinition&
 SyntaxDefinitionManager::getByLanguageName( const std::string& name ) const {
 	for ( auto& style : mDefinitions ) {
 		if ( style.getLanguageName() == name )
+			return style;
+	}
+	return mDefinitions[0];
+}
+
+const SyntaxDefinition&
+SyntaxDefinitionManager::getByLanguageNameInsensitive( std::string name ) const {
+	String::toLowerInPlace( name );
+	for ( auto& style : mDefinitions ) {
+		if ( String::toLower( style.getLanguageName() ) == name )
 			return style;
 	}
 	return mDefinitions[0];
@@ -2301,6 +2311,16 @@ const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePa
 	if ( def.getLanguageName() == mDefinitions[0].getLanguageName() )
 		return getByExtension( filePath, hFileAsCPP );
 	return def;
+}
+
+const SyntaxDefinition& SyntaxDefinitionManager::findFromString( const std::string& lang ) const {
+	const auto& syn = getByLSPName( lang );
+	if ( syn.getLSPName() != getPlainDefinition().getLSPName() )
+		return syn;
+	const auto& syn2 = getByLanguageNameInsensitive( lang );
+	if ( syn2.getLSPName() != getPlainDefinition().getLSPName() )
+		return syn2;
+	return getPlainDefinition();
 }
 
 }}} // namespace EE::UI::Doc

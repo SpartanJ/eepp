@@ -5,8 +5,6 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/window/engine.hpp>
-#include <iostream>
-#include <sstream>
 
 using namespace EE::System;
 using namespace EE::Window;
