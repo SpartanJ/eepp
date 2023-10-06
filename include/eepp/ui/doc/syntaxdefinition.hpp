@@ -26,7 +26,8 @@ template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) 
 }
 
 struct EE_API SyntaxPattern {
-	using DynamicSyntax = std::function<std::string( const SyntaxPattern&, const std::string& )>;
+	using DynamicSyntax =
+		std::function<std::string( const SyntaxPattern&, const std::string_view& )>;
 
 	std::vector<std::string> patterns;
 	std::vector<SyntaxStyleType> types;

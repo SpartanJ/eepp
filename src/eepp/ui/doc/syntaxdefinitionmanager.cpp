@@ -2317,9 +2317,12 @@ const SyntaxDefinition& SyntaxDefinitionManager::findFromString( const std::stri
 	const auto& syn = getByLSPName( lang );
 	if ( syn.getLSPName() != getPlainDefinition().getLSPName() )
 		return syn;
-	const auto& syn2 = getByLanguageNameInsensitive( lang );
+	const auto& syn2 = getByLanguageName( lang );
 	if ( syn2.getLSPName() != getPlainDefinition().getLSPName() )
 		return syn2;
+	const auto& syn3 = getByLanguageNameInsensitive( lang );
+	if ( syn3.getLSPName() != getPlainDefinition().getLSPName() )
+		return syn3;
 	return getPlainDefinition();
 }
 

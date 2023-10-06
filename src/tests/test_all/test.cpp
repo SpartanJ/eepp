@@ -1,4 +1,5 @@
 #include "test.hpp"
+using namespace std::literals;
 
 Demo_Test::EETest* TestInstance = NULL;
 
@@ -269,7 +270,7 @@ void EETest::onFontLoaded() {
 		"mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está "
 		"ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. "
 		"Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter "
-		"el mar en tu cabeza, que es un balde." );
+		"el mar en tu cabeza, que es un balde."sv );
 
 	createUI();
 	Con = UIConsole::NewOpt( monospace, true, true, 8191 );

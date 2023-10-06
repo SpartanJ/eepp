@@ -4,8 +4,8 @@
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addMarkdown() {
-	auto dynSyntax = []( const SyntaxPattern&, const std::string& match ) -> std::string {
-		std::string lang = String::toLower( match.substr( 3 ) );
+	auto dynSyntax = []( const SyntaxPattern&, const std::string_view& match ) -> std::string {
+		std::string lang = String::toLower( std::string{ match.substr( 3 ) } );
 		String::trimInPlace( lang );
 		if ( !lang.empty() && lang[lang.size() - 1] == '\n' )
 			lang.pop_back();

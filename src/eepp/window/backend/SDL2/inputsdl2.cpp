@@ -241,7 +241,7 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_TEXTINPUT: {
-			String txt = String::fromUtf8( SDLEvent.text.text );
+			String txt = String::fromUtf8( std::string_view{ SDLEvent.text.text } );
 			event.Type = InputEvent::TextInput;
 			event.text.timestamp = SDLEvent.text.timestamp;
 			event.WinID = SDLEvent.text.windowID;

@@ -32,7 +32,7 @@ static int isInMultiByteCodePoint( const char* text, const size_t& textSize, con
 
 template <typename T>
 static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
-					   const std::string& text ) {
+					   const std::string_view& text ) {
 	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type ) ) {
 		size_t tpos = tokens.size() - 1;
 		tokens[tpos].type = type;
@@ -47,14 +47,14 @@ static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
 			while ( textSize > 0 ) {
 				size_t chunkSize = textSize > MAX_TOKEN_SIZE ? MAX_TOKEN_SIZE : textSize;
 				int multiByteCodePointPos = 0;
-				if ( ( multiByteCodePointPos = isInMultiByteCodePoint( text.c_str(), text.size(),
+				if ( ( multiByteCodePointPos = isInMultiByteCodePoint( text.data(), text.size(),
 																	   pos + chunkSize ) ) > 0 ) {
 					chunkSize = eemin( textSize, chunkSize + multiByteCodePointPos );
 				}
-				std::string substr = text.substr( pos, chunkSize );
+				std::string_view substr = text.substr( pos, chunkSize );
 				SyntaxStyleType len = String::utf8Length( substr );
 				if constexpr ( std::is_same_v<T, SyntaxTokenComplete> ) {
-					tokens.push_back( { type, std::move( substr ), len } );
+					tokens.push_back( { type, std::string{ substr }, len } );
 				} else if constexpr ( std::is_same_v<T, SyntaxTokenPosition> ) {
 					SyntaxStyleType tpos = tokens.empty() ? 0
 														  : tokens[tokens.size() - 1].pos +
@@ -68,8 +68,8 @@ static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
 			}
 		} else {
 			if constexpr ( std::is_same_v<T, SyntaxTokenComplete> ) {
-				tokens.push_back(
-					{ type, text, static_cast<SyntaxTokenLen>( String::utf8Length( text ) ) } );
+				tokens.push_back( { type, std::string{ text },
+									static_cast<SyntaxTokenLen>( String::utf8Length( text ) ) } );
 			} else if constexpr ( std::is_same_v<T, SyntaxTokenPosition> ) {
 				SyntaxStyleType tpos =
 					tokens.empty() ? 0
@@ -249,6 +249,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 		bool matched = false;
 		std::string patternStr;
+		std::string patternText;
 
 		for ( size_t patternIndex = 0; patternIndex < curState.currentSyntax->getPatterns().size();
 			  patternIndex++ ) {
@@ -290,7 +291,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 									   text.substr( lastEnd, start - lastEnd ) );
 						}
 
-						std::string patternText( text.substr( start, end - start ) );
+						patternText = text.substr( start, end - start );
 						SyntaxStyleType type = curState.currentSyntax->getSymbol( patternText );
 						if ( !skipSubSyntaxSeparator || !pattern.hasSyntax() ) {
 							pushToken( tokens,
@@ -335,7 +336,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 							String::utf8Next( strEnd );
 							end = start + ( strEnd - strStart );
 						}
-						std::string patternText( text.substr( start, end - start ) );
+						patternText = text.substr( start, end - start );
 						SyntaxStyleType type = curState.currentSyntax->getSymbol( patternText );
 						if ( !skipSubSyntaxSeparator || !pattern.hasSyntax() ) {
 							pushToken( tokens,

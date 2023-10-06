@@ -128,7 +128,7 @@ void SyntaxHighlighter::tokenizeAsync( std::shared_ptr<ThreadPool> pool ) {
 		return;
 	mTokenizeAsync = true;
 	pool->run( [this] {
-		for ( size_t i = 0; i < mDoc->linesCount() && !mStopTokenizing; i++ )
+		for ( size_t i = mFirstInvalidLine; i < mDoc->linesCount() && !mStopTokenizing; i++ )
 			getLine( i );
 		mStopTokenizing = false;
 		mTokenizeAsync = false;

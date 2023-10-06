@@ -4,7 +4,6 @@
 #include <cstdarg>
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
-#include <functional>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -1040,7 +1039,24 @@ String String::fromUtf8( const std::string& utf8String ) {
 	return String( utf32 );
 }
 
-#define iscont( p ) ( ( *(p)&0xC0 ) == 0x80 )
+String String::fromUtf8( const std::string_view& utf8String ) {
+	String::StringType utf32;
+
+	// Skip BOM
+	int skip = 0;
+	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+		 (char)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
+	utf32.reserve( utf8String.length() + 1 );
+
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( utf32 ) );
+
+	return String( utf32 );
+}
+
+#define iscont( p ) ( ( *( p ) & 0xC0 ) == 0x80 )
 
 static inline const char* utf8_next( const char* s, const char* e ) {
 	while ( s < e && iscont( s + 1 ) )
@@ -1057,6 +1073,10 @@ static inline size_t utf8_length( const char* s, const char* e ) {
 
 size_t String::utf8Length( const std::string& utf8String ) {
 	return utf8_length( utf8String.c_str(), utf8String.c_str() + utf8String.length() );
+}
+
+size_t String::utf8Length( const std::string_view& utf8String ) {
+	return utf8_length( utf8String.data(), utf8String.data() + utf8String.length() );
 }
 
 Uint32 String::utf8Next( char*& utf8String ) {

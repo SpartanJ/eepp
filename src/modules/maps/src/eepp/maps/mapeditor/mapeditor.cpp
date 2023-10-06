@@ -400,7 +400,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 		->setParent( mTextureRegionCont )
 		->setPosition( mChkBlocked->getPosition().x,
 					   mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 );
-	mChkRot90->setText( String::fromUtf8( "Rotate 90º" ) );
+	mChkRot90->setText( String::fromUtf8( std::string_view{ "Rotate 90º" } ) );
 	mChkRot90->addEventListener( Event::OnValueChange,
 								 cb::Make1( this, &MapEditor::chkClickRot90 ) );
 

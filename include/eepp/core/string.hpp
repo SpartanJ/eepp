@@ -352,6 +352,14 @@ class EE_API String {
 	/** @return The number of codepoints of the utf8 string. */
 	static size_t utf8Length( const std::string& utf8String );
 
+	/** @brief Construct from an UTF-8 string to UTF-32 according
+	** @param utf8String UTF-8 string to convert
+	**/
+	static String fromUtf8( const std::string_view& utf8String );
+
+	/** @return The number of codepoints of the utf8 string. */
+	static size_t utf8Length( const std::string_view& utf8String );
+
 	/** @return The next character in a utf8 null terminated string */
 	static Uint32 utf8Next( char*& utf8String );
 

@@ -2108,7 +2108,7 @@ static std::pair<size_t, size_t> findType( const String& str, const String& find
 										   const TextDocument::FindReplaceType& type ) {
 	switch ( type ) {
 		case TextDocument::FindReplaceType::LuaPattern: {
-			LuaPattern words( findStr );
+			LuaPattern words( findStr.toUtf8() );
 			int start, end = 0;
 			words.find( str, start, end );
 			if ( start < 0 )
@@ -2129,7 +2129,7 @@ static std::pair<size_t, size_t> findLastType( const String& str, const String& 
 	switch ( type ) {
 		case TextDocument::FindReplaceType::LuaPattern: {
 			// TODO: Implement findLastType for Lua patterns
-			LuaPattern words( findStr );
+			LuaPattern words( findStr.toUtf8() );
 			int start, end = 0;
 			words.find( str, start, end );
 			if ( start < 0 )
