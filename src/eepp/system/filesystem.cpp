@@ -344,7 +344,7 @@ std::string FileSystem::getRealPath( const std::string& path ) {
 	realPath = std::string( dir );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	wchar_t dir[_MAX_PATH + 1];
-	GetFullPathNameW( String::fromUtf8( path.c_str() ).toWideString().c_str(), _MAX_PATH, &dir[0],
+	GetFullPathNameW( String::fromUtf8( path ).toWideString().c_str(), _MAX_PATH, &dir[0],
 					  nullptr );
 	realPath = String( dir ).toUtf8();
 #else
@@ -608,9 +608,9 @@ bool FileSystem::changeWorkingDirectory( const std::string& path ) {
 	int res;
 #ifdef EE_COMPILER_MSVC
 #ifdef UNICODE
-	res = _wchdir( String::fromUtf8( path.c_str() ).toWideString().c_str() );
+	res = _wchdir( String::fromUtf8( path ).toWideString().c_str() );
 #else
-	res = _chdir( String::fromUtf8( path.c_str() ).toAnsiString().c_str() );
+	res = _chdir( String::fromUtf8( path ).toAnsiString().c_str() );
 #endif
 #else
 	res = chdir( path.c_str() );
@@ -649,7 +649,7 @@ Int64 FileSystem::getDiskFreeSpace( const std::string& path ) {
 	Int64 TotalBytes;
 	Int64 FreeBytes;
 #ifdef UNICODE
-	GetDiskFreeSpaceEx( String::fromUtf8( path.c_str() ).toWideString().c_str(),
+	GetDiskFreeSpaceEx( String::fromUtf8( path ).toWideString().c_str(),
 						(PULARGE_INTEGER)&AvailableBytes,
 #else
 	GetDiskFreeSpaceEx( path.c_str(), (PULARGE_INTEGER)&AvailableBytes,

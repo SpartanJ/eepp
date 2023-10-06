@@ -163,12 +163,10 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		curState.currentPatternIdx = patternIndex;
 		retState.state &= ~( 0xFF << ( curState.currentLevel << 3 ) );
 		retState.state |= ( patternIndex << ( curState.currentLevel << 3 ) );
-		if ( curState.currentSyntax )
-			retState.hash = curState.currentSyntax->getLanguageId();
 	};
 
-	auto pushSubsyntax = [&setSubsyntaxPatternIdx,
-						  &curState]( const SyntaxPattern& enteringSubsyntax,
+	auto pushSubsyntax = [&setSubsyntaxPatternIdx, &curState,
+						  &retState]( const SyntaxPattern& enteringSubsyntax,
 									  const Uint32& patternIndex, const std::string& patternStr ) {
 		setSubsyntaxPatternIdx( patternIndex );
 		curState.currentLevel++;
@@ -177,6 +175,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			curState.subsyntaxInfo->dynSyntax
 				? curState.subsyntaxInfo->dynSyntax( enteringSubsyntax, patternStr )
 				: curState.subsyntaxInfo->syntax );
+		if ( curState.subsyntaxInfo->dynSyntax )
+			retState.hash = curState.currentSyntax->getLanguageId();
 		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
 	};
 
@@ -184,11 +184,14 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
 		curState.currentLevel--;
 		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
+		retState.hash = 0;
 		curState = SyntaxTokenizer::retrieveSyntaxState( syntax, retState );
 	};
 
 	size_t size = !text.empty() ? ( text[text.size() - 1] == '\n' ? text.size() - 1 : text.size() )
 								: 0; // skip last char ( new line char )
+	std::string patternStr;
+	std::string patternText;
 
 	while ( i < size ) {
 		if ( curState.currentPatternIdx != SYNTAX_TOKENIZER_STATE_NONE ) {
@@ -248,8 +251,6 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		}
 
 		bool matched = false;
-		std::string patternStr;
-		std::string patternText;
 
 		for ( size_t patternIndex = 0; patternIndex < curState.currentSyntax->getPatterns().size();
 			  patternIndex++ ) {

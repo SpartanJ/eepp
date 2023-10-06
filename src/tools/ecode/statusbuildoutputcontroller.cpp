@@ -171,7 +171,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	auto configs = { outputParser.getPresetConfig(), outputParser.getConfig() };
 	for ( const auto& config : configs ) {
 		for ( const auto& parser : config ) {
-			mPatternHolder.push_back( { LuaPattern( parser.pattern ), parser } );
+			mPatternHolder.push_back( { LuaPatternStorage( parser.pattern ), parser } );
 
 			SyntaxPattern ptn( { parser.pattern },
 							   getProjectOutputParserTypeToString( parser.type ) );

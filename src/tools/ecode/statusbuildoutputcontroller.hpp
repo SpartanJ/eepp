@@ -30,7 +30,7 @@ struct StatusMessage {
 };
 
 struct PatternHolder {
-	LuaPattern pattern;
+	LuaPatternStorage pattern;
 	ProjectBuildOutputParserConfig config;
 };
 
