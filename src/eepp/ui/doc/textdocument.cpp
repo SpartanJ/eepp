@@ -165,7 +165,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 				size_t lineBufferSize = lineBuffer.size();
 				char lastChar = lineBuffer[lineBufferSize - 1];
 
-				if ( lastChar == '\n' || lastChar == '\r' || !consume ) {
+				if ( lastChar == '\n' || lastChar == '\r' ) {
 					if ( mLines.empty() ) {
 						if ( lineBufferSize > 1 && lineBuffer[lineBufferSize - 2] == '\r' &&
 							 lastChar == '\n' ) {
@@ -196,15 +196,6 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 				}
 			}
 
-			if ( !mLines.empty() ) {
-				const String& lastLine = mLines[mLines.size() - 1].getText();
-				if ( lastLine[lastLine.size() - 1] == '\n' ) {
-					mLines.push_back( String( "\n" ) );
-				} else {
-					mLines[mLines.size() - 1].append( "\n" );
-				}
-			}
-
 			if ( !read )
 				break;
 			pending -= read;
@@ -212,8 +203,16 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 		};
 	}
 
-	if ( mLines.empty() )
+	if ( !mLines.empty() ) {
+		const String& lastLine = mLines[mLines.size() - 1].getText();
+		if ( lastLine[lastLine.size() - 1] == '\n' ) {
+			mLines.push_back( String( "\n" ) );
+		} else {
+			mLines[mLines.size() - 1].append( "\n" );
+		}
+	} else {
 		mLines.push_back( String( "\n" ) );
+	}
 
 	if ( mAutoDetectIndentType )
 		guessIndentType();

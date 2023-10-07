@@ -298,7 +298,7 @@ void LSPDocumentClient::highlight() {
 	const auto& caps = mServer->getCapabilities().semanticTokenProvider;
 	Uint32 currentLine = 0;
 	Uint32 start = 0;
-	std::unordered_map<size_t, TokenizedLine> tokenizerLines;
+	UnorderedMap<size_t, TokenizedLine> tokenizerLines;
 	Int64 lastLine = 0;
 	TokenizedLine* lastLinePtr = nullptr;
 	Time diff;
