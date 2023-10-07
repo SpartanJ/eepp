@@ -85,9 +85,9 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 		  { "minimap_visible_area"_sst, Color( "#FFFFFF0A" ) } } };
 }
 
-SyntaxColorScheme::Style
-parseStyle( const std::string& value, bool* colorWasSet = nullptr,
-			const UnorderedMap<std::string, SyntaxColorScheme::Style>* syntaxColors = nullptr ) {
+SyntaxColorScheme::Style parseStyle(
+	const std::string& value, bool* colorWasSet = nullptr,
+	const UnorderedMap<SyntaxStyleType, SyntaxColorScheme::Style>* syntaxColors = nullptr ) {
 	static const std::string outline = "outline";
 	auto values = String::split( value, ",", "", "()" );
 	SyntaxColorScheme::Style style;
@@ -133,8 +133,8 @@ parseStyle( const std::string& value, bool* colorWasSet = nullptr,
 						  "keyword" == val || "keyword2" == val || "number" == val ||
 						  "literal" == val || "string" == val || "opetaror" == val ||
 						  "function" == val || "link" == val || "link_hover" == val ) ) {
-				auto styleIt = ( *syntaxColors ).find( val );
-				if ( styleIt != ( *syntaxColors ).end() ) {
+				auto styleIt = syntaxColors->find( toSyntaxStyleType( val ) );
+				if ( styleIt != syntaxColors->end() ) {
 					style = styleIt->second;
 					colorSet = true;
 				}
@@ -316,7 +316,7 @@ SyntaxColorScheme::getSyntaxStyleFromCache( const SyntaxStyleType& type ) const 
 	else {
 		auto cache = SyntaxPattern::SyntaxStyleTypeCache.find( type );
 		if ( cache != SyntaxPattern::SyntaxStyleTypeCache.end() ) {
-			mStyleCache[type] = parseStyle( cache->second, &colorWasSet );
+			mStyleCache[type] = parseStyle( cache->second, &colorWasSet, &mSyntaxColors );
 		} else {
 			return StyleEmpty;
 		}
