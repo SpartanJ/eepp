@@ -147,7 +147,11 @@ class EE_API SyntaxDefinition {
 
 	UnorderedMap<std::string, std::string> getSymbolNames() const;
 
+	const Uint16& getLanguageIndex() const { return mLanguageIndex; }
+
   protected:
+	friend class SyntaxDefinitionManager;
+
 	std::string mLanguageName;
 	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;
@@ -157,6 +161,7 @@ class EE_API SyntaxDefinition {
 	std::string mComment;
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;
+	Uint16 mLanguageIndex{ 0 };
 	bool mAutoCloseXMLTags{ false };
 	bool mVisible{ true };
 	bool mHasExtensionPriority{ false };

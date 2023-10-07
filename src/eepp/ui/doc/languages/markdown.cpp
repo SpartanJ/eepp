@@ -4,13 +4,13 @@
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addMarkdown() {
-	/* auto dynSyntax = []( const SyntaxPattern&, const std::string_view& match ) -> std::string {
+	auto dynSyntax = []( const SyntaxPattern&, const std::string_view& match ) -> std::string {
 		std::string lang = String::toLower( std::string{ match.substr( 3 ) } );
 		String::trimInPlace( lang );
 		if ( !lang.empty() && lang[lang.size() - 1] == '\n' )
 			lang.pop_back();
 		return SyntaxDefinitionManager::instance()->findFromString( lang ).getLanguageName();
-	}; */
+	};
 
 	SyntaxDefinitionManager::instance()->add(
 
@@ -18,7 +18,7 @@ void addMarkdown() {
 		  { "%.md$", "%.markdown$" },
 		  {
 			  { { "\\." }, "normal" },
-			  { { "```[Xx][Mm][Ll]", "```" }, "function", "XML" },
+			  /*{ { "```[Xx][Mm][Ll]", "```" }, "function", "XML" },
 			  { { "```[Hh][Tt][Mm][Ll]", "```" }, "function", "html" },
 			  { { "```[Cc]++", "```" }, "function", "C++" },
 			  { { "```[Cc][Pp][Pp]", "```" }, "function", "C++" },
@@ -51,8 +51,8 @@ void addMarkdown() {
 			  { { "```[Hh]askell", "```" }, "function", "Haskell" },
 			  { { "```[Oo]din", "```" }, "function", "Odin" },
 			  { { "```[Nn]im", "```" }, "function", "Nim" },
-			  { { "```[Zz]ig", "```" }, "function", "Zig" },
-			  // { { "```[%w%s+-#]+", "```" }, "function", dynSyntax },
+			  { { "```[Zz]ig", "```" }, "function", "Zig" },*/
+			  { { "```[%w%s+-#]+", "```" }, "function", dynSyntax },
 			  { { "<!%-%-", "%-%->" }, "comment" },
 			  { { "```", "```" }, "string" },
 			  { { "``", "``" }, "string" },

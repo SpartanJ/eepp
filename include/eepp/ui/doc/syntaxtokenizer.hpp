@@ -49,11 +49,14 @@ struct SyntaxStateRestored {
 };
 
 struct SyntaxState {
-	Uint32 state{ SYNTAX_TOKENIZER_STATE_NONE };
-	String::HashType hash{ 0 };
+	// 16 bits per pattern - max 4 languages
+	Uint16 state[4]{ SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE,
+					 SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE };
+	// 16 bits per language (language index) - max 4 languages
+	Uint16 langStack[4]{ 0, 0, 0, 0 };
 
 	bool operator==( const SyntaxState& other ) {
-		return state == other.state && hash == other.hash;
+		return memcmp( this, &other, sizeof( SyntaxState ) ) == 0;
 	}
 
 	bool operator!=( const SyntaxState& other ) { return !( *this == other ); }

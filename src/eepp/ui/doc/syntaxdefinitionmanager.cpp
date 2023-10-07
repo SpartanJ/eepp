@@ -1911,6 +1911,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
+	syntaxStyle.mLanguageIndex = mDefinitions.size();
 	mDefinitions.emplace_back( std::move( syntaxStyle ) );
 	return mDefinitions.back();
 }
@@ -1930,6 +1931,11 @@ SyntaxDefinitionManager::getByLanguageName( const std::string& name ) const {
 			return style;
 	}
 	return mDefinitions[0];
+}
+
+const SyntaxDefinition& SyntaxDefinitionManager::getByLanguageIndex( const Uint32& index ) const {
+	eeASSERT( index < mDefinitions.size() );
+	return mDefinitions[index];
 }
 
 const SyntaxDefinition&
@@ -2116,6 +2122,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 				} else {
 					if ( addedLangs )
 						addedLangs->push_back( res.getLanguageName() );
+					res.mLanguageIndex = mDefinitions.size();
 					mDefinitions.emplace_back( std::move( res ) );
 				}
 			}
@@ -2131,6 +2138,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 			} else {
 				if ( addedLangs )
 					addedLangs->push_back( res.getLanguageName() );
+				res.mLanguageIndex = mDefinitions.size();
 				mDefinitions.emplace_back( std::move( res ) );
 			}
 		}

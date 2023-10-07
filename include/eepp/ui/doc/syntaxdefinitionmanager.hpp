@@ -41,6 +41,8 @@ class EE_API SyntaxDefinitionManager {
 
 	const SyntaxDefinition& getByLanguageName( const std::string& name ) const;
 
+	const SyntaxDefinition& getByLanguageIndex( const Uint32& index ) const;
+
 	const SyntaxDefinition& getByLanguageNameInsensitive( std::string name ) const;
 
 	const SyntaxDefinition& getByLSPName( const std::string& name ) const;

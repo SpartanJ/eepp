@@ -111,21 +111,22 @@ std::pair<int, int> findNonEscaped( const std::string& text, const std::string& 
 
 SyntaxStateRestored SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition& syntax,
 														  const SyntaxState& state ) {
-	SyntaxStateRestored syntaxState{ &syntax, nullptr, state.state, 0 };
-	if ( state.state > 0 &&
-		 ( state.state > 255 ||
-		   ( state.state < syntaxState.currentSyntax->getPatterns().size() &&
-			 syntaxState.currentSyntax->getPatterns()[state.state - 1].hasSyntax() ) ) ) {
+	SyntaxStateRestored syntaxState{ &syntax, nullptr, state.state[0], 0 };
+	if ( state.state[0] > 0 &&
+		 ( state.state[1] > 0 ||
+		   ( state.state[0] < syntaxState.currentSyntax->getPatterns().size() &&
+			 syntaxState.currentSyntax->getPatterns()[state.state[0] - 1].hasSyntax() ) ) ) {
 		for ( size_t i = 0; i <= 2; ++i ) {
-			Uint32 target = ( state.state >> ( i << 3 ) ) & 0xFF;
+			Uint32 target = state.state[i];
 			if ( target != SYNTAX_TOKENIZER_STATE_NONE ) {
 				if ( target < syntaxState.currentSyntax->getPatterns().size() &&
 					 syntaxState.currentSyntax->getPatterns()[target - 1].hasSyntax() ) {
 					syntaxState.subsyntaxInfo =
 						&syntaxState.currentSyntax->getPatterns()[target - 1];
+					Uint32 langIndex = state.langStack[i];
 					syntaxState.currentSyntax =
-						state.hash != 0
-							? &SyntaxDefinitionManager::instance()->getByLanguageId( state.hash )
+						langIndex != 0
+							? &SyntaxDefinitionManager::instance()->getByLanguageIndex( langIndex )
 							: &SyntaxDefinitionManager::instance()->getByLanguageName(
 								  syntaxState.subsyntaxInfo->syntax );
 					syntaxState.currentPatternIdx = SYNTAX_TOKENIZER_STATE_NONE;
@@ -161,30 +162,30 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 	auto setSubsyntaxPatternIdx = [&curState, &retState]( const Uint32& patternIndex ) {
 		curState.currentPatternIdx = patternIndex;
-		retState.state &= ~( 0xFF << ( curState.currentLevel << 3 ) );
-		retState.state |= ( patternIndex << ( curState.currentLevel << 3 ) );
+		retState.state[curState.currentLevel] = patternIndex;
 	};
 
 	auto pushSubsyntax = [&setSubsyntaxPatternIdx, &curState,
 						  &retState]( const SyntaxPattern& enteringSubsyntax,
 									  const Uint32& patternIndex, const std::string& patternStr ) {
+		if ( curState.currentLevel == 3 )
+			return;
 		setSubsyntaxPatternIdx( patternIndex );
-		curState.currentLevel++;
 		curState.subsyntaxInfo = &enteringSubsyntax;
 		curState.currentSyntax = &SyntaxDefinitionManager::instance()->getByLanguageName(
 			curState.subsyntaxInfo->dynSyntax
 				? curState.subsyntaxInfo->dynSyntax( enteringSubsyntax, patternStr )
 				: curState.subsyntaxInfo->syntax );
-		if ( curState.subsyntaxInfo->dynSyntax )
-			retState.hash = curState.currentSyntax->getLanguageId();
+		retState.langStack[curState.currentLevel] = curState.currentSyntax->getLanguageIndex();
+		curState.currentLevel++;
 		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
 	};
 
 	auto popSubsyntax = [&setSubsyntaxPatternIdx, &curState, &syntax, &retState]() {
 		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
+		retState.langStack[curState.currentLevel] = 0;
 		curState.currentLevel--;
 		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
-		retState.hash = 0;
 		curState = SyntaxTokenizer::retrieveSyntaxState( syntax, retState );
 	};
 
@@ -408,9 +409,8 @@ Text& SyntaxTokenizer::tokenizeText( const SyntaxDefinition& syntax,
 									 const size_t& startIndex, const size_t& endIndex,
 									 bool skipSubSyntaxSeparator, const std::string& trimChars ) {
 
-	auto tokens = SyntaxTokenizer::tokenizeComplete( syntax, text.getString(),
-													 { SYNTAX_TOKENIZER_STATE_NONE, 0 }, startIndex,
-													 skipSubSyntaxSeparator )
+	auto tokens = SyntaxTokenizer::tokenizeComplete( syntax, text.getString(), SyntaxState{},
+													 startIndex, skipSubSyntaxSeparator )
 					  .first;
 
 	if ( skipSubSyntaxSeparator || !trimChars.empty() ) {
