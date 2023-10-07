@@ -123,15 +123,18 @@ void SyntaxHighlighter::setMaxTokenizationLength( const Int64& maxTokenizationLe
 	mMaxTokenizationLength = maxTokenizationLength;
 }
 
-void SyntaxHighlighter::tokenizeAsync( std::shared_ptr<ThreadPool> pool ) {
+void SyntaxHighlighter::tokenizeAsync( std::shared_ptr<ThreadPool> pool,
+									   const std::function<void()>& onDone ) {
 	if ( mTokenizeAsync )
 		return;
 	mTokenizeAsync = true;
-	pool->run( [this] {
+	pool->run( [this, onDone] {
 		for ( size_t i = mFirstInvalidLine; i < mDoc->linesCount() && !mStopTokenizing; i++ )
 			getLine( i );
 		mStopTokenizing = false;
 		mTokenizeAsync = false;
+		if ( onDone )
+			onDone();
 	} );
 }
 
@@ -225,7 +228,7 @@ SyntaxHighlighter::getSyntaxDefinitionFromTextPosition( const TextPosition& posi
 	if ( found == mLines.end() )
 		return SyntaxDefinitionManager::instance()->getPlainDefinition();
 
-	TokenizedLine& line = found->second;
+	const TokenizedLine& line = found->second;
 	SyntaxStateRestored state =
 		SyntaxTokenizer::retrieveSyntaxState( mDoc->getSyntaxDefinition(), line.state );
 

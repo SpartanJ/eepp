@@ -97,6 +97,9 @@ bool isScaped( const std::string& text, const size_t& startIndex, const std::str
 
 std::pair<int, int> findNonEscaped( const std::string& text, const std::string& pattern, int offset,
 									const std::string& escapeStr ) {
+	eeASSERT( !pattern.empty() );
+	if ( pattern.empty() )
+		return std::make_pair( -1, -1 );
 	LuaPattern words( pattern );
 	int start, end;
 	while ( words.find( text, start, end, offset ) ) {
@@ -142,52 +145,54 @@ SyntaxStateRestored SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition
 	return syntaxState;
 }
 
+static inline void setSubsyntaxPatternIdx( SyntaxStateRestored& curState, SyntaxState& retState,
+										   const Uint32& patternIndex ) {
+	curState.currentPatternIdx = patternIndex;
+	retState.state[curState.currentLevel] = patternIndex;
+};
+
+static inline void pushSubsyntax( SyntaxStateRestored& curState, SyntaxState& retState,
+								  const SyntaxPattern& enteringSubsyntax,
+								  const Uint32& patternIndex, const std::string& patternStr ) {
+	if ( curState.currentLevel == MAX_SUB_SYNTAXS - 1 )
+		return;
+	setSubsyntaxPatternIdx( curState, retState, patternIndex );
+	curState.subsyntaxInfo = &enteringSubsyntax;
+	curState.currentSyntax = &SyntaxDefinitionManager::instance()->getByLanguageName(
+		curState.subsyntaxInfo->dynSyntax
+			? curState.subsyntaxInfo->dynSyntax( enteringSubsyntax, patternStr )
+			: curState.subsyntaxInfo->syntax );
+	retState.langStack[curState.currentLevel] = curState.currentSyntax->getLanguageIndex();
+	curState.currentLevel++;
+	setSubsyntaxPatternIdx( curState, retState, SYNTAX_TOKENIZER_STATE_NONE );
+};
+
+static inline void popSubsyntax( SyntaxStateRestored& curState, SyntaxState& retState,
+								 const SyntaxDefinition& syntax ) {
+	setSubsyntaxPatternIdx( curState, retState, SYNTAX_TOKENIZER_STATE_NONE );
+	retState.langStack[curState.currentLevel] = 0;
+	curState.currentLevel--;
+	setSubsyntaxPatternIdx( curState, retState, SYNTAX_TOKENIZER_STATE_NONE );
+	curState = SyntaxTokenizer::retrieveSyntaxState( syntax, retState );
+};
+
 template <typename T>
 static inline std::pair<std::vector<T>, SyntaxState>
 _tokenize( const SyntaxDefinition& syntax, const std::string& text, const SyntaxState& state,
 		   const size_t& startIndex, bool skipSubSyntaxSeparator ) {
 	std::vector<T> tokens;
-	LuaPattern::Range matches[12];
-	int start, end;
-	size_t numMatches;
 
 	if ( syntax.getPatterns().empty() ) {
 		pushToken( tokens, SyntaxStyleTypes::Normal, text );
 		return std::make_pair( std::move( tokens ), SyntaxState{} );
 	}
 
+	LuaPattern::Range matches[12];
+	int start, end;
+	size_t numMatches;
 	size_t i = startIndex;
 	SyntaxState retState = state;
 	SyntaxStateRestored curState = SyntaxTokenizer::retrieveSyntaxState( syntax, state );
-
-	auto setSubsyntaxPatternIdx = [&curState, &retState]( const Uint32& patternIndex ) {
-		curState.currentPatternIdx = patternIndex;
-		retState.state[curState.currentLevel] = patternIndex;
-	};
-
-	auto pushSubsyntax = [&setSubsyntaxPatternIdx, &curState,
-						  &retState]( const SyntaxPattern& enteringSubsyntax,
-									  const Uint32& patternIndex, const std::string& patternStr ) {
-		if ( curState.currentLevel == 3 )
-			return;
-		setSubsyntaxPatternIdx( patternIndex );
-		curState.subsyntaxInfo = &enteringSubsyntax;
-		curState.currentSyntax = &SyntaxDefinitionManager::instance()->getByLanguageName(
-			curState.subsyntaxInfo->dynSyntax
-				? curState.subsyntaxInfo->dynSyntax( enteringSubsyntax, patternStr )
-				: curState.subsyntaxInfo->syntax );
-		retState.langStack[curState.currentLevel] = curState.currentSyntax->getLanguageIndex();
-		curState.currentLevel++;
-		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
-	};
-
-	auto popSubsyntax = [&setSubsyntaxPatternIdx, &curState, &syntax, &retState]() {
-		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
-		retState.langStack[curState.currentLevel] = 0;
-		curState.currentLevel--;
-		setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
-		curState = SyntaxTokenizer::retrieveSyntaxState( syntax, retState );
-	};
 
 	size_t size = !text.empty() ? ( text[text.size() - 1] == '\n' ? text.size() - 1 : text.size() )
 								: 0; // skip last char ( new line char )
@@ -217,7 +222,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						pushToken( tokens, curState.subsyntaxInfo->types[0],
 								   text.substr( i, rangeSubsyntax.second - i ) );
 					}
-					popSubsyntax();
+					popSubsyntax( curState, retState, syntax );
 					i = rangeSubsyntax.second;
 					skip = true;
 				}
@@ -226,7 +231,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			if ( !skip ) {
 				if ( range.first != -1 ) {
 					pushToken( tokens, pattern.types[0], text.substr( i, range.second - i ) );
-					setSubsyntaxPatternIdx( SYNTAX_TOKENIZER_STATE_NONE );
+					setSubsyntaxPatternIdx( curState, retState, SYNTAX_TOKENIZER_STATE_NONE );
 					i = range.second;
 				} else {
 					pushToken( tokens, pattern.types[0], text.substr( i ) );
@@ -246,7 +251,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					pushToken( tokens, curState.subsyntaxInfo->types[0],
 							   text.substr( i, rangeSubsyntax.second - i ) );
 				}
-				popSubsyntax();
+				popSubsyntax( curState, retState, syntax );
 				i = rangeSubsyntax.second;
 			}
 		}
@@ -306,9 +311,10 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						}
 
 						if ( pattern.hasSyntax() ) {
-							pushSubsyntax( pattern, patternIndex + 1, patternStr );
+							pushSubsyntax( curState, retState, pattern, patternIndex + 1,
+										   patternStr );
 						} else if ( pattern.patterns.size() > 1 ) {
-							setSubsyntaxPatternIdx( patternIndex + 1 );
+							setSubsyntaxPatternIdx( curState, retState, patternIndex + 1 );
 						}
 
 						i = end;
@@ -350,9 +356,10 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 									   patternText );
 						}
 						if ( pattern.hasSyntax() ) {
-							pushSubsyntax( pattern, patternIndex + 1, patternText );
+							pushSubsyntax( curState, retState, pattern, patternIndex + 1,
+										   patternText );
 						} else if ( pattern.patterns.size() > 1 ) {
-							setSubsyntaxPatternIdx( patternIndex + 1 );
+							setSubsyntaxPatternIdx( curState, retState, patternIndex + 1 );
 						}
 						i = end;
 						matched = true;

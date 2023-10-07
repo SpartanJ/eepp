@@ -62,7 +62,8 @@ class EE_API SyntaxHighlighter {
 
 	void setMaxTokenizationLength( const Int64& maxTokenizationLength );
 
-	void tokenizeAsync( std::shared_ptr<ThreadPool> pool );
+	void tokenizeAsync( std::shared_ptr<ThreadPool> pool,
+						const std::function<void()>& onDone = {} );
 
 	bool isTokenizingAsync() const { return mTokenizeAsync; }
 

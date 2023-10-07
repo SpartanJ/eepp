@@ -48,12 +48,15 @@ struct SyntaxStateRestored {
 	Uint32 currentLevel{ 0 };
 };
 
+#define MAX_SUB_SYNTAXS 4
+
 struct SyntaxState {
-	// 16 bits per pattern - max 4 languages
-	Uint16 state[4]{ SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE,
-					 SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE };
-	// 16 bits per language (language index) - max 4 languages
-	Uint16 langStack[4]{ 0, 0, 0, 0 };
+	// 8 bits per pattern - max 4 sub-languages - max 254 patterns per language
+	Uint8 state[MAX_SUB_SYNTAXS]{ SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE,
+								   SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE };
+
+	// 8 bits per language (language index) - max 4 sub-languages - max 255 languages
+	Uint8 langStack[MAX_SUB_SYNTAXS]{ 0, 0, 0, 0 };
 
 	bool operator==( const SyntaxState& other ) {
 		return memcmp( this, &other, sizeof( SyntaxState ) ) == 0;

@@ -453,8 +453,11 @@ bool UICodeEditor::loadAsyncFromFile(
 				} );
 				return;
 			}
-			if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() )
-				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool() );
+			if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() ) {
+				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
+					runOnMainThread( [this] { invalidateDraw(); } );
+				} );
+			}
 			runOnMainThread( [&, onLoaded, wasLocked, success] {
 				invalidateEditor();
 				invalidateDraw();
@@ -492,7 +495,9 @@ bool UICodeEditor::loadAsyncFromURL(
 		url, headers,
 		[this, onLoaded, wasLocked]( TextDocument*, bool success ) {
 			if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() )
-				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool() );
+				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
+					runOnMainThread( [this] { invalidateDraw(); } );
+				} );
 			runOnMainThread( [&, onLoaded, wasLocked] {
 				invalidateEditor();
 				updateLongestLineWidth();
