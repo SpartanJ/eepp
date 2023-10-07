@@ -915,7 +915,7 @@ static void addYAML() {
 			  { { "'", "'", "\\" }, "string" },
 			  { { "%-?%.inf" }, "number" },
 			  { { "%.NaN" }, "number" },
-			  { { "(%&)(%g+)" }, { "keyword", "literal", "" } },
+			  { { "(%&)(%g+)" }, { "normal", "keyword", "literal" } },
 			  { { "!%g+" }, "keyword" },
 			  { { "<<" }, "literal" },
 			  { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"

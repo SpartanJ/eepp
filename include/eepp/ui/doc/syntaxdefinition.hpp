@@ -26,6 +26,8 @@ template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) 
 }
 
 struct EE_API SyntaxPattern {
+	static UnorderedMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
+
 	using DynamicSyntax =
 		std::function<std::string( const SyntaxPattern&, const std::string_view& )>;
 
@@ -36,32 +38,16 @@ struct EE_API SyntaxPattern {
 	DynamicSyntax dynSyntax;
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-				   const std::string& _syntax = "" ) :
-		patterns( std::move( _patterns ) ),
-		types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
-		typesNames( { _type } ),
-		syntax( _syntax ) {}
+				   const std::string& _syntax = "" );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
-				   const std::string& _syntax = "" ) :
-		patterns( std::move( _patterns ) ),
-		types( toSyntaxStyleTypeV( _types ) ),
-		typesNames( std::move( _types ) ),
-		syntax( _syntax ) {}
+				   const std::string& _syntax = "" );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-				   DynamicSyntax&& _syntax ) :
-		patterns( std::move( _patterns ) ),
-		types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
-		typesNames( { _type } ),
-		dynSyntax( std::move( _syntax ) ) {}
+				   DynamicSyntax&& _syntax );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
-				   DynamicSyntax&& _syntax ) :
-		patterns( std::move( _patterns ) ),
-		types( toSyntaxStyleTypeV( _types ) ),
-		typesNames( std::move( _types ) ),
-		dynSyntax( std::move( _syntax ) ) {}
+				   DynamicSyntax&& _syntax );
 
 	bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
 };

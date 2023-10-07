@@ -4,7 +4,6 @@
 #include <eepp/system/color.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>
-#include <unordered_map>
 #include <vector>
 
 using namespace EE::System;
@@ -63,6 +62,58 @@ class SyntaxStyleTypes {
 	static constexpr auto MinimapSelection = "minimap_selection"_sst;
 	static constexpr auto MinimapHighlight = "minimap_highlight"_sst;
 	static constexpr auto MinimapVisibleArea = "minimap_visible_area"_sst;
+
+	template <typename Type> static bool needsToBeCached( const Type& style ) {
+		if constexpr ( std::is_same_v<Type, std::string> ) {
+			return false;
+		} else if constexpr ( std::is_same_v<Type, String::HashType> ) {
+			switch ( style ) {
+				case SyntaxStyleTypes::Normal:
+				case SyntaxStyleTypes::Symbol:
+				case SyntaxStyleTypes::Comment:
+				case SyntaxStyleTypes::Keyword:
+				case SyntaxStyleTypes::Keyword2:
+				case SyntaxStyleTypes::Keyword3:
+				case SyntaxStyleTypes::Number:
+				case SyntaxStyleTypes::Literal:
+				case SyntaxStyleTypes::String:
+				case SyntaxStyleTypes::Operator:
+				case SyntaxStyleTypes::Function:
+				case SyntaxStyleTypes::Link:
+				case SyntaxStyleTypes::LinkHover:
+				case SyntaxStyleTypes::Background:
+				case SyntaxStyleTypes::Text:
+				case SyntaxStyleTypes::Caret:
+				case SyntaxStyleTypes::Selection:
+				case SyntaxStyleTypes::LineHighlight:
+				case SyntaxStyleTypes::LineNumber:
+				case SyntaxStyleTypes::LineNumber2:
+				case SyntaxStyleTypes::GutterBackground:
+				case SyntaxStyleTypes::Whitespace:
+				case SyntaxStyleTypes::LineBreakColumn:
+				case SyntaxStyleTypes::MatchingBracket:
+				case SyntaxStyleTypes::MatchingSelection:
+				case SyntaxStyleTypes::MatchingSearch:
+				case SyntaxStyleTypes::Suggestion:
+				case SyntaxStyleTypes::SuggestionScrollbar:
+				case SyntaxStyleTypes::SuggestionSelected:
+				case SyntaxStyleTypes::Error:
+				case SyntaxStyleTypes::Warning:
+				case SyntaxStyleTypes::Notice:
+				case SyntaxStyleTypes::SelectionRegion:
+				case SyntaxStyleTypes::MinimapBackground:
+				case SyntaxStyleTypes::MinimapCurrentLine:
+				case SyntaxStyleTypes::MinimapHover:
+				case SyntaxStyleTypes::MinimapSelection:
+				case SyntaxStyleTypes::MinimapHighlight:
+				case SyntaxStyleTypes::MinimapVisibleArea:
+					return false;
+				default:
+					break;
+			}
+		}
+		return true;
+	}
 
 	template <typename Type> static std::string toString( const Type& style ) {
 		if constexpr ( std::is_same_v<Type, std::string> ) {
@@ -257,6 +308,9 @@ class EE_API SyntaxColorScheme {
 	UnorderedMap<SyntaxStyleType, Style> mSyntaxColors;
 	UnorderedMap<SyntaxStyleType, Style> mEditorColors;
 	mutable UnorderedMap<SyntaxStyleType, Style> mStyleCache;
+
+	template <typename SyntaxStyleType>
+	const SyntaxColorScheme::Style& getSyntaxStyleFromCache( const SyntaxStyleType& type ) const;
 };
 
 }}} // namespace EE::UI::Doc

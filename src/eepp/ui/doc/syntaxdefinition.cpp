@@ -4,6 +4,22 @@
 
 namespace EE { namespace UI { namespace Doc {
 
+UnorderedMap<SyntaxStyleType, std::string> SyntaxPattern::SyntaxStyleTypeCache = {};
+
+template <typename SyntaxStyleType> void updateCache( const SyntaxPattern& ptrn ) {
+	if constexpr ( std::is_same_v<SyntaxStyleType, std::string> ) {
+		return;
+	} else {
+		for ( size_t i = 0; i < ptrn.typesNames.size(); i++ ) {
+			if ( SyntaxStyleTypes::needsToBeCached( ptrn.types[i] ) ) {
+				auto it = SyntaxPattern::SyntaxStyleTypeCache.find( ptrn.types[i] );
+				if ( it == SyntaxPattern::SyntaxStyleTypeCache.end() )
+					SyntaxPattern::SyntaxStyleTypeCache[ptrn.types[i]] = ptrn.typesNames[i];
+			}
+		}
+	}
+}
+
 SyntaxDefinition::SyntaxDefinition() {}
 
 SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
@@ -206,6 +222,42 @@ std::string SyntaxDefinition::getLanguageNameForFileSystem() const {
 
 const String::HashType& SyntaxDefinition::getLanguageId() const {
 	return mLanguageId;
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
+							  const std::string& _syntax ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
+	typesNames( { _type } ),
+	syntax( _syntax ) {
+	updateCache<SyntaxStyleType>( *this );
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
+							  std::vector<std::string>&& _types, const std::string& _syntax ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( _types ) ),
+	typesNames( std::move( _types ) ),
+	syntax( _syntax ) {
+	updateCache<SyntaxStyleType>( *this );
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
+							  DynamicSyntax&& _syntax ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
+	typesNames( { _type } ),
+	dynSyntax( std::move( _syntax ) ) {
+	updateCache<SyntaxStyleType>( *this );
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
+							  std::vector<std::string>&& _types, DynamicSyntax&& _syntax ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( _types ) ),
+	typesNames( std::move( _types ) ),
+	dynSyntax( std::move( _syntax ) ) {
+	updateCache<SyntaxStyleType>( *this );
 }
 
 }}} // namespace EE::UI::Doc

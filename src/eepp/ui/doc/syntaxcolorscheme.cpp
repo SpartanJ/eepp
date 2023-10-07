@@ -9,6 +9,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
+#include <eepp/ui/doc/syntaxdefinition.hpp>
 
 using namespace EE::Graphics;
 
@@ -230,15 +231,7 @@ SyntaxColorScheme::getSyntaxStyle( const SyntaxStyleType& type ) const {
 		auto foundIt = mStyleCache.find( type );
 		if ( foundIt != mStyleCache.end() )
 			return foundIt->second;
-		/*bool colorWasSet;
-		mStyleCache[type] = parseStyle( type, &colorWasSet, &mSyntaxColors );
-		if ( !colorWasSet ) {
-			auto normalStyle = mSyntaxColors.find( "normal"_sst );
-			if ( normalStyle != mSyntaxColors.end() ) {
-				mStyleCache[type].color = normalStyle->second.color;
-			}
-		}
-		return mStyleCache[type];*/
+		return getSyntaxStyleFromCache<SyntaxStyleType>( type );
 	}
 	return StyleEmpty;
 }
@@ -312,6 +305,28 @@ const std::string& SyntaxColorScheme::getName() const {
 
 void SyntaxColorScheme::setName( const std::string& name ) {
 	mName = name;
+}
+
+template <typename SyntaxStyleType>
+const SyntaxColorScheme::Style&
+SyntaxColorScheme::getSyntaxStyleFromCache( const SyntaxStyleType& type ) const {
+	bool colorWasSet = false;
+	if constexpr ( std::is_same_v<SyntaxStyleType, std::string> )
+		mStyleCache[type] = parseStyle( type, &colorWasSet, &mSyntaxColors );
+	else {
+		auto cache = SyntaxPattern::SyntaxStyleTypeCache.find( type );
+		if ( cache != SyntaxPattern::SyntaxStyleTypeCache.end() ) {
+			mStyleCache[type] = parseStyle( cache->second, &colorWasSet );
+		} else {
+			return StyleEmpty;
+		}
+	}
+	if ( !colorWasSet ) {
+		auto normalStyle = mSyntaxColors.find( "normal"_sst );
+		if ( normalStyle != mSyntaxColors.end() )
+			mStyleCache[type].color = normalStyle->second.color;
+	}
+	return mStyleCache[type];
 }
 
 }}} // namespace EE::UI::Doc
