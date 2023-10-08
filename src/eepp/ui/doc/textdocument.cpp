@@ -188,6 +188,8 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 
 					mLines.push_back( lineBuffer );
 					lineBuffer.resize( 0 );
+				} else if ( consume <= 0 ) {
+					mLines.push_back( lineBuffer );
 				}
 
 				if ( consume < 0 ) {
