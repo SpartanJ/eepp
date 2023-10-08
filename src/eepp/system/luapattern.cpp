@@ -8,11 +8,11 @@ namespace EE { namespace System {
 const int MAX_DEFAULT_MATCHES = 12;
 static bool sFailHandlerInitialized = false;
 
-std::string LuaPattern::getURLPattern() {
+std::string_view LuaPattern::getURLPattern() {
 	return "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*";
 }
 
-std::string LuaPattern::getURIPattern() {
+std::string_view LuaPattern::getURIPattern() {
 	return "%w+://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*";
 }
 
@@ -20,7 +20,7 @@ static void failHandler( const char* msg ) {
 	throw std::string( msg );
 }
 
-std::string LuaPattern::match( const std::string& string, const std::string& pattern ) {
+std::string LuaPattern::match( const std::string& string, const std::string_view& pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
 	if ( matcher.find( string, start, end ) )
@@ -29,7 +29,7 @@ std::string LuaPattern::match( const std::string& string, const std::string& pat
 }
 
 std::string LuaPattern::matchesAny( const std::vector<std::string>& stringvec,
-									const std::string& pattern ) {
+									const std::string_view& pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
 	for ( const auto& str : stringvec ) {
@@ -40,7 +40,7 @@ std::string LuaPattern::matchesAny( const std::vector<std::string>& stringvec,
 	return "";
 }
 
-LuaPattern::Range LuaPattern::find( const std::string& string, const std::string& pattern ) {
+LuaPattern::Range LuaPattern::find( const std::string& string, const std::string_view& pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
 	if ( matcher.find( string, start, end ) )
@@ -48,7 +48,7 @@ LuaPattern::Range LuaPattern::find( const std::string& string, const std::string
 	return { -1, -1 };
 }
 
-bool LuaPattern::matches( const std::string& string, const std::string& pattern ) {
+bool LuaPattern::matches( const std::string& string, const std::string_view& pattern ) {
 	return find( string, pattern ).isValid();
 }
 
@@ -241,6 +241,11 @@ std::string LuaPattern::gsub( const std::string& text, const std::string& replac
 
 LuaPatternStorage::LuaPatternStorage( const std::string& pattern ) :
 	LuaPattern( "" ), mPatternStorage( pattern ) {
+	mPattern = std::string_view{ mPatternStorage };
+}
+
+LuaPatternStorage::LuaPatternStorage( std::string&& pattern ) :
+	LuaPattern( "" ), mPatternStorage( std::move( pattern ) ) {
 	mPattern = std::string_view{ mPatternStorage };
 }
 

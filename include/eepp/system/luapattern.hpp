@@ -11,9 +11,9 @@ namespace EE { namespace System {
 // This implementation removes all the regexp related stuffs, only leaves the Lua implementation.
 class EE_API LuaPattern {
   public:
-	static std::string getURLPattern();
+	static std::string_view getURLPattern();
 
-	static std::string getURIPattern();
+	static std::string_view getURIPattern();
 
 	struct EE_API Range {
 		int start{ -1 };
@@ -95,13 +95,13 @@ class EE_API LuaPattern {
 	};
 
 	static std::string matchesAny( const std::vector<std::string>& stringvec,
-								   const std::string& pattern );
+								   const std::string_view& pattern );
 
-	static std::string match( const std::string& string, const std::string& pattern );
+	static std::string match( const std::string& string, const std::string_view& pattern );
 
-	static Range find( const std::string& string, const std::string& pattern );
+	static Range find( const std::string& string, const std::string_view& pattern );
 
-	static bool matches( const std::string& string, const std::string& pattern );
+	static bool matches( const std::string& string, const std::string_view& pattern );
 
 	LuaPattern( const std::string_view& pattern );
 
@@ -144,6 +144,8 @@ class EE_API LuaPattern {
 class EE_API LuaPatternStorage : public LuaPattern {
   public:
 	LuaPatternStorage( const std::string& pattern );
+
+	explicit LuaPatternStorage( std::string&& pattern );
 
   protected:
 	std::string mPatternStorage;
