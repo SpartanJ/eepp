@@ -282,6 +282,13 @@
       "url": "https://github.com/REditorSupport/languageserver",
       "command": "R --slave -e\"languageserver::run()\"",
       "file_patterns": ["%.r$"]
+    },
+    {
+      "language": "glsl",
+      "name": "glsl_analyzer",
+      "url": "https://github.com/nolanderc/glsl_analyzer",
+      "command": "glsl_analyzer",
+      "file_patterns": ["%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$", "%.tesc", "%.tese"]
     }
   ]
 }
