@@ -20,6 +20,7 @@
 #include <eepp/ui/doc/languages/jai.hpp>
 #include <eepp/ui/doc/languages/julia.hpp>
 #include <eepp/ui/doc/languages/kotlin.hpp>
+#include <eepp/ui/doc/languages/lobster.hpp>
 #include <eepp/ui/doc/languages/markdown.hpp>
 #include <eepp/ui/doc/languages/nelua.hpp>
 #include <eepp/ui/doc/languages/objeck.hpp>
@@ -1671,7 +1672,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 66 );
+	mDefinitions.reserve( 80 );
 
 	// Register some languages support.
 	addPlainText();
@@ -1711,6 +1712,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addJSX();
 	addKotlin();
 	addLatex();
+	addLobster();
 	addLua();
 	addMakefile();
 	addMarkdown();

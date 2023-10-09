@@ -91,10 +91,10 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& addPatternsToFront( const std::vector<SyntaxPattern>& patterns );
 
-	SyntaxDefinition& addSymbol( const std::string& symbolName, const SyntaxStyleType& typeName );
+	SyntaxDefinition& addSymbol( const std::string& symbolName, const std::string& typeName );
 
 	SyntaxDefinition& addSymbols( const std::vector<std::string>& symbolNames,
-								  const SyntaxStyleType& typeName );
+								  const std::string& typeName );
 
 	SyntaxDefinition& setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols );
 

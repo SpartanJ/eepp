@@ -129,13 +129,14 @@ SyntaxDefinition::addPatternsToFront( const std::vector<SyntaxPattern>& patterns
 }
 
 SyntaxDefinition& SyntaxDefinition::addSymbol( const std::string& symbolName,
-											   const SyntaxStyleType& typeName ) {
-	mSymbols[symbolName] = typeName;
+											   const std::string& typeName ) {
+	mSymbols[symbolName] = toSyntaxStyleType( typeName );
+	mSymbolNames[symbolName] = typeName;
 	return *this;
 }
 
 SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& symbolNames,
-												const SyntaxStyleType& typeName ) {
+												const std::string& typeName ) {
 	for ( auto& symbol : symbolNames )
 		addSymbol( symbol, typeName );
 	return *this;
