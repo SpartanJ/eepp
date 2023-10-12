@@ -9,7 +9,7 @@ namespace EE { namespace UI { namespace Doc {
 
 struct EE_API TokenizedLine {
 	SyntaxState initState;
-	String::HashType hash;
+	String::HashType hash{ 0 };
 	std::vector<SyntaxTokenPosition> tokens;
 	SyntaxState state;
 	Uint64 signature{ 0 };

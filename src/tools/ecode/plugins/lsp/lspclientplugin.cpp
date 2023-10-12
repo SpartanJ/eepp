@@ -763,9 +763,10 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 		if ( mDocs.find( doc.first ) != mDocs.end() )
 			mClientManager.tryRunServer( doc.second );
 	mDelayedDocs.clear();
-	if ( mReady )
+	if ( mReady ) {
 		fireReadyCbs();
-
+		setReady();
+	}
 	subscribeFileSystemListener();
 }
 

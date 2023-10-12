@@ -6,7 +6,6 @@
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
-#include <set>
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
@@ -86,6 +85,7 @@ class FormatterPlugin : public Plugin {
 	std::map<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
 	String::HashType mConfigHash{ 0 };
+	PluginManager* mPluginManager{ nullptr };
 
 	bool mAutoFormatOnSave{ false };
 

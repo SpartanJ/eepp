@@ -86,15 +86,19 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 			mEditorDocs[editor] = newDoc;
 		} ) );
 
-	listeners.push_back( editor->addEventListener( Event::OnDocumentSave, [this](
-																			  const Event* event ) {
-		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
-			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-			auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
-			if ( isAutoFormatting == mIsAutoFormatting.end() || isAutoFormatting->second == false )
-				formatDoc( editor );
-		}
-	} ) );
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentSave, [this]( const Event* event ) {
+			if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
+				UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+				auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
+				if ( ( isAutoFormatting == mIsAutoFormatting.end() ||
+					   isAutoFormatting->second == false ) &&
+					 mPluginManager &&
+					 !String::startsWith( editor->getDocument().getFilePath(),
+										  mPluginManager->getPluginsPath() ) )
+					formatDoc( editor );
+			}
+		} ) );
 
 	mEditors.insert( { editor, listeners } );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
@@ -257,6 +261,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 
 void FormatterPlugin::load( PluginManager* pluginManager ) {
 	BoolScopedOp loading( mLoading, true );
+	mPluginManager = pluginManager;
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
@@ -284,9 +289,10 @@ void FormatterPlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 	mReady = !mFormatters.empty();
-	if ( mReady )
+	if ( mReady ) {
 		fireReadyCbs();
-
+		setReady();
+	}
 	subscribeFileSystemListener();
 }
 
@@ -380,7 +386,9 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 					doc->textInput( data, false );
 					doc->setSelection( pos );
 					editor->setScroll( scroll );
-					if ( mAutoFormatOnSave ) {
+					if ( mAutoFormatOnSave && mPluginManager &&
+						 !String::startsWith( doc->getFilePath(),
+											  mPluginManager->getPluginsPath() ) ) {
 						mIsAutoFormatting[doc.get()] = true;
 						doc->save();
 						mIsAutoFormatting[doc.get()] = false;
@@ -472,9 +480,9 @@ FormatterPlugin::Formatter FormatterPlugin::supportsFormatter( std::shared_ptr<T
 	std::string fileName( FileSystem::fileNameFromPath( doc->getFilePath() ) );
 	const auto& def = doc->getSyntaxDefinition();
 
-	for ( auto& formatter : mFormatters ) {
-		for ( auto& ext : formatter.files ) {
-			if ( LuaPattern::find( fileName, ext ).isValid() )
+	for ( const auto& formatter : mFormatters ) {
+		for ( const auto& ext : formatter.files ) {
+			if ( LuaPattern::matches( fileName, ext ) )
 				return formatter;
 			auto& files = def.getFiles();
 			if ( std::find( files.begin(), files.end(), ext ) != files.end() )

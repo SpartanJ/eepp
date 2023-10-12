@@ -100,6 +100,7 @@ void XMLToolsPlugin::load( PluginManager* pluginManager ) {
 
 	mReady = true;
 	fireReadyCbs();
+	setReady();
 
 	subscribeFileSystemListener();
 }

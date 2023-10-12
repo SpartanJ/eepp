@@ -573,9 +573,10 @@ void LinterPlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 	mReady = !mLinters.empty();
-	if ( mReady )
+	if ( mReady ) {
 		fireReadyCbs();
-
+		setReady();
+	}
 	subscribeFileSystemListener();
 }
 

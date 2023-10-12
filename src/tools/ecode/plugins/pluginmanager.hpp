@@ -61,11 +61,7 @@ struct PluginDefinition {
 	PluginCreatorFn creatorSyncFn{ nullptr };
 };
 
-enum class PluginCapability {
-	WorkspaceSymbol,
-	TextDocumentSymbol,
-	Max
-};
+enum class PluginCapability { WorkspaceSymbol, TextDocumentSymbol, Max };
 
 enum class PluginMessageType {
 	WorkspaceFolderChanged, // Broadcast the workspace folder from the application to the plugins
@@ -251,7 +247,7 @@ class PluginRequestHandle {
 class PluginManager {
   public:
 	static constexpr int versionNumber( int major, int minor, int patch ) {
-		return ( (major)*1000 + (minor)*100 + ( patch ) );
+		return ( ( major ) * 1000 + ( minor ) * 100 + ( patch ) );
 	}
 
 	static std::string versionString( int major, int minor, int patch ) {
@@ -332,6 +328,10 @@ class PluginManager {
 
 	const OnLoadFileCb& getLoadFileFn() const;
 
+	bool isPluginReloadEnabled() const;
+
+	void setPluginReloadEnabled( bool pluginReloadEnabled );
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;
@@ -349,6 +349,7 @@ class PluginManager {
 	SubscribedPlugins mSubscribedPlugins;
 	OnLoadFileCb mLoadFileFn;
 	bool mClosing{ false };
+	bool mPluginReloadEnabled{ false };
 
 	bool hasDefinition( const std::string& id );
 
@@ -427,6 +428,8 @@ class Plugin : public UICodeEditorPlugin {
 	bool mReady{ false };
 	bool mLoading{ false };
 	bool mShuttingDown{ false };
+
+	void setReady();
 };
 
 class PluginBase : public Plugin {

@@ -592,6 +592,8 @@ class App : public UICodeEditorSplitter::Client {
 	void updateOpenRecentFolderBtn();
 
 	void updateDocInfoLocation();
+
+	void onReady();
 };
 
 } // namespace ecode

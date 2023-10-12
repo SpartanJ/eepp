@@ -80,6 +80,8 @@ AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager ) :
 	mManager->subscribeMessages( this, [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 		return processResponse( msg );
 	} );
+	mReady = true;
+	setReady();
 }
 
 AutoCompletePlugin::~AutoCompletePlugin() {

@@ -53,7 +53,7 @@ struct SyntaxStateRestored {
 struct SyntaxState {
 	// 8 bits per pattern - max 4 sub-languages - max 254 patterns per language
 	Uint8 state[MAX_SUB_SYNTAXS]{ SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE,
-								   SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE };
+								  SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE };
 
 	// 8 bits per language (language index) - max 4 sub-languages - max 255 languages
 	Uint8 langStack[MAX_SUB_SYNTAXS]{ 0, 0, 0, 0 };

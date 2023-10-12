@@ -227,6 +227,14 @@ const PluginManager::OnLoadFileCb& PluginManager::getLoadFileFn() const {
 	return mLoadFileFn;
 }
 
+bool PluginManager::isPluginReloadEnabled() const {
+	return mPluginReloadEnabled;
+}
+
+void PluginManager::setPluginReloadEnabled( bool pluginReloadEnabled ) {
+	mPluginReloadEnabled = pluginReloadEnabled;
+}
+
 void PluginManager::subscribeMessages(
 	UICodeEditorPlugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
 	subscribeMessages( plugin->getId(), cb );
@@ -458,10 +466,16 @@ void Plugin::subscribeFileSystemListener() {
 				std::string fileContents;
 				FileSystem::fileGet( file.getFilepath(), fileContents );
 				if ( getConfigFileHash() != String::hash( fileContents ) ) {
-					mConfigFileInfo = file;
-					mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
-					mFileSystemListenerCb = 0;
-					mManager->reload( getId() );
+					if ( mManager->isPluginReloadEnabled() ) {
+						mConfigFileInfo = file;
+						mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
+						mFileSystemListenerCb = 0;
+						mManager->reload( getId() );
+					} else {
+						Log::debug( "Plugin %s: Configuration file has been modified: %s. But "
+									"plugin reload is not enabled.",
+									getTitle().c_str(), mConfigPath.c_str() );
+					}
 				} else {
 					Log::debug( "Plugin %s: Configuration file has been modified: %s. But contents "
 								"are the same.",
@@ -494,6 +508,11 @@ std::string Plugin::getFileConfigPath() {
 
 PluginManager* Plugin::getManager() const {
 	return mManager;
+}
+
+void Plugin::setReady() {
+	if ( mReady )
+		Log::info( "Plugin: %s loaded and ready.", getTitle().c_str() );
 }
 
 PluginBase::~PluginBase() {

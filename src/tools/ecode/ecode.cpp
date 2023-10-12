@@ -547,6 +547,12 @@ void App::closeApp() {
 		mWindow->close();
 }
 
+void App::onReady() {
+	// Plugin reload is only available right after we render the first frame and the editor is ready
+	// to run.
+	mPluginManager->setPluginReloadEnabled( true );
+}
+
 void App::mainLoop() {
 	mWindow->getInput()->update();
 	SceneManager::instance()->update();
@@ -563,6 +569,7 @@ void App::mainLoop() {
 		if ( unlikely( firstFrame ) ) {
 			Log::info( "First frame took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 			firstFrame = false;
+			onReady();
 		}
 	} else {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN

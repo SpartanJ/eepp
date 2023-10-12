@@ -199,17 +199,28 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 
 		for ( Int64 index = mFirstInvalidLine; index <= max; index++ ) {
 			SyntaxState state;
-			Lock l( mLinesMutex );
 			if ( index > 0 ) {
+				Lock l( mLinesMutex );
 				auto prevIt = mLines.find( index - 1 );
-				if ( prevIt != mLines.end() ) {
+				if ( prevIt != mLines.end() )
 					state = prevIt->second.state;
-				}
 			}
-			const auto& it = mLines.find( index );
-			if ( it == mLines.end() || it->second.hash != mDoc->line( index ).getHash() ||
-				 it->second.initState != state ) {
-				mLines[index] = tokenizeLine( index, state );
+
+			bool mustTokenize = false;
+
+			{
+				Lock l( mLinesMutex );
+				const auto& it = mLines.find( index );
+				mustTokenize = it == mLines.end() ||
+							   it->second.hash != mDoc->line( index ).getHash() ||
+							   it->second.initState != state;
+			}
+
+			if ( mustTokenize ) {
+				auto tokenizedLine = tokenizeLine( index, state );
+
+				Lock l( mLinesMutex );
+				mLines[index] = std::move( tokenizedLine );
 				mTokenizerLines[index] = mLines[index];
 				changed = true;
 			}
@@ -223,14 +234,20 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 
 const SyntaxDefinition&
 SyntaxHighlighter::getSyntaxDefinitionFromTextPosition( const TextPosition& position ) {
-	Lock l( mLinesMutex );
-	auto found = mLines.find( position.line() );
-	if ( found == mLines.end() )
-		return SyntaxDefinitionManager::instance()->getPlainDefinition();
+	SyntaxState lineState;
 
-	const TokenizedLine& line = found->second;
+	{
+		Lock l( mLinesMutex );
+		auto found = mLines.find( position.line() );
+		if ( found == mLines.end() ) {
+			return SyntaxDefinitionManager::instance()->getPlainDefinition();
+		} else {
+			lineState = found->second.state;
+		}
+	}
+
 	SyntaxStateRestored state =
-		SyntaxTokenizer::retrieveSyntaxState( mDoc->getSyntaxDefinition(), line.state );
+		SyntaxTokenizer::retrieveSyntaxState( mDoc->getSyntaxDefinition(), lineState );
 
 	if ( nullptr == state.currentSyntax )
 		return SyntaxDefinitionManager::instance()->getPlainDefinition();
@@ -276,14 +293,18 @@ void SyntaxHighlighter::setLine( const size_t& line, const TokenizedLine& tokeni
 void SyntaxHighlighter::mergeLine( const size_t& line, const TokenizedLine& tokenization ) {
 	TokenizedLine tline;
 	{
-		Lock l( mLinesMutex );
+		mLinesMutex.lock();
 		auto found = mTokenizerLines.find( line );
 		if ( found != mTokenizerLines.end() &&
 			 mDoc->line( line ).getHash() == found->second.hash ) {
 			tline = found->second;
+			mLinesMutex.unlock();
 		} else {
+			mLinesMutex.unlock();
 			tline = tokenizeLine( line );
+			mLinesMutex.lock();
 			mTokenizerLines[line] = tline;
+			mLinesMutex.unlock();
 		}
 	}
 
