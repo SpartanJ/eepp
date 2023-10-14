@@ -568,6 +568,7 @@ void UICodeEditor::onDocumentLoaded( TextDocument* ) {}
 void UICodeEditor::onDocumentLoaded() {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
 	sendEvent( &event );
+	invalidateDraw();
 }
 
 void UICodeEditor::onDocumentChanged() {

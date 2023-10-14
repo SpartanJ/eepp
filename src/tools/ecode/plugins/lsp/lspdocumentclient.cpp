@@ -85,9 +85,10 @@ void LSPDocumentClient::onDocumentReloaded( TextDocument* ) {
 	TextDocument* doc = mDoc;
 	LSPClientServer* server = mServer;
 	auto version = ++mVersion;
-	mServer->getThreadPool()->run( [server, doc, uri, version]() {
+	mServer->getThreadPool()->run( [this, server, doc, uri, version]() {
 		server->didClose( uri );
 		server->didOpen( doc, version );
+		requestSemanticHighlighting( true );
 	} );
 	refreshTag();
 }

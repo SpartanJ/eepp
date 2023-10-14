@@ -429,7 +429,7 @@ void UIConsole::draw() {
 						 .blendAlpha( (Uint8)mAlpha ) );
 
 	Primitives p;
-	p.setColor( mFontStyleConfig.FontSelectionBackColor.blendAlpha( (Uint8)mAlpha ) );
+	p.setColor( Color( mFontStyleConfig.FontSelectionBackColor ).blendAlpha( (Uint8)mAlpha ) );
 	auto to = eemax( mCon.min - mCon.modif, 0 );
 	auto from = eemin( mCon.max - mCon.modif, (int)mCmdLog.size() - 1 );
 
@@ -997,9 +997,9 @@ TextPosition UIConsole::getPositionOnScreen( Vector2f position ) {
 	auto firstVisibleLine = eemax( mCon.min - mCon.modif, 0 );
 	Float startOffset =
 		getPixelsSize().getHeight() - mPaddingPx.Bottom - linesInScreen * lineHeight;
-	Int64 line = eeclamp( (Int64)0, (Int64)eefloor( ( position.y - startOffset ) / lineHeight + 1 ),
+	Int64 line = eeclamp( (Int64)eefloor( ( position.y - startOffset ) / lineHeight + 1 ), (Int64)0,
 						  (Int64)mCmdLog.size() - 1 );
-	Int64 fline = eeclamp( (Int64)0, firstVisibleLine + line, (Int64)mCmdLog.size() - 1 );
+	Int64 fline = eeclamp( firstVisibleLine + line, (Int64)0, (Int64)mCmdLog.size() - 1 );
 	Int64 col = Text::findCharacterFromPos(
 		{ (int)eefloor( position.x - mPaddingPx.Left ), 0 }, true, mFontStyleConfig.Font,
 		mFontStyleConfig.CharacterSize, mCmdLog[fline].log, mFontStyleConfig.Style );
