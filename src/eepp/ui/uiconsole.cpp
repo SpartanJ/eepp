@@ -44,7 +44,7 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 	mFlags |= UI_TAB_STOP | UI_SCROLLABLE | UI_TEXT_SELECTION_ENABLED;
 	setClipType( ClipType::ContentBox );
 
-	setBackgroundColor( 0x201F1F11 );
+	setBackgroundColor( 0x201F1FEE );
 
 	mDoc.registerClient( this );
 	registerCommands();
@@ -995,8 +995,11 @@ TextPosition UIConsole::getPositionOnScreen( Vector2f position ) {
 	Float lineHeight = getLineHeight();
 	auto linesInScreen = linesOnScreen();
 	auto firstVisibleLine = eemax( mCon.min - mCon.modif, 0 );
-	Float startOffset =
-		getPixelsSize().getHeight() - mPaddingPx.Bottom - linesInScreen * lineHeight;
+	Float startOffset = getPixelsSize().getHeight() - mPaddingPx.Bottom -
+						linesInScreen * lineHeight +
+						( linesInScreen > (Int64)mCmdLog.size()
+							  ? lineHeight * ( linesInScreen - (Float)mCmdLog.size() )
+							  : 0.f );
 	Int64 line = eeclamp( (Int64)eefloor( ( position.y - startOffset ) / lineHeight + 1 ), (Int64)0,
 						  (Int64)mCmdLog.size() - 1 );
 	Int64 fline = eeclamp( firstVisibleLine + line, (Int64)0, (Int64)mCmdLog.size() - 1 );

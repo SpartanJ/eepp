@@ -569,6 +569,7 @@ void UICodeEditor::onDocumentLoaded() {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
 	sendEvent( &event );
 	invalidateDraw();
+	invalidateLongestLineWidth();
 }
 
 void UICodeEditor::onDocumentChanged() {
