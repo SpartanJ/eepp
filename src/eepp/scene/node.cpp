@@ -1505,16 +1505,16 @@ Node* Node::runAction( Action* action ) {
 	return this;
 }
 
-void Node::removeAction( Action* action ) {
-	getActionManager()->removeAction( action );
+bool Node::removeAction( Action* action ) {
+	return getActionManager()->removeAction( action );
 }
 
-void Node::removeActions( const std::vector<Action*>& actions ) {
-	getActionManager()->removeActions( actions );
+bool Node::removeActions( const std::vector<Action*>& actions ) {
+	return getActionManager()->removeActions( actions );
 }
 
-void Node::removeActionsByTag( const String::HashType& tag ) {
-	getActionManager()->removeActionsByTagFromTarget( this, tag );
+bool Node::removeActionsByTag( const String::HashType& tag ) {
+	return getActionManager()->removeActionsByTagFromTarget( this, tag );
 }
 
 std::vector<Action*> Node::getActions() {

@@ -2362,7 +2362,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			if ( doc->isDirty() ) {
 				editor->runOnMainThread( [&, editor]() { createDocDirtyAlert( editor ); } );
 			} else {
-				auto hash = String::hash( docEvent->getDoc()->getFilePath() );
+				auto hash = String::hash( "OnDocumentDirtyOnFileSysten-" +
+										  docEvent->getDoc()->getFilePath() );
 				editor->removeActionsByTag( hash );
 				editor->runOnMainThread( [doc]() { doc->reload(); }, Seconds( 0.5f ), hash );
 			}

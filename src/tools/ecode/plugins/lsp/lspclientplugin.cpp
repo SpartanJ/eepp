@@ -1437,7 +1437,8 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 		tryHideTooltip( editor, position );
 		return false;
 	}
-	String::HashType tag = String::hash( editor->getDocument().getFilePath() );
+	String::HashType tag =
+		String::hash( "LSPClientPlugin::onMouseMove-" + editor->getDocument().getFilePath() );
 	editor->removeActionsByTag( tag );
 	mEditorsTags[editor].insert( tag );
 	editor->runOnMainThread(

@@ -68,11 +68,11 @@ std::vector<Action*> ActionManager::getActionsByTagFromTarget( Node* target,
 	return actions;
 }
 
-void ActionManager::removeActionByTag( const Action::UniqueID& tag ) {
-	removeAction( getActionByTag( tag ) );
+bool ActionManager::removeActionByTag( const Action::UniqueID& tag ) {
+	return removeAction( getActionByTag( tag ) );
 }
 
-void ActionManager::removeActionsByTagFromTarget( Node* target, const Action::UniqueID& tag ) {
+bool ActionManager::removeActionsByTagFromTarget( Node* target, const Action::UniqueID& tag ) {
 	std::vector<Action*> removeList;
 
 	{
@@ -88,6 +88,8 @@ void ActionManager::removeActionsByTagFromTarget( Node* target, const Action::Un
 
 	for ( auto it = removeList.begin(); it != removeList.end(); ++it )
 		removeAction( *it );
+
+	return !removeList.empty();
 }
 
 void ActionManager::update( const Time& time ) {
@@ -150,7 +152,7 @@ void ActionManager::clear() {
 	mActions.clear();
 }
 
-void ActionManager::removeAction( Action* action ) {
+bool ActionManager::removeAction( Action* action ) {
 	if ( NULL != action ) {
 		if ( !mUpdating ) {
 			Lock l( mMutex );
@@ -165,16 +167,23 @@ void ActionManager::removeAction( Action* action ) {
 		} else {
 			mActionsRemoveList.emplace_back( action );
 		}
+
+		return true;
 	}
+
+	return false;
 }
 
-void ActionManager::removeActions( const std::vector<Action*>& actions ) {
+bool ActionManager::removeActions( const std::vector<Action*>& actions ) {
+	size_t removed = 0;
 	for ( auto& action : actions ) {
-		removeAction( action );
+		if ( removeAction( action ) )
+			removed++;
 	}
+	return removed == actions.size();
 }
 
-void ActionManager::removeAllActionsFromTarget( Node* target ) {
+bool ActionManager::removeAllActionsFromTarget( Node* target ) {
 	std::vector<Action*> removeList;
 
 	{
@@ -190,6 +199,8 @@ void ActionManager::removeAllActionsFromTarget( Node* target ) {
 
 	for ( auto it = removeList.begin(); it != removeList.end(); ++it )
 		removeAction( *it );
+
+	return !removeList.empty();
 }
 
 }} // namespace EE::Scene

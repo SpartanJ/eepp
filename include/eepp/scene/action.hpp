@@ -1,7 +1,6 @@
 #ifndef EE_SCENEACTION_HPP
 #define EE_SCENEACTION_HPP
 
-#include <cstdlib>
 #include <eepp/core.hpp>
 #include <eepp/system/time.hpp>
 #include <map>
@@ -93,7 +92,7 @@ class EE_API Action {
 
   protected:
 	friend class Node;
-	typedef std::map<ActionType, std::map<Uint32, ActionCallback>> ActionCallbackMap;
+	typedef UnorderedMap<ActionType, UnorderedMap<Uint32, ActionCallback>> ActionCallbackMap;
 
 	Node* mNode{ nullptr };
 	Action::UniqueID mId{ 0 };

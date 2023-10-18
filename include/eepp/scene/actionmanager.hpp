@@ -26,15 +26,15 @@ class EE_API ActionManager {
 
 	Action* getActionByTag( const Action::UniqueID& tag );
 
-	void removeActionByTag( const Action::UniqueID& tag );
+	bool removeActionByTag( const Action::UniqueID& tag );
 
-	void removeAction( Action* action );
+	bool removeAction( Action* action );
 
-	void removeActions( const std::vector<EE::Scene::Action*>& actions );
+	bool removeActions( const std::vector<EE::Scene::Action*>& actions );
 
-	void removeAllActionsFromTarget( Node* target );
+	bool removeAllActionsFromTarget( Node* target );
 
-	void removeActionsByTagFromTarget( Node* target, const Action::UniqueID& tag );
+	bool removeActionsByTagFromTarget( Node* target, const Action::UniqueID& tag );
 
 	std::vector<Action*> getActionsFromTarget( Node* target );
 
