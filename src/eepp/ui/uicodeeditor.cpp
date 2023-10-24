@@ -2826,7 +2826,7 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 		const String& line = mDoc->line( ln ).getText();
 		size_t pos = 0;
 		// Skip ridiculously long lines.
-		if ( line.size() > 300 )
+		if ( line.size() > EE_1KB )
 			continue;
 
 		do {
