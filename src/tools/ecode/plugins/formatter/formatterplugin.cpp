@@ -260,7 +260,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 }
 
 void FormatterPlugin::load( PluginManager* pluginManager ) {
-	BoolScopedOp loading( mLoading, true );
+	AtomicBoolScopedOp loading( mLoading, true );
 	mPluginManager = pluginManager;
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
@@ -288,12 +288,13 @@ void FormatterPlugin::load( PluginManager* pluginManager ) {
 			Log::error( "Parsing formatter \"%s\" failed:\n%s", fpath.c_str(), e.what() );
 		}
 	}
+
+	subscribeFileSystemListener();
 	mReady = !mFormatters.empty();
 	if ( mReady ) {
 		fireReadyCbs();
 		setReady();
 	}
-	subscribeFileSystemListener();
 }
 
 bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i&,

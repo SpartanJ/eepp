@@ -548,7 +548,7 @@ TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
 }
 
 void LinterPlugin::load( PluginManager* pluginManager ) {
-	BoolScopedOp loading( mLoading, true );
+	AtomicBoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
@@ -572,12 +572,13 @@ void LinterPlugin::load( PluginManager* pluginManager ) {
 			Log::error( "Parsing linter \"%s\" failed:\n%s", tpath.c_str(), e.what() );
 		}
 	}
+
+	subscribeFileSystemListener();
 	mReady = !mLinters.empty();
 	if ( mReady ) {
 		fireReadyCbs();
 		setReady();
 	}
-	subscribeFileSystemListener();
 }
 
 void LinterPlugin::onRegister( UICodeEditor* editor ) {

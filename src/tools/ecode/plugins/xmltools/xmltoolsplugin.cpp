@@ -52,7 +52,7 @@ bool XMLToolsPlugin::getAutoEditMatch() const {
 }
 
 void XMLToolsPlugin::load( PluginManager* pluginManager ) {
-	BoolScopedOp loading( mLoading, true );
+	AtomicBoolScopedOp loading( mLoading, true );
 	std::string path = pluginManager->getPluginsPath() + "xmltools.json";
 	if ( FileSystem::fileExists( path ) ||
 		 FileSystem::fileWrite( path, "{\n  \"config\":{},\n  \"keybindings\":{}\n}\n" ) ) {
@@ -98,11 +98,10 @@ void XMLToolsPlugin::load( PluginManager* pluginManager ) {
 		mConfigHash = String::hash( data );
 	}
 
+	subscribeFileSystemListener();
 	mReady = true;
 	fireReadyCbs();
 	setReady();
-
-	subscribeFileSystemListener();
 }
 
 void XMLToolsPlugin::onRegisterDocument( TextDocument* doc ) {

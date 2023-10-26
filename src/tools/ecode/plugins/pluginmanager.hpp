@@ -406,7 +406,7 @@ class Plugin : public UICodeEditorPlugin {
 
 	bool isReady() const;
 
-	bool isLoading() const { return mLoading; }
+	bool isLoading() const;
 
 	bool isShuttingDown() const;
 
@@ -425,9 +425,9 @@ class Plugin : public UICodeEditorPlugin {
 	std::string mConfigPath;
 	FileInfo mConfigFileInfo;
 
-	bool mReady{ false };
-	bool mLoading{ false };
-	bool mShuttingDown{ false };
+	std::atomic<bool> mReady{ false };
+	std::atomic<bool> mLoading{ false };
+	std::atomic<bool> mShuttingDown{ false };
 
 	void setReady();
 };

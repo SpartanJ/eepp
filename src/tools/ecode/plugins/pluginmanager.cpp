@@ -449,7 +449,12 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 }
 
 Plugin::Plugin( PluginManager* manager ) :
-	mManager( manager ), mThreadPool( manager->getThreadPool() ) {}
+	mManager( manager ),
+	mThreadPool( manager->getThreadPool() ),
+	mReady( false ), // All plugins will start as not ready until proved the contrary
+	mLoading( true ) // All plugins will start as loading until the load is complete, this is to
+					 // avoid concurrency issues
+{}
 
 void Plugin::subscribeFileSystemListener() {
 	if ( mFileSystemListenerCb != 0 || mManager->getFileSystemListener() == nullptr )
@@ -461,12 +466,12 @@ void Plugin::subscribeFileSystemListener() {
 		[this]( const FileEvent& ev, const FileInfo& file ) {
 			if ( ev.type != FileSystemEventType::Modified )
 				return;
-			if ( !mShuttingDown && !mLoading && file.getFilepath() == mConfigPath &&
+			if ( !mShuttingDown && !isLoading() && file.getFilepath() == mConfigPath &&
 				 file.getModificationTime() != mConfigFileInfo.getModificationTime() ) {
 				std::string fileContents;
 				FileSystem::fileGet( file.getFilepath(), fileContents );
 				if ( getConfigFileHash() != String::hash( fileContents ) ) {
-					if ( mManager->isPluginReloadEnabled() ) {
+					if ( mManager->isPluginReloadEnabled() && !isLoading() && isReady() ) {
 						mConfigFileInfo = file;
 						mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
 						mFileSystemListenerCb = 0;
@@ -492,6 +497,10 @@ void Plugin::unsubscribeFileSystemListener() {
 
 bool Plugin::isReady() const {
 	return mReady;
+}
+
+bool Plugin::isLoading() const {
+	return mLoading;
 }
 
 bool Plugin::isShuttingDown() const {

@@ -727,7 +727,7 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 }
 
 void LSPClientPlugin::load( PluginManager* pluginManager ) {
-	BoolScopedOp loading( mLoading, true );
+	AtomicBoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
@@ -758,6 +758,7 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 
 	mClientManager.load( this, pluginManager, std::move( lsps ) );
 
+	subscribeFileSystemListener();
 	mReady = mClientManager.lspCount() > 0;
 	for ( const auto& doc : mDelayedDocs )
 		if ( mDocs.find( doc.first ) != mDocs.end() )
@@ -767,7 +768,6 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 		fireReadyCbs();
 		setReady();
 	}
-	subscribeFileSystemListener();
 }
 
 static std::string parseCommand( nlohmann::json cmd ) {
