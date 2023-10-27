@@ -927,7 +927,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 	if ( !cmd.empty() ) {
 		// Allow copy selection on locked mode
 		if ( !mLocked || mUnlockedCmd.find( cmd ) != mUnlockedCmd.end() ) {
-			mDoc->execute( cmd );
+			mDoc->execute( cmd, this );
 			mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 			return 1;
 		}
@@ -1060,7 +1060,7 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string txt( item->getId() );
-		mDoc.get()->execute( txt );
+		mDoc.get()->execute( txt, this );
 		menu->hide();
 	} );
 

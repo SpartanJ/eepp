@@ -395,7 +395,8 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 
 void App::runCommand( const std::string& command ) {
 	if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-		mSplitter->getCurWidget()->asType<UICodeEditor>()->getDocument().execute( command );
+		UICodeEditor* editor = mSplitter->getCurWidget()->asType<UICodeEditor>();
+		editor->getDocument().execute( command, editor );
 	} else if ( mSplitter->getCurWidget() &&
 				mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
 		mSplitter->getCurWidget()->asType<UITerminal>()->execute( command );
@@ -523,7 +524,7 @@ bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
 		std::string cmd = mSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
 			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
 		if ( !cmd.empty() && mSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
-			mSplitter->getCurEditor()->getDocument().execute( cmd );
+			mSplitter->getCurEditor()->getDocument().execute( cmd, mSplitter->getCurEditor() );
 			return true;
 		}
 	} else if ( mSplitter->getCurWidget() != nullptr &&
@@ -1741,6 +1742,14 @@ void App::setTheme( const std::string& path ) {
 	mUISceneNode->reloadStyle( true, true );
 }
 
+bool App::dirInFolderWatches( const std::string& dir ) {
+	Lock l( mWatchesLock );
+	for ( const auto& watch : mFolderWatches )
+		if ( String::startsWith( dir, watch.first ) )
+			return true;
+	return false;
+}
+
 void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	updateEditorTitle( editor );
 	if ( mSplitter->curEditorExistsAndFocused() && editor == mSplitter->getCurEditor() )
@@ -1753,7 +1762,8 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 	if ( mRecentFiles.size() > 10 )
 		mRecentFiles.resize( 10 );
 	cleanUpRecentFiles();
-	updateRecentFiles();
+	auto urfId = String::hash( "updateRecentFiles" );
+	mUISceneNode->debounce( [this] { updateRecentFiles(); }, Seconds( 0.5f ), urfId );
 	if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() == editor ) {
 		mSettings->updateDocumentMenu();
 		updateDocInfo( editor->getDocument() );
@@ -1769,9 +1779,13 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 	if ( mFileWatcher && doc.hasFilepath() &&
 		 ( !mDirTree || !mDirTree->isDirInTree( doc.getFileInfo().getFilepath() ) ) ) {
 		std::string dir( FileSystem::fileRemoveFileName( doc.getFileInfo().getFilepath() ) );
-		Lock l( mWatchesLock );
-		if ( mFileWatcher )
-			mFilesFolderWatches[dir] = mFileWatcher->addWatch( dir, mFileSystemListener );
+		mThreadPool->run( [this, dir] {
+			if ( mFileWatcher && !dirInFolderWatches( dir ) ) {
+				auto watchId = mFileWatcher->addWatch( dir, mFileSystemListener );
+				Lock l( mWatchesLock );
+				mFilesFolderWatches[dir] = watchId;
+			}
+		} );
 	}
 }
 
@@ -2387,9 +2401,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		Lock l( mWatchesLock );
 		auto itWatch = mFilesFolderWatches.find( dir );
 		if ( mFileWatcher && itWatch != mFilesFolderWatches.end() ) {
-			if ( !mDirTree || !mDirTree->isDirInTree( dir ) ) {
+			if ( !mDirTree || !mDirTree->isDirInTree( dir ) )
 				mFileWatcher->removeWatch( itWatch->second );
-			}
 			mFilesFolderWatches.erase( itWatch );
 		}
 	} );
@@ -2436,9 +2449,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 	auto docLoaded = [this, editor, docChanged]( const Event* event ) {
 		if ( editor->getDocument().getFileInfo().getExtension() == "svg" ) {
-			editor->getDocument().setCommand( "show-image-preview", [this, editor]() {
-				loadImageFromMemory( editor->getDocument().getText().toUtf8() );
-			} );
+			editor->getDocument().setCommand(
+				"show-image-preview", [this]( TextDocument::Client* client ) {
+					loadImageFromMemory(
+						static_cast<UICodeEditor*>( client )->getDocument().getText().toUtf8() );
+				} );
 			editor->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
 				auto cevent = static_cast<const ContextMenuEvent*>( event );
 				cevent->getMenu()
@@ -2507,19 +2522,22 @@ void App::updateEditorState() {
 }
 
 void App::removeFolderWatches() {
-	std::unordered_set<efsw::WatchID> folderWatches;
+	std::unordered_map<std::string, efsw::WatchID> folderWatches;
 	std::unordered_map<std::string, efsw::WatchID> filesFolderWatches;
 
-	Lock l( mWatchesLock );
 	if ( !mFileWatcher )
 		return;
-	folderWatches = mFolderWatches;
-	filesFolderWatches = mFilesFolderWatches;
-	mFolderWatches.clear();
-	mFilesFolderWatches.clear();
+
+	{
+		Lock l( mWatchesLock );
+		folderWatches = mFolderWatches;
+		filesFolderWatches = mFilesFolderWatches;
+		mFolderWatches.clear();
+		mFilesFolderWatches.clear();
+	}
 
 	for ( const auto& dir : folderWatches )
-		mFileWatcher->removeWatch( dir );
+		mFileWatcher->removeWatch( dir.first );
 
 	for ( const auto& fileFolder : filesFolderWatches )
 		mFileWatcher->removeWatch( fileFolder.second );
@@ -2542,11 +2560,13 @@ void App::loadDirTree( const std::string& path ) {
 					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
 			} );
 			removeFolderWatches();
-			{
-				Lock l( mWatchesLock );
-				if ( mFileWatcher )
-					mFolderWatches.insert(
-						mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true ) );
+			if ( mFileWatcher ) {
+				{
+					Lock l( mWatchesLock );
+					mFolderWatches.insert( { dirTree.getPath(), 0 } );
+				}
+				mFolderWatches[dirTree.getPath()] =
+					mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true );
 			}
 			mFileSystemListener->setDirTree( mDirTree );
 		},
@@ -2900,7 +2920,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 			std::string cmd = mSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
 				{ keyEvent->getKeyCode(), keyEvent->getMod() } );
 			if ( !cmd.empty() && mSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
-				mSplitter->getCurEditor()->getDocument().execute( cmd );
+				mSplitter->getCurEditor()->getDocument().execute( cmd, mSplitter->getCurEditor() );
 				return 1;
 			}
 		}

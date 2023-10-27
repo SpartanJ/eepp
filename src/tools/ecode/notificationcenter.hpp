@@ -10,10 +10,10 @@ class NotificationCenter {
   public:
 	NotificationCenter( UILayout* layout, PluginManager* pluginManager );
 
-	UITextView* addNotification( const String& text, const Time& delay = Seconds( 2.5 ) );
+	void addNotification( const String& text, const Time& delay = Seconds( 2.5 ) );
 
-	UILinearLayout* addShowRequest( const String& uri, const String& actionText,
-									const Time& delay = Seconds( 2.5 ) );
+	void addShowRequest( const String& uri, const String& actionText,
+						 const Time& delay = Seconds( 2.5 ) );
 
   protected:
 	UILayout* mLayout{ nullptr };

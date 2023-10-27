@@ -483,7 +483,7 @@ class App : public UICodeEditorSplitter::Client {
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mWatchesLock;
-	std::unordered_set<efsw::WatchID> mFolderWatches;
+	std::unordered_map<std::string, efsw::WatchID> mFolderWatches;
 	std::unordered_map<std::string, efsw::WatchID> mFilesFolderWatches;
 	std::unique_ptr<GlobalSearchController> mGlobalSearchController;
 	std::unique_ptr<DocSearchController> mDocSearchController;
@@ -594,6 +594,8 @@ class App : public UICodeEditorSplitter::Client {
 	void updateDocInfoLocation();
 
 	void onReady();
+
+	bool dirInFolderWatches( const std::string& dir );
 };
 
 } // namespace ecode

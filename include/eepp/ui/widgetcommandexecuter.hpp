@@ -4,7 +4,6 @@
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <functional>
-#include <memory>
 
 using namespace EE::Scene;
 

@@ -1,5 +1,4 @@
-﻿#include <algorithm>
-#include <cstdio>
+﻿#include <cstdio>
 #include <eepp/core/debug.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -2083,12 +2082,20 @@ bool TextDocument::isDirty() const {
 
 void TextDocument::execute( const std::string& command ) {
 	auto cmdIt = mCommands.find( command );
-	if ( cmdIt != mCommands.end() ) {
+	if ( cmdIt != mCommands.end() )
 		cmdIt->second();
-	}
 }
 
-void TextDocument::setCommands( const std::map<std::string, DocumentCommand>& cmds ) {
+void TextDocument::execute( const std::string& command, Client* client ) {
+	auto cmdIt = mCommands.find( command );
+	if ( cmdIt != mCommands.end() )
+		return cmdIt->second();
+	auto cmdRefIt = mRefCommands.find( command );
+	if ( cmdRefIt != mRefCommands.end() )
+		return cmdRefIt->second( client );
+}
+
+void TextDocument::setCommands( const UnorderedMap<std::string, DocumentCommand>& cmds ) {
 	mCommands.insert( cmds.begin(), cmds.end() );
 }
 
@@ -2097,12 +2104,18 @@ void TextDocument::setCommand( const std::string& command,
 	mCommands[command] = func;
 }
 
+void TextDocument::setCommand( const std::string& command,
+							   const TextDocument::DocumentRefCommand& func ) {
+	mRefCommands[command] = func;
+}
+
 bool TextDocument::hasCommand( const std::string& command ) {
-	return mCommands.find( command ) != mCommands.end();
+	return mCommands.find( command ) != mCommands.end() ||
+		   mRefCommands.find( command ) != mRefCommands.end();
 }
 
 bool TextDocument::removeCommand( const std::string& command ) {
-	return mCommands.erase( command ) > 0;
+	return mCommands.erase( command ) > 0 || mRefCommands.erase( command ) > 0;
 }
 
 static std::pair<size_t, size_t> findType( const String& str, const String& findStr,

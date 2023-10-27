@@ -13,7 +13,6 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
-#include <random>
 
 using json = nlohmann::json;
 
@@ -627,13 +626,20 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 	if ( editor->hasDocument() ) {
 		auto& doc = editor->getDocument();
 
-		doc.setCommand( "linter-go-to-next-error", [this, editor] { goToNextError( editor ); } );
+		doc.setCommand( "linter-go-to-next-error", [this]( TextDocument::Client* client ) {
+			goToNextError( static_cast<UICodeEditor*>( client ) );
+		} );
 
-		doc.setCommand( "linter-go-to-previous-error",
-						[this, editor] { goToPrevError( editor ); } );
+		doc.setCommand( "linter-go-to-previous-error", [this]( TextDocument::Client* client ) {
+			goToPrevError( static_cast<UICodeEditor*>( client ) );
+		} );
 
-		doc.setCommand( "linter-copy-error-message", [this, editor] {
-			editor->getUISceneNode()->getWindow()->getClipboard()->setText( mErrorMsg );
+		doc.setCommand( "linter-copy-error-message", [this]( TextDocument::Client* client ) {
+			static_cast<UICodeEditor*>( client )
+				->getUISceneNode()
+				->getWindow()
+				->getClipboard()
+				->setText( mErrorMsg );
 		} );
 	}
 

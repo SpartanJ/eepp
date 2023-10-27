@@ -447,7 +447,7 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 	if ( !docPos.isValid() || !editor->getDocument().isValidPosition( docPos ) )
 		return false;
 
-	editor->getDocument().execute( "lsp-go-to-definition" );
+	editor->getDocument().execute( "lsp-go-to-definition", editor );
 
 	return true;
 }
@@ -1144,46 +1144,58 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	if ( editor->hasDocument() ) {
 		auto& doc = editor->getDocument();
 
-		doc.setCommand( "lsp-go-to-definition", [this, editor]() {
-			getAndGoToLocation( editor, "textDocument/definition" );
+		doc.setCommand( "lsp-go-to-definition", [this]( TextDocument::Client* client ) {
+			getAndGoToLocation( static_cast<UICodeEditor*>( client ), "textDocument/definition" );
 		} );
 
-		doc.setCommand( "lsp-rename-symbol-under-cursor",
-						[this, editor]() { renameSymbol( editor ); } );
-
-		doc.setCommand( "lsp-go-to-declaration", [this, editor]() {
-			getAndGoToLocation( editor, "textDocument/declaration" );
+		doc.setCommand( "lsp-rename-symbol-under-cursor", [this]( TextDocument::Client* client ) {
+			renameSymbol( static_cast<UICodeEditor*>( client ) );
 		} );
 
-		doc.setCommand( "lsp-go-to-implementation", [this, editor]() {
-			getAndGoToLocation( editor, "textDocument/implementation" );
+		doc.setCommand( "lsp-go-to-declaration", [this]( TextDocument::Client* client ) {
+			getAndGoToLocation( static_cast<UICodeEditor*>( client ), "textDocument/declaration" );
 		} );
 
-		doc.setCommand( "lsp-go-to-type-definition", [this, editor]() {
-			getAndGoToLocation( editor, "textDocument/typeDefinition" );
+		doc.setCommand( "lsp-go-to-implementation", [this]( TextDocument::Client* client ) {
+			getAndGoToLocation( static_cast<UICodeEditor*>( client ),
+								"textDocument/implementation" );
 		} );
 
-		doc.setCommand( "lsp-switch-header-source",
-						[this, editor]() { switchSourceHeader( editor ); } );
-
-		doc.setCommand( "lsp-symbol-info", [this, editor]() { getSymbolInfo( editor ); } );
-
-		doc.setCommand( "lsp-symbol-references", [this, editor] {
-			mClientManager.getSymbolReferences( editor->getDocumentRef() );
+		doc.setCommand( "lsp-go-to-type-definition", [this]( TextDocument::Client* client ) {
+			getAndGoToLocation( static_cast<UICodeEditor*>( client ),
+								"textDocument/typeDefinition" );
 		} );
 
-		doc.setCommand( "lsp-symbol-code-action", [this, editor] { codeAction( editor ); } );
-
-		doc.setCommand( "lsp-memory-usage", [this, editor] {
-			mClientManager.memoryUsage( editor->getDocumentRef() );
+		doc.setCommand( "lsp-switch-header-source", [this]( TextDocument::Client* client ) {
+			switchSourceHeader( static_cast<UICodeEditor*>( client ) );
 		} );
 
-		doc.setCommand( "lsp-refresh-semantic-highlighting", [this, editor] {
-			mClientManager.requestSymanticHighlighting( editor->getDocumentRef() );
+		doc.setCommand( "lsp-symbol-info", [this]( TextDocument::Client* client ) {
+			getSymbolInfo( static_cast<UICodeEditor*>( client ) );
 		} );
 
-		doc.setCommand( "lsp-format-range", [this, editor] {
-			mClientManager.rangeFormatting( editor->getDocumentRef() );
+		doc.setCommand( "lsp-symbol-references", [this]( TextDocument::Client* client ) {
+			mClientManager.getSymbolReferences(
+				static_cast<UICodeEditor*>( client )->getDocumentRef() );
+		} );
+
+		doc.setCommand( "lsp-symbol-code-action", [this]( TextDocument::Client* client ) {
+			codeAction( static_cast<UICodeEditor*>( client ) );
+		} );
+
+		doc.setCommand( "lsp-memory-usage", [this]( TextDocument::Client* client ) {
+			mClientManager.memoryUsage( static_cast<UICodeEditor*>( client )->getDocumentRef() );
+		} );
+
+		doc.setCommand( "lsp-refresh-semantic-highlighting",
+						[this]( TextDocument::Client* client ) {
+							mClientManager.requestSymanticHighlighting(
+								static_cast<UICodeEditor*>( client )->getDocumentRef() );
+						} );
+
+		doc.setCommand( "lsp-format-range", [this]( TextDocument::Client* client ) {
+			mClientManager.rangeFormatting(
+				static_cast<UICodeEditor*>( client )->getDocumentRef() );
 		} );
 	}
 

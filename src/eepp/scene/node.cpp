@@ -1543,6 +1543,12 @@ void Node::setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& del
 	runAction( action );
 }
 
+void Node::debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
+					 const Uint32& uniqueIdentifier ) {
+	removeActionsByTag( uniqueIdentifier );
+	setTimeout( std::move( runnable ), std::move( delay ), uniqueIdentifier );
+}
+
 void Node::setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
 						const Uint32& uniqueIdentifier ) {
 	Action* action = Actions::Runnable::New( std::move( runnable ), interval, true );

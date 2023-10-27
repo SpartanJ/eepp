@@ -72,16 +72,19 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
 	}
 
-	if ( editor->hasDocument() )
-		editor->getDocument().setCommand( "format-doc", [&, editor]() { formatDoc( editor ); } );
+	if ( editor->hasDocument() ) {
+		editor->getDocument().setCommand( "format-doc", [this]( TextDocument::Client* client ) {
+			formatDoc( static_cast<UICodeEditor*>( client ) );
+		} );
+	}
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
 			tryRequestCapabilities( editor->getDocumentRef() );
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
 			TextDocument* newDoc = editor->getDocumentRef().get();
 			mEditorDocs[editor] = newDoc;
 		} ) );

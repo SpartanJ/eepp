@@ -394,6 +394,9 @@ class EE_API Node : public Transformable {
 	void setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay = Seconds( 0 ),
 					 const Uint32& uniqueIdentifier = 0 );
 
+	void debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
+				   const Uint32& uniqueIdentifier );
+
 	void setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
 					  const Uint32& uniqueIdentifier = 0 );
 
