@@ -1156,7 +1156,9 @@ static void windowsSystem( const std::string& programPath ) {
 	si.cb = sizeof( si );
 	ZeroMemory( &pi, sizeof( pi ) );
 
-	if ( CreateProcess( NULL, const_cast<char*>( programPath.c_str() ), NULL, NULL, FALSE, 0, NULL,
+	if ( CreateProcessW( NULL, (LPWSTR)String( programPath ).toWideString().c_str(), NULL, NULL,
+						 FALSE, 0,
+						 NULL,
 						NULL, &si, &pi ) ) {
 		CloseHandle( pi.hProcess );
 		CloseHandle( pi.hThread );
@@ -1173,11 +1175,14 @@ void Sys::execute( const std::string& cmd ) {
 }
 
 std::string Sys::getProcessFilePath() {
+#if EE_PLATFORM != EE_PLATFORM_WIN
 	char exename[PATH_MAX];
+#endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	int len = GetModuleFileName( NULL, exename, PATH_MAX - 1 );
-	exename[len] = '\0';
+	std::wstring exename( _MAX_DIR, 0 );
+	GetModuleFileNameW( 0, &exename[0], _MAX_PATH );
+	return String( exename ).toUtf8();
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 	char path[] = "/proc/self/exe";
 	ssize_t len = readlink( path, exename, PATH_MAX - 1 );
@@ -1203,6 +1208,8 @@ std::string Sys::getProcessFilePath() {
 	*exename = 0;
 #endif
 
+#if EE_PLATFORM != EE_PLATFORM_WIN
 	return std::string( exename );
+#endif
 }
 }} // namespace EE::System
