@@ -23,6 +23,7 @@ using namespace EE::UI::Tools;
 namespace ecode {
 
 class PluginManager;
+class Plugin;
 class FileSystemListener;
 
 typedef std::function<UICodeEditorPlugin*( PluginManager* pluginManager )> PluginCreatorFn;
@@ -332,6 +333,10 @@ class PluginManager {
 
 	void setPluginReloadEnabled( bool pluginReloadEnabled );
 
+	void subscribeFileSystemListener( Plugin* plugin );
+
+	void unsubscribeFileSystemListener( Plugin* plugin );
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;
@@ -348,6 +353,8 @@ class PluginManager {
 	Mutex mSubscribedPluginsMutex;
 	SubscribedPlugins mSubscribedPlugins;
 	OnLoadFileCb mLoadFileFn;
+	Uint64 mFileSystemListenerCb{ 0 };
+	UnorderedSet<Plugin*> mPluginsFSSubs;
 	bool mClosing{ false };
 	bool mPluginReloadEnabled{ false };
 
@@ -356,6 +363,10 @@ class PluginManager {
 	void setSplitter( UICodeEditorSplitter* splitter );
 
 	void setFileSystemListener( FileSystemListener* listener );
+
+	void subscribeFileSystemListener();
+
+	void unsubscribeFileSystemListener();
 };
 
 class PluginsModel : public Model {
@@ -418,10 +429,11 @@ class Plugin : public UICodeEditorPlugin {
 
 	virtual String::HashType getConfigFileHash() { return 0; }
 
+	virtual void onFileSystemEvent( const FileEvent& ev, const FileInfo& file );
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
-	Uint64 mFileSystemListenerCb{ 0 };
 	std::string mConfigPath;
 	FileInfo mConfigFileInfo;
 

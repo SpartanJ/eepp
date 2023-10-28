@@ -93,9 +93,11 @@ void XMLToolsPlugin::load( PluginManager* pluginManager ) {
 	}
 
 	if ( updateConfigFile ) {
-		data = j.dump( 2 );
-		FileSystem::fileWrite( path, data );
-		mConfigHash = String::hash( data );
+		std::string newData = j.dump( 2 );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( newData );
+		}
 	}
 
 	subscribeFileSystemListener();

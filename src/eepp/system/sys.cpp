@@ -20,9 +20,9 @@
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
+#include <CoreFoundation/CoreFoundation.h>
 #include <libproc.h>
 #include <unistd.h>
-#include <CoreFoundation/CoreFoundation.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -48,6 +48,10 @@
 #include <stdlib.h>
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#include <mach-o/dyld.h>
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
 #include <sys/mount.h>
@@ -57,6 +61,7 @@
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <direct.h>
 #include <sys/utime.h>
+#include <tchar.h>
 #else
 #include <sys/time.h>
 #endif
@@ -488,7 +493,7 @@ static std::string sGetProcessPath() {
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pid_t pid = getpid();
-	int ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	int ret = proc_pidpath( pid, pathbuf, sizeof( pathbuf ) );
 	if ( ret >= 0 )
 		return FileSystem::fileRemoveFileName( std::string( pathbuf ) );
 
@@ -1143,4 +1148,61 @@ bool Sys::windowAttachConsole() {
 	return true;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+static void windowsSystem( const std::string& programPath ) {
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory( &si, sizeof( si ) );
+	si.cb = sizeof( si );
+	ZeroMemory( &pi, sizeof( pi ) );
+
+	if ( CreateProcess( NULL, const_cast<char*>( programPath.c_str() ), NULL, NULL, FALSE, 0, NULL,
+						NULL, &si, &pi ) ) {
+		CloseHandle( pi.hProcess );
+		CloseHandle( pi.hThread );
+	}
+}
+#endif
+
+void Sys::execute( const std::string& cmd ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	windowsSystem( cmd );
+#else
+	std::system( cmd.c_str() );
+#endif
+}
+
+std::string Sys::getProcessFilePath() {
+	char exename[PATH_MAX];
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	int len = GetModuleFileName( NULL, exename, PATH_MAX - 1 );
+	exename[len] = '\0';
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+	char path[] = "/proc/self/exe";
+	ssize_t len = readlink( path, exename, PATH_MAX - 1 );
+	if ( len > 0 )
+		exename[len] = '\0';
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+	/* use realpath to resolve a symlink if the process was launched from one.
+	** This happens when Homebrew installs a cack and creates a symlink in
+	** /usr/loca/bin for launching the executable from the command line. */
+	unsigned size = PATH_MAX;
+	char exepath[size];
+	_NSGetExecutablePath( exepath, &size );
+	realpath( exepath, exename );
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+	size_t len = PATH_MAX;
+	const int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
+	sysctl( mib, 4, exename, &len, NULL, 0 );
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	image_info info;
+	get_image_info( 0, &info );
+	strncpy( exename, info.name, sizeof( exename ) );
+#else
+	*exename = 0;
+#endif
+
+	return std::string( exename );
+}
 }} // namespace EE::System

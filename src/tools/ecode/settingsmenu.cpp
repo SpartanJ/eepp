@@ -37,6 +37,10 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 			   getKeybind( "create-new-terminal" ) )
 		->setId( "create-new-terminal" );
 	mSettingsMenu
+		->add( i18n( "new_window", "New Window" ), findIcon( "window" ),
+			   getKeybind( "create-new-window" ) )
+		->setId( "create-new-window" );
+	mSettingsMenu
 		->add( i18n( "open_file", "Open File..." ), findIcon( "document-open" ),
 			   getKeybind( "open-file" ) )
 		->setId( "open-file" );

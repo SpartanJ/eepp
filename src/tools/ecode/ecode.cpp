@@ -552,6 +552,7 @@ void App::onReady() {
 	// Plugin reload is only available right after we render the first frame and the editor is ready
 	// to run.
 	mPluginManager->setPluginReloadEnabled( true );
+	Log::info( "App Ready" );
 }
 
 void App::mainLoop() {
@@ -1875,6 +1876,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 			  "open-workspace-symbol-search" },
 			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
 			  "open-document-symbol-search" },
+			{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
 	};
 }
 
@@ -1950,7 +1952,8 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "open-workspace-symbol-search",
 			 "open-document-symbol-search",
 			 "show-folder-treeview-tab",
-			 "show-build-tab" };
+			 "show-build-tab",
+			 "create-new-window" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {

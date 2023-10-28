@@ -293,6 +293,13 @@ class App : public UICodeEditorSplitter::Client {
 				mTerminalManager->configureTerminalScrollback();
 		} );
 		t.setCommand( "check-for-updates", [this] { checkForUpdates( false ); } );
+		t.setCommand( "create-new-window", [this] {
+			std::string processPath = Sys::getProcessFilePath();
+			if ( !processPath.empty() ) {
+				std::string cmd( processPath + " -x" );
+				Sys::execute( cmd );
+			}
+		} );
 		mSplitter->registerSplitterCommands( t );
 	}
 

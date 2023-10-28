@@ -203,9 +203,11 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 		j["keybindings"]["format-doc"] = mKeyBindings["format-doc"];
 
 	if ( updateConfigFile ) {
-		data = j.dump( 2 );
-		FileSystem::fileWrite( path, data );
-		mConfigHash = String::hash( data );
+		std::string newData = j.dump( 2 );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( data );
+		}
 	}
 
 	if ( !j.contains( "formatters" ) )

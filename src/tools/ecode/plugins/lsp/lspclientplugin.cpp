@@ -908,7 +908,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 	}
 
 	if ( updateConfigFile ) {
-		FileSystem::fileWrite( path, j.dump( 2 ) );
+		std::string newData( j.dump( 2 ) );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( newData );
+		}
 	}
 
 	if ( !j.contains( "servers" ) )

@@ -2160,8 +2160,7 @@ static std::pair<size_t, size_t> findLastType( const String& str, const String& 
 }
 
 TextRange TextDocument::findText( String text, TextPosition from, bool caseSensitive,
-								  bool wholeWord, const FindReplaceType& type,
-								  TextRange restrictRange ) {
+								  bool wholeWord, FindReplaceType type, TextRange restrictRange ) {
 	if ( text.empty() )
 		return TextRange();
 	from = sanitizePosition( from );
@@ -2213,7 +2212,7 @@ TextRange TextDocument::findText( String text, TextPosition from, bool caseSensi
 }
 
 TextRange TextDocument::findTextLast( String text, TextPosition from, bool caseSensitive,
-									  bool wholeWord, const FindReplaceType& type,
+									  bool wholeWord, FindReplaceType type,
 									  TextRange restrictRange ) {
 	if ( text.empty() )
 		return TextRange();
@@ -2268,8 +2267,7 @@ TextRange TextDocument::findTextLast( String text, TextPosition from, bool caseS
 }
 
 TextRange TextDocument::find( const String& text, TextPosition from, bool caseSensitive,
-							  bool wholeWord, const FindReplaceType& type,
-							  TextRange restrictRange ) {
+							  bool wholeWord, FindReplaceType type, TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
 	if ( textLines.empty() || textLines.size() > mLines.size() )
@@ -2349,8 +2347,7 @@ TextRange TextDocument::find( const String& text, TextPosition from, bool caseSe
 }
 
 TextRange TextDocument::findLast( const String& text, TextPosition from, bool caseSensitive,
-								  bool wholeWord, const FindReplaceType& type,
-								  TextRange restrictRange ) {
+								  bool wholeWord, FindReplaceType type, TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
 	if ( textLines.empty() || textLines.size() > mLines.size() )
@@ -2439,7 +2436,7 @@ bool TextDocument::isInsertingText() const {
 }
 
 TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool wholeWord,
-								  const FindReplaceType& type, TextRange restrictRange,
+								  FindReplaceType type, TextRange restrictRange,
 								  size_t maxResults ) {
 	TextRanges all;
 	TextRange found;
@@ -2475,7 +2472,7 @@ TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool w
 }
 
 int TextDocument::replaceAll( const String& text, const String& replace, const bool& caseSensitive,
-							  const bool& wholeWord, const FindReplaceType& type,
+							  const bool& wholeWord, FindReplaceType type,
 							  TextRange restrictRange ) {
 	if ( text.empty() )
 		return 0;
@@ -2537,7 +2534,7 @@ void TextDocument::selectAllMatches() {
 
 TextPosition TextDocument::replace( String search, const String& replace, TextPosition from,
 									const bool& caseSensitive, const bool& wholeWord,
-									const FindReplaceType& type, TextRange restrictRange ) {
+									FindReplaceType type, TextRange restrictRange ) {
 	TextRange found( findText( search, from, caseSensitive, wholeWord, type, restrictRange ) );
 	if ( found.isValid() ) {
 		setSelection( found );

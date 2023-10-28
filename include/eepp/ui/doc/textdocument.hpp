@@ -361,28 +361,26 @@ class EE_API TextDocument {
 	bool removeCommand( const std::string& command );
 
 	TextRange find( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-					bool wholeWord = false, const FindReplaceType& type = FindReplaceType::Normal,
+					bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 					TextRange restrictRange = TextRange() );
 
 	TextRange findLast( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-						bool wholeWord = false,
-						const FindReplaceType& type = FindReplaceType::Normal,
+						bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange() );
 
 	TextRanges findAll( const String& text, bool caseSensitive = true, bool wholeWord = false,
-						const FindReplaceType& type = FindReplaceType::Normal,
+						FindReplaceType type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange(), size_t maxResults = 0 );
 
 	int replaceAll( const String& text, const String& replace, const bool& caseSensitive = true,
-					const bool& wholeWord = false,
-					const FindReplaceType& type = FindReplaceType::Normal,
+					const bool& wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 					TextRange restrictRange = TextRange() );
 
 	TextPosition replaceSelection( const String& replace );
 
 	TextPosition replace( String search, const String& replace, TextPosition from = { 0, 0 },
 						  const bool& caseSensitive = true, const bool& wholeWord = false,
-						  const FindReplaceType& type = FindReplaceType::Normal,
+						  FindReplaceType type = FindReplaceType::Normal,
 						  TextRange restrictRange = TextRange() );
 
 	String getIndentString();
@@ -699,13 +697,11 @@ class EE_API TextDocument {
 	LoadStatus loadFromStream( IOStream& file, std::string path, bool callReset );
 
 	TextRange findText( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-						bool wholeWord = false,
-						const FindReplaceType& type = FindReplaceType::Normal,
+						bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange() );
 
 	TextRange findTextLast( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-							bool wholeWord = false,
-							const FindReplaceType& type = FindReplaceType::Normal,
+							bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 							TextRange restrictRange = TextRange() );
 };
 

@@ -35,8 +35,11 @@ class EE_API Sys {
 	/** Wait the time defined before returning. */
 	static void sleep( const Time& time );
 
-	/** @return The application path ( the executable path ) */
+	/** @return The application path ( the executable path without the executable ) */
 	static std::string getProcessPath();
+
+	/** @return The process path ( the executable file path ) */
+	static std::string getProcessFilePath();
 
 	/** @return The System Time */
 	static double getSystemTime();
@@ -94,6 +97,9 @@ class EE_API Sys {
 	 * Other platforms will do nothing.
 	 */
 	static bool windowAttachConsole();
+
+	/** Executes a command */
+	static void execute( const std::string& cmd );
 };
 
 }} // namespace EE::System
