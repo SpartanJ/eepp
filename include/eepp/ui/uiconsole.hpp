@@ -327,7 +327,7 @@ class EE_API UIConsole : public UIWidget,
 
 	void copySelection();
 
-	void updateIMELocation();
+	void updateIMELocation( const Rectf& loc );
 };
 
 }} // namespace EE::UI

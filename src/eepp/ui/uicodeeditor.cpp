@@ -350,7 +350,6 @@ void UICodeEditor::draw() {
 		FontStyleConfig config( mFontStyleConfig );
 		config.FontColor = mFontStyleConfig.getFontSelectedColor();
 		getUISceneNode()->getIME().draw( cursorPos, getFontHeight(), mFontStyleConfig,
-										 mFontStyleConfig.getFontSelectionBackColor(),
 										 Color( mCaretColor ).blendAlpha( mAlpha ) );
 	} else {
 		for ( const auto& sel : mDoc->getSelections() )
@@ -929,13 +928,13 @@ void UICodeEditor::updateIMELocation() {
 		return;
 	updateScreenPos();
 	getUISceneNode()->getIME().setLocation(
-		getScreenPosition( mDoc->getSelection( true ).end() ).asInt() );
+		getScreenPosition( mDoc->getSelection( true ).start() ).asInt() );
 }
 
 Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
 	UIWidget::onTextEditing( event );
 	mLastActivity.restart();
-	mDoc->textInput( "" ); // Reset selection
+	mDoc->imeTextEditing( event.getText() );
 	updateIMELocation();
 	invalidateDraw();
 	return 1;

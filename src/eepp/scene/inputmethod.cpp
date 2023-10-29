@@ -41,8 +41,8 @@ const InputMethod::State& InputMethod::getState() const {
 }
 
 void InputMethod::draw( const Vector2f& screenPos, const Float& lineHeight,
-						const FontStyleConfig& fontStyle, const Color& backgroundColor,
-						const Color& lineColor ) {
+						const FontStyleConfig& fontStyle, const Color& lineColor,
+						const Color& backgroundColor, bool drawText ) {
 	Float width = Text::getTextWidth( mState.text, fontStyle );
 	Primitives p;
 
@@ -58,9 +58,8 @@ void InputMethod::draw( const Vector2f& screenPos, const Float& lineHeight,
 			Rectf( { screenPos.x, screenPos.y + lineHeight - lh * 0.5f }, { width, lh } ) );
 	}
 
-	p.drawBatch();
-
-	Text::draw( mState.text, screenPos, fontStyle );
+	if ( drawText )
+		Text::draw( mState.text, screenPos, fontStyle );
 }
 
 }} // namespace EE::Scene

@@ -491,19 +491,16 @@ void UIConsole::draw() {
 
 	curY = mScreenPos.y + getPixelsSize().getHeight() - mPaddingPx.Bottom - lineHeight - 1;
 
+	auto editCharWidth = Text::getTextWidth( String( "> " ), mFontStyleConfig );
+
 	if ( mDoc.hasSelection() ) {
-		auto mwidth = Text::getTextWidth( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
-										  String( "> " ), mFontStyleConfig.Style );
-		auto sel = mDoc.getSelection( true );
-		auto tsubstr = mDoc.getCurrentLine().getText().view().substr( 0, sel.start().column() );
-		auto twidth = Text::getTextWidth( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
-										  tsubstr, mFontStyleConfig.Style );
-		auto fsubstr = mDoc.getCurrentLine().getText().view().substr( sel.start().column(),
-																	  sel.end().column() );
-		auto fwidth = Text::getTextWidth( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
-										  fsubstr, mFontStyleConfig.Style );
-		p.drawRectangle( Rectf( { mScreenPos.x + mPaddingPx.Left + mwidth + twidth, curY },
-								{ fwidth, lineHeight } ) );
+		Float selStartPos =
+			editCharWidth + Text::getTextWidth( mDoc.getCurrentLine().getText().view().substr(
+													0, mDoc.getSelection( true ).start().column() ),
+												mFontStyleConfig );
+		Float selWidth = Text::getTextWidth( mDoc.getSelectedText(), mFontStyleConfig );
+		p.drawRectangle( Rectf( { mScreenPos.x + mPaddingPx.Left + selStartPos, curY },
+								{ selWidth, lineHeight } ) );
 	}
 
 	Text& text = mTextCache[mTextCache.size() - 1].text;
@@ -512,22 +509,24 @@ void UIConsole::draw() {
 	text.setString( "> " + mDoc.getCurrentLine().getTextWithoutNewLine() );
 	text.draw( mScreenPos.x + mPaddingPx.Left, curY );
 
-	Text& text2 = mTextCache[mTextCache.size() - 2].text;
-	text2.setStyleConfig( mFontStyleConfig );
-	text2.setFillColor( fontColor );
-
 	if ( mCursorVisible ) {
-		if ( (unsigned int)mDoc.getSelection().start().column() ==
-			 mDoc.getCurrentLine().size() - 1 ) {
-			Uint32 width = text.getTextWidth();
-			text2.setString( "_" );
-			text2.draw( mScreenPos.x + mPaddingPx.Left + width, curY );
+		Float cursorPos =
+			editCharWidth + Text::getTextWidth( mDoc.getCurrentLine().getText().view().substr(
+													0, mDoc.getSelection().start().column() ),
+												mFontStyleConfig );
+		Rectf r( { mScreenPos.x + mPaddingPx.Left + cursorPos, curY }, { cursorPos, lineHeight } );
+		updateIMELocation( r );
+		if ( hasFocus() && getUISceneNode()->getIME().isEditing() ) {
+			FontStyleConfig config( mFontStyleConfig );
+			config.FontColor = mFontStyleConfig.getFontSelectedColor();
+			getUISceneNode()->getIME().draw( r.getPosition(), getLineHeight(), mFontStyleConfig,
+											 Color( fontColor ).blendAlpha( mAlpha ) );
 		} else {
-			text2.setString( "> " + mDoc.getCurrentLine().getText().substr(
-										0, mDoc.getSelection().start().column() ) );
-			Uint32 width = mPaddingPx.Left + text2.getTextWidth();
+			Text& text2 = mTextCache[mTextCache.size() - 2].text;
+			text2.setStyleConfig( mFontStyleConfig );
+			text2.setFillColor( fontColor );
 			text2.setString( "_" );
-			text2.draw( mScreenPos.x + width, curY );
+			text2.draw( r.Left, r.Top );
 		}
 	}
 
@@ -910,18 +909,15 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 
 Uint32 UIConsole::onTextEditing( const TextEditingEvent& event ) {
 	UIWidget::onTextEditing( event );
-	mDoc.textInput( "" ); // Reset selection
-	updateIMELocation();
+	mDoc.imeTextEditing( event.getText() );
 	invalidateDraw();
 	return 1;
 }
 
-void UIConsole::updateIMELocation() {
+void UIConsole::updateIMELocation( const Rectf& loc ) {
 	if ( mDoc.getActiveClient() != this )
 		return;
-	updateScreenPos();
-//	getUISceneNode()->getIME().setLocation(
-//		getScreenPosition( mDoc.getSelection( true ).end() ).asInt() );
+	getUISceneNode()->getIME().setLocation( loc.asInt() );
 }
 
 Uint32 UIConsole::onPressEnter() {

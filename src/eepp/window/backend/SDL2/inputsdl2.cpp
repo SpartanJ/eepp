@@ -258,8 +258,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			event.textediting.start = SDLEvent.edit.start;
 			event.textediting.length = SDLEvent.edit.length;
 			event.WinID = SDLEvent.edit.windowID;
-			Log::warning( "InputEvent::TextEditing '%s' s: %d l: %d", event.textediting.text,
-						  event.textediting.start, event.textediting.length );
 			break;
 		}
 #if SDL_VERSION_ATLEAST( 2, 0, 22 )

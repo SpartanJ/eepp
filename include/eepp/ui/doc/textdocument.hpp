@@ -254,6 +254,8 @@ class EE_API TextDocument {
 
 	void textInput( const String& text, bool mightBeInteresting = true );
 
+	void imeTextEditing( const String& text );
+
 	void registerClient( Client* client );
 
 	void unregisterClient( Client* client );

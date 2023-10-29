@@ -154,7 +154,6 @@ void UITextInput::draw() {
 		FontStyleConfig config( mFontStyleConfig );
 		config.FontColor = mFontStyleConfig.getFontSelectedColor();
 		getUISceneNode()->getIME().draw( cursor, getTextHeight(), mFontStyleConfig,
-										 mFontStyleConfig.getFontSelectionBackColor(),
 										 Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
 	} else {
 		drawWaitingCursor();
@@ -822,7 +821,7 @@ void UITextInput::updateIMELocation() {
 
 Uint32 UITextInput::onTextEditing( const TextEditingEvent& event ) {
 	UITextView::onTextEditing( event );
-	mDoc.textInput( "" ); // Reset selection
+	mDoc.imeTextEditing( event.getText() );
 	updateIMELocation();
 	invalidateDraw();
 	return 1;

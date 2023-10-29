@@ -12,7 +12,7 @@ namespace EE { namespace Scene {
 
 class SceneNode;
 
-class InputMethod {
+class EE_API InputMethod {
   public:
 	struct State {
 		String text;
@@ -33,8 +33,8 @@ class InputMethod {
 	const InputMethod::State& getState() const;
 
 	void draw( const Vector2f& screenPos, const Float& lineHeight, const FontStyleConfig& fontStyle,
-			   const Color& backgroundColor = Color::Transparent,
-			   const Color& lineColor = Color::Transparent );
+			   const Color& lineColor = Color::Transparent,
+			   const Color& backgroundColor = Color::Transparent, bool drawText = false );
 
   protected:
 	friend class SceneNode;

@@ -921,7 +921,9 @@ void WindowSDL::setTextInputRect( const Rect& rect ) {
 }
 
 void WindowSDL::clearComposition() {
+#if SDL_VERSION_ATLEAST( 2, 0, 22 )
 	SDL_ClearComposition();
+#endif
 }
 
 bool WindowSDL::hasScreenKeyboardSupport() {

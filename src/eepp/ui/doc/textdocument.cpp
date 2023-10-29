@@ -1448,6 +1448,15 @@ void TextDocument::textInput( const String& text, bool mightBeInteresting ) {
 		mLastCursorChangeWasInteresting = true;
 }
 
+void TextDocument::imeTextEditing( const String& text ) {
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		if ( mSelection[i].hasSelection() )
+			deleteTo( i, 0 );
+		TextPosition tp( insert( i, getSelectionIndex( i ).start(), text ) );
+		setSelection( i, { positionOffset( tp, -text.size() ), tp } );
+	}
+}
+
 void TextDocument::registerClient( Client* client ) {
 	Lock l( mClientsMutex );
 	mClients.insert( client );
