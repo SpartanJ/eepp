@@ -44,6 +44,7 @@ class EE_API InputMethod {
 	SceneNode* mSceneNode{ nullptr };
 	InputMethod::State mState;
 	bool mEditing{ false };
+	Rect mLastLocation;
 };
 
 }} // namespace EE::Scene

@@ -794,6 +794,9 @@ void UIConsole::paste() {
 }
 
 Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
+	if ( getUISceneNode()->getIME().isEditing() )
+		return 0;
+
 	if ( ( event.getKeyCode() == KEY_TAB ) &&
 		 mDoc.getSelection().start().column() == (Int64)mDoc.getCurrentLine().size() - 1 ) {
 		printCommandsStartingWith( mDoc.getCurrentLine().getTextWithoutNewLine() );
@@ -885,6 +888,9 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
+	if ( getUISceneNode()->getIME().isEditing() )
+		return 0;
+
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||

@@ -898,6 +898,9 @@ Uint32 UICodeEditor::onFocusLoss() {
 }
 
 Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
+	if ( getUISceneNode()->getIME().isEditing() )
+		return 0;
+
 	mLastActivity.restart();
 
 	if ( mLocked || NULL == mFont )
@@ -924,11 +927,11 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 }
 
 void UICodeEditor::updateIMELocation() {
-	if ( mDoc->getActiveClient() != this )
+	if ( mDoc->getActiveClient() != this || !Engine::isRunninMainThread() )
 		return;
 	updateScreenPos();
-	getUISceneNode()->getIME().setLocation(
-		getScreenPosition( mDoc->getSelection( true ).start() ).asInt() );
+	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
+	getUISceneNode()->getIME().setLocation( r.asInt() );
 }
 
 Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
@@ -941,6 +944,9 @@ Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
 }
 
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
+	if ( getUISceneNode()->getIME().isEditing() )
+		return 0;
+
 	mLastActivity.restart();
 
 	if ( NULL == mFont || mUISceneNode->getUIEventDispatcher()->justGainedFocus() )

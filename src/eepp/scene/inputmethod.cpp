@@ -7,7 +7,13 @@
 namespace EE { namespace Scene {
 
 void InputMethod::setLocation( Rect rect ) {
-	mSceneNode->getWindow()->setTextInputRect( rect );
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+	rect = PixelDensity::pxToDpI( rect );
+#endif
+	if ( rect != mLastLocation ) {
+		mSceneNode->getWindow()->setTextInputRect( rect );
+		mLastLocation = std::move( rect );
+	}
 }
 
 bool InputMethod::isEditing() const {
@@ -56,6 +62,11 @@ void InputMethod::draw( const Vector2f& screenPos, const Float& lineHeight,
 		p.setColor( lineColor );
 		p.drawRectangle(
 			Rectf( { screenPos.x, screenPos.y + lineHeight - lh * 0.5f }, { width, lh } ) );
+
+		Float lineOffsetX =
+			Text::getTextWidth( mState.text.view().substr( 0, mState.start ), fontStyle );
+		p.drawRectangle( Rectf( { screenPos.x + lineOffsetX, screenPos.y },
+								{ PixelDensity::dpToPx( 1.f ), lineHeight } ) );
 	}
 
 	if ( drawText )

@@ -767,6 +767,9 @@ void UITextInput::registerKeybindings() {
 }
 
 Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
+	if ( getUISceneNode()->getIME().isEditing() )
+		return 0;
+
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		// Allow copy selection on locked mode
@@ -780,6 +783,9 @@ Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
+	if ( getUISceneNode()->getIME().isEditing() )
+		return 0;
+
 	if ( !mAllowEditing )
 		return 0;
 	Input* input = getUISceneNode()->getWindow()->getInput();
@@ -808,7 +814,7 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 }
 
 void UITextInput::updateIMELocation() {
-	if ( mDoc.getActiveClient() != this )
+	if ( mDoc.getActiveClient() != this || !Engine::isRunninMainThread() )
 		return;
 
 	updateScreenPos();

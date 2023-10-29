@@ -225,6 +225,7 @@
 ../../include/eepp/scene/eventdispatcher.hpp
 ../../include/eepp/scene/event.hpp
 ../../include/eepp/scene.hpp
+../../include/eepp/scene/inputmethod.hpp
 ../../include/eepp/scene/keyevent.hpp
 ../../include/eepp/scene/mouseevent.hpp
 ../../include/eepp/scene/node.hpp
@@ -623,6 +624,7 @@
 ../../src/eepp/graphics/vertexbuffervbo.cpp
 ../../src/eepp/graphics/view.cpp
 ../../src/eepp/main/eepp_main.cpp
+../../src/eepp/scene/inputmethod.cpp
 ../../src/eepp/ui/doc/languages/angelscript.cpp
 ../../src/eepp/ui/doc/languages/angelscript.hpp
 ../../src/eepp/ui/doc/languages/batchscript.cpp

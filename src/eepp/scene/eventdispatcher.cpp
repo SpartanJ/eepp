@@ -38,6 +38,8 @@ EventDispatcher::~EventDispatcher() {
 void EventDispatcher::inputCallback( InputEvent* event ) {
 	switch ( event->Type ) {
 		case InputEvent::Window: {
+			if ( event->window.type == InputEvent::WindowEventType::WindowKeyboardFocusLost )
+				mSceneNode->getIME().stop();
 			break;
 		}
 		case InputEvent::KeyUp:
