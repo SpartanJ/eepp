@@ -9,6 +9,7 @@
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace EE::Graphics;
 using namespace EE::UI::Doc;
@@ -756,6 +757,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 
+	virtual Uint32 onTextEditing( const TextEditingEvent& event );
+
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual Uint32 onKeyUp( const KeyEvent& event );
@@ -911,6 +914,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	template <typename StringType> Float getTextWidth( const StringType& text ) const;
 
+	void updateIMELocation();
 };
 
 }} // namespace EE::UI

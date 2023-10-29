@@ -240,6 +240,8 @@ class EE_API UIConsole : public UIWidget,
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 
+	virtual Uint32 onTextEditing( const TextEditingEvent& event );
+
 	virtual void onSelectionChange();
 
 	virtual void onSizeChange();
@@ -324,6 +326,8 @@ class EE_API UIConsole : public UIWidget,
 	Drawable* findIcon( const std::string& name );
 
 	void copySelection();
+
+	void updateIMELocation();
 };
 
 }} // namespace EE::UI

@@ -907,6 +907,23 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 	invalidateDraw();
 	return 1;
 }
+
+Uint32 UIConsole::onTextEditing( const TextEditingEvent& event ) {
+	UIWidget::onTextEditing( event );
+	mDoc.textInput( "" ); // Reset selection
+	updateIMELocation();
+	invalidateDraw();
+	return 1;
+}
+
+void UIConsole::updateIMELocation() {
+	if ( mDoc.getActiveClient() != this )
+		return;
+	updateScreenPos();
+//	getUISceneNode()->getIME().setLocation(
+//		getScreenPosition( mDoc.getSelection( true ).end() ).asInt() );
+}
+
 Uint32 UIConsole::onPressEnter() {
 	processLine();
 	sendCommonEvent( Event::OnPressEnter );

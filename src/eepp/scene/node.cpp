@@ -297,8 +297,8 @@ void Node::update( const Time& time ) {
 	writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
-void Node::sendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags ) {
-	MouseEvent MouseEvent( this, Event, Pos, Flags );
+void Node::sendMouseEvent( const Uint32& event, const Vector2i& pos, const Uint32& flags ) {
+	MouseEvent MouseEvent( this, event, pos, flags );
 	sendEvent( &MouseEvent );
 }
 
@@ -313,6 +313,11 @@ void Node::sendTextEvent( const Uint32& event, const std::string& text ) {
 }
 
 Uint32 Node::onTextInput( const TextInputEvent& event ) {
+	sendEvent( &event );
+	return 0;
+}
+
+Uint32 Node::onTextEditing( const TextEditingEvent& event ) {
 	sendEvent( &event );
 	return 0;
 }

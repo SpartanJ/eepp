@@ -24,7 +24,7 @@ class EE_API UILayout : public UIWidget {
   protected:
 	friend class UISceneNode;
 
-	std::unordered_set<UILayout*> mLayouts;
+	UnorderedSet<UILayout*> mLayouts;
 	bool mDirtyLayout{ false };
 	bool mPacking{ false };
 	bool mGravityOwner{ false };

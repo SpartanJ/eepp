@@ -443,6 +443,14 @@ void Window::popResizeCallback( const Uint32& CallbackId ) {
 	mCallbacks.erase( mCallbacks.find( CallbackId ) );
 }
 
+void Window::startOnScreenKeyboard() {}
+
+void Window::stopOnScreenKeyboard() {}
+
+bool Window::isOnScreenKeyboardActive() const {
+	return false;
+}
+
 void Window::sendVideoResizeCb() {
 	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin();
 		  i != mCallbacks.end(); ++i ) {
@@ -556,13 +564,15 @@ Float Window::getScale() {
 
 void Window::startTextInput() {}
 
-bool Window::isTextInputActive() {
+bool Window::isTextInputActive() const {
 	return false;
 }
 
 void Window::stopTextInput() {}
 
-void Window::setTextInputRect( Rect& ) {}
+void Window::setTextInputRect( const Rect& ) {}
+
+void Window::clearComposition() {}
 
 bool Window::hasScreenKeyboardSupport() {
 	return false;

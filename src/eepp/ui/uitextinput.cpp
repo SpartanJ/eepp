@@ -99,6 +99,7 @@ void UITextInput::scheduledUpdate( const Time& time ) {
 
 void UITextInput::onCursorPosChange() {
 	sendCommonEvent( Event::OnCursorPosChange );
+	updateIMELocation();
 	invalidateDraw();
 }
 
@@ -146,7 +147,18 @@ void UITextInput::draw() {
 		}
 	}
 
-	drawWaitingCursor();
+	if ( hasFocus() && getUISceneNode()->getIME().isEditing() ) {
+		updateIMELocation();
+		Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
+						 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
+		FontStyleConfig config( mFontStyleConfig );
+		config.FontColor = mFontStyleConfig.getFontSelectedColor();
+		getUISceneNode()->getIME().draw( cursor, getTextHeight(), mFontStyleConfig,
+										 mFontStyleConfig.getFontSelectionBackColor(),
+										 Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
+	} else {
+		drawWaitingCursor();
+	}
 }
 
 Uint32 UITextInput::onFocus() {
@@ -158,6 +170,8 @@ Uint32 UITextInput::onFocus() {
 		getSceneNode()->getWindow()->startTextInput();
 
 		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+
+		updateIMELocation();
 	}
 
 	return 1;
@@ -791,6 +805,26 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 	}
 
 	mDoc.textInput( text );
+	return 1;
+}
+
+void UITextInput::updateIMELocation() {
+	if ( mDoc.getActiveClient() != this )
+		return;
+
+	updateScreenPos();
+
+	Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
+					 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
+	Float h = mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSize() );
+	getUISceneNode()->getIME().setLocation( Rectf( cursor, { 0, h } ).asInt() );
+}
+
+Uint32 UITextInput::onTextEditing( const TextEditingEvent& event ) {
+	UITextView::onTextEditing( event );
+	mDoc.textInput( "" ); // Reset selection
+	updateIMELocation();
+	invalidateDraw();
 	return 1;
 }
 

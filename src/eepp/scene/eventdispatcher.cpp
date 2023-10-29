@@ -50,6 +50,11 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 			break;
 		case InputEvent::TextInput:
 			sendTextInput( event->text.text, event->text.timestamp );
+			break;
+		case InputEvent::TextEditing:
+			sendTextEditing( event->textediting.text, event->textediting.start,
+							 event->textediting.length );
+			break;
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
 		case InputEvent::VideoExpose: {
@@ -202,6 +207,19 @@ void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& times
 	}
 }
 
+void EventDispatcher::sendTextEditing( const String& text, const Int32& start,
+									   const Int32& length ) {
+	mSceneNode->getIME().onTextEditing( text, start, length );
+	TextEditingEvent textEditingEvent =
+		TextEditingEvent( mFocusNode, Event::TextInput, text, start, length );
+	Node* node = mFocusNode;
+	while ( NULL != node ) {
+		if ( node->isEnabled() && node->onTextEditing( textEditingEvent ) )
+			break;
+		node = node->getParent();
+	}
+}
+
 void EventDispatcher::sendKeyUp( const Keycode& keyCode, const Scancode& scancode,
 								 const Uint32& chr, const Uint32& mod ) {
 	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyUp, keyCode, scancode, chr, mod );
@@ -246,6 +264,8 @@ void EventDispatcher::sendMouseDown( Node* toNode, const Vector2i& pos, const Ui
 
 void EventDispatcher::setFocusNode( Node* node ) {
 	if ( NULL != mFocusNode && NULL != node && node != mFocusNode ) {
+		mSceneNode->getIME().stop();
+
 		mLossFocusNode = mFocusNode;
 
 		mFocusNode = node;

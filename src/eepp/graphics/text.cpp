@@ -82,6 +82,18 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String::View
 	return getTextWidth<String::View>( font, fontSize, string, style, tabWidth, outlineThickness );
 }
 
+Float Text::getTextWidth( const String& string, const FontStyleConfig& config,
+						  const Uint32& tabWidth ) {
+	return getTextWidth<String>( config.Font, config.CharacterSize, string, config.Style, tabWidth,
+								 config.OutlineThickness );
+}
+
+Float Text::getTextWidth( const String::View& string, const FontStyleConfig& config,
+						  const Uint32& tabWidth ) {
+	return getTextWidth<String::View>( config.Font, config.CharacterSize, string, config.Style,
+									   tabWidth, config.OutlineThickness );
+}
+
 Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,

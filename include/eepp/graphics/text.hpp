@@ -31,6 +31,12 @@ class EE_API Text {
 							   const Uint32& style, const Uint32& tabWidth = 4,
 							   const Float& outlineThickness = 0.f );
 
+	static Float getTextWidth( const String& string, const FontStyleConfig& config,
+							   const Uint32& tabWidth = 4 );
+
+	static Float getTextWidth( const String::View& string, const FontStyleConfig& config,
+							   const Uint32& tabWidth = 4 );
+
 	static Sizef draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
 					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
 					   const Color& outlineColor = Color::Black,

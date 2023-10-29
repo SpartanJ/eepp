@@ -38,11 +38,7 @@ enum class WindowFlashOperation {
 enum class WindowBackend : Uint32 { SDL2, Default };
 
 #ifndef EE_SCREEN_KEYBOARD_ENABLED
-#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
-#define EE_SCREEN_KEYBOARD_ENABLED true
-#else
 #define EE_SCREEN_KEYBOARD_ENABLED false
-#endif
 #endif
 
 /** @brief WindowSettings A small class that contains the window settings */
@@ -384,9 +380,17 @@ class EE_API Window {
 	/** Pop the callback id indicated. */
 	void popResizeCallback( const Uint32& CallbackId );
 
+	/** @brief Show the on-screen keyboard if supported. */
+	virtual void startOnScreenKeyboard();
+
+	/** @brief Hide the on-screen keyboard if supported. */
+	virtual void stopOnScreenKeyboard();
+
+	/** @return True if on-screen keyboard is active. */
+	virtual bool isOnScreenKeyboardActive() const;
+
 	/**
 	 * @brief Start accepting Unicode text input events.
-	 *        This function will show the on-screen keyboard if supported.
 	 *
 	 * @sa stopTextInput()
 	 * @sa setTextInputRect()
@@ -400,11 +404,10 @@ class EE_API Window {
 	 * @sa startTextInput()
 	 * @sa stopTextInput()
 	 */
-	virtual bool isTextInputActive();
+	virtual bool isTextInputActive() const;
 
 	/**
 	 * @brief Stop receiving any text input events.
-	 *        This function will hide the on-screen keyboard if supported.
 	 *
 	 * @sa startTextInput()
 	 * @sa hasScreenKeyboardSupport()
@@ -417,7 +420,15 @@ class EE_API Window {
 	 *
 	 * @sa startTextInput()
 	 */
-	virtual void setTextInputRect( Rect& rect );
+	virtual void setTextInputRect( const Rect& rect );
+
+	/**
+	 * Dismiss the composition window/IME without disabling the subsystem.
+	 *
+	 * @sa startTextInput
+	 * @sa stopTextInput
+	 */
+	virtual void clearComposition();
 
 	/**
 	 * @brief Returns whether the platform has some screen keyboard support.

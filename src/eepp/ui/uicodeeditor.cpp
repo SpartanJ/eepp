@@ -344,8 +344,18 @@ void UICodeEditor::draw() {
 		}
 	}
 
-	for ( const auto& sel : mDoc->getSelections() )
-		drawCursor( startScroll, lineHeight, sel.start() );
+	if ( hasFocus() && getUISceneNode()->getIME().isEditing() ) {
+		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
+							startScroll.y + cursor.line() * lineHeight + getLineOffset() );
+		FontStyleConfig config( mFontStyleConfig );
+		config.FontColor = mFontStyleConfig.getFontSelectedColor();
+		getUISceneNode()->getIME().draw( cursorPos, getFontHeight(), mFontStyleConfig,
+										 mFontStyleConfig.getFontSelectionBackColor(),
+										 Color( mCaretColor ).blendAlpha( mAlpha ) );
+	} else {
+		for ( const auto& sel : mDoc->getSelections() )
+			drawCursor( startScroll, lineHeight, sel.start() );
+	}
 
 	if ( mShowLineNumber ) {
 		drawLineNumbers( lineRange, startScroll,
@@ -864,6 +874,7 @@ Uint32 UICodeEditor::onFocus() {
 		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 		resetCursor();
 		mDoc->setActiveClient( this );
+		updateIMELocation();
 	}
 	for ( auto& plugin : mPlugins )
 		plugin->onFocus( this );
@@ -911,6 +922,23 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 			return 1;
 
 	return 0;
+}
+
+void UICodeEditor::updateIMELocation() {
+	if ( mDoc->getActiveClient() != this )
+		return;
+	updateScreenPos();
+	getUISceneNode()->getIME().setLocation(
+		getScreenPosition( mDoc->getSelection( true ).end() ).asInt() );
+}
+
+Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
+	UIWidget::onTextEditing( event );
+	mLastActivity.restart();
+	mDoc->textInput( "" ); // Reset selection
+	updateIMELocation();
+	invalidateDraw();
+	return 1;
 }
 
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
@@ -1619,6 +1647,7 @@ void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
 	resetCursor();
 	checkMatchingBrackets();
 	invalidateEditor();
+	updateIMELocation();
 	invalidateDraw();
 	onCursorPosChange();
 }
@@ -1792,6 +1821,7 @@ void UICodeEditor::setScrollX( const Float& val, bool emmitEvent ) {
 	mScroll.x = eefloor( eeclamp<Float>( val, 0.f, getMaxScroll().x ) );
 	if ( oldVal != mScroll.x ) {
 		invalidateDraw();
+		updateIMELocation();
 		if ( mHorizontalScrollBarEnabled && emmitEvent )
 			mHScrollBar->setValue( mScroll.x / getMaxScroll().x, false );
 	}
@@ -1802,6 +1832,7 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 	mScroll.y = eefloor( eeclamp<Float>( val, 0, getMaxScroll().y ) );
 	if ( oldVal != mScroll.y ) {
 		invalidateDraw();
+		updateIMELocation();
 		if ( mVerticalScrollBarEnabled && emmitEvent )
 			mVScrollBar->setValue( mScroll.y / getMaxScroll().y, false );
 	}
@@ -3791,6 +3822,9 @@ bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 	const SyntaxDefinition& definition =
 		mDoc->getHighlighter()->getSyntaxDefinitionFromTextPosition( start );
 	if ( !definition.getAutoCloseXMLTags() )
+		return false;
+	SyntaxStyleType type = mDoc->getHighlighter()->getTokenTypeAt( start );
+	if ( type == SyntaxStyleTypes::String || type == SyntaxStyleTypes::Comment )
 		return false;
 	size_t foundOpenPos = line.find_last_of( "<", start.column() - 1 );
 	if ( foundOpenPos == String::InvalidPos || start.column() - foundOpenPos < 1 )

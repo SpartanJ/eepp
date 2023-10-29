@@ -1,10 +1,10 @@
 #ifndef EE_SCENENODE_HPP
 #define EE_SCENENODE_HPP
 
+#include <eepp/scene/inputmethod.hpp>
 #include <eepp/scene/node.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/window/cursor.hpp>
-#include <unordered_set>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;
@@ -81,7 +81,7 @@ class EE_API SceneNode : public Node {
 
 	const Time& getElapsed() const;
 
-	bool usesInvalidation();
+	bool usesInvalidation() const;
 
 	void setUseGlobalCursors( const bool& use );
 
@@ -108,6 +108,8 @@ class EE_API SceneNode : public Node {
 	void setUpdateAllChilds( const bool& updateAllChilds );
 
 	const Float& getDPI() const;
+
+	InputMethod& getIME();
 
   protected:
 	friend class Node;
@@ -136,6 +138,7 @@ class EE_API SceneNode : public Node {
 	UnorderedSet<Node*> mScheduledUpdateRemove;
 	UnorderedSet<Node*> mMouseOverNodes;
 	Float mDPI;
+	InputMethod mIMEState;
 
 	virtual void onSizeChange();
 

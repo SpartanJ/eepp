@@ -471,13 +471,15 @@ class EE_API Node : public Transformable {
 	OriginPoint mScaleOriginPoint;
 	Float mAlpha;
 
-	virtual Uint32 onMessage( const NodeMessage* Msg );
+	virtual Uint32 onMessage( const NodeMessage* msg );
 
-	virtual Uint32 onTextInput( const TextInputEvent& Event );
+	virtual Uint32 onTextInput( const TextInputEvent& event );
 
-	virtual Uint32 onKeyDown( const KeyEvent& Event );
+	virtual Uint32 onTextEditing( const TextEditingEvent& event );
 
-	virtual Uint32 onKeyUp( const KeyEvent& Event );
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onKeyUp( const KeyEvent& event );
 
 	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 

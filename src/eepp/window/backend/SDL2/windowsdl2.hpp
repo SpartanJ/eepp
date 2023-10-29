@@ -10,7 +10,7 @@
 #include <eepp/window/window.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
-	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
+	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||       \
 	EE_PLATFORM == EE_PLATFORM_ANDROID
 #define EE_USE_WMINFO
 #endif
@@ -88,13 +88,21 @@ class EE_API WindowSDL : public Window {
 
 	SDL_Window* GetSDLWindow() const;
 
+	void startOnScreenKeyboard();
+
+	void stopOnScreenKeyboard();
+
+	bool isOnScreenKeyboardActive() const;
+
 	void startTextInput();
 
-	bool isTextInputActive();
+	bool isTextInputActive() const;
 
 	void stopTextInput();
 
-	void setTextInputRect( Rect& rect );
+	void setTextInputRect( const Rect& rect );
+
+	void clearComposition();
 
 	bool hasScreenKeyboardSupport();
 
