@@ -344,13 +344,13 @@ void UICodeEditor::draw() {
 		}
 	}
 
-	if ( hasFocus() && getUISceneNode()->getIME().isEditing() ) {
+	if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {
 		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
 							startScroll.y + cursor.line() * lineHeight + getLineOffset() );
 		FontStyleConfig config( mFontStyleConfig );
 		config.FontColor = mFontStyleConfig.getFontSelectedColor();
-		getUISceneNode()->getIME().draw( cursorPos, getFontHeight(), mFontStyleConfig,
-										 Color( mCaretColor ).blendAlpha( mAlpha ) );
+		getUISceneNode()->getWindow()->getIME().draw( cursorPos, getFontHeight(), config,
+													  Color( mCaretColor ).blendAlpha( mAlpha ) );
 	} else {
 		for ( const auto& sel : mDoc->getSelections() )
 			drawCursor( startScroll, lineHeight, sel.start() );
@@ -898,7 +898,7 @@ Uint32 UICodeEditor::onFocusLoss() {
 }
 
 Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
-	if ( getUISceneNode()->getIME().isEditing() )
+	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
 		return 0;
 
 	mLastActivity.restart();
@@ -931,7 +931,7 @@ void UICodeEditor::updateIMELocation() {
 		return;
 	updateScreenPos();
 	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
-	getUISceneNode()->getIME().setLocation( r.asInt() );
+	getUISceneNode()->getWindow()->getIME().setLocation( r.asInt() );
 }
 
 Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
@@ -944,7 +944,7 @@ Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
 }
 
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
-	if ( getUISceneNode()->getIME().isEditing() )
+	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
 		return 0;
 
 	mLastActivity.restart();

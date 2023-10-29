@@ -33,8 +33,7 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 	mHighlightInvalidation( false ),
 	mHighlightFocusColor( 234, 195, 123, 255 ),
 	mHighlightOverColor( 195, 123, 234, 255 ),
-	mHighlightInvalidationColor( 220, 0, 0, 255 ),
-	mIMEState( this ) {
+	mHighlightInvalidationColor( 220, 0, 0, 255 ) {
 	mNodeFlags |= NODE_FLAG_SCENENODE;
 	mSceneNode = this;
 
@@ -497,10 +496,6 @@ void SceneNode::setUpdateAllChilds( const bool& updateAllChilds ) {
 
 const Float& SceneNode::getDPI() const {
 	return mDPI;
-}
-
-InputMethod& SceneNode::getIME() {
-	return mIMEState;
 }
 
 }} // namespace EE::Scene

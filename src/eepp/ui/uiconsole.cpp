@@ -516,11 +516,12 @@ void UIConsole::draw() {
 												mFontStyleConfig );
 		Rectf r( { mScreenPos.x + mPaddingPx.Left + cursorPos, curY }, { cursorPos, lineHeight } );
 		updateIMELocation( r );
-		if ( hasFocus() && getUISceneNode()->getIME().isEditing() ) {
+		if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {
 			FontStyleConfig config( mFontStyleConfig );
 			config.FontColor = mFontStyleConfig.getFontSelectedColor();
-			getUISceneNode()->getIME().draw( r.getPosition(), getLineHeight(), mFontStyleConfig,
-											 Color( fontColor ).blendAlpha( mAlpha ) );
+			getUISceneNode()->getWindow()->getIME().draw( r.getPosition(), getLineHeight(),
+														  mFontStyleConfig,
+														  Color( fontColor ).blendAlpha( mAlpha ) );
 		} else {
 			Text& text2 = mTextCache[mTextCache.size() - 2].text;
 			text2.setStyleConfig( mFontStyleConfig );
@@ -794,7 +795,7 @@ void UIConsole::paste() {
 }
 
 Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
-	if ( getUISceneNode()->getIME().isEditing() )
+	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
 		return 0;
 
 	if ( ( event.getKeyCode() == KEY_TAB ) &&
@@ -888,7 +889,7 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
-	if ( getUISceneNode()->getIME().isEditing() )
+	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
 		return 0;
 
 	Input* input = getUISceneNode()->getWindow()->getInput();
@@ -923,7 +924,7 @@ Uint32 UIConsole::onTextEditing( const TextEditingEvent& event ) {
 void UIConsole::updateIMELocation( const Rectf& loc ) {
 	if ( mDoc.getActiveClient() != this )
 		return;
-	getUISceneNode()->getIME().setLocation( loc.asInt() );
+	getUISceneNode()->getWindow()->getIME().setLocation( loc.asInt() );
 }
 
 Uint32 UIConsole::onPressEnter() {

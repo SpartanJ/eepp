@@ -26,6 +26,10 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mNodeWasDragging( NULL ),
 	mNodeDragging( NULL ) {
 	mCbId = mInput->pushCallback( cb::Make1( this, &EventDispatcher::inputCallback ) );
+	mIMECbId = mWindow->getIME().addTextEditingCb(
+		[this]( const String& text, Int32 start, Int32 length ) {
+			sendTextEditing( text, start, length );
+		} );
 }
 
 EventDispatcher::~EventDispatcher() {
@@ -33,13 +37,18 @@ EventDispatcher::~EventDispatcher() {
 		 Engine::instance()->existsWindow( mWindow ) ) {
 		mInput->popCallback( mCbId );
 	}
+
+	if ( mIMECbId && NULL != Engine::existsSingleton() &&
+		 Engine::instance()->existsWindow( mWindow ) ) {
+		mWindow->getIME().removeTextEditingCb( mIMECbId );
+	}
 }
 
 void EventDispatcher::inputCallback( InputEvent* event ) {
 	switch ( event->Type ) {
 		case InputEvent::Window: {
 			if ( event->window.type == InputEvent::WindowEventType::WindowKeyboardFocusLost )
-				mSceneNode->getIME().stop();
+				mWindow->getIME().stop();
 			break;
 		}
 		case InputEvent::KeyUp:
@@ -211,7 +220,7 @@ void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& times
 
 void EventDispatcher::sendTextEditing( const String& text, const Int32& start,
 									   const Int32& length ) {
-	mSceneNode->getIME().onTextEditing( text, start, length );
+	mWindow->getIME().onTextEditing( text, start, length );
 	TextEditingEvent textEditingEvent =
 		TextEditingEvent( mFocusNode, Event::TextInput, text, start, length );
 	Node* node = mFocusNode;
@@ -266,7 +275,7 @@ void EventDispatcher::sendMouseDown( Node* toNode, const Vector2i& pos, const Ui
 
 void EventDispatcher::setFocusNode( Node* node ) {
 	if ( NULL != mFocusNode && NULL != node && node != mFocusNode ) {
-		mSceneNode->getIME().stop();
+		mWindow->getIME().stop();
 
 		mLossFocusNode = mFocusNode;
 

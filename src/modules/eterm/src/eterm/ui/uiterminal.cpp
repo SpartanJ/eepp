@@ -429,6 +429,16 @@ Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
 	return 1;
 }
 
+Uint32 UITerminal::onTextEditing( const TextEditingEvent& event ) {
+	UIWidget::onTextEditing( event );
+	if ( mTerm ) {
+		mTerm->onTextEditing( event.getText(), event.getStart(), event.getLength() );
+		invalidateDraw();
+		return 1;
+	}
+	return 0;
+}
+
 Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
 	if ( mUISceneNode->getUIEventDispatcher()->justGainedFocus() )
 		return 0;
@@ -502,12 +512,16 @@ void UITerminal::onSizeChange() {
 }
 
 Uint32 UITerminal::onFocus() {
+	getUISceneNode()->getWindow()->startTextInput();
+	updateScreenPos();
+	mTerm->setPosition( mScreenPosi.asFloat() );
 	mTerm->setFocus( true );
 	invalidateDraw();
 	return UIWidget::onFocus();
 }
 
 Uint32 UITerminal::onFocusLoss() {
+	getUISceneNode()->getWindow()->stopTextInput();
 	mTerm->setFocus( false );
 	invalidateDraw();
 	return UIWidget::onFocusLoss();

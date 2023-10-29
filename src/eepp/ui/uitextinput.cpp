@@ -147,14 +147,15 @@ void UITextInput::draw() {
 		}
 	}
 
-	if ( hasFocus() && getUISceneNode()->getIME().isEditing() ) {
+	if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {
 		updateIMELocation();
 		Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
 						 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
 		FontStyleConfig config( mFontStyleConfig );
 		config.FontColor = mFontStyleConfig.getFontSelectedColor();
-		getUISceneNode()->getIME().draw( cursor, getTextHeight(), mFontStyleConfig,
-										 Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
+		getUISceneNode()->getWindow()->getIME().draw(
+			cursor, getTextHeight(), mFontStyleConfig,
+			Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
 	} else {
 		drawWaitingCursor();
 	}
@@ -767,7 +768,7 @@ void UITextInput::registerKeybindings() {
 }
 
 Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
-	if ( getUISceneNode()->getIME().isEditing() )
+	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
 		return 0;
 
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
@@ -783,7 +784,7 @@ Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
-	if ( getUISceneNode()->getIME().isEditing() )
+	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
 		return 0;
 
 	if ( !mAllowEditing )
@@ -822,7 +823,7 @@ void UITextInput::updateIMELocation() {
 	Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
 					 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
 	Float h = mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSize() );
-	getUISceneNode()->getIME().setLocation( Rectf( cursor, { 0, h } ).asInt() );
+	getUISceneNode()->getWindow()->getIME().setLocation( Rectf( cursor, { 0, h } ).asInt() );
 }
 
 Uint32 UITextInput::onTextEditing( const TextEditingEvent& event ) {

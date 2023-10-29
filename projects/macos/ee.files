@@ -225,7 +225,6 @@
 ../../include/eepp/scene/eventdispatcher.hpp
 ../../include/eepp/scene/event.hpp
 ../../include/eepp/scene.hpp
-../../include/eepp/scene/inputmethod.hpp
 ../../include/eepp/scene/keyevent.hpp
 ../../include/eepp/scene/mouseevent.hpp
 ../../include/eepp/scene/node.hpp
@@ -454,6 +453,7 @@
 ../../include/eepp/window/inputevent.hpp
 ../../include/eepp/window/inputfinger.hpp
 ../../include/eepp/window/inputhelper.hpp
+../../include/eepp/window/inputmethod.hpp
 ../../include/eepp/window/input.hpp
 ../../include/eepp/window/joycodes.hpp
 ../../include/eepp/window/joystick.hpp
@@ -624,7 +624,6 @@
 ../../src/eepp/graphics/vertexbuffervbo.cpp
 ../../src/eepp/graphics/view.cpp
 ../../src/eepp/main/eepp_main.cpp
-../../src/eepp/scene/inputmethod.cpp
 ../../src/eepp/ui/doc/languages/angelscript.cpp
 ../../src/eepp/ui/doc/languages/angelscript.hpp
 ../../src/eepp/ui/doc/languages/batchscript.cpp
@@ -1119,6 +1118,7 @@
 ../../src/eepp/window/input.cpp
 ../../src/eepp/window/inputfinger.cpp
 ../../src/eepp/window/inputhelper.cpp
+../../src/eepp/window/inputmethod.cpp
 ../../src/eepp/window/joystick.cpp
 ../../src/eepp/window/joystickmanager.cpp
 ../../src/eepp/window/keycodes.cpp

@@ -129,6 +129,7 @@ class EE_API EventDispatcher {
 	Vector2i mMouseDownPos;
 	Vector2i mClickPos;
 	Int32 mCbId;
+	Uint32 mIMECbId;
 	bool mFirstPress;
 	bool mDisableMousePress{ false };
 	bool mJustDisabledMousePress{ false };

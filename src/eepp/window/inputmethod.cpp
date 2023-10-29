@@ -1,17 +1,23 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
-#include <eepp/scene/inputmethod.hpp>
-#include <eepp/scene/scenenode.hpp>
+#include <eepp/window/inputmethod.hpp>
 #include <eepp/window/window.hpp>
 
-namespace EE { namespace Scene {
+namespace EE { namespace Window {
+
+InputMethod::InputMethod( EE::Window::Window* window ) : mWindow( window ) {}
+
+void InputMethod::sendTextEditing( const String& txt, Int32 start, Int32 length ) {
+	for ( const auto& cb : mEditingCbs )
+		cb.second( txt, start, length );
+}
 
 void InputMethod::setLocation( Rect rect ) {
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 	rect = PixelDensity::pxToDpI( rect );
 #endif
 	if ( rect != mLastLocation ) {
-		mSceneNode->getWindow()->setTextInputRect( rect );
+		mWindow->setTextInputRect( rect );
 		mLastLocation = std::move( rect );
 	}
 }
@@ -27,9 +33,9 @@ void InputMethod::reset() {
 
 void InputMethod::stop() {
 	if ( mEditing ) {
-		mSceneNode->getWindow()->clearComposition();
-		mSceneNode->getEventDispatcher()->sendTextEditing( "", 0, 0 );
+		mWindow->clearComposition();
 		reset();
+		sendTextEditing( "", 0, 0 );
 	}
 }
 
@@ -73,4 +79,13 @@ void InputMethod::draw( const Vector2f& screenPos, const Float& lineHeight,
 		Text::draw( mState.text, screenPos, fontStyle );
 }
 
-}} // namespace EE::Scene
+Uint32 InputMethod::addTextEditingCb( TextEditingCb cb ) {
+	mEditingCbs[++mLastCb] = std::move( cb );
+	return mLastCb;
+}
+
+void InputMethod::removeTextEditingCb( Uint32 cbId ) {
+	mEditingCbs.erase( cbId );
+}
+
+}} // namespace EE::Window

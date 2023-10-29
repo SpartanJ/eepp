@@ -5,6 +5,7 @@
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/view.hpp>
 #include <eepp/window/base.hpp>
+#include <eepp/window/inputmethod.hpp>
 
 namespace EE { namespace Window {
 
@@ -501,6 +502,8 @@ class EE_API Window {
 	virtual bool showMessageBox( const MessageBoxType& type, const std::string& title,
 								 const std::string& message );
 
+	InputMethod& getIME();
+
   protected:
 	friend class Engine;
 	friend class Input;
@@ -516,6 +519,7 @@ class EE_API Window {
 	WindowRequestCloseCallback mCloseRequestCallback;
 	WindowQuitCallback mQuitCallback;
 	Sizei mLastWindowedSize;
+	InputMethod mIME;
 
 	class FrameData {
 	  public:

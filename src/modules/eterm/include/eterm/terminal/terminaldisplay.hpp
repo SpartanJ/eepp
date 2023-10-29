@@ -195,6 +195,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	virtual void onTextInput( const Uint32& chr );
 
+	virtual void onTextEditing( const String& text, const Int32& start, const Int32& length );
+
 	virtual void onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
 							const Scancode& scancode );
 
@@ -345,6 +347,8 @@ class TerminalDisplay : public ITerminalDisplay {
 					const float& h );
 
 	void drawboxlines( float x, float y, float w, float h, Color fg, ushort bd );
+
+	Rectf updateIMELocation();
 };
 
 }} // namespace eterm::Terminal

@@ -1,5 +1,5 @@
-#ifndef EE_SCENE_IMESTATE_HPP
-#define EE_SCENE_IMESTATE_HPP
+#ifndef EE_WINDOW_IMESTATE_HPP
+#define EE_WINDOW_IMESTATE_HPP
 
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
@@ -8,12 +8,14 @@
 using namespace EE::Math;
 using namespace EE::Graphics;
 
-namespace EE { namespace Scene {
+namespace EE { namespace Window {
 
-class SceneNode;
+class Window;
 
 class EE_API InputMethod {
   public:
+	typedef std::function<void( const String&, Int32, Int32 )> TextEditingCb;
+
 	struct State {
 		String text;
 		Int32 start{ 0 };
@@ -36,17 +38,25 @@ class EE_API InputMethod {
 			   const Color& lineColor = Color::Transparent,
 			   const Color& backgroundColor = Color::Transparent, bool drawText = false );
 
+	Uint32 addTextEditingCb( TextEditingCb cb );
+
+	void removeTextEditingCb( Uint32 cbId );
+
   protected:
-	friend class SceneNode;
+	friend class Window;
 
-	explicit InputMethod( SceneNode* sceneNode ) : mSceneNode( sceneNode ) {}
+	explicit InputMethod( EE::Window::Window* window );
 
-	SceneNode* mSceneNode{ nullptr };
+	EE::Window::Window* mWindow{ nullptr };
 	InputMethod::State mState;
 	bool mEditing{ false };
 	Rect mLastLocation;
+	Uint32 mLastCb{ 0 };
+	std::map<Uint32, TextEditingCb> mEditingCbs;
+
+	void sendTextEditing( const String& txt, Int32 start, Int32 length );
 };
 
-}} // namespace EE::Scene
+}} // namespace EE::Window
 
-#endif // EE_SCENE_IMESTATE_HPP
+#endif // EE_WINDOW_IMESTATE_HPP

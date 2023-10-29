@@ -1402,6 +1402,16 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 	if ( mFrameBuffer )
 		drawFrameBuffer();
 
+	if ( hasFocus() && mWindow->getIME().isEditing() ) {
+		Rectf r = updateIMELocation();
+		FontStyleConfig config;
+		config.Font = mFont;
+		config.CharacterSize = mFontSize;
+		config.FontColor = termColor( mCursorGlyph.bg, mColors );
+		mWindow->getIME().draw( r.getPosition(), r.getHeight(), config, config.FontColor,
+								termColor( mCursorGlyph.fg, mColors ), true );
+	}
+
 	mDrawing = false;
 	mDirty = false;
 }
@@ -1489,7 +1499,7 @@ void TerminalDisplay::onProcessExit( int exitCode ) {
 }
 
 void TerminalDisplay::onTextInput( const Uint32& chr ) {
-	if ( !mTerminal )
+	if ( !mTerminal || mWindow->getIME().isEditing() )
 		return;
 	String input;
 	input.push_back( chr );
@@ -1497,8 +1507,17 @@ void TerminalDisplay::onTextInput( const Uint32& chr ) {
 	mTerminal->ttywrite( utf8Input.c_str(), utf8Input.size(), 1 );
 }
 
+void TerminalDisplay::onTextEditing( const String& text, const Int32& start, const Int32& length ) {
+	if ( !mTerminal )
+		return;
+	invalidateCursor();
+	updateIMELocation();
+}
+
 void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, const Uint32& mod,
 								 const Scancode& scancode ) {
+	if ( mWindow->getIME().isEditing() )
+		return;
 	Uint32 smod = sanitizeMod( mod );
 
 	auto scIt = terminalKeyMap.Shortcuts().find( keyCode );
@@ -1651,6 +1670,9 @@ void TerminalDisplay::invalidateLines() {
 	mDirty = true;
 }
 void TerminalDisplay::setFocus( bool focus ) {
+	if ( focus )
+		updateIMELocation();
+
 	if ( focus == mFocus )
 		return;
 	mFocus = focus;
@@ -1725,6 +1747,18 @@ void TerminalDisplay::initVBOs() {
 	mVBStyles.clear();
 	for ( Uint32 i = 0; i < mRows; ++i )
 		mVBStyles.emplace_back( createRowVBO( false ) );
+}
+
+Rectf TerminalDisplay::updateIMELocation() {
+	if ( !Engine::isRunninMainThread() )
+		return {};
+	auto fontSize = mFont->getFontHeight( mFontSize );
+	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
+	auto pos = mPosition.floor() + Vector2f( mPadding.Left, mPadding.Top );
+	Rectf r( { pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * fontSize },
+			 { spaceCharAdvanceX, fontSize } );
+	mWindow->getIME().setLocation( r.asInt() );
+	return r;
 }
 
 }} // namespace eterm::Terminal

@@ -44,7 +44,8 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard* Cli
 	mInput( Input ),
 	mCursorManager( CursorManager ),
 	mCurrentView( NULL ),
-	mNumCallBacks( 0 ) {
+	mNumCallBacks( 0 ),
+	mIME( this ) {
 	mWindow.WindowConfig = Settings;
 	mWindow.ContextConfig = Context;
 	setFrameRateLimit( Context.FrameRateLimit );
@@ -347,6 +348,10 @@ const Sizei& Window::getLastWindowedSize() const {
 
 bool Window::showMessageBox( const MessageBoxType&, const std::string&, const std::string& ) {
 	return false;
+}
+
+InputMethod& Window::getIME() {
+	return mIME;
 }
 
 void Window::calculateFps() {
