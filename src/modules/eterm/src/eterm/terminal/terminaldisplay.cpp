@@ -1499,7 +1499,7 @@ void TerminalDisplay::onProcessExit( int exitCode ) {
 }
 
 void TerminalDisplay::onTextInput( const Uint32& chr ) {
-	if ( !mTerminal || mWindow->getIME().isEditing() )
+	if ( !mTerminal )
 		return;
 	String input;
 	input.push_back( chr );
@@ -1507,7 +1507,7 @@ void TerminalDisplay::onTextInput( const Uint32& chr ) {
 	mTerminal->ttywrite( utf8Input.c_str(), utf8Input.size(), 1 );
 }
 
-void TerminalDisplay::onTextEditing( const String& text, const Int32& start, const Int32& length ) {
+void TerminalDisplay::onTextEditing( const String&, const Int32&, const Int32& ) {
 	if ( !mTerminal )
 		return;
 	invalidateCursor();
@@ -1752,8 +1752,8 @@ void TerminalDisplay::initVBOs() {
 Rectf TerminalDisplay::updateIMELocation() {
 	if ( !Engine::isRunninMainThread() )
 		return {};
-	auto fontSize = mFont->getFontHeight( mFontSize );
-	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
+	Float fontSize = mFont->getFontHeight( mFontSize );
+	Float spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
 	auto pos = mPosition.floor() + Vector2f( mPadding.Left, mPadding.Top );
 	Rectf r( { pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * fontSize },
 			 { spaceCharAdvanceX, fontSize } );

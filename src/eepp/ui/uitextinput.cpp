@@ -784,9 +784,6 @@ Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
-	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
-		return 0;
-
 	if ( !mAllowEditing )
 		return 0;
 	Input* input = getUISceneNode()->getWindow()->getInput();

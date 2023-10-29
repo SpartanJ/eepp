@@ -898,9 +898,6 @@ Uint32 UICodeEditor::onFocusLoss() {
 }
 
 Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
-	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
-		return 0;
-
 	mLastActivity.restart();
 
 	if ( mLocked || NULL == mFont )

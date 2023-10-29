@@ -889,9 +889,6 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
-	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
-		return 0;
-
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
