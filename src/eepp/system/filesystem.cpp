@@ -208,7 +208,7 @@ bool FileSystem::fileHide( const std::string& filepath ) {
 	return SetFileAttributesW( (LPCWSTR)String( filepath ).toWideString().c_str(), 
 		FILE_ATTRIBUTE_HIDDEN );
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-	return 0 == chflags( filename.c_str(), UF_HIDDEN );
+	return 0 == chflags( filepath.c_str(), UF_HIDDEN );
 #else
 	return false;
 #endif
