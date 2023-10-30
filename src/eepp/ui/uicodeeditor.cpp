@@ -869,9 +869,9 @@ void UICodeEditor::invalidateLongestLineWidth() {
 
 Uint32 UICodeEditor::onFocus() {
 	if ( !mLocked ) {
-		getUISceneNode()->getWindow()->startTextInput();
 		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 		resetCursor();
+		getUISceneNode()->getWindow()->startTextInput();
 		mDoc->setActiveClient( this );
 		updateIMELocation();
 	}
@@ -1918,8 +1918,12 @@ const bool& UICodeEditor::isLocked() const {
 void UICodeEditor::setLocked( bool locked ) {
 	if ( mLocked != locked ) {
 		mLocked = locked;
-		if ( !mLocked && hasFocus() )
+		if ( !mLocked && hasFocus() ) {
+			resetCursor();
+			getUISceneNode()->getWindow()->startTextInput();
 			mDoc->setActiveClient( this );
+			updateIMELocation();
+		}
 		invalidateDraw();
 	}
 }
