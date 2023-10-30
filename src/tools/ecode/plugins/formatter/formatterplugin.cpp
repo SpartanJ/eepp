@@ -372,6 +372,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 		doc->save( fileString, true );
 		FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(),
 							   fileString.getSize() );
+		FileSystem::fileHide( tmpPath );
 		runFormatter( editor, formatter, tmpPath );
 
 		if ( formatter.type == FormatterType::Inplace ) {

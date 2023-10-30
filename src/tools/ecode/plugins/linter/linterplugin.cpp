@@ -776,6 +776,7 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 		doc->save( fileString, true );
 		FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(),
 							   fileString.getSize() );
+		FileSystem::fileHide( tmpPath );
 		runLinter( doc, linter, tmpPath );
 		FileSystem::fileRemove( tmpPath );
 	} else {

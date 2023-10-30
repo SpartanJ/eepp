@@ -203,6 +203,17 @@ bool FileSystem::fileRemove( const std::string& filepath ) {
 #endif
 }
 
+bool FileSystem::fileHide( const std::string& filepath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return SetFileAttributesW( (LPCWSTR)String( filepath ).toWideString().c_str(), 
+		FILE_ATTRIBUTE_HIDDEN );
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	return 0 == chflags( filename.c_str(), UF_HIDDEN );
+#else
+	return false;
+#endif
+}
+
 Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
 	struct stat st;
 	int res = stat( filepath.c_str(), &st );

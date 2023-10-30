@@ -329,6 +329,7 @@ void App::saveTmpDocument( TextDocument& doc,
 	IOStreamString fileString;
 	doc.save( fileString, true );
 	FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(), fileString.getSize() );
+	FileSystem::fileHide( tmpPath );
 	action( tmpPath );
 	FileSystem::fileRemove( tmpPath );
 }
