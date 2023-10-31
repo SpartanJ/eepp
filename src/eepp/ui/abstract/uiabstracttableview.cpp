@@ -338,6 +338,16 @@ void UIAbstractTableView::updateColumnsWidth() {
 	}
 }
 
+Uint32 UIAbstractTableView::onFocus() {
+	getUISceneNode()->getWindow()->startTextInput();
+	return UIAbstractView::onFocus();
+}
+
+Uint32 UIAbstractTableView::onFocusLoss() {
+	getUISceneNode()->getWindow()->stopTextInput();
+	return UIAbstractView::onFocusLoss();
+}
+
 const Float& UIAbstractTableView::getDragBorderDistance() const {
 	return mDragBorderDistance;
 }

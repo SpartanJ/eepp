@@ -146,6 +146,13 @@ bool StatusBuildOutputController::searchFindAndAddStatusResult(
 	return false;
 }
 
+static void safeInsertBuffer( TextDocument& doc, const std::string& buffer ) {
+	auto sels = doc.getSelections();
+	doc.setSelection( doc.endOfDoc() );
+	doc.textInput( buffer, false );
+	doc.setSelection( sels );
+}
+
 void StatusBuildOutputController::runBuild( const std::string& buildName,
 											const std::string& buildType,
 											const ProjectBuildOutputParser& outputParser ) {
@@ -224,7 +231,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		[this]( auto, std::string buffer, const ProjectBuildCommand* cmd ) {
 			mBuildOutput->runOnMainThread( [this, buffer]() {
 				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer, false );
+				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
 				if ( scrollToBottom )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
@@ -260,7 +267,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
 				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer, false );
+				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
 				if ( scrollToBottom )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
@@ -325,7 +332,7 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 		[this]( auto, auto buffer, auto ) {
 			mBuildOutput->runOnMainThread( [this, buffer]() {
 				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer, false );
+				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
 				if ( scrollToBottom )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
@@ -343,7 +350,7 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
 				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer, false );
+				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
 				if ( scrollToBottom )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
