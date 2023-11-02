@@ -1852,6 +1852,8 @@ void UICodeEditor::setScrollX( const Float& val, bool emmitEvent ) {
 	if ( oldVal != mScroll.x ) {
 		invalidateDraw();
 		updateIMELocation();
+		if ( emmitEvent )
+			sendCommonEvent( Event::OnScrollChange );
 		if ( mHorizontalScrollBarEnabled && emmitEvent )
 			mHScrollBar->setValue( mScroll.x / getMaxScroll().x, false );
 	}
@@ -1863,6 +1865,8 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 	if ( oldVal != mScroll.y ) {
 		invalidateDraw();
 		updateIMELocation();
+		if ( emmitEvent )
+			sendCommonEvent( Event::OnScrollChange );
 		if ( mVerticalScrollBarEnabled && emmitEvent )
 			mVScrollBar->setValue( mScroll.y / getMaxScroll().y, false );
 	}

@@ -196,8 +196,6 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
 	mBuildOutput->getDocument().getHighlighter()->setMaxTokenizationLength( 2048 );
-	mBuildOutput->getVScrollBar()->on( Event::OnValueChange,
-									   [this]( auto ) { mScrollLocked = false; } );
 	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton( mApp );
@@ -313,8 +311,6 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 
 	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
-	mBuildOutput->getVScrollBar()->on( Event::OnValueChange,
-									   [this]( auto ) { mScrollLocked = false; } );
 	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton( mApp );
@@ -602,6 +598,9 @@ void StatusBuildOutputController::createContainer() {
 	} );
 
 	mBuildOutput = editor;
+	mBuildOutput->on( Event::OnScrollChange, [this]( auto ) {
+		mScrollLocked = mBuildOutput->getMaxScroll().y == mBuildOutput->getScroll().y;
+	} );
 	mContainer->setVisible( false );
 	mContainer->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
 	mContainer->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );

@@ -109,6 +109,7 @@ class EE_API Event {
 		OnCursorPosChangeInteresting,
 		OnCopy,
 		OnRowCreated,
+		OnScrollChange,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 
