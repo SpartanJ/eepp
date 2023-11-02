@@ -74,7 +74,8 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 		{ "hammer", 0xedee },
 		{ "eraser", 0xec9e },
 		{ "file-search", 0xed05 },
-		{ "window", 0xf2c4 } };
+		{ "window", 0xf2c4 },
+		{ "file-lock-fill", 0xecf2 } };
 
 	for ( const auto& icon : icons )
 		iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );

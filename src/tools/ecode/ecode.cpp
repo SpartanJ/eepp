@@ -2285,6 +2285,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 									 : mConfig.doc;
 	editor->setFontSize( config.fontSize.asPixels( 0, Sizef(), mUISceneNode->getDPI() ) );
 	editor->setEnableColorPickerOnSelection( true );
+	editor->setDisplayLockedIcon( true );
 	editor->setColorScheme( mSplitter->getCurrentColorScheme() );
 	editor->setShowLineNumber( config.showLineNumbers );
 	editor->setShowWhitespaces( config.showWhiteSpaces );
@@ -2901,12 +2902,12 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 	} );
 	mProjectTreeView->on( Event::KeyDown, [this]( const Event* event ) {
 		if ( !mFileSystemModel )
-			return 0;
+			return;
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( keyEvent->getKeyCode() == KEY_F2 || keyEvent->getKeyCode() == KEY_DELETE ) {
 			ModelIndex modelIndex = mProjectTreeView->getSelection().first();
 			if ( !modelIndex.isValid() )
-				return 0;
+				return;
 			Variant vPath( mProjectTreeView->getModel()->data( modelIndex, ModelRole::Custom ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				FileInfo fileInfo( vPath.asCStr() );
@@ -2916,19 +2917,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 					mSettings->deleteFileDialog( fileInfo );
 				}
 			}
-			return 1;
 		}
-
-		if ( mSplitter->curEditorExistsAndFocused() ) {
-			std::string cmd = mSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
-				{ keyEvent->getKeyCode(), keyEvent->getMod() } );
-			if ( !cmd.empty() && mSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
-				mSplitter->getCurEditor()->getDocument().execute( cmd, mSplitter->getCurEditor() );
-				return 1;
-			}
-		}
-
-		return 0;
 	} );
 
 	bool hasPosition = pathHasPosition( path );

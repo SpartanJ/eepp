@@ -319,7 +319,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		}
 	} );
 
-	mDocMenu->addCheckBox( i18n( "read_only", "Read Only" ) )->setId( "read_only" );
+	mDocMenu->addCheckBox( i18n( "read_only", "Read Only" ), false, getKeybind( "lock-toggle" ) )
+		->setId( "read_only" );
 
 	mDocMenu
 		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),

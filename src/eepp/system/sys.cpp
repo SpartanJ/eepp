@@ -624,6 +624,8 @@ Uint64 Sys::getProcessID() {
 	return GetCurrentProcessId();
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	return getpid();
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return 0; // just return 0
 #else
 #warning Sys::getProcessID() not implemented in this platform
 #endif
@@ -1157,9 +1159,7 @@ static void windowsSystem( const std::string& programPath ) {
 	ZeroMemory( &pi, sizeof( pi ) );
 
 	if ( CreateProcessW( NULL, (LPWSTR)String( programPath ).toWideString().c_str(), NULL, NULL,
-						 FALSE, 0,
-						 NULL,
-						NULL, &si, &pi ) ) {
+						 FALSE, 0, NULL, NULL, &si, &pi ) ) {
 		CloseHandle( pi.hProcess );
 		CloseHandle( pi.hThread );
 	}
@@ -1171,6 +1171,14 @@ void Sys::execute( const std::string& cmd ) {
 	windowsSystem( cmd );
 #else
 	std::system( cmd.c_str() );
+#endif
+}
+
+bool Sys::isMobile() {
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+	return true;
+#else
+	return false;
 #endif
 }
 

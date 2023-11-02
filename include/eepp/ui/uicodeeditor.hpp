@@ -24,6 +24,7 @@ namespace Tools {
 class UIDocFindReplace;
 }
 
+class UIIcon;
 class UICodeEditor;
 class UIWindow;
 class UIScrollBar;
@@ -625,7 +626,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setJumpLinesLength( size_t jumpLinesLength );
 
-  protected:
+	std::string getFileLockIconName() const;
+
+	void setFileLockIconName( const std::string& fileLockIconName );
+
+	bool getDisplayLockedIcon() const;
+	void setDisplayLockedIcon(bool displayLockedIcon);
+
+	protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };
@@ -662,6 +670,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mFindReplaceEnabled{ true };
 	bool mShowIndentationGuides{ false };
 	bool mShowLinesRelativePosition{ false };
+	bool mDisplayLockedIcon{ false };
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
@@ -733,6 +742,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Uint64 mLastExecuteEventId{ 0 };
 	Text mLineTextCache;
 	size_t mJumpLinesLength{ 5 };
+	UIIcon* mFileLockIcon{ nullptr };
+	std::string mFileLockIconName{ "file-lock-fill" };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -915,6 +926,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	template <typename StringType> Float getTextWidth( const StringType& text ) const;
 
 	void updateIMELocation();
+
+	void drawLockedIcon( const Vector2f start );
 };
 
 }} // namespace EE::UI

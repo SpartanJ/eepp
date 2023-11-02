@@ -147,10 +147,7 @@ bool StatusBuildOutputController::searchFindAndAddStatusResult(
 }
 
 static void safeInsertBuffer( TextDocument& doc, const std::string& buffer ) {
-	auto sels = doc.getSelections();
-	doc.setSelection( doc.endOfDoc() );
-	doc.textInput( buffer, false );
-	doc.setSelection( sels );
+	doc.insert( 0, doc.endOfDoc(), buffer );
 }
 
 void StatusBuildOutputController::runBuild( const std::string& buildName,
@@ -199,6 +196,9 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
 	mBuildOutput->getDocument().getHighlighter()->setMaxTokenizationLength( 2048 );
+	mBuildOutput->getVScrollBar()->on( Event::OnValueChange,
+									   [this]( auto ) { mScrollLocked = false; } );
+	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton( mApp );
 	if ( buildButton )
@@ -230,9 +230,8 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		buildType,
 		[this]( auto, std::string buffer, const ProjectBuildCommand* cmd ) {
 			mBuildOutput->runOnMainThread( [this, buffer]() {
-				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
 				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
-				if ( scrollToBottom )
+				if ( mScrollLocked )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
 
@@ -266,9 +265,8 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 			}
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
-				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
 				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
-				if ( scrollToBottom )
+				if ( mScrollLocked )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
 
@@ -315,6 +313,9 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 
 	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
+	mBuildOutput->getVScrollBar()->on( Event::OnValueChange,
+									   [this]( auto ) { mScrollLocked = false; } );
+	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton( mApp );
 	bool enableBuildButton = false;
@@ -331,9 +332,8 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 		buildType,
 		[this]( auto, auto buffer, auto ) {
 			mBuildOutput->runOnMainThread( [this, buffer]() {
-				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
 				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
-				if ( scrollToBottom )
+				if ( mScrollLocked )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
 		},
@@ -349,9 +349,8 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 			}
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
-				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
 				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
-				if ( scrollToBottom )
+				if ( mScrollLocked )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
 

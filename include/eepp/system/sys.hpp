@@ -100,6 +100,9 @@ class EE_API Sys {
 
 	/** Executes a command */
 	static void execute( const std::string& cmd );
+
+	/** @return True if current running platform / os is a mobile one */
+	static bool isMobile();
 };
 
 }} // namespace EE::System

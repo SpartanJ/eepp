@@ -71,6 +71,7 @@ class StatusBuildOutputController {
 	std::vector<StatusMessage> mStatusResults;
 	std::vector<PatternHolder> mPatternHolder;
 	std::string mCurLineBuffer;
+	bool mScrollLocked{ true };
 
 	void createContainer();
 

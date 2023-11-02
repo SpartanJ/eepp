@@ -339,12 +339,14 @@ void UIAbstractTableView::updateColumnsWidth() {
 }
 
 Uint32 UIAbstractTableView::onFocus() {
-	getUISceneNode()->getWindow()->startTextInput();
+	if ( !Sys::isMobile() )
+		getUISceneNode()->getWindow()->startTextInput();
 	return UIAbstractView::onFocus();
 }
 
 Uint32 UIAbstractTableView::onFocusLoss() {
-	getUISceneNode()->getWindow()->stopTextInput();
+	if ( !Sys::isMobile() )
+		getUISceneNode()->getWindow()->stopTextInput();
 	return UIAbstractView::onFocusLoss();
 }
 

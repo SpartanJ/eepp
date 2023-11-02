@@ -369,6 +369,9 @@ void UICodeEditor::draw() {
 	if ( mMinimapEnabled )
 		drawMinimap( screenStart, lineRange );
 
+	if ( mLocked && mDisplayLockedIcon )
+		drawLockedIcon( start );
+
 	for ( auto& plugin : mPlugins )
 		plugin->postDraw( this, startScroll, lineHeight, cursor );
 }
@@ -929,6 +932,31 @@ void UICodeEditor::updateIMELocation() {
 	updateScreenPos();
 	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
 	getUISceneNode()->getWindow()->getIME().setLocation( r.asInt() );
+}
+
+void UICodeEditor::drawLockedIcon( const Vector2f start ) {
+	if ( mFileLockIcon == nullptr && !mFileLockIconName.empty() ) {
+		mFileLockIcon = getUISceneNode()->findIcon( mFileLockIconName );
+		if ( mFileLockIcon == nullptr )
+			return;
+	}
+
+	Drawable* fileLockIcon = mFileLockIcon->getSize( PixelDensity::dpToPxI( 16 ) );
+	if ( fileLockIcon == nullptr )
+		return;
+
+	Float w = fileLockIcon->getPixelsSize().getWidth();
+	Float posX =
+		mMinimapEnabled
+			? getMinimapRect( getScreenStart() ).Left - w
+			: ( start.x + mSize.getWidth() -
+				( mVScrollBar->isVisible() ? mVScrollBar->getPixelsSize().getWidth() : 0 ) ) -
+				  mPadding.Right - w;
+	Color col( fileLockIcon->getColor() );
+	fileLockIcon->setColor( Color( mFontStyleConfig.getFontColor() ).blendAlpha( mAlpha ) );
+	Float margin = PixelDensity::dpToPxI( 4 );
+	fileLockIcon->draw( { posX - margin, start.y + margin } );
+	fileLockIcon->setColor( col );
 }
 
 Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
@@ -2588,6 +2616,25 @@ size_t UICodeEditor::getJumpLinesLength() const {
 
 void UICodeEditor::setJumpLinesLength( size_t jumpLinesLength ) {
 	mJumpLinesLength = jumpLinesLength;
+}
+
+std::string UICodeEditor::getFileLockIconName() const {
+	return mFileLockIconName;
+}
+
+void UICodeEditor::setFileLockIconName( const std::string& fileLockIconName ) {
+	if ( mFileLockIconName != fileLockIconName ) {
+		mFileLockIconName = fileLockIconName;
+		mFileLockIcon = nullptr;
+	}
+}
+
+bool UICodeEditor::getDisplayLockedIcon() const {
+	return mDisplayLockedIcon;
+}
+
+void UICodeEditor::setDisplayLockedIcon( bool displayLockedIcon ) {
+	mDisplayLockedIcon = displayLockedIcon;
 }
 
 void UICodeEditor::indent() {
