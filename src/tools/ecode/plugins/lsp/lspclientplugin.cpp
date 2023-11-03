@@ -898,7 +898,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					  "lsp-rename-symbol-under-cursor",
 					  "lsp-refresh-semantic-highlighting",
 					  "lsp-format-range",
-					  "lsp-plugin-reload" };
+					  "lsp-plugin-restart" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -1203,7 +1203,7 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 				static_cast<UICodeEditor*>( client )->getDocumentRef() );
 		} );
 
-		doc.setCommand( "lsp-plugin-reload", [this] { mManager->reload( getId() ); } );
+		doc.setCommand( "lsp-plugin-restart", [this] { mManager->reload( getId() ); } );
 	}
 
 	std::vector<Uint32> listeners;
@@ -1373,7 +1373,7 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
 		addFn( "lsp-switch-header-source", "Switch Header/Source", "filetype-hpp" );
 
-	addFn( "lsp-plugin-reload", "LSP Client Reload", "refresh" );
+	addFn( "lsp-plugin-restart", "Restart LSP Client", "refresh" );
 
 #ifdef EE_DEBUG
 	if ( server->getDefinition().name == "clangd" )
