@@ -7,7 +7,7 @@
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_MACOS
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 #define SUBPROCESS_USE_POSIX_SPAWN
 #endif
 #include <thirdparty/subprocess/subprocess.h>

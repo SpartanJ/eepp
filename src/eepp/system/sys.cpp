@@ -50,6 +50,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 #include <mach-o/dyld.h>
+#include <spawn.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
@@ -1170,7 +1171,16 @@ void Sys::execute( const std::string& cmd ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	windowsSystem( cmd );
 #else
-	std::system( cmd.c_str() );
+	pid_t pid = fork();
+	if ( pid == 0 ) {
+		std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
+		std::vector<const char*> strings;
+		for ( size_t i = 0; i < cmdArr.size(); ++i )
+			strings.push_back( cmdArr[i].c_str() );
+		strings.push_back( NULL );
+		execvp( strings[0], (char* const*)strings.data() );
+		exit( 0 );
+	}
 #endif
 }
 
