@@ -752,8 +752,8 @@ void UIConsole::cmdShowFps( const std::vector<String>& params ) {
 	privPushText( "Valid parameters are 0 ( hide ) or 1 ( show )." );
 }
 
-void UIConsole::writeLog( const std::string& text ) {
-	std::vector<String> strings = String::split( String( text ) );
+void UIConsole::writeLog( const std::string_view& text ) {
+	std::vector<std::string_view> strings = String::split( text );
 	for ( size_t i = 0; i < strings.size(); i++ )
 		privPushText( strings[i] );
 }

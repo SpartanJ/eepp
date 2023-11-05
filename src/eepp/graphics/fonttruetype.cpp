@@ -363,17 +363,20 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 	}
 
 	Uint32 glyphIndex = getGlyphIndex( codePoint );
-	if ( 0 == glyphIndex && mEnableFallbackFont && FontManager::instance()->getFallbackFont() &&
-		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
-		FontTrueType* fallbackFont =
-			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
-		if ( 0 != fallbackFont->getGlyphIndex( codePoint ) ) {
-			if ( mIsMonospace && mEnableDynamicMonospace ) {
-				mIsMonospaceComplete = false;
-				mUsingFallback = true;
+	if ( 0 == glyphIndex && mEnableFallbackFont && FontManager::instance()->hasFallbackFonts() ) {
+		for ( Font* fallbackFontPtr : FontManager::instance()->getFallbackFonts() ) {
+			if ( fallbackFontPtr->getType() != FontType::TTF )
+				continue;
+			FontTrueType* fallbackFont = static_cast<FontTrueType*>( fallbackFontPtr );
+			if ( 0 != fallbackFont->getGlyphIndex( codePoint ) ) {
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
+					mIsMonospaceComplete = false;
+					mUsingFallback = true;
+				}
+				return fallbackFont->getGlyph( codePoint, characterSize, bold, italic,
+											   outlineThickness, getPage( characterSize ),
+											   maxWidth );
 			}
-			return fallbackFont->getGlyph( codePoint, characterSize, bold, italic, outlineThickness,
-										   getPage( characterSize ), maxWidth );
 		}
 	}
 
@@ -480,22 +483,24 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 		isItalic = true;
 	}
 
-	if ( 0 == glyphIndex && mEnableFallbackFont &&
-		 FontManager::instance()->getFallbackFont() != nullptr &&
-		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
-		FontTrueType* fontFallback =
-			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
-		tGlyphIndex = fontFallback->getGlyphIndex( codePoint );
-		if ( 0 != tGlyphIndex ) {
-			glyphIndex = tGlyphIndex;
-			fontInternalId = fontFallback->getFontInternalId();
-			if ( mIsMonospace && mEnableDynamicMonospace ) {
-				mIsMonospaceComplete = false;
-				mUsingFallback = true;
+	if ( 0 == glyphIndex && mEnableFallbackFont && FontManager::instance()->hasFallbackFonts() ) {
+		for ( Font* fontFallbackPtr : FontManager::instance()->getFallbackFonts() ) {
+			if ( fontFallbackPtr->getType() != FontType::TTF )
+				continue;
+			FontTrueType* fontFallback = static_cast<FontTrueType*>( fontFallbackPtr );
+			tGlyphIndex = fontFallback->getGlyphIndex( codePoint );
+			if ( 0 != tGlyphIndex ) {
+				glyphIndex = tGlyphIndex;
+				fontInternalId = fontFallback->getFontInternalId();
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
+					mIsMonospaceComplete = false;
+					mUsingFallback = true;
+				}
+				break;
 			}
-		} else {
-			glyphIndex = getGlyphIndex( codePoint );
 		}
+		if ( 0 == glyphIndex )
+			glyphIndex = getGlyphIndex( codePoint );
 	}
 
 	Uint64 key = getIndexKey( fontInternalId, glyphIndex, bold, italic, outlineThickness );

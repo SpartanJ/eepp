@@ -384,6 +384,32 @@ std::vector<std::string> String::split( const std::string& str, const Int8& deli
 	return cont;
 }
 
+std::vector<std::string_view> String::split( const std::string_view& str, const Int8& delim,
+											 const bool& pushEmptyString ) {
+	if ( str.empty() )
+		return {};
+	std::vector<std::string_view> cont;
+	std::size_t current, previous = 0;
+	current = str.find( delim );
+	while ( current != std::string::npos ) {
+		if ( (Int64)current - (Int64)previous < 0 ) {
+			std::cerr << "String::split fatal error: current " << current << " previous "
+					  << previous << " with str " << str << " delim " << delim
+					  << " pushEmptyString " << pushEmptyString << "\n";
+			return cont;
+		}
+		std::string_view substr( str.substr( previous, current - previous ) );
+		if ( pushEmptyString || !substr.empty() )
+			cont.emplace_back( std::move( substr ) );
+		previous = current + 1;
+		current = str.find( delim, previous );
+	}
+	std::string_view substr( str.substr( previous, current - previous ) );
+	if ( pushEmptyString || !substr.empty() )
+		cont.emplace_back( std::move( substr ) );
+	return cont;
+}
+
 std::vector<String> String::split( const StringBaseType& delim, const bool& pushEmptyString,
 								   const bool& keepDelim ) const {
 	return String::split( *this, delim, pushEmptyString, keepDelim );
@@ -964,6 +990,19 @@ String::String( const char* utf8String, const size_t& utf8StringSize ) {
 }
 
 String::String( const std::string& utf8String ) {
+	mString.reserve( utf8String.length() + 1 );
+
+	int skip = 0;
+	// Skip BOM
+	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+		 (char)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+}
+
+String::String( const std::string_view& utf8String ) {
 	mString.reserve( utf8String.length() + 1 );
 
 	int skip = 0;

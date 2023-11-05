@@ -3407,7 +3407,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
 		if ( mFallbackFont )
-			FontManager::instance()->setFallbackFont( mFallbackFont );
+			FontManager::instance()->addFallbackFont( mFallbackFont );
 
 		SceneManager::instance()->add( mUISceneNode );
 

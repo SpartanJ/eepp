@@ -31,9 +31,13 @@ class EE_API FontManager : public ResourceManager<Font> {
 
 	void setEmojiFont( Font* newEmojiFont );
 
-	Font* getFallbackFont() const;
+	const std::vector<Font*>& getFallbackFonts() const;
 
-	void setFallbackFont( Font* fallbackFont );
+	bool hasFallbackFonts() const;
+
+	bool addFallbackFont( Font* fallbackFont );
+
+	bool removeFallbackFont( Font* fallbackFont );
 
 	FontHinting getHinting() const;
 
@@ -46,7 +50,7 @@ class EE_API FontManager : public ResourceManager<Font> {
   protected:
 	Font* mColorEmojiFont{ nullptr };
 	Font* mEmojiFont{ nullptr };
-	Font* mFallbackFont{ nullptr };
+	std::vector<Font*> mFallbackFonts;
 	FontHinting mHinting{ FontHinting::Full };
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 

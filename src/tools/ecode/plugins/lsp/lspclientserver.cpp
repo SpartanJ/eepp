@@ -22,6 +22,7 @@ static const char* MEMBER_PARAMS = "params";
 static const char* MEMBER_URI = "uri";
 static const char* MEMBER_VERSION = "version";
 static const char* MEMBER_TEXT = "text";
+static const char* MEMBER_TEXTDOCUMENT = "textDocument";
 static const char* MEMBER_LANGID = "languageId";
 static const char* MEMBER_ERROR = "error";
 static const char* MEMBER_CODE = "code";
@@ -122,7 +123,7 @@ static json textDocumentItem( const URI& document, const std::string& lang, cons
 }
 
 static json textDocumentParams( const json& m ) {
-	return json{ { "textDocument", m } };
+	return json{ { MEMBER_TEXTDOCUMENT, m } };
 }
 
 static json textDocumentParams( const URI& document, int version = -1 ) {
@@ -539,7 +540,7 @@ static void fromJson( LSPVersionedTextDocumentIdentifier& id, const json& json )
 static LSPTextDocumentEdit parseTextDocumentEdit( const json& result ) {
 	LSPTextDocumentEdit ret;
 	auto& ob = result;
-	fromJson( ret.textDocument, ob.at( "textDocument" ) );
+	fromJson( ret.textDocument, ob.at( MEMBER_TEXTDOCUMENT ) );
 	ret.edits = parseTextEditArray( ob.at( "edits" ) );
 	return ret;
 }
@@ -1063,7 +1064,7 @@ void LSPClientServer::initialize() {
 	workspace["codeLens"] = json{ { "refreshSupport", true } };
 
 	json capabilities{
-		{ "textDocument",
+		{ MEMBER_TEXTDOCUMENT,
 		  json{
 			  { "documentSymbol", json{ { "dynamicRegistration", true },
 										{ "hierarchicalDocumentSymbolSupport", true } } },
@@ -1284,8 +1285,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::cancel( const PluginIDType& r
 	return LSPRequestHandle();
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
-														  const JsonReplyHandler& h,
+LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const JsonReplyHandler& h,
 														  const JsonReplyHandler& eh,
 														  const int id ) {
 	LSPRequestHandle ret;
@@ -1294,36 +1294,52 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 	if ( !isRunning() )
 		return ret;
 
-	json ob = msg;
-	ob["jsonrpc"] = "2.0";
+	msg["jsonrpc"] = "2.0";
 
 	// notification == no handler
 	if ( h ) {
 		int msgId = ++mLastMsgId;
-		ob[MEMBER_ID] = msgId;
+		msg[MEMBER_ID] = msgId;
 		ret.mId = msgId;
 		Lock l( mHandlersMutex );
 		mHandlers[msgId] = { h, eh };
 	} else if ( id ) {
-		ob[MEMBER_ID] = id;
+		msg[MEMBER_ID] = id;
 	}
 
 	try {
-		std::string sjson = ob.dump();
-		sjson = String::format( "Content-Length: %lu\r\n\r\n%s", sjson.length(), sjson.c_str() );
+		std::string sjson( msg.dump() );
+		sjson.insert( 0, "Content-Length: " + String::toString( sjson.size() ) + "\r\n\r\n" );
 
 		if ( mReady || ( msg.contains( MEMBER_METHOD ) && msg[MEMBER_METHOD] == "initialize" ) ) {
-			std::string method;
-			if ( msg.contains( MEMBER_METHOD ) )
-				method = msg[MEMBER_METHOD].get<std::string>();
-			else if ( msg.contains( MEMBER_MESSAGE ) )
-				method = msg[MEMBER_MESSAGE];
 			if ( !isSilent() ) {
+				std::string method;
+				if ( msg.contains( MEMBER_METHOD ) )
+					method = msg[MEMBER_METHOD].get<std::string>();
+				else if ( msg.contains( MEMBER_MESSAGE ) )
+					method = msg[MEMBER_MESSAGE];
+				else if ( msg.contains( MEMBER_RESULT ) && msg.contains( MEMBER_ID ) )
+					method = "result for id " + msg[MEMBER_ID].dump();
+
+				if ( msg.contains( MEMBER_PARAMS ) &&
+					 msg[MEMBER_PARAMS].contains( MEMBER_TEXTDOCUMENT ) &&
+					 msg[MEMBER_PARAMS][MEMBER_TEXTDOCUMENT].contains( MEMBER_URI ) )
+					method +=
+						" " +
+						msg[MEMBER_PARAMS][MEMBER_TEXTDOCUMENT][MEMBER_URI].get<std::string>();
 				Log::info( "LSPClientServer server %s calling %s", mLSP.name.c_str(),
 						   method.c_str() );
-				Log::debug( "LSPClientServer server %s sending message:\n%s", mLSP.name.c_str(),
-							sjson.c_str() );
+
+				if ( trimLogs() && sjson.size() > EE_1KB ) {
+					Log::debug( "LSPClientServer server %s sending message:", mLSP.name.c_str() );
+					if ( Log::instance()->getLogLevelThreshold() <= LogLevel::Debug )
+						Log::instance()->writel( std::string_view{ sjson }.substr( 0, EE_1KB ) );
+				} else {
+					Log::debug( "LSPClientServer server %s sending message:\n%s", mLSP.name.c_str(),
+								sjson.c_str() );
+				}
 			}
+
 			if ( mSocket ) {
 				size_t sent = 0;
 				mSocket->send( sjson.c_str(), sjson.size(), sent );
@@ -1331,7 +1347,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 				mProcess.write( sjson );
 			}
 		} else {
-			mQueuedMessages.push_back( { std::move( ob ), h, eh } );
+			mQueuedMessages.push_back( { std::move( msg ), h, eh } );
 		}
 	} catch ( const json::exception& e ) {
 		Log::warning( "LSPClientServer::write server %s failed. Coudln't dump json err: %s",
@@ -1341,17 +1357,18 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( const json& msg,
 	return ret;
 }
 
-void LSPClientServer::sendAsync( const json& msg, const JsonReplyHandler& h,
+void LSPClientServer::sendAsync( json&& msg, const JsonReplyHandler& h,
 								 const JsonReplyHandler& eh ) {
-	getThreadPool()->run( [this, msg, h, eh] { send( msg, h, eh ); } );
+	getThreadPool()->run(
+		[this, msg = std::move( msg ), h, eh]() mutable { send( std::move( msg ), h, eh ); } );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::send( const json& msg, const JsonReplyHandler& h,
+LSPClientServer::LSPRequestHandle LSPClientServer::send( json&& msg, const JsonReplyHandler& h,
 														 const JsonReplyHandler& eh ) {
 	eeASSERT( !needsAsync() );
 
 	if ( isRunning() ) {
-		return write( msg, h, eh );
+		return write( std::move( msg ), h, eh );
 	} else {
 		Log::warning( "LSPClientServer server %s Send for non-running server: %s",
 					  mLSP.name.c_str(), mLSP.name.c_str() );
@@ -1359,11 +1376,10 @@ LSPClientServer::LSPRequestHandle LSPClientServer::send( const json& msg, const 
 	return LSPRequestHandle();
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::sendSync( const json& msg,
-															 const JsonReplyHandler& h,
+LSPClientServer::LSPRequestHandle LSPClientServer::sendSync( json&& msg, const JsonReplyHandler& h,
 															 const JsonReplyHandler& eh ) {
 	if ( isRunning() ) {
-		return write( msg, h, eh );
+		return write( std::move( msg ), h, eh );
 	} else {
 		Log::warning( "LSPClientServer server %s Send for non-running server: %s",
 					  mLSP.name.c_str(), mLSP.name.c_str() );
@@ -1388,6 +1404,10 @@ void LSPClientServer::refreshCodeLens() {
 
 bool LSPClientServer::isSilent() const {
 	return mManager->getPlugin()->isSilent();
+}
+
+bool LSPClientServer::trimLogs() const {
+	return mManager->getPlugin()->trimLogs();
 }
 
 LSPClientServer::LSPRequestHandle LSPClientServer::didOpen( const URI& document,
@@ -1792,9 +1812,17 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 				continue;
 			}
 
-			if ( !isSilent() )
-				Log::debug( "LSPClientServer::readStdOut server %s said:\n%s", mLSP.name.c_str(),
-							res.dump().c_str() );
+			if ( !isSilent() ) {
+				std::string respd( res.dump() );
+				if ( trimLogs() && respd.size() > EE_1KB ) {
+					Log::debug( "LSPClientServer::readStdOut server %s said:", mLSP.name.c_str() );
+					if ( Log::instance()->getLogLevelThreshold() <= LogLevel::Debug )
+						Log::instance()->writel( std::string_view( respd ).substr( 0, EE_1KB ) );
+				} else {
+					Log::debug( "LSPClientServer::readStdOut server %s said:\n%s",
+								mLSP.name.c_str(), respd.c_str() );
+				}
+			}
 
 			HandlersMap::iterator it;
 			HandlersMap::iterator itEnd;
@@ -1820,14 +1848,15 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 					handlerOK( msgid, res[MEMBER_RESULT] );
 				}
 			} else {
-				if ( !isSilent() )
+				if ( !isSilent() ) {
 					Log::debug( "LSPClientServer::readStdOut server %s unexpected reply id: %s",
 								mLSP.name.c_str(), msgid.toString().c_str() );
+				}
 			}
 #ifndef EE_DEBUG
 		} catch ( const json::exception& e ) {
-			Log::debug( "LSPClientServer::readStdOut server %s said: Coudln't parse json err: %s",
-						mLSP.name.c_str(), e.what() );
+			Log::warning( "LSPClientServer::readStdOut server %s said: Coudln't parse json err: %s",
+						  mLSP.name.c_str(), e.what() );
 		}
 #endif
 	}
@@ -1848,8 +1877,8 @@ void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
 }
 
 void LSPClientServer::sendQueuedMessages() {
-	for ( const auto& msg : mQueuedMessages )
-		write( msg.msg, msg.h, msg.eh );
+	for ( auto& msg : mQueuedMessages )
+		write( std::move( msg.msg ), msg.h, msg.eh );
 	mQueuedMessages.clear();
 }
 

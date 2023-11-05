@@ -256,7 +256,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		if ( FileSystem::fileExists( fallbackFontPath ) ) {
 			FontTrueType* fallbackFont = FontTrueType::New( "fallback-font" );
 			if ( fallbackFont->loadFromFile( fallbackFontPath ) )
-				FontManager::instance()->setFallbackFont( fallbackFont );
+				FontManager::instance()->addFallbackFont( fallbackFont );
 		}
 
 		Float realMaxFPS = maxFPS.Get() ? maxFPS.Get() : currentDisplay->getRefreshRate();

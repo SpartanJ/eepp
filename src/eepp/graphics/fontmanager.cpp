@@ -29,12 +29,30 @@ void FontManager::setEmojiFont( Graphics::Font* newEmojiFont ) {
 	mEmojiFont = newEmojiFont;
 }
 
-Font* FontManager::getFallbackFont() const {
-	return mFallbackFont;
+const std::vector<Font*>& FontManager::getFallbackFonts() const {
+	return mFallbackFonts;
 }
 
-void FontManager::setFallbackFont( Font* fallbackFont ) {
-	mFallbackFont = fallbackFont;
+bool FontManager::hasFallbackFonts() const {
+	return !mFallbackFonts.empty();
+}
+
+bool FontManager::addFallbackFont( Font* fallbackFont ) {
+	if ( fallbackFont && std::find( mFallbackFonts.begin(), mFallbackFonts.end(), fallbackFont ) ==
+							 mFallbackFonts.end() ) {
+		mFallbackFonts.emplace_back( fallbackFont );
+		return true;
+	}
+	return false;
+}
+
+bool FontManager::removeFallbackFont( Font* fallbackFont ) {
+	auto fallbackFontIt = std::find( mFallbackFonts.begin(), mFallbackFonts.end(), fallbackFont );
+	if ( fallbackFontIt != mFallbackFonts.end() ) {
+		mFallbackFonts.erase( fallbackFontIt );
+		return true;
+	}
+	return false;
 }
 
 FontHinting FontManager::getHinting() const {

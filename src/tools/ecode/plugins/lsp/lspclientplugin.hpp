@@ -49,7 +49,7 @@ class LSPClientPlugin : public Plugin {
 
 	void onUnregister( UICodeEditor* );
 
-	const std::unordered_map<UICodeEditor*, TextDocument*>& getEditorDocs() { return mEditorDocs; };
+	const UnorderedMap<UICodeEditor*, TextDocument*>& getEditorDocs() { return mEditorDocs; };
 
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );
@@ -84,9 +84,13 @@ class LSPClientPlugin : public Plugin {
 
 	bool langSupportsSemanticHighlighting( const std::string& lspLang );
 
-	bool isSilent() const { return mSilence; }
+	bool isSilent() const;
 
-	void setSilent( bool silence = true ) { mSilence = silence; }
+	void setSilent( bool silence = true );
+
+	bool trimLogs() const;
+
+	void setTrimLogs( bool trimLogs );
 
   protected:
 	friend class LSPDocumentClient;
@@ -95,27 +99,28 @@ class LSPClientPlugin : public Plugin {
 	Clock mClock;
 	Mutex mDocMutex;
 	Mutex mDocSymbolsMutex;
-	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
-	std::unordered_map<UICodeEditor*, std::set<String::HashType>> mEditorsTags;
-	std::set<TextDocument*> mDocs;
-	std::map<URI, LSPSymbolInformationList> mDocSymbols;
-	std::map<URI, LSPSymbolInformationList> mDocFlatSymbols;
-	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
+	UnorderedMap<UICodeEditor*, std::vector<Uint32>> mEditors;
+	UnorderedMap<UICodeEditor*, UnorderedSet<String::HashType>> mEditorsTags;
+	UnorderedSet<TextDocument*> mDocs;
+	UnorderedMap<URI, LSPSymbolInformationList> mDocSymbols;
+	UnorderedMap<URI, LSPSymbolInformationList> mDocFlatSymbols;
+	UnorderedMap<UICodeEditor*, TextDocument*> mEditorDocs;
 	LSPClientServerManager mClientManager;
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mSymbolInfoShowing{ false };
 	bool mSemanticHighlighting{ false };
 	bool mSilence{ false };
-	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
-	std::map<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
+	bool mTrimLogs{ false };
+	UnorderedMap<std::string, std::string> mKeyBindings; /* cmd, shortcut */
+	UnorderedMap<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
 	Uint32 mHoverWaitCb{ 0 };
 	LSPHover mCurrentHover;
 	Time mHoverDelay{ Seconds( 1.f ) };
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
 	LSPDiagnosticsCodeAction mQuickFix;
-	std::unordered_set<std::string> mSemanticHighlightingDisabledLangs;
+	UnorderedSet<std::string> mSemanticHighlightingDisabledLangs;
 	String::HashType mConfigHash{ 0 };
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );

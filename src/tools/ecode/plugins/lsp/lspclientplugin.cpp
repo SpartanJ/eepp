@@ -466,6 +466,22 @@ bool LSPClientPlugin::langSupportsSemanticHighlighting( const std::string& lspLa
 						 [&lspLang]( const auto& other ) { return lspLang == other; } );
 }
 
+bool LSPClientPlugin::isSilent() const {
+	return mSilence;
+}
+
+void LSPClientPlugin::setSilent( bool silence ) {
+	mSilence = silence;
+}
+
+bool LSPClientPlugin::trimLogs() const {
+	return mTrimLogs;
+}
+
+void LSPClientPlugin::setTrimLogs( bool trimLogs ) {
+	mTrimLogs = trimLogs;
+}
+
 bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
 	return mManager->getSplitter()->editorExists( editor );
 }
@@ -836,6 +852,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			mSilence = config.value( "silent", false );
 		else if ( updateConfigFile )
 			config["silent"] = mSilence;
+
+		if ( config.contains( "trim_logs" ) )
+			mTrimLogs = config.value( "trim_logs", false );
+		else if ( updateConfigFile )
+			config["trim_logs"] = mTrimLogs;
 
 		if ( config.contains( "hover_delay" ) )
 			setHoverDelay( Time::fromString( config["hover_delay"].get<std::string>() ) );
@@ -1220,7 +1241,7 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	mEditors.insert( { editor, listeners } );
-	mEditorsTags.insert( { editor, {} } );
+	mEditorsTags.insert( { editor, UnorderedSet<String::HashType>{} } );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
 
 	if ( mReady && editor->hasDocument() && editor->getDocument().hasFilepath() )

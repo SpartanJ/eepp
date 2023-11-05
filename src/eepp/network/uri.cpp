@@ -790,4 +790,32 @@ bool URI::operator<( const URI& url ) const {
 	return cmp < 0;
 }
 
+const std::string& EE::Network::URI::getScheme() const {
+	return mScheme;
+}
+
+const std::string& EE::Network::URI::getUserInfo() const {
+	return mUserInfo;
+}
+
+const std::string& EE::Network::URI::getHost() const {
+	return mHost;
+}
+
+const std::string& EE::Network::URI::getPath() const {
+	return mPath;
+}
+
+const std::string& EE::Network::URI::getRawQuery() const {
+	return mQuery;
+}
+
+const std::string& EE::Network::URI::getFragment() const {
+	return mFragment;
+}
+
+void swap( URI& u1, URI& u2 ) {
+	u1.swap( u2 );
+}
+
 }} // namespace EE::Network

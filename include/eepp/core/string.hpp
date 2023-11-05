@@ -133,6 +133,11 @@ class EE_API String {
 										   const bool& pushEmptyString = false,
 										   const bool& keepDelim = false );
 
+	/** Split a string and hold it on a vector */
+	static std::vector<std::string_view> split( const std::string_view& str,
+												const Int8& delim = '\n',
+												const bool& pushEmptyString = false );
+
 	/** Split a string and hold it on a vector. This function is meant to be used for code
 	 * splitting, detects functions, arrays, braces and quotes for the splitting. */
 	static std::vector<std::string> split( const std::string& str, const std::string& delims,
@@ -403,6 +408,11 @@ class EE_API String {
 	** @param utf8String UTF-8 string to convert
 	**/
 	String( const std::string& utf8String );
+
+	/** @brief Construct from an UTF-8 string to UTF-32 according
+	** @param utf8String UTF-8 string to convert
+	**/
+	String( const std::string_view& utf8String );
 
 	/** @brief Construct from a null-terminated C-style ANSI string and a locale
 	** The source string is converted to UTF-32 according

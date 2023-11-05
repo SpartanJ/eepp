@@ -301,7 +301,7 @@ class EE_API UIConsole : public UIWidget,
 
 	void privPushText( const String& str );
 
-	void writeLog( const std::string& text );
+	void writeLog( const std::string_view& text );
 
 	void resetCursor();
 
