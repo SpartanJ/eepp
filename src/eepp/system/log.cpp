@@ -195,10 +195,11 @@ void Log::writel( const std::string_view& text ) {
 #elif defined( EE_COMPILER_MSVC )
 #ifdef UNICODE
 		OutputDebugString( String::fromUtf8( text ).toWideString().c_str() );
+		OutputDebugString( String::fromUtf8( std::string_view{ "\n" } ).toWideString().c_str() );
 #else
 		OutputDebugString( text.data() );
-#endif
 		OutputDebugString( "\n" );
+#endif
 #else
 		std::cout << text << std::endl;
 #endif
