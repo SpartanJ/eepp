@@ -778,6 +778,11 @@ workspace "eepp"
 	filter "platforms:x86_64"
 		architecture "x86_64"
 
+	filter { "platforms:x86_64", "system:macosx" }
+		architecture "x86_64"
+		buildoptions { "-arch x86_64" }
+		linkoptions { "-arch x86_64" }
+
 	filter "system:macosx"
 		defines { "GL_SILENCE_DEPRECATION" }
 
