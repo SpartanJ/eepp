@@ -21,6 +21,7 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 }
 
 LSPDocumentClient::~LSPDocumentClient() {
+	mDoc = nullptr;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( nullptr != sceneNode && 0 != mTag )
 		sceneNode->removeActionsByTag( mTag );
@@ -32,6 +33,7 @@ LSPDocumentClient::~LSPDocumentClient() {
 }
 
 void LSPDocumentClient::onDocumentLoaded( TextDocument* ) {
+	refreshTag();
 	requestSemanticHighlightingDelayed();
 	// requestCodeLens();
 }
@@ -83,9 +85,10 @@ void LSPDocumentClient::onDocumentReloaded( TextDocument* ) {
 	TextDocument* doc = mDoc;
 	LSPClientServer* server = mServer;
 	auto version = ++mVersion;
-	mServer->getThreadPool()->run( [server, doc, uri, version]() {
+	mServer->getThreadPool()->run( [this, server, doc, uri, version]() {
 		server->didClose( uri );
 		server->didOpen( doc, version );
+		requestSemanticHighlighting( true );
 	} );
 	refreshTag();
 }
@@ -146,10 +149,10 @@ void LSPDocumentClient::requestSemanticHighlighting( bool reqFull ) {
 	Uint64 docModId = mDoc->getModificationId();
 	mServer->documentSemanticTokensFull(
 		mDoc->getURI(), delta, reqId, range,
-		[docClient, uri, server, docModId]( const auto&, const LSPSemanticTokensDelta& deltas ) {
+		[docClient, uri, server, docModId]( const auto&, LSPSemanticTokensDelta&& deltas ) {
 			if ( server->hasDocument( uri ) ) {
 				docClient->mWaitingSemanticTokensResponse = false;
-				docClient->processTokens( deltas, docModId );
+				docClient->processTokens( std::move( deltas ), docModId );
 			}
 		} );
 }
@@ -203,8 +206,8 @@ UISceneNode* LSPDocumentClient::getUISceneNode() {
 	return server->getManager()->getPluginManager()->getUISceneNode();
 }
 
-static std::string semanticTokenTypeToSyntaxType( const std::string& type,
-												  const SyntaxDefinition& ) {
+static SyntaxStyleType semanticTokenTypeToSyntaxType( const std::string& type,
+													  const SyntaxDefinition& ) {
 	switch ( String::hash( type ) ) {
 		case SemanticTokenTypes::Namespace:
 		case SemanticTokenTypes::Type:
@@ -213,44 +216,47 @@ static std::string semanticTokenTypeToSyntaxType( const std::string& type,
 		case SemanticTokenTypes::Interface:
 		case SemanticTokenTypes::Struct:
 		case SemanticTokenTypes::TypeParameter:
-			return "keyword2";
+			return "keyword2"_sst;
 		case SemanticTokenTypes::Parameter:
-			return "keyword3";
+			return "keyword3"_sst;
 		case SemanticTokenTypes::Variable:
-			return "symbol";
+			return "symbol"_sst;
 		case SemanticTokenTypes::Property:
-			return "symbol";
+			return "symbol"_sst;
 		case SemanticTokenTypes::EnumMember:
 		case SemanticTokenTypes::Event:
-			return "keyword2";
+			return "keyword2"_sst;
 		case SemanticTokenTypes::Function:
 		case SemanticTokenTypes::Method:
 		case SemanticTokenTypes::Member:
-			return "function";
+			return "function"_sst;
 		case SemanticTokenTypes::Macro:
-			return "keyword2";
+			return "keyword2"_sst;
 		case SemanticTokenTypes::Keyword:
 		case SemanticTokenTypes::Modifier:
-			return "keyword";
+			return "keyword"_sst;
 		case SemanticTokenTypes::Comment:
-			return "comment";
+			return "comment"_sst;
 		case SemanticTokenTypes::Str:
-			return "string";
+			return "string"_sst;
 		case SemanticTokenTypes::Number:
 		case SemanticTokenTypes::Regexp:
-			return "number";
+			return "number"_sst;
 		case SemanticTokenTypes::Operator:
-			return "operator";
+			return "operator"_sst;
 		case SemanticTokenTypes::Decorator:
-			return "literal";
+			return "literal"_sst;
 		case SemanticTokenTypes::Unknown:
 			break;
 	};
-	return "normal";
+	return SyntaxStyleTypes::Normal;
 }
 
-void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens,
+void LSPDocumentClient::processTokens( LSPSemanticTokensDelta&& tokens,
 									   const Uint64& docModificationId ) {
+	if ( mDoc == nullptr || mServer == nullptr )
+		return;
+
 	// If the document has already being modified after requesting the semantic highlighting,
 	// re-request the changes
 	if ( docModificationId != mDoc->getModificationId() )
@@ -271,7 +277,7 @@ void LSPDocumentClient::processTokens( const LSPSemanticTokensDelta& tokens,
 	}
 
 	if ( !tokens.data.empty() ) {
-		mSemanticTokens = tokens;
+		mSemanticTokens = std::move( tokens );
 	}
 
 	highlight();
@@ -293,7 +299,7 @@ void LSPDocumentClient::highlight() {
 	const auto& caps = mServer->getCapabilities().semanticTokenProvider;
 	Uint32 currentLine = 0;
 	Uint32 start = 0;
-	std::unordered_map<size_t, TokenizedLine> tokenizerLines;
+	UnorderedMap<size_t, TokenizedLine> tokenizerLines;
 	Int64 lastLine = 0;
 	TokenizedLine* lastLinePtr = nullptr;
 	Time diff;
@@ -321,7 +327,7 @@ void LSPDocumentClient::highlight() {
 				{ semanticTokenTypeToSyntaxType( ltype, mDoc->getSyntaxDefinition() ), start,
 				  len } );
 		} else {
-			line->tokens.push_back( { "normal", start, len } );
+			line->tokens.push_back( { SyntaxStyleTypes::Normal, start, len } );
 		}
 		line->hash = mDoc->line( currentLine ).getHash();
 		line->updateSignature();

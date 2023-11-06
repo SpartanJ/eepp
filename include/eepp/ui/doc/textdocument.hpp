@@ -1,6 +1,7 @@
 #ifndef EE_UI_DOC_TEXTDOCUMENT
 #define EE_UI_DOC_TEXTDOCUMENT
 
+#include <array>
 #include <atomic>
 #include <eepp/core/string.hpp>
 #include <eepp/network/http.hpp>
@@ -17,8 +18,6 @@
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/undostack.hpp>
 #include <functional>
-#include <map>
-#include <unordered_set>
 #include <vector>
 
 using namespace EE::System;
@@ -35,8 +34,6 @@ struct DocumentContentChange {
 
 class EE_API TextDocument {
   public:
-	typedef std::function<void()> DocumentCommand;
-
 	enum class UndoRedo { Undo, Redo };
 
 	enum class IndentType { IndentSpaces, IndentTabs };
@@ -48,26 +45,6 @@ class EE_API TextDocument {
 	enum class LoadStatus { Loaded, Interrupted, Failed };
 
 	enum class MatchDirection { Forward, Backward };
-
-	static std::string lineEndingToString( const LineEnding& le ) {
-		switch ( le ) {
-			case LineEnding::CRLF:
-				return "CRLF";
-			case LineEnding::CR:
-				return "CR";
-			case LineEnding::LF:
-			default:
-				return "LF";
-		}
-	}
-
-	static LineEnding stringToLineEnding( const std::string& str ) {
-		if ( "CR" == str )
-			return LineEnding::CR;
-		if ( "CRLF" == str )
-			return LineEnding::CRLF;
-		return LineEnding::LF;
-	}
 
 	class EE_API Client {
 	  public:
@@ -93,6 +70,29 @@ class EE_API TextDocument {
 		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*numLines*/ ){};
 		virtual TextRange getVisibleRange() const { return {}; };
 	};
+
+	typedef std::function<void()> DocumentCommand;
+	typedef std::function<void( Client* )> DocumentRefCommand;
+
+	static std::string lineEndingToString( const LineEnding& le ) {
+		switch ( le ) {
+			case LineEnding::CRLF:
+				return "CRLF";
+			case LineEnding::CR:
+				return "CR";
+			case LineEnding::LF:
+			default:
+				return "LF";
+		}
+	}
+
+	static LineEnding stringToLineEnding( const std::string& str ) {
+		if ( "CR" == str )
+			return LineEnding::CR;
+		if ( "CRLF" == str )
+			return LineEnding::CRLF;
+		return LineEnding::LF;
+	}
 
 	TextDocument( bool verbose = true );
 
@@ -177,6 +177,10 @@ class EE_API TextDocument {
 
 	bool hasSelection() const;
 
+	const std::array<Uint8, 16>& getHash() const;
+
+	std::string getHashHexString() const;
+
 	String getText( const TextRange& range ) const;
 
 	String getText() const;
@@ -249,6 +253,8 @@ class EE_API TextDocument {
 	void moveTo( int columnOffset );
 
 	void textInput( const String& text, bool mightBeInteresting = true );
+
+	void imeTextEditing( const String& text );
 
 	void registerClient( Client* client );
 
@@ -344,37 +350,39 @@ class EE_API TextDocument {
 
 	void execute( const std::string& command );
 
-	void setCommands( const std::map<std::string, DocumentCommand>& cmds );
+	void execute( const std::string& command, Client* client );
+
+	void setCommands( const UnorderedMap<std::string, DocumentCommand>& cmds );
 
 	void setCommand( const std::string& command, const DocumentCommand& func );
+
+	void setCommand( const std::string& command, const DocumentRefCommand& func );
 
 	bool hasCommand( const std::string& command );
 
 	bool removeCommand( const std::string& command );
 
 	TextRange find( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-					bool wholeWord = false, const FindReplaceType& type = FindReplaceType::Normal,
+					bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 					TextRange restrictRange = TextRange() );
 
 	TextRange findLast( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-						bool wholeWord = false,
-						const FindReplaceType& type = FindReplaceType::Normal,
+						bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange() );
 
 	TextRanges findAll( const String& text, bool caseSensitive = true, bool wholeWord = false,
-						const FindReplaceType& type = FindReplaceType::Normal,
+						FindReplaceType type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange(), size_t maxResults = 0 );
 
 	int replaceAll( const String& text, const String& replace, const bool& caseSensitive = true,
-					const bool& wholeWord = false,
-					const FindReplaceType& type = FindReplaceType::Normal,
+					const bool& wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 					TextRange restrictRange = TextRange() );
 
 	TextPosition replaceSelection( const String& replace );
 
 	TextPosition replace( String search, const String& replace, TextPosition from = { 0, 0 },
 						  const bool& caseSensitive = true, const bool& wholeWord = false,
-						  const FindReplaceType& type = FindReplaceType::Normal,
+						  FindReplaceType type = FindReplaceType::Normal,
 						  TextRange restrictRange = TextRange() );
 
 	String getIndentString();
@@ -548,11 +556,12 @@ class EE_API TextDocument {
 
 	TextPosition getMatchingBracket( TextPosition startPosition,
 									 const String::StringBaseType& openBracket,
-									 const String::StringBaseType& closeBracket,
-									 MatchDirection dir );
+									 const String::StringBaseType& closeBracket, MatchDirection dir,
+									 bool allowDepth = true );
 
 	TextRange getMatchingBracket( TextPosition startPosition, const String& openBracket,
-								  const String& closeBracket, MatchDirection dir );
+								  const String& closeBracket, MatchDirection dir,
+								  bool matchingXMLTags = false );
 
 	SyntaxHighlighter* getHighlighter() const;
 
@@ -589,12 +598,13 @@ class EE_API TextDocument {
 	UndoStack mUndoStack;
 	std::string mFilePath;
 	std::string mLoadingFilePath;
+	std::array<Uint8, 16> mHash;
 	URI mFileURI;
 	URI mLoadingFileURI;
 	FileInfo mFileRealPath;
 	std::vector<TextDocumentLine> mLines;
 	TextRanges mSelection;
-	std::unordered_set<Client*> mClients;
+	UnorderedSet<Client*> mClients;
 	Mutex mClientsMutex;
 	LineEnding mLineEnding{ LineEnding::LF };
 	std::atomic<bool> mLoading{ false };
@@ -622,7 +632,8 @@ class EE_API TextDocument {
 	std::string mDefaultFileName;
 	Uint64 mCleanChangeId;
 	Uint32 mPageSize{ 10 };
-	std::map<std::string, DocumentCommand> mCommands;
+	UnorderedMap<std::string, DocumentCommand> mCommands;
+	UnorderedMap<std::string, DocumentRefCommand> mRefCommands;
 	String mNonWordChars;
 	Client* mActiveClient{ nullptr };
 	mutable Mutex mLoadingMutex;
@@ -630,7 +641,7 @@ class EE_API TextDocument {
 	size_t mLastSelection{ 0 };
 	std::unique_ptr<SyntaxHighlighter> mHighlighter;
 	Mutex mStopFlagsMutex;
-	std::unordered_map<bool*, std::unique_ptr<bool>> mStopFlags;
+	UnorderedMap<bool*, std::unique_ptr<bool>> mStopFlags;
 
 	void initializeCommands();
 
@@ -688,13 +699,11 @@ class EE_API TextDocument {
 	LoadStatus loadFromStream( IOStream& file, std::string path, bool callReset );
 
 	TextRange findText( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-						bool wholeWord = false,
-						const FindReplaceType& type = FindReplaceType::Normal,
+						bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 						TextRange restrictRange = TextRange() );
 
 	TextRange findTextLast( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-							bool wholeWord = false,
-							const FindReplaceType& type = FindReplaceType::Normal,
+							bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
 							TextRange restrictRange = TextRange() );
 };
 

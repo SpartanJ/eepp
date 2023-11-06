@@ -142,6 +142,10 @@ class TerminalEmulator final {
 
 	void terminate();
 
+	bool isStarting() const;
+
+	bool isRunning() const;
+
 	bool hasExited() const;
 
 	int getExitCode() const;

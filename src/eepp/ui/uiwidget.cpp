@@ -713,7 +713,7 @@ void UIWidget::updatePseudoClasses() {
 	invalidateDraw();
 }
 
-void UIWidget::resetClass() {
+UIWidget* UIWidget::resetClass() {
 	if ( !mClasses.empty() ) {
 		mClasses.clear();
 		if ( !isSceneNodeLoading() && !isLoadingState() ) {
@@ -723,9 +723,10 @@ void UIWidget::resetClass() {
 
 		onClassChange();
 	}
+	return this;
 }
 
-void UIWidget::setClass( const std::string& cls ) {
+UIWidget* UIWidget::setClass( const std::string& cls ) {
 	if ( mClasses.size() != 1 || mClasses[0] != cls ) {
 		mClasses.clear();
 		mClasses.push_back( cls );
@@ -737,9 +738,10 @@ void UIWidget::setClass( const std::string& cls ) {
 
 		onClassChange();
 	}
+	return this;
 }
 
-void UIWidget::setClasses( const std::vector<std::string>& classes ) {
+UIWidget* UIWidget::setClasses( const std::vector<std::string>& classes ) {
 	if ( mClasses != classes ) {
 		mClasses = classes;
 
@@ -750,9 +752,10 @@ void UIWidget::setClasses( const std::vector<std::string>& classes ) {
 
 		onClassChange();
 	}
+	return this;
 }
 
-void UIWidget::addClass( const std::string& cls ) {
+UIWidget* UIWidget::addClass( const std::string& cls ) {
 	if ( !cls.empty() && !hasClass( cls ) ) {
 		mClasses.push_back( cls );
 
@@ -763,9 +766,10 @@ void UIWidget::addClass( const std::string& cls ) {
 
 		onClassChange();
 	}
+	return this;
 }
 
-void UIWidget::addClasses( const std::vector<std::string>& classes ) {
+UIWidget* UIWidget::addClasses( const std::vector<std::string>& classes ) {
 	if ( !classes.empty() ) {
 		for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
 			const std::string& cls = *cit;
@@ -782,9 +786,10 @@ void UIWidget::addClasses( const std::vector<std::string>& classes ) {
 
 		onClassChange();
 	}
+	return this;
 }
 
-void UIWidget::removeClass( const std::string& cls ) {
+UIWidget* UIWidget::removeClass( const std::string& cls ) {
 	if ( hasClass( cls ) ) {
 		mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
 
@@ -795,9 +800,10 @@ void UIWidget::removeClass( const std::string& cls ) {
 
 		onClassChange();
 	}
+	return this;
 }
 
-void UIWidget::removeClasses( const std::vector<std::string>& classes ) {
+UIWidget* UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 	if ( !classes.empty() ) {
 		for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
 			const std::string& cls = *cit;
@@ -818,6 +824,7 @@ void UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 
 		onClassChange();
 	}
+	return this;
 }
 
 bool UIWidget::hasClass( const std::string& cls ) const {
@@ -1158,7 +1165,7 @@ std::vector<UIWidget*> UIWidget::querySelectorAll( const CSS::StyleSheetSelector
 
 bool UIWidget::checkPropertyDefinition( const StyleSheetProperty& property ) {
 	if ( property.getPropertyDefinition() == NULL ) {
-		Log::warning( "applyProperty: Property %s not defined!", property.getName().c_str() );
+		Log::warning( "applyProperty: Property \"%s\" not defined!", property.getName().c_str() );
 		return false;
 	}
 	return true;

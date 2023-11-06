@@ -6,7 +6,6 @@
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
-#include <set>
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
@@ -34,7 +33,7 @@ class FormatterPlugin : public Plugin {
 	static PluginDefinition Definition() {
 		return {
 			"autoformatter",	  "Auto Formatter", "Enables the code formatter/prettifier plugin.",
-			FormatterPlugin::New, { 0, 2, 2 },		FormatterPlugin::NewSync };
+			FormatterPlugin::New, { 0, 2, 3 },		FormatterPlugin::NewSync };
 	}
 
 	static UICodeEditorPlugin* New( PluginManager* pluginManager );
@@ -70,11 +69,12 @@ class FormatterPlugin : public Plugin {
 
 	const std::vector<Formatter>& getFormatters() const;
 
-	Formatter getFormatterForLang( const std::string& lang, const std::vector<std::string>& ext );
+	Formatter getFormatterForLang( const std::string& lang );
 
   protected:
 	std::vector<Formatter> mFormatters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
+	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	std::mutex mWorkMutex;
 	std::condition_variable mWorkerCondition;
 	std::map<std::string, std::function<NativeFormatterResult( const std::string& file )>>
@@ -85,6 +85,7 @@ class FormatterPlugin : public Plugin {
 	std::map<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
 	String::HashType mConfigHash{ 0 };
+	PluginManager* mPluginManager{ nullptr };
 
 	bool mAutoFormatOnSave{ false };
 

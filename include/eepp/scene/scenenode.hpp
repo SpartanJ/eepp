@@ -4,7 +4,6 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/window/cursor.hpp>
-#include <unordered_set>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;
@@ -81,7 +80,7 @@ class EE_API SceneNode : public Node {
 
 	const Time& getElapsed() const;
 
-	bool usesInvalidation();
+	bool usesInvalidation() const;
 
 	void setUseGlobalCursors( const bool& use );
 
@@ -111,7 +110,7 @@ class EE_API SceneNode : public Node {
 
   protected:
 	friend class Node;
-	typedef std::unordered_set<Node*> CloseList;
+	typedef UnorderedSet<Node*> CloseList;
 
 	EE::Window::Window* mWindow;
 	ActionManager* mActionManager;
@@ -132,9 +131,9 @@ class EE_API SceneNode : public Node {
 	Color mHighlightOverColor;
 	Color mHighlightInvalidationColor;
 	Time mElapsed;
-	std::unordered_set<Node*> mScheduledUpdate;
-	std::unordered_set<Node*> mScheduledUpdateRemove;
-	std::unordered_set<Node*> mMouseOverNodes;
+	UnorderedSet<Node*> mScheduledUpdate;
+	UnorderedSet<Node*> mScheduledUpdateRemove;
+	UnorderedSet<Node*> mMouseOverNodes;
 	Float mDPI;
 
 	virtual void onSizeChange();

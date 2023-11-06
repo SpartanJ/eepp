@@ -1619,7 +1619,8 @@ void TerminalEmulator::csihandle( void ) {
 						 mCsiescseq.arg[0] < TerminalCursorMode::MAX_CURSOR )
 						goto unknown;
 					dpy = mDpy.lock();
-					dpy->setCursorMode( (TerminalCursorMode)mCsiescseq.arg[0] );
+					if ( dpy )
+						dpy->setCursorMode( (TerminalCursorMode)mCsiescseq.arg[0] );
 					break;
 				default:
 					goto unknown;
@@ -1663,6 +1664,9 @@ void TerminalEmulator::strhandle( void ) {
 	par = ( narg = mStrescseq.narg ) ? atoi( mStrescseq.args[0] ) : 0;
 
 	std::shared_ptr<ITerminalDisplay> dpy = mDpy.lock();
+
+	if ( !dpy )
+		return;
 
 	switch ( mStrescseq.type ) {
 		case ']': /* OSC -- Operating System Command */
@@ -1924,8 +1928,9 @@ void TerminalEmulator::tcontrolcode( uchar ascii ) {
 				/* backwards compatibility to xterm */
 				strhandle();
 			} else {
-				auto belDpyPtr = mDpy.lock();
-				belDpyPtr->bell();
+				auto dpy = mDpy.lock();
+				if ( dpy )
+					dpy->bell();
 			}
 			break;
 		case '\033': /* ESC */
@@ -2442,12 +2447,15 @@ void TerminalEmulator::redraw() {
 
 void TerminalEmulator::xsetmode( int set, unsigned int mode ) {
 	auto dpy = mDpy.lock();
-	dpy->setMode( (TerminalWinMode)mode, set );
+	if ( dpy )
+		dpy->setMode( (TerminalWinMode)mode, set );
 }
 
 bool TerminalEmulator::xgetmode( const TerminalWinMode& mode ) {
 	auto dpy = mDpy.lock();
-	return dpy->getMode( mode );
+	if ( dpy )
+		return dpy->getMode( mode );
+	return false;
 }
 
 void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Vector2i& pos,
@@ -2640,24 +2648,20 @@ void TerminalEmulator::terminate() {
 
 void TerminalEmulator::onProcessExit( int exitCode ) {
 	auto dpy = mDpy.lock();
-	if ( !dpy )
-		return;
-	dpy->onProcessExit( exitCode );
+	if ( dpy )
+		dpy->onProcessExit( exitCode );
 }
 
 void TerminalEmulator::setClipboard( const char* str ) {
 	auto dpy = mDpy.lock();
-	if ( !dpy )
-		return;
-	dpy->setClipboard( str );
+	if ( dpy )
+		dpy->setClipboard( str );
 }
 
 void TerminalEmulator::loadColors() {
 	auto dpy = mDpy.lock();
-	if ( !dpy )
-		return;
-
-	dpy->resetColors();
+	if ( dpy )
+		dpy->resetColors();
 }
 
 int TerminalEmulator::resetColor( int i, const char* name ) {
@@ -2666,6 +2670,14 @@ int TerminalEmulator::resetColor( int i, const char* name ) {
 		return 0;
 
 	return dpy->resetColor( i, name );
+}
+
+bool TerminalEmulator::isStarting() const {
+	return mStatus == STARTING;
+}
+
+bool TerminalEmulator::isRunning() const {
+	return mStatus == RUNNING;
 }
 
 bool TerminalEmulator::hasExited() const {

@@ -60,7 +60,7 @@ class EE_API UITooltip : public UIWidget {
 
 	Float getTextHeight();
 
-	const int& getNumLines() const;
+	Uint32 getNumLines();
 
 	Vector2f getAlignOffset();
 

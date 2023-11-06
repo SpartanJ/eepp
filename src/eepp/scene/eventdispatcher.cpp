@@ -26,6 +26,10 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mNodeWasDragging( NULL ),
 	mNodeDragging( NULL ) {
 	mCbId = mInput->pushCallback( cb::Make1( this, &EventDispatcher::inputCallback ) );
+	mIMECbId = mWindow->getIME().addTextEditingCb(
+		[this]( const String& text, Int32 start, Int32 length ) {
+			sendTextEditing( text, start, length );
+		} );
 }
 
 EventDispatcher::~EventDispatcher() {
@@ -33,11 +37,18 @@ EventDispatcher::~EventDispatcher() {
 		 Engine::instance()->existsWindow( mWindow ) ) {
 		mInput->popCallback( mCbId );
 	}
+
+	if ( mIMECbId && NULL != Engine::existsSingleton() &&
+		 Engine::instance()->existsWindow( mWindow ) ) {
+		mWindow->getIME().removeTextEditingCb( mIMECbId );
+	}
 }
 
 void EventDispatcher::inputCallback( InputEvent* event ) {
 	switch ( event->Type ) {
 		case InputEvent::Window: {
+			if ( event->window.type == InputEvent::WindowEventType::WindowKeyboardFocusLost )
+				mWindow->getIME().stop();
 			break;
 		}
 		case InputEvent::KeyUp:
@@ -50,6 +61,11 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 			break;
 		case InputEvent::TextInput:
 			sendTextInput( event->text.text, event->text.timestamp );
+			break;
+		case InputEvent::TextEditing:
+			sendTextEditing( event->textediting.text, event->textediting.start,
+							 event->textediting.length );
+			break;
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
 		case InputEvent::VideoExpose: {
@@ -110,7 +126,7 @@ void EventDispatcher::update( const Time& time ) {
 			sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getPressTrigger() );
 		}
 	}
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 	else if ( NULL != mOverNode && mInput->getReleaseTrigger() &&
 			  !( mInput->getPressTrigger() & mInput->getReleaseTrigger() ) &&
 			  !( mInput->getLastPressTrigger() & mInput->getReleaseTrigger() ) ) {
@@ -202,6 +218,19 @@ void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& times
 	}
 }
 
+void EventDispatcher::sendTextEditing( const String& text, const Int32& start,
+									   const Int32& length ) {
+	mWindow->getIME().onTextEditing( text, start, length );
+	TextEditingEvent textEditingEvent =
+		TextEditingEvent( mFocusNode, Event::TextInput, text, start, length );
+	Node* node = mFocusNode;
+	while ( NULL != node ) {
+		if ( node->isEnabled() && node->onTextEditing( textEditingEvent ) )
+			break;
+		node = node->getParent();
+	}
+}
+
 void EventDispatcher::sendKeyUp( const Keycode& keyCode, const Scancode& scancode,
 								 const Uint32& chr, const Uint32& mod ) {
 	KeyEvent keyEvent = KeyEvent( mFocusNode, Event::KeyUp, keyCode, scancode, chr, mod );
@@ -246,6 +275,8 @@ void EventDispatcher::sendMouseDown( Node* toNode, const Vector2i& pos, const Ui
 
 void EventDispatcher::setFocusNode( Node* node ) {
 	if ( NULL != mFocusNode && NULL != node && node != mFocusNode ) {
+		mWindow->getIME().stop();
+
 		mLossFocusNode = mFocusNode;
 
 		mFocusNode = node;

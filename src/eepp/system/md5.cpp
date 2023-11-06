@@ -59,31 +59,30 @@ namespace EE { namespace System {
  * doesn't work.
  */
 #if defined( __i386__ ) || defined( __x86_64__ ) || defined( __vax__ )
-#define SET( n ) ( *(MD5_u32plus*)&ptr[(n)*4] )
+#define SET( n ) ( *(Uint32*)&ptr[(n)*4] )
 #define GET( n ) SET( n )
 #else
-#define SET( n )                                                                           \
-	( ctx->block[( n )] = (MD5_u32plus)ptr[(n)*4] | ( (MD5_u32plus)ptr[(n)*4 + 1] << 8 ) | \
-						  ( (MD5_u32plus)ptr[(n)*4 + 2] << 16 ) |                          \
-						  ( (MD5_u32plus)ptr[(n)*4 + 3] << 24 ) )
-#define GET( n ) ( ctx->block[( n )] )
+#define SET( n )                                                                \
+	( ctx.block[( n )] = (Uint32)ptr[(n)*4] | ( (Uint32)ptr[(n)*4 + 1] << 8 ) | \
+						 ( (Uint32)ptr[(n)*4 + 2] << 16 ) | ( (Uint32)ptr[(n)*4 + 3] << 24 ) )
+#define GET( n ) ( ctx.block[( n )] )
 #endif
 
 /*
  * This processes one or more 64-byte data blocks, but does NOT update
  * the bit counters.  There are no alignment requirements.
  */
-const void* MD5::body( MD5::Context* ctx, const void* data, unsigned long size ) {
+const void* MD5::body( Context& ctx, const void* data, unsigned long size ) {
 	const unsigned char* ptr;
-	MD5_u32plus a, b, c, d;
-	MD5_u32plus saved_a, saved_b, saved_c, saved_d;
+	Uint32 a, b, c, d;
+	Uint32 saved_a, saved_b, saved_c, saved_d;
 
 	ptr = (const unsigned char*)data;
 
-	a = ctx->a;
-	b = ctx->b;
-	c = ctx->c;
-	d = ctx->d;
+	a = ctx.a;
+	b = ctx.b;
+	c = ctx.c;
+	d = ctx.d;
 
 	do {
 		saved_a = a;
@@ -171,45 +170,44 @@ const void* MD5::body( MD5::Context* ctx, const void* data, unsigned long size )
 		ptr += 64;
 	} while ( size -= 64 );
 
-	ctx->a = a;
-	ctx->b = b;
-	ctx->c = c;
-	ctx->d = d;
+	ctx.a = a;
+	ctx.b = b;
+	ctx.c = c;
+	ctx.d = d;
 
 	return ptr;
 }
 
-std::string MD5::hexDigest( std::vector<Uint8>& digest ) {
+std::string MD5::hexDigest( const MD5::Digest& digest ) {
 	char buf[33];
 	size_t size = digest.size();
 
-	for ( size_t i = 0; i < size; i++ ) {
-		sprintf( buf + i * 2, "%02x", digest[i] );
-	}
+	for ( size_t i = 0; i < size; i++ )
+		snprintf( buf + i * 2, size - i + 2, "%02x", digest[i] );
 
 	buf[32] = 0;
 
 	return std::string( buf );
 }
 
-void MD5::init( MD5::Context* ctx ) {
-	ctx->a = 0x67452301;
-	ctx->b = 0xefcdab89;
-	ctx->c = 0x98badcfe;
-	ctx->d = 0x10325476;
+void MD5::init( Context& ctx ) {
+	ctx.a = 0x67452301;
+	ctx.b = 0xefcdab89;
+	ctx.c = 0x98badcfe;
+	ctx.d = 0x10325476;
 
-	ctx->lo = 0;
-	ctx->hi = 0;
+	ctx.lo = 0;
+	ctx.hi = 0;
 }
 
-void MD5::update( MD5::Context* ctx, const void* data, unsigned long size ) {
-	MD5_u32plus saved_lo;
+void MD5::update( Context& ctx, const void* data, unsigned long size ) {
+	Uint32 saved_lo;
 	unsigned long used, available;
 
-	saved_lo = ctx->lo;
-	if ( ( ctx->lo = ( saved_lo + size ) & 0x1fffffff ) < saved_lo )
-		ctx->hi++;
-	ctx->hi += size >> 29;
+	saved_lo = ctx.lo;
+	if ( ( ctx.lo = ( saved_lo + size ) & 0x1fffffff ) < saved_lo )
+		ctx.hi++;
+	ctx.hi += size >> 29;
 
 	used = saved_lo & 0x3f;
 
@@ -217,14 +215,14 @@ void MD5::update( MD5::Context* ctx, const void* data, unsigned long size ) {
 		available = 64 - used;
 
 		if ( size < available ) {
-			memcpy( &ctx->buffer[used], data, size );
+			memcpy( &ctx.buffer[used], data, size );
 			return;
 		}
 
-		memcpy( &ctx->buffer[used], data, available );
+		memcpy( &ctx.buffer[used], data, available );
 		data = (const unsigned char*)data + available;
 		size -= available;
-		body( ctx, ctx->buffer, 64 );
+		body( ctx, ctx.buffer, 64 );
 	}
 
 	if ( size >= 64 ) {
@@ -232,57 +230,63 @@ void MD5::update( MD5::Context* ctx, const void* data, unsigned long size ) {
 		size &= 0x3f;
 	}
 
-	memcpy( ctx->buffer, data, size );
+	memcpy( ctx.buffer, data, size );
 }
 
-void MD5::final( unsigned char* result, MD5::Context* ctx ) {
+void MD5::final( MD5::Digest& result, Context& ctx ) {
 	unsigned long used, available;
 
-	used = ctx->lo & 0x3f;
+	used = ctx.lo & 0x3f;
 
-	ctx->buffer[used++] = 0x80;
+	ctx.buffer[used++] = 0x80;
 
 	available = 64 - used;
 
 	if ( available < 8 ) {
-		memset( &ctx->buffer[used], 0, available );
-		body( ctx, ctx->buffer, 64 );
+		memset( &ctx.buffer[used], 0, available );
+		body( ctx, ctx.buffer, 64 );
 		used = 0;
 		available = 64;
 	}
 
-	memset( &ctx->buffer[used], 0, available - 8 );
+	memset( &ctx.buffer[used], 0, available - 8 );
 
-	ctx->lo <<= 3;
-	ctx->buffer[56] = ctx->lo;
-	ctx->buffer[57] = ctx->lo >> 8;
-	ctx->buffer[58] = ctx->lo >> 16;
-	ctx->buffer[59] = ctx->lo >> 24;
-	ctx->buffer[60] = ctx->hi;
-	ctx->buffer[61] = ctx->hi >> 8;
-	ctx->buffer[62] = ctx->hi >> 16;
-	ctx->buffer[63] = ctx->hi >> 24;
+	ctx.lo <<= 3;
+	ctx.buffer[56] = ctx.lo;
+	ctx.buffer[57] = ctx.lo >> 8;
+	ctx.buffer[58] = ctx.lo >> 16;
+	ctx.buffer[59] = ctx.lo >> 24;
+	ctx.buffer[60] = ctx.hi;
+	ctx.buffer[61] = ctx.hi >> 8;
+	ctx.buffer[62] = ctx.hi >> 16;
+	ctx.buffer[63] = ctx.hi >> 24;
 
-	body( ctx, ctx->buffer, 64 );
+	body( ctx, ctx.buffer, 64 );
 
-	result[0] = ctx->a;
-	result[1] = ctx->a >> 8;
-	result[2] = ctx->a >> 16;
-	result[3] = ctx->a >> 24;
-	result[4] = ctx->b;
-	result[5] = ctx->b >> 8;
-	result[6] = ctx->b >> 16;
-	result[7] = ctx->b >> 24;
-	result[8] = ctx->c;
-	result[9] = ctx->c >> 8;
-	result[10] = ctx->c >> 16;
-	result[11] = ctx->c >> 24;
-	result[12] = ctx->d;
-	result[13] = ctx->d >> 8;
-	result[14] = ctx->d >> 16;
-	result[15] = ctx->d >> 24;
+	result[0] = ctx.a;
+	result[1] = ctx.a >> 8;
+	result[2] = ctx.a >> 16;
+	result[3] = ctx.a >> 24;
+	result[4] = ctx.b;
+	result[5] = ctx.b >> 8;
+	result[6] = ctx.b >> 16;
+	result[7] = ctx.b >> 24;
+	result[8] = ctx.c;
+	result[9] = ctx.c >> 8;
+	result[10] = ctx.c >> 16;
+	result[11] = ctx.c >> 24;
+	result[12] = ctx.d;
+	result[13] = ctx.d >> 8;
+	result[14] = ctx.d >> 16;
+	result[15] = ctx.d >> 24;
 
-	memset( ctx, 0, sizeof( *ctx ) );
+	memset( &ctx, 0, sizeof( ctx ) );
+}
+
+MD5::Result MD5::result( Context& ctx ) {
+	MD5::Digest digest;
+	final( digest, ctx );
+	return { digest };
 }
 
 MD5::Result MD5::fromStream( IOStream& stream ) {
@@ -294,25 +298,23 @@ MD5::Result MD5::fromStream( IOStream& stream ) {
 
 	stream.seek( 0 );
 
-	init( &ctx );
+	init( ctx );
 
 	while ( size > 0 ) {
 		if ( size > buff_size ) {
 			stream.read( data, buff_size );
 
-			update( &ctx, data, buff_size );
+			update( ctx, data, buff_size );
 		} else {
 			stream.read( data, size );
 
-			update( &ctx, data, size );
+			update( ctx, data, size );
 		}
 
 		size -= buff_size;
 	}
 
-	res.digest.resize( 16 );
-
-	final( &res.digest[0], &ctx );
+	final( res.digest, ctx );
 
 	return res;
 }
@@ -327,13 +329,11 @@ MD5::Result MD5::fromMemory( const Uint8* data, Uint64 size ) {
 
 	Context ctx;
 
-	init( &ctx );
+	init( ctx );
 
-	update( &ctx, data, size );
+	update( ctx, data, size );
 
-	res.digest.resize( 16 );
-
-	final( &res.digest[0], &ctx );
+	final( res.digest, ctx );
 
 	return res;
 }

@@ -203,6 +203,17 @@ bool FileSystem::fileRemove( const std::string& filepath ) {
 #endif
 }
 
+bool FileSystem::fileHide( const std::string& filepath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return SetFileAttributesW( (LPCWSTR)String( filepath ).toWideString().c_str(), 
+		FILE_ATTRIBUTE_HIDDEN );
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	return 0 == chflags( filepath.c_str(), UF_HIDDEN );
+#else
+	return false;
+#endif
+}
+
 Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
 	struct stat st;
 	int res = stat( filepath.c_str(), &st );
@@ -344,7 +355,7 @@ std::string FileSystem::getRealPath( const std::string& path ) {
 	realPath = std::string( dir );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	wchar_t dir[_MAX_PATH + 1];
-	GetFullPathNameW( String::fromUtf8( path.c_str() ).toWideString().c_str(), _MAX_PATH, &dir[0],
+	GetFullPathNameW( String::fromUtf8( path ).toWideString().c_str(), _MAX_PATH, &dir[0],
 					  nullptr );
 	realPath = String( dir ).toUtf8();
 #else
@@ -608,9 +619,9 @@ bool FileSystem::changeWorkingDirectory( const std::string& path ) {
 	int res;
 #ifdef EE_COMPILER_MSVC
 #ifdef UNICODE
-	res = _wchdir( String::fromUtf8( path.c_str() ).toWideString().c_str() );
+	res = _wchdir( String::fromUtf8( path ).toWideString().c_str() );
 #else
-	res = _chdir( String::fromUtf8( path.c_str() ).toAnsiString().c_str() );
+	res = _chdir( String::fromUtf8( path ).toAnsiString().c_str() );
 #endif
 #else
 	res = chdir( path.c_str() );
@@ -639,7 +650,7 @@ Int64 FileSystem::getDiskFreeSpace( const std::string& path ) {
 #if defined( EE_PLATFORM_POSIX )
 	struct statvfs data;
 	statvfs( path.c_str(), &data );
-#if EE_PLATFORM != EE_PLATFORM_MACOSX
+#if EE_PLATFORM != EE_PLATFORM_MACOS
 	return (Int64)data.f_bsize * (Int64)data.f_bfree;
 #else
 	return (Int64)data.f_frsize * (Int64)data.f_bfree;
@@ -649,7 +660,7 @@ Int64 FileSystem::getDiskFreeSpace( const std::string& path ) {
 	Int64 TotalBytes;
 	Int64 FreeBytes;
 #ifdef UNICODE
-	GetDiskFreeSpaceEx( String::fromUtf8( path.c_str() ).toWideString().c_str(),
+	GetDiskFreeSpaceEx( String::fromUtf8( path ).toWideString().c_str(),
 						(PULARGE_INTEGER)&AvailableBytes,
 #else
 	GetDiskFreeSpaceEx( path.c_str(), (PULARGE_INTEGER)&AvailableBytes,

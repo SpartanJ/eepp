@@ -6,17 +6,18 @@ namespace ecode {
 DocSearchController::DocSearchController( UICodeEditorSplitter* editorSplitter, App* app ) :
 	mSplitter( editorSplitter ), mApp( app ) {}
 
+DocSearchController::~DocSearchController() {
+	Clock clock;
+	while ( mSearchingCount && clock.getElapsedTime() < Seconds( 1 ) )
+		Sys::sleep( Milliseconds( 10 ) );
+}
+
 void DocSearchController::refreshHighlight() {
 	if ( mSearchState.editor && mSplitter->editorExists( mSearchState.editor ) ) {
 		mSearchState.text = mFindInput->getText();
 		mSearchState.editor->setHighlightWord( mSearchState.toTextSearchParams() );
 		if ( !mSearchState.text.empty() ) {
-			mSearchState.editor->getDocument().setSelection( { 0, 0 } );
-			if ( !findNextText( mSearchState ) ) {
-				mFindInput->addClass( "error" );
-			} else {
-				mFindInput->removeClass( "error" );
-			}
+			findNextText( mSearchState, true );
 		} else {
 			mFindInput->removeClass( "error" );
 			mSearchState.editor->getDocument().setSelection(
@@ -201,86 +202,113 @@ void DocSearchController::showFindView() {
 	editor->getDocument().setActiveClient( editor );
 }
 
-bool DocSearchController::findPrevText( SearchState& search ) {
+void DocSearchController::findPrevText( SearchState& search ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( !search.editor || !mSplitter->editorExists( search.editor ) || search.text.empty() )
-		return false;
+		return;
 
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
-	TextDocument& doc = search.editor->getDocument();
-	TextRange range = doc.getDocRange();
-	TextPosition from = doc.getSelection( true ).start();
-	if ( search.range.isValid() ) {
-		range = doc.sanitizeRange( search.range ).normalized();
-		from = from < range.start() ? range.start() : from;
-	}
 
-	String txt( search.text );
-	if ( search.escapeSequences )
-		txt.unescape();
+	Uint64 tag = String::hash( "DocSearchController::findPrevText-" +
+							   search.editor->getDocument().getHashHexString() );
+	mApp->getThreadPool()->removeWithTag( tag );
+	mApp->getThreadPool()->run( [this, search] {
+		ScopedOp op( [this] { mSearchingCount++; }, [this] { mSearchingCount--; } );
+		TextDocument& doc = search.editor->getDocument();
+		TextRange range = doc.getDocRange();
+		TextPosition from = doc.getSelection( true ).start();
+		if ( search.range.isValid() ) {
+			range = doc.sanitizeRange( search.range ).normalized();
+			from = from < range.start() ? range.start() : from;
+		}
 
-	TextRange found = doc.findLast( txt, from, search.caseSensitive, search.wholeWord, search.type,
-									search.range );
-	if ( found.isValid() ) {
-		doc.setSelection( found );
-		mSplitter->addEditorPositionToNavigationHistory( search.editor );
-		mFindInput->removeClass( "error" );
-		return true;
-	} else {
-		found = doc.findLast( txt, range.end(), search.caseSensitive, search.wholeWord, search.type,
-							  range );
+		String txt( search.text );
+		if ( search.escapeSequences )
+			txt.unescape();
+
+		TextRange found = doc.findLast( txt, from, search.caseSensitive, search.wholeWord,
+										search.type, search.range );
 		if ( found.isValid() ) {
 			doc.setSelection( found );
-			mSplitter->addEditorPositionToNavigationHistory( search.editor );
-			mFindInput->removeClass( "error" );
-			return true;
+			mFindInput->runOnMainThread( [this, search] {
+				mSplitter->addEditorPositionToNavigationHistory( search.editor );
+				mFindInput->removeClass( "error" );
+			} );
+			return;
+		} else {
+			found = doc.findLast( txt, range.end(), search.caseSensitive, search.wholeWord,
+								  search.type, range );
+			if ( found.isValid() ) {
+				doc.setSelection( found );
+				mFindInput->runOnMainThread( [this, search] {
+					mSplitter->addEditorPositionToNavigationHistory( search.editor );
+					mFindInput->removeClass( "error" );
+				} );
+				return;
+			}
 		}
-	}
-	mFindInput->addClass( "error" );
-	return false;
+		mFindInput->runOnMainThread( [this] { mFindInput->addClass( "error" ); } );
+	} );
 }
 
-bool DocSearchController::findNextText( SearchState& search ) {
+void DocSearchController::findNextText( SearchState& search, bool resetSelection ) {
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( !search.editor || !mSplitter->editorExists( search.editor ) || search.text.empty() )
-		return false;
+		return;
 
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
-	TextDocument& doc = search.editor->getDocument();
-	TextRange range = doc.getDocRange();
-	TextPosition from = doc.getSelection( true ).end();
-	if ( search.range.isValid() ) {
-		range = doc.sanitizeRange( search.range ).normalized();
-		from = from < range.start() ? range.start() : from;
-	}
 
-	String txt( search.text );
-	if ( search.escapeSequences )
-		txt.unescape();
+	Uint64 tag = String::hash( "DocSearchController::findNextText-" +
+							   search.editor->getDocument().getHashHexString() );
 
-	TextRange found =
-		doc.find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
-	if ( found.isValid() ) {
-		doc.setSelection( found.reversed() );
-		mSplitter->addEditorPositionToNavigationHistory( search.editor );
-		mFindInput->removeClass( "error" );
-		return true;
-	} else {
-		found = doc.find( txt, range.start(), search.caseSensitive, search.wholeWord, search.type,
-						  range );
-		if ( found.isValid() ) {
-			doc.setSelection( found.reversed() );
-			mSplitter->addEditorPositionToNavigationHistory( search.editor );
-			mFindInput->removeClass( "error" );
-			return true;
-		}
-	}
-	mFindInput->addClass( "error" );
-	return false;
+	mApp->getThreadPool()->removeWithTag( tag );
+	mApp->getThreadPool()->run(
+		[this, search, resetSelection] {
+			ScopedOp op( [this] { mSearchingCount++; }, [this] { mSearchingCount--; } );
+			TextDocument& doc = search.editor->getDocument();
+			TextRange range = doc.getDocRange();
+			TextPosition from =
+				resetSelection ? TextPosition( 0, 0 ) : doc.getSelection( true ).end();
+
+			if ( search.range.isValid() ) {
+				range = doc.sanitizeRange( search.range ).normalized();
+				from = from < range.start() ? range.start() : from;
+			}
+
+			String txt( search.text );
+			if ( search.escapeSequences )
+				txt.unescape();
+
+			TextRange found =
+				doc.find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
+
+			if ( found.isValid() ) {
+				doc.setSelection( found.reversed() );
+				mFindInput->runOnMainThread( [this, search] {
+					mSplitter->addEditorPositionToNavigationHistory( search.editor );
+					mFindInput->removeClass( "error" );
+				} );
+				return;
+			} else {
+				found = doc.find( txt, range.start(), search.caseSensitive, search.wholeWord,
+								  search.type, range );
+				if ( found.isValid() ) {
+					doc.setSelection( found.reversed() );
+					mFindInput->runOnMainThread( [this, search] {
+						mSplitter->addEditorPositionToNavigationHistory( search.editor );
+						mFindInput->removeClass( "error" );
+					} );
+					return;
+				}
+			}
+
+			mFindInput->runOnMainThread( [this] { mFindInput->addClass( "error" ); } );
+		},
+		{}, tag );
 }
 
 bool DocSearchController::replaceSelection( SearchState& search, const String& replacement ) {
@@ -333,13 +361,13 @@ int DocSearchController::replaceAll( SearchState& search, const String& replace 
 	return count;
 }
 
-bool DocSearchController::findAndReplace( SearchState& search, const String& replace ) {
+void DocSearchController::findAndReplace( SearchState& search, const String& replace ) {
 	if ( !search.editor || !mSplitter->editorExists( search.editor ) )
-		return false;
+		return;
 	if ( search.text.empty() )
 		search.text = mLastSearch;
 	if ( search.text.empty() )
-		return false;
+		return;
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
 	TextDocument& doc = search.editor->getDocument();
@@ -352,9 +380,9 @@ bool DocSearchController::findAndReplace( SearchState& search, const String& rep
 	}
 
 	if ( doc.hasSelection() && doc.getSelectedText() == txt ) {
-		return replaceSelection( search, repl );
+		replaceSelection( search, repl );
 	} else {
-		return findNextText( search );
+		findNextText( search );
 	}
 }
 

@@ -48,6 +48,8 @@ class TerminalManager {
 
 	void configureTerminalShell();
 
+	void configureTerminalScrollback();
+
 	const std::string& getTerminalCurrentColorScheme() { return mTerminalCurrentColorScheme; }
 
 	void setKeybindings( UITerminal* term );

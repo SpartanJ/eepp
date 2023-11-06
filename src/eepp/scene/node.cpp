@@ -297,8 +297,8 @@ void Node::update( const Time& time ) {
 	writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
-void Node::sendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags ) {
-	MouseEvent MouseEvent( this, Event, Pos, Flags );
+void Node::sendMouseEvent( const Uint32& event, const Vector2i& pos, const Uint32& flags ) {
+	MouseEvent MouseEvent( this, event, pos, flags );
 	sendEvent( &MouseEvent );
 }
 
@@ -313,6 +313,11 @@ void Node::sendTextEvent( const Uint32& event, const std::string& text ) {
 }
 
 Uint32 Node::onTextInput( const TextInputEvent& event ) {
+	sendEvent( &event );
+	return 0;
+}
+
+Uint32 Node::onTextEditing( const TextEditingEvent& event ) {
 	sendEvent( &event );
 	return 0;
 }
@@ -369,7 +374,9 @@ Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
 	EventDispatcher* eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
 	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() == this )
-		sendMouseEvent( Event::MouseOver, Pos, Flags );
+		sendMouseEvent( Event::MouseEnter, Pos, Flags );
+
+	sendMouseEvent( Event::MouseOver, Pos, Flags );
 
 	return 1;
 }
@@ -384,6 +391,8 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 
 	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this )
 		sendMouseEvent( Event::MouseLeave, Pos, Flags );
+
+	sendMouseEvent( Event::MouseOut, Pos, Flags );
 
 	return 1;
 }
@@ -430,17 +439,19 @@ const BlendMode& Node::getBlendMode() const {
 	return mBlend;
 }
 
-void Node::toFront() {
+Node* Node::toFront() {
 	if ( NULL != mParentNode && mParentNode->mChildLast != this ) {
 		mParentNode->childRemove( this );
 		mParentNode->childAdd( this );
 	}
+	return this;
 }
 
-void Node::toBack() {
+Node* Node::toBack() {
 	if ( NULL != mParentNode ) {
 		mParentNode->childAddAt( this, 0 );
 	}
+	return this;
 }
 
 void Node::toPosition( const Uint32& Pos ) {
@@ -1218,6 +1229,7 @@ void Node::onParentSizeChange( const Vector2f& ) {
 }
 
 void Node::onChildCountChange( Node*, const bool& ) {
+	sendCommonEvent( Event::OnChildCountChanged );
 	invalidateDraw();
 }
 
@@ -1498,16 +1510,16 @@ Node* Node::runAction( Action* action ) {
 	return this;
 }
 
-void Node::removeAction( Action* action ) {
-	getActionManager()->removeAction( action );
+bool Node::removeAction( Action* action ) {
+	return getActionManager()->removeAction( action );
 }
 
-void Node::removeActions( const std::vector<Action*>& actions ) {
-	getActionManager()->removeActions( actions );
+bool Node::removeActions( const std::vector<Action*>& actions ) {
+	return getActionManager()->removeActions( actions );
 }
 
-void Node::removeActionsByTag( const String::HashType& tag ) {
-	getActionManager()->removeActionsByTagFromTarget( this, tag );
+bool Node::removeActionsByTag( const String::HashType& tag ) {
+	return getActionManager()->removeActionsByTagFromTarget( this, tag );
 }
 
 std::vector<Action*> Node::getActions() {
@@ -1534,6 +1546,12 @@ void Node::setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& del
 	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
 	action->setTag( uniqueIdentifier );
 	runAction( action );
+}
+
+void Node::debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
+					 const Uint32& uniqueIdentifier ) {
+	removeActionsByTag( uniqueIdentifier );
+	setTimeout( std::move( runnable ), std::move( delay ), uniqueIdentifier );
 }
 
 void Node::setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
@@ -1658,27 +1676,31 @@ void Node::disableReportSizeChangeToChilds() {
 	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS, 0 );
 }
 
-void Node::centerHorizontal() {
+Node* Node::centerHorizontal() {
 	Node* node = getParent();
 	if ( NULL != node ) {
 		setPosition( eefloor( ( node->getSize().getWidth() - getSize().getWidth() ) * 0.5f ),
 					 getPosition().y );
 	}
+	return this;
 }
 
-void Node::centerVertical() {
+Node* Node::centerVertical() {
 	Node* node = getParent();
 	if ( NULL != node ) {
 		setPosition( getPosition().x,
 					 eefloor( node->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
 	}
+	return this;
 }
 
-void Node::center() {
+Node* Node::center() {
 	Node* node = getParent();
-	if ( NULL != node )
+	if ( NULL != node ) {
 		setPosition( eefloor( ( node->getSize().getWidth() - getSize().getWidth() ) * 0.5f ),
 					 eefloor( node->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
+	}
+	return this;
 }
 
 Node* Node::clipEnable() {

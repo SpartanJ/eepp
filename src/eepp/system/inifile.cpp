@@ -10,39 +10,29 @@
 
 namespace EE { namespace System {
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
-#define iniEOL std::endl
-#else
-#define iniEOL '\r' << std::endl
-#endif
-
-IniFile::IniFile( std::string const iniPath, bool autoLoad ) :
-	mCaseInsensitive( true ), mIniReaded( false ) {
+IniFile::IniFile( const std::string& iniPath, bool autoLoad ) {
 	if ( autoLoad )
 		loadFromFile( iniPath );
 	else
 		path( iniPath );
 }
 
-IniFile::IniFile( const Uint8* RAWData, const Uint32& size, bool autoLoad ) :
-	mCaseInsensitive( true ), mIniReaded( false ) {
+IniFile::IniFile( const Uint8* RAWData, const Uint32& size, bool autoLoad ) {
 	if ( autoLoad )
 		loadFromMemory( RAWData, size );
 }
 
-IniFile::IniFile( Pack* Pack, std::string iniPackPath, bool autoLoad ) :
-	mCaseInsensitive( true ), mIniReaded( false ) {
+IniFile::IniFile( Pack* Pack, const std::string& iniPackPath, bool autoLoad ) {
 	if ( autoLoad )
 		loadFromPack( Pack, iniPackPath );
 }
 
-IniFile::IniFile( IOStream& stream, bool autoLoad ) :
-	mCaseInsensitive( true ), mIniReaded( false ) {
+IniFile::IniFile( IOStream& stream, bool autoLoad ) {
 	if ( autoLoad )
 		loadFromStream( stream );
 }
 
-bool IniFile::loadFromPack( Pack* Pack, std::string iniPackPath ) {
+bool IniFile::loadFromPack( Pack* Pack, const std::string& iniPackPath ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( iniPackPath ) ) {
 		ScopedBuffer buffer;
 
@@ -58,13 +48,9 @@ bool IniFile::loadFromStream( IOStream& stream ) {
 	if ( !stream.isOpen() )
 		return false;
 	Clock clock;
-	std::string myfile( (size_t)stream.getSize(), '\0' );
-
-	stream.read( (char*)&myfile[0], stream.getSize() );
-
+	mBuffer.resize( stream.getSize() );
+	stream.read( mBuffer.data(), mBuffer.size() );
 	clear();
-	mLines.clear();
-	mLines = String::split( myfile );
 	readFile();
 	if ( !mPath.empty() )
 		Log::info( "%s loaded in %.2fms", mPath.c_str(), clock.getElapsedTime().asMilliseconds() );
@@ -95,18 +81,31 @@ bool IniFile::loadFromFile( const std::string& iniPath ) {
 }
 
 bool IniFile::readFile() {
-	std::string line;
-	std::string keyname, valuename, value;
-	std::string::size_type pLeft, pRight;
 
 	if ( mIniReaded )
 		return true;
 
-	if ( mLines.size() <= 0 )
-		return false;
+	bool isBOM = false;
+	if ( mBuffer.size() >= 3 && (char)0xef == mBuffer[0] && (char)0xbb == mBuffer[1] &&
+		 (char)0xbf == mBuffer[2] ) {
+		isBOM = true;
+	}
 
-	for ( Uint32 i = 0; i < mLines.size(); i++ ) {
-		line = String::lTrim( mLines[i] );
+	std::string_view buffer( mBuffer );
+	if ( isBOM )
+		buffer = std::string_view( mBuffer.data() + 3, mBuffer.size() - 3 );
+	std::string_view line;
+	std::string_view keyname, valuename, value;
+	std::string::size_type pLeft, pRight;
+
+	size_t pos = 0;
+	size_t curPos = 0;
+	size_t size = mBuffer.size();
+
+	while ( pos < size ) {
+		curPos = buffer.find_first_of( '\n', pos );
+		line = buffer.substr( pos, curPos - pos );
+		pos = curPos + 1;
 
 		// To be compatible with Win32, check for existence of '\r'.
 		// Win32 files have the '\r' and Unix files don't at the end of a line.
@@ -114,40 +113,38 @@ bool IniFile::readFile() {
 		// Unix so that the created INI file can be read under Win32
 		// without change.
 		if ( line.length() && line[line.length() - 1] == '\r' )
-			line = line.substr( 0, line.length() - 1 );
+			line = line.substr( 0, line.size() - 1 );
 
-		if ( line.length() ) {
-			// Check that the user hasn't openned a binary file by checking the first
-			// character of each line!
-			if ( !isprint( line[0] ) ) {
-				Log::error( "IniFile::readFile(): Failing on char %d.", line[0] );
-				return false;
-			}
+		// Check that the user hasn't openned a binary file by checking the first
+		// character of each line!
+		if ( !line.empty() && line[0] != '\0' && !isprint( line[0] ) ) {
+			Log::error( "IniFile::readFile(): Failing on char %d.", line[0] );
+			return false;
+		}
 
-			if ( ( pLeft = line.find_first_of( ";#[=" ) ) != std::string::npos ) {
-				switch ( line[pLeft] ) {
-					case '[':
-						if ( ( pRight = line.find_last_of( "]" ) ) != std::string::npos &&
-							 pRight > pLeft ) {
-							keyname = line.substr( pLeft + 1, pRight - pLeft - 1 );
-							addKeyName( keyname );
-						}
-						break;
-					case '=':
-						valuename = String::trim(
-							line.substr( 0, pLeft ) ); // Remove the extra space between valuename
-													   // and = . No spaced valuename permited.
-						value = String::lTrim( line.substr( pLeft + 1 ) );
-						setValue( keyname, valuename, value );
-						break;
-					case ';':
-					case '#':
-						if ( !mNames.size() )
-							addHeaderComment( line.substr( pLeft + 1 ) );
-						else
-							addKeyComment( keyname, line.substr( pLeft + 1 ) );
-						break;
-				}
+		if ( ( pLeft = line.find_first_of( ";#[=" ) ) != std::string_view::npos ) {
+			switch ( line[pLeft] ) {
+				case '[':
+					if ( ( pRight = line.find_last_of( "]" ) ) != std::string_view::npos &&
+						 pRight > pLeft ) {
+						keyname = line.substr( pLeft + 1, pRight - pLeft - 1 );
+						addKeyName( keyname );
+					}
+					break;
+				case '=':
+					valuename = String::trim(
+						line.substr( 0, pLeft ) ); // Remove the extra space between valuename
+												   // and = . No spaced valuename permited.
+					value = String::lTrim( line.substr( pLeft + 1 ) );
+					setValue( keyname, valuename, value );
+					break;
+				case ';':
+				case '#':
+					if ( !mNames.size() )
+						addHeaderComment( std::string{ line.substr( pLeft + 1 ) } );
+					else
+						addKeyComment( keyname, std::string{ line.substr( pLeft + 1 ) } );
+					break;
 			}
 		}
 	}
@@ -212,25 +209,48 @@ bool IniFile::writeFile() {
 	return true;
 }
 
-long IniFile::findKey( std::string const keyname ) const {
+long IniFile::findKey( const std::string& keyname ) const {
 	for ( unsigned keyID = 0; keyID < mNames.size(); ++keyID )
-		if ( checkCase( mNames[keyID] ) == checkCase( keyname ) )
+		if ( mNames[keyID] == keyname )
 			return long( keyID );
 	return noID;
 }
 
-long IniFile::findValue( unsigned const keyID, std::string const valuename ) const {
+long IniFile::findKey( const std::string_view& keyname ) const {
+	for ( unsigned keyID = 0; keyID < mNames.size(); ++keyID )
+		if ( mNames[keyID] == keyname )
+			return long( keyID );
+	return noID;
+}
+
+long IniFile::findValue( unsigned const keyID, const std::string& valuename ) const {
 	if ( !mKeys.size() || keyID >= mKeys.size() )
 		return noID;
 
 	for ( unsigned valueID = 0; valueID < mKeys[keyID].names.size(); ++valueID )
-		if ( checkCase( mKeys[keyID].names[valueID] ) == checkCase( valuename ) )
+		if ( mKeys[keyID].names[valueID] == valuename )
 			return long( valueID );
 	return noID;
 }
 
-unsigned IniFile::addKeyName( std::string const keyname ) {
+long IniFile::findValue( const unsigned int keyID, const std::string_view& valuename ) const {
+	if ( !mKeys.size() || keyID >= mKeys.size() )
+		return noID;
+
+	for ( unsigned valueID = 0; valueID < mKeys[keyID].names.size(); ++valueID )
+		if ( mKeys[keyID].names[valueID] == valuename )
+			return long( valueID );
+	return noID;
+}
+
+unsigned IniFile::addKeyName( const std::string& keyname ) {
 	mNames.resize( mNames.size() + 1, keyname );
+	mKeys.resize( mKeys.size() + 1 );
+	return (unsigned int)( mNames.size() - 1 );
+}
+
+unsigned int IniFile::addKeyName( const std::string_view& keyname ) {
+	mNames.resize( mNames.size() + 1, std::string{ keyname } );
 	mKeys.resize( mKeys.size() + 1 );
 	return (unsigned int)( mNames.size() - 1 );
 }
@@ -248,7 +268,7 @@ unsigned IniFile::getNumValues( unsigned const keyID ) {
 	return 0;
 }
 
-unsigned IniFile::getNumValues( std::string const keyname ) {
+unsigned IniFile::getNumValues( const std::string& keyname ) {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return 0;
@@ -261,22 +281,22 @@ std::string IniFile::getValueName( unsigned const keyID, unsigned const valueID 
 	return "";
 }
 
-std::string IniFile::getValueName( std::string const keyname, unsigned const valueID ) const {
+std::string IniFile::getValueName( const std::string& keyname, unsigned const valueID ) const {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return "";
 	return getValueName( keyID, valueID );
 }
 
-bool IniFile::setValue( unsigned const keyID, unsigned const valueID, std::string const value ) {
+bool IniFile::setValue( unsigned const keyID, unsigned const valueID, const std::string& value ) {
 	if ( keyID < mKeys.size() && valueID < mKeys[keyID].names.size() )
 		mKeys[keyID].values[valueID] = value;
 
 	return false;
 }
 
-bool IniFile::setValue( std::string const keyname, std::string const valuename,
-						std::string const value, bool create ) {
+bool IniFile::setValue( const std::string& keyname, const std::string& valuename,
+						const std::string& value, bool create ) {
 	long keyID = findKey( keyname );
 	if ( keyID == noID ) {
 		if ( create )
@@ -297,7 +317,29 @@ bool IniFile::setValue( std::string const keyname, std::string const valuename,
 	return true;
 }
 
-bool IniFile::setValueI( std::string const keyname, std::string const valuename, int const value,
+bool IniFile::setValue( const std::string_view& keyname, const std::string_view& valuename,
+						const std::string_view& value, bool create ) {
+	long keyID = findKey( keyname );
+	if ( keyID == noID ) {
+		if ( create )
+			keyID = long( addKeyName( std::string{ keyname } ) );
+		else
+			return false;
+	}
+
+	long valueID = findValue( unsigned( keyID ), valuename );
+	if ( valueID == noID ) {
+		if ( !create )
+			return false;
+		mKeys[keyID].names.resize( mKeys[keyID].names.size() + 1, std::string{ valuename } );
+		mKeys[keyID].values.resize( mKeys[keyID].values.size() + 1, std::string{ value } );
+	} else
+		mKeys[keyID].values[valueID] = value;
+
+	return true;
+}
+
+bool IniFile::setValueI( const std::string& keyname, const std::string& valuename, int const value,
 						 bool create ) {
 	char svalue[MAX_VALUEDATA];
 
@@ -305,7 +347,7 @@ bool IniFile::setValueI( std::string const keyname, std::string const valuename,
 	return setValue( keyname, valuename, svalue, create );
 }
 
-bool IniFile::setValueU( const std::string keyname, const std::string valuename,
+bool IniFile::setValueU( const std::string& keyname, const std::string& valuename,
 						 const unsigned long value, bool create ) {
 	char svalue[MAX_VALUEDATA];
 
@@ -313,15 +355,15 @@ bool IniFile::setValueU( const std::string keyname, const std::string valuename,
 	return setValue( keyname, valuename, svalue, create );
 }
 
-bool IniFile::setValueF( std::string const keyname, std::string const valuename, double const value,
-						 bool create ) {
+bool IniFile::setValueF( const std::string& keyname, const std::string& valuename,
+						 double const value, bool create ) {
 	char svalue[MAX_VALUEDATA];
 
 	String::formatBuffer( svalue, MAX_VALUEDATA, "%f", value );
 	return setValue( keyname, valuename, svalue, create );
 }
 
-bool IniFile::setValueV( std::string const keyname, std::string const valuename, char* format,
+bool IniFile::setValueV( const std::string& keyname, const std::string& valuename, char* format,
 						 ... ) {
 	va_list args;
 	char value[MAX_VALUEDATA];
@@ -330,21 +372,21 @@ bool IniFile::setValueV( std::string const keyname, std::string const valuename,
 #ifdef EE_COMPILER_MSVC
 	vsprintf_s( value, MAX_VALUEDATA, format, args );
 #else
-	vsprintf( value, format, args );
+	vsnprintf( value, MAX_VALUEDATA, format, args );
 #endif
 	va_end( args );
 	return setValue( keyname, valuename, value );
 }
 
 std::string IniFile::getValue( unsigned const keyID, unsigned const valueID,
-							   std::string const defValue ) const {
+							   const std::string& defValue ) const {
 	if ( keyID < mKeys.size() && valueID < mKeys[keyID].names.size() )
 		return mKeys[keyID].values[valueID];
 	return defValue;
 }
 
-std::string IniFile::getValue( std::string const keyname, std::string const valuename,
-							   std::string const defValue ) const {
+std::string IniFile::getValue( const std::string& keyname, const std::string& valuename,
+							   const std::string& defValue ) const {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return defValue;
@@ -356,7 +398,7 @@ std::string IniFile::getValue( std::string const keyname, std::string const valu
 	return mKeys[keyID].values[valueID];
 }
 
-int IniFile::getValueI( std::string const keyname, std::string const valuename,
+int IniFile::getValueI( const std::string& keyname, const std::string& valuename,
 						int const defValue ) const {
 	char svalue[MAX_VALUEDATA];
 
@@ -364,7 +406,7 @@ int IniFile::getValueI( std::string const keyname, std::string const valuename,
 	return atoi( getValue( keyname, valuename, svalue ).c_str() );
 }
 
-unsigned long IniFile::getValueU( const std::string keyname, const std::string valuename,
+unsigned long IniFile::getValueU( const std::string& keyname, const std::string& valuename,
 								  const unsigned long defValue ) const {
 	char svalue[MAX_VALUEDATA];
 
@@ -372,14 +414,14 @@ unsigned long IniFile::getValueU( const std::string keyname, const std::string v
 	return atoi( getValue( keyname, valuename, svalue ).c_str() );
 }
 
-bool IniFile::getValueB( const std::string keyname, const std::string valuename,
+bool IniFile::getValueB( const std::string& keyname, const std::string& valuename,
 						 const bool defValue ) const {
 	std::string val = getValue( keyname, valuename, defValue ? "1" : "0" );
 	char fist = !val.empty() ? val[0] : '0';
 	return fist == '1' || fist == 't' || fist == 'y' || fist == 'T' || fist == 'Y';
 }
 
-double IniFile::getValueF( std::string const keyname, std::string const valuename,
+double IniFile::getValueF( const std::string& keyname, const std::string& valuename,
 						   double const defValue ) const {
 	char svalue[MAX_VALUEDATA];
 
@@ -387,35 +429,7 @@ double IniFile::getValueF( std::string const keyname, std::string const valuenam
 	return atof( getValue( keyname, valuename, svalue ).c_str() );
 }
 
-// 16 variables may be a bit of over kill, but hey, it's only code.
-unsigned IniFile::getValueV( std::string const keyname, std::string const valuename, char* format,
-							 void* v1, void* v2, void* v3, void* v4, void* v5, void* v6, void* v7,
-							 void* v8, void* v9, void* v10, void* v11, void* v12, void* v13,
-							 void* v14, void* v15, void* v16 ) {
-	std::string value;
-	// va_list  args;
-	unsigned nVals;
-
-	value = getValue( keyname, valuename );
-	if ( !value.length() )
-		return false;
-		// Why is there not vsscanf() function. Linux man pages say that there is
-		// but no compiler I've seen has it defined. Bummer!
-		//
-		// va_start( args, format);
-		// nVals = vsscanf( value.c_str(), format, args);
-		// va_end( args);
-#ifdef EE_COMPILER_MSVC
-	nVals = (unsigned int)sscanf_s( value.c_str(), format, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10,
-									v11, v12, v13, v14, v15, v16 );
-#else
-	nVals = (unsigned int)sscanf( value.c_str(), format, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10,
-								  v11, v12, v13, v14, v15, v16 );
-#endif
-	return nVals;
-}
-
-bool IniFile::deleteValue( std::string const keyname, std::string const valuename ) {
+bool IniFile::deleteValue( const std::string& keyname, const std::string& valuename ) {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return false;
@@ -433,7 +447,7 @@ bool IniFile::deleteValue( std::string const keyname, std::string const valuenam
 	return true;
 }
 
-bool IniFile::deleteKey( std::string const keyname ) {
+bool IniFile::deleteKey( const std::string& keyname ) {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return false;
@@ -453,7 +467,7 @@ void IniFile::clear() {
 	mComments.clear();
 }
 
-void IniFile::addHeaderComment( std::string const comment ) {
+void IniFile::addHeaderComment( const std::string& comment ) {
 	mComments.resize( mComments.size() + 1, comment );
 }
 
@@ -516,14 +530,14 @@ unsigned IniFile::getNumKeyComments( unsigned const keyID ) const {
 	return 0;
 }
 
-unsigned IniFile::getNumKeyComments( std::string const keyname ) const {
+unsigned IniFile::getNumKeyComments( const std::string& keyname ) const {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return 0;
 	return (unsigned int)mKeys[keyID].comments.size();
 }
 
-bool IniFile::addKeyComment( unsigned const keyID, std::string const comment ) {
+bool IniFile::addKeyComment( unsigned const keyID, const std::string& comment ) {
 	if ( keyID < mKeys.size() ) {
 		mKeys[keyID].comments.resize( mKeys[keyID].comments.size() + 1, comment );
 		return true;
@@ -531,7 +545,22 @@ bool IniFile::addKeyComment( unsigned const keyID, std::string const comment ) {
 	return false;
 }
 
-bool IniFile::addKeyComment( std::string const keyname, std::string const comment ) {
+bool IniFile::addKeyComment( unsigned const keyID, const std::string_view& comment ) {
+	if ( keyID < mKeys.size() ) {
+		mKeys[keyID].comments.resize( mKeys[keyID].comments.size() + 1, std::string{ comment } );
+		return true;
+	}
+	return false;
+}
+
+bool IniFile::addKeyComment( const std::string& keyname, const std::string& comment ) {
+	long keyID = findKey( keyname );
+	if ( keyID == noID )
+		return false;
+	return addKeyComment( unsigned( keyID ), comment );
+}
+
+bool IniFile::addKeyComment( const std::string_view& keyname, const std::string_view& comment ) {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return false;
@@ -544,7 +573,7 @@ std::string IniFile::getKeyComment( unsigned const keyID, unsigned const comment
 	return "";
 }
 
-std::string IniFile::getKeyComment( std::string const keyname, unsigned const commentID ) const {
+std::string IniFile::getKeyComment( const std::string& keyname, unsigned const commentID ) const {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return "";
@@ -560,7 +589,7 @@ bool IniFile::deleteKeyComment( unsigned const keyID, unsigned const commentID )
 	return false;
 }
 
-bool IniFile::deleteKeyComment( std::string const keyname, unsigned const commentID ) {
+bool IniFile::deleteKeyComment( const std::string& keyname, unsigned const commentID ) {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return false;
@@ -575,7 +604,7 @@ bool IniFile::deleteKeyComments( unsigned const keyID ) {
 	return false;
 }
 
-bool IniFile::deleteKeyComments( std::string const keyname ) {
+bool IniFile::deleteKeyComments( const std::string& keyname ) {
 	long keyID = findKey( keyname );
 	if ( keyID == noID )
 		return false;
@@ -596,13 +625,6 @@ bool IniFile::keyValueExists( const std::string& keyname, const std::string& val
 		return false;
 
 	return true;
-}
-
-std::string IniFile::checkCase( std::string s ) const {
-	if ( mCaseInsensitive )
-		for ( std::string::size_type i = 0; i < s.length(); ++i )
-			s[i] = std::tolower( s[i] );
-	return s;
 }
 
 }} // namespace EE::System

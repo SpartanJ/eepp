@@ -251,7 +251,8 @@ UITheme* UITheme::loadFromDirectroy( UITheme* tTheme, const std::string& Path,
 	else
 		eeSAFE_DELETE( tSG );
 
-	Log::info( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsedTimeAndReset().asMilliseconds() );
+	Log::info( "UI Theme Loaded in: %4.3f ms ( from path )",
+			   TE.getElapsedTimeAndReset().asMilliseconds() );
 
 	return tTheme;
 }
@@ -273,7 +274,7 @@ UITheme::UITheme( const std::string& name, const std::string& Abbr, Graphics::Fo
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),
 	mDefaultFont( defaultFont ),
-	mDefaultFontSize( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ),
+	mDefaultFontSize( PixelDensity::dpToPx( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ) ),
 	mIconTheme( UIIconTheme::New( name ) ) {}
 
 UITheme::~UITheme() {

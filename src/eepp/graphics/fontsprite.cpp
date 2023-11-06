@@ -163,7 +163,7 @@ const FontSprite::Info& FontSprite::getInfo() const {
 	return mInfo;
 }
 
-const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize, bool, Float,
+const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize, bool, bool, Float,
 								   Float ) const {
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
@@ -178,18 +178,19 @@ const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize,
 }
 
 GlyphDrawable* FontSprite::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											 bool bold, Float outlineThickness,
+											 bool bold, bool italic, Float outlineThickness,
 											 const Float& ) const {
 	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
 	auto it = drawables.find( codePoint );
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness );
-		auto& page = mPages[characterSize];
+		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, italic, outlineThickness );
+		const auto& page = mPages[characterSize];
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.bounds.getSize(),
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
+		region->setAdvance( glyph.bounds.getSize().getWidth() );
 		drawables[codePoint] = region;
 		return region;
 	}
@@ -215,7 +216,7 @@ Glyph FontSprite::loadGlyph( Uint32 codePoint, unsigned int characterSize ) cons
 	return glyph;
 }
 
-Float FontSprite::getKerning( Uint32, Uint32, unsigned int, bool ) const {
+Float FontSprite::getKerning( Uint32, Uint32, unsigned int, bool, bool, Float ) const {
 	return 0;
 }
 

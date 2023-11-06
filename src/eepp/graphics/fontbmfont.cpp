@@ -157,8 +157,8 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 			glyph.textureRect = Rect( charX, charY, charWidth, charHeight );
 		}
 
-		const Glyph& gl1 = getGlyph( '@', mFontSize, false );
-		const Glyph& gl2 = getGlyph( '.', mFontSize, false );
+		const Glyph& gl1 = getGlyph( '@', mFontSize, false, false );
+		const Glyph& gl2 = getGlyph( '.', mFontSize, false, false );
 		mIsMonospace = gl1.advance == gl2.advance;
 
 		sendEvent( Event::Load );
@@ -186,7 +186,7 @@ const FontBMFont::Info& FontBMFont::getInfo() const {
 }
 
 const Glyph& FontBMFont::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-								   Float outlineThickness, Float ) const {
+								   bool /*italic*/, Float outlineThickness, Float ) const {
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
 	GlyphTable::const_iterator it = glyphs.find( codePoint );
@@ -200,18 +200,19 @@ const Glyph& FontBMFont::getGlyph( Uint32 codePoint, unsigned int characterSize,
 }
 
 GlyphDrawable* FontBMFont::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											 bool bold, Float outlineThickness,
+											 bool bold, bool italic, Float outlineThickness,
 											 const Float& ) const {
 	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
 	auto it = drawables.find( codePoint );
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness );
-		auto& page = mPages[characterSize];
+		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, italic, outlineThickness );
+		const auto& page = mPages[characterSize];
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.bounds.getSize(),
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
+		region->setAdvance( glyph.bounds.getSize().getWidth() );
 		drawables[codePoint] = region;
 		return region;
 	}
@@ -237,7 +238,7 @@ Glyph FontBMFont::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool,
 	return glyph;
 }
 
-Float FontBMFont::getKerning( Uint32, Uint32, unsigned int, bool ) const {
+Float FontBMFont::getKerning( Uint32, Uint32, unsigned int, bool, bool, Float ) const {
 	return 0;
 }
 

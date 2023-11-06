@@ -467,21 +467,10 @@ const std::vector<LSPDefinition>& LSPClientServerManager::getLSPs() const {
 }
 
 LSPDefinition
-LSPClientServerManager::getLSPForLang( const std::string& lang,
-									   const std::vector<std::string>& extensions ) const {
+LSPClientServerManager::getLSPForLang( const std::string& lang ) const {
 	for ( const auto& lsp : mLSPs ) {
 		if ( lsp.language == lang )
 			return lsp;
-
-		if ( !lsp.filePatterns.empty() ) {
-			for ( const auto& file : lsp.filePatterns ) {
-				for ( const auto& ext : extensions ) {
-					if ( ext == file ) {
-						return lsp;
-					}
-				}
-			}
-		}
 	}
 	return {};
 }

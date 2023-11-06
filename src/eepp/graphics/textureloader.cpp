@@ -23,6 +23,19 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
+UnorderedMap<Uint32, TextureLoader::OnTextureLoaded> TextureLoader::sCbs = {};
+std::atomic<Uint32> TextureLoader::sNumCbs = 0;
+
+Uint32 TextureLoader::pushLoadedCallback( const OnTextureLoaded& cb ) {
+	Uint32 newCb = ++sNumCbs;
+	sCbs.insert( { newCb, cb } );
+	return newCb;
+}
+
+void TextureLoader::popLoadedCallback( const Uint32& cbId ) {
+	sCbs.erase( cbId );
+}
+
 TextureLoader::TextureLoader( IOStream& Stream, const bool& Mipmap,
 							  const Texture::ClampMode& ClampMode, const bool& CompressTexture,
 							  const bool& KeepLocalCopy ) :
@@ -261,6 +274,11 @@ void TextureLoader::loadFromStream() {
 	}
 }
 
+void TextureLoader::notifyLoaded() {
+	for ( const auto& cb : sCbs )
+		cb.second( cb.first, mTexture );
+}
+
 void TextureLoader::loadFromPixels() {
 	if ( !mLoaded && mTexLoaded ) {
 		Uint32 tTexId = 0;
@@ -345,17 +363,19 @@ void TextureLoader::loadFromPixels() {
 					}
 				}
 
-				mTexId = TextureFactory::instance()->pushTexture(
+				mTexture = TextureFactory::instance()->pushTexture(
 					mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels,
 					mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
 				if ( mFilepath.empty() ) {
-					Log::info( "Texture ID %d loaded in %4.3f ms.", mTexId,
+					Log::info( "Texture ID %d loaded in %4.3f ms.", mTexture->getTextureId(),
 							   mTE.getElapsedTimeAndReset().asMilliseconds() );
 				} else {
 					Log::info( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(),
 							   mTE.getElapsedTimeAndReset().asMilliseconds() );
 				}
+
+				notifyLoaded();
 			} else {
 				Log::warning( "Failed to create texture. Reason: %s", SOIL_last_result() );
 			}
@@ -387,8 +407,8 @@ void TextureLoader::loadFromPixels() {
 	}
 }
 
-const Uint32& TextureLoader::getId() const {
-	return mTexId;
+Uint32 TextureLoader::getId() const {
+	return mTexture != nullptr ? mTexture->getTextureId() : 0;
 }
 
 void TextureLoader::setColorKey( RGB Color ) {
@@ -401,10 +421,7 @@ const std::string& TextureLoader::getFilepath() const {
 }
 
 Texture* TextureLoader::getTexture() const {
-	if ( 0 != mTexId )
-		return TextureFactory::instance()->getTexture( mTexId );
-
-	return NULL;
+	return mTexture;
 }
 
 Image::FormatConfiguration TextureLoader::getFormatConfiguration() const {
@@ -417,16 +434,16 @@ void TextureLoader::setFormatConfiguration(
 }
 
 void TextureLoader::unload() {
-	if ( mLoaded ) {
-		TextureFactory::instance()->remove( mTexId );
+	if ( mLoaded && mTexture != nullptr ) {
+		TextureFactory::instance()->remove( mTexture->getTextureId() );
 
 		reset();
 	}
 }
 
 void TextureLoader::reset() {
-	mPixels = NULL;
-	mTexId = 0;
+	mPixels = nullptr;
+	mTexture = nullptr;
 	mImgWidth = 0;
 	mImgHeight = 0;
 	mWidth = 0;

@@ -32,7 +32,7 @@ function get_dll_extension()
 end
 
 function get_host()
-	if os.getenv("MSYSTEM") ~= "" then
+	if os.getenv("MSYSTEM") ~= "" and not is_vs() then
 		return "msys"
 	end
 	return os.host()
@@ -125,6 +125,7 @@ function set_kind()
 	else
 		kind("WindowedApp")
 	end
+	cppdialect "C++17"
 end
 
 link_list = { }
@@ -386,6 +387,9 @@ function build_link_configuration( package_name, use_ee_icon )
 		if _OPTIONS["with-gles2"] and not _OPTIONS["force-gles1"] then
 			linkoptions{ "-s FULL_ES2=1" }
 		end
+
+	filter { "action:export-compile-commands", "system:macosx" }
+		buildoptions { "-std=c++17" }
 end
 
 function generate_os_links()
@@ -713,6 +717,9 @@ function build_eepp( build_name )
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
 		buildoptions { "/bigobj" }
+
+	filter { "action:export-compile-commands", "system:macosx" }
+		buildoptions { "-std=c++17" }
 end
 
 function target_dir_lib(path)
@@ -762,11 +769,19 @@ workspace "eepp"
 
 	filter "platforms:arm64"
 		architecture "ARM64"
+
+	filter { "platforms:arm64", "system:macosx" }
+		architecture "ARM64"
 		buildoptions { "-arch arm64" }
 		linkoptions { "-arch arm64" }
 
 	filter "platforms:x86_64"
 		architecture "x86_64"
+
+	filter { "platforms:x86_64", "system:macosx" }
+		architecture "x86_64"
+		buildoptions { "-arch x86_64" }
+		linkoptions { "-arch x86_64" }
 
 	filter "system:macosx"
 		defines { "GL_SILENCE_DEPRECATION" }
@@ -1017,6 +1032,8 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
+		filter { "action:export-compile-commands", "system:macosx" }
+			buildoptions { "-std=c++17" }
 
 	-- Library
 	project "eepp-static"

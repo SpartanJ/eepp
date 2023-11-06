@@ -215,9 +215,13 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	void paste();
 
+	void updateIMELocation();
+
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
+
+	virtual Uint32 onTextEditing( const TextEditingEvent& event );
 
 	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
 

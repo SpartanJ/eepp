@@ -73,7 +73,7 @@ class EE_API UIStyle : public UIState {
 
 	void removeStructurallyVolatileChild( UIWidget* widget );
 
-	std::unordered_set<UIWidget*>& getStructurallyVolatileChilds();
+	UnorderedSet<UIWidget*>& getStructurallyVolatileChilds();
 
 	bool hasProperty( const CSS::PropertyId& propertyId ) const;
 
@@ -88,7 +88,7 @@ class EE_API UIStyle : public UIState {
 	CSS::AnimationsMap mAnimations;
 	std::set<UIWidget*> mRelatedWidgets;
 	std::set<UIWidget*> mSubscribedWidgets;
-	std::unordered_set<UIWidget*> mStructurallyVolatileChilds;
+	UnorderedSet<UIWidget*> mStructurallyVolatileChilds;
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;

@@ -229,7 +229,7 @@ function get_dll_extension()
 end
 
 function get_host()
-	if os.getenv("MSYSTEM") ~= "" then
+	if os.getenv("MSYSTEM") ~= "" and not is_vs() then
 		return "msys"
 	end
 	return os.get()

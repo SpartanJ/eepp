@@ -1,4 +1,5 @@
 #include "test.hpp"
+using namespace std::literals;
 
 Demo_Test::EETest* TestInstance = NULL;
 
@@ -269,7 +270,7 @@ void EETest::onFontLoaded() {
 		"mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está "
 		"ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. "
 		"Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter "
-		"el mar en tu cabeza, que es un balde." );
+		"el mar en tu cabeza, que es un balde."sv );
 
 	createUI();
 	Con = UIConsole::NewOpt( monospace, true, true, 8191 );
@@ -1744,10 +1745,11 @@ void EETest::screen3() {
 }
 
 void EETest::screen4() {
-	if ( NULL != mFBO ) {
-		mFBO->bind();
-		mFBO->clear();
-	}
+	if ( NULL == mFBO )
+		return;
+
+	mFBO->bind();
+	mFBO->clear();
 
 	if ( NULL != mVBO ) {
 		mBlindy.setPosition( Vector2f( 128 - 16, 128 - 16 ) );
@@ -1776,15 +1778,13 @@ void EETest::screen4() {
 	p.drawCircle( center, 32 );
 	GLi->getClippingMask()->stencilMaskDisable();
 
-	if ( NULL != mFBO ) {
-		mFBO->unbind();
+	mFBO->unbind();
 
-		if ( NULL != mFBO->getTexture() ) {
-			mFBO->getTexture()->draw(
-				(Float)mWindow->getWidth() * 0.5f - (Float)mFBO->getWidth() * 0.5f,
-				(Float)mWindow->getHeight() * 0.5f - (Float)mFBO->getHeight() * 0.5f, Ang );
-			GlobalBatchRenderer::instance()->draw();
-		}
+	if ( NULL != mFBO->getTexture() ) {
+		mFBO->getTexture()->draw(
+			(Float)mWindow->getWidth() * 0.5f - (Float)mFBO->getWidth() * 0.5f,
+			(Float)mWindow->getHeight() * 0.5f - (Float)mFBO->getHeight() * 0.5f, Ang );
+		GlobalBatchRenderer::instance()->draw();
 	}
 }
 

@@ -13,6 +13,7 @@
 #include "version.hpp"
 #include <algorithm>
 #include <args/args.hxx>
+#include <eepp/graphics/fontfamily.hpp>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -31,7 +32,7 @@ using json = nlohmann::json;
 #endif
 #include <backward-cpp/backward.hpp>
 #endif
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 #include "macos/macos.hpp"
 #endif
 
@@ -126,6 +127,7 @@ void App::saveAllProcess() {
 }
 
 void App::saveAll() {
+	mTmpDocs.clear();
 	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 		if ( editor->isDirty() )
 			mTmpDocs.insert( &editor->getDocument() );
@@ -158,11 +160,8 @@ void App::updateEditorTitle( UICodeEditor* editor ) {
 
 void App::setAppTitle( const std::string& title ) {
 	std::string fullTitle( mWindowTitle );
-	if ( !mCurrentProject.empty() ) {
-		std::string currentProject( FileSystem::fileNameFromPath( mCurrentProject ) );
-		if ( !currentProject.empty() )
-			fullTitle += " - " + currentProject;
-	}
+	if ( !mCurrentProjectName.empty() )
+		fullTitle += " - " + mCurrentProjectName;
 
 	if ( !title.empty() )
 		fullTitle += " - " + title;
@@ -170,13 +169,19 @@ void App::setAppTitle( const std::string& title ) {
 	if ( mBenchmarkMode )
 		fullTitle += " - " + String::toString( mWindow->getFPS() ) + " FPS";
 
-	mWindow->setTitle( fullTitle );
+	if ( mCurWindowTitle != fullTitle ) {
+		mCurWindowTitle = fullTitle;
+		if ( Engine::isRunninMainThread() ) {
+			mWindow->setTitle( fullTitle );
+		} else {
+			mUISceneNode->runOnMainThread( [this, fullTitle] { mWindow->setTitle( fullTitle ); } );
+		}
+	}
 }
 
 void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {
 	bool isDirty = editor->getDocument().isDirty();
-	bool wasDirty =
-		!mWindow->getTitle().empty() && mWindow->getTitle()[mWindow->getTitle().size() - 1] == '*';
+	bool wasDirty = !mCurWindowTitle.empty() && mCurWindowTitle[mCurWindowTitle.size() - 1] == '*';
 
 	if ( isDirty != wasDirty )
 		setAppTitle( titleFromEditor( editor ) );
@@ -287,6 +292,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 					mFontMono = fontMono;
 					mFontMono->setEnableDynamicMonospace( true );
 					mFontMono->setBoldAdvanceSameAsRegular( true );
+					FontFamily::loadFromRegular( mFontMono );
 					if ( mSplitter ) {
 						mSplitter->forEachEditor(
 							[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
@@ -357,7 +363,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
-				 FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+				 FileSystem::fileWrite( path, "" ) ) {
 				if ( editor->getDocument().save( path ) ) {
 					updateEditorState();
 				} else {
@@ -389,7 +395,8 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 
 void App::runCommand( const std::string& command ) {
 	if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-		mSplitter->getCurWidget()->asType<UICodeEditor>()->getDocument().execute( command );
+		UICodeEditor* editor = mSplitter->getCurWidget()->asType<UICodeEditor>();
+		editor->getDocument().execute( command, editor );
 	} else if ( mSplitter->getCurWidget() &&
 				mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
 		mSplitter->getCurWidget()->asType<UITerminal>()->execute( command );
@@ -433,11 +440,14 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( XMLToolsPlugin::Definition() );
 }
 
-void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
+bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
 					  bool stdOutLogs, bool disableFileLogs ) {
 	mConfigPath = Sys::getConfigPath( "ecode" );
-	if ( !FileSystem::fileExists( mConfigPath ) )
+	bool firstRun = false;
+	if ( !FileSystem::fileExists( mConfigPath ) ) {
 		FileSystem::makeDir( mConfigPath );
+		firstRun = true;
+	}
 	FileSystem::dirAddSlashAtEnd( mConfigPath );
 	mPluginsPath = mConfigPath + "plugins";
 	mLanguagesPath = mConfigPath + "languages";
@@ -462,10 +472,12 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 		FileSystem::makeDir( mThemesPath );
 	FileSystem::dirAddSlashAtEnd( mThemesPath );
 
+	mLogsPath = mConfigPath + "ecode.log";
+
 #ifndef EE_DEBUG
-	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, !disableFileLogs );
+	Log::create( mLogsPath, logLevel, stdOutLogs, !disableFileLogs );
 #else
-	Log::create( mConfigPath + "ecode.log", logLevel, stdOutLogs, !disableFileLogs );
+	Log::create( mLogsPath, logLevel, stdOutLogs, !disableFileLogs );
 #endif
 
 	Log::instance()->setKeepLog( true );
@@ -479,6 +491,8 @@ void App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 
 	mConfig.load( mConfigPath, mKeybindingsPath, mInitColorScheme, mRecentFiles, mRecentFolders,
 				  mResPath, mPluginManager.get(), displaySize.asInt(), sync );
+
+	return firstRun;
 }
 
 void App::saveConfig() {
@@ -510,7 +524,7 @@ bool App::trySendUnlockedCmd( const KeyEvent& keyEvent ) {
 		std::string cmd = mSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
 			{ keyEvent.getKeyCode(), keyEvent.getMod() } );
 		if ( !cmd.empty() && mSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
-			mSplitter->getCurEditor()->getDocument().execute( cmd );
+			mSplitter->getCurEditor()->getDocument().execute( cmd, mSplitter->getCurEditor() );
 			return true;
 		}
 	} else if ( mSplitter->getCurWidget() != nullptr &&
@@ -534,6 +548,13 @@ void App::closeApp() {
 		mWindow->close();
 }
 
+void App::onReady() {
+	// Plugin reload is only available right after we render the first frame and the editor is ready
+	// to run.
+	mPluginManager->setPluginReloadEnabled( true );
+	Log::info( "App Ready" );
+}
+
 void App::mainLoop() {
 	mWindow->getInput()->update();
 	SceneManager::instance()->update();
@@ -550,6 +571,7 @@ void App::mainLoop() {
 		if ( unlikely( firstFrame ) ) {
 			Log::info( "First frame took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 			firstFrame = false;
+			onReady();
 		}
 	} else {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -598,10 +620,16 @@ void App::onFileDropped( String file ) {
 		}
 	}
 
-	loadFileFromPath( file, false, codeEditor, [tab]( UICodeEditor*, const std::string& ) {
-		if ( tab )
-			tab->getTabWidget()->setTabSelected( tab );
-	} );
+	loadFileFromPath( file, false, codeEditor,
+					  [this, tab]( UICodeEditor* editor, const std::string& ) {
+						  if ( tab )
+							  tab->setTabSelected();
+						  else {
+							  UITab* tab = mSplitter->tabFromEditor( editor );
+							  if ( tab )
+								  tab->setTabSelected();
+						  }
+					  } );
 }
 
 void App::onTextDropped( String text ) {
@@ -1005,7 +1033,7 @@ void App::setEditorFontSize() {
 	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
 		mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
 		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setFontSize( mConfig.editor.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+			editor->setFontSize( mConfig.editor.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
 		} );
 	} );
 	setFocusEditorOnClose( msgBox );
@@ -1038,7 +1066,7 @@ void App::setUIFontSize() {
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
 		mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		Float fontSize = mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI );
+		Float fontSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
 		UIThemeManager* manager = mUISceneNode->getUIThemeManager();
 		manager->setDefaultFontSize( fontSize );
 		manager->getDefaultTheme()->setDefaultFontSize( fontSize );
@@ -1047,8 +1075,8 @@ void App::setUIFontSize() {
 				UITextView* textView = node->asType<UITextView>();
 				if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
 					textView->setFontSize(
-						mConfig.ui.fontSize.asDp( node->getParent()->getPixelsSize().getWidth(),
-												  Sizef(), mUISceneNode->getDPI() ) );
+						mConfig.ui.fontSize.asPixels( node->getParent()->getPixelsSize().getWidth(),
+													  Sizef(), mUISceneNode->getDPI() ) );
 				}
 			}
 		} );
@@ -1513,15 +1541,17 @@ void App::updateDocInfoLocation() {
 }
 
 void App::updateDocInfo( TextDocument& doc ) {
-	if ( mConfig.editor.showDocInfo && mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
+	if ( !doc.isRunningTransaction() && mConfig.editor.showDocInfo && mDocInfo &&
+		 mSplitter->curEditorExistsAndFocused() ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
-		mDocInfo->setText( String::format(
+		String infoStr( String::format(
 			"%s: %lld / %zu  %s: %lld    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
 			doc.getSelection().start().line() + 1, doc.linesCount(),
 			i18n( "col_abbr", "col" ).toUtf8().c_str(),
 			mSplitter->getCurEditor()->getCurrentColumnCount(),
 			TextDocument::lineEndingToString( doc.getLineEnding() ).c_str() ) );
+		mDocInfo->runOnMainThread( [this, infoStr] { mDocInfo->setText( infoStr ); } );
 	}
 }
 
@@ -1634,6 +1664,10 @@ void App::loadFileDelayed() {
 							  editor->runOnMainThread( [this, editor, fileAndPos] {
 								  editor->goToLine( fileAndPos.second );
 								  mSplitter->addEditorPositionToNavigationHistory( editor );
+								  UITab* tab = mSplitter->tabFromEditor( editor );
+								  if ( tab )
+									  tab->setTabSelected();
+								  updateEditorTabTitle( editor );
 							  } );
 						  } );
 	}
@@ -1662,7 +1696,7 @@ std::string App::getDefaultThemePath() const {
 
 void App::setTheme( const std::string& path ) {
 	UITheme* theme = UITheme::load( "uitheme", "uitheme", "", mFont, path );
-	theme->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) );
+	theme->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
 
 	if ( path != getDefaultThemePath() ) {
 		auto style = theme->getStyleSheet().getStyleFromSelector( ":root" );
@@ -1696,7 +1730,7 @@ void App::setTheme( const std::string& path ) {
 		//->setDefaultEffectsEnabled( true )
 		->setDefaultTheme( theme )
 		->setDefaultFont( mFont )
-		->setDefaultFontSize( mConfig.ui.fontSize.asDp( 0, Sizef(), mDisplayDPI ) )
+		->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) )
 		->add( theme );
 
 	mUISceneNode->getRoot()->addClass( "appbackground" );
@@ -1707,6 +1741,14 @@ void App::setTheme( const std::string& path ) {
 	mTheme = theme;
 
 	mUISceneNode->reloadStyle( true, true );
+}
+
+bool App::dirInFolderWatches( const std::string& dir ) {
+	Lock l( mWatchesLock );
+	for ( const auto& watch : mFolderWatches )
+		if ( String::startsWith( dir, watch.first ) )
+			return true;
+	return false;
 }
 
 void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
@@ -1721,7 +1763,8 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 	if ( mRecentFiles.size() > 10 )
 		mRecentFiles.resize( 10 );
 	cleanUpRecentFiles();
-	updateRecentFiles();
+	auto urfId = String::hash( "updateRecentFiles" );
+	mUISceneNode->debounce( [this] { updateRecentFiles(); }, Seconds( 0.5f ), urfId );
 	if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() == editor ) {
 		mSettings->updateDocumentMenu();
 		updateDocInfo( editor->getDocument() );
@@ -1737,9 +1780,13 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 	if ( mFileWatcher && doc.hasFilepath() &&
 		 ( !mDirTree || !mDirTree->isDirInTree( doc.getFileInfo().getFilepath() ) ) ) {
 		std::string dir( FileSystem::fileRemoveFileName( doc.getFileInfo().getFilepath() ) );
-		Lock l( mWatchesLock );
-		if ( mFileWatcher )
-			mFilesFolderWatches[dir] = mFileWatcher->addWatch( dir, mFileSystemListener );
+		mThreadPool->run( [this, dir] {
+			if ( mFileWatcher && !dirInFolderWatches( dir ) ) {
+				auto watchId = mFileWatcher->addWatch( dir, mFileSystemListener );
+				Lock l( mWatchesLock );
+				mFilesFolderWatches[dir] = watchId;
+			}
+		} );
 	}
 }
 
@@ -1787,37 +1834,49 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
-		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
-		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
-		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
-		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-		{ { KEY_J, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-left" },
-		{ { KEY_L, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-right" },
-		{ { KEY_I, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-top" },
-		{ { KEY_K, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-bottom" },
-		{ { KEY_S, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "terminal-split-swap" },
-		{ { KEY_T, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "reopen-closed-tab" },
-		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
-		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
-		{ { KEY_K, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
-		{ { KEY_P, KEYMOD_CTRL | KEYMOD_SHIFT }, "open-document-symbol-search" },
+			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+			{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+#else
+			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+#endif
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+			{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
+			{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-left" },
+			{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-right" },
+			{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-top" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-bottom" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-swap" },
+			{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "reopen-closed-tab" },
+			{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
+			{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
+			{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+			{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+			{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-workspace-symbol-search" },
+			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-document-symbol-search" },
+			{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
 	};
 }
 
@@ -1826,11 +1885,14 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 std::map<std::string, std::string> App::getMigrateKeybindings() {
 	return {
 		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
-		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
-		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
-		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
-		{ "switch-to-last-tab", "alt+0" },
+			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
+			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
+			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
+			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
+			{ "switch-to-last-tab", "alt+0" },
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+			{ "menu-toggle", "mod+shift+m" },
+#endif
 	};
 }
 
@@ -1890,7 +1952,8 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "open-workspace-symbol-search",
 			 "open-document-symbol-search",
 			 "show-folder-treeview-tab",
-			 "show-build-tab" };
+			 "show-build-tab",
+			 "create-new-window" };
 }
 
 bool App::isUnlockedCommand( const std::string& command ) {
@@ -1940,6 +2003,7 @@ void App::closeEditors() {
 	} );
 
 	mCurrentProject = "";
+	mCurrentProjectName = "";
 	mDirTree = nullptr;
 	if ( mFileSystemListener )
 		mFileSystemListener->setDirTree( mDirTree );
@@ -1977,7 +2041,7 @@ void App::closeFolder() {
 	mStatusBar->setVisible( false );
 }
 
-void App::createDocAlert( UICodeEditor* editor ) {
+void App::createDocDirtyAlert( UICodeEditor* editor ) {
 	UILinearLayout* docAlert = editor->findByClass<UILinearLayout>( "doc_alert" );
 
 	if ( docAlert )
@@ -2031,6 +2095,69 @@ void App::createDocAlert( UICodeEditor* editor ) {
 				editor->setFocus();
 			}
 		} );
+
+	docAlert->runOnMainThread(
+		[docAlert, editor] {
+			editor->disableReportSizeChangeToChilds();
+			docAlert->close();
+			editor->setFocus();
+		},
+		Seconds( 10.f ) );
+}
+
+void App::createDocManyLangsAlert( UICodeEditor* editor ) {
+	UILinearLayout* docAlert = editor->findByClass<UILinearLayout>( "doc_alert_manylangs" );
+
+	if ( docAlert )
+		return;
+
+	auto ext = editor->getDocument().getFileInfo().getExtension();
+	auto langs = SyntaxDefinitionManager::instance()->languagesThatSupportExtension( ext );
+
+	if ( langs.size() <= 1 )
+		return;
+
+	const auto msg = R"xml(
+	<vbox class="doc_alert doc_alert_manylangs" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" gravity-owner="true">
+		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
+			text='@string(reload_current_file, "The current document uses an extension that can be interpreted as more than one languages.&#xA;Which language is this document?")'
+		/>
+		<StackLayout class="languages" layout_width="200dp" layout_height="wrap_content" margin-right="24dp" margin-top="8dp"></StackLayout>
+		<TextView font-size="9dp" text='@string(lang_selected_default, The language selected will be set as the default language for this file extension.)' margin-top="8dp" />
+	</vbox>
+	)xml";
+	docAlert = mUISceneNode->loadLayoutFromString( msg, editor )->asType<UILinearLayout>();
+
+	UIStackLayout* stack = docAlert->findByClass<UIStackLayout>( "languages" );
+
+	if ( !stack ) {
+		docAlert->close();
+		return;
+	}
+
+	for ( const auto& lang : langs ) {
+		UIPushButton* btn = UIPushButton::New();
+		btn->setParent( stack );
+		btn->setText( lang->getLanguageName() );
+		btn->setLayoutMarginRight( PixelDensity::dpToPx( 8 ) );
+		btn->onClick( [this, editor, lang, docAlert, ext]( auto ) {
+			editor->getDocument().setSyntaxDefinition( *lang );
+			editor->disableReportSizeChangeToChilds();
+			docAlert->close();
+			editor->setFocus();
+			mConfig.languagesExtensions.priorities[ext] = lang->getLSPName();
+		} );
+	}
+
+	editor->enableReportSizeChangeToChilds();
+
+	docAlert->runOnMainThread(
+		[docAlert, editor] {
+			editor->disableReportSizeChangeToChilds();
+			docAlert->close();
+			editor->setFocus();
+		},
+		Seconds( 30.f ) );
 }
 
 void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
@@ -2156,8 +2283,9 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const DocumentConfig& docc = !mCurrentProject.empty() && !mProjectDocConfig.useGlobalSettings
 									 ? mProjectDocConfig.doc
 									 : mConfig.doc;
-	editor->setFontSize( config.fontSize.asDp( 0, Sizef(), mUISceneNode->getDPI() ) );
+	editor->setFontSize( config.fontSize.asPixels( 0, Sizef(), mUISceneNode->getDPI() ) );
 	editor->setEnableColorPickerOnSelection( true );
+	editor->setDisplayLockedIcon( true );
 	editor->setColorScheme( mSplitter->getCurrentColorScheme() );
 	editor->setShowLineNumber( config.showLineNumbers );
 	editor->setShowWhitespaces( config.showWhiteSpaces );
@@ -2250,9 +2378,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		TextDocument* doc = docEvent->getDoc();
 		if ( doc->getFileInfo() != file ) {
 			if ( doc->isDirty() ) {
-				editor->runOnMainThread( [&, editor]() { createDocAlert( editor ); } );
+				editor->runOnMainThread( [&, editor]() { createDocDirtyAlert( editor ); } );
 			} else {
-				auto hash = String::hash( docEvent->getDoc()->getFilePath() );
+				auto hash = String::hash( "OnDocumentDirtyOnFileSysten-" +
+										  docEvent->getDoc()->getFilePath() );
 				editor->removeActionsByTag( hash );
 				editor->runOnMainThread( [doc]() { doc->reload(); }, Seconds( 0.5f ), hash );
 			}
@@ -2276,9 +2405,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		Lock l( mWatchesLock );
 		auto itWatch = mFilesFolderWatches.find( dir );
 		if ( mFileWatcher && itWatch != mFilesFolderWatches.end() ) {
-			if ( !mDirTree || !mDirTree->isDirInTree( dir ) ) {
+			if ( !mDirTree || !mDirTree->isDirInTree( dir ) )
 				mFileWatcher->removeWatch( itWatch->second );
-			}
 			mFilesFolderWatches.erase( itWatch );
 		}
 	} );
@@ -2287,9 +2415,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( !appInstance )
 			return;
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-		updateEditorTabTitle( editor );
-		editor->getDocument().resetSyntax();
-		editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
+		editor->runOnMainThread( [this, editor] {
+			updateEditorTabTitle( editor );
+			editor->getDocument().resetSyntax();
+			editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
+		} );
 	} );
 
 	auto docChanged = [this]( const Event* event ) {
@@ -2306,13 +2436,28 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			tab->setIcon( icon->getSize( mMenuIconSize ) );
 		}
 		editor->getDocument().setHAsCpp( mProjectDocConfig.hAsCPP );
+
+		auto ext = editor->getDocument().getFileInfo().getExtension();
+		if ( SyntaxDefinitionManager::instance()->extensionCanRepresentManyLanguages( ext ) ) {
+			auto hasConfig = mConfig.languagesExtensions.priorities.find( ext );
+			const SyntaxDefinition* def = nullptr;
+			if ( hasConfig != mConfig.languagesExtensions.priorities.end() &&
+				 ( def = SyntaxDefinitionManager::instance()->getPtrByLSPName(
+					   hasConfig->second ) ) ) {
+				editor->getDocument().setSyntaxDefinition( *def );
+			} else {
+				createDocManyLangsAlert( editor );
+			}
+		}
 	};
 
 	auto docLoaded = [this, editor, docChanged]( const Event* event ) {
 		if ( editor->getDocument().getFileInfo().getExtension() == "svg" ) {
-			editor->getDocument().setCommand( "show-image-preview", [this, editor]() {
-				loadImageFromMemory( editor->getDocument().getText().toUtf8() );
-			} );
+			editor->getDocument().setCommand(
+				"show-image-preview", [this]( TextDocument::Client* client ) {
+					loadImageFromMemory(
+						static_cast<UICodeEditor*>( client )->getDocument().getText().toUtf8() );
+				} );
 			editor->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
 				auto cevent = static_cast<const ContextMenuEvent*>( event );
 				cevent->getMenu()
@@ -2381,19 +2526,22 @@ void App::updateEditorState() {
 }
 
 void App::removeFolderWatches() {
-	std::unordered_set<efsw::WatchID> folderWatches;
+	std::unordered_map<std::string, efsw::WatchID> folderWatches;
 	std::unordered_map<std::string, efsw::WatchID> filesFolderWatches;
 
-	Lock l( mWatchesLock );
 	if ( !mFileWatcher )
 		return;
-	folderWatches = mFolderWatches;
-	filesFolderWatches = mFilesFolderWatches;
-	mFolderWatches.clear();
-	mFilesFolderWatches.clear();
+
+	{
+		Lock l( mWatchesLock );
+		folderWatches = mFolderWatches;
+		filesFolderWatches = mFilesFolderWatches;
+		mFolderWatches.clear();
+		mFilesFolderWatches.clear();
+	}
 
 	for ( const auto& dir : folderWatches )
-		mFileWatcher->removeWatch( dir );
+		mFileWatcher->removeWatch( dir.first );
 
 	for ( const auto& fileFolder : filesFolderWatches )
 		mFileWatcher->removeWatch( fileFolder.second );
@@ -2416,11 +2564,13 @@ void App::loadDirTree( const std::string& path ) {
 					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
 			} );
 			removeFolderWatches();
-			{
-				Lock l( mWatchesLock );
-				if ( mFileWatcher )
-					mFolderWatches.insert(
-						mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true ) );
+			if ( mFileWatcher ) {
+				{
+					Lock l( mWatchesLock );
+					mFolderWatches.insert( { dirTree.getPath(), 0 } );
+				}
+				mFolderWatches[dirTree.getPath()] =
+					mFileWatcher->addWatch( dirTree.getPath(), mFileSystemListener, true );
 			}
 			mFileSystemListener->setDirTree( mDirTree );
 		},
@@ -2752,12 +2902,12 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 	} );
 	mProjectTreeView->on( Event::KeyDown, [this]( const Event* event ) {
 		if ( !mFileSystemModel )
-			return 0;
+			return;
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( keyEvent->getKeyCode() == KEY_F2 || keyEvent->getKeyCode() == KEY_DELETE ) {
 			ModelIndex modelIndex = mProjectTreeView->getSelection().first();
 			if ( !modelIndex.isValid() )
-				return 0;
+				return;
 			Variant vPath( mProjectTreeView->getModel()->data( modelIndex, ModelRole::Custom ) );
 			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
 				FileInfo fileInfo( vPath.asCStr() );
@@ -2767,19 +2917,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 					mSettings->deleteFileDialog( fileInfo );
 				}
 			}
-			return 1;
 		}
-
-		if ( mSplitter->curEditorExistsAndFocused() ) {
-			std::string cmd = mSplitter->getCurEditor()->getKeyBindings().getCommandFromKeyBind(
-				{ keyEvent->getKeyCode(), keyEvent->getMod() } );
-			if ( !cmd.empty() && mSplitter->getCurEditor()->isUnlockedCommand( cmd ) ) {
-				mSplitter->getCurEditor()->getDocument().execute( cmd );
-				return 1;
-			}
-		}
-
-		return 0;
 	} );
 
 	bool hasPosition = pathHasPosition( path );
@@ -2829,7 +2967,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 
 				if ( FileSystem::fileExists( rpath ) ) {
 					loadFileFromPath( rpath, false, nullptr, forcePosition );
-				} else if ( FileSystem::fileCanWrite( folderPath ) ) {
+				} else if ( FileSystem::fileWrite( path, "" ) ) {
 					loadFileFromPath( path, false, nullptr, forcePosition );
 				}
 
@@ -2954,6 +3092,7 @@ void App::loadFolder( const std::string& path ) {
 	FileSystem::dirAddSlashAtEnd( rpath );
 
 	mCurrentProject = rpath;
+	mCurrentProjectName = FileSystem::fileNameFromPath( mCurrentProject );
 	mPluginManager->setWorkspaceFolder( rpath );
 
 	loadDirTree( rpath );
@@ -2986,6 +3125,46 @@ void App::loadFolder( const std::string& path ) {
 	if ( mSplitter->getCurWidget() )
 		mSplitter->getCurWidget()->setFocus();
 }
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+static std::string getDefaultShell() {
+	std::string shell = Sys::getEnv( "SHELL" );
+	if ( !shell.empty() )
+		return shell;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return "cmd";
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	return "zsh";
+#else
+	return "bash";
+#endif
+}
+
+static std::string getShellEnv( const std::string& env, const std::string& defShell = "" ) {
+	std::string shell = defShell.empty() ? Sys::which( getDefaultShell() ) : defShell;
+	Process process;
+	if ( process.create( shell, "-c env", Process::getDefaultOptions() ) ) {
+		size_t envLen = env.size();
+		std::string buf( 32 * 1024, '\0' );
+		process.readAllStdOut( buf );
+		auto pathPos = buf.find( "\n" + env + "=" );
+		bool startsWithPath = false;
+		if ( pathPos == std::string::npos && buf.substr( 0, envLen + 1 ) == env + "=" )
+			startsWithPath = true;
+		if ( pathPos != std::string::npos || startsWithPath ) {
+			pathPos += startsWithPath ? envLen + 1 : envLen + 2; // Remove \n + env + "="
+			auto endPathPos = buf.find_first_of( "\r\n", pathPos );
+			if ( endPathPos != std::string::npos ) {
+				size_t len = endPathPos - pathPos;
+				return buf.substr( pathPos, len );
+			} else {
+				return buf.substr( pathPos );
+			}
+		}
+	}
+	return "";
+}
+#endif
 
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
@@ -3027,7 +3206,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
-	loadConfig( logLevel, currentDisplay->getSize(), health, stdOutLogs, disableFileLogs );
+	bool firstRun =
+		loadConfig( logLevel, currentDisplay->getSize(), health, stdOutLogs, disableFileLogs );
 
 	if ( health ) {
 		Sys::windowAttachConsole();
@@ -3072,11 +3252,14 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			winSettings.Icon = mResPath + winSettings.Icon;
 	}
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", true );
 #else
 	mConfig.context = engine->createContextSettings( &mConfig.ini, "window", false );
 #endif
+
+	if ( firstRun )
+		mConfig.context.FrameRateLimit = currentDisplay->getRefreshRate();
 
 	mConfig.context.SharedGLContext = true;
 
@@ -3098,8 +3281,31 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			return;
 		}
 #endif
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 		macOS_CreateApplicationMenus();
+
+		mThreadPool->run( [this]() {
+			// Checks if the default shell path contains more paths
+			// than the current environment, and adds them to ensure
+			// that the environment is more friendly for any new user
+			std::string path( Sys::getEnv( "PATH" ) );
+			std::string shellPath( getShellEnv( "PATH", mConfig.term.shell ) );
+			if ( !shellPath.empty() && String::hash( path ) != String::hash( shellPath ) ) {
+				auto pathSpl = String::split( path, ':' );
+				auto shellPathSpl = String::split( shellPath, ':' );
+				std::vector<std::string> paths;
+				for ( auto& path : pathSpl )
+					paths.emplace_back( std::move( path ) );
+				for ( auto& shellPath : shellPathSpl ) {
+					if ( std::find( paths.begin(), paths.end(), shellPath ) == paths.end() )
+						paths.emplace_back( std::move( shellPath ) );
+				}
+				if ( pathSpl.size() != paths.size() ) {
+					std::string newPath = String::join( paths, ':' );
+					setenv( "PATH", newPath.c_str(), 1 );
+				}
+			}
+		} );
 #endif
 
 		Log::info( "Window creation took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
@@ -3115,8 +3321,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		}
 
 		if ( mWindow->isWindowed() && mWindow->getSize() >= currentDisplay->getSize().asInt() ) {
-			mWindow->setPosition( mWindow->getBorderSize().getWidth(),
-								  mWindow->getBorderSize().getHeight() );
+			auto borderSize( mWindow->getBorderSize() );
+			mWindow->setPosition( borderSize.getWidth(), borderSize.getHeight() );
 		}
 
 		loadKeybindings();
@@ -3135,6 +3341,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mWindow->setCloseRequestCallback(
 			[this]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
+
+		mWindow->setQuitCallback( [this]( EE::Window::Window* win ) {
+			if ( win->isOpen() )
+				closeApp();
+		} );
 
 		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
 			if ( event->Type == InputEvent::FileDropped ) {
@@ -3157,10 +3368,13 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
 		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
+		FontFamily::loadFromRegular( mFont );
+
 		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
 		if ( mFontMono ) {
 			mFontMono->setEnableDynamicMonospace( true );
 			mFontMono->setBoldAdvanceSameAsRegular( true );
+			FontFamily::loadFromRegular( mFontMono );
 		}
 
 		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
@@ -3181,10 +3395,19 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mTerminalFont = loadFont( "monospace-nerdfont", mConfig.ui.terminalFont,
 								  "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+		if ( ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == "DejaVuSansMono NF" &&
+			   mFontMono->getInfo().family == "DejaVu Sans Mono" ) ||
+			 mTerminalFont->getInfo().family == mFontMono->getInfo().family ) {
+			mTerminalFont->setBoldFont( mFontMono->getBoldFont() );
+			mTerminalFont->setItalicFont( mFontMono->getItalicFont() );
+			mTerminalFont->setBoldItalicFont( mFontMono->getBoldItalicFont() );
+		} else {
+			FontFamily::loadFromRegular( mTerminalFont );
+		}
 
 		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
 		if ( mFallbackFont )
-			FontManager::instance()->setFallbackFont( mFallbackFont );
+			FontManager::instance()->addFallbackFont( mFallbackFont );
 
 		SceneManager::instance()->add( mUISceneNode );
 
@@ -3279,7 +3502,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();
-		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel );
+		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel, { mLogsPath } );
 		mFileWatcher->addWatch( mPluginsPath, mFileSystemListener );
 		mFileWatcher->watch();
 		mPluginManager->setFileSystemListener( mFileSystemListener );
@@ -3366,6 +3589,34 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				}
 			},
 			Seconds( 60.f ) );
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+		// Is the process running from flatpak isolation for the first time?
+		if ( firstRun && getenv( "FLATPAK_ID" ) != NULL ) {
+			static const auto FLATPAK_WARN = R"xml(
+<window id="win_flatpak_warning" windowFlags="default|maximize|shadow" lw="440dp" lh="150dp" window-title="ecode - Flatpak Warning">
+	<vbox lw="mp" lh="mp" padding="4dp">
+		<StackLayout lw="mp" lh="0" lw8="1">
+			<TextView lw="mp" lh="wc" word-wrap="true">You are running flatpak version of ecode. This version is running inside of a container and is therefore not able to access tools on your host system.</TextView>
+			<TextView lw="wc" lh="wc">Please read carefully the following guide at: </TextView>
+			<Anchor href="https://github.com/flathub/dev.ensoft.ecode/blob/master/ECODE_FIRST_RUN.md">https://github.com/flathub/dev.ensoft.ecode/blob/master/ECODE_FIRST_RUN.md</Anchor>
+		</StackLayout>
+		<PushButton id="win_flatpak_warning_ok" text="OK" lg="right" />
+	</vbox>
+</window>
+			)xml";
+
+			UIWindow* flatpakWarnWindow =
+				static_cast<UIWindow*>( mUISceneNode->loadLayoutFromString( FLATPAK_WARN ) );
+			flatpakWarnWindow->find( "win_flatpak_warning_ok" )
+				->onClick( [flatpakWarnWindow]( auto ) { flatpakWarnWindow->closeWindow(); } );
+			flatpakWarnWindow->on( Event::KeyDown, [flatpakWarnWindow]( const Event* event ) {
+				if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
+					flatpakWarnWindow->closeWindow();
+			} );
+			flatpakWarnWindow->center();
+		}
+#endif
 
 		mWindow->runMainLoop( &appLoop, mBenchmarkMode ? 0 : mConfig.context.FrameRateLimit );
 	}

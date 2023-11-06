@@ -20,7 +20,7 @@ class XMLToolsPlugin : public PluginBase {
 				 "XML Tools",
 				 "Simple tools to improve your XML editing experience.",
 				 XMLToolsPlugin::New,
-				 { 0, 0, 1 },
+				 { 0, 0, 2 },
 				 XMLToolsPlugin::NewSync };
 	}
 

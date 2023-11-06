@@ -2,6 +2,7 @@
 #define EE_SYSTEMTCONTAINER_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/core/containers.hpp>
 #include <unordered_set>
 
 namespace EE { namespace System {
@@ -23,7 +24,7 @@ template <class T> class Container {
 	Uint32 count();
 
   protected:
-	std::unordered_set<T*> mResources;
+	UnorderedSet<T*> mResources;
 };
 
 template <class T> Container<T>::Container() {}

@@ -7,7 +7,7 @@
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 #define SUBPROCESS_USE_POSIX_SPAWN
 #endif
 #include <thirdparty/subprocess/subprocess.h>
@@ -20,6 +20,8 @@
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #include <windows.h>
 #endif
+
+#define CHUNK_SIZE 4096
 
 namespace EE { namespace System {
 
@@ -36,10 +38,8 @@ Process::Process( const std::string& command, const Uint32& options,
 
 Process::~Process() {
 	mShuttingDown = true;
-	if ( mProcess && isAlive() ) {
-		subprocess_init_shutdown( PROCESS_PTR );
+	if ( mProcess && isAlive() )
 		kill();
-	}
 	if ( mStdOutThread.joinable() )
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )
@@ -141,18 +141,7 @@ bool Process::create( const std::string& command, const std::string& args, const
 }
 
 size_t Process::readAllStdOut( std::string& buffer ) {
-	size_t bytesRead = 0;
-	size_t totalBytesRead = 0;
-	const size_t chunkSize = mBufferSize;
-	totalBytesRead = bytesRead = readStdOut( (char* const)buffer.c_str(), buffer.size() );
-	while ( bytesRead != 0 && isAlive() && !mShuttingDown ) {
-		bytesRead = readStdOut( (char* const)buffer.c_str() + bytesRead, chunkSize );
-		if ( bytesRead ) {
-			totalBytesRead += bytesRead;
-			buffer.resize( totalBytesRead + chunkSize );
-		}
-	}
-	return totalBytesRead;
+	return readAll( buffer, false );
 }
 
 size_t Process::readStdOut( std::string& buffer ) {
@@ -165,18 +154,7 @@ size_t Process::readStdOut( char* const buffer, const size_t& size ) {
 }
 
 size_t Process::readAllStdErr( std::string& buffer ) {
-	size_t bytesRead = 0;
-	size_t totalBytesRead = 0;
-	const size_t chunkSize = 4096;
-	totalBytesRead = bytesRead = readStdErr( (char* const)buffer.c_str(), buffer.size() );
-	while ( bytesRead != 0 && isAlive() && !mShuttingDown ) {
-		bytesRead = readStdErr( (char* const)buffer.c_str() + bytesRead, chunkSize );
-		if ( bytesRead ) {
-			totalBytesRead += bytesRead;
-			buffer.resize( totalBytesRead + chunkSize );
-		}
-	}
-	return totalBytesRead;
+	return readAll( buffer, true );
 }
 
 size_t Process::readStdErr( std::string& buffer ) {
@@ -206,6 +184,8 @@ bool Process::join( int* const returnCodeOut ) {
 }
 
 bool Process::kill() {
+	mShuttingDown = true;
+	subprocess_init_shutdown( PROCESS_PTR );
 	eeASSERT( mProcess != nullptr );
 	if ( PROCESS_PTR->alive ) {
 		destroy();
@@ -245,6 +225,60 @@ void Process::startShutdown() {
 
 const bool& Process::isShuttingDown() {
 	return mShuttingDown;
+}
+
+size_t Process::readAll( std::string& buffer, bool readErr ) {
+	eeASSERT( mProcess != nullptr );
+	if ( buffer.empty() || buffer.size() < CHUNK_SIZE )
+		buffer.resize( CHUNK_SIZE );
+	size_t totalBytesRead = 0;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	while ( !mShuttingDown && isAlive() ) {
+		unsigned n =
+			readErr
+				? subprocess_read_stderr( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE )
+				: subprocess_read_stdout( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE );
+		if ( n == 0 )
+			break;
+		totalBytesRead += n;
+		if ( totalBytesRead + CHUNK_SIZE > buffer.size() )
+			buffer.resize( totalBytesRead + CHUNK_SIZE );
+	}
+#elif defined( EE_PLATFORM_POSIX )
+	auto stdOutFd = fileno( readErr ? PROCESS_PTR->stderr_file : PROCESS_PTR->stdout_file );
+	pollfd pollfd = {};
+	pollfd.fd =
+		fcntl( stdOutFd, F_SETFL, fcntl( stdOutFd, F_GETFL ) | O_NONBLOCK ) == 0 ? stdOutFd : -1;
+	pollfd.events = POLLIN;
+	buffer.resize( mBufferSize );
+	bool anyOpen = pollfd.fd != -1;
+	ssize_t n = 0;
+	while ( anyOpen && !mShuttingDown && isAlive() && errno != EINTR ) {
+		int res = poll( &pollfd, static_cast<nfds_t>( 1 ), 100 );
+		if ( res <= 0 )
+			continue;
+		anyOpen = false;
+		if ( pollfd.revents & POLLIN ) {
+			n = read( pollfd.fd, buffer.data() + totalBytesRead, CHUNK_SIZE );
+			if ( n > 0 ) {
+				totalBytesRead += n;
+				if ( totalBytesRead + CHUNK_SIZE > buffer.size() )
+					buffer.resize( totalBytesRead + CHUNK_SIZE );
+			} else if ( n == 0 ||
+						( n < 0 && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK ) ) {
+				pollfd.fd = -1;
+				continue;
+			}
+		}
+		if ( pollfd.revents & ( POLLERR | POLLHUP | POLLNVAL ) ) {
+			pollfd.fd = -1;
+			continue;
+		}
+		anyOpen = true;
+	}
+#endif
+	buffer.resize( totalBytesRead );
+	return totalBytesRead;
 }
 
 void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {

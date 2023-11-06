@@ -1,4 +1,5 @@
 #include "filesystemlistener.hpp"
+#include <eepp/system/md5.hpp>
 
 namespace ecode {
 
@@ -18,8 +19,9 @@ std::string getFileSystemEventTypeName( FileSystemEventType action ) {
 }
 
 FileSystemListener::FileSystemListener( UICodeEditorSplitter* splitter,
-										std::shared_ptr<FileSystemModel> fileSystemModel ) :
-	mSplitter( splitter ), mFileSystemModel( fileSystemModel ) {}
+										std::shared_ptr<FileSystemModel> fileSystemModel,
+										const std::vector<std::string>& ignoreFiles ) :
+	mSplitter( splitter ), mFileSystemModel( fileSystemModel ), mIgnoredFiles( ignoreFiles ) {}
 
 static inline bool endsWithSlash( const std::string& dir ) {
 	return !dir.empty() && ( dir.back() == '\\' || dir.back() == '/' );
@@ -70,12 +72,19 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 				}
 			}
 
+			if ( file.isLink() )
+				file = FileInfo( file.linksTo() );
+
+			if ( isFileOpen( file ) )
+				notifyChange( file );
+
 			Lock l( mCbsMutex );
 			if ( !mCbs.empty() ) {
 				auto cbs = mCbs;
 				for ( const auto& cb : cbs )
 					cb.second( event, file );
 			}
+
 			break;
 		}
 		case efsw::Actions::Modified: {
@@ -130,10 +139,22 @@ bool FileSystemListener::isFileOpen( const FileInfo& file ) {
 
 void FileSystemListener::notifyChange( const FileInfo& file ) {
 	mSplitter->forEachDoc( [&]( TextDocument& doc ) {
-		if ( file.getFilepath() == doc.getFileInfo().getFilepath() &&
+		if ( !isIgnored( file.getFilepath() ) &&
+			 file.getFilepath() == doc.getFileInfo().getFilepath() &&
 			 file.getModificationTime() != doc.getFileInfo().getModificationTime() &&
-			 !doc.isSaving() )
-			doc.setDirtyOnFileSystem( true );
+			 !doc.isSaving() ) {
+			MD5::Digest curHash = MD5::fromFile( file.getFilepath() ).digest;
+			if ( curHash != doc.getHash() ) {
+				Log::notice( "Document: \"%s\" has changed on the file system:",
+							 file.getFilepath().c_str() );
+				Log::notice( "Modification time on file system: %ul vs %ul in memory",
+							 file.getModificationTime(), doc.getFileInfo().getModificationTime() );
+				Log::notice( "Hash on file system: %s vs %s in memory",
+							 MD5::hexDigest( curHash ).c_str(),
+							 MD5::hexDigest( doc.getHash() ).c_str() );
+				doc.setDirtyOnFileSystem( true );
+			}
+		}
 	} );
 }
 
@@ -142,6 +163,10 @@ void FileSystemListener::notifyMove( const FileInfo& oldFile, const FileInfo& ne
 		if ( oldFile.getFilepath() == doc.getFileInfo().getFilepath() )
 			doc.notifyDocumentMoved( newFile.getFilepath() );
 	} );
+}
+
+bool FileSystemListener::isIgnored( const std::string& path ) {
+	return std::find( mIgnoredFiles.begin(), mIgnoredFiles.end(), path ) != mIgnoredFiles.end();
 }
 
 } // namespace ecode

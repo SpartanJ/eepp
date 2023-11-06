@@ -1,5 +1,5 @@
 {
-  "ecode": {
+  "ecode-linux": {
     "build": [
       {
         "args": "--with-debug-symbols gmake",
@@ -39,7 +39,42 @@
       "build_dir": "${project_root}/make/${os}"
     }
   },
-  "eepp": {
+  "ecode-macos": {
+    "build": [
+      {
+        "args": "config=${build_type} ecode",
+        "command": "${build_dir}/make_no_fw.sh",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "build_types": [
+      "debug",
+      "release"
+    ],
+    "clean": [
+      {
+        "args": "config=${build_type} clean",
+        "command": "${build_dir}/make_no_fw.sh",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "config": {
+      "clear_sys_env": false
+    },
+    "os": [
+      "macos"
+    ],
+    "output_parser": {
+      "config": {
+        "preset": "generic",
+        "relative_file_paths": true
+      }
+    },
+    "var": {
+      "build_dir": "${project_root}/projects/${os}"
+    }
+  },
+  "eepp-linux": {
     "build": [
       {
         "args": "--with-debug-symbols gmake",
@@ -77,6 +112,41 @@
     },
     "var": {
       "build_dir": "${project_root}/make/${os}"
+    }
+  },
+  "eepp-macos": {
+    "build": [
+      {
+        "args": "config=${build_type}",
+        "command": "${build_dir}/make_no_fw.sh",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "build_types": [
+      "debug",
+      "release"
+    ],
+    "clean": [
+      {
+        "args": "config=${build_type} clean",
+        "command": "${build_dir}/make_no_fw.sh",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "config": {
+      "clear_sys_env": false
+    },
+    "os": [
+      "macos"
+    ],
+    "output_parser": {
+      "config": {
+        "preset": "generic",
+        "relative_file_paths": true
+      }
+    },
+    "var": {
+      "build_dir": "${project_root}/projects/${os}"
     }
   }
 }

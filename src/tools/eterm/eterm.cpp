@@ -183,7 +183,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 
 	std::string resPath = Sys::getProcessPath();
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 	if ( String::contains( resPath, "ecode.app" ) ) {
 		resPath = FileSystem::getCurrentWorkingDirectory();
 		FileSystem::dirAddSlashAtEnd( resPath );
@@ -230,12 +230,16 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		if ( fontPath && FileSystem::fileExists( fontPath.Get() ) ) {
 			FileInfo file( fontPath.Get() );
 			fontMono = FontTrueType::New( "monospace" );
-			if ( !fontMono->loadFromFile( file.getFilepath() ) )
+			if ( fontMono->loadFromFile( file.getFilepath() ) ) {
+				FontFamily::loadFromRegular( fontMono );
+			} else {
 				fontMono = nullptr;
+			}
 		}
 		if ( fontMono == nullptr ) {
 			fontMono = FontTrueType::New( "monospace" );
 			fontMono->loadFromFile( resPath + "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+			FontFamily::loadFromRegular( fontMono, "DejaVuSansMono" );
 		}
 
 		if ( FileSystem::fileExists( resPath + "fonts/NotoColorEmoji.ttf" ) ) {
@@ -252,7 +256,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		if ( FileSystem::fileExists( fallbackFontPath ) ) {
 			FontTrueType* fallbackFont = FontTrueType::New( "fallback-font" );
 			if ( fallbackFont->loadFromFile( fallbackFontPath ) )
-				FontManager::instance()->setFallbackFont( fallbackFont );
+				FontManager::instance()->addFallbackFont( fallbackFont );
 		}
 
 		Float realMaxFPS = maxFPS.Get() ? maxFPS.Get() : currentDisplay->getRefreshRate();

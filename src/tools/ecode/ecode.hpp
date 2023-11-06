@@ -61,7 +61,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void runCommand( const std::string& command );
 
-	void loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync, bool stdOutLogs,
+	bool loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync, bool stdOutLogs,
 					 bool disableFileLogs );
 
 	void saveConfig();
@@ -288,7 +288,18 @@ class App : public UICodeEditorSplitter::Client {
 			if ( mTerminalManager )
 				mTerminalManager->configureTerminalShell();
 		} );
+		t.setCommand( "configure-terminal-scrollback", [this] {
+			if ( mTerminalManager )
+				mTerminalManager->configureTerminalScrollback();
+		} );
 		t.setCommand( "check-for-updates", [this] { checkForUpdates( false ); } );
+		t.setCommand( "create-new-window", [] {
+			std::string processPath = Sys::getProcessFilePath();
+			if ( !processPath.empty() ) {
+				std::string cmd( processPath + " -x" );
+				Sys::execute( cmd );
+			}
+		} );
 		mSplitter->registerSplitterCommands( t );
 	}
 
@@ -424,6 +435,7 @@ class App : public UICodeEditorSplitter::Client {
 	EE::Window::Window* mWindow{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
 	UIConsole* mConsole{ nullptr };
+	std::string mCurWindowTitle;
 	std::string mWindowTitle{ "ecode" };
 	UIMainLayout* mMainLayout{ nullptr };
 	UILayout* mBaseLayout{ nullptr };
@@ -452,6 +464,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mResPath;
 	std::string mLanguagesPath;
 	std::string mThemesPath;
+	std::string mLogsPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
@@ -469,6 +482,7 @@ class App : public UICodeEditorSplitter::Client {
 	ProjectDocumentConfig mProjectDocConfig;
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;
+	std::string mCurrentProjectName;
 	FontTrueType* mFont{ nullptr };
 	FontTrueType* mFontMono{ nullptr };
 	FontTrueType* mTerminalFont{ nullptr };
@@ -476,7 +490,7 @@ class App : public UICodeEditorSplitter::Client {
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mWatchesLock;
-	std::unordered_set<efsw::WatchID> mFolderWatches;
+	std::unordered_map<std::string, efsw::WatchID> mFolderWatches;
 	std::unordered_map<std::string, efsw::WatchID> mFilesFolderWatches;
 	std::unique_ptr<GlobalSearchController> mGlobalSearchController;
 	std::unique_ptr<DocSearchController> mDocSearchController;
@@ -562,7 +576,9 @@ class App : public UICodeEditorSplitter::Client {
 
 	void removeFolderWatches();
 
-	void createDocAlert( UICodeEditor* editor );
+	void createDocDirtyAlert( UICodeEditor* editor );
+
+	void createDocManyLangsAlert( UICodeEditor* editor );
 
 	void syncProjectTreeWithEditor( UICodeEditor* editor );
 
@@ -583,6 +599,10 @@ class App : public UICodeEditorSplitter::Client {
 	void updateOpenRecentFolderBtn();
 
 	void updateDocInfoLocation();
+
+	void onReady();
+
+	bool dirInFolderWatches( const std::string& dir );
 };
 
 } // namespace ecode

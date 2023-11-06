@@ -781,16 +781,24 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 			continue;
 		}
 
+		if ( progressFn ) {
+			progressFn(
+				progress,
+				Sys::getDateTimeStr() + ": " +
+					String::format( i18n( "starting_process", "Starting %s %s\n" ).toUtf8().c_str(),
+									cmd.cmd.c_str(), cmd.args.c_str() ),
+				nullptr );
+
+			progressFn(
+				progress,
+				Sys::getDateTimeStr() + ": " +
+					String::format( i18n( "working_dir_at", "Working Dir %s\n" ).toUtf8().c_str(),
+									cmd.workingDir.c_str() ),
+				nullptr );
+		}
+
 		if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( env ),
 							   cmd.workingDir ) ) {
-			if ( progressFn )
-				progressFn( progress,
-							Sys::getDateTimeStr() + ": " +
-								String::format(
-									i18n( "starting_process", "Starting %s %s\n" ).toUtf8().c_str(),
-									cmd.cmd.c_str(), cmd.args.c_str() ),
-							nullptr );
-
 			std::string buffer( 1024, '\0' );
 			unsigned bytesRead = 0;
 			int returnCode;
@@ -859,7 +867,7 @@ void ProjectBuildManager::buildSidePanelTab() {
 	UIIcon* icon = mUISceneNode->findIcon( "symbol-property" );
 	UIWidget* node = mUISceneNode->loadLayoutFromString(
 		R"html(
-			<ScrollView id="build_tab" lw="mp" lh="mp">
+			<ScrollView id="build_tab_view" lw="mp" lh="mp">
 				<vbox lw="mp" lh="wc" padding="4dp">
 					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" />
 					<TextView text="@string(build_configuration, Build Configuration)" />
@@ -886,7 +894,7 @@ void ProjectBuildManager::buildSidePanelTab() {
 void ProjectBuildManager::updateSidePanelTab() {
 	if ( mTab == nullptr )
 		return;
-	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab_view" );
 	if ( buildTab == nullptr )
 		return;
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
@@ -970,7 +978,7 @@ void ProjectBuildManager::updateSidePanelTab() {
 void ProjectBuildManager::updateBuildType() {
 	if ( mTab == nullptr )
 		return;
-	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab" );
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab_view" );
 	if ( buildTab == nullptr )
 		return;
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );

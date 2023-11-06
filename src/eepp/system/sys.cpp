@@ -19,10 +19,10 @@
 #include <sys/utsname.h>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+#include <CoreFoundation/CoreFoundation.h>
 #include <libproc.h>
 #include <unistd.h>
-#include <CoreFoundation/CoreFoundation.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -48,7 +48,12 @@
 #include <stdlib.h>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#include <mach-o/dyld.h>
+#include <spawn.h>
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
 #include <sys/mount.h>
 #include <sys/sysctl.h>
@@ -57,6 +62,7 @@
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <direct.h>
 #include <sys/utime.h>
+#include <tchar.h>
 #else
 #include <sys/time.h>
 #endif
@@ -386,7 +392,7 @@ std::string Sys::getPlatform() {
 	return "Haiku";
 #elif EE_PLATFORM == EE_PLATFORM_IOS
 	return "iOS";
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
 	return "macOS";
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 	return "Solaris";
@@ -485,10 +491,10 @@ void Sys::sleep( const Time& time ) {
 }
 
 static std::string sGetProcessPath() {
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pid_t pid = getpid();
-	int ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	int ret = proc_pidpath( pid, pathbuf, sizeof( pathbuf ) );
 	if ( ret >= 0 )
 		return FileSystem::fileRemoveFileName( std::string( pathbuf ) );
 
@@ -619,6 +625,8 @@ Uint64 Sys::getProcessID() {
 	return GetCurrentProcessId();
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	return getpid();
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return 0; // just return 0
 #else
 #warning Sys::getProcessID() not implemented in this platform
 #endif
@@ -674,7 +682,7 @@ std::string Sys::getConfigPath( const std::string& appname ) {
 	_snprintf( path, EE_MAX_CFG_PATH_LEN, "%s\\%s", home, appname.c_str() );
 
 #endif
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
 	char* home = getenv( "HOME" );
 
 	if ( NULL == home ) {
@@ -771,7 +779,7 @@ int Sys::getCPUCount() {
 	nprocs = sysconf( _SC_NPROCESSORS_ONLN );
 #elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	return EM_ASM_INT( { return navigator.hardwareConcurrency; } );
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
 	int mib[2];
 	int maxproc = 1;
@@ -967,7 +975,7 @@ std::vector<std::string> Sys::getLogicalDrives() {
 	}
 	endmntent( file );
 	return ret;
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || \
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_BSD || \
 	EE_PLATFORM == EE_PLATFORM_IOS
 	std::vector<std::string> ret;
 	struct statfs* mounts;
@@ -1014,22 +1022,6 @@ std::vector<std::string> Sys::getLogicalDrives() {
 #endif
 }
 
-static std::string getenv( const std::string& name ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC )
-	wchar_t* envbuf;
-	size_t envsize;
-	_wdupenv_s( &envbuf, &envsize, String( name ).toWideString().c_str() );
-	std::string env;
-	if ( NULL != envbuf )
-		env = String::fromWide( envbuf ).toUtf8();
-	free( envbuf );
-	return env;
-#else
-	char* env = ::getenv( name.c_str() );
-	return NULL == env ? std::string() : std::string( env );
-#endif
-}
-
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #define PATH_SEP_CHAR ';'
 #else
@@ -1037,10 +1029,13 @@ static std::string getenv( const std::string& name ) {
 #endif
 std::string Sys::which( const std::string& exeName,
 						const std::vector<std::string>& customSearchPaths ) {
-	std::string PATH = getenv( "PATH" );
-	std::vector<std::string> PATHS = String::split( PATH, PATH_SEP_CHAR );
+	if ( exeName.find_first_of( FileSystem::getOSSlash() ) != std::string::npos &&
+		 FileSystem::fileExists( exeName ) )
+		return exeName;
+
+	std::vector<std::string> PATHS = getEnvSplitted( "PATH" );
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	static std::vector<std::string> PATHEXTS = String::split( getenv( "PATHEXT" ), PATH_SEP_CHAR );
+	static std::vector<std::string> PATHEXTS = getEnvSplitted( "PATHEXT" );
 	std::string exePath;
 #endif
 
@@ -1080,6 +1075,26 @@ std::string Sys::which( const std::string& exeName,
 #endif
 	}
 	return "";
+}
+
+std::string Sys::getEnv( const std::string& name ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC )
+	wchar_t* envbuf;
+	size_t envsize;
+	_wdupenv_s( &envbuf, &envsize, String( name ).toWideString().c_str() );
+	std::string env;
+	if ( NULL != envbuf )
+		env = String::fromWide( envbuf ).toUtf8();
+	free( envbuf );
+	return env;
+#else
+	char* env = ::getenv( name.c_str() );
+	return NULL == env ? std::string() : std::string( env );
+#endif
+}
+
+std::vector<std::string> Sys::getEnvSplitted( const std::string& name ) {
+	return String::split( getEnv( name.c_str() ), PATH_SEP_CHAR );
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -1136,4 +1151,83 @@ bool Sys::windowAttachConsole() {
 	return true;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+static void windowsSystem( const std::string& programPath ) {
+	STARTUPINFOW si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory( &si, sizeof( si ) );
+	si.cb = sizeof( si );
+	ZeroMemory( &pi, sizeof( pi ) );
+
+	if ( CreateProcessW( NULL, (LPWSTR)String( programPath ).toWideString().c_str(), NULL, NULL,
+						 FALSE, 0, NULL, NULL, &si, &pi ) ) {
+		CloseHandle( pi.hProcess );
+		CloseHandle( pi.hThread );
+	}
+}
+#endif
+
+void Sys::execute( const std::string& cmd ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	windowsSystem( cmd );
+#else
+	pid_t pid = fork();
+	if ( pid == 0 ) {
+		std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
+		std::vector<const char*> strings;
+		for ( size_t i = 0; i < cmdArr.size(); ++i )
+			strings.push_back( cmdArr[i].c_str() );
+		strings.push_back( NULL );
+		execvp( strings[0], (char* const*)strings.data() );
+		exit( 0 );
+	}
+#endif
+}
+
+bool Sys::isMobile() {
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+	return true;
+#else
+	return false;
+#endif
+}
+
+std::string Sys::getProcessFilePath() {
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	char exename[PATH_MAX];
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::wstring exename( _MAX_DIR, 0 );
+	GetModuleFileNameW( 0, &exename[0], _MAX_PATH );
+	return String( exename ).toUtf8();
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+	char path[] = "/proc/self/exe";
+	ssize_t len = readlink( path, exename, PATH_MAX - 1 );
+	if ( len > 0 )
+		exename[len] = '\0';
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+	/* use realpath to resolve a symlink if the process was launched from one.
+	** This happens when Homebrew installs a cack and creates a symlink in
+	** /usr/loca/bin for launching the executable from the command line. */
+	unsigned size = PATH_MAX;
+	char exepath[size];
+	_NSGetExecutablePath( exepath, &size );
+	realpath( exepath, exename );
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+	size_t len = PATH_MAX;
+	const int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
+	sysctl( mib, 4, exename, &len, NULL, 0 );
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	image_info info;
+	get_image_info( 0, &info );
+	strncpy( exename, info.name, sizeof( exename ) );
+#else
+	*exename = 0;
+#endif
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	return std::string( exename );
+#endif
+}
 }} // namespace EE::System

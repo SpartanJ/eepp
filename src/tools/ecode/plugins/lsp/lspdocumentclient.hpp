@@ -82,7 +82,7 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	UISceneNode* getUISceneNode();
 
-	void processTokens( const LSPSemanticTokensDelta& tokens, const Uint64& docModificationId );
+	void processTokens( LSPSemanticTokensDelta&& tokens, const Uint64& docModificationId );
 
 	void highlight();
 };

@@ -67,4 +67,20 @@ String TextInputEvent::getText() const {
 	return String( (String::StringBaseType)mChar );
 }
 
+TextEditingEvent::TextEditingEvent( Node* node, const Uint32& eventNum, const String& text,
+									const Int32& start, const Int32& length ) :
+	Event( node, eventNum ), mText( text ), mStart( start ), mLength( length ) {}
+
+const String& TextEditingEvent::getText() const {
+	return mText;
+}
+
+const Int32& TextEditingEvent::getStart() const {
+	return mStart;
+}
+
+const Int32& TextEditingEvent::getLength() const {
+	return mLength;
+}
+
 }} // namespace EE::Scene

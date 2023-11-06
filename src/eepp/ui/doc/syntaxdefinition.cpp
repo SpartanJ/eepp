@@ -4,23 +4,42 @@
 
 namespace EE { namespace UI { namespace Doc {
 
+UnorderedMap<SyntaxStyleType, std::string> SyntaxPattern::SyntaxStyleTypeCache = {};
+
+template <typename SyntaxStyleType> void updateCache( const SyntaxPattern& ptrn ) {
+	if constexpr ( std::is_same_v<SyntaxStyleType, std::string> ) {
+		return;
+	} else {
+		for ( size_t i = 0; i < ptrn.typesNames.size(); i++ ) {
+			if ( SyntaxStyleTypes::needsToBeCached( ptrn.types[i] ) ) {
+				auto it = SyntaxPattern::SyntaxStyleTypeCache.find( ptrn.types[i] );
+				if ( it == SyntaxPattern::SyntaxStyleTypeCache.end() )
+					SyntaxPattern::SyntaxStyleTypeCache[ptrn.types[i]] = ptrn.typesNames[i];
+			}
+		}
+	}
+}
+
 SyntaxDefinition::SyntaxDefinition() {}
 
 SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
-									const std::vector<std::string>& files,
-									const std::vector<SyntaxPattern>& patterns,
-									const std::unordered_map<std::string, std::string>& symbols,
-									const std::string& comment,
-									const std::vector<std::string> headers,
+									std::vector<std::string>&& files,
+									std::vector<SyntaxPattern>&& patterns,
+									UnorderedMap<std::string, std::string>&& symbols,
+									const std::string& comment, std::vector<std::string>&& headers,
 									const std::string& lspName ) :
 	mLanguageName( languageName ),
 	mLanguageId( String::hash( String::toLower( languageName ) ) ),
-	mFiles( files ),
-	mPatterns( patterns ),
-	mSymbols( symbols ),
+	mFiles( std::move( files ) ),
+	mPatterns( std::move( patterns ) ),
+	mSymbolNames( std::move( symbols ) ),
 	mComment( comment ),
-	mHeaders( headers ),
-	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {}
+	mHeaders( std::move( headers ) ),
+	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {
+	mSymbols.reserve( mSymbolNames.size() );
+	for ( const auto& symbol : mSymbolNames )
+		mSymbols.insert( { symbol.first, toSyntaxStyleType( symbol.second ) } );
+}
 
 const std::vector<std::string>& SyntaxDefinition::getFiles() const {
 	return mFiles;
@@ -37,7 +56,8 @@ std::string SyntaxDefinition::getFileExtension() const {
 	return "";
 }
 
-std::vector<SyntaxPattern> SyntaxDefinition::getPatternsOfType( const std::string& type ) const {
+std::vector<SyntaxPattern>
+SyntaxDefinition::getPatternsOfType( const SyntaxStyleType& type ) const {
 	std::vector<SyntaxPattern> patterns;
 	for ( const auto& pattern : mPatterns ) {
 		if ( pattern.types.size() == 1 && pattern.types[0] == type )
@@ -51,6 +71,18 @@ SyntaxDefinition& SyntaxDefinition::setFileTypes( const std::vector<std::string>
 	return *this;
 }
 
+bool SyntaxDefinition::hasExtensionPriority() const {
+	return mHasExtensionPriority;
+}
+
+void SyntaxDefinition::setExtensionPriority( bool hasExtensionPriority ) {
+	mHasExtensionPriority = hasExtensionPriority;
+}
+
+UnorderedMap<std::string, std::string> SyntaxDefinition::getSymbolNames() const {
+	return mSymbolNames;
+}
+
 const std::vector<SyntaxPattern>& SyntaxDefinition::getPatterns() const {
 	return mPatterns;
 }
@@ -59,15 +91,15 @@ const std::string& SyntaxDefinition::getComment() const {
 	return mComment;
 }
 
-const std::unordered_map<std::string, std::string>& SyntaxDefinition::getSymbols() const {
+const UnorderedMap<std::string, SyntaxStyleType>& SyntaxDefinition::getSymbols() const {
 	return mSymbols;
 }
 
-std::string SyntaxDefinition::getSymbol( const std::string& symbol ) const {
+SyntaxStyleType SyntaxDefinition::getSymbol( const std::string& symbol ) const {
 	auto it = mSymbols.find( symbol );
 	if ( it != mSymbols.end() )
 		return it->second;
-	return "";
+	return SyntaxStyleEmpty();
 }
 
 SyntaxDefinition& SyntaxDefinition::addFileType( const std::string& fileType ) {
@@ -98,15 +130,21 @@ SyntaxDefinition::addPatternsToFront( const std::vector<SyntaxPattern>& patterns
 
 SyntaxDefinition& SyntaxDefinition::addSymbol( const std::string& symbolName,
 											   const std::string& typeName ) {
-	mSymbols[symbolName] = typeName;
+	mSymbols[symbolName] = toSyntaxStyleType( typeName );
+	mSymbolNames[symbolName] = typeName;
 	return *this;
 }
 
 SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& symbolNames,
 												const std::string& typeName ) {
-	for ( auto& symbol : symbolNames ) {
+	for ( auto& symbol : symbolNames )
 		addSymbol( symbol, typeName );
-	}
+	return *this;
+}
+
+SyntaxDefinition&
+SyntaxDefinition::setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols ) {
+	mSymbols = symbols;
 	return *this;
 }
 
@@ -185,6 +223,42 @@ std::string SyntaxDefinition::getLanguageNameForFileSystem() const {
 
 const String::HashType& SyntaxDefinition::getLanguageId() const {
 	return mLanguageId;
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
+							  const std::string& _syntax ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
+	typesNames( { _type } ),
+	syntax( _syntax ) {
+	updateCache<SyntaxStyleType>( *this );
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
+							  std::vector<std::string>&& _types, const std::string& _syntax ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( _types ) ),
+	typesNames( std::move( _types ) ),
+	syntax( _syntax ) {
+	updateCache<SyntaxStyleType>( *this );
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
+							  DynamicSyntax&& _syntax ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
+	typesNames( { _type } ),
+	dynSyntax( std::move( _syntax ) ) {
+	updateCache<SyntaxStyleType>( *this );
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
+							  std::vector<std::string>&& _types, DynamicSyntax&& _syntax ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( _types ) ),
+	typesNames( std::move( _types ) ),
+	dynSyntax( std::move( _syntax ) ) {
+	updateCache<SyntaxStyleType>( *this );
 }
 
 }}} // namespace EE::UI::Doc

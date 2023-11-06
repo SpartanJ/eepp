@@ -56,8 +56,9 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 
 	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
 		mResourceChangeCb = static_cast<DrawableResource*>( mDrawable )
-								->pushResourceChangeCallback(
-									cb::Make2( this, &UIImage::onDrawableResourceEvent ) );
+								->pushResourceChangeCallback( [this]( auto, auto event, auto res ) {
+									onDrawableResourceEvent( event, res );
+								} );
 	}
 
 	onAutoSize();

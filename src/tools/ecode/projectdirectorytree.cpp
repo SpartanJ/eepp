@@ -324,8 +324,11 @@ void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
 		}
 		if ( foundPattern ) {
 			Lock l( mFilesMutex );
-			mFiles.emplace_back( file.getFilepath() );
-			mNames.emplace_back( file.getFileName() );
+			auto exists = std::find( mFiles.begin(), mFiles.end(), file.getFilepath() ) != mFiles.end();
+			if ( !exists ) {
+				mFiles.emplace_back( file.getFilepath() );
+				mNames.emplace_back( file.getFileName() );
+			}
 		}
 	}
 }

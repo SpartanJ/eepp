@@ -4,7 +4,6 @@
 #include <cstdarg>
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
-#include <functional>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -276,7 +275,8 @@ String::HashType String::hash( const std::string& str ) {
 }
 
 String::HashType String::hash( const String& str ) {
-	return std::hash<std::u32string>{}( str.mString );
+	return String::hash( reinterpret_cast<const char*>( str.mString.data() ),
+						 str.size() * sizeof( String::StringBaseType ) );
 }
 
 bool String::isCharacter( const int& value ) {
@@ -381,6 +381,32 @@ std::vector<std::string> String::split( const std::string& str, const Int8& deli
 				cont.pop_back();
 		}
 	}
+	return cont;
+}
+
+std::vector<std::string_view> String::split( const std::string_view& str, const Int8& delim,
+											 const bool& pushEmptyString ) {
+	if ( str.empty() )
+		return {};
+	std::vector<std::string_view> cont;
+	std::size_t current, previous = 0;
+	current = str.find( delim );
+	while ( current != std::string::npos ) {
+		if ( (Int64)current - (Int64)previous < 0 ) {
+			std::cerr << "String::split fatal error: current " << current << " previous "
+					  << previous << " with str " << str << " delim " << delim
+					  << " pushEmptyString " << pushEmptyString << "\n";
+			return cont;
+		}
+		std::string_view substr( str.substr( previous, current - previous ) );
+		if ( pushEmptyString || !substr.empty() )
+			cont.emplace_back( std::move( substr ) );
+		previous = current + 1;
+		current = str.find( delim, previous );
+	}
+	std::string_view substr( str.substr( previous, current - previous ) );
+	if ( pushEmptyString || !substr.empty() )
+		cont.emplace_back( std::move( substr ) );
 	return cont;
 }
 
@@ -512,6 +538,23 @@ std::string String::rTrim( const std::string& str, char character ) {
 }
 
 std::string String::trim( const std::string& str, char character ) {
+	std::string::size_type pos1 = str.find_first_not_of( character );
+	std::string::size_type pos2 = str.find_last_not_of( character );
+	return str.substr( pos1 == std::string::npos ? 0 : pos1,
+					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+}
+
+std::string_view String::lTrim( const std::string_view& str, char character ) {
+	std::string::size_type pos1 = str.find_first_not_of( character );
+	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+}
+
+std::string_view String::rTrim( const std::string_view& str, char character ) {
+	std::string::size_type pos1 = str.find_last_not_of( character );
+	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+}
+
+std::string_view String::trim( const std::string_view& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
 	std::string::size_type pos2 = str.find_last_not_of( character );
 	return str.substr( pos1 == std::string::npos ? 0 : pos1,
@@ -768,6 +811,10 @@ bool String::contains( const String& needle ) {
 	return String::contains( *this, needle );
 }
 
+String::View String::view() const {
+	return String::View( mString );
+}
+
 void String::replace( std::string& target, const std::string& that, const std::string& with ) {
 	std::size_t start_pos = target.find( that );
 	if ( start_pos == std::string::npos )
@@ -927,19 +974,45 @@ String::String( const char* utf8String ) {
 }
 
 String::String( const char* utf8String, const size_t& utf8StringSize ) {
-	if ( utf8String ) {
-		if ( utf8StringSize > 0 ) {
-			mString.reserve( utf8StringSize + 1 );
+	if ( utf8String && utf8StringSize > 0 ) {
+		mString.reserve( utf8StringSize + 1 );
 
-			Utf8::toUtf32( utf8String, utf8String + utf8StringSize, std::back_inserter( mString ) );
+		int skip = 0;
+		// Skip BOM
+		if ( utf8StringSize >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+			 (char)0xbf == utf8String[2] ) {
+			skip = 3;
 		}
+
+		Utf8::toUtf32( utf8String + skip, utf8String + utf8StringSize,
+					   std::back_inserter( mString ) );
 	}
 }
 
 String::String( const std::string& utf8String ) {
 	mString.reserve( utf8String.length() + 1 );
 
-	Utf8::toUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( mString ) );
+	int skip = 0;
+	// Skip BOM
+	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+		 (char)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+}
+
+String::String( const std::string_view& utf8String ) {
+	mString.reserve( utf8String.length() + 1 );
+
+	int skip = 0;
+	// Skip BOM
+	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+		 (char)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
 }
 
 String::String( const char* ansiString, const std::locale& locale ) {
@@ -991,14 +1064,38 @@ String::String( const String& str ) : mString( str.mString ) {}
 String String::fromUtf8( const std::string& utf8String ) {
 	String::StringType utf32;
 
+	// Skip BOM
+	int skip = 0;
+	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+		 (char)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
 	utf32.reserve( utf8String.length() + 1 );
 
-	Utf8::toUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( utf32 ) );
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( utf32 ) );
 
 	return String( utf32 );
 }
 
-#define iscont( p ) ( ( *(p)&0xC0 ) == 0x80 )
+String String::fromUtf8( const std::string_view& utf8String ) {
+	String::StringType utf32;
+
+	// Skip BOM
+	int skip = 0;
+	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
+		 (char)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
+	utf32.reserve( utf8String.length() + 1 );
+
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( utf32 ) );
+
+	return String( utf32 );
+}
+
+#define iscont( p ) ( ( *( p ) & 0xC0 ) == 0x80 )
 
 static inline const char* utf8_next( const char* s, const char* e ) {
 	while ( s < e && iscont( s + 1 ) )
@@ -1015,6 +1112,10 @@ static inline size_t utf8_length( const char* s, const char* e ) {
 
 size_t String::utf8Length( const std::string& utf8String ) {
 	return utf8_length( utf8String.c_str(), utf8String.c_str() + utf8String.length() );
+}
+
+size_t String::utf8Length( const std::string_view& utf8String ) {
+	return utf8_length( utf8String.data(), utf8String.data() + utf8String.length() );
 }
 
 Uint32 String::utf8Next( char*& utf8String ) {
@@ -1077,6 +1178,11 @@ String::HashType String::getHash() const {
 
 String& String::operator=( const String& right ) {
 	mString = right.mString;
+	return *this;
+}
+
+String& String::operator=( String&& right ) {
+	mString = std::move( right.mString );
 	return *this;
 }
 

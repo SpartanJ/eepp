@@ -37,10 +37,16 @@ mkdir -p ecode.app/assets/colorschemes
 mkdir -p ecode.app/assets/fonts
 cp -r ../../../bin/assets/colorschemes ecode.app/assets/
 cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode.app/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf ecode.app/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Oblique.ttf ecode.app/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-BoldOblique.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/nonicons.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/codicon.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode.app/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Bold.ttf ecode.app/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Italic.ttf ecode.app/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-BoldItalic.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/assets/fonts/

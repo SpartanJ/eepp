@@ -10,6 +10,7 @@
 using namespace EE::Network;
 using namespace eterm::UI;
 using json = nlohmann::json;
+using namespace std::literals;
 
 namespace ecode {
 
@@ -151,6 +152,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 	term.newTerminalOrientation = NewTerminalOrientation::fromString(
 		ini.getValue( "terminal", "new_terminal_orientation", "vertical" ) );
+	term.scrollback = ini.getValueI( "terminal", "scrollback", 10000 );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
@@ -164,6 +166,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
 							   "autoformatter" == creator.first || "lspclient" == creator.first );
 	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
+
+	languagesExtensions.priorities = ini.getKeyMap( "languages_extensions" );
 
 	iniInfo = FileInfo( ini.path() );
 }
@@ -223,8 +227,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "terminal_font", ui.terminalFont );
 	ini.setValue( "ui", "theme", ui.theme );
 	ini.setValue( "ui", "fallback_font", ui.fallbackFont );
-	ini.setValue( "ui", "ui_color_scheme",
-				  ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" );
+	ini.setValue(
+		"ui", "ui_color_scheme",
+		std::string_view{ ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" } );
 	ini.setValueB( "document", "trim_trailing_whitespaces", doc.trimTrailingWhitespaces );
 	ini.setValueB( "document", "force_new_line_at_end_of_file", doc.forceNewLineAtEndOfFile );
 	ini.setValueB( "document", "auto_detect_indent_type", doc.autoDetectIndentType );
@@ -263,6 +268,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "terminal", "colorscheme", term.colorScheme );
 	ini.setValue( "terminal", "new_terminal_orientation",
 				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
+	ini.setValue( "terminal", "scrollback", String::toString( term.scrollback ) );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",
@@ -277,6 +283,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
 	for ( const auto& plugin : pluginsEnabled )
 		ini.setValueB( "plugins", plugin.first, plugin.second );
+
+	for ( const auto& langExt : languagesExtensions.priorities )
+		ini.setValue( "languages_extensions", langExt.first, langExt.second );
 
 	ini.writeFile();
 	iniState.writeFile();

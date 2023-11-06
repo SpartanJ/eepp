@@ -15,7 +15,8 @@ GlyphDrawable::GlyphDrawable( Texture* texture, const Rect& srcRect, const Sizef
 	DrawableResource( Drawable::GLYPH, resourceName ),
 	mTexture( texture ),
 	mSrcRect( srcRect.asFloat() ),
-	mDestSize( destSize ) {
+	mDestSize( destSize ),
+	mAdvance( destSize.getWidth() ) {
 	mPixelDensity = PixelDensity::getPixelDensity();
 }
 
@@ -41,7 +42,7 @@ void GlyphDrawable::draw( const Vector2f& position, const Sizef& size ) {
 						  mSrcRect.Top + mSrcRect.Bottom );
 	if ( mDrawMode == DrawMode::Image ) {
 		BR->batchQuad( position.x, position.y, size.getWidth(), size.getHeight() );
-	} else if ( mDrawMode == DrawMode::TextItalic ) {
+	} else if ( mDrawMode == DrawMode::TextItalic && !mIsItalic ) {
 		Float x = position.x + mGlyphOffset.x;
 		Float y = position.y + mGlyphOffset.y;
 		Float italic = 0.208f * size.getWidth(); // 12 degrees
@@ -63,7 +64,7 @@ void GlyphDrawable::drawIntoVertexBuffer( VertexBuffer* vbo, const Vector2u& gri
 	Sizef size( mDestSize != Sizef::Zero ? mDestSize : Sizef( mSrcRect.Right, mSrcRect.Bottom ) );
 	if ( mDrawMode == DrawMode::Image ) {
 		vbo->setQuad( gridPos, pos, size, mColor );
-	} else if ( mDrawMode == DrawMode::TextItalic ) {
+	} else if ( mDrawMode == DrawMode::TextItalic && !mIsItalic ) {
 		Float x = pos.x + mGlyphOffset.x;
 		Float y = pos.y + mGlyphOffset.y;
 		Float italic = 0.208f * size.getWidth(); // 12 degrees
@@ -81,6 +82,14 @@ bool GlyphDrawable::isStateful() {
 
 Texture* GlyphDrawable::getTexture() {
 	return mTexture;
+}
+
+const Rectf& GlyphDrawable::getSrcRect() const {
+	return mSrcRect;
+}
+
+const Sizef& GlyphDrawable::getDestSize() const {
+	return mDestSize;
 }
 
 Sizef GlyphDrawable::getSize() {
@@ -117,6 +126,18 @@ const GlyphDrawable::DrawMode& GlyphDrawable::getDrawMode() const {
 
 void GlyphDrawable::setDrawMode( const DrawMode& drawMode ) {
 	mDrawMode = drawMode;
+}
+
+void GlyphDrawable::setIsItalic( bool isItalic ) {
+	mIsItalic = isItalic;
+}
+
+const Float& GlyphDrawable::getAdvance() const {
+	return mAdvance;
+}
+
+void GlyphDrawable::setAdvance( Float advance ) {
+	mAdvance = advance;
 }
 
 }} // namespace EE::Graphics

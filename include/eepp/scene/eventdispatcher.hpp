@@ -54,6 +54,8 @@ class EE_API EventDispatcher {
 
 	void sendTextInput( const Uint32& textChar, const Uint32& timestamp );
 
+	void sendTextEditing( const String& text, const Int32& start, const Int32& length );
+
 	void sendKeyUp( const Keycode& keyCode, const Scancode& scancode, const Uint32& chr,
 					const Uint32& mod );
 
@@ -127,6 +129,7 @@ class EE_API EventDispatcher {
 	Vector2i mMouseDownPos;
 	Vector2i mClickPos;
 	Int32 mCbId;
+	Uint32 mIMECbId;
 	bool mFirstPress;
 	bool mDisableMousePress{ false };
 	bool mJustDisabledMousePress{ false };

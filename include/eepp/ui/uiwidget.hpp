@@ -141,21 +141,21 @@ class EE_API UIWidget : public UINode {
 
 	const std::vector<std::string>& getStyleSheetPseudoClasses() const;
 
-	void resetClass();
+	UIWidget* resetClass();
 
 	/** Resets all classes and assign a class */
-	void setClass( const std::string& cls );
+	UIWidget* setClass( const std::string& cls );
 
 	/** Resets all classes and assign vector of classes */
-	void setClasses( const std::vector<std::string>& classes );
+	UIWidget* setClasses( const std::vector<std::string>& classes );
 
-	void addClass( const std::string& cls );
+	UIWidget* addClass( const std::string& cls );
 
-	void addClasses( const std::vector<std::string>& classes );
+	UIWidget* addClasses( const std::vector<std::string>& classes );
 
-	void removeClass( const std::string& cls );
+	UIWidget* removeClass( const std::string& cls );
 
-	void removeClasses( const std::vector<std::string>& classes );
+	UIWidget* removeClasses( const std::vector<std::string>& classes );
 
 	bool hasClass( const std::string& cls ) const;
 
@@ -252,6 +252,7 @@ class EE_API UIWidget : public UINode {
 	String i18n( const std::string& str );
 
 	String i18n( const std::string& str, const String& defaultValue );
+
   protected:
 	friend class UIManager;
 	friend class UISceneNode;
@@ -351,7 +352,6 @@ class EE_API UIWidget : public UINode {
 	void disableCSSAnimations();
 
 	void reloadFontFamily();
-
 };
 
 }} // namespace EE::UI

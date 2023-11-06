@@ -215,6 +215,8 @@ class EE_API Process {
 	Mutex mStdInMutex;
 	ReadFn mReadStdOutFn;
 	ReadFn mReadStdErrFn;
+
+	size_t readAll( std::string& buffer, bool readErr );
 };
 
 }} // namespace EE::System

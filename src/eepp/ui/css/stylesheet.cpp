@@ -291,6 +291,18 @@ StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& 
 	for ( auto& node : mNodes )
 		if ( node->getAtRuleType() == atRuleType )
 			vector.push_back( node.get() );
+
+	std::sort( vector.begin(), vector.end(),
+			   []( const StyleSheetStyle* left, const StyleSheetStyle* right ) {
+				   bool leftHasIt = left->hasProperty( PropertyId::FontStyle );
+				   bool rightHasIt = right->hasProperty( PropertyId::FontStyle );
+				   if ( leftHasIt && !rightHasIt )
+					   return false;
+				   if ( !leftHasIt && rightHasIt )
+					   return true;
+				   return leftHasIt && rightHasIt;
+			   } );
+
 	return vector;
 }
 

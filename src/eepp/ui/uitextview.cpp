@@ -86,7 +86,7 @@ void UITextView::draw() {
 								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
-			mTextCache->setAlign( getFlags() );
+			mTextCache->setAlign( Font::getHorizontalAlign( getFlags() ) );
 			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
@@ -118,10 +118,6 @@ UITextView* UITextView::setFont( Graphics::Font* font ) {
 
 Uint32 UITextView::getFontSize() const {
 	return mTextCache->getCharacterSize();
-}
-
-Uint32 UITextView::getPixelsFontSize() const {
-	return mTextCache->getCharacterSizePx();
 }
 
 UITextView* UITextView::setFontSize( const Uint32& characterSize ) {
@@ -454,7 +450,7 @@ Float UITextView::getTextHeight() {
 	return mTextCache->getTextHeight();
 }
 
-const int& UITextView::getNumLines() const {
+Uint32 UITextView::getNumLines() {
 	return mTextCache->getNumLines();
 }
 
@@ -562,7 +558,7 @@ void UITextView::drawSelection( Text* textCache ) {
 		if ( !mSelPosCache.empty() ) {
 			Primitives P;
 			P.setColor( mFontStyleConfig.FontSelectionBackColor );
-			Float vspace = textCache->getFont()->getLineSpacing( textCache->getCharacterSizePx() );
+			Float vspace = textCache->getFont()->getLineSpacing( textCache->getCharacterSize() );
 
 			for ( size_t i = 0; i < mSelPosCache.size(); i++ ) {
 				initPos = mSelPosCache[i].initPos;
@@ -655,7 +651,7 @@ const Int32& UITextView::getFontLineCenter() {
 }
 
 void UITextView::recalculate() {
-	int fontHeight = mTextCache->getCharacterSizePx();
+	int fontHeight = mTextCache->getCharacterSize();
 	mFontLineCenter = eefloor(
 		(Float)( ( mTextCache->getFont()->getLineSpacing( fontHeight ) - fontHeight ) / 2 ) );
 
@@ -706,7 +702,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
-			setFontSize( lengthFromValueAsDp( attribute ) );
+			setFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::FontStyle: {
 			Uint32 flags = attribute.asFontStyle();
@@ -777,7 +773,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%ddp", getFontSize() );
+			return String::format( "%dpx", getFontSize() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:

@@ -70,6 +70,56 @@ Uint32 Text::stringToStyleFlag( const std::string& str ) {
 	return flags;
 }
 
+Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& string,
+						  const Uint32& style, const Uint32& tabWidth,
+						  const Float& outlineThickness ) {
+	return getTextWidth<String>( font, fontSize, string, style, tabWidth, outlineThickness );
+}
+
+Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String::View& string,
+						  const Uint32& style, const Uint32& tabWidth,
+						  const Float& outlineThickness ) {
+	return getTextWidth<String::View>( font, fontSize, string, style, tabWidth, outlineThickness );
+}
+
+Float Text::getTextWidth( const String& string, const FontStyleConfig& config,
+						  const Uint32& tabWidth ) {
+	return getTextWidth<String>( config.Font, config.CharacterSize, string, config.Style, tabWidth,
+								 config.OutlineThickness );
+}
+
+Float Text::getTextWidth( const String::View& string, const FontStyleConfig& config,
+						  const Uint32& tabWidth ) {
+	return getTextWidth<String::View>( config.Font, config.CharacterSize, string, config.Style,
+									   tabWidth, config.OutlineThickness );
+}
+
+Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
+				  const Color& fontColor, Uint32 style, Float outlineThickness,
+				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
+				  const Uint32& tabWidth ) {
+	return draw<String>( string, pos, font, fontSize, fontColor, style, outlineThickness,
+						 outlineColor, shadowColor, shadowOffset, tabWidth );
+}
+
+Sizef Text::draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
+				  const Uint32& tabWidth ) {
+	return draw<String>( string, pos, config, tabWidth );
+}
+
+Sizef Text::draw( const String::View& string, const Vector2f& pos, Font* font, Float fontSize,
+				  const Color& fontColor, Uint32 style, Float outlineThickness,
+				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
+				  const Uint32& tabWidth ) {
+	return draw<String::View>( string, pos, font, fontSize, fontColor, style, outlineThickness,
+							   outlineColor, shadowColor, shadowOffset, tabWidth );
+}
+
+Sizef Text::draw( const String::View& string, const Vector2f& pos, const FontStyleConfig& config,
+				  const Uint32& tabWidth ) {
+	return draw<String::View>( string, pos, config, tabWidth );
+}
+
 Text* Text::New() {
 	return eeNew( Text, () );
 }
@@ -82,134 +132,276 @@ Text* Text::New( Font* font, unsigned int characterSize ) {
 	return eeNew( Text, ( font, characterSize ) );
 }
 
-Text::Text() :
-	mString(),
-	mFont( NULL ),
-	mFontSize( 12 ),
-	mRealFontSize( PixelDensity::dpToPxI( mFontSize ) ),
-	mStyle( Regular ),
-	mFillColor( 255, 255, 255, 255 ),
-	mOutlineColor( 0, 0, 0, 255 ),
-	mOutlineThickness( 0 ),
-	mGeometryNeedUpdate( false ),
-	mCachedWidthNeedUpdate( false ),
-	mColorsNeedUpdate( false ),
-	mCachedWidth( 0 ),
-	mNumLines( 0 ),
-	mLargestLineCharCount( 0 ),
-	mShadowColor( Color( 0, 0, 0, 255 ) ),
-	mAlign( 0 ),
-	mFontHeight( 0 ),
-	mTabWidth( 4 ) {}
-
-Text::Text( const String& string, Font* font, unsigned int characterSize ) :
-	mString( string ),
-	mFont( font ),
-	mFontSize( characterSize ),
-	mRealFontSize( PixelDensity::dpToPxI( mFontSize ) ),
-	mStyle( Regular ),
-	mFillColor( 255, 255, 255, 255 ),
-	mOutlineColor( 0, 0, 0, 255 ),
-	mOutlineThickness( 0 ),
-	mGeometryNeedUpdate( true ),
-	mCachedWidthNeedUpdate( true ),
-	mColorsNeedUpdate( true ),
-	mCachedWidth( 0 ),
-	mNumLines( 0 ),
-	mLargestLineCharCount( 0 ),
-	mShadowColor( Color( 0, 0, 0, 255 ) ),
-	mAlign( 0 ),
-	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
-	mTabWidth( 4 ) {
-	if ( !mFont->isScalable() ) {
-		mFontSize = mFontHeight;
-		mRealFontSize = mFontHeight;
+static inline void drawGlyph( BatchRenderer* BR, GlyphDrawable* gd, const Vector2f& position,
+							  const Color& color, bool isItalic ) {
+	BR->quadsSetColor( color );
+	BR->quadsSetTexCoord( gd->getSrcRect().Left, gd->getSrcRect().Top,
+						  gd->getSrcRect().Left + gd->getSrcRect().Right,
+						  gd->getSrcRect().Top + gd->getSrcRect().Bottom );
+	if ( isItalic && !gd->isItalic() ) {
+		Float x = position.x + gd->getGlyphOffset().x;
+		Float y = position.y + gd->getGlyphOffset().y;
+		Float italic = 0.208f * gd->getDestSize().getWidth(); // 12 degrees
+		BR->batchQuadFree( x + italic, y, x, y + gd->getDestSize().getHeight(),
+						   x + gd->getDestSize().getWidth(), y + gd->getDestSize().getHeight(),
+						   x + gd->getDestSize().getWidth() + italic, y );
+	} else {
+		BR->batchQuad( position.x + gd->getGlyphOffset().x, position.y + gd->getGlyphOffset().y,
+					   gd->getDestSize().getWidth(), gd->getDestSize().getHeight() );
 	}
+};
+
+static inline void drawUnderline( Font* font, Float fontSize, const Color& fontColor,
+								  const Vector2f& cpos, const Uint32& style, BatchRenderer* BR,
+								  Float outlineThickness, const Vector2f& pos, Float width,
+								  const Color& shadowColor, const Vector2f& shadowOffset,
+								  const Color& outlineColor ) {
+	Float underlineOffset = font->getUnderlinePosition( fontSize );
+	Float underlineThickness = font->getUnderlineThickness( fontSize );
+	Float top =
+		cpos.y + std::floor( fontSize + underlineOffset - ( underlineThickness / 2 ) + 0.5f );
+	Float bottom = top + std::floor( underlineThickness + 0.5f );
+
+	if ( style & Text::Shadow ) {
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( shadowColor );
+		BR->batchQuad( Rectf( pos.x + shadowOffset.x, top + shadowOffset.y,
+							  pos.x + width + shadowOffset.x, bottom + shadowOffset.y ) );
+	}
+
+	if ( outlineThickness ) {
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( outlineColor );
+		BR->batchQuad( Rectf( pos.x - outlineThickness, top - outlineThickness,
+							  pos.x + width + outlineThickness, bottom + outlineThickness ) );
+	}
+
+	BR->quadsSetTexCoord( 0, 0, 1, 1 );
+	BR->quadsSetColor( fontColor );
+	BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
 }
 
-Text::Text( Font* font, unsigned int characterSize ) :
-	mFont( font ),
-	mFontSize( characterSize ),
-	mRealFontSize( PixelDensity::dpToPxI( mFontSize ) ),
-	mStyle( Regular ),
-	mFillColor( 255, 255, 255, 255 ),
-	mOutlineColor( 0, 0, 0, 255 ),
-	mOutlineThickness( 0 ),
-	mGeometryNeedUpdate( true ),
-	mCachedWidthNeedUpdate( true ),
-	mColorsNeedUpdate( true ),
-	mCachedWidth( 0 ),
-	mNumLines( 0 ),
-	mLargestLineCharCount( 0 ),
-	mShadowColor( Color( 0, 0, 0, 255 ) ),
-	mAlign( 0 ),
-	mFontHeight( mFont->getFontHeight( mRealFontSize ) ),
-	mTabWidth( 4 ) {
-	if ( !mFont->isScalable() ) {
-		mFontSize = mFontHeight;
-		mRealFontSize = mFontHeight;
+static inline void drawStrikeThrough( Font* font, Float fontSize, const Color& fontColor,
+									  const Vector2f& cpos, const Uint32& style, BatchRenderer* BR,
+									  Float outlineThickness, const Vector2f& pos, Float width,
+									  const Color& shadowColor, const Vector2f& shadowOffset,
+									  const Color& outlineColor, bool isBold, bool isItalic ) {
+	Rectf xBounds = font->getGlyph( L'x', fontSize, isBold, isItalic ).bounds;
+	Float strikeThroughOffset = xBounds.Top + xBounds.Bottom * 0.5f;
+	Float underlineThickness = font->getUnderlineThickness( fontSize );
+	Float top =
+		std::floor( cpos.y + fontSize + strikeThroughOffset - ( underlineThickness / 2 ) + 0.5f );
+	Float bottom = top + std::floor( underlineThickness + 0.5f );
+	if ( style & Text::Shadow ) {
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( shadowColor );
+		BR->batchQuad( Rectf( pos.x + shadowOffset.x, top + shadowOffset.y,
+							  pos.x + width + shadowOffset.x, bottom + +shadowOffset.y ) );
 	}
+	if ( outlineThickness ) {
+		BR->quadsSetTexCoord( 0, 0, 1, 1 );
+		BR->quadsSetColor( outlineColor );
+		BR->batchQuad( Rectf( pos.x - outlineThickness, top - outlineThickness,
+							  pos.x + width + outlineThickness, bottom + outlineThickness ) );
+	}
+	BR->quadsSetTexCoord( 0, 0, 1, 1 );
+	BR->quadsSetColor( fontColor );
+	BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
+}
+
+template <typename StringType>
+Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Float fontSize,
+				  const Color& fontColor, Uint32 style, Float outlineThickness,
+				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
+				  const Uint32& tabWidth ) {
+	Vector2f cpos{ pos };
+	String::StringBaseType ch;
+	String::StringBaseType prevChar = 0;
+	bool isBold = ( style & Text::Bold ) != 0;
+	bool isItalic = ( style & Text::Italic ) != 0;
+	Float kerning = 0;
+	Float width = 0;
+	Float height = font->getFontHeight( fontSize );
+	Sizef size{ 0, height };
+	size_t ssize = string.size();
+	BatchRenderer* BR = GlobalBatchRenderer::instance();
+	Texture* fontTexture = font->getTexture( fontSize );
+	BR->setBlendMode( BlendMode::Alpha() );
+	BR->quadsBegin();
+	BR->setTexture( fontTexture, fontTexture->getCoordinateType() );
+
+	for ( size_t i = 0; i < ssize; ++i ) {
+		ch = string[i];
+
+		switch ( ch ) {
+			case '\r':
+				continue;
+			case '\t': {
+				Float advance =
+					font->getGlyph( ' ', fontSize, isBold, isItalic ).advance * tabWidth;
+				width += advance;
+				cpos.x += advance;
+				prevChar = ch;
+				continue;
+			}
+			case ' ': {
+				Float advance = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
+				width += advance;
+				cpos.x += advance;
+				prevChar = ch;
+				continue;
+			}
+			case '\n': {
+				if ( style & Text::Underlined ) {
+					drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
+								   pos, width, shadowColor, shadowOffset, outlineColor );
+				}
+				if ( style & Text::StrikeThrough ) {
+					drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
+									   pos, width, shadowColor, shadowOffset, outlineColor, isBold,
+									   isItalic );
+				}
+				size.x = eemax( width, cpos.x );
+				width = 0;
+				cpos.y += height;
+				if ( i != ssize - 1 )
+					size.y += height;
+				continue;
+			}
+		}
+
+		if ( style & Text::Shadow ) {
+			auto* gds = font->getGlyphDrawable( ch, fontSize, isBold, isItalic, outlineThickness );
+			if ( gds )
+				drawGlyph( BR, gds, cpos, shadowColor, isItalic );
+		}
+
+		if ( outlineThickness != 0.f ) {
+			auto* gdo = font->getGlyphDrawable( ch, fontSize, isBold, isItalic, outlineThickness );
+			if ( gdo )
+				drawGlyph( BR, gdo, cpos, outlineColor, isItalic );
+		}
+
+		auto* gd = font->getGlyphDrawable( ch, fontSize, isBold, isItalic );
+		if ( gd ) {
+			drawGlyph( BR, gd, cpos, fontColor, isItalic );
+
+			cpos.x += gd->getAdvance();
+			width += gd->getAdvance();
+
+			if ( !font->isMonospace() ) {
+				kerning =
+					font->getKerning( prevChar, ch, fontSize, isBold, isItalic, outlineThickness );
+				cpos.x += kerning;
+				width += kerning;
+			}
+		}
+
+		prevChar = ch;
+	}
+
+	if ( ( style & Text::Underlined ) && width != 0 ) {
+		drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos, width,
+					   shadowColor, shadowOffset, outlineColor );
+	}
+
+	if ( ( style & Text::StrikeThrough ) && width != 0 ) {
+		drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos, width,
+						   shadowColor, shadowOffset, outlineColor, isBold, isItalic );
+	}
+
+	size.x = eemax( width, size.x );
+
+	BR->drawOpt();
+
+	return size;
+}
+
+template <typename StringType>
+Sizef Text::draw( const StringType& string, const Vector2f& pos, const FontStyleConfig& config,
+				  const Uint32& tabWidth ) {
+	return draw<StringType>( string, pos, config.Font, config.CharacterSize, config.FontColor,
+							 config.Style, config.OutlineThickness, config.OutlineColor,
+							 config.ShadowColor, config.ShadowOffset, tabWidth );
+}
+
+Text::Text() {}
+
+Text::Text( const String& string, Font* font, unsigned int characterSize ) :
+	Text( font, characterSize ) {
+	mString = string;
+	invalidate();
+}
+
+Text::Text( Font* font, unsigned int characterSize ) {
+	mFontStyleConfig.Font = font;
+	mFontStyleConfig.CharacterSize = characterSize;
+	mFontHeight = mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
+	if ( !mFontStyleConfig.Font->isScalable() )
+		mFontStyleConfig.CharacterSize = mFontHeight;
 }
 
 void Text::create( Font* font, const String& text, Color FontColor, Color FontShadowColor,
 				   Uint32 characterSize ) {
-	mFont = font;
+	mFontStyleConfig.Font = font;
+	mFontStyleConfig.CharacterSize = characterSize;
+
+	mFontHeight = mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
+	if ( !mFontStyleConfig.Font->isScalable() )
+		mFontStyleConfig.CharacterSize = mFontHeight;
 	mString = text;
-	mFontSize = characterSize;
-	mRealFontSize = PixelDensity::dpToPxI( mFontSize );
-	Float dp = PixelDensity::dpToPx( 1 );
-	mShadowOffset = { dp, dp };
 	setFillColor( FontColor );
 	setShadowColor( FontShadowColor );
+	invalidate();
+}
+
+void Text::onNewString() {
+	mColorsNeedUpdate = true;
 	mGeometryNeedUpdate = true;
 	mCachedWidthNeedUpdate = true;
-	mColorsNeedUpdate = true;
-	ensureColorUpdate();
-	ensureGeometryUpdate();
+	mContainsColorEmoji = false;
+	if ( FontManager::instance()->getColorEmojiFont() != nullptr ) {
+		if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
+			FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+			if ( fontTrueType->isColorEmojiFont() || !fontTrueType->isEmojiFont() )
+				mContainsColorEmoji = Font::containsEmojiCodePoint( mString );
+		}
+	}
 }
 
 void Text::setString( const String& string ) {
 	if ( mString != string ) {
 		mString = string;
-		mColorsNeedUpdate = true;
-		mGeometryNeedUpdate = true;
-		mCachedWidthNeedUpdate = true;
-		mContainsColorEmoji = false;
-		if ( FontManager::instance()->getColorEmojiFont() != nullptr ) {
-			if ( mFont->getType() == FontType::TTF ) {
-				FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFont );
-				if ( fontTrueType->isColorEmojiFont() || !fontTrueType->isEmojiFont() )
-					mContainsColorEmoji = Font::containsEmojiCodePoint( string );
-			}
-		}
+		onNewString();
+	}
+}
+
+void Text::setString( String&& string ) {
+	if ( mString != string ) {
+		mString = std::move( string );
+		onNewString();
 	}
 }
 
 void Text::setFont( Font* font ) {
-	if ( NULL != font && mFont != font ) {
-		mFont = font;
+	if ( NULL != font && mFontStyleConfig.Font != font ) {
+		mFontStyleConfig.Font = font;
 
-		mRealFontSize = PixelDensity::dpToPxI( mFontSize );
-		mFontHeight = mFont->getFontHeight( mRealFontSize );
-		if ( !mFont->isScalable() ) {
-			mFontSize = mFontHeight;
-			mRealFontSize = mFontHeight;
-		}
+		mFontHeight = mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
+		if ( !mFontStyleConfig.Font->isScalable() )
+			mFontStyleConfig.CharacterSize = mFontHeight;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
 	}
 }
 
 void Text::setFontSize( unsigned int size ) {
-	if ( NULL != mFont && mFontSize != size ) {
-		mFontSize = size;
+	if ( NULL != mFontStyleConfig.Font && mFontStyleConfig.CharacterSize != size ) {
+		mFontStyleConfig.CharacterSize = size;
 
-		mRealFontSize = PixelDensity::dpToPxI( mFontSize );
-		mFontHeight = mFont->getFontHeight( mRealFontSize );
-		if ( !mFont->isScalable() ) {
-			mFontSize = mFontHeight;
-			mRealFontSize = mFontHeight;
-		}
+		mFontHeight = mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
+		if ( !mFontStyleConfig.Font->isScalable() )
+			mFontStyleConfig.CharacterSize = mFontHeight;
 
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
@@ -217,8 +409,8 @@ void Text::setFontSize( unsigned int size ) {
 }
 
 void Text::setStyle( Uint32 style ) {
-	if ( mStyle != style ) {
-		mStyle = style;
+	if ( mFontStyleConfig.Style != style ) {
+		mFontStyleConfig.Style = style;
 		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
@@ -230,22 +422,22 @@ void Text::setColor( const Color& color ) {
 }
 
 void Text::setFillColor( const Color& color ) {
-	if ( color != mFillColor ) {
-		mFillColor = color;
+	if ( color != mFontStyleConfig.FontColor ) {
+		mFontStyleConfig.FontColor = color;
 		mColorsNeedUpdate = true;
 	}
 }
 
 void Text::setOutlineColor( const Color& color ) {
-	if ( color != mOutlineColor ) {
-		mOutlineColor = color;
+	if ( color != mFontStyleConfig.OutlineColor ) {
+		mFontStyleConfig.OutlineColor = color;
 		mColorsNeedUpdate = true;
 	}
 }
 
 void Text::setOutlineThickness( Float thickness ) {
-	if ( thickness != mOutlineThickness ) {
-		mOutlineThickness = thickness;
+	if ( thickness != mFontStyleConfig.OutlineThickness ) {
+		mFontStyleConfig.OutlineThickness = thickness;
 		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
@@ -273,15 +465,11 @@ String& Text::getString() {
 }
 
 Font* Text::getFont() const {
-	return mFont;
+	return mFontStyleConfig.Font;
 }
 
 unsigned int Text::getCharacterSize() const {
-	return mFontSize;
-}
-
-unsigned int Text::getCharacterSizePx() const {
-	return mRealFontSize;
+	return mFontStyleConfig.CharacterSize;
 }
 
 const Uint32& Text::getFontHeight() const {
@@ -289,7 +477,7 @@ const Uint32& Text::getFontHeight() const {
 }
 
 Uint32 Text::getStyle() const {
-	return mStyle;
+	return mFontStyleConfig.Style;
 }
 
 void Text::setAlpha( const Uint8& alpha ) {
@@ -297,11 +485,11 @@ void Text::setAlpha( const Uint8& alpha ) {
 	for ( Uint32 i = 0; i < s; i++ ) {
 		mColors[i].a = alpha;
 	}
-	mFillColor.a = alpha;
+	mFontStyleConfig.FontColor.a = alpha;
 }
 
 const Color& Text::getFillColor() const {
-	return mFillColor;
+	return mFontStyleConfig.FontColor;
 }
 
 const Color& Text::getColor() const {
@@ -309,70 +497,34 @@ const Color& Text::getColor() const {
 }
 
 const Color& Text::getOutlineColor() const {
-	return mOutlineColor;
+	return mFontStyleConfig.OutlineColor;
 }
 
 Float Text::getOutlineThickness() const {
-	return mOutlineThickness;
+	return mFontStyleConfig.OutlineThickness;
 }
 
 Vector2f Text::findCharacterPos( std::size_t index ) const {
 	// Make sure that we have a valid font
-	if ( !mFont || mString.empty() )
+	if ( !mFontStyleConfig.Font || mString.empty() )
 		return Vector2f();
 
 	// Adjust the index if it's out of range
 	if ( index > mString.size() )
 		index = mString.size();
 
-	const_cast<Text*>( this )->ensureGeometryUpdate();
-
-	return Vector2f( mGlyphCache[index].Left, mGlyphCache[index].Top );
+	return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+								   mString, mFontStyleConfig.Style, mTabWidth,
+								   mFontStyleConfig.OutlineThickness );
 }
 
-Int32 Text::findCharacterFromPos( const Vector2i& pos, bool ) const {
-	if ( NULL == mFont || mString.empty() )
+Int32 Text::findCharacterFromPos( const Vector2i& pos, bool nearest ) const {
+	if ( NULL == mFontStyleConfig.Font || mString.empty() )
 		return 0;
 
-	const_cast<Text*>( this )->ensureGeometryUpdate();
-
-	if ( mLinesStartIndex.empty() )
-		return 0;
-
-	Vector2f charCenter;
-	Int32 nearest = 0;
-	Int32 minDist = std::numeric_limits<Int32>::max();
-	Int32 curDist = -1;
-	Vector2f fpos( pos.asFloat() );
-
-	Float textHeight = mFont->getLineSpacing( mRealFontSize );
-	Int32 approximateSearchLine = static_cast<Int32>( eefloor( pos.y / textHeight ) );
-	approximateSearchLine = eemin(
-		eemax( 0, approximateSearchLine ),
-		static_cast<Int32>( mLinesStartIndex.size() > 1 ? mLinesStartIndex.size() : 1 ) - 1 );
-	size_t start = mLinesStartIndex[approximateSearchLine];
-	size_t end = approximateSearchLine == static_cast<Int32>( mLinesStartIndex.size() ) - 1
-					 ? mString.size()
-					 : mLinesStartIndex[approximateSearchLine + 1];
-
-	if ( mString[start] == '\n' && start + 1 < mString.size() ) {
-		start++;
-	}
-
-	if ( end >= mGlyphCache.size() )
-		end = mGlyphCache.size() - 1;
-
-	for ( std::size_t i = start; i <= end; ++i ) {
-		charCenter.x = mGlyphCache[i].Left;
-		charCenter.y = mGlyphCache[i].Top + mGlyphCache[i].getHeight();
-		curDist = eeabs( fpos.distance( charCenter ) );
-		if ( curDist < minDist ) {
-			nearest = i;
-			minDist = curDist;
-		}
-	}
-
-	return nearest;
+	return Text::findCharacterFromPos(
+		pos, nearest, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
+		mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness );
 }
 
 static bool isStopSelChar( Uint32 c ) {
@@ -411,7 +563,8 @@ void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& initCur, Int
 	}
 }
 
-Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& string,
+template <typename StringType>
+Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& string,
 						  const Uint32& style, const Uint32& tabWidth,
 						  const Float& outlineThickness ) {
 	if ( NULL == font || string.empty() )
@@ -421,20 +574,23 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& stri
 	String::StringBaseType rune;
 	Uint32 prevChar = 0;
 	bool bold = ( style & Text::Bold ) != 0;
-	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	bool italic = ( style & Text::Italic ) != 0;
+	Float hspace = static_cast<Float>(
+		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
 	for ( std::size_t i = 0; i < string.size(); ++i ) {
 		rune = string.at( i );
-		Glyph glyph = font->getGlyph( rune, fontSize, bold, outlineThickness );
+		Glyph glyph = font->getGlyph( rune, fontSize, bold, italic, outlineThickness );
 		if ( rune != '\r' && rune != '\t' ) {
-			width += font->getKerning( prevChar, rune, fontSize, bold );
-			prevChar = rune;
+			width += font->getKerning( prevChar, rune, fontSize, bold, italic, outlineThickness );
 			width += glyph.advance;
 		} else if ( rune == '\t' ) {
 			width += hspace * tabWidth;
-		} else if ( rune == '\n' ) {
+		}
+		if ( rune == '\n' ) {
 			width = 0;
 		}
 		maxWidth = eemax( width, maxWidth );
+		prevChar = rune;
 	}
 	return maxWidth;
 }
@@ -452,7 +608,9 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 
 	// Precompute the variables needed by the algorithm
 	bool bold = ( style & Text::Bold ) != 0;
-	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	bool italic = ( style & Italic ) != 0;
+	Float hspace = static_cast<Float>(
+		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
 	Float vspace = static_cast<Float>( font->getLineSpacing( fontSize ) );
 
 	// Compute the position
@@ -462,7 +620,8 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 		String::StringBaseType curChar = string[i];
 
 		// Apply the kerning offset
-		position.x += static_cast<Float>( font->getKerning( prevChar, curChar, fontSize, bold ) );
+		position.x += static_cast<Float>(
+			font->getKerning( prevChar, curChar, fontSize, bold, italic, outlineThickness ) );
 		prevChar = curChar;
 
 		// Handle special characters
@@ -483,7 +642,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 
 		// For regular characters, add the advance offset of the glyph
 		position.x += static_cast<Float>(
-			font->getGlyph( curChar, fontSize, bold, outlineThickness ).advance );
+			font->getGlyph( curChar, fontSize, bold, italic, outlineThickness ).advance );
 	}
 
 	return position;
@@ -504,23 +663,26 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 	Int32 curDist = -1;
 	std::size_t tSize = string.size();
 	bool bold = ( style & Text::Bold ) != 0;
+	bool italic = ( style & Italic ) != 0;
 	Vector2f fpos( pos.asFloat() );
 
-	Float hspace = static_cast<Float>( font->getGlyph( L' ', fontSize, bold ).advance );
+	Float hspace = static_cast<Float>(
+		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
 
 	for ( std::size_t i = 0; i < tSize; ++i ) {
 		rune = string[i];
-		Glyph glyph = font->getGlyph( rune, fontSize, bold, outlineThickness );
+		Glyph glyph = font->getGlyph( rune, fontSize, bold, italic, outlineThickness );
 
 		lWidth = width;
 
 		if ( rune != '\r' && rune != '\t' ) {
-			width += font->getKerning( prevChar, rune, fontSize, bold );
+			width += font->getKerning( prevChar, rune, fontSize, bold, italic, outlineThickness );
 			prevChar = rune;
 			width += glyph.advance;
 		} else if ( rune == '\t' ) {
 			width += hspace * tabWidth;
-		} else if ( rune == '\n' ) {
+		}
+		if ( rune == '\n' ) {
 			lWidth = 0;
 			width = 0;
 		}
@@ -558,68 +720,56 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 	return nearest;
 }
 
-void Text::getWidthInfo() {
-	if ( NULL == mFont || mString.empty() )
+void Text::updateWidthCache() {
+	if ( NULL == mFontStyleConfig.Font || mString.empty() )
 		return;
 
 	mLinesWidth.clear();
-	mLinesStartIndex.clear();
 
-	Float Width = 0, MaxWidth = 0;
-	Uint32 CharID;
-	Int32 Lines = 1;
-	Int32 CharCount = 0;
+	Float width = 0;
+	Float maxWidth = 0;
+	Uint32 rune;
 	Uint32 prevChar = 0;
-	mLargestLineCharCount = 0;
-	bool bold = ( mStyle & Bold ) != 0;
+	bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
+	bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
 
-	mLinesStartIndex.push_back( 0 );
+	Float hspace = static_cast<Float>( mFontStyleConfig.Font
+										   ->getGlyph( L' ', mFontStyleConfig.CharacterSize, bold,
+													   italic, mFontStyleConfig.OutlineThickness )
+										   .advance );
 
-	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );
-
-	for ( std::size_t i = 0; i < mString.size(); ++i ) {
-		CharID = static_cast<Int32>( mString.at( i ) );
-		Glyph glyph = mFont->getGlyph( CharID, mRealFontSize, bold, mOutlineThickness );
-
-		if ( CharID != '\r' && CharID != '\t' ) {
-			Width += mFont->getKerning( prevChar, CharID, mRealFontSize, bold );
-			prevChar = CharID;
-			Width += glyph.advance;
+	size_t size = mString.size();
+	for ( std::size_t i = 0; i < size; ++i ) {
+		rune = mString[i];
+		const Glyph& glyph = mFontStyleConfig.Font->getGlyph(
+			rune, mFontStyleConfig.CharacterSize, bold, italic, mFontStyleConfig.OutlineThickness );
+		if ( rune != '\r' && rune != '\t' ) {
+			width += mFontStyleConfig.Font->getKerning( prevChar, rune,
+														mFontStyleConfig.CharacterSize, bold,
+														italic, mFontStyleConfig.OutlineThickness );
+			width += glyph.advance;
+		} else if ( rune == '\t' ) {
+			width += hspace * mTabWidth;
 		}
 
-		CharCount++;
-
-		if ( CharID == '\t' ) {
-			Width += hspace * mTabWidth;
-		}
-		if ( CharID == '\n' ) {
-			mLinesStartIndex.push_back( i );
-			Lines++;
-
-			mLinesWidth.push_back( Width - glyph.advance );
-
-			Width = 0;
-
-			CharCount = 0;
-		} else {
-			if ( CharCount > mLargestLineCharCount )
-				mLargestLineCharCount = CharCount;
+		if ( rune == '\n' ) {
+			mLinesWidth.push_back( width - glyph.advance );
+			width = 0;
 		}
 
-		if ( Width > MaxWidth )
-			MaxWidth = Width;
+		if ( width > maxWidth )
+			maxWidth = width;
+		prevChar = rune;
 	}
 
-	if ( mString.size() && mString.at( mString.size() - 1 ) != '\n' ) {
-		mLinesWidth.push_back( Width );
-	}
+	if ( !mString.empty() && mString[mString.size() - 1] != '\n' )
+		mLinesWidth.push_back( width );
 
-	mCachedWidth = MaxWidth;
-	mNumLines = Lines;
+	mCachedWidth = maxWidth;
 }
 
 void Text::wrapText( const Uint32& maxWidth ) {
-	if ( !mString.size() || NULL == mFont )
+	if ( !mString.size() || NULL == mFontStyleConfig.Font )
 		return;
 
 	Float tCurWidth = 0.f;
@@ -628,12 +778,17 @@ void Text::wrapText( const Uint32& maxWidth ) {
 	String::StringBaseType* tChar = &mString[0];
 	String::StringBaseType* tLastSpace = NULL;
 	Uint32 prevChar = 0;
-	bool bold = ( mStyle & Bold ) != 0;
+	bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
+	bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
 
-	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );
+	Float hspace = static_cast<Float>( mFontStyleConfig.Font
+										   ->getGlyph( L' ', mFontStyleConfig.CharacterSize, bold,
+													   italic, mFontStyleConfig.OutlineThickness )
+										   .advance );
 
 	while ( *tChar ) {
-		Glyph pChar = mFont->getGlyph( *tChar, mRealFontSize, bold, mOutlineThickness );
+		Glyph pChar = mFontStyleConfig.Font->getGlyph( *tChar, mFontStyleConfig.CharacterSize, bold,
+													   italic, mFontStyleConfig.OutlineThickness );
 
 		Float fCharWidth = (Float)pChar.advance;
 
@@ -646,7 +801,9 @@ void Text::wrapText( const Uint32& maxWidth ) {
 		tWordWidth += fCharWidth;
 
 		if ( *tChar != '\r' ) {
-			tWordWidth += mFont->getKerning( prevChar, *tChar, mRealFontSize, bold );
+			tWordWidth += mFontStyleConfig.Font->getKerning(
+				prevChar, *tChar, mFontStyleConfig.CharacterSize, bold, italic,
+				mFontStyleConfig.OutlineThickness );
 			prevChar = *tChar;
 		}
 
@@ -724,20 +881,12 @@ void Text::setBackgroundColor( const Color& backgroundColor ) {
 	mBackgroundColor = backgroundColor;
 }
 
-bool Text::getDisableCacheWidth() const {
-	return mDisableCacheWidth;
-}
-
-void Text::setDisableCacheWidth( bool newDisableCacheWidth ) {
-	mDisableCacheWidth = newDisableCacheWidth;
-}
-
 const Vector2f& Text::getShadowOffset() const {
-	return mShadowOffset;
+	return mFontStyleConfig.ShadowOffset;
 }
 
 void Text::setShadowOffset( const Vector2f& shadowOffset ) {
-	mShadowOffset = shadowOffset;
+	mFontStyleConfig.ShadowOffset = shadowOffset;
 }
 
 Rectf Text::getLocalBounds() {
@@ -755,13 +904,16 @@ Float Text::getTextWidth() {
 Float Text::getTextHeight() {
 	cacheWidth();
 
-	return NULL != mFont
-			   ? mFont->getLineSpacing( mRealFontSize ) * ( 0 == mNumLines ? 1 : mNumLines )
+	return NULL != mFontStyleConfig.Font
+			   ? mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize ) *
+					 ( mLinesWidth.empty() ? 1 : mLinesWidth.size() )
 			   : 0;
 }
 
 Float Text::getLineSpacing() {
-	return NULL != mFont ? mFont->getLineSpacing( mRealFontSize ) : 0;
+	return NULL != mFontStyleConfig.Font
+			   ? mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize )
+			   : 0;
 }
 
 void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
@@ -812,7 +964,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		p.drawRectangle( getLocalBounds() );
 	}
 
-	Texture* texture = mFont->getTexture( mRealFontSize );
+	Texture* texture = mFontStyleConfig.Font->getTexture( mFontStyleConfig.CharacterSize );
 	if ( !texture )
 		return;
 	texture->bind();
@@ -821,7 +973,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	Uint32 alloc = numvert * sizeof( VertexCoords );
 	Uint32 allocC = numvert * GLi->quadVertexs();
 
-	if ( 0 != mOutlineThickness ) {
+	if ( 0 != mFontStyleConfig.OutlineThickness ) {
 		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
 						   reinterpret_cast<const char*>( outlineColors.data() ), allocC );
 		GLi->texCoordPointer( 2, GL_FP, sizeof( VertexCoords ),
@@ -860,21 +1012,21 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Float& rotation,
 				 BlendMode effect, const OriginPoint& rotationCenter,
 				 const OriginPoint& scaleCenter ) {
-	if ( NULL == mFont )
+	if ( NULL == mFontStyleConfig.Font )
 		return;
 
 	ensureColorUpdate();
 	ensureGeometryUpdate();
 
-	if ( mStyle & Shadow ) {
+	if ( mFontStyleConfig.Style & Shadow ) {
 		std::vector<Color> colors;
 		Color shadowColor( getShadowColor() );
 		if ( getFillColor().a != 255 )
 			shadowColor.a =
 				(Uint8)( (Float)shadowColor.a * ( (Float)getFillColor().a / (Float)255 ) );
 		colors.assign( mColors.size(), shadowColor );
-		draw( X + mShadowOffset.x, Y + mShadowOffset.y, scale, rotation, effect, rotationCenter,
-			  scaleCenter, colors, {}, Color::Transparent );
+		draw( X + mFontStyleConfig.ShadowOffset.x, Y + mFontStyleConfig.ShadowOffset.y, scale,
+			  rotation, effect, rotationCenter, scaleCenter, colors, {}, Color::Transparent );
 	}
 
 	draw( X, Y, scale, rotation, effect, rotationCenter, scaleCenter, mColors, mOutlineColors,
@@ -882,7 +1034,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 }
 
 void Text::ensureGeometryUpdate() {
-	if ( !mDisableCacheWidth )
+	if ( mCachedWidthNeedUpdate && mAlign != TEXT_ALIGN_LEFT )
 		cacheWidth();
 
 	// Do nothing, if geometry has not changed
@@ -894,72 +1046,94 @@ void Text::ensureGeometryUpdate() {
 
 	// Clear the previous geometry
 	mVertices.clear();
-	mGlyphCache.clear();
 	mOutlineVertices.clear();
+
+	if ( mCachedWidthNeedUpdate )
+		mLinesWidth.clear();
+
 	mBounds = Rectf();
 
 	// No font or text: nothing to draw
-	if ( !mFont || mString.empty() )
+	if ( !mFontStyleConfig.Font || mString.empty() )
 		return;
 
+	mVertices.reserve( mString.size() * GLi->quadVertexs() );
+
+	if ( mFontStyleConfig.OutlineThickness != 0.f )
+		mOutlineVertices.reserve( mString.size() * GLi->quadVertexs() );
+
 	// Compute values related to the text style
-	bool bold = ( mStyle & Bold ) != 0;
-	bool underlined = ( mStyle & Underlined ) != 0;
-	bool strikeThrough = ( mStyle & StrikeThrough ) != 0;
-	Float italic = ( mStyle & Italic ) ? 0.208f : 0.f; // 12 degrees
-	Float underlineOffset = mFont->getUnderlinePosition( mRealFontSize );
-	Float underlineThickness = mFont->getUnderlineThickness( mRealFontSize );
+	bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
+	bool reqItalic = ( mFontStyleConfig.Style & Italic ) != 0;
+	bool underlined = ( mFontStyleConfig.Style & Underlined ) != 0;
+	bool strikeThrough = ( mFontStyleConfig.Style & StrikeThrough ) != 0;
+	Float italic = reqItalic && !mFontStyleConfig.Font->hasItalic() ? 0.208f : 0.f; // 12 degrees
+	Float underlineOffset =
+		mFontStyleConfig.Font->getUnderlinePosition( mFontStyleConfig.CharacterSize );
+	Float underlineThickness =
+		mFontStyleConfig.Font->getUnderlineThickness( mFontStyleConfig.CharacterSize );
 
 	// Compute the location of the strike through dynamically
 	// We use the center point of the lowercase 'x' glyph as the reference
 	// We reuse the underline thickness as the thickness of the strike through as well
 	Float strikeThroughOffset = 0;
 	if ( strikeThrough ) {
-		Rectf xBounds = mFont->getGlyph( L'x', mRealFontSize, bold ).bounds;
+		Rectf xBounds =
+			mFontStyleConfig.Font->getGlyph( L'x', mFontStyleConfig.CharacterSize, bold, reqItalic )
+				.bounds;
 		strikeThroughOffset = xBounds.Top + xBounds.Bottom / 2.f;
 	}
 
 	// Precompute the variables needed by the algorithm
-	Float hspace = static_cast<Float>( mFont->getGlyph( L' ', mRealFontSize, bold ).advance );
-	Float vspace = static_cast<Float>( mFont->getLineSpacing( mRealFontSize ) );
+	Float hspace = static_cast<Float>(
+		mFontStyleConfig.Font->getGlyph( L' ', mFontStyleConfig.CharacterSize, bold, reqItalic )
+			.advance );
+	Float vspace = static_cast<Float>(
+		mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize ) );
 	Float x = 0.f;
-	Float y = static_cast<Float>( mRealFontSize );
+	Float y = static_cast<Float>( mFontStyleConfig.CharacterSize );
 
 	// Create one quad for each character
-	Float minX = static_cast<Float>( mRealFontSize );
-	Float minY = static_cast<Float>( mRealFontSize );
+	Float minX = static_cast<Float>( mFontStyleConfig.CharacterSize );
+	Float minY = static_cast<Float>( mFontStyleConfig.CharacterSize );
 	Float maxX = 0.f;
 	Float maxY = 0.f;
+	Float maxW = 0.f;
 	Uint32 prevChar = 0;
 
+	size_t size = mString.size();
 	Float centerDiffX = 0;
-	unsigned int Line = 0;
+	unsigned int line = 0;
 
 	switch ( Font::getHorizontalAlign( mAlign ) ) {
 		case TEXT_ALIGN_CENTER:
-			centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[Line] ) * 0.5f ) );
-			Line++;
+			centerDiffX = line < mLinesWidth.size()
+							  ? (Float)( (Int32)( ( mCachedWidth - mLinesWidth[line] ) * 0.5f ) )
+							  : 0.f;
+			line++;
 			break;
 		case TEXT_ALIGN_RIGHT:
-			centerDiffX = mCachedWidth - mLinesWidth[Line];
-			Line++;
+			centerDiffX = line < mLinesWidth.size() ? mCachedWidth - mLinesWidth[line] : 0.f;
+			line++;
 			break;
 	}
 
-	for ( std::size_t i = 0; i < mString.size(); ++i ) {
+	for ( std::size_t i = 0; i < size; ++i ) {
 		Uint32 curChar = mString[i];
 
 		// Apply the kerning offset
-		x += mFont->getKerning( prevChar, curChar, mRealFontSize, bold );
+		x +=
+			mFontStyleConfig.Font->getKerning( prevChar, curChar, mFontStyleConfig.CharacterSize,
+											   bold, reqItalic, mFontStyleConfig.OutlineThickness );
 		prevChar = curChar;
 
 		// If we're using the underlined style and there's a new line, draw a line
 		if ( underlined && ( curChar == L'\n' ) ) {
 			addLine( mVertices, x, y, underlineOffset, underlineThickness, 0, centerDiffX );
 
-			if ( mOutlineThickness != 0 )
+			if ( mFontStyleConfig.OutlineThickness != 0 )
 				addLine( mOutlineVertices, x, y, underlineOffset, underlineThickness,
-						 mOutlineThickness, centerDiffX );
+						 mFontStyleConfig.OutlineThickness, centerDiffX );
 		}
 
 		// If we're using the strike through style and there's a new line, draw a line across all
@@ -967,46 +1141,47 @@ void Text::ensureGeometryUpdate() {
 		if ( strikeThrough && ( curChar == L'\n' ) ) {
 			addLine( mVertices, x, y, strikeThroughOffset, underlineThickness, 0, centerDiffX );
 
-			if ( mOutlineThickness != 0 )
+			if ( mFontStyleConfig.OutlineThickness != 0 )
 				addLine( mOutlineVertices, x, y, strikeThroughOffset, underlineThickness,
-						 mOutlineThickness, centerDiffX );
+						 mFontStyleConfig.OutlineThickness, centerDiffX );
 		}
 
 		if ( curChar == L'\n' ) {
 			switch ( Font::getHorizontalAlign( mAlign ) ) {
 				case TEXT_ALIGN_CENTER:
-					centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[Line] ) * 0.5f ) );
+					centerDiffX =
+						line < mLinesWidth.size()
+							? (Float)( (Int32)( ( mCachedWidth - mLinesWidth[line] ) * 0.5f ) )
+							: 0.f;
 					break;
 				case TEXT_ALIGN_RIGHT:
-					centerDiffX = mCachedWidth - mLinesWidth[Line];
+					centerDiffX =
+						line < mLinesWidth.size() ? mCachedWidth - mLinesWidth[line] : 0.f;
 					break;
 			}
 
-			Line++;
+			line++;
 		}
 
 		// Handle special characters
-		if ( ( curChar == ' ' ) || ( curChar == '\t' ) || ( curChar == '\n' ) ||
-			 ( curChar == '\r' ) ) {
+		if ( curChar == ' ' || curChar == '\t' || curChar == '\n' || curChar == '\r' ) {
 			// Update the current bounds (min coordinates)
 			minX = std::min( minX, x );
 			minY = std::min( minY, y );
 
 			switch ( curChar ) {
 				case ' ':
-					mGlyphCache.push_back(
-						Rectf( Vector2f( x, y - mRealFontSize ), Sizef( hspace, vspace ) ) );
 					x += hspace;
 					break;
 				case '\t':
-					mGlyphCache.push_back( Rectf( Vector2f( x, y - mRealFontSize ),
-												  Sizef( hspace * mTabWidth, vspace ) ) );
 					x += hspace * mTabWidth;
 					break;
 				case '\n':
-					mGlyphCache.push_back(
-						Rectf( Vector2f( x, y - mRealFontSize ), Sizef( 0, vspace ) ) );
 					y += vspace;
+
+					if ( mCachedWidthNeedUpdate )
+						mLinesWidth.push_back( x );
+
 					x = 0;
 					break;
 				case '\r':
@@ -1017,13 +1192,18 @@ void Text::ensureGeometryUpdate() {
 			maxX = std::max( maxX, x );
 			maxY = std::max( maxY, y );
 
+			if ( mCachedWidthNeedUpdate )
+				maxW = std::max( maxW, x );
+
 			// Next glyph, no need to create a quad for whitespace
 			continue;
 		}
 
 		// Apply the outline
-		if ( mOutlineThickness != 0 ) {
-			const Glyph& glyph = mFont->getGlyph( curChar, mRealFontSize, bold, mOutlineThickness );
+		if ( mFontStyleConfig.OutlineThickness != 0 ) {
+			const Glyph& glyph =
+				mFontStyleConfig.Font->getGlyph( curChar, mFontStyleConfig.CharacterSize, bold,
+												 italic, mFontStyleConfig.OutlineThickness );
 
 			Float left = glyph.bounds.Left;
 			Float top = glyph.bounds.Top;
@@ -1031,24 +1211,28 @@ void Text::ensureGeometryUpdate() {
 			Float bottom = glyph.bounds.Top + glyph.bounds.Bottom;
 
 			// Add the outline glyph to the vertices
-			addGlyphQuad( mOutlineVertices, Vector2f( x, y ), glyph, italic, mOutlineThickness,
-						  centerDiffX );
+			addGlyphQuad( mOutlineVertices, Vector2f( x, y ), glyph, italic,
+						  mFontStyleConfig.OutlineThickness, centerDiffX );
 
 			// Update the current bounds with the outlined glyph bounds
-			minX = std::min( minX, x + left - italic * bottom - mOutlineThickness );
-			maxX = std::max( maxX, x + right - italic * top - mOutlineThickness );
-			minY = std::min( minY, y + top - mOutlineThickness );
-			maxY = std::max( maxY, y + bottom - mOutlineThickness );
+			minX = std::min( minX, x + left - italic * bottom - mFontStyleConfig.OutlineThickness );
+			maxX = std::max( maxX, x + right - italic * top - mFontStyleConfig.OutlineThickness );
+			minY = std::min( minY, y + top - mFontStyleConfig.OutlineThickness );
+			maxY = std::max( maxY, y + bottom - mFontStyleConfig.OutlineThickness );
+			if ( mCachedWidthNeedUpdate )
+				maxW = std::max( maxW, x + glyph.advance - italic * top -
+										   mFontStyleConfig.OutlineThickness );
 		}
 
 		// Extract the current glyph's description
-		const Glyph& glyph = mFont->getGlyph( curChar, mRealFontSize, bold );
+		const Glyph& glyph = mFontStyleConfig.Font->getGlyph(
+			curChar, mFontStyleConfig.CharacterSize, bold, reqItalic );
 
 		// Add the glyph to the vertices
 		addGlyphQuad( mVertices, Vector2f( x, y ), glyph, italic, 0, centerDiffX );
 
 		// Update the current bounds with the non outlined glyph bounds
-		if ( mOutlineThickness == 0 ) {
+		if ( mFontStyleConfig.OutlineThickness == 0 ) {
 			Float left = glyph.bounds.Left;
 			Float top = glyph.bounds.Top;
 			Float right = glyph.bounds.Left + glyph.bounds.Right;
@@ -1058,40 +1242,46 @@ void Text::ensureGeometryUpdate() {
 			maxX = std::max( maxX, x + right - italic * top );
 			minY = std::min( minY, y + top );
 			maxY = std::max( maxY, y + bottom );
-		}
 
-		mGlyphCache.push_back(
-			Rectf( Vector2f( x, y - mRealFontSize ), Sizef( glyph.advance, vspace ) ) );
+			if ( mCachedWidthNeedUpdate )
+				maxW = std::max( maxW, x + glyph.advance - italic * top );
+		}
 
 		// Advance to the next character
 		x += glyph.advance;
 	}
 
-	mGlyphCache.push_back( Rectf( Vector2f( x, y - mRealFontSize ), Sizef( 0, vspace ) ) );
-
 	// If we're using the underlined style, add the last line
 	if ( underlined && ( x > 0 ) ) {
 		addLine( mVertices, x, y, underlineOffset, underlineThickness, 0, centerDiffX );
 
-		if ( mOutlineThickness != 0 )
-			addLine( mOutlineVertices, x, y, underlineOffset, underlineThickness, mOutlineThickness,
-					 centerDiffX );
+		if ( mFontStyleConfig.OutlineThickness != 0 )
+			addLine( mOutlineVertices, x, y, underlineOffset, underlineThickness,
+					 mFontStyleConfig.OutlineThickness, centerDiffX );
 	}
 
 	// If we're using the strike through style, add the last line across all characters
 	if ( strikeThrough && ( x > 0 ) ) {
 		addLine( mVertices, x, y, strikeThroughOffset, underlineThickness, 0, centerDiffX );
 
-		if ( mOutlineThickness != 0 )
+		if ( mFontStyleConfig.OutlineThickness != 0 )
 			addLine( mOutlineVertices, x, y, strikeThroughOffset, underlineThickness,
-					 mOutlineThickness, centerDiffX );
+					 mFontStyleConfig.OutlineThickness, centerDiffX );
 	}
+
+	if ( mCachedWidthNeedUpdate && !mString.empty() && mString[mString.size() - 1] != '\n' )
+		mLinesWidth.push_back( x );
 
 	// Update the bounding rectangle
 	mBounds.Left = minX;
 	mBounds.Top = minY;
 	mBounds.Right = maxX;
 	mBounds.Bottom = maxY;
+
+	if ( mCachedWidthNeedUpdate ) {
+		mCachedWidth = maxW;
+		mCachedWidthNeedUpdate = false;
+	}
 }
 
 void Text::ensureColorUpdate() {
@@ -1099,39 +1289,40 @@ void Text::ensureColorUpdate() {
 		Uint32 tv = getTotalVertices();
 
 		if ( mColors.size() < tv )
-			mColors.resize( tv, mFillColor );
+			mColors.resize( tv, mFontStyleConfig.FontColor );
 
-		mColors.assign( tv, mFillColor );
+		mColors.assign( tv, mFontStyleConfig.FontColor );
 
-		if ( 0 != mOutlineThickness ) {
+		if ( 0 != mFontStyleConfig.OutlineThickness ) {
 			if ( mOutlineColors.size() < tv )
-				mOutlineColors.resize( tv, mOutlineColor );
+				mOutlineColors.resize( tv, mFontStyleConfig.OutlineColor );
 
-			mOutlineColors.assign( tv, mOutlineColor );
+			mOutlineColors.assign( tv, mFontStyleConfig.OutlineColor );
 		}
 
 		mColorsNeedUpdate = false;
 
 		if ( mContainsColorEmoji ) {
 			auto positions = Font::emojiCodePointsPositions( mString );
-			for ( auto& position : positions )
-				setFillColor( Color( 255, 255, 255, mFillColor.a ), position, position );
+			for ( const auto& position : positions )
+				setFillColor( Color( 255, 255, 255, mFontStyleConfig.FontColor.a ), position,
+							  position );
 		}
 	}
 }
 
 const Color& Text::getShadowColor() const {
-	return mShadowColor;
+	return mFontStyleConfig.ShadowColor;
 }
 
 void Text::setShadowColor( const Color& color ) {
-	mShadowColor = color;
+	mFontStyleConfig.ShadowColor = color;
 }
 
-const int& Text::getNumLines() {
-	cacheWidth();
-
-	return mNumLines;
+Uint32 Text::getNumLines() {
+	if ( !mCachedWidthNeedUpdate )
+		return mLinesWidth.size();
+	return mString.countChar( '\n' ) + 1;
 }
 
 const std::vector<Float>& Text::getLinesWidth() {
@@ -1155,14 +1346,12 @@ void Text::cacheWidth() {
 	if ( !mCachedWidthNeedUpdate )
 		return;
 
-	if ( NULL != mFont && mString.size() ) {
-		getWidthInfo();
+	if ( NULL != mFontStyleConfig.Font && !mString.empty() ) {
+		updateWidthCache();
 		mCachedWidthNeedUpdate = false;
 	} else {
 		mCachedWidth = 0;
-		mNumLines = 0;
 		mLinesWidth.clear();
-		mLinesStartIndex.clear();
 	}
 }
 
@@ -1174,14 +1363,11 @@ void Text::setStyleConfig( const FontStyleConfig& styleConfig ) {
 	setOutlineThickness( styleConfig.OutlineThickness );
 	setOutlineColor( styleConfig.OutlineColor );
 	setShadowColor( styleConfig.ShadowColor );
+	setShadowOffset( styleConfig.ShadowOffset );
 }
 
 bool Text::hasSameFontStyleConfig( const FontStyleConfig& styleConfig ) {
-	return styleConfig.Font == mFont && styleConfig.CharacterSize == mFontSize &&
-		   styleConfig.Style == mStyle && styleConfig.FontColor == mFillColor &&
-		   styleConfig.OutlineColor == mOutlineColor && styleConfig.ShadowColor == mShadowColor &&
-		   styleConfig.ShadowOffset == mShadowOffset &&
-		   styleConfig.OutlineThickness == mOutlineThickness;
+	return mFontStyleConfig == styleConfig;
 }
 
 void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
@@ -1190,8 +1376,8 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 
 	ensureColorUpdate();
 
-	bool underlined = ( mStyle & Underlined ) != 0;
-	bool strikeThrough = ( mStyle & StrikeThrough ) != 0;
+	bool underlined = ( mFontStyleConfig.Style & Underlined ) != 0;
+	bool strikeThrough = ( mFontStyleConfig.Style & StrikeThrough ) != 0;
 	std::size_t s = mString.size();
 
 	if ( to >= s ) {
@@ -1433,8 +1619,8 @@ void Text::addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
 }
 
 Uint32 Text::getTotalVertices() {
-	bool underlined = ( mStyle & Underlined ) != 0;
-	bool strikeThrough = ( mStyle & StrikeThrough ) != 0;
+	bool underlined = ( mFontStyleConfig.Style & Underlined ) != 0;
+	bool strikeThrough = ( mFontStyleConfig.Style & StrikeThrough ) != 0;
 	size_t sl = mString.size();
 	size_t sv = sl * GLi->quadVertexs();
 

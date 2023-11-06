@@ -144,9 +144,9 @@ class EE_API Node : public Transformable {
 
 	const BlendMode& getBlendMode() const;
 
-	void toFront();
+	Node* toFront();
 
-	void toBack();
+	Node* toBack();
 
 	void toPosition( const Uint32& position );
 
@@ -314,11 +314,11 @@ class EE_API Node : public Transformable {
 
 	Node* runAction( Action* action );
 
-	void removeAction( Action* action );
+	bool removeAction( Action* action );
 
-	void removeActions( const std::vector<Action*>& actions );
+	bool removeActions( const std::vector<Action*>& actions );
 
-	void removeActionsByTag( const String::HashType& tag );
+	bool removeActionsByTag( const String::HashType& tag );
 
 	std::vector<Action*> getActions();
 
@@ -356,11 +356,11 @@ class EE_API Node : public Transformable {
 
 	bool reportSizeChangeToChilds() const;
 
-	void centerHorizontal();
+	Node* centerHorizontal();
 
-	void centerVertical();
+	Node* centerVertical();
 
-	void center();
+	Node* center();
 
 	Node* clipEnable();
 
@@ -393,6 +393,9 @@ class EE_API Node : public Transformable {
 
 	void setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay = Seconds( 0 ),
 					 const Uint32& uniqueIdentifier = 0 );
+
+	void debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
+				   const Uint32& uniqueIdentifier );
 
 	void setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
 					  const Uint32& uniqueIdentifier = 0 );
@@ -435,7 +438,7 @@ class EE_API Node : public Transformable {
 	bool hasEventsOfType( const Uint32& eventType ) const;
 
   protected:
-	typedef std::unordered_map<Uint32, std::map<Uint32, EventCallback>> EventsMap;
+	typedef UnorderedMap<Uint32, std::map<Uint32, EventCallback>> EventsMap;
 	friend class EventDispatcher;
 
 	std::string mId;
@@ -468,13 +471,15 @@ class EE_API Node : public Transformable {
 	OriginPoint mScaleOriginPoint;
 	Float mAlpha;
 
-	virtual Uint32 onMessage( const NodeMessage* Msg );
+	virtual Uint32 onMessage( const NodeMessage* msg );
 
-	virtual Uint32 onTextInput( const TextInputEvent& Event );
+	virtual Uint32 onTextInput( const TextInputEvent& event );
 
-	virtual Uint32 onKeyDown( const KeyEvent& Event );
+	virtual Uint32 onTextEditing( const TextEditingEvent& event );
 
-	virtual Uint32 onKeyUp( const KeyEvent& Event );
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onKeyUp( const KeyEvent& event );
 
 	virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 

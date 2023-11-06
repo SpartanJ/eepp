@@ -166,6 +166,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void updateColumnsWidth();
 
+	virtual Uint32 onFocus();
+
+	virtual Uint32 onFocusLoss();
+
 	virtual UITableRow* createRow();
 
 	virtual UITableRow* updateRow( const int& rowIndex, const ModelIndex& index,
@@ -185,6 +189,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onOpenMenuModelIndex( const ModelIndex& index,
 									   const Event* triggerEvent = nullptr );
+
+	virtual void onRowCreated( UITableRow* row );
 
 	virtual void onSortColumn( const size_t& colIndex );
 

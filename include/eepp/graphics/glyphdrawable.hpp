@@ -39,7 +39,9 @@ class EE_API GlyphDrawable : public DrawableResource {
 	Texture* getTexture();
 
 	/** @return The Texture sector that represents the GlyphDrawable */
-	const Rect& getSrcRect() const;
+	const Rectf& getSrcRect() const;
+
+	const Sizef& getDestSize() const;
 
 	/** @return This is the same as Destination Size but with the values rounded as integers. */
 	Sizef getSize();
@@ -58,6 +60,14 @@ class EE_API GlyphDrawable : public DrawableResource {
 
 	void setDrawMode( const DrawMode& drawMode );
 
+	bool isItalic() const { return mIsItalic; }
+
+	void setIsItalic( bool isItalic );
+
+	const Float& getAdvance() const;
+
+	void setAdvance( Float advance );
+
   protected:
 	Texture* mTexture;
 	Rectf mSrcRect;
@@ -65,6 +75,8 @@ class EE_API GlyphDrawable : public DrawableResource {
 	Float mPixelDensity;
 	Vector2f mGlyphOffset;
 	DrawMode mDrawMode{ DrawMode::Image };
+	Float mAdvance{ 0 };
+	bool mIsItalic{ false };
 };
 
 }} // namespace EE::Graphics

@@ -329,6 +329,7 @@ void App::saveTmpDocument( TextDocument& doc,
 	IOStreamString fileString;
 	doc.save( fileString, true );
 	FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(), fileString.getSize() );
+	FileSystem::fileHide( tmpPath );
 	action( tmpPath );
 	FileSystem::fileRemove( tmpPath );
 }
@@ -997,7 +998,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
-				 FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+				 FileSystem::fileWrite( path, "" ) ) {
 				std::string oldPath( editor->getDocument().getFilePath() );
 				if ( editor->getDocument().save( path ) ) {
 					editor->getDocument().setDeleteOnClose( false );
@@ -1210,7 +1211,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 	mWindow = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, "eepp - UI Editor", WindowStyle::Default, WindowBackend::Default,
 						32, mResPath + "assets/icon/ee.png", pixelDensity ),
-		ContextSettings( false, GLv_default, true, 24, 1, 0, true ) );
+		ContextSettings( false, GLv_default, true, 24, 1, 4, true ) );
 
 	if ( mWindow->isOpen() ) {
 		mWindow->setFrameRateLimit( displayManager->getDisplayIndex( 0 )->getRefreshRate() );
@@ -1220,8 +1221,13 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mWindow->setCloseRequestCallback(
 			[this]( auto* window ) -> bool { return onCloseRequestCallback( window ); } );
 
+		mWindow->setQuitCallback( [this]( EE::Window::Window* win ) {
+			if ( mWindow->isOpen() )
+				onCloseRequestCallback( win );
+		} );
+
 		mResPath = Sys::getProcessPath();
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 		if ( String::contains( mResPath, "eepp-UIEditor.app" ) ) {
 			mResPath = FileSystem::getCurrentWorkingDirectory();
 			FileSystem::dirAddSlashAtEnd( mResPath );
@@ -1522,6 +1528,7 @@ void App::saveDoc() {
 }
 
 void App::saveAll() {
+	mTmpDocs.clear();
 	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 		if ( editor->isDirty() )
 			mTmpDocs.insert( &editor->getDocument() );

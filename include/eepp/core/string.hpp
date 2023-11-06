@@ -9,6 +9,7 @@
 #include <locale>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace EE {
@@ -29,6 +30,7 @@ class EE_API String {
 	typedef StringType::reverse_iterator ReverseIterator;			 //! Reverse Iterator type
 	typedef StringType::const_reverse_iterator ConstReverseIterator; //! Constant iterator type
 	typedef Uint32 HashType;
+	typedef std::basic_string_view<StringBaseType> View;
 
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
@@ -67,6 +69,20 @@ class EE_API String {
 		}
 
 		return 0;
+	}
+
+	static constexpr String::HashType hashCombine( String::HashType& hash, const char* str,
+												   Int64 len ) {
+		while ( --len >= 0 )
+			hash = ( ( hash << 5 ) + hash ) + *str++;
+		return hash;
+	}
+
+	static constexpr String::HashType hash( const char* str, Int64 len ) {
+		String::HashType hash = 5381;
+		while ( --len >= 0 )
+			hash = ( ( hash << 5 ) + hash ) + *str++;
+		return hash;
 	}
 
 	/** Escape string sequence */
@@ -117,6 +133,11 @@ class EE_API String {
 										   const bool& pushEmptyString = false,
 										   const bool& keepDelim = false );
 
+	/** Split a string and hold it on a vector */
+	static std::vector<std::string_view> split( const std::string_view& str,
+												const Int8& delim = '\n',
+												const bool& pushEmptyString = false );
+
 	/** Split a string and hold it on a vector. This function is meant to be used for code
 	 * splitting, detects functions, arrays, braces and quotes for the splitting. */
 	static std::vector<std::string> split( const std::string& str, const std::string& delims,
@@ -140,6 +161,15 @@ class EE_API String {
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static std::string trim( const std::string& str, char character = ' ' );
+
+	/** Removes the trailing prefix. */
+	static std::string_view lTrim( const std::string_view& str, char character = ' ' );
+
+	/** Removes the trailing suffix. */
+	static std::string_view rTrim( const std::string_view& str, char character );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static std::string_view trim( const std::string_view& str, char character = ' ' );
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static void trimInPlace( std::string& str, char character = ' ' );
@@ -327,6 +357,14 @@ class EE_API String {
 	/** @return The number of codepoints of the utf8 string. */
 	static size_t utf8Length( const std::string& utf8String );
 
+	/** @brief Construct from an UTF-8 string to UTF-32 according
+	** @param utf8String UTF-8 string to convert
+	**/
+	static String fromUtf8( const std::string_view& utf8String );
+
+	/** @return The number of codepoints of the utf8 string. */
+	static size_t utf8Length( const std::string_view& utf8String );
+
 	/** @return The next character in a utf8 null terminated string */
 	static Uint32 utf8Next( char*& utf8String );
 
@@ -370,6 +408,11 @@ class EE_API String {
 	** @param utf8String UTF-8 string to convert
 	**/
 	String( const std::string& utf8String );
+
+	/** @brief Construct from an UTF-8 string to UTF-32 according
+	** @param utf8String UTF-8 string to convert
+	**/
+	String( const std::string_view& utf8String );
 
 	/** @brief Construct from a null-terminated C-style ANSI string and a locale
 	** The source string is converted to UTF-32 according
@@ -500,6 +543,8 @@ class EE_API String {
 	** @return Reference to self
 	**/
 	String& operator=( const String& right );
+
+	String& operator=( String&& right );
 
 	String& operator=( const StringBaseType& right );
 
@@ -848,6 +893,8 @@ class EE_API String {
 	 * @param needle The searched string.
 	 */
 	bool contains( const String& needle );
+
+	String::View view() const;
 
   private:
 	friend EE_API bool operator==( const String& left, const String& right );

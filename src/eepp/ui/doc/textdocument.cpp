@@ -1,5 +1,4 @@
-﻿#include <algorithm>
-#include <cstdio>
+﻿#include <cstdio>
 #include <eepp/core/debug.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -7,12 +6,12 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/md5.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
-#include <sstream>
 #include <string>
 
 using namespace EE::Network;
@@ -22,7 +21,7 @@ namespace EE { namespace UI { namespace Doc {
 // Text document is loosely based on the SerenityOS (https://github.com/SerenityOS/serenity)
 // TextDocument and the lite editor (https://github.com/rxi/lite) implementations.
 
-const char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
+static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
 
 bool TextDocument::isNonWord( String::StringBaseType ch ) const {
 	return mNonWordChars.find_first_of( ch ) != String::InvalidPos;
@@ -43,6 +42,9 @@ TextDocument::TextDocument( bool verbose ) :
 
 TextDocument::~TextDocument() {
 	stopActiveFindAll();
+
+	if ( mHighlighter->isTokenizingAsync() )
+		mHighlighter->setStopTokenizingAsync();
 
 	// TODO: Use a condition variable to wait the thread pool to finish
 	while ( !mStopFlags.empty() )
@@ -70,6 +72,7 @@ bool TextDocument::isUntitledEmpty() const {
 }
 
 void TextDocument::reset() {
+	mHash = {};
 	mMightBeBinary = false;
 	mIsBOM = false;
 	mDirtyOnFileSystem = false;
@@ -82,7 +85,7 @@ void TextDocument::reset() {
 	mLastSelection = 0;
 	mLines.clear();
 	mLines.emplace_back( String( "\n" ) );
-	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainStyle();
+	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainDefinition();
 	mUndoStack.clear();
 	cleanChangeId();
 	notifySyntaxDefinitionChange();
@@ -123,6 +126,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 	if ( callReset )
 		reset();
 	mLines.clear();
+	MD5::Context md5Ctx;
 	if ( file.isOpen() ) {
 		const size_t BLOCK_SIZE = EE_1MB;
 		size_t total = file.getSize();
@@ -134,10 +138,14 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 		int consume;
 		char* bufferPtr;
 		TScopedBuffer<char> data( blockSize );
+		MD5::init( md5Ctx );
+
 		while ( pending && mLoading ) {
 			read = file.read( data.get(), blockSize );
 			bufferPtr = data.get();
 			consume = read;
+
+			MD5::update( md5Ctx, data.get(), read );
 
 			if ( pending == total ) {
 				// Check UTF-8 BOM header
@@ -156,7 +164,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 				size_t lineBufferSize = lineBuffer.size();
 				char lastChar = lineBuffer[lineBufferSize - 1];
 
-				if ( lastChar == '\n' || lastChar == '\r' || !consume ) {
+				if ( lastChar == '\n' || lastChar == '\r' ) {
 					if ( mLines.empty() ) {
 						if ( lineBufferSize > 1 && lineBuffer[lineBufferSize - 2] == '\r' &&
 							 lastChar == '\n' ) {
@@ -179,20 +187,13 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 
 					mLines.push_back( lineBuffer );
 					lineBuffer.resize( 0 );
+				} else if ( consume <= 0 && pending - read == 0 ) {
+					mLines.push_back( lineBuffer );
 				}
 
 				if ( consume < 0 ) {
 					eeASSERT( !consume );
 					break;
-				}
-			}
-
-			if ( !mLines.empty() ) {
-				const String& lastLine = mLines[mLines.size() - 1].getText();
-				if ( lastLine[lastLine.size() - 1] == '\n' ) {
-					mLines.push_back( String( "\n" ) );
-				} else {
-					mLines[mLines.size() - 1].append( "\n" );
 				}
 			}
 
@@ -203,8 +204,16 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 		};
 	}
 
-	if ( mLines.empty() )
+	if ( !mLines.empty() ) {
+		const String& lastLine = mLines[mLines.size() - 1].getText();
+		if ( lastLine[lastLine.size() - 1] == '\n' ) {
+			mLines.push_back( String( "\n" ) );
+		} else {
+			mLines[mLines.size() - 1].append( "\n" );
+		}
+	} else {
 		mLines.push_back( String( "\n" ) );
+	}
 
 	if ( mAutoDetectIndentType )
 		guessIndentType();
@@ -216,7 +225,10 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 	bool wasInterrupted = !mLoading;
 	if ( wasInterrupted )
 		reset();
+
+	mHash = MD5::result( md5Ctx ).digest;
 	mLoading = false;
+
 	return wasInterrupted ? LoadStatus::Interrupted
 						  : ( file.isOpen() ? LoadStatus::Loaded : LoadStatus::Failed );
 }
@@ -522,16 +534,16 @@ TextDocument::LoadStatus TextDocument::reload() {
 }
 
 bool TextDocument::save( const std::string& path ) {
-	if ( path.empty() || mDefaultFileName == path )
+	if ( path.empty() || mDefaultFileName == path || mSaving )
 		return false;
-	if ( FileSystem::fileCanWrite( FileSystem::fileRemoveFileName( path ) ) ) {
+	mSaving = true;
+	if ( FileSystem::fileWrite( path, "" ) ) {
 		IOStreamFile file( path, "wb" );
 		std::string oldFilePath( mFilePath );
 		URI oldFileURI( mFileURI );
 		FileInfo oldFileInfo( mFileRealPath );
 		mFilePath = path;
 		mFileURI = URI( "file://" + mFilePath );
-		mSaving = true;
 		if ( save( file ) ) {
 			file.close();
 			mFileRealPath =
@@ -554,9 +566,12 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 		return false;
 	BoolScopedOp op( mDoingTextInput, true );
 	const std::string whitespaces( " \t\f\v\n\r" );
+	MD5::Context md5Ctx;
+	MD5::init( md5Ctx );
 	if ( mIsBOM ) {
 		unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
 		stream.write( (char*)bom, sizeof( bom ) );
+		MD5::update( md5Ctx, bom, sizeof( bom ) );
 	}
 	size_t lastLine = mLines.size() - 1;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
@@ -592,11 +607,14 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 				text += "\n";
 			}
 			stream.write( text.c_str(), text.size() );
+			MD5::update( md5Ctx, text.data(), text.size() );
 		} else if ( mLineEnding == LineEnding::CR ) {
 			text[text.size() - 1] = '\r';
 			stream.write( text.c_str(), text.size() );
+			MD5::update( md5Ctx, text.data(), text.size() );
 		} else {
 			stream.write( text.c_str(), text.size() );
+			MD5::update( md5Ctx, text.data(), text.size() );
 		}
 	}
 
@@ -604,6 +622,9 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 
 	if ( !keepUndoRedoStatus )
 		cleanChangeId();
+
+	mHash = MD5::result( md5Ctx ).digest;
+	mDirtyOnFileSystem = false;
 
 	return true;
 }
@@ -799,6 +820,14 @@ std::vector<TextDocumentLine>& TextDocument::lines() {
 
 bool TextDocument::hasSelection() const {
 	return mSelection.hasSelection();
+}
+
+const std::array<Uint8, 16>& TextDocument::getHash() const {
+	return mHash;
+}
+
+std::string TextDocument::getHashHexString() const {
+	return MD5::Result{ mHash }.toHexString();
 }
 
 String TextDocument::getText( const TextRange& range ) const {
@@ -1419,6 +1448,15 @@ void TextDocument::textInput( const String& text, bool mightBeInteresting ) {
 		mLastCursorChangeWasInteresting = true;
 }
 
+void TextDocument::imeTextEditing( const String& text ) {
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		if ( mSelection[i].hasSelection() )
+			deleteTo( i, 0 );
+		TextPosition tp( insert( i, getSelectionIndex( i ).start(), text ) );
+		setSelection( i, { positionOffset( tp, -text.size() ), tp } );
+	}
+}
+
 void TextDocument::registerClient( Client* client ) {
 	Lock l( mClientsMutex );
 	mClients.insert( client );
@@ -2017,8 +2055,10 @@ const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 }
 
 void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
-	mSyntaxDefinition = definition;
-	notifySyntaxDefinitionChange();
+	if ( &mSyntaxDefinition != &definition ) {
+		mSyntaxDefinition = definition;
+		notifySyntaxDefinitionChange();
+	}
 }
 
 Uint64 TextDocument::getCurrentChangeId() const {
@@ -2051,12 +2091,20 @@ bool TextDocument::isDirty() const {
 
 void TextDocument::execute( const std::string& command ) {
 	auto cmdIt = mCommands.find( command );
-	if ( cmdIt != mCommands.end() ) {
+	if ( cmdIt != mCommands.end() )
 		cmdIt->second();
-	}
 }
 
-void TextDocument::setCommands( const std::map<std::string, DocumentCommand>& cmds ) {
+void TextDocument::execute( const std::string& command, Client* client ) {
+	auto cmdIt = mCommands.find( command );
+	if ( cmdIt != mCommands.end() )
+		return cmdIt->second();
+	auto cmdRefIt = mRefCommands.find( command );
+	if ( cmdRefIt != mRefCommands.end() )
+		return cmdRefIt->second( client );
+}
+
+void TextDocument::setCommands( const UnorderedMap<std::string, DocumentCommand>& cmds ) {
 	mCommands.insert( cmds.begin(), cmds.end() );
 }
 
@@ -2065,19 +2113,25 @@ void TextDocument::setCommand( const std::string& command,
 	mCommands[command] = func;
 }
 
+void TextDocument::setCommand( const std::string& command,
+							   const TextDocument::DocumentRefCommand& func ) {
+	mRefCommands[command] = func;
+}
+
 bool TextDocument::hasCommand( const std::string& command ) {
-	return mCommands.find( command ) != mCommands.end();
+	return mCommands.find( command ) != mCommands.end() ||
+		   mRefCommands.find( command ) != mRefCommands.end();
 }
 
 bool TextDocument::removeCommand( const std::string& command ) {
-	return mCommands.erase( command ) > 0;
+	return mCommands.erase( command ) > 0 || mRefCommands.erase( command ) > 0;
 }
 
 static std::pair<size_t, size_t> findType( const String& str, const String& findStr,
 										   const TextDocument::FindReplaceType& type ) {
 	switch ( type ) {
 		case TextDocument::FindReplaceType::LuaPattern: {
-			LuaPattern words( findStr );
+			LuaPatternStorage words( findStr.toUtf8() );
 			int start, end = 0;
 			words.find( str, start, end );
 			if ( start < 0 )
@@ -2098,7 +2152,7 @@ static std::pair<size_t, size_t> findLastType( const String& str, const String& 
 	switch ( type ) {
 		case TextDocument::FindReplaceType::LuaPattern: {
 			// TODO: Implement findLastType for Lua patterns
-			LuaPattern words( findStr );
+			LuaPatternStorage words( findStr.toUtf8() );
 			int start, end = 0;
 			words.find( str, start, end );
 			if ( start < 0 )
@@ -2115,8 +2169,7 @@ static std::pair<size_t, size_t> findLastType( const String& str, const String& 
 }
 
 TextRange TextDocument::findText( String text, TextPosition from, bool caseSensitive,
-								  bool wholeWord, const FindReplaceType& type,
-								  TextRange restrictRange ) {
+								  bool wholeWord, FindReplaceType type, TextRange restrictRange ) {
 	if ( text.empty() )
 		return TextRange();
 	from = sanitizePosition( from );
@@ -2168,7 +2221,7 @@ TextRange TextDocument::findText( String text, TextPosition from, bool caseSensi
 }
 
 TextRange TextDocument::findTextLast( String text, TextPosition from, bool caseSensitive,
-									  bool wholeWord, const FindReplaceType& type,
+									  bool wholeWord, FindReplaceType type,
 									  TextRange restrictRange ) {
 	if ( text.empty() )
 		return TextRange();
@@ -2223,8 +2276,7 @@ TextRange TextDocument::findTextLast( String text, TextPosition from, bool caseS
 }
 
 TextRange TextDocument::find( const String& text, TextPosition from, bool caseSensitive,
-							  bool wholeWord, const FindReplaceType& type,
-							  TextRange restrictRange ) {
+							  bool wholeWord, FindReplaceType type, TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
 	if ( textLines.empty() || textLines.size() > mLines.size() )
@@ -2304,8 +2356,7 @@ TextRange TextDocument::find( const String& text, TextPosition from, bool caseSe
 }
 
 TextRange TextDocument::findLast( const String& text, TextPosition from, bool caseSensitive,
-								  bool wholeWord, const FindReplaceType& type,
-								  TextRange restrictRange ) {
+								  bool wholeWord, FindReplaceType type, TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
 	if ( textLines.empty() || textLines.size() > mLines.size() )
@@ -2394,7 +2445,7 @@ bool TextDocument::isInsertingText() const {
 }
 
 TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool wholeWord,
-								  const FindReplaceType& type, TextRange restrictRange,
+								  FindReplaceType type, TextRange restrictRange,
 								  size_t maxResults ) {
 	TextRanges all;
 	TextRange found;
@@ -2430,12 +2481,12 @@ TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool w
 }
 
 int TextDocument::replaceAll( const String& text, const String& replace, const bool& caseSensitive,
-							  const bool& wholeWord, const FindReplaceType& type,
+							  const bool& wholeWord, FindReplaceType type,
 							  TextRange restrictRange ) {
 	if ( text.empty() )
 		return 0;
 	bool wasRunningTransaction = isRunningTransaction();
-	if ( wasRunningTransaction )
+	if ( !wasRunningTransaction )
 		setRunningTransaction( true );
 	int count = 0;
 	TextRange found;
@@ -2451,7 +2502,7 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 			count++;
 		}
 	} while ( found.isValid() && endOfDoc() != found.end() );
-	if ( wasRunningTransaction )
+	if ( !wasRunningTransaction )
 		setRunningTransaction( false );
 	setSelection( startedPosition );
 	return count;
@@ -2492,7 +2543,7 @@ void TextDocument::selectAllMatches() {
 
 TextPosition TextDocument::replace( String search, const String& replace, TextPosition from,
 									const bool& caseSensitive, const bool& wholeWord,
-									const FindReplaceType& type, TextRange restrictRange ) {
+									FindReplaceType type, TextRange restrictRange ) {
 	TextRange found( findText( search, from, caseSensitive, wholeWord, type, restrictRange ) );
 	if ( found.isValid() ) {
 		setSelection( found );
@@ -2519,7 +2570,7 @@ static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, cons
 								int dir ) {
 	if ( highlighter ) {
 		auto type = highlighter->getTokenTypeAt( pos );
-		if ( type != "comment" && type != "string" )
+		if ( type != "comment"_sst && type != "string"_sst )
 			depth += dir;
 	} else {
 		depth += dir;
@@ -2529,7 +2580,7 @@ static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, cons
 TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 											   const String::StringBaseType& openBracket,
 											   const String::StringBaseType& closeBracket,
-											   MatchDirection dir ) {
+											   MatchDirection dir, bool allowDepth ) {
 	SyntaxHighlighter* highlighter = getHighlighter();
 	int depth = 0;
 	while ( sp.isValid() ) {
@@ -2538,10 +2589,14 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 			changeDepth( highlighter, depth, sp, 1 );
 			if ( depth == 0 )
 				return sp;
+			if ( !allowDepth && depth > 1 )
+				return {};
 		} else if ( byte == closeBracket ) {
 			changeDepth( highlighter, depth, sp, -1 );
 			if ( depth == 0 )
 				return sp;
+			if ( !allowDepth && depth > 1 )
+				return {};
 		}
 
 		auto prevPos = sp;
@@ -2553,7 +2608,8 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 }
 
 TextRange TextDocument::getMatchingBracket( TextPosition start, const String& openBracket,
-											const String& closeBracket, MatchDirection dir ) {
+											const String& closeBracket, MatchDirection dir,
+											bool matchingXMLTags ) {
 	if ( !start.isValid() )
 		return {};
 	SyntaxHighlighter* highlighter = getHighlighter();
@@ -2579,9 +2635,34 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 		do {
 			// Find all the open brackets between the first open bracket and the first close bracket
 			do {
-				foundOpen =
-					find( openBracket, start, true, false, TextDocument::FindReplaceType::Normal,
-						  { start, foundClose.start() } );
+				if ( matchingXMLTags ) {
+					// Ignore closed XML tags
+					do {
+						foundOpen = find( openBracket, start, true, false,
+										  TextDocument::FindReplaceType::Normal,
+										  { start, foundClose.start() } );
+
+						if ( foundOpen.isValid() ) {
+							TextPosition closePosition =
+								getMatchingBracket( foundOpen.start(), openBracket[0], '>',
+													MatchDirection::Forward, false );
+							if ( closePosition.isValid() ) {
+								if ( getChar( positionOffset( closePosition, -1 ) ) != '/' ) {
+									break;
+								} else {
+									start = closePosition;
+								}
+							} else {
+								break;
+							}
+						}
+					} while ( foundOpen.isValid() );
+				} else {
+					foundOpen = find( openBracket, start, true, false,
+									  TextDocument::FindReplaceType::Normal,
+									  { start, foundClose.start() } );
+				}
+
 				if ( foundOpen.isValid() ) {
 					start = foundOpen.end();
 					changeDepth( highlighter, depth, start, 1 );
@@ -2612,7 +2693,28 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 		}
 
 		// Ensure there's an open bracket
-		auto foundOpen = findLast( openBracket, start );
+		TextRange foundOpen;
+		if ( matchingXMLTags ) {
+			do {
+				foundOpen = findLast( openBracket, start );
+				if ( foundOpen.isValid() ) {
+					TextPosition closePosition =
+						getMatchingBracket( foundOpen.normalized().start(), openBracket[0], '>',
+											MatchDirection::Forward, false );
+					if ( closePosition.isValid() ) {
+						if ( getChar( positionOffset( closePosition, -1 ) ) != '/' ) {
+							break;
+						} else {
+							start = foundOpen.normalized().start();
+						}
+					} else {
+						break;
+					}
+				}
+			} while ( foundOpen.isValid() );
+		} else {
+			foundOpen = findLast( openBracket, start );
+		}
 		if ( !foundOpen.isValid() )
 			return {}; // Not found, exit
 
@@ -2637,7 +2739,28 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 
 			if ( depth > 0 ) {
 				// Find the next open bracket from the last open bracket
-				foundOpen = findLast( openBracket, start );
+				if ( matchingXMLTags ) {
+					do {
+						foundOpen = findLast( openBracket, start );
+						if ( foundOpen.isValid() ) {
+							TextPosition closePosition =
+								getMatchingBracket( foundOpen.normalized().start(), openBracket[0],
+													'>', MatchDirection::Forward, false );
+							if ( closePosition.isValid() ) {
+								if ( getChar( positionOffset( closePosition, -1 ) ) != '/' ) {
+									break;
+								} else {
+									start = foundOpen.normalized().start();
+								}
+							} else {
+								break;
+							}
+						}
+					} while ( foundOpen.isValid() );
+				} else {
+					foundOpen = findLast( openBracket, start );
+				}
+
 				if ( !foundOpen.isValid() )
 					break;
 			}

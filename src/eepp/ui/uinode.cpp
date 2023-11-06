@@ -540,8 +540,9 @@ const Sizef& UINode::getSize() const {
 }
 
 void UINode::drawHighlightFocus() {
-	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightFocus() &&
-		 getEventDispatcher()->getFocusNode() == this ) {
+	if ( ( mFlags & UI_HIGHLIGHT ) ||
+		 ( NULL != getEventDispatcher() && mSceneNode->getHighlightFocus() &&
+		   getEventDispatcher()->getFocusNode() == this ) ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
@@ -1376,8 +1377,8 @@ void UINode::onThemeLoaded() {
 	invalidateDraw();
 }
 
-void UINode::onChildCountChange( Node*, const bool& ) {
-	invalidateDraw();
+void UINode::onChildCountChange( Node* child, const bool& removed ) {
+	Node::onChildCountChange( child, removed );
 }
 
 void UINode::worldToNode( Vector2i& pos ) const {

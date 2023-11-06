@@ -147,11 +147,16 @@ struct TerminalConfig {
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	NewTerminalOrientation::Orientation newTerminalOrientation{
 		NewTerminalOrientation::Horizontal };
+	size_t scrollback{ 10000 };
 };
 
 struct WorkspaceConfig {
 	bool restoreLastSession{ false };
 	bool checkForUpdatesAtStartup{ false };
+};
+
+struct LanguagesExtensions {
+	std::map<std::string, std::string> priorities;
 };
 
 class AppConfig {
@@ -161,7 +166,6 @@ class AppConfig {
 	CodeEditorConfig editor;
 	DocumentConfig doc;
 	TerminalConfig term;
-	std::map<std::string, bool> pluginsConfig;
 	UIConfig ui;
 	IniFile ini;
 	IniFile iniState;
@@ -169,6 +173,7 @@ class AppConfig {
 	SearchBarConfig searchBarConfig;
 	GlobalSearchBarConfig globalSearchBarConfig;
 	WorkspaceConfig workspace;
+	LanguagesExtensions languagesExtensions;
 
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,

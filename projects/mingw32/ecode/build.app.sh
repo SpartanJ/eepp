@@ -42,10 +42,16 @@ mkdir -p ecode/assets/colorschemes
 mkdir -p ecode/assets/fonts
 cp -r ../../../bin/assets/colorschemes ecode/assets/
 cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Oblique.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-BoldOblique.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/nonicons.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/codicon.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Bold.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Italic.ttf ecode/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-BoldItalic.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/remixicon.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode/assets/fonts/

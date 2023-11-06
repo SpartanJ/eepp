@@ -52,7 +52,7 @@ bool XMLToolsPlugin::getAutoEditMatch() const {
 }
 
 void XMLToolsPlugin::load( PluginManager* pluginManager ) {
-	BoolScopedOp loading( mLoading, true );
+	AtomicBoolScopedOp loading( mLoading, true );
 	std::string path = pluginManager->getPluginsPath() + "xmltools.json";
 	if ( FileSystem::fileExists( path ) ||
 		 FileSystem::fileWrite( path, "{\n  \"config\":{},\n  \"keybindings\":{}\n}\n" ) ) {
@@ -93,15 +93,17 @@ void XMLToolsPlugin::load( PluginManager* pluginManager ) {
 	}
 
 	if ( updateConfigFile ) {
-		data = j.dump( 2 );
-		FileSystem::fileWrite( path, data );
-		mConfigHash = String::hash( data );
+		std::string newData = j.dump( 2 );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( newData );
+		}
 	}
 
+	subscribeFileSystemListener();
 	mReady = true;
 	fireReadyCbs();
-
-	subscribeFileSystemListener();
+	setReady();
 }
 
 void XMLToolsPlugin::onRegisterDocument( TextDocument* doc ) {
@@ -139,11 +141,26 @@ static bool isClosedTag( TextDocument* doc, TextPosition start ) {
 		String::StringBaseType ch = doc->getChar( start );
 		if ( ch == '>' ) {
 			auto tokenType = highlighter->getTokenTypeAt( start );
-			if ( tokenType != "comment" && tokenType != "string" )
+			if ( tokenType != "comment"_sst && tokenType != "string"_sst )
 				return prevChar == '/';
 		}
 		start = doc->positionOffset( start, 1 );
 		prevChar = ch;
+	} while ( start.isValid() && start != endOfDoc );
+	return false;
+}
+
+static bool isAlreadyClosedTag( TextDocument* doc, TextPosition start ) {
+	SyntaxHighlighter* highlighter = doc->getHighlighter();
+	TextPosition endOfDoc = doc->endOfDoc();
+	do {
+		String::StringBaseType ch = doc->getChar( start );
+		if ( ch == '>' ) {
+			auto tokenType = highlighter->getTokenTypeAt( start );
+			if ( tokenType != "comment"_sst && tokenType != "string"_sst )
+				return true;
+		}
+		start = doc->positionOffset( start, 1 );
 	} while ( start.isValid() && start != endOfDoc );
 	return false;
 }
@@ -206,7 +223,10 @@ void XMLToolsPlugin::XMLToolsClient::onDocumentTextChanged(
 		if ( match.isSameLine() && !match.currentIsClose )
 			translatedPos =
 				mDoc->positionOffset( translatedPos, translation + docChange.text.size() );
-		mDoc->insert( 0, translatedPos, docChange.text );
+		if ( !( ">" == docChange.text && isAlreadyClosedTag( mDoc, match.matchBracket.start() ) ) &&
+			 !( " " == docChange.text && docChange.range.end() == match.currentBracket.end() ) ) {
+			mDoc->insert( 0, translatedPos, docChange.text );
+		}
 		mWaitingText = false;
 		if ( match.isSameLine() && match.currentIsClose ) {
 			for ( auto& s : sel ) {
@@ -231,7 +251,7 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 	if ( !def.getAutoCloseXMLTags() ) // getAutoCloseXMLTags means that it supports XML element tags
 		return clearMatch();
 	TextRange range = mDoc->getWordRangeInPosition( sel.start(), false );
-	if ( !range.isValid() )
+	if ( !range.isValid() || !range.hasSelection() )
 		return clearMatch();
 	range.normalize();
 	if ( range.start().column() == 0 || line.size() <= 1 )
@@ -250,21 +270,41 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 			return; // Moving inside match
 	}
 	String tag( mDoc->getText( range ) );
-
 	TextRange found;
+
+	const auto ensureMatchesWord = [&]( int offset ) {
+		if ( found.isValid() && found.hasSelection() ) {
+			found.normalize();
+			auto start( mDoc->positionOffset( found.start(), offset ) );
+			TextRange wordRange = mDoc->getWordRangeInPosition( start, false );
+			if ( !wordRange.isValid() ||
+				 wordRange.normalized() != TextRange( start, found.end() ).normalized() ) {
+				found = TextRange();
+			}
+		}
+	};
+
 	if ( isCloseBracket ) {
 		String openBracket( tag );
 		openBracket.erase( 1 );
 		found = mDoc->getMatchingBracket( range.start(), openBracket, tag,
-										  TextDocument::MatchDirection::Backward );
+										  TextDocument::MatchDirection::Backward, true );
+		ensureMatchesWord( 1 );
 	} else {
+		// Ensure the current bracket is closed, otherwise don't try to match
+		TextPosition matchClose( mDoc->getMatchingBracket(
+			range.start(), '<', '>', TextDocument::MatchDirection::Forward, false ) );
+		if ( !matchClose.isValid() )
+			return;
+
 		String closeBracket( tag );
 		closeBracket.insert( 1, '/' );
 		found = mDoc->getMatchingBracket( range.start(), tag, closeBracket,
-										  TextDocument::MatchDirection::Forward );
+										  TextDocument::MatchDirection::Forward, true );
+		ensureMatchesWord( 2 );
 	}
 
-	if ( found.isValid() ) {
+	if ( found.isValid() && found.hasSelection() ) {
 		ClientMatch match{ range.normalized(), found.normalized(), isCloseBracket };
 		mParent->mMatches[mDoc] = std::move( match );
 	} else {
@@ -308,7 +348,7 @@ void XMLToolsPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& inde
 	if ( !isOverMatch( &editor->getDocument(), index ) )
 		return;
 	Primitives p;
-	Color color( editor->getColorScheme().getEditorSyntaxStyle( "matching_bracket" ).color );
+	Color color( editor->getColorScheme().getEditorSyntaxStyle( "matching_bracket"_sst ).color );
 	Color blendedColor( Color( color, 50 ) );
 	p.setColor( blendedColor );
 
@@ -329,7 +369,7 @@ void XMLToolsPlugin::minimapDrawAfterLineText( UICodeEditor* editor, const Int64
 	if ( !isOverMatch( &editor->getDocument(), index ) )
 		return;
 	Primitives p;
-	Color color( editor->getColorScheme().getEditorSyntaxStyle( "matching_bracket" ).color );
+	Color color( editor->getColorScheme().getEditorSyntaxStyle( "matching_bracket"_sst ).color );
 	Color blendedColor( Color( color, 50 ) );
 	p.setColor( blendedColor );
 

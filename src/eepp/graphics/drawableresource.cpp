@@ -44,7 +44,7 @@ void DrawableResource::onResourceChange() {
 
 void DrawableResource::sendEvent( const Event& event ) {
 	for ( const auto& cb : mCallbacks ) {
-		cb.second( event, this );
+		cb.second( cb.first, event, this );
 	}
 }
 
@@ -54,9 +54,8 @@ Uint32 DrawableResource::pushResourceChangeCallback( const OnResourceChangeCallb
 	return mNumCallBacks;
 }
 
-void DrawableResource::popResourceChangeCallback( const Uint32& callbackId ) {
-	mCallbacks[callbackId] = 0;
-	mCallbacks.erase( mCallbacks.find( callbackId ) );
+bool DrawableResource::popResourceChangeCallback( const Uint32& callbackId ) {
+	return mCallbacks.erase( callbackId ) > 0;
 }
 
 }} // namespace EE::Graphics

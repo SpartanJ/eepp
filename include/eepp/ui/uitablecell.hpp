@@ -3,6 +3,8 @@
 
 #include <eepp/ui/models/modelindex.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/window.hpp>
 
 using namespace EE::UI::Models;
 
@@ -55,6 +57,16 @@ class EE_API UITableCell : public UIPushButton {
 	}
 
 	virtual void onModelIndexChange() {}
+
+	Uint32 onFocus() {
+		getUISceneNode()->getWindow()->startTextInput();
+		return UIPushButton::onFocus();
+	}
+
+	Uint32 onFocusLoss() {
+		getUISceneNode()->getWindow()->stopTextInput();
+		return UIPushButton::onFocusLoss();
+	}
 };
 
 }} // namespace EE::UI

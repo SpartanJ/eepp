@@ -1,6 +1,7 @@
 #ifndef EE_SYSTEM_SCOPEDOP_HPP
 #define EE_SYSTEM_SCOPEDOP_HPP
 
+#include <atomic>
 #include <functional>
 
 namespace EE { namespace System {
@@ -34,6 +35,21 @@ class BoolScopedOp {
 
   private:
 	bool& boolRef;
+};
+
+class AtomicBoolScopedOp {
+  public:
+	explicit AtomicBoolScopedOp( std::atomic<bool>& boolRef ) : boolRef( boolRef ) {}
+
+	explicit AtomicBoolScopedOp( std::atomic<bool>& boolRef, bool initialVal ) :
+		boolRef( boolRef ) {
+		boolRef = initialVal;
+	}
+
+	~AtomicBoolScopedOp() { boolRef = !boolRef; }
+
+  private:
+	std::atomic<bool>& boolRef;
 };
 
 class BoolScopedOpOptional {

@@ -176,8 +176,7 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 			mResultStr = "";
 		}
 
-		auto tokens =
-			SyntaxTokenizer::tokenize( styleDef, text, SYNTAX_TOKENIZER_STATE_NONE, to ).first;
+		auto tokens = SyntaxTokenizer::tokenize( styleDef, text, SyntaxState{}, to ).first;
 
 		size_t start = to;
 		for ( const auto& token : tokens ) {
@@ -195,9 +194,9 @@ void UITreeViewCellGlobalSearch::draw() {
 		 mSearchStrPos.second > 0 && mSearchStrPos.second <= mTextBox->getText().length() ) {
 		UITreeViewGlobalSearch* pp = getParent()->getParent()->asType<UITreeViewGlobalSearch>();
 		auto hspace =
-			mTextBox->getFont()->getGlyph( L' ', mTextBox->getPixelsFontSize(), false ).advance;
+			mTextBox->getFont()->getGlyph( L' ', mTextBox->getFontSize(), false, false ).advance;
 		Primitives p;
-		p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection" ).color );
+		p.setColor( pp->getColorScheme().getEditorSyntaxStyle( "selection"_sst ).color );
 		Vector2f screenPos( mScreenPos );
 		if ( mTextBox->isType( UI_TYPE_CHECKBOX ) ) {
 			UICheckBox* chk = mTextBox->asType<UICheckBox>();

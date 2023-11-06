@@ -66,8 +66,12 @@ class EE_API Primitives {
 	 * @param Angle Rectangle Angle
 	 * @param Scale Rectangle Scale ( default 1.0f )
 	 */
-	void drawRectangle( const Rectf& R, const Float& Angle = 0,
-						const Vector2f& Scale = Vector2f::One );
+	void drawRectangle( const Rectf& R, const Float& Angle, const Vector2f& Scale = Vector2f::One );
+
+	/** Draw a rectangle on the screen
+	 * @param R The Rectangle Rectf
+	 */
+	void drawRectangle( const Rectf& R );
 
 	/** Draw a rounded rectangle on the screen
 	 * @param R The Rectangle Rectf

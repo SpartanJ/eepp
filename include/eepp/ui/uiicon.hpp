@@ -4,8 +4,6 @@
 #include <eepp/core/core.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <memory>
-#include <unordered_map>
 
 namespace EE { namespace Graphics {
 class FontTrueType;
@@ -30,7 +28,7 @@ class EE_API UIIcon {
 	UIIcon( const std::string& name );
 
 	std::string mName;
-	mutable std::map<int, Drawable*> mSizes;
+	mutable UnorderedMap<int, Drawable*> mSizes;
 };
 
 class EE_API UIGlyphIcon : public UIIcon {
@@ -61,7 +59,7 @@ class EE_API UISVGIcon : public UIIcon {
 	UISVGIcon( const std::string& name, const std::string& svgXML );
 
 	std::string mSVGXml;
-	mutable std::unordered_map<int, Texture*> mSVGs;
+	mutable UnorderedMap<int, Texture*> mSVGs;
 	mutable Sizei mOriSize;
 	mutable int mOriChannels{ 0 };
 };

@@ -133,6 +133,8 @@ class UITerminal : public UIWidget {
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 
+	virtual Uint32 onTextEditing( const TextEditingEvent& event );
+
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	virtual Uint32 onKeyUp( const KeyEvent& event );

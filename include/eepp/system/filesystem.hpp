@@ -79,6 +79,9 @@ class EE_API FileSystem {
 	/** Deletes a file from the file system. */
 	static bool fileRemove( const std::string& filepath );
 
+	/** Hides the file in the file system */
+	static bool fileHide( const std::string& filepath );
+
 	/** @return The modification date of the file */
 	static Uint32 fileGetModificationDate( const std::string& filepath );
 

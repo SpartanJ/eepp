@@ -8,10 +8,10 @@
 namespace EE { namespace UI { namespace Doc {
 
 struct EE_API TokenizedLine {
-	Uint64 initState{ SYNTAX_TOKENIZER_STATE_NONE };
-	String::HashType hash;
+	SyntaxState initState;
+	String::HashType hash{ 0 };
 	std::vector<SyntaxTokenPosition> tokens;
-	Uint64 state{ SYNTAX_TOKENIZER_STATE_NONE };
+	SyntaxState state;
 	Uint64 signature{ 0 };
 
 	void updateSignature();
@@ -23,13 +23,16 @@ class EE_API SyntaxHighlighter {
   public:
 	explicit SyntaxHighlighter( TextDocument* doc );
 
+	~SyntaxHighlighter();
+
 	void changeDoc( TextDocument* doc );
 
 	void reset();
 
 	void invalidate( Int64 lineIndex );
 
-	const std::vector<SyntaxTokenPosition>& getLine( const size_t& index );
+	const std::vector<SyntaxTokenPosition>& getLine( const size_t& index,
+													 bool mustTokenize = true );
 
 	Int64 getFirstInvalidLine() const;
 
@@ -39,7 +42,7 @@ class EE_API SyntaxHighlighter {
 
 	const SyntaxDefinition& getSyntaxDefinitionFromTextPosition( const TextPosition& position );
 
-	std::string getTokenTypeAt( const TextPosition& pos );
+	SyntaxStyleType getTokenTypeAt( const TextPosition& pos );
 
 	SyntaxTokenPosition getTokenPositionAt( const TextPosition& pos );
 
@@ -47,8 +50,7 @@ class EE_API SyntaxHighlighter {
 
 	void mergeLine( const size_t& line, const TokenizedLine& tokenization );
 
-	TokenizedLine tokenizeLine( const size_t& line,
-								const Uint64& state = SYNTAX_TOKENIZER_STATE_NONE );
+	TokenizedLine tokenizeLine( const size_t& line, const SyntaxState& state = SyntaxState{} );
 
 	Mutex& getLinesMutex();
 
@@ -60,14 +62,23 @@ class EE_API SyntaxHighlighter {
 
 	void setMaxTokenizationLength( const Int64& maxTokenizationLength );
 
+	void tokenizeAsync( std::shared_ptr<ThreadPool> pool,
+						const std::function<void()>& onDone = {} );
+
+	bool isTokenizingAsync() const { return mTokenizeAsync; }
+
+	void setStopTokenizingAsync() { mStopTokenizing = true; }
+
   protected:
 	TextDocument* mDoc;
 	std::unordered_map<size_t, TokenizedLine> mLines;
-	std::unordered_map<size_t, TokenizedLine> mTokenizerLines;
+	UnorderedMap<size_t, TokenizedLine> mTokenizerLines;
 	Mutex mLinesMutex;
 	Int64 mFirstInvalidLine;
 	Int64 mMaxWantedLine;
 	Int64 mMaxTokenizationLength{ 0 };
+	bool mTokenizeAsync{ false };
+	bool mStopTokenizing{ false };
 };
 
 }}} // namespace EE::UI::Doc

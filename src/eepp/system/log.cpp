@@ -114,7 +114,7 @@ void Log::save( const std::string& filepath ) {
 	mSave = true;
 }
 
-void Log::write( const std::string& text ) {
+void Log::write( const std::string_view& text ) {
 	if ( mKeepLog ) {
 		lock();
 		mData += text;
@@ -125,7 +125,7 @@ void Log::write( const std::string& text ) {
 
 	if ( mConsoleOutput ) {
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-		__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", text.c_str() );
+		__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", text.data() );
 #elif defined( EE_COMPILER_MSVC )
 #ifdef UNICODE
 		OutputDebugString( String::fromUtf8( text ).toWideString().c_str() );
@@ -140,7 +140,7 @@ void Log::write( const std::string& text ) {
 	if ( mLiveWrite ) {
 		openFS();
 
-		mFS->write( text.c_str(), text.size() );
+		mFS->write( text.data(), text.size() );
 
 		mFS->flush();
 	}
@@ -166,19 +166,19 @@ static std::string logLevelToString( const LogLevel& level ) {
 	}
 }
 
-static std::string logLevelWithTimestamp( const LogLevel& level, const std::string& text,
+static std::string logLevelWithTimestamp( const LogLevel& level, const std::string_view& text,
 										  bool appendNewLine ) {
 	return String::format( appendNewLine ? "%s - %s: %s\n" : "%s - %s: %s",
 						   Sys::getDateTimeStr().c_str(), logLevelToString( level ).c_str(),
-						   text.c_str() );
+						   text.data() );
 }
 
-void Log::write( const LogLevel& level, const std::string& text ) {
+void Log::write( const LogLevel& level, const std::string_view& text ) {
 	if ( level >= mLogLevelThreshold )
 		write( logLevelWithTimestamp( level, text, false ) );
 }
 
-void Log::writel( const std::string& text ) {
+void Log::writel( const std::string_view& text ) {
 	if ( mKeepLog ) {
 		lock();
 		mData += text;
@@ -191,12 +191,14 @@ void Log::writel( const std::string& text ) {
 
 	if ( mConsoleOutput ) {
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-		__android_log_print( ANDROID_LOG_INFO, "eepp", "%s\n", text.c_str() );
+		__android_log_print( ANDROID_LOG_INFO, "eepp", "%s\n", text.data() );
 #elif defined( EE_COMPILER_MSVC )
 #ifdef UNICODE
-		OutputDebugString( String::fromUtf8( text + "\n" ).toWideString().c_str() );
+		OutputDebugString( String::fromUtf8( text ).toWideString().c_str() );
+		OutputDebugString( String::fromUtf8( std::string_view{ "\n" } ).toWideString().c_str() );
 #else
-		OutputDebugString( ( text + "\n" ).c_str() );
+		OutputDebugString( text.data() );
+		OutputDebugString( "\n" );
 #endif
 #else
 		std::cout << text << std::endl;
@@ -206,14 +208,14 @@ void Log::writel( const std::string& text ) {
 	if ( mLiveWrite ) {
 		openFS();
 
-		mFS->write( text.c_str(), text.size() );
+		mFS->write( text.data(), text.size() );
 		mFS->write( "\n", 1 );
 
 		mFS->flush();
 	}
 }
 
-void Log::writel( const LogLevel& level, const std::string& text ) {
+void Log::writel( const LogLevel& level, const std::string_view& text ) {
 	if ( level >= mLogLevelThreshold )
 		write( logLevelWithTimestamp( level, text, true ) );
 }
@@ -400,7 +402,7 @@ void Log::removeLogReader( LogReaderInterface* reader ) {
 		mReaders.erase( found );
 }
 
-void Log::writeToReaders( const std::string& text ) {
+void Log::writeToReaders( const std::string_view& text ) {
 	for ( const auto& reader : mReaders )
 		reader->writeLog( text );
 }

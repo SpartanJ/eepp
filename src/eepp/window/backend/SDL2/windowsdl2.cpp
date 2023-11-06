@@ -21,8 +21,8 @@
 #include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || \
-	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
+	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||       \
 	EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #define SDL2_THREADED_GLCONTEXT
 #endif
@@ -272,7 +272,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, mWindow.ContextConfig.Multisamples );
 	}
 
-#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_IOS && \
+#if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_IOS && \
 	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	mWindow.WindowConfig.Width *= mWindow.WindowConfig.PixelDensity;
 	mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
@@ -413,9 +413,6 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mCursorManager->set( Cursor::SysArrow );
 
 	logSuccessfulInit( getVersion() );
-
-	SDL_SetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0" );
-	SDL_SetHint( SDL_HINT_RETURN_KEY_HIDES_IME, "0" );
 
 	return true;
 }
@@ -787,12 +784,14 @@ void WindowSDL::raise() {
 
 void WindowSDL::flash( WindowFlashOperation op ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if SDL_VERSION_ATLEAST( 2, 0, 16 )
 	SDL_FlashOperation sdlOp = SDL_FlashOperation::SDL_FLASH_BRIEFLY;
 	if ( op == WindowFlashOperation::Cancel )
 		sdlOp = SDL_FlashOperation::SDL_FLASH_CANCEL;
 	else if ( op == WindowFlashOperation::UntilFocused )
 		sdlOp = SDL_FlashOperation::SDL_FLASH_UNTIL_FOCUSED;
 	SDL_FlashWindow( mSDLWindow, sdlOp );
+#endif
 #endif
 }
 
@@ -865,54 +864,68 @@ SDL_Window* WindowSDL::GetSDLWindow() const {
 	return mSDLWindow;
 }
 
-void WindowSDL::startTextInput() {
-	if ( mWindow.WindowConfig.UseScreenKeyboard ) {
+void WindowSDL::startOnScreenKeyboard() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-		showOSK( getWindowHandler() );
+	showOSK( getWindowHandler() );
 #elif defined( EE_X11_PLATFORM )
-		showOSK();
-#else
-		SDL_StartTextInput();
+	showOSK();
 #endif
-	}
 }
 
-bool WindowSDL::isTextInputActive() {
+void WindowSDL::stopOnScreenKeyboard() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	hideOSK();
+#elif defined( EE_X11_PLATFORM )
+	hideOSK();
+#endif
+}
+
+bool WindowSDL::isOnScreenKeyboardActive() const {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return WIN_OSK_VISIBLE;
 #elif defined( EE_X11_PLATFORM )
 	return ONBOARD_PID != 0;
 #else
-	return SDL_TRUE == SDL_IsTextInputActive();
+	return false;
 #endif
+}
+
+void WindowSDL::startTextInput() {
+	if ( mWindow.WindowConfig.UseScreenKeyboard ) {
+		startOnScreenKeyboard();
+	} else {
+		SDL_StartTextInput();
+	}
+}
+
+bool WindowSDL::isTextInputActive() const {
+	if ( mWindow.WindowConfig.UseScreenKeyboard )
+		return isOnScreenKeyboardActive();
+	return SDL_TRUE == SDL_IsTextInputActive();
 }
 
 void WindowSDL::stopTextInput() {
 	if ( mWindow.WindowConfig.UseScreenKeyboard ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-		hideOSK();
-#elif defined( EE_X11_PLATFORM )
-		hideOSK();
-#else
+		stopOnScreenKeyboard();
+	} else {
 		SDL_StopTextInput();
-#endif
 	}
 }
 
-void WindowSDL::setTextInputRect( Rect& rect ) {
+void WindowSDL::setTextInputRect( const Rect& rect ) {
 	SDL_Rect r;
-
 	r.x = rect.Left;
 	r.y = rect.Top;
 	r.w = rect.getSize().getWidth();
 	r.h = rect.getSize().getHeight();
 
 	SDL_SetTextInputRect( &r );
+}
 
-	rect.Left = r.x;
-	rect.Top = r.y;
-	rect.Right = rect.Left + r.w;
-	rect.Bottom = rect.Top + r.h;
+void WindowSDL::clearComposition() {
+#if SDL_VERSION_ATLEAST( 2, 0, 22 )
+	SDL_ClearComposition();
+#endif
 }
 
 bool WindowSDL::hasScreenKeyboardSupport() {

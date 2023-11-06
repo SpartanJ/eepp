@@ -44,7 +44,8 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard* Cli
 	mInput( Input ),
 	mCursorManager( CursorManager ),
 	mCurrentView( NULL ),
-	mNumCallBacks( 0 ) {
+	mNumCallBacks( 0 ),
+	mIME( this ) {
 	mWindow.WindowConfig = Settings;
 	mWindow.ContextConfig = Context;
 	setFrameRateLimit( Context.FrameRateLimit );
@@ -140,6 +141,10 @@ Vector2i Window::mapCoordsToPixel( const Vector2f& point, const View& view ) {
 
 void Window::setCloseRequestCallback( const WindowRequestCloseCallback& closeRequestCallback ) {
 	mCloseRequestCallback = closeRequestCallback;
+}
+
+void Window::setQuitCallback( const WindowQuitCallback& quitCallback ) {
+	mQuitCallback = quitCallback;
 }
 
 void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width,
@@ -345,6 +350,10 @@ bool Window::showMessageBox( const MessageBoxType&, const std::string&, const st
 	return false;
 }
 
+InputMethod& Window::getIME() {
+	return mIME;
+}
+
 void Window::calculateFps() {
 	if ( mFrameData.FPS.LastCheck.getElapsedTime().asSeconds() >= 1.f ) {
 		mFrameData.FPS.Current = mFrameData.FPS.Count;
@@ -439,6 +448,14 @@ void Window::popResizeCallback( const Uint32& CallbackId ) {
 	mCallbacks.erase( mCallbacks.find( CallbackId ) );
 }
 
+void Window::startOnScreenKeyboard() {}
+
+void Window::stopOnScreenKeyboard() {}
+
+bool Window::isOnScreenKeyboardActive() const {
+	return false;
+}
+
 void Window::sendVideoResizeCb() {
 	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin();
 		  i != mCallbacks.end(); ++i ) {
@@ -476,11 +493,15 @@ void Window::logFailureInit( const std::string& ClassName, const std::string& Ba
 }
 
 void Window::onCloseRequest() {
-	if ( mCloseRequestCallback && !mCloseRequestCallback( this ) ) {
+	if ( mCloseRequestCallback && !mCloseRequestCallback( this ) )
 		return;
-	}
 
 	close();
+}
+
+void Window::onQuit() {
+	if ( mQuitCallback )
+		mQuitCallback( this );
 }
 
 std::string Window::getTitle() {
@@ -490,7 +511,7 @@ std::string Window::getTitle() {
 eeWindowContex Window::getContext() const {
 #if defined( EE_GLEW_AVAILABLE ) &&                                   \
 	( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || \
-	  EE_PLATFORM == EE_PLATFORM_MACOSX )
+	  EE_PLATFORM == EE_PLATFORM_MACOS )
 	return mWindow.Context;
 #else
 	return 0;
@@ -548,13 +569,15 @@ Float Window::getScale() {
 
 void Window::startTextInput() {}
 
-bool Window::isTextInputActive() {
+bool Window::isTextInputActive() const {
 	return false;
 }
 
 void Window::stopTextInput() {}
 
-void Window::setTextInputRect( Rect& ) {}
+void Window::setTextInputRect( const Rect& ) {}
+
+void Window::clearComposition() {}
 
 bool Window::hasScreenKeyboardSupport() {
 	return false;

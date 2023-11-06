@@ -271,22 +271,39 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 	if ( servers.empty() )
 		return {};
 
-	std::string query = msg.asJSON().value( "query", "" );
+	json jmsg = msg.asJSON();
+	std::string query = jmsg.value( "query", "" );
+	PluginRequestHandle hdl;
+
 	for ( const auto server : servers ) {
-		server->workspaceSymbol(
-			query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
-				if ( !query.empty() ) {
-					for ( auto& i : info ) {
-						if ( i.score == 0.f )
-							i.score = String::fuzzyMatch( i.name, query );
+		if ( Engine::instance()->isMainThread() ) {
+			server->workspaceSymbolAsync(
+				query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
+					if ( !query.empty() ) {
+						for ( auto& i : info ) {
+							if ( i.score == 0.f )
+								i.score = String::fuzzyMatch( i.name, query );
+						}
 					}
-				}
-				mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
-										PluginMessageFormat::SymbolInformation, &info, id );
-			} );
+					mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
+											PluginMessageFormat::SymbolInformation, &info, id );
+				} );
+		} else {
+			hdl = server->workspaceSymbol(
+				query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
+					if ( !query.empty() ) {
+						for ( auto& i : info ) {
+							if ( i.score == 0.f )
+								i.score = String::fuzzyMatch( i.name, query );
+						}
+					}
+					mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
+											PluginMessageFormat::SymbolInformation, &info, id );
+				} );
+		}
 	}
 
-	return {};
+	return hdl;
 }
 
 PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMessage& msg ) {
@@ -423,14 +440,14 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 									const Uint32& flags ) {
 	Input* input = editor->getUISceneNode()->getWindow()->getInput();
 	Uint32 mod = input->getSanitizedModState();
-	if ( mod != ( KEYMOD_LALT | KEYMOD_CTRL ) || ( flags & EE_BUTTON_LMASK ) == 0 )
+	if ( mod != ( KEYMOD_LALT | KeyMod::getDefaultModifier() ) || ( flags & EE_BUTTON_LMASK ) == 0 )
 		return false;
 
 	auto docPos = editor->resolveScreenPosition( pos.asFloat() );
 	if ( !docPos.isValid() || !editor->getDocument().isValidPosition( docPos ) )
 		return false;
 
-	editor->getDocument().execute( "lsp-go-to-definition" );
+	editor->getDocument().execute( "lsp-go-to-definition", editor );
 
 	return true;
 }
@@ -447,6 +464,22 @@ bool LSPClientPlugin::langSupportsSemanticHighlighting( const std::string& lspLa
 	return !std::any_of( mSemanticHighlightingDisabledLangs.begin(),
 						 mSemanticHighlightingDisabledLangs.end(),
 						 [&lspLang]( const auto& other ) { return lspLang == other; } );
+}
+
+bool LSPClientPlugin::isSilent() const {
+	return mSilence;
+}
+
+void LSPClientPlugin::setSilent( bool silence ) {
+	mSilence = silence;
+}
+
+bool LSPClientPlugin::trimLogs() const {
+	return mTrimLogs;
+}
+
+void LSPClientPlugin::setTrimLogs( bool trimLogs ) {
+	mTrimLogs = trimLogs;
 }
 
 bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
@@ -636,6 +669,38 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 				return ret;
 			break;
 		}
+		case PluginMessageType::QueryPluginCapability: {
+			if ( msg.isRequest() && msg.isJSON() ) {
+				const auto& data = msg.asJSON();
+				if ( !data.contains( "capability" ) || !data["capability"].is_number_integer() ||
+					 data["capability"].get<int>() < 0 ||
+					 data["capability"].get<int>() >= static_cast<int>( PluginCapability::Max ) )
+					return {};
+				PluginCapability capability = data["capability"].get<PluginCapability>();
+				URI uri;
+				if ( data.contains( "uri" ) && data["uri"].is_string() )
+					uri = data["uri"];
+				PluginInmediateResponse rmsg;
+				rmsg.type = PluginMessageType::QueryPluginCapability;
+				auto servers = mClientManager.getFilteredServers(
+					[capability, uri]( LSPClientServer* server ) {
+						if ( !uri.empty() && !server->hasDocument( uri ) )
+							return false;
+						switch ( capability ) {
+							case PluginCapability::WorkspaceSymbol:
+								return server->getCapabilities().workspaceSymbolProvider;
+							case PluginCapability::TextDocumentSymbol:
+								return server->getCapabilities().documentSymbolProvider;
+							default: {
+							}
+						}
+						return false;
+					} );
+				rmsg.data = !servers.empty();
+				return PluginRequestHandle( rmsg );
+			}
+			break;
+		}
 		case PluginMessageType::LanguageServerCapabilities: {
 			if ( msg.isRequest() && msg.isJSON() ) {
 				const auto& data = msg.asJSON();
@@ -678,7 +743,7 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 }
 
 void LSPClientPlugin::load( PluginManager* pluginManager ) {
-	BoolScopedOp loading( mLoading, true );
+	AtomicBoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
@@ -709,15 +774,16 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 
 	mClientManager.load( this, pluginManager, std::move( lsps ) );
 
+	subscribeFileSystemListener();
 	mReady = mClientManager.lspCount() > 0;
 	for ( const auto& doc : mDelayedDocs )
 		if ( mDocs.find( doc.first ) != mDocs.end() )
 			mClientManager.tryRunServer( doc.second );
 	mDelayedDocs.clear();
-	if ( mReady )
+	if ( mReady ) {
 		fireReadyCbs();
-
-	subscribeFileSystemListener();
+		setReady();
+	}
 }
 
 static std::string parseCommand( nlohmann::json cmd ) {
@@ -781,6 +847,17 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
+
+		if ( config.contains( "silent" ) )
+			mSilence = config.value( "silent", false );
+		else if ( updateConfigFile )
+			config["silent"] = mSilence;
+
+		if ( config.contains( "trim_logs" ) )
+			mTrimLogs = config.value( "trim_logs", false );
+		else if ( updateConfigFile )
+			config["trim_logs"] = mTrimLogs;
+
 		if ( config.contains( "hover_delay" ) )
 			setHoverDelay( Time::fromString( config["hover_delay"].get<std::string>() ) );
 		else if ( updateConfigFile )
@@ -841,7 +918,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					  "lsp-symbol-code-action",
 					  "lsp-rename-symbol-under-cursor",
 					  "lsp-refresh-semantic-highlighting",
-					  "lsp-format-range" };
+					  "lsp-format-range",
+					  "lsp-plugin-restart" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -852,7 +930,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 	}
 
 	if ( updateConfigFile ) {
-		FileSystem::fileWrite( path, j.dump( 2 ) );
+		std::string newData( j.dump( 2 ) );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( newData );
+		}
 	}
 
 	if ( !j.contains( "servers" ) )
@@ -1088,47 +1170,61 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	if ( editor->hasDocument() ) {
 		auto& doc = editor->getDocument();
 
-		doc.setCommand( "lsp-go-to-definition", [this, editor]() {
-			getAndGoToLocation( editor, "textDocument/definition" );
+		doc.setCommand( "lsp-go-to-definition", [this]( TextDocument::Client* client ) {
+			getAndGoToLocation( static_cast<UICodeEditor*>( client ), "textDocument/definition" );
 		} );
 
-		doc.setCommand( "lsp-rename-symbol-under-cursor",
-						[this, editor]() { renameSymbol( editor ); } );
-
-		doc.setCommand( "lsp-go-to-declaration", [this, editor]() {
-			getAndGoToLocation( editor, "textDocument/declaration" );
+		doc.setCommand( "lsp-rename-symbol-under-cursor", [this]( TextDocument::Client* client ) {
+			renameSymbol( static_cast<UICodeEditor*>( client ) );
 		} );
 
-		doc.setCommand( "lsp-go-to-implementation", [this, editor]() {
-			getAndGoToLocation( editor, "textDocument/implementation" );
+		doc.setCommand( "lsp-go-to-declaration", [this]( TextDocument::Client* client ) {
+			getAndGoToLocation( static_cast<UICodeEditor*>( client ), "textDocument/declaration" );
 		} );
 
-		doc.setCommand( "lsp-go-to-type-definition", [this, editor]() {
-			getAndGoToLocation( editor, "textDocument/typeDefinition" );
+		doc.setCommand( "lsp-go-to-implementation", [this]( TextDocument::Client* client ) {
+			getAndGoToLocation( static_cast<UICodeEditor*>( client ),
+								"textDocument/implementation" );
 		} );
 
-		doc.setCommand( "lsp-switch-header-source",
-						[this, editor]() { switchSourceHeader( editor ); } );
-
-		doc.setCommand( "lsp-symbol-info", [this, editor]() { getSymbolInfo( editor ); } );
-
-		doc.setCommand( "lsp-symbol-references", [this, editor] {
-			mClientManager.getSymbolReferences( editor->getDocumentRef() );
+		doc.setCommand( "lsp-go-to-type-definition", [this]( TextDocument::Client* client ) {
+			getAndGoToLocation( static_cast<UICodeEditor*>( client ),
+								"textDocument/typeDefinition" );
 		} );
 
-		doc.setCommand( "lsp-symbol-code-action", [this, editor] { codeAction( editor ); } );
-
-		doc.setCommand( "lsp-memory-usage", [this, editor] {
-			mClientManager.memoryUsage( editor->getDocumentRef() );
+		doc.setCommand( "lsp-switch-header-source", [this]( TextDocument::Client* client ) {
+			switchSourceHeader( static_cast<UICodeEditor*>( client ) );
 		} );
 
-		doc.setCommand( "lsp-refresh-semantic-highlighting", [this, editor] {
-			mClientManager.requestSymanticHighlighting( editor->getDocumentRef() );
+		doc.setCommand( "lsp-symbol-info", [this]( TextDocument::Client* client ) {
+			getSymbolInfo( static_cast<UICodeEditor*>( client ) );
 		} );
 
-		doc.setCommand( "lsp-format-range", [this, editor] {
-			mClientManager.rangeFormatting( editor->getDocumentRef() );
+		doc.setCommand( "lsp-symbol-references", [this]( TextDocument::Client* client ) {
+			mClientManager.getSymbolReferences(
+				static_cast<UICodeEditor*>( client )->getDocumentRef() );
 		} );
+
+		doc.setCommand( "lsp-symbol-code-action", [this]( TextDocument::Client* client ) {
+			codeAction( static_cast<UICodeEditor*>( client ) );
+		} );
+
+		doc.setCommand( "lsp-memory-usage", [this]( TextDocument::Client* client ) {
+			mClientManager.memoryUsage( static_cast<UICodeEditor*>( client )->getDocumentRef() );
+		} );
+
+		doc.setCommand( "lsp-refresh-semantic-highlighting",
+						[this]( TextDocument::Client* client ) {
+							mClientManager.requestSymanticHighlighting(
+								static_cast<UICodeEditor*>( client )->getDocumentRef() );
+						} );
+
+		doc.setCommand( "lsp-format-range", [this]( TextDocument::Client* client ) {
+			mClientManager.rangeFormatting(
+				static_cast<UICodeEditor*>( client )->getDocumentRef() );
+		} );
+
+		doc.setCommand( "lsp-plugin-restart", [this] { mManager->reload( getId() ); } );
 	}
 
 	std::vector<Uint32> listeners;
@@ -1145,7 +1241,7 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	mEditors.insert( { editor, listeners } );
-	mEditorsTags.insert( { editor, {} } );
+	mEditorsTags.insert( { editor, UnorderedSet<String::HashType>{} } );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
 
 	if ( mReady && editor->hasDocument() && editor->getDocument().hasFilepath() )
@@ -1233,10 +1329,9 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 			return;
 	}
 
-	if ( editor->hasDocument() ) {
+	if ( editor->hasDocument() )
 		for ( auto& kb : mKeyBindings )
 			editor->getDocument().removeCommand( kb.first );
-	}
 
 	{
 		Lock lds( mDocSymbolsMutex );
@@ -1298,6 +1393,8 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
 		addFn( "lsp-switch-header-source", "Switch Header/Source", "filetype-hpp" );
+
+	addFn( "lsp-plugin-restart", "Restart LSP Client", "refresh" );
 
 #ifdef EE_DEBUG
 	if ( server->getDefinition().name == "clangd" )
@@ -1382,7 +1479,8 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 		tryHideTooltip( editor, position );
 		return false;
 	}
-	String::HashType tag = String::hash( editor->getDocument().getFilePath() );
+	String::HashType tag =
+		String::hash( "LSPClientPlugin::onMouseMove-" + editor->getDocument().getFilePath() );
 	editor->removeActionsByTag( tag );
 	mEditorsTags[editor].insert( tag );
 	editor->runOnMainThread(

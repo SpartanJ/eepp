@@ -41,6 +41,10 @@ class EE_API StyleSheetStyle {
 
 	bool hasProperties() const;
 
+	bool hasProperty( PropertyId id ) const;
+
+	bool hasProperty( const std::string& name ) const;
+
 	bool hasVariables() const;
 
 	bool hasVariable( const std::string& name ) const;
@@ -74,7 +78,6 @@ class EE_API StyleSheetStyle {
 	AtRuleType checkAtRule();
 };
 
-typedef std::map<std::string, StyleSheetStyle> StyleSheetStyleList;
 typedef std::vector<StyleSheetStyle*> StyleSheetStyleVector;
 
 }}} // namespace EE::UI::CSS

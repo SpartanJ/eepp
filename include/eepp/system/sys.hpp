@@ -35,8 +35,11 @@ class EE_API Sys {
 	/** Wait the time defined before returning. */
 	static void sleep( const Time& time );
 
-	/** @return The application path ( the executable path ) */
+	/** @return The application path ( the executable path without the executable ) */
 	static std::string getProcessPath();
+
+	/** @return The process path ( the executable file path ) */
+	static std::string getProcessFilePath();
 
 	/** @return The System Time */
 	static double getSystemTime();
@@ -83,11 +86,23 @@ class EE_API Sys {
 	 *  @return The executable file path, or an empty string if not found. */
 	static std::string which( const std::string& exeName,
 							  const std::vector<std::string>& customSearchPaths = {} );
-	
-	/* It will attach the console to the parent process console if any. Windows only function.
-	 * Other platforms will do nothing. 
-	*/
+
+	/** @return An environment variable */
+	static std::string getEnv( const std::string& name );
+
+	/** @return A splitted environment variable */
+	static std::vector<std::string> getEnvSplitted( const std::string& name );
+
+	/** It will attach the console to the parent process console if any. Windows only function.
+	 * Other platforms will do nothing.
+	 */
 	static bool windowAttachConsole();
+
+	/** Executes a command */
+	static void execute( const std::string& cmd );
+
+	/** @return True if current running platform / os is a mobile one */
+	static bool isMobile();
 };
 
 }} // namespace EE::System

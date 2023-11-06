@@ -313,34 +313,17 @@ class EE_API URI {
 	std::string mFragment;
 };
 
-inline const std::string& URI::getScheme() const {
-	return mScheme;
-}
-
-inline const std::string& URI::getUserInfo() const {
-	return mUserInfo;
-}
-
-inline const std::string& URI::getHost() const {
-	return mHost;
-}
-
-inline const std::string& URI::getPath() const {
-	return mPath;
-}
-
-inline const std::string& URI::getRawQuery() const {
-	return mQuery;
-}
-
-inline const std::string& URI::getFragment() const {
-	return mFragment;
-}
-
-inline void swap( URI& u1, URI& u2 ) {
-	u1.swap( u2 );
-}
-
 }} // namespace EE::Network
+
+template <> struct std::hash<EE::Network::URI> {
+	std::size_t operator()( EE::Network::URI const& uri ) const noexcept {
+		return hashCombine(
+			std::hash<std::string>()( uri.getScheme() ),
+			std::hash<std::string>()( uri.getUserInfo() ),
+			std::hash<std::string>()( uri.getHost() ), std::hash<int>()( uri.getPort() ),
+			std::hash<std::string>()( uri.getPath() ), std::hash<std::string>()( uri.getQuery() ),
+			std::hash<std::string>()( uri.getFragment() ) );
+	}
+};
 
 #endif

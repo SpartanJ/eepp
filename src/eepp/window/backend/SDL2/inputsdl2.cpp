@@ -241,13 +241,35 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_TEXTINPUT: {
-			String txt = String::fromUtf8( SDLEvent.text.text );
+			String txt = String::fromUtf8( std::string_view{ SDLEvent.text.text } );
 			event.Type = InputEvent::TextInput;
 			event.text.timestamp = SDLEvent.text.timestamp;
 			event.WinID = SDLEvent.text.windowID;
-			event.text.text = txt[0];
+			for ( size_t i = 0; i < txt.size() - 1; i++ ) {
+				event.text.text = txt[i];
+				processEvent( &event );
+			}
+			event.text.text = txt[txt.size() - 1];
 			break;
 		}
+		case SDL_TEXTEDITING: {
+			event.Type = InputEvent::TextEditing;
+			event.textediting.text = SDLEvent.edit.text;
+			event.textediting.start = SDLEvent.edit.start;
+			event.textediting.length = SDLEvent.edit.length;
+			event.WinID = SDLEvent.edit.windowID;
+			break;
+		}
+#if SDL_VERSION_ATLEAST( 2, 0, 22 )
+		case SDL_TEXTEDITING_EXT: {
+			event.Type = InputEvent::TextEditing;
+			event.textediting.text = SDLEvent.editExt.text;
+			event.textediting.start = SDLEvent.editExt.start;
+			event.textediting.length = SDLEvent.editExt.length;
+			event.WinID = SDLEvent.editExt.windowID;
+			break;
+		}
+#endif
 		case SDL_KEYDOWN: {
 			event.Type = InputEvent::KeyDown;
 			event.key.state = SDLEvent.key.state;
@@ -468,6 +490,11 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 
 	if ( InputEvent::FileDropped == event.Type || InputEvent::TextDropped == event.Type )
 		SDL_free( SDLEvent.drop.file );
+
+#if SDL_VERSION_ATLEAST( 2, 0, 22 )
+	if ( InputEvent::TextEditing == event.Type && SDL_TEXTEDITING_EXT == SDLEvent.type )
+		SDL_free( SDLEvent.editExt.text );
+#endif
 }
 
 }}}} // namespace EE::Window::Backend::SDL2

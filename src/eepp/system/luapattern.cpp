@@ -8,11 +8,11 @@ namespace EE { namespace System {
 const int MAX_DEFAULT_MATCHES = 12;
 static bool sFailHandlerInitialized = false;
 
-std::string LuaPattern::getURLPattern() {
+std::string_view LuaPattern::getURLPattern() {
 	return "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*";
 }
 
-std::string LuaPattern::getURIPattern() {
+std::string_view LuaPattern::getURIPattern() {
 	return "%w+://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*";
 }
 
@@ -20,7 +20,7 @@ static void failHandler( const char* msg ) {
 	throw std::string( msg );
 }
 
-std::string LuaPattern::match( const std::string& string, const std::string& pattern ) {
+std::string LuaPattern::match( const std::string& string, const std::string_view& pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
 	if ( matcher.find( string, start, end ) )
@@ -29,7 +29,7 @@ std::string LuaPattern::match( const std::string& string, const std::string& pat
 }
 
 std::string LuaPattern::matchesAny( const std::vector<std::string>& stringvec,
-								  const std::string& pattern ) {
+									const std::string_view& pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
 	for ( const auto& str : stringvec ) {
@@ -40,7 +40,7 @@ std::string LuaPattern::matchesAny( const std::vector<std::string>& stringvec,
 	return "";
 }
 
-LuaPattern::Range LuaPattern::find( const std::string& string, const std::string& pattern ) {
+LuaPattern::Range LuaPattern::find( const std::string& string, const std::string_view& pattern ) {
 	LuaPattern matcher( pattern );
 	int start = 0, end = 0;
 	if ( matcher.find( string, start, end ) )
@@ -48,11 +48,11 @@ LuaPattern::Range LuaPattern::find( const std::string& string, const std::string
 	return { -1, -1 };
 }
 
-bool LuaPattern::matches( const std::string& string, const std::string& pattern ) {
+bool LuaPattern::matches( const std::string& string, const std::string_view& pattern ) {
 	return find( string, pattern ).isValid();
 }
 
-LuaPattern::LuaPattern( const std::string& pattern ) : mPattern( pattern ) {
+LuaPattern::LuaPattern( const std::string_view& pattern ) : mPattern( pattern ) {
 	if ( !sFailHandlerInitialized ) {
 		sFailHandlerInitialized = true;
 		lua_str_fail_func( failHandler );
@@ -67,10 +67,9 @@ bool LuaPattern::matches( const char* stringSearch, int stringStartOffset,
 	if ( stringLength == 0 )
 		stringLength = strlen( stringSearch );
 	try {
-		mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength, mPattern.c_str(),
+		mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength, mPattern.data(),
 								   (LuaMatch*)matchList );
 	} catch ( const std::string& patternError ) {
-		mErr = std::move( patternError );
 		mMatchNum = 0;
 	}
 	return mMatchNum == 0 ? false : true;
@@ -238,6 +237,16 @@ std::string LuaPattern::gsub( const char* text, const char* replace ) {
 
 std::string LuaPattern::gsub( const std::string& text, const std::string& replace ) {
 	return gsub( text.c_str(), replace.c_str() );
+}
+
+LuaPatternStorage::LuaPatternStorage( const std::string& pattern ) :
+	LuaPattern( "" ), mPatternStorage( pattern ) {
+	mPattern = std::string_view{ mPatternStorage };
+}
+
+LuaPatternStorage::LuaPatternStorage( std::string&& pattern ) :
+	LuaPattern( "" ), mPatternStorage( std::move( pattern ) ) {
+	mPattern = std::string_view{ mPatternStorage };
 }
 
 }} // namespace EE::System

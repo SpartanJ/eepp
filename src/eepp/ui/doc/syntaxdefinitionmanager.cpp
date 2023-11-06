@@ -3,25 +3,47 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/ui/doc/languages/angelscript.hpp>
 #include <eepp/ui/doc/languages/batchscript.hpp>
+#include <eepp/ui/doc/languages/crystal.hpp>
 #include <eepp/ui/doc/languages/css.hpp>
 #include <eepp/ui/doc/languages/d.hpp>
+#include <eepp/ui/doc/languages/elixir.hpp>
+#include <eepp/ui/doc/languages/elm.hpp>
+#include <eepp/ui/doc/languages/fstab.hpp>
+#include <eepp/ui/doc/languages/gdscript.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
+#include <eepp/ui/doc/languages/hare.hpp>
 #include <eepp/ui/doc/languages/hlsl.hpp>
 #include <eepp/ui/doc/languages/htaccess.hpp>
+#include <eepp/ui/doc/languages/html.hpp>
+#include <eepp/ui/doc/languages/jai.hpp>
+#include <eepp/ui/doc/languages/julia.hpp>
+#include <eepp/ui/doc/languages/kotlin.hpp>
+#include <eepp/ui/doc/languages/lobster.hpp>
+#include <eepp/ui/doc/languages/markdown.hpp>
+#include <eepp/ui/doc/languages/nelua.hpp>
 #include <eepp/ui/doc/languages/objeck.hpp>
 #include <eepp/ui/doc/languages/odin.hpp>
 #include <eepp/ui/doc/languages/pascal.hpp>
 #include <eepp/ui/doc/languages/perl.hpp>
 #include <eepp/ui/doc/languages/pico-8.hpp>
+#include <eepp/ui/doc/languages/po.hpp>
 #include <eepp/ui/doc/languages/postgresql.hpp>
+#include <eepp/ui/doc/languages/r.hpp>
 #include <eepp/ui/doc/languages/rust.hpp>
 #include <eepp/ui/doc/languages/sass.hpp>
 #include <eepp/ui/doc/languages/solidity.hpp>
 #include <eepp/ui/doc/languages/sql.hpp>
 #include <eepp/ui/doc/languages/swift.hpp>
+#include <eepp/ui/doc/languages/teal.hpp>
+#include <eepp/ui/doc/languages/toml.hpp>
+#include <eepp/ui/doc/languages/v.hpp>
 #include <eepp/ui/doc/languages/vb.hpp>
+#include <eepp/ui/doc/languages/verilog.hpp>
 #include <eepp/ui/doc/languages/x86assembly.hpp>
+#include <eepp/ui/doc/languages/xml.hpp>
+#include <eepp/ui/doc/languages/zig.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <nlohmann/json.hpp>
@@ -38,136 +60,6 @@ SINGLETON_DECLARE_IMPLEMENTATION( SyntaxDefinitionManager )
 static void addPlainText() {
 	SyntaxDefinitionManager::instance()->add(
 		{ "Plain Text", { "%.txt$" }, {}, {}, "", {}, "plaintext" } );
-}
-
-static void addXML() {
-	SyntaxDefinitionManager::instance()
-		->add( { "XML",
-				 { "%.xml$", "%.svg$" },
-				 {
-					 { { "<%s*[sS][tT][yY][lL][eE]%s*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
-					   "function",
-					   "CSS" },
-					 { { "<!%-%-", "%-%->" }, "comment" },
-					 { { "%f[^>][^<]", "%f[<]" }, "normal" },
-					 { { "\"", "\"", "\\" }, "string" },
-					 { { "'", "'", "\\" }, "string" },
-					 { { "0x[%da-fA-F]+" }, "number" },
-					 { { "-?%d+[%d%.]*f?" }, "number" },
-					 { { "-?%.?%d+f?" }, "number" },
-					 { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
-					 { { "%f[^<][%a_][%w%_%-]*" }, "function" },
-					 { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
-					 { { "[%a_][%w_]*" }, "keyword" },
-					 { { "[/<>=]" }, "operator" },
-				 },
-				 {},
-				 "",
-				 { "<%?xml" } } )
-		.setAutoCloseXMLTags( true );
-}
-
-static void addHTML() {
-	SyntaxDefinitionManager::instance()
-		->add( { "HTML",
-				 { "%.html?$", "%.phtml", "%.handlebars" },
-				 {
-					 { { "<%s*[sS][cC][rR][iI][pP][tT]%s+[tT][yY][pP][eE]%s*=%s*['\"]%a+/"
-						 "[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]['\"]%s*>",
-						 "<%s*/[sS][cC][rR][iI][pP][tT]>" },
-					   "function",
-					   "JavaScript" },
-					 { { "<%s*[sS][cC][rR][iI][pP][tT]%s*>", "<%s*/%s*[sS][cC][rR][iI][pP][tT]>" },
-					   "function",
-					   "JavaScript" },
-					 { { "<%s*[sS][tT][yY][lL][eE][^>]*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
-					   "function",
-					   "CSS" },
-					 { { "<%?p?h?p?", "%?>" }, "function", "PHPCore" },
-					 { { "<!%-%-", "%-%->" }, "comment" },
-					 { { "%f[^>][^<]", "%f[<]" }, "normal" },
-					 { { "\"", "\"", "\\" }, "string" },
-					 { { "'", "'", "\\" }, "string" },
-					 { { "0x[%da-fA-F]+" }, "number" },
-					 { { "-?%d+[%d%.]*f?" }, "number" },
-					 { { "-?%.?%d+f?" }, "number" },
-					 { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
-					 { { "%f[^<][%a_][%w%_%-]*" }, "function" },
-					 { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
-					 { { "[%a_][%w_]*" }, "keyword" },
-					 { { "[/<>=]" }, "operator" },
-				 },
-				 {},
-				 "",
-				 { "<html", "<![Dd][Oo][Cc][Tt][Yy][Pp][Ee]%s[Hh][Tt][Mm][Ll]>" } } )
-		.setAutoCloseXMLTags( true );
-}
-
-static void addMarkdown() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Markdown",
-		  { "%.md$", "%.markdown$" },
-		  {
-			  { { "\\." }, "normal" },
-			  { { "```[Xx][Mm][Ll]", "```" }, "function", "XML" },
-			  { { "```[Hh][Tt][Mm][Ll]", "```" }, "function", "html" },
-			  { { "```[Cc]++", "```" }, "function", "C++" },
-			  { { "```[Cc][Pp][Pp]", "```" }, "function", "C++" },
-			  { { "```[Cc]sharp", "```" }, "function", "C#" },
-			  { { "```[Cc][Ss][Ss]", "```" }, "function", "CSS" },
-			  { { "```[Cc]", "```" }, "function", "C" },
-			  { { "```[Dd][Aa][Rr][Tt]", "```" }, "function", "Dart" },
-			  { { "```[Dd]", "```" }, "function", "D" },
-			  { { "```[Ll]ua", "```" }, "function", "Lua" },
-			  { { "```[Jj][Ss][Oo][Nn]", "```" }, "function", "JSON" },
-			  { { "```[Ja]va[Ss]cript", "```" }, "function", "JavaScript" },
-			  { { "```[Tt]ype[Ss]cript", "```" }, "function", "TypeScript" },
-			  { { "```[Pp]ython", "```" }, "function", "Python" },
-			  { { "```[Bb]ash", "```" }, "function", "Bash" },
-			  { { "```[Pp][Hh][Pp]", "```" }, "function", "PHPCore" },
-			  { { "```[Ss][Qq][Ll]", "```" }, "function", "SQL" },
-			  { { "```[Gg][Ll][Ss][Ll]", "```" }, "function", "GLSL" },
-			  { { "```[Ii][Nn][Ii]", "```" }, "function", "Config File" },
-			  { { "```[Mm]akefile", "```" }, "function", "Makefile" },
-			  { { "```[Gg][Oo]", "```" }, "function", "Go" },
-			  { { "```[Rr]ust", "```" }, "function", "Rust" },
-			  { { "```[Rr]uby", "```" }, "function", "Ruby" },
-			  { { "```[Gg][Dd][Ss]cript", "```" }, "function", "GSCript" },
-			  { { "```[Jj]ava", "```" }, "function", "java" },
-			  { { "```[Ss]wift", "```" }, "function", "Swift" },
-			  { { "```[Oo]bjective[Cc]", "```" }, "function", "Objective-C" },
-			  { { "```[Yy][Aa][Mm][Ll]", "```" }, "function", "YAML" },
-			  { { "```[Kk]otlin", "```" }, "function", "Kotlin" },
-			  { { "```[Ss]olidity", "```" }, "function", "Solidity" },
-			  { { "```[Hh]askell", "```" }, "function", "Haskell" },
-			  { { "```[Oo]din", "```" }, "function", "Odin" },
-			  { { "```[Nn]im", "```" }, "function", "Nim" },
-			  { { "```[Zz]ig", "```" }, "function", "Zig" },
-			  { { "<!%-%-", "%-%->" }, "comment" },
-			  { { "```", "```" }, "string" },
-			  { { "``", "``" }, "string" },
-			  { { "`", "`" }, "string" },
-			  { { "~~", "~~", "\\" }, "keyword2" },
-			  { { "%-%-%-+" }, "comment" },
-			  { { "%*%s+" }, "operator" },
-			  { { "%*", "[%*\n]", "\\" }, "operator" },
-			  { { "%s%_", "[%_\n]", "\\" }, "keyword2" },
-			  { { "^%_", "[%_\n]", "\\" }, "keyword2" },
-			  { { "^#.-\n" }, "keyword" },
-			  { { "\n%_", "[%_\n]", "\\" }, "keyword2" },
-			  { { "\n#.-\n" }, "keyword" },
-			  { { "%[!%[([^%]].-)%]%((https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/"
-				  "?[%w_.~!*:@&+$/?%%#=-]*)%)%]%((https?://[%w_.~!*:@&+$/"
-				  "?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*)%)" },
-				{ "keyword", "function", "link", "link" } },
-			  { { "!?%[([^%]].-)%]%((https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/"
-				  "?[%w_.~!*:@&+$/?%%#=-]*)%)" },
-				{ "keyword", "function", "link" } },
-			  { { "!?%[([^%]].-)%]%((%#+[%w-]*)%)" }, { "keyword", "function", "link" } },
-			  { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"
-				  "?%%#=-]*" },
-				"link" },
-		  } } );
 }
 
 static void addC() {
@@ -357,37 +249,40 @@ static void addTypeScript() {
 			{ "type", "keyword2" },		 { "typeof", "keyword" },	  { "undefined", "literal" },
 			{ "var", "keyword" },		 { "void", "keyword" },		  { "while", "keyword" },
 			{ "with", "keyword" },		 { "yield", "keyword" },	  { "unknown", "keyword2" },
-			{ "namespace", "keyword" } },
+			{ "namespace", "keyword" },	 { "abstract", "keyword" } },
 		  "//" } );
 
-	SyntaxDefinitionManager::instance()->add(
-		{ "TSX",
-		  { "%.tsx$" },
-		  {
-			  { { "//.-\n" }, "comment" },
-			  { { "/%*", "%*/" }, "comment" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "`", "`", "\\" }, "string" },
-			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\].*%f[/]",
-				  "/[igmsuyd\n]?[igmsuyd\n]?[igmsuyd\n]?", "\\" },
-				"string" },
-			  { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
-			  { { "%f[^<][%a_][%w%_%-]*" }, "function" },
-			  { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
-			  { { "([%a_-][%w-_]*)(%\?\?)(=)%f[%{%\"]" },
-				{ "normal", "keyword", "normal", "operator" } },
-			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "0x[%da-fA-F]+" }, "number" },
-			  { { "-?%d+[%d%.eE]*" }, "number" },
-			  { { "-?%.?%d+" }, "number" },
-			  { { "(interface%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },
-			  { { "(type%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },
-			  { { "[%a_][%w_$]*%f[(]" }, "function" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-		  },
-		  ts.getSymbols(),
-		  "//" } );
+	SyntaxDefinitionManager::instance()
+		->add( { "TSX",
+				 { "%.tsx$" },
+				 {
+					 { { "//.-\n" }, "comment" },
+					 { { "/%*", "%*/" }, "comment" },
+					 { { "\"", "\"", "\\" }, "string" },
+					 { { "'", "'", "\\" }, "string" },
+					 { { "`", "`", "\\" }, "string" },
+					 { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\].*%f[/]",
+						 "/[igmsuyd\n]?[igmsuyd\n]?[igmsuyd\n]?", "\\" },
+					   "string" },
+					 { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+					 { { "%f[^<][%a_][%w%_%-]*" }, "function" },
+					 { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
+					 { { "([%a_-][%w-_]*)(%\?\?)(=)%f[%{%\"]" },
+					   { "normal", "keyword", "normal", "operator" } },
+					 { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+					 { { "0x[%da-fA-F]+" }, "number" },
+					 { { "-?%d+[%d%.eE]*" }, "number" },
+					 { { "-?%.?%d+" }, "number" },
+					 { { "(interface%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },
+					 { { "(type%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },
+					 { { "[%a_][%w_$]*%f[(]" }, "function" },
+					 { { "[%a_][%w_]*" }, "symbol" },
+				 },
+				 {},
+				 "//" } )
+		.setSymbols( ts.getSymbols() )
+		.setAutoCloseXMLTags( true );
+	;
 }
 
 static void addPython() {
@@ -428,7 +323,8 @@ static void addBash() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Shell script",
-		  { "%.sh$", "%.bash$", "^%.bashrc$", "^%.bash_profile$", "^%.profile$" },
+		  { "%.sh$", "%.bash$", "^%.bashrc$", "^%.bash_profile$", "^%.profile$", "%.zsh$",
+			"%.fish$" },
 		  {
 			  { { "$[%a_@*#][%w_]*" }, "keyword2" },
 			  { { "#.*\n" }, "comment" },
@@ -871,101 +767,6 @@ static void addGo() {
 		  "//" } );
 }
 
-static void addGDScript() {
-	SyntaxDefinitionManager::instance()->add(
-
-		{ "GDScript",
-		  { "%.gd$" },
-		  {
-			  { { "#.-\n" }, "comment" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "-?0x%x*" }, "number" },
-			  { { "-?%d+[%d%.e]*" }, "number" },
-			  { { "-?%.?%d+" }, "number" },
-			  { { "[%+%:%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-		  },
-		  {
-			  { "if", "keyword" },
-			  { "elif", "keyword" },
-			  { "else", "keyword" },
-			  { "for", "keyword" },
-			  { "while", "keyword" },
-			  { "match", "keyword" },
-			  { "break", "keyword" },
-			  { "continue", "keyword" },
-			  { "pass", "keyword" },
-			  { "return", "keyword" },
-			  { "class", "keyword" },
-			  { "class_name", "keyword" },
-			  { "extends", "keyword" },
-			  { "is", "keyword" },
-			  { "in", "keyword" },
-			  { "as", "keyword" },
-			  { "and", "keyword" },
-			  { "or", "keyword" },
-			  { "not", "keyword" },
-			  { "self", "keyword" },
-			  { "tool", "keyword" },
-			  { "signal", "keyword" },
-			  { "func", "keyword" },
-			  { "static", "keyword" },
-			  { "const", "keyword" },
-			  { "enum", "keyword" },
-			  { "var", "keyword" },
-			  { "onready", "keyword" },
-			  { "export", "keyword" },
-			  { "setget", "keyword" },
-			  { "breakpoint", "keyword" },
-			  { "preload", "keyword" },
-			  { "yield", "keyword" },
-			  { "assert", "keyword" },
-			  { "remote", "keyword" },
-			  { "master", "keyword" },
-			  { "puppet", "keyword" },
-			  { "remotesync", "keyword" },
-			  { "mastersync", "keyword" },
-			  { "puppetsync", "keyword" },
-			  { "void", "keyword2" },
-			  { "int", "keyword2" },
-			  { "float", "keyword2" },
-			  { "bool", "keyword2" },
-			  { "String", "keyword2" },
-			  { "Vector2", "keyword2" },
-			  { "Rect2", "keyword2" },
-			  { "Vector3", "keyword2" },
-			  { "Transform2D", "keyword2" },
-			  { "Plane", "keyword2" },
-			  { "Quat", "keyword2" },
-			  { "AABB", "keyword2" },
-			  { "Basis", "keyword2" },
-			  { "Transform", "keyword2" },
-			  { "Color", "keyword2" },
-			  { "NodePath", "keyword2" },
-			  { "RID", "keyword2" },
-			  { "Object", "keyword2" },
-			  { "Array", "keyword2" },
-			  { "PoolByteArray", "keyword2" },
-			  { "PoolIntArray", "keyword2" },
-			  { "PoolRealArray", "keyword2" },
-			  { "PoolStringArray", "keyword2" },
-			  { "PoolVector2Array", "keyword2" },
-			  { "PoolVector3Array", "keyword2" },
-			  { "PoolColorArray", "keyword2" },
-			  { "Dictionary", "keyword2" },
-			  { "null", "literal" },
-			  { "true", "literal" },
-			  { "false", "literal" },
-			  { "PI", "literal" },
-			  { "TAU", "literal" },
-			  { "INF", "literal" },
-			  { "NAN", "literal" },
-		  },
-		  "#" } );
-}
-
 static void addHaskell() {
 	SyntaxDefinitionManager::instance()->add(
 		{ "Haskell",
@@ -1045,53 +846,6 @@ static void addMeson() {
 												"#" } );
 }
 
-static void addAngelScript() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "AngelScript",
-		  { "%.as$", "%.asc$" },
-		  {
-			  { { "//.-\n" }, "comment" },
-			  { { "/%*", "%*/" }, "comment" },
-			  { { "#", "[^\\]\n" }, "comment" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "-?0[xX]%x+" }, "number" },
-			  { { "-?0[bB][0-1]+" }, "number" },
-			  { { "-?0[oO][0-7]+" }, "number" },
-			  { { "-?%d+[%d%.eE]*f?" }, "number" },
-			  { { "-?%.?%d+f?" }, "number" },
-			  { { "&inout" }, "keyword" },
-			  { { "&in" }, "keyword" },
-			  { { "&out" }, "keyword" },
-			  { { "[%a_][%w_]*@" }, "keyword2" },
-			  { { "[%-%+!~@%?:&|%^<>%*/=%%]" }, "operator" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-		  },
-		  {
-			  { "shared", "keyword" },	  { "external", "keyword" },  { "private", "keyword" },
-			  { "protected", "keyword" }, { "const", "keyword" },	  { "final", "keyword" },
-			  { "abstract", "keyword" },  { "class", "keyword" },	  { "typedef", "keyword" },
-			  { "namespace", "keyword" }, { "interface", "keyword" }, { "import", "keyword" },
-			  { "enum", "keyword" },	  { "funcdef", "keyword" },	  { "get", "keyword" },
-			  { "set", "keyword" },		  { "mixin", "keyword" },	  { "void", "keyword2" },
-			  { "int", "keyword2" },	  { "int8", "keyword2" },	  { "int16", "keyword2" },
-			  { "int32", "keyword2" },	  { "int64", "keyword2" },	  { "uint", "keyword2" },
-			  { "uint8", "keyword2" },	  { "uint16", "keyword2" },	  { "uint32", "keyword2" },
-			  { "uint64", "keyword2" },	  { "float", "keyword2" },	  { "double", "keyword2" },
-			  { "bool", "keyword2" },	  { "auto", "keyword" },	  { "override", "keyword" },
-			  { "explicit", "keyword" },  { "property", "keyword" },  { "break", "keyword" },
-			  { "continue", "keyword" },  { "return", "keyword" },	  { "switch", "keyword" },
-			  { "case", "keyword" },	  { "default", "keyword" },	  { "for", "keyword" },
-			  { "while", "keyword" },	  { "do", "keyword" },		  { "if", "keyword" },
-			  { "else", "keyword" },	  { "try", "keyword" },		  { "catch", "keyword" },
-			  { "cast", "keyword" },	  { "function", "keyword" },  { "true", "literal" },
-			  { "false", "literal" },	  { "null", "literal" },	  { "is", "operator" },
-			  { "and", "operator" },	  { "or", "operator" },		  { "xor", "operator" },
-		  },
-		  "//" } );
-}
-
 static void addDiff() {
 	SyntaxDefinitionManager::instance()->add( { "Diff File",
 												{ "%.diff$", "%.patch$" },
@@ -1162,7 +916,7 @@ static void addYAML() {
 			  { { "'", "'", "\\" }, "string" },
 			  { { "%-?%.inf" }, "number" },
 			  { { "%.NaN" }, "number" },
-			  { { "(%&)(%g+)" }, { "keyword", "literal", "" } },
+			  { { "(%&)(%g+)" }, { "normal", "keyword", "literal" } },
 			  { { "!%g+" }, "keyword" },
 			  { { "<<" }, "literal" },
 			  { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"
@@ -1255,181 +1009,9 @@ static void addDart() {
 		  "//" } );
 }
 
-static void addKotlin() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Kotlin",
-		  { "%.kt$" },
-		  {
-			  { { "//.-\n" }, "comment" },
-			  { { "/%*", "%*/" }, "comment" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "'\\x%x?%x?%x?%x'" }, "string" },
-			  { { "'\\u%x%x%x%x'" }, "string" },
-			  { { "'\\?.'" }, "string" },
-			  { { "-?0x%x+" }, "number" },
-			  { { "-?%d+[%d%.eE]*f?" }, "number" },
-			  { { "-?%.?%d+f?" }, "number" },
-			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "%@[%a_][%w_]*" }, "function" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-		  },
-		  { { "if", "keyword" },		  { "then", "keyword" },
-			{ "else", "keyword" },		  { "elseif", "keyword" },
-			{ "do", "keyword" },		  { "while", "keyword" },
-			{ "for", "keyword" },		  { "new", "keyword" },
-			{ "break", "keyword" },		  { "continue", "keyword" },
-			{ "return", "keyword" },	  { "goto", "keyword" },
-			{ "class", "keyword" },		  { "implements", "keyword" },
-			{ "extends", "keyword" },	  { "private", "keyword" },
-			{ "protected", "keyword" },	  { "public", "keyword" },
-			{ "abstract", "keyword" },	  { "interface", "keyword" },
-			{ "assert", "keyword" },	  { "import", "keyword" },
-			{ "native", "keyword" },	  { "package", "keyword" },
-			{ "super", "keyword" },		  { "synchronized", "keyword" },
-			{ "instanceof", "keyword" },  { "enum", "keyword" },
-			{ "catch", "keyword" },		  { "throw", "keyword" },
-			{ "throws", "keyword" },	  { "try", "keyword" },
-			{ "transient", "keyword" },	  { "finally", "keyword" },
-			{ "static", "keyword" },	  { "volatile", "keyword" },
-			{ "final", "keyword" },		  { "switch", "keyword" },
-			{ "case", "keyword" },		  { "default", "keyword" },
-			{ "void", "keyword" },		  { "Int", "keyword2" },
-			{ "Short", "keyword2" },	  { "Byte", "keyword2" },
-			{ "Long", "keyword2" },		  { "Float", "keyword2" },
-			{ "Double", "keyword2" },	  { "String", "keyword2" },
-			{ "Boolean", "keyword2" },	  { "true", "literal" },
-			{ "false", "literal" },		  { "null", "literal" },
-			{ "var", "keyword" },		  { "lateinit", "literal" },
-			{ "override", "keyword" },	  { "fun", "keyword" },
-			{ "sealed", "keyword" },	  { "companion", "keyword" },
-			{ "object", "keyword" },	  { "val", "keyword" },
-			{ "UInt", "keyword2" },		  { "UShort", "keyword2" },
-			{ "UByte", "keyword2" },	  { "ULong", "keyword2" },
-			{ "IntArray", "keyword2" },	  { "ShortArray", "keyword2" },
-			{ "ByteArray", "keyword2" },  { "LongArray", "keyword2" },
-			{ "UIntArray", "keyword2" },  { "UShortArray", "keyword2" },
-			{ "UByteArray", "keyword2" }, { "ULongArray", "keyword2" },
-			{ "Array", "keyword2" } },
-		  "//" } );
-}
-
-static void addZig() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Zig",
-		  { "%.zig$" },
-		  {
-			  { { "//.-\n" }, "comment" },
-			  { { "\\\\.-\n" }, "string" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "[iu][%d_]+" }, "keyword2" },
-			  { { "0b[01_]+" }, "number" },
-			  { { "0o[0-7_]+" }, "number" },
-			  { { "0x[%x_]+" }, "number" },
-			  { { "0x[%x_]+%.[%x_]*[pP][-+]?%d+" }, "number" },
-			  { { "0x[%x_]+%.[%x_]*" }, "number" },
-			  { { "0x%.[%x_]+[pP][-+]?%d+" }, "number" },
-			  { { "0x%.[%x_]+" }, "number" },
-			  { { "0x[%x_]+[pP][-+]?%d+" }, "number" },
-			  { { "0x[%x_]+" }, "number" },
-			  { { "%d[%d_]*%.[%d_]*[eE][-+]?%d+" }, "number" },
-			  { { "%d[%d_]*%.[%d_]*" }, "number" },
-			  { { "%d[%d_]*" }, "number" },
-			  { { "[%+%-=/%*%^%%<>!~|&%.%?]" }, "operator" },
-			  { { "([%a_][%w_]*)(%s*%()" }, { "function", "function", "normal" } },
-			  { { "[A-Z][%w_]*" }, "keyword2" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "(@)([%a_][%w_]*)" }, { "operator", "operator", "function" } },
-		  },
-		  {
-			  { "fn", "keyword" },
-			  { "asm", "keyword" },
-			  { "volatile", "keyword" },
-			  { "continue", "keyword" },
-			  { "break", "keyword" },
-			  { "switch", "keyword" },
-			  { "for", "keyword" },
-			  { "while", "keyword" },
-			  { "var", "keyword" },
-			  { "anytype", "keyword" },
-			  { "anyframe", "keyword" },
-			  { "const", "keyword" },
-			  { "test", "keyword" },
-			  { "packed", "keyword" },
-			  { "extern", "keyword" },
-			  { "export", "keyword" },
-			  { "pub", "keyword" },
-			  { "defer", "keyword" },
-			  { "errdefer", "keyword" },
-			  { "align", "keyword" },
-			  { "usingnamespace", "keyword" },
-			  { "noasync", "keyword" },
-			  { "async", "keyword" },
-			  { "await", "keyword" },
-			  { "cancel", "keyword" },
-			  { "suspend", "keyword" },
-			  { "resume", "keyword" },
-			  { "threadlocal", "keyword" },
-			  { "linksection", "keyword" },
-			  { "callconv", "keyword" },
-			  { "try", "keyword" },
-			  { "catch", "keyword" },
-			  { "orelse", "keyword" },
-			  { "unreachable", "keyword" },
-			  { "error", "keyword" },
-			  { "if", "keyword" },
-			  { "else", "keyword" },
-			  { "return", "keyword" },
-			  { "comptime", "keyword" },
-			  { "stdcallcc", "keyword" },
-			  { "ccc", "keyword" },
-			  { "nakedcc", "keyword" },
-			  { "and", "keyword" },
-			  { "or", "keyword" },
-			  { "struct", "keyword" },
-			  { "enum", "keyword" },
-			  { "union", "keyword" },
-			  { "opaque", "keyword" },
-			  { "inline", "keyword" },
-			  { "allowzero", "keyword" },
-			  { "noalias", "keyword" },
-			  { "nosuspend", "keyword" },
-			  { "f16", "keyword2" },
-			  { "f32", "keyword2" },
-			  { "f64", "keyword2" },
-			  { "f128", "keyword2" },
-			  { "void", "keyword2" },
-			  { "c_void", "keyword2" },
-			  { "isize", "keyword2" },
-			  { "usize", "keyword2" },
-			  { "c_short", "keyword2" },
-			  { "c_ushort", "keyword2" },
-			  { "c_int", "keyword2" },
-			  { "c_uint", "keyword2" },
-			  { "c_long", "keyword2" },
-			  { "c_ulong", "keyword2" },
-			  { "c_longlong", "keyword2" },
-			  { "c_ulonglong", "keyword2" },
-			  { "c_longdouble", "keyword2" },
-			  { "bool", "keyword2" },
-			  { "noreturn", "keyword2" },
-			  { "type", "keyword2" },
-			  { "anyerror", "keyword2" },
-			  { "comptime_int", "keyword2" },
-			  { "comptime_float", "keyword2" },
-			  { "true", "literal" },
-			  { "false", "literal" },
-			  { "null", "literal" },
-			  { "undefined", "literal" },
-		  },
-		  "//" } );
-}
-
 static void addNim() {
 	std::vector<SyntaxPattern> nim_patterns;
-	std::unordered_map<std::string, std::string> nim_symbols;
+	UnorderedMap<std::string, std::string> nim_symbols;
 
 	const std::vector<std::string> nim_number_patterns = {
 		"0[bB][01][01_]*",	  "0o[0-7][0-7_]*",
@@ -1503,14 +1085,14 @@ static void addNim() {
 	SyntaxDefinitionManager::instance()->add( {
 		"Nim",
 		{ "%.nim$", "%.nims$", "%.nimble$" },
-		nim_patterns,
-		nim_symbols,
+		std::move( nim_patterns ),
+		std::move( nim_symbols ),
 		"#",
 	} );
 }
 
 static void addCMake() {
-	std::unordered_map<std::string, std::string> cmake_symbols;
+	UnorderedMap<std::string, std::string> cmake_symbols;
 	const std::vector<std::string> cmake_keywords{
 		"ANDROID",		  "APPLE",	   "BORLAND",		 "CACHE",	   "CYGWIN",	  "ENV",
 		"GHSMULTI",		  "IOS",	   "MINGW",			 "MSVC",	   "MSVC10",	  "MSVC11",
@@ -1554,54 +1136,63 @@ static void addCMake() {
 													{ { "%${[%a_][%w_]*%}" }, "keyword2" },
 													{ { "[%a_][%w_]*" }, "symbol" },
 												},
-												cmake_symbols,
+												std::move( cmake_symbols ),
 												"//" } );
 }
 
 static void addJSX() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "JSX",
-		  { "%.jsx$" },
-		  {
-			  { { "//.-\n" }, "comment" },
-			  { { "/%*", "%*/" }, "comment" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "`", "`", "\\" }, "string" },
-			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\].*%f[/]",
-				  "/[igmsuyd\n]?[igmsuyd\n]?[igmsuyd\n]?", "\\" },
-				"string" },
-			  { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
-			  { { "%f[^<][%a_][%w%_%-]*" }, "function" },
-			  { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
-			  { { "([%a_-][%w-_]*)(%\?\?)(=)%f[%{%\"]" },
-				{ "normal", "keyword", "normal", "operator" } },
-			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "0x[%da-fA-F]+" }, "number" },
-			  { { "-?%d+[%d%.eE]*" }, "number" },
-			  { { "-?%.?%d+" }, "number" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-		  },
-		  {
-			  { "async", "keyword" },	   { "await", "keyword" },		{ "break", "keyword" },
-			  { "case", "keyword" },	   { "catch", "keyword" },		{ "class", "keyword" },
-			  { "const", "keyword" },	   { "continue", "keyword" },	{ "debugger", "keyword" },
-			  { "default", "keyword" },	   { "delete", "keyword" },		{ "do", "keyword" },
-			  { "else", "keyword" },	   { "export", "keyword" },		{ "extends", "keyword" },
-			  { "finally", "keyword" },	   { "for", "keyword" },		{ "function", "keyword" },
-			  { "get", "keyword" },		   { "if", "keyword" },			{ "import", "keyword" },
-			  { "in", "keyword" },		   { "instanceof", "keyword" }, { "let", "keyword" },
-			  { "new", "keyword" },		   { "return", "keyword" },		{ "set", "keyword" },
-			  { "static", "keyword" },	   { "super", "keyword" },		{ "switch", "keyword" },
-			  { "throw", "keyword" },	   { "try", "keyword" },		{ "typeof", "keyword" },
-			  { "var", "keyword" },		   { "void", "keyword" },		{ "while", "keyword" },
-			  { "with", "keyword" },	   { "yield", "keyword" },		{ "true", "literal" },
-			  { "false", "literal" },	   { "null", "literal" },		{ "undefined", "literal" },
-			  { "arguments", "keyword2" }, { "Infinity", "keyword2" },	{ "NaN", "keyword2" },
-			  { "this", "keyword2" },
-		  },
-		  "//" } );
+	SyntaxDefinitionManager::instance()
+		->add( { "JSX",
+				 { "%.jsx$" },
+				 {
+					 { { "//.-\n" }, "comment" },
+					 { { "/%*", "%*/" }, "comment" },
+					 { { "\"", "\"", "\\" }, "string" },
+					 { { "'", "'", "\\" }, "string" },
+					 { { "`", "`", "\\" }, "string" },
+					 { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\].*%f[/]",
+						 "/[igmsuyd\n]?[igmsuyd\n]?[igmsuyd\n]?", "\\" },
+					   "string" },
+					 { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+					 { { "%f[^<][%a_][%w%_%-]*" }, "function" },
+					 { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
+					 { { "([%a_-][%w-_]*)(%\?\?)(=)%f[%{%\"]" },
+					   { "normal", "keyword", "normal", "operator" } },
+					 { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+					 { { "0x[%da-fA-F]+" }, "number" },
+					 { { "-?%d+[%d%.eE]*" }, "number" },
+					 { { "-?%.?%d+" }, "number" },
+					 { { "[%a_][%w_]*%f[(]" }, "function" },
+					 { { "[%a_][%w_]*" }, "symbol" },
+				 },
+				 {
+					 { "async", "keyword" },	  { "await", "keyword" },
+					 { "break", "keyword" },	  { "case", "keyword" },
+					 { "catch", "keyword" },	  { "class", "keyword" },
+					 { "const", "keyword" },	  { "continue", "keyword" },
+					 { "debugger", "keyword" },	  { "default", "keyword" },
+					 { "delete", "keyword" },	  { "do", "keyword" },
+					 { "else", "keyword" },		  { "export", "keyword" },
+					 { "extends", "keyword" },	  { "finally", "keyword" },
+					 { "for", "keyword" },		  { "function", "keyword" },
+					 { "get", "keyword" },		  { "if", "keyword" },
+					 { "import", "keyword" },	  { "in", "keyword" },
+					 { "instanceof", "keyword" }, { "let", "keyword" },
+					 { "new", "keyword" },		  { "return", "keyword" },
+					 { "set", "keyword" },		  { "static", "keyword" },
+					 { "super", "keyword" },	  { "switch", "keyword" },
+					 { "throw", "keyword" },	  { "try", "keyword" },
+					 { "typeof", "keyword" },	  { "var", "keyword" },
+					 { "void", "keyword" },		  { "while", "keyword" },
+					 { "with", "keyword" },		  { "yield", "keyword" },
+					 { "true", "literal" },		  { "false", "literal" },
+					 { "null", "literal" },		  { "undefined", "literal" },
+					 { "arguments", "keyword2" }, { "Infinity", "keyword2" },
+					 { "NaN", "keyword2" },		  { "this", "keyword2" },
+				 },
+				 "//" } )
+		.setAutoCloseXMLTags( true );
+	;
 }
 
 static void addContainerfile() {
@@ -1885,27 +1476,6 @@ static void addScala() {
 	} );
 }
 
-static void addPO() {
-	SyntaxDefinitionManager::instance()->add( {
-		"PO",
-		{ "%.po$", "%.pot$" },
-		{
-			{ { "#", "\n" }, "comment" },
-			{ { "\"", "\"", "\\" }, "string" },
-			{ { "[%[%]]" }, "operator" },
-			{ { "%d+" }, "number" },
-			{ { "[%a_][%w_]*" }, "symbol" },
-		},
-		{
-			{ "msgctxt", "keyword" },
-			{ "msgid", "keyword" },
-			{ "msgid_plural", "keyword" },
-			{ "msgstr", "keyword" },
-		},
-		"#",
-	} );
-}
-
 static void addxit() {
 	SyntaxDefinitionManager::instance()->add( {
 		"[x]it!",
@@ -1942,90 +1512,6 @@ static void addxit() {
 		{},
 		"",
 	} );
-}
-
-static void addNelua() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Nelua",
-		  { "%.nelua$" },
-		  {
-			  { { "##%[=*%[", "%]=*%]" }, "function", "Lua" },
-			  { { "#|", "|#" }, "function", "Lua" },
-			  { { "##", "\n" }, "function", "Lua" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "%[%[", "%]%]" }, "string" },
-			  { { "%-%-%[=*%[", "%]=*%]" }, "comment" },
-			  { { "%-%-.-\n" }, "comment" },
-			  { { "0x%x+%.%x*[pP][-+]?%d+" }, "number" },
-			  { { "0x%x+%.%x*" }, "number" },
-			  { { "0x%.%x+[pP][-+]?%d+" }, "number" },
-			  { { "0x%.%x+" }, "number" },
-			  { { "0x%x+[pP][-+]?%d+" }, "number" },
-			  { { "0x%x+" }, "number" },
-			  { { "%d%.%d*[eE][-+]?%d+" }, "number" },
-			  { { "%d%.%d*" }, "number" },
-			  { { "%.?%d*[eE][-+]?%d+" }, "number" },
-			  { { "<%S[%w+%._,%s*'\"()<>]-%S>" }, "keyword2" },
-			  { { "%.?%d+" }, "number" },
-			  { { "%.%.%.?" }, "operator" },
-			  { { "[<>~=]=" }, "operator" },
-			  { { "[%+%-=/%*%^%%#<>]" }, "operator" },
-			  { { "([%a_][%w_]*)(%s*%f[(\"'{])" }, { "function", "function", "normal" } },
-			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "::[%a_][%w_]*::" }, "function" },
-		  },
-		  {
-			  { "if", "keyword" },		 { "then", "keyword" },	  { "else", "keyword" },
-			  { "elseif", "keyword" },	 { "end", "keyword" },	  { "do", "keyword" },
-			  { "function", "keyword" }, { "repeat", "keyword" }, { "until", "keyword" },
-			  { "while", "keyword" },	 { "for", "keyword" },	  { "break", "keyword" },
-			  { "return", "keyword" },	 { "local", "keyword" },  { "in", "keyword" },
-			  { "not", "keyword" },		 { "and", "keyword" },	  { "or", "keyword" },
-			  { "goto", "keyword" },	 { "self", "keyword2" },  { "true", "literal" },
-			  { "false", "literal" },	 { "nil", "literal" },	  { "global", "keyword" },
-			  { "switch", "keyword" },	 { "case", "keyword" },	  { "defer", "keyword" },
-			  { "continue", "keyword" }, { "nilptr", "keyword" },
-		  },
-		  "--",
-		  { "^#!.*[ /]nelua" } } );
-}
-
-static void addTeal() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Teal",
-		  { "%.tl$", "%.d.tl$" },
-		  {
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "%[%[", "%]%]" }, "string" },
-			  { { "%-%-%[%[", "%]%]" }, "comment" },
-			  { { "%-%-.-\n" }, "comment" },
-			  { { "-?0x%x+" }, "number" },
-			  { { "-?%d+[%d%.eE]*" }, "number" },
-			  { { "-?%.?%d+" }, "number" },
-			  { { "<%a+>" }, "keyword2" },
-			  { { "%.%.%.?" }, "operator" },
-			  { { "[<>~=]=" }, "operator" },
-			  { { "[%+%-=/%*%^%%#<>]" }, "operator" },
-			  { { "[%a_][%w_]*%s*%f[(\"{]" }, "function" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "::[%a_][%w_]*::" }, "function" },
-		  },
-		  {
-			  { "if", "keyword" },		 { "then", "keyword" },	   { "else", "keyword" },
-			  { "elseif", "keyword" },	 { "end", "keyword" },	   { "do", "keyword" },
-			  { "function", "keyword" }, { "repeat", "keyword" },  { "until", "keyword" },
-			  { "while", "keyword" },	 { "for", "keyword" },	   { "break", "keyword" },
-			  { "return", "keyword" },	 { "local", "keyword" },   { "global", "keyword" },
-			  { "in", "keyword" },		 { "not", "keyword" },	   { "and", "keyword" },
-			  { "or", "keyword" },		 { "goto", "keyword" },	   { "enum", "keyword" },
-			  { "record", "keyword" },	 { "any", "keyword2" },	   { "boolean", "keyword2" },
-			  { "number", "keyword2" },	 { "string", "keyword2" }, { "thread", "keyword2" },
-			  { "true", "literal" },	 { "false", "literal" },   { "nil", "literal" },
-		  },
-		  "--",
-		  { "^#!.*[ /]tl" } } );
 }
 
 static void addVue() {
@@ -2083,361 +1569,6 @@ static void addVue() {
 		  },
 		  {},
 		  "",
-		  {} } );
-}
-
-static void addElixir() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Elixir",
-		  { "%.ex$", "%.exs$" },
-		  { { { "#.*\n" }, "comment" },
-			{ { ":\"", "\"", "\\" }, "number" },
-			{ { "\"\"\"", "\"\"\"", "\\" }, "string" },
-			{ { "\"", "\"", "\\" }, "string" },
-			{ { "'", "'", "\\" }, "string" },
-			{ { "~%a\"\"\"", "\"\"\"" }, "string" },
-			{ { "~%a[/\"|'%(%[%{<]", "[/\"|'%)%]%}>]", "\\" }, "string" },
-			{ { "-?0x%x+" }, "number" },
-			{ { "-?%d+[%d%.eE]*f?" }, "number" },
-			{ { "-?%.?%d+f?" }, "number" },
-			{ { ":\"?[%a_][%w_]*\"?" }, "number" },
-			{ { "[%a][%w_!?]*%f[(]" }, "function" },
-			{ { "%u%w+" }, "normal" },
-			{ { "@[%a_][%w_]*" }, "keyword2" },
-			{ { "_%a[%w_]*" }, "keyword2" },
-			{ { "[%+%-=/%*<>!|&]" }, "operator" },
-			{ { "[%a_][%w_]*" }, "symbol" } },
-		  { { "def", "keyword" },
-			{ "defp", "keyword" },
-			{ "defguard", "keyword" },
-			{ "defguardp", "keyword" },
-			{ "defmodule", "keyword" },
-			{ "defprotocol", "keyword" },
-			{ "defimpl", "keyword" },
-			{ "defrecord", "keyword" },
-			{ "defrecordp", "keyword" },
-			{ "defmacro", "keyword" },
-			{ "defmacrop", "keyword" },
-			{ "defdelegate", "keyword" },
-			{ "defoverridable", "keyword" },
-			{ "defexception", "keyword" },
-			{ "defcallback", "keyword" },
-			{ "defstruct", "keyword" },
-			{ "for", "keyword" },
-			{ "case", "keyword" },
-			{ "when", "keyword" },
-			{ "with", "keyword" },
-			{ "cond", "keyword" },
-			{ "if", "keyword" },
-			{ "unless", "keyword" },
-			{ "try", "keyword" },
-			{ "receive", "keyword" },
-			{ "after", "keyword" },
-			{ "raise", "keyword" },
-			{ "rescue", "keyword" },
-			{ "catch", "keyword" },
-			{ "else", "keyword" },
-			{ "quote", "keyword" },
-			{ "unquote", "keyword" },
-			{ "super", "keyword" },
-			{ "unquote_splicing", "keyword" },
-			{ "do", "keyword" },
-			{ "end", "keyword" },
-			{ "fn", "keyword" },
-			{ "import", "keyword2" },
-			{ "alias", "keyword2" },
-			{ "use", "keyword2" },
-			{ "require", "keyword2" },
-			{ "and", "operator" },
-			{ "or", "operator" },
-			{ "true", "literal" },
-			{ "false", "literal" },
-			{ "nil", "literal" } },
-		  "#" } );
-}
-
-static void addCrystal() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Crystal",
-		  { "%.cr$" },
-		  {
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'" }, "string" },
-			  { { "-?0x%x+" }, "number" },
-			  { { "%#.-\n" }, "comment" },
-			  { { " : [%w_| :]*" }, "comment" },
-			  { { "-?%d+[%d%.eE]*%f[^eE]" }, "number" },
-			  { { "-?%.?%d+f?" }, "number" },
-			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "[%a_][%w_]*%f[(?]" }, "function" },
-			  { { "%.[%a_][%w_]*%f[(%s]" }, "function" },
-			  { { "@?@[%a_][%w_]*" }, "keyword2" },
-			  { { ":-[%u_][%u%d_]*%f[^%w]" }, "keyword2" },
-			  { { "::[%w_]*" }, "symbol" },
-			  { { ":[%w_]*" }, "symbol" },
-			  { { "[%a_][%w_]*:[^:]" }, "keyword2" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
-		  },
-		  {
-			  { "yield", "keyword" },		 { "unless", "keyword" },
-			  { "undef", "keyword" },		 { "true", "literal" },
-			  { "then", "keyword" },		 { "super", "keyword2" },
-			  { "return", "keyword" },		 { "responds_to?", "function" },
-			  { "rescue", "keyword" },		 { "private", "keyword2" },
-			  { "puts", "function" },		 { "p!", "function" },
-			  { "out", "function" },		 { "class", "keyword" },
-			  { "break", "keyword" },		 { "self", "keyword2" },
-			  { "alias", "keyword" },		 { "fun", "keyword" },
-			  { "Void", "literal" },		 { "until", "keyword" },
-			  { "abstract", "keyword" },	 { "__LINE__", "keyword" },
-			  { "annotation", "keyword2" },	 { "__FILE__", "keyword" },
-			  { "__ENCODING__", "keyword" }, { "case", "keyword" },
-			  { "BEGIN", "keyword" },		 { "END", "keyword" },
-			  { "end", "keyword" },			 { "else", "keyword" },
-			  { "defined?", "keyword" },	 { "require", "keyword" },
-			  { "do", "keyword" },			 { "while", "keyword" },
-			  { "ensure", "keyword" },		 { "include", "keyword" },
-			  { "nil", "literal" },			 { "begin", "keyword" },
-			  { "enum", "keyword2" },		 { "when", "keyword" },
-			  { "extend", "keyword" },		 { "next", "keyword" },
-			  { "if", "keyword" },			 { "false", "literal" },
-			  { "def", "keyword" },			 { "elsif", "keyword" },
-			  { "in", "keyword" },			 { "module", "keyword" },
-
-		  },
-		  "#",
-		  {} } );
-}
-
-static void addV() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "V",
-		  { "%.v$", "%.vsh$" },
-		  {
-			  { { "//.-\n" }, "comment" },
-			  { { "/%*", "%*/" }, "comment" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "`", "`", "\\" }, "string" },
-			  { { "r'", "'" }, "string" },
-			  { { "r\"", "\"" }, "string" },
-			  { { "0x[%da-fA-F_]+" }, "number" },
-			  { { "0b[01_]+" }, "number" },
-			  { { "00[01234567_]+" }, "number" },
-			  { { "-?%.?%d+" }, "number" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "[%+%-%*%/%%%~%&%|%^%!%=]" }, "operator" },
-			  { { "%:%=" }, "operator" },
-			  { { "%.%.%.?" }, "operator" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%$%s?[%a_][%w_]*" }, "keyword2" },
-			  { { "%@%s?[%a_][%w_]*" }, "keyword2" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
-		  },
-		  {
-			  { "voidptr", "keyword2" },  { "unsafe", "keyword" },	   { "u16", "keyword2" },
-			  { "i128", "keyword2" },	  { "goto", "keyword" },	   { "as", "keyword" },
-			  { "go", "keyword" },		  { "for", "keyword" },		   { "import", "keyword" },
-			  { "fn", "keyword" },		  { "if", "keyword" },		   { "i64", "keyword2" },
-			  { "typeof", "keyword" },	  { "f32", "keyword2" },	   { "union", "keyword" },
-			  { "u32", "keyword2" },	  { "const", "keyword" },	   { "char", "keyword2" },
-			  { "continue", "keyword" },  { "byte", "keyword2" },	   { "i16", "keyword2" },
-			  { "assert", "keyword" },	  { "bool", "keyword2" },	   { "atomic", "keyword" },
-			  { "isreftype", "keyword" }, { "u8", "keyword2" },		   { "chan", "keyword2" },
-			  { "u128", "keyword2" },	  { "__offsetof", "keyword" }, { "i8", "keyword2" },
-			  { "int", "keyword2" },	  { "is", "keyword" },		   { "defer", "keyword" },
-			  { "interface", "keyword" }, { "false", "literal" },	   { "or", "keyword" },
-			  { "pub", "keyword" },		  { "lock", "keyword" },	   { "map", "keyword2" },
-			  { "module", "keyword" },	  { "rune", "keyword2" },	   { "shared", "keyword" },
-			  { "mut", "keyword" },		  { "match", "keyword" },	   { "static", "keyword" },
-			  { "asm", "keyword" },		  { "none", "literal" },	   { "return", "keyword" },
-			  { "in", "keyword" },		  { "else", "keyword" },	   { "break", "keyword" },
-			  { "rlock", "keyword" },	  { "select", "keyword" },	   { "enum", "keyword" },
-			  { "f64", "keyword2" },	  { "sizeof", "keyword" },	   { "string", "keyword2" },
-			  { "struct", "keyword" },	  { "thread", "keyword2" },	   { "true", "literal" },
-			  { "type", "keyword" },	  { "u64", "keyword2" },
-		  },
-		  "//",
-		  {} } );
-}
-
-static void addJulia() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Julia",
-		  { "%.jl$" },
-		  {
-			  { { "#=", "=#" }, "comment" },
-			  { { "#.*$" }, "comment" },
-			  { { "icxx\"\"\"", "\"\"\"" }, "string", "C++" },
-			  { { "cxx\"\"\"", "\"\"\"" }, "string", "C++" },
-			  { { "py\"\"\"", "\"\"\"" }, "string", "Python" },
-			  { { "js\"\"\"", "\"\"\"" }, "string", "JavaScript" },
-			  { { "md\"\"\"", "\"\"\"" }, "string", "Markdown" },
-			  { { "%d%w*[%.-+*//]" }, "number" },
-			  { { "0[oO_][0-7]+" }, "number" },
-			  { { "-?0x[%x_]+" }, "number" },
-			  { { "-?0b[%x_]+" }, "number" },
-			  { { "-?%d+_%d" }, "number" },
-			  { { "-?%d+[%d%.eE]*f?" }, "number" },
-			  { { "-?%.?%d+f?" }, "number" },
-			  { { "[^%d%g]%:%a*" }, "function" },
-			  { { "[%+%-=/%*%^%%<>!~|&%:]" }, "operator" },
-			  { { "\"\"\".*\"\"\"" }, "string" },
-			  { { "\".*\"" }, "string" },
-			  { { "[bv]\".*\"" }, "string" },
-			  { { "r\".*$" }, "string" },
-			  { { "'\\.*'" }, "string" },
-			  { { "'.'" }, "string" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "%g*!" }, "function" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
-		  },
-		  {
-			  { "while", "keyword" },	   { "where", "keyword" },	  { "using", "keyword" },
-			  { "typeof", "keyword" },	   { "true", "literal" },	  { "UInt8", "keyword2" },
-			  { "elseif", "keyword" },	   { "type", "keyword" },	  { "String", "keyword2" },
-			  { "Float16", "keyword2" },   { "if", "keyword" },		  { "Set", "keyword" },
-			  { "Union", "keyword" },	   { "UInt16", "keyword2" },  { "Float32", "keyword2" },
-			  { "try", "keyword" },		   { "UInt128", "keyword2" }, { "Ref", "keyword2" },
-			  { "Function", "keyword2" },  { "Matrix", "keyword2" },  { "Vector", "keyword2" },
-			  { "module", "keyword" },	   { "UInt32", "keyword2" },  { "Int8", "keyword2" },
-			  { "continue", "keyword" },   { "end", "keyword" },	  { "Int128", "keyword2" },
-			  { "baremodule", "keyword" }, { "Char", "keyword2" },	  { "abstract", "keyword2" },
-			  { "Inf", "literal" },		   { "Int16", "keyword2" },	  { "primitive", "keyword2" },
-			  { "Int64", "keyword2" },	   { "missing", "literal" },  { "mutable", "keyword2" },
-			  { "NaN", "literal" },		   { "Bool", "keyword2" },	  { "Int32", "keyword2" },
-			  { "macro", "keyword" },	   { "UInt64", "keyword2" },  { "Int", "keyword2" },
-			  { "catch", "keyword" },	   { "do", "keyword" },		  { "export", "keyword" },
-			  { "false", "literal" },	   { "Integer", "keyword2" }, { "else", "keyword" },
-			  { "break", "keyword" },	   { "in", "keyword" },		  { "Float64", "keyword2" },
-			  { "finally", "keyword" },	   { "const", "keyword" },	  { "local", "keyword" },
-			  { "begin", "keyword" },	   { "for", "keyword" },	  { "import", "keyword" },
-			  { "function", "keyword" },   { "Dict", "keyword" },	  { "global", "keyword" },
-			  { "let", "keyword" },		   { "return", "keyword" },	  { "nothing", "literal" },
-			  { "quote", "keyword" },	   { "Number", "keyword2" },  { "struct", "keyword2" },
-		  },
-		  "#",
-		  {} } );
-}
-
-static void addElm() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Elm",
-		  { "%.elm$" },
-		  {
-			  { { "%-%-", "\n" }, "comment" },
-			  { { "{%-", "%-}" }, "comment" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "\"\"\"", "\"\"\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "-?0x%x+" }, "number" },
-			  { { "-?%d+[%d%.eE]*f?" }, "number" },
-			  { { "-?%.?%d+f?" }, "number" },
-			  { { "%.%." }, "operator" },
-			  { { "[=:|&<>%+%-%*\\/%^%%]" }, "operator" },
-			  { { "[%a_'][%w_']*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
-		  },
-		  {
-			  { "or", "keyword" },		 { "of", "keyword" },	 { "number", "keyword2" },
-			  { "module", "keyword" },	 { "not", "keyword" },	 { "let", "keyword" },
-			  { "in", "keyword" },		 { "port", "keyword" },	 { "import", "keyword" },
-			  { "if", "keyword" },		 { "Bool", "keyword2" }, { "type", "keyword" },
-			  { "case", "keyword" },	 { "xor", "keyword" },	 { "alias", "keyword" },
-			  { "String", "keyword2" },	 { "True", "literal" },	 { "Char", "keyword2" },
-			  { "Float", "keyword2" },	 { "else", "keyword" },	 { "False", "literal" },
-			  { "exposing", "keyword" }, { "Int", "keyword2" },	 { "and", "keyword" },
-			  { "then", "keyword" },	 { "as", "keyword" },
-		  },
-		  "%-%-",
-		  {} } );
-}
-
-static void addToml() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "TOML",
-		  { "%.toml$" },
-		  {
-			  { { "#.-\n" }, "comment" },
-			  { { "\"\"\"", "\"\"\"", "\\" }, "string" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'''", "'''" }, "string" },
-			  { { "'", "'" }, "string" },
-			  { { "[A-Za-z0-9_%.%-]+%s*%f[=]" }, "function" },
-			  { { "%[[A-Za-z0-9_%.%- ]+%]" }, "keyword" },
-			  { { "%[%[[A-Za-z0-9_%.%- ]+%]%]" }, "keyword" },
-			  { { "[%-+]?[0-9_]+%.[0-9_]+[eE][%-+]?[0-9_]+" }, "number" },
-			  { { "[%-+]?[0-9_]+%.[0-9_]+" }, "number" },
-			  { { "[%-+]?[0-9_]+[eE][%-+]?[0-9_]+" }, "number" },
-			  { { "[%-+]?[0-9_]+" }, "number" },
-			  { { "[%-+]?0x[0-9a-fA-F_]+" }, "number" },
-			  { { "[%-+]?0o[0-7_]+" }, "number" },
-			  { { "[%-+]?0b[01_]+" }, "number" },
-			  { { "[%-+]?nan" }, "number" },
-			  { { "[%-+]?inf" }, "number" },
-			  { { "[a-z]+" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
-		  },
-		  {
-			  { "true", "literal" },
-			  { "false", "literal" },
-		  },
-		  "#",
-		  {} } );
-}
-
-static void addFstab() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "fstab",
-		  { "fstab" },
-		  {
-			  { { "^#.*$" }, "comment" },
-			  { { "[=/:.,]+" }, "operator" },
-			  { { "/.*/" }, "string" },
-			  { { "#" }, "operator" },
-			  { { "%w-%-%w-%-%w-%-%w-%-%w- " }, "string" },
-			  { { "%d+%.%d+%.%d+%.%d+" }, "string" },
-			  { { " %d+ " }, "number" },
-			  { { "[%w_]+" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
-		  },
-		  {
-			  { "xfs", "keyword2" },	  { "ufs", "keyword2" },
-			  { "sysfs", "keyword2" },	  { "swap", "keyword2" },
-			  { "sockfs", "keyword2" },	  { "qnx4", "keyword2" },
-			  { "pipefs", "keyword2" },	  { "none", "literal" },
-			  { "nfsd", "keyword2" },	  { "msdos", "keyword2" },
-			  { "cpuset", "keyword2" },	  { "autofs", "keyword2" },
-			  { "configfs", "keyword2" }, { "mqueue", "keyword2" },
-			  { "cgroup2", "keyword2" },  { "securityfs", "keyword2" },
-			  { "cgroup", "keyword2" },	  { "binfmt_misc", "keyword2" },
-			  { "binder", "keyword2" },	  { "proc", "keyword2" },
-			  { "btrfs", "keyword2" },	  { "hugetlbfs", "keyword2" },
-			  { "aufs", "keyword2" },	  { "UUID", "keyword" },
-			  { "LABEL", "keyword" },	  { "squashfs", "keyword2" },
-			  { "devpts", "keyword2" },	  { "vfat", "keyword2" },
-			  { "ecryptfs", "keyword2" }, { "ramfs", "keyword2" },
-			  { "ext4", "keyword2" },	  { "minix", "keyword2" },
-			  { "ext2", "keyword2" },	  { "tracefs", "keyword2" },
-			  { "ext3", "keyword2" },	  { "pstore", "keyword2" },
-			  { "nfs4", "keyword2" },	  { "bpf", "keyword2" },
-			  { "fuse", "keyword2" },	  { "debugfs", "keyword2" },
-			  { "fuseblk", "keyword2" },  { "tmpfs", "keyword2" },
-			  { "ntfs", "keyword2" },	  { "bdev", "keyword2" },
-			  { "fusectl", "keyword2" },  { "rpc_pipefs", "keyword2" },
-			  { "hfs", "keyword2" },	  { "devtmpfs", "keyword2" },
-			  { "hfsplus", "keyword2" },  { "nfs", "keyword2" },
-			  { "jfs", "keyword2" },
-		  },
-		  "#",
 		  {} } );
 }
 
@@ -2534,50 +1665,6 @@ static void addHaxe() {
 		  {} } );
 }
 
-static void addR() {
-	SyntaxDefinitionManager::instance()->add(
-
-		{ "R",
-		  { "%.r$", "%.rds$", "%.rda$", "%.rdata$", "%.R$" },
-		  {
-			  { { "#", "\n" }, "comment" },
-			  { { "\"", "\"" }, "string" },
-			  { { "'", "'" }, "string" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "[%+%-=/%*%^%%<>!|&]" }, "operator" },
-			  { { "0x[%da-fA-F]+" }, "number" },
-			  { { "-?%d+[%d%.eE]*" }, "number" },
-			  { { "-?%.?%d+" }, "number" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
-		  },
-		  {
-			  { "repeat", "keyword" },
-			  { "next", "keyword" },
-			  { "in", "keyword" },
-			  { "if", "keyword" },
-			  { "FALSE", "literal" },
-			  { "NA_integer", "keyword" },
-			  { "NA_character", "keyword" },
-			  { "break", "keyword" },
-			  { "while", "keyword" },
-			  { "NA_complex", "keyword" },
-			  { "NA_real", "keyword" },
-			  { "else", "keyword" },
-			  { "NULL", "literal" },
-			  { "TRUE", "literal" },
-			  { "Inf", "literal" },
-			  { "for", "keyword" },
-			  { "NA", "literal" },
-			  { "function", "keyword" },
-		  },
-		  "#",
-		  {}
-
-		} );
-}
-
 // Syntax definitions can be directly converted from the lite (https://github.com/rxi/lite) and
 // lite-plugins (https://github.com/rxi/lite-plugins) supported languages.
 
@@ -2585,7 +1672,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 64 );
+	mDefinitions.reserve( 80 );
 
 	// Register some languages support.
 	addPlainText();
@@ -2610,12 +1697,14 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addGLSL();
 	addGo();
 	addHaskell();
+	addHare();
 	addHaxe();
 	addHLSL();
 	addHtaccessFile();
 	addHTML();
 	addIgnore();
 	addIni();
+	addJai();
 	addJava();
 	addJavaScript();
 	addJulia();
@@ -2623,6 +1712,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addJSX();
 	addKotlin();
 	addLatex();
+	addLobster();
 	addLua();
 	addMakefile();
 	addMarkdown();
@@ -2652,6 +1742,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addToml();
 	addTypeScript();
 	addV();
+	addVerilog();
 	addVisualBasic();
 	addVue();
 	addWren();
@@ -2695,7 +1786,7 @@ static json toJson( const SyntaxDefinition& def ) {
 	}
 	if ( !def.getSymbols().empty() ) {
 		j["symbols"] = json::array();
-		for ( const auto& sym : def.getSymbols() )
+		for ( const auto& sym : def.getSymbolNames() )
 			j["symbols"].emplace_back( json{ json{ sym.first, sym.second } } );
 	}
 
@@ -2793,12 +1884,12 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 	// patterns
 	buf += "{\n";
 	for ( const auto& pattern : def.getPatterns() )
-		buf += "{ " + join( pattern.patterns ) + ", " + join( pattern.types, true, true ) +
+		buf += "{ " + join( pattern.patterns ) + ", " + join( pattern.typesNames, true, true ) +
 			   str( pattern.syntax, ", ", "", false ) + " },\n";
 	buf += "\n},\n";
 	// symbols
 	buf += "{\n";
-	for ( const auto& symbol : def.getSymbols() )
+	for ( const auto& symbol : def.getSymbolNames() )
 		buf += "{ " + str( symbol.first ) + " , " + str( symbol.second ) + " },\n";
 	buf += "\n},\n";
 	buf += str( def.getComment(), "", "", true ) + ",\n";
@@ -2822,11 +1913,12 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
+	syntaxStyle.mLanguageIndex = mDefinitions.size();
 	mDefinitions.emplace_back( std::move( syntaxStyle ) );
 	return mDefinitions.back();
 }
 
-const SyntaxDefinition& SyntaxDefinitionManager::getPlainStyle() const {
+const SyntaxDefinition& SyntaxDefinitionManager::getPlainDefinition() const {
 	return mDefinitions[0];
 }
 
@@ -2838,6 +1930,21 @@ const SyntaxDefinition&
 SyntaxDefinitionManager::getByLanguageName( const std::string& name ) const {
 	for ( auto& style : mDefinitions ) {
 		if ( style.getLanguageName() == name )
+			return style;
+	}
+	return mDefinitions[0];
+}
+
+const SyntaxDefinition& SyntaxDefinitionManager::getByLanguageIndex( const Uint32& index ) const {
+	eeASSERT( index < mDefinitions.size() );
+	return mDefinitions[index];
+}
+
+const SyntaxDefinition&
+SyntaxDefinitionManager::getByLanguageNameInsensitive( std::string name ) const {
+	String::toLowerInPlace( name );
+	for ( auto& style : mDefinitions ) {
+		if ( String::toLower( style.getLanguageName() ) == name )
 			return style;
 	}
 	return mDefinitions[0];
@@ -2884,12 +1991,28 @@ std::vector<std::string> SyntaxDefinitionManager::getExtensionsPatternsSupported
 
 const SyntaxDefinition*
 SyntaxDefinitionManager::getPtrByLanguageName( const std::string& name ) const {
-	return &getByLanguageName( name );
+	for ( const auto& style : mDefinitions ) {
+		if ( style.getLanguageName() == name )
+			return &style;
+	}
+	return nullptr;
+}
+
+const SyntaxDefinition* SyntaxDefinitionManager::getPtrByLSPName( const std::string& name ) const {
+	for ( const auto& style : mDefinitions ) {
+		if ( style.getLSPName() == name )
+			return &style;
+	}
+	return nullptr;
 }
 
 const SyntaxDefinition*
 SyntaxDefinitionManager::getPtrByLanguageId( const String::HashType& id ) const {
-	return &getByLanguageId( id );
+	for ( const auto& style : mDefinitions ) {
+		if ( style.getLanguageId() == id )
+			return &style;
+	}
+	return nullptr;
 }
 
 static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
@@ -2938,7 +2061,7 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 						ptrns.emplace_back( pattern["pattern"] );
 					}
 				}
-				def.addPattern( SyntaxPattern( ptrns, type, syntax ) );
+				def.addPattern( SyntaxPattern( std::move( ptrns ), std::move( type ), syntax ) );
 			}
 		}
 		if ( json.contains( "symbols" ) ) {
@@ -3001,6 +2124,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 				} else {
 					if ( addedLangs )
 						addedLangs->push_back( res.getLanguageName() );
+					res.mLanguageIndex = mDefinitions.size();
 					mDefinitions.emplace_back( std::move( res ) );
 				}
 			}
@@ -3016,6 +2140,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 			} else {
 				if ( addedLangs )
 					addedLangs->push_back( res.getLanguageName() );
+				res.mLanguageIndex = mDefinitions.size();
 				mDefinitions.emplace_back( std::move( res ) );
 			}
 		}
@@ -3071,36 +2196,106 @@ void SyntaxDefinitionManager::loadFromFolder( const std::string& folderPath ) {
 	}
 }
 
+std::vector<const SyntaxDefinition*>
+SyntaxDefinitionManager::languagesThatSupportExtension( std::string extension ) const {
+	std::vector<const SyntaxDefinition*> langs;
+	if ( extension.empty() )
+		return {};
+
+	if ( extension[0] != '.' )
+		extension = '.' + extension;
+
+	for ( const auto& style : mDefinitions ) {
+		for ( const auto& ext : style.getFiles() ) {
+			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+				 String::endsWith( ext, "$" ) ) {
+				LuaPattern words( ext );
+				int start, end;
+				if ( words.find( extension, start, end ) )
+					langs.push_back( &style );
+			} else if ( extension == ext ) {
+				langs.push_back( &style );
+			}
+		}
+	}
+	return langs;
+}
+
+bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string extension ) const {
+	if ( extension.empty() )
+		return false;
+	if ( extension[0] != '.' )
+		extension = '.' + extension;
+
+	int count = 0;
+	for ( const auto& style : mDefinitions ) {
+		for ( const auto& ext : style.getFiles() ) {
+			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+				 String::endsWith( ext, "$" ) ) {
+				LuaPattern words( ext );
+				int start, end;
+				if ( words.find( extension, start, end ) ) {
+					count++;
+					if ( count > 1 )
+						return true;
+				}
+			} else if ( extension == ext ) {
+				count++;
+				if ( count > 1 )
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
 const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::string& filePath,
 																 bool hFileAsCPP ) const {
 	std::string extension( FileSystem::fileExtension( filePath ) );
 	std::string fileName( FileSystem::fileNameFromPath( filePath ) );
 
+	bool extHasMultipleLangs = extensionCanRepresentManyLanguages( extension );
+
 	// Use the filename instead
 	if ( extension.empty() )
 		extension = FileSystem::fileNameFromPath( filePath );
 
+	const SyntaxDefinition* def = nullptr;
+
 	if ( !extension.empty() ) {
-		for ( auto style = mDefinitions.rbegin(); style != mDefinitions.rend(); ++style ) {
-			for ( const auto& ext : style->getFiles() ) {
+		for ( const auto& style : mDefinitions ) {
+			for ( const auto& ext : style.getFiles() ) {
 				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
 					 String::endsWith( ext, "$" ) ) {
 					LuaPattern words( ext );
 					int start, end;
 					if ( words.find( fileName, start, end ) ) {
-						if ( hFileAsCPP && style->getLSPName() == "c" && ext == "%.h$" )
+						if ( hFileAsCPP && style.getLSPName() == "c" && ext == "%.h$" )
 							return getByLSPName( "cpp" );
-						return *style;
+
+						if ( extHasMultipleLangs && !style.hasExtensionPriority() ) {
+							def = &style;
+							continue;
+						}
+
+						return style;
 					}
 				} else if ( extension == ext ) {
-					if ( hFileAsCPP && style->getLSPName() == "c" && ext == ".h" )
+					if ( hFileAsCPP && style.getLSPName() == "c" && ext == ".h" )
 						return getByLSPName( "cpp" );
-					return *style;
+
+					if ( extHasMultipleLangs && !style.hasExtensionPriority() ) {
+						def = &style;
+						continue;
+					}
+
+					return style;
 				}
 			}
 		}
 	}
-	return mDefinitions[0];
+
+	return def != nullptr ? *def : mDefinitions[0];
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string& header,
@@ -3126,6 +2321,19 @@ const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePa
 	if ( def.getLanguageName() == mDefinitions[0].getLanguageName() )
 		return getByExtension( filePath, hFileAsCPP );
 	return def;
+}
+
+const SyntaxDefinition& SyntaxDefinitionManager::findFromString( const std::string& lang ) const {
+	const auto& syn = getByLSPName( lang );
+	if ( syn.getLSPName() != getPlainDefinition().getLSPName() )
+		return syn;
+	const auto& syn2 = getByLanguageName( lang );
+	if ( syn2.getLSPName() != getPlainDefinition().getLSPName() )
+		return syn2;
+	const auto& syn3 = getByLanguageNameInsensitive( lang );
+	if ( syn3.getLSPName() != getPlainDefinition().getLSPName() )
+		return syn3;
+	return getPlainDefinition();
 }
 
 }}} // namespace EE::UI::Doc

@@ -99,6 +99,7 @@ void UITextInput::scheduledUpdate( const Time& time ) {
 
 void UITextInput::onCursorPosChange() {
 	sendCommonEvent( Event::OnCursorPosChange );
+	updateIMELocation();
 	invalidateDraw();
 }
 
@@ -111,7 +112,7 @@ void UITextInput::drawWaitingCursor() {
 		primitives.setColor( Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle( Rectf(
 			cursor, Sizef( PixelDensity::dpToPx( 1 ), mTextCache->getFont()->getFontHeight(
-														  mTextCache->getCharacterSizePx() ) ) ) );
+														  mTextCache->getCharacterSize() ) ) ) );
 	}
 }
 
@@ -146,7 +147,18 @@ void UITextInput::draw() {
 		}
 	}
 
-	drawWaitingCursor();
+	if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {
+		updateIMELocation();
+		Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
+						 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
+		FontStyleConfig config( mFontStyleConfig );
+		config.FontColor = mFontStyleConfig.getFontSelectedColor();
+		getUISceneNode()->getWindow()->getIME().draw(
+			cursor, getTextHeight(), mFontStyleConfig,
+			Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
+	} else {
+		drawWaitingCursor();
+	}
 }
 
 Uint32 UITextInput::onFocus() {
@@ -158,6 +170,8 @@ Uint32 UITextInput::onFocus() {
 		getSceneNode()->getWindow()->startTextInput();
 
 		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+
+		updateIMELocation();
 	}
 
 	return 1;
@@ -296,7 +310,7 @@ Uint32 UITextInput::onMouseDown( const Vector2i& position, const Uint32& flags )
 	UITextView::onMouseDown( position, flags );
 
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
-		 getEventDispatcher()->getMouseDownNode() == this ) {
+		 getEventDispatcher()->getMouseDownNode() == this && !mMouseDown ) {
 		getUISceneNode()->getWindow()->getInput()->captureMouse( true );
 		mMouseDown = true;
 	}
@@ -524,7 +538,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setHintShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::HintFontSize:
-			setHintFontSize( attribute.asDpDimensionI() );
+			setHintFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::HintFontFamily:
 			setHintFont( FontManager::instance()->getByName( attribute.asString() ) );
@@ -754,6 +768,9 @@ void UITextInput::registerKeybindings() {
 }
 
 Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
+	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
+		return 0;
+
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		// Allow copy selection on locked mode
@@ -791,6 +808,26 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 	}
 
 	mDoc.textInput( text );
+	return 1;
+}
+
+void UITextInput::updateIMELocation() {
+	if ( mDoc.getActiveClient() != this || !Engine::isRunninMainThread() )
+		return;
+
+	updateScreenPos();
+
+	Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
+					 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
+	Float h = mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSize() );
+	getUISceneNode()->getWindow()->getIME().setLocation( Rectf( cursor, { 0, h } ).asInt() );
+}
+
+Uint32 UITextInput::onTextEditing( const TextEditingEvent& event ) {
+	UITextView::onTextEditing( event );
+	mDoc.imeTextEditing( event.getText() );
+	updateIMELocation();
+	invalidateDraw();
 	return 1;
 }
 

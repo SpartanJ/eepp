@@ -3,35 +3,63 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <string>
-#include <unordered_map>
+#include <type_traits>
 #include <vector>
 
 namespace EE { namespace UI { namespace Doc {
 
+template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) noexcept {
+	if constexpr ( std::is_same_v<SyntaxStyleType, std::string> &&
+				   std::is_same_v<T, std::string> ) {
+		return std::vector<T>( s );
+	} else if constexpr ( std::is_same_v<SyntaxStyleType, String::HashType> &&
+						  std::is_same_v<T, std::string> ) {
+		std::vector<SyntaxStyleType> v;
+		v.reserve( s.size() );
+		for ( const auto& sv : s )
+			v.push_back( String::hash( sv ) );
+		return v;
+	} else
+		return std::vector<SyntaxStyleType>{};
+}
+
 struct EE_API SyntaxPattern {
+	static UnorderedMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
+
+	using DynamicSyntax =
+		std::function<std::string( const SyntaxPattern&, const std::string_view& )>;
+
 	std::vector<std::string> patterns;
-	std::vector<std::string> types;
+	std::vector<SyntaxStyleType> types;
+	std::vector<std::string> typesNames;
 	std::string syntax{ "" };
+	DynamicSyntax dynSyntax;
 
-	SyntaxPattern( std::vector<std::string> _patterns, std::string _type,
-				   std::string _syntax = "" ) :
-		patterns( _patterns ), types( { _type } ), syntax( _syntax ) {}
+	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
+				   const std::string& _syntax = "" );
 
-	SyntaxPattern( std::vector<std::string> _patterns, std::vector<std::string> _types,
-				   std::string _syntax = "" ) :
-		patterns( _patterns ), types( _types ), syntax( _syntax ) {}
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   const std::string& _syntax = "" );
+
+	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
+				   DynamicSyntax&& _syntax );
+
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   DynamicSyntax&& _syntax );
+
+	bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
 };
 
 class EE_API SyntaxDefinition {
   public:
 	SyntaxDefinition();
 
-	SyntaxDefinition( const std::string& languageName, const std::vector<std::string>& files,
-					  const std::vector<SyntaxPattern>& patterns,
-					  const std::unordered_map<std::string, std::string>& symbols =
-						  std::unordered_map<std::string, std::string>(),
-					  const std::string& comment = "", const std::vector<std::string> headers = {},
+	SyntaxDefinition( const std::string& languageName, std::vector<std::string>&& files,
+					  std::vector<SyntaxPattern>&& patterns,
+					  UnorderedMap<std::string, std::string>&& symbols = {},
+					  const std::string& comment = "", std::vector<std::string>&& headers = {},
 					  const std::string& lspName = "" );
 
 	const std::string& getLanguageName() const;
@@ -48,9 +76,9 @@ class EE_API SyntaxDefinition {
 
 	const std::string& getComment() const;
 
-	const std::unordered_map<std::string, std::string>& getSymbols() const;
+	const UnorderedMap<std::string, SyntaxStyleType>& getSymbols() const;
 
-	std::string getSymbol( const std::string& symbol ) const;
+	SyntaxStyleType getSymbol( const std::string& symbol ) const;
 
 	/** Accepts lua patterns and file extensions. */
 	SyntaxDefinition& addFileType( const std::string& fileType );
@@ -67,6 +95,8 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& addSymbols( const std::vector<std::string>& symbolNames,
 								  const std::string& typeName );
+
+	SyntaxDefinition& setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols );
 
 	/** Sets the comment string used for auto-comment functionality. */
 	SyntaxDefinition& setComment( const std::string& comment );
@@ -93,21 +123,34 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setLSPName( const std::string& lSPName );
 
-	std::vector<SyntaxPattern> getPatternsOfType( const std::string& type ) const;
+	std::vector<SyntaxPattern> getPatternsOfType( const SyntaxStyleType& type ) const;
 
 	SyntaxDefinition& setFileTypes( const std::vector<std::string>& types );
 
+	bool hasExtensionPriority() const;
+
+	void setExtensionPriority( bool hasExtensionPriority );
+
+	UnorderedMap<std::string, std::string> getSymbolNames() const;
+
+	const Uint16& getLanguageIndex() const { return mLanguageIndex; }
+
   protected:
+	friend class SyntaxDefinitionManager;
+
 	std::string mLanguageName;
 	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;
-	std::unordered_map<std::string, std::string> mSymbols;
+	UnorderedMap<std::string, SyntaxStyleType> mSymbols;
+	UnorderedMap<std::string, std::string> mSymbolNames;
 	std::string mComment;
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;
+	Uint16 mLanguageIndex{ 0 };
 	bool mAutoCloseXMLTags{ false };
 	bool mVisible{ true };
+	bool mHasExtensionPriority{ false };
 };
 
 }}} // namespace EE::UI::Doc

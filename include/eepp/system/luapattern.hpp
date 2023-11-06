@@ -11,9 +11,9 @@ namespace EE { namespace System {
 // This implementation removes all the regexp related stuffs, only leaves the Lua implementation.
 class EE_API LuaPattern {
   public:
-	static std::string getURLPattern();
+	static std::string_view getURLPattern();
 
-	static std::string getURIPattern();
+	static std::string_view getURIPattern();
 
 	struct EE_API Range {
 		int start{ -1 };
@@ -95,15 +95,15 @@ class EE_API LuaPattern {
 	};
 
 	static std::string matchesAny( const std::vector<std::string>& stringvec,
-								 const std::string& pattern );
+								   const std::string_view& pattern );
 
-	static std::string match( const std::string& string, const std::string& pattern );
+	static std::string match( const std::string& string, const std::string_view& pattern );
 
-	static Range find( const std::string& string, const std::string& pattern );
+	static Range find( const std::string& string, const std::string_view& pattern );
 
-	static bool matches( const std::string& string, const std::string& pattern );
+	static bool matches( const std::string& string, const std::string_view& pattern );
 
-	LuaPattern( const std::string& pattern );
+	LuaPattern( const std::string_view& pattern );
 
 	bool matches( const char* stringSearch, int stringStartOffset, LuaPattern::Range* matchList,
 				  size_t stringLength ) const;
@@ -122,7 +122,7 @@ class EE_API LuaPattern {
 	bool range( int indexGet, int& startMatch, int& endMatch,
 				LuaPattern::Range* returnedMatched ) const;
 
-	const std::string& getPatern() const { return mPattern; }
+	const std::string_view& getPatern() const { return mPattern; }
 
 	LuaPattern::Match gmatch( const char* s ) &;
 
@@ -137,9 +137,18 @@ class EE_API LuaPattern {
 	std::string gsub( const std::string& text, const std::string& replace );
 
   protected:
-	mutable std::string mErr;
-	std::string mPattern;
+	std::string_view mPattern;
 	mutable size_t mMatchNum;
+};
+
+class EE_API LuaPatternStorage : public LuaPattern {
+  public:
+	LuaPatternStorage( const std::string& pattern );
+
+	explicit LuaPatternStorage( std::string&& pattern );
+
+  protected:
+	std::string mPatternStorage;
 };
 
 }} // namespace EE::System

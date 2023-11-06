@@ -186,10 +186,10 @@ class EE_API UISceneNode : public SceneNode {
 	std::vector<Font*> mFontFaces;
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
-	std::unordered_set<UIWidget*> mDirtyStyle;
-	std::unordered_set<UIWidget*> mDirtyStyleState;
-	std::unordered_map<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
-	std::unordered_set<UILayout*> mDirtyLayouts;
+	UnorderedSet<UIWidget*> mDirtyStyle;
+	UnorderedSet<UIWidget*> mDirtyStyleState;
+	UnorderedMap<UIWidget*, bool> mDirtyStyleStateCSSAnimations;
+	UnorderedSet<UILayout*> mDirtyLayouts;
 	std::vector<std::pair<Float, std::string>> mTimes;
 	ColorSchemePreference mColorSchemePreference{ ColorSchemePreference::Dark };
 	Uint32 mMaxInvalidationDepth{ 2 };

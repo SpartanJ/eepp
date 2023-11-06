@@ -9,6 +9,7 @@
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace EE::Graphics;
 using namespace EE::UI::Doc;
@@ -23,6 +24,7 @@ namespace Tools {
 class UIDocFindReplace;
 }
 
+class UIIcon;
 class UICodeEditor;
 class UIWindow;
 class UIScrollBar;
@@ -194,7 +196,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	UICodeEditor* setFont( Font* font );
 
-	UICodeEditor* setFontSize( const Float& dpSize );
+	UICodeEditor* setFontSize( const Float& size );
 
 	const Float& getFontSize() const;
 
@@ -461,6 +463,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getTextWidth( const String& text ) const;
 
+	size_t characterWidth( const String::View& str ) const;
+
+	Float getTextWidth( const String::View& text ) const;
+
 	Float getLineHeight() const;
 
 	Float getCharacterSize() const;
@@ -620,7 +626,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setJumpLinesLength( size_t jumpLinesLength );
 
-  protected:
+	std::string getFileLockIconName() const;
+
+	void setFileLockIconName( const std::string& fileLockIconName );
+
+	bool getDisplayLockedIcon() const;
+	void setDisplayLockedIcon(bool displayLockedIcon);
+
+	protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };
@@ -657,6 +670,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mFindReplaceEnabled{ true };
 	bool mShowIndentationGuides{ false };
 	bool mShowLinesRelativePosition{ false };
+	bool mDisplayLockedIcon{ false };
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
@@ -728,6 +742,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Uint64 mLastExecuteEventId{ 0 };
 	Text mLineTextCache;
 	size_t mJumpLinesLength{ 5 };
+	UIIcon* mFileLockIcon{ nullptr };
+	std::string mFileLockIconName{ "file-lock-fill" };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -751,6 +767,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual Uint32 onFocusLoss();
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
+
+	virtual Uint32 onTextEditing( const TextEditingEvent& event );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
@@ -902,6 +920,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 						 bool ignoreSelectionMatch );
 
 	void updateHighlightWordCache();
+
+	template <typename StringType> size_t characterWidth( const StringType& str ) const;
+
+	template <typename StringType> Float getTextWidth( const StringType& text ) const;
+
+	void updateIMELocation();
+
+	void drawLockedIcon( const Vector2f start );
 };
 
 }} // namespace EE::UI

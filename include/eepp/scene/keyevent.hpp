@@ -52,6 +52,23 @@ class EE_API TextInputEvent : public Event {
 	Uint32 mTimestamp;
 };
 
+class EE_API TextEditingEvent : public Event {
+  public:
+	TextEditingEvent( Node* node, const Uint32& eventNum, const String& text, const Int32& start,
+					  const Int32& length );
+
+	const String& getText() const;
+
+	const Int32& getStart() const;
+
+	const Int32& getLength() const;
+
+  protected:
+	String mText;
+	Int32 mStart;
+	Int32 mLength;
+};
+
 }} // namespace EE::Scene
 
 #endif

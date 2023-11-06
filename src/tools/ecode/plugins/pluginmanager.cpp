@@ -22,6 +22,7 @@ PluginManager::~PluginManager() {
 		Log::debug( "PluginManager: unloading plugin %s", plugin.second->getTitle().c_str() );
 		eeDelete( plugin.second );
 	}
+	unsubscribeFileSystemListener();
 }
 
 void PluginManager::registerPlugin( const PluginDefinition& def ) {
@@ -65,12 +66,18 @@ bool PluginManager::isEnabled( const std::string& id ) const {
 }
 
 bool PluginManager::reload( const std::string& id ) {
+	if ( !isPluginReloadEnabled() ) {
+		Log::warning( "PluginManager: tried to reload a plugin but plugin reload is not enabled." );
+		return false;
+	}
 	if ( isEnabled( id ) ) {
-		Log::warning( "PluginManager: reloading plugin %s", id.c_str() );
+		Log::warning( "PluginManager: reloading plugin %s from process %u", id.c_str(),
+					  Sys::getProcessID() );
 		setEnabled( id, false );
 		setEnabled( id, true );
 		return true;
 	}
+	Log::warning( "PluginManager: tried to reload a plugin but plugin is not enabled." );
 	return false;
 }
 
@@ -227,6 +234,14 @@ const PluginManager::OnLoadFileCb& PluginManager::getLoadFileFn() const {
 	return mLoadFileFn;
 }
 
+bool PluginManager::isPluginReloadEnabled() const {
+	return mPluginReloadEnabled;
+}
+
+void PluginManager::setPluginReloadEnabled( bool pluginReloadEnabled ) {
+	mPluginReloadEnabled = pluginReloadEnabled;
+}
+
 void PluginManager::subscribeMessages(
 	UICodeEditorPlugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
 	subscribeMessages( plugin->getId(), cb );
@@ -246,6 +261,31 @@ void PluginManager::setFileSystemListener( FileSystemListener* listener ) {
 	mFileSystemListener = listener;
 	sendBroadcast( PluginMessageType::FileSystemListenerReady, PluginMessageFormat::Empty,
 				   nullptr );
+	subscribeFileSystemListener();
+}
+
+void PluginManager::subscribeFileSystemListener( Plugin* plugin ) {
+	mPluginsFSSubs.insert( plugin );
+}
+
+void PluginManager::unsubscribeFileSystemListener( Plugin* plugin ) {
+	mPluginsFSSubs.erase( plugin );
+}
+
+void PluginManager::subscribeFileSystemListener() {
+	if ( mFileSystemListenerCb != 0 || mFileSystemListener == nullptr )
+		return;
+
+	mFileSystemListenerCb =
+		mFileSystemListener->addListener( [this]( const FileEvent& ev, const FileInfo& file ) {
+			for ( Plugin* plugin : mPluginsFSSubs )
+				plugin->onFileSystemEvent( ev, file );
+		} );
+}
+
+void PluginManager::unsubscribeFileSystemListener() {
+	if ( mFileSystemListenerCb != 0 && mFileSystemListener )
+		mFileSystemListener->removeListener( mFileSystemListenerCb );
 }
 
 void PluginManager::sendBroadcast( const PluginMessageType& notification,
@@ -441,43 +481,19 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 }
 
 Plugin::Plugin( PluginManager* manager ) :
-	mManager( manager ), mThreadPool( manager->getThreadPool() ) {}
-
-void Plugin::subscribeFileSystemListener() {
-	if ( mFileSystemListenerCb != 0 || mManager->getFileSystemListener() == nullptr )
-		return;
-
-	mConfigFileInfo = FileInfo( mConfigPath );
-
-	mFileSystemListenerCb = mManager->getFileSystemListener()->addListener(
-		[this]( const FileEvent& ev, const FileInfo& file ) {
-			if ( ev.type != FileSystemEventType::Modified )
-				return;
-			if ( !mShuttingDown && !mLoading && file.getFilepath() == mConfigPath &&
-				 file.getModificationTime() != mConfigFileInfo.getModificationTime() ) {
-				std::string fileContents;
-				FileSystem::fileGet( file.getFilepath(), fileContents );
-				if ( getConfigFileHash() != String::hash( fileContents ) ) {
-					mConfigFileInfo = file;
-					mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
-					mFileSystemListenerCb = 0;
-					mManager->reload( getId() );
-				} else {
-					Log::debug( "Plugin %s: Configuration file has been modified: %s. But contents "
-								"are the same.",
-								getTitle().c_str(), mConfigPath.c_str() );
-				}
-			}
-		} );
-}
-
-void Plugin::unsubscribeFileSystemListener() {
-	if ( mFileSystemListenerCb != 0 && mManager->getFileSystemListener() )
-		mManager->getFileSystemListener()->removeListener( mFileSystemListenerCb );
-}
+	mManager( manager ),
+	mThreadPool( manager->getThreadPool() ),
+	mReady( false ), // All plugins will start as not ready until proved the contrary
+	mLoading( true ) // All plugins will start as loading until the load is complete, this is to
+					 // avoid concurrency issues
+{}
 
 bool Plugin::isReady() const {
 	return mReady;
+}
+
+bool Plugin::isLoading() const {
+	return mLoading;
 }
 
 bool Plugin::isShuttingDown() const {
@@ -488,12 +504,55 @@ bool Plugin::hasFileConfig() {
 	return !mConfigPath.empty();
 }
 
+void Plugin::subscribeFileSystemListener() {
+	mConfigFileInfo = FileInfo( mConfigPath );
+	mManager->subscribeFileSystemListener( this );
+}
+
+void Plugin::unsubscribeFileSystemListener() {
+	mManager->unsubscribeFileSystemListener( this );
+}
+
 std::string Plugin::getFileConfigPath() {
 	return mConfigPath;
 }
 
 PluginManager* Plugin::getManager() const {
 	return mManager;
+}
+
+void Plugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
+	if ( ev.type != FileSystemEventType::Modified || mShuttingDown || isLoading() )
+		return;
+
+	if ( file.getFilepath() != mConfigPath ||
+		 file.getModificationTime() == mConfigFileInfo.getModificationTime() )
+		return;
+
+	std::string fileContents;
+	FileSystem::fileGet( file.getFilepath(), fileContents );
+	if ( getConfigFileHash() != String::hash( fileContents ) ) {
+		if ( mManager->isPluginReloadEnabled() && !isLoading() && isReady() ) {
+			mConfigFileInfo = file;
+			unsubscribeFileSystemListener();
+			mManager->reload( getId() );
+		} else {
+			Log::debug( "Plugin %s: Configuration file has been modified: %s. But "
+						"plugin reload is not enabled.",
+						getTitle().c_str(), mConfigPath.c_str() );
+		}
+	} else {
+		Log::debug( "Plugin %s: Configuration file has been modified: %s. But contents "
+					"are the same.",
+					getTitle().c_str(), mConfigPath.c_str() );
+	}
+}
+
+void Plugin::setReady() {
+	if ( mReady ) {
+		Log::info( "Plugin: %s loaded and ready from process %u", getTitle().c_str(),
+				   Sys::getProcessID() );
+	}
 }
 
 PluginBase::~PluginBase() {

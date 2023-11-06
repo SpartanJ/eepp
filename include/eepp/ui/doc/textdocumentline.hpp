@@ -9,6 +9,11 @@ class EE_API TextDocumentLine {
   public:
 	TextDocumentLine( const String& text ) : mText( text ) { updateHash(); }
 
+	void setText( String&& text ) {
+		mText = std::move( text );
+		updateHash();
+	}
+
 	void setText( const String& text ) {
 		mText = text;
 		updateHash();

@@ -22,7 +22,8 @@ class FileSystemListener : public efsw::FileWatchListener {
 	typedef std::function<void( const FileEvent&, const FileInfo& )> FileEventFn;
 
 	FileSystemListener( UICodeEditorSplitter* codeSplitter,
-						std::shared_ptr<FileSystemModel> fileSystemModel );
+						std::shared_ptr<FileSystemModel> fileSystemModel,
+						const std::vector<std::string>& ignoreFiles );
 
 	virtual ~FileSystemListener() {}
 
@@ -43,6 +44,7 @@ class FileSystemListener : public efsw::FileWatchListener {
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
 	std::atomic<Uint64> mLastId{ 0 };
 	std::unordered_map<Uint64, FileEventFn> mCbs;
+	std::vector<std::string> mIgnoredFiles;
 	Mutex mCbsMutex;
 
 	bool isFileOpen( const FileInfo& file );
@@ -50,6 +52,8 @@ class FileSystemListener : public efsw::FileWatchListener {
 	void notifyChange( const FileInfo& file );
 
 	void notifyMove( const FileInfo& oldFile, const FileInfo& newFile );
+
+	bool isIgnored( const std::string& path );
 };
 
 } // namespace ecode

@@ -4,6 +4,10 @@
 #include <eepp/config.hpp>
 #include <string>
 
+namespace EE { namespace UI {
+class UITableRow;
+}} // namespace EE::UI
+
 namespace EE { namespace Scene {
 
 class Node;
@@ -14,6 +18,7 @@ class TextEvent;
 class TextInputEvent;
 class WindowEvent;
 class ItemValueEvent;
+class RowCreatedEvent;
 
 class EE_API Event {
   public:
@@ -26,8 +31,10 @@ class EE_API Event {
 		MouseClick,
 		MouseDoubleClick,
 		MouseUp,
+		MouseEnter,
 		MouseOver,
 		MouseLeave,
+		MouseOut,
 		OnFocus,
 		OnFocusLoss,
 		OnVisibleChange,
@@ -39,6 +46,7 @@ class EE_API Event {
 		OnAlphaChange,
 		OnTextChanged,
 		OnFontChanged,
+		OnChildCountChanged,
 		OnDocumentLoaded,
 		OnDocumentChanged,
 		OnDocumentClosed,
@@ -100,6 +108,8 @@ class EE_API Event {
 		OnItemValueChange,
 		OnCursorPosChangeInteresting,
 		OnCopy,
+		OnRowCreated,
+		OnScrollChange,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 
@@ -126,6 +136,8 @@ class EE_API Event {
 	const WindowEvent* asWindowEvent() const;
 
 	const ItemValueEvent* asItemValueEvent() const;
+
+	const RowCreatedEvent* asRowCreatedEvent() const;
 
   protected:
 	friend class Node;
@@ -173,6 +185,17 @@ class EE_API ItemValueEvent : public Event {
 
   protected:
 	Uint32 itemIndex;
+};
+
+class EE_API RowCreatedEvent : public Event {
+  public:
+	RowCreatedEvent( Node* node, const Uint32& eventType, UI::UITableRow* row ) :
+		Event( node, eventType ), row( row ) {}
+
+	UI::UITableRow* getRow() const { return row; }
+
+  protected:
+	UI::UITableRow* row;
 };
 
 }} // namespace EE::Scene

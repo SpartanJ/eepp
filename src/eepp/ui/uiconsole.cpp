@@ -13,6 +13,8 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiconsole.hpp>
+#include <eepp/ui/uiicon.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -39,7 +41,7 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 					  const unsigned int& maxLogLines ) :
 	UIWidget( "console" ), mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {
 	setFlags( UI_AUTO_PADDING );
-	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
+	mFlags |= UI_TAB_STOP | UI_SCROLLABLE | UI_TEXT_SELECTION_ENABLED;
 	setClipType( ClipType::ContentBox );
 
 	setBackgroundColor( 0x201F1FEE );
@@ -57,6 +59,8 @@ UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& a
 	if ( nullptr == mFontStyleConfig.Font )
 		Log::error( "A monospace font must be loaded to be able to use the console.\nTry loading "
 					"a font with the name \"monospace\"" );
+
+	setFontSelectionBackColor( 0x4d668066 );
 
 	if ( makeDefaultCommands )
 		createDefaultCommands();
@@ -95,6 +99,16 @@ void UIConsole::setTheme( UITheme* Theme ) {
 }
 
 void UIConsole::scheduledUpdate( const Time& ) {
+	if ( mMouseDown ) {
+		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+			mMouseDown = false;
+			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+		} else {
+			onMouseDown( getUISceneNode()->getEventDispatcher()->getMousePos(),
+						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
+		}
+	}
+
 	if ( hasFocus() && getUISceneNode()->getWindow()->hasFocus() ) {
 		if ( mBlinkTime != Time::Zero && mBlinkTimer.getElapsedTime() > mBlinkTime ) {
 			mCursorVisible = !mCursorVisible;
@@ -115,6 +129,14 @@ void UIConsole::setBlinkTime( const Time& blinkTime ) {
 		if ( mBlinkTime == Time::Zero )
 			mCursorVisible = true;
 	}
+}
+
+size_t UIConsole::getMenuIconSize() const {
+	return mMenuIconSize;
+}
+
+void UIConsole::setMenuIconSize( size_t menuIconSize ) {
+	mMenuIconSize = menuIconSize;
 }
 
 Font* UIConsole::getFont() const {
@@ -164,7 +186,7 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
-			setFontSize( lengthFromValueAsDp( attribute ) );
+			setFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::FontStyle: {
 			setFontStyle( attribute.asFontStyle() );
@@ -203,7 +225,7 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%.2fdp", getFontSize() );
+			return String::format( "%.2fpx", getFontSize() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyleConfig().getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -226,11 +248,10 @@ std::vector<PropertyId> UIConsole::getPropertiesImplemented() const {
 	return props;
 }
 
-UIConsole* UIConsole::setFontSize( const Float& dpSize ) {
-	if ( mFontStyleConfig.CharacterSize != dpSize ) {
+UIConsole* UIConsole::setFontSize( const Float& size ) {
+	if ( mFontStyleConfig.CharacterSize != size ) {
 		mFontStyleConfig.CharacterSize =
-			eeabs( dpSize - (int)dpSize ) == 0.5f || (int)dpSize == dpSize ? dpSize
-																		   : eefloor( dpSize );
+			eeabs( size - (int)size ) == 0.5f || (int)size == size ? size : eefloor( size );
 		invalidateDraw();
 		onFontChanged();
 	}
@@ -368,7 +389,8 @@ void UIConsole::setMaxLogLines( const Uint32& maxLogLines ) {
 void UIConsole::privPushText( const String& str ) {
 	Lock l( mMutex );
 	mCmdLog.push_back( { str, String::hash( str ) } );
-	invalidateDraw();
+	if ( mVisible )
+		invalidateDraw();
 	if ( mCmdLog.size() >= mMaxLogLines )
 		mCmdLog.pop_front();
 }
@@ -394,8 +416,8 @@ void UIConsole::draw() {
 	size_t pos = 0;
 	Float curY;
 	Float lineHeight = getLineHeight();
-	Float cw =
-		mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false ).advance;
+	Float cw = mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false, false )
+				   .advance;
 
 	mCon.min = eemax( 0, (Int32)mCmdLog.size() - linesInScreen );
 	mCon.max = (int)mCmdLog.size() - 1;
@@ -406,29 +428,80 @@ void UIConsole::draw() {
 							mFontStyleConfig.FontColor.b )
 						 .blendAlpha( (Uint8)mAlpha ) );
 
-	for ( int i = mCon.max - mCon.modif; i >= mCon.min - mCon.modif; i-- ) {
-		if ( i < (int)mCmdLog.size() && i >= 0 ) {
-			curY = mScreenPos.y + getPixelsSize().getHeight() - mPaddingPx.Bottom -
-				   pos * lineHeight - lineHeight * 2 - 1;
-			Text& text = mTextCache[pos].text;
-			text.setStyleConfig( mFontStyleConfig );
-			text.setFillColor( fontColor );
-			if ( mCmdLog[i].hash != mTextCache[pos].hash ) {
-				if ( mCmdLog[i].log.size() * cw <= mSize.getWidth() ) {
-					text.setString( mCmdLog[i].log );
-					mTextCache[pos].hash = mCmdLog[i].hash;
-				} else {
-					auto substr = mCmdLog[i].log.substr( 0, ( mSize.getWidth() + 8 * cw ) / cw );
-					mTextCache[pos].hash = String::hash( substr );
-					text.setString( substr );
-				}
+	Primitives p;
+	p.setColor( Color( mFontStyleConfig.FontSelectionBackColor ).blendAlpha( (Uint8)mAlpha ) );
+	auto to = eemax( mCon.min - mCon.modif, 0 );
+	auto from = eemin( mCon.max - mCon.modif, (int)mCmdLog.size() - 1 );
+
+	for ( int i = from; i >= to; i-- ) {
+		curY = mScreenPos.y + getPixelsSize().getHeight() - mPaddingPx.Bottom - pos * lineHeight -
+			   lineHeight * 2 - 1;
+
+		auto selNorm = mSelection.normalized();
+		if ( mSelection.isValid() && mSelection.hasSelection() && selNorm.containsLine( i ) &&
+			 i < (int)mCmdLog.size() ) {
+			auto startCol = eemin( (Int64)mCmdLog[i].log.size(), selNorm.start().column() );
+			auto endCol = eemin( (Int64)mCmdLog[i].log.size(), selNorm.end().column() );
+
+			if ( i == selNorm.start().line() ) {
+				auto tsubstr = mCmdLog[i].log.view().substr(
+					startCol, selNorm.end().line() == i ? eemax( (Int64)0, endCol - startCol )
+														: (Int64)mCmdLog[i].log.size() - startCol );
+				auto twidth =
+					Text::getTextWidth( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+										tsubstr, mFontStyleConfig.Style );
+				auto fsubstr = mCmdLog[i].log.view().substr( 0, startCol );
+				auto fwidth =
+					Text::getTextWidth( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+										fsubstr, mFontStyleConfig.Style );
+				p.drawRectangle( Rectf( { mScreenPos.x + mPaddingPx.Left + fwidth, curY },
+										{ twidth, lineHeight } ) );
+			} else if ( i == selNorm.end().line() ) {
+				auto fsubstr = mCmdLog[i].log.view().substr( 0, endCol );
+				auto fwidth =
+					Text::getTextWidth( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+										fsubstr, mFontStyleConfig.Style );
+				p.drawRectangle(
+					Rectf( { mScreenPos.x + mPaddingPx.Left, curY }, { fwidth, lineHeight } ) );
+			} else {
+				p.drawRectangle(
+					Rectf( { mScreenPos.x + mPaddingPx.Left, curY },
+						   { getPixelsSize().getWidth() - mPadding.getWidth(), lineHeight } ) );
 			}
-			text.draw( mScreenPos.x + mPaddingPx.Left, curY );
-			pos++;
+
+			p.setForceDraw( true );
 		}
+
+		Text& text = mTextCache[pos].text;
+		text.setStyleConfig( mFontStyleConfig );
+		text.setFillColor( fontColor );
+		if ( mCmdLog[i].hash != mTextCache[pos].hash ) {
+			if ( mCmdLog[i].log.size() * cw <= mSize.getWidth() ) {
+				text.setString( mCmdLog[i].log );
+				mTextCache[pos].hash = mCmdLog[i].hash;
+			} else {
+				auto substr = mCmdLog[i].log.substr( 0, ( mSize.getWidth() + 8 * cw ) / cw );
+				mTextCache[pos].hash = String::hash( substr );
+				text.setString( substr );
+			}
+		}
+		text.draw( mScreenPos.x + mPaddingPx.Left, curY );
+		pos++;
 	}
 
 	curY = mScreenPos.y + getPixelsSize().getHeight() - mPaddingPx.Bottom - lineHeight - 1;
+
+	auto editCharWidth = Text::getTextWidth( String( "> " ), mFontStyleConfig );
+
+	if ( mDoc.hasSelection() ) {
+		Float selStartPos =
+			editCharWidth + Text::getTextWidth( mDoc.getCurrentLine().getText().view().substr(
+													0, mDoc.getSelection( true ).start().column() ),
+												mFontStyleConfig );
+		Float selWidth = Text::getTextWidth( mDoc.getSelectedText(), mFontStyleConfig );
+		p.drawRectangle( Rectf( { mScreenPos.x + mPaddingPx.Left + selStartPos, curY },
+								{ selWidth, lineHeight } ) );
+	}
 
 	Text& text = mTextCache[mTextCache.size() - 1].text;
 	text.setStyleConfig( mFontStyleConfig );
@@ -436,28 +509,32 @@ void UIConsole::draw() {
 	text.setString( "> " + mDoc.getCurrentLine().getTextWithoutNewLine() );
 	text.draw( mScreenPos.x + mPaddingPx.Left, curY );
 
-	Text& text2 = mTextCache[mTextCache.size() - 2].text;
-	text2.setStyleConfig( mFontStyleConfig );
-	text2.setFillColor( fontColor );
-
 	if ( mCursorVisible ) {
-		if ( (unsigned int)mDoc.getSelection().start().column() ==
-			 mDoc.getCurrentLine().size() - 1 ) {
-			Uint32 width = text.getTextWidth();
-			text2.setString( "_" );
-			text2.draw( mScreenPos.x + mPaddingPx.Left + width, curY );
+		Float cursorPos =
+			editCharWidth + Text::getTextWidth( mDoc.getCurrentLine().getText().view().substr(
+													0, mDoc.getSelection().start().column() ),
+												mFontStyleConfig );
+		Rectf r( { mScreenPos.x + mPaddingPx.Left + cursorPos, curY }, { cursorPos, lineHeight } );
+		updateIMELocation( r );
+		if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {
+			FontStyleConfig config( mFontStyleConfig );
+			config.FontColor = mFontStyleConfig.getFontSelectedColor();
+			getUISceneNode()->getWindow()->getIME().draw( r.getPosition(), getLineHeight(),
+														  mFontStyleConfig,
+														  Color( fontColor ).blendAlpha( mAlpha ) );
 		} else {
-			text2.setString( "> " + mDoc.getCurrentLine().getText().substr(
-										0, mDoc.getSelection().start().column() ) );
-			Uint32 width = mPaddingPx.Left + text2.getTextWidth();
+			Text& text2 = mTextCache[mTextCache.size() - 2].text;
+			text2.setStyleConfig( mFontStyleConfig );
+			text2.setFillColor( fontColor );
 			text2.setString( "_" );
-			text2.draw( mScreenPos.x + width, curY );
+			text2.draw( r.Left, r.Top );
 		}
 	}
 
 	if ( mShowFps ) {
 		Float cw =
-			mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false ).advance;
+			mFontStyleConfig.Font->getGlyph( '_', mFontStyleConfig.CharacterSize, false, false )
+				.advance;
 		Text& text = mTextCache[mTextCache.size() - 3].text;
 		Color OldColor1( text.getColor() );
 		text.setStyleConfig( mFontStyleConfig );
@@ -675,8 +752,8 @@ void UIConsole::cmdShowFps( const std::vector<String>& params ) {
 	privPushText( "Valid parameters are 0 ( hide ) or 1 ( show )." );
 }
 
-void UIConsole::writeLog( const std::string& text ) {
-	std::vector<String> strings = String::split( String( text ) );
+void UIConsole::writeLog( const std::string_view& text ) {
+	std::vector<std::string_view> strings = String::split( text );
 	for ( size_t i = 0; i < strings.size(); i++ )
 		privPushText( strings[i] );
 }
@@ -718,6 +795,9 @@ void UIConsole::paste() {
 }
 
 Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
+	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
+		return 0;
+
 	if ( ( event.getKeyCode() == KEY_TAB ) &&
 		 mDoc.getSelection().start().column() == (Int64)mDoc.getCurrentLine().size() - 1 ) {
 		printCommandsStartingWith( mDoc.getCurrentLine().getTextWithoutNewLine() );
@@ -830,14 +910,35 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 	invalidateDraw();
 	return 1;
 }
+
+Uint32 UIConsole::onTextEditing( const TextEditingEvent& event ) {
+	UIWidget::onTextEditing( event );
+	mDoc.imeTextEditing( event.getText() );
+	invalidateDraw();
+	return 1;
+}
+
+void UIConsole::updateIMELocation( const Rectf& loc ) {
+	if ( mDoc.getActiveClient() != this )
+		return;
+	getUISceneNode()->getWindow()->getIME().setLocation( loc.asInt() );
+}
+
 Uint32 UIConsole::onPressEnter() {
 	processLine();
 	sendCommonEvent( Event::OnPressEnter );
 	invalidateDraw();
 	return 0;
 }
+
 void UIConsole::registerCommands() {
-	mDoc.setCommand( "copy", [this] { copy(); } );
+	mDoc.setCommand( "copy", [this] {
+		if ( mSelection.hasSelection() ) {
+			copySelection();
+		} else {
+			copy();
+		}
+	} );
 	mDoc.setCommand( "cut", [this] { cut(); } );
 	mDoc.setCommand( "paste", [this] { paste(); } );
 	mDoc.setCommand( "press-enter", [this] { onPressEnter(); } );
@@ -906,13 +1007,81 @@ bool UIConsole::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
+TextPosition UIConsole::getPositionOnScreen( Vector2f position ) {
+	convertToNodeSpace( position );
+	Float lineHeight = getLineHeight();
+	auto linesInScreen = linesOnScreen();
+	auto firstVisibleLine = eemax( mCon.min - mCon.modif, 0 );
+	Float startOffset = getPixelsSize().getHeight() - mPaddingPx.Bottom -
+						linesInScreen * lineHeight +
+						( linesInScreen > (Int64)mCmdLog.size()
+							  ? lineHeight * ( linesInScreen - (Float)mCmdLog.size() )
+							  : 0.f );
+	Int64 line = eeclamp( (Int64)eefloor( ( position.y - startOffset ) / lineHeight + 1 ), (Int64)0,
+						  (Int64)mCmdLog.size() - 1 );
+	Int64 fline = eeclamp( firstVisibleLine + line, (Int64)0, (Int64)mCmdLog.size() - 1 );
+	Int64 col = Text::findCharacterFromPos(
+		{ (int)eefloor( position.x - mPaddingPx.Left ), 0 }, true, mFontStyleConfig.Font,
+		mFontStyleConfig.CharacterSize, mCmdLog[fline].log, mFontStyleConfig.Style );
+	return { fline, col };
+}
+
 Uint32 UIConsole::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	UIWidget::onMouseDown( position, flags );
 
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
-		 getEventDispatcher()->getMouseDownNode() == this ) {
+		 getEventDispatcher()->getMouseDownNode() == this && !mMouseDown ) {
 		getUISceneNode()->getWindow()->getInput()->captureMouse( true );
 		mMouseDown = true;
+		auto pos = getPositionOnScreen( position.asFloat() );
+		auto prevSelection = mSelection;
+		mSelection = { pos, pos };
+		if ( prevSelection != mSelection )
+			invalidateDraw();
+	}
+
+	return 1;
+}
+
+Uint32 UIConsole::onMouseMove( const Vector2i& position, const Uint32& flags ) {
+	UIWidget::onMouseMove( position, flags );
+
+	if ( ( flags & EE_BUTTON_LMASK ) && getEventDispatcher()->getMouseDownNode() == this &&
+		 mMouseDown ) {
+		auto prevSelection = mSelection;
+		mSelection.setEnd( getPositionOnScreen( position.asFloat() ) );
+		if ( prevSelection != mSelection )
+			invalidateDraw();
+	}
+
+	return 1;
+}
+
+static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
+
+Uint32 UIConsole::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
+	UIWidget::onMouseDoubleClick( position, flags );
+
+	if ( ( flags & EE_BUTTON_LMASK ) ) {
+		auto pos = getPositionOnScreen( position.asFloat() );
+		if ( pos.line() < (Int64)mCmdLog.size() ) {
+			const String& str = mCmdLog[pos.line()].log;
+			if ( pos.column() < (Int64)str.size() ) {
+				auto start = str.find_last_of( DEFAULT_NON_WORD_CHARS, pos.column() );
+				auto end = str.find_first_of( DEFAULT_NON_WORD_CHARS, pos.column() );
+				if ( start == String::InvalidPos )
+					start = 0;
+				else
+					start = eemin( start + 1, str.size() - 1 );
+				if ( end == String::InvalidPos )
+					end = str.size();
+				auto prevSelection = mSelection;
+				mSelection = { { pos.line(), static_cast<Int64>( start ) },
+							   { pos.line(), static_cast<Int64>( end ) } };
+				if ( prevSelection != mSelection )
+					invalidateDraw();
+			}
+		}
 	}
 
 	return 1;
@@ -937,25 +1106,9 @@ Uint32 UIConsole::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		}
 	} else if ( ( flags & EE_BUTTON_RMASK ) ) {
-		// onCreateContextMenu( position, flags );
+		onCreateContextMenu( position, flags );
 	}
 	return UIWidget::onMouseUp( position, flags );
-}
-
-Uint32 UIConsole::onMouseClick( const Vector2i& position, const Uint32& flags ) {
-	return UIWidget::onMouseClick( position, flags );
-}
-
-Uint32 UIConsole::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
-	return UIWidget::onMouseDoubleClick( Pos, Flags );
-}
-
-Uint32 UIConsole::onMouseOver( const Vector2i& position, const Uint32& flags ) {
-	return UIWidget::onMouseOver( position, flags );
-}
-
-Uint32 UIConsole::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	return UIWidget::onMouseLeave( Pos, Flags );
 }
 
 void UIConsole::onDocumentTextChanged( const DocumentContentChange& ) {
@@ -990,6 +1143,100 @@ void UIConsole::onDocumentUndoRedo( const TextDocument::UndoRedo& ) {
 void UIConsole::onDocumentSaved( TextDocument* ) {}
 
 void UIConsole::onDocumentMoved( TextDocument* ) {}
+
+Drawable* UIConsole::findIcon( const std::string& name ) {
+	UIIcon* icon = getUISceneNode()->findIcon( name );
+	if ( icon )
+		return icon->getSize( mMenuIconSize );
+	return nullptr;
+}
+
+void UIConsole::copySelection() {
+	std::string str;
+	auto selNorm = mSelection.normalized();
+
+	for ( Int64 i = selNorm.start().line(); i <= selNorm.end().line(); i++ ) {
+		auto startCol = eemin( (Int64)mCmdLog[i].log.size(), selNorm.start().column() );
+		auto endCol = eemin( (Int64)mCmdLog[i].log.size(), selNorm.end().column() );
+
+		if ( i >= (Int64)mCmdLog.size() )
+			continue;
+
+		if ( i == selNorm.start().line() ) {
+			str += mCmdLog[i]
+					   .log
+					   .substr( startCol, selNorm.end().line() == i
+											  ? eemax( (Int64)0, endCol - startCol )
+											  : (Int64)mCmdLog[i].log.size() - startCol )
+					   .toUtf8();
+			if ( endCol == (Int64)mCmdLog[i].log.size() )
+				str += "\n";
+		} else if ( i == selNorm.end().line() ) {
+			str += mCmdLog[i].log.substr( 0, endCol ).toUtf8();
+			if ( endCol == (Int64)mCmdLog[i].log.size() )
+				str += "\n";
+		} else {
+			str += mCmdLog[i].log.toUtf8();
+			str += "\n";
+		}
+	}
+
+	getUISceneNode()->getWindow()->getClipboard()->setText( str );
+}
+
+UIMenuItem* UIConsole::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
+								const String& translateString, const std::string& icon,
+								const std::string& cmd ) {
+	UIMenuItem* menuItem =
+		menu->add( getTranslatorString( "@string/uiconsole_" + translateKey, translateString ),
+				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+	menuItem->setId( cmd );
+	return menuItem;
+}
+
+bool UIConsole::onCreateContextMenu( const Vector2i& position, const Uint32& flags ) {
+	if ( mCurrentMenu )
+		return false;
+
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+
+	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mSelection.hasSelection() );
+
+	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
+	sendEvent( &event );
+
+	if ( menu->getCount() == 0 ) {
+		menu->close();
+		return false;
+	}
+
+	menu->setCloseOnHide( true );
+	menu->addEventListener( Event::OnItemClicked, [&, menu]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		const std::string& txt( item->getId() );
+		if ( txt == "copy" )
+			copySelection();
+		menu->hide();
+	} );
+
+	Vector2f pos( position.asFloat() );
+	runOnMainThread( [this, menu, pos]() {
+		Vector2f npos( pos );
+		menu->nodeToWorldTranslation( npos );
+		UIMenu::findBestMenuPos( npos, menu );
+		menu->setPixelsPosition( npos );
+		menu->show();
+		mCurrentMenu = menu;
+	} );
+	menu->addEventListener( Event::OnMenuHide, [this]( const Event* ) {
+		if ( !isClosing() )
+			setFocus();
+	} );
+	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
+	return true;
+}
 
 void UIConsole::onSelectionChange() {
 	invalidateDraw();
@@ -1207,8 +1454,7 @@ void UIConsole::pushText( const char* format, ... ) {
 }
 
 Float UIConsole::getLineHeight() const {
-	return mFontStyleConfig.Font->getFontHeight(
-		PixelDensity::dpToPx( mFontStyleConfig.CharacterSize ) );
+	return mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
 }
 
 bool UIConsole::getQuakeMode() const {

@@ -3,7 +3,7 @@
 
 #define EE_PLATFORM_WIN 1
 #define EE_PLATFORM_LINUX 2
-#define EE_PLATFORM_MACOSX 3
+#define EE_PLATFORM_MACOS 3
 #define EE_PLATFORM_BSD 4
 #define EE_PLATFORM_SOLARIS 5
 #define EE_PLATFORM_HAIKU 6
@@ -16,7 +16,7 @@
 
 #if ( defined( _MSCVER ) || defined( _MSC_VER ) )
 #define EE_COMPILER_MSVC
-
+#pragma warning( disable : 4267 )
 #pragma warning( disable : 4251 )
 #pragma warning( disable : 4244 )
 #pragma warning( disable : 4996 )
@@ -32,7 +32,7 @@
 	( defined( TARGET_IPHONE_SIMULATOR ) && TARGET_IPHONE_SIMULATOR )
 #define EE_PLATFORM EE_PLATFORM_IOS
 #else
-#define EE_PLATFORM EE_PLATFORM_MACOSX
+#define EE_PLATFORM EE_PLATFORM_MACOS
 #endif
 #elif defined( __emscripten__ ) || defined( EMSCRIPTEN )
 #define EE_PLATFORM EE_PLATFORM_EMSCRIPTEN
@@ -192,7 +192,7 @@
 #define EE_SHADERS_SUPPORTED
 #endif
 
-#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || \
+#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
 	  defined( EE_X11_PLATFORM ) ) &&                                        \
 	!defined( EE_GLES )
 #define EE_GLEW_AVAILABLE

@@ -31,6 +31,13 @@ class FontStyleConfig {
 
 	FontStyleConfig() {}
 
+	bool operator==( const FontStyleConfig& other ) {
+		return Font == other.Font && CharacterSize == other.CharacterSize && Style == other.Style &&
+			   FontColor == other.FontColor && ShadowColor == other.ShadowColor &&
+			   ShadowOffset == other.ShadowOffset && OutlineThickness == other.OutlineThickness &&
+			   OutlineColor == other.OutlineColor;
+	}
+
 	virtual void updateFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
 		Font = fontStyleConfig.Font;
 		Style = fontStyleConfig.Style;
@@ -42,14 +49,14 @@ class FontStyleConfig {
 		OutlineColor = fontStyleConfig.OutlineColor;
 	}
 
-	Graphics::Font* Font = NULL;
-	Float CharacterSize = 12;
-	Uint32 Style = 0;
-	Color FontColor = Color( 255, 255, 255, 255 );
-	Color ShadowColor = Color( 50, 50, 50, 230 );
+	Graphics::Font* Font{ nullptr };
+	Float CharacterSize{ 12 };
+	Uint32 Style{ 0 };
+	Color FontColor{ 255, 255, 255, 255 };
+	Color ShadowColor{ 50, 50, 50, 230 };
 	Vector2f ShadowOffset{ PixelDensity::dpToPx( 1 ), PixelDensity::dpToPx( 1 ) };
-	Float OutlineThickness = 0;
-	Color OutlineColor = Color( 0, 0, 0, 255 );
+	Float OutlineThickness{ 0 };
+	Color OutlineColor{ 0, 0, 0, 255 };
 };
 
 }} // namespace EE::Graphics

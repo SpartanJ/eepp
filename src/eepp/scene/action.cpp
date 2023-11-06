@@ -65,7 +65,7 @@ Action* Action::on( const Action::ActionType& actionType, const Action::ActionCa
 
 void Action::removeEventListener( const Uint32& callbackId ) {
 	for ( auto it = mCallbacks.begin(); it != mCallbacks.end(); ++it ) {
-		std::map<Uint32, ActionCallback>& event = it->second;
+		UnorderedMap<Uint32, ActionCallback>& event = it->second;
 
 		if ( event.erase( callbackId ) )
 			break;

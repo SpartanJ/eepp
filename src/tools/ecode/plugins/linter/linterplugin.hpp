@@ -4,6 +4,7 @@
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
+#include <eepp/system/process.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <memory>
@@ -56,7 +57,7 @@ class LinterPlugin : public Plugin {
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New,
-				 { 0, 2, 2 },
+				 { 0, 2, 3 },
 				 LinterPlugin::NewSync };
 	}
 
@@ -104,7 +105,7 @@ class LinterPlugin : public Plugin {
 
 	const std::vector<Linter>& getLinters() const;
 
-	Linter getLinterForLang( const std::string& lang, const std::vector<std::string>& extensions );
+	Linter getLinterForLang( const std::string& lang );
 
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );
@@ -123,6 +124,8 @@ class LinterPlugin : public Plugin {
 	std::condition_variable mWorkerCondition;
 	Int32 mWorkersCount{ 0 };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
+	std::mutex mRunningProcessesMutex;
+	std::unordered_map<TextDocument*, Process*> mRunningProcesses;
 
 	bool mHoveringMatch{ false };
 	bool mEnableLSPDiagnostics{ true };
@@ -151,7 +154,7 @@ class LinterPlugin : public Plugin {
 
 	void invalidateEditors( TextDocument* doc );
 
-	std::string getMatchString( const LinterType& type );
+	SyntaxStyleType getMatchString( const LinterType& type );
 
 	void loadLinterConfig( const std::string& path, bool updateConfigFile );
 

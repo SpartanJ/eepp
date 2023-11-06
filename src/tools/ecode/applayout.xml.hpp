@@ -68,10 +68,12 @@ StatusBar > #doc_info {
 #search_replace.error {
 	border-color: #ff4040;
 }
-TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2) {
+TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2),
+TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) {
 	color: var(--font-hint);
 }
-TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2) {
+TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2),
+TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(3) {
 	color: var(--font);
 }
 .search_tree treeview::cell {
@@ -373,6 +375,15 @@ Anchor.error:hover {
 #build_output_issues TableView::cell.theme-error > TableView::cell::icon {
 	tint: var(--theme-error);
 }
+#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::text {
+	color: var(--font);
+}
+#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::icon {
+	tint: var(--font);
+}
+.texture-preview {
+	border: 1dp solid var(--list-back);
+}
 </style>
 <MainLayout id="main_layout" lw="mp" lh="mp">
 <Splitter id="project_splitter" lw="mp" lh="mp">
@@ -466,7 +477,7 @@ Anchor.error:hover {
 			<PushButton class="status_but" id="status_global_search_bar" text="@string(search, Search)" icon="icon(file-search, 12dp)" />
 			<PushButton class="status_but" id="status_terminal" text="@string(terminal, Terminal)" icon="icon(terminal, 12dp)" />
 			<PushButton class="status_but" id="status_build_output" text="@string(build, Build)" icon="icon(symbol-property, 12dp)"  />
-			<Widget lw="0" lw8="1" lh="1dp" />
+			<Widget class="status_sep" lw="0" lw8="1" lh="1dp" />
 		</statusbar>
 	</vbox>
 </Splitter>

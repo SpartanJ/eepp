@@ -23,6 +23,7 @@ using namespace EE::UI::Tools;
 namespace ecode {
 
 class PluginManager;
+class Plugin;
 class FileSystemListener;
 
 typedef std::function<UICodeEditorPlugin*( PluginManager* pluginManager )> PluginCreatorFn;
@@ -42,9 +43,9 @@ struct PluginVersion {
 		patch( patch ),
 		string( String::format( "%d.%d.%d", major, minor, patch ) ) {}
 
-	Uint8 major; /**< major version */
-	Uint8 minor; /**< minor version */
-	Uint8 patch; /**< update version */
+	Uint8 major{ 0 }; /**< major version */
+	Uint8 minor{ 0 }; /**< minor version */
+	Uint8 patch{ 0 }; /**< update version */
 	std::string string;
 
 	Uint32 getVersion() const { return major * 1000 + minor * 100 + patch; }
@@ -60,6 +61,8 @@ struct PluginDefinition {
 	PluginVersion version;
 	PluginCreatorFn creatorSyncFn{ nullptr };
 };
+
+enum class PluginCapability { WorkspaceSymbol, TextDocumentSymbol, Max };
 
 enum class PluginMessageType {
 	WorkspaceFolderChanged, // Broadcast the workspace folder from the application to the plugins
@@ -84,6 +87,7 @@ enum class PluginMessageType {
 	GetErrorOrWarning, // Request a component to provide the information of an error or warning in a
 					   // particular document location
 	GetDiagnostics,	   // Request the diagnostic information from a cursor position
+	QueryPluginCapability, // Requests / queries if a plugin providers a capability
 	Undefined
 };
 
@@ -244,7 +248,7 @@ class PluginRequestHandle {
 class PluginManager {
   public:
 	static constexpr int versionNumber( int major, int minor, int patch ) {
-		return ( (major)*1000 + (minor)*100 + ( patch ) );
+		return ( ( major ) * 1000 + ( minor ) * 100 + ( patch ) );
 	}
 
 	static std::string versionString( int major, int minor, int patch ) {
@@ -325,6 +329,14 @@ class PluginManager {
 
 	const OnLoadFileCb& getLoadFileFn() const;
 
+	bool isPluginReloadEnabled() const;
+
+	void setPluginReloadEnabled( bool pluginReloadEnabled );
+
+	void subscribeFileSystemListener( Plugin* plugin );
+
+	void unsubscribeFileSystemListener( Plugin* plugin );
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;
@@ -341,13 +353,20 @@ class PluginManager {
 	Mutex mSubscribedPluginsMutex;
 	SubscribedPlugins mSubscribedPlugins;
 	OnLoadFileCb mLoadFileFn;
+	Uint64 mFileSystemListenerCb{ 0 };
+	UnorderedSet<Plugin*> mPluginsFSSubs;
 	bool mClosing{ false };
+	bool mPluginReloadEnabled{ false };
 
 	bool hasDefinition( const std::string& id );
 
 	void setSplitter( UICodeEditorSplitter* splitter );
 
 	void setFileSystemListener( FileSystemListener* listener );
+
+	void subscribeFileSystemListener();
+
+	void unsubscribeFileSystemListener();
 };
 
 class PluginsModel : public Model {
@@ -398,7 +417,7 @@ class Plugin : public UICodeEditorPlugin {
 
 	bool isReady() const;
 
-	bool isLoading() const { return mLoading; }
+	bool isLoading() const;
 
 	bool isShuttingDown() const;
 
@@ -410,16 +429,19 @@ class Plugin : public UICodeEditorPlugin {
 
 	virtual String::HashType getConfigFileHash() { return 0; }
 
+	virtual void onFileSystemEvent( const FileEvent& ev, const FileInfo& file );
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
-	Uint64 mFileSystemListenerCb{ 0 };
 	std::string mConfigPath;
 	FileInfo mConfigFileInfo;
 
-	bool mReady{ false };
-	bool mLoading{ false };
-	bool mShuttingDown{ false };
+	std::atomic<bool> mReady{ false };
+	std::atomic<bool> mLoading{ false };
+	std::atomic<bool> mShuttingDown{ false };
+
+	void setReady();
 };
 
 class PluginBase : public Plugin {

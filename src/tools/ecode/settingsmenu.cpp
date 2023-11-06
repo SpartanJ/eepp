@@ -37,6 +37,10 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 			   getKeybind( "create-new-terminal" ) )
 		->setId( "create-new-terminal" );
 	mSettingsMenu
+		->add( i18n( "new_window", "New Window" ), findIcon( "window" ),
+			   getKeybind( "create-new-window" ) )
+		->setId( "create-new-window" );
+	mSettingsMenu
 		->add( i18n( "open_file", "Open File..." ), findIcon( "document-open" ),
 			   getKeybind( "open-file" ) )
 		->setId( "open-file" );
@@ -315,7 +319,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		}
 	} );
 
-	mDocMenu->addCheckBox( i18n( "read_only", "Read Only" ) )->setId( "read_only" );
+	mDocMenu->addCheckBox( i18n( "read_only", "Read Only" ), false, getKeybind( "lock-toggle" ) )
+		->setId( "read_only" );
 
 	mDocMenu
 		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
@@ -768,6 +773,11 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		->add( i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-shell" ) )
 		->setId( "configure-terminal-shell" );
+
+	mTerminalMenu
+		->add( i18n( "configure_terminal_scrollback", "Configure Terminal Scrollback" ),
+			   findIcon( "terminal" ), getKeybind( "configure-terminal-scrollback" ) )
+		->setId( "configure-terminal-scrollback" );
 
 	newTerminalBehaviorSubMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );

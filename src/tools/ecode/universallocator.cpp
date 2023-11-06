@@ -336,7 +336,8 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 
 				if ( String::startsWith( mLocateInput->getText(), "sb " ) ) {
 					auto pbm = mApp->getProjectBuildManager();
-					if ( nullptr == pbm ) return;
+					if ( nullptr == pbm )
+						return;
 					auto cfg = pbm->getConfig();
 					std::string buildName = vName.toString();
 					if ( pbm->hasBuild( buildName ) ) {
@@ -347,7 +348,8 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 					return;
 				} else if ( String::startsWith( mLocateInput->getText(), "sbt " ) ) {
 					auto pbm = mApp->getProjectBuildManager();
-					if ( nullptr == pbm ) return;
+					if ( nullptr == pbm )
+						return;
 					auto cfg = pbm->getConfig();
 					auto build = pbm->getBuild( cfg.buildName );
 					if ( build != nullptr ) {
@@ -412,7 +414,12 @@ void UniversalLocator::updateLocateBarSync() {
 	mLocateTable->setPixelsSize( width,
 								 mLocateTable->getRowHeight() * LOCATEBAR_MAX_VISIBLE_ITEMS );
 	width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
-	if ( mLocateTable->getModel()->columnCount() >= 2 ) {
+	if ( mLocateTable->getModel() && mLocateTable->getModel()->columnCount() >= 3 ) {
+		mLocateTable->setColumnsVisible( { 0, 1, 2 } );
+		mLocateTable->setColumnWidth( 0, eefloor( width * 0.5 ) );
+		mLocateTable->setColumnWidth( 1, eefloor( width * 0.25 ) );
+		mLocateTable->setColumnWidth( 2, eefloor( width * 0.25 ) );
+	} else if ( mLocateTable->getModel() && mLocateTable->getModel()->columnCount() >= 2 ) {
 		mLocateTable->setColumnsVisible( { 0, 1 } );
 		mLocateTable->setColumnWidth( 0, eeceil( width * 0.5 ) );
 		mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );
@@ -440,7 +447,9 @@ void UniversalLocator::showBar() {
 	mLocateTable->setVisible( true );
 	const String& text = mLocateInput->getText();
 
-	if ( !text.empty() && ( text[0] == '>' || text[0] == ':' || text[0] == '.' ) ) {
+	if ( !text.empty() && ( text[0] == '>' || text[0] == ':' || text[0] == '.' ||
+							( text[0] == 'o' && text.size() > 1 && text[1] == ' ' ) ||
+							( text[0] == 'l' && text.size() > 1 && text[1] == ' ' ) ) ) {
 		Int64 selectFrom = 1;
 		if ( text.size() >= 2 && text[1] == ' ' )
 			selectFrom = 2;
@@ -462,6 +471,8 @@ void UniversalLocator::showLocateBar() {
 	if ( !mLocateInput->getText().empty() &&
 		 ( mLocateInput->getText()[0] == '>' || mLocateInput->getText()[0] == ':' ||
 		   mLocateInput->getText()[0] == '.' ||
+		   String::startsWith( mLocateInput->getText(), "l " ) ||
+		   String::startsWith( mLocateInput->getText(), "o " ) ||
 		   String::startsWith( mLocateInput->getText(), "sb " ) ||
 		   String::startsWith( mLocateInput->getText(), "sbt " ) ) )
 		mLocateInput->setText( "" );
@@ -707,21 +718,60 @@ std::shared_ptr<LSPSymbolInfoModel> UniversalLocator::emptyModel( const String& 
 	return LSPSymbolInfoModel::create( mUISceneNode, query, { info } );
 }
 
+bool UniversalLocator::findCapability( PluginCapability capability ) {
+	json capa;
+	capa["capability"] = capability;
+	capa["uri"] = getCurDocURI();
+	PluginRequestHandle resp = mApp->getPluginManager()->sendRequest(
+		PluginMessageType::QueryPluginCapability, PluginMessageFormat::JSON, &capa );
+	if ( resp.isResponse() && resp.getResponse().data.is_boolean() )
+		return resp.getResponse().data.get<bool>();
+	return false;
+}
+
+String UniversalLocator::getDefQueryText( PluginCapability capability ) {
+	bool hasCapability = findCapability( capability );
+	if ( !hasCapability )
+		return mUISceneNode->i18n( "no_running_lsp_server", "No running LSP server" );
+	return mUISceneNode->i18n( "insert_search_query", "Insert search query" );
+}
+
+nlohmann::json UniversalLocator::pluginID( const PluginIDType& id ) {
+	json r;
+	r["uri"] = getCurDocURI();
+	if ( id.isInteger() )
+		r["id"] = id.asInt();
+	else
+		r["id"] = id.asString();
+	return r;
+}
+
 void UniversalLocator::requestWorkspaceSymbol() {
 	if ( mLocateInput->getText().empty() )
 		return;
 	auto txt( mLocateInput->getText().substr( 1 ).trim() );
 	if ( mWorkspaceSymbolQuery != txt.toUtf8() || mWorkspaceSymbolQuery.empty() ) {
 		mWorkspaceSymbolQuery = txt.toUtf8();
+
 		if ( !mWorkspaceSymbolModel ) {
-			auto defTxt = mUISceneNode->i18n( "no_running_lsp_server", "No running LSP server" );
+			auto defTxt = getDefQueryText( PluginCapability::WorkspaceSymbol );
 			mWorkspaceSymbolModel = emptyModel( defTxt, mWorkspaceSymbolQuery );
 		}
 		mLocateTable->setModel( mWorkspaceSymbolModel );
 
-		json j = json{ json{ "query", mWorkspaceSymbolQuery } };
-		mApp->getPluginManager()->sendRequest( PluginMessageType::WorkspaceSymbol,
-											   PluginMessageFormat::JSON, &j );
+		if ( mQueryWorkspaceLastId.isValid() ) {
+			json r( pluginID( mQueryWorkspaceLastId ) );
+			mApp->getPluginManager()->sendBroadcast( PluginMessageType::CancelRequest,
+													 PluginMessageFormat::JSON, &r );
+		}
+
+		mApp->getThreadPool()->run( [this] {
+			json j;
+			j["query"] = mWorkspaceSymbolQuery;
+			auto hdl = mApp->getPluginManager()->sendRequest( PluginMessageType::WorkspaceSymbol,
+															  PluginMessageFormat::JSON, &j );
+			mQueryWorkspaceLastId = hdl.id();
+		} );
 	} else if ( mWorkspaceSymbolModel && mWorkspaceSymbolModel.get() != mLocateTable->getModel() ) {
 		mLocateTable->setModel( mWorkspaceSymbolModel );
 	}
@@ -757,16 +807,18 @@ void UniversalLocator::requestDocumentSymbol() {
 
 	if ( mSplitter->curEditorIsNotNull() ) {
 		if ( needsUpdate ) {
-			mTextDocumentSymbolModel = emptyModel(
-				mUISceneNode->i18n( "no_running_lsp_server", "No running LSP server" ) );
+			mTextDocumentSymbolModel =
+				emptyModel( getDefQueryText( PluginCapability::TextDocumentSymbol ) );
+			mLocateTable->setModel( mTextDocumentSymbolModel );
+
 			json j;
 			j["uri"] = mCurDocURI = getCurDocURI();
-			mApp->getPluginManager()->sendRequest( PluginMessageType::TextDocumentFlattenSymbol,
-												   PluginMessageFormat::JSON, &j );
+			auto hdl = mApp->getPluginManager()->sendRequest(
+				PluginMessageType::TextDocumentFlattenSymbol, PluginMessageFormat::JSON, &j );
 		} else {
 			if ( !mTextDocumentSymbolModel ) {
-				mTextDocumentSymbolModel = emptyModel(
-					mUISceneNode->i18n( "no_running_lsp_server", "No running LSP server" ) );
+				mTextDocumentSymbolModel =
+					emptyModel( getDefQueryText( PluginCapability::TextDocumentSymbol ) );
 			}
 			mLocateTable->setModel( mTextDocumentSymbolModel );
 		}
@@ -821,6 +873,7 @@ std::string UniversalLocator::getCurDocURI() {
 PluginRequestHandle UniversalLocator::processResponse( const PluginMessage& msg ) {
 	if ( msg.isResponse() && msg.type == PluginMessageType::WorkspaceSymbol &&
 		 msg.format == PluginMessageFormat::SymbolInformation ) {
+		mQueryWorkspaceLastId = PluginIDType();
 		updateWorkspaceSymbol( msg.asSymbolInformation() );
 	} else if ( msg.isResponse() && msg.type == PluginMessageType::TextDocumentFlattenSymbol &&
 				msg.format == PluginMessageFormat::SymbolInformation ) {

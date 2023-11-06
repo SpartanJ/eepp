@@ -5,7 +5,6 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <memory>
-#include <unordered_map>
 
 namespace EE { namespace System {
 class Pack;
@@ -32,17 +31,18 @@ class EE_API FontTrueType : public Font {
 
 	const Font::Info& getInfo() const;
 
-	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
+	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness = 0, Float maxWidth = 0 ) const;
 
-	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
+	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
 								  Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-									 bool bold = false, Float outlineThickness = 0,
-									 const Float& maxWidth = 0 ) const;
+									 bool bold = false, bool italic = false,
+									 Float outlineThickness = 0, const Float& maxWidth = 0 ) const;
 
-	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold ) const;
+	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
+					  bool italic, Float outlineThickness = 0 ) const;
 
 	Float getLineSpacing( unsigned int characterSize ) const;
 
@@ -102,6 +102,30 @@ class EE_API FontTrueType : public Font {
 
 	void setAntialiasing( FontAntialiasing antialiasing );
 
+	virtual bool isBold() const { return mIsBold && !mIsItalic; }
+
+	virtual bool isItalic() const { return mIsItalic && !mIsBold; }
+
+	virtual bool isBoldItalic() const { return mIsBold && mIsItalic; }
+
+	virtual bool hasBold() const { return mIsBold || mFontBold != nullptr; }
+
+	virtual bool hasItalic() const { return mIsItalic || mFontItalic != nullptr; }
+
+	virtual bool hasBoldItalic() const { return isBoldItalic() || mFontBoldItalic; }
+
+	FontTrueType* getBoldFont() const { return mFontBold; }
+
+	FontTrueType* getItalicFont() const { return mFontItalic; }
+
+	FontTrueType* getBoldItalicFont() const { return mFontBoldItalic; }
+
+	void setBoldFont( FontTrueType* fontBold );
+
+	void setItalicFont( FontTrueType* fontItalic );
+
+	void setBoldItalicFont( FontTrueType* fontBoldItalic );
+
   protected:
 	explicit FontTrueType( const std::string& FontName );
 
@@ -114,12 +138,11 @@ class EE_API FontTrueType : public Font {
 		unsigned int height; ///< Height of the row
 	};
 
-	typedef std::unordered_map<Uint64, Glyph>
-		GlyphTable; ///< Table mapping a codepoint to its glyph
-	typedef std::unordered_map<Uint64, GlyphDrawable*> GlyphDrawableTable;
+	typedef UnorderedMap<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef UnorderedMap<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
-		explicit Page( const Uint32 fontInternalId );
+		explicit Page( const Uint32 fontInternalId, const std::string& pageName );
 
 		~Page();
 
@@ -134,15 +157,15 @@ class EE_API FontTrueType : public Font {
 
 	void cleanup();
 
-	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
+	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
 								  Float outlineThickness, Page& page, const Float& maxWidth ) const;
 
-	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
+	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness, Page& page, const Float& maxWidth ) const;
 
 	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
 
-	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
+	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 					 Float outlineThickness, Page& page, const Float& maxWidth = 0.f ) const;
 
 	Rect findGlyphRect( Page& page, unsigned int width, unsigned int height ) const;
@@ -151,7 +174,7 @@ class EE_API FontTrueType : public Font {
 
 	Page& getPage( unsigned int characterSize ) const;
 
-	typedef std::map<unsigned int, std::unique_ptr<Page>>
+	typedef UnorderedMap<unsigned int, std::unique_ptr<Page>>
 		PageTable; ///< Table mapping a character size to its page (texture)
 
 	void* mLibrary; ///< Pointer to the internal library interface (it is typeless to avoid exposing
@@ -172,15 +195,29 @@ class EE_API FontTrueType : public Font {
 	bool mIsColorEmojiFont{ false };
 	bool mIsEmojiFont{ false };
 	mutable bool mIsMonospace{ false };
+	mutable bool mIsMonospaceComplete{ false };
+	mutable bool mUsingFallback{ false };
 	bool mEnableEmojiFallback{ true };
 	bool mEnableFallbackFont{ true };
 	bool mEnableDynamicMonospace{ false };
-	mutable std::unordered_map<unsigned int, unsigned int> mClosestCharacterSize;
-	mutable std::unordered_map<Uint32, Uint32> mCodePointIndexCache;
+	bool mIsBold{ false };
+	bool mIsItalic{ false };
+	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
+	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
 	FontHinting mHinting{ FontHinting::Full };
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
+	FontTrueType* mFontBold{ nullptr };
+	FontTrueType* mFontItalic{ nullptr };
+	FontTrueType* mFontBoldItalic{ nullptr };
+	Uint32 mFontBoldCb{ 0 };
+	Uint32 mFontItalicCb{ 0 };
+	Uint32 mFontBoldItalicCb{ 0 };
 
 	void updateFontInternalId();
+
+	bool setFontFace( void* face );
+
+	void updateMonospaceState();
 };
 
 }} // namespace EE::Graphics

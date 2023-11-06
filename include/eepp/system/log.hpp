@@ -13,7 +13,7 @@ namespace EE { namespace System {
  * example for a console. */
 class LogReaderInterface {
   public:
-	virtual void writeLog( const std::string& Text ) = 0;
+	virtual void writeLog( const std::string_view& Text ) = 0;
 };
 
 enum class LogLevel : int {
@@ -56,22 +56,22 @@ class EE_API Log : protected Mutex {
 
 	/** @brief Writes the text to the log
 	**	@param text The text to write */
-	void write( const std::string& text );
+	void write( const std::string_view& text );
 
 	/** @brief Writes the text to the log with a log level.
 	 ** @param level The log level that will try to write.
 	 ** @param text The text to write */
-	void write( const LogLevel& level, const std::string& text );
+	void write( const LogLevel& level, const std::string_view& text );
 
 	/** @brief Writes the text to the log and appends a new line character at the end.
 	**	@param text The text to write */
-	void writel( const std::string& text );
+	void writel( const std::string_view& text );
 
 	/** @brief Writes the text to the log and appends a new line character at the end with a log
 	 *level.
 	 ** @param levelThe log level that will try to write.
 	 ** @param text The text to write */
-	void writel( const LogLevel& level, const std::string& text );
+	void writel( const LogLevel& level, const std::string_view& text );
 
 	/** @brief Writes a formated string to the log with a log level.
 	 ** @param level The log level that will try to write.
@@ -124,29 +124,29 @@ class EE_API Log : protected Mutex {
 	/** Enable/Disable to keep a copy of the logs into memory (disabled by default) */
 	void setKeepLog( bool keepLog );
 
-	static void debug( const std::string& text ) {
+	static void debug( const std::string_view& text ) {
 		Log::instance()->writel( LogLevel::Debug, text );
 	}
 
-	static void info( const std::string& text ) { Log::instance()->writel( LogLevel::Info, text ); }
+	static void info( const std::string_view& text ) { Log::instance()->writel( LogLevel::Info, text ); }
 
-	static void notice( const std::string& text ) {
+	static void notice( const std::string_view& text ) {
 		Log::instance()->writel( LogLevel::Notice, text );
 	}
 
-	static void warning( const std::string& text ) {
+	static void warning( const std::string_view& text ) {
 		Log::instance()->writel( LogLevel::Warning, text );
 	}
 
-	static void error( const std::string& text ) {
+	static void error( const std::string_view& text ) {
 		Log::instance()->writel( LogLevel::Error, text );
 	}
 
-	static void critical( const std::string& text ) {
+	static void critical( const std::string_view& text ) {
 		Log::instance()->writel( LogLevel::Critical, text );
 	}
 
-	static void assertLog( const std::string& text ) {
+	static void assertLog( const std::string_view& text ) {
 		Log::instance()->writel( LogLevel::Assert, text );
 	}
 
@@ -197,7 +197,7 @@ class EE_API Log : protected Mutex {
 
 	void closeFS();
 
-	void writeToReaders( const std::string& text );
+	void writeToReaders( const std::string_view& text );
 };
 
 }} // namespace EE::System

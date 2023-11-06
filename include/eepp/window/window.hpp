@@ -5,6 +5,7 @@
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/view.hpp>
 #include <eepp/window/base.hpp>
+#include <eepp/window/inputmethod.hpp>
 
 namespace EE { namespace Window {
 
@@ -38,11 +39,7 @@ enum class WindowFlashOperation {
 enum class WindowBackend : Uint32 { SDL2, Default };
 
 #ifndef EE_SCREEN_KEYBOARD_ENABLED
-#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
-#define EE_SCREEN_KEYBOARD_ENABLED true
-#else
 #define EE_SCREEN_KEYBOARD_ENABLED false
-#endif
 #endif
 
 /** @brief WindowSettings A small class that contains the window settings */
@@ -160,6 +157,7 @@ class EE_API Window {
   public:
 	typedef std::function<void( Window* )> WindowResizeCallback;
 	typedef std::function<bool( Window* )> WindowRequestCloseCallback;
+	typedef std::function<void( Window* )> WindowQuitCallback;
 
 	Window( WindowSettings Settings, ContextSettings Context, Clipboard* Clipboard, Input* Input,
 			CursorManager* CursorManager );
@@ -383,9 +381,17 @@ class EE_API Window {
 	/** Pop the callback id indicated. */
 	void popResizeCallback( const Uint32& CallbackId );
 
+	/** @brief Show the on-screen keyboard if supported. */
+	virtual void startOnScreenKeyboard();
+
+	/** @brief Hide the on-screen keyboard if supported. */
+	virtual void stopOnScreenKeyboard();
+
+	/** @return True if on-screen keyboard is active. */
+	virtual bool isOnScreenKeyboardActive() const;
+
 	/**
 	 * @brief Start accepting Unicode text input events.
-	 *        This function will show the on-screen keyboard if supported.
 	 *
 	 * @sa stopTextInput()
 	 * @sa setTextInputRect()
@@ -399,11 +405,10 @@ class EE_API Window {
 	 * @sa startTextInput()
 	 * @sa stopTextInput()
 	 */
-	virtual bool isTextInputActive();
+	virtual bool isTextInputActive() const;
 
 	/**
 	 * @brief Stop receiving any text input events.
-	 *        This function will hide the on-screen keyboard if supported.
 	 *
 	 * @sa startTextInput()
 	 * @sa hasScreenKeyboardSupport()
@@ -416,7 +421,15 @@ class EE_API Window {
 	 *
 	 * @sa startTextInput()
 	 */
-	virtual void setTextInputRect( Rect& rect );
+	virtual void setTextInputRect( const Rect& rect );
+
+	/**
+	 * Dismiss the composition window/IME without disabling the subsystem.
+	 *
+	 * @sa startTextInput
+	 * @sa stopTextInput
+	 */
+	virtual void clearComposition();
 
 	/**
 	 * @brief Returns whether the platform has some screen keyboard support.
@@ -464,6 +477,8 @@ class EE_API Window {
 
 	void setCloseRequestCallback( const WindowRequestCloseCallback& closeRequestCallback );
 
+	void setQuitCallback( const WindowQuitCallback& quitCallback );
+
 	/** In case of a frame rate limit is set, this will return the time spent sleeping per second.
 	 */
 	const System::Time& getSleepTimePerSecond() const;
@@ -487,6 +502,8 @@ class EE_API Window {
 	virtual bool showMessageBox( const MessageBoxType& type, const std::string& title,
 								 const std::string& message );
 
+	InputMethod& getIME();
+
   protected:
 	friend class Engine;
 	friend class Input;
@@ -500,7 +517,9 @@ class EE_API Window {
 	Uint32 mNumCallBacks;
 	std::map<Uint32, WindowResizeCallback> mCallbacks;
 	WindowRequestCloseCallback mCloseRequestCallback;
+	WindowQuitCallback mQuitCallback;
 	Sizei mLastWindowedSize;
+	InputMethod mIME;
 
 	class FrameData {
 	  public:
@@ -559,6 +578,8 @@ class EE_API Window {
 	void logFailureInit( const std::string& ClassName, const std::string& BackendName );
 
 	void onCloseRequest();
+
+	void onQuit();
 };
 
 }} // namespace EE::Window

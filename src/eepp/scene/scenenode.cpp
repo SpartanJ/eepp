@@ -431,7 +431,7 @@ const Time& SceneNode::getElapsed() const {
 	return mElapsed;
 }
 
-bool SceneNode::usesInvalidation() {
+bool SceneNode::usesInvalidation() const {
 	return mUseInvalidation;
 }
 

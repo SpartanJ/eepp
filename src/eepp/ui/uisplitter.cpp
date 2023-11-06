@@ -26,7 +26,7 @@ UISplitter::UISplitter() :
 	mSplitter->setMinWidth( 4 );
 	mSplitter->setMinHeight( 4 );
 	mSplitter->on( Event::OnSizeChange, [this]( const Event* ) { setLayoutDirty(); } );
-	mSplitter->on( Event::MouseOver, [this]( const Event* ) {
+	mSplitter->on( Event::MouseEnter, [this]( const Event* ) {
 		getUISceneNode()->setCursor( mOrientation == UIOrientation::Horizontal ? Cursor::SizeWE
 																			   : Cursor::SizeNS );
 	} );

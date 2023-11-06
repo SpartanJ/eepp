@@ -6,6 +6,8 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/window/engine.hpp>
+using namespace EE::Window;
 
 #include <freetype/ftlcdfil.h>
 #include <ft2build.h>
@@ -47,16 +49,20 @@ template <typename T, typename U> inline T reinterpret( const U& input ) {
 } // namespace
 
 namespace EE { namespace Graphics {
+using std::move;
 
-static std::map<std::string, Uint32> fontsInternalIds;
+static std::unordered_map<std::string, Uint32> fontsInternalIds;
 static std::atomic<Uint32> fontInternalIdCounter{ 0 };
 
-// Combine outline thickness, boldness and font glyph index into a single 64-bit key
-static inline Uint64 getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold,
+// Combine outline thickness, boldness, italics and font glyph index into a single 64-bit key
+static inline Uint64 getIndexKey( Uint32 fontInternalId, Uint32 index, bool bold, bool italics,
 								  Float outlineThickness ) {
 	return ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( fontInternalId ) ) << 48 ) |
-		   ( static_cast<EE::Uint64>( reinterpret<EE::Uint32>( outlineThickness * 100 ) ) << 33 ) |
-		   ( static_cast<EE::Uint64>( bold ) << 32 ) | index;
+		   ( static_cast<EE::Uint64>(
+				 reinterpret<EE::Uint32>( static_cast<Uint32>( outlineThickness ) * 100 ) )
+			 << 34 ) |
+		   ( static_cast<EE::Uint64>( bold ) << 33 ) |
+		   ( static_cast<EE::Uint64>( italics ) << 32 ) | index;
 }
 
 FontTrueType* FontTrueType::New( const std::string& FontName ) {
@@ -126,49 +132,10 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 		return false;
 	}
 
-	mFace = face;
-	mIsMonospace = FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
-	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
-	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
+	mInfo.fontpath = FileSystem::fileRemoveFileName( filename );
+	mInfo.filename = FileSystem::fileNameFromPath( filename );
 
-	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
-		FontManager::instance()->setColorEmojiFont( this );
-
-	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
-		FontManager::instance()->setEmojiFont( this );
-
-	FT_Stroker stroker = nullptr;
-	if ( !mIsColorEmojiFont ) {
-		// Load the stroker that will be used to outline the font
-		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-			Log::error( "Failed to load font \"%s\" (failed to create the stroker)",
-						filename.c_str() );
-			FT_Done_Face( face );
-			return false;
-		}
-
-		// Store the loaded font in our ugly void* :)
-		mStroker = stroker;
-	}
-
-	// Select the unicode character map
-	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
-		Log::error( "Failed to load font \"%s\" (failed to set the Unicode character set)",
-					filename.c_str() );
-		if ( stroker )
-			FT_Stroker_Done( stroker );
-		FT_Done_Face( face );
-		return false;
-	}
-
-	// Store the font information
-	mInfo.family = face->family_name ? face->family_name : std::string();
-
-	updateFontInternalId();
-
-	sendEvent( Event::Load );
-
-	return true;
+	return setFontFace( face );
 }
 
 bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bool copyData ) {
@@ -200,47 +167,7 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 		return false;
 	}
 
-	mFace = face;
-	mIsMonospace = FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
-	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
-	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
-
-	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
-		FontManager::instance()->setColorEmojiFont( this );
-
-	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
-		FontManager::instance()->setEmojiFont( this );
-
-	// Load the stroker that will be used to outline the font
-	FT_Stroker stroker = nullptr;
-	if ( !mIsColorEmojiFont ) {
-		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-			Log::error( "Failed to load font from memory (failed to create the stroker)" );
-			FT_Done_Face( face );
-			return false;
-		}
-	}
-
-	// Select the Unicode character map
-	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
-		Log::error( "Failed to load font from memory (failed to set the Unicode character set)" );
-		if ( stroker )
-			FT_Stroker_Done( stroker );
-		FT_Done_Face( face );
-		return false;
-	}
-
-	// Store the loaded font in our ugly void* :)
-	mStroker = stroker;
-
-	// Store the font information
-	mInfo.family = face->family_name ? face->family_name : std::string();
-
-	updateFontInternalId();
-
-	sendEvent( Event::Load );
-
-	return true;
+	return setFontFace( face );
 }
 
 bool FontTrueType::loadFromStream( IOStream& stream ) {
@@ -282,11 +209,38 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 		return false;
 	}
 
+	bool res = setFontFace( face );
+	if ( res )
+		mStreamRec = rec;
+
+	return res;
+}
+
+bool FontTrueType::loadFromPack( Pack* pack, std::string filePackPath ) {
+	if ( NULL == pack )
+		return false;
+
+	bool ret = false;
+
+	mMemCopy.clear();
+
+	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mMemCopy ) )
+		ret = loadFromMemory( mMemCopy.get(), mMemCopy.length(), false );
+
+	mInfo.fontpath = FileSystem::fileRemoveFileName( filePackPath );
+	mInfo.filename = FileSystem::fileNameFromPath( filePackPath );
+
+	return ret;
+}
+
+bool FontTrueType::setFontFace( void* _face ) {
+	FT_Face face = (FT_Face)_face;
 	mFace = face;
-	mIsMonospace = FT_IS_FIXED_WIDTH( static_cast<FT_Face>( mFace ) );
-	mIsColorEmojiFont = checkIsColorEmojiFont( static_cast<FT_Face>( mFace ) );
-	mIsEmojiFont = FT_Get_Char_Index( static_cast<FT_Face>( mFace ), 0x1F600 ) != 0;
-	FT_Stroker stroker = nullptr;
+	mIsMonospaceComplete = mIsMonospace = FT_IS_FIXED_WIDTH( face );
+	mIsColorEmojiFont = checkIsColorEmojiFont( face );
+	mIsEmojiFont = FT_Get_Char_Index( face, 0x1F600 ) != 0;
+	mIsBold = face->style_flags & FT_STYLE_FLAG_BOLD;
+	mIsItalic = face->style_flags & FT_STYLE_FLAG_ITALIC;
 
 	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
 		FontManager::instance()->setColorEmojiFont( this );
@@ -294,29 +248,27 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
 		FontManager::instance()->setEmojiFont( this );
 
+	// Load the stroker that will be used to outline the font
+	FT_Stroker stroker = nullptr;
 	if ( !mIsColorEmojiFont ) {
-		// Load the stroker that will be used to outline the font
 		if ( FT_Stroker_New( static_cast<FT_Library>( mLibrary ), &stroker ) != 0 ) {
-			Log::error( "Failed to load font from stream (failed to create the stroker)" );
+			Log::error( "Failed to load font from memory (failed to create the stroker)" );
 			FT_Done_Face( face );
-			delete rec;
 			return false;
 		}
 	}
 
 	// Select the Unicode character map
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 ) {
-		Log::error( "Failed to load font from stream (failed to set the Unicode character set)" );
+		Log::error( "Failed to load font from memory (failed to set the Unicode character set)" );
 		if ( stroker )
 			FT_Stroker_Done( stroker );
 		FT_Done_Face( face );
-		delete rec;
 		return false;
 	}
 
 	// Store the loaded font in our ugly void* :)
 	mStroker = stroker;
-	mStreamRec = rec;
 
 	// Store the font information
 	mInfo.family = face->family_name ? face->family_name : std::string();
@@ -326,21 +278,6 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 	sendEvent( Event::Load );
 
 	return true;
-}
-
-bool FontTrueType::loadFromPack( Pack* pack, std::string filePackPath ) {
-	if ( NULL == pack )
-		return false;
-
-	bool Ret = false;
-
-	mMemCopy.clear();
-
-	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mMemCopy ) ) {
-		Ret = loadFromMemory( mMemCopy.get(), mMemCopy.length(), false );
-	}
-
-	return Ret;
 }
 
 const FontTrueType::Info& FontTrueType::getInfo() const {
@@ -374,69 +311,95 @@ Uint32 FontTrueType::getGlyphIndex( const Uint32& codePoint ) const {
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 Float outlineThickness, Float maxWidth ) const {
+									 bool italic, Float outlineThickness, Float maxWidth ) const {
 	if ( mEnableEmojiFallback && Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont &&
 		 !mIsEmojiFont ) {
 		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 
 			if ( isMonospace() && maxWidth == 0.f ) {
-				Glyph monospaceGlyph = getGlyph( ' ', characterSize, bold, outlineThickness );
+				Glyph monospaceGlyph =
+					getGlyph( ' ', characterSize, bold, italic, outlineThickness );
 				maxWidth = monospaceGlyph.advance;
 			}
 
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
 			if ( 0 != fontEmoji->getGlyphIndex( codePoint ) )
-				return fontEmoji->getGlyph( codePoint, characterSize, bold, outlineThickness,
-											getPage( characterSize ), maxWidth );
+				return fontEmoji->getGlyph( codePoint, characterSize, bold, italic,
+											outlineThickness, getPage( characterSize ), maxWidth );
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 
 			if ( isMonospace() && maxWidth == 0.f ) {
-				Glyph monospaceGlyph = getGlyph( ' ', characterSize, bold, outlineThickness );
+				Glyph monospaceGlyph =
+					getGlyph( ' ', characterSize, bold, italic, outlineThickness );
 				maxWidth = monospaceGlyph.advance;
 			}
 
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
 			if ( 0 != fontEmoji->getGlyphIndex( codePoint ) )
-				return fontEmoji->getGlyph( codePoint, characterSize, bold, outlineThickness,
-											getPage( characterSize ), maxWidth );
+				return fontEmoji->getGlyph( codePoint, characterSize, bold, italic,
+											outlineThickness, getPage( characterSize ), maxWidth );
 		}
+	}
+
+	if ( bold && italic && mFontBoldItalic != nullptr &&
+		 0 != mFontBoldItalic->getGlyphIndex( codePoint ) ) {
+		return mFontBoldItalic->getGlyph( codePoint, characterSize, true, true, outlineThickness,
+										  getPage( characterSize ), maxWidth );
+	}
+
+	if ( bold && !italic && mFontBold != nullptr && 0 != mFontBold->getGlyphIndex( codePoint ) ) {
+		return mFontBold->getGlyph( codePoint, characterSize, true, false, outlineThickness,
+									getPage( characterSize ), maxWidth );
+	}
+
+	if ( italic && !bold && mFontItalic != nullptr &&
+		 0 != mFontItalic->getGlyphIndex( codePoint ) ) {
+		return mFontItalic->getGlyph( codePoint, characterSize, false, true, outlineThickness,
+									  getPage( characterSize ), maxWidth );
 	}
 
 	Uint32 glyphIndex = getGlyphIndex( codePoint );
-	if ( 0 == glyphIndex && mEnableFallbackFont && FontManager::instance()->getFallbackFont() &&
-		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
-		FontTrueType* fallbackFont =
-			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
-		if ( 0 != fallbackFont->getGlyphIndex( codePoint ) ) {
-			if ( mIsMonospace && mEnableDynamicMonospace )
-				mIsMonospace = false;
-			return fallbackFont->getGlyph( codePoint, characterSize, bold, outlineThickness,
-										   getPage( characterSize ), maxWidth );
+	if ( 0 == glyphIndex && mEnableFallbackFont && FontManager::instance()->hasFallbackFonts() ) {
+		for ( Font* fallbackFontPtr : FontManager::instance()->getFallbackFonts() ) {
+			if ( fallbackFontPtr->getType() != FontType::TTF )
+				continue;
+			FontTrueType* fallbackFont = static_cast<FontTrueType*>( fallbackFontPtr );
+			if ( 0 != fallbackFont->getGlyphIndex( codePoint ) ) {
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
+					mIsMonospaceComplete = false;
+					mUsingFallback = true;
+				}
+				return fallbackFont->getGlyph( codePoint, characterSize, bold, italic,
+											   outlineThickness, getPage( characterSize ),
+											   maxWidth );
+			}
 		}
 	}
 
-	return getGlyphByIndex( glyphIndex, characterSize, bold, outlineThickness );
+	return getGlyphByIndex( glyphIndex, characterSize, bold, italic, outlineThickness );
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 Float outlineThickness, Page& page,
+									 bool italic, Float outlineThickness, Page& page,
 									 const Float& maxWidth ) const {
 	Uint32 index = getGlyphIndex( codePoint );
-	return getGlyphByIndex( index, characterSize, bold, outlineThickness, page, maxWidth );
+	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page, maxWidth );
 }
 
 const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-											Float outlineThickness, Page& page,
+											bool italic, Float outlineThickness, Page& page,
 											const Float& maxWidth ) const {
+	eeASSERT( Engine::isRunninMainThread() );
+
 	// Get the page corresponding to the character size
 	GlyphTable& glyphs = page.glyphs;
 
 	// Build the key by combining the code point, bold flag, and outline thickness
-	Uint64 key = getIndexKey( mFontInternalId, index, bold, outlineThickness );
+	Uint64 key = getIndexKey( mFontInternalId, index, bold, italic, outlineThickness );
 
 	// Search the glyph into the cache
 	GlyphTable::const_iterator it = glyphs.find( key );
@@ -445,20 +408,21 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 		return it->second;
 	} else {
 		// Not found: we have to load it
-		Glyph glyph = loadGlyph( index, characterSize, bold, outlineThickness, page, maxWidth );
+		Glyph glyph =
+			loadGlyph( index, characterSize, bold, italic, outlineThickness, page, maxWidth );
 
-		return glyphs.insert( std::make_pair( key, glyph ) ).first->second;
+		return glyphs.emplace( key, glyph ).first->second;
 	}
 }
 
 const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-											Float outlineThickness ) const {
-	return getGlyphByIndex( index, characterSize, bold, outlineThickness, getPage( characterSize ),
-							0.f );
+											bool italic, Float outlineThickness ) const {
+	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness,
+							getPage( characterSize ), 0.f );
 }
 
 GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											   bool bold, Float outlineThickness,
+											   bool bold, bool italic, Float outlineThickness,
 											   const Float& maxWidth ) const {
 	Page& page = getPage( characterSize );
 	GlyphDrawableTable& drawables = page.drawables;
@@ -466,6 +430,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 	Uint32 glyphIndex = 0;
 	Uint32 tGlyphIndex = 0;
 	Uint32 fontInternalId = mFontInternalId;
+	bool isItalic = false;
 
 	if ( mEnableEmojiFallback && Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont &&
 		 !mIsEmojiFont ) {
@@ -498,42 +463,71 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 		glyphIndex = getGlyphIndex( codePoint );
 	}
 
-	if ( 0 == glyphIndex && mEnableFallbackFont &&
-		 FontManager::instance()->getFallbackFont() != nullptr &&
-		 FontManager::instance()->getFallbackFont()->getType() == FontType::TTF ) {
-		FontTrueType* fontFallback =
-			static_cast<FontTrueType*>( FontManager::instance()->getFallbackFont() );
-		tGlyphIndex = fontFallback->getGlyphIndex( codePoint );
-		if ( 0 != tGlyphIndex ) {
-			glyphIndex = tGlyphIndex;
-			fontInternalId = fontFallback->getFontInternalId();
-			if ( mIsMonospace && mEnableDynamicMonospace )
-				mIsMonospace = false;
-		} else {
-			glyphIndex = getGlyphIndex( codePoint );
-		}
+	if ( bold && italic && mFontBoldItalic != nullptr &&
+		 ( tGlyphIndex = mFontBoldItalic->getGlyphIndex( codePoint ) ) ) {
+		glyphIndex = tGlyphIndex;
+		fontInternalId = mFontBoldItalic->getFontInternalId();
+		isItalic = true;
 	}
 
-	Uint64 key = getIndexKey( fontInternalId, glyphIndex, bold, outlineThickness );
+	if ( bold && !italic && mFontBold != nullptr &&
+		 ( tGlyphIndex = mFontBold->getGlyphIndex( codePoint ) ) ) {
+		glyphIndex = tGlyphIndex;
+		fontInternalId = mFontBold->getFontInternalId();
+	}
+
+	if ( italic && !bold && mFontItalic != nullptr &&
+		 ( tGlyphIndex = mFontItalic->getGlyphIndex( codePoint ) ) ) {
+		glyphIndex = tGlyphIndex;
+		fontInternalId = mFontItalic->getFontInternalId();
+		isItalic = true;
+	}
+
+	if ( 0 == glyphIndex && mEnableFallbackFont && FontManager::instance()->hasFallbackFonts() ) {
+		for ( Font* fontFallbackPtr : FontManager::instance()->getFallbackFonts() ) {
+			if ( fontFallbackPtr->getType() != FontType::TTF )
+				continue;
+			FontTrueType* fontFallback = static_cast<FontTrueType*>( fontFallbackPtr );
+			tGlyphIndex = fontFallback->getGlyphIndex( codePoint );
+			if ( 0 != tGlyphIndex ) {
+				glyphIndex = tGlyphIndex;
+				fontInternalId = fontFallback->getFontInternalId();
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
+					mIsMonospaceComplete = false;
+					mUsingFallback = true;
+				}
+				break;
+			}
+		}
+		if ( 0 == glyphIndex )
+			glyphIndex = getGlyphIndex( codePoint );
+	}
+
+	Uint64 key = getIndexKey( fontInternalId, glyphIndex, bold, italic, outlineThickness );
 
 	auto it = drawables.find( key );
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, outlineThickness, maxWidth );
+		const Glyph& glyph =
+			getGlyph( codePoint, characterSize, bold, italic, outlineThickness, maxWidth );
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.size,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, codePoint ) );
+
 		region->setGlyphOffset( { glyph.bounds.Left - outlineThickness,
 								  characterSize + glyph.bounds.Top - outlineThickness } );
+		region->setAdvance( glyph.advance );
+		region->setIsItalic( isItalic );
 
 		drawables[key] = region;
 		return region;
 	}
+	return nullptr;
 }
 
-Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int characterSize,
-								bool bold ) const {
+Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
+								bool italic, Float outlineThickness ) const {
 	// Special case where first or second is 0 (null character)
 	if ( first == 0 || second == 0 || isMonospace() )
 		return 0.f;
@@ -546,9 +540,10 @@ Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int charac
 		FT_UInt index2 = getGlyphIndex( second );
 
 		// Retrieve position compensation deltas generated by FT_LOAD_FORCE_AUTOHINT flag
-		auto firstRsbDelta = static_cast<float>( getGlyph( first, characterSize, bold ).rsbDelta );
-		auto secondLsbDelta =
-			static_cast<float>( getGlyph( second, characterSize, bold ).lsbDelta );
+		auto firstRsbDelta = static_cast<float>(
+			getGlyph( first, characterSize, bold, italic, outlineThickness ).rsbDelta );
+		auto secondLsbDelta = static_cast<float>(
+			getGlyph( second, characterSize, bold, italic, outlineThickness ).lsbDelta );
 
 		// Get the kerning vector
 		FT_Vector kerning;
@@ -663,6 +658,21 @@ void FontTrueType::cleanup() {
 	if ( FontManager::existsSingleton() && FontManager::instance()->getColorEmojiFont() == this )
 		FontManager::instance()->setColorEmojiFont( nullptr );
 
+	if ( mFontBoldItalicCb != 0 && mFontBoldItalic != nullptr ) {
+		mFontBoldItalic->popFontEventCallback( mFontBoldItalicCb );
+		mFontBoldItalicCb = 0;
+	}
+
+	if ( mFontBoldCb != 0 && mFontBold != nullptr ) {
+		mFontBold->popFontEventCallback( mFontBoldCb );
+		mFontBoldCb = 0;
+	}
+
+	if ( mFontItalicCb != 0 && mFontItalic != nullptr ) {
+		mFontItalic->popFontEventCallback( mFontItalicCb );
+		mFontItalicCb = 0;
+	}
+
 	mCallbacks.clear();
 	mNumCallBacks = 0;
 
@@ -732,7 +742,7 @@ fontSetRenderOptions( FT_Library library, FontAntialiasing antialiasing, FontHin
 	return FT_RENDER_MODE_NORMAL;
 }
 
-Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bold,
+Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bold, bool /*italic*/,
 							   Float outlineThickness, Page& page, const Float& maxWidth ) const {
 	// The glyph to return
 	Glyph glyph;
@@ -783,7 +793,7 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 	FT_Pos weight = 1 << 6;
 	bool outline = ( glyphDesc->format == FT_GLYPH_FORMAT_OUTLINE );
 	if ( outline ) {
-		if ( bold ) {
+		if ( bold && !mIsBold ) {
 			FT_OutlineGlyph outlineGlyph = (FT_OutlineGlyph)glyphDesc;
 			FT_Outline_EmboldenXY( &outlineGlyph->outline, 1 << 5, weight );
 		}
@@ -804,7 +814,7 @@ Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bo
 
 	// Apply bold if necessary -- fallback technique using bitmap (lower quality)
 	if ( !outline ) {
-		if ( bold )
+		if ( bold && !mIsBold )
 			FT_Bitmap_Embolden( static_cast<FT_Library>( mLibrary ), &bitmap, weight, weight );
 
 		if ( outlineThickness != 0 && !mIsColorEmojiFont )
@@ -1153,7 +1163,13 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 	auto pageIt = mPages.find( characterSize );
 	if ( pageIt == mPages.end() ) {
-		mPages.insert( std::make_pair( characterSize, std::make_unique<Page>( mFontInternalId ) ) );
+		std::string name =
+			String::format( "@font:TrueType:%s:%d", mInfo.family.c_str(), characterSize );
+		if ( mIsBold )
+			name += ":bold";
+		if ( mIsItalic )
+			name += ":italic";
+		mPages[characterSize] = std::make_unique<Page>( mFontInternalId, name );
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;
@@ -1208,7 +1224,7 @@ void FontTrueType::setIsEmojiFont( bool isEmojiFont ) {
 }
 
 void FontTrueType::setForceIsMonospace( bool isMonospace ) {
-	mIsMonospace = isMonospace;
+	mIsMonospaceComplete = isMonospace;
 }
 
 void FontTrueType::setIsColorEmojiFont( bool isColorEmojiFont ) {
@@ -1220,7 +1236,7 @@ bool FontTrueType::isColorEmojiFont() const {
 }
 
 bool FontTrueType::isMonospace() const {
-	return mIsMonospace;
+	return mIsMonospaceComplete;
 }
 
 bool FontTrueType::isScalable() const {
@@ -1239,7 +1255,75 @@ void FontTrueType::setBoldAdvanceSameAsRegular( bool boldAdvanceSameAsRegular ) 
 	mBoldAdvanceSameAsRegular = boldAdvanceSameAsRegular;
 }
 
-FontTrueType::Page::Page( const Uint32 fontInternalId ) :
+void FontTrueType::updateMonospaceState() {
+	mIsMonospaceComplete = mIsMonospace && !mUsingFallback;
+	if ( mIsMonospaceComplete && mFontBold != nullptr ) {
+		mIsMonospaceComplete = mIsMonospaceComplete && mFontBold->isMonospace() &&
+							   getGlyph( ' ', 10, false, false ).advance ==
+								   mFontBold->getGlyph( ' ', 10, false, false ).advance;
+	}
+	if ( mIsMonospaceComplete && mFontItalic != nullptr ) {
+		mIsMonospaceComplete = mIsMonospaceComplete && mFontItalic->isMonospace() &&
+							   getGlyph( ' ', 10, false, false ).advance ==
+								   mFontItalic->getGlyph( ' ', 10, false, false ).advance;
+	}
+	if ( mIsMonospaceComplete && mFontBoldItalic != nullptr ) {
+		mIsMonospaceComplete = mIsMonospaceComplete && mFontBoldItalic->isMonospace() &&
+							   getGlyph( ' ', 10, false, false ).advance ==
+								   mFontBoldItalic->getGlyph( ' ', 10, false, false ).advance;
+	}
+}
+
+void FontTrueType::setBoldFont( FontTrueType* fontBold ) {
+	if ( fontBold == mFontBold )
+		return;
+	mFontBold = fontBold;
+	if ( mFontBold != nullptr ) {
+		mFontBoldCb = mFontBold->pushFontEventCallback( [this]( Uint32, Event event, Font* ) {
+			if ( event == Font::Event::Unload ) {
+				// Maybe we should recreate the page table
+				mFontBold = nullptr;
+				mFontBoldCb = 0;
+			}
+		} );
+	}
+	updateMonospaceState();
+}
+
+void FontTrueType::setItalicFont( FontTrueType* fontItalic ) {
+	if ( fontItalic == mFontItalic )
+		return;
+	mFontItalic = fontItalic;
+	if ( mFontItalic != nullptr ) {
+		mFontItalicCb = mFontItalic->pushFontEventCallback( [this]( Uint32, Event event, Font* ) {
+			if ( event == Font::Event::Unload ) {
+				// Maybe we should recreate the page table
+				mFontItalic = nullptr;
+				mFontItalicCb = 0;
+			}
+		} );
+	}
+	updateMonospaceState();
+}
+
+void FontTrueType::setBoldItalicFont( FontTrueType* fontBoldItalic ) {
+	if ( fontBoldItalic == mFontBoldItalic )
+		return;
+	mFontBoldItalic = fontBoldItalic;
+	if ( mFontBoldItalic != nullptr ) {
+		mFontBoldItalicCb =
+			mFontBoldItalic->pushFontEventCallback( [this]( Uint32, Event event, Font* ) {
+				if ( event == Font::Event::Unload ) {
+					// Maybe we should recreate the page table
+					mFontBoldItalic = nullptr;
+					mFontBoldItalicCb = 0;
+				}
+			} );
+	}
+	updateMonospaceState();
+}
+
+FontTrueType::Page::Page( const Uint32 fontInternalId, const std::string& pageName ) :
 	texture( NULL ), nextRow( 3 ), fontInternalId( fontInternalId ) {
 	// Make sure that the texture is initialized by default
 	Image image;
@@ -1255,6 +1339,7 @@ FontTrueType::Page::Page( const Uint32 fontInternalId ) :
 		image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false,
 		Texture::ClampMode::ClampToEdge, false, true );
 	texture->setCoordinateType( Texture::CoordinateType::Pixels );
+	texture->setName( pageName );
 }
 
 FontTrueType::Page::~Page() {

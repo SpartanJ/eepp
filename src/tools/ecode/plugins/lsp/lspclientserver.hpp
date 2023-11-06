@@ -47,7 +47,7 @@ class LSPClientServer {
 	using LocationHandler = ReplyHandler<std::vector<LSPLocation>>;
 	using TextEditArrayHandler = ReplyHandler<std::vector<LSPTextEdit>>;
 	using WorkspaceEditHandler = ReplyHandler<LSPWorkspaceEdit>;
-	using SemanticTokensDeltaHandler = ReplyHandler<LSPSemanticTokensDelta>;
+	using SemanticTokensDeltaHandler = WReplyHandler<LSPSemanticTokensDelta>;
 
 	class LSPRequestHandle : public PluginRequestHandle {
 	  public:
@@ -81,10 +81,10 @@ class LSPClientServer {
 
 	LSPRequestHandle cancel( const PluginIDType& id );
 
-	LSPRequestHandle send( const json& msg, const JsonReplyHandler& h = nullptr,
+	LSPRequestHandle send( json&& msg, const JsonReplyHandler& h = nullptr,
 						   const JsonReplyHandler& eh = nullptr );
 
-	void sendAsync( const json& msg, const JsonReplyHandler& h = nullptr,
+	void sendAsync( json&& msg, const JsonReplyHandler& h = nullptr,
 					const JsonReplyHandler& eh = nullptr );
 
 	const LSPDefinition& getDefinition() const { return mLSP; }
@@ -177,11 +177,18 @@ class LSPClientServer {
 	LSPRequestHandle documentCompletion( const URI& document, const TextPosition& pos,
 										 const CompletionHandler& h );
 
-	void workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
-						  const size_t& limit = 100 );
+	void workspaceSymbolAsync( const std::string& querySymbol, const JsonReplyHandler& h,
+							   const size_t& limit = 100 );
 
-	void workspaceSymbol( const std::string& querySymbol, const SymbolInformationHandler& h,
-						  const size_t& limit = 100 );
+	void workspaceSymbolAsync( const std::string& querySymbol, const SymbolInformationHandler& h,
+							   const size_t& limit = 100 );
+
+	LSPRequestHandle workspaceSymbol( const std::string& querySymbol, const JsonReplyHandler& h,
+									  const size_t& limit = 100 );
+
+	LSPRequestHandle workspaceSymbol( const std::string& querySymbol,
+									  const SymbolInformationHandler& h,
+									  const size_t& limit = 100 );
 
 	LSPRequestHandle selectionRange( const URI& document,
 									 const std::vector<TextPosition>& positions,
@@ -279,7 +286,7 @@ class LSPClientServer {
 
 	void readStdErr( const char* bytes, size_t n );
 
-	LSPRequestHandle write( const json& msg, const JsonReplyHandler& h = nullptr,
+	LSPRequestHandle write( json&& msg, const JsonReplyHandler& h = nullptr,
 							const JsonReplyHandler& eh = nullptr, const int id = 0 );
 
 	void initialize();
@@ -300,13 +307,16 @@ class LSPClientServer {
 
 	void socketInitialize();
 
-	LSPClientServer::LSPRequestHandle sendSync( const json& msg,
-												const JsonReplyHandler& h = nullptr,
+	LSPClientServer::LSPRequestHandle sendSync( json&& msg, const JsonReplyHandler& h = nullptr,
 												const JsonReplyHandler& eh = nullptr );
 
 	void refreshSmenaticHighlighting();
 
 	void refreshCodeLens();
+
+	bool isSilent() const;
+
+	bool trimLogs() const;
 };
 
 } // namespace ecode

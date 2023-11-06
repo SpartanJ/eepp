@@ -3,20 +3,29 @@
 
 #include <eepp/core.hpp>
 #include <eepp/system/iostream.hpp>
-#include <vector>
+#include <array>
 
 namespace EE { namespace System {
 
 class EE_API MD5 {
   public:
-	struct Result {
-		std::vector<Uint8> digest;
+	using Digest = std::array<Uint8, 16>;
 
-		std::string toHexString() { return MD5::hexDigest( digest ); }
+	struct Result {
+		Digest digest;
+
+		std::string toHexString() const { return MD5::hexDigest( digest ); }
 
 		bool operator==( const Result& other ) { return digest == other.digest; }
 
 		bool operator!=( const Result& other ) { return digest != other.digest; }
+	};
+
+	struct Context {
+		Uint32 lo, hi;
+		Uint32 a, b, c, d;
+		unsigned char buffer[64];
+		Uint32 block[16];
 	};
 
 	/** @return Calculates the md5 hash from a stream */
@@ -34,25 +43,18 @@ class EE_API MD5 {
 	/** Calculates the md5 hash from a string */
 	static Result fromString( const String& str );
 
-  protected:
-	typedef unsigned int MD5_u32plus;
+	static void init( Context& ctx );
 
-	struct Context {
-		MD5_u32plus lo, hi;
-		MD5_u32plus a, b, c, d;
-		unsigned char buffer[64];
-		MD5_u32plus block[16];
-	};
+	static void update( Context& ctx, const void* data, unsigned long size );
 
-	static const void* body( Context* ctx, const void* data, unsigned long size );
+	static void final( Digest& result, Context& ctx );
 
-	static void init( Context* ctx );
+	static Result result( Context& ctx );
 
-	static void update( Context* ctx, const void* data, unsigned long size );
+	static std::string hexDigest( const Digest& digest );
 
-	static void final( unsigned char* result, Context* ctx );
-
-	static std::string hexDigest( std::vector<Uint8>& digest );
+  private:
+	static const void* body( Context& ctx, const void* data, unsigned long size );
 };
 
 }} // namespace EE::System

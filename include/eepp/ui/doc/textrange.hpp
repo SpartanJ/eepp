@@ -97,6 +97,10 @@ class EE_API TextRange {
 		return true;
 	}
 
+	bool containsLine( const Int64& line ) const {
+		return line >= mStart.line() && line <= mEnd.line();
+	}
+
 	bool contains( const TextRange& range ) const {
 		return range.start() >= start() && range.end() <= end();
 	}

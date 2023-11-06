@@ -6,7 +6,6 @@
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
-#include <eepp/system/process.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -14,7 +13,6 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
-#include <random>
 
 using json = nlohmann::json;
 
@@ -185,7 +183,11 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 	}
 
 	if ( updateConfigFile ) {
-		FileSystem::fileWrite( path, j.dump( 2 ) );
+		std::string newData( j.dump( 2 ) );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( newData );
+		}
 	}
 
 	if ( !j.contains( "linters" ) )
@@ -549,7 +551,7 @@ TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
 }
 
 void LinterPlugin::load( PluginManager* pluginManager ) {
-	BoolScopedOp loading( mLoading, true );
+	AtomicBoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
@@ -573,11 +575,13 @@ void LinterPlugin::load( PluginManager* pluginManager ) {
 			Log::error( "Parsing linter \"%s\" failed:\n%s", tpath.c_str(), e.what() );
 		}
 	}
-	mReady = !mLinters.empty();
-	if ( mReady )
-		fireReadyCbs();
 
 	subscribeFileSystemListener();
+	mReady = !mLinters.empty();
+	if ( mReady ) {
+		fireReadyCbs();
+		setReady();
+	}
 }
 
 void LinterPlugin::onRegister( UICodeEditor* editor ) {
@@ -626,13 +630,20 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 	if ( editor->hasDocument() ) {
 		auto& doc = editor->getDocument();
 
-		doc.setCommand( "linter-go-to-next-error", [this, editor] { goToNextError( editor ); } );
+		doc.setCommand( "linter-go-to-next-error", [this]( TextDocument::Client* client ) {
+			goToNextError( static_cast<UICodeEditor*>( client ) );
+		} );
 
-		doc.setCommand( "linter-go-to-previous-error",
-						[this, editor] { goToPrevError( editor ); } );
+		doc.setCommand( "linter-go-to-previous-error", [this]( TextDocument::Client* client ) {
+			goToPrevError( static_cast<UICodeEditor*>( client ) );
+		} );
 
-		doc.setCommand( "linter-copy-error-message", [this, editor] {
-			editor->getUISceneNode()->getWindow()->getClipboard()->setText( mErrorMsg );
+		doc.setCommand( "linter-copy-error-message", [this]( TextDocument::Client* client ) {
+			static_cast<UICodeEditor*>( client )
+				->getUISceneNode()
+				->getWindow()
+				->getClipboard()
+				->setText( mErrorMsg );
 		} );
 	}
 
@@ -642,14 +653,9 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 }
 
 void LinterPlugin::onUnregister( UICodeEditor* editor ) {
-	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-		if ( editor->hasDocument() )
-			editor->getDocument().removeCommand( kb.first );
-	}
-
 	if ( mShuttingDown )
 		return;
+
 	Lock l( mDocMutex );
 	TextDocument* doc = mEditorDocs[editor];
 	auto cbs = mEditors[editor];
@@ -660,6 +666,13 @@ void LinterPlugin::onUnregister( UICodeEditor* editor ) {
 	for ( auto editorIt : mEditorDocs )
 		if ( editorIt.second == doc )
 			return;
+
+	for ( auto& kb : mKeyBindings ) {
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+		if ( editor->hasDocument() )
+			editor->getDocument().removeCommand( kb.first );
+	}
+
 	mDocs.erase( doc );
 	mDirtyDoc.erase( doc );
 	Lock matchesLock( mMatchesMutex );
@@ -707,22 +720,11 @@ const std::vector<Linter>& LinterPlugin::getLinters() const {
 	return mLinters;
 }
 
-Linter LinterPlugin::getLinterForLang( const std::string& lang,
-									   const std::vector<std::string>& extensions ) {
+Linter LinterPlugin::getLinterForLang( const std::string& lang ) {
 	for ( const auto& linter : mLinters ) {
 		for ( const auto& clang : linter.languages ) {
 			if ( clang == lang ) {
 				return linter;
-			}
-		}
-
-		if ( !linter.files.empty() ) {
-			for ( const auto& file : linter.files ) {
-				for ( const auto& ext : extensions ) {
-					if ( ext == file ) {
-						return linter;
-					}
-				}
 			}
 		}
 	}
@@ -736,13 +738,15 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 		return;
 
 	ScopedOp op(
-		[this]() {
-			mWorkMutex.lock();
+		[this, doc]() {
+			std::lock_guard l( mWorkMutex );
 			mWorkersCount++;
 		},
 		[this]() {
-			mWorkersCount--;
-			mWorkMutex.unlock();
+			{
+				std::lock_guard l( mWorkMutex );
+				mWorkersCount--;
+			}
 			mWorkerCondition.notify_all();
 		} );
 	if ( !mReady )
@@ -772,6 +776,7 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 		doc->save( fileString, true );
 		FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(),
 							   fileString.getSize() );
+		FileSystem::fileHide( tmpPath );
 		runLinter( doc, linter, tmpPath );
 		FileSystem::fileRemove( tmpPath );
 	} else {
@@ -785,16 +790,26 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 	std::string cmd( linter.command );
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
 	Process process;
+	TextDocument* docPtr = doc.get();
+	ScopedOp op(
+		[this, &process, &docPtr] {
+			std::lock_guard l( mRunningProcessesMutex );
+			auto found = mRunningProcesses.find( docPtr );
+			if ( found != mRunningProcesses.end() )
+				found->second->kill();
+			mRunningProcesses[docPtr] = &process;
+		},
+		[this, &docPtr] {
+			std::lock_guard l( mRunningProcessesMutex );
+			mRunningProcesses.erase( docPtr );
+		} );
+	;
+
 	if ( process.create( cmd, Process::getDefaultOptions() | Process::CombinedStdoutStderr, {},
 						 mManager->getWorkspaceFolder() ) ) {
-		std::string buffer( 1024, '\0' );
-		std::string data;
-		unsigned bytesRead = 0;
 		int returnCode;
-		do {
-			bytesRead = process.readStdOut( buffer );
-			data += buffer.substr( 0, bytesRead );
-		} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown );
+		std::string data;
+		process.readAllStdOut( data );
 
 		if ( mShuttingDown ) {
 			process.kill();
@@ -927,16 +942,16 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 	}
 }
 
-std::string LinterPlugin::getMatchString( const LinterType& type ) {
+SyntaxStyleType LinterPlugin::getMatchString( const LinterType& type ) {
 	switch ( type ) {
 		case LinterType::Warning:
-			return "warning";
+			return "warning"_sst;
 		case LinterType::Notice:
-			return "notice";
+			return "notice"_sst;
 		default:
 			break;
 	}
-	return "error";
+	return "error"_sst;
 }
 
 void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
@@ -1000,7 +1015,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		if ( !quickFixRendered && doc->getSelection().start().line() == index &&
 			 !match.diagnostic.codeActions.empty() ) {
 			rLineWidth = editor->getLineWidth( index );
-			Color wcolor( editor->getColorScheme().getEditorSyntaxStyle( "warning" ).color );
+			Color wcolor( editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
 			if ( nullptr == mLightbulbIcon ) {
 				mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
 					"lightbulb-autofix" );

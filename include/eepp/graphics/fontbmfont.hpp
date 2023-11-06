@@ -36,14 +36,15 @@ class EE_API FontBMFont : public Font {
 
 	const Font::Info& getInfo() const;
 
-	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
+	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness = 0, Float maxWidth = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-									 bool bold = false, Float outlineThickness = 0,
-									 const Float& maxWidth = 0 ) const;
+									 bool bold = false, bool italic = false,
+									 Float outlineThickness = 0, const Float& maxWidth = 0 ) const;
 
-	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold ) const;
+	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
+					  bool italic, Float outlineThickness = 0 ) const;
 
 	Float getLineSpacing( unsigned int characterSize ) const;
 
@@ -62,8 +63,8 @@ class EE_API FontBMFont : public Font {
   protected:
 	FontBMFont( const std::string FontName );
 
-	typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
-	typedef std::map<Uint64, GlyphDrawable*> GlyphDrawableTable;
+	typedef UnorderedMap<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
+	typedef UnorderedMap<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
 		~Page();

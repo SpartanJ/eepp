@@ -312,7 +312,7 @@ Float UITooltip::getTextHeight() {
 	return mTextCache->getTextHeight();
 }
 
-const int& UITooltip::getNumLines() const {
+Uint32 UITooltip::getNumLines() {
 	return mTextCache->getNumLines();
 }
 
@@ -424,7 +424,7 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%ddp", getCharacterSize() );
+			return String::format( "%dpx", getCharacterSize() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -529,7 +529,7 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 		}
 		case PropertyId::FontSize:
 			if ( !mUsingCustomStyling )
-				setFontSize( attribute.asDpDimensionI() );
+				setFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::FontStyle:
 			if ( !mUsingCustomStyling )

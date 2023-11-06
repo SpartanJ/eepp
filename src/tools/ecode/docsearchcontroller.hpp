@@ -46,21 +46,23 @@ class DocSearchController {
 
 	DocSearchController( UICodeEditorSplitter*, App* app );
 
+	~DocSearchController();
+
 	void initSearchBar(
 		UISearchBar* searchBar, const SearchBarConfig& searchBarConfig,
 		std::unordered_map<std::string, std::string> keybindings = getDefaultKeybindings() );
 
 	void showFindView();
 
-	bool findPrevText( SearchState& search );
+	void findPrevText( SearchState& search );
 
-	bool findNextText( SearchState& search );
+	void findNextText( SearchState& search, bool resetSelection = false );
 
 	bool replaceSelection( SearchState& search, const String& replacement );
 
 	int replaceAll( SearchState& search, const String& replace );
 
-	bool findAndReplace( SearchState& search, const String& replace );
+	void findAndReplace( SearchState& search, const String& replace );
 
 	void hideSearchBar();
 
@@ -73,6 +75,7 @@ class DocSearchController {
 	void selectAll( SearchState& search );
 
 	void refreshHighlight();
+
   protected:
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	UITextInput* mFindInput{ nullptr };
@@ -85,6 +88,7 @@ class DocSearchController {
 	App* mApp{ nullptr };
 	SearchState mSearchState;
 	String mLastSearch;
+	size_t mSearchingCount{ 0 };
 };
 
 } // namespace ecode

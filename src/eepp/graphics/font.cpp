@@ -1,6 +1,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/window/engine.hpp>
 
 namespace EE { namespace Graphics {
@@ -60,6 +61,17 @@ void Font::setName( const std::string& name ) {
 
 const String::HashType& Font::getId() {
 	return mFontHash;
+}
+
+Uint32 Font::getFontStyle() const {
+	Uint32 style = 0;
+	if ( isBold() )
+		style |= Text::Bold;
+	if ( isItalic() )
+		style |= Text::Italic;
+	if ( isBoldItalic() )
+		style |= Text::Bold | Text::Italic;
+	return style;
 }
 
 Uint32 Font::pushFontEventCallback( const FontEventCallback& cb ) {

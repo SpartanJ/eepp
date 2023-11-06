@@ -73,7 +73,7 @@ static std::string getProjectOutputParserTypeToString( const ProjectOutputParser
 
 UIPushButton* StatusBuildOutputController::getBuildButton( App* app ) {
 	if ( app->getSidePanel() ) {
-		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab" );
+		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab_view" );
 		if ( tab )
 			return tab->find<UIPushButton>( "build_button" );
 	}
@@ -82,7 +82,7 @@ UIPushButton* StatusBuildOutputController::getBuildButton( App* app ) {
 
 UIPushButton* StatusBuildOutputController::getCleanButton( App* app ) {
 	if ( app->getSidePanel() ) {
-		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab" );
+		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab_view" );
 		if ( tab )
 			return tab->find<UIPushButton>( "clean_button" );
 	}
@@ -146,6 +146,10 @@ bool StatusBuildOutputController::searchFindAndAddStatusResult(
 	return false;
 }
 
+static void safeInsertBuffer( TextDocument& doc, const std::string& buffer ) {
+	doc.insert( 0, doc.endOfDoc(), buffer );
+}
+
 void StatusBuildOutputController::runBuild( const std::string& buildName,
 											const std::string& buildType,
 											const ProjectBuildOutputParser& outputParser ) {
@@ -171,7 +175,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	auto configs = { outputParser.getPresetConfig(), outputParser.getConfig() };
 	for ( const auto& config : configs ) {
 		for ( const auto& parser : config ) {
-			mPatternHolder.push_back( { LuaPattern( parser.pattern ), parser } );
+			mPatternHolder.push_back( { LuaPatternStorage( parser.pattern ), parser } );
 
 			SyntaxPattern ptn( { parser.pattern },
 							   getProjectOutputParserTypeToString( parser.type ) );
@@ -187,11 +191,12 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 
-	SyntaxDefinition synDef( "custom_build", {}, patterns );
+	SyntaxDefinition synDef( "custom_build", {}, std::move( patterns ) );
 
 	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
 	mBuildOutput->getDocument().getHighlighter()->setMaxTokenizationLength( 2048 );
+	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton( mApp );
 	if ( buildButton )
@@ -203,14 +208,28 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		enableCleanButton = true;
 	}
 
+	const auto updateBuildButton = [this, enableCleanButton]() {
+		UIPushButton* buildButton = getBuildButton( mApp );
+		if ( buildButton ) {
+			buildButton->runOnMainThread(
+				[this, buildButton] { buildButton->setText( mApp->i18n( "build", "Build" ) ); } );
+		}
+
+		if ( enableCleanButton ) {
+			UIPushButton* cleanButton = getCleanButton( mApp );
+			if ( cleanButton ) {
+				cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
+			}
+		}
+	};
+
 	auto res = pbm->build(
 		buildName, [this]( const auto& key, const auto& def ) { return mApp->i18n( key, def ); },
 		buildType,
 		[this]( auto, std::string buffer, const ProjectBuildCommand* cmd ) {
 			mBuildOutput->runOnMainThread( [this, buffer]() {
-				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer, false );
-				if ( scrollToBottom )
+				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
+				if ( mScrollLocked )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
 
@@ -230,7 +249,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 				}
 			} while ( !buffer.empty() );
 		},
-		[this, enableCleanButton]( auto exitCode, const ProjectBuildCommand* cmd ) {
+		[this, updateBuildButton]( auto exitCode, const ProjectBuildCommand* cmd ) {
 			if ( !mCurLineBuffer.empty() && nullptr != cmd )
 				searchFindAndAddStatusResult( mPatternHolder, mCurLineBuffer, cmd );
 			String buffer;
@@ -244,21 +263,12 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 			}
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
-				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer, false );
-				if ( scrollToBottom )
+				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
+				if ( mScrollLocked )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
 
-			UIPushButton* buildButton = getBuildButton( mApp );
-			if ( buildButton )
-				buildButton->setText( mApp->i18n( "build", "Build" ) );
-
-			if ( enableCleanButton ) {
-				UIPushButton* cleanButton = getCleanButton( mApp );
-				if ( cleanButton )
-					cleanButton->setEnabled( true );
-			}
+			updateBuildButton();
 
 			if ( !mApp->getWindow()->hasFocus() )
 				mApp->getWindow()->flash( WindowFlashOperation::UntilFocused );
@@ -266,6 +276,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 	if ( !res.isValid() ) {
 		mApp->getNotificationCenter()->addNotification( res.errorMsg );
+		updateBuildButton();
 	}
 }
 
@@ -296,10 +307,11 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 
-	SyntaxDefinition synDef( "custom_build", {}, patterns );
+	SyntaxDefinition synDef( "custom_build", {}, std::move( patterns ) );
 
 	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
+	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton( mApp );
 	bool enableBuildButton = false;
@@ -316,9 +328,8 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 		buildType,
 		[this]( auto, auto buffer, auto ) {
 			mBuildOutput->runOnMainThread( [this, buffer]() {
-				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer, false );
-				if ( scrollToBottom )
+				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
+				if ( mScrollLocked )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
 		},
@@ -334,9 +345,8 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 			}
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
-				bool scrollToBottom = mBuildOutput->getVScrollBar()->getValue() == 1.f;
-				mBuildOutput->getDocument().textInput( buffer, false );
-				if ( scrollToBottom )
+				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
+				if ( mScrollLocked )
 					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 			} );
 
@@ -588,6 +598,9 @@ void StatusBuildOutputController::createContainer() {
 	} );
 
 	mBuildOutput = editor;
+	mBuildOutput->on( Event::OnScrollChange, [this]( auto ) {
+		mScrollLocked = mBuildOutput->getMaxScroll().y == mBuildOutput->getScroll().y;
+	} );
 	mContainer->setVisible( false );
 	mContainer->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
 	mContainer->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );

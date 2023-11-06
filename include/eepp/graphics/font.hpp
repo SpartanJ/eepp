@@ -46,7 +46,9 @@ class EE_API Font {
 	typedef std::function<void( Uint32, Event, Font* )> FontEventCallback;
 
 	struct Info {
-		std::string family; ///< The font family
+		std::string family;	  ///< The font family
+		std::string fontpath; ///< The directory path of the font
+		std::string filename; ///< The file name
 	};
 
 	static inline Uint32 getHorizontalAlign( const Uint32& flags ) {
@@ -87,16 +89,18 @@ class EE_API Font {
 	virtual const Info& getInfo() const = 0;
 
 	virtual const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-								   Float outlineThickness = 0, Float maxWidth = 0 ) const = 0;
+								   bool italic, Float outlineThickness = 0,
+								   Float maxWidth = 0 ) const = 0;
 
 	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
 	 * allocation is managed by the font. */
 	virtual GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											 bool bold = false, Float outlineThickness = 0,
+											 bool bold = false, bool italic = false,
+											 Float outlineThickness = 0,
 											 const Float& forzeSize = 0 ) const = 0;
 
-	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize,
-							  bool bold ) const = 0;
+	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
+							  bool italic, Float outlineThickness = 0 ) const = 0;
 
 	virtual Float getLineSpacing( unsigned int characterSize ) const = 0;
 
@@ -105,6 +109,22 @@ class EE_API Font {
 	virtual Float getUnderlineThickness( unsigned int characterSize ) const = 0;
 
 	virtual Texture* getTexture( unsigned int characterSize ) const = 0;
+
+	virtual Uint32 getFontStyle() const;
+
+	virtual bool isRegular() const { return !isBold() && !isItalic(); }
+
+	virtual bool isBold() const { return false; }
+
+	virtual bool isItalic() const { return false; }
+
+	virtual bool isBoldItalic() const { return false; }
+
+	virtual bool hasBold() const { return false; }
+
+	virtual bool hasItalic() const { return false; }
+
+	virtual bool hasBoldItalic() const { return false; }
 
 	virtual bool loaded() const = 0;
 

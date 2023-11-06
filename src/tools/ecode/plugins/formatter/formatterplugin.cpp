@@ -1,16 +1,15 @@
 #include "formatterplugin.hpp"
-#include "eepp/system/md5.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/md5.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <nlohmann/json.hpp>
-#include <random>
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
@@ -73,34 +72,42 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
 	}
 
-	if ( editor->hasDocument() )
-		editor->getDocument().setCommand( "format-doc", [&, editor]() { formatDoc( editor ); } );
+	if ( editor->hasDocument() ) {
+		editor->getDocument().setCommand( "format-doc", [this]( TextDocument::Client* client ) {
+			formatDoc( static_cast<UICodeEditor*>( client ) );
+		} );
+	}
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
 			tryRequestCapabilities( editor->getDocumentRef() );
 		} ) );
 
-	listeners.push_back( editor->addEventListener( Event::OnDocumentSave, [this](
-																			  const Event* event ) {
-		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
-			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-			auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
-			if ( isAutoFormatting == mIsAutoFormatting.end() || isAutoFormatting->second == false )
-				formatDoc( editor );
-		}
-	} ) );
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+			TextDocument* newDoc = editor->getDocumentRef().get();
+			mEditorDocs[editor] = newDoc;
+		} ) );
+
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentSave, [this]( const Event* event ) {
+			if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
+				UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+				auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
+				if ( ( isAutoFormatting == mIsAutoFormatting.end() ||
+					   isAutoFormatting->second == false ) &&
+					 mPluginManager &&
+					 !String::startsWith( editor->getDocument().getFilePath(),
+										  mPluginManager->getPluginsPath() ) )
+					formatDoc( editor );
+			}
+		} ) );
 
 	mEditors.insert( { editor, listeners } );
+	mEditorDocs[editor] = editor->getDocumentRef().get();
 }
 
 void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
-	for ( auto& kb : mKeyBindings ) {
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-		if ( editor->hasDocument() )
-			editor->getDocument().removeCommand( kb.first );
-	}
-
 	auto afIt = mIsAutoFormatting.find( &editor->getDocument() );
 	if ( afIt != mIsAutoFormatting.end() )
 		mIsAutoFormatting.erase( afIt );
@@ -112,6 +119,18 @@ void FormatterPlugin::onUnregister( UICodeEditor* editor ) {
 	if ( mShuttingDown )
 		return;
 	mEditors.erase( editor );
+	mEditorDocs.erase( editor );
+
+	TextDocument* doc = &editor->getDocument();
+	for ( auto editorIt : mEditorDocs )
+		if ( editorIt.second == doc )
+			return;
+
+	for ( auto& kb : mKeyBindings ) {
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+		if ( editor->hasDocument() )
+			editor->getDocument().removeCommand( kb.first );
+	}
 }
 
 bool FormatterPlugin::getAutoFormatOnSave() const {
@@ -184,9 +203,11 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 		j["keybindings"]["format-doc"] = mKeyBindings["format-doc"];
 
 	if ( updateConfigFile ) {
-		data = j.dump( 2 );
-		FileSystem::fileWrite( path, data );
-		mConfigHash = String::hash( data );
+		std::string newData = j.dump( 2 );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( data );
+		}
 	}
 
 	if ( !j.contains( "formatters" ) )
@@ -244,7 +265,8 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 }
 
 void FormatterPlugin::load( PluginManager* pluginManager ) {
-	BoolScopedOp loading( mLoading, true );
+	AtomicBoolScopedOp loading( mLoading, true );
+	mPluginManager = pluginManager;
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
@@ -271,11 +293,13 @@ void FormatterPlugin::load( PluginManager* pluginManager ) {
 			Log::error( "Parsing formatter \"%s\" failed:\n%s", fpath.c_str(), e.what() );
 		}
 	}
-	mReady = !mFormatters.empty();
-	if ( mReady )
-		fireReadyCbs();
 
 	subscribeFileSystemListener();
+	mReady = !mFormatters.empty();
+	if ( mReady ) {
+		fireReadyCbs();
+		setReady();
+	}
 }
 
 bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i&,
@@ -297,23 +321,11 @@ const std::vector<FormatterPlugin::Formatter>& FormatterPlugin::getFormatters() 
 	return mFormatters;
 }
 
-FormatterPlugin::Formatter
-FormatterPlugin::getFormatterForLang( const std::string& lang,
-									  const std::vector<std::string>& extensions ) {
+FormatterPlugin::Formatter FormatterPlugin::getFormatterForLang( const std::string& lang ) {
 	for ( const auto& formatter : mFormatters ) {
 		for ( const auto& clang : formatter.languages ) {
 			if ( clang == lang ) {
 				return formatter;
-			}
-		}
-
-		if ( !formatter.files.empty() ) {
-			for ( const auto& file : formatter.files ) {
-				for ( const auto& ext : extensions ) {
-					if ( ext == file ) {
-						return formatter;
-					}
-				}
 			}
 		}
 	}
@@ -360,6 +372,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 		doc->save( fileString, true );
 		FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(),
 							   fileString.getSize() );
+		FileSystem::fileHide( tmpPath );
 		runFormatter( editor, formatter, tmpPath );
 
 		if ( formatter.type == FormatterType::Inplace ) {
@@ -380,7 +393,9 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 					doc->textInput( data, false );
 					doc->setSelection( pos );
 					editor->setScroll( scroll );
-					if ( mAutoFormatOnSave ) {
+					if ( mAutoFormatOnSave && mPluginManager &&
+						 !String::startsWith( doc->getFilePath(),
+											  mPluginManager->getPluginsPath() ) ) {
 						mIsAutoFormatting[doc.get()] = true;
 						doc->save();
 						mIsAutoFormatting[doc.get()] = false;
@@ -426,14 +441,9 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
 	Process process;
 	if ( process.create( cmd ) ) {
-		std::string buffer( 1024, '\0' );
-		std::string data;
-		unsigned bytesRead = 0;
 		int returnCode;
-		do {
-			bytesRead = process.readStdOut( buffer );
-			data += buffer.substr( 0, bytesRead );
-		} while ( bytesRead != 0 && process.isAlive() && !mShuttingDown );
+		std::string data;
+		process.readAllStdOut( data );
 
 		if ( mShuttingDown ) {
 			process.kill();
@@ -477,9 +487,9 @@ FormatterPlugin::Formatter FormatterPlugin::supportsFormatter( std::shared_ptr<T
 	std::string fileName( FileSystem::fileNameFromPath( doc->getFilePath() ) );
 	const auto& def = doc->getSyntaxDefinition();
 
-	for ( auto& formatter : mFormatters ) {
-		for ( auto& ext : formatter.files ) {
-			if ( LuaPattern::find( fileName, ext ).isValid() )
+	for ( const auto& formatter : mFormatters ) {
+		for ( const auto& ext : formatter.files ) {
+			if ( LuaPattern::matches( fileName, ext ) )
 				return formatter;
 			auto& files = def.getFiles();
 			if ( std::find( files.begin(), files.end(), ext ) != files.end() )

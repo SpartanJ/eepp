@@ -145,12 +145,19 @@ class InputEvent {
 
 	/** File dropped event */
 	struct FileDroppedEvent {
-		char* file;
+		const char* file;
 	};
 
 	/** Text dropped event */
 	struct TextDroppedEvent {
-		char* text;
+		const char* text;
+	};
+
+	/** Text editing event (text composition) */
+	struct TextEditingEvent {
+		const char* text;
+		Int32 start;
+		Int32 length;
 	};
 
 	/** The "quit requested" event */
@@ -196,6 +203,7 @@ class InputEvent {
 		VideoExpose,
 		FileDropped,
 		TextDropped,
+		TextEditing,
 		EventUser,
 		EventCount = EventUser - 1
 	};
@@ -222,6 +230,7 @@ class InputEvent {
 		ExposeEvent expose;
 		FileDroppedEvent file;
 		TextDroppedEvent textdrop;
+		TextEditingEvent textediting;
 		QuitEvent quit;
 		UserEvent user;
 		SysWMEvent syswm;

@@ -42,6 +42,7 @@ enum UIFlag {
 	UI_TAB_FOCUSABLE = ( 1 << 25 ),
 	UI_TOOLTIP_ENABLED = ( 1 << 26 ),
 	UI_SCROLLABLE = ( 1 << 27 ),
+	UI_HIGHLIGHT = ( 1 << 28 ),
 };
 
 enum UINodeType {

@@ -10,6 +10,7 @@
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>

@@ -14,9 +14,9 @@ Float PixelDensity::toFloat( PixelDensitySize pd ) {
 		case PixelDensitySize::XHDPI:
 			return 2.f;
 		case PixelDensitySize::XXHDPI:
-			return 3.f;
+			return 2.5f;
 		case PixelDensitySize::XXXHDPI:
-			return 4.f;
+			return 3.f;
 		default:
 			return 1.f;
 	}
