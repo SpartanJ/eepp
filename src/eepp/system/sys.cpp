@@ -1153,7 +1153,7 @@ bool Sys::windowAttachConsole() {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 static void windowsSystem( const std::string& programPath ) {
-	STARTUPINFO si;
+	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory( &si, sizeof( si ) );
 	si.cb = sizeof( si );

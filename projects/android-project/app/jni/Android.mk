@@ -64,7 +64,8 @@ CORE_SRCS				:= tools/ecode/*.cpp \
 							tools/ecode/plugins/autocomplete/*.cpp \
 							tools/ecode/plugins/linter/*.cpp \
 							tools/ecode/plugins/formatter/*.cpp \
-							tools/ecode/plugins/lsp/*.cpp
+							tools/ecode/plugins/lsp/*.cpp \
+							tools/ecode/plugins/xmltools/*.cpp
 
 LOCAL_SRC_FILES			:= $(SDL_MAIN_PATH) $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 

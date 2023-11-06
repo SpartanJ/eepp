@@ -784,12 +784,14 @@ void WindowSDL::raise() {
 
 void WindowSDL::flash( WindowFlashOperation op ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if SDL_VERSION_ATLEAST( 2, 0, 16 )
 	SDL_FlashOperation sdlOp = SDL_FlashOperation::SDL_FLASH_BRIEFLY;
 	if ( op == WindowFlashOperation::Cancel )
 		sdlOp = SDL_FlashOperation::SDL_FLASH_CANCEL;
 	else if ( op == WindowFlashOperation::UntilFocused )
 		sdlOp = SDL_FlashOperation::SDL_FLASH_UNTIL_FOCUSED;
 	SDL_FlashWindow( mSDLWindow, sdlOp );
+#endif
 #endif
 }
 
