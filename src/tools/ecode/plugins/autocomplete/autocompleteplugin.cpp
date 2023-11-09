@@ -104,6 +104,8 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	listeners.push_back(
 		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
 			mDirty = true;
+			mDocs.insert( editor->getDocumentRef().get() );
+			mEditorDocs[editor] = editor->getDocumentRef().get();
 			tryRequestCapabilities( editor );
 		} ) );
 

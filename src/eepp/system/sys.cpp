@@ -1230,4 +1230,5 @@ std::string Sys::getProcessFilePath() {
 	return std::string( exename );
 #endif
 }
+
 }} // namespace EE::System

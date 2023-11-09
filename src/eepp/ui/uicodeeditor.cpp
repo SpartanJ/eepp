@@ -443,7 +443,7 @@ TextDocument::LoadStatus UICodeEditor::loadFromFile( const std::string& path ) {
 		invalidateEditor();
 		updateLongestLineWidth();
 		invalidateDraw();
-		onDocumentLoaded( mDoc.get() );
+		onDocumentLoaded();
 	}
 	return ret;
 }
@@ -576,6 +576,11 @@ void UICodeEditor::onFontStyleChanged() {
 }
 
 void UICodeEditor::onDocumentLoaded( TextDocument* ) {}
+
+void UICodeEditor::onDocumentReloaded( TextDocument* ) {
+	onDocumentClosed( mDoc.get() );
+	onDocumentLoaded();
+}
 
 void UICodeEditor::onDocumentLoaded() {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );

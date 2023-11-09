@@ -2423,6 +2423,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	} );
 
 	auto docChanged = [this]( const Event* event ) {
+		if ( !Engine::isRunninMainThread() )
+			return;
 		const DocEvent* synEvent = static_cast<const DocEvent*>( event );
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		UIIcon* icon = mUISceneNode->findIcon(

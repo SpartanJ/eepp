@@ -590,9 +590,11 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 	std::vector<Uint32> listeners;
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this]( const Event* event ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* event ) {
 			Lock l( mDocMutex );
 			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+			mDocs.insert( docEvent->getDoc() );
+			mEditorDocs[editor] = docEvent->getDoc();
 			setDocDirty( docEvent->getDoc() );
 		} ) );
 
@@ -615,6 +617,7 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 			mDocs.erase( oldDoc );
 			mDirtyDoc.erase( oldDoc );
 			mEditorDocs[editor] = newDoc;
+			mDocs.insert( newDoc );
 			Lock matchesLock( mMatchesMutex );
 			mMatches.erase( oldDoc );
 		} ) );

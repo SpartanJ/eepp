@@ -867,6 +867,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentLoaded( TextDocument* doc );
 
+	virtual void onDocumentReloaded( TextDocument* doc );
+
 	virtual void onDocumentLoaded();
 
 	virtual void onDocumentChanged();

@@ -572,9 +572,11 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 	std::vector<Uint32> listeners;
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this]( const Event* event ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* event ) {
 			Lock l( mMutex );
 			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+			mDocs.insert( docEvent->getDoc() );
+			mEditorDocs[editor] = docEvent->getDoc();
 			onDocumentLoaded( docEvent->getDoc() );
 		} ) );
 
@@ -596,6 +598,7 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 			TextDocument* newDoc = editor->getDocumentRef().get();
 			Lock l( mMutex );
 			mDocs.erase( oldDoc );
+			mDocs.insert( newDoc );
 			mEditorDocs[editor] = newDoc;
 			onDocumentChanged( editor, oldDoc );
 		} ) );
