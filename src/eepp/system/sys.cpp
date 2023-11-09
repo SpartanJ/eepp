@@ -1170,7 +1170,7 @@ static void windowsSystem( const std::string& programPath ) {
 void Sys::execute( const std::string& cmd ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	windowsSystem( cmd );
-#else
+#elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pid_t pid = fork();
 	if ( pid == 0 ) {
 		std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
