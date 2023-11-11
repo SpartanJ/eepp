@@ -249,7 +249,7 @@ static void addTypeScript() {
 			{ "type", "keyword2" },		 { "typeof", "keyword" },	  { "undefined", "literal" },
 			{ "var", "keyword" },		 { "void", "keyword" },		  { "while", "keyword" },
 			{ "with", "keyword" },		 { "yield", "keyword" },	  { "unknown", "keyword2" },
-			{ "namespace", "keyword" },	 { "abstract", "keyword" } },
+			{ "namespace", "keyword" },	 { "abstract", "keyword" },	  { "readonly", "keyword" } },
 		  "//" } );
 
 	SyntaxDefinitionManager::instance()
