@@ -15,6 +15,8 @@
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
+using namespace std::literals;
+
 namespace EE { namespace UI {
 
 UITextView* UITextView::New() {
@@ -77,25 +79,25 @@ void UITextView::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UINode::draw();
 
-		if ( mTextCache->getTextWidth() ) {
-			drawSelection( mTextCache );
+		if ( mTextCache->getTextWidth() <= 0.f )
+			return;
 
-			if ( isClipped() ) {
-				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
-								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
-								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
-			}
+		drawSelection( mTextCache );
 
-			mTextCache->setAlign( Font::getHorizontalAlign( getFlags() ) );
-			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
-								  (int)mPaddingPx.Top,
-							  Vector2f::One, 0.f, getBlendMode() );
-
-			if ( isClipped() ) {
-				clipSmartDisable();
-			}
+		if ( isClipped() ) {
+			clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
+							 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
+							 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 		}
+
+		mTextCache->setAlign( Font::getHorizontalAlign( getFlags() ) );
+		mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
+						  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
+							  (int)mPaddingPx.Top,
+						  Vector2f::One, 0.f, getBlendMode() );
+
+		if ( isClipped() )
+			clipSmartDisable();
 	}
 }
 
@@ -321,15 +323,16 @@ void UITextView::onAutoSize() {
 	bool sizeChanged = false;
 
 	if ( ( mFlags & UI_AUTO_SIZE && 0 == getSize().getWidth() ) ) {
-		setInternalPixelsSize( Sizef( mTextCache->getTextWidth(), mTextCache->getTextHeight() ) );
+		setInternalPixelsSize( Sizef( getTextWidth(), mTextCache->getTextHeight() ) );
 		sizeChanged = true;
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		Float totW = (int)mTextCache->getTextWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		Float totW = (int)getTextWidth() + mPaddingPx.Left + mPaddingPx.Right;
+
 		if ( !getMaxWidthEq().empty() ) {
 			Float oldW = totW;
-			totW = eemin( totW, getMaxSize().getWidth() );
+			totW = eemin( totW, getMaxSizePx().getWidth() );
 			if ( oldW != totW )
 				setClipType( ClipType::ContentBox );
 		}
@@ -343,7 +346,7 @@ void UITextView::onAutoSize() {
 		Float totH = (int)mTextCache->getTextHeight() + mPaddingPx.Top + mPaddingPx.Bottom;
 		if ( !getMaxHeightEq().empty() ) {
 			Float oldH = totH;
-			totH = eemin( totH, getMaxSize().getHeight() );
+			totH = eemin( totH, getMaxSizePx().getHeight() );
 			if ( oldH != totH )
 				setClipType( ClipType::ContentBox );
 		}
@@ -353,8 +356,10 @@ void UITextView::onAutoSize() {
 		}
 	}
 
-	if ( sizeChanged )
+	if ( sizeChanged ) {
+		updateTextOverflow();
 		notifyLayoutAttrChange();
+	}
 }
 
 void UITextView::alignFix() {
@@ -362,11 +367,11 @@ void UITextView::alignFix() {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x =
 				(Float)( (Int32)( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / 2 -
-								  mTextCache->getTextWidth() / 2 ) );
+								  getTextWidth() / 2 ) );
 			break;
 		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mSize.x - mPaddingPx.Left - mPaddingPx.Right -
-								   (Float)mTextCache->getTextWidth() );
+			mRealAlignOffset.x =
+				( (Float)mSize.x - mPaddingPx.Left - mPaddingPx.Right - (Float)getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mRealAlignOffset.x = 0;
@@ -443,7 +448,8 @@ void UITextView::setTheme( UITheme* Theme ) {
 }
 
 Float UITextView::getTextWidth() {
-	return mTextCache->getTextWidth();
+	return hasTextOverflow() ? Text::getTextWidth( mString, mFontStyleConfig )
+							 : mTextCache->getTextWidth();
 }
 
 Float UITextView::getTextHeight() {
@@ -655,6 +661,7 @@ void UITextView::recalculate() {
 	mFontLineCenter = eefloor(
 		(Float)( ( mTextCache->getFont()->getLineSpacing( fontHeight ) - fontHeight ) / 2 ) );
 
+	updateTextOverflow();
 	autoWrap();
 	onAutoSize();
 	alignFix();
@@ -742,6 +749,9 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 				setTextAlign( UI_HALIGN_RIGHT );
 			break;
 		}
+		case PropertyId::TextOverflow:
+			setTextOverflow( attribute.value() );
+			break;
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -789,6 +799,8 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 					   ? "center"
 					   : ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_RIGHT ? "right"
 																					 : "left" );
+		case PropertyId::TextOverflow:
+			return mTextOverflow;
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -810,7 +822,8 @@ std::vector<PropertyId> UITextView::getPropertiesImplemented() const {
 				   PropertyId::TextStrokeWidth,
 				   PropertyId::TextStrokeColor,
 				   PropertyId::TextSelection,
-				   PropertyId::TextAlign };
+				   PropertyId::TextAlign,
+				   PropertyId::TextOverflow };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -831,6 +844,61 @@ void UITextView::loadFromXmlNode( const pugi::xml_node& node ) {
 	}
 
 	endAttributesTransaction();
+}
+
+void UITextView::updateTextOverflow() {
+	if ( hasTextOverflow() ) {
+		mTextOverflowWidth = Text::getTextWidth( mTextOverflow, mFontStyleConfig );
+
+		Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
+
+		std::size_t charPos =
+			Text::findLastCharPosWithinLength( mString, maxWidth, mFontStyleConfig );
+
+		if ( charPos != mString.size() ) {
+			maxWidth -= mTextOverflowWidth;
+			charPos = Text::findLastCharPosWithinLength( mString, maxWidth, mFontStyleConfig );
+			mTextCache->setString( mString.view().substr( 0, charPos ) + mTextOverflow );
+		} else {
+			if ( mFlags & UI_WORD_WRAP ) {
+				autoWrap();
+			} else if ( mString != mTextCache->getString() ) {
+				mTextCache->setString( mString );
+			}
+		}
+	} else {
+		mTextOverflowWidth = 0.f;
+
+		if ( mFlags & UI_WORD_WRAP ) {
+			autoWrap();
+		} else if ( mString != mTextCache->getString() ) {
+			mTextCache->setString( mString );
+		}
+	}
+}
+
+UITextView* UITextView::setTextOverflow( const std::string_view& textOverflow ) {
+	if ( textOverflow == mTextOverflow ||
+		 ( mTextOverflow == u8"…" && textOverflow == "ellipsis"sv ) )
+		return this;
+
+	if ( "ellipsis"sv == textOverflow ) {
+		mTextOverflow = u8"…"; // U+2026
+	} else {
+		mTextOverflow = textOverflow;
+	}
+
+	updateTextOverflow();
+
+	return this;
+}
+
+const std::string& UITextView::getTextOverflow() const {
+	return mTextOverflow;
+}
+
+bool UITextView::hasTextOverflow() const {
+	return !mTextOverflow.empty() && mTextOverflow != "clip"sv;
 }
 
 UIAnchor* UIAnchor::New() {

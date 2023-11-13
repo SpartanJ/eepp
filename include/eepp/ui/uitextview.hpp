@@ -106,6 +106,12 @@ class EE_API UITextView : public UIWidget {
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
+	UITextView* setTextOverflow( const std::string_view& textOverflow );
+
+	const std::string& getTextOverflow() const;
+
+	bool hasTextOverflow() const;
+
   protected:
 	Text* mTextCache;
 	String mString;
@@ -124,6 +130,8 @@ class EE_API UITextView : public UIWidget {
 	Int32 mLastSelCurEnd;
 	Int32 mFontLineCenter;
 	bool mSelecting;
+	std::string mTextOverflow;
+	Float mTextOverflowWidth{ 0 };
 	TextTransform::Value mTextTransform{ TextTransform::None };
 
 	virtual void drawSelection( Text* textCache );
@@ -171,6 +179,8 @@ class EE_API UITextView : public UIWidget {
 	void recalculate();
 
 	void resetSelCache();
+
+	void updateTextOverflow();
 };
 
 class EE_API UIAnchor : public UITextView {

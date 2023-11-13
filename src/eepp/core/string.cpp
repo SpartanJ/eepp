@@ -1061,6 +1061,8 @@ String::String( const StringType& utf32String ) : mString( utf32String ) {}
 
 String::String( const String& str ) : mString( str.mString ) {}
 
+String::String( const String::View& utf32String ) : mString( utf32String ) {}
+
 String String::fromUtf8( const std::string& utf8String ) {
 	String::StringType utf32;
 

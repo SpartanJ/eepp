@@ -5,7 +5,6 @@
 #include <cstring>
 #include <eepp/config.hpp>
 #include <eepp/core/utf.hpp>
-#include <fstream>
 #include <locale>
 #include <sstream>
 #include <string>
@@ -460,6 +459,11 @@ class EE_API String {
 	** @param str Instance to copy
 	**/
 	String( const String& str );
+
+	/** @brief Copy constructor
+	** @param str Instance to copy
+	**/
+	String( const String::View& str );
 
 	/** @brief Create a new String from a UTF-8 encoded string
 	**  @param begin Forward iterator to the begining of the UTF-8 sequence

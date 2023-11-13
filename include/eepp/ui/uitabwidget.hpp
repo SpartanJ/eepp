@@ -4,7 +4,6 @@
 #include <deque>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uiwidget.hpp>
-#include <queue>
 
 namespace EE { namespace UI {
 

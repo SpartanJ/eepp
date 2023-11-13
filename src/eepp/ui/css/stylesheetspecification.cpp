@@ -406,6 +406,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "row-vertical-align" )
 		.setType( PropertyType::String );
 
+	registerProperty( "text-overflow", "clip" ).setType( PropertyType::String );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );

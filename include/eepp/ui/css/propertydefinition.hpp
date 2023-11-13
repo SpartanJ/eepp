@@ -215,6 +215,7 @@ enum class PropertyId : Uint32 {
 	Glyph = String::hash( "glyph" ),
 	Name = String::hash( "name" ),
 	RowValign = String::hash( "row-valign" ),
+	TextOverflow = String::hash( "text-overflow" ),
 };
 
 enum class PropertyType : Uint32 {

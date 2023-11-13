@@ -859,7 +859,7 @@ the load can't be determined.
 
 ### inner-widget-orientation
 
-PushButton can contain 3 widgets: the text (textbox), the icon, and a custom extra 
+PushButton can contain 3 widgets: the text (textbox), the icon, and a custom extra
 item. And with these 3 items does its own layouting. This property allows configuring the order
 in which these items are displayed/sorted inside the button.
 
@@ -1760,6 +1760,12 @@ When enabled will only display text if the icon is not set/found.
 * Applicable to: EE::UI::UIPushButton (PushButton)
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `false`
+
+---
+
+### text-overflow
+
+Read [text-overflow](https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow) documentation.
 
 ---
 

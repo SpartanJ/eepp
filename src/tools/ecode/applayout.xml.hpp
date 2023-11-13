@@ -384,6 +384,12 @@ Anchor.error:hover {
 .texture-preview {
 	border: 1dp solid var(--list-back);
 }
+#code_container > TabWidget {
+	max-tab-width: 200dp;
+}
+#code_container > TabWidget > TabWidget::TabBar > Tab > Tab::Text {
+	text-overflow: ellipsis;
+}
 </style>
 <MainLayout id="main_layout" lw="mp" lh="mp">
 <Splitter id="project_splitter" lw="mp" lh="mp">

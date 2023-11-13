@@ -29,7 +29,7 @@ void FontFamily::loadFromRegular( FontTrueType* font, std::string overwriteFontN
 
 	setFont( font,
 			 findType( font->getInfo().fontpath, fontname, ext,
-					   { "Italic", "Oblique", "italic", "oblique", "It", "it" } ),
+					   { "Italic"sv, "Oblique"sv, "italic"sv, "oblique"sv, "It"sv, "it"sv } ),
 			 "italic"sv );
 
 	setFont(

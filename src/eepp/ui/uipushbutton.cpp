@@ -538,6 +538,7 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::TextStrokeColor:
 		case PropertyId::TextSelection:
 		case PropertyId::TextTransform:
+		case PropertyId::TextOverflow:
 			return mTextBox->getPropertyString( propertyDef, propertyIndex );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
@@ -564,7 +565,8 @@ std::vector<PropertyId> UIPushButton::getPropertiesImplemented() const {
 				   PropertyId::TextStrokeWidth,
 				   PropertyId::TextStrokeColor,
 				   PropertyId::TextSelection,
-				   PropertyId::TextTransform };
+				   PropertyId::TextTransform,
+				   PropertyId::TextOverflow };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -633,6 +635,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextStrokeColor:
 		case PropertyId::TextSelection:
 		case PropertyId::TextTransform:
+		case PropertyId::TextOverflow:
 			attributeSet = mTextBox->applyProperty( attribute );
 			break;
 		default:

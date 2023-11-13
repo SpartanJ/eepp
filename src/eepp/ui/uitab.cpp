@@ -236,39 +236,41 @@ void UITab::onAutoSize() {
 		mCloseButton->setEnabled( tTabW->getTabsClosable() );
 	}
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		Float nonTextW =
-			( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
-								  mIcon->getLayoutMargin().Right
-							: 0 ) +
-			( NULL != mCloseButton && mCloseButton->isVisible()
-				  ? mCloseButton->getSize().getWidth() + mCloseButton->getLayoutMargin().Left +
-						mCloseButton->getLayoutMargin().Right
-				  : 0 ) +
-			getSkinSize().getWidth();
-		Float textW = mTextBox->getSize().getWidth();
-		Float w = textW + nonTextW;
+	if ( ( mFlags & UI_AUTO_SIZE ) == 0 )
+		return;
 
-		if ( NULL != tTabW ) {
-			if ( !mMinWidthEq.empty() )
-				w = eemax( w, getMinSize().getWidth() );
-			if ( !mMaxWidthEq.empty() )
-				w = eemin( w, getMaxSize().getWidth() );
+	Float nonTextW =
+		( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
+							  mIcon->getLayoutMargin().Right
+						: 0 ) +
+		( NULL != mCloseButton && mCloseButton->isVisible()
+			  ? mCloseButton->getSize().getWidth() + mCloseButton->getLayoutMargin().Left +
+					mCloseButton->getLayoutMargin().Right
+			  : 0 ) +
+		getSkinSize().getWidth();
 
-			if ( textW > w - nonTextW )
-				getTextBox()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
-		}
+	Float textW = mTextBox->getSize().getWidth();
+	Float w = textW + nonTextW;
 
-		setInternalWidth( w );
+	if ( NULL != tTabW ) {
+		if ( !mMinWidthEq.empty() )
+			w = eemax( w, getMinSize().getWidth() );
+		if ( !mMaxWidthEq.empty() )
+			w = eemin( w, getMaxSize().getWidth() );
 
-		if ( getSize().getWidth() != w ) {
-			if ( NULL != getTabWidget() )
-				getTabWidget()->orderTabs();
-		}
-
-		if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
-			getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
+		if ( textW > w - nonTextW )
+			getTextBox()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
 	}
+
+	setInternalWidth( w );
+
+	if ( getSize().getWidth() != w ) {
+		if ( NULL != getTabWidget() )
+			getTabWidget()->orderTabs();
+	}
+
+	if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
+		getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
 }
 
 std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,

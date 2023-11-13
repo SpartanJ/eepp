@@ -3126,6 +3126,8 @@ void App::loadFolder( const std::string& path ) {
 
 	if ( mSplitter->getCurWidget() )
 		mSplitter->getCurWidget()->setFocus();
+
+	setAppTitle( titleFromEditor( mSplitter->getCurEditor() ) );
 }
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS

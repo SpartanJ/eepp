@@ -369,6 +369,13 @@ void Text::onNewString() {
 	}
 }
 
+void Text::setString( const String::View& string ) {
+	if ( mString.view() != string ) {
+		mString = string;
+		onNewString();
+	}
+}
+
 void Text::setString( const String& string ) {
 	if ( mString != string ) {
 		mString = string;
@@ -583,16 +590,47 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 		if ( rune != '\r' && rune != '\t' ) {
 			width += font->getKerning( prevChar, rune, fontSize, bold, italic, outlineThickness );
 			width += glyph.advance;
-		} else if ( rune == '\t' ) {
+		} else if ( rune == '\t' )
 			width += hspace * tabWidth;
-		}
-		if ( rune == '\n' ) {
+
+		if ( rune == '\n' )
 			width = 0;
-		}
 		maxWidth = eemax( width, maxWidth );
 		prevChar = rune;
 	}
 	return maxWidth;
+}
+
+template <typename StringType>
+std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
+												 const StringType& string, Float maxWidth,
+												 const Uint32& style, const Uint32& tabWidth,
+												 const Float& outlineThickness ) {
+	if ( NULL == font || string.empty() )
+		return 0;
+	String::StringBaseType rune;
+	Uint32 prevChar = 0;
+	Float width = 0;
+	bool bold = ( style & Text::Bold ) != 0;
+	bool italic = ( style & Text::Italic ) != 0;
+	Float hspace = static_cast<Float>(
+		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+	for ( std::size_t i = 0; i < string.size(); ++i ) {
+		rune = string.at( i );
+		Glyph glyph = font->getGlyph( rune, fontSize, bold, italic, outlineThickness );
+		if ( rune != '\r' && rune != '\t' ) {
+			width += font->getKerning( prevChar, rune, fontSize, bold, italic, outlineThickness );
+			width += glyph.advance;
+		} else if ( rune == '\t' )
+			width += hspace * tabWidth;
+
+		if ( width > maxWidth )
+			return i > 0 ? i - 1 : 0;
+		if ( rune == '\n' )
+			width = 0;
+		prevChar = rune;
+	}
+	return width <= maxWidth ? string.size() : string.size() - 1;
 }
 
 Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
@@ -718,6 +756,38 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 	if ( pos.x >= width )
 		return tSize;
 	return nearest;
+}
+
+std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
+												 const String& string, Float maxWidth,
+												 const Uint32& style, const Uint32& tabWidth,
+												 const Float& outlineThickness ) {
+	return findLastCharPosWithinLength<String>( font, fontSize, string, maxWidth, style, tabWidth,
+												  outlineThickness );
+}
+
+std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
+												 const String::View& string, Float maxWidth,
+												 const Uint32& style, const Uint32& tabWidth,
+												 const Float& outlineThickness ) {
+	return findLastCharPosWithinLength<String::View>( font, fontSize, string, maxWidth, style,
+														tabWidth, outlineThickness );
+}
+
+std::size_t Text::findLastCharPosWithinLength( const String& string, Float maxWidth,
+												 const FontStyleConfig& config,
+												 const Uint32& tabWidth ) {
+	return findLastCharPosWithinLength<String>( config.Font, config.CharacterSize, string,
+												  maxWidth, config.Style, tabWidth,
+												  config.OutlineThickness );
+}
+
+std::size_t Text::findLastCharPosWithinLength( const String::View& string, Float maxWidth,
+												 const FontStyleConfig& config,
+												 const Uint32& tabWidth ) {
+	return findLastCharPosWithinLength<String::View>( config.Font, config.CharacterSize, string,
+														maxWidth, config.Style, tabWidth,
+														config.OutlineThickness );
 }
 
 void Text::updateWidthCache() {
