@@ -693,6 +693,9 @@ function build_eepp( build_name )
 	filter { "system:macosx", "action:xcode* or options:use-frameworks" }
 		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
 
+	filter { "system:macosx", "not action:xcode*", "not options:use-frameworks" }
+		libdirs { "/opt/homebrew/lib" }
+
 	filter "system:windows"
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }

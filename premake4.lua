@@ -894,6 +894,8 @@ end
 function set_macos_and_ios_config()
 	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
+	elseif os.is_real("macosx") then
+		libdirs { "/opt/homebrew/lib" }
 	end
 
 	if _OPTIONS["use-frameworks"] then

@@ -1,5 +1,6 @@
 #!/bin/sh
 SDL2_CONFIG=$(which sdl2-config)
+rm -rf ../../../libs/macosx
 if [ -z $SDL2_CONFIG ]; then
 echo "Building using frameworks"
 ../make.sh config=release ecode || exit
@@ -34,7 +35,8 @@ install_name_tool -change @rpath/libeepp.dylib @executable_path/libeepp.dylib ec
 else
 SDL2_LIB_PATH=$(sdl2-config --libs | awk '{ print $1 }' | cut -b 3-)
 cp $SDL2_LIB_PATH/libSDL2-2.0.0.dylib ecode.app/Contents/MacOS
-install_name_tool -change $SDL2_LIB_PATH/libSDL2-2.0.0.dylib @executable_path/libSDL2-2.0.0.dylib ecode.app/Contents/MacOS/libeepp.dylib
+SDL2_LIB_REAL_PATH=$(otool -L ecode.app/Contents/MacOS/libeepp.dylib | grep libSDL2 | awk '{ print $1 }')
+install_name_tool -change $SDL2_LIB_REAL_PATH @executable_path/libSDL2-2.0.0.dylib ecode.app/Contents/MacOS/libeepp.dylib
 install_name_tool -change libeepp.dylib @executable_path/libeepp.dylib ecode.app/Contents/MacOS/ecode
 fi
 
