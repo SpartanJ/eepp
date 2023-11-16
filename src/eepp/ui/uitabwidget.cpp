@@ -171,6 +171,8 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 			return getAllowDragAndDropTabs() ? "true" : "false";
 		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
 			return getAllowSwitchTabsInEmptySpaces() ? "true" : "false";
+		case PropertyId::TabCloseButtonVisible:
+			return getTabCloseButtonVisible() ? "true" : "false";
 		case PropertyId::DroppableHoveringColor:
 			return !mDroppableHoveringColorWasSet
 					   ? UIWidget::getPropertyString( propertyDef, propertyIndex )
@@ -193,7 +195,8 @@ std::vector<PropertyId> UITabWidget::getPropertiesImplemented() const {
 				   PropertyId::TabBarAllowRearrange,
 				   PropertyId::TabBarAllowDragAndDrop,
 				   PropertyId::TabAllowSwitchTabsInEmptySpaces,
-				   PropertyId::DroppableHoveringColor };
+				   PropertyId::DroppableHoveringColor,
+				   PropertyId::TabCloseButtonVisible };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -271,6 +274,9 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
 			setAllowSwitchTabsInEmptySpaces( attribute.asBool() );
 			break;
+		case PropertyId::TabCloseButtonVisible:
+			setTabCloseButtonVisible( attribute.asBool() );
+			break;
 		case PropertyId::DroppableHoveringColor:
 			setDroppableHoveringColor( attribute.asColor() );
 			break;
@@ -335,6 +341,18 @@ bool UITabWidget::getTabsClosable() const {
 void UITabWidget::setTabsClosable( bool tabsClosable ) {
 	if ( mStyleConfig.TabsClosable != tabsClosable ) {
 		mStyleConfig.TabsClosable = tabsClosable;
+		updateTabs();
+		invalidateDraw();
+	}
+}
+
+bool UITabWidget::getTabCloseButtonVisible() const {
+	return mStyleConfig.TabCloseButtonVisible;
+}
+
+void UITabWidget::setTabCloseButtonVisible( bool visible ) {
+	if ( mStyleConfig.TabCloseButtonVisible != visible ) {
+		mStyleConfig.TabCloseButtonVisible = visible;
 		updateTabs();
 		invalidateDraw();
 	}
@@ -424,10 +442,16 @@ void UITabWidget::posTabs() {
 void UITabWidget::zorderTabs() {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		mTabs[i]->toBack();
+		mTabs[i]->removeClass( "next" );
+		mTabs[i]->removeClass( "prev" );
 	}
 
 	if ( NULL != mTabSelected ) {
 		mTabSelected->toFront();
+		if ( mTabSelectedIndex > 0 )
+			mTabs[mTabSelectedIndex - 1]->addClass( "prev" );
+		if ( mTabSelectedIndex + 1 < mTabs.size() )
+			mTabs[mTabSelectedIndex + 1]->addClass( "next" );
 	}
 }
 
@@ -458,6 +482,11 @@ UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* 
 	tab->setVisible( true );
 	tab->setEnabled( true );
 	tab->setOwnedWidget( nodeOwned );
+	if ( tab->getCloseButton() ) {
+		tab->getCloseButton()
+			->setVisible( mStyleConfig.TabsClosable && mStyleConfig.TabCloseButtonVisible )
+			->setEnabled( mStyleConfig.TabsClosable && mStyleConfig.TabCloseButtonVisible );
+	}
 	nodeOwned->setParent( mNodeContainer );
 	nodeOwned->setVisible( false );
 	nodeOwned->setEnabled( true );
@@ -877,6 +906,7 @@ void UITabWidget::swapTabs( UITab* left, UITab* right ) {
 		mTabs[leftIndex] = right;
 		mTabs[rightIndex] = left;
 		posTabs();
+		zorderTabs();
 	}
 }
 

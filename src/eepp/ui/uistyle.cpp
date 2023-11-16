@@ -294,11 +294,17 @@ void UIStyle::onStateChange() {
 			mWidget->endAttributesTransaction();
 		}
 
-		for ( auto& related : mRelatedWidgets ) {
-			if ( NULL != related->getUIStyle() ) {
-				related->getUIStyle()->onStateChange();
+		mStateDepthCounter++;
+
+		if ( mStateDepthCounter <= 1 ) {
+			for ( auto& related : mRelatedWidgets ) {
+				if ( NULL != related->getUIStyle() ) {
+					related->getUIStyle()->onStateChange();
+				}
 			}
 		}
+
+		mStateDepthCounter--;
 
 		mChangingState = false;
 		mFirstState = false;

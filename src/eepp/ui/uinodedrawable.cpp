@@ -656,7 +656,7 @@ void UINodeDrawable::LayerDrawable::update() {
 		setDrawable( mDrawableRef );
 	}
 
-	mDrawableSize = calcDrawableSize( mSizeEq );
+	mDrawableSize = calcDrawableSize( mSizeEq ).roundDown();
 	mOffset = calcPosition( mPositionX + " " + mPositionY );
 
 	mNeedsUpdate = false;

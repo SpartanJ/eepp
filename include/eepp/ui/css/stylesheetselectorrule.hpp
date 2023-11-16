@@ -46,7 +46,8 @@ class EE_API StyleSheetSelectorRule {
 		DESCENDANT = ' ',
 		CHILD = '>',
 		DIRECT_SIBLING = '+',
-		SIBLING = '~'
+		SIBLING = '~',
+		PREVIOUS_SIBLING = '|',
 	};
 
 	StyleSheetSelectorRule( const std::string& selectorFragment, PatternMatch mPatternMatch );

@@ -24,6 +24,7 @@ UITab::UITab() :
 	mCloseButton->addEventListener( Event::OnPaddingChange, cb );
 	mCloseButton->addEventListener( Event::OnMarginChange, cb );
 	mCloseButton->addEventListener( Event::OnSizeChange, cb );
+	mCloseButton->addEventListener( Event::OnVisibleChange, cb );
 	applyDefaultTheme();
 	unsetFlags( UI_DRAG_VERTICAL );
 }
@@ -167,6 +168,10 @@ void UITab::removeTab( bool destroyOwnedNode, bool immediateClose ) {
 	getTabWidget()->removeTab( this, destroyOwnedNode, immediateClose );
 }
 
+UIWidget* UITab::getCloseButton() const {
+	return mCloseButton;
+}
+
 void UITab::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
@@ -230,11 +235,6 @@ UIPushButton* UITab::setText( const String& text ) {
 
 void UITab::onAutoSize() {
 	UITabWidget* tTabW = getTabWidget();
-
-	if ( NULL != tTabW ) {
-		mCloseButton->setVisible( tTabW->getTabsClosable() );
-		mCloseButton->setEnabled( tTabW->getTabsClosable() );
-	}
 
 	if ( ( mFlags & UI_AUTO_SIZE ) == 0 )
 		return;

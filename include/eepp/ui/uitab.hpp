@@ -44,6 +44,8 @@ class EE_API UITab : public UISelectButton {
 
 	void removeTab( bool destroyOwnedNode = true, bool immediateClose = false );
 
+	UIWidget* getCloseButton() const;
+
   protected:
 	friend class UITabWidget;
 

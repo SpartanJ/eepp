@@ -538,10 +538,18 @@ Tab {
 	background-position-y: bottom;
 	height: 24dp;
 	transition: background-color 0.15s;
+	foreground-image: linear-gradient( to top, var(--tab-line), var(--tab-back));
+	foreground-size: 1dp 80%;
+	foreground-position: right bottom;
+}
+
+Tab.prev {
+	foreground-image: none;
 }
 
 Tab:hover {
 	background-color: var(--tab-hover);
+	foreground-image: none;
 }
 
 Tab::text {
@@ -562,6 +570,7 @@ Tab:selected {
 	border-top-width: 1dp;
 	border-top-left-radius: 2dp;
 	border-top-right-radius: 2dp;
+	foreground-image: none;
 }
 
 Tab:selected:hover {

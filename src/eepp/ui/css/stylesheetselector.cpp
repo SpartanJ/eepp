@@ -29,6 +29,7 @@ void removeExtraSpaces( std::string& string ) {
 	String::replaceAll( string, "   ", " " );
 	String::replaceAll( string, "  ", " " );
 	String::replaceAll( string, " > ", ">" );
+	String::replaceAll( string, " | ", "|" );
 	String::replaceAll( string, " + ", "+" );
 	String::replaceAll( string, " ~ ", "~" );
 }
@@ -68,6 +69,10 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 				case StyleSheetSelectorRule::DIRECT_SIBLING:
 					addSelectorRule( buffer, curPatternMatch,
 									 StyleSheetSelectorRule::DIRECT_SIBLING );
+					break;
+				case StyleSheetSelectorRule::PREVIOUS_SIBLING:
+					addSelectorRule( buffer, curPatternMatch,
+									 StyleSheetSelectorRule::PREVIOUS_SIBLING );
 					break;
 				case StyleSheetSelectorRule::SIBLING:
 					addSelectorRule( buffer, curPatternMatch, StyleSheetSelectorRule::SIBLING );
@@ -156,6 +161,14 @@ bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) co
 			}
 			case StyleSheetSelectorRule::DIRECT_SIBLING: {
 				curElement = curElement->getStyleSheetPreviousSiblingElement();
+
+				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
+					return false;
+
+				break; // continue evaluating
+			}
+			case StyleSheetSelectorRule::PREVIOUS_SIBLING: {
+				curElement = curElement->getStyleSheetNextSiblingElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
 					return false;
@@ -253,6 +266,19 @@ std::vector<UIWidget*> StyleSheetSelector::getRelatedElements( UIWidget* element
 			}
 			case StyleSheetSelectorRule::DIRECT_SIBLING: {
 				curElement = curElement->getStyleSheetPreviousSiblingElement();
+
+				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
+					return EMPTY_ELEMENTS;
+
+				if ( 0 != i && ( selectorRule.hasPseudoClasses() ||
+								 selectorRule.hasStructuralPseudoClasses() ) ) {
+					elements.push_back( curElement );
+				}
+
+				break; // continue evaluating
+			}
+			case StyleSheetSelectorRule::PREVIOUS_SIBLING: {
+				curElement = curElement->getStyleSheetNextSiblingElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
 					return EMPTY_ELEMENTS;

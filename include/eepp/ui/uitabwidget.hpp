@@ -38,6 +38,7 @@ class EE_API UITabWidget : public UIWidget {
 		bool TabsClosable = false;
 		bool TabsEdgesDiffSkins = false; //! Indicates if the edge tabs ( the left and right
 										 //! border tab ) are different from the central tabs.
+		bool TabCloseButtonVisible = true;
 	};
 
 	typedef std::function<bool( UITab*, FocusTabBehavior )> TabTryCloseCallback;
@@ -107,6 +108,10 @@ class EE_API UITabWidget : public UIWidget {
 	bool getTabsClosable() const;
 
 	void setTabsClosable( bool tabsClosable );
+
+	bool getTabCloseButtonVisible() const;
+
+	void setTabCloseButtonVisible( bool visible);
 
 	bool getSpecialBorderTabs() const;
 

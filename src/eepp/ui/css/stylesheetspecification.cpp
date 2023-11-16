@@ -227,6 +227,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "min-tab-width", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "max-tab-width", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "tab-closable", "" ).setType( PropertyType::Bool );
+	registerProperty( "tab-close-button-visible", "" ).setType( PropertyType::Bool );
 	registerProperty( "tabs-edges-diff-skin", "" ).setType( PropertyType::Bool );
 	registerProperty( "tab-separation", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "tab-height", "" ).setType( PropertyType::NumberLength );
@@ -459,7 +460,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
 													StyleSheetNodeSelector nodeSelector ) {
-	mNodeSelectors[String::toLower( name )] = nodeSelector;
+	mNodeSelectors[String::toLower( name )] = std::move( nodeSelector );
 }
 
 static bool isNth( int a, int b, int count ) {

@@ -89,6 +89,7 @@ class EE_API UIStyle : public UIState {
 	std::set<UIWidget*> mRelatedWidgets;
 	std::set<UIWidget*> mSubscribedWidgets;
 	UnorderedSet<UIWidget*> mStructurallyVolatileChilds;
+	size_t mStateDepthCounter{ 0 };
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
