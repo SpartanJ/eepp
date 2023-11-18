@@ -158,8 +158,10 @@ class ProjectDirectoryTree {
 	bool mRunning;
 	bool mIsReady;
 	bool mIgnoreHidden;
+	bool mClosing;
 	mutable Mutex mFilesMutex;
 	mutable Mutex mMatchingMutex;
+	Mutex mDoneMutex;
 	IgnoreMatcherManager mIgnoreMatcher;
 	App* mApp{ nullptr };
 

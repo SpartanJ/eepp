@@ -539,7 +539,7 @@ Tab {
 	height: 24dp;
 	transition: background-color 0.15s;
 	foreground-image: linear-gradient( to top, var(--tab-line), var(--tab-back));
-	foreground-size: 1dp 80%;
+	foreground-size: 1dprd 80%;
 	foreground-position: right bottom;
 }
 
@@ -586,9 +586,6 @@ Tab::close {
 	width: 10dp;
 	height: 10dp;
 	border-radius: 5dp;
-	/*background-color: var(--tab-close);
-	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 5dp 5dp"), poly(line, var(--icon-line-hover), "5dp 0dp, 0dp 5dp");
-	foreground-position: 2.5dp 2.5dp, 2.5dp 2.5dp;*/
 	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
 	foreground-tint: var(--tab-close);
 	foreground-size: 10dp 10dp;
@@ -597,7 +594,6 @@ Tab::close {
 }
 
 Tab::close:hover {
-	/*background-color: var(--tab-close-hover);*/
 	foreground-tint: var(--tab-close-hover);
 }
 

@@ -27,8 +27,7 @@ the CSS file.
 * eepp CSS supports alternative path methods besides paths (resource locator to previously loaded
 resources by the process).
 
-* eepp CSS supports [Device-independent
-pixel](https://en.wikipedia.org/wiki/Device-independent_pixel) unit `dp`.
+* eepp CSS supports [Device-independent pixel](https://en.wikipedia.org/wiki/Device-independent_pixel) unit `dp`.
 
 * CSS files should be always UTF-8 encoded.
 
@@ -2460,6 +2459,8 @@ Read [length](https://developer.mozilla.org/en-US/docs/Web/CSS/length) documenta
 **Differences with documentation:**
 
 * Supported lenghts: `em`, `rem`, `pt`, `pc`, `in`, `cm`, `mm`, `vw`, `vh`, `vmin`, `vmax`.
+
+* Also adds: `dp` as [Device-independent pixel](https://en.wikipedia.org/wiki/Device-independent_pixel). Plus `dprd` (dp rounded down) and `dpru` (dp rounded up).
 
 ---
 

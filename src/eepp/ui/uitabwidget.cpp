@@ -482,6 +482,7 @@ UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* 
 	tab->setVisible( true );
 	tab->setEnabled( true );
 	tab->setOwnedWidget( nodeOwned );
+	tab->reloadStyle( true, true, true );
 	if ( tab->getCloseButton() ) {
 		tab->getCloseButton()
 			->setVisible( mStyleConfig.TabsClosable && mStyleConfig.TabCloseButtonVisible )
@@ -752,9 +753,7 @@ UITab* UITabWidget::setTabSelected( UITab* tab ) {
 		if ( tab->getOwnedWidget() )
 			tab->getOwnedWidget()->setFocus();
 		return tab;
-	}
-
-	if ( NULL != mTabSelected ) {
+	} else if ( NULL != mTabSelected ) {
 		mTabSelected->unselect();
 
 		if ( NULL != mTabSelected->getOwnedWidget() ) {

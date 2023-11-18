@@ -15,18 +15,23 @@ ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 	mRunning( false ),
 	mIsReady( false ),
 	mIgnoreHidden( true ),
+	mClosing( false ),
 	mIgnoreMatcher( path ),
 	mApp( app ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
 
 ProjectDirectoryTree::~ProjectDirectoryTree() {
+	mClosing = true;
 	if ( mApp->getPluginManager() )
 		mApp->getPluginManager()->unsubscribeMessages( "ProjectDirectoryTree" );
 	Lock rl( mMatchingMutex );
 	if ( mRunning ) {
 		mRunning = false;
 		Lock l( mFilesMutex );
+	}
+	{
+		Lock l( mDoneMutex );
 	}
 }
 
@@ -76,7 +81,6 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 								   mAllowedMatcher.get() );
 			}
 			mIsReady = true;
-			mRunning = false;
 			mApp->getPluginManager()->subscribeMessages(
 				"ProjectDirectoryTree", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 					return processMessage( msg );
@@ -88,8 +92,11 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		},
 		[scanComplete, this]( const auto& ) {
-			if ( scanComplete )
+			if ( !mClosing && scanComplete ) {
+				Lock l( mDoneMutex );
 				scanComplete( *this );
+			}
+			mRunning = false;
 		} );
 #endif
 }
@@ -324,7 +331,8 @@ void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
 		}
 		if ( foundPattern ) {
 			Lock l( mFilesMutex );
-			auto exists = std::find( mFiles.begin(), mFiles.end(), file.getFilepath() ) != mFiles.end();
+			auto exists =
+				std::find( mFiles.begin(), mFiles.end(), file.getFilepath() ) != mFiles.end();
 			if ( !exists ) {
 				mFiles.emplace_back( file.getFilepath() );
 				mNames.emplace_back( file.getFileName() );

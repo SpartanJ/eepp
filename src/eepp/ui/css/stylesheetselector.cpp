@@ -109,7 +109,7 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 	}
 }
 
-const bool& StyleSheetSelector::isCacheable() const {
+bool StyleSheetSelector::isCacheable() const {
 	return mCacheable;
 }
 
@@ -210,7 +210,7 @@ bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) co
 }
 
 std::vector<UIWidget*> StyleSheetSelector::getRelatedElements( UIWidget* element,
-															   const bool& applyPseudo ) const {
+															   bool applyPseudo ) const {
 	static std::vector<UIWidget*> EMPTY_ELEMENTS;
 	std::vector<UIWidget*> elements;
 	if ( mSelectorRules.empty() )
@@ -331,7 +331,7 @@ std::vector<UIWidget*> StyleSheetSelector::getRelatedElements( UIWidget* element
 	return elements;
 }
 
-const bool& StyleSheetSelector::isStructurallyVolatile() const {
+bool StyleSheetSelector::isStructurallyVolatile() const {
 	return mStructurallyVolatile;
 }
 

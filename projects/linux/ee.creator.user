@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 11.0.3, 2023-11-16T01:44:57. -->
+<!-- Written by QtCreator 11.0.3, 2023-11-18T11:06:20. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1215,6 +1215,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">ecode-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
+    <value type="QString" key="RunConfiguration.Arguments">--css=/root/.config/ecode/style.css</value>
     <value type="int" key="RunConfiguration.UseCppDebugger">0</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">false</value>
     <value type="int" key="RunConfiguration.UseQmlDebugger">1</value>

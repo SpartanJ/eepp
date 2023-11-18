@@ -390,6 +390,13 @@ Anchor.error:hover {
 #code_container > TabWidget > TabWidget::TabBar > Tab > Tab::Text {
 	text-overflow: ellipsis;
 }
+#code_container > TabWidget > TabWidget::TabBar > Tab > Tab::close {
+	opacity: 0;
+}
+#code_container > TabWidget > TabWidget::TabBar > Tab:selected > Tab::close,
+#code_container > TabWidget > TabWidget::TabBar > Tab:hover > Tab::close {
+	opacity: 1;
+}
 </style>
 <MainLayout id="main_layout" lw="mp" lh="mp">
 <Splitter id="project_splitter" lw="mp" lh="mp">

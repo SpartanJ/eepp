@@ -30,6 +30,8 @@ class EE_API StyleSheetLength {
 		Vmin,
 		Vmax,
 		Rem,
+		Dprd,
+		Dpru,
 	};
 
 	static Unit unitFromString( std::string unitStr );
@@ -64,7 +66,7 @@ class EE_API StyleSheetLength {
 
 	StyleSheetLength& operator=( const Float& val );
 
-	static StyleSheetLength fromString( std::string str, const Float& defaultValue = 0 );
+	static StyleSheetLength fromString( const std::string& str, const Float& defaultValue = 0 );
 
 	std::string toString() const;
 
