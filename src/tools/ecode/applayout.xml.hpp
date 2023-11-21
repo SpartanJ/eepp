@@ -384,17 +384,17 @@ Anchor.error:hover {
 .texture-preview {
 	border: 1dp solid var(--list-back);
 }
-#code_container > TabWidget {
+#code_container TabWidget {
 	max-tab-width: 200dp;
 }
-#code_container > TabWidget > TabWidget::TabBar > Tab > Tab::Text {
+#code_container Tab > Tab::Text {
 	text-overflow: ellipsis;
 }
-#code_container > TabWidget > TabWidget::TabBar > Tab > Tab::close {
+#code_container Tab > Tab::close {
 	opacity: 0;
 }
-#code_container > TabWidget > TabWidget::TabBar > Tab:selected > Tab::close,
-#code_container > TabWidget > TabWidget::TabBar > Tab:hover > Tab::close {
+#code_container Tab:selected > Tab::close,
+#code_container Tab:hover > Tab::close {
 	opacity: 1;
 }
 </style>
