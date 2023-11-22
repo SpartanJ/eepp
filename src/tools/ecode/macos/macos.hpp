@@ -7,6 +7,8 @@ extern "C" {
 
 void macOS_CreateApplicationMenus();
 
+void macOS_EnableScrollMomentum();
+
 #ifdef __cplusplus
 }
 #endif

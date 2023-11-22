@@ -63,3 +63,7 @@ macOS_CreateApplicationMenus(void)
 
 	[NSApp setWindowsMenu:windowMenu];
 }
+
+void macOS_EnableScrollMomentum() {
+	[[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"AppleMomentumScrollSupported"];
+}

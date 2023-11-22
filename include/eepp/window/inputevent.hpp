@@ -76,6 +76,14 @@ class InputEvent {
 		Int16 x, y;	  /** The X/Y coordinates of the mouse at press time */
 	};
 
+	struct WheelEvent {
+		enum Direction { Normal, Flipped };
+		Uint32 which;
+		Float x;
+		Float y;
+		Direction direction;
+	};
+
 	/** Touch finger motion/finger event structure */
 	struct FingerEvent {
 		Uint32 timestamp;
@@ -204,6 +212,7 @@ class InputEvent {
 		FileDropped,
 		TextDropped,
 		TextEditing,
+		MouseWheel,
 		EventUser,
 		EventCount = EventUser - 1
 	};
@@ -233,6 +242,7 @@ class InputEvent {
 		TextEditingEvent textediting;
 		QuitEvent quit;
 		UserEvent user;
+		WheelEvent wheel;
 		SysWMEvent syswm;
 	};
 };

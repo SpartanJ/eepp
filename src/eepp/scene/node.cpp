@@ -397,6 +397,10 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	return 1;
 }
 
+Uint32 Node::onMouseWheel( const Vector2f& offset, bool flipped ) {
+	return 1;
+}
+
 Uint32 Node::onCalculateDrag( const Vector2f&, const Uint32& ) {
 	return 1;
 }

@@ -66,6 +66,11 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 			sendTextEditing( event->textediting.text, event->textediting.start,
 							 event->textediting.length );
 			break;
+		case InputEvent::MouseWheel:
+			sendMouseWheel( { event->wheel.x, event->wheel.y },
+							event->wheel.direction == InputEvent::WheelEvent::Normal ? true
+																					 : false );
+			break;
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
 		case InputEvent::VideoExpose: {
@@ -248,6 +253,15 @@ void EventDispatcher::sendKeyDown( const Keycode& keyCode, const Scancode& scanc
 	Node* node = mFocusNode;
 	while ( NULL != node ) {
 		if ( node->isEnabled() && node->onKeyDown( keyEvent ) )
+			break;
+		node = node->getParent();
+	}
+}
+
+void EventDispatcher::sendMouseWheel( const Vector2f& offset, bool flipped ) {
+	Node* node = mFocusNode;
+	while ( NULL != node ) {
+		if ( node->isEnabled() && node->onMouseWheel( offset, flipped ) )
 			break;
 		node = node->getParent();
 	}

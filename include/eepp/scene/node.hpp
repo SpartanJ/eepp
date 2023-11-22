@@ -495,6 +495,8 @@ class EE_API Node : public Transformable {
 
 	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
 	virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
 	void onClose();
