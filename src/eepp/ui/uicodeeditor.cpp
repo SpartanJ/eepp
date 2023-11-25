@@ -3062,7 +3062,8 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							}
 							fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
 							fontStyle.Style = lineStyle;
-							size = Text::draw( afterString, { position.x, position.y + lineOffset },
+							size = Text::draw( afterString,
+											   { position.x + offset, position.y + lineOffset },
 											   fontStyle, mTabWidth );
 							offset += afterWidth;
 						}
