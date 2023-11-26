@@ -76,7 +76,7 @@ const UIScrollableWidget::ScrollViewType& UIScrollableWidget::getViewType() cons
 	return mViewType;
 }
 
-void UIScrollableWidget::setViewType( const ScrollViewType& viewType ) {
+void UIScrollableWidget::setScrollViewType( const ScrollViewType& viewType ) {
 	if ( viewType != mViewType ) {
 		mViewType = viewType;
 		onContentSizeChange();
@@ -304,9 +304,9 @@ bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
 			if ( "inclusive" == val || "inside" == val )
-				setViewType( Inclusive );
+				setScrollViewType( Inclusive );
 			else if ( "exclusive" == val || "outside" == val )
-				setViewType( Exclusive );
+				setScrollViewType( Exclusive );
 			break;
 		}
 		case PropertyId::VScrollMode: {

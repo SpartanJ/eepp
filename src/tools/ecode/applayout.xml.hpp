@@ -397,6 +397,15 @@ Anchor.error:hover {
 #code_container Tab:hover > Tab::close {
 	opacity: 1;
 }
+#project_view ScrollBar {
+	opacity: 0;
+	transition: opacity 0.15;
+}
+#project_view:hover ScrollBar,
+#project_view ScrollBar.dragging,
+#project_view ScrollBar:focus-within {
+	opacity: 1;
+}
 </style>
 <MainLayout id="main_layout" lw="mp" lh="mp">
 <Splitter id="project_splitter" lw="mp" lh="mp">
