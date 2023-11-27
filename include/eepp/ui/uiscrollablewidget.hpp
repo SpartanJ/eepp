@@ -62,7 +62,7 @@ class EE_API UIScrollableWidget : public UIWidget {
 	virtual bool isScrollable() const;
 
   protected:
-	ScrollViewType mViewType;
+	ScrollViewType mScrollViewType;
 	ScrollBarMode mVScrollMode;
 	ScrollBarMode mHScrollMode;
 	UIScrollBar* mVScroll;

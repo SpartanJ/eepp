@@ -914,6 +914,8 @@
 ../../src/eepp/ui/doc/languages/pico-8.hpp
 ../../src/eepp/ui/doc/languages/po.cpp
 ../../src/eepp/ui/doc/languages/po.hpp
+../../src/eepp/ui/doc/languages/pony.cpp
+../../src/eepp/ui/doc/languages/pony.hpp
 ../../src/eepp/ui/doc/languages/postgresql.cpp
 ../../src/eepp/ui/doc/languages/postgresql.hpp
 ../../src/eepp/ui/doc/languages/r.cpp

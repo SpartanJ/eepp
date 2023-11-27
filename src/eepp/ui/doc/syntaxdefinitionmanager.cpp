@@ -29,6 +29,7 @@
 #include <eepp/ui/doc/languages/perl.hpp>
 #include <eepp/ui/doc/languages/pico-8.hpp>
 #include <eepp/ui/doc/languages/po.hpp>
+#include <eepp/ui/doc/languages/pony.hpp>
 #include <eepp/ui/doc/languages/postgresql.hpp>
 #include <eepp/ui/doc/languages/r.hpp>
 #include <eepp/ui/doc/languages/rust.hpp>
@@ -1727,6 +1728,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addPICO8();
 	addPHP();
 	addPO();
+	addPony();
 	addPostgreSQL();
 	addPowerShell();
 	addPython();

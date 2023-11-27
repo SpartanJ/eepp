@@ -6,7 +6,7 @@ namespace EE { namespace UI {
 
 UIScrollableWidget::UIScrollableWidget( const std::string& tag ) :
 	UIWidget( tag ),
-	mViewType( Exclusive ),
+	mScrollViewType( Exclusive ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
 	mVScroll( UIScrollBar::NewVertical() ),
@@ -73,12 +73,12 @@ const ScrollBarMode& UIScrollableWidget::getHorizontalScrollMode() const {
 }
 
 const UIScrollableWidget::ScrollViewType& UIScrollableWidget::getViewType() const {
-	return mViewType;
+	return mScrollViewType;
 }
 
 void UIScrollableWidget::setScrollViewType( const ScrollViewType& viewType ) {
-	if ( viewType != mViewType ) {
-		mViewType = viewType;
+	if ( viewType != mScrollViewType ) {
+		mScrollViewType = viewType;
 		onContentSizeChange();
 	}
 }
@@ -139,7 +139,7 @@ void UIScrollableWidget::onContentSizeChange() {
 
 	Sizef size = getPixelsSize() - mPaddingPx;
 
-	if ( Exclusive == mViewType ) {
+	if ( Exclusive == mScrollViewType ) {
 		if ( mVScroll->isVisible() )
 			size.x -= mVScroll->getPixelsSize().getWidth();
 
