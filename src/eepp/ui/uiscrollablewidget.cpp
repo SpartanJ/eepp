@@ -95,46 +95,45 @@ void UIScrollableWidget::onContentSizeChange() {
 	Sizef contentSize( getContentSize() );
 
 	if ( ScrollBarMode::AlwaysOn == mHScrollMode ) {
-		mHScroll->setVisible( true );
-		mHScroll->setEnabled( true );
+		mHScroll->setVisible( true )->setEnabled( true );
 	} else if ( ScrollBarMode::AlwaysOff == mHScrollMode ) {
-		mHScroll->setVisible( false );
-		mHScroll->setEnabled( false );
+		mHScroll->setVisible( false )->setEnabled( false );
 	} else {
-		Float totW = getPixelsSize().getWidth() - getPixelsPadding().Left -
-					 getPixelsPadding().Right - mVScroll->getPixelsSize().getWidth();
+		Float totW =
+			getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right;
+
+		if ( mScrollViewType == Exclusive )
+			totW -= mVScroll->getPixelsSize().getWidth();
 
 		bool visible = contentSize.getWidth() > totW;
 
-		mHScroll->setVisible( visible );
-		mHScroll->setEnabled( visible );
+		mHScroll->setVisible( visible )->setEnabled( visible );
 	}
 
 	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
-		mVScroll->setVisible( true );
-		mVScroll->setEnabled( true );
+		mVScroll->setVisible( true )->setEnabled( true );
 	} else if ( ScrollBarMode::AlwaysOff == mVScrollMode ) {
-		mVScroll->setVisible( false );
-		mVScroll->setEnabled( false );
+		mVScroll->setVisible( false )->setEnabled( false );
 	} else {
 		Float totH = getPixelsSize().getHeight() - getPixelsPadding().Top -
 					 getPixelsPadding().Bottom - mHScroll->getPixelsSize().getHeight();
 
 		bool visible = contentSize.getHeight() > totH;
 
-		mVScroll->setVisible( visible );
-		mVScroll->setEnabled( visible );
+		mVScroll->setVisible( visible )->setEnabled( visible );
 	}
 
 	if ( ScrollBarMode::Auto == mHScrollMode ) {
 		Float totW = getPixelsSize().getWidth() - getPixelsPadding().Left -
 					 getPixelsPadding().Right -
-					 ( mVScroll->isVisible() ? mVScroll->getPixelsSize().getWidth() : 0 );
+					 ( mVScroll->isVisible() &&
+							   ( mScrollViewType == Exclusive || mVScroll->getAlpha() != 0.f )
+						   ? mVScroll->getPixelsSize().getWidth()
+						   : 0 );
 
 		bool visible = contentSize.getWidth() > totW;
 
-		mHScroll->setVisible( visible );
-		mHScroll->setEnabled( visible );
+		mHScroll->setVisible( visible )->setEnabled( visible );
 	}
 
 	Sizef size = getPixelsSize() - mPaddingPx;

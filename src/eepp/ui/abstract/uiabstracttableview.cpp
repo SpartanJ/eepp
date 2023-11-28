@@ -21,6 +21,10 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	mHeader->setParent( this );
 	mHeader->setVisible( true );
 	mHeader->setEnabled( true );
+	mVScroll->on( Event::OnAlphaChange, [this]( const Event* ) {
+		if ( mVScroll->getAlpha() == 0.f || mVScroll->getAlpha() == 1.f )
+			updateColumnsWidth();
+	} );
 }
 
 UIAbstractTableView::~UIAbstractTableView() {}
@@ -316,9 +320,11 @@ void UIAbstractTableView::columnResizeToContent( const size_t& colIndex ) {
 }
 
 Float UIAbstractTableView::getContentSpaceWidth() const {
-	return eefloor( getPixelsSize().getWidth() - getPixelsPadding().Left -
-					getPixelsPadding().Right -
-					( mVScroll->isVisible() ? mVScroll->getPixelsSize().getWidth() : 0 ) );
+	return eefloor(
+		getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right -
+		( mVScroll->isVisible() && ( mScrollViewType == Exclusive || mVScroll->getAlpha() != 0.f )
+			  ? mVScroll->getPixelsSize().getWidth()
+			  : 0 ) );
 }
 
 void UIAbstractTableView::updateColumnsWidth() {
@@ -327,13 +333,17 @@ void UIAbstractTableView::updateColumnsWidth() {
 		if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
 			Float width = eemax( getContentSpaceWidth(), getMaxColumnContentWidth( col, true ) );
 			bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
-			if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
-				width -= getVerticalScrollBar()->getPixelsSize().getWidth();
-			else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
-				width += getVerticalScrollBar()->getPixelsSize().getWidth();
-			columnData( col ).width = width;
-			updateHeaderSize();
-			onColumnSizeChange( col );
+			if ( mScrollViewType == Exclusive || mVScroll->getAlpha() != 0.f ) {
+				if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
+					width -= getVerticalScrollBar()->getPixelsSize().getWidth();
+				else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
+					width += getVerticalScrollBar()->getPixelsSize().getWidth();
+			}
+			if ( columnData( col ).width != width ) {
+				columnData( col ).width = width;
+				updateHeaderSize();
+				onColumnSizeChange( col );
+			}
 		}
 	}
 }
@@ -808,7 +818,7 @@ std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* pr
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::RowHeight:
-			return String::format( "%.2fdp", getRowHeight() );
+			return String::format( "%.2fpx", getRowHeight() );
 		default:
 			return UIAbstractView::getPropertyString( propertyDef, propertyIndex );
 	}

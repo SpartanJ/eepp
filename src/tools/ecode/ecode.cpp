@@ -2870,6 +2870,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 	mProjectTreeView->setHeadersVisible( false );
 	mProjectTreeView->setExpandersAsIcons( true );
 	mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
+	mProjectTreeView->setScrollViewType( UIScrollableWidget::Inclusive );
 	mProjectTreeView->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		ModelEventType type = modelEvent->getModelEventType();
