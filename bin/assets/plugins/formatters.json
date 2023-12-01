@@ -7,8 +7,8 @@
   },
   "formatters": [
     {
-      "language": ["javascript", "typescript", "JSX"],
-      "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$"],
+      "language": ["javascript", "typescript", "jsx", "tsx", "html"],
+      "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$", "%.html?$"],
       "command": "prettier $FILENAME",
       "url": "https://prettier.io"
     },
@@ -52,8 +52,8 @@
       "url": "#native"
     },
     {
-      "language": [ "xml", "html" ],
-      "file_patterns": ["%.xml", "%.html?$"],
+      "language": [ "xml" ],
+      "file_patterns": ["%.xml"],
       "command": "xml",
       "type": "native",
       "url": "#native"
