@@ -4,8 +4,6 @@
 #include <eepp/ui/abstract/uiabstracttableview.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uitablerow.hpp>
-#include <memory>
-#include <unordered_map>
 
 using namespace EE::UI::Abstract;
 
@@ -19,38 +17,13 @@ class EE_API UITreeViewCell : public UITableCell {
 
 	Uint32 getType() const { return UI_TYPE_TREEVIEW_CELL; }
 
-	bool isType( const Uint32& type ) const {
-		return UITreeViewCell::getType() == type ? true : UITableCell::isType( type );
-	}
+	bool isType( const Uint32& type ) const;
 
 	UIImage* getImage() const { return mImage; }
 
-	Rectf calculatePadding() const {
-		Sizef size;
-		Rectf autoPadding;
-		if ( mFlags & UI_AUTO_PADDING ) {
-			autoPadding = makePadding( true, true, true, true );
-			if ( autoPadding != Rectf() )
-				autoPadding = PixelDensity::dpToPx( autoPadding );
-		}
-		if ( mPaddingPx.Top > autoPadding.Top )
-			autoPadding.Top = mPaddingPx.Top;
-		if ( mPaddingPx.Bottom > autoPadding.Bottom )
-			autoPadding.Bottom = mPaddingPx.Bottom;
-		if ( mPaddingPx.Left > autoPadding.Left )
-			autoPadding.Left = mPaddingPx.Left;
-		if ( mPaddingPx.Right > autoPadding.Right )
-			autoPadding.Right = mPaddingPx.Right;
-		autoPadding.Left += mIndent;
-		return autoPadding;
-	}
+	Rectf calculatePadding() const;
 
-	void setIndentation( const Float& indent ) {
-		if ( mIndent != indent ) {
-			mIndent = indent;
-			updateLayout();
-		}
-	}
+	void setIndentation( const Float& indent );
 
 	const Float& getIndentation() const { return mIndent; }
 
@@ -58,26 +31,9 @@ class EE_API UITreeViewCell : public UITableCell {
 	mutable UIImage* mImage{ nullptr };
 	Float mIndent{ 0 };
 
-	UITreeViewCell( const std::function<UITextView*( UIPushButton* )>& newTextViewCb = nullptr ) :
-		UITableCell( "treeview::cell", newTextViewCb ) {
-		mTextBox->setElementTag( mTag + "::text" );
-		mIcon->setElementTag( mTag + "::icon" );
-		mInnerWidgetOrientation = InnerWidgetOrientation::WidgetIconTextBox;
-		auto cb = [this]( const Event* ) { updateLayout(); };
-		mImage = UIImage::NewWithTag( mTag + "::expander" );
-		mImage->setScaleType( UIScaleType::FitInside )
-			->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
-			->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
-			->setParent( const_cast<UITreeViewCell*>( this ) )
-			->setVisible( false )
-			->setEnabled( false );
-		mImage->addEventListener( Event::OnPaddingChange, cb );
-		mImage->addEventListener( Event::OnMarginChange, cb );
-		mImage->addEventListener( Event::OnSizeChange, cb );
-		mImage->addEventListener( Event::OnVisibleChange, cb );
-	}
+	UITreeViewCell( const std::function<UITextView*( UIPushButton* )>& newTextViewCb = nullptr );
 
-	virtual UIWidget* getExtraInnerWidget() const { return mImage; }
+	virtual UIWidget* getExtraInnerWidget() const;
 };
 
 class EE_API UITreeView : public UIAbstractTableView {

@@ -533,13 +533,13 @@ class EE_API Node : public Transformable {
 
 	virtual void onSceneChange();
 
-	void clipStart();
-
 	virtual Uint32 onFocus();
 
 	virtual Uint32 onFocusLoss();
 
-	void clipEnd();
+	void clipStart( bool needsClipPlanes );
+
+	void clipEnd(bool needsClipPlanes );
 
 	void updateScreenPos();
 
@@ -576,6 +576,11 @@ class EE_API Node : public Transformable {
 	void setDirty();
 
 	void setChildsDirty();
+
+	void clipSmartEnable(const Int32& x, const Int32& y, const Uint32& Width,
+						  const Uint32& Height, bool needsClipPlanes );
+
+	void clipSmartDisable( bool needsClipPlanes );
 
 	void clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
 						  const Uint32& Height );

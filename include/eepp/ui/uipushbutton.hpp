@@ -40,7 +40,9 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual UIPushButton* setIcon( Drawable* icon, bool ownIt = false );
 
-	virtual UIImage* getIcon() const;
+	virtual UIImage* getIcon();
+
+	bool hasIcon() const;
 
 	virtual UIPushButton* setText( const String& text );
 

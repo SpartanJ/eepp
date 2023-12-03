@@ -476,7 +476,6 @@ UITableRow* UIAbstractTableView::createRow() {
 		} else {
 			getSelection().set( index );
 		}
-
 	} );
 	onRowCreated( rowWidget );
 	return rowWidget;
@@ -636,7 +635,8 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 			isVisible = true;
 			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
 		}
-		cell->getIcon()->setVisible( isVisible );
+		if ( cell->hasIcon() )
+			cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
 	}

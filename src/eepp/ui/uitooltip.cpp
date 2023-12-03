@@ -521,7 +521,7 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 				setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.asString() );
+			Font* font = FontManager::instance()->getByName( attribute.value() );
 
 			if ( !mUsingCustomStyling && NULL != font && font->loaded() )
 				setFont( font );

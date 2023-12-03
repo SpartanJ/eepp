@@ -5,7 +5,6 @@
 #include <eepp/core/core.hpp>
 #include <eepp/ui/models/modelrole.hpp>
 #include <eepp/ui/models/variant.hpp>
-#include <limits>
 
 namespace EE { namespace UI { namespace Models {
 
@@ -68,5 +67,14 @@ class EE_API ModelIndex {
 };
 
 }}} // namespace EE::UI::Models
+
+template <> struct std::hash<EE::UI::Models::ModelIndex> {
+	std::size_t operator()( EE::UI::Models::ModelIndex const& modelIndex ) const noexcept {
+		return hashCombine( reinterpret_cast<std::size_t>( modelIndex.model() ), modelIndex.row(),
+							modelIndex.column(),
+							reinterpret_cast<std::size_t>( modelIndex.internalData() ),
+							modelIndex.internalId() );
+	}
+};
 
 #endif // EE_UI_MODEL_MODELINDEX_HPP

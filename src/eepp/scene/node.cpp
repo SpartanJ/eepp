@@ -541,13 +541,15 @@ void Node::nodeDraw() {
 
 		matrixSet();
 
-		clipStart();
+		bool needsClipPlanes = isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
+
+		clipStart( needsClipPlanes );
 
 		draw();
 
 		drawChilds();
 
-		clipEnd();
+		clipEnd( needsClipPlanes );
 
 		matrixUnset();
 	}
@@ -573,15 +575,16 @@ Rectf Node::getScreenRect() const {
 	return Rectf( getScreenPos(), getPixelsSize() );
 }
 
-void Node::clipStart() {
+void Node::clipStart( bool needsClipPlanes ) {
 	if ( mVisible && isClipped() ) {
-		clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
+		clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight(),
+						 needsClipPlanes );
 	}
 }
 
-void Node::clipEnd() {
+void Node::clipEnd( bool needsClipPlanes ) {
 	if ( mVisible && isClipped() ) {
-		clipSmartDisable();
+		clipSmartDisable( needsClipPlanes );
 	}
 }
 
@@ -1071,7 +1074,7 @@ bool Node::isMeOrParentTreeScaled() const {
 bool Node::isMeOrParentTreeScaledOrRotated() const {
 	const Node* node = this;
 	while ( NULL != node ) {
-		if ( node->isScaled() || node->isRotated() )
+		if ( node->mNodeFlags & ( NODE_FLAG_SCALED | NODE_FLAG_ROTATED ) )
 			return true;
 		node = node->getParent();
 	}
@@ -1081,9 +1084,9 @@ bool Node::isMeOrParentTreeScaledOrRotated() const {
 bool Node::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() const {
 	const Node* node = this;
 	while ( NULL != node ) {
-		if ( node->isScaled() || node->isRotated() || node->isFrameBuffer() )
+		if ( node->mNodeFlags & ( NODE_FLAG_SCALED | NODE_FLAG_ROTATED | NODE_FLAG_FRAME_BUFFER ) )
 			return true;
-		node = node->getParent();
+		node = node->mParentNode;
 	}
 	return false;
 }
@@ -1718,20 +1721,29 @@ Node* Node::clipDisable() {
 }
 
 void Node::clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
-							const Uint32& Height ) {
-	if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+							const Uint32& Height, bool needsClipPlanes ) {
+	if ( needsClipPlanes ) {
 		GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
 	} else {
 		GLi->getClippingMask()->clipEnable( x, y, Width, Height );
 	}
 }
 
-void Node::clipSmartDisable() {
-	if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+void Node::clipSmartDisable( bool needsClipPlanes ) {
+	if ( needsClipPlanes ) {
 		GLi->getClippingMask()->clipPlaneDisable();
 	} else {
 		GLi->getClippingMask()->clipDisable();
 	}
+}
+
+void Node::clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
+							const Uint32& Height ) {
+	clipSmartEnable( x, y, Width, Height, isMeOrParentTreeScaledOrRotatedOrFrameBuffer() );
+}
+
+void Node::clipSmartDisable() {
+	clipSmartDisable( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() );
 }
 
 Node* Node::getDrawInvalidator() {

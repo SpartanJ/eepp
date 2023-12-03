@@ -64,7 +64,7 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 		ModelIndex sourceParent;
 	};
 
-	using InternalMapIterator = std::map<ModelIndex, std::shared_ptr<Mapping>>::iterator;
+	using InternalMapIterator = UnorderedMap<ModelIndex, std::shared_ptr<Mapping>>::iterator;
 
 	SortingProxyModel( std::shared_ptr<Model> );
 
@@ -85,7 +85,7 @@ class EE_API SortingProxyModel final : public Model, private Model::Client {
 	bool isSortingCaseSensitive();
 
 	std::shared_ptr<Model> mSource;
-	std::map<ModelIndex, std::shared_ptr<Mapping>> mMappings;
+	UnorderedMap<ModelIndex, std::shared_ptr<Mapping>> mMappings;
 	int mKeyColumn{ -1 };
 	SortOrder mSortOrder{ SortOrder::Ascending };
 	ModelRole mSortRole{ ModelRole::Sort };

@@ -120,7 +120,7 @@ bool UISplitter::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::SplitterPartition:
-			setSplitPartition( StyleSheetLength( attribute.asString() ) );
+			setSplitPartition( StyleSheetLength( attribute.value() ) );
 		case PropertyId::SplitterAlwaysShow:
 			setAlwaysShowSplitter( attribute.asBool() );
 		case PropertyId::Orientation: {

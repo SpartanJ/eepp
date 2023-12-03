@@ -1488,7 +1488,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setEnabled( attribute.asBool() );
 			break;
 		case PropertyId::Theme:
-			setThemeByName( attribute.asString() );
+			setThemeByName( attribute.value() );
 			if ( !mSkinName.empty() )
 				setThemeSkin( mSkinName );
 			break;
@@ -1580,7 +1580,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setLayoutMarginBottom( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::Tooltip: {
-			String text = getTranslatorString( attribute.asString() );
+			String text = getTranslatorString( attribute.value() );
 			setTooltipText( text );
 			if ( NULL != mTooltip )
 				mTooltip->setStringBuffer( text );
@@ -1681,7 +1681,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 				rule = PositionPolicy::TopOf;
 			else if ( layoutId == PropertyId::LayoutToBottomOf )
 				rule = PositionPolicy::BottomOf;
-			std::string id = attribute.asString();
+			const std::string& id = attribute.value();
 			Node* node = getParent()->find( id );
 			if ( NULL != node && node->isWidget() ) {
 				UIWidget* widget = static_cast<UIWidget*>( node );
@@ -1772,28 +1772,28 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBorderEnabled( true )->setColorBottom( attribute.asColor() );
 			break;
 		case PropertyId::BorderLeftWidth:
-			setBorderEnabled( true )->setLeftWidth( attribute.asString() );
+			setBorderEnabled( true )->setLeftWidth( attribute.value() );
 			break;
 		case PropertyId::BorderRightWidth:
-			setBorderEnabled( true )->setRightWidth( attribute.asString() );
+			setBorderEnabled( true )->setRightWidth( attribute.value() );
 			break;
 		case PropertyId::BorderTopWidth:
-			setBorderEnabled( true )->setTopWidth( attribute.asString() );
+			setBorderEnabled( true )->setTopWidth( attribute.value() );
 			break;
 		case PropertyId::BorderBottomWidth:
-			setBorderEnabled( true )->setBottomWidth( attribute.asString() );
+			setBorderEnabled( true )->setBottomWidth( attribute.value() );
 			break;
 		case PropertyId::BorderTopLeftRadius:
-			setTopLeftRadius( attribute.asString() );
+			setTopLeftRadius( attribute.value() );
 			break;
 		case PropertyId::BorderBottomLeftRadius:
-			setBottomLeftRadius( attribute.asString() );
+			setBottomLeftRadius( attribute.value() );
 			break;
 		case PropertyId::BorderTopRightRadius:
-			setTopRightRadius( attribute.asString() );
+			setTopRightRadius( attribute.value() );
 			break;
 		case PropertyId::BorderBottomRightRadius:
-			setBottomRightRadius( attribute.asString() );
+			setBottomRightRadius( attribute.value() );
 			break;
 		case PropertyId::BorderSmooth:
 			setBorderEnabled( true )->setSmooth( attribute.asBool() );

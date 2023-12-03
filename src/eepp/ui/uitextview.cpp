@@ -679,7 +679,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			setText( getTranslatorString( attribute.asString() ) );
+			setText( getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::TextTransform:
 			setTextTransform( TextTransform::fromString( attribute.asString() ) );
@@ -701,7 +701,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			setSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.asString() );
+			Font* font = FontManager::instance()->getByName( attribute.value() );
 
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );

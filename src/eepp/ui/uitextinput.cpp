@@ -511,7 +511,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			setText( getTranslatorString( attribute.asString() ) );
+			setText( getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::AllowEditing:
 			setAllowEditing( attribute.asBool() );
@@ -526,7 +526,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setAllowOnlyNumbers( onlyNumbersAllowed(), attribute.asBool() );
 			break;
 		case PropertyId::Hint:
-			setHint( getTranslatorString( attribute.asString() ) );
+			setHint( getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::HintColor:
 			setHintColor( attribute.asColor() );
@@ -541,7 +541,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setHintFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::HintFontFamily:
-			setHintFont( FontManager::instance()->getByName( attribute.asString() ) );
+			setHintFont( FontManager::instance()->getByName( attribute.value() ) );
 			break;
 		case PropertyId::HintFontStyle:
 			setHintFontStyle( attribute.asFontStyle() );

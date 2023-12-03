@@ -316,7 +316,7 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 			}
 		}
 
-		if ( hasChilds && mExpandersAsIcons && cell->getIcon() ) {
+		if ( hasChilds && mExpandersAsIcons && cell->hasIcon() ) {
 			cell->getIcon()->setVisible( false );
 			return widget;
 		}
@@ -330,7 +330,8 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 			isVisible = true;
 			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
 		}
-		cell->getIcon()->setVisible( isVisible );
+		if ( cell->hasIcon() )
+			cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
 	}
@@ -860,6 +861,59 @@ void UITreeView::onModelSelectionChange() {
 	UIAbstractTableView::onModelSelectionChange();
 	if ( mFocusOnSelection )
 		mFocusSelectionDirty = true;
+}
+
+bool UITreeViewCell::isType( const Uint32& type ) const {
+	return UITreeViewCell::getType() == type ? true : UITableCell::isType( type );
+}
+
+Rectf UITreeViewCell::calculatePadding() const {
+	Sizef size;
+	Rectf autoPadding;
+	if ( mFlags & UI_AUTO_PADDING ) {
+		autoPadding = makePadding( true, true, true, true );
+		if ( autoPadding != Rectf() )
+			autoPadding = PixelDensity::dpToPx( autoPadding );
+	}
+	if ( mPaddingPx.Top > autoPadding.Top )
+		autoPadding.Top = mPaddingPx.Top;
+	if ( mPaddingPx.Bottom > autoPadding.Bottom )
+		autoPadding.Bottom = mPaddingPx.Bottom;
+	if ( mPaddingPx.Left > autoPadding.Left )
+		autoPadding.Left = mPaddingPx.Left;
+	if ( mPaddingPx.Right > autoPadding.Right )
+		autoPadding.Right = mPaddingPx.Right;
+	autoPadding.Left += mIndent;
+	return autoPadding;
+}
+
+void UITreeViewCell::setIndentation( const Float& indent ) {
+	if ( mIndent != indent ) {
+		mIndent = indent;
+		updateLayout();
+	}
+}
+
+UITreeViewCell::UITreeViewCell( const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) :
+	UITableCell( "treeview::cell", newTextViewCb ) {
+	mTextBox->setElementTag( mTag + "::text" );
+	mInnerWidgetOrientation = InnerWidgetOrientation::WidgetIconTextBox;
+	auto cb = [this]( const Event* ) { updateLayout(); };
+	mImage = UIImage::NewWithTag( mTag + "::expander" );
+	mImage->setScaleType( UIScaleType::FitInside )
+		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
+		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
+		->setParent( const_cast<UITreeViewCell*>( this ) )
+		->setVisible( false )
+		->setEnabled( false );
+	mImage->addEventListener( Event::OnPaddingChange, cb );
+	mImage->addEventListener( Event::OnMarginChange, cb );
+	mImage->addEventListener( Event::OnSizeChange, cb );
+	mImage->addEventListener( Event::OnVisibleChange, cb );
+}
+
+UIWidget* UITreeViewCell::getExtraInnerWidget() const {
+	return mImage;
 }
 
 }} // namespace EE::UI

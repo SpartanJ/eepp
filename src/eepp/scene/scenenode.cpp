@@ -106,11 +106,13 @@ void SceneNode::draw() {
 		matrixSet();
 
 		if ( NULL == mFrameBuffer || !usesInvalidation() || invalidated() ) {
-			clipStart();
+			bool needsClipPlanes = isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
+
+			clipStart( needsClipPlanes );
 
 			drawChilds();
 
-			clipEnd();
+			clipEnd( needsClipPlanes );
 		}
 
 		matrixUnset();

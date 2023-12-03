@@ -93,7 +93,7 @@ SortingProxyModel::buildMapping( const ModelIndex& sourceParent ) {
 		auto sourceGrandParent = sourceParent.parent();
 		buildMapping( sourceGrandParent );
 	}
-	mMappings.insert( std::make_pair( sourceParent, mapping ) );
+	mMappings.insert( { sourceParent, mapping } );
 	return mMappings.find( sourceParent );
 }
 

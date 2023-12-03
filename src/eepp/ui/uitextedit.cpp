@@ -104,7 +104,7 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			setText( attribute.asString() );
+			setText( attribute.value() );
 			break;
 		default:
 			return UICodeEditor::applyProperty( attribute );

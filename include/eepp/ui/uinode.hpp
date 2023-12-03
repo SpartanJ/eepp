@@ -421,6 +421,10 @@ class EE_API UINode : public Node {
 
 	virtual void updateOriginPoint();
 
+	void smartClipStart( const ClipType& reqClipType, bool needsClipPlanes );
+
+	void smartClipEnd( const ClipType& reqClipType, bool needsClipPlanes );
+
 	void smartClipStart( const ClipType& reqClipType );
 
 	void smartClipEnd( const ClipType& reqClipType );

@@ -13,10 +13,8 @@ UITab* UITab::New() {
 UITab::UITab() :
 	UISelectButton( "tab" ), mOwnedWidget( NULL ), mDragTotalDiff( 0.f ), mTabWidget( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
-	mIcon->setElementTag( mTag + "::icon" );
 	auto cb = [this]( const Event* ) { onSizeChange(); };
 	mTextBox->addEventListener( Event::OnSizeChange, cb );
-	mIcon->addEventListener( Event::OnSizeChange, cb );
 	mCloseButton = UIWidget::NewWithTag( mTag + "::close" );
 	mCloseButton->setParent( const_cast<UITab*>( this ) );
 	mCloseButton->setEnabled( false );
@@ -303,10 +301,10 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Text:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 				setText( static_cast<UISceneNode*>( mSceneNode )
-							 ->getTranslatorString( attribute.asString() ) );
+							 ->getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::Owns:
-			mOwnedName = attribute.asString();
+			mOwnedName = attribute.value();
 			setOwnedNode();
 			break;
 		default:

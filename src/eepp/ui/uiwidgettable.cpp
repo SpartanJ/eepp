@@ -696,7 +696,7 @@ bool UIWidgetTable::applyProperty( const StyleSheetProperty& attribute ) {
 			setRowHeight( attribute.asDpDimensionI( this ) );
 			break;
 		case PropertyId::VScrollMode: {
-			std::string val = attribute.asString();
+			const std::string& val = attribute.value();
 			if ( "auto" == val )
 				setVerticalScrollMode( ScrollBarMode::Auto );
 			else if ( "on" == val )
@@ -706,7 +706,7 @@ bool UIWidgetTable::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::HScrollMode: {
-			std::string val = attribute.asString();
+			const std::string& val = attribute.value();
 			if ( "auto" == val )
 				setHorizontalScrollMode( ScrollBarMode::Auto );
 			else if ( "on" == val )

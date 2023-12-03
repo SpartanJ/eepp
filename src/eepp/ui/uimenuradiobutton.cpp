@@ -13,7 +13,6 @@ UIMenuRadioButton::UIMenuRadioButton() :
 	mActive( false ),
 	mSkinActive( NULL ),
 	mSkinInactive( NULL ) {
-	mIcon->setElementTag( mTag + "::icon" );
 	mTextBox->setElementTag( mTag + "::text" );
 	applyDefaultTheme();
 	mIcon->setFlags( UI_SKIN_KEEP_SIZE_ON_DRAW );

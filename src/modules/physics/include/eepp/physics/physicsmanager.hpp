@@ -2,7 +2,6 @@
 #define EE_PHYSICS_PHYSICSMANAGER_HPP
 
 #include <eepp/physics/base.hpp>
-#include <list>
 
 namespace EE { namespace Physics {
 

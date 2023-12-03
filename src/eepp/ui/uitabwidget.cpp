@@ -245,10 +245,10 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setMaxTextLength( attribute.asUint( 1 ) );
 			break;
 		case PropertyId::MinTabWidth:
-			setMinTabWidth( attribute.asString() );
+			setMinTabWidth( attribute.value() );
 			break;
 		case PropertyId::MaxTabWidth:
-			setMaxTabWidth( attribute.asString() );
+			setMaxTabWidth( attribute.value() );
 			break;
 		case PropertyId::TabClosable:
 			setTabsClosable( attribute.asBool() );
