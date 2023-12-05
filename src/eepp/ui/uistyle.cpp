@@ -55,8 +55,16 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
 }
 
 void UIStyle::resetGlobalDefinition() {
-	mGlobalDefinition =
-		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, false );
+	const auto& stylesheet = mWidget->getUISceneNode()->getStyleSheet();
+
+	if ( stylesheet.getVersion() == mLoadedVersion )
+		return;
+
+	auto prefDef = mGlobalDefinition;
+
+	mGlobalDefinition = stylesheet.getElementStyles( mWidget, false );
+
+	mLoadedVersion = stylesheet.getVersion();
 }
 
 void UIStyle::load() {
@@ -227,88 +235,89 @@ void UIStyle::applyVarValues( StyleSheetProperty* property ) {
 }
 
 void UIStyle::onStateChange() {
-	if ( NULL != mWidget && NULL != mWidget->getUISceneNode() ) {
-		mChangingState = true;
+	if ( NULL == mWidget || NULL == mWidget->getUISceneNode() )
+		return;
 
-		std::shared_ptr<ElementDefinition> prevDefinition = mDefinition;
-		std::shared_ptr<ElementDefinition> newDefinition =
-			mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, true );
+	mChangingState = true;
 
-		if ( newDefinition != mDefinition || mForceReapplyProperties ) {
-			PropertyIdSet changedProperties;
+	std::shared_ptr<ElementDefinition> prevDefinition = mDefinition;
+	std::shared_ptr<ElementDefinition> newDefinition =
+		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, true );
 
-			if ( mDefinition )
-				changedProperties = mDefinition->getPropertyIds();
+	if ( newDefinition != mDefinition || mForceReapplyProperties ) {
+		PropertyIdSet changedProperties;
 
-			if ( newDefinition )
-				changedProperties |= newDefinition->getPropertyIds();
+		if ( mDefinition )
+			changedProperties = mDefinition->getPropertyIds();
 
-			if ( !mForceReapplyProperties ) {
-				if ( nullptr != newDefinition && !newDefinition->getPropertyIds().empty() ) {
-					if ( nullptr != mDefinition ) {
-						const PropertyIdSet propertiesInBothDefinitions =
-							( mDefinition->getPropertyIds() & newDefinition->getPropertyIds() );
+		if ( newDefinition )
+			changedProperties |= newDefinition->getPropertyIds();
 
-						for ( Uint32 id : propertiesInBothDefinitions ) {
-							const StyleSheetProperty* p0 = mDefinition->getProperty( id );
-							const StyleSheetProperty* p1 = newDefinition->getProperty( id );
-							if ( nullptr != p0 && nullptr != p1 && *p0 == *p1 )
-								changedProperties.erase( id );
-						}
+		if ( !mForceReapplyProperties ) {
+			if ( nullptr != newDefinition && !newDefinition->getPropertyIds().empty() ) {
+				if ( nullptr != mDefinition ) {
+					const PropertyIdSet propertiesInBothDefinitions =
+						( mDefinition->getPropertyIds() & newDefinition->getPropertyIds() );
+
+					for ( Uint32 id : propertiesInBothDefinitions ) {
+						const StyleSheetProperty* p0 = mDefinition->getProperty( id );
+						const StyleSheetProperty* p1 = newDefinition->getProperty( id );
+						if ( nullptr != p0 && nullptr != p1 && *p0 == *p1 )
+							changedProperties.erase( id );
 					}
-				}
-			}
-
-			mDefinition = newDefinition;
-
-			mForceReapplyProperties = false;
-
-			mWidget->beginAttributesTransaction();
-
-			if ( nullptr != mDefinition && !mDefinition->getTransitionProperties().empty() ) {
-				mTransitions = TransitionDefinition::parseTransitionProperties(
-					mDefinition->getTransitionProperties() );
-			}
-
-			for ( auto prop : changedProperties ) {
-				StyleSheetProperty* property = getLocalProperty( prop );
-
-				if ( nullptr == property || NULL == property->getPropertyDefinition() )
-					continue;
-
-				applyVarValues( property );
-
-				if ( property->getPropertyDefinition()->isIndexed() ) {
-					for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
-						applyVarValues( property->getPropertyIndexRef( i ) );
-
-						applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
-					}
-				} else {
-					applyStyleSheetProperty( *property, prevDefinition );
-				}
-			}
-
-			updateAnimations();
-
-			mWidget->endAttributesTransaction();
-		}
-
-		mStateDepthCounter++;
-
-		if ( mStateDepthCounter <= 1 ) {
-			for ( auto& related : mRelatedWidgets ) {
-				if ( NULL != related->getUIStyle() ) {
-					related->getUIStyle()->onStateChange();
 				}
 			}
 		}
 
-		mStateDepthCounter--;
+		mDefinition = newDefinition;
 
-		mChangingState = false;
-		mFirstState = false;
+		mForceReapplyProperties = false;
+
+		mWidget->beginAttributesTransaction();
+
+		if ( nullptr != mDefinition && !mDefinition->getTransitionProperties().empty() ) {
+			mTransitions = TransitionDefinition::parseTransitionProperties(
+				mDefinition->getTransitionProperties() );
+		}
+
+		for ( auto prop : changedProperties ) {
+			StyleSheetProperty* property = getLocalProperty( prop );
+
+			if ( nullptr == property || NULL == property->getPropertyDefinition() )
+				continue;
+
+			applyVarValues( property );
+
+			if ( property->getPropertyDefinition()->isIndexed() ) {
+				for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {
+					applyVarValues( property->getPropertyIndexRef( i ) );
+
+					applyStyleSheetProperty( property->getPropertyIndex( i ), prevDefinition );
+				}
+			} else {
+				applyStyleSheetProperty( *property, prevDefinition );
+			}
+		}
+
+		updateAnimations();
+
+		mWidget->endAttributesTransaction();
 	}
+
+	mStateDepthCounter++;
+
+	if ( mStateDepthCounter <= 1 ) {
+		for ( auto& related : mRelatedWidgets ) {
+			if ( NULL != related->getUIStyle() ) {
+				related->getUIStyle()->onStateChange();
+			}
+		}
+	}
+
+	mStateDepthCounter--;
+
+	mChangingState = false;
+	mFirstState = false;
 }
 
 const StyleSheetProperty*

@@ -4,7 +4,6 @@
 #include <eepp/math/ease.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
-#include <unordered_map>
 #include <vector>
 
 using namespace EE::Math;
@@ -14,7 +13,7 @@ namespace EE { namespace UI { namespace CSS {
 
 class EE_API AnimationDefinition {
   public:
-	static std::unordered_map<std::string, AnimationDefinition>
+	static UnorderedMap<std::string, AnimationDefinition>
 	parseAnimationProperties( const std::vector<const StyleSheetProperty*>& stylesheetProperties );
 
 	/* https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction */
@@ -106,7 +105,7 @@ inline bool operator!=( const AnimationDefinition& a, const AnimationDefinition&
 	return !( a == b );
 }
 
-typedef std::unordered_map<std::string, AnimationDefinition> AnimationsMap;
+typedef UnorderedMap<std::string, AnimationDefinition> AnimationsMap;
 
 }}} // namespace EE::UI::CSS
 

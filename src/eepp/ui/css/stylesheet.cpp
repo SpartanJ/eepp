@@ -4,7 +4,6 @@
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/uiwidget.hpp>
-#include <iostream>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -26,6 +25,7 @@ size_t StyleSheet::nodeHash( const std::string& tag, const std::string& id ) {
 
 void StyleSheet::invalidateCache() {
 	mNodeCache.clear();
+	mVersion++;
 }
 
 const Uint32& StyleSheet::getMarker() const {
@@ -107,7 +107,7 @@ bool StyleSheet::markerExists( const Uint32& marker ) const {
 }
 
 std::vector<std::shared_ptr<StyleSheetStyle>>
-StyleSheet::findStyleFromSelectorName( const std::string& selector ) {
+StyleSheet::findStyleFromSelectorName( const std::string& selector ) const {
 	std::vector<std::shared_ptr<StyleSheetStyle>> found;
 	for ( const auto& node : mNodes ) {
 		if ( selector == node->getSelector().getName() )
@@ -121,15 +121,20 @@ bool StyleSheet::refreshCacheFromStyles(
 	bool refreshed = false;
 	for ( const auto& style : styles ) {
 		for ( auto& node : mNodeCache ) {
-			for ( auto& nodeStyle : node.second->getStyles() ) {
+			for ( const auto& nodeStyle : node.second->getStyles() ) {
 				if ( nodeStyle == style.get() ) {
 					node.second->refresh();
 					refreshed = true;
+					mVersion++;
 				}
 			}
 		}
 	}
 	return refreshed;
+}
+
+const Uint64& StyleSheet::getVersion() const {
+	return mVersion;
 }
 
 bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
@@ -154,6 +159,7 @@ void StyleSheet::addStyle( std::shared_ptr<StyleSheetStyle> node ) {
 		mNodes.push_back( node );
 	}
 	addMediaQueryList( node->getMediaQueryList() );
+	mVersion++;
 }
 
 bool StyleSheet::isEmpty() const {
@@ -237,7 +243,7 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 
 	auto cacheIterator = mNodeCache.find( seed );
 	if ( cacheIterator != mNodeCache.end() ) {
-		std::shared_ptr<ElementDefinition>& definition = ( *cacheIterator ).second;
+		const std::shared_ptr<ElementDefinition>& definition = ( *cacheIterator ).second;
 		return definition;
 	}
 
@@ -269,6 +275,9 @@ bool StyleSheet::updateMediaLists( const MediaFeatures& features ) {
 		if ( ( *iter )->applyMediaFeatures( features ) )
 			updateStyles = true;
 	}
+
+	if ( updateStyles )
+		mVersion++;
 
 	return updateStyles;
 }
@@ -306,11 +315,12 @@ StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& 
 	return vector;
 }
 
-bool StyleSheet::isKeyframesDefined( const std::string& keyframesName ) {
+bool StyleSheet::isKeyframesDefined( const std::string& keyframesName ) const {
 	return mKeyframesMap.find( keyframesName ) != mKeyframesMap.end();
 }
 
-const KeyframesDefinition& StyleSheet::getKeyframesDefinition( const std::string& keyframesName ) {
+const KeyframesDefinition&
+StyleSheet::getKeyframesDefinition( const std::string& keyframesName ) const {
 	static KeyframesDefinition EMPTY;
 	const auto& it = mKeyframesMap.find( keyframesName );
 	if ( it != mKeyframesMap.end() ) {
@@ -323,6 +333,8 @@ void StyleSheet::addKeyframes( const KeyframesDefinition& keyframes ) {
 	// "none" is a reserved keyword
 	if ( keyframes.getName() != "none" )
 		mKeyframesMap[keyframes.getName()] = keyframes;
+
+	mVersion++;
 }
 
 void StyleSheet::addKeyframes( const KeyframesDefinitionMap& keyframesMap ) {

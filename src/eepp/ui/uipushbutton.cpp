@@ -376,8 +376,9 @@ UIImage* UIPushButton::getIcon() {
 		mIcon->addEventListener( Event::OnVisibleChange, cb );
 
 		if ( mIconMinSize != Sizei::Zero ) {
+			auto iconMinSize = mIconMinSize;
 			mIconMinSize = Sizei{ -1, -1 }; // force refresh
-			setIconMinimumSize( mIconMinSize );
+			setIconMinimumSize( iconMinSize );
 		}
 	}
 	return mIcon;
@@ -453,9 +454,9 @@ void UIPushButton::setIconMinimumSize( const Sizei& minIconSize ) {
 	if ( minIconSize != mIconMinSize ) {
 		mIconMinSize = minIconSize;
 
-		if ( mIcon && mIconMinSize.x != 0 && mIconMinSize.y != 0 ) {
-			mIcon->setMinSizeEq( String::fromFloat( mIconMinSize.x, "dp" ),
-								 String::fromFloat( mIconMinSize.y, "dp" ) );
+		if ( mIconMinSize.x != 0 && mIconMinSize.y != 0 ) {
+			getIcon()->setMinSizeEq( String::fromFloat( mIconMinSize.x, "dp" ),
+									 String::fromFloat( mIconMinSize.y, "dp" ) );
 		}
 	}
 }
@@ -639,8 +640,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			setTextAsFallback( attribute.asBool() );
 			break;
 		case PropertyId::Tint:
-			if ( mIcon )
-				mIcon->setColor( attribute.asColor() );
+			getIcon()->setColor( attribute.asColor() );
 			break;
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:

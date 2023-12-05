@@ -9,9 +9,6 @@
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/transitiondefinition.hpp>
 #include <eepp/ui/uistate.hpp>
-#include <functional>
-#include <set>
-#include <unordered_set>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -86,10 +83,11 @@ class EE_API UIStyle : public UIState {
 	std::shared_ptr<CSS::ElementDefinition> mDefinition;
 	CSS::TransitionsMap mTransitions;
 	CSS::AnimationsMap mAnimations;
-	std::set<UIWidget*> mRelatedWidgets;
-	std::set<UIWidget*> mSubscribedWidgets;
+	UnorderedSet<UIWidget*> mRelatedWidgets;
+	UnorderedSet<UIWidget*> mSubscribedWidgets;
 	UnorderedSet<UIWidget*> mStructurallyVolatileChilds;
-	size_t mStateDepthCounter{ 0 };
+	Uint32 mStateDepthCounter{ 0 };
+	Uint64 mLoadedVersion{ 0 };
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;

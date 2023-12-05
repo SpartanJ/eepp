@@ -14,7 +14,7 @@ namespace EE { namespace UI { namespace CSS {
 
 class EE_API TransitionDefinition {
   public:
-	static std::map<std::string, TransitionDefinition>
+	static UnorderedMap<std::string, TransitionDefinition>
 	parseTransitionProperties( const std::vector<const StyleSheetProperty*>& styleSheetProperties );
 
 	TransitionDefinition() : timingFunction( Ease::Linear ) {}
@@ -36,7 +36,7 @@ class EE_API TransitionDefinition {
 	Time duration = Time::Zero;
 };
 
-typedef std::map<std::string, TransitionDefinition> TransitionsMap;
+typedef UnorderedMap<std::string, TransitionDefinition> TransitionsMap;
 
 }}} // namespace EE::UI::CSS
 

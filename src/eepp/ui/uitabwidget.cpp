@@ -482,7 +482,7 @@ UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* 
 	tab->setVisible( true );
 	tab->setEnabled( true );
 	tab->setOwnedWidget( nodeOwned );
-	tab->reloadStyle( true, true, true );
+	tab->reloadStyle( true, true, false );
 	if ( tab->getCloseButton() ) {
 		tab->getCloseButton()
 			->setVisible( mStyleConfig.TabsClosable && mStyleConfig.TabCloseButtonVisible )

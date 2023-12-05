@@ -6,7 +6,6 @@
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <memory>
-#include <unordered_map>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -35,17 +34,15 @@ class EE_API StyleSheet {
 
 	StyleSheetStyleVector getStyleSheetStyleByAtRule( const AtRuleType& atRuleType ) const;
 
-	bool isKeyframesDefined( const std::string& keyframesName );
+	bool isKeyframesDefined( const std::string& keyframesName ) const;
 
-	const KeyframesDefinition& getKeyframesDefinition( const std::string& keyframesName );
+	const KeyframesDefinition& getKeyframesDefinition( const std::string& keyframesName ) const;
 
 	void addKeyframes( const KeyframesDefinition& keyframes );
 
 	void addKeyframes( const KeyframesDefinitionMap& keyframesMap );
 
 	const KeyframesDefinitionMap& getKeyframes() const;
-
-	static size_t nodeHash( const std::string& tag, const std::string& id );
 
 	void invalidateCache();
 
@@ -58,11 +55,14 @@ class EE_API StyleSheet {
 	bool markerExists( const Uint32& marker ) const;
 
 	std::vector<std::shared_ptr<StyleSheetStyle>>
-	findStyleFromSelectorName( const std::string& selector );
+	findStyleFromSelectorName( const std::string& selector ) const;
 
 	bool refreshCacheFromStyles( const std::vector<std::shared_ptr<StyleSheetStyle>>& styles );
 
+	const Uint64& getVersion() const;
+
   protected:
+	Uint64 mVersion{ 1 };
 	Uint32 mMarker{ 0 };
 	std::vector<std::shared_ptr<StyleSheetStyle>> mNodes;
 	UnorderedMap<size_t, StyleSheetStyleVector> mNodeIndex;
@@ -70,6 +70,8 @@ class EE_API StyleSheet {
 	KeyframesDefinitionMap mKeyframesMap;
 	using ElementDefinitionCache = UnorderedMap<size_t, std::shared_ptr<ElementDefinition>>;
 	mutable ElementDefinitionCache mNodeCache;
+
+	static size_t nodeHash( const std::string& tag, const std::string& id );
 
 	void addMediaQueryList( MediaQueryList::ptr list );
 
