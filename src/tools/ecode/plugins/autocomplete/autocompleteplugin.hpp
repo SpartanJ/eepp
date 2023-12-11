@@ -2,6 +2,7 @@
 #define ECODE_AUTOCOMPLETEPLUGIN_HPP
 
 #include "../lsp/lspprotocol.hpp"
+#include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>

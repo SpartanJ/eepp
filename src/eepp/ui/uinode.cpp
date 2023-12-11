@@ -1705,9 +1705,9 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length,
 
 				while ( NULL != node ) {
 					if ( node->isWidget() ) {
-						std::string fontSizeStr( node->asType<UIWidget>()->getPropertyString(
+						fontSizeStr = node->asType<UIWidget>()->getPropertyString(
 							CSS::StyleSheetSpecification::instance()->getProperty(
-								(Uint32)PropertyId::FontSize ) ) );
+								(Uint32)PropertyId::FontSize ) );
 						if ( !fontSizeStr.empty() ) {
 							Float num;
 							if ( String::fromString( num, fontSizeStr ) ) {

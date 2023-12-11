@@ -1387,6 +1387,8 @@
 ../../src/tools/ecode/plugins/lsp/lspdocumentclient.cpp
 ../../src/tools/ecode/plugins/lsp/lspdocumentclient.hpp
 ../../src/tools/ecode/plugins/lsp/lspprotocol.hpp
+../../src/tools/ecode/plugins/plugin.cpp
+../../src/tools/ecode/plugins/plugin.hpp
 ../../src/tools/ecode/plugins/pluginmanager.cpp
 ../../src/tools/ecode/plugins/pluginmanager.hpp
 ../../src/tools/ecode/plugins/xmltools/xmltoolsplugin.cpp

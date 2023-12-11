@@ -1,6 +1,7 @@
 #ifndef ECODE_FORMATTERPLUGIN_HPP
 #define ECODE_FORMATTERPLUGIN_HPP
 
+#include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>

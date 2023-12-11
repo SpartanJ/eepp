@@ -1,6 +1,7 @@
 #ifndef ECODE_LSPPLUGIN_HPP
 #define ECODE_LSPPLUGIN_HPP
 
+#include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "lspclientservermanager.hpp"
 #include <eepp/config.hpp>
@@ -12,8 +13,6 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uilistview.hpp>
-#include <set>
-#include <unordered_set>
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;

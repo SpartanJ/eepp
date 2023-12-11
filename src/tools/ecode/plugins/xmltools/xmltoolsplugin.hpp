@@ -1,12 +1,12 @@
 #ifndef ECODE_XMLTOOLSPLUGIN_HPP
 #define ECODE_XMLTOOLSPLUGIN_HPP
 
+#include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
-#include <set>
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
