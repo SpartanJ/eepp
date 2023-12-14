@@ -812,7 +812,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 						 mManager->getWorkspaceFolder() ) ) {
 		int returnCode;
 		std::string data;
-		process.readAllStdOut( data );
+		process.readAllStdOut( data, Seconds( 30 ) );
 
 		if ( mShuttingDown ) {
 			process.kill();

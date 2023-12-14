@@ -74,7 +74,7 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 
 	if ( editor->hasDocument() ) {
 		editor->getDocument().setCommand( "format-doc", [this]( TextDocument::Client* client ) {
-			formatDoc( static_cast<UICodeEditor*>( client ) );
+			formatDocAsync( static_cast<UICodeEditor*>( client ) );
 		} );
 	}
 
@@ -99,7 +99,7 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 					 mPluginManager &&
 					 !String::startsWith( editor->getDocument().getFilePath(),
 										  mPluginManager->getPluginsPath() ) )
-					formatDoc( editor );
+					formatDocAsync( editor );
 			}
 		} ) );
 
@@ -332,6 +332,10 @@ FormatterPlugin::Formatter FormatterPlugin::getFormatterForLang( const std::stri
 	return {};
 }
 
+void FormatterPlugin::formatDocAsync( UICodeEditor* editor ) {
+	mThreadPool->run( [editor, this] { formatDoc( editor ); } );
+}
+
 void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 	ScopedOp op(
 		[this]() {
@@ -441,16 +445,14 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
 	Process process;
 	if ( process.create( cmd ) ) {
-		int returnCode;
 		std::string data;
-		process.readAllStdOut( data );
+		process.readAllStdOut( data, Seconds( 30 ) );
 
 		if ( mShuttingDown ) {
 			process.kill();
 			return;
 		}
 
-		process.join( &returnCode );
 		process.destroy();
 
 		// Log::info( "Formatter result:\n%s", data.c_str() );

@@ -28,6 +28,7 @@
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+#include <cstdint>
 #include <initguid.h>
 #include <objbase.h>
 #include <shellapi.h>

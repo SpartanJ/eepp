@@ -98,6 +98,8 @@ class FormatterPlugin : public Plugin {
 
 	void formatDoc( UICodeEditor* editor );
 
+	void formatDocAsync( UICodeEditor* editor );
+
 	void runFormatter( UICodeEditor* editor, const Formatter& formatter, const std::string& path );
 
 	size_t formatterFilePatternPosition( const std::vector<std::string>& patterns );

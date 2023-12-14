@@ -2,6 +2,7 @@
 #include <eepp/core/debug.hpp>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/process.hpp>
@@ -29,7 +30,7 @@ namespace EE { namespace System {
 
 Process::Process() {}
 
-Process::Process( const std::string& command, const Uint32& options,
+Process::Process( const std::string& command, Uint32 options,
 				  const std::unordered_map<std::string, std::string>& environment,
 				  const std::string& workingDirectory, const size_t& bufferSize ) :
 	mBufferSize( bufferSize ) {
@@ -47,7 +48,7 @@ Process::~Process() {
 	eeFree( mProcess );
 }
 
-bool Process::create( const std::string& command, const Uint32& options,
+bool Process::create( const std::string& command, Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
 	if ( mProcess )
@@ -90,7 +91,7 @@ bool Process::create( const std::string& command, const Uint32& options,
 	return ret;
 }
 
-bool Process::create( const std::string& command, const std::string& args, const Uint32& options,
+bool Process::create( const std::string& command, const std::string& args, Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
 	if ( mProcess )
@@ -140,8 +141,8 @@ bool Process::create( const std::string& command, const std::string& args, const
 	return ret;
 }
 
-size_t Process::readAllStdOut( std::string& buffer ) {
-	return readAll( buffer, false );
+size_t Process::readAllStdOut( std::string& buffer, Time timeout ) {
+	return readAll( buffer, false, timeout );
 }
 
 size_t Process::readStdOut( std::string& buffer ) {
@@ -153,8 +154,8 @@ size_t Process::readStdOut( char* const buffer, const size_t& size ) {
 	return subprocess_read_stdout( PROCESS_PTR, buffer, size );
 }
 
-size_t Process::readAllStdErr( std::string& buffer ) {
-	return readAll( buffer, true );
+size_t Process::readAllStdErr( std::string& buffer, Time timeout ) {
+	return readAll( buffer, true, timeout );
 }
 
 size_t Process::readStdErr( std::string& buffer ) {
@@ -227,24 +228,31 @@ const bool& Process::isShuttingDown() {
 	return mShuttingDown;
 }
 
-size_t Process::readAll( std::string& buffer, bool readErr ) {
+size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 	eeASSERT( mProcess != nullptr );
 	if ( buffer.empty() || buffer.size() < CHUNK_SIZE )
 		buffer.resize( CHUNK_SIZE );
 	size_t totalBytesRead = 0;
+	Clock clock;
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	while ( !mShuttingDown && isAlive() ) {
 		unsigned n =
 			readErr
 				? subprocess_read_stderr( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE )
 				: subprocess_read_stdout( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE );
-		if ( n == 0 )
-			break;
+		if ( n == 0 ) {
+			if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout )
+				break;
+			continue;
+		}
 		totalBytesRead += n;
 		if ( totalBytesRead + CHUNK_SIZE > buffer.size() )
 			buffer.resize( totalBytesRead + CHUNK_SIZE );
+		clock.restart();
 	}
 #elif defined( EE_PLATFORM_POSIX )
+	if ( !isAlive() )
+		return 0;
 	auto stdOutFd = fileno( readErr ? PROCESS_PTR->stderr_file : PROCESS_PTR->stdout_file );
 	pollfd pollfd = {};
 	pollfd.fd =
@@ -255,9 +263,13 @@ size_t Process::readAll( std::string& buffer, bool readErr ) {
 	ssize_t n = 0;
 	while ( anyOpen && !mShuttingDown && isAlive() && errno != EINTR ) {
 		int res = poll( &pollfd, static_cast<nfds_t>( 1 ), 100 );
-		if ( res <= 0 )
+		if ( res <= 0 ) {
+			if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout )
+				break;
 			continue;
+		}
 		anyOpen = false;
+		clock.restart();
 		if ( pollfd.revents & POLLIN ) {
 			n = read( pollfd.fd, buffer.data() + totalBytesRead, CHUNK_SIZE );
 			if ( n > 0 ) {
