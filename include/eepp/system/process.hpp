@@ -73,6 +73,16 @@ class EE_API Process {
 				 const std::unordered_map<std::string, std::string>& environment = {},
 				 const std::string& workingDirectory = "" );
 
+	/** @brief Create a process.
+	 ** @param command Command line to execute for this process.
+	 ** @param args Command line arguments to execute for this process.
+	 ** @param options A bit field of Options's to pass.
+	 ** @return On success true is returned. */
+	bool create( const std::string& command, const std::vector<std::string>& args,
+				 Uint32 options = getDefaultOptions(),
+				 const std::unordered_map<std::string, std::string>& environment = {},
+				 const std::string& workingDirectory = "" );
+
 	/** @brief Starts a new thread to receive all stdout and stderr data */
 	void startAsyncRead( ReadFn readStdOut = nullptr, ReadFn readStdErr = nullptr );
 
@@ -148,6 +158,11 @@ class EE_API Process {
 	 ** @param buffer The buffer to write into.
 	 ** @return The number of bytes actually written into buffer. */
 	size_t write( const std::string& buffer );
+
+	/** @brief Write the standard output from the child process.
+	 ** @param buffer The buffer to write into.
+	 ** @return The number of bytes actually written into buffer. */
+	size_t write( const std::string_view& buffer );
 
 	/** @brief Wait for a process to finish execution.
 	 ** @param returnCodeOut The return code of the returned process (can be nullptr).

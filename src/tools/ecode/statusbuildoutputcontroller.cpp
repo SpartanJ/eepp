@@ -568,12 +568,11 @@ void StatusBuildOutputController::createContainer() {
 				->setId( "copy-error-message" );
 			menu->add( mApp->i18n( "copy_file_path", "Copy File Path" ), mApp->findIcon( "copy" ) )
 				->setId( "copy-file-path" );
-			menu->on( Event::OnItemClicked, [this, model, modelEvent, idx]( const Event* event ) {
+			menu->on( Event::OnItemClicked, [this, model, idx]( const Event* event ) {
 				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 				std::string id( item->getId() );
 				if ( id == "copy-error-message" ) {
-					Variant msg( model->data( model->index( modelEvent->getModelIndex().row(), 0 ),
-											  ModelRole::Display ) );
+					Variant msg( model->data( model->index( idx.row(), 0 ), ModelRole::Display ) );
 					mApp->getWindow()->getClipboard()->setText( msg.toString() );
 				} else if ( id == "copy-file-path" ) {
 					Variant msg( model->data( idx, ModelRole::Custom ) );

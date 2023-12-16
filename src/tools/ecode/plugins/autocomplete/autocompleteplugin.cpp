@@ -262,10 +262,12 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			editor->invalidateDraw();
 			return true;
 		} else if ( event.getKeyCode() == KEY_ESCAPE ) {
-			resetSuggestions( editor );
-			resetSignatureHelp();
-			editor->invalidateDraw();
-			return true;
+			if ( !ret ) {
+				resetSuggestions( editor );
+				resetSignatureHelp();
+				editor->invalidateDraw();
+				return true;
+			}
 		} else if ( event.getKeyCode() == KEY_HOME ) {
 			mSuggestionIndex = 0;
 			mSuggestionsStartIndex = 0;

@@ -17,33 +17,6 @@ using json = nlohmann::json;
 
 using namespace EE::Scene;
 
-/** @return The process environment variables */
-static ecode::ProjectBuildKeyVal getEnvironmentVariables() {
-	ecode::ProjectBuildKeyVal ret;
-	char** env;
-#if defined( WIN ) && ( _MSC_VER >= 1900 )
-	env = *__p__environ();
-#else
-	extern char** environ;
-	env = environ;
-#endif
-
-	for ( ; *env; ++env ) {
-		auto var = String::split( *env, "=" );
-
-		if ( var.size() == 2 ) {
-			ret.push_back( std::make_pair( var[0], var[1] ) );
-		} else if ( var.size() > 2 ) {
-			auto val( var[1] );
-			for ( size_t i = 2; i < var.size(); ++i )
-				val += var[i];
-			ret.push_back( std::make_pair( var[0], val ) );
-		}
-	}
-
-	return ret;
-}
-
 namespace ecode {
 
 static const char* VAR_PROJECT_ROOT = "${project_root}";
@@ -764,17 +737,8 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 		int progress = c > 0 ? c / (Float)totSteps : 0;
 		mProcess = std::make_unique<Process>();
 		auto options = Process::SearchUserPath | Process::NoWindow | Process::CombinedStdoutStderr;
-		ProjectBuildKeyVal env;
-		if ( !cmd.config.clearSysEnv ) {
-			if ( !res.envs.empty() ) {
-				env = getEnvironmentVariables();
-				env.insert( env.begin(), res.envs.begin(), res.envs.end() );
-			} else {
-				options |= Process::InheritEnvironment;
-			}
-		} else {
-			env = res.envs;
-		}
+		if ( !cmd.config.clearSysEnv )
+			options |= Process::InheritEnvironment;
 
 		if ( !cmd.enabled ) {
 			c++;
@@ -797,7 +761,7 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 				nullptr );
 		}
 
-		if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( env ),
+		if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( res.envs ),
 							   cmd.workingDir ) ) {
 			std::string buffer( 1024, '\0' );
 			unsigned bytesRead = 0;
