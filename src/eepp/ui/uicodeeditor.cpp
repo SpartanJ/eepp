@@ -1102,6 +1102,7 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 		return false;
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
+	menu->addClass( "uicodeeditor_menu" );
 
 	createDefaultContextMenuOptions( menu );
 
@@ -1118,14 +1119,25 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [&, menu]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		std::string txt( item->getId() );
-		mDoc.get()->execute( txt, this );
-		menu->hide();
-	} );
+
+	UICodeEditor* editor = this;
+	const auto registerMenu = [editor, this]( UIMenu* menu ) {
+		menu->addEventListener( Event::OnItemClicked, [this, menu, editor]( const Event* event ) {
+			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+			std::string txt( item->getId() );
+			mDoc.get()->execute( txt, editor );
+			menu->hide();
+		} );
+	};
+	registerMenu( menu );
+	auto subMenus = menu->findAllByType<UIMenuSubMenu>( UI_TYPE_MENUSUBMENU );
+	for ( auto* subMenu : subMenus ) {
+		registerMenu( subMenu->getSubMenu() );
+		if ( subMenu->getSubMenu()->isType( UI_TYPE_POPUPMENU ) )
+			subMenu->getSubMenu()->asType<UIPopUpMenu>()->setCloseOnHide( true );
+	}
 
 	Vector2f pos( position.asFloat() );
 	runOnMainThread( [this, menu, pos]() {

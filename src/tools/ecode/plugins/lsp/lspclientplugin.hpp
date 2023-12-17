@@ -121,6 +121,7 @@ class LSPClientPlugin : public Plugin {
 	LSPDiagnosticsCodeAction mQuickFix;
 	UnorderedSet<std::string> mSemanticHighlightingDisabledLangs;
 	String::HashType mConfigHash{ 0 };
+	Color mOldBackgroundColor;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 

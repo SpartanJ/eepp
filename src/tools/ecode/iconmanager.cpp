@@ -201,7 +201,8 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "layout-sidebar-left", 0xebf3 },
 			{ "warning", 0xea6c },
 			{ "error", 0xea87 },
-			{ "search-fuzzy", 0xec0d } };
+			{ "search-fuzzy", 0xec0d },
+			{ "source-control", 0xea68 } };
 
 		for ( const auto& icon : codIcons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );

@@ -814,6 +814,23 @@ Node* Node::findByType( const Uint32& type ) const {
 	return NULL;
 }
 
+std::vector<Node*> Node::findAllByType( const Uint32& type ) const {
+	std::vector<Node*> nodes;
+
+	if ( !isClosing() && isType( type ) )
+		nodes.push_back( const_cast<Node*>( this ) );
+
+	Node* child = mChild;
+	while ( NULL != child ) {
+		std::vector<Node*> foundNode = child->findAllByType( type );
+		if ( !foundNode.empty() )
+			nodes.insert( nodes.end(), foundNode.begin(), foundNode.end() );
+		child = child->mNext;
+	}
+
+	return nodes;
+}
+
 bool Node::inNodeTree( Node* node ) const {
 	if ( this == node ) {
 		return true;

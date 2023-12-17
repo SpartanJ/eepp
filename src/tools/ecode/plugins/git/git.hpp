@@ -5,12 +5,12 @@ namespace ecode {
 
 class Git {
   public:
-	struct BlameData {
-		BlameData( const std::string& error );
+	struct Blame {
+		Blame( const std::string& error );
 
-		BlameData( std::string&& author, std::string&& authorEmail, std::string&& date,
-				   std::string&& commitHash, std::string&& commitShortHash,
-				   std::string&& commitMessage );
+		Blame( std::string&& author, std::string&& authorEmail, std::string&& date,
+			   std::string&& commitHash, std::string&& commitShortHash, std::string&& commitMessage,
+			   std::size_t line );
 
 		std::string author;
 		std::string authorEmail;
@@ -19,6 +19,7 @@ class Git {
 		std::string commitShortHash;
 		std::string commitMessage;
 		std::string error;
+		std::size_t line{ 0 };
 	};
 
 	struct DiffFile {
@@ -37,7 +38,7 @@ class Git {
 
 	void git( const std::string& args, const std::string& projectDir, std::string& buf ) const;
 
-	BlameData blame( const std::string& filepath, std::size_t line ) const;
+	Blame blame( const std::string& filepath, std::size_t line ) const;
 
 	std::string branch( std::string projectDir = "" );
 

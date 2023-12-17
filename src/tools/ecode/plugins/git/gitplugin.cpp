@@ -91,6 +91,24 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 
+	if ( mKeyBindings.empty() ) {
+		mKeyBindings["git-blame"] = "alt+shift+b";
+	}
+
+	if ( j.contains( "keybindings" ) ) {
+		auto& kb = j["keybindings"];
+		auto list = { "git-blame" };
+		for ( const auto& key : list ) {
+			if ( kb.contains( key ) ) {
+				if ( !kb[key].empty() )
+					mKeyBindings[key] = kb[key];
+			} else {
+				kb[key] = mKeyBindings[key];
+				updateConfigFile = true;
+			}
+		}
+	}
+
 	if ( updateConfigFile ) {
 		std::string newData = j.dump( 2 );
 		if ( newData != data ) {
@@ -111,7 +129,10 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 	switch ( msg.type ) {
 		case PluginMessageType::WorkspaceFolderChanged: {
-			mGit->setProjectPath( msg.asJSON()["folder"] );
+			if ( !mGit )
+				mGit = std::make_unique<Git>( "", msg.asJSON()["folder"] );
+			else
+				mGit->setProjectPath( msg.asJSON()["folder"] );
 			break;
 		}
 		default:
@@ -127,21 +148,22 @@ void GitPlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 		return;
 }
 
-void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::BlameData& blame,
+void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 								const Vector2f& position ) {
 	// HACK: Gets the old font style to restore it when the tooltip is hidden
 	UITooltip* tooltip = editor->createTooltip();
 	if ( tooltip == nullptr )
 		return;
 
-	String str(
-		blame.error.empty()
-			? String::format( "%s: %s\n%s: %s (%s)\n%s: %s\n\n%s",
-							  i18n( "commit", "Commit" ).toUtf8().c_str(), blame.commitHash.c_str(),
-							  i18n( "author", "Author" ).toUtf8().c_str(), blame.author.c_str(),
-							  blame.authorEmail.c_str(), i18n( "date", "Date" ).toUtf8().c_str(),
-							  blame.date.c_str(), blame.commitMessage.c_str() )
-			: blame.error );
+	String str( blame.error.empty()
+					? String::format( "%s: %s (%s)\n%s: %s (%s)\n%s: %s\n\n%s",
+									  i18n( "commit", "commit" ).capitalize().toUtf8().c_str(),
+									  blame.commitHash.c_str(), blame.commitShortHash.c_str(),
+									  i18n( "author", "author" ).capitalize().toUtf8().c_str(),
+									  blame.author.c_str(), blame.authorEmail.c_str(),
+									  i18n( "date", "date" ).capitalize().toUtf8().c_str(),
+									  blame.date.c_str(), blame.commitMessage.c_str() )
+					: blame.error );
 
 	Text::wrapText( str, PixelDensity::dpToPx( 400 ), tooltip->getFontStyleConfig(),
 					editor->getTabWidth() );
@@ -153,17 +175,28 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::BlameData& blam
 	mOldTextAlign = tooltip->getHorizontalAlign();
 	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
 	mOldUsingCustomStyling = tooltip->getUsingCustomStyling();
+	mOldBackgroundColor = tooltip->getBackgroundColor();
 	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
 	tooltip->setPixelsPosition( tooltip->getTooltipPosition( position ) );
-	tooltip->setDontAutoHideOnMouseMove( false );
+	tooltip->setDontAutoHideOnMouseMove( true );
 	tooltip->setUsingCustomStyling( true );
+	tooltip->setData( String::hash( "git" ) );
+	tooltip->setBackgroundColor( editor->getColorScheme().getEditorColor( "background"_sst ) );
 
-	// const auto& syntaxDef = SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
+	std::vector<SyntaxPattern> patterns;
+	patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%x+)%s%((%x+)%)" },
+										  { "normal", "keyword", "number", "number" } ) );
+	patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(.*)%(([%w%.-]+@[%w-]+%.%w+)%)" },
+										  { "normal", "keyword", "function", "link" } ) );
+	patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%d%d%d%d%-%d%d%-%d%d[%s%d%-:]+)" },
+										  { "normal", "keyword", "warning" } ) );
 
-	// SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), *tooltip->getTextCache(), 0,
-	// 							   0xFFFFFFFF, true, "\n\t " );
+	SyntaxDefinition syntaxDef( "custom_build", {}, std::move( patterns ) );
 
-	// tooltip->notifyTextChangedFromTextCache();
+	SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), *tooltip->getTextCache(), 0,
+								   0xFFFFFFFF, true, "\n\t " );
+
+	tooltip->notifyTextChangedFromTextCache();
 
 	if ( editor->hasFocus() && !tooltip->isVisible() )
 		tooltip->show();
@@ -172,15 +205,23 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::BlameData& blam
 void GitPlugin::hideTooltip( UICodeEditor* editor ) {
 	mTooltipInfoShowing = false;
 	UITooltip* tooltip = nullptr;
-	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() ) {
+	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() &&
+		 tooltip->getData() == String::hash( "git" ) ) {
 		editor->setTooltipText( "" );
 		tooltip->hide();
 		// Restore old tooltip state
+		tooltip->setData( 0 );
 		tooltip->setFontStyle( mOldTextStyle );
 		tooltip->setHorizontalAlign( mOldTextAlign );
 		tooltip->setUsingCustomStyling( mOldUsingCustomStyling );
 		tooltip->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
+		tooltip->setBackgroundColor( mOldBackgroundColor );
 	}
+}
+
+bool GitPlugin::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Uint32& ) {
+	hideTooltip( editor );
+	return false;
 }
 
 void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
@@ -189,6 +230,16 @@ void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& 
 			if ( mTooltipInfoShowing )
 				hideTooltip( editor );
 		} ) );
+}
+
+void GitPlugin::onBeforeUnregister( UICodeEditor* editor ) {
+	for ( auto& kb : mKeyBindings )
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+}
+
+void GitPlugin::onUnregisterDocument( TextDocument* doc ) {
+	for ( auto& kb : mKeyBindings )
+		doc->removeCommand( kb.first );
 }
 
 void GitPlugin::blame( UICodeEditor* editor ) {
@@ -212,6 +263,12 @@ void GitPlugin::blame( UICodeEditor* editor ) {
 
 void GitPlugin::onRegister( UICodeEditor* editor ) {
 	PluginBase::onRegister( editor );
+
+	for ( auto& kb : mKeyBindings ) {
+		if ( !kb.second.empty() )
+			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+	}
+
 	if ( !editor->hasDocument() )
 		return;
 
@@ -232,9 +289,13 @@ bool GitPlugin::onCreateContextMenu( UICodeEditor*, UIPopUpMenu* menu, const Vec
 
 	menu->addSeparator();
 
-	auto addFn = [this, menu]( const std::string& txtKey, const std::string& txtVal,
-							   const std::string& icon = "" ) {
-		menu->add( i18n( txtKey, txtVal ),
+	auto* subMenu = UIPopUpMenu::New();
+	subMenu->addClass( "gitplugin_menu" );
+
+	auto addFn = [this, subMenu]( const std::string& txtKey, const std::string& txtVal,
+								  const std::string& icon = "" ) {
+		subMenu
+			->add( i18n( txtKey, txtVal ),
 				   !icon.empty() ? mManager->getUISceneNode()->findIcon( icon )->getSize(
 									   PixelDensity::dpToPxI( 12 ) )
 								 : nullptr,
@@ -243,6 +304,21 @@ bool GitPlugin::onCreateContextMenu( UICodeEditor*, UIPopUpMenu* menu, const Vec
 	};
 
 	addFn( "git-blame", "Git Blame" );
+
+	menu->addSubMenu( i18n( "git", "Git" ),
+					  mManager->getUISceneNode()
+						  ->findIcon( "source-control" )
+						  ->getSize( PixelDensity::dpToPxI( 12 ) ),
+					  subMenu );
+
+	return false;
+}
+
+bool GitPlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
+	if ( event.getSanitizedMod() == 0 && event.getKeyCode() == KEY_ESCAPE && editor->getTooltip() &&
+		 editor->getTooltip()->isVisible() ) {
+		hideTooltip( editor );
+	}
 
 	return false;
 }

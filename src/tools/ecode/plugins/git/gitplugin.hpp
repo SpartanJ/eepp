@@ -27,14 +27,18 @@ class GitPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
-	virtual void onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) override;
+	void onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) override;
 
-	virtual void onRegister( UICodeEditor* ) override;
+	void onRegister( UICodeEditor* ) override;
 
-	virtual void onUnregister( UICodeEditor* ) override;
+	void onUnregister( UICodeEditor* ) override;
 
-	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
-									  const Vector2i& position, const Uint32& flags ) override;
+	bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i& position,
+							  const Uint32& flags ) override;
+
+	bool onKeyDown( UICodeEditor*, const KeyEvent& ) override;
+
+	bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& ) override;
 
   protected:
 	std::unique_ptr<Git> mGit;
@@ -45,12 +49,16 @@ class GitPlugin : public PluginBase {
 
 	PluginRequestHandle processMessage( const PluginMessage& msg );
 
-	void displayTooltip( UICodeEditor* editor, const Git::BlameData& blame,
+	void displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 						 const Vector2f& position );
 
 	void hideTooltip( UICodeEditor* editor );
 
 	void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& listeners ) override;
+
+	void onBeforeUnregister( UICodeEditor* ) override;
+
+	void onUnregisterDocument( TextDocument* ) override;
 
 	bool mGitFound{ false };
 	bool mTooltipInfoShowing{ false };
@@ -60,6 +68,7 @@ class GitPlugin : public PluginBase {
 	bool mOldUsingCustomStyling{ false };
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
+	Color mOldBackgroundColor;
 
 	void blame( UICodeEditor* editor );
 };

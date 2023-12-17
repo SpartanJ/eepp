@@ -14,17 +14,18 @@ namespace ecode {
 
 static constexpr auto sNotCommitedYetHash = "0000000000000000000000000000000000000000";
 
-Git::BlameData::BlameData( const std::string& error ) : error( error ) {}
+Git::Blame::Blame( const std::string& error ) : error( error ), line( 0 ) {}
 
-Git::BlameData::BlameData( std::string&& author, std::string&& authorEmail, std::string&& date,
-						   std::string&& commitHash, std::string&& commitShortHash,
-						   std::string&& commitMessage ) :
+Git::Blame::Blame( std::string&& author, std::string&& authorEmail, std::string&& date,
+				   std::string&& commitHash, std::string&& commitShortHash,
+				   std::string&& commitMessage, std::size_t line ) :
 	author( std::move( author ) ),
 	authorEmail( std::move( authorEmail ) ),
 	date( std::move( date ) ),
 	commitHash( std::move( commitHash ) ),
 	commitShortHash( std::move( commitShortHash ) ),
-	commitMessage( std::move( commitMessage ) ) {}
+	commitMessage( std::move( commitMessage ) ),
+	line( line ) {}
 
 Git::Git( const std::string& projectDir, const std::string& gitPath ) : mGitPath( gitPath ) {
 	if ( gitPath.empty() )
@@ -94,7 +95,7 @@ Git::Status Git::status( std::string projectDir ) {
 	return s;
 }
 
-Git::BlameData Git::blame( const std::string& filepath, std::size_t line ) const {
+Git::Blame Git::blame( const std::string& filepath, std::size_t line ) const {
 	std::string buf;
 	const auto getText = [&buf]( const std::string_view& txt ) -> std::string {
 		std::string search = "\n" + txt + " ";
@@ -140,8 +141,13 @@ Git::BlameData Git::blame( const std::string& filepath, std::size_t line ) const
 
 	auto commitShortHash = String::rTrim( buf, '\n' );
 
-	return { std::move( author ),	  std::move( authorEmail ),		std::move( datetime ),
-			 std::move( commitHash ), std::move( commitShortHash ), std::move( commitMessage ) };
+	return { std::move( author ),
+			 std::move( authorEmail ),
+			 std::move( datetime ),
+			 std::move( commitHash ),
+			 std::move( commitShortHash ),
+			 std::move( commitMessage ),
+			 line };
 }
 
 } // namespace ecode

@@ -333,11 +333,10 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 				runAction( Actions::Runnable::New(
 					[this] {
 						if ( isTooltipEnabled() &&
-							 getEventDispatcher()->getMouseOverNode() == this ) {
-							bool createdTooltip = mTooltip == NULL;
+							 getEventDispatcher()->getMouseOverNode() == this &&
+							 ( mTooltip == NULL || !mTooltip->isVisible() ) ) {
 							createTooltip();
-							if ( createdTooltip )
-								mTooltip->setPixelsPosition( getTooltipPosition() );
+							mTooltip->setPixelsPosition( getTooltipPosition() );
 							mTooltip->show();
 						}
 					},
@@ -356,10 +355,9 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	EventDispatcher* eventDispatcher = getEventDispatcher();
 
-	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this ) {
-		if ( mVisible && NULL != mTooltip ) {
-			mTooltip->hide();
-		}
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this && mVisible &&
+		 NULL != mTooltip && !mTooltip->dontAutoHideOnMouseMove() ) {
+		mTooltip->hide();
 	}
 
 	return UINode::onMouseLeave( Pos, Flags );

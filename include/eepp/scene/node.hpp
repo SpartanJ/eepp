@@ -260,6 +260,17 @@ class EE_API Node : public Transformable {
 		return node;
 	}
 
+	std::vector<Node*> findAllByType( const Uint32& type ) const;
+
+	template <typename T> std::vector<T*> findAllByType( const Uint32& type ) const {
+		std::vector<T*> casted;
+		auto all( findAllByType( type ) );
+		casted.reserve( all.size() );
+		for ( auto* node : all )
+			casted.push_back( reinterpret_cast<T*>( node ) );
+		return casted;
+	}
+
 	bool inNodeTree( Node* node ) const;
 
 	bool isReverseDraw() const;
@@ -539,7 +550,7 @@ class EE_API Node : public Transformable {
 
 	void clipStart( bool needsClipPlanes );
 
-	void clipEnd(bool needsClipPlanes );
+	void clipEnd( bool needsClipPlanes );
 
 	void updateScreenPos();
 
@@ -577,8 +588,8 @@ class EE_API Node : public Transformable {
 
 	void setChildsDirty();
 
-	void clipSmartEnable(const Int32& x, const Int32& y, const Uint32& Width,
-						  const Uint32& Height, bool needsClipPlanes );
+	void clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height,
+						  bool needsClipPlanes );
 
 	void clipSmartDisable( bool needsClipPlanes );
 

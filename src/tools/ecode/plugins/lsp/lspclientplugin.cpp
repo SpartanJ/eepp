@@ -910,7 +910,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		auto list = { "lsp-go-to-definition",
 					  "lsp-go-to-declaration",
 					  "lsp-go-to-implementation",
-					  "lsp-go-to-type-definition",
+					  "lspz-go-to-type-definition",
 					  "lsp-switch-header-source",
 					  "lsp-symbol-info",
 					  "lsp-symbol-references",
@@ -1407,14 +1407,17 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
 	mSymbolInfoShowing = false;
 	UITooltip* tooltip = nullptr;
-	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() ) {
+	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() &&
+		 tooltip->getData() == String::hash( "lsp" ) ) {
 		editor->setTooltipText( "" );
 		tooltip->hide();
 		// Restore old tooltip state
+		tooltip->setData( 0 );
 		tooltip->setFontStyle( mOldTextStyle );
 		tooltip->setHorizontalAlign( mOldTextAlign );
 		tooltip->setUsingCustomStyling( mOldUsingCustomStyling );
 		tooltip->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
+		tooltip->setBackgroundColor( mOldBackgroundColor );
 	}
 }
 
@@ -1441,11 +1444,14 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 	mOldTextAlign = tooltip->getHorizontalAlign();
 	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
 	mOldUsingCustomStyling = tooltip->getUsingCustomStyling();
+	mOldBackgroundColor = tooltip->getBackgroundColor();
 	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
 	tooltip->setPixelsPosition( tooltip->getTooltipPosition( position ) );
 	tooltip->setDontAutoHideOnMouseMove( true );
 	tooltip->setUsingCustomStyling( true );
 	tooltip->setFontStyle( Text::Regular );
+	tooltip->setData( String::hash( "lsp" ) );
+	tooltip->setBackgroundColor( editor->getColorScheme().getEditorColor( "background"_sst ) );
 
 	const auto& syntaxDef = resp.contents[0].kind == LSPMarkupKind::MarkDown
 								? SyntaxDefinitionManager::instance()->getByLSPName( "markdown" )
