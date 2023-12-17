@@ -159,11 +159,16 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 			config["disable_languages"] = json::array();
 		}
 
-		if ( config.contains( "go-to-ignore-warnings" ) &&
-			 config["go-to-ignore-warnings"].is_boolean() ) {
-			mGoToIgnoreWarnings = config["go-to-ignore-warnings"].get<bool>();
+		if ( config.contains( "go-to-ignore-warnings" ) ) {
+			config["goto_ignore_warnings"] = config["go-to-ignore-warnings"];
+			config.erase( "go-to-ignore-warnings" );
+		}
+
+		if ( config.contains( "goto_ignore_warnings" ) &&
+			 config["goto_ignore_warnings"].is_boolean() ) {
+			mGoToIgnoreWarnings = config["goto_ignore_warnings"].get<bool>();
 		} else if ( updateConfigFile ) {
-			config["go-to-ignore-warnings"] = false;
+			config["goto_ignore_warnings"] = false;
 		}
 	}
 

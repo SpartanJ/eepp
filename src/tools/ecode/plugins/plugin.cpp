@@ -7,8 +7,8 @@ namespace ecode {
 Plugin::Plugin( PluginManager* manager ) :
 	mManager( manager ),
 	mThreadPool( manager->getThreadPool() ),
-	mReady( false ), // All plugins will start as not ready until proved the contrary
-	mLoading( true ) // All plugins will start as loading until the load is complete, this is to
+	mReady( false ), // All plugins will start as "not ready" until proven the contrary
+	mLoading( true ) // All plugins will start as "loading" until the load is complete, this is to
 					 // avoid concurrency issues
 {}
 
@@ -43,6 +43,10 @@ std::string Plugin::getFileConfigPath() {
 
 PluginManager* Plugin::getManager() const {
 	return mManager;
+}
+
+String Plugin::i18n( const std::string& key, const String& def ) const {
+	return getManager()->getUISceneNode()->i18n( key, def );
 }
 
 void Plugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {

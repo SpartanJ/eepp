@@ -334,8 +334,10 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 					[this] {
 						if ( isTooltipEnabled() &&
 							 getEventDispatcher()->getMouseOverNode() == this ) {
+							bool createdTooltip = mTooltip == NULL;
 							createTooltip();
-							mTooltip->setPixelsPosition( getTooltipPosition() );
+							if ( createdTooltip )
+								mTooltip->setPixelsPosition( getTooltipPosition() );
 							mTooltip->show();
 						}
 					},

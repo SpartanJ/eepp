@@ -187,12 +187,11 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 }
 
 bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
-	bool ret = false;
 	if ( mSignatureHelpVisible ) {
 		if ( event.getKeyCode() == KEY_ESCAPE ) {
 			resetSignatureHelp();
 			editor->invalidateDraw();
-			ret = true;
+			return true;
 		} else if ( event.getKeyCode() == KEY_UP ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
 				mSignatureHelpSelected = mSignatureHelpSelected == -1 ? 0 : mSignatureHelpSelected;
@@ -262,12 +261,10 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			editor->invalidateDraw();
 			return true;
 		} else if ( event.getKeyCode() == KEY_ESCAPE ) {
-			if ( !ret ) {
-				resetSuggestions( editor );
-				resetSignatureHelp();
-				editor->invalidateDraw();
-				return true;
-			}
+			resetSuggestions( editor );
+			resetSignatureHelp();
+			editor->invalidateDraw();
+			return true;
 		} else if ( event.getKeyCode() == KEY_HOME ) {
 			mSuggestionIndex = 0;
 			mSuggestionsStartIndex = 0;
@@ -310,7 +307,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 		updateSuggestions( partialSymbol, editor );
 		return true;
 	}
-	return ret;
+	return false;
 }
 
 void AutoCompletePlugin::requestSignatureHelp( UICodeEditor* editor ) {

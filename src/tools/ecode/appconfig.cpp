@@ -160,11 +160,13 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 
 	std::map<std::string, bool> pluginsEnabled;
 	const auto& creators = pluginManager->getDefinitions();
-	for ( const auto& creator : creators )
+	for ( const auto& creator : creators ) {
 		pluginsEnabled[creator.first] =
 			ini.getValueB( "plugins", creator.first,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
-							   "autoformatter" == creator.first || "lspclient" == creator.first );
+							   "autoformatter" == creator.first || "lspclient" == creator.first ||
+							   "git" == creator.first );
+	}
 	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 
 	languagesExtensions.priorities = ini.getKeyMap( "languages_extensions" );

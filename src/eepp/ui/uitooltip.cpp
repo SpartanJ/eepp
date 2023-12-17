@@ -172,6 +172,7 @@ Graphics::Font* UITooltip::getFont() const {
 void UITooltip::setFont( Graphics::Font* font ) {
 	if ( NULL != font && mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
+		mStyleConfig.Font = font;
 		autoPadding();
 		onAutoSize();
 		autoAlign();

@@ -36,6 +36,8 @@ class Plugin : public UICodeEditorPlugin {
 
 	virtual void onFileSystemEvent( const FileEvent& ev, const FileInfo& file );
 
+	String i18n( const std::string& key, const String& def ) const;
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;

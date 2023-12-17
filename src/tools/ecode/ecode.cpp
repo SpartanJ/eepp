@@ -4,6 +4,7 @@
 #include "pathhelper.hpp"
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
+#include "plugins/git/gitplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
 #include "plugins/xmltools/xmltoolsplugin.hpp"
@@ -438,6 +439,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );
 	mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
 	mPluginManager->registerPlugin( XMLToolsPlugin::Definition() );
+	mPluginManager->registerPlugin( GitPlugin::Definition() );
 }
 
 bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,

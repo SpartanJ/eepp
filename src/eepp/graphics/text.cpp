@@ -325,6 +325,104 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, const FontStyle
 							 config.ShadowColor, config.ShadowOffset, tabWidth );
 }
 
+template <typename StringType>
+bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, const Float& maxWidth,
+					 const Uint32& style, const Uint32& tabWidth, const Float& outlineThickness ) {
+	if ( string.empty() || NULL == font )
+		return false;
+
+	Float tCurWidth = 0.f;
+	Float tWordWidth = 0.f;
+	Float tMaxWidth = (Float)maxWidth;
+	auto tChar = &string[0];
+	decltype( tChar ) tLastSpace = NULL;
+	Uint32 prevChar = 0;
+	bool bold = ( style & Bold ) != 0;
+	bool italic = ( style & Italic ) != 0;
+	bool wrapped = false;
+
+	Float hspace = static_cast<Float>(
+		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+
+	while ( *tChar ) {
+		Glyph pChar = font->getGlyph( *tChar, fontSize, bold, italic, outlineThickness );
+
+		Float fCharWidth = (Float)pChar.advance;
+
+		if ( ( *tChar ) == '\t' )
+			fCharWidth += hspace * tabWidth;
+		else if ( ( *tChar ) == '\r' )
+			fCharWidth = 0;
+
+		// Add the new char width to the current word width
+		tWordWidth += fCharWidth;
+
+		if ( *tChar != '\r' ) {
+			tWordWidth +=
+				font->getKerning( prevChar, *tChar, fontSize, bold, italic, outlineThickness );
+			prevChar = *tChar;
+		}
+
+		if ( ' ' == *tChar || '\0' == *( tChar + 1 ) ) {
+			// If current width plus word width is minor to the max width, continue adding
+			if ( tCurWidth + tWordWidth < tMaxWidth ) {
+				tCurWidth += tWordWidth;
+				tLastSpace = tChar;
+
+				tChar++;
+			} else {
+				// If it was an space before, replace that space for an new line
+				// Start counting from the new line first character
+				if ( NULL != tLastSpace ) {
+					*tLastSpace = '\n';
+					tChar = tLastSpace + 1;
+				} else { // The word is larger than the current possible width
+					*tChar = '\n';
+					wrapped = true;
+				}
+
+				if ( '\0' == *( tChar + 1 ) )
+					tChar++;
+
+				// Set the last spaces as null, because is a new line
+				tLastSpace = NULL;
+
+				// New line, new current width
+				tCurWidth = 0.f;
+			}
+
+			// New word, so we reset the current word width
+			tWordWidth = 0.f;
+		} else if ( '\n' == *tChar ) {
+			tWordWidth = 0.f;
+			tCurWidth = 0.f;
+			tLastSpace = NULL;
+			tChar++;
+		} else {
+			tChar++;
+		}
+	}
+
+	return wrapped;
+}
+
+template <typename StringType>
+bool Text::wrapText( StringType& string, const Float& maxWidth, const FontStyleConfig& config,
+					 const Uint32& tabWidth ) {
+	return wrapText<StringType>( config.Font, config.CharacterSize, string, maxWidth, config.Style,
+								 tabWidth, config.OutlineThickness );
+}
+
+bool Text::wrapText( Font* font, const Uint32& fontSize, String& string, const Float& maxWidth,
+					 const Uint32& style, const Uint32& tabWidth, const Float& outlineThickness ) {
+	return wrapText<String>( font, fontSize, string, maxWidth, style, tabWidth, outlineThickness );
+}
+
+bool Text::wrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
+					 const Uint32& tabWidth ) {
+	return wrapText<String>( string, maxWidth, config, tabWidth );
+}
+
 Text::Text() {}
 
 Text::Text( const String& string, Font* font, unsigned int characterSize ) :
@@ -603,9 +701,9 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 
 template <typename StringType>
 std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
-												 const StringType& string, Float maxWidth,
-												 const Uint32& style, const Uint32& tabWidth,
-												 const Float& outlineThickness ) {
+											   const StringType& string, Float maxWidth,
+											   const Uint32& style, const Uint32& tabWidth,
+											   const Float& outlineThickness ) {
 	if ( NULL == font || string.empty() )
 		return 0;
 	String::StringBaseType rune;
@@ -759,35 +857,34 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 }
 
 std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
-												 const String& string, Float maxWidth,
-												 const Uint32& style, const Uint32& tabWidth,
-												 const Float& outlineThickness ) {
+											   const String& string, Float maxWidth,
+											   const Uint32& style, const Uint32& tabWidth,
+											   const Float& outlineThickness ) {
 	return findLastCharPosWithinLength<String>( font, fontSize, string, maxWidth, style, tabWidth,
-												  outlineThickness );
+												outlineThickness );
 }
 
 std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
-												 const String::View& string, Float maxWidth,
-												 const Uint32& style, const Uint32& tabWidth,
-												 const Float& outlineThickness ) {
+											   const String::View& string, Float maxWidth,
+											   const Uint32& style, const Uint32& tabWidth,
+											   const Float& outlineThickness ) {
 	return findLastCharPosWithinLength<String::View>( font, fontSize, string, maxWidth, style,
-														tabWidth, outlineThickness );
+													  tabWidth, outlineThickness );
 }
 
 std::size_t Text::findLastCharPosWithinLength( const String& string, Float maxWidth,
-												 const FontStyleConfig& config,
-												 const Uint32& tabWidth ) {
-	return findLastCharPosWithinLength<String>( config.Font, config.CharacterSize, string,
-												  maxWidth, config.Style, tabWidth,
-												  config.OutlineThickness );
+											   const FontStyleConfig& config,
+											   const Uint32& tabWidth ) {
+	return findLastCharPosWithinLength<String>( config.Font, config.CharacterSize, string, maxWidth,
+												config.Style, tabWidth, config.OutlineThickness );
 }
 
 std::size_t Text::findLastCharPosWithinLength( const String::View& string, Float maxWidth,
-												 const FontStyleConfig& config,
-												 const Uint32& tabWidth ) {
+											   const FontStyleConfig& config,
+											   const Uint32& tabWidth ) {
 	return findLastCharPosWithinLength<String::View>( config.Font, config.CharacterSize, string,
-														maxWidth, config.Style, tabWidth,
-														config.OutlineThickness );
+													  maxWidth, config.Style, tabWidth,
+													  config.OutlineThickness );
 }
 
 void Text::updateWidthCache() {
@@ -839,85 +936,8 @@ void Text::updateWidthCache() {
 }
 
 void Text::wrapText( const Uint32& maxWidth ) {
-	if ( !mString.size() || NULL == mFontStyleConfig.Font )
-		return;
-
-	Float tCurWidth = 0.f;
-	Float tWordWidth = 0.f;
-	Float tMaxWidth = (Float)maxWidth;
-	String::StringBaseType* tChar = &mString[0];
-	String::StringBaseType* tLastSpace = NULL;
-	Uint32 prevChar = 0;
-	bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
-	bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
-
-	Float hspace = static_cast<Float>( mFontStyleConfig.Font
-										   ->getGlyph( L' ', mFontStyleConfig.CharacterSize, bold,
-													   italic, mFontStyleConfig.OutlineThickness )
-										   .advance );
-
-	while ( *tChar ) {
-		Glyph pChar = mFontStyleConfig.Font->getGlyph( *tChar, mFontStyleConfig.CharacterSize, bold,
-													   italic, mFontStyleConfig.OutlineThickness );
-
-		Float fCharWidth = (Float)pChar.advance;
-
-		if ( ( *tChar ) == '\t' )
-			fCharWidth += hspace * mTabWidth;
-		else if ( ( *tChar ) == '\r' )
-			fCharWidth = 0;
-
-		// Add the new char width to the current word width
-		tWordWidth += fCharWidth;
-
-		if ( *tChar != '\r' ) {
-			tWordWidth += mFontStyleConfig.Font->getKerning(
-				prevChar, *tChar, mFontStyleConfig.CharacterSize, bold, italic,
-				mFontStyleConfig.OutlineThickness );
-			prevChar = *tChar;
-		}
-
-		if ( ' ' == *tChar || '\0' == *( tChar + 1 ) ) {
-
-			// If current width plus word width is minor to the max width, continue adding
-			if ( tCurWidth + tWordWidth < tMaxWidth ) {
-				tCurWidth += tWordWidth;
-				tLastSpace = tChar;
-
-				tChar++;
-			} else {
-				// If it was an space before, replace that space for an new line
-				// Start counting from the new line first character
-				if ( NULL != tLastSpace ) {
-					*tLastSpace = '\n';
-					tChar = tLastSpace + 1;
-				} else { // The word is larger than the current possible width
-					*tChar = '\n';
-				}
-
-				if ( '\0' == *( tChar + 1 ) )
-					tChar++;
-
-				// Set the last spaces as null, because is a new line
-				tLastSpace = NULL;
-
-				// New line, new current width
-				tCurWidth = 0.f;
-			}
-
-			// New word, so we reset the current word width
-			tWordWidth = 0.f;
-		} else if ( '\n' == *tChar ) {
-			tWordWidth = 0.f;
-			tCurWidth = 0.f;
-			tLastSpace = NULL;
-			tChar++;
-		} else {
-			tChar++;
-		}
-	}
-
-	invalidate();
+	if ( wrapText( mString, maxWidth, mFontStyleConfig, mTabWidth ) )
+		invalidate();
 }
 
 void Text::invalidateColors() {

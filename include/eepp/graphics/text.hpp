@@ -66,26 +66,29 @@ class EE_API Text {
 									  const Float& outlineThickness = 0.f );
 
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
-													  const String& string, Float maxWidth,
-													  const Uint32& style,
-													  const Uint32& tabWidth = 4,
-													  const Float& outlineThickness = 0.f );
+													const String& string, Float maxWidth,
+													const Uint32& style, const Uint32& tabWidth = 4,
+													const Float& outlineThickness = 0.f );
 
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
-													  const String::View& string, Float maxWidth,
-													  const Uint32& style,
-													  const Uint32& tabWidth = 4,
-													  const Float& outlineThickness = 0.f );
+													const String::View& string, Float maxWidth,
+													const Uint32& style, const Uint32& tabWidth = 4,
+													const Float& outlineThickness = 0.f );
 
-	static std::size_t findLastCharPosWithinLength( const String& string,
-														Float maxWidth,
-													  const FontStyleConfig& config,
-													  const Uint32& tabWidth = 4 );
+	static std::size_t findLastCharPosWithinLength( const String& string, Float maxWidth,
+													const FontStyleConfig& config,
+													const Uint32& tabWidth = 4 );
 
-	static std::size_t findLastCharPosWithinLength( const String::View& string,
-	Float maxWidth,
-													  const FontStyleConfig& config,
-													  const Uint32& tabWidth = 4 );
+	static std::size_t findLastCharPosWithinLength( const String::View& string, Float maxWidth,
+													const FontStyleConfig& config,
+													const Uint32& tabWidth = 4 );
+
+	static bool wrapText( Font* font, const Uint32& fontSize, String& string, const Float& maxWidth,
+						  const Uint32& style, const Uint32& tabWidth = 4,
+						  const Float& outlineThickness = 0.f );
+
+	static bool wrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
+						  const Uint32& tabWidth = 4 );
 
 	static Text* New();
 
@@ -306,10 +309,19 @@ class EE_API Text {
 					   const Uint32& tabWidth = 4 );
 
 	template <typename StringType>
-	static std::size_t
-	findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const StringType& string,
-								   Float width, const Uint32& style, const Uint32& tabWidth = 4,
-								   const Float& outlineThickness = 0.f );
+	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
+													const StringType& string, Float width,
+													const Uint32& style, const Uint32& tabWidth = 4,
+													const Float& outlineThickness = 0.f );
+
+	template <typename StringType>
+	static bool wrapText( Font* font, const Uint32& fontSize, StringType& string,
+						  const Float& maxWidth, const Uint32& style, const Uint32& tabWidth = 4,
+						  const Float& outlineThickness = 0.f );
+
+	template <typename StringType>
+	static bool wrapText( StringType& string, const Float& maxWidth, const FontStyleConfig& config,
+						  const Uint32& tabWidth = 4 );
 };
 
 }} // namespace EE::Graphics

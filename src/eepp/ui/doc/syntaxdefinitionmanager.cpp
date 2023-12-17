@@ -1778,10 +1778,10 @@ static json toJson( const SyntaxDefinition& def ) {
 			} else {
 				pattern["pattern"] = ptrn.patterns;
 			}
-			if ( ptrn.types.size() == 1 ) {
-				pattern["type"] = ptrn.types[0];
+			if ( ptrn.typesNames.size() == 1 ) {
+				pattern["type"] = ptrn.typesNames[0];
 			} else {
-				pattern["type"] = ptrn.types;
+				pattern["type"] = ptrn.typesNames;
 			}
 			if ( !ptrn.syntax.empty() )
 				pattern["syntax"] = ptrn.syntax;
