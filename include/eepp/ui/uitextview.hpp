@@ -114,6 +114,10 @@ class EE_API UITextView : public UIWidget {
 
 	bool hasTextOverflow() const;
 
+	bool getUsingCustomStyling() const;
+
+	void setUsingCustomStyling( bool usingCustomStyling );
+
   protected:
 	Text* mTextCache;
 	String mString;
@@ -132,6 +136,7 @@ class EE_API UITextView : public UIWidget {
 	Int32 mLastSelCurEnd;
 	Int32 mFontLineCenter;
 	bool mSelecting;
+	bool mUsingCustomStyling{ false };
 	std::string mTextOverflow;
 	Float mTextOverflowWidth{ 0 };
 	TextTransform::Value mTextTransform{ TextTransform::None };

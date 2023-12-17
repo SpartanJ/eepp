@@ -7,6 +7,7 @@
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
@@ -1452,6 +1453,10 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 	tooltip->setFontStyle( Text::Regular );
 	tooltip->setData( String::hash( "lsp" ) );
 	tooltip->setBackgroundColor( editor->getColorScheme().getEditorColor( "background"_sst ) );
+	tooltip->getUIStyle()->setStyleSheetProperty( StyleSheetProperty(
+		"background-color",
+		editor->getColorScheme().getEditorColor( "background"_sst ).toHexString(), true,
+		StyleSheetSelectorRule::SpecificityImportant ) );
 
 	const auto& syntaxDef = resp.contents[0].kind == LSPMarkupKind::MarkDown
 								? SyntaxDefinitionManager::instance()->getByLSPName( "markdown" )

@@ -686,45 +686,54 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			setText( getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::TextTransform:
-			setTextTransform( TextTransform::fromString( attribute.asString() ) );
+			if ( !mUsingCustomStyling )
+				setTextTransform( TextTransform::fromString( attribute.asString() ) );
 			break;
 		case PropertyId::Color:
-			setFontColor( attribute.asColor() );
+			if ( !mUsingCustomStyling )
+				setFontColor( attribute.asColor() );
 			break;
 		case PropertyId::TextShadowColor: {
-			setFontShadowColor( attribute.asColor() );
+			if ( !mUsingCustomStyling )
+				setFontShadowColor( attribute.asColor() );
 			break;
 		}
 		case PropertyId::TextShadowOffset:
-			setFontShadowOffset( attribute.asVector2f() );
+			if ( !mUsingCustomStyling )
+				setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::SelectionColor:
-			mFontStyleConfig.FontSelectedColor = attribute.asColor();
+			if ( !mUsingCustomStyling )
+				mFontStyleConfig.FontSelectedColor = attribute.asColor();
 			break;
 		case PropertyId::SelectionBackColor:
-			setSelectionBackColor( attribute.asColor() );
+			if ( !mUsingCustomStyling )
+				setSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
 			Font* font = FontManager::instance()->getByName( attribute.value() );
 
-			if ( NULL != font && font->loaded() ) {
+			if ( !mUsingCustomStyling && NULL != font && font->loaded() ) {
 				setFont( font );
 			}
 			break;
 		}
 		case PropertyId::FontSize:
-			setFontSize( lengthFromValue( attribute ) );
+			if ( !mUsingCustomStyling )
+				setFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::FontStyle: {
-			Uint32 flags = attribute.asFontStyle();
+			if ( !mUsingCustomStyling ) {
+				Uint32 flags = attribute.asFontStyle();
 
-			if ( flags & UI_WORD_WRAP ) {
-				mFlags |= UI_WORD_WRAP;
-				flags &= ~UI_WORD_WRAP;
-				autoWrap();
+				if ( flags & UI_WORD_WRAP ) {
+					mFlags |= UI_WORD_WRAP;
+					flags &= ~UI_WORD_WRAP;
+					autoWrap();
+				}
+
+				setFontStyle( flags );
 			}
-
-			setFontStyle( flags );
 			break;
 		}
 		case PropertyId::Wordwrap:
@@ -735,13 +744,16 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			autoWrap();
 			break;
 		case PropertyId::TextStrokeWidth:
-			setOutlineThickness( lengthFromValue( attribute ) );
+			if ( !mUsingCustomStyling )
+				setOutlineThickness( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::TextStrokeColor:
-			setOutlineColor( attribute.asColor() );
+			if ( !mUsingCustomStyling )
+				setOutlineColor( attribute.asColor() );
 			break;
 		case PropertyId::TextSelection:
-			setTextSelection( attribute.asBool() );
+			if ( !mUsingCustomStyling )
+				setTextSelection( attribute.asBool() );
 			break;
 		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );
@@ -903,6 +915,14 @@ const std::string& UITextView::getTextOverflow() const {
 
 bool UITextView::hasTextOverflow() const {
 	return !mTextOverflow.empty() && mTextOverflow != "clip"sv;
+}
+
+bool UITextView::getUsingCustomStyling() const {
+	return mUsingCustomStyling;
+}
+
+void UITextView::setUsingCustomStyling( bool usingCustomStyling ) {
+	mUsingCustomStyling = usingCustomStyling;
 }
 
 UIAnchor* UIAnchor::New() {

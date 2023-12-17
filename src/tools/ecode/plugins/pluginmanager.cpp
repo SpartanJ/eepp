@@ -34,6 +34,10 @@ void PluginManager::setUIReady() {
 	sendBroadcast( PluginMessageType::UIReady, PluginMessageFormat::Empty, nullptr );
 }
 
+void PluginManager::setUIThemeReloaded() {
+	sendBroadcast( PluginMessageType::UIThemeReloaded, PluginMessageFormat::Empty, nullptr );
+}
+
 UICodeEditorPlugin* ecode::PluginManager::get( const std::string& id ) {
 	auto findIt = mPlugins.find( id );
 	if ( findIt != mPlugins.end() )

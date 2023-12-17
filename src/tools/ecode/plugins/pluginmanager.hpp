@@ -89,6 +89,7 @@ enum class PluginMessageType {
 	GetDiagnostics,	   // Request the diagnostic information from a cursor position
 	QueryPluginCapability, // Requests / queries if a plugin providers a capability
 	UIReady, // Informs the Plugins that the UI is ready to be used
+	UIThemeReloaded, // Informs the plugins that the UI theme has been reloaded
 	Undefined
 };
 
@@ -267,6 +268,8 @@ class PluginManager {
 	void registerPlugin( const PluginDefinition& def );
 
 	void setUIReady();
+
+	void setUIThemeReloaded();
 
 	UICodeEditorPlugin* get( const std::string& id );
 

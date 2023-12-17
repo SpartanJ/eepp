@@ -841,6 +841,8 @@ void App::setUIColorScheme( const ColorSchemePreference& colorScheme ) {
 		return;
 	mUIColorScheme = mConfig.ui.colorScheme = colorScheme;
 	mUISceneNode->setColorSchemePreference( colorScheme );
+	if ( !firstFrame )
+		mPluginManager->setUIThemeReloaded();
 }
 
 ColorSchemePreference App::getUIColorScheme() const {
@@ -1743,6 +1745,8 @@ void App::setTheme( const std::string& path ) {
 	mTheme = theme;
 
 	mUISceneNode->reloadStyle( true, true );
+	if ( !firstFrame )
+		mPluginManager->setUIThemeReloaded();
 }
 
 bool App::dirInFolderWatches( const std::string& dir ) {

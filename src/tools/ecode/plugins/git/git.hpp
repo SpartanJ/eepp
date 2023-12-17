@@ -26,12 +26,21 @@ class Git {
 		std::string file;
 		int inserts{ 0 };
 		int deletes{ 0 };
+
+		bool operator==( const DiffFile& other ) const {
+			return file == other.file && inserts == other.inserts && deletes == other.deletes;
+		}
 	};
 
 	struct Status {
 		std::vector<DiffFile> modified;
 		int totalInserts{ 0 };
 		int totalDeletions{ 0 };
+
+		bool operator==( const Status& other ) const {
+			return totalInserts == other.totalInserts && totalDeletions == other.totalDeletions &&
+				   modified == other.modified;
+		}
 	};
 
 	Git( const std::string& projectDir = "", const std::string& gitPath = "" );
@@ -50,9 +59,12 @@ class Git {
 
 	const std::string& getProjectPath() const { return mProjectPath; }
 
+	const std::string& getGitFolder() const;
+
   protected:
 	std::string mGitPath;
 	std::string mProjectPath;
+	std::string mGitFolder;
 };
 
 } // namespace ecode

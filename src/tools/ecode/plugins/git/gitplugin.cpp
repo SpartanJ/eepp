@@ -139,11 +139,11 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	setReady();
 }
 
-void GitPlugin::updateUINow() {
+void GitPlugin::updateUINow( bool force ) {
 	if ( !mGit || !getUISceneNode() )
 		return;
 
-	updateStatusBar();
+	updateStatusBar( force );
 }
 
 void GitPlugin::updateUI() {
@@ -154,14 +154,19 @@ void GitPlugin::updateUI() {
 								String::hash( "git::status-update" ) );
 }
 
-void GitPlugin::updateStatusBar() {
+void GitPlugin::updateStatusBar( bool force ) {
 	if ( !mGit || !mStatusBarDisplayBranch )
 		return;
-	mThreadPool->run( [this] {
+	mThreadPool->run( [this, force] {
 		if ( !mGit )
 			return;
+		auto prevBranch = mGitBranch;
 		mGitBranch = mGit->branch();
+		auto prevGitStatus = mGitStatus;
 		mGitStatus = mGit->status();
+		if ( !force && mGitBranch == prevBranch && mGitStatus == prevGitStatus )
+			return;
+
 		getUISceneNode()->runOnMainThread( [this] {
 			if ( !mStatusBar )
 				getUISceneNode()->bind( "status_bar", mStatusBar );
@@ -172,25 +177,50 @@ void GitPlugin::updateStatusBar() {
 				mStatusButton = UIPushButton::New();
 				mStatusButton->setLayoutSizePolicy( SizePolicy::WrapContent,
 													SizePolicy::MatchParent );
+				mStatusButton->setParent( mStatusBar );
 				mStatusButton->setId( "status_git" );
 				mStatusButton->setClass( "status_but" );
 				mStatusButton->setIcon( getManager()
 											->getUISceneNode()
 											->findIcon( "source-control" )
-											->getSize( PixelDensity::dpToPxI( 12 ) ) );
-				mStatusButton->setParent( mStatusBar );
+											->getSize( PixelDensity::dpToPxI( 10 ) ) );
+				mStatusButton->reloadStyle( true, true );
+				mStatusButton->getTextBox()->setUsingCustomStyling( true );
 				auto childCount = mStatusBar->getChildCount();
 				if ( childCount > 2 )
 					mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
 			}
 
-			std::string text( mStatusBarDisplayModifications
+			std::string text( mStatusBarDisplayModifications &&
+									  ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
 								  ? String::format( "%s (+%d / -%d)", mGitBranch.c_str(),
 													mGitStatus.totalInserts,
 													mGitStatus.totalDeletions )
 								  : mGitBranch );
 
 			mStatusButton->setText( text );
+
+			if ( !mStatusCustomTokenizer.has_value() ) {
+				std::vector<SyntaxPattern> patterns;
+				auto fontColor( getVarColor( "--font" ) );
+				auto insertedColor( getVarColor( "--theme-success" ) );
+				auto deletedColor( getVarColor( "--theme-error" ) );
+				patterns.emplace_back( SyntaxPattern( { ".*%((%+%d+)%s/%s(%-%d+)%)" },
+													  { "normal", "keyword", "keyword2" } ) );
+				SyntaxDefinition syntaxDef( "custom_build", {}, std::move( patterns ) );
+				SyntaxColorScheme scheme( "status_bar_git",
+										  { { "normal"_sst, { fontColor } },
+											{ "keyword"_sst, { insertedColor } },
+											{ "keyword2"_sst, { deletedColor } } },
+										  {} );
+				mStatusCustomTokenizer = { std::move( syntaxDef ), std::move( scheme ) };
+			}
+
+			SyntaxTokenizer::tokenizeText( mStatusCustomTokenizer->def,
+										   mStatusCustomTokenizer->scheme,
+										   *mStatusButton->getTextBox()->getTextCache() );
+
+			mStatusButton->invalidateDraw();
 		} );
 	} );
 }
@@ -203,7 +233,12 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
-			updateStatusBar();
+			updateUINow();
+			break;
+		}
+		case ecode::PluginMessageType::UIThemeReloaded: {
+			mStatusCustomTokenizer.reset();
+			updateUINow( true );
 			break;
 		}
 		default:
@@ -218,22 +253,14 @@ void GitPlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	if ( mShuttingDown || isLoading() )
 		return;
 
+	if ( String::startsWith( file.getFilepath(), mGit->getGitFolder() ) )
+		return;
+
 	updateUI();
 }
 
 void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 								const Vector2f& position ) {
-	static std::vector<SyntaxPattern> patterns;
-
-	if ( patterns.empty() ) {
-		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%x+)%s%((%x+)%)" },
-											  { "normal", "keyword", "number", "number" } ) );
-		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(.*)%(([%w%.-]+@[%w-]+%.%w+)%)" },
-											  { "normal", "keyword", "function", "link" } ) );
-		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%d%d%d%d%-%d%d%-%d%d[%s%d%-+:]+)" },
-											  { "normal", "keyword", "warning" } ) );
-	}
-
 	// HACK: Gets the old font style to restore it when the tooltip is hidden
 	UITooltip* tooltip = editor->createTooltip();
 	if ( tooltip == nullptr )
@@ -265,15 +292,27 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 	tooltip->setDontAutoHideOnMouseMove( true );
 	tooltip->setUsingCustomStyling( true );
 	tooltip->setData( String::hash( "git" ) );
+	tooltip->setBackgroundColor( editor->getColorScheme().getEditorColor( "background"_sst ) );
 	tooltip->getUIStyle()->setStyleSheetProperty( StyleSheetProperty(
 		"background-color",
-		editor->getColorScheme().getEditorColor( "background"_sst ).toRgbaString(), true,
+		editor->getColorScheme().getEditorColor( "background"_sst ).toHexString(), true,
 		StyleSheetSelectorRule::SpecificityImportant ) );
 
-	SyntaxDefinition syntaxDef( "custom_build", {}, std::move( patterns ) );
+	if ( !mTooltipCustomSyntaxDef.has_value() ) {
+		static std::vector<SyntaxPattern> patterns;
 
-	SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), *tooltip->getTextCache(), 0,
-								   0xFFFFFFFF, true, "\n\t " );
+		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%x+)%s%((%x+)%)" },
+											  { "normal", "keyword", "number", "number" } ) );
+		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(.*)%(([%w%.-]+@[%w-]+%.%w+)%)" },
+											  { "normal", "keyword", "function", "link" } ) );
+		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%d%d%d%d%-%d%d%-%d%d[%s%d%-+:]+)" },
+											  { "normal", "keyword", "warning" } ) );
+		SyntaxDefinition syntaxDef( "custom_build", {}, std::move( patterns ) );
+		mTooltipCustomSyntaxDef = std::move( syntaxDef );
+	}
+
+	SyntaxTokenizer::tokenizeText( *mTooltipCustomSyntaxDef, editor->getColorScheme(),
+								   *tooltip->getTextCache() );
 
 	tooltip->notifyTextChangedFromTextCache();
 
@@ -319,6 +358,11 @@ void GitPlugin::onBeforeUnregister( UICodeEditor* editor ) {
 void GitPlugin::onUnregisterDocument( TextDocument* doc ) {
 	for ( auto& kb : mKeyBindings )
 		doc->removeCommand( kb.first );
+}
+
+Color GitPlugin::getVarColor( const std::string& var ) {
+	return Color::fromString(
+		getUISceneNode()->getRoot()->getUIStyle()->getVariable( var ).getValue() );
 }
 
 void GitPlugin::blame( UICodeEditor* editor ) {

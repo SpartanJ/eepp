@@ -5,6 +5,7 @@
 #include "../pluginmanager.hpp"
 #include "git.hpp"
 #include <eepp/ui/uilinearlayout.hpp>
+#include <optional>
 
 namespace ecode {
 
@@ -75,13 +76,22 @@ class GitPlugin : public PluginBase {
 	Uint32 mOldTextAlign{ 0 };
 	Color mOldBackgroundColor;
 
+	struct CustomTokenizer {
+		SyntaxDefinition def;
+		SyntaxColorScheme scheme;
+	};
+	std::optional<CustomTokenizer> mStatusCustomTokenizer;
+	std::optional<SyntaxDefinition> mTooltipCustomSyntaxDef;
+
+	Color getVarColor( const std::string& var );
+
 	void blame( UICodeEditor* editor );
 
-	void updateStatusBar();
+	void updateStatusBar( bool force = false );
 
 	void updateUI();
 
-	void updateUINow();
+	void updateUINow( bool force = false );
 };
 
 } // namespace ecode

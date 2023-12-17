@@ -230,6 +230,7 @@ void UITooltip::notifyTextChangedFromTextCache() {
 	autoPadding();
 	onAutoSize();
 	autoAlign();
+	invalidateDraw();
 }
 
 void UITooltip::setFontShadowOffset( const Vector2f& offset ) {

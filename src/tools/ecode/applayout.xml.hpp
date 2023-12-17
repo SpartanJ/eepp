@@ -50,6 +50,7 @@ RelativeLayout > #doc_info {
 	padding: 6dp;
 	opacity: 0.8;
 	layout-gravity: bottom|right;
+	layout-height: wrap_content;
 	font-size: 1rem;
 }
 StatusBar > #doc_info {
@@ -61,6 +62,7 @@ StatusBar > #doc_info {
 	padding: 0dp 4dp 0dp 4dp;
 	opacity: 1;
 	layout-gravity: center;
+	layout-height: match_parent;
 	font-size: 10dp;
 }
 #doc_info {
@@ -152,7 +154,6 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar {
 	background-color: var(--list-back);
-	padding-top: 1dp;
 	min-height: 16dp;
 }
 #status_bar > .status_but {
@@ -164,6 +165,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	border-bottom-color: transparent;
 	border-right-color: var(--tab-line);
 	font-size: 10dp;
+	layout-height: match_parent;
+	layout-gravity: top;
 }
 #status_bar > .status_but:hover {
 	background-color: var(--item-hover);

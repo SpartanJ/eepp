@@ -49,6 +49,7 @@ std::string Git::branch( std::string projectDir ) {
 
 bool Git::setProjectPath( std::string projectPath ) {
 	mProjectPath = "";
+	mGitFolder = "";
 	FileInfo f( projectPath );
 	if ( !f.isDirectory() )
 		return false;
@@ -57,14 +58,20 @@ bool Git::setProjectPath( std::string projectPath ) {
 	std::string lPath;
 	FileSystem::dirAddSlashAtEnd( path );
 	while ( path != lPath ) {
-		if ( FileSystem::fileExists( path + ".git" ) ) {
+		std::string gitFolder( path + ".git" );
+		if ( FileSystem::fileExists( gitFolder ) ) {
 			mProjectPath = path;
+			mGitFolder = std::move( gitFolder );
 			return true;
 		}
 		lPath = path;
 		path = FileSystem::removeLastFolderFromPath( path );
 	}
 	return false;
+}
+
+const std::string& Git::getGitFolder() const {
+	return mGitFolder;
 }
 
 Git::Status Git::status( std::string projectDir ) {
