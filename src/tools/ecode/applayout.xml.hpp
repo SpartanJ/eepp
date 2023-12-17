@@ -50,6 +50,7 @@ RelativeLayout > #doc_info {
 	padding: 6dp;
 	opacity: 0.8;
 	layout-gravity: bottom|right;
+	font-size: 1rem;
 }
 StatusBar > #doc_info {
 	background-color: transparent;
@@ -60,6 +61,7 @@ StatusBar > #doc_info {
 	padding: 0dp 4dp 0dp 4dp;
 	opacity: 1;
 	layout-gravity: center;
+	font-size: 10dp;
 }
 #doc_info {
 	color: var(--font);

@@ -3627,6 +3627,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		}
 #endif
 
+		mPluginManager->setUIReady();
+
 		mWindow->runMainLoop( &appLoop, mBenchmarkMode ? 0 : mConfig.context.FrameRateLimit );
 	}
 }

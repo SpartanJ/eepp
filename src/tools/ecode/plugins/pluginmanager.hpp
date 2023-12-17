@@ -88,6 +88,7 @@ enum class PluginMessageType {
 					   // particular document location
 	GetDiagnostics,	   // Request the diagnostic information from a cursor position
 	QueryPluginCapability, // Requests / queries if a plugin providers a capability
+	UIReady, // Informs the Plugins that the UI is ready to be used
 	Undefined
 };
 
@@ -264,6 +265,8 @@ class PluginManager {
 	~PluginManager();
 
 	void registerPlugin( const PluginDefinition& def );
+
+	void setUIReady();
 
 	UICodeEditorPlugin* get( const std::string& id );
 

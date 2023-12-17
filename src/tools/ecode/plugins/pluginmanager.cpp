@@ -1,6 +1,6 @@
+#include "pluginmanager.hpp"
 #include "../filesystemlistener.hpp"
 #include "plugin.hpp"
-#include "pluginmanager.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
@@ -28,6 +28,10 @@ PluginManager::~PluginManager() {
 
 void PluginManager::registerPlugin( const PluginDefinition& def ) {
 	mDefinitions[def.id] = def;
+}
+
+void PluginManager::setUIReady() {
+	sendBroadcast( PluginMessageType::UIReady, PluginMessageFormat::Empty, nullptr );
 }
 
 UICodeEditorPlugin* ecode::PluginManager::get( const std::string& id ) {

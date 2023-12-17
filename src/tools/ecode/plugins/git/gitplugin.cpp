@@ -1,4 +1,5 @@
 #include "gitplugin.hpp"
+#include "eepp/ui/uistyle.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -40,6 +41,8 @@ GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) : PluginBase( pl
 
 GitPlugin::~GitPlugin() {
 	mShuttingDown = true;
+	if ( mStatusButton )
+		mStatusButton->close();
 }
 
 void GitPlugin::load( PluginManager* pluginManager ) {
@@ -74,6 +77,13 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
+
+		if ( config.contains( "ui_refresh_frequency" ) )
+			mRefreshFreq = Time::fromString( config.value( "ui_refresh_frequency", "5s" ) );
+		else {
+			config["ui_refresh_frequency"] = mRefreshFreq.toString();
+			updateConfigFile = true;
+		}
 
 		if ( config.contains( "statusbar_display_branch" ) )
 			mStatusBarDisplayBranch = config.value( "statusbar_display_branch", true );
@@ -117,8 +127,11 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 
-	mGit = std::make_unique<Git>( "", pluginManager->getWorkspaceFolder() );
+	mGit = std::make_unique<Git>( pluginManager->getWorkspaceFolder() );
 	mGitFound = !mGit->getGitPath().empty();
+
+	if ( getUISceneNode() )
+		updateStatusBar();
 
 	subscribeFileSystemListener();
 	mReady = true;
@@ -126,13 +139,71 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	setReady();
 }
 
+void GitPlugin::updateUINow() {
+	if ( !mGit || !getUISceneNode() )
+		return;
+
+	updateStatusBar();
+}
+
+void GitPlugin::updateUI() {
+	if ( !mGit || !getUISceneNode() )
+		return;
+
+	getUISceneNode()->debounce( [this] { updateUINow(); }, mRefreshFreq,
+								String::hash( "git::status-update" ) );
+}
+
+void GitPlugin::updateStatusBar() {
+	if ( !mGit || !mStatusBarDisplayBranch )
+		return;
+	mThreadPool->run( [this] {
+		if ( !mGit )
+			return;
+		mGitBranch = mGit->branch();
+		mGitStatus = mGit->status();
+		getUISceneNode()->runOnMainThread( [this] {
+			if ( !mStatusBar )
+				getUISceneNode()->bind( "status_bar", mStatusBar );
+			if ( !mStatusBar )
+				return;
+
+			if ( !mStatusButton ) {
+				mStatusButton = UIPushButton::New();
+				mStatusButton->setLayoutSizePolicy( SizePolicy::WrapContent,
+													SizePolicy::MatchParent );
+				mStatusButton->setId( "status_git" );
+				mStatusButton->setClass( "status_but" );
+				mStatusButton->setIcon( getManager()
+											->getUISceneNode()
+											->findIcon( "source-control" )
+											->getSize( PixelDensity::dpToPxI( 12 ) ) );
+				mStatusButton->setParent( mStatusBar );
+				auto childCount = mStatusBar->getChildCount();
+				if ( childCount > 2 )
+					mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
+			}
+
+			std::string text( mStatusBarDisplayModifications
+								  ? String::format( "%s (+%d / -%d)", mGitBranch.c_str(),
+													mGitStatus.totalInserts,
+													mGitStatus.totalDeletions )
+								  : mGitBranch );
+
+			mStatusButton->setText( text );
+		} );
+	} );
+}
+
 PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 	switch ( msg.type ) {
 		case PluginMessageType::WorkspaceFolderChanged: {
-			if ( !mGit )
-				mGit = std::make_unique<Git>( "", msg.asJSON()["folder"] );
-			else
+			if ( mGit )
 				mGit->setProjectPath( msg.asJSON()["folder"] );
+			break;
+		}
+		case ecode::PluginMessageType::UIReady: {
+			updateStatusBar();
 			break;
 		}
 		default:
@@ -146,10 +217,23 @@ void GitPlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 
 	if ( mShuttingDown || isLoading() )
 		return;
+
+	updateUI();
 }
 
 void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 								const Vector2f& position ) {
+	static std::vector<SyntaxPattern> patterns;
+
+	if ( patterns.empty() ) {
+		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%x+)%s%((%x+)%)" },
+											  { "normal", "keyword", "number", "number" } ) );
+		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(.*)%(([%w%.-]+@[%w-]+%.%w+)%)" },
+											  { "normal", "keyword", "function", "link" } ) );
+		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%d%d%d%d%-%d%d%-%d%d[%s%d%-+:]+)" },
+											  { "normal", "keyword", "warning" } ) );
+	}
+
 	// HACK: Gets the old font style to restore it when the tooltip is hidden
 	UITooltip* tooltip = editor->createTooltip();
 	if ( tooltip == nullptr )
@@ -181,15 +265,10 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 	tooltip->setDontAutoHideOnMouseMove( true );
 	tooltip->setUsingCustomStyling( true );
 	tooltip->setData( String::hash( "git" ) );
-	tooltip->setBackgroundColor( editor->getColorScheme().getEditorColor( "background"_sst ) );
-
-	std::vector<SyntaxPattern> patterns;
-	patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%x+)%s%((%x+)%)" },
-										  { "normal", "keyword", "number", "number" } ) );
-	patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(.*)%(([%w%.-]+@[%w-]+%.%w+)%)" },
-										  { "normal", "keyword", "function", "link" } ) );
-	patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%d%d%d%d%-%d%d%-%d%d[%s%d%-:]+)" },
-										  { "normal", "keyword", "warning" } ) );
+	tooltip->getUIStyle()->setStyleSheetProperty( StyleSheetProperty(
+		"background-color",
+		editor->getColorScheme().getEditorColor( "background"_sst ).toRgbaString(), true,
+		StyleSheetSelectorRule::SpecificityImportant ) );
 
 	SyntaxDefinition syntaxDef( "custom_build", {}, std::move( patterns ) );
 
@@ -251,7 +330,7 @@ void GitPlugin::blame( UICodeEditor* editor ) {
 	}
 	mThreadPool->run( [this, editor]() {
 		auto blame = mGit->blame( editor->getDocument().getFilePath(),
-								  editor->getDocument().getSelection().start().line() );
+								  editor->getDocument().getSelection().start().line() + 1 );
 		editor->runOnMainThread( [this, editor, blame] {
 			displayTooltip(
 				editor, blame,

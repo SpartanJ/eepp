@@ -98,6 +98,8 @@ class EE_API UITextView : public UIWidget {
 
 	const Text* getTextCache() const;
 
+	Text* getTextCache();
+
 	const Vector2f& getRealAlignOffset() const;
 
 	const TextTransform::Value& getTextTransform() const;

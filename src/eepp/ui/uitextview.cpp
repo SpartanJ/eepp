@@ -232,6 +232,10 @@ const Text* UITextView::getTextCache() const {
 	return mTextCache;
 }
 
+Text* UITextView::getTextCache() {
+	return mTextCache;
+}
+
 const Vector2f& UITextView::getRealAlignOffset() const {
 	return mRealAlignOffset;
 }

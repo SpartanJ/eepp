@@ -4,6 +4,7 @@
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "git.hpp"
+#include <eepp/ui/uilinearlayout.hpp>
 
 namespace ecode {
 
@@ -42,6 +43,11 @@ class GitPlugin : public PluginBase {
 
   protected:
 	std::unique_ptr<Git> mGit;
+	std::string mGitBranch;
+	Git::Status mGitStatus;
+	UILinearLayout* mStatusBar{ nullptr };
+	UIPushButton* mStatusButton{ nullptr };
+	Time mRefreshFreq{ Seconds( 5 ) };
 
 	GitPlugin( PluginManager* pluginManager, bool sync );
 
@@ -49,8 +55,7 @@ class GitPlugin : public PluginBase {
 
 	PluginRequestHandle processMessage( const PluginMessage& msg );
 
-	void displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
-						 const Vector2f& position );
+	void displayTooltip( UICodeEditor* editor, const Git::Blame& blame, const Vector2f& position );
 
 	void hideTooltip( UICodeEditor* editor );
 
@@ -71,6 +76,12 @@ class GitPlugin : public PluginBase {
 	Color mOldBackgroundColor;
 
 	void blame( UICodeEditor* editor );
+
+	void updateStatusBar();
+
+	void updateUI();
+
+	void updateUINow();
 };
 
 } // namespace ecode

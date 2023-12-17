@@ -45,6 +45,10 @@ PluginManager* Plugin::getManager() const {
 	return mManager;
 }
 
+UISceneNode* Plugin::getUISceneNode() const {
+	return mManager->getUISceneNode();
+}
+
 String Plugin::i18n( const std::string& key, const String& def ) const {
 	return getManager()->getUISceneNode()->i18n( key, def );
 }

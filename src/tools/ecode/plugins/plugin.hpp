@@ -32,6 +32,8 @@ class Plugin : public UICodeEditorPlugin {
 
 	PluginManager* getManager() const;
 
+	UISceneNode* getUISceneNode() const;
+
 	virtual String::HashType getConfigFileHash() { return 0; }
 
 	virtual void onFileSystemEvent( const FileEvent& ev, const FileInfo& file );
