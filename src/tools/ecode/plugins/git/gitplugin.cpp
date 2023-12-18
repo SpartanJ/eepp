@@ -155,7 +155,7 @@ void GitPlugin::updateUI() {
 }
 
 void GitPlugin::updateStatusBar( bool force ) {
-	if ( !mGit || !mStatusBarDisplayBranch )
+	if ( !mGit || !mGitFound || !mStatusBarDisplayBranch )
 		return;
 	mThreadPool->run( [this, force] {
 		if ( !mGit )
@@ -199,6 +199,9 @@ void GitPlugin::updateStatusBar( bool force ) {
 								  : mGitBranch );
 
 			mStatusButton->setText( text );
+
+			if ( !mStatusBarDisplayModifications )
+				return;
 
 			if ( !mStatusCustomTokenizer.has_value() ) {
 				std::vector<SyntaxPattern> patterns;
