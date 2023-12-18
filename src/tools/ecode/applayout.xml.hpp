@@ -412,6 +412,9 @@ Anchor.error:hover {
 	opacity: 1;
 }
 </style>
+)html"
+
+R"html(
 <MainLayout id="main_layout" lw="mp" lh="mp">
 <Splitter id="project_splitter" lw="mp" lh="mp">
 	<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
