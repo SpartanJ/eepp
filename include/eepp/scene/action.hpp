@@ -3,7 +3,6 @@
 
 #include <eepp/core.hpp>
 #include <eepp/system/time.hpp>
-#include <map>
 using namespace EE::System;
 
 namespace EE { namespace Scene {

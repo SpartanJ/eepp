@@ -1574,8 +1574,15 @@ void Node::setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& del
 
 void Node::debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
 					 const Uint32& uniqueIdentifier ) {
-	removeActionsByTag( uniqueIdentifier );
-	setTimeout( std::move( runnable ), std::move( delay ), uniqueIdentifier );
+	Action* prevAction =
+		getActionManager()->getActionByTagFromTarget( this, uniqueIdentifier, true );
+	if ( prevAction ) {
+		auto* action = static_cast<Actions::Runnable*>( prevAction );
+		action->setCallback( std::move( runnable ) );
+		action->restart();
+	} else {
+		setTimeout( std::move( runnable ), std::move( delay ), uniqueIdentifier );
+	}
 }
 
 void Node::setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,

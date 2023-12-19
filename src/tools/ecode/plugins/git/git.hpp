@@ -49,15 +49,15 @@ class Git {
 
 	Blame blame( const std::string& filepath, std::size_t line ) const;
 
-	std::string branch( std::string projectDir = "" );
+	std::string branch( const std::string& projectDir = "" );
 
-	Status status( std::string projectDir = "" );
+	Status status( bool recurseSubmodules, const std::string& projectDir = "" );
 
-	bool setProjectPath( std::string projectPath );
+	bool setProjectPath( const std::string& projectPath );
 
-	const std::string& getGitPath() const { return mGitPath; }
+	const std::string& getGitPath() const;
 
-	const std::string& getProjectPath() const { return mProjectPath; }
+	const std::string& getProjectPath() const;
 
 	const std::string& getGitFolder() const;
 

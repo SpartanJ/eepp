@@ -35,19 +35,20 @@ Git::Git( const std::string& projectDir, const std::string& gitPath ) : mGitPath
 }
 
 void Git::git( const std::string& args, const std::string& projectDir, std::string& buf ) const {
+	buf.clear();
 	Process p;
 	p.create( mGitPath, args, Process::CombinedStdoutStderr | Process::Options::NoWindow,
 			  { { "LC_ALL", "en_US.UTF-8" } }, projectDir.empty() ? mProjectPath : projectDir );
 	p.readAllStdOut( buf );
 }
 
-std::string Git::branch( std::string projectDir ) {
+std::string Git::branch( const std::string& projectDir ) {
 	std::string buf;
 	git( "rev-parse --abbrev-ref HEAD", projectDir, buf );
 	return String::rTrim( buf, '\n' );
 }
 
-bool Git::setProjectPath( std::string projectPath ) {
+bool Git::setProjectPath( const std::string& projectPath ) {
 	mProjectPath = "";
 	mGitFolder = "";
 	FileInfo f( projectPath );
@@ -70,35 +71,58 @@ bool Git::setProjectPath( std::string projectPath ) {
 	return false;
 }
 
+const std::string& Git::getGitPath() const {
+	return mGitPath;
+}
+
+const std::string& Git::getProjectPath() const {
+	return mProjectPath;
+}
+
 const std::string& Git::getGitFolder() const {
 	return mGitFolder;
 }
 
-Git::Status Git::status( std::string projectDir ) {
+Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir ) {
 	Status s;
 	std::string buf;
 	git( "diff --numstat", projectDir, buf );
-	auto lastNL = 0;
-	auto nextNL = buf.find_first_of( '\n' );
-	while ( nextNL != std::string_view::npos ) {
-		LuaPattern pattern( "(%d+)%s+(%d+)%s+(.+)" );
-		LuaPattern::Range matches[4];
-		if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
-			auto inserted = buf.substr( matches[1].start, matches[1].end - matches[1].start );
-			auto deleted = buf.substr( matches[2].start, matches[2].end - matches[2].start );
-			auto file = buf.substr( matches[3].start, matches[3].end - matches[3].start );
-			int inserts;
-			int deletes;
-			if ( String::fromString( inserts, inserted ) &&
-				 String::fromString( deletes, deleted ) ) {
-				s.modified.push_back( { std::move( file ), inserts, deletes } );
-				s.totalInserts += inserts;
-				s.totalDeletions += deletes;
+	auto parseStatus = [&s, &buf]() {
+		auto lastNL = 0;
+		auto nextNL = buf.find_first_of( '\n' );
+		while ( nextNL != std::string_view::npos ) {
+			LuaPattern pattern( "(%d+)%s+(%d+)%s+(.+)" );
+			LuaPattern::Range matches[4];
+			if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
+				auto inserted = buf.substr( matches[1].start, matches[1].end - matches[1].start );
+				auto deleted = buf.substr( matches[2].start, matches[2].end - matches[2].start );
+				auto file = buf.substr( matches[3].start, matches[3].end - matches[3].start );
+				int inserts;
+				int deletes;
+				if ( String::fromString( inserts, inserted ) &&
+					 String::fromString( deletes, deleted ) ) {
+					s.modified.push_back( { std::move( file ), inserts, deletes } );
+					s.totalInserts += inserts;
+					s.totalDeletions += deletes;
+				}
 			}
+			lastNL = nextNL;
+			nextNL = buf.find_first_of( '\n', nextNL + 1 );
 		}
-		lastNL = nextNL;
-		nextNL = buf.find_first_of( '\n', nextNL + 1 );
+	};
+
+	parseStatus();
+
+	if ( recurseSubmodules ) {
+		bool hasSubmodules =
+			( !projectDir.empty() && FileSystem::fileExists( projectDir + ".gitmodules" ) ) ||
+			( !mProjectPath.empty() && FileSystem::fileExists( mProjectPath + ".gitmodules" ) );
+		if ( hasSubmodules ) {
+			git( "submodule foreach \"git diff --numstat\"", projectDir, buf );
+			parseStatus();
+		}
 	}
+
 	return s;
 }
 

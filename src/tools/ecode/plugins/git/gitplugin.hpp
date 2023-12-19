@@ -70,6 +70,7 @@ class GitPlugin : public PluginBase {
 	bool mTooltipInfoShowing{ false };
 	bool mStatusBarDisplayBranch{ true };
 	bool mStatusBarDisplayModifications{ true };
+	bool mStatusRecurseSubmodules{ true };
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	Uint32 mOldTextStyle{ 0 };

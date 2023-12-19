@@ -1526,8 +1526,9 @@ void App::onDocumentSelectionChange( UICodeEditor* editor, TextDocument& doc ) {
 	onDocumentModified( editor, doc );
 }
 
-void App::onDocumentCursorPosChange( UICodeEditor*, TextDocument& doc ) {
-	updateDocInfo( doc );
+void App::onDocumentCursorPosChange( UICodeEditor* editor, TextDocument& doc ) {
+	if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() == editor )
+		updateDocInfo( doc );
 }
 
 void App::updateDocInfoLocation() {
@@ -1545,8 +1546,8 @@ void App::updateDocInfoLocation() {
 }
 
 void App::updateDocInfo( TextDocument& doc ) {
-	if ( !doc.isRunningTransaction() && mConfig.editor.showDocInfo && mDocInfo &&
-		 mSplitter->curEditorExistsAndFocused() ) {
+	if ( !doc.isRunningTransaction() && !doc.isLoading() && mConfig.editor.showDocInfo &&
+		 mDocInfo && mSplitter->curEditorExistsAndFocused() ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
 		String infoStr( String::format(
@@ -1555,7 +1556,8 @@ void App::updateDocInfo( TextDocument& doc ) {
 			i18n( "col_abbr", "col" ).toUtf8().c_str(),
 			mSplitter->getCurEditor()->getCurrentColumnCount(),
 			TextDocument::lineEndingToString( doc.getLineEnding() ).c_str() ) );
-		mDocInfo->runOnMainThread( [this, infoStr] { mDocInfo->setText( infoStr ); } );
+		mDocInfo->debounce( [this, infoStr] { mDocInfo->setText( infoStr ); }, Time::Zero,
+							String::hash( "ecode::doc_info::update" ) );
 	}
 }
 

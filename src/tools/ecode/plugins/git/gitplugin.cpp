@@ -99,6 +99,13 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 			config["statusbar_display_modifications"] = mStatusBarDisplayModifications;
 			updateConfigFile = true;
 		}
+
+		if ( config.contains( "status_recurse_submodules" ) )
+			mStatusRecurseSubmodules = config.value( "status_recurse_submodules", true );
+		else {
+			config["status_recurse_submodules"] = mStatusRecurseSubmodules;
+			updateConfigFile = true;
+		}
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -160,12 +167,17 @@ void GitPlugin::updateStatusBar( bool force ) {
 	mThreadPool->run( [this, force] {
 		if ( !mGit )
 			return;
-		auto prevBranch = mGitBranch;
-		mGitBranch = mGit->branch();
-		auto prevGitStatus = mGitStatus;
-		mGitStatus = mGit->status();
-		if ( !force && mGitBranch == prevBranch && mGitStatus == prevGitStatus )
+
+		if ( !mGit->getGitFolder().empty() ) {
+			auto prevBranch = mGitBranch;
+			mGitBranch = mGit->branch();
+			auto prevGitStatus = mGitStatus;
+			mGitStatus = mGit->status( mStatusRecurseSubmodules );
+			if ( !force && mGitBranch == prevBranch && mGitStatus == prevGitStatus )
+				return;
+		} else if ( !mStatusButton ) {
 			return;
+		}
 
 		getUISceneNode()->runOnMainThread( [this] {
 			if ( !mStatusBar )
@@ -190,6 +202,11 @@ void GitPlugin::updateStatusBar( bool force ) {
 				if ( childCount > 2 )
 					mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
 			}
+
+			mStatusButton->setVisible( !mGit->getGitFolder().empty() );
+
+			if ( mGit->getGitFolder().empty() )
+				return;
 
 			std::string text( mStatusBarDisplayModifications &&
 									  ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
@@ -231,8 +248,10 @@ void GitPlugin::updateStatusBar( bool force ) {
 PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 	switch ( msg.type ) {
 		case PluginMessageType::WorkspaceFolderChanged: {
-			if ( mGit )
+			if ( mGit ) {
 				mGit->setProjectPath( msg.asJSON()["folder"] );
+				updateUINow( true );
+			}
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
@@ -285,11 +304,15 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 	editor->setTooltipText( str );
 
 	mTooltipInfoShowing = true;
+	mOldBackgroundColor = tooltip->getBackgroundColor();
+	if ( Color::Transparent == mOldBackgroundColor ) {
+		tooltip->reloadStyle( true, true, true, true );
+		mOldBackgroundColor = tooltip->getBackgroundColor();
+	}
 	mOldTextStyle = tooltip->getFontStyle();
 	mOldTextAlign = tooltip->getHorizontalAlign();
 	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
 	mOldUsingCustomStyling = tooltip->getUsingCustomStyling();
-	mOldBackgroundColor = tooltip->getBackgroundColor();
 	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
 	tooltip->setPixelsPosition( tooltip->getTooltipPosition( position ) );
 	tooltip->setDontAutoHideOnMouseMove( true );

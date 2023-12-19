@@ -27,6 +27,8 @@ class EE_API Delay : public Action {
 
 	Action* reverse() const override;
 
+	void restart();
+
   protected:
 	Clock mClock;
 	Time mTime;

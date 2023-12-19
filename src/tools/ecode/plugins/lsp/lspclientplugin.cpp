@@ -1446,6 +1446,10 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
 	mOldUsingCustomStyling = tooltip->getUsingCustomStyling();
 	mOldBackgroundColor = tooltip->getBackgroundColor();
+	if ( Color::Transparent == mOldBackgroundColor ) {
+		tooltip->reloadStyle( true, true, true, true );
+		mOldBackgroundColor = tooltip->getBackgroundColor();
+	}
 	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
 	tooltip->setPixelsPosition( tooltip->getTooltipPosition( position ) );
 	tooltip->setDontAutoHideOnMouseMove( true );

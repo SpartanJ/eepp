@@ -1,4 +1,5 @@
 #include <eepp/scene/actions/runnable.hpp>
+#include <eepp/system/lock.hpp>
 
 namespace EE { namespace Scene { namespace Actions {
 
@@ -10,6 +11,7 @@ Runnable::Runnable( Runnable::RunnableFunc callback, const Time& time, bool loop
 	Delay( time ), mCallback( std::move( callback ) ), mLoop( loop ) {}
 
 void Runnable::update( const Time& ) {
+	Lock l( mCallbackMutex );
 	if ( mCallback && Delay::isDone() && !mCalled ) {
 		mCallback();
 		if ( mLoop ) {
@@ -32,6 +34,11 @@ Action* Runnable::clone() const {
 
 Action* Runnable::reverse() const {
 	return NULL; // or a time machine
+}
+
+void Runnable::setCallback( RunnableFunc&& callback ) {
+	Lock l( mCallbackMutex );
+	mCallback = std::move( callback );
 }
 
 void Runnable::onStart() {}
