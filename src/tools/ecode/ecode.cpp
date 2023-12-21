@@ -3296,8 +3296,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		}
 #endif
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		macOS_CreateApplicationMenus();
-		macOS_EnableScrollMomentum();
+		macOS_createApplicationMenus();
+		macOS_enableScrollMomentum();
+		macOS_removeTitleBarSeparator( mWindow->getWindowHandler() );
 
 		mThreadPool->run( [this]() {
 			// Checks if the default shell path contains more paths

@@ -7,9 +7,7 @@
 @end
 
 // Recreates the menubar replacing the default SDL menubar
-void
-macOS_CreateApplicationMenus(void)
-{
+void macOS_createApplicationMenus() {
 	NSString *appName;
 	NSString *title;
 	NSMenu *appleMenu;
@@ -64,6 +62,11 @@ macOS_CreateApplicationMenus(void)
 	[NSApp setWindowsMenu:windowMenu];
 }
 
-void macOS_EnableScrollMomentum() {
+void macOS_enableScrollMomentum() {
 	[[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"AppleMomentumScrollSupported"];
+}
+
+void macOS_removeTitleBarSeparator( void* window ) {
+	NSWindow* nsWindow = window;
+	[nsWindow setTitlebarSeparatorStyle:NSTitlebarSeparatorStyleNone];
 }
