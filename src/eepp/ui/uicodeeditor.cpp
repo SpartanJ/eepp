@@ -934,7 +934,6 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 void UICodeEditor::updateIMELocation() {
 	if ( mDoc->getActiveClient() != this || !Engine::isRunninMainThread() )
 		return;
-	updateScreenPos();
 	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
 	getUISceneNode()->getWindow()->getIME().setLocation( r.asInt() );
 }

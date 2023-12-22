@@ -261,6 +261,9 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 		   line[range.start().column() - 2] != '<' ) )
 		return clearMatch();
 	bool isCloseBracket = line[range.start().column() - 1] == '/';
+	if ( isCloseBracket &&
+		 ( ( line.size() >= 2 && line[range.start().column() - 2] != '<' ) || line.size() < 2 ) )
+		return clearMatch();
 	if ( !isCloseBracket && isClosedTag( mDoc, range.end() ) )
 		return clearMatch();
 	range.start().setColumn( range.start().column() - ( isCloseBracket ? 2 : 1 ) );

@@ -125,7 +125,7 @@ void TileMap::createEmptyTile() {
 	//! because is a lot faster, at least with NVIDIA GPUs.
 	TextureFactory* TF = TextureFactory::instance();
 
-	std::string tileName( String::format( "maptile-%dx%d-%ul", mTileSize.getWidth(),
+	std::string tileName( String::format( "maptile-%dx%d-%u", mTileSize.getWidth(),
 										  mTileSize.getHeight(), mGridLinesColor.getValue() ) );
 
 	Texture* Tex = TF->getByName( tileName );

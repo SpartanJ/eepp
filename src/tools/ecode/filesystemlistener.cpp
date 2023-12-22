@@ -147,7 +147,7 @@ void FileSystemListener::notifyChange( const FileInfo& file ) {
 			if ( curHash != doc.getHash() ) {
 				Log::notice( "Document: \"%s\" has changed on the file system:",
 							 file.getFilepath().c_str() );
-				Log::notice( "Modification time on file system: %ul vs %ul in memory",
+				Log::notice( "Modification time on file system: %u vs %u in memory",
 							 file.getModificationTime(), doc.getFileInfo().getModificationTime() );
 				Log::notice( "Hash on file system: %s vs %s in memory",
 							 MD5::hexDigest( curHash ).c_str(),

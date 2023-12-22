@@ -814,9 +814,6 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 void UITextInput::updateIMELocation() {
 	if ( mDoc.getActiveClient() != this || !Engine::isRunninMainThread() )
 		return;
-
-	updateScreenPos();
-
 	Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
 					 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
 	Float h = mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSize() );
