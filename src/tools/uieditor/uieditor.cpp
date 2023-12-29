@@ -1370,7 +1370,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 
 		createAppMenu();
 
-		mConfigPath = Sys::getConfigPath( "ecode" );
+		mConfigPath = Sys::getConfigPath( "eepp-uieditor" );
 		mColorSchemesPath = mConfigPath + "colorschemes";
 		auto colorSchemes(
 			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );

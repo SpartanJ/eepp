@@ -442,9 +442,40 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( GitPlugin::Definition() );
 }
 
+std::pair<bool, std::string> App::generateConfigPath() {
+	if ( mPortableMode ) {
+		std::string path( Sys::getProcessPath() + "config" );
+		FileSystem::dirAddSlashAtEnd( path );
+		bool fileExists = FileSystem::fileExists( path );
+
+		if ( fileExists && !FileSystem::isDirectory( path ) ) {
+			if ( FileSystem::fileRemove( path ) )
+				fileExists = false;
+			else
+				return { false, Sys::getConfigPath( "ecode" ) };
+		}
+
+		if ( !fileExists && !FileSystem::makeDir( path ) ) {
+			path = Sys::getTempPath();
+			path += "ecode_portable";
+			path += FileSystem::getOSSlash();
+			if ( !FileSystem::fileExists( path ) && !FileSystem::makeDir( path ) )
+				return { false, Sys::getConfigPath( "ecode" ) };
+		}
+
+		return { true, path };
+	}
+
+	return { true, Sys::getConfigPath( "ecode" ) };
+}
+
 bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
 					  bool stdOutLogs, bool disableFileLogs ) {
-	mConfigPath = Sys::getConfigPath( "ecode" );
+	if ( !mPortableMode )
+		mPortableMode = FileSystem::fileExists( Sys::getProcessPath() + "portable_mode.txt" );
+	auto [ok, configPath] = generateConfigPath();
+	mConfigPath = std::move( configPath );
+	mPortableModeFailed = !ok;
 	bool firstRun = false;
 	if ( !FileSystem::fileExists( mConfigPath ) ) {
 		FileSystem::makeDir( mConfigPath );
@@ -555,6 +586,16 @@ void App::onReady() {
 	// to run.
 	mPluginManager->setPluginReloadEnabled( true );
 	Log::info( "App Ready" );
+
+	if ( mPortableModeFailed ) {
+		UIMessageBox* msg = UIMessageBox::New(
+			UIMessageBox::OK,
+			i18n( "portable_mode_failed", "Portable Mode failed.\nPlease check that the "
+										  "application directory has write permissions." ) );
+		msg->setTitle( "Error" );
+		msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
+		msg->showWhenReady();
+	}
 }
 
 void App::mainLoop() {
@@ -3203,9 +3244,10 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 				const std::string& css, bool health, const std::string& healthLang,
 				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
-				bool stdOutLogs, bool disableFileLogs, bool openClean ) {
+				bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+	mPortableMode = portable;
 	mDisplayDPI = currentDisplay->getDPI();
 	mUseFrameBuffer = frameBuffer;
 	mBenchmarkMode = benchmarkMode;
@@ -3711,6 +3753,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 							  { "benchmark-mode" } );
 	args::Flag verbose( parser, "verbose", "Redirects all logs to stdout.", { 'v', "verbose" } );
 	args::Flag version( parser, "version", "Prints version information", { 'V', "version" } );
+	args::Flag portable(
+		parser, "portable",
+		"Portable Mode (it will save the configuration files within the ecode main folder)",
+		{ 'p', "portable" } );
 	args::ValueFlag<size_t> jobs(
 		parser, "jobs",
 		"Sets the number of background jobs that the application will spawn "
@@ -3814,7 +3860,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
 					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
 					   healthFormat.Get(), file.Get(), verbose.Get(), disableFileLogs.Get(),
-					   openClean.Get() );
+					   openClean.Get(), portable.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

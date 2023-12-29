@@ -39,7 +39,7 @@ class App : public UICodeEditorSplitter::Client {
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 			   const std::string& css, bool health, const std::string& healthLang,
 			   ecode::FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
-			   bool stdOutLogs, bool disableFileLogs, bool openClean );
+			   bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable );
 
 	void createWidgetInspector();
 
@@ -430,6 +430,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void saveProject();
 
+	std::pair<bool, std::string> generateConfigPath();
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -476,6 +478,8 @@ class App : public UICodeEditorSplitter::Client {
 	bool mDirTreeReady{ false };
 	bool mUseFrameBuffer{ false };
 	bool mBenchmarkMode{ false };
+	bool mPortableMode{ false };
+	bool mPortableModeFailed{ false };
 	Time mFrameTime{ Time::Zero };
 	Clock mLastRender;
 	Clock mSecondsCounter;

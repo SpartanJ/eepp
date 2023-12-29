@@ -12,6 +12,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
@@ -394,6 +395,9 @@ DisplayManager* Engine::getDisplayManager() {
 bool Engine::openURI( const std::string& url ) {
 	if ( nullptr == getPlatformHelper() )
 		return false;
+
+	if ( !LuaPattern::matches( url, "^%w+://" ) )
+		return openURI( "file://" + url );
 
 	if ( String::startsWith( url, "file://" ) ) {
 		std::string absolutePath( FileSystem::getCurrentWorkingDirectory() );
