@@ -38,7 +38,7 @@ void PluginManager::setUIThemeReloaded() {
 	sendBroadcast( PluginMessageType::UIThemeReloaded, PluginMessageFormat::Empty, nullptr );
 }
 
-UICodeEditorPlugin* ecode::PluginManager::get( const std::string& id ) {
+Plugin* ecode::PluginManager::get( const std::string& id ) {
 	auto findIt = mPlugins.find( id );
 	if ( findIt != mPlugins.end() )
 		return findIt->second;
@@ -47,13 +47,13 @@ UICodeEditorPlugin* ecode::PluginManager::get( const std::string& id ) {
 
 bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) {
 	mPluginsEnabled[id] = enable;
-	UICodeEditorPlugin* plugin = get( id );
+	Plugin* plugin = get( id );
 	if ( enable && plugin == nullptr && hasDefinition( id ) ) {
 		Log::debug( "PluginManager: loading plugin %s", mDefinitions[id].name.c_str() );
-		UICodeEditorPlugin* newPlugin = sync && mDefinitions[id].creatorSyncFn
+		Plugin* newPlugin = sync && mDefinitions[id].creatorSyncFn
 											? mDefinitions[id].creatorSyncFn( this )
 											: mDefinitions[id].creatorFn( this );
-		mPlugins.insert( std::pair<std::string, UICodeEditorPlugin*>( id, newPlugin ) );
+		mPlugins.insert( std::pair<std::string, Plugin*>( id, newPlugin ) );
 		if ( onPluginEnabled )
 			onPluginEnabled( newPlugin );
 		return true;
@@ -170,7 +170,7 @@ PluginRequestHandle PluginManager::sendRequest( PluginMessageType type, PluginMe
 	return PluginRequestHandle::empty();
 }
 
-PluginRequestHandle PluginManager::sendRequest( UICodeEditorPlugin* pluginWho,
+PluginRequestHandle PluginManager::sendRequest( Plugin* pluginWho,
 												PluginMessageType type, PluginMessageFormat format,
 												const void* data ) {
 	if ( mClosing )
@@ -190,7 +190,7 @@ PluginRequestHandle PluginManager::sendRequest( UICodeEditorPlugin* pluginWho,
 	return PluginRequestHandle::empty();
 }
 
-void PluginManager::sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+void PluginManager::sendResponse( Plugin* pluginWho, PluginMessageType type,
 								  PluginMessageFormat format, const void* data,
 								  const PluginIDType& responseID ) {
 	if ( mClosing )
@@ -205,7 +205,7 @@ void PluginManager::sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageTy
 			plugin.second( { type, format, data, responseID } );
 }
 
-void PluginManager::sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+void PluginManager::sendBroadcast( Plugin* pluginWho, PluginMessageType type,
 								   PluginMessageFormat format, const void* data ) {
 	if ( mClosing )
 		return;
@@ -252,11 +252,11 @@ void PluginManager::setPluginReloadEnabled( bool pluginReloadEnabled ) {
 }
 
 void PluginManager::subscribeMessages(
-	UICodeEditorPlugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
+	Plugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
 	subscribeMessages( plugin->getId(), cb );
 }
 
-void PluginManager::unsubscribeMessages( UICodeEditorPlugin* plugin ) {
+void PluginManager::unsubscribeMessages( Plugin* plugin ) {
 	unsubscribeMessages( plugin->getId() );
 }
 

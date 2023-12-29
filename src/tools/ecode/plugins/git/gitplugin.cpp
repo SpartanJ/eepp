@@ -19,11 +19,11 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-UICodeEditorPlugin* GitPlugin::New( PluginManager* pluginManager ) {
+Plugin* GitPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( GitPlugin, ( pluginManager, false ) );
 }
 
-UICodeEditorPlugin* GitPlugin::NewSync( PluginManager* pluginManager ) {
+Plugin* GitPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( GitPlugin, ( pluginManager, true ) );
 }
 

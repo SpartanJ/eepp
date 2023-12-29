@@ -28,9 +28,9 @@ class LSPClientPlugin : public Plugin {
 				 LSPClientPlugin::New, { 0, 2, 3 },	 LSPClientPlugin::NewSync };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
-	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~LSPClientPlugin();
 
@@ -91,6 +91,8 @@ class LSPClientPlugin : public Plugin {
 
 	void setTrimLogs( bool trimLogs );
 
+	void onVersionUpgrade( Uint32 oldVersion, Uint32 currentVersion );
+
   protected:
 	friend class LSPDocumentClient;
 	friend class LSPClientServer;
@@ -108,7 +110,7 @@ class LSPClientPlugin : public Plugin {
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mSymbolInfoShowing{ false };
-	bool mSemanticHighlighting{ false };
+	bool mSemanticHighlighting{ true };
 	bool mSilence{ false };
 	bool mTrimLogs{ false };
 	UnorderedMap<std::string, std::string> mKeyBindings; /* cmd, shortcut */

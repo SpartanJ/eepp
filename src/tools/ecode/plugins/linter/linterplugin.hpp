@@ -62,9 +62,9 @@ class LinterPlugin : public Plugin {
 				 LinterPlugin::NewSync };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
-	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~LinterPlugin();
 

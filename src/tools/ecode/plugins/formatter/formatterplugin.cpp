@@ -23,11 +23,11 @@ namespace ecode {
 #define FORMATTER_THREADED 0
 #endif
 
-UICodeEditorPlugin* FormatterPlugin::New( PluginManager* pluginManager ) {
+Plugin* FormatterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( FormatterPlugin, ( pluginManager, false ) );
 }
 
-UICodeEditorPlugin* FormatterPlugin::NewSync( PluginManager* pluginManager ) {
+Plugin* FormatterPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( FormatterPlugin, ( pluginManager, true ) );
 }
 

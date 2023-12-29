@@ -24,11 +24,11 @@ namespace ecode {
 #define LINTER_THREADED 0
 #endif
 
-UICodeEditorPlugin* LinterPlugin::New( PluginManager* pluginManager ) {
+Plugin* LinterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager, false ) );
 }
 
-UICodeEditorPlugin* LinterPlugin::NewSync( PluginManager* pluginManager ) {
+Plugin* LinterPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager, true ) );
 }
 

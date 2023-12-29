@@ -406,10 +406,16 @@ void App::runCommand( const std::string& command ) {
 	}
 }
 
-void App::onPluginEnabled( UICodeEditorPlugin* plugin ) {
-	if ( mSplitter )
+void App::onPluginEnabled( Plugin* plugin ) {
+	if ( mSplitter ) {
 		mSplitter->forEachEditor(
 			[plugin]( UICodeEditor* editor ) { editor->registerPlugin( plugin ); } );
+	}
+
+	if ( firstFrame && mConfig.isNewVersion() ) {
+		plugin->onVersionUpgrade( mConfig.windowState.lastRunVersion,
+								  ecode::Version::getVersionNum() );
+	}
 }
 
 void App::initPluginManager() {
@@ -423,13 +429,14 @@ void App::initPluginManager() {
 				cb( tab->getOwnedWidget()->asType<UICodeEditor>(), path );
 			}
 		} );
-	mPluginManager->onPluginEnabled = [this]( UICodeEditorPlugin* plugin ) {
+	mPluginManager->onPluginEnabled = [this]( Plugin* plugin ) {
 		if ( nullptr == mUISceneNode || plugin->isReady() ) {
 			onPluginEnabled( plugin );
 		} else {
 			// If plugin loads asynchronously and is not ready, delay the plugin enabled callback
 			plugin->addOnReadyCallback( [this]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
-				mUISceneNode->runOnMainThread( [&, plugin]() { onPluginEnabled( plugin ); } );
+				mUISceneNode->runOnMainThread(
+					[&, plugin]() { onPluginEnabled( static_cast<Plugin*>( plugin ) ); } );
 				plugin->removeReadyCallback( cbId );
 			} );
 		}

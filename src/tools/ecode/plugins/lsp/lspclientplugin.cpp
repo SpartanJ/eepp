@@ -1,4 +1,5 @@
 #include "lspclientplugin.hpp"
+#include "../../version.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -116,11 +117,11 @@ class LSPCodeActionModel : public Model {
 	std::vector<LSPCodeAction> mCodeActions;
 };
 
-UICodeEditorPlugin* LSPClientPlugin::New( PluginManager* pluginManager ) {
+Plugin* LSPClientPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LSPClientPlugin, ( pluginManager, false ) );
 }
 
-UICodeEditorPlugin* LSPClientPlugin::NewSync( PluginManager* pluginManager ) {
+Plugin* LSPClientPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( LSPClientPlugin, ( pluginManager, true ) );
 }
 
@@ -871,7 +872,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			config["server_close_after_idle_time"] = mClientManager.getLSPDecayTime().toString();
 
 		if ( config.contains( "semantic_highlighting" ) )
-			mSemanticHighlighting = config.value( "semantic_highlighting", false );
+			mSemanticHighlighting = config.value( "semantic_highlighting", true );
 		else if ( updateConfigFile )
 			config["semantic_highlighting"] = mSemanticHighlighting;
 
@@ -1541,6 +1542,12 @@ const Time& LSPClientPlugin::getHoverDelay() const {
 
 void LSPClientPlugin::setHoverDelay( const Time& hoverDelay ) {
 	mHoverDelay = hoverDelay;
+}
+
+void LSPClientPlugin::onVersionUpgrade( Uint32 oldVersion, Uint32 currentVersion ) {
+	if ( oldVersion <= ECODE_VERSIONNUM( 0, 5, 0 ) ) {
+		mSemanticHighlighting = true;
+	}
 }
 
 const LSPClientServerManager& LSPClientPlugin::getClientManager() const {

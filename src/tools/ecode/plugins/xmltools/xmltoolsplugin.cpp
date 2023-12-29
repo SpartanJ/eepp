@@ -13,11 +13,11 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-UICodeEditorPlugin* XMLToolsPlugin::New( PluginManager* pluginManager ) {
+Plugin* XMLToolsPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( XMLToolsPlugin, ( pluginManager, false ) );
 }
 
-UICodeEditorPlugin* XMLToolsPlugin::NewSync( PluginManager* pluginManager ) {
+Plugin* XMLToolsPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( XMLToolsPlugin, ( pluginManager, true ) );
 }
 

@@ -62,7 +62,7 @@ class AutoCompletePlugin : public Plugin {
 				 { 0, 2, 2 } };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
 	virtual ~AutoCompletePlugin();
 

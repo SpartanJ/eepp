@@ -26,7 +26,7 @@ class PluginManager;
 class Plugin;
 class FileSystemListener;
 
-typedef std::function<UICodeEditorPlugin*( PluginManager* pluginManager )> PluginCreatorFn;
+typedef std::function<Plugin*( PluginManager* pluginManager )> PluginCreatorFn;
 
 #ifdef minor
 #undef minor
@@ -271,7 +271,7 @@ class PluginManager {
 
 	void setUIThemeReloaded();
 
-	UICodeEditorPlugin* get( const std::string& id );
+	Plugin* get( const std::string& id );
 
 	bool setEnabled( const std::string& id, bool enable, bool sync = false );
 
@@ -291,7 +291,7 @@ class PluginManager {
 
 	const std::shared_ptr<ThreadPool>& getThreadPool() const;
 
-	std::function<void( UICodeEditorPlugin* )> onPluginEnabled;
+	std::function<void( Plugin* )> onPluginEnabled;
 
 	const std::map<std::string, PluginDefinition>& getDefinitions() const;
 
@@ -308,23 +308,23 @@ class PluginManager {
 	PluginRequestHandle sendRequest( PluginMessageType type, PluginMessageFormat format,
 									 const void* data );
 
-	PluginRequestHandle sendRequest( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+	PluginRequestHandle sendRequest( Plugin* pluginWho, PluginMessageType type,
 									 PluginMessageFormat format, const void* data );
 
-	void sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+	void sendResponse( Plugin* pluginWho, PluginMessageType type,
 					   PluginMessageFormat format, const void* data,
 					   const PluginIDType& responseID );
 
-	void sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType, PluginMessageFormat,
+	void sendBroadcast( Plugin* pluginWho, PluginMessageType, PluginMessageFormat,
 						const void* data );
 
 	void sendBroadcast( const PluginMessageType& notification, const PluginMessageFormat& format,
 						void* data );
 
-	void subscribeMessages( UICodeEditorPlugin* plugin,
+	void subscribeMessages( Plugin* plugin,
 							std::function<PluginRequestHandle( const PluginMessage& )> cb );
 
-	void unsubscribeMessages( UICodeEditorPlugin* plugin );
+	void unsubscribeMessages( Plugin* plugin );
 
 	void subscribeMessages( const std::string& uniqueComponentId,
 							std::function<PluginRequestHandle( const PluginMessage& )> cb );
@@ -350,7 +350,7 @@ class PluginManager {
 	std::string mResourcesPath;
 	std::string mPluginsPath;
 	std::string mWorkspaceFolder;
-	std::map<std::string, UICodeEditorPlugin*> mPlugins;
+	std::map<std::string, Plugin*> mPlugins;
 	std::map<std::string, bool> mPluginsEnabled;
 	std::map<std::string, PluginDefinition> mDefinitions;
 	std::shared_ptr<ThreadPool> mThreadPool;

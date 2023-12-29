@@ -1,6 +1,7 @@
 #include "appconfig.hpp"
 #include "ecode.hpp"
 #include "plugins/pluginmanager.hpp"
+#include "version.hpp"
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
@@ -77,6 +78,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.displayIndex = iniState.getValueI( "window", "display_index", 0 );
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
+	windowState.lastRunVersion = iniState.getValueU( "editor", "last_run_version", 0 );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
@@ -210,6 +212,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValue( "files", "recentfiles", String::join( urlEncode( recentFiles ), ';' ) );
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
+	iniState.setValueU( "editor", "last_run_version", ecode::Version::getVersionNum() );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
 	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );
@@ -548,6 +551,10 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 			editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
 		loadDocuments( editorSplitter, j, curTabWidget, app );
 	}
+}
+
+bool AppConfig::isNewVersion() const {
+	return windowState.lastRunVersion != ecode::Version::getVersionNum();
 }
 
 } // namespace ecode

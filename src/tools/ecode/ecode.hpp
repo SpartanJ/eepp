@@ -588,7 +588,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void initPluginManager();
 
-	void onPluginEnabled( UICodeEditorPlugin* plugin );
+	void onPluginEnabled( Plugin* plugin );
 
 	void checkForUpdatesResponse( Http::Response response, bool fromStartup );
 

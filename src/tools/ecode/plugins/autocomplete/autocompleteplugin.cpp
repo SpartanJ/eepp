@@ -68,7 +68,7 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 	return matches;
 }
 
-UICodeEditorPlugin* AutoCompletePlugin::New( PluginManager* pluginManager ) {
+Plugin* AutoCompletePlugin::New( PluginManager* pluginManager ) {
 	return eeNew( AutoCompletePlugin, ( pluginManager ) );
 }
 

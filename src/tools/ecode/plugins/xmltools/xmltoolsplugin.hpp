@@ -24,9 +24,9 @@ class XMLToolsPlugin : public PluginBase {
 				 XMLToolsPlugin::NewSync };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
-	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~XMLToolsPlugin();
 

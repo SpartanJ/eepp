@@ -17,9 +17,9 @@ class GitPlugin : public PluginBase {
 		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 0, 1 }, GitPlugin::NewSync };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
-	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~GitPlugin();
 

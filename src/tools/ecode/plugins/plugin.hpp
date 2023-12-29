@@ -40,6 +40,8 @@ class Plugin : public UICodeEditorPlugin {
 
 	String i18n( const std::string& key, const String& def ) const;
 
+	virtual void onVersionUpgrade( Uint32 oldVersion, Uint32 currentVersion ) {}
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;

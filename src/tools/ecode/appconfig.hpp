@@ -48,6 +48,7 @@ struct WindowStateConfig {
 	std::string statusBarPartition;
 	int displayIndex{ 0 };
 	Vector2i position{ -1, -1 };
+	Uint32 lastRunVersion{ 0 };
 };
 
 struct CodeEditorConfig {
@@ -174,6 +175,8 @@ class AppConfig {
 	GlobalSearchBarConfig globalSearchBarConfig;
 	WorkspaceConfig workspace;
 	LanguagesExtensions languagesExtensions;
+
+	bool isNewVersion() const;
 
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,
