@@ -253,6 +253,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_TEXTEDITING: {
+			if ( SDLEvent.edit.length == 0 )
+				return;
 			event.Type = InputEvent::TextEditing;
 			event.textediting.text = SDLEvent.edit.text;
 			event.textediting.start = SDLEvent.edit.start;
@@ -262,6 +264,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		}
 #if SDL_VERSION_ATLEAST( 2, 0, 22 )
 		case SDL_TEXTEDITING_EXT: {
+			if ( SDLEvent.edit.length == 0 )
+				return;
 			event.Type = InputEvent::TextEditing;
 			event.textediting.text = SDLEvent.editExt.text;
 			event.textediting.start = SDLEvent.editExt.start;
