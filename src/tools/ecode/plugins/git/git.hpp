@@ -1,3 +1,4 @@
+#include <map>
 #include <string>
 #include <vector>
 
@@ -32,20 +33,35 @@ class Git {
 		}
 	};
 
+	enum FileStatus {
+		Unidentified,
+		Modified = 'M',
+		Added = 'A',
+		Renamed = 'R',
+		TypeChanged = 'T',
+		UpdatedUnmerged = 'U',
+		Deleted = 'D',
+		Untracked = '?',
+		ModifiedSubmodule = 'm',
+	};
+
 	struct Status {
 		std::vector<DiffFile> modified;
 		int totalInserts{ 0 };
 		int totalDeletions{ 0 };
+		std::map<std::string, FileStatus> files;
 
 		bool operator==( const Status& other ) const {
 			return totalInserts == other.totalInserts && totalDeletions == other.totalDeletions &&
-				   modified == other.modified;
+				   modified == other.modified && files == other.files;
 		}
 	};
 
 	Git( const std::string& projectDir = "", const std::string& gitPath = "" );
 
 	void git( const std::string& args, const std::string& projectDir, std::string& buf ) const;
+
+	void gitSubmodules( const std::string& args, const std::string& projectDir, std::string& buf );
 
 	Blame blame( const std::string& filepath, std::size_t line ) const;
 
@@ -65,6 +81,8 @@ class Git {
 	std::string mGitPath;
 	std::string mProjectPath;
 	std::string mGitFolder;
+
+	bool hasSubmodules( const std::string& projectDir );
 };
 
 } // namespace ecode

@@ -42,6 +42,11 @@ void Git::git( const std::string& args, const std::string& projectDir, std::stri
 	p.readAllStdOut( buf );
 }
 
+void Git::gitSubmodules( const std::string& args, const std::string& projectDir,
+						 std::string& buf ) {
+	git( String::format( "submodule foreach \"git %s\"", args.c_str() ), projectDir, buf );
+}
+
 std::string Git::branch( const std::string& projectDir ) {
 	std::string buf;
 	git( "rev-parse --abbrev-ref HEAD", projectDir, buf );
@@ -83,11 +88,18 @@ const std::string& Git::getGitFolder() const {
 	return mGitFolder;
 }
 
+bool Git::hasSubmodules( const std::string& projectDir ) {
+	return ( !projectDir.empty() && FileSystem::fileExists( projectDir + ".gitmodules" ) ) ||
+		   ( !mProjectPath.empty() && FileSystem::fileExists( mProjectPath + ".gitmodules" ) );
+}
+
 Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir ) {
+	static constexpr auto DIFF_CMD = "diff --numstat";
+	static constexpr auto STATUS_CMD = "-c color.status=never status -b -u -s";
 	Status s;
 	std::string buf;
-	git( "diff --numstat", projectDir, buf );
-	auto parseStatus = [&s, &buf]() {
+	git( DIFF_CMD, projectDir, buf );
+	auto parseNumStat = [&s, &buf]() {
 		auto lastNL = 0;
 		auto nextNL = buf.find_first_of( '\n' );
 		while ( nextNL != std::string_view::npos ) {
@@ -111,16 +123,62 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		}
 	};
 
+	parseNumStat();
+
+	bool submodules = hasSubmodules( projectDir );
+
+	if ( recurseSubmodules && submodules ) {
+		gitSubmodules( DIFF_CMD, projectDir, buf );
+		parseNumStat();
+	}
+
+	bool modifiedSubmodule = false;
+	auto parseStatus = [&s, &buf, &modifiedSubmodule]() {
+		auto lastNL = 0;
+		auto nextNL = buf.find_first_of( '\n' );
+		while ( nextNL != std::string_view::npos ) {
+			LuaPattern pattern( "\n([%s?][MARTUD?])%s(.*)" );
+			LuaPattern::Range matches[3];
+			if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
+				auto status = buf.substr( matches[1].start, matches[1].end - matches[1].start );
+				String::trimInPlace( status );
+				auto file = buf.substr( matches[2].start, matches[2].end - matches[2].start );
+				FileStatus rstatus = FileStatus::Unidentified;
+				if ( "??" == status )
+					rstatus = FileStatus::Untracked;
+				else if ( "M" == status )
+					rstatus = FileStatus::Modified;
+				else if ( "A" == status )
+					rstatus = FileStatus::Added;
+				else if ( "D" == status )
+					rstatus = FileStatus::Deleted;
+				else if ( "R" == status )
+					rstatus = FileStatus::Renamed;
+				else if ( "T" == status )
+					rstatus = FileStatus::TypeChanged;
+				else if ( "U" == status )
+					rstatus = FileStatus::UpdatedUnmerged;
+				else if ( "m" == status )
+					rstatus = FileStatus::ModifiedSubmodule;
+
+				if ( rstatus != FileStatus::Unidentified ) {
+					if ( rstatus != FileStatus::ModifiedSubmodule )
+						modifiedSubmodule = true;
+					else
+						s.files.insert( { std::move( file ), rstatus } );
+				}
+			}
+			lastNL = nextNL;
+			nextNL = buf.find_first_of( '\n', nextNL + 1 );
+		}
+	};
+
+	git( STATUS_CMD, projectDir, buf );
 	parseStatus();
 
-	if ( recurseSubmodules ) {
-		bool hasSubmodules =
-			( !projectDir.empty() && FileSystem::fileExists( projectDir + ".gitmodules" ) ) ||
-			( !mProjectPath.empty() && FileSystem::fileExists( mProjectPath + ".gitmodules" ) );
-		if ( hasSubmodules ) {
-			git( "submodule foreach \"git diff --numstat\"", projectDir, buf );
-			parseStatus();
-		}
+	if ( modifiedSubmodule && submodules ) {
+		gitSubmodules( STATUS_CMD, projectDir, buf );
+		parseStatus();
 	}
 
 	return s;

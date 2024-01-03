@@ -1290,6 +1290,10 @@
 ../../src/tools/ecode/notificationcenter.cpp
 ../../src/tools/ecode/notificationcenter.hpp
 ../../src/tools/ecode/pathhelper.hpp
+../../src/tools/ecode/plugins/git/git.cpp
+../../src/tools/ecode/plugins/git/git.hpp
+../../src/tools/ecode/plugins/git/gitplugin.cpp
+../../src/tools/ecode/plugins/git/gitplugin.hpp
 ../../src/tools/ecode/plugins/linter/linterplugin.cpp
 ../../src/tools/ecode/plugins/linter/linterplugin.hpp
 ../../src/tools/ecode/plugins/lsp/lspclientplugin.cpp
@@ -1302,6 +1306,8 @@
 ../../src/tools/ecode/plugins/lsp/lspdocumentclient.cpp
 ../../src/tools/ecode/plugins/lsp/lspdocumentclient.hpp
 ../../src/tools/ecode/plugins/lsp/lspprotocol.hpp
+../../src/tools/ecode/plugins/plugin.cpp
+../../src/tools/ecode/plugins/plugin.hpp
 ../../src/tools/ecode/plugins/pluginmanager.cpp
 ../../src/tools/ecode/plugins/pluginmanager.hpp
 ../../src/tools/ecode/plugins/xmltools/xmltoolsplugin.cpp
