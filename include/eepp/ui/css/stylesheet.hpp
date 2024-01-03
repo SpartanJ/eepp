@@ -13,6 +13,8 @@ class EE_API StyleSheet {
   public:
 	StyleSheet();
 
+	void clear();
+
 	void addStyle( std::shared_ptr<StyleSheetStyle> node );
 
 	bool isEmpty() const;
@@ -53,6 +55,8 @@ class EE_API StyleSheet {
 	void removeAllWithMarker( const Uint32& marker );
 
 	bool markerExists( const Uint32& marker ) const;
+
+	StyleSheet getAllWithMarker( const Uint32& marker ) const;
 
 	std::vector<std::shared_ptr<StyleSheetStyle>>
 	findStyleFromSelectorName( const std::string& selector ) const;

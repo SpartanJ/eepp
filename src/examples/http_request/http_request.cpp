@@ -1,5 +1,6 @@
 #include <args/args.hxx>
 #include <eepp/ee.hpp>
+#include <iostream>
 
 // Prints the response headers
 void printResponseHeaders( Http::Response& response ) {

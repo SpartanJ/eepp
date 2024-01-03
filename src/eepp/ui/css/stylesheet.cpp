@@ -9,6 +9,16 @@ namespace EE { namespace UI { namespace CSS {
 
 StyleSheet::StyleSheet() {}
 
+void StyleSheet::clear() {
+	mVersion = 1;
+	mMarker = 0;
+	mNodes.clear();
+	mNodeIndex.clear();
+	mMediaQueryList.clear();
+	mKeyframesMap.clear();
+	mNodeCache.clear();
+}
+
 template <class T> inline void HashCombine( std::size_t& seed, const T& v ) {
 	std::hash<T> hasher;
 	seed ^= hasher( v ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
@@ -96,6 +106,16 @@ void StyleSheet::removeAllWithMarker( const Uint32& marker ) {
 		mKeyframesMap.erase( removeKey );
 
 	invalidateCache();
+}
+
+StyleSheet StyleSheet::getAllWithMarker( const Uint32& marker ) const {
+	StyleSheet style;
+	std::vector<std::shared_ptr<StyleSheetStyle>> hits;
+	for ( auto node : mNodes ) {
+		if ( node->getMarker() == marker )
+			style.addStyle( node );
+	}
+	return style;
 }
 
 bool StyleSheet::markerExists( const Uint32& marker ) const {

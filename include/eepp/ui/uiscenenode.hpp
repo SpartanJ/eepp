@@ -13,6 +13,7 @@ class Font;
 
 namespace EE { namespace UI {
 
+class UITheme;
 class UIThemeManager;
 class UIIconThemeManager;
 class UIEventDispatcher;
@@ -86,7 +87,7 @@ class EE_API UISceneNode : public SceneNode {
 							const bool& forceReloadStyle = true );
 
 	void combineStyleSheet( const std::string& inlineStyleSheet,
-							const bool& forceReloadStyle = true );
+							const bool& forceReloadStyle = true, const Uint32& marker = 0 );
 
 	CSS::StyleSheet& getStyleSheet();
 
@@ -167,6 +168,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	void setThreadPool( const std::shared_ptr<ThreadPool>& threadPool );
 
+	void setTheme( UITheme* theme );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -240,6 +243,8 @@ class EE_API UISceneNode : public SceneNode {
 	CSS::MediaFeatures getMediaFeatures() const;
 
 	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent, const Uint32& marker );
+
+	void setTheme( UITheme* theme, Node* to );
 };
 
 }} // namespace EE::UI

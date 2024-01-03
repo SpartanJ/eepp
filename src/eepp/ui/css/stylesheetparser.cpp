@@ -14,6 +14,7 @@
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/ui/css/stylesheetselectorparser.hpp>
+#include <iostream>
 
 using namespace EE::Network;
 using namespace EE::System;
@@ -85,6 +86,13 @@ bool StyleSheetParser::loadFromString( const std::string& str ) {
 		return false;
 
 	return loadFromMemory( (const Uint8*)&str[0], str.size() );
+}
+
+bool StyleSheetParser::loadFromString( const std::string_view& str ) {
+	if ( str.empty() )
+		return false;
+
+	return loadFromMemory( (const Uint8*)str.data(), str.size() );
 }
 
 StyleSheet& StyleSheetParser::getStyleSheet() {

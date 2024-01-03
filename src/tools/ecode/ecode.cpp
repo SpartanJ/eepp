@@ -44,6 +44,8 @@ bool firstFrame = true;
 bool firstUpdate = true;
 App* appInstance = nullptr;
 
+static const Uint32 APP_LAYOUT_STYLE_MARKER = String::hash( "app_layout_style" );
+
 void appLoop() {
 	appInstance->mainLoop();
 }
@@ -1779,6 +1781,10 @@ void App::setTheme( const std::string& path ) {
 	}
 
 	mUISceneNode->setStyleSheet( theme->getStyleSheet() );
+
+	if ( !mAppStyleSheet.isEmpty() )
+		mUISceneNode->getStyleSheet().combineStyleSheet( mAppStyleSheet );
+
 	mUISceneNode
 		->getUIThemeManager()
 		//->setDefaultEffectsEnabled( true )
@@ -1786,6 +1792,8 @@ void App::setTheme( const std::string& path ) {
 		->setDefaultFont( mFont )
 		->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) )
 		->add( theme );
+
+	mUISceneNode->setTheme( theme );
 
 	mUISceneNode->getRoot()->addClass( "appbackground" );
 
@@ -3490,7 +3498,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		}
 		)css",
 											 mConfig.ui.panelFontSize.toString().c_str() ) );
-		mUISceneNode->combineStyleSheet( panelUI, false );
+		mUISceneNode->combineStyleSheet( panelUI, false, APP_LAYOUT_STYLE_MARKER );
 
 		const auto baseUI = (
 #include "applayout.xml.hpp"
@@ -3510,7 +3518,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		UIWidgetCreator::registerWidget( "mainlayout", UIMainLayout::New );
 		UIWidgetCreator::registerWidget( "statusbar", UIStatusBar::New );
 		UIWidgetCreator::registerWidget( "rellayce", UIRelativeLayoutCommandExecuter::New );
-		mUISceneNode->loadLayoutFromString( baseUI );
+		mUISceneNode->loadLayoutFromString( baseUI, nullptr, APP_LAYOUT_STYLE_MARKER );
+		mAppStyleSheet = mUISceneNode->getStyleSheet().getAllWithMarker( APP_LAYOUT_STYLE_MARKER );
 		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );
 		mUISceneNode->bind( "image_container", mImageLayout );

@@ -231,7 +231,7 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 		UISceneNode* uiSceneNode = mUIContainer->getSceneNode()->asType<UISceneNode>();
 
 		if ( !sStyleSheetParser.isLoaded() ) {
-			sStyleSheetParser.loadFromString( std::string( COLOR_PICKER_STYLE ) );
+			sStyleSheetParser.loadFromString( std::string_view{ COLOR_PICKER_STYLE } );
 		}
 
 		if ( sLastSceneNode != uiSceneNode ) {

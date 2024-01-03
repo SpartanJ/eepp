@@ -1,6 +1,7 @@
 #include <args/args.hxx>
 #include <eepp/ee.hpp>
 #include <eterm/terminal/terminaldisplay.hpp>
+#include <iostream>
 
 EE::Window::Window* win = NULL;
 std::shared_ptr<TerminalDisplay> terminal = nullptr;

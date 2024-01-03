@@ -304,7 +304,7 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 		} else if ( String::toLower( std::string( widget.name() ) ) == "style" ) {
 			CSS::StyleSheetParser parser;
 
-			if ( parser.loadFromString( widget.text().as_string() ) ) {
+			if ( parser.loadFromString( std::string_view{ widget.text().as_string() } ) ) {
 				parser.getStyleSheet().setMarker( marker );
 				combineStyleSheet( parser.getStyleSheet(), false );
 			}
@@ -383,11 +383,14 @@ void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet,
 }
 
 void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet,
-									 const bool& forceReloadStyle ) {
+									 const bool& forceReloadStyle, const Uint32& marker ) {
 	CSS::StyleSheetParser parser;
 
-	if ( parser.loadFromString( inlineStyleSheet ) )
+	if ( parser.loadFromString( inlineStyleSheet ) ) {
+		parser.getStyleSheet().setMarker( marker );
+
 		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle );
+	}
 }
 
 CSS::StyleSheet& UISceneNode::getStyleSheet() {
@@ -650,6 +653,18 @@ const bool& UISceneNode::isLoading() const {
 
 UIThemeManager* UISceneNode::getUIThemeManager() const {
 	return mUIThemeManager;
+}
+
+void UISceneNode::setTheme( UITheme* theme ) {
+	setTheme( theme, mRoot );
+}
+
+void UISceneNode::setTheme( UITheme* theme, Node* to ) {
+	to->forEachChild( [theme, this]( Node* node ) {
+		if ( node->isWidget() )
+			node->asType<UIWidget>()->setTheme( theme );
+		setTheme( theme, node );
+	} );
 }
 
 UIWidget* UISceneNode::getRoot() const {
