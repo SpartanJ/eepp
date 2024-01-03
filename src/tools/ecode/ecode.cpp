@@ -16,6 +16,7 @@
 #include <args/args.hxx>
 #include <eepp/graphics/fontfamily.hpp>
 #include <filesystem>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
