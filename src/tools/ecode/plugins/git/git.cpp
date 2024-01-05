@@ -1,3 +1,4 @@
+
 #include "git.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
@@ -162,7 +163,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					rstatus = FileStatus::ModifiedSubmodule;
 
 				if ( rstatus != FileStatus::Unidentified ) {
-					if ( rstatus != FileStatus::ModifiedSubmodule )
+					if ( rstatus == FileStatus::ModifiedSubmodule )
 						modifiedSubmodule = true;
 					else
 						s.files.insert( { std::move( file ), rstatus } );

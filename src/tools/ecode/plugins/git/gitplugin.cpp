@@ -1,5 +1,5 @@
-#include "gitplugin.hpp"
 #include "eepp/ui/uistyle.hpp"
+#include "gitplugin.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -161,6 +161,67 @@ void GitPlugin::updateUI() {
 								String::hash( "git::status-update" ) );
 }
 
+void GitPlugin::updateStatusBarSync() {
+	if ( !mStatusBar )
+		getUISceneNode()->bind( "status_bar", mStatusBar );
+	if ( !mStatusBar )
+		return;
+
+	if ( !mStatusButton ) {
+		mStatusButton = UIPushButton::New();
+		mStatusButton->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent );
+		mStatusButton->setParent( mStatusBar );
+		mStatusButton->setId( "status_git" );
+		mStatusButton->setClass( "status_but" );
+		mStatusButton->setIcon( getManager()
+									->getUISceneNode()
+									->findIcon( "source-control" )
+									->getSize( PixelDensity::dpToPxI( 10 ) ) );
+		mStatusButton->reloadStyle( true, true );
+		mStatusButton->getTextBox()->setUsingCustomStyling( true );
+		auto childCount = mStatusBar->getChildCount();
+		if ( childCount > 2 )
+			mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
+	}
+
+	mStatusButton->setVisible( !mGit->getGitFolder().empty() );
+
+	if ( mGit->getGitFolder().empty() )
+		return;
+
+	std::string text( mStatusBarDisplayModifications &&
+							  ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
+						  ? String::format( "%s (+%d / -%d)", mGitBranch.c_str(),
+											mGitStatus.totalInserts, mGitStatus.totalDeletions )
+						  : mGitBranch );
+
+	mStatusButton->setText( text );
+
+	if ( !mStatusBarDisplayModifications )
+		return;
+
+	if ( !mStatusCustomTokenizer.has_value() ) {
+		std::vector<SyntaxPattern> patterns;
+		auto fontColor( getVarColor( "--font" ) );
+		auto insertedColor( getVarColor( "--theme-success" ) );
+		auto deletedColor( getVarColor( "--theme-error" ) );
+		patterns.emplace_back(
+			SyntaxPattern( { ".*%((%+%d+)%s/%s(%-%d+)%)" }, { "normal", "keyword", "keyword2" } ) );
+		SyntaxDefinition syntaxDef( "custom_build", {}, std::move( patterns ) );
+		SyntaxColorScheme scheme( "status_bar_git",
+								  { { "normal"_sst, { fontColor } },
+									{ "keyword"_sst, { insertedColor } },
+									{ "keyword2"_sst, { deletedColor } } },
+								  {} );
+		mStatusCustomTokenizer = { std::move( syntaxDef ), std::move( scheme ) };
+	}
+
+	SyntaxTokenizer::tokenizeText( mStatusCustomTokenizer->def, mStatusCustomTokenizer->scheme,
+								   *mStatusButton->getTextBox()->getTextCache() );
+
+	mStatusButton->invalidateDraw();
+}
+
 void GitPlugin::updateStatusBar( bool force ) {
 	if ( !mGit || !mGitFound || !mStatusBarDisplayBranch )
 		return;
@@ -179,69 +240,7 @@ void GitPlugin::updateStatusBar( bool force ) {
 			return;
 		}
 
-		getUISceneNode()->runOnMainThread( [this] {
-			if ( !mStatusBar )
-				getUISceneNode()->bind( "status_bar", mStatusBar );
-			if ( !mStatusBar )
-				return;
-
-			if ( !mStatusButton ) {
-				mStatusButton = UIPushButton::New();
-				mStatusButton->setLayoutSizePolicy( SizePolicy::WrapContent,
-													SizePolicy::MatchParent );
-				mStatusButton->setParent( mStatusBar );
-				mStatusButton->setId( "status_git" );
-				mStatusButton->setClass( "status_but" );
-				mStatusButton->setIcon( getManager()
-											->getUISceneNode()
-											->findIcon( "source-control" )
-											->getSize( PixelDensity::dpToPxI( 10 ) ) );
-				mStatusButton->reloadStyle( true, true );
-				mStatusButton->getTextBox()->setUsingCustomStyling( true );
-				auto childCount = mStatusBar->getChildCount();
-				if ( childCount > 2 )
-					mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
-			}
-
-			mStatusButton->setVisible( !mGit->getGitFolder().empty() );
-
-			if ( mGit->getGitFolder().empty() )
-				return;
-
-			std::string text( mStatusBarDisplayModifications &&
-									  ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
-								  ? String::format( "%s (+%d / -%d)", mGitBranch.c_str(),
-													mGitStatus.totalInserts,
-													mGitStatus.totalDeletions )
-								  : mGitBranch );
-
-			mStatusButton->setText( text );
-
-			if ( !mStatusBarDisplayModifications )
-				return;
-
-			if ( !mStatusCustomTokenizer.has_value() ) {
-				std::vector<SyntaxPattern> patterns;
-				auto fontColor( getVarColor( "--font" ) );
-				auto insertedColor( getVarColor( "--theme-success" ) );
-				auto deletedColor( getVarColor( "--theme-error" ) );
-				patterns.emplace_back( SyntaxPattern( { ".*%((%+%d+)%s/%s(%-%d+)%)" },
-													  { "normal", "keyword", "keyword2" } ) );
-				SyntaxDefinition syntaxDef( "custom_build", {}, std::move( patterns ) );
-				SyntaxColorScheme scheme( "status_bar_git",
-										  { { "normal"_sst, { fontColor } },
-											{ "keyword"_sst, { insertedColor } },
-											{ "keyword2"_sst, { deletedColor } } },
-										  {} );
-				mStatusCustomTokenizer = { std::move( syntaxDef ), std::move( scheme ) };
-			}
-
-			SyntaxTokenizer::tokenizeText( mStatusCustomTokenizer->def,
-										   mStatusCustomTokenizer->scheme,
-										   *mStatusButton->getTextBox()->getTextCache() );
-
-			mStatusButton->invalidateDraw();
-		} );
+		getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
 	} );
 }
 

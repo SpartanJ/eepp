@@ -1602,10 +1602,11 @@ void App::updateDocInfo( TextDocument& doc ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
 		String infoStr( String::format(
-			"%s: %lld / %zu  %s: %lld    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
+			"%s: %lld / %zu  %s: %lld    %s    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
 			doc.getSelection().start().line() + 1, doc.linesCount(),
 			i18n( "col_abbr", "col" ).toUtf8().c_str(),
 			mSplitter->getCurEditor()->getCurrentColumnCount(),
+			doc.getSyntaxDefinition().getLanguageName().c_str(),
 			TextDocument::lineEndingToString( doc.getLineEnding() ).c_str() ) );
 		mDocInfo->debounce( [this, infoStr] { mDocInfo->setText( infoStr ); }, Time::Zero,
 							String::hash( "ecode::doc_info::update" ) );

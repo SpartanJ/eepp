@@ -90,6 +90,8 @@ class GitPlugin : public PluginBase {
 
 	void updateStatusBar( bool force = false );
 
+	void updateStatusBarSync();
+
 	void updateUI();
 
 	void updateUINow( bool force = false );
