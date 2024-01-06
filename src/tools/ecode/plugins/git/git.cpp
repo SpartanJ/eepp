@@ -45,7 +45,7 @@ void Git::git( const std::string& args, const std::string& projectDir, std::stri
 
 void Git::gitSubmodules( const std::string& args, const std::string& projectDir,
 						 std::string& buf ) {
-	git( String::format( "submodule foreach \"git %s\"", args.c_str() ), projectDir, buf );
+	git( String::format( "submodule foreach \"git %s\"", args ), projectDir, buf );
 }
 
 std::string Git::branch( const std::string& projectDir ) {
@@ -227,7 +227,7 @@ Git::Blame Git::blame( const std::string& filepath, std::size_t line ) const {
 
 	auto commitMessage = getText( "summary"sv );
 
-	git( String::format( "rev-parse --short %s", commitHash.c_str() ), workingDir, buf );
+	git( String::format( "rev-parse --short %s", commitHash ), workingDir, buf );
 
 	auto commitShortHash = String::rTrim( buf, '\n' );
 

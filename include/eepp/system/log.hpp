@@ -151,31 +151,45 @@ class EE_API Log : protected Mutex {
 	}
 
 	template <class... Args> static void debug( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Debug, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Debug, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void info( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Info, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Info, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void notice( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Notice, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Notice, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void warning( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Warning, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Warning, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void error( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Error, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Error, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void critical( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Critical, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Critical, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void assertLog( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Assert, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Assert, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
   protected:

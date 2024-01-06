@@ -917,34 +917,6 @@ void String::formatBuffer( char* Buffer, int BufferSize, const char* format, ...
 	va_end( args );
 }
 
-std::string String::format( const char* format, ... ) {
-	int n, size = 256;
-	std::string tstr( size, '\0' );
-
-	va_list args;
-
-	va_start( args, format );
-
-	while ( 1 ) {
-		n = vsnprintf( &tstr[0], size, format, args );
-
-		if ( n > -1 && n < size ) {
-			tstr.resize( n );
-
-			va_end( args );
-
-			return tstr;
-		}
-
-		if ( n > -1 )	  // glibc 2.1
-			size = n + 1; // precisely what is needed
-		else			  // glibc 2.0
-			size *= 2;	  // twice the old size
-
-		tstr.resize( size );
-	}
-}
-
 String::String() {}
 
 String::String( char ansiChar, const std::locale& locale ) {

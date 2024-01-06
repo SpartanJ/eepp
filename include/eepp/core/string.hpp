@@ -13,6 +13,18 @@
 
 namespace EE {
 
+template <typename T> struct FormatArg {
+	static const T& get( const T& arg ) { return arg; }
+};
+
+template <> struct FormatArg<std::string> {
+	static const char* get( const std::string& arg ) { return arg.c_str(); }
+};
+
+template <> struct FormatArg<std::string_view> {
+	static const char* get( const std::string_view& arg ) { return arg.data(); }
+};
+
 /*
 ** The class was modified to fit EEPP own needs. This is not the original implementation from SFML2.
 ** Functions and methods are the same that in std::string to facilitate portability.
@@ -68,13 +80,6 @@ class EE_API String {
 		}
 
 		return 0;
-	}
-
-	static constexpr String::HashType hashCombine( String::HashType& hash, const char* str,
-												   Int64 len ) {
-		while ( --len >= 0 )
-			hash = ( ( hash << 5 ) + hash ) + *str++;
-		return hash;
 	}
 
 	static constexpr String::HashType hash( const char* str, Int64 len ) {
@@ -336,14 +341,20 @@ class EE_API String {
 		return !( iss >> f >> t ).fail();
 	}
 
-	/** Returning a std::string from a formated string */
-	static std::string format( const char* format, ... )
-#ifdef __GNUC__
-		/* This attribute is nice: it even works through gettext invokation. For
-		   example, gcc will complain that StrFormat(_("%s"), 42) is ill-formed. */
-		__attribute__( ( format( printf, 1, 2 ) ) )
-#endif
-		;
+	template <typename... Args>
+	static std::string format( std::string_view format, Args&&... args ) {
+		int size =
+			std::snprintf( nullptr, 0, format.data(),
+						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... ) +
+			1;
+		std::string result( size, 0 );
+		if ( size > 0 ) {
+			std::snprintf( &result[0], size, format.data(),
+						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
+			result.resize( size - 1 );
+		}
+		return result;
+	}
 
 	/** Format a char buffer */
 	static void formatBuffer( char* Buffer, int BufferSize, const char* format, ... );

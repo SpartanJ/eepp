@@ -63,8 +63,8 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 			saveConfig();
 			mWindow->close();
 		} );
-		msgBox->setTitle( String::format( i18n( "close_title", "Close %s?" ).toUtf8().c_str(),
-										  mWindowTitle.c_str() ) );
+		msgBox->setTitle(
+			String::format( i18n( "close_title", "Close %s?" ).toUtf8(), mWindowTitle ) );
 		msgBox->center();
 		msgBox->showWhenReady();
 		return false;
@@ -527,7 +527,7 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 
 	if ( !mArgs.empty() ) {
 		std::string strargs( String::join( mArgs ) );
-		Log::info( "ecode starting with these command line arguments: %s", strargs.c_str() );
+		Log::info( "ecode starting with these command line arguments: %s", strargs );
 	}
 
 	initPluginManager();
@@ -1602,12 +1602,11 @@ void App::updateDocInfo( TextDocument& doc ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
 		String infoStr( String::format(
-			"%s: %lld / %zu  %s: %lld    %s    %s", i18n( "line_abbr", "line" ).toUtf8().c_str(),
+			"%s: %lld / %zu  %s: %lld    %s    %s", i18n( "line_abbr", "line" ).toUtf8(),
 			doc.getSelection().start().line() + 1, doc.linesCount(),
-			i18n( "col_abbr", "col" ).toUtf8().c_str(),
-			mSplitter->getCurEditor()->getCurrentColumnCount(),
-			doc.getSyntaxDefinition().getLanguageName().c_str(),
-			TextDocument::lineEndingToString( doc.getLineEnding() ).c_str() ) );
+			i18n( "col_abbr", "col" ).toUtf8(), mSplitter->getCurEditor()->getCurrentColumnCount(),
+			doc.getSyntaxDefinition().getLanguageName(),
+			TextDocument::lineEndingToString( doc.getLineEnding() ) ) );
 		mDocInfo->debounce( [this, infoStr] { mDocInfo->setText( infoStr ); }, Time::Zero,
 							String::hash( "ecode::doc_info::update" ) );
 	}
@@ -1659,8 +1658,8 @@ void App::onColorSchemeChanged( const std::string& ) {
 	}
 
 	mNotificationCenter->addNotification(
-		String::format( i18n( "color_scheme_set", "Color scheme: %s" ).toUtf8().c_str(),
-						mSplitter->getCurrentColorScheme().getName().c_str() ) );
+		String::format( i18n( "color_scheme_set", "Color scheme: %s" ).toUtf8(),
+						mSplitter->getCurrentColorScheme().getName() ) );
 }
 
 void App::cleanUpRecentFiles() {
@@ -2619,7 +2618,7 @@ void App::loadDirTree( const std::string& path ) {
 	Clock* clock = eeNew( Clock, () );
 	mDirTreeReady = false;
 	mDirTree = std::make_shared<ProjectDirectoryTree>( path, mThreadPool, this );
-	Log::info( "Loading DirTree: %s", path.c_str() );
+	Log::info( "Loading DirTree: %s", path );
 	mDirTree->scan(
 		[&, clock]( ProjectDirectoryTree& dirTree ) {
 			Log::info( "DirTree read in: %.2fms. Found %ld files.",
@@ -3337,8 +3336,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mConfig.context.SharedGLContext = true;
 
 	mWindow = engine->createWindow( winSettings, mConfig.context );
-	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName().c_str(),
-			   ecode::Version::getCodename().c_str() );
+	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName(),
+			   ecode::Version::getCodename() );
 
 	if ( mWindow->isOpen() ) {
 		// Only verify GPU driver availability on Windows.
@@ -3499,7 +3498,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			font-size: %s;
 		}
 		)css",
-											 mConfig.ui.panelFontSize.toString().c_str() ) );
+											 mConfig.ui.panelFontSize.toString() ) );
 		mUISceneNode->combineStyleSheet( panelUI, false, APP_LAYOUT_STYLE_MARKER );
 
 		const auto baseUI = (
