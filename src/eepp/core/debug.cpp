@@ -70,9 +70,9 @@ void eePRINT( const char* format, ... ) {
 
 	va_list args;
 
-	while ( 1 ) {
-		va_start( args, format );
+	va_start( args, format );
 
+	while ( 1 ) {
 		n = vsnprintf( &buf[0], buf.size(), format, args );
 
 		if ( n > -1 && n < size ) {
@@ -100,9 +100,9 @@ void eePRINTL( const char* format, ... ) {
 
 	va_list args;
 
-	while ( 1 ) {
-		va_start( args, format );
+	va_start( args, format );
 
+	while ( 1 ) {
 		n = vsnprintf( &buf[0], buf.size(), format, args );
 
 		if ( n > -1 && n < size ) {
@@ -133,9 +133,9 @@ void eePRINTC( unsigned int cond, const char* format, ... ) {
 
 	va_list args;
 
-	while ( 1 ) {
-		va_start( args, format );
+	va_start( args, format );
 
+	while ( 1 ) {
 		n = vsnprintf( &buf[0], buf.size(), format, args );
 
 		if ( n > -1 && n < size ) {

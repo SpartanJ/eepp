@@ -923,9 +923,9 @@ std::string String::format( const char* format, ... ) {
 
 	va_list args;
 
-	while ( 1 ) {
-		va_start( args, format );
+	va_start( args, format );
 
+	while ( 1 ) {
 		n = vsnprintf( &tstr[0], size, format, args );
 
 		if ( n > -1 && n < size ) {

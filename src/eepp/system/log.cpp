@@ -242,9 +242,9 @@ void Log::writef( const char* format, ... ) {
 
 	va_list args;
 
-	while ( 1 ) {
-		va_start( args, format );
+	va_start( args, format );
 
+	while ( 1 ) {
 		n = vsnprintf( &tstr[0], size, format, args );
 
 		if ( n > -1 && n < size ) {
@@ -301,22 +301,17 @@ void Log::writef( const LogLevel& level, const char* format, ... ) {
 
 	int n, size = 256;
 	std::string tstr( size, '\0' );
-	bool first = true;
 	va_list args;
 
-	while ( 1 ) {
-		va_start( args, format );
+	va_start( args, format );
 
+	while ( 1 ) {
 		n = vsnprintf( &tstr[0], size, format, args );
 
 		if ( n > -1 && n < size ) {
 			tstr.resize( n );
 			tstr += '\n';
-
-			if ( first ) {
-				tstr = logLevelWithTimestamp( level, tstr, false );
-				first = false;
-			}
+			tstr = logLevelWithTimestamp( level, tstr, false );
 
 			if ( mKeepLog ) {
 				lock();
