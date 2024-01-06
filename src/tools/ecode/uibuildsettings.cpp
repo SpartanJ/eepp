@@ -145,9 +145,8 @@ class UICustomOutputParserWindow : public UIWindow {
 				return true;
 			} );
 
-		mOptDb = UIDataBind<ProjectOutputParserTypes>::New(
+		mDataBindHolder += UIDataBind<ProjectOutputParserTypes>::New(
 			&mTmpCfg.type, cpTypeddl, projectOutputParserTypesConverter, "selected-index" );
-
 		mDataBindHolder +=
 			UIDataBind<int>::New( &mTmpCfg.patternOrder.file, find<UIWidget>( "file_name_pos" ) );
 		mDataBindHolder +=
@@ -181,8 +180,7 @@ class UICustomOutputParserWindow : public UIWindow {
 	UIWidget* mLayoutCont{ nullptr };
 	ProjectBuildOutputParserConfig mTmpCfg;
 	ProjectBuildOutputParserConfig& mCfg;
-	UIDataBindHolder mDataBindHolder;
-	std::unique_ptr<UIDataBind<ProjectOutputParserTypes>> mOptDb;
+	UIDataBindHolder<int, std::string, ProjectOutputParserTypes> mDataBindHolder;
 
 	virtual void onWindowReady() {
 		forcedApplyStyle();
@@ -298,7 +296,7 @@ class UIBuildStep : public UILinearLayout {
 	UIBuildSettings* mBuildSettings{ nullptr };
 	size_t mStepNum{ 0 };
 	ProjectBuildStep* mStep;
-	UIDataBindHolder mDataBindHolder;
+	UIDataBindHolder<int, bool, std::string> mDataBindHolder;
 };
 
 static const auto SETTINGS_PANEL_XML = R"xml(

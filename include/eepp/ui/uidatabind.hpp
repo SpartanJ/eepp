@@ -247,15 +247,9 @@ class UIDataBindString {
 	}
 };
 
-class UIDataBindHolder {
+template <typename... Ts> class UIDataBindHolder {
   public:
-	using UIDataBindVariant =
-		std::variant<UIDataBindString::Ptr, UIDataBindBool::Ptr,
-					 std::unique_ptr<UIDataBind<Uint32>>, std::unique_ptr<UIDataBind<Int32>>,
-					 std::unique_ptr<UIDataBind<Uint64>>, std::unique_ptr<UIDataBind<Int64>>,
-					 std::unique_ptr<UIDataBind<Uint8>>, std::unique_ptr<UIDataBind<Int8>>,
-					 std::unique_ptr<UIDataBind<Uint16>>, std::unique_ptr<UIDataBind<Int16>>,
-					 std::unique_ptr<UIDataBind<float>>, std::unique_ptr<UIDataBind<double>>>;
+	using UIDataBindVariant = std::variant<std::unique_ptr<UIDataBind<Ts>>...>;
 
 	UIDataBindHolder& hold( UIDataBindVariant&& ptr ) {
 		mHolder.emplace_back( std::move( ptr ) );
@@ -271,6 +265,26 @@ class UIDataBindHolder {
 
   protected:
 	std::vector<UIDataBindVariant> mHolder;
+};
+
+template <typename... Ts> class UIDataBindHolderKV {
+  public:
+	using UIDataBindVariant = std::variant<std::unique_ptr<UIDataBind<Ts>>...>;
+
+	UIDataBindHolderKV& hold( std::string key, UIDataBindVariant&& ptr ) {
+		mHolder[std::move( key )] = std::move( ptr );
+		return *this;
+	}
+
+	UIDataBindHolderKV& operator+=( std::pair<std::string, UIDataBindVariant&&> pair ) {
+		mHolder[std::move( pair.first )] = std::move( pair.second );
+		return *this;
+	}
+
+	void clear() { mHolder.clear(); }
+
+  protected:
+	UnorderedMap<std::string, UIDataBindVariant> mHolder;
 };
 
 }} // namespace EE::UI
