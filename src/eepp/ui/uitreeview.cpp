@@ -239,23 +239,10 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 			Variant cls( getModel()->data( index, ModelRole::Class ) );
 			cell->setLoadingState( true );
 			if ( cls.isValid() ) {
-				// We analize each case to avoid unnecessary allocations
-				if ( cls.is( Variant::Type::StdString ) ) {
-					needsReloadStyle = cell->getClasses().empty() ||
-									   cell->getClasses().size() != 1 ||
-									   cls.asStdString() != cell->getClasses()[0];
-					cell->setClass( cls.asStdString() );
-				} else if ( cls.is( Variant::Type::String ) ) {
-					needsReloadStyle = cell->getClasses().empty() ||
-									   cell->getClasses().size() != 1 ||
-									   cls.asString().toUtf8() != cell->getClasses()[0];
-					cell->setClass( cls.asString() );
-				} else if ( cls.is( Variant::Type::cstr ) ) {
-					needsReloadStyle = cell->getClasses().empty() ||
-									   cell->getClasses().size() != 1 ||
-									   cls.asCStr() != cell->getClasses()[0];
-					cell->setClass( cls.asCStr() );
-				}
+				std::string clsStr( cls.toString() );
+				needsReloadStyle = cell->getClasses().empty() || cell->getClasses().size() != 1 ||
+								   clsStr != cell->getClasses()[0];
+				cell->setClass( clsStr );
 			} else {
 				needsReloadStyle = !cell->getClasses().empty();
 				cell->resetClass();
@@ -266,18 +253,8 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
-		if ( txt.isValid() ) {
-			if ( txt.is( Variant::Type::StdString ) )
-				cell->setText( txt.asStdString() );
-			else if ( txt.is( Variant::Type::String ) )
-				cell->setText( txt.asString() );
-			else if ( txt.is( Variant::Type::cstr ) )
-				cell->setText( txt.asCStr() );
-			else if ( txt.is( Variant::Type::Bool ) || txt.is( Variant::Type::Float ) ||
-					  txt.is( Variant::Type::Int ) || txt.is( Variant::Type::Uint ) ||
-					  txt.is( Variant::Type::Int64 ) || txt.is( Variant::Type::Uint64 ) )
-				cell->setText( txt.toString() );
-		}
+		if ( txt.isValid() )
+			cell->setText( txt.toString() );
 
 		bool hasChilds = false;
 

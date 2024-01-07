@@ -411,6 +411,15 @@ Anchor.error:hover {
 #project_view ScrollBar:focus-within {
 	opacity: 1;
 }
+#code_container TabWidget::TabBar ScrollBarMini {
+	opacity: 0;
+	transition: opacity 0.15;
+}
+#code_container TabWidget::TabBar:hover ScrollBarMini,
+#code_container TabWidget::TabBar ScrollBarMini.dragging,
+#code_container TabWidget::TabBar ScrollBarMini:focus-within {
+	opacity: 1;
+}
 </style>
 )html"
 

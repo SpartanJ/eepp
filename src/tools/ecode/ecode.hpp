@@ -570,6 +570,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 
+	void onTabCreated( UITab* tab, UIWidget* widget );
+
 	bool trySendUnlockedCmd( const KeyEvent& keyEvent );
 
 	FontTrueType* loadFont( const std::string& name, std::string fontPath,

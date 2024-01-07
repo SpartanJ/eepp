@@ -23,6 +23,8 @@ class EE_API UICodeEditorSplitter {
 	  public:
 		virtual ~Client(){};
 
+		virtual void onTabCreated( UITab* tab, UIWidget* widget ) = 0;
+
 		virtual void onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) = 0;
 
 		virtual void onCodeEditorFocusChange( UICodeEditor* editor ) = 0;

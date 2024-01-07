@@ -518,8 +518,8 @@ void StatusBuildOutputController::createContainer() {
 		auto idx = modelEvent->getModelIndex();
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			Variant vPath( model->data( idx, ModelRole::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
-				std::string path( vPath.asCStr() );
+			if ( vPath.isValid() && vPath.isString() ) {
+				std::string path( vPath.toString() );
 				UITab* tab = mSplitter->isDocumentOpen( path );
 				Variant lineNum( model->data( model->index( modelEvent->getModelIndex().row(), 1 ),
 											  ModelRole::Custom ) );

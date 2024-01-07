@@ -1,4 +1,5 @@
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
@@ -311,6 +312,43 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 			return UISelectButton::applyProperty( attribute );
 	}
 
+	return true;
+}
+
+Uint32 UITab::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_RMASK ) && getTabWidget() &&
+		 getTabWidget()->getEnabledCreateContextMenu() ) {
+		onCreateContextMenu( position, flags );
+	}
+	return UISelectButton::onMouseUp( position, flags );
+}
+
+bool UITab::onCreateContextMenu( const Vector2i& position, const Uint32& flags ) {
+	UITabWidget* tTabW = getTabWidget();
+	if ( !tTabW )
+		return false;
+
+	if ( tTabW->mCurrentMenu )
+		return false;
+
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
+	sendEvent( &event );
+
+	if ( menu->getCount() == 0 ) {
+		menu->close();
+		return false;
+	}
+
+	menu->setCloseOnHide( true );
+	Vector2f pos( position.asFloat() );
+	menu->nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, menu );
+	menu->setPixelsPosition( pos );
+	menu->show();
+	menu->addEventListener( Event::OnClose,
+							[tTabW]( const Event* ) { tTabW->mCurrentMenu = nullptr; } );
+	tTabW->mCurrentMenu = menu;
 	return true;
 }
 

@@ -1463,6 +1463,9 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 		editor->getColorScheme().getEditorColor( "background"_sst ).toHexString(), true,
 		StyleSheetSelectorRule::SpecificityImportant ) );
 
+	if ( tooltip->getText().empty() )
+		return;
+
 	const auto& syntaxDef = resp.contents[0].kind == LSPMarkupKind::MarkDown
 								? SyntaxDefinitionManager::instance()->getByLSPName( "markdown" )
 								: editor->getSyntaxDefinition();
@@ -1472,7 +1475,8 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 
 	tooltip->notifyTextChangedFromTextCache();
 
-	if ( editor->hasFocus() && !tooltip->isVisible() )
+	if ( editor->hasFocus() && !tooltip->isVisible() &&
+		 !tooltip->getTextCache()->getString().empty() )
 		tooltip->show();
 }
 

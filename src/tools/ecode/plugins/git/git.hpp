@@ -1,6 +1,5 @@
 #include <map>
 #include <string>
-#include <vector>
 
 namespace ecode {
 
@@ -23,18 +22,8 @@ class Git {
 		std::size_t line{ 0 };
 	};
 
-	struct DiffFile {
-		std::string file;
-		int inserts{ 0 };
-		int deletes{ 0 };
-
-		bool operator==( const DiffFile& other ) const {
-			return file == other.file && inserts == other.inserts && deletes == other.deletes;
-		}
-	};
-
-	enum FileStatus {
-		Unidentified,
+	enum class FileStatus {
+		Unknown,
 		Modified = 'M',
 		Added = 'A',
 		Renamed = 'R',
@@ -44,22 +33,31 @@ class Git {
 		Untracked = '?',
 		ModifiedSubmodule = 'm',
 	};
+	struct DiffFile {
+		std::string file;
+		int inserts{ 0 };
+		int deletes{ 0 };
+		FileStatus status{ FileStatus::Unknown };
+
+		bool operator==( const DiffFile& other ) const {
+			return file == other.file && inserts == other.inserts && deletes == other.deletes;
+		}
+	};
 
 	struct Status {
-		std::vector<DiffFile> modified;
 		int totalInserts{ 0 };
 		int totalDeletions{ 0 };
-		std::map<std::string, FileStatus> files;
+		std::map<std::string, DiffFile> files;
 
 		bool operator==( const Status& other ) const {
 			return totalInserts == other.totalInserts && totalDeletions == other.totalDeletions &&
-				   modified == other.modified && files == other.files;
+				   files == other.files;
 		}
 	};
 
 	Git( const std::string& projectDir = "", const std::string& gitPath = "" );
 
-	void git( const std::string& args, const std::string& projectDir, std::string& buf ) const;
+	bool git( const std::string& args, const std::string& projectDir, std::string& buf ) const;
 
 	void gitSubmodules( const std::string& args, const std::string& projectDir, std::string& buf );
 
@@ -76,6 +74,8 @@ class Git {
 	const std::string& getProjectPath() const;
 
 	const std::string& getGitFolder() const;
+
+	std::string setSafeDirectory( const std::string& projectDir ) const;
 
   protected:
 	std::string mGitPath;

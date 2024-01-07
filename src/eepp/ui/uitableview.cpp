@@ -125,18 +125,14 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 	// TODO: Improve best guess
 	if ( bestGuess && getItemCount() > 10 ) {
 		Variant dataTest( getModel()->data( getModel()->index( 0, colIndex ) ) );
-		bool isStdString = dataTest.is( Variant::Type::StdString );
-		bool isString = dataTest.is( Variant::Type::String );
-		if ( isStdString || isString || dataTest.is( Variant::Type::cstr ) ) {
+		if ( dataTest.isString() ) {
 			std::map<size_t, ModelIndex> lengths;
 			for ( size_t i = 0; i < getItemCount(); i++ ) {
 				ModelIndex index( getModel()->index( i, colIndex ) );
 				Variant data( getModel()->data( index ) );
 				if ( !data.isValid() )
 					continue;
-				size_t length =
-					isStdString ? data.asStdString().length()
-								: ( isString ? data.asString().length() : strlen( data.asCStr() ) );
+				size_t length = data.size();
 				if ( lengths.empty() || length > lengths.rbegin()->first )
 					lengths[length] = index;
 			}

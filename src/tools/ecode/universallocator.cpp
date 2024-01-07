@@ -367,8 +367,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
 					ModelRole::Display ) );
 				if ( vPath.isValid() && !String::startsWith( mLocateInput->getText(), ". " ) ) {
-					std::string path( vPath.is( Variant::Type::cstr ) ? vPath.asCStr()
-																	  : vPath.asStdString() );
+					std::string path( vPath.toString() );
 					if ( path.empty() )
 						return;
 

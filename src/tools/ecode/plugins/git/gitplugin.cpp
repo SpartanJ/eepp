@@ -1,5 +1,5 @@
-#include "eepp/ui/uistyle.hpp"
 #include "gitplugin.hpp"
+#include "eepp/ui/uistyle.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -274,7 +274,8 @@ void GitPlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	if ( mShuttingDown || isLoading() )
 		return;
 
-	if ( String::startsWith( file.getFilepath(), mGit->getGitFolder() ) )
+	if ( String::startsWith( file.getFilepath(), mGit->getGitFolder() ) &&
+		 file.getExtension() == "lock" )
 		return;
 
 	updateUI();

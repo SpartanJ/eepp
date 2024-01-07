@@ -512,6 +512,7 @@ UICodeEditorSplitter::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 	editor->sendEvent( static_cast<const Event*>( &docEvent ) );
 	mAboutToAddEditor = nullptr;
 	mFirstCodeEditor = false;
+	mClient->onTabCreated( tab, editor );
 	return std::make_pair( tab, editor );
 }
 
@@ -557,6 +558,7 @@ UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget*
 	} );
 	if ( focus )
 		tabWidget->setTabSelected( tab );
+	mClient->onTabCreated( tab, widget );
 	return std::make_pair( tab, widget );
 }
 
@@ -613,6 +615,7 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	tabWidget->setAllowRearrangeTabs( true );
 	tabWidget->setAllowDragAndDropTabs( true );
 	tabWidget->setAllowSwitchTabsInEmptySpaces( true );
+	tabWidget->setEnabledCreateContextMenu( true );
 	tabWidget->setFocusTabBehavior( UITabWidget::FocusTabBehavior::FocusOrder );
 	tabWidget->addEventListener( Event::OnTabSelected, [this]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
@@ -974,7 +977,8 @@ void UICodeEditorSplitter::closeTab( UIWidget* widget,
 			}
 		} else {
 			UITabWidget* tabWidget = tabWidgetFromWidget( widget );
-			tabWidget->removeTab( (UITab*)widget->getData(), true, false, focusTabBehavior );
+			if ( tabWidget )
+				tabWidget->removeTab( (UITab*)widget->getData(), true, false, focusTabBehavior );
 		}
 		if ( mCurEditor == widget )
 			mCurEditor = nullptr;

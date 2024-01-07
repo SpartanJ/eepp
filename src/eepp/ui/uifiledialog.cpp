@@ -151,7 +151,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			Variant vPath(
 				modelEvent->getModel()->data( modelEvent->getModelIndex(), ModelRole::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+			if ( vPath.isValid() && vPath.isString() ) {
 				bool shouldOpenFolder = false;
 				if ( allowFolderSelect() && modelEvent->getTriggerEvent() &&
 					 modelEvent->getTriggerEvent()->getType() == Event::EventType::KeyDown ) {

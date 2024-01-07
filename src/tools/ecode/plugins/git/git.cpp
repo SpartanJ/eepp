@@ -13,6 +13,18 @@ using namespace std::literals;
 
 namespace ecode {
 
+static int countLines( const std::string& text ) {
+	const char* startPtr = text.c_str();
+	const char* endPtr = text.c_str() + text.size();
+	size_t count = 0;
+	if ( startPtr != endPtr ) {
+		count = 1 + *startPtr == '\n' ? 1 : 0;
+		while ( ++startPtr && startPtr != endPtr )
+			count += ( '\n' == *startPtr ) ? 1 : 0;
+	}
+	return count;
+}
+
 static constexpr auto sNotCommitedYetHash = "0000000000000000000000000000000000000000";
 
 Git::Blame::Blame( const std::string& error ) : error( error ), line( 0 ) {}
@@ -35,12 +47,15 @@ Git::Git( const std::string& projectDir, const std::string& gitPath ) : mGitPath
 		setProjectPath( projectDir );
 }
 
-void Git::git( const std::string& args, const std::string& projectDir, std::string& buf ) const {
+bool Git::git( const std::string& args, const std::string& projectDir, std::string& buf ) const {
 	buf.clear();
 	Process p;
 	p.create( mGitPath, args, Process::CombinedStdoutStderr | Process::Options::NoWindow,
 			  { { "LC_ALL", "en_US.UTF-8" } }, projectDir.empty() ? mProjectPath : projectDir );
 	p.readAllStdOut( buf );
+	int retCode;
+	p.join( &retCode );
+	return EXIT_SUCCESS == retCode;
 }
 
 void Git::gitSubmodules( const std::string& args, const std::string& projectDir,
@@ -50,8 +65,9 @@ void Git::gitSubmodules( const std::string& args, const std::string& projectDir,
 
 std::string Git::branch( const std::string& projectDir ) {
 	std::string buf;
-	git( "rev-parse --abbrev-ref HEAD", projectDir, buf );
-	return String::rTrim( buf, '\n' );
+	if ( git( "rev-parse --abbrev-ref HEAD", projectDir, buf ) )
+		return String::rTrim( buf, '\n' );
+	return "HEAD";
 }
 
 bool Git::setProjectPath( const std::string& projectPath ) {
@@ -89,6 +105,13 @@ const std::string& Git::getGitFolder() const {
 	return mGitFolder;
 }
 
+std::string Git::setSafeDirectory( const std::string& projectDir ) const {
+	std::string dir( projectDir.empty() ? mProjectPath : projectDir );
+	std::string buf;
+	git( String::format( "config --global --add safe.directory %s", dir ), dir, buf );
+	return buf;
+}
+
 bool Git::hasSubmodules( const std::string& projectDir ) {
 	return ( !projectDir.empty() && FileSystem::fileExists( projectDir + ".gitmodules" ) ) ||
 		   ( !mProjectPath.empty() && FileSystem::fileExists( mProjectPath + ".gitmodules" ) );
@@ -99,7 +122,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	static constexpr auto STATUS_CMD = "-c color.status=never status -b -u -s";
 	Status s;
 	std::string buf;
-	git( DIFF_CMD, projectDir, buf );
+	if ( !git( DIFF_CMD, projectDir, buf ) )
+		return s;
 	auto parseNumStat = [&s, &buf]() {
 		auto lastNL = 0;
 		auto nextNL = buf.find_first_of( '\n' );
@@ -114,7 +138,14 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				int deletes;
 				if ( String::fromString( inserts, inserted ) &&
 					 String::fromString( deletes, deleted ) ) {
-					s.modified.push_back( { std::move( file ), inserts, deletes } );
+					auto fileIt = s.files.find( file );
+					if ( fileIt != s.files.end() ) {
+						fileIt->second.file = std::move( file );
+						fileIt->second.inserts = inserts;
+						fileIt->second.deletes = deletes;
+					} else {
+						s.files.insert( { file, { file, inserts, deletes } } );
+					}
 					s.totalInserts += inserts;
 					s.totalDeletions += deletes;
 				}
@@ -138,13 +169,13 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		auto lastNL = 0;
 		auto nextNL = buf.find_first_of( '\n' );
 		while ( nextNL != std::string_view::npos ) {
-			LuaPattern pattern( "\n([%s?][MARTUD?])%s(.*)" );
+			LuaPattern pattern( "\n([%sA?][MARTUD?%s])%s(.*)" );
 			LuaPattern::Range matches[3];
 			if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
 				auto status = buf.substr( matches[1].start, matches[1].end - matches[1].start );
 				String::trimInPlace( status );
 				auto file = buf.substr( matches[2].start, matches[2].end - matches[2].start );
-				FileStatus rstatus = FileStatus::Unidentified;
+				FileStatus rstatus = FileStatus::Unknown;
 				if ( "??" == status )
 					rstatus = FileStatus::Untracked;
 				else if ( "M" == status )
@@ -162,11 +193,16 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				else if ( "m" == status )
 					rstatus = FileStatus::ModifiedSubmodule;
 
-				if ( rstatus != FileStatus::Unidentified ) {
+				if ( rstatus != FileStatus::Unknown ) {
 					if ( rstatus == FileStatus::ModifiedSubmodule )
 						modifiedSubmodule = true;
-					else
-						s.files.insert( { std::move( file ), rstatus } );
+					else {
+						auto fileIt = s.files.find( file );
+						if ( fileIt != s.files.end() )
+							fileIt->second.status = rstatus;
+						else
+							s.files.insert( { file, { file, 0, 0, rstatus } } );
+					}
 				}
 			}
 			lastNL = nextNL;
@@ -180,6 +216,15 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	if ( modifiedSubmodule && submodules ) {
 		gitSubmodules( STATUS_CMD, projectDir, buf );
 		parseStatus();
+	}
+
+	for ( auto [_, val] : s.files ) {
+		if ( val.status == FileStatus::Added && val.inserts == 0 ) {
+			std::string fileText;
+			FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
+								 fileText );
+			val.inserts = countLines( fileText );
+		}
 	}
 
 	return s;
@@ -200,7 +245,9 @@ Git::Blame Git::blame( const std::string& filepath, std::size_t line ) const {
 	};
 
 	std::string workingDir( FileSystem::fileRemoveFileName( filepath ) );
-	git( String::format( "blame %s -p -L%zu,%zu", filepath.data(), line, line ), workingDir, buf );
+	if ( !git( String::format( "blame %s -p -L%zu,%zu", filepath.data(), line, line ), workingDir,
+			   buf ) )
+		return { buf };
 
 	if ( String::startsWith( buf, "fatal: " ) )
 		return { buf.substr( 7 ) };

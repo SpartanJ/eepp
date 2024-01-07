@@ -505,9 +505,9 @@ PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& m
 	for ( size_t i = 0; i < rowCount; ++i ) {
 		Variant dataName = model->data( model->index( i, 0 ) );
 		Variant dataPath = model->data( model->index( i, 1 ) );
-		if ( dataName.is( Variant::Type::cstr ) && dataPath.is( Variant::Type::cstr ) ) {
-			std::string fileName( dataName.asCStr() );
-			std::string filePath( dataPath.asCStr() );
+		if ( dataName.isString() && dataPath.isString() ) {
+			std::string fileName( dataName.toString() );
+			std::string filePath( dataPath.toString() );
 			if ( std::find( expectedNames.begin(), expectedNames.end(), fileName ) !=
 				 expectedNames.end() ) {
 				std::string closestDataPath;

@@ -3,6 +3,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitabwidget.hpp>
@@ -43,7 +44,7 @@ UITabWidget::UITabWidget() :
 		->setPosition( 0, mStyleConfig.TabHeight );
 
 	mTabScroll = UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
-	mTabScroll->setParent( this );
+	mTabScroll->setParent( mTabBar );
 	mTabScroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
 	mTabScroll->on( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
 	mTabScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
@@ -53,7 +54,12 @@ UITabWidget::UITabWidget() :
 	applyDefaultTheme();
 }
 
-UITabWidget::~UITabWidget() {}
+UITabWidget::~UITabWidget() {
+	if ( mCurrentMenu ) {
+		mCurrentMenu->clearEventListener();
+		mCurrentMenu = nullptr;
+	}
+}
 
 Uint32 UITabWidget::getType() const {
 	return UI_TYPE_TABWIDGET;
@@ -453,6 +459,8 @@ void UITabWidget::zorderTabs() {
 		if ( mTabSelectedIndex + 1 < mTabs.size() )
 			mTabs[mTabSelectedIndex + 1]->addClass( "next" );
 	}
+
+	mTabScroll->toFront();
 }
 
 void UITabWidget::orderTabs() {
@@ -871,6 +879,14 @@ void UITabWidget::setFocusTabBehavior( UITabWidget::FocusTabBehavior focusTabBeh
 	mFocusTabBehavior = focusTabBehavior;
 }
 
+bool UITabWidget::getEnabledCreateContextMenu() const {
+	return mEnabledCreateContextMenu;
+}
+
+void UITabWidget::setEnabledCreateContextMenu( bool enabledCreateContextMenu ) {
+	mEnabledCreateContextMenu = enabledCreateContextMenu;
+}
+
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	if ( NULL != tab && NULL != tab->getOwnedWidget() ) {
 		tab->getOwnedWidget()->setParent( mNodeContainer );
@@ -1042,9 +1058,12 @@ void UITabWidget::updateScrollBar() {
 }
 
 void UITabWidget::updateScroll() {
-	if ( mTabScroll->isVisible() )
-		mTabBar->setPixelsPosition(
-			{ mPaddingPx.Left + -mTabScroll->getValue(), mTabBar->getPixelsPosition().y } );
+	if ( mTabScroll->isVisible() ) {
+		Vector2f newPos{ mPaddingPx.Left + -mTabScroll->getValue(),
+						 mTabBar->getPixelsPosition().y };
+		mTabBar->setPixelsPosition( newPos );
+		mTabScroll->setPixelsPosition( { -newPos.x, mTabScroll->getPixelsPosition().y } );
+	}
 }
 
 }} // namespace EE::UI

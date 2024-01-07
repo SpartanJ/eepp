@@ -42,6 +42,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	virtual void onDocumentLoaded( UICodeEditor*, const std::string& );
 
+	virtual void onTabCreated( UITab*, UIWidget* ) {}
+
 	void updateLayoutFunc( const InvalidationType& invalidator );
 	void updateStyleSheetFunc( const InvalidationType& invalidator );
 	void updateBaseStyleSheetFunc( const InvalidationType& invalidator );

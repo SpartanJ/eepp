@@ -1648,6 +1648,55 @@ void App::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	syncProjectTreeWithEditor( editor );
 }
 
+void App::onTabCreated( UITab* tab, UIWidget* ) {
+	tab->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_TAB ) )
+			return;
+		const ContextMenuEvent* menuEvent = static_cast<const ContextMenuEvent*>( event );
+		UIPopUpMenu* menu = menuEvent->getMenu();
+		if ( nullptr == menu )
+			return;
+		UITab* tab = event->getNode()->asType<UITab>();
+		if ( !tab->getTabWidget() )
+			return;
+		menu->add( i18n( "editor_tab_menu_close_tab", "Close Tab" ) )->setId( "close-tab" );
+		menu->add( i18n( "editor_tab_menu_close_other_tabs", "Close Other Tabs" ) )
+			->setId( "close-other-tabs" );
+		menu->add( i18n( "editor_tab_menu_close_all_tabs", "Close All Tabs" ) )
+			->setId( "close-all-tabs" );
+		menu->addEventListener( Event::OnItemClicked, [tab, this]( const Event* event ) {
+			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+			UITabWidget* tabW = tab->getTabWidget();
+			if ( "close-tab" == item->getId() ) {
+				mSplitter->closeTab( tab->getOwnedWidget()->asType<UIWidget>(),
+									 UITabWidget::FocusTabBehavior::Closest );
+			} else if ( "close-other-tabs" == item->getId() ) {
+				size_t tabCount = tabW->getTabCount();
+				std::vector<UITab*> tabs;
+				for ( size_t i = 0; i < tabCount; i++ ) {
+					if ( tabW->getTab( i ) != tab )
+						tabs.push_back( tabW->getTab( i ) );
+				}
+				for ( auto* tab : tabs ) {
+					mSplitter->closeTab( tab->getOwnedWidget()->asType<UIWidget>(),
+										 UITabWidget::FocusTabBehavior::Closest );
+				}
+			} else if ( "close-all-tabs" == item->getId() ) {
+				size_t tabCount = tabW->getTabCount();
+				std::vector<UITab*> tabs;
+				for ( size_t i = 0; i < tabCount; i++ )
+					tabs.push_back( tabW->getTab( i ) );
+				for ( auto* tab : tabs ) {
+					mSplitter->closeTab( tab->getOwnedWidget()->asType<UIWidget>(),
+										 UITabWidget::FocusTabBehavior::Closest );
+				}
+			}
+		} );
+	} );
+}
+
 void App::onColorSchemeChanged( const std::string& ) {
 	mSettings->updateColorSchemeMenu();
 	mGlobalSearchController->updateColorScheme( mSplitter->getCurrentColorScheme() );
@@ -2942,8 +2991,8 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 		if ( type == ModelEventType::Open || type == ModelEventType::OpenMenu ) {
 			Variant vPath(
 				modelEvent->getModel()->data( modelEvent->getModelIndex(), ModelRole::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
-				std::string path( vPath.asCStr() );
+			if ( vPath.isValid() && vPath.isString() ) {
+				std::string path( vPath.toString() );
 				if ( type == ModelEventType::Open ) {
 					UITab* tab = mSplitter->isDocumentOpen( path );
 					if ( !tab ) {
@@ -2977,8 +3026,8 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 			if ( !modelIndex.isValid() )
 				return;
 			Variant vPath( mProjectTreeView->getModel()->data( modelIndex, ModelRole::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
-				FileInfo fileInfo( vPath.asCStr() );
+			if ( vPath.isValid() && vPath.isString() ) {
+				FileInfo fileInfo( vPath.toString() );
 				if ( keyEvent->getKeyCode() == KEY_F2 ) {
 					renameFile( fileInfo );
 				} else {
