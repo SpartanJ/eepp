@@ -1183,6 +1183,8 @@ Drawable* App::findIcon( const std::string& name ) {
 }
 
 Drawable* App::findIcon( const std::string& name, const size_t iconSize ) {
+	if ( name.empty() )
+		return nullptr;
 	UIIcon* icon = mUISceneNode->findIcon( name );
 	if ( icon )
 		return icon->getSize( iconSize );
@@ -1659,39 +1661,72 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 		UITab* tab = event->getNode()->asType<UITab>();
 		if ( !tab->getTabWidget() )
 			return;
-		menu->add( i18n( "editor_tab_menu_close_tab", "Close Tab" ) )->setId( "close-tab" );
-		menu->add( i18n( "editor_tab_menu_close_other_tabs", "Close Other Tabs" ) )
-			->setId( "close-other-tabs" );
-		menu->add( i18n( "editor_tab_menu_close_all_tabs", "Close All Tabs" ) )
-			->setId( "close-all-tabs" );
+		const auto menuAdd = [menu, this]( const std::string& translateKey,
+										   const String& translateString, const std::string& icon,
+										   const std::string& cmd ) {
+			UIMenuItem* menuItem = menu->add( i18n( translateKey, translateString ),
+											  findIcon( icon ), getKeybind( cmd ) );
+			menuItem->setId( cmd );
+			return menuItem;
+		};
+
+		menuAdd( "editor_tab_menu_close_tab", "Close Tab", "document-close", "close-tab" );
+		menuAdd( "editor_tab_menu_close_other_tabs", "Close Other Tabs", "", "close-other-tabs" );
+		menuAdd( "editor_tab_menu_close_clean_tabs", "Close Clean Tabs", "", "close-clean-tabs" );
+		menuAdd( "editor_tab_menu_close_all_tabs", "Close All Tabs", "", "close-all-tabs" );
+		menuAdd( "editor_tab_menu_close_tabs_to_the_left", "Close Tabs To The Left", "",
+				 "close-tabs-to-the-left" );
+		menuAdd( "editor_tab_menu_close_tabs_to_the_right", "Close Tabs To The Right", "",
+				 "close-tabs-to-the-right" );
+
+		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			menu->addSeparator();
+
+			menuAdd( "split_left", "Split Left", "split-horizontal", "split-left" );
+			menuAdd( "split_right", "Split Right", "split-horizontal", "split-right" );
+			menuAdd( "split_top", "Split Top", "split-vertical", "split-top" );
+			menuAdd( "split_bottom", "Split Bottom", "split-vertical", "split-bottom" );
+
+			menu->addSeparator();
+
+			menuAdd( "open_containing_folder", "Open Containing Folder...", "folder-open",
+					 "open-containing-folder" );
+
+			menuAdd( "copy_containing_folder_path", "Copy Containing Folder Path...", "copy",
+					 "copy-containing-folder-path" );
+
+			menuAdd( "copy_file_path", "Copy File Path", "copy", "copy-file-path" );
+
+			menuAdd( "copy_file_path_and_position", "Copy File Path and Position", "copy",
+					 "copy-file-path-and-position" );
+		}
+
 		menu->addEventListener( Event::OnItemClicked, [tab, this]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-			UITabWidget* tabW = tab->getTabWidget();
-			if ( "close-tab" == item->getId() ) {
-				mSplitter->closeTab( tab->getOwnedWidget()->asType<UIWidget>(),
-									 UITabWidget::FocusTabBehavior::Closest );
-			} else if ( "close-other-tabs" == item->getId() ) {
-				size_t tabCount = tabW->getTabCount();
-				std::vector<UITab*> tabs;
-				for ( size_t i = 0; i < tabCount; i++ ) {
-					if ( tabW->getTab( i ) != tab )
-						tabs.push_back( tabW->getTab( i ) );
-				}
-				for ( auto* tab : tabs ) {
-					mSplitter->closeTab( tab->getOwnedWidget()->asType<UIWidget>(),
-										 UITabWidget::FocusTabBehavior::Closest );
-				}
-			} else if ( "close-all-tabs" == item->getId() ) {
-				size_t tabCount = tabW->getTabCount();
-				std::vector<UITab*> tabs;
-				for ( size_t i = 0; i < tabCount; i++ )
-					tabs.push_back( tabW->getTab( i ) );
-				for ( auto* tab : tabs ) {
-					mSplitter->closeTab( tab->getOwnedWidget()->asType<UIWidget>(),
-										 UITabWidget::FocusTabBehavior::Closest );
-				}
+			UICodeEditor* nce = nullptr;
+			UICodeEditor* ce = nullptr;
+			UIWidget* ncw = nullptr;
+			UIWidget* cw = nullptr;
+			if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+				nce = tab->getOwnedWidget()->asType<UICodeEditor>();
+				ce = mSplitter->getCurEditor();
+				if ( nce != ce )
+					mSplitter->setCurrentEditor( nce );
+			} else {
+				ncw = tab->getOwnedWidget()->asType<UIWidget>();
+				cw = mSplitter->getCurWidget();
+				if ( ncw != cw )
+					mSplitter->setCurrentWidget( ncw );
+			}
+			runCommand( item->getId() );
+			if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+				if ( nce != ce && mSplitter->checkEditorExists( ce ) )
+					mSplitter->setCurrentEditor( ce );
+			} else {
+				if ( ncw != cw && mSplitter->checkWidgetExists( cw ) )
+					mSplitter->setCurrentWidget( cw );
 			}
 		} );
 	} );

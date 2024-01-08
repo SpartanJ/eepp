@@ -53,7 +53,21 @@ class EE_API UICodeEditorSplitter {
 
 	virtual ~UICodeEditorSplitter();
 
-	virtual bool tryTabClose( UIWidget* widget, UITabWidget::FocusTabBehavior focusTabBehavior );
+	virtual bool tryTabClose( UIWidget* widget, UITabWidget::FocusTabBehavior focusTabBehavior,
+							  std::function<void()> onMsgBoxCloseCb = {} );
+
+	virtual bool tryCloseAllTabs( UIWidget* widget,
+								  UITabWidget::FocusTabBehavior focusTabBehavior );
+
+	virtual bool tryCloseOtherTabs( UIWidget* widget,
+									UITabWidget::FocusTabBehavior focusTabBehavior );
+
+	virtual bool tryCloseCleanTabs( UIWidget* widget,
+									UITabWidget::FocusTabBehavior focusTabBehavior );
+
+	virtual bool tryCloseTabsToDirection( UIWidget* widget,
+										  UITabWidget::FocusTabBehavior focusTabBehavior,
+										  bool toTheRight );
 
 	void closeTab( UIWidget* widget, UITabWidget::FocusTabBehavior focusTabBehavior );
 
@@ -223,6 +237,21 @@ class EE_API UICodeEditorSplitter {
 		t.setCommand( "close-tab", [this] {
 			tryTabClose( mCurWidget, UITabWidget::FocusTabBehavior::Default );
 		} );
+		t.setCommand( "close-other-tabs", [this] {
+			tryCloseOtherTabs( mCurWidget, UITabWidget::FocusTabBehavior::Default );
+		} );
+		t.setCommand( "close-all-tabs", [this] {
+			tryCloseAllTabs( mCurWidget, UITabWidget::FocusTabBehavior::Default );
+		} );
+		t.setCommand( "close-clean-tabs", [this] {
+			tryCloseCleanTabs( mCurWidget, UITabWidget::FocusTabBehavior::Default );
+		} );
+		t.setCommand( "close-tabs-to-the-left", [this] {
+			tryCloseTabsToDirection( mCurWidget, UITabWidget::FocusTabBehavior::Default, false );
+		} );
+		t.setCommand( "close-tabs-to-the-right", [this] {
+			tryCloseTabsToDirection( mCurWidget, UITabWidget::FocusTabBehavior::Default, true );
+		} );
 		t.setCommand( "create-new", [this] {
 			auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
 			if ( d.first != nullptr && d.second != nullptr ) {
@@ -308,6 +337,10 @@ class EE_API UICodeEditorSplitter {
 
 	void setThreadPool( const std::shared_ptr<ThreadPool>& threadPool );
 
+	bool checkEditorExists( UICodeEditor* ) const;
+
+	bool checkWidgetExists( UIWidget* ) const;
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -336,9 +369,9 @@ class EE_API UICodeEditorSplitter {
 						  const std::vector<SyntaxColorScheme>& colorSchemes,
 						  const std::string& initColorScheme );
 
-	bool checkEditorExists( UICodeEditor* ) const;
-
 	virtual void onTabClosed( const TabEvent* tabEvent );
+
+	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
 };
 
 }}} // namespace EE::UI::Tools

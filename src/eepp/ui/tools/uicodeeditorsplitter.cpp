@@ -63,7 +63,12 @@ std::vector<std::string> UICodeEditorSplitter::getUnlockedCommands() {
 												 "switch-to-previous-split",
 												 "switch-to-next-split",
 												 "switch-to-previous-colorscheme",
-												 "switch-to-next-colorscheme" };
+												 "switch-to-next-colorscheme",
+												 "close-other-tabs",
+												 "close-all-tabs",
+												 "close-clean-tabs",
+												 "close-tabs-to-the-left",
+												 "close-tabs-to-the-right" };
 	return unlockedCmds;
 }
 
@@ -920,7 +925,8 @@ void UICodeEditorSplitter::zoomReset() {
 }
 
 bool UICodeEditorSplitter::tryTabClose( UIWidget* widget,
-										UITabWidget::FocusTabBehavior focusTabBehavior ) {
+										UITabWidget::FocusTabBehavior focusTabBehavior,
+										std::function<void()> onMsgBoxCloseCb ) {
 	if ( !widget )
 		return false;
 
@@ -932,17 +938,24 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget,
 				return false;
 			mTryCloseMsgBox = UIMessageBox::New(
 				UIMessageBox::OK_CANCEL,
-				widget->getUISceneNode()->getTranslatorString(
-					"@string/confirm_close_tab",
-					"Do you really want to close this tab?\nAll changes will be lost." ) );
-			mTryCloseMsgBox->addEventListener( Event::OnConfirm, [&, editor]( const Event* ) {
-				closeTab( editor, focusTabBehavior );
-			} );
-			mTryCloseMsgBox->addEventListener( Event::OnClose, [this]( const Event* ) {
-				mTryCloseMsgBox = nullptr;
-				if ( mCurEditor )
-					mCurEditor->setFocus();
-			} );
+				String::format( widget->getUISceneNode()
+									->i18n( "@string/confirm_close_tab",
+											"Do you really want to close this tab?\nAll changes in "
+											"\"%s\" will be lost." )
+									.toUtf8(),
+								editor->getDocument().getFilename() ) );
+			mTryCloseMsgBox->addEventListener( Event::OnConfirm,
+											   [this, editor, focusTabBehavior]( const Event* ) {
+												   closeTab( editor, focusTabBehavior );
+											   } );
+			mTryCloseMsgBox->addEventListener( Event::OnClose,
+											   [this, onMsgBoxCloseCb]( const Event* ) {
+												   mTryCloseMsgBox = nullptr;
+												   if ( mCurEditor )
+													   mCurEditor->setFocus();
+												   if ( onMsgBoxCloseCb )
+													   onMsgBoxCloseCb();
+											   } );
 			mTryCloseMsgBox->setTitle( widget->getUISceneNode()->getTranslatorString(
 				"@string/ask_close_tab", "Close Tab?" ) );
 			mTryCloseMsgBox->center();
@@ -956,6 +969,108 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget,
 		closeTab( widget, focusTabBehavior );
 		return true;
 	}
+}
+
+void UICodeEditorSplitter::closeAllTabs( std::vector<UITab*> tabs,
+										 UITabWidget::FocusTabBehavior focusTabBehavior ) {
+	while ( !tabs.empty() ) {
+		UITab* tab = tabs.back();
+		if ( tab && !tryTabClose( tab->getOwnedWidget()->asType<UIWidget>(), focusTabBehavior,
+								  [this, tabs, focusTabBehavior]() mutable {
+									  tabs.pop_back();
+									  closeAllTabs( tabs, focusTabBehavior );
+								  } ) ) {
+			return;
+		} else {
+			tabs.pop_back();
+		}
+	}
+}
+
+bool UICodeEditorSplitter::tryCloseAllTabs( UIWidget* widget,
+											UITabWidget::FocusTabBehavior focusTabBehavior ) {
+	UITabWidget* tabW = tabWidgetFromWidget( widget );
+	if ( !tabW )
+		return false;
+
+	size_t tabCount = tabW->getTabCount();
+	std::vector<UITab*> tabs;
+	for ( size_t i = 0; i < tabCount; i++ )
+		tabs.push_back( tabW->getTab( i ) );
+
+	closeAllTabs( tabs, focusTabBehavior );
+
+	return true;
+}
+
+bool UICodeEditorSplitter::tryCloseOtherTabs( UIWidget* widget,
+											  UITabWidget::FocusTabBehavior focusTabBehavior ) {
+	UITabWidget* tabW = tabWidgetFromWidget( widget );
+	if ( !tabW )
+		return false;
+
+	size_t tabCount = tabW->getTabCount();
+	std::vector<UITab*> tabs;
+	for ( size_t i = 0; i < tabCount; i++ ) {
+		if ( tabW->getTab( i )->getOwnedWidget() != widget )
+			tabs.push_back( tabW->getTab( i ) );
+	}
+
+	closeAllTabs( tabs, focusTabBehavior );
+
+	return true;
+}
+
+bool UICodeEditorSplitter::tryCloseCleanTabs( UIWidget* widget,
+											  UITabWidget::FocusTabBehavior focusTabBehavior ) {
+	UITabWidget* tabW = tabWidgetFromWidget( widget );
+	if ( !tabW )
+		return false;
+
+	size_t tabCount = tabW->getTabCount();
+	std::vector<UITab*> tabs;
+	for ( size_t i = 0; i < tabCount; i++ ) {
+		UITab* tab = tabW->getTab( i );
+		UIWidget* widget =
+			tab->getOwnedWidget()->isWidget() ? tab->getOwnedWidget()->asType<UIWidget>() : nullptr;
+		if ( widget && widget->isType( UI_TYPE_CODEEDITOR ) &&
+			 !widget->asType<UICodeEditor>()->isDirty() )
+			tabs.push_back( tabW->getTab( i ) );
+	}
+
+	closeAllTabs( tabs, focusTabBehavior );
+
+	return true;
+}
+
+bool UICodeEditorSplitter::tryCloseTabsToDirection( UIWidget* widget,
+													UITabWidget::FocusTabBehavior focusTabBehavior,
+													bool toTheRight ) {
+	UITabWidget* tabW = tabWidgetFromWidget( widget );
+	if ( !tabW )
+		return false;
+
+	UITab* tab = tabW->getTabFromOwnedWidget( widget );
+	if ( !tab )
+		return false;
+	size_t tabIndex = tabW->getTabIndex( tab );
+	if ( tabIndex == eeINDEX_NOT_FOUND )
+		return false;
+
+	size_t tabCount = tabW->getTabCount();
+	std::vector<UITab*> tabs;
+
+	if ( toTheRight ) {
+		for ( size_t i = tabIndex + 1; i < tabCount; i++ )
+			tabs.push_back( tabW->getTab( i ) );
+	} else {
+		for ( size_t i = 0; i < tabIndex; i++ )
+			tabs.push_back( tabW->getTab( i ) );
+	}
+
+	closeAllTabs( tabs, focusTabBehavior );
+
+	return true;
 }
 
 void UICodeEditorSplitter::closeTab( UIWidget* widget,
@@ -1156,6 +1271,18 @@ void UICodeEditorSplitter::closeTabWidgets( UISplitter* splitter ) {
 		}
 		node = node->getNextNode();
 	}
+}
+
+bool UICodeEditorSplitter::checkWidgetExists( UIWidget* checkWidget ) const {
+	bool found = false;
+	forEachWidgetStoppable( [&]( UIWidget* widget ) {
+		if ( widget == checkWidget ) {
+			found = true;
+			return true;
+		}
+		return false;
+	} );
+	return found || checkWidget == nullptr;
 }
 
 bool UICodeEditorSplitter::checkEditorExists( UICodeEditor* checkEditor ) const {
