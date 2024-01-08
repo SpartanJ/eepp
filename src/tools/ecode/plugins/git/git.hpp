@@ -1,5 +1,6 @@
 #include <map>
 #include <string>
+#include <vector>
 
 namespace ecode {
 
