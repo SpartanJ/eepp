@@ -1,4 +1,3 @@
-
 #include "git.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
@@ -47,7 +46,7 @@ Git::Git( const std::string& projectDir, const std::string& gitPath ) : mGitPath
 		setProjectPath( projectDir );
 }
 
-bool Git::git( const std::string& args, const std::string& projectDir, std::string& buf ) const {
+int Git::git( const std::string& args, const std::string& projectDir, std::string& buf ) const {
 	buf.clear();
 	Process p;
 	p.create( mGitPath, args, Process::CombinedStdoutStderr | Process::Options::NoWindow,
@@ -55,7 +54,7 @@ bool Git::git( const std::string& args, const std::string& projectDir, std::stri
 	p.readAllStdOut( buf );
 	int retCode;
 	p.join( &retCode );
-	return EXIT_SUCCESS == retCode;
+	return retCode;
 }
 
 void Git::gitSubmodules( const std::string& args, const std::string& projectDir,
@@ -63,9 +62,16 @@ void Git::gitSubmodules( const std::string& args, const std::string& projectDir,
 	git( String::format( "submodule foreach \"git %s\"", args ), projectDir, buf );
 }
 
+bool Git::isGitRepo( const std::string& projectDir ) {
+	std::string buf;
+	git( "rev-parse --is-inside-work-tree", projectDir, buf );
+	String::trimInPlace( buf );
+	return "true" == buf;
+}
+
 std::string Git::branch( const std::string& projectDir ) {
 	std::string buf;
-	if ( git( "rev-parse --abbrev-ref HEAD", projectDir, buf ) )
+	if ( EXIT_SUCCESS == git( "rev-parse --abbrev-ref HEAD", projectDir, buf ) )
 		return String::rTrim( buf, '\n' );
 	return "HEAD";
 }
@@ -112,6 +118,93 @@ std::string Git::setSafeDirectory( const std::string& projectDir ) const {
 	return buf;
 }
 
+Git::CheckoutResult Git::checkout( const std::string& branch,
+								   const std::string& projectDir ) const {
+	std::string buf;
+	int retCode = git( String::format( "checkout %s", branch ), projectDir, buf );
+	Git::CheckoutResult res;
+	if ( EXIT_SUCCESS != retCode ) {
+		res.returnCode = retCode;
+		res.error = buf;
+	} else {
+		res.branch = buf;
+	}
+	return res;
+}
+
+Git::CheckoutResult Git::checkoutNewBranch( const std::string& newBranch,
+											const std::string& fromBranch,
+											const std::string& projectDir ) {
+	std::string buf;
+	std::string args( String::format( "checkout -q -b %s", newBranch ) );
+	if ( !fromBranch.empty() )
+		args += " " + fromBranch;
+	int retCode = git( args, projectDir, buf );
+	Git::CheckoutResult res;
+	if ( EXIT_SUCCESS != retCode ) {
+		res.returnCode = retCode;
+		res.error = buf;
+	} else {
+		res.branch = buf;
+	}
+	return res;
+}
+
+std::vector<Git::Branch> Git::getAllBranches( const std::string& projectDir ) {
+	return getAllBranchesAndTags( static_cast<RefType>( RefType::Head | RefType::Remote ),
+								  projectDir );
+}
+
+static Git::Branch parseLocalBranch( const std::string& raw ) {
+	static constexpr size_t len = std::string_view{ "refs/heads/"sv }.size();
+	return Git::Branch{ raw.substr( len ), std::string{}, Git::RefType::Head, std::string{} };
+}
+
+static Git::Branch parseRemoteBranch( const std::string& raw ) {
+	static constexpr size_t len = std::string_view( "refs/remotes/"sv ).size();
+	size_t indexOfRemote = raw.find_first_of( '/', len );
+	if ( indexOfRemote != std::string::npos )
+		return Git::Branch{ raw.substr( len ), raw.substr( len, indexOfRemote - len ),
+							Git::RefType::Remote, std::string{} };
+	return {};
+}
+
+std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::string& projectDir ) {
+	std::string args( "for-each-ref --format '%(refname)' --sort=-committerdate" );
+	if ( ref & RefType::Head ) {
+		args.append( " refs/heads" );
+	}
+	if ( ref & RefType::Remote ) {
+		args.append( " refs/remotes" );
+	}
+	if ( ref & RefType::Tag ) {
+		args.append( " refs/tags" );
+		args.append( " --sort=-taggerdate" );
+	}
+
+	std::vector<Branch> branches;
+	std::string buf;
+
+	if ( EXIT_SUCCESS != git( args, projectDir, buf ) )
+		return branches;
+
+	auto out = String::split( buf );
+	branches.reserve( out.size() );
+	for ( const auto& branch : out ) {
+		if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
+			branches.emplace_back( parseLocalBranch( branch ) );
+		} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
+			branches.emplace_back( parseRemoteBranch( branch ) );
+		} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
+			static constexpr size_t len = std::string_view{ "refs/tags/"sv }.size();
+			branches.push_back(
+				{ branch.substr( len ), std::string{}, RefType::Tag, std::string{} } );
+		}
+	}
+
+	return branches;
+}
+
 bool Git::hasSubmodules( const std::string& projectDir ) {
 	return ( !projectDir.empty() && FileSystem::fileExists( projectDir + ".gitmodules" ) ) ||
 		   ( !mProjectPath.empty() && FileSystem::fileExists( mProjectPath + ".gitmodules" ) );
@@ -122,7 +215,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	static constexpr auto STATUS_CMD = "-c color.status=never status -b -u -s";
 	Status s;
 	std::string buf;
-	if ( !git( DIFF_CMD, projectDir, buf ) )
+	if ( EXIT_SUCCESS != git( DIFF_CMD, projectDir, buf ) )
 		return s;
 	auto parseNumStat = [&s, &buf]() {
 		auto lastNL = 0;
@@ -218,7 +311,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		parseStatus();
 	}
 
-	for ( auto [_, val] : s.files ) {
+	for ( auto& [_, val] : s.files ) {
 		if ( val.status == FileStatus::Added && val.inserts == 0 ) {
 			std::string fileText;
 			FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
@@ -245,8 +338,9 @@ Git::Blame Git::blame( const std::string& filepath, std::size_t line ) const {
 	};
 
 	std::string workingDir( FileSystem::fileRemoveFileName( filepath ) );
-	if ( !git( String::format( "blame %s -p -L%zu,%zu", filepath.data(), line, line ), workingDir,
-			   buf ) )
+	if ( EXIT_SUCCESS !=
+		 git( String::format( "blame %s -p -L%zu,%zu", filepath.data(), line, line ), workingDir,
+			  buf ) )
 		return { buf };
 
 	if ( String::startsWith( buf, "fatal: " ) )

@@ -55,11 +55,40 @@ class Git {
 		}
 	};
 
+	struct Result {
+		std::string error;
+		int returnCode = 0;
+	};
+
+	struct CheckoutResult : public Result {
+		std::string branch;
+	};
+
+	enum RefType {
+		Head = 0x1,
+		Remote = 0x2,
+		Tag = 0x4,
+		All = 0x7,
+	};
+
+	struct Branch {
+		/** Branch name */
+		std::string name;
+		/** remote name, will be empty for local branches */
+		std::string remote;
+		/** Ref type @see RefType */
+		RefType type = All;
+		/** last commit on this branch, may be empty **/
+		std::string lastCommit;
+	};
+
 	Git( const std::string& projectDir = "", const std::string& gitPath = "" );
 
-	bool git( const std::string& args, const std::string& projectDir, std::string& buf ) const;
+	int git( const std::string& args, const std::string& projectDir, std::string& buf ) const;
 
 	void gitSubmodules( const std::string& args, const std::string& projectDir, std::string& buf );
+
+	bool isGitRepo( const std::string& projectDir );
 
 	Blame blame( const std::string& filepath, std::size_t line ) const;
 
@@ -76,6 +105,23 @@ class Git {
 	const std::string& getGitFolder() const;
 
 	std::string setSafeDirectory( const std::string& projectDir ) const;
+
+	CheckoutResult checkout( const std::string& branch, const std::string& projectDir = "" ) const;
+
+	CheckoutResult checkoutNewBranch( const std::string& newBranch,
+									  const std::string& fromBranch = "",
+									  const std::string& projectDir = "" );
+
+	/**
+	 * @brief get all local and remote branches
+	 */
+	std::vector<Branch> getAllBranches( const std::string& projectDir = "" );
+
+	/**
+	 * @brief get all local and remote branches + tags
+	 */
+	std::vector<Branch> getAllBranchesAndTags( RefType ref = RefType::All,
+											   const std::string& projectDir = "" );
 
   protected:
 	std::string mGitPath;
