@@ -1042,7 +1042,8 @@ void UITabWidget::updateScrollBar() {
 	mTabScroll->setPixelsSize(
 		{ getPixelsSize().getWidth(), mTabScroll->getPixelsSize().getHeight() } );
 	mTabScroll->setPixelsPosition(
-		{ 0, mTabBar->getPixelsSize().getHeight() - mTabScroll->getPixelsSize().getHeight() } );
+		{ -mTabBar->getPixelsPosition().x,
+		  mTabBar->getPixelsSize().getHeight() - mTabScroll->getPixelsSize().getHeight() } );
 
 	Float totalSize = mTabs.empty() ? 0
 									: mTabs.back()->getPixelsPosition().x +
@@ -1062,7 +1063,8 @@ void UITabWidget::updateScroll() {
 		Vector2f newPos{ mPaddingPx.Left + -mTabScroll->getValue(),
 						 mTabBar->getPixelsPosition().y };
 		mTabBar->setPixelsPosition( newPos );
-		mTabScroll->setPixelsPosition( { -newPos.x, mTabScroll->getPixelsPosition().y } );
+		mTabScroll->setPixelsPosition(
+			{ -mTabBar->getPixelsPosition().x, mTabScroll->getPixelsPosition().y } );
 	}
 }
 
