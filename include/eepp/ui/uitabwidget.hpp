@@ -183,6 +183,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setEnabledCreateContextMenu( bool enabledCreateContextMenu );
 
+	UIScrollBar* getTabScroll() const;
+
   protected:
 	friend class UITab;
 
@@ -245,7 +247,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	void updateScrollBar();
 
-	void updateScroll();
+	void updateScroll( bool updateFocus = false );
 
 	void updateTabSelected( FocusTabBehavior tabBehavior );
 

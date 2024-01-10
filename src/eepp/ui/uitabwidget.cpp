@@ -789,7 +789,7 @@ UITab* UITabWidget::setTabSelected( UITab* tab ) {
 		sendCommonEvent( Event::OnTabSelected );
 	}
 
-	updateScroll();
+	updateScroll( true );
 
 	return tab;
 }
@@ -885,6 +885,10 @@ bool UITabWidget::getEnabledCreateContextMenu() const {
 
 void UITabWidget::setEnabledCreateContextMenu( bool enabledCreateContextMenu ) {
 	mEnabledCreateContextMenu = enabledCreateContextMenu;
+}
+
+UIScrollBar* UITabWidget::getTabScroll() const {
+	return mTabScroll;
 }
 
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {
@@ -1058,13 +1062,31 @@ void UITabWidget::updateScrollBar() {
 	}
 }
 
-void UITabWidget::updateScroll() {
+void UITabWidget::updateScroll( bool updateFocus ) {
 	if ( mTabScroll->isVisible() ) {
-		Vector2f newPos{ mPaddingPx.Left + -mTabScroll->getValue(),
-						 mTabBar->getPixelsPosition().y };
-		mTabBar->setPixelsPosition( newPos );
+		mTabBar->setPixelsPosition(
+			{ mPaddingPx.Left - mTabScroll->getValue(), mTabBar->getPixelsPosition().y } );
 		mTabScroll->setPixelsPosition(
 			{ -mTabBar->getPixelsPosition().x, mTabScroll->getPixelsPosition().y } );
+
+		Rectf r = mTabScroll->getRectBox();
+		Rectf r2 = mTabSelected->getRectBox();
+
+		if ( updateFocus && mTabSelected && !( r.Left <= r2.Left && r.Right >= r2.Right ) ) {
+			size_t pIndex = mFocusHistory.size() >= 2
+								? getTabIndex( mFocusHistory.at( mFocusHistory.size() - 2 ) )
+								: getTabIndex( mFocusHistory.back() );
+
+			Float x = mTabSelectedIndex > pIndex
+						  ? eeclamp( mTabSelected->getPixelsPosition().x +
+										 mTabSelected->getPixelsSize().getWidth() -
+										 mTabScroll->getPixelsSize().getWidth(),
+									 0.f, mTabScroll->getMaxValue() )
+						  : eeclamp( mTabSelected->getPixelsPosition().x, 0.f,
+									 mTabScroll->getMaxValue() );
+
+			mTabScroll->setValue( x );
+		}
 	}
 }
 

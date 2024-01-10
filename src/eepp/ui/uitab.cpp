@@ -1,9 +1,12 @@
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI {
 
@@ -377,10 +380,20 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 			} else if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
 				tTabW->tryCloseTab( this, UITabWidget::FocusTabBehavior::Closest );
 			} else if ( flags & EE_BUTTONS_WUWD ) {
-				if ( flags & EE_BUTTON_WUMASK ) {
-					tTabW->selectPreviousTab();
-				} else if ( flags & EE_BUTTON_WDMASK ) {
-					tTabW->selectNextTab();
+				Input* input = getUISceneNode()->getWindow()->getInput();
+				if ( input->isModState( KeyMod::getDefaultModifier() ) ) {
+					UISlider* slider = tTabW->getTabScroll()->getSlider();
+					if ( flags & EE_BUTTON_WUMASK ) {
+						slider->setValue( slider->getValue() - slider->getClickStep() );
+					} else if ( flags & EE_BUTTON_WDMASK ) {
+						slider->setValue( slider->getValue() + slider->getClickStep() );
+					}
+				} else {
+					if ( flags & EE_BUTTON_WUMASK ) {
+						tTabW->selectPreviousTab();
+					} else if ( flags & EE_BUTTON_WDMASK ) {
+						tTabW->selectNextTab();
+					}
 				}
 			}
 			break;
