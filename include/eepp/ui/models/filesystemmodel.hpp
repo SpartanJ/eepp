@@ -233,8 +233,6 @@ class EE_API DiskDrivesModel : public Model {
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const;
 
-	virtual void update() { onModelUpdate(); }
-
   private:
 	explicit DiskDrivesModel( const std::vector<std::string>& data ) : mData( data ) {}
 

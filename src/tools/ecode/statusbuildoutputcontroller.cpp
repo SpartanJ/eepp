@@ -437,8 +437,6 @@ class StatusMessageModel : public Model {
 		return {};
 	}
 
-	virtual void update() { onModelUpdate(); }
-
 	virtual std::string columnName( const size_t& idx ) const {
 		switch ( idx ) {
 			case 2:

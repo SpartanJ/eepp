@@ -58,8 +58,6 @@ class LSPLocationModel : public Model {
 		return {};
 	}
 
-	void update() override { onModelUpdate(); }
-
   protected:
 	struct Location {
 		LSPLocation loc;
@@ -107,8 +105,6 @@ class LSPCodeActionModel : public Model {
 	}
 
 	bool hasCodeActions() const { return !mCodeActions.empty(); }
-
-	void update() override { onModelUpdate(); }
 
 	const LSPCodeAction& getCodeAction( size_t row ) const { return mCodeActions[row]; }
 

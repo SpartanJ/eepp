@@ -70,7 +70,7 @@ class EE_API Model {
 
 	virtual Variant data( const ModelIndex&, ModelRole = ModelRole::Display ) const = 0;
 
-	virtual void update() = 0;
+	virtual void update() { onModelUpdate(); }
 
 	virtual ModelIndex parentIndex( const ModelIndex& ) const { return {}; }
 

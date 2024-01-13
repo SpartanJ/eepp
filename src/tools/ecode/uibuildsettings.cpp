@@ -63,8 +63,6 @@ class OutputParserModel final : public Model {
 		return {};
 	}
 
-	virtual void update() { onModelUpdate(); }
-
   private:
 	std::vector<ProjectBuildOutputParserConfig>& mData;
 	std::function<String( const std::string&, const String& )> i18n;

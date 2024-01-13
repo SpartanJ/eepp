@@ -60,8 +60,6 @@ class FileListModel : public Model {
 		mIcons[idx] = icon;
 	}
 
-	virtual void update() { onModelUpdate(); }
-
   protected:
 	std::vector<std::string> mFiles;
 	std::vector<std::string> mNames;

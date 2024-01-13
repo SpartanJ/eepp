@@ -49,8 +49,6 @@ class CSSPropertiesModel final : public Model {
 		return {};
 	}
 
-	virtual void update() { onModelUpdate(); }
-
 	CSSPropertiesModel() {}
 
 	explicit CSSPropertiesModel( UIWidget* widget ) { setWidget( widget ); }

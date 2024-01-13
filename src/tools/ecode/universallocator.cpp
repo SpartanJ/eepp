@@ -50,8 +50,6 @@ class LSPSymbolInfoModel : public Model {
 		return {};
 	}
 
-	void update() override { onModelUpdate(); }
-
 	const LSPSymbolInformationList& getInfo() const { return mInfo; }
 
 	LSPSymbolInformation at( const size_t& idx ) {

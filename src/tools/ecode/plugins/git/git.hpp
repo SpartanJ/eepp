@@ -23,8 +23,8 @@ class Git {
 		std::size_t line{ 0 };
 	};
 
-	enum class FileStatus {
-		Unknown,
+	enum class FileStatus : char {
+		Unknown = ' ',
 		Modified = 'M',
 		Added = 'A',
 		Renamed = 'R',
@@ -34,6 +34,7 @@ class Git {
 		Untracked = '?',
 		ModifiedSubmodule = 'm',
 	};
+
 	struct DiffFile {
 		std::string file;
 		int inserts{ 0 };
@@ -45,10 +46,12 @@ class Git {
 		}
 	};
 
+	using FilesStatus = std::map<std::string, DiffFile>;
+
 	struct Status {
 		int totalInserts{ 0 };
 		int totalDeletions{ 0 };
-		std::map<std::string, DiffFile> files;
+		FilesStatus files;
 
 		bool operator==( const Status& other ) const {
 			return totalInserts == other.totalInserts && totalDeletions == other.totalDeletions &&
@@ -72,6 +75,23 @@ class Git {
 		All = 0x7,
 	};
 
+	static constexpr const char* HEAD = "head";
+	static constexpr const char* REMOTE = "remote";
+	static constexpr const char* TAG = "tag";
+	static constexpr const char* ALL = "all";
+
+	static const char* refTypeToString( RefType type ) {
+		switch ( type ) {
+			case Head:
+				return HEAD;
+			case Remote:
+				return REMOTE;
+			case Tag:
+				return TAG;
+			case All:
+				return ALL;
+		}
+	}
 	struct Branch {
 		/** Branch name */
 		std::string name;
@@ -81,6 +101,8 @@ class Git {
 		RefType type = All;
 		/** last commit on this branch, may be empty **/
 		std::string lastCommit;
+
+		const char* typeStr() const { return refTypeToString( type ); }
 	};
 
 	Git( const std::string& projectDir = "", const std::string& gitPath = "" );

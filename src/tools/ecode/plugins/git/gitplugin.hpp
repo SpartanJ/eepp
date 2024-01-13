@@ -4,8 +4,12 @@
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "git.hpp"
+#include <eepp/ui/models/model.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <optional>
+
+using namespace EE::UI::Models;
+using namespace EE::UI;
 
 namespace ecode {
 
@@ -95,6 +99,72 @@ class GitPlugin : public PluginBase {
 	void updateUI();
 
 	void updateUINow( bool force = false );
+};
+
+class GitBranchModel : public Model {
+  public:
+	enum Column { Name, Remote, Type, LastCommit };
+
+	GitBranchModel( std::vector<Git::Branch>&& branches ) : mBranches( std::move( branches ) ) {}
+
+	size_t rowCount( const ModelIndex& ) const { return mBranches.size(); }
+
+	size_t columnCount( const ModelIndex& ) const { return 4; }
+
+	Variant data( const ModelIndex& index, ModelRole role ) const {
+		if ( role == ModelRole::Display && index.row() < mBranches.size() ) {
+			const Git::Branch& branch = mBranches[index.row()];
+			switch ( index.column() ) {
+				case Column::Name:
+					return branch.name.c_str();
+				case Column::Remote:
+					return branch.remote.c_str();
+				case Column::Type:
+					return branch.typeStr();
+				case Column::LastCommit:
+					return branch.lastCommit.c_str();
+			}
+		}
+		return {};
+	}
+
+  protected:
+	std::vector<Git::Branch> mBranches;
+};
+
+class GitStatusModel : public Model {
+  public:
+	enum Column { File, Inserted, Removed, FileStatus };
+
+	GitStatusModel( Git::FilesStatus&& status ) {
+		mStatus.reserve( status.size() );
+		for ( auto& s : status )
+			mStatus.emplace_back( std::move( s.second ) );
+	}
+
+	size_t rowCount( const ModelIndex& ) const { return mStatus.size(); }
+
+	size_t columnCount( const ModelIndex& ) const { return 4; }
+
+	Variant data( const ModelIndex& index, ModelRole role ) const {
+		if ( role == ModelRole::Display && index.row() < mStatus.size() ) {
+			const Git::DiffFile& s = mStatus[index.row()];
+			switch ( index.column() ) {
+				case Column::File:
+					return s.file.c_str();
+				case Column::Inserted:
+					return s.inserts;
+				case Column::Removed:
+					return s.deletes;
+				case Column::FileStatus:
+					return Variant( std::string( static_cast<char>( s.status ), 1 ) );
+			}
+		}
+		return {};
+	}
+
+  protected:
+	std::vector<Git::DiffFile> mStatus;
 };
 
 } // namespace ecode

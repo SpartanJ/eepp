@@ -182,8 +182,6 @@ class ProjectSearch {
 			return Variant( EMPTY );
 		}
 
-		virtual void update() { onModelUpdate(); }
-
 		const Result& getResult() const { return mResult; }
 
 		void removeLastNewLineCharacter();

@@ -398,8 +398,6 @@ class PluginsModel : public Model {
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const;
 
-	virtual void update() { onModelUpdate(); }
-
 	PluginManager* getManager() const;
 
   protected:

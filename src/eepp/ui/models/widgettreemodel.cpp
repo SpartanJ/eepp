@@ -91,10 +91,6 @@ ModelIndex WidgetTreeModel::parentIndex( const ModelIndex& index ) const {
 	return createIndex( node->getParent()->getNodeIndex(), 0, node->getParent() );
 }
 
-void WidgetTreeModel::update() {
-	onModelUpdate();
-}
-
 ModelIndex WidgetTreeModel::getRoot() const {
 	return createIndex( 0, 0, mRoot );
 }

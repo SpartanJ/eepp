@@ -332,8 +332,6 @@ class HealthModel : public Model {
 		return {};
 	}
 
-	virtual void update() { onModelUpdate(); }
-
 	virtual bool classModelRoleEnabled() { return true; }
 
 	const FeaturesHealth::LangHealth& getHealthRow( size_t idx ) {
