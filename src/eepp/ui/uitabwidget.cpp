@@ -1069,23 +1069,25 @@ void UITabWidget::updateScroll( bool updateFocus ) {
 		mTabScroll->setPixelsPosition(
 			{ -mTabBar->getPixelsPosition().x, mTabScroll->getPixelsPosition().y } );
 
-		Rectf r = mTabScroll->getRectBox();
-		Rectf r2 = mTabSelected->getRectBox();
+		if ( updateFocus && mTabSelected ) {
+			Rectf r = mTabScroll->getRectBox();
+			Rectf r2 = mTabSelected->getRectBox();
 
-		if ( updateFocus && mTabSelected && !( r.Left <= r2.Left && r.Right >= r2.Right ) ) {
-			size_t pIndex = mFocusHistory.size() >= 2
-								? getTabIndex( mFocusHistory.at( mFocusHistory.size() - 2 ) )
-								: getTabIndex( mFocusHistory.back() );
+			if ( !( r.Left <= r2.Left && r.Right >= r2.Right ) ) {
+				size_t pIndex = mFocusHistory.size() >= 2
+									? getTabIndex( mFocusHistory.at( mFocusHistory.size() - 2 ) )
+									: getTabIndex( mFocusHistory.back() );
 
-			Float x = mTabSelectedIndex > pIndex
-						  ? eeclamp( mTabSelected->getPixelsPosition().x +
-										 mTabSelected->getPixelsSize().getWidth() -
-										 mTabScroll->getPixelsSize().getWidth(),
-									 0.f, mTabScroll->getMaxValue() )
-						  : eeclamp( mTabSelected->getPixelsPosition().x, 0.f,
-									 mTabScroll->getMaxValue() );
+				Float x = mTabSelectedIndex > pIndex
+							  ? eeclamp( mTabSelected->getPixelsPosition().x +
+											 mTabSelected->getPixelsSize().getWidth() -
+											 mTabScroll->getPixelsSize().getWidth(),
+										 0.f, mTabScroll->getMaxValue() )
+							  : eeclamp( mTabSelected->getPixelsPosition().x, 0.f,
+										 mTabScroll->getMaxValue() );
 
-			mTabScroll->setValue( x );
+				mTabScroll->setValue( x );
+			}
 		}
 	}
 }

@@ -1350,6 +1350,7 @@
 ../../src/thirdparty/efsw/src/test/efsw-test.cpp
 ../../src/tools/ecode/appconfig.cpp
 ../../src/tools/ecode/appconfig.hpp
+../../src/tools/ecode/applayout.xml.hpp
 ../../src/tools/ecode/commandpalette.cpp
 ../../src/tools/ecode/commandpalette.hpp
 ../../src/tools/ecode/ecode.cpp

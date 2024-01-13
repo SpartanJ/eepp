@@ -1513,6 +1513,11 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 					if ( editorExists( editor ) && !resp.contents.empty() &&
 						 !resp.contents[0].value.empty() ) {
 						editor->runOnMainThread( [editor, resp, position, this]() {
+							if ( !editor->getScreenRect().contains( editor->getUISceneNode()
+																		->getWindow()
+																		->getInput()
+																		->getMousePosf() ) )
+								return;
 							tryDisplayTooltip( editor, resp, position );
 						} );
 					}
@@ -1544,7 +1549,7 @@ void LSPClientPlugin::setHoverDelay( const Time& hoverDelay ) {
 	mHoverDelay = hoverDelay;
 }
 
-void LSPClientPlugin::onVersionUpgrade( Uint32 oldVersion, Uint32 currentVersion ) {
+void LSPClientPlugin::onVersionUpgrade( Uint32 oldVersion, Uint32 ) {
 	if ( oldVersion <= ECODE_VERSIONNUM( 0, 5, 0 ) ) {
 		mSemanticHighlighting = true;
 	}

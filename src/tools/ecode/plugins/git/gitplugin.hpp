@@ -112,7 +112,7 @@ class GitBranchModel : public Model {
 	size_t columnCount( const ModelIndex& ) const { return 4; }
 
 	Variant data( const ModelIndex& index, ModelRole role ) const {
-		if ( role == ModelRole::Display && index.row() < mBranches.size() ) {
+		if ( role == ModelRole::Display && index.row() < (Int64)mBranches.size() ) {
 			const Git::Branch& branch = mBranches[index.row()];
 			switch ( index.column() ) {
 				case Column::Name:
@@ -147,7 +147,7 @@ class GitStatusModel : public Model {
 	size_t columnCount( const ModelIndex& ) const { return 4; }
 
 	Variant data( const ModelIndex& index, ModelRole role ) const {
-		if ( role == ModelRole::Display && index.row() < mStatus.size() ) {
+		if ( role == ModelRole::Display && index.row() < (Int64)mStatus.size() ) {
 			const Git::DiffFile& s = mStatus[index.row()];
 			switch ( index.column() ) {
 				case Column::File:

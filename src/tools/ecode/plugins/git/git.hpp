@@ -91,6 +91,7 @@ class Git {
 			case All:
 				return ALL;
 		}
+		return nullptr;
 	}
 	struct Branch {
 		/** Branch name */
