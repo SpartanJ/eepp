@@ -24,6 +24,17 @@ static int countLines( const std::string& text ) {
 	return count;
 }
 
+static void readAllLines( const std::string_view& buf,
+						  std::function<void( const std::string_view& )> onLineRead ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( '\n' );
+	while ( nextNL != std::string_view::npos ) {
+		onLineRead( buf.substr( lastNL, nextNL - lastNL ) );
+		lastNL = nextNL + 1;
+		nextNL = buf.find_first_of( '\n', nextNL + 1 );
+	}
+}
+
 static constexpr auto sNotCommitedYetHash = "0000000000000000000000000000000000000000";
 
 Git::Blame::Blame( const std::string& error ) : error( error ), line( 0 ) {}
@@ -58,6 +69,7 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 		const_cast<Git*>( this )->mLastProjectPath = projectDir;
 		const_cast<Git*>( this )->mSubModulesUpdated = false;
 	}
+	Log::debug( "GitPlugin run: %s %s", mGitPath, args );
 	return retCode;
 }
 
@@ -159,16 +171,18 @@ std::vector<Git::Branch> Git::getAllBranches( const std::string& projectDir ) {
 								  projectDir );
 }
 
-static Git::Branch parseLocalBranch( const std::string& raw ) {
+static Git::Branch parseLocalBranch( const std::string_view& raw ) {
 	static constexpr size_t len = std::string_view{ "refs/heads/"sv }.size();
-	return Git::Branch{ raw.substr( len ), std::string{}, Git::RefType::Head, std::string{} };
+	return Git::Branch{ std::string{ raw.substr( len ) }, std::string{}, Git::RefType::Head,
+						std::string{} };
 }
 
-static Git::Branch parseRemoteBranch( const std::string& raw ) {
+static Git::Branch parseRemoteBranch( const std::string_view& raw ) {
 	static constexpr size_t len = std::string_view( "refs/remotes/"sv ).size();
 	size_t indexOfRemote = raw.find_first_of( '/', len );
 	if ( indexOfRemote != std::string::npos )
-		return Git::Branch{ raw.substr( len ), raw.substr( len, indexOfRemote - len ),
+		return Git::Branch{ std::string{ raw.substr( len ) },
+							std::string{ raw.substr( len, indexOfRemote - len ) },
 							Git::RefType::Remote, std::string{} };
 	return {};
 }
@@ -192,32 +206,21 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::str
 	if ( EXIT_SUCCESS != git( args, projectDir, buf ) )
 		return branches;
 
-	auto out = String::split( buf );
-	branches.reserve( out.size() );
-	for ( const auto& branch : out ) {
+	readAllLines( buf, [&branches, ref]( const std::string_view& line ) {
+		auto branch = String::trim( line, '\n' );
+		branch = String::trim( line, '\'' );
 		if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
 			branches.emplace_back( parseLocalBranch( branch ) );
 		} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
 			branches.emplace_back( parseRemoteBranch( branch ) );
 		} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
 			static constexpr size_t len = std::string_view{ "refs/tags/"sv }.size();
-			branches.push_back(
-				{ branch.substr( len ), std::string{}, RefType::Tag, std::string{} } );
+			branches.push_back( { std::string{ branch.substr( len ) }, std::string{}, RefType::Tag,
+								  std::string{} } );
 		}
-	}
+	} );
 
 	return branches;
-}
-
-static void readAllLines( const std::string_view& buf,
-						  std::function<void( const std::string_view& )> onLineRead ) {
-	auto lastNL = 0;
-	auto nextNL = buf.find_first_of( '\n' );
-	while ( nextNL != std::string_view::npos ) {
-		onLineRead( buf.substr( lastNL, nextNL - lastNL ) );
-		lastNL = nextNL;
-		nextNL = buf.find_first_of( '\n', nextNL + 1 );
-	}
 }
 
 std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
@@ -228,8 +231,8 @@ std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
 	readAllLines( buf, [&pattern, &submodules]( const std::string_view& line ) {
 		LuaPattern::Range matches[2];
 		if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
-			submodules.emplace_back(
-				line.substr( matches[1].start, matches[1].end - matches[1].start ) );
+			submodules.emplace_back( String::trim(
+				line.substr( matches[1].start, matches[1].end - matches[1].start ), '\n' ) );
 		}
 	} );
 	return submodules;

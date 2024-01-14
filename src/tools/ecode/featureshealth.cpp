@@ -266,9 +266,9 @@ class HealthModel : public Model {
 	}
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
-		static const char* SUCCESS = "theme-success";
-		static const char* ERROR = "theme-error";
-		static const char* NONE = "theme-none";
+		static const char* HEALTH_SUCCESS = "theme-success";
+		static const char* HEALTH_ERROR = "theme-error";
+		static const char* HEALTH_NONE = "theme-none";
 
 		eeASSERT( index.row() < (Int64)mData.size() );
 		static std::string none;
@@ -306,24 +306,24 @@ class HealthModel : public Model {
 			case ModelRole::Class: {
 				switch ( index.column() ) {
 					case 1:
-						return Variant( SUCCESS );
+						return Variant( HEALTH_SUCCESS );
 					case 2:
 						if ( !lang.lsp.name.empty() )
-							return Variant( lang.lsp.found ? SUCCESS : ERROR );
+							return Variant( lang.lsp.found ? HEALTH_SUCCESS : HEALTH_ERROR );
 						else
-							return Variant( NONE );
+							return Variant( HEALTH_NONE );
 						break;
 					case 3:
 						if ( !lang.linter.name.empty() )
-							return Variant( lang.linter.found ? SUCCESS : ERROR );
+							return Variant( lang.linter.found ? HEALTH_SUCCESS : HEALTH_ERROR );
 						else
-							return Variant( NONE );
+							return Variant( HEALTH_NONE );
 						break;
 					case 4:
 						if ( !lang.formatter.name.empty() )
-							return Variant( lang.formatter.found ? SUCCESS : ERROR );
+							return Variant( lang.formatter.found ? HEALTH_SUCCESS : HEALTH_ERROR );
 						else
-							return Variant( NONE );
+							return Variant( HEALTH_NONE );
 						break;
 					default: {
 					}

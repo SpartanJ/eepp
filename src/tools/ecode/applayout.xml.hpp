@@ -420,6 +420,12 @@ Anchor.error:hover {
 #code_container TabWidget::TabBar ScrollBarMini:focus-within {
 	opacity: 1;
 }
+.notbold {
+	font-style: normal;
+}
+.bold {
+	font-style: bold;
+}
 </style>
 )html"
 
