@@ -3578,7 +3578,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		}
 
 		std::string panelUI( String::format( R"css(
-		#project_view > treeview::row > treeview::cell > treeview::cell::text {
+		#panel treeview > treeview::row > treeview::cell > treeview::cell::text,
+		#panel treeview > treeview::row > table::cell > table::cell::text {
 			font-size: %s;
 		}
 		)css",

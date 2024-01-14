@@ -143,7 +143,7 @@ Git::CheckoutResult Git::checkout( const std::string& branch,
 		res.returnCode = retCode;
 		res.error = buf;
 	} else {
-		res.branch = buf;
+		res.branch = branch;
 	}
 	return res;
 }
@@ -218,6 +218,10 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::str
 			branches.push_back( { std::string{ branch.substr( len ) }, std::string{}, RefType::Tag,
 								  std::string{} } );
 		}
+	} );
+
+	std::sort( branches.begin(), branches.end(), []( const Branch& left, const Branch& right ) {
+		return left.type < right.type || left.name < right.name;
 	} );
 
 	return branches;

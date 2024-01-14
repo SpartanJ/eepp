@@ -915,6 +915,8 @@ void UITabWidget::tryCloseTab( UITab* tab, FocusTabBehavior focusTabBehavior ) {
 }
 
 void UITabWidget::swapTabs( UITab* left, UITab* right ) {
+	if ( !left || !right )
+		return;
 	Uint32 leftIndex = getTabIndex( left );
 	Uint32 rightIndex = getTabIndex( right );
 	if ( leftIndex != eeINDEX_NOT_FOUND && rightIndex != eeINDEX_NOT_FOUND ) {

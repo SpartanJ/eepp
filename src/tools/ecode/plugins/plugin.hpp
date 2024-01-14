@@ -1,6 +1,7 @@
 #ifndef ECODE_PLUGIN_HPP
 #define ECODE_PLUGIN_HPP
 
+#include "lsp/lspprotocol.hpp"
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 
@@ -40,7 +41,10 @@ class Plugin : public UICodeEditorPlugin {
 
 	String i18n( const std::string& key, const String& def ) const;
 
-	virtual void onVersionUpgrade( Uint32 oldVersion, Uint32 currentVersion ) {}
+	virtual void onVersionUpgrade( Uint32 /*oldVersion*/, Uint32 /*currentVersion*/ ) {}
+
+	void showMessage( LSPMessageType type, const std::string& message,
+					  const std::string& title = "" );
 
   protected:
 	PluginManager* mManager{ nullptr };

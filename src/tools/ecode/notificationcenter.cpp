@@ -14,10 +14,11 @@ NotificationCenter::NotificationCenter( UILayout* layout, PluginManager* pluginM
 					addNotification( sm.message, Seconds( 10 ) );
 			} else if ( msg.type == PluginMessageType::ShowDocument ) {
 				auto sd = msg.asShowDocument();
-				if ( !sd.uri.empty() )
+				if ( !sd.uri.empty() ) {
 					addShowRequest( sd.uri.toString(),
 									mLayout->getUISceneNode()->i18n( "open", "Open" ),
 									Seconds( 10 ) );
+				}
 			}
 			return {};
 		} );

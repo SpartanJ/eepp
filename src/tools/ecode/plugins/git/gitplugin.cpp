@@ -3,7 +3,9 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitreeview.hpp>
@@ -21,16 +23,25 @@ using json = nlohmann::json;
 namespace ecode {
 
 static const char* GIT_EMPTY = "";
-static const char* GIT_SUCCESS = "theme-success";
-static const char* GIT_ERROR = "theme-error";
+static const char* GIT_SUCCESS = "success";
+static const char* GIT_ERROR = "error";
 static const char* GIT_BOLD = "bold";
 static const char* GIT_NOT_BOLD = "notbold";
+static const std::string GIT_TAG = "tag";
+static const std::string GIT_REPO = "repo";
+
+static size_t hashBranches( const std::vector<Git::Branch>& branches ) {
+	size_t hash = 0;
+	for ( const auto& branch : branches )
+		hash = hashCombine( hash, String::hash( branch.name ), String::hash( branch.lastCommit ) );
+	return hash;
+}
 
 class GitBranchModel : public Model {
   public:
 	static std::shared_ptr<GitBranchModel> asModel( std::vector<Git::Branch>&& branches,
-													GitPlugin* gitPlugin ) {
-		return std::make_shared<GitBranchModel>( std::move( branches ), gitPlugin );
+													size_t hash, GitPlugin* gitPlugin ) {
+		return std::make_shared<GitBranchModel>( std::move( branches ), hash, gitPlugin );
 	}
 
 	enum Column { Name, Remote, Type, LastCommit };
@@ -54,8 +65,8 @@ class GitBranchModel : public Model {
 		return "";
 	}
 
-	GitBranchModel( std::vector<Git::Branch>&& branches, GitPlugin* gitPlugin ) :
-		mPlugin( gitPlugin ) {
+	GitBranchModel( std::vector<Git::Branch>&& branches, size_t hash, GitPlugin* gitPlugin ) :
+		mPlugin( gitPlugin ), mHash( hash ) {
 		std::map<std::string, std::vector<Git::Branch>> branchTypes;
 		for ( auto& branch : branches ) {
 			auto& type = branchTypes[refTypeToString( branch.type )];
@@ -96,6 +107,17 @@ class GitBranchModel : public Model {
 		return {};
 	}
 
+	UIIcon* iconFor( const ModelIndex& index ) const {
+		if ( index.column() == (Int64)treeColumn() ) {
+			if ( index.hasParent() ) {
+				Git::Branch* branch = static_cast<Git::Branch*>( index.internalData() );
+				return mPlugin->getUISceneNode()->findIcon(
+					branch->type == Git::RefType::Tag ? GIT_TAG : GIT_REPO );
+			}
+		}
+		return nullptr;
+	}
+
 	Variant data( const ModelIndex& index, ModelRole role ) const {
 		switch ( role ) {
 			case ModelRole::Display: {
@@ -107,6 +129,10 @@ class GitBranchModel : public Model {
 				const Git::Branch& branch = mBranches[index.internalId()].data[index.row()];
 				switch ( index.column() ) {
 					case Column::Name:
+						if ( branch.type == Git::Remote &&
+							 String::startsWith( branch.name, "origin/" ) ) {
+							return Variant( std::string_view{ branch.name }.substr( 7 ).data() );
+						}
 						return Variant( branch.name.c_str() );
 					case Column::Remote:
 						return Variant( branch.remote.c_str() );
@@ -125,6 +151,9 @@ class GitBranchModel : public Model {
 					return Variant( GIT_BOLD );
 				return Variant( GIT_NOT_BOLD );
 			}
+			case ModelRole::Icon: {
+				return iconFor( index );
+			}
 			default:
 				break;
 		}
@@ -133,15 +162,19 @@ class GitBranchModel : public Model {
 
 	virtual bool classModelRoleEnabled() { return true; }
 
+	size_t getHash() const { return mHash; }
+
   protected:
 	std::vector<BranchData> mBranches;
-	GitPlugin* mPlugin;
+	GitPlugin* mPlugin{ nullptr };
+	size_t mHash{ 0 };
 };
 
 class GitStatusModel : public Model {
   public:
-	static std::shared_ptr<GitStatusModel> asModel( Git::FilesStatus&& status ) {
-		return std::make_shared<GitStatusModel>( std::move( status ) );
+	static std::shared_ptr<GitStatusModel> asModel( Git::FilesStatus status,
+													GitPlugin* gitPlugin ) {
+		return std::make_shared<GitStatusModel>( std::move( status ), gitPlugin );
 	}
 
 	struct RepoStatus {
@@ -149,9 +182,9 @@ class GitStatusModel : public Model {
 		std::vector<Git::DiffFile> files;
 	};
 
-	enum Column { File, Inserted, Removed, FileStatus };
+	enum Column { File, State, Inserted, Removed, RelativeDirectory };
 
-	GitStatusModel( Git::FilesStatus&& status ) {
+	GitStatusModel( Git::FilesStatus&& status, GitPlugin* gitPlugin ) : mPlugin( gitPlugin ) {
 		mStatus.reserve( status.size() );
 		for ( auto& s : status )
 			mStatus.emplace_back( RepoStatus{ std::move( s.first ), std::move( s.second ) } );
@@ -167,7 +200,7 @@ class GitStatusModel : public Model {
 		return 0;
 	}
 
-	size_t columnCount( const ModelIndex& ) const { return 4; }
+	size_t columnCount( const ModelIndex& ) const { return 5; }
 
 	ModelIndex parentIndex( const ModelIndex& index ) const {
 		if ( !index.isValid() || index.internalId() == -1 )
@@ -186,40 +219,52 @@ class GitStatusModel : public Model {
 	}
 
 	Variant data( const ModelIndex& index, ModelRole role ) const {
-		if ( role == ModelRole::Display ) {
-			if ( index.internalId() == -1 ) {
-				if ( index.column() == Column::File )
-					return Variant( mStatus[index.row()].repo.c_str() );
-				return Variant( GIT_EMPTY );
+		switch ( role ) {
+			case ModelRole::Display: {
+				if ( index.internalId() == -1 ) {
+					if ( index.column() == Column::File )
+						return Variant( mStatus[index.row()].repo.c_str() );
+					return Variant( GIT_EMPTY );
+				}
+				const Git::DiffFile& s = mStatus[index.internalId()].files[index.row()];
+				switch ( index.column() ) {
+					case Column::File:
+						return Variant( FileSystem::fileNameFromPath( s.file ) );
+					case Column::Inserted:
+						return Variant( String::format( " +%d ", s.inserts ) );
+					case Column::Removed:
+						return Variant( String::format( " -%d ", s.deletes ) );
+					case Column::State:
+						return Variant( String::format( " %c ", s.status ) );
+					case Column::RelativeDirectory:
+						return Variant( FileSystem::fileRemoveFileName( s.file ) );
+				}
+				break;
 			}
-			const Git::DiffFile& s = mStatus[index.internalId()].files[index.row()];
-			switch ( index.column() ) {
-				case Column::File:
-					return Variant( s.file.c_str() );
-				case Column::Inserted:
-					return Variant( s.inserts );
-				case Column::Removed:
-					return Variant( s.deletes );
-				case Column::FileStatus:
-					return Variant( std::string( static_cast<char>( s.status ), 1 ) );
+			case ModelRole::Class: {
+				if ( index.internalId() != -1 ) {
+					switch ( index.column() ) {
+						case Column::Inserted:
+							return Variant( GIT_SUCCESS );
+						case Column::Removed:
+							return Variant( GIT_ERROR );
+						default:
+							break;
+					}
+				}
+				break;
 			}
-		} else if ( role == ModelRole::Class ) {
-			switch ( index.column() ) {
-				case Column::Inserted:
-					return Variant( GIT_SUCCESS );
-				case Column::Removed:
-					return Variant( GIT_ERROR );
-				default:
-					break;
-			}
+			default:
+				break;
 		}
-		return Variant( GIT_EMPTY );
+		return {};
 	}
 
 	virtual bool classModelRoleEnabled() { return true; }
 
   protected:
 	std::vector<RepoStatus> mStatus;
+	GitPlugin* mPlugin{ nullptr };
 };
 
 Plugin* GitPlugin::New( PluginManager* pluginManager ) {
@@ -343,8 +388,8 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	mGitFound = !mGit->getGitPath().empty();
 
 	if ( getUISceneNode() ) {
-		updateStatusBar();
-		// updateBranches();
+		updateStatus();
+		updateBranches();
 	}
 
 	subscribeFileSystemListener();
@@ -357,8 +402,8 @@ void GitPlugin::updateUINow( bool force ) {
 	if ( !mGit || !getUISceneNode() )
 		return;
 
-	updateStatusBar( force );
-	// updateBranches();
+	updateStatus( force );
+	updateBranches();
 }
 
 void GitPlugin::updateUI() {
@@ -370,6 +415,18 @@ void GitPlugin::updateUI() {
 }
 
 void GitPlugin::updateStatusBarSync() {
+	buildSidePanelTab();
+
+	mGitContentView->setVisible( !mGit->getGitFolder().empty() )
+		->setEnabled( !mGit->getGitFolder().empty() );
+	mGitNoContentView->setVisible( !mGitContentView->isVisible() )
+		->setEnabled( !mGitContentView->isEnabled() );
+
+	if ( !mGit->getGitFolder().empty() ) {
+		mStatusTree->setModel( GitStatusModel::asModel( mGitStatus.files, this ) );
+		mStatusTree->expandAll();
+	}
+
 	if ( !mStatusBar )
 		getUISceneNode()->bind( "status_bar", mStatusBar );
 	if ( !mStatusBar )
@@ -390,6 +447,11 @@ void GitPlugin::updateStatusBarSync() {
 		auto childCount = mStatusBar->getChildCount();
 		if ( childCount > 2 )
 			mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
+
+		mStatusButton->on( Event::MouseClick, [this]( const Event* ) {
+			if ( mTab )
+				mTab->setTabSelected();
+		} );
 	}
 
 	mStatusButton->setVisible( !mGit->getGitFolder().empty() );
@@ -430,7 +492,7 @@ void GitPlugin::updateStatusBarSync() {
 	mStatusButton->invalidateDraw();
 }
 
-void GitPlugin::updateStatusBar( bool force ) {
+void GitPlugin::updateStatus( bool force ) {
 	if ( !mGit || !mGitFound || !mStatusBarDisplayBranch )
 		return;
 	mThreadPool->run( [this, force] {
@@ -637,6 +699,10 @@ void GitPlugin::onRegister( UICodeEditor* editor ) {
 	doc.setCommand( "git-blame", [this]( TextDocument::Client* client ) {
 		blame( static_cast<UICodeEditor*>( client ) );
 	} );
+	doc.setCommand( "show-source-control-tab", [this]() {
+		if ( mTab )
+			mTab->setTabSelected();
+	} );
 }
 
 void GitPlugin::onUnregister( UICodeEditor* editor ) {
@@ -696,18 +762,21 @@ void GitPlugin::updateBranches() {
 			if ( mGitBranch.empty() )
 				mGitBranch = mGit->branch();
 			auto branches = mGit->getAllBranchesAndTags();
-			auto model = GitBranchModel::asModel( std::move( branches ), this );
-			getUISceneNode()->runOnMainThread( [this, model] { updateSidePanelTab( model ); } );
+			auto hash = hashBranches( branches );
+			auto model = GitBranchModel::asModel( std::move( branches ), hash, this );
+			if ( mBranchesTree &&
+				 static_cast<GitBranchModel*>( mBranchesTree->getModel() )->getHash() == hash )
+				return;
+			getUISceneNode()->runOnMainThread( [this, model] { updateBranchesUI( model ); } );
 		}
 	} );
 }
 
-void GitPlugin::updateSidePanelTab( std::shared_ptr<GitBranchModel> model ) {
+void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 	buildSidePanelTab();
-
-	UITreeView* tree = mSidePanel->find<UITreeView>( "git_branches_tree" );
-	tree->setModel( model );
-	tree->setColumnsVisible( { GitBranchModel::Name } );
+	mBranchesTree->setModel( model );
+	mBranchesTree->setColumnsVisible( { GitBranchModel::Name } );
+	mBranchesTree->expandAll();
 }
 
 void GitPlugin::buildSidePanelTab() {
@@ -718,22 +787,84 @@ void GitPlugin::buildSidePanelTab() {
 	UIIcon* icon = getUISceneNode()->findIcon( "source-control" );
 	UIWidget* node = getUISceneNode()->loadLayoutFromString(
 		R"html(
-			<vbox id="git_branches" lw="mp" lh="wc" padding="4dp">
-				<!-- <hbox lw="mp" lh="wc" margin-bottom="4dp">
-					<Input id="branch_filter" lw="0" lw8="1" lh="0" />
-					<PushButton id="branch_add" text="@string(add_branch, Add Branch)" tooltip="@string(add_branch, Add Branch)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
-				</hbox> -->
-				<TreeView id="git_branches_tree" lw="mp" lh="0" lw8="1" />
+		<RelativeLayout id="git_panel" lw="mp" lh="mp">
+			<vbox id="git_content" lw="mp" lh="mp">
+				<DropDownList id="git_panel_switcher" lw="mp" lh="22dp" border-type="inside"
+					border-right-width="0" border-left-width="0" border-top-width="0" border-bottom-width="0" />
+				<StackWidget id="git_panel_stack" lw="mp" lh="0" lw8="1">
+					<vbox id="git_branches" lw="mp" lh="wc">
+						<!--
+						<hbox lw="mp" lh="wc" margin-bottom="4dp" padding="4dp">
+							<Widget lw="0" lh="0" lw8="1" />
+							<PushButton id="branch_pull" text="@string(pull_branch, Pull)" tooltip="@string(pull_branch, Pull Branch)" text-as-fallback="true" icon="icon(repo-pull, 12dp)" margin-left="2dp" />
+							<PushButton id="branch_add" text="@string(add_branch, Add Branch)" tooltip="@string(add_branch, Add Branch)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
+						</hbox>
+						-->
+						<TreeView id="git_branches_tree" lw="mp" lh="0" lw8="1" />
+					</vbox>
+					<vbox id="git_status" lw="mp" lh="mp">
+						<TreeView id="git_status_tree" lw="mp" lh="mp" />
+					</vbox>
+				</StackWidget>
 			</vbox>
+			<TextView id="git_no_content" lw="mp" lh="wc" word-wrap="true" visible="false"
+				text='@string(git_no_git_repo, "Current folder is not a Git repository.")' padding="16dp" />
+		</RelativeLayout>
 		)html" );
 	mTab = mSidePanel->add( getUISceneNode()->i18n( "source_control", "Source Control" ), node,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "source_control" );
 	mTab->setTextAsFallback( true );
 
-	UITreeView* tree = mSidePanel->find<UITreeView>( "git_branches_tree" );
-	tree->setAutoExpandOnSingleColumn( true );
-	tree->setHeadersVisible( false );
+	node->bind( "git_panel_switcher", mPanelSwicher );
+	node->bind( "git_panel_stack", mStackWidget );
+	node->bind( "git_branches_tree", mBranchesTree );
+	node->bind( "git_status_tree", mStatusTree );
+	node->bind( "git_content", mGitContentView );
+	node->bind( "git_no_content", mGitNoContentView );
+
+	mBranchesTree->setAutoExpandOnSingleColumn( true );
+	mBranchesTree->setHeadersVisible( false );
+	mBranchesTree->on( Event::OnModelEvent, [this]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( !modelEvent->getModelIndex().hasParent() )
+			return;
+
+		const Git::Branch* branch =
+			static_cast<Git::Branch*>( modelEvent->getModelIndex().internalData() );
+
+		switch ( modelEvent->getModelEventType() ) {
+			case EE::UI::Abstract::ModelEventType::Open: {
+				auto result = mGit->checkout( branch->name );
+				if ( result.returnCode == EXIT_SUCCESS ) {
+					mGitBranch = branch->name;
+					if ( mBranchesTree->getModel() )
+						mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
+				} else {
+					showMessage( LSPMessageType::Warning, result.error );
+				}
+				break;
+			}
+			case EE::UI::Abstract::ModelEventType::OpenTree:
+			case EE::UI::Abstract::ModelEventType::CloseTree:
+			case EE::UI::Abstract::ModelEventType::OpenMenu:
+				break;
+		}
+	} );
+
+	auto listBox = mPanelSwicher->getListBox();
+	listBox->addListBoxItems( { i18n( "branches", "Branches" ), i18n( "status", "Status" ) } );
+	mStackMap.resize( 2 );
+	mStackMap[0] = node->find<UIWidget>( "git_branches" );
+	mStackMap[1] = node->find<UIWidget>( "git_status" );
+	listBox->setSelected( 0 );
+
+	mPanelSwicher->addEventListener( Event::OnItemSelected, [this, listBox]( const Event* ) {
+		mStackWidget->setActiveWidget( mStackMap[listBox->getItemSelectedIndex()] );
+	} );
+
+	mStatusTree->setAutoColumnsWidth( true );
+	mStatusTree->setHeadersVisible( false );
 }
 
 } // namespace ecode

@@ -53,6 +53,15 @@ String Plugin::i18n( const std::string& key, const String& def ) const {
 	return getManager()->getUISceneNode()->i18n( key, def );
 }
 
+void Plugin::showMessage( LSPMessageType type, const std::string& message,
+						  const std::string& title ) {
+	if ( !mManager )
+		return;
+	LSPShowMessageParams msgReq{ type, message, { { title } } };
+	mManager->sendBroadcast( PluginMessageType::ShowMessage, PluginMessageFormat::ShowMessage,
+							 &msgReq );
+}
+
 void Plugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	if ( ev.type != FileSystemEventType::Modified || mShuttingDown || isLoading() )
 		return;

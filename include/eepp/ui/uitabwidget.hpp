@@ -185,6 +185,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	UIScrollBar* getTabScroll() const;
 
+	void swapTabs( UITab* left, UITab* right );
+
   protected:
 	friend class UITab;
 
@@ -242,8 +244,6 @@ class EE_API UITabWidget : public UIWidget {
 	void refreshOwnedWidget( UITab* tab );
 
 	void tryCloseTab( UITab* tab, FocusTabBehavior focustTabBehavior = FocusTabBehavior::Default );
-
-	void swapTabs( UITab* left, UITab* right );
 
 	void updateScrollBar();
 

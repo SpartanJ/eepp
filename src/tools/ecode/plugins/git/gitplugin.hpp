@@ -11,6 +11,13 @@
 using namespace EE::UI::Models;
 using namespace EE::UI;
 
+namespace EE::UI {
+class UITreeView;
+class UIDropDownList;
+class UIStackWidget;
+class UIListBoxItem;
+}
+
 namespace ecode {
 
 class Git;
@@ -86,6 +93,14 @@ class GitPlugin : public PluginBase {
 	UITabWidget* mSidePanel{ nullptr };
 	UITab* mTab{ nullptr };
 
+	UITreeView* mBranchesTree{ nullptr };
+	UITreeView* mStatusTree{ nullptr };
+	UIDropDownList* mPanelSwicher{ nullptr };
+	UIStackWidget* mStackWidget{ nullptr };
+	std::vector<UIWidget*> mStackMap;
+	UIWidget* mGitContentView{ nullptr };
+	UIWidget* mGitNoContentView{ nullptr };
+
 	struct CustomTokenizer {
 		SyntaxDefinition def;
 		SyntaxColorScheme scheme;
@@ -97,7 +112,7 @@ class GitPlugin : public PluginBase {
 
 	void blame( UICodeEditor* editor );
 
-	void updateStatusBar( bool force = false );
+	void updateStatus( bool force = false );
 
 	void updateStatusBarSync();
 
@@ -109,7 +124,7 @@ class GitPlugin : public PluginBase {
 
 	void buildSidePanelTab();
 
-	void updateSidePanelTab( std::shared_ptr<GitBranchModel> );
+	void updateBranchesUI( std::shared_ptr<GitBranchModel> );
 };
 
 } // namespace ecode

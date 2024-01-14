@@ -202,7 +202,11 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "warning", 0xea6c },
 			{ "error", 0xea87 },
 			{ "search-fuzzy", 0xec0d },
-			{ "source-control", 0xea68 } };
+			{ "source-control", 0xea68 },
+			{ "repo", 0xea62 },
+			{ "repo-pull", 0xeb40 },
+			{ "repo-push", 0xeb41 },
+			{ "tag", 0xea66 } };
 
 		for ( const auto& icon : codIcons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
