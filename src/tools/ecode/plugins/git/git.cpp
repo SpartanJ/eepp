@@ -54,6 +54,10 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 	p.readAllStdOut( buf );
 	int retCode;
 	p.join( &retCode );
+	if ( mLastProjectPath != projectDir ) {
+		const_cast<Git*>( this )->mLastProjectPath = projectDir;
+		const_cast<Git*>( this )->mSubModulesUpdated = false;
+	}
 	return retCode;
 }
 
@@ -205,9 +209,51 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::str
 	return branches;
 }
 
+static void readAllLines( const std::string_view& buf,
+						  std::function<void( const std::string_view& )> onLineRead ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( '\n' );
+	while ( nextNL != std::string_view::npos ) {
+		onLineRead( buf.substr( lastNL, nextNL - lastNL ) );
+		lastNL = nextNL;
+		nextNL = buf.find_first_of( '\n', nextNL + 1 );
+	}
+}
+
+std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
+	std::vector<std::string> submodules;
+	std::string buf;
+	FileSystem::fileGet( ( !projectDir.empty() ? projectDir : mProjectPath ) + ".gitmodules", buf );
+	LuaPattern pattern( "^%s*path%s*=%s*(.+)" );
+	readAllLines( buf, [&pattern, &submodules]( const std::string_view& line ) {
+		LuaPattern::Range matches[2];
+		if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
+			submodules.emplace_back(
+				line.substr( matches[1].start, matches[1].end - matches[1].start ) );
+		}
+	} );
+	return submodules;
+}
+
+std::vector<std::string> Git::getSubModules( const std::string& projectDir ) {
+	if ( !mSubModulesUpdated ) {
+		mSubModules = fetchSubModules( projectDir );
+		mSubModulesUpdated = true;
+	}
+	return mSubModules;
+}
+
 bool Git::hasSubmodules( const std::string& projectDir ) {
 	return ( !projectDir.empty() && FileSystem::fileExists( projectDir + ".gitmodules" ) ) ||
 		   ( !mProjectPath.empty() && FileSystem::fileExists( mProjectPath + ".gitmodules" ) );
+}
+
+std::string Git::inSubModule( const std::string& file, const std::string& projectDir ) {
+	for ( const auto& subRepo : mSubModules ) {
+		if ( String::startsWith( file, subRepo ) )
+			return subRepo;
+	}
+	return FileSystem::fileNameFromPath( !projectDir.empty() ? projectDir : mProjectPath );
 }
 
 Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir ) {
@@ -217,11 +263,11 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	std::string buf;
 	if ( EXIT_SUCCESS != git( DIFF_CMD, projectDir, buf ) )
 		return s;
-	auto parseNumStat = [&s, &buf]() {
+	auto parseNumStat = [&s, &buf, &projectDir, this]() {
 		auto lastNL = 0;
 		auto nextNL = buf.find_first_of( '\n' );
+		LuaPattern pattern( "(%d+)%s+(%d+)%s+(.+)" );
 		while ( nextNL != std::string_view::npos ) {
-			LuaPattern pattern( "(%d+)%s+(%d+)%s+(.+)" );
 			LuaPattern::Range matches[4];
 			if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
 				auto inserted = buf.substr( matches[1].start, matches[1].end - matches[1].start );
@@ -231,13 +277,22 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				int deletes;
 				if ( String::fromString( inserts, inserted ) &&
 					 String::fromString( deletes, deleted ) ) {
-					auto fileIt = s.files.find( file );
-					if ( fileIt != s.files.end() ) {
-						fileIt->second.file = std::move( file );
-						fileIt->second.inserts = inserts;
-						fileIt->second.deletes = deletes;
+					auto repo = inSubModule( file, projectDir );
+					auto repoIt = s.files.find( repo );
+					if ( repoIt != s.files.end() ) {
+						bool found = false;
+						for ( auto& fileIt : repoIt->second ) {
+							if ( fileIt.file == file ) {
+								fileIt.inserts = inserts;
+								fileIt.deletes = deletes;
+								found = true;
+								break;
+							}
+						}
+						if ( !found )
+							s.files[repo].push_back( { std::move( file ), inserts, deletes } );
 					} else {
-						s.files.insert( { file, { file, inserts, deletes } } );
+						s.files.insert( { repo, { { std::move( file ), inserts, deletes } } } );
 					}
 					s.totalInserts += inserts;
 					s.totalDeletions += deletes;
@@ -257,12 +312,14 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		parseNumStat();
 	}
 
+	getSubModules( projectDir );
+
 	bool modifiedSubmodule = false;
-	auto parseStatus = [&s, &buf, &modifiedSubmodule]() {
+	auto parseStatus = [&s, &buf, &modifiedSubmodule, &projectDir, this]() {
 		auto lastNL = 0;
 		auto nextNL = buf.find_first_of( '\n' );
+		LuaPattern pattern( "\n([%sA?][MARTUD?%s])%s(.*)" );
 		while ( nextNL != std::string_view::npos ) {
-			LuaPattern pattern( "\n([%sA?][MARTUD?%s])%s(.*)" );
 			LuaPattern::Range matches[3];
 			if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
 				auto status = buf.substr( matches[1].start, matches[1].end - matches[1].start );
@@ -290,11 +347,22 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					if ( rstatus == FileStatus::ModifiedSubmodule )
 						modifiedSubmodule = true;
 					else {
-						auto fileIt = s.files.find( file );
-						if ( fileIt != s.files.end() )
-							fileIt->second.status = rstatus;
-						else
-							s.files.insert( { file, { file, 0, 0, rstatus } } );
+						auto repo = inSubModule( file, projectDir );
+						auto repoIt = s.files.find( repo );
+						if ( repoIt != s.files.end() ) {
+							bool found = false;
+							for ( auto& fileIt : repoIt->second ) {
+								if ( fileIt.file == file ) {
+									fileIt.status = rstatus;
+									found = true;
+									break;
+								}
+							}
+							if ( !found )
+								s.files[repo].push_back( { std::move( file ), 0, 0, rstatus } );
+						} else {
+							s.files.insert( { file, { { file, 0, 0, rstatus } } } );
+						}
 					}
 				}
 			}
@@ -311,12 +379,14 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		parseStatus();
 	}
 
-	for ( auto& [_, val] : s.files ) {
-		if ( val.status == FileStatus::Added && val.inserts == 0 ) {
-			std::string fileText;
-			FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
-								 fileText );
-			val.inserts = countLines( fileText );
+	for ( auto& [_, repo] : s.files ) {
+		for ( auto& val : repo ) {
+			if ( val.status == FileStatus::Added && val.inserts == 0 ) {
+				std::string fileText;
+				FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
+									 fileText );
+				val.inserts = countLines( fileText );
+			}
 		}
 	}
 

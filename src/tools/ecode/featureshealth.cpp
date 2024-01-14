@@ -266,6 +266,10 @@ class HealthModel : public Model {
 	}
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
+		static const char* SUCCESS = "theme-success";
+		static const char* ERROR = "theme-error";
+		static const char* NONE = "theme-none";
+
 		eeASSERT( index.row() < (Int64)mData.size() );
 		static std::string none;
 		static UIIcon* icon = nullptr;
@@ -302,25 +306,24 @@ class HealthModel : public Model {
 			case ModelRole::Class: {
 				switch ( index.column() ) {
 					case 1:
-						return Variant( "theme-success" );
+						return Variant( SUCCESS );
 					case 2:
 						if ( !lang.lsp.name.empty() )
-							return Variant( lang.lsp.found ? "theme-success" : "theme-error" );
+							return Variant( lang.lsp.found ? SUCCESS : ERROR );
 						else
-							return Variant( "theme-none" );
+							return Variant( NONE );
 						break;
 					case 3:
 						if ( !lang.linter.name.empty() )
-							return Variant( lang.linter.found ? "theme-success" : "theme-error" );
+							return Variant( lang.linter.found ? SUCCESS : ERROR );
 						else
-							return Variant( "theme-none" );
+							return Variant( NONE );
 						break;
 					case 4:
 						if ( !lang.formatter.name.empty() )
-							return Variant( lang.formatter.found ? "theme-success"
-																 : "theme-error" );
+							return Variant( lang.formatter.found ? SUCCESS : ERROR );
 						else
-							return Variant( "theme-none" );
+							return Variant( NONE );
 						break;
 					default: {
 					}

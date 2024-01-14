@@ -103,17 +103,65 @@ class GitPlugin : public PluginBase {
 
 class GitBranchModel : public Model {
   public:
+	static std::shared_ptr<GitBranchModel> asModel( std::vector<Git::Branch>&& branches ) {
+		return std::make_shared<GitBranchModel>( std::move( branches ) );
+	}
+
 	enum Column { Name, Remote, Type, LastCommit };
 
-	GitBranchModel( std::vector<Git::Branch>&& branches ) : mBranches( std::move( branches ) ) {}
+	struct BranchData {
+		std::string branch;
+		std::vector<Git::Branch> data;
+	};
 
-	size_t rowCount( const ModelIndex& ) const { return mBranches.size(); }
+	GitBranchModel( std::vector<Git::Branch>&& branches ) {
+		std::map<std::string, std::vector<Git::Branch>> branchTypes;
+		for ( auto& branch : branches ) {
+			auto& type = branchTypes[Git::refTypeToString( branch.type )];
+			type.emplace_back( std::move( branch ) );
+		}
+		for ( auto& branch : branchTypes ) {
+			mBranches.emplace_back(
+				BranchData{ std::move( branch.first ), std::move( branch.second ) } );
+		}
+	}
+
+	size_t treeColumn() const { return Column::Name; }
+
+	size_t rowCount( const ModelIndex& index ) const {
+		if ( !index.isValid() )
+			return mBranches.size();
+		return mBranches[index.row()].data.size();
+	}
 
 	size_t columnCount( const ModelIndex& ) const { return 4; }
 
+	ModelIndex parentIndex( const ModelIndex& index ) const {
+		if ( !index.isValid() || index.internalId() == -1 )
+			return {};
+		return createIndex( index.internalId(), index.column(), &mBranches[index.internalId()],
+							-1 );
+	}
+
+	ModelIndex index( int row, int column, const ModelIndex& parent ) const {
+		if ( row < 0 || column < 0 )
+			return {};
+		if ( !parent.isValid() )
+			return createIndex( row, column, &mBranches[row], -1 );
+		if ( parent.internalData() )
+			return createIndex( row, column, &mBranches[parent.row()].data[row], parent.row() );
+		return {};
+	}
+
 	Variant data( const ModelIndex& index, ModelRole role ) const {
-		if ( role == ModelRole::Display && index.row() < (Int64)mBranches.size() ) {
-			const Git::Branch& branch = mBranches[index.row()];
+		static const char* EMPTY = "";
+		if ( role == ModelRole::Display ) {
+			if ( index.internalId() == -1 ) {
+				if ( index.column() == Column::Name )
+					return mBranches[index.row()].branch.c_str();
+				return EMPTY;
+			}
+			const Git::Branch& branch = mBranches[index.internalId()].data[index.row()];
 			switch ( index.column() ) {
 				case Column::Name:
 					return branch.name.c_str();
@@ -125,30 +173,69 @@ class GitBranchModel : public Model {
 					return branch.lastCommit.c_str();
 			}
 		}
-		return {};
+		return EMPTY;
 	}
 
   protected:
-	std::vector<Git::Branch> mBranches;
+	std::vector<BranchData> mBranches;
 };
 
 class GitStatusModel : public Model {
   public:
+	static std::shared_ptr<GitStatusModel> asModel( Git::FilesStatus&& status ) {
+		return std::make_shared<GitStatusModel>( std::move( status ) );
+	}
+
+	struct RepoStatus {
+		std::string repo;
+		std::vector<Git::DiffFile> files;
+	};
+
 	enum Column { File, Inserted, Removed, FileStatus };
 
 	GitStatusModel( Git::FilesStatus&& status ) {
 		mStatus.reserve( status.size() );
 		for ( auto& s : status )
-			mStatus.emplace_back( std::move( s.second ) );
+			mStatus.emplace_back( RepoStatus{ std::move( s.first ), std::move( s.second ) } );
 	}
 
-	size_t rowCount( const ModelIndex& ) const { return mStatus.size(); }
+	size_t treeColumn() const { return Column::File; }
+
+	size_t rowCount( const ModelIndex& index ) const {
+		if ( !index.isValid() )
+			return mStatus.size();
+		return mStatus[index.row()].files.size();
+	}
 
 	size_t columnCount( const ModelIndex& ) const { return 4; }
 
+	ModelIndex parentIndex( const ModelIndex& index ) const {
+		if ( !index.isValid() || index.internalId() == -1 )
+			return {};
+		return createIndex( index.internalId(), index.column(), &mStatus[index.internalId()], -1 );
+	}
+
+	ModelIndex index( int row, int column, const ModelIndex& parent ) const {
+		if ( row < 0 || column < 0 )
+			return {};
+		if ( !parent.isValid() )
+			return createIndex( row, column, &mStatus[row], -1 );
+		if ( parent.internalData() )
+			return createIndex( row, column, &mStatus[parent.row()].files[row], parent.row() );
+		return {};
+	}
+
 	Variant data( const ModelIndex& index, ModelRole role ) const {
-		if ( role == ModelRole::Display && index.row() < (Int64)mStatus.size() ) {
-			const Git::DiffFile& s = mStatus[index.row()];
+		static const char* EMPTY = "";
+		static const char* SUCCESS = "theme-success";
+		static const char* ERROR = "theme-error";
+		if ( role == ModelRole::Display ) {
+			if ( index.internalId() == -1 ) {
+				if ( index.column() == Column::File )
+					return mStatus[index.row()].repo.c_str();
+				return EMPTY;
+			}
+			const Git::DiffFile& s = mStatus[index.internalId()].files[index.row()];
 			switch ( index.column() ) {
 				case Column::File:
 					return s.file.c_str();
@@ -159,12 +246,23 @@ class GitStatusModel : public Model {
 				case Column::FileStatus:
 					return Variant( std::string( static_cast<char>( s.status ), 1 ) );
 			}
+		} else if ( role == ModelRole::Class ) {
+			switch ( index.column() ) {
+				case Column::Inserted:
+					return SUCCESS;
+				case Column::Removed:
+					return ERROR;
+				default:
+					break;
+			}
 		}
-		return {};
+		return EMPTY;
 	}
 
+	virtual bool classModelRoleEnabled() { return true; }
+
   protected:
-	std::vector<Git::DiffFile> mStatus;
+	std::vector<RepoStatus> mStatus;
 };
 
 } // namespace ecode

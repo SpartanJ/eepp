@@ -46,7 +46,8 @@ class Git {
 		}
 	};
 
-	using FilesStatus = std::map<std::string, DiffFile>;
+	using RepositoryName = std::string;
+	using FilesStatus = std::map<RepositoryName, std::vector<DiffFile>>;
 
 	struct Status {
 		int totalInserts{ 0 };
@@ -147,12 +148,21 @@ class Git {
 	std::vector<Branch> getAllBranchesAndTags( RefType ref = RefType::All,
 											   const std::string& projectDir = "" );
 
+	std::vector<std::string> fetchSubModules( const std::string& projectDir );
+
+	std::vector<std::string> getSubModules( const std::string& projectDir = "" );
+
   protected:
 	std::string mGitPath;
 	std::string mProjectPath;
 	std::string mGitFolder;
+	std::string mLastProjectPath;
+	std::vector<std::string> mSubModules;
+	bool mSubModulesUpdated{ false };
 
 	bool hasSubmodules( const std::string& projectDir );
+
+	std::string inSubModule( const std::string& file, const std::string& projectDir );
 };
 
 } // namespace ecode
