@@ -184,43 +184,6 @@ String Translator::getString( const std::string& key, const String& defaultValue
 	return defaultValue;
 }
 
-String Translator::getStringf( const char* key, ... ) {
-	std::string str( getString( key ).toUtf8() );
-
-	if ( str.empty() )
-		return String();
-
-	const char* format = str.c_str();
-
-	int size = 256;
-	std::string tstr( size, '\0' );
-
-	va_list args;
-
-	while ( 1 ) {
-		va_start( args, key );
-
-		int n = vsnprintf( &tstr[0], size, format, args );
-
-		if ( n > -1 && n < size ) {
-			tstr.resize( n );
-
-			va_end( args );
-
-			return tstr;
-		}
-
-		if ( n > -1 )	  // glibc 2.1
-			size = n + 1; // precisely what is needed
-		else			  // glibc 2.0
-			size *= 2;	  // twice the old size
-
-		tstr.resize( size );
-	}
-
-	return String( tstr );
-}
-
 void Translator::setLanguageFromLocale( std::locale locale ) {
 	std::string name = locale.name();
 

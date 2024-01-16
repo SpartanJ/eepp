@@ -173,32 +173,31 @@ std::vector<Git::Branch> Git::getAllBranches( const std::string& projectDir ) {
 
 static Git::Branch parseLocalBranch( const std::string_view& raw ) {
 	static constexpr size_t len = std::string_view{ "refs/heads/"sv }.size();
-	return Git::Branch{ std::string{ raw.substr( len ) }, std::string{}, Git::RefType::Head,
-						std::string{} };
+	if ( len < raw.size() )
+		return Git::Branch{ std::string{ raw.substr( len ) }, std::string{}, Git::RefType::Head,
+							std::string{} };
+	return {};
 }
 
 static Git::Branch parseRemoteBranch( const std::string_view& raw ) {
 	static constexpr size_t len = std::string_view( "refs/remotes/"sv ).size();
 	size_t indexOfRemote = raw.find_first_of( '/', len );
-	if ( indexOfRemote != std::string::npos )
+	if ( indexOfRemote != std::string::npos && len < raw.size() ) {
 		return Git::Branch{ std::string{ raw.substr( len ) },
 							std::string{ raw.substr( len, indexOfRemote - len ) },
 							Git::RefType::Remote, std::string{} };
+	}
 	return {};
 }
 
 std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::string& projectDir ) {
-	std::string args( "for-each-ref --format '%(refname)' --sort=-committerdate" );
-	if ( ref & RefType::Head ) {
+	std::string args( "for-each-ref --format '%(refname)' --sort=v:refname" );
+	if ( ref & RefType::Head )
 		args.append( " refs/heads" );
-	}
-	if ( ref & RefType::Remote ) {
+	if ( ref & RefType::Remote )
 		args.append( " refs/remotes" );
-	}
-	if ( ref & RefType::Tag ) {
+	if ( ref & RefType::Tag )
 		args.append( " refs/tags" );
-		args.append( " --sort=-taggerdate" );
-	}
 
 	std::vector<Branch> branches;
 	std::string buf;
@@ -206,22 +205,21 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::str
 	if ( EXIT_SUCCESS != git( args, projectDir, buf ) )
 		return branches;
 
+	branches.reserve( countLines( buf ) );
+
 	readAllLines( buf, [&branches, ref]( const std::string_view& line ) {
-		auto branch = String::trim( line, '\n' );
-		branch = String::trim( line, '\'' );
+		auto branch = String::trim( String::trim( line, '\n' ), '\'' );
 		if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
 			branches.emplace_back( parseLocalBranch( branch ) );
 		} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
 			branches.emplace_back( parseRemoteBranch( branch ) );
 		} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
 			static constexpr size_t len = std::string_view{ "refs/tags/"sv }.size();
-			branches.push_back( { std::string{ branch.substr( len ) }, std::string{}, RefType::Tag,
-								  std::string{} } );
+			Branch newBranch;
+			newBranch.name = branch.substr( len );
+			newBranch.type = RefType::Tag;
+			branches.emplace_back( std::move( newBranch ) );
 		}
-	} );
-
-	std::sort( branches.begin(), branches.end(), []( const Branch& left, const Branch& right ) {
-		return left.type < right.type || left.name < right.name;
 	} );
 
 	return branches;
@@ -257,7 +255,7 @@ bool Git::hasSubmodules( const std::string& projectDir ) {
 
 std::string Git::inSubModule( const std::string& file, const std::string& projectDir ) {
 	for ( const auto& subRepo : mSubModules ) {
-		if ( String::startsWith( file, subRepo ) )
+		if ( String::startsWith( file, subRepo ) && file.size() != subRepo.size() )
 			return subRepo;
 	}
 	return FileSystem::fileNameFromPath( !projectDir.empty() ? projectDir : mProjectPath );
@@ -270,26 +268,37 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	std::string buf;
 	if ( EXIT_SUCCESS != git( DIFF_CMD, projectDir, buf ) )
 		return s;
-	auto parseNumStat = [&s, &buf, &projectDir, this]() {
+
+	getSubModules( projectDir );
+
+	LuaPattern subModulePattern( "^Entering '(.*)'" );
+
+	auto parseNumStat = [&s, &buf, &projectDir, this, &subModulePattern]() {
 		auto lastNL = 0;
 		auto nextNL = buf.find_first_of( '\n' );
 		LuaPattern pattern( "(%d+)%s+(%d+)%s+(.+)" );
+		std::string subModulePath = "";
 		while ( nextNL != std::string_view::npos ) {
 			LuaPattern::Range matches[4];
-			if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
+			if ( subModulePattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
+				subModulePath = String::trim(
+					buf.substr( matches[1].start, matches[1].end - matches[1].start ) );
+				FileSystem::dirAddSlashAtEnd( subModulePath );
+			} else if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
 				auto inserted = buf.substr( matches[1].start, matches[1].end - matches[1].start );
 				auto deleted = buf.substr( matches[2].start, matches[2].end - matches[2].start );
 				auto file = buf.substr( matches[3].start, matches[3].end - matches[3].start );
 				int inserts;
 				int deletes;
 				if ( String::fromString( inserts, inserted ) &&
-					 String::fromString( deletes, deleted ) ) {
-					auto repo = inSubModule( file, projectDir );
+					 String::fromString( deletes, deleted ) && ( inserts || deletes ) ) {
+					auto filePath = subModulePath + file;
+					auto repo = inSubModule( filePath, projectDir );
 					auto repoIt = s.files.find( repo );
 					if ( repoIt != s.files.end() ) {
 						bool found = false;
 						for ( auto& fileIt : repoIt->second ) {
-							if ( fileIt.file == file ) {
+							if ( fileIt.file == filePath ) {
 								fileIt.inserts = inserts;
 								fileIt.deletes = deletes;
 								found = true;
@@ -297,15 +306,15 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 							}
 						}
 						if ( !found )
-							s.files[repo].push_back( { std::move( file ), inserts, deletes } );
+							s.files[repo].push_back( { std::move( filePath ), inserts, deletes } );
 					} else {
-						s.files.insert( { repo, { { std::move( file ), inserts, deletes } } } );
+						s.files.insert( { repo, { { std::move( filePath ), inserts, deletes } } } );
 					}
 					s.totalInserts += inserts;
 					s.totalDeletions += deletes;
 				}
 			}
-			lastNL = nextNL;
+			lastNL = nextNL + 1;
 			nextNL = buf.find_first_of( '\n', nextNL + 1 );
 		}
 	};
@@ -319,19 +328,23 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		parseNumStat();
 	}
 
-	getSubModules( projectDir );
-
 	bool modifiedSubmodule = false;
-	auto parseStatus = [&s, &buf, &modifiedSubmodule, &projectDir, this]() {
+	auto parseStatus = [&s, &buf, &modifiedSubmodule, &projectDir, this, &subModulePattern]() {
 		auto lastNL = 0;
 		auto nextNL = buf.find_first_of( '\n' );
-		LuaPattern pattern( "\n([%sA?][MARTUD?%s])%s(.*)" );
+		LuaPattern pattern( "([mMARTUD?%s][mMARTUD?%s])%s(.*)" );
+		std::string subModulePath = "";
 		while ( nextNL != std::string_view::npos ) {
+			std::string_view line = std::string_view{ buf }.substr( lastNL, nextNL - lastNL );
 			LuaPattern::Range matches[3];
-			if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
-				auto status = buf.substr( matches[1].start, matches[1].end - matches[1].start );
-				String::trimInPlace( status );
-				auto file = buf.substr( matches[2].start, matches[2].end - matches[2].start );
+			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
+				subModulePath = String::trim(
+					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
+				FileSystem::dirAddSlashAtEnd( subModulePath );
+			} else if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
+				auto status = String::trim(
+					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
+				auto file = line.substr( matches[2].start, matches[2].end - matches[2].start );
 				FileStatus rstatus = FileStatus::Unknown;
 				if ( "??" == status )
 					rstatus = FileStatus::Untracked;
@@ -354,26 +367,28 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					if ( rstatus == FileStatus::ModifiedSubmodule )
 						modifiedSubmodule = true;
 					else {
-						auto repo = inSubModule( file, projectDir );
+						auto filePath = subModulePath + file;
+						auto repo = inSubModule( filePath, projectDir );
 						auto repoIt = s.files.find( repo );
 						if ( repoIt != s.files.end() ) {
 							bool found = false;
 							for ( auto& fileIt : repoIt->second ) {
-								if ( fileIt.file == file ) {
+								if ( fileIt.file == filePath ) {
 									fileIt.status = rstatus;
 									found = true;
 									break;
 								}
 							}
 							if ( !found )
-								s.files[repo].push_back( { std::move( file ), 0, 0, rstatus } );
+								s.files[repo].push_back( { std::move( filePath ), 0, 0, rstatus } );
 						} else {
-							s.files.insert( { file, { { file, 0, 0, rstatus } } } );
+							s.files.insert(
+								{ repo, { { std::move( filePath ), 0, 0, rstatus } } } );
 						}
 					}
 				}
 			}
-			lastNL = nextNL;
+			lastNL = nextNL + 1;
 			nextNL = buf.find_first_of( '\n', nextNL + 1 );
 		}
 	};
@@ -381,7 +396,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	git( STATUS_CMD, projectDir, buf );
 	parseStatus();
 
-	if ( modifiedSubmodule && submodules ) {
+	if ( modifiedSubmodule && recurseSubmodules && submodules ) {
 		gitSubmodules( STATUS_CMD, projectDir, buf );
 		parseStatus();
 	}
@@ -393,6 +408,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
 									 fileText );
 				val.inserts = countLines( fileText );
+				s.totalInserts += val.inserts;
 			}
 		}
 	}

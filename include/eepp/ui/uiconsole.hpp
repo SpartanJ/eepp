@@ -107,7 +107,10 @@ class EE_API UIConsole : public UIWidget,
 	void pushText( const String& str );
 
 	/** Add formated Text to console */
-	void pushText( const char* format, ... );
+	template <typename... Args> void pushText( std::string_view format, Args&&... args ) {
+		pushText( String::format(
+			format, FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... ) );
+	}
 
 	Float getLineHeight() const;
 

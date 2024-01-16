@@ -1,4 +1,3 @@
-#include <cassert>
 #include <cstdarg>
 #include <eepp/core/debug.hpp>
 #include <eepp/system/log.hpp>

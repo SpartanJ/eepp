@@ -299,7 +299,7 @@ void LSPDocumentClient::highlight() {
 	const auto& caps = mServer->getCapabilities().semanticTokenProvider;
 	Uint32 currentLine = 0;
 	Uint32 start = 0;
-	UnorderedMap<size_t, TokenizedLine> tokenizerLines;
+	std::unordered_map<size_t, TokenizedLine> tokenizerLines;
 	Int64 lastLine = 0;
 	TokenizedLine* lastLinePtr = nullptr;
 	Time diff;
@@ -350,10 +350,12 @@ void LSPDocumentClient::highlight() {
 		mDoc->getHighlighter()->mergeLine( tline.first, tline.second );
 	}
 
-	Log::debug( "LSPDocumentClient::highlight took: %.2f ms. Diff analysis took: %.2f ms. Updated "
-				"%lld elements",
-				clock.getElapsedTime().asMilliseconds(), diff.asMilliseconds(),
-				tokenizerLines.size() );
+	if ( !mServer->isSilent() ) {
+		Log::debug(
+			"LSPDocumentClient::highlight took: %.2f ms. Diff analysis took: %.2f ms. Updated "
+			"%lld elements",
+			clock.getElapsedTime().asMilliseconds(), diff.asMilliseconds(), tokenizerLines.size() );
+	}
 }
 
 void LSPDocumentClient::notifyOpen() {

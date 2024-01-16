@@ -1423,36 +1423,6 @@ void UIConsole::pushText( const String& str ) {
 	}
 }
 
-void UIConsole::pushText( const char* format, ... ) {
-	int n, size = 256;
-	std::string tstr( size, '\0' );
-
-	va_list args;
-
-	va_start( args, format );
-
-	while ( 1 ) {
-		n = vsnprintf( &tstr[0], size, format, args );
-
-		if ( n > -1 && n < size ) {
-			tstr.resize( n );
-
-			pushText( tstr );
-
-			va_end( args );
-
-			return;
-		}
-
-		if ( n > -1 )	  // glibc 2.1
-			size = n + 1; // precisely what is needed
-		else			  // glibc 2.0
-			size *= 2;	  // twice the old size
-
-		tstr.resize( size );
-	}
-}
-
 Float UIConsole::getLineHeight() const {
 	return mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
 }

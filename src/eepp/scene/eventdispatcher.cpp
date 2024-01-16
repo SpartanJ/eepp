@@ -25,7 +25,7 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mFirstPress( false ),
 	mNodeWasDragging( NULL ),
 	mNodeDragging( NULL ) {
-	mCbId = mInput->pushCallback( cb::Make1( this, &EventDispatcher::inputCallback ) );
+	mCbId = mInput->pushCallback( [this]( InputEvent* event ) { inputCallback( event ); } );
 	mIMECbId = mWindow->getIME().addTextEditingCb(
 		[this]( const String& text, Int32 start, Int32 length ) {
 			sendTextEditing( text, start, length );

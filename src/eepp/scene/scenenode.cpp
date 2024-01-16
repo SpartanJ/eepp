@@ -43,7 +43,7 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
-	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &SceneNode::resizeNode ) );
+	mResizeCb = mWindow->pushResizeCallback( [this]( auto win ) { resizeNode( win ); } );
 
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	int currentDisplayIndex = getWindow()->getCurrentDisplayIndex();

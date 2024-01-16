@@ -32,6 +32,7 @@ class Git {
 		UpdatedUnmerged = 'U',
 		Deleted = 'D',
 		Untracked = '?',
+		Ignored = 'I',
 		ModifiedSubmodule = 'm',
 	};
 

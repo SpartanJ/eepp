@@ -244,6 +244,8 @@ class LSPClientServer {
 
 	LSPDocumentClient* getLSPDocumentClient( TextDocument* doc );
 
+	bool isSilent() const;
+
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;
@@ -313,8 +315,6 @@ class LSPClientServer {
 	void refreshSmenaticHighlighting();
 
 	void refreshCodeLens();
-
-	bool isSilent() const;
 
 	bool trimLogs() const;
 };

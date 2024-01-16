@@ -16,7 +16,7 @@ class UITreeView;
 class UIDropDownList;
 class UIStackWidget;
 class UIListBoxItem;
-}
+} // namespace EE::UI
 
 namespace ecode {
 
@@ -54,7 +54,7 @@ class GitPlugin : public PluginBase {
 
 	bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& ) override;
 
-	std::string gitBranch() const;
+	std::string gitBranch();
 
   protected:
 	std::unique_ptr<Git> mGit;
@@ -87,6 +87,7 @@ class GitPlugin : public PluginBase {
 	bool mStatusRecurseSubmodules{ true };
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
+	bool mInitialized{ false };
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
 	Color mOldBackgroundColor;
@@ -100,6 +101,10 @@ class GitPlugin : public PluginBase {
 	std::vector<UIWidget*> mStackMap;
 	UIWidget* mGitContentView{ nullptr };
 	UIWidget* mGitNoContentView{ nullptr };
+	std::atomic<bool> mRunningUpdateBranches{ false };
+	std::atomic<bool> mRunningUpdateStatus{ false };
+	Mutex mGitBranchMutex;
+	Mutex mGitStatusMutex;
 
 	struct CustomTokenizer {
 		SyntaxDefinition def;

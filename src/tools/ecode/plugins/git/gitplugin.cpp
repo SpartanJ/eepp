@@ -33,7 +33,7 @@ static const std::string GIT_REPO = "repo";
 static size_t hashBranches( const std::vector<Git::Branch>& branches ) {
 	size_t hash = 0;
 	for ( const auto& branch : branches )
-		hash = hashCombine( hash, String::hash( branch.name ), String::hash( branch.lastCommit ) );
+		hash = hashCombine( hash, String::hash( branch.name ) );
 	return hash;
 }
 
@@ -231,11 +231,11 @@ class GitStatusModel : public Model {
 					case Column::File:
 						return Variant( FileSystem::fileNameFromPath( s.file ) );
 					case Column::Inserted:
-						return Variant( String::format( " +%d ", s.inserts ) );
+						return Variant( String::format( "+%d ", s.inserts ) );
 					case Column::Removed:
-						return Variant( String::format( " -%d ", s.deletes ) );
+						return Variant( String::format( "-%d ", s.deletes ) );
 					case Column::State:
-						return Variant( String::format( " %c ", s.status ) );
+						return Variant( String::format( "%c", s.status ) );
 					case Column::RelativeDirectory:
 						return Variant( FileSystem::fileRemoveFileName( s.file ) );
 				}
@@ -423,6 +423,7 @@ void GitPlugin::updateStatusBarSync() {
 		->setEnabled( !mGitContentView->isEnabled() );
 
 	if ( !mGit->getGitFolder().empty() ) {
+		Lock l( mGitStatusMutex );
 		mStatusTree->setModel( GitStatusModel::asModel( mGitStatus.files, this ) );
 		mStatusTree->expandAll();
 	}
@@ -459,12 +460,15 @@ void GitPlugin::updateStatusBarSync() {
 	if ( mGit->getGitFolder().empty() )
 		return;
 
-	std::string text( mStatusBarDisplayModifications &&
-							  ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
-						  ? String::format( "%s (+%d / -%d)", mGitBranch.c_str(),
-											mGitStatus.totalInserts, mGitStatus.totalDeletions )
-						  : mGitBranch );
-
+	std::string text;
+	{
+		Lock l( mGitStatusMutex );
+		text = mStatusBarDisplayModifications &&
+					   ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
+				   ? String::format( "%s (+%d / -%d)", gitBranch().c_str(), mGitStatus.totalInserts,
+									 mGitStatus.totalDeletions )
+				   : gitBranch();
+	}
 	mStatusButton->setText( text );
 
 	if ( !mStatusBarDisplayModifications )
@@ -493,25 +497,39 @@ void GitPlugin::updateStatusBarSync() {
 }
 
 void GitPlugin::updateStatus( bool force ) {
-	if ( !mGit || !mGitFound || !mStatusBarDisplayBranch )
+	if ( !mGit || !mGitFound || !mStatusBarDisplayBranch || mRunningUpdateStatus )
 		return;
-	mThreadPool->run( [this, force] {
-		if ( !mGit )
-			return;
-
-		if ( !mGit->getGitFolder().empty() ) {
-			auto prevBranch = mGitBranch;
-			mGitBranch = mGit->branch();
-			auto prevGitStatus = mGitStatus;
-			mGitStatus = mGit->status( mStatusRecurseSubmodules );
-			if ( !force && mGitBranch == prevBranch && mGitStatus == prevGitStatus )
+	mRunningUpdateStatus = true;
+	mThreadPool->run(
+		[this, force] {
+			if ( !mGit )
 				return;
-		} else if ( !mStatusButton ) {
-			return;
-		}
 
-		getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
-	} );
+			if ( !mGit->getGitFolder().empty() ) {
+				auto prevBranch = mGitBranch;
+				{
+					Lock l( mGitBranchMutex );
+					mGitBranch = mGit->branch();
+				}
+				Git::Status prevGitStatus;
+				{
+					Lock l( mGitStatusMutex );
+					prevGitStatus = mGitStatus;
+				}
+				Git::Status newGitStatus = mGit->status( mStatusRecurseSubmodules );
+				{
+					Lock l( mGitStatusMutex );
+					mGitStatus = std::move( newGitStatus );
+					if ( !force && mGitBranch == prevBranch && mGitStatus == prevGitStatus )
+						return;
+				}
+			} else if ( !mStatusButton ) {
+				return;
+			}
+
+			getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
+		},
+		[this]( auto ) { mRunningUpdateStatus = false; } );
 }
 
 PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
@@ -520,11 +538,13 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 			if ( mGit ) {
 				mGit->setProjectPath( msg.asJSON()["folder"] );
 				updateUINow( true );
+				mInitialized = true;
 			}
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
-			updateUINow();
+			if ( !mInitialized )
+				updateUINow();
 			break;
 		}
 		case ecode::PluginMessageType::UIThemeReloaded: {
@@ -638,7 +658,8 @@ bool GitPlugin::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Uint3
 	return false;
 }
 
-std::string GitPlugin::gitBranch() const {
+std::string GitPlugin::gitBranch() {
+	Lock l( mGitBranchMutex );
 	return mGitBranch;
 }
 
@@ -751,25 +772,32 @@ bool GitPlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
 }
 
 void GitPlugin::updateBranches() {
-	if ( !mGit || !mGitFound )
+	if ( !mGit || !mGitFound || mRunningUpdateBranches )
 		return;
 
-	mThreadPool->run( [this] {
-		if ( !mGit )
-			return;
+	mRunningUpdateBranches = true;
+	mThreadPool->run(
+		[this] {
+			if ( !mGit || mGit->getGitFolder().empty() )
+				return;
 
-		if ( !mGit->getGitFolder().empty() ) {
-			if ( mGitBranch.empty() )
-				mGitBranch = mGit->branch();
+			{
+				Lock l( mGitBranchMutex );
+				if ( mGitBranch.empty() )
+					mGitBranch = mGit->branch();
+			}
+
 			auto branches = mGit->getAllBranchesAndTags();
 			auto hash = hashBranches( branches );
 			auto model = GitBranchModel::asModel( std::move( branches ), hash, this );
+
 			if ( mBranchesTree &&
 				 static_cast<GitBranchModel*>( mBranchesTree->getModel() )->getHash() == hash )
 				return;
+
 			getUISceneNode()->runOnMainThread( [this, model] { updateBranchesUI( model ); } );
-		}
-	} );
+		},
+		[this]( auto ) { mRunningUpdateBranches = false; } );
 }
 
 void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
@@ -825,6 +853,7 @@ void GitPlugin::buildSidePanelTab() {
 
 	mBranchesTree->setAutoExpandOnSingleColumn( true );
 	mBranchesTree->setHeadersVisible( false );
+	mBranchesTree->setIndentWidth( 0 );
 	mBranchesTree->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( !modelEvent->getModelIndex().hasParent() )
@@ -837,7 +866,10 @@ void GitPlugin::buildSidePanelTab() {
 			case EE::UI::Abstract::ModelEventType::Open: {
 				auto result = mGit->checkout( branch->name );
 				if ( result.returnCode == EXIT_SUCCESS ) {
-					mGitBranch = branch->name;
+					{
+						Lock l( mGitBranchMutex );
+						mGitBranch = branch->name;
+					}
 					if ( mBranchesTree->getModel() )
 						mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
 				} else {
@@ -865,6 +897,7 @@ void GitPlugin::buildSidePanelTab() {
 
 	mStatusTree->setAutoColumnsWidth( true );
 	mStatusTree->setHeadersVisible( false );
+	mStatusTree->setIndentWidth( 0 );
 }
 
 } // namespace ecode
