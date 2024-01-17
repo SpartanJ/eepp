@@ -343,6 +343,8 @@ class EE_API String {
 
 	template <typename... Args>
 	static std::string format( std::string_view format, Args&&... args ) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-security"
 		int size =
 			std::snprintf( nullptr, 0, format.data(),
 						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... ) +
@@ -353,6 +355,7 @@ class EE_API String {
 						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 			result.resize( size - 1 );
 		}
+#pragma clang diagnostic pop
 		return result;
 	}
 

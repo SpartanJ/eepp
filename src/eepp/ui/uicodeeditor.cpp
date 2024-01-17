@@ -622,7 +622,7 @@ Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
 		vScrollWidth += getMinimapWidth();
 	Float viewWidth = eefloor( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 							   getGutterWidth() - vScrollWidth );
-	return viewWidth;
+	return eemax( 0.f, viewWidth );
 }
 
 bool UICodeEditor::getShowIndentationGuides() const {
@@ -856,6 +856,7 @@ void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 		mDoc = doc;
 		mDoc->registerClient( this );
 		invalidateEditor();
+		invalidateLongestLineWidth();
 		invalidateDraw();
 		onDocumentChanged();
 	}
@@ -1832,6 +1833,8 @@ void UICodeEditor::scrollTo( TextRange position, bool centered, bool forceExactP
 	Float offsetXEnd = getXOffsetCol( position.end() );
 	Float minVisibility = getGlyphWidth();
 	Float viewPortWidth = getViewportWidth();
+	if ( viewPortWidth == 0 )
+		return;
 	if ( offsetXEnd + minVisibility > mScroll.x + viewPortWidth ) {
 		setScrollX( eefloor( eemax( 0.f, offsetXEnd + minVisibility - viewPortWidth ) ) );
 	} else if ( offsetXEnd < mScroll.x ) {
