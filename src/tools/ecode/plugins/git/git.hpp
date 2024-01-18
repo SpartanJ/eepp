@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -23,7 +24,7 @@ class Git {
 		std::size_t line{ 0 };
 	};
 
-	enum class FileStatus : char {
+	enum class GitStatusChar : char {
 		Unknown = ' ',
 		Modified = 'M',
 		Added = 'A',
@@ -33,17 +34,89 @@ class Git {
 		Deleted = 'D',
 		Untracked = '?',
 		Ignored = 'I',
+		Copied = 'C',
 		ModifiedSubmodule = 'm',
+	};
+
+	enum class GitStatus {
+		Unmerge_BothDeleted,
+		Unmerge_AddedByUs,
+		Unmerge_DeletedByThem,
+		Unmerge_AddedByThem,
+		Unmerge_DeletedByUs,
+		Unmerge_BothAdded,
+		Unmerge_BothModified,
+
+		Index_Modified,
+		Index_Added,
+		Index_Deleted,
+		Index_Renamed,
+		Index_Copied,
+		Index_ModifiedSubmodule,
+
+		WorkingTree_Modified,
+		WorkingTree_Deleted,
+		WorkingTree_IntentToAdd,
+		WorkingTree_ModifiedSubmodule,
+
+		Untracked,
+		Ignored,
+		NotSet
+	};
+
+	enum class GitStatusType {
+		Untracked,
+		Unmerged,
+		Changed,
+		Staged,
+		Ignored,
+	};
+
+	static constexpr uint16_t xy( char x, char y ) { return ( (uint16_t)x ) << 8 | y; }
+
+	static constexpr uint16_t x( uint16_t val ) { return ( val >> 8 ) & 0xFF; }
+
+	static constexpr uint16_t y( uint16_t val ) { return val & 0xFF; }
+
+	static constexpr auto ANY = 0;
+
+#define _xy( x, y ) ( ( (uint16_t)x ) << 8 | y )
+
+	enum StatusXY : uint16_t {
+		A = _xy( ' ', 'A' ),   // modified, added not updated
+		M = _xy( ' ', 'M' ),   // modified, modified not updated
+		D = _xy( ' ', 'D' ),   // modified, deleted not updated
+		m = _xy( ' ', 'm' ),   // modified, modified submodule not updated
+		DD = _xy( 'D', 'D' ),  // unmerged, both deleted
+		AU = _xy( 'A', 'U' ),  // unmerged, added by us
+		UD = _xy( 'U', 'D' ),  // unmerged, deleted by them
+		UA = _xy( 'U', 'A' ),  // unmerged, added by them
+		DU = _xy( 'D', 'U' ),  // unmerged, deleted by us
+		AA = _xy( 'A', 'A' ),  // unmerged, both added
+		UU = _xy( 'U', 'U' ),  // unmerged, both modified
+		QQ = _xy( '?', '?' ),  // untracked
+		II = _xy( '!', '!' ),  // ignored
+		SM = _xy( 'M', ANY ),  // staged modified
+		ST = _xy( 'T', ANY ),  // staged type changed
+		SA = _xy( 'A', ANY ),  // staged added
+		SD = _xy( 'D', ANY ),  // staged deleted
+		SR = _xy( 'R', ANY ),  // staged renamed
+		SC = _xy( 'C', ANY ),  // staged copied
+		SMM = _xy( 'm', ANY ), // staged modified submodule
 	};
 
 	struct DiffFile {
 		std::string file;
 		int inserts{ 0 };
 		int deletes{ 0 };
-		FileStatus status{ FileStatus::Unknown };
+		GitStatus status;
+		GitStatusType statusType;
+		GitStatusChar statusChar{ GitStatusChar::Unknown };
 
 		bool operator==( const DiffFile& other ) const {
-			return file == other.file && inserts == other.inserts && deletes == other.deletes;
+			return file == other.file && inserts == other.inserts && deletes == other.deletes &&
+				   status == other.status && statusType == other.statusType &&
+				   statusChar == other.statusChar;
 		}
 	};
 

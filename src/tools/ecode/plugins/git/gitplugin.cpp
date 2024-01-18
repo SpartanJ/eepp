@@ -235,7 +235,7 @@ class GitStatusModel : public Model {
 					case Column::Removed:
 						return Variant( String::format( "-%d ", s.deletes ) );
 					case Column::State:
-						return Variant( String::format( "%c", s.status ) );
+						return Variant( String::format( "%c", s.statusChar ) );
 					case Column::RelativeDirectory:
 						return Variant( FileSystem::fileRemoveFileName( s.file ) );
 				}
