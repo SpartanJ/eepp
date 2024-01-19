@@ -135,8 +135,12 @@ class Git {
 	};
 
 	struct Result {
-		std::string error;
+		std::string result;
 		int returnCode = 0;
+
+		bool success() const { return returnCode == EXIT_SUCCESS; }
+
+		bool fail() const { return !success(); }
 	};
 
 	struct CheckoutResult : public Result {
@@ -195,6 +199,12 @@ class Git {
 
 	Status status( bool recurseSubmodules, const std::string& projectDir = "" );
 
+	Result add( const std::string& file, const std::string& projectDir = "" );
+
+	Result restore( const std::string& file, const std::string& projectDir = "" );
+
+	Result reset( const std::string& file, const std::string& projectDir = "" );
+
 	bool setProjectPath( const std::string& projectPath );
 
 	const std::string& getGitPath() const;
@@ -204,6 +214,8 @@ class Git {
 	const std::string& getGitFolder() const;
 
 	std::string setSafeDirectory( const std::string& projectDir ) const;
+
+	Result pull( const std::string& projectDir = "" );
 
 	CheckoutResult checkout( const std::string& branch, const std::string& projectDir = "" ) const;
 

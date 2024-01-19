@@ -103,6 +103,7 @@ class GitPlugin : public PluginBase {
 	std::vector<UIWidget*> mStackMap;
 	UIWidget* mGitContentView{ nullptr };
 	UIWidget* mGitNoContentView{ nullptr };
+	UILoader* mLoader{ nullptr };
 	std::atomic<bool> mRunningUpdateBranches{ false };
 	std::atomic<bool> mRunningUpdateStatus{ false };
 	Mutex mGitBranchMutex;
@@ -119,6 +120,18 @@ class GitPlugin : public PluginBase {
 
 	void blame( UICodeEditor* editor );
 
+	void checkout( const std::string& branch );
+
+	void pull();
+
+	void stage( const std::string& file );
+
+	void unstage( const std::string& file );
+
+	void discard( const std::string& file );
+
+	void openFile( const std::string& file );
+
 	void updateStatus( bool force = false );
 
 	void updateStatusBarSync();
@@ -132,6 +145,10 @@ class GitPlugin : public PluginBase {
 	void buildSidePanelTab();
 
 	void updateBranchesUI( std::shared_ptr<GitBranchModel> );
+
+	void openBranchMenu( const Git::Branch& branch );
+
+	void openFileStatusMenu( const Git::DiffFile& file );
 };
 
 } // namespace ecode

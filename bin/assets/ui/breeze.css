@@ -935,8 +935,8 @@ treeview.selection_type_cell tableview::cell:selected {
 
 tableview::cell,
 treeview::cell {
-	padding-left: 6dp;
-	padding-right: 6dp;
+	padding-left: 4dp;
+	padding-right: 4dp;
 	min-icon-size: 16dp 16dp;
 }
 

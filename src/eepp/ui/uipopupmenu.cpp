@@ -3,6 +3,8 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI {
 
@@ -56,6 +58,17 @@ bool UIPopUpMenu::show() {
 	}
 
 	return false;
+}
+
+void UIPopUpMenu::showAtScreenPosition( Vector2f pos ) {
+	nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, this );
+	setPixelsPosition( pos );
+	show();
+}
+
+void UIPopUpMenu::showOverMouseCursor() {
+	showAtScreenPosition( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
 }
 
 bool UIPopUpMenu::hide() {

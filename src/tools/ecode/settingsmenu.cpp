@@ -1529,11 +1529,7 @@ void SettingsMenu::updateDocumentMenu() {
 }
 
 void SettingsMenu::showProjectTreeMenu() {
-	Vector2f pos( mApp->getWindow()->getInput()->getMousePosf() );
-	mProjectTreeMenu->nodeToWorldTranslation( pos );
-	UIMenu::findBestMenuPos( pos, mProjectTreeMenu );
-	mProjectTreeMenu->setPixelsPosition( pos );
-	mProjectTreeMenu->show();
+	mProjectTreeMenu->showOverMouseCursor();
 }
 
 void SettingsMenu::createProjectTreeMenu() {

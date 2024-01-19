@@ -41,6 +41,10 @@ class Plugin : public UICodeEditorPlugin {
 
 	String i18n( const std::string& key, const String& def ) const;
 
+	UIIcon* findIcon( const std::string& iconName );
+
+	Drawable* iconDrawable( const std::string& iconName, Float dpSize );
+
 	virtual void onVersionUpgrade( Uint32 /*oldVersion*/, Uint32 /*currentVersion*/ ) {}
 
 	void showMessage( LSPMessageType type, const std::string& message,

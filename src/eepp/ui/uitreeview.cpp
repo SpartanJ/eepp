@@ -258,21 +258,21 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 
 		bool hasChilds = false;
 
-		if ( widget->isType( UI_TYPE_TREEVIEW_CELL ) ) {
+		if ( widget->isType( UI_TYPE_TREEVIEW_CELL ) &&
+			 index.column() == (Int64)getModel()->treeColumn() ) {
 			UITreeViewCell* tcell = widget->asType<UITreeViewCell>();
 			UIImage* image = widget->asType<UITreeViewCell>()->getImage();
 
-			Float minIndent =
-				!mExpandersAsIcons && mExpandIcon && mContractIcon
-					? eemax( mExpandIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth(),
-							 mContractIcon->getSize( mExpanderIconSize )
-								 ->getPixelsSize()
-								 .getWidth() ) +
-						  PixelDensity::dpToPx( image->getLayoutMargin().Right )
-					: 0;
+			Float minIndent = 0;
+			if ( !mExpandersAsIcons && mExpandIcon && mContractIcon ) {
+				minIndent =
+					eemax(
+						mExpandIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth(),
+						mContractIcon->getSize( mExpanderIconSize )->getPixelsSize().getWidth() ) +
+					image->getLayoutPixelsMargin().Right;
+			}
 
-			if ( index.column() == (Int64)getModel()->treeColumn() )
-				tcell->setIndentation( minIndent + getIndentWidth() * indentLevel );
+			Float indentation = minIndent + getIndentWidth() * indentLevel;
 
 			hasChilds = getModel()->rowCount( index ) > 0;
 
@@ -286,15 +286,14 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 					image->setVisible( true );
 					image->setPixelsSize( drawable ? drawable->getPixelsSize() : Sizef( 0, 0 ) );
 					image->setDrawable( drawable );
-					if ( !mExpandersAsIcons ) {
-						tcell->setIndentation(
-							tcell->getIndentation() - image->getPixelsSize().getWidth() -
-							PixelDensity::dpToPx( image->getLayoutMargin().Right ) );
-					}
+					if ( !mExpandersAsIcons )
+						indentation = indentation - image->getPixelsSize().getWidth();
 				}
 			} else {
 				image->setVisible( false );
 			}
+
+			tcell->setIndentation( indentation );
 		}
 
 		if ( hasChilds && mExpandersAsIcons && cell->hasIcon() ) {

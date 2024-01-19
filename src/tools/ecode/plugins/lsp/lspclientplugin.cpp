@@ -1348,12 +1348,9 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	menu->addSeparator();
 
-	auto addFn = [this, editor, menu]( const std::string& txtKey, const std::string& txtVal,
+	auto addFn = [this, menu]( const std::string& txtKey, const std::string& txtVal,
 									   const std::string& icon = "" ) {
-		menu->add( editor->getUISceneNode()->i18n( txtKey, txtVal ),
-				   !icon.empty() ? mManager->getUISceneNode()->findIcon( icon )->getSize(
-									   PixelDensity::dpToPxI( 12 ) )
-								 : nullptr,
+		menu->add( i18n( txtKey, txtVal ), iconDrawable( icon, 12 ),
 				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
 			->setId( txtKey );
 	};

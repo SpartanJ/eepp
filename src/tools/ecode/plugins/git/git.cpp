@@ -134,17 +134,50 @@ std::string Git::setSafeDirectory( const std::string& projectDir ) const {
 	return buf;
 }
 
+Git::Result Git::pull( const std::string& projectDir ) {
+	std::string buf;
+	Git::Result res;
+	int retCode = git( "pull", projectDir, buf );
+	res.returnCode = retCode;
+	res.result = buf;
+	return res;
+}
+
 Git::CheckoutResult Git::checkout( const std::string& branch,
 								   const std::string& projectDir ) const {
 	std::string buf;
 	int retCode = git( String::format( "checkout %s", branch ), projectDir, buf );
 	Git::CheckoutResult res;
-	if ( EXIT_SUCCESS != retCode ) {
-		res.returnCode = retCode;
-		res.error = buf;
-	} else {
-		res.branch = branch;
-	}
+	res.returnCode = retCode;
+	res.result = buf;
+	res.branch = branch;
+	return res;
+}
+
+Git::Result Git::add( const std::string& file, const std::string& projectDir ) {
+	std::string buf;
+	int retCode = git( String::format( "add --force -- %s", file ), projectDir, buf );
+	Git::CheckoutResult res;
+	res.returnCode = retCode;
+	res.result = buf;
+	return res;
+}
+
+Git::Result Git::restore( const std::string& file, const std::string& projectDir ) {
+	std::string buf;
+	int retCode = git( String::format( "restore %s", file ), projectDir, buf );
+	Git::CheckoutResult res;
+	res.returnCode = retCode;
+	res.result = buf;
+	return res;
+}
+
+Git::Result Git::reset( const std::string& file, const std::string& projectDir ) {
+	std::string buf;
+	int retCode = git( String::format( "reset -q HEAD -- %s", file ), projectDir, buf );
+	Git::CheckoutResult res;
+	res.returnCode = retCode;
+	res.result = buf;
 	return res;
 }
 
@@ -157,12 +190,9 @@ Git::CheckoutResult Git::checkoutNewBranch( const std::string& newBranch,
 		args += " " + fromBranch;
 	int retCode = git( args, projectDir, buf );
 	Git::CheckoutResult res;
-	if ( EXIT_SUCCESS != retCode ) {
-		res.returnCode = retCode;
-		res.error = buf;
-	} else {
-		res.branch = buf;
-	}
+	res.returnCode = retCode;
+	res.result = buf;
+	res.branch = buf;
 	return res;
 }
 

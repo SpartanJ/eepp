@@ -35,6 +35,10 @@ class EE_API UIPopUpMenu : public UIMenu {
 
 	void setCloseSubMenusOnClose( bool closeSubMenusOnClose );
 
+	void showAtScreenPosition( Vector2f pos );
+
+	void showOverMouseCursor();
+
   protected:
 	Action* mHidingAction{ nullptr };
 	bool mCloseOnHide{ false };

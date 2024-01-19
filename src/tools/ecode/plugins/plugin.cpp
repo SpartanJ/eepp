@@ -53,6 +53,15 @@ String Plugin::i18n( const std::string& key, const String& def ) const {
 	return getManager()->getUISceneNode()->i18n( key, def );
 }
 
+UIIcon* Plugin::findIcon( const std::string& iconName ) {
+	return getManager()->getUISceneNode()->findIcon( iconName );
+}
+
+Drawable* Plugin::iconDrawable( const std::string& iconName, Float dpSize ) {
+	UIIcon* icon = findIcon( iconName );
+	return icon ? icon->getSize( PixelDensity::dpToPx( dpSize ) ) : nullptr;
+}
+
 void Plugin::showMessage( LSPMessageType type, const std::string& message,
 						  const std::string& title ) {
 	if ( !mManager )
