@@ -65,10 +65,10 @@ class Git {
 	};
 
 	enum class GitStatusType {
+		Staged,
+		Changed,
 		Untracked,
 		Unmerged,
-		Changed,
-		Staged,
 		Ignored,
 	};
 

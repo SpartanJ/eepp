@@ -263,6 +263,7 @@ std::string Git::inSubModule( const std::string& file, const std::string& projec
 
 Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir ) {
 	static constexpr auto DIFF_CMD = "diff --numstat";
+	static constexpr auto DIFF_STAGED_CMD = "diff --numstat --staged";
 	static constexpr auto STATUS_CMD = "-c color.status=never status -b -u -s";
 	Status s;
 	std::string buf;
@@ -327,10 +328,16 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 
 	parseNumStat();
 
+	git( DIFF_STAGED_CMD, projectDir, buf );
+	parseNumStat();
+
 	bool submodules = hasSubmodules( projectDir );
 
 	if ( recurseSubmodules && submodules ) {
 		gitSubmodules( DIFF_CMD, projectDir, buf );
+		parseNumStat();
+
+		gitSubmodules( DIFF_STAGED_CMD, projectDir, buf );
 		parseNumStat();
 	}
 

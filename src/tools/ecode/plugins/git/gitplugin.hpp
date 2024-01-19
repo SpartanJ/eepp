@@ -56,6 +56,8 @@ class GitPlugin : public PluginBase {
 
 	std::string gitBranch();
 
+	std::string statusTypeToString( Git::GitStatusType type );
+
   protected:
 	std::unique_ptr<Git> mGit;
 	std::string mGitBranch;

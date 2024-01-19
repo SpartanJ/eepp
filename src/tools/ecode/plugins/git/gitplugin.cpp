@@ -4,6 +4,7 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -29,6 +30,22 @@ static const char* GIT_BOLD = "bold";
 static const char* GIT_NOT_BOLD = "notbold";
 static const std::string GIT_TAG = "tag";
 static const std::string GIT_REPO = "repo";
+
+std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
+	switch ( type ) {
+		case Git::GitStatusType::Untracked:
+			return i18n( "git_untracked", "Untracked" );
+		case Git::GitStatusType::Unmerged:
+			return i18n( "git_unmerged", "Unmergedd" );
+		case Git::GitStatusType::Changed:
+			return i18n( "git_changed", "Changed" );
+		case Git::GitStatusType::Staged:
+			return i18n( "git_staged", "Staged" );
+		case Git::GitStatusType::Ignored:
+			return i18n( "git_ignored", "Ignored" );
+	}
+	return "";
+}
 
 static size_t hashBranches( const std::vector<Git::Branch>& branches ) {
 	size_t hash = 0;
@@ -177,17 +194,64 @@ class GitStatusModel : public Model {
 		return std::make_shared<GitStatusModel>( std::move( status ), gitPlugin );
 	}
 
+	struct RepoStatusType;
+	struct RepoStatus;
+
+	struct DiffFile : Git::DiffFile {
+		DiffFile( Git::DiffFile&& df, RepoStatusType* parent ) :
+			Git::DiffFile( df ), parent( parent ){};
+		RepoStatusType* parent;
+	};
+
+	struct RepoStatusType {
+		std::string typeStr;
+		Git::GitStatusType type;
+		std::vector<DiffFile> files;
+		RepoStatus* parent{ nullptr };
+	};
+
 	struct RepoStatus {
 		std::string repo;
-		std::vector<Git::DiffFile> files;
+		std::vector<RepoStatusType> type;
 	};
 
 	enum Column { File, State, Inserted, Removed, RelativeDirectory };
 
 	GitStatusModel( Git::FilesStatus&& status, GitPlugin* gitPlugin ) : mPlugin( gitPlugin ) {
-		mStatus.reserve( status.size() );
+		std::map<std::string, std::set<Git::GitStatusType>> typesFound;
+		std::unordered_map<std::string, size_t> repoPos;
+		std::unordered_map<size_t, std::unordered_map<Git::GitStatusType, size_t>> repoTypePos;
+
 		for ( auto& s : status )
-			mStatus.emplace_back( RepoStatus{ std::move( s.first ), std::move( s.second ) } );
+			for ( auto& f : s.second )
+				typesFound[s.first].insert( f.statusType );
+
+		for ( const auto& tf : typesFound ) {
+			RepoStatus rs;
+			rs.repo = tf.first;
+			size_t pos = mStatus.size();
+			repoPos[rs.repo] = pos;
+			for ( const auto& s : tf.second ) {
+				RepoStatusType rt;
+				rt.typeStr = mPlugin->statusTypeToString( s );
+				rt.type = s;
+				repoTypePos[pos][s] = rs.type.size();
+				rs.type.emplace_back( std::move( rt ) );
+			}
+			mStatus.emplace_back( std::move( rs ) );
+			auto parent = &mStatus[mStatus.size() - 1];
+			for ( auto& t : parent->type )
+				t.parent = parent;
+		}
+
+		for ( auto& s : status ) {
+			for ( auto& fv : s.second ) {
+				auto pos = repoPos[s.first];
+				auto typePos = repoTypePos[pos][fv.statusType];
+				DiffFile df( std::move( fv ), &mStatus[pos].type[typePos] );
+				mStatus[pos].type[typePos].files.emplace_back( std::move( df ) );
+			}
+		}
 	}
 
 	size_t treeColumn() const { return Column::File; }
@@ -195,38 +259,88 @@ class GitStatusModel : public Model {
 	size_t rowCount( const ModelIndex& index ) const {
 		if ( !index.isValid() )
 			return mStatus.size();
-		if ( index.internalId() == -1 )
-			return mStatus[index.row()].files.size();
+
+		if ( index.internalId() == Repo )
+			return mStatus[index.row()].type.size();
+
+		if ( index.internalId() == Status )
+			return mStatus[index.parent().row()].type[index.row()].files.size();
+
 		return 0;
 	}
 
 	size_t columnCount( const ModelIndex& ) const { return 5; }
 
 	ModelIndex parentIndex( const ModelIndex& index ) const {
-		if ( !index.isValid() || index.internalId() == -1 )
+		if ( !index.isValid() || index.internalId() == Repo )
 			return {};
-		return createIndex( index.internalId(), index.column(), &mStatus[index.internalId()], -1 );
+
+		if ( index.internalId() == Status ) {
+			RepoStatusType* status = reinterpret_cast<RepoStatusType*>( index.internalData() );
+			size_t f = 0;
+			for ( size_t i = 0; i < mStatus.size(); i++ ) {
+				if ( &mStatus[i] == status->parent ) {
+					f = i;
+					break;
+				}
+			}
+			return createIndex( f, index.column(), status->parent, Repo );
+		}
+
+		if ( index.internalId() == GitFile ) {
+			DiffFile* file = reinterpret_cast<DiffFile*>( index.internalData() );
+			RepoStatusType* status = file->parent;
+			size_t f = 0;
+			for ( size_t i = 0; i < status->parent->type.size(); i++ ) {
+				if ( &status->parent->type[i] == status ) {
+					f = i;
+					break;
+				}
+			}
+			return createIndex( f, index.column(), status, Status );
+		}
+
+		return {};
 	}
+
+	enum ModelCategory { Repo, Status, GitFile };
 
 	ModelIndex index( int row, int column, const ModelIndex& parent ) const {
 		if ( row < 0 || column < 0 )
 			return {};
+
 		if ( !parent.isValid() )
-			return createIndex( row, column, &mStatus[row], -1 );
-		if ( parent.internalData() )
-			return createIndex( row, column, &mStatus[parent.row()].files[row], parent.row() );
+			return createIndex( row, column, &mStatus[row], Repo );
+
+		if ( parent.internalId() == Repo )
+			return createIndex( row, column, &mStatus[parent.row()].type[row], Status );
+
+		if ( parent.internalId() == Status ) {
+			size_t pprow = parent.parent().row();
+			size_t prow = parent.row();
+			return createIndex( row, column, &mStatus[pprow].type[prow].files[row], GitFile );
+		}
+
 		return {};
 	}
 
 	Variant data( const ModelIndex& index, ModelRole role ) const {
 		switch ( role ) {
 			case ModelRole::Display: {
-				if ( index.internalId() == -1 ) {
+				if ( index.internalId() == Repo ) {
 					if ( index.column() == Column::File )
 						return Variant( mStatus[index.row()].repo.c_str() );
 					return Variant( GIT_EMPTY );
+				} else if ( index.internalId() == Status ) {
+					if ( index.column() == Column::File ) {
+						return Variant(
+							mStatus[index.parent().row()].type[index.row()].typeStr.c_str() );
+					}
+					return Variant( GIT_EMPTY );
 				}
-				const Git::DiffFile& s = mStatus[index.internalId()].files[index.row()];
+				const Git::DiffFile& s = mStatus[index.parent().parent().row()]
+											 .type[index.parent().row()]
+											 .files[index.row()];
 				switch ( index.column() ) {
 					case Column::File:
 						return Variant( FileSystem::fileNameFromPath( s.file ) );
@@ -242,7 +356,7 @@ class GitStatusModel : public Model {
 				break;
 			}
 			case ModelRole::Class: {
-				if ( index.internalId() != -1 ) {
+				if ( index.internalId() == GitFile ) {
 					switch ( index.column() ) {
 						case Column::Inserted:
 							return Variant( GIT_SUCCESS );
@@ -250,6 +364,26 @@ class GitStatusModel : public Model {
 							return Variant( GIT_ERROR );
 						default:
 							break;
+					}
+				}
+				break;
+			}
+			case ModelRole::Icon: {
+				if ( (Int64)treeColumn() == index.column() ) {
+					if ( index.internalId() == Repo ) {
+						return Variant(
+							mPlugin->getManager()->getUISceneNode()->findIcon( "repo" ) );
+					} else if ( index.internalId() == GitFile ) {
+						const Git::DiffFile& s = mStatus[index.parent().parent().row()]
+													 .type[index.parent().row()]
+													 .files[index.row()];
+						std::string iconName =
+							UIIconThemeManager::getIconNameFromFileName( s.file );
+						auto* scene = mPlugin->getUISceneNode();
+						auto* d = scene->findIcon( iconName );
+						if ( !d )
+							return scene->findIcon( "file" );
+						return d;
 					}
 				}
 				break;
@@ -897,7 +1031,6 @@ void GitPlugin::buildSidePanelTab() {
 
 	mStatusTree->setAutoColumnsWidth( true );
 	mStatusTree->setHeadersVisible( false );
-	mStatusTree->setIndentWidth( 0 );
 }
 
 } // namespace ecode

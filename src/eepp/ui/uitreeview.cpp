@@ -280,13 +280,17 @@ UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
 				Drawable* drawable = icon ? icon->getSize( mExpanderIconSize ) : nullptr;
 
-				image->setVisible( true );
-				image->setPixelsSize( drawable ? drawable->getPixelsSize() : Sizef( 0, 0 ) );
-				image->setDrawable( drawable );
-				if ( !mExpandersAsIcons ) {
-					tcell->setIndentation( tcell->getIndentation() -
-										   image->getPixelsSize().getWidth() -
-										   PixelDensity::dpToPx( image->getLayoutMargin().Right ) );
+				if ( drawable == nullptr ) {
+					image->setVisible( false );
+				} else {
+					image->setVisible( true );
+					image->setPixelsSize( drawable ? drawable->getPixelsSize() : Sizef( 0, 0 ) );
+					image->setDrawable( drawable );
+					if ( !mExpandersAsIcons ) {
+						tcell->setIndentation(
+							tcell->getIndentation() - image->getPixelsSize().getWidth() -
+							PixelDensity::dpToPx( image->getLayoutMargin().Right ) );
+					}
 				}
 			} else {
 				image->setVisible( false );
