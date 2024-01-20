@@ -147,6 +147,11 @@ class Git {
 		std::string branch;
 	};
 
+	struct CountResult : public Result {
+		int64_t behind{ 0 };
+		int64_t ahead{ 0 };
+	};
+
 	enum RefType {
 		Head = 0x1,
 		Remote = 0x2,
@@ -205,6 +210,15 @@ class Git {
 
 	Result reset( const std::string& file, const std::string& projectDir = "" );
 
+	Result deleteBranch( const std::string& branch, const std::string& projectDir = "" );
+
+	CountResult branchHistoryPosition( const std::string& localBranch,
+									   const std::string& remoteBranch,
+									   const std::string& projectDir = "" );
+
+	CountResult branchHistoryPosition( const Git::Branch& branch,
+									   const std::string& projectDir = "" );
+
 	bool setProjectPath( const std::string& projectPath );
 
 	const std::string& getGitPath() const;
@@ -218,6 +232,10 @@ class Git {
 	Result pull( const std::string& projectDir = "" );
 
 	CheckoutResult checkout( const std::string& branch, const std::string& projectDir = "" ) const;
+
+	CheckoutResult checkoutAndCreateLocalBranch( const std::string& remoteBranch,
+												 const std::string& newBranch = "",
+												 const std::string& projectDir = "" ) const;
 
 	CheckoutResult checkoutNewBranch( const std::string& newBranch,
 									  const std::string& fromBranch = "",

@@ -120,7 +120,9 @@ class GitPlugin : public PluginBase {
 
 	void blame( UICodeEditor* editor );
 
-	void checkout( const std::string& branch );
+	void checkout( Git::Branch branch );
+
+	void branchDelete( Git::Branch branch );
 
 	void pull();
 

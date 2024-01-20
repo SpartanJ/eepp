@@ -29,8 +29,8 @@ static const char* GIT_SUCCESS = "success";
 static const char* GIT_ERROR = "error";
 static const char* GIT_BOLD = "bold";
 static const char* GIT_NOT_BOLD = "notbold";
-static const std::string GIT_TAG = "tag";
-static const std::string GIT_REPO = "repo";
+static const char* GIT_TAG = "tag";
+static const char* GIT_REPO = "repo";
 
 std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
 	switch ( type ) {
@@ -140,7 +140,8 @@ class GitBranchModel : public Model {
 			case ModelRole::Display: {
 				if ( index.internalId() == -1 ) {
 					if ( index.column() == Column::Name )
-						return Variant( mBranches[index.row()].branch.c_str() );
+						return Variant( String::format( "%s (%zu)", mBranches[index.row()].branch,
+														mBranches[index.row()].data.size() ) );
 					return Variant( GIT_EMPTY );
 				}
 				const Git::Branch& branch = mBranches[index.internalId()].data[index.row()];
@@ -843,22 +844,58 @@ void GitPlugin::blame( UICodeEditor* editor ) {
 	} );
 }
 
-void GitPlugin::checkout( const std::string& branch ) {
+void GitPlugin::checkout( Git::Branch branch ) {
+	if ( !mGit )
+		return;
+
+	const auto checkOutFn = [this, branch]( bool createLocal ) {
+		mLoader->setVisible( true );
+		mThreadPool->run( [this, branch, createLocal] {
+			auto result = createLocal ? mGit->checkoutAndCreateLocalBranch( branch.name )
+									  : mGit->checkout( branch.name );
+			if ( result.success() ) {
+				{
+					Lock l( mGitBranchMutex );
+					mGitBranch = branch.name;
+				}
+				if ( mBranchesTree->getModel() ) {
+					if ( createLocal )
+						updateBranches();
+					else
+						mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
+				}
+			} else {
+				showMessage( LSPMessageType::Warning, result.result );
+			}
+			getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
+		} );
+	};
+
+	if ( branch.type == Git::RefType::Remote ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::YES_NO, i18n( "git_create_local_branch", "Create local branch?" ) );
+		msgBox->on( Event::OnConfirm, [checkOutFn]( const Event* ) { checkOutFn( true ); } );
+		msgBox->on( Event::OnCancel, [checkOutFn]( const Event* ) { checkOutFn( false ); } );
+		msgBox->setTitle( i18n( "git_checkout", "Check Out" ) );
+		msgBox->center();
+		msgBox->showWhenReady();
+		return;
+	}
+
+	checkOutFn( false );
+}
+
+void GitPlugin::branchDelete( Git::Branch branch ) {
 	if ( !mGit )
 		return;
 	mLoader->setVisible( true );
 	mThreadPool->run( [this, branch] {
-		auto result = mGit->checkout( branch );
-		if ( result.success() ) {
-			{
-				Lock l( mGitBranchMutex );
-				mGitBranch = branch;
-			}
-			if ( mBranchesTree->getModel() )
-				mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
-		} else {
-			showMessage( LSPMessageType::Warning, result.result );
+		auto res = mGit->deleteBranch( branch.name );
+		if ( res.fail() ) {
+			showMessage( LSPMessageType::Warning, res.result );
+			return;
 		}
+		updateBranches();
 		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
 	} );
 }
@@ -904,14 +941,27 @@ void GitPlugin::unstage( const std::string& file ) {
 void GitPlugin::discard( const std::string& file ) {
 	if ( !mGit )
 		return;
-	mLoader->setVisible( true );
-	mThreadPool->run( [this, file] {
-		auto res = mGit->restore( file );
-		if ( res.fail() )
-			showMessage( LSPMessageType::Warning, res.result );
-		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-		updateStatus( true );
+
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		String::format( i18n( "git_confirm_discard_changes",
+							  "Are you sure you want to discard the changes in file: \"%s\"?" )
+							.toUtf8(),
+						file ) );
+
+	msgBox->on( Event::OnConfirm, [this, file]( auto ) {
+		mLoader->setVisible( true );
+		mThreadPool->run( [this, file] {
+			auto res = mGit->restore( file );
+			if ( res.fail() )
+				showMessage( LSPMessageType::Warning, res.result );
+			getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
+			updateStatus( true );
+		} );
 	} );
+	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
 }
 
 void GitPlugin::openFile( const std::string& file ) {
@@ -940,7 +990,6 @@ void GitPlugin::onRegister( UICodeEditor* editor ) {
 			mTab->setTabSelected();
 	} );
 	doc.setCommand( "git-pull", [this]() { pull(); } );
-	doc.setCommand( "git-checkout", [this]() { checkout( mGitBranch ); } );
 }
 
 void GitPlugin::onUnregister( UICodeEditor* editor ) {
@@ -1082,7 +1131,7 @@ void GitPlugin::buildSidePanelTab() {
 
 		switch ( modelEvent->getModelEventType() ) {
 			case EE::UI::Abstract::ModelEventType::Open: {
-				checkout( branch->name );
+				checkout( *branch );
 				break;
 			}
 			case EE::UI::Abstract::ModelEventType::OpenMenu: {
@@ -1146,23 +1195,25 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 
 	if ( mGitBranch != branch.name ) {
 		addFn( "git-checkout", "Check Out..." );
+		if ( branch.type == Git::RefType::Head ) {
+			addFn( "git-branch-delete", "Delete" );
+		}
 	} else {
 		addFn( "git-pull", "Pull", "repo-pull" );
 	}
 
-	std::string name( branch.name );
-	menu->on( Event::OnItemClicked, [this, name]( const Event* event ) {
+	menu->on( Event::OnItemClicked, [this, branch]( const Event* event ) {
 		if ( !mGit )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string id( item->getId() );
-		mThreadPool->run( [this, id, name]() {
-			if ( id == "git-checkout" ) {
-				checkout( name );
-			} else if ( id == "git-pull" ) {
-				pull();
-			}
-		} );
+		if ( id == "git-checkout" ) {
+			checkout( branch );
+		} else if ( id == "git-pull" ) {
+			pull();
+		} else if ( id == "git-branch-delete" ) {
+			branchDelete( branch );
+		}
 	} );
 
 	menu->showOverMouseCursor();
@@ -1185,28 +1236,26 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 		addFn( "git-stage", "Stage" );
 	} else {
 		addFn( "git-unstage", "Unstage" );
-
-		menu->addSeparator();
-
-		addFn( "git-discard", "Discard" );
 	}
+
+	menu->addSeparator();
+
+	addFn( "git-discard", "Discard" );
 
 	menu->on( Event::OnItemClicked, [this, file]( const Event* event ) {
 		if ( !mGit )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string id( item->getId() );
-		mThreadPool->run( [this, id, file]() {
-			if ( id == "git-stage" ) {
-				stage( file.file );
-			} else if ( id == "git-unstage" ) {
-				unstage( file.file );
-			} else if ( id == "git-discard" ) {
-				discard( file.file );
-			} else if ( id == "git-open-file" ) {
-				openFile( file.file );
-			}
-		} );
+		if ( id == "git-stage" ) {
+			stage( file.file );
+		} else if ( id == "git-unstage" ) {
+			unstage( file.file );
+		} else if ( id == "git-discard" ) {
+			discard( file.file );
+		} else if ( id == "git-open-file" ) {
+			openFile( file.file );
+		}
 	} );
 
 	menu->showOverMouseCursor();

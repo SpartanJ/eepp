@@ -154,9 +154,40 @@ Git::CheckoutResult Git::checkout( const std::string& branch,
 	return res;
 }
 
+Git::CheckoutResult Git::checkoutAndCreateLocalBranch( const std::string& remoteBranch,
+													   const std::string& newBranch,
+													   const std::string& projectDir ) const {
+	std::string newBranchName =
+		newBranch.empty() ? ( remoteBranch.find_last_of( '/' ) != std::string::npos
+								  ? remoteBranch.substr( remoteBranch.find_last_of( '/' ) + 1 )
+								  : remoteBranch )
+						  : newBranch;
+	Git::CheckoutResult res;
+	std::string buf;
+	int retCode =
+		git( String::format( "branch --no-track %s refs/remotes/%s", newBranchName, remoteBranch ),
+			 projectDir, buf );
+	if ( retCode != EXIT_SUCCESS ) {
+		res.returnCode = retCode;
+		res.result = buf;
+		return res;
+	}
+
+	retCode = git( String::format( "branch --set-upstream-to=refs/remotes/%s %s", remoteBranch,
+								   newBranchName ),
+				   projectDir, buf );
+	if ( retCode != EXIT_SUCCESS ) {
+		res.returnCode = retCode;
+		res.result = buf;
+		return res;
+	}
+
+	return checkout( newBranchName, projectDir );
+}
+
 Git::Result Git::add( const std::string& file, const std::string& projectDir ) {
 	std::string buf;
-	int retCode = git( String::format( "add --force -- %s", file ), projectDir, buf );
+	int retCode = git( String::format( "add --force -- \"%s\"", file ), projectDir, buf );
 	Git::CheckoutResult res;
 	res.returnCode = retCode;
 	res.result = buf;
@@ -165,7 +196,7 @@ Git::Result Git::add( const std::string& file, const std::string& projectDir ) {
 
 Git::Result Git::restore( const std::string& file, const std::string& projectDir ) {
 	std::string buf;
-	int retCode = git( String::format( "restore %s", file ), projectDir, buf );
+	int retCode = git( String::format( "restore \"%s\"", file ), projectDir, buf );
 	Git::CheckoutResult res;
 	res.returnCode = retCode;
 	res.result = buf;
@@ -174,11 +205,56 @@ Git::Result Git::restore( const std::string& file, const std::string& projectDir
 
 Git::Result Git::reset( const std::string& file, const std::string& projectDir ) {
 	std::string buf;
-	int retCode = git( String::format( "reset -q HEAD -- %s", file ), projectDir, buf );
+	int retCode = git( String::format( "reset -q HEAD -- \"%s\"", file ), projectDir, buf );
 	Git::CheckoutResult res;
 	res.returnCode = retCode;
 	res.result = buf;
 	return res;
+}
+
+Git::Result Git::deleteBranch( const std::string& branch, const std::string& projectDir ) {
+	std::string buf;
+	int retCode = git( String::format( "branch -D %s", branch ), projectDir, buf );
+	Git::CheckoutResult res;
+	res.returnCode = retCode;
+	res.result = buf;
+	return res;
+}
+
+Git::CountResult Git::branchHistoryPosition( const std::string& localBranch,
+											 const std::string& remoteBranch,
+											 const std::string& projectDir ) {
+	std::string buf;
+	int retCode = git( String::format( "rev-list --count %s..%s", localBranch, remoteBranch ),
+					   projectDir, buf );
+	Git::CountResult res;
+	res.returnCode = retCode;
+	if ( res.success() ) {
+		uint64_t count = 0;
+		if ( String::fromString( count, buf ) )
+			res.behind = count;
+	} else {
+		res.result = buf;
+		return res;
+	}
+
+	retCode = git( String::format( "rev-list --count %s..%s", remoteBranch, localBranch ),
+				   projectDir, buf );
+	res.returnCode = retCode;
+
+	if ( res.success() ) {
+		uint64_t count = 0;
+		if ( String::fromString( count, buf ) )
+			res.ahead = count;
+	} else {
+		res.result = buf;
+	}
+
+	return res;
+}
+
+Git::CountResult Git::branchHistoryPosition( const Branch& branch, const std::string& projectDir ) {
+	return branchHistoryPosition( branch.name, branch.remote, projectDir );
 }
 
 Git::CheckoutResult Git::checkoutNewBranch( const std::string& newBranch,
@@ -305,20 +381,18 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	LuaPattern subModulePattern( "^Entering '(.*)'" );
 
 	auto parseNumStat = [&s, &buf, &projectDir, this, &subModulePattern]() {
-		auto lastNL = 0;
-		auto nextNL = buf.find_first_of( '\n' );
 		LuaPattern pattern( "(%d+)%s+(%d+)%s+(.+)" );
 		std::string subModulePath = "";
-		while ( nextNL != std::string_view::npos ) {
+		readAllLines( buf, [&]( const std::string_view& line ) {
 			LuaPattern::Range matches[4];
-			if ( subModulePattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
+			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
-					buf.substr( matches[1].start, matches[1].end - matches[1].start ) );
+					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
 				FileSystem::dirAddSlashAtEnd( subModulePath );
-			} else if ( pattern.matches( buf.c_str(), lastNL, matches, nextNL ) ) {
-				auto inserted = buf.substr( matches[1].start, matches[1].end - matches[1].start );
-				auto deleted = buf.substr( matches[2].start, matches[2].end - matches[2].start );
-				auto file = buf.substr( matches[3].start, matches[3].end - matches[3].start );
+			} else if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
+				auto inserted = line.substr( matches[1].start, matches[1].end - matches[1].start );
+				auto deleted = line.substr( matches[2].start, matches[2].end - matches[2].start );
+				auto file = line.substr( matches[3].start, matches[3].end - matches[3].start );
 				int inserts;
 				int deletes;
 				if ( String::fromString( inserts, inserted ) &&
@@ -351,9 +425,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					s.totalDeletions += deletes;
 				}
 			}
-			lastNL = nextNL + 1;
-			nextNL = buf.find_first_of( '\n', nextNL + 1 );
-		}
+		} );
 	};
 
 	parseNumStat();
@@ -373,12 +445,9 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 
 	bool modifiedSubmodule = false;
 	auto parseStatus = [&s, &buf, &modifiedSubmodule, &projectDir, this, &subModulePattern]() {
-		auto lastNL = 0;
-		auto nextNL = buf.find_first_of( '\n' );
-		LuaPattern pattern( "^([mMARTUD?%s][mMARTUD?%s])%s(.*)" );
 		std::string subModulePath = "";
-		while ( nextNL != std::string_view::npos ) {
-			std::string_view line = std::string_view{ buf }.substr( lastNL, nextNL - lastNL );
+		LuaPattern pattern( "^([mMARTUD?%s][mMARTUD?%s])%s(.*)" );
+		readAllLines( buf, [&]( const std::string_view& line ) {
 			LuaPattern::Range matches[3];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
@@ -388,7 +457,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				auto statusStr = line.substr( matches[1].start, matches[1].end - matches[1].start );
 				auto file = line.substr( matches[2].start, matches[2].end - matches[2].start );
 				if ( statusStr.size() < 2 )
-					continue;
+					return;
 
 				Uint16 status = xy( statusStr[0], statusStr[1] );
 				GitStatus gitStatus = GitStatus::NotSet;
@@ -557,9 +626,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					}
 				}
 			}
-			lastNL = nextNL + 1;
-			nextNL = buf.find_first_of( '\n', nextNL + 1 );
-		}
+		} );
 	};
 
 	git( STATUS_CMD, projectDir, buf );
