@@ -589,8 +589,11 @@ void GitPlugin::updateStatusBarSync() {
 			mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
 
 		mStatusButton->on( Event::MouseClick, [this]( const Event* ) {
-			if ( mTab )
+			if ( mTab ) {
 				mTab->setTabSelected();
+				if ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
+					mPanelSwicher->getListBox()->setSelected( 1 );
+			}
 		} );
 	}
 
