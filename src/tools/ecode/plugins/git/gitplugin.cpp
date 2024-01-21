@@ -888,6 +888,39 @@ void GitPlugin::checkout( Git::Branch branch ) {
 	checkOutFn( false );
 }
 
+void GitPlugin::branchRename( Git::Branch branch ) {
+	if ( !mGit )
+		return;
+
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		String::format(
+			i18n( "git_rename_branch_ask", "Enter the new name for the branch: '%s'" ).toUtf8(),
+			branch.name ) );
+	msgBox->on( Event::OnConfirm, [this, branch, msgBox]( const Event* ) {
+		std::string newName( msgBox->getTextInput()->getText().toUtf8() );
+		if ( newName.empty() || branch.name == newName )
+			return;
+
+		mLoader->setVisible( true );
+		msgBox->closeWindow();
+		mThreadPool->run( [this, branch, newName] {
+			auto res = mGit->renameBranch( branch.name, newName );
+			if ( res.fail() ) {
+				showMessage( LSPMessageType::Warning, res.result );
+				return;
+			}
+			updateBranches();
+			getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
+		} );
+	} );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "git_rename_branch", "Rename Branch" ) );
+	msgBox->center();
+	msgBox->getTextInput()->setText( branch.name );
+	msgBox->showWhenReady();
+}
+
 void GitPlugin::branchDelete( Git::Branch branch ) {
 	if ( !mGit )
 		return;
@@ -962,6 +995,7 @@ void GitPlugin::discard( const std::string& file ) {
 			updateStatus( true );
 		} );
 	} );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
 	msgBox->center();
 	msgBox->showWhenReady();
@@ -1199,6 +1233,7 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 	if ( mGitBranch != branch.name ) {
 		addFn( "git-checkout", "Check Out..." );
 		if ( branch.type == Git::RefType::Head ) {
+			addFn( "git-branch-rename", "Rename" );
 			addFn( "git-branch-delete", "Delete" );
 		}
 	} else {
@@ -1216,6 +1251,8 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 			pull();
 		} else if ( id == "git-branch-delete" ) {
 			branchDelete( branch );
+		} else if ( id == "git-branch-rename" ) {
+			branchRename( branch );
 		}
 	} );
 

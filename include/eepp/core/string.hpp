@@ -362,7 +362,7 @@ class EE_API String {
 #ifdef __clang__
 #pragma clang diagnostic pop
 #elif defined( __GNUC__ )
-#pragma diagnostic pop
+#pragma GCC diagnostic pop
 #endif
 		return result;
 	}

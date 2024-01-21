@@ -1,7 +1,6 @@
 #include <cstdint>
 #include <map>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace ecode {
@@ -208,6 +207,9 @@ class Git {
 
 	Result reset( const std::string& file, const std::string& projectDir = "" );
 
+	Result renameBranch( const std::string& branch, const std::string& newName,
+						 const std::string& projectDir = "" );
+
 	Result deleteBranch( const std::string& branch, const std::string& projectDir = "" );
 
 	CountResult branchHistoryPosition( const std::string& localBranch,
@@ -254,9 +256,6 @@ class Git {
 
 	std::vector<std::string> getSubModules( const std::string& projectDir = "" );
 
-	std::unordered_map<std::string, std::string>
-	getHeadOrigins( const std::string& projectDir = "" );
-
   protected:
 	std::string mGitPath;
 	std::string mProjectPath;
@@ -269,9 +268,7 @@ class Git {
 
 	std::string inSubModule( const std::string& file, const std::string& projectDir );
 
-	Git::Branch parseLocalBranch( const std::string_view& raw,
-								  const std::unordered_map<std::string, std::string>& headOrigins,
-								  const std::string& projectDir = "" );
+	Git::Branch parseLocalBranch( const std::string_view& raw, const std::string& projectDir );
 };
 
 } // namespace ecode

@@ -122,6 +122,8 @@ class GitPlugin : public PluginBase {
 
 	void checkout( Git::Branch branch );
 
+	void branchRename( Git::Branch branch );
+
 	void branchDelete( Git::Branch branch );
 
 	void pull();

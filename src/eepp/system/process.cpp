@@ -10,6 +10,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 #define SUBPROCESS_USE_POSIX_SPAWN
+#elif defined( __GLIBC__ ) && ( __GLIBC__ > 2 || ( __GLIBC__ == 2 && __GLIBC_MINOR__ >= 29 ) )
+#define SUBPROCESS_USE_POSIX_SPAWN
 #endif
 #include <thirdparty/subprocess/subprocess.h>
 #include <vector>

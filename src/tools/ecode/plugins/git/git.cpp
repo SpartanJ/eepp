@@ -188,7 +188,7 @@ Git::CheckoutResult Git::checkoutAndCreateLocalBranch( const std::string& remote
 Git::Result Git::add( const std::string& file, const std::string& projectDir ) {
 	std::string buf;
 	int retCode = git( String::format( "add --force -- \"%s\"", file ), projectDir, buf );
-	Git::CheckoutResult res;
+	Git::Result res;
 	res.returnCode = retCode;
 	res.result = buf;
 	return res;
@@ -197,7 +197,7 @@ Git::Result Git::add( const std::string& file, const std::string& projectDir ) {
 Git::Result Git::restore( const std::string& file, const std::string& projectDir ) {
 	std::string buf;
 	int retCode = git( String::format( "restore \"%s\"", file ), projectDir, buf );
-	Git::CheckoutResult res;
+	Git::Result res;
 	res.returnCode = retCode;
 	res.result = buf;
 	return res;
@@ -206,7 +206,17 @@ Git::Result Git::restore( const std::string& file, const std::string& projectDir
 Git::Result Git::reset( const std::string& file, const std::string& projectDir ) {
 	std::string buf;
 	int retCode = git( String::format( "reset -q HEAD -- \"%s\"", file ), projectDir, buf );
-	Git::CheckoutResult res;
+	Git::Result res;
+	res.returnCode = retCode;
+	res.result = buf;
+	return res;
+}
+
+Git::Result Git::renameBranch( const std::string& branch, const std::string& newName,
+							   const std::string& projectDir ) {
+	std::string buf;
+	int retCode = git( String::format( "branch -M %s %s", branch, newName ), projectDir, buf );
+	Git::Result res;
 	res.returnCode = retCode;
 	res.result = buf;
 	return res;
@@ -215,7 +225,7 @@ Git::Result Git::reset( const std::string& file, const std::string& projectDir )
 Git::Result Git::deleteBranch( const std::string& branch, const std::string& projectDir ) {
 	std::string buf;
 	int retCode = git( String::format( "branch -D %s", branch ), projectDir, buf );
-	Git::CheckoutResult res;
+	Git::Result res;
 	res.returnCode = retCode;
 	res.result = buf;
 	return res;
@@ -273,31 +283,30 @@ std::vector<Git::Branch> Git::getAllBranches( const std::string& projectDir ) {
 								  projectDir );
 }
 
-Git::Branch Git::parseLocalBranch( const std::string_view& raw,
-								   const std::unordered_map<std::string, std::string>& headOrigins,
-								   const std::string& projectDir ) {
+Git::Branch Git::parseLocalBranch( const std::string_view& raw, const std::string& projectDir ) {
 	static constexpr size_t len = std::string_view{ "refs/heads/"sv }.size();
 	if ( len >= raw.size() )
 		return {};
 
-	std::string name( std::string{ raw.substr( len ) } );
-	auto found = headOrigins.find( name );
-	std::string remote;
+	auto split = String::split( raw, '\t' );
+	if ( split.size() != 2 )
+		return {};
+	std::string name( std::string{ split[0].substr( len ) } );
+	std::string remote( std::string{ split[1] } );
 	int64_t ahead = 0;
 	int64_t behind = 0;
-	if ( found != headOrigins.end() ) {
-		remote = found->second;
-		auto res = branchHistoryPosition( name, remote );
-		if ( res.success() ) {
-			ahead = res.ahead;
-			behind = res.behind;
-		}
+
+	auto res = branchHistoryPosition( name, remote );
+	if ( res.success() ) {
+		ahead = res.ahead;
+		behind = res.behind;
 	}
+
 	return Git::Branch{
 		std::move( name ), std::move( remote ), Git::RefType::Head, std::string{}, ahead, behind };
 }
 
-static Git::Branch parseRemoteBranch( const std::string_view& raw ) {
+static Git::Branch parseRemoteBranch( std::string_view raw ) {
 	static constexpr size_t len = std::string_view( "refs/remotes/"sv ).size();
 	size_t indexOfRemote = raw.find_first_of( '/', len );
 	if ( indexOfRemote != std::string::npos && len < raw.size() ) {
@@ -309,7 +318,7 @@ static Git::Branch parseRemoteBranch( const std::string_view& raw ) {
 }
 
 std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::string& projectDir ) {
-	std::string args( "for-each-ref --format '%(refname)' --sort=v:refname" );
+	std::string args( "for-each-ref --format '%(refname)	%(upstream:short)' --sort=v:refname" );
 	if ( ref & RefType::Head )
 		args.append( " refs/heads" );
 	if ( ref & RefType::Remote )
@@ -325,12 +334,10 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::str
 
 	branches.reserve( countLines( buf ) );
 
-	auto headOrigins = getHeadOrigins( projectDir );
-
 	readAllLines( buf, [&]( const std::string_view& line ) {
-		auto branch = String::trim( String::trim( line, '\n' ), '\'' );
+		auto branch = String::trim( String::trim( line, '\'' ), '\t' );
 		if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
-			branches.emplace_back( parseLocalBranch( branch, headOrigins ) );
+			branches.emplace_back( parseLocalBranch( branch, projectDir ) );
 		} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
 			branches.emplace_back( parseRemoteBranch( branch ) );
 		} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
@@ -366,26 +373,6 @@ std::vector<std::string> Git::getSubModules( const std::string& projectDir ) {
 		mSubModulesUpdated = true;
 	}
 	return mSubModules;
-}
-
-std::unordered_map<std::string, std::string> Git::getHeadOrigins( const std::string& projectDir ) {
-	std::unordered_map<std::string, std::string> ret;
-	std::string buf;
-	int retCode = git( "for-each-ref --format='%(refname:short)	%(upstream:short)' refs/heads",
-					   projectDir, buf );
-	Result res;
-	res.returnCode = retCode;
-	if ( res.fail() )
-		return ret;
-
-	readAllLines( buf, [&ret]( const std::string_view& line ) {
-		auto split = String::split( String::trim( line, '\'' ), '\t' );
-		if ( split.size() != 2 )
-			return;
-		ret[std::string{ split[0] }] = std::string{ split[1] };
-	} );
-
-	return ret;
 }
 
 bool Git::hasSubmodules( const std::string& projectDir ) {
