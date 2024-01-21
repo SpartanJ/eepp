@@ -327,7 +327,7 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::str
 
 	auto headOrigins = getHeadOrigins( projectDir );
 
-	readAllLines( buf, [&branches, ref, &headOrigins, this]( const std::string_view& line ) {
+	readAllLines( buf, [&]( const std::string_view& line ) {
 		auto branch = String::trim( String::trim( line, '\n' ), '\'' );
 		if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
 			branches.emplace_back( parseLocalBranch( branch, headOrigins ) );
