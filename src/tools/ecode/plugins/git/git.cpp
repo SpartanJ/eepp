@@ -225,31 +225,27 @@ Git::CountResult Git::branchHistoryPosition( const std::string& localBranch,
 											 const std::string& remoteBranch,
 											 const std::string& projectDir ) {
 	std::string buf;
-	int retCode = git( String::format( "rev-list --count %s..%s", localBranch, remoteBranch ),
-					   projectDir, buf );
+	int retCode =
+		git( String::format( "rev-list --left-right --count %s...%s", localBranch, remoteBranch ),
+			 projectDir, buf );
 	Git::CountResult res;
 	res.returnCode = retCode;
 	if ( res.success() ) {
-		uint64_t count = 0;
-		if ( String::fromString( count, buf ) )
-			res.behind = count;
+		String::trimInPlace( buf );
+		auto results = String::split( buf, '\t' );
+		if ( results.size() == 2 ) {
+			int64_t behind = 0;
+			int64_t ahead = 0;
+			if ( String::fromString( ahead, results[0] ) &&
+				 String::fromString( behind, results[1] ) ) {
+				res.ahead = ahead;
+				res.behind = behind;
+			}
+		}
 	} else {
 		res.result = buf;
 		return res;
 	}
-
-	retCode = git( String::format( "rev-list --count %s..%s", remoteBranch, localBranch ),
-				   projectDir, buf );
-	res.returnCode = retCode;
-
-	if ( res.success() ) {
-		uint64_t count = 0;
-		if ( String::fromString( count, buf ) )
-			res.ahead = count;
-	} else {
-		res.result = buf;
-	}
-
 	return res;
 }
 
@@ -277,12 +273,28 @@ std::vector<Git::Branch> Git::getAllBranches( const std::string& projectDir ) {
 								  projectDir );
 }
 
-static Git::Branch parseLocalBranch( const std::string_view& raw ) {
+Git::Branch Git::parseLocalBranch( const std::string_view& raw,
+								   const std::unordered_map<std::string, std::string>& headOrigins,
+								   const std::string& projectDir ) {
 	static constexpr size_t len = std::string_view{ "refs/heads/"sv }.size();
-	if ( len < raw.size() )
-		return Git::Branch{ std::string{ raw.substr( len ) }, std::string{}, Git::RefType::Head,
-							std::string{} };
-	return {};
+	if ( len >= raw.size() )
+		return {};
+
+	std::string name( std::string{ raw.substr( len ) } );
+	auto found = headOrigins.find( name );
+	std::string remote;
+	int64_t ahead = 0;
+	int64_t behind = 0;
+	if ( found != headOrigins.end() ) {
+		remote = found->second;
+		auto res = branchHistoryPosition( name, remote );
+		if ( res.success() ) {
+			ahead = res.ahead;
+			behind = res.behind;
+		}
+	}
+	return Git::Branch{
+		std::move( name ), std::move( remote ), Git::RefType::Head, std::string{}, ahead, behind };
 }
 
 static Git::Branch parseRemoteBranch( const std::string_view& raw ) {
@@ -313,10 +325,12 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::str
 
 	branches.reserve( countLines( buf ) );
 
-	readAllLines( buf, [&branches, ref]( const std::string_view& line ) {
+	auto headOrigins = getHeadOrigins( projectDir );
+
+	readAllLines( buf, [&branches, ref, &headOrigins, this]( const std::string_view& line ) {
 		auto branch = String::trim( String::trim( line, '\n' ), '\'' );
 		if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
-			branches.emplace_back( parseLocalBranch( branch ) );
+			branches.emplace_back( parseLocalBranch( branch, headOrigins ) );
 		} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
 			branches.emplace_back( parseRemoteBranch( branch ) );
 		} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
@@ -352,6 +366,26 @@ std::vector<std::string> Git::getSubModules( const std::string& projectDir ) {
 		mSubModulesUpdated = true;
 	}
 	return mSubModules;
+}
+
+std::unordered_map<std::string, std::string> Git::getHeadOrigins( const std::string& projectDir ) {
+	std::unordered_map<std::string, std::string> ret;
+	std::string buf;
+	int retCode = git( "for-each-ref --format='%(refname:short)	%(upstream:short)' refs/heads",
+					   projectDir, buf );
+	Result res;
+	res.returnCode = retCode;
+	if ( res.fail() )
+		return ret;
+
+	readAllLines( buf, [&ret]( const std::string_view& line ) {
+		auto split = String::split( String::trim( line, '\'' ), '\t' );
+		if ( split.size() != 2 )
+			return;
+		ret[std::string{ split[0] }] = std::string{ split[1] };
+	} );
+
+	return ret;
 }
 
 bool Git::hasSubmodules( const std::string& projectDir ) {
@@ -459,7 +493,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				if ( statusStr.size() < 2 )
 					return;
 
-				Uint16 status = xy( statusStr[0], statusStr[1] );
+				Uint16 status = git_xy( statusStr[0], statusStr[1] );
 				GitStatus gitStatus = GitStatus::NotSet;
 				GitStatusChar gitStatusChar = GitStatusChar::Unknown;
 				GitStatusType gitStatusType = GitStatusType::Untracked;

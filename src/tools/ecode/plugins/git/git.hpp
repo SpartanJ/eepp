@@ -5,6 +5,8 @@
 
 namespace ecode {
 
+#define git_xy( x, y ) ( ( (uint16_t)x ) << 8 | y )
+
 class Git {
   public:
 	struct Blame {
@@ -72,37 +74,29 @@ class Git {
 		Ignored,
 	};
 
-	static constexpr uint16_t xy( char x, char y ) { return ( (uint16_t)x ) << 8 | y; }
-
-	static constexpr uint16_t x( uint16_t val ) { return ( val >> 8 ) & 0xFF; }
-
-	static constexpr uint16_t y( uint16_t val ) { return val & 0xFF; }
-
 	static constexpr auto ANY = 0;
 
-#define _xy( x, y ) ( ( (uint16_t)x ) << 8 | y )
-
 	enum StatusXY : uint16_t {
-		A = _xy( ' ', 'A' ),   // modified, added not updated
-		M = _xy( ' ', 'M' ),   // modified, modified not updated
-		D = _xy( ' ', 'D' ),   // modified, deleted not updated
-		m = _xy( ' ', 'm' ),   // modified, modified submodule not updated
-		DD = _xy( 'D', 'D' ),  // unmerged, both deleted
-		AU = _xy( 'A', 'U' ),  // unmerged, added by us
-		UD = _xy( 'U', 'D' ),  // unmerged, deleted by them
-		UA = _xy( 'U', 'A' ),  // unmerged, added by them
-		DU = _xy( 'D', 'U' ),  // unmerged, deleted by us
-		AA = _xy( 'A', 'A' ),  // unmerged, both added
-		UU = _xy( 'U', 'U' ),  // unmerged, both modified
-		QQ = _xy( '?', '?' ),  // untracked
-		II = _xy( '!', '!' ),  // ignored
-		SM = _xy( 'M', ANY ),  // staged modified
-		ST = _xy( 'T', ANY ),  // staged type changed
-		SA = _xy( 'A', ANY ),  // staged added
-		SD = _xy( 'D', ANY ),  // staged deleted
-		SR = _xy( 'R', ANY ),  // staged renamed
-		SC = _xy( 'C', ANY ),  // staged copied
-		SMM = _xy( 'm', ANY ), // staged modified submodule
+		A = git_xy( ' ', 'A' ),	  // modified, added not updated
+		M = git_xy( ' ', 'M' ),	  // modified, modified not updated
+		D = git_xy( ' ', 'D' ),	  // modified, deleted not updated
+		m = git_xy( ' ', 'm' ),	  // modified, modified submodule not updated
+		DD = git_xy( 'D', 'D' ),  // unmerged, both deleted
+		AU = git_xy( 'A', 'U' ),  // unmerged, added by us
+		UD = git_xy( 'U', 'D' ),  // unmerged, deleted by them
+		UA = git_xy( 'U', 'A' ),  // unmerged, added by them
+		DU = git_xy( 'D', 'U' ),  // unmerged, deleted by us
+		AA = git_xy( 'A', 'A' ),  // unmerged, both added
+		UU = git_xy( 'U', 'U' ),  // unmerged, both modified
+		QQ = git_xy( '?', '?' ),  // untracked
+		II = git_xy( '!', '!' ),  // ignored
+		SM = git_xy( 'M', ANY ),  // staged modified
+		ST = git_xy( 'T', ANY ),  // staged type changed
+		SA = git_xy( 'A', ANY ),  // staged added
+		SD = git_xy( 'D', ANY ),  // staged deleted
+		SR = git_xy( 'R', ANY ),  // staged renamed
+		SC = git_xy( 'C', ANY ),  // staged copied
+		SMM = git_xy( 'm', ANY ), // staged modified submodule
 	};
 
 	struct DiffFile {
@@ -186,6 +180,9 @@ class Git {
 		RefType type = All;
 		/** last commit on this branch, may be empty **/
 		std::string lastCommit;
+		/** if it's HEAD how much ahead and behind the current local branch is against remote */
+		int64_t ahead{ 0 };
+		int64_t behind{ 0 };
 
 		const char* typeStr() const { return refTypeToString( type ); }
 	};
@@ -256,6 +253,9 @@ class Git {
 
 	std::vector<std::string> getSubModules( const std::string& projectDir = "" );
 
+	std::unordered_map<std::string, std::string>
+	getHeadOrigins( const std::string& projectDir = "" );
+
   protected:
 	std::string mGitPath;
 	std::string mProjectPath;
@@ -267,6 +267,10 @@ class Git {
 	bool hasSubmodules( const std::string& projectDir );
 
 	std::string inSubModule( const std::string& file, const std::string& projectDir );
+
+	Git::Branch parseLocalBranch( const std::string_view& raw,
+								  const std::unordered_map<std::string, std::string>& headOrigins,
+								  const std::string& projectDir = "" );
 };
 
 } // namespace ecode
