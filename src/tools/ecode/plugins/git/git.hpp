@@ -212,6 +212,12 @@ class Git {
 
 	Result deleteBranch( const std::string& branch, const std::string& projectDir = "" );
 
+	Result commit( const std::string& commitMsg, const std::string& projectDir = "" );
+
+	Result fetch( const std::string& projectDir = "" );
+
+	Result fastForwardMerge( const std::string& projectDir = "" );
+
 	CountResult branchHistoryPosition( const std::string& localBranch,
 									   const std::string& remoteBranch,
 									   const std::string& projectDir = "" );
@@ -268,7 +274,7 @@ class Git {
 
 	std::string inSubModule( const std::string& file, const std::string& projectDir );
 
-	Git::Branch parseLocalBranch( const std::string_view& raw, const std::string& projectDir );
+	Result gitSimple( const std::string& cmd, const std::string& projectDir );
 };
 
 } // namespace ecode

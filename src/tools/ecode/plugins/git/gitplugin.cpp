@@ -146,12 +146,25 @@ class GitBranchModel : public Model {
 				}
 				const Git::Branch& branch = mBranches[index.internalId()].data[index.row()];
 				switch ( index.column() ) {
-					case Column::Name:
+					case Column::Name: {
 						if ( branch.type == Git::Remote &&
 							 String::startsWith( branch.name, "origin/" ) ) {
 							return Variant( std::string_view{ branch.name }.substr( 7 ).data() );
+						} else if ( branch.type == Git::Head &&
+									( branch.ahead || branch.behind ) ) {
+							if ( branch.ahead && branch.behind ) {
+								return Variant( String::format( "%s (+%ld/-%ld)", branch.name,
+																branch.ahead, branch.behind ) );
+							} else if ( branch.ahead ) {
+								return Variant(
+									String::format( "%s (+%ld)", branch.name, branch.ahead ) );
+							} else {
+								return Variant(
+									String::format( "%s (-%ld)", branch.name, branch.behind ) );
+							}
 						}
 						return Variant( branch.name.c_str() );
+					}
 					case Column::Remote:
 						return Variant( branch.remote.c_str() );
 					case Column::Type:

@@ -12,7 +12,7 @@ using namespace std::literals;
 
 namespace ecode {
 
-static int countLines( const std::string& text ) {
+static size_t countLines( const std::string& text ) {
 	const char* startPtr = text.c_str();
 	const char* endPtr = text.c_str() + text.size();
 	size_t count = 0;
@@ -135,12 +135,7 @@ std::string Git::setSafeDirectory( const std::string& projectDir ) const {
 }
 
 Git::Result Git::pull( const std::string& projectDir ) {
-	std::string buf;
-	Git::Result res;
-	int retCode = git( "pull", projectDir, buf );
-	res.returnCode = retCode;
-	res.result = buf;
-	return res;
+	return gitSimple( "pull", projectDir );
 }
 
 Git::CheckoutResult Git::checkout( const std::string& branch,
@@ -186,49 +181,51 @@ Git::CheckoutResult Git::checkoutAndCreateLocalBranch( const std::string& remote
 }
 
 Git::Result Git::add( const std::string& file, const std::string& projectDir ) {
-	std::string buf;
-	int retCode = git( String::format( "add --force -- \"%s\"", file ), projectDir, buf );
-	Git::Result res;
-	res.returnCode = retCode;
-	res.result = buf;
-	return res;
+	return gitSimple( String::format( "add --force -- \"%s\"", file ), projectDir );
 }
 
 Git::Result Git::restore( const std::string& file, const std::string& projectDir ) {
-	std::string buf;
-	int retCode = git( String::format( "restore \"%s\"", file ), projectDir, buf );
-	Git::Result res;
-	res.returnCode = retCode;
-	res.result = buf;
-	return res;
+	return gitSimple( String::format( "restore \"%s\"", file ), projectDir );
 }
 
 Git::Result Git::reset( const std::string& file, const std::string& projectDir ) {
-	std::string buf;
-	int retCode = git( String::format( "reset -q HEAD -- \"%s\"", file ), projectDir, buf );
-	Git::Result res;
-	res.returnCode = retCode;
-	res.result = buf;
-	return res;
+	return gitSimple( String::format( "reset -q HEAD -- \"%s\"", file ), projectDir );
 }
 
 Git::Result Git::renameBranch( const std::string& branch, const std::string& newName,
 							   const std::string& projectDir ) {
+	return gitSimple( String::format( "branch -M %s %s", branch, newName ), projectDir );
+}
+
+Git::Result Git::deleteBranch( const std::string& branch, const std::string& projectDir ) {
+	return gitSimple( String::format( "branch -D %s", branch ), projectDir );
+}
+
+Git::Result Git::commit( const std::string& commitMsg, const std::string& projectDir ) {
+	auto tmpPath = Sys::getTempPath() + ".ecode-git-commit-" + String::randString( 16 );
+	if ( !FileSystem::fileWrite( tmpPath, commitMsg ) ) {
+		Git::Result res;
+		res.returnCode = -1;
+		res.result = "Could not write commit message into a file";
+		return res;
+	}
 	std::string buf;
-	int retCode = git( String::format( "branch -M %s %s", branch, newName ), projectDir, buf );
+	int retCode =
+		git( String::format( "commit --cleanup=whitespace --allow-empty --file=%s", tmpPath ),
+			 projectDir, buf );
+	FileSystem::fileRemove( tmpPath );
 	Git::Result res;
 	res.returnCode = retCode;
 	res.result = buf;
 	return res;
 }
 
-Git::Result Git::deleteBranch( const std::string& branch, const std::string& projectDir ) {
-	std::string buf;
-	int retCode = git( String::format( "branch -D %s", branch ), projectDir, buf );
-	Git::Result res;
-	res.returnCode = retCode;
-	res.result = buf;
-	return res;
+Git::Result Git::fetch( const std::string& projectDir ) {
+	return gitSimple( "fetch --all --prune", projectDir );
+}
+
+Git::Result Git::fastForwardMerge( const std::string& projectDir ) {
+	return gitSimple( "merge --no-commit --ff --ff-only", projectDir );
 }
 
 Git::CountResult Git::branchHistoryPosition( const std::string& localBranch,
@@ -283,42 +280,73 @@ std::vector<Git::Branch> Git::getAllBranches( const std::string& projectDir ) {
 								  projectDir );
 }
 
-Git::Branch Git::parseLocalBranch( const std::string_view& raw, const std::string& projectDir ) {
-	static constexpr size_t len = std::string_view{ "refs/heads/"sv }.size();
-	if ( len >= raw.size() )
-		return {};
-
-	auto split = String::split( raw, '\t' );
-	if ( split.size() != 2 )
-		return {};
-	std::string name( std::string{ split[0].substr( len ) } );
-	std::string remote( std::string{ split[1] } );
-	int64_t ahead = 0;
-	int64_t behind = 0;
-
-	auto res = branchHistoryPosition( name, remote );
-	if ( res.success() ) {
-		ahead = res.ahead;
-		behind = res.behind;
+static void parseAheadBehind( std::string_view aheadBehind, Git::Branch& branch ) {
+	static constexpr auto BEHIND = "behind "sv;
+	static constexpr auto AHEAD = "ahead "sv;
+	if ( aheadBehind.empty() )
+		return;
+	auto split = String::split( aheadBehind, ',' );
+	for ( auto s : split ) {
+		s = String::trim( s );
+		if ( String::startsWith( s, BEHIND ) ) {
+			std::string numStr = std::string{ s.substr( BEHIND.size() ) };
+			int64_t val = 0;
+			if ( String::fromString( val, numStr ) )
+				branch.behind = val;
+		} else if ( String::startsWith( s, AHEAD ) ) {
+			std::string numStr = std::string{ s.substr( AHEAD.size() ) };
+			int64_t val = 0;
+			if ( String::fromString( val, numStr ) )
+				branch.ahead = val;
+		}
 	}
+}
 
-	return Git::Branch{
-		std::move( name ), std::move( remote ), Git::RefType::Head, std::string{}, ahead, behind };
+Git::Branch parseLocalBranch( const std::string_view& raw, const std::string& projectDir ) {
+	auto split = String::split( raw, '\t', true );
+	if ( split.size() < 4 )
+		return {};
+	std::string name( std::string{ split[1] } );
+	std::string remote( std::string{ split[2] } );
+	std::string commitHash( std::string{ split[3] } );
+	auto ret = Git::Branch{ std::move( name ), std::move( remote ), Git::RefType::Head,
+							std::move( commitHash ) };
+	if ( split.size() > 4 )
+		parseAheadBehind( split[4], ret );
+	return ret;
 }
 
 static Git::Branch parseRemoteBranch( std::string_view raw ) {
-	static constexpr size_t len = std::string_view( "refs/remotes/"sv ).size();
-	size_t indexOfRemote = raw.find_first_of( '/', len );
-	if ( indexOfRemote != std::string::npos && len < raw.size() ) {
-		return Git::Branch{ std::string{ raw.substr( len ) },
-							std::string{ raw.substr( len, indexOfRemote - len ) },
-							Git::RefType::Remote, std::string{} };
-	}
-	return {};
+	auto split = String::split( raw, '\t', true );
+	if ( split.size() < 4 )
+		return {};
+	std::string name( std::string{ split[1] } );
+	std::string remote( std::string{ split[1] } );
+	std::string commitHash( std::string{ split[3] } );
+	auto ret = Git::Branch{ std::move( name ), std::move( remote ), Git::RefType::Remote,
+							std::move( commitHash ) };
+	if ( split.size() > 4 )
+		parseAheadBehind( split[4], ret );
+	return ret;
+}
+
+static Git::Branch parseTag( std::string_view raw ) {
+	auto split = String::split( raw, '\t', true );
+	if ( split.size() < 4 )
+		return {};
+	Git::Branch newBranch;
+	newBranch.name = std::string{ split[1] };
+	newBranch.lastCommit = std::string{ split[3] };
+	newBranch.type = Git::RefType::Tag;
+	if ( split.size() > 4 )
+		parseAheadBehind( split[4], newBranch );
+	return newBranch;
 }
 
 std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::string& projectDir ) {
-	std::string args( "for-each-ref --format '%(refname)	%(upstream:short)' --sort=v:refname" );
+	// clang-format off
+	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)' --sort=v:refname" );
+	// clang-format on
 	if ( ref & RefType::Head )
 		args.append( " refs/heads" );
 	if ( ref & RefType::Remote )
@@ -341,11 +369,7 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::str
 		} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
 			branches.emplace_back( parseRemoteBranch( branch ) );
 		} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
-			static constexpr size_t len = std::string_view{ "refs/tags/"sv }.size();
-			Branch newBranch;
-			newBranch.name = branch.substr( len );
-			newBranch.type = RefType::Tag;
-			branches.emplace_back( std::move( newBranch ) );
+			branches.emplace_back( parseTag( branch ) );
 		}
 	} );
 
@@ -386,6 +410,15 @@ std::string Git::inSubModule( const std::string& file, const std::string& projec
 			return subRepo;
 	}
 	return FileSystem::fileNameFromPath( !projectDir.empty() ? projectDir : mProjectPath );
+}
+
+Git::Result Git::gitSimple( const std::string& cmd, const std::string& projectDir ) {
+	std::string buf;
+	int retCode = git( cmd, projectDir, buf );
+	Git::Result res;
+	res.returnCode = retCode;
+	res.result = buf;
+	return res;
 }
 
 Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir ) {
@@ -468,6 +501,9 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	auto parseStatus = [&s, &buf, &modifiedSubmodule, &projectDir, this, &subModulePattern]() {
 		std::string subModulePath = "";
 		LuaPattern pattern( "^([mMARTUD?%s][mMARTUD?%s])%s(.*)" );
+		size_t changesCount = countLines( buf );
+		if ( changesCount > 1000 )
+			return;
 		readAllLines( buf, [&]( const std::string_view& line ) {
 			LuaPattern::Range matches[3];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
