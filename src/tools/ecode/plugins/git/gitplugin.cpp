@@ -13,6 +13,7 @@
 #include <eepp/ui/uitreeview.hpp>
 #include <nlohmann/json.hpp>
 
+using namespace EE::UI;
 using namespace EE::UI::Doc;
 
 using json = nlohmann::json;
@@ -902,9 +903,6 @@ void GitPlugin::checkout( Git::Branch branch ) {
 }
 
 void GitPlugin::branchRename( Git::Branch branch ) {
-	if ( !mGit )
-		return;
-
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::INPUT,
 		String::format(
@@ -914,18 +912,9 @@ void GitPlugin::branchRename( Git::Branch branch ) {
 		std::string newName( msgBox->getTextInput()->getText().toUtf8() );
 		if ( newName.empty() || branch.name == newName )
 			return;
-
-		mLoader->setVisible( true );
 		msgBox->closeWindow();
-		mThreadPool->run( [this, branch, newName] {
-			auto res = mGit->renameBranch( branch.name, newName );
-			if ( res.fail() ) {
-				showMessage( LSPMessageType::Warning, res.result );
-				return;
-			}
-			updateBranches();
-			getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-		} );
+		runAsync( [this, branch, newName]() { return mGit->renameBranch( branch.name, newName ); },
+				  false, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_rename_branch", "Rename Branch" ) );
@@ -935,62 +924,26 @@ void GitPlugin::branchRename( Git::Branch branch ) {
 }
 
 void GitPlugin::branchDelete( Git::Branch branch ) {
-	if ( !mGit )
-		return;
-	mLoader->setVisible( true );
-	mThreadPool->run( [this, branch] {
-		auto res = mGit->deleteBranch( branch.name );
-		if ( res.fail() ) {
-			showMessage( LSPMessageType::Warning, res.result );
-			return;
-		}
-		updateBranches();
-		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-	} );
+	runAsync( [this, branch]() { return mGit->deleteBranch( branch.name ); }, false, true );
 }
 
 void GitPlugin::pull() {
-	if ( !mGit )
-		return;
-	mLoader->setVisible( true );
-	mThreadPool->run( [this] {
-		auto res = mGit->pull();
-		if ( res.fail() )
-			showMessage( LSPMessageType::Warning, res.result );
-		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-	} );
+	runAsync( [this]() { return mGit->pull(); }, true, true );
+}
+
+void GitPlugin::fetch() {
+	runAsync( [this]() { return mGit->fetch(); }, true, true );
 }
 
 void GitPlugin::stage( const std::string& file ) {
-	if ( !mGit )
-		return;
-	mLoader->setVisible( true );
-	mThreadPool->run( [this, file] {
-		auto res = mGit->add( file );
-		if ( res.fail() )
-			showMessage( LSPMessageType::Warning, res.result );
-		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-		updateStatus( true );
-	} );
+	runAsync( [this, file]() { return mGit->add( file ); }, true, false );
 }
 
 void GitPlugin::unstage( const std::string& file ) {
-	if ( !mGit )
-		return;
-	mLoader->setVisible( true );
-	mThreadPool->run( [this, file] {
-		auto res = mGit->reset( file );
-		if ( res.fail() )
-			showMessage( LSPMessageType::Warning, res.result );
-		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-		updateStatus( true );
-	} );
+	runAsync( [this, file]() { return mGit->reset( file ); }, true, false );
 }
 
 void GitPlugin::discard( const std::string& file ) {
-	if ( !mGit )
-		return;
-
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
 		String::format( i18n( "git_confirm_discard_changes",
@@ -999,14 +952,7 @@ void GitPlugin::discard( const std::string& file ) {
 						file ) );
 
 	msgBox->on( Event::OnConfirm, [this, file]( auto ) {
-		mLoader->setVisible( true );
-		mThreadPool->run( [this, file] {
-			auto res = mGit->restore( file );
-			if ( res.fail() )
-				showMessage( LSPMessageType::Warning, res.result );
-			getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-			updateStatus( true );
-		} );
+		runAsync( [this, file]() { return mGit->restore( file ); }, true, false );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -1151,7 +1097,7 @@ void GitPlugin::buildSidePanelTab() {
 			</vbox>
 			<TextView id="git_no_content" lw="mp" lh="wc" word-wrap="true" visible="false"
 				text='@string(git_no_git_repo, "Current folder is not a Git repository.")' padding="16dp" />
-			<Loader margin-top="32dp" id="git_panel_loader" inderterminate="true" lw="24dp" lh="24dp" outline-thickness="2dp" visible="false" layout_gravity="bottom|right" margin-bottom="24dp" margin-right="24dp" />
+			<Loader margin-top="32dp" id="git_panel_loader" indeterminate="true" lw="24dp" lh="24dp" outline-thickness="2dp" visible="false" layout_gravity="bottom|right" margin-bottom="24dp" margin-right="24dp" />
 		</RelativeLayout>
 		)html" );
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), node,
@@ -1180,11 +1126,15 @@ void GitPlugin::buildSidePanelTab() {
 			static_cast<Git::Branch*>( modelEvent->getModelIndex().internalData() );
 
 		switch ( modelEvent->getModelEventType() ) {
-			case EE::UI::Abstract::ModelEventType::Open: {
+			case Abstract::ModelEventType::Open: {
 				checkout( *branch );
 				break;
 			}
-			case EE::UI::Abstract::ModelEventType::OpenMenu: {
+			case Abstract::ModelEventType::OpenMenu: {
+				bool focusOnSelection = mBranchesTree->getFocusOnSelection();
+				mBranchesTree->setFocusOnSelection( false );
+				mBranchesTree->getSelection().set( modelEvent->getModelIndex() );
+				mBranchesTree->setFocusOnSelection( focusOnSelection );
 				openBranchMenu( *branch );
 				break;
 			}
@@ -1218,7 +1168,7 @@ void GitPlugin::buildSidePanelTab() {
 			return;
 
 		switch ( modelEvent->getModelEventType() ) {
-			case EE::UI::Abstract::ModelEventType::OpenMenu: {
+			case Abstract::ModelEventType::OpenMenu: {
 				bool focusOnSelection = mStatusTree->getFocusOnSelection();
 				mStatusTree->setFocusOnSelection( false );
 				mStatusTree->getSelection().set( modelEvent->getModelIndex() );
@@ -1243,6 +1193,8 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 			->setId( txtKey );
 	};
 
+	addFn( "git-fetch", "Fetch" );
+
 	if ( mGitBranch != branch.name ) {
 		addFn( "git-checkout", "Check Out..." );
 		if ( branch.type == Git::RefType::Head ) {
@@ -1250,7 +1202,9 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 			addFn( "git-branch-delete", "Delete" );
 		}
 	} else {
-		addFn( "git-pull", "Pull", "repo-pull" );
+		if ( branch.type == Git::RefType::Head ) {
+			addFn( "git-pull", "Pull", "repo-pull" );
+		}
 	}
 
 	menu->on( Event::OnItemClicked, [this, branch]( const Event* event ) {
@@ -1266,6 +1220,8 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 			branchDelete( branch );
 		} else if ( id == "git-branch-rename" ) {
 			branchRename( branch );
+		} else if ( id == "git-fetch" ) {
+			fetch();
 		}
 	} );
 
@@ -1312,6 +1268,25 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 	} );
 
 	menu->showOverMouseCursor();
+}
+
+void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus,
+						  bool _updateBranches ) {
+	if ( !mGit )
+		return;
+	mLoader->setVisible( true );
+	mThreadPool->run( [&] {
+		auto res = fn();
+		if ( res.fail() ) {
+			showMessage( LSPMessageType::Warning, res.result );
+			return;
+		}
+		if ( _updateBranches )
+			updateBranches();
+		if ( _updateStatus )
+			updateStatus( true );
+		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
+	} );
 }
 
 } // namespace ecode

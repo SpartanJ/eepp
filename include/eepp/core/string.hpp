@@ -347,7 +347,7 @@ class EE_API String {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-security"
 #elif defined( __GNUC__ )
-#pragma GCC diagnostic warning "-Wformat-security"
+#pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 		int size =
 			std::snprintf( nullptr, 0, format.data(),

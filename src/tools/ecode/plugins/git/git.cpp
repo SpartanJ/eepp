@@ -302,7 +302,7 @@ static void parseAheadBehind( std::string_view aheadBehind, Git::Branch& branch 
 	}
 }
 
-Git::Branch parseLocalBranch( const std::string_view& raw, const std::string& projectDir ) {
+Git::Branch parseLocalBranch( const std::string_view& raw ) {
 	auto split = String::split( raw, '\t', true );
 	if ( split.size() < 4 )
 		return {};
@@ -365,7 +365,7 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::str
 	readAllLines( buf, [&]( const std::string_view& line ) {
 		auto branch = String::trim( String::trim( line, '\'' ), '\t' );
 		if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
-			branches.emplace_back( parseLocalBranch( branch, projectDir ) );
+			branches.emplace_back( parseLocalBranch( branch ) );
 		} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
 			branches.emplace_back( parseRemoteBranch( branch ) );
 		} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {

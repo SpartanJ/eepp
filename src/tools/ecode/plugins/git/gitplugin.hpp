@@ -128,6 +128,8 @@ class GitPlugin : public PluginBase {
 
 	void pull();
 
+	void fetch();
+
 	void stage( const std::string& file );
 
 	void unstage( const std::string& file );
@@ -153,6 +155,8 @@ class GitPlugin : public PluginBase {
 	void openBranchMenu( const Git::Branch& branch );
 
 	void openFileStatusMenu( const Git::DiffFile& file );
+
+	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches );
 };
 
 } // namespace ecode
