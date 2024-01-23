@@ -972,6 +972,10 @@ void GitPlugin::pull() {
 	runAsync( [this]() { return mGit->pull(); }, true, true );
 }
 
+void GitPlugin::push() {
+	runAsync( [this]() { return mGit->push(); }, true, true );
+}
+
 void GitPlugin::fetch() {
 	runAsync( [this]() { return mGit->fetch(); }, true, true );
 }
@@ -1002,7 +1006,7 @@ void GitPlugin::commit() {
 		if ( msg.empty() )
 			return;
 		msgBox->closeWindow();
-		runAsync( [this, msg]() { return mGit->commit( msg ); }, false, true );
+		runAsync( [this, msg]() { return mGit->commit( msg ); }, true, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_commit", "Commit" ) );
@@ -1077,6 +1081,7 @@ void GitPlugin::onRegister( UICodeEditor* editor ) {
 			mTab->setTabSelected();
 	} );
 	doc.setCommand( "git-pull", [this] { pull(); } );
+	doc.setCommand( "git-push", [this] { push(); } );
 	doc.setCommand( "git-fetch", [this] { fetch(); } );
 	doc.setCommand( "git-commit", [this] { commit(); } );
 }
@@ -1347,6 +1352,8 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 	} else {
 		if ( branch.type == Git::RefType::Head ) {
 			addMenuItem( menu, "git-pull", "Pull", "repo-pull" );
+			if ( branch.ahead )
+				addMenuItem( menu, "git-push", "Push", "repo-push" );
 		}
 	}
 
@@ -1362,6 +1369,8 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 			checkout( branch );
 		} else if ( id == "git-pull" ) {
 			pull();
+		} else if ( id == "git-push" ) {
+			push();
 		} else if ( id == "git-branch-delete" ) {
 			branchDelete( branch );
 		} else if ( id == "git-branch-rename" ) {

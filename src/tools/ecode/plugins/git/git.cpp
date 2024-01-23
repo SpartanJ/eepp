@@ -140,6 +140,10 @@ Git::Result Git::pull( const std::string& projectDir ) {
 	return gitSimple( "pull", projectDir );
 }
 
+Git::Result Git::push( const std::string& projectDir ) {
+	return gitSimple( "push", projectDir );
+}
+
 Git::CheckoutResult Git::checkout( const std::string& branch,
 								   const std::string& projectDir ) const {
 	std::string buf;

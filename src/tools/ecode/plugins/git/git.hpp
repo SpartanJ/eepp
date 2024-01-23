@@ -243,6 +243,8 @@ class Git {
 
 	Result pull( const std::string& projectDir = "" );
 
+	Result push( const std::string& projectDir = "" );
+
 	CheckoutResult checkout( const std::string& branch, const std::string& projectDir = "" ) const;
 
 	CheckoutResult checkoutAndCreateLocalBranch( const std::string& remoteBranch,

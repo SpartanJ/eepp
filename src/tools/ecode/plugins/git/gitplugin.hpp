@@ -131,6 +131,8 @@ class GitPlugin : public PluginBase {
 
 	void pull();
 
+	void push();
+
 	void fetch();
 
 	void branchCreate();
