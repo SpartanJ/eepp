@@ -60,7 +60,9 @@ Git::Git( const std::string& projectDir, const std::string& gitPath ) : mGitPath
 int Git::git( const std::string& args, const std::string& projectDir, std::string& buf ) const {
 	buf.clear();
 	Process p;
-	p.create( mGitPath, args, Process::CombinedStdoutStderr | Process::Options::NoWindow,
+	p.create( mGitPath, args,
+			  Process::CombinedStdoutStderr | Process::Options::NoWindow |
+				  Process::Options::InheritEnvironment,
 			  { { "LC_ALL", "en_US.UTF-8" } }, projectDir.empty() ? mProjectPath : projectDir );
 	p.readAllStdOut( buf );
 	int retCode;

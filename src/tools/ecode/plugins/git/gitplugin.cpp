@@ -1275,8 +1275,9 @@ void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus,
 	if ( !mGit )
 		return;
 	mLoader->setVisible( true );
-	mThreadPool->run( [&] {
+	mThreadPool->run( [this, fn, _updateStatus, _updateBranches] {
 		auto res = fn();
+		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
 		if ( res.fail() ) {
 			showMessage( LSPMessageType::Warning, res.result );
 			return;
@@ -1285,7 +1286,6 @@ void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus,
 			updateBranches();
 		if ( _updateStatus )
 			updateStatus( true );
-		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
 	} );
 }
 
