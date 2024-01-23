@@ -2,8 +2,6 @@
 #define EE_UICUIWINDOW_HPP
 
 #include <eepp/ui/keyboardshortcut.hpp>
-#include <eepp/ui/uipushbutton.hpp>
-#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace Graphics {
@@ -12,6 +10,7 @@ class FrameBuffer;
 
 namespace EE { namespace UI {
 
+class UITextView;
 class UISceneNode;
 
 enum UIWindowFlags {

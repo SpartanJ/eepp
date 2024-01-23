@@ -1,13 +1,14 @@
 #ifndef EE_UICUIMESSAGEBOX_HPP
 #define EE_UICUIMESSAGEBOX_HPP
 
-#include <eepp/ui/uilayout.hpp>
-#include <eepp/ui/uipushbutton.hpp>
-#include <eepp/ui/uitextinput.hpp>
-#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
 namespace EE { namespace UI {
+
+class UITextEdit;
+class UITextInput;
+class UILayout;
+class UIPushButton;
 
 #define UI_MESSAGE_BOX_DEFAULT_FLAGS                                          \
 	UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_MODAL | \
@@ -15,7 +16,7 @@ namespace EE { namespace UI {
 
 class EE_API UIMessageBox : public UIWindow {
   public:
-	enum Type { OK_CANCEL, YES_NO, RETRY_CANCEL, OK, INPUT };
+	enum Type { OK_CANCEL, YES_NO, RETRY_CANCEL, OK, INPUT, TEXT_EDIT };
 
 	static UIMessageBox* New( const Type& type, const String& message,
 							  const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS );
@@ -43,16 +44,19 @@ class EE_API UIMessageBox : public UIWindow {
 
 	UITextInput* getTextInput() const;
 
+	UITextEdit* getTextEdit() const;
+
 	UILayout* getLayoutCont() const;
 
-	protected:
+  protected:
 	Type mMsgBoxType;
-	UITextView* mTextBox;
-	UIPushButton* mButtonOK;
-	UIPushButton* mButtonCancel;
-	UITextInput* mTextInput;
+	UITextView* mTextBox{ nullptr };
+	UIPushButton* mButtonOK{ nullptr };
+	UIPushButton* mButtonCancel{ nullptr };
+	UITextInput* mTextInput{ nullptr };
+	UITextEdit* mTextEdit{ nullptr };
 	KeyBindings::Shortcut mCloseShortcut;
-	UILayout* mLayoutCont;
+	UILayout* mLayoutCont{ nullptr };
 
 	virtual void onWindowReady();
 

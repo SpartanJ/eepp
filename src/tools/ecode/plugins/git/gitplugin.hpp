@@ -16,6 +16,7 @@ class UITreeView;
 class UIDropDownList;
 class UIStackWidget;
 class UIListBoxItem;
+class UIMenu;
 } // namespace EE::UI
 
 namespace ecode {
@@ -62,26 +63,8 @@ class GitPlugin : public PluginBase {
 	std::unique_ptr<Git> mGit;
 	std::string mGitBranch;
 	Git::Status mGitStatus;
-	UILinearLayout* mStatusBar{ nullptr };
-	UIPushButton* mStatusButton{ nullptr };
+
 	Time mRefreshFreq{ Seconds( 5 ) };
-
-	GitPlugin( PluginManager* pluginManager, bool sync );
-
-	void load( PluginManager* pluginManager );
-
-	PluginRequestHandle processMessage( const PluginMessage& msg );
-
-	void displayTooltip( UICodeEditor* editor, const Git::Blame& blame, const Vector2f& position );
-
-	void hideTooltip( UICodeEditor* editor );
-
-	void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& listeners ) override;
-
-	void onBeforeUnregister( UICodeEditor* ) override;
-
-	void onUnregisterDocument( TextDocument* ) override;
-
 	bool mGitFound{ false };
 	bool mTooltipInfoShowing{ false };
 	bool mStatusBarDisplayBranch{ true };
@@ -96,6 +79,8 @@ class GitPlugin : public PluginBase {
 	UITabWidget* mSidePanel{ nullptr };
 	UITab* mTab{ nullptr };
 
+	UILinearLayout* mStatusBar{ nullptr };
+	UIPushButton* mStatusButton{ nullptr };
 	UITreeView* mBranchesTree{ nullptr };
 	UITreeView* mStatusTree{ nullptr };
 	UIDropDownList* mPanelSwicher{ nullptr };
@@ -116,6 +101,22 @@ class GitPlugin : public PluginBase {
 	std::optional<CustomTokenizer> mStatusCustomTokenizer;
 	std::optional<SyntaxDefinition> mTooltipCustomSyntaxDef;
 
+	GitPlugin( PluginManager* pluginManager, bool sync );
+
+	void load( PluginManager* pluginManager );
+
+	PluginRequestHandle processMessage( const PluginMessage& msg );
+
+	void displayTooltip( UICodeEditor* editor, const Git::Blame& blame, const Vector2f& position );
+
+	void hideTooltip( UICodeEditor* editor );
+
+	void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& listeners ) override;
+
+	void onBeforeUnregister( UICodeEditor* ) override;
+
+	void onUnregisterDocument( TextDocument* ) override;
+
 	Color getVarColor( const std::string& var );
 
 	void blame( UICodeEditor* editor );
@@ -126,13 +127,19 @@ class GitPlugin : public PluginBase {
 
 	void branchDelete( Git::Branch branch );
 
+	void fastForwardMerge( Git::Branch branch );
+
 	void pull();
 
 	void fetch();
 
-	void stage( const std::string& file );
+	void branchCreate();
 
-	void unstage( const std::string& file );
+	void commit();
+
+	void stage( const std::vector<std::string>& files );
+
+	void unstage( const std::vector<std::string>& files );
 
 	void discard( const std::string& file );
 
@@ -157,6 +164,9 @@ class GitPlugin : public PluginBase {
 	void openFileStatusMenu( const Git::DiffFile& file );
 
 	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches );
+
+	void addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,
+					  const std::string& icon = "" );
 };
 
 } // namespace ecode

@@ -2,6 +2,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/scene/scenemanager.hpp>

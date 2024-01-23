@@ -201,11 +201,14 @@ class Git {
 
 	Status status( bool recurseSubmodules, const std::string& projectDir = "" );
 
-	Result add( const std::string& file, const std::string& projectDir = "" );
+	Result add( std::vector<std::string> files, const std::string& projectDir = "" );
 
 	Result restore( const std::string& file, const std::string& projectDir = "" );
 
-	Result reset( const std::string& file, const std::string& projectDir = "" );
+	Result reset( std::vector<std::string> files, const std::string& projectDir = "" );
+
+	Result createBranch( const std::string& branchName, bool checkout = false,
+						 const std::string& projectDir = "" );
 
 	Result renameBranch( const std::string& branch, const std::string& newName,
 						 const std::string& projectDir = "" );
@@ -217,6 +220,9 @@ class Git {
 	Result fetch( const std::string& projectDir = "" );
 
 	Result fastForwardMerge( const std::string& projectDir = "" );
+
+	Result updateRef( const std::string& headBranch, const std::string& toCommit,
+					  const std::string& projectDir = "" );
 
 	CountResult branchHistoryPosition( const std::string& localBranch,
 									   const std::string& remoteBranch,
@@ -256,11 +262,18 @@ class Git {
 	 * @brief get all local and remote branches + tags
 	 */
 	std::vector<Branch> getAllBranchesAndTags( RefType ref = RefType::All,
+											   std::string_view filterBranch = {},
 											   const std::string& projectDir = "" );
 
 	std::vector<std::string> fetchSubModules( const std::string& projectDir );
 
 	std::vector<std::string> getSubModules( const std::string& projectDir = "" );
+
+	std::string repoName( const std::string& file, const std::string& projectDir = "" );
+
+	bool hasSubmodules( const std::string& projectDir );
+
+	Result gitSimple( const std::string& cmd, const std::string& projectDir );
 
   protected:
 	std::string mGitPath;
@@ -269,12 +282,6 @@ class Git {
 	std::string mLastProjectPath;
 	std::vector<std::string> mSubModules;
 	bool mSubModulesUpdated{ false };
-
-	bool hasSubmodules( const std::string& projectDir );
-
-	std::string inSubModule( const std::string& file, const std::string& projectDir );
-
-	Result gitSimple( const std::string& cmd, const std::string& projectDir );
 };
 
 } // namespace ecode

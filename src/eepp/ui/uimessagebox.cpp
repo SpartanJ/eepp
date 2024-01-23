@@ -1,7 +1,12 @@
+#include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitheme.hpp>
 
 namespace EE { namespace UI {
@@ -12,7 +17,7 @@ UIMessageBox* UIMessageBox::New( const Type& type, const String& message,
 }
 
 UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags ) :
-	UIWindow(), mMsgBoxType( type ), mTextInput( NULL ), mCloseShortcut( KEY_UNKNOWN ) {
+	UIWindow(), mMsgBoxType( type ), mCloseShortcut( KEY_UNKNOWN ) {
 	mVisible = false;
 
 	mStyleConfig.WinFlags = windowFlags;
@@ -41,6 +46,12 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 			->setParent( vlay )
 			->addEventListener( Event::OnPressEnter,
 								[this]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
+	} else if ( mMsgBoxType == TEXT_EDIT ) {
+		mTextEdit = UITextEdit::New();
+		mTextEdit->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
+			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
+			->setSize( PixelDensity::dpToPx( Vector2f{ 400, 100 } ) )
+			->setParent( vlay );
 	}
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
@@ -58,6 +69,7 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 
 	switch ( mMsgBoxType ) {
 		case UIMessageBox::INPUT:
+		case UIMessageBox::TEXT_EDIT:
 		case UIMessageBox::OK_CANCEL: {
 			mButtonOK->setText( getTranslatorString( "@string/msg_box_ok", "Ok" ) );
 			mButtonCancel->setText( getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
@@ -178,6 +190,10 @@ void UIMessageBox::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey )
 
 UITextInput* UIMessageBox::getTextInput() const {
 	return mTextInput;
+}
+
+UITextEdit* UIMessageBox::getTextEdit() const {
+	return mTextEdit;
 }
 
 UILayout* UIMessageBox::getLayoutCont() const {

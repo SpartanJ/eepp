@@ -9,11 +9,14 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwindow.hpp>
+
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 

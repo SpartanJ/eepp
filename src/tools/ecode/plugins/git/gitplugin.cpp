@@ -9,6 +9,7 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <nlohmann/json.hpp>
@@ -52,7 +53,9 @@ std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
 static size_t hashBranches( const std::vector<Git::Branch>& branches ) {
 	size_t hash = 0;
 	for ( const auto& branch : branches )
-		hash = hashCombine( hash, String::hash( branch.name ) );
+		hash = hashCombine( hash, String::hash( branch.name ), String::hash( branch.remote ),
+							String::hash( branch.lastCommit ), branch.type, branch.ahead,
+							branch.behind );
 	return hash;
 }
 
@@ -254,9 +257,6 @@ class GitStatusModel : public Model {
 				rs.type.emplace_back( std::move( rt ) );
 			}
 			mStatus.emplace_back( std::move( rs ) );
-			auto parent = &mStatus[mStatus.size() - 1];
-			for ( auto& t : parent->type )
-				t.parent = parent;
 		}
 
 		for ( auto& s : status ) {
@@ -265,6 +265,15 @@ class GitStatusModel : public Model {
 				auto typePos = repoTypePos[pos][fv.statusType];
 				DiffFile df( std::move( fv ), &mStatus[pos].type[typePos] );
 				mStatus[pos].type[typePos].files.emplace_back( std::move( df ) );
+			}
+		}
+
+		// Set the parents after the addreses are stable
+		for ( auto& status : mStatus ) {
+			for ( auto& type : status.type ) {
+				for ( auto& f : type.files )
+					f.parent = &type;
+				type.parent = &status;
 			}
 		}
 	}
@@ -293,7 +302,8 @@ class GitStatusModel : public Model {
 		if ( index.internalId() == Status ) {
 			RepoStatusType* status = reinterpret_cast<RepoStatusType*>( index.internalData() );
 			size_t f = 0;
-			for ( size_t i = 0; i < mStatus.size(); i++ ) {
+			size_t statusSize = mStatus.size();
+			for ( size_t i = 0; i < statusSize; i++ ) {
 				if ( &mStatus[i] == status->parent ) {
 					f = i;
 					break;
@@ -305,8 +315,10 @@ class GitStatusModel : public Model {
 		if ( index.internalId() == GitFile ) {
 			DiffFile* file = reinterpret_cast<DiffFile*>( index.internalData() );
 			RepoStatusType* status = file->parent;
+			RepoStatus* repoStatus = status->parent;
+			size_t typeSize = repoStatus->type.size();
 			size_t f = 0;
-			for ( size_t i = 0; i < status->parent->type.size(); i++ ) {
+			for ( size_t i = 0; i < typeSize; i++ ) {
 				if ( &status->parent->type[i] == status ) {
 					f = i;
 					break;
@@ -410,12 +422,41 @@ class GitStatusModel : public Model {
 
 	virtual bool classModelRoleEnabled() { return true; }
 
+	const RepoStatus* repo( const ModelIndex& index ) const {
+		if ( index.internalId() != Repo )
+			return nullptr;
+		return &mStatus[index.row()];
+	}
+
+	const RepoStatusType* statusType( const ModelIndex& index ) const {
+		if ( index.internalId() != Status )
+			return nullptr;
+		return &mStatus[index.parent().row()].type[index.row()];
+	}
+
 	const DiffFile* file( const ModelIndex& index ) const {
 		if ( index.internalId() != GitFile )
 			return nullptr;
 		return &mStatus[index.parent().parent().row()]
 					.type[index.parent().row()]
 					.files[index.row()];
+	}
+
+	std::vector<std::string> getFiles( const std::string& repo, uint32_t statusType ) const {
+		std::vector<std::string> files;
+		for ( const auto& status : mStatus ) {
+			if ( status.repo == repo ) {
+				for ( const auto& type : status.type ) {
+					if ( static_cast<uint32_t>( type.type ) & statusType ) {
+						for ( const auto& file : type.files )
+							files.push_back( file.file );
+						break;
+					}
+				}
+				break;
+			}
+		}
+		return files;
 	}
 
   protected:
@@ -935,12 +976,62 @@ void GitPlugin::fetch() {
 	runAsync( [this]() { return mGit->fetch(); }, true, true );
 }
 
-void GitPlugin::stage( const std::string& file ) {
-	runAsync( [this, file]() { return mGit->add( file ); }, true, false );
+void GitPlugin::branchCreate() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "git_create_branch_ask",
+			  "Create new branch at current branch (HEAD).\nEnter the name for the branch:" ) );
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
+		std::string newName( msgBox->getTextInput()->getText().toUtf8() );
+		if ( newName.empty() )
+			return;
+		msgBox->closeWindow();
+		runAsync( [this, newName]() { return mGit->createBranch( newName, true ); }, false, true );
+	} );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "git_add_branch", "Add Branch" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
 }
 
-void GitPlugin::unstage( const std::string& file ) {
-	runAsync( [this, file]() { return mGit->reset( file ); }, true, false );
+void GitPlugin::commit() {
+	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::TEXT_EDIT,
+											  i18n( "git_commit_message", "Commit Message:" ) );
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
+		std::string msg( msgBox->getTextEdit()->getText().toUtf8() );
+		if ( msg.empty() )
+			return;
+		msgBox->closeWindow();
+		runAsync( [this, msg]() { return mGit->commit( msg ); }, false, true );
+	} );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "git_commit", "Commit" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
+}
+
+void GitPlugin::stage( const std::vector<std::string>& files ) {
+	runAsync( [this, files]() { return mGit->add( files ); }, true, false );
+}
+
+void GitPlugin::unstage( const std::vector<std::string>& files ) {
+	runAsync( [this, files]() { return mGit->reset( files ); }, true, false );
+}
+
+void GitPlugin::fastForwardMerge( Git::Branch branch ) {
+	runAsync(
+		[this, branch]() {
+			if ( branch.name == mGitBranch )
+				return mGit->fastForwardMerge();
+
+			auto remoteBranch = mGit->getAllBranchesAndTags( Git::RefType::Remote,
+															 "refs/remotes/" + branch.remote );
+			if ( remoteBranch.empty() )
+				return Git::Result{ "", -1 };
+
+			return mGit->updateRef( branch.name, remoteBranch[0].lastCommit );
+		},
+		false, true );
 }
 
 void GitPlugin::discard( const std::string& file ) {
@@ -985,7 +1076,9 @@ void GitPlugin::onRegister( UICodeEditor* editor ) {
 		if ( mTab )
 			mTab->setTabSelected();
 	} );
-	doc.setCommand( "git-pull", [this]() { pull(); } );
+	doc.setCommand( "git-pull", [this] { pull(); } );
+	doc.setCommand( "git-fetch", [this] { fetch(); } );
+	doc.setCommand( "git-commit", [this] { commit(); } );
 }
 
 void GitPlugin::onUnregister( UICodeEditor* editor ) {
@@ -1042,10 +1135,10 @@ void GitPlugin::updateBranches() {
 			if ( !mGit || mGit->getGitFolder().empty() )
 				return;
 
+			auto prevBranch = mGitBranch;
 			{
 				Lock l( mGitBranchMutex );
-				if ( mGitBranch.empty() )
-					mGitBranch = mGit->branch();
+				mGitBranch = mGit->branch();
 			}
 
 			auto branches = mGit->getAllBranchesAndTags();
@@ -1053,8 +1146,11 @@ void GitPlugin::updateBranches() {
 			auto model = GitBranchModel::asModel( std::move( branches ), hash, this );
 
 			if ( mBranchesTree &&
-				 static_cast<GitBranchModel*>( mBranchesTree->getModel() )->getHash() == hash )
+				 static_cast<GitBranchModel*>( mBranchesTree->getModel() )->getHash() == hash ) {
+				if ( prevBranch != mGitBranch )
+					mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
 				return;
+			}
 
 			getUISceneNode()->runOnMainThread( [this, model] { updateBranchesUI( model ); } );
 		},
@@ -1085,6 +1181,7 @@ void GitPlugin::buildSidePanelTab() {
 						<hbox lw="mp" lh="wc" margin-bottom="4dp" padding="4dp">
 							<Widget lw="0" lh="0" lw8="1" />
 							<PushButton id="branch_pull" text="@string(pull_branch, Pull)" tooltip="@string(pull_branch, Pull Branch)" text-as-fallback="true" icon="icon(repo-pull, 12dp)" margin-left="2dp" />
+							<PushButton id="branch_push" text="@string(push_branch, Push)" tooltip="@string(push_branch, Push Branch)" text-as-fallback="true" icon="icon(repo-push, 12dp)" margin-left="2dp" />
 							<PushButton id="branch_add" text="@string(add_branch, Add Branch)" tooltip="@string(add_branch, Add Branch)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
 						</hbox>
 						-->
@@ -1159,25 +1256,77 @@ void GitPlugin::buildSidePanelTab() {
 	mStatusTree->setExpandersAsIcons( true );
 	mStatusTree->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-		if ( modelEvent->getModel() == nullptr ||
-			 modelEvent->getModelIndex().internalId() != GitStatusModel::GitFile )
-			return;
-		auto model = static_cast<const GitStatusModel*>( modelEvent->getModel() );
-		const Git::DiffFile* file = model->file( modelEvent->getModelIndex() );
-		if ( file == nullptr )
+		if ( modelEvent->getModel() == nullptr )
 			return;
 
-		switch ( modelEvent->getModelEventType() ) {
-			case Abstract::ModelEventType::OpenMenu: {
-				bool focusOnSelection = mStatusTree->getFocusOnSelection();
-				mStatusTree->setFocusOnSelection( false );
-				mStatusTree->getSelection().set( modelEvent->getModelIndex() );
-				mStatusTree->setFocusOnSelection( focusOnSelection );
-				openFileStatusMenu( *file );
-				break;
+		auto model = static_cast<const GitStatusModel*>( modelEvent->getModel() );
+		if ( modelEvent->getModelIndex().internalId() == GitStatusModel::GitFile ) {
+			const Git::DiffFile* file = model->file( modelEvent->getModelIndex() );
+			if ( file == nullptr )
+				return;
+
+			switch ( modelEvent->getModelEventType() ) {
+				case Abstract::ModelEventType::OpenMenu: {
+					bool focusOnSelection = mStatusTree->getFocusOnSelection();
+					mStatusTree->setFocusOnSelection( false );
+					mStatusTree->getSelection().set( modelEvent->getModelIndex() );
+					mStatusTree->setFocusOnSelection( focusOnSelection );
+					openFileStatusMenu( *file );
+					break;
+				}
+				default:
+					break;
 			}
-			default:
-				break;
+		} else if ( modelEvent->getModelIndex().internalId() == GitStatusModel::Status ) {
+			switch ( modelEvent->getModelEventType() ) {
+				case Abstract::ModelEventType::OpenMenu: {
+					bool focusOnSelection = mStatusTree->getFocusOnSelection();
+					mStatusTree->setFocusOnSelection( false );
+					mStatusTree->getSelection().set( modelEvent->getModelIndex() );
+					mStatusTree->setFocusOnSelection( focusOnSelection );
+
+					const auto* status = model->statusType( modelEvent->getModelIndex() );
+					if ( status->type == Git::GitStatusType::Staged ||
+						 status->type == Git::GitStatusType::Untracked ||
+						 status->type == Git::GitStatusType::Changed ) {
+						UIPopUpMenu* menu = UIPopUpMenu::New();
+						menu->setId( "git_status_type_menu" );
+
+						if ( status->type == Git::GitStatusType::Staged ) {
+							addMenuItem( menu, "git-commit", "Commit" );
+
+							addMenuItem( menu, "git-unstage-all", "Unstage All" );
+						}
+
+						if ( status->type == Git::GitStatusType::Untracked ||
+							 status->type == Git::GitStatusType::Changed )
+							addMenuItem( menu, "git-stage-all", "Stage All" );
+
+						menu->on( Event::OnItemClicked, [this, model]( const Event* event ) {
+							if ( !mGit )
+								return;
+							UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+							std::string id( item->getId() );
+							if ( id == "git-commit" ) {
+								commit();
+							} else if ( id == "git-stage-all" ) {
+								stage( model->getFiles( mGit->repoName( "" ),
+														(Uint32)Git::GitStatusType::Untracked |
+															(Uint32)Git::GitStatusType::Changed ) );
+							} else if ( id == "git-unstage-all" ) {
+								unstage( model->getFiles( mGit->repoName( "" ),
+														  (Uint32)Git::GitStatusType::Staged ) );
+							}
+						} );
+
+						menu->showOverMouseCursor();
+					}
+
+					break;
+				}
+				default:
+					break;
+			}
 		}
 	} );
 }
@@ -1186,26 +1335,23 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->setId( "git_branch_menu" );
 
-	auto addFn = [this, menu]( const std::string& txtKey, const std::string& txtVal,
-							   const std::string& icon = "" ) {
-		menu->add( i18n( txtKey, txtVal ), iconDrawable( icon, 12 ),
-				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
-			->setId( txtKey );
-	};
-
-	addFn( "git-fetch", "Fetch" );
+	addMenuItem( menu, "git-fetch", "Fetch" );
+	addMenuItem( menu, "git-create-branch", "Create Branch", "repo-forked" );
 
 	if ( mGitBranch != branch.name ) {
-		addFn( "git-checkout", "Check Out..." );
+		addMenuItem( menu, "git-checkout", "Check Out..." );
 		if ( branch.type == Git::RefType::Head ) {
-			addFn( "git-branch-rename", "Rename" );
-			addFn( "git-branch-delete", "Delete" );
+			addMenuItem( menu, "git-branch-rename", "Rename" );
+			addMenuItem( menu, "git-branch-delete", "Delete" );
 		}
 	} else {
 		if ( branch.type == Git::RefType::Head ) {
-			addFn( "git-pull", "Pull", "repo-pull" );
+			addMenuItem( menu, "git-pull", "Pull", "repo-pull" );
 		}
 	}
+
+	if ( branch.type == Git::RefType::Head && branch.behind )
+		addMenuItem( menu, "git-fast-forward-merge", "Fast Forward Merge" );
 
 	menu->on( Event::OnItemClicked, [this, branch]( const Event* event ) {
 		if ( !mGit )
@@ -1222,6 +1368,10 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 			branchRename( branch );
 		} else if ( id == "git-fetch" ) {
 			fetch();
+		} else if ( id == "git-fast-forward-merge" ) {
+			fastForwardMerge( branch );
+		} else if ( id == "git-create-branch" ) {
+			branchCreate();
 		}
 	} );
 
@@ -1232,24 +1382,17 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->setId( "git_file_status_menu" );
 
-	auto addFn = [this, menu]( const std::string& txtKey, const std::string& txtVal,
-							   const std::string& icon = "" ) {
-		menu->add( i18n( txtKey, txtVal ), iconDrawable( icon, 12 ),
-				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
-			->setId( txtKey );
-	};
-
-	addFn( "git-open-file", "Open File" );
+	addMenuItem( menu, "git-open-file", "Open File" );
 
 	if ( file.statusType != Git::GitStatusType::Staged ) {
-		addFn( "git-stage", "Stage" );
+		addMenuItem( menu, "git-stage", "Stage" );
 	} else {
-		addFn( "git-unstage", "Unstage" );
+		addMenuItem( menu, "git-unstage", "Unstage" );
 	}
 
 	menu->addSeparator();
 
-	addFn( "git-discard", "Discard" );
+	addMenuItem( menu, "git-discard", "Discard" );
 
 	menu->on( Event::OnItemClicked, [this, file]( const Event* event ) {
 		if ( !mGit )
@@ -1257,9 +1400,9 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string id( item->getId() );
 		if ( id == "git-stage" ) {
-			stage( file.file );
+			stage( { file.file } );
 		} else if ( id == "git-unstage" ) {
-			unstage( file.file );
+			unstage( { file.file } );
 		} else if ( id == "git-discard" ) {
 			discard( file.file );
 		} else if ( id == "git-open-file" ) {
@@ -1288,5 +1431,12 @@ void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus,
 			updateStatus( true );
 	} );
 }
+
+void GitPlugin::addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,
+							 const std::string& icon ) {
+	menu->add( i18n( txtKey, txtVal ), iconDrawable( icon, 12 ),
+			   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
+		->setId( txtKey );
+};
 
 } // namespace ecode

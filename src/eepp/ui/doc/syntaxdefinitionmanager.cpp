@@ -1124,21 +1124,23 @@ static void addCMake() {
 	for ( const auto& keyword : cmake_literals )
 		cmake_symbols[keyword] = "literal";
 
-	SyntaxDefinitionManager::instance()->add( { "CMake",
-												{ "%.cmake$", "CMakeLists.txt$" },
-												{
-													{ { "#", "[^\\]\n" }, "comment" },
-													{ { "\"", "\"", "\\" }, "string" },
-													{ { "'", "'", "\\" }, "string" },
-													{ { "[%a_][%w_]*%s?%f[(]" }, "function" },
-													{ { "CMAKE_[%w%d_]+" }, "keyword" },
-													{ { "CTEST_[%w%d_]+" }, "keyword" },
-													{ { "%u[%u%d_]*_[%u%d_]+" }, "keyword" },
-													{ { "%${[%a_][%w_]*%}" }, "keyword2" },
-													{ { "[%a_][%w_]*" }, "symbol" },
-												},
-												std::move( cmake_symbols ),
-												"//" } );
+	SyntaxDefinitionManager::instance()->add(
+		{ "CMake",
+		  { "%.cmake$", "CMakeLists.txt$" },
+		  {
+			  { { "#", "[^\\]\n" }, "comment" },
+			  { { "\"", "\"", "\\" }, "string" },
+			  { { "'", "'", "\\" }, "string" },
+			  { { "[%a_][%w_]*%s?%f[(]" }, "function" },
+			  { { "CMAKE_[%w%d_]+" }, "keyword" },
+			  { { "CTEST_[%w%d_]+" }, "keyword" },
+			  { { "%u[%u%d_]*_[%u%d_]+" }, "keyword" },
+			  { { "%${[%a_][%w_]*%}" }, "keyword2" },
+			  { { "[%a_][%w_]*" }, "symbol" },
+		  },
+		  std::move( cmake_symbols ),
+		  "//",
+		  { "^cmake_minimum_required.*%c" } } );
 }
 
 static void addJSX() {

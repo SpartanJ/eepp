@@ -182,16 +182,30 @@ Git::CheckoutResult Git::checkoutAndCreateLocalBranch( const std::string& remote
 	return checkout( newBranchName, projectDir );
 }
 
-Git::Result Git::add( const std::string& file, const std::string& projectDir ) {
-	return gitSimple( String::format( "add --force -- \"%s\"", file ), projectDir );
+static std::string asList( std::vector<std::string>& files ) {
+	for ( auto& file : files )
+		file = "\"" + file + "\"";
+	return String::join( files );
+}
+
+Git::Result Git::add( std::vector<std::string> files, const std::string& projectDir ) {
+	return gitSimple( String::format( "add --force -- %s", asList( files ) ), projectDir );
 }
 
 Git::Result Git::restore( const std::string& file, const std::string& projectDir ) {
 	return gitSimple( String::format( "restore \"%s\"", file ), projectDir );
 }
 
-Git::Result Git::reset( const std::string& file, const std::string& projectDir ) {
-	return gitSimple( String::format( "reset -q HEAD -- \"%s\"", file ), projectDir );
+Git::Result Git::reset( std::vector<std::string> files, const std::string& projectDir ) {
+	return gitSimple( String::format( "reset -q HEAD -- %s", asList( files ) ), projectDir );
+}
+
+Git::Result Git::createBranch( const std::string& branchName, bool _checkout,
+							   const std::string& projectDir ) {
+	auto res = gitSimple( String::format( "branch --no-track %s", branchName ), projectDir );
+	if ( _checkout )
+		checkout( branchName );
+	return res;
 }
 
 Git::Result Git::renameBranch( const std::string& branch, const std::string& newName,
@@ -228,6 +242,12 @@ Git::Result Git::fetch( const std::string& projectDir ) {
 
 Git::Result Git::fastForwardMerge( const std::string& projectDir ) {
 	return gitSimple( "merge --no-commit --ff --ff-only", projectDir );
+}
+
+Git::Result Git::updateRef( const std::string& headBranch, const std::string& toCommit,
+							const std::string& projectDir ) {
+	return gitSimple( String::format( "update-ref refs/heads/%s %s", headBranch, toCommit ),
+					  projectDir );
 }
 
 Git::CountResult Git::branchHistoryPosition( const std::string& localBranch,
@@ -345,16 +365,22 @@ static Git::Branch parseTag( std::string_view raw ) {
 	return newBranch;
 }
 
-std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, const std::string& projectDir ) {
+std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_view filterBranch,
+													 const std::string& projectDir ) {
 	// clang-format off
 	std::string args( "for-each-ref --format '%(refname)	%(refname:short)	%(upstream:short)	%(objectname)	%(upstream:track,nobracket)' --sort=v:refname" );
 	// clang-format on
-	if ( ref & RefType::Head )
-		args.append( " refs/heads" );
-	if ( ref & RefType::Remote )
-		args.append( " refs/remotes" );
-	if ( ref & RefType::Tag )
-		args.append( " refs/tags" );
+
+	if ( filterBranch.empty() ) {
+		if ( ref & RefType::Head )
+			args.append( " refs/heads" );
+		if ( ref & RefType::Remote )
+			args.append( " refs/remotes" );
+		if ( ref & RefType::Tag )
+			args.append( " refs/tags" );
+	} else {
+		args.append( " " + filterBranch );
+	}
 
 	std::vector<Branch> branches;
 	std::string buf;
@@ -406,7 +432,7 @@ bool Git::hasSubmodules( const std::string& projectDir ) {
 		   ( !mProjectPath.empty() && FileSystem::fileExists( mProjectPath + ".gitmodules" ) );
 }
 
-std::string Git::inSubModule( const std::string& file, const std::string& projectDir ) {
+std::string Git::repoName( const std::string& file, const std::string& projectDir ) {
 	for ( const auto& subRepo : mSubModules ) {
 		if ( String::startsWith( file, subRepo ) && file.size() != subRepo.size() )
 			return subRepo;
@@ -454,7 +480,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				if ( String::fromString( inserts, inserted ) &&
 					 String::fromString( deletes, deleted ) && ( inserts || deletes ) ) {
 					auto filePath = subModulePath + file;
-					auto repo = inSubModule( filePath, projectDir );
+					auto repo = repoName( filePath, projectDir );
 					auto repoIt = s.files.find( repo );
 					if ( repoIt != s.files.end() ) {
 						bool found = false;
@@ -660,7 +686,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 						modifiedSubmodule = true;
 					else {
 						auto filePath = subModulePath + file;
-						auto repo = inSubModule( filePath, projectDir );
+						auto repo = repoName( filePath, projectDir );
 						auto repoIt = s.files.find( repo );
 						if ( repoIt != s.files.end() ) {
 							bool found = false;
