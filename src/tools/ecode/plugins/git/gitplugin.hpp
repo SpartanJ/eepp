@@ -63,6 +63,9 @@ class GitPlugin : public PluginBase {
 	std::unique_ptr<Git> mGit;
 	std::string mGitBranch;
 	Git::Status mGitStatus;
+	std::vector<std::pair<std::string, std::string>> mRepos;
+	std::string mProjectPath;
+	std::string mRepoSelected;
 
 	Time mRefreshFreq{ Seconds( 5 ) };
 	bool mGitFound{ false };
@@ -84,15 +87,17 @@ class GitPlugin : public PluginBase {
 	UITreeView* mBranchesTree{ nullptr };
 	UITreeView* mStatusTree{ nullptr };
 	UIDropDownList* mPanelSwicher{ nullptr };
+	UIDropDownList* mRepoDropDown{ nullptr };
 	UIStackWidget* mStackWidget{ nullptr };
 	std::vector<UIWidget*> mStackMap;
 	UIWidget* mGitContentView{ nullptr };
 	UIWidget* mGitNoContentView{ nullptr };
 	UILoader* mLoader{ nullptr };
-	std::atomic<bool> mRunningUpdateBranches{ false };
-	std::atomic<bool> mRunningUpdateStatus{ false };
+	std::atomic<int> mRunningUpdateBranches{ false };
+	std::atomic<int> mRunningUpdateStatus{ false };
 	Mutex mGitBranchMutex;
 	Mutex mGitStatusMutex;
+	Mutex mRepoMutex;
 
 	struct CustomTokenizer {
 		SyntaxDefinition def;
@@ -155,7 +160,7 @@ class GitPlugin : public PluginBase {
 
 	void updateUINow( bool force = false );
 
-	void updateBranches();
+	void updateBranches( bool force = false );
 
 	void buildSidePanelTab();
 

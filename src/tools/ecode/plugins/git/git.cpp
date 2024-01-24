@@ -67,10 +67,6 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 	p.readAllStdOut( buf );
 	int retCode;
 	p.join( &retCode );
-	if ( mLastProjectPath != projectDir ) {
-		const_cast<Git*>( this )->mLastProjectPath = projectDir;
-		const_cast<Git*>( this )->mSubModulesUpdated = false;
-	}
 	Log::debug( "GitPlugin run: %s %s", mGitPath, args );
 	return retCode;
 }
@@ -95,6 +91,7 @@ std::string Git::branch( const std::string& projectDir ) {
 }
 
 bool Git::setProjectPath( const std::string& projectPath ) {
+	auto lastProjectPath = mProjectPath;
 	mProjectPath = "";
 	mGitFolder = "";
 	FileInfo f( projectPath );
@@ -109,6 +106,8 @@ bool Git::setProjectPath( const std::string& projectPath ) {
 		if ( FileSystem::fileExists( gitFolder ) ) {
 			mProjectPath = path;
 			mGitFolder = std::move( gitFolder );
+			if ( lastProjectPath != mProjectPath )
+				mSubModulesUpdated = false;
 			return true;
 		}
 		lPath = path;
@@ -392,6 +391,8 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 	if ( EXIT_SUCCESS != git( args, projectDir, buf ) )
 		return branches;
 
+	getSubModules( projectDir );
+
 	branches.reserve( countLines( buf ) );
 
 	readAllLines( buf, [&]( const std::string_view& line ) {
@@ -442,6 +443,14 @@ std::string Git::repoName( const std::string& file, const std::string& projectDi
 			return subRepo;
 	}
 	return FileSystem::fileNameFromPath( !projectDir.empty() ? projectDir : mProjectPath );
+}
+
+std::string Git::repoPath( const std::string& file, const std::string& projectDir ) {
+	for ( const auto& subRepo : mSubModules ) {
+		if ( String::startsWith( file, subRepo ) && file.size() != subRepo.size() )
+			return mProjectPath + subRepo;
+	}
+	return mProjectPath;
 }
 
 Git::Result Git::gitSimple( const std::string& cmd, const std::string& projectDir ) {

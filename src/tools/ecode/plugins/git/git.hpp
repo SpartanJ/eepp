@@ -273,6 +273,8 @@ class Git {
 
 	std::string repoName( const std::string& file, const std::string& projectDir = "" );
 
+	std::string repoPath( const std::string& file, const std::string& projectDir = "" );
+
 	bool hasSubmodules( const std::string& projectDir );
 
 	Result gitSimple( const std::string& cmd, const std::string& projectDir );
@@ -281,7 +283,6 @@ class Git {
 	std::string mGitPath;
 	std::string mProjectPath;
 	std::string mGitFolder;
-	std::string mLastProjectPath;
 	std::vector<std::string> mSubModules;
 	bool mSubModulesUpdated{ false };
 };
