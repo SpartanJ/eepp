@@ -50,6 +50,13 @@ std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
 	return "";
 }
 
+std::vector<std::string> GitPlugin::repos() {
+	std::vector<std::string> ret;
+	for ( const auto& repo : mRepos )
+		ret.push_back( repo.first );
+	return ret;
+}
+
 static size_t hashBranches( const std::vector<Git::Branch>& branches ) {
 	size_t hash = 0;
 	for ( const auto& branch : branches )
@@ -242,7 +249,7 @@ class GitStatusModel : public Model {
 
 		for ( auto& s : status )
 			for ( auto& f : s.second )
-				typesFound[s.first].insert( f.statusType );
+				typesFound[s.first].insert( f.report.type );
 
 		for ( const auto& tf : typesFound ) {
 			RepoStatus rs;
@@ -262,7 +269,7 @@ class GitStatusModel : public Model {
 		for ( auto& s : status ) {
 			for ( auto& fv : s.second ) {
 				auto pos = repoPos[s.first];
-				auto typePos = repoTypePos[pos][fv.statusType];
+				auto typePos = repoTypePos[pos][fv.report.type];
 				DiffFile df( std::move( fv ), &mStatus[pos].type[typePos] );
 				mStatus[pos].type[typePos].files.emplace_back( std::move( df ) );
 			}
@@ -376,7 +383,7 @@ class GitStatusModel : public Model {
 					case Column::Removed:
 						return Variant( String::format( "-%d ", s.deletes ) );
 					case Column::State:
-						return Variant( String::format( "%c", s.statusChar ) );
+						return Variant( String::format( "%c", s.report.symbol ) );
 					case Column::RelativeDirectory:
 						return Variant( FileSystem::fileRemoveFileName( s.file ) );
 				}
@@ -704,10 +711,10 @@ void GitPlugin::updateStatus( bool force ) {
 				return;
 
 			if ( !mGit->getGitFolder().empty() ) {
-				auto prevBranch = mGitBranch;
+				auto prevBranch = mGitBranches;
 				{
 					Lock l( mGitBranchMutex );
-					mGitBranch = mGit->branch();
+					mGitBranches = mGit->branches( repos() );
 				}
 				Git::Status prevGitStatus;
 				{
@@ -718,7 +725,7 @@ void GitPlugin::updateStatus( bool force ) {
 				{
 					Lock l( mGitStatusMutex );
 					mGitStatus = std::move( newGitStatus );
-					if ( !force && mGitBranch == prevBranch && mGitStatus == prevGitStatus )
+					if ( !force && mGitBranches == prevBranch && mGitStatus == prevGitStatus )
 						return;
 				}
 			} else if ( !mStatusButton ) {
@@ -863,8 +870,9 @@ bool GitPlugin::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Uint3
 }
 
 std::string GitPlugin::gitBranch() {
+	std::string repoSel = repoSelected();
 	Lock l( mGitBranchMutex );
-	return mGitBranch;
+	return mGitBranches[repoSel];
 }
 
 void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
@@ -917,12 +925,13 @@ void GitPlugin::checkout( Git::Branch branch ) {
 		mLoader->setVisible( true );
 		mThreadPool->run( [this, branch, createLocal] {
 			auto result = createLocal
-							  ? mGit->checkoutAndCreateLocalBranch( branch.name, mRepoSelected )
-							  : mGit->checkout( branch.name, mRepoSelected );
+							  ? mGit->checkoutAndCreateLocalBranch( branch.name, repoSelected() )
+							  : mGit->checkout( branch.name, repoSelected() );
 			if ( result.success() ) {
 				{
+					std::string repoSel = repoSelected();
 					Lock l( mGitBranchMutex );
-					mGitBranch = branch.name;
+					mGitBranches[repoSel] = branch.name;
 				}
 				if ( mBranchesTree->getModel() ) {
 					if ( createLocal )
@@ -963,9 +972,11 @@ void GitPlugin::branchRename( Git::Branch branch ) {
 		if ( newName.empty() || branch.name == newName )
 			return;
 		msgBox->closeWindow();
-		runAsync( [this, branch,
-				   newName]() { return mGit->renameBranch( branch.name, newName, mRepoSelected ); },
-				  false, true );
+		runAsync(
+			[this, branch, newName]() {
+				return mGit->renameBranch( branch.name, newName, repoSelected() );
+			},
+			false, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_rename_branch", "Rename Branch" ) );
@@ -983,7 +994,7 @@ void GitPlugin::branchDelete( Git::Branch branch ) {
 						branch.name ) );
 
 	msgBox->on( Event::OnConfirm, [this, branch]( auto ) {
-		runAsync( [this, branch]() { return mGit->deleteBranch( branch.name, mRepoSelected ); },
+		runAsync( [this, branch]() { return mGit->deleteBranch( branch.name, repoSelected() ); },
 				  false, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
@@ -993,7 +1004,7 @@ void GitPlugin::branchDelete( Git::Branch branch ) {
 }
 
 void GitPlugin::pull() {
-	runAsync( [this]() { return mGit->pull( mRepoSelected ); }, true, true );
+	runAsync( [this]() { return mGit->pull( repoSelected() ); }, true, true );
 }
 
 void GitPlugin::push() {
@@ -1003,7 +1014,7 @@ void GitPlugin::push() {
 			  "Are you sure you want to push the local changes to the remote server?" ) );
 
 	msgBox->on( Event::OnConfirm, [this]( auto ) {
-		runAsync( [this]() { return mGit->push( mRepoSelected ); }, true, true );
+		runAsync( [this]() { return mGit->push( repoSelected() ); }, true, true, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -1012,7 +1023,7 @@ void GitPlugin::push() {
 }
 
 void GitPlugin::fetch() {
-	runAsync( [this]() { return mGit->fetch( mRepoSelected ); }, true, true );
+	runAsync( [this]() { return mGit->fetch( repoSelected() ); }, true, true );
 }
 
 void GitPlugin::branchCreate() {
@@ -1025,7 +1036,7 @@ void GitPlugin::branchCreate() {
 		if ( newName.empty() )
 			return;
 		msgBox->closeWindow();
-		runAsync( [this, newName]() { return mGit->createBranch( newName, true, mRepoSelected ); },
+		runAsync( [this, newName]() { return mGit->createBranch( newName, true, repoSelected() ); },
 				  false, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
@@ -1053,15 +1064,15 @@ void GitPlugin::commit() {
 void GitPlugin::fastForwardMerge( Git::Branch branch ) {
 	runAsync(
 		[this, branch]() {
-			if ( branch.name == mGitBranch )
-				return mGit->fastForwardMerge( mRepoSelected );
+			if ( branch.name == gitBranch() )
+				return mGit->fastForwardMerge( repoSelected() );
 
 			auto remoteBranch = mGit->getAllBranchesAndTags(
-				Git::RefType::Remote, "refs/remotes/" + branch.remote, mRepoSelected );
+				Git::RefType::Remote, "refs/remotes/" + branch.remote, repoSelected() );
 			if ( remoteBranch.empty() )
 				return Git::Result{ "", -1 };
 
-			return mGit->updateRef( branch.name, remoteBranch[0].lastCommit, mRepoSelected );
+			return mGit->updateRef( branch.name, remoteBranch[0].lastCommit, repoSelected() );
 		},
 		false, true );
 }
@@ -1186,21 +1197,21 @@ void GitPlugin::updateBranches( bool force ) {
 			if ( !mGit || mGit->getGitFolder().empty() )
 				return;
 
-			auto prevBranch = mGitBranch;
+			auto prevBranch = mGitBranches;
 			{
 				Lock l( mGitBranchMutex );
-				mGitBranch = mGit->branch();
+				mGitBranches = mGit->branches( repos() );
 			}
 
 			mGit->getSubModules();
 
-			auto branches = mGit->getAllBranchesAndTags( Git::RefType::All, {}, mRepoSelected );
+			auto branches = mGit->getAllBranchesAndTags( Git::RefType::All, {}, repoSelected() );
 			auto hash = hashBranches( branches );
 			auto model = GitBranchModel::asModel( std::move( branches ), hash, this );
 
 			if ( mBranchesTree &&
 				 static_cast<GitBranchModel*>( mBranchesTree->getModel() )->getHash() == hash ) {
-				if ( prevBranch != mGitBranch )
+				if ( prevBranch != mGitBranches )
 					mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
 				return;
 			}
@@ -1222,18 +1233,12 @@ void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 	auto subModules = mGit->getSubModules();
 	std::sort( subModules.begin(), subModules.end() );
 
-	size_t selectedIdx = 0;
-	std::vector<std::pair<std::string, std::string>> repos;
+	std::unordered_map<std::string, std::string> repos;
 	repos.clear();
-	repos.reserve( subModules.size() + 1 );
-	repos.emplace_back( FileSystem::fileNameFromPath( mProjectPath ), mProjectPath );
-	size_t i = 1;
+	repos.insert( { mProjectPath, FileSystem::fileNameFromPath( mProjectPath ) } );
 	for ( auto& subModule : subModules ) {
 		std::string subModulePath = mProjectPath + subModule;
-		if ( subModulePath == mRepoSelected )
-			selectedIdx = i;
-		repos.emplace_back( FileSystem::fileNameFromPath( subModule ), std::move( subModulePath ) );
-		i++;
+		repos.insert( { std::move( subModulePath ), FileSystem::fileNameFromPath( subModule ) } );
 	}
 
 	if ( repos == mRepos )
@@ -1242,11 +1247,11 @@ void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 	mRepos = std::move( repos );
 	std::vector<String> items;
 	for ( const auto& repo : mRepos )
-		items.push_back( repo.first );
+		items.push_back( repo.second );
 
 	mRepoDropDown->getListBox()->clear();
 	mRepoDropDown->getListBox()->addListBoxItems( items );
-	mRepoDropDown->getListBox()->setSelected( selectedIdx );
+	mRepoDropDown->getListBox()->setSelected( mRepos[repoSelected()] );
 }
 
 void GitPlugin::buildSidePanelTab() {
@@ -1422,10 +1427,10 @@ void GitPlugin::buildSidePanelTab() {
 		const auto& txt = mRepoDropDown->getListBox()->getItemSelectedText();
 
 		for ( const auto& repo : mRepos ) {
-			if ( txt == repo.first ) {
+			if ( txt == repo.second ) {
 				{
 					Lock l( mRepoMutex );
-					mRepoSelected = repo.second;
+					mRepoSelected = repo.first;
 				}
 				updateBranches( true );
 				break;
@@ -1440,7 +1445,7 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 
 	addMenuItem( menu, "git-fetch", "Fetch" );
 
-	if ( mGitBranch != branch.name ) {
+	if ( gitBranch() != branch.name ) {
 		addMenuItem( menu, "git-checkout", "Check Out..." );
 		if ( branch.type == Git::RefType::Head ) {
 			addMenuItem( menu, "git-branch-rename", "Rename" );
@@ -1492,7 +1497,7 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 
 	addMenuItem( menu, "git-open-file", "Open File" );
 
-	if ( file.statusType != Git::GitStatusType::Staged ) {
+	if ( file.report.type != Git::GitStatusType::Staged ) {
 		addMenuItem( menu, "git-stage", "Stage" );
 	} else {
 		addMenuItem( menu, "git-unstage", "Unstage" );
@@ -1521,15 +1526,15 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 	menu->showOverMouseCursor();
 }
 
-void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus,
-						  bool _updateBranches ) {
+void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, bool _updateBranches,
+						  bool displaySuccessMsg ) {
 	if ( !mGit )
 		return;
 	mLoader->setVisible( true );
-	mThreadPool->run( [this, fn, _updateStatus, _updateBranches] {
+	mThreadPool->run( [this, fn, _updateStatus, _updateBranches, displaySuccessMsg] {
 		auto res = fn();
 		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-		if ( res.fail() ) {
+		if ( res.fail() || displaySuccessMsg ) {
 			showMessage( LSPMessageType::Warning, res.result );
 			return;
 		}
@@ -1545,6 +1550,11 @@ void GitPlugin::addMenuItem( UIMenu* menu, const std::string& txtKey, const std:
 	menu->add( i18n( txtKey, txtVal ), iconDrawable( icon, 12 ),
 			   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
 		->setId( txtKey );
-};
+}
+
+std::string GitPlugin::repoSelected() {
+	Lock l( mRepoMutex );
+	return mRepoSelected;
+}
 
 } // namespace ecode

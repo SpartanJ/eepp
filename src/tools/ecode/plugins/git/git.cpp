@@ -85,9 +85,22 @@ bool Git::isGitRepo( const std::string& projectDir ) {
 
 std::string Git::branch( const std::string& projectDir ) {
 	std::string buf;
+
+	if ( EXIT_SUCCESS == git( "symbolic-ref --short HEAD", projectDir, buf ) )
+		return String::rTrim( buf, '\n' );
+
 	if ( EXIT_SUCCESS == git( "rev-parse --abbrev-ref HEAD", projectDir, buf ) )
 		return String::rTrim( buf, '\n' );
+
 	return "HEAD";
+}
+
+std::unordered_map<std::string, std::string>
+Git::branches( const std::vector<std::string>& repos ) {
+	std::unordered_map<std::string, std::string> ret;
+	for ( const auto& repo : repos )
+		ret[repo] = branch( repo );
+	return ret;
 }
 
 bool Git::setProjectPath( const std::string& projectPath ) {
@@ -495,6 +508,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					auto filePath = subModulePath + file;
 					auto repo = repoName( filePath, projectDir );
 					auto repoIt = s.files.find( repo );
+					GitStatusReport status = { GitStatus::NotSet, GitStatusType::Untracked,
+											   GitStatusChar::Untracked };
 					if ( repoIt != s.files.end() ) {
 						bool found = false;
 						for ( auto& fileIt : repoIt->second ) {
@@ -506,15 +521,12 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 							}
 						}
 						if ( !found ) {
-							s.files[repo].push_back( { std::move( filePath ), inserts, deletes,
-													   GitStatus::NotSet, GitStatusType::Untracked,
-													   GitStatusChar::Untracked } );
+							s.files[repo].push_back(
+								{ std::move( filePath ), inserts, deletes, status } );
 						}
 					} else {
 						s.files.insert(
-							{ repo,
-							  { { std::move( filePath ), inserts, deletes, GitStatus::NotSet,
-								  GitStatusType::Untracked, GitStatusChar::Untracked } } } );
+							{ repo, { { std::move( filePath ), inserts, deletes, status } } } );
 					}
 					s.totalInserts += inserts;
 					s.totalDeletions += deletes;
@@ -559,10 +571,10 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 
 				auto status = statusFromShortStatusStr( statusStr );
 
-				if ( status.gitStatus != GitStatus::NotSet )
+				if ( status.status == GitStatus::NotSet )
 					return;
 
-				if ( status.gitStatusChar == GitStatusChar::ModifiedSubmodule ) {
+				if ( status.symbol == GitStatusChar::ModifiedSubmodule ) {
 					modifiedSubmodule = true;
 					return;
 				}
@@ -574,21 +586,15 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					bool found = false;
 					for ( auto& fileIt : repoIt->second ) {
 						if ( fileIt.file == filePath ) {
-							fileIt.statusChar = status.gitStatusChar;
-							fileIt.status = status.gitStatus;
-							fileIt.statusType = status.gitStatusType;
+							fileIt.report = status;
 							found = true;
 							break;
 						}
 					}
-					if ( !found ) {
-						s.files[repo].push_back( { std::move( filePath ), 0, 0, status.gitStatus,
-												   status.gitStatusType, status.gitStatusChar } );
-					}
+					if ( !found )
+						s.files[repo].push_back( { std::move( filePath ), 0, 0, status } );
 				} else {
-					s.files.insert( { repo,
-									  { { std::move( filePath ), 0, 0, status.gitStatus,
-										  status.gitStatusType, status.gitStatusChar } } } );
+					s.files.insert( { repo, { { std::move( filePath ), 0, 0, status } } } );
 				}
 			}
 		} );
@@ -604,7 +610,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 
 	for ( auto& [_, repo] : s.files ) {
 		for ( auto& val : repo ) {
-			if ( val.statusChar == GitStatusChar::Added && val.inserts == 0 ) {
+			if ( val.report.symbol == GitStatusChar::Added && val.inserts == 0 ) {
 				std::string fileText;
 				FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
 									 fileText );
@@ -813,7 +819,7 @@ Git::GitStatusReport Git::statusFromShortStatusStr( const std::string_view& stat
 		}
 	}
 
-	return { gitStatus, gitStatusChar, gitStatusType };
+	return { gitStatus, gitStatusType, gitStatusChar };
 }
 
 } // namespace ecode

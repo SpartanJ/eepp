@@ -99,18 +99,25 @@ class Git {
 		SMM = git_xy( 'm', ANY ), // staged modified submodule
 	};
 
+	struct GitStatusReport {
+		GitStatus status = GitStatus::NotSet;
+		GitStatusType type = GitStatusType::Untracked;
+		GitStatusChar symbol = GitStatusChar::Unknown;
+
+		bool operator==( const GitStatusReport& other ) const {
+			return status == other.status && symbol == other.symbol && type == other.type;
+		}
+	};
+
 	struct DiffFile {
 		std::string file;
 		int inserts{ 0 };
 		int deletes{ 0 };
-		GitStatus status;
-		GitStatusType statusType;
-		GitStatusChar statusChar{ GitStatusChar::Unknown };
+		GitStatusReport report;
 
 		bool operator==( const DiffFile& other ) const {
 			return file == other.file && inserts == other.inserts && deletes == other.deletes &&
-				   status == other.status && statusType == other.statusType &&
-				   statusChar == other.statusChar;
+				   report == other.report;
 		}
 	};
 
@@ -199,6 +206,8 @@ class Git {
 
 	std::string branch( const std::string& projectDir = "" );
 
+	std::unordered_map<std::string, std::string> branches( const std::vector<std::string>& repos );
+
 	Status status( bool recurseSubmodules, const std::string& projectDir = "" );
 
 	Result add( std::vector<std::string> files, const std::string& projectDir = "" );
@@ -279,19 +288,14 @@ class Git {
 
 	Result gitSimple( const std::string& cmd, const std::string& projectDir );
 
+	GitStatusReport statusFromShortStatusStr( const std::string_view& statusStr );
+
   protected:
 	std::string mGitPath;
 	std::string mProjectPath;
 	std::string mGitFolder;
 	std::vector<std::string> mSubModules;
 	bool mSubModulesUpdated{ false };
-
-	struct GitStatusReport {
-		GitStatus gitStatus = GitStatus::NotSet;
-		GitStatusChar gitStatusChar = GitStatusChar::Unknown;
-		GitStatusType gitStatusType = GitStatusType::Untracked;
-	};
-	GitStatusReport statusFromShortStatusStr( const std::string_view& statusStr );
 };
 
 } // namespace ecode

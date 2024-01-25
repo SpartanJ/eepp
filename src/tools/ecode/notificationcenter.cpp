@@ -41,6 +41,7 @@ void NotificationCenter::addNotification( const String& text, const Time& delay 
 			{ Actions::FadeIn::New( Seconds( 0.125 ) ), Actions::Delay::New( delay ),
 			  Actions::FadeOut::New( Seconds( 0.125 ) ), Actions::Close::New() } );
 		tv->runAction( sequence );
+		Log::info( "Displayed notification:\n%s", text.toUtf8() );
 	};
 
 	if ( Engine::isRunninMainThread() )

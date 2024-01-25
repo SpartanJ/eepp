@@ -59,11 +59,13 @@ class GitPlugin : public PluginBase {
 
 	std::string statusTypeToString( Git::GitStatusType type );
 
+	std::vector<std::string> repos();
+
   protected:
 	std::unique_ptr<Git> mGit;
-	std::string mGitBranch;
+	std::unordered_map<std::string, std::string> mGitBranches;
 	Git::Status mGitStatus;
-	std::vector<std::pair<std::string, std::string>> mRepos;
+	std::unordered_map<std::string, std::string> mRepos;
 	std::string mProjectPath;
 	std::string mRepoSelected;
 
@@ -170,10 +172,13 @@ class GitPlugin : public PluginBase {
 
 	void openFileStatusMenu( const Git::DiffFile& file );
 
-	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches );
+	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches,
+				   bool displaySuccessMsg = false );
 
 	void addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,
 					  const std::string& icon = "" );
+
+	std::string repoSelected();
 };
 
 } // namespace ecode
