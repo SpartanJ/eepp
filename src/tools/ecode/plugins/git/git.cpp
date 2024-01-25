@@ -445,7 +445,7 @@ std::string Git::repoName( const std::string& file, const std::string& projectDi
 	return FileSystem::fileNameFromPath( !projectDir.empty() ? projectDir : mProjectPath );
 }
 
-std::string Git::repoPath( const std::string& file, const std::string& projectDir ) {
+std::string Git::repoPath( const std::string& file ) {
 	for ( const auto& subRepo : mSubModules ) {
 		if ( String::startsWith( file, subRepo ) && file.size() != subRepo.size() )
 			return mProjectPath + subRepo;
@@ -557,171 +557,38 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				if ( statusStr.size() < 2 )
 					return;
 
-				Uint16 status = git_xy( statusStr[0], statusStr[1] );
-				GitStatus gitStatus = GitStatus::NotSet;
-				GitStatusChar gitStatusChar = GitStatusChar::Unknown;
-				GitStatusType gitStatusType = GitStatusType::Untracked;
+				auto status = statusFromShortStatusStr( statusStr );
 
-				switch ( status ) {
-					case StatusXY::DD: {
-						gitStatus = GitStatus::Unmerge_BothDeleted;
-						gitStatusChar = GitStatusChar::Deleted;
-						gitStatusType = GitStatusType::Unmerged;
-						break;
-					}
-					case StatusXY::AU: {
-						gitStatus = GitStatus::Unmerge_AddedByUs;
-						gitStatusChar = GitStatusChar::Added;
-						gitStatusType = GitStatusType::Unmerged;
-						break;
-					}
-					case StatusXY::UD: {
-						gitStatus = GitStatus::Unmerge_DeletedByThem;
-						gitStatusChar = GitStatusChar::Deleted;
-						gitStatusType = GitStatusType::Unmerged;
-						break;
-					}
-					case StatusXY::UA: {
-						gitStatus = GitStatus::Unmerge_AddedByThem;
-						gitStatusChar = GitStatusChar::Added;
-						gitStatusType = GitStatusType::Unmerged;
-						break;
-					}
-					case StatusXY::DU: {
-						gitStatus = GitStatus::Unmerge_DeletedByUs;
-						gitStatusChar = GitStatusChar::Deleted;
-						gitStatusType = GitStatusType::Unmerged;
-						break;
-					}
-					case StatusXY::AA: {
-						gitStatus = GitStatus::Unmerge_BothAdded;
-						gitStatusChar = GitStatusChar::Added;
-						gitStatusType = GitStatusType::Unmerged;
-						break;
-					}
-					case StatusXY::UU: {
-						gitStatus = GitStatus::Unmerge_BothModified;
-						gitStatusChar = GitStatusChar::Modified;
-						gitStatusType = GitStatusType::Unmerged;
-						break;
-					}
-					case StatusXY::QQ: {
-						gitStatus = GitStatus::Untracked;
-						gitStatusChar = GitStatusChar::Untracked;
-						gitStatusType = GitStatusType::Untracked;
-						break;
-					}
-					case StatusXY::II: {
-						gitStatus = GitStatus::Ignored;
-						gitStatusChar = GitStatusChar::Ignored;
-						gitStatusType = GitStatusType::Ignored;
-						break;
-					}
-					case StatusXY::m: {
-						gitStatus = GitStatus::WorkingTree_ModifiedSubmodule;
-						gitStatusChar = GitStatusChar::ModifiedSubmodule;
-						gitStatusType = GitStatusType::Changed;
-						break;
-					}
-					default:
-						break;
+				if ( status.gitStatus != GitStatus::NotSet )
+					return;
+
+				if ( status.gitStatusChar == GitStatusChar::ModifiedSubmodule ) {
+					modifiedSubmodule = true;
+					return;
 				}
 
-				if ( gitStatus == GitStatus::NotSet ) {
-					char x = statusStr[0];
-
-					switch ( x ) {
-						case 'M': {
-							gitStatus = GitStatus::Index_Modified;
-							gitStatusChar = GitStatusChar::Modified;
-							gitStatusType = GitStatusType::Staged;
-							break;
-						}
-						case 'A': {
-							gitStatus = GitStatus::Index_Added;
-							gitStatusChar = GitStatusChar::Added;
-							gitStatusType = GitStatusType::Staged;
-							break;
-						}
-						case 'D': {
-							gitStatus = GitStatus::Index_Deleted;
-							gitStatusChar = GitStatusChar::Deleted;
-							gitStatusType = GitStatusType::Staged;
-							break;
-						}
-						case 'R': {
-							gitStatus = GitStatus::Index_Renamed;
-							gitStatusChar = GitStatusChar::Renamed;
-							gitStatusType = GitStatusType::Staged;
-							break;
-						}
-						case 'C': {
-							gitStatus = GitStatus::Index_Copied;
-							gitStatusChar = GitStatusChar::Copied;
-							gitStatusType = GitStatusType::Staged;
-							break;
-						}
-						case 'm': {
-							gitStatus = GitStatus::Index_ModifiedSubmodule;
-							gitStatusChar = GitStatusChar::ModifiedSubmodule;
-							gitStatusType = GitStatusType::Staged;
+				auto filePath = subModulePath + file;
+				auto repo = repoName( filePath, projectDir );
+				auto repoIt = s.files.find( repo );
+				if ( repoIt != s.files.end() ) {
+					bool found = false;
+					for ( auto& fileIt : repoIt->second ) {
+						if ( fileIt.file == filePath ) {
+							fileIt.statusChar = status.gitStatusChar;
+							fileIt.status = status.gitStatus;
+							fileIt.statusType = status.gitStatusType;
+							found = true;
 							break;
 						}
 					}
-				}
-
-				if ( gitStatus == GitStatus::NotSet ) {
-					char y = statusStr[1];
-					switch ( y ) {
-						case 'M': {
-							gitStatus = GitStatus::WorkingTree_Modified;
-							gitStatusChar = GitStatusChar::Modified;
-							gitStatusType = GitStatusType::Changed;
-							break;
-						}
-						case 'D': {
-							gitStatus = GitStatus::WorkingTree_Deleted;
-							gitStatusChar = GitStatusChar::Deleted;
-							gitStatusType = GitStatusType::Changed;
-							break;
-						}
-						case 'A': {
-							gitStatus = GitStatus::WorkingTree_IntentToAdd;
-							gitStatusChar = GitStatusChar::Added;
-							gitStatusType = GitStatusType::Changed;
-							break;
-						}
+					if ( !found ) {
+						s.files[repo].push_back( { std::move( filePath ), 0, 0, status.gitStatus,
+												   status.gitStatusType, status.gitStatusChar } );
 					}
-				}
-
-				if ( gitStatus != GitStatus::NotSet ) {
-					if ( gitStatusChar == GitStatusChar::ModifiedSubmodule )
-						modifiedSubmodule = true;
-					else {
-						auto filePath = subModulePath + file;
-						auto repo = repoName( filePath, projectDir );
-						auto repoIt = s.files.find( repo );
-						if ( repoIt != s.files.end() ) {
-							bool found = false;
-							for ( auto& fileIt : repoIt->second ) {
-								if ( fileIt.file == filePath ) {
-									fileIt.statusChar = gitStatusChar;
-									fileIt.status = gitStatus;
-									fileIt.statusType = gitStatusType;
-									found = true;
-									break;
-								}
-							}
-							if ( !found ) {
-								s.files[repo].push_back( { std::move( filePath ), 0, 0, gitStatus,
-														   gitStatusType, gitStatusChar } );
-							}
-						} else {
-							s.files.insert( { repo,
-											  { { std::move( filePath ), 0, 0, gitStatus,
-												  gitStatusType, gitStatusChar } } } );
-						}
-					}
+				} else {
+					s.files.insert( { repo,
+									  { { std::move( filePath ), 0, 0, status.gitStatus,
+										  status.gitStatusType, status.gitStatusChar } } } );
 				}
 			}
 		} );
@@ -806,6 +673,147 @@ Git::Blame Git::blame( const std::string& filepath, std::size_t line ) const {
 			 std::move( commitShortHash ),
 			 std::move( commitMessage ),
 			 line };
+}
+
+Git::GitStatusReport Git::statusFromShortStatusStr( const std::string_view& statusStr ) {
+	Uint16 status = git_xy( statusStr[0], statusStr[1] );
+	GitStatus gitStatus = GitStatus::NotSet;
+	GitStatusChar gitStatusChar = GitStatusChar::Unknown;
+	GitStatusType gitStatusType = GitStatusType::Untracked;
+
+	switch ( status ) {
+		case StatusXY::DD: {
+			gitStatus = GitStatus::Unmerge_BothDeleted;
+			gitStatusChar = GitStatusChar::Deleted;
+			gitStatusType = GitStatusType::Unmerged;
+			break;
+		}
+		case StatusXY::AU: {
+			gitStatus = GitStatus::Unmerge_AddedByUs;
+			gitStatusChar = GitStatusChar::Added;
+			gitStatusType = GitStatusType::Unmerged;
+			break;
+		}
+		case StatusXY::UD: {
+			gitStatus = GitStatus::Unmerge_DeletedByThem;
+			gitStatusChar = GitStatusChar::Deleted;
+			gitStatusType = GitStatusType::Unmerged;
+			break;
+		}
+		case StatusXY::UA: {
+			gitStatus = GitStatus::Unmerge_AddedByThem;
+			gitStatusChar = GitStatusChar::Added;
+			gitStatusType = GitStatusType::Unmerged;
+			break;
+		}
+		case StatusXY::DU: {
+			gitStatus = GitStatus::Unmerge_DeletedByUs;
+			gitStatusChar = GitStatusChar::Deleted;
+			gitStatusType = GitStatusType::Unmerged;
+			break;
+		}
+		case StatusXY::AA: {
+			gitStatus = GitStatus::Unmerge_BothAdded;
+			gitStatusChar = GitStatusChar::Added;
+			gitStatusType = GitStatusType::Unmerged;
+			break;
+		}
+		case StatusXY::UU: {
+			gitStatus = GitStatus::Unmerge_BothModified;
+			gitStatusChar = GitStatusChar::Modified;
+			gitStatusType = GitStatusType::Unmerged;
+			break;
+		}
+		case StatusXY::QQ: {
+			gitStatus = GitStatus::Untracked;
+			gitStatusChar = GitStatusChar::Untracked;
+			gitStatusType = GitStatusType::Untracked;
+			break;
+		}
+		case StatusXY::II: {
+			gitStatus = GitStatus::Ignored;
+			gitStatusChar = GitStatusChar::Ignored;
+			gitStatusType = GitStatusType::Ignored;
+			break;
+		}
+		case StatusXY::m: {
+			gitStatus = GitStatus::WorkingTree_ModifiedSubmodule;
+			gitStatusChar = GitStatusChar::ModifiedSubmodule;
+			gitStatusType = GitStatusType::Changed;
+			break;
+		}
+		default:
+			break;
+	}
+
+	if ( gitStatus == GitStatus::NotSet ) {
+		char x = statusStr[0];
+
+		switch ( x ) {
+			case 'M': {
+				gitStatus = GitStatus::Index_Modified;
+				gitStatusChar = GitStatusChar::Modified;
+				gitStatusType = GitStatusType::Staged;
+				break;
+			}
+			case 'A': {
+				gitStatus = GitStatus::Index_Added;
+				gitStatusChar = GitStatusChar::Added;
+				gitStatusType = GitStatusType::Staged;
+				break;
+			}
+			case 'D': {
+				gitStatus = GitStatus::Index_Deleted;
+				gitStatusChar = GitStatusChar::Deleted;
+				gitStatusType = GitStatusType::Staged;
+				break;
+			}
+			case 'R': {
+				gitStatus = GitStatus::Index_Renamed;
+				gitStatusChar = GitStatusChar::Renamed;
+				gitStatusType = GitStatusType::Staged;
+				break;
+			}
+			case 'C': {
+				gitStatus = GitStatus::Index_Copied;
+				gitStatusChar = GitStatusChar::Copied;
+				gitStatusType = GitStatusType::Staged;
+				break;
+			}
+			case 'm': {
+				gitStatus = GitStatus::Index_ModifiedSubmodule;
+				gitStatusChar = GitStatusChar::ModifiedSubmodule;
+				gitStatusType = GitStatusType::Staged;
+				break;
+			}
+		}
+	}
+
+	if ( gitStatus == GitStatus::NotSet ) {
+		char y = statusStr[1];
+		switch ( y ) {
+			case 'M': {
+				gitStatus = GitStatus::WorkingTree_Modified;
+				gitStatusChar = GitStatusChar::Modified;
+				gitStatusType = GitStatusType::Changed;
+				break;
+			}
+			case 'D': {
+				gitStatus = GitStatus::WorkingTree_Deleted;
+				gitStatusChar = GitStatusChar::Deleted;
+				gitStatusType = GitStatusType::Changed;
+				break;
+			}
+			case 'A': {
+				gitStatus = GitStatus::WorkingTree_IntentToAdd;
+				gitStatusChar = GitStatusChar::Added;
+				gitStatusType = GitStatusType::Changed;
+				break;
+			}
+		}
+	}
+
+	return { gitStatus, gitStatusChar, gitStatusType };
 }
 
 } // namespace ecode

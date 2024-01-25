@@ -823,7 +823,7 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 
 		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%x+)%s%((%x+)%)" },
 											  { "normal", "keyword", "number", "number" } ) );
-		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(.*)%(([%w%.-]+@[%w-]+%.%w+)%)" },
+		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(.*)%(([%w%+%.-]+@[%w%.-]+%.%w+)%)" },
 											  { "normal", "keyword", "function", "link" } ) );
 		patterns.emplace_back( SyntaxPattern( { "([%w:]+)%s(%d%d%d%d%-%d%d%-%d%d[%s%d%-+:]+)" },
 											  { "normal", "keyword", "warning" } ) );

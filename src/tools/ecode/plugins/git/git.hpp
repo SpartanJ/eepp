@@ -273,7 +273,7 @@ class Git {
 
 	std::string repoName( const std::string& file, const std::string& projectDir = "" );
 
-	std::string repoPath( const std::string& file, const std::string& projectDir = "" );
+	std::string repoPath( const std::string& file );
 
 	bool hasSubmodules( const std::string& projectDir );
 
@@ -285,6 +285,13 @@ class Git {
 	std::string mGitFolder;
 	std::vector<std::string> mSubModules;
 	bool mSubModulesUpdated{ false };
+
+	struct GitStatusReport {
+		GitStatus gitStatus = GitStatus::NotSet;
+		GitStatusChar gitStatusChar = GitStatusChar::Unknown;
+		GitStatusType gitStatusType = GitStatusType::Untracked;
+	};
+	GitStatusReport statusFromShortStatusStr( const std::string_view& statusStr );
 };
 
 } // namespace ecode
