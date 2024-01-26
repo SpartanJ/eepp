@@ -116,6 +116,11 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	UITableCell* getCellFromIndex( const ModelIndex& index ) const;
 
+	virtual void onOpenModelIndex( const ModelIndex& index, const Event* triggerEvent = nullptr );
+
+	virtual void onOpenMenuModelIndex( const ModelIndex& index,
+									   const Event* triggerEvent = nullptr );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -184,11 +189,6 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 								 const ModelIndex& index );
 
 	virtual void onScrollChange();
-
-	virtual void onOpenModelIndex( const ModelIndex& index, const Event* triggerEvent = nullptr );
-
-	virtual void onOpenMenuModelIndex( const ModelIndex& index,
-									   const Event* triggerEvent = nullptr );
 
 	virtual void onRowCreated( UITableRow* row );
 

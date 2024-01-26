@@ -478,82 +478,21 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	static constexpr auto STATUS_CMD = "-c color.status=never status -b -u -s";
 	Status s;
 	std::string buf;
-	if ( EXIT_SUCCESS != git( DIFF_CMD, projectDir, buf ) )
-		return s;
 
 	getSubModules( projectDir );
-
-	LuaPattern subModulePattern( "^Entering '(.*)'" );
-
-	auto parseNumStat = [&s, &buf, &projectDir, this, &subModulePattern]() {
-		LuaPattern pattern( "(%d+)%s+(%d+)%s+(.+)" );
-		std::string subModulePath = "";
-		readAllLines( buf, [&]( const std::string_view& line ) {
-			LuaPattern::Range matches[4];
-			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
-				subModulePath = String::trim(
-					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
-				FileSystem::dirAddSlashAtEnd( subModulePath );
-			} else if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
-				auto inserted = line.substr( matches[1].start, matches[1].end - matches[1].start );
-				auto deleted = line.substr( matches[2].start, matches[2].end - matches[2].start );
-				auto file = line.substr( matches[3].start, matches[3].end - matches[3].start );
-				int inserts;
-				int deletes;
-				if ( String::fromString( inserts, inserted ) &&
-					 String::fromString( deletes, deleted ) && ( inserts || deletes ) ) {
-					auto filePath = subModulePath + file;
-					auto repo = repoName( filePath, projectDir );
-					auto repoIt = s.files.find( repo );
-					GitStatusReport status = { GitStatus::NotSet, GitStatusType::Untracked,
-											   GitStatusChar::Untracked };
-					if ( repoIt != s.files.end() ) {
-						bool found = false;
-						for ( auto& fileIt : repoIt->second ) {
-							if ( fileIt.file == filePath ) {
-								fileIt.inserts = inserts;
-								fileIt.deletes = deletes;
-								found = true;
-								break;
-							}
-						}
-						if ( !found ) {
-							s.files[repo].push_back(
-								{ std::move( filePath ), inserts, deletes, status } );
-						}
-					} else {
-						s.files.insert(
-							{ repo, { { std::move( filePath ), inserts, deletes, status } } } );
-					}
-					s.totalInserts += inserts;
-					s.totalDeletions += deletes;
-				}
-			}
-		} );
-	};
-
-	parseNumStat();
-
-	git( DIFF_STAGED_CMD, projectDir, buf );
-	parseNumStat();
-
 	bool submodules = hasSubmodules( projectDir );
 
-	if ( recurseSubmodules && submodules ) {
-		gitSubmodules( DIFF_CMD, projectDir, buf );
-		parseNumStat();
-
-		gitSubmodules( DIFF_STAGED_CMD, projectDir, buf );
-		parseNumStat();
-	}
+	LuaPattern subModulePattern( "^Entering '(.*)'" );
 
 	bool modifiedSubmodule = false;
 	auto parseStatus = [&s, &buf, &modifiedSubmodule, &projectDir, this, &subModulePattern]() {
 		std::string subModulePath = "";
 		LuaPattern pattern( "^([mMARTUD?%s][mMARTUD?%s])%s(.*)" );
 		size_t changesCount = countLines( buf );
+
 		if ( changesCount > 1000 )
 			return;
+
 		readAllLines( buf, [&]( const std::string_view& line ) {
 			LuaPattern::Range matches[3];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
@@ -576,11 +515,14 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					return;
 				}
 
+				bool isStagedAndModified =
+					status.type == GitStatusType::Staged && statusStr[1] != ' ';
+
 				auto filePath = subModulePath + file;
 				auto repo = repoName( filePath, projectDir );
 				auto repoIt = s.files.find( repo );
+				bool found = false;
 				if ( repoIt != s.files.end() ) {
-					bool found = false;
 					for ( auto& fileIt : repoIt->second ) {
 						if ( fileIt.file == filePath ) {
 							fileIt.report = status;
@@ -588,21 +530,92 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 							break;
 						}
 					}
-					if ( !found )
+				}
+				if ( !found ) {
+					s.files[repo].push_back( { std::move( filePath ), 0, 0, status } );
+
+					if ( isStagedAndModified ) {
+						status.type = GitStatusType::Changed;
+
 						s.files[repo].push_back( { std::move( filePath ), 0, 0, status } );
-				} else {
-					s.files.insert( { repo, { { std::move( filePath ), 0, 0, status } } } );
+					}
 				}
 			}
 		} );
 	};
 
-	git( STATUS_CMD, projectDir, buf );
+	if ( EXIT_SUCCESS != git( STATUS_CMD, projectDir, buf ) )
+		return s;
+
 	parseStatus();
 
 	if ( modifiedSubmodule && recurseSubmodules && submodules ) {
 		gitSubmodules( STATUS_CMD, projectDir, buf );
 		parseStatus();
+	}
+
+	auto parseNumStat = [&s, &buf, &projectDir, this, &subModulePattern]( bool isStaged ) {
+		LuaPattern pattern( "(%d+)%s+(%d+)%s+(.+)" );
+		std::string subModulePath = "";
+		readAllLines( buf, [&]( const std::string_view& line ) {
+			LuaPattern::Range matches[4];
+			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
+				subModulePath = String::trim(
+					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
+				FileSystem::dirAddSlashAtEnd( subModulePath );
+			} else if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
+				auto inserted = line.substr( matches[1].start, matches[1].end - matches[1].start );
+				auto deleted = line.substr( matches[2].start, matches[2].end - matches[2].start );
+				auto file = line.substr( matches[3].start, matches[3].end - matches[3].start );
+				int inserts;
+				int deletes;
+				if ( String::fromString( inserts, inserted ) &&
+					 String::fromString( deletes, deleted ) && ( inserts || deletes ) ) {
+					auto filePath = subModulePath + file;
+					auto repo = repoName( filePath, projectDir );
+					auto repoIt = s.files.find( repo );
+					GitStatusReport status = { GitStatus::NotSet, GitStatusType::Untracked,
+											   GitStatusChar::Untracked };
+					bool found = false;
+					if ( repoIt != s.files.end() ) {
+						for ( auto& fileIt : repoIt->second ) {
+							if ( fileIt.file == filePath ) {
+								if ( isStaged && fileIt.report.type != Git::GitStatusType::Staged )
+									continue;
+								if ( !isStaged && fileIt.report.type == Git::GitStatusType::Staged )
+									continue;
+								fileIt.inserts = inserts;
+								fileIt.deletes = deletes;
+								found = true;
+								break;
+							}
+						}
+					}
+					if ( !found ) {
+						s.files[repo].push_back(
+							{ std::move( filePath ), inserts, deletes, status } );
+					}
+					s.totalInserts += inserts;
+					s.totalDeletions += deletes;
+				}
+			}
+		} );
+	};
+
+	if ( EXIT_SUCCESS != git( DIFF_CMD, projectDir, buf ) )
+		return s;
+
+	parseNumStat( false );
+
+	git( DIFF_STAGED_CMD, projectDir, buf );
+	parseNumStat( true );
+
+	if ( recurseSubmodules && submodules ) {
+		gitSubmodules( DIFF_CMD, projectDir, buf );
+		parseNumStat( false );
+
+		gitSubmodules( DIFF_STAGED_CMD, projectDir, buf );
+		parseNumStat( true );
 	}
 
 	for ( auto& [_, repo] : s.files ) {

@@ -959,6 +959,13 @@ void GitPlugin::buildSidePanelTab() {
 	mStatusTree->setAutoColumnsWidth( true );
 	mStatusTree->setHeadersVisible( false );
 	mStatusTree->setExpandersAsIcons( true );
+	mStatusTree->on( Event::OnRowCreated, [this]( const Event* event ) {
+		UITableRow* row = event->asRowCreatedEvent()->getRow();
+		row->on( Event::MouseUp, [this, row]( const Event* event ) {
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_RMASK )
+				mStatusTree->onOpenMenuModelIndex( row->getCurIndex(), event );
+		} );
+	} );
 	mStatusTree->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModel() == nullptr )

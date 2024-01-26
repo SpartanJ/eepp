@@ -100,6 +100,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void updateContentSize();
 
+	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
+
   protected:
 	enum class IterationDecision {
 		Continue,
@@ -144,8 +146,6 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
-
-	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
 
 	virtual void onSortColumn( const size_t& colIndex );
 
