@@ -1612,6 +1612,14 @@ void TextDocument::deleteToNextWord() {
 	mergeSelection();
 }
 
+void TextDocument::deleteWord() {
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		moveTo( i, previousWordBoundary( getSelectionIndex( i ).start() ) );
+		deleteTo( i, nextWordBoundary( getSelectionIndex( i ).start() ) );
+	}
+	mergeSelection();
+}
+
 void TextDocument::deleteCurrentLine() {
 	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
@@ -2923,6 +2931,7 @@ void TextDocument::initializeCommands() {
 	mCommands["delete-to-next-char"] = [this] { deleteToNextChar(); };
 	mCommands["delete-current-line"] = [this] { deleteCurrentLine(); };
 	mCommands["delete-selection"] = [this] { deleteSelection(); };
+	mCommands["delete-word"] = [this] { deleteWord(); };
 	mCommands["move-to-previous-char"] = [this] { moveToPreviousChar(); };
 	mCommands["move-to-previous-word"] = [this] { moveToPreviousWord(); };
 	mCommands["move-to-next-char"] = [this] { moveToNextChar(); };

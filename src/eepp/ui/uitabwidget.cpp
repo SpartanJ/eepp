@@ -123,7 +123,7 @@ void UITabWidget::setContainerSize() {
 		Float totalSize = totalTabsWidth > mSize.getWidth() ? totalTabsWidth : mSize.getWidth();
 		mTabBar->setPixelsSize( totalSize - mPaddingPx.Left - mPaddingPx.Right,
 								PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
-		mTabBar->setPosition( mPadding.Left, mPadding.Top );
+		mTabBar->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 		mNodeContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
 		Sizef s( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 				 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
@@ -471,6 +471,8 @@ void UITabWidget::orderTabs() {
 	zorderTabs();
 
 	posTabs();
+
+	updateScroll( true );
 
 	invalidateDraw();
 }
@@ -1065,31 +1067,32 @@ void UITabWidget::updateScrollBar() {
 }
 
 void UITabWidget::updateScroll( bool updateFocus ) {
-	if ( mTabScroll->isVisible() ) {
-		mTabBar->setPixelsPosition(
-			{ mPaddingPx.Left - mTabScroll->getValue(), mTabBar->getPixelsPosition().y } );
-		mTabScroll->setPixelsPosition(
-			{ -mTabBar->getPixelsPosition().x, mTabScroll->getPixelsPosition().y } );
+	if ( !mTabScroll->isVisible() )
+		return;
 
-		if ( updateFocus && mTabSelected ) {
-			Rectf r = mTabScroll->getRectBox();
-			Rectf r2 = mTabSelected->getRectBox();
+	mTabBar->setPixelsPosition( mPaddingPx.Left - mTabScroll->getValue(),
+								mTabBar->getPixelsPosition().y );
+	mTabScroll->setPixelsPosition( -mTabBar->getPixelsPosition().x,
+								   mTabScroll->getPixelsPosition().y );
 
-			if ( !( r.Left <= r2.Left && r.Right >= r2.Right ) ) {
-				size_t pIndex = mFocusHistory.size() >= 2
-									? getTabIndex( mFocusHistory.at( mFocusHistory.size() - 2 ) )
-									: getTabIndex( mFocusHistory.back() );
+	if ( updateFocus && mTabSelected ) {
+		Rectf r = mTabScroll->getRectBox();
+		Rectf r2 = mTabSelected->getRectBox();
 
-				Float x = mTabSelectedIndex > pIndex
-							  ? eeclamp( mTabSelected->getPixelsPosition().x +
-											 mTabSelected->getPixelsSize().getWidth() -
-											 mTabScroll->getPixelsSize().getWidth(),
-										 0.f, mTabScroll->getMaxValue() )
-							  : eeclamp( mTabSelected->getPixelsPosition().x, 0.f,
-										 mTabScroll->getMaxValue() );
+		if ( !( r.Left <= r2.Left && r.Right >= r2.Right ) ) {
+			size_t pIndex = mFocusHistory.size() >= 2
+								? getTabIndex( mFocusHistory.at( mFocusHistory.size() - 2 ) )
+								: getTabIndex( mFocusHistory.back() );
 
-				mTabScroll->setValue( x );
-			}
+			Float x = mTabSelectedIndex > pIndex
+						  ? eeclamp( mTabSelected->getPixelsPosition().x +
+										 mTabSelected->getPixelsSize().getWidth() -
+										 mTabScroll->getPixelsSize().getWidth(),
+									 0.f, mTabScroll->getMaxValue() )
+						  : eeclamp( mTabSelected->getPixelsPosition().x, 0.f,
+									 mTabScroll->getMaxValue() );
+
+			mTabScroll->setValue( x );
 		}
 	}
 }

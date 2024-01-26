@@ -67,7 +67,7 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 	p.readAllStdOut( buf );
 	int retCode;
 	p.join( &retCode );
-	Log::debug( "GitPlugin run: %s %s", mGitPath, args );
+	Log::info( "GitPlugin run: %s %s", mGitPath, args );
 	return retCode;
 }
 
@@ -85,9 +85,6 @@ bool Git::isGitRepo( const std::string& projectDir ) {
 
 std::string Git::branch( const std::string& projectDir ) {
 	std::string buf;
-
-	if ( EXIT_SUCCESS == git( "symbolic-ref --short HEAD", projectDir, buf ) )
-		return String::rTrim( buf, '\n' );
 
 	if ( EXIT_SUCCESS == git( "rev-parse --abbrev-ref HEAD", projectDir, buf ) )
 		return String::rTrim( buf, '\n' );

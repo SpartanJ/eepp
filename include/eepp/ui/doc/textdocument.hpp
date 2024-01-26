@@ -294,6 +294,8 @@ class EE_API TextDocument {
 
 	void deleteToNextWord();
 
+	void deleteWord();
+
 	void deleteCurrentLine();
 
 	void selectToPreviousChar();

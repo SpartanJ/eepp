@@ -140,6 +140,10 @@ class EE_API UIConsole : public UIWidget,
 
 	void setMenuIconSize( size_t menuIconSize );
 
+	KeyBindings& getKeyBindings();
+
+	TextDocument& getDoc();
+
   protected:
 	struct TextCache {
 		Text text;

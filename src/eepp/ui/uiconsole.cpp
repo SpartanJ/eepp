@@ -139,6 +139,14 @@ void UIConsole::setMenuIconSize( size_t menuIconSize ) {
 	mMenuIconSize = menuIconSize;
 }
 
+KeyBindings& UIConsole::getKeyBindings() {
+	return mKeyBindings;
+}
+
+TextDocument& UIConsole::getDoc() {
+	return mDoc;
+}
+
 Font* UIConsole::getFont() const {
 	return mFontStyleConfig.Font;
 }

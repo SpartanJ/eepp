@@ -1,6 +1,7 @@
 #include "gitplugin.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
@@ -628,10 +629,15 @@ void GitPlugin::updateStatusBarSync() {
 		->setEnabled( !mGitContentView->isEnabled() );
 
 	if ( !mGit->getGitFolder().empty() ) {
-		Lock l( mGitStatusMutex );
-		mStatusTree->setModel( GitStatusModel::asModel( mGitStatus.files, this ) );
+		{
+			Lock l( mGitStatusMutex );
+			mStatusTree->setModel( GitStatusModel::asModel( mGitStatus.files, this ) );
+		}
 		mStatusTree->expandAll();
 	}
+
+	if ( !mStatusBarDisplayBranch )
+		return;
 
 	if ( !mStatusBar )
 		getUISceneNode()->bind( "status_bar", mStatusBar );
@@ -702,34 +708,32 @@ void GitPlugin::updateStatusBarSync() {
 }
 
 void GitPlugin::updateStatus( bool force ) {
-	if ( !mGit || !mGitFound || !mStatusBarDisplayBranch || mRunningUpdateStatus )
+	if ( !mGit || !mGitFound || mRunningUpdateStatus )
 		return;
 	mRunningUpdateStatus++;
 	mThreadPool->run(
 		[this, force] {
-			if ( !mGit )
+			if ( !mGit || mGit->getGitFolder().empty() )
 				return;
 
-			if ( !mGit->getGitFolder().empty() ) {
-				auto prevBranch = mGitBranches;
-				{
-					Lock l( mGitBranchMutex );
-					mGitBranches = mGit->branches( repos() );
-				}
-				Git::Status prevGitStatus;
-				{
-					Lock l( mGitStatusMutex );
-					prevGitStatus = mGitStatus;
-				}
-				Git::Status newGitStatus = mGit->status( mStatusRecurseSubmodules );
-				{
-					Lock l( mGitStatusMutex );
-					mGitStatus = std::move( newGitStatus );
-					if ( !force && mGitBranches == prevBranch && mGitStatus == prevGitStatus )
-						return;
-				}
-			} else if ( !mStatusButton ) {
-				return;
+			decltype( mGitBranches ) prevBranch;
+			{
+				auto branches = mGit->branches( repos() );
+				Lock l( mGitBranchMutex );
+				prevBranch = mGitBranches;
+				mGitBranches = std::move( branches );
+			}
+			Git::Status prevGitStatus;
+			{
+				Lock l( mGitStatusMutex );
+				prevGitStatus = mGitStatus;
+			}
+			Git::Status newGitStatus = mGit->status( mStatusRecurseSubmodules );
+			{
+				Lock l( mGitStatusMutex );
+				mGitStatus = std::move( newGitStatus );
+				if ( !force && mGitBranches == prevBranch && mGitStatus == prevGitStatus )
+					return;
 			}
 
 			getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
@@ -1004,7 +1008,7 @@ void GitPlugin::branchDelete( Git::Branch branch ) {
 }
 
 void GitPlugin::pull() {
-	runAsync( [this]() { return mGit->pull( repoSelected() ); }, true, true );
+	runAsync( [this]() { return mGit->pull( repoSelected() ); }, true, true, true );
 }
 
 void GitPlugin::push() {
@@ -1023,7 +1027,7 @@ void GitPlugin::push() {
 }
 
 void GitPlugin::fetch() {
-	runAsync( [this]() { return mGit->fetch( repoSelected() ); }, true, true );
+	runAsync( [this]() { return mGit->fetch( repoSelected() ); }, true, true, true );
 }
 
 void GitPlugin::branchCreate() {
@@ -1079,18 +1083,45 @@ void GitPlugin::fastForwardMerge( Git::Branch branch ) {
 // Branch operations
 
 // File operations
+
+static bool isPath( const std::string& file ) {
+	bool ret = !file.empty() && file[0] == '/';
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	if ( !ret )
+		ret = LuaPattern::matches( file, "%w:[\\/][\\/]" );
+#endif
+	return ret;
+}
+
+std::vector<std::string> GitPlugin::fixFilePaths( const std::vector<std::string>& files ) {
+	std::vector<std::string> paths;
+	paths.reserve( files.size() );
+	for ( const auto& file : files ) {
+		if ( !isPath( file ) ) {
+			paths.push_back( mProjectPath + file );
+		} else {
+			paths.push_back( file );
+		}
+	}
+	return paths;
+}
+
 void GitPlugin::stage( const std::vector<std::string>& files ) {
 	if ( files.empty() )
 		return;
-	runAsync( [this, files]() { return mGit->add( files, mGit->repoPath( files[0] ) ); }, true,
-			  false );
+	runAsync(
+		[this, files]() { return mGit->add( fixFilePaths( files ), mGit->repoPath( files[0] ) ); },
+		true, false );
 }
 
 void GitPlugin::unstage( const std::vector<std::string>& files ) {
 	if ( files.empty() )
 		return;
-	runAsync( [this, files]() { return mGit->reset( files, mGit->repoPath( files[0] ) ); }, true,
-			  false );
+	runAsync(
+		[this, files]() {
+			return mGit->reset( fixFilePaths( files ), mGit->repoPath( files[0] ) );
+		},
+		true, false );
 }
 // File operations
 
@@ -1197,13 +1228,14 @@ void GitPlugin::updateBranches( bool force ) {
 			if ( !mGit || mGit->getGitFolder().empty() )
 				return;
 
-			auto prevBranch = mGitBranches;
+			mGit->getSubModules();
+
+			decltype( mGitBranches ) prevBranch;
 			{
 				Lock l( mGitBranchMutex );
+				prevBranch = mGitBranches;
 				mGitBranches = mGit->branches( repos() );
 			}
-
-			mGit->getSubModules();
 
 			auto branches = mGit->getAllBranchesAndTags( Git::RefType::All, {}, repoSelected() );
 			auto hash = hashBranches( branches );

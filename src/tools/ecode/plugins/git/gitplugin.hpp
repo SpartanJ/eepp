@@ -179,6 +179,8 @@ class GitPlugin : public PluginBase {
 					  const std::string& icon = "" );
 
 	std::string repoSelected();
+
+	std::vector<std::string> fixFilePaths( const std::vector<std::string>& files );
 };
 
 } // namespace ecode
