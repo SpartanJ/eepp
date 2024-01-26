@@ -24,6 +24,14 @@ namespace ecode {
 class Git;
 class GitBranchModel;
 
+static constexpr const char* GIT_EMPTY = "";
+static constexpr const char* GIT_SUCCESS = "success";
+static constexpr const char* GIT_ERROR = "error";
+static constexpr const char* GIT_BOLD = "bold";
+static constexpr const char* GIT_NOT_BOLD = "notbold";
+static constexpr const char* GIT_TAG = "tag";
+static constexpr const char* GIT_REPO = "repo";
+
 class GitPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {

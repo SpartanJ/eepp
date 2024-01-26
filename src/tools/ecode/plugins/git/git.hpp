@@ -1,3 +1,6 @@
+#ifndef ECODE_GIT_HPP
+#define ECODE_GIT_HPP
+
 #include <cstdint>
 #include <map>
 #include <string>
@@ -300,3 +303,5 @@ class Git {
 };
 
 } // namespace ecode
+
+#endif
