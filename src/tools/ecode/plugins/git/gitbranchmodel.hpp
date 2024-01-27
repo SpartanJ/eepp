@@ -55,6 +55,8 @@ class GitBranchModel : public Model {
 
 	Git::Branch branch( const ModelIndex& index ) const;
 
+	Git::Branch branch( const std::string& name ) const;
+
   protected:
 	std::vector<BranchData> mBranches;
 	GitPlugin* mPlugin{ nullptr };

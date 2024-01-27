@@ -207,6 +207,10 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "repo-pull", 0xeb40 },
 			{ "repo-push", 0xeb41 },
 			{ "repo-forked", 0xea63 },
+			{ "repo-fetch", 0xec1d },
+			{ "git-fetch", 0xf101 },
+			{ "git-commit", 0xeafc },
+			{ "remove", 0xeb3b },
 			{ "tag", 0xea66 } };
 
 		for ( const auto& icon : codIcons )

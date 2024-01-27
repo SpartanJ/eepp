@@ -1,4 +1,5 @@
 #include "git.hpp"
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -58,6 +59,7 @@ Git::Git( const std::string& projectDir, const std::string& gitPath ) : mGitPath
 }
 
 int Git::git( const std::string& args, const std::string& projectDir, std::string& buf ) const {
+	Clock clock;
 	buf.clear();
 	Process p;
 	p.create( mGitPath, args,
@@ -65,9 +67,10 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 				  Process::Options::InheritEnvironment,
 			  { { "LC_ALL", "en_US.UTF-8" } }, projectDir.empty() ? mProjectPath : projectDir );
 	p.readAllStdOut( buf );
-	int retCode;
+	int retCode = 0;
 	p.join( &retCode );
-	Log::info( "GitPlugin run: %s %s", mGitPath, args );
+	Log::info( "GitPlugin cmd in %s (%d): %s %s", clock.getElapsedTime().toString(), retCode,
+			   mGitPath, args );
 	return retCode;
 }
 
@@ -230,7 +233,8 @@ Git::Result Git::deleteBranch( const std::string& branch, const std::string& pro
 	return gitSimple( String::format( "branch -D %s", branch ), projectDir );
 }
 
-Git::Result Git::commit( const std::string& commitMsg, const std::string& projectDir ) {
+Git::Result Git::commit( const std::string& commitMsg, bool ammend,
+						 const std::string& projectDir ) {
 	auto tmpPath = Sys::getTempPath() + ".ecode-git-commit-" + String::randString( 16 );
 	if ( !FileSystem::fileWrite( tmpPath, commitMsg ) ) {
 		Git::Result res;
@@ -239,9 +243,9 @@ Git::Result Git::commit( const std::string& commitMsg, const std::string& projec
 		return res;
 	}
 	std::string buf;
-	int retCode =
-		git( String::format( "commit --cleanup=whitespace --allow-empty --file=%s", tmpPath ),
-			 projectDir, buf );
+	int retCode = git( String::format( "commit %s --cleanup=whitespace --allow-empty --file=%s",
+									   ammend ? "--ammend" : "", tmpPath ),
+					   projectDir, buf );
 	FileSystem::fileRemove( tmpPath );
 	Git::Result res;
 	res.returnCode = retCode;

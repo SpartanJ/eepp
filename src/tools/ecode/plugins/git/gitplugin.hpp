@@ -69,6 +69,10 @@ class GitPlugin : public PluginBase {
 
 	std::vector<std::string> repos();
 
+	std::unordered_map<std::string, std::string> updateReposBranches();
+
+	void updateRepos();
+
   protected:
 	std::unique_ptr<Git> mGit;
 	std::unordered_map<std::string, std::string> mGitBranches;
@@ -103,11 +107,13 @@ class GitPlugin : public PluginBase {
 	UIWidget* mGitContentView{ nullptr };
 	UIWidget* mGitNoContentView{ nullptr };
 	UILoader* mLoader{ nullptr };
-	std::atomic<int> mRunningUpdateBranches{ false };
-	std::atomic<int> mRunningUpdateStatus{ false };
+	std::atomic<int> mRunningUpdateBranches{ 0 };
+	std::atomic<int> mRunningUpdateStatus{ 0 };
+	Clock mLastBranchesUpdate;
 	Mutex mGitBranchMutex;
 	Mutex mGitStatusMutex;
 	Mutex mRepoMutex;
+	Mutex mReposMutex;
 
 	struct CustomTokenizer {
 		SyntaxDefinition def;
@@ -152,7 +158,7 @@ class GitPlugin : public PluginBase {
 
 	void branchCreate();
 
-	void commit();
+	void commit( const std::string& repoPath = "" );
 
 	void stage( const std::vector<std::string>& files );
 

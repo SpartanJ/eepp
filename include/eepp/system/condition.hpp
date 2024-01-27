@@ -20,7 +20,7 @@ class EE_API Condition : NonCopyable {
 	};
 
 	/** Initializes a Condition object and sets its internal value to value.
-	 * Thus using WaitAndLock(value, ...) will immediately return.
+	 * Thus using waitAndLock(value, ...) will immediately return.
 	 */
 	Condition( int value = 0 );
 
@@ -66,7 +66,7 @@ class EE_API Condition : NonCopyable {
 
 	void unlock();
 
-	/** Performs an assignement followed by a Signal() call.
+	/** Performs an assignement followed by a signal() call.
 	 * The internal Condition value is updated to value() and the Condition is
 	 * signaled. Note that the Condition must be unlocked in order
 	 * to be updated, otherwise it'll block until the Condition
@@ -92,13 +92,13 @@ class EE_API Condition : NonCopyable {
 	void signal();
 
 	/** Signals the Condition and disables blocking calls,
-	 * thus WaitAndLock() does no more wait whatever
+	 * thus waitAndLock() does no more wait whatever
 	 * the awaitedValue is and waiting calls are unlocked, returning false.
 	 */
 	void invalidate();
 
 	/** Restores the blocking capabilities of the Condition,
-	 * possibly previously disabled with Invalidate()
+	 * possibly previously disabled with invalidate()
 	 */
 	void restore();
 

@@ -274,10 +274,12 @@ void PluginManager::setFileSystemListener( FileSystemListener* listener ) {
 }
 
 void PluginManager::subscribeFileSystemListener( Plugin* plugin ) {
+	Lock l( mPluginsFSSubsMutex );
 	mPluginsFSSubs.insert( plugin );
 }
 
 void PluginManager::unsubscribeFileSystemListener( Plugin* plugin ) {
+	Lock l( mPluginsFSSubsMutex );
 	mPluginsFSSubs.erase( plugin );
 }
 
@@ -287,6 +289,7 @@ void PluginManager::subscribeFileSystemListener() {
 
 	mFileSystemListenerCb =
 		mFileSystemListener->addListener( [this]( const FileEvent& ev, const FileInfo& file ) {
+			Lock l( mPluginsFSSubsMutex );
 			for ( Plugin* plugin : mPluginsFSSubs )
 				plugin->onFileSystemEvent( ev, file );
 		} );

@@ -357,6 +357,7 @@ class PluginManager {
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mSubscribedPluginsMutex;
+	Mutex mPluginsFSSubsMutex;
 	SubscribedPlugins mSubscribedPlugins;
 	OnLoadFileCb mLoadFileFn;
 	Uint64 mFileSystemListenerCb{ 0 };

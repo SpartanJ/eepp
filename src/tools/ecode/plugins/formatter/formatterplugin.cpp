@@ -53,7 +53,7 @@ FormatterPlugin::~FormatterPlugin() {
 		mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
 	}
 
-	for ( auto editor : mEditors ) {
+	for ( auto& editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {
 			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
 			if ( editor.first->hasDocument() )

@@ -228,7 +228,7 @@ class Git {
 
 	Result deleteBranch( const std::string& branch, const std::string& projectDir = "" );
 
-	Result commit( const std::string& commitMsg, const std::string& projectDir = "" );
+	Result commit( const std::string& commitMsg, bool ammend, const std::string& projectDir = "" );
 
 	Result fetch( const std::string& projectDir = "" );
 

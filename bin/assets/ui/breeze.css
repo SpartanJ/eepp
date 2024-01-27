@@ -190,6 +190,10 @@ selectbutton:disabled {
 	border-color: var(--disabled-border);
 }
 
+checkbox:disabled {
+	color: var(--disabled-color);
+}
+
 PushButton::icon,
 SelectButton::icon,
 TableView::cell::icon,
