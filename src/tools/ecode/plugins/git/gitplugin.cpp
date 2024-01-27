@@ -945,6 +945,25 @@ void GitPlugin::buildSidePanelTab() {
 		}
 	} );
 
+	mBranchesTree->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = event->asKeyEvent();
+		ModelIndex modelIndex = mBranchesTree->getSelection().first();
+		if ( !modelIndex.isValid() || modelIndex.internalId() == -1 )
+			return;
+		Git::Branch branch =
+			static_cast<const GitBranchModel*>( mBranchesTree->getModel() )->branch( modelIndex );
+
+		switch ( keyEvent->getKeyCode() ) {
+			case KEY_F7:
+				branchCreate();
+				break;
+			case KEY_F2:
+				branchRename( branch );
+			default:
+				break;
+		}
+	} );
+
 	auto listBox = mPanelSwicher->getListBox();
 	listBox->addListBoxItems( { i18n( "branches", "Branches" ), i18n( "status", "Status" ) } );
 	mStackMap.resize( 2 );
@@ -1066,22 +1085,20 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 
 	if ( gitBranch() != branch.name ) {
 		addMenuItem( menu, "git-checkout", "Check Out..." );
-		if ( branch.type == Git::RefType::Head ) {
-			addMenuItem( menu, "git-branch-rename", "Rename" );
-			addMenuItem( menu, "git-branch-delete", "Delete" );
-		}
-	} else {
-		if ( branch.type == Git::RefType::Head ) {
-			addMenuItem( menu, "git-pull", "Pull", "repo-pull" );
-			if ( branch.ahead )
-				addMenuItem( menu, "git-push", "Push", "repo-push" );
-		}
 	}
 
-	if ( branch.type == Git::RefType::Head && branch.behind )
-		addMenuItem( menu, "git-fast-forward-merge", "Fast Forward Merge" );
+	if ( branch.type == Git::RefType::Head ) {
+		addMenuItem( menu, "git-branch-rename", "Rename", "", { KEY_F2 } );
+		addMenuItem( menu, "git-pull", "Pull", "repo-pull" );
+		if ( branch.ahead )
+			addMenuItem( menu, "git-push", "Push", "repo-push" );
+		if ( branch.behind )
+			addMenuItem( menu, "git-fast-forward-merge", "Fast Forward Merge" );
+		menu->addSeparator();
+		addMenuItem( menu, "git-branch-delete", "Delete" );
+	}
 
-	addMenuItem( menu, "git-create-branch", "Create Branch", "repo-forked" );
+	addMenuItem( menu, "git-create-branch", "Create Branch", "repo-forked", { KEY_F7 } );
 
 	menu->on( Event::OnItemClicked, [this, branch]( const Event* event ) {
 		if ( !mGit )
@@ -1165,9 +1182,13 @@ void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, b
 }
 
 void GitPlugin::addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,
-							 const std::string& icon ) {
+							 const std::string& icon,
+							 const KeyBindings::Shortcut& forcedKeybinding ) {
+
 	menu->add( i18n( txtKey, txtVal ), iconDrawable( icon, 12 ),
-			   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
+			   forcedKeybinding.empty() ? KeyBindings::keybindFormat( mKeyBindings[txtKey] )
+										: getUISceneNode()->getKeyBindings().getShortcutString(
+											  forcedKeybinding, true ) )
 		->setId( txtKey );
 }
 

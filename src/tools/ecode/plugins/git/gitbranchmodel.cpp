@@ -129,4 +129,8 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 	return {};
 }
 
+Git::Branch GitBranchModel::branch( const ModelIndex& index ) const {
+	return *static_cast<Git::Branch*>( index.internalData() );
+}
+
 } // namespace ecode

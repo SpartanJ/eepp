@@ -75,7 +75,7 @@ class EE_API KeyBindings {
 
 	const std::map<std::string, Uint64> getKeybindings() const;
 
-	std::string getShortcutString( Shortcut shortcut ) const;
+	std::string getShortcutString( Shortcut shortcut, bool format = false ) const;
 
   protected:
 	const Window::Input* mInput;

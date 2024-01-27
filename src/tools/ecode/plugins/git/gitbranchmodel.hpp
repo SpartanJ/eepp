@@ -53,6 +53,8 @@ class GitBranchModel : public Model {
 
 	size_t getHash() const { return mHash; }
 
+	Git::Branch branch( const ModelIndex& index ) const;
+
   protected:
 	std::vector<BranchData> mBranches;
 	GitPlugin* mPlugin{ nullptr };
