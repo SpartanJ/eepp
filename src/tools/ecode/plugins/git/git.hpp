@@ -7,6 +7,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include <eepp/system/mutex.hpp>
+
+using namespace EE::System;
+
 namespace ecode {
 
 #define git_xy( x, y ) ( ( (uint16_t)x ) << 8 | y )
@@ -137,6 +141,19 @@ class Git {
 			return totalInserts == other.totalInserts && totalDeletions == other.totalDeletions &&
 				   files == other.files;
 		}
+
+		bool empty() { return totalInserts == 0 && totalDeletions == 0 && files.empty(); }
+
+		bool hasStagedChanges( const std::string& repoName ) {
+			auto found = files.find( repoName );
+			if ( found != files.end() ) {
+				for ( const auto& file : found->second ) {
+					if ( file.report.type == GitStatusType::Staged )
+						return true;
+				}
+			}
+			return false;
+		}
 	};
 
 	struct Result {
@@ -228,7 +245,8 @@ class Git {
 
 	Result deleteBranch( const std::string& branch, const std::string& projectDir = "" );
 
-	Result commit( const std::string& commitMsg, bool ammend, const std::string& projectDir = "" );
+	Result commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,
+				   const std::string& projectDir = "" );
 
 	Result fetch( const std::string& projectDir = "" );
 
@@ -284,7 +302,8 @@ class Git {
 
 	std::vector<std::string> getSubModules( const std::string& projectDir = "" );
 
-	std::string repoName( const std::string& file, const std::string& projectDir = "" );
+	std::string repoName( const std::string& file, bool allowExactMatch = false,
+						  const std::string& projectDir = "" );
 
 	std::string repoPath( const std::string& file );
 
@@ -299,6 +318,7 @@ class Git {
 	std::string mProjectPath;
 	std::string mGitFolder;
 	std::vector<std::string> mSubModules;
+	Mutex mSubModulesMutex;
 	bool mSubModulesUpdated{ false };
 };
 

@@ -59,6 +59,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	String getItemSelectedText() const;
 
+	const std::vector<String>& getItemsText() const;
+
 	Uint32 getItemSelectedIndex() const;
 
 	bool hasSelection() const;

@@ -1,6 +1,7 @@
 #include "git.hpp"
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/process.hpp>
@@ -107,6 +108,8 @@ bool Git::setProjectPath( const std::string& projectPath ) {
 	auto lastProjectPath = mProjectPath;
 	mProjectPath = "";
 	mGitFolder = "";
+	mSubModules = {};
+	mSubModulesUpdated = true;
 	FileInfo f( projectPath );
 	if ( !f.isDirectory() )
 		return false;
@@ -233,7 +236,7 @@ Git::Result Git::deleteBranch( const std::string& branch, const std::string& pro
 	return gitSimple( String::format( "branch -D %s", branch ), projectDir );
 }
 
-Git::Result Git::commit( const std::string& commitMsg, bool ammend,
+Git::Result Git::commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,
 						 const std::string& projectDir ) {
 	auto tmpPath = Sys::getTempPath() + ".ecode-git-commit-" + String::randString( 16 );
 	if ( !FileSystem::fileWrite( tmpPath, commitMsg ) ) {
@@ -243,9 +246,16 @@ Git::Result Git::commit( const std::string& commitMsg, bool ammend,
 		return res;
 	}
 	std::string buf;
-	int retCode = git( String::format( "commit %s --cleanup=whitespace --allow-empty --file=%s",
-									   ammend ? "--ammend" : "", tmpPath ),
-					   projectDir, buf );
+	std::string opts;
+	if ( ammend )
+		opts += " --ammend";
+
+	if ( byPassCommitHook )
+		opts += " --no-verify";
+
+	int retCode = git(
+		String::format( "commit %s --cleanup=whitespace --allow-empty --file=%s", opts, tmpPath ),
+		projectDir, buf );
 	FileSystem::fileRemove( tmpPath );
 	Git::Result res;
 	res.returnCode = retCode;
@@ -439,6 +449,7 @@ std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
 }
 
 std::vector<std::string> Git::getSubModules( const std::string& projectDir ) {
+	Lock l( mSubModulesMutex );
 	if ( !mSubModulesUpdated ) {
 		mSubModules = fetchSubModules( projectDir );
 		mSubModulesUpdated = true;
@@ -451,9 +462,11 @@ bool Git::hasSubmodules( const std::string& projectDir ) {
 		   ( !mProjectPath.empty() && FileSystem::fileExists( mProjectPath + ".gitmodules" ) );
 }
 
-std::string Git::repoName( const std::string& file, const std::string& projectDir ) {
+std::string Git::repoName( const std::string& file, bool allowExactMatch,
+						   const std::string& projectDir ) {
 	for ( const auto& subRepo : mSubModules ) {
-		if ( String::startsWith( file, subRepo ) && file.size() != subRepo.size() )
+		if ( String::startsWith( file, subRepo ) &&
+			 ( allowExactMatch || file.size() != subRepo.size() ) )
 			return subRepo;
 	}
 	return FileSystem::fileNameFromPath( !projectDir.empty() ? projectDir : mProjectPath );
@@ -523,7 +536,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					status.type == GitStatusType::Staged && statusStr[1] != ' ';
 
 				auto filePath = subModulePath + file;
-				auto repo = repoName( filePath, projectDir );
+				auto repo = repoName( filePath, false, projectDir );
 				auto repoIt = s.files.find( repo );
 				bool found = false;
 				if ( repoIt != s.files.end() ) {
@@ -576,7 +589,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				if ( String::fromString( inserts, inserted ) &&
 					 String::fromString( deletes, deleted ) && ( inserts || deletes ) ) {
 					auto filePath = subModulePath + file;
-					auto repo = repoName( filePath, projectDir );
+					auto repo = repoName( filePath, false, projectDir );
 					auto repoIt = s.files.find( repo );
 					GitStatusReport status = { GitStatus::NotSet, GitStatusType::Untracked,
 											   GitStatusChar::Untracked };

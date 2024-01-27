@@ -727,6 +727,10 @@ String UIListBox::getItemSelectedText() const {
 	return tstr;
 }
 
+const std::vector<String>& UIListBox::getItemsText() const {
+	return mTexts;
+}
+
 std::vector<Uint32> UIListBox::getItemsSelectedIndex() const {
 	return mSelected;
 }

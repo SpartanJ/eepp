@@ -216,6 +216,8 @@ void GitPlugin::updateStatusBarSync() {
 			mStatusTree->setModel( GitStatusModel::asModel( mGitStatus.files, this ) );
 		}
 		mStatusTree->expandAll();
+	} else {
+		return;
 	}
 
 	if ( !mStatusBarDisplayBranch )
@@ -295,8 +297,10 @@ void GitPlugin::updateStatus( bool force ) {
 	mRunningUpdateStatus++;
 	mThreadPool->run(
 		[this, force] {
-			if ( !mGit || mGit->getGitFolder().empty() )
+			if ( !mGit || mGit->getGitFolder().empty() ) {
+				getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
 				return;
+			}
 
 			auto prevBranch = updateReposBranches();
 			Git::Status prevGitStatus;
@@ -324,8 +328,18 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 				mGit->setProjectPath( msg.asJSON()["folder"] );
 
 				{
+					Lock l( mGitBranchMutex );
+					mGitBranches.clear();
+				}
+
+				{
 					Lock l( mRepoMutex );
 					mProjectPath = mRepoSelected = mGit->getProjectPath();
+				}
+
+				{
+					Lock l( mReposMutex );
+					mRepos.clear();
 				}
 
 				updateUINow( true );
@@ -626,45 +640,66 @@ void GitPlugin::branchCreate() {
 }
 
 void GitPlugin::commit( const std::string& repoPath ) {
+	if ( !mGitStatus.hasStagedChanges( mGit->repoName( repoPath, true ) ) ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::OK, i18n( "git_nothing_to_commit", "Nothing to Commit" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->setTitle( i18n( "git_nothing_to_commit", "Nothing to Commit" ) );
+		msgBox->center();
+		msgBox->showWhenReady();
+		return;
+	}
+
 	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::TEXT_EDIT,
 											  i18n( "git_commit_message", "Commit Message:" ) );
 
-	UICheckBox* chkBox = UICheckBox::New();
-	chkBox->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
+	UICheckBox* chkAmmend = UICheckBox::New();
+	chkAmmend->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setLayoutGravity( UI_HALIGN_LEFT | UI_VALIGN_CENTER )
 		->setClipType( ClipType::None )
 		->setParent( msgBox->getLayoutCont()->getFirstChild() )
 		->setId( "git-ammend" );
-	chkBox->setText( i18n( "git_ammend", "Ammend last commit" ) );
-	chkBox->toPosition( 2 );
+	chkAmmend->setText( i18n( "git_ammend", "Ammend last commit" ) );
+	chkAmmend->toPosition( 2 );
+
+	UICheckBox* chkBypassHook = UICheckBox::New();
+	chkBypassHook->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setLayoutGravity( UI_HALIGN_LEFT | UI_VALIGN_CENTER )
+		->setClipType( ClipType::None )
+		->setParent( msgBox->getLayoutCont()->getFirstChild() )
+		->setId( "git-bypass-hook" );
+	chkBypassHook->setText( i18n( "git_bypass_hook", "Bypass commit hook" ) );
+	chkBypassHook->toPosition( 3 );
 
 	if ( !repoPath.empty() ) {
 		auto branchName = mGitBranches[repoPath];
 		if ( !branchName.empty() ) {
-			if ( repoPath != repoSelected() || mBranchesTree->getModel() == nullptr ) {
-
+			if ( repoPath != repoSelected() || !mBranchesTree->getModel() ) {
 				auto branch = mGit->getAllBranchesAndTags( Git::RefType::All,
 														   "refs/heads/" + branchName, repoPath );
 				if ( !branch.empty() )
-					chkBox->setEnabled( branch.front().ahead > 0 );
-
+					chkAmmend->setEnabled( branch.front().ahead > 0 );
 			} else {
 				auto model = static_cast<const GitBranchModel*>( mBranchesTree->getModel() );
 				auto branch = model->branch( branchName );
 				if ( !branch.name.empty() )
-					chkBox->setEnabled( branch.ahead > 0 );
+					chkAmmend->setEnabled( branch.ahead > 0 );
 			}
 		}
 	}
 
-	msgBox->on( Event::OnConfirm, [this, msgBox, chkBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox, chkAmmend, chkBypassHook]( const Event* ) {
 		std::string msg( msgBox->getTextEdit()->getText().toUtf8() );
 		if ( msg.empty() )
 			return;
+		bool ammend = chkAmmend->isChecked();
+		bool bypassHook = chkBypassHook->isChecked();
 		msgBox->closeWindow();
-		runAsync( [this, msg, chkBox]() { return mGit->commit( msg, chkBox->isChecked() ); }, true,
-				  true );
+		runAsync(
+			[this, msg, ammend, bypassHook]() { return mGit->commit( msg, ammend, bypassHook ); },
+			true, true );
 	} );
 
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
@@ -859,15 +894,17 @@ void GitPlugin::updateBranches( bool force ) {
 	mRunningUpdateBranches++;
 	mThreadPool->run(
 		[this] {
-			if ( !mGit || mGit->getGitFolder().empty() )
+			if ( !mGit || mGit->getGitFolder().empty() ) {
+				getUISceneNode()->runOnMainThread( [this] { updateBranchesUI( nullptr ); } );
 				return;
+			}
 
 			auto prevBranch = updateReposBranches();
 			auto branches = mGit->getAllBranchesAndTags( Git::RefType::All, {}, repoSelected() );
 			auto hash = GitBranchModel::hashBranches( branches );
 			auto model = GitBranchModel::asModel( std::move( branches ), hash, this );
 
-			if ( mBranchesTree &&
+			if ( mBranchesTree && mBranchesTree->getModel() &&
 				 static_cast<GitBranchModel*>( mBranchesTree->getModel() )->getHash() == hash ) {
 				if ( prevBranch != mGitBranches )
 					mBranchesTree->getModel()->invalidate( Model::DontInvalidateIndexes );
@@ -903,17 +940,38 @@ void GitPlugin::updateRepos() {
 
 void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 	buildSidePanelTab();
-	mBranchesTree->setModel( model );
-	mBranchesTree->setColumnsVisible( { GitBranchModel::Name } );
-	mBranchesTree->expandAll();
+
+	if ( !model ) {
+		mBranchesTree->setModel( model );
+	} else {
+		mBranchesTree->setModel( model );
+		mBranchesTree->setColumnsVisible( { GitBranchModel::Name } );
+		mBranchesTree->expandAll();
+	}
+
 	updateRepos();
+
 	std::vector<String> items;
-	for ( const auto& repo : mRepos )
+	std::unordered_map<std::string, std::string> repos;
+	{
+		Lock l( mReposMutex );
+		repos = mRepos;
+	}
+
+	for ( const auto& repo : repos )
 		items.push_back( repo.second );
 
-	mRepoDropDown->getListBox()->clear();
-	mRepoDropDown->getListBox()->addListBoxItems( items );
-	mRepoDropDown->getListBox()->setSelected( mRepos[repoSelected()] );
+	if ( repos.empty() || ( repos.size() == 1 && repos.begin()->second == "" ) ) {
+		if ( !mRepoDropDown->getListBox()->isEmpty() )
+			mRepoDropDown->getListBox()->clear();
+		return;
+	}
+
+	if ( mRepoDropDown->getListBox()->getItemsText() != items ) {
+		mRepoDropDown->getListBox()->clear();
+		mRepoDropDown->getListBox()->addListBoxItems( items );
+		mRepoDropDown->getListBox()->setSelected( mRepos[repoSelected()] );
+	}
 }
 
 void GitPlugin::buildSidePanelTab() {
@@ -998,7 +1056,7 @@ void GitPlugin::buildSidePanelTab() {
 	mBranchesTree->on( Event::KeyDown, [this]( const Event* event ) {
 		const KeyEvent* keyEvent = event->asKeyEvent();
 		ModelIndex modelIndex = mBranchesTree->getSelection().first();
-		if ( !modelIndex.isValid() || modelIndex.internalId() == -1 )
+		if ( !modelIndex.isValid() || modelIndex.internalId() == -1 || !mBranchesTree->getModel() )
 			return;
 		Git::Branch branch =
 			static_cast<const GitBranchModel*>( mBranchesTree->getModel() )->branch( modelIndex );
@@ -1224,7 +1282,7 @@ void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, b
 	mLoader->setVisible( true );
 	mThreadPool->run( [this, fn, _updateStatus, _updateBranches, displaySuccessMsg] {
 		auto res = fn();
-		getUISceneNode()->runOnMainThread( [this] { mLoader->setVisible( false ); } );
+		mLoader->runOnMainThread( [this] { mLoader->setVisible( false ); } );
 		if ( res.fail() || displaySuccessMsg ) {
 			showMessage( LSPMessageType::Warning, res.result );
 			return;
