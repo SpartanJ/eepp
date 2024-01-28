@@ -70,8 +70,11 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 	p.readAllStdOut( buf );
 	int retCode = 0;
 	p.join( &retCode );
-	Log::info( "GitPlugin cmd in %s (%d): %s %s", clock.getElapsedTime().toString(), retCode,
-			   mGitPath, args );
+	if ( mLogLevel == LogLevel::Info ||
+		 ( mLogLevel >= LogLevel::Warning && retCode != EXIT_SUCCESS ) ) {
+		Log::instance()->writef( mLogLevel, "GitPlugin cmd in %s (%d): %s %s",
+								 clock.getElapsedTime().toString(), retCode, mGitPath, args );
+	}
 	return retCode;
 }
 
@@ -219,8 +222,9 @@ Git::Result Git::reset( std::vector<std::string> files, const std::string& proje
 	return gitSimple( String::format( "reset -q HEAD -- %s", asList( files ) ), projectDir );
 }
 
-Git::Result Git::diff( const std::string& file, const std::string& projectDir ) {
-	return gitSimple( String::format( "diff \"%s\"", file ), projectDir );
+Git::Result Git::diff( const std::string& file, bool isStaged, const std::string& projectDir ) {
+	return gitSimple( String::format( "diff%s \"%s\"", isStaged ? " --staged" : "", file ),
+					  projectDir );
 }
 
 Git::Result Git::createBranch( const std::string& branchName, bool _checkout,

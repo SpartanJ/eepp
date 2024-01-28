@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <eepp/system/log.hpp>
 #include <eepp/system/mutex.hpp>
 
 using namespace EE::System;
@@ -237,7 +238,7 @@ class Git {
 
 	Result reset( std::vector<std::string> files, const std::string& projectDir = "" );
 
-	Result diff( const std::string& file, const std::string& projectDir = "" );
+	Result diff( const std::string& file, bool isStaged, const std::string& projectDir = "" );
 
 	Result createBranch( const std::string& branchName, bool checkout = false,
 						 const std::string& projectDir = "" );
@@ -315,11 +316,16 @@ class Git {
 
 	GitStatusReport statusFromShortStatusStr( const std::string_view& statusStr );
 
+	void setLogLevel( LogLevel logLevel ) { mLogLevel = logLevel; }
+
+	LogLevel getLogLevel() const { return mLogLevel; }
+
   protected:
 	std::string mGitPath;
 	std::string mProjectPath;
 	std::string mGitFolder;
 	std::vector<std::string> mSubModules;
+	LogLevel mLogLevel{ LogLevel::Error };
 	Mutex mSubModulesMutex;
 	bool mSubModulesUpdated{ false };
 };

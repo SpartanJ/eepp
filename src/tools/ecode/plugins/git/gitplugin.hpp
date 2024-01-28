@@ -73,11 +73,13 @@ class GitPlugin : public PluginBase {
 
 	void updateRepos();
 
+	bool isSilent() const { return mSilence; }
+
   protected:
 	std::unique_ptr<Git> mGit;
 	std::unordered_map<std::string, std::string> mGitBranches;
 	Git::Status mGitStatus;
-	std::unordered_map<std::string, std::string> mRepos;
+	std::vector<std::pair<std::string, std::string>> mRepos;
 	std::string mProjectPath;
 	std::string mRepoSelected;
 
@@ -90,6 +92,7 @@ class GitPlugin : public PluginBase {
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mInitialized{ false };
+	bool mSilence{ true };
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
 	Color mOldBackgroundColor;
@@ -114,6 +117,7 @@ class GitPlugin : public PluginBase {
 	Mutex mGitStatusMutex;
 	Mutex mRepoMutex;
 	Mutex mReposMutex;
+	String mLastCommitMsg;
 
 	struct CustomTokenizer {
 		SyntaxDefinition def;
@@ -166,7 +170,7 @@ class GitPlugin : public PluginBase {
 
 	void discard( const std::string& file );
 
-	void diff( const std::string& file );
+	void diff( const std::string& file, bool isStaged );
 
 	void openFile( const std::string& file );
 
@@ -196,6 +200,8 @@ class GitPlugin : public PluginBase {
 					  const KeyBindings::Shortcut& forcedKeybinding = KeyBindings::Shortcut() );
 
 	std::string repoSelected();
+
+	std::string repoName( const std::string& repoPath );
 
 	std::string fixFilePath( const std::string& file );
 

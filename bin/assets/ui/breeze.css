@@ -306,6 +306,7 @@ ListView::row:selected {
 DropDownList::ListBox::item,
 ComboBox::DropDownList::ListBox::item {
 	padding-left: 4dp;
+	background-color: transparent;
 }
 
 DropDownList::ListBox::item:hover,

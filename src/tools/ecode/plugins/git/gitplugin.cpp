@@ -143,6 +143,13 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 			config["status_recurse_submodules"] = mStatusRecurseSubmodules;
 			updateConfigFile = true;
 		}
+
+		if ( config.contains( "silent" ) )
+			mSilence = config.value( "silent", true );
+		else {
+			config["silent"] = mSilence;
+			updateConfigFile = true;
+		}
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -172,6 +179,7 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	}
 
 	mGit = std::make_unique<Git>( pluginManager->getWorkspaceFolder() );
+	mGit->setLogLevel( mSilence ? LogLevel::Warning : LogLevel::Info );
 	mGitFound = !mGit->getGitPath().empty();
 	mProjectPath = mRepoSelected = mGit->getProjectPath();
 
@@ -653,6 +661,8 @@ void GitPlugin::commit( const std::string& repoPath ) {
 	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::TEXT_EDIT,
 											  i18n( "git_commit_message", "Commit Message:" ) );
 
+	msgBox->getTextEdit()->setText( mLastCommitMsg );
+
 	UICheckBox* chkAmmend = UICheckBox::New();
 	chkAmmend->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
@@ -698,8 +708,19 @@ void GitPlugin::commit( const std::string& repoPath ) {
 		bool bypassHook = chkBypassHook->isChecked();
 		msgBox->closeWindow();
 		runAsync(
-			[this, msg, ammend, bypassHook]() { return mGit->commit( msg, ammend, bypassHook ); },
+			[this, msg, ammend, bypassHook, msgBox]() {
+				auto res = mGit->commit( msg, ammend, bypassHook );
+				if ( res.success() )
+					mLastCommitMsg.clear();
+				else
+					mLastCommitMsg = msgBox->getTextEdit()->getText();
+				return res;
+			},
 			true, true );
+	} );
+
+	msgBox->on( Event::OnCancel, [this, msgBox]( const Event* ) {
+		mLastCommitMsg = msgBox->getTextEdit()->getText();
 	} );
 
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
@@ -799,9 +820,9 @@ void GitPlugin::openFile( const std::string& file ) {
 	} );
 }
 
-void GitPlugin::diff( const std::string& file ) {
-	mThreadPool->run( [this, file] {
-		auto res = mGit->diff( fixFilePath( file ), mGit->repoPath( file ) );
+void GitPlugin::diff( const std::string& file, bool isStaged ) {
+	mThreadPool->run( [this, file, isStaged] {
+		auto res = mGit->diff( fixFilePath( file ), isStaged, mGit->repoPath( file ) );
 		if ( res.fail() )
 			return;
 
@@ -950,12 +971,12 @@ void GitPlugin::updateRepos() {
 	auto subModules = mGit->getSubModules();
 	std::sort( subModules.begin(), subModules.end() );
 
-	std::unordered_map<std::string, std::string> repos;
+	std::vector<std::pair<std::string, std::string>> repos;
 	repos.clear();
-	repos.insert( { mProjectPath, FileSystem::fileNameFromPath( mProjectPath ) } );
+	repos.emplace_back( mProjectPath, FileSystem::fileNameFromPath( mProjectPath ) );
 	for ( auto& subModule : subModules ) {
 		std::string subModulePath = mProjectPath + subModule;
-		repos.insert( { std::move( subModulePath ), FileSystem::fileNameFromPath( subModule ) } );
+		repos.emplace_back( std::move( subModulePath ), FileSystem::fileNameFromPath( subModule ) );
 	}
 
 	Lock l( mReposMutex );
@@ -979,7 +1000,7 @@ void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 	updateRepos();
 
 	std::vector<String> items;
-	std::unordered_map<std::string, std::string> repos;
+	decltype( mRepos ) repos;
 	{
 		Lock l( mReposMutex );
 		repos = mRepos;
@@ -997,7 +1018,7 @@ void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 	if ( mRepoDropDown->getListBox()->getItemsText() != items ) {
 		mRepoDropDown->getListBox()->clear();
 		mRepoDropDown->getListBox()->addListBoxItems( items );
-		mRepoDropDown->getListBox()->setSelected( mRepos[repoSelected()] );
+		mRepoDropDown->getListBox()->setSelected( repoName( repoSelected() ) );
 	}
 }
 
@@ -1009,6 +1030,22 @@ void GitPlugin::buildSidePanelTab() {
 	UIIcon* icon = findIcon( "source-control" );
 	UIWidget* node = getUISceneNode()->loadLayoutFromString(
 		R"html(
+		<style>
+		#git_branches_tree ScrollBar,
+		#git_status_tree ScrollBar {
+			opacity: 0;
+			transition: opacity 0.15;
+		}
+
+		#git_branches_tree:hover ScrollBar,
+		#git_branches_tree ScrollBar.dragging,
+		#git_branches_tree ScrollBar:focus-within,
+		#git_status_tree:hover ScrollBar,
+		#git_status_tree ScrollBar.dragging,
+		#git_status_tree ScrollBar:focus-within {
+			opacity: 1;
+		}
+		</style>
 		<RelativeLayout id="git_panel" lw="mp" lh="mp">
 			<vbox id="git_content" lw="mp" lh="mp">
 				<DropDownList id="git_panel_switcher" lw="mp" lh="22dp" border-type="inside" border-right-width="0" border-left-width="0" border-top-width="0" border-bottom-left-radius="0" border-bottom-right-radius="0" />
@@ -1143,7 +1180,7 @@ void GitPlugin::buildSidePanelTab() {
 					break;
 				}
 				case Abstract::ModelEventType::Open: {
-					diff( file->file );
+					diff( file->file, file->report.type == Git::GitStatusType::Staged );
 					break;
 				}
 				default:
@@ -1304,7 +1341,7 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 		} else if ( id == "git-open-file" ) {
 			openFile( file.file );
 		} else if ( id == "git-diff" ) {
-			diff( file.file );
+			diff( file.file, file.report.type == Git::GitStatusType::Staged );
 		}
 	} );
 
@@ -1348,6 +1385,14 @@ void GitPlugin::addMenuItem( UIMenu* menu, const std::string& txtKey, const std:
 std::string GitPlugin::repoSelected() {
 	Lock l( mRepoMutex );
 	return mRepoSelected;
+}
+
+std::string GitPlugin::repoName( const std::string& repoPath ) {
+	Lock l( mRepoMutex );
+	for ( const auto& repo : mRepos )
+		if ( repo.first == repoPath )
+			return repo.second;
+	return "";
 }
 
 } // namespace ecode
