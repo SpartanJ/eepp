@@ -409,6 +409,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "text-overflow", "clip" ).setType( PropertyType::String );
 
+	registerProperty( "check-mode", "element" ).setType( PropertyType::String );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );

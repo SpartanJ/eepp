@@ -431,6 +431,29 @@ Sets the percentage of scroll of a page that triggers a page change in a ViewPag
 
 ---
 
+### checked
+
+Sets as checkbox as checked
+
+* Applicable to: EE::UI::UICheckBox (CheckBox).
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
+### check-mode
+
+Checkboxs have two possible interaction modes for changing its checked state.
+
+* Applicable to: EE::UI::UICheckBox (CheckBox).
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `element`: Checked state will change by clicking anywhere in the widget (clicking over text or icon)
+  * `button`: Checked state will only change by clicking over the icon
+* Default value: `element`
+
+---
+
 ### click-step
 
 For any element that has a stepped value change, this sets the step variation for a click to the

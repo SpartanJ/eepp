@@ -51,8 +51,8 @@ bool PluginManager::setEnabled( const std::string& id, bool enable, bool sync ) 
 	if ( enable && plugin == nullptr && hasDefinition( id ) ) {
 		Log::debug( "PluginManager: loading plugin %s", mDefinitions[id].name );
 		Plugin* newPlugin = sync && mDefinitions[id].creatorSyncFn
-											? mDefinitions[id].creatorSyncFn( this )
-											: mDefinitions[id].creatorFn( this );
+								? mDefinitions[id].creatorSyncFn( this )
+								: mDefinitions[id].creatorFn( this );
 		mPlugins.insert( std::pair<std::string, Plugin*>( id, newPlugin ) );
 		if ( onPluginEnabled )
 			onPluginEnabled( newPlugin );
@@ -170,9 +170,8 @@ PluginRequestHandle PluginManager::sendRequest( PluginMessageType type, PluginMe
 	return PluginRequestHandle::empty();
 }
 
-PluginRequestHandle PluginManager::sendRequest( Plugin* pluginWho,
-												PluginMessageType type, PluginMessageFormat format,
-												const void* data ) {
+PluginRequestHandle PluginManager::sendRequest( Plugin* pluginWho, PluginMessageType type,
+												PluginMessageFormat format, const void* data ) {
 	if ( mClosing )
 		return PluginRequestHandle::empty();
 	SubscribedPlugins subscribedPlugins;
@@ -365,26 +364,18 @@ class UIPluginManagerTable : public UITableView {
 
 	std::function<UITextView*( UIPushButton* )> getCheckBoxFn( const ModelIndex& index,
 															   const PluginsModel* model ) {
-		return [index, model, this]( UIPushButton* but ) -> UITextView* {
+		return [index, model, this]( UIPushButton* ) -> UITextView* {
 			UICheckBox* chk = UICheckBox::New();
 			chk->setChecked(
 				model->data( model->index( index.row(), PluginsModel::Enabled ) ).asBool() );
-			but->addEventListener( Event::MouseClick, [&, index, model, chk]( const Event* event ) {
-				if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) )
-					return 1;
-				UIWidget* chkBut = chk->getCurrentButton();
-				auto mousePos =
-					chkBut->convertToNodeSpace( event->asMouseEvent()->getPosition().asFloat() );
-				if ( chkBut->getLocalBounds().contains( mousePos ) ) {
-					bool checked = !chk->isChecked();
-					chk->setChecked( checked );
-					std::string id(
-						model->data( model->index( index.row(), PluginsModel::Id ) ).asCStr() );
-					model->getManager()->setEnabled( id, checked );
-					if ( onModelEnabledChange )
-						onModelEnabledChange( id, checked );
-				}
-				return 1;
+			chk->setCheckMode( UICheckBox::Button );
+			chk->on( Event::OnValueChange, [&, index, model, chk]( const Event* ) {
+				bool checked = chk->isChecked();
+				std::string id(
+					model->data( model->index( index.row(), PluginsModel::Id ) ).asCStr() );
+				model->getManager()->setEnabled( id, checked );
+				if ( onModelEnabledChange )
+					onModelEnabledChange( id, checked );
 			} );
 			return chk;
 		};
@@ -394,6 +385,7 @@ class UIPluginManagerTable : public UITableView {
 		if ( index.column() == PluginsModel::Title ) {
 			UITableCell* widget = UITableCell::NewWithOpt(
 				mTag + "::cell", getCheckBoxFn( index, (const PluginsModel*)getModel() ) );
+			widget->getTextBox()->setEnabled( true );
 			return setupCell( widget, rowWidget, index );
 		}
 		return UITableView::createCell( rowWidget, index );
@@ -432,10 +424,7 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 	UIPushButton* prefs = cont->find<UIPushButton>( "plugin-manager-preferences" );
 	UIPluginManagerTable* tv =
 		win->getContainer()->find<UIPluginManagerTable>( "plugin-manager-table" );
-	close->addEventListener( Event::MouseClick, [win]( const Event* event ) {
-		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK )
-			win->closeWindow();
-	} );
+	close->onClick( [win]( const MouseEvent* ) { win->closeWindow(); } );
 	tv->setModel( PluginsModel::New( manager ) );
 	tv->setColumnsVisible(
 		{ PluginsModel::Title, PluginsModel::Description, PluginsModel::Version } );

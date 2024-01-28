@@ -608,7 +608,7 @@ void GitPlugin::push() {
 			  "Are you sure you want to push the local changes to the remote server?" ) );
 
 	msgBox->on( Event::OnConfirm, [this]( auto ) {
-		runAsync( [this]() { return mGit->push( repoSelected() ); }, true, true, true );
+		runAsync( [this]() { return mGit->push( repoSelected() ); }, true, true, true, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -1312,23 +1312,26 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 }
 
 void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, bool _updateBranches,
-						  bool displaySuccessMsg ) {
+						  bool displaySuccessMsg, bool updateBranchesOnError ) {
 	if ( !mGit )
 		return;
 	mLoader->setVisible( true );
-	mThreadPool->run( [this, fn, _updateStatus, _updateBranches, displaySuccessMsg] {
-		auto res = fn();
-		mLoader->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-		if ( res.fail() || displaySuccessMsg ) {
-			showMessage( LSPMessageType::Warning, res.result );
-			return;
-		}
-		if ( _updateBranches )
-			updateBranches( true );
+	mThreadPool->run(
+		[this, fn, _updateStatus, _updateBranches, displaySuccessMsg, updateBranchesOnError] {
+			auto res = fn();
+			mLoader->runOnMainThread( [this] { mLoader->setVisible( false ); } );
+			if ( res.fail() || displaySuccessMsg ) {
+				showMessage( LSPMessageType::Warning, res.result );
+				if ( _updateBranches && updateBranchesOnError )
+					updateBranches();
+				return;
+			}
+			if ( _updateBranches )
+				updateBranches();
 
-		if ( _updateStatus )
-			updateStatus( true );
-	} );
+			if ( _updateStatus )
+				updateStatus( true );
+		} );
 }
 
 void GitPlugin::addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,

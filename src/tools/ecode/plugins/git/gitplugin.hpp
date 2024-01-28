@@ -189,7 +189,7 @@ class GitPlugin : public PluginBase {
 	void openFileStatusMenu( const Git::DiffFile& file );
 
 	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches,
-				   bool displaySuccessMsg = false );
+				   bool displaySuccessMsg = false, bool updateBranchesOnError = false );
 
 	void addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,
 					  const std::string& icon = "",
