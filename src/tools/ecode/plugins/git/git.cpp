@@ -219,6 +219,10 @@ Git::Result Git::reset( std::vector<std::string> files, const std::string& proje
 	return gitSimple( String::format( "reset -q HEAD -- %s", asList( files ) ), projectDir );
 }
 
+Git::Result Git::diff( const std::string& file, const std::string& projectDir ) {
+	return gitSimple( String::format( "diff \"%s\"", file ), projectDir );
+}
+
 Git::Result Git::createBranch( const std::string& branchName, bool _checkout,
 							   const std::string& projectDir ) {
 	auto res = gitSimple( String::format( "branch --no-track %s", branchName ), projectDir );

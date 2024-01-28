@@ -241,7 +241,7 @@ void GitPlugin::updateStatusBarSync() {
 		if ( childCount > 2 )
 			mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
 
-		mStatusButton->on( Event::MouseClick, [this]( const Event* ) {
+		mStatusButton->onClick( [this]( const Event* ) {
 			if ( mTab ) {
 				mTab->setTabSelected();
 				if ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
@@ -736,6 +736,14 @@ static bool isPath( const std::string& file ) {
 	return ret;
 }
 
+std::string GitPlugin::fixFilePath( const std::string& file ) {
+	std::string path;
+	if ( !isPath( file ) ) {
+		path = ( mProjectPath + file );
+	}
+	return file;
+}
+
 std::vector<std::string> GitPlugin::fixFilePaths( const std::vector<std::string>& files ) {
 	std::vector<std::string> paths;
 	paths.reserve( files.size() );
@@ -766,7 +774,6 @@ void GitPlugin::unstage( const std::vector<std::string>& files ) {
 		},
 		true, false );
 }
-// File operations
 
 void GitPlugin::discard( const std::string& file ) {
 	UIMessageBox* msgBox = UIMessageBox::New(
@@ -791,6 +798,26 @@ void GitPlugin::openFile( const std::string& file ) {
 		mManager->getLoadFileFn()( mGit->getProjectPath() + file, []( auto, auto ) {} );
 	} );
 }
+
+void GitPlugin::diff( const std::string& file ) {
+	mThreadPool->run( [this, file] {
+		auto res = mGit->diff( fixFilePath( file ), mGit->repoPath( file ) );
+		if ( res.fail() )
+			return;
+
+		getUISceneNode()->runOnMainThread( [this, file, res] {
+			auto ret = mManager->getSplitter()->createEditorInNewTab();
+			auto doc = ret.second->getDocumentRef();
+			doc->setDefaultFileName( FileSystem::fileNameFromPath( file ) + ".diff" );
+			doc->setSyntaxDefinition( SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
+			doc->textInput( res.result, false );
+			doc->moveToStartOfDoc();
+			doc->resetUndoRedo();
+		} );
+	} );
+}
+
+// File operations
 
 void GitPlugin::onRegister( UICodeEditor* editor ) {
 	PluginBase::onRegister( editor );
@@ -1019,14 +1046,15 @@ void GitPlugin::buildSidePanelTab() {
 	node->bind( "git_panel_loader", mLoader );
 	node->bind( "git_repo", mRepoDropDown );
 
-	node->find( "branch_pull" )->on( Event::MouseClick, [this]( auto ) { pull(); } );
-	node->find( "branch_push" )->on( Event::MouseClick, [this]( auto ) { push(); } );
-	node->find( "branch_add" )->on( Event::MouseClick, [this]( auto ) { branchCreate(); } );
+	node->find( "branch_pull" )->onClick( [this]( auto ) { pull(); } );
+	node->find( "branch_push" )->onClick( [this]( auto ) { push(); } );
+	node->find( "branch_add" )->onClick( [this]( auto ) { branchCreate(); } );
 
 	mBranchesTree->setAutoExpandOnSingleColumn( true );
 	mBranchesTree->setHeadersVisible( false );
 	mBranchesTree->setExpandersAsIcons( true );
 	mBranchesTree->setIndentWidth( PixelDensity::dpToPx( 16 ) );
+	mBranchesTree->setScrollViewType( UIScrollableWidget::Inclusive );
 	mBranchesTree->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( !modelEvent->getModelIndex().hasParent() )
@@ -1086,6 +1114,7 @@ void GitPlugin::buildSidePanelTab() {
 	mStatusTree->setAutoColumnsWidth( true );
 	mStatusTree->setHeadersVisible( false );
 	mStatusTree->setExpandersAsIcons( true );
+	mStatusTree->setScrollViewType( UIScrollableWidget::Inclusive );
 	mStatusTree->on( Event::OnRowCreated, [this]( const Event* event ) {
 		UITableRow* row = event->asRowCreatedEvent()->getRow();
 		row->on( Event::MouseUp, [this, row]( const Event* event ) {
@@ -1111,6 +1140,10 @@ void GitPlugin::buildSidePanelTab() {
 					mStatusTree->getSelection().set( modelEvent->getModelIndex() );
 					mStatusTree->setFocusOnSelection( focusOnSelection );
 					openFileStatusMenu( *file );
+					break;
+				}
+				case Abstract::ModelEventType::Open: {
+					diff( file->file );
 					break;
 				}
 				default:
@@ -1245,6 +1278,7 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 	menu->setId( "git_file_status_menu" );
 
 	addMenuItem( menu, "git-open-file", "Open File" );
+	addMenuItem( menu, "git-diff", "Open Diff" );
 
 	if ( file.report.type != Git::GitStatusType::Staged ) {
 		addMenuItem( menu, "git-stage", "Stage" );
@@ -1269,6 +1303,8 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 			discard( file.file );
 		} else if ( id == "git-open-file" ) {
 			openFile( file.file );
+		} else if ( id == "git-diff" ) {
+			diff( file.file );
 		}
 	} );
 
@@ -1288,7 +1324,7 @@ void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, b
 			return;
 		}
 		if ( _updateBranches )
-			updateBranches();
+			updateBranches( true );
 
 		if ( _updateStatus )
 			updateStatus( true );

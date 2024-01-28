@@ -75,11 +75,11 @@ class Git {
 	};
 
 	enum class GitStatusType {
-		Staged,
-		Changed,
-		Untracked,
-		Unmerged,
-		Ignored,
+		Staged = 1 << 1,
+		Changed = 1 << 2,
+		Untracked = 1 << 3,
+		Unmerged = 1 << 4,
+		Ignored = 1 << 5,
 	};
 
 	static constexpr auto ANY = 0;
@@ -236,6 +236,8 @@ class Git {
 	Result restore( const std::string& file, const std::string& projectDir = "" );
 
 	Result reset( std::vector<std::string> files, const std::string& projectDir = "" );
+
+	Result diff( const std::string& file, const std::string& projectDir = "" );
 
 	Result createBranch( const std::string& branchName, bool checkout = false,
 						 const std::string& projectDir = "" );

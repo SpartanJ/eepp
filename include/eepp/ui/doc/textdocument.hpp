@@ -593,6 +593,8 @@ class EE_API TextDocument {
 
 	bool isInsertingText() const;
 
+	void resetUndoRedo();
+
   protected:
 	friend class UndoStack;
 

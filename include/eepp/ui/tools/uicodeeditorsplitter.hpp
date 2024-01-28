@@ -118,6 +118,8 @@ class EE_API UICodeEditorSplitter {
 
 	bool loadDocument( std::shared_ptr<TextDocument> doc, UICodeEditor* codeEditor = nullptr );
 
+	std::pair<UITab*, UICodeEditor*> createEditorInNewTab();
+
 	std::pair<UITab*, UICodeEditor*> loadDocumentInNewTab( std::shared_ptr<TextDocument> doc );
 
 	bool loadFileFromPath( const std::string& path, UICodeEditor* codeEditor = nullptr );

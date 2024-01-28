@@ -166,6 +166,8 @@ class GitPlugin : public PluginBase {
 
 	void discard( const std::string& file );
 
+	void diff( const std::string& file );
+
 	void openFile( const std::string& file );
 
 	void updateStatus( bool force = false );
@@ -194,6 +196,8 @@ class GitPlugin : public PluginBase {
 					  const KeyBindings::Shortcut& forcedKeybinding = KeyBindings::Shortcut() );
 
 	std::string repoSelected();
+
+	std::string fixFilePath( const std::string& file );
 
 	std::vector<std::string> fixFilePaths( const std::vector<std::string>& files );
 };

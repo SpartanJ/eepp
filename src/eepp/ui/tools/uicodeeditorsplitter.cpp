@@ -325,6 +325,22 @@ bool UICodeEditorSplitter::loadDocument( std::shared_ptr<TextDocument> doc,
 	return true;
 }
 
+std::pair<UITab*, UICodeEditor*> UICodeEditorSplitter::createEditorInNewTab() {
+	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	if ( d.first == nullptr || d.second == nullptr ) {
+		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
+			d = createCodeEditorInTabWidget( mTabWidgets[0] );
+		} else {
+			Log::error( "Couldn't createCodeEditorInTabWidget in "
+						"UICodeEditorSplitter::createEditorInNewTab" );
+			return d;
+		}
+	}
+	UITabWidget* tabWidget = d.first->getTabWidget();
+	tabWidget->setTabSelected( d.first );
+	return d;
+}
+
 std::pair<UITab*, UICodeEditor*>
 UICodeEditorSplitter::loadDocumentInNewTab( std::shared_ptr<TextDocument> doc ) {
 	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );

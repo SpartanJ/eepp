@@ -2078,7 +2078,7 @@ const std::string& TextDocument::getDefaultFileName() const {
 }
 
 void TextDocument::setDefaultFileName( const std::string& defaultFileName ) {
-	mDefaultFileName = defaultFileName;
+	mFilePath = mDefaultFileName = defaultFileName;
 }
 
 const std::string& TextDocument::getFilePath() const {
@@ -2572,6 +2572,13 @@ void TextDocument::setPageSize( const Uint32& pageSize ) {
 
 void TextDocument::cleanChangeId() {
 	mCleanChangeId = getCurrentChangeId();
+}
+
+void TextDocument::resetUndoRedo() {
+	mUndoStack.clear();
+	cleanChangeId();
+	notifyCursorChanged();
+	notifySelectionChanged();
 }
 
 static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, const TextPosition& pos,
