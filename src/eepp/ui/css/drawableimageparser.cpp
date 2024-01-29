@@ -6,6 +6,7 @@
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/triangledrawable.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uinode.hpp>

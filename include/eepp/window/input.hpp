@@ -5,7 +5,6 @@
 #include <eepp/window/base.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/inputfinger.hpp>
-#include <eepp/window/inputhelper.hpp>
 #include <eepp/window/joystickmanager.hpp>
 #include <eepp/window/window.hpp>
 

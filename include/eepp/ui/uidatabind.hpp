@@ -1,6 +1,7 @@
 #ifndef EE_UI_UIDATABIND_HPP
 #define EE_UI_UIDATABIND_HPP
 
+#include <eepp/system/log.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <memory>
 #include <set>

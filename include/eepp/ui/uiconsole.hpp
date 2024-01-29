@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <eepp/graphics/text.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>

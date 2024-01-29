@@ -9,6 +9,7 @@
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/uiicontheme.hpp>
 #include <eepp/ui/uistate.hpp>

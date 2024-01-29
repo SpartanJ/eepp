@@ -1,3 +1,4 @@
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiwidget.hpp>

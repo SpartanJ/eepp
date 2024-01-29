@@ -52,6 +52,10 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
 			->setSize( PixelDensity::dpToPx( Vector2f{ 400, 100 } ) )
 			->setParent( vlay );
+		mTextEdit->getDocument().setCommand( "complete-edit",
+											 [this] { sendCommonEvent( Event::OnConfirm ); } );
+		mTextEdit->getKeyBindings().addKeybind( { KEY_RETURN, KeyMod::getDefaultModifier() },
+												"complete-edit" );
 	}
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();

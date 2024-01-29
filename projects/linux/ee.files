@@ -452,7 +452,6 @@
 ../../include/eepp/window.hpp
 ../../include/eepp/window/inputevent.hpp
 ../../include/eepp/window/inputfinger.hpp
-../../include/eepp/window/inputhelper.hpp
 ../../include/eepp/window/inputmethod.hpp
 ../../include/eepp/window/input.hpp
 ../../include/eepp/window/joycodes.hpp
@@ -1125,7 +1124,6 @@
 ../../src/eepp/window/engine.cpp
 ../../src/eepp/window/input.cpp
 ../../src/eepp/window/inputfinger.cpp
-../../src/eepp/window/inputhelper.cpp
 ../../src/eepp/window/inputmethod.cpp
 ../../src/eepp/window/joystick.cpp
 ../../src/eepp/window/joystickmanager.cpp

@@ -1244,6 +1244,13 @@ void GitPlugin::buildSidePanelTab() {
 				break;
 			case KEY_F2:
 				branchRename( branch );
+				break;
+			case KEY_DELETE:
+				if ( branch.type == Git::RefType::Stash )
+					stashDrop( branch );
+				else if ( branch.type == Git::RefType::Head )
+					branchDelete( branch );
+				break;
 			default:
 				break;
 		}

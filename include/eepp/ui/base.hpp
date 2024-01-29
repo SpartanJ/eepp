@@ -19,9 +19,6 @@ using namespace EE::Math;
 #include <eepp/system/sys.hpp>
 using namespace EE::System;
 
-#include <eepp/window/inputhelper.hpp>
-using namespace EE::Window;
-
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/rendermode.hpp>
 using namespace EE::Graphics;

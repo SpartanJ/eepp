@@ -7,6 +7,8 @@
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 
+#include <eepp/system/log.hpp>
+
 using namespace EE::UI::Doc;
 
 namespace EE { namespace UI { namespace Tools {

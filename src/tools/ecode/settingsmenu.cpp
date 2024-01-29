@@ -143,7 +143,7 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 	} );
 	mApp->updateRecentFiles();
 	mApp->updateRecentFolders();
-	Log::info( "Settings Menu took: %.2f ms", clock.getElapsedTime().asMilliseconds() );
+	Log::info( "Settings Menu took: %s", clock.getElapsedTime().toString() );
 }
 
 UIMenu* SettingsMenu::createFileTypeMenu() {
