@@ -31,7 +31,7 @@ class GitBranchModel : public Model {
 		std::vector<Git::Branch> data;
 	};
 
-	std::string refTypeToString( Git::RefType type );
+	std::string refTypeToString( Git::RefType type ) const;
 
 	GitBranchModel( std::vector<Git::Branch>&& branches, size_t hash, GitPlugin* gitPlugin );
 
@@ -57,6 +57,7 @@ class GitBranchModel : public Model {
 
 	Git::Branch branch( const std::string& name ) const;
 
+	ModelIndex refTypeIndex( Git::RefType refType ) const;
   protected:
 	std::vector<BranchData> mBranches;
 	GitPlugin* mPlugin{ nullptr };

@@ -31,6 +31,7 @@ static constexpr const char* GIT_BOLD = "bold";
 static constexpr const char* GIT_NOT_BOLD = "notbold";
 static constexpr const char* GIT_TAG = "tag";
 static constexpr const char* GIT_REPO = "repo";
+static constexpr const char* GIT_STASH = "git-stash";
 
 class GitPlugin : public PluginBase {
   public:
@@ -154,15 +155,15 @@ class GitPlugin : public PluginBase {
 
 	void fastForwardMerge( Git::Branch branch );
 
-	void pull();
+	void pull( const std::string& repoPath );
 
-	void push();
+	void push( const std::string& repoPath );
 
-	void fetch();
+	void fetch( const std::string& repoPath );
 
 	void branchCreate();
 
-	void commit( const std::string& repoPath = "" );
+	void commit( const std::string& repoPath );
 
 	void stage( const std::vector<std::string>& files );
 
@@ -192,6 +193,12 @@ class GitPlugin : public PluginBase {
 
 	void openFileStatusMenu( const Git::DiffFile& file );
 
+	void stashPush( const std::vector<std::string>& files, const std::string& repoPath );
+
+	void stashApply( const Git::Branch& branch );
+
+	void stashDrop( const Git::Branch& branch );
+
 	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches,
 				   bool displaySuccessMsg = false, bool updateBranchesOnError = false );
 
@@ -201,7 +208,11 @@ class GitPlugin : public PluginBase {
 
 	std::string repoSelected();
 
+	std::string projectPath();
+
 	std::string repoName( const std::string& repoPath );
+
+	std::string repoPath( const std::string& repoName );
 
 	std::string fixFilePath( const std::string& file );
 

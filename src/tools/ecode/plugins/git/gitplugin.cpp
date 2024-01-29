@@ -11,6 +11,7 @@
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextedit.hpp>
@@ -605,18 +606,18 @@ void GitPlugin::branchDelete( Git::Branch branch ) {
 	msgBox->showWhenReady();
 }
 
-void GitPlugin::pull() {
-	runAsync( [this]() { return mGit->pull( repoSelected() ); }, true, true, true );
+void GitPlugin::pull( const std::string& repoPath ) {
+	runAsync( [this, repoPath]() { return mGit->pull( repoPath ); }, true, true, true );
 }
 
-void GitPlugin::push() {
+void GitPlugin::push( const std::string& repoPath ) {
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
 		i18n( "git_confirm_push_changes",
 			  "Are you sure you want to push the local changes to the remote server?" ) );
 
-	msgBox->on( Event::OnConfirm, [this]( auto ) {
-		runAsync( [this]() { return mGit->push( repoSelected() ); }, true, true, true, true );
+	msgBox->on( Event::OnConfirm, [this, repoPath]( auto ) {
+		runAsync( [this, repoPath]() { return mGit->push( repoPath ); }, true, true, true, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -624,8 +625,8 @@ void GitPlugin::push() {
 	msgBox->showWhenReady();
 }
 
-void GitPlugin::fetch() {
-	runAsync( [this]() { return mGit->fetch( repoSelected() ); }, true, true, true );
+void GitPlugin::fetch( const std::string& repoPath ) {
+	runAsync( [this, repoPath]() { return mGit->fetch( repoPath ); }, true, true, true );
 }
 
 void GitPlugin::branchCreate() {
@@ -683,6 +684,16 @@ void GitPlugin::commit( const std::string& repoPath ) {
 	chkBypassHook->setText( i18n( "git_bypass_hook", "Bypass commit hook" ) );
 	chkBypassHook->toPosition( 3 );
 
+	UICheckBox* chkPush = UICheckBox::New();
+	chkPush->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setLayoutGravity( UI_HALIGN_LEFT | UI_VALIGN_CENTER )
+		->setClipType( ClipType::None )
+		->setParent( msgBox->getLayoutCont()->getFirstChild() )
+		->setId( "git-push-commit" );
+	chkPush->setText( i18n( "git_push_commit", "Push commit" ) );
+	chkPush->toPosition( 4 );
+
 	if ( !repoPath.empty() ) {
 		auto branchName = mGitBranches[repoPath];
 		if ( !branchName.empty() ) {
@@ -700,24 +711,28 @@ void GitPlugin::commit( const std::string& repoPath ) {
 		}
 	}
 
-	msgBox->on( Event::OnConfirm, [this, msgBox, chkAmmend, chkBypassHook]( const Event* ) {
-		std::string msg( msgBox->getTextEdit()->getText().toUtf8() );
-		if ( msg.empty() )
-			return;
-		bool ammend = chkAmmend->isChecked();
-		bool bypassHook = chkBypassHook->isChecked();
-		msgBox->closeWindow();
-		runAsync(
-			[this, msg, ammend, bypassHook, msgBox]() {
-				auto res = mGit->commit( msg, ammend, bypassHook );
-				if ( res.success() )
-					mLastCommitMsg.clear();
-				else
-					mLastCommitMsg = msgBox->getTextEdit()->getText();
-				return res;
-			},
-			true, true );
-	} );
+	msgBox->on( Event::OnConfirm,
+				[this, msgBox, chkAmmend, chkBypassHook, chkPush, repoPath]( const Event* ) {
+					std::string msg( msgBox->getTextEdit()->getText().toUtf8() );
+					if ( msg.empty() )
+						return;
+					bool ammend = chkAmmend->isChecked();
+					bool bypassHook = chkBypassHook->isChecked();
+					bool pushCommit = chkPush->isChecked();
+					msgBox->closeWindow();
+					runAsync(
+						[this, msg, ammend, bypassHook, msgBox, pushCommit, repoPath]() {
+							auto res = mGit->commit( msg, ammend, bypassHook, repoPath );
+							if ( res.success() ) {
+								mLastCommitMsg.clear();
+								if ( pushCommit )
+									return mGit->push( repoPath );
+							} else
+								mLastCommitMsg = msgBox->getTextEdit()->getText();
+							return res;
+						},
+						true, true, true, true );
+				} );
 
 	msgBox->on( Event::OnCancel, [this, msgBox]( const Event* ) {
 		mLastCommitMsg = msgBox->getTextEdit()->getText();
@@ -840,6 +855,104 @@ void GitPlugin::diff( const std::string& file, bool isStaged ) {
 
 // File operations
 
+// Stash operations
+
+void GitPlugin::stashPush( const std::vector<std::string>& files, const std::string& repoPath ) {
+
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "git_stash_push", "Stash Local Changes\nName your stash (optional):" ) );
+
+	UIRadioButton* rKeepIndex = UIRadioButton::New();
+	rKeepIndex->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setLayoutGravity( UI_HALIGN_LEFT | UI_VALIGN_CENTER )
+		->setClipType( ClipType::None )
+		->setParent( msgBox->getLayoutCont()->getFirstChild() )
+		->setId( "git-stash-keep-index" );
+	rKeepIndex->setText( i18n( "git_stash_keep_index", "Keep Index" ) );
+	rKeepIndex->toPosition( 2 );
+
+	UIRadioButton* rKeepWorkingTree = UIRadioButton::New();
+	rKeepWorkingTree->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setLayoutGravity( UI_HALIGN_LEFT | UI_VALIGN_CENTER )
+		->setClipType( ClipType::None )
+		->setParent( msgBox->getLayoutCont()->getFirstChild() )
+		->setId( "git-stash-keep-working-tree" );
+	rKeepWorkingTree->setText( i18n( "git_stash_keep_working_tree", "Keep Working Tree" ) );
+	rKeepWorkingTree->toPosition( 3 );
+
+	msgBox->on( Event::OnConfirm,
+				[this, msgBox, rKeepIndex, rKeepWorkingTree, files, repoPath]( const Event* ) {
+					bool keepIndex = rKeepIndex->isActive();
+					bool keepWorkingTree = rKeepWorkingTree->isActive();
+					std::string message = msgBox->getTextInput()->getText().toUtf8();
+					String::trimInPlace( message );
+					String::trimInPlace( message, '\n' );
+					msgBox->closeWindow();
+					runAsync(
+						[this, files, keepIndex, keepWorkingTree, repoPath, message]() {
+							auto res = mGit->stashPush( files, message, keepIndex, repoPath );
+							if ( res.success() && keepWorkingTree )
+								mGit->stashApply( "stash@{0}", true, repoPath );
+							return res;
+						},
+						true, true );
+				} );
+
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "git_stash_save", "Save Stash" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
+}
+
+void GitPlugin::stashApply( const Git::Branch& branch ) {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		i18n( "git_confirm_apply_stash", "Apply a previously saved stash?" ).toUtf8() );
+
+	UICheckBox* chkIndex = UICheckBox::New();
+	chkIndex->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
+		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+		->setLayoutGravity( UI_HALIGN_LEFT | UI_VALIGN_CENTER )
+		->setClipType( ClipType::None )
+		->setParent( msgBox->getLayoutCont()->getFirstChild() )
+		->setId( "git-restore-index" );
+	chkIndex->setText( i18n( "git_restore_index", "Restore Index" ) );
+	chkIndex->toPosition( 2 );
+	chkIndex->setChecked( true );
+
+	msgBox->on( Event::OnConfirm, [this, branch, chkIndex]( auto ) {
+		runAsync(
+			[this, branch, chkIndex]() {
+				return mGit->stashApply( branch.remote, chkIndex->isChecked(), repoSelected() );
+			},
+			true, true );
+	} );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "git_apply_stash_title", "Apply Stash" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
+}
+
+void GitPlugin::stashDrop( const Git::Branch& branch ) {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		i18n( "git_confirm_drop_stash", "Do you want to drop the selected stash?" ).toUtf8() );
+
+	msgBox->on( Event::OnConfirm, [this, branch]( auto ) {
+		runAsync( [this, branch]() { return mGit->stashDrop( branch.remote, repoSelected() ); },
+				  true, true );
+	} );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "git_drop_stash_title", "Drop Stash" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
+}
+
+// Stash operations
+
 void GitPlugin::onRegister( UICodeEditor* editor ) {
 	PluginBase::onRegister( editor );
 
@@ -859,10 +972,10 @@ void GitPlugin::onRegister( UICodeEditor* editor ) {
 		if ( mTab )
 			mTab->setTabSelected();
 	} );
-	doc.setCommand( "git-pull", [this] { pull(); } );
-	doc.setCommand( "git-push", [this] { push(); } );
-	doc.setCommand( "git-fetch", [this] { fetch(); } );
-	doc.setCommand( "git-commit", [this] { commit(); } );
+	doc.setCommand( "git-pull", [this] { pull( projectPath() ); } );
+	doc.setCommand( "git-push", [this] { push( projectPath() ); } );
+	doc.setCommand( "git-fetch", [this] { fetch( projectPath() ); } );
+	doc.setCommand( "git-commit", [this] { commit( projectPath() ); } );
 }
 
 void GitPlugin::onUnregister( UICodeEditor* editor ) {
@@ -1083,8 +1196,8 @@ void GitPlugin::buildSidePanelTab() {
 	node->bind( "git_panel_loader", mLoader );
 	node->bind( "git_repo", mRepoDropDown );
 
-	node->find( "branch_pull" )->onClick( [this]( auto ) { pull(); } );
-	node->find( "branch_push" )->onClick( [this]( auto ) { push(); } );
+	node->find( "branch_pull" )->onClick( [this]( auto ) { pull( repoSelected() ); } );
+	node->find( "branch_push" )->onClick( [this]( auto ) { push( repoSelected() ); } );
 	node->find( "branch_add" )->onClick( [this]( auto ) { branchCreate(); } );
 
 	mBranchesTree->setAutoExpandOnSingleColumn( true );
@@ -1101,15 +1214,14 @@ void GitPlugin::buildSidePanelTab() {
 			static_cast<Git::Branch*>( modelEvent->getModelIndex().internalData() );
 
 		switch ( modelEvent->getModelEventType() ) {
-			case Abstract::ModelEventType::Open: {
-				checkout( *branch );
+			case ModelEventType::Open: {
+				if ( branch->type != Git::RefType::Stash )
+					checkout( *branch );
+				else
+					stashApply( *branch );
 				break;
 			}
-			case Abstract::ModelEventType::OpenMenu: {
-				bool focusOnSelection = mBranchesTree->getFocusOnSelection();
-				mBranchesTree->setFocusOnSelection( false );
-				mBranchesTree->getSelection().set( modelEvent->getModelIndex() );
-				mBranchesTree->setFocusOnSelection( focusOnSelection );
+			case ModelEventType::OpenMenu: {
 				openBranchMenu( *branch );
 				break;
 			}
@@ -1165,21 +1277,18 @@ void GitPlugin::buildSidePanelTab() {
 			return;
 
 		auto model = static_cast<const GitStatusModel*>( modelEvent->getModel() );
+
 		if ( modelEvent->getModelIndex().internalId() == GitStatusModel::GitFile ) {
 			const Git::DiffFile* file = model->file( modelEvent->getModelIndex() );
 			if ( file == nullptr )
 				return;
 
 			switch ( modelEvent->getModelEventType() ) {
-				case Abstract::ModelEventType::OpenMenu: {
-					bool focusOnSelection = mStatusTree->getFocusOnSelection();
-					mStatusTree->setFocusOnSelection( false );
-					mStatusTree->getSelection().set( modelEvent->getModelIndex() );
-					mStatusTree->setFocusOnSelection( focusOnSelection );
+				case ModelEventType::OpenMenu: {
 					openFileStatusMenu( *file );
 					break;
 				}
-				case Abstract::ModelEventType::Open: {
+				case ModelEventType::Open: {
 					diff( file->file, file->report.type == Git::GitStatusType::Staged );
 					break;
 				}
@@ -1188,12 +1297,7 @@ void GitPlugin::buildSidePanelTab() {
 			}
 		} else if ( modelEvent->getModelIndex().internalId() == GitStatusModel::Status ) {
 			switch ( modelEvent->getModelEventType() ) {
-				case Abstract::ModelEventType::OpenMenu: {
-					bool focusOnSelection = mStatusTree->getFocusOnSelection();
-					mStatusTree->setFocusOnSelection( false );
-					mStatusTree->getSelection().set( modelEvent->getModelIndex() );
-					mStatusTree->setFocusOnSelection( focusOnSelection );
-
+				case ModelEventType::OpenMenu: {
 					const auto* status = model->statusType( modelEvent->getModelIndex() );
 					if ( status->type == Git::GitStatusType::Staged ||
 						 status->type == Git::GitStatusType::Untracked ||
@@ -1224,17 +1328,76 @@ void GitPlugin::buildSidePanelTab() {
 							if ( id == "git-commit" ) {
 								commit( repoPath );
 							} else if ( id == "git-stage-all" ) {
-								stage( model->getFiles( mGit->repoName( "" ),
+								stage( model->getFiles( repoName( repoPath ),
 														(Uint32)Git::GitStatusType::Untracked |
 															(Uint32)Git::GitStatusType::Changed ) );
 							} else if ( id == "git-unstage-all" ) {
-								unstage( model->getFiles( mGit->repoName( "" ),
+								unstage( model->getFiles( repoName( repoPath ),
 														  (Uint32)Git::GitStatusType::Staged ) );
 							}
 						} );
 
 						menu->showOverMouseCursor();
 					}
+
+					break;
+				}
+				default:
+					break;
+			}
+		} else if ( modelEvent->getModelIndex().internalId() == GitStatusModel::Repo ) {
+			switch ( modelEvent->getModelEventType() ) {
+				case ModelEventType::OpenMenu: {
+					const auto* repo = model->repo( modelEvent->getModelIndex() );
+					if ( repo == nullptr )
+						return;
+
+					std::string repoName = repo->repo;
+					std::string repoPath = this->repoPath( repo->repo );
+					if ( repoPath.empty() && !repo->type.empty() &&
+						 !repo->type.front().files.empty() )
+						repoPath = mGit->repoPath( repo->type.front().files.front().file );
+
+					if ( repoPath.empty() )
+						return;
+
+					UIPopUpMenu* menu = UIPopUpMenu::New();
+					menu->setId( "git_repo_type_menu" );
+
+					if ( repo->hasStatusType( Git::GitStatusType::Staged ) ) {
+						addMenuItem( menu, "git-commit", "Commit", "git-commit" );
+						addMenuItem( menu, "git-stage-all", "Stage All" );
+					}
+
+					addMenuItem( menu, "git-fetch", "Fetch", "repo-fetch" );
+					addMenuItem( menu, "git-pull", "Pull", "repo-pull" );
+					addMenuItem( menu, "git-push", "Push", "repo-push" );
+					addMenuItem( menu, "git-stash", "Stash All", "git-stash" );
+
+					menu->on( Event::OnItemClicked,
+							  [this, model, repoName, repoPath]( const Event* event ) {
+								  if ( !mGit )
+									  return;
+								  UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+								  std::string id( item->getId() );
+								  if ( id == "git-stash" ) {
+									  stashPush( model->getFiles( repoName ), repoPath );
+								  } else if ( id == "git-fetch" ) {
+									  fetch( repoPath );
+								  } else if ( id == "git-pull" ) {
+									  pull( repoPath );
+								  } else if ( id == "git-push" ) {
+									  push( repoPath );
+								  } else if ( id == "git-commit" ) {
+									  commit( repoPath );
+								  } else if ( id == "git-stage-all" ) {
+									  stage( model->getFiles(
+										  repoName, (Uint32)Git::GitStatusType::Untracked |
+														(Uint32)Git::GitStatusType::Changed ) );
+								  }
+							  } );
+
+					menu->showOverMouseCursor();
 
 					break;
 				}
@@ -1264,24 +1427,29 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->setId( "git_branch_menu" );
 
-	addMenuItem( menu, "git-fetch", "Fetch", "repo-fetch" );
+	if ( branch.type != Git::RefType::Stash ) {
+		addMenuItem( menu, "git-fetch", "Fetch", "repo-fetch" );
 
-	if ( gitBranch() != branch.name ) {
-		addMenuItem( menu, "git-checkout", "Check Out...", "git-fetch" );
+		if ( gitBranch() != branch.name ) {
+			addMenuItem( menu, "git-checkout", "Check Out...", "git-fetch" );
+		}
+
+		if ( branch.type == Git::RefType::Head ) {
+			addMenuItem( menu, "git-branch-rename", "Rename", "", { KEY_F2 } );
+			addMenuItem( menu, "git-pull", "Pull", "repo-pull" );
+			if ( branch.ahead )
+				addMenuItem( menu, "git-push", "Push", "repo-push" );
+			if ( branch.behind )
+				addMenuItem( menu, "git-fast-forward-merge", "Fast Forward Merge" );
+			menu->addSeparator();
+			addMenuItem( menu, "git-branch-delete", "Delete", "remove" );
+		}
+
+		addMenuItem( menu, "git-create-branch", "Create Branch", "repo-forked", { KEY_F7 } );
+	} else {
+		addMenuItem( menu, "git-stash-apply", "Apply Stash", "git-stash-apply" );
+		addMenuItem( menu, "git-stash-drop", "Drop Stash", "git-stash-pop" );
 	}
-
-	if ( branch.type == Git::RefType::Head ) {
-		addMenuItem( menu, "git-branch-rename", "Rename", "", { KEY_F2 } );
-		addMenuItem( menu, "git-pull", "Pull", "repo-pull" );
-		if ( branch.ahead )
-			addMenuItem( menu, "git-push", "Push", "repo-push" );
-		if ( branch.behind )
-			addMenuItem( menu, "git-fast-forward-merge", "Fast Forward Merge" );
-		menu->addSeparator();
-		addMenuItem( menu, "git-branch-delete", "Delete", "remove" );
-	}
-
-	addMenuItem( menu, "git-create-branch", "Create Branch", "repo-forked", { KEY_F7 } );
 
 	menu->on( Event::OnItemClicked, [this, branch]( const Event* event ) {
 		if ( !mGit )
@@ -1291,19 +1459,23 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 		if ( id == "git-checkout" ) {
 			checkout( branch );
 		} else if ( id == "git-pull" ) {
-			pull();
+			pull( repoSelected() );
 		} else if ( id == "git-push" ) {
-			push();
+			push( repoSelected() );
 		} else if ( id == "git-branch-delete" ) {
 			branchDelete( branch );
 		} else if ( id == "git-branch-rename" ) {
 			branchRename( branch );
 		} else if ( id == "git-fetch" ) {
-			fetch();
+			fetch( repoSelected() );
 		} else if ( id == "git-fast-forward-merge" ) {
 			fastForwardMerge( branch );
 		} else if ( id == "git-create-branch" ) {
 			branchCreate();
+		} else if ( id == "git-stash-apply" ) {
+			stashApply( branch );
+		} else if ( id == "git-stash-drop" ) {
+			stashDrop( branch );
 		}
 	} );
 
@@ -1314,8 +1486,8 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->setId( "git_file_status_menu" );
 
-	addMenuItem( menu, "git-open-file", "Open File" );
-	addMenuItem( menu, "git-diff", "Open Diff" );
+	addMenuItem( menu, "git-open-file", "Open File", "file" );
+	addMenuItem( menu, "git-diff", "Open Diff", "diff-single" );
 
 	if ( file.report.type != Git::GitStatusType::Staged ) {
 		addMenuItem( menu, "git-stage", "Stage" );
@@ -1387,11 +1559,24 @@ std::string GitPlugin::repoSelected() {
 	return mRepoSelected;
 }
 
+std::string GitPlugin::projectPath() {
+	Lock l( mRepoMutex );
+	return mProjectPath;
+}
+
 std::string GitPlugin::repoName( const std::string& repoPath ) {
 	Lock l( mRepoMutex );
 	for ( const auto& repo : mRepos )
 		if ( repo.first == repoPath )
 			return repo.second;
+	return "";
+}
+
+std::string GitPlugin::repoPath( const std::string& repoName ) {
+	Lock l( mRepoMutex );
+	for ( const auto& repo : mRepos )
+		if ( repo.second == repoName )
+			return repo.first;
 	return "";
 }
 

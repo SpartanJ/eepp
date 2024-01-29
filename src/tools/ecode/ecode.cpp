@@ -3038,10 +3038,6 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 						tab->getTabWidget()->setTabSelected( tab );
 					}
 				} else { // ModelEventType::OpenMenu
-					bool focusOnSelection = mProjectTreeView->getFocusOnSelection();
-					mProjectTreeView->setFocusOnSelection( false );
-					mProjectTreeView->getSelection().set( modelEvent->getModelIndex() );
-					mProjectTreeView->setFocusOnSelection( focusOnSelection );
 					mSettings->createProjectTreeMenu( FileInfo( path ) );
 				}
 			}

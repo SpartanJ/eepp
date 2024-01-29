@@ -12,7 +12,7 @@ size_t GitBranchModel::hashBranches( const std::vector<Git::Branch>& branches ) 
 	return hash;
 }
 
-std::string GitBranchModel::refTypeToString( Git::RefType type ) {
+std::string GitBranchModel::refTypeToString( Git::RefType type ) const {
 	switch ( type ) {
 		case Git::RefType::Head:
 			return mPlugin->i18n( "git_local_branches", "Local Branches" ).toUtf8();
@@ -20,6 +20,8 @@ std::string GitBranchModel::refTypeToString( Git::RefType type ) {
 			return mPlugin->i18n( "git_remote_branches", "Remote Branches" ).toUtf8();
 		case Git::RefType::Tag:
 			return mPlugin->i18n( "git_tags", "Tags" ).toUtf8();
+		case Git::RefType::Stash:
+			return mPlugin->i18n( "git_stashes", "Stashes" ).toUtf8();
 		default:
 			break;
 	}
@@ -68,7 +70,10 @@ UIIcon* GitBranchModel::iconFor( const ModelIndex& index ) const {
 	if ( index.column() == (Int64)treeColumn() ) {
 		if ( index.hasParent() ) {
 			Git::Branch* branch = static_cast<Git::Branch*>( index.internalData() );
-			return mPlugin->findIcon( branch->type == Git::RefType::Tag ? GIT_TAG : GIT_REPO );
+			return mPlugin->findIcon(
+				branch->type == Git::RefType::Tag
+					? GIT_TAG
+					: ( branch->type == Git::RefType::Stash ? GIT_STASH : GIT_REPO ) );
 		}
 	}
 	return nullptr;
@@ -139,6 +144,15 @@ Git::Branch GitBranchModel::branch( const std::string& name ) const {
 			if ( branch.name == name )
 				return branch;
 		}
+	}
+	return {};
+}
+
+ModelIndex GitBranchModel::refTypeIndex( Git::RefType refType ) const {
+	auto name = refTypeToString( refType );
+	for ( size_t i = 0; i < mBranches.size(); i++ ) {
+		if ( mBranches[i].branch == name )
+			return index( i, 0, {} );
 	}
 	return {};
 }

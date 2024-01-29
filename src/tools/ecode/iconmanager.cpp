@@ -210,6 +210,10 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "repo-fetch", 0xec1d },
 			{ "git-fetch", 0xf101 },
 			{ "git-commit", 0xeafc },
+			{ "git-stash", 0xec26 },
+			{ "git-stash-apply", 0xec27 },
+			{ "git-stash-pop", 0xec28 },
+			{ "diff-single", 0xec22 },
 			{ "remove", 0xeb3b },
 			{ "tag", 0xea66 } };
 

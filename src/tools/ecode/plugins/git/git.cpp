@@ -214,6 +214,11 @@ Git::Result Git::add( std::vector<std::string> files, const std::string& project
 	return gitSimple( String::format( "add --force -- %s", asList( files ) ), projectDir );
 }
 
+Git::Result Git::stash( std::vector<std::string> files, const std::string& projectDir ) {
+	return gitSimple( String::format( "stash push --include-untracked -- %s", asList( files ) ),
+					  projectDir );
+}
+
 Git::Result Git::restore( const std::string& file, const std::string& projectDir ) {
 	return gitSimple( String::format( "restore \"%s\"", file ), projectDir );
 }
@@ -420,23 +425,39 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 	std::vector<Branch> branches;
 	std::string buf;
 
-	if ( EXIT_SUCCESS != git( args, projectDir, buf ) )
-		return branches;
+	if ( EXIT_SUCCESS == git( args, projectDir, buf ) ) {
+		branches.reserve( countLines( buf ) );
 
-	getSubModules( projectDir );
+		readAllLines( buf, [&]( const std::string_view& line ) {
+			auto branch = String::trim( String::trim( line, '\'' ), '\t' );
+			if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
+				branches.emplace_back( parseLocalBranch( branch ) );
+			} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
+				branches.emplace_back( parseRemoteBranch( branch ) );
+			} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
+				branches.emplace_back( parseTag( branch ) );
+			}
+		} );
+	}
 
-	branches.reserve( countLines( buf ) );
-
-	readAllLines( buf, [&]( const std::string_view& line ) {
-		auto branch = String::trim( String::trim( line, '\'' ), '\t' );
-		if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
-			branches.emplace_back( parseLocalBranch( branch ) );
-		} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
-			branches.emplace_back( parseRemoteBranch( branch ) );
-		} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
-			branches.emplace_back( parseTag( branch ) );
-		}
-	} );
+	if ( ( ref & RefType::Stash ) && EXIT_SUCCESS == git( "stash list", projectDir, buf ) ) {
+		branches.reserve( branches.size() + countLines( buf ) );
+		LuaPattern pattern( "(stash@{%d+}):%s(.*)" );
+		readAllLines( buf, [&]( const std::string_view& line ) {
+			LuaPattern::Range matches[3];
+			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
+				std::string id(
+					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
+				std::string name(
+					line.substr( matches[2].start, matches[2].end - matches[2].start ) );
+				Git::Branch newBranch;
+				newBranch.type = RefType::Stash;
+				newBranch.name = std::move( name );
+				newBranch.remote = std::move( id );
+				branches.emplace_back( std::move( newBranch ) );
+			}
+		} );
+	}
 
 	return branches;
 }
@@ -855,6 +876,28 @@ Git::GitStatusReport Git::statusFromShortStatusStr( const std::string_view& stat
 	}
 
 	return { gitStatus, gitStatusType, gitStatusChar };
+}
+
+Git::Result Git::stashPush( std::vector<std::string> files, const std::string& name, bool keepIndex,
+							const std::string& projectDir ) {
+	std::string args;
+	if ( keepIndex )
+		args += " --keep-index";
+	if ( !name.empty() )
+		args += " --message " + name;
+	return gitSimple(
+		String::format( "stash push --include-untracked %s -- %s", args, asList( files ) ),
+		projectDir );
+}
+
+Git::Result Git::stashApply( const std::string& stashId, bool restoreIndex,
+							 const std::string& projectDir ) {
+	return gitSimple( String::format( "stash apply%s %s", restoreIndex ? " --index" : "", stashId ),
+					  projectDir );
+}
+
+Git::Result Git::stashDrop( const std::string& stashId, const std::string& projectDir ) {
+	return gitSimple( String::format( "stash drop %s", stashId ), projectDir );
 }
 
 } // namespace ecode

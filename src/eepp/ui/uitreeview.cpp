@@ -422,6 +422,24 @@ bool UITreeView::isExpanded( const ModelIndex& index ) const {
 	return getIndexMetadata( index ).open;
 }
 
+void UITreeView::setExpanded( const std::vector<ModelIndex>& indexes, bool expanded ) {
+	if ( !getModel() )
+		return;
+	Model& model = *getModel();
+	for ( const auto& index : indexes ) {
+		if ( !index.isValid() )
+			continue;
+		size_t count = model.rowCount( index );
+		if ( count )
+			getIndexMetadata( index ).open = expanded;
+	}
+	createOrUpdateColumns( false );
+}
+
+void UITreeView::setExpanded( const ModelIndex& index, bool expanded ) {
+	setExpanded( std::vector{ index }, expanded );
+}
+
 void UITreeView::setAllExpanded( const ModelIndex& index, bool expanded ) {
 	Model& model = *getModel();
 	size_t count = model.rowCount( index );

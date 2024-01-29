@@ -83,6 +83,13 @@ class Git {
 		Ignored = 1 << 5,
 	};
 
+	static constexpr auto STATUS_TYPE_ALL =
+		static_cast<std::underlying_type_t<GitStatusType>>( GitStatusType::Staged ) |
+		static_cast<std::underlying_type_t<GitStatusType>>( GitStatusType::Changed ) |
+		static_cast<std::underlying_type_t<GitStatusType>>( GitStatusType::Untracked ) |
+		static_cast<std::underlying_type_t<GitStatusType>>( GitStatusType::Unmerged ) |
+		static_cast<std::underlying_type_t<GitStatusType>>( GitStatusType::Ignored );
+
 	static constexpr auto ANY = 0;
 
 	enum StatusXY : uint16_t {
@@ -179,12 +186,14 @@ class Git {
 		Head = 0x1,
 		Remote = 0x2,
 		Tag = 0x4,
-		All = 0x7,
+		Stash = 0x8,
+		All = 0xF,
 	};
 
 	static constexpr const char* HEAD = "head";
 	static constexpr const char* REMOTE = "remote";
 	static constexpr const char* TAG = "tag";
+	static constexpr const char* STASH = "stash";
 	static constexpr const char* ALL = "all";
 
 	static const char* refTypeToString( RefType type ) {
@@ -195,6 +204,8 @@ class Git {
 				return REMOTE;
 			case Tag:
 				return TAG;
+			case Stash:
+				return STASH;
 			case All:
 				return ALL;
 		}
@@ -233,6 +244,8 @@ class Git {
 	Status status( bool recurseSubmodules, const std::string& projectDir = "" );
 
 	Result add( std::vector<std::string> files, const std::string& projectDir = "" );
+
+	Result stash( std::vector<std::string> files, const std::string& projectDir = "" );
 
 	Result restore( const std::string& file, const std::string& projectDir = "" );
 
@@ -319,6 +332,14 @@ class Git {
 	void setLogLevel( LogLevel logLevel ) { mLogLevel = logLevel; }
 
 	LogLevel getLogLevel() const { return mLogLevel; }
+
+	Result stashPush( std::vector<std::string> files, const std::string& name, bool keepIndex,
+					  const std::string& projectDir = "" );
+
+	Result stashApply( const std::string& stashId, bool restoreIndex,
+					   const std::string& projectDir = "" );
+
+	Result stashDrop( const std::string& stashId, const std::string& projectDir = "" );
 
   protected:
 	std::string mGitPath;

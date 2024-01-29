@@ -56,6 +56,10 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	bool isExpanded( const ModelIndex& index ) const;
 
+	void setExpanded( const std::vector<ModelIndex>& index, bool expanded );
+
+	void setExpanded( const ModelIndex& index, bool expanded );
+
 	void expandAll( const ModelIndex& index = {} );
 
 	void collapseAll( const ModelIndex& index = {} );

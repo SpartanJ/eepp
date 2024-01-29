@@ -468,7 +468,8 @@ UITableRow* UIAbstractTableView::createRow() {
 	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	rowWidget->reloadStyle( true, true, true );
 	rowWidget->on( Event::MouseDown, [this]( const Event* event ) {
-		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) || !isRowSelection() )
+		if ( !( event->asMouseEvent()->getFlags() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) ||
+			 !isRowSelection() )
 			return;
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
 		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {

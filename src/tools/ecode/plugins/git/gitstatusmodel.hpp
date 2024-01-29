@@ -38,6 +38,14 @@ class GitStatusModel : public Model {
 	struct RepoStatus {
 		std::string repo;
 		std::vector<RepoStatusType> type;
+
+		bool hasStatusType( Git::GitStatusType statusType ) const {
+			for ( const auto& t : type ) {
+				if ( t.type == statusType )
+					return true;
+			}
+			return false;
+		}
 	};
 
 	enum Column { File, State, Inserted, Removed, RelativeDirectory };
@@ -66,7 +74,8 @@ class GitStatusModel : public Model {
 
 	const DiffFile* file( const ModelIndex& index ) const;
 
-	std::vector<std::string> getFiles( const std::string& repo, uint32_t statusType ) const;
+	std::vector<std::string> getFiles( const std::string& repo,
+									   uint32_t statusType = Git::STATUS_TYPE_ALL ) const;
 
   protected:
 	std::vector<RepoStatus> mStatus;
