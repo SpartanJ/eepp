@@ -318,7 +318,7 @@ class Git {
 
 	std::vector<std::string> getSubModules( const std::string& projectDir = "" );
 
-	std::string repoName( const std::string& file, bool allowExactMatch = false,
+	std::string repoName( std::string file, bool allowExactMatch = false,
 						  const std::string& projectDir = "" );
 
 	std::string repoPath( const std::string& file );

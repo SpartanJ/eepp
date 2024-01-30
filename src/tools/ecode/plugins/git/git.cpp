@@ -75,6 +75,7 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 		Log::instance()->writef( mLogLevel, "GitPlugin cmd in %s (%d): %s %s",
 								 clock.getElapsedTime().toString(), retCode, mGitPath, args );
 	}
+	Log::debug( "%s", buf );
 	return retCode;
 }
 
@@ -491,8 +492,10 @@ bool Git::hasSubmodules( const std::string& projectDir ) {
 		   ( !mProjectPath.empty() && FileSystem::fileExists( mProjectPath + ".gitmodules" ) );
 }
 
-std::string Git::repoName( const std::string& file, bool allowExactMatch,
-						   const std::string& projectDir ) {
+std::string Git::repoName( std::string file, bool allowExactMatch, const std::string& projectDir ) {
+	if ( String::startsWith( file, !projectDir.empty() ? projectDir : mProjectPath ) )
+		FileSystem::filePathRemoveBasePath( !projectDir.empty() ? projectDir : mProjectPath, file );
+	Lock l( mSubModulesMutex );
 	for ( const auto& subRepo : mSubModules ) {
 		if ( String::startsWith( file, subRepo ) &&
 			 ( allowExactMatch || file.size() != subRepo.size() ) )
@@ -502,6 +505,7 @@ std::string Git::repoName( const std::string& file, bool allowExactMatch,
 }
 
 std::string Git::repoPath( const std::string& file ) {
+	Lock l( mSubModulesMutex );
 	for ( const auto& subRepo : mSubModules ) {
 		if ( String::startsWith( file, subRepo ) && file.size() != subRepo.size() )
 			return mProjectPath + subRepo;
@@ -531,7 +535,20 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	LuaPattern subModulePattern( "^Entering '(.*)'" );
 
 	bool modifiedSubmodule = false;
-	auto parseStatus = [&s, &buf, &modifiedSubmodule, &projectDir, this, &subModulePattern]() {
+
+	std::vector<std::string> curSubModules;
+	{
+		Lock l( mSubModulesMutex );
+		curSubModules = mSubModules;
+	}
+
+	const auto isSubmodule = [&curSubModules]( const std::string_view& file ) -> bool {
+		return std::any_of( curSubModules.begin(), curSubModules.end(),
+							[&file]( const auto& submodule ) { return submodule == file; } );
+	};
+
+	auto parseStatus = [&s, &buf, &modifiedSubmodule, &projectDir, this, &subModulePattern,
+						submodules, &isSubmodule]() {
 		std::string subModulePath = "";
 		LuaPattern pattern( "^([mMARTUD?%s][mMARTUD?%s])%s(.*)" );
 		size_t changesCount = countLines( buf );
@@ -561,6 +578,9 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					return;
 				}
 
+				if ( submodules && !mSubModules.empty() && isSubmodule( file ) )
+					modifiedSubmodule = true;
+
 				bool isStagedAndModified =
 					status.type == GitStatusType::Staged && statusStr[1] != ' ';
 
@@ -578,7 +598,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					}
 				}
 				if ( !found ) {
-					s.files[repo].push_back( { std::move( filePath ), 0, 0, status } );
+					s.files[repo].push_back( { filePath, 0, 0, status } );
 
 					if ( isStagedAndModified ) {
 						status.type = GitStatusType::Changed;

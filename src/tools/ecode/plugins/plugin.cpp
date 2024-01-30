@@ -178,7 +178,9 @@ void PluginBase::onUnregister( UICodeEditor* editor ) {
 	for ( auto editorIt : mEditorDocs )
 		if ( editorIt.second == doc )
 			return;
+
 	onUnregisterDocument( doc );
+
 	mDocs.erase( doc );
 }
 

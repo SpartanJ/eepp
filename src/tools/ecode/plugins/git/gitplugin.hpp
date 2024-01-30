@@ -200,7 +200,8 @@ class GitPlugin : public PluginBase {
 	void stashDrop( const Git::Branch& branch );
 
 	void runAsync( std::function<Git::Result()> fn, bool updateStatus, bool updateBranches,
-				   bool displaySuccessMsg = false, bool updateBranchesOnError = false );
+				   bool displaySuccessMsg = false, bool updateBranchesOnError = false,
+				   bool updateStatusOnError = false );
 
 	void addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,
 					  const std::string& icon = "",

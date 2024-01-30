@@ -520,6 +520,8 @@ void GitPlugin::blame( UICodeEditor* editor ) {
 	} );
 }
 
+// Branch operations
+
 void GitPlugin::checkout( Git::Branch branch ) {
 	if ( !mGit )
 		return;
@@ -563,7 +565,6 @@ void GitPlugin::checkout( Git::Branch branch ) {
 	checkOutFn( false );
 }
 
-// Branch operations
 void GitPlugin::branchRename( Git::Branch branch ) {
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::INPUT,
@@ -698,7 +699,7 @@ void GitPlugin::commit( const std::string& repoPath ) {
 		auto branchName = mGitBranches[repoPath];
 		if ( !branchName.empty() ) {
 			if ( repoPath != repoSelected() || !mBranchesTree->getModel() ) {
-				auto branch = mGit->getAllBranchesAndTags( Git::RefType::All,
+				auto branch = mGit->getAllBranchesAndTags( Git::RefType::Head,
 														   "refs/heads/" + branchName, repoPath );
 				if ( !branch.empty() )
 					chkAmmend->setEnabled( branch.front().ahead > 0 );
@@ -731,7 +732,7 @@ void GitPlugin::commit( const std::string& repoPath ) {
 								mLastCommitMsg = msgBox->getTextEdit()->getText();
 							return res;
 						},
-						true, true, true, true );
+						true, true, true, true, true );
 				} );
 
 	msgBox->on( Event::OnCancel, [this, msgBox]( const Event* ) {
@@ -759,6 +760,7 @@ void GitPlugin::fastForwardMerge( Git::Branch branch ) {
 		},
 		false, true );
 }
+
 // Branch operations
 
 // File operations
@@ -777,7 +779,7 @@ std::string GitPlugin::fixFilePath( const std::string& file ) {
 	if ( !isPath( file ) ) {
 		path = ( mProjectPath + file );
 	}
-	return file;
+	return path;
 }
 
 std::vector<std::string> GitPlugin::fixFilePaths( const std::vector<std::string>& files ) {
@@ -820,8 +822,9 @@ void GitPlugin::discard( const std::string& file ) {
 						file ) );
 
 	msgBox->on( Event::OnConfirm, [this, file]( auto ) {
-		runAsync( [this, file]() { return mGit->restore( file, mGit->repoPath( file ) ); }, true,
-				  false );
+		runAsync(
+			[this, file]() { return mGit->restore( fixFilePath( file ), mGit->repoPath( file ) ); },
+			true, false );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -1528,26 +1531,29 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 }
 
 void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, bool _updateBranches,
-						  bool displaySuccessMsg, bool updateBranchesOnError ) {
+						  bool displaySuccessMsg, bool updateBranchesOnError,
+						  bool updateStatusOnError ) {
 	if ( !mGit )
 		return;
 	mLoader->setVisible( true );
-	mThreadPool->run(
-		[this, fn, _updateStatus, _updateBranches, displaySuccessMsg, updateBranchesOnError] {
-			auto res = fn();
-			mLoader->runOnMainThread( [this] { mLoader->setVisible( false ); } );
-			if ( res.fail() || displaySuccessMsg ) {
-				showMessage( LSPMessageType::Warning, res.result );
-				if ( _updateBranches && updateBranchesOnError )
-					updateBranches();
-				return;
-			}
-			if ( _updateBranches )
+	mThreadPool->run( [this, fn, _updateStatus, _updateBranches, displaySuccessMsg,
+					   updateBranchesOnError, updateStatusOnError] {
+		auto res = fn();
+		mLoader->runOnMainThread( [this] { mLoader->setVisible( false ); } );
+		if ( res.fail() || displaySuccessMsg ) {
+			showMessage( LSPMessageType::Warning, res.result );
+			if ( _updateBranches && updateBranchesOnError )
 				updateBranches();
-
-			if ( _updateStatus )
+			if ( _updateStatus && updateStatusOnError )
 				updateStatus( true );
-		} );
+			return;
+		}
+		if ( _updateBranches )
+			updateBranches();
+
+		if ( _updateStatus )
+			updateStatus( true );
+	} );
 }
 
 void GitPlugin::addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,
