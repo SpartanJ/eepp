@@ -215,6 +215,8 @@ class GitPlugin : public PluginBase {
 
 	std::string repoPath( const std::string& repoName );
 
+	std::string repoFullName( const std::string& repoPath );
+
 	std::string fixFilePath( const std::string& file );
 
 	std::vector<std::string> fixFilePaths( const std::vector<std::string>& files );

@@ -1338,11 +1338,11 @@ void GitPlugin::buildSidePanelTab() {
 							if ( id == "git-commit" ) {
 								commit( repoPath );
 							} else if ( id == "git-stage-all" ) {
-								stage( model->getFiles( repoName( repoPath ),
+								stage( model->getFiles( repoFullName( repoPath ),
 														(Uint32)Git::GitStatusType::Untracked |
 															(Uint32)Git::GitStatusType::Changed ) );
 							} else if ( id == "git-unstage-all" ) {
-								unstage( model->getFiles( repoName( repoPath ),
+								unstage( model->getFiles( repoFullName( repoPath ),
 														  (Uint32)Git::GitStatusType::Staged ) );
 							}
 						} );
@@ -1582,6 +1582,21 @@ std::string GitPlugin::repoName( const std::string& repoPath ) {
 	for ( const auto& repo : mRepos )
 		if ( repo.first == repoPath )
 			return repo.second;
+	return "";
+}
+
+std::string GitPlugin::repoFullName( const std::string& repoPath ) {
+	Lock l( mRepoMutex );
+	for ( const auto& repo : mRepos ) {
+		if ( repo.first == repoPath ) {
+			if ( repoPath != mProjectPath ) {
+				auto fullName( repo.first );
+				FileSystem::filePathRemoveBasePath( mProjectPath, fullName );
+				return fullName;
+			}
+			return repo.second;
+		}
+	}
 	return "";
 }
 

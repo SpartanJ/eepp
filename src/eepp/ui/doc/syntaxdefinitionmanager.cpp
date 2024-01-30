@@ -1140,7 +1140,7 @@ static void addCMake() {
 													{ { "[%a_][%w_]*" }, "symbol" },
 												},
 												std::move( cmake_symbols ),
-												"//",
+												"#",
 												{ "^cmake_minimum_required.*%c" } } );
 }
 
