@@ -261,6 +261,8 @@ class Git {
 
 	Result deleteBranch( const std::string& branch, const std::string& projectDir = "" );
 
+	Result mergeBranch( const std::string& branch, const std::string& projectDir = "" );
+
 	Result commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,
 				   const std::string& projectDir = "" );
 
@@ -291,6 +293,8 @@ class Git {
 	Result pull( const std::string& projectDir = "" );
 
 	Result push( const std::string& projectDir = "" );
+
+	Result pushNewBranch( const std::string& branch, const std::string& projectDir );
 
 	CheckoutResult checkout( const std::string& branch, const std::string& projectDir = "" ) const;
 

@@ -163,6 +163,14 @@ Git::Result Git::push( const std::string& projectDir ) {
 	return gitSimple( "push", projectDir );
 }
 
+Git::Result Git::pushNewBranch( const std::string& branch, const std::string& projectDir ) {
+	return gitSimple(
+		String::format(
+			"push --porcelain --recurse-submodules=check origin refs/heads/%s:refs/heads/%s",
+			branch, branch ),
+		projectDir );
+}
+
 Git::CheckoutResult Git::checkout( const std::string& branch,
 								   const std::string& projectDir ) const {
 	std::string buf;
@@ -248,6 +256,10 @@ Git::Result Git::renameBranch( const std::string& branch, const std::string& new
 
 Git::Result Git::deleteBranch( const std::string& branch, const std::string& projectDir ) {
 	return gitSimple( String::format( "branch -D %s", branch ), projectDir );
+}
+
+Git::Result Git::mergeBranch( const std::string& branch, const std::string& projectDir ) {
+	return gitSimple( String::format( "merge --no-ff %s", branch ), projectDir );
 }
 
 Git::Result Git::commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,

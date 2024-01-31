@@ -153,6 +153,8 @@ class GitPlugin : public PluginBase {
 
 	void branchDelete( Git::Branch branch );
 
+	void branchMerge( Git::Branch branch );
+
 	void fastForwardMerge( Git::Branch branch );
 
 	void pull( const std::string& repoPath );
@@ -220,6 +222,8 @@ class GitPlugin : public PluginBase {
 	std::string fixFilePath( const std::string& file );
 
 	std::vector<std::string> fixFilePaths( const std::vector<std::string>& files );
+
+	std::optional<Git::Branch> getBranchFromRepoPath( const std::string& repoPath );
 };
 
 } // namespace ecode

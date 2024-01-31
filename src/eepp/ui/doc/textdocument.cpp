@@ -237,30 +237,40 @@ void TextDocument::guessIndentType() {
 	int guessSpaces = 0;
 	int guessTabs = 0;
 	std::map<int, int> guessWidth;
-	int guessCountdown = 10;
-	size_t linesCount = eemin<size_t>( 100, mLines.size() );
-	for ( size_t i = 0; i < linesCount; i++ ) {
-		const String& text = mLines[i].getText();
-		std::string match =
-			LuaPattern::match( text.size() > 128 ? text.substr( 0, 12 ) : text, "^  +" );
-		if ( !match.empty() ) {
-			guessSpaces++;
-			guessWidth[match.size()]++;
-			guessCountdown--;
-		} else {
-			match = LuaPattern::match( mLines[i].getText(), "^\t+" );
+
+	const auto guessTabsFn = [&]( size_t start, size_t end ) {
+		int guessCountdown = 10;
+		for ( size_t i = start; i < end; i++ ) {
+			const String& text = mLines[i].getText();
+			std::string match =
+				LuaPattern::match( text.size() > 128 ? text.substr( 0, 12 ) : text, "^  +" );
 			if ( !match.empty() ) {
-				guessTabs++;
+				guessSpaces++;
+				guessWidth[match.size()]++;
 				guessCountdown--;
-				break; // if tab found asume tabs
+			} else {
+				match = LuaPattern::match( mLines[i].getText(), "^\t+" );
+				if ( !match.empty() ) {
+					guessTabs++;
+					guessCountdown--;
+					break; // if tab found asume tabs
+				}
 			}
+			if ( guessCountdown == 0 )
+				break;
 		}
-		if ( guessCountdown == 0 )
-			break;
-	}
+	};
+
+	size_t start = eemin<size_t>( 100, mLines.size() );
+	guessTabsFn( 0, start );
+
 	if ( !guessTabs && !guessSpaces ) {
-		return;
+		if ( start == 100 )
+			guessTabsFn( start, eemin<size_t>( start + 100, mLines.size() ) );
+		if ( !guessTabs && !guessSpaces )
+			return;
 	}
+
 	if ( guessTabs >= guessSpaces ) {
 		mIndentType = IndentType::IndentTabs;
 	} else {

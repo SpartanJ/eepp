@@ -36,7 +36,7 @@ std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
 		case Git::GitStatusType::Untracked:
 			return i18n( "git_untracked", "Untracked" );
 		case Git::GitStatusType::Unmerged:
-			return i18n( "git_unmerged", "Unmergedd" );
+			return i18n( "git_unmerged", "Unmerged" );
 		case Git::GitStatusType::Changed:
 			return i18n( "git_changed", "Changed" );
 		case Git::GitStatusType::Staged:
@@ -609,6 +609,24 @@ void GitPlugin::branchDelete( Git::Branch branch ) {
 	msgBox->showWhenReady();
 }
 
+void GitPlugin::branchMerge( Git::Branch branch ) {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		String::format(
+			i18n( "git_confirm_branch_merge", "Are you sure you want to merge from branch \"%s\"?" )
+				.toUtf8(),
+			branch.name ) );
+
+	msgBox->on( Event::OnConfirm, [this, branch]( auto ) {
+		runAsync( [this, branch]() { return mGit->mergeBranch( branch.name, repoSelected() ); },
+				  true, true, true, true, true );
+	} );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
+}
+
 void GitPlugin::pull( const std::string& repoPath ) {
 	runAsync( [this, repoPath]() { return mGit->pull( repoPath ); }, true, true, true );
 }
@@ -620,7 +638,15 @@ void GitPlugin::push( const std::string& repoPath ) {
 			  "Are you sure you want to push the local changes to the remote server?" ) );
 
 	msgBox->on( Event::OnConfirm, [this, repoPath]( auto ) {
-		runAsync( [this, repoPath]() { return mGit->push( repoPath ); }, true, true, true, true );
+		runAsync(
+			[this, repoPath]() {
+				std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
+				bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
+				if ( pushNewBranch )
+					return mGit->pushNewBranch( branch->name, repoPath );
+				return mGit->push( repoPath );
+			},
+			true, true, true, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -665,7 +691,8 @@ void GitPlugin::commit( const std::string& repoPath ) {
 	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::TEXT_EDIT,
 											  i18n( "git_commit_message", "Commit Message:" ) );
 
-	msgBox->getTextEdit()->setText( mLastCommitMsg );
+	UITextEdit* txtEdit = msgBox->getTextEdit();
+	txtEdit->setText( mLastCommitMsg );
 
 	UICheckBox* chkAmmend = UICheckBox::New();
 	chkAmmend->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
@@ -676,6 +703,8 @@ void GitPlugin::commit( const std::string& repoPath ) {
 		->setId( "git-ammend" );
 	chkAmmend->setText( i18n( "git_ammend", "Ammend last commit" ) );
 	chkAmmend->toPosition( 2 );
+	chkAmmend->setTooltipText( getUISceneNode()->getKeyBindings().getShortcutString(
+		{ KEY_A, KeyMod::getDefaultModifier() }, true ) );
 
 	UICheckBox* chkBypassHook = UICheckBox::New();
 	chkBypassHook->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
@@ -686,6 +715,8 @@ void GitPlugin::commit( const std::string& repoPath ) {
 		->setId( "git-bypass-hook" );
 	chkBypassHook->setText( i18n( "git_bypass_hook", "Bypass commit hook" ) );
 	chkBypassHook->toPosition( 3 );
+	chkBypassHook->setTooltipText( getUISceneNode()->getKeyBindings().getShortcutString(
+		{ KEY_B, KeyMod::getDefaultModifier() }, true ) );
 
 	UICheckBox* chkPush = UICheckBox::New();
 	chkPush->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
@@ -696,46 +727,52 @@ void GitPlugin::commit( const std::string& repoPath ) {
 		->setId( "git-push-commit" );
 	chkPush->setText( i18n( "git_push_commit", "Push commit" ) );
 	chkPush->toPosition( 4 );
+	chkPush->setTooltipText( getUISceneNode()->getKeyBindings().getShortcutString(
+		{ KEY_P, KeyMod::getDefaultModifier() }, true ) );
 
-	if ( !repoPath.empty() ) {
-		auto branchName = mGitBranches[repoPath];
-		if ( !branchName.empty() ) {
-			if ( repoPath != repoSelected() || !mBranchesTree->getModel() ) {
-				auto branch = mGit->getAllBranchesAndTags( Git::RefType::Head,
-														   "refs/heads/" + branchName, repoPath );
-				if ( !branch.empty() )
-					chkAmmend->setEnabled( branch.front().ahead > 0 );
-			} else {
-				auto model = static_cast<const GitBranchModel*>( mBranchesTree->getModel() );
-				auto branch = model->branch( branchName );
-				if ( !branch.name.empty() )
-					chkAmmend->setEnabled( branch.ahead > 0 );
-			}
-		}
-	}
+	txtEdit->getDocument().setCommand(
+		"commit-ammend", [chkAmmend] { chkAmmend->setChecked( !chkAmmend->isChecked() ); } );
+	txtEdit->getKeyBindings().addKeybind( { KEY_L, KeyMod::getDefaultModifier() },
+										  "commit-ammend" );
 
-	msgBox->on( Event::OnConfirm,
-				[this, msgBox, chkAmmend, chkBypassHook, chkPush, repoPath]( const Event* ) {
-					std::string msg( msgBox->getTextEdit()->getText().toUtf8() );
-					if ( msg.empty() )
-						return;
-					bool ammend = chkAmmend->isChecked();
-					bool bypassHook = chkBypassHook->isChecked();
-					bool pushCommit = chkPush->isChecked();
-					msgBox->closeWindow();
-					runAsync(
-						[this, msg, ammend, bypassHook, msgBox, pushCommit, repoPath]() {
-							auto res = mGit->commit( msg, ammend, bypassHook, repoPath );
-							if ( res.success() ) {
-								mLastCommitMsg.clear();
-								if ( pushCommit )
-									return mGit->push( repoPath );
-							} else
-								mLastCommitMsg = msgBox->getTextEdit()->getText();
-							return res;
-						},
-						true, true, true, true, true );
-				} );
+	txtEdit->getDocument().setCommand(
+		"commit-push", [chkPush] { chkPush->setChecked( !chkPush->isChecked() ); } );
+	txtEdit->getKeyBindings().addKeybind( { KEY_P, KeyMod::getDefaultModifier() }, "commit-push" );
+
+	txtEdit->getDocument().setCommand( "commit-bypass-hook", [chkBypassHook] {
+		chkBypassHook->setChecked( !chkBypassHook->isChecked() );
+	} );
+	txtEdit->getKeyBindings().addKeybind( { KEY_B, KeyMod::getDefaultModifier() },
+										  "commit-bypass-hook" );
+
+	msgBox->on( Event::OnConfirm, [this, msgBox, chkAmmend, chkBypassHook, chkPush,
+								   repoPath]( const Event* ) {
+		std::string msg( msgBox->getTextEdit()->getText().toUtf8() );
+		if ( msg.empty() )
+			return;
+		bool ammend = chkAmmend->isChecked();
+		bool bypassHook = chkBypassHook->isChecked();
+		bool pushCommit = chkPush->isChecked();
+
+		msgBox->closeWindow();
+		runAsync(
+			[this, msg, ammend, bypassHook, msgBox, pushCommit, repoPath]() {
+				std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
+				bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
+				auto res = mGit->commit( msg, ammend, bypassHook, repoPath );
+				if ( res.success() ) {
+					mLastCommitMsg.clear();
+					if ( pushCommit ) {
+						if ( pushNewBranch )
+							return mGit->pushNewBranch( branch->name, repoPath );
+						return mGit->push( repoPath );
+					}
+				} else
+					mLastCommitMsg = msgBox->getTextEdit()->getText();
+				return res;
+			},
+			true, true, true, true, true );
+	} );
 
 	msgBox->on( Event::OnCancel, [this, msgBox]( const Event* ) {
 		mLastCommitMsg = msgBox->getTextEdit()->getText();
@@ -795,6 +832,35 @@ std::vector<std::string> GitPlugin::fixFilePaths( const std::vector<std::string>
 		}
 	}
 	return paths;
+}
+
+std::optional<Git::Branch> GitPlugin::getBranchFromRepoPath( const std::string& repoPath ) {
+	Git::Branch branch;
+	std::string branchName;
+
+	if ( repoPath.empty() )
+		return {};
+
+	{
+		Lock l( mGitBranchMutex );
+		branchName = mGitBranches[repoPath];
+	}
+
+	if ( branchName.empty() )
+		return {};
+
+	if ( repoPath != repoSelected() || !mBranchesTree->getModel() ) {
+		auto branches =
+			mGit->getAllBranchesAndTags( Git::RefType::Head, "refs/heads/" + branchName, repoPath );
+		if ( !branches.empty() )
+			return branches.front();
+	} else {
+		auto modelShared = mBranchesTree->getModelShared();
+		auto model = static_cast<const GitBranchModel*>( modelShared.get() );
+		return model->branch( branchName );
+	}
+
+	return {};
 }
 
 void GitPlugin::stage( const std::vector<std::string>& files ) {
@@ -1457,6 +1523,7 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 			addMenuItem( menu, "git-branch-delete", "Delete", "remove" );
 		}
 
+		addMenuItem( menu, "git-merge-branch", "Merge Branch", "git-merge" );
 		addMenuItem( menu, "git-create-branch", "Create Branch", "repo-forked", { KEY_F7 } );
 	} else {
 		addMenuItem( menu, "git-stash-apply", "Apply Stash", "git-stash-apply" );
@@ -1488,6 +1555,8 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 			stashApply( branch );
 		} else if ( id == "git-stash-drop" ) {
 			stashDrop( branch );
+		} else if ( id == "git-merge-branch" ) {
+			branchMerge( branch );
 		}
 	} );
 

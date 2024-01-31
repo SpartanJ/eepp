@@ -485,6 +485,7 @@ static void addCPP() {
 			  { "auto", "keyword2" },
 			  { "const", "keyword" },
 			  { "void", "keyword" },
+			  { "override", "keyword" },
 			  { "int", "keyword2" },
 			  { "short", "keyword2" },
 			  { "long", "keyword2" },

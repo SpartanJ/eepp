@@ -138,7 +138,7 @@ Git::Branch GitBranchModel::branch( const ModelIndex& index ) const {
 	return *static_cast<Git::Branch*>( index.internalData() );
 }
 
-Git::Branch GitBranchModel::branch( const std::string& name ) const {
+std::optional<Git::Branch> GitBranchModel::branch( const std::string& name ) const {
 	for ( const auto& type : mBranches ) {
 		for ( const auto& branch : type.data ) {
 			if ( branch.name == name )

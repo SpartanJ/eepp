@@ -4,6 +4,7 @@
 #include "git.hpp"
 
 #include <cstddef>
+#include <optional>
 
 #include <eepp/ui/models/model.hpp>
 
@@ -55,9 +56,10 @@ class GitBranchModel : public Model {
 
 	Git::Branch branch( const ModelIndex& index ) const;
 
-	Git::Branch branch( const std::string& name ) const;
+	std::optional<Git::Branch> branch( const std::string& name ) const;
 
 	ModelIndex refTypeIndex( Git::RefType refType ) const;
+
   protected:
 	std::vector<BranchData> mBranches;
 	GitPlugin* mPlugin{ nullptr };

@@ -213,6 +213,7 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "git-stash", 0xec26 },
 			{ "git-stash-apply", 0xec27 },
 			{ "git-stash-pop", 0xec28 },
+			{ "git-merge", 0xeafe },
 			{ "diff-single", 0xec22 },
 			{ "remove", 0xeb3b },
 			{ "tag", 0xea66 } };

@@ -178,6 +178,8 @@ bool UIMessageBox::show() {
 	bool b = UIWindow::show();
 	if ( NULL != mTextInput ) {
 		mTextInput->setFocus();
+	} else if ( NULL != mTextEdit ) {
+		mTextEdit->setFocus();
 	} else {
 		mButtonOK->setFocus();
 	}
