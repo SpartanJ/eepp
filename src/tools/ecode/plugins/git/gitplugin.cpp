@@ -241,7 +241,7 @@ void GitPlugin::updateStatusBarSync() {
 		mStatusButton = UIPushButton::New();
 		mStatusButton->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent );
 		mStatusButton->setParent( mStatusBar );
-		mStatusButton->setId( "status_git" );
+		mStatusButton->setId( "git_status" );
 		mStatusButton->setClass( "status_but" );
 		mStatusButton->setIcon( iconDrawable( "source-control", 10 ) );
 		mStatusButton->reloadStyle( true, true );
@@ -250,12 +250,14 @@ void GitPlugin::updateStatusBarSync() {
 		if ( childCount > 2 )
 			mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
 
-		mStatusButton->onClick( [this]( const Event* ) {
-			if ( mTab ) {
-				mTab->setTabSelected();
-				if ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
-					mPanelSwicher->getListBox()->setSelected( 1 );
-			}
+		mStatusButton->on( Event::MouseClick, [this]( const Event* event ) {
+			if ( nullptr == mTab )
+				return;
+			mTab->setTabSelected();
+			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_RMASK )
+				mPanelSwicher->getListBox()->setSelected( 0 );
+			else if ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
+				mPanelSwicher->getListBox()->setSelected( 1 );
 		} );
 	}
 

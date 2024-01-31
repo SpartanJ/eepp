@@ -5,61 +5,16 @@ namespace ecode {
 
 StatusTerminalController::StatusTerminalController( UISplitter* mainSplitter,
 													UISceneNode* uiSceneNode, App* app ) :
-	mMainSplitter( mainSplitter ),
-	mUISceneNode( uiSceneNode ),
-	mApp( app ),
-	mSplitter( mApp->getSplitter() ) {}
+	StatusBarElement( mainSplitter, uiSceneNode, app ) {}
 
-void StatusTerminalController::toggle() {
-	if ( nullptr == mUITerminal ) {
-		show();
-		return;
-	}
-
-	if ( mMainSplitter->getLastWidget() != nullptr ) {
-		if ( mMainSplitter->getLastWidget() == mUITerminal ) {
-			hide();
-		} else {
-			show();
-		}
-	} else {
-		show();
-	}
+UIWidget* StatusTerminalController::getWidget() {
+	return mUITerminal;
 }
 
-void StatusTerminalController::hide() {
-	if ( mUITerminal && mUITerminal->isVisible() ) {
-		mUITerminal->setParent( mUISceneNode );
-		mUITerminal->setVisible( false );
-		mApp->getStatusBar()->updateState();
-		if ( mSplitter->getCurWidget() )
-			mSplitter->getCurWidget()->setFocus();
-	}
-}
-
-void StatusTerminalController::show() {
-	if ( nullptr == mUITerminal ) {
-		mMainSplitter->updateLayout();
+UIWidget* StatusTerminalController::createWidget() {
+	if ( mUITerminal == nullptr )
 		mUITerminal = createTerminal();
-		if ( !mUITerminal )
-			return;
-		mUITerminal->setId( "terminal" );
-		mUITerminal->setVisible( false );
-	}
-
-	if ( !mUITerminal->isVisible() ) {
-		mApp->hideLocateBar();
-		mApp->hideSearchBar();
-		mApp->hideGlobalSearchBar();
-		if ( mMainSplitter->getLastWidget() != nullptr ) {
-			mMainSplitter->getLastWidget()->setVisible( false );
-			mMainSplitter->getLastWidget()->setParent( mUISceneNode );
-		}
-		mUITerminal->setParent( mMainSplitter );
-		mUITerminal->setVisible( true );
-		mUITerminal->setFocus();
-		mApp->getStatusBar()->updateState();
-	}
+	return getWidget();
 }
 
 UITerminal* StatusTerminalController::getUITerminal() {
@@ -122,6 +77,7 @@ UITerminal* StatusTerminalController::createTerminal( const std::string& working
 	mApp->registerUnlockedCommands( *term );
 	mApp->getSplitter()->registerSplitterCommands( *term );
 	term->setFocus();
+	term->setId( "terminal" );
 	return term;
 }
 

@@ -139,6 +139,10 @@ UICodeEditorSplitter* PluginManager::getSplitter() const {
 	return mSplitter;
 }
 
+UISplitter* PluginManager::getMainSplitter() const {
+	return mMainSplitter;
+}
+
 UISceneNode* PluginManager::getUISceneNode() const {
 	return mSplitter ? mSplitter->getUISceneNode() : nullptr;
 }
@@ -261,6 +265,10 @@ void PluginManager::unsubscribeMessages( Plugin* plugin ) {
 
 void PluginManager::setSplitter( UICodeEditorSplitter* splitter ) {
 	mSplitter = splitter;
+}
+
+void PluginManager::setMainSplitter( UISplitter* splitter ) {
+	mMainSplitter = splitter;
 }
 
 void PluginManager::setFileSystemListener( FileSystemListener* listener ) {

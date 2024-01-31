@@ -297,7 +297,11 @@ class PluginManager {
 
 	const PluginDefinition* getDefinitionIndex( const Int64& index ) const;
 
+	/** This is the code editor splitter. Where documents/terminals/etc are opened */
 	UICodeEditorSplitter* getSplitter() const;
+
+	/** This is the splitter between the code editor splitter and the bottom panel. */
+	UISplitter* getMainSplitter() const;
 
 	UISceneNode* getUISceneNode() const;
 
@@ -355,6 +359,7 @@ class PluginManager {
 	std::map<std::string, PluginDefinition> mDefinitions;
 	std::shared_ptr<ThreadPool> mThreadPool;
 	UICodeEditorSplitter* mSplitter{ nullptr };
+	UISplitter* mMainSplitter{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mSubscribedPluginsMutex;
 	Mutex mPluginsFSSubsMutex;
@@ -368,6 +373,8 @@ class PluginManager {
 	bool hasDefinition( const std::string& id );
 
 	void setSplitter( UICodeEditorSplitter* splitter );
+
+	void setMainSplitter( UISplitter* splitter );
 
 	void setFileSystemListener( FileSystemListener* listener );
 

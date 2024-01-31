@@ -3655,6 +3655,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mMainSplitter->setSplitPartition(
 			StyleSheetLength( mConfig.windowState.statusBarPartition ) );
 		mStatusBar = mUISceneNode->find<UIStatusBar>( "status_bar" );
+		mPluginManager->setMainSplitter( mMainSplitter );
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		mFileWatcher = new efsw::FileWatcher();
