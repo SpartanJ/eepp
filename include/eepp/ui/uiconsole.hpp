@@ -307,7 +307,7 @@ class EE_API UIConsole : public UIWidget,
 	/** Add command to grep the console log */
 	void cmdGrep( const std::vector<String>& params );
 
-	void privPushText( const String& str );
+	void privPushText( String&& str );
 
 	void writeLog( const std::string_view& text );
 

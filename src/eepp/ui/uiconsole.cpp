@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cstdarg>
 #include <eepp/audio/listener.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontmanager.hpp>
@@ -394,9 +393,9 @@ void UIConsole::setMaxLogLines( const Uint32& maxLogLines ) {
 	mMaxLogLines = maxLogLines;
 }
 
-void UIConsole::privPushText( const String& str ) {
+void UIConsole::privPushText( String&& str ) {
 	Lock l( mMutex );
-	mCmdLog.push_back( { str, String::hash( str ) } );
+	mCmdLog.push_back( { std::move( str ), String::hash( str ) } );
 	if ( mVisible )
 		invalidateDraw();
 	if ( mCmdLog.size() >= mMaxLogLines )
@@ -626,7 +625,7 @@ void UIConsole::cmdGetLog() {
 		String::split( String( String::toString( Log::instance()->getBuffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
-			privPushText( tvec[i] );
+			privPushText( std::move( tvec[i] ) );
 	}
 }
 
@@ -634,7 +633,7 @@ void UIConsole::cmdGetGpuExtensions() {
 	std::vector<String> tvec = String::split( String( GLi->getExtensions() ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
-			privPushText( tvec[i] );
+			privPushText( std::move( tvec[i] ) );
 	}
 }
 
@@ -648,13 +647,13 @@ void UIConsole::cmdGrep( const std::vector<String>& params ) {
 	if ( caseSensitive ) {
 		for ( const auto& cmd : mCmdLog )
 			if ( !cmd.log.empty() && cmd.log[0] != '>' && String::contains( cmd.log, search ) )
-				privPushText( cmd.log );
+				privPushText( String( cmd.log ) );
 	} else {
 		search.toLower();
 		for ( const auto& cmd : mCmdLog )
 			if ( !cmd.log.empty() && cmd.log[0] != '>' &&
 				 String::contains( String::toLower( cmd.log ), search ) )
-				privPushText( cmd.log );
+				privPushText( String( cmd.log ) );
 	}
 }
 
@@ -1260,12 +1259,10 @@ String UIConsole::getLastCommonSubStr( std::vector<String>& cmds ) {
 
 	do {
 		found = false;
-
-		bool allEqual = true;
-
 		String strBeg( ( *cmds.begin() ) );
 
 		if ( strTry.size() + 1 <= strBeg.size() ) {
+			bool allEqual = true;
 			strTry = String( strBeg.substr( 0, strTry.size() + 1 ) );
 
 			for ( ite = ++cmds.begin(); ite != cmds.end(); ++ite ) {
@@ -1292,18 +1289,15 @@ void UIConsole::printCommandsStartingWith( const String& start ) {
 	std::vector<String> cmds;
 
 	for ( auto it = mCallbacks.begin(); it != mCallbacks.end(); ++it ) {
-		if ( String::startsWith( it->first, start ) ) {
+		if ( String::startsWith( it->first, start ) )
 			cmds.push_back( it->first );
-		}
 	}
 
 	if ( cmds.size() > 1 ) {
 		privPushText( "> " + mDoc.getCurrentLine().getTextWithoutNewLine() );
 
-		std::vector<String>::iterator ite;
-
-		for ( ite = cmds.begin(); ite != cmds.end(); ++ite )
-			privPushText( ( *ite ) );
+		for ( auto& cmd : cmds )
+			privPushText( std::move( cmd ) );
 
 		String newStr( getLastCommonSubStr( cmds ) );
 
@@ -1424,10 +1418,10 @@ void UIConsole::pushText( const String& str ) {
 		std::vector<String> Strings = String::split( String( str ) );
 
 		for ( Uint32 i = 0; i < Strings.size(); i++ ) {
-			privPushText( Strings[i] );
+			privPushText( std::move( Strings[i] ) );
 		}
 	} else {
-		privPushText( str );
+		privPushText( String( str ) );
 	}
 }
 
