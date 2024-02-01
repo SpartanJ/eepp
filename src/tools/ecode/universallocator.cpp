@@ -246,21 +246,10 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 			 String::startsWith( inputTxt, String( "l " ) ) ) {
 			String lineColInput( inputTxt.substr( 2 ) );
 			std::vector<String> parts = lineColInput.split( ':' );
-			Int64 line, column = 0;
-
-			if ( parts.size() > 0 && String::fromString( line, parts[0] ) && line - 1 >= 0 ) {
-				if ( parts.size() > 1 ) {
-					String::fromString( column, parts[1] );
-					if ( column < 0 ) {
-						column = 0;
-					}
-				}
-				if ( mSplitter->curEditorExistsAndFocused() ) {
-					mSplitter->getCurEditor()->goToLine( { line - 1, column } );
-					mSplitter->addCurrentPositionToNavigationHistory();
-				}
+			Int64 line = 0;
+			if ( parts.size() > 0 && String::fromString( line, parts[0] ) && line - 1 >= 0 )
 				mLocateTable->setVisible( false );
-			}
+			return;
 		} else if ( !inputTxt.empty() && mLocateInput->getText()[0] == '>' ) {
 			showCommandPalette();
 		} else if ( !inputTxt.empty() && mLocateInput->getText()[0] == ':' ) {
@@ -280,6 +269,32 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 	} );
 	mLocateInput->addEventListener( Event::OnPressEnter, [this]( const Event* ) {
 		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
+
+		const String& inputTxt = mLocateInput->getText();
+		if ( mSplitter->curEditorExistsAndFocused() &&
+			 String::startsWith( inputTxt, String( "l " ) ) ) {
+			String lineColInput( inputTxt.substr( 2 ) );
+			std::vector<String> parts = lineColInput.split( ':' );
+			Int64 line, column = 0;
+
+			if ( parts.size() > 0 && String::fromString( line, parts[0] ) && line - 1 >= 0 ) {
+				if ( parts.size() > 1 ) {
+					String::fromString( column, parts[1] );
+					if ( column < 0 ) {
+						column = 0;
+					}
+				}
+
+				if ( mSplitter->curEditorExistsAndFocused() ) {
+					mSplitter->getCurEditor()->goToLine( { line - 1, column } );
+					mSplitter->addCurrentPositionToNavigationHistory();
+				}
+
+				mLocateBarLayout->execute( "close-locatebar" );
+				return;
+			}
+		}
+
 		mLocateTable->forceKeyDown( keyEvent );
 	} );
 	mLocateInput->addEventListener( Event::KeyDown, [this]( const Event* event ) {
