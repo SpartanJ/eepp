@@ -10,6 +10,7 @@
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/system/threadlocalptr.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
 #include <map>
 #include <string>
@@ -580,7 +581,7 @@ class EE_API Http : NonCopyable {
 		 * @param host The scheme + hostname + port represented as an URI.
 		 * @param proxy The client proxy if any, scheme + hostname + post as URI.
 		 */
-		bool exists( const URI& host, const URI& proxy = URI() ) const;
+		bool exists( const URI& host, const URI& proxy = URI() );
 
 		/** @return An HTTP Client to the host and proxy ( creates one if no one is found )
 		 * @param host The scheme + hostname + port represented as an URI.
@@ -589,7 +590,8 @@ class EE_API Http : NonCopyable {
 		Http* get( const URI& host, const URI& proxy = URI() );
 
 	  protected:
-		std::map<Uint32, Http*> mHttps;
+		Mutex mMutex;
+		UnorderedMap<Uint32, Http*> mHttps;
 
 		static std::string getHostKey( const URI& host, const URI& proxy );
 
@@ -644,6 +646,9 @@ class EE_API Http : NonCopyable {
 
 	/** It will try to get the proxy from the environment variables. */
 	static URI getEnvProxyURI();
+
+	/** Set the thread pool to consume for async requests, otherwise it will use its own */
+	static void setThreadPool( std::shared_ptr<ThreadPool> pool );
 
   private:
 	class AsyncRequest : public Thread {

@@ -61,7 +61,7 @@ FunctionString FunctionString::parse( const std::string& function ) {
 				lastWasBackslash = '\\' == curChar;
 			}
 
-			curParameter = String::trim( curParameter );
+			String::trimInPlace( curParameter );
 
 			if ( !curParameter.empty() ) {
 				parameters.push_back( curParameter );

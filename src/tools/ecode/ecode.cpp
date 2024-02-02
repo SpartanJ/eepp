@@ -3341,6 +3341,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				const std::string& css, bool health, const std::string& healthLang,
 				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
 				bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable ) {
+	Http::setThreadPool( mThreadPool );
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
 	mPortableMode = portable;

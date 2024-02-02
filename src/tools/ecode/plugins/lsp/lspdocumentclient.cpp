@@ -206,8 +206,7 @@ UISceneNode* LSPDocumentClient::getUISceneNode() {
 	return server->getManager()->getPluginManager()->getUISceneNode();
 }
 
-static SyntaxStyleType semanticTokenTypeToSyntaxType( const std::string& type,
-													  const SyntaxDefinition& ) {
+static SyntaxStyleType semanticTokenTypeToSyntaxType( const std::string& type ) {
 	switch ( String::hash( type ) ) {
 		case SemanticTokenTypes::Namespace:
 		case SemanticTokenTypes::Type:
@@ -323,9 +322,7 @@ void LSPDocumentClient::highlight() {
 		auto* line = &tokenizerLines[currentLine];
 		if ( type >= 0 && type < (int)caps.legend.tokenTypes.size() ) {
 			const auto& ltype = caps.legend.tokenTypes[type];
-			line->tokens.push_back(
-				{ semanticTokenTypeToSyntaxType( ltype, mDoc->getSyntaxDefinition() ), start,
-				  len } );
+			line->tokens.push_back( { semanticTokenTypeToSyntaxType( ltype ), start, len } );
 		} else {
 			line->tokens.push_back( { SyntaxStyleTypes::Normal, start, len } );
 		}

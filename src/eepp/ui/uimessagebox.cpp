@@ -114,6 +114,10 @@ void UIMessageBox::setTheme( UITheme* theme ) {
 	mTextBox->setTheme( theme );
 	mButtonOK->setTheme( theme );
 	mButtonCancel->setTheme( theme );
+	if ( mTextInput )
+		mTextInput->setTheme( theme );
+	if ( mTextEdit )
+		mTextEdit->setTheme( theme );
 
 	if ( getTranslatorString( "@string/msg_box_retry", "Retry" ) != mButtonOK->getText() ) {
 		Drawable* okIcon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
