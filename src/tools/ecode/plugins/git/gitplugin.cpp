@@ -531,9 +531,9 @@ void GitPlugin::checkout( Git::Branch branch ) {
 	const auto checkOutFn = [this, branch]( bool createLocal ) {
 		mLoader->setVisible( true );
 		mThreadPool->run( [this, branch, createLocal] {
-			auto result = createLocal
-							  ? mGit->checkoutAndCreateLocalBranch( branch.name, repoSelected() )
-							  : mGit->checkout( branch.name, repoSelected() );
+			auto result =
+				createLocal ? mGit->checkoutAndCreateLocalBranch( branch.name, "", repoSelected() )
+							: mGit->checkout( branch.name, repoSelected() );
 			if ( result.success() ) {
 				{
 					std::string repoSel = repoSelected();
@@ -954,23 +954,23 @@ void GitPlugin::stashPush( const std::vector<std::string>& files, const std::str
 	rKeepWorkingTree->setText( i18n( "git_stash_keep_working_tree", "Keep Working Tree" ) );
 	rKeepWorkingTree->toPosition( 3 );
 
-	msgBox->on( Event::OnConfirm,
-				[this, msgBox, rKeepIndex, rKeepWorkingTree, files, repoPath]( const Event* ) {
-					bool keepIndex = rKeepIndex->isActive();
-					bool keepWorkingTree = rKeepWorkingTree->isActive();
-					std::string message = msgBox->getTextInput()->getText().toUtf8();
-					String::trimInPlace( message );
-					String::trimInPlace( message, '\n' );
-					msgBox->closeWindow();
-					runAsync(
-						[this, files, keepIndex, keepWorkingTree, repoPath, message]() {
-							auto res = mGit->stashPush( files, message, keepIndex, repoPath );
-							if ( res.success() && keepWorkingTree )
-								mGit->stashApply( "stash@{0}", true, repoPath );
-							return res;
-						},
-						true, true );
-				} );
+	msgBox->on( Event::OnConfirm, [this, msgBox, rKeepIndex, rKeepWorkingTree, files,
+								   repoPath]( const Event* ) {
+		bool keepIndex = rKeepIndex->isActive();
+		bool keepWorkingTree = rKeepWorkingTree->isActive();
+		std::string message = msgBox->getTextInput()->getText().toUtf8();
+		String::trimInPlace( message );
+		String::trimInPlace( message, '\n' );
+		msgBox->closeWindow();
+		runAsync(
+			[this, files, keepIndex, keepWorkingTree, repoPath, message]() {
+				auto res = mGit->stashPush( fixFilePaths( files ), message, keepIndex, repoPath );
+				if ( res.success() && keepWorkingTree )
+					mGit->stashApply( "stash@{0}", true, repoPath );
+				return res;
+			},
+			true, true );
+	} );
 
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_stash_save", "Save Stash" ) );

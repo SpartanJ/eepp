@@ -7,6 +7,7 @@
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/languages/angelscript.hpp>
 #include <eepp/ui/doc/languages/batchscript.hpp>
+#include <eepp/ui/doc/languages/blueprint.hpp>
 #include <eepp/ui/doc/languages/crystal.hpp>
 #include <eepp/ui/doc/languages/css.hpp>
 #include <eepp/ui/doc/languages/d.hpp>
@@ -1679,13 +1680,14 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 80 );
+	mDefinitions.reserve( 81 );
 
 	// Register some languages support.
 	addPlainText();
 	addAngelScript();
 	addBash();
 	addBatchScript();
+	addBlueprint();
 	addC();
 	addCMake();
 	addContainerfile();
