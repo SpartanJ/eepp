@@ -21,6 +21,8 @@ class StatusTerminalController : public StatusBarElement {
   public:
 	StatusTerminalController( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app );
 
+	virtual ~StatusTerminalController() {}
+
 	UIWidget* getWidget();
 
 	UIWidget* createWidget();
