@@ -32,7 +32,7 @@ class Mp3Info {
 
 	class Info {
 	  public:
-		off_t datasize;
+		long datasize;
 		int header_isvalid;
 		Header header;
 		int id3_isvalid;

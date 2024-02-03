@@ -3886,6 +3886,33 @@ void UICodeEditor::setAutoCloseXMLTags( bool autoCloseXMLTags ) {
 	mAutoCloseXMLTags = autoCloseXMLTags;
 }
 
+static bool isAlreadyClosedTag( TextDocument* doc, TextPosition start,
+								size_t maxSearchTokens = 1000 ) {
+	SyntaxHighlighter* highlighter = doc->getHighlighter();
+	TextPosition endOfDoc = doc->endOfDoc();
+	do {
+		String::StringBaseType ch = doc->getChar( start );
+		switch ( ch ) {
+			case '>': {
+				auto tokenType = highlighter->getTokenTypeAt( start );
+				if ( tokenType != "comment"_sst && tokenType != "string"_sst )
+					return true;
+				break;
+			}
+			case '<': {
+				auto tokenType = highlighter->getTokenTypeAt( start );
+				if ( tokenType != "comment"_sst && tokenType != "string"_sst )
+					return false;
+				break;
+			}
+			default:
+				break;
+		}
+		start = doc->positionOffset( start, 1 );
+	} while ( start.isValid() && start != endOfDoc && --maxSearchTokens );
+	return false;
+}
+
 bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 	if ( !mAutoCloseXMLTags || text.empty() || text.size() > 1 || text[0] != '>' ||
 		 mDoc->getSelection().hasSelection() )
@@ -3911,9 +3938,8 @@ bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 	std::string tag( line.substr( foundOpenPos, start.column() - foundOpenPos ).toUtf8() );
 	LuaPattern pattern( "<([%w_%-]+).*>" );
 	auto match = pattern.gmatch( tag );
-	if ( match.matches() ) {
-		std::string tagName( match.group( 1 ) );
-		mDoc->textInput( String( "</" + tagName + ">" ) );
+	if ( match.matches() && !isAlreadyClosedTag( mDoc.get(), start ) ) {
+		mDoc->textInput( String( "</" + match.group( 1 ) + ">" ) );
 		mDoc->setSelection( start );
 		return true;
 	}

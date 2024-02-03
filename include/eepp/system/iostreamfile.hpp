@@ -2,6 +2,7 @@
 #define EE_SYSTEMCIOSTREAMFILE_HPP
 
 #include <eepp/system/iostream.hpp>
+#include <string>
 
 namespace EE { namespace System {
 

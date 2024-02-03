@@ -1,6 +1,7 @@
 #ifndef EE_SYSTEM_COMPRESSION_HPP
 #define EE_SYSTEM_COMPRESSION_HPP
 
+#include <cstddef>
 #include <eepp/config.hpp>
 #include <eepp/system/iostream.hpp>
 

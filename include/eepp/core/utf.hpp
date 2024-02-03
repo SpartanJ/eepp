@@ -35,7 +35,6 @@
 #include <cstdlib>
 #include <eepp/config.hpp>
 #include <locale>
-#include <string>
 
 namespace EE {
 

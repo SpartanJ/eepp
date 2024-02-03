@@ -11,9 +11,6 @@ void macOS_enableScrollMomentum();
 
 void macOS_removeTitleBarSeparator( void* nsWindow );
 
-void macOS_setTitleBarBackgroundColor( void* nsWindow, float red, float green, float blue,
-									   float alpha );
-
 #ifdef __cplusplus
 }
 #endif

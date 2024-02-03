@@ -3,6 +3,8 @@
 
 #include <eepp/system/iostream.hpp>
 
+#include <string>
+
 struct zip;
 struct zip_file;
 

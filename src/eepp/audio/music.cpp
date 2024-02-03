@@ -6,7 +6,6 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
-#include <fstream>
 
 namespace EE { namespace Audio {
 
