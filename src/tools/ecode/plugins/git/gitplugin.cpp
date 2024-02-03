@@ -81,6 +81,11 @@ GitPlugin::~GitPlugin() {
 		mStatusButton->close();
 	if ( mSidePanel && mTab )
 		mSidePanel->removeTab( mTab );
+
+	{ Lock l( mGitBranchMutex ); }
+	{ Lock l( mGitStatusMutex ); }
+	{ Lock l( mRepoMutex ); }
+	{ Lock l( mReposMutex ); }
 }
 
 void GitPlugin::load( PluginManager* pluginManager ) {

@@ -714,7 +714,10 @@ App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 App::~App() {
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
+
+	Http::setThreadPool( nullptr );
 	mThreadPool.reset();
+
 	if ( mFileWatcher ) {
 		Lock l( mWatchesLock );
 		delete mFileWatcher;

@@ -941,11 +941,10 @@ void UICodeEditor::updateIMELocation() {
 }
 
 void UICodeEditor::drawLockedIcon( const Vector2f start ) {
-	if ( mFileLockIcon == nullptr && !mFileLockIconName.empty() ) {
+	if ( mFileLockIcon == nullptr && !mFileLockIconName.empty() )
 		mFileLockIcon = getUISceneNode()->findIcon( mFileLockIconName );
-		if ( mFileLockIcon == nullptr )
-			return;
-	}
+	if ( mFileLockIcon == nullptr )
+		return;
 
 	Drawable* fileLockIcon = mFileLockIcon->getSize( PixelDensity::dpToPxI( 16 ) );
 	if ( fileLockIcon == nullptr )
@@ -1552,19 +1551,23 @@ void UICodeEditor::findLongestLine() {
 Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
 	if ( lineIndex >= (Int64)mDoc->linesCount() )
 		return 0;
-	if ( mFont && !mFont->isMonospace() )
-		return Text::getTextWidth( mFont, getCharacterSize(), mDoc->line( lineIndex ).getText(),
-								   mFontStyleConfig.Style, mTabWidth ) +
-			   getGlyphWidth();
+	if ( mFont && !mFont->isMonospace() ) {
+		auto line = mDoc->line( lineIndex );
+		auto found = mLinesWidthCache.find( lineIndex );
+		if ( found != mLinesWidthCache.end() && line.getHash() == found->first )
+			return found->second.second;
+		Float width = getTextWidth( line.getText() ) + getGlyphWidth();
+		mLinesWidthCache[lineIndex] = { line.getHash(), width };
+		return width;
+	}
 	return getTextWidth( mDoc->line( lineIndex ).getText() );
 }
 
 void UICodeEditor::updateScrollBar() {
 	int notVisibleLineCount = (int)mDoc->linesCount() - (int)getViewPortLineCount().y;
 
-	if ( mLongestLineWidthDirty && mFont && mFont->isMonospace() ) {
+	if ( mLongestLineWidthDirty && mFont )
 		updateLongestLineWidth();
-	}
 
 	mHScrollBar->setEnabled( false );
 	mHScrollBar->setVisible( false );

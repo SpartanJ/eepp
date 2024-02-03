@@ -701,7 +701,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	SyntaxColorScheme mColorScheme;
 	UIScrollBar* mVScrollBar;
 	UIScrollBar* mHScrollBar;
-	std::unordered_map<size_t, LastXOffset> mLastXOffset;
+	UnorderedMap<size_t, LastXOffset> mLastXOffset;
 	KeyBindings mKeyBindings;
 	std::unordered_set<std::string> mUnlockedCmd;
 	Clock mLastDoubleClick;
@@ -728,7 +728,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 		Text text;
 		String::HashType hash;
 	};
-	mutable std::unordered_map<Int64, TextLine> mTextCache;
+	mutable UnorderedMap<Int64, TextLine> mTextCache;
+	UnorderedMap<Int64, std::pair<String::HashType, Float>> mLinesWidthCache;
 	Tools::UIDocFindReplace* mFindReplace{ nullptr };
 	struct PluginRequestedSpace {
 		UICodeEditorPlugin* plugin;
