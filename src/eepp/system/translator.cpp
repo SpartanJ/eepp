@@ -1,6 +1,3 @@
-#include <algorithm>
-#include <cctype>
-#include <cstdarg>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/log.hpp>
@@ -161,12 +158,20 @@ bool Translator::loadFromPack( Pack* pack, const std::string& FilePackPath, std:
 String Translator::getString( const std::string& key, const String& defaultValue ) {
 	StringLocaleDictionary::iterator lang = mDictionary.find( mCurrentLanguage );
 
-	if ( lang != mDictionary.end() ) {
+	if ( lang != mDictionary.end() || mSetDefaultValues ) {
+		if ( lang == mDictionary.end() ) {
+			mDictionary[mCurrentLanguage] = StringDictionary{};
+			lang = mDictionary.find( mCurrentLanguage );
+		}
+
 		StringDictionary& dictionary = lang->second;
 		StringDictionary::iterator string = dictionary.find( key );
-
-		if ( string != dictionary.end() ) {
+		if ( string != dictionary.end() )
 			return string->second;
+
+		if ( mSetDefaultValues && !defaultValue.empty() ) {
+			dictionary[key] = defaultValue;
+			return defaultValue;
 		}
 	}
 
@@ -176,9 +181,8 @@ String Translator::getString( const std::string& key, const String& defaultValue
 		StringDictionary& dictionary = lang->second;
 		StringDictionary::iterator string = dictionary.find( key );
 
-		if ( string != dictionary.end() ) {
+		if ( string != dictionary.end() )
 			return string->second;
-		}
 	}
 
 	return defaultValue;
@@ -221,6 +225,37 @@ std::string Translator::getCurrentLanguage() const {
 
 void Translator::setCurrentLanguage( const std::string& currentLanguage ) {
 	mCurrentLanguage = currentLanguage;
+}
+
+class IOStreamXmlWriter : public pugi::xml_writer {
+  public:
+	IOStreamXmlWriter( IOStream& stream ) : mIOStream( stream ) {}
+
+	virtual void write( const void* data, size_t size ) {
+		mIOStream.write( (const char*)data, size );
+	}
+
+  private:
+	IOStream& mIOStream;
+};
+
+void Translator::saveToStream( IOStream& stream, std::string lang ) {
+	pugi::xml_document doc;
+
+	auto resources = doc.append_child( "resources" );
+	resources.append_attribute( "language" ).set_value( lang.c_str() );
+
+	const auto& langStrs = mDictionary[lang];
+
+	for ( const auto& str : langStrs ) {
+		auto r = resources.append_child( "string" );
+		auto d = r.append_child( pugi::node_cdata );
+		r.append_attribute( "name" ).set_value( str.first.c_str() );
+		d.set_value( str.second.toUtf8().c_str() );
+	}
+
+	IOStreamXmlWriter writer( stream );
+	doc.save( writer );
 }
 
 }} // namespace EE::System

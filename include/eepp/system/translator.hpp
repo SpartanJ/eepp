@@ -14,6 +14,9 @@ class Pack;
 
 class EE_API Translator {
   public:
+	typedef std::unordered_map<std::string, String> StringDictionary;
+	typedef std::unordered_map<std::string, StringDictionary> StringLocaleDictionary;
+
 	Translator( const std::locale& locale = std::locale() );
 
 	bool loadFromDirectory( std::string dirPath, std::string ext = "xml" );
@@ -46,13 +49,21 @@ class EE_API Translator {
 
 	void setCurrentLanguage( const std::string& currentLanguage );
 
-  protected:
-	typedef std::unordered_map<std::string, String> StringDictionary;
-	typedef std::unordered_map<std::string, StringDictionary> StringLocaleDictionary;
+	void setSaveDefaultValues( bool set ) { mSetDefaultValues = set; }
 
+	bool isSetDefaultValues() const { return mSetDefaultValues; }
+
+	void saveToStream( IOStream& stream, std::string lang = "" );
+
+	const StringLocaleDictionary& getDictionary() const { return mDictionary; }
+
+	StringLocaleDictionary& getDictionary() { return mDictionary; }
+
+  protected:
 	std::string mDefaultLanguage;
 	std::string mCurrentLanguage;
 	StringLocaleDictionary mDictionary;
+	bool mSetDefaultValues{ false };
 
 	bool loadNodes( pugi::xml_node node, std::string lang = "" );
 };

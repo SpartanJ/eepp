@@ -725,12 +725,23 @@ App::~App() {
 	}
 	mPluginManager.reset();
 	eeSAFE_DELETE( mSplitter );
-	eeSAFE_DELETE( mConsole );
+
 	if ( mFileSystemListener ) {
 		delete mFileSystemListener;
 		mFileSystemListener = nullptr;
 	}
 	mDirTree.reset();
+
+#ifdef EE_DEBUG
+	if ( !mUISceneNode->getTranslator().isSetDefaultValues() )
+		return;
+	std::string langsPath( mConfigPath + "i18n" + FileSystem::getOSSlash() );
+	if ( !FileSystem::fileExists( langsPath ) && !FileSystem::makeDir( langsPath ) )
+		return;
+	std::string lang( mUISceneNode->getTranslator().getCurrentLanguage() );
+	IOStreamFile file( langsPath + lang + ".xml", "wb" );
+	mUISceneNode->getTranslator().saveToStream( file, lang );
+#endif
 }
 
 void App::updateRecentFiles() {

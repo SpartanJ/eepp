@@ -230,7 +230,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 			if ( !skip ) {
 				if ( range.first != -1 ) {
-					pushToken( tokens, pattern.types[0], text.substr( i, range.second - i ) );
+					if ( range.second > range.first && pattern.types.size() >= 3 ) {
+						pushToken( tokens, pattern.types[0], text.substr( i, range.first - i ) );
+						pushToken( tokens, pattern.types[pattern.types.size() - 1],
+								   text.substr( range.first, range.second - range.first ) );
+					} else {
+						pushToken( tokens, pattern.types[0], text.substr( i, range.second - i ) );
+					}
 					setSubsyntaxPatternIdx( curState, retState, SYNTAX_TOKENIZER_STATE_NONE );
 					i = range.second;
 				} else {

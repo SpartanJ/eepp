@@ -192,17 +192,14 @@ String UISceneNode::getTranslatorString( const std::string& str ) {
 String UISceneNode::getTranslatorString( const std::string& str, const String& defaultValue ) {
 	if ( str.size() >= 8 && String::startsWith( str, "@string" ) ) {
 		if ( str[7] == '/' ) {
-			String tstr( mTranslator.getString( str.substr( 8 ) ) );
-			if ( !tstr.empty() )
-				return tstr;
+			return mTranslator.getString( str.substr( 8 ), defaultValue );
 		} else if ( str[7] == '(' ) {
 			FunctionString fun( FunctionString::parse( str ) );
 			if ( !fun.isEmpty() ) {
-				String tstr( mTranslator.getString( fun.getParameters()[0] ) );
-				if ( !tstr.empty() )
-					return tstr;
+				if ( !defaultValue.empty() )
+					return mTranslator.getString( fun.getParameters()[0], defaultValue );
 				if ( fun.getParameters().size() >= 2 )
-					return fun.getParameters()[1];
+					return mTranslator.getString( fun.getParameters()[0], fun.getParameters()[1] );
 			}
 		}
 	}
@@ -211,12 +208,7 @@ String UISceneNode::getTranslatorString( const std::string& str, const String& d
 
 String UISceneNode::getTranslatorStringFromKey( const std::string& key,
 												const String& defaultValue ) {
-	String tstr = mTranslator.getString( key );
-
-	if ( !tstr.empty() )
-		return tstr;
-
-	return defaultValue;
+	return mTranslator.getString( key, defaultValue );
 }
 
 String UISceneNode::i18n( const std::string& key, const String& defaultValue ) {
