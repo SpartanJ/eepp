@@ -1369,6 +1369,12 @@ solution "eepp"
 		files { "src/examples/7guis/timer/*.cpp" }
 		build_link_configuration( "eepp-7guis-timer", true )
 
+	project "eepp-7guis-crud"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/crud/*.cpp" }
+		build_link_configuration( "eepp-7guis-crud", true )
+
 	-- Tools
 	project "eepp-textureatlaseditor"
 		set_kind()

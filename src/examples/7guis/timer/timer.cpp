@@ -3,7 +3,7 @@
 // Reference https://eugenkiss.github.io/7guis/tasks#timer
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 380, 160, "eepp - 7GUIs - Timer" } );
-	UIWidget* hbox = app.getUI()->loadLayoutFromString( R"xml(
+	UIWidget* vbox = app.getUI()->loadLayoutFromString( R"xml(
 	<vbox layout_width="match_parent" layout_height="match_parent" padding="8dp">
 		<hbox layout_width="match_parent" layout_height="wrap_content" marginBottom="8dp">
 			<TextView text="Elapsed Time: " marginRight="8dp" />
@@ -19,9 +19,9 @@ EE_MAIN_FUNC int main( int, char** ) {
 	</vbox>
 	)xml" );
 	Clock clock;
-	auto progressBar = hbox->find<UIProgressBar>( "progressbar" );
-	auto durationSlider = hbox->find<UISlider>( "duration_slider" );
-	auto elapsedTimeView = hbox->find<UITextView>( "elapsed_time" );
+	auto progressBar = vbox->find<UIProgressBar>( "progressbar" );
+	auto durationSlider = vbox->find<UISlider>( "duration_slider" );
+	auto elapsedTimeView = vbox->find<UITextView>( "elapsed_time" );
 	auto intervalId = String::hash( "unique_interval_id" );
 	const auto update = [&]() {
 		double totalDurationInSeconds = static_cast<double>( durationSlider->getValue() * 100. );
@@ -34,7 +34,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 		if ( clock.getElapsedTime().asSeconds() >= totalDurationInSeconds )
 			app.getUI()->removeActionsByTag( intervalId );
 	};
-	hbox->find<UIPushButton>( "reset_button" )->onClick( [&]( auto ) {
+	vbox->find<UIPushButton>( "reset_button" )->onClick( [&]( auto ) {
 		clock.restart();
 		app.getUI()->removeActionsByTag( intervalId );
 		app.getUI()->setInterval( [&update] { update(); }, Milliseconds( 100 ), intervalId );

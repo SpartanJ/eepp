@@ -8,7 +8,7 @@ namespace EE { namespace UI {
 
 class UISceneNode;
 
-class UIApplication {
+class EE_API UIApplication {
   public:
 	UIApplication( const WindowSettings& windowSettings, bool loadBaseResources = true,
 				   const ContextSettings& contextSettings = ContextSettings() );

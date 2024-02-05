@@ -131,9 +131,8 @@ void UIAbstractView::onModelUpdate( unsigned flags ) {
 }
 
 void UIAbstractView::onModelSelectionChange() {
-	if ( getModel() && mOnSelection && getSelection().first().isValid() ) {
+	if ( getModel() && mOnSelection && getSelection().first().isValid() )
 		mOnSelection( getSelection().first() );
-	}
 	invalidateDraw();
 }
 

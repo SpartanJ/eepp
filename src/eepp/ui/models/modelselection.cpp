@@ -7,11 +7,13 @@ namespace EE { namespace UI { namespace Models {
 void ModelSelection::removeAllMatching( std::function<bool( const ModelIndex& )> filter ) {
 	std::vector<ModelIndex> notMatching;
 	for ( auto& index : mIndexes ) {
-		if ( !filter( index ) ) {
+		if ( !filter( index ) )
 			notMatching.emplace_back( index );
-		}
 	}
-	mIndexes = notMatching;
+	if ( mIndexes.size() != notMatching.size() ) {
+		mIndexes = std::move( notMatching );
+		mView->notifySelectionChange();
+	}
 }
 
 void ModelSelection::set( const ModelIndex& index ) {

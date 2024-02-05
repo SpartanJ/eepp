@@ -8,6 +8,7 @@ UIListView* UIListView::New() {
 
 UIListView::UIListView() : UITableView( "listview" ) {
 	setHeadersVisible( false );
+	setAutoExpandOnSingleColumn( true );
 	applyDefaultTheme();
 }
 

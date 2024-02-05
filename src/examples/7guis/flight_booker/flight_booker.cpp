@@ -4,7 +4,7 @@
 // Reference https://eugenkiss.github.io/7guis/tasks#flight
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 440, 240, "eepp - 7GUIs - Flight Booker" } );
-	UIWidget* hbox = app.getUI()->loadLayoutFromString( R"xml(
+	UIWidget* vbox = app.getUI()->loadLayoutFromString( R"xml(
 	<style>
 	.error_input {
 		color: var(--theme-error);
@@ -20,10 +20,10 @@ EE_MAIN_FUNC int main( int, char** ) {
 		<PushButton id="book" layout_width="match_parent" text="Book" />
 	</vbox>
 	)xml" );
-	auto ddlType = hbox->find<UIDropDownList>( "type" );
-	auto dateFrom = hbox->find<UITextInput>( "date_from" );
-	auto dateTo = hbox->find<UITextInput>( "date_to" );
-	auto bookBut = hbox->find<UIPushButton>( "book" );
+	auto ddlType = vbox->find<UIDropDownList>( "type" );
+	auto dateFrom = vbox->find<UITextInput>( "date_from" );
+	auto dateTo = vbox->find<UITextInput>( "date_to" );
+	auto bookBut = vbox->find<UIPushButton>( "book" );
 	const auto covertDate = []( const String& dateStr ) -> std::optional<std::time_t> {
 		if ( std::count( dateStr.begin(), dateStr.end(), '.' ) != 2 )
 			return {};
