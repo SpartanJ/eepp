@@ -146,6 +146,10 @@ void UIProgressBar::onSizeChange() {
 	Sizef fSize( ( ( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ) * getProgress() ) /
 					 getTotalSteps(),
 				 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
+	if ( std::isnan( fSize.x ) )
+		fSize.x = 0;
+	if ( std::isnan( fSize.y ) )
+		fSize.y = 0;
 	mFiller->setPixelsSize( fSize );
 	mFiller->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 	updateTextBox();
@@ -157,7 +161,7 @@ void UIProgressBar::onPaddingChange() {
 }
 
 void UIProgressBar::setProgress( Float Val ) {
-	mProgress = Val;
+	mProgress = eeclamp( Val, 0.f, mTotalSteps );
 
 	onValueChange();
 	updateTextBox();
@@ -210,7 +214,10 @@ const bool& UIProgressBar::getDisplayPercent() const {
 
 void UIProgressBar::updateTextBox() {
 	mTextBox->setVisible( mStyleConfig.DisplayPercent );
-	mTextBox->setText( String::toString( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
+	Float clamped = eefloor( eeclamp( ( mProgress / mTotalSteps ) * 100.f, 0.f, 100.f ) );
+	if ( std::isnan( clamped ) )
+		clamped = 0;
+	mTextBox->setText( String::fromFloat( clamped ) + "%" );
 	mTextBox->center();
 }
 

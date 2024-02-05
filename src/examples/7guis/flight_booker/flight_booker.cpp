@@ -1,6 +1,7 @@
 #include <eepp/ee.hpp>
 #include <iomanip>
 
+// Reference https://eugenkiss.github.io/7guis/tasks#flight
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 440, 240, "eepp - 7GUIs - Flight Booker" } );
 	UIWidget* hbox = app.getUI()->loadLayoutFromString( R"xml(

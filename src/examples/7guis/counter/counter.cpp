@@ -1,5 +1,6 @@
 #include <eepp/ee.hpp>
 
+// Reference https://eugenkiss.github.io/7guis/tasks#counter
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 380, 64, "eepp - 7GUIs - Counter" } );
 	UIWidget* hbox = app.getUI()->loadLayoutFromString( R"xml(

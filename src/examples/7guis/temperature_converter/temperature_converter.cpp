@@ -1,5 +1,6 @@
 #include <eepp/ee.hpp>
 
+// Reference https://eugenkiss.github.io/7guis/tasks#temp
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 490, 64, "eepp - 7GUIs - Temperature Converter" } );
 	UIWidget* hbox = app.getUI()->loadLayoutFromString( R"xml(

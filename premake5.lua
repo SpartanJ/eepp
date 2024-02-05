@@ -1100,13 +1100,13 @@ workspace "eepp"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/http_request/*.cpp" }
+		incdirs { "src/thirdparty" }
 		build_link_configuration( "eepp-http-request", true )
 
 	project "eepp-ui-hello-world"
 		set_kind()
 		language "C++"
 		files { "src/examples/ui_hello_world/*.cpp" }
-		incdirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-hello-world", true )
 
 	project "eepp-7guis-counter"
@@ -1126,6 +1126,12 @@ workspace "eepp"
 		language "C++"
 		files { "src/examples/7guis/flight_booker/*.cpp" }
 		build_link_configuration( "eepp-7guis-flight-booker", true )
+
+	project "eepp-7guis-timer"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/timer/*.cpp" }
+		build_link_configuration( "eepp-7guis-timer", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"
