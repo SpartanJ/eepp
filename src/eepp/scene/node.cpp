@@ -1657,7 +1657,9 @@ bool Node::hasFocusWithin() const {
 	return hasFocus() || inParentTreeOf( getEventDispatcher()->getFocusNode() );
 }
 
-void Node::setFocus() {}
+Node* Node::setFocus() {
+	return this;
+}
 
 Node* Node::getFirstWidget() const {
 	Node* child = mChild;

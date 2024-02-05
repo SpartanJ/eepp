@@ -235,7 +235,7 @@ class EE_API UINode : public Node {
 
 	const Uint32& getDragButton() const;
 
-	virtual void setFocus();
+	virtual Node* setFocus();
 
 	Float
 	getPropertyRelativeTargetContainerLength( const CSS::PropertyRelativeTarget& relativeTarget,

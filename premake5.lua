@@ -1100,7 +1100,6 @@ workspace "eepp"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/http_request/*.cpp" }
-		incdirs { "src/thirdparty" }
 		build_link_configuration( "eepp-http-request", true )
 
 	project "eepp-ui-hello-world"
@@ -1109,6 +1108,24 @@ workspace "eepp"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		incdirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-hello-world", true )
+
+	project "eepp-7guis-counter"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/counter/*.cpp" }
+		build_link_configuration( "eepp-7guis-counter", true )
+
+	project "eepp-7guis-temperature-converter"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/temperature_converter/*.cpp" }
+		build_link_configuration( "eepp-7guis-temperature-converter", true )
+
+	project "eepp-7guis-flight-booker"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/flight_booker/*.cpp" }
+		build_link_configuration( "eepp-7guis-flight-booker", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"

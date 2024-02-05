@@ -185,7 +185,8 @@ SelectButton:selected:pressed {
 }
 
 pushbutton:disabled,
-selectbutton:disabled {
+selectbutton:disabled,
+textinput:disabled {
 	color: var(--disabled-color);
 	border-color: var(--disabled-border);
 }

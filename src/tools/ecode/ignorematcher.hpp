@@ -2,7 +2,6 @@
 #define ECODE_IGNOREMATCHER_HPP
 
 #include <eepp/system/filesystem.hpp>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -68,6 +67,8 @@ class IgnoreMatcherManager {
 	virtual ~IgnoreMatcherManager();
 
 	bool foundMatch() const;
+
+	bool match( const FileInfo& file ) const;
 
 	bool match( const std::string& dir, const std::string& value ) const;
 

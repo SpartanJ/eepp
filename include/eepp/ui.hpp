@@ -87,4 +87,6 @@
 
 #include <eepp/ui/uidatabind.hpp>
 
+#include <eepp/ui/uiapplication.hpp>
+
 #endif

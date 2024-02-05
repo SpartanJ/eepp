@@ -30,9 +30,7 @@ ProjectDirectoryTree::~ProjectDirectoryTree() {
 		mRunning = false;
 		Lock l( mFilesMutex );
 	}
-	{
-		Lock l( mDoneMutex );
-	}
+	{ Lock l( mDoneMutex ); }
 }
 
 void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& scanComplete,
@@ -320,8 +318,10 @@ void ProjectDirectoryTree::onChange( const ProjectDirectoryTree::Action& action,
 }
 
 void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
+	if ( mIgnoreHidden && file.isHidden() )
+		return;
 	IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( file.getFilepath() ) );
-	if ( !matcher.foundMatch() || !matcher.match( file.getDirectoryPath(), file.getFilepath() ) ) {
+	if ( !matcher.foundMatch() || !matcher.match( file ) ) {
 		bool foundPattern = mAcceptedPatterns.empty();
 		for ( auto& pattern : mAcceptedPatterns ) {
 			if ( pattern.matches( file.getFilepath() ) ) {
@@ -344,6 +344,8 @@ void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
 void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 	if ( file.isDirectory() ) {
 		if ( !String::startsWith( file.getFilepath(), mPath ) || isDirInTree( file.getFilepath() ) )
+			return;
+		if ( mIgnoreHidden && file.isHidden() )
 			return;
 		Lock l( mFilesMutex );
 		std::vector<std::string> files;

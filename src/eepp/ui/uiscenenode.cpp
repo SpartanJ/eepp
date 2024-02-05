@@ -107,9 +107,10 @@ void UISceneNode::onDrawDebugDataChange() {
 	}
 }
 
-void UISceneNode::setFocus() {
+Node* UISceneNode::setFocus() {
 	if ( NULL != getEventDispatcher() )
 		getEventDispatcher()->setFocusNode( mRoot );
+	return this;
 }
 
 void UISceneNode::nodeToWorldTranslation( Vector2f& Pos ) const {

@@ -892,14 +892,25 @@ std::string String::randString( size_t len, std::string dictionary ) {
 	return dictionary.substr( 0, len );
 }
 
+void numberClean( std::string& strNumber ) {
+	while ( strNumber.back() == '0' )
+		strNumber.pop_back();
+	if ( strNumber.back() == '.' )
+		strNumber.pop_back();
+}
+
 std::string String::fromFloat( const Float& value, const std::string& append,
 							   const std::string& prepend ) {
-	return prepend + toString( value ) + append;
+	std::string val( toString( value ) );
+	numberClean( val );
+	return prepend + val + append;
 }
 
 std::string String::fromDouble( const double& value, const std::string& append,
 								const std::string& prepend ) {
-	return prepend + toString( value ) + append;
+	std::string val( toString( value ) );
+	numberClean( val );
+	return prepend + val + append;
 }
 
 void String::insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar ) {

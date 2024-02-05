@@ -804,7 +804,10 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 			return 0;
 		if ( mOnlyNumbers && ( ( mAllowFloat && text[i] == '.' && mDoc.find( "." ).isValid() ) ||
 							   !String::isNumber( text[i], mAllowFloat ) ) ) {
-			return 0;
+			if ( !( i == 0 && mDoc.getSelection( true ).start().column() == 0 &&
+					( text[i] == '-' || text[i] == '+' ) ) ) {
+				return 0;
+			}
 		}
 	}
 

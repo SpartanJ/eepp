@@ -171,6 +171,8 @@ const std::string& GitIgnoreMatcher::getIgnoreFilePath() const {
 bool GitIgnoreMatcher::parse() {
 	std::string patternFile;
 	FileSystem::fileGet( mPath + mIgnoreFileName, patternFile );
+	if ( FileSystem::fileExists( mPath + ".git" ) ) // Also ignore the .git folder
+		mPatterns.emplace_back( std::make_pair( "**/.git/**", false ) );
 	std::vector<std::string> patterns = String::split( patternFile );
 	for ( auto& pattern : patterns ) {
 		bool negates = false;
@@ -187,8 +189,6 @@ bool GitIgnoreMatcher::parse() {
 		pattern = String::rTrim( pattern, '/' );
 		mPatterns.emplace_back( std::make_pair( pattern, negates ) );
 	}
-	if ( FileSystem::fileExists( mPath + ".git" ) )
-		mPatterns.emplace_back( std::make_pair( "/.git", false ) ); // Also ignore the .git folder
 	return !mPatterns.empty();
 }
 
@@ -258,10 +258,25 @@ bool IgnoreMatcherManager::foundMatch() const {
 	return !mMatchers.empty();
 }
 
+bool IgnoreMatcherManager::match( const FileInfo& file ) const {
+	eeASSERT( foundMatch() );
+	auto dirPath( file.getDirectoryPath() );
+	std::string localPath;
+	for ( const auto& matcher : mMatchers ) {
+		localPath.clear();
+		if ( String::startsWith( dirPath, matcher->getPath() ) )
+			localPath = dirPath.substr( matcher->getPath().size() );
+		if ( matcher->match( localPath + file.getFileName() ) )
+			return true;
+	}
+	return false;
+}
+
 bool IgnoreMatcherManager::match( const std::string& dir, const std::string& value ) const {
 	eeASSERT( foundMatch() );
+	std::string localPath;
 	for ( const auto& matcher : mMatchers ) {
-		std::string localPath;
+		localPath.clear();
 		if ( String::startsWith( dir, matcher->getPath() ) )
 			localPath = dir.substr( matcher->getPath().size() );
 		if ( matcher->match( localPath + value ) )

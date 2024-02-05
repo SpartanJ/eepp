@@ -1343,8 +1343,25 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/examples/ui_hello_world/*.cpp" }
-		includedirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-hello-world", true )
+
+	project "eepp-7guis-counter"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/counter/*.cpp" }
+		build_link_configuration( "eepp-7guis-counter", true )
+
+	project "eepp-7guis-temperature-converter"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/temperature_converter/*.cpp" }
+		build_link_configuration( "eepp-7guis-temperature-converter", true )
+
+	project "eepp-7guis-flight-booker"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/flight_booker/*.cpp" }
+		build_link_configuration( "eepp-7guis-flight-booker", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"

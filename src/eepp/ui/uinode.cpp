@@ -1557,9 +1557,10 @@ void UINode::onWidgetFocusLoss() {
 	invalidateDraw();
 }
 
-void UINode::setFocus() {
+Node* UINode::setFocus() {
 	if ( NULL != getEventDispatcher() )
 		getEventDispatcher()->setFocusNode( this );
+	return this;
 }
 
 Float UINode::getPropertyRelativeTargetContainerLength(

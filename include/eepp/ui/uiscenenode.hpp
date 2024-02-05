@@ -204,7 +204,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	virtual void onDrawDebugDataChange();
 
-	virtual void setFocus();
+	virtual Node* setFocus();
 
 	virtual void onParentChange();
 

@@ -1,8 +1,4 @@
 #include <eepp/ee.hpp>
-#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
-#include <eepp/ui/doc/syntaxtokenizer.hpp>
-#include <eepp/ui/doc/textdocument.hpp>
-using namespace EE::UI::Doc;
 
 EE::Window::Window* win = NULL;
 
