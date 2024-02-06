@@ -225,6 +225,8 @@ class TerminalEmulator final {
 
 	void setAllowMemoryTrimnming( bool allowMemoryTrimnming );
 
+	Vector2i getSize() const;
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;

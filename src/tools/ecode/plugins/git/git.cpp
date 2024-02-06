@@ -27,13 +27,14 @@ static size_t countLines( const std::string& text ) {
 }
 
 static void readAllLines( const std::string_view& buf,
-						  std::function<void( const std::string_view& )> onLineRead ) {
+						  std::function<void( const std::string_view& )> onLineRead,
+						  char sep = '\n' ) {
 	auto lastNL = 0;
-	auto nextNL = buf.find_first_of( '\n' );
+	auto nextNL = buf.find_first_of( sep );
 	while ( nextNL != std::string_view::npos ) {
 		onLineRead( buf.substr( lastNL, nextNL - lastNL ) );
 		lastNL = nextNL + 1;
-		nextNL = buf.find_first_of( '\n', nextNL + 1 );
+		nextNL = buf.find_first_of( sep, nextNL + 1 );
 	}
 }
 
@@ -596,7 +597,14 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				bool isStagedAndModified =
 					status.type == GitStatusType::Staged && statusStr[1] != ' ';
 
-				auto filePath = subModulePath + file;
+				if ( status.symbol == GitStatusChar::Renamed ) {
+					LuaPattern rpattern( ".*%s%-%>%s(.*)" );
+					LuaPattern::Range rranges[2];
+					if ( rpattern.matches( file.data(), 0, rranges, file.size() ) )
+						file = file.substr( rranges[1].start, rranges[1].end - rranges[1].start );
+				}
+
+				std::string filePath = subModulePath + file;
 				auto repo = repoName( filePath, false, projectDir );
 				auto repoIt = s.files.find( repo );
 				bool found = false;
@@ -644,11 +652,18 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 			} else if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
 				auto inserted = line.substr( matches[1].start, matches[1].end - matches[1].start );
 				auto deleted = line.substr( matches[2].start, matches[2].end - matches[2].start );
-				auto file = line.substr( matches[3].start, matches[3].end - matches[3].start );
+				std::string file = std::string{
+					line.substr( matches[3].start, matches[3].end - matches[3].start ) };
 				int inserts;
 				int deletes;
 				if ( String::fromString( inserts, inserted ) &&
 					 String::fromString( deletes, deleted ) && ( inserts || deletes ) ) {
+					LuaPattern pattern( "(.*)%{.*%s->%s(.*)%}" );
+					if ( pattern.matches( file.data(), 0, matches, file.size() ) ) {
+						file = file.substr( matches[1].start, matches[1].end - matches[1].start ) +
+							   file.substr( matches[2].start, matches[2].end - matches[2].start );
+					}
+
 					auto filePath = subModulePath + file;
 					auto repo = repoName( filePath, false, projectDir );
 					auto repoIt = s.files.find( repo );

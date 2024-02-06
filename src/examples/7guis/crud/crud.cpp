@@ -142,15 +142,15 @@ EE_MAIN_FUNC int main( int, char** ) {
 		updateModel( true, false );
 		filterView->setText( "" );
 	} );
+	const auto getSelectedPersonIt = [&]() -> std::vector<Person>::iterator {
+		auto p = static_cast<PeopleModel*>( listView->getModel() )
+					 ->getPerson( listView->getSelection().first() );
+		auto found = std::find_if( people.begin(), people.end(),
+								   [&p]( const Person& person ) { return p.id == person.id; } );
+		return found;
+	};
 	updateBut->onClick( [&]( auto ) {
-		auto selPerson = static_cast<PeopleModel*>( listView->getModel() )
-							 ->getPerson( listView->getSelection().first() );
-
-		auto found =
-			std::find_if( people.begin(), people.end(), [&selPerson]( const Person& person ) {
-				return selPerson.id == person.id;
-			} );
-
+		auto found = getSelectedPersonIt();
 		if ( found != people.end() ) {
 			found->name = nameView->getText().toUtf8();
 			found->surname = surnameView->getText().toUtf8();
@@ -163,14 +163,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 			UIMessageBox::New( UIMessageBox::OK, "Select a person from the list" )->showWhenReady();
 			return;
 		}
-		auto selPerson = static_cast<PeopleModel*>( listView->getModel() )
-							 ->getPerson( listView->getSelection().first() );
-
-		auto found =
-			std::find_if( people.begin(), people.end(), [&selPerson]( const Person& person ) {
-				return selPerson.id == person.id;
-			} );
-
+		auto found = getSelectedPersonIt();
 		if ( found != people.end() ) {
 			people.erase( found );
 			clearInputs();

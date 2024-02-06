@@ -734,6 +734,10 @@ void TerminalEmulator::setAllowMemoryTrimnming( bool allowMemoryTrimnming ) {
 	mAllowMemoryTrimnming = allowMemoryTrimnming;
 }
 
+Vector2i TerminalEmulator::getSize() const {
+	return { mTerm.col, mTerm.row };
+}
+
 bool TerminalEmulator::isScrolling() const {
 	return mTerm.scr != 0;
 }
