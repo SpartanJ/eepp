@@ -196,7 +196,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
 	virtual void bindNavigationClick( UIWidget* widget );
+
 
 	void updateHeaderSize();
 

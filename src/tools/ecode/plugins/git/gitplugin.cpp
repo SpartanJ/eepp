@@ -886,6 +886,25 @@ void GitPlugin::unstage( const std::vector<std::string>& files ) {
 		true, false );
 }
 
+void GitPlugin::discard( const std::vector<std::string>& files ) {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::OK_CANCEL,
+		i18n( "git_confirm_discard_changes", "Are you sure you want to discard all file changes?" )
+			.toUtf8() );
+
+	msgBox->on( Event::OnConfirm, [this, files]( auto ) {
+		runAsync(
+			[this, files]() {
+				return mGit->restore( fixFilePaths( files ), mGit->repoPath( files[0] ) );
+			},
+			true, false );
+	} );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
+	msgBox->center();
+	msgBox->showWhenReady();
+}
+
 void GitPlugin::discard( const std::string& file ) {
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
@@ -1347,6 +1366,7 @@ void GitPlugin::buildSidePanelTab() {
 	mStatusTree->setHeadersVisible( false );
 	mStatusTree->setExpandersAsIcons( true );
 	mStatusTree->setScrollViewType( UIScrollableWidget::Inclusive );
+	mStatusTree->setIndentWidth( PixelDensity::dpToPx( 4 ) );
 	mStatusTree->on( Event::OnRowCreated, [this]( const Event* event ) {
 		UITableRow* row = event->asRowCreatedEvent()->getRow();
 		row->on( Event::MouseUp, [this, row]( const Event* event ) {
@@ -1394,13 +1414,17 @@ void GitPlugin::buildSidePanelTab() {
 
 						if ( status->type == Git::GitStatusType::Staged ) {
 							addMenuItem( menu, "git-commit", "Commit", "git-commit" );
-
 							addMenuItem( menu, "git-unstage-all", "Unstage All" );
 						}
 
 						if ( status->type == Git::GitStatusType::Untracked ||
 							 status->type == Git::GitStatusType::Changed )
 							addMenuItem( menu, "git-stage-all", "Stage All" );
+
+						if ( status->type == Git::GitStatusType::Changed ) {
+							menu->addSeparator();
+							addMenuItem( menu, "git-discard-all", "Discard All" );
+						}
 
 						menu->on( Event::OnItemClicked, [this, model,
 														 repoPath]( const Event* event ) {
@@ -1417,6 +1441,9 @@ void GitPlugin::buildSidePanelTab() {
 							} else if ( id == "git-unstage-all" ) {
 								unstage( model->getFiles( repoFullName( repoPath ),
 														  (Uint32)Git::GitStatusType::Staged ) );
+							} else if ( id == "git-discard-all" ) {
+								discard( model->getFiles( repoFullName( repoPath ),
+														  (Uint32)Git::GitStatusType::Changed ) );
 							}
 						} );
 
@@ -1449,6 +1476,9 @@ void GitPlugin::buildSidePanelTab() {
 
 					if ( repo->hasStatusType( Git::GitStatusType::Staged ) ) {
 						addMenuItem( menu, "git-commit", "Commit", "git-commit" );
+					}
+
+					if ( repo->hasStatusType( Git::GitStatusType::Untracked ) ) {
 						addMenuItem( menu, "git-stage-all", "Stage All" );
 					}
 
@@ -1583,7 +1613,8 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 
 	menu->addSeparator();
 
-	addMenuItem( menu, "git-discard", "Discard" );
+	if ( file.report.type != Git::GitStatusType::Staged )
+		addMenuItem( menu, "git-discard", "Discard" );
 
 	menu->on( Event::OnItemClicked, [this, file]( const Event* event ) {
 		if ( !mGit )

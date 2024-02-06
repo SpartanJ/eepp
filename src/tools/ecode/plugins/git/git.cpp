@@ -229,6 +229,10 @@ Git::Result Git::stash( std::vector<std::string> files, const std::string& proje
 					  projectDir );
 }
 
+Git::Result Git::restore( std::vector<std::string> files, const std::string& projectDir ) {
+	return gitSimple( String::format( "restore -- %s", asList( files ) ), projectDir );
+}
+
 Git::Result Git::restore( const std::string& file, const std::string& projectDir ) {
 	return gitSimple( String::format( "restore \"%s\"", file ), projectDir );
 }

@@ -171,6 +171,8 @@ class GitPlugin : public PluginBase {
 
 	void unstage( const std::vector<std::string>& files );
 
+	void discard( const std::vector<std::string>& files );
+
 	void discard( const std::string& file );
 
 	void diff( const std::string& file, bool isStaged );

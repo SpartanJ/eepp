@@ -247,6 +247,8 @@ class Git {
 
 	Result stash( std::vector<std::string> files, const std::string& projectDir = "" );
 
+	Result restore( std::vector<std::string> files, const std::string& projectDir = "" );
+
 	Result restore( const std::string& file, const std::string& projectDir = "" );
 
 	Result reset( std::vector<std::string> files, const std::string& projectDir = "" );

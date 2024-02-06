@@ -1055,8 +1055,8 @@ UIMenuItem* UICodeEditor::menuAdd( UIPopUpMenu* menu, const std::string& transla
 								   const String& translateString, const std::string& icon,
 								   const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( getTranslatorString( "@string/uicodeeditor_" + translateKey, translateString ),
-				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( i18n( "uicodeeditor_" + translateKey, translateString ), findIcon( icon ),
+				   mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }

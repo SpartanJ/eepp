@@ -11,6 +11,14 @@ UIAbstractView::~UIAbstractView() {
 	eeSAFE_DELETE( mEditingDelegate );
 }
 
+UIAbstractView::SelectionKind UIAbstractView::getSelectionKind() const {
+	return mSelectionKind;
+}
+
+void UIAbstractView::setSelectionKind( UIAbstractView::SelectionKind selectionKind ) {
+	mSelectionKind = selectionKind;
+}
+
 UIAbstractView::SelectionType UIAbstractView::getSelectionType() const {
 	return mSelectionType;
 }
@@ -38,12 +46,12 @@ Uint32 UIAbstractView::onModelEvent( const std::function<void( const ModelEvent*
 		} );
 }
 
-KeyBindings::Shortcut UIAbstractView::getEditShortcut() const {
-	return mEditShortcut;
+std::vector<KeyBindings::Shortcut> UIAbstractView::getEditShortcuts() const {
+	return mEditShortcuts;
 }
 
-void UIAbstractView::setEditShortcut( const KeyBindings::Shortcut& editShortcut ) {
-	mEditShortcut = editShortcut;
+void UIAbstractView::setEditShortcuts( const std::vector<KeyBindings::Shortcut>& editShortcuts ) {
+	mEditShortcuts = editShortcuts;
 }
 
 Uint32 UIAbstractView::getEditTriggers() const {
@@ -149,7 +157,7 @@ ModelIndex UIAbstractView::findRowWithText( const std::string&, const bool&, con
 
 void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidget ) {
 	if ( !isEditable() || !mModel || mEditIndex == index || !mModel->isEditable( index ) ||
-		 !onCreateEditingDelegate )
+		 !onCreateEditingDelegate || !editedWidget )
 		return;
 
 	if ( mEditWidget ) {

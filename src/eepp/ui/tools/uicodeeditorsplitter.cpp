@@ -955,7 +955,7 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget,
 			mTryCloseMsgBox = UIMessageBox::New(
 				UIMessageBox::OK_CANCEL,
 				String::format( widget->getUISceneNode()
-									->i18n( "@string/confirm_close_tab",
+									->i18n( "confirm_close_tab",
 											"Do you really want to close this tab?\nAll changes in "
 											"\"%s\" will be lost." )
 									.toUtf8(),
@@ -972,8 +972,8 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget,
 												   if ( onMsgBoxCloseCb )
 													   onMsgBoxCloseCb();
 											   } );
-			mTryCloseMsgBox->setTitle( widget->getUISceneNode()->getTranslatorString(
-				"@string/ask_close_tab", "Close Tab?" ) );
+			mTryCloseMsgBox->setTitle(
+				widget->getUISceneNode()->i18n( "ask_close_tab", "Close Tab?" ) );
 			mTryCloseMsgBox->center();
 			mTryCloseMsgBox->show();
 			return false;

@@ -1196,8 +1196,8 @@ UIMenuItem* UIConsole::menuAdd( UIPopUpMenu* menu, const std::string& translateK
 								const String& translateString, const std::string& icon,
 								const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( getTranslatorString( "@string/uiconsole_" + translateKey, translateString ),
-				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( i18n( "uiconsole_" + translateKey, translateString ), findIcon( icon ),
+				   mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }

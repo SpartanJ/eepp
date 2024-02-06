@@ -1,6 +1,7 @@
 #include <deque>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -44,11 +45,12 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	if ( !getModel() )
 		return;
-	auto& model = *getModel();
 	Lock l( const_cast<Model*>( getModel() )->resourceMutex() );
+	auto& model = *getModel();
 	int indentLevel = 0;
 	Float yOffset = getHeaderHeight();
 	int rowIndex = -1;
+	Float rowHeight = getRowHeight();
 	std::function<IterationDecision( const ModelIndex& )> traverseIndex =
 		[&]( const ModelIndex& index ) {
 			if ( index.isValid() ) {
@@ -57,7 +59,7 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 				IterationDecision decision = callback( rowIndex, index, indentLevel, yOffset );
 				if ( decision == IterationDecision::Break || decision == IterationDecision::Stop )
 					return decision;
-				yOffset += getRowHeight();
+				yOffset += rowHeight;
 				if ( !metadata.open ) {
 					return IterationDecision::Continue;
 				}
@@ -344,12 +346,13 @@ Sizef UITreeView::getContentSize() const {
 
 void UITreeView::drawChilds() {
 	int realIndex = 0;
+	Float rowHeight = getRowHeight();
 
-	traverseTree( [this, &realIndex]( const int&, const ModelIndex& index,
-									  const size_t& indentLevel, const Float& yOffset ) {
+	traverseTree( [this, &realIndex, rowHeight]( const int&, const ModelIndex& index,
+												 const size_t& indentLevel, const Float& yOffset ) {
 		if ( yOffset - mScrollOffset.y > mSize.getHeight() )
 			return IterationDecision::Stop;
-		if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
+		if ( yOffset - mScrollOffset.y + rowHeight < 0 )
 			return IterationDecision::Continue;
 		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
 			if ( columnData( colIndex ).visible ) {
@@ -396,18 +399,19 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 			if ( mHeader && ( pOver = mHeader->overFind( point ) ) )
 				return pOver;
 			int realIndex = 0;
-			traverseTree(
-				[&, point]( int, const ModelIndex& index, const size_t&, const Float& yOffset ) {
-					if ( yOffset - mScrollOffset.y > mSize.getHeight() )
-						return IterationDecision::Stop;
-					if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
-						return IterationDecision::Continue;
-					pOver = updateRow( realIndex, index, yOffset )->overFind( point );
-					realIndex++;
-					if ( pOver )
-						return IterationDecision::Stop;
+			Float rowHeight = getRowHeight();
+			traverseTree( [&, point, rowHeight]( int, const ModelIndex& index, const size_t&,
+												 const Float& yOffset ) {
+				if ( yOffset - mScrollOffset.y > mSize.getHeight() )
+					return IterationDecision::Stop;
+				if ( yOffset - mScrollOffset.y + rowHeight < 0 )
 					return IterationDecision::Continue;
-				} );
+				pOver = updateRow( realIndex, index, yOffset )->overFind( point );
+				realIndex++;
+				if ( pOver )
+					return IterationDecision::Stop;
+				return IterationDecision::Continue;
+			} );
 			if ( !pOver )
 				pOver = this;
 		}
@@ -709,6 +713,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 		default:
 			break;
 	}
+
 	return UIAbstractTableView::onKeyDown( event );
 }
 

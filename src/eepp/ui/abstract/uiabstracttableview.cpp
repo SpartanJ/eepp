@@ -472,10 +472,18 @@ UITableRow* UIAbstractTableView::createRow() {
 			 !isRowSelection() )
 			return;
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
-		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		if ( mSelectionKind == SelectionKind::Single &&
+			 getUISceneNode()->getWindow()->getInput()->getSanitizedModState() &
+				 KeyMod::getDefaultModifier() ) {
 			getSelection().remove( index );
 		} else {
-			getSelection().set( index );
+			if ( mSelectionKind == SelectionKind::Multiple &&
+				 getUISceneNode()->getWindow()->getInput()->getSanitizedModState() &
+					 KeyMod::getDefaultModifier() ) {
+				getSelection().toggle( index );
+			} else {
+				getSelection().set( index );
+			}
 		}
 	} );
 	onRowCreated( rowWidget );
@@ -772,6 +780,20 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 		}
 	}
 	return 1;
+}
+
+Uint32 UIAbstractTableView::onKeyDown( const KeyEvent& event ) {
+	if ( isEditable() && getSelection().first().isValid() && getModel() &&
+		 getModel()->isEditable( getSelection().first() ) &&
+		 ( mEditTriggers & EditTrigger::EditKeyPressed ) && !mEditShortcuts.empty() ) {
+		for ( const auto& shortcut : mEditShortcuts ) {
+			if ( shortcut == KeyBindings::Shortcut{ event.getKeyCode(), event.getMod() } ) {
+				beginEditing( getSelection().first(), getCellFromIndex( getSelection().first() ) );
+				return 1;
+			}
+		}
+	}
+	return UIAbstractView::onKeyDown( event );
 }
 
 bool UIAbstractTableView::applyProperty( const StyleSheetProperty& attribute ) {

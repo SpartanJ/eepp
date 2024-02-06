@@ -707,8 +707,8 @@ void UIBuildSettings::bindTable( const std::string& name, const std::string& key
 		};
 		return delegate;
 	};
-	model->setColumnName( 0, getTranslatorString( key + "_name", "Name" ) );
-	model->setColumnName( 1, getTranslatorString( key + "_value", "Value" ) );
+	model->setColumnName( 0, i18n( key + "_name", "Name" ) );
+	model->setColumnName( 1, i18n( key + "_value", "Value" ) );
 	model->setIsEditable( true );
 	table->setMainColumn( 1 );
 	table->setAutoColumnsWidth( true );

@@ -75,22 +75,22 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		case UIMessageBox::INPUT:
 		case UIMessageBox::TEXT_EDIT:
 		case UIMessageBox::OK_CANCEL: {
-			mButtonOK->setText( getTranslatorString( "@string/msg_box_ok", "Ok" ) );
-			mButtonCancel->setText( getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
+			mButtonOK->setText( i18n( "msg_box_ok", "Ok" ) );
+			mButtonCancel->setText( i18n( "msg_box_cancel", "Cancel" ) );
 			break;
 		}
 		case UIMessageBox::YES_NO: {
-			mButtonOK->setText( getTranslatorString( "@string/msg_box_yes", "Yes" ) );
-			mButtonCancel->setText( getTranslatorString( "@string/msg_box_no", "No" ) );
+			mButtonOK->setText( i18n( "msg_box_yes", "Yes" ) );
+			mButtonCancel->setText( i18n( "msg_box_no", "No" ) );
 			break;
 		}
 		case UIMessageBox::RETRY_CANCEL: {
-			mButtonOK->setText( getTranslatorString( "@string/msg_box_retry", "Retry" ) );
-			mButtonCancel->setText( getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
+			mButtonOK->setText( i18n( "msg_box_retry", "Retry" ) );
+			mButtonCancel->setText( i18n( "msg_box_cancel", "Cancel" ) );
 			break;
 		}
 		case UIMessageBox::OK: {
-			mButtonOK->setText( getTranslatorString( "@string/msg_box_ok", "Ok" ) );
+			mButtonOK->setText( i18n( "msg_box_ok", "Ok" ) );
 			mButtonCancel->setVisible( false );
 			mButtonCancel->setEnabled( false );
 			break;
@@ -115,7 +115,7 @@ void UIMessageBox::setTheme( UITheme* theme ) {
 	mButtonOK->setTheme( theme );
 	mButtonCancel->setTheme( theme );
 
-	if ( getTranslatorString( "@string/msg_box_retry", "Retry" ) != mButtonOK->getText() ) {
+	if ( i18n( "msg_box_retry", "Retry" ) != mButtonOK->getText() ) {
 		Drawable* okIcon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
 		Drawable* cancelIcon =
 			getUISceneNode()->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) );

@@ -557,8 +557,8 @@ UIMenuItem* UITerminal::menuAdd( UIPopUpMenu* menu, const std::string& translate
 								 const String& translateString, const std::string& icon,
 								 const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( getTranslatorString( "@string/uiterminal_" + translateKey, translateString ),
-				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( i18n( "uiterminal_" + translateKey, translateString ), findIcon( icon ),
+				   mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }
