@@ -328,7 +328,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 	filter "action:vs*"
-		buildoptions { "/utf-8" }
+		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
@@ -719,7 +719,7 @@ function build_eepp( build_name )
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
-		buildoptions { "/bigobj" }
+		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
 
 	filter { "action:export-compile-commands", "system:macosx" }
 		buildoptions { "-std=c++17" }
