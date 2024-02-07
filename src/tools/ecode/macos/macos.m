@@ -1,4 +1,6 @@
+#import <AppKit/AppKit.h>
 #include <Cocoa/Cocoa.h>
+
 #include "macos.hpp"
 
 /* setAppleMenu disappeared from the headers in 10.4 */
@@ -69,4 +71,21 @@ void macOS_enableScrollMomentum() {
 void macOS_removeTitleBarSeparator( void* window ) {
 	NSWindow* nsWindow = window;
 	[nsWindow setTitlebarSeparatorStyle:NSTitlebarSeparatorStyleNone];
+}
+
+void macOS_changeTitleBarColor( void* window, double red, double green, double blue ) {
+	NSWindow* nsWindow = window;
+	nsWindow.titlebarAppearsTransparent = YES;
+	nsWindow.backgroundColor = [NSColor colorWithRed:red green:green blue:blue alpha:1.];
+}
+
+int macOS_isDarkModeEnabled() {
+	if ( @available( macOS 10.14, * ) ) {
+		NSAppearance* appearance =
+			[NSAppearance performSelector:@selector( currentDrawingAppearance )];
+		if ( [appearance.name isEqualToString:NSAppearanceNameDarkAqua] ) {
+			return 1;
+		}
+	}
+	return 0;
 }

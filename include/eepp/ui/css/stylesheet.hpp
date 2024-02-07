@@ -28,7 +28,11 @@ class EE_API StyleSheet {
 
 	const std::vector<std::shared_ptr<StyleSheetStyle>>& getStyles() const;
 
-	std::shared_ptr<StyleSheetStyle> getStyleFromSelector( const std::string& selector ) const;
+	std::vector<std::shared_ptr<StyleSheetStyle>>
+	getStylesFromSelector( const std::string& selector ) const;
+
+	std::shared_ptr<StyleSheetStyle> getStyleFromSelector( const std::string& selector,
+														   bool searchBySpecificity = false ) const;
 
 	bool updateMediaLists( const MediaFeatures& features );
 

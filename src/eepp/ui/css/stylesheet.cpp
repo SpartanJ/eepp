@@ -278,11 +278,41 @@ const std::vector<std::shared_ptr<StyleSheetStyle>>& StyleSheet::getStyles() con
 	return mNodes;
 }
 
-std::shared_ptr<StyleSheetStyle>
-StyleSheet::getStyleFromSelector( const std::string& selector ) const {
+std::vector<std::shared_ptr<StyleSheetStyle>>
+StyleSheet::getStylesFromSelector( const std::string& selector ) const {
+	std::vector<std::shared_ptr<StyleSheetStyle>> found;
 	for ( const auto& node : mNodes )
-		if ( node->getSelector().getName() == selector )
-			return node;
+		if ( node->isMediaValid() && node->getSelector().getName() == selector )
+			found.push_back( node );
+	return found;
+}
+
+std::shared_ptr<StyleSheetStyle>
+StyleSheet::getStyleFromSelector( const std::string& selector, bool searchBySpecificity ) const {
+	if ( !searchBySpecificity ) {
+		for ( const auto& node : mNodes )
+			if ( node->getSelector().getName() == selector )
+				return node;
+	} else {
+		std::vector<std::shared_ptr<StyleSheetStyle>> found;
+		for ( const auto& node : mNodes )
+			if ( node->isMediaValid() && node->getSelector().getName() == selector )
+				found.push_back( node );
+		if ( !found.empty() ) {
+			std::sort( found.begin(), found.end(),
+					   []( const std::shared_ptr<StyleSheetStyle>& lhs,
+						   const std::shared_ptr<StyleSheetStyle>& rhs ) {
+						   if ( ( lhs->getMediaQueryList() == nullptr ) !=
+								( rhs->getMediaQueryList() == nullptr ) ) {
+							   return ( lhs->getMediaQueryList() == nullptr ) >
+									  ( rhs->getMediaQueryList() == nullptr );
+						   }
+						   return lhs->getSelector().getSpecificity() <
+								  rhs->getSelector().getSpecificity();
+					   } );
+			return found.back();
+		}
+	}
 	return {};
 }
 

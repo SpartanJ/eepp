@@ -1865,7 +1865,7 @@ void App::setTheme( const std::string& path ) {
 						theme->getStyleSheet().addStyle( tstyle );
 					} else {
 						// Add root variables that arent defined in the custom theme
-						auto root = theme->getStyleSheet().getStyleFromSelector( ":root" );
+						auto root = theme->getStyleSheet().getStyleFromSelector( ":root", true );
 						if ( root ) {
 							for ( const auto& var : tstyle->getVariables() ) {
 								if ( !root->hasVariable( var.second.getName() ) )
@@ -3587,6 +3587,22 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			if ( parser.loadFromFile( css ) )
 				mUISceneNode->combineStyleSheet( parser.getStyleSheet(), false );
 		}
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		if ( ( macOS_isDarkModeEnabled() &&
+			   mConfig.ui.colorScheme == ColorSchemePreference::Dark ) ||
+			 ( !macOS_isDarkModeEnabled() &&
+			   mConfig.ui.colorScheme == ColorSchemePreference::Light ) ) {
+			auto backVar = mUISceneNode->getStyleSheet()
+							   .getStyleFromSelector( ":root", true )
+							   ->getVariableByName( "--back" );
+			if ( !backVar.isEmpty() ) {
+				auto backColor( Color::fromString( backVar.getValue() ) );
+				macOS_changeTitleBarColor( mWindow->getWindowHandler(), backColor.r / 255.f,
+										   backColor.g / 255.f, backColor.b / 255.f );
+			}
+		}
+#endif
 
 		std::string panelUI( String::format( R"css(
 		#panel treeview > treeview::row > treeview::cell > treeview::cell::text,

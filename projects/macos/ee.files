@@ -362,6 +362,7 @@
 ../../include/eepp/ui/tools/uidocfindreplace.hpp
 ../../include/eepp/ui/tools/uiwidgetinspector.hpp
 ../../include/eepp/ui/uiabstractview.hpp
+../../include/eepp/ui/uiapplication.hpp
 ../../include/eepp/ui/uibackgrounddrawable.hpp
 ../../include/eepp/ui/uiborderdrawable.hpp
 ../../include/eepp/ui/uicheckbox.hpp
@@ -965,6 +966,7 @@
 ../../src/eepp/ui/tools/uidocfindreplace.cpp
 ../../src/eepp/ui/tools/uiwidgetinspector.cpp
 ../../src/eepp/ui/uiabstractview.cpp
+../../src/eepp/ui/uiapplication.cpp
 ../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp
 ../../src/eepp/ui/uicheckbox.cpp

@@ -35,7 +35,7 @@ TextInput.small_input,
 	color: var(--floating-icon);
 	font-family: icon;
 	font-size: 16dp;
-	margin-top: 6dp;
+	margin-top: 4dp;
 	margin-right: 22dp;
 	transition: all 0.15s;
 }
