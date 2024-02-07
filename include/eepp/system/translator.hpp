@@ -33,6 +33,8 @@ class EE_API Translator {
 
 	String getString( const std::string& key, const String& defaultValue = String() );
 
+	void setString( const std::string& lang, const std::string& key, const String& val );
+
 	template <typename... Args> String getStringf( const char* key, Args&&... args ) {
 		return String::format(
 			std::string_view{ getString( key ).toUtf8() },

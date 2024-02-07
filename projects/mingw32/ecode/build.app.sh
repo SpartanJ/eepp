@@ -40,6 +40,8 @@ cp ../../../bin/eepp.dll ecode/
 cp ../../../src/thirdparty/"$SDLVER"/$ARCHI-w64-mingw32/bin/SDL2.dll ecode/
 mkdir -p ecode/assets/colorschemes
 mkdir -p ecode/assets/fonts
+mkdir -p ecode/assets/i18n
+cp -r ../../../bin/assets/i18n ecode/assets/
 cp -r ../../../bin/assets/colorschemes ecode/assets/
 cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode/assets/fonts/
 cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf ecode/assets/fonts/

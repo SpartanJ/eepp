@@ -1,0 +1,397 @@
+<?xml version="1.0"?>
+<resources language="en">
+	<string name="about_ecode">About ecode...</string>
+	<string name="any_https_or_http_url">Any https or http URL</string>
+	<string name="any_name">Any name...</string>
+	<string name="ask_close_tab">Close Tab?</string>
+	<string name="author">author</string>
+	<string name="auto_close_brackets_and_tags">Auto-Close Brackets &amp; Tags</string>
+	<string name="auto_close_xml_tags">Auto Close XML Tags</string>
+	<string name="auto_detect_indent_type_and_width">Auto Detect Indent Type &amp; Width</string>
+	<string name="back_quotes">Back Quotes ``</string>
+	<string name="brackets">Brackets ()</string>
+	<string name="branches">Branches</string>
+	<string name="build">Build</string>
+	<string name="build_cloned_name">New Cloned Build Name:</string>
+	<string name="build_elapsed_time">Elapsed Time: %s.
+</string>
+	<string name="build_failed">Build run with errors
+</string>
+	<string name="build_name_not_found">Build name not found!</string>
+	<string name="build_os_not_supported">Operating System not supported for this build!</string>
+	<string name="build_seetings">Build Settings</string>
+	<string name="build_settings">Build Settings</string>
+	<string name="build_step_num">Step %u: %s</string>
+	<string name="build_successful">Build run successfully
+</string>
+	<string name="build_type_name">Build Type Name:</string>
+	<string name="build_type_name_del">Delete Build Type: %s?</string>
+	<string name="build_type_required">Build type must be set!</string>
+	<string name="cancel_build">Cancel Build</string>
+	<string name="cancel_clean">Cancel Clean</string>
+	<string name="check_for_new_updates_at_startup">Always check for new updates at startup.</string>
+	<string name="check_for_updates">Check for Updates...</string>
+	<string name="check_languages_health">Check Languages Health</string>
+	<string name="clean">Clean</string>
+	<string name="clean_failed">Clean run with errors
+</string>
+	<string name="clean_successful">Clean run successfully
+</string>
+	<string name="clear_menu">Clear Menu</string>
+	<string name="cloned_name_must_be_different">Cloned name must be different from any existing build name.</string>
+	<string name="close">Close</string>
+	<string name="close_folder">Close Folder</string>
+	<string name="close_folder_question">Close Folder?</string>
+	<string name="close_title">Close %s?</string>
+	<string name="col_abbr">col</string>
+	<string name="collapse_all">Collapse All</string>
+	<string name="color_scheme_set">Color scheme: %s</string>
+	<string name="command_palette">Command Palette...</string>
+	<string name="commit">commit</string>
+	<string name="configure_ignore_files">Configure Ignore Files...</string>
+	<string name="configure_terminal_scrollback">Configure Terminal Scrollback</string>
+	<string name="configure_terminal_shell">Configure Terminal Shell</string>
+	<string name="confirm_build_delete">Are you sure you want to delete the build configuration?</string>
+	<string name="confirm_close_folder">Do you really want to close the folder?
+Some files haven't been saved.</string>
+	<string name="confirm_close_tab">Do you really want to close this tab?
+All changes in "%s" will be lost.</string>
+	<string name="confirm_ecode_exit">Do you really want to close the code editor?
+All changes will be lost.</string>
+	<string name="confirm_loading_font">Font loading confirmation</string>
+	<string name="confirm_remove_file">Do you really want to remove "%s"?</string>
+	<string name="copy">Copy</string>
+	<string name="copy_containing_folder_path">Copy Containing Folder Path...</string>
+	<string name="copy_error_message">Copy Error Message</string>
+	<string name="copy_file_path">Copy File Path</string>
+	<string name="coudlnt_write_the_file">Couldn't write the file.</string>
+	<string name="could_not_write_file">Could not write file to disk.
+Please check if the file is read-only or if ecode does not have permissions to write to that file.
+File path is: </string>
+	<string name="couldnt_create_directory">Couldn't create directory.</string>
+	<string name="couldnt_create_ecode_dir">Couldn't create .ecode directory in current folder.</string>
+	<string name="couldnt_create_file">Couldn't create file.</string>
+	<string name="couldnt_create_folder_of_file">Couldn't create folder of file.</string>
+	<string name="couldnt_remove">Couldn't remove</string>
+	<string name="couldnt_write_file">Couldn't write file on disk.</string>
+	<string name="create_new_file">Create new file</string>
+	<string name="create_new_folder">Create new folder</string>
+	<string name="curly_brackets">Curly Brackets {}</string>
+	<string name="current_document">Current Document</string>
+	<string name="current_terminal">Current Terminal</string>
+	<string name="cursor_blinking_time">Cursor Blinking Time</string>
+	<string name="custom_output_parser">Custom Output Parser</string>
+	<string name="cut">Cut</string>
+	<string name="dark">Dark</string>
+	<string name="date">date</string>
+	<string name="default_theme">Default Theme</string>
+	<string name="delete">Delete</string>
+	<string name="directory">directory</string>
+	<string name="document">Document</string>
+	<string name="document_symbol_find">Search Document Symbol...</string>
+	<string name="documents_settings">Documents Settings</string>
+	<string name="double_quotes">Double Quotes ""</string>
+	<string name="duplicate_file">Duplicate file</string>
+	<string name="ecode_no_updates_available">There are currently no updates available.</string>
+	<string name="ecode_source">ecode source code...</string>
+	<string name="ecode_unreleased_version">You are running an unreleased version of ecode!
+Current version: </string>
+	<string name="ecode_updates_available"> is available!
+Do you want to download it now?</string>
+	<string name="edit">Edit</string>
+	<string name="editor_font_size">Editor Font Size</string>
+	<string name="empty_file_name">You must set a name to the file.</string>
+	<string name="enable-vertical-scrollbar">Enable Vertical ScrollBar</string>
+	<string name="enable_color_picker">Enable Color Picker</string>
+	<string name="enable_color_picker_tooltip">Enables the color picker tool when a double click selection
+is done over a word representing a color.</string>
+	<string name="enable_color_preview">Enable Color Preview</string>
+	<string name="enable_color_preview_tooltip">Enables a quick preview of a color when the mouse
+is hover a word that represents a color.</string>
+	<string name="enable_horizontal_scrollbar">Enable Horizontal ScrollBar</string>
+	<string name="enter_duplicate_file_name">Enter duplicate file name:</string>
+	<string name="enter_new_file_name">Enter new file name:</string>
+	<string name="enter_new_folder_name">Enter new folder name:</string>
+	<string name="error">Error</string>
+	<string name="error_checking_version">Failed checking for updates.</string>
+	<string name="error_copying_file">Error copying file.</string>
+	<string name="error_renaming_file">Error renaming file.</string>
+	<string name="exclusive_mode">Exclusive Mode</string>
+	<string name="execute_dir_in_terminal">Open directory in terminal</string>
+	<string name="execute_in_terminal">Execute in terminal</string>
+	<string name="expand_all">Expand All</string>
+	<string name="fallback_font">Fallback Font...</string>
+	<string name="feature_not_supported_in_emscripten">This feature is only supported in the desktop version of ecode.</string>
+	<string name="feature_not_supported_in_os">This feature is not supported in this Operating System</string>
+	<string name="file">file</string>
+	<string name="file_already_exists">File already exists!</string>
+	<string name="file_type">File Type</string>
+	<string name="find_replace">Find/Replace</string>
+	<string name="folder_project_settings">Folder/Project Settings</string>
+	<string name="folder_settings">Folder/Project Settings</string>
+	<string name="force_new_line_at_end_of_file">Force New Line at End of File</string>
+	<string name="formatter-format-document">Format Document</string>
+	<string name="frame_rate_limit">Frame Rate Limit</string>
+	<string name="frame_rate_limit_applied">Frame Rate Limit Applied</string>
+	<string name="fullscreen_mode">Full Screen Mode</string>
+	<string name="git">Git</string>
+	<string name="git_add_branch">Add Branch</string>
+	<string name="git_ammend">Ammend last commit</string>
+	<string name="git_apply_stash_title">Apply Stash</string>
+	<string name="git_bypass_hook">Bypass commit hook</string>
+	<string name="git_changed">Changed</string>
+	<string name="git_checkout">Check Out</string>
+	<string name="git_commit">Commit</string>
+	<string name="git_commit_message">Commit Message:</string>
+	<string name="git_confirm">Confirm</string>
+	<string name="git_confirm_apply_stash">Apply a previously saved stash?</string>
+	<string name="git_confirm_branch_delete">Are you sure you want to delete the branch "%s"?</string>
+	<string name="git_confirm_branch_merge">Are you sure you want to merge from branch "%s"?</string>
+	<string name="git_confirm_discard_changes">Are you sure you want to discard the changes in file: "%s"?</string>
+	<string name="git_confirm_drop_stash">Do you want to drop the selected stash?</string>
+	<string name="git_confirm_push_changes">Are you sure you want to push the local changes to the remote server?</string>
+	<string name="git_create_branch_ask">Create new branch at current branch (HEAD).
+Enter the name for the branch:</string>
+	<string name="git_create_local_branch">Create local branch?</string>
+	<string name="git_drop_stash_title">Drop Stash</string>
+	<string name="git_ignored">Ignored</string>
+	<string name="git_local_branches">Local Branches</string>
+	<string name="git_not_found">Git binary not found.
+Please check that git is accesible via PATH</string>
+	<string name="git_nothing_to_commit">Nothing to Commit</string>
+	<string name="git_push_commit">Push commit</string>
+	<string name="git_remote_branches">Remote Branches</string>
+	<string name="git_rename_branch">Rename Branch</string>
+	<string name="git_rename_branch_ask">Enter the new name for the branch: '%s'</string>
+	<string name="git_restore_index">Restore Index</string>
+	<string name="git_staged">Staged</string>
+	<string name="git_stash_keep_index">Keep Index</string>
+	<string name="git_stash_keep_working_tree">Keep Working Tree</string>
+	<string name="git_stash_push">Stash Local Changes
+Name your stash (optional):</string>
+	<string name="git_stash_save">Save Stash</string>
+	<string name="git_stashes">Stashes</string>
+	<string name="git_tags">Tags</string>
+	<string name="git_unmerged">Unmerged</string>
+	<string name="git_untracked">Untracked</string>
+	<string name="global_settings">Global Settings</string>
+	<string name="glversion_changed">Renderer version changed.
+Restart ecode to see the changes.</string>
+	<string name="go_to_line">Go to line...</string>
+	<string name="go_to_line_in_current_document">Go To Line in Current Document</string>
+	<string name="group">Group</string>
+	<string name="h_as_cpp">Treat .h files as C++ code.</string>
+	<string name="help">Help</string>
+	<string name="hide_tabbar_on_single_tab">Hide tabbar on single tab</string>
+	<string name="hide_tabbar_on_single_tab_tooltip">Hides the tabbar if there's only one element in the tab widget.</string>
+	<string name="highlight_current_line">Highlight Current Line</string>
+	<string name="highlight_matching_brackets">Highlight Matching Bracket</string>
+	<string name="highlight_selection_match">Highlight Selection Match</string>
+	<string name="indent_width">Indent Width</string>
+	<string name="indentation_type">Indentation Type</string>
+	<string name="inode">Inode</string>
+	<string name="insert_search_query">Insert search query</string>
+	<string name="inspect_widgets">Inspect Widgets</string>
+	<string name="key_bindings">Key Bindings</string>
+	<string name="light">Light</string>
+	<string name="line">Line</string>
+	<string name="line_abbr">line</string>
+	<string name="line_breaking_column">Line Breaking Column</string>
+	<string name="line_endings">Line Endings</string>
+	<string name="line_spacing">Line Spacing</string>
+	<string name="load_cur_dir_as_folder">Load current document directory as folder</string>
+	<string name="locate">Locate...</string>
+	<string name="message">Message</string>
+	<string name="mode">Mode</string>
+	<string name="modified">Modified</string>
+	<string name="monospace_font">Monospace Font...</string>
+	<string name="move_panel_left">Move panel to left...</string>
+	<string name="move_panel_right">Move panel to right...</string>
+	<string name="msg_box_cancel">Cancel</string>
+	<string name="msg_box_no">No</string>
+	<string name="msg_box_ok">Ok</string>
+	<string name="msg_box_retry">Retry</string>
+	<string name="msg_box_yes">Yes</string>
+	<string name="multisamples_changed">Multisample Anti-Aliasing Level applied.
+Restart ecode to see the changes.</string>
+	<string name="name">Name</string>
+	<string name="new_file">New File...</string>
+	<string name="new_file_in_directory">New File in directory...</string>
+	<string name="new_file_in_file_folder">New File in File Folder...</string>
+	<string name="new_folder">New Folder...</string>
+	<string name="new_name">New Name</string>
+	<string name="new_terminal">New Terminal</string>
+	<string name="new_terminal_behavior">New Terminal Behavior</string>
+	<string name="new_terminal_name">New terminal name:</string>
+	<string name="new_ui_scale_factor">New UI scale factor assigned.
+Please restart the application.</string>
+	<string name="new_value">New Value</string>
+	<string name="new_window">New Window</string>
+	<string name="no_build_has_been_run">No build has been run</string>
+	<string name="no_code_action">No Code Action</string>
+	<string name="no_open_document">No open document</string>
+	<string name="no_running_lsp_server">No running LSP server</string>
+	<string name="no_threads">Threaded ecode required to compile builds.</string>
+	<string name="none">None</string>
+	<string name="not_found_in_path">Not found in $PATH</string>
+	<string name="open">Open</string>
+	<string name="open_containin_folder">Open Containing Folder...</string>
+	<string name="open_containing_folder">Open Containing Folder...</string>
+	<string name="open_documents">Open Documents</string>
+	<string name="open_file">Open File</string>
+	<string name="open_file_from_web">Open File from Web...</string>
+	<string name="open_first_a_folder">You must first open a folder.</string>
+	<string name="open_folder">Open Folder...</string>
+	<string name="open_in_horizontal_split">Open In New Horizontal Split</string>
+	<string name="open_in_new_window">Open in New Window...</string>
+	<string name="open_in_same_tabbar">Open In Current Tab Bar</string>
+	<string name="open_in_vertical_split">Open In New Vertical Split</string>
+	<string name="owner">Owner</string>
+	<string name="paste">Paste</string>
+	<string name="path">Path</string>
+	<string name="pattern">Pattern</string>
+	<string name="please_enter_file_url">Please enter the file URL...</string>
+	<string name="plugin_manager">Plugin Manager</string>
+	<string name="pluginsmodel_description">Description</string>
+	<string name="pluginsmodel_enabled">Enabled</string>
+	<string name="pluginsmodel_id">Id</string>
+	<string name="pluginsmodel_title">Title</string>
+	<string name="pluginsmodel_version">Version</string>
+	<string name="portable_mode_failed">Portable Mode failed.
+Please check that the application directory has write permissions.</string>
+	<string name="process_exited_normally">The process "%s" exited normally.
+</string>
+	<string name="process_exited_with_errors">The process "%s" exited with errors.
+</string>
+	<string name="project_find">Project Find...</string>
+	<string name="quit">Quit</string>
+	<string name="read_only">Read Only</string>
+	<string name="recent_files">Recent Files</string>
+	<string name="recent_folders">Recent Folders</string>
+	<string name="redo">Redo</string>
+	<string name="refresh_view">Refresh View...</string>
+	<string name="remove">Remove...</string>
+	<string name="remove_file_question">Remove file?</string>
+	<string name="rename">Rename</string>
+	<string name="rename_file">Rename file</string>
+	<string name="rename_session">Rename Session</string>
+	<string name="reopen_closed_document">Reopen Closed Document</string>
+	<string name="restore_last_session_at_startup">Restart last session at startup</string>
+	<string name="running_steps_for_project">Running steps for project %s...
+</string>
+	<string name="save">Save</string>
+	<string name="save_all">Save All</string>
+	<string name="save_as">Save as...</string>
+	<string name="save_file_as">Save File As</string>
+	<string name="search_for_document_symbols">Search for Symbols in Current Document</string>
+	<string name="search_for_workspace_symbols">Search for Workspace Symbols</string>
+	<string name="search_in_command_palette">Search in Command Palette</string>
+	<string name="select_all">Select All</string>
+	<string name="select_font_file">Select Font File</string>
+	<string name="serif_font">Serif Font...</string>
+	<string name="set_cursor_blinking_time">Set Cursor Blinking Time:
+Set 0 to disable it.
+</string>
+	<string name="set_editor_font_size">Set the editor font size:</string>
+	<string name="set_frame_rate_limit">Set Frame Rate Limit:
+Set 0 to disable it.
+</string>
+	<string name="set_line_breaking_column">Set Line Breaking Column:
+Set 0 to disable it.
+</string>
+	<string name="set_line_spacing">Set Line Spacing:
+Set 0 to disable it.
+</string>
+	<string name="set_side_panel_font_size">Set side panel font size:</string>
+	<string name="set_terminal_font_size">Set the terminal font size:</string>
+	<string name="set_ui_font_size">Set the UI font size:</string>
+	<string name="set_ui_scale_factor">Set the UI scale factor (pixel density):
+Minimum value is 1, and maximum 6. Requires restart.</string>
+	<string name="shell">Shell</string>
+	<string name="show_console">Show Console</string>
+	<string name="show_doc_info">Show Document Info</string>
+	<string name="show_hidden_files">Show hidden files</string>
+	<string name="show_image_preview">Show Image Preview</string>
+	<string name="show_indentation_guides">Show Indentation Guides</string>
+	<string name="show_line_endings">Show Line Endings</string>
+	<string name="show_line_numbers">Show Line Numbers</string>
+	<string name="show_lines_relative_position">Show Lines Relative Position</string>
+	<string name="show_minimap">Show Minimap</string>
+	<string name="show_open_documents">Show Open Documents...</string>
+	<string name="show_side_panel">Show Side Panel</string>
+	<string name="show_status_bar">Show Status Bar</string>
+	<string name="show_white_spaces">Show White Spaces</string>
+	<string name="single_quotes">Single Quotes ''</string>
+	<string name="size">Size</string>
+	<string name="source_control">Source Control</string>
+	<string name="spaces">Spaces</string>
+	<string name="split_bottom">Split Bottom</string>
+	<string name="split_left">Split Left</string>
+	<string name="split_right">Split Right</string>
+	<string name="split_top">Split Top</string>
+	<string name="square_brakcets">Square Brackets []</string>
+	<string name="starting_process">Starting %s %s
+</string>
+	<string name="status">Status</string>
+	<string name="switch_build">Switch Build</string>
+	<string name="switch_build_type">Switch Build Type</string>
+	<string name="symlink_target">Symlink target</string>
+	<string name="sync_project_tree">Synchronize project tree with editor</string>
+	<string name="sync_project_tree_tooltip">Syncronizes the current focused document as the selected
+file in the directory tree.</string>
+	<string name="syntax_color_scheme">Syntax Color Scheme</string>
+	<string name="tab_width">Tab Width</string>
+	<string name="tabs">Tabs</string>
+	<string name="terminal">Terminal</string>
+	<string name="terminal_color_scheme">Terminal Color Scheme</string>
+	<string name="terminal_color_scheme_set">Terminal color scheme: %s</string>
+	<string name="terminal_font">Terminal Font...</string>
+	<string name="terminal_font_size">Terminal Font Size</string>
+	<string name="terminal_split_bottom">Split Terminal Bottom</string>
+	<string name="terminal_split_left">Split Terminal Left</string>
+	<string name="terminal_split_right">Split Terminal Right</string>
+	<string name="terminal_split_top">Split Terminal Top</string>
+	<string name="tools">Tools</string>
+	<string name="treeview_single_click_nav">Single Click Navigation in Tree View</string>
+	<string name="trim_trailing_whitespaces">Trim Trailing Whitespaces</string>
+	<string name="type">Type</string>
+	<string name="ui_font_size">UI Font Size</string>
+	<string name="ui_multisamples_level">Multisample Anti-Aliasing Level</string>
+	<string name="ui_panel_font_size">UI Panel Font Size</string>
+	<string name="ui_prefes_color_scheme">UI Prefers Color Scheme</string>
+	<string name="ui_renderer">Renderer</string>
+	<string name="ui_renderer_version">Renderer Version</string>
+	<string name="ui_scale_factor">UI Scale Factor (Pixel Density)</string>
+	<string name="ui_thene">UI Theme</string>
+	<string name="uifiledialog_cancel">Cancel</string>
+	<string name="uifiledialog_create_new_folder">Create new folder</string>
+	<string name="uifiledialog_enter_new_folder_name">Enter new folder name:</string>
+	<string name="uifiledialog_file_name">File Name:</string>
+	<string name="uifiledialog_files_of_type">Files of type:</string>
+	<string name="uifiledialog_go_up">Up</string>
+	<string name="uifiledialog_list">List</string>
+	<string name="uifiledialog_look_in">Look in:</string>
+	<string name="uifiledialog_new_folder">New Folder</string>
+	<string name="uifiledialog_open">Open</string>
+	<string name="uifiledialog_save">Save</string>
+	<string name="uifiledialog_select_file">Select a file</string>
+	<string name="uifiledialog_select_folder">Select a folder</string>
+	<string name="uifiledialog_table">Table</string>
+	<string name="undo">Undo</string>
+	<string name="use_global_settings">Use Global Settings</string>
+	<string name="using_build_type">Using build type: %s.
+</string>
+	<string name="view">View</string>
+	<string name="vsync">VSync</string>
+	<string name="vsync_changed">Vsync configuration changed.
+Restart ecode to see the changes.</string>
+	<string name="welcome">Welcome</string>
+	<string name="window">Window</string>
+	<string name="working_dir_at">Working Dir %s
+</string>
+	<string name="workspace_symbol_find">Search Worskspace Symbol...</string>
+	<string name="write_unicode_bom">Write Unicode BOM</string>
+	<string name="zoom_in">Zoom In</string>
+	<string name="zoom_out">Zoom Out</string>
+	<string name="zoom_reset">Zoom Reset</string>
+</resources>

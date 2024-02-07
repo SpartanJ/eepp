@@ -9,6 +9,8 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwindow.hpp>
+
+#include <array>
 #include <limits>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -88,8 +90,8 @@ enum class PluginMessageType {
 					   // particular document location
 	GetDiagnostics,	   // Request the diagnostic information from a cursor position
 	QueryPluginCapability, // Requests / queries if a plugin providers a capability
-	UIReady, // Informs the Plugins that the UI is ready to be used
-	UIThemeReloaded, // Informs the plugins that the UI theme has been reloaded
+	UIReady,			   // Informs the Plugins that the UI is ready to be used
+	UIThemeReloaded,	   // Informs the plugins that the UI theme has been reloaded
 	Undefined
 };
 
@@ -315,9 +317,8 @@ class PluginManager {
 	PluginRequestHandle sendRequest( Plugin* pluginWho, PluginMessageType type,
 									 PluginMessageFormat format, const void* data );
 
-	void sendResponse( Plugin* pluginWho, PluginMessageType type,
-					   PluginMessageFormat format, const void* data,
-					   const PluginIDType& responseID );
+	void sendResponse( Plugin* pluginWho, PluginMessageType type, PluginMessageFormat format,
+					   const void* data, const PluginIDType& responseID );
 
 	void sendBroadcast( Plugin* pluginWho, PluginMessageType, PluginMessageFormat,
 						const void* data );
@@ -385,11 +386,11 @@ class PluginManager {
 
 class PluginsModel : public Model {
   public:
-	enum Columns { Id, Title, Enabled, Description, Version };
+	enum Columns { Id, Title, Enabled, Description, Version, Count };
 
 	static std::shared_ptr<PluginsModel> New( PluginManager* manager );
 
-	PluginsModel( PluginManager* manager ) : mManager( manager ) {}
+	PluginsModel( PluginManager* manager );
 
 	virtual ~PluginsModel() {}
 
@@ -410,7 +411,8 @@ class PluginsModel : public Model {
 
   protected:
 	PluginManager* mManager;
-	std::vector<std::string> mColumnNames{ "Id", "Title", "Enabled", "Description", "Version" };
+	std::array<std::string, Columns::Count> mColumnNames{ "Id", "Title", "Enabled", "Description",
+														  "Version" };
 };
 
 class UIPluginManager {

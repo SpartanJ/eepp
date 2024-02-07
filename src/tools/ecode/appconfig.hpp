@@ -37,6 +37,7 @@ struct UIConfig {
 	std::string fallbackFont;
 	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
 	std::string theme;
+	std::string language;
 };
 
 struct WindowStateConfig {

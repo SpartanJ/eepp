@@ -188,6 +188,10 @@ String Translator::getString( const std::string& key, const String& defaultValue
 	return defaultValue;
 }
 
+void Translator::setString( const std::string& lang, const std::string& key, const String& val ) {
+	mDictionary[lang][key] = val;
+}
+
 void Translator::setLanguageFromLocale( std::locale locale ) {
 	std::string name = locale.name();
 
@@ -245,11 +249,12 @@ void Translator::saveToStream( IOStream& stream, std::string lang ) {
 	auto resources = doc.append_child( "resources" );
 	resources.append_attribute( "language" ).set_value( lang.c_str() );
 
-	const auto& langStrs = mDictionary[lang];
+	auto& unordered_map = mDictionary[lang];
+	std::map<std::string, String> langStrs(unordered_map.begin(), unordered_map.end());
 
 	for ( const auto& str : langStrs ) {
 		auto r = resources.append_child( "string" );
-		auto d = r.append_child( pugi::node_cdata );
+		auto d = r.append_child( pugi::node_pcdata );
 		r.append_attribute( "name" ).set_value( str.first.c_str() );
 		d.set_value( str.second.toUtf8().c_str() );
 	}

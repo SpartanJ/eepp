@@ -43,6 +43,8 @@ fi
 #cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
 mkdir -p ecode.app/Contents/MacOS/assets/colorschemes
 cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorschemes/
+mkdir -p ecode.app/Contents/MacOS/assets/i18n
+cp -r ../../../bin/assets/i18n/ ecode.app/Contents/MacOS/assets/i18n/
 #cp -r ../../../bin/assets/fonts ecode.app/Contents/MacOS/assets/
 mkdir -p ecode.app/Contents/MacOS/assets/fonts
 cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode.app/Contents/MacOS/assets/fonts/

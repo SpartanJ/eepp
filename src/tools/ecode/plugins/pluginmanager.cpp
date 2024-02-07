@@ -328,6 +328,15 @@ std::shared_ptr<PluginsModel> PluginsModel::New( PluginManager* manager ) {
 	return std::make_shared<PluginsModel>( manager );
 }
 
+PluginsModel::PluginsModel( PluginManager* manager ) : mManager( manager ) {
+	auto ui = manager->getUISceneNode();
+	mColumnNames[Columns::Id] = ui->i18n( "pluginsmodel_id", "Id" );
+	mColumnNames[Columns::Title] = ui->i18n( "pluginsmodel_title", "Title" );
+	mColumnNames[Columns::Enabled] = ui->i18n( "pluginsmodel_enabled", "Enabled" );
+	mColumnNames[Columns::Description] = ui->i18n( "pluginsmodel_description", "Description" );
+	mColumnNames[Columns::Version] = ui->i18n( "pluginsmodel_version", "Version" );
+}
+
 size_t PluginsModel::rowCount( const ModelIndex& ) const {
 	return mManager->getDefinitions().size();
 }

@@ -826,6 +826,9 @@ UIMenu* SettingsMenu::createEditMenu() {
 	menu->add( i18n( "open_containing_folder", "Open Containing Folder..." ),
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
+	menu->add( i18n( "open_in_new_window", "Open in New Window..." ), findIcon( "window" ),
+			   getKeybind( "open-in-new-window" ) )
+		->setId( "open-in-new-window" );
 	menu->add( i18n( "copy_containing_folder_path", "Copy Containing Folder Path..." ),
 			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
 		->setId( "copy-containing-folder-path" );
@@ -841,15 +844,27 @@ UIMenu* SettingsMenu::createEditMenu() {
 			return;
 		runCommand( event->getNode()->getId() );
 	} );
-	menu->addEventListener( Event::OnMenuShow, [&, menu, fileSep]( const Event* ) {
-		if ( !mSplitter->curEditorExistsAndFocused() )
+	menu->addEventListener( Event::OnMenuShow, [this, menu, fileSep]( const Event* ) {
+		if ( !mSplitter->curEditorExistsAndFocused() ) {
+			menu->getItemId( "undo" )->setEnabled( false );
+			menu->getItemId( "redo" )->setEnabled( false );
+			menu->getItemId( "copy" )->setEnabled( false );
+			menu->getItemId( "cut" )->setEnabled( false );
+			menu->getItemId( "open-containing-folder" )->setVisible( false );
+			menu->getItemId( "copy-containing-folder-path" )->setVisible( false );
+			menu->getItemId( "open-in-new-window" )->setVisible( false );
+			menu->getItemId( "copy-file-path" )->setVisible( false );
+			fileSep->setVisible( false );
 			return;
+		}
 		auto doc = mSplitter->getCurEditor()->getDocumentRef();
 		menu->getItemId( "undo" )->setEnabled( doc->hasUndo() );
 		menu->getItemId( "redo" )->setEnabled( doc->hasRedo() );
 		menu->getItemId( "copy" )->setEnabled( doc->hasSelection() );
 		menu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
 		menu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
+		menu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
+		menu->getItemId( "open-in-new-window" )->setVisible( doc->hasFilepath() );
 		menu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
 		fileSep->setVisible( doc->hasFilepath() );
 	} );
@@ -900,6 +915,11 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->setId( "terminal-font" );
 	mWindowMenu->add( i18n( "fallback_font", "Fallback Font..." ), findIcon( "font-size" ) )
 		->setId( "fallback-font" );
+	mWindowMenu->addSeparator();
+	mWindowMenu
+		->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
+			   getKeybind( "keybindings" ) )
+		->setId( "keybindings" );
 	mWindowMenu->addSeparator();
 	mWindowMenu
 		->addCheckBox( i18n( "fullscreen_mode", "Full Screen Mode" ), false,

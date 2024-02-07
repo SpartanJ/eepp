@@ -6,7 +6,6 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/doc/textrange.hpp>
-#include <memory>
 
 using namespace EE::System;
 

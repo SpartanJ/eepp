@@ -267,18 +267,21 @@ void FileSystemModel::Node::updateMimeType() {
 
 std::shared_ptr<FileSystemModel> FileSystemModel::New( const std::string& rootPath,
 													   const FileSystemModel::Mode& mode,
-													   const DisplayConfig& displayConfig ) {
-	return std::shared_ptr<FileSystemModel>( new FileSystemModel( rootPath, mode, displayConfig ) );
+													   const DisplayConfig& displayConfig,
+													   Translator* translator ) {
+	return std::shared_ptr<FileSystemModel>(
+		new FileSystemModel( rootPath, mode, displayConfig, translator ) );
 }
 
 FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemModel::Mode& mode,
-								  const DisplayConfig& displayConfig ) :
+								  const DisplayConfig& displayConfig, Translator* translator ) :
 	mRootPath( rootPath ),
 	mRealRootPath( FileSystem::getRealPath( rootPath ) ),
 	mMode( mode ),
 	mDisplayConfig( displayConfig ) {
 	mRoot = std::make_unique<Node>( mRootPath, *this );
 	mInitOK = true;
+	setupColumnNames( translator );
 	invalidate();
 }
 
@@ -367,30 +370,10 @@ size_t FileSystemModel::columnCount( const ModelIndex& ) const {
 }
 
 std::string FileSystemModel::columnName( const size_t& column ) const {
-	switch ( column ) {
-		case Column::Icon:
-			return "";
-		case Column::Name:
-			return "Name";
-		case Column::Size:
-			return "Size";
-		case Column::Owner:
-			return "Owner";
-		case Column::Group:
-			return "Group";
-		case Column::Permissions:
-			return "Mode";
-		case Column::ModificationTime:
-			return "Modified";
-		case Column::Inode:
-			return "Inode";
-		case Column::SymlinkTarget:
-			return "Symlink target";
-		case Column::Path:
-			return "Path";
-		default:
-			return "";
-	}
+	eeASSERT( column < mColumnNames.size() );
+	if ( column < mColumnNames.size() )
+		return mColumnNames[column];
+	return "";
 }
 
 static std::string permissionString( const FileInfo& info ) {
@@ -798,6 +781,24 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 	}
 
 	return true;
+}
+
+void FileSystemModel::setupColumnNames( Translator* translator ) {
+	const auto i18n = [&translator]( const std::string& key,
+									 const std::string& value ) -> std::string {
+		return translator ? translator->getString( "filesystemmodel_column_" + key, value ).toUtf8()
+						  : value;
+	};
+	mColumnNames[Column::Icon] = "";
+	mColumnNames[Column::Name] = i18n( "name", "Name" );
+	mColumnNames[Column::Size] = i18n( "size", "Size" );
+	mColumnNames[Column::Owner] = i18n( "owner", "Owner" );
+	mColumnNames[Column::Group] = i18n( "group", "Group" );
+	mColumnNames[Column::Permissions] = i18n( "mode", "Mode" );
+	mColumnNames[Column::ModificationTime] = i18n( "modified", "Modified" );
+	mColumnNames[Column::Inode] = i18n( "inode", "Inode" );
+	mColumnNames[Column::Path] = i18n( "path", "Path" );
+	mColumnNames[Column::SymlinkTarget] = i18n( "symlink_target", "Symlink target" );
 }
 
 bool FileSystemModel::handleFileEvent( const FileEvent& event ) {

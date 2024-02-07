@@ -1151,7 +1151,6 @@ listview::row:hover listview::cell checkbox,
 tableview::header::column:hover,
 treeview::header::column:hover,
 listview::header::column:hover {
-	color: var(--menu-font-active);
 	tint: var(--menu-font-active);
 }
 

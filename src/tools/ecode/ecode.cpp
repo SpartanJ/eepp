@@ -1706,6 +1706,9 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			menuAdd( "open_containing_folder", "Open Containing Folder...", "folder-open",
 					 "open-containing-folder" );
 
+			menuAdd( "open_in_new_window", "Open in New Window...", "window",
+					 "open-in-new-window" );
+
 			menuAdd( "copy_containing_folder_path", "Copy Containing Folder Path...", "copy",
 					 "copy-containing-folder-path" );
 
@@ -2514,6 +2517,17 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	} );
 	doc.setCommand( "go-to-line", [this] { mUniversalLocator->goToLine(); } );
 	doc.setCommand( "load-current-dir", [this] { loadCurrentDirectory(); } );
+	doc.setCommand( "open-in-new-window", [this] {
+		auto editor = mSplitter->getCurEditor();
+		if ( editor == nullptr || editor->getDocumentRef() == nullptr ||
+			 editor->getDocumentRef()->getFilePath().empty() )
+			return;
+		std::string processPath = Sys::getProcessFilePath();
+		if ( !processPath.empty() ) {
+			std::string cmd( processPath + " \"" + editor->getDocumentRef()->getFilePath() + "\"" );
+			Sys::execute( cmd );
+		}
+	} );
 	registerUnlockedCommands( doc );
 
 	editor->on( Event::OnDocumentSave, [this]( const Event* event ) {
@@ -2873,7 +2887,8 @@ void App::toggleHiddenFiles() {
 											   {},
 											   [this]( const std::string& filePath ) -> bool {
 												   return isFileVisibleInTreeView( filePath );
-											   } } );
+											   } },
+											 &mUISceneNode->getTranslator() );
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );
 	if ( mFileSystemListener )
@@ -3104,11 +3119,16 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 			if ( FileSystem::isDirectory( folderPath ) ) {
 				loadFileSystemMatcher( folderPath );
 
-				mFileSystemModel = FileSystemModel::New(
-					folderPath, FileSystemModel::Mode::FilesAndDirectories,
-					{ true, true, true, {}, [this]( const std::string& filePath ) -> bool {
-						 return isFileVisibleInTreeView( filePath );
-					 } } );
+				mFileSystemModel =
+					FileSystemModel::New( folderPath, FileSystemModel::Mode::FilesAndDirectories,
+										  { true,
+											true,
+											true,
+											{},
+											[this]( const std::string& filePath ) -> bool {
+												return isFileVisibleInTreeView( filePath );
+											} },
+										  &mUISceneNode->getTranslator() );
 
 				mProjectTreeView->setModel( mFileSystemModel );
 				mProjectViewEmptyCont->setVisible( false );
@@ -3267,11 +3287,15 @@ void App::loadFolder( const std::string& path ) {
 
 	loadFileSystemMatcher( rpath );
 
-	mFileSystemModel = FileSystemModel::New(
-		rpath, FileSystemModel::Mode::FilesAndDirectories,
-		{ true, true, true, {}, [this]( const std::string& filePath ) -> bool {
-			 return isFileVisibleInTreeView( filePath );
-		 } } );
+	mFileSystemModel = FileSystemModel::New( rpath, FileSystemModel::Mode::FilesAndDirectories,
+											 { true,
+											   true,
+											   true,
+											   {},
+											   [this]( const std::string& filePath ) -> bool {
+												   return isFileVisibleInTreeView( filePath );
+											   } },
+											 &mUISceneNode->getTranslator() );
 
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );
@@ -3354,7 +3378,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 				const std::string& css, bool health, const std::string& healthLang,
 				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
-				bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable ) {
+				bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
+				std::string language ) {
 	Http::setThreadPool( mThreadPool );
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
@@ -3530,6 +3555,18 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mUISceneNode = UISceneNode::New();
 		mUISceneNode->setThreadPool( mThreadPool );
 		mUIColorScheme = mConfig.ui.colorScheme;
+
+		if ( language.empty() )
+			language = mConfig.ui.language;
+		if ( !language.empty() )
+			mUISceneNode->getTranslator().setCurrentLanguage( language );
+		std::string currentLanguage(
+			language.empty() ? mUISceneNode->getTranslator().getCurrentLanguage() : language );
+		std::string langPath( mResPath + "i18n" + FileSystem::getOSSlash() + currentLanguage +
+							  ".xml" );
+		if ( currentLanguage != "en" && FileSystem::fileExists( langPath ) )
+			mUISceneNode->getTranslator().loadFromFile( langPath );
+
 		if ( !colorScheme.empty() ) {
 			mUIColorScheme =
 				colorScheme == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
@@ -3926,6 +3963,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag openClean( parser, "open-clean",
 						  "Open a new instance of ecode without recovering the last session",
 						  { "open-clean", 'x' } );
+	args::ValueFlag<std::string> language(
+		parser, "language",
+		"Try to set the default language the editor will be loaded. The language must be supported "
+		"in order to this option do something.",
+		{ "language" }, "" );
 
 	std::vector<std::string> args;
 	try {
@@ -3990,7 +4032,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
 					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
 					   healthFormat.Get(), file.Get(), verbose.Get(), disableFileLogs.Get(),
-					   openClean.Get(), portable.Get() );
+					   openClean.Get(), portable.Get(), language.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

@@ -89,19 +89,16 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setParent( hLayout );
 
 	mButtonNewFolder = UIPushButton::New();
-	mButtonNewFolder
-		->setText( i18n( "uifiledialog_new_folder", "New Folder" ) )
+	mButtonNewFolder->setText( i18n( "uifiledialog_new_folder", "New Folder" ) )
 		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
 	mButtonNewFolder->addEventListener( Event::MouseClick, [this]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT,
-				i18n( "uifiledialog_enter_new_folder_name",
-									 "Enter new folder name:" ) );
-			msgBox->setTitle( i18n( "uifiledialog_create_new_folder",
-												   "Create new folder" ) );
+			UIMessageBox* msgBox =
+				UIMessageBox::New( UIMessageBox::INPUT, i18n( "uifiledialog_enter_new_folder_name",
+															  "Enter new folder name:" ) );
+			msgBox->setTitle( i18n( "uifiledialog_create_new_folder", "Create new folder" ) );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->show();
 			msgBox->addEventListener( Event::OnConfirm, [this, msgBox]( const Event* ) {
@@ -332,7 +329,8 @@ void UIFileDialog::refreshFolder( bool resetScroll ) {
 				getShowOnlyFolders() ? FileSystemModel::Mode::DirectoriesOnly
 									 : FileSystemModel::Mode::FilesAndDirectories,
 				FileSystemModel::DisplayConfig( getSortAlphabetically(), getFoldersFirst(),
-												!getShowHidden(), patterns ) );
+												!getShowHidden(), patterns ),
+				&getUISceneNode()->getTranslator() );
 		} else {
 			mModel->setRootPath( mCurPath );
 		}
