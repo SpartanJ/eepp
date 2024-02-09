@@ -1831,7 +1831,7 @@ void SettingsMenu::deleteFileDialog( const FileInfo& file ) {
 				std::string fpath( file.getFilepath() );
 				FileSystem::dirRemoveSlashAtEnd( fpath );
 				fsRemoveAll( fpath );
-			} catch ( const fs::filesystem_error& err ) {
+			} catch ( const fs::filesystem_error& ) {
 				errFn();
 			}
 		} else if ( !FileSystem::fileRemove( file.getFilepath() ) ) {

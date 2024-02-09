@@ -105,6 +105,9 @@ class EE_API Input {
 	/** @return If the Control Key is pressed */
 	bool isControlPressed() const;
 
+	/** @return If the default key modifier is pressed */
+	bool isKeyModPressed() const;
+
 	/** @return If the left Shift Key is pressed */
 	bool isLeftShiftPressed() const;
 

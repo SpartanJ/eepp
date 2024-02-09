@@ -1581,7 +1581,7 @@ void Node::debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay
 		action->setCallback( std::move( runnable ) );
 		action->restart();
 	} else {
-		setTimeout( std::move( runnable ), std::move( delay ), uniqueIdentifier );
+		setTimeout( std::move( runnable ), delay, uniqueIdentifier );
 	}
 }
 

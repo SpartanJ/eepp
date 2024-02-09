@@ -1003,7 +1003,7 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onKeyUp( this, event ) )
 			return 1;
-	if ( mHandShown && !getUISceneNode()->getWindow()->getInput()->isControlPressed() )
+	if ( mHandShown && !getUISceneNode()->getWindow()->getInput()->isKeyModPressed() )
 		resetLinkOver();
 	return UIWidget::onKeyUp( event );
 }
@@ -1341,14 +1341,14 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	}
 
 	if ( flags & EE_BUTTON_WDMASK ) {
-		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-shrink" );
 		} else {
 			setScrollY( mScroll.y + PixelDensity::dpToPx( mMouseWheelScroll ) );
 		}
 		invalidateDraw();
 	} else if ( flags & EE_BUTTON_WUMASK ) {
-		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-grow" );
 		} else {
 			setScrollY( mScroll.y - PixelDensity::dpToPx( mMouseWheelScroll ) );
@@ -1378,7 +1378,7 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 	}
 
 	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		 getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 		String link( checkMouseOverLink( position ) );
 		if ( !link.empty() ) {
 			Engine::instance()->openURI( link.toUtf8() );
@@ -3425,18 +3425,18 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 }
 
 String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
-	if ( !mInteractiveLinks || !getUISceneNode()->getWindow()->getInput()->isControlPressed() )
+	if ( !mInteractiveLinks || !getUISceneNode()->getWindow()->getInput()->isKeyModPressed() )
 		return resetLinkOver();
 
 	TextPosition pos( resolveScreenPosition( position.asFloat(), false ) );
-	if ( mDoc->getChar( pos ) == '\n' )
-		return resetLinkOver();
-
-	if ( pos.line() > (Int64)mDoc->linesCount() )
+	if ( pos.line() >= (Int64)mDoc->linesCount() )
 		return resetLinkOver();
 
 	const String& line = mDoc->line( pos.line() ).getText();
 	if ( pos.column() >= (Int64)line.size() - 1 )
+		return resetLinkOver();
+
+	if ( mDoc->getChar( pos ) == '\n' )
 		return resetLinkOver();
 
 	TextPosition startB( mDoc->previousSpaceBoundaryInLine( pos ) );

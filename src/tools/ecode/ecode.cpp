@@ -2868,7 +2868,7 @@ void App::renameFile( const FileInfo& file ) {
 				if ( file.isDirectory() )
 					FileSystem::dirRemoveSlashAtEnd( fpath );
 				fsRenameFile( fpath, newFilePath );
-			} catch ( const fs::filesystem_error& err ) {
+			} catch ( const fs::filesystem_error& ) {
 				errorMsgBox( i18n( "error_renaming_file", "Error renaming file." ) );
 			}
 			msgBox->closeWindow();
@@ -3603,7 +3603,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 								  "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 		if ( ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == "DejaVuSansMono NF" &&
 			   mFontMono->getInfo().family == "DejaVu Sans Mono" ) ||
-			 mTerminalFont->getInfo().family == mFontMono->getInfo().family ) {
+			 ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == mFontMono->getInfo().family ) ) {
 			mTerminalFont->setBoldFont( mFontMono->getBoldFont() );
 			mTerminalFont->setItalicFont( mFontMono->getItalicFont() );
 			mTerminalFont->setBoldItalicFont( mFontMono->getBoldItalicFont() );
