@@ -461,8 +461,8 @@ class EE_API Window {
 
 	/** Runs the main loop function passed as parameter
 	**	@param func The main loop function
-	**	@param fps The desired FPS ( 0 = infinite ) */
-	void runMainLoop( std::function<void()> func, int fps = 0 );
+	**	@param fps The desired FPS ( 0 = infinite, < 0 keep current setting ) */
+	void runMainLoop( std::function<void()> func, int fps = -1 );
 
 	/** @return The current display index. */
 	virtual int getCurrentDisplayIndex();

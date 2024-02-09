@@ -1130,6 +1130,7 @@
 ../../src/eepp/window/keycodes.cpp
 ../../src/eepp/window/platformhelper.hpp
 ../../src/eepp/window/window.cpp
+../../src/examples/7guis/circle_drawer/circle_drawer.cpp
 ../../src/examples/7guis/counter/counter.cpp
 ../../src/examples/7guis/crud/crud.cpp
 ../../src/examples/7guis/flight_booker/flight_booker.cpp

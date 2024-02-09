@@ -250,7 +250,7 @@ Git::Result Git::createBranch( const std::string& branchName, bool _checkout,
 							   const std::string& projectDir ) {
 	auto res = gitSimple( String::format( "branch --no-track %s", branchName ), projectDir );
 	if ( _checkout )
-		checkout( branchName );
+		checkout( branchName, projectDir );
 	return res;
 }
 

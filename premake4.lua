@@ -1374,6 +1374,12 @@ solution "eepp"
 		files { "src/examples/7guis/crud/*.cpp" }
 		build_link_configuration( "eepp-7guis-crud", true )
 
+	project "eepp-7guis-circle-drawer"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/circle_drawer/*.cpp" }
+		build_link_configuration( "eepp-7guis-circle-drawer", true )
+
 	-- Tools
 	project "eepp-textureatlaseditor"
 		set_kind()

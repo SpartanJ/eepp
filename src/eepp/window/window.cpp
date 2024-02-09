@@ -602,12 +602,14 @@ static void eepp_mainloop() {
 #endif
 
 void Window::runMainLoop( std::function<void()> func, int fps ) {
-	mMainLoop = std::move(func);
+	mMainLoop = std::move( func );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	emscripten_set_main_loop( eepp_mainloop, fps, 1 );
+	emscripten_set_main_loop( eepp_mainloop, std::max( mFrameData.FPS.Limit, std::max( 0, fps ) ),
+							  1 );
 #else
-	setFrameRateLimit( fps );
+	if ( fps >= 0 )
+		setFrameRateLimit( fps );
 
 	while ( isRunning() ) {
 		mMainLoop();

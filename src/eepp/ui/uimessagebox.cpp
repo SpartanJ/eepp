@@ -176,11 +176,11 @@ Uint32 UIMessageBox::onKeyUp( const KeyEvent& event ) {
 
 bool UIMessageBox::show() {
 	bool b = UIWindow::show();
-	if ( NULL != mTextInput ) {
+	if ( NULL != mTextInput && mTextInput->isEnabled() ) {
 		mTextInput->setFocus();
-	} else if ( NULL != mTextEdit ) {
+	} else if ( NULL != mTextEdit && mTextEdit->isEnabled() ) {
 		mTextEdit->setFocus();
-	} else {
+	} else if ( mButtonOK->isEnabled() ) {
 		mButtonOK->setFocus();
 	}
 	return b;

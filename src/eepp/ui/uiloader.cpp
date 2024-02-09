@@ -62,6 +62,9 @@ void UILoader::draw() {
 }
 
 void UILoader::scheduledUpdate( const Time& time ) {
+	if ( !mVisible )
+		return;
+
 	if ( mVisible && isMeOrParentTreeVisible() && mAnimationSpeed != 0.f )
 		invalidateDraw();
 
@@ -76,6 +79,9 @@ void UILoader::scheduledUpdate( const Time& time ) {
 			mOp = 1;
 			mArcAngle = 20;
 		}
+
+		if ( mArcStartAngle > 360 )
+			mArcStartAngle = fmod( mArcStartAngle, 360 );
 
 		mArc.setArcAngle( mArcAngle );
 		mArc.setArcStartAngle( mArcStartAngle );
