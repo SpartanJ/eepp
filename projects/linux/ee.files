@@ -1046,6 +1046,8 @@
 ../../src/eepp/ui/uiwidgettable.cpp
 ../../src/eepp/ui/uiwidgettablerow.cpp
 ../../src/eepp/ui/uiwindow.cpp
+../../src/eepp/ui/undostack.cpp
+../../src/eepp/ui/undostack.hpp
 ../../src/eepp/ui/widgetcommandexecuter.hpp
 ../../src/eepp/window/backend/allegro5/cbackendal.hpp
 ../../src/eepp/window/backend/allegro5/cclipboardal.cpp

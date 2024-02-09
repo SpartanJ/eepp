@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>

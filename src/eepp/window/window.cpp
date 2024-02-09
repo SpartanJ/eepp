@@ -605,7 +605,7 @@ void Window::runMainLoop( std::function<void()> func, int fps ) {
 	mMainLoop = std::move( func );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	emscripten_set_main_loop( eepp_mainloop, std::max( mFrameData.FPS.Limit, std::max( 0, fps ) ),
+	emscripten_set_main_loop( eepp_mainloop, eemax( (int)mFrameData.FPS.Limit, eemax( 0, fps ) ),
 							  1 );
 #else
 	if ( fps >= 0 )

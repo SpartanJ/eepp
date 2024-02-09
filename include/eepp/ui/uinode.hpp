@@ -59,9 +59,9 @@ class EE_API UINode : public Node {
 
 	virtual Node* setPosition( const Float& x, const Float& y );
 
-	Node* setPixelsPosition( const Vector2f& position );
+	UINode* setPixelsPosition( const Vector2f& position );
 
-	Node* setPixelsPosition( const Float& x, const Float& y );
+	UINode* setPixelsPosition( const Float& x, const Float& y );
 
 	const Vector2f& getPosition() const;
 

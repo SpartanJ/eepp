@@ -114,7 +114,7 @@ Node* UINode::setPosition( const Float& x, const Float& y ) {
 	return this;
 }
 
-Node* UINode::setPixelsPosition( const Vector2f& Pos ) {
+UINode* UINode::setPixelsPosition( const Vector2f& Pos ) {
 	if ( mPosition != Pos ) {
 		mDpPos = PixelDensity::pxToDp( Pos );
 		Transformable::setPosition( Pos );
@@ -124,7 +124,7 @@ Node* UINode::setPixelsPosition( const Vector2f& Pos ) {
 	return this;
 }
 
-Node* UINode::setPixelsPosition( const Float& x, const Float& y ) {
+UINode* UINode::setPixelsPosition( const Float& x, const Float& y ) {
 	setPixelsPosition( Vector2f( x, y ) );
 	return this;
 }
