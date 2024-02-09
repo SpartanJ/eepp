@@ -9,7 +9,6 @@
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
-#include <eepp/ui/doc/undostack.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <memory>

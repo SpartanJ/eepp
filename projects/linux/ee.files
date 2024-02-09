@@ -343,7 +343,7 @@
 ../../include/eepp/ui/doc/textdocumentline.hpp
 ../../include/eepp/ui/doc/textposition.hpp
 ../../include/eepp/ui/doc/textrange.hpp
-../../include/eepp/ui/doc/undostack.hpp
+../../include/eepp/ui/doc/textundostack.hpp
 ../../include/eepp/ui/keyboardshortcut.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/models/csspropertiesmodel.hpp
@@ -951,7 +951,7 @@
 ../../src/eepp/ui/doc/syntaxhighlighter.cpp
 ../../src/eepp/ui/doc/syntaxtokenizer.cpp
 ../../src/eepp/ui/doc/textdocument.cpp
-../../src/eepp/ui/doc/undostack.cpp
+../../src/eepp/ui/doc/textundostack.cpp
 ../../src/eepp/ui/keyboardshortcut.cpp
 ../../src/eepp/ui/models/filesystemmodel.cpp
 ../../src/eepp/ui/models/model.cpp

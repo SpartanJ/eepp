@@ -16,7 +16,7 @@
 #include <eepp/ui/doc/textdocumentline.hpp>
 #include <eepp/ui/doc/textposition.hpp>
 #include <eepp/ui/doc/textrange.hpp>
-#include <eepp/ui/doc/undostack.hpp>
+#include <eepp/ui/doc/textundostack.hpp>
 #include <functional>
 #include <vector>
 
@@ -596,10 +596,10 @@ class EE_API TextDocument {
 	void resetUndoRedo();
 
   protected:
-	friend class UndoStack;
+	friend class TextUndoStack;
 
 	Uint64 mModificationId{ 0 };
-	UndoStack mUndoStack;
+	TextUndoStack mUndoStack;
 	std::string mFilePath;
 	std::string mLoadingFilePath;
 	std::array<Uint8, 16> mHash;

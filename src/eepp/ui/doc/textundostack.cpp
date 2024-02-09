@@ -1,6 +1,6 @@
 #include <eepp/core/core.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
-#include <eepp/ui/doc/undostack.hpp>
+#include <eepp/ui/doc/textundostack.hpp>
 
 using namespace EE::System;
 
@@ -73,36 +73,36 @@ size_t TextUndoCommandSelection::getCursorIdx() const {
 	return mCursorIdx;
 }
 
-UndoStack::UndoStack( TextDocument* owner, const Uint32& maxStackSize ) :
+TextUndoStack::TextUndoStack( TextDocument* owner, const Uint32& maxStackSize ) :
 	mDoc( owner ),
 	mMaxStackSize( maxStackSize ),
 	mChangeIdCounter( 0 ),
 	mMergeTimeout( Milliseconds( 300.f ) ) {}
 
-UndoStack::~UndoStack() {
+TextUndoStack::~TextUndoStack() {
 	clear();
 }
 
-void UndoStack::clear() {
+void TextUndoStack::clear() {
 	clearUndoStack();
 	clearRedoStack();
 }
 
-void UndoStack::clearUndoStack() {
+void TextUndoStack::clearUndoStack() {
 	for ( TextUndoCommand* cmd : mUndoStack ) {
 		eeDelete( cmd );
 	}
 	mUndoStack.clear();
 }
 
-void UndoStack::clearRedoStack() {
+void TextUndoStack::clearRedoStack() {
 	for ( TextUndoCommand* cmd : mRedoStack ) {
 		eeDelete( cmd );
 	}
 	mRedoStack.clear();
 }
 
-void UndoStack::pushUndo( UndoStackContainer& undoStack, TextUndoCommand* cmd ) {
+void TextUndoStack::pushUndo( UndoStackContainer& undoStack, TextUndoCommand* cmd ) {
 	undoStack.push_back( cmd );
 	while ( undoStack.size() > mMaxStackSize ) {
 		eeDelete( undoStack.front() );
@@ -110,26 +110,26 @@ void UndoStack::pushUndo( UndoStackContainer& undoStack, TextUndoCommand* cmd ) 
 	}
 }
 
-void UndoStack::pushInsert( UndoStackContainer& undoStack, const String& string,
-							const size_t& cursorIdx, const TextPosition& position,
-							const Time& time ) {
+void TextUndoStack::pushInsert( UndoStackContainer& undoStack, const String& string,
+								const size_t& cursorIdx, const TextPosition& position,
+								const Time& time ) {
 	pushUndo( undoStack, eeNew( TextUndoCommandInsert,
 								( ++mChangeIdCounter, cursorIdx, string, position, time ) ) );
 }
 
-void UndoStack::pushRemove( UndoStackContainer& undoStack, const size_t& cursorIdx,
-							const TextRange& range, const Time& time ) {
+void TextUndoStack::pushRemove( UndoStackContainer& undoStack, const size_t& cursorIdx,
+								const TextRange& range, const Time& time ) {
 	pushUndo( undoStack,
 			  eeNew( TextUndoCommandRemove, ( ++mChangeIdCounter, cursorIdx, range, time ) ) );
 }
 
-void UndoStack::pushSelection( UndoStackContainer& undoStack, const size_t& cursorIdx,
-							   const TextRanges& selection, const Time& time ) {
+void TextUndoStack::pushSelection( UndoStackContainer& undoStack, const size_t& cursorIdx,
+								   const TextRanges& selection, const Time& time ) {
 	pushUndo( undoStack, eeNew( TextUndoCommandSelection,
 								( ++mChangeIdCounter, cursorIdx, selection, time ) ) );
 }
 
-void UndoStack::popUndo( UndoStackContainer& undoStack, UndoStackContainer& redoStack ) {
+void TextUndoStack::popUndo( UndoStackContainer& undoStack, UndoStackContainer& redoStack ) {
 	if ( undoStack.empty() )
 		return;
 
@@ -166,45 +166,45 @@ void UndoStack::popUndo( UndoStackContainer& undoStack, UndoStackContainer& redo
 	}
 }
 
-void UndoStack::undo() {
+void TextUndoStack::undo() {
 	popUndo( mUndoStack, mRedoStack );
 }
 
-void UndoStack::redo() {
+void TextUndoStack::redo() {
 	popUndo( mRedoStack, mUndoStack );
 }
 
-bool UndoStack::hasUndo() const {
+bool TextUndoStack::hasUndo() const {
 	return !mUndoStack.empty();
 }
 
-bool UndoStack::hasRedo() const {
+bool TextUndoStack::hasRedo() const {
 	return !mRedoStack.empty();
 }
 
-const Uint32& UndoStack::getMaxStackSize() const {
+const Uint32& TextUndoStack::getMaxStackSize() const {
 	return mMaxStackSize;
 }
 
-const Time& UndoStack::getMergeTimeout() const {
+const Time& TextUndoStack::getMergeTimeout() const {
 	return mMergeTimeout;
 }
 
-void UndoStack::setMergeTimeout( const Time& mergeTimeout ) {
+void TextUndoStack::setMergeTimeout( const Time& mergeTimeout ) {
 	mMergeTimeout = mergeTimeout;
 }
 
-Uint64 UndoStack::getCurrentChangeId() const {
+Uint64 TextUndoStack::getCurrentChangeId() const {
 	if ( mUndoStack.empty() )
 		return 0;
 	return mUndoStack.back()->getId();
 }
 
-UndoStackContainer& UndoStack::getUndoStackContainer() {
+UndoStackContainer& TextUndoStack::getUndoStackContainer() {
 	return mUndoStack;
 }
 
-UndoStackContainer& UndoStack::getRedoStackContainer() {
+UndoStackContainer& TextUndoStack::getRedoStackContainer() {
 	return mRedoStack;
 }
 
