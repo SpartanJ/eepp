@@ -1,15 +1,35 @@
 #include "spreadsheet.hpp"
 #include "parser.hpp"
 
+void Observable::notifyObservers() {
+	if ( !mChanged )
+		return;
+	for ( auto observer : mObservers )
+		observer->update();
+	clearChanged();
+}
+
 void Cell::parseFormula( const std::string& formulaStr ) {
 	FormulaParser parser;
 	formula = parser.parseFormula( formulaStr );
 }
 
-void Cell::setData( std::string&& data, Spreadsheet& sheet ) {
+Cell::Cell( std::string val, Spreadsheet& sheet ) : value( std::move( val ) ), sheet( sheet ) {}
+
+void Cell::setData( std::string&& data ) {
+	if ( formula ) {
+		for ( const auto& ref : formula->getReferences( sheet ) )
+			ref->deleteObserver( this );
+	}
 	value = std::move( data );
 	parseFormula( value );
-	calc( sheet );
+	calc();
+	if ( formula ) {
+		for ( const auto& ref : formula->getReferences( sheet ) )
+			ref->addObserver( this );
+	}
+	setChanged();
+	notifyObservers();
 }
 
 std::optional<double> Cell::eval() const {
@@ -19,7 +39,15 @@ std::optional<double> Cell::eval() const {
 	return {};
 }
 
-void Cell::calc( Spreadsheet& sheet ) {
+const std::string& Cell::getValue() const {
+	return value;
+}
+
+const std::string& Cell::getDisplayValue() const {
+	return displayValue;
+}
+
+void Cell::calc() {
 	if ( !formula || formula->type() == FormulaType::Textual ) {
 		displayValue = value;
 		return;
@@ -31,7 +59,16 @@ void Cell::calc( Spreadsheet& sheet ) {
 		displayValue = "!ERR";
 }
 
-Spreadsheet::Spreadsheet() : Model(), mEmptyCell( std::make_unique<Cell>( "" ) ) {}
+void Cell::update() {
+	calc();
+}
+
+Spreadsheet::Spreadsheet( int cols, int rows ) :
+	Model(), mEmptyCell( std::make_unique<Cell>( "", *this ) ) {
+	mCells.resize( cols );
+	for ( auto& col : mCells )
+		col.resize( rows );
+}
 
 Variant Spreadsheet::data( const ModelIndex& index, ModelRole role ) const {
 	static const std::string EMPTY = "";
@@ -51,10 +88,11 @@ Variant Spreadsheet::data( const ModelIndex& index, ModelRole role ) const {
 
 void Spreadsheet::createCell( int col, int row ) {
 	if ( mCells[col][row] == nullptr )
-		mCells[col][row] = std::make_unique<Cell>( "" );
+		mCells[col][row] = std::make_unique<Cell>( "", *this );
 }
 
 Cell& Spreadsheet::cell( int col, int row ) {
+	createCell( col, row );
 	return mCells[col][row] ? *mCells[col][row] : *mEmptyCell;
 }
 
@@ -68,5 +106,5 @@ const Cell& Spreadsheet::cell( const ModelIndex& index ) const {
 
 void Spreadsheet::setData( const ModelIndex& index, const Variant& data ) {
 	createCell( index.column(), index.row() );
-	cell( index ).setData( data.toString(), *this );
+	cell( index ).setData( data.toString() );
 }

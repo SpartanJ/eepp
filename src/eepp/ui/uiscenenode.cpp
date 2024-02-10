@@ -679,30 +679,21 @@ void UISceneNode::invalidateStyle( UIWidget* node ) {
 	if ( node->isClosing() )
 		return;
 
-	Node* itNode = NULL;
-
 	if ( mDirtyStyle.count( node ) > 0 )
 		return;
 
-	for ( auto& dirtyNode : mDirtyStyle ) {
-		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) ) {
+	for ( auto& dirtyNode : mDirtyStyle )
+		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
 			return;
-		}
-	}
 
-	std::vector<UnorderedSet<UIWidget*>::iterator> itEraseList;
+	std::vector<UIWidget*> eraseList;
 
-	for ( auto it = mDirtyStyle.begin(); it != mDirtyStyle.end(); ++it ) {
-		itNode = *it;
+	for ( auto widget : mDirtyStyle )
+		if ( NULL == widget || node->isParentOf( widget ) )
+			eraseList.push_back( widget );
 
-		if ( NULL == itNode || node->isParentOf( itNode ) ) {
-			itEraseList.push_back( it );
-		}
-	}
-
-	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
-		mDirtyStyle.erase( *ite );
-	}
+	for ( auto widget : eraseList )
+		mDirtyStyle.erase( widget );
 
 	mDirtyStyle.insert( node );
 }
@@ -713,32 +704,21 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 	if ( node->isClosing() )
 		return;
 
-	Node* itNode = NULL;
-
 	if ( mDirtyStyleState.count( node ) > 0 )
 		return;
 
-	for ( auto& dirtyNode : mDirtyStyleState ) {
-		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) ) {
+	for ( auto& dirtyNode : mDirtyStyleState )
+		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
 			return;
-		}
-	}
 
-	std::vector<UnorderedSet<UIWidget*>::iterator> itEraseList;
+	std::vector<UIWidget*> eraseList;
 
-	for ( auto it = mDirtyStyleState.begin(); it != mDirtyStyleState.end(); ++it ) {
-		itNode = *it;
+	for ( auto widget : mDirtyStyleState )
+		if ( NULL == widget || node->isParentOf( widget ) )
+			eraseList.push_back( widget );
 
-		if ( NULL != itNode && node->isParentOf( itNode ) ) {
-			itEraseList.push_back( it );
-		} else if ( NULL == itNode ) {
-			itEraseList.push_back( it );
-		}
-	}
-
-	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
-		mDirtyStyleState.erase( *ite );
-	}
+	for ( auto widget : eraseList )
+		mDirtyStyleState.erase( widget );
 
 	mDirtyStyleState.insert( node );
 	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
@@ -750,34 +730,23 @@ void UISceneNode::invalidateLayout( UILayout* node ) {
 	if ( node->isClosing() )
 		return;
 
-	Node* itNode = NULL;
-
 	if ( mDirtyLayouts.count( node ) > 0 )
 		return;
 
 	if ( node->getParent()->isLayout() ) {
-		for ( auto& dirtyNode : mDirtyLayouts ) {
-			if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) &&
-				 node->getParent()->isLayout() ) {
+		for ( auto& dirtyNode : mDirtyLayouts )
+			if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
 				return;
-			}
-		}
 
-		std::vector<UnorderedSet<UILayout*>::iterator> itEraseList;
+		std::vector<UILayout*> eraseList;
 
-		for ( auto it = mDirtyLayouts.begin(); it != mDirtyLayouts.end(); ++it ) {
-			itNode = *it;
+		for ( auto layout : mDirtyLayouts )
+			if ( NULL == layout ||
+				 ( node->isParentOf( layout ) && layout->getParent()->isLayout() ) )
+				eraseList.push_back( layout );
 
-			if ( NULL != itNode && node->isParentOf( itNode ) && itNode->getParent()->isLayout() ) {
-				itEraseList.push_back( it );
-			} else if ( NULL == itNode ) {
-				itEraseList.push_back( it );
-			}
-		}
-
-		for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
-			mDirtyLayouts.erase( *ite );
-		}
+		for ( auto layout : eraseList )
+			mDirtyLayouts.erase( layout );
 	}
 
 	mDirtyLayouts.insert( node );

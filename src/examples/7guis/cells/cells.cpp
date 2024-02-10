@@ -1,6 +1,8 @@
 #include "spreadsheet.hpp"
 #include <eepp/ee.hpp>
 
+// Referece https://eugenkiss.github.io/7guis/tasks/#cells
+// Row header pending
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 1024, 768, "eepp - 7GUIs - Cells" } );
 	UIWidget* rlay = app.getUI()->loadLayoutFromString( R"xml(

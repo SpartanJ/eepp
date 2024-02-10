@@ -4,6 +4,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/ui/models/model.hpp>
 
+#include <atomic>
 #include <optional>
 
 using namespace EE;
@@ -11,31 +12,64 @@ using namespace EE::UI::Models;
 struct Formula;
 class Spreadsheet;
 
-class Cell {
-  public:
-	Cell( std::string val ) : value( std::move( val ) ) {}
+class Observer;
 
-	void setData( std::string&& data, Spreadsheet& );
+class Observable {
+  public:
+	void addObserver( Observer* observer ) { mObservers.insert( observer ); }
+
+	void clearChanged() { mChanged = false; }
+
+	void setChanged() { mChanged = true; }
+
+	int countObservers() { return mObservers.size(); }
+
+	void deleteObserver( Observer* observer ) { mObservers.erase( observer ); }
+
+	void deleteObservers() { mObservers.clear(); }
+
+	bool hasChanged() { return mChanged; }
+
+	void notifyObservers();
+
+  protected:
+	std::unordered_set<Observer*> mObservers;
+	std::atomic<bool> mChanged{ false };
+};
+
+class Observer {
+  public:
+	virtual void update() = 0;
+};
+
+class Cell : public Observer, public Observable {
+  public:
+	Cell( std::string val, Spreadsheet& sheet );
+
+	void setData( std::string&& data );
 
 	std::optional<double> eval() const;
 
-	const std::string& getValue() const { return value; }
+	const std::string& getValue() const;
 
-	const std::string& getDisplayValue() const { return displayValue; }
+	const std::string& getDisplayValue() const;
 
-	void calc( Spreadsheet& );
+	void calc();
+
+	void update();
 
   protected:
 	std::string value;
 	std::string displayValue;
 	std::shared_ptr<Formula> formula;
+	Spreadsheet& sheet;
 
 	void parseFormula( const std::string& formulaStr );
 };
 
 class Spreadsheet : public Model {
   public:
-	Spreadsheet();
+	Spreadsheet( int cols = 26, int rows = 100 );
 
 	virtual ~Spreadsheet() {}
 
@@ -62,7 +96,7 @@ class Spreadsheet : public Model {
 	virtual bool isEditable( const ModelIndex& ) const { return true; }
 
   protected:
-	std::array<std::array<std::unique_ptr<Cell>, 100>, 26> mCells;
+	std::vector<std::vector<std::unique_ptr<Cell>>> mCells;
 	std::unique_ptr<Cell> mEmptyCell;
 };
 

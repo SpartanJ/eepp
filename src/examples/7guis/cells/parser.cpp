@@ -102,6 +102,7 @@ std::shared_ptr<Formula> FormulaParser::expression() {
 		case TokenType::DECIMAL: {
 			double val = 0;
 			String::fromString( val, lookahead.sequence );
+			nextToken();
 			return std::make_shared<Number>( val );
 		}
 		case TokenType::IDENT:
