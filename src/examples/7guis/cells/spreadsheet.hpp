@@ -46,6 +46,8 @@ class Cell : public Observer, public Observable {
   public:
 	Cell( std::string val, Spreadsheet& sheet );
 
+	virtual ~Cell() {}
+
 	void setData( std::string&& data );
 
 	std::optional<double> eval() const;
