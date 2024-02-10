@@ -278,11 +278,24 @@ void Translator::saveToStream( IOStream& stream, std::string lang ) {
 		auto r = resources.append_child( "string" );
 		auto d = r.append_child( pugi::node_pcdata );
 		r.append_attribute( "name" ).set_value( str.first.c_str() );
+
+		auto langNameIt = mLangNames.find( lang );
+		if ( langNameIt != mLangNames.end() )
+			r.append_attribute( "title" ).set_name( langNameIt->second.c_str() );
+
 		d.set_value( str.second.toUtf8().c_str() );
 	}
 
 	IOStreamXmlWriter writer( stream );
 	doc.save( writer );
+}
+
+void Translator::setLanguageName( const std::string& id, const std::string& name ) {
+	mLangNames[id] = name;
+}
+
+std::unordered_map<std::string, std::string> Translator::getLanguageNames() const {
+	return mLangNames;
 }
 
 }} // namespace EE::System

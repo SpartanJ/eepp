@@ -40,6 +40,8 @@ class SettingsMenu {
 
 	UIMenu* createThemesMenu();
 
+	UIMenu* createLanguagesMenu();
+
 	void updateTerminalMenu();
 
 	void updateProjectSettingsMenu();

@@ -732,17 +732,6 @@ App::~App() {
 		mFileSystemListener = nullptr;
 	}
 	mDirTree.reset();
-
-#ifdef EE_DEBUG
-	if ( !mUISceneNode->getTranslator().isSetDefaultValues() )
-		return;
-	std::string langsPath( mConfigPath + "i18n" + FileSystem::getOSSlash() );
-	if ( !FileSystem::fileExists( langsPath ) && !FileSystem::makeDir( langsPath ) )
-		return;
-	std::string lang( mUISceneNode->getTranslator().getCurrentLanguage() );
-	IOStreamFile file( langsPath + lang + ".xml", "wb" );
-	mUISceneNode->getTranslator().saveToStream( file, lang );
-#endif
 }
 
 void App::updateRecentFiles() {
@@ -1836,6 +1825,10 @@ void App::loadFileDelayed() {
 
 const std::string& App::getThemesPath() const {
 	return mThemesPath;
+}
+
+const std::string& App::geti18nPath() const {
+	return mi18nPath;
 }
 
 std::string App::getThemePath() const {
@@ -3562,8 +3555,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( !language.empty() )
 			mUISceneNode->getTranslator().setCurrentLanguage( language );
 		std::string currentLanguage( mUISceneNode->getTranslator().getCurrentLanguage() );
-		std::string langPath( mResPath + "i18n" + FileSystem::getOSSlash() + currentLanguage +
-							  ".xml" );
+		mi18nPath = mResPath + "i18n" + FileSystem::getOSSlash();
+		std::string langPath( mi18nPath + currentLanguage + ".xml" );
 		if ( currentLanguage != "en" && FileSystem::fileExists( langPath ) )
 			mUISceneNode->getTranslator().loadFromFile( langPath );
 

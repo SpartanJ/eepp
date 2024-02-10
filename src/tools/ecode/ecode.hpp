@@ -387,6 +387,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string& getThemesPath() const;
 
+	const std::string& geti18nPath() const;
+
 	std::string getThemePath() const;
 
 	std::string getDefaultThemePath() const;
@@ -468,6 +470,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mLanguagesPath;
 	std::string mThemesPath;
 	std::string mLogsPath;
+	std::string mi18nPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;

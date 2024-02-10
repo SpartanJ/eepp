@@ -61,10 +61,15 @@ class EE_API Translator {
 
 	StringLocaleDictionary& getDictionary() { return mDictionary; }
 
+	void setLanguageName( const std::string& id, const std::string& name );
+
+	std::unordered_map<std::string, std::string> getLanguageNames() const;
+
   protected:
 	std::string mDefaultLanguage;
 	std::string mCurrentLanguage;
 	StringLocaleDictionary mDictionary;
+	std::unordered_map<std::string, std::string> mLangNames;
 	bool mSetDefaultValues{ false };
 
 	bool loadNodes( pugi::xml_node node, std::string lang = "" );

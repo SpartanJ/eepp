@@ -75,7 +75,7 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 	mSettingsMenu->addSeparator();
 	UIMenuSubMenu* fileTypeMenu = mSettingsMenu->addSubMenu(
 		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu() );
-	fileTypeMenu->addEventListener( Event::OnMenuShow, [&, fileTypeMenu]( const Event* ) {
+	fileTypeMenu->on( Event::OnMenuShow, [&, fileTypeMenu]( const Event* ) {
 		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
 			for ( UIPopUpMenu* menu : mFileTypeMenues )
 				menu->close();
@@ -88,7 +88,7 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 	UIMenuSubMenu* colorSchemeMenu =
 		mSettingsMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
 								   findIcon( "palette" ), createColorSchemeMenu() );
-	colorSchemeMenu->addEventListener( Event::OnMenuShow, [&, colorSchemeMenu]( const Event* ) {
+	colorSchemeMenu->on( Event::OnMenuShow, [&, colorSchemeMenu]( const Event* ) {
 		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
 			for ( UIPopUpMenu* menu : mColorSchemeMenues )
 				menu->close();
@@ -133,9 +133,8 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 	mSettingsMenu->add( i18n( "quit", "Quit" ), findIcon( "quit" ), getKeybind( "close-app" ) )
 		->setId( "close-app" );
 	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
-	mSettingsButton->addEventListener( Event::MouseClick,
-									   [this]( const Event* ) { toggleSettingsMenu(); } );
-	mSettingsMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mSettingsButton->on( Event::MouseClick, [this]( const Event* ) { toggleSettingsMenu(); } );
+	mSettingsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		const String& id = event->getNode()->asType<UIMenuItem>()->getId();
@@ -161,7 +160,7 @@ UIMenu* SettingsMenu::createFileTypeMenu() {
 	};
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->addEventListener( Event::OnItemClicked, cb );
+	menu->on( Event::OnItemClicked, cb );
 	mFileTypeMenues.push_back( menu );
 	size_t total = 0;
 
@@ -182,7 +181,7 @@ UIMenu* SettingsMenu::createFileTypeMenu() {
 		if ( menu->getCount() == maxItems && names.size() - total > 1 ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
 			menu->addSubMenu( i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
-			newMenu->addEventListener( Event::OnItemClicked, cb );
+			newMenu->on( Event::OnItemClicked, cb );
 			mFileTypeMenues.push_back( newMenu );
 			menu = newMenu;
 		}
@@ -201,7 +200,7 @@ UIMenu* SettingsMenu::createColorSchemeMenu() {
 	};
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->addEventListener( Event::OnItemClicked, cb );
+	menu->on( Event::OnItemClicked, cb );
 	mColorSchemeMenues.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mSplitter->getColorSchemes();
@@ -222,7 +221,7 @@ UIMenu* SettingsMenu::createColorSchemeMenu() {
 		if ( menu->getCount() == maxItems && colorSchemes.size() - total > 1 ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
 			menu->addSubMenu( i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
-			newMenu->addEventListener( Event::OnItemClicked, cb );
+			newMenu->on( Event::OnItemClicked, cb );
 			mColorSchemeMenues.push_back( newMenu );
 			menu = newMenu;
 		}
@@ -251,7 +250,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	tabTypeMenu->addRadioButton( i18n( "spaces", "Spaces" ) )->setId( "spaces" );
 	mDocMenu->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenu )
 		->setId( "indent_type_cur" );
-	tabTypeMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	tabTypeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			TextDocument::IndentType indentType = text == "tabs"
@@ -271,7 +270,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			->setData( w );
 	mDocMenu->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenu )
 		->setId( "indent_width_cur" );
-	indentWidthMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	indentWidthMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			int width = event->getNode()->getData();
 			mSplitter->getCurEditor()->getDocument().setIndentWidth( width );
@@ -288,7 +287,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			->setData( w );
 	mDocMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenu )
 		->setId( "tab_width_cur" );
-	tabWidthMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	tabWidthMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			int width = event->getNode()->getData();
 			mSplitter->getCurEditor()->setTabWidth( width );
@@ -310,7 +309,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->setId( "CR" );
 	mDocMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsMenu )
 		->setId( "line_endings_cur" );
-	lineEndingsMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	lineEndingsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		auto le =
 			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 		if ( mSplitter->curEditorExistsAndFocused() ) {
@@ -337,7 +336,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 					   mApp->getConfig().doc.writeUnicodeBOM )
 		->setId( "write_bom_cur" );
 
-	mDocMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mDocMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
@@ -384,7 +383,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	globalMenu
 		->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenuGlobal )
 		->setId( "indent_type" );
-	tabTypeMenuGlobal->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	tabTypeMenuGlobal->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
 		mApp->getConfig().doc.indentSpaces = text != "tabs";
 	} );
@@ -397,7 +396,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			->setData( w );
 	globalMenu->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuGlobal )
 		->setId( "indent_width" );
-	indentWidthMenuGlobal->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	indentWidthMenuGlobal->on( Event::OnItemClicked, [this]( const Event* event ) {
 		int width = event->getNode()->getData();
 		mApp->getConfig().doc.indentWidth = width;
 	} );
@@ -410,7 +409,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			->setData( w );
 	globalMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuGlobal )
 		->setId( "tab_width_cur" );
-	tabWidthMenuGlobal->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	tabWidthMenuGlobal->on( Event::OnItemClicked, [this]( const Event* event ) {
 		int width = event->getNode()->getData();
 		mApp->getConfig().doc.tabWidth = width;
 	} );
@@ -430,7 +429,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->setId( "CR" );
 	globalMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsGlobalMenu )
 		->setId( "line_endings" );
-	lineEndingsGlobalMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	lineEndingsGlobalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		mApp->getConfig().doc.lineEndings =
 			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 	} );
@@ -474,7 +473,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 					   mApp->getConfig().editor.autoCloseXMLTags )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "XML" );
-	bracketsMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	bracketsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		std::string id = event->getNode()->getId();
 		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
 			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
@@ -527,7 +526,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	globalMenu->add( i18n( "cursor_blinking_time", "Cursor Blinking Time" ) )
 		->setId( "cursor_blinking_time" );
 
-	globalMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	globalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
@@ -582,7 +581,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenuProject )
 		->setId( "indent_type" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
-	tabTypeMenuProject->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	tabTypeMenuProject->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
 		mApp->getProjectDocConfig().doc.indentSpaces = text != "tabs";
 	} );
@@ -598,7 +597,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuProject )
 		->setId( "indent_width" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
-	indentWidthMenuProject->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	indentWidthMenuProject->on( Event::OnItemClicked, [this]( const Event* event ) {
 		int width = event->getNode()->getData();
 		mApp->getProjectDocConfig().doc.indentWidth = width;
 	} );
@@ -612,7 +611,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	mProjectDocMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuProject )
 		->setId( "tab_width" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
-	tabWidthMenuProject->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	tabWidthMenuProject->on( Event::OnItemClicked, [this]( const Event* event ) {
 		int width = event->getNode()->getData();
 		mApp->getProjectDocConfig().doc.tabWidth = width;
 	} );
@@ -634,7 +633,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsProjectMenu )
 		->setId( "line_endings" )
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
-	lineEndingsProjectMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	lineEndingsProjectMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		mApp->getProjectDocConfig().doc.lineEndings =
 			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 	} );
@@ -662,7 +661,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	mProjectDocMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
 		->setId( "line_breaking_column" );
 
-	mProjectDocMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mProjectDocMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
@@ -694,7 +693,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			msgBox->getTextInput()->setText(
 				String::toString( mApp->getProjectDocConfig().doc.lineBreakingColumn ) );
 			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::OnConfirm, [&, msgBox]( const Event* ) {
+			msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
 				int val;
 				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
 					mApp->getProjectDocConfig().doc.lineBreakingColumn = val;
@@ -743,10 +742,9 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 	UIMenuSubMenu* termColorSchemeMenu = mTerminalMenu->addSubMenu(
 		i18n( "terminal_color_scheme", "Terminal Color Scheme" ), findIcon( "palette" ),
 		mApp->getTerminalManager()->createColorSchemeMenu() );
-	termColorSchemeMenu->addEventListener(
-		Event::OnMenuShow, [&, termColorSchemeMenu]( const Event* ) {
-			mApp->getTerminalManager()->updateMenuColorScheme( termColorSchemeMenu );
-		} );
+	termColorSchemeMenu->on( Event::OnMenuShow, [&, termColorSchemeMenu]( const Event* ) {
+		mApp->getTerminalManager()->updateMenuColorScheme( termColorSchemeMenu );
+	} );
 #endif
 
 	UIPopUpMenu* newTerminalBehaviorSubMenu = UIPopUpMenu::New();
@@ -784,7 +782,7 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		mApp->getConfig().term.newTerminalOrientation = NewTerminalOrientation::fromString( id );
 	} );
 
-	mTerminalMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mTerminalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
 		if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
 			UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
@@ -839,12 +837,12 @@ UIMenu* SettingsMenu::createEditMenu() {
 	menu->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
 			   getKeybind( "keybindings" ) )
 		->setId( "keybindings" );
-	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		runCommand( event->getNode()->getId() );
 	} );
-	menu->addEventListener( Event::OnMenuShow, [this, menu, fileSep]( const Event* ) {
+	menu->on( Event::OnMenuShow, [this, menu, fileSep]( const Event* ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ) {
 			menu->getItemId( "undo" )->setEnabled( false );
 			menu->getItemId( "redo" )->setEnabled( false );
@@ -882,13 +880,15 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->addRadioButton( i18n( "dark", "Dark" ),
 						  mApp->getUIColorScheme() == ColorSchemePreference::Dark )
 		->setId( "dark" );
-	colorsMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	colorsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		mApp->setUIColorScheme( item->getId() == "light" ? ColorSchemePreference::Light
 														 : ColorSchemePreference::Dark );
 	} );
+	mWindowMenu->addSubMenu( i18n( "ui_language", "UI Language" ), findIcon( "globe" ),
+							 createLanguagesMenu() );
 	mWindowMenu->addSubMenu( i18n( "ui_prefes_color_scheme", "UI Prefers Color Scheme" ),
 							 findIcon( "color-scheme" ), colorsMenu );
 	mWindowMenu->addSubMenu( i18n( "ui_thene", "UI Theme" ), findIcon( "palette" ),
@@ -999,7 +999,7 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->add( i18n( "inspect_widgets", "Inspect Widgets" ), findIcon( "package" ),
 			   getKeybind( "debug-widget-tree-view" ) )
 		->setId( "debug-widget-tree-view" );
-	mWindowMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mWindowMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1027,7 +1027,7 @@ UIMenu* SettingsMenu::createRendererMenu() {
 	mRendererMenu->add( i18n( "frame_rate_limit", "Frame Rate Limit" ), findIcon( "fps" ) )
 		->setId( "frame_rate_limit" );
 
-	mRendererMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mRendererMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1049,7 +1049,7 @@ UIMenu* SettingsMenu::createRendererMenu() {
 			msgBox->getTextInput()->setText(
 				String::toString( mApp->getConfig().context.FrameRateLimit ) );
 			msgBox->showWhenReady();
-			msgBox->addEventListener( Event::OnConfirm, [&, msgBox]( const Event* ) {
+			msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
 				int val;
 				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
 					mApp->getConfig().context.FrameRateLimit = val;
@@ -1071,7 +1071,7 @@ UIMenu* SettingsMenu::createRendererMenu() {
 			->addRadioButton( Renderer::graphicsLibraryVersionToString( ver ),
 							  GLi->version() == ver )
 			->setData( ver );
-	glVersion->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	glVersion->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1094,7 +1094,7 @@ UIMenu* SettingsMenu::createRendererMenu() {
 			->setData( val );
 	mRendererMenu->addSubMenu( i18n( "ui_multisamples_level", "Multisample Anti-Aliasing Level" ),
 							   findIcon( "multisamples" ), multisampleLvl );
-	multisampleLvl->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	multisampleLvl->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1180,7 +1180,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 				  "directory tree." ) )
 		->setId( "sync-project-tree" );
 
-	mViewMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mViewMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1333,7 +1333,7 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 		->add( i18n( "load_cur_dir_as_folder", "Load current document directory as folder" ),
 			   findIcon( "folder" ), getKeybind( "load-current-dir" ) )
 		->setId( "load-current-dir" );
-	mToolsMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mToolsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		runCommand( event->getNode()->getId() );
@@ -1349,9 +1349,8 @@ UIMenu* SettingsMenu::createHelpMenu() {
 		->setId( "check-for-updates" );
 	helpMenu->add( i18n( "about_ecode", "About ecode..." ), findIcon( "ecode" ) )
 		->setId( "about-ecode" );
-	helpMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
-		runCommand( event->getNode()->getId() );
-	} );
+	helpMenu->on( Event::OnItemClicked,
+				  [this]( const Event* event ) { runCommand( event->getNode()->getId() ); } );
 	return helpMenu;
 }
 
@@ -1373,13 +1372,65 @@ UIMenu* SettingsMenu::createThemesMenu() {
 		menu->addRadioButton( name, curTheme == name )->setId( name );
 	}
 
-	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		auto id = event->getNode()->getId();
 		mApp->getConfig().ui.theme = "default_theme" != id ? id : "";
 		std::string path( mApp->getConfig().ui.theme.empty()
 							  ? mApp->getDefaultThemePath()
 							  : mApp->getThemesPath() + id + ".css" );
 		mApp->setTheme( path );
+	} );
+
+	return menu;
+}
+
+UIMenu* SettingsMenu::createLanguagesMenu() {
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+
+	std::string curLang = mApp->getConfig().ui.language;
+	if ( curLang.empty() )
+		curLang = "en";
+
+	mApp->getThreadPool()->run( [this, menu, curLang] {
+		auto files =
+			FileSystem::filesInfoGetInPath( mApp->geti18nPath(), false, true, false, true );
+
+		std::map<std::string, std::string> languages;
+		for ( const auto& file : files ) {
+			if ( file.getExtension() != "xml" )
+				continue;
+			auto name( FileSystem::fileRemoveExtension( file.getFileName() ) );
+			std::string data;
+			FileSystem::fileGet( file.getFilepath(), data );
+			std::string lptrn( "title=\"(.-)\"" );
+			LuaPattern pattern( lptrn );
+			LuaPattern::Range matches[2];
+			if ( pattern.matches( data, matches ) ) {
+				std::string title(
+					data.substr( matches[1].start, matches[1].end - matches[1].start ) );
+				languages[title] = name;
+			} else {
+				languages[name] = name;
+			}
+		}
+		if ( languages.empty() )
+			return;
+
+		menu->runOnMainThread( [this, menu, curLang, languages] {
+			for ( const auto& lang : languages )
+				menu->addRadioButton( lang.first, curLang == lang.second )->setId( lang.second );
+
+			menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+				auto id = event->getNode()->getId();
+				mApp->getConfig().ui.language = id;
+				UIMessageBox* msg = UIMessageBox::New(
+					UIMessageBox::OK,
+					i18n( "new_ui_language", "New language assigned.\nPlease restart the "
+											 "application to see the complete changes." ) );
+				msg->showWhenReady();
+				mApp->setFocusEditorOnClose( msg );
+			} );
+		} );
 	} );
 
 	return menu;
@@ -1599,7 +1650,7 @@ void SettingsMenu::createProjectTreeMenu() {
 			->setId( "open-folder" );
 	}
 
-	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mProjectTreeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1723,7 +1774,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			->setId( "configure-ignore-files" );
 	}
 
-	mProjectTreeMenu->addEventListener( Event::OnItemClicked, [&, file]( const Event* event ) {
+	mProjectTreeMenu->on( Event::OnItemClicked, [&, file]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1743,7 +1794,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 								i18n( "duplicate_file", "Duplicate file" ).toUtf8().c_str(),
 								file.getFileName().c_str() ),
 				i18n( "enter_duplicate_file_name", "Enter duplicate file name:" ) );
-			msgBox->addEventListener( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
+			msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
 				auto newFilePath( mApp->getNewFilePath( file, msgBox ) );
 				if ( !FileSystem::fileExists( newFilePath ) ) {
 					if ( !FileSystem::fileCopy( file.getFilepath(), newFilePath ) )
@@ -1832,7 +1883,7 @@ void SettingsMenu::deleteFileDialog( const FileInfo& file ) {
 		String::format(
 			i18n( "confirm_remove_file", "Do you really want to remove \"%s\"?" ).toUtf8().c_str(),
 			file.getFileName().c_str() ) );
-	msgBox->addEventListener( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
 		auto errFn = [&, file] {
 			mApp->errorMsgBox( String::format(
 				std::string( i18n( "couldnt_remove", "Couldn't remove" ).toUtf8() + "%s." ).c_str(),
@@ -1869,7 +1920,7 @@ void SettingsMenu::createProjectMenu() {
 					   mApp->getProjectDocConfig().hAsCPP )
 		->setId( "h_as_cpp" );
 
-	mProjectMenu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	mProjectMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
 			return;

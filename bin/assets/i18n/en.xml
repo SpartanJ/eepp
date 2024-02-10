@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<resources language="en">
+<resources language="en" title="English">
 	<string name="about_ecode">About Ecode</string>
 	<string name="add_branch">Add Branch</string>
 	<string name="add_build">Add Build</string>
@@ -194,8 +194,9 @@ is hover a word that represents a color.</string>
 	<string name="error_checking_version">Failed checking for updates.</string>
 	<string name="error_copying_file">Error copying file.</string>
 	<string name="error_renaming_file">Error renaming file.</string>
-	<string name="escape_sequence_tooltip">Replace \, 	, 
-,  and (Unicode characters</string>
+	<string name="escape_sequence_tooltip">Replace \, 	,
+,
+ and (Unicode characters</string>
 	<string name="exclusive_mode">Exclusive Mode</string>
 	<string name="execute_dir_in_terminal">Open directory in terminal</string>
 	<string name="execute_in_terminal">Execute in terminal</string>
@@ -387,6 +388,8 @@ Restart ecode to see the changes.</string>
 	<string name="new_terminal">New Terminal</string>
 	<string name="new_terminal_behavior">New Terminal Behavior</string>
 	<string name="new_terminal_name">New terminal name:</string>
+	<string name="new_ui_language">New language assigned.
+Please restart the application to see the complete changes.</string>
 	<string name="new_ui_scale_factor">New UI scale factor assigned.
 Please restart the application.</string>
 	<string name="new_value">New Value</string>
@@ -615,6 +618,7 @@ file in the directory tree.</string>
 	<string name="type">Type</string>
 	<string name="type_to_locate">Type to Locate</string>
 	<string name="ui_font_size">Ui Font Size</string>
+	<string name="ui_language">UI Language</string>
 	<string name="ui_multisamples_level">Multisample Anti-Aliasing Level</string>
 	<string name="ui_panel_font_size">Ui Panel Font Size</string>
 	<string name="ui_prefes_color_scheme">UI Prefers Color Scheme</string>

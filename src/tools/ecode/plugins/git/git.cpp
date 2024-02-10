@@ -460,7 +460,8 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 
 	if ( ( ref & RefType::Stash ) && EXIT_SUCCESS == git( "stash list", projectDir, buf ) ) {
 		branches.reserve( branches.size() + countLines( buf ) );
-		LuaPattern pattern( "(stash@{%d+}):%s(.*)" );
+		std::string ptrn( "(stash@{%d+}):%s(.*)" );
+		LuaPattern pattern( ptrn );
 		readAllLines( buf, [&]( const std::string_view& line ) {
 			LuaPattern::Range matches[3];
 			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
@@ -484,7 +485,8 @@ std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
 	std::vector<std::string> submodules;
 	std::string buf;
 	FileSystem::fileGet( ( !projectDir.empty() ? projectDir : mProjectPath ) + ".gitmodules", buf );
-	LuaPattern pattern( "^%s*path%s*=%s*(.+)" );
+	std::string ptrn( "^%s*path%s*=%s*(.+)" );
+	LuaPattern pattern( ptrn );
 	readAllLines( buf, [&pattern, &submodules]( const std::string_view& line ) {
 		LuaPattern::Range matches[2];
 		if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
@@ -549,7 +551,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	getSubModules( projectDir );
 	bool submodules = hasSubmodules( projectDir );
 
-	LuaPattern subModulePattern( "^Entering '(.*)'" );
+	std::string enteringPtrn( "^Entering '(.*)'" );
+	LuaPattern subModulePattern( enteringPtrn );
 
 	bool modifiedSubmodule = false;
 
@@ -567,7 +570,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	auto parseStatus = [&s, &buf, &modifiedSubmodule, &projectDir, this, &subModulePattern,
 						submodules, &isSubmodule]() {
 		std::string subModulePath = "";
-		LuaPattern pattern( "^([mMARTUD?%s][mMARTUD?%s])%s(.*)" );
+		std::string ptrn = "^([mMARTUD?%s][mMARTUD?%s])%s(.*)";
+		LuaPattern pattern( ptrn );
 		size_t changesCount = countLines( buf );
 
 		if ( changesCount > 1000 )
@@ -602,7 +606,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					status.type == GitStatusType::Staged && statusStr[1] != ' ';
 
 				if ( status.symbol == GitStatusChar::Renamed ) {
-					LuaPattern rpattern( ".*%s%-%>%s(.*)" );
+					std::string rptrn( ".*%s%-%>%s(.*)" );
+					LuaPattern rpattern( rptrn );
 					LuaPattern::Range rranges[2];
 					if ( rpattern.matches( file.data(), 0, rranges, file.size() ) )
 						file = file.substr( rranges[1].start, rranges[1].end - rranges[1].start );
@@ -645,7 +650,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	}
 
 	auto parseNumStat = [&s, &buf, &projectDir, this, &subModulePattern]( bool isStaged ) {
-		LuaPattern pattern( "(%d+)%s+(%d+)%s+(.+)" );
+		std::string ptrn( "(%d+)%s+(%d+)%s+(.+)" );
+		LuaPattern pattern( ptrn );
 		std::string subModulePath = "";
 		readAllLines( buf, [&]( const std::string_view& line ) {
 			LuaPattern::Range matches[4];
@@ -662,7 +668,8 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				int deletes;
 				if ( String::fromString( inserts, inserted ) &&
 					 String::fromString( deletes, deleted ) && ( inserts || deletes ) ) {
-					LuaPattern pattern( "(.*)%{.*%s->%s(.*)%}" );
+					std::string rptrn( "(.*)%{.*%s->%s(.*)%}" );
+					LuaPattern pattern( rptrn );
 					if ( pattern.matches( file.data(), 0, matches, file.size() ) ) {
 						file = file.substr( matches[1].start, matches[1].end - matches[1].start ) +
 							   file.substr( matches[2].start, matches[2].end - matches[2].start );

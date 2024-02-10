@@ -219,7 +219,8 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "git-merge", 0xeafe },
 			{ "diff-single", 0xec22 },
 			{ "remove", 0xeb3b },
-			{ "tag", 0xea66 } };
+			{ "tag", 0xea66 },
+			{ "globe", 0xeb01 } };
 
 		for ( const auto& icon : codIcons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
