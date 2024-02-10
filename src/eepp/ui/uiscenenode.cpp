@@ -37,7 +37,6 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	SceneNode( window ),
 	mRoot( NULL ),
 	mIsLoading( false ),
-	mVerbose( false ),
 	mUpdatingLayouts( false ),
 	mUIThemeManager( UIThemeManager::New() ),
 	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
@@ -663,14 +662,6 @@ void UISceneNode::setTheme( UITheme* theme, Node* to ) {
 
 UIWidget* UISceneNode::getRoot() const {
 	return mRoot;
-}
-
-bool UISceneNode::getVerbose() const {
-	return mVerbose;
-}
-
-void UISceneNode::setVerbose( bool verbose ) {
-	mVerbose = verbose;
 }
 
 void UISceneNode::invalidateStyle( UIWidget* node ) {

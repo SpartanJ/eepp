@@ -1,6 +1,7 @@
 #include <deque>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -384,8 +385,8 @@ void UITreeView::drawChilds() {
 }
 
 Node* UITreeView::overFind( const Vector2f& point ) {
-	mUISceneNode->setIsLoading( true );
-
+	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
+				 [this] { mUISceneNode->setIsLoading( false ); } );
 	Node* pOver = NULL;
 	if ( mEnabled && mVisible ) {
 		updateWorldPolygon();
@@ -416,9 +417,6 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 				pOver = this;
 		}
 	}
-
-	mUISceneNode->setIsLoading( false );
-
 	return pOver;
 }
 
@@ -509,7 +507,8 @@ void UITreeView::setExpandersAsIcons( bool expandersAsIcons ) {
 
 Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex, bool ) {
 	Float lWidth = 0;
-	getUISceneNode()->setIsLoading( true );
+	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
+				 [this] { mUISceneNode->setIsLoading( false ); } );
 	traverseTree( [&, colIndex]( const int&, const ModelIndex& index, const size_t& indentLevel,
 								 const Float& yOffset ) {
 		UIWidget* widget = updateCell(
@@ -521,7 +520,6 @@ Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex, bool ) {
 		}
 		return IterationDecision::Continue;
 	} );
-	getUISceneNode()->setIsLoading( false );
 	return lWidth;
 }
 

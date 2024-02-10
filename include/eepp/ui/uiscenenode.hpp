@@ -99,10 +99,6 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIWidget* getRoot() const;
 
-	bool getVerbose() const;
-
-	void setVerbose( bool verbose );
-
 	void invalidateStyle( UIWidget* widget );
 
 	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false );
@@ -179,11 +175,8 @@ class EE_API UISceneNode : public SceneNode {
 	Translator mTranslator;
 	std::vector<UIWindow*> mWindowsList;
 	CSS::StyleSheet mStyleSheet;
-	bool mIsLoading;
-	bool mVerbose;
-	bool mUpdatingLayouts;
-	bool mFirstUpdate{ true };
-	Clock mClock;
+	bool mIsLoading{ false };
+	bool mUpdatingLayouts{ false };
 	UIThemeManager* mUIThemeManager{ nullptr };
 	UIIconThemeManager* mUIIconThemeManager{ nullptr };
 	std::vector<Font*> mFontFaces;

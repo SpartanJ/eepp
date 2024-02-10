@@ -108,6 +108,10 @@ class EE_API SceneNode : public Node {
 
 	const Float& getDPI() const;
 
+	bool getVerbose() const;
+
+	void setVerbose( bool verbose );
+
   protected:
 	friend class Node;
 	typedef UnorderedSet<Node*> CloseList;
@@ -117,6 +121,7 @@ class EE_API SceneNode : public Node {
 	FrameBuffer* mFrameBuffer;
 	EventDispatcher* mEventDispatcher;
 	CloseList mCloseList;
+	Clock mClock;
 	bool mFrameBufferBound;
 	bool mUseInvalidation;
 	bool mUseGlobalCursors;
@@ -127,6 +132,9 @@ class EE_API SceneNode : public Node {
 	bool mHighlightOver;
 	bool mHighlightFocus;
 	bool mHighlightInvalidation;
+	bool mFirstUpdate{ true };
+	bool mFirstFrame{ true };
+	bool mVerbose{ false };
 	Color mHighlightFocusColor;
 	Color mHighlightOverColor;
 	Color mHighlightInvalidationColor;

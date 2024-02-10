@@ -4,6 +4,8 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitableview.hpp>
 
+#include <eepp/system/scopedop.hpp>
+
 namespace EE { namespace UI {
 
 UITableView* UITableView::New() {
@@ -56,13 +58,12 @@ void UITableView::drawChilds() {
 }
 
 Node* UITableView::overFind( const Vector2f& point ) {
-	mUISceneNode->setIsLoading( true );
-
+	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
+				 [this] { mUISceneNode->setIsLoading( false ); } );
 	Node* pOver = NULL;
 	if ( mEnabled && mVisible ) {
 		ConditionalLock l( getModel() != nullptr,
 						   getModel() ? &getModel()->resourceMutex() : nullptr );
-
 		updateWorldPolygon();
 		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
 			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
@@ -103,7 +104,6 @@ Node* UITableView::overFind( const Vector2f& point ) {
 		}
 	}
 
-	mUISceneNode->setIsLoading( false );
 	return pOver;
 }
 
@@ -112,7 +112,8 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
 	if ( getModel()->rowCount() == 0 )
 		return lWidth;
-	getUISceneNode()->setIsLoading( true );
+	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
+				 [this] { mUISceneNode->setIsLoading( false ); } );
 	Float yOffset = getHeaderHeight();
 	auto worstCaseFunc = [&]( const ModelIndex& index ) {
 		UIWidget* widget = updateCell( index.row(), index, 0, yOffset );
@@ -148,7 +149,6 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 		for ( size_t i = 0; i < getItemCount(); i++ )
 			worstCaseFunc( getModel()->index( i, colIndex ) );
 	}
-	getUISceneNode()->setIsLoading( false );
 	return lWidth;
 }
 

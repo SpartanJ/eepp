@@ -18,9 +18,7 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	mSortIconSize( PixelDensity::dpToPxI( 20 ) ) {
 	mHeader = UILinearLayout::NewWithTag( mTag + "::header", UIOrientation::Horizontal );
 	mHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	mHeader->setParent( this );
-	mHeader->setVisible( true );
-	mHeader->setEnabled( true );
+	mHeader->setParent( this )->setVisible( true )->setEnabled( true );
 	mVScroll->on( Event::OnAlphaChange, [this]( const Event* ) {
 		if ( mVScroll->getAlpha() == 0.f || mVScroll->getAlpha() == 1.f )
 			updateColumnsWidth();

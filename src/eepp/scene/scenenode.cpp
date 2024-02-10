@@ -127,6 +127,12 @@ void SceneNode::draw() {
 	mWindow->setView( prevView );
 
 	GlobalBatchRenderer::instance()->draw();
+
+	if ( mVerbose && mFirstFrame ) {
+		mFirstFrame = false;
+		Log::info( "First frame in SceneNode took %.2f ms",
+				   mClock.getElapsedTime().asMilliseconds() );
+	}
 }
 
 void SceneNode::update( const Time& time ) {
@@ -497,6 +503,14 @@ void SceneNode::setUpdateAllChilds( const bool& updateAllChilds ) {
 
 const Float& SceneNode::getDPI() const {
 	return mDPI;
+}
+
+bool SceneNode::getVerbose() const {
+	return mVerbose;
+}
+
+void SceneNode::setVerbose( bool verbose ) {
+	mVerbose = verbose;
 }
 
 }} // namespace EE::Scene
