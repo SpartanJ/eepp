@@ -327,8 +327,7 @@ class EE_API UIConsole : public UIWidget,
 
 	TextPosition getPositionOnScreen( Vector2f position );
 
-	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-						 const String& translateString, const std::string& icon,
+	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
 	Drawable* findIcon( const std::string& name );

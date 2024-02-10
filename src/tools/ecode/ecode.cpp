@@ -331,8 +331,9 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 }
 
 void App::downloadFileWebDialog() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT, i18n( "please_enter_file_url", "Please enter the file URL..." ) );
+	UIMessageBox* msgBox =
+		UIMessageBox::New( UIMessageBox::INPUT, i18n( "please_enter_file_url_ellipsis",
+													  "Please enter the file URL..." ) );
 
 	msgBox->setTitle( mWindowTitle );
 	msgBox->getTextInput()->setHint( i18n( "any_https_or_http_url", "Any https or http URL" ) );
@@ -1703,14 +1704,14 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 
 			menu->addSeparator();
 
-			menuAdd( "open_containing_folder", "Open Containing Folder...", "folder-open",
+			menuAdd( "open_containing_folder_ellipsis", "Open Containing Folder...", "folder-open",
 					 "open-containing-folder" );
 
-			menuAdd( "open_in_new_window", "Open in New Window...", "window",
+			menuAdd( "open_in_new_window_ellipsis", "Open in New Window...", "window",
 					 "open-in-new-window" );
 
-			menuAdd( "copy_containing_folder_path", "Copy Containing Folder Path...", "copy",
-					 "copy-containing-folder-path" );
+			menuAdd( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path...",
+					 "copy", "copy-containing-folder-path" );
 
 			menuAdd( "copy_file_path", "Copy File Path", "copy", "copy-file-path" );
 
@@ -3560,8 +3561,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			language = mConfig.ui.language;
 		if ( !language.empty() )
 			mUISceneNode->getTranslator().setCurrentLanguage( language );
-		std::string currentLanguage(
-			language.empty() ? mUISceneNode->getTranslator().getCurrentLanguage() : language );
+		std::string currentLanguage( mUISceneNode->getTranslator().getCurrentLanguage() );
 		std::string langPath( mResPath + "i18n" + FileSystem::getOSSlash() + currentLanguage +
 							  ".xml" );
 		if ( currentLanguage != "en" && FileSystem::fileExists( langPath ) )
@@ -3603,7 +3603,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 								  "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 		if ( ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == "DejaVuSansMono NF" &&
 			   mFontMono->getInfo().family == "DejaVu Sans Mono" ) ||
-			 ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == mFontMono->getInfo().family ) ) {
+			 ( nullptr != mTerminalFont &&
+			   mTerminalFont->getInfo().family == mFontMono->getInfo().family ) ) {
 			mTerminalFont->setBoldFont( mFontMono->getBoldFont() );
 			mTerminalFont->setItalicFont( mFontMono->getItalicFont() );
 			mTerminalFont->setBoldItalicFont( mFontMono->getBoldItalicFont() );

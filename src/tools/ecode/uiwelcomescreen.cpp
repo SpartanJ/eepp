@@ -111,8 +111,8 @@ static const auto LAYOUT = R"xml(
 			<button id="open-folder" text="@string(open_a_folder, Open a Folder)" />
 			<button id="open-file" text="@string(open_a_file, Open a File)" />
 			<button id="create-new-terminal" text="@string(new_terminal, New Terminal)" />
-			<button id="recent-folders" text="@string(recent_folders, Recent Folders...)" />
-			<button id="recent-files" text="@string(recent_files, Recent Files...)" />
+			<button id="recent-folders" text="@string(recent_folders_ellipsis, Recent Folders...)" />
+			<button id="recent-files" text="@string(recent_files_ellipsis, Recent Files...)" />
 			<button id="plugin-manager-open" text="@string(plugin_manager, Plugin Manager)" />
 			<button id="keybindings" text="@string(keybindings, Keybindings)" />
 			<widget class="separator" lw="mp" lh="32dp" />

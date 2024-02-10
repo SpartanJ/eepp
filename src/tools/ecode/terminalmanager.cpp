@@ -213,7 +213,7 @@ UIMenu* TerminalManager::createColorSchemeMenu() {
 
 		if ( menu->getCount() == maxItems && colorSchemes.size() - total > 1 ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
-			menu->addSubMenu( mApp->i18n( "more...", "More..." ), nullptr, newMenu );
+			menu->addSubMenu( mApp->i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
 			newMenu->addEventListener( Event::OnItemClicked, cb );
 			mColorSchemeMenues.push_back( newMenu );
 			menu = newMenu;
@@ -311,7 +311,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::INPUT, mApp->i18n( "new_terminal_name", "New terminal name:" ) );
 		msgBox->setTitle( mApp->getWindowTitle() );
-		msgBox->getTextInput()->setHint( mApp->i18n( "any_name", "Any name..." ) );
+		msgBox->getTextInput()->setHint( mApp->i18n( "any_name_ellipsis", "Any name..." ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
 		msgBox->addEventListener( Event::OnConfirm, [&, msgBox, term]( const Event* ) {

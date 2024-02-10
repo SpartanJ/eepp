@@ -37,7 +37,7 @@ class AddCircleCommand : public UndoCommand {
 	}
 
 	virtual ~AddCircleCommand() {
-		if ( !SceneManager::instance()->isShuttingDown() )
+		if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() )
 			circle->close();
 	}
 

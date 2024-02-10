@@ -876,12 +876,10 @@ Drawable* UITextInput::findIcon( const std::string& name ) {
 	return nullptr;
 }
 
-UIMenuItem* UITextInput::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-								  const String& translateString, const std::string& icon,
-								  const std::string& cmd ) {
+UIMenuItem* UITextInput::menuAdd( UIPopUpMenu* menu, const String& translateString,
+								  const std::string& icon, const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( i18n( "uicodeeditor_" + translateKey, translateString ),
-				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( translateString, findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }
@@ -890,16 +888,20 @@ void UITextInput::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	menuAdd( menu, "undo", "Undo", "undo", "undo" )->setEnabled( mDoc.hasUndo() );
-	menuAdd( menu, "redo", "Redo", "redo", "redo" )->setEnabled( mDoc.hasRedo() );
+	menuAdd( menu, i18n( "uicodeeditor_undo", "Undo" ), "undo", "undo" )
+		->setEnabled( mDoc.hasUndo() );
+	menuAdd( menu, i18n( "uicodeeditor_redo", "Redo" ), "redo", "redo" )
+		->setEnabled( mDoc.hasRedo() );
 	menu->addSeparator();
 
-	menuAdd( menu, "cut", "Cut", "cut", "cut" )->setEnabled( mDoc.hasSelection() );
-	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mDoc.hasSelection() );
-	menuAdd( menu, "cut", "Paste", "paste", "paste" );
-	menuAdd( menu, "delete", "Delete", "delete-text", "delete-to-next-char" );
+	menuAdd( menu, i18n( "uicodeeditor_cut", "Cut" ), "cut", "cut" )
+		->setEnabled( mDoc.hasSelection() );
+	menuAdd( menu, i18n( "uicodeeditor_copy", "Copy" ), "copy", "copy" )
+		->setEnabled( mDoc.hasSelection() );
+	menuAdd( menu, i18n( "uicodeeditor_cut", "Paste" ), "paste", "paste" );
+	menuAdd( menu, i18n( "uicodeeditor_delete", "Delete" ), "delete-text", "delete-to-next-char" );
 	menu->addSeparator();
-	menuAdd( menu, "select_all", "Select All", "select-all", "select-all" );
+	menuAdd( menu, i18n( "uicodeeditor_select_all", "Select All" ), "select-all", "select-all" );
 }
 
 bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& flags ) {

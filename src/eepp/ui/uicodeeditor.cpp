@@ -1051,12 +1051,10 @@ Sizef UICodeEditor::getMaxScroll() const {
 							getLineHeight() );
 }
 
-UIMenuItem* UICodeEditor::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-								   const String& translateString, const std::string& icon,
-								   const std::string& cmd ) {
+UIMenuItem* UICodeEditor::menuAdd( UIPopUpMenu* menu, const String& translateString,
+								   const std::string& icon, const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( i18n( "uicodeeditor_" + translateKey, translateString ), findIcon( icon ),
-				   mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( translateString, findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }
@@ -1065,30 +1063,40 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	menuAdd( menu, "undo", "Undo", "undo", "undo" )->setEnabled( mDoc->hasUndo() );
-	menuAdd( menu, "redo", "Redo", "redo", "redo" )->setEnabled( mDoc->hasRedo() );
+	menuAdd( menu, i18n( "uicodeeditor_undo", "Undo" ), "undo", "undo" )
+		->setEnabled( mDoc->hasUndo() );
+	menuAdd( menu, i18n( "uicodeeditor_redo", "Redo" ), "redo", "redo" )
+		->setEnabled( mDoc->hasRedo() );
 	menu->addSeparator();
 
-	menuAdd( menu, "cut", "Cut", "cut", "cut" )->setEnabled( mDoc->hasSelection() );
-	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mDoc->hasSelection() );
-	menuAdd( menu, "paste", "Paste", "paste", "paste" );
-	menuAdd( menu, "delete", "Delete", "delete-text", "delete-to-next-char" );
+	menuAdd( menu, i18n( "uicodeeditor_cut", "Cut" ), "cut", "cut" )
+		->setEnabled( mDoc->hasSelection() );
+	menuAdd( menu, i18n( "uicodeeditor_copy", "Copy" ), "copy", "copy" )
+		->setEnabled( mDoc->hasSelection() );
+	menuAdd( menu, i18n( "uicodeeditor_paste", "Paste" ), "paste", "paste" );
+	menuAdd( menu, i18n( "uicodeeditor_delete", "Delete" ), "delete-text", "delete-to-next-char" );
 	menu->addSeparator();
-	menuAdd( menu, "select_all", "Select All", "select-all", "select-all" );
+	menuAdd( menu, i18n( "uicodeeditor_select_all", "Select All" ), "select-all", "select-all" );
 
 	if ( mDoc->hasFilepath() ) {
 		menu->addSeparator();
 
-		menuAdd( menu, "open_containing_folder", "Open Containing Folder...", "folder-open",
-				 "open-containing-folder" );
+		menuAdd(
+			menu,
+			i18n( "uicodeeditor_open_containing_folder_ellipsis", "Open Containing Folder..." ),
+			"folder-open", "open-containing-folder" );
 
-		menuAdd( menu, "copy_containing_folder_path", "Copy Containing Folder Path...", "copy",
-				 "copy-containing-folder-path" );
+		menuAdd( menu,
+				 i18n( "uicodeeditor_copy_containing_folder_path_ellipsis",
+					   "Copy Containing Folder Path..." ),
+				 "copy", "copy-containing-folder-path" );
 
-		menuAdd( menu, "copy_file_path", "Copy File Path", "copy", "copy-file-path" );
+		menuAdd( menu, i18n( "uicodeeditor_copy_file_path", "Copy File Path" ), "copy",
+				 "copy-file-path" );
 
-		menuAdd( menu, "copy_file_path_and_position", "Copy File Path and Position", "copy",
-				 "copy-file-path-and-position" );
+		menuAdd( menu,
+				 i18n( "uicodeeditor_copy_file_path_and_position", "Copy File Path and Position" ),
+				 "copy", "copy-file-path-and-position" );
 	}
 }
 

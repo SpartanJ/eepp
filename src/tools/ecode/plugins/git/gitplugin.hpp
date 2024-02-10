@@ -207,9 +207,9 @@ class GitPlugin : public PluginBase {
 				   bool displaySuccessMsg = false, bool updateBranchesOnError = false,
 				   bool updateStatusOnError = false );
 
-	void addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,
-					  const std::string& icon = "",
-					  const KeyBindings::Shortcut& forcedKeybinding = KeyBindings::Shortcut() );
+	void menuAdd( UIMenu* menu, const std::string& cmd, const std::string& text,
+				  const std::string& icon = "",
+				  const KeyBindings::Shortcut& forcedKeybinding = KeyBindings::Shortcut() );
 
 	std::string repoSelected();
 

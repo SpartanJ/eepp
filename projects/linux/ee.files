@@ -972,6 +972,7 @@
 ../../src/eepp/ui/tools/uitextureviewer.hpp
 ../../src/eepp/ui/tools/uiwidgetinspector.cpp
 ../../src/eepp/ui/uiabstractview.cpp
+../../src/eepp/ui/uiapplication.cpp
 ../../src/eepp/ui/uibackgrounddrawable.cpp
 ../../src/eepp/ui/uiborderdrawable.cpp
 ../../src/eepp/ui/uicheckbox.cpp

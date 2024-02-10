@@ -41,16 +41,16 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 			   getKeybind( "create-new-window" ) )
 		->setId( "create-new-window" );
 	mSettingsMenu
-		->add( i18n( "open_file", "Open File..." ), findIcon( "document-open" ),
+		->add( i18n( "open_file_ellipsis", "Open File..." ), findIcon( "document-open" ),
 			   getKeybind( "open-file" ) )
 		->setId( "open-file" );
 	mSettingsMenu
-		->add( i18n( "open_folder", "Open Folder..." ), findIcon( "document-open" ),
+		->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "document-open" ),
 			   getKeybind( "open-folder" ) )
 		->setId( "open-folder" );
 	mSettingsMenu
-		->add( i18n( "open_file_from_web", "Open File from Web..." ), findIcon( "download-cloud" ),
-			   getKeybind( "download-file-web" ) )
+		->add( i18n( "open_file_from_web_ellipsis", "Open File from Web..." ),
+			   findIcon( "download-cloud" ), getKeybind( "download-file-web" ) )
 		->setId( "download-file-web" );
 	mSettingsMenu
 		->addSubMenu( i18n( "recent_files", "Recent Files" ), findIcon( "document-recent" ),
@@ -65,7 +65,7 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 		->add( i18n( "save", "Save" ), findIcon( "document-save" ), getKeybind( "save-doc" ) )
 		->setId( "save-doc" );
 	mSettingsMenu
-		->add( i18n( "save_as", "Save as..." ), findIcon( "document-save-as" ),
+		->add( i18n( "save_as_ellipsis", "Save as..." ), findIcon( "document-save-as" ),
 			   getKeybind( "save-as-doc" ) )
 		->setId( "save-as-doc" );
 	mSettingsMenu
@@ -181,7 +181,7 @@ UIMenu* SettingsMenu::createFileTypeMenu() {
 
 		if ( menu->getCount() == maxItems && names.size() - total > 1 ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
-			menu->addSubMenu( i18n( "more...", "More..." ), nullptr, newMenu );
+			menu->addSubMenu( i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
 			newMenu->addEventListener( Event::OnItemClicked, cb );
 			mFileTypeMenues.push_back( newMenu );
 			menu = newMenu;
@@ -221,7 +221,7 @@ UIMenu* SettingsMenu::createColorSchemeMenu() {
 
 		if ( menu->getCount() == maxItems && colorSchemes.size() - total > 1 ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
-			menu->addSubMenu( i18n( "more...", "More..." ), nullptr, newMenu );
+			menu->addSubMenu( i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
 			newMenu->addEventListener( Event::OnItemClicked, cb );
 			mColorSchemeMenues.push_back( newMenu );
 			menu = newMenu;
@@ -823,13 +823,13 @@ UIMenu* SettingsMenu::createEditMenu() {
 			   getKeybind( "find-replace" ) )
 		->setId( "find-replace" );
 	menu->addSeparator();
-	menu->add( i18n( "open_containing_folder", "Open Containing Folder..." ),
+	menu->add( i18n( "open_containing_folder_ellipsis", "Open Containing Folder..." ),
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
-	menu->add( i18n( "open_in_new_window", "Open in New Window..." ), findIcon( "window" ),
+	menu->add( i18n( "open_in_new_window_ellipsis", "Open in New Window..." ), findIcon( "window" ),
 			   getKeybind( "open-in-new-window" ) )
 		->setId( "open-in-new-window" );
-	menu->add( i18n( "copy_containing_folder_path", "Copy Containing Folder Path..." ),
+	menu->add( i18n( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path..." ),
 			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
 		->setId( "copy-containing-folder-path" );
 	menu->add( i18n( "copy_file_path", "Copy File Path" ), findIcon( "copy" ),
@@ -907,13 +907,16 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->setId( "editor-font-size" );
 	mWindowMenu->add( i18n( "terminal_font_size", "Terminal Font Size" ), findIcon( "font-size" ) )
 		->setId( "terminal-font-size" );
-	mWindowMenu->add( i18n( "serif_font", "Serif Font..." ), findIcon( "font-size" ) )
+	mWindowMenu->add( i18n( "serif_font_ellipsis", "Serif Font..." ), findIcon( "font-size" ) )
 		->setId( "serif-font" );
-	mWindowMenu->add( i18n( "monospace_font", "Monospace Font..." ), findIcon( "font-size" ) )
+	mWindowMenu
+		->add( i18n( "monospace_font_ellipsis", "Monospace Font..." ), findIcon( "font-size" ) )
 		->setId( "monospace-font" );
-	mWindowMenu->add( i18n( "terminal_font", "Terminal Font..." ), findIcon( "font-size" ) )
+	mWindowMenu
+		->add( i18n( "terminal_font_ellipsis", "Terminal Font..." ), findIcon( "font-size" ) )
 		->setId( "terminal-font" );
-	mWindowMenu->add( i18n( "fallback_font", "Fallback Font..." ), findIcon( "font-size" ) )
+	mWindowMenu
+		->add( i18n( "fallback_font_ellipsis", "Fallback Font..." ), findIcon( "font-size" ) )
 		->setId( "fallback-font" );
 	mWindowMenu->addSeparator();
 	mWindowMenu
@@ -934,12 +937,12 @@ UIMenu* SettingsMenu::createWindowMenu() {
 					   mApp->getConfig().ui.showStatusBar, getKeybind( "toggle-status-bar" ) )
 		->setId( "toggle-status-bar" );
 	mWindowMenu
-		->add( i18n( "move_panel_left", "Move panel to left..." ), findIcon( "layout-left" ),
-			   getKeybind( "layout-left" ) )
+		->add( i18n( "move_panel_left_ellipsis", "Move panel to left..." ),
+			   findIcon( "layout-left" ), getKeybind( "layout-left" ) )
 		->setId( "move-panel-left" );
 	mWindowMenu
-		->add( i18n( "move_panel_right", "Move panel to right..." ), findIcon( "layout-right" ),
-			   getKeybind( "layout-rigth" ) )
+		->add( i18n( "move_panel_right_ellipsis", "Move panel to right..." ),
+			   findIcon( "layout-right" ), getKeybind( "layout-rigth" ) )
 		->setId( "move-panel-right" );
 	mWindowMenu->addSeparator();
 	mWindowMenu
@@ -1138,7 +1141,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu->addCheckBox( i18n( "highlight_selection_match", "Highlight Selection Match" ) )
 		->setActive( mApp->getConfig().editor.highlightSelectionMatch )
 		->setId( "highlight-selection-match" );
-	mViewMenu->addCheckBox( i18n( "enable-vertical-scrollbar", "Enable Vertical ScrollBar" ) )
+	mViewMenu->addCheckBox( i18n( "enable_vertical_scrollbar", "Enable Vertical ScrollBar" ) )
 		->setActive( mApp->getConfig().editor.verticalScrollbar )
 		->setId( "enable-vertical-scrollbar" );
 	mViewMenu->addCheckBox( i18n( "enable_horizontal_scrollbar", "Enable Horizontal ScrollBar" ) )
@@ -1289,30 +1292,31 @@ UIMenu* SettingsMenu::createViewMenu() {
 UIPopUpMenu* SettingsMenu::createToolsMenu() {
 	mToolsMenu = UIPopUpMenu::New();
 	mToolsMenu
-		->add( i18n( "locate", "Locate..." ), findIcon( "search" ), getKeybind( "open-locatebar" ) )
+		->add( i18n( "locate_ellipsis", "Locate..." ), findIcon( "search" ),
+			   getKeybind( "open-locatebar" ) )
 		->setId( "open-locatebar" );
 	mToolsMenu
-		->add( i18n( "command_palette", "Command Palette..." ), findIcon( "search" ),
+		->add( i18n( "command_palette_ellipsis", "Command Palette..." ), findIcon( "search" ),
 			   getKeybind( "open-command-palette" ) )
 		->setId( "open-command-palette" );
 	mToolsMenu
-		->add( i18n( "project_find", "Project Find..." ), findIcon( "search" ),
+		->add( i18n( "project_find_ellipsis", "Project Find..." ), findIcon( "search" ),
 			   getKeybind( "open-global-search" ) )
 		->setId( "open-global-search" );
 	mToolsMenu
-		->add( i18n( "show_open_documents", "Show Open Documents..." ), findIcon( "search" ),
-			   getKeybind( "show-open-documents" ) )
+		->add( i18n( "show_open_documents_ellipsis", "Show Open Documents..." ),
+			   findIcon( "search" ), getKeybind( "show-open-documents" ) )
 		->setId( "show-open-documents" );
 	mToolsMenu
-		->add( i18n( "workspace_symbol_find", "Search Worskspace Symbol..." ), findIcon( "search" ),
-			   getKeybind( "open-workspace-symbol-search" ) )
+		->add( i18n( "workspace_symbol_find_ellipsis", "Search Worskspace Symbol..." ),
+			   findIcon( "search" ), getKeybind( "open-workspace-symbol-search" ) )
 		->setId( "open-workspace-symbol-search" );
 	mToolsMenu
-		->add( i18n( "document_symbol_find", "Search Document Symbol..." ), findIcon( "search" ),
-			   getKeybind( "open-document-symbol-search" ) )
+		->add( i18n( "document_symbol_find_ellipsis", "Search Document Symbol..." ),
+			   findIcon( "search" ), getKeybind( "open-document-symbol-search" ) )
 		->setId( "open-workspace-symbol-search" );
 	mToolsMenu
-		->add( i18n( "go_to_line", "Go to line..." ), findIcon( "go-to-line" ),
+		->add( i18n( "go_to_line_ellipsis", "Go to line..." ), findIcon( "go-to-line" ),
 			   getKeybind( "go-to-line" ) )
 		->setId( "go-to-line" );
 
@@ -1559,11 +1563,13 @@ void SettingsMenu::createProjectTreeMenu() {
 	mProjectTreeMenu = UIPopUpMenu::New();
 
 	if ( !mApp->getCurrentProject().empty() ) {
-		mProjectTreeMenu->add( i18n( "new_file", "New File..." ), findIcon( "file-add" ) )
+		mProjectTreeMenu->add( i18n( "new_file_ellipsis", "New File..." ), findIcon( "file-add" ) )
 			->setId( "new_file" );
-		mProjectTreeMenu->add( i18n( "new_folder", "New Folder..." ), findIcon( "folder-add" ) )
+		mProjectTreeMenu
+			->add( i18n( "new_folder_ellipsis", "New Folder..." ), findIcon( "folder-add" ) )
 			->setId( "new_folder" );
-		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
+		mProjectTreeMenu
+			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
 			->setId( "open_folder" );
 		mProjectTreeMenu
 			->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
@@ -1580,13 +1586,16 @@ void SettingsMenu::createProjectTreeMenu() {
 						   !mApp->getFileSystemModel()->getDisplayConfig().ignoreHidden )
 			->setId( "show-hidden-files" );
 		mProjectTreeMenu->addSeparator();
-		mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View..." ), findIcon( "refresh" ) )
+		mProjectTreeMenu
+			->add( i18n( "refresh_view_ellipsis", "Refresh View..." ), findIcon( "refresh" ) )
 			->setId( "refresh-view" );
 		mProjectTreeMenu->addSeparator();
-		mProjectTreeMenu->add( i18n( "configure_ignore_files", "Configure Ignore Files..." ) )
+		mProjectTreeMenu
+			->add( i18n( "configure_ignore_files_ellipsis", "Configure Ignore Files..." ) )
 			->setId( "configure-ignore-files" );
 	} else if ( !mApp->getFileSystemModel() ) {
-		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
+		mProjectTreeMenu
+			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
 			->setId( "open-folder" );
 	}
 
@@ -1635,11 +1644,13 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 	mProjectTreeMenu = UIPopUpMenu::New();
 
 	if ( file.isDirectory() ) {
-		mProjectTreeMenu->add( i18n( "new_file", "New File..." ), findIcon( "file-add" ) )
+		mProjectTreeMenu->add( i18n( "new_file_ellipsis", "New File..." ), findIcon( "file-add" ) )
 			->setId( "new_file" );
-		mProjectTreeMenu->add( i18n( "new_folder", "New Folder..." ), findIcon( "folder-add" ) )
+		mProjectTreeMenu
+			->add( i18n( "new_folder_ellipsis", "New Folder..." ), findIcon( "folder-add" ) )
 			->setId( "new_folder" );
-		mProjectTreeMenu->add( i18n( "open_folder", "Open Folder..." ), findIcon( "folder-open" ) )
+		mProjectTreeMenu
+			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
 			->setId( "open_folder" );
 	} else {
 		if ( file.isRegularFile() ) {
@@ -1647,7 +1658,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			FileSystem::dirAddSlashAtEnd( curDir );
 			if ( curDir == file.getDirectoryPath() ) {
 				mProjectTreeMenu
-					->add( i18n( "new_file_in_file_folder", "New File in File Folder..." ),
+					->add( i18n( "new_file_in_file_folder_ellipsis", "New File in File Folder..." ),
 						   findIcon( "file-add" ) )
 					->setId( "new_file" );
 			}
@@ -1656,20 +1667,21 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 		mProjectTreeMenu->add( i18n( "open_file", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu
-			->add( i18n( "open_containin_folder", "Open Containing Folder..." ),
+			->add( i18n( "open_containing_folder_ellipsis", "Open Containing Folder..." ),
 				   findIcon( "folder-open" ) )
 			->setId( "open_containing_folder" );
 		mProjectTreeMenu
-			->add( i18n( "new_file_in_directory", "New File in directory..." ),
+			->add( i18n( "new_file_in_directory_ellipsis", "New File in directory..." ),
 				   findIcon( "file-add" ) )
 			->setId( "new_file_in_place" );
 		mProjectTreeMenu
-			->add( i18n( "duplicate_file", "Duplicate File..." ), findIcon( "file-copy" ) )
+			->add( i18n( "duplicate_file_ellipsis", "Duplicate File..." ), findIcon( "file-copy" ) )
 			->setId( "duplicate_file" );
 	}
 	mProjectTreeMenu->add( i18n( "rename", "Rename" ), findIcon( "edit" ), "F2" )
 		->setId( "rename" );
-	mProjectTreeMenu->add( i18n( "remove", "Remove..." ), findIcon( "delete-bin" ), "Delete" )
+	mProjectTreeMenu
+		->add( i18n( "remove_ellipsis", "Remove..." ), findIcon( "delete-bin" ), "Delete" )
 		->setId( "remove" );
 
 	if ( file.isDirectory() || file.isExecutable() ) {
@@ -1700,12 +1712,14 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ), findIcon( "expand-all" ) )
 		->setId( "expand-all" );
 	mProjectTreeMenu->addSeparator();
-	mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View..." ), findIcon( "refresh" ) )
+	mProjectTreeMenu
+		->add( i18n( "refresh_view_ellipsis", "Refresh View..." ), findIcon( "refresh" ) )
 		->setId( "refresh-view" );
 
 	if ( !mApp->getCurrentProject().empty() ) {
 		mProjectTreeMenu->addSeparator();
-		mProjectTreeMenu->add( i18n( "configure_ignore_files", "Configure Ignore Files..." ) )
+		mProjectTreeMenu
+			->add( i18n( "configure_ignore_files_ellipsis", "Configure Ignore Files..." ) )
 			->setId( "configure-ignore-files" );
 	}
 

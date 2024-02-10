@@ -711,11 +711,11 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 	if ( progressFn ) {
 		progressFn( 0,
 					Sys::getDateTimeStr() + ": " +
-						String::format(
-							i18n( "running_steps_for_project", "Running steps for project %s...\n" )
-								.toUtf8()
-								.c_str(),
-							buildName.c_str() ),
+						String::format( i18n( "running_steps_for_project_ellipsis",
+											  "Running steps for project %s...\n" )
+											.toUtf8()
+											.c_str(),
+										buildName.c_str() ),
 					nullptr );
 
 		if ( !buildType.empty() )

@@ -1192,12 +1192,10 @@ void UIConsole::copySelection() {
 	getUISceneNode()->getWindow()->getClipboard()->setText( str );
 }
 
-UIMenuItem* UIConsole::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-								const String& translateString, const std::string& icon,
-								const std::string& cmd ) {
+UIMenuItem* UIConsole::menuAdd( UIPopUpMenu* menu, const String& translateString,
+								const std::string& icon, const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( i18n( "uiconsole_" + translateKey, translateString ), findIcon( icon ),
-				   mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( translateString, findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }
@@ -1208,7 +1206,8 @@ bool UIConsole::onCreateContextMenu( const Vector2i& position, const Uint32& fla
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
-	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mSelection.hasSelection() );
+	menuAdd( menu, i18n( "uiconsole_copy", "Copy" ), "copy", "copy" )
+		->setEnabled( mSelection.hasSelection() );
 
 	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
 	sendEvent( &event );

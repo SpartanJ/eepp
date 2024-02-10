@@ -1127,7 +1127,7 @@ void App::createAppMenu() {
 		->setId( "recent-projects" );
 	uiPopMenu->addSeparator();
 	uiPopMenu->add( i18n( "save", "Save" ), findIcon( "document-save" ) )->setId( "save-doc" );
-	uiPopMenu->add( i18n( "save_as", "Save as..." ), findIcon( "document-save-as" ) )
+	uiPopMenu->add( i18n( "save_as_ellipsis", "Save as..." ), findIcon( "document-save-as" ) )
 		->setId( "save-as-doc" );
 	uiPopMenu->add( i18n( "save_all", "Save All" ), findIcon( "document-save-as" ) )
 		->setId( "save-all" );

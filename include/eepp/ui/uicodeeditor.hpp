@@ -631,9 +631,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setFileLockIconName( const std::string& fileLockIconName );
 
 	bool getDisplayLockedIcon() const;
-	void setDisplayLockedIcon(bool displayLockedIcon);
+	void setDisplayLockedIcon( bool displayLockedIcon );
 
-	protected:
+  protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };
@@ -892,8 +892,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void createDefaultContextMenuOptions( UIPopUpMenu* menu );
 
-	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-						 const String& translateString, const std::string& icon,
+	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
 	void drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& lineRange );

@@ -310,7 +310,7 @@ bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		return false;
 
 	menu->addSeparator();
-	menu->add( editor->getUISceneNode()->i18n( "formatter-format-document", "Format Document" ),
+	menu->add( editor->getUISceneNode()->i18n( "formatter_format_document", "Format Document" ),
 			   nullptr, KeyBindings::keybindFormat( mKeyBindings["format-doc"] ) )
 		->setId( "format-doc" );
 

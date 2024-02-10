@@ -227,8 +227,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
 
-	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-						 const String& translateString, const std::string& icon,
+	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
 	Drawable* findIcon( const std::string& name );

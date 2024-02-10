@@ -401,12 +401,12 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 
 	String str( blame.error.empty()
 					? String::format( "%s: %s (%s)\n%s: %s (%s)\n%s: %s\n\n%s",
-									  i18n( "commit", "commit" ).capitalize().toUtf8().c_str(),
+									  i18n( "commit", "Commit" ).toUtf8().c_str(),
 									  blame.commitHash.c_str(), blame.commitShortHash.c_str(),
-									  i18n( "author", "author" ).capitalize().toUtf8().c_str(),
+									  i18n( "author", "Author" ).toUtf8().c_str(),
 									  blame.author.c_str(), blame.authorEmail.c_str(),
-									  i18n( "date", "date" ).capitalize().toUtf8().c_str(),
-									  blame.date.c_str(), blame.commitMessage.c_str() )
+									  i18n( "date", "Date" ).toUtf8().c_str(), blame.date.c_str(),
+									  blame.commitMessage.c_str() )
 					: blame.error );
 
 	Text::wrapText( str, PixelDensity::dpToPx( 400 ), tooltip->getFontStyleConfig(),
@@ -761,7 +761,7 @@ void GitPlugin::commit( const std::string& repoPath ) {
 
 		msgBox->closeWindow();
 		runAsync(
-			[this, msg, ammend, bypassHook, msgBox, pushCommit, repoPath]() {
+			[this, msg, ammend, bypassHook, pushCommit, repoPath]() {
 				std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
 				bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
 				auto res = mGit->commit( msg, ammend, bypassHook, repoPath );
@@ -773,7 +773,7 @@ void GitPlugin::commit( const std::string& repoPath ) {
 						return mGit->push( repoPath );
 					}
 				} else
-					mLastCommitMsg = msgBox->getTextEdit()->getText();
+					mLastCommitMsg = msg;
 				return res;
 			},
 			true, true, true, true, true );
@@ -1261,9 +1261,9 @@ void GitPlugin::buildSidePanelTab() {
 					<vbox id="git_branches" lw="mp" lh="wc">
 						<hbox lw="mp" lh="wc" padding="4dp">
 							<DropDownList id="git_repo" lw="0" lh="wc" lw8="1" />
-							<PushButton id="branch_pull" text="@string(pull_branch, Pull)" tooltip="@string(pull_branch, Pull Branch)" text-as-fallback="true" icon="icon(repo-pull, 12dp)" margin-left="2dp" />
-							<PushButton id="branch_push" text="@string(push_branch, Push)" tooltip="@string(push_branch, Push Branch)" text-as-fallback="true" icon="icon(repo-push, 12dp)" margin-left="2dp" />
-							<PushButton id="branch_add" text="@string(add_branch, Add Branch)" tooltip="@string(add_branch, Add Branch)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
+							<PushButton id="branch_pull" text="@string(git_pull, Pull)" tooltip="@string(pull_branch, Pull Branch)" text-as-fallback="true" icon="icon(repo-pull, 12dp)" margin-left="2dp" />
+							<PushButton id="branch_push" text="@string(git_push, Push)" tooltip="@string(push_branch, Push Branch)" text-as-fallback="true" icon="icon(repo-push, 12dp)" margin-left="2dp" />
+							<PushButton id="branch_add" text="@string(git_add_branch, Add Branch)" tooltip="@string(add_branch, Add Branch)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
 						</hbox>
 						<TreeView id="git_branches_tree" lw="mp" lh="0" lw8="1" />
 					</vbox>
@@ -1413,17 +1413,17 @@ void GitPlugin::buildSidePanelTab() {
 						menu->setId( "git_status_type_menu" );
 
 						if ( status->type == Git::GitStatusType::Staged ) {
-							addMenuItem( menu, "git-commit", "Commit", "git-commit" );
-							addMenuItem( menu, "git-unstage-all", "Unstage All" );
+							menuAdd( menu, "git-commit", "Commit", "git-commit" );
+							menuAdd( menu, "git-unstage-all", "Unstage All" );
 						}
 
 						if ( status->type == Git::GitStatusType::Untracked ||
 							 status->type == Git::GitStatusType::Changed )
-							addMenuItem( menu, "git-stage-all", "Stage All" );
+							menuAdd( menu, "git-stage-all", "Stage All" );
 
 						if ( status->type == Git::GitStatusType::Changed ) {
 							menu->addSeparator();
-							addMenuItem( menu, "git-discard-all", "Discard All" );
+							menuAdd( menu, "git-discard-all", "Discard All" );
 						}
 
 						menu->on( Event::OnItemClicked, [this, model,
@@ -1475,17 +1475,17 @@ void GitPlugin::buildSidePanelTab() {
 					menu->setId( "git_repo_type_menu" );
 
 					if ( repo->hasStatusType( Git::GitStatusType::Staged ) ) {
-						addMenuItem( menu, "git-commit", "Commit", "git-commit" );
+						menuAdd( menu, "git-commit", i18n( "git_commit", "Commit" ), "git-commit" );
 					}
 
 					if ( repo->hasStatusType( Git::GitStatusType::Untracked ) ) {
-						addMenuItem( menu, "git-stage-all", "Stage All" );
+						menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ) );
 					}
 
-					addMenuItem( menu, "git-fetch", "Fetch", "repo-fetch" );
-					addMenuItem( menu, "git-pull", "Pull", "repo-pull" );
-					addMenuItem( menu, "git-push", "Push", "repo-push" );
-					addMenuItem( menu, "git-stash", "Stash All", "git-stash" );
+					menuAdd( menu, "git-fetch", i18n( "git_fetch", "Fetch" ), "repo-fetch" );
+					menuAdd( menu, "git-pull", i18n( "git_pull", "Pull" ), "repo-pull" );
+					menuAdd( menu, "git-push", i18n( "git_push", "Push" ), "repo-push" );
+					menuAdd( menu, "git-stash", i18n( "git_stash_all", "Stash All" ), "git-stash" );
 
 					menu->on( Event::OnItemClicked,
 							  [this, model, repoName, repoPath]( const Event* event ) {
@@ -1541,28 +1541,33 @@ void GitPlugin::openBranchMenu( const Git::Branch& branch ) {
 	menu->setId( "git_branch_menu" );
 
 	if ( branch.type != Git::RefType::Stash ) {
-		addMenuItem( menu, "git-fetch", "Fetch", "repo-fetch" );
+		menuAdd( menu, "git-fetch", i18n( "git_fetch", "Fetch" ), "repo-fetch" );
 
 		if ( gitBranch() != branch.name ) {
-			addMenuItem( menu, "git-checkout", "Check Out...", "git-fetch" );
+			menuAdd( menu, "git-checkout", i18n( "git_checkout_ellipsis", "Check Out..." ),
+					 "git-fetch" );
 		}
 
 		if ( branch.type == Git::RefType::Head ) {
-			addMenuItem( menu, "git-branch-rename", "Rename", "", { KEY_F2 } );
-			addMenuItem( menu, "git-pull", "Pull", "repo-pull" );
+			menuAdd( menu, "git-branch-rename", i18n( "git_rename", "Rename" ), "", { KEY_F2 } );
+			menuAdd( menu, "git-pull", i18n( "git_pull", "Pull" ), "repo-pull" );
 			if ( branch.ahead )
-				addMenuItem( menu, "git-push", "Push", "repo-push" );
+				menuAdd( menu, "git-push", i18n( "git_push", "Push" ), "repo-push" );
 			if ( branch.behind )
-				addMenuItem( menu, "git-fast-forward-merge", "Fast Forward Merge" );
+				menuAdd( menu, "git-fast-forward-merge",
+						 i18n( "git_fast_forward_merge", "Fast Forward Merge" ) );
 			menu->addSeparator();
-			addMenuItem( menu, "git-branch-delete", "Delete", "remove" );
+			menuAdd( menu, "git-branch-delete", i18n( "git_delete_branch", "Delete" ), "remove" );
 		}
 
-		addMenuItem( menu, "git-merge-branch", "Merge Branch", "git-merge" );
-		addMenuItem( menu, "git-create-branch", "Create Branch", "repo-forked", { KEY_F7 } );
+		menuAdd( menu, "git-merge-branch", i18n( "git_merge_branch", "Merge Branch" ),
+				 "git-merge" );
+		menuAdd( menu, "git-create-branch", i18n( "git_create_branch", "Create Branch" ),
+				 "repo-forked", { KEY_F7 } );
 	} else {
-		addMenuItem( menu, "git-stash-apply", "Apply Stash", "git-stash-apply" );
-		addMenuItem( menu, "git-stash-drop", "Drop Stash", "git-stash-pop" );
+		menuAdd( menu, "git-stash-apply", i18n( "git_apply_stash", "Apply Stash" ),
+				 "git-stash-apply" );
+		menuAdd( menu, "git-stash-drop", i18n( "git_drop_stash", "Drop Stash" ), "git-stash-pop" );
 	}
 
 	menu->on( Event::OnItemClicked, [this, branch]( const Event* event ) {
@@ -1602,19 +1607,19 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->setId( "git_file_status_menu" );
 
-	addMenuItem( menu, "git-open-file", "Open File", "file" );
-	addMenuItem( menu, "git-diff", "Open Diff", "diff-single" );
+	menuAdd( menu, "git-open-file", i18n( "git_open_file", "Open File" ), "file" );
+	menuAdd( menu, "git-diff", i18n( "git_open_diff", "Open Diff" ), "diff-single" );
 
 	if ( file.report.type != Git::GitStatusType::Staged ) {
-		addMenuItem( menu, "git-stage", "Stage" );
+		menuAdd( menu, "git-stage", i18n( "git_stage", "Stage" ) );
 	} else {
-		addMenuItem( menu, "git-unstage", "Unstage" );
+		menuAdd( menu, "git-unstage", i18n( "git_unstage", "Unstage" ) );
 	}
 
 	menu->addSeparator();
 
 	if ( file.report.type != Git::GitStatusType::Staged )
-		addMenuItem( menu, "git-discard", "Discard" );
+		menuAdd( menu, "git-discard", i18n( "git_discard", "Discard" ) );
 
 	menu->on( Event::OnItemClicked, [this, file]( const Event* event ) {
 		if ( !mGit )
@@ -1663,15 +1668,14 @@ void GitPlugin::runAsync( std::function<Git::Result()> fn, bool _updateStatus, b
 	} );
 }
 
-void GitPlugin::addMenuItem( UIMenu* menu, const std::string& txtKey, const std::string& txtVal,
-							 const std::string& icon,
-							 const KeyBindings::Shortcut& forcedKeybinding ) {
+void GitPlugin::menuAdd( UIMenu* menu, const std::string& cmd, const std::string& text,
+						 const std::string& icon, const KeyBindings::Shortcut& forcedKeybinding ) {
 
-	menu->add( i18n( txtKey, txtVal ), iconDrawable( icon, 12 ),
-			   forcedKeybinding.empty() ? KeyBindings::keybindFormat( mKeyBindings[txtKey] )
+	menu->add( text, iconDrawable( icon, 12 ),
+			   forcedKeybinding.empty() ? KeyBindings::keybindFormat( mKeyBindings[cmd] )
 										: getUISceneNode()->getKeyBindings().getShortcutString(
 											  forcedKeybinding, true ) )
-		->setId( txtKey );
+		->setId( cmd );
 }
 
 std::string GitPlugin::repoSelected() {

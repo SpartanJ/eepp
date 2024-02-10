@@ -1348,52 +1348,60 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	menu->addSeparator();
 
-	auto addFn = [this, menu]( const std::string& txtKey, const std::string& txtVal,
-									   const std::string& icon = "" ) {
-		menu->add( i18n( txtKey, txtVal ), iconDrawable( icon, 12 ),
-				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
-			->setId( txtKey );
+	auto addFn = [this, menu]( const std::string& cmd, const std::string& text,
+							   const std::string& icon = "" ) {
+		menu->add( text, iconDrawable( icon, 12 ), KeyBindings::keybindFormat( mKeyBindings[cmd] ) )
+			->setId( cmd );
 	};
 	auto& cap = server->getCapabilities();
 
-	addFn( "lsp-symbol-info", "Symbol Info" );
+	addFn( "lsp-symbol-info", i18n( "lsp_symbol_info", "Symbol Info" ) );
 
 	if ( cap.definitionProvider )
-		addFn( "lsp-go-to-definition", "Go To Definition" );
+		addFn( "lsp-go-to-definition", i18n( "lsp_go_to_definition", "Go To Definition" ) );
 
 	if ( cap.declarationProvider )
-		addFn( "lsp-go-to-declaration", "Go To Declaration" );
+		addFn( "lsp-go-to-declaration", i18n( "lsp_go_to_declaration", "Go To Declaration" ) );
 
 	if ( cap.typeDefinitionProvider )
-		addFn( "lsp-go-to-type-definition", "Go To Type Definition" );
+		addFn( "lsp-go-to-type-definition",
+			   i18n( "lsp_go_to_type_definition", "Go To Type Definition" ) );
 
 	if ( cap.implementationProvider )
-		addFn( "lsp-go-to-implementation", "Go To Implementation" );
+		addFn( "lsp-go-to-implementation",
+			   i18n( "lsp_go_to_implementation", "Go To Implementation" ) );
 
 	if ( cap.renameProvider )
-		addFn( "lsp-rename-symbol-under-cursor", "Rename Symbol Under Cursor" );
+		addFn( "lsp-rename-symbol-under-cursor",
+			   i18n( "lsp_rename_symbol_under_cursor", "Rename Symbol Under Cursor" ) );
 
 	if ( cap.referencesProvider )
-		addFn( "lsp-symbol-references", "Find References to Symbol Under Cursor" );
+		addFn( "lsp-symbol-references", i18n( "lsp_find_references_to_symbol_under_cursor",
+											  "Find References to Symbol Under Cursor" ) );
 
 	if ( cap.codeActionProvider )
-		addFn( "lsp-symbol-code-action", "Code Action", "lightbulb-autofix" );
+		addFn( "lsp-symbol-code-action", i18n( "lsp_code_action", "Code Action" ),
+			   "lightbulb-autofix" );
 
 	if ( cap.documentRangeFormattingProvider &&
 		 editor->getDocument().getSelection().hasSelection() )
-		addFn( "lsp-format-range", "Format Selected Range" );
+		addFn( "lsp-format-range", i18n( "lsp_format_selected_range", "Format Selected Range" ) );
 
 	if ( cap.semanticTokenProvider.full || cap.semanticTokenProvider.fullDelta )
-		addFn( "lsp-refresh-semantic-highlighting", "Refresh Semantic Highlighting", "refresh" );
+		addFn( "lsp-refresh-semantic-highlighting",
+			   i18n( "lsp_refresh_semantic_highlighting", "Refresh Semantic Highlighting" ),
+			   "refresh" );
 
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
-		addFn( "lsp-switch-header-source", "Switch Header/Source", "filetype-hpp" );
+		addFn( "lsp-switch-header-source",
+			   i18n( "lsp_switch_header_source", "Switch Header/Source" ), "filetype-hpp" );
 
-	addFn( "lsp-plugin-restart", "Restart LSP Client", "refresh" );
+	addFn( "lsp-plugin-restart", i18n( "lsp_restart_lsp_client", "Restart LSP Client" ),
+		   "refresh" );
 
 #ifdef EE_DEBUG
 	if ( server->getDefinition().name == "clangd" )
-		addFn( "lsp-memory-usage", "LSP Memory Usage" );
+		addFn( "lsp-memory-usage", i18n( "lsp_memory_usage", "LSP Memory Usage" ) );
 #endif
 
 	return false;

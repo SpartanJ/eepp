@@ -1306,7 +1306,7 @@ bool LinterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 	for ( auto& match : matches ) {
 		if ( match.box[editor].contains( localPos ) ) {
 			menu->addSeparator();
-			menu->add( editor->i18n( "copy_error_message", "Copy Error Message" ),
+			menu->add( editor->i18n( "linter_copy_error_message", "Copy Error Message" ),
 					   mManager->getUISceneNode()->findIcon( "copy" )->getSize(
 						   PixelDensity::dpToPxI( 12 ) ) )
 				->setId( "linter-copy-error-message" );

@@ -223,10 +223,12 @@ ProjectDirectoryTree::emptyModel( const std::vector<CommandInfo>& prependCommand
 }
 
 size_t ProjectDirectoryTree::getFilesCount() const {
+	Lock l( mFilesMutex );
 	return mFiles.size();
 }
 
 const std::vector<std::string>& ProjectDirectoryTree::getFiles() const {
+	Lock l( mFilesMutex );
 	return mFiles;
 }
 
