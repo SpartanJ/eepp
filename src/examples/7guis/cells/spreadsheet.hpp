@@ -4,6 +4,8 @@
 #include <eepp/core/string.hpp>
 #include <eepp/ui/models/model.hpp>
 
+#include <optional>
+
 using namespace EE;
 using namespace EE::UI::Models;
 struct Formula;

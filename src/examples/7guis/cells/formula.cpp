@@ -6,21 +6,36 @@ std::unordered_map<String::HashType, SheetFunction::Op> SheetFunction::opTable =
 void SheetFunction::initOpTable() {
 	if ( !opTable.empty() )
 		return;
-	opTable.insert( { String::hash( "ADD" ), []( const std::vector<double>& vals ) {
-						 return vals.size() == 2 ? vals[0] + vals[1] : 0;
-					 } } );
-	opTable.insert( { String::hash( "SUB" ), []( const std::vector<double>& vals ) {
-						 return vals.size() == 2 ? vals[0] - vals[1] : 0;
-					 } } );
-	opTable.insert( { String::hash( "DIV" ), []( const std::vector<double>& vals ) {
-						 return vals.size() == 2 ? vals[0] / vals[1] : 0;
-					 } } );
-	opTable.insert( { String::hash( "MUL" ), []( const std::vector<double>& vals ) {
-						 return vals.size() == 2 ? vals[0] * vals[1] : 0;
-					 } } );
-	opTable.insert( { String::hash( "MOD" ), []( const std::vector<double>& vals ) {
-						 return vals.size() == 2 ? std::fmod( vals[0], vals[1] ) : 0;
-					 } } );
+	opTable.insert(
+		{ String::hash( "ADD" ), []( const std::vector<double>& vals ) -> std::optional<double> {
+			 if ( vals.size() == 2 )
+				 return vals[0] + vals[1];
+			 return std::nullopt;
+		 } } );
+	opTable.insert(
+		{ String::hash( "SUB" ), []( const std::vector<double>& vals ) -> std::optional<double> {
+			 if ( vals.size() == 2 )
+				 return vals[0] - vals[1];
+			 return std::nullopt;
+		 } } );
+	opTable.insert(
+		{ String::hash( "DIV" ), []( const std::vector<double>& vals ) -> std::optional<double> {
+			 if ( vals.size() == 2 && vals[1] != 0 )
+				 return vals[0] / vals[1];
+			 return std::nullopt;
+		 } } );
+	opTable.insert(
+		{ String::hash( "MUL" ), []( const std::vector<double>& vals ) -> std::optional<double> {
+			 if ( vals.size() == 2 )
+				 return vals[0] * vals[1];
+			 return std::nullopt;
+		 } } );
+	opTable.insert(
+		{ String::hash( "MOD" ), []( const std::vector<double>& vals ) -> std::optional<double> {
+			 if ( vals.size() == 2 )
+				 return std::fmod( vals[0], vals[1] );
+			 return std::nullopt;
+		 } } );
 	opTable.insert( { String::hash( "SUM" ), []( const std::vector<double>& vals ) {
 						 double tot = 0;
 						 for ( const auto& val : vals )

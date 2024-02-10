@@ -182,7 +182,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 	switch ( event.getKeyCode() ) {
 		case KEY_PAGEUP: {
 			if ( curIndex.row() - pageSize < 0 ) {
-				getSelection().set( getModel()->index( 0, 0 ) );
+				getSelection().set( getModel()->index(
+					0, getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
 				scrollToTop();
 			} else {
 				moveSelection( -pageSize );
@@ -209,7 +210,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 					return 1;
 				foundIndex = model.index( oldIndex.row(), oldIndex.column() - 1 );
 			} else {
-				foundIndex = model.index( 0, 0 );
+				foundIndex = model.index(
+					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
 			}
 			if ( model.isValid( foundIndex ) ) {
 				Float curX = getColumnPosition( foundIndex.column() ).x;
@@ -233,7 +235,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 				auto oldIndex = getSelection().first();
 				foundIndex = model.index( oldIndex.row(), oldIndex.column() + 1 );
 			} else {
-				foundIndex = model.index( 0, 0 );
+				foundIndex = model.index(
+					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
 			}
 			if ( model.isValid( foundIndex ) ) {
 				Float colWidth = getColumnWidth( foundIndex.column() );
@@ -255,14 +258,10 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			ModelIndex foundIndex;
 			if ( !getSelection().isEmpty() ) {
 				auto oldIndex = getSelection().first();
-				if ( oldIndex.row() == 0 ) {
-					getSelection().set( getModel()->index( 0, 0 ) );
-					scrollToTop();
-					return 1;
-				}
 				foundIndex = model.index( oldIndex.row() - 1, oldIndex.column() );
 			} else {
-				foundIndex = model.index( 0, 0 );
+				foundIndex = model.index(
+					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
 			}
 			if ( model.isValid( foundIndex ) ) {
 				Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
@@ -285,7 +284,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 				auto oldIndex = getSelection().first();
 				foundIndex = model.index( oldIndex.row() + 1, oldIndex.column() );
 			} else {
-				foundIndex = model.index( 0, 0 );
+				foundIndex = model.index(
+					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
 			}
 			if ( model.isValid( foundIndex ) ) {
 				Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
@@ -302,13 +302,16 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			return 1;
 		}
 		case KEY_END: {
+			getSelection().set( getModel()->index(
+				getItemCount() - 1,
+				getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
 			scrollToBottom();
-			getSelection().set( getModel()->index( getItemCount() - 1 ) );
 			return 1;
 		}
 		case KEY_HOME: {
+			getSelection().set( getModel()->index(
+				0, getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
 			scrollToTop();
-			getSelection().set( getModel()->index( 0, 0 ) );
 			return 1;
 		}
 		case KEY_RETURN:

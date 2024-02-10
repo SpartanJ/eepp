@@ -1133,6 +1133,13 @@
 ../../src/eepp/window/keycodes.cpp
 ../../src/eepp/window/platformhelper.hpp
 ../../src/eepp/window/window.cpp
+../../src/examples/7guis/cells/cells.cpp
+../../src/examples/7guis/cells/formula.cpp
+../../src/examples/7guis/cells/formula.hpp
+../../src/examples/7guis/cells/parser.cpp
+../../src/examples/7guis/cells/parser.hpp
+../../src/examples/7guis/cells/spreadsheet.cpp
+../../src/examples/7guis/cells/spreadsheet.hpp
 ../../src/examples/7guis/circle_drawer/circle_drawer.cpp
 ../../src/examples/7guis/counter/counter.cpp
 ../../src/examples/7guis/crud/crud.cpp

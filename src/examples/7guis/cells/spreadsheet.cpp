@@ -34,13 +34,15 @@ void Cell::calc( Spreadsheet& sheet ) {
 Spreadsheet::Spreadsheet() : Model(), mEmptyCell( std::make_unique<Cell>( "" ) ) {}
 
 Variant Spreadsheet::data( const ModelIndex& index, ModelRole role ) const {
-	if ( nullptr == mCells[index.column()][index.row()] )
-		return {};
+	static const std::string EMPTY = "";
 	switch ( role ) {
 		case EE::UI::Models::ModelRole::Display:
+			if ( nullptr == mCells[index.column()][index.row()] )
+				return Variant( EMPTY.c_str() );
 			return Variant( cell( index ).getDisplayValue().c_str() );
 		case EE::UI::Models::ModelRole::Custom:
-			return Variant( cell( index ).getValue().c_str() );
+			if ( nullptr != mCells[index.column()][index.row()] )
+				return Variant( cell( index ).getValue().c_str() );
 		default:
 			break;
 	}

@@ -40,7 +40,7 @@ struct CellReference : public Formula {
 		return {};
 	}
 	std::vector<Cell*> getReferences( Spreadsheet& env ) const {
-		if ( column < env.columnCount() && row < env.rowCount() )
+		if ( column < (int)env.columnCount() && row < (int)env.rowCount() )
 			return { &env.cell( column, row ) };
 		return {};
 	}
@@ -53,11 +53,11 @@ struct RangeReference : public Formula {
 	std::shared_ptr<CellReference> start;
 	std::shared_ptr<CellReference> end;
 	FormulaType type() const { return FormulaType::RangeReference; }
-	std::optional<double> eval( Spreadsheet& env ) const { return std::nullopt; }
+	std::optional<double> eval( Spreadsheet& ) const { return std::nullopt; }
 	std::vector<Cell*> getReferences( Spreadsheet& env ) const {
 		std::vector<Cell*> result;
-		auto rowCount = env.rowCount();
-		auto colCount = env.columnCount();
+		auto rowCount = (int)env.rowCount();
+		auto colCount = (int)env.columnCount();
 		for ( int r = start->row; r <= end->row; r++ ) {
 			if ( r >= rowCount )
 				break;
@@ -73,7 +73,7 @@ struct RangeReference : public Formula {
 
 class SheetFunction : public Formula {
   public:
-	using Op = std::function<double( const std::vector<double>& )>;
+	using Op = std::function<std::optional<double>( const std::vector<double>& )>;
 
 	SheetFunction( std::string function, std::vector<std::shared_ptr<Formula>> arguments ) :
 		function( std::move( function ) ),

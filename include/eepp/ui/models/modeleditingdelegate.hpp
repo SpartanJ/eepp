@@ -114,6 +114,7 @@ class EE_API StringModelEditingDelegate : public ModelEditingDelegate {
 		input->addClass( "table_cell_edit" );
 		input->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		input->addEventListener( Event::OnPressEnter, [this]( auto ) { commit(); } );
+		input->addEventListener( Event::OnFocusLoss, [this]( auto ) { rollback(); } );
 		input->addEventListener( Event::KeyUp, [this]( const Event* event ) {
 			if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
 				rollback();
