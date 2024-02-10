@@ -253,7 +253,7 @@ class EE_API Variant {
 
   private:
 	union {
-		void* asDataPtr;
+		void* asDataPtr{ nullptr };
 		Drawable* asDrawable;
 		UIIcon* asIcon;
 		std::string* asStdString;

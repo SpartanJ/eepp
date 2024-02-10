@@ -60,6 +60,17 @@ void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& w
 	}
 }
 
+void UIAbstractTableView::setColumnsWidth( const Float& width ) {
+	if ( !getModel() )
+		return;
+	for ( size_t i = 0; i < getModel()->columnCount(); i++ ) {
+		columnData( i ).width = width;
+		onColumnSizeChange( i );
+	}
+	updateHeaderSize();
+	createOrUpdateColumns( false );
+}
+
 const Float& UIAbstractTableView::getColumnWidth( const size_t& colIndex ) const {
 	return columnData( colIndex ).width;
 }
@@ -782,17 +793,23 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 	return 1;
 }
 
-Uint32 UIAbstractTableView::onKeyDown( const KeyEvent& event ) {
+bool UIAbstractTableView::tryBeginEditing( KeyBindings::Shortcut fromShortcut ) {
 	if ( isEditable() && getSelection().first().isValid() && getModel() &&
 		 getModel()->isEditable( getSelection().first() ) &&
 		 ( mEditTriggers & EditTrigger::EditKeyPressed ) && !mEditShortcuts.empty() ) {
 		for ( const auto& shortcut : mEditShortcuts ) {
-			if ( shortcut == KeyBindings::Shortcut{ event.getKeyCode(), event.getMod() } ) {
+			if ( shortcut == fromShortcut ) {
 				beginEditing( getSelection().first(), getCellFromIndex( getSelection().first() ) );
-				return 1;
+				return true;
 			}
 		}
 	}
+	return false;
+}
+
+Uint32 UIAbstractTableView::onKeyDown( const KeyEvent& event ) {
+	if ( tryBeginEditing( KeyBindings::Shortcut{ event.getKeyCode(), event.getMod() } ) )
+		return 1;
 	return UIAbstractView::onKeyDown( event );
 }
 

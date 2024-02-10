@@ -76,6 +76,10 @@ void UIAbstractView::setEditable( bool editable ) {
 	}
 }
 
+bool UIAbstractView::isEditing() const {
+	return mEditIndex.isValid();
+}
+
 std::function<void( const ModelIndex& )> UIAbstractView::getOnSelection() const {
 	return mOnSelection;
 }
@@ -169,7 +173,7 @@ void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidg
 	mEditIndex = index;
 	mEditingDelegate = onCreateEditingDelegate( index );
 	mEditingDelegate->bind( mModel, index );
-	mEditingDelegate->setValue( index.data() );
+	mEditingDelegate->setValue( index.data( mEditingDelegate->pullDataFrom() ) );
 	mEditWidget = mEditingDelegate->getWidget();
 	mEditWidget->setParent( editedWidget );
 	mEditWidget->setSize( editedWidget->getSize() );

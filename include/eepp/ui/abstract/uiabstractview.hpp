@@ -92,6 +92,8 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	void setEditable( bool editable );
 
+	bool isEditing() const;
+
 	Uint32 getEditTriggers() const;
 
 	void setEditTriggers( Uint32 editTriggers );

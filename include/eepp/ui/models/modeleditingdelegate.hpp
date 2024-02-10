@@ -52,6 +52,10 @@ class EE_API ModelEditingDelegate {
 		mSelectionBehavior = selectionBehavior;
 	}
 
+	inline ModelRole pullDataFrom() const { return mPullDataFrom; }
+
+	inline void setPullDataFrom( ModelRole newPullDataFrom ) { mPullDataFrom = newPullDataFrom; }
+
   protected:
 	ModelEditingDelegate() = default;
 
@@ -75,6 +79,7 @@ class EE_API ModelEditingDelegate {
 	std::shared_ptr<Model> mModel;
 	ModelIndex mIndex;
 	UIWidget* mWidget{ nullptr };
+	ModelRole mPullDataFrom{ ModelRole::Display };
 
   protected:
 	SelectionBehavior mSelectionBehavior{ SelectionBehavior::SelectAll };

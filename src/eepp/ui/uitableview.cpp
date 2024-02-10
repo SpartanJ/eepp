@@ -198,8 +198,58 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			}
 			return 1;
 		}
+		case KEY_LEFT: {
+			if ( !getModel() || getSelectionType() != SelectionType::Cell )
+				return 0;
+			auto& model = *this->getModel();
+			ModelIndex foundIndex;
+			if ( !getSelection().isEmpty() ) {
+				auto oldIndex = getSelection().first();
+				if ( oldIndex.column() == 0 )
+					return 1;
+				foundIndex = model.index( oldIndex.row(), oldIndex.column() - 1 );
+			} else {
+				foundIndex = model.index( 0, 0 );
+			}
+			if ( model.isValid( foundIndex ) ) {
+				Float curX = getColumnPosition( foundIndex.column() ).x;
+				getSelection().set( foundIndex );
+				if ( curX < mScrollOffset.x || curX > mScrollOffset.x + getPixelsSize().getWidth() -
+														  mPaddingPx.Left - mPaddingPx.Right ) {
+					Float colWidth = getColumnWidth( foundIndex.column() );
+					mHScroll->setValue(
+						( mHScroll->getValue() - colWidth / getScrollableArea().getWidth() ) *
+						getScrollableArea().getWidth() / getScrollableArea().getWidth() );
+				}
+			}
+			return 0;
+		}
+		case KEY_RIGHT: {
+			if ( !getModel() || getSelectionType() != SelectionType::Cell )
+				return 0;
+			auto& model = *this->getModel();
+			ModelIndex foundIndex;
+			if ( !getSelection().isEmpty() ) {
+				auto oldIndex = getSelection().first();
+				foundIndex = model.index( oldIndex.row(), oldIndex.column() + 1 );
+			} else {
+				foundIndex = model.index( 0, 0 );
+			}
+			if ( model.isValid( foundIndex ) ) {
+				Float colWidth = getColumnWidth( foundIndex.column() );
+				Float curX = getColumnPosition( foundIndex.column() ).x + colWidth;
+				getSelection().set( foundIndex );
+				if ( curX < mScrollOffset.x || curX > mScrollOffset.x + getPixelsSize().getWidth() -
+														  mPaddingPx.Left - mPaddingPx.Right ) {
+					mHScroll->setValue(
+						( mHScroll->getValue() + colWidth / getScrollableArea().getWidth() ) *
+						getScrollableArea().getWidth() / getScrollableArea().getWidth() );
+				}
+			}
+			return 0;
+		}
 		case KEY_UP: {
-			if ( !getModel() )
+			if ( !getModel() || isEditing() )
 				return 0;
 			auto& model = *this->getModel();
 			ModelIndex foundIndex;
@@ -227,7 +277,7 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			return 1;
 		}
 		case KEY_DOWN: {
-			if ( !getModel() )
+			if ( !getModel() || isEditing() )
 				return 0;
 			auto& model = *this->getModel();
 			ModelIndex foundIndex;
@@ -263,6 +313,8 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 		}
 		case KEY_RETURN:
 		case KEY_KP_ENTER: {
+			if ( tryBeginEditing( KeyBindings::Shortcut{ event.getKeyCode(), event.getMod() } ) )
+				return 1;
 			if ( curIndex.isValid() )
 				onOpenModelIndex( curIndex, &event );
 			return 1;

@@ -55,6 +55,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	/** In pixels. */
 	void setColumnWidth( const size_t& colIndex, const Float& width );
 
+	/** In pixels. */
+	void setColumnsWidth( const Float& width );
+
 	const Float& getColumnWidth( const size_t& colIndex ) const;
 
 	virtual Float getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess = false );
@@ -200,6 +203,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void bindNavigationClick( UIWidget* widget );
 
+	bool tryBeginEditing( KeyBindings::Shortcut shortcut );
 
 	void updateHeaderSize();
 

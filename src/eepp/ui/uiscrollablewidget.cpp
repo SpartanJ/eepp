@@ -362,6 +362,12 @@ Uint32 UIScrollableWidget::onMessage( const NodeMessage* Msg ) {
 				} else if ( Msg->getFlags() & EE_BUTTON_WDMASK ) {
 					mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
 					return 1;
+				} else if ( Msg->getFlags() & EE_BUTTON_WLMASK ) {
+					mHScroll->setValue( mHScroll->getValue() - mHScroll->getClickStep() );
+					return 1;
+				} else if ( Msg->getFlags() & EE_BUTTON_WRMASK ) {
+					mHScroll->setValue( mHScroll->getValue() + mHScroll->getClickStep() );
+					return 1;
 				}
 			}
 		}
