@@ -27,28 +27,48 @@ bool UITableView::isType( const Uint32& type ) const {
 }
 
 void UITableView::drawChilds() {
-	int realIndex = 0;
+	int realRowIndex = 0;
+	int realColIndex = 0;
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
-	size_t start = mScrollOffset.y / getRowHeight();
-	size_t end =
-		eemin<size_t>( (size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / getRowHeight() ),
-					   getItemCount() );
-	Float yOffset;
-	for ( size_t i = start; i < end; i++ ) {
-		yOffset = getHeaderHeight() + i * getRowHeight();
-		ModelIndex index( getModel()->index( i ) );
-		if ( yOffset - mScrollOffset.y > mSize.getHeight() )
-			break;
-		if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
-			continue;
-		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
-			updateCell( realIndex, getModel()->index( index.row(), colIndex, index.parent() ), 0,
-						yOffset );
+	if ( getModel() ) {
+		Float rowHeight = getRowHeight();
+		size_t start = mScrollOffset.y / rowHeight;
+		size_t end = eemin<size_t>(
+			(size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / rowHeight ), getItemCount() );
+		Float yOffset = 0;
+		Float xOffset;
+		auto colCount = getModel()->columnCount();
+		auto headerHeight = getHeaderHeight();
+		for ( size_t i = start; i < end; i++ ) {
+			xOffset = mPaddingPx.Left;
+			yOffset = headerHeight + i * rowHeight;
+			ModelIndex rowIndex( getModel()->index( i ) );
+			if ( yOffset - mScrollOffset.y > mSize.getHeight() )
+				break;
+			if ( yOffset - mScrollOffset.y + rowHeight < 0 )
+				continue;
+			UITableRow* rowNode = updateRow( realRowIndex, rowIndex, yOffset );
+			rowNode->setChildsVisibility( false, false );
+			realColIndex = 0;
+			for ( size_t colIndex = 0; colIndex < colCount; colIndex++ ) {
+				auto& colData = columnData( colIndex );
+				if ( !colData.visible || ( xOffset + colData.width ) - mScrollOffset.x < 0 ) {
+					if ( colData.visible )
+						xOffset += colData.width;
+					continue;
+				}
+				if ( xOffset - mScrollOffset.x > mSize.getWidth() )
+					break;
+				xOffset += colData.width;
+				updateCell( { realColIndex, realRowIndex },
+							getModel()->index( rowIndex.row(), colIndex, rowIndex.parent() ), 0,
+							yOffset );
+				realColIndex++;
+			}
+			rowNode->nodeDraw();
+			realRowIndex++;
 		}
-		updateRow( realIndex, index, yOffset )->nodeDraw();
-		realIndex++;
 	}
-
 	if ( mHeader && mHeader->isVisible() )
 		mHeader->nodeDraw();
 	if ( mHScroll->isVisible() )
@@ -61,49 +81,42 @@ Node* UITableView::overFind( const Vector2f& point ) {
 	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
 				 [this] { mUISceneNode->setIsLoading( false ); } );
 	Node* pOver = NULL;
-	if ( mEnabled && mVisible ) {
-		ConditionalLock l( getModel() != nullptr,
-						   getModel() ? &getModel()->resourceMutex() : nullptr );
-		updateWorldPolygon();
-		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
-			if ( mHScroll->isVisible() && ( pOver = mHScroll->overFind( point ) ) )
-				return pOver;
-			if ( mVScroll->isVisible() && ( pOver = mVScroll->overFind( point ) ) )
-				return pOver;
-			if ( mHeader && ( pOver = mHeader->overFind( point ) ) )
-				return pOver;
-			int realIndex = 0;
-			Float yOffset;
-			size_t start = mScrollOffset.y / getRowHeight();
-			size_t end = eemin<size_t>(
-				(size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / getRowHeight() ),
-				getItemCount() );
-			for ( size_t i = start; i < end; i++ ) {
-				yOffset = getHeaderHeight() + i * getRowHeight();
-				ModelIndex index( getModel()->index( i ) );
-				if ( yOffset - mScrollOffset.y > mSize.getHeight() )
-					break;
-				if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
-					continue;
-				for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
-					if ( columnData( colIndex ).visible ) {
-						updateCell( realIndex,
-									getModel()->index( index.row(), colIndex, index.parent() ), 0,
-									yOffset );
-					}
-				}
-				pOver = updateRow( realIndex, index, yOffset )->overFind( point );
-				if ( pOver )
-					break;
-				realIndex++;
-			}
-			if ( !pOver )
-				pOver = this;
+	if ( !mEnabled || !mVisible )
+		return pOver;
+	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
+	updateWorldPolygon();
+	if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
+		writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+		mSceneNode->addMouseOverNode( this );
+		if ( mHScroll->isVisible() && ( pOver = mHScroll->overFind( point ) ) )
+			return pOver;
+		if ( mVScroll->isVisible() && ( pOver = mVScroll->overFind( point ) ) )
+			return pOver;
+		if ( mHeader && ( pOver = mHeader->overFind( point ) ) )
+			return pOver;
+		Float rowHeight = getRowHeight();
+		Float headerHeight = getHeaderHeight();
+		Float itemCount = getItemCount();
+		int realIndex = 0;
+		Float yOffset;
+		size_t start = mScrollOffset.y / rowHeight;
+		size_t end = eemin<size_t>(
+			(size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / rowHeight ), itemCount );
+		for ( size_t i = start; i < end; i++ ) {
+			yOffset = headerHeight + i * rowHeight;
+			ModelIndex index( getModel()->index( i ) );
+			if ( yOffset - mScrollOffset.y > mSize.getHeight() )
+				break;
+			if ( yOffset - mScrollOffset.y + rowHeight < 0 )
+				continue;
+			pOver = updateRow( realIndex, index, yOffset )->overFind( point );
+			if ( pOver )
+				break;
+			realIndex++;
 		}
+		if ( !pOver )
+			pOver = this;
 	}
-
 	return pOver;
 }
 
@@ -116,7 +129,7 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 				 [this] { mUISceneNode->setIsLoading( false ); } );
 	Float yOffset = getHeaderHeight();
 	auto worstCaseFunc = [&]( const ModelIndex& index ) {
-		UIWidget* widget = updateCell( index.row(), index, 0, yOffset );
+		UIWidget* widget = updateCell( { (Int64)0, (Int64)0 }, index, 0, yOffset );
 		if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 			Float w = widget->asType<UIPushButton>()->getContentSize().getWidth();
 			if ( w > lWidth )

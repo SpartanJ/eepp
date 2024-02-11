@@ -577,21 +577,23 @@ UIWidget* UIAbstractTableView::setupCell( UITableCell* widget, UIWidget* rowWidg
 	return widget;
 }
 
-UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex& index,
+UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const ModelIndex& index,
 										   const size_t&, const Float& yOffset ) {
-	if ( rowIndex >= (int)mWidgets.size() )
-		mWidgets.resize( rowIndex + 1 );
-	auto* widget = mWidgets[rowIndex][index.column()];
+	if ( posIndex.y >= (int)mWidgets.size() )
+		mWidgets.resize( posIndex.y + 1 );
+	auto* widget = mWidgets[posIndex.y][posIndex.x];
 	if ( !widget ) {
-		UIWidget* rowWidget = updateRow( rowIndex, index, yOffset );
+		UIWidget* rowWidget = updateRow( posIndex.y, index, yOffset );
 		widget = createCell( rowWidget, index );
-		mWidgets[rowIndex][index.column()] = widget;
+		mWidgets[posIndex.y][posIndex.x] = widget;
 		widget->reloadStyle( true, true, true );
 	}
 	const auto& colData = columnData( index.column() );
 	if ( !colData.visible ) {
 		widget->setVisible( false );
 		return widget;
+	} else {
+		widget->setVisible( true );
 	}
 	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );

@@ -355,21 +355,30 @@ bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 Uint32 UIScrollableWidget::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseUp: {
+			bool moved = false;
 			if ( mVScroll->isEnabled() ) {
+
 				if ( Msg->getFlags() & EE_BUTTON_WUMASK ) {
 					mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
-					return 1;
+					moved = true;
 				} else if ( Msg->getFlags() & EE_BUTTON_WDMASK ) {
 					mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
-					return 1;
-				} else if ( Msg->getFlags() & EE_BUTTON_WLMASK ) {
-					mHScroll->setValue( mHScroll->getValue() - mHScroll->getClickStep() );
-					return 1;
-				} else if ( Msg->getFlags() & EE_BUTTON_WRMASK ) {
-					mHScroll->setValue( mHScroll->getValue() + mHScroll->getClickStep() );
-					return 1;
+					moved = true;
 				}
 			}
+
+			if ( mHScroll->isEnabled() ) {
+				if ( Msg->getFlags() & EE_BUTTON_WLMASK ) {
+					mHScroll->setValue( mHScroll->getValue() - mHScroll->getClickStep() );
+					moved = true;
+				} else if ( Msg->getFlags() & EE_BUTTON_WRMASK ) {
+					mHScroll->setValue( mHScroll->getValue() + mHScroll->getClickStep() );
+					moved = true;
+				}
+			}
+
+			if ( moved )
+				return 1;
 		}
 	}
 	return UIWidget::onMessage( Msg );

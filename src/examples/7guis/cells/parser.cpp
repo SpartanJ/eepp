@@ -119,7 +119,9 @@ std::shared_ptr<Formula> FormulaParser::formula() {
 			nextToken();
 			double val = 0;
 			String::fromString( val, n );
-			return std::make_shared<Number>( val );
+			if ( lookahead.token == TokenType::EPSILON )
+				return std::make_shared<Number>( val );
+			break;
 		}
 		case TokenType::EQUALS:
 			nextToken();
@@ -129,6 +131,7 @@ std::shared_ptr<Formula> FormulaParser::formula() {
 		default:
 			return std::make_shared<Textual>( formulaString );
 	}
+	return nullptr;
 }
 
 std::shared_ptr<Formula> FormulaParser::parseFormula( std::string _formulaString ) {

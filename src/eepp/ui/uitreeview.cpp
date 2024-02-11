@@ -215,21 +215,23 @@ UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex& index )
 	return setupCell( widget, rowWidget, index );
 }
 
-UIWidget* UITreeView::updateCell( const int& rowIndex, const ModelIndex& index,
+UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelIndex& index,
 								  const size_t& indentLevel, const Float& yOffset ) {
-	if ( rowIndex >= (int)mWidgets.size() )
-		mWidgets.resize( rowIndex + 1 );
-	auto* widget = mWidgets[rowIndex][index.column()];
+	if ( posIndex.y >= (int)mWidgets.size() )
+		mWidgets.resize( posIndex.y + 1 );
+	auto* widget = mWidgets[posIndex.y][index.column()];
 	if ( !widget ) {
-		UIWidget* rowWidget = updateRow( rowIndex, index, yOffset );
+		UIWidget* rowWidget = updateRow( posIndex.y, index, yOffset );
 		widget = createCell( rowWidget, index );
-		mWidgets[rowIndex][index.column()] = widget;
+		mWidgets[posIndex.y][index.column()] = widget;
 		widget->reloadStyle( true, true, true );
 	}
 	const auto& colData = columnData( index.column() );
 	if ( !colData.visible ) {
 		widget->setVisible( false );
 		return widget;
+	} else {
+		widget->setVisible( true );
 	}
 	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
@@ -346,33 +348,48 @@ Sizef UITreeView::getContentSize() const {
 }
 
 void UITreeView::drawChilds() {
-	int realIndex = 0;
+	int realRowIndex = 0;
+	int realColIndex = 0;
 	Float rowHeight = getRowHeight();
 
-	traverseTree( [this, &realIndex, rowHeight]( const int&, const ModelIndex& index,
-												 const size_t& indentLevel, const Float& yOffset ) {
+	traverseTree( [this, &realRowIndex, &realColIndex,
+				   rowHeight]( const int&, const ModelIndex& index, const size_t& indentLevel,
+							   const Float& yOffset ) {
 		if ( yOffset - mScrollOffset.y > mSize.getHeight() )
 			return IterationDecision::Stop;
 		if ( yOffset - mScrollOffset.y + rowHeight < 0 )
 			return IterationDecision::Continue;
+		Float xOffset = mPaddingPx.Left;
+		UITableRow* rowNode = updateRow( realRowIndex, index, yOffset );
+		rowNode->setChildsVisibility( false, false );
+		realColIndex = 0;
 		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
-			if ( columnData( colIndex ).visible ) {
-				if ( (Int64)colIndex != index.column() ) {
-					updateCell( realIndex,
-								getModel()->index( index.row(), colIndex, index.parent() ),
-								indentLevel, yOffset );
-				} else {
-					auto* cell = updateCell( realIndex, index, indentLevel, yOffset );
+			auto& colData = columnData( colIndex );
+			if ( !colData.visible || ( xOffset + colData.width ) - mScrollOffset.x < 0 ) {
+				if ( colData.visible )
+					xOffset += colData.width;
+				continue;
+			}
+			if ( xOffset - mScrollOffset.x > mSize.getWidth() )
+				break;
+			xOffset += colData.width;
+			if ( (Int64)colIndex != index.column() ) {
+				updateCell( { realColIndex, realRowIndex },
+							getModel()->index( index.row(), colIndex, index.parent() ), indentLevel,
+							yOffset );
+			} else {
+				auto* cell =
+					updateCell( { realColIndex, realRowIndex }, index, indentLevel, yOffset );
 
-					if ( mFocusSelectionDirty && index == getSelection().first() ) {
-						cell->setFocus();
-						mFocusSelectionDirty = false;
-					}
+				if ( mFocusSelectionDirty && index == getSelection().first() ) {
+					cell->setFocus();
+					mFocusSelectionDirty = false;
 				}
 			}
+			realColIndex++;
 		}
-		updateRow( realIndex, index, yOffset )->nodeDraw();
-		realIndex++;
+		rowNode->nodeDraw();
+		realRowIndex++;
 		return IterationDecision::Continue;
 	} );
 
@@ -511,8 +528,9 @@ Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex, bool ) {
 				 [this] { mUISceneNode->setIsLoading( false ); } );
 	traverseTree( [&, colIndex]( const int&, const ModelIndex& index, const size_t& indentLevel,
 								 const Float& yOffset ) {
-		UIWidget* widget = updateCell(
-			0, getModel()->index( index.row(), colIndex, index.parent() ), indentLevel, yOffset );
+		UIWidget* widget = updateCell( { (Int64)0, (Int64)0 },
+									   getModel()->index( index.row(), colIndex, index.parent() ),
+									   indentLevel, yOffset );
 		if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 			Float w = widget->asType<UIPushButton>()->getContentSize().getWidth();
 			if ( w > lWidth )

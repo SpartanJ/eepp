@@ -86,6 +86,13 @@ GitPlugin::~GitPlugin() {
 	{ Lock l( mGitStatusMutex ); }
 	{ Lock l( mRepoMutex ); }
 	{ Lock l( mReposMutex ); }
+
+	// TODO: Add a signal for this waits
+	while ( mRunningUpdateStatus )
+		Sys::sleep( 1.f );
+
+	while ( mRunningUpdateBranches )
+		Sys::sleep( 1.f );
 }
 
 void GitPlugin::load( PluginManager* pluginManager ) {

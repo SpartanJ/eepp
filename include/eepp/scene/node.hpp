@@ -108,6 +108,8 @@ class EE_API Node : public Transformable {
 
 	Node* setVisible( const bool& visible );
 
+	Node* setChildsVisibility( bool visible, bool emitEventNotification = true );
+
 	bool isVisible() const;
 
 	bool isHided() const;

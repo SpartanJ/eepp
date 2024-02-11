@@ -181,6 +181,22 @@ Node* Node::setVisible( const bool& visible ) {
 	return this;
 }
 
+Node* Node::setChildsVisibility( bool visible, bool emitEventNotification ) {
+	Node* child = mChild;
+	if ( emitEventNotification ) {
+		while ( child ) {
+			child->setVisible( visible );
+			child = child->mNext;
+		}
+	} else {
+		while ( child ) {
+			child->mVisible = visible;
+			child = child->mNext;
+		}
+	}
+	return this;
+}
+
 bool Node::isVisible() const {
 	return mVisible;
 }
