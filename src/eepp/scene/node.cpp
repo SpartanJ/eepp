@@ -173,10 +173,11 @@ const Sizef& Node::getPixelsSize() const {
 	return mSize;
 }
 
-Node* Node::setVisible( const bool& visible ) {
+Node* Node::setVisible( const bool& visible, bool emitEventNotification ) {
 	if ( mVisible != visible ) {
 		mVisible = visible;
-		onVisibilityChange();
+		if ( emitEventNotification )
+			onVisibilityChange();
 	}
 	return this;
 }

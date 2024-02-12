@@ -40,7 +40,7 @@ void UITableView::drawChilds() {
 		auto colCount = getModel()->columnCount();
 		auto headerHeight = getHeaderHeight();
 		for ( size_t i = start; i < end; i++ ) {
-			xOffset = mPaddingPx.Left;
+			xOffset = 0;
 			yOffset = headerHeight + i * rowHeight;
 			ModelIndex rowIndex( getModel()->index( i ) );
 			if ( yOffset - mScrollOffset.y > mSize.getHeight() )

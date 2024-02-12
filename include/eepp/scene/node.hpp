@@ -106,7 +106,7 @@ class EE_API Node : public Transformable {
 
 	const Sizef& getPixelsSize() const;
 
-	Node* setVisible( const bool& visible );
+	Node* setVisible( const bool& visible, bool emitEventNotification = true );
 
 	Node* setChildsVisibility( bool visible, bool emitEventNotification = true );
 

@@ -228,10 +228,10 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 	}
 	const auto& colData = columnData( index.column() );
 	if ( !colData.visible ) {
-		widget->setVisible( false );
+		widget->setVisible( false, false );
 		return widget;
 	} else {
-		widget->setVisible( true );
+		widget->setVisible( true, false );
 	}
 	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
@@ -359,7 +359,7 @@ void UITreeView::drawChilds() {
 			return IterationDecision::Stop;
 		if ( yOffset - mScrollOffset.y + rowHeight < 0 )
 			return IterationDecision::Continue;
-		Float xOffset = mPaddingPx.Left;
+		Float xOffset = 0;
 		UITableRow* rowNode = updateRow( realRowIndex, index, yOffset );
 		rowNode->setChildsVisibility( false, false );
 		realColIndex = 0;

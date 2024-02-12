@@ -139,7 +139,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	Float mHeaderHeight{ 16 };
 	mutable std::vector<UITableRow*> mRows;
 	mutable std::vector<ColumnData> mColumn;
-	mutable std::vector<std::map<int, UIWidget*>> mWidgets;
+	mutable std::vector<UnorderedMap<int, UIWidget*>> mWidgets;
 	UILinearLayout* mHeader;
 	Float mDragBorderDistance{ 8 };
 	size_t mIconSize{ 12 };
@@ -208,8 +208,6 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	void updateHeaderSize();
 
 	int visibleColumn();
-
-	void updateCellsVisibility();
 
 	void resetColumnData();
 };
