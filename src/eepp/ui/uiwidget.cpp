@@ -994,8 +994,8 @@ void UIWidget::onThemeLoaded() {}
 
 void UIWidget::onParentChange() {
 	if ( !isSceneNodeLoading() && !isLoadingState() ) {
-		getUISceneNode()->invalidateStyle( this );
-		getUISceneNode()->invalidateStyleState( this, true );
+		getUISceneNode()->invalidateStyle( this, true );
+		getUISceneNode()->invalidateStyleState( this, true, true );
 	}
 }
 

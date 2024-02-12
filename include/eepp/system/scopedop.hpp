@@ -23,6 +23,25 @@ class ScopedOp {
 	std::function<void()> mEndOp;
 };
 
+class ScopedOpOptional {
+  public:
+	explicit ScopedOpOptional( bool cond, std::function<void()> startOp,
+							   std::function<void()> endOp = nullptr ) :
+		cond( cond ), mEndOp( endOp ) {
+		if ( cond && startOp )
+			startOp();
+	}
+
+	~ScopedOpOptional() {
+		if ( cond && mEndOp )
+			mEndOp();
+	}
+
+  private:
+	bool cond;
+	std::function<void()> mEndOp;
+};
+
 class BoolScopedOp {
   public:
 	explicit BoolScopedOp( bool& boolRef ) : boolRef( boolRef ) {}

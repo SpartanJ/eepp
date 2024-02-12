@@ -81,10 +81,6 @@ unsigned long ClockImpl::getElapsedTime() {
 	return newMicro;
 }
 
-bool ClockImpl::isPO2( Uint32 n ) {
-	return ( n & ( n - 1 ) ) == 0;
-}
-
 }}} // namespace EE::System::Platform
 
 #endif

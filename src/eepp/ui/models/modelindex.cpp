@@ -16,6 +16,11 @@ ModelIndex ModelIndex::siblingAtColumn( int column ) const {
 	return sibling( row(), column );
 }
 
+std::string ModelIndex::toString() const {
+	return String::format( "ModelIndex{col: %ld - row: %ld, internalId: %ld}", mColumn, mRow,
+						   mInternalId );
+}
+
 Variant ModelIndex::data( ModelRole role ) const {
 	if ( !isValid() )
 		return {};

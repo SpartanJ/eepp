@@ -49,6 +49,8 @@ class EE_API ModelIndex {
 
 	ModelIndex siblingAtColumn( int column ) const;
 
+	std::string toString() const;
+
   protected:
 	friend class Model;
 	const Model* mModel{ nullptr };

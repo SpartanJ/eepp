@@ -664,14 +664,18 @@ UIWidget* UISceneNode::getRoot() const {
 	return mRoot;
 }
 
-void UISceneNode::invalidateStyle( UIWidget* node ) {
+void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	eeASSERT( NULL != node );
 
 	if ( node->isClosing() )
 		return;
 
-	if ( mDirtyStyle.count( node ) > 0 )
-		return;
+	if ( mDirtyStyle.count( node ) > 0 ) {
+		if ( !tryReinsert )
+			return;
+		else
+			mDirtyStyle.erase( node );
+	}
 
 	for ( auto& dirtyNode : mDirtyStyle )
 		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
@@ -689,14 +693,19 @@ void UISceneNode::invalidateStyle( UIWidget* node ) {
 	mDirtyStyle.insert( node );
 }
 
-void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimations ) {
+void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimations,
+										bool tryReinsert ) {
 	eeASSERT( NULL != node );
 
 	if ( node->isClosing() )
 		return;
 
-	if ( mDirtyStyleState.count( node ) > 0 )
-		return;
+	if ( mDirtyStyleState.count( node ) > 0 ) {
+		if ( !tryReinsert )
+			return;
+		else
+			mDirtyStyleState.erase( node );
+	}
 
 	for ( auto& dirtyNode : mDirtyStyleState )
 		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )

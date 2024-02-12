@@ -99,9 +99,9 @@ class EE_API UISceneNode : public SceneNode {
 
 	UIWidget* getRoot() const;
 
-	void invalidateStyle( UIWidget* widget );
+	void invalidateStyle( UIWidget* widget, bool tryReinsert = false );
 
-	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false );
+	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false, bool tryReinsert = false );
 
 	void invalidateLayout( UILayout* widget );
 
