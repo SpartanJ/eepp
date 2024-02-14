@@ -83,6 +83,7 @@ class GitPlugin : public PluginBase {
 	std::vector<std::pair<std::string, std::string>> mRepos;
 	std::string mProjectPath;
 	std::string mRepoSelected;
+	std::string mHighlightStyle{ "color: var(--font-highlight);" };
 
 	Time mRefreshFreq{ Seconds( 5 ) };
 	bool mGitFound{ false };
@@ -90,6 +91,7 @@ class GitPlugin : public PluginBase {
 	bool mStatusBarDisplayBranch{ true };
 	bool mStatusBarDisplayModifications{ true };
 	bool mStatusRecurseSubmodules{ true };
+	bool mFileTreeHighlightChanges{ true };
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mInitialized{ false };
@@ -126,6 +128,7 @@ class GitPlugin : public PluginBase {
 	};
 	std::optional<CustomTokenizer> mStatusCustomTokenizer;
 	std::optional<SyntaxDefinition> mTooltipCustomSyntaxDef;
+	Uint32 mModelStylerId{ 0 };
 
 	GitPlugin( PluginManager* pluginManager, bool sync );
 
@@ -226,6 +229,10 @@ class GitPlugin : public PluginBase {
 	std::vector<std::string> fixFilePaths( const std::vector<std::string>& files );
 
 	std::optional<Git::Branch> getBranchFromRepoPath( const std::string& repoPath );
+
+	void initModelStyler();
+
+	void endModelStyler();
 };
 
 } // namespace ecode

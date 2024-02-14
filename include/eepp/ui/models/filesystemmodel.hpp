@@ -158,6 +158,8 @@ class EE_API FileSystemModel : public Model {
 
 	Node* getNodeFromPath( std::string path, bool folderNode = false, bool invalidateTree = true );
 
+	std::string_view getNodeRelativePath( const Node* ) const;
+
 	void reload();
 
 	void refresh();
@@ -187,6 +189,8 @@ class EE_API FileSystemModel : public Model {
 	void setPreviouslySelectedIndex( const ModelIndex& previouslySelectedIndex );
 
 	bool handleFileEvent( const FileEvent& event );
+
+	virtual bool classModelRoleEnabled() { return true; }
 
 	~FileSystemModel();
 

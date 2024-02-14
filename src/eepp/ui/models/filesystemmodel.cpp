@@ -331,6 +331,13 @@ FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool 
 	return curNode;
 }
 
+std::string_view FileSystemModel::getNodeRelativePath( const Node* node ) const {
+	auto rp = std::string_view{ node->fullPath() };
+	if ( mRootPath.size() < rp.size() )
+		return rp.substr( mRootPath.size() );
+	return rp;
+}
+
 void FileSystemModel::reload() {
 	setRootPath( mRootPath );
 }
@@ -452,6 +459,9 @@ Variant FileSystemModel::data( const ModelIndex& index, ModelRole role ) const {
 		}
 		case ModelRole::Icon: {
 			return iconFor( node, index );
+		}
+		case ModelRole::Class: {
+			return stylizeModel( index, &node );
 		}
 		default: {
 		}

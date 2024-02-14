@@ -3,6 +3,7 @@
 	--primary: #3daee9;
 	--back: #31363b;
 	--font: #eff0f1;
+	--font-highlight: #8bdcfd;
 	--font-hint: #898b8d;
 	--button-back: #30353a;
 	--button-border: #6b6f73;
@@ -1060,6 +1061,7 @@ TextInput.table_cell_edit {
 	--primary: #3daee9;
 	--back: #eff0f1;
 	--font: #232627;
+	--font-highlight: #1a5676;
 	--font-hint: #232627;
 	--button-back: #fcfcfc;
 	--button-border: #b3b4b5;

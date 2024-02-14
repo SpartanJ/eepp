@@ -2,6 +2,7 @@
 #include "gitbranchmodel.hpp"
 #include "gitstatusmodel.hpp"
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -82,6 +83,8 @@ GitPlugin::~GitPlugin() {
 	if ( mSidePanel && mTab )
 		mSidePanel->removeTab( mTab );
 
+	endModelStyler();
+
 	{ Lock l( mGitBranchMutex ); }
 	{ Lock l( mGitStatusMutex ); }
 	{ Lock l( mRepoMutex ); }
@@ -142,6 +145,21 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 			updateConfigFile = true;
 		}
 
+		if ( config.contains( "filetree_highlight_changes" ) )
+			mFileTreeHighlightChanges = config.value( "filetree_highlight_changes", true );
+		else {
+			config["filetree_highlight_changes"] = mFileTreeHighlightChanges;
+			updateConfigFile = true;
+		}
+
+		if ( config.contains( "filetree_highlight_style" ) )
+			mHighlightStyle =
+				config.value( "filetree_highlight_style", "color: var(--font-highlight);" );
+		else {
+			config["filetree_highlight_style"] = mHighlightStyle;
+			updateConfigFile = true;
+		}
+
 		if ( config.contains( "statusbar_display_modifications" ) )
 			mStatusBarDisplayModifications =
 				config.value( "statusbar_display_modifications", true );
@@ -197,6 +215,7 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	mProjectPath = mRepoSelected = mGit->getProjectPath();
 
 	if ( getUISceneNode() ) {
+		initModelStyler();
 		updateStatus();
 		updateBranches();
 	}
@@ -205,6 +224,44 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	mReady = true;
 	fireReadyCbs();
 	setReady();
+}
+
+void GitPlugin::initModelStyler() {
+	if ( !mFileTreeHighlightChanges )
+		return;
+
+	auto projectView = getUISceneNode()->getRoot()->find<UITreeView>( "project_view" );
+	if ( !projectView || !projectView->getModel() )
+		return;
+
+	mModelStylerId = projectView->getModel()->subsribeModelStyler(
+		[this]( const ModelIndex& index, const void* data ) -> Variant {
+			static const char* STYLE_MODIFIED = "git_highlight_style";
+			static const char* STYLE_NONE = "theme-clear";
+			auto model = static_cast<const FileSystemModel*>( index.model() );
+			Lock l( mGitStatusMutex );
+			for ( const auto& status : mGitStatus.files ) {
+				for ( const auto& file : status.second ) {
+					auto node = static_cast<const FileSystemModel::Node*>( data );
+					std::string_view rp = model->getNodeRelativePath( node );
+					std::string_view filesv( file.file );
+					if ( rp.size() <= file.file.size() && rp == filesv.substr( 0, rp.size() ) ) {
+						return Variant( STYLE_MODIFIED );
+					}
+				}
+			}
+			return Variant( STYLE_NONE );
+		} );
+}
+
+void GitPlugin::endModelStyler() {
+	if ( !mFileTreeHighlightChanges || mModelStylerId == 0 || !SceneManager::existsSingleton() ||
+		 SceneManager::instance()->isShuttingDown() )
+		return;
+	auto projectView = getUISceneNode()->getRoot()->find<UITreeView>( "project_view" );
+	if ( !projectView || !projectView->getModel() )
+		return;
+	projectView->getModel()->unsubsribeModelStyler( mModelStylerId );
 }
 
 void GitPlugin::updateUINow( bool force ) {
@@ -373,6 +430,8 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 		case ecode::PluginMessageType::UIReady: {
 			if ( !mInitialized )
 				updateUINow();
+			if ( mModelStylerId == 0 )
+				initModelStyler();
 			break;
 		}
 		case ecode::PluginMessageType::UIThemeReloaded: {
@@ -1242,48 +1301,57 @@ void GitPlugin::buildSidePanelTab() {
 		return;
 	if ( mSidePanel == nullptr )
 		getUISceneNode()->bind( "panel", mSidePanel );
+	static constexpr auto STYLE = R"html(
+	<style>
+	#git_branches_tree ScrollBar,
+	#git_status_tree ScrollBar {
+		opacity: 0;
+		transition: opacity 0.15;
+	}
+	#git_branches_tree:hover ScrollBar,
+	#git_branches_tree ScrollBar.dragging,
+	#git_branches_tree ScrollBar:focus-within,
+	#git_status_tree:hover ScrollBar,
+	#git_status_tree ScrollBar.dragging,
+	#git_status_tree ScrollBar:focus-within {
+		opacity: 1;
+	}
+	.git_highlight_style > tableview::cell::text,
+	.git_highlight_style > treeview::cell::text,
+	.git_highlight_style > listview::cell::text,
+	.git_highlight_style {
+		%s
+	}
+	treeview::row:hover treeview::cell.git_highlight_style {
+		color: var(--font);
+	}
+	</style>
+	<RelativeLayout id="git_panel" lw="mp" lh="mp">
+		<vbox id="git_content" lw="mp" lh="mp">
+			<DropDownList id="git_panel_switcher" lw="mp" lh="22dp" border-type="inside" border-right-width="0" border-left-width="0" border-top-width="0" border-bottom-left-radius="0" border-bottom-right-radius="0" />
+			<StackWidget id="git_panel_stack" lw="mp" lh="0" lw8="1">
+				<vbox id="git_branches" lw="mp" lh="wc">
+					<hbox lw="mp" lh="wc" padding="4dp">
+						<DropDownList id="git_repo" lw="0" lh="wc" lw8="1" />
+						<PushButton id="branch_pull" text="@string(git_pull, Pull)" tooltip="@string(pull_branch, Pull Branch)" text-as-fallback="true" icon="icon(repo-pull, 12dp)" margin-left="2dp" />
+						<PushButton id="branch_push" text="@string(git_push, Push)" tooltip="@string(push_branch, Push Branch)" text-as-fallback="true" icon="icon(repo-push, 12dp)" margin-left="2dp" />
+						<PushButton id="branch_add" text="@string(git_add_branch, Add Branch)" tooltip="@string(add_branch, Add Branch)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
+					</hbox>
+					<TreeView id="git_branches_tree" lw="mp" lh="0" lw8="1" />
+				</vbox>
+				<vbox id="git_status" lw="mp" lh="mp">
+					<TreeView id="git_status_tree" lw="mp" lh="mp" />
+				</vbox>
+			</StackWidget>
+		</vbox>
+		<TextView id="git_no_content" lw="mp" lh="wc" word-wrap="true" visible="false"
+			text='@string(git_no_git_repo, "Current folder is not a Git repository.")' padding="16dp" />
+		<Loader margin-top="32dp" id="git_panel_loader" indeterminate="true" lw="24dp" lh="24dp" outline-thickness="2dp" visible="false" layout_gravity="bottom|right" margin-bottom="24dp" margin-right="24dp" />
+	</RelativeLayout>
+	)html";
 	UIIcon* icon = findIcon( "source-control" );
-	UIWidget* node = getUISceneNode()->loadLayoutFromString(
-		R"html(
-		<style>
-		#git_branches_tree ScrollBar,
-		#git_status_tree ScrollBar {
-			opacity: 0;
-			transition: opacity 0.15;
-		}
-
-		#git_branches_tree:hover ScrollBar,
-		#git_branches_tree ScrollBar.dragging,
-		#git_branches_tree ScrollBar:focus-within,
-		#git_status_tree:hover ScrollBar,
-		#git_status_tree ScrollBar.dragging,
-		#git_status_tree ScrollBar:focus-within {
-			opacity: 1;
-		}
-		</style>
-		<RelativeLayout id="git_panel" lw="mp" lh="mp">
-			<vbox id="git_content" lw="mp" lh="mp">
-				<DropDownList id="git_panel_switcher" lw="mp" lh="22dp" border-type="inside" border-right-width="0" border-left-width="0" border-top-width="0" border-bottom-left-radius="0" border-bottom-right-radius="0" />
-				<StackWidget id="git_panel_stack" lw="mp" lh="0" lw8="1">
-					<vbox id="git_branches" lw="mp" lh="wc">
-						<hbox lw="mp" lh="wc" padding="4dp">
-							<DropDownList id="git_repo" lw="0" lh="wc" lw8="1" />
-							<PushButton id="branch_pull" text="@string(git_pull, Pull)" tooltip="@string(pull_branch, Pull Branch)" text-as-fallback="true" icon="icon(repo-pull, 12dp)" margin-left="2dp" />
-							<PushButton id="branch_push" text="@string(git_push, Push)" tooltip="@string(push_branch, Push Branch)" text-as-fallback="true" icon="icon(repo-push, 12dp)" margin-left="2dp" />
-							<PushButton id="branch_add" text="@string(git_add_branch, Add Branch)" tooltip="@string(add_branch, Add Branch)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
-						</hbox>
-						<TreeView id="git_branches_tree" lw="mp" lh="0" lw8="1" />
-					</vbox>
-					<vbox id="git_status" lw="mp" lh="mp">
-						<TreeView id="git_status_tree" lw="mp" lh="mp" />
-					</vbox>
-				</StackWidget>
-			</vbox>
-			<TextView id="git_no_content" lw="mp" lh="wc" word-wrap="true" visible="false"
-				text='@string(git_no_git_repo, "Current folder is not a Git repository.")' padding="16dp" />
-			<Loader margin-top="32dp" id="git_panel_loader" indeterminate="true" lw="24dp" lh="24dp" outline-thickness="2dp" visible="false" layout_gravity="bottom|right" margin-bottom="24dp" margin-right="24dp" />
-		</RelativeLayout>
-		)html" );
+	UIWidget* node =
+		getUISceneNode()->loadLayoutFromString( String::format( STYLE, mHighlightStyle ) );
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), node,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "source_control" );

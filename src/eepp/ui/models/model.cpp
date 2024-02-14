@@ -303,6 +303,15 @@ void Model::handleDelete( Operation const& operation ) {
 	}
 }
 
+Variant Model::stylizeModel( const ModelIndex& index, const void* data ) const {
+	for ( const auto& styler : mStylers ) {
+		auto ret = styler.second( index, data );
+		if ( ret.isValid() )
+			return ret;
+	}
+	return {};
+}
+
 Mutex& Model::resourceMutex() {
 	return mResourceLock;
 }
@@ -313,6 +322,15 @@ void Model::acquireResourceMutex() {
 
 void Model::releaseResourceMutex() {
 	mResourceLock.unlock();
+}
+
+Uint32 Model::subsribeModelStyler( const ModelStyler& styler ) {
+	mStylers[++mLastStylerId] = styler;
+	return mLastStylerId;
+}
+
+void Model::unsubsribeModelStyler( Uint32 id ) {
+	mStylers.erase( id );
 }
 
 void Model::handleMove( Operation const& operation ) {

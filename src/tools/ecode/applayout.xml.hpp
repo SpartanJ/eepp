@@ -358,6 +358,21 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .none {
 	color: #d48838;
 }
+
+.theme-primary > tableview::cell::text,
+.theme-primary > treeview::cell::text,
+.theme-primary > listview::cell::text,
+.primary {
+	color: var(--font-highlight);
+}
+
+.theme-clear > tableview::cell::text,
+.theme-clear > treeview::cell::text,
+.theme-clear > listview::cell::text,
+.clear {
+	color: var(--font);
+}
+
 Anchor.success:hover,
 Anchor.error:hover {
 	color: var(--primary);
