@@ -20,6 +20,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 									 std::function<void()> highlightToggle,
 									 std::function<void()> drawBoxesToggle,
 									 std::function<void()> drawDebugDataToggle ) {
+	static ModelIndex lastModelIndex = {};
 	if ( sceneNode->getRoot()->hasChild( "widget-tree-view" ) )
 		return nullptr;
 	UIWindow* uiWin = UIWindow::New();
@@ -45,11 +46,17 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	)xml";
 	UIWidget* cont = sceneNode->loadLayoutFromString( WIDGET_LAYOUT, uiWin->getContainer() );
 	UITreeView* widgetTree = cont->findByType<UITreeView>( UI_TYPE_TREEVIEW );
-	widgetTree->on( Event::OnRowCreated, []( const Event* event ) {
+	widgetTree->on( Event::OnRowCreated, [sceneNode]( const Event* event ) {
 		UITableRow* row = event->asRowCreatedEvent()->getRow();
-		row->on( Event::MouseOver, [row]( const Event* ) {
-			if ( row->getCurIndex().internalData() && row->getCurIndex().ref<Node>()->isUINode() )
+		row->on( Event::MouseOver, [row, sceneNode]( const Event* ) {
+			if ( lastModelIndex.isValid() && lastModelIndex != row->getCurIndex() &&
+				 sceneNode->getRoot()->inNodeTree( lastModelIndex.ref<UINode>() ) ) {
+				lastModelIndex.ref<UINode>()->unsetFlags( UI_HIGHLIGHT );
+			}
+			if ( row->getCurIndex().internalData() && row->getCurIndex().ref<Node>()->isUINode() ) {
 				row->getCurIndex().ref<UINode>()->setFlags( UI_HIGHLIGHT );
+				lastModelIndex = row->getCurIndex();
+			}
 		} );
 		row->on( Event::MouseLeave, [row]( const Event* ) {
 			if ( row->getCurIndex().internalData() && row->getCurIndex().ref<Node>()->isUINode() )

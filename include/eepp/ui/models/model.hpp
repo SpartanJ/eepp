@@ -195,7 +195,7 @@ class EE_API Model {
 
 	template <bool IsRow> void saveDeletedIndices( ModelIndex const& parent, int first, int last );
 
-	std::map<ModelIndex, std::shared_ptr<PersistentHandle>> mPersistentHandles;
+	UnorderedMap<ModelIndex, std::shared_ptr<PersistentHandle>> mPersistentHandles;
 	std::stack<Operation> mOperationStack;
 	// NOTE: We need to save which indices have been deleted before the delete
 	// actually happens, because we can't figure out which persistent handles

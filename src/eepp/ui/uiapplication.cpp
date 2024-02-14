@@ -15,15 +15,12 @@ using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
-UIApplication::UIApplication( const WindowSettings& windowSettings, bool loadBaseResources,
+UIApplication::UIApplication( const WindowSettings& windowSettings, const Settings& appSettings,
 							  const ContextSettings& contextSettings ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
 	displayManager->disableBypassCompositor();
-
-	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
-	Float pixelDensity = currentDisplay->getPixelDensity();
 
 	mWindow = Engine::instance()->createWindow( windowSettings, contextSettings );
 
@@ -32,29 +29,34 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, bool loadBas
 
 	mDidRun = true;
 
-	PixelDensity::setPixelDensity( eemax( mWindow->getScale(), pixelDensity ) );
-
-	if ( !loadBaseResources )
-		return;
+	PixelDensity::setPixelDensity(
+		appSettings.pixelDensity
+			? *appSettings.pixelDensity
+			: eemax( mWindow->getScale(),
+					 displayManager->getDisplayIndex( 0 )->getPixelDensity() ) );
 
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	FontTrueType* font =
-		FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
-
 	mUISceneNode = UISceneNode::New();
-	mUISceneNode->getUIThemeManager()->setDefaultFont( font );
 	SceneManager::instance()->add( mUISceneNode );
 
-	mUISceneNode->getRoot()->addClass( "appbackground" );
+	if ( !appSettings.loadBaseResources )
+		return;
 
-	UITheme* theme = UITheme::load( "uitheme", "uitheme", "", font, "assets/ui/breeze.css" );
+	Font* font = appSettings.baseFont
+					 ? appSettings.baseFont
+					 : FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+
+	mUISceneNode->getUIThemeManager()->setDefaultFont( font );
+	mUISceneNode->getRoot()->addClass( "appbackground" );
+	mUISceneNode->getUIThemeManager()->setDefaultEffectsEnabled( true )->setDefaultFont( font );
+
+	UITheme* theme = UITheme::load( "uitheme", "uitheme", "", font,
+									appSettings.baseStyleSheetPath ? *appSettings.baseStyleSheetPath
+																   : "assets/ui/breeze.css" );
+
 	mUISceneNode->setStyleSheet( theme->getStyleSheet() );
-	mUISceneNode->getUIThemeManager()
-		->setDefaultEffectsEnabled( true )
-		->setDefaultTheme( theme )
-		->setDefaultFont( font )
-		->add( theme );
+	mUISceneNode->getUIThemeManager()->setDefaultTheme( theme )->add( theme );
 }
 
 UIApplication::~UIApplication() {

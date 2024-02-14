@@ -5,7 +5,6 @@
 #include <eepp/core/containers.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/bitop.hpp>
-#include <map>
 #include <string>
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #undef RGB

@@ -1,7 +1,6 @@
 #ifndef EE_MATHVECTOR2_H
 #define EE_MATHVECTOR2_H
 
-#include <cmath>
 #include <eepp/config.hpp>
 #include <eepp/math/math.hpp>
 

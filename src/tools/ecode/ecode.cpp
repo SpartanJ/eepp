@@ -53,20 +53,23 @@ void appLoop() {
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	if ( mSplitter->isAnyEditorDirty() ) {
-		UIMessageBox* msgBox = UIMessageBox::New(
+		if ( mCloseMsgBox )
+			return false;
+		mCloseMsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			i18n( "confirm_ecode_exit",
 				  "Do you really want to close the code editor?\nAll changes will be lost." )
 				.unescape() );
-		msgBox->on( Event::OnConfirm, [this]( const Event* ) {
+		mCloseMsgBox->on( Event::OnConfirm, [this]( const Event* ) {
 			saveProject();
 			saveConfig();
 			mWindow->close();
 		} );
-		msgBox->setTitle(
+		mCloseMsgBox->on( Event::OnWindowClose, [this]( auto ) { mCloseMsgBox = nullptr; } );
+		mCloseMsgBox->setTitle(
 			String::format( i18n( "close_title", "Close %s?" ).toUtf8(), mWindowTitle ) );
-		msgBox->center();
-		msgBox->showWhenReady();
+		mCloseMsgBox->center();
+		mCloseMsgBox->showWhenReady();
 		return false;
 	} else {
 		saveProject();

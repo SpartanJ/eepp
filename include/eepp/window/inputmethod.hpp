@@ -4,6 +4,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/math/rect.hpp>
+#include <map>
 
 using namespace EE::Math;
 using namespace EE::Graphics;

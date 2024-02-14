@@ -6,7 +6,6 @@
 #include <eepp/physics/body.hpp>
 #include <eepp/physics/constraints/constraint.hpp>
 #include <eepp/physics/shape.hpp>
-#include <list>
 
 namespace EE { namespace Physics {
 
@@ -246,7 +245,7 @@ class EE_PHYSICS_API Space {
 	std::vector<Body*> mBodys;
 	std::vector<Shape*> mShapes;
 	std::vector<Constraint*> mConstraints;
-	std::map<cpHashValue, CollisionHandler> mCollisions;
+	UnorderedMap<cpHashValue, CollisionHandler> mCollisions;
 	CollisionHandler mCollisionsDefault;
 	std::vector<PostStepCallbackCont*> mPostStepCallbacks;
 };

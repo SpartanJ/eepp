@@ -517,6 +517,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIStatusBar* mStatusBar{ nullptr };
 	UISplitter* mMainSplitter{ nullptr };
 	StyleSheet mAppStyleSheet;
+	UIMessageBox* mCloseMsgBox{ nullptr };
 
 	void saveAllProcess();
 
