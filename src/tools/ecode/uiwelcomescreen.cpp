@@ -1,5 +1,5 @@
-#include "uiwelcomescreen.hpp"
 #include "ecode.hpp"
+#include "uiwelcomescreen.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
 
@@ -83,8 +83,12 @@ static const auto LAYOUT = R"xml(
 				<image id="home_logo" lw="wc" min-width="128dp" lh="128dp" lg="center" />
 				<tv id="home_title" text="ecode" lg="center" />
 			</hbox>
-			<tv class="bold" text="Shortcuts" lg="center" margin-top="16dp" />
+			<tv class="bold" text="@string(shortcuts, Shortcuts)" lg="center" margin-top="16dp" />
 			<vbox lw="mp" lh="wc" lg="center">
+				<hbox class="shortcut" lg="center">
+					<tv class="name" id="menu" text="@string(main_menu, Main Menu)" />
+					<tv class="shortcut" id="main_menu_shortcut" text="Ctrl + M" />
+				</hbox>
 				<hbox class="shortcut" lg="center">
 					<tv class="name" id="command_palette" text="@string(command_palette, Command Palette)" />
 					<tv class="shortcut" id="command_palette_shortcut" text="Ctrl + P" />
@@ -116,22 +120,22 @@ static const auto LAYOUT = R"xml(
 			<button id="plugin-manager-open" text="@string(plugin_manager, Plugin Manager)" />
 			<button id="keybindings" text="@string(keybindings, Keybindings)" />
 			<widget class="separator" lw="mp" lh="32dp" />
-			<tv class="bold" text="For help, please visit:" lg="center" />
+			<tv class="bold" text="@string(for_help_please_visit, For help, please visit:)" lg="center" />
 			<vbox lw="wc" lh="wc" lg="center">
 				<hbox>
-					<tv text="The ecode " />
-					<a id="home_doc" text="documentation" href="https://github.com/SpartanJ/ecode" />
+					<tv text='@string(the_ecode_nbsp, "The ecode ")' />
+					<a id="home_doc" text="@string(documentation, documentation)" href="https://github.com/SpartanJ/ecode" />
 				</hbox>
 				<hbox>
-					<tv text="The ecode " />
-					<a id="home_forum" text="forum" href="https://github.com/SpartanJ/ecode/discussions" />
+					<tv text='@string(the_ecode_nbsp, "The ecode ")' />
+					<a id="home_forum" text="@string(forum, forum)" href="https://github.com/SpartanJ/ecode/discussions" />
 				</hbox>
 				<hbox>
-					<tv text="The ecode " />
-					<a id="home_issues" text="issues" href="https://github.com/SpartanJ/ecode/issues" />
+					<tv text='@string(the_ecode_nbsp, "The ecode ")' />
+					<a id="home_issues" text="@string(issues, issues)" href="https://github.com/SpartanJ/ecode/issues" />
 				</hbox>
 				<hbox>
-					<a id="check-for-updates" text="Check for Updates" />
+					<a id="check-for-updates" text="@string(check_for_updates, Check for Updates)" />
 				</hbox>
 			</vbox>
 		</vbox>
@@ -219,6 +223,8 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 	} else {
 		recentFiles->setEnabled( false );
 	}
+
+	find<UITextView>( "main_menu_shortcut" )->setText( mApp->getKeybind( "menu-toggle" ) );
 
 	find<UITextView>( "command_palette_shortcut" )
 		->setText( mApp->getKeybind( "open-command-palette" ) );

@@ -81,9 +81,10 @@ class GitPlugin : public PluginBase {
 	std::unordered_map<std::string, std::string> mGitBranches;
 	Git::Status mGitStatus;
 	std::vector<std::pair<std::string, std::string>> mRepos;
+	UnorderedSet<std::string> mGitStatusFilesCache;
 	std::string mProjectPath;
 	std::string mRepoSelected;
-	std::string mHighlightStyle{ "color: var(--font-highlight);" };
+	std::string mHighlightStyleColor;
 
 	Time mRefreshFreq{ Seconds( 5 ) };
 	bool mGitFound{ false };
@@ -118,6 +119,7 @@ class GitPlugin : public PluginBase {
 	Clock mLastBranchesUpdate;
 	Mutex mGitBranchMutex;
 	Mutex mGitStatusMutex;
+	Mutex mGitStatusFileCacheMutex;
 	Mutex mRepoMutex;
 	Mutex mReposMutex;
 	String mLastCommitMsg;
@@ -177,6 +179,8 @@ class GitPlugin : public PluginBase {
 	void discard( const std::vector<std::string>& files );
 
 	void discard( const std::string& file );
+
+	void diff( const Git::DiffMode mode, const std::string& repoPath );
 
 	void diff( const std::string& file, bool isStaged );
 

@@ -220,7 +220,11 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "diff-single", 0xec22 },
 			{ "remove", 0xeb3b },
 			{ "tag", 0xea66 },
-			{ "globe", 0xeb01 } };
+			{ "globe", 0xeb01 },
+			{ "circle-filled", 0xea71 },
+			{ "circle", 0xeabc },
+			{ "diff-multiple", 0xec23 },
+		};
 
 		for ( const auto& icon : codIcons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );

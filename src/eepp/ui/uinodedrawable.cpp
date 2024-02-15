@@ -595,7 +595,7 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 		position.y += ( pos[yFloatIndex] == "bottom" ) ? -yl2Val : yl2Val;
 	}
 
-	return position;
+	return position.round();
 }
 
 const std::string& UINodeDrawable::LayerDrawable::getSizeEq() const {

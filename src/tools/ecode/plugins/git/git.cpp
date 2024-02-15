@@ -241,6 +241,21 @@ Git::Result Git::reset( std::vector<std::string> files, const std::string& proje
 	return gitSimple( String::format( "reset -q HEAD -- %s", asList( files ) ), projectDir );
 }
 
+Git::Result Git::diff( DiffMode mode, const std::string& projectDir ) {
+	std::string modeTxt;
+	switch ( mode ) {
+		case DiffHead: {
+			modeTxt = "HEAD";
+			break;
+		}
+		case DiffStaged: {
+			modeTxt = "--staged";
+			break;
+		}
+	}
+	return gitSimple( String::format( "diff %s", modeTxt ), projectDir );
+}
+
 Git::Result Git::diff( const std::string& file, bool isStaged, const std::string& projectDir ) {
 	return gitSimple( String::format( "diff%s \"%s\"", isStaged ? " --staged" : "", file ),
 					  projectDir );

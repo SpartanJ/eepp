@@ -134,7 +134,8 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 			if ( !mReplacing )
 				resetSuggestions( editor );
-			else if ( mSignatureHelpVisible && mSignatureHelpPosition.isValid() &&
+
+			if ( mSignatureHelpVisible && mSignatureHelpPosition.isValid() &&
 					  !editor->getDocument().getSelection().hasSelection() &&
 					  mSignatureHelpPosition.line() !=
 						  editor->getDocument().getSelection().end().line() ) {

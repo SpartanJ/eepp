@@ -23,6 +23,8 @@
 using namespace EE::UI;
 using namespace EE::UI::Doc;
 
+using namespace std::literals;
+
 using json = nlohmann::json;
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 #define GIT_THREADED 1
@@ -31,6 +33,8 @@ using json = nlohmann::json;
 #endif
 
 namespace ecode {
+
+static constexpr auto DEFAULT_HIGHLIGHT_COLOR = "var(--font-highlight)"sv;
 
 std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
 	switch ( type ) {
@@ -64,7 +68,8 @@ Plugin* GitPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( GitPlugin, ( pluginManager, true ) );
 }
 
-GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) : PluginBase( pluginManager ) {
+GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
+	PluginBase( pluginManager ), mHighlightStyleColor( DEFAULT_HIGHLIGHT_COLOR ) {
 	if ( sync ) {
 		load( pluginManager );
 	} else {
@@ -152,11 +157,11 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 			updateConfigFile = true;
 		}
 
-		if ( config.contains( "filetree_highlight_style" ) )
-			mHighlightStyle =
-				config.value( "filetree_highlight_style", "color: var(--font-highlight);" );
-		else {
-			config["filetree_highlight_style"] = mHighlightStyle;
+		if ( config.contains( "filetree_highlight_style_color" ) ) {
+			mHighlightStyleColor =
+				config.value( "filetree_highlight_style_color", DEFAULT_HIGHLIGHT_COLOR );
+		} else {
+			config["filetree_highlight_style_color"] = mHighlightStyleColor;
 			updateConfigFile = true;
 		}
 
@@ -237,19 +242,14 @@ void GitPlugin::initModelStyler() {
 	mModelStylerId = projectView->getModel()->subsribeModelStyler(
 		[this]( const ModelIndex& index, const void* data ) -> Variant {
 			static const char* STYLE_MODIFIED = "git_highlight_style";
-			static const char* STYLE_NONE = "theme-clear";
+			static const char* STYLE_NONE = "git_highlight_style_clear";
 			auto model = static_cast<const FileSystemModel*>( index.model() );
-			Lock l( mGitStatusMutex );
-			for ( const auto& status : mGitStatus.files ) {
-				for ( const auto& file : status.second ) {
-					auto node = static_cast<const FileSystemModel::Node*>( data );
-					std::string_view rp = model->getNodeRelativePath( node );
-					std::string_view filesv( file.file );
-					if ( rp.size() <= file.file.size() && rp == filesv.substr( 0, rp.size() ) ) {
-						return Variant( STYLE_MODIFIED );
-					}
-				}
-			}
+			auto node = static_cast<const FileSystemModel::Node*>( data );
+			Lock l( mGitStatusFileCacheMutex );
+			auto found =
+				mGitStatusFilesCache.find( std::string{ model->getNodeRelativePath( node ) } );
+			if ( found != mGitStatusFilesCache.end() )
+				return Variant( STYLE_MODIFIED );
 			return Variant( STYLE_NONE );
 		} );
 }
@@ -389,6 +389,26 @@ void GitPlugin::updateStatus( bool force ) {
 				prevGitStatus = mGitStatus;
 			}
 			Git::Status newGitStatus = mGit->status( mStatusRecurseSubmodules );
+			UnorderedSet<std::string> cache;
+
+			for ( const auto& status : newGitStatus.files ) {
+				for ( const auto& file : status.second ) {
+					std::string p( FileSystem::fileRemoveFileName( file.file ) );
+					std::string lp;
+					while ( p != lp ) {
+						cache.insert( p );
+						lp = p;
+						p = FileSystem::removeLastFolderFromPath( p );
+					}
+					cache.insert( file.file );
+				}
+			}
+
+			{
+				Lock l( mGitStatusFileCacheMutex );
+				mGitStatusFilesCache = std::move( cache );
+			}
+
 			{
 				Lock l( mGitStatusMutex );
 				mGitStatus = std::move( newGitStatus );
@@ -996,6 +1016,35 @@ void GitPlugin::openFile( const std::string& file ) {
 	} );
 }
 
+void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
+	mThreadPool->run( [this, mode, repoPath] {
+		auto res = mGit->diff( mode, repoPath );
+		if ( res.fail() )
+			return;
+
+		std::string repoName = this->repoName( repoPath );
+		getUISceneNode()->runOnMainThread( [this, mode, res, repoName] {
+			auto ret = mManager->getSplitter()->createEditorInNewTab();
+			auto doc = ret.second->getDocumentRef();
+			std::string modeName;
+			switch ( mode ) {
+				case Git::DiffHead: {
+					modeName = "HEAD";
+					break;
+				}
+				case Git::DiffStaged:
+					modeName = "staged";
+					break;
+			}
+			doc->setDefaultFileName( repoName + "-" + modeName + ".diff" );
+			doc->setSyntaxDefinition( SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
+			doc->textInput( res.result, false );
+			doc->moveToStartOfDoc();
+			doc->resetUndoRedo();
+		} );
+	} );
+}
+
 void GitPlugin::diff( const std::string& file, bool isStaged ) {
 	mThreadPool->run( [this, file, isStaged] {
 		auto res = mGit->diff( fixFilePath( file ), isStaged, mGit->repoPath( file ) );
@@ -1316,14 +1365,21 @@ void GitPlugin::buildSidePanelTab() {
 	#git_status_tree ScrollBar:focus-within {
 		opacity: 1;
 	}
-	.git_highlight_style > tableview::cell::text,
-	.git_highlight_style > treeview::cell::text,
-	.git_highlight_style > listview::cell::text,
-	.git_highlight_style {
-		%s
+	.git_highlight_style > treeview::cell::text {
+		color: %s;
 	}
-	treeview::row:hover treeview::cell.git_highlight_style {
+	treeview::row treeview::cell.git_highlight_style_clear,
+	treeview::row:selected .git_highlight_style > treeview::cell::text,
+	treeview::row:selected .git_highlight_style > treeview::cell::text {
 		color: var(--font);
+	}
+	.git_highlight_style > treeview::cell::icon {
+		foreground-image: icon(circle, 12dpru), icon(circle-filled, 12dpru);
+		foreground-position: 80%% 80%%, 80%% 80%%;
+		foreground-tint: black, %s;
+	}
+	.git_highlight_style_clear > treeview::cell::icon {
+		foreground-image: none, none;
 	}
 	</style>
 	<RelativeLayout id="git_panel" lw="mp" lh="mp">
@@ -1350,8 +1406,12 @@ void GitPlugin::buildSidePanelTab() {
 	</RelativeLayout>
 	)html";
 	UIIcon* icon = findIcon( "source-control" );
+	std::string color =
+		!mHighlightStyleColor.empty() && Color::isColorString( mHighlightStyleColor )
+			? mHighlightStyleColor
+			: std::string{ DEFAULT_HIGHLIGHT_COLOR };
 	UIWidget* node =
-		getUISceneNode()->loadLayoutFromString( String::format( STYLE, mHighlightStyle ) );
+		getUISceneNode()->loadLayoutFromString( String::format( STYLE, color, color ) );
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), node,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "source_control" );
@@ -1488,17 +1548,22 @@ void GitPlugin::buildSidePanelTab() {
 						menu->setId( "git_status_type_menu" );
 
 						if ( status->type == Git::GitStatusType::Staged ) {
-							menuAdd( menu, "git-commit", "Commit", "git-commit" );
-							menuAdd( menu, "git-unstage-all", "Unstage All" );
+							menuAdd( menu, "git-commit", i18n( "git_commit", "Commit" ),
+									 "git-commit" );
+							menuAdd( menu, "git-diff-staged",
+									 i18n( "git_diff_staged", "Diff Staged" ), "diff-multiple" );
+							menuAdd( menu, "git-unstage-all",
+									 i18n( "git_unstage_all", "Unstage All" ) );
 						}
 
 						if ( status->type == Git::GitStatusType::Untracked ||
 							 status->type == Git::GitStatusType::Changed )
-							menuAdd( menu, "git-stage-all", "Stage All" );
+							menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ) );
 
 						if ( status->type == Git::GitStatusType::Changed ) {
 							menu->addSeparator();
-							menuAdd( menu, "git-discard-all", "Discard All" );
+							menuAdd( menu, "git-discard-all",
+									 i18n( "git_discard_all", "Discard All" ) );
 						}
 
 						menu->on( Event::OnItemClicked, [this, model,
@@ -1519,6 +1584,8 @@ void GitPlugin::buildSidePanelTab() {
 							} else if ( id == "git-discard-all" ) {
 								discard( model->getFiles( repoFullName( repoPath ),
 														  (Uint32)Git::GitStatusType::Changed ) );
+							} else if ( id == "git-diff-staged" ) {
+								diff( Git::DiffMode::DiffStaged, repoPath );
 							}
 						} );
 
@@ -1561,6 +1628,8 @@ void GitPlugin::buildSidePanelTab() {
 					menuAdd( menu, "git-pull", i18n( "git_pull", "Pull" ), "repo-pull" );
 					menuAdd( menu, "git-push", i18n( "git_push", "Push" ), "repo-push" );
 					menuAdd( menu, "git-stash", i18n( "git_stash_all", "Stash All" ), "git-stash" );
+					menuAdd( menu, "git-diff-head", i18n( "git_diff_head", "Diff HEAD" ),
+							 "diff-multiple" );
 
 					menu->on( Event::OnItemClicked,
 							  [this, model, repoName, repoPath]( const Event* event ) {
@@ -1582,6 +1651,8 @@ void GitPlugin::buildSidePanelTab() {
 									  stage( model->getFiles(
 										  repoName, (Uint32)Git::GitStatusType::Untracked |
 														(Uint32)Git::GitStatusType::Changed ) );
+								  } else if ( id == "git-diff-head" ) {
+									  diff( Git::DiffMode::DiffHead, repoPath );
 								  }
 							  } );
 

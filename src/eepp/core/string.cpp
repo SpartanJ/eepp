@@ -892,7 +892,24 @@ std::string String::randString( size_t len, std::string dictionary ) {
 	return dictionary.substr( 0, len );
 }
 
-void numberClean( std::string& strNumber ) {
+std::string_view String::numberClean( std::string_view strNumber ) {
+	while ( strNumber.back() == '0' )
+		strNumber.remove_suffix( 1 );
+	if ( strNumber.back() == '.' )
+		strNumber.remove_suffix( 1 );
+	return strNumber;
+}
+
+std::string String::numberClean( const std::string& number ) {
+	std::string strNumber( number );
+	while ( strNumber.back() == '0' )
+		strNumber.pop_back();
+	if ( strNumber.back() == '.' )
+		strNumber.pop_back();
+	return strNumber;
+}
+
+void String::numberCleanInPlace( std::string& strNumber ) {
 	while ( strNumber.back() == '0' )
 		strNumber.pop_back();
 	if ( strNumber.back() == '.' )
@@ -902,14 +919,14 @@ void numberClean( std::string& strNumber ) {
 std::string String::fromFloat( const Float& value, const std::string& append,
 							   const std::string& prepend ) {
 	std::string val( toString( value ) );
-	numberClean( val );
+	numberCleanInPlace( val );
 	return prepend + val + append;
 }
 
 std::string String::fromDouble( const double& value, const std::string& append,
 								const std::string& prepend ) {
 	std::string val( toString( value ) );
-	numberClean( val );
+	numberCleanInPlace( val );
 	return prepend + val + append;
 }
 

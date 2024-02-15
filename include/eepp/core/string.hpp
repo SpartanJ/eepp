@@ -298,6 +298,15 @@ class EE_API String {
 	/** Removes the numbers at the end of the string */
 	static std::string removeNumbersAtEnd( std::string txt );
 
+	/** Removes the trailing 0 and . in a string number */
+	static std::string_view numberClean( std::string_view strNumber );
+
+	/** Removes the trailing 0 and . in a string number */
+	static std::string numberClean( const std::string& strNumber );
+
+	/** Removes the trailing 0 and . in a string number */
+	static void numberCleanInPlace( std::string& strNumber );
+
 	/** Searchs the position of the corresponding close bracket in a string. */
 	static std::size_t findCloseBracket( const std::string& string, std::size_t startOffset,
 										 char openBracket, char closeBracket );

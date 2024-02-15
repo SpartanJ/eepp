@@ -227,6 +227,8 @@ class Git {
 		const char* typeStr() const { return refTypeToString( type ); }
 	};
 
+	enum DiffMode { DiffHead, DiffStaged };
+
 	Git( const std::string& projectDir = "", const std::string& gitPath = "" );
 
 	int git( const std::string& args, const std::string& projectDir, std::string& buf ) const;
@@ -252,6 +254,8 @@ class Git {
 	Result restore( const std::string& file, const std::string& projectDir = "" );
 
 	Result reset( std::vector<std::string> files, const std::string& projectDir = "" );
+
+	Result diff( DiffMode mode, const std::string& projectDir = "" );
 
 	Result diff( const std::string& file, bool isStaged, const std::string& projectDir = "" );
 
