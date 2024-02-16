@@ -130,6 +130,7 @@ class GitPlugin : public PluginBase {
 	};
 	std::optional<CustomTokenizer> mStatusCustomTokenizer;
 	std::optional<SyntaxDefinition> mTooltipCustomSyntaxDef;
+	Uint32 mModelChangedId{ 0 };
 	Uint32 mModelStylerId{ 0 };
 
 	GitPlugin( PluginManager* pluginManager, bool sync );

@@ -239,6 +239,11 @@ void GitPlugin::initModelStyler() {
 	if ( !projectView || !projectView->getModel() )
 		return;
 
+	if ( mModelChangedId == 0 ) {
+		mModelChangedId =
+			projectView->on( Event::OnModelChanged, [this]( auto ) { initModelStyler(); } );
+	}
+
 	mModelStylerId = projectView->getModel()->subsribeModelStyler(
 		[this]( const ModelIndex& index, const void* data ) -> Variant {
 			static const char* STYLE_MODIFIED = "git_highlight_style";
@@ -258,10 +263,20 @@ void GitPlugin::endModelStyler() {
 	if ( !mFileTreeHighlightChanges || mModelStylerId == 0 || !SceneManager::existsSingleton() ||
 		 SceneManager::instance()->isShuttingDown() )
 		return;
+
 	auto projectView = getUISceneNode()->getRoot()->find<UITreeView>( "project_view" );
-	if ( !projectView || !projectView->getModel() )
+	if ( !projectView )
 		return;
-	projectView->getModel()->unsubsribeModelStyler( mModelStylerId );
+
+	if ( mModelChangedId ) {
+		projectView->removeEventListener( mModelChangedId );
+		mModelChangedId = 0;
+	}
+
+	if ( projectView->getModel() ) {
+		projectView->getModel()->unsubsribeModelStyler( mModelStylerId );
+		mModelStylerId = 0;
+	}
 }
 
 void GitPlugin::updateUINow( bool force ) {

@@ -121,6 +121,7 @@ void UIAbstractView::setModel( const std::shared_ptr<Model>& model ) {
 	if ( mModel )
 		mModel->registerView( this );
 	onModelUpdate( Model::InvalidateAllIndexes );
+	sendCommonEvent( Event::OnModelChanged );
 }
 
 void UIAbstractView::modelUpdate( unsigned flags ) {

@@ -1343,9 +1343,10 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 
 UIMenu* SettingsMenu::createHelpMenu() {
 	UIPopUpMenu* helpMenu = UIPopUpMenu::New();
-	helpMenu->add( i18n( "ecode_source", "ecode source code..." ), findIcon( "github" ) )
+	helpMenu->add( i18n( "ecode_source_ellipsis", "ecode source code..." ), findIcon( "github" ) )
 		->setId( "ecode-source" );
-	helpMenu->add( i18n( "check_for_updates", "Check for Updates..." ), findIcon( "refresh" ) )
+	helpMenu
+		->add( i18n( "check_for_updates_ellipsis", "Check for Updates..." ), findIcon( "refresh" ) )
 		->setId( "check-for-updates" );
 	helpMenu->add( i18n( "about_ecode", "About ecode..." ), findIcon( "ecode" ) )
 		->setId( "about-ecode" );
