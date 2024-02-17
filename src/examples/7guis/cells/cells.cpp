@@ -2,13 +2,14 @@
 #include <eepp/ee.hpp>
 
 // Referece https://eugenkiss.github.io/7guis/tasks/#cells
-// Row header pending
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 1024, 768, "eepp - 7GUIs - Cells" } );
 	UIWidget* rlay = app.getUI()->loadLayoutFromString( R"xml(
 	<style>
 		#sheet tableview::cell {
-			border: 1dp solid var(--button-border);
+			border-type: inside;
+			border-right: 1dprd solid var(--button-border);
+			border-bottom: 1dprd solid var(--button-border);
 		}
 	</style>
 	<RelativeLayout layout_width="match_parent" layout_height="match_parent">
@@ -19,6 +20,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 	auto model = std::make_shared<Spreadsheet>();
 	table->setModel( model );
 	table->setColumnsWidth( PixelDensity::dpToPx( 80 ) );
+	table->setRowHeaderWidth( PixelDensity::dpToPx( 32 ) );
 	table->setSelectionType( UITableView::SelectionType::Cell );
 	table->setEditable( true );
 	table->setEditTriggers( UIAbstractView::EditTrigger::DoubleClicked |

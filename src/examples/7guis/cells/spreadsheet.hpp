@@ -83,6 +83,10 @@ class Spreadsheet : public Model {
 		return String::format( "%c", column + 'A' );
 	}
 
+	virtual std::string rowName( const size_t& row ) const {
+		return String::format( "%zu", row + 1 );
+	}
+
 	virtual Variant data( const ModelIndex& index, ModelRole role ) const;
 
 	void createCell( int col, int row );

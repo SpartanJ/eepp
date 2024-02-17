@@ -2203,9 +2203,23 @@ Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border) documenta
 
 ---
 
+### border-bottom
+
+Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom) documentation.
+`border-style` is not implemented yet.
+
+---
+
 ### border-color
 
 Read [border-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-color) documentation.
+
+---
+
+### border-left
+
+Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left) documentation.
+`border-style` is not implemented yet.
 
 ---
 
@@ -2215,9 +2229,23 @@ Read [border-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-rad
 
 ---
 
+### border-right
+
+Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right) documentation.
+`border-style` is not implemented yet.
+
+---
+
 ### border-width
 
 Read [border-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-width) documentation.
+
+---
+
+### border-top
+
+Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top) documentation.
+`border-style` is not implemented yet.
 
 ---
 

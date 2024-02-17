@@ -30,6 +30,7 @@ void UITableView::drawChilds() {
 	int realRowIndex = 0;
 	int realColIndex = 0;
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
+	buildRowHeader();
 	if ( getModel() ) {
 		Float rowHeight = getRowHeight();
 		size_t start = mScrollOffset.y / rowHeight;
@@ -66,11 +67,18 @@ void UITableView::drawChilds() {
 				realColIndex++;
 			}
 			rowNode->nodeDraw();
+			if ( mRowHeaderWidth ) {
+				updateRowHeader( realRowIndex, rowIndex,
+								 realRowIndex == 0 ? std::fmodf( -mScrollOffset.y, rowHeight )
+												   : 0.f );
+			}
 			realRowIndex++;
 		}
 	}
 	if ( mHeader && mHeader->isVisible() )
 		mHeader->nodeDraw();
+	if ( mRowHeader && mRowHeader->isVisible() )
+		mRowHeader->nodeDraw();
 	if ( mHScroll->isVisible() )
 		mHScroll->nodeDraw();
 	if ( mVScroll->isVisible() )
@@ -93,6 +101,8 @@ Node* UITableView::overFind( const Vector2f& point ) {
 		if ( mVScroll->isVisible() && ( pOver = mVScroll->overFind( point ) ) )
 			return pOver;
 		if ( mHeader && ( pOver = mHeader->overFind( point ) ) )
+			return pOver;
+		if ( mRowHeader && ( pOver = mRowHeader->overFind( point ) ) )
 			return pOver;
 		Float rowHeight = getRowHeight();
 		Float headerHeight = getHeaderHeight();

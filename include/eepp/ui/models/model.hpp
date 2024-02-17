@@ -70,6 +70,8 @@ class EE_API Model {
 
 	virtual std::string columnName( const size_t& /*column*/ ) const { return {}; }
 
+	virtual std::string rowName( const size_t& /*row*/ ) const { return {}; }
+
 	virtual Variant data( const ModelIndex&, ModelRole = ModelRole::Display ) const = 0;
 
 	virtual void update() { onModelUpdate(); }

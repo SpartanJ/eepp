@@ -238,7 +238,7 @@ Sizef UIAbstractTableView::getContentSize() const {
 	if ( !getModel() )
 		return {};
 	size_t count = getModel()->columnCount();
-	Sizef size;
+	Sizef size( mRowHeaderWidth, 0.f );
 	for ( size_t i = 0; i < count; i++ )
 		if ( !isColumnHidden( i ) )
 			size.x += columnData( i ).width;
@@ -490,7 +490,8 @@ UITableRow* UIAbstractTableView::updateRow( const int& rowIndex, const ModelInde
 	}
 	rowWidget->setCurIndex( index );
 	rowWidget->setPixelsSize( getContentSize().getWidth(), getRowHeight() );
-	rowWidget->setPixelsPosition( { -mScrollOffset.x, yOffset - mScrollOffset.y } );
+	rowWidget->setPixelsPosition(
+		{ mRowHeaderWidth + -mScrollOffset.x, yOffset - mScrollOffset.y } );
 	if ( isRowSelection() ) {
 		if ( getSelection().contains( index ) ) {
 			rowWidget->pushState( UIState::StateSelected );
@@ -502,7 +503,7 @@ UITableRow* UIAbstractTableView::updateRow( const int& rowIndex, const ModelInde
 }
 
 void UIAbstractTableView::onScrollChange() {
-	mHeader->setPixelsPosition( -mScrollOffset.x, 0 );
+	mHeader->setPixelsPosition( mRowHeaderWidth + -mScrollOffset.x, 0 );
 }
 
 void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
@@ -682,6 +683,64 @@ void UIAbstractTableView::onOpenMenuModelIndex( const ModelIndex& index,
 												const Event* triggerEvent ) {
 	ModelEvent event( getModel(), index, this, ModelEventType::OpenMenu, triggerEvent );
 	sendEvent( &event );
+}
+
+Float UIAbstractTableView::getRowHeaderWidth() const {
+	return mRowHeaderWidth;
+}
+
+void UIAbstractTableView::setRowHeaderWidth( Float rowHeaderWidth ) {
+	if ( mRowHeaderWidth == rowHeaderWidth )
+		return;
+	mRowHeaderWidth = rowHeaderWidth;
+	onScrollChange();
+	buildRowHeader();
+}
+
+void UIAbstractTableView::buildRowHeader() {
+	if ( mRowHeaderWidth == 0 ) {
+		if ( mRowHeader )
+			mRowHeader->setVisible( false )->setEnabled( false );
+		return;
+	}
+
+	if ( mRowHeader == nullptr ) {
+		mRowHeader = UILinearLayout::NewWithTag( mTag + "::rowheader", UIOrientation::Vertical );
+		mRowHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		mRowHeader->setParent( this )->setVisible( true )->setEnabled( true );
+	}
+
+	mRowHeader->setPaddingTop( mHeader->getSize().getHeight() );
+	mRowHeader->setPixelsSize( { mRowHeaderWidth, getPixelsSize().getHeight() } );
+	mRowHeader->setClipType( ClipType::PaddingBox );
+
+	int rowsCount = Math::roundUp( mSize.getHeight() / getRowHeight() ) + 1;
+
+	if ( mRowHeader->getChildCount() < rowsCount ) {
+		int createCount = rowsCount - mRowHeader->getChildCount();
+		for ( int i = 0; i < createCount; i++ ) {
+			UIWidget* row = UIPushButton::NewWithTag( mTag + "::rowheader::row" );
+			row->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+			row->setParent( mRowHeader );
+			row->setPixelsSize( mRowHeaderWidth, getRowHeight() );
+		}
+	}
+}
+
+void UIAbstractTableView::updateRowHeader( int realRowIndex, const ModelIndex& index,
+										   Float yOffset ) {
+	if ( !mRowHeader || mRowHeaderWidth == 0 )
+		return;
+	Node* child = mRowHeader->getChildAt( realRowIndex );
+	if ( !child )
+		return;
+	UIPushButton* row = child->asType<UIPushButton>();
+
+	row->setPixelsSize( mRowHeaderWidth, getRowHeight() );
+	row->setLayoutMarginTop( PixelDensity::pxToDp( yOffset ) );
+
+	if ( getModel() )
+		row->setText( getModel()->rowName( index.row() ) );
 }
 
 void UIAbstractTableView::onRowCreated( UITableRow* row ) {

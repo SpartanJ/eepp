@@ -881,7 +881,9 @@ Splitter::separator:hover {
 }
 
 tableview::header,
-listview::header {
+listview::header,
+tableview::rowheader,
+listview::rowheader {
 	background-color: var(--back);
 }
 
@@ -900,9 +902,24 @@ listview::header::column {
 	text-align: left;
 }
 
+tableview::rowheader::row,
+treeview::rowheader::row,
+listview::rowheader::row {
+	background-color: var(--back);
+	border-right-color: var(--tab-line);
+	border-right-width: 1dp;
+	border-bottom-color: var(--tab-line);
+	border-bottom-width: 1dp;
+	border-type: inside;
+	color: var(--font);
+}
+
 tableview::header::column:hover,
 treeview::header::column:hover,
-listview::header::column:hover {
+listview::header::column:hover,
+tableview::rowheader::row:hover,
+treeview::rowheader::row:hover,
+listview::rowheader::row:hover {
 	background-color: var(--tab-hover);
 }
 

@@ -124,6 +124,14 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual void onOpenMenuModelIndex( const ModelIndex& index,
 									   const Event* triggerEvent = nullptr );
 
+	bool isRowHeaderVisible() const;
+
+	void setRowHeaderVisible( bool rowHeaderVisible );
+
+	Float getRowHeaderWidth() const;
+
+	void setRowHeaderWidth( Float rowHeaderWidth );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -140,7 +148,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	mutable std::vector<UITableRow*> mRows;
 	mutable std::vector<ColumnData> mColumn;
 	mutable std::vector<UnorderedMap<int, UIWidget*>> mWidgets;
-	UILinearLayout* mHeader;
+	UILinearLayout* mHeader{ nullptr };
+	UILinearLayout* mRowHeader{ nullptr };
 	Float mDragBorderDistance{ 8 };
 	size_t mIconSize{ 12 };
 	size_t mSortIconSize{ 16 };
@@ -153,6 +162,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	std::string mSearchText;
 	size_t mMainColumn{ 0 };
 	std::unordered_map<UIWidget*, std::vector<Uint32>> mWidgetsClickCbId;
+	Float mRowHeaderWidth{ 0 };
 
 	virtual ~UIAbstractTableView();
 
@@ -210,6 +220,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	int visibleColumn();
 
 	void resetColumnData();
+
+	void buildRowHeader();
+
+	void updateRowHeader( int realRowIndex, const ModelIndex& index, Float yOffset );
 };
 
 }}} // namespace EE::UI::Abstract
