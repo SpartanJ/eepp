@@ -1,10 +1,11 @@
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitableview.hpp>
 
-#include <eepp/system/scopedop.hpp>
+#include <cmath>
 
 namespace EE { namespace UI {
 
@@ -69,8 +70,7 @@ void UITableView::drawChilds() {
 			rowNode->nodeDraw();
 			if ( mRowHeaderWidth ) {
 				updateRowHeader( realRowIndex, rowIndex,
-								 realRowIndex == 0 ? std::fmodf( -mScrollOffset.y, rowHeight )
-												   : 0.f );
+								 realRowIndex == 0 ? fmodf( -mScrollOffset.y, rowHeight ) : 0.f );
 			}
 			realRowIndex++;
 		}
