@@ -5,7 +5,7 @@ using namespace EE::Window;
 
 namespace EE { namespace UI {
 
-static KeyBindings::Shortcut sanitizeShortcut( const KeyBindings::Shortcut& shortcut ) {
+KeyBindings::Shortcut KeyBindings::sanitizeShortcut( const KeyBindings::Shortcut& shortcut ) {
 	KeyBindings::Shortcut sanitized( shortcut.key, 0 );
 	if ( shortcut.mod & KEYMOD_CTRL )
 		sanitized.mod |= KEYMOD_CTRL;

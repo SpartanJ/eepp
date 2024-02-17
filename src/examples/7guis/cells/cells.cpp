@@ -26,9 +26,16 @@ EE_MAIN_FUNC int main( int, char** ) {
 	table->setEditTriggers( UIAbstractView::EditTrigger::DoubleClicked |
 							UIAbstractTableView::EditTrigger::EditKeyPressed );
 	table->setEditShortcuts( { { KEY_F2 }, { KEY_RETURN }, { KEY_KP_ENTER } } );
-	table->onCreateEditingDelegate = [model]( const ModelIndex& ) -> ModelEditingDelegate* {
+	table->setSelection( model->index( 0, 0 ) );
+	table->setFocus();
+	table->onCreateEditingDelegate = [table,
+									  model]( const ModelIndex& index ) -> ModelEditingDelegate* {
 		auto ret = StringModelEditingDelegate::New();
 		ret->setPullDataFrom( ModelRole::Custom );
+		ret->onValueSet = [table, model, index] {
+			if ( index.row() + 1 < static_cast<Int64>( model->rowCount() ) )
+				table->setSelection( model->index( index.row() + 1, index.column() ) );
+		};
 		return ret;
 	};
 	return app.run();

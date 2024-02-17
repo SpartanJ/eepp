@@ -651,10 +651,11 @@ void UIAbstractTableView::setSelection( const ModelIndex& index, bool scrollToSe
 		if ( openModelIndexTree )
 			onOpenMenuModelIndex( index );
 		getSelection().set( index );
-		if ( scrollToSelection )
-			scrollToPosition(
-				{ { mScrollOffset.x, getHeaderHeight() + index.row() * getRowHeight() },
-				  { columnData( index.column() ).width, getRowHeight() } } );
+		if ( scrollToSelection ) {
+			auto rowHeight = getRowHeight();
+			scrollToPosition( { { mScrollOffset.x, getHeaderHeight() + index.row() * rowHeight },
+								{ columnData( index.column() ).width, rowHeight } } );
+		}
 	}
 }
 
@@ -834,6 +835,7 @@ bool UIAbstractTableView::tryBeginEditing( KeyBindings::Shortcut fromShortcut ) 
 	if ( isEditable() && getSelection().first().isValid() && getModel() &&
 		 getModel()->isEditable( getSelection().first() ) &&
 		 ( mEditTriggers & EditTrigger::EditKeyPressed ) && !mEditShortcuts.empty() ) {
+		fromShortcut = KeyBindings::sanitizeShortcut( fromShortcut );
 		for ( const auto& shortcut : mEditShortcuts ) {
 			if ( shortcut == fromShortcut ) {
 				beginEditing( getSelection().first(), getCellFromIndex( getSelection().first() ) );

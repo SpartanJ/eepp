@@ -60,6 +60,10 @@ class Cell : public Observer, public Observable {
 
 	void update();
 
+	bool hasFormula() const;
+
+	const std::shared_ptr<Formula>& getFormula() const { return this->formula; }
+
   protected:
 	std::string value;
 	std::string displayValue;
@@ -100,6 +104,8 @@ class Spreadsheet : public Model {
 	virtual void setData( const ModelIndex& index, const Variant& data );
 
 	virtual bool isEditable( const ModelIndex& ) const { return true; }
+
+	virtual bool classModelRoleEnabled() { return true; }
 
   protected:
 	std::vector<std::vector<std::unique_ptr<Cell>>> mCells;

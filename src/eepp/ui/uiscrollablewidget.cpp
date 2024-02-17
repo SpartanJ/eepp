@@ -272,7 +272,7 @@ void UIScrollableWidget::scrollToBottom() {
 void UIScrollableWidget::scrollToPosition( const Rectf& pos, const bool& scrollVertically,
 										   const bool& scrollHorizontally ) {
 	Rectf visibleRect( getVisibleRect() );
-	if ( visibleRect.contains( pos ) )
+	if ( visibleRect.Top < 0 || visibleRect.Bottom < 0 || visibleRect.contains( pos ) )
 		return;
 
 	if ( scrollVertically ) {

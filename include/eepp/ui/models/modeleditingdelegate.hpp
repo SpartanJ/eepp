@@ -32,6 +32,7 @@ class EE_API ModelEditingDelegate {
 	std::function<void()> onRollback;
 	std::function<void()> onChange;
 	std::function<void()> onWillBeginEditing;
+	std::function<void()> onValueSet;
 
 	virtual Variant getValue() const = 0;
 

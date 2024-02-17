@@ -182,8 +182,11 @@ void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidg
 	mEditWidget->toFront();
 	mEditingDelegate->willBeginEditing();
 	mEditingDelegate->onCommit = [this]() {
-		if ( getModel() && mEditIndex.isValid() )
+		if ( getModel() && mEditIndex.isValid() ) {
 			getModel()->setData( mEditIndex, mEditingDelegate->getValue() );
+			if ( mEditingDelegate->onValueSet )
+				mEditingDelegate->onValueSet();
+		}
 		stopEditing();
 	};
 	mEditingDelegate->onRollback = [this]() { stopEditing(); };

@@ -48,19 +48,30 @@ const std::string& Cell::getDisplayValue() const {
 }
 
 void Cell::calc() {
-	if ( !formula || formula->type() == FormulaType::Textual ) {
+	auto oldDisplayValue = displayValue;
+
+	if ( !hasFormula() ) {
 		displayValue = value;
 		return;
 	}
+
 	auto res = formula->eval( sheet );
 	if ( res )
 		displayValue = String::fromDouble( *res );
 	else
 		displayValue = "!ERR";
+
+	if ( oldDisplayValue != displayValue )
+		setChanged();
 }
 
 void Cell::update() {
 	calc();
+	notifyObservers();
+}
+
+bool Cell::hasFormula() const {
+	return formula && formula->type() != FormulaType::Textual;
 }
 
 Spreadsheet::Spreadsheet( int cols, int rows ) :
@@ -71,15 +82,37 @@ Spreadsheet::Spreadsheet( int cols, int rows ) :
 }
 
 Variant Spreadsheet::data( const ModelIndex& index, ModelRole role ) const {
-	static const std::string EMPTY = "";
+	static const char* EMPTY = "";
+	static const char* STYLE_NONE = "font_theme_normal";
+	static const char* FORMULA_STYLE = "font_theme_success";
+	static const char* NUMBER_STYLE = "font_theme_warning";
 	switch ( role ) {
-		case EE::UI::Models::ModelRole::Display:
+		case ModelRole::Display:
 			if ( nullptr == mCells[index.column()][index.row()] )
-				return Variant( EMPTY.c_str() );
+				return Variant( EMPTY );
 			return Variant( cell( index ).getDisplayValue().c_str() );
-		case EE::UI::Models::ModelRole::Custom:
+		case ModelRole::Custom: {
 			if ( nullptr != mCells[index.column()][index.row()] )
 				return Variant( cell( index ).getValue().c_str() );
+			break;
+		}
+		case ModelRole::Class: {
+			const auto& cell = mCells[index.column()][index.row()];
+			if ( cell && cell->hasFormula() ) { // Let's give it some style
+				switch ( cell->getFormula()->type() ) {
+					case FormulaType::CellReference:
+					case FormulaType::RangeReference:
+					case FormulaType::Application:
+						return Variant( FORMULA_STYLE );
+					case FormulaType::Number:
+						return Variant( NUMBER_STYLE );
+						break;
+					default:
+						break;
+				}
+			}
+			return Variant( STYLE_NONE );
+		}
 		default:
 			break;
 	}

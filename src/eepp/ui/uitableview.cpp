@@ -197,12 +197,48 @@ void UITableView::onColumnSizeChange( const size_t& colIndex, bool fromUserInter
 }
 
 Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
-	if ( event.getMod() & KEYMOD_CTRL_SHIFT_ALT_META )
+	bool isJump = ( event.getKeyCode() == KEY_LEFT || event.getKeyCode() == KEY_RIGHT ||
+					event.getKeyCode() == KEY_UP || event.getKeyCode() == KEY_DOWN ) &&
+				  ( event.getSanitizedMod() & KeyMod::getDefaultModifier() );
+	if ( !isJump && ( event.getMod() & KEYMOD_CTRL_SHIFT_ALT_META ) )
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 	int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
 
 	switch ( event.getKeyCode() ) {
+		case KEY_UP: {
+			// Fallback to home if using modifier key
+			if ( !( event.getSanitizedMod() & KeyMod::getDefaultModifier() ) ) {
+				if ( !getModel() || isEditing() )
+					return 0;
+				auto& model = *this->getModel();
+				ModelIndex foundIndex;
+				if ( !getSelection().isEmpty() ) {
+					auto oldIndex = getSelection().first();
+					foundIndex = model.index( oldIndex.row() - 1, oldIndex.column() );
+				} else {
+					foundIndex = model.index(
+						0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
+				}
+				if ( model.isValid( foundIndex ) ) {
+					Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
+					getSelection().set( foundIndex );
+					if ( curY < mScrollOffset.y + getHeaderHeight() + getRowHeight() ||
+						 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
+									mPaddingPx.Bottom - getRowHeight() ) {
+						curY -= getHeaderHeight();
+						mVScroll->setValue( curY / getScrollableArea().getHeight() );
+					}
+				}
+				return 1;
+			}
+		}
+		case KEY_HOME: {
+			getSelection().set( getModel()->index(
+				0, getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
+			scrollToTop();
+			return 1;
+		}
 		case KEY_PAGEUP: {
 			if ( curIndex.row() - pageSize < 0 ) {
 				getSelection().set( getModel()->index(
@@ -211,6 +247,42 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			} else {
 				moveSelection( -pageSize );
 			}
+			return 1;
+		}
+		case KEY_DOWN: {
+			if ( !getModel() || isEditing() )
+				return 0;
+			// Fallback to end if using modifier key
+			if ( !( event.getSanitizedMod() & KeyMod::getDefaultModifier() ) ) {
+				auto& model = *this->getModel();
+				ModelIndex foundIndex;
+				if ( !getSelection().isEmpty() ) {
+					auto oldIndex = getSelection().first();
+					foundIndex = model.index( oldIndex.row() + 1, oldIndex.column() );
+				} else {
+					foundIndex = model.index(
+						0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
+				}
+				if ( model.isValid( foundIndex ) ) {
+					Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
+					getSelection().set( foundIndex );
+					if ( curY < mScrollOffset.y ||
+						 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
+									mPaddingPx.Bottom - getRowHeight() ) {
+						curY -= eefloor( getVisibleArea().getHeight() / getRowHeight() ) *
+									getRowHeight() -
+								getRowHeight();
+						mVScroll->setValue( curY / getScrollableArea().getHeight() );
+					}
+				}
+				return 1;
+			}
+		}
+		case KEY_END: {
+			getSelection().set( getModel()->index(
+				getItemCount() - 1,
+				getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
+			scrollToBottom();
 			return 1;
 		}
 		case KEY_PAGEDOWN: {
@@ -236,6 +308,10 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 				foundIndex = model.index(
 					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
 			}
+
+			if ( event.getSanitizedMod() & KeyMod::getDefaultModifier() )
+				foundIndex = model.index( foundIndex.row(), 0 );
+
 			if ( model.isValid( foundIndex ) ) {
 				Float curX = getColumnPosition( foundIndex.column() ).x;
 				getSelection().set( foundIndex );
@@ -243,8 +319,10 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 														  mPaddingPx.Left - mPaddingPx.Right ) {
 					Float colWidth = getColumnWidth( foundIndex.column() );
 					mHScroll->setValue(
-						( mHScroll->getValue() - colWidth / getScrollableArea().getWidth() ) *
-						getScrollableArea().getWidth() / getScrollableArea().getWidth() );
+						( event.getSanitizedMod() & KEYMOD_CTRL )
+							? 0
+							: ( mHScroll->getValue() - colWidth / getScrollableArea().getWidth() ) *
+								  getScrollableArea().getWidth() / getScrollableArea().getWidth() );
 				}
 			}
 			return 0;
@@ -261,6 +339,12 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 				foundIndex = model.index(
 					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
 			}
+
+			if ( event.getSanitizedMod() & KeyMod::getDefaultModifier() ) {
+				foundIndex = model.index( foundIndex.row(),
+										  model.columnCount() > 0 ? model.columnCount() - 1 : 0 );
+			}
+
 			if ( model.isValid( foundIndex ) ) {
 				Float colWidth = getColumnWidth( foundIndex.column() );
 				Float curX = getColumnPosition( foundIndex.column() ).x + colWidth;
@@ -268,74 +352,13 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 				if ( curX < mScrollOffset.x || curX > mScrollOffset.x + getPixelsSize().getWidth() -
 														  mPaddingPx.Left - mPaddingPx.Right ) {
 					mHScroll->setValue(
-						( mHScroll->getValue() + colWidth / getScrollableArea().getWidth() ) *
-						getScrollableArea().getWidth() / getScrollableArea().getWidth() );
+						( event.getSanitizedMod() & KEYMOD_CTRL )
+							? getScrollableArea().getWidth()
+							: ( mHScroll->getValue() + colWidth / getScrollableArea().getWidth() ) *
+								  getScrollableArea().getWidth() / getScrollableArea().getWidth() );
 				}
 			}
 			return 0;
-		}
-		case KEY_UP: {
-			if ( !getModel() || isEditing() )
-				return 0;
-			auto& model = *this->getModel();
-			ModelIndex foundIndex;
-			if ( !getSelection().isEmpty() ) {
-				auto oldIndex = getSelection().first();
-				foundIndex = model.index( oldIndex.row() - 1, oldIndex.column() );
-			} else {
-				foundIndex = model.index(
-					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
-			}
-			if ( model.isValid( foundIndex ) ) {
-				Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
-				getSelection().set( foundIndex );
-				if ( curY < mScrollOffset.y + getHeaderHeight() + getRowHeight() ||
-					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
-								mPaddingPx.Bottom - getRowHeight() ) {
-					curY -= getHeaderHeight();
-					mVScroll->setValue( curY / getScrollableArea().getHeight() );
-				}
-			}
-			return 1;
-		}
-		case KEY_DOWN: {
-			if ( !getModel() || isEditing() )
-				return 0;
-			auto& model = *this->getModel();
-			ModelIndex foundIndex;
-			if ( !getSelection().isEmpty() ) {
-				auto oldIndex = getSelection().first();
-				foundIndex = model.index( oldIndex.row() + 1, oldIndex.column() );
-			} else {
-				foundIndex = model.index(
-					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
-			}
-			if ( model.isValid( foundIndex ) ) {
-				Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
-				getSelection().set( foundIndex );
-				if ( curY < mScrollOffset.y ||
-					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
-								mPaddingPx.Bottom - getRowHeight() ) {
-					curY -=
-						eefloor( getVisibleArea().getHeight() / getRowHeight() ) * getRowHeight() -
-						getRowHeight();
-					mVScroll->setValue( curY / getScrollableArea().getHeight() );
-				}
-			}
-			return 1;
-		}
-		case KEY_END: {
-			getSelection().set( getModel()->index(
-				getItemCount() - 1,
-				getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
-			scrollToBottom();
-			return 1;
-		}
-		case KEY_HOME: {
-			getSelection().set( getModel()->index(
-				0, getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
-			scrollToTop();
-			return 1;
 		}
 		case KEY_RETURN:
 		case KEY_KP_ENTER: {
