@@ -93,4 +93,11 @@ int UIApplication::run() {
 	return mDidRun ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
+UIApplication::Settings::Settings( std::optional<Float> pixelDensity, bool loadBaseResources,
+								   Font* baseFont, std::optional<std::string> baseStyleSheetPath ) :
+	pixelDensity( pixelDensity ),
+	loadBaseResources( loadBaseResources ),
+	baseFont( baseFont ),
+	baseStyleSheetPath( baseStyleSheetPath ) {}
+
 }} // namespace EE::UI

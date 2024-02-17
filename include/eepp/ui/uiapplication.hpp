@@ -16,13 +16,19 @@ class EE_API UIApplication {
 	struct Settings {
 		Settings() {}
 
-		//! Must be set to true in order to initialize the basic UI resources (font and UI theme). Otherwise it will initialize with an empty UI scene node
-		bool loadBaseResources{ true };
-		//! The default base font for the UI. If not provided it will load NotoSans-Regular ( will look at "assets/fonts/NotoSans-Regular.ttf" )
-		Font* baseFont{ nullptr };
+		Settings( std::optional<Float> pixelDensity, bool loadBaseResources = true,
+				  Font* baseFont = nullptr, std::optional<std::string> baseStyleSheetPath = {} );
+
 		//! Not setting anything will automatically try to detect the main screen pixel density
 		std::optional<Float> pixelDensity;
-		//! The style sheet path is the path of the base UI theme stylesheet ( will look at "assets/ui/breeze.css" by default )
+		//! Must be set to true in order to initialize the basic UI resources (font and UI theme).
+		//! Otherwise it will initialize with an empty UI scene node
+		bool loadBaseResources{ true };
+		//! The default base font for the UI. If not provided it will load NotoSans-Regular ( will
+		//! look at "assets/fonts/NotoSans-Regular.ttf" )
+		Font* baseFont{ nullptr };
+		//! The style sheet path is the path of the base UI theme stylesheet ( will look at
+		//! "assets/ui/breeze.css" by default )
 		std::optional<std::string> baseStyleSheetPath;
 	};
 
@@ -35,7 +41,8 @@ class EE_API UIApplication {
 	//! The main window
 	EE::Window::Window* getWindow() const;
 
-	//! The UI scene node, this node handles the whole UI. This is the equivalent to the HTML DOM Document
+	//! The UI scene node, this node handles the whole UI. This is the equivalent to the HTML DOM
+	//! Document
 	UISceneNode* getUI() const;
 
 	int run();

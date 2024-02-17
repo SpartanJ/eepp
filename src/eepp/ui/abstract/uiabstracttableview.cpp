@@ -710,11 +710,11 @@ void UIAbstractTableView::buildRowHeader() {
 		mRowHeader->setParent( this )->setVisible( true )->setEnabled( true );
 	}
 
-	mRowHeader->setPaddingTop( mHeader->getSize().getHeight() );
+	mRowHeader->setPaddingPixelsTop( mHeader->getPixelsSize().getHeight() );
 	mRowHeader->setPixelsSize( { mRowHeaderWidth, getPixelsSize().getHeight() } );
 	mRowHeader->setClipType( ClipType::PaddingBox );
 
-	int rowsCount = Math::roundUp( mSize.getHeight() / getRowHeight() ) + 1;
+	Uint32 rowsCount = Math::roundUp( mSize.getHeight() / getRowHeight() ) + 1;
 
 	if ( mRowHeader->getChildCount() < rowsCount ) {
 		int createCount = rowsCount - mRowHeader->getChildCount();
@@ -737,7 +737,7 @@ void UIAbstractTableView::updateRowHeader( int realRowIndex, const ModelIndex& i
 	UIPushButton* row = child->asType<UIPushButton>();
 
 	row->setPixelsSize( mRowHeaderWidth, getRowHeight() );
-	row->setLayoutMarginTop( PixelDensity::pxToDp( yOffset ) );
+	row->setLayoutPixelsMarginTop( eefloor( yOffset ) );
 
 	if ( getModel() )
 		row->setText( getModel()->rowName( index.row() ) );
