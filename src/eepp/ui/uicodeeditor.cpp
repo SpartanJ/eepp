@@ -457,7 +457,7 @@ bool UICodeEditor::loadAsyncFromFile(
 	bool ret = mDoc->loadAsyncFromFile(
 		path, pool, [this, onLoaded, wasLocked]( TextDocument*, bool success ) {
 			if ( !success ) {
-				runOnMainThread( [&, onLoaded, wasLocked, success] {
+				runOnMainThread( [this, onLoaded, wasLocked, success] {
 					if ( !wasLocked )
 						setLocked( false );
 					if ( onLoaded )
@@ -470,7 +470,7 @@ bool UICodeEditor::loadAsyncFromFile(
 					runOnMainThread( [this] { invalidateDraw(); } );
 				} );
 			}
-			runOnMainThread( [&, onLoaded, wasLocked, success] {
+			runOnMainThread( [this, onLoaded, wasLocked, success] {
 				invalidateEditor();
 				invalidateDraw();
 				if ( !wasLocked )
@@ -510,7 +510,7 @@ bool UICodeEditor::loadAsyncFromURL(
 				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
 					runOnMainThread( [this] { invalidateDraw(); } );
 				} );
-			runOnMainThread( [&, onLoaded, wasLocked] {
+			runOnMainThread( [this, success, onLoaded, wasLocked] {
 				invalidateEditor();
 				updateLongestLineWidth();
 				invalidateDraw();
@@ -1484,7 +1484,7 @@ void UICodeEditor::checkColorPickerAction() {
 				TextDocument::MatchDirection::Forward );
 			if ( position.isValid() ) {
 				mDoc->setSelection( { position.line(), position.column() + 1 }, range.start() );
-				colorPicker = UIColorPicker::NewModal( this, [&, isRgba]( Color color ) {
+				colorPicker = UIColorPicker::NewModal( this, [this, isRgba]( Color color ) {
 					mDoc->replaceSelection( isRgba || color.a != 255 ? color.toRgbaString()
 																	 : color.toRgbString() );
 				} );

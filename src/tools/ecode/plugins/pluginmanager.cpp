@@ -386,7 +386,7 @@ class UIPluginManagerTable : public UITableView {
 			chk->setChecked(
 				model->data( model->index( index.row(), PluginsModel::Enabled ) ).asBool() );
 			chk->setCheckMode( UICheckBox::Button );
-			chk->on( Event::OnValueChange, [&, index, model, chk]( const Event* ) {
+			chk->on( Event::OnValueChange, [this, index, model, chk]( const Event* ) {
 				bool checked = chk->isChecked();
 				std::string id(
 					model->data( model->index( index.row(), PluginsModel::Id ) ).asCStr() );
@@ -462,18 +462,18 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 				loadFileCb( plugin->getFileConfigPath() );
 		}
 	} );
-	tv->setOnSelection( [&, prefs, manager]( const ModelIndex& index ) {
+	tv->setOnSelection( [prefs, manager]( const ModelIndex& index ) {
 		const PluginDefinition* def = manager->getDefinitionIndex( index.row() );
 		if ( def == nullptr )
 			return;
 		prefs->setEnabled( manager->isEnabled( def->id ) &&
 						   manager->get( def->id )->hasFileConfig() );
 	} );
-	tv->onModelEnabledChange = [&, prefs, manager, tv]( const std::string& id, bool enabled ) {
+	tv->onModelEnabledChange = [prefs, manager, tv]( const std::string& id, bool enabled ) {
 		auto* plugin = manager->get( id );
 		if ( enabled && !plugin->isReady() ) {
 			tv->readyCbs[id] = plugin->addOnReadyCallback(
-				[&, manager, prefs, tv]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
+				[manager, prefs, tv]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
 					prefs->runOnMainThread( [prefs, manager, plugin]() {
 						prefs->setEnabled( manager->isEnabled( plugin->getId() ) &&
 										   plugin->hasFileConfig() );
@@ -485,7 +485,7 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 			prefs->setEnabled( enabled && plugin->hasFileConfig() );
 		}
 	};
-	tv->addEventListener( Event::OnClose, [&, manager, tv]( const Event* ) {
+	tv->addEventListener( Event::OnClose, [manager, tv]( const Event* ) {
 		if ( tv->readyCbs.empty() )
 			return;
 		for ( const auto& cb : tv->readyCbs ) {

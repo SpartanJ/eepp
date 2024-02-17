@@ -143,7 +143,7 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
 			TextDocument* oldDoc = mEditorDocs[editor];
 			TextDocument* newDoc = editor->getDocumentRef().get();
 			Lock l( mMutex );

@@ -137,7 +137,7 @@ void UIAbstractView::onModelUpdate( unsigned flags ) {
 	if ( !Engine::instance()->isMainThread() ) {
 		static constexpr String::HashType tag = String::hash( "onModelUpdate" );
 		removeActionsByTag( tag );
-		runOnMainThread( [&, flags] { modelUpdate( flags ); }, Time::Zero, tag );
+		runOnMainThread( [this, flags] { modelUpdate( flags ); }, Time::Zero, tag );
 	} else {
 		modelUpdate( flags );
 	}

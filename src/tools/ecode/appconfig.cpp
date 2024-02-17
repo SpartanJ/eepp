@@ -159,7 +159,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
-		ini.getValueB( "workspace", "check_for_updates_at_startup", false );
+		ini.getValueB( "workspace", "check_for_updates_at_startup", true );
 
 	std::map<std::string, bool> pluginsEnabled;
 	const auto& creators = pluginManager->getDefinitions();

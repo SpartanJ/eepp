@@ -72,7 +72,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	UITableView* tableView = cont->findByType<UITableView>( UI_TYPE_TABLEVIEW );
 	tableView->setAutoColumnsWidth( true );
 	tableView->setHeadersVisible( true );
-	widgetTree->setOnSelection( [&, tableView]( const ModelIndex& index ) {
+	widgetTree->setOnSelection( [tableView]( const ModelIndex& index ) {
 		Node* node = static_cast<Node*>( index.internalData() );
 		if ( node->isWidget() ) {
 			tableView->setModel( node->isWidget()
@@ -150,7 +150,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 
 	uiWin->center();
 
-	Uint32 winCb = sceneNode->addEventListener( Event::OnWindowAdded, [&, sceneNode, uiWin](
+	Uint32 winCb = sceneNode->addEventListener( Event::OnWindowAdded, [sceneNode, uiWin](
 																		  const Event* event ) {
 		UIWindow* eWin = event->asWindowEvent()->getWindow()->asType<UIWindow>();
 		if ( eWin != uiWin ) {

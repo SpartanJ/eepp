@@ -361,7 +361,7 @@ void App::reloadBaseStyleSheet() {
 			if ( !editor )
 				return;
 			saveTmpDocument( editor->getDocument(),
-							 [&, realStyleSheetPath]( const std::string& tmpPath ) {
+							 [this, realStyleSheetPath]( const std::string& tmpPath ) {
 								 mTheme->setStyleSheetPath( tmpPath );
 								 mTheme->reloadStyleSheet();
 								 mTheme->setStyleSheetPath( realStyleSheetPath );
@@ -995,7 +995,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
 		filename += editor->getSyntaxDefinition().getFileExtension();
 	dialog->setFileName( filename );
-	dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* event ) {
+	dialog->addEventListener( Event::SaveFile, [this, editor]( const Event* event ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
@@ -1028,7 +1028,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		}
 	} );
 	if ( focusOnClose ) {
-		dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+		dialog->addEventListener( Event::OnWindowClose, [editor]( const Event* ) {
 			if ( editor && !SceneManager::instance()->isShuttingDown() )
 				editor->setFocus();
 		} );
@@ -1504,12 +1504,12 @@ void App::saveAllProcess() {
 				mTmpDocs.erase( &editor->getDocument() );
 			} else {
 				UIFileDialog* dialog = saveFileDialog( editor, false );
-				dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* ) {
+				dialog->addEventListener( Event::SaveFile, [this, editor]( const Event* ) {
 					updateEditorTabTitle( editor );
 					if ( mSplitter->getCurEditor() == editor )
 						updateEditorTitle( editor );
 				} );
-				dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+				dialog->addEventListener( Event::OnWindowClose, [this, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
 					if ( !SceneManager::instance()->isShuttingDown() && !mTmpDocs.empty() )
 						saveAllProcess();

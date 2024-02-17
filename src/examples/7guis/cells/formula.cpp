@@ -48,12 +48,20 @@ void SheetFunction::initOpTable() {
 							 tot *= val;
 						 return tot;
 					 } } );
+	opTable.insert( { String::hash( "AVG" ), []( const std::vector<double>& vals ) {
+						 double tot = 0;
+						 for ( const auto& val : vals )
+							 tot += val;
+						 return vals.empty() ? 0 : tot / vals.size();
+					 } } );
 }
 
 std::vector<double> SheetFunction::evalList( const std::vector<std::shared_ptr<Formula>>& args,
 											 Spreadsheet& env ) {
 	std::vector<double> result;
 	for ( const auto& f : args ) {
+		if ( !f )
+			return result;
 		if ( f->type() == FormulaType::RangeReference ) {
 			auto refs( f->getReferences( env ) );
 			for ( Cell* c : refs ) {
@@ -82,6 +90,8 @@ std::optional<double> SheetFunction::eval( Spreadsheet& env ) const {
 std::vector<Cell*> SheetFunction::getReferences( Spreadsheet& env ) const {
 	std::vector<Cell*> result;
 	for ( const auto& argument : arguments ) {
+		if ( !argument )
+			continue;
 		auto refs( argument->getReferences( env ) );
 		result.insert( result.end(), refs.begin(), refs.end() );
 	}

@@ -38,7 +38,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 								 const bool& ignoreHidden ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	mPool->run(
-		[&, acceptedPatterns, ignoreHidden] {
+		[this, acceptedPatterns, ignoreHidden] {
 #endif
 			Lock l( mFilesMutex );
 			mRunning = true;
@@ -161,12 +161,12 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::matchTree( const std::strin
 
 void ProjectDirectoryTree::asyncFuzzyMatchTree( const std::string& match, const size_t& max,
 												ProjectDirectoryTree::MatchResultCb res ) const {
-	mPool->run( [&, match, max, res]() { res( fuzzyMatchTree( match, max ) ); } );
+	mPool->run( [this, match, max, res]() { res( fuzzyMatchTree( match, max ) ); } );
 }
 
 void ProjectDirectoryTree::asyncMatchTree( const std::string& match, const size_t& max,
 										   ProjectDirectoryTree::MatchResultCb res ) const {
-	mPool->run( [&, match, max, res]() { res( matchTree( match, max ) ); } );
+	mPool->run( [this, match, max, res]() { res( matchTree( match, max ) ); } );
 }
 
 std::shared_ptr<FileListModel>

@@ -56,7 +56,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 	button->setVisible( true );
 	button->setEnabled( true );
 	button->addEventListener( Event::OnSizeChange, [this]( const Event* ) { refreshButtons(); } );
-	button->addEventListener( Event::OnFocus, [&, button]( const Event* ) {
+	button->addEventListener( Event::OnFocus, [this, button]( const Event* ) {
 		if ( getEventDispatcher()->getReleaseTrigger() & EE_BUTTON_LMASK ) {
 			getMenuFromButton( button )->setFocus();
 		}
@@ -67,7 +67,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 	menu->setOwnerNode( button );
 	// This will force to change the parent when shown, and force the CSS style reload.
 	menu->setParent( this );
-	menu->addEventListener( Event::OnVisibleChange, [&, button]( const Event* event ) {
+	menu->addEventListener( Event::OnVisibleChange, [this, button]( const Event* event ) {
 		if ( event->getNode()->isVisible() ) {
 			button->select();
 			mCurrentMenu = event->getNode()->asType<UIPopUpMenu>();

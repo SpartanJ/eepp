@@ -370,7 +370,7 @@ bool UICodeEditorSplitter::loadFileFromPath( const std::string& path, UICodeEdit
 	bool isUrl = String::startsWith( path, "https://" ) || String::startsWith( path, "http://" );
 	bool ret = isUrl ? codeEditor->loadAsyncFromURL(
 						   path, Http::Request::FieldTable(),
-						   [&, codeEditor, path]( std::shared_ptr<TextDocument>, bool ) {
+						   [this, codeEditor, path]( std::shared_ptr<TextDocument>, bool ) {
 							   mClient->onDocumentLoaded( codeEditor, path );
 						   } )
 					 : codeEditor->loadFromFile( path ) == TextDocument::LoadStatus::Loaded;
@@ -400,7 +400,7 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 	if ( isUrl ) {
 		codeEditor->loadAsyncFromURL(
 			path, Http::Request::FieldTable(),
-			[&, codeEditor, path, onLoaded]( std::shared_ptr<TextDocument>, bool ) {
+			[this, codeEditor, path, onLoaded]( std::shared_ptr<TextDocument>, bool ) {
 				mClient->onDocumentLoaded( codeEditor, path );
 				if ( onLoaded )
 					onLoaded( codeEditor, path );
@@ -408,7 +408,7 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 	} else {
 		codeEditor->loadAsyncFromFile(
 			path, mThreadPool,
-			[&, codeEditor, path, onLoaded]( std::shared_ptr<TextDocument>, bool ) {
+			[this, codeEditor, path, onLoaded]( std::shared_ptr<TextDocument>, bool ) {
 				mClient->onDocumentLoaded( codeEditor, path );
 				if ( onLoaded )
 					onLoaded( codeEditor, path );
@@ -734,7 +734,7 @@ UICodeEditor* UICodeEditorSplitter::editorFromTab( UITab* tab ) const {
 
 UICodeEditor* UICodeEditorSplitter::findEditorFromPath( const std::string& path ) {
 	UICodeEditor* editor = nullptr;
-	forEachEditorStoppable( [&, path]( UICodeEditor* curEditor ) -> bool {
+	forEachEditorStoppable( [&]( UICodeEditor* curEditor ) -> bool {
 		if ( curEditor->getDocument().getFilePath() == path ) {
 			editor = curEditor;
 			return true;
@@ -808,7 +808,8 @@ void UICodeEditorSplitter::forEachEditor( std::function<void( UICodeEditor* )> r
 
 void UICodeEditorSplitter::forEachDoc( std::function<void( TextDocument& )> run ) const {
 	std::unordered_set<TextDocument*> docs;
-	forEachEditor( [&]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef().get() ); } );
+	forEachEditor(
+		[&docs]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef().get() ); } );
 	for ( auto doc : docs )
 		run( *doc );
 }
@@ -867,7 +868,7 @@ void UICodeEditorSplitter::forEachDocStoppable( std::function<bool( TextDocument
 
 std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromURI( const URI& uri ) {
 	std::unordered_set<std::shared_ptr<TextDocument>> docs;
-	forEachEditor( [&]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef() ); } );
+	forEachEditor( [&docs]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef() ); } );
 	for ( const auto& doc : docs ) {
 		if ( doc->getURI() == uri )
 			return doc;
@@ -877,7 +878,7 @@ std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromURI( const URI& u
 
 std::shared_ptr<TextDocument> UICodeEditorSplitter::findDocFromPath( const std::string& path ) {
 	std::unordered_set<std::shared_ptr<TextDocument>> docs;
-	forEachEditor( [&]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef() ); } );
+	forEachEditor( [&docs]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef() ); } );
 	for ( const auto& doc : docs ) {
 		if ( doc->getFilePath() == path )
 			return doc;
@@ -912,7 +913,7 @@ UIWidget* UICodeEditorSplitter::getCurWidget() const {
 
 std::vector<UICodeEditor*> UICodeEditorSplitter::getAllEditors() {
 	std::vector<UICodeEditor*> editors;
-	forEachEditor( [&]( UICodeEditor* editor ) { editors.push_back( editor ); } );
+	forEachEditor( [&editors]( UICodeEditor* editor ) { editors.push_back( editor ); } );
 	return editors;
 }
 

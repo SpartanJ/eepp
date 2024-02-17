@@ -1171,7 +1171,6 @@ workspace "eepp"
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
-		eepp_module_maps_add()
 		build_link_configuration( "eepp-UIEditor", true )
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework" }

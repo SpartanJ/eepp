@@ -487,7 +487,7 @@ void StatusBuildOutputController::createContainer() {
 					if ( fileInfo.exists() && fileInfo.isRegularFile() ) {
 						mApp->loadFileFromPath(
 							path, true, nullptr,
-							[&, lineNum, colNum]( UICodeEditor*, const std::string& ) {
+							[this, lineNum, colNum]( UICodeEditor*, const std::string& ) {
 								onLoadDone( lineNum, colNum );
 							} );
 					} else {
@@ -503,7 +503,7 @@ void StatusBuildOutputController::createContainer() {
 								UITab* tab = mSplitter->isDocumentOpen( path );
 								if ( !tab ) {
 									mApp->loadFileFromPath( path, true, nullptr,
-															[&, lineNum, colNum]( auto, auto ) {
+															[this, lineNum, colNum]( auto, auto ) {
 																onLoadDone( lineNum, colNum );
 															} );
 								} else {

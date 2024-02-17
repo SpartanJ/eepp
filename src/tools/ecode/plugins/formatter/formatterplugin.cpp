@@ -37,7 +37,7 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 	} else {
 #if defined( FORMATTER_THREADED ) && FORMATTER_THREADED == 1
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
@@ -387,7 +387,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 			auto newFile = MD5::fromString( data );
 
 			if ( oldFile != newFile ) {
-				editor->runOnMainThread( [&, data, editor]() {
+				editor->runOnMainThread( [this, data, editor]() {
 					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 					auto pos = doc->getSelection();
 					auto scroll = editor->getScroll();
@@ -426,7 +426,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 		NativeFormatterResult res = mNativeFormatters[formatter.command]( path );
 		if ( !res.success )
 			return;
-		editor->runOnMainThread( [&, res, editor]() {
+		editor->runOnMainThread( [res, editor]() {
 			std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 			TextPosition pos = doc->getSelection().start();
 			auto scroll = editor->getScroll();
@@ -468,7 +468,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			auto newFile = MD5::fromString( data );
 
 			if ( oldFile != newFile ) {
-				editor->runOnMainThread( [&, data, editor]() {
+				editor->runOnMainThread( [data, editor]() {
 					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 					TextPosition pos = doc->getSelection().start();
 					auto scroll = editor->getScroll();

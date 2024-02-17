@@ -188,7 +188,7 @@ void UniversalLocator::updateCommandPaletteTable() {
 	if ( txt.size() > 1 ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ), 1000, [this]( auto res ) {
-			mUISceneNode->runOnMainThread( [&, res] {
+			mUISceneNode->runOnMainThread( [this, res] {
 				mLocateTable->setModel( res );
 				mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 				mLocateTable->scrollToTop();
@@ -790,7 +790,7 @@ void UniversalLocator::requestWorkspaceSymbol() {
 }
 
 void UniversalLocator::updateWorkspaceSymbol( const LSPSymbolInformationList& res ) {
-	mUISceneNode->runOnMainThread( [&, res] {
+	mUISceneNode->runOnMainThread( [this, res] {
 		if ( !mWorkspaceSymbolModel ) {
 			mWorkspaceSymbolModel =
 				LSPSymbolInfoModel::create( mApp->getUISceneNode(), mWorkspaceSymbolQuery, res );
@@ -860,7 +860,7 @@ void UniversalLocator::updateDocumentSymbol( const LSPSymbolInformationList& res
 		} );
 	}
 #else
-	mUISceneNode->runOnMainThread( [&, res] {
+	mUISceneNode->runOnMainThread( [this, res] {
 		if ( mCurDocQuery.empty() ) {
 			mTextDocumentSymbolModel =
 				LSPSymbolInfoModel::create( mApp->getUISceneNode(), mCurDocQuery, res, true );

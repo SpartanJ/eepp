@@ -62,6 +62,8 @@ class Cell : public Observer, public Observable {
 
 	bool hasFormula() const;
 
+	bool hasErrors() const { return formulaContainsErrors; }
+
 	const std::shared_ptr<Formula>& getFormula() const { return this->formula; }
 
   protected:
@@ -69,6 +71,7 @@ class Cell : public Observer, public Observable {
 	std::string displayValue;
 	std::shared_ptr<Formula> formula;
 	Spreadsheet& sheet;
+	bool formulaContainsErrors{ false };
 
 	void parseFormula( const std::string& formulaStr );
 };

@@ -286,7 +286,7 @@ class EE_API UICodeEditorSplitter {
 		} );
 		for ( int i = 1; i <= 10; i++ )
 			t.setCommand( String::format( "switch-to-tab-%d", i ),
-						  [&, i] { switchToTab( i - 1 ); } );
+						  [this, i] { switchToTab( i - 1 ); } );
 		t.setCommand( "switch-to-first-tab", [this] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 			if ( tabWidget && tabWidget->getTabCount() ) {

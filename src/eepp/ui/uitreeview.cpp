@@ -418,8 +418,8 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 				return pOver;
 			int realIndex = 0;
 			Float rowHeight = getRowHeight();
-			traverseTree( [&, point, rowHeight]( int, const ModelIndex& index, const size_t&,
-												 const Float& yOffset ) {
+			traverseTree( [this, &pOver, &realIndex, point, rowHeight](
+							  int, const ModelIndex& index, const size_t&, const Float& yOffset ) {
 				if ( yOffset - mScrollOffset.y > mSize.getHeight() )
 					return IterationDecision::Stop;
 				if ( yOffset - mScrollOffset.y + rowHeight < 0 )
@@ -526,8 +526,8 @@ Float UITreeView::getMaxColumnContentWidth( const size_t& colIndex, bool ) {
 	Float lWidth = 0;
 	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
 				 [this] { mUISceneNode->setIsLoading( false ); } );
-	traverseTree( [&, colIndex]( const int&, const ModelIndex& index, const size_t& indentLevel,
-								 const Float& yOffset ) {
+	traverseTree( [this, &lWidth, colIndex]( const int&, const ModelIndex& index,
+											 const size_t& indentLevel, const Float& yOffset ) {
 		UIWidget* widget = updateCell( { (Int64)0, (Int64)0 },
 									   getModel()->index( index.row(), colIndex, index.parent() ),
 									   indentLevel, yOffset );
@@ -782,7 +782,8 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 		const auto& part = pathPart[i];
 
 		traverseTree(
-			[&, i]( const int&, const ModelIndex& index, const size_t& indentLevel, const Float& ) {
+			[&model, &foundIndex, &part, &parentIndex,
+			 i]( const int&, const ModelIndex& index, const size_t& indentLevel, const Float& ) {
 				Variant var = model->data( index );
 				if ( i == indentLevel && var.isValid() && var.toString() == part ) {
 					if ( !parentIndex.isValid() || parentIndex == index.parent() ) {

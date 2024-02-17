@@ -6,6 +6,10 @@ EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 1024, 768, "eepp - 7GUIs - Cells" } );
 	UIWidget* rlay = app.getUI()->loadLayoutFromString( R"xml(
 	<style>
+		.font_theme_normal { color: var(--font); }
+		.font_theme_success { color: var(--theme-success); }
+		.font_theme_warning { color: var(--theme-warning); }
+		.font_theme_error { color: var(--theme-error); }
 		#sheet tableview::cell {
 			border-type: inside;
 			border-right: 1dprd solid var(--button-border);

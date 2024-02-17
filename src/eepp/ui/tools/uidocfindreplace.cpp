@@ -202,7 +202,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 		getParent()->isType( UI_TYPE_CODEEDITOR ) ? getParent()->asType<UICodeEditor>() : nullptr;
 
 	mFindInput->addEventListener( Event::OnTextChanged,
-								  [&, editor]( const Event* ) { refreshHighlight( editor ); } );
+								  [this, editor]( const Event* ) { refreshHighlight( editor ); } );
 	mFindInput->addEventListener( Event::OnTextPasted, [this]( const Event* ) {
 		if ( mFindInput->getUISceneNode()->getWindow()->getClipboard()->getText().find( '\n' ) !=
 			 String::InvalidPos ) {
@@ -258,7 +258,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 		if ( !widget )
 			return;
 		widget->setTooltipText( getKeyBindings().getCommandKeybindString( cmd ) );
-		widget->addEventListener( Event::MouseClick, [&, cmd]( const Event* event ) {
+		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
 				execute( cmd );

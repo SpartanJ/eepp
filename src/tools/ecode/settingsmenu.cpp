@@ -75,7 +75,7 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 	mSettingsMenu->addSeparator();
 	UIMenuSubMenu* fileTypeMenu = mSettingsMenu->addSubMenu(
 		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu() );
-	fileTypeMenu->on( Event::OnMenuShow, [&, fileTypeMenu]( const Event* ) {
+	fileTypeMenu->on( Event::OnMenuShow, [this, fileTypeMenu]( const Event* ) {
 		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
 			for ( UIPopUpMenu* menu : mFileTypeMenues )
 				menu->close();
@@ -88,7 +88,7 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 	UIMenuSubMenu* colorSchemeMenu =
 		mSettingsMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
 								   findIcon( "palette" ), createColorSchemeMenu() );
-	colorSchemeMenu->on( Event::OnMenuShow, [&, colorSchemeMenu]( const Event* ) {
+	colorSchemeMenu->on( Event::OnMenuShow, [this, colorSchemeMenu]( const Event* ) {
 		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
 			for ( UIPopUpMenu* menu : mColorSchemeMenues )
 				menu->close();
@@ -150,7 +150,7 @@ UIMenu* SettingsMenu::createFileTypeMenu() {
 	size_t maxItems = 19;
 	auto* dM = SyntaxDefinitionManager::instance();
 	auto names = dM->getLanguageNames();
-	auto cb = [&, dM]( const Event* event ) {
+	auto cb = [this, dM]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		const String& name = item->getText();
 		if ( mSplitter->curEditorExistsAndFocused() ) {
@@ -494,7 +494,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			}
 			mApp->getConfig().editor.autoCloseBrackets = String::join( curPairs, ',' );
 			auto pairs = mApp->makeAutoClosePairs( mApp->getConfig().editor.autoCloseBrackets );
-			mSplitter->forEachEditor( [&, pairs]( UICodeEditor* editor ) {
+			mSplitter->forEachEditor( [pairs]( UICodeEditor* editor ) {
 				editor->getDocument().setAutoCloseBrackets( !pairs.empty() );
 				editor->getDocument().setAutoCloseBracketsPairs( pairs );
 			} );
@@ -693,7 +693,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			msgBox->getTextInput()->setText(
 				String::toString( mApp->getProjectDocConfig().doc.lineBreakingColumn ) );
 			msgBox->showWhenReady();
-			msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+			msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 				int val;
 				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
 					mApp->getProjectDocConfig().doc.lineBreakingColumn = val;
@@ -742,7 +742,7 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 	UIMenuSubMenu* termColorSchemeMenu = mTerminalMenu->addSubMenu(
 		i18n( "terminal_color_scheme", "Terminal Color Scheme" ), findIcon( "palette" ),
 		mApp->getTerminalManager()->createColorSchemeMenu() );
-	termColorSchemeMenu->on( Event::OnMenuShow, [&, termColorSchemeMenu]( const Event* ) {
+	termColorSchemeMenu->on( Event::OnMenuShow, [this, termColorSchemeMenu]( const Event* ) {
 		mApp->getTerminalManager()->updateMenuColorScheme( termColorSchemeMenu );
 	} );
 #endif
@@ -1049,7 +1049,7 @@ UIMenu* SettingsMenu::createRendererMenu() {
 			msgBox->getTextInput()->setText(
 				String::toString( mApp->getConfig().context.FrameRateLimit ) );
 			msgBox->showWhenReady();
-			msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+			msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 				int val;
 				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
 					mApp->getConfig().context.FrameRateLimit = val;
@@ -1775,7 +1775,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			->setId( "configure-ignore-files" );
 	}
 
-	mProjectTreeMenu->on( Event::OnItemClicked, [&, file]( const Event* event ) {
+	mProjectTreeMenu->on( Event::OnItemClicked, [this, file]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1795,7 +1795,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 								i18n( "duplicate_file", "Duplicate file" ).toUtf8().c_str(),
 								file.getFileName().c_str() ),
 				i18n( "enter_duplicate_file_name", "Enter duplicate file name:" ) );
-			msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
+			msgBox->on( Event::OnConfirm, [this, file, msgBox]( const Event* ) {
 				auto newFilePath( mApp->getNewFilePath( file, msgBox ) );
 				if ( !FileSystem::fileExists( newFilePath ) ) {
 					if ( !FileSystem::fileCopy( file.getFilepath(), newFilePath ) )
@@ -1884,8 +1884,8 @@ void SettingsMenu::deleteFileDialog( const FileInfo& file ) {
 		String::format(
 			i18n( "confirm_remove_file", "Do you really want to remove \"%s\"?" ).toUtf8().c_str(),
 			file.getFileName().c_str() ) );
-	msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
-		auto errFn = [&, file] {
+	msgBox->on( Event::OnConfirm, [this, file, msgBox]( const Event* ) {
+		auto errFn = [this, file] {
 			mApp->errorMsgBox( String::format(
 				std::string( i18n( "couldnt_remove", "Couldn't remove" ).toUtf8() + "%s." ).c_str(),
 				file.isDirectory() ? i18n( "directory", "directory" ).toUtf8().c_str()

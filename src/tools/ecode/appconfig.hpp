@@ -154,7 +154,7 @@ struct TerminalConfig {
 
 struct WorkspaceConfig {
 	bool restoreLastSession{ false };
-	bool checkForUpdatesAtStartup{ false };
+	bool checkForUpdatesAtStartup{ true };
 };
 
 struct LanguagesExtensions {

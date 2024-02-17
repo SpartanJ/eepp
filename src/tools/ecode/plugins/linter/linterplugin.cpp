@@ -37,7 +37,7 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( 
 		load( pluginManager );
 	} else {
 #if defined( LINTER_THREADED ) && LINTER_THREADED == 1
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
@@ -615,7 +615,7 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
 			TextDocument* oldDoc = mEditorDocs[editor];
 			TextDocument* newDoc = editor->getDocumentRef().get();
 			Lock l( mDocMutex );
@@ -628,7 +628,7 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	listeners.push_back( editor->addEventListener(
-		Event::OnTextChanged, [&, editor]( const Event* ) { setDocDirty( editor ); } ) );
+		Event::OnTextChanged, [this, editor]( const Event* ) { setDocDirty( editor ); } ) );
 
 	for ( auto& kb : mKeyBindings ) {
 		if ( !kb.second.empty() )
@@ -693,7 +693,7 @@ void LinterPlugin::update( UICodeEditor* editor ) {
 	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
 #if LINTER_THREADED
-		mThreadPool->run( [&, doc] { lintDoc( doc ); } );
+		mThreadPool->run( [this, doc] { lintDoc( doc ); } );
 #else
 		lintDoc( doc );
 #endif

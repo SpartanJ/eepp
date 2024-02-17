@@ -1694,7 +1694,7 @@ void LSPClientServer::processRequest( const json& msg ) {
 	if ( method == "workspace/applyEdit" ) {
 		auto workspaceEdit = parseApplyWorkspaceEditParams( msg[MEMBER_PARAMS] );
 		mManager->applyWorkspaceEdit( workspaceEdit.edit,
-									  [&, msgid]( const LSPApplyWorkspaceEditResponse& res ) {
+									  [this, msgid]( const LSPApplyWorkspaceEditResponse& res ) {
 										  getThreadPool()->run( [this, msgid, res] {
 											  write( applyWorkspaceEditResponse( msgid, res ) );
 										  } );

@@ -92,7 +92,7 @@ void UIAbstractTableView::onModelUpdate( unsigned flags ) {
 		static constexpr String::HashType tag = String::hash( "onModelUpdate" );
 		removeActionsByTag( tag );
 		runOnMainThread(
-			[&, flags] {
+			[this, flags] {
 				modelUpdate( flags );
 				createOrUpdateColumns( true );
 			},

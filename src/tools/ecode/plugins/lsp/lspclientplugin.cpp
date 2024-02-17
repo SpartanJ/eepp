@@ -127,7 +127,7 @@ LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 	} else {
 #if defined( LSPCLIENT_THREADED ) && LSPCLIENT_THREADED == 1
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
@@ -251,7 +251,7 @@ PluginRequestHandle LSPClientPlugin::processDocumentFormatting( const PluginMess
 
 	auto ret = server.server->documentFormatting(
 		server.uri, msg.asJSON()["options"],
-		[&, server]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
+		[this, server]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
 			mManager->getSplitter()->getUISceneNode()->runOnMainThread(
 				[this, server, edits] { processDocumentFormattingResponse( server.uri, edits ); } );
 		} );
@@ -276,7 +276,7 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 	for ( const auto server : servers ) {
 		if ( Engine::instance()->isMainThread() ) {
 			server->workspaceSymbolAsync(
-				query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
+				query, [this, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
 					if ( !query.empty() ) {
 						for ( auto& i : info ) {
 							if ( i.score == 0.f )
@@ -288,7 +288,7 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 				} );
 		} else {
 			hdl = server->workspaceSymbol(
-				query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
+				query, [this, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
 					if ( !query.empty() ) {
 						for ( auto& i : info ) {
 							if ( i.score == 0.f )
@@ -534,7 +534,7 @@ void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_pt
 			if ( splitter->editorExists( editor ) )
 				editor->setFocus();
 		} );
-		lv->on( Event::OnModelEvent, [&, onModelEventCb]( const Event* event ) {
+		lv->on( Event::OnModelEvent, [onModelEventCb]( const Event* event ) {
 			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 			if ( onModelEventCb )
 				onModelEventCb( modelEvent );
@@ -1088,7 +1088,7 @@ size_t LSPClientPlugin::lspFilePatternPosition( const std::vector<LSPDefinition>
 void LSPClientPlugin::getAndGoToLocation( UICodeEditor* editor, const std::string& search ) {
 	mClientManager.getAndGoToLocation(
 		editor->getDocumentRef(), search,
-		[&, editor]( const LSPClientServer::IdType&, const std::vector<LSPLocation>& res ) {
+		[this, editor]( const LSPClientServer::IdType&, const std::vector<LSPLocation>& res ) {
 			if ( res.empty() )
 				return;
 			if ( res.size() == 1 ) {
@@ -1128,7 +1128,7 @@ void LSPClientPlugin::codeAction( UICodeEditor* editor ) {
 
 	mClientManager.codeAction(
 		editor->getDocumentRef(), diagnostics,
-		[&, editor]( const LSPClientServer::IdType&, const std::vector<LSPCodeAction>& res ) {
+		[this, editor]( const LSPClientServer::IdType&, const std::vector<LSPCodeAction>& res ) {
 			createCodeActionsView( editor, res );
 		} );
 }
@@ -1228,12 +1228,12 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	std::vector<Uint32> listeners;
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
 			mClientManager.run( editor->getDocumentRef() );
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnCursorPosChange, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 			if ( mSymbolInfoShowing )
 				hideTooltip( editor );
 		} ) );
@@ -1260,7 +1260,7 @@ void LSPClientPlugin::getSymbolInfo( UICodeEditor* editor ) {
 		return;
 	server->documentHover(
 		editor->getDocument().getURI(), editor->getDocument().getSelection().start(),
-		[&, editor]( const Int64&, const LSPHover& resp ) {
+		[this, editor]( const Int64&, const LSPHover& resp ) {
 			json j;
 			auto& doc = editor->getDocument();
 			j["uri"] = doc.getURI().toString();
@@ -1505,7 +1505,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 	editor->removeActionsByTag( tag );
 	mEditorsTags[editor].insert( tag );
 	editor->runOnMainThread(
-		[&, editor, position, tag]() {
+		[this, editor, position, tag]() {
 			mEditorsTags[editor].erase( tag );
 			if ( !editorExists( editor ) )
 				return;
@@ -1514,7 +1514,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 				return;
 			server->documentHover(
 				editor->getDocument().getURI(), currentMouseTextPosition( editor ),
-				[&, editor, position]( const Int64&, const LSPHover& resp ) {
+				[this, editor, position]( const Int64&, const LSPHover& resp ) {
 					if ( editorExists( editor ) && !resp.contents.empty() &&
 						 !resp.contents[0].value.empty() ) {
 						editor->runOnMainThread( [editor, resp, position, this]() {

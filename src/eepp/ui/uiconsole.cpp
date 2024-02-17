@@ -1218,7 +1218,7 @@ bool UIConsole::onCreateContextMenu( const Vector2i& position, const Uint32& fla
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [&, menu]( const Event* event ) {
+	menu->addEventListener( Event::OnItemClicked, [this, menu]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();

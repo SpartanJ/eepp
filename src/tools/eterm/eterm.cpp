@@ -272,7 +272,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				file.getDirectoryPath(), historySize.Get(), nullptr, fb.Get(),
 				!( file.isRegularFile() && file.isExecutable() ) );
 			terminal->getTerminal()->setAllowMemoryTrimnming( true );
-			terminal->pushEventCallback( [&]( const TerminalDisplay::Event& event ) {
+			terminal->pushEventCallback( [&closeOnExit]( const TerminalDisplay::Event& event ) {
 				if ( event.type == TerminalDisplay::EventType::TITLE ) {
 					windowStringData = event.eventData;
 					win->setTitle( "eterm - " + windowStringData );

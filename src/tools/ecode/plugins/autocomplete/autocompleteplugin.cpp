@@ -102,7 +102,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	std::vector<Uint32> listeners;
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
 			mDirty = true;
 			mDocs.insert( editor->getDocumentRef().get() );
 			mEditorDocs[editor] = editor->getDocumentRef().get();
@@ -155,7 +155,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 			std::string oldLang = event->getOldLang();
 			std::string newLang = event->getNewLang();
 #if defined( AUTO_COMPLETE_THREADED ) && AUTO_COMPLETE_THREADED == 1
-			mThreadPool->run( [&, oldLang, newLang] {
+			mThreadPool->run( [this, oldLang, newLang] {
 				updateLangCache( oldLang );
 				updateLangCache( newLang );
 			} );
@@ -325,7 +325,7 @@ void AutoCompletePlugin::requestSignatureHelp( UICodeEditor* editor ) {
 	auto doc = editor->getDocumentRef();
 	mSignatureHelpPosition = editor->getDocumentRef()->getSelection().start();
 
-	mThreadPool->run( [&, editor]() {
+	mThreadPool->run( [this, editor]() {
 		json data = getURIAndPositionJSON( editor );
 		mManager->sendRequest( this, PluginMessageType::SignatureHelp, PluginMessageFormat::JSON,
 							   &data );
@@ -610,7 +610,7 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 						continue;
 				}
 #if AUTO_COMPLETE_THREADED
-				mThreadPool->run( [&, doc] { updateDocCache( doc ); } );
+				mThreadPool->run( [this, doc] { updateDocCache( doc ); } );
 #else
 				updateDocCache( doc );
 #endif

@@ -116,12 +116,12 @@ void App::saveAllProcess() {
 				mTmpDocs.erase( &editor->getDocument() );
 			} else {
 				UIFileDialog* dialog = saveFileDialog( editor, false );
-				dialog->on( Event::SaveFile, [&, editor]( const Event* ) {
+				dialog->on( Event::SaveFile, [this, editor]( const Event* ) {
 					updateEditorTabTitle( editor );
 					if ( mSplitter->getCurEditor() == editor )
 						updateEditorTitle( editor );
 				} );
-				dialog->on( Event::OnWindowClose, [&, editor]( const Event* ) {
+				dialog->on( Event::OnWindowClose, [this, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
 					if ( !SceneManager::instance()->isShuttingDown() && !mTmpDocs.empty() )
 						saveAllProcess();
@@ -273,7 +273,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 		FileSystem::fileNameFromPath( fontPath ), true, true );
 	if ( index.isValid() )
 		dialog->runOnMainThread(
-			[&, dialog, index]() { dialog->getMultiView()->setSelection( index ); } );
+			[dialog, index]() { dialog->getMultiView()->setSelection( index ); } );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "select_font_file", "Select Font File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -281,7 +281,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
-	dialog->on( Event::OpenFile, [&, loadingMonoFont]( const Event* event ) {
+	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont]( const Event* event ) {
 		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		if ( String::startsWith( newPath, mResPath ) )
 			newPath = newPath.substr( mResPath.size() );
@@ -294,7 +294,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( newPath ) );
 			FontTrueType* fontMono = loadFont( fontName, newPath );
 			if ( fontMono ) {
-				auto loadMonoFont = [&, newPath]( FontTrueType* fontMono ) {
+				auto loadMonoFont = [this, &fontPath, newPath]( FontTrueType* fontMono ) {
 					fontPath = newPath;
 					mFontMono = fontMono;
 					mFontMono->setEnableDynamicMonospace( true );
@@ -314,7 +314,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 							"flagged as monospace.\nDo you want to load it anyways?\nPerformance "
 							"and memory usage will be awful without a monospaced font." )
 							.unescape() );
-					msgBox->on( Event::OnConfirm, [&, loadMonoFont, fontMono]( const Event* ) {
+					msgBox->on( Event::OnConfirm, [loadMonoFont, fontMono]( const Event* ) {
 						loadMonoFont( fontMono );
 					} );
 					msgBox->on( Event::OnCancel, [fontMono]( const Event* ) {
@@ -342,7 +342,7 @@ void App::downloadFileWebDialog() {
 	msgBox->getTextInput()->setHint( i18n( "any_https_or_http_url", "Any https or http URL" ) );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		std::string url( msgBox->getTextInput()->getText().toUtf8() );
 		downloadFileWeb( url );
 		if ( mSplitter->getCurWidget() )
@@ -367,7 +367,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
 		filename += editor->getSyntaxDefinition().getFileExtension();
 	dialog->setFileName( filename );
-	dialog->on( Event::SaveFile, [&, editor]( const Event* event ) {
+	dialog->on( Event::SaveFile, [this, editor]( const Event* event ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
@@ -391,7 +391,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		}
 	} );
 	if ( focusOnClose ) {
-		dialog->on( Event::OnWindowClose, [&, editor]( const Event* ) {
+		dialog->on( Event::OnWindowClose, [editor]( const Event* ) {
 			if ( editor && !SceneManager::instance()->isShuttingDown() )
 				editor->setFocus();
 		} );
@@ -443,7 +443,7 @@ void App::initPluginManager() {
 			// If plugin loads asynchronously and is not ready, delay the plugin enabled callback
 			plugin->addOnReadyCallback( [this]( UICodeEditorPlugin* plugin, const Uint32& cbId ) {
 				mUISceneNode->runOnMainThread(
-					[&, plugin]() { onPluginEnabled( static_cast<Plugin*>( plugin ) ); } );
+					[this, plugin]() { onPluginEnabled( static_cast<Plugin*>( plugin ) ); } );
 				plugin->removeReadyCallback( cbId );
 			} );
 		}
@@ -920,7 +920,7 @@ UITreeView* App::getProjectTreeView() const {
 }
 
 void App::checkForUpdatesResponse( Http::Response response, bool fromStartup ) {
-	auto updatesError = [&, fromStartup]() {
+	auto updatesError = [this, fromStartup]() {
 		if ( fromStartup )
 			return;
 		UIMessageBox* msg = UIMessageBox::New(
@@ -974,7 +974,7 @@ void App::checkForUpdatesResponse( Http::Response response, bool fromStartup ) {
 							   .unescape() );
 
 				auto url( j.value( "html_url", "https://github.com/SpartanJ/ecode/releases/" ) );
-				msg->on( Event::OnConfirm, [&, url, msg]( const Event* ) {
+				msg->on( Event::OnConfirm, [url, msg]( const Event* ) {
 					Engine::instance()->openURI( url );
 					msg->closeWindow();
 				} );
@@ -1013,9 +1013,10 @@ void App::checkForUpdatesResponse( Http::Response response, bool fromStartup ) {
 
 void App::checkForUpdates( bool fromStartup ) {
 	Http::getAsync(
-		[&, fromStartup]( const Http&, Http::Request&, Http::Response& response ) {
-			mUISceneNode->runOnMainThread(
-				[&, response]() { checkForUpdatesResponse( response, fromStartup ); } );
+		[this, fromStartup]( const Http&, Http::Request&, Http::Response& response ) {
+			mUISceneNode->runOnMainThread( [this, response, fromStartup]() {
+				checkForUpdatesResponse( response, fromStartup );
+			} );
 		},
 		"https://api.github.com/repos/SpartanJ/ecode/releases/latest", Seconds( 30 ) );
 }
@@ -1058,7 +1059,7 @@ void App::setUIScaleFactor() {
 		String::numberClean( String::format( "%.2f", mConfig.windowState.pixelDensity ) ) );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		msgBox->closeWindow();
 		Float val;
 		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 1 &&
@@ -1093,7 +1094,7 @@ void App::setEditorFontSize() {
 	msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
 		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 			editor->setFontSize( mConfig.editor.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
@@ -1109,7 +1110,7 @@ void App::setTerminalFontSize() {
 	msgBox->getTextInput()->setText( mConfig.term.fontSize.toString() );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		mConfig.term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
 		mSplitter->forEachWidget( [this]( UIWidget* widget ) {
 			if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
@@ -1127,7 +1128,7 @@ void App::setUIFontSize() {
 	msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
 		Float fontSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
 		UIThemeManager* manager = mUISceneNode->getUIThemeManager();
@@ -1155,7 +1156,7 @@ void App::setUIPanelFontSize() {
 	msgBox->getTextInput()->setText( mConfig.ui.panelFontSize.toString() );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		mConfig.ui.panelFontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
 
 		// Update the CSS
@@ -1245,7 +1246,7 @@ void App::setLineBreakingColumn() {
 	msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
 	msgBox->getTextInput()->setText( String::toString( mConfig.doc.lineBreakingColumn ) );
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		int val;
 		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
 			mConfig.doc.lineBreakingColumn = val;
@@ -1265,7 +1266,7 @@ void App::setLineSpacing() {
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->getTextInput()->setText( mConfig.editor.lineSpacing.toString() );
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		mConfig.editor.lineSpacing = StyleSheetLength( msgBox->getTextInput()->getText() );
 		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 			editor->setLineSpacing( mConfig.editor.lineSpacing );
@@ -1283,7 +1284,7 @@ void App::setCursorBlinkingTime() {
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->getTextInput()->setText( mConfig.editor.cursorBlinkingTime.toString() );
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		mConfig.editor.cursorBlinkingTime =
 			Time::fromString( msgBox->getTextInput()->getText().toUtf8() );
 		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
@@ -1959,7 +1960,7 @@ void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 
 	// Check if other editor is using the same document and needs to receive the same notification
 	const TextDocument* docPtr = &editor->getDocument();
-	mSplitter->forEachEditor( [&, docPtr, editor]( UICodeEditor* otherEditor ) {
+	mSplitter->forEachEditor( [this, &path, docPtr, editor]( UICodeEditor* otherEditor ) {
 		if ( otherEditor != editor && docPtr == &otherEditor->getDocument() ) {
 			onRealDocumentLoaded( otherEditor, path );
 		}
@@ -2547,13 +2548,13 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		}
 	} );
 
-	editor->on( Event::OnDocumentDirtyOnFileSysten, [&, editor]( const Event* event ) {
+	editor->on( Event::OnDocumentDirtyOnFileSysten, [this, editor]( const Event* event ) {
 		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 		FileInfo file( docEvent->getDoc()->getFileInfo().getFilepath() );
 		TextDocument* doc = docEvent->getDoc();
 		if ( doc->getFileInfo() != file ) {
 			if ( doc->isDirty() ) {
-				editor->runOnMainThread( [&, editor]() { createDocDirtyAlert( editor ); } );
+				editor->runOnMainThread( [this, editor]() { createDocDirtyAlert( editor ); } );
 			} else {
 				auto hash = String::hash( "OnDocumentDirtyOnFileSysten-" +
 										  docEvent->getDoc()->getFilePath() );
@@ -2730,7 +2731,7 @@ void App::loadDirTree( const std::string& path ) {
 	mDirTree = std::make_shared<ProjectDirectoryTree>( path, mThreadPool, this );
 	Log::info( "Loading DirTree: %s", path );
 	mDirTree->scan(
-		[&, clock]( ProjectDirectoryTree& dirTree ) {
+		[this, clock]( ProjectDirectoryTree& dirTree ) {
 			Log::info( "DirTree read in: %.2fms. Found %ld files.",
 					   clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
 			eeDelete( clock );
@@ -2857,7 +2858,7 @@ void App::renameFile( const FileInfo& file ) {
 		newInputMsgBox( i18n( "rename_file", "Rename file" ) + " \"" + file.getFileName() + "\"",
 						i18n( "enter_new_file_name", "Enter new file name:" ) );
 	msgBox->getTextInput()->setText( file.getFileName() );
-	msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, file, msgBox]( const Event* ) {
 		auto newFilePath( getNewFilePath( file, msgBox, false ) );
 		if ( !FileSystem::fileExists( newFilePath ) ||
 			 file.getFileName() != msgBox->getTextInput()->getText() ) {
@@ -2896,7 +2897,7 @@ void App::toggleHiddenFiles() {
 void App::newFile( const FileInfo& file ) {
 	UIMessageBox* msgBox = newInputMsgBox( i18n( "create_new_file", "Create new file" ),
 										   i18n( "enter_new_file_name", "Enter new file name:" ) );
-	msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, file, msgBox]( const Event* ) {
 		auto newFilePath( getNewFilePath( file, msgBox ) );
 		if ( !FileSystem::fileExists( newFilePath ) ) {
 			// Needs to create sub folders?
@@ -2915,7 +2916,7 @@ void App::newFile( const FileInfo& file ) {
 			} else if ( mProjectTreeView ) {
 				// We wait 100 ms to get the notification from the file system
 				mUISceneNode->runOnMainThread(
-					[&, newFilePath] {
+					[this, newFilePath] {
 						if ( !mFileSystemModel || !mProjectTreeView )
 							return;
 						loadFileFromPathOrFocus( newFilePath );
@@ -2934,7 +2935,7 @@ void App::newFolder( const FileInfo& file ) {
 	UIMessageBox* msgBox =
 		newInputMsgBox( i18n( "create_new_folder", "Create new folder" ),
 						i18n( "enter_new_folder_name", "Enter new folder name:" ) );
-	msgBox->on( Event::OnConfirm, [&, file, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, file, msgBox]( const Event* ) {
 		auto newFolderPath( getNewFilePath( file, msgBox ) );
 		if ( !FileSystem::fileExists( newFolderPath ) ) {
 			if ( !FileSystem::makeDir( newFolderPath ) ) {
@@ -2942,7 +2943,7 @@ void App::newFolder( const FileInfo& file ) {
 			} else if ( mProjectTreeView ) {
 				// We wait 100 ms to get the notification from the file system
 				mUISceneNode->runOnMainThread(
-					[&, newFolderPath] {
+					[this, newFolderPath] {
 						if ( !mFileSystemModel || !mProjectTreeView )
 							return;
 						std::string nfp( newFolderPath );

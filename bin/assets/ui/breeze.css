@@ -1072,26 +1072,6 @@ TextInput.table_cell_edit {
 	padding-bottom: 0!important;
 }
 
-.font_theme_normal {
-	color: var(--font);
-}
-
-.font_theme_primary {
-	color: var(--primary);
-}
-
-.font_theme_success {
-	color: var(--theme-success);
-}
-
-.font_theme_warning {
-	color: var(--theme-warning);
-}
-
-.font_theme_font {
-	color: var(--theme-error);
-}
-
 @media (prefers-color-scheme: light) {
 
 :root {

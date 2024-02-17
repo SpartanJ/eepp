@@ -74,7 +74,7 @@ GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 	} else {
 #if defined( GIT_THREADED ) && GIT_THREADED == 1
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif

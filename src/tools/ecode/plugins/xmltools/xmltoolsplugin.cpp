@@ -27,7 +27,7 @@ XMLToolsPlugin::XMLToolsPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 	} else {
 #if defined( XMLTOOLS_THREADED ) && XMLTOOLS_THREADED == 1
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif

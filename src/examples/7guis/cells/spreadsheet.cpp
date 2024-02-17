@@ -50,8 +50,13 @@ const std::string& Cell::getDisplayValue() const {
 void Cell::calc() {
 	auto oldDisplayValue = displayValue;
 
-	if ( !hasFormula() ) {
+	if ( !hasFormula() && !value.empty() && value[0] == '=' ) {
+		displayValue = "!ERR";
+		formulaContainsErrors = true;
+		return;
+	} else if ( !hasFormula() ) {
 		displayValue = value;
+		formulaContainsErrors = false;
 		return;
 	}
 
@@ -60,6 +65,8 @@ void Cell::calc() {
 		displayValue = String::fromDouble( *res );
 	else
 		displayValue = "!ERR";
+
+	formulaContainsErrors = res ? false : true;
 
 	if ( oldDisplayValue != displayValue )
 		setChanged();
@@ -86,6 +93,7 @@ Variant Spreadsheet::data( const ModelIndex& index, ModelRole role ) const {
 	static const char* STYLE_NONE = "font_theme_normal";
 	static const char* FORMULA_STYLE = "font_theme_success";
 	static const char* NUMBER_STYLE = "font_theme_warning";
+	static const char* ERROR_STYLE = "font_theme_error";
 	switch ( role ) {
 		case ModelRole::Display:
 			if ( nullptr == mCells[index.column()][index.row()] )
@@ -98,6 +106,8 @@ Variant Spreadsheet::data( const ModelIndex& index, ModelRole role ) const {
 		}
 		case ModelRole::Class: {
 			const auto& cell = mCells[index.column()][index.row()];
+			if ( cell && cell->hasErrors() )
+				return Variant( ERROR_STYLE );
 			if ( cell && cell->hasFormula() ) { // Let's give it some style
 				switch ( cell->getFormula()->type() ) {
 					case FormulaType::CellReference:
