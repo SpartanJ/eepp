@@ -112,19 +112,19 @@ const char DOC_FIND_REPLACE_XML[] = R"xml(
 				<input class="input-find" layout_width="match_parent" layout_height="wrap_content" hint="Find" />
 				<selectbutton id="ce_find_replace_box-escape-sequences"
 							  layout_width="wrap_content" layout_height="wrap_content" class="escape-sequences"
-							  layout_gravity="right|center_vertical" tooltip="Escape Sequences"
+							  layout_gravity="right|center_vertical" tooltip="@string(escape_sequences, Escape Sequences)"
 							  marginRight="2dp" text="\n" />
 				<selectbutton id="ce_find_replace_box-match-case" class="match-case"
 							  layout_width="wrap_content" layout_height="wrap_content"
-							  layout_gravity="right|center_vertical" tooltip="Match Case" marginRight="2dp"
+							  layout_gravity="right|center_vertical" tooltip="@string(match_case, Match Case)" marginRight="2dp"
 							  layout_to_left_of="ce_find_replace_box-escape-sequences" />
 				<selectbutton id="ce_find_replace_box-whole-word" class="whole-word"
 							  layout_width="wrap_content" layout_height="wrap_content"
-							  layout_gravity="right|center_vertical" tooltip="Whole Word"
+							  layout_gravity="right|center_vertical" tooltip="@string(Whole Word)"
 							  layout_to_left_of="ce_find_replace_box-match-case" marginRight="2dp" />
 				<selectbutton id="ce_find_replace_box-regex" class="regex" layout_width="wrap_content"
 							  layout_height="wrap_content" layout_gravity="right|center_vertical"
-							  tooltip="Lua Pattern Match" layout_to_left_of="ce_find_replace_box-whole-word"
+							  tooltip="@string(lua_pattern_match, Lua Pattern Match)" layout_to_left_of="ce_find_replace_box-whole-word"
 							  marginRight="2dp" />
 			</RelativeLayout>
 			<button class="prev-button" layout_width="wrap_content" layout_height="24dp" text="Prev." icon="icon(arrow-up, 16dp)" />
@@ -134,9 +134,9 @@ const char DOC_FIND_REPLACE_XML[] = R"xml(
 		<hbox class="replace_box" layout_width="match_parent" layout_height="wrap_content">
 			<input class="input-replace" layout_width="200dp" layout_height="wrap_content" hint="Replace" marginRight="1dp" />
 
-			<button class="replace-button" layout_width="wrap_content" layout_height="wrap_content" tooltip="Replace" />
+			<button class="replace-button" layout_width="wrap_content" layout_height="wrap_content" tooltip="@string(replace, Replace)" />
 
-			<button class="replace-all-button" layout_width="wrap_content" layout_height="wrap_content" tooltip="Replace All" />
+			<button class="replace-all-button" layout_width="wrap_content" layout_height="wrap_content" tooltip="@string(replace_all, Replace All)" />
 		</hbox>
 	</vbox>
 </hbox>

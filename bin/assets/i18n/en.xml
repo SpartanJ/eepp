@@ -56,6 +56,7 @@
 	<string name="change_whole_word">Change Whole Word</string>
 	<string name="check_for_new_updates_at_startup">Always check for new updates at startup.</string>
 	<string name="check_for_updates">Check For Updates</string>
+	<string name="check_for_updates_ellipsis">Check for Updates...</string>
 	<string name="check_languages_health">Check Languages Health</string>
 	<string name="clean">Clean</string>
 	<string name="clean_failed">Clean run with errors
@@ -157,6 +158,7 @@ File path is: </string>
 	<string name="directory">directory</string>
 	<string name="document">Document</string>
 	<string name="document_symbol_find_ellipsis">Search Document Symbol...</string>
+	<string name="documentation">documentation</string>
 	<string name="documents_settings">Documents Settings</string>
 	<string name="double_quotes">Double Quotes ""</string>
 	<string name="download_file_web">Download File Web</string>
@@ -164,6 +166,7 @@ File path is: </string>
 	<string name="duplicate_file_ellipsis">Duplicate File...</string>
 	<string name="ecode_no_updates_available">There are currently no updates available.</string>
 	<string name="ecode_source">Ecode Source</string>
+	<string name="ecode_source_ellipsis">ecode source code...</string>
 	<string name="ecode_unreleased_version">You are running an unreleased version of ecode!
 Current version: </string>
 	<string name="ecode_updates_available"> is available!
@@ -194,9 +197,8 @@ is hover a word that represents a color.</string>
 	<string name="error_checking_version">Failed checking for updates.</string>
 	<string name="error_copying_file">Error copying file.</string>
 	<string name="error_renaming_file">Error renaming file.</string>
-	<string name="escape_sequence_tooltip">Replace \, 	,
-,
- and (Unicode characters</string>
+	<string name="escape_sequence_tooltip">Replace \, \t, \n, \r and (Unicode characters</string>
+	<string name="escape_sequences">Escape Sequences</string>
 	<string name="exclusive_mode">Exclusive Mode</string>
 	<string name="execute_dir_in_terminal">Open directory in terminal</string>
 	<string name="execute_in_terminal">Execute in terminal</string>
@@ -218,9 +220,11 @@ is hover a word that represents a color.</string>
 	<string name="font_size_grow">Font Size Grow</string>
 	<string name="font_size_reset">Font Size Reset</string>
 	<string name="font_size_shrink">Font Size Shrink</string>
+	<string name="for_help_please_visit">For help, please visit:</string>
 	<string name="force_new_line_at_end_of_file">Force New Line at End of File</string>
 	<string name="format_doc">Format Doc</string>
 	<string name="formatter_format_document">Format Document</string>
+	<string name="forum">forum</string>
 	<string name="frame_rate_limit">Frame Rate Limit</string>
 	<string name="frame_rate_limit_applied">Frame Rate Limit Applied</string>
 	<string name="fullscreen_mode">Full Screen Mode</string>
@@ -249,7 +253,10 @@ is hover a word that represents a color.</string>
 Enter the name for the branch:</string>
 	<string name="git_create_local_branch">Create local branch?</string>
 	<string name="git_delete_branch">Delete</string>
+	<string name="git_diff_head">Diff HEAD</string>
+	<string name="git_diff_staged">Diff Staged</string>
 	<string name="git_discard">Discard</string>
+	<string name="git_discard_all">Discard All</string>
 	<string name="git_drop_stash">Drop Stash</string>
 	<string name="git_drop_stash_title">Drop Stash</string>
 	<string name="git_fast_forward_merge">Fast Forward Merge</string>
@@ -284,6 +291,7 @@ Name your stash (optional):</string>
 	<string name="git_tags">Tags</string>
 	<string name="git_unmerged">Unmerged</string>
 	<string name="git_unstage">Unstage</string>
+	<string name="git_unstage_all">Unstage All</string>
 	<string name="git_untracked">Untracked</string>
 	<string name="global_search">Global Search</string>
 	<string name="global_search_clear_history">Global Search Clear History</string>
@@ -310,7 +318,8 @@ Restart ecode to see the changes.</string>
 	<string name="inode">Inode</string>
 	<string name="insert_search_query">Insert search query</string>
 	<string name="inspect_widgets">Inspect Widgets</string>
-	<string name="issues">Issues</string>
+	<string name="issues">issues</string>
+	<string name="issues_capitalized">Issues</string>
 	<string name="jump_lines_down">Jump Lines Down</string>
 	<string name="jump_lines_up">Jump Lines Up</string>
 	<string name="key_bindings">Key Bindings</string>
@@ -352,6 +361,9 @@ Restart ecode to see the changes.</string>
 	<string name="lsp_symbol_info">Lsp Symbol Info</string>
 	<string name="lsp_symbol_references">Lsp Symbol References</string>
 	<string name="lua_pattern">Lua Pattern</string>
+	<string name="lua_pattern_match">Lua Pattern Match</string>
+	<string name="main_menu">Main Menu</string>
+	<string name="match_case">Match Case</string>
 	<string name="match_whole_word">Match Whole Word</string>
 	<string name="menu_toggle">Menu Toggle</string>
 	<string name="message">Message</string>
@@ -428,7 +440,7 @@ Please restart the application.</string>
 	<string name="open_locatebar">Open Locatebar</string>
 	<string name="open_recent_folder_ellipsis">Open Recent Folder...</string>
 	<string name="open_workspace_symbol_search">Open Workspace Symbol Search</string>
-	<string name="output">Output</string>
+	<string name="output_capitalized">Output</string>
 	<string name="output_parser">Output Parser</string>
 	<string name="output_parser_desc">Custom output parsers scan command line output for user-provided error patterns to create entries in Build Issues and highlight those errors on the Build Output</string>
 	<string name="output_parser_preset">Presets are provided as generic output parsers, you can select one below, by default a "generic" preset will be selected:</string>
@@ -531,6 +543,7 @@ Set 0 to disable it.
 Minimum value is 1, and maximum 6. Requires restart.</string>
 	<string name="shell">Shell</string>
 	<string name="shell_configuration">Shell Configuration</string>
+	<string name="shortcuts">Shortcuts</string>
 	<string name="show_build_tab">Show Build Tab</string>
 	<string name="show_console">Show Console</string>
 	<string name="show_doc_info">Show Document Info</string>
@@ -602,6 +615,7 @@ file in the directory tree.</string>
 	<string name="terminal_split_right">Terminal Split Right</string>
 	<string name="terminal_split_top">Terminal Split Top</string>
 	<string name="texture_viewer">Texture Viewer</string>
+	<string name="the_ecode_nbsp">The ecode </string>
 	<string name="toggle_lua_pattern">Toggle Lua Pattern</string>
 	<string name="toggle_status_bar">Toggle Status Bar</string>
 	<string name="toggle_status_build_output">Toggle Status Build Output</string>
@@ -630,7 +644,7 @@ file in the directory tree.</string>
 	<string name="uicodeeditor_copy_containing_folder_path_ellipsis">Copy Containing Folder Path...</string>
 	<string name="uicodeeditor_copy_file_path">Copy File Path</string>
 	<string name="uicodeeditor_copy_file_path_and_position">Copy File Path and Position</string>
-	<string name="uicodeeditor_cut">Paste</string>
+	<string name="uicodeeditor_cut">Cut</string>
 	<string name="uicodeeditor_delete">Delete</string>
 	<string name="uicodeeditor_open_containing_folder_ellipsis">Open Containing Folder...</string>
 	<string name="uicodeeditor_paste">Paste</string>

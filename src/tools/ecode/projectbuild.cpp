@@ -132,7 +132,7 @@ ProjectBuildManager::ProjectBuildManager( const std::string& projectRoot,
 	mThreadPool( pool ),
 	mSidePanel( sidePanel ),
 	mApp( app ),
-	mNewBuild( mApp->i18n( "new_name", "new_name" ), mProjectRoot ) {
+	mNewBuild( mApp->i18n( "new_name", "New Name" ), mProjectRoot ) {
 	FileSystem::dirAddSlashAtEnd( mProjectRoot );
 
 	if ( mThreadPool ) {
@@ -172,7 +172,7 @@ bool ProjectBuildManager::cloneBuild( const std::string& build, std::string newB
 }
 
 void ProjectBuildManager::addBuild( UIWidget* buildTab ) {
-	mNewBuild = ProjectBuild( mApp->i18n( "new_name", "new_name" ), mProjectRoot );
+	mNewBuild = ProjectBuild( mApp->i18n( "new_name", "New Name" ), mProjectRoot );
 	std::string hashName = String::toString( String::hash( "new_name" ) );
 	UIWidget* widget = nullptr;
 	if ( ( widget = buildTab->getUISceneNode()->getRoot()->querySelector( "#build_settings_" +

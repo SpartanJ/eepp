@@ -442,8 +442,8 @@ void StatusBuildOutputController::createContainer() {
 <rellayce id="build_output" lw="mp" lh="mp" visible="false" class="status_build_output_cont" lw="mp" lh="mp">
 	<CodeEditor id="build_output_output" lw="mp" lh="mp" />
 	<TableView id="build_output_issues" lw="mp" lh="mp" visible="false" />
-	<SelectButton id="but_build_output_issues" text="@string(issues, Issues)" lg="bottom|right" margin-right="1dp" margin-bottom="18dp" margin-right="18dp" />
-	<SelectButton id="but_build_output_output" text="@string(output, Output)" layout-to-left-of="but_build_output_issues" selected="true" />
+	<SelectButton id="but_build_output_issues" text="@string(issues_capitalized, Issues)" lg="bottom|right" margin-right="1dp" margin-bottom="18dp" margin-right="18dp" />
+	<SelectButton id="but_build_output_output" text="@string(output_capitalized, Output)" layout-to-left-of="but_build_output_issues" selected="true" />
 </rellayce>
 	)xml";
 

@@ -898,7 +898,7 @@ void UITextInput::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 		->setEnabled( mDoc.hasSelection() );
 	menuAdd( menu, i18n( "uicodeeditor_copy", "Copy" ), "copy", "copy" )
 		->setEnabled( mDoc.hasSelection() );
-	menuAdd( menu, i18n( "uicodeeditor_cut", "Paste" ), "paste", "paste" );
+	menuAdd( menu, i18n( "uicodeeditor_paste", "Paste" ), "paste", "paste" );
 	menuAdd( menu, i18n( "uicodeeditor_delete", "Delete" ), "delete-text", "delete-to-next-char" );
 	menu->addSeparator();
 	menuAdd( menu, i18n( "uicodeeditor_select_all", "Select All" ), "select-all", "select-all" );

@@ -271,6 +271,10 @@ void Translator::saveToStream( IOStream& stream, std::string lang ) {
 	auto resources = doc.append_child( "resources" );
 	resources.append_attribute( "language" ).set_value( lang.c_str() );
 
+	auto langNameIt = mLangNames.find( lang );
+	if ( langNameIt != mLangNames.end() )
+		resources.append_attribute( "title" ).set_value( langNameIt->second.c_str() );
+
 	auto& unordered_map = mDictionary[lang];
 	std::map<std::string, String> langStrs( unordered_map.begin(), unordered_map.end() );
 
@@ -278,10 +282,6 @@ void Translator::saveToStream( IOStream& stream, std::string lang ) {
 		auto r = resources.append_child( "string" );
 		auto d = r.append_child( pugi::node_pcdata );
 		r.append_attribute( "name" ).set_value( str.first.c_str() );
-
-		auto langNameIt = mLangNames.find( lang );
-		if ( langNameIt != mLangNames.end() )
-			r.append_attribute( "title" ).set_name( langNameIt->second.c_str() );
 
 		d.set_value( str.second.toUtf8().c_str() );
 	}

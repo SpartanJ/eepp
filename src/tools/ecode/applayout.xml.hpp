@@ -474,7 +474,7 @@ R"html(
 			</vbox>
 			<vbox lw="wc" lh="wc" margin-right="4dp">
 				<CheckBox id="whole_word" lw="wc" lh="wc" text='@string(match_whole_word, "Match Whole Word")' selected="false" />
-				<CheckBox id="escape_sequence" lw="wc" lh="wc" text='@string(use_escape_sequences, "Use escape sequences")' selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
+				<CheckBox id="escape_sequence" lw="wc" lh="wc" text='@string(use_escape_sequences, "Use escape sequences")' selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \\t, \\n, \\r and \\uXXXX (Unicode characters) with the corresponding control")' />
 			</vbox>
 			<vbox lw="wc" lh="wc">
 				<hbox lw="wc" lh="wc" margin-bottom="2dp">
