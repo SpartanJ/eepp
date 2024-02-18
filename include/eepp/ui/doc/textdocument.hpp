@@ -306,6 +306,8 @@ class EE_API TextDocument {
 
 	void selectWord( bool withMulticursor = true );
 
+	void selectAllWords();
+
 	void selectLine();
 
 	void selectToNextWord();
@@ -529,6 +531,8 @@ class EE_API TextDocument {
 	TextRange addSelection( TextRange selection );
 
 	TextRange addSelection( const TextPosition& selection );
+
+	TextRange addSelections( TextRanges&& selections );
 
 	void popSelection();
 

@@ -2201,6 +2201,7 @@ void App::closeFolder() {
 
 	mProjectViewEmptyCont->setVisible( true );
 	mFileSystemModel->setRootPath( "" );
+	mPluginManager->setWorkspaceFolder( "" );
 	updateOpenRecentFolderBtn();
 	UIWelcomeScreen::createWelcomeScreen( this );
 	mStatusBar->setVisible( false );

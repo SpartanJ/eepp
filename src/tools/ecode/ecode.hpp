@@ -188,6 +188,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void showBuildTab();
 
+	SettingsMenu* getSettingsMenu() const { return mSettings.get(); }
+
 	template <typename T> void registerUnlockedCommands( T& t ) {
 		t.setCommand( "keybindings", [this] { loadFileFromPath( mKeybindingsPath ); } );
 		t.setCommand( "debug-draw-boxes-toggle", [this] { debugDrawBoxesToggle(); } );

@@ -85,6 +85,7 @@ GitPlugin::~GitPlugin() {
 	mShuttingDown = true;
 	if ( mStatusButton )
 		mStatusButton->close();
+
 	if ( mSidePanel && mTab )
 		mSidePanel->removeTab( mTab );
 
@@ -95,7 +96,7 @@ GitPlugin::~GitPlugin() {
 	{ Lock l( mRepoMutex ); }
 	{ Lock l( mReposMutex ); }
 
-	// TODO: Add a signal for this waits
+	// TODO: Add a signal for these waits
 	while ( mRunningUpdateStatus )
 		Sys::sleep( 1.f );
 
@@ -455,6 +456,14 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 				{
 					Lock l( mReposMutex );
 					mRepos.clear();
+				}
+
+				if ( getUISceneNode() && mSidePanel ) {
+					getUISceneNode()->runOnMainThread( [this] {
+						if ( mProjectPath.empty() ) {
+							hideSidePanel();
+						}
+					} );
 				}
 
 				updateUINow( true );
@@ -1361,6 +1370,16 @@ void GitPlugin::updateBranchesUI( std::shared_ptr<GitBranchModel> model ) {
 }
 
 void GitPlugin::buildSidePanelTab() {
+	if ( mTabContents && !mTab ) {
+		if ( mProjectPath.empty() )
+			return;
+		UIIcon* icon = findIcon( "source-control" );
+		mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
+								icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
+		mTab->setId( "source_control" );
+		mTab->setTextAsFallback( true );
+		return;
+	}
 	if ( mTab )
 		return;
 	if ( mSidePanel == nullptr )
@@ -1425,25 +1444,24 @@ void GitPlugin::buildSidePanelTab() {
 		!mHighlightStyleColor.empty() && Color::isColorString( mHighlightStyleColor )
 			? mHighlightStyleColor
 			: std::string{ DEFAULT_HIGHLIGHT_COLOR };
-	UIWidget* node =
-		getUISceneNode()->loadLayoutFromString( String::format( STYLE, color, color ) );
-	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), node,
+	mTabContents = getUISceneNode()->loadLayoutFromString( String::format( STYLE, color, color ) );
+	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "source_control" );
 	mTab->setTextAsFallback( true );
 
-	node->bind( "git_panel_switcher", mPanelSwicher );
-	node->bind( "git_panel_stack", mStackWidget );
-	node->bind( "git_branches_tree", mBranchesTree );
-	node->bind( "git_status_tree", mStatusTree );
-	node->bind( "git_content", mGitContentView );
-	node->bind( "git_no_content", mGitNoContentView );
-	node->bind( "git_panel_loader", mLoader );
-	node->bind( "git_repo", mRepoDropDown );
+	mTabContents->bind( "git_panel_switcher", mPanelSwicher );
+	mTabContents->bind( "git_panel_stack", mStackWidget );
+	mTabContents->bind( "git_branches_tree", mBranchesTree );
+	mTabContents->bind( "git_status_tree", mStatusTree );
+	mTabContents->bind( "git_content", mGitContentView );
+	mTabContents->bind( "git_no_content", mGitNoContentView );
+	mTabContents->bind( "git_panel_loader", mLoader );
+	mTabContents->bind( "git_repo", mRepoDropDown );
 
-	node->find( "branch_pull" )->onClick( [this]( auto ) { pull( repoSelected() ); } );
-	node->find( "branch_push" )->onClick( [this]( auto ) { push( repoSelected() ); } );
-	node->find( "branch_add" )->onClick( [this]( auto ) { branchCreate(); } );
+	mTabContents->find( "branch_pull" )->onClick( [this]( auto ) { pull( repoSelected() ); } );
+	mTabContents->find( "branch_push" )->onClick( [this]( auto ) { push( repoSelected() ); } );
+	mTabContents->find( "branch_add" )->onClick( [this]( auto ) { branchCreate(); } );
 
 	mBranchesTree->setAutoExpandOnSingleColumn( true );
 	mBranchesTree->setHeadersVisible( false );
@@ -1504,8 +1522,8 @@ void GitPlugin::buildSidePanelTab() {
 	auto listBox = mPanelSwicher->getListBox();
 	listBox->addListBoxItems( { i18n( "branches", "Branches" ), i18n( "status", "Status" ) } );
 	mStackMap.resize( 2 );
-	mStackMap[0] = node->find<UIWidget>( "git_branches" );
-	mStackMap[1] = node->find<UIWidget>( "git_status" );
+	mStackMap[0] = mTabContents->find<UIWidget>( "git_branches" );
+	mStackMap[1] = mTabContents->find<UIWidget>( "git_status" );
 	listBox->setSelected( 0 );
 
 	mPanelSwicher->on( Event::OnItemSelected, [this, listBox]( const Event* ) {
@@ -1695,6 +1713,13 @@ void GitPlugin::buildSidePanelTab() {
 			}
 		}
 	} );
+}
+
+void GitPlugin::hideSidePanel() {
+	if ( mSidePanel && mTab ) {
+		mSidePanel->removeTab( mTab, false );
+		mTab = nullptr;
+	}
 }
 
 void GitPlugin::openBranchMenu( const Git::Branch& branch ) {

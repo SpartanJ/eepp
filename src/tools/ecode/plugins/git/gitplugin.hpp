@@ -102,6 +102,7 @@ class GitPlugin : public PluginBase {
 	Color mOldBackgroundColor;
 	UITabWidget* mSidePanel{ nullptr };
 	UITab* mTab{ nullptr };
+	UIWidget* mTabContents{ nullptr };
 
 	UILinearLayout* mStatusBar{ nullptr };
 	UIPushButton* mStatusButton{ nullptr };
@@ -238,6 +239,8 @@ class GitPlugin : public PluginBase {
 	void initModelStyler();
 
 	void endModelStyler();
+
+	void hideSidePanel();
 };
 
 } // namespace ecode

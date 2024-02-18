@@ -1,6 +1,8 @@
 #include "universallocator.hpp"
 #include "ecode.hpp"
 #include "pathhelper.hpp"
+#include "settingsmenu.hpp"
+
 #include <algorithm>
 
 namespace ecode {
@@ -221,7 +223,7 @@ void UniversalLocator::goToLine() {
 static bool isCommand( const std::string& filename ) {
 	return !filename.empty() &&
 		   ( filename == "> " || filename == ": " || filename == "l " || filename == ". " ||
-			 filename == "o " || filename == "sb " || filename == "sbt " );
+			 filename == "o " || filename == "sb " || filename == "sbt " || filename == "ft " );
 }
 
 void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInput ) {
@@ -262,6 +264,8 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 			showSwitchBuild();
 		} else if ( String::startsWith( inputTxt, "sbt " ) ) {
 			showSwitchBuildType();
+		} else if ( String::startsWith( inputTxt, "ft " ) ) {
+			showSwitchFileType();
 		} else {
 			showLocateTable();
 		}
@@ -372,6 +376,15 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 							pbm->setConfig( cfg );
 							mLocateBarLayout->execute( "close-locatebar" );
 						}
+					}
+					return;
+				} else if ( String::startsWith( mLocateInput->getText(), "ft " ) ) {
+					if ( mSplitter->getCurEditor() ) {
+						const auto& df = SyntaxDefinitionManager::instance()->getByLanguageName(
+							vName.toString() );
+						mSplitter->getCurEditor()->setSyntaxDefinition( df );
+						mApp->getSettingsMenu()->updateCurrentFileType();
+						mLocateBarLayout->execute( "close-locatebar" );
 					}
 					return;
 				}
@@ -486,7 +499,8 @@ void UniversalLocator::showLocateBar() {
 		   String::startsWith( mLocateInput->getText(), "l " ) ||
 		   String::startsWith( mLocateInput->getText(), "o " ) ||
 		   String::startsWith( mLocateInput->getText(), "sb " ) ||
-		   String::startsWith( mLocateInput->getText(), "sbt " ) ) )
+		   String::startsWith( mLocateInput->getText(), "sbt " ) ||
+		   String::startsWith( mLocateInput->getText(), "ft " ) ) )
 		mLocateInput->setText( "" );
 
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
@@ -713,6 +727,50 @@ void UniversalLocator::updateSwitchBuildTypeTable() {
 	mLocateTable->setColumnsVisible( { 0 } );
 }
 
+void UniversalLocator::showSwitchFileType() {
+	showBar();
+
+	if ( mLocateInput->getText().empty() || !String::startsWith( mLocateInput->getText(), "ft " ) )
+		mLocateInput->setText( "ft " );
+
+	if ( mLocateInput->getText().size() >= 3 )
+		updateSwitchFileTypeTable();
+	updateLocateBar();
+	mApp->getStatusBar()->updateState();
+}
+
+std::shared_ptr<ItemListOwnerModel<std::string>>
+UniversalLocator::openFileTypeModel( const std::string& match ) {
+	if ( nullptr == mApp->getSplitter()->getCurEditor() )
+		return ItemListOwnerModel<std::string>::create( {} );
+	const auto& defs = SyntaxDefinitionManager::instance()->getDefinitions();
+	std::vector<std::string> fileTypeNames;
+	fileTypeNames.reserve( defs.size() );
+	for ( const auto& def : defs ) {
+		if ( match.empty() || String::startsWith( String::toLower( def.getLanguageName() ),
+												  String::toLower( match ) ) )
+			fileTypeNames.push_back( def.getLanguageName() );
+	}
+	std::sort( fileTypeNames.begin(), fileTypeNames.end() );
+	return ItemListOwnerModel<std::string>::create( fileTypeNames );
+}
+
+void UniversalLocator::updateSwitchFileTypeTable() {
+	mLocateTable->setModel(
+		openFileTypeModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
+	if ( mLocateTable->getModel()->rowCount() > 0 && mApp->getSplitter()->getCurEditor() ) {
+		ModelIndex idx = mLocateTable->findRowWithText( mApp->getSplitter()
+															->getCurEditor()
+															->getDocumentRef()
+															->getSyntaxDefinition()
+															.getLanguageName() );
+		mLocateTable->getSelection().set( idx.isValid() ? idx
+														: mLocateTable->getModel()->index( 0 ) );
+	}
+	mLocateTable->scrollToTop();
+	mLocateTable->setColumnsVisible( { 0 } );
+}
+
 void UniversalLocator::onCodeEditorFocusChange( UICodeEditor* editor ) {
 	if ( !mLocateTable || !mLocateTable->isVisible() )
 		return;
@@ -927,6 +985,7 @@ std::vector<ProjectDirectoryTree::CommandInfo> UniversalLocator::getLocatorComma
 	vec.push_back( { "sb ", mUISceneNode->i18n( "switch_build", "Switch Build" ), icon } );
 	vec.push_back(
 		{ "sbt ", mUISceneNode->i18n( "switch_build_type", "Switch Build Type" ), icon } );
+	vec.push_back( { "ft ", mUISceneNode->i18n( "switch_file_type", "Switch File Type" ), icon } );
 	return vec;
 }
 

@@ -102,6 +102,7 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_DOWN, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-lower" },
 		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
 		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
+		{ { KEY_D, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-all-words" },
 		{ { KEY_UP, KEYMOD_LALT }, "add-cursor-above" },
 		{ { KEY_DOWN, KEYMOD_LALT }, "add-cursor-below" },
 		{ { KEY_ESCAPE }, "reset-cursor" },

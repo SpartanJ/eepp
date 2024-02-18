@@ -757,6 +757,24 @@ TextRange TextDocument::addSelection( const TextPosition& selection ) {
 	return addSelection( { selection, selection } );
 }
 
+TextRange TextDocument::addSelections( TextRanges&& selections ) {
+	mSelection.reserve( mSelection.size() + selections.size() );
+	for ( auto& selection : selections ) {
+		if ( mSelection.exists( selection ) )
+			return {};
+		selection = sanitizeRange( selection );
+		if ( mSelection.exists( selection ) )
+			return {};
+		mSelection.push_back( selection );
+	}
+	mSelection.sort();
+	mergeSelection();
+	notifyCursorChanged( selections.back().start() );
+	notifySelectionChanged( selections.back() );
+	mLastSelection = mSelection.findIndex( selections.back() );
+	return selections.back();
+}
+
 TextRange TextDocument::addSelection( TextRange selection ) {
 	if ( mSelection.exists( selection ) )
 		return {};
@@ -1736,6 +1754,19 @@ void TextDocument::selectWord( bool withMulticursor ) {
 				addSelection( res );
 			}
 		}
+	}
+}
+
+void TextDocument::selectAllWords() {
+	if ( !hasSelection() )
+		selectWord( false );
+	String text( getSelectedText() );
+	auto res( findAll( text, true, false, FindReplaceType::Normal,
+					   { getBottomMostCursor().normalized().end(), endOfDoc() } ) );
+	if ( !res.empty() ) {
+		for ( auto& selection : res )
+			selection.reverse();
+		addSelections( std::move( res ) );
 	}
 }
 
@@ -2971,6 +3002,7 @@ void TextDocument::initializeCommands() {
 	mCommands["select-to-next-word"] = [this] { selectToNextWord(); };
 	mCommands["select-to-next-line"] = [this] { selectToNextLine(); };
 	mCommands["select-word"] = [this] { selectWord(); };
+	mCommands["select-all-words"] = [this] { selectAllWords(); };
 	mCommands["select-line"] = [this] { selectLine(); };
 	mCommands["select-to-start-of-line"] = [this] { selectToStartOfLine(); };
 	mCommands["select-to-end-of-line"] = [this] { selectToEndOfLine(); };
