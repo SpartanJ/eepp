@@ -520,6 +520,20 @@ TextFormat::LineEnding TextFormat::stringToLineEnding( const std::string& str ) 
 	return TextFormat::LineEnding::LF;
 }
 
+TextFormat::Encoding TextFormat::encodingFromString( const std::string_view& str ) {
+	switch ( String::hash( str ) ) {
+		case static_cast<String::HashType>( TextFormat::Encoding::UTF16LE ):
+			return TextFormat::Encoding::UTF16LE;
+		case static_cast<String::HashType>( TextFormat::Encoding::UTF16BE ):
+			return TextFormat::Encoding::UTF16BE;
+		case static_cast<String::HashType>( TextFormat::Encoding::Latin1 ):
+			return TextFormat::Encoding::Latin1;
+		case static_cast<String::HashType>( TextFormat::Encoding::UTF8 ):
+		default:
+			return TextFormat::Encoding::UTF8;
+	}
+}
+
 std::string TextFormat::encodingToString( TextFormat::Encoding enc ) {
 	switch ( enc ) {
 		case TextFormat::Encoding::UTF16LE:
@@ -533,6 +547,15 @@ std::string TextFormat::encodingToString( TextFormat::Encoding enc ) {
 			break;
 	}
 	return "UTF-8";
+}
+
+std::vector<std::pair<TextFormat::Encoding, std::string>> TextFormat::encodings() {
+	std::vector<std::pair<TextFormat::Encoding, std::string>> encs;
+	encs.emplace_back( Encoding::UTF8, encodingToString( Encoding::UTF8 ) );
+	encs.emplace_back( Encoding::UTF16BE, encodingToString( Encoding::UTF16BE ) );
+	encs.emplace_back( Encoding::UTF16LE, encodingToString( Encoding::UTF16LE ) );
+	encs.emplace_back( Encoding::Latin1, encodingToString( Encoding::Latin1 ) );
+	return encs;
 }
 
 }}} // namespace EE::UI::Doc

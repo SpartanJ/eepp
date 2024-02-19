@@ -245,6 +245,34 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent_cur" );
 
+	UIPopUpMenu* fileEncoding = UIPopUpMenu::New();
+	auto encodings = TextFormat::encodings();
+	for ( const auto& enc : encodings )
+		fileEncoding->addRadioButton( enc.second )->setId( enc.second );
+	mDocMenu->addSubMenu( i18n( "file_encoding", "File Encoding" ), nullptr, fileEncoding )
+		->setId( "file_encoding" );
+	fileEncoding->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
+		if ( mSplitter->curEditorExistsAndFocused() ) {
+			auto enc = TextFormat::encodingFromString( text.toUtf8() );
+			if ( enc == mSplitter->getCurEditor()->getDocument().getEncoding() )
+				return;
+			mSplitter->getCurEditor()->getDocument().setEncoding( enc );
+			mApp->updateDocInfo( mSplitter->getCurEditor()->getDocument() );
+			if ( !mSplitter->getCurEditor()->getDocument().hasFilepath() )
+				return;
+			auto msgBox = UIMessageBox::New(
+				UIMessageBox::YES_NO, i18n( "confirm_new_file_encoding",
+											"To confirm the new file encoding it's required to "
+											"save the file. Do you want to save it now?" ) );
+			msgBox->on( Event::OnConfirm, [this]( auto ) {
+				if ( mSplitter->curEditorExistsAndFocused() )
+					mSplitter->getCurEditor()->getDocument().save();
+			} );
+			msgBox->showWhenReady();
+		}
+	} );
+
 	UIPopUpMenu* tabTypeMenu = UIPopUpMenu::New();
 	tabTypeMenu->addRadioButton( i18n( "tabs", "Tabs" ) )->setId( "tabs" );
 	tabTypeMenu->addRadioButton( i18n( "spaces", "Spaces" ) )->setId( "spaces" );
@@ -1560,6 +1588,13 @@ void SettingsMenu::updateDocumentMenu() {
 	mDocMenu->find( "auto_indent_cur" )
 		->asType<UIMenuCheckBox>()
 		->setActive( doc.getAutoDetectIndentType() );
+
+	auto* curEncoding = mDocMenu->find( "file_encoding" )
+							->asType<UIMenuSubMenu>()
+							->getSubMenu()
+							->find( TextFormat::encodingToString( doc.getEncoding() ) );
+	if ( curEncoding )
+		curEncoding->asType<UIMenuRadioButton>()->setActive( true );
 
 	auto* curIndent = mDocMenu->find( "indent_width_cur" )
 						  ->asType<UIMenuSubMenu>()

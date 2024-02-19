@@ -25,11 +25,15 @@ class EE_API TextFormat {
 	LineEnding newLine = LineEnding::LF;
 	bool bom = false;
 
+	static std::vector<std::pair<Encoding, std::string>> encodings();
+
 	static std::string lineEndingToString( const TextFormat::LineEnding& le );
 
 	static TextFormat::LineEnding stringToLineEnding( const std::string& str );
 
 	static std::string encodingToString( TextFormat::Encoding enc );
+
+	static Encoding encodingFromString( const std::string_view& str );
 
 	static TextFormat autodetect( IOStream& ins );
 };
