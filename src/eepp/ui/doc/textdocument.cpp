@@ -1,5 +1,4 @@
-﻿#include <codecvt>
-#include <cstdio>
+﻿#include <cstdio>
 #include <eepp/core/debug.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -739,8 +738,8 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 		switch ( mEncoding ) {
 			case TextFormat::Encoding::UTF16LE:
 			case TextFormat::Encoding::UTF16BE: {
-				std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-				std::u16string utf16String = convert.from_bytes( text );
+				std::u16string utf16String;
+				Utf8::toUtf16( text.begin(), text.end(), std::back_inserter( utf16String ) );
 				if ( mEncoding == TextFormat::Encoding::UTF16BE ) {
 					for ( char16_t& c : utf16String )
 						c = ( ( c >> 8 ) & 0xFF ) | ( ( c << 8 ) & 0xFF00 );
