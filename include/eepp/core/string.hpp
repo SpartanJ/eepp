@@ -496,6 +496,11 @@ class EE_API String {
 	**/
 	String( const String::View& str );
 
+	static String fromUtf16( const char* utf16String, const size_t& utf16StringSize,
+							 bool isBigEndian = false );
+
+	static String fromLatin1( const char* string, const size_t& stringSize );
+
 	/** @brief Create a new String from a UTF-8 encoded string
 	**  @param begin Forward iterator to the begining of the UTF-8 sequence
 	**  @param end   Forward iterator to the end of the UTF-8 sequence

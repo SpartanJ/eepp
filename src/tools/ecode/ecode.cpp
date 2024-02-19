@@ -25,6 +25,8 @@ extern "C" {
 }
 #endif
 
+using namespace std::literals;
+
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
@@ -1613,11 +1615,12 @@ void App::updateDocInfo( TextDocument& doc ) {
 		mDocInfo->setVisible( true );
 		updateDocInfoLocation();
 		String infoStr( String::format(
-			"%s: %lld / %zu  %s: %lld    %s    %s", i18n( "line_abbr", "line" ).toUtf8(),
+			"%s: %lld / %zu  %s: %lld    %s    %s%s    %s", i18n( "line_abbr", "line" ).toUtf8(),
 			doc.getSelection().start().line() + 1, doc.linesCount(),
 			i18n( "col_abbr", "col" ).toUtf8(), mSplitter->getCurEditor()->getCurrentColumnCount(),
 			doc.getSyntaxDefinition().getLanguageName(),
-			TextDocument::lineEndingToString( doc.getLineEnding() ) ) );
+			TextFormat::encodingToString( doc.getEncoding() ), doc.isBOM() ? " (with BOM)"sv : ""sv,
+			TextFormat::lineEndingToString( doc.getLineEnding() ) ) );
 		mDocInfo->debounce( [this, infoStr] { mDocInfo->setText( infoStr ); }, Time::Zero,
 							String::hash( "ecode::doc_info::update" ) );
 	}

@@ -111,12 +111,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
 	doc.lineEndings =
-		TextDocument::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
+		TextFormat::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
 	// Migrate old data
 	if ( ini.keyValueExists( "document", "windows_line_endings" ) &&
 		 !ini.keyValueExists( "document", "line_endings" ) &&
 		 ini.getValueB( "document", "windows_line_endings" ) == true ) {
-		doc.lineEndings = TextDocument::LineEnding::CRLF;
+		doc.lineEndings = TextFormat::LineEnding::CRLF;
 	}
 
 	doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
@@ -243,7 +243,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", doc.indentWidth );
 	ini.setValueB( "document", "indent_spaces", doc.indentSpaces );
-	ini.setValue( "document", "line_endings", TextDocument::lineEndingToString( doc.lineEndings ) );
+	ini.setValue( "document", "line_endings", TextFormat::lineEndingToString( doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", doc.tabWidth );
 	ini.setValueI( "document", "line_breaking_column", doc.lineBreakingColumn );
 	ini.setValue( "editor", "auto_close_brackets", editor.autoCloseBrackets );
@@ -384,7 +384,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	cfg.setValueI( "document", "indent_width", docConfig.doc.indentWidth );
 	cfg.setValueB( "document", "indent_spaces", docConfig.doc.indentSpaces );
 	cfg.setValue( "document", "line_endings",
-				  TextDocument::lineEndingToString( docConfig.doc.lineEndings ) );
+				  TextFormat::lineEndingToString( docConfig.doc.lineEndings ) );
 	cfg.setValueI( "document", "tab_width", docConfig.doc.tabWidth );
 	cfg.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
 	cfg.setValue( "build", "build_name", buildConfig.buildName );
@@ -524,7 +524,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	docConfig.doc.indentWidth = cfg.getValueI( "document", "indent_width", 4 );
 	docConfig.doc.indentSpaces = cfg.getValueB( "document", "indent_spaces", false );
 	docConfig.doc.lineEndings =
-		TextDocument::stringToLineEnding( cfg.getValue( "document", "line_endings", "LF" ) );
+		TextFormat::stringToLineEnding( cfg.getValue( "document", "line_endings", "LF" ) );
 
 	docConfig.doc.tabWidth = eemax( 2, cfg.getValueI( "document", "tab_width", 4 ) );
 	docConfig.doc.lineBreakingColumn =

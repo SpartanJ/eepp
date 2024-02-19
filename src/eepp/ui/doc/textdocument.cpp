@@ -1,4 +1,5 @@
-﻿#include <cstdio>
+﻿#include <codecvt>
+#include <cstdio>
 #include <eepp/core/debug.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -13,6 +14,8 @@
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <string>
+
+using namespace std::literals;
 
 using namespace EE::Network;
 
@@ -102,8 +105,61 @@ void TextDocument::resetCursor() {
 	notifySelectionChanged();
 }
 
-static String ptrGetLine( char* data, const size_t& size, size_t& position ) {
+static constexpr int codepointSize( TextFormat::Encoding enc ) {
+	switch ( enc ) {
+		case TextFormat::Encoding::UTF16LE:
+		case TextFormat::Encoding::UTF16BE:
+			return 2;
+		case TextFormat::Encoding::UTF8:
+		default:
+			break;
+	}
+	return 1;
+}
+
+static inline void searchSubstr( char* data, const size_t& size, size_t& position,
+								 const std::string_view& substr, const std::string_view& substrfb,
+								 int codepointSize ) {
 	position = 0;
+	const char* found =
+		std::search( data, data + size, substr.data(), substr.data() + substr.size() );
+	if ( found != data + size ) {
+		position = ( found - data );
+		position += codepointSize;
+	} else {
+		found =
+			std::search( data, data + size, substrfb.data(), substrfb.data() + substrfb.size() );
+		if ( found != data + size ) {
+			position = ( found - data );
+			position += codepointSize;
+		} else {
+			position = size;
+		}
+	}
+}
+
+static String ptrGetLine( char* data, const size_t& size, size_t& position,
+						  TextFormat::Encoding enc ) {
+	static constexpr auto LE_END_LF = "\n\0"sv;
+	static constexpr auto LE_END_CR = "\r\0"sv;
+	static constexpr auto BE_END_LF = "\0\n"sv;
+	static constexpr auto BE_END_CR = "\0\r"sv;
+	position = 0;
+	switch ( enc ) {
+		case TextFormat::Encoding::UTF16LE: {
+			searchSubstr( data, size, position, LE_END_LF, LE_END_CR, codepointSize( enc ) );
+			return String::fromUtf16( data, position, false );
+		}
+		case TextFormat::Encoding::UTF16BE: {
+			searchSubstr( data, size, position, BE_END_LF, BE_END_CR, codepointSize( enc ) );
+			return String::fromUtf16( data, position, true );
+		}
+		case TextFormat::Encoding::UTF8:
+		case TextFormat::Encoding::Latin1:
+		default:
+			break;
+	}
+
 	while ( position < size && data[position] != '\n' && data[position] != '\r' )
 		position++;
 	if ( position < size ) {
@@ -111,6 +167,10 @@ static String ptrGetLine( char* data, const size_t& size, size_t& position ) {
 			position++;
 		position++;
 	}
+
+	if ( enc == TextFormat::Encoding::Latin1 )
+		return String::fromLatin1( data, position );
+
 	return String( data, position );
 }
 
@@ -154,11 +214,32 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 					bufferPtr += 3;
 					consume -= 3;
 					mIsBOM = true;
+					mEncoding = TextFormat::Encoding::UTF8;
+				}
+				// Check UTF-16 LE BOM header
+				else if ( (char)0xFF == data.get()[0] && (char)0xFE == data.get()[1] ) {
+					bufferPtr += 2;
+					consume -= 2;
+					mIsBOM = true;
+					mEncoding = TextFormat::Encoding::UTF16LE;
+				}
+				// Check UTF-16 BE BOM header
+				else if ( (char)0xFE == data.get()[0] && (char)0xFF == data.get()[1] ) {
+					bufferPtr += 2;
+					consume -= 2;
+					mIsBOM = true;
+					mEncoding = TextFormat::Encoding::UTF16BE;
+				}
+				// Try to guess
+				else {
+					mIsBOM = false;
+					IOStreamMemory iomem( bufferPtr, read );
+					mEncoding = TextFormat::autodetect( iomem ).encoding;
 				}
 			}
 
 			while ( consume && mLoading ) {
-				lineBuffer += ptrGetLine( bufferPtr, consume, position );
+				lineBuffer += ptrGetLine( bufferPtr, consume, position, mEncoding );
 				bufferPtr += position;
 				consume -= position;
 				size_t lineBufferSize = lineBuffer.size();
@@ -168,20 +249,20 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 					if ( mLines.empty() ) {
 						if ( lineBufferSize > 1 && lineBuffer[lineBufferSize - 2] == '\r' &&
 							 lastChar == '\n' ) {
-							mLineEnding = LineEnding::CRLF;
+							mLineEnding = TextFormat::LineEnding::CRLF;
 						} else if ( lastChar == '\r' ) {
-							mLineEnding = LineEnding::CR;
+							mLineEnding = TextFormat::LineEnding::CR;
 						}
 
 						mMightBeBinary = lineBuffer.find_first_of( (String::StringBaseType)'\0' ) !=
 										 String::InvalidPos;
 					}
 
-					if ( mLineEnding == LineEnding::CRLF && lineBufferSize > 1 &&
+					if ( mLineEnding == TextFormat::LineEnding::CRLF && lineBufferSize > 1 &&
 						 lastChar == '\n' ) {
 						lineBuffer[lineBuffer.size() - 2] = '\n';
 						lineBuffer.resize( lineBufferSize - 1 );
-					} else if ( mLineEnding == LineEnding::CR && lineBufferSize > 0 ) {
+					} else if ( mLineEnding == TextFormat::LineEnding::CR && lineBufferSize > 0 ) {
 						lineBuffer[lineBuffer.size() - 1] = '\n';
 					}
 
@@ -310,11 +391,11 @@ void TextDocument::setAutoDetectIndentType( bool autodetect ) {
 	mAutoDetectIndentType = autodetect;
 }
 
-const TextDocument::LineEnding& TextDocument::getLineEnding() const {
+const TextFormat::LineEnding& TextDocument::getLineEnding() const {
 	return mLineEnding;
 }
 
-void TextDocument::setLineEnding( const LineEnding& lineEnding ) {
+void TextDocument::setLineEnding( const TextFormat::LineEnding& lineEnding ) {
 	mLineEnding = lineEnding;
 }
 
@@ -346,7 +427,7 @@ void TextDocument::setBOM( bool active ) {
 	mIsBOM = active;
 }
 
-bool TextDocument::getBOM() const {
+bool TextDocument::isBOM() const {
 	return mIsBOM;
 }
 
@@ -578,14 +659,36 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 	const std::string whitespaces( " \t\f\v\n\r" );
 	MD5::Context md5Ctx;
 	MD5::init( md5Ctx );
+
 	if ( mIsBOM ) {
-		unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
-		stream.write( (char*)bom, sizeof( bom ) );
-		MD5::update( md5Ctx, bom, sizeof( bom ) );
+		switch ( mEncoding ) {
+			case TextFormat::Encoding::UTF16LE: {
+				unsigned char bom[] = { 0xFF, 0xFE };
+				stream.write( (char*)bom, sizeof( bom ) );
+				MD5::update( md5Ctx, bom, sizeof( bom ) );
+				break;
+			}
+			case TextFormat::Encoding::UTF16BE: {
+				unsigned char bom[] = { 0xFE, 0xFF };
+				stream.write( (char*)bom, sizeof( bom ) );
+				MD5::update( md5Ctx, bom, sizeof( bom ) );
+				break;
+			}
+			case TextFormat::Encoding::UTF8: {
+				unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
+				stream.write( (char*)bom, sizeof( bom ) );
+				MD5::update( md5Ctx, bom, sizeof( bom ) );
+				break;
+			}
+			case TextFormat::Encoding::Latin1:
+				break;
+		}
 	}
+
 	size_t lastLine = mLines.size() - 1;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
 		std::string text( mLines[i].toUtf8() );
+
 		if ( !keepUndoRedoStatus && mTrimTrailingWhitespaces && text.size() > 1 &&
 			 whitespaces.find( text[text.size() - 2] ) != std::string::npos ) {
 			size_t pos = text.find_last_not_of( whitespaces );
@@ -598,6 +701,7 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 			}
 			text = mLines[i].toUtf8();
 		}
+
 		if ( i == lastLine ) {
 			if ( !text.empty() && text[text.size() - 1] == '\n' ) {
 				// Last \n is added by the document but it's not part of the document.
@@ -611,20 +715,53 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 				insert( 0, endOfDoc(), "\n" );
 			}
 		}
-		if ( mLineEnding == LineEnding::CRLF ) {
-			if ( text[text.size() - 1] == '\n' ) {
-				text[text.size() - 1] = '\r';
-				text += "\n";
+
+		switch ( mLineEnding ) {
+			case TextFormat::LineEnding::CRLF: {
+				if ( text[text.size() - 1] == '\n' ) {
+					text[text.size() - 1] = '\r';
+					text += "\n";
+				}
+				break;
 			}
-			stream.write( text.c_str(), text.size() );
-			MD5::update( md5Ctx, text.data(), text.size() );
-		} else if ( mLineEnding == LineEnding::CR ) {
-			text[text.size() - 1] = '\r';
-			stream.write( text.c_str(), text.size() );
-			MD5::update( md5Ctx, text.data(), text.size() );
-		} else {
-			stream.write( text.c_str(), text.size() );
-			MD5::update( md5Ctx, text.data(), text.size() );
+			case TextFormat::LineEnding::CR: {
+				text[text.size() - 1] = '\r';
+				break;
+			}
+			case TextFormat::LineEnding::LF: {
+				break;
+			}
+		}
+
+		switch ( mEncoding ) {
+			case TextFormat::Encoding::UTF16LE:
+			case TextFormat::Encoding::UTF16BE: {
+				std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+				std::u16string utf16String = convert.from_bytes( text );
+				if ( mEncoding == TextFormat::Encoding::UTF16BE ) {
+					for ( char16_t& c : utf16String )
+						c = ( ( c >> 8 ) & 0xFF ) | ( ( c << 8 ) & 0xFF00 );
+				}
+				stream.write( (const char*)utf16String.data(), utf16String.size() * 2 );
+				MD5::update( md5Ctx, (const char*)utf16String.data(), utf16String.size() * 2 );
+				break;
+			}
+			case TextFormat::Encoding::Latin1: {
+				std::string latin1;
+				String utf32( text ); // TODO: Do direct conversion
+				latin1.reserve( utf32.size() );
+				for ( size_t i = 0; i < utf32.size(); i++ )
+					if ( utf32[i] < 0xFF )
+						latin1.push_back( utf32[i] );
+				stream.write( latin1.c_str(), latin1.size() );
+				MD5::update( md5Ctx, latin1.data(), latin1.size() );
+				break;
+			}
+			case TextFormat::Encoding::UTF8: {
+				stream.write( text.c_str(), text.size() );
+				MD5::update( md5Ctx, text.data(), text.size() );
+				break;
+			}
 		}
 	}
 
@@ -2620,6 +2757,14 @@ void TextDocument::resetUndoRedo() {
 	cleanChangeId();
 	notifyCursorChanged();
 	notifySelectionChanged();
+}
+
+TextFormat::Encoding TextDocument::getEncoding() const {
+	return mEncoding;
+}
+
+void TextDocument::setEncoding( TextFormat::Encoding encoding ) {
+	mEncoding = encoding;
 }
 
 static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, const TextPosition& pos,

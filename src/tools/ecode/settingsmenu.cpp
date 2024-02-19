@@ -297,21 +297,21 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	UIPopUpMenu* lineEndingsMenu = UIPopUpMenu::New();
 	lineEndingsMenu
 		->addRadioButton( "Windows/DOS (CR/LF)",
-						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::CRLF )
+						  mApp->getConfig().doc.lineEndings == TextFormat::LineEnding::CRLF )
 		->setId( "CRLF" );
 	lineEndingsMenu
 		->addRadioButton( "Unix (LF)",
-						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::LF )
+						  mApp->getConfig().doc.lineEndings == TextFormat::LineEnding::LF )
 		->setId( "LF" );
 	lineEndingsMenu
 		->addRadioButton( "Macintosh (CR)",
-						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::CR )
+						  mApp->getConfig().doc.lineEndings == TextFormat::LineEnding::CR )
 		->setId( "CR" );
 	mDocMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsMenu )
 		->setId( "line_endings_cur" );
 	lineEndingsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		auto le =
-			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
+			TextFormat::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->getDocument().setLineEnding( le );
 			mApp->updateDocInfo( mSplitter->getCurEditor()->getDocument() );
@@ -417,21 +417,21 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	UIPopUpMenu* lineEndingsGlobalMenu = UIPopUpMenu::New();
 	lineEndingsGlobalMenu
 		->addRadioButton( "Windows/DOS (CR/LF)",
-						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::CRLF )
+						  mApp->getConfig().doc.lineEndings == TextFormat::LineEnding::CRLF )
 		->setId( "CRLF" );
 	lineEndingsGlobalMenu
 		->addRadioButton( "Unix (LF)",
-						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::LF )
+						  mApp->getConfig().doc.lineEndings == TextFormat::LineEnding::LF )
 		->setId( "LF" );
 	lineEndingsGlobalMenu
 		->addRadioButton( "Macintosh (CR)",
-						  mApp->getConfig().doc.lineEndings == TextDocument::LineEnding::CR )
+						  mApp->getConfig().doc.lineEndings == TextFormat::LineEnding::CR )
 		->setId( "CR" );
 	globalMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsGlobalMenu )
 		->setId( "line_endings" );
 	lineEndingsGlobalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		mApp->getConfig().doc.lineEndings =
-			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
+			TextFormat::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 	} );
 
 	UIPopUpMenu* bracketsMenu = UIPopUpMenu::New();
@@ -619,15 +619,15 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	UIPopUpMenu* lineEndingsProjectMenu = UIPopUpMenu::New();
 	lineEndingsProjectMenu
 		->addRadioButton( "Windows (CR/LF)", mApp->getProjectDocConfig().doc.lineEndings ==
-												 TextDocument::LineEnding::CRLF )
+												 TextFormat::LineEnding::CRLF )
 		->setId( "CRLF" );
 	lineEndingsProjectMenu
 		->addRadioButton( "Unix (LF)", mApp->getProjectDocConfig().doc.lineEndings ==
-										   TextDocument::LineEnding::LF )
+										   TextFormat::LineEnding::LF )
 		->setId( "LF" );
 	lineEndingsProjectMenu
 		->addRadioButton( "Macintosh (CR)", mApp->getProjectDocConfig().doc.lineEndings ==
-												TextDocument::LineEnding::CR )
+												TextFormat::LineEnding::CR )
 		->setId( "CR" );
 	mProjectDocMenu
 		->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsProjectMenu )
@@ -635,7 +635,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
 	lineEndingsProjectMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		mApp->getProjectDocConfig().doc.lineEndings =
-			TextDocument::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
+			TextFormat::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 	} );
 
 	mProjectDocMenu
@@ -1514,7 +1514,7 @@ void SettingsMenu::updateProjectSettingsMenu() {
 	mProjectDocMenu->find( "line_endings" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
-		->find( TextDocument::lineEndingToString( mApp->getProjectDocConfig().doc.lineEndings ) )
+		->find( TextFormat::lineEndingToString( mApp->getProjectDocConfig().doc.lineEndings ) )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
@@ -1590,12 +1590,12 @@ void SettingsMenu::updateDocumentMenu() {
 		->asType<UIMenuCheckBox>()
 		->setActive( doc.getForceNewLineAtEndOfFile() );
 
-	mDocMenu->find( "write_bom_cur" )->asType<UIMenuCheckBox>()->setActive( doc.getBOM() );
+	mDocMenu->find( "write_bom_cur" )->asType<UIMenuCheckBox>()->setActive( doc.isBOM() );
 
 	mDocMenu->find( "line_endings_cur" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
-		->find( TextDocument::lineEndingToString( doc.getLineEnding() ) )
+		->find( TextFormat::lineEndingToString( doc.getLineEnding() ) )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 

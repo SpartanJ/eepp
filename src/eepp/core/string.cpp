@@ -1063,6 +1063,42 @@ String::String( const String& str ) : mString( str.mString ) {}
 
 String::String( const String::View& utf32String ) : mString( utf32String ) {}
 
+String String::fromUtf16( const char* utf16String, const size_t& utf16StringSize,
+						  bool isBigEndian ) {
+	String string;
+	if ( nullptr == utf16String || utf16StringSize == 0 )
+		return string;
+
+	string.mString.reserve( utf16StringSize / 2 + 1 );
+
+	int skip = 0;
+	// Skip BOM
+	if ( utf16StringSize >= 2 ) {
+		if ( ( (char)0xFF == utf16String[0] && (char)0xFE == utf16String[1] ) ||
+			 ( (char)0xFE == utf16String[0] && (char)0xFF == utf16String[1] ) ) {
+			skip = 2;
+		}
+	}
+
+	for ( size_t i = skip; i < utf16StringSize; i += 2 ) {
+		Uint16 utf16 = isBigEndian ? ( utf16String[i] << 8 ) | ( utf16String[i + 1] & 0xFF )
+								   : ( utf16String[i + 1] << 8 ) | ( utf16String[i] & 0xFF );
+		Uint32 codepoint = 0;
+		Utf16::toUtf32( &utf16, &utf16 + 1, &codepoint );
+		string.mString.push_back( codepoint );
+	}
+
+	return string;
+}
+
+String String::fromLatin1( const char* str, const size_t& stringSize ) {
+	String::StringType utf32;
+	utf32.reserve( stringSize );
+	for ( size_t i = 0; i < stringSize; i++ )
+		utf32.push_back( static_cast<Uint8>( str[i] ) );
+	return String( utf32 );
+}
+
 String String::fromUtf8( const std::string& utf8String ) {
 	String::StringType utf32;
 

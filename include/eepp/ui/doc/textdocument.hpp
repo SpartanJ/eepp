@@ -14,6 +14,7 @@
 #include <eepp/system/time.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/textdocumentline.hpp>
+#include <eepp/ui/doc/textformat.hpp>
 #include <eepp/ui/doc/textposition.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
@@ -37,8 +38,6 @@ class EE_API TextDocument {
 	enum class UndoRedo { Undo, Redo };
 
 	enum class IndentType { IndentSpaces, IndentTabs };
-
-	enum class LineEnding { LF, CRLF, CR };
 
 	enum class FindReplaceType { Normal, LuaPattern };
 
@@ -74,25 +73,6 @@ class EE_API TextDocument {
 	typedef std::function<void()> DocumentCommand;
 	typedef std::function<void( Client* )> DocumentRefCommand;
 
-	static std::string lineEndingToString( const LineEnding& le ) {
-		switch ( le ) {
-			case LineEnding::CRLF:
-				return "CRLF";
-			case LineEnding::CR:
-				return "CR";
-			case LineEnding::LF:
-			default:
-				return "LF";
-		}
-	}
-
-	static LineEnding stringToLineEnding( const std::string& str ) {
-		if ( "CR" == str )
-			return LineEnding::CR;
-		if ( "CRLF" == str )
-			return LineEnding::CRLF;
-		return LineEnding::LF;
-	}
 
 	TextDocument( bool verbose = true );
 
@@ -435,9 +415,9 @@ class EE_API TextDocument {
 
 	void setAutoDetectIndentType( bool autodetect );
 
-	const LineEnding& getLineEnding() const;
+	const TextFormat::LineEnding& getLineEnding() const;
 
-	void setLineEnding( const LineEnding& lineEnding );
+	void setLineEnding( const TextFormat::LineEnding& lineEnding );
 
 	bool getForceNewLineAtEndOfFile() const;
 
@@ -453,7 +433,7 @@ class EE_API TextDocument {
 
 	void setBOM( bool active );
 
-	bool getBOM() const;
+	bool isBOM() const;
 
 	TextRange sanitizeRange( const TextRange& range ) const;
 
@@ -599,6 +579,10 @@ class EE_API TextDocument {
 
 	void resetUndoRedo();
 
+	TextFormat::Encoding getEncoding() const;
+
+	void setEncoding( TextFormat::Encoding encoding );
+
   protected:
 	friend class TextUndoStack;
 
@@ -614,7 +598,8 @@ class EE_API TextDocument {
 	TextRanges mSelection;
 	UnorderedSet<Client*> mClients;
 	Mutex mClientsMutex;
-	LineEnding mLineEnding{ LineEnding::LF };
+	TextFormat::Encoding mEncoding{ TextFormat::Encoding::UTF8 };
+	TextFormat::LineEnding mLineEnding{ TextFormat::LineEnding::LF };
 	std::atomic<bool> mLoading{ false };
 	std::atomic<bool> mRunningTransaction{ false };
 	std::atomic<bool> mLoadingAsync{ false };
