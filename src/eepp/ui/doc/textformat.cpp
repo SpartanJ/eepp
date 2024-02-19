@@ -4,6 +4,8 @@
 
 namespace EE { namespace UI { namespace Doc {
 
+static constexpr Uint32 NumBytesForAutodetect = 16000;
+
 // Adapted from plywood https://preshing.com/20200727/automatically-detecting-text-encodings-in-cpp/
 // MIT Licensed
 struct TextDecodeResult {
@@ -355,15 +357,15 @@ static Uint32 scanTextFile( TextFileStats& stats, IOStream& ins, const TextEncod
 			break;
 
 		TextDecodeResult decoded = encoding->decodePoint( std::string_view{ buf, read } );
-		if ( decoded.status == TextDecodeResult::Status::Truncated )
+		if ( decoded.status == TextDecodeResult::Status::Truncated && decoded.numBytes == 0 )
 			break; // EOF/error
-		eeASSERT( decoded.point >= 0 && decoded.numBytes > 0 );
 
 		numBytes += decoded.numBytes;
 		ins.seek( numBytes );
 
 		stats.numPoints++;
 		if ( decoded.status == TextDecodeResult::Status::Valid ) {
+			eeASSERT( decoded.point >= 0 && decoded.numBytes > 0 );
 			stats.numValidPoints++;
 			stats.totalPointValue += decoded.point;
 			if ( decoded.point < 32 ) {
@@ -409,7 +411,7 @@ TextFormat guessFileEncoding( IOStream& ins ) {
 
 	// Try UTF8 first:
 	Uint32 numBytesRead =
-		scanTextFile( stats8, ins, TextEncoding::get<UTF8>(), TextFormat::NumBytesForAutodetect );
+		scanTextFile( stats8, ins, TextEncoding::get<UTF8>(), NumBytesForAutodetect );
 	if ( numBytesRead == 0 )
 		return { TextFormat::Encoding::UTF8, stats8.getNewLineType(), false };
 
@@ -434,13 +436,11 @@ TextFormat guessFileEncoding( IOStream& ins ) {
 
 	// Examine both UTF16 endianness:
 	TextFileStats stats16_le;
-	scanTextFile( stats16_le, ins, TextEncoding::get<UTF16_LE>(),
-				  TextFormat::NumBytesForAutodetect );
+	scanTextFile( stats16_le, ins, TextEncoding::get<UTF16_LE>(), NumBytesForAutodetect );
 	ins.seek( 0 );
 
 	TextFileStats stats16_be;
-	scanTextFile( stats16_be, ins, TextEncoding::get<UTF16_BE>(),
-				  TextFormat::NumBytesForAutodetect );
+	scanTextFile( stats16_be, ins, TextEncoding::get<UTF16_BE>(), NumBytesForAutodetect );
 	ins.seek( 0 );
 
 	// Choose the better UTF16 candidate:
@@ -490,14 +490,14 @@ TextFormat TextFormat::autodetect( IOStream& ins ) {
 		ins.seek( start );
 	}
 	if ( !tff.bom ) {
-		return guessFileEncoding( ins );
+		tff = guessFileEncoding( ins );
 	} else {
 		// Detect LF or CRLF
 		TextFileStats stats;
 		scanTextFile( stats, ins, encodingFromEnum( tff.encoding ), NumBytesForAutodetect );
 		tff.newLine = stats.getNewLineType();
-		return tff;
 	}
+	return tff;
 }
 
 std::string TextFormat::lineEndingToString( const LineEnding& le ) {

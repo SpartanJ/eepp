@@ -12,8 +12,6 @@ namespace EE { namespace UI { namespace Doc {
 
 class EE_API TextFormat {
   public:
-	static constexpr Uint32 NumBytesForAutodetect = 4000;
-
 	enum class Encoding : String::HashType {
 		UTF8 = String::hash( "UTF-8" ),
 		UTF16LE = String::hash( "UTF-16 LE" ),

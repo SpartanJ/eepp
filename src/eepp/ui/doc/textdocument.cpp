@@ -254,8 +254,11 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 							mLineEnding = TextFormat::LineEnding::CR;
 						}
 
-						mMightBeBinary = lineBuffer.find_first_of( (String::StringBaseType)'\0' ) !=
-										 String::InvalidPos;
+						static constexpr auto BINARY_STR = "\0\0\0\0"sv;
+						mMightBeBinary =
+							std::search( lineBuffer.begin(), lineBuffer.end(), BINARY_STR.data(),
+										 BINARY_STR.data() + BINARY_STR.size() ) !=
+							lineBuffer.end();
 					}
 
 					if ( mLineEnding == TextFormat::LineEnding::CRLF && lineBufferSize > 1 &&
