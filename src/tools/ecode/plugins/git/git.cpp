@@ -957,7 +957,7 @@ Git::Result Git::stashPush( std::vector<std::string> files, const std::string& n
 	if ( keepIndex )
 		args += " --keep-index";
 	if ( !name.empty() )
-		args += " --message " + name;
+		args += " --message \"" + name + "\"";
 	return gitSimple(
 		String::format( "stash push --include-untracked %s -- %s", args, asList( files ) ),
 		projectDir );
