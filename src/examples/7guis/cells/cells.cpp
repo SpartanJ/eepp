@@ -26,12 +26,20 @@ EE_MAIN_FUNC int main( int, char** ) {
 	table->setColumnsWidth( PixelDensity::dpToPx( 80 ) );
 	table->setRowHeaderWidth( PixelDensity::dpToPx( 32 ) );
 	table->setSelectionType( UITableView::SelectionType::Cell );
+	table->setRowSearchByName( false );
 	table->setEditable( true );
 	table->setEditTriggers( UIAbstractView::EditTrigger::DoubleClicked |
 							UIAbstractTableView::EditTrigger::EditKeyPressed );
 	table->setEditShortcuts( { { KEY_F2 }, { KEY_RETURN }, { KEY_KP_ENTER } } );
 	table->setSelection( model->index( 0, 0 ) );
 	table->setFocus();
+	table->on( Event::KeyDown, [table, model]( const Event* event ) {
+		if ( table->getSelection().first().isValid() &&
+			 event->asKeyEvent()->getKeyCode() == KEY_DELETE ) {
+			model->cell( table->getSelection().first() ).clear();
+			model->invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+		}
+	} );
 	table->onCreateEditingDelegate = [table,
 									  model]( const ModelIndex& index ) -> ModelEditingDelegate* {
 		auto ret = StringModelEditingDelegate::New();

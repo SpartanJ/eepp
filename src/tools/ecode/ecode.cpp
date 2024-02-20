@@ -1057,8 +1057,7 @@ void App::setUIScaleFactor() {
 		i18n( "set_ui_scale_factor", "Set the UI scale factor (pixel density):\nMinimum value is "
 									 "1, and maximum 6. Requires restart." ) );
 	msgBox->setTitle( mWindowTitle );
-	msgBox->getTextInput()->setText(
-		String::numberClean( String::format( "%.2f", mConfig.windowState.pixelDensity ) ) );
+	msgBox->getTextInput()->setText( String::fromFloat( mConfig.windowState.pixelDensity ) );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {

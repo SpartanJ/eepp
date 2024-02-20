@@ -54,6 +54,8 @@ void SheetFunction::initOpTable() {
 							 tot += val;
 						 return vals.empty() ? 0 : tot / vals.size();
 					 } } );
+	opTable.insert( { String::hash( "COUNT" ),
+					  []( const std::vector<double>& vals ) { return vals.size(); } } );
 }
 
 std::vector<double> SheetFunction::evalList( const std::vector<std::shared_ptr<Formula>>& args,

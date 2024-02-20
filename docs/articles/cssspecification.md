@@ -2511,7 +2511,7 @@ Read [length](https://developer.mozilla.org/en-US/docs/Web/CSS/length) documenta
 
 * Supported lenghts: `em`, `rem`, `pt`, `pc`, `in`, `cm`, `mm`, `vw`, `vh`, `vmin`, `vmax`.
 
-* Also adds: `dp` as [Device-independent pixel](https://en.wikipedia.org/wiki/Device-independent_pixel). Plus `dprd` (dp rounded down) and `dpru` (dp rounded up).
+* Also adds: `dp` as [Device-independent pixel](https://en.wikipedia.org/wiki/Device-independent_pixel). Plus `dpr` (dp rounded), `dprd` (dp rounded down) and `dpru` (dp rounded up).
 
 ---
 

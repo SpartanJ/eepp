@@ -1391,13 +1391,13 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::Height:
 			return String::fromFloat( getSize().getHeight(), "dp" );
 		case PropertyId::MarginLeft:
-			return String::format( "%.2fdp", getLayoutMargin().Left );
+			return String::fromFloat( getLayoutMargin().Left, "dp" );
 		case PropertyId::MarginTop:
-			return String::format( "%.2fdp", getLayoutMargin().Top );
+			return String::fromFloat( getLayoutMargin().Top, "dp" );
 		case PropertyId::MarginRight:
-			return String::format( "%.2fdp", getLayoutMargin().Right );
+			return String::fromFloat( getLayoutMargin().Right, "dp" );
 		case PropertyId::MarginBottom:
-			return String::format( "%.2fdp", getLayoutMargin().Bottom );
+			return String::fromFloat( getLayoutMargin().Bottom, "dp" );
 		case PropertyId::PaddingLeft:
 			return String::fromFloat( getPadding().Left, "dp" );
 		case PropertyId::PaddingTop:
@@ -1495,21 +1495,27 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::BorderBottomWidth:
 			return String::fromFloat( setBorderEnabled( true )->getBorders().bottom.width, "px" );
 		case PropertyId::BorderTopLeftRadius:
-			return String::format( "%.2fpx %.2fpx",
-								   setBorderEnabled( true )->getBorders().radius.topLeft.x,
-								   getBorder()->getBorders().radius.topLeft.y );
+			return String::format(
+				"%s %s",
+				String::fromFloat( setBorderEnabled( true )->getBorders().radius.topLeft.x, "px" ),
+				String::fromFloat( getBorder()->getBorders().radius.topLeft.y, "px" ) );
 		case PropertyId::BorderTopRightRadius:
-			return String::format( "%.2fpx %.2fpx",
-								   setBorderEnabled( true )->getBorders().radius.topRight.x,
-								   getBorder()->getBorders().radius.topRight.y );
+			return String::format(
+				"%s %s",
+				String::fromFloat( setBorderEnabled( true )->getBorders().radius.topRight.x, "px" ),
+				String::fromFloat( getBorder()->getBorders().radius.topRight.y, "px" ) );
 		case PropertyId::BorderBottomLeftRadius:
-			return String::format( "%.2fpx %.2fpx",
-								   setBorderEnabled( true )->getBorders().radius.bottomLeft.x,
-								   getBorder()->getBorders().radius.bottomLeft.y );
+			return String::format(
+				"%s %s",
+				String::fromFloat( setBorderEnabled( true )->getBorders().radius.bottomLeft.x,
+								   "px" ),
+				String::fromFloat( getBorder()->getBorders().radius.bottomLeft.y, "px" ) );
 		case PropertyId::BorderBottomRightRadius:
-			return String::format( "%.2fpx %.2fpx",
-								   setBorderEnabled( true )->getBorders().radius.bottomRight.x,
-								   getBorder()->getBorders().radius.bottomRight.y );
+			return String::format(
+				"%s %s",
+				String::fromFloat( setBorderEnabled( true )->getBorders().radius.bottomRight.x,
+								   "px" ),
+				String::fromFloat( getBorder()->getBorders().radius.bottomRight.y, "px" ) );
 		case PropertyId::BorderSmooth:
 			return mBorder ? ( mBorder->isSmooth() ? "true" : "false" ) : "false";
 		case PropertyId::BackgroundSmooth:
@@ -1968,7 +1974,7 @@ std::string UIWidget::getLayoutWidthPolicyString() const {
 		return "match_parent";
 	else if ( rules == SizePolicy::WrapContent )
 		return "wrap_content";
-	return String::toString( getSize().getHeight() ) + "dp";
+	return String::fromFloat( getSize().getHeight(), "dp" );
 }
 
 std::string UIWidget::getLayoutHeightPolicyString() const {
@@ -1978,7 +1984,7 @@ std::string UIWidget::getLayoutHeightPolicyString() const {
 		return "match_parent";
 	else if ( rules == SizePolicy::WrapContent )
 		return "wrap_content";
-	return String::toString( getSize().getHeight() ) + "dp";
+	return String::fromFloat( getSize().getHeight(), "dp" );
 }
 
 static std::string getGravityStringFromUint( const Uint32& gravity ) {

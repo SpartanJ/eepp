@@ -232,11 +232,11 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%.2fpx", getFontSize() );
+			return String::fromFloat( getFontSize(), "px" );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyleConfig().getFontStyle() );
 		case PropertyId::TextStrokeWidth:
-			return String::toString( PixelDensity::dpToPx( getFontOutlineThickness() ) );
+			return String::fromFloat( PixelDensity::dpToPx( getFontOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
 			return getFontOutlineColor().toHexString();
 		default:

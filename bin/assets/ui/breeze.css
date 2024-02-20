@@ -225,7 +225,7 @@ CheckBox:hover CheckBox::inactive {
 CheckBox::active {
 	border-color: var(--primary);
 	background-image: rectangle(solid, var(--primary));
-	background-size: 70% 70%;
+	background-size: 8dpru 8dpru;
 	background-position: center;
 }
 

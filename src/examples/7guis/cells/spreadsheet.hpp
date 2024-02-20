@@ -32,6 +32,8 @@ class Observable {
 
 	void notifyObservers();
 
+	bool hasObserver( Observer* observer ) { return mObservers.count( observer ); }
+
   protected:
 	std::unordered_set<Observer*> mObservers;
 	std::atomic<bool> mChanged{ false };
@@ -46,7 +48,7 @@ class Cell : public Observer, public Observable {
   public:
 	Cell( std::string val, Spreadsheet& sheet );
 
-	virtual ~Cell() {}
+	virtual ~Cell();
 
 	void setData( std::string&& data );
 
@@ -57,6 +59,8 @@ class Cell : public Observer, public Observable {
 	const std::string& getDisplayValue() const;
 
 	void calc();
+
+	void clear();
 
 	void update();
 
@@ -74,6 +78,10 @@ class Cell : public Observer, public Observable {
 	bool formulaContainsErrors{ false };
 
 	void parseFormula( const std::string& formulaStr );
+
+	bool subscribeToObservers();
+
+	void unsubscribeFromObservers();
 };
 
 class Spreadsheet : public Model {

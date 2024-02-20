@@ -16,20 +16,41 @@ void Cell::parseFormula( const std::string& formulaStr ) {
 
 Cell::Cell( std::string val, Spreadsheet& sheet ) : value( std::move( val ) ), sheet( sheet ) {}
 
-void Cell::setData( std::string&& data ) {
+Cell::~Cell() {}
+
+bool Cell::subscribeToObservers() {
+	if ( formula ) {
+		for ( const auto& ref : formula->getReferences( sheet ) ) {
+			if ( this == ref || hasObserver( ref ) ) {
+				unsubscribeFromObservers();
+				return false;
+			}
+			ref->addObserver( this );
+		}
+	}
+	return true;
+}
+
+void Cell::unsubscribeFromObservers() {
 	if ( formula ) {
 		for ( const auto& ref : formula->getReferences( sheet ) )
 			ref->deleteObserver( this );
 	}
+}
+
+void Cell::setData( std::string&& data ) {
+	unsubscribeFromObservers();
 	value = std::move( data );
 	parseFormula( value );
 	calc();
-	if ( formula ) {
-		for ( const auto& ref : formula->getReferences( sheet ) )
-			ref->addObserver( this );
+	bool circular = !subscribeToObservers();
+	if ( circular ) {
+		displayValue = "!CIRCULAR";
+		formulaContainsErrors = true;
+	} else {
+		setChanged();
+		notifyObservers();
 	}
-	setChanged();
-	notifyObservers();
 }
 
 std::optional<double> Cell::eval() const {
@@ -70,6 +91,12 @@ void Cell::calc() {
 
 	if ( oldDisplayValue != displayValue )
 		setChanged();
+}
+
+void Cell::clear() {
+	value = displayValue = "";
+	formula = {};
+	formulaContainsErrors = false;
 }
 
 void Cell::update() {

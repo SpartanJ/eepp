@@ -2283,11 +2283,11 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%.2fpx", getFontSize() );
+			return String::fromFloat( getFontSize(), "px" );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
-			return String::toString( PixelDensity::dpToPx( getOutlineThickness() ) );
+			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextSelection:

@@ -477,7 +477,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::HintFontStyle:
 			return Text::styleFlagToString( getHintFontStyle() );
 		case PropertyId::HintStrokeWidth:
-			return String::toString( PixelDensity::dpToPx( getHintOutlineThickness() ) );
+			return String::fromFloat( PixelDensity::dpToPx( getHintOutlineThickness() ), "px" );
 		case PropertyId::HintStrokeColor:
 			return getHintOutlineColor().toHexString();
 		default:

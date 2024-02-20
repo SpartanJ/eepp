@@ -874,7 +874,7 @@ std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* pr
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::RowHeight:
-			return String::format( "%.2fpx", getRowHeight() );
+			return String::fromFloat( getRowHeight(), "px" );
 		default:
 			return UIAbstractView::getPropertyString( propertyDef, propertyIndex );
 	}

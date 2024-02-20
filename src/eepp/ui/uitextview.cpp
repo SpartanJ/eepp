@@ -803,7 +803,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
-			return String::toString( PixelDensity::dpToPx( getOutlineThickness() ) );
+			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::Wordwrap:

@@ -28,6 +28,7 @@ enum UnitHashes : String::HashType {
 	Rem = String::hash( "rem" ),
 	Dprd = String::hash( "dprd" ),
 	Dpru = String::hash( "dpru" ),
+	Dpr = String::hash( "dpr" ),
 };
 
 enum PercentagePositions : String::HashType {
@@ -112,6 +113,8 @@ StyleSheetLength::Unit StyleSheetLength::unitFromString( std::string unitStr ) {
 			return Unit::Dprd;
 		case UnitHashes::Dpru:
 			return Unit::Dpru;
+		case UnitHashes::Dpr:
+			return Unit::Dpr;
 	}
 	return Unit::Px;
 }
@@ -156,6 +159,8 @@ std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit )
 			return "dprd";
 		case Unit::Dpru:
 			return "dpru";
+		case Unit::Dpr:
+			return "dpr";
 	}
 	return "px";
 }
@@ -197,11 +202,13 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 		case Unit::Dp:
 			ret = PixelDensity::dpToPx( mValue );
 			break;
+		case Unit::Dpr:
+			return round( PixelDensity::dpToPx( mValue ) );
 		case Unit::Dprd:
-			ret = roundDown( PixelDensity::dpToPx( mValue ) );
+			ret = Math::roundDown( PixelDensity::dpToPx( mValue ) );
 			break;
 		case Unit::Dpru:
-			ret = roundUp( PixelDensity::dpToPx( mValue ) );
+			ret = Math::roundUp( PixelDensity::dpToPx( mValue ) );
 			break;
 		case Unit::Em:
 			ret = Math::round( mValue * elFontSize );
@@ -300,12 +307,10 @@ StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Flo
 }
 
 std::string StyleSheetLength::toString() const {
-	std::string res;
-	if ( (Int64)mValue == mValue )
-		res = String::format( "%lld%s", (Int64)mValue, unitToString( mUnit ).c_str() );
-	else
-		res = String::format( "%.2f%s", mValue, unitToString( mUnit ).c_str() );
+	std::string res( String::format( "%.2f", mValue ) );
 	String::replace( res, ",", "." );
+	String::numberCleanInPlace( res );
+	res += unitToString( mUnit );
 	return res;
 }
 
