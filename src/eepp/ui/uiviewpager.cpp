@@ -293,11 +293,11 @@ std::string UIViewPager::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::Orientation:
 			return getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		case PropertyId::DragResistance:
-			return String::format( "%.2f", mDragResistance );
+			return String::fromFloat( mDragResistance );
 		case PropertyId::ChangePagePercent:
-			return String::format( "%.2f", mChangePagePercent );
+			return String::fromFloat( mChangePagePercent );
 		case PropertyId::MaxEdgeResistance:
-			return String::format( "%.2f", mMaxEdgeResistance );
+			return String::fromFloat( mMaxEdgeResistance );
 		case PropertyId::PageTransitionDuration:
 			return mPageTransitionDuration.toString();
 		case PropertyId::TimingFunction:

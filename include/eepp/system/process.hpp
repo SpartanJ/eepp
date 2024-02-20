@@ -3,8 +3,8 @@
 
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
+#include <eepp/system/time.hpp>
 #include <functional>
-#include <map>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -49,7 +49,7 @@ class EE_API Process {
 	/** @brief Create a process.
 	 ** @param command Command line to execute for this process.
 	 ** @param options A bit field of Options's to pass. */
-	Process( const std::string& command, const Uint32& options = getDefaultOptions(),
+	Process( const std::string& command, Uint32 options = getDefaultOptions(),
 			 const std::unordered_map<std::string, std::string>& environment = {},
 			 const std::string& workingDirectory = "", const size_t& bufferSize = 132072 );
 
@@ -59,7 +59,7 @@ class EE_API Process {
 	 ** @param command Command line to execute for this process.
 	 ** @param options A bit field of Options's to pass.
 	 ** @return On success true is returned. */
-	bool create( const std::string& command, const Uint32& options = getDefaultOptions(),
+	bool create( const std::string& command, Uint32 options = getDefaultOptions(),
 				 const std::unordered_map<std::string, std::string>& environment = {},
 				 const std::string& workingDirectory = "" );
 
@@ -69,7 +69,17 @@ class EE_API Process {
 	 ** @param options A bit field of Options's to pass.
 	 ** @return On success true is returned. */
 	bool create( const std::string& command, const std::string& args,
-				 const Uint32& options = getDefaultOptions(),
+				 Uint32 options = getDefaultOptions(),
+				 const std::unordered_map<std::string, std::string>& environment = {},
+				 const std::string& workingDirectory = "" );
+
+	/** @brief Create a process.
+	 ** @param command Command line to execute for this process.
+	 ** @param args Command line arguments to execute for this process.
+	 ** @param options A bit field of Options's to pass.
+	 ** @return On success true is returned. */
+	bool create( const std::string& command, const std::vector<std::string>& args,
+				 Uint32 options = getDefaultOptions(),
 				 const std::unordered_map<std::string, std::string>& environment = {},
 				 const std::string& workingDirectory = "" );
 
@@ -84,7 +94,7 @@ class EE_API Process {
 	 ** The only safe way to read from the standard output of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
 	 ** conjuction with this method. */
-	size_t readAllStdOut( std::string& buffer );
+	size_t readAllStdOut( std::string& buffer, Time timeout = Time::Zero );
 
 	/** @brief Read the standard output from the child process.
 	 ** @param buffer The buffer to read into.
@@ -115,7 +125,7 @@ class EE_API Process {
 	 ** The only safe way to read from the standard error of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
 	 ** conjuction with this method. */
-	size_t readAllStdErr( std::string& buffer );
+	size_t readAllStdErr( std::string& buffer, Time timeout = Time::Zero );
 
 	/** @brief Read the standard error from the child process.
 	 ** @param buffer The buffer to read into.
@@ -148,6 +158,11 @@ class EE_API Process {
 	 ** @param buffer The buffer to write into.
 	 ** @return The number of bytes actually written into buffer. */
 	size_t write( const std::string& buffer );
+
+	/** @brief Write the standard output from the child process.
+	 ** @param buffer The buffer to write into.
+	 ** @return The number of bytes actually written into buffer. */
+	size_t write( const std::string_view& buffer );
 
 	/** @brief Wait for a process to finish execution.
 	 ** @param returnCodeOut The return code of the returned process (can be nullptr).
@@ -216,7 +231,7 @@ class EE_API Process {
 	ReadFn mReadStdOutFn;
 	ReadFn mReadStdErrFn;
 
-	size_t readAll( std::string& buffer, bool readErr );
+	size_t readAll( std::string& buffer, bool readErr, Time timeout = Time::Zero );
 };
 
 }} // namespace EE::System

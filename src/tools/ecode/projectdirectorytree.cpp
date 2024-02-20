@@ -15,12 +15,14 @@ ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 	mRunning( false ),
 	mIsReady( false ),
 	mIgnoreHidden( true ),
+	mClosing( false ),
 	mIgnoreMatcher( path ),
 	mApp( app ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
 
 ProjectDirectoryTree::~ProjectDirectoryTree() {
+	mClosing = true;
 	if ( mApp->getPluginManager() )
 		mApp->getPluginManager()->unsubscribeMessages( "ProjectDirectoryTree" );
 	Lock rl( mMatchingMutex );
@@ -28,6 +30,7 @@ ProjectDirectoryTree::~ProjectDirectoryTree() {
 		mRunning = false;
 		Lock l( mFilesMutex );
 	}
+	{ Lock l( mDoneMutex ); }
 }
 
 void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& scanComplete,
@@ -35,7 +38,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 								 const bool& ignoreHidden ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	mPool->run(
-		[&, acceptedPatterns, ignoreHidden] {
+		[this, acceptedPatterns, ignoreHidden] {
 #endif
 			Lock l( mFilesMutex );
 			mRunning = true;
@@ -76,7 +79,6 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 								   mAllowedMatcher.get() );
 			}
 			mIsReady = true;
-			mRunning = false;
 			mApp->getPluginManager()->subscribeMessages(
 				"ProjectDirectoryTree", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 					return processMessage( msg );
@@ -88,8 +90,11 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		},
 		[scanComplete, this]( const auto& ) {
-			if ( scanComplete )
+			if ( !mClosing && scanComplete ) {
+				Lock l( mDoneMutex );
 				scanComplete( *this );
+			}
+			mRunning = false;
 		} );
 #endif
 }
@@ -156,12 +161,12 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::matchTree( const std::strin
 
 void ProjectDirectoryTree::asyncFuzzyMatchTree( const std::string& match, const size_t& max,
 												ProjectDirectoryTree::MatchResultCb res ) const {
-	mPool->run( [&, match, max, res]() { res( fuzzyMatchTree( match, max ) ); } );
+	mPool->run( [this, match, max, res]() { res( fuzzyMatchTree( match, max ) ); } );
 }
 
 void ProjectDirectoryTree::asyncMatchTree( const std::string& match, const size_t& max,
 										   ProjectDirectoryTree::MatchResultCb res ) const {
-	mPool->run( [&, match, max, res]() { res( matchTree( match, max ) ); } );
+	mPool->run( [this, match, max, res]() { res( matchTree( match, max ) ); } );
 }
 
 std::shared_ptr<FileListModel>
@@ -218,10 +223,12 @@ ProjectDirectoryTree::emptyModel( const std::vector<CommandInfo>& prependCommand
 }
 
 size_t ProjectDirectoryTree::getFilesCount() const {
+	Lock l( mFilesMutex );
 	return mFiles.size();
 }
 
 const std::vector<std::string>& ProjectDirectoryTree::getFiles() const {
+	Lock l( mFilesMutex );
 	return mFiles;
 }
 
@@ -313,8 +320,10 @@ void ProjectDirectoryTree::onChange( const ProjectDirectoryTree::Action& action,
 }
 
 void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
+	if ( mIgnoreHidden && file.isHidden() )
+		return;
 	IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( file.getFilepath() ) );
-	if ( !matcher.foundMatch() || !matcher.match( file.getDirectoryPath(), file.getFilepath() ) ) {
+	if ( !matcher.foundMatch() || !matcher.match( file ) ) {
 		bool foundPattern = mAcceptedPatterns.empty();
 		for ( auto& pattern : mAcceptedPatterns ) {
 			if ( pattern.matches( file.getFilepath() ) ) {
@@ -324,7 +333,8 @@ void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
 		}
 		if ( foundPattern ) {
 			Lock l( mFilesMutex );
-			auto exists = std::find( mFiles.begin(), mFiles.end(), file.getFilepath() ) != mFiles.end();
+			auto exists =
+				std::find( mFiles.begin(), mFiles.end(), file.getFilepath() ) != mFiles.end();
 			if ( !exists ) {
 				mFiles.emplace_back( file.getFilepath() );
 				mNames.emplace_back( file.getFileName() );
@@ -336,6 +346,8 @@ void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
 void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 	if ( file.isDirectory() ) {
 		if ( !String::startsWith( file.getFilepath(), mPath ) || isDirInTree( file.getFilepath() ) )
+			return;
+		if ( mIgnoreHidden && file.isHidden() )
 			return;
 		Lock l( mFilesMutex );
 		std::vector<std::string> files;
@@ -497,9 +509,9 @@ PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& m
 	for ( size_t i = 0; i < rowCount; ++i ) {
 		Variant dataName = model->data( model->index( i, 0 ) );
 		Variant dataPath = model->data( model->index( i, 1 ) );
-		if ( dataName.is( Variant::Type::cstr ) && dataPath.is( Variant::Type::cstr ) ) {
-			std::string fileName( dataName.asCStr() );
-			std::string filePath( dataPath.asCStr() );
+		if ( dataName.isString() && dataPath.isString() ) {
+			std::string fileName( dataName.toString() );
+			std::string filePath( dataPath.toString() );
 			if ( std::find( expectedNames.begin(), expectedNames.end(), fileName ) !=
 				 expectedNames.end() ) {
 				std::string closestDataPath;

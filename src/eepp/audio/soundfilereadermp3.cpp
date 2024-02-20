@@ -1,7 +1,5 @@
 #include <eepp/audio/soundfilereadermp3.hpp>
 #define DR_MP3_IMPLEMENTATION
-#include <algorithm>
-#include <cctype>
 #include <dr_libs/dr_mp3.h>
 #include <eepp/audio/mp3info.hpp>
 #include <eepp/core/core.hpp>

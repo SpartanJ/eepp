@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <eepp/ui/models/modelindex.hpp>
 #include <functional>
-#include <unordered_set>
 
 namespace EE { namespace UI { namespace Abstract {
 class UIAbstractView;

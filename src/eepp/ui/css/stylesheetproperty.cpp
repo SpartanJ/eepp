@@ -2,6 +2,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>

@@ -33,9 +33,8 @@ class ClockImpl {
 	LARGE_INTEGER mStartTime;
 	LARGE_INTEGER mFrequency;
 	unsigned long mTimerMask;
-
-	bool isPO2( Uint32 n );
 };
+
 }}} // namespace EE::System::Platform
 
 #endif

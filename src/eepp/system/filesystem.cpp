@@ -215,8 +215,13 @@ bool FileSystem::fileHide( const std::string& filepath ) {
 }
 
 Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	struct _stat st;
+	int res = _wstat( String( filepath ).toWideString().c_str(), &st );
+#else
 	struct stat st;
 	int res = stat( filepath.c_str(), &st );
+#endif
 
 	if ( 0 == res )
 		return (Uint32)st.st_mtime;
@@ -566,8 +571,13 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 }
 
 Uint64 FileSystem::fileSize( const std::string& Filepath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	struct _stat st;
+	int res = _wstat( String( Filepath ).toWideString().c_str(), &st );
+#else
 	struct stat st;
 	int res = stat( Filepath.c_str(), &st );
+#endif
 
 	if ( 0 == res )
 		return st.st_size;
@@ -576,8 +586,13 @@ Uint64 FileSystem::fileSize( const std::string& Filepath ) {
 }
 
 bool FileSystem::fileExists( const std::string& Filepath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	struct _stat st;
+	return ( _wstat( String( Filepath ).toWideString().c_str(), &st ) == 0 );
+#else
 	struct stat st;
 	return ( stat( Filepath.c_str(), &st ) == 0 );
+#endif
 }
 
 std::string FileSystem::sizeToString( const Int64& Size ) {

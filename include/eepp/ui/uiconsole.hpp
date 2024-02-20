@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <eepp/graphics/text.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
@@ -107,7 +108,10 @@ class EE_API UIConsole : public UIWidget,
 	void pushText( const String& str );
 
 	/** Add formated Text to console */
-	void pushText( const char* format, ... );
+	template <typename... Args> void pushText( std::string_view format, Args&&... args ) {
+		pushText( String::format(
+			format, FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... ) );
+	}
 
 	Float getLineHeight() const;
 
@@ -136,6 +140,10 @@ class EE_API UIConsole : public UIWidget,
 	size_t getMenuIconSize() const;
 
 	void setMenuIconSize( size_t menuIconSize );
+
+	KeyBindings& getKeyBindings();
+
+	TextDocument& getDoc();
 
   protected:
 	struct TextCache {
@@ -299,7 +307,7 @@ class EE_API UIConsole : public UIWidget,
 	/** Add command to grep the console log */
 	void cmdGrep( const std::vector<String>& params );
 
-	void privPushText( const String& str );
+	void privPushText( String&& str );
 
 	void writeLog( const std::string_view& text );
 
@@ -319,8 +327,7 @@ class EE_API UIConsole : public UIWidget,
 
 	TextPosition getPositionOnScreen( Vector2f position );
 
-	UIMenuItem* menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-						 const String& translateString, const std::string& icon,
+	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
 	Drawable* findIcon( const std::string& name );

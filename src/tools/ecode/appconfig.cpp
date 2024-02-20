@@ -1,6 +1,7 @@
 #include "appconfig.hpp"
 #include "ecode.hpp"
 #include "plugins/pluginmanager.hpp"
+#include "version.hpp"
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
@@ -77,6 +78,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.displayIndex = iniState.getValueI( "window", "display_index", 0 );
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
+	windowState.lastRunVersion = iniState.getValueU( "editor", "last_run_version", 0 );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
@@ -97,6 +99,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValue( "ui", "terminal_font", "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 	ui.fallbackFont = ini.getValue( "ui", "fallback_font", "fonts/DroidSansFallbackFull.ttf" );
 	ui.theme = ini.getValue( "ui", "theme" );
+	ui.language = ini.getValue( "ui", "language" );
 	ui.colorScheme = ini.getValue( "ui", "ui_color_scheme", "dark" ) == "light"
 						 ? ColorSchemePreference::Light
 						 : ColorSchemePreference::Dark;
@@ -108,12 +111,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
 	doc.lineEndings =
-		TextDocument::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
+		TextFormat::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
 	// Migrate old data
 	if ( ini.keyValueExists( "document", "windows_line_endings" ) &&
 		 !ini.keyValueExists( "document", "line_endings" ) &&
 		 ini.getValueB( "document", "windows_line_endings" ) == true ) {
-		doc.lineEndings = TextDocument::LineEnding::CRLF;
+		doc.lineEndings = TextFormat::LineEnding::CRLF;
 	}
 
 	doc.tabWidth = eemax( 2, ini.getValueI( "document", "tab_width", 4 ) );
@@ -156,15 +159,17 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
-		ini.getValueB( "workspace", "check_for_updates_at_startup", false );
+		ini.getValueB( "workspace", "check_for_updates_at_startup", true );
 
 	std::map<std::string, bool> pluginsEnabled;
 	const auto& creators = pluginManager->getDefinitions();
-	for ( const auto& creator : creators )
+	for ( const auto& creator : creators ) {
 		pluginsEnabled[creator.first] =
 			ini.getValueB( "plugins", creator.first,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
-							   "autoformatter" == creator.first || "lspclient" == creator.first );
+							   "autoformatter" == creator.first || "lspclient" == creator.first ||
+							   "git" == creator.first );
+	}
 	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 
 	languagesExtensions.priorities = ini.getKeyMap( "languages_extensions" );
@@ -208,6 +213,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValue( "files", "recentfiles", String::join( urlEncode( recentFiles ), ';' ) );
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
+	iniState.setValueU( "editor", "last_run_version", ecode::Version::getVersionNum() );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
 	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );
@@ -226,6 +232,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
 	ini.setValue( "ui", "terminal_font", ui.terminalFont );
 	ini.setValue( "ui", "theme", ui.theme );
+	ini.setValue( "ui", "language", ui.language );
 	ini.setValue( "ui", "fallback_font", ui.fallbackFont );
 	ini.setValue(
 		"ui", "ui_color_scheme",
@@ -236,7 +243,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", doc.indentWidth );
 	ini.setValueB( "document", "indent_spaces", doc.indentSpaces );
-	ini.setValue( "document", "line_endings", TextDocument::lineEndingToString( doc.lineEndings ) );
+	ini.setValue( "document", "line_endings", TextFormat::lineEndingToString( doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", doc.tabWidth );
 	ini.setValueI( "document", "line_breaking_column", doc.lineBreakingColumn );
 	ini.setValue( "editor", "auto_close_brackets", editor.autoCloseBrackets );
@@ -377,7 +384,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	cfg.setValueI( "document", "indent_width", docConfig.doc.indentWidth );
 	cfg.setValueB( "document", "indent_spaces", docConfig.doc.indentSpaces );
 	cfg.setValue( "document", "line_endings",
-				  TextDocument::lineEndingToString( docConfig.doc.lineEndings ) );
+				  TextFormat::lineEndingToString( docConfig.doc.lineEndings ) );
 	cfg.setValueI( "document", "tab_width", docConfig.doc.tabWidth );
 	cfg.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
 	cfg.setValue( "build", "build_name", buildConfig.buildName );
@@ -517,7 +524,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	docConfig.doc.indentWidth = cfg.getValueI( "document", "indent_width", 4 );
 	docConfig.doc.indentSpaces = cfg.getValueB( "document", "indent_spaces", false );
 	docConfig.doc.lineEndings =
-		TextDocument::stringToLineEnding( cfg.getValue( "document", "line_endings", "LF" ) );
+		TextFormat::stringToLineEnding( cfg.getValue( "document", "line_endings", "LF" ) );
 
 	docConfig.doc.tabWidth = eemax( 2, cfg.getValueI( "document", "tab_width", 4 ) );
 	docConfig.doc.lineBreakingColumn =
@@ -546,6 +553,10 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 			editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
 		loadDocuments( editorSplitter, j, curTabWidget, app );
 	}
+}
+
+bool AppConfig::isNewVersion() const {
+	return windowState.lastRunVersion != ecode::Version::getVersionNum();
 }
 
 } // namespace ecode

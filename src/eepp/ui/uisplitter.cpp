@@ -120,7 +120,7 @@ bool UISplitter::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::SplitterPartition:
-			setSplitPartition( StyleSheetLength( attribute.asString() ) );
+			setSplitPartition( StyleSheetLength( attribute.value() ) );
 		case PropertyId::SplitterAlwaysShow:
 			setAlwaysShowSplitter( attribute.asBool() );
 		case PropertyId::Orientation: {
@@ -279,17 +279,19 @@ void UISplitter::updateFromDrag() {
 
 	if ( UIOrientation::Horizontal == mOrientation ) {
 		mSplitPartition = StyleSheetLength(
-			eeclamp<Float>(
-				( mSplitter->getPixelsPosition().x + mSplitter->getPixelsSize().getWidth() ) /
-					( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ) * 100,
-				0, 100 ),
+			eeclamp<Float>( mSplitter->getPixelsPosition().x /
+								( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+								  mSplitter->getPixelsSize().getWidth() ) *
+								100,
+							0, 100 ),
 			StyleSheetLength::Percentage );
 	} else {
 		mSplitPartition = StyleSheetLength(
-			eeclamp<Float>(
-				( mSplitter->getPixelsPosition().y + mSplitter->getPixelsSize().getHeight() ) /
-					( mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) * 100,
-				0, 100 ),
+			eeclamp<Float>( mSplitter->getPixelsPosition().y /
+								( mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom -
+								  mSplitter->getPixelsSize().getHeight() ) *
+								100,
+							0, 100 ),
 			StyleSheetLength::Percentage );
 	}
 

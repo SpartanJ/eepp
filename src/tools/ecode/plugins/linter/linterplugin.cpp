@@ -24,11 +24,11 @@ namespace ecode {
 #define LINTER_THREADED 0
 #endif
 
-UICodeEditorPlugin* LinterPlugin::New( PluginManager* pluginManager ) {
+Plugin* LinterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager, false ) );
 }
 
-UICodeEditorPlugin* LinterPlugin::NewSync( PluginManager* pluginManager ) {
+Plugin* LinterPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager, true ) );
 }
 
@@ -37,7 +37,7 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( 
 		load( pluginManager );
 	} else {
 #if defined( LINTER_THREADED ) && LINTER_THREADED == 1
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
@@ -159,11 +159,16 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 			config["disable_languages"] = json::array();
 		}
 
-		if ( config.contains( "go-to-ignore-warnings" ) &&
-			 config["go-to-ignore-warnings"].is_boolean() ) {
-			mGoToIgnoreWarnings = config["go-to-ignore-warnings"].get<bool>();
+		if ( config.contains( "go-to-ignore-warnings" ) ) {
+			config["goto_ignore_warnings"] = config["go-to-ignore-warnings"];
+			config.erase( "go-to-ignore-warnings" );
+		}
+
+		if ( config.contains( "goto_ignore_warnings" ) &&
+			 config["goto_ignore_warnings"].is_boolean() ) {
+			mGoToIgnoreWarnings = config["goto_ignore_warnings"].get<bool>();
 		} else if ( updateConfigFile ) {
-			config["go-to-ignore-warnings"] = false;
+			config["goto_ignore_warnings"] = false;
 		}
 	}
 
@@ -590,9 +595,11 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 	std::vector<Uint32> listeners;
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this]( const Event* event ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* event ) {
 			Lock l( mDocMutex );
 			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+			mDocs.insert( docEvent->getDoc() );
+			mEditorDocs[editor] = docEvent->getDoc();
 			setDocDirty( docEvent->getDoc() );
 		} ) );
 
@@ -608,19 +615,20 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
 			TextDocument* oldDoc = mEditorDocs[editor];
 			TextDocument* newDoc = editor->getDocumentRef().get();
 			Lock l( mDocMutex );
 			mDocs.erase( oldDoc );
 			mDirtyDoc.erase( oldDoc );
 			mEditorDocs[editor] = newDoc;
+			mDocs.insert( newDoc );
 			Lock matchesLock( mMatchesMutex );
 			mMatches.erase( oldDoc );
 		} ) );
 
 	listeners.push_back( editor->addEventListener(
-		Event::OnTextChanged, [&, editor]( const Event* ) { setDocDirty( editor ); } ) );
+		Event::OnTextChanged, [this, editor]( const Event* ) { setDocDirty( editor ); } ) );
 
 	for ( auto& kb : mKeyBindings ) {
 		if ( !kb.second.empty() )
@@ -685,7 +693,7 @@ void LinterPlugin::update( UICodeEditor* editor ) {
 	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
 #if LINTER_THREADED
-		mThreadPool->run( [&, doc] { lintDoc( doc ); } );
+		mThreadPool->run( [this, doc] { lintDoc( doc ); } );
 #else
 		lintDoc( doc );
 #endif
@@ -809,7 +817,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 						 mManager->getWorkspaceFolder() ) ) {
 		int returnCode;
 		std::string data;
-		process.readAllStdOut( data );
+		process.readAllStdOut( data, Seconds( 30 ) );
 
 		if ( mShuttingDown ) {
 			process.kill();
@@ -1298,7 +1306,7 @@ bool LinterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 	for ( auto& match : matches ) {
 		if ( match.box[editor].contains( localPos ) ) {
 			menu->addSeparator();
-			menu->add( editor->i18n( "copy_error_message", "Copy Error Message" ),
+			menu->add( editor->i18n( "linter_copy_error_message", "Copy Error Message" ),
 					   mManager->getUISceneNode()->findIcon( "copy" )->getSize(
 						   PixelDensity::dpToPxI( 12 ) ) )
 				->setId( "linter-copy-error-message" );

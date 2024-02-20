@@ -32,6 +32,7 @@ class EE_API ModelEditingDelegate {
 	std::function<void()> onRollback;
 	std::function<void()> onChange;
 	std::function<void()> onWillBeginEditing;
+	std::function<void()> onValueSet;
 
 	virtual Variant getValue() const = 0;
 
@@ -51,6 +52,10 @@ class EE_API ModelEditingDelegate {
 	void setSelectionBehavior( SelectionBehavior selectionBehavior ) {
 		mSelectionBehavior = selectionBehavior;
 	}
+
+	inline ModelRole pullDataFrom() const { return mPullDataFrom; }
+
+	inline void setPullDataFrom( ModelRole newPullDataFrom ) { mPullDataFrom = newPullDataFrom; }
 
   protected:
 	ModelEditingDelegate() = default;
@@ -75,6 +80,7 @@ class EE_API ModelEditingDelegate {
 	std::shared_ptr<Model> mModel;
 	ModelIndex mIndex;
 	UIWidget* mWidget{ nullptr };
+	ModelRole mPullDataFrom{ ModelRole::Display };
 
   protected:
 	SelectionBehavior mSelectionBehavior{ SelectionBehavior::SelectAll };
@@ -109,6 +115,7 @@ class EE_API StringModelEditingDelegate : public ModelEditingDelegate {
 		input->addClass( "table_cell_edit" );
 		input->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		input->addEventListener( Event::OnPressEnter, [this]( auto ) { commit(); } );
+		input->addEventListener( Event::OnFocusLoss, [this]( auto ) { rollback(); } );
 		input->addEventListener( Event::KeyUp, [this]( const Event* event ) {
 			if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
 				rollback();

@@ -43,7 +43,7 @@ void LSPDocumentClient::onDocumentTextChanged( const DocumentContentChange& chan
 	// If several change event are being fired, the thread pool can't guaranteed that it will be
 	// executed in FIFO. Se we accumulate the events in a queue and fire them in correct order.
 	mServer->queueDidChange( mDoc->getURI(), mVersion, "", { change } );
-	mServer->getThreadPool()->run( [&, change]() { mServer->processDidChangeQueue(); } );
+	mServer->getThreadPool()->run( [this, change]() { mServer->processDidChangeQueue(); } );
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
 }
@@ -206,8 +206,7 @@ UISceneNode* LSPDocumentClient::getUISceneNode() {
 	return server->getManager()->getPluginManager()->getUISceneNode();
 }
 
-static SyntaxStyleType semanticTokenTypeToSyntaxType( const std::string& type,
-													  const SyntaxDefinition& ) {
+static SyntaxStyleType semanticTokenTypeToSyntaxType( const std::string& type ) {
 	switch ( String::hash( type ) ) {
 		case SemanticTokenTypes::Namespace:
 		case SemanticTokenTypes::Type:
@@ -299,7 +298,7 @@ void LSPDocumentClient::highlight() {
 	const auto& caps = mServer->getCapabilities().semanticTokenProvider;
 	Uint32 currentLine = 0;
 	Uint32 start = 0;
-	UnorderedMap<size_t, TokenizedLine> tokenizerLines;
+	std::unordered_map<size_t, TokenizedLine> tokenizerLines;
 	Int64 lastLine = 0;
 	TokenizedLine* lastLinePtr = nullptr;
 	Time diff;
@@ -323,9 +322,7 @@ void LSPDocumentClient::highlight() {
 		auto* line = &tokenizerLines[currentLine];
 		if ( type >= 0 && type < (int)caps.legend.tokenTypes.size() ) {
 			const auto& ltype = caps.legend.tokenTypes[type];
-			line->tokens.push_back(
-				{ semanticTokenTypeToSyntaxType( ltype, mDoc->getSyntaxDefinition() ), start,
-				  len } );
+			line->tokens.push_back( { semanticTokenTypeToSyntaxType( ltype ), start, len } );
 		} else {
 			line->tokens.push_back( { SyntaxStyleTypes::Normal, start, len } );
 		}
@@ -350,10 +347,12 @@ void LSPDocumentClient::highlight() {
 		mDoc->getHighlighter()->mergeLine( tline.first, tline.second );
 	}
 
-	Log::debug( "LSPDocumentClient::highlight took: %.2f ms. Diff analysis took: %.2f ms. Updated "
-				"%lld elements",
-				clock.getElapsedTime().asMilliseconds(), diff.asMilliseconds(),
-				tokenizerLines.size() );
+	if ( !mServer->isSilent() ) {
+		Log::debug(
+			"LSPDocumentClient::highlight took: %.2f ms. Diff analysis took: %.2f ms. Updated "
+			"%lld elements",
+			clock.getElapsedTime().asMilliseconds(), diff.asMilliseconds(), tokenizerLines.size() );
+	}
 }
 
 void LSPDocumentClient::notifyOpen() {

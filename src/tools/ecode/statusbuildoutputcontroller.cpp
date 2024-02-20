@@ -6,58 +6,7 @@ namespace ecode {
 
 StatusBuildOutputController::StatusBuildOutputController( UISplitter* mainSplitter,
 														  UISceneNode* uiSceneNode, App* app ) :
-	mMainSplitter( mainSplitter ),
-	mUISceneNode( uiSceneNode ),
-	mApp( app ),
-	mSplitter( mApp->getSplitter() ) {}
-
-void StatusBuildOutputController::toggle() {
-	if ( nullptr == mContainer ) {
-		show();
-		return;
-	}
-
-	if ( mMainSplitter->getLastWidget() != nullptr ) {
-		if ( mMainSplitter->getLastWidget() == mContainer ) {
-			hide();
-		} else {
-			show();
-		}
-	} else {
-		show();
-	}
-}
-
-void StatusBuildOutputController::hide() {
-	if ( mContainer && mContainer->isVisible() ) {
-		mContainer->setParent( mUISceneNode );
-		mContainer->setVisible( false );
-		mApp->getStatusBar()->updateState();
-		if ( mSplitter->getCurWidget() )
-			mSplitter->getCurWidget()->setFocus();
-	}
-}
-
-void StatusBuildOutputController::show() {
-	if ( nullptr == mContainer ) {
-		mMainSplitter->updateLayout();
-		createContainer();
-	}
-
-	if ( !mContainer->isVisible() ) {
-		mApp->hideLocateBar();
-		mApp->hideSearchBar();
-		mApp->hideGlobalSearchBar();
-		if ( mMainSplitter->getLastWidget() != nullptr ) {
-			mMainSplitter->getLastWidget()->setVisible( false );
-			mMainSplitter->getLastWidget()->setParent( mUISceneNode );
-		}
-		mContainer->setParent( mMainSplitter );
-		mContainer->setVisible( true );
-		mContainer->getFirstChild()->setFocus();
-		mApp->getStatusBar()->updateState();
-	}
-}
+	StatusBarElement( mainSplitter, uiSceneNode, app ) {}
 
 static std::string getProjectOutputParserTypeToString( const ProjectOutputParserTypes& type ) {
 	switch ( type ) {
@@ -369,6 +318,16 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 	}
 }
 
+UIWidget* StatusBuildOutputController::getWidget() {
+	return mContainer;
+}
+
+UIWidget* StatusBuildOutputController::createWidget() {
+	if ( nullptr == mContainer )
+		createContainer();
+	return mContainer;
+}
+
 UICodeEditor* StatusBuildOutputController::getContainer() {
 	return mBuildOutput;
 }
@@ -437,8 +396,6 @@ class StatusMessageModel : public Model {
 		return {};
 	}
 
-	virtual void update() { onModelUpdate(); }
-
 	virtual std::string columnName( const size_t& idx ) const {
 		switch ( idx ) {
 			case 2:
@@ -485,8 +442,8 @@ void StatusBuildOutputController::createContainer() {
 <rellayce id="build_output" lw="mp" lh="mp" visible="false" class="status_build_output_cont" lw="mp" lh="mp">
 	<CodeEditor id="build_output_output" lw="mp" lh="mp" />
 	<TableView id="build_output_issues" lw="mp" lh="mp" visible="false" />
-	<SelectButton id="but_build_output_issues" text="@string(issues, Issues)" lg="bottom|right" margin-right="1dp" margin-bottom="18dp" margin-right="18dp" />
-	<SelectButton id="but_build_output_output" text="@string(output, Output)" layout-to-left-of="but_build_output_issues" selected="true" />
+	<SelectButton id="but_build_output_issues" text="@string(issues_capitalized, Issues)" lg="bottom|right" margin-right="1dp" margin-bottom="18dp" margin-right="18dp" />
+	<SelectButton id="but_build_output_output" text="@string(output_capitalized, Output)" layout-to-left-of="but_build_output_issues" selected="true" />
 </rellayce>
 	)xml";
 
@@ -518,8 +475,8 @@ void StatusBuildOutputController::createContainer() {
 		auto idx = modelEvent->getModelIndex();
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			Variant vPath( model->data( idx, ModelRole::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
-				std::string path( vPath.asCStr() );
+			if ( vPath.isValid() && vPath.isString() ) {
+				std::string path( vPath.toString() );
 				UITab* tab = mSplitter->isDocumentOpen( path );
 				Variant lineNum( model->data( model->index( modelEvent->getModelIndex().row(), 1 ),
 											  ModelRole::Custom ) );
@@ -530,7 +487,7 @@ void StatusBuildOutputController::createContainer() {
 					if ( fileInfo.exists() && fileInfo.isRegularFile() ) {
 						mApp->loadFileFromPath(
 							path, true, nullptr,
-							[&, lineNum, colNum]( UICodeEditor*, const std::string& ) {
+							[this, lineNum, colNum]( UICodeEditor*, const std::string& ) {
 								onLoadDone( lineNum, colNum );
 							} );
 					} else {
@@ -546,7 +503,7 @@ void StatusBuildOutputController::createContainer() {
 								UITab* tab = mSplitter->isDocumentOpen( path );
 								if ( !tab ) {
 									mApp->loadFileFromPath( path, true, nullptr,
-															[&, lineNum, colNum]( auto, auto ) {
+															[this, lineNum, colNum]( auto, auto ) {
 																onLoadDone( lineNum, colNum );
 															} );
 								} else {
@@ -568,12 +525,11 @@ void StatusBuildOutputController::createContainer() {
 				->setId( "copy-error-message" );
 			menu->add( mApp->i18n( "copy_file_path", "Copy File Path" ), mApp->findIcon( "copy" ) )
 				->setId( "copy-file-path" );
-			menu->on( Event::OnItemClicked, [this, model, modelEvent, idx]( const Event* event ) {
+			menu->on( Event::OnItemClicked, [this, model, idx]( const Event* event ) {
 				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 				std::string id( item->getId() );
 				if ( id == "copy-error-message" ) {
-					Variant msg( model->data( model->index( modelEvent->getModelIndex().row(), 0 ),
-											  ModelRole::Display ) );
+					Variant msg( model->data( model->index( idx.row(), 0 ), ModelRole::Display ) );
 					mApp->getWindow()->getClipboard()->setText( msg.toString() );
 				} else if ( id == "copy-file-path" ) {
 					Variant msg( model->data( idx, ModelRole::Custom ) );

@@ -11,6 +11,14 @@ UIAbstractView::~UIAbstractView() {
 	eeSAFE_DELETE( mEditingDelegate );
 }
 
+UIAbstractView::SelectionKind UIAbstractView::getSelectionKind() const {
+	return mSelectionKind;
+}
+
+void UIAbstractView::setSelectionKind( UIAbstractView::SelectionKind selectionKind ) {
+	mSelectionKind = selectionKind;
+}
+
 UIAbstractView::SelectionType UIAbstractView::getSelectionType() const {
 	return mSelectionType;
 }
@@ -38,12 +46,12 @@ Uint32 UIAbstractView::onModelEvent( const std::function<void( const ModelEvent*
 		} );
 }
 
-KeyBindings::Shortcut UIAbstractView::getEditShortcut() const {
-	return mEditShortcut;
+std::vector<KeyBindings::Shortcut> UIAbstractView::getEditShortcuts() const {
+	return mEditShortcuts;
 }
 
-void UIAbstractView::setEditShortcut( const KeyBindings::Shortcut& editShortcut ) {
-	mEditShortcut = editShortcut;
+void UIAbstractView::setEditShortcuts( const std::vector<KeyBindings::Shortcut>& editShortcuts ) {
+	mEditShortcuts = editShortcuts;
 }
 
 Uint32 UIAbstractView::getEditTriggers() const {
@@ -66,6 +74,10 @@ void UIAbstractView::setEditable( bool editable ) {
 	} else {
 		removeClass( "editable_cells" );
 	}
+}
+
+bool UIAbstractView::isEditing() const {
+	return mEditIndex.isValid();
 }
 
 std::function<void( const ModelIndex& )> UIAbstractView::getOnSelection() const {
@@ -109,6 +121,7 @@ void UIAbstractView::setModel( const std::shared_ptr<Model>& model ) {
 	if ( mModel )
 		mModel->registerView( this );
 	onModelUpdate( Model::InvalidateAllIndexes );
+	sendCommonEvent( Event::OnModelChanged );
 }
 
 void UIAbstractView::modelUpdate( unsigned flags ) {
@@ -124,16 +137,15 @@ void UIAbstractView::onModelUpdate( unsigned flags ) {
 	if ( !Engine::instance()->isMainThread() ) {
 		static constexpr String::HashType tag = String::hash( "onModelUpdate" );
 		removeActionsByTag( tag );
-		runOnMainThread( [&, flags] { modelUpdate( flags ); }, Time::Zero, tag );
+		runOnMainThread( [this, flags] { modelUpdate( flags ); }, Time::Zero, tag );
 	} else {
 		modelUpdate( flags );
 	}
 }
 
 void UIAbstractView::onModelSelectionChange() {
-	if ( getModel() && mOnSelection && getSelection().first().isValid() ) {
+	if ( getModel() && mOnSelection && getSelection().first().isValid() )
 		mOnSelection( getSelection().first() );
-	}
 	invalidateDraw();
 }
 
@@ -150,7 +162,7 @@ ModelIndex UIAbstractView::findRowWithText( const std::string&, const bool&, con
 
 void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidget ) {
 	if ( !isEditable() || !mModel || mEditIndex == index || !mModel->isEditable( index ) ||
-		 !onCreateEditingDelegate )
+		 !onCreateEditingDelegate || !editedWidget )
 		return;
 
 	if ( mEditWidget ) {
@@ -162,7 +174,7 @@ void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidg
 	mEditIndex = index;
 	mEditingDelegate = onCreateEditingDelegate( index );
 	mEditingDelegate->bind( mModel, index );
-	mEditingDelegate->setValue( index.data() );
+	mEditingDelegate->setValue( index.data( mEditingDelegate->pullDataFrom() ) );
 	mEditWidget = mEditingDelegate->getWidget();
 	mEditWidget->setParent( editedWidget );
 	mEditWidget->setSize( editedWidget->getSize() );
@@ -170,8 +182,11 @@ void UIAbstractView::beginEditing( const ModelIndex& index, UIWidget* editedWidg
 	mEditWidget->toFront();
 	mEditingDelegate->willBeginEditing();
 	mEditingDelegate->onCommit = [this]() {
-		if ( getModel() && mEditIndex.isValid() )
+		if ( getModel() && mEditIndex.isValid() ) {
 			getModel()->setData( mEditIndex, mEditingDelegate->getValue() );
+			if ( mEditingDelegate->onValueSet )
+				mEditingDelegate->onValueSet();
+		}
 		stopEditing();
 	};
 	mEditingDelegate->onRollback = [this]() { stopEditing(); };

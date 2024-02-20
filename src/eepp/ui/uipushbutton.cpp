@@ -65,20 +65,7 @@ UIPushButton::UIPushButton( const std::string& tag,
 	UIWidget( tag ), mIcon( NULL ), mTextBox( NULL ) {
 	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
-	mIcon = UIImage::NewWithTag( tag + "::icon" );
-	mIcon->setScaleType( UIScaleType::FitInside )
-		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
-		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
-		->setParent( this )
-		->setVisible( true )
-		->setEnabled( false );
-
 	auto cb = [this]( const Event* ) { onSizeChange(); };
-
-	mIcon->addEventListener( Event::OnPaddingChange, cb );
-	mIcon->addEventListener( Event::OnMarginChange, cb );
-	mIcon->addEventListener( Event::OnSizeChange, cb );
-	mIcon->addEventListener( Event::OnVisibleChange, cb );
 
 	mTextBox = newTextViewCb ? newTextViewCb( this ) : UITextView::NewWithTag( tag + "::text" );
 	mTextBox->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
@@ -255,18 +242,16 @@ UIWidget* UIPushButton::getFirstInnerItem() const {
 		case InnerWidgetOrientation::WidgetIconTextBox:
 			return getExtraInnerWidget() && getExtraInnerWidget()->isVisible()
 					   ? getExtraInnerWidget()
-					   : mIcon;
+					   : ( mIcon && mIcon->isVisible() ? mIcon->asType<UIWidget>()
+													   : mTextBox->asType<UIWidget>() );
 		case InnerWidgetOrientation::IconWidgetTextBox:
-			return mIcon->isVisible()
+			return mIcon && mIcon->isVisible()
 					   ? mIcon
 					   : ( getExtraInnerWidget() && getExtraInnerWidget()->isVisible()
 							   ? getExtraInnerWidget()
 							   : mTextBox );
 		case InnerWidgetOrientation::IconTextBoxWidget:
-			if ( mIcon->isVisible() )
-				return mIcon;
-			else
-				return mTextBox;
+			return mIcon && mIcon->isVisible() ? mIcon->asType<UIWidget>() : mTextBox;
 		case InnerWidgetOrientation::WidgetTextBoxIcon:
 			return ( getExtraInnerWidget() && getExtraInnerWidget()->isVisible() )
 					   ? getExtraInnerWidget()
@@ -274,12 +259,14 @@ UIWidget* UIPushButton::getFirstInnerItem() const {
 		case InnerWidgetOrientation::TextBoxIconWidget:
 			if ( mTextBox->isVisible() )
 				return mTextBox;
-			if ( mIcon->isVisible() )
+			if ( mIcon && mIcon->isVisible() )
 				return mIcon;
+			return getExtraInnerWidget();
 			break;
 		case InnerWidgetOrientation::TextBoxWidgetIcon:
 			if ( mTextBox->isVisible() )
 				return mTextBox;
+
 			break;
 	}
 	return mChild->isWidget() ? mChild->asType<UIWidget>() : nullptr;
@@ -360,16 +347,45 @@ void UIPushButton::updateTextBox() {
 }
 
 UIPushButton* UIPushButton::setIcon( Drawable* icon, bool ownIt ) {
-	if ( mIcon->getDrawable() != icon ) {
-		mIcon->setPixelsSize( icon->getPixelsSize() );
-		mIcon->setDrawable( icon, ownIt );
+	if ( nullptr == mIcon || mIcon->getDrawable() != icon ) {
+		if ( icon )
+			getIcon()->setPixelsSize( icon->getPixelsSize() );
+		if ( icon == nullptr && mIcon == nullptr )
+			return this;
+		getIcon()->setDrawable( icon, ownIt );
 		updateTextBox();
 	}
 	return this;
 }
 
-UIImage* UIPushButton::getIcon() const {
+UIImage* UIPushButton::getIcon() {
+	if ( nullptr == mIcon ) {
+		auto cb = [this]( const Event* ) { onSizeChange(); };
+
+		mIcon = UIImage::NewWithTag( mTag + "::icon" );
+		mIcon->setScaleType( UIScaleType::FitInside )
+			->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
+			->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
+			->setParent( this )
+			->setVisible( true )
+			->setEnabled( false );
+
+		mIcon->addEventListener( Event::OnPaddingChange, cb );
+		mIcon->addEventListener( Event::OnMarginChange, cb );
+		mIcon->addEventListener( Event::OnSizeChange, cb );
+		mIcon->addEventListener( Event::OnVisibleChange, cb );
+
+		if ( mIconMinSize != Sizei::Zero ) {
+			auto iconMinSize = mIconMinSize;
+			mIconMinSize = Sizei{ -1, -1 }; // force refresh
+			setIconMinimumSize( iconMinSize );
+		}
+	}
 	return mIcon;
+}
+
+bool UIPushButton::hasIcon() const {
+	return mIcon != nullptr;
 }
 
 UIPushButton* UIPushButton::setText( const String& text ) {
@@ -393,7 +409,8 @@ UITextView* UIPushButton::getTextBox() const {
 void UIPushButton::onAlphaChange() {
 	UIWidget::onAlphaChange();
 
-	mIcon->setAlpha( mAlpha );
+	if ( mIcon )
+		mIcon->setAlpha( mAlpha );
 	mTextBox->setAlpha( mAlpha );
 
 	if ( NULL != getExtraInnerWidget() ) {
@@ -438,8 +455,8 @@ void UIPushButton::setIconMinimumSize( const Sizei& minIconSize ) {
 		mIconMinSize = minIconSize;
 
 		if ( mIconMinSize.x != 0 && mIconMinSize.y != 0 ) {
-			mIcon->setMinSizeEq( String::fromFloat( mIconMinSize.x, "dp" ),
-								 String::fromFloat( mIconMinSize.y, "dp" ) );
+			getIcon()->setMinSizeEq( String::fromFloat( mIconMinSize.x, "dp" ),
+									 String::fromFloat( mIconMinSize.y, "dp" ) );
 		}
 	}
 }
@@ -523,8 +540,11 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 																					 : "left" );
 		case PropertyId::TextAsFallback:
 			return mTextAsFallback ? "true" : "false";
-		case PropertyId::Tint:
-			return mIcon->getColor().toHexString();
+		case PropertyId::Tint: {
+			if ( mIcon )
+				return mIcon->getColor().toHexString();
+			return Color::Transparent.toHexString();
+		}
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:
 		case PropertyId::TextShadowOffset:
@@ -538,6 +558,7 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::TextStrokeColor:
 		case PropertyId::TextSelection:
 		case PropertyId::TextTransform:
+		case PropertyId::TextOverflow:
 			return mTextBox->getPropertyString( propertyDef, propertyIndex );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
@@ -564,7 +585,8 @@ std::vector<PropertyId> UIPushButton::getPropertiesImplemented() const {
 				   PropertyId::TextStrokeWidth,
 				   PropertyId::TextStrokeColor,
 				   PropertyId::TextSelection,
-				   PropertyId::TextTransform };
+				   PropertyId::TextTransform,
+				   PropertyId::TextOverflow };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -578,14 +600,14 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::InnerWidgetOrientation:
-			setInnerWidgetOrientation( innerWidgetOrientationFromString( attribute.asString() ) );
+			setInnerWidgetOrientation( innerWidgetOrientationFromString( attribute.value() ) );
 			break;
 		case PropertyId::Text:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				setText( getUISceneNode()->getTranslatorString( attribute.asString() ) );
+				setText( getUISceneNode()->getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::Icon: {
-			std::string val = attribute.asString();
+			const std::string& val = attribute.value();
 			Drawable* icon = NULL;
 			bool ownIt;
 			UIIcon* iconF = getUISceneNode()->findIcon( val );
@@ -618,7 +640,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			setTextAsFallback( attribute.asBool() );
 			break;
 		case PropertyId::Tint:
-			mIcon->setColor( attribute.asColor() );
+			getIcon()->setColor( attribute.asColor() );
 			break;
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:
@@ -633,6 +655,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextStrokeColor:
 		case PropertyId::TextSelection:
 		case PropertyId::TextTransform:
+		case PropertyId::TextOverflow:
 			attributeSet = mTextBox->applyProperty( attribute );
 			break;
 		default:

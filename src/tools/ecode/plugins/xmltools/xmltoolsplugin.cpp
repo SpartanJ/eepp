@@ -13,11 +13,11 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-UICodeEditorPlugin* XMLToolsPlugin::New( PluginManager* pluginManager ) {
+Plugin* XMLToolsPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( XMLToolsPlugin, ( pluginManager, false ) );
 }
 
-UICodeEditorPlugin* XMLToolsPlugin::NewSync( PluginManager* pluginManager ) {
+Plugin* XMLToolsPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( XMLToolsPlugin, ( pluginManager, true ) );
 }
 
@@ -27,7 +27,7 @@ XMLToolsPlugin::XMLToolsPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 	} else {
 #if defined( XMLTOOLS_THREADED ) && XMLTOOLS_THREADED == 1
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
@@ -261,6 +261,9 @@ void XMLToolsPlugin::XMLToolsClient::updateMatch( const TextRange& sel ) {
 		   line[range.start().column() - 2] != '<' ) )
 		return clearMatch();
 	bool isCloseBracket = line[range.start().column() - 1] == '/';
+	if ( isCloseBracket &&
+		 ( ( line.size() >= 2 && line[range.start().column() - 2] != '<' ) || line.size() < 2 ) )
+		return clearMatch();
 	if ( !isCloseBracket && isClosedTag( mDoc, range.end() ) )
 		return clearMatch();
 	range.start().setColumn( range.start().column() - ( isCloseBracket ? 2 : 1 ) );

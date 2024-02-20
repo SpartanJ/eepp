@@ -2,6 +2,7 @@
 #define EE_SCENE_ACTION_CALLBACK_HPP
 
 #include <eepp/scene/actions/delay.hpp>
+#include <eepp/system/mutex.hpp>
 #include <functional>
 
 namespace EE { namespace Scene { namespace Actions {
@@ -21,8 +22,11 @@ class EE_API Runnable : public Delay {
 
 	Action* reverse() const override;
 
+	void setCallback( RunnableFunc&& callback );
+
   protected:
 	RunnableFunc mCallback;
+	Mutex mCallbackMutex;
 	bool mCalled{ false };
 	bool mLoop{ false };
 

@@ -6,7 +6,7 @@ namespace EE { namespace UI {
 
 UIScrollableWidget::UIScrollableWidget( const std::string& tag ) :
 	UIWidget( tag ),
-	mViewType( Exclusive ),
+	mScrollViewType( Exclusive ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
 	mVScroll( UIScrollBar::NewVertical() ),
@@ -73,12 +73,12 @@ const ScrollBarMode& UIScrollableWidget::getHorizontalScrollMode() const {
 }
 
 const UIScrollableWidget::ScrollViewType& UIScrollableWidget::getViewType() const {
-	return mViewType;
+	return mScrollViewType;
 }
 
-void UIScrollableWidget::setViewType( const ScrollViewType& viewType ) {
-	if ( viewType != mViewType ) {
-		mViewType = viewType;
+void UIScrollableWidget::setScrollViewType( const ScrollViewType& viewType ) {
+	if ( viewType != mScrollViewType ) {
+		mScrollViewType = viewType;
 		onContentSizeChange();
 	}
 }
@@ -95,51 +95,50 @@ void UIScrollableWidget::onContentSizeChange() {
 	Sizef contentSize( getContentSize() );
 
 	if ( ScrollBarMode::AlwaysOn == mHScrollMode ) {
-		mHScroll->setVisible( true );
-		mHScroll->setEnabled( true );
+		mHScroll->setVisible( true )->setEnabled( true );
 	} else if ( ScrollBarMode::AlwaysOff == mHScrollMode ) {
-		mHScroll->setVisible( false );
-		mHScroll->setEnabled( false );
+		mHScroll->setVisible( false )->setEnabled( false );
 	} else {
-		Float totW = getPixelsSize().getWidth() - getPixelsPadding().Left -
-					 getPixelsPadding().Right - mVScroll->getPixelsSize().getWidth();
+		Float totW =
+			getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right;
+
+		if ( mScrollViewType == Exclusive )
+			totW -= mVScroll->getPixelsSize().getWidth();
 
 		bool visible = contentSize.getWidth() > totW;
 
-		mHScroll->setVisible( visible );
-		mHScroll->setEnabled( visible );
+		mHScroll->setVisible( visible )->setEnabled( visible );
 	}
 
 	if ( ScrollBarMode::AlwaysOn == mVScrollMode ) {
-		mVScroll->setVisible( true );
-		mVScroll->setEnabled( true );
+		mVScroll->setVisible( true )->setEnabled( true );
 	} else if ( ScrollBarMode::AlwaysOff == mVScrollMode ) {
-		mVScroll->setVisible( false );
-		mVScroll->setEnabled( false );
+		mVScroll->setVisible( false )->setEnabled( false );
 	} else {
 		Float totH = getPixelsSize().getHeight() - getPixelsPadding().Top -
 					 getPixelsPadding().Bottom - mHScroll->getPixelsSize().getHeight();
 
 		bool visible = contentSize.getHeight() > totH;
 
-		mVScroll->setVisible( visible );
-		mVScroll->setEnabled( visible );
+		mVScroll->setVisible( visible )->setEnabled( visible );
 	}
 
 	if ( ScrollBarMode::Auto == mHScrollMode ) {
 		Float totW = getPixelsSize().getWidth() - getPixelsPadding().Left -
 					 getPixelsPadding().Right -
-					 ( mVScroll->isVisible() ? mVScroll->getPixelsSize().getWidth() : 0 );
+					 ( mVScroll->isVisible() &&
+							   ( mScrollViewType == Exclusive || mVScroll->getAlpha() != 0.f )
+						   ? mVScroll->getPixelsSize().getWidth()
+						   : 0 );
 
 		bool visible = contentSize.getWidth() > totW;
 
-		mHScroll->setVisible( visible );
-		mHScroll->setEnabled( visible );
+		mHScroll->setVisible( visible )->setEnabled( visible );
 	}
 
 	Sizef size = getPixelsSize() - mPaddingPx;
 
-	if ( Exclusive == mViewType ) {
+	if ( Exclusive == mScrollViewType ) {
 		if ( mVScroll->isVisible() )
 			size.x -= mVScroll->getPixelsSize().getWidth();
 
@@ -273,7 +272,7 @@ void UIScrollableWidget::scrollToBottom() {
 void UIScrollableWidget::scrollToPosition( const Rectf& pos, const bool& scrollVertically,
 										   const bool& scrollHorizontally ) {
 	Rectf visibleRect( getVisibleRect() );
-	if ( visibleRect.contains( pos ) )
+	if ( visibleRect.Top < 0 || visibleRect.Bottom < 0 || visibleRect.contains( pos ) )
 		return;
 
 	if ( scrollVertically ) {
@@ -304,9 +303,9 @@ bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
 			if ( "inclusive" == val || "inside" == val )
-				setViewType( Inclusive );
+				setScrollViewType( Inclusive );
 			else if ( "exclusive" == val || "outside" == val )
-				setViewType( Exclusive );
+				setScrollViewType( Exclusive );
 			break;
 		}
 		case PropertyId::VScrollMode: {
@@ -356,15 +355,30 @@ bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 Uint32 UIScrollableWidget::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseUp: {
+			bool moved = false;
 			if ( mVScroll->isEnabled() ) {
+
 				if ( Msg->getFlags() & EE_BUTTON_WUMASK ) {
 					mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
-					return 1;
+					moved = true;
 				} else if ( Msg->getFlags() & EE_BUTTON_WDMASK ) {
 					mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
-					return 1;
+					moved = true;
 				}
 			}
+
+			if ( mHScroll->isEnabled() ) {
+				if ( Msg->getFlags() & EE_BUTTON_WLMASK ) {
+					mHScroll->setValue( mHScroll->getValue() - mHScroll->getClickStep() );
+					moved = true;
+				} else if ( Msg->getFlags() & EE_BUTTON_WRMASK ) {
+					mHScroll->setValue( mHScroll->getValue() + mHScroll->getClickStep() );
+					moved = true;
+				}
+			}
+
+			if ( moved )
+				return 1;
 		}
 	}
 	return UIWidget::onMessage( Msg );

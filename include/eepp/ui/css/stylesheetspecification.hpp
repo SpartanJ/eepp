@@ -69,8 +69,8 @@ class EE_API StyleSheetSpecification {
   protected:
 	PropertySpecification* mPropertySpecification;
 	DrawableImageParser mDrawableImageParser;
-	std::map<std::string, ShorthandParserFunc> mShorthandParsers;
-	std::map<std::string, StyleSheetNodeSelector> mNodeSelectors;
+	UnorderedMap<std::string, ShorthandParserFunc> mShorthandParsers;
+	UnorderedMap<std::string, StyleSheetNodeSelector> mNodeSelectors;
 
 	void registerDefaultShorthandParsers();
 

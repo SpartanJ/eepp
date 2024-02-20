@@ -93,7 +93,7 @@ void CommandPalette::asyncFuzzyMatch( const std::string& match, const size_t& ma
 	if ( !mCurModel )
 		return;
 
-	mPool->run( [&, match, max, res]() {
+	mPool->run( [this, match, max, res]() {
 		const std::vector<std::vector<std::string>>& cmdPalette =
 			mCurModel.get() == mBaseModel.get() ? mCommandPalette : mCommandPaletteEditor;
 		res( fuzzyMatch( cmdPalette, match, max ) );

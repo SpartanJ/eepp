@@ -9,6 +9,8 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwindow.hpp>
+
+#include <array>
 #include <limits>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -26,7 +28,7 @@ class PluginManager;
 class Plugin;
 class FileSystemListener;
 
-typedef std::function<UICodeEditorPlugin*( PluginManager* pluginManager )> PluginCreatorFn;
+typedef std::function<Plugin*( PluginManager* pluginManager )> PluginCreatorFn;
 
 #ifdef minor
 #undef minor
@@ -88,6 +90,8 @@ enum class PluginMessageType {
 					   // particular document location
 	GetDiagnostics,	   // Request the diagnostic information from a cursor position
 	QueryPluginCapability, // Requests / queries if a plugin providers a capability
+	UIReady,			   // Informs the Plugins that the UI is ready to be used
+	UIThemeReloaded,	   // Informs the plugins that the UI theme has been reloaded
 	Undefined
 };
 
@@ -265,7 +269,11 @@ class PluginManager {
 
 	void registerPlugin( const PluginDefinition& def );
 
-	UICodeEditorPlugin* get( const std::string& id );
+	void setUIReady();
+
+	void setUIThemeReloaded();
+
+	Plugin* get( const std::string& id );
 
 	bool setEnabled( const std::string& id, bool enable, bool sync = false );
 
@@ -285,13 +293,17 @@ class PluginManager {
 
 	const std::shared_ptr<ThreadPool>& getThreadPool() const;
 
-	std::function<void( UICodeEditorPlugin* )> onPluginEnabled;
+	std::function<void( Plugin* )> onPluginEnabled;
 
 	const std::map<std::string, PluginDefinition>& getDefinitions() const;
 
 	const PluginDefinition* getDefinitionIndex( const Int64& index ) const;
 
+	/** This is the code editor splitter. Where documents/terminals/etc are opened */
 	UICodeEditorSplitter* getSplitter() const;
+
+	/** This is the splitter between the code editor splitter and the bottom panel. */
+	UISplitter* getMainSplitter() const;
 
 	UISceneNode* getUISceneNode() const;
 
@@ -302,23 +314,22 @@ class PluginManager {
 	PluginRequestHandle sendRequest( PluginMessageType type, PluginMessageFormat format,
 									 const void* data );
 
-	PluginRequestHandle sendRequest( UICodeEditorPlugin* pluginWho, PluginMessageType type,
+	PluginRequestHandle sendRequest( Plugin* pluginWho, PluginMessageType type,
 									 PluginMessageFormat format, const void* data );
 
-	void sendResponse( UICodeEditorPlugin* pluginWho, PluginMessageType type,
-					   PluginMessageFormat format, const void* data,
-					   const PluginIDType& responseID );
+	void sendResponse( Plugin* pluginWho, PluginMessageType type, PluginMessageFormat format,
+					   const void* data, const PluginIDType& responseID );
 
-	void sendBroadcast( UICodeEditorPlugin* pluginWho, PluginMessageType, PluginMessageFormat,
+	void sendBroadcast( Plugin* pluginWho, PluginMessageType, PluginMessageFormat,
 						const void* data );
 
 	void sendBroadcast( const PluginMessageType& notification, const PluginMessageFormat& format,
 						void* data );
 
-	void subscribeMessages( UICodeEditorPlugin* plugin,
+	void subscribeMessages( Plugin* plugin,
 							std::function<PluginRequestHandle( const PluginMessage& )> cb );
 
-	void unsubscribeMessages( UICodeEditorPlugin* plugin );
+	void unsubscribeMessages( Plugin* plugin );
 
 	void subscribeMessages( const std::string& uniqueComponentId,
 							std::function<PluginRequestHandle( const PluginMessage& )> cb );
@@ -344,13 +355,15 @@ class PluginManager {
 	std::string mResourcesPath;
 	std::string mPluginsPath;
 	std::string mWorkspaceFolder;
-	std::map<std::string, UICodeEditorPlugin*> mPlugins;
+	std::map<std::string, Plugin*> mPlugins;
 	std::map<std::string, bool> mPluginsEnabled;
 	std::map<std::string, PluginDefinition> mDefinitions;
 	std::shared_ptr<ThreadPool> mThreadPool;
 	UICodeEditorSplitter* mSplitter{ nullptr };
+	UISplitter* mMainSplitter{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mSubscribedPluginsMutex;
+	Mutex mPluginsFSSubsMutex;
 	SubscribedPlugins mSubscribedPlugins;
 	OnLoadFileCb mLoadFileFn;
 	Uint64 mFileSystemListenerCb{ 0 };
@@ -362,6 +375,8 @@ class PluginManager {
 
 	void setSplitter( UICodeEditorSplitter* splitter );
 
+	void setMainSplitter( UISplitter* splitter );
+
 	void setFileSystemListener( FileSystemListener* listener );
 
 	void subscribeFileSystemListener();
@@ -371,11 +386,11 @@ class PluginManager {
 
 class PluginsModel : public Model {
   public:
-	enum Columns { Id, Title, Enabled, Description, Version };
+	enum Columns { Id, Title, Enabled, Description, Version, Count };
 
 	static std::shared_ptr<PluginsModel> New( PluginManager* manager );
 
-	PluginsModel( PluginManager* manager ) : mManager( manager ) {}
+	PluginsModel( PluginManager* manager );
 
 	virtual ~PluginsModel() {}
 
@@ -392,101 +407,18 @@ class PluginsModel : public Model {
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const;
 
-	virtual void update() { onModelUpdate(); }
-
 	PluginManager* getManager() const;
 
   protected:
 	PluginManager* mManager;
-	std::vector<std::string> mColumnNames{ "Id", "Title", "Enabled", "Description", "Version" };
+	std::array<std::string, Columns::Count> mColumnNames{ "Id", "Title", "Enabled", "Description",
+														  "Version" };
 };
 
 class UIPluginManager {
   public:
 	static UIWindow* New( UISceneNode* sceneNode, PluginManager* manager,
 						  std::function<void( const std::string& )> loadFileCb );
-};
-
-class Plugin : public UICodeEditorPlugin {
-  public:
-	explicit Plugin( PluginManager* manager );
-
-	void subscribeFileSystemListener();
-
-	void unsubscribeFileSystemListener();
-
-	bool isReady() const;
-
-	bool isLoading() const;
-
-	bool isShuttingDown() const;
-
-	virtual bool hasFileConfig();
-
-	virtual std::string getFileConfigPath();
-
-	PluginManager* getManager() const;
-
-	virtual String::HashType getConfigFileHash() { return 0; }
-
-	virtual void onFileSystemEvent( const FileEvent& ev, const FileInfo& file );
-
-  protected:
-	PluginManager* mManager{ nullptr };
-	std::shared_ptr<ThreadPool> mThreadPool;
-	std::string mConfigPath;
-	FileInfo mConfigFileInfo;
-
-	std::atomic<bool> mReady{ false };
-	std::atomic<bool> mLoading{ false };
-	std::atomic<bool> mShuttingDown{ false };
-
-	void setReady();
-};
-
-class PluginBase : public Plugin {
-  public:
-	explicit PluginBase( PluginManager* manager ) : Plugin( manager ) {}
-
-	virtual ~PluginBase();
-
-	virtual void onRegister( UICodeEditor* ) override;
-
-	virtual void onUnregister( UICodeEditor* ) override;
-
-	virtual String::HashType getConfigFileHash() override { return mConfigHash; }
-
-  protected:
-	//! Keep track of the registered editors + all the listeners registered to each editor
-	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
-	//! Keep track of the documents opened
-	std::set<TextDocument*> mDocs;
-	//! Documents and Editors mutex
-	Mutex mMutex;
-	//! Keep track of the document pointer of each editor
-	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
-	//! Keep track of the key bindings managed by the plugin
-	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
-	//! If the configuration is stored in a file, keep track of the config hash
-	String::HashType mConfigHash{ 0 };
-
-	virtual void onDocumentLoaded( TextDocument* ){};
-
-	virtual void onDocumentClosed( TextDocument* ){};
-
-	virtual void onDocumentChanged( UICodeEditor*, TextDocument* /*oldDoc*/ ){};
-
-	virtual void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& /*listeners*/ ){};
-
-	//! Usually used to remove keybindings in an editor
-	virtual void onBeforeUnregister( UICodeEditor* ){};
-
-	virtual void onRegisterDocument( TextDocument* ){};
-
-	virtual void onUnregisterEditor( UICodeEditor* ){};
-
-	//! Usually used to unregister commands in a document
-	virtual void onUnregisterDocument( TextDocument* ){};
 };
 
 } // namespace ecode

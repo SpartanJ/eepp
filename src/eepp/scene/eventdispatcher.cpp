@@ -25,7 +25,7 @@ EventDispatcher::EventDispatcher( SceneNode* sceneNode ) :
 	mFirstPress( false ),
 	mNodeWasDragging( NULL ),
 	mNodeDragging( NULL ) {
-	mCbId = mInput->pushCallback( cb::Make1( this, &EventDispatcher::inputCallback ) );
+	mCbId = mInput->pushCallback( [this]( InputEvent* event ) { inputCallback( event ); } );
 	mIMECbId = mWindow->getIME().addTextEditingCb(
 		[this]( const String& text, Int32 start, Int32 length ) {
 			sendTextEditing( text, start, length );
@@ -65,6 +65,11 @@ void EventDispatcher::inputCallback( InputEvent* event ) {
 		case InputEvent::TextEditing:
 			sendTextEditing( event->textediting.text, event->textediting.start,
 							 event->textediting.length );
+			break;
+		case InputEvent::MouseWheel:
+			sendMouseWheel( { event->wheel.x, event->wheel.y },
+							event->wheel.direction == InputEvent::WheelEvent::Normal ? true
+																					 : false );
 			break;
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
@@ -248,6 +253,15 @@ void EventDispatcher::sendKeyDown( const Keycode& keyCode, const Scancode& scanc
 	Node* node = mFocusNode;
 	while ( NULL != node ) {
 		if ( node->isEnabled() && node->onKeyDown( keyEvent ) )
+			break;
+		node = node->getParent();
+	}
+}
+
+void EventDispatcher::sendMouseWheel( const Vector2f& offset, bool flipped ) {
+	Node* node = mFocusNode;
+	while ( NULL != node ) {
+		if ( node->isEnabled() && node->onMouseWheel( offset, flipped ) )
 			break;
 		node = node->getParent();
 	}

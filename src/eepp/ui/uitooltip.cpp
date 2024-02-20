@@ -1,6 +1,7 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/actions/actions.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -172,6 +173,7 @@ Graphics::Font* UITooltip::getFont() const {
 void UITooltip::setFont( Graphics::Font* font ) {
 	if ( NULL != font && mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
+		mStyleConfig.Font = font;
 		autoPadding();
 		onAutoSize();
 		autoAlign();
@@ -229,6 +231,7 @@ void UITooltip::notifyTextChangedFromTextCache() {
 	autoPadding();
 	onAutoSize();
 	autoAlign();
+	invalidateDraw();
 }
 
 void UITooltip::setFontShadowOffset( const Vector2f& offset ) {
@@ -428,7 +431,7 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
-			return String::toString( PixelDensity::dpToPx( getOutlineThickness() ) );
+			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextAlign:
@@ -521,7 +524,7 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 				setFontShadowOffset( attribute.asVector2f() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.asString() );
+			Font* font = FontManager::instance()->getByName( attribute.value() );
 
 			if ( !mUsingCustomStyling && NULL != font && font->loaded() )
 				setFont( font );

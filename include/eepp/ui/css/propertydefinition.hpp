@@ -92,6 +92,7 @@ enum class PropertyId : Uint32 {
 	TabsEdgesDiffSkin = String::hash( "tabs-edges-diff-skin" ),
 	TabSeparation = String::hash( "tab-separation" ),
 	TabHeight = String::hash( "tab-height" ),
+	TabCloseButtonVisible = String::hash( "tab-close-button-visible" ),
 	Selected = String::hash( "selected" ),
 	Checked = String::hash( "checked" ),
 	PopUpToRoot = String::hash( "popup-to-root" ),
@@ -215,6 +216,8 @@ enum class PropertyId : Uint32 {
 	Glyph = String::hash( "glyph" ),
 	Name = String::hash( "name" ),
 	RowValign = String::hash( "row-valign" ),
+	TextOverflow = String::hash( "text-overflow" ),
+	CheckMode = String::hash( "check-mode" ),
 };
 
 enum class PropertyType : Uint32 {

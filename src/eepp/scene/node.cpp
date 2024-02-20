@@ -173,10 +173,27 @@ const Sizef& Node::getPixelsSize() const {
 	return mSize;
 }
 
-Node* Node::setVisible( const bool& visible ) {
+Node* Node::setVisible( const bool& visible, bool emitEventNotification ) {
 	if ( mVisible != visible ) {
 		mVisible = visible;
-		onVisibilityChange();
+		if ( emitEventNotification )
+			onVisibilityChange();
+	}
+	return this;
+}
+
+Node* Node::setChildsVisibility( bool visible, bool emitEventNotification ) {
+	Node* child = mChild;
+	if ( emitEventNotification ) {
+		while ( child ) {
+			child->setVisible( visible );
+			child = child->mNext;
+		}
+	} else {
+		while ( child ) {
+			child->mVisible = visible;
+			child = child->mNext;
+		}
 	}
 	return this;
 }
@@ -397,6 +414,10 @@ Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	return 1;
 }
 
+Uint32 Node::onMouseWheel( const Vector2f&, bool ) {
+	return 1;
+}
+
 Uint32 Node::onCalculateDrag( const Vector2f&, const Uint32& ) {
 	return 1;
 }
@@ -537,13 +558,15 @@ void Node::nodeDraw() {
 
 		matrixSet();
 
-		clipStart();
+		bool needsClipPlanes = isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
+
+		clipStart( needsClipPlanes );
 
 		draw();
 
 		drawChilds();
 
-		clipEnd();
+		clipEnd( needsClipPlanes );
 
 		matrixUnset();
 	}
@@ -569,15 +592,16 @@ Rectf Node::getScreenRect() const {
 	return Rectf( getScreenPos(), getPixelsSize() );
 }
 
-void Node::clipStart() {
+void Node::clipStart( bool needsClipPlanes ) {
 	if ( mVisible && isClipped() ) {
-		clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
+		clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight(),
+						 needsClipPlanes );
 	}
 }
 
-void Node::clipEnd() {
+void Node::clipEnd( bool needsClipPlanes ) {
 	if ( mVisible && isClipped() ) {
-		clipSmartDisable();
+		clipSmartDisable( needsClipPlanes );
 	}
 }
 
@@ -805,6 +829,23 @@ Node* Node::findByType( const Uint32& type ) const {
 	}
 
 	return NULL;
+}
+
+std::vector<Node*> Node::findAllByType( const Uint32& type ) const {
+	std::vector<Node*> nodes;
+
+	if ( !isClosing() && isType( type ) )
+		nodes.push_back( const_cast<Node*>( this ) );
+
+	Node* child = mChild;
+	while ( NULL != child ) {
+		std::vector<Node*> foundNode = child->findAllByType( type );
+		if ( !foundNode.empty() )
+			nodes.insert( nodes.end(), foundNode.begin(), foundNode.end() );
+		child = child->mNext;
+	}
+
+	return nodes;
 }
 
 bool Node::inNodeTree( Node* node ) const {
@@ -1067,7 +1108,7 @@ bool Node::isMeOrParentTreeScaled() const {
 bool Node::isMeOrParentTreeScaledOrRotated() const {
 	const Node* node = this;
 	while ( NULL != node ) {
-		if ( node->isScaled() || node->isRotated() )
+		if ( node->mNodeFlags & ( NODE_FLAG_SCALED | NODE_FLAG_ROTATED ) )
 			return true;
 		node = node->getParent();
 	}
@@ -1077,9 +1118,9 @@ bool Node::isMeOrParentTreeScaledOrRotated() const {
 bool Node::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() const {
 	const Node* node = this;
 	while ( NULL != node ) {
-		if ( node->isScaled() || node->isRotated() || node->isFrameBuffer() )
+		if ( node->mNodeFlags & ( NODE_FLAG_SCALED | NODE_FLAG_ROTATED | NODE_FLAG_FRAME_BUFFER ) )
 			return true;
-		node = node->getParent();
+		node = node->mParentNode;
 	}
 	return false;
 }
@@ -1550,8 +1591,15 @@ void Node::setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& del
 
 void Node::debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
 					 const Uint32& uniqueIdentifier ) {
-	removeActionsByTag( uniqueIdentifier );
-	setTimeout( std::move( runnable ), std::move( delay ), uniqueIdentifier );
+	Action* prevAction =
+		getActionManager()->getActionByTagFromTarget( this, uniqueIdentifier, true );
+	if ( prevAction ) {
+		auto* action = static_cast<Actions::Runnable*>( prevAction );
+		action->setCallback( std::move( runnable ) );
+		action->restart();
+	} else {
+		setTimeout( std::move( runnable ), delay, uniqueIdentifier );
+	}
 }
 
 void Node::setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
@@ -1626,7 +1674,9 @@ bool Node::hasFocusWithin() const {
 	return hasFocus() || inParentTreeOf( getEventDispatcher()->getFocusNode() );
 }
 
-void Node::setFocus() {}
+Node* Node::setFocus() {
+	return this;
+}
 
 Node* Node::getFirstWidget() const {
 	Node* child = mChild;
@@ -1714,20 +1764,29 @@ Node* Node::clipDisable() {
 }
 
 void Node::clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
-							const Uint32& Height ) {
-	if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+							const Uint32& Height, bool needsClipPlanes ) {
+	if ( needsClipPlanes ) {
 		GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
 	} else {
 		GLi->getClippingMask()->clipEnable( x, y, Width, Height );
 	}
 }
 
-void Node::clipSmartDisable() {
-	if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+void Node::clipSmartDisable( bool needsClipPlanes ) {
+	if ( needsClipPlanes ) {
 		GLi->getClippingMask()->clipPlaneDisable();
 	} else {
 		GLi->getClippingMask()->clipDisable();
 	}
+}
+
+void Node::clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
+							const Uint32& Height ) {
+	clipSmartEnable( x, y, Width, Height, isMeOrParentTreeScaledOrRotatedOrFrameBuffer() );
+}
+
+void Node::clipSmartDisable() {
+	clipSmartDisable( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() );
 }
 
 Node* Node::getDrawInvalidator() {

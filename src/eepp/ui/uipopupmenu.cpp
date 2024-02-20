@@ -3,6 +3,8 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI {
 
@@ -58,6 +60,17 @@ bool UIPopUpMenu::show() {
 	return false;
 }
 
+void UIPopUpMenu::showAtScreenPosition( Vector2f pos ) {
+	nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, this );
+	setPixelsPosition( pos );
+	show();
+}
+
+void UIPopUpMenu::showOverMouseCursor() {
+	showAtScreenPosition( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
+}
+
 bool UIPopUpMenu::hide() {
 	if ( isVisible() && !mHidingAction ) {
 		if ( NULL != getUISceneNode() &&
@@ -85,16 +98,32 @@ bool UIPopUpMenu::hide() {
 	return false;
 }
 
+void UIPopUpMenu::close() {
+	UIMenu::close();
+
+	auto menuSubMenus = findAllByType( UI_TYPE_MENUSUBMENU );
+	for ( auto* menu : menuSubMenus )
+		menu->asType<UIMenuSubMenu>()->getSubMenu()->close();
+}
+
 bool UIPopUpMenu::isHiding() const {
 	return mHidingAction != nullptr;
 }
 
-bool UIPopUpMenu::getCloseOnHide() const {
+bool UIPopUpMenu::closeOnHide() const {
 	return mCloseOnHide;
 }
 
 void UIPopUpMenu::setCloseOnHide( bool closeOnHide ) {
 	mCloseOnHide = closeOnHide;
+}
+
+bool UIPopUpMenu::closeSubMenusOnClose() const {
+	return mCloseSubMenusOnClose;
+}
+
+void UIPopUpMenu::setCloseSubMenusOnClose( bool closeSubMenusOnClose ) {
+	mCloseSubMenusOnClose = closeSubMenusOnClose;
 }
 
 }} // namespace EE::UI

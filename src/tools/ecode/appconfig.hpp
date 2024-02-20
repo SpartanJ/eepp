@@ -37,6 +37,7 @@ struct UIConfig {
 	std::string fallbackFont;
 	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
 	std::string theme;
+	std::string language;
 };
 
 struct WindowStateConfig {
@@ -48,6 +49,7 @@ struct WindowStateConfig {
 	std::string statusBarPartition;
 	int displayIndex{ 0 };
 	Vector2i position{ -1, -1 };
+	Uint32 lastRunVersion{ 0 };
 };
 
 struct CodeEditorConfig {
@@ -82,7 +84,7 @@ struct DocumentConfig {
 	bool autoDetectIndentType{ true };
 	bool writeUnicodeBOM{ false };
 	bool indentSpaces{ false };
-	TextDocument::LineEnding lineEndings{ TextDocument::LineEnding::LF };
+	TextFormat::LineEnding lineEndings{ TextFormat::LineEnding::LF };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };
 	int lineBreakingColumn{ 100 };
@@ -152,7 +154,7 @@ struct TerminalConfig {
 
 struct WorkspaceConfig {
 	bool restoreLastSession{ false };
-	bool checkForUpdatesAtStartup{ false };
+	bool checkForUpdatesAtStartup{ true };
 };
 
 struct LanguagesExtensions {
@@ -174,6 +176,8 @@ class AppConfig {
 	GlobalSearchBarConfig globalSearchBarConfig;
 	WorkspaceConfig workspace;
 	LanguagesExtensions languagesExtensions;
+
+	bool isNewVersion() const;
 
 	void load( const std::string& confPath, std::string& keybindingsPath,
 			   std::string& initColorScheme, std::vector<std::string>& recentFiles,

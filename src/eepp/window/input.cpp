@@ -347,6 +347,10 @@ bool Input::isControlPressed() const {
 	return ( mInputMod & KEYMOD_CTRL ) != 0;
 }
 
+bool Input::isKeyModPressed() const {
+	return ( mInputMod & KeyMod::getDefaultModifier() ) != 0;
+}
+
 bool Input::isLeftShiftPressed() const {
 	return ( mInputMod & KEYMOD_LSHIFT ) != 0;
 }

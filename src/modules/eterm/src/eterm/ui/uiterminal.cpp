@@ -421,8 +421,9 @@ Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() ||
-		 input->isLeftAltPressed() )
+		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
+		   !input->isAltGrPressed() ) ||
+		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
 	mTerm->onTextInput( event.getChar() );
@@ -535,13 +536,14 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 		auto sel( mTerm->getTerminal()->getSelection() );
 
 		if ( LuaPattern::matches( sel, LuaPattern::getURIPattern() ) ) {
-			menuAdd( menu, "open_link", "Open Link", "earth", "terminal-open-link" );
+			menuAdd( menu, i18n( "uiterminal_open_link", "Open Link" ), "earth",
+					 "terminal-open-link" );
 		}
 	}
 
-	menuAdd( menu, "copy", "Copy", "copy", "terminal-copy" )
+	menuAdd( menu, i18n( "uiterminal_copy", "Copy" ), "copy", "terminal-copy" )
 		->setEnabled( mTerm->getTerminal() && mTerm->getTerminal()->hasSelection() );
-	menuAdd( menu, "paste", "Paste", "paste", "terminal-paste" )
+	menuAdd( menu, i18n( "uiterminal_paste", "Paste" ), "paste", "terminal-paste" )
 		->setEnabled( !getUISceneNode()->getWindow()->getClipboard()->getText().empty() );
 }
 
@@ -552,12 +554,10 @@ Drawable* UITerminal::findIcon( const std::string& name ) {
 	return nullptr;
 }
 
-UIMenuItem* UITerminal::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-								 const String& translateString, const std::string& icon,
-								 const std::string& cmd ) {
+UIMenuItem* UITerminal::menuAdd( UIPopUpMenu* menu, const String& translateString,
+								 const std::string& icon, const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( getTranslatorString( "@string/uiterminal_" + translateKey, translateString ),
-				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( translateString, findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }

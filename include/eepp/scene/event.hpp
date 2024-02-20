@@ -110,6 +110,7 @@ class EE_API Event {
 		OnCopy,
 		OnRowCreated,
 		OnScrollChange,
+		OnModelChanged,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

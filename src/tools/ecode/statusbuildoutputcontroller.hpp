@@ -2,6 +2,7 @@
 #define ECODE_STATUSBUILDOUTPUTCONTROLLER_HPP
 
 #include "projectbuild.hpp"
+#include "uistatusbar.hpp"
 #include "widgetcommandexecuter.hpp"
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
@@ -34,21 +35,21 @@ struct PatternHolder {
 	ProjectBuildOutputParserConfig config;
 };
 
-class StatusBuildOutputController {
+class StatusBuildOutputController : public StatusBarElement {
   public:
 	StatusBuildOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app );
 
-	void toggle();
-
-	void hide();
-
-	void show();
+	virtual ~StatusBuildOutputController() {};
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
 				   const ProjectBuildOutputParser& outputParser = {} );
 
 	void runClean( const std::string& buildName, const std::string& buildType,
 				   const ProjectBuildOutputParser& outputParser = {} );
+
+	UIWidget* getWidget();
+
+	UIWidget* createWidget();
 
 	UICodeEditor* getContainer();
 
@@ -57,11 +58,6 @@ class StatusBuildOutputController {
 	void showBuildOutput();
 
   protected:
-	UISplitter* mMainSplitter{ nullptr };
-	UISceneNode* mUISceneNode{ nullptr };
-	App* mApp{ nullptr };
-	UICodeEditorSplitter* mSplitter{ nullptr };
-
 	UIRelativeLayoutCommandExecuter* mContainer{ nullptr };
 	UICodeEditor* mBuildOutput{ nullptr };
 	UISelectButton* mButOutput{ nullptr };

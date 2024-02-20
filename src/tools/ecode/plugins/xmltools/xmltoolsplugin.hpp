@@ -1,12 +1,12 @@
 #ifndef ECODE_XMLTOOLSPLUGIN_HPP
 #define ECODE_XMLTOOLSPLUGIN_HPP
 
+#include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
-#include <set>
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
@@ -24,9 +24,9 @@ class XMLToolsPlugin : public PluginBase {
 				 XMLToolsPlugin::NewSync };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
-	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~XMLToolsPlugin();
 

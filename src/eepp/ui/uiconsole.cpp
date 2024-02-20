@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cstdarg>
 #include <eepp/audio/listener.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontmanager.hpp>
@@ -139,6 +138,14 @@ void UIConsole::setMenuIconSize( size_t menuIconSize ) {
 	mMenuIconSize = menuIconSize;
 }
 
+KeyBindings& UIConsole::getKeyBindings() {
+	return mKeyBindings;
+}
+
+TextDocument& UIConsole::getDoc() {
+	return mDoc;
+}
+
 Font* UIConsole::getFont() const {
 	return mFontStyleConfig.Font;
 }
@@ -178,7 +185,7 @@ bool UIConsole::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.asString() );
+			Font* font = FontManager::instance()->getByName( attribute.value() );
 
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
@@ -225,11 +232,11 @@ std::string UIConsole::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%.2fpx", getFontSize() );
+			return String::fromFloat( getFontSize(), "px" );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyleConfig().getFontStyle() );
 		case PropertyId::TextStrokeWidth:
-			return String::toString( PixelDensity::dpToPx( getFontOutlineThickness() ) );
+			return String::fromFloat( PixelDensity::dpToPx( getFontOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
 			return getFontOutlineColor().toHexString();
 		default:
@@ -386,9 +393,9 @@ void UIConsole::setMaxLogLines( const Uint32& maxLogLines ) {
 	mMaxLogLines = maxLogLines;
 }
 
-void UIConsole::privPushText( const String& str ) {
+void UIConsole::privPushText( String&& str ) {
 	Lock l( mMutex );
-	mCmdLog.push_back( { str, String::hash( str ) } );
+	mCmdLog.push_back( { std::move( str ), String::hash( str ) } );
 	if ( mVisible )
 		invalidateDraw();
 	if ( mCmdLog.size() >= mMaxLogLines )
@@ -618,7 +625,7 @@ void UIConsole::cmdGetLog() {
 		String::split( String( String::toString( Log::instance()->getBuffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
-			privPushText( tvec[i] );
+			privPushText( std::move( tvec[i] ) );
 	}
 }
 
@@ -626,7 +633,7 @@ void UIConsole::cmdGetGpuExtensions() {
 	std::vector<String> tvec = String::split( String( GLi->getExtensions() ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
-			privPushText( tvec[i] );
+			privPushText( std::move( tvec[i] ) );
 	}
 }
 
@@ -640,13 +647,13 @@ void UIConsole::cmdGrep( const std::vector<String>& params ) {
 	if ( caseSensitive ) {
 		for ( const auto& cmd : mCmdLog )
 			if ( !cmd.log.empty() && cmd.log[0] != '>' && String::contains( cmd.log, search ) )
-				privPushText( cmd.log );
+				privPushText( String( cmd.log ) );
 	} else {
 		search.toLower();
 		for ( const auto& cmd : mCmdLog )
 			if ( !cmd.log.empty() && cmd.log[0] != '>' &&
 				 String::contains( String::toLower( cmd.log ), search ) )
-				privPushText( cmd.log );
+				privPushText( String( cmd.log ) );
 	}
 }
 
@@ -892,8 +899,9 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() ||
-		 input->isLeftAltPressed() )
+		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
+		   !input->isAltGrPressed() ) ||
+		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
 	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
@@ -1184,12 +1192,10 @@ void UIConsole::copySelection() {
 	getUISceneNode()->getWindow()->getClipboard()->setText( str );
 }
 
-UIMenuItem* UIConsole::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-								const String& translateString, const std::string& icon,
-								const std::string& cmd ) {
+UIMenuItem* UIConsole::menuAdd( UIPopUpMenu* menu, const String& translateString,
+								const std::string& icon, const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( getTranslatorString( "@string/uiconsole_" + translateKey, translateString ),
-				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( translateString, findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }
@@ -1200,7 +1206,8 @@ bool UIConsole::onCreateContextMenu( const Vector2i& position, const Uint32& fla
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
-	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mSelection.hasSelection() );
+	menuAdd( menu, i18n( "uiconsole_copy", "Copy" ), "copy", "copy" )
+		->setEnabled( mSelection.hasSelection() );
 
 	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
 	sendEvent( &event );
@@ -1211,7 +1218,7 @@ bool UIConsole::onCreateContextMenu( const Vector2i& position, const Uint32& fla
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [&, menu]( const Event* event ) {
+	menu->addEventListener( Event::OnItemClicked, [this, menu]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1252,12 +1259,10 @@ String UIConsole::getLastCommonSubStr( std::vector<String>& cmds ) {
 
 	do {
 		found = false;
-
-		bool allEqual = true;
-
 		String strBeg( ( *cmds.begin() ) );
 
 		if ( strTry.size() + 1 <= strBeg.size() ) {
+			bool allEqual = true;
 			strTry = String( strBeg.substr( 0, strTry.size() + 1 ) );
 
 			for ( ite = ++cmds.begin(); ite != cmds.end(); ++ite ) {
@@ -1284,18 +1289,15 @@ void UIConsole::printCommandsStartingWith( const String& start ) {
 	std::vector<String> cmds;
 
 	for ( auto it = mCallbacks.begin(); it != mCallbacks.end(); ++it ) {
-		if ( String::startsWith( it->first, start ) ) {
+		if ( String::startsWith( it->first, start ) )
 			cmds.push_back( it->first );
-		}
 	}
 
 	if ( cmds.size() > 1 ) {
 		privPushText( "> " + mDoc.getCurrentLine().getTextWithoutNewLine() );
 
-		std::vector<String>::iterator ite;
-
-		for ( ite = cmds.begin(); ite != cmds.end(); ++ite )
-			privPushText( ( *ite ) );
+		for ( auto& cmd : cmds )
+			privPushText( std::move( cmd ) );
 
 		String newStr( getLastCommonSubStr( cmds ) );
 
@@ -1416,40 +1418,10 @@ void UIConsole::pushText( const String& str ) {
 		std::vector<String> Strings = String::split( String( str ) );
 
 		for ( Uint32 i = 0; i < Strings.size(); i++ ) {
-			privPushText( Strings[i] );
+			privPushText( std::move( Strings[i] ) );
 		}
 	} else {
-		privPushText( str );
-	}
-}
-
-void UIConsole::pushText( const char* format, ... ) {
-	int n, size = 256;
-	std::string tstr( size, '\0' );
-
-	va_list args;
-
-	while ( 1 ) {
-		va_start( args, format );
-
-		n = vsnprintf( &tstr[0], size, format, args );
-
-		if ( n > -1 && n < size ) {
-			tstr.resize( n );
-
-			pushText( tstr );
-
-			va_end( args );
-
-			return;
-		}
-
-		if ( n > -1 )	  // glibc 2.1
-			size = n + 1; // precisely what is needed
-		else			  // glibc 2.0
-			size *= 2;	  // twice the old size
-
-		tstr.resize( size );
+		privPushText( String( str ) );
 	}
 }
 

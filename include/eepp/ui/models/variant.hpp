@@ -72,6 +72,9 @@ class EE_API Variant {
 	UIIcon* asIcon() const { return mValue.asIcon; }
 	void* asDataPtr() const { return mValue.asDataPtr; }
 	bool is( const Type& type ) const { return type == mType; }
+	bool isString() const {
+		return mType == Type::StdString || mType == Type::cstr || mType == Type::String;
+	}
 	void reset() {
 		switch ( mType ) {
 			case Type::StdString:
@@ -212,9 +215,45 @@ class EE_API Variant {
 		return false;
 	}
 
+	size_t size() const {
+		switch ( mType ) {
+			case Type::Bool:
+				return 1;
+			case Type::Int:
+				return sizeof( int );
+			case Type::Uint:
+				return sizeof( unsigned int );
+			case Type::Int64:
+				return sizeof( Int64 );
+			case Type::Uint64:
+				return sizeof( Uint64 );
+			case Type::Float:
+				return sizeof( Float );
+			case Type::StdString:
+				return asStdString().size();
+			case Type::String:
+				return asString().size();
+			case Type::Drawable:
+				return sizeof( mValue.asDrawable );
+			case Type::Icon:
+				return asIcon()->getName().size();
+			case Type::DataPtr:
+				return sizeof( mValue.asDataPtr );
+			case Type::Vector2f:
+				return sizeof( mValue.asVector2f );
+			case Type::Rectf:
+				return sizeof( mValue.asRectf );
+			case Type::cstr:
+				return strlen( asCStr() );
+			case Type::Invalid:
+				break;
+		}
+		return 0;
+	}
+
   private:
 	union {
-		void* asDataPtr;
+		void* asDataPtr{ nullptr };
 		Drawable* asDrawable;
 		UIIcon* asIcon;
 		std::string* asStdString;

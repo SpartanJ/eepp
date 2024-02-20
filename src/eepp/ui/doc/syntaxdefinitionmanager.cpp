@@ -1,10 +1,13 @@
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/languages/angelscript.hpp>
 #include <eepp/ui/doc/languages/batchscript.hpp>
+#include <eepp/ui/doc/languages/blueprint.hpp>
 #include <eepp/ui/doc/languages/crystal.hpp>
 #include <eepp/ui/doc/languages/css.hpp>
 #include <eepp/ui/doc/languages/d.hpp>
@@ -13,6 +16,7 @@
 #include <eepp/ui/doc/languages/fstab.hpp>
 #include <eepp/ui/doc/languages/gdscript.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
+#include <eepp/ui/doc/languages/graphql.hpp>
 #include <eepp/ui/doc/languages/hare.hpp>
 #include <eepp/ui/doc/languages/hlsl.hpp>
 #include <eepp/ui/doc/languages/htaccess.hpp>
@@ -22,6 +26,7 @@
 #include <eepp/ui/doc/languages/kotlin.hpp>
 #include <eepp/ui/doc/languages/lobster.hpp>
 #include <eepp/ui/doc/languages/markdown.hpp>
+#include <eepp/ui/doc/languages/moonscript.hpp>
 #include <eepp/ui/doc/languages/nelua.hpp>
 #include <eepp/ui/doc/languages/objeck.hpp>
 #include <eepp/ui/doc/languages/odin.hpp>
@@ -29,6 +34,7 @@
 #include <eepp/ui/doc/languages/perl.hpp>
 #include <eepp/ui/doc/languages/pico-8.hpp>
 #include <eepp/ui/doc/languages/po.hpp>
+#include <eepp/ui/doc/languages/pony.hpp>
 #include <eepp/ui/doc/languages/postgresql.hpp>
 #include <eepp/ui/doc/languages/r.hpp>
 #include <eepp/ui/doc/languages/rust.hpp>
@@ -249,7 +255,7 @@ static void addTypeScript() {
 			{ "type", "keyword2" },		 { "typeof", "keyword" },	  { "undefined", "literal" },
 			{ "var", "keyword" },		 { "void", "keyword" },		  { "while", "keyword" },
 			{ "with", "keyword" },		 { "yield", "keyword" },	  { "unknown", "keyword2" },
-			{ "namespace", "keyword" },	 { "abstract", "keyword" } },
+			{ "namespace", "keyword" },	 { "abstract", "keyword" },	  { "readonly", "keyword" } },
 		  "//" } );
 
 	SyntaxDefinitionManager::instance()
@@ -482,6 +488,7 @@ static void addCPP() {
 			  { "auto", "keyword2" },
 			  { "const", "keyword" },
 			  { "void", "keyword" },
+			  { "override", "keyword" },
 			  { "int", "keyword2" },
 			  { "short", "keyword2" },
 			  { "long", "keyword2" },
@@ -1137,7 +1144,8 @@ static void addCMake() {
 													{ { "[%a_][%w_]*" }, "symbol" },
 												},
 												std::move( cmake_symbols ),
-												"//" } );
+												"#",
+												{ "^cmake_minimum_required.*%c" } } );
 }
 
 static void addJSX() {
@@ -1490,6 +1498,7 @@ static void addxit() {
 			{ { "^(%[x%]%s)([%.!]+)%s" }, { "function", "function", "red" } },
 			{ { "^(%[@%]%s)([%.!]+)%s" }, { "keyword", "keyword", "red" } },
 			{ { "^(%[~%]%s)([%.!]+)%s" }, { "comment", "comment", "red" } },
+			{ { "^(%[%.%]%s)([%.!]+)%s" }, { "comment", "comment", "red" } },
 			{ { "%#[%wñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ%-%_]+%=\"", "\"" },
 			  "string" },
 			{ { "%#[%wñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ%-%_]+%='", "'" },
@@ -1502,6 +1511,7 @@ static void addxit() {
 			{ { "^%[@%]%s" }, "keyword" },
 			{ { "^%[~%]%s" }, "comment" },
 			{ { "^%[%?%]%s" }, "warning" },
+			{ { "^%[%.%]%s" }, "notice" },
 			{ { "^[%wñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w"
 				"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ%s%p]*%f[\n]" },
 			  "underline" },
@@ -1672,13 +1682,14 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 80 );
+	mDefinitions.reserve( 83 );
 
 	// Register some languages support.
 	addPlainText();
 	addAngelScript();
 	addBash();
 	addBatchScript();
+	addBlueprint();
 	addC();
 	addCMake();
 	addContainerfile();
@@ -1696,6 +1707,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addGDScript();
 	addGLSL();
 	addGo();
+	addGraphQL();
 	addHaskell();
 	addHare();
 	addHaxe();
@@ -1717,6 +1729,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addMakefile();
 	addMarkdown();
 	addMeson();
+	addMoonscript();
 	addNelua();
 	addNim();
 	addObjeck();
@@ -1727,6 +1740,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addPICO8();
 	addPHP();
 	addPO();
+	addPony();
 	addPostgreSQL();
 	addPowerShell();
 	addPython();
@@ -1774,10 +1788,10 @@ static json toJson( const SyntaxDefinition& def ) {
 			} else {
 				pattern["pattern"] = ptrn.patterns;
 			}
-			if ( ptrn.types.size() == 1 ) {
-				pattern["type"] = ptrn.types[0];
+			if ( ptrn.typesNames.size() == 1 ) {
+				pattern["type"] = ptrn.typesNames[0];
 			} else {
-				pattern["type"] = ptrn.types;
+				pattern["type"] = ptrn.typesNames;
 			}
 			if ( !ptrn.syntax.empty() )
 				pattern["syntax"] = ptrn.syntax;

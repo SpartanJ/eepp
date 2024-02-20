@@ -2,12 +2,15 @@
 #include <eepp/core/debug.hpp>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#define SUBPROCESS_USE_POSIX_SPAWN
+#elif defined( __GLIBC__ ) && ( __GLIBC__ > 2 || ( __GLIBC__ == 2 && __GLIBC_MINOR__ >= 29 ) )
 #define SUBPROCESS_USE_POSIX_SPAWN
 #endif
 #include <thirdparty/subprocess/subprocess.h>
@@ -29,7 +32,7 @@ namespace EE { namespace System {
 
 Process::Process() {}
 
-Process::Process( const std::string& command, const Uint32& options,
+Process::Process( const std::string& command, Uint32 options,
 				  const std::unordered_map<std::string, std::string>& environment,
 				  const std::string& workingDirectory, const size_t& bufferSize ) :
 	mBufferSize( bufferSize ) {
@@ -47,55 +50,30 @@ Process::~Process() {
 	eeFree( mProcess );
 }
 
-bool Process::create( const std::string& command, const Uint32& options,
+bool Process::create( const std::string& command, Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
-	if ( mProcess )
-		return false;
 	std::vector<std::string> cmdArr = String::split( command, " ", "", "\"", true );
-	std::vector<const char*> strings;
-	mProcess = eeMalloc( sizeof( subprocess_s ) );
-	memset( mProcess, 0, sizeof( subprocess_s ) );
-	if ( !environment.empty() ) {
-		std::string rcommand;
-		if ( FileSystem::fileExists( command ) ) {
-			rcommand = command;
-		} else {
-			rcommand = Sys::which( command );
-			if ( rcommand.empty() )
-				return false;
-		}
-		strings.push_back( rcommand.c_str() );
-		std::vector<std::string> envArr;
-		std::vector<const char*> envStrings;
-		for ( const auto& pair : environment ) {
-			envArr.push_back( String::format( "%s=%s", pair.first.c_str(), pair.second.c_str() ) );
-			envStrings.push_back( envArr[envArr.size() - 1].c_str() );
-		}
-		envStrings.push_back( NULL );
-
-		auto ret = 0 == subprocess_create_ex( strings.data(), options, envStrings.data(),
-											  !workingDirectory.empty() ? workingDirectory.c_str()
-																		: nullptr,
-											  PROCESS_PTR );
-		return ret;
-	}
-	for ( size_t i = 0; i < cmdArr.size(); ++i )
-		strings.push_back( cmdArr[i].c_str() );
-	strings.push_back( NULL );
-	auto ret =
-		0 == subprocess_create_ex( strings.data(), options, nullptr,
-								   !workingDirectory.empty() ? workingDirectory.c_str() : nullptr,
-								   PROCESS_PTR );
-	return ret;
+	if ( cmdArr.empty() )
+		return false;
+	std::string cmd( cmdArr[0] );
+	cmdArr.erase( cmdArr.begin() );
+	return create( cmd, cmdArr, options, environment, workingDirectory );
 }
 
-bool Process::create( const std::string& command, const std::string& args, const Uint32& options,
+bool Process::create( const std::string& command, const std::string& args, Uint32 options,
+					  const std::unordered_map<std::string, std::string>& environment,
+					  const std::string& workingDirectory ) {
+	return create( command, String::split( args, " ", "", "\"", true ), options, environment,
+				   workingDirectory );
+}
+
+bool Process::create( const std::string& command, const std::vector<std::string>& cmdArr,
+					  Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
 	if ( mProcess )
 		return false;
-	std::vector<std::string> cmdArr = String::split( args, " ", "", "\"", true );
 	std::vector<const char*> strings;
 	mProcess = eeMalloc( sizeof( subprocess_s ) );
 	memset( mProcess, 0, sizeof( subprocess_s ) );
@@ -108,17 +86,31 @@ bool Process::create( const std::string& command, const std::string& args, const
 			if ( rcommand.empty() )
 				return false;
 		}
+		std::vector<std::string> envArr;
+		std::vector<const char*> envStrings;
+		std::unordered_map<std::string, std::string> envVars;
+		if ( options & Process::InheritEnvironment ) {
+			envVars = Sys::getEnvironmentVariables();
+			options &= ~Process::InheritEnvironment;
+		}
+		envArr.reserve( environment.size() + envVars.size() );
+		strings.reserve( cmdArr.size() + 1 );
+		envStrings.reserve( envArr.size() + 1 );
+
 		strings.push_back( rcommand.c_str() );
 		for ( size_t i = 0; i < cmdArr.size(); ++i )
 			strings.push_back( cmdArr[i].c_str() );
 		strings.push_back( NULL );
 
-		std::vector<std::string> envArr;
-		std::vector<const char*> envStrings;
-		for ( const auto& pair : environment ) {
+		// Set / Overwrite our envs
+		for ( auto& pair : environment )
+			envVars[pair.first] = std::move( pair.second );
+
+		for ( const auto& pair : envVars ) {
 			envArr.push_back( String::format( "%s=%s", pair.first.c_str(), pair.second.c_str() ) );
 			envStrings.push_back( envArr[envArr.size() - 1].c_str() );
 		}
+
 		envStrings.push_back( NULL );
 
 		auto ret = 0 == subprocess_create_ex( strings.data(), options, envStrings.data(),
@@ -140,8 +132,8 @@ bool Process::create( const std::string& command, const std::string& args, const
 	return ret;
 }
 
-size_t Process::readAllStdOut( std::string& buffer ) {
-	return readAll( buffer, false );
+size_t Process::readAllStdOut( std::string& buffer, Time timeout ) {
+	return readAll( buffer, false, timeout );
 }
 
 size_t Process::readStdOut( std::string& buffer ) {
@@ -153,8 +145,8 @@ size_t Process::readStdOut( char* const buffer, const size_t& size ) {
 	return subprocess_read_stdout( PROCESS_PTR, buffer, size );
 }
 
-size_t Process::readAllStdErr( std::string& buffer ) {
-	return readAll( buffer, true );
+size_t Process::readAllStdErr( std::string& buffer, Time timeout ) {
+	return readAll( buffer, true, timeout );
 }
 
 size_t Process::readStdErr( std::string& buffer ) {
@@ -176,6 +168,10 @@ size_t Process::write( const char* buffer, const size_t& size ) {
 
 size_t Process::write( const std::string& buffer ) {
 	return write( buffer.c_str(), buffer.size() );
+}
+
+size_t Process::write( const std::string_view& buffer ) {
+	return write( buffer.data(), buffer.size() );
 }
 
 bool Process::join( int* const returnCodeOut ) {
@@ -227,24 +223,31 @@ const bool& Process::isShuttingDown() {
 	return mShuttingDown;
 }
 
-size_t Process::readAll( std::string& buffer, bool readErr ) {
+size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 	eeASSERT( mProcess != nullptr );
 	if ( buffer.empty() || buffer.size() < CHUNK_SIZE )
 		buffer.resize( CHUNK_SIZE );
 	size_t totalBytesRead = 0;
+	Clock clock;
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	while ( !mShuttingDown && isAlive() ) {
 		unsigned n =
 			readErr
 				? subprocess_read_stderr( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE )
 				: subprocess_read_stdout( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE );
-		if ( n == 0 )
-			break;
+		if ( n == 0 ) {
+			if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout )
+				break;
+			continue;
+		}
 		totalBytesRead += n;
 		if ( totalBytesRead + CHUNK_SIZE > buffer.size() )
 			buffer.resize( totalBytesRead + CHUNK_SIZE );
+		clock.restart();
 	}
 #elif defined( EE_PLATFORM_POSIX )
+	if ( !isAlive() )
+		return 0;
 	auto stdOutFd = fileno( readErr ? PROCESS_PTR->stderr_file : PROCESS_PTR->stdout_file );
 	pollfd pollfd = {};
 	pollfd.fd =
@@ -255,9 +258,13 @@ size_t Process::readAll( std::string& buffer, bool readErr ) {
 	ssize_t n = 0;
 	while ( anyOpen && !mShuttingDown && isAlive() && errno != EINTR ) {
 		int res = poll( &pollfd, static_cast<nfds_t>( 1 ), 100 );
-		if ( res <= 0 )
+		if ( res <= 0 ) {
+			if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout )
+				break;
 			continue;
+		}
 		anyOpen = false;
+		clock.restart();
 		if ( pollfd.revents & POLLIN ) {
 			n = read( pollfd.fd, buffer.data() + totalBytesRead, CHUNK_SIZE );
 			if ( n > 0 ) {
@@ -300,7 +307,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 											mBufferSize );
 				if ( n == 0 )
 					break;
-				if ( n < static_cast<long>( mBufferSize - 1 ) )
+				if ( n < mBufferSize - 1 )
 					buffer[n] = '\0';
 				if ( !mShuttingDown )
 					mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
@@ -317,7 +324,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 											mBufferSize );
 				if ( n == 0 )
 					break;
-				if ( n < static_cast<long>( mBufferSize - 1 ) )
+				if ( n < mBufferSize - 1 )
 					buffer[n] = '\0';
 
 				if ( !mShuttingDown )

@@ -1,6 +1,7 @@
 #ifndef ECODE_FORMATTERPLUGIN_HPP
 #define ECODE_FORMATTERPLUGIN_HPP
 
+#include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
@@ -36,9 +37,9 @@ class FormatterPlugin : public Plugin {
 			FormatterPlugin::New, { 0, 2, 3 },		FormatterPlugin::NewSync };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
-	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~FormatterPlugin();
 
@@ -96,6 +97,8 @@ class FormatterPlugin : public Plugin {
 	void loadFormatterConfig( const std::string& path, bool updateConfigFile );
 
 	void formatDoc( UICodeEditor* editor );
+
+	void formatDocAsync( UICodeEditor* editor );
 
 	void runFormatter( UICodeEditor* editor, const Formatter& formatter, const std::string& path );
 

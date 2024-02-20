@@ -26,6 +26,9 @@ class EE_API ActionManager {
 
 	Action* getActionByTag( const Action::UniqueID& tag );
 
+	Action* getActionByTagFromTarget( Node* target, const Action::UniqueID& tag,
+									  bool mustBePending = false );
+
 	bool removeActionByTag( const Action::UniqueID& tag );
 
 	bool removeAction( Action* action );

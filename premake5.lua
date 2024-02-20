@@ -328,7 +328,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 	filter "action:vs*"
-		buildoptions { "/utf-8" }
+		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
@@ -693,6 +693,9 @@ function build_eepp( build_name )
 	filter { "system:macosx", "action:xcode* or options:use-frameworks" }
 		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
 
+	filter { "system:macosx", "not action:xcode*", "not options:use-frameworks" }
+		libdirs { "/opt/homebrew/lib" }
+
 	filter "system:windows"
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }
@@ -716,7 +719,7 @@ function build_eepp( build_name )
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
-		buildoptions { "/bigobj" }
+		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
 
 	filter { "action:export-compile-commands", "system:macosx" }
 		buildoptions { "-std=c++17" }
@@ -1104,8 +1107,49 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/examples/ui_hello_world/*.cpp" }
-		incdirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-hello-world", true )
+
+	project "eepp-7guis-counter"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/counter/*.cpp" }
+		build_link_configuration( "eepp-7guis-counter", true )
+
+	project "eepp-7guis-temperature-converter"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/temperature_converter/*.cpp" }
+		build_link_configuration( "eepp-7guis-temperature-converter", true )
+
+	project "eepp-7guis-flight-booker"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/flight_booker/*.cpp" }
+		build_link_configuration( "eepp-7guis-flight-booker", true )
+
+	project "eepp-7guis-timer"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/timer/*.cpp" }
+		build_link_configuration( "eepp-7guis-timer", true )
+
+	project "eepp-7guis-crud"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/crud/*.cpp" }
+		build_link_configuration( "eepp-7guis-crud", true )
+
+	project "eepp-7guis-circle-drawer"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/circle_drawer/*.cpp" }
+		build_link_configuration( "eepp-7guis-circle-drawer", true )
+
+	project "eepp-7guis-cells"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/cells/*.cpp" }
+		build_link_configuration( "eepp-7guis-cells", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"
@@ -1127,7 +1171,6 @@ workspace "eepp"
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
-		eepp_module_maps_add()
 		build_link_configuration( "eepp-UIEditor", true )
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework" }

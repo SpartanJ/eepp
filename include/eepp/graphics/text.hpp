@@ -65,6 +65,31 @@ class EE_API Text {
 									  const Uint32& tabWidth = 4,
 									  const Float& outlineThickness = 0.f );
 
+	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
+													const String& string, Float maxWidth,
+													const Uint32& style, const Uint32& tabWidth = 4,
+													const Float& outlineThickness = 0.f );
+
+	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
+													const String::View& string, Float maxWidth,
+													const Uint32& style, const Uint32& tabWidth = 4,
+													const Float& outlineThickness = 0.f );
+
+	static std::size_t findLastCharPosWithinLength( const String& string, Float maxWidth,
+													const FontStyleConfig& config,
+													const Uint32& tabWidth = 4 );
+
+	static std::size_t findLastCharPosWithinLength( const String::View& string, Float maxWidth,
+													const FontStyleConfig& config,
+													const Uint32& tabWidth = 4 );
+
+	static bool wrapText( Font* font, const Uint32& fontSize, String& string, const Float& maxWidth,
+						  const Uint32& style, const Uint32& tabWidth = 4,
+						  const Float& outlineThickness = 0.f );
+
+	static bool wrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
+						  const Uint32& tabWidth = 4 );
+
 	static Text* New();
 
 	static Text* New( const String& string, Font* font,
@@ -84,6 +109,8 @@ class EE_API Text {
 				 Color FontColor = Color( 255, 255, 255, 255 ),
 				 Color FontShadowColor = Color( 0, 0, 0, 255 ),
 				 Uint32 characterSize = PixelDensity::dpToPx( 12 ) );
+
+	void setString( const String::View& string );
 
 	void setString( const String& string );
 
@@ -280,6 +307,21 @@ class EE_API Text {
 	template <typename StringType>
 	static Sizef draw( const StringType& string, const Vector2f& pos, const FontStyleConfig& config,
 					   const Uint32& tabWidth = 4 );
+
+	template <typename StringType>
+	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
+													const StringType& string, Float width,
+													const Uint32& style, const Uint32& tabWidth = 4,
+													const Float& outlineThickness = 0.f );
+
+	template <typename StringType>
+	static bool wrapText( Font* font, const Uint32& fontSize, StringType& string,
+						  const Float& maxWidth, const Uint32& style, const Uint32& tabWidth = 4,
+						  const Float& outlineThickness = 0.f );
+
+	template <typename StringType>
+	static bool wrapText( StringType& string, const Float& maxWidth, const FontStyleConfig& config,
+						  const Uint32& tabWidth = 4 );
 };
 
 }} // namespace EE::Graphics

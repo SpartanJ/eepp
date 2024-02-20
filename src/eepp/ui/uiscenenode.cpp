@@ -2,6 +2,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -36,7 +37,6 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	SceneNode( window ),
 	mRoot( NULL ),
 	mIsLoading( false ),
-	mVerbose( false ),
 	mUpdatingLayouts( false ),
 	mUIThemeManager( UIThemeManager::New() ),
 	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
@@ -106,9 +106,10 @@ void UISceneNode::onDrawDebugDataChange() {
 	}
 }
 
-void UISceneNode::setFocus() {
+Node* UISceneNode::setFocus() {
 	if ( NULL != getEventDispatcher() )
 		getEventDispatcher()->setFocusNode( mRoot );
+	return this;
 }
 
 void UISceneNode::nodeToWorldTranslation( Vector2f& Pos ) const {
@@ -191,17 +192,14 @@ String UISceneNode::getTranslatorString( const std::string& str ) {
 String UISceneNode::getTranslatorString( const std::string& str, const String& defaultValue ) {
 	if ( str.size() >= 8 && String::startsWith( str, "@string" ) ) {
 		if ( str[7] == '/' ) {
-			String tstr( mTranslator.getString( str.substr( 8 ) ) );
-			if ( !tstr.empty() )
-				return tstr;
+			return mTranslator.getString( str.substr( 8 ), defaultValue );
 		} else if ( str[7] == '(' ) {
 			FunctionString fun( FunctionString::parse( str ) );
 			if ( !fun.isEmpty() ) {
-				String tstr( mTranslator.getString( fun.getParameters()[0] ) );
-				if ( !tstr.empty() )
-					return tstr;
+				if ( !defaultValue.empty() )
+					return mTranslator.getString( fun.getParameters()[0], defaultValue );
 				if ( fun.getParameters().size() >= 2 )
-					return fun.getParameters()[1];
+					return mTranslator.getString( fun.getParameters()[0], fun.getParameters()[1] );
 			}
 		}
 	}
@@ -210,12 +208,7 @@ String UISceneNode::getTranslatorString( const std::string& str, const String& d
 
 String UISceneNode::getTranslatorStringFromKey( const std::string& key,
 												const String& defaultValue ) {
-	String tstr = mTranslator.getString( key );
-
-	if ( !tstr.empty() )
-		return tstr;
-
-	return defaultValue;
+	return mTranslator.getString( key, defaultValue );
 }
 
 String UISceneNode::i18n( const std::string& key, const String& defaultValue ) {
@@ -304,7 +297,7 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 		} else if ( String::toLower( std::string( widget.name() ) ) == "style" ) {
 			CSS::StyleSheetParser parser;
 
-			if ( parser.loadFromString( widget.text().as_string() ) ) {
+			if ( parser.loadFromString( std::string_view{ widget.text().as_string() } ) ) {
 				parser.getStyleSheet().setMarker( marker );
 				combineStyleSheet( parser.getStyleSheet(), false );
 			}
@@ -383,11 +376,14 @@ void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet,
 }
 
 void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet,
-									 const bool& forceReloadStyle ) {
+									 const bool& forceReloadStyle, const Uint32& marker ) {
 	CSS::StyleSheetParser parser;
 
-	if ( parser.loadFromString( inlineStyleSheet ) )
+	if ( parser.loadFromString( inlineStyleSheet ) ) {
+		parser.getStyleSheet().setMarker( marker );
+
 		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle );
+	}
 }
 
 CSS::StyleSheet& UISceneNode::getStyleSheet() {
@@ -652,84 +648,77 @@ UIThemeManager* UISceneNode::getUIThemeManager() const {
 	return mUIThemeManager;
 }
 
+void UISceneNode::setTheme( UITheme* theme ) {
+	setTheme( theme, mRoot );
+}
+
+void UISceneNode::setTheme( UITheme* theme, Node* to ) {
+	to->forEachChild( [theme, this]( Node* node ) {
+		if ( node->isWidget() )
+			node->asType<UIWidget>()->setTheme( theme );
+		setTheme( theme, node );
+	} );
+}
+
 UIWidget* UISceneNode::getRoot() const {
 	return mRoot;
 }
 
-bool UISceneNode::getVerbose() const {
-	return mVerbose;
-}
-
-void UISceneNode::setVerbose( bool verbose ) {
-	mVerbose = verbose;
-}
-
-void UISceneNode::invalidateStyle( UIWidget* node ) {
+void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	eeASSERT( NULL != node );
 
 	if ( node->isClosing() )
 		return;
 
-	Node* itNode = NULL;
-
-	if ( mDirtyStyle.count( node ) > 0 )
-		return;
-
-	for ( auto& dirtyNode : mDirtyStyle ) {
-		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) ) {
+	if ( mDirtyStyle.count( node ) > 0 ) {
+		if ( !tryReinsert )
 			return;
-		}
+		else
+			mDirtyStyle.erase( node );
 	}
 
-	std::vector<UnorderedSet<UIWidget*>::iterator> itEraseList;
+	for ( auto& dirtyNode : mDirtyStyle )
+		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
+			return;
 
-	for ( auto it = mDirtyStyle.begin(); it != mDirtyStyle.end(); ++it ) {
-		itNode = *it;
+	std::vector<UIWidget*> eraseList;
 
-		if ( NULL == itNode || node->isParentOf( itNode ) ) {
-			itEraseList.push_back( it );
-		}
-	}
+	for ( auto widget : mDirtyStyle )
+		if ( NULL == widget || node->isParentOf( widget ) )
+			eraseList.push_back( widget );
 
-	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
-		mDirtyStyle.erase( *ite );
-	}
+	for ( auto widget : eraseList )
+		mDirtyStyle.erase( widget );
 
 	mDirtyStyle.insert( node );
 }
 
-void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimations ) {
+void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimations,
+										bool tryReinsert ) {
 	eeASSERT( NULL != node );
 
 	if ( node->isClosing() )
 		return;
 
-	Node* itNode = NULL;
-
-	if ( mDirtyStyleState.count( node ) > 0 )
-		return;
-
-	for ( auto& dirtyNode : mDirtyStyleState ) {
-		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) ) {
+	if ( mDirtyStyleState.count( node ) > 0 ) {
+		if ( !tryReinsert )
 			return;
-		}
+		else
+			mDirtyStyleState.erase( node );
 	}
 
-	std::vector<UnorderedSet<UIWidget*>::iterator> itEraseList;
+	for ( auto& dirtyNode : mDirtyStyleState )
+		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
+			return;
 
-	for ( auto it = mDirtyStyleState.begin(); it != mDirtyStyleState.end(); ++it ) {
-		itNode = *it;
+	std::vector<UIWidget*> eraseList;
 
-		if ( NULL != itNode && node->isParentOf( itNode ) ) {
-			itEraseList.push_back( it );
-		} else if ( NULL == itNode ) {
-			itEraseList.push_back( it );
-		}
-	}
+	for ( auto widget : mDirtyStyleState )
+		if ( NULL == widget || node->isParentOf( widget ) )
+			eraseList.push_back( widget );
 
-	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
-		mDirtyStyleState.erase( *ite );
-	}
+	for ( auto widget : eraseList )
+		mDirtyStyleState.erase( widget );
 
 	mDirtyStyleState.insert( node );
 	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
@@ -741,34 +730,23 @@ void UISceneNode::invalidateLayout( UILayout* node ) {
 	if ( node->isClosing() )
 		return;
 
-	Node* itNode = NULL;
-
 	if ( mDirtyLayouts.count( node ) > 0 )
 		return;
 
 	if ( node->getParent()->isLayout() ) {
-		for ( auto& dirtyNode : mDirtyLayouts ) {
-			if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) &&
-				 node->getParent()->isLayout() ) {
+		for ( auto& dirtyNode : mDirtyLayouts )
+			if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
 				return;
-			}
-		}
 
-		std::vector<UnorderedSet<UILayout*>::iterator> itEraseList;
+		std::vector<UILayout*> eraseList;
 
-		for ( auto it = mDirtyLayouts.begin(); it != mDirtyLayouts.end(); ++it ) {
-			itNode = *it;
+		for ( auto layout : mDirtyLayouts )
+			if ( NULL == layout ||
+				 ( node->isParentOf( layout ) && layout->getParent()->isLayout() ) )
+				eraseList.push_back( layout );
 
-			if ( NULL != itNode && node->isParentOf( itNode ) && itNode->getParent()->isLayout() ) {
-				itEraseList.push_back( it );
-			} else if ( NULL == itNode ) {
-				itEraseList.push_back( it );
-			}
-		}
-
-		for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
-			mDirtyLayouts.erase( *ite );
-		}
+		for ( auto layout : eraseList )
+			mDirtyLayouts.erase( layout );
 	}
 
 	mDirtyLayouts.insert( node );

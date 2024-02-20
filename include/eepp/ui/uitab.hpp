@@ -44,6 +44,8 @@ class EE_API UITab : public UISelectButton {
 
 	void removeTab( bool destroyOwnedNode = true, bool immediateClose = false );
 
+	UIWidget* getCloseButton() const;
+
   protected:
 	friend class UITabWidget;
 
@@ -62,6 +64,8 @@ class EE_API UITab : public UISelectButton {
 
 	Uint32 onDragStop( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
+
 	virtual Uint32 onMessage( const NodeMessage* message );
 
 	virtual void onStateChange();
@@ -71,6 +75,8 @@ class EE_API UITab : public UISelectButton {
 	virtual void onParentChange();
 
 	virtual void onSizeChange();
+
+	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
 
 	void setOwnedNode();
 

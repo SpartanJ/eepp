@@ -3,6 +3,7 @@
 
 #include <eepp/config.hpp>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace EE { namespace System {
@@ -58,6 +59,8 @@ class EE_API LuaPattern {
 		void next();
 
 		std::string group( int idx = -1 ) const;
+
+		std::string_view groupView( int idx = -1 ) const;
 
 		bool range( int idx, int& start, int& end ) const;
 

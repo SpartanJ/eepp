@@ -77,10 +77,23 @@ class EE_API Log : protected Mutex {
 	 ** @param level The log level that will try to write.
 	 ** @param format The Text format.
 	 */
-	void writef( const LogLevel& level, const char* format, ... );
+	template <typename... Args>
+	void writef( const LogLevel& level, std::string_view format, Args&&... args ) {
+		if ( mLogLevelThreshold > level )
+			return;
+		auto result = String::format(
+			format, FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
+		write( logLevelWithTimestamp( level, result, true ) );
+	}
 
 	/** @brief Writes a formated string to the log */
-	void writef( const char* format, ... );
+	template <typename... Args>
+	void writef( std::string_view format, Args&&... args ) {
+		auto result = String::format(
+			format, FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
+		write( result );
+		write( "\n" );
+	}
 
 	/** @returns A reference of the current writed log. */
 	const std::string& getBuffer() const;
@@ -128,7 +141,9 @@ class EE_API Log : protected Mutex {
 		Log::instance()->writel( LogLevel::Debug, text );
 	}
 
-	static void info( const std::string_view& text ) { Log::instance()->writel( LogLevel::Info, text ); }
+	static void info( const std::string_view& text ) {
+		Log::instance()->writel( LogLevel::Info, text );
+	}
 
 	static void notice( const std::string_view& text ) {
 		Log::instance()->writel( LogLevel::Notice, text );
@@ -151,31 +166,45 @@ class EE_API Log : protected Mutex {
 	}
 
 	template <class... Args> static void debug( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Debug, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Debug, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void info( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Info, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Info, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void notice( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Notice, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Notice, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void warning( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Warning, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Warning, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void error( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Error, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Error, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void critical( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Critical, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Critical, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
 	template <class... Args> static void assertLog( const char* format, Args&&... args ) {
-		Log::instance()->writef( LogLevel::Assert, format, std::forward<Args>( args )... );
+		Log::instance()->writef(
+			LogLevel::Assert, format,
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
 
   protected:
@@ -198,6 +227,9 @@ class EE_API Log : protected Mutex {
 	void closeFS();
 
 	void writeToReaders( const std::string_view& text );
+
+	std::string logLevelWithTimestamp( const LogLevel& level, const std::string_view& text,
+									   bool appendNewLine );
 };
 
 }} // namespace EE::System

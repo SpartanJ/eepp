@@ -149,6 +149,61 @@ UIWidget* UIWidget::setLayoutMarginBottom( const Float& marginBottom ) {
 	return this;
 }
 
+UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
+	if ( mLayoutMargin != margin ) {
+		mLayoutMarginPx = margin;
+		mLayoutMargin = PixelDensity::pxToDp( mLayoutMarginPx ).ceil();
+		onMarginChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
+	if ( mLayoutMargin.Left != marginLeft ) {
+		mLayoutMarginPx.Left = marginLeft;
+		mLayoutMargin.Left = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Left ) );
+		onMarginChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
+	if ( mLayoutMargin.Right != marginRight ) {
+		mLayoutMarginPx.Right = marginRight;
+		mLayoutMargin.Right = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Right ) );
+		onMarginChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
+	if ( mLayoutMargin.Top != marginTop ) {
+		mLayoutMarginPx.Top = marginTop;
+		mLayoutMargin.Top = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Top ) );
+		onMarginChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setLayoutPixelsMarginBottom( const Float& marginBottom ) {
+	if ( mLayoutMargin.Bottom != marginBottom ) {
+		mLayoutMarginPx.Bottom = marginBottom;
+		mLayoutMargin.Bottom = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Bottom ) );
+		onMarginChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
 Float UIWidget::getLayoutWeight() const {
 	return mLayoutWeight;
 }
@@ -333,7 +388,10 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 				runAction( Actions::Runnable::New(
 					[this] {
 						if ( isTooltipEnabled() &&
-							 getEventDispatcher()->getMouseOverNode() == this ) {
+							 getEventDispatcher()->getMouseOverNode() == this &&
+							 ( mTooltip == NULL || !mTooltip->isVisible() ) &&
+							 ( !mTooltipText.empty() ||
+							   ( mTooltip && !mTooltip->getText().empty() ) ) ) {
 							createTooltip();
 							mTooltip->setPixelsPosition( getTooltipPosition() );
 							mTooltip->show();
@@ -354,10 +412,9 @@ Uint32 UIWidget::onMouseOver( const Vector2i& position, const Uint32& flags ) {
 Uint32 UIWidget::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	EventDispatcher* eventDispatcher = getEventDispatcher();
 
-	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this ) {
-		if ( mVisible && NULL != mTooltip ) {
-			mTooltip->hide();
-		}
+	if ( NULL != eventDispatcher && eventDispatcher->getMouseOverNode() != this && mVisible &&
+		 NULL != mTooltip && !mTooltip->dontAutoHideOnMouseMove() ) {
+		mTooltip->hide();
 	}
 
 	return UINode::onMouseLeave( Pos, Flags );
@@ -653,6 +710,66 @@ UIWidget* UIWidget::setPaddingBottom( const Float& paddingBottom ) {
 	if ( paddingBottom != mPadding.Bottom ) {
 		mPadding.Bottom = paddingBottom;
 		mPaddingPx.Bottom = eeceil( PixelDensity::dpToPx( mPadding.Bottom ) );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setPaddingPixels( const Rectf& padding ) {
+	if ( padding != mPadding ) {
+		mPaddingPx = padding;
+		mPadding = PixelDensity::pxToDp( mPadding ).ceil();
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setPaddingPixelsLeft( const Float& paddingLeft ) {
+	if ( paddingLeft != mPadding.Left ) {
+		mPaddingPx.Left = paddingLeft;
+		mPadding.Left = eeceil( PixelDensity::pxToDp( mPadding.Left ) );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setPaddingPixelsRight( const Float& paddingRight ) {
+	if ( paddingRight != mPadding.Right ) {
+		mPaddingPx.Right = paddingRight;
+		mPadding.Right = eeceil( PixelDensity::pxToDp( mPadding.Right ) );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setPaddingPixelsTop( const Float& paddingTop ) {
+	if ( paddingTop != mPadding.Top ) {
+		mPaddingPx.Top = paddingTop;
+		mPadding.Top = eeceil( PixelDensity::pxToDp( mPadding.Top ) );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UIWidget* UIWidget::setPaddingPixelsBottom( const Float& paddingBottom ) {
+	if ( paddingBottom != mPadding.Bottom ) {
+		mPaddingPx.Bottom = paddingBottom;
+		mPadding.Bottom = eeceil( PixelDensity::pxToDp( mPadding.Bottom ) );
 		onAutoSize();
 		onPaddingChange();
 		notifyLayoutAttrChange();
@@ -992,8 +1109,8 @@ void UIWidget::onThemeLoaded() {}
 
 void UIWidget::onParentChange() {
 	if ( !isSceneNodeLoading() && !isLoadingState() ) {
-		getUISceneNode()->invalidateStyle( this );
-		getUISceneNode()->invalidateStyleState( this, true );
+		getUISceneNode()->invalidateStyle( this, true );
+		getUISceneNode()->invalidateStyleState( this, true, true );
 	}
 }
 
@@ -1274,13 +1391,13 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::Height:
 			return String::fromFloat( getSize().getHeight(), "dp" );
 		case PropertyId::MarginLeft:
-			return String::format( "%.2fdp", getLayoutMargin().Left );
+			return String::fromFloat( getLayoutMargin().Left, "dp" );
 		case PropertyId::MarginTop:
-			return String::format( "%.2fdp", getLayoutMargin().Top );
+			return String::fromFloat( getLayoutMargin().Top, "dp" );
 		case PropertyId::MarginRight:
-			return String::format( "%.2fdp", getLayoutMargin().Right );
+			return String::fromFloat( getLayoutMargin().Right, "dp" );
 		case PropertyId::MarginBottom:
-			return String::format( "%.2fdp", getLayoutMargin().Bottom );
+			return String::fromFloat( getLayoutMargin().Bottom, "dp" );
 		case PropertyId::PaddingLeft:
 			return String::fromFloat( getPadding().Left, "dp" );
 		case PropertyId::PaddingTop:
@@ -1378,21 +1495,27 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::BorderBottomWidth:
 			return String::fromFloat( setBorderEnabled( true )->getBorders().bottom.width, "px" );
 		case PropertyId::BorderTopLeftRadius:
-			return String::format( "%.2fpx %.2fpx",
-								   setBorderEnabled( true )->getBorders().radius.topLeft.x,
-								   getBorder()->getBorders().radius.topLeft.y );
+			return String::format(
+				"%s %s",
+				String::fromFloat( setBorderEnabled( true )->getBorders().radius.topLeft.x, "px" ),
+				String::fromFloat( getBorder()->getBorders().radius.topLeft.y, "px" ) );
 		case PropertyId::BorderTopRightRadius:
-			return String::format( "%.2fpx %.2fpx",
-								   setBorderEnabled( true )->getBorders().radius.topRight.x,
-								   getBorder()->getBorders().radius.topRight.y );
+			return String::format(
+				"%s %s",
+				String::fromFloat( setBorderEnabled( true )->getBorders().radius.topRight.x, "px" ),
+				String::fromFloat( getBorder()->getBorders().radius.topRight.y, "px" ) );
 		case PropertyId::BorderBottomLeftRadius:
-			return String::format( "%.2fpx %.2fpx",
-								   setBorderEnabled( true )->getBorders().radius.bottomLeft.x,
-								   getBorder()->getBorders().radius.bottomLeft.y );
+			return String::format(
+				"%s %s",
+				String::fromFloat( setBorderEnabled( true )->getBorders().radius.bottomLeft.x,
+								   "px" ),
+				String::fromFloat( getBorder()->getBorders().radius.bottomLeft.y, "px" ) );
 		case PropertyId::BorderBottomRightRadius:
-			return String::format( "%.2fpx %.2fpx",
-								   setBorderEnabled( true )->getBorders().radius.bottomRight.x,
-								   getBorder()->getBorders().radius.bottomRight.y );
+			return String::format(
+				"%s %s",
+				String::fromFloat( setBorderEnabled( true )->getBorders().radius.bottomRight.x,
+								   "px" ),
+				String::fromFloat( getBorder()->getBorders().radius.bottomRight.y, "px" ) );
 		case PropertyId::BorderSmooth:
 			return mBorder ? ( mBorder->isSmooth() ? "true" : "false" ) : "false";
 		case PropertyId::BackgroundSmooth:
@@ -1488,7 +1611,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setEnabled( attribute.asBool() );
 			break;
 		case PropertyId::Theme:
-			setThemeByName( attribute.asString() );
+			setThemeByName( attribute.value() );
 			if ( !mSkinName.empty() )
 				setThemeSkin( mSkinName );
 			break;
@@ -1580,7 +1703,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setLayoutMarginBottom( lengthFromValueAsDp( attribute ) );
 			break;
 		case PropertyId::Tooltip: {
-			String text = getTranslatorString( attribute.asString() );
+			String text = getTranslatorString( attribute.value() );
 			setTooltipText( text );
 			if ( NULL != mTooltip )
 				mTooltip->setStringBuffer( text );
@@ -1681,7 +1804,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 				rule = PositionPolicy::TopOf;
 			else if ( layoutId == PropertyId::LayoutToBottomOf )
 				rule = PositionPolicy::BottomOf;
-			std::string id = attribute.asString();
+			const std::string& id = attribute.value();
 			Node* node = getParent()->find( id );
 			if ( NULL != node && node->isWidget() ) {
 				UIWidget* widget = static_cast<UIWidget*>( node );
@@ -1772,28 +1895,28 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBorderEnabled( true )->setColorBottom( attribute.asColor() );
 			break;
 		case PropertyId::BorderLeftWidth:
-			setBorderEnabled( true )->setLeftWidth( attribute.asString() );
+			setBorderEnabled( true )->setLeftWidth( attribute.value() );
 			break;
 		case PropertyId::BorderRightWidth:
-			setBorderEnabled( true )->setRightWidth( attribute.asString() );
+			setBorderEnabled( true )->setRightWidth( attribute.value() );
 			break;
 		case PropertyId::BorderTopWidth:
-			setBorderEnabled( true )->setTopWidth( attribute.asString() );
+			setBorderEnabled( true )->setTopWidth( attribute.value() );
 			break;
 		case PropertyId::BorderBottomWidth:
-			setBorderEnabled( true )->setBottomWidth( attribute.asString() );
+			setBorderEnabled( true )->setBottomWidth( attribute.value() );
 			break;
 		case PropertyId::BorderTopLeftRadius:
-			setTopLeftRadius( attribute.asString() );
+			setTopLeftRadius( attribute.value() );
 			break;
 		case PropertyId::BorderBottomLeftRadius:
-			setBottomLeftRadius( attribute.asString() );
+			setBottomLeftRadius( attribute.value() );
 			break;
 		case PropertyId::BorderTopRightRadius:
-			setTopRightRadius( attribute.asString() );
+			setTopRightRadius( attribute.value() );
 			break;
 		case PropertyId::BorderBottomRightRadius:
-			setBottomRightRadius( attribute.asString() );
+			setBottomRightRadius( attribute.value() );
 			break;
 		case PropertyId::BorderSmooth:
 			setBorderEnabled( true )->setSmooth( attribute.asBool() );
@@ -1851,7 +1974,7 @@ std::string UIWidget::getLayoutWidthPolicyString() const {
 		return "match_parent";
 	else if ( rules == SizePolicy::WrapContent )
 		return "wrap_content";
-	return String::toString( getSize().getHeight() ) + "dp";
+	return String::fromFloat( getSize().getHeight(), "dp" );
 }
 
 std::string UIWidget::getLayoutHeightPolicyString() const {
@@ -1861,7 +1984,7 @@ std::string UIWidget::getLayoutHeightPolicyString() const {
 		return "match_parent";
 	else if ( rules == SizePolicy::WrapContent )
 		return "wrap_content";
-	return String::toString( getSize().getHeight() ) + "dp";
+	return String::fromFloat( getSize().getHeight(), "dp" );
 }
 
 static std::string getGravityStringFromUint( const Uint32& gravity ) {

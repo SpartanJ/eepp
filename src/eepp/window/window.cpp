@@ -595,14 +595,24 @@ void Window::setGLContextThread() {}
 
 void Window::unsetGLContextThread() {}
 
-void Window::runMainLoop( void ( *func )(), int fps ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	emscripten_set_main_loop( func, fps, 1 );
+static void eepp_mainloop() {
+	Engine::instance()->getCurrentWindow()->getMainLoop()();
+}
+#endif
+
+void Window::runMainLoop( std::function<void()> func, int fps ) {
+	mMainLoop = std::move( func );
+
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	emscripten_set_main_loop( eepp_mainloop, eemax( (int)mFrameData.FPS.Limit, eemax( 0, fps ) ),
+							  1 );
 #else
-	setFrameRateLimit( fps );
+	if ( fps >= 0 )
+		setFrameRateLimit( fps );
 
 	while ( isRunning() ) {
-		func();
+		mMainLoop();
 	}
 #endif
 }

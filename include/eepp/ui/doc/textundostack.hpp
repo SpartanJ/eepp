@@ -1,12 +1,11 @@
-#ifndef EE_UI_DOC_UNDOSTACK_HPP
-#define EE_UI_DOC_UNDOSTACK_HPP
+#ifndef EE_UI_DOC_TEXTUNDOSTACK_HPP
+#define EE_UI_DOC_TEXTUNDOSTACK_HPP
 
 #include <deque>
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/doc/textrange.hpp>
-#include <memory>
 
 using namespace EE::System;
 
@@ -81,11 +80,11 @@ class EE_API TextUndoCommandSelection : public TextUndoCommand {
 
 using UndoStackContainer = std::deque<TextUndoCommand*>;
 
-class EE_API UndoStack {
+class EE_API TextUndoStack {
   public:
-	UndoStack( TextDocument* owner, const Uint32& maxStackSize = 10000 );
+	TextUndoStack( TextDocument* owner, const Uint32& maxStackSize = 10000 );
 
-	~UndoStack();
+	~TextUndoStack();
 
 	void clear();
 

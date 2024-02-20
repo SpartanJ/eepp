@@ -102,6 +102,7 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 		{ { KEY_DOWN, KEYMOD_CTRL | KEYMOD_LALT | KEYMOD_SHIFT }, "selection-to-lower" },
 		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
 		{ { KEY_D, KeyMod::getDefaultModifier() }, "select-word" },
+		{ { KEY_D, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "select-all-words" },
 		{ { KEY_UP, KEYMOD_LALT }, "add-cursor-above" },
 		{ { KEY_DOWN, KEYMOD_LALT }, "add-cursor-below" },
 		{ { KEY_ESCAPE }, "reset-cursor" },
@@ -443,7 +444,7 @@ TextDocument::LoadStatus UICodeEditor::loadFromFile( const std::string& path ) {
 		invalidateEditor();
 		updateLongestLineWidth();
 		invalidateDraw();
-		onDocumentLoaded( mDoc.get() );
+		onDocumentLoaded();
 	}
 	return ret;
 }
@@ -457,7 +458,7 @@ bool UICodeEditor::loadAsyncFromFile(
 	bool ret = mDoc->loadAsyncFromFile(
 		path, pool, [this, onLoaded, wasLocked]( TextDocument*, bool success ) {
 			if ( !success ) {
-				runOnMainThread( [&, onLoaded, wasLocked, success] {
+				runOnMainThread( [this, onLoaded, wasLocked, success] {
 					if ( !wasLocked )
 						setLocked( false );
 					if ( onLoaded )
@@ -470,7 +471,7 @@ bool UICodeEditor::loadAsyncFromFile(
 					runOnMainThread( [this] { invalidateDraw(); } );
 				} );
 			}
-			runOnMainThread( [&, onLoaded, wasLocked, success] {
+			runOnMainThread( [this, onLoaded, wasLocked, success] {
 				invalidateEditor();
 				invalidateDraw();
 				if ( !wasLocked )
@@ -510,7 +511,7 @@ bool UICodeEditor::loadAsyncFromURL(
 				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
 					runOnMainThread( [this] { invalidateDraw(); } );
 				} );
-			runOnMainThread( [&, onLoaded, wasLocked] {
+			runOnMainThread( [this, success, onLoaded, wasLocked] {
 				invalidateEditor();
 				updateLongestLineWidth();
 				invalidateDraw();
@@ -577,6 +578,11 @@ void UICodeEditor::onFontStyleChanged() {
 
 void UICodeEditor::onDocumentLoaded( TextDocument* ) {}
 
+void UICodeEditor::onDocumentReloaded( TextDocument* ) {
+	onDocumentClosed( mDoc.get() );
+	onDocumentLoaded();
+}
+
 void UICodeEditor::onDocumentLoaded() {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
 	sendEvent( &event );
@@ -617,7 +623,7 @@ Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
 		vScrollWidth += getMinimapWidth();
 	Float viewWidth = eefloor( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 							   getGutterWidth() - vScrollWidth );
-	return viewWidth;
+	return eemax( 0.f, viewWidth );
 }
 
 bool UICodeEditor::getShowIndentationGuides() const {
@@ -851,6 +857,7 @@ void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 		mDoc = doc;
 		mDoc->registerClient( this );
 		invalidateEditor();
+		invalidateLongestLineWidth();
 		invalidateDraw();
 		onDocumentChanged();
 	}
@@ -908,8 +915,9 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() ||
-		 input->isLeftAltPressed() )
+		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
+		   !input->isAltGrPressed() ) ||
+		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
 	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
@@ -929,17 +937,15 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 void UICodeEditor::updateIMELocation() {
 	if ( mDoc->getActiveClient() != this || !Engine::isRunninMainThread() )
 		return;
-	updateScreenPos();
 	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
 	getUISceneNode()->getWindow()->getIME().setLocation( r.asInt() );
 }
 
 void UICodeEditor::drawLockedIcon( const Vector2f start ) {
-	if ( mFileLockIcon == nullptr && !mFileLockIconName.empty() ) {
+	if ( mFileLockIcon == nullptr && !mFileLockIconName.empty() )
 		mFileLockIcon = getUISceneNode()->findIcon( mFileLockIconName );
-		if ( mFileLockIcon == nullptr )
-			return;
-	}
+	if ( mFileLockIcon == nullptr )
+		return;
 
 	Drawable* fileLockIcon = mFileLockIcon->getSize( PixelDensity::dpToPxI( 16 ) );
 	if ( fileLockIcon == nullptr )
@@ -998,7 +1004,7 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onKeyUp( this, event ) )
 			return 1;
-	if ( mHandShown && !getUISceneNode()->getWindow()->getInput()->isControlPressed() )
+	if ( mHandShown && !getUISceneNode()->getWindow()->getInput()->isKeyModPressed() )
 		resetLinkOver();
 	return UIWidget::onKeyUp( event );
 }
@@ -1046,12 +1052,10 @@ Sizef UICodeEditor::getMaxScroll() const {
 							getLineHeight() );
 }
 
-UIMenuItem* UICodeEditor::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-								   const String& translateString, const std::string& icon,
-								   const std::string& cmd ) {
+UIMenuItem* UICodeEditor::menuAdd( UIPopUpMenu* menu, const String& translateString,
+								   const std::string& icon, const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( getTranslatorString( "@string/uicodeeditor_" + translateKey, translateString ),
-				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( translateString, findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }
@@ -1060,30 +1064,40 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	menuAdd( menu, "undo", "Undo", "undo", "undo" )->setEnabled( mDoc->hasUndo() );
-	menuAdd( menu, "redo", "Redo", "redo", "redo" )->setEnabled( mDoc->hasRedo() );
+	menuAdd( menu, i18n( "uicodeeditor_undo", "Undo" ), "undo", "undo" )
+		->setEnabled( mDoc->hasUndo() );
+	menuAdd( menu, i18n( "uicodeeditor_redo", "Redo" ), "redo", "redo" )
+		->setEnabled( mDoc->hasRedo() );
 	menu->addSeparator();
 
-	menuAdd( menu, "cut", "Cut", "cut", "cut" )->setEnabled( mDoc->hasSelection() );
-	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mDoc->hasSelection() );
-	menuAdd( menu, "paste", "Paste", "paste", "paste" );
-	menuAdd( menu, "delete", "Delete", "delete-text", "delete-to-next-char" );
+	menuAdd( menu, i18n( "uicodeeditor_cut", "Cut" ), "cut", "cut" )
+		->setEnabled( mDoc->hasSelection() );
+	menuAdd( menu, i18n( "uicodeeditor_copy", "Copy" ), "copy", "copy" )
+		->setEnabled( mDoc->hasSelection() );
+	menuAdd( menu, i18n( "uicodeeditor_paste", "Paste" ), "paste", "paste" );
+	menuAdd( menu, i18n( "uicodeeditor_delete", "Delete" ), "delete-text", "delete-to-next-char" );
 	menu->addSeparator();
-	menuAdd( menu, "select_all", "Select All", "select-all", "select-all" );
+	menuAdd( menu, i18n( "uicodeeditor_select_all", "Select All" ), "select-all", "select-all" );
 
 	if ( mDoc->hasFilepath() ) {
 		menu->addSeparator();
 
-		menuAdd( menu, "open_containing_folder", "Open Containing Folder...", "folder-open",
-				 "open-containing-folder" );
+		menuAdd(
+			menu,
+			i18n( "uicodeeditor_open_containing_folder_ellipsis", "Open Containing Folder..." ),
+			"folder-open", "open-containing-folder" );
 
-		menuAdd( menu, "copy_containing_folder_path", "Copy Containing Folder Path...", "copy",
-				 "copy-containing-folder-path" );
+		menuAdd( menu,
+				 i18n( "uicodeeditor_copy_containing_folder_path_ellipsis",
+					   "Copy Containing Folder Path..." ),
+				 "copy", "copy-containing-folder-path" );
 
-		menuAdd( menu, "copy_file_path", "Copy File Path", "copy", "copy-file-path" );
+		menuAdd( menu, i18n( "uicodeeditor_copy_file_path", "Copy File Path" ), "copy",
+				 "copy-file-path" );
 
-		menuAdd( menu, "copy_file_path_and_position", "Copy File Path and Position", "copy",
-				 "copy-file-path-and-position" );
+		menuAdd( menu,
+				 i18n( "uicodeeditor_copy_file_path_and_position", "Copy File Path and Position" ),
+				 "copy", "copy-file-path-and-position" );
 	}
 }
 
@@ -1097,6 +1111,7 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 		return false;
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
+	menu->addClass( "uicodeeditor_menu" );
 
 	createDefaultContextMenuOptions( menu );
 
@@ -1113,14 +1128,23 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [&, menu]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
-			return;
-		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		std::string txt( item->getId() );
-		mDoc.get()->execute( txt, this );
-		menu->hide();
-	} );
+	menu->setCloseSubMenusOnClose( true );
+
+	UICodeEditor* editor = this;
+	const auto registerMenu = [editor, this]( UIMenu* menu ) {
+		menu->addEventListener( Event::OnItemClicked, [this, menu, editor]( const Event* event ) {
+			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+				return;
+			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+			std::string txt( item->getId() );
+			mDoc.get()->execute( txt, editor );
+			menu->hide();
+		} );
+	};
+	registerMenu( menu );
+	auto subMenus = menu->findAllByType<UIMenuSubMenu>( UI_TYPE_MENUSUBMENU );
+	for ( auto* subMenu : subMenus )
+		registerMenu( subMenu->getSubMenu() );
 
 	Vector2f pos( position.asFloat() );
 	runOnMainThread( [this, menu, pos]() {
@@ -1326,14 +1350,14 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	}
 
 	if ( flags & EE_BUTTON_WDMASK ) {
-		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-shrink" );
 		} else {
 			setScrollY( mScroll.y + PixelDensity::dpToPx( mMouseWheelScroll ) );
 		}
 		invalidateDraw();
 	} else if ( flags & EE_BUTTON_WUMASK ) {
-		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-grow" );
 		} else {
 			setScrollY( mScroll.y - PixelDensity::dpToPx( mMouseWheelScroll ) );
@@ -1363,7 +1387,7 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 	}
 
 	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		 getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 		String link( checkMouseOverLink( position ) );
 		if ( !link.empty() ) {
 			Engine::instance()->openURI( link.toUtf8() );
@@ -1461,7 +1485,7 @@ void UICodeEditor::checkColorPickerAction() {
 				TextDocument::MatchDirection::Forward );
 			if ( position.isValid() ) {
 				mDoc->setSelection( { position.line(), position.column() + 1 }, range.start() );
-				colorPicker = UIColorPicker::NewModal( this, [&, isRgba]( Color color ) {
+				colorPicker = UIColorPicker::NewModal( this, [this, isRgba]( Color color ) {
 					mDoc->replaceSelection( isRgba || color.a != 255 ? color.toRgbaString()
 																	 : color.toRgbString() );
 				} );
@@ -1536,19 +1560,23 @@ void UICodeEditor::findLongestLine() {
 Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
 	if ( lineIndex >= (Int64)mDoc->linesCount() )
 		return 0;
-	if ( mFont && !mFont->isMonospace() )
-		return Text::getTextWidth( mFont, getCharacterSize(), mDoc->line( lineIndex ).getText(),
-								   mFontStyleConfig.Style, mTabWidth ) +
-			   getGlyphWidth();
+	if ( mFont && !mFont->isMonospace() ) {
+		auto line = mDoc->line( lineIndex );
+		auto found = mLinesWidthCache.find( lineIndex );
+		if ( found != mLinesWidthCache.end() && line.getHash() == found->first )
+			return found->second.second;
+		Float width = getTextWidth( line.getText() ) + getGlyphWidth();
+		mLinesWidthCache[lineIndex] = { line.getHash(), width };
+		return width;
+	}
 	return getTextWidth( mDoc->line( lineIndex ).getText() );
 }
 
 void UICodeEditor::updateScrollBar() {
 	int notVisibleLineCount = (int)mDoc->linesCount() - (int)getViewPortLineCount().y;
 
-	if ( mLongestLineWidthDirty && mFont && mFont->isMonospace() ) {
+	if ( mLongestLineWidthDirty && mFont )
 		updateLongestLineWidth();
-	}
 
 	mHScrollBar->setEnabled( false );
 	mHScrollBar->setVisible( false );
@@ -1818,6 +1846,8 @@ void UICodeEditor::scrollTo( TextRange position, bool centered, bool forceExactP
 	Float offsetXEnd = getXOffsetCol( position.end() );
 	Float minVisibility = getGlyphWidth();
 	Float viewPortWidth = getViewportWidth();
+	if ( viewPortWidth == 0 )
+		return;
 	if ( offsetXEnd + minVisibility > mScroll.x + viewPortWidth ) {
 		setScrollX( eefloor( eemax( 0.f, offsetXEnd + minVisibility - viewPortWidth ) ) );
 	} else if ( offsetXEnd < mScroll.x ) {
@@ -2199,7 +2229,7 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontSelectionBackColor( attribute.asColor() );
 			break;
 		case PropertyId::FontFamily: {
-			Font* font = FontManager::instance()->getByName( attribute.asString() );
+			Font* font = FontManager::instance()->getByName( attribute.value() );
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
 			}
@@ -2253,11 +2283,11 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%.2fpx", getFontSize() );
+			return String::fromFloat( getFontSize(), "px" );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
-			return String::toString( PixelDensity::dpToPx( getOutlineThickness() ) );
+			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
 		case PropertyId::TextSelection:
@@ -3057,7 +3087,8 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							}
 							fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
 							fontStyle.Style = lineStyle;
-							size = Text::draw( afterString, { position.x, position.y + lineOffset },
+							size = Text::draw( afterString,
+											   { position.x + offset, position.y + lineOffset },
 											   fontStyle, mTabWidth );
 							offset += afterWidth;
 						}
@@ -3403,18 +3434,18 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 }
 
 String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
-	if ( !mInteractiveLinks || !getUISceneNode()->getWindow()->getInput()->isControlPressed() )
+	if ( !mInteractiveLinks || !getUISceneNode()->getWindow()->getInput()->isKeyModPressed() )
 		return resetLinkOver();
 
 	TextPosition pos( resolveScreenPosition( position.asFloat(), false ) );
-	if ( mDoc->getChar( pos ) == '\n' )
-		return resetLinkOver();
-
-	if ( pos.line() > (Int64)mDoc->linesCount() )
+	if ( pos.line() >= (Int64)mDoc->linesCount() )
 		return resetLinkOver();
 
 	const String& line = mDoc->line( pos.line() ).getText();
 	if ( pos.column() >= (Int64)line.size() - 1 )
+		return resetLinkOver();
+
+	if ( mDoc->getChar( pos ) == '\n' )
 		return resetLinkOver();
 
 	TextPosition startB( mDoc->previousSpaceBoundaryInLine( pos ) );
@@ -3864,6 +3895,33 @@ void UICodeEditor::setAutoCloseXMLTags( bool autoCloseXMLTags ) {
 	mAutoCloseXMLTags = autoCloseXMLTags;
 }
 
+static bool isAlreadyClosedTag( TextDocument* doc, TextPosition start,
+								size_t maxSearchTokens = 1000 ) {
+	SyntaxHighlighter* highlighter = doc->getHighlighter();
+	TextPosition endOfDoc = doc->endOfDoc();
+	do {
+		String::StringBaseType ch = doc->getChar( start );
+		switch ( ch ) {
+			case '>': {
+				auto tokenType = highlighter->getTokenTypeAt( start );
+				if ( tokenType != "comment"_sst && tokenType != "string"_sst )
+					return true;
+				break;
+			}
+			case '<': {
+				auto tokenType = highlighter->getTokenTypeAt( start );
+				if ( tokenType != "comment"_sst && tokenType != "string"_sst )
+					return false;
+				break;
+			}
+			default:
+				break;
+		}
+		start = doc->positionOffset( start, 1 );
+	} while ( start.isValid() && start != endOfDoc && --maxSearchTokens );
+	return false;
+}
+
 bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 	if ( !mAutoCloseXMLTags || text.empty() || text.size() > 1 || text[0] != '>' ||
 		 mDoc->getSelection().hasSelection() )
@@ -3889,9 +3947,8 @@ bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 	std::string tag( line.substr( foundOpenPos, start.column() - foundOpenPos ).toUtf8() );
 	LuaPattern pattern( "<([%w_%-]+).*>" );
 	auto match = pattern.gmatch( tag );
-	if ( match.matches() ) {
-		std::string tagName( match.group( 1 ) );
-		mDoc->textInput( String( "</" + tagName + ">" ) );
+	if ( match.matches() && !isAlreadyClosedTag( mDoc.get(), start ) ) {
+		mDoc->textInput( String( "</" + match.group( 1 ) + ">" ) );
 		mDoc->setSelection( start );
 		return true;
 	}

@@ -1,4 +1,6 @@
+#import <AppKit/AppKit.h>
 #include <Cocoa/Cocoa.h>
+
 #include "macos.hpp"
 
 /* setAppleMenu disappeared from the headers in 10.4 */
@@ -7,9 +9,7 @@
 @end
 
 // Recreates the menubar replacing the default SDL menubar
-void
-macOS_CreateApplicationMenus(void)
-{
+void macOS_createApplicationMenus() {
 	NSString *appName;
 	NSString *title;
 	NSMenu *appleMenu;
@@ -62,4 +62,30 @@ macOS_CreateApplicationMenus(void)
 	[[NSApp mainMenu] addItem:menuItem];
 
 	[NSApp setWindowsMenu:windowMenu];
+}
+
+void macOS_enableScrollMomentum() {
+	[[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"AppleMomentumScrollSupported"];
+}
+
+void macOS_removeTitleBarSeparator( void* window ) {
+	NSWindow* nsWindow = window;
+	[nsWindow setTitlebarSeparatorStyle:NSTitlebarSeparatorStyleNone];
+}
+
+void macOS_changeTitleBarColor( void* window, double red, double green, double blue ) {
+	NSWindow* nsWindow = window;
+	nsWindow.titlebarAppearsTransparent = YES;
+	nsWindow.backgroundColor = [NSColor colorWithRed:red green:green blue:blue alpha:1.];
+}
+
+int macOS_isDarkModeEnabled() {
+	if ( @available( macOS 10.14, * ) ) {
+		NSAppearance* appearance =
+			[NSAppearance performSelector:@selector( currentDrawingAppearance )];
+		if ( [appearance.name isEqualToString:NSAppearanceNameDarkAqua] ) {
+			return 1;
+		}
+	}
+	return 0;
 }

@@ -1,6 +1,8 @@
 #ifndef ECODE_STATUSTERMINALCONTROLLER_HPP
 #define ECODE_STATUSTERMINALCONTROLLER_HPP
 
+#include "uistatusbar.hpp"
+
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uisplitter.hpp>
@@ -15,24 +17,20 @@ namespace ecode {
 
 class App;
 
-class StatusTerminalController {
+class StatusTerminalController : public StatusBarElement {
   public:
 	StatusTerminalController( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app );
 
-	void toggle();
+	virtual ~StatusTerminalController() {}
 
-	void hide();
+	UIWidget* getWidget();
 
-	void show();
+	UIWidget* createWidget();
 
 	UITerminal* getUITerminal();
 
   protected:
-	UISplitter* mMainSplitter{ nullptr };
-	UISceneNode* mUISceneNode{ nullptr };
-	App* mApp{ nullptr };
 	UITerminal* mUITerminal{ nullptr };
-	UICodeEditorSplitter* mSplitter{ nullptr };
 
 	UITerminal* createTerminal( const std::string& workingDir = "", std::string program = "",
 								const std::vector<std::string>& args = {} );

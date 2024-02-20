@@ -1,6 +1,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
@@ -104,7 +105,7 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			setText( attribute.asString() );
+			setText( attribute.value() );
 			break;
 		default:
 			return UICodeEditor::applyProperty( attribute );

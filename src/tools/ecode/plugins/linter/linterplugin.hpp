@@ -1,6 +1,7 @@
 #ifndef ECODE_LINTERPLUGIN_HPP
 #define ECODE_LINTERPLUGIN_HPP
 
+#include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
@@ -61,9 +62,9 @@ class LinterPlugin : public Plugin {
 				 LinterPlugin::NewSync };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
-	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~LinterPlugin();
 

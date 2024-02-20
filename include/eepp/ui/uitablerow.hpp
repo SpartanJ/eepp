@@ -29,14 +29,29 @@ class EE_API UITableRow : public UIWidget {
 
 	UITableRow() : UIWidget( "table::row" ) {}
 
+	static Event::EventType isMouseEvent( Uint32 msg ) {
+		switch ( msg ) {
+			case NodeMessage::MouseClick:
+				return Event::MouseClick;
+			case NodeMessage::MouseDoubleClick:
+				return Event::MouseDoubleClick;
+			case NodeMessage::MouseDown:
+				return Event::MouseDown;
+			case NodeMessage::MouseUp:
+				return Event::MouseUp;
+		}
+		return Event::NoEvent;
+	}
+
 	virtual Uint32 onMessage( const NodeMessage* msg ) {
 		EventDispatcher* eventDispatcher = getEventDispatcher();
 		Node* mouseDownNode = eventDispatcher->getMouseDownNode();
 		Node* draggingNode = eventDispatcher->getNodeDragging();
-		if ( msg->getMsg() == NodeMessage::MouseDown &&
+		auto eventType = isMouseEvent( msg->getMsg() );
+		if ( eventType != Event::NoEvent &&
 			 ( mouseDownNode == nullptr || mouseDownNode == this || isParentOf( mouseDownNode ) ) &&
 			 draggingNode == nullptr ) {
-			sendMouseEvent( Event::MouseDown, eventDispatcher->getMousePos(), msg->getFlags() );
+			sendMouseEvent( eventType, eventDispatcher->getMousePos(), msg->getFlags() );
 		}
 		return 0;
 	}

@@ -166,8 +166,8 @@ static std::string logLevelToString( const LogLevel& level ) {
 	}
 }
 
-static std::string logLevelWithTimestamp( const LogLevel& level, const std::string_view& text,
-										  bool appendNewLine ) {
+std::string Log::logLevelWithTimestamp( const LogLevel& level, const std::string_view& text,
+										bool appendNewLine ) {
 	return String::format( appendNewLine ? "%s - %s: %s\n" : "%s - %s: %s",
 						   Sys::getDateTimeStr().c_str(), logLevelToString( level ).c_str(),
 						   text.data() );
@@ -234,132 +234,6 @@ void Log::closeFS() {
 	eeSAFE_DELETE( mFS );
 
 	unlock();
-}
-
-void Log::writef( const char* format, ... ) {
-	int n, size = 256;
-	std::string tstr( size, '\0' );
-
-	va_list args;
-
-	while ( 1 ) {
-		va_start( args, format );
-
-		n = vsnprintf( &tstr[0], size, format, args );
-
-		if ( n > -1 && n < size ) {
-			tstr.resize( n );
-			tstr += '\n';
-
-			if ( mKeepLog ) {
-				lock();
-				mData += tstr;
-				unlock();
-			}
-
-			writeToReaders( tstr );
-
-			if ( mConsoleOutput ) {
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-				__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", tstr.c_str() );
-#elif defined( EE_COMPILER_MSVC )
-#ifdef UNICODE
-				OutputDebugString( String::fromUtf8( tstr ).toWideString().c_str() );
-#else
-				OutputDebugString( tstr.c_str() );
-#endif
-#else
-				std::cout << tstr;
-#endif
-			}
-
-			if ( mLiveWrite ) {
-				openFS();
-
-				mFS->write( tstr.c_str(), tstr.size() );
-
-				mFS->flush();
-			}
-
-			va_end( args );
-
-			return;
-		}
-
-		if ( n > -1 )	  // glibc 2.1
-			size = n + 1; // precisely what is needed
-		else			  // glibc 2.0
-			size *= 2;	  // twice the old size
-
-		tstr.resize( size, '\0' );
-	}
-}
-
-void Log::writef( const LogLevel& level, const char* format, ... ) {
-	if ( mLogLevelThreshold > level )
-		return;
-
-	int n, size = 256;
-	std::string tstr( size, '\0' );
-	bool first = true;
-	va_list args;
-
-	while ( 1 ) {
-		va_start( args, format );
-
-		n = vsnprintf( &tstr[0], size, format, args );
-
-		if ( n > -1 && n < size ) {
-			tstr.resize( n );
-			tstr += '\n';
-
-			if ( first ) {
-				tstr = logLevelWithTimestamp( level, tstr, false );
-				first = false;
-			}
-
-			if ( mKeepLog ) {
-				lock();
-				mData += tstr;
-				unlock();
-			}
-
-			writeToReaders( tstr );
-
-			if ( mConsoleOutput ) {
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-				__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", tstr.c_str() );
-#elif defined( EE_COMPILER_MSVC )
-#ifdef UNICODE
-				OutputDebugString( String::fromUtf8( tstr ).toWideString().c_str() );
-#else
-				OutputDebugString( tstr.c_str() );
-#endif
-#else
-				std::cout << tstr;
-#endif
-			}
-
-			if ( mLiveWrite ) {
-				openFS();
-
-				mFS->write( tstr.c_str(), tstr.size() );
-
-				mFS->flush();
-			}
-
-			va_end( args );
-
-			return;
-		}
-
-		if ( n > -1 )	  // glibc 2.1
-			size = n + 1; // precisely what is needed
-		else			  // glibc 2.0
-			size *= 2;	  // twice the old size
-
-		tstr.resize( size, '\0' );
-	}
 }
 
 const std::string& Log::getBuffer() const {

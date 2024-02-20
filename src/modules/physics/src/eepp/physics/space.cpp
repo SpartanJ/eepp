@@ -434,7 +434,7 @@ cpBool Space::onCollisionBegin( Arbiter* arb, void* data ) {
 	cpHashValue hash = (cpHashValue)data;
 
 	// if ( NULL != data ) {
-	std::map<cpHashValue, CollisionHandler>::iterator it = mCollisions.find( hash );
+	auto it = mCollisions.find( hash );
 	CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
 	if ( it != mCollisions.end() && handler.begin ) {
@@ -453,7 +453,7 @@ cpBool Space::onCollisionPreSolve( Arbiter* arb, void* data ) {
 	cpHashValue hash = (cpHashValue)data;
 
 	// if ( NULL != data ) {
-	std::map<cpHashValue, CollisionHandler>::iterator it = mCollisions.find( hash );
+	auto it = mCollisions.find( hash );
 	CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
 	if ( it != mCollisions.end() && handler.preSolve ) {
@@ -472,7 +472,7 @@ void Space::onCollisionPostSolve( Arbiter* arb, void* data ) {
 	cpHashValue hash = (cpHashValue)data;
 
 	// if ( NULL != data ) {
-	std::map<cpHashValue, CollisionHandler>::iterator it = mCollisions.find( hash );
+	auto it = mCollisions.find( hash );
 	CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
 	if ( it != mCollisions.end() && handler.postSolve ) {
@@ -490,7 +490,7 @@ void Space::onCollisionSeparate( Arbiter* arb, void* data ) {
 	cpHashValue hash = (cpHashValue)data;
 
 	// if ( NULL != data ) {
-	std::map<cpHashValue, CollisionHandler>::iterator it = mCollisions.find( hash );
+	auto it = mCollisions.find( hash );
 	CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
 	if ( it != mCollisions.end() && handler.separate ) {

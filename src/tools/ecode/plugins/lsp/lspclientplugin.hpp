@@ -1,6 +1,7 @@
 #ifndef ECODE_LSPPLUGIN_HPP
 #define ECODE_LSPPLUGIN_HPP
 
+#include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "lspclientservermanager.hpp"
 #include <eepp/config.hpp>
@@ -12,8 +13,6 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uilistview.hpp>
-#include <set>
-#include <unordered_set>
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
@@ -29,9 +28,9 @@ class LSPClientPlugin : public Plugin {
 				 LSPClientPlugin::New, { 0, 2, 3 },	 LSPClientPlugin::NewSync };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
-	static UICodeEditorPlugin* NewSync( PluginManager* pluginManager );
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~LSPClientPlugin();
 
@@ -92,6 +91,8 @@ class LSPClientPlugin : public Plugin {
 
 	void setTrimLogs( bool trimLogs );
 
+	void onVersionUpgrade( Uint32 oldVersion, Uint32 currentVersion );
+
   protected:
 	friend class LSPDocumentClient;
 	friend class LSPClientServer;
@@ -109,7 +110,7 @@ class LSPClientPlugin : public Plugin {
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mSymbolInfoShowing{ false };
-	bool mSemanticHighlighting{ false };
+	bool mSemanticHighlighting{ true };
 	bool mSilence{ false };
 	bool mTrimLogs{ false };
 	UnorderedMap<std::string, std::string> mKeyBindings; /* cmd, shortcut */
@@ -122,6 +123,7 @@ class LSPClientPlugin : public Plugin {
 	LSPDiagnosticsCodeAction mQuickFix;
 	UnorderedSet<std::string> mSemanticHighlightingDisabledLangs;
 	String::HashType mConfigHash{ 0 };
+	Color mOldBackgroundColor;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 

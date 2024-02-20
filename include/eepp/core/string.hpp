@@ -5,7 +5,6 @@
 #include <cstring>
 #include <eepp/config.hpp>
 #include <eepp/core/utf.hpp>
-#include <fstream>
 #include <locale>
 #include <sstream>
 #include <string>
@@ -13,6 +12,18 @@
 #include <vector>
 
 namespace EE {
+
+template <typename T> struct FormatArg {
+	static const T& get( const T& arg ) { return arg; }
+};
+
+template <> struct FormatArg<std::string> {
+	static const char* get( const std::string& arg ) { return arg.c_str(); }
+};
+
+template <> struct FormatArg<std::string_view> {
+	static const char* get( const std::string_view& arg ) { return arg.data(); }
+};
 
 /*
 ** The class was modified to fit EEPP own needs. This is not the original implementation from SFML2.
@@ -69,13 +80,6 @@ class EE_API String {
 		}
 
 		return 0;
-	}
-
-	static constexpr String::HashType hashCombine( String::HashType& hash, const char* str,
-												   Int64 len ) {
-		while ( --len >= 0 )
-			hash = ( ( hash << 5 ) + hash ) + *str++;
-		return hash;
 	}
 
 	static constexpr String::HashType hash( const char* str, Int64 len ) {
@@ -294,6 +298,15 @@ class EE_API String {
 	/** Removes the numbers at the end of the string */
 	static std::string removeNumbersAtEnd( std::string txt );
 
+	/** Removes the trailing 0 and . in a string number */
+	static std::string_view numberClean( std::string_view strNumber );
+
+	/** Removes the trailing 0 and . in a string number */
+	static std::string numberClean( const std::string& strNumber );
+
+	/** Removes the trailing 0 and . in a string number */
+	static void numberCleanInPlace( std::string& strNumber );
+
 	/** Searchs the position of the corresponding close bracket in a string. */
 	static std::size_t findCloseBracket( const std::string& string, std::size_t startOffset,
 										 char openBracket, char closeBracket );
@@ -337,14 +350,31 @@ class EE_API String {
 		return !( iss >> f >> t ).fail();
 	}
 
-	/** Returning a std::string from a formated string */
-	static std::string format( const char* format, ... )
-#ifdef __GNUC__
-		/* This attribute is nice: it even works through gettext invokation. For
-		   example, gcc will complain that StrFormat(_("%s"), 42) is ill-formed. */
-		__attribute__( ( format( printf, 1, 2 ) ) )
+	template <typename... Args>
+	static std::string format( std::string_view format, Args&&... args ) {
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-security"
+#elif defined( __GNUC__ )
+#pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-		;
+		int size =
+			std::snprintf( nullptr, 0, format.data(),
+						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... ) +
+			1;
+		std::string result( size, 0 );
+		if ( size > 0 ) {
+			std::snprintf( &result[0], size, format.data(),
+						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
+			result.resize( size - 1 );
+		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#elif defined( __GNUC__ )
+#pragma GCC diagnostic pop
+#endif
+		return result;
+	}
 
 	/** Format a char buffer */
 	static void formatBuffer( char* Buffer, int BufferSize, const char* format, ... );
@@ -460,6 +490,16 @@ class EE_API String {
 	** @param str Instance to copy
 	**/
 	String( const String& str );
+
+	/** @brief Copy constructor
+	** @param str Instance to copy
+	**/
+	String( const String::View& str );
+
+	static String fromUtf16( const char* utf16String, const size_t& utf16StringSize,
+							 bool isBigEndian = false );
+
+	static String fromLatin1( const char* string, const size_t& stringSize );
 
 	/** @brief Create a new String from a UTF-8 encoded string
 	**  @param begin Forward iterator to the begining of the UTF-8 sequence

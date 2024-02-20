@@ -1071,7 +1071,7 @@ int subprocess_join(struct subprocess_s *const process,
 
   return 0;
 #else
-  int status;
+  int status = 0;
 
   if (process->stdin_file) {
     fclose(process->stdin_file);

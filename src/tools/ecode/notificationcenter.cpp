@@ -14,10 +14,11 @@ NotificationCenter::NotificationCenter( UILayout* layout, PluginManager* pluginM
 					addNotification( sm.message, Seconds( 10 ) );
 			} else if ( msg.type == PluginMessageType::ShowDocument ) {
 				auto sd = msg.asShowDocument();
-				if ( !sd.uri.empty() )
+				if ( !sd.uri.empty() ) {
 					addShowRequest( sd.uri.toString(),
 									mLayout->getUISceneNode()->i18n( "open", "Open" ),
 									Seconds( 10 ) );
+				}
 			}
 			return {};
 		} );
@@ -40,6 +41,7 @@ void NotificationCenter::addNotification( const String& text, const Time& delay 
 			{ Actions::FadeIn::New( Seconds( 0.125 ) ), Actions::Delay::New( delay ),
 			  Actions::FadeOut::New( Seconds( 0.125 ) ), Actions::Close::New() } );
 		tv->runAction( sequence );
+		Log::info( "Displayed notification:\n%s", text.toUtf8() );
 	};
 
 	if ( Engine::isRunninMainThread() )

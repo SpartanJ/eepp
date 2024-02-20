@@ -77,6 +77,16 @@ class EE_API UIWidget : public UINode {
 
 	UIWidget* setLayoutMarginBottom( const Float& marginBottom );
 
+	UIWidget* setLayoutPixelsMargin( const Rectf& margin );
+
+	UIWidget* setLayoutPixelsMarginLeft( const Float& marginLeft );
+
+	UIWidget* setLayoutPixelsMarginRight( const Float& marginRight );
+
+	UIWidget* setLayoutPixelsMarginTop( const Float& marginTop );
+
+	UIWidget* setLayoutPixelsMarginBottom( const Float& marginBottom );
+
 	Float getLayoutWeight() const;
 
 	UIWidget* setLayoutWeight( const Float& weight );
@@ -126,6 +136,16 @@ class EE_API UIWidget : public UINode {
 	UIWidget* setPaddingTop( const Float& paddingTop );
 
 	UIWidget* setPaddingBottom( const Float& paddingBottom );
+
+	UIWidget* setPaddingPixels( const Rectf& padding );
+
+	UIWidget* setPaddingPixelsLeft( const Float& paddingLeft );
+
+	UIWidget* setPaddingPixelsRight( const Float& paddingRight );
+
+	UIWidget* setPaddingPixelsTop( const Float& paddingTop );
+
+	UIWidget* setPaddingPixelsBottom( const Float& paddingBottom );
 
 	const std::string& getStyleSheetTag() const;
 

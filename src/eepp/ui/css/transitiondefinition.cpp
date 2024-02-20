@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-std::map<std::string, TransitionDefinition> TransitionDefinition::parseTransitionProperties(
+UnorderedMap<std::string, TransitionDefinition> TransitionDefinition::parseTransitionProperties(
 	const std::vector<const StyleSheetProperty*>& styleSheetProperties ) {
 	std::vector<std::string> properties;
 	std::vector<Time> durations;

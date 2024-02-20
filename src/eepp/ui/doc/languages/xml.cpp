@@ -16,6 +16,7 @@ void addXML() {
 					"CSS" },
 				  { { "<!%-%-", "%-%->" }, "comment" },
 				  { { "%f[^>][^<]", "%f[<]" }, "normal" },
+				  { { "(<!%[CDATA%[)", "(%]%]>)", "\\" }, { "string", "function", "function" } },
 				  { { "\"", "\"", "\\" }, "string" },
 				  { { "'", "'", "\\" }, "string" },
 				  { { "0x[%da-fA-F]+" }, "number" },

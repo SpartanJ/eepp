@@ -23,15 +23,26 @@ class EE_API UIPopUpMenu : public UIMenu {
 
 	virtual bool hide();
 
+	virtual void close();
+
 	bool isHiding() const;
 
-	bool getCloseOnHide() const;
+	bool closeOnHide() const;
 
 	void setCloseOnHide( bool closeOnHide );
+
+	bool closeSubMenusOnClose() const;
+
+	void setCloseSubMenusOnClose( bool closeSubMenusOnClose );
+
+	void showAtScreenPosition( Vector2f pos );
+
+	void showOverMouseCursor();
 
   protected:
 	Action* mHidingAction{ nullptr };
 	bool mCloseOnHide{ false };
+	bool mCloseSubMenusOnClose{ false };
 };
 
 class EE_API ContextMenuEvent : public MouseEvent {

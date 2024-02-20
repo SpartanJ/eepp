@@ -35,8 +35,6 @@ template <typename T> class ItemListModel final : public Model {
 		return {};
 	}
 
-	virtual void update() { onModelUpdate(); }
-
   private:
 	const std::vector<T>& mData;
 };
@@ -83,8 +81,6 @@ template <typename K, typename V> class ItemPairListModel final : public Model {
 		}
 		return {};
 	}
-
-	virtual void update() { onModelUpdate(); }
 
 	virtual bool isEditable( const ModelIndex& ) const { return mIsEditable; }
 
@@ -134,8 +130,6 @@ template <typename T> class ItemListOwnerModel final : public Model {
 			return Variant( mData[index.row()] );
 		return {};
 	}
-
-	virtual void update() { onModelUpdate(); }
 
 	virtual bool isEditable( const ModelIndex& ) const { return mIsEditable; }
 
@@ -195,8 +189,6 @@ template <typename K, typename V> class ItemPairListOwnerModel final : public Mo
 		}
 		return {};
 	}
-
-	virtual void update() { onModelUpdate(); }
 
 	virtual bool isEditable( const ModelIndex& ) const { return mIsEditable; }
 
@@ -266,8 +258,6 @@ template <typename V> class ItemVectorListOwnerModel final : public Model {
 
 		return {};
 	}
-
-	virtual void update() { onModelUpdate(); }
 
 	virtual bool isEditable( const ModelIndex& ) const { return mIsEditable; }
 

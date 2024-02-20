@@ -11,10 +11,11 @@ class EE_API FontFamily {
 
   private:
 	static std::string findType( const std::string& fontpath, const std::string& fontname,
-								 const std::string& ext, const std::vector<std::string>& names );
+								 const std::string& ext,
+								 const std::vector<std::string_view>& names );
 
 	static FontTrueType* setFont( FontTrueType* font, const std::string& fontpath,
-								  const std::string& fontType );
+								  const std::string_view& fontType );
 };
 
 }} // namespace EE::Graphics

@@ -29,6 +29,8 @@ enum class SortOrder { None, Ascending, Descending };
 
 class EE_API Model {
   public:
+	using ModelStyler = std::function<Variant( const ModelIndex&, const void* data )>;
+
 	class EE_API Client {
 	  public:
 		virtual ~Client() {}
@@ -68,9 +70,11 @@ class EE_API Model {
 
 	virtual std::string columnName( const size_t& /*column*/ ) const { return {}; }
 
+	virtual std::string rowName( const size_t& /*row*/ ) const { return {}; }
+
 	virtual Variant data( const ModelIndex&, ModelRole = ModelRole::Display ) const = 0;
 
-	virtual void update() = 0;
+	virtual void update() { onModelUpdate(); }
 
 	virtual ModelIndex parentIndex( const ModelIndex& ) const { return {}; }
 
@@ -146,6 +150,10 @@ class EE_API Model {
 
 	void releaseResourceMutex();
 
+	Uint32 subsribeModelStyler( const ModelStyler& styler );
+
+	void unsubsribeModelStyler( Uint32 id );
+
   protected:
 	Model(){};
 
@@ -195,19 +203,21 @@ class EE_API Model {
 
 	template <bool IsRow> void saveDeletedIndices( ModelIndex const& parent, int first, int last );
 
-	std::map<ModelIndex, std::shared_ptr<PersistentHandle>> mPersistentHandles;
+	Variant stylizeModel( const ModelIndex& index, const void* data = nullptr ) const;
+
+	UnorderedMap<ModelIndex, std::shared_ptr<PersistentHandle>> mPersistentHandles;
 	std::stack<Operation> mOperationStack;
 	// NOTE: We need to save which indices have been deleted before the delete
 	// actually happens, because we can't figure out which persistent handles
 	// belong to us in end_delete_rows/columns (because accessing the parents of
 	// the indices might be impossible).
 	std::stack<std::vector<ModelIndex>> mDeletedIndicesStack;
-
-  private:
 	std::unordered_set<UIAbstractView*> mViews;
 	std::unordered_set<Client*> mClients;
 	std::function<void()> mOnUpdate;
 	Mutex mResourceLock;
+	Uint32 mLastStylerId{ 0 };
+	std::unordered_map<Uint32, ModelStyler> mStylers;
 };
 
 }}} // namespace EE::UI::Models

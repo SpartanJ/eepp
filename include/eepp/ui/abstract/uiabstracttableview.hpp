@@ -55,6 +55,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	/** In pixels. */
 	void setColumnWidth( const size_t& colIndex, const Float& width );
 
+	/** In pixels. */
+	void setColumnsWidth( const Float& width );
+
 	const Float& getColumnWidth( const size_t& colIndex ) const;
 
 	virtual Float getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess = false );
@@ -116,6 +119,19 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	UITableCell* getCellFromIndex( const ModelIndex& index ) const;
 
+	virtual void onOpenModelIndex( const ModelIndex& index, const Event* triggerEvent = nullptr );
+
+	virtual void onOpenMenuModelIndex( const ModelIndex& index,
+									   const Event* triggerEvent = nullptr );
+
+	bool isRowHeaderVisible() const;
+
+	void setRowHeaderVisible( bool rowHeaderVisible );
+
+	Float getRowHeaderWidth() const;
+
+	void setRowHeaderWidth( Float rowHeaderWidth );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -131,8 +147,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	Float mHeaderHeight{ 16 };
 	mutable std::vector<UITableRow*> mRows;
 	mutable std::vector<ColumnData> mColumn;
-	mutable std::vector<std::map<int, UIWidget*>> mWidgets;
-	UILinearLayout* mHeader;
+	mutable std::vector<UnorderedMap<int, UIWidget*>> mWidgets;
+	UILinearLayout* mHeader{ nullptr };
+	UILinearLayout* mRowHeader{ nullptr };
 	Float mDragBorderDistance{ 8 };
 	size_t mIconSize{ 12 };
 	size_t mSortIconSize{ 16 };
@@ -145,6 +162,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	std::string mSearchText;
 	size_t mMainColumn{ 0 };
 	std::unordered_map<UIWidget*, std::vector<Uint32>> mWidgetsClickCbId;
+	Float mRowHeaderWidth{ 0 };
 
 	virtual ~UIAbstractTableView();
 
@@ -175,7 +193,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual UITableRow* updateRow( const int& rowIndex, const ModelIndex& index,
 								   const Float& yOffset );
 
-	virtual UIWidget* updateCell( const int& rowIndex, const ModelIndex& index,
+	virtual UIWidget* updateCell( const Vector2<Int64>& posIndex, const ModelIndex& index,
 								  const size_t& indentLevel, const Float& yOffset );
 
 	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
@@ -185,26 +203,27 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void onScrollChange();
 
-	virtual void onOpenModelIndex( const ModelIndex& index, const Event* triggerEvent = nullptr );
-
-	virtual void onOpenMenuModelIndex( const ModelIndex& index,
-									   const Event* triggerEvent = nullptr );
-
 	virtual void onRowCreated( UITableRow* row );
 
 	virtual void onSortColumn( const size_t& colIndex );
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 
+	virtual Uint32 onKeyDown( const KeyEvent& event );
+
 	virtual void bindNavigationClick( UIWidget* widget );
+
+	bool tryBeginEditing( KeyBindings::Shortcut shortcut );
 
 	void updateHeaderSize();
 
 	int visibleColumn();
 
-	void updateCellsVisibility();
-
 	void resetColumnData();
+
+	void buildRowHeader();
+
+	void updateRowHeader( int realRowIndex, const ModelIndex& index, Float yOffset );
 };
 
 }}} // namespace EE::UI::Abstract

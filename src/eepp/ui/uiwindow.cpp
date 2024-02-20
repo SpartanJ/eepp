@@ -9,11 +9,14 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwindow.hpp>
+
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
@@ -1643,7 +1646,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 			setSize( getSize().getWidth(), attribute.asDpDimension( this ) );
 			break;
 		case PropertyId::WindowTitle:
-			setTitle( getUISceneNode()->getTranslatorString( attribute.asString() ) );
+			setTitle( getUISceneNode()->getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::WindowOpacity:
 			setWindowOpacity( (Uint8)eemin<Uint32>( (Uint32)attribute.asFloat() * 255.f, 255u ) );

@@ -3,6 +3,7 @@
 	--primary: #3daee9;
 	--back: #31363b;
 	--font: #eff0f1;
+	--font-highlight: #8bdcfd;
 	--font-hint: #898b8d;
 	--button-back: #30353a;
 	--button-border: #6b6f73;
@@ -37,7 +38,7 @@
 	--menu-font-active: white;
 	--menu-font-disabled: #6e7275;
 	--win-icon: #dbdbdd;
-	--floating-icon: #eff0f188;
+	--floating-icon: #96999c;
 	--term-back-color: #1e2127;
 	--term-font-color: #abb2bf;
 	--highlight-primary: #FFFFFF7A;
@@ -185,9 +186,15 @@ SelectButton:selected:pressed {
 }
 
 pushbutton:disabled,
-selectbutton:disabled {
+selectbutton:disabled,
+textinput:disabled,
+textedit:disabled {
 	color: var(--disabled-color);
 	border-color: var(--disabled-border);
+}
+
+checkbox:disabled {
+	color: var(--disabled-color);
 }
 
 PushButton::icon,
@@ -218,7 +225,7 @@ CheckBox:hover CheckBox::inactive {
 CheckBox::active {
 	border-color: var(--primary);
 	background-image: rectangle(solid, var(--primary));
-	background-size: 70% 70%;
+	background-size: 8dpru 8dpru;
 	background-position: center;
 }
 
@@ -302,6 +309,7 @@ ListView::row:selected {
 DropDownList::ListBox::item,
 ComboBox::DropDownList::ListBox::item {
 	padding-left: 4dp;
+	background-color: transparent;
 }
 
 DropDownList::ListBox::item:hover,
@@ -538,10 +546,18 @@ Tab {
 	background-position-y: bottom;
 	height: 24dp;
 	transition: background-color 0.15s;
+	foreground-image: linear-gradient( to top, var(--tab-line), var(--tab-back));
+	foreground-size: 1dprd 80%;
+	foreground-position: right bottom;
+}
+
+Tab.prev {
+	foreground-image: none;
 }
 
 Tab:hover {
 	background-color: var(--tab-hover);
+	foreground-image: none;
 }
 
 Tab::text {
@@ -562,6 +578,7 @@ Tab:selected {
 	border-top-width: 1dp;
 	border-top-left-radius: 2dp;
 	border-top-right-radius: 2dp;
+	foreground-image: none;
 }
 
 Tab:selected:hover {
@@ -577,9 +594,6 @@ Tab::close {
 	width: 10dp;
 	height: 10dp;
 	border-radius: 5dp;
-	/*background-color: var(--tab-close);
-	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 5dp 5dp"), poly(line, var(--icon-line-hover), "5dp 0dp, 0dp 5dp");
-	foreground-position: 2.5dp 2.5dp, 2.5dp 2.5dp;*/
 	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
 	foreground-tint: var(--tab-close);
 	foreground-size: 10dp 10dp;
@@ -588,7 +602,6 @@ Tab::close {
 }
 
 Tab::close:hover {
-	/*background-color: var(--tab-close-hover);*/
 	foreground-tint: var(--tab-close-hover);
 }
 
@@ -868,7 +881,9 @@ Splitter::separator:hover {
 }
 
 tableview::header,
-listview::header {
+listview::header,
+tableview::rowheader,
+listview::rowheader {
 	background-color: var(--back);
 }
 
@@ -887,9 +902,24 @@ listview::header::column {
 	text-align: left;
 }
 
+tableview::rowheader::row,
+treeview::rowheader::row,
+listview::rowheader::row {
+	background-color: var(--back);
+	border-right-color: var(--tab-line);
+	border-right-width: 1dp;
+	border-bottom-color: var(--tab-line);
+	border-bottom-width: 1dp;
+	border-type: inside;
+	color: var(--font);
+}
+
 tableview::header::column:hover,
 treeview::header::column:hover,
-listview::header::column:hover {
+listview::header::column:hover,
+tableview::rowheader::row:hover,
+treeview::rowheader::row:hover,
+listview::rowheader::row:hover {
 	background-color: var(--tab-hover);
 }
 
@@ -930,8 +960,8 @@ treeview.selection_type_cell tableview::cell:selected {
 
 tableview::cell,
 treeview::cell {
-	padding-left: 6dp;
-	padding-right: 6dp;
+	padding-left: 4dp;
+	padding-right: 4dp;
 	min-icon-size: 16dp 16dp;
 }
 
@@ -1048,6 +1078,7 @@ TextInput.table_cell_edit {
 	--primary: #3daee9;
 	--back: #eff0f1;
 	--font: #232627;
+	--font-highlight: #1a5676;
 	--font-hint: #232627;
 	--button-back: #fcfcfc;
 	--button-border: #b3b4b5;
@@ -1082,7 +1113,7 @@ TextInput.table_cell_edit {
 	--menu-font-active: #fcfcfc;
 	--menu-font-disabled: #a8a9aa;
 	--win-icon: #232627;
-	--floating-icon: #cbcdcd;
+	--floating-icon: #666666;
 	--term-back-color: #eff0f1;
 	--term-font-color: #232627;
 	--disabled-color: #727679;
@@ -1139,7 +1170,6 @@ listview::row:hover listview::cell checkbox,
 tableview::header::column:hover,
 treeview::header::column:hover,
 listview::header::column:hover {
-	color: var(--menu-font-active);
 	tint: var(--menu-font-active);
 }
 

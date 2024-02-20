@@ -39,7 +39,8 @@ class App : public UICodeEditorSplitter::Client {
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 			   const std::string& css, bool health, const std::string& healthLang,
 			   ecode::FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
-			   bool stdOutLogs, bool disableFileLogs, bool openClean );
+			   bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
+			   std::string language );
 
 	void createWidgetInspector();
 
@@ -186,6 +187,8 @@ class App : public UICodeEditorSplitter::Client {
 	void showFolderTreeViewTab();
 
 	void showBuildTab();
+
+	SettingsMenu* getSettingsMenu() const { return mSettings.get(); }
 
 	template <typename T> void registerUnlockedCommands( T& t ) {
 		t.setCommand( "keybindings", [this] { loadFileFromPath( mKeybindingsPath ); } );
@@ -386,6 +389,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string& getThemesPath() const;
 
+	const std::string& geti18nPath() const;
+
 	std::string getThemePath() const;
 
 	std::string getDefaultThemePath() const;
@@ -430,6 +435,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void saveProject();
 
+	std::pair<bool, std::string> generateConfigPath();
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -465,6 +472,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mLanguagesPath;
 	std::string mThemesPath;
 	std::string mLogsPath;
+	std::string mi18nPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
@@ -476,6 +484,8 @@ class App : public UICodeEditorSplitter::Client {
 	bool mDirTreeReady{ false };
 	bool mUseFrameBuffer{ false };
 	bool mBenchmarkMode{ false };
+	bool mPortableMode{ false };
+	bool mPortableModeFailed{ false };
 	Time mFrameTime{ Time::Zero };
 	Clock mLastRender;
 	Clock mSecondsCounter;
@@ -508,6 +518,8 @@ class App : public UICodeEditorSplitter::Client {
 	UITheme* mTheme{ nullptr };
 	UIStatusBar* mStatusBar{ nullptr };
 	UISplitter* mMainSplitter{ nullptr };
+	StyleSheet mAppStyleSheet;
+	UIMessageBox* mCloseMsgBox{ nullptr };
 
 	void saveAllProcess();
 
@@ -565,6 +577,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onCodeEditorFocusChange( UICodeEditor* editor );
 
+	void onTabCreated( UITab* tab, UIWidget* widget );
+
 	bool trySendUnlockedCmd( const KeyEvent& keyEvent );
 
 	FontTrueType* loadFont( const std::string& name, std::string fontPath,
@@ -584,7 +598,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void initPluginManager();
 
-	void onPluginEnabled( UICodeEditorPlugin* plugin );
+	void onPluginEnabled( Plugin* plugin );
 
 	void checkForUpdatesResponse( Http::Response response, bool fromStartup );
 

@@ -2,6 +2,7 @@
 #define ECODE_AUTOCOMPLETEPLUGIN_HPP
 
 #include "../lsp/lspprotocol.hpp"
+#include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include <eepp/config.hpp>
 #include <eepp/system/clock.hpp>
@@ -61,7 +62,7 @@ class AutoCompletePlugin : public Plugin {
 				 { 0, 2, 2 } };
 	}
 
-	static UICodeEditorPlugin* New( PluginManager* pluginManager );
+	static Plugin* New( PluginManager* pluginManager );
 
 	virtual ~AutoCompletePlugin();
 

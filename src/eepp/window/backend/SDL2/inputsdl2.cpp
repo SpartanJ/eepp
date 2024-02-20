@@ -253,6 +253,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_TEXTEDITING: {
+			if ( SDLEvent.edit.length == 0 )
+				return;
 			event.Type = InputEvent::TextEditing;
 			event.textediting.text = SDLEvent.edit.text;
 			event.textediting.start = SDLEvent.edit.start;
@@ -262,6 +264,8 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		}
 #if SDL_VERSION_ATLEAST( 2, 0, 22 )
 		case SDL_TEXTEDITING_EXT: {
+			if ( SDLEvent.edit.length == 0 )
+				return;
 			event.Type = InputEvent::TextEditing;
 			event.textediting.text = SDLEvent.editExt.text;
 			event.textediting.start = SDLEvent.editExt.start;
@@ -357,6 +361,22 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 
 			event.Type = InputEvent::MouseButtonUp;
 			event.button.state = 0;
+			processEvent( &event );
+
+			event.Type = InputEvent::MouseWheel;
+			event.wheel.which = SDLEvent.wheel.which;
+			event.wheel.direction = SDLEvent.wheel.direction == SDL_MOUSEWHEEL_NORMAL
+										? InputEvent::WheelEvent::Normal
+										: InputEvent::WheelEvent::Flipped;
+
+#if SDL_VERSION_ATLEAST( 2, 0, 18 )
+			event.wheel.x = SDLEvent.wheel.preciseX;
+			event.wheel.y = SDLEvent.wheel.preciseY;
+#else
+			event.wheel.x = SDLEvent.wheel.x;
+			event.wheel.y = SDLEvent.wheel.y;
+#endif
+			processEvent( &event );
 			break;
 		}
 		case SDL_FINGERMOTION: {

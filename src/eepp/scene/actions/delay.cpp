@@ -43,6 +43,10 @@ Action* Delay::reverse() const {
 	return NULL; // or a time machine
 }
 
+void Delay::restart() {
+	mClock.restart();
+}
+
 Delay::Delay( const Time& time ) : mTime( time ) {}
 
 }}} // namespace EE::Scene::Actions

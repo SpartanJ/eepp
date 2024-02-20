@@ -3,6 +3,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitabwidget.hpp>
@@ -43,7 +44,7 @@ UITabWidget::UITabWidget() :
 		->setPosition( 0, mStyleConfig.TabHeight );
 
 	mTabScroll = UIScrollBar::NewHorizontalWithTag( "scrollbarmini" );
-	mTabScroll->setParent( this );
+	mTabScroll->setParent( mTabBar );
 	mTabScroll->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
 	mTabScroll->on( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
 	mTabScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
@@ -53,7 +54,12 @@ UITabWidget::UITabWidget() :
 	applyDefaultTheme();
 }
 
-UITabWidget::~UITabWidget() {}
+UITabWidget::~UITabWidget() {
+	if ( mCurrentMenu ) {
+		mCurrentMenu->clearEventListener();
+		mCurrentMenu = nullptr;
+	}
+}
 
 Uint32 UITabWidget::getType() const {
 	return UI_TYPE_TABWIDGET;
@@ -117,7 +123,7 @@ void UITabWidget::setContainerSize() {
 		Float totalSize = totalTabsWidth > mSize.getWidth() ? totalTabsWidth : mSize.getWidth();
 		mTabBar->setPixelsSize( totalSize - mPaddingPx.Left - mPaddingPx.Right,
 								PixelDensity::dpToPx( mStyleConfig.TabHeight ) );
-		mTabBar->setPosition( mPadding.Left, mPadding.Top );
+		mTabBar->setPixelsPosition( mPaddingPx.Left, mPaddingPx.Top );
 		mNodeContainer->setPosition( mPadding.Left, mPadding.Top + mStyleConfig.TabHeight );
 		Sizef s( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 				 mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabHeight ) -
@@ -171,6 +177,8 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 			return getAllowDragAndDropTabs() ? "true" : "false";
 		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
 			return getAllowSwitchTabsInEmptySpaces() ? "true" : "false";
+		case PropertyId::TabCloseButtonVisible:
+			return getTabCloseButtonVisible() ? "true" : "false";
 		case PropertyId::DroppableHoveringColor:
 			return !mDroppableHoveringColorWasSet
 					   ? UIWidget::getPropertyString( propertyDef, propertyIndex )
@@ -193,7 +201,8 @@ std::vector<PropertyId> UITabWidget::getPropertiesImplemented() const {
 				   PropertyId::TabBarAllowRearrange,
 				   PropertyId::TabBarAllowDragAndDrop,
 				   PropertyId::TabAllowSwitchTabsInEmptySpaces,
-				   PropertyId::DroppableHoveringColor };
+				   PropertyId::DroppableHoveringColor,
+				   PropertyId::TabCloseButtonVisible };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -242,10 +251,10 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setMaxTextLength( attribute.asUint( 1 ) );
 			break;
 		case PropertyId::MinTabWidth:
-			setMinTabWidth( attribute.asString() );
+			setMinTabWidth( attribute.value() );
 			break;
 		case PropertyId::MaxTabWidth:
-			setMaxTabWidth( attribute.asString() );
+			setMaxTabWidth( attribute.value() );
 			break;
 		case PropertyId::TabClosable:
 			setTabsClosable( attribute.asBool() );
@@ -270,6 +279,9 @@ bool UITabWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
 			setAllowSwitchTabsInEmptySpaces( attribute.asBool() );
+			break;
+		case PropertyId::TabCloseButtonVisible:
+			setTabCloseButtonVisible( attribute.asBool() );
 			break;
 		case PropertyId::DroppableHoveringColor:
 			setDroppableHoveringColor( attribute.asColor() );
@@ -335,6 +347,18 @@ bool UITabWidget::getTabsClosable() const {
 void UITabWidget::setTabsClosable( bool tabsClosable ) {
 	if ( mStyleConfig.TabsClosable != tabsClosable ) {
 		mStyleConfig.TabsClosable = tabsClosable;
+		updateTabs();
+		invalidateDraw();
+	}
+}
+
+bool UITabWidget::getTabCloseButtonVisible() const {
+	return mStyleConfig.TabCloseButtonVisible;
+}
+
+void UITabWidget::setTabCloseButtonVisible( bool visible ) {
+	if ( mStyleConfig.TabCloseButtonVisible != visible ) {
+		mStyleConfig.TabCloseButtonVisible = visible;
 		updateTabs();
 		invalidateDraw();
 	}
@@ -424,11 +448,19 @@ void UITabWidget::posTabs() {
 void UITabWidget::zorderTabs() {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		mTabs[i]->toBack();
+		mTabs[i]->removeClass( "next" );
+		mTabs[i]->removeClass( "prev" );
 	}
 
 	if ( NULL != mTabSelected ) {
 		mTabSelected->toFront();
+		if ( mTabSelectedIndex > 0 )
+			mTabs[mTabSelectedIndex - 1]->addClass( "prev" );
+		if ( mTabSelectedIndex + 1 < mTabs.size() )
+			mTabs[mTabSelectedIndex + 1]->addClass( "next" );
 	}
+
+	mTabScroll->toFront();
 }
 
 void UITabWidget::orderTabs() {
@@ -439,6 +471,8 @@ void UITabWidget::orderTabs() {
 	zorderTabs();
 
 	posTabs();
+
+	updateScroll( true );
 
 	invalidateDraw();
 }
@@ -458,6 +492,12 @@ UITab* UITabWidget::createTab( const String& text, UINode* nodeOwned, Drawable* 
 	tab->setVisible( true );
 	tab->setEnabled( true );
 	tab->setOwnedWidget( nodeOwned );
+	tab->reloadStyle( true, true, false );
+	if ( tab->getCloseButton() ) {
+		tab->getCloseButton()
+			->setVisible( mStyleConfig.TabsClosable && mStyleConfig.TabCloseButtonVisible )
+			->setEnabled( mStyleConfig.TabsClosable && mStyleConfig.TabCloseButtonVisible );
+	}
 	nodeOwned->setParent( mNodeContainer );
 	nodeOwned->setVisible( false );
 	nodeOwned->setEnabled( true );
@@ -723,9 +763,7 @@ UITab* UITabWidget::setTabSelected( UITab* tab ) {
 		if ( tab->getOwnedWidget() )
 			tab->getOwnedWidget()->setFocus();
 		return tab;
-	}
-
-	if ( NULL != mTabSelected ) {
+	} else if ( NULL != mTabSelected ) {
 		mTabSelected->unselect();
 
 		if ( NULL != mTabSelected->getOwnedWidget() ) {
@@ -753,7 +791,7 @@ UITab* UITabWidget::setTabSelected( UITab* tab ) {
 		sendCommonEvent( Event::OnTabSelected );
 	}
 
-	updateScroll();
+	updateScroll( true );
 
 	return tab;
 }
@@ -843,6 +881,18 @@ void UITabWidget::setFocusTabBehavior( UITabWidget::FocusTabBehavior focusTabBeh
 	mFocusTabBehavior = focusTabBehavior;
 }
 
+bool UITabWidget::getEnabledCreateContextMenu() const {
+	return mEnabledCreateContextMenu;
+}
+
+void UITabWidget::setEnabledCreateContextMenu( bool enabledCreateContextMenu ) {
+	mEnabledCreateContextMenu = enabledCreateContextMenu;
+}
+
+UIScrollBar* UITabWidget::getTabScroll() const {
+	return mTabScroll;
+}
+
 void UITabWidget::refreshOwnedWidget( UITab* tab ) {
 	if ( NULL != tab && NULL != tab->getOwnedWidget() ) {
 		tab->getOwnedWidget()->setParent( mNodeContainer );
@@ -867,6 +917,8 @@ void UITabWidget::tryCloseTab( UITab* tab, FocusTabBehavior focusTabBehavior ) {
 }
 
 void UITabWidget::swapTabs( UITab* left, UITab* right ) {
+	if ( !left || !right || left->getTabWidget() != this || right->getTabWidget() != this )
+		return;
 	Uint32 leftIndex = getTabIndex( left );
 	Uint32 rightIndex = getTabIndex( right );
 	if ( leftIndex != eeINDEX_NOT_FOUND && rightIndex != eeINDEX_NOT_FOUND ) {
@@ -877,6 +929,7 @@ void UITabWidget::swapTabs( UITab* left, UITab* right ) {
 		mTabs[leftIndex] = right;
 		mTabs[rightIndex] = left;
 		posTabs();
+		zorderTabs();
 	}
 }
 
@@ -997,7 +1050,8 @@ void UITabWidget::updateScrollBar() {
 	mTabScroll->setPixelsSize(
 		{ getPixelsSize().getWidth(), mTabScroll->getPixelsSize().getHeight() } );
 	mTabScroll->setPixelsPosition(
-		{ 0, mTabBar->getPixelsSize().getHeight() - mTabScroll->getPixelsSize().getHeight() } );
+		{ -mTabBar->getPixelsPosition().x,
+		  mTabBar->getPixelsSize().getHeight() - mTabScroll->getPixelsSize().getHeight() } );
 
 	Float totalSize = mTabs.empty() ? 0
 									: mTabs.back()->getPixelsPosition().x +
@@ -1012,10 +1066,35 @@ void UITabWidget::updateScrollBar() {
 	}
 }
 
-void UITabWidget::updateScroll() {
-	if ( mTabScroll->isVisible() )
-		mTabBar->setPixelsPosition(
-			{ mPaddingPx.Left + -mTabScroll->getValue(), mTabBar->getPixelsPosition().y } );
+void UITabWidget::updateScroll( bool updateFocus ) {
+	if ( !mTabScroll->isVisible() )
+		return;
+
+	mTabBar->setPixelsPosition( mPaddingPx.Left - mTabScroll->getValue(),
+								mTabBar->getPixelsPosition().y );
+	mTabScroll->setPixelsPosition( -mTabBar->getPixelsPosition().x,
+								   mTabScroll->getPixelsPosition().y );
+
+	if ( updateFocus && mTabSelected ) {
+		Rectf r = mTabScroll->getRectBox();
+		Rectf r2 = mTabSelected->getRectBox();
+
+		if ( !( r.Left <= r2.Left && r.Right >= r2.Right ) ) {
+			size_t pIndex = mFocusHistory.size() >= 2
+								? getTabIndex( mFocusHistory.at( mFocusHistory.size() - 2 ) )
+								: getTabIndex( mFocusHistory.back() );
+
+			Float x = mTabSelectedIndex > pIndex
+						  ? eeclamp( mTabSelected->getPixelsPosition().x +
+										 mTabSelected->getPixelsSize().getWidth() -
+										 mTabScroll->getPixelsSize().getWidth(),
+									 0.f, mTabScroll->getMaxValue() )
+						  : eeclamp( mTabSelected->getPixelsPosition().x, 0.f,
+									 mTabScroll->getMaxValue() );
+
+			mTabScroll->setValue( x );
+		}
+	}
 }
 
 }} // namespace EE::UI

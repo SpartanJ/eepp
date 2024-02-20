@@ -9,7 +9,6 @@
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
-#include <eepp/ui/doc/undostack.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <memory>
@@ -244,6 +243,8 @@ class LSPClientServer {
 
 	LSPDocumentClient* getLSPDocumentClient( TextDocument* doc );
 
+	bool isSilent() const;
+
   protected:
 	LSPClientServerManager* mManager{ nullptr };
 	String::HashType mId;
@@ -313,8 +314,6 @@ class LSPClientServer {
 	void refreshSmenaticHighlighting();
 
 	void refreshCodeLens();
-
-	bool isSilent() const;
 
 	bool trimLogs() const;
 };

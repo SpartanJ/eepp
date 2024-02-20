@@ -41,7 +41,7 @@ UISpinBox::UISpinBox() :
 
 	mInput->setAllowOnlyNumbers( true, false );
 	mInput->addEventListener( Event::OnBufferChange,
-							  cb::Make1( this, &UISpinBox::onBufferChange ) );
+							  [this]( auto event ) { onBufferChange( event ); } );
 	double val = mValue;
 	mValue += 1;
 	setValue( val );

@@ -1,7 +1,12 @@
+#include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitheme.hpp>
 
 namespace EE { namespace UI {
@@ -12,7 +17,7 @@ UIMessageBox* UIMessageBox::New( const Type& type, const String& message,
 }
 
 UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint32& windowFlags ) :
-	UIWindow(), mMsgBoxType( type ), mTextInput( NULL ), mCloseShortcut( KEY_UNKNOWN ) {
+	UIWindow(), mMsgBoxType( type ), mCloseShortcut( KEY_UNKNOWN ) {
 	mVisible = false;
 
 	mStyleConfig.WinFlags = windowFlags;
@@ -41,6 +46,16 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 			->setParent( vlay )
 			->addEventListener( Event::OnPressEnter,
 								[this]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
+	} else if ( mMsgBoxType == TEXT_EDIT ) {
+		mTextEdit = UITextEdit::New();
+		mTextEdit->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
+			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
+			->setSize( PixelDensity::dpToPx( Vector2f{ 400, 100 } ) )
+			->setParent( vlay );
+		mTextEdit->getDocument().setCommand( "complete-edit",
+											 [this] { sendCommonEvent( Event::OnConfirm ); } );
+		mTextEdit->getKeyBindings().addKeybind( { KEY_RETURN, KeyMod::getDefaultModifier() },
+												"complete-edit" );
 	}
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
@@ -58,23 +73,24 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 
 	switch ( mMsgBoxType ) {
 		case UIMessageBox::INPUT:
+		case UIMessageBox::TEXT_EDIT:
 		case UIMessageBox::OK_CANCEL: {
-			mButtonOK->setText( getTranslatorString( "@string/msg_box_ok", "Ok" ) );
-			mButtonCancel->setText( getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
+			mButtonOK->setText( i18n( "msg_box_ok", "Ok" ) );
+			mButtonCancel->setText( i18n( "msg_box_cancel", "Cancel" ) );
 			break;
 		}
 		case UIMessageBox::YES_NO: {
-			mButtonOK->setText( getTranslatorString( "@string/msg_box_yes", "Yes" ) );
-			mButtonCancel->setText( getTranslatorString( "@string/msg_box_no", "No" ) );
+			mButtonOK->setText( i18n( "msg_box_yes", "Yes" ) );
+			mButtonCancel->setText( i18n( "msg_box_no", "No" ) );
 			break;
 		}
 		case UIMessageBox::RETRY_CANCEL: {
-			mButtonOK->setText( getTranslatorString( "@string/msg_box_retry", "Retry" ) );
-			mButtonCancel->setText( getTranslatorString( "@string/msg_box_cancel", "Cancel" ) );
+			mButtonOK->setText( i18n( "msg_box_retry", "Retry" ) );
+			mButtonCancel->setText( i18n( "msg_box_cancel", "Cancel" ) );
 			break;
 		}
 		case UIMessageBox::OK: {
-			mButtonOK->setText( getTranslatorString( "@string/msg_box_ok", "Ok" ) );
+			mButtonOK->setText( i18n( "msg_box_ok", "Ok" ) );
 			mButtonCancel->setVisible( false );
 			mButtonCancel->setEnabled( false );
 			break;
@@ -99,7 +115,7 @@ void UIMessageBox::setTheme( UITheme* theme ) {
 	mButtonOK->setTheme( theme );
 	mButtonCancel->setTheme( theme );
 
-	if ( getTranslatorString( "@string/msg_box_retry", "Retry" ) != mButtonOK->getText() ) {
+	if ( i18n( "msg_box_retry", "Retry" ) != mButtonOK->getText() ) {
 		Drawable* okIcon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) );
 		Drawable* cancelIcon =
 			getUISceneNode()->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) );
@@ -160,9 +176,11 @@ Uint32 UIMessageBox::onKeyUp( const KeyEvent& event ) {
 
 bool UIMessageBox::show() {
 	bool b = UIWindow::show();
-	if ( NULL != mTextInput ) {
+	if ( NULL != mTextInput && mTextInput->isEnabled() ) {
 		mTextInput->setFocus();
-	} else {
+	} else if ( NULL != mTextEdit && mTextEdit->isEnabled() ) {
+		mTextEdit->setFocus();
+	} else if ( mButtonOK->isEnabled() ) {
 		mButtonOK->setFocus();
 	}
 	return b;
@@ -178,6 +196,10 @@ void UIMessageBox::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey )
 
 UITextInput* UIMessageBox::getTextInput() const {
 	return mTextInput;
+}
+
+UITextEdit* UIMessageBox::getTextEdit() const {
+	return mTextEdit;
 }
 
 UILayout* UIMessageBox::getLayoutCont() const {

@@ -14,6 +14,9 @@ class Pack;
 
 class EE_API Translator {
   public:
+	typedef std::unordered_map<std::string, String> StringDictionary;
+	typedef std::unordered_map<std::string, StringDictionary> StringLocaleDictionary;
+
 	Translator( const std::locale& locale = std::locale() );
 
 	bool loadFromDirectory( std::string dirPath, std::string ext = "xml" );
@@ -30,7 +33,13 @@ class EE_API Translator {
 
 	String getString( const std::string& key, const String& defaultValue = String() );
 
-	String getStringf( const char* key, ... );
+	void setString( const std::string& lang, const std::string& key, const String& val );
+
+	template <typename... Args> String getStringf( const char* key, Args&&... args ) {
+		return String::format(
+			std::string_view{ getString( key ).toUtf8() },
+			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
+	}
 
 	void setLanguageFromLocale( std::locale locale );
 
@@ -42,13 +51,26 @@ class EE_API Translator {
 
 	void setCurrentLanguage( const std::string& currentLanguage );
 
-  protected:
-	typedef std::unordered_map<std::string, String> StringDictionary;
-	typedef std::unordered_map<std::string, StringDictionary> StringLocaleDictionary;
+	void setSaveDefaultValues( bool set ) { mSetDefaultValues = set; }
 
+	bool isSetDefaultValues() const { return mSetDefaultValues; }
+
+	void saveToStream( IOStream& stream, std::string lang = "" );
+
+	const StringLocaleDictionary& getDictionary() const { return mDictionary; }
+
+	StringLocaleDictionary& getDictionary() { return mDictionary; }
+
+	void setLanguageName( const std::string& id, const std::string& name );
+
+	std::unordered_map<std::string, std::string> getLanguageNames() const;
+
+  protected:
 	std::string mDefaultLanguage;
 	std::string mCurrentLanguage;
 	StringLocaleDictionary mDictionary;
+	std::unordered_map<std::string, std::string> mLangNames;
+	bool mSetDefaultValues{ false };
 
 	bool loadNodes( pugi::xml_node node, std::string lang = "" );
 };

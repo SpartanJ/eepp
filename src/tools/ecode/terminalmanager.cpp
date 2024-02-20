@@ -137,7 +137,7 @@ void TerminalManager::configureTerminalShell() {
 		if ( !shellEnvStr.empty() )
 			shellCombo->getListBox()->setSelected( shellEnvStr );
 	}
-	auto setShellFn = []( App* app, UIWindow* window, UIComboBox* shellCombo ) {
+	const auto setShellFn = []( App* app, UIWindow* window, UIComboBox* shellCombo ) {
 		std::string shell( shellCombo->getText().toUtf8() );
 		if ( !Sys::which( shell ).empty() || FileSystem::fileExists( shell ) ) {
 			app->getConfig().term.shell = shell;
@@ -153,9 +153,9 @@ void TerminalManager::configureTerminalShell() {
 		shellCombo->getListBox()->getVerticalScrollBar()->setClickStep(
 			shellCombo->getDropDownList()->getMaxNumVisibleItems() / (Float)found.size() );
 	ok->setFocus();
-	ok->onClick(
-		[&, window, shellCombo]( const MouseEvent* ) { setShellFn( mApp, window, shellCombo ); },
-		MouseButton::EE_BUTTON_LEFT );
+	ok->onClick( [this, setShellFn, window,
+				  shellCombo]( const MouseEvent* ) { setShellFn( mApp, window, shellCombo ); },
+				 MouseButton::EE_BUTTON_LEFT );
 	cancel->onClick( [window]( const MouseEvent* ) { window->closeWindow(); }, EE_BUTTON_LEFT );
 	window->on( Event::KeyDown, [window]( const Event* event ) {
 		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
@@ -175,7 +175,7 @@ void TerminalManager::configureTerminalScrollback() {
 	msgBox->getTextInput()->setText( String::toString( mApp->getConfig().term.scrollback ) );
 	msgBox->center();
 	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [&, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		int val;
 		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
 			mApp->getConfig().term.scrollback = val;
@@ -213,7 +213,7 @@ UIMenu* TerminalManager::createColorSchemeMenu() {
 
 		if ( menu->getCount() == maxItems && colorSchemes.size() - total > 1 ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
-			menu->addSubMenu( mApp->i18n( "more...", "More..." ), nullptr, newMenu );
+			menu->addSubMenu( mApp->i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
 			newMenu->addEventListener( Event::OnItemClicked, cb );
 			mColorSchemeMenues.push_back( newMenu );
 			menu = newMenu;
@@ -307,14 +307,14 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		mApp->setAppTitle( event->getNode()->asType<UITerminal>()->getTitle() );
 	} );
 	setKeybindings( term );
-	term->setCommand( "terminal-rename", [&, term] {
+	term->setCommand( "terminal-rename", [this, term] {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::INPUT, mApp->i18n( "new_terminal_name", "New terminal name:" ) );
 		msgBox->setTitle( mApp->getWindowTitle() );
-		msgBox->getTextInput()->setHint( mApp->i18n( "any_name", "Any name..." ) );
+		msgBox->getTextInput()->setHint( mApp->i18n( "any_name_ellipsis", "Any name..." ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener( Event::OnConfirm, [&, msgBox, term]( const Event* ) {
+		msgBox->addEventListener( Event::OnConfirm, [msgBox, term]( const Event* ) {
 			std::string title( msgBox->getTextInput()->getText().toUtf8() );
 			term->setTitle( title );
 			msgBox->close();

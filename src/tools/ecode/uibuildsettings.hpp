@@ -27,7 +27,7 @@ class UIBuildSettings : public UIRelativeLayout {
 
 	ProjectBuild& mBuild;
 	ProjectBuildConfiguration& mConfig;
-	UIDataBindHolder mDataBindHolder;
+	UIDataBindHolder<int, bool, std::string> mDataBindHolder;
 	UITab* mTab{ nullptr };
 	String mOldName;
 	std::unordered_map<UIWidget*, std::vector<Uint32>> mCbs;

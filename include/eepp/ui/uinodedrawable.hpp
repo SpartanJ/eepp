@@ -6,7 +6,6 @@
 #include <eepp/scene/action.hpp>
 #include <eepp/ui/uibackgrounddrawable.hpp>
 #include <map>
-#include <vector>
 
 using namespace EE::Graphics;
 using namespace EE::Scene;

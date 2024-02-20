@@ -5,7 +5,7 @@ using namespace EE::Window;
 
 namespace EE { namespace UI {
 
-static KeyBindings::Shortcut sanitizeShortcut( const KeyBindings::Shortcut& shortcut ) {
+KeyBindings::Shortcut KeyBindings::sanitizeShortcut( const KeyBindings::Shortcut& shortcut ) {
 	KeyBindings::Shortcut sanitized( shortcut.key, 0 );
 	if ( shortcut.mod & KEYMOD_CTRL )
 		sanitized.mod |= KEYMOD_CTRL;
@@ -163,7 +163,7 @@ const std::map<std::string, Uint64> KeyBindings::getKeybindings() const {
 	return mKeybindingsInvert;
 }
 
-std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut ) const {
+std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut, bool format ) const {
 	std::vector<std::string> mods;
 	std::string keyname( String::toLower( mInput->getKeyName( shortcut.key ) ) );
 	const auto& MOD_MAP = KeyMod::getModMap();
@@ -180,8 +180,9 @@ std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut ) con
 	if ( ( shortcut.mod & KEYMOD_META ) && KEYMOD_META != MOD_MAP.at( "mod" ) )
 		mods.emplace_back( "meta" );
 	if ( mods.empty() )
-		return keyname;
-	return String::join( mods, '+' ) + "+" + keyname;
+		return format ? keybindFormat( keyname ) : keyname;
+	auto ret = String::join( mods, '+' ) + "+" + keyname;
+	return format ? keybindFormat( ret ) : ret;
 }
 
 }} // namespace EE::UI

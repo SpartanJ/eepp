@@ -1,8 +1,11 @@
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitableview.hpp>
+
+#include <cmath>
 
 namespace EE { namespace UI {
 
@@ -25,30 +28,57 @@ bool UITableView::isType( const Uint32& type ) const {
 }
 
 void UITableView::drawChilds() {
-	int realIndex = 0;
+	int realRowIndex = 0;
+	int realColIndex = 0;
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
-	size_t start = mScrollOffset.y / getRowHeight();
-	size_t end =
-		eemin<size_t>( (size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / getRowHeight() ),
-					   getItemCount() );
-	Float yOffset;
-	for ( size_t i = start; i < end; i++ ) {
-		yOffset = getHeaderHeight() + i * getRowHeight();
-		ModelIndex index( getModel()->index( i ) );
-		if ( yOffset - mScrollOffset.y > mSize.getHeight() )
-			break;
-		if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
-			continue;
-		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
-			updateCell( realIndex, getModel()->index( index.row(), colIndex, index.parent() ), 0,
-						yOffset );
+	buildRowHeader();
+	if ( getModel() ) {
+		Float rowHeight = getRowHeight();
+		size_t start = mScrollOffset.y / rowHeight;
+		size_t end = eemin<size_t>(
+			(size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / rowHeight ), getItemCount() );
+		Float yOffset = 0;
+		Float xOffset;
+		auto colCount = getModel()->columnCount();
+		auto headerHeight = getHeaderHeight();
+		for ( size_t i = start; i < end; i++ ) {
+			xOffset = 0;
+			yOffset = headerHeight + i * rowHeight;
+			ModelIndex rowIndex( getModel()->index( i ) );
+			if ( yOffset - mScrollOffset.y > mSize.getHeight() )
+				break;
+			if ( yOffset - mScrollOffset.y + rowHeight < 0 )
+				continue;
+			UITableRow* rowNode = updateRow( realRowIndex, rowIndex, yOffset );
+			rowNode->setChildsVisibility( false, false );
+			realColIndex = 0;
+			for ( size_t colIndex = 0; colIndex < colCount; colIndex++ ) {
+				auto& colData = columnData( colIndex );
+				if ( !colData.visible || ( xOffset + colData.width ) - mScrollOffset.x < 0 ) {
+					if ( colData.visible )
+						xOffset += colData.width;
+					continue;
+				}
+				if ( xOffset - mScrollOffset.x > mSize.getWidth() )
+					break;
+				xOffset += colData.width;
+				updateCell( { realColIndex, realRowIndex },
+							getModel()->index( rowIndex.row(), colIndex, rowIndex.parent() ), 0,
+							yOffset );
+				realColIndex++;
+			}
+			rowNode->nodeDraw();
+			if ( mRowHeaderWidth ) {
+				updateRowHeader( realRowIndex, rowIndex,
+								 realRowIndex == 0 ? fmodf( -mScrollOffset.y, rowHeight ) : 0.f );
+			}
+			realRowIndex++;
 		}
-		updateRow( realIndex, index, yOffset )->nodeDraw();
-		realIndex++;
 	}
-
 	if ( mHeader && mHeader->isVisible() )
 		mHeader->nodeDraw();
+	if ( mRowHeader && mRowHeader->isVisible() )
+		mRowHeader->nodeDraw();
 	if ( mHScroll->isVisible() )
 		mHScroll->nodeDraw();
 	if ( mVScroll->isVisible() )
@@ -56,54 +86,47 @@ void UITableView::drawChilds() {
 }
 
 Node* UITableView::overFind( const Vector2f& point ) {
-	mUISceneNode->setIsLoading( true );
-
+	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
+				 [this] { mUISceneNode->setIsLoading( false ); } );
 	Node* pOver = NULL;
-	if ( mEnabled && mVisible ) {
-		ConditionalLock l( getModel() != nullptr,
-						   getModel() ? &getModel()->resourceMutex() : nullptr );
-
-		updateWorldPolygon();
-		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
-			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-			mSceneNode->addMouseOverNode( this );
-			if ( mHScroll->isVisible() && ( pOver = mHScroll->overFind( point ) ) )
-				return pOver;
-			if ( mVScroll->isVisible() && ( pOver = mVScroll->overFind( point ) ) )
-				return pOver;
-			if ( mHeader && ( pOver = mHeader->overFind( point ) ) )
-				return pOver;
-			int realIndex = 0;
-			Float yOffset;
-			size_t start = mScrollOffset.y / getRowHeight();
-			size_t end = eemin<size_t>(
-				(size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / getRowHeight() ),
-				getItemCount() );
-			for ( size_t i = start; i < end; i++ ) {
-				yOffset = getHeaderHeight() + i * getRowHeight();
-				ModelIndex index( getModel()->index( i ) );
-				if ( yOffset - mScrollOffset.y > mSize.getHeight() )
-					break;
-				if ( yOffset - mScrollOffset.y + getRowHeight() < 0 )
-					continue;
-				for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
-					if ( columnData( colIndex ).visible ) {
-						updateCell( realIndex,
-									getModel()->index( index.row(), colIndex, index.parent() ), 0,
-									yOffset );
-					}
-				}
-				pOver = updateRow( realIndex, index, yOffset )->overFind( point );
-				if ( pOver )
-					break;
-				realIndex++;
-			}
-			if ( !pOver )
-				pOver = this;
+	if ( !mEnabled || !mVisible )
+		return pOver;
+	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
+	updateWorldPolygon();
+	if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
+		writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+		mSceneNode->addMouseOverNode( this );
+		if ( mHScroll->isVisible() && ( pOver = mHScroll->overFind( point ) ) )
+			return pOver;
+		if ( mVScroll->isVisible() && ( pOver = mVScroll->overFind( point ) ) )
+			return pOver;
+		if ( mHeader && ( pOver = mHeader->overFind( point ) ) )
+			return pOver;
+		if ( mRowHeader && ( pOver = mRowHeader->overFind( point ) ) )
+			return pOver;
+		Float rowHeight = getRowHeight();
+		Float headerHeight = getHeaderHeight();
+		Float itemCount = getItemCount();
+		int realIndex = 0;
+		Float yOffset;
+		size_t start = mScrollOffset.y / rowHeight;
+		size_t end = eemin<size_t>(
+			(size_t)eeceil( ( mScrollOffset.y + mSize.getHeight() ) / rowHeight ), itemCount );
+		for ( size_t i = start; i < end; i++ ) {
+			yOffset = headerHeight + i * rowHeight;
+			ModelIndex index( getModel()->index( i ) );
+			if ( yOffset - mScrollOffset.y > mSize.getHeight() )
+				break;
+			if ( yOffset - mScrollOffset.y + rowHeight < 0 )
+				continue;
+			pOver = updateRow( realIndex, index, yOffset )->overFind( point );
+			if ( pOver )
+				break;
+			realIndex++;
 		}
+		if ( !pOver )
+			pOver = this;
 	}
-
-	mUISceneNode->setIsLoading( false );
 	return pOver;
 }
 
@@ -112,10 +135,11 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
 	if ( getModel()->rowCount() == 0 )
 		return lWidth;
-	getUISceneNode()->setIsLoading( true );
+	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
+				 [this] { mUISceneNode->setIsLoading( false ); } );
 	Float yOffset = getHeaderHeight();
 	auto worstCaseFunc = [&]( const ModelIndex& index ) {
-		UIWidget* widget = updateCell( index.row(), index, 0, yOffset );
+		UIWidget* widget = updateCell( { (Int64)0, (Int64)0 }, index, 0, yOffset );
 		if ( widget->isType( UI_TYPE_PUSHBUTTON ) ) {
 			Float w = widget->asType<UIPushButton>()->getContentSize().getWidth();
 			if ( w > lWidth )
@@ -125,18 +149,14 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 	// TODO: Improve best guess
 	if ( bestGuess && getItemCount() > 10 ) {
 		Variant dataTest( getModel()->data( getModel()->index( 0, colIndex ) ) );
-		bool isStdString = dataTest.is( Variant::Type::StdString );
-		bool isString = dataTest.is( Variant::Type::String );
-		if ( isStdString || isString || dataTest.is( Variant::Type::cstr ) ) {
+		if ( dataTest.isString() ) {
 			std::map<size_t, ModelIndex> lengths;
 			for ( size_t i = 0; i < getItemCount(); i++ ) {
 				ModelIndex index( getModel()->index( i, colIndex ) );
 				Variant data( getModel()->data( index ) );
 				if ( !data.isValid() )
 					continue;
-				size_t length =
-					isStdString ? data.asStdString().length()
-								: ( isString ? data.asString().length() : strlen( data.asCStr() ) );
+				size_t length = data.size();
 				if ( lengths.empty() || length > lengths.rbegin()->first )
 					lengths[length] = index;
 			}
@@ -152,7 +172,6 @@ Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGu
 		for ( size_t i = 0; i < getItemCount(); i++ )
 			worstCaseFunc( getModel()->index( i, colIndex ) );
 	}
-	getUISceneNode()->setIsLoading( false );
 	return lWidth;
 }
 
@@ -178,19 +197,92 @@ void UITableView::onColumnSizeChange( const size_t& colIndex, bool fromUserInter
 }
 
 Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
-	if ( event.getMod() & KEYMOD_CTRL_SHIFT_ALT_META )
+	bool isJump = ( event.getKeyCode() == KEY_LEFT || event.getKeyCode() == KEY_RIGHT ||
+					event.getKeyCode() == KEY_UP || event.getKeyCode() == KEY_DOWN ) &&
+				  ( event.getSanitizedMod() & KeyMod::getDefaultModifier() );
+	if ( !isJump && ( event.getMod() & KEYMOD_CTRL_SHIFT_ALT_META ) )
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 	int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
 
 	switch ( event.getKeyCode() ) {
+		case KEY_UP: {
+			// Fallback to home if using modifier key
+			if ( !( event.getSanitizedMod() & KeyMod::getDefaultModifier() ) ) {
+				if ( !getModel() || isEditing() )
+					return 0;
+				auto& model = *this->getModel();
+				ModelIndex foundIndex;
+				if ( !getSelection().isEmpty() ) {
+					auto oldIndex = getSelection().first();
+					foundIndex = model.index( oldIndex.row() - 1, oldIndex.column() );
+				} else {
+					foundIndex = model.index(
+						0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
+				}
+				if ( model.isValid( foundIndex ) ) {
+					Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
+					getSelection().set( foundIndex );
+					if ( curY < mScrollOffset.y + getHeaderHeight() + getRowHeight() ||
+						 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
+									mPaddingPx.Bottom - getRowHeight() ) {
+						curY -= getHeaderHeight();
+						mVScroll->setValue( curY / getScrollableArea().getHeight() );
+					}
+				}
+				return 1;
+			}
+		}
+		case KEY_HOME: {
+			getSelection().set( getModel()->index(
+				0, getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
+			scrollToTop();
+			return 1;
+		}
 		case KEY_PAGEUP: {
 			if ( curIndex.row() - pageSize < 0 ) {
-				getSelection().set( getModel()->index( 0, 0 ) );
+				getSelection().set( getModel()->index(
+					0, getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
 				scrollToTop();
 			} else {
 				moveSelection( -pageSize );
 			}
+			return 1;
+		}
+		case KEY_DOWN: {
+			if ( !getModel() || isEditing() )
+				return 0;
+			// Fallback to end if using modifier key
+			if ( !( event.getSanitizedMod() & KeyMod::getDefaultModifier() ) ) {
+				auto& model = *this->getModel();
+				ModelIndex foundIndex;
+				if ( !getSelection().isEmpty() ) {
+					auto oldIndex = getSelection().first();
+					foundIndex = model.index( oldIndex.row() + 1, oldIndex.column() );
+				} else {
+					foundIndex = model.index(
+						0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
+				}
+				if ( model.isValid( foundIndex ) ) {
+					Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
+					getSelection().set( foundIndex );
+					if ( curY < mScrollOffset.y ||
+						 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
+									mPaddingPx.Bottom - getRowHeight() ) {
+						curY -= eefloor( getVisibleArea().getHeight() / getRowHeight() ) *
+									getRowHeight() -
+								getRowHeight();
+						mVScroll->setValue( curY / getScrollableArea().getHeight() );
+					}
+				}
+				return 1;
+			}
+		}
+		case KEY_END: {
+			getSelection().set( getModel()->index(
+				getItemCount() - 1,
+				getSelection().first().isValid() ? getSelection().first().column() : 0 ) );
+			scrollToBottom();
 			return 1;
 		}
 		case KEY_PAGEDOWN: {
@@ -202,71 +294,76 @@ Uint32 UITableView::onKeyDown( const KeyEvent& event ) {
 			}
 			return 1;
 		}
-		case KEY_UP: {
-			if ( !getModel() )
+		case KEY_LEFT: {
+			if ( !getModel() || getSelectionType() != SelectionType::Cell )
 				return 0;
 			auto& model = *this->getModel();
 			ModelIndex foundIndex;
 			if ( !getSelection().isEmpty() ) {
 				auto oldIndex = getSelection().first();
-				if ( oldIndex.row() == 0 ) {
-					getSelection().set( getModel()->index( 0, 0 ) );
-					scrollToTop();
+				if ( oldIndex.column() == 0 )
 					return 1;
-				}
-				foundIndex = model.index( oldIndex.row() - 1, oldIndex.column() );
+				foundIndex = model.index( oldIndex.row(), oldIndex.column() - 1 );
 			} else {
-				foundIndex = model.index( 0, 0 );
+				foundIndex = model.index(
+					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
 			}
+
+			if ( event.getSanitizedMod() & KeyMod::getDefaultModifier() )
+				foundIndex = model.index( foundIndex.row(), 0 );
+
 			if ( model.isValid( foundIndex ) ) {
-				Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
+				Float curX = getColumnPosition( foundIndex.column() ).x;
 				getSelection().set( foundIndex );
-				if ( curY < mScrollOffset.y + getHeaderHeight() + getRowHeight() ||
-					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
-								mPaddingPx.Bottom - getRowHeight() ) {
-					curY -= getHeaderHeight();
-					mVScroll->setValue( curY / getScrollableArea().getHeight() );
+				if ( curX < mScrollOffset.x || curX > mScrollOffset.x + getPixelsSize().getWidth() -
+														  mPaddingPx.Left - mPaddingPx.Right ) {
+					Float colWidth = getColumnWidth( foundIndex.column() );
+					mHScroll->setValue(
+						( event.getSanitizedMod() & KEYMOD_CTRL )
+							? 0
+							: ( mHScroll->getValue() - colWidth / getScrollableArea().getWidth() ) *
+								  getScrollableArea().getWidth() / getScrollableArea().getWidth() );
 				}
 			}
-			return 1;
+			return 0;
 		}
-		case KEY_DOWN: {
-			if ( !getModel() )
+		case KEY_RIGHT: {
+			if ( !getModel() || getSelectionType() != SelectionType::Cell )
 				return 0;
 			auto& model = *this->getModel();
 			ModelIndex foundIndex;
 			if ( !getSelection().isEmpty() ) {
 				auto oldIndex = getSelection().first();
-				foundIndex = model.index( oldIndex.row() + 1, oldIndex.column() );
+				foundIndex = model.index( oldIndex.row(), oldIndex.column() + 1 );
 			} else {
-				foundIndex = model.index( 0, 0 );
+				foundIndex = model.index(
+					0, getSelection().first().isValid() ? getSelection().first().column() : 0 );
 			}
+
+			if ( event.getSanitizedMod() & KeyMod::getDefaultModifier() ) {
+				foundIndex = model.index( foundIndex.row(),
+										  model.columnCount() > 0 ? model.columnCount() - 1 : 0 );
+			}
+
 			if ( model.isValid( foundIndex ) ) {
-				Float curY = getHeaderHeight() + getRowHeight() * foundIndex.row();
+				Float colWidth = getColumnWidth( foundIndex.column() );
+				Float curX = getColumnPosition( foundIndex.column() ).x + colWidth;
 				getSelection().set( foundIndex );
-				if ( curY < mScrollOffset.y ||
-					 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
-								mPaddingPx.Bottom - getRowHeight() ) {
-					curY -=
-						eefloor( getVisibleArea().getHeight() / getRowHeight() ) * getRowHeight() -
-						getRowHeight();
-					mVScroll->setValue( curY / getScrollableArea().getHeight() );
+				if ( curX < mScrollOffset.x || curX > mScrollOffset.x + getPixelsSize().getWidth() -
+														  mPaddingPx.Left - mPaddingPx.Right ) {
+					mHScroll->setValue(
+						( event.getSanitizedMod() & KEYMOD_CTRL )
+							? getScrollableArea().getWidth()
+							: ( mHScroll->getValue() + colWidth / getScrollableArea().getWidth() ) *
+								  getScrollableArea().getWidth() / getScrollableArea().getWidth() );
 				}
 			}
-			return 1;
-		}
-		case KEY_END: {
-			scrollToBottom();
-			getSelection().set( getModel()->index( getItemCount() - 1 ) );
-			return 1;
-		}
-		case KEY_HOME: {
-			scrollToTop();
-			getSelection().set( getModel()->index( 0, 0 ) );
-			return 1;
+			return 0;
 		}
 		case KEY_RETURN:
 		case KEY_KP_ENTER: {
+			if ( tryBeginEditing( KeyBindings::Shortcut{ event.getKeyCode(), event.getMod() } ) )
+				return 1;
 			if ( curIndex.isValid() )
 				onOpenModelIndex( curIndex, &event );
 			return 1;

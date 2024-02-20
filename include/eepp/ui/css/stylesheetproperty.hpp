@@ -10,7 +10,6 @@
 #include <eepp/system/color.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
-#include <unordered_map>
 #include <string>
 
 using namespace EE::System;

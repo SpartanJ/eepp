@@ -1,4 +1,5 @@
 #include "lspclientplugin.hpp"
+#include "../../version.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -7,6 +8,7 @@
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
@@ -56,8 +58,6 @@ class LSPLocationModel : public Model {
 		return {};
 	}
 
-	void update() override { onModelUpdate(); }
-
   protected:
 	struct Location {
 		LSPLocation loc;
@@ -106,8 +106,6 @@ class LSPCodeActionModel : public Model {
 
 	bool hasCodeActions() const { return !mCodeActions.empty(); }
 
-	void update() override { onModelUpdate(); }
-
 	const LSPCodeAction& getCodeAction( size_t row ) const { return mCodeActions[row]; }
 
   protected:
@@ -115,11 +113,11 @@ class LSPCodeActionModel : public Model {
 	std::vector<LSPCodeAction> mCodeActions;
 };
 
-UICodeEditorPlugin* LSPClientPlugin::New( PluginManager* pluginManager ) {
+Plugin* LSPClientPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LSPClientPlugin, ( pluginManager, false ) );
 }
 
-UICodeEditorPlugin* LSPClientPlugin::NewSync( PluginManager* pluginManager ) {
+Plugin* LSPClientPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( LSPClientPlugin, ( pluginManager, true ) );
 }
 
@@ -129,7 +127,7 @@ LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 	} else {
 #if defined( LSPCLIENT_THREADED ) && LSPCLIENT_THREADED == 1
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
@@ -253,7 +251,7 @@ PluginRequestHandle LSPClientPlugin::processDocumentFormatting( const PluginMess
 
 	auto ret = server.server->documentFormatting(
 		server.uri, msg.asJSON()["options"],
-		[&, server]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
+		[this, server]( const PluginIDType&, const std::vector<LSPTextEdit>& edits ) {
 			mManager->getSplitter()->getUISceneNode()->runOnMainThread(
 				[this, server, edits] { processDocumentFormattingResponse( server.uri, edits ); } );
 		} );
@@ -278,7 +276,7 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 	for ( const auto server : servers ) {
 		if ( Engine::instance()->isMainThread() ) {
 			server->workspaceSymbolAsync(
-				query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
+				query, [this, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
 					if ( !query.empty() ) {
 						for ( auto& i : info ) {
 							if ( i.score == 0.f )
@@ -290,7 +288,7 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 				} );
 		} else {
 			hdl = server->workspaceSymbol(
-				query, [&, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
+				query, [this, query]( const PluginIDType& id, LSPSymbolInformationList&& info ) {
 					if ( !query.empty() ) {
 						for ( auto& i : info ) {
 							if ( i.score == 0.f )
@@ -536,7 +534,7 @@ void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_pt
 			if ( splitter->editorExists( editor ) )
 				editor->setFocus();
 		} );
-		lv->on( Event::OnModelEvent, [&, onModelEventCb]( const Event* event ) {
+		lv->on( Event::OnModelEvent, [onModelEventCb]( const Event* event ) {
 			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 			if ( onModelEventCb )
 				onModelEventCb( modelEvent );
@@ -870,7 +868,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			config["server_close_after_idle_time"] = mClientManager.getLSPDecayTime().toString();
 
 		if ( config.contains( "semantic_highlighting" ) )
-			mSemanticHighlighting = config.value( "semantic_highlighting", false );
+			mSemanticHighlighting = config.value( "semantic_highlighting", true );
 		else if ( updateConfigFile )
 			config["semantic_highlighting"] = mSemanticHighlighting;
 
@@ -910,7 +908,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		auto list = { "lsp-go-to-definition",
 					  "lsp-go-to-declaration",
 					  "lsp-go-to-implementation",
-					  "lsp-go-to-type-definition",
+					  "lspz-go-to-type-definition",
 					  "lsp-switch-header-source",
 					  "lsp-symbol-info",
 					  "lsp-symbol-references",
@@ -1090,7 +1088,7 @@ size_t LSPClientPlugin::lspFilePatternPosition( const std::vector<LSPDefinition>
 void LSPClientPlugin::getAndGoToLocation( UICodeEditor* editor, const std::string& search ) {
 	mClientManager.getAndGoToLocation(
 		editor->getDocumentRef(), search,
-		[&, editor]( const LSPClientServer::IdType&, const std::vector<LSPLocation>& res ) {
+		[this, editor]( const LSPClientServer::IdType&, const std::vector<LSPLocation>& res ) {
 			if ( res.empty() )
 				return;
 			if ( res.size() == 1 ) {
@@ -1130,7 +1128,7 @@ void LSPClientPlugin::codeAction( UICodeEditor* editor ) {
 
 	mClientManager.codeAction(
 		editor->getDocumentRef(), diagnostics,
-		[&, editor]( const LSPClientServer::IdType&, const std::vector<LSPCodeAction>& res ) {
+		[this, editor]( const LSPClientServer::IdType&, const std::vector<LSPCodeAction>& res ) {
 			createCodeActionsView( editor, res );
 		} );
 }
@@ -1230,12 +1228,12 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	std::vector<Uint32> listeners;
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
 			mClientManager.run( editor->getDocumentRef() );
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnCursorPosChange, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 			if ( mSymbolInfoShowing )
 				hideTooltip( editor );
 		} ) );
@@ -1262,7 +1260,7 @@ void LSPClientPlugin::getSymbolInfo( UICodeEditor* editor ) {
 		return;
 	server->documentHover(
 		editor->getDocument().getURI(), editor->getDocument().getSelection().start(),
-		[&, editor]( const Int64&, const LSPHover& resp ) {
+		[this, editor]( const Int64&, const LSPHover& resp ) {
 			json j;
 			auto& doc = editor->getDocument();
 			j["uri"] = doc.getURI().toString();
@@ -1350,55 +1348,60 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 
 	menu->addSeparator();
 
-	auto addFn = [this, editor, menu]( const std::string& txtKey, const std::string& txtVal,
-									   const std::string& icon = "" ) {
-		menu->add( editor->getUISceneNode()->i18n( txtKey, txtVal ),
-				   !icon.empty() ? mManager->getUISceneNode()->findIcon( icon )->getSize(
-									   PixelDensity::dpToPxI( 12 ) )
-								 : nullptr,
-				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
-			->setId( txtKey );
+	auto addFn = [this, menu]( const std::string& cmd, const std::string& text,
+							   const std::string& icon = "" ) {
+		menu->add( text, iconDrawable( icon, 12 ), KeyBindings::keybindFormat( mKeyBindings[cmd] ) )
+			->setId( cmd );
 	};
 	auto& cap = server->getCapabilities();
 
-	addFn( "lsp-symbol-info", "Symbol Info" );
+	addFn( "lsp-symbol-info", i18n( "lsp_symbol_info", "Symbol Info" ) );
 
 	if ( cap.definitionProvider )
-		addFn( "lsp-go-to-definition", "Go To Definition" );
+		addFn( "lsp-go-to-definition", i18n( "lsp_go_to_definition", "Go To Definition" ) );
 
 	if ( cap.declarationProvider )
-		addFn( "lsp-go-to-declaration", "Go To Declaration" );
+		addFn( "lsp-go-to-declaration", i18n( "lsp_go_to_declaration", "Go To Declaration" ) );
 
 	if ( cap.typeDefinitionProvider )
-		addFn( "lsp-go-to-type-definition", "Go To Type Definition" );
+		addFn( "lsp-go-to-type-definition",
+			   i18n( "lsp_go_to_type_definition", "Go To Type Definition" ) );
 
 	if ( cap.implementationProvider )
-		addFn( "lsp-go-to-implementation", "Go To Implementation" );
+		addFn( "lsp-go-to-implementation",
+			   i18n( "lsp_go_to_implementation", "Go To Implementation" ) );
 
 	if ( cap.renameProvider )
-		addFn( "lsp-rename-symbol-under-cursor", "Rename Symbol Under Cursor" );
+		addFn( "lsp-rename-symbol-under-cursor",
+			   i18n( "lsp_rename_symbol_under_cursor", "Rename Symbol Under Cursor" ) );
 
 	if ( cap.referencesProvider )
-		addFn( "lsp-symbol-references", "Find References to Symbol Under Cursor" );
+		addFn( "lsp-symbol-references", i18n( "lsp_find_references_to_symbol_under_cursor",
+											  "Find References to Symbol Under Cursor" ) );
 
 	if ( cap.codeActionProvider )
-		addFn( "lsp-symbol-code-action", "Code Action", "lightbulb-autofix" );
+		addFn( "lsp-symbol-code-action", i18n( "lsp_code_action", "Code Action" ),
+			   "lightbulb-autofix" );
 
 	if ( cap.documentRangeFormattingProvider &&
 		 editor->getDocument().getSelection().hasSelection() )
-		addFn( "lsp-format-range", "Format Selected Range" );
+		addFn( "lsp-format-range", i18n( "lsp_format_selected_range", "Format Selected Range" ) );
 
 	if ( cap.semanticTokenProvider.full || cap.semanticTokenProvider.fullDelta )
-		addFn( "lsp-refresh-semantic-highlighting", "Refresh Semantic Highlighting", "refresh" );
+		addFn( "lsp-refresh-semantic-highlighting",
+			   i18n( "lsp_refresh_semantic_highlighting", "Refresh Semantic Highlighting" ),
+			   "refresh" );
 
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
-		addFn( "lsp-switch-header-source", "Switch Header/Source", "filetype-hpp" );
+		addFn( "lsp-switch-header-source",
+			   i18n( "lsp_switch_header_source", "Switch Header/Source" ), "filetype-hpp" );
 
-	addFn( "lsp-plugin-restart", "Restart LSP Client", "refresh" );
+	addFn( "lsp-plugin-restart", i18n( "lsp_restart_lsp_client", "Restart LSP Client" ),
+		   "refresh" );
 
 #ifdef EE_DEBUG
 	if ( server->getDefinition().name == "clangd" )
-		addFn( "lsp-memory-usage", "LSP Memory Usage" );
+		addFn( "lsp-memory-usage", i18n( "lsp_memory_usage", "LSP Memory Usage" ) );
 #endif
 
 	return false;
@@ -1407,14 +1410,17 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
 	mSymbolInfoShowing = false;
 	UITooltip* tooltip = nullptr;
-	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() ) {
+	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() &&
+		 tooltip->getData() == String::hash( "lsp" ) ) {
 		editor->setTooltipText( "" );
 		tooltip->hide();
 		// Restore old tooltip state
+		tooltip->setData( 0 );
 		tooltip->setFontStyle( mOldTextStyle );
 		tooltip->setHorizontalAlign( mOldTextAlign );
 		tooltip->setUsingCustomStyling( mOldUsingCustomStyling );
 		tooltip->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
+		tooltip->setBackgroundColor( mOldBackgroundColor );
 	}
 }
 
@@ -1441,11 +1447,25 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 	mOldTextAlign = tooltip->getHorizontalAlign();
 	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
 	mOldUsingCustomStyling = tooltip->getUsingCustomStyling();
+	mOldBackgroundColor = tooltip->getBackgroundColor();
+	if ( Color::Transparent == mOldBackgroundColor ) {
+		tooltip->reloadStyle( true, true, true, true );
+		mOldBackgroundColor = tooltip->getBackgroundColor();
+	}
 	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
 	tooltip->setPixelsPosition( tooltip->getTooltipPosition( position ) );
 	tooltip->setDontAutoHideOnMouseMove( true );
 	tooltip->setUsingCustomStyling( true );
 	tooltip->setFontStyle( Text::Regular );
+	tooltip->setData( String::hash( "lsp" ) );
+	tooltip->setBackgroundColor( editor->getColorScheme().getEditorColor( "background"_sst ) );
+	tooltip->getUIStyle()->setStyleSheetProperty( StyleSheetProperty(
+		"background-color",
+		editor->getColorScheme().getEditorColor( "background"_sst ).toHexString(), true,
+		StyleSheetSelectorRule::SpecificityImportant ) );
+
+	if ( tooltip->getText().empty() )
+		return;
 
 	const auto& syntaxDef = resp.contents[0].kind == LSPMarkupKind::MarkDown
 								? SyntaxDefinitionManager::instance()->getByLSPName( "markdown" )
@@ -1456,7 +1476,8 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 
 	tooltip->notifyTextChangedFromTextCache();
 
-	if ( editor->hasFocus() && !tooltip->isVisible() )
+	if ( editor->hasFocus() && !tooltip->isVisible() &&
+		 !tooltip->getTextCache()->getString().empty() )
 		tooltip->show();
 }
 
@@ -1484,7 +1505,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 	editor->removeActionsByTag( tag );
 	mEditorsTags[editor].insert( tag );
 	editor->runOnMainThread(
-		[&, editor, position, tag]() {
+		[this, editor, position, tag]() {
 			mEditorsTags[editor].erase( tag );
 			if ( !editorExists( editor ) )
 				return;
@@ -1493,10 +1514,15 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 				return;
 			server->documentHover(
 				editor->getDocument().getURI(), currentMouseTextPosition( editor ),
-				[&, editor, position]( const Int64&, const LSPHover& resp ) {
+				[this, editor, position]( const Int64&, const LSPHover& resp ) {
 					if ( editorExists( editor ) && !resp.contents.empty() &&
 						 !resp.contents[0].value.empty() ) {
 						editor->runOnMainThread( [editor, resp, position, this]() {
+							if ( !editor->getScreenRect().contains( editor->getUISceneNode()
+																		->getWindow()
+																		->getInput()
+																		->getMousePosf() ) )
+								return;
 							tryDisplayTooltip( editor, resp, position );
 						} );
 					}
@@ -1526,6 +1552,12 @@ const Time& LSPClientPlugin::getHoverDelay() const {
 
 void LSPClientPlugin::setHoverDelay( const Time& hoverDelay ) {
 	mHoverDelay = hoverDelay;
+}
+
+void LSPClientPlugin::onVersionUpgrade( Uint32 oldVersion, Uint32 ) {
+	if ( oldVersion <= ECODE_VERSIONNUM( 0, 5, 0 ) ) {
+		mSemanticHighlighting = true;
+	}
 }
 
 const LSPClientServerManager& LSPClientPlugin::getClientManager() const {

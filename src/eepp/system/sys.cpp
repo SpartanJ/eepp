@@ -77,6 +77,32 @@ using namespace EE::Network;
 #define PATH_MAX 4096
 #endif
 
+std::unordered_map<std::string, std::string> _getEnvironmentVariables() {
+	std::unordered_map<std::string, std::string> ret;
+	char** env;
+#if defined( WIN ) && ( _MSC_VER >= 1900 )
+	env = *__p__environ();
+#else
+	extern char** environ;
+	env = environ;
+#endif
+
+	for ( ; *env; ++env ) {
+		auto var = EE::String::split( *env, "=" );
+
+		if ( var.size() == 2 ) {
+			ret.insert( std::make_pair( var[0], var[1] ) );
+		} else if ( var.size() > 2 ) {
+			auto val( var[1] );
+			for ( size_t i = 2; i < var.size(); ++i )
+				val += var[i];
+			ret.insert( std::make_pair( var[0], val ) );
+		}
+	}
+
+	return ret;
+}
+
 namespace EE { namespace System {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -1170,7 +1196,7 @@ static void windowsSystem( const std::string& programPath ) {
 void Sys::execute( const std::string& cmd ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	windowsSystem( cmd );
-#else
+#elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pid_t pid = fork();
 	if ( pid == 0 ) {
 		std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
@@ -1190,6 +1216,10 @@ bool Sys::isMobile() {
 #else
 	return false;
 #endif
+}
+
+std::unordered_map<std::string, std::string> Sys::getEnvironmentVariables() {
+	return _getEnvironmentVariables();
 }
 
 std::string Sys::getProcessFilePath() {
@@ -1230,4 +1260,5 @@ std::string Sys::getProcessFilePath() {
 	return std::string( exename );
 #endif
 }
+
 }} // namespace EE::System

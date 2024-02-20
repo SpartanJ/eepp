@@ -47,6 +47,8 @@ class UniversalLocator {
 
 	void showSwitchBuildType();
 
+	void showSwitchFileType();
+
   protected:
 	UILocateBar* mLocateBarLayout{ nullptr };
 	UITableView* mLocateTable{ nullptr };
@@ -81,6 +83,8 @@ class UniversalLocator {
 
 	void updateSwitchBuildTypeTable();
 
+	void updateSwitchFileTypeTable();
+
 	void requestWorkspaceSymbol();
 
 	void requestDocumentSymbol();
@@ -103,6 +107,8 @@ class UniversalLocator {
 	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildModel( const std::string& match );
 
 	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildTypeModel( const std::string& match );
+
+	std::shared_ptr<ItemListOwnerModel<std::string>> openFileTypeModel( const std::string& match );
 
 	bool findCapability( PluginCapability );
 

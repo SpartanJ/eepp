@@ -23,7 +23,7 @@
       "url": "https://stedolan.github.io/jq/"
     },
     {
-      "language": ["javascript", "typescript", "JSX"],
+      "language": ["javascript", "typescript", "jsx", "tsx"],
       "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$"],
       "warning_pattern": "[^:]:(%d+):(%d+): ([^%[]+)%[([^\n]+)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },

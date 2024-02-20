@@ -266,6 +266,10 @@ class HealthModel : public Model {
 	}
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
+		static const char* HEALTH_SUCCESS = "theme-success";
+		static const char* HEALTH_ERROR = "theme-error";
+		static const char* HEALTH_NONE = "theme-none";
+
 		eeASSERT( index.row() < (Int64)mData.size() );
 		static std::string none;
 		static UIIcon* icon = nullptr;
@@ -302,25 +306,24 @@ class HealthModel : public Model {
 			case ModelRole::Class: {
 				switch ( index.column() ) {
 					case 1:
-						return Variant( "theme-success" );
+						return Variant( HEALTH_SUCCESS );
 					case 2:
 						if ( !lang.lsp.name.empty() )
-							return Variant( lang.lsp.found ? "theme-success" : "theme-error" );
+							return Variant( lang.lsp.found ? HEALTH_SUCCESS : HEALTH_ERROR );
 						else
-							return Variant( "theme-none" );
+							return Variant( HEALTH_NONE );
 						break;
 					case 3:
 						if ( !lang.linter.name.empty() )
-							return Variant( lang.linter.found ? "theme-success" : "theme-error" );
+							return Variant( lang.linter.found ? HEALTH_SUCCESS : HEALTH_ERROR );
 						else
-							return Variant( "theme-none" );
+							return Variant( HEALTH_NONE );
 						break;
 					case 4:
 						if ( !lang.formatter.name.empty() )
-							return Variant( lang.formatter.found ? "theme-success"
-																 : "theme-error" );
+							return Variant( lang.formatter.found ? HEALTH_SUCCESS : HEALTH_ERROR );
 						else
-							return Variant( "theme-none" );
+							return Variant( HEALTH_NONE );
 						break;
 					default: {
 					}
@@ -331,8 +334,6 @@ class HealthModel : public Model {
 		}
 		return {};
 	}
-
-	virtual void update() { onModelUpdate(); }
 
 	virtual bool classModelRoleEnabled() { return true; }
 

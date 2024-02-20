@@ -6,8 +6,6 @@
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
-#include <iostream>
-#include <map>
 #include <string>
 using namespace EE;
 using namespace EE::System;
@@ -31,6 +29,8 @@ class EE_API StyleSheetParser {
 	bool loadFromPack( Pack* pack, std::string filePackPath );
 
 	bool loadFromString( const std::string& str );
+
+	bool loadFromString( const std::string_view& str );
 
 	void print();
 

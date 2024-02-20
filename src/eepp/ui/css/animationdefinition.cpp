@@ -9,7 +9,7 @@ inline bool isTimingFunction( const std::string& str ) {
 	return Ease::Interpolation::None != Ease::fromName( str, Ease::Interpolation::None );
 }
 
-std::unordered_map<std::string, AnimationDefinition> AnimationDefinition::parseAnimationProperties(
+UnorderedMap<std::string, AnimationDefinition> AnimationDefinition::parseAnimationProperties(
 	const std::vector<const StyleSheetProperty*>& stylesheetProperties ) {
 	AnimationsMap animations;
 	std::vector<std::string> names;

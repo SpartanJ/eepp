@@ -18,9 +18,11 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	mSortIconSize( PixelDensity::dpToPxI( 20 ) ) {
 	mHeader = UILinearLayout::NewWithTag( mTag + "::header", UIOrientation::Horizontal );
 	mHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	mHeader->setParent( this );
-	mHeader->setVisible( true );
-	mHeader->setEnabled( true );
+	mHeader->setParent( this )->setVisible( true )->setEnabled( true );
+	mVScroll->on( Event::OnAlphaChange, [this]( const Event* ) {
+		if ( mVScroll->getAlpha() == 0.f || mVScroll->getAlpha() == 1.f )
+			updateColumnsWidth();
+	} );
 }
 
 UIAbstractTableView::~UIAbstractTableView() {}
@@ -56,6 +58,17 @@ void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& w
 	}
 }
 
+void UIAbstractTableView::setColumnsWidth( const Float& width ) {
+	if ( !getModel() )
+		return;
+	for ( size_t i = 0; i < getModel()->columnCount(); i++ ) {
+		columnData( i ).width = width;
+		onColumnSizeChange( i );
+	}
+	updateHeaderSize();
+	createOrUpdateColumns( false );
+}
+
 const Float& UIAbstractTableView::getColumnWidth( const size_t& colIndex ) const {
 	return columnData( colIndex ).width;
 }
@@ -79,7 +92,7 @@ void UIAbstractTableView::onModelUpdate( unsigned flags ) {
 		static constexpr String::HashType tag = String::hash( "onModelUpdate" );
 		removeActionsByTag( tag );
 		runOnMainThread(
-			[&, flags] {
+			[this, flags] {
 				modelUpdate( flags );
 				createOrUpdateColumns( true );
 			},
@@ -109,7 +122,6 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	size_t count = model->columnCount();
 	Float totalWidth = 0;
 	auto visibleColCount = visibleColumnCount();
-	bool requiresUpdateCellVisibility = false;
 
 	if ( resetColumnData )
 		this->resetColumnData();
@@ -122,10 +134,7 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			col.widget->setEnabled( true );
 			col.widget->setVisible( true );
 		}
-		bool wasVisible = col.visible;
 		col.visible = !isColumnHidden( i );
-		if ( wasVisible != col.visible )
-			requiresUpdateCellVisibility = true;
 		col.widget->setVisible( col.visible );
 		if ( !col.visible )
 			continue;
@@ -200,7 +209,6 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			ColumnData& col = columnData( i );
 			col.width = 0;
 			col.visible = false;
-			requiresUpdateCellVisibility = true;
 			if ( col.widget ) {
 				col.widget->close();
 				col.widget = nullptr;
@@ -213,9 +221,6 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	mHeader->setVisible( true );
 	mHeader->updateLayout();
 	mHeader->setVisible( visible );
-
-	if ( requiresUpdateCellVisibility )
-		updateCellsVisibility();
 
 	updateColumnsWidth();
 }
@@ -233,7 +238,7 @@ Sizef UIAbstractTableView::getContentSize() const {
 	if ( !getModel() )
 		return {};
 	size_t count = getModel()->columnCount();
-	Sizef size;
+	Sizef size( mRowHeaderWidth, 0.f );
 	for ( size_t i = 0; i < count; i++ )
 		if ( !isColumnHidden( i ) )
 			size.x += columnData( i ).width;
@@ -289,17 +294,6 @@ int UIAbstractTableView::visibleColumn() {
 	return -1;
 }
 
-void UIAbstractTableView::updateCellsVisibility() {
-	auto colCount = mColumn.size();
-	for ( size_t colIdx = 0; colIdx < colCount; ++colIdx ) {
-		for ( auto row : mWidgets ) {
-			auto rowCol = row.find( colIdx );
-			if ( rowCol != row.end() )
-				rowCol->second->setVisible( mColumn[colIdx].visible );
-		}
-	}
-}
-
 bool UIAbstractTableView::getAutoExpandOnSingleColumn() const {
 	return mAutoExpandOnSingleColumn;
 }
@@ -316,9 +310,11 @@ void UIAbstractTableView::columnResizeToContent( const size_t& colIndex ) {
 }
 
 Float UIAbstractTableView::getContentSpaceWidth() const {
-	return eefloor( getPixelsSize().getWidth() - getPixelsPadding().Left -
-					getPixelsPadding().Right -
-					( mVScroll->isVisible() ? mVScroll->getPixelsSize().getWidth() : 0 ) );
+	return eefloor(
+		getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right -
+		( mVScroll->isVisible() && ( mScrollViewType == Exclusive || mVScroll->getAlpha() != 0.f )
+			  ? mVScroll->getPixelsSize().getWidth()
+			  : 0 ) );
 }
 
 void UIAbstractTableView::updateColumnsWidth() {
@@ -327,13 +323,17 @@ void UIAbstractTableView::updateColumnsWidth() {
 		if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
 			Float width = eemax( getContentSpaceWidth(), getMaxColumnContentWidth( col, true ) );
 			bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
-			if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
-				width -= getVerticalScrollBar()->getPixelsSize().getWidth();
-			else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
-				width += getVerticalScrollBar()->getPixelsSize().getWidth();
-			columnData( col ).width = width;
-			updateHeaderSize();
-			onColumnSizeChange( col );
+			if ( mScrollViewType == Exclusive || mVScroll->getAlpha() != 0.f ) {
+				if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
+					width -= getVerticalScrollBar()->getPixelsSize().getWidth();
+				else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
+					width += getVerticalScrollBar()->getPixelsSize().getWidth();
+			}
+			if ( columnData( col ).width != width ) {
+				columnData( col ).width = width;
+				updateHeaderSize();
+				onColumnSizeChange( col );
+			}
 		}
 	}
 }
@@ -393,7 +393,6 @@ void UIAbstractTableView::setColumnHidden( const size_t& column, bool hidden ) {
 void UIAbstractTableView::setColumnsHidden( const std::vector<size_t>& columns, bool hidden ) {
 	for ( auto col : columns )
 		columnData( col ).visible = !hidden;
-	updateCellsVisibility();
 	createOrUpdateColumns( false );
 }
 
@@ -445,8 +444,6 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t>& columns 
 	if ( !foundMainColumn && !columns.empty() )
 		mMainColumn = columns[0];
 
-	updateCellsVisibility();
-
 	createOrUpdateColumns( true );
 }
 
@@ -458,15 +455,23 @@ UITableRow* UIAbstractTableView::createRow() {
 	rowWidget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	rowWidget->reloadStyle( true, true, true );
 	rowWidget->on( Event::MouseDown, [this]( const Event* event ) {
-		if ( !( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) || !isRowSelection() )
+		if ( !( event->asMouseEvent()->getFlags() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) ||
+			 !isRowSelection() )
 			return;
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
-		if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+		if ( mSelectionKind == SelectionKind::Single &&
+			 getUISceneNode()->getWindow()->getInput()->getSanitizedModState() &
+				 KeyMod::getDefaultModifier() ) {
 			getSelection().remove( index );
 		} else {
-			getSelection().set( index );
+			if ( mSelectionKind == SelectionKind::Multiple &&
+				 getUISceneNode()->getWindow()->getInput()->getSanitizedModState() &
+					 KeyMod::getDefaultModifier() ) {
+				getSelection().toggle( index );
+			} else {
+				getSelection().set( index );
+			}
 		}
-
 	} );
 	onRowCreated( rowWidget );
 	return rowWidget;
@@ -485,7 +490,8 @@ UITableRow* UIAbstractTableView::updateRow( const int& rowIndex, const ModelInde
 	}
 	rowWidget->setCurIndex( index );
 	rowWidget->setPixelsSize( getContentSize().getWidth(), getRowHeight() );
-	rowWidget->setPixelsPosition( { -mScrollOffset.x, yOffset - mScrollOffset.y } );
+	rowWidget->setPixelsPosition(
+		{ mRowHeaderWidth + -mScrollOffset.x, yOffset - mScrollOffset.y } );
 	if ( isRowSelection() ) {
 		if ( getSelection().contains( index ) ) {
 			rowWidget->pushState( UIState::StateSelected );
@@ -497,7 +503,7 @@ UITableRow* UIAbstractTableView::updateRow( const int& rowIndex, const ModelInde
 }
 
 void UIAbstractTableView::onScrollChange() {
-	mHeader->setPixelsPosition( -mScrollOffset.x, 0 );
+	mHeader->setPixelsPosition( mRowHeaderWidth + -mScrollOffset.x, 0 );
 }
 
 void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
@@ -550,21 +556,23 @@ UIWidget* UIAbstractTableView::setupCell( UITableCell* widget, UIWidget* rowWidg
 	return widget;
 }
 
-UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex& index,
+UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const ModelIndex& index,
 										   const size_t&, const Float& yOffset ) {
-	if ( rowIndex >= (int)mWidgets.size() )
-		mWidgets.resize( rowIndex + 1 );
-	auto* widget = mWidgets[rowIndex][index.column()];
+	if ( posIndex.y >= (int)mWidgets.size() )
+		mWidgets.resize( posIndex.y + 1 );
+	auto* widget = mWidgets[posIndex.y][posIndex.x];
 	if ( !widget ) {
-		UIWidget* rowWidget = updateRow( rowIndex, index, yOffset );
+		UIWidget* rowWidget = updateRow( posIndex.y, index, yOffset );
 		widget = createCell( rowWidget, index );
-		mWidgets[rowIndex][index.column()] = widget;
+		mWidgets[posIndex.y][posIndex.x] = widget;
 		widget->reloadStyle( true, true, true );
 	}
 	const auto& colData = columnData( index.column() );
 	if ( !colData.visible ) {
 		widget->setVisible( false );
 		return widget;
+	} else {
+		widget->setVisible( true );
 	}
 	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
@@ -577,23 +585,10 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 			Variant cls( getModel()->data( index, ModelRole::Class ) );
 			cell->setLoadingState( true );
 			if ( cls.isValid() ) {
-				// We analize each case to avoid unnecessary allocations
-				if ( cls.is( Variant::Type::StdString ) ) {
-					needsReloadStyle = cell->getClasses().empty() ||
-									   cell->getClasses().size() != 1 ||
-									   cls.asStdString() != cell->getClasses()[0];
-					cell->setClass( cls.asStdString() );
-				} else if ( cls.is( Variant::Type::String ) ) {
-					needsReloadStyle = cell->getClasses().empty() ||
-									   cell->getClasses().size() != 1 ||
-									   cls.asString().toUtf8() != cell->getClasses()[0];
-					cell->setClass( cls.asString() );
-				} else if ( cls.is( Variant::Type::cstr ) ) {
-					needsReloadStyle = cell->getClasses().empty() ||
-									   cell->getClasses().size() != 1 ||
-									   cls.asCStr() != cell->getClasses()[0];
-					cell->setClass( cls.asCStr() );
-				}
+				std::string clsStr( cls.toString() );
+				needsReloadStyle = cell->getClasses().empty() || cell->getClasses().size() != 1 ||
+								   clsStr != cell->getClasses()[0];
+				cell->setClass( clsStr );
 			} else {
 				needsReloadStyle = !cell->getClasses().empty();
 				cell->resetClass();
@@ -604,18 +599,8 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
-		if ( txt.isValid() ) {
-			if ( txt.is( Variant::Type::StdString ) )
-				cell->setText( txt.asStdString() );
-			else if ( txt.is( Variant::Type::String ) )
-				cell->setText( txt.asString() );
-			else if ( txt.is( Variant::Type::cstr ) )
-				cell->setText( txt.asCStr() );
-			else if ( txt.is( Variant::Type::Bool ) || txt.is( Variant::Type::Float ) ||
-					  txt.is( Variant::Type::Int ) || txt.is( Variant::Type::Uint ) ||
-					  txt.is( Variant::Type::Int64 ) || txt.is( Variant::Type::Uint64 ) )
-				cell->setText( txt.toString() );
-		}
+		if ( txt.isValid() )
+			cell->setText( txt.toString() );
 
 		bool isVisible = false;
 		Variant icon( getModel()->data( index, ModelRole::Icon ) );
@@ -626,7 +611,8 @@ UIWidget* UIAbstractTableView::updateCell( const int& rowIndex, const ModelIndex
 			isVisible = true;
 			cell->setIcon( icon.asIcon()->getSize( mIconSize ) );
 		}
-		cell->getIcon()->setVisible( isVisible );
+		if ( cell->hasIcon() )
+			cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
 	}
@@ -665,10 +651,11 @@ void UIAbstractTableView::setSelection( const ModelIndex& index, bool scrollToSe
 		if ( openModelIndexTree )
 			onOpenMenuModelIndex( index );
 		getSelection().set( index );
-		if ( scrollToSelection )
-			scrollToPosition(
-				{ { mScrollOffset.x, getHeaderHeight() + index.row() * getRowHeight() },
-				  { columnData( index.column() ).width, getRowHeight() } } );
+		if ( scrollToSelection ) {
+			auto rowHeight = getRowHeight();
+			scrollToPosition( { { mScrollOffset.x, getHeaderHeight() + index.row() * rowHeight },
+								{ columnData( index.column() ).width, rowHeight } } );
+		}
 	}
 }
 
@@ -697,6 +684,64 @@ void UIAbstractTableView::onOpenMenuModelIndex( const ModelIndex& index,
 												const Event* triggerEvent ) {
 	ModelEvent event( getModel(), index, this, ModelEventType::OpenMenu, triggerEvent );
 	sendEvent( &event );
+}
+
+Float UIAbstractTableView::getRowHeaderWidth() const {
+	return mRowHeaderWidth;
+}
+
+void UIAbstractTableView::setRowHeaderWidth( Float rowHeaderWidth ) {
+	if ( mRowHeaderWidth == rowHeaderWidth )
+		return;
+	mRowHeaderWidth = rowHeaderWidth;
+	onScrollChange();
+	buildRowHeader();
+}
+
+void UIAbstractTableView::buildRowHeader() {
+	if ( mRowHeaderWidth == 0 ) {
+		if ( mRowHeader )
+			mRowHeader->setVisible( false )->setEnabled( false );
+		return;
+	}
+
+	if ( mRowHeader == nullptr ) {
+		mRowHeader = UILinearLayout::NewWithTag( mTag + "::rowheader", UIOrientation::Vertical );
+		mRowHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+		mRowHeader->setParent( this )->setVisible( true )->setEnabled( true );
+	}
+
+	mRowHeader->setPaddingPixelsTop( mHeader->getPixelsSize().getHeight() );
+	mRowHeader->setPixelsSize( { mRowHeaderWidth, getPixelsSize().getHeight() } );
+	mRowHeader->setClipType( ClipType::PaddingBox );
+
+	Uint32 rowsCount = Math::roundUp( mSize.getHeight() / getRowHeight() ) + 1;
+
+	if ( mRowHeader->getChildCount() < rowsCount ) {
+		int createCount = rowsCount - mRowHeader->getChildCount();
+		for ( int i = 0; i < createCount; i++ ) {
+			UIWidget* row = UIPushButton::NewWithTag( mTag + "::rowheader::row" );
+			row->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+			row->setParent( mRowHeader );
+			row->setPixelsSize( mRowHeaderWidth, getRowHeight() );
+		}
+	}
+}
+
+void UIAbstractTableView::updateRowHeader( int realRowIndex, const ModelIndex& index,
+										   Float yOffset ) {
+	if ( !mRowHeader || mRowHeaderWidth == 0 )
+		return;
+	Node* child = mRowHeader->getChildAt( realRowIndex );
+	if ( !child )
+		return;
+	UIPushButton* row = child->asType<UIPushButton>();
+
+	row->setPixelsSize( mRowHeaderWidth, getRowHeight() );
+	row->setLayoutPixelsMarginTop( eefloor( yOffset ) );
+
+	if ( getModel() )
+		row->setText( getModel()->rowName( index.row() ) );
 }
 
 void UIAbstractTableView::onRowCreated( UITableRow* row ) {
@@ -786,6 +831,27 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 	return 1;
 }
 
+bool UIAbstractTableView::tryBeginEditing( KeyBindings::Shortcut fromShortcut ) {
+	if ( isEditable() && getSelection().first().isValid() && getModel() &&
+		 getModel()->isEditable( getSelection().first() ) &&
+		 ( mEditTriggers & EditTrigger::EditKeyPressed ) && !mEditShortcuts.empty() ) {
+		fromShortcut = KeyBindings::sanitizeShortcut( fromShortcut );
+		for ( const auto& shortcut : mEditShortcuts ) {
+			if ( shortcut == fromShortcut ) {
+				beginEditing( getSelection().first(), getCellFromIndex( getSelection().first() ) );
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+Uint32 UIAbstractTableView::onKeyDown( const KeyEvent& event ) {
+	if ( tryBeginEditing( KeyBindings::Shortcut{ event.getKeyCode(), event.getMod() } ) )
+		return 1;
+	return UIAbstractView::onKeyDown( event );
+}
+
 bool UIAbstractTableView::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
@@ -808,7 +874,7 @@ std::string UIAbstractTableView::getPropertyString( const PropertyDefinition* pr
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::RowHeight:
-			return String::format( "%.2fdp", getRowHeight() );
+			return String::fromFloat( getRowHeight(), "px" );
 		default:
 			return UIAbstractView::getPropertyString( propertyDef, propertyIndex );
 	}

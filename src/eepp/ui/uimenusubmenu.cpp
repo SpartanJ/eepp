@@ -1,3 +1,4 @@
+#include <eepp/scene/actionmanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenusubmenu.hpp>
@@ -70,8 +71,10 @@ void UIMenuSubMenu::onStateChange() {
 }
 
 void UIMenuSubMenu::setSubMenu( UIMenu* subMenu ) {
-	if ( nullptr != mSubMenu && mSubMenu != subMenu )
+	if ( nullptr != mSubMenu && mSubMenu != subMenu ) {
+		getActionManager()->removeActionsByTagFromTarget( this, String::hash( "subMenu" ) );
 		mSubMenu->setOwnerNode( nullptr );
+	}
 	mSubMenu = subMenu;
 	if ( nullptr != mSubMenu )
 		mSubMenu->setOwnerNode( this );
@@ -92,11 +95,8 @@ void UIMenuSubMenu::showSubMenu() {
 	mSubMenu->getParent()->worldToNode( pos );
 	mSubMenu->setPosition( pos );
 	if ( !mSubMenu->isVisible() ) {
-		if ( menu->mCurrentSubMenu != nullptr ) {
-			if ( menu->mCurrentSubMenu != mSubMenu ) {
-				menu->mCurrentSubMenu->hide();
-			}
-		}
+		if ( menu->mCurrentSubMenu != nullptr && menu->mCurrentSubMenu != mSubMenu )
+			menu->mCurrentSubMenu->hide();
 		mSubMenu->show();
 		menu->mCurrentSubMenu = mSubMenu;
 	}
@@ -106,11 +106,12 @@ Uint32 UIMenuSubMenu::onMouseOver( const Vector2i& pos, const Uint32& flags ) {
 	if ( nullptr == mCurWait ) {
 		mCurWait = Actions::Runnable::New(
 			[this] {
-				if ( isMouseOver() )
+				if ( isMouseOver() && mSubMenu )
 					showSubMenu();
 				mCurWait = nullptr;
 			},
 			mMaxTime );
+		mCurWait->setTag( String::hash( "subMenu" ) );
 		runAction( mCurWait );
 	}
 	return UIMenuItem::onMouseOver( pos, flags );

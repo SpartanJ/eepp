@@ -738,7 +738,7 @@ void EETest::createNewUI() {
 	pushButton->setPosition( 50, 560 )->setSize( 200, 0 )->setParent( container );
 	pushButton->setText( "PushButton" );
 	pushButton->setIcon( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
-	pushButton->addEventListener( Event::MouseClick, [&, pushButton]( const Event* event ) {
+	pushButton->addEventListener( Event::MouseClick, [this, pushButton]( const Event* event ) {
 		if ( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_LMASK )
 			createColorPicker( pushButton );
 	} );
@@ -1154,7 +1154,7 @@ void EETest::createDecoratedWindow() {
 	TEdit->setFlags( UI_WORD_WRAP );
 	TEdit->setParent( TabWidget );
 	TEdit->addEventListener( Event::OnSizeChange,
-							 [&, TEdit]( const Event* ) { TEdit->setText( mBuda ); } );
+							 [this, TEdit]( const Event* ) { TEdit->setText( mBuda ); } );
 	TabWidget->add( "TextEdit", TEdit );
 
 	UITextInput* Txt = UITextInput::New();

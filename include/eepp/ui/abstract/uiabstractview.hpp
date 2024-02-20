@@ -51,6 +51,8 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	enum SelectionType { Row, Cell };
 
+	enum SelectionKind { Single, Multiple };
+
 	bool isCellSelection() const;
 
 	bool isRowSelection() const;
@@ -90,13 +92,15 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	void setEditable( bool editable );
 
+	bool isEditing() const;
+
 	Uint32 getEditTriggers() const;
 
 	void setEditTriggers( Uint32 editTriggers );
 
-	KeyBindings::Shortcut getEditShortcut() const;
+	std::vector<KeyBindings::Shortcut> getEditShortcuts() const;
 
-	void setEditShortcut( const KeyBindings::Shortcut& editShortcut );
+	void setEditShortcuts( const std::vector<KeyBindings::Shortcut>& editShortcut );
 
 	void beginEditing( const ModelIndex& index, UIWidget* editedWidget );
 
@@ -110,6 +114,10 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	Uint32 onModelEvent( const std::function<void( const ModelEvent* )>& callback,
 						 const Event::EventType& triggerEventType = Event::EventType::NoEvent );
+
+	SelectionKind getSelectionKind() const;
+
+	void setSelectionKind( SelectionKind selectionKind );
 
   protected:
 	friend class EE::UI::Models::Model;
@@ -136,8 +144,9 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 	std::function<void( const ModelIndex& )> mOnSelection;
 
 	Uint32 mEditTriggers{ EditTrigger::None };
-	KeyBindings::Shortcut mEditShortcut{ KEY_F2 };
+	std::vector<KeyBindings::Shortcut> mEditShortcuts{ { KEY_F2 } };
 	SelectionType mSelectionType{ SelectionType::Row };
+	SelectionKind mSelectionKind{ SelectionKind::Single };
 
 	virtual void editingWidgetDidChange( const ModelIndex& ) {}
 };

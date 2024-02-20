@@ -63,8 +63,8 @@ std::string Time::toString() const {
 
 	if ( asSeconds() < 1 ) {
 		if ( asMilliseconds() == static_cast<double>( (Int64)asMilliseconds() ) )
-			return String::format( "%.fms", asMilliseconds() );
-		return String::format( "%.2fms", asMilliseconds() );
+			return String::fromFloat( asMilliseconds() );
+		return String::fromFloat( asMilliseconds() );
 	} else if ( totalSeconds < 60 ) {
 		return String::format( "%lus", static_cast<unsigned long>( totalSeconds ) );
 	}

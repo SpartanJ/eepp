@@ -1,10 +1,6 @@
 
 # TODO - Short and mid term plans.
 
-## Graphics Module
-
-* Add support for font packs/families (separate fonts for regular/bold/italics).
-
 ## UI Module
 
 * Implement a Rich Text View.

@@ -4,10 +4,10 @@
 #include <deque>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uiwidget.hpp>
-#include <queue>
 
 namespace EE { namespace UI {
 
+class UIPopUpMenu;
 class UIScrollBar;
 
 class EE_API TabEvent : public Event {
@@ -39,6 +39,7 @@ class EE_API UITabWidget : public UIWidget {
 		bool TabsClosable = false;
 		bool TabsEdgesDiffSkins = false; //! Indicates if the edge tabs ( the left and right
 										 //! border tab ) are different from the central tabs.
+		bool TabCloseButtonVisible = true;
 	};
 
 	typedef std::function<bool( UITab*, FocusTabBehavior )> TabTryCloseCallback;
@@ -109,6 +110,10 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setTabsClosable( bool tabsClosable );
 
+	bool getTabCloseButtonVisible() const;
+
+	void setTabCloseButtonVisible( bool visible );
+
 	bool getSpecialBorderTabs() const;
 
 	void setTabsEdgesDiffSkins( bool diffSkins );
@@ -174,6 +179,14 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setFocusTabBehavior( FocusTabBehavior focusTabBehavior );
 
+	bool getEnabledCreateContextMenu() const;
+
+	void setEnabledCreateContextMenu( bool enabledCreateContextMenu );
+
+	UIScrollBar* getTabScroll() const;
+
+	void swapTabs( UITab* left, UITab* right );
+
   protected:
 	friend class UITab;
 
@@ -190,10 +203,12 @@ class EE_API UITabWidget : public UIWidget {
 	bool mAllowDragAndDropTabs{ false };
 	bool mAllowSwitchTabsInEmptySpaces{ false };
 	bool mDroppableHoveringColorWasSet{ false };
+	bool mEnabledCreateContextMenu{ false };
 	Float mTabVerticalDragResistance;
 	Color mDroppableHoveringColor{ Color::Transparent };
 	FocusTabBehavior mFocusTabBehavior{ FocusTabBehavior::Closest };
 	std::deque<UITab*> mFocusHistory;
+	UIPopUpMenu* mCurrentMenu{ nullptr };
 
 	void onThemeLoaded();
 
@@ -230,11 +245,9 @@ class EE_API UITabWidget : public UIWidget {
 
 	void tryCloseTab( UITab* tab, FocusTabBehavior focustTabBehavior = FocusTabBehavior::Default );
 
-	void swapTabs( UITab* left, UITab* right );
-
 	void updateScrollBar();
 
-	void updateScroll();
+	void updateScroll( bool updateFocus = false );
 
 	void updateTabSelected( FocusTabBehavior tabBehavior );
 

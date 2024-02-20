@@ -35,7 +35,7 @@ TextInput.small_input,
 	color: var(--floating-icon);
 	font-family: icon;
 	font-size: 16dp;
-	margin-top: 6dp;
+	margin-top: 4dp;
 	margin-right: 22dp;
 	transition: all 0.15s;
 }
@@ -50,6 +50,8 @@ RelativeLayout > #doc_info {
 	padding: 6dp;
 	opacity: 0.8;
 	layout-gravity: bottom|right;
+	layout-height: wrap_content;
+	font-size: 1rem;
 }
 StatusBar > #doc_info {
 	background-color: transparent;
@@ -60,6 +62,8 @@ StatusBar > #doc_info {
 	padding: 0dp 4dp 0dp 4dp;
 	opacity: 1;
 	layout-gravity: center;
+	layout-height: match_parent;
+	font-size: 10dp;
 }
 #doc_info {
 	color: var(--font);
@@ -150,7 +154,6 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar {
 	background-color: var(--list-back);
-	padding-top: 1dp;
 	min-height: 16dp;
 }
 #status_bar > .status_but {
@@ -162,6 +165,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	border-bottom-color: transparent;
 	border-right-color: var(--tab-line);
 	font-size: 10dp;
+	layout-height: match_parent;
+	layout-gravity: top;
 }
 #status_bar > .status_but:hover {
 	background-color: var(--item-hover);
@@ -353,6 +358,7 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .none {
 	color: #d48838;
 }
+
 Anchor.success:hover,
 Anchor.error:hover {
 	color: var(--primary);
@@ -384,16 +390,56 @@ Anchor.error:hover {
 .texture-preview {
 	border: 1dp solid var(--list-back);
 }
+#code_container TabWidget {
+	max-tab-width: 200dp;
+}
+#code_container Tab > Tab::Text {
+	text-overflow: ellipsis;
+}
+#code_container Tab > Tab::close {
+	opacity: 0;
+}
+#code_container Tab:selected > Tab::close,
+#code_container Tab:hover > Tab::close {
+	opacity: 1;
+}
+#project_view ScrollBar {
+	opacity: 0;
+	transition: opacity 0.15;
+}
+#project_view:hover ScrollBar,
+#project_view ScrollBar.dragging,
+#project_view ScrollBar:focus-within {
+	opacity: 1;
+}
+#code_container TabWidget::TabBar ScrollBarMini {
+	opacity: 0;
+	transition: opacity 0.15;
+}
+#code_container TabWidget::TabBar:hover ScrollBarMini,
+#code_container TabWidget::TabBar ScrollBarMini.dragging,
+#code_container TabWidget::TabBar ScrollBarMini:focus-within {
+	opacity: 1;
+}
+.notbold {
+	font-style: normal;
+}
+.bold {
+	font-style: bold;
+}
 </style>
+)html"
+
+R"html(
 <MainLayout id="main_layout" lw="mp" lh="mp">
 <Splitter id="project_splitter" lw="mp" lh="mp">
 	<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
 		<RelativeLayout id="project_view_cont" lw="mp" lh="mp">
 			<TreeView id="project_view" lw="mp" lh="mp" />
 			<vbox id="project_view_empty" lg="top|center_horizontal" lw="mp" lh="wc">
-				<TextView text-align="center" lw="mp" lg="center" text='@string(you-have-not-yet-opened-a-folder, "You have not yet opened a folder.")' word-wrap="true"  />
+				<TextView text-align="center" lw="mp" lg="center" text='@string(you_have_not_yet_opened_a_folder, "You have not yet opened a folder.")' word-wrap="true"  />
 				<PushButton lw="mp" lg="center" id="open_folder" text='@string(open_folder, "Open Folder")' margin-top="4dp" />
-				<PushButton lw="mp" lg="center" id="open_recent_folder" text='@string(open-recent-folder, "Open Recent Folder...")' margin-top="4dp" />
+				<PushButton lw="mp" lg="center" id="open_recent_folder" text='@string(open_recent_folder_ellipsis, "Open Recent Folder...")' margin-top="4dp" />
 			</vbox>
 		</RelativeLayout>
 		<Tab id="treeview_tab" text='@string("project", "Project")' owns="project_view_cont" text-as-fallback="true" icon="icon(folder-open, 12dp)" />
@@ -428,7 +474,7 @@ Anchor.error:hover {
 			</vbox>
 			<vbox lw="wc" lh="wc" margin-right="4dp">
 				<CheckBox id="whole_word" lw="wc" lh="wc" text='@string(match_whole_word, "Match Whole Word")' selected="false" />
-				<CheckBox id="escape_sequence" lw="wc" lh="wc" text='@string(use_escape_sequences, "Use escape sequences")' selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
+				<CheckBox id="escape_sequence" lw="wc" lh="wc" text='@string(use_escape_sequences, "Use escape sequences")' selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \\t, \\n, \\r and \\uXXXX (Unicode characters) with the corresponding control")' />
 			</vbox>
 			<vbox lw="wc" lh="wc">
 				<hbox lw="wc" lh="wc" margin-bottom="2dp">

@@ -477,7 +477,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::HintFontStyle:
 			return Text::styleFlagToString( getHintFontStyle() );
 		case PropertyId::HintStrokeWidth:
-			return String::toString( PixelDensity::dpToPx( getHintOutlineThickness() ) );
+			return String::fromFloat( PixelDensity::dpToPx( getHintOutlineThickness() ), "px" );
 		case PropertyId::HintStrokeColor:
 			return getHintOutlineColor().toHexString();
 		default:
@@ -511,7 +511,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::Text:
-			setText( getTranslatorString( attribute.asString() ) );
+			setText( getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::AllowEditing:
 			setAllowEditing( attribute.asBool() );
@@ -526,7 +526,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setAllowOnlyNumbers( onlyNumbersAllowed(), attribute.asBool() );
 			break;
 		case PropertyId::Hint:
-			setHint( getTranslatorString( attribute.asString() ) );
+			setHint( getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::HintColor:
 			setHintColor( attribute.asColor() );
@@ -541,7 +541,7 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			setHintFontSize( lengthFromValue( attribute ) );
 			break;
 		case PropertyId::HintFontFamily:
-			setHintFont( FontManager::instance()->getByName( attribute.asString() ) );
+			setHintFont( FontManager::instance()->getByName( attribute.value() ) );
 			break;
 		case PropertyId::HintFontStyle:
 			setHintFontStyle( attribute.asFontStyle() );
@@ -789,8 +789,9 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 	Input* input = getUISceneNode()->getWindow()->getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isAltGrPressed() ) || input->isMetaPressed() ||
-		 input->isLeftAltPressed() )
+		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
+		   !input->isAltGrPressed() ) ||
+		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
 	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
@@ -803,7 +804,10 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 			return 0;
 		if ( mOnlyNumbers && ( ( mAllowFloat && text[i] == '.' && mDoc.find( "." ).isValid() ) ||
 							   !String::isNumber( text[i], mAllowFloat ) ) ) {
-			return 0;
+			if ( !( i == 0 && mDoc.getSelection( true ).start().column() == 0 &&
+					( text[i] == '-' || text[i] == '+' ) ) ) {
+				return 0;
+			}
 		}
 	}
 
@@ -814,9 +818,6 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 void UITextInput::updateIMELocation() {
 	if ( mDoc.getActiveClient() != this || !Engine::isRunninMainThread() )
 		return;
-
-	updateScreenPos();
-
 	Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
 					 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
 	Float h = mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSize() );
@@ -875,12 +876,10 @@ Drawable* UITextInput::findIcon( const std::string& name ) {
 	return nullptr;
 }
 
-UIMenuItem* UITextInput::menuAdd( UIPopUpMenu* menu, const std::string& translateKey,
-								  const String& translateString, const std::string& icon,
-								  const std::string& cmd ) {
+UIMenuItem* UITextInput::menuAdd( UIPopUpMenu* menu, const String& translateString,
+								  const std::string& icon, const std::string& cmd ) {
 	UIMenuItem* menuItem =
-		menu->add( getTranslatorString( "@string/uicodeeditor_" + translateKey, translateString ),
-				   findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
+		menu->add( translateString, findIcon( icon ), mKeyBindings.getCommandKeybindString( cmd ) );
 	menuItem->setId( cmd );
 	return menuItem;
 }
@@ -889,16 +888,20 @@ void UITextInput::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	menuAdd( menu, "undo", "Undo", "undo", "undo" )->setEnabled( mDoc.hasUndo() );
-	menuAdd( menu, "redo", "Redo", "redo", "redo" )->setEnabled( mDoc.hasRedo() );
+	menuAdd( menu, i18n( "uicodeeditor_undo", "Undo" ), "undo", "undo" )
+		->setEnabled( mDoc.hasUndo() );
+	menuAdd( menu, i18n( "uicodeeditor_redo", "Redo" ), "redo", "redo" )
+		->setEnabled( mDoc.hasRedo() );
 	menu->addSeparator();
 
-	menuAdd( menu, "cut", "Cut", "cut", "cut" )->setEnabled( mDoc.hasSelection() );
-	menuAdd( menu, "copy", "Copy", "copy", "copy" )->setEnabled( mDoc.hasSelection() );
-	menuAdd( menu, "cut", "Paste", "paste", "paste" );
-	menuAdd( menu, "delete", "Delete", "delete-text", "delete-to-next-char" );
+	menuAdd( menu, i18n( "uicodeeditor_cut", "Cut" ), "cut", "cut" )
+		->setEnabled( mDoc.hasSelection() );
+	menuAdd( menu, i18n( "uicodeeditor_copy", "Copy" ), "copy", "copy" )
+		->setEnabled( mDoc.hasSelection() );
+	menuAdd( menu, i18n( "uicodeeditor_paste", "Paste" ), "paste", "paste" );
+	menuAdd( menu, i18n( "uicodeeditor_delete", "Delete" ), "delete-text", "delete-to-next-char" );
 	menu->addSeparator();
-	menuAdd( menu, "select_all", "Select All", "select-all", "select-all" );
+	menuAdd( menu, i18n( "uicodeeditor_select_all", "Select All" ), "select-all", "select-all" );
 }
 
 bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& flags ) {

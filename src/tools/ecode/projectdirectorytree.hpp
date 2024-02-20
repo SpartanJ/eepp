@@ -60,8 +60,6 @@ class FileListModel : public Model {
 		mIcons[idx] = icon;
 	}
 
-	virtual void update() { onModelUpdate(); }
-
   protected:
 	std::vector<std::string> mFiles;
 	std::vector<std::string> mNames;
@@ -158,8 +156,10 @@ class ProjectDirectoryTree {
 	bool mRunning;
 	bool mIsReady;
 	bool mIgnoreHidden;
+	bool mClosing;
 	mutable Mutex mFilesMutex;
 	mutable Mutex mMatchingMutex;
+	Mutex mDoneMutex;
 	IgnoreMatcherManager mIgnoreMatcher;
 	App* mApp{ nullptr };
 

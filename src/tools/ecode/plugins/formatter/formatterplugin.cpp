@@ -23,11 +23,11 @@ namespace ecode {
 #define FORMATTER_THREADED 0
 #endif
 
-UICodeEditorPlugin* FormatterPlugin::New( PluginManager* pluginManager ) {
+Plugin* FormatterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( FormatterPlugin, ( pluginManager, false ) );
 }
 
-UICodeEditorPlugin* FormatterPlugin::NewSync( PluginManager* pluginManager ) {
+Plugin* FormatterPlugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( FormatterPlugin, ( pluginManager, true ) );
 }
 
@@ -37,7 +37,7 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 		load( pluginManager );
 	} else {
 #if defined( FORMATTER_THREADED ) && FORMATTER_THREADED == 1
-		mThreadPool->run( [&, pluginManager] { load( pluginManager ); } );
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
 #else
 		load( pluginManager );
 #endif
@@ -53,7 +53,7 @@ FormatterPlugin::~FormatterPlugin() {
 		mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
 	}
 
-	for ( auto editor : mEditors ) {
+	for ( auto& editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {
 			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
 			if ( editor.first->hasDocument() )
@@ -74,7 +74,7 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 
 	if ( editor->hasDocument() ) {
 		editor->getDocument().setCommand( "format-doc", [this]( TextDocument::Client* client ) {
-			formatDoc( static_cast<UICodeEditor*>( client ) );
+			formatDocAsync( static_cast<UICodeEditor*>( client ) );
 		} );
 	}
 
@@ -99,7 +99,7 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 					 mPluginManager &&
 					 !String::startsWith( editor->getDocument().getFilePath(),
 										  mPluginManager->getPluginsPath() ) )
-					formatDoc( editor );
+					formatDocAsync( editor );
 			}
 		} ) );
 
@@ -310,7 +310,7 @@ bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		return false;
 
 	menu->addSeparator();
-	menu->add( editor->getUISceneNode()->i18n( "formatter-format-document", "Format Document" ),
+	menu->add( editor->getUISceneNode()->i18n( "formatter_format_document", "Format Document" ),
 			   nullptr, KeyBindings::keybindFormat( mKeyBindings["format-doc"] ) )
 		->setId( "format-doc" );
 
@@ -330,6 +330,10 @@ FormatterPlugin::Formatter FormatterPlugin::getFormatterForLang( const std::stri
 		}
 	}
 	return {};
+}
+
+void FormatterPlugin::formatDocAsync( UICodeEditor* editor ) {
+	mThreadPool->run( [editor, this] { formatDoc( editor ); } );
 }
 
 void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
@@ -383,7 +387,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 			auto newFile = MD5::fromString( data );
 
 			if ( oldFile != newFile ) {
-				editor->runOnMainThread( [&, data, editor]() {
+				editor->runOnMainThread( [this, data, editor]() {
 					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 					auto pos = doc->getSelection();
 					auto scroll = editor->getScroll();
@@ -422,7 +426,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 		NativeFormatterResult res = mNativeFormatters[formatter.command]( path );
 		if ( !res.success )
 			return;
-		editor->runOnMainThread( [&, res, editor]() {
+		editor->runOnMainThread( [res, editor]() {
 			std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 			TextPosition pos = doc->getSelection().start();
 			auto scroll = editor->getScroll();
@@ -441,16 +445,14 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
 	Process process;
 	if ( process.create( cmd ) ) {
-		int returnCode;
 		std::string data;
-		process.readAllStdOut( data );
+		process.readAllStdOut( data, Seconds( 30 ) );
 
 		if ( mShuttingDown ) {
 			process.kill();
 			return;
 		}
 
-		process.join( &returnCode );
 		process.destroy();
 
 		// Log::info( "Formatter result:\n%s", data.c_str() );
@@ -466,7 +468,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			auto newFile = MD5::fromString( data );
 
 			if ( oldFile != newFile ) {
-				editor->runOnMainThread( [&, data, editor]() {
+				editor->runOnMainThread( [data, editor]() {
 					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 					TextPosition pos = doc->getSelection().start();
 					auto scroll = editor->getScroll();

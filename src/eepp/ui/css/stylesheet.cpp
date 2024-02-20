@@ -1,14 +1,24 @@
 #include <algorithm>
 #include <array>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/uiwidget.hpp>
-#include <iostream>
 
 namespace EE { namespace UI { namespace CSS {
 
 StyleSheet::StyleSheet() {}
+
+void StyleSheet::clear() {
+	mVersion = 1;
+	mMarker = 0;
+	mNodes.clear();
+	mNodeIndex.clear();
+	mMediaQueryList.clear();
+	mKeyframesMap.clear();
+	mNodeCache.clear();
+}
 
 template <class T> inline void HashCombine( std::size_t& seed, const T& v ) {
 	std::hash<T> hasher;
@@ -26,6 +36,7 @@ size_t StyleSheet::nodeHash( const std::string& tag, const std::string& id ) {
 
 void StyleSheet::invalidateCache() {
 	mNodeCache.clear();
+	mVersion++;
 }
 
 const Uint32& StyleSheet::getMarker() const {
@@ -98,6 +109,16 @@ void StyleSheet::removeAllWithMarker( const Uint32& marker ) {
 	invalidateCache();
 }
 
+StyleSheet StyleSheet::getAllWithMarker( const Uint32& marker ) const {
+	StyleSheet style;
+	std::vector<std::shared_ptr<StyleSheetStyle>> hits;
+	for ( auto node : mNodes ) {
+		if ( node->getMarker() == marker )
+			style.addStyle( node );
+	}
+	return style;
+}
+
 bool StyleSheet::markerExists( const Uint32& marker ) const {
 	for ( auto node : mNodes ) {
 		if ( node->getMarker() == marker )
@@ -107,7 +128,7 @@ bool StyleSheet::markerExists( const Uint32& marker ) const {
 }
 
 std::vector<std::shared_ptr<StyleSheetStyle>>
-StyleSheet::findStyleFromSelectorName( const std::string& selector ) {
+StyleSheet::findStyleFromSelectorName( const std::string& selector ) const {
 	std::vector<std::shared_ptr<StyleSheetStyle>> found;
 	for ( const auto& node : mNodes ) {
 		if ( selector == node->getSelector().getName() )
@@ -121,15 +142,20 @@ bool StyleSheet::refreshCacheFromStyles(
 	bool refreshed = false;
 	for ( const auto& style : styles ) {
 		for ( auto& node : mNodeCache ) {
-			for ( auto& nodeStyle : node.second->getStyles() ) {
+			for ( const auto& nodeStyle : node.second->getStyles() ) {
 				if ( nodeStyle == style.get() ) {
 					node.second->refresh();
 					refreshed = true;
+					mVersion++;
 				}
 			}
 		}
 	}
 	return refreshed;
+}
+
+const Uint64& StyleSheet::getVersion() const {
+	return mVersion;
 }
 
 bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
@@ -154,6 +180,7 @@ void StyleSheet::addStyle( std::shared_ptr<StyleSheetStyle> node ) {
 		mNodes.push_back( node );
 	}
 	addMediaQueryList( node->getMediaQueryList() );
+	mVersion++;
 }
 
 bool StyleSheet::isEmpty() const {
@@ -237,7 +264,7 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 
 	auto cacheIterator = mNodeCache.find( seed );
 	if ( cacheIterator != mNodeCache.end() ) {
-		std::shared_ptr<ElementDefinition>& definition = ( *cacheIterator ).second;
+		const std::shared_ptr<ElementDefinition>& definition = ( *cacheIterator ).second;
 		return definition;
 	}
 
@@ -251,11 +278,41 @@ const std::vector<std::shared_ptr<StyleSheetStyle>>& StyleSheet::getStyles() con
 	return mNodes;
 }
 
-std::shared_ptr<StyleSheetStyle>
-StyleSheet::getStyleFromSelector( const std::string& selector ) const {
+std::vector<std::shared_ptr<StyleSheetStyle>>
+StyleSheet::getStylesFromSelector( const std::string& selector ) const {
+	std::vector<std::shared_ptr<StyleSheetStyle>> found;
 	for ( const auto& node : mNodes )
-		if ( node->getSelector().getName() == selector )
-			return node;
+		if ( node->isMediaValid() && node->getSelector().getName() == selector )
+			found.push_back( node );
+	return found;
+}
+
+std::shared_ptr<StyleSheetStyle>
+StyleSheet::getStyleFromSelector( const std::string& selector, bool searchBySpecificity ) const {
+	if ( !searchBySpecificity ) {
+		for ( const auto& node : mNodes )
+			if ( node->getSelector().getName() == selector )
+				return node;
+	} else {
+		std::vector<std::shared_ptr<StyleSheetStyle>> found;
+		for ( const auto& node : mNodes )
+			if ( node->isMediaValid() && node->getSelector().getName() == selector )
+				found.push_back( node );
+		if ( !found.empty() ) {
+			std::sort( found.begin(), found.end(),
+					   []( const std::shared_ptr<StyleSheetStyle>& lhs,
+						   const std::shared_ptr<StyleSheetStyle>& rhs ) {
+						   if ( ( lhs->getMediaQueryList() == nullptr ) !=
+								( rhs->getMediaQueryList() == nullptr ) ) {
+							   return ( lhs->getMediaQueryList() == nullptr ) >
+									  ( rhs->getMediaQueryList() == nullptr );
+						   }
+						   return lhs->getSelector().getSpecificity() <
+								  rhs->getSelector().getSpecificity();
+					   } );
+			return found.back();
+		}
+	}
 	return {};
 }
 
@@ -269,6 +326,9 @@ bool StyleSheet::updateMediaLists( const MediaFeatures& features ) {
 		if ( ( *iter )->applyMediaFeatures( features ) )
 			updateStyles = true;
 	}
+
+	if ( updateStyles )
+		mVersion++;
 
 	return updateStyles;
 }
@@ -306,11 +366,12 @@ StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& 
 	return vector;
 }
 
-bool StyleSheet::isKeyframesDefined( const std::string& keyframesName ) {
+bool StyleSheet::isKeyframesDefined( const std::string& keyframesName ) const {
 	return mKeyframesMap.find( keyframesName ) != mKeyframesMap.end();
 }
 
-const KeyframesDefinition& StyleSheet::getKeyframesDefinition( const std::string& keyframesName ) {
+const KeyframesDefinition&
+StyleSheet::getKeyframesDefinition( const std::string& keyframesName ) const {
 	static KeyframesDefinition EMPTY;
 	const auto& it = mKeyframesMap.find( keyframesName );
 	if ( it != mKeyframesMap.end() ) {
@@ -323,6 +384,8 @@ void StyleSheet::addKeyframes( const KeyframesDefinition& keyframes ) {
 	// "none" is a reserved keyword
 	if ( keyframes.getName() != "none" )
 		mKeyframesMap[keyframes.getName()] = keyframes;
+
+	mVersion++;
 }
 
 void StyleSheet::addKeyframes( const KeyframesDefinitionMap& keyframesMap ) {

@@ -38,6 +38,19 @@ Action* ActionManager::getActionByTag( const Action::UniqueID& tag ) {
 	return NULL;
 }
 
+Action* ActionManager::getActionByTagFromTarget( Node* target, const Action::UniqueID& tag,
+												 bool mustBePending ) {
+	Lock l( mMutex );
+
+	for ( Action* action : mActions ) {
+		if ( action->getTarget() == target && action->getTag() == tag &&
+			 ( !mustBePending || !action->isDone() ) )
+			return action;
+	}
+
+	return NULL;
+}
+
 std::vector<Action*> ActionManager::getActionsFromTarget( Node* target ) {
 	Lock l( mMutex );
 

@@ -35,6 +35,8 @@ cp -L "$(whereis libSDL2-2.0.so.0 | awk '{print $NF}')" ecode.app/libs/
 strip ecode.app/libs/libSDL2-2.0.so.0
 mkdir -p ecode.app/assets/colorschemes
 mkdir -p ecode.app/assets/fonts
+mkdir -p ecode.app/assets/i18n
+cp -r ../../../bin/assets/i18n ecode.app/assets/
 cp -r ../../../bin/assets/colorschemes ecode.app/assets/
 cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode.app/assets/fonts/
 cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf ecode.app/assets/fonts/

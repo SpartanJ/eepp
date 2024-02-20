@@ -35,7 +35,6 @@
 #include <cstdlib>
 #include <eepp/config.hpp>
 #include <locale>
-#include <string>
 
 namespace EE {
 
@@ -138,7 +137,7 @@ template <> class Utf<8> {
 	template <typename In, typename Out> static Out fromWide( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
-	/// \brief Convert a latin-1 (ISO-5589-1) characters range to UTF-8
+	/// \brief Convert a latin-1 (ISO-8859-1) characters range to UTF-8
 	///
 	/// \param begin  Iterator pointing to the beginning of the input sequence
 	/// \param end	Iterator pointing to the end of the input sequence
@@ -185,7 +184,7 @@ template <> class Utf<8> {
 #endif
 
 	////////////////////////////////////////////////////////////
-	/// \brief Convert an UTF-8 characters range to latin-1 (ISO-5589-1) characters
+	/// \brief Convert an UTF-8 characters range to latin-1 (ISO-8859-1) characters
 	///
 	/// \param begin	   Iterator pointing to the beginning of the input sequence
 	/// \param end		 Iterator pointing to the end of the input sequence
@@ -261,7 +260,7 @@ template <> class Utf<16> {
 	///
 	////////////////////////////////////////////////////////////
 	template <typename In>
-	static In decode( In begin, In end, Uint32& output, Uint32 replacement = 0 );
+	static In decode( In begin, In end, Uint32& output, Uint32 replacement = 0, bool byteSwap = false );
 
 	////////////////////////////////////////////////////////////
 	/// \brief Encode a single UTF-16 character
@@ -337,7 +336,7 @@ template <> class Utf<16> {
 	template <typename In, typename Out> static Out fromWide( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
-	/// \brief Convert a latin-1 (ISO-5589-1) characters range to UTF-16
+	/// \brief Convert a latin-1 (ISO-8859-1) characters range to UTF-16
 	///
 	/// \param begin  Iterator pointing to the beginning of the input sequence
 	/// \param end	Iterator pointing to the end of the input sequence
@@ -384,7 +383,7 @@ template <> class Utf<16> {
 #endif
 
 	////////////////////////////////////////////////////////////
-	/// \brief Convert an UTF-16 characters range to latin-1 (ISO-5589-1) characters
+	/// \brief Convert an UTF-16 characters range to latin-1 (ISO-8859-1) characters
 	///
 	/// \param begin	   Iterator pointing to the beginning of the input sequence
 	/// \param end		 Iterator pointing to the end of the input sequence
@@ -436,7 +435,8 @@ template <> class Utf<16> {
 	/// \return Iterator to the end of the output sequence which has been written
 	///
 	////////////////////////////////////////////////////////////
-	template <typename In, typename Out> static Out toUtf32( In begin, In end, Out output );
+	template <typename In, typename Out>
+	static Out toUtf32( In begin, In end, Out output, bool byteSwap = false );
 };
 
 ////////////////////////////////////////////////////////////
@@ -537,7 +537,7 @@ template <> class Utf<32> {
 	template <typename In, typename Out> static Out fromWide( In begin, In end, Out output );
 
 	////////////////////////////////////////////////////////////
-	/// \brief Convert a latin-1 (ISO-5589-1) characters range to UTF-32
+	/// \brief Convert a latin-1 (ISO-8859-1) characters range to UTF-32
 	///
 	/// \param begin  Iterator pointing to the beginning of the input sequence
 	/// \param end	Iterator pointing to the end of the input sequence
@@ -584,7 +584,7 @@ template <> class Utf<32> {
 #endif
 
 	////////////////////////////////////////////////////////////
-	/// \brief Convert an UTF-16 characters range to latin-1 (ISO-5589-1) characters
+	/// \brief Convert an UTF-16 characters range to latin-1 (ISO-8859-1) characters
 	///
 	/// \param begin	   Iterator pointing to the beginning of the input sequence
 	/// \param end		 Iterator pointing to the end of the input sequence

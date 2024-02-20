@@ -547,6 +547,9 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 	if ( pos.size() == 1 )
 		pos.push_back( "center" );
 
+	bool needsRoundingX = false;
+	bool needsRoundingY = false;
+
 	if ( pos.size() == 2 ) {
 		int xFloatIndex = 0;
 		int yFloatIndex = 1;
@@ -562,6 +565,9 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 			xl, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getWidth() );
 		position.y = mContainer->getOwner()->convertLength(
 			yl, mContainer->getOwner()->getPixelsSize().getHeight() - mDrawableSize.getHeight() );
+
+		needsRoundingX = pos[xFloatIndex][pos[xFloatIndex].size() - 1] == '%';
+		needsRoundingY = pos[yFloatIndex][pos[yFloatIndex].size() - 1] == '%';
 	} else if ( pos.size() > 2 ) {
 		if ( pos.size() == 3 ) {
 			pos.push_back( "0dp" );
@@ -593,7 +599,16 @@ Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positio
 		Float yl2Val = mContainer->getOwner()->convertLength(
 			yl2, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getHeight() );
 		position.y += ( pos[yFloatIndex] == "bottom" ) ? -yl2Val : yl2Val;
+
+		needsRoundingX = pos[xFloatIndex][pos[xFloatIndex].size() - 1] == '%';
+		needsRoundingY = pos[yFloatIndex][pos[yFloatIndex].size() - 1] == '%';
 	}
+
+	if ( needsRoundingX )
+		position.x = Math::round( position.x );
+
+	if ( needsRoundingY )
+		position.y = Math::round( position.y );
 
 	return position;
 }

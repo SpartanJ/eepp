@@ -1,8 +1,12 @@
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 
 namespace EE { namespace UI {
 
@@ -13,10 +17,8 @@ UITab* UITab::New() {
 UITab::UITab() :
 	UISelectButton( "tab" ), mOwnedWidget( NULL ), mDragTotalDiff( 0.f ), mTabWidget( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
-	mIcon->setElementTag( mTag + "::icon" );
 	auto cb = [this]( const Event* ) { onSizeChange(); };
 	mTextBox->addEventListener( Event::OnSizeChange, cb );
-	mIcon->addEventListener( Event::OnSizeChange, cb );
 	mCloseButton = UIWidget::NewWithTag( mTag + "::close" );
 	mCloseButton->setParent( const_cast<UITab*>( this ) );
 	mCloseButton->setEnabled( false );
@@ -24,6 +26,7 @@ UITab::UITab() :
 	mCloseButton->addEventListener( Event::OnPaddingChange, cb );
 	mCloseButton->addEventListener( Event::OnMarginChange, cb );
 	mCloseButton->addEventListener( Event::OnSizeChange, cb );
+	mCloseButton->addEventListener( Event::OnVisibleChange, cb );
 	applyDefaultTheme();
 	unsetFlags( UI_DRAG_VERTICAL );
 }
@@ -167,6 +170,10 @@ void UITab::removeTab( bool destroyOwnedNode, bool immediateClose ) {
 	getTabWidget()->removeTab( this, destroyOwnedNode, immediateClose );
 }
 
+UIWidget* UITab::getCloseButton() const {
+	return mCloseButton;
+}
+
 void UITab::setTheme( UITheme* Theme ) {
 	UIWidget::setTheme( Theme );
 
@@ -231,44 +238,41 @@ UIPushButton* UITab::setText( const String& text ) {
 void UITab::onAutoSize() {
 	UITabWidget* tTabW = getTabWidget();
 
+	if ( ( mFlags & UI_AUTO_SIZE ) == 0 )
+		return;
+
+	Float nonTextW =
+		( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
+							  mIcon->getLayoutMargin().Right
+						: 0 ) +
+		( NULL != mCloseButton && mCloseButton->isVisible()
+			  ? mCloseButton->getSize().getWidth() + mCloseButton->getLayoutMargin().Left +
+					mCloseButton->getLayoutMargin().Right
+			  : 0 ) +
+		getSkinSize().getWidth();
+
+	Float textW = mTextBox->getSize().getWidth();
+	Float w = textW + nonTextW;
+
 	if ( NULL != tTabW ) {
-		mCloseButton->setVisible( tTabW->getTabsClosable() );
-		mCloseButton->setEnabled( tTabW->getTabsClosable() );
+		if ( !mMinWidthEq.empty() )
+			w = eemax( w, getMinSize().getWidth() );
+		if ( !mMaxWidthEq.empty() )
+			w = eemin( w, getMaxSize().getWidth() );
+
+		if ( textW > w - nonTextW )
+			getTextBox()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
 	}
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		Float nonTextW =
-			( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
-								  mIcon->getLayoutMargin().Right
-							: 0 ) +
-			( NULL != mCloseButton && mCloseButton->isVisible()
-				  ? mCloseButton->getSize().getWidth() + mCloseButton->getLayoutMargin().Left +
-						mCloseButton->getLayoutMargin().Right
-				  : 0 ) +
-			getSkinSize().getWidth();
-		Float textW = mTextBox->getSize().getWidth();
-		Float w = textW + nonTextW;
+	setInternalWidth( w );
 
-		if ( NULL != tTabW ) {
-			if ( !mMinWidthEq.empty() )
-				w = eemax( w, getMinSize().getWidth() );
-			if ( !mMaxWidthEq.empty() )
-				w = eemin( w, getMaxSize().getWidth() );
-
-			if ( textW > w - nonTextW )
-				getTextBox()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
-		}
-
-		setInternalWidth( w );
-
-		if ( getSize().getWidth() != w ) {
-			if ( NULL != getTabWidget() )
-				getTabWidget()->orderTabs();
-		}
-
-		if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
-			getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
+	if ( getSize().getWidth() != w ) {
+		if ( NULL != getTabWidget() )
+			getTabWidget()->orderTabs();
 	}
+
+	if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
+		getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
 }
 
 std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,
@@ -301,16 +305,53 @@ bool UITab::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Text:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 				setText( static_cast<UISceneNode*>( mSceneNode )
-							 ->getTranslatorString( attribute.asString() ) );
+							 ->getTranslatorString( attribute.value() ) );
 			break;
 		case PropertyId::Owns:
-			mOwnedName = attribute.asString();
+			mOwnedName = attribute.value();
 			setOwnedNode();
 			break;
 		default:
 			return UISelectButton::applyProperty( attribute );
 	}
 
+	return true;
+}
+
+Uint32 UITab::onMouseUp( const Vector2i& position, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_RMASK ) && getTabWidget() &&
+		 getTabWidget()->getEnabledCreateContextMenu() ) {
+		onCreateContextMenu( position, flags );
+	}
+	return UISelectButton::onMouseUp( position, flags );
+}
+
+bool UITab::onCreateContextMenu( const Vector2i& position, const Uint32& flags ) {
+	UITabWidget* tTabW = getTabWidget();
+	if ( !tTabW )
+		return false;
+
+	if ( tTabW->mCurrentMenu )
+		return false;
+
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	ContextMenuEvent event( this, menu, Event::OnCreateContextMenu, position, flags );
+	sendEvent( &event );
+
+	if ( menu->getCount() == 0 ) {
+		menu->close();
+		return false;
+	}
+
+	menu->setCloseOnHide( true );
+	Vector2f pos( position.asFloat() );
+	menu->nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, menu );
+	menu->setPixelsPosition( pos );
+	menu->show();
+	menu->addEventListener( Event::OnClose,
+							[tTabW]( const Event* ) { tTabW->mCurrentMenu = nullptr; } );
+	tTabW->mCurrentMenu = menu;
 	return true;
 }
 
@@ -339,10 +380,20 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 			} else if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
 				tTabW->tryCloseTab( this, UITabWidget::FocusTabBehavior::Closest );
 			} else if ( flags & EE_BUTTONS_WUWD ) {
-				if ( flags & EE_BUTTON_WUMASK ) {
-					tTabW->selectPreviousTab();
-				} else if ( flags & EE_BUTTON_WDMASK ) {
-					tTabW->selectNextTab();
+				Input* input = getUISceneNode()->getWindow()->getInput();
+				if ( input->isModState( KeyMod::getDefaultModifier() ) ) {
+					UISlider* slider = tTabW->getTabScroll()->getSlider();
+					if ( flags & EE_BUTTON_WUMASK ) {
+						slider->setValue( slider->getValue() - slider->getClickStep() );
+					} else if ( flags & EE_BUTTON_WDMASK ) {
+						slider->setValue( slider->getValue() + slider->getClickStep() );
+					}
+				} else {
+					if ( flags & EE_BUTTON_WUMASK ) {
+						tTabW->selectPreviousTab();
+					} else if ( flags & EE_BUTTON_WDMASK ) {
+						tTabW->selectNextTab();
+					}
 				}
 			}
 			break;

@@ -114,17 +114,19 @@ Node* UINode::setPosition( const Float& x, const Float& y ) {
 	return this;
 }
 
-void UINode::setPixelsPosition( const Vector2f& Pos ) {
+UINode* UINode::setPixelsPosition( const Vector2f& Pos ) {
 	if ( mPosition != Pos ) {
 		mDpPos = PixelDensity::pxToDp( Pos );
 		Transformable::setPosition( Pos );
 		setDirty();
 		onPositionChange();
 	}
+	return this;
 }
 
-void UINode::setPixelsPosition( const Float& x, const Float& y ) {
+UINode* UINode::setPixelsPosition( const Float& x, const Float& y ) {
 	setPixelsPosition( Vector2f( x, y ) );
+	return this;
 }
 
 const Vector2f& UINode::getPosition() const {
@@ -1006,7 +1008,7 @@ void UINode::drawBorder() {
 	}
 }
 
-void UINode::smartClipStart( const ClipType& reqClipType ) {
+void UINode::smartClipStart( const ClipType& reqClipType, bool needsClipPlanes ) {
 	if ( mClip.getClipType() != reqClipType )
 		return;
 	switch ( mClip.getClipType() ) {
@@ -1014,11 +1016,12 @@ void UINode::smartClipStart( const ClipType& reqClipType ) {
 			const Rectf& pd = getPixelsPadding();
 			clipSmartEnable( mScreenPos.x + pd.Left, mScreenPos.y + pd.Top,
 							 mSize.getWidth() - pd.Left - pd.Right,
-							 mSize.getHeight() - pd.Top - pd.Bottom );
+							 mSize.getHeight() - pd.Top - pd.Bottom, needsClipPlanes );
 			break;
 		}
 		case ClipType::ContentBox: {
-			clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
+			clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight(),
+							 needsClipPlanes );
 			break;
 		}
 		case ClipType::BorderBox: {
@@ -1027,7 +1030,7 @@ void UINode::smartClipStart( const ClipType& reqClipType ) {
 				borderDiff = mBorder->getBorderBoxDiff();
 			clipSmartEnable( mScreenPos.x + borderDiff.Left, mScreenPos.y + borderDiff.Top,
 							 mSize.getWidth() + borderDiff.Right,
-							 mSize.getHeight() + borderDiff.Bottom );
+							 mSize.getHeight() + borderDiff.Bottom, needsClipPlanes );
 			break;
 		}
 		case ClipType::None: {
@@ -1036,10 +1039,18 @@ void UINode::smartClipStart( const ClipType& reqClipType ) {
 	}
 }
 
-void UINode::smartClipEnd( const ClipType& reqClipType ) {
+void UINode::smartClipEnd( const ClipType& reqClipType, bool needsClipPlanes ) {
 	if ( mVisible && isClipped() && mClip.getClipType() == reqClipType ) {
-		clipEnd();
+		clipEnd( needsClipPlanes );
 	}
+}
+
+void UINode::smartClipStart( const ClipType& reqClipType ) {
+	smartClipStart( reqClipType, isMeOrParentTreeScaledOrRotatedOrFrameBuffer() );
+}
+
+void UINode::smartClipEnd( const ClipType& reqClipType ) {
+	smartClipEnd( reqClipType, isMeOrParentTreeScaledOrRotatedOrFrameBuffer() );
 }
 
 void UINode::nodeDraw() {
@@ -1052,10 +1063,14 @@ void UINode::nodeDraw() {
 
 		matrixSet();
 
-		smartClipStart( ClipType::BorderBox );
+		bool needsClipPlanes = isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
 
-		if ( mWorldBounds.intersect( mSceneNode->getWorldBounds() ) ) {
-			smartClipStart( ClipType::ContentBox );
+		smartClipStart( ClipType::BorderBox, needsClipPlanes );
+
+		bool intersected = mWorldBounds.intersect( mSceneNode->getWorldBounds() );
+
+		if ( intersected ) {
+			smartClipStart( ClipType::ContentBox, needsClipPlanes );
 
 			if ( 0.f != mAlpha ) {
 				drawBackground();
@@ -1063,36 +1078,39 @@ void UINode::nodeDraw() {
 				drawSkin();
 			}
 
-			smartClipStart( ClipType::PaddingBox );
+			smartClipStart( ClipType::PaddingBox, needsClipPlanes );
 
 			draw();
 
 			drawChilds();
 
-			smartClipEnd( ClipType::PaddingBox );
+			smartClipEnd( ClipType::PaddingBox, needsClipPlanes );
 
 			if ( 0.f != mAlpha )
 				drawForeground();
 
-			smartClipEnd( ClipType::ContentBox );
+			smartClipEnd( ClipType::ContentBox, needsClipPlanes );
 		} else if ( !isClipped() ) {
 			drawChilds();
 		}
 
-		drawBorder();
+		if ( intersected )
+			drawBorder();
 
 		if ( mNodeFlags & NODE_FLAG_DROPPABLE_HOVERING )
 			drawDroppableHovering();
 
-		drawHighlightFocus();
+		if ( intersected ) {
+			drawHighlightFocus();
 
-		drawOverNode();
+			drawOverNode();
 
-		updateDebugData();
+			updateDebugData();
 
-		drawBox();
+			drawBox();
+		}
 
-		smartClipEnd( ClipType::BorderBox );
+		smartClipEnd( ClipType::BorderBox, needsClipPlanes );
 
 		matrixUnset();
 	}
@@ -1541,9 +1559,10 @@ void UINode::onWidgetFocusLoss() {
 	invalidateDraw();
 }
 
-void UINode::setFocus() {
+Node* UINode::setFocus() {
 	if ( NULL != getEventDispatcher() )
 		getEventDispatcher()->setFocusNode( this );
+	return this;
 }
 
 Float UINode::getPropertyRelativeTargetContainerLength(
@@ -1689,9 +1708,9 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length,
 
 				while ( NULL != node ) {
 					if ( node->isWidget() ) {
-						std::string fontSizeStr( node->asType<UIWidget>()->getPropertyString(
+						fontSizeStr = node->asType<UIWidget>()->getPropertyString(
 							CSS::StyleSheetSpecification::instance()->getProperty(
-								(Uint32)PropertyId::FontSize ) ) );
+								(Uint32)PropertyId::FontSize ) );
 						if ( !fontSizeStr.empty() ) {
 							Float num;
 							if ( String::fromString( num, fontSizeStr ) ) {

@@ -59,9 +59,9 @@ class EE_API UINode : public Node {
 
 	virtual Node* setPosition( const Float& x, const Float& y );
 
-	void setPixelsPosition( const Vector2f& position );
+	UINode* setPixelsPosition( const Vector2f& position );
 
-	void setPixelsPosition( const Float& x, const Float& y );
+	UINode* setPixelsPosition( const Float& x, const Float& y );
 
 	const Vector2f& getPosition() const;
 
@@ -235,7 +235,7 @@ class EE_API UINode : public Node {
 
 	const Uint32& getDragButton() const;
 
-	virtual void setFocus();
+	virtual Node* setFocus();
 
 	Float
 	getPropertyRelativeTargetContainerLength( const CSS::PropertyRelativeTarget& relativeTarget,
@@ -420,6 +420,10 @@ class EE_API UINode : public Node {
 	void setInternalPixelsHeight( const Float& height );
 
 	virtual void updateOriginPoint();
+
+	void smartClipStart( const ClipType& reqClipType, bool needsClipPlanes );
+
+	void smartClipEnd( const ClipType& reqClipType, bool needsClipPlanes );
 
 	void smartClipStart( const ClipType& reqClipType );
 

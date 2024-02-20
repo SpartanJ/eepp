@@ -3,6 +3,7 @@
 
 #include <eepp/system/time.hpp>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace EE { namespace System {
@@ -103,6 +104,9 @@ class EE_API Sys {
 
 	/** @return True if current running platform / os is a mobile one */
 	static bool isMobile();
+
+	/** @return The process environment variables */
+	static std::unordered_map<std::string, std::string> getEnvironmentVariables();
 };
 
 }} // namespace EE::System

@@ -4,45 +4,118 @@
 #include <eepp/ui/css/stylesheetlength.hpp>
 
 using namespace EE::Graphics;
+using namespace std::literals;
 
 namespace EE { namespace UI { namespace CSS {
 
+enum UnitHashes : String::HashType {
+	Percentage = String::hash( "%" ),
+	In = String::hash( "in" ),
+	Cm = String::hash( "cm" ),
+	Mm = String::hash( "mm" ),
+	Em = String::hash( "em" ),
+	Ex = String::hash( "ex" ),
+	Pt = String::hash( "pt" ),
+	Pc = String::hash( "pc" ),
+	Px = String::hash( "px" ),
+	Dpi = String::hash( "dpi" ),
+	Dp = String::hash( "dp" ),
+	Dpcm = String::hash( "dpcm" ),
+	Vw = String::hash( "vw" ),
+	Vh = String::hash( "vh" ),
+	Vmin = String::hash( "vmin" ),
+	Vmax = String::hash( "vmax" ),
+	Rem = String::hash( "rem" ),
+	Dprd = String::hash( "dprd" ),
+	Dpru = String::hash( "dpru" ),
+	Dpr = String::hash( "dpr" ),
+};
+
+enum PercentagePositions : String::HashType {
+	Center = String::hash( "center" ),
+	Left = String::hash( "left" ),
+	Right = String::hash( "right" ),
+	Top = String::hash( "top" ),
+	Bottom = String::hash( "bottom" ),
+	None = 0,
+};
+
+static std::string positionToPercentage( const PercentagePositions& pos ) {
+	switch ( pos ) {
+		case Center:
+			return "50%";
+		case Left:
+		case Top:
+			return "0%";
+		case Right:
+		case Bottom:
+			return "100%";
+		default:
+		case None:
+			return "";
+	}
+}
+
+static PercentagePositions isPercentagePosition( const String::HashType& strHash ) {
+	switch ( strHash ) {
+		case PercentagePositions::Center:
+			return PercentagePositions::Center;
+		case PercentagePositions::Left:
+			return PercentagePositions::Left;
+		case PercentagePositions::Right:
+			return PercentagePositions::Right;
+		case PercentagePositions::Top:
+			return PercentagePositions::Top;
+		case PercentagePositions::Bottom:
+			return PercentagePositions::Bottom;
+	}
+	return PercentagePositions::None;
+}
+
 StyleSheetLength::Unit StyleSheetLength::unitFromString( std::string unitStr ) {
 	String::toLowerInPlace( unitStr );
-	if ( "%" == unitStr )
-		return Unit::Percentage;
-	else if ( "dp" == unitStr )
-		return Unit::Dp;
-	else if ( "px" == unitStr )
-		return Unit::Px;
-	else if ( "in" == unitStr )
-		return Unit::In;
-	else if ( "cm" == unitStr )
-		return Unit::Cm;
-	else if ( "mm" == unitStr )
-		return Unit::Mm;
-	else if ( "em" == unitStr )
-		return Unit::Em;
-	else if ( "ex" == unitStr )
-		return Unit::Ex;
-	else if ( "pt" == unitStr )
-		return Unit::Pt;
-	else if ( "pc" == unitStr )
-		return Unit::Pc;
-	else if ( "dpi" == unitStr )
-		return Unit::Dpi;
-	else if ( "dpcm" == unitStr )
-		return Unit::Dpcm;
-	else if ( "vw" == unitStr )
-		return Unit::Vw;
-	else if ( "vh" == unitStr )
-		return Unit::Vh;
-	else if ( "vmin" == unitStr )
-		return Unit::Vmin;
-	else if ( "vmax" == unitStr )
-		return Unit::Vmax;
-	else if ( "rem" == unitStr )
-		return Unit::Rem;
+	switch ( String::hash( unitStr ) ) {
+		case UnitHashes::Percentage:
+			return Unit::Percentage;
+		case UnitHashes::Dp:
+			return Unit::Dp;
+		case UnitHashes::Px:
+			return Unit::Px;
+		case UnitHashes::In:
+			return Unit::In;
+		case UnitHashes::Cm:
+			return Unit::Cm;
+		case UnitHashes::Mm:
+			return Unit::Mm;
+		case UnitHashes::Em:
+			return Unit::Em;
+		case UnitHashes::Ex:
+			return Unit::Ex;
+		case UnitHashes::Pt:
+			return Unit::Pt;
+		case UnitHashes::Pc:
+			return Unit::Pc;
+		case UnitHashes::Dpi:
+			return Unit::Dpi;
+		case UnitHashes::Dpcm:
+			return Unit::Dpcm;
+		case UnitHashes::Vw:
+			return Unit::Vw;
+		case UnitHashes::Vh:
+			return Unit::Vh;
+		case UnitHashes::Vmin:
+			return Unit::Vmin;
+		case UnitHashes::Vmax:
+			return Unit::Vmax;
+		case UnitHashes::Rem:
+			return Unit::Rem;
+		case UnitHashes::Dprd:
+			return Unit::Dprd;
+		case UnitHashes::Dpru:
+			return Unit::Dpru;
+		case UnitHashes::Dpr:
+			return Unit::Dpr;
+	}
 	return Unit::Px;
 }
 
@@ -82,6 +155,12 @@ std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit )
 			return "vmax";
 		case Unit::Rem:
 			return "rem";
+		case Unit::Dprd:
+			return "dprd";
+		case Unit::Dpru:
+			return "dpru";
+		case Unit::Dpr:
+			return "dpr";
 	}
 	return "px";
 }
@@ -122,6 +201,14 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 			break;
 		case Unit::Dp:
 			ret = PixelDensity::dpToPx( mValue );
+			break;
+		case Unit::Dpr:
+			return round( PixelDensity::dpToPx( mValue ) );
+		case Unit::Dprd:
+			ret = Math::roundDown( PixelDensity::dpToPx( mValue ) );
+			break;
+		case Unit::Dpru:
+			ret = Math::roundUp( PixelDensity::dpToPx( mValue ) );
 			break;
 		case Unit::Em:
 			ret = Math::round( mValue * elFontSize );
@@ -190,22 +277,15 @@ StyleSheetLength& StyleSheetLength::operator=( const StyleSheetLength& val ) {
 	return *this;
 }
 
-static std::string positionToPercentage( const std::string& pos ) {
-	if ( pos == "center" )
-		return "50%";
-	if ( pos == "left" || pos == "top" )
-		return "0%";
-	if ( pos == "right" || pos == "bottom" )
-		return "100%";
-	return pos;
-}
+StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Float& defaultValue ) {
+	PercentagePositions isPercentage = isPercentagePosition( String::hash( str ) );
+	if ( PercentagePositions::None != isPercentage )
+		return fromString( positionToPercentage( isPercentage ), defaultValue );
 
-StyleSheetLength StyleSheetLength::fromString( std::string str, const Float& defaultValue ) {
 	StyleSheetLength length;
 	length.setValue( defaultValue, Unit::Px );
 	std::string num;
 	std::string unit;
-	str = positionToPercentage( str );
 
 	for ( std::size_t i = 0; i < str.size(); i++ ) {
 		if ( String::isNumber( str[i], true ) || ( '-' == str[i] && i == 0 ) ||
@@ -219,22 +299,18 @@ StyleSheetLength StyleSheetLength::fromString( std::string str, const Float& def
 
 	if ( !num.empty() ) {
 		Float val = 0;
-		bool res = String::fromString<Float>( val, num );
-
-		if ( res ) {
+		if ( String::fromString<Float>( val, num ) )
 			length.setValue( val, unitFromString( unit ) );
-		}
 	}
 
 	return length;
 }
 
 std::string StyleSheetLength::toString() const {
-	std::string res;
-	if ( (Int64)mValue == mValue )
-		res = String::format( "%lld%s", (Int64)mValue, unitToString( mUnit ).c_str() );
-	res = String::format( "%.2f%s", mValue, unitToString( mUnit ).c_str() );
+	std::string res( String::format( "%.2f", mValue ) );
 	String::replace( res, ",", "." );
+	String::numberCleanInPlace( res );
+	res += unitToString( mUnit );
 	return res;
 }
 

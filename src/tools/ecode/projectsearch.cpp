@@ -2,6 +2,13 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/luapattern.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+// For malloc_trim, which is a GNU extension
+extern "C" {
+#include <malloc.h>
+}
+#endif
+
 namespace ecode {
 
 static int countNewLines( const std::string& text, const size_t& start, const size_t& end ) {
@@ -179,6 +186,9 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 				if ( count == 0 ) {
 					result( findData->res );
 					eeDelete( findData );
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+					malloc_trim( 0 );
+#endif
 				}
 			} );
 	}

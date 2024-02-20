@@ -8,6 +8,8 @@ namespace EE { namespace UI {
 
 class EE_API UICheckBox : public UITextView {
   public:
+	enum CheckMode { TextAndButton, Button };
+
 	static UICheckBox* New();
 
 	static UICheckBox* NewWithTag( const std::string& tag );
@@ -41,10 +43,15 @@ class EE_API UICheckBox : public UITextView {
 
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
+	bool getCheckMode() const;
+
+	void setCheckMode( CheckMode mode );
+
   protected:
 	UIWidget* mActiveButton;
 	UIWidget* mInactiveButton;
 	bool mChecked;
+	CheckMode mCheckMode{ CheckMode::TextAndButton };
 	Uint32 mLastTick;
 	Int32 mTextSeparation;
 

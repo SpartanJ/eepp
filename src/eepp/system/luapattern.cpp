@@ -3,17 +3,19 @@
 #include <eepp/system/lua-str.hpp>
 #include <eepp/system/luapattern.hpp>
 
+using namespace std::literals;
+
 namespace EE { namespace System {
 
 const int MAX_DEFAULT_MATCHES = 12;
 static bool sFailHandlerInitialized = false;
 
 std::string_view LuaPattern::getURLPattern() {
-	return "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*";
+	return "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*"sv;
 }
 
 std::string_view LuaPattern::getURIPattern() {
-	return "%w+://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*";
+	return "%w+://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*"sv;
 }
 
 static void failHandler( const char* msg ) {
@@ -170,10 +172,17 @@ void LuaPattern::Match::next() {
 
 std::string LuaPattern::Match::group( int idx ) const {
 	int m1, m2;
-	if ( mState->range( idx, m1, m2 ) ) {
+	if ( mState->range( idx, m1, m2 ) )
 		return std::string( mString + m1, m2 - m1 );
-	}
 	return "";
+}
+
+std::string_view LuaPattern::Match::groupView( int idx ) const {
+	static constexpr auto EMPTY = ""sv;
+	int m1, m2;
+	if ( mState->range( idx, m1, m2 ) )
+		return std::string_view( mString + m1, m2 - m1 );
+	return EMPTY;
 }
 
 bool LuaPattern::Match::range( int idx, int& start, int& end ) const {

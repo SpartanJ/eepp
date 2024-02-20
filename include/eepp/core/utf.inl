@@ -236,9 +236,11 @@ Out Utf<8>::toUtf32(In begin, In end, Out output)
 }
 
 template <typename In>
-In Utf<16>::decode(In begin, In end, Uint32& output, Uint32 replacement)
+In Utf<16>::decode(In begin, In end, Uint32& output, Uint32 replacement, bool byteSwap)
 {
 	Uint16 first = *begin++;
+	if ( byteSwap )
+		first = ( ( ( first & 0xFF ) << 8 ) | ( ( first >> 8 ) & 0xFF ) );
 
 	// If it's a surrogate pair, first convert to a single UTF-32 character
 	if ((first >= 0xD800) && (first <= 0xDBFF))
@@ -246,6 +248,9 @@ In Utf<16>::decode(In begin, In end, Uint32& output, Uint32 replacement)
 		if (begin < end)
 		{
 			Uint32 second = *begin++;
+			if ( byteSwap )
+				second = ( ( ( second & 0xFF ) << 8 ) | ( ( second >> 8 ) & 0xFF ) );
+
 			if ((second >= 0xDC00) && (second <= 0xDFFF))
 			{
 				// The second element is valid: convert the two elements to a UTF-32 character
@@ -428,12 +433,12 @@ Out Utf<16>::toUtf16(In begin, In end, Out output)
 }
 
 template <typename In, typename Out>
-Out Utf<16>::toUtf32(In begin, In end, Out output)
+Out Utf<16>::toUtf32(In begin, In end, Out output, bool byteSwap)
 {
 	while (begin < end)
 	{
 		Uint32 codepoint;
-		begin = decode(begin, end, codepoint);
+		begin = decode<In>(begin, end, codepoint, 0, byteSwap);
 		*output++ = codepoint;
 	}
 
@@ -579,7 +584,7 @@ Uint32 Utf<32>::decodeAnsi(In input, const std::locale& locale)
 		#else
 		const std::ctype<char>& facet = std::use_facet< std::ctype<char> >(locale);
 		#endif
-		
+
 		// Use the facet to convert each character of the input string
 		return static_cast<Uint32>(facet.widen(input));
 

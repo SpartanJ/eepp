@@ -1,3 +1,4 @@
+#include <eepp/system/log.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
 #include <eepp/ui/uiwidget.hpp>
@@ -227,6 +228,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "min-tab-width", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "max-tab-width", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "tab-closable", "" ).setType( PropertyType::Bool );
+	registerProperty( "tab-close-button-visible", "" ).setType( PropertyType::Bool );
 	registerProperty( "tabs-edges-diff-skin", "" ).setType( PropertyType::Bool );
 	registerProperty( "tab-separation", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "tab-height", "" ).setType( PropertyType::NumberLength );
@@ -406,6 +408,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "row-vertical-align" )
 		.setType( PropertyType::String );
 
+	registerProperty( "text-overflow", "clip" ).setType( PropertyType::String );
+
+	registerProperty( "check-mode", "element" ).setType( PropertyType::String );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );
@@ -453,11 +459,22 @@ void StyleSheetSpecification::registerDefaultProperties() {
 					   "color-vector2" );
 	registerShorthand( "hint-shadow", { "hint-shadow-color", "hint-shadow-offset" },
 					   "color-vector2" );
+	registerShorthand( "border-left",
+					   { "border-left-width", "border-left-style", "border-left-color" },
+					   "border-side" );
+	registerShorthand( "border-right",
+					   { "border-right-width", "border-right-style", "border-right-color" },
+					   "border-side" );
+	registerShorthand( "border-top", { "border-top-width", "border-top-style", "border-top-color" },
+					   "border-side" );
+	registerShorthand( "border-bottom",
+					   { "border-bottom-width", "border-bottom-style", "border-bottom-color" },
+					   "border-side" );
 }
 
 void StyleSheetSpecification::registerNodeSelector( const std::string& name,
 													StyleSheetNodeSelector nodeSelector ) {
-	mNodeSelectors[String::toLower( name )] = nodeSelector;
+	mNodeSelectors[String::toLower( name )] = std::move( nodeSelector );
 }
 
 static bool isNth( int a, int b, int count ) {
@@ -927,6 +944,38 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 							properties.emplace_back( bb );
 					}
 				}
+			}
+		}
+
+		return properties;
+	};
+
+	mShorthandParsers["border-side"] = []( const ShorthandDefinition* shorthand,
+										   std::string value ) -> std::vector<StyleSheetProperty> {
+		value = String::trim( value );
+		if ( value.empty() || "none" == value )
+			return {};
+
+		std::vector<StyleSheetProperty> properties;
+		const std::vector<std::string>& propNames = shorthand->getProperties();
+		std::vector<std::string> tokens = String::split( value, " ", "", "(" );
+
+		for ( auto& tok : tokens ) {
+			if ( -1 !=
+				 String::valueIndex(
+					 tok, "none;hidden;dotted;dashed;solid;double;groove;ridge;inset;outset" ) ) {
+				int pos = getIndexEndingWith( propNames, "-style" );
+				// boder-style is not implemented yet
+				if ( pos != -1 )
+					continue;
+			} else if ( Color::isColorString( tok ) || String::startsWith( tok, "var(" ) ) {
+				int pos = getIndexEndingWith( propNames, "-color" );
+				if ( pos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[pos], tok ) );
+			} else {
+				int pos = getIndexEndingWith( propNames, "-width" );
+				if ( pos != -1 )
+					properties.emplace_back( StyleSheetProperty( propNames[pos], tok ) );
 			}
 		}
 

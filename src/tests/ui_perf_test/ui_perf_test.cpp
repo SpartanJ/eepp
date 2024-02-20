@@ -125,25 +125,34 @@ void mainLoop() {
 		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 	}
 
+	if ( win->getInput()->isKeyUp( KEY_F11 ) ) {
+		UIWidgetInspector::create( uiSceneNode );
+	}
+
 	// Update the UI scene.
 	SceneManager::instance()->update();
 
 	// Check if the UI has been invalidated ( needs redraw ).
-	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
+	if ( true || SceneManager::instance()->getUISceneNode()->invalidated() ) {
 		win->clear();
 
 		// Redraw the UI scene.
 		SceneManager::instance()->draw();
 
+		Text::draw(
+			String( String::format( "FPS: %d", win->getFPS() ) ), { 16, 16 },
+			SceneManager::instance()->getUISceneNode()->getUIThemeManager()->getDefaultFont(), 12.f,
+			Color::White, 0, 1.f, Color::Black );
+
 		win->display();
 	} else {
-		Sys::sleep( Milliseconds( 8 ) );
+		// win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 	}
 }
 
 EE_MAIN_FUNC int main( int, char*[] ) {
-	win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - UI Perf Test" ),
-											ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 1366, 768, "eepp - UI Perf Test" ),
+											ContextSettings( false ) );
 
 	if ( win->isOpen() ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -198,72 +207,77 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		UITableView* view = UITableView::New();
 		// view->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
 		view->setId( "treeview" );
-		/*view->setExpandedIcon( open );
-		view->setContractedIcon( closed );*/
 		view->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		view->setParent( vlay );
 		view->setModel( SortingProxyModel::New( model ) );
-		// view->setModel( model );
 		Log::notice( "Total time: %.2fms", clock.getElapsedTime().asMilliseconds() );
 
-		UIWindow* uiWin = UIWindow::NewOpt( UIWindow::LINEAR_LAYOUT );
-		uiWin->setMinWindowSize( 500, 400 );
-		uiWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
-		UITreeView* widgetTree = UITreeView::New();
-		widgetTree->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-		widgetTree->setParent( uiWin );
-		widgetTree->setHeadersVisible( false );
-		widgetTree->setAutoExpandOnSingleColumn( true );
-		widgetTree->setExpanderIconSize( PixelDensity::dpToPx( 20 ) );
-		widgetTree->setModel( WidgetTreeModel::New( uiSceneNode ) );
-
-		/* ListBox test *//*
-		std::vector<String> strings;
-		for ( size_t i = 0; i < 10000; i++ )
-			strings.emplace_back( String::format(
-				"This is a very long string number %ld. Cover the full width of the listbox.",
-				i ) );
-		 auto* lbox = UIListBox::New();
-		 std::cout << "Time New: " << clock.getElapsed().asMilliseconds() << " ms" << std::endl;
-		 lbox->setParent( vlay );
-		 std::cout << "Time setParent: " << clock.getElapsed().asMilliseconds() << " ms"
-				   << std::endl;
-		 lbox->setLayoutMargin( Rectf( 4, 4, 4, 4 ) );
-		 std::cout << "Time setLayoutMargin: " << clock.getElapsed().asMilliseconds() << " ms"
-				   << std::endl;
-		 lbox->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-		 std::cout << "Time setLayoutSizePolicy: " << clock.getElapsed().asMilliseconds() << " ms"
-				   << std::endl;
-		 for ( size_t i = 0; i < 10; i++ )
-			 lbox->addListBoxItem( String::format(
+		/* ListBox test */ /*
+		 std::vector<String> strings;
+		 for ( size_t i = 0; i < 10000; i++ )
+			 strings.emplace_back( String::format(
 				 "This is a very long string number %ld. Cover the full width of the listbox.",
 				 i ) );
-		 std::cout << "Time addListBoxItem: " << clock.getElapsed().asMilliseconds() << " ms"
-				   << std::endl;
-		 lbox->addListBoxItems( strings );
-		 std::cout << "Time addListBoxItems: " << clock.getElapsed().asMilliseconds() << " ms"
-				   << std::endl;*/
+		  auto* lbox = UIListBox::New();
+		  std::cout << "Time New: " << clock.getElapsed().asMilliseconds() << " ms" << std::endl;
+		  lbox->setParent( vlay );
+		  std::cout << "Time setParent: " << clock.getElapsed().asMilliseconds() << " ms"
+					<< std::endl;
+		  lbox->setLayoutMargin( Rectf( 4, 4, 4, 4 ) );
+		  std::cout << "Time setLayoutMargin: " << clock.getElapsed().asMilliseconds() << " ms"
+					<< std::endl;
+		  lbox->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		  std::cout << "Time setLayoutSizePolicy: " << clock.getElapsed().asMilliseconds() << " ms"
+					<< std::endl;
+		  for ( size_t i = 0; i < 10; i++ )
+			  lbox->addListBoxItem( String::format(
+				  "This is a very long string number %ld. Cover the full width of the listbox.",
+				  i ) );
+		  std::cout << "Time addListBoxItem: " << clock.getElapsed().asMilliseconds() << " ms"
+					<< std::endl;
+		  lbox->addListBoxItems( strings );
+		  std::cout << "Time addListBoxItems: " << clock.getElapsed().asMilliseconds() << " ms"
+					<< std::endl;*/
 
 		/* Create Widget test */
 		Clock total;
 		/*for ( size_t i = 0; i < 10000; i++ ) {
 			UINode::New();
 		}
-		std::cout << "Time UINode total: " << total.getElapsedTime().asMilliseconds() << " ms"
-				  << std::endl;
-
+		std::cout << "Time UINode total: " << total.getElapsedTime().toString() << std::endl;
 		uiSceneNode->getRoot()->childsCloseAll();
 
 		total.restart();
 		for ( size_t i = 0; i < 10000; i++ ) {
 			UIWidget::New();
 		}
-		std::cout << "Time UIWidget total: " << total.getElapsedTime().asMilliseconds() << " ms"
-				  << std::endl;
+		std::cout << "Time UIWidget total: " << total.getElapsedTime().toString() << std::endl;
+		uiSceneNode->getRoot()->childsCloseAll();*/
 
-		uiSceneNode->getRoot()->childsCloseAll();
+		/*auto* rl = UIRelativeLayout::New();
+		rl->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
-		SceneManager::instance()->update();*/
+		auto* sv = UIScrollView::New();
+		sv->setParent( rl );
+		sv->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		auto* parent = UILinearLayout::NewVertical();
+		parent->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+		parent->setParent( sv );
+
+		total.restart();
+		for ( size_t i = 0; i < 10000; i++ ) {
+			auto* but = UIPushButton::New();
+			but->setText( String::format( "Button %zu", i ) );
+			but->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+			but->setParent( parent )->clipEnable();
+		}
+		std::cout << "Time UIPushButton total: " << total.getElapsedTime().toString() << std::endl;
+
+		// uiSceneNode->getRoot()->childsCloseAll();
+		total.restart();
+		SceneManager::instance()->update();
+		std::cout << "SceneManager::instance()->update(): " << total.getElapsedTime().toString()
+				  << std::endl;*/
 
 		/*total.restart();
 		for ( size_t i = 0; i < 100000; i++ ) {

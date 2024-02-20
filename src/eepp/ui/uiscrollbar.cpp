@@ -181,10 +181,6 @@ void UIScrollBar::onAutoSize() {
 	}
 }
 
-Uint32 UIScrollBar::onMouseOver( const Vector2i&, const Uint32& ) {
-	return 1;
-}
-
 void UIScrollBar::onSizeChange() {
 	onAutoSize();
 
@@ -263,6 +259,14 @@ void UIScrollBar::adjustChilds() {
 
 Uint32 UIScrollBar::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
+		case NodeMessage::DragStart: {
+			addClass( "dragging" );
+			return 1;
+		}
+		case NodeMessage::DragStop: {
+			removeClass( "dragging" );
+			return 1;
+		}
 		case NodeMessage::MouseClick: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mBtnUp ) {

@@ -22,19 +22,7 @@ VertexBufferVBO::VertexBufferVBO( const Uint32& vertexFlags, PrimitiveType drawT
 }
 
 VertexBufferVBO::~VertexBufferVBO() {
-	for ( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
-		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) && mArrayHandle[i] ) {
-			glDeleteBuffersARB( 1, (unsigned int*)&mArrayHandle[i] );
-		}
-	}
-
-	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && mElementHandle ) {
-		glDeleteBuffersARB( 1, (unsigned int*)&mElementHandle );
-	}
-
-	if ( GLv_3CP == GLi->version() && mVAO ) {
-		GLi->deleteVertexArrays( 1, &mVAO );
-	}
+	clear();
 }
 
 void VertexBufferVBO::bind() {
@@ -424,6 +412,21 @@ void VertexBufferVBO::unbind() {
 void VertexBufferVBO::clear() {
 	mCompiled = false;
 	mBuffersSet = false;
+
+	for ( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
+		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) && mArrayHandle[i] ) {
+			glDeleteBuffersARB( 1, (unsigned int*)&mArrayHandle[i] );
+		}
+	}
+
+	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && mElementHandle ) {
+		glDeleteBuffersARB( 1, (unsigned int*)&mElementHandle );
+	}
+
+	if ( GLv_3CP == GLi->version() && mVAO ) {
+		GLi->deleteVertexArrays( 1, &mVAO );
+	}
+
 	VertexBuffer::clear();
 }
 

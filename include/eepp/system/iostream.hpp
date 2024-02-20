@@ -2,10 +2,9 @@
 #define EE_SYSTEMCIOSTREAM_HPP
 
 #include <eepp/config.hpp>
-#include <ios>
 
 namespace EE {
-typedef std::streamsize ios_size;
+using ios_size = long;
 }
 
 namespace EE { namespace System {

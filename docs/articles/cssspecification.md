@@ -27,8 +27,7 @@ the CSS file.
 * eepp CSS supports alternative path methods besides paths (resource locator to previously loaded
 resources by the process).
 
-* eepp CSS supports [Device-independent
-pixel](https://en.wikipedia.org/wiki/Device-independent_pixel) unit `dp`.
+* eepp CSS supports [Device-independent pixel](https://en.wikipedia.org/wiki/Device-independent_pixel) unit `dp`.
 
 * CSS files should be always UTF-8 encoded.
 
@@ -429,6 +428,29 @@ Sets the percentage of scroll of a page that triggers a page change in a ViewPag
 * Applicable to: EE::UI::UIViewPager (ViewPager).
 * Data Type: [number](#number-data-type) (normalized between `0` and `1`)
 * Default value: `0.33`
+
+---
+
+### checked
+
+Sets as checkbox as checked
+
+* Applicable to: EE::UI::UICheckBox (CheckBox).
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
+### check-mode
+
+Checkboxs have two possible interaction modes for changing its checked state.
+
+* Applicable to: EE::UI::UICheckBox (CheckBox).
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `element`: Checked state will change by clicking anywhere in the widget (clicking over text or icon)
+  * `button`: Checked state will only change by clicking over the icon
+* Default value: `element`
 
 ---
 
@@ -859,7 +881,7 @@ the load can't be determined.
 
 ### inner-widget-orientation
 
-PushButton can contain 3 widgets: the text (textbox), the icon, and a custom extra 
+PushButton can contain 3 widgets: the text (textbox), the icon, and a custom extra
 item. And with these 3 items does its own layouting. This property allows configuring the order
 in which these items are displayed/sorted inside the button.
 
@@ -1763,6 +1785,12 @@ When enabled will only display text if the icon is not set/found.
 
 ---
 
+### text-overflow
+
+Read [text-overflow](https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow) documentation.
+
+---
+
 ### text-selection
 
 Enables/disables text selection in any element that contains text.
@@ -2175,9 +2203,23 @@ Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border) documenta
 
 ---
 
+### border-bottom
+
+Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border-bottom) documentation.
+`border-style` is not implemented yet.
+
+---
+
 ### border-color
 
 Read [border-color](https://developer.mozilla.org/en-US/docs/Web/CSS/border-color) documentation.
+
+---
+
+### border-left
+
+Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border-left) documentation.
+`border-style` is not implemented yet.
 
 ---
 
@@ -2187,9 +2229,23 @@ Read [border-radius](https://developer.mozilla.org/en-US/docs/Web/CSS/border-rad
 
 ---
 
+### border-right
+
+Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border-right) documentation.
+`border-style` is not implemented yet.
+
+---
+
 ### border-width
 
 Read [border-width](https://developer.mozilla.org/en-US/docs/Web/CSS/border-width) documentation.
+
+---
+
+### border-top
+
+Read [border](https://developer.mozilla.org/en-US/docs/Web/CSS/border-top) documentation.
+`border-style` is not implemented yet.
 
 ---
 
@@ -2454,6 +2510,8 @@ Read [length](https://developer.mozilla.org/en-US/docs/Web/CSS/length) documenta
 **Differences with documentation:**
 
 * Supported lenghts: `em`, `rem`, `pt`, `pc`, `in`, `cm`, `mm`, `vw`, `vh`, `vmin`, `vmax`.
+
+* Also adds: `dp` as [Device-independent pixel](https://en.wikipedia.org/wiki/Device-independent_pixel). Plus `dpr` (dp rounded), `dprd` (dp rounded down) and `dpru` (dp rounded up).
 
 ---
 

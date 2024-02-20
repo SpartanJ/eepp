@@ -1,6 +1,3 @@
-#include <algorithm>
-#include <cctype>
-#include <cstdarg>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/log.hpp>
@@ -67,6 +64,18 @@ bool Translator::loadNodes( pugi::xml_node node, std::string lang ) {
 	return true;
 }
 
+static size_t countLines( const std::string_view& text ) {
+	const char* startPtr = text.data();
+	const char* endPtr = text.data() + text.size();
+	size_t count = 0;
+	if ( startPtr != endPtr ) {
+		count = 1 + *startPtr == '\n' ? 1 : 0;
+		while ( ++startPtr && startPtr != endPtr )
+			count += ( '\n' == *startPtr ) ? 1 : 0;
+	}
+	return count;
+}
+
 bool Translator::loadFromFile( const std::string& path, std::string lang ) {
 	if ( FileSystem::fileExists( path ) ) {
 		lang = lang.size() == 2
@@ -82,6 +91,10 @@ bool Translator::loadFromFile( const std::string& path, std::string lang ) {
 			Log::error( "Couldn't load i18n file: %s", path.c_str() );
 			Log::error( "Error description: %s", result.description() );
 			Log::error( "Error offset: %d", result.offset );
+			std::string file;
+			FileSystem::fileGet( path, file );
+			Log::error( "Error line: %d",
+						countLines( std::string_view{ file }.substr( 0, result.offset ) ) + 1 );
 		}
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string packPath( path );
@@ -103,6 +116,8 @@ bool Translator::loadFromString( const std::string& string, std::string lang ) {
 		Log::error( "Couldn't load i18n file from string: %s", string.c_str() );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
+		Log::error( "Error line: %d",
+					countLines( std::string_view{ string }.substr( 0, result.offset ) ) + 1 );
 	}
 	return false;
 }
@@ -117,6 +132,10 @@ bool Translator::loadFromMemory( const void* buffer, Int32 bufferSize, std::stri
 		Log::error( "Couldn't load i18n file from buffer" );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
+		Log::error( "Error line: %d",
+					countLines( std::string_view{ (const char*)buffer, (size_t)bufferSize }.substr(
+						0, result.offset ) ) +
+						1 );
 	}
 	return false;
 }
@@ -161,12 +180,20 @@ bool Translator::loadFromPack( Pack* pack, const std::string& FilePackPath, std:
 String Translator::getString( const std::string& key, const String& defaultValue ) {
 	StringLocaleDictionary::iterator lang = mDictionary.find( mCurrentLanguage );
 
-	if ( lang != mDictionary.end() ) {
+	if ( lang != mDictionary.end() || mSetDefaultValues ) {
+		if ( lang == mDictionary.end() ) {
+			mDictionary[mCurrentLanguage] = StringDictionary{};
+			lang = mDictionary.find( mCurrentLanguage );
+		}
+
 		StringDictionary& dictionary = lang->second;
 		StringDictionary::iterator string = dictionary.find( key );
-
-		if ( string != dictionary.end() ) {
+		if ( string != dictionary.end() )
 			return string->second;
+
+		if ( mSetDefaultValues && !defaultValue.empty() ) {
+			dictionary[key] = defaultValue;
+			return defaultValue;
 		}
 	}
 
@@ -176,49 +203,15 @@ String Translator::getString( const std::string& key, const String& defaultValue
 		StringDictionary& dictionary = lang->second;
 		StringDictionary::iterator string = dictionary.find( key );
 
-		if ( string != dictionary.end() ) {
+		if ( string != dictionary.end() )
 			return string->second;
-		}
 	}
 
 	return defaultValue;
 }
 
-String Translator::getStringf( const char* key, ... ) {
-	std::string str( getString( key ).toUtf8() );
-
-	if ( str.empty() )
-		return String();
-
-	const char* format = str.c_str();
-
-	int size = 256;
-	std::string tstr( size, '\0' );
-
-	va_list args;
-
-	while ( 1 ) {
-		va_start( args, key );
-
-		int n = vsnprintf( &tstr[0], size, format, args );
-
-		if ( n > -1 && n < size ) {
-			tstr.resize( n );
-
-			va_end( args );
-
-			return tstr;
-		}
-
-		if ( n > -1 )	  // glibc 2.1
-			size = n + 1; // precisely what is needed
-		else			  // glibc 2.0
-			size *= 2;	  // twice the old size
-
-		tstr.resize( size );
-	}
-
-	return String( tstr );
+void Translator::setString( const std::string& lang, const std::string& key, const String& val ) {
+	mDictionary[lang][key] = val;
 }
 
 void Translator::setLanguageFromLocale( std::locale locale ) {
@@ -258,6 +251,51 @@ std::string Translator::getCurrentLanguage() const {
 
 void Translator::setCurrentLanguage( const std::string& currentLanguage ) {
 	mCurrentLanguage = currentLanguage;
+}
+
+class IOStreamXmlWriter : public pugi::xml_writer {
+  public:
+	IOStreamXmlWriter( IOStream& stream ) : mIOStream( stream ) {}
+
+	virtual void write( const void* data, size_t size ) {
+		mIOStream.write( (const char*)data, size );
+	}
+
+  private:
+	IOStream& mIOStream;
+};
+
+void Translator::saveToStream( IOStream& stream, std::string lang ) {
+	pugi::xml_document doc;
+
+	auto resources = doc.append_child( "resources" );
+	resources.append_attribute( "language" ).set_value( lang.c_str() );
+
+	auto langNameIt = mLangNames.find( lang );
+	if ( langNameIt != mLangNames.end() )
+		resources.append_attribute( "title" ).set_value( langNameIt->second.c_str() );
+
+	auto& unordered_map = mDictionary[lang];
+	std::map<std::string, String> langStrs( unordered_map.begin(), unordered_map.end() );
+
+	for ( const auto& str : langStrs ) {
+		auto r = resources.append_child( "string" );
+		auto d = r.append_child( pugi::node_pcdata );
+		r.append_attribute( "name" ).set_value( str.first.c_str() );
+
+		d.set_value( str.second.toUtf8().c_str() );
+	}
+
+	IOStreamXmlWriter writer( stream );
+	doc.save( writer );
+}
+
+void Translator::setLanguageName( const std::string& id, const std::string& name ) {
+	mLangNames[id] = name;
+}
+
+std::unordered_map<std::string, std::string> Translator::getLanguageNames() const {
+	return mLangNames;
 }
 
 }} // namespace EE::System

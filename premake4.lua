@@ -507,7 +507,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	if not is_vs() then
 		buildoptions{ "-std=c++17" }
 	else
-		buildoptions{ "/std:c++17", "/utf-8" }
+		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -894,6 +894,8 @@ end
 function set_macos_and_ios_config()
 	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
+	elseif os.is_real("macosx") then
+		libdirs { "/opt/homebrew/lib" }
 	end
 
 	if _OPTIONS["use-frameworks"] then
@@ -934,8 +936,7 @@ function build_eepp( build_name )
 	if not is_vs() then
 		buildoptions{ "-std=c++17" }
 	else
-		buildoptions{ "/std:c++17" }
-		buildoptions{ "/bigobj" }
+		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
 	end
 
 	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then
@@ -1341,8 +1342,49 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/examples/ui_hello_world/*.cpp" }
-		includedirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-hello-world", true )
+
+	project "eepp-7guis-counter"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/counter/*.cpp" }
+		build_link_configuration( "eepp-7guis-counter", true )
+
+	project "eepp-7guis-temperature-converter"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/temperature_converter/*.cpp" }
+		build_link_configuration( "eepp-7guis-temperature-converter", true )
+
+	project "eepp-7guis-flight-booker"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/flight_booker/*.cpp" }
+		build_link_configuration( "eepp-7guis-flight-booker", true )
+
+	project "eepp-7guis-timer"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/timer/*.cpp" }
+		build_link_configuration( "eepp-7guis-timer", true )
+
+	project "eepp-7guis-crud"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/crud/*.cpp" }
+		build_link_configuration( "eepp-7guis-crud", true )
+
+	project "eepp-7guis-circle-drawer"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/circle_drawer/*.cpp" }
+		build_link_configuration( "eepp-7guis-circle-drawer", true )
+
+	project "eepp-7guis-cells"
+		set_kind()
+		language "C++"
+		files { "src/examples/7guis/cells/*.cpp" }
+		build_link_configuration( "eepp-7guis-cells", true )
 
 	-- Tools
 	project "eepp-textureatlaseditor"

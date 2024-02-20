@@ -892,14 +892,42 @@ std::string String::randString( size_t len, std::string dictionary ) {
 	return dictionary.substr( 0, len );
 }
 
+std::string_view String::numberClean( std::string_view strNumber ) {
+	while ( strNumber.back() == '0' )
+		strNumber.remove_suffix( 1 );
+	if ( strNumber.back() == '.' )
+		strNumber.remove_suffix( 1 );
+	return strNumber;
+}
+
+std::string String::numberClean( const std::string& number ) {
+	std::string strNumber( number );
+	while ( strNumber.back() == '0' )
+		strNumber.pop_back();
+	if ( strNumber.back() == '.' )
+		strNumber.pop_back();
+	return strNumber;
+}
+
+void String::numberCleanInPlace( std::string& strNumber ) {
+	while ( strNumber.back() == '0' )
+		strNumber.pop_back();
+	if ( strNumber.back() == '.' )
+		strNumber.pop_back();
+}
+
 std::string String::fromFloat( const Float& value, const std::string& append,
 							   const std::string& prepend ) {
-	return prepend + toString( value ) + append;
+	std::string val( toString( value ) );
+	numberCleanInPlace( val );
+	return prepend + val + append;
 }
 
 std::string String::fromDouble( const double& value, const std::string& append,
 								const std::string& prepend ) {
-	return prepend + toString( value ) + append;
+	std::string val( toString( value ) );
+	numberCleanInPlace( val );
+	return prepend + val + append;
 }
 
 void String::insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar ) {
@@ -915,34 +943,6 @@ void String::formatBuffer( char* Buffer, int BufferSize, const char* format, ...
 	vsnprintf( Buffer, BufferSize - 1, format, args );
 #endif
 	va_end( args );
-}
-
-std::string String::format( const char* format, ... ) {
-	int n, size = 256;
-	std::string tstr( size, '\0' );
-
-	va_list args;
-
-	while ( 1 ) {
-		va_start( args, format );
-
-		n = vsnprintf( &tstr[0], size, format, args );
-
-		if ( n > -1 && n < size ) {
-			tstr.resize( n );
-
-			va_end( args );
-
-			return tstr;
-		}
-
-		if ( n > -1 )	  // glibc 2.1
-			size = n + 1; // precisely what is needed
-		else			  // glibc 2.0
-			size *= 2;	  // twice the old size
-
-		tstr.resize( size );
-	}
 }
 
 String::String() {}
@@ -1060,6 +1060,34 @@ String::String( const StringBaseType* utf32String ) {
 String::String( const StringType& utf32String ) : mString( utf32String ) {}
 
 String::String( const String& str ) : mString( str.mString ) {}
+
+String::String( const String::View& utf32String ) : mString( utf32String ) {}
+
+String String::fromUtf16( const char* utf16String, const size_t& utf16StringSize,
+						  bool isBigEndian ) {
+	int skip = 0;
+	// Skip BOM
+	if ( utf16StringSize >= 2 ) {
+		if ( ( (char)0xFF == utf16String[0] && (char)0xFE == utf16String[1] ) ||
+			 ( (char)0xFE == utf16String[0] && (char)0xFF == utf16String[1] ) ) {
+			skip = 2;
+		}
+	}
+
+	String::StringType utf32;
+	Utf16::toUtf32( reinterpret_cast<const Uint16*>( utf16String + skip ),
+					reinterpret_cast<const Uint16*>( utf16String + utf16StringSize ),
+					std::back_inserter( utf32 ), isBigEndian );
+	return String( utf32 );
+}
+
+String String::fromLatin1( const char* str, const size_t& stringSize ) {
+	String::StringType utf32;
+	utf32.reserve( stringSize );
+	for ( size_t i = 0; i < stringSize; i++ )
+		utf32.push_back( static_cast<Uint8>( str[i] ) );
+	return String( utf32 );
+}
 
 String String::fromUtf8( const std::string& utf8String ) {
 	String::StringType utf32;

@@ -63,8 +63,6 @@ class OutputParserModel final : public Model {
 		return {};
 	}
 
-	virtual void update() { onModelUpdate(); }
-
   private:
 	std::vector<ProjectBuildOutputParserConfig>& mData;
 	std::function<String( const std::string&, const String& )> i18n;
@@ -145,9 +143,8 @@ class UICustomOutputParserWindow : public UIWindow {
 				return true;
 			} );
 
-		mOptDb = UIDataBind<ProjectOutputParserTypes>::New(
+		mDataBindHolder += UIDataBind<ProjectOutputParserTypes>::New(
 			&mTmpCfg.type, cpTypeddl, projectOutputParserTypesConverter, "selected-index" );
-
 		mDataBindHolder +=
 			UIDataBind<int>::New( &mTmpCfg.patternOrder.file, find<UIWidget>( "file_name_pos" ) );
 		mDataBindHolder +=
@@ -181,8 +178,7 @@ class UICustomOutputParserWindow : public UIWindow {
 	UIWidget* mLayoutCont{ nullptr };
 	ProjectBuildOutputParserConfig mTmpCfg;
 	ProjectBuildOutputParserConfig& mCfg;
-	UIDataBindHolder mDataBindHolder;
-	std::unique_ptr<UIDataBind<ProjectOutputParserTypes>> mOptDb;
+	UIDataBindHolder<int, std::string, ProjectOutputParserTypes> mDataBindHolder;
 
 	virtual void onWindowReady() {
 		forcedApplyStyle();
@@ -298,7 +294,7 @@ class UIBuildStep : public UILinearLayout {
 	UIBuildSettings* mBuildSettings{ nullptr };
 	size_t mStepNum{ 0 };
 	ProjectBuildStep* mStep;
-	UIDataBindHolder mDataBindHolder;
+	UIDataBindHolder<int, bool, std::string> mDataBindHolder;
 };
 
 static const auto SETTINGS_PANEL_XML = R"xml(
@@ -711,8 +707,8 @@ void UIBuildSettings::bindTable( const std::string& name, const std::string& key
 		};
 		return delegate;
 	};
-	model->setColumnName( 0, getTranslatorString( key + "_name", "Name" ) );
-	model->setColumnName( 1, getTranslatorString( key + "_value", "Value" ) );
+	model->setColumnName( 0, i18n( key + "_name", "Name" ) );
+	model->setColumnName( 1, i18n( key + "_value", "Value" ) );
 	model->setIsEditable( true );
 	table->setMainColumn( 1 );
 	table->setAutoColumnsWidth( true );

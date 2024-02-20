@@ -1,11 +1,14 @@
 #ifndef EE_UI_MODELS_FILESYSTEMMODEL_HPP
 #define EE_UI_MODELS_FILESYSTEMMODEL_HPP
 
+#include <array>
 #include <atomic>
+#include <memory>
+
 #include <eepp/system/fileinfo.hpp>
+#include <eepp/system/translator.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/uiicon.hpp>
-#include <memory>
 
 namespace EE { namespace UI { namespace Models {
 
@@ -145,7 +148,7 @@ class EE_API FileSystemModel : public Model {
 
 	static std::shared_ptr<FileSystemModel>
 	New( const std::string& rootPath, const Mode& mode = Mode::FilesAndDirectories,
-		 const DisplayConfig& displayConfig = DisplayConfig() );
+		 const DisplayConfig& displayConfig = DisplayConfig(), Translator* translator = nullptr );
 
 	const Mode& getMode() const { return mMode; }
 
@@ -154,6 +157,8 @@ class EE_API FileSystemModel : public Model {
 	void setRootPath( const std::string& rootPath );
 
 	Node* getNodeFromPath( std::string path, bool folderNode = false, bool invalidateTree = true );
+
+	std::string_view getNodeRelativePath( const Node* ) const;
 
 	void reload();
 
@@ -185,6 +190,8 @@ class EE_API FileSystemModel : public Model {
 
 	bool handleFileEvent( const FileEvent& event );
 
+	virtual bool classModelRoleEnabled() { return true; }
+
 	~FileSystemModel();
 
   protected:
@@ -194,17 +201,20 @@ class EE_API FileSystemModel : public Model {
 	std::unique_ptr<Node> mRoot{ nullptr };
 	Mode mMode{ Mode::FilesAndDirectories };
 	DisplayConfig mDisplayConfig;
+	std::array<std::string, Column::Count> mColumnNames;
 
 	ModelIndex mPreviouslySelectedIndex{};
 
 	Node& nodeRef( const ModelIndex& index ) const;
 
 	FileSystemModel( const std::string& rootPath, const Mode& mode,
-					 const DisplayConfig& displayConfig );
+					 const DisplayConfig& displayConfig, Translator* translator );
 
 	size_t getFileIndex( Node* parent, const FileInfo& file );
 
 	bool handleFileEventLocked( const FileEvent& event );
+
+	void setupColumnNames( Translator* translator );
 };
 
 class EE_API DiskDrivesModel : public Model {
@@ -232,8 +242,6 @@ class EE_API DiskDrivesModel : public Model {
 	UIIcon* diskIcon() const;
 
 	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const;
-
-	virtual void update() { onModelUpdate(); }
 
   private:
 	explicit DiskDrivesModel( const std::vector<std::string>& data ) : mData( data ) {}

@@ -1236,8 +1236,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				if ( mVBForeground )
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
 			} else {
-				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD, glyph.mode & ATTR_ITALIC, 0,
-													advanceX );
+				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD,
+													glyph.mode & ATTR_ITALIC, 0, advanceX );
 
 				if ( ( glyph.mode & ATTR_EMOJI ) && FontManager::instance()->getColorEmojiFont() ) {
 					gd->setColor( Color::White );
@@ -1434,6 +1434,15 @@ Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
 		mouseX = eeclamp( (int)std::floor( relPos.x / spaceCharAdvanceX ), 0, clipColumns );
 		mouseY = eeclamp( (int)std::floor( relPos.y / fontSize ), 0, clipRows - 1 );
 	}
+
+	// All these checks are because there's a very rare bug I cannot find how it happens
+	auto termSize = mTerminal->getSize();
+
+	eeASSERT( mouseX >= 0 && mouseX <= mTerminal->getSize().x );
+	eeASSERT( mouseY >= 0 && mouseY <= mTerminal->getSize().y );
+
+	mouseX = eeclamp( mouseX, 0, termSize.x );
+	mouseY = eeclamp( mouseY, 0, termSize.y );
 
 	return { mouseX, mouseY };
 }

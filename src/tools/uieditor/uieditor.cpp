@@ -1,6 +1,7 @@
 ﻿#include "uieditor.hpp"
 #include <args/args.hxx>
 #define PUGIXML_HEADER_ONLY
+#include <iostream>
 #include <pugixml/pugixml.hpp>
 
 namespace uieditor {
@@ -360,7 +361,7 @@ void App::reloadBaseStyleSheet() {
 			if ( !editor )
 				return;
 			saveTmpDocument( editor->getDocument(),
-							 [&, realStyleSheetPath]( const std::string& tmpPath ) {
+							 [this, realStyleSheetPath]( const std::string& tmpPath ) {
 								 mTheme->setStyleSheetPath( tmpPath );
 								 mTheme->reloadStyleSheet();
 								 mTheme->setStyleSheetPath( realStyleSheetPath );
@@ -994,7 +995,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
 		filename += editor->getSyntaxDefinition().getFileExtension();
 	dialog->setFileName( filename );
-	dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* event ) {
+	dialog->addEventListener( Event::SaveFile, [this, editor]( const Event* event ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
@@ -1027,7 +1028,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		}
 	} );
 	if ( focusOnClose ) {
-		dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+		dialog->addEventListener( Event::OnWindowClose, [editor]( const Event* ) {
 			if ( editor && !SceneManager::instance()->isShuttingDown() )
 				editor->setFocus();
 		} );
@@ -1126,7 +1127,7 @@ void App::createAppMenu() {
 		->setId( "recent-projects" );
 	uiPopMenu->addSeparator();
 	uiPopMenu->add( i18n( "save", "Save" ), findIcon( "document-save" ) )->setId( "save-doc" );
-	uiPopMenu->add( i18n( "save_as", "Save as..." ), findIcon( "document-save-as" ) )
+	uiPopMenu->add( i18n( "save_as_ellipsis", "Save as..." ), findIcon( "document-save-as" ) )
 		->setId( "save-as-doc" );
 	uiPopMenu->add( i18n( "save_all", "Save All" ), findIcon( "document-save-as" ) )
 		->setId( "save-all" );
@@ -1370,7 +1371,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 
 		createAppMenu();
 
-		mConfigPath = Sys::getConfigPath( "ecode" );
+		mConfigPath = Sys::getConfigPath( "eepp-uieditor" );
 		mColorSchemesPath = mConfigPath + "colorschemes";
 		auto colorSchemes(
 			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );
@@ -1503,12 +1504,12 @@ void App::saveAllProcess() {
 				mTmpDocs.erase( &editor->getDocument() );
 			} else {
 				UIFileDialog* dialog = saveFileDialog( editor, false );
-				dialog->addEventListener( Event::SaveFile, [&, editor]( const Event* ) {
+				dialog->addEventListener( Event::SaveFile, [this, editor]( const Event* ) {
 					updateEditorTabTitle( editor );
 					if ( mSplitter->getCurEditor() == editor )
 						updateEditorTitle( editor );
 				} );
-				dialog->addEventListener( Event::OnWindowClose, [&, editor]( const Event* ) {
+				dialog->addEventListener( Event::OnWindowClose, [this, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
 					if ( !SceneManager::instance()->isShuttingDown() && !mTmpDocs.empty() )
 						saveAllProcess();

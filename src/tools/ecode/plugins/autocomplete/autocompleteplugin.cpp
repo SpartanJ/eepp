@@ -68,7 +68,7 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 	return matches;
 }
 
-UICodeEditorPlugin* AutoCompletePlugin::New( PluginManager* pluginManager ) {
+Plugin* AutoCompletePlugin::New( PluginManager* pluginManager ) {
 	return eeNew( AutoCompletePlugin, ( pluginManager ) );
 }
 
@@ -102,8 +102,10 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	std::vector<Uint32> listeners;
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [&, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
 			mDirty = true;
+			mDocs.insert( editor->getDocumentRef().get() );
+			mEditorDocs[editor] = editor->getDocumentRef().get();
 			tryRequestCapabilities( editor );
 		} ) );
 
@@ -132,6 +134,13 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 			if ( !mReplacing )
 				resetSuggestions( editor );
+
+			if ( mSignatureHelpVisible && mSignatureHelpPosition.isValid() &&
+					  !editor->getDocument().getSelection().hasSelection() &&
+					  mSignatureHelpPosition.line() !=
+						  editor->getDocument().getSelection().end().line() ) {
+				resetSignatureHelp();
+			}
 		} ) );
 
 	listeners.push_back( editor->addEventListener(
@@ -146,7 +155,7 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 			std::string oldLang = event->getOldLang();
 			std::string newLang = event->getNewLang();
 #if defined( AUTO_COMPLETE_THREADED ) && AUTO_COMPLETE_THREADED == 1
-			mThreadPool->run( [&, oldLang, newLang] {
+			mThreadPool->run( [this, oldLang, newLang] {
 				updateLangCache( oldLang );
 				updateLangCache( newLang );
 			} );
@@ -185,12 +194,11 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 }
 
 bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
-	bool ret = false;
 	if ( mSignatureHelpVisible ) {
 		if ( event.getKeyCode() == KEY_ESCAPE ) {
 			resetSignatureHelp();
 			editor->invalidateDraw();
-			ret = true;
+			return true;
 		} else if ( event.getKeyCode() == KEY_UP ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
 				mSignatureHelpSelected = mSignatureHelpSelected == -1 ? 0 : mSignatureHelpSelected;
@@ -306,7 +314,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 		updateSuggestions( partialSymbol, editor );
 		return true;
 	}
-	return ret;
+	return false;
 }
 
 void AutoCompletePlugin::requestSignatureHelp( UICodeEditor* editor ) {
@@ -317,7 +325,7 @@ void AutoCompletePlugin::requestSignatureHelp( UICodeEditor* editor ) {
 	auto doc = editor->getDocumentRef();
 	mSignatureHelpPosition = editor->getDocumentRef()->getSelection().start();
 
-	mThreadPool->run( [&, editor]() {
+	mThreadPool->run( [this, editor]() {
 		json data = getURIAndPositionJSON( editor );
 		mManager->sendRequest( this, PluginMessageType::SignatureHelp, PluginMessageFormat::JSON,
 							   &data );
@@ -602,7 +610,7 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 						continue;
 				}
 #if AUTO_COMPLETE_THREADED
-				mThreadPool->run( [&, doc] { updateDocCache( doc ); } );
+				mThreadPool->run( [this, doc] { updateDocCache( doc ); } );
 #else
 				updateDocCache( doc );
 #endif

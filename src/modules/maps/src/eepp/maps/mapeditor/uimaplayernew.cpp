@@ -1,5 +1,6 @@
 #include <eepp/maps/mapeditor/uimaplayernew.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 

@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -43,7 +42,7 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
-	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &SceneNode::resizeNode ) );
+	mResizeCb = mWindow->pushResizeCallback( [this]( auto win ) { resizeNode( win ); } );
 
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	int currentDisplayIndex = getWindow()->getCurrentDisplayIndex();
@@ -106,11 +105,13 @@ void SceneNode::draw() {
 		matrixSet();
 
 		if ( NULL == mFrameBuffer || !usesInvalidation() || invalidated() ) {
-			clipStart();
+			bool needsClipPlanes = isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
+
+			clipStart( needsClipPlanes );
 
 			drawChilds();
 
-			clipEnd();
+			clipEnd( needsClipPlanes );
 		}
 
 		matrixUnset();
@@ -126,6 +127,12 @@ void SceneNode::draw() {
 	mWindow->setView( prevView );
 
 	GlobalBatchRenderer::instance()->draw();
+
+	if ( mVerbose && mFirstFrame ) {
+		mFirstFrame = false;
+		Log::info( "First frame in SceneNode took %.2f ms",
+				   mClock.getElapsedTime().asMilliseconds() );
+	}
 }
 
 void SceneNode::update( const Time& time ) {
@@ -496,6 +503,14 @@ void SceneNode::setUpdateAllChilds( const bool& updateAllChilds ) {
 
 const Float& SceneNode::getDPI() const {
 	return mDPI;
+}
+
+bool SceneNode::getVerbose() const {
+	return mVerbose;
+}
+
+void SceneNode::setVerbose( bool verbose ) {
+	mVerbose = verbose;
 }
 
 }} // namespace EE::Scene

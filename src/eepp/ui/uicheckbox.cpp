@@ -112,15 +112,17 @@ void UICheckBox::onSizeChange() {
 	UITextView::onSizeChange();
 }
 
-Uint32 UICheckBox::onMessage( const NodeMessage* Msg ) {
-	switch ( Msg->getMsg() ) {
+Uint32 UICheckBox::onMessage( const NodeMessage* msg ) {
+	switch ( msg->getMsg() ) {
 		case NodeMessage::MouseClick: {
-			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
-				switchState();
+			if ( msg->getFlags() & EE_BUTTON_LMASK ) {
+				if ( CheckMode::TextAndButton == mCheckMode ||
+					 ( msg->getSender() == mActiveButton || msg->getSender() == mInactiveButton ) )
+					switchState();
 			}
 
 			if ( NULL != getEventDispatcher() &&
-				 ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) ) {
+				 ( msg->getSender() == mActiveButton || msg->getSender() == mInactiveButton ) ) {
 				sendMouseEvent( Event::MouseClick, getEventDispatcher()->getMousePos(),
 								getEventDispatcher()->getPressTrigger() );
 			}
@@ -230,6 +232,8 @@ std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::Checked:
 		case PropertyId::Value:
 			return isChecked() ? "true" : "false";
+		case PropertyId::CheckMode:
+			return mCheckMode == CheckMode::TextAndButton ? "element" : "button";
 		default:
 			return UITextView::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -238,7 +242,16 @@ std::string UICheckBox::getPropertyString( const PropertyDefinition* propertyDef
 std::vector<PropertyId> UICheckBox::getPropertiesImplemented() const {
 	auto props = UITextView::getPropertiesImplemented();
 	props.push_back( PropertyId::Checked );
+	props.push_back( PropertyId::CheckMode );
 	return props;
+}
+
+bool UICheckBox::getCheckMode() const {
+	return mCheckMode;
+}
+
+void UICheckBox::setCheckMode( UICheckBox::CheckMode mode ) {
+	mCheckMode = mode;
 }
 
 bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
@@ -250,6 +263,11 @@ bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Checked:
 		case PropertyId::Value:
 			setChecked( attribute.asBool() );
+			break;
+		case PropertyId::CheckMode:
+			setCheckMode( String::toLower( attribute.value() ) == "button"
+							  ? CheckMode::Button
+							  : CheckMode::TextAndButton );
 			break;
 		case PropertyId::Tooltip:
 			if ( mActiveButton )

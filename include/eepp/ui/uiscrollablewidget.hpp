@@ -25,7 +25,7 @@ class EE_API UIScrollableWidget : public UIWidget {
 
 	const ScrollViewType& getViewType() const;
 
-	void setViewType( const ScrollViewType& viewType );
+	void setScrollViewType( const ScrollViewType& viewType );
 
 	UIScrollBar* getVerticalScrollBar() const;
 
@@ -62,7 +62,7 @@ class EE_API UIScrollableWidget : public UIWidget {
 	virtual bool isScrollable() const;
 
   protected:
-	ScrollViewType mViewType;
+	ScrollViewType mScrollViewType;
 	ScrollBarMode mVScrollMode;
 	ScrollBarMode mHScrollMode;
 	UIScrollBar* mVScroll;

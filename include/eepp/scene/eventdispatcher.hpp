@@ -68,6 +68,8 @@ class EE_API EventDispatcher {
 
 	void sendMouseDown( Node* toNode, const Vector2i& pos, const Uint32 flags );
 
+	void sendMouseWheel( const Vector2f& offset, bool flipped );
+
 	const Uint32& getPressTrigger() const;
 
 	const Uint32& getLastPressTrigger() const;

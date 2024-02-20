@@ -106,7 +106,9 @@ class EE_API Node : public Transformable {
 
 	const Sizef& getPixelsSize() const;
 
-	Node* setVisible( const bool& visible );
+	Node* setVisible( const bool& visible, bool emitEventNotification = true );
+
+	Node* setChildsVisibility( bool visible, bool emitEventNotification = true );
 
 	bool isVisible() const;
 
@@ -260,6 +262,17 @@ class EE_API Node : public Transformable {
 		return node;
 	}
 
+	std::vector<Node*> findAllByType( const Uint32& type ) const;
+
+	template <typename T> std::vector<T*> findAllByType( const Uint32& type ) const {
+		std::vector<T*> casted;
+		auto all( findAllByType( type ) );
+		casted.reserve( all.size() );
+		for ( auto* node : all )
+			casted.push_back( reinterpret_cast<T*>( node ) );
+		return casted;
+	}
+
 	bool inNodeTree( Node* node ) const;
 
 	bool isReverseDraw() const;
@@ -344,7 +357,7 @@ class EE_API Node : public Transformable {
 
 	bool hasFocusWithin() const;
 
-	virtual void setFocus();
+	virtual Node* setFocus();
 
 	Node* getFirstWidget() const;
 
@@ -495,6 +508,8 @@ class EE_API Node : public Transformable {
 
 	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
+	virtual Uint32 onMouseWheel( const Vector2f& offset, bool flipped );
+
 	virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
 	void onClose();
@@ -531,13 +546,13 @@ class EE_API Node : public Transformable {
 
 	virtual void onSceneChange();
 
-	void clipStart();
-
 	virtual Uint32 onFocus();
 
 	virtual Uint32 onFocusLoss();
 
-	void clipEnd();
+	void clipStart( bool needsClipPlanes );
+
+	void clipEnd( bool needsClipPlanes );
 
 	void updateScreenPos();
 
@@ -574,6 +589,11 @@ class EE_API Node : public Transformable {
 	void setDirty();
 
 	void setChildsDirty();
+
+	void clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height,
+						  bool needsClipPlanes );
+
+	void clipSmartDisable( bool needsClipPlanes );
 
 	void clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
 						  const Uint32& Height );

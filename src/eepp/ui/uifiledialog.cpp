@@ -50,9 +50,9 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mContainer->setSize( getSize() );
 
 	if ( allowFolderSelect() ) {
-		setTitle( getTranslatorString( "@string/uifiledialog_select_folder", "Select a folder" ) );
+		setTitle( i18n( "uifiledialog_select_folder", "Select a folder" ) );
 	} else {
-		setTitle( getTranslatorString( "@string/uifiledialog_select_file", "Select a file" ) );
+		setTitle( i18n( "uifiledialog_select_file", "Select a file" ) );
 	}
 
 	UILinearLayout* linearLayout = UILinearLayout::NewVertical();
@@ -67,7 +67,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setId( "lay1" );
 
 	UITextView::New()
-		->setText( getTranslatorString( "@string/uifiledialog_look_in", "Look in:" ) )
+		->setText( i18n( "uifiledialog_look_in", "Look in:" ) )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setLayoutMargin( Rectf( 0, 0, 4, 0 ) )
 		->setParent( hLayout )
@@ -83,25 +83,22 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mPath->addEventListener( Event::OnPressEnter, cb::Make1( this, &UIFileDialog::onPressEnter ) );
 
 	mButtonUp = UIPushButton::New();
-	mButtonUp->setText( getTranslatorString( "@string/uifiledialog_go_up", "Up" ) )
+	mButtonUp->setText( i18n( "uifiledialog_go_up", "Up" ) )
 		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
 
 	mButtonNewFolder = UIPushButton::New();
-	mButtonNewFolder
-		->setText( getTranslatorString( "@string/uifiledialog_new_folder", "New Folder" ) )
+	mButtonNewFolder->setText( i18n( "uifiledialog_new_folder", "New Folder" ) )
 		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
 	mButtonNewFolder->addEventListener( Event::MouseClick, [this]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
-			UIMessageBox* msgBox = UIMessageBox::New(
-				UIMessageBox::INPUT,
-				getTranslatorString( "@string/uifiledialog_enter_new_folder_name",
-									 "Enter new folder name:" ) );
-			msgBox->setTitle( getTranslatorString( "@string/uifiledialog_create_new_folder",
-												   "Create new folder" ) );
+			UIMessageBox* msgBox =
+				UIMessageBox::New( UIMessageBox::INPUT, i18n( "uifiledialog_enter_new_folder_name",
+															  "Enter new folder name:" ) );
+			msgBox->setTitle( i18n( "uifiledialog_create_new_folder", "Create new folder" ) );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->show();
 			msgBox->addEventListener( Event::OnConfirm, [this, msgBox]( const Event* ) {
@@ -116,7 +113,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	} );
 
 	mButtonListView = UISelectButton::New();
-	mButtonListView->setText( getTranslatorString( "@string/uifiledialog_list", "List" ) )
+	mButtonListView->setText( i18n( "uifiledialog_list", "List" ) )
 		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
@@ -127,7 +124,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	} );
 
 	mButtonTableView = UISelectButton::New();
-	mButtonTableView->setText( getTranslatorString( "@string/uifiledialog_table", "Table" ) )
+	mButtonTableView->setText( i18n( "uifiledialog_table", "Table" ) )
 		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
@@ -151,7 +148,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			Variant vPath(
 				modelEvent->getModel()->data( modelEvent->getModelIndex(), ModelRole::Custom ) );
-			if ( vPath.isValid() && vPath.is( Variant::Type::cstr ) ) {
+			if ( vPath.isValid() && vPath.isString() ) {
 				bool shouldOpenFolder = false;
 				if ( allowFolderSelect() && modelEvent->getTriggerEvent() &&
 					 modelEvent->getTriggerEvent()->getType() == Event::EventType::KeyDown ) {
@@ -189,7 +186,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setParent( linearLayout );
 
 	UITextView::New()
-		->setText( getTranslatorString( "@string/uifiledialog_file_name", "File Name:" ) )
+		->setText( i18n( "uifiledialog_file_name", "File Name:" ) )
 		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::MatchParent )
 		->setSize( 74, 0 )
 		->setParent( hLayout )
@@ -205,8 +202,8 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 
 	mButtonOpen = UIPushButton::New();
 	mButtonOpen
-		->setText( isSaveDialog() ? getTranslatorString( "@string/uifiledialog_save", "Save" )
-								  : getTranslatorString( "@string/uifiledialog_open", "Open" ) )
+		->setText( isSaveDialog() ? i18n( "uifiledialog_save", "Save" )
+								  : i18n( "uifiledialog_open", "Open" ) )
 		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 		->setSize( 80, 0 )
 		->setParent( hLayout );
@@ -216,7 +213,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setParent( linearLayout );
 
 	UITextView::New()
-		->setText( getTranslatorString( "@string/uifiledialog_files_of_type", "Files of type:" ) )
+		->setText( i18n( "uifiledialog_files_of_type", "Files of type:" ) )
 		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::MatchParent )
 		->setSize( 74, 0 )
 		->setParent( hLayout )
@@ -232,7 +229,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mFiletype->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );
 
 	mButtonCancel = UIPushButton::New();
-	mButtonCancel->setText( getTranslatorString( "@string/uifiledialog_cancel", "Cancel" ) )
+	mButtonCancel->setText( i18n( "uifiledialog_cancel", "Cancel" ) )
 		->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
 		->setSize( 80, 0 )
 		->setParent( hLayout );
@@ -332,7 +329,8 @@ void UIFileDialog::refreshFolder( bool resetScroll ) {
 				getShowOnlyFolders() ? FileSystemModel::Mode::DirectoriesOnly
 									 : FileSystemModel::Mode::FilesAndDirectories,
 				FileSystemModel::DisplayConfig( getSortAlphabetically(), getFoldersFirst(),
-												!getShowHidden(), patterns ) );
+												!getShowHidden(), patterns ),
+				&getUISceneNode()->getTranslator() );
 		} else {
 			mModel->setRootPath( mCurPath );
 		}

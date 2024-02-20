@@ -1,9 +1,66 @@
-#include "uistatusbar.hpp"
 #include "ecode.hpp"
+#include "uistatusbar.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
 
 namespace ecode {
+
+StatusBarElement::StatusBarElement( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app ) :
+	mMainSplitter( mainSplitter ),
+	mUISceneNode( uiSceneNode ),
+	mApp( app ),
+	mSplitter( mApp->getSplitter() ) {}
+
+void StatusBarElement::toggle() {
+	if ( nullptr == getWidget() ) {
+		show();
+		return;
+	}
+
+	if ( mMainSplitter->getLastWidget() != nullptr ) {
+		if ( mMainSplitter->getLastWidget() == getWidget() ) {
+			hide();
+		} else {
+			show();
+		}
+	} else {
+		show();
+	}
+}
+
+void StatusBarElement::hide() {
+	if ( getWidget() && getWidget()->isVisible() ) {
+		getWidget()->setParent( mUISceneNode );
+		getWidget()->setVisible( false );
+		mApp->getStatusBar()->updateState();
+		if ( mSplitter->getCurWidget() )
+			mSplitter->getCurWidget()->setFocus();
+	}
+}
+
+void StatusBarElement::show() {
+	if ( nullptr == getWidget() ) {
+		mMainSplitter->updateLayout();
+		createWidget();
+		if ( nullptr == getWidget() )
+			return;
+		getWidget()->setVisible( false );
+	}
+
+	if ( !getWidget()->isVisible() ) {
+		mApp->hideLocateBar();
+		mApp->hideSearchBar();
+		mApp->hideGlobalSearchBar();
+		if ( mMainSplitter->getLastWidget() != nullptr ) {
+			mMainSplitter->getLastWidget()->setVisible( false );
+			mMainSplitter->getLastWidget()->setParent( mUISceneNode );
+		}
+		getWidget()->setParent( mMainSplitter );
+		getWidget()->setVisible( true );
+		getWidget()->setFocus();
+		mApp->getStatusBar()->updateState();
+	}
+}
 
 UIStatusBar* UIStatusBar::New() {
 	return eeNew( UIStatusBar, () );

@@ -549,6 +549,8 @@ void Http::Response::parseFields( std::istream& in ) {
 
 static Http::Pool sGlobalHttpPool = Http::Pool();
 
+static std::shared_ptr<ThreadPool> sGlobalThreadPool = nullptr;
+
 Http::Response Http::request( const URI& uri, Request::Method method, const Time& timeout,
 							  const Http::Request::ProgressCallback& progressCallback,
 							  const Http::Request::FieldTable& headers, const std::string& body,
@@ -1095,6 +1097,10 @@ Http::Response Http::downloadRequest( const Http::Request& request, std::string 
 	return downloadRequest( request, file, timeout );
 }
 
+void Http::setThreadPool( std::shared_ptr<ThreadPool> pool ) {
+	sGlobalThreadPool = pool;
+}
+
 Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback& cb,
 								  Http::Request request, Time timeout ) :
 	mHttp( http ),
@@ -1295,15 +1301,17 @@ void Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http::
 								 emscripten_async_wget2_got_data,
 								 emscripten_async_wget2_got_error_data, NULL );
 #else
+	if ( sGlobalThreadPool ) {
+		sGlobalThreadPool->run( [this, cb, request, timeout] {
+			AsyncRequest asyncRequest( this, cb, request, timeout );
+			asyncRequest.run();
+		} );
+		return;
+	}
 	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
-
 	thread->launch();
-
-	// Clean old threads
 	Lock l( mThreadsMutex );
-
 	removeOldThreads();
-
 	mThreads.push_back( thread );
 #endif
 }
@@ -1322,15 +1330,17 @@ void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 								 emscripten_async_wget2_got_data,
 								 emscripten_async_wget2_got_error_data, NULL );
 #else
+	if ( sGlobalThreadPool ) {
+		sGlobalThreadPool->run( [this, cb, request, &writeTo, timeout] {
+			AsyncRequest asyncRequest( this, cb, request, writeTo, timeout );
+			asyncRequest.run();
+		} );
+		return;
+	}
 	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, writeTo, timeout ) );
-
 	thread->launch();
-
-	// Clean old threads
 	Lock l( mThreadsMutex );
-
 	removeOldThreads();
-
 	mThreads.push_back( thread );
 #endif
 }
@@ -1349,15 +1359,17 @@ void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 							emscripten_async_wget2_got_file, emscripten_async_wget2_got_error_file,
 							NULL );
 #else
+	if ( sGlobalThreadPool ) {
+		sGlobalThreadPool->run( [this, cb, request, writePath, timeout] {
+			AsyncRequest asyncRequest( this, cb, request, writePath, timeout );
+			asyncRequest.run();
+		} );
+		return;
+	}
 	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, writePath, timeout ) );
-
 	thread->launch();
-
-	// Clean old threads
 	Lock l( mThreadsMutex );
-
 	removeOldThreads();
-
 	mThreads.push_back( thread );
 #endif
 }
@@ -1455,6 +1467,7 @@ Http::Pool::~Pool() {
 }
 
 void Http::Pool::clear() {
+	Lock l( mMutex );
 	for ( auto& connection : mHttps ) {
 		Http* con = connection.second;
 
@@ -1474,18 +1487,23 @@ String::HashType Http::Pool::getHostHash( const URI& host, const URI& proxy ) {
 	return String::hash( Http::Pool::getHostKey( host, proxy ) );
 }
 
-bool Http::Pool::exists( const URI& host, const URI& proxy ) const {
+bool Http::Pool::exists( const URI& host, const URI& proxy ) {
+	Lock l( mMutex );
 	return mHttps.find( getHostHash( host, proxy ) ) != mHttps.end();
 }
 
 Http* Http::Pool::get( const URI& host, const URI& proxy ) {
-	auto hostInstance = mHttps.find( Http::Pool::getHostHash( host, proxy ) );
+	{
+		Lock l( mMutex );
+		auto hostInstance = mHttps.find( Http::Pool::getHostHash( host, proxy ) );
 
-	if ( hostInstance != mHttps.end() ) {
-		return hostInstance->second;
+		if ( hostInstance != mHttps.end() ) {
+			return hostInstance->second;
+		}
 	}
 
 	Http* http = eeNew( Http, ( host.getHost(), host.getPort(), host.getScheme() == "https" ) );
+	Lock l( mMutex );
 	mHttps[getHostHash( host, proxy )] = http;
 	return http;
 }

@@ -81,7 +81,7 @@ void UITreeViewCellGlobalSearch::toggleSelected() {
 std::function<UITextView*( UIPushButton* )> UITreeViewCellGlobalSearch::getCheckBoxFn() {
 	return [this]( UIPushButton* ) -> UITextView* {
 		UICheckBox* chk = UICheckBox::New();
-		addEventListener( Event::MouseClick, [&, chk]( const Event* event ) {
+		addEventListener( Event::MouseClick, [this, chk]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( !( mouseEvent->getFlags() & EE_BUTTON_LMASK ) )
 				return 1;

@@ -5,7 +5,6 @@
 #include <eepp/window/base.hpp>
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/inputfinger.hpp>
-#include <eepp/window/inputhelper.hpp>
 #include <eepp/window/joystickmanager.hpp>
 #include <eepp/window/window.hpp>
 
@@ -105,6 +104,9 @@ class EE_API Input {
 
 	/** @return If the Control Key is pressed */
 	bool isControlPressed() const;
+
+	/** @return If the default key modifier is pressed */
+	bool isKeyModPressed() const;
 
 	/** @return If the left Shift Key is pressed */
 	bool isLeftShiftPressed() const;

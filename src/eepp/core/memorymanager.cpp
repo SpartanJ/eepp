@@ -108,14 +108,14 @@ bool MemoryManager::removePointer( void* data, const char* file, const size_t& l
 
 	AllocatedPointerMapIt it = sMapPointers.find( data );
 
-	if ( it->second.mTrack )
-		eePRINTL( "Deleting pointer %p at '%s' %d", data, file, line );
-
 	if ( it == sMapPointers.end() ) {
 		eePRINTL( "Trying to delete pointer %p created that does not exist!", data );
-
+		eeASSERT( false );
 		return false;
 	}
+
+	if ( it->second.mTrack )
+		eePRINTL( "Deleting pointer %p at '%s' %d", data, file, line );
 
 	sTotalMemoryUsage -= it->second.mMemory;
 
