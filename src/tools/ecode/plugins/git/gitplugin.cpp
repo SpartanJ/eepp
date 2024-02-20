@@ -1007,7 +1007,7 @@ void GitPlugin::discard( const std::vector<std::string>& files ) {
 			[this, files]() {
 				return mGit->restore( fixFilePaths( files ), mGit->repoPath( files[0] ) );
 			},
-			true, false );
+			true, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -1026,7 +1026,7 @@ void GitPlugin::discard( const std::string& file ) {
 	msgBox->on( Event::OnConfirm, [this, file]( auto ) {
 		runAsync(
 			[this, file]() { return mGit->restore( fixFilePath( file ), mGit->repoPath( file ) ); },
-			true, false );
+			true, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );

@@ -285,6 +285,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					for ( size_t curMatch = 1; curMatch < numMatches; curMatch++ ) {
 						start = matches[curMatch].start;
 						end = matches[curMatch].end;
+						if ( start == end && matches[curMatch - 1].end == start )
+							continue;
 						if ( pattern.patterns.size() >= 3 && i > 0 &&
 							 text[i - 1] == pattern.patterns[2][0] )
 							continue;

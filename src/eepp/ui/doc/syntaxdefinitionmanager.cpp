@@ -16,6 +16,7 @@
 #include <eepp/ui/doc/languages/fstab.hpp>
 #include <eepp/ui/doc/languages/gdscript.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
+#include <eepp/ui/doc/languages/graphql.hpp>
 #include <eepp/ui/doc/languages/hare.hpp>
 #include <eepp/ui/doc/languages/hlsl.hpp>
 #include <eepp/ui/doc/languages/htaccess.hpp>
@@ -25,6 +26,7 @@
 #include <eepp/ui/doc/languages/kotlin.hpp>
 #include <eepp/ui/doc/languages/lobster.hpp>
 #include <eepp/ui/doc/languages/markdown.hpp>
+#include <eepp/ui/doc/languages/moonscript.hpp>
 #include <eepp/ui/doc/languages/nelua.hpp>
 #include <eepp/ui/doc/languages/objeck.hpp>
 #include <eepp/ui/doc/languages/odin.hpp>
@@ -1680,7 +1682,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 81 );
+	mDefinitions.reserve( 83 );
 
 	// Register some languages support.
 	addPlainText();
@@ -1705,6 +1707,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addGDScript();
 	addGLSL();
 	addGo();
+	addGraphQL();
 	addHaskell();
 	addHare();
 	addHaxe();
@@ -1726,6 +1729,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addMakefile();
 	addMarkdown();
 	addMeson();
+	addMoonscript();
 	addNelua();
 	addNim();
 	addObjeck();

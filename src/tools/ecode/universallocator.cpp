@@ -764,10 +764,10 @@ void UniversalLocator::updateSwitchFileTypeTable() {
 															->getDocumentRef()
 															->getSyntaxDefinition()
 															.getLanguageName() );
-		mLocateTable->getSelection().set( idx.isValid() ? idx
-														: mLocateTable->getModel()->index( 0 ) );
+		mLocateTable->setSelection( idx.isValid() ? idx : mLocateTable->getModel()->index( 0 ) );
+	} else {
+		mLocateTable->scrollToTop();
 	}
-	mLocateTable->scrollToTop();
 	mLocateTable->setColumnsVisible( { 0 } );
 }
 
