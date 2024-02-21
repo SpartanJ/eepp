@@ -1,5 +1,5 @@
-#include "globalsearchcontroller.hpp"
 #include "ecode.hpp"
+#include "globalsearchcontroller.hpp"
 #include "uitreeviewglobalsearch.hpp"
 
 namespace ecode {
@@ -33,6 +33,26 @@ static bool replaceInFile( const std::string& path, const std::string& replaceTe
 	return true;
 }
 
+static bool replaceInFile( const std::string& path, const std::vector<std::string>& replaceTexts,
+						   const std::vector<std::pair<Int64, Int64>>& replacements ) {
+	std::string data;
+	if ( !FileSystem::fileGet( path, data ) )
+		return false;
+
+	Int64 diff = 0;
+	int pos = 0;
+	for ( const auto& range : replacements ) {
+		data.replace( range.first + diff, range.second - range.first, replaceTexts[pos] );
+		diff += replaceTexts[pos].size() - ( range.second - range.first );
+		pos++;
+	}
+
+	if ( !FileSystem::fileWrite( path, (const Uint8*)data.c_str(), data.size() ) )
+		return false;
+
+	return true;
+}
+
 size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 											   std::shared_ptr<ProjectSearch::ResultModel> model ) {
 	size_t count = 0;
@@ -42,6 +62,39 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 	}
 
 	const ProjectSearch::Result& res = model.get()->getResult();
+	bool hasCaptures =
+		model->isResultFromLuaPattern() && LuaPattern::find( replaceText, "$%d+" ).isValid();
+
+	if ( hasCaptures ) {
+		for ( const auto& fileResult : res ) {
+			std::vector<std::pair<Int64, Int64>> replacements;
+			std::vector<std::string> replaceTexts;
+
+			for ( const auto& result : fileResult.results ) {
+				if ( !result.selected )
+					continue;
+				replacements.push_back( { result.start, result.end } );
+				std::string newText( replaceText );
+				LuaPattern ptrn( "$(%d+)" );
+				for ( auto& match : ptrn.gmatch( replaceText ) ) {
+					std::string matchSubStr( match.group( 0 ) ); // $1 $2 ...
+					std::string matchNum( match.group( 1 ) );	 // 1 2 ...
+					int num;
+					if ( String::fromString( num, matchNum ) && num > 0 &&
+						 num - 1 < static_cast<int>( result.captures.size() ) ) {
+						String::replaceAll( newText, matchSubStr, result.captures[num - 1] );
+						replaceTexts.emplace_back( std::move( newText ) );
+					}
+				}
+			}
+
+			if ( replacements.size() == replaceTexts.size() &&
+				 replaceInFile( fileResult.file, replaceTexts, replacements ) )
+				count += replacements.size();
+		}
+
+		return count;
+	}
 
 	for ( const auto& fileResult : res ) {
 		std::vector<std::pair<Int64, Int64>> replacements;
@@ -116,13 +169,12 @@ void GlobalSearchController::initGlobalSearchBar(
 	mGlobalSearchHistoryList =
 		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
 	mGlobalSearchBarLayout->setCommand( "global-search-clear-history", [this] { clearHistory(); } );
-	mGlobalSearchBarLayout->setCommand(
-		"search-in-files",
-		[this, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
-			doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
-							wholeWordChk->isChecked(), luaPatternChk->isChecked(),
-							escapeSequenceChk->isChecked(), false );
-		} );
+	mGlobalSearchBarLayout->setCommand( "search-in-files", [this, caseSensitiveChk, wholeWordChk,
+															luaPatternChk, escapeSequenceChk] {
+		doGlobalSearch( mGlobalSearchInput->getText(), caseSensitiveChk->isChecked(),
+						wholeWordChk->isChecked(), luaPatternChk->isChecked(),
+						escapeSequenceChk->isChecked(), false );
+	} );
 	mGlobalSearchBarLayout->setCommand(
 		"search-again", [this, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
 			auto listBox = mGlobalSearchHistoryList->getListBox();
@@ -275,22 +327,22 @@ void GlobalSearchController::initGlobalSearchBar(
 								escapeSequenceChk->isChecked(), true );
 			}
 		} );
-	mGlobalSearchBarLayout->setCommand( "replace-in-files", [this, replaceInput,
-															 escapeSequenceChk] {
-		auto listBox = mGlobalSearchHistoryList->getListBox();
-		if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
-			const auto& replaceData = mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
-														   listBox->getItemSelectedIndex()];
-			String text( replaceInput->getText() );
-			if ( escapeSequenceChk->isChecked() )
-				text.unescape();
-			size_t count = replaceInFiles( text.toUtf8(), replaceData.second );
-			mGlobalSearchBarLayout->execute( "search-again" );
-			mGlobalSearchBarLayout->execute( "close-global-searchbar" );
-			mApp->getNotificationCenter()->addNotification(
-				String::format( "Replaced %zu occurrences.", count ) );
-		}
-	} );
+	mGlobalSearchBarLayout->setCommand(
+		"replace-in-files", [this, replaceInput, escapeSequenceChk] {
+			auto listBox = mGlobalSearchHistoryList->getListBox();
+			if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
+				const auto& replaceData = mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
+															   listBox->getItemSelectedIndex()];
+				String text( replaceInput->getText() );
+				if ( escapeSequenceChk->isChecked() )
+					text.unescape();
+				size_t count = replaceInFiles( text.toUtf8(), replaceData.second );
+				mGlobalSearchBarLayout->execute( "search-again" );
+				mGlobalSearchBarLayout->execute( "close-global-searchbar" );
+				mApp->getNotificationCenter()->addNotification(
+					String::format( "Replaced %zu occurrences.", count ) );
+			}
+		} );
 	mGlobalSearchTreeSearch =
 		UITreeViewGlobalSearch::New( mSplitter->getCurrentColorScheme(), false );
 	mGlobalSearchTreeReplace =
@@ -500,14 +552,15 @@ void GlobalSearchController::doGlobalSearch( String text, bool caseSensitive, bo
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 			mApp->getThreadPool(),
 #endif
-			[this, clock, search, loader, searchReplace, searchAgain,
-			 escapeSequence]( const ProjectSearch::Result& res ) {
+			[this, clock, search, loader, searchReplace, searchAgain, escapeSequence,
+			 luaPattern]( const ProjectSearch::Result& res ) {
 				Log::info( "Global search for \"%s\" took %.2fms", search.c_str(),
 						   clock->getElapsedTime().asMilliseconds() );
 				eeDelete( clock );
 				mUISceneNode->runOnMainThread( [this, loader, res, search, searchReplace,
-												searchAgain, escapeSequence] {
+												searchAgain, escapeSequence, luaPattern] {
 					auto model = ProjectSearch::asModel( res );
+					model->setResultFromLuaPattern( luaPattern );
 					updateGlobalSearchHistory( model, search, searchReplace, searchAgain,
 											   escapeSequence );
 					updateGlobalSearchBarResults( search, model, searchReplace, escapeSequence );

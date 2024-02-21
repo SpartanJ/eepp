@@ -80,7 +80,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
-	mPath->addEventListener( Event::OnPressEnter, cb::Make1( this, &UIFileDialog::onPressEnter ) );
+	mPath->addEventListener( Event::OnPressEnter, [this] ( auto event ) { onPressEnter( event ); } );
 
 	mButtonUp = UIPushButton::New();
 	mButtonUp->setText( i18n( "uifiledialog_go_up", "Up" ) )
@@ -198,7 +198,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setParent( hLayout );
 	mFile->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );
 	mFile->addEventListener( Event::OnPressEnter,
-							 cb::Make1( this, &UIFileDialog::onPressFileEnter ) );
+							 [this] ( auto event ) { onPressFileEnter( event ); } );
 
 	mButtonOpen = UIPushButton::New();
 	mButtonOpen

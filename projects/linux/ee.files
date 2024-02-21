@@ -301,7 +301,6 @@
 ../../include/eepp/thirdparty/chipmunk/cpSpace.h
 ../../include/eepp/thirdparty/chipmunk/cpSpatialIndex.h
 ../../include/eepp/thirdparty/chipmunk/cpVect.h
-../../include/eepp/thirdparty/PlusCallback/callback.hpp
 ../../include/eepp/ui/models/model.hpp
 ../../include/eepp/ui/abstract/uiabstracttableview.hpp
 ../../include/eepp/ui/abstract/uiabstractview.hpp

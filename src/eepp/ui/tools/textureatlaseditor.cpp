@@ -15,7 +15,7 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-UIWidget* TextureAtlasEditor::createTextureAtlasTextureRegionEditor( std::string ) {
+UIWidget* TextureAtlasEditor::createTextureAtlasTextureRegionEditor() {
 	mTextureRegionEditor = TextureAtlasTextureRegionEditor::New( this );
 	return mTextureRegionEditor;
 }
@@ -113,9 +113,9 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 	</LinearLayout>
 	)xml";
 
-	UIWidgetCreator::addCustomWidgetCallback(
-		"TextureAtlasTextureRegionEditor",
-		cb::Make1( this, &TextureAtlasEditor::createTextureAtlasTextureRegionEditor ) );
+	UIWidgetCreator::addCustomWidgetCallback( "TextureAtlasTextureRegionEditor", [this]( auto ) {
+		return createTextureAtlasTextureRegionEditor();
+	} );
 
 	if ( NULL != mUIContainer->getSceneNode()->asType<UISceneNode>()->getUIThemeManager() )
 		mUIContainer->getSceneNode()->asType<UISceneNode>()->loadLayoutFromString( layout,
@@ -125,56 +125,53 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 
 	mUIContainer->bind( "TextureRegionList", mTextureRegionList );
 	mTextureRegionList->addEventListener(
-		Event::OnItemSelected, cb::Make1( this, &TextureAtlasEditor::onTextureRegionChange ) );
+		Event::OnItemSelected, [this]( auto event ) { onTextureRegionChange( event ); } );
 
 	mUIContainer->bind( "gridlayout", mTextureRegionGrid );
 
 	mUIContainer->bind( "offX", mSpinOffX );
 	mSpinOffX->addEventListener( Event::OnValueChange,
-								 cb::Make1( this, &TextureAtlasEditor::onOffXChange ) );
+								 [this]( auto event ) { onOffXChange( event ); } );
 
 	mUIContainer->bind( "offY", mSpinOffY );
 	mSpinOffY->addEventListener( Event::OnValueChange,
-								 cb::Make1( this, &TextureAtlasEditor::onOffYChange ) );
+								 [this]( auto event ) { onOffYChange( event ); } );
 
 	mUIContainer->bind( "destW", mSpinDestW );
 	mSpinDestW->addEventListener( Event::OnValueChange,
-								  cb::Make1( this, &TextureAtlasEditor::onDestWChange ) );
+								  [this]( auto event ) { onDestWChange( event ); } );
 
 	mUIContainer->bind( "destH", mSpinDestH );
 	mSpinDestH->addEventListener( Event::OnValueChange,
-								  cb::Make1( this, &TextureAtlasEditor::onDestHChange ) );
+								  [this]( auto event ) { onDestHChange( event ); } );
 
 	mUIContainer->bind( "textureFilter", mTextureFilterList );
 	mTextureFilterList->addEventListener(
-		Event::OnItemSelected, cb::Make1( this, &TextureAtlasEditor::onTextureFilterChange ) );
+		Event::OnItemSelected, [this]( auto event ) { onTextureFilterChange( event ); } );
 
 	mUIContainer->find<UIPushButton>( "resetDest" )
-		->addEventListener( Event::MouseClick,
-							cb::Make1( this, &TextureAtlasEditor::onResetDestSize ) );
+		->addEventListener( Event::MouseClick, [this]( auto event ) { onResetDestSize( event ); } );
 
 	mUIContainer->find<UIPushButton>( "resetOff" )
-		->addEventListener( Event::MouseClick,
-							cb::Make1( this, &TextureAtlasEditor::onResetOffset ) );
+		->addEventListener( Event::MouseClick, [this]( auto event ) { onResetOffset( event ); } );
 
 	mUIContainer->find<UIPushButton>( "centerOff" )
-		->addEventListener( Event::MouseClick,
-							cb::Make1( this, &TextureAtlasEditor::onCenterOffset ) );
+		->addEventListener( Event::MouseClick, [this]( auto event ) { onCenterOffset( event ); } );
 
 	mUIContainer->find<UIPushButton>( "hbotOff" )
-		->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasEditor::onHBOffset ) );
+		->addEventListener( Event::MouseClick, [this]( auto event ) { onHBOffset( event ); } );
 
 	mUIContainer->find<UIPopUpMenu>( "fileMenu" )
 		->addEventListener( Event::OnItemClicked,
-							cb::Make1( this, &TextureAtlasEditor::fileMenuClick ) );
+							[this]( auto event ) { fileMenuClick( event ); } );
 
 	if ( NULL != mUIWindow ) {
 		mUIWindow->setTitle( "Texture Atlas Editor" );
 		mUIWindow->addEventListener( Event::OnWindowClose,
-									 cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+									 [this]( auto event ) { windowClose( event ); } );
 	} else {
 		mUIContainer->addEventListener( Event::OnClose,
-										cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+										[this]( auto event ) { windowClose( event ); } );
 		mUIContainer->find<UINode>( "texture_atlas_editor_root" )
 			->setThemeSkin( mUIContainer->getSceneNode()
 								->asType<UISceneNode>()
@@ -291,14 +288,14 @@ void TextureAtlasEditor::fileMenuClick( const Event* Event ) {
 	const String& txt = Event->getNode()->asType<UIMenuItem>()->getText();
 
 	if ( "New..." == txt ) {
-		eeNew( TextureAtlasNew, ( cb::Make1( this, &TextureAtlasEditor::onTextureAtlasCreate ) ) );
+		eeNew( TextureAtlasNew, ( [this]( auto event ) { onTextureAtlasCreate( event ); } ) );
 	} else if ( "Open..." == txt ) {
 		UIFileDialog* TGDialog = UIFileDialog::New(
 			UIFileDialog::DefaultFlags, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Texture Atlas" );
 		TGDialog->addEventListener( Event::OpenFile,
-									cb::Make1( this, &TextureAtlasEditor::openTextureAtlas ) );
+									[this]( auto event ) { openTextureAtlas( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Save" == txt ) {
@@ -311,7 +308,7 @@ void TextureAtlasEditor::fileMenuClick( const Event* Event ) {
 													  "Do you really want to close the current "
 													  "texture atlas?\nAll changes will be lost." );
 			MsgBox->addEventListener( Event::OnConfirm,
-									  cb::Make1( this, &TextureAtlasEditor::onTextureAtlasClose ) );
+									  [this]( auto event ) { onTextureAtlasClose( event ); } );
 			MsgBox->setTitle( "Close Texture Atlas?" );
 			MsgBox->center();
 			MsgBox->show();
@@ -350,7 +347,7 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker* TexPacker ) {
 
 	mTextureAtlasLoader =
 		TextureAtlasLoader::New( FPath, Engine::instance()->isThreaded(),
-								 cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
+								 [this]( auto event ) { onTextureAtlasLoaded( event ); } );
 }
 
 void TextureAtlasEditor::updateWidgets() {
@@ -400,7 +397,7 @@ void TextureAtlasEditor::fillTextureRegionList() {
 				->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 				->setParent( mTextureRegionGrid )
 				->addEventListener( Event::MouseClick,
-									cb::Make1( this, &TextureAtlasEditor::onTextureRegionChange ) );
+									[this]( auto event ) { onTextureRegionChange( event ); } );
 			;
 		}
 	}
@@ -449,7 +446,7 @@ void TextureAtlasEditor::openTextureAtlas( const Event* Event ) {
 
 	mTextureAtlasLoader = TextureAtlasLoader::New(
 		Event->getNode()->asType<UIFileDialog>()->getFullPath(), Engine::instance()->isThreaded(),
-		cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
+		[this]( auto event ) { onTextureAtlasLoaded( event ); } );
 }
 
 void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader* textureAtlasLoader ) {

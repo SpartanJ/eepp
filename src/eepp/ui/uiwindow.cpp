@@ -84,7 +84,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mContainer->setClipType( ClipType::ContentBox );
 	mContainer->enableReportSizeChangeToChilds();
 	mContainer->addEventListener( Event::OnPositionChange,
-								  cb::Make1( this, &UIWindow::onContainerPositionChange ) );
+								  [this] ( auto event ) { onContainerPositionChange( event ); } );
 
 	updateWinFlags();
 

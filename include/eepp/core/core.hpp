@@ -5,6 +5,5 @@
 #include <eepp/core/debug.hpp>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/string.hpp>
-#include <eepp/core/utf.hpp>
 
 #endif

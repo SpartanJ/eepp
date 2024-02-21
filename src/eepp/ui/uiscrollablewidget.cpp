@@ -19,9 +19,9 @@ UIScrollableWidget::UIScrollableWidget( const std::string& tag ) :
 	mHScroll->setParent( this );
 
 	mVScroll->addEventListener( Event::OnValueChange,
-								cb::Make1( this, &UIScrollableWidget::onValueChangeCb ) );
+								[this] ( auto event ) { onValueChangeCb( event ); } );
 	mHScroll->addEventListener( Event::OnValueChange,
-								cb::Make1( this, &UIScrollableWidget::onValueChangeCb ) );
+								[this] ( auto event ) { onValueChangeCb( event ); } );
 
 	applyDefaultTheme();
 }

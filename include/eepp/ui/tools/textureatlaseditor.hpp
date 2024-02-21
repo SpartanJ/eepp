@@ -94,7 +94,7 @@ class EE_API TextureAtlasEditor {
 
 	void update();
 
-	UIWidget* createTextureAtlasTextureRegionEditor( std::string name );
+	UIWidget* createTextureAtlasTextureRegionEditor();
 };
 
 }}} // namespace EE::UI::Tools

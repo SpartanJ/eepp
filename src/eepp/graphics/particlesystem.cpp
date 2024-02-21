@@ -307,7 +307,7 @@ void ParticleSystem::reset( Particle* P ) {
 			break;
 		}
 		case ParticleEffect::Callback: {
-			if ( mPC.IsSet() ) {
+			if ( mPC ) {
 				mPC( P, this );
 			}
 

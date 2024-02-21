@@ -25,7 +25,7 @@ static int countNewLines( const std::string& text, const size_t& start, const si
 	return count;
 }
 
-static String textLine( const std::string& fileText, const size_t& fromPos, size_t& relCol ) {
+static String textLine( const std::string& fileText, const size_t& fromPos, Int64& relCol ) {
 	const char* stringStartPtr = fileText.c_str();
 	const char* startPtr = fileText.c_str() + fromPos;
 	const char* endPtr = startPtr;
@@ -68,7 +68,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 				searchRes += text.size();
 				continue;
 			}
-			size_t relCol;
+			Int64 relCol;
 			totNl += countNewLines( fileText, lSearchRes, searchRes );
 			String str(
 				textLine( caseSensitive ? fileText : fileTextOriginal, searchRes, relCol ) );
@@ -91,8 +91,8 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 	std::string fileText;
 	FileSystem::fileGet( file, fileText );
 	LuaPattern pattern( text );
-	std::vector<ProjectSearch::ResultData::Result> res;
-	size_t totNl = 0;
+	std::vector<ProjectSearch::ResultData::Result> results;
+	Int64 totNl = 0;
 	bool matched = false;
 	Int64 searchRes = 0;
 	std::string fileTextOriginal;
@@ -102,28 +102,43 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 		String::toLowerInPlace( fileText );
 	}
 
+	LuaPattern::Range matches[12];
 	do {
 		int start, end = 0;
-		if ( ( matched = pattern.find( fileText, start, end, searchRes ) ) ) {
+
+		if ( ( matched = pattern.matches( fileText, matches, searchRes ) ) ) {
+			start = matches[0].start;
+			end = matches[0].end;
+
 			if ( wholeWord &&
 				 !String::isWholeWord( fileText, fileText.substr( start, end - start ), start ) ) {
 				searchRes = end;
 				continue;
 			}
-			size_t relCol;
+
+			Int64 relCol;
 			totNl += countNewLines( fileText, searchRes, start );
 			String str( textLine( caseSensitive ? fileText : fileTextOriginal, start, relCol ) );
 			int len = end - start;
-			res.push_back(
-				{ str,
-				  { { (Int64)totNl, (Int64)relCol }, { (Int64)totNl, (Int64)( relCol + len ) } },
-				  start,
-				  end } );
+			ProjectSearch::ResultData::Result res;
+			res.line = std::move( str );
+			res.position = { { totNl, (Int64)relCol }, { totNl, (Int64)( relCol + len ) } };
+			res.start = start;
+			res.end = end;
+			for ( size_t c = 1; c < 12; c++ ) {
+				if ( matches[c].isValid() ) {
+					res.captures.push_back(
+						fileText.substr( matches[c].start, matches[c].end - matches[c].start ) );
+				} else {
+					break;
+				}
+			}
+			results.emplace_back( std::move( res ) );
 			searchRes = end;
 		}
 	} while ( matched );
 
-	return res;
+	return results;
 }
 
 void ProjectSearch::find( const std::vector<std::string> files, const std::string& string,

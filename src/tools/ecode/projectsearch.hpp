@@ -28,6 +28,7 @@ class ProjectSearch {
 			Int64 start{ 0 };
 			Int64 end{ 0 };
 			bool selected{ true };
+			std::vector<std::string> captures;
 		};
 		std::string file;
 		std::vector<Result> results;
@@ -190,9 +191,14 @@ class ProjectSearch {
 
 		bool isResultFromSymbolReference() const { return mResultFromSymbolReference; }
 
+		void setResultFromLuaPattern( bool ref ) { mResultFromLuaPattern = ref; }
+
+		bool isResultFromLuaPattern() const { return mResultFromLuaPattern; }
+
 	  protected:
 		Result mResult;
 		bool mResultFromSymbolReference{ false };
+		bool mResultFromLuaPattern{ false };
 	};
 
 	static std::shared_ptr<ResultModel> asModel( const Result& result ) {

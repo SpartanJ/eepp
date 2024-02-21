@@ -13,6 +13,7 @@ newoption { trigger = "with-mold-linker", description = "Tries to use the mold l
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption { trigger = "thread-sanitizer", description = "Compile with ThreadSanitizer." }
 newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
+newoption { trigger = "time-trace", description = "Compile with time tracing." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -453,6 +454,10 @@ function parse_args()
 		if not os.istarget("macosx") then
 			links { "asan" }
 		end
+	end
+
+	if _OPTIONS["time-trace"] then
+		buildoptions { "-ftime-trace" }
 	end
 end
 

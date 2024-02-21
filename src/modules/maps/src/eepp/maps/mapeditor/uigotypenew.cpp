@@ -23,7 +23,7 @@ UIGOTypeNew::UIGOTypeNew( std::function<void( std::string, Uint32 )> Cb ) :
 		->setMinWindowSize( 278, 114 );
 
 	mUIWindow->addEventListener( Event::OnWindowClose,
-								 cb::Make1( this, &UIGOTypeNew::onWindowClose ) );
+								 [this] ( auto event ) { onWindowClose( event ); } );
 	mUIWindow->setTitle( "Add GameObject Type" );
 
 	Int32 InitialY = 16;
@@ -47,8 +47,8 @@ UIGOTypeNew::UIGOTypeNew( std::function<void( std::string, Uint32 )> Cb ) :
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( Event::MouseClick, cb::Make1( this, &UIGOTypeNew::onOKClick ) );
-	mUIInput->addEventListener( Event::OnPressEnter, cb::Make1( this, &UIGOTypeNew::onOKClick ) );
+	OKButton->addEventListener( Event::MouseClick, [this] ( auto event ) { onOKClick( event ); } );
+	mUIInput->addEventListener( Event::OnPressEnter, [this] ( auto event ) { onOKClick( event ); } );
 
 	OKButton->setText( "Add" );
 
@@ -59,7 +59,7 @@ UIGOTypeNew::UIGOTypeNew( std::function<void( std::string, Uint32 )> Cb ) :
 					   OKButton->getPosition().y );
 	CancelButton->setIcon( sceneNode->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) ) );
 	CancelButton->addEventListener( Event::MouseClick,
-									cb::Make1( this, &UIGOTypeNew::onCancelClick ) );
+									[this] ( auto event ) { onCancelClick( event ); } );
 	CancelButton->setText( "Cancel" );
 
 	mUIWindow->center();

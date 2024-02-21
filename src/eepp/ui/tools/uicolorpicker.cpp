@@ -248,10 +248,10 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	if ( NULL != mUIWindow ) {
 		mUIWindow->setTitle( "Color Picker" );
 		mUIWindow->addEventListener( Event::OnWindowClose,
-									 cb::Make1( this, &UIColorPicker::windowClose ) );
+									 [this] ( auto event ) { windowClose( event ); } );
 	} else {
 		mUIContainer->addEventListener( Event::OnClose,
-										cb::Make1( this, &UIColorPicker::windowClose ) );
+										[this] ( auto event ) { windowClose( event ); } );
 	}
 
 	if ( NULL != mUIWindow && mUIWindow->isModal() ) {

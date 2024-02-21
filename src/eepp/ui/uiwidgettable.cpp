@@ -58,9 +58,9 @@ UIWidgetTable::UIWidgetTable() :
 	mVScrollBar->setEnabled( ScrollBarMode::AlwaysOn == mVScrollMode );
 
 	mVScrollBar->addEventListener( Event::OnValueChange,
-								   cb::Make1( this, &UIWidgetTable::onScrollValueChange ) );
+								   [this] ( auto event ) { onScrollValueChange( event ); } );
 	mHScrollBar->addEventListener( Event::OnValueChange,
-								   cb::Make1( this, &UIWidgetTable::onScrollValueChange ) );
+								   [this] ( auto event ) { onScrollValueChange( event ); } );
 
 	mVScrollBar->addEventListener( Event::OnSizeChange, cb );
 	mHScrollBar->addEventListener( Event::OnSizeChange, cb );

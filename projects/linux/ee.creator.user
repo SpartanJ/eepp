@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 12.0.1, 2024-02-10T17:28:39. -->
+<!-- Written by QtCreator 12.0.2, 2024-02-21T01:01:02. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1173,7 +1173,6 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
     <value type="bool" key="ProjectExplorer.RunConfiguration.Customized">true</value>
-    <value type="QString" key="RunConfiguration.Arguments">--css=/root/.config/ecode/style.css --language=de</value>
     <value type="int" key="RunConfiguration.UseCppDebugger">0</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">false</value>
     <value type="int" key="RunConfiguration.UseQmlDebugger">1</value>
