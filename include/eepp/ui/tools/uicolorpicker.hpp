@@ -66,6 +66,7 @@ class EE_API UIColorPicker {
 	UILinearLayout* mAlphaContainer{ nullptr };
 	UILinearLayout* mFooter{ nullptr };
 	UITextInput* mTextInput{ nullptr };
+	UIWidget* mCoverWidget{ nullptr };
 	Colorf mHsv;
 	Color mRgb;
 	std::string mHexColor;

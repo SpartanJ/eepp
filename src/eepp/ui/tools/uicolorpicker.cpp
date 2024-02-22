@@ -247,11 +247,9 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 
 	if ( NULL != mUIWindow ) {
 		mUIWindow->setTitle( "Color Picker" );
-		mUIWindow->addEventListener( Event::OnWindowClose,
-									 [this] ( auto event ) { windowClose( event ); } );
+		mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { windowClose( event ); } );
 	} else {
-		mUIContainer->addEventListener( Event::OnClose,
-										[this] ( auto event ) { windowClose( event ); } );
+		mUIContainer->on( Event::OnClose, [this]( auto event ) { windowClose( event ); } );
 	}
 
 	if ( NULL != mUIWindow && mUIWindow->isModal() ) {
@@ -264,9 +262,9 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 					mRoot->getUISceneNode()->getUIThemeManager()->getWidgetsFadeOutTime() ) );
 			}
 		}
-		mUIWindow->getModalWidget()->addEventListener( Event::MouseClick,
-													   [this]( const Event* ) { closePicker(); } );
-		mUIWindow->addEventListener( Event::KeyDown, [this]( const Event* event ) {
+		mUIWindow->getModalWidget()->on( Event::MouseClick,
+										 [this]( const Event* ) { closePicker(); } );
+		mUIWindow->on( Event::KeyDown, [this]( const Event* event ) {
 			const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 			onKeyDown( *keyEvent );
 		} );
@@ -285,9 +283,9 @@ UIColorPicker::UIColorPicker( UIWindow* attachTo, const UIColorPicker::ColorPick
 	mRoot->bind( "footer", mFooter );
 	mTextInput = mFooter->findByTag( "textinput" )->asType<UITextInput>();
 
-	mRoot->addEventListener( Event::OnSizeChange, [this]( const Event* ) { updateAll(); } );
+	mRoot->on( Event::OnSizeChange, [this]( const Event* ) { updateAll(); } );
 
-	mRoot->addEventListener( Event::OnLayoutUpdate, [this]( const Event* ) {
+	mRoot->on( Event::OnLayoutUpdate, [this]( const Event* ) {
 		if ( mHuePicker->getDrawable() == nullptr ) {
 			mHuePicker->setDrawable( createHueTexture( mHuePicker->getPixelsSize() ), true );
 			mCurrentColor->setBackgroundDrawable( createGridTexture(), true );
@@ -333,6 +331,13 @@ UIWindow* UIColorPicker::getUIWindow() const {
 }
 
 void UIColorPicker::closePicker() {
+	if ( mCoverWidget ) {
+		mCoverWidget->close();
+		mCoverWidget = nullptr;
+		setModalAlpha( mDefModalAlpha );
+		return;
+	}
+
 	if ( mModalAlpha != 0.f &&
 		 mRoot->getUISceneNode()->getUIThemeManager()->getDefaultEffectsEnabled() )
 		mUIWindow->getModalWidget()->runAction( Actions::FadeOut::New(
@@ -458,17 +463,17 @@ void UIColorPicker::updateAll() {
 }
 
 void UIColorPicker::registerEvents() {
-	mColorPicker->addEventListener( Event::MouseDown, [this]( const Event* event ) {
+	mColorPicker->on( Event::MouseDown, [this]( const Event* event ) {
 		onColorPickerEvent( reinterpret_cast<const MouseEvent*>( event ) );
 	} );
 
-	mHuePicker->addEventListener( Event::MouseDown, [this]( const Event* event ) {
+	mHuePicker->on( Event::MouseDown, [this]( const Event* event ) {
 		onHuePickerEvent( reinterpret_cast<const MouseEvent*>( event ) );
 	} );
 
 	UISlider* redSlider = mRedContainer->findByTag<UISlider>( "slider" );
 
-	redSlider->addEventListener( Event::OnValueChange, [this]( const Event* event ) {
+	redSlider->on( Event::OnValueChange, [this]( const Event* event ) {
 		if ( mUpdating )
 			return;
 		setColor(
@@ -477,7 +482,7 @@ void UIColorPicker::registerEvents() {
 
 	UISlider* greenSlider = mGreenContainer->findByTag<UISlider>( "slider" );
 
-	greenSlider->addEventListener( Event::OnValueChange, [this]( const Event* event ) {
+	greenSlider->on( Event::OnValueChange, [this]( const Event* event ) {
 		if ( mUpdating )
 			return;
 		setColor(
@@ -486,7 +491,7 @@ void UIColorPicker::registerEvents() {
 
 	UISlider* blueSlider = mBlueContainer->findByTag<UISlider>( "slider" );
 
-	blueSlider->addEventListener( Event::OnValueChange, [this]( const Event* event ) {
+	blueSlider->on( Event::OnValueChange, [this]( const Event* event ) {
 		if ( mUpdating )
 			return;
 		setColor(
@@ -495,7 +500,7 @@ void UIColorPicker::registerEvents() {
 
 	UISlider* alphaSlider = mAlphaContainer->findByTag<UISlider>( "slider" );
 
-	alphaSlider->addEventListener( Event::OnValueChange, [this]( const Event* event ) {
+	alphaSlider->on( Event::OnValueChange, [this]( const Event* event ) {
 		if ( mUpdating )
 			return;
 		setColor(
@@ -504,7 +509,7 @@ void UIColorPicker::registerEvents() {
 
 	UISpinBox* redSpinBox = mRedContainer->findByTag<UISpinBox>( "spinbox" );
 
-	redSpinBox->addEventListener( Event::OnValueChange, [this]( const Event* event ) {
+	redSpinBox->on( Event::OnValueChange, [this]( const Event* event ) {
 		if ( mUpdating )
 			return;
 		setColor(
@@ -513,7 +518,7 @@ void UIColorPicker::registerEvents() {
 
 	UISpinBox* greenSpinBox = mGreenContainer->findByTag<UISpinBox>( "spinbox" );
 
-	greenSpinBox->addEventListener( Event::OnValueChange, [this]( const Event* event ) {
+	greenSpinBox->on( Event::OnValueChange, [this]( const Event* event ) {
 		if ( mUpdating )
 			return;
 		setColor(
@@ -522,7 +527,7 @@ void UIColorPicker::registerEvents() {
 
 	UISpinBox* blueSpinBox = mBlueContainer->findByTag<UISpinBox>( "spinbox" );
 
-	blueSpinBox->addEventListener( Event::OnValueChange, [this]( const Event* event ) {
+	blueSpinBox->on( Event::OnValueChange, [this]( const Event* event ) {
 		if ( mUpdating )
 			return;
 		setColor(
@@ -531,7 +536,7 @@ void UIColorPicker::registerEvents() {
 
 	UISpinBox* alphaSpinBox = mAlphaContainer->findByTag<UISpinBox>( "spinbox" );
 
-	alphaSpinBox->addEventListener( Event::OnValueChange, [this]( const Event* event ) {
+	alphaSpinBox->on( Event::OnValueChange, [this]( const Event* event ) {
 		if ( mUpdating )
 			return;
 		setColor(
@@ -539,7 +544,7 @@ void UIColorPicker::registerEvents() {
 	} );
 
 	mFooter->findByTag<UIPushButton>( "pushbutton" )
-		->addEventListener( Event::MouseClick, [this]( const Event* ) {
+		->on( Event::MouseClick, [this]( const Event* ) {
 			if ( mPickedCb )
 				mPickedCb( mRgb );
 
@@ -547,44 +552,44 @@ void UIColorPicker::registerEvents() {
 				mUIWindow->closeWindow();
 		} );
 
-	mTextInput->addEventListener( Event::OnPressEnter, [this]( const Event* ) {
+	mTextInput->on( Event::OnPressEnter, [this]( const Event* ) {
 		if ( mUpdating )
 			return;
 		std::string buffer( mTextInput->getText().toUtf8() );
 		onColorPicked( buffer );
 	} );
 
-	mTextInput->addEventListener( Event::OnTextChanged, [this]( const Event* ) {
+	mTextInput->on( Event::OnTextChanged, [this]( const Event* ) {
 		std::string buffer( mTextInput->getText().toUtf8() );
 		if ( Color::validHexColorString( "#" + buffer ) &&
 			 ( buffer.size() == 3 || buffer.size() == 6 || buffer.size() == 8 ) )
 			onColorPicked( buffer );
 	} );
 
-	mRoot->find<UIPushButton>( "picker_icon" )
-		->addEventListener( Event::MouseClick, [this]( const Event* ) {
-			UIWidget* coverWidget = UIWidget::New();
-			setModalAlpha( 0 );
-			coverWidget->setParent( mRoot->getSceneNode() )
-				->setPosition( 0, 0 )
-				->setSize( mRoot->getSceneNode()->getSize() );
-			coverWidget->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT |
-									 UI_ANCHOR_BOTTOM );
-			coverWidget->addEventListener( Event::MouseMove, [this]( const Event* event ) {
-				Vector2i position = reinterpret_cast<const MouseEvent*>( event )->getPosition();
-				setColor( GLi->readPixel(
-					position.x,
-					event->getNode()->getSceneNode()->getWindow()->getHeight() - position.y ) );
-			} );
-			coverWidget->addEventListener( Event::MouseClick, [this]( const Event* event ) {
-				Vector2i position = reinterpret_cast<const MouseEvent*>( event )->getPosition();
-				setColor( GLi->readPixel(
-					position.x,
-					event->getNode()->getSceneNode()->getWindow()->getHeight() - position.y ) );
-				event->getNode()->close();
-				setModalAlpha( mDefModalAlpha );
-			} );
+	mRoot->find<UIPushButton>( "picker_icon" )->on( Event::MouseClick, [this]( const Event* ) {
+		mCoverWidget = UIWidget::New();
+		setModalAlpha( 0 );
+		mCoverWidget->setParent( mRoot->getSceneNode() )
+			->setPosition( 0, 0 )
+			->setSize( mRoot->getSceneNode()->getSize() );
+		mCoverWidget->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT |
+								 UI_ANCHOR_BOTTOM );
+		mCoverWidget->on( Event::MouseMove, [this]( const Event* event ) {
+			Vector2i position = reinterpret_cast<const MouseEvent*>( event )->getPosition();
+			setColor( GLi->readPixel( position.x,
+									  event->getNode()->getSceneNode()->getWindow()->getHeight() -
+										  position.y ) );
 		} );
+		mCoverWidget->on( Event::MouseClick, [this]( const Event* event ) {
+			Vector2i position = reinterpret_cast<const MouseEvent*>( event )->getPosition();
+			setColor( GLi->readPixel( position.x,
+									  event->getNode()->getSceneNode()->getWindow()->getHeight() -
+										  position.y ) );
+			event->getNode()->close();
+			mCoverWidget = nullptr;
+			setModalAlpha( mDefModalAlpha );
+		} );
+	} );
 }
 
 void UIColorPicker::onColorPicked( const std::string& buffer ) {
