@@ -423,6 +423,8 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
   const unsigned long genericWrite = 0x40000000;
   const unsigned long openExisting = 3;
   const unsigned long fileAttributeNormal = 0x00000080;
+  const unsigned long fileNoBuffering = 0x20000000;
+  const unsigned long fileWriteThrough = 0x80000000;
   const void *const invalidHandleValue =
       SUBPROCESS_PTR_CAST(void *, ~(SUBPROCESS_CAST(subprocess_intptr_t, 0)));
   struct subprocess_security_attributes_s saAttr = {sizeof(saAttr),
@@ -454,8 +456,8 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
   }
 
   *wr = CreateFileA(name, genericWrite, SUBPROCESS_NULL,
-                    SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr),
-                    openExisting, fileAttributeNormal, SUBPROCESS_NULL);
+                    SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr), openExisting,
+					 fileAttributeNormal | fileNoBuffering | fileWriteThrough, SUBPROCESS_NULL );
 
   if (invalidHandleValue == *wr) {
     return -1;
@@ -1333,8 +1335,6 @@ subprocess_write_stdin(struct subprocess_s *const process, char *const buffer,
            }
          }
        }
-    } else {
-       FlushFileBuffers(handle);
     }
     return SUBPROCESS_CAST(unsigned, bytes_write);
 #else
