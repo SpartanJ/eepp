@@ -2195,7 +2195,10 @@ void LSPClientServer::documentSemanticTokensFull( const URI& document, bool delt
 void LSPClientServer::shutdown() {
 	if ( mReady ) {
 		Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
-		mHandlers.clear();
+		{
+			Lock l( mHandlersMutex );
+			mHandlers.clear();
+		}
 		sendSync( newRequest( "shutdown" ) );
 		Sys::sleep( Milliseconds( 100 ) );
 		sendSync( newRequest( "exit" ) );
