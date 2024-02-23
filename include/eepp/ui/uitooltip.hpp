@@ -121,6 +121,8 @@ class EE_API UITooltip : public UIWidget {
 
 	void notifyTextChangedFromTextCache();
 
+	void wrapText( Uint32 width );
+
   protected:
 	Text* mTextCache;
 	UIFontStyleConfig mStyleConfig;

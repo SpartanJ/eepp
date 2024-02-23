@@ -578,4 +578,8 @@ void UITooltip::onAlphaChange() {
 	mTextCache->setOutlineColor( outlineColor );
 }
 
+void UITooltip::wrapText( Uint32 width ) {
+	mTextCache->wrapText( width );
+}
+
 }} // namespace EE::UI

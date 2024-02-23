@@ -1453,7 +1453,7 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 		mOldBackgroundColor = tooltip->getBackgroundColor();
 	}
 	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
-	tooltip->setPixelsPosition( tooltip->getTooltipPosition( position ) );
+	tooltip->setPixelsPosition( position );
 	tooltip->setDontAutoHideOnMouseMove( true );
 	tooltip->setUsingCustomStyling( true );
 	tooltip->setFontStyle( Text::Regular );
@@ -1467,6 +1467,7 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 	if ( tooltip->getText().empty() )
 		return;
 
+	tooltip->wrapText( editor->getSize().getWidth() / 2.0 );
 	const auto& syntaxDef = resp.contents[0].kind == LSPMarkupKind::MarkDown
 								? SyntaxDefinitionManager::instance()->getByLSPName( "markdown" )
 								: editor->getSyntaxDefinition();
