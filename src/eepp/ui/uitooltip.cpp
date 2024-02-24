@@ -182,12 +182,17 @@ void UITooltip::setFont( Graphics::Font* font ) {
 }
 
 const String& UITooltip::getText() {
+	if ( mFlags & UI_WORD_WRAP )
+		return mStringBuffer;
+
 	return mTextCache->getString();
 }
 
 void UITooltip::setText( const String& text ) {
+	mStringBuffer = text;
 	mTextCache->setString( text );
 	autoPadding();
+	autoWrap();
 	onAutoSize();
 	autoAlign();
 	onTextChanged();
@@ -301,6 +306,10 @@ void UITooltip::onTextChanged() {
 void UITooltip::onFontChanged() {
 	sendCommonEvent( Event::OnFontChanged );
 	invalidateDraw();
+}
+
+const Text* UITooltip::getTextCache() const {
+	return mTextCache;
 }
 
 Text* UITooltip::getTextCache() {
@@ -434,6 +443,8 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
+		case PropertyId::Wordwrap:
+			return mFlags & UI_WORD_WRAP ? "true" : "false";
 		case PropertyId::TextAlign:
 			return Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_CENTER
 					   ? "center"
@@ -446,11 +457,11 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 
 std::vector<PropertyId> UITooltip::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::TextTransform,	PropertyId::Color,
-				   PropertyId::TextShadowColor, PropertyId::TextShadowOffset,
-				   PropertyId::FontFamily,		PropertyId::FontSize,
-				   PropertyId::FontStyle,		PropertyId::TextStrokeWidth,
-				   PropertyId::TextStrokeColor, PropertyId::TextAlign };
+	auto local = {
+		PropertyId::TextTransform,	  PropertyId::Color,		   PropertyId::TextShadowColor,
+		PropertyId::TextShadowOffset, PropertyId::FontFamily,	   PropertyId::FontSize,
+		PropertyId::FontStyle,		  PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
+		PropertyId::TextAlign,		  PropertyId::Wordwrap };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -531,8 +542,24 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
-			if ( !mUsingCustomStyling )
-				setFontSize( lengthFromValue( attribute ) );
+			if ( !mUsingCustomStyling ) {
+				Uint32 flags = attribute.asFontStyle();
+
+				if ( flags & UI_WORD_WRAP ) {
+					mFlags |= UI_WORD_WRAP;
+					flags &= ~UI_WORD_WRAP;
+					autoWrap();
+				}
+
+				setFontStyle( flags );
+			}
+			break;
+		case PropertyId::Wordwrap:
+			if ( attribute.asBool() )
+				mFlags |= UI_WORD_WRAP;
+			else
+				mFlags &= ~UI_WORD_WRAP;
+			autoWrap();
 			break;
 		case PropertyId::FontStyle:
 			if ( !mUsingCustomStyling )
@@ -576,6 +603,37 @@ void UITooltip::onAlphaChange() {
 	mTextCache->setFillColor( color );
 	mTextCache->setShadowColor( shadowColor );
 	mTextCache->setOutlineColor( outlineColor );
+}
+
+void UITooltip::autoWrap() {
+	if ( mFlags & UI_WORD_WRAP && !mMaxWidthEq.empty() ) {
+		Float length =
+			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+		wrapText( length );
+	}
+}
+
+void UITooltip::wrapText( const Uint32& maxWidth ) {
+	if ( mFlags & UI_WORD_WRAP ) {
+		mTextCache->setString( mStringBuffer );
+	}
+
+	mTextCache->wrapText( maxWidth );
+	invalidateDraw();
+}
+
+void UITooltip::setWordWrap( bool set ) {
+	if ( set != isWordWrap() ) {
+		if ( set )
+			mFlags |= UI_WORD_WRAP;
+		else
+			mFlags &= ~UI_WORD_WRAP;
+		autoWrap();
+	}
+}
+
+bool UITooltip::isWordWrap() const {
+	return mFlags & UI_WORD_WRAP;
 }
 
 }} // namespace EE::UI

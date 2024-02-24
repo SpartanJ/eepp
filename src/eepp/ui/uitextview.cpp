@@ -925,6 +925,20 @@ void UITextView::setUsingCustomStyling( bool usingCustomStyling ) {
 	mUsingCustomStyling = usingCustomStyling;
 }
 
+void UITextView::setWordWrap( bool set ) {
+	if ( set != isWordWrap() ) {
+		if ( set )
+			mFlags |= UI_WORD_WRAP;
+		else
+			mFlags &= ~UI_WORD_WRAP;
+		autoWrap();
+	}
+}
+
+bool UITextView::isWordWrap() const {
+	return mFlags & UI_WORD_WRAP;
+}
+
 UIAnchor* UIAnchor::New() {
 	return eeNew( UIAnchor, () );
 }

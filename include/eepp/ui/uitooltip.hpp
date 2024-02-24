@@ -54,6 +54,8 @@ class EE_API UITooltip : public UIWidget {
 
 	virtual void onFontChanged();
 
+	const Text* getTextCache() const;
+
 	Text* getTextCache();
 
 	Float getTextWidth();
@@ -121,6 +123,12 @@ class EE_API UITooltip : public UIWidget {
 
 	void notifyTextChangedFromTextCache();
 
+	virtual void wrapText( const Uint32& maxWidth );
+
+	void setWordWrap( bool set );
+
+	bool isWordWrap() const;
+
   protected:
 	Text* mTextCache;
 	UIFontStyleConfig mStyleConfig;
@@ -141,6 +149,8 @@ class EE_API UITooltip : public UIWidget {
 	virtual void autoAlign();
 
 	virtual void autoPadding();
+
+	virtual void autoWrap();
 
 	void transformText();
 };

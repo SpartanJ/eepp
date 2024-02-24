@@ -118,6 +118,10 @@ class EE_API UITextView : public UIWidget {
 
 	void setUsingCustomStyling( bool usingCustomStyling );
 
+	void setWordWrap( bool set );
+
+	bool isWordWrap() const;
+
   protected:
 	Text* mTextCache;
 	String mString;

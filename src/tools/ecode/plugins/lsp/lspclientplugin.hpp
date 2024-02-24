@@ -109,6 +109,7 @@ class LSPClientPlugin : public Plugin {
 	LSPClientServerManager mClientManager;
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
+	bool mOldWordWrap{ false };
 	bool mSymbolInfoShowing{ false };
 	bool mSemanticHighlighting{ true };
 	bool mSilence{ false };
@@ -124,6 +125,7 @@ class LSPClientPlugin : public Plugin {
 	UnorderedSet<std::string> mSemanticHighlightingDisabledLangs;
 	String::HashType mConfigHash{ 0 };
 	Color mOldBackgroundColor;
+	std::string mOldMaxWidth;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 

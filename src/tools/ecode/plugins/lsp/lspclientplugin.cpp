@@ -1421,6 +1421,8 @@ void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
 		tooltip->setUsingCustomStyling( mOldUsingCustomStyling );
 		tooltip->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
 		tooltip->setBackgroundColor( mOldBackgroundColor );
+		tooltip->setWordWrap( mOldWordWrap );
+		tooltip->setMaxWidthEq( mOldMaxWidth );
 	}
 }
 
@@ -1438,11 +1440,15 @@ void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& posi
 
 void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp,
 									  const Vector2f& position ) {
-	editor->setTooltipText( resp.contents[0].value );
 	// HACK: Gets the old font style to restore it when the tooltip is hidden
 	UITooltip* tooltip = editor->createTooltip();
 	if ( tooltip == nullptr )
 		return;
+	mOldWordWrap = tooltip->isWordWrap();
+	mOldMaxWidth = tooltip->getMaxWidthEq();
+	tooltip->setWordWrap( true );
+	tooltip->setMaxWidthEq( "50vw" );
+	editor->setTooltipText( resp.contents[0].value );
 	mOldTextStyle = tooltip->getFontStyle();
 	mOldTextAlign = tooltip->getHorizontalAlign();
 	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
