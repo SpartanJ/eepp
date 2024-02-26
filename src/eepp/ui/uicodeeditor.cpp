@@ -1563,7 +1563,7 @@ Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
 	if ( mFont && !mFont->isMonospace() ) {
 		auto line = mDoc->line( lineIndex );
 		auto found = mLinesWidthCache.find( lineIndex );
-		if ( found != mLinesWidthCache.end() && line.getHash() == found->first )
+		if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
 			return found->second.second;
 		Float width = getTextWidth( line.getText() ) + getGlyphWidth();
 		mLinesWidthCache[lineIndex] = { line.getHash(), width };
