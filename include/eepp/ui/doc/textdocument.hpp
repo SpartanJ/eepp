@@ -66,7 +66,7 @@ class EE_API TextDocument {
 			onDocumentLoaded( doc );
 		}
 		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
-		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*numLines*/ ){};
+		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*numLines*/ ) {}
 		virtual TextRange getVisibleRange() const { return {}; };
 	};
 

@@ -729,7 +729,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 		String::HashType hash;
 	};
 	mutable UnorderedMap<Int64, TextLine> mTextCache;
-	UnorderedMap<Int64, std::pair<String::HashType, Float>> mLinesWidthCache;
+	std::unordered_map<Int64, std::pair<String::HashType, Float>> mLinesWidthCache;
 	Tools::UIDocFindReplace* mFindReplace{ nullptr };
 	struct PluginRequestedSpace {
 		UICodeEditorPlugin* plugin;
@@ -820,6 +820,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void onDocumentMoved( TextDocument* );
 
 	void onDocumentClosed( TextDocument* doc );
+
+	virtual void onDocumentLineMove( const Int64& fromLine, const Int64& numLines );
 
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
 
