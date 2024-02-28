@@ -14,6 +14,7 @@ newoption { trigger = "with-debug-symbols", description = "Release builds are bu
 newoption { trigger = "thread-sanitizer", description = "Compile with ThreadSanitizer." }
 newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
 newoption { trigger = "time-trace", description = "Compile with time tracing." }
+newoption { trigger = "disable-static-build", description = "Disables eepp static build project, this is just a helper to avoid rebuilding twice eepp while developing the library." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -1044,12 +1045,13 @@ workspace "eepp"
 			buildoptions { "-std=c++17" }
 
 	-- Library
+	if not _OPTIONS["disable-static-build"] then
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"
 		build_eepp( "eepp-static" )
 		target_dir_lib("")
-
+	end
 	project "eepp-shared"
 		kind "SharedLib"
 		language "C++"

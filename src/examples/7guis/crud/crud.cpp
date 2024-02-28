@@ -145,9 +145,8 @@ EE_MAIN_FUNC int main( int, char** ) {
 	const auto getSelectedPersonIt = [&]() -> std::vector<Person>::iterator {
 		auto p = static_cast<PeopleModel*>( listView->getModel() )
 					 ->getPerson( listView->getSelection().first() );
-		auto found = std::find_if( people.begin(), people.end(),
-								   [&p]( const Person& person ) { return p.id == person.id; } );
-		return found;
+		return std::find_if( people.begin(), people.end(),
+							 [&p]( const Person& person ) { return p.id == person.id; } );
 	};
 	updateBut->onClick( [&]( auto ) {
 		auto found = getSelectedPersonIt();
