@@ -1349,9 +1349,12 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		}
 	}
 
+	Input* input = getUISceneNode()->getWindow()->getInput();
 	if ( flags & EE_BUTTON_WDMASK ) {
 		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-shrink" );
+		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
+			setScrollX( mScroll.x + PixelDensity::dpToPx( mMouseWheelScroll ) );
 		} else {
 			setScrollY( mScroll.y + PixelDensity::dpToPx( mMouseWheelScroll ) );
 		}
@@ -1359,6 +1362,8 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	} else if ( flags & EE_BUTTON_WUMASK ) {
 		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-grow" );
+		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
+			setScrollX( mScroll.x - PixelDensity::dpToPx( mMouseWheelScroll ) );
 		} else {
 			setScrollY( mScroll.y - PixelDensity::dpToPx( mMouseWheelScroll ) );
 		}
