@@ -295,7 +295,7 @@ static void addTypeScript() {
 static void addPython() {
 	SyntaxDefinitionManager::instance()->add(
 		{ "Python",
-		  { "%.py$", "%.pyw$" },
+		  { "%.py$", "%.pyw$", "%.bry$" },
 		  {
 			  { { "#", "\n" }, "comment" },
 			  { { "[ruU]?\"", "\"", "\\" }, "string" },
