@@ -289,6 +289,13 @@
       "url": "https://github.com/nolanderc/glsl_analyzer",
       "command": "glsl_analyzer",
       "file_patterns": ["%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$", "%.tesc", "%.tese"]
+    },
+    {
+      "language": "vala",
+      "name": "vala-language-server",
+      "url": "https://github.com/vala-lang/vala-language-server",
+      "command": "vala-language-server",
+      "file_patterns": ["%.vala$", "%.genie$"]
     }
   ]
 }

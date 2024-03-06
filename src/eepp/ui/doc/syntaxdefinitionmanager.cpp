@@ -45,6 +45,7 @@
 #include <eepp/ui/doc/languages/teal.hpp>
 #include <eepp/ui/doc/languages/toml.hpp>
 #include <eepp/ui/doc/languages/v.hpp>
+#include <eepp/ui/doc/languages/vala.hpp>
 #include <eepp/ui/doc/languages/vb.hpp>
 #include <eepp/ui/doc/languages/verilog.hpp>
 #include <eepp/ui/doc/languages/x86assembly.hpp>
@@ -1682,7 +1683,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 83 );
+	mDefinitions.reserve( 84 );
 
 	// Register some languages support.
 	addPlainText();
@@ -1756,6 +1757,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addToml();
 	addTypeScript();
 	addV();
+	addVala();
 	addVerilog();
 	addVisualBasic();
 	addVue();
