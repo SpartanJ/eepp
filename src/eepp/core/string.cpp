@@ -917,15 +917,21 @@ void String::numberCleanInPlace( std::string& strNumber ) {
 }
 
 std::string String::fromFloat( const Float& value, const std::string& append,
-							   const std::string& prepend ) {
-	std::string val( toString( value ) );
+							   const std::string& prepend, size_t digitsAfterComma ) {
+	std::ostringstream ss;
+	ss.precision(digitsAfterComma);
+	ss << std::fixed << value;
+	std::string val( ss.str() );
 	numberCleanInPlace( val );
 	return prepend + val + append;
 }
 
 std::string String::fromDouble( const double& value, const std::string& append,
-								const std::string& prepend ) {
-	std::string val( toString( value ) );
+								const std::string& prepend, size_t digitsAfterComma ) {
+	std::ostringstream ss;
+	ss.precision(digitsAfterComma);
+	ss << std::fixed << value;
+	std::string val( ss.str() );
 	numberCleanInPlace( val );
 	return prepend + val + append;
 }

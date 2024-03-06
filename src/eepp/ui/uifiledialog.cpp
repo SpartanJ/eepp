@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
@@ -80,7 +79,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
-	mPath->addEventListener( Event::OnPressEnter, [this] ( auto event ) { onPressEnter( event ); } );
+	mPath->on( Event::OnPressEnter, [this]( auto event ) { onPressEnter( event ); } );
 
 	mButtonUp = UIPushButton::New();
 	mButtonUp->setText( i18n( "uifiledialog_go_up", "Up" ) )
@@ -93,7 +92,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
-	mButtonNewFolder->addEventListener( Event::MouseClick, [this]( const Event* event ) {
+	mButtonNewFolder->on( Event::MouseClick, [this]( const Event* event ) {
 		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
 			UIMessageBox* msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, i18n( "uifiledialog_enter_new_folder_name",
@@ -101,7 +100,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 			msgBox->setTitle( i18n( "uifiledialog_create_new_folder", "Create new folder" ) );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->show();
-			msgBox->addEventListener( Event::OnConfirm, [this, msgBox]( const Event* ) {
+			msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 				auto folderName( msgBox->getTextInput()->getText() );
 				auto newFolderPath( getCurPath() + folderName );
 				if ( !FileSystem::fileExists( newFolderPath ) &&
@@ -117,7 +116,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
-	mButtonListView->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+	mButtonListView->on( Event::MouseClick, [&]( const Event* event ) {
 		const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 		if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
 			setViewMode( UIMultiModelView::ViewMode::List );
@@ -128,7 +127,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutMarginLeft( 4 )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent )
 		->setParent( hLayout );
-	mButtonTableView->addEventListener( Event::MouseClick, [&]( const Event* event ) {
+	mButtonTableView->on( Event::MouseClick, [&]( const Event* event ) {
 		const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 		if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
 			setViewMode( UIMultiModelView::ViewMode::Table );
@@ -139,11 +138,11 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mMultiView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setLayoutWeight( 1 )
 		->setLayoutMargin( Rectf( 0, 0, 0, 4 ) );
-	mMultiView->addEventListener( Event::KeyDown, [this]( const Event* event ) {
+	mMultiView->on( Event::KeyDown, [this]( const Event* event ) {
 		if ( event->asKeyEvent()->getKeyCode() == KEY_BACKSPACE )
 			goFolderUp();
 	} );
-	mMultiView->addEventListener( Event::OnModelEvent, [&]( const Event* event ) {
+	mMultiView->on( Event::OnModelEvent, [&]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
 			Variant vPath(
@@ -197,8 +196,14 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mFile->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );
-	mFile->addEventListener( Event::OnPressEnter,
-							 [this] ( auto event ) { onPressFileEnter( event ); } );
+	mFile->on( Event::OnPressEnter, [this]( auto event ) { onPressFileEnter( event ); } );
+	mFile->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* kevent = event->asKeyEvent();
+		if ( kevent->getKeyCode() == KEY_UP || kevent->getKeyCode() == KEY_DOWN ) {
+			mMultiView->getCurrentView()->setFocus();
+			mMultiView->getCurrentView()->forceKeyDown( *kevent );
+		}
+	});
 
 	mButtonOpen = UIPushButton::New();
 	mButtonOpen
@@ -251,6 +256,10 @@ UIFileDialog::~UIFileDialog() {}
 
 void UIFileDialog::onWindowReady() {
 	updateClickStep();
+	if ( isSaveDialog() ) {
+		mFile->getDocument().selectAll();
+		mFile->setFocus();
+	}
 	UIWindow::onWindowReady();
 }
 

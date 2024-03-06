@@ -65,7 +65,7 @@ SINGLETON_DECLARE_IMPLEMENTATION( SyntaxDefinitionManager )
 
 static void addPlainText() {
 	SyntaxDefinitionManager::instance()->add(
-		{ "Plain Text", { "%.txt$" }, {}, {}, "", {}, "plaintext" } );
+		{ "Plain Text", {}, {}, {}, "", {}, "plaintext" } );
 }
 
 static void addC() {
@@ -821,7 +821,7 @@ static void addLatex() {
 
 static void addMeson() {
 	SyntaxDefinitionManager::instance()->add( { "Meson",
-												{ "meson.build$" },
+												{ "meson.build$", "^meson_options.txt$" },
 												{
 													{ { "#", "\n" }, "comment" },
 													{ { "\"", "\"", "\\" }, "string" },

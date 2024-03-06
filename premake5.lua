@@ -1052,6 +1052,7 @@ workspace "eepp"
 		build_eepp( "eepp-static" )
 		target_dir_lib("")
 	end
+
 	project "eepp-shared"
 		kind "SharedLib"
 		language "C++"

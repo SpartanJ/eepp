@@ -329,10 +329,10 @@ class EE_API String {
 	}
 
 	static std::string fromFloat( const Float& value, const std::string& append = "",
-								  const std::string& prepend = "" );
+								  const std::string& prepend = "", size_t digitsAfterComma = 2 );
 
 	static std::string fromDouble( const double& value, const std::string& append = "",
-								   const std::string& prepend = "" );
+								   const std::string& prepend = "", size_t digitsAfterComma = 2 );
 
 	/** Converts from a string to type */
 	template <class T>
