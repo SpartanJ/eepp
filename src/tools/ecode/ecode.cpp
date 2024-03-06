@@ -360,14 +360,17 @@ void App::downloadFileWeb( const std::string& url ) {
 UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( !editor )
 		return nullptr;
-	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*" );
-	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
-	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
-	dialog->setCloseShortcut( KEY_ESCAPE );
 	std::string filename( editor->getDocument().getFilename() );
 	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
 		filename += editor->getSyntaxDefinition().getFileExtension();
+	std::string folderPath( FileSystem::fileRemoveFileName( editor->getDocument().getFilePath() ) );
+	if ( !FileSystem::isDirectory( folderPath ) )
+		folderPath = getLastUsedFolder();
+	UIFileDialog* dialog =
+		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*", folderPath );
+	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
+	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->setFileName( filename );
 	dialog->on( Event::SaveFile, [this, editor]( const Event* event ) {
 		if ( editor ) {
