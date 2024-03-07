@@ -40,6 +40,7 @@
 #include <eepp/ui/doc/languages/r.hpp>
 #include <eepp/ui/doc/languages/rust.hpp>
 #include <eepp/ui/doc/languages/sass.hpp>
+#include <eepp/ui/doc/languages/smallbasic.hpp>
 #include <eepp/ui/doc/languages/solidity.hpp>
 #include <eepp/ui/doc/languages/sql.hpp>
 #include <eepp/ui/doc/languages/swift.hpp>
@@ -1752,6 +1753,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addRust();
 	addSass();
 	addScala();
+	addSmallBASIC();
 	addSolidity();
 	addSQL();
 	addSwift();
