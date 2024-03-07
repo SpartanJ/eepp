@@ -5,6 +5,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/ui/doc/languages/adept.hpp>
 #include <eepp/ui/doc/languages/angelscript.hpp>
 #include <eepp/ui/doc/languages/batchscript.hpp>
 #include <eepp/ui/doc/languages/blueprint.hpp>
@@ -1684,10 +1685,11 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 85 );
+	mDefinitions.reserve( 86 );
 
 	// Register some languages support.
 	addPlainText();
+	addAdept();
 	addAngelScript();
 	addBash();
 	addBatchScript();
