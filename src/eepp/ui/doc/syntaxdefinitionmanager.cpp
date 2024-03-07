@@ -47,6 +47,7 @@
 #include <eepp/ui/doc/languages/v.hpp>
 #include <eepp/ui/doc/languages/vala.hpp>
 #include <eepp/ui/doc/languages/vb.hpp>
+#include <eepp/ui/doc/languages/sb.hpp>
 #include <eepp/ui/doc/languages/verilog.hpp>
 #include <eepp/ui/doc/languages/x86assembly.hpp>
 #include <eepp/ui/doc/languages/xml.hpp>
