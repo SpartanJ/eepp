@@ -775,6 +775,130 @@ static void addGo() {
 		  "//" } );
 }
 
+static void addAdept() {
+	SyntaxDefinitionManager::instance()->add(
+		{ "Adept",
+		  { "%.adept$" },
+		  {
+			  { { "//.-\n" }, "comment" },
+			  { { "/%*", "%*/" }, "comment" },
+			  { { "\"", "\"", "\\" }, "string" },
+			  { { "'", "'ub", "\\" }, "string" },
+			  { { "'", "'", "\\" }, "string" },
+			  { { "0[oO_][0-7]+" }, "number" },
+			  { { "-?0x[%x_]+" }, "number" },
+			  { { "-?%d+_%d" }, "number" },
+			  { { "-?%d+[%d%.eE]*f?" }, "number" },
+			  { { "-?%.?%d+f?" }, "number" },
+			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			  { { ":=" }, "operator" },
+			  { { "[%a_][%w_]*%f[(]" }, "function" },
+			  { { "[%a_][%w_]*" }, "symbol" },
+		  },
+		  {
+			  { "POD", "keyword" },
+			  { "alias", "keyword" },
+			  { "and", "keyword" },
+			  { "as", "keyword" },
+			  { "at", "keyword" },
+			  { "break", "keyword" },
+			  { "case", "keyword" },
+			  { "cast", "keyword" },
+			  { "continue", "keyword" },
+			  { "def", "keyword" },
+			  { "default", "keyword" },
+			  { "defer", "keyword" },
+			  { "delete", "keyword" },
+			  { "each", "keyword" },
+			  { "else", "keyword" },
+			  { "enum", "keyword" },
+			  { "external", "keyword" },
+			  { "fallthrough", "keyword" },
+			  { "for", "keyword" },
+			  { "foreign", "keyword" },
+			  { "func", "keyword" },
+			  { "funcptr", "keyword" },
+			  { "global", "keyword" },
+			  { "if", "keyword" },
+			  { "import", "keyword" },
+			  { "in", "keyword" },
+			  { "inout", "keyword" },
+			  { "new", "keyword" },
+			  { "or", "keyword" },
+			  { "out", "keyword" },
+			  { "packed", "keyword" },
+			  { "private", "keyword" },
+			  { "public", "keyword" },
+			  { "repeat", "keyword" },
+			  { "return", "keyword" },
+			  { "sizeof", "keyword" },
+			  { "static", "keyword" },
+			  { "stdcall", "keyword" },
+			  { "struct", "keyword" },
+			  { "switch", "keyword" },
+			  { "typeinfo", "keyword" },
+			  { "unless", "keyword" },
+			  { "until", "keyword" },
+			  { "while", "keyword" },
+			  { "va_start", "keyword" },
+			  { "va_end", "keyword" },
+			  { "va_copy", "keyword" },
+			  { "va_arg", "keyword" },
+			  { "verbatim", "keyword" },
+			  { "void", "keyword" },
+			  { "union", "keyword" },
+			  { "exhaustive", "keyword" },
+			  { "const", "keyword" },
+			  { "define", "keyword" },
+			  { "namespace", "keyword" },
+			  { "using", "keyword" },
+			  { "implicit", "keyword" },
+			  { "pragma", "keyword" },
+			  { "elif", "keyword" },
+			  { "llvm_asm", "keyword" },
+			  { "thread_local", "keyword" },
+			  { "typenameof", "keyword" },
+			  { "embed", "keyword" },
+			  { "alignof", "keyword" },
+			  { "record", "keyword" },
+			  { "constructor", "keyword" },
+			  { "class", "keyword" },
+			  { "virtual", "keyword" },
+			  { "override", "keyword" },
+			  { "extends", "keyword" },
+			  { "assert", "keyword" },
+			  { "undef", "keyword" },
+			  { "this", "keyword" },
+			  { "it", "keyword" },
+			  { "idx", "keyword" },
+			  { "bool", "keyword2" },
+			  { "ptr", "keyword2" },
+			  { "byte", "keyword2" },
+			  { "ubyte", "keyword2" },
+			  { "short", "keyword2" },
+			  { "ushort", "keyword2" },
+			  { "int", "keyword2" },
+			  { "uint", "keyword2" },
+			  { "long", "keyword2" },
+			  { "ulong", "keyword2" },
+			  { "usize", "keyword2" },
+			  { "double", "keyword2" },
+			  { "float", "keyword2" },
+			  { "String", "keyword2" },
+			  { "List", "keyword2" },
+			  { "Array", "keyword2" },
+			  { "Matrix4f", "keyword2" },
+			  { "Vector3f", "keyword2" },
+			  { "FILE", "keyword2" },
+			  { "va_list", "keyword2" },
+			  { "successful", "keyword2" },
+			  { "true", "literal" },
+			  { "false", "literal" },
+			  { "null", "literal" },
+		  },
+		  "//" } );
+}
+
 static void addHaskell() {
 	SyntaxDefinitionManager::instance()->add(
 		{ "Haskell",
@@ -1683,7 +1807,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 84 );
+	mDefinitions.reserve( 85 );
 
 	// Register some languages support.
 	addPlainText();
@@ -1708,6 +1832,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addGDScript();
 	addGLSL();
 	addGo();
+	addAdept();
 	addGraphQL();
 	addHaskell();
 	addHare();
