@@ -39,6 +39,7 @@
 #include <eepp/ui/doc/languages/r.hpp>
 #include <eepp/ui/doc/languages/rust.hpp>
 #include <eepp/ui/doc/languages/sass.hpp>
+#include <eepp/ui/doc/languages/smallbasic.hpp>
 #include <eepp/ui/doc/languages/solidity.hpp>
 #include <eepp/ui/doc/languages/sql.hpp>
 #include <eepp/ui/doc/languages/swift.hpp>
@@ -47,7 +48,6 @@
 #include <eepp/ui/doc/languages/v.hpp>
 #include <eepp/ui/doc/languages/vala.hpp>
 #include <eepp/ui/doc/languages/vb.hpp>
-#include <eepp/ui/doc/languages/sb.hpp>
 #include <eepp/ui/doc/languages/verilog.hpp>
 #include <eepp/ui/doc/languages/x86assembly.hpp>
 #include <eepp/ui/doc/languages/xml.hpp>
@@ -1751,6 +1751,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addRust();
 	addSass();
 	addScala();
+	addSmallBASIC();
 	addSolidity();
 	addSQL();
 	addSwift();
@@ -1761,7 +1762,6 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addVala();
 	addVerilog();
 	addVisualBasic();
-	addSmallBASIC();
 	addVue();
 	addWren();
 	addX86Assembly();
