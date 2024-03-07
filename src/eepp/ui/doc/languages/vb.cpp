@@ -8,7 +8,8 @@ void addVisualBasic() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Visual Basic",
-		  { "%.vb$", "%.vbs$" },
+		  { "%.bas$", "%.cls$", "%.ctl$", "%.dob$", "%.dsm$", "%.dsr$", "%.frm$", "%.pag$", "%.vb$",
+			"%.vba$", "%.vbs$" },
 		  {
 			  { { "'.*" }, "comment" },
 			  { { "REM%s.*" }, "comment" },
