@@ -1684,7 +1684,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 85 );
+	mDefinitions.reserve( 86 );
 
 	// Register some languages support.
 	addPlainText();
