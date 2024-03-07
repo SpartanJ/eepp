@@ -1,4 +1,4 @@
-#include <eepp/ui/doc/languages/sb.hpp>
+#include <eepp/ui/doc/languages/smallbasic.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
