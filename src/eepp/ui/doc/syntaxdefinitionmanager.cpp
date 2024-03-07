@@ -1684,7 +1684,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 84 );
+	mDefinitions.reserve( 85 );
 
 	// Register some languages support.
 	addPlainText();
@@ -1761,6 +1761,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addVala();
 	addVerilog();
 	addVisualBasic();
+	addSmallBASIC();
 	addVue();
 	addWren();
 	addX86Assembly();
