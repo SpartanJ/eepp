@@ -267,7 +267,8 @@ class Git {
 
 	Result deleteBranch( const std::string& branch, const std::string& projectDir = "" );
 
-	Result mergeBranch( const std::string& branch, const std::string& projectDir = "" );
+	Result mergeBranch( const std::string& branch, bool fastForward = false,
+						const std::string& projectDir = "" );
 
 	Result commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,
 				   const std::string& projectDir = "" );

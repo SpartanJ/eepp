@@ -165,11 +165,19 @@ Git::Result Git::push( const std::string& projectDir ) {
 }
 
 Git::Result Git::pushNewBranch( const std::string& branch, const std::string& projectDir ) {
-	return gitSimple(
+	auto res = gitSimple(
 		String::format(
 			"push --porcelain --recurse-submodules=check origin refs/heads/%s:refs/heads/%s",
 			branch, branch ),
 		projectDir );
+
+	if ( res.fail() )
+		return res;
+
+	gitSimple( String::format( "branch --set-upstream-to=origin/%s %s", branch, branch ),
+			   projectDir );
+
+	return res;
 }
 
 Git::CheckoutResult Git::checkout( const std::string& branch,
@@ -278,8 +286,10 @@ Git::Result Git::deleteBranch( const std::string& branch, const std::string& pro
 	return gitSimple( String::format( "branch -D %s", branch ), projectDir );
 }
 
-Git::Result Git::mergeBranch( const std::string& branch, const std::string& projectDir ) {
-	return gitSimple( String::format( "merge --no-ff %s", branch ), projectDir );
+Git::Result Git::mergeBranch( const std::string& branch, bool fastForward,
+							  const std::string& projectDir ) {
+	return gitSimple( String::format( "merge %s %s", fastForward ? "--ff" : "--no-ff", branch ),
+					  projectDir );
 }
 
 Git::Result Git::commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,

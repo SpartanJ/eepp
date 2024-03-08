@@ -35,6 +35,7 @@ using json = nlohmann::json;
 namespace ecode {
 
 static constexpr auto DEFAULT_HIGHLIGHT_COLOR = "var(--font-highlight)"sv;
+static constexpr auto GIT_STATUS_UPDATE_TAG = String::hash( "git::status-update" );
 
 std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
 	switch ( type ) {
@@ -90,6 +91,8 @@ GitPlugin::~GitPlugin() {
 		mSidePanel->removeTab( mTab );
 
 	endModelStyler();
+
+	getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
 
 	{ Lock l( mGitBranchMutex ); }
 	{ Lock l( mGitStatusMutex ); }
@@ -292,8 +295,7 @@ void GitPlugin::updateUI() {
 	if ( !mGit || !getUISceneNode() )
 		return;
 
-	getUISceneNode()->debounce( [this] { updateUINow(); }, mRefreshFreq,
-								String::hash( "git::status-update" ) );
+	getUISceneNode()->debounce( [this] { updateUINow(); }, mRefreshFreq, GIT_STATUS_UPDATE_TAG );
 }
 
 void GitPlugin::updateStatusBarSync() {
@@ -733,8 +735,9 @@ void GitPlugin::branchMerge( Git::Branch branch ) {
 			branch.name ) );
 
 	msgBox->on( Event::OnConfirm, [this, branch]( auto ) {
-		runAsync( [this, branch]() { return mGit->mergeBranch( branch.name, repoSelected() ); },
-				  true, true, true, true, true );
+		runAsync(
+			[this, branch]() { return mGit->mergeBranch( branch.name, false, repoSelected() ); },
+			true, true, true, true, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -902,8 +905,12 @@ void GitPlugin::commit( const std::string& repoPath ) {
 void GitPlugin::fastForwardMerge( Git::Branch branch ) {
 	runAsync(
 		[this, branch]() {
-			if ( branch.name == gitBranch() )
-				return mGit->fastForwardMerge( repoSelected() );
+			if ( branch.name == gitBranch() ) {
+				auto res = mGit->fastForwardMerge( repoSelected() );
+				if ( res.success() )
+					return res;
+				return mGit->mergeBranch( "", true, repoSelected() );
+			}
 
 			auto remoteBranch = mGit->getAllBranchesAndTags(
 				Git::RefType::Remote, "refs/remotes/" + branch.remote, repoSelected() );
