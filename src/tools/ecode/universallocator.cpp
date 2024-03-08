@@ -108,8 +108,8 @@ LSPSymbolInformationList fuzzyMatchTextDocumentSymbol( const LSPSymbolInformatio
 	return nl;
 }
 
-static int LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
-static int LOCATEBAR_MAX_RESULTS = 100;
+static constexpr auto LOCATEBAR_MAX_VISIBLE_ITEMS = 18;
+static constexpr auto LOCATEBAR_MAX_RESULTS = 100;
 
 UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode,
 									App* app ) :
@@ -117,6 +117,171 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 	mUISceneNode( sceneNode ),
 	mApp( app ),
 	mCommandPalette( mApp->getThreadPool() ) {
+
+	mLocatorProviders.push_back( {
+		">",
+		mUISceneNode->i18n( "search_in_command_palette", "Search in Command Palette" ),
+		[this]( auto ) {
+			showCommandPalette();
+			return true;
+		},
+		[this]( const Variant& vName, const ModelEvent* modelEvent ) {
+			ModelIndex idx( modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 2 ) );
+			if ( idx.isValid() ) {
+				String cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
+				mApp->runCommand( cmd );
+				if ( !mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
+					if ( mSplitter->curEditorIsNotNull() &&
+						 mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
+						mSplitter->getCurEditor()->setFocus();
+				}
+				if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
+					 cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
+					 cmd != "show-open-documents" ) {
+					hideLocateBar();
+				} else {
+					mLocateInput->setFocus();
+				}
+			}
+		},
+	} );
+
+	mLocatorProviders.push_back(
+		{ ":", mUISceneNode->i18n( "search_for_workspace_symbols", "Search for Workspace Symbols" ),
+		  [this]( auto ) {
+			  showWorkspaceSymbol();
+			  return true;
+		  },
+		  nullptr } );
+
+	mLocatorProviders.push_back(
+		{ ".", mUISceneNode->i18n( "search_for_workspace_symbols", "Search for Workspace Symbols" ),
+		  [this]( auto ) {
+			  showDocumentSymbol();
+			  return true;
+		  },
+		  [this]( const Variant& vName, const ModelEvent* modelEvent ) {
+			  Variant rangeStr( modelEvent->getModel()->data(
+				  modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
+				  ModelRole::Custom ) );
+			  auto range = rangeStr.isValid() ? TextRange::fromString( rangeStr.asStdString() )
+											  : TextRange();
+			  if ( !range.isValid() )
+				  return;
+			  UITab* tab = mSplitter->isDocumentOpen( URI( mCurDocURI ), true );
+			  if ( tab ) {
+				  tab->getTabWidget()->setTabSelected( tab );
+				  UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+				  editor->goToLine( range.start() );
+				  mSplitter->addEditorPositionToNavigationHistory( editor );
+				  mLocateBarLayout->execute( "close-locatebar" );
+			  }
+		  } } );
+
+	mLocatorProviders.push_back(
+		{ "l",
+		  mUISceneNode->i18n( "go_to_line_in_current_document", "Go To Line in Current Document" ),
+		  [this]( const String& inputTxt ) {
+			  if ( mSplitter->curEditorExistsAndFocused() ) {
+				  String lineColInput( inputTxt.substr( 2 ) );
+				  std::vector<String> parts = lineColInput.split( ':' );
+				  Int64 line = 0;
+				  if ( parts.size() > 0 && String::fromString( line, parts[0] ) && line - 1 >= 0 )
+					  mLocateTable->setVisible( false );
+			  }
+			  return true;
+		  },
+		  nullptr,
+		  [this]( const String& inputTxt ) {
+			  if ( mSplitter->curEditorExistsAndFocused() ) {
+				  String lineColInput( inputTxt.substr( 2 ) );
+				  std::vector<String> parts = lineColInput.split( ':' );
+				  Int64 line, column = 0;
+				  if ( parts.size() > 0 && String::fromString( line, parts[0] ) && line - 1 >= 0 ) {
+					  if ( parts.size() > 1 ) {
+						  String::fromString( column, parts[1] );
+						  if ( column < 0 ) {
+							  column = 0;
+						  }
+					  }
+
+					  if ( mSplitter->curEditorExistsAndFocused() ) {
+						  mSplitter->getCurEditor()->goToLine( { line - 1, column } );
+						  mSplitter->addCurrentPositionToNavigationHistory();
+					  }
+
+					  mLocateBarLayout->execute( "close-locatebar" );
+					  return true;
+				  }
+			  }
+			  return false;
+		  } } );
+
+	mLocatorProviders.push_back( { "o", mUISceneNode->i18n( "open_documents", "Open Documents" ),
+								   [this]( auto ) {
+									   showOpenDocuments();
+									   return true;
+								   },
+								   nullptr } );
+
+	// clang-format off
+	mLocatorProviders.push_back( { "sb", mUISceneNode->i18n( "switch_build", "Switch Build" ),
+		   [this](auto) {
+		   	showSwitchBuild();
+		   	return true;
+		   },
+		   [this]( const Variant& vName, const ModelEvent* ) {
+			   auto pbm = mApp->getProjectBuildManager();
+			   if ( nullptr == pbm )
+				   return;
+			   auto cfg = pbm->getConfig();
+			   std::string buildName = vName.toString();
+			   if ( pbm->hasBuild( buildName ) ) {
+				   cfg.buildName = buildName;
+				   pbm->setConfig( cfg );
+				   mLocateBarLayout->execute( "close-locatebar" );
+			   }
+		   } } );
+	// clang-format on
+
+	mLocatorProviders.push_back(
+		{ "sbt", mUISceneNode->i18n( "switch_build_type", "Switch Build Type" ),
+		  [this]( auto ) {
+			  showSwitchBuildType();
+			  return true;
+		  },
+		  [this]( const Variant& vName, const ModelEvent* ) {
+			  auto pbm = mApp->getProjectBuildManager();
+			  if ( nullptr == pbm )
+				  return;
+			  auto cfg = pbm->getConfig();
+			  auto build = pbm->getBuild( cfg.buildName );
+			  if ( build != nullptr ) {
+				  std::string buildType = vName.toString();
+				  if ( build->buildTypes().find( buildType ) != build->buildTypes().end() ) {
+					  cfg.buildType = buildType;
+					  pbm->setConfig( cfg );
+					  mLocateBarLayout->execute( "close-locatebar" );
+				  }
+			  }
+		  } } );
+
+	mLocatorProviders.push_back(
+		{ "ft", mUISceneNode->i18n( "switch_file_type", "Switch File Type" ),
+		  [this]( auto ) {
+			  showSwitchFileType();
+			  return true;
+		  },
+		  [this]( const Variant& vName, const ModelEvent* ) {
+			  if ( mSplitter->getCurEditor() ) {
+				  const auto& df =
+					  SyntaxDefinitionManager::instance()->getByLanguageName( vName.toString() );
+				  mSplitter->getCurEditor()->setSyntaxDefinition( df );
+				  mApp->getSettingsMenu()->updateCurrentFileType();
+				  mLocateBarLayout->execute( "close-locatebar" );
+			  }
+		  } } );
+
 	mApp->getPluginManager()->subscribeMessages(
 		"universallocator", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 			return processResponse( msg );
@@ -220,17 +385,68 @@ void UniversalLocator::goToLine() {
 	mLocateInput->setText( "l " );
 }
 
-static bool isCommand( const std::string& filename ) {
-	return !filename.empty() &&
-		   ( filename == "> " || filename == ": " || filename == "l " || filename == ". " ||
-			 filename == "o " || filename == "sb " || filename == "sbt " || filename == "ft " );
+bool UniversalLocator::isCommand( const std::string& filename ) {
+	const auto isLocator = [this]( const std::string& filename ) {
+		return std::find_if( mLocatorProviders.begin(), mLocatorProviders.end(),
+							 [&filename]( const LocatorProvider& provider ) {
+								 return filename == provider.symbolTrigger;
+							 } ) != mLocatorProviders.end();
+	};
+
+	return !filename.empty() && isLocator( filename );
+}
+
+std::optional<UniversalLocator::LocatorProvider> UniversalLocator::getLocator( const String& txt ) {
+	for ( const auto& locator : mLocatorProviders )
+		if ( String::startsWith( txt, locator.symbolTrigger ) )
+			return locator;
+	return {};
+}
+
+bool UniversalLocator::isLocator( const String& txt ) {
+	if ( !txt.empty() ) {
+		for ( const auto& locator : mLocatorProviders )
+			if ( String::startsWith( txt, locator.symbolTrigger ) )
+				return true;
+	}
+	return false;
+}
+
+bool UniversalLocator::tryLocator( const String& txt ) {
+	if ( txt.empty() )
+		return false;
+	for ( const auto& locator : mLocatorProviders ) {
+		if ( String::startsWith( txt, locator.symbolTrigger ) && locator.switchFn( txt ) )
+			return true;
+	}
+	return false;
+}
+
+bool UniversalLocator::openLocator( const String& txt, const Variant& vName,
+									const ModelEvent* modelEvent ) {
+	for ( const auto& locator : mLocatorProviders ) {
+		if ( String::startsWith( txt, locator.symbolTrigger ) && locator.openFn ) {
+			locator.openFn( vName, modelEvent );
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UniversalLocator::pressEnterLocator( const String& txt ) {
+	for ( const auto& locator : mLocatorProviders ) {
+		if ( String::startsWith( txt, locator.symbolTrigger ) && locator.pressEnterFn &&
+			 locator.pressEnterFn( txt ) )
+			return true;
+	}
+	return false;
 }
 
 void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locateInput ) {
 	mLocateBarLayout = locateBar;
 	mLocateInput = locateInput;
 	auto addClickListener = [this]( UIWidget* widget, std::string cmd ) {
-		widget->addEventListener( Event::MouseClick, [this, cmd]( const Event* event ) {
+		widget->on( Event::MouseClick, [this, cmd]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 				mLocateBarLayout->execute( cmd );
@@ -242,66 +458,20 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 	mLocateTable->setParent( mUISceneNode->getRoot() );
 	mLocateTable->setHeadersVisible( false );
 	mLocateTable->setVisible( false );
-	mLocateInput->addEventListener( Event::OnTextChanged, [this]( const Event* ) {
+	mLocateInput->on( Event::OnTextChanged, [this]( const Event* ) {
 		const String& inputTxt = mLocateInput->getText();
-		if ( mSplitter->curEditorExistsAndFocused() &&
-			 String::startsWith( inputTxt, String( "l " ) ) ) {
-			String lineColInput( inputTxt.substr( 2 ) );
-			std::vector<String> parts = lineColInput.split( ':' );
-			Int64 line = 0;
-			if ( parts.size() > 0 && String::fromString( line, parts[0] ) && line - 1 >= 0 )
-				mLocateTable->setVisible( false );
-			return;
-		} else if ( !inputTxt.empty() && mLocateInput->getText()[0] == '>' ) {
-			showCommandPalette();
-		} else if ( !inputTxt.empty() && mLocateInput->getText()[0] == ':' ) {
-			showWorkspaceSymbol();
-		} else if ( String::startsWith( inputTxt, "o " ) ) {
-			showOpenDocuments();
-		} else if ( String::startsWith( inputTxt, ". " ) ) {
-			showDocumentSymbol();
-		} else if ( String::startsWith( inputTxt, "sb " ) ) {
-			showSwitchBuild();
-		} else if ( String::startsWith( inputTxt, "sbt " ) ) {
-			showSwitchBuildType();
-		} else if ( String::startsWith( inputTxt, "ft " ) ) {
-			showSwitchFileType();
-		} else {
+		if ( !tryLocator( inputTxt ) )
 			showLocateTable();
-		}
 		updateLocateBarSync();
 	} );
-	mLocateInput->addEventListener( Event::OnPressEnter, [this]( const Event* ) {
+	mLocateInput->on( Event::OnPressEnter, [this]( const Event* ) {
 		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
-
 		const String& inputTxt = mLocateInput->getText();
-		if ( mSplitter->curEditorExistsAndFocused() &&
-			 String::startsWith( inputTxt, String( "l " ) ) ) {
-			String lineColInput( inputTxt.substr( 2 ) );
-			std::vector<String> parts = lineColInput.split( ':' );
-			Int64 line, column = 0;
-
-			if ( parts.size() > 0 && String::fromString( line, parts[0] ) && line - 1 >= 0 ) {
-				if ( parts.size() > 1 ) {
-					String::fromString( column, parts[1] );
-					if ( column < 0 ) {
-						column = 0;
-					}
-				}
-
-				if ( mSplitter->curEditorExistsAndFocused() ) {
-					mSplitter->getCurEditor()->goToLine( { line - 1, column } );
-					mSplitter->addCurrentPositionToNavigationHistory();
-				}
-
-				mLocateBarLayout->execute( "close-locatebar" );
-				return;
-			}
-		}
-
+		if ( pressEnterLocator( inputTxt ) )
+			return;
 		mLocateTable->forceKeyDown( keyEvent );
 	} );
-	mLocateInput->addEventListener( Event::KeyDown, [this]( const Event* event ) {
+	mLocateInput->on( Event::KeyDown, [this]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		mLocateTable->forceKeyDown( *keyEvent );
 	} );
@@ -313,123 +483,51 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 	mLocateBarLayout->getKeyBindings().addKeybindsString( {
 		{ "escape", "close-locatebar" },
 	} );
-	mLocateTable->addEventListener( Event::KeyDown, [this]( const Event* event ) {
+	mLocateTable->on( Event::KeyDown, [this]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
 			mLocateBarLayout->execute( "close-locatebar" );
 	} );
 	addClickListener( mLocateBarLayout->find<UIWidget>( "locatebar_close" ), "close-locatebar" );
-	mLocateTable->addEventListener( Event::OnModelEvent, [this]( const Event* event ) {
+	mLocateTable->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
-			// Keep it simple for now, command palette has 3 columns
-			if ( modelEvent->getModel()->columnCount() == 3 ) {
-				ModelIndex idx(
-					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 2 ) );
-				if ( idx.isValid() ) {
-					String cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
-					mApp->runCommand( cmd );
-					if ( !mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
-						if ( mSplitter->curEditorIsNotNull() &&
-							 mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
-							mSplitter->getCurEditor()->setFocus();
-					}
-					if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
-						 cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
-						 cmd != "show-open-documents" ) {
-						hideLocateBar();
-					} else {
-						mLocateInput->setFocus();
-					}
-				}
-			} else {
-				Variant vName( modelEvent->getModel()->data(
-					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 0 ),
-					ModelRole::Display ) );
-				if ( isCommand( vName.toString() ) ) {
-					mLocateInput->setText( vName.toString() );
-					return;
-				}
+			Variant vName( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 0 ),
+				ModelRole::Display ) );
 
-				if ( String::startsWith( mLocateInput->getText(), "sb " ) ) {
-					auto pbm = mApp->getProjectBuildManager();
-					if ( nullptr == pbm )
-						return;
-					auto cfg = pbm->getConfig();
-					std::string buildName = vName.toString();
-					if ( pbm->hasBuild( buildName ) ) {
-						cfg.buildName = buildName;
-						pbm->setConfig( cfg );
-						mLocateBarLayout->execute( "close-locatebar" );
-					}
-					return;
-				} else if ( String::startsWith( mLocateInput->getText(), "sbt " ) ) {
-					auto pbm = mApp->getProjectBuildManager();
-					if ( nullptr == pbm )
-						return;
-					auto cfg = pbm->getConfig();
-					auto build = pbm->getBuild( cfg.buildName );
-					if ( build != nullptr ) {
-						std::string buildType = vName.toString();
-						if ( build->buildTypes().find( buildType ) != build->buildTypes().end() ) {
-							cfg.buildType = buildType;
-							pbm->setConfig( cfg );
-							mLocateBarLayout->execute( "close-locatebar" );
-						}
-					}
-					return;
-				} else if ( String::startsWith( mLocateInput->getText(), "ft " ) ) {
-					if ( mSplitter->getCurEditor() ) {
-						const auto& df = SyntaxDefinitionManager::instance()->getByLanguageName(
-							vName.toString() );
-						mSplitter->getCurEditor()->setSyntaxDefinition( df );
-						mApp->getSettingsMenu()->updateCurrentFileType();
-						mLocateBarLayout->execute( "close-locatebar" );
-					}
-					return;
-				}
-
-				Variant vPath( modelEvent->getModel()->data(
-					modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
-					ModelRole::Display ) );
-				if ( vPath.isValid() && !String::startsWith( mLocateInput->getText(), ". " ) ) {
-					std::string path( vPath.toString() );
-					if ( path.empty() )
-						return;
-
-					Variant rangeStr( modelEvent->getModel()->data(
-						modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
-						ModelRole::Custom ) );
-					auto range = rangeStr.isValid()
-									 ? TextRange::fromString( rangeStr.asStdString() )
-									 : TextRange();
-					if ( !range.isValid() && !FileSystem::isRelativePath( path ) &&
-						 pathHasPosition( mLocateInput->getText() ) &&
-						 String::startsWith( mLocateInput->getText().toUtf8(), path ) ) {
-						auto pathAndPos = getPathAndPosition( mLocateInput->getText() );
-						range = { pathAndPos.second, pathAndPos.second };
-					}
-					focusOrLoadFile( path, range );
-					mLocateBarLayout->execute( "close-locatebar" );
-				} else {
-					Variant rangeStr( modelEvent->getModel()->data(
-						modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
-						ModelRole::Custom ) );
-					auto range = rangeStr.isValid()
-									 ? TextRange::fromString( rangeStr.asStdString() )
-									 : TextRange();
-					if ( !range.isValid() )
-						return;
-					UITab* tab = mSplitter->isDocumentOpen( URI( mCurDocURI ), true );
-					if ( tab ) {
-						tab->getTabWidget()->setTabSelected( tab );
-						UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
-						editor->goToLine( range.start() );
-						mSplitter->addEditorPositionToNavigationHistory( editor );
-						mLocateBarLayout->execute( "close-locatebar" );
-					}
-				}
+			if ( isCommand( vName.toString() ) ) {
+				mLocateInput->setText( vName.toString() );
+				return;
 			}
+
+			if ( openLocator( mLocateInput->getText(), vName, modelEvent ) )
+				return;
+
+			Variant vPath( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
+				ModelRole::Display ) );
+
+			if ( !vPath.isValid() )
+				return;
+
+			std::string path( vPath.toString() );
+			if ( path.empty() )
+				return;
+
+			Variant rangeStr( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
+				ModelRole::Custom ) );
+			auto range =
+				rangeStr.isValid() ? TextRange::fromString( rangeStr.asStdString() ) : TextRange();
+			if ( !range.isValid() && !FileSystem::isRelativePath( path ) &&
+				 pathHasPosition( mLocateInput->getText() ) &&
+				 String::startsWith( mLocateInput->getText().toUtf8(), path ) ) {
+				auto pathAndPos = getPathAndPosition( mLocateInput->getText() );
+				range = { pathAndPos.second, pathAndPos.second };
+			}
+			focusOrLoadFile( path, range );
+			mLocateBarLayout->execute( "close-locatebar" );
 		}
 	} );
 }
@@ -472,35 +570,22 @@ void UniversalLocator::showBar() {
 	mLocateTable->setVisible( true );
 	const String& text = mLocateInput->getText();
 
-	if ( !text.empty() && ( text[0] == '>' || text[0] == ':' || text[0] == '.' ||
-							( text[0] == 'o' && text.size() > 1 && text[1] == ' ' ) ||
-							( text[0] == 'l' && text.size() > 1 && text[1] == ' ' ) ) ) {
-		Int64 selectFrom = 1;
-		if ( text.size() >= 2 && text[1] == ' ' )
-			selectFrom = 2;
-
+	if ( isLocator( text ) ) {
+		auto locator = *getLocator( text );
 		mLocateInput->getDocument().setSelection(
-			{ { 0, selectFrom },
-			  { 0, mLocateInput->getDocument().endOfLine( { 0, 0 } ).column() } } );
+			{ { 0, mLocateInput->getDocument().endOfLine( { 0, 0 } ).column() },
+			  { 0, static_cast<Int64>( locator.symbolTrigger.size() ) } } );
 	} else {
 		mLocateInput->getDocument().selectAll();
 	}
 
-	mLocateInput->addEventListener( Event::OnSizeChange,
-									[this]( const Event* ) { updateLocateBar(); } );
+	mLocateInput->on( Event::OnSizeChange, [this]( const Event* ) { updateLocateBar(); } );
 }
 
 void UniversalLocator::showLocateBar() {
 	showBar();
 
-	if ( !mLocateInput->getText().empty() &&
-		 ( mLocateInput->getText()[0] == '>' || mLocateInput->getText()[0] == ':' ||
-		   mLocateInput->getText()[0] == '.' ||
-		   String::startsWith( mLocateInput->getText(), "l " ) ||
-		   String::startsWith( mLocateInput->getText(), "o " ) ||
-		   String::startsWith( mLocateInput->getText(), "sb " ) ||
-		   String::startsWith( mLocateInput->getText(), "sbt " ) ||
-		   String::startsWith( mLocateInput->getText(), "ft " ) ) )
+	if ( isLocator( mLocateInput->getText() ) )
 		mLocateInput->setText( "" );
 
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
@@ -966,26 +1051,8 @@ void UniversalLocator::asyncFuzzyMatchTextDocumentSymbol(
 std::vector<ProjectDirectoryTree::CommandInfo> UniversalLocator::getLocatorCommands() const {
 	std::vector<ProjectDirectoryTree::CommandInfo> vec;
 	UIIcon* icon = mUISceneNode->findIcon( "chevron-right" );
-	vec.push_back( { "> ",
-					 mUISceneNode->i18n( "search_in_command_palette", "Search in Command Palette" ),
-					 icon } );
-	vec.push_back(
-		{ ": ",
-		  mUISceneNode->i18n( "search_for_workspace_symbols", "Search for Workspace Symbols" ),
-		  icon } );
-	vec.push_back( { ". ",
-					 mUISceneNode->i18n( "search_for_document_symbols",
-										 "Search for Symbols in Current Document" ),
-					 icon } );
-	vec.push_back(
-		{ "l ",
-		  mUISceneNode->i18n( "go_to_line_in_current_document", "Go To Line in Current Document" ),
-		  icon } );
-	vec.push_back( { "o ", mUISceneNode->i18n( "open_documents", "Open Documents" ), icon } );
-	vec.push_back( { "sb ", mUISceneNode->i18n( "switch_build", "Switch Build" ), icon } );
-	vec.push_back(
-		{ "sbt ", mUISceneNode->i18n( "switch_build_type", "Switch Build Type" ), icon } );
-	vec.push_back( { "ft ", mUISceneNode->i18n( "switch_file_type", "Switch File Type" ), icon } );
+	for ( const auto& locator : mLocatorProviders )
+		vec.push_back( { locator.symbolTrigger, locator.description, icon } );
 	return vec;
 }
 

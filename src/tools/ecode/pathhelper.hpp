@@ -17,7 +17,7 @@ template <typename T> static bool pathHasPosition( const T& path ) {
 #endif
 	if ( countedSep ) {
 		auto seps = String::split( path, ':' );
-		return String::isNumber( seps.back() );
+		return !seps.empty() && String::isNumber( seps.back() );
 	}
 	return false;
 }

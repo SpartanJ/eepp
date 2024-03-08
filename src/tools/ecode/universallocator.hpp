@@ -15,6 +15,26 @@ class OpenDocumentsModel;
 
 class UniversalLocator {
   public:
+	struct LocatorProvider {
+		LocatorProvider(
+			String&& symbol, String&& description, std::function<bool( const String& )> switchFn,
+			std::function<void( const Variant& var, const ModelEvent* modelEvent )> openFn,
+			std::function<bool( const String& )> pressEnterFn = nullptr ) :
+			symbol( std::move( symbol ) ),
+			symbolTrigger( this->symbol + " " ),
+			description( std::move( description ) ),
+			switchFn( std::move( switchFn ) ),
+			openFn( std::move( openFn ) ),
+			pressEnterFn( std::move( pressEnterFn ) ) {}
+
+		String symbol;
+		String symbolTrigger;
+		String description;
+		std::function<bool( const String& )> switchFn;
+		std::function<void( const Variant&, const ModelEvent* )> openFn;
+		std::function<bool( const String& )> pressEnterFn{ nullptr };
+	};
+
 	UniversalLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode, App* app );
 
 	void initLocateBar( UILocateBar* locateBar, UITextInput* locateInput );
@@ -64,6 +84,7 @@ class UniversalLocator {
 	std::shared_ptr<LSPSymbolInfoModel> mTextDocumentSymbolModel{ nullptr };
 	std::shared_ptr<OpenDocumentsModel> mOpenDocumentsModel{ nullptr };
 	PluginIDType mQueryWorkspaceLastId;
+	std::vector<LocatorProvider> mLocatorProviders;
 
 	void updateLocateBar();
 
@@ -115,6 +136,18 @@ class UniversalLocator {
 	String getDefQueryText( PluginCapability );
 
 	nlohmann::json pluginID( const PluginIDType& id );
+
+	bool isCommand( const std::string& filename );
+
+	std::optional<LocatorProvider> getLocator( const String& txt );
+
+	bool isLocator( const String& txt );
+
+	bool tryLocator( const String& txt );
+
+	bool openLocator( const String& txt, const Variant& vName, const ModelEvent* modelEvent );
+
+	bool pressEnterLocator( const String& txt );
 };
 
 } // namespace ecode
