@@ -202,8 +202,9 @@ void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {
 }
 
 void App::openFileDialog() {
-	UIFileDialog* dialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*",
-											  mLastFileFolder.empty() ? "." : mLastFileFolder );
+	UIFileDialog* dialog =
+		UIFileDialog::New( UIFileDialog::DefaultFlags, "*",
+						   mLastFileFolder.empty() ? getLastUsedFolder() : mLastFileFolder );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );

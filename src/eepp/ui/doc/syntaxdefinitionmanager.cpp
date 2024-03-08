@@ -67,8 +67,7 @@ namespace EE { namespace UI { namespace Doc {
 SINGLETON_DECLARE_IMPLEMENTATION( SyntaxDefinitionManager )
 
 static void addPlainText() {
-	SyntaxDefinitionManager::instance()->add(
-		{ "Plain Text", {}, {}, {}, "", {}, "plaintext" } );
+	SyntaxDefinitionManager::instance()->add( { "Plain Text", {}, {}, {}, "", {}, "plaintext" } );
 }
 
 static void addC() {
@@ -333,7 +332,7 @@ static void addBash() {
 
 		{ "Shell script",
 		  { "%.sh$", "%.bash$", "^%.bashrc$", "^%.bash_profile$", "^%.profile$", "%.zsh$",
-			"%.fish$" },
+			"%.fish$", "^PKGBUILD$" },
 		  {
 			  { { "$[%a_@*#][%w_]*" }, "keyword2" },
 			  { { "#.*\n" }, "comment" },
@@ -663,21 +662,22 @@ static void addIni() {
 }
 
 static void addMakefile() {
-	SyntaxDefinitionManager::instance()->add( { "Makefile",
-												{ "Makefile", "makefile", "%.mk$", "%.make$" },
-												{
-													{ { "#.*\n" }, "comment" },
-													{ { "[[.]]}" }, "normal" },
-													{ { "$[@^<%%?+|*]" }, "keyword2" },
-													{ { "$%(", "%)" }, "keyword" },
-													{ { "%f[%w_][%d%.]+%f[^%w_]" }, "number" },
-													{ { "%..*:" }, "keyword2" },
-													{ { ".*:=" }, "function" },
-													{ { ".*+=" }, "function" },
-													{ { ".*%s=" }, "function" },
-												},
-												{},
-												"#" } );
+	SyntaxDefinitionManager::instance()->add(
+		{ "Makefile",
+		  { "Makefile", "makefile", "%.mk$", "%.make$", "%.mak$" },
+		  {
+			  { { "#.*\n" }, "comment" },
+			  { { "[[.]]}" }, "normal" },
+			  { { "$[@^<%%?+|*]" }, "keyword2" },
+			  { { "$%(", "%)" }, "keyword" },
+			  { { "%f[%w_][%d%.]+%f[^%w_]" }, "number" },
+			  { { "%..*:" }, "keyword2" },
+			  { { ".*:=" }, "function" },
+			  { { ".*+=" }, "function" },
+			  { { ".*%s=" }, "function" },
+		  },
+		  {},
+		  "#" } );
 }
 
 static void addCSharp() {
