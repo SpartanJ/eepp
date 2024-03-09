@@ -1760,6 +1760,8 @@ void LSPClientServer::processRequest( const json& msg ) {
 }
 
 void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
+	if ( mEnded )
+		return;
 	mReceive.append( bytes, n );
 
 	std::string& buffer = mReceive;
@@ -1884,6 +1886,8 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 }
 
 void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
+	if ( mEnded )
+		return;
 	mReceiveErr += std::string( bytes, n );
 	LSPShowMessageParams msg;
 	const auto lastNewLineIndex = mReceiveErr.find_last_of( '\n' );
@@ -2214,21 +2218,36 @@ void LSPClientServer::documentSemanticTokensFull( const URI& document, bool delt
 }
 
 void LSPClientServer::shutdown() {
-	if ( mReady ) {
-		Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
-		{
-			Lock l( mHandlersMutex );
-			mHandlers.clear();
-		}
-		sendSync( newRequest( "shutdown" ), [this]( const IdType&, const json& ) {
-			sendSync( newRequest( "exit" ) );
-			{
-				std::lock_guard l( mShutdownMutex );
-				mReady = false;
-			}
-			mShutdownCond.notify_all();
-		} );
+	if ( !mReady )
+		return;
+	Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
+	{
+		Lock l( mHandlersMutex );
+		mHandlers.clear();
 	}
+	sendSync( newRequest( "shutdown" ), [this]( const IdType&, const json& ) {
+		sendSync( newRequest( "exit" ) );
+		{
+			std::lock_guard l( mShutdownMutex );
+			mReady = false;
+		}
+		mEnded = true;
+
+		if ( mUsingProcess ) {
+			Clock clock;
+			bool waited = false;
+			while ( mProcess.isAlive() && clock.getElapsedTime().asMilliseconds() < 250.f ) {
+				Sys::sleep( Milliseconds( 10 ) );
+				waited = true;
+			}
+			if ( waited ) {
+				Log::debug( "Waited \"%s\" LSP process to exit: %s", mLSP.name,
+							clock.getElapsedTime().toString() );
+			}
+		}
+
+		mShutdownCond.notify_all();
+	} );
 }
 
 bool LSPClientServer::supportsLanguage( const std::string& lang ) const {

@@ -259,6 +259,7 @@ class LSPClientServer {
 	Mutex mClientsMutex;
 	Mutex mHandlersMutex;
 	bool mReady{ false };
+	bool mEnded{ false };
 	bool mUsingProcess{ false };
 	bool mUsingSocket{ false };
 	struct QueueMessage {

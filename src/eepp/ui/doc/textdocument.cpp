@@ -1529,15 +1529,20 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 	if ( !mAutoCloseBrackets || 1 != text.size() )
 		return {};
 
-	size_t pos = 0xFFFFFFFF;
+	size_t pos = std::numeric_limits<size_t>::max();
+	bool isClose = false;
+	bool isSame = false;
 	for ( size_t i = 0; i < mAutoCloseBracketsPairs.size(); i++ ) {
-		if ( text[0] == mAutoCloseBracketsPairs[i].first ) {
+		if ( text[0] == mAutoCloseBracketsPairs[i].first ||
+			 text[0] == mAutoCloseBracketsPairs[i].second ) {
 			pos = i;
+			isClose = text[0] == mAutoCloseBracketsPairs[i].second;
+			isSame = mAutoCloseBracketsPairs[i].first == mAutoCloseBracketsPairs[i].second;
 			break;
 		}
 	}
 
-	if ( pos == 0xFFFFFFFF )
+	if ( pos == std::numeric_limits<size_t>::max() )
 		return {};
 
 	std::vector<bool> inserted;
@@ -1554,7 +1559,18 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 
 			if ( sel.start().column() < (Int64)line( sel.start().line() ).size() ) {
 				auto ch = line( sel.start().line() ).getText()[sel.start().column()];
-				if ( ch == closeChar )
+
+				if ( isClose && ch == closeChar &&
+					 ( !isSame ||
+					   ( sel.start().column() - 1 >= 0 &&
+						 line( sel.start().line() ).getText()[sel.start().column() - 1] ==
+							 text[0] ) ) ) {
+					deleteTo( i, 1 );
+					inserted.push_back( false );
+					continue;
+				}
+
+				if ( isClose && !isSame )
 					mustClose = false;
 			}
 

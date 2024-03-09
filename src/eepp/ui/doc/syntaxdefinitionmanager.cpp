@@ -665,7 +665,7 @@ static void addIni() {
 static void addMakefile() {
 	SyntaxDefinitionManager::instance()->add(
 		{ "Makefile",
-		  { "Makefile", "makefile", "%.mk$", "%.make$", "%.mak$" },
+		  { "^[Mm]akefile$", "%.mk$", "%.make$", "%.mak$", "^Makefile%.am$", "^Makefile%.in$" },
 		  {
 			  { { "#.*\n" }, "comment" },
 			  { { "[[.]]}" }, "normal" },

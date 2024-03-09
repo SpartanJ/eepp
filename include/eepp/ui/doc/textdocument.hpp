@@ -73,7 +73,6 @@ class EE_API TextDocument {
 	typedef std::function<void()> DocumentCommand;
 	typedef std::function<void( Client* )> DocumentRefCommand;
 
-
 	TextDocument( bool verbose = true );
 
 	~TextDocument();
