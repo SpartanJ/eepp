@@ -336,6 +336,7 @@ static void addBash() {
 		  {
 			  { { "$[%a_@*#][%w_]*" }, "keyword2" },
 			  { { "#.*\n" }, "comment" },
+			  { { "<<%-?%s*EOF", "EOF" }, "string" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
 			  { { "`", "`", "\\" }, "string" },

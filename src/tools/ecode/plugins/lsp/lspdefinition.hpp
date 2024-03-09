@@ -15,6 +15,7 @@ struct LSPDefinition {
 	std::string language;
 	std::string name;
 	std::vector<std::string> filePatterns;
+	std::unordered_map<std::string, std::string> cmdVars;
 	std::string command;
 	std::string commandParameters;
 	std::vector<std::string> rootIndicationFileNames;

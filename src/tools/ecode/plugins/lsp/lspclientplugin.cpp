@@ -1037,6 +1037,13 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			lsp.host = obj.value( "host", "" );
 			lsp.port = obj.value( "port", 0 );
 			lsp.shareProcessWithOtherDefinition = obj.value( "share_process", false );
+			if ( obj.contains( "vars" ) && obj.is_object() ) {
+				auto vars = obj["vars"];
+				for ( const auto& var : vars.items() ) {
+					if ( var.value().is_string() )
+						lsp.cmdVars[var.key()] = var.value().get<std::string>();
+				}
+			}
 		}
 
 		lsp.commandParameters = obj.value( "command_parameters", lsp.commandParameters );

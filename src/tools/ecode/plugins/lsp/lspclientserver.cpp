@@ -1154,6 +1154,8 @@ LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String:
 
 LSPClientServer::~LSPClientServer() {
 	shutdown();
+	std::unique_lock<std::mutex> lock( mShutdownMutex );
+	mShutdownCond.wait( lock, [this]() { return !mReady; } );
 	eeSAFE_DELETE( mSocket );
 	{
 		Lock l( mClientsMutex );
@@ -1188,11 +1190,30 @@ void LSPClientServer::socketInitialize() {
 
 bool LSPClientServer::start() {
 	std::string cmd( mLSP.command );
+
 	if ( !mLSP.commandParameters.empty() ) {
 		if ( mLSP.commandParameters.front() != ' ' )
 			mLSP.commandParameters = " " + mLSP.commandParameters;
 		cmd += mLSP.commandParameters;
 	}
+
+	if ( !mLSP.cmdVars.empty() ) {
+		for ( const auto& [key, val] : mLSP.cmdVars ) {
+			std::string rkey( "$" + key );
+			if ( String::contains( mLSP.command, rkey ) ||
+				 String::contains( mLSP.commandParameters, rkey ) ) {
+				Process p;
+				if ( p.create( val, Process::getDefaultOptions() ) ) {
+					std::string buf;
+					p.readAllStdOut( buf );
+					String::trimInPlace( buf, '\n' );
+					String::trimInPlace( buf );
+					String::replaceAll( cmd, rkey, buf );
+				}
+			}
+		}
+	}
+
 	if ( !cmd.empty() ) {
 		bool ret = mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync,
 									mLSP.env, mRootPath );
@@ -2199,11 +2220,14 @@ void LSPClientServer::shutdown() {
 			Lock l( mHandlersMutex );
 			mHandlers.clear();
 		}
-		sendSync( newRequest( "shutdown" ) );
-		Sys::sleep( Milliseconds( 100 ) );
-		sendSync( newRequest( "exit" ) );
-		Sys::sleep( Milliseconds( 100 ) );
-		mReady = false;
+		sendSync( newRequest( "shutdown" ), [this]( const IdType&, const json& ) {
+			sendSync( newRequest( "exit" ) );
+			{
+				std::lock_guard l( mShutdownMutex );
+				mReady = false;
+			}
+			mShutdownCond.notify_all();
+		} );
 	}
 }
 

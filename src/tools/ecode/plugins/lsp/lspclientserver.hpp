@@ -280,6 +280,8 @@ class LSPClientServer {
 	};
 	std::queue<DidChangeQueue> mDidChangeQueue;
 	Mutex mDidChangeMutex;
+	std::mutex mShutdownMutex;
+	std::condition_variable mShutdownCond;
 
 	std::atomic<int> mLastMsgId{ 0 };
 

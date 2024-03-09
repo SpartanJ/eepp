@@ -296,6 +296,16 @@
       "url": "https://github.com/vala-lang/vala-language-server",
       "command": "vala-language-server",
       "file_patterns": ["%.vala$", "%.genie$"]
+    },
+    {
+      "language": "adept",
+      "name": "AdeptLSP",
+      "url": "https://github.com/AdeptLanguage/AdeptLSP",
+      "vars": {
+        "ADEPT_ROOT": "adept --root"
+      },
+      "command": "adeptls --infrastructure $ADEPT_ROOT",
+      "file_patterns": ["%.adept$"]
     }
   ]
 }

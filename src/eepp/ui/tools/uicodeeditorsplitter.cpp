@@ -1405,6 +1405,8 @@ void UICodeEditorSplitter::updateCurrentPositionInNavigationHistory() {
 }
 
 void UICodeEditorSplitter::goBackInNavigationHistory() {
+	if ( mNavigationHistoryPos == std::numeric_limits<size_t>::max() )
+		return;
 	updateCurrentPositionInNavigationHistory();
 	while ( mNavigationHistoryPos > 0 ) {
 		mNavigationHistoryPos--;
