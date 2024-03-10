@@ -12,10 +12,11 @@ class EE_API UIEventDispatcher : public EventDispatcher {
 
 	explicit UIEventDispatcher( SceneNode* sceneNode );
 
-	const bool& justGainedFocus() const;
+	bool justGainedFocus() const;
 
   protected:
-	bool mJustGainedFocus;
+	bool mJustGainedFocus{ false };
+	bool mJustLostFocus{ false };
 
 	void inputCallback( InputEvent* Event );
 
