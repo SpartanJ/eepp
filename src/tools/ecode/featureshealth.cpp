@@ -66,16 +66,16 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		if ( linter ) {
 			Linter found = linter->getLinterForLang( def.getLSPName() );
 			if ( !found.command.empty() ) {
-				lang.linter.name = String::split( found.command, ' ' )[0];
+				lang.linter.name =
+					found.isNative ? "native" : String::split( found.command, ' ' )[0];
 				lang.linter.path = Sys::which( lang.linter.name );
-				lang.linter.found = !lang.linter.path.empty();
+				lang.linter.found = !lang.linter.path.empty() || found.isNative;
 				lang.linter.url = found.url;
 			}
 		}
 
 		if ( formatter ) {
-			FormatterPlugin::Formatter found =
-				formatter->getFormatterForLang( def.getLSPName() );
+			FormatterPlugin::Formatter found = formatter->getFormatterForLang( def.getLSPName() );
 			if ( !found.command.empty() ) {
 				lang.formatter.name = found.type == FormatterPlugin::FormatterType::Native
 										  ? "native"
@@ -88,8 +88,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		}
 
 		if ( lsp ) {
-			LSPDefinition found =
-				lsp->getClientManager().getLSPForLang( def.getLSPName() );
+			LSPDefinition found = lsp->getClientManager().getLSPForLang( def.getLSPName() );
 			if ( !found.command.empty() ) {
 				lang.lsp.name = found.name;
 				lang.lsp.url = found.url;

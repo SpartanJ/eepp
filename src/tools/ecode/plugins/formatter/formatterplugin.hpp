@@ -34,7 +34,7 @@ class FormatterPlugin : public Plugin {
 	static PluginDefinition Definition() {
 		return {
 			"autoformatter",	  "Auto Formatter", "Enables the code formatter/prettifier plugin.",
-			FormatterPlugin::New, { 0, 2, 3 },		FormatterPlugin::NewSync };
+			FormatterPlugin::New, { 0, 2, 4 },		FormatterPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -78,7 +78,7 @@ class FormatterPlugin : public Plugin {
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	std::mutex mWorkMutex;
 	std::condition_variable mWorkerCondition;
-	std::map<std::string, std::function<NativeFormatterResult( const std::string& file )>>
+	std::unordered_map<std::string, std::function<NativeFormatterResult( const std::string& file )>>
 		mNativeFormatters;
 	Int32 mWorkersCount{ 0 };
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */

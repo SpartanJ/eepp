@@ -38,6 +38,7 @@ struct Linter {
 	std::vector<Int64> expectedExitCodes{};
 	int noErrorsExitCode{ 0 };
 	std::string url;
+	bool isNative{ false };
 };
 
 struct LinterMatch {
@@ -46,7 +47,7 @@ struct LinterMatch {
 	LinterType type{ LinterType::Error };
 	String::HashType lineCache{ 0 };
 	MatchOrigin origin{ MatchOrigin::Linter };
-	std::map<UICodeEditor*, Rectf> box;
+	std::unordered_map<UICodeEditor*, Rectf> box;
 	LSPDiagnostic diagnostic;
 };
 
@@ -58,7 +59,7 @@ class LinterPlugin : public Plugin {
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New,
-				 { 0, 2, 3 },
+				 { 0, 2, 4 },
 				 LinterPlugin::NewSync };
 	}
 
@@ -111,6 +112,12 @@ class LinterPlugin : public Plugin {
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );
 
+	void registerNativeLinter( const std::string& cmd,
+							   const std::function<void( std::shared_ptr<TextDocument> doc,
+														 const std::string& file )>& nativeLinter );
+
+	void unregisterNativeLinter( const std::string& cmd );
+
   protected:
 	std::vector<Linter> mLinters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
@@ -127,6 +134,9 @@ class LinterPlugin : public Plugin {
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::mutex mRunningProcessesMutex;
 	std::unordered_map<TextDocument*, Process*> mRunningProcesses;
+	std::unordered_map<std::string, std::function<void( std::shared_ptr<TextDocument> doc,
+														const std::string& file )>>
+		mNativeLinters;
 
 	bool mHoveringMatch{ false };
 	bool mEnableLSPDiagnostics{ true };
@@ -177,6 +187,8 @@ class LinterPlugin : public Plugin {
 	void goToNextError( UICodeEditor* editor );
 
 	void goToPrevError( UICodeEditor* editor );
+
+	void registerNativeLinters();
 };
 
 } // namespace ecode

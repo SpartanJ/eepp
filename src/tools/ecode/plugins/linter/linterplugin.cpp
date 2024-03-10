@@ -13,6 +13,8 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
+#define PUGIXML_HEADER_ONLY
+#include <pugixml/pugixml.hpp>
 
 using json = nlohmann::json;
 
@@ -234,6 +236,20 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 
 		linter.command = obj["command"].get<std::string>();
 		linter.url = obj.value( "url", "" );
+
+		if ( obj.contains( "type" ) ) {
+			std::string typeStr( obj["type"].get<std::string>() );
+			String::toLowerInPlace( typeStr );
+			String::trimInPlace( typeStr );
+			if ( "native" == typeStr ) {
+				linter.isNative = true;
+				if ( mNativeLinters.find( linter.command ) == mNativeLinters.end() ) {
+					Log::error( "Requested native linter: '%s' does not exists.",
+								linter.command.c_str() );
+					continue;
+				}
+			}
+		}
 
 		if ( obj.contains( "expected_exitcodes" ) ) {
 			auto ee = obj["expected_exitcodes"];
@@ -561,6 +577,8 @@ void LinterPlugin::load( PluginManager* pluginManager ) {
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
 									  } );
+	registerNativeLinters();
+
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/linters.json" );
 	if ( FileSystem::fileExists( path ) )
@@ -797,6 +815,10 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 	Clock clock;
 	std::string cmd( linter.command );
 	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
+	if ( linter.isNative && mNativeLinters.find( cmd ) != mNativeLinters.end() ) {
+		mNativeLinters[cmd]( doc, path );
+		return;
+	}
 	Process process;
 	TextDocument* docPtr = doc.get();
 	ScopedOp op(
@@ -829,7 +851,8 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		if ( linter.hasNoErrorsExitCode && linter.noErrorsExitCode == returnCode ) {
 			Lock matchesLock( mMatchesMutex );
-			mMatches[doc.get()] = {};
+			std::map<Int64, std::vector<LinterMatch>> empty;
+			setMatches( doc.get(), MatchOrigin::Linter, empty );
 			return;
 		}
 
@@ -1316,6 +1339,58 @@ bool LinterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 	}
 
 	return false;
+}
+
+void LinterPlugin::registerNativeLinter(
+	const std::string& cmd,
+	const std::function<void( std::shared_ptr<TextDocument>, const std::string& )>& nativeLinter ) {
+	mNativeLinters[cmd] = nativeLinter;
+}
+
+void LinterPlugin::unregisterNativeLinter( const std::string& cmd ) {
+	mNativeLinters.erase( cmd );
+}
+
+static size_t countLines( const std::string_view& text ) {
+	const char* startPtr = text.data();
+	const char* endPtr = text.data() + text.size();
+	size_t count = 0;
+	if ( startPtr != endPtr ) {
+		count = 1 + *startPtr == '\n' ? 1 : 0;
+		while ( ++startPtr && startPtr != endPtr )
+			count += ( '\n' == *startPtr ) ? 1 : 0;
+	}
+	return count;
+}
+
+void LinterPlugin::registerNativeLinters() {
+	if ( !mNativeLinters.empty() )
+		return;
+	mNativeLinters["xml"] = [this]( std::shared_ptr<TextDocument> doc, const std::string& path ) {
+		pugi::xml_document xmlDoc;
+		pugi::xml_parse_result result = xmlDoc.load_file( path.c_str() );
+		std::map<Int64, std::vector<LinterMatch>> matches;
+		if ( !result ) {
+			std::string file;
+			FileSystem::fileGet( path, file );
+			std::string_view filesv{ file };
+			Int64 line = countLines( filesv.substr( 0, result.offset ) );
+			Int64 offset = 0;
+			auto lastNL = filesv.substr( 0, result.offset ).find_last_of( '\n' );
+			if ( lastNL != std::string_view::npos )
+				offset = result.offset - lastNL;
+			LinterMatch match;
+			match.range = { { line, offset }, { line, offset } };
+			match.range = { doc->nextWordBoundary( match.range.start(), false ),
+							doc->previousWordBoundary( match.range.start(), false ) };
+			match.text = result.description();
+			match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Error );
+			match.lineCache = doc->line( match.range.start().line() ).getHash();
+			match.origin = MatchOrigin::Linter;
+			matches[line] = { match };
+		}
+		setMatches( doc.get(), MatchOrigin::Linter, matches );
+	};
 }
 
 } // namespace ecode

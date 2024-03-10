@@ -120,6 +120,14 @@
       "warning_pattern_order": { "line": 1, "col": 2, "message": 4, "type": 3 },
       "command": "hlint --color=never -j $FILENAME",
       "url": "https://github.com/ndmitchell/hlint"
+    },
+    {
+      "language": "xml",
+      "file_patterns": ["%.xml$", "%.svg$"],
+      "warning_pattern": "",
+      "command": "xml",
+      "type": "native",
+      "url": "#native"
     }
   ]
 }
