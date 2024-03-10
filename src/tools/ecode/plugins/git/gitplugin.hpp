@@ -36,7 +36,7 @@ static constexpr const char* GIT_STASH = "git-stash";
 class GitPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
-		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 0, 1 }, GitPlugin::NewSync };
+		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 1, 0 }, GitPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );

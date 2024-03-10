@@ -1236,6 +1236,7 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 
 	listeners.push_back(
 		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
+			mEditorDocs[editor] = editor->getDocumentRef().get();
 			mClientManager.run( editor->getDocumentRef() );
 		} ) );
 
@@ -1243,6 +1244,15 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 			if ( mSymbolInfoShowing )
 				hideTooltip( editor );
+		} ) );
+
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+			TextDocument* oldDoc = mEditorDocs[editor];
+			TextDocument* newDoc = editor->getDocumentRef().get();
+			Lock l( mDocMutex );
+			mDocs.erase( oldDoc );
+			mEditorDocs[editor] = newDoc;
 		} ) );
 
 	mEditors.insert( { editor, listeners } );
