@@ -418,8 +418,15 @@ void ProjectDirectoryTree::moveFile( const FileInfo& file, const std::string& ol
 		FileSystem::dirAddSlashAtEnd( dir );
 		size_t index = findFileIndex( dir + oldFilename );
 		if ( index != std::string::npos ) {
-			mFiles[index] = file.getFilepath();
-			mNames[index] = file.getFileName();
+			IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( file.getFilepath() ) );
+			if ( !( mIgnoreHidden && file.isHidden() ) &&
+				 ( !matcher.foundMatch() || !matcher.match( file ) ) ) {
+				mFiles[index] = file.getFilepath();
+				mNames[index] = file.getFileName();
+			} else {
+				mFiles.erase( mFiles.begin() + index );
+				mNames.erase( mNames.begin() + index );
+			}
 		} else {
 			tryAddFile( file );
 		}

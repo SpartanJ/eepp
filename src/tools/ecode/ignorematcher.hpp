@@ -1,7 +1,7 @@
 #ifndef ECODE_IGNOREMATCHER_HPP
 #define ECODE_IGNOREMATCHER_HPP
 
-#include <eepp/system/filesystem.hpp>
+#include <eepp/system/fileinfo.hpp>
 #include <string>
 #include <vector>
 
@@ -27,6 +27,12 @@ class IgnoreMatcher {
 	const std::string& getPath() const { return mPath; }
 
 	const bool& matcherReady() const { return mMatcherReady; }
+
+	static bool globMatch( const std::string& text, const std::string_view& glob,
+						   bool caseInsensitive = false );
+
+	static bool globMatch( const std::string& text, const std::vector<std::string>& globs,
+						   bool caseInsensitive = false );
 
   protected:
 	std::string mPath;

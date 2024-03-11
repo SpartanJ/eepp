@@ -21,7 +21,7 @@ ThreadPool::ThreadPool( Uint32 numThreads, bool terminateOnClose ) :
 	mTerminateOnClose( terminateOnClose ) {
 	for ( Uint32 i = 0; i < numThreads; ++i ) {
 		mThreads.emplace_back( std::make_unique<Thread>( &ThreadPool::threadFunc, this ) );
-		mThreads.back().get()->launch();
+		mThreads.back()->launch();
 	}
 }
 
@@ -35,9 +35,9 @@ ThreadPool::~ThreadPool() {
 
 	for ( auto& t : mThreads ) {
 		if ( terminateOnClose() ) {
-			t.get()->terminate();
+			t->terminate();
 		} else {
-			t.get()->wait();
+			t->wait();
 		}
 	}
 }

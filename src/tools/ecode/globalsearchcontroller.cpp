@@ -61,7 +61,7 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 		return count;
 	}
 
-	const ProjectSearch::Result& res = model.get()->getResult();
+	const ProjectSearch::Result& res = model->getResult();
 	bool hasCaptures =
 		model->isResultFromLuaPattern() && LuaPattern::find( replaceText, "$%d+" ).isValid();
 

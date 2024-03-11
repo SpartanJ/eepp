@@ -1,4 +1,5 @@
-﻿#include "linterplugin.hpp"
+﻿#include "../../stringhelper.hpp"
+#include "linterplugin.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -1351,18 +1352,6 @@ void LinterPlugin::unregisterNativeLinter( const std::string& cmd ) {
 	mNativeLinters.erase( cmd );
 }
 
-static size_t countLines( const std::string_view& text ) {
-	const char* startPtr = text.data();
-	const char* endPtr = text.data() + text.size();
-	size_t count = 0;
-	if ( startPtr != endPtr ) {
-		count = 1 + *startPtr == '\n' ? 1 : 0;
-		while ( ++startPtr && startPtr != endPtr )
-			count += ( '\n' == *startPtr ) ? 1 : 0;
-	}
-	return count;
-}
-
 void LinterPlugin::registerNativeLinters() {
 	if ( !mNativeLinters.empty() )
 		return;
@@ -1374,7 +1363,7 @@ void LinterPlugin::registerNativeLinters() {
 			std::string file;
 			FileSystem::fileGet( path, file );
 			std::string_view filesv{ file };
-			Int64 line = countLines( filesv.substr( 0, result.offset ) );
+			Int64 line = StringHelper::countLines( filesv.substr( 0, result.offset ) );
 			Int64 offset = 0;
 			auto lastNL = filesv.substr( 0, result.offset ).find_last_of( '\n' );
 			if ( lastNL != std::string_view::npos )

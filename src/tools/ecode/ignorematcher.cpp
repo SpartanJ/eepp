@@ -14,8 +14,8 @@ namespace ecode {
 #define PATHSEP '/'
 #define CASE( c, caseInsensitive ) ( caseInsensitive ? std::tolower( c ) : ( c ) )
 
-bool gitignore_glob_match( const std::string& text, const std::string& glob,
-						   bool caseInsensitive = false ) {
+bool IgnoreMatcher::globMatch( const std::string& text, const std::string_view& glob,
+							   bool caseInsensitive ) {
 	size_t i = 0;
 	size_t j = 0;
 	size_t n = text.size();
@@ -142,6 +142,15 @@ bool gitignore_glob_match( const std::string& text, const std::string& glob,
 	return j >= m;
 }
 
+bool IgnoreMatcher::globMatch( const std::string& text, const std::vector<std::string>& globs,
+							   bool caseInsensitive ) {
+	for ( const auto& glob : globs ) {
+		if ( globMatch( text, glob, caseInsensitive ) )
+			return true;
+	}
+	return false;
+}
+
 IgnoreMatcher::IgnoreMatcher( const std::string& rootPath ) : mPath( rootPath ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
@@ -198,7 +207,7 @@ bool GitIgnoreMatcher::match( const std::string& value ) const {
 	bool match = false;
 	for ( size_t i = 0; i < mPatterns.size(); i++ ) {
 		auto& pattern = mPatterns[i];
-		match = gitignore_glob_match( value, pattern.first );
+		match = globMatch( value, pattern.first );
 		if ( pattern.second )
 			match = !match;
 		if ( match && !pattern.second ) {
@@ -206,7 +215,7 @@ bool GitIgnoreMatcher::match( const std::string& value ) const {
 				for ( size_t n = i + 1; n < mPatterns.size(); n++ ) {
 					// Check if there's a positive negate after the match
 					if ( mPatterns[n].second ) {
-						if ( gitignore_glob_match( value, mPatterns[n].first ) )
+						if ( globMatch( value, mPatterns[n].first ) )
 							return false;
 					} else {
 						break;

@@ -1,3 +1,4 @@
+#include "../../stringhelper.hpp"
 #include "git.hpp"
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -13,30 +14,6 @@ using namespace EE::System;
 using namespace std::literals;
 
 namespace ecode {
-
-static size_t countLines( const std::string& text ) {
-	const char* startPtr = text.c_str();
-	const char* endPtr = text.c_str() + text.size();
-	size_t count = 0;
-	if ( startPtr != endPtr ) {
-		count = 1 + *startPtr == '\n' ? 1 : 0;
-		while ( ++startPtr && startPtr != endPtr )
-			count += ( '\n' == *startPtr ) ? 1 : 0;
-	}
-	return count;
-}
-
-static void readAllLines( const std::string_view& buf,
-						  std::function<void( const std::string_view& )> onLineRead,
-						  char sep = '\n' ) {
-	auto lastNL = 0;
-	auto nextNL = buf.find_first_of( sep );
-	while ( nextNL != std::string_view::npos ) {
-		onLineRead( buf.substr( lastNL, nextNL - lastNL ) );
-		lastNL = nextNL + 1;
-		nextNL = buf.find_first_of( sep, nextNL + 1 );
-	}
-}
 
 static constexpr auto sNotCommitedYetHash = "0000000000000000000000000000000000000000";
 
@@ -469,9 +446,9 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 	std::string buf;
 
 	if ( EXIT_SUCCESS == git( args, projectDir, buf ) ) {
-		branches.reserve( countLines( buf ) );
+		branches.reserve( StringHelper::countLines( buf ) );
 
-		readAllLines( buf, [&]( const std::string_view& line ) {
+		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
 			auto branch = String::trim( String::trim( line, '\'' ), '\t' );
 			if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
 				branches.emplace_back( parseLocalBranch( branch ) );
@@ -484,10 +461,10 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 	}
 
 	if ( ( ref & RefType::Stash ) && EXIT_SUCCESS == git( "stash list", projectDir, buf ) ) {
-		branches.reserve( branches.size() + countLines( buf ) );
+		branches.reserve( branches.size() + StringHelper::countLines( buf ) );
 		std::string ptrn( "(stash@{%d+}):%s(.*)" );
 		LuaPattern pattern( ptrn );
-		readAllLines( buf, [&]( const std::string_view& line ) {
+		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
 			LuaPattern::Range matches[3];
 			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
 				std::string id(
@@ -512,7 +489,7 @@ std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
 	FileSystem::fileGet( ( !projectDir.empty() ? projectDir : mProjectPath ) + ".gitmodules", buf );
 	std::string ptrn( "^%s*path%s*=%s*(.+)" );
 	LuaPattern pattern( ptrn );
-	readAllLines( buf, [&pattern, &submodules]( const std::string_view& line ) {
+	StringHelper::readBySeparator( buf, [&pattern, &submodules]( const std::string_view& line ) {
 		LuaPattern::Range matches[2];
 		if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
 			submodules.emplace_back( String::trim(
@@ -597,12 +574,12 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		std::string subModulePath = "";
 		std::string ptrn = "^([mMARTUD?%s][mMARTUD?%s])%s(.*)";
 		LuaPattern pattern( ptrn );
-		size_t changesCount = countLines( buf );
+		size_t changesCount = StringHelper::countLines( buf );
 
 		if ( changesCount > 1000 )
 			return;
 
-		readAllLines( buf, [&]( const std::string_view& line ) {
+		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
 			LuaPattern::Range matches[3];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
@@ -678,7 +655,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		std::string ptrn( "(%d+)%s+(%d+)%s+(.+)" );
 		LuaPattern pattern( ptrn );
 		std::string subModulePath = "";
-		readAllLines( buf, [&]( const std::string_view& line ) {
+		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
 			LuaPattern::Range matches[4];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
@@ -753,7 +730,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				std::string fileText;
 				FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
 									 fileText );
-				val.inserts = countLines( fileText );
+				val.inserts = StringHelper::countLines( fileText );
 				s.totalInserts += val.inserts;
 			}
 		}

@@ -1137,7 +1137,7 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 				return;
 			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 			std::string txt( item->getId() );
-			mDoc.get()->execute( txt, editor );
+			mDoc->execute( txt, editor );
 			menu->hide();
 		} );
 	};
