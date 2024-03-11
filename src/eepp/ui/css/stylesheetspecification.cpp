@@ -323,6 +323,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "hintoutlinethickness" );
 	registerProperty( "hint-stroke-color", "" ).setType( PropertyType::Color );
 	registerProperty( "hint-font-family", "" ).addAlias( "hint-font-name" );
+	registerProperty( "hint-display", "" ).setType( PropertyType::String );
 
 	registerProperty( "transition", "" ).setIndexed();
 	registerProperty( "transition-duration", "" );

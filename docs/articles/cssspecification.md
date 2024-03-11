@@ -752,6 +752,19 @@ Sets the hint font color.
 
 ---
 
+### hint-display
+
+Sets the hint display mode.
+
+* Applicable to: EE::UI::UITextInput (TextInput)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `always`: Always visible
+  * `focus`: Visible on focus
+* Default value: `always`
+
+---
+
 ### hint-font-family
 
 Sets the hint font family.

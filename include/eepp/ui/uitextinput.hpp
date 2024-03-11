@@ -115,6 +115,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	void setEscapePastedText( bool escapePastedText );
 
+	void setHintDisplay( HintDisplay );
+
+	HintDisplay getHintDisplay() const;
+
   protected:
 	TextDocument mDoc;
 	Float mWaitCursorTime;
@@ -136,6 +140,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	size_t mMenuIconSize{ 16 };
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	Uint64 mLastExecuteEventId{ 0 };
+	HintDisplay mHintDisplay{ HintDisplay::Always };
 
 	void resetWaitCursor();
 

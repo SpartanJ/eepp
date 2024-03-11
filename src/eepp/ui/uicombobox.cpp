@@ -171,6 +171,7 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::HintFontStyle:
 		case PropertyId::HintStrokeWidth:
 		case PropertyId::HintStrokeColor:
+		case PropertyId::HintDisplay:
 		case PropertyId::PopUpToRoot:
 		case PropertyId::MaxVisibleItems:
 		case PropertyId::SelectedIndex:
@@ -220,6 +221,7 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::HintFontStyle:
 		case PropertyId::HintStrokeWidth:
 		case PropertyId::HintStrokeColor:
+		case PropertyId::HintDisplay:
 		case PropertyId::PopUpToRoot:
 		case PropertyId::MaxVisibleItems:
 		case PropertyId::SelectedIndex:
@@ -264,6 +266,7 @@ std::vector<PropertyId> UIComboBox::getPropertiesImplemented() const {
 		PropertyId::HintFontStyle,
 		PropertyId::HintStrokeWidth,
 		PropertyId::HintStrokeColor,
+		PropertyId::HintDisplay,
 		PropertyId::PopUpToRoot,
 		PropertyId::MaxVisibleItems,
 		PropertyId::SelectedIndex,

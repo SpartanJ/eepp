@@ -139,7 +139,8 @@ void UITextInput::draw() {
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
-		} else if ( !mHintCache->getString().empty() ) {
+		} else if ( !mHintCache->getString().empty() &&
+					( mHintDisplay == HintDisplay::Always || hasFocus() ) ) {
 			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
 								  (int)mPaddingPx.Top,
@@ -480,6 +481,8 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 			return String::fromFloat( PixelDensity::dpToPx( getHintOutlineThickness() ), "px" );
 		case PropertyId::HintStrokeColor:
 			return getHintOutlineColor().toHexString();
+		case PropertyId::HintDisplay:
+			return mHintDisplay == HintDisplay::Always ? "always" : "focus";
 		default:
 			return UITextView::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -500,7 +503,8 @@ std::vector<PropertyId> UITextInput::getPropertiesImplemented() const {
 				   PropertyId::HintFontFamily,
 				   PropertyId::HintFontStyle,
 				   PropertyId::HintStrokeWidth,
-				   PropertyId::HintStrokeColor };
+				   PropertyId::HintStrokeColor,
+				   PropertyId::HintDisplay };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -551,6 +555,11 @@ bool UITextInput::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::HintStrokeColor:
 			setHintOutlineColor( attribute.asColor() );
+			break;
+		case PropertyId::HintDisplay:
+			setHintDisplay( String::toLower( attribute.asString() ) == "focus"
+								? HintDisplay::Focus
+								: HintDisplay::Always );
 			break;
 		default:
 			return UITextView::applyProperty( attribute );
@@ -941,6 +950,14 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 	selCurInit( init );
 	selCurEnd( end );
 	return true;
+}
+
+void UITextInput::setHintDisplay( HintDisplay display ) {
+	mHintDisplay = display;
+}
+
+HintDisplay UITextInput::getHintDisplay() const {
+	return mHintDisplay;
 }
 
 }} // namespace EE::UI

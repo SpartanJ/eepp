@@ -11,7 +11,6 @@
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <functional>
-#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -22,8 +21,6 @@ using namespace EE::UI;
 using namespace EE::UI::Models;
 
 namespace ecode {
-
-class App;
 
 class FileListModel : public Model {
   public:
@@ -97,8 +94,10 @@ class ProjectDirectoryTree {
 	typedef std::function<void( ProjectDirectoryTree& dirTree )> ScanCompleteEvent;
 	typedef std::function<void( std::shared_ptr<FileListModel> )> MatchResultCb;
 
-	ProjectDirectoryTree( const std::string& path, std::shared_ptr<ThreadPool> threadPool,
-						  App* app );
+	ProjectDirectoryTree(
+		const std::string& path, std::shared_ptr<ThreadPool> threadPool,
+		PluginManager* pluginManager = nullptr,
+		std::function<void( const std::string& )> loadFileFromPathOrFocusFn = {} );
 
 	~ProjectDirectoryTree();
 
@@ -161,7 +160,8 @@ class ProjectDirectoryTree {
 	mutable Mutex mMatchingMutex;
 	Mutex mDoneMutex;
 	IgnoreMatcherManager mIgnoreMatcher;
-	App* mApp{ nullptr };
+	PluginManager* mPluginManager{ nullptr };
+	std::function<void( const std::string& )> mLoadFileFromPathOrFocusFn;
 
 	void getDirectoryFiles( std::vector<std::string>& files, std::vector<std::string>& names,
 							std::string directory, std::set<std::string> currentDirs,

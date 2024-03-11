@@ -2735,7 +2735,9 @@ void App::removeFolderWatches() {
 void App::loadDirTree( const std::string& path ) {
 	Clock* clock = eeNew( Clock, () );
 	mDirTreeReady = false;
-	mDirTree = std::make_shared<ProjectDirectoryTree>( path, mThreadPool, this );
+	mDirTree = std::make_shared<ProjectDirectoryTree>(
+		path, mThreadPool, mPluginManager.get(),
+		[this]( auto path ) { loadFileFromPathOrFocus( path ); } );
 	Log::info( "Loading DirTree: %s", path );
 	mDirTree->scan(
 		[this, clock]( ProjectDirectoryTree& dirTree ) {

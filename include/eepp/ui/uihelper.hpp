@@ -132,6 +132,11 @@ static const Uint32 UI_NODE_DEFAULT_FLAGS =
 static const Uint32 UI_NODE_DEFAULT_FLAGS_CENTERED =
 	UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
 
+enum class HintDisplay {
+	Always,
+	Focus
+};
+
 }} // namespace EE::UI
 
 #endif

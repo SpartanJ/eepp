@@ -1,5 +1,4 @@
 #include "projectdirectorytree.hpp"
-#include "ecode.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <limits>
@@ -8,8 +7,9 @@ namespace ecode {
 
 #define PRJ_ALLOWED_PATH ".ecode/.prjallowed"
 
-ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
-											std::shared_ptr<ThreadPool> threadPool, App* app ) :
+ProjectDirectoryTree::ProjectDirectoryTree(
+	const std::string& path, std::shared_ptr<ThreadPool> threadPool, PluginManager* pluginManager,
+	std::function<void( const std::string& )> loadFileFromPathOrFocusFn ) :
 	mPath( path ),
 	mPool( threadPool ),
 	mRunning( false ),
@@ -17,14 +17,15 @@ ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 	mIgnoreHidden( true ),
 	mClosing( false ),
 	mIgnoreMatcher( path ),
-	mApp( app ) {
+	mPluginManager( pluginManager ),
+	mLoadFileFromPathOrFocusFn( std::move( loadFileFromPathOrFocusFn ) ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
 
 ProjectDirectoryTree::~ProjectDirectoryTree() {
 	mClosing = true;
-	if ( mApp->getPluginManager() )
-		mApp->getPluginManager()->unsubscribeMessages( "ProjectDirectoryTree" );
+	if ( mPluginManager )
+		mPluginManager->unsubscribeMessages( "ProjectDirectoryTree" );
 	Lock rl( mMatchingMutex );
 	if ( mRunning ) {
 		mRunning = false;
@@ -79,10 +80,13 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 								   mAllowedMatcher.get() );
 			}
 			mIsReady = true;
-			mApp->getPluginManager()->subscribeMessages(
-				"ProjectDirectoryTree", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
-					return processMessage( msg );
-				} );
+			if ( mPluginManager ) {
+				mPluginManager->subscribeMessages(
+					"ProjectDirectoryTree",
+					[this]( const PluginMessage& msg ) -> PluginRequestHandle {
+						return processMessage( msg );
+					} );
+			}
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )
 			if ( scanComplete )
 				scanComplete( *this );
@@ -530,9 +534,11 @@ PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& m
 	}
 
 	if ( !matchesMap.empty() ) {
-		std::string filePath( matchesMap.begin()->second );
-		mApp->getUISceneNode()->runOnMainThread(
-			[this, filePath]() { mApp->loadFileFromPathOrFocus( filePath ); } );
+		if ( mPluginManager && mLoadFileFromPathOrFocusFn ) {
+			std::string filePath( matchesMap.begin()->second );
+			mPluginManager->getUISceneNode()->runOnMainThread(
+				[this, filePath]() { mLoadFileFromPathOrFocusFn( filePath ); } );
+		}
 	}
 
 	return PluginRequestHandle::broadcast();
