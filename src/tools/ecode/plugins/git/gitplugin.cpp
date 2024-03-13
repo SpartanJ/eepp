@@ -92,7 +92,8 @@ GitPlugin::~GitPlugin() {
 
 	endModelStyler();
 
-	getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
+	if ( getUISceneNode() )
+		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
 
 	{ Lock l( mGitBranchMutex ); }
 	{ Lock l( mGitStatusMutex ); }

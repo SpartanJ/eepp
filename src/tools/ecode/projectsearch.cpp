@@ -64,6 +64,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 		searchRes = String::BMH::find( fileText, text, searchRes, occ );
 		if ( searchRes != -1 ) {
 			if ( wholeWord && !String::isWholeWord( fileText, text, searchRes ) ) {
+				totNl += countNewLines( fileText, lSearchRes, searchRes );
 				lSearchRes = searchRes;
 				searchRes += text.size();
 				continue;

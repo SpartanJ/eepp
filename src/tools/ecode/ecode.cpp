@@ -3862,19 +3862,23 @@ static void exportLanguages( const std::string& path, const std::string& langs )
 	std::vector<SyntaxDefinition> defs;
 
 	if ( !langs.empty() ) {
-		auto langss = String::split( langs, ',' );
-		for ( const auto& l : langss ) {
-			const auto& sd = sdm->getByLSPName( l );
+		if ( langs == "all" ) {
+			defs = sdm->getDefinitions();
+		} else {
+			auto langss = String::split( langs, ',' );
+			for ( const auto& l : langss ) {
+				const auto& sd = sdm->getByLSPName( l );
 
-			if ( !sd.getLanguageName().empty() ) {
-				defs.push_back( sd );
-				continue;
+				if ( !sd.getLanguageName().empty() ) {
+					defs.push_back( sd );
+					continue;
+				}
+
+				const auto& sd2 = sdm->getByLanguageName( l );
+
+				if ( !sd2.getLanguageName().empty() )
+					defs.push_back( sd2 );
 			}
-
-			const auto& sd2 = sdm->getByLanguageName( l );
-
-			if ( !sd2.getLanguageName().empty() )
-				defs.push_back( sd2 );
 		}
 	}
 
