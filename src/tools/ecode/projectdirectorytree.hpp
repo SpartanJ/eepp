@@ -144,6 +144,8 @@ class ProjectDirectoryTree {
 
 	const std::string& getPath() const { return mPath; }
 
+	void resetPluginManager();
+
   protected:
 	std::string mPath;
 	std::shared_ptr<ThreadPool> mPool;

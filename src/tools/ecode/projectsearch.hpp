@@ -212,14 +212,14 @@ class ProjectSearch {
 	find( const std::vector<std::string> files, const std::string& string, ResultCb result,
 		  bool caseSensitive, bool wholeWord = false,
 		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
-		  const std::vector<GlobMatch>& pathFilters = {} );
+		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "" );
 
 	static void
 	find( const std::vector<std::string> files, std::string string,
 		  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
 		  bool wholeWord = false,
 		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
-		  const std::vector<GlobMatch>& pathFilters = {} );
+		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "" );
 };
 
 } // namespace ecode

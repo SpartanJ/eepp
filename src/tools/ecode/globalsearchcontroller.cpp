@@ -589,7 +589,7 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 			caseSensitive, wholeWord,
 			luaPattern ? TextDocument::FindReplaceType::LuaPattern
 					   : TextDocument::FindReplaceType::Normal,
-			parseGlobMatches( filter ) );
+			parseGlobMatches( filter ), mApp->getCurrentProject() );
 	}
 }
 

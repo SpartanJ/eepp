@@ -23,16 +23,16 @@ const std::size_t String::InvalidPos = StringType::npos;
 #define PATHSEP '/'
 #define CASE( c, caseInsensitive ) ( caseInsensitive ? std::tolower( c ) : ( c ) )
 
-bool String::globMatch( const std::string& text, const std::string_view& glob,
+bool String::globMatch( const std::string_view& text, const std::string_view& glob,
 						bool caseInsensitive ) {
 	size_t i = 0;
 	size_t j = 0;
 	size_t n = text.size();
 	size_t m = glob.size();
-	size_t text1_backup = std::string::npos;
-	size_t glob1_backup = std::string::npos;
-	size_t text2_backup = std::string::npos;
-	size_t glob2_backup = std::string::npos;
+	size_t text1_backup = std::string_view::npos;
+	size_t glob1_backup = std::string_view::npos;
+	size_t text2_backup = std::string_view::npos;
+	size_t glob2_backup = std::string_view::npos;
 	bool nodot = !DOTGLOB;
 	// match pathname if glob contains a / otherwise match the basename
 	if ( j + 1 < m && glob[j] == '/' ) {
@@ -43,9 +43,9 @@ bool String::globMatch( const std::string& text, const std::string_view& glob,
 		if ( i < n && text[i] == PATHSEP )
 			i++;
 		j++;
-	} else if ( glob.find( '/' ) == std::string::npos ) {
+	} else if ( glob.find( '/' ) == std::string_view::npos ) {
 		size_t sep = text.rfind( PATHSEP );
-		if ( sep != std::string::npos )
+		if ( sep != std::string_view::npos )
 			i = sep + 1;
 	}
 	while ( i < n ) {
@@ -63,8 +63,8 @@ bool String::globMatch( const std::string& text, const std::string_view& glob,
 						if ( glob[j] != '/' )
 							return false;
 						// new **-loop, discard *-loop
-						text1_backup = std::string::npos;
-						glob1_backup = std::string::npos;
+						text1_backup = std::string_view::npos;
+						glob1_backup = std::string_view::npos;
 						text2_backup = i;
 						glob2_backup = ++j;
 						continue;
@@ -130,13 +130,13 @@ bool String::globMatch( const std::string& text, const std::string_view& glob,
 					continue;
 			}
 		}
-		if ( glob1_backup != std::string::npos && text[text1_backup] != PATHSEP ) {
+		if ( glob1_backup != std::string_view::npos && text[text1_backup] != PATHSEP ) {
 			// *-loop: backtrack to the last * but do not jump over /
 			i = ++text1_backup;
 			j = glob1_backup;
 			continue;
 		}
-		if ( glob2_backup != std::string::npos ) {
+		if ( glob2_backup != std::string_view::npos ) {
 			// **-loop: backtrack to the last **
 			i = ++text2_backup;
 			j = glob2_backup;
@@ -151,8 +151,8 @@ bool String::globMatch( const std::string& text, const std::string_view& glob,
 	return j >= m;
 }
 
-bool String::globMatch( const std::string& text, const std::vector<std::string>& globs,
-							   bool caseInsensitive ) {
+bool String::globMatch( const std::string_view& text, const std::vector<std::string>& globs,
+						bool caseInsensitive ) {
 	for ( const auto& glob : globs ) {
 		if ( globMatch( text, glob, caseInsensitive ) )
 			return true;

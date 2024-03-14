@@ -323,6 +323,10 @@ void ProjectDirectoryTree::onChange( const ProjectDirectoryTree::Action& action,
 	}
 }
 
+void ProjectDirectoryTree::resetPluginManager() {
+	mPluginManager = nullptr;
+}
+
 void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
 	if ( mIgnoreHidden && file.isHidden() )
 		return;

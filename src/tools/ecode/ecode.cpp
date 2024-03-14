@@ -733,6 +733,7 @@ App::~App() {
 		delete mFileWatcher;
 		mFileWatcher = nullptr;
 	}
+	mDirTree->resetPluginManager();
 	mPluginManager.reset();
 	eeSAFE_DELETE( mSplitter );
 

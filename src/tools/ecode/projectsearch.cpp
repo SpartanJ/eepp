@@ -145,7 +145,7 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 void ProjectSearch::find( const std::vector<std::string> files, const std::string& string,
 						  ResultCb result, bool caseSensitive, bool wholeWord,
 						  const TextDocument::FindReplaceType& type,
-						  const std::vector<GlobMatch>& pathFilters ) {
+						  const std::vector<GlobMatch>& pathFilters, std::string basePath ) {
 	Result res;
 	const auto occ =
 		type == TextDocument::FindReplaceType::Normal
@@ -182,9 +182,10 @@ struct FindData {
 void ProjectSearch::find( const std::vector<std::string> files, std::string string,
 						  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
 						  bool wholeWord, const TextDocument::FindReplaceType& type,
-						  const std::vector<GlobMatch>& pathFilters ) {
+						  const std::vector<GlobMatch>& pathFilters, std::string basePath ) {
 	if ( files.empty() )
 		result( {} );
+	FileSystem::dirAddSlashAtEnd( basePath );
 	FindData* findData = eeNew( FindData, () );
 	findData->resCount = files.size();
 	if ( !caseSensitive )
@@ -197,10 +198,14 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 	search.resize( files.size() );
 	size_t pos = 0;
 	size_t count = 0;
-	for ( auto& file : files ) {
+	for ( const auto& file : files ) {
 		bool skip = false;
+		std::string_view fsv( file );
+		if ( !basePath.empty() && String::startsWith( file, basePath ) )
+			fsv = fsv.substr( basePath.size() );
+
 		for ( const auto& filter : pathFilters ) {
-			bool matches = String::globMatch( file, filter.first );
+			bool matches = String::globMatch( fsv, filter.first );
 			if ( ( matches && filter.second ) || ( !matches && !filter.second ) ) {
 				skip = true;
 				break;
