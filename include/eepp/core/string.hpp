@@ -398,6 +398,18 @@ class EE_API String {
 	/** @return The next character in a utf8 null terminated string */
 	static Uint32 utf8Next( char*& utf8String );
 
+	/** glob matches a string against a glob
+	** @return True if matches
+	*/
+	static bool globMatch( const std::string& text, const std::string_view& glob,
+						   bool caseInsensitive = false );
+
+	/** glob matches a string against a set of globs
+	** @return True if matches
+	*/
+	static bool globMatch( const std::string& text, const std::vector<std::string>& globs,
+						   bool caseInsensitive = false );
+
 	/** @brief Default constructor
 	** This constructor creates an empty string.
 	**/

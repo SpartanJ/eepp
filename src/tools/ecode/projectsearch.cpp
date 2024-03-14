@@ -144,13 +144,25 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 
 void ProjectSearch::find( const std::vector<std::string> files, const std::string& string,
 						  ResultCb result, bool caseSensitive, bool wholeWord,
-						  const TextDocument::FindReplaceType& type ) {
+						  const TextDocument::FindReplaceType& type,
+						  const std::vector<GlobMatch>& pathFilters ) {
 	Result res;
 	const auto occ =
 		type == TextDocument::FindReplaceType::Normal
 			? String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() )
 			: std::vector<size_t>();
 	for ( auto& file : files ) {
+		bool skip = false;
+		for ( const auto& filter : pathFilters ) {
+			bool matches = String::globMatch( file, filter.first );
+			if ( ( matches && filter.second ) || ( !matches && !filter.second ) ) {
+				skip = true;
+				break;
+			}
+		}
+		if ( skip )
+			continue;
+
 		auto fileRes = type == TextDocument::FindReplaceType::Normal
 						   ? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
 						   : searchInFileLuaPattern( file, string, caseSensitive, wholeWord );
@@ -169,7 +181,8 @@ struct FindData {
 
 void ProjectSearch::find( const std::vector<std::string> files, std::string string,
 						  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
-						  bool wholeWord, const TextDocument::FindReplaceType& type ) {
+						  bool wholeWord, const TextDocument::FindReplaceType& type,
+						  const std::vector<GlobMatch>& pathFilters ) {
 	if ( files.empty() )
 		result( {} );
 	FindData* findData = eeNew( FindData, () );
@@ -180,7 +193,43 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 		type == TextDocument::FindReplaceType::Normal
 			? String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() )
 			: std::vector<size_t>();
+	std::vector<bool> search;
+	search.resize( files.size() );
+	size_t pos = 0;
+	size_t count = 0;
 	for ( auto& file : files ) {
+		bool skip = false;
+		for ( const auto& filter : pathFilters ) {
+			bool matches = String::globMatch( file, filter.first );
+			if ( ( matches && filter.second ) || ( !matches && !filter.second ) ) {
+				skip = true;
+				break;
+			}
+		}
+		if ( skip ) {
+			search[pos++] = false;
+			continue;
+		}
+		search[pos++] = true;
+		count++;
+	}
+
+	findData->resCount = count;
+
+	if ( count == 0 ) {
+		result( findData->res );
+		eeDelete( findData );
+		return;
+	}
+
+	pos = 0;
+	for ( const auto& file : files ) {
+		if ( !search[pos] ) {
+			pos++;
+			continue;
+		}
+		pos++;
+
 		pool->run(
 			[findData, file, string, caseSensitive, wholeWord, occ, type] {
 				auto fileRes =

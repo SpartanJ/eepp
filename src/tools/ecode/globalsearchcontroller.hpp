@@ -47,8 +47,9 @@ class GlobalSearchController {
 
 	void initGlobalSearchTree( UITreeViewGlobalSearch* searchTree );
 
-	void doGlobalSearch( String text, bool caseSensitive, bool wholeWord, bool luaPattern,
-						 bool escapeSequence, bool searchReplace, bool searchAgain = false );
+	void doGlobalSearch( String text, String filter, bool caseSensitive, bool wholeWord,
+						 bool luaPattern, bool escapeSequence, bool searchReplace,
+						 bool searchAgain = false );
 
 	size_t replaceInFiles( const std::string& replaceText,
 						   std::shared_ptr<ProjectSearch::ResultModel> model );
@@ -76,18 +77,25 @@ class GlobalSearchController {
 	UITreeViewGlobalSearch* mGlobalSearchTreeSearch{ nullptr };
 	UITreeViewGlobalSearch* mGlobalSearchTreeReplace{ nullptr };
 	UITextInput* mGlobalSearchInput{ nullptr };
+	UITextInput* mGlobalSearchWhereInput{ nullptr };
 	UIDropDownList* mGlobalSearchHistoryList{ nullptr };
 	Uint32 mGlobalSearchHistoryOnItemSelectedCb{ 0 };
-	std::deque<std::pair<std::string, std::shared_ptr<ProjectSearch::ResultModel>>>
-		mGlobalSearchHistory;
+	struct SearchHistoryItem {
+		std::string search;
+		std::string filter;
+		std::shared_ptr<ProjectSearch::ResultModel> result;
+	};
+	std::deque<SearchHistoryItem> mGlobalSearchHistory;
 
 	void onLoadDone( const Variant& lineNum, const Variant& colNum );
 
 	PluginRequestHandle processMessage( const PluginMessage& msg );
 
 	void updateGlobalSearchHistory( std::shared_ptr<ProjectSearch::ResultModel> model,
-									const std::string& search, bool searchReplace, bool searchAgain,
-									bool escapeSequence );
+									const std::string& search, const std::string& filter,
+									bool searchReplace, bool searchAgain, bool escapeSequence );
+
+	std::vector<GlobMatch> parseGlobMatches( const String& str );
 };
 
 } // namespace ecode

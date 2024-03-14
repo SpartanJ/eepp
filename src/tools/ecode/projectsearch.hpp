@@ -16,6 +16,9 @@ using namespace EE::UI::Models;
 
 namespace ecode {
 
+using GlobMatch = std::pair<std::string, bool>; // where string is the glob and bool true
+												// indicates that it's inverted / negated
+
 class ProjectSearch {
   public:
 	struct ResultData {
@@ -208,13 +211,15 @@ class ProjectSearch {
 	static void
 	find( const std::vector<std::string> files, const std::string& string, ResultCb result,
 		  bool caseSensitive, bool wholeWord = false,
-		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal );
+		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
+		  const std::vector<GlobMatch>& pathFilters = {} );
 
 	static void
 	find( const std::vector<std::string> files, std::string string,
 		  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
 		  bool wholeWord = false,
-		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal );
+		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
+		  const std::vector<GlobMatch>& pathFilters = {} );
 };
 
 } // namespace ecode
