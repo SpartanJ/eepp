@@ -1250,6 +1250,8 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 				TextPosition pos( resolveScreenPosition( position.asFloat() ) );
 				if ( !mDoc->selectionExists( pos ) )
 					mDoc->addSelection( { pos, pos } );
+			} else if ( mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
+				mDoc->selectLine();
 			} else {
 				mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
 			}
@@ -1400,9 +1402,6 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 			Engine::instance()->openURI( link.toUtf8() );
 			resetLinkOver();
 		}
-	} else if ( ( flags & EE_BUTTON_LMASK ) &&
-				mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
-		mDoc->selectLine();
 	} else if ( ( flags & EE_BUTTON_MMASK ) && isMouseOverMeOrChilds() ) {
 		auto txt( getUISceneNode()->getWindow()->getClipboard()->getText() );
 		if ( !isLocked() && !txt.empty() ) {
