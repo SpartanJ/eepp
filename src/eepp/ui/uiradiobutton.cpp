@@ -24,6 +24,7 @@ UIRadioButton::UIRadioButton() :
 	mActiveButton->setPosition( 0, 0 );
 	mActiveButton->setSize( 8, 8 );
 	mActiveButton->addEventListener( Event::OnSizeChange, cb );
+	mActiveButton->unsetTabFocusable();
 
 	mInactiveButton = UIWidget::NewWithTag( "radiobutton::inactive" );
 	mInactiveButton->setVisible( true );
@@ -32,6 +33,7 @@ UIRadioButton::UIRadioButton() :
 	mInactiveButton->setPosition( 0, 0 );
 	mInactiveButton->setSize( 9, 8 );
 	mInactiveButton->addEventListener( Event::OnSizeChange, cb );
+	mInactiveButton->unsetTabFocusable();
 
 	onPaddingChange();
 

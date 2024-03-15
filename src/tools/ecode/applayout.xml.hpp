@@ -504,12 +504,12 @@ R"html(
 				</vbox>
 				<vbox lw="0" lw8="1" lh="wc">
 					<TextInput id="global_search_find" lw="mp" lh="wc" lh="18dp" padding="0" margin-bottom="2dp" />
-					<hbox lw="mp" lh="wc" margin-bottom="4dp">
+					<hbox lw="mp" lh="wc" margin-bottom="2dp">
 						<TextInput id="global_search_where" lw="0" lw8="1" lh="wc" lh="18dp" padding="0" margin-right="4dp"
 								   hint='@string(search_where_example, "e.g. *.ts, src/**/include, -src/**/exclude")' hint-display="focus" />
-						<PushButton lw="wc" lh="mp" text="..." />
+						<PushButton id="global_search_filters_menu_button" lw="wc" lh="mp" text="..." />
 					</hbox>
-					<StackLayout lw="mp" lh="wc" margin-bottom="4dp">
+					<StackLayout lw="mp" lh="wc" margin-bottom="2dp">
 						<CheckBox id="case_sensitive" text='@string(case_sensitive, "Case sensitive")' selected="true" margin-right="8dp" />
 						<CheckBox id="whole_word" text='@string(match_whole_word, "Match Whole Word")' selected="false" margin-right="8dp" />
 						<CheckBox id="lua_pattern" text='@string(lua_pattern, "Lua Pattern")' selected="false" margin-right="8dp" />
@@ -517,7 +517,7 @@ R"html(
 								  tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
 					</StackLayout>
 					<hbox lw="mp" lh="wc">
-						<TextView text='@string(history, "History:")' margin-right="4dp" lh="18dp" />
+						<TextView text='@string(history, "History:")' margin-right="4dp" lh="18dp" focusable="false" />
 						<DropDownList id="global_search_history" lw="0" lh="18dp" lw8="1" margin-right="4dp" />
 						<PushButton id="global_search_clear_history" lw="wc" lh="18dp" text='@string(clear_history, "Clear History")' margin-right="4dp" />
 						<PushButton id="global_search" lw="wc" lh="18dp" text='@string(search, "Search")' margin-right="4dp" />

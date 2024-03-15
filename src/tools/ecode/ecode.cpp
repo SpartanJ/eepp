@@ -733,7 +733,8 @@ App::~App() {
 		delete mFileWatcher;
 		mFileWatcher = nullptr;
 	}
-	mDirTree->resetPluginManager();
+	if ( mDirTree )
+		mDirTree->resetPluginManager();
 	mPluginManager.reset();
 	eeSAFE_DELETE( mSplitter );
 
@@ -1948,10 +1949,13 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 	}
 
 	TextDocument& doc = editor->getDocument();
+	std::string filePath =
+		doc.hasFilepath() ? doc.getFilePath()
+						  : ( !doc.getLoadingFilePath().empty() ? doc.getLoadingFilePath() : "" );
 
-	if ( mFileWatcher && doc.hasFilepath() &&
-		 ( !mDirTree || !mDirTree->isDirInTree( doc.getFileInfo().getFilepath() ) ) ) {
-		std::string dir( FileSystem::fileRemoveFileName( doc.getFileInfo().getFilepath() ) );
+	if ( mFileWatcher && !filePath.empty() &&
+		 ( !mDirTree || !mDirTree->isDirInTree( filePath ) ) ) {
+		std::string dir( FileSystem::fileRemoveFileName( filePath ) );
 		mThreadPool->run( [this, dir] {
 			if ( mFileWatcher && !dirInFolderWatches( dir ) ) {
 				auto watchId = mFileWatcher->addWatch( dir, mFileSystemListener );

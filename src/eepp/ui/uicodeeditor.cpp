@@ -579,8 +579,10 @@ void UICodeEditor::onFontStyleChanged() {
 void UICodeEditor::onDocumentLoaded( TextDocument* ) {}
 
 void UICodeEditor::onDocumentReloaded( TextDocument* ) {
-	onDocumentClosed( mDoc.get() );
-	onDocumentLoaded();
+	DocEvent event( this, mDoc.get(), Event::OnDocumentReloaded );
+	sendEvent( &event );
+	invalidateDraw();
+	invalidateLongestLineWidth();
 }
 
 void UICodeEditor::onDocumentLoaded() {

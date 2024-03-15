@@ -1369,7 +1369,8 @@ std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 			 PropertyId::BorderBottomLeftRadius,
 			 PropertyId::BorderBottomRightRadius,
 			 PropertyId::BorderSmooth,
-			 PropertyId::BackgroundSmooth };
+			 PropertyId::BackgroundSmooth,
+			 PropertyId::Focusable };
 }
 
 std::string UIWidget::getPropertyString( const std::string& property ) const {
@@ -1522,6 +1523,8 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return mBackground
 					   ? ( mBackground->getBackgroundDrawable().isSmooth() ? "true" : "false" )
 					   : "false";
+		case PropertyId::Focusable:
+			return isTabFocusable() ? "true" : "false";
 		default:
 			break;
 	}
@@ -2061,6 +2064,22 @@ bool UIWidget::isTabStop() const {
 
 void UIWidget::setTabStop() {
 	mFlags |= UI_TAB_STOP;
+}
+
+void UIWidget::unsetTabStop() {
+	mFlags &= ~UI_TAB_STOP;
+}
+
+bool UIWidget::isTabFocusable() const {
+	return ( mFlags & UI_TAB_FOCUSABLE ) != 0;
+}
+
+void UIWidget::setTabFocusable() {
+	mFlags |= UI_TAB_FOCUSABLE;
+}
+
+void UIWidget::unsetTabFocusable() {
+	mFlags &= ~UI_TAB_FOCUSABLE;
 }
 
 UIWidget* UIWidget::getPrevWidget() const {

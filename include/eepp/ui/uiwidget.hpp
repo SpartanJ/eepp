@@ -251,6 +251,14 @@ class EE_API UIWidget : public UINode {
 
 	void setTabStop();
 
+	void unsetTabStop();
+
+	bool isTabFocusable() const;
+
+	void setTabFocusable();
+
+	void unsetTabFocusable();
+
 	UIWidget* getPrevTabWidget() const;
 
 	UIWidget* getNextTabWidget() const;

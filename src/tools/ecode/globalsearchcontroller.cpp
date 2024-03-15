@@ -232,6 +232,8 @@ void GlobalSearchController::initGlobalSearchBar(
 	};
 	mGlobalSearchInput->on( Event::OnPressEnter, pressEnterCb );
 	mGlobalSearchWhereInput->on( Event::OnPressEnter, pressEnterCb );
+	mGlobalSearchWhereInput->on( Event::OnTabNavigate,
+								 [this]( auto ) { mGlobalSearchInput->setFocus(); } );
 	auto switchInputToTree = [this]( const Event* event ) {
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
 		Uint32 keyCode = keyEvent->getKeyCode();
@@ -358,6 +360,36 @@ void GlobalSearchController::initGlobalSearchBar(
 			 keyEvent->getKeyCode() == KEY_RETURN )
 			mGlobalSearchBarLayout->execute( "replace-in-files" );
 	} );
+
+	UIWidget* menuBtn =
+		mGlobalSearchBarLayout->find<UIWidget>( "global_search_filters_menu_button" );
+	menuBtn->onClick( [this, menuBtn]( auto ) {
+		UIPopUpMenu* menu = UIPopUpMenu::New();
+		menu->add( mApp->i18n( "add_include_filter", "Add Include Filter" ) )
+			->setId( "add-include-filter" );
+		menu->add( mApp->i18n( "add_exclude_filter", "Add Exclude Filter" ) )
+			->setId( "add-exclude-filter" );
+		menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+			const auto& id = event->getNode()->getId();
+
+			String appendTxt = "";
+			bool addComma = !mGlobalSearchWhereInput->getText().empty() &&
+							mGlobalSearchWhereInput->getText().back() != ',';
+
+			if ( "add-include-filter" == id ) {
+				appendTxt = ( addComma ? String{ "," } : String{ "" } ) + "*.txt";
+			} else if ( "add-exclude-filter" == id ) {
+				appendTxt = ( addComma ? String{ "," } : String{ "" } ) + "-*.txt";
+			}
+
+			if ( !appendTxt.empty() )
+				mGlobalSearchWhereInput->setText( mGlobalSearchWhereInput->getText() + appendTxt );
+		} );
+
+		menu->showAtScreenPosition( menuBtn->convertToWorldSpace( { 0, 0 } ) );
+		menu->setFocus();
+	} );
+
 	mGlobalSearchTree = mGlobalSearchTreeSearch;
 }
 

@@ -206,6 +206,16 @@ ListView::cell::icon {
 	margin-right: 4dp;
 }
 
+CheckBox,
+RadioButton {
+	text-decoration: none;
+}
+
+CheckBox:focus,
+RadioButton:focus {
+	text-decoration: underline;
+}
+
 CheckBox::active,
 CheckBox::inactive {
 	width: 12dp;

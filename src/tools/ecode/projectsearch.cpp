@@ -153,8 +153,12 @@ void ProjectSearch::find( const std::vector<std::string> files, const std::strin
 			: std::vector<size_t>();
 	for ( auto& file : files ) {
 		bool skip = false;
+		std::string_view fsv( file );
+		if ( !basePath.empty() && String::startsWith( file, basePath ) )
+			fsv = fsv.substr( basePath.size() );
+
 		for ( const auto& filter : pathFilters ) {
-			bool matches = String::globMatch( file, filter.first );
+			bool matches = String::globMatch( fsv, filter.first );
 			if ( ( matches && filter.second ) || ( !matches && !filter.second ) ) {
 				skip = true;
 				break;
@@ -186,82 +190,87 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 	if ( files.empty() )
 		result( {} );
 	FileSystem::dirAddSlashAtEnd( basePath );
-	FindData* findData = eeNew( FindData, () );
-	findData->resCount = files.size();
-	if ( !caseSensitive )
-		String::toLowerInPlace( string );
-	const auto occ =
-		type == TextDocument::FindReplaceType::Normal
-			? String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() )
-			: std::vector<size_t>();
-	std::vector<bool> search;
-	search.resize( files.size() );
-	size_t pos = 0;
-	size_t count = 0;
-	for ( const auto& file : files ) {
-		bool skip = false;
-		std::string_view fsv( file );
-		if ( !basePath.empty() && String::startsWith( file, basePath ) )
-			fsv = fsv.substr( basePath.size() );
+	pool->run( [files = std::move( files ), string = std::move( string ), pool = std::move( pool ),
+				result = std::move( result ), caseSensitive, wholeWord, type,
+				pathFilters = std::move( pathFilters ),
+				basePath = std::move( basePath )]() mutable {
+		FindData* findData = eeNew( FindData, () );
+		findData->resCount = files.size();
+		if ( !caseSensitive )
+			String::toLowerInPlace( string );
+		const auto occ =
+			type == TextDocument::FindReplaceType::Normal
+				? String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() )
+				: std::vector<size_t>();
+		std::vector<bool> search;
+		search.resize( files.size() );
+		size_t pos = 0;
+		size_t count = 0;
+		for ( const auto& file : files ) {
+			bool skip = false;
+			std::string_view fsv( file );
+			if ( !basePath.empty() && String::startsWith( file, basePath ) )
+				fsv = fsv.substr( basePath.size() );
 
-		for ( const auto& filter : pathFilters ) {
-			bool matches = String::globMatch( fsv, filter.first );
-			if ( ( matches && filter.second ) || ( !matches && !filter.second ) ) {
-				skip = true;
-				break;
+			for ( const auto& filter : pathFilters ) {
+				bool matches = String::globMatch( fsv, filter.first );
+				if ( ( matches && filter.second ) || ( !matches && !filter.second ) ) {
+					skip = true;
+					break;
+				}
 			}
+			if ( skip ) {
+				search[pos++] = false;
+				continue;
+			}
+			search[pos++] = true;
+			count++;
 		}
-		if ( skip ) {
-			search[pos++] = false;
-			continue;
+
+		findData->resCount = count;
+
+		if ( count == 0 ) {
+			result( findData->res );
+			eeDelete( findData );
+			return;
 		}
-		search[pos++] = true;
-		count++;
-	}
 
-	findData->resCount = count;
-
-	if ( count == 0 ) {
-		result( findData->res );
-		eeDelete( findData );
-		return;
-	}
-
-	pos = 0;
-	for ( const auto& file : files ) {
-		if ( !search[pos] ) {
+		pos = 0;
+		for ( const auto& file : files ) {
+			if ( !search[pos] ) {
+				pos++;
+				continue;
+			}
 			pos++;
-			continue;
-		}
-		pos++;
 
-		pool->run(
-			[findData, file, string, caseSensitive, wholeWord, occ, type] {
-				auto fileRes =
-					type == TextDocument::FindReplaceType::Normal
-						? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
-						: searchInFileLuaPattern( file, string, caseSensitive, wholeWord );
-				if ( !fileRes.empty() ) {
-					Lock l( findData->resMutex );
-					findData->res.push_back( { file, fileRes } );
-				}
-			},
-			[result, findData]( const auto& ) {
-				int count;
-				{
-					Lock l( findData->countMutex );
-					findData->resCount--;
-					count = findData->resCount;
-				}
-				if ( count == 0 ) {
-					result( findData->res );
-					eeDelete( findData );
+			pool->run(
+				[findData, file, string, caseSensitive, wholeWord, occ, type] {
+					auto fileRes =
+						type == TextDocument::FindReplaceType::Normal
+							? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
+							: searchInFileLuaPattern( file, string, caseSensitive, wholeWord );
+					if ( !fileRes.empty() ) {
+						Lock l( findData->resMutex );
+						findData->res.push_back( { file, fileRes } );
+					}
+				},
+				[result, findData]( const auto& ) {
+					int count;
+					{
+						Lock l( findData->countMutex );
+						findData->resCount--;
+						count = findData->resCount;
+					}
+					if ( count == 0 ) {
+						result( findData->res );
+						eeDelete( findData );
 #if EE_PLATFORM == EE_PLATFORM_LINUX
-					malloc_trim( 0 );
+						malloc_trim( 0 );
 #endif
-				}
-			} );
-	}
+					}
+				} );
+		}
+	} );
 }
 
 void ProjectSearch::ResultModel::removeLastNewLineCharacter() {

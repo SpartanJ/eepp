@@ -26,6 +26,7 @@ UICheckBox::UICheckBox( const std::string& tag ) :
 	mActiveButton->setPosition( 0, 0 );
 	mActiveButton->setSize( 8, 8 );
 	mActiveButton->addEventListener( Event::OnSizeChange, cb );
+	mActiveButton->unsetTabFocusable();
 
 	mInactiveButton = UIWidget::NewWithTag( tag + "::inactive" );
 	mInactiveButton->setVisible( true );
@@ -34,6 +35,7 @@ UICheckBox::UICheckBox( const std::string& tag ) :
 	mInactiveButton->setPosition( 0, 0 );
 	mInactiveButton->setSize( 8, 8 );
 	mInactiveButton->addEventListener( Event::OnSizeChange, cb );
+	mInactiveButton->unsetTabFocusable();
 
 	onPaddingChange();
 
