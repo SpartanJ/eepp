@@ -2318,7 +2318,7 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 		btn->setText( lang->getLanguageName() );
 		btn->setLayoutMarginRight( PixelDensity::dpToPx( 8 ) );
 		btn->onClick( [this, editor, lang, docAlert, ext]( auto ) {
-			editor->getDocument().setSyntaxDefinition( *lang );
+			editor->setSyntaxDefinition( *lang );
 			editor->disableReportSizeChangeToChilds();
 			docAlert->close();
 			editor->setFocus();
@@ -2634,7 +2634,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			if ( hasConfig != mConfig.languagesExtensions.priorities.end() &&
 				 ( def = SyntaxDefinitionManager::instance()->getPtrByLSPName(
 					   hasConfig->second ) ) ) {
-				editor->getDocument().setSyntaxDefinition( *def );
+				editor->setSyntaxDefinition( *def );
 			} else {
 				createDocManyLangsAlert( editor );
 			}
