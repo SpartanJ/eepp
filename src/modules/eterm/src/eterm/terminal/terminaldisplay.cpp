@@ -1385,7 +1385,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 }
 
 void TerminalDisplay::draw( const Vector2f& pos ) {
-	if ( !mEmulator )
+	if ( !mEmulator || !mTerminal )
 		return;
 
 	mDrawing = true;

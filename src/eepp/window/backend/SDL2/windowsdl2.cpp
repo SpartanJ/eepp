@@ -861,7 +861,7 @@ bool WindowSDL::showMessageBox( const MessageBoxType& type, const std::string& t
 										  mSDLWindow );
 }
 
-SDL_Window* WindowSDL::GetSDLWindow() const {
+SDL_Window* WindowSDL::getSDLWindow() const {
 	return mSDLWindow;
 }
 
