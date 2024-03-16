@@ -247,7 +247,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			file.getDirectoryPath(), historySize.Get(), nullptr, fb.Get(),
 			!( file.isRegularFile() && file.isExecutable() ) );
 
-		if ( terminal->getTerminal() == nullptr ) {
+		if ( terminal == nullptr ) {
 			win->close();
 			win->showMessageBox( EE::Window::Window::MessageBoxType::Error, "eterm",
 								 "Operating System not supported." );
