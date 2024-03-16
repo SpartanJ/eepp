@@ -54,7 +54,7 @@ bool LuaPattern::matches( const std::string& string, const std::string_view& pat
 	return find( string, pattern ).isValid();
 }
 
-LuaPattern::LuaPattern( const std::string_view& pattern ) : mPattern( pattern ) {
+LuaPattern::LuaPattern( const std::string_view& pattern ) : mPattern( pattern ), mMatchNum( 0 ) {
 	if ( !sFailHandlerInitialized ) {
 		sFailHandlerInitialized = true;
 		lua_str_fail_func( failHandler );

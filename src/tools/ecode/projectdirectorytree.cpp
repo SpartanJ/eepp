@@ -52,10 +52,10 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			if ( !acceptedPatterns.empty() ) {
 				std::vector<std::string> files;
 				std::vector<std::string> names;
-				std::vector<LuaPattern> patterns;
-				for ( auto& strPattern : acceptedPatterns )
-					patterns.emplace_back( LuaPattern( strPattern ) );
-				mAcceptedPatterns = patterns;
+				std::vector<LuaPatternStorage> patterns;
+				for ( const auto& strPattern : acceptedPatterns )
+					patterns.emplace_back( LuaPatternStorage( strPattern ) );
+				mAcceptedPatterns = std::move( patterns );
 				std::set<std::string> info;
 				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
 								   mAllowedMatcher.get() );

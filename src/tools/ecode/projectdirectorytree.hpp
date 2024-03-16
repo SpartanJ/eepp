@@ -152,7 +152,7 @@ class ProjectDirectoryTree {
 	std::vector<std::string> mFiles;
 	std::vector<std::string> mNames;
 	std::vector<std::string> mDirectories;
-	std::vector<LuaPattern> mAcceptedPatterns;
+	std::vector<LuaPatternStorage> mAcceptedPatterns;
 	std::unique_ptr<GitIgnoreMatcher> mAllowedMatcher;
 	bool mRunning;
 	bool mIsReady;
