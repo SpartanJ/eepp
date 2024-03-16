@@ -1195,7 +1195,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	mUndoStack.pushSelection( undoStack, cursorIdx, mSelection, time );
 	mUndoStack.pushInsert( undoStack, getText( range ), cursorIdx, range.start(), time );
 
-	size_t linesRemoved = 0;
+	Int64 linesRemoved = 0;
 
 	// First delete all the lines in between the first and last one.
 	if ( range.start().line() + 1 < range.end().line() ) {

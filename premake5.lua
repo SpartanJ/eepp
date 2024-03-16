@@ -366,10 +366,10 @@ function build_link_configuration( package_name, use_ee_icon )
 	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x64" }
 
-	filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
+	filter { "options:windows-mingw-build", "architecture:x86" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/lib/", "/usr/i686-w64-mingw32/sys-root/mingw/lib/" }
 
-	filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
+	filter { "options:windows-mingw-build", "architecture:x86_64" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
 
 	filter "system:emscripten"
@@ -717,10 +717,10 @@ function build_eepp( build_name )
 	filter "options:windows-vc-build"
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 
-	filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
+	filter { "options:windows-mingw-build", "architecture:x86" }
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
 
-	filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
+	filter { "options:windows-mingw-build", "architecture:x86_64" }
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
 
 	filter "action:vs*"
@@ -916,9 +916,9 @@ workspace "eepp"
 		target_dir_thirdparty()
 		filter "options:windows-vc-build"
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
-		filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
+		filter { "options:windows-mingw-build", "architecture:x86" }
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
-		filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
+		filter { "options:windows-mingw-build", "architecture:x86_64" }
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
 
 	project "efsw-static"
