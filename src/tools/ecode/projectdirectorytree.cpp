@@ -63,7 +63,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
 					found = false;
-					for ( auto& pattern : patterns ) {
+					for ( auto& pattern : mAcceptedPatterns ) {
 						if ( pattern.matches( names[i] ) ) {
 							found = true;
 							break;
