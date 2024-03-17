@@ -39,7 +39,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 								 const bool& ignoreHidden ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	mPool->run(
-		[this, acceptedPatterns, ignoreHidden] {
+		[this, acceptedPatterns = std::move( acceptedPatterns ), ignoreHidden] {
 #endif
 			Lock l( mFilesMutex );
 			mRunning = true;
@@ -47,15 +47,15 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			mDirectories.push_back( mPath );
 
 			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) )
-				mAllowedMatcher = std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH );
+				mAllowedMatcher = std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH, false );
 
 			if ( !acceptedPatterns.empty() ) {
 				std::vector<std::string> files;
 				std::vector<std::string> names;
-				std::vector<LuaPatternStorage> patterns;
+				mAcceptedPatterns.clear();
+				mAcceptedPatterns.reserve( acceptedPatterns.size() );
 				for ( const auto& strPattern : acceptedPatterns )
-					patterns.emplace_back( LuaPatternStorage( strPattern ) );
-				mAcceptedPatterns = std::move( patterns );
+					mAcceptedPatterns.emplace_back( std::string{ strPattern } );
 				std::set<std::string> info;
 				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
 								   mAllowedMatcher.get() );
@@ -63,7 +63,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
 					found = false;
-					for ( auto& pattern : mAcceptedPatterns ) {
+					for ( const auto& pattern : mAcceptedPatterns ) {
 						if ( pattern.matches( names[i] ) ) {
 							found = true;
 							break;

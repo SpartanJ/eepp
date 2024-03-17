@@ -11,12 +11,16 @@ IgnoreMatcher::IgnoreMatcher( const std::string& rootPath ) : mPath( rootPath ) 
 
 IgnoreMatcher::~IgnoreMatcher() {}
 
-GitIgnoreMatcher::GitIgnoreMatcher( const std::string& rootPath,
-									const std::string& ignoreFileName ) :
+GitIgnoreMatcher::GitIgnoreMatcher( const std::string& rootPath, const std::string& ignoreFileName,
+									bool addGitFolderFilter ) :
 	IgnoreMatcher( rootPath ),
 	mIgnoreFileName( ignoreFileName ),
 	mIgnoreFilePath( mPath + mIgnoreFileName ) {
 	if ( canMatch() ) {
+		if ( addGitFolderFilter ) {
+			if ( FileSystem::fileExists( mPath + ".git" ) ) // Also ignore the .git folder
+				mPatterns.emplace_back( std::make_pair( ".git/**", false ) );
+		}
 		if ( parse() ) {
 			mMatcherReady = true;
 		}
@@ -34,8 +38,6 @@ const std::string& GitIgnoreMatcher::getIgnoreFilePath() const {
 bool GitIgnoreMatcher::parse() {
 	std::string patternFile;
 	FileSystem::fileGet( mPath + mIgnoreFileName, patternFile );
-	if ( FileSystem::fileExists( mPath + ".git" ) ) // Also ignore the .git folder
-		mPatterns.emplace_back( std::make_pair( "**/.git/**", false ) );
 	std::vector<std::string> patterns = String::split( patternFile );
 	for ( auto& pattern : patterns ) {
 		bool negates = false;

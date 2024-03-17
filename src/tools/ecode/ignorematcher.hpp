@@ -38,7 +38,8 @@ class IgnoreMatcher {
 class GitIgnoreMatcher : public IgnoreMatcher {
   public:
 	GitIgnoreMatcher( const std::string& rootPath,
-					  const std::string& ignoreFileName = ".gitignore" );
+					  const std::string& ignoreFileName = ".gitignore",
+					  bool addGitFolderFilter = true );
 
 	bool canMatch() override;
 
