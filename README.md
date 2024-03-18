@@ -400,30 +400,26 @@ That's it. That will build the whole project.
 ### Windows
 
 You have two options: build with [Visual Studio](https://visualstudio.microsoft.com/)
-or with [MinGW](https://sourceforge.net/projects/mingw-w64/).
+or with [MinGW](https://github.com/skeeto/w64devkit/releases/latest).
 To be able to build the project with any of these options first you will need to
 generate the project files with [premake4 or premake5](https://premake.github.io/download).
 Then you will need to add the binary file to any of the executable paths defined
-in `PATH` ( or add one, or use it from a local path ). Also you will need to
-install the prebuild binaries and development libraries of [SDL2](http://libsdl.org/download-2.0.php)
-and [openal-soft](http://kcat.strangesoft.net/openal.html#download).
+in `PATH` ( or add one, or use it from a local path ).
 Download *Visual Studio* or *MinGW* files depending on your needs.
 
 #### Visual Studio
 
 You will need to use premake5 and run:
 
-`premake5.exe vs2022`
+`premake5.exe --windows-vc-build vs2022`
 
 Then the project files should be found in `make/windows/`. A complete solution
 and all the project will be available. Having installed everything, you'll be
 able to build the *Visual Studio* solution as any other project.
 
-If you are very new to programming there's an alternative to build the project
-without external dependencies, in order to do that you need to generate the
-project files with the command:
-
-`premake5.exe --windows-vc-build vs2022`
+Using the commnad line argument `--windows-vc-build` will download the SDL2 dependency automatically
+and add the paths to the build process to link against it without the need to download manually any
+external dependency.
 
 Then just build the solution in Visual Studio or run `MSBuild` manually in a
 console:
@@ -437,12 +433,29 @@ _VS2022 Community Edition_ the path usually is:
 
 #### MinGW
 
-`premake5.exe gmake2`
+Windows MinGW builds are being produced and tested with [w64devkit](https://github.com/skeeto/w64devkit/releases/latest) distribution.
+MSYS is currently not officially supported given some issues found on the build process (but it's possible to build with some extra steps).
 
- Then just build the project located in `make/windows/` with `mingw32-make.exe` or `mingw64-make.exe` (depending on your target architecture)
- or any equivalent:
+If you're using w64devkit you'll have to [download](https://github.com/skeeto/w64devkit/releases/latest) it and extract it, we will assume that it's extracted at `C:\w64devkit`.
 
-`mingw32-make.exe -C make\windows`
+Execute `C:\w64devkit\w64devkit.exe` as an administrator (`right click` -> `Run as administrator` ).
+
+Then go to the `eepp` cloned repository directory and run:
+
+`premake5.exe --windows-mingw-build gmake2`
+
+`--windows-mingw-build` will automatically download and link external dependencies (SDL2).
+
+Then just build the project located in `make/windows/` with `mingw32-make.exe` or any equivalent:
+
+`mingw32-make.exe -C make\windows config=release_x86_64`
+
+To build a debug build run:
+
+`mingw32-make.exe -C make\windows config=debug_x86_64`
+
+And then make sure to copy the `SDL2.dll` file located at `src/thirdparty/SDL2-2.XX.X/x86_64-w64-mingw32/bin/SDL2.dll` to `bin`.
+If for some reason `eepp.dll` (or `eepp-debug.dll`) hasn't being copied automatically you can copy them from `libs/windows/x86_64/` to `bin`.
 
 ### macOS
 

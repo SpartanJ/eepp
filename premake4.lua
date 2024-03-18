@@ -1480,6 +1480,7 @@ solution "eepp"
 		end
 		if os.is("windows") and not is_vs() then
 			linkoptions { "../../bin/assets/icon/ecode.res" }
+			buildoptions{ "-Wa,-mbig-obj" }
 		end
 		build_link_configuration( "ecode", false )
 

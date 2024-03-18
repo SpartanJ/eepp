@@ -1210,6 +1210,8 @@ workspace "eepp"
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/" }
 		links { "efsw-static", "eterm-static" }
 		build_link_configuration( "ecode", false )
+		filter { "system:windows", "action:not vs*" }
+			buildoptions{ "-Wa,-mbig-obj" }
 		filter { "system:windows", "action:vs*" }
 			files { "bin/assets/icon/ecode.rc", "bin/assets/icon/ecode.ico" }
 			vpaths { ['Resources/*'] = { "ecode.rc", "ecode.ico" } }

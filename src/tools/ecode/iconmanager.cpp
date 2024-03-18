@@ -75,7 +75,21 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 		{ "eraser", 0xec9e },
 		{ "file-search", 0xed05 },
 		{ "window", 0xf2c4 },
-		{ "file-lock-fill", 0xecf2 } };
+		{ "file-lock-fill", 0xecf2 },
+		{ "filetype-svg", 0xF3C5 },
+		{ "filetype-png", 0xF3C5 },
+		{ "filetype-jpg", 0xF3C5 },
+		{ "filetype-jpeg", 0xF3C5 },
+		{ "filetype-tga", 0xF3C5 },
+		{ "filetype-dds", 0xF3C5 },
+		{ "filetype-qoi", 0xF3C5 },
+		{ "filetype-bmp", 0xF3C5 },
+		{ "filetype-gif", 0xF3C5 },
+		{ "filetype-psd", 0xF3C5 },
+		{ "filetype-hdr", 0xF3C5 },
+		{ "filetype-pic", 0xF3C5 },
+		{ "filetype-pvr", 0xF3C5 },
+		{ "filetype-pkm", 0xF3C5 } };
 
 	for ( const auto& icon : icons )
 		iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
