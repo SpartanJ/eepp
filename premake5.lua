@@ -162,6 +162,14 @@ function download_and_extract_sdl(sdl_url)
 	end
 end
 
+function copy_sdl()
+	if _OPTIONS["windows-vc-build"] then
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
+	elseif _OPTIONS["windows-mingw-build"] then
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
+	end
+end
+
 function version_to_number( version )
 	versionpart = 0
 	versionnum = 0
@@ -182,8 +190,10 @@ function download_and_extract_dependencies()
 	if not os.isdir("src/thirdparty/" .. remote_sdl2_version) then
 		if _OPTIONS["windows-vc-build"] then
 			download_and_extract_sdl(remote_sdl2_devel_vc_url)
+			copy_sdl()
 		elseif _OPTIONS["windows-mingw-build"] then
 			download_and_extract_sdl(remote_sdl2_devel_mingw_url)
+			copy_sdl()
 		elseif os.istarget("ios") then
 			download_and_extract_sdl(remote_sdl2_devel_src_url)
 		end
