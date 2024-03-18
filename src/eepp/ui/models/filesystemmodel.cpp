@@ -102,10 +102,10 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 	auto child = eeNew( Node, ( std::move( file ), this ) );
 
 	if ( model.getDisplayConfig().ignoreHidden && file.isHidden() )
-		return {};
+		return nullptr;
 
 	if ( model.getMode() == Mode::DirectoriesOnly && !file.isDirectory() )
-		return {};
+		return nullptr;
 
 	return child;
 }
@@ -601,7 +601,7 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			Node* childNode = parent->createChild( file.getFileName(), *this );
 
-			if ( childNode->getName().empty() )
+			if ( childNode == nullptr || childNode->getName().empty() )
 				return false;
 
 			size_t pos = getFileIndex( parent, file );
