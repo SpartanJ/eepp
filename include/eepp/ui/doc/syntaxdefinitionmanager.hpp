@@ -78,10 +78,17 @@ class EE_API SyntaxDefinitionManager {
 	/* empty = all */
 	bool save( const std::string& path, const std::vector<SyntaxDefinition>& def = {} );
 
+	void setLanguageExtensionsPriority( const std::map<std::string, std::string>& priorities );
+
+	const std::map<std::string, std::string>& getLanguageExtensionsPriority() {
+		return mPriorities;
+	}
+
   protected:
 	SyntaxDefinitionManager();
 
 	std::vector<SyntaxDefinition> mDefinitions;
+	std::map<std::string, std::string> mPriorities;
 
 	std::optional<size_t> getLanguageIndex( const std::string& langName );
 };

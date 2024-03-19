@@ -2323,6 +2323,8 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 			docAlert->close();
 			editor->setFocus();
 			mConfig.languagesExtensions.priorities[ext] = lang->getLSPName();
+			SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
+				mConfig.languagesExtensions.priorities );
 		} );
 	}
 
@@ -3672,6 +3674,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		Clock defClock;
 		SyntaxDefinitionManager::createSingleton();
+		SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
+			mConfig.languagesExtensions.priorities );
 		Log::info( "Syntax definitions loaded in %.2f ms.",
 				   defClock.getElapsedTimeAndReset().asMilliseconds() );
 

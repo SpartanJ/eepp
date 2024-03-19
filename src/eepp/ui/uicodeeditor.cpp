@@ -1554,12 +1554,28 @@ void UICodeEditor::onPaddingChange() {
 	invalidateEditor( false );
 }
 
+std::pair<size_t, Float> UICodeEditor::findLongestLineInRange( const TextRange& range ) {
+	std::pair<size_t, Float> curRange{ mLongestLineIndex, mLongestLineWidth };
+	Float longestLineWidth = mLongestLineWidth;
+	if ( mHorizontalScrollBarEnabled ) {
+		for ( Int64 lineIndex = range.start().line(); lineIndex <= range.end().line();
+			  lineIndex++ ) {
+			Float lineWidth = getLineWidth( lineIndex );
+			if ( lineWidth > longestLineWidth ) {
+				curRange.first = lineIndex;
+				curRange.second = lineWidth;
+				longestLineWidth = lineWidth;
+			}
+		}
+	}
+	return curRange;
+}
+
 void UICodeEditor::findLongestLine() {
 	if ( mHorizontalScrollBarEnabled ) {
-		mLongestLineWidth = 0;
-		for ( size_t lineIndex = 0; lineIndex < mDoc->linesCount(); lineIndex++ ) {
-			mLongestLineWidth = eemax( mLongestLineWidth, getLineWidth( lineIndex ) );
-		}
+		auto range = findLongestLineInRange( mDoc->getDocRange() );
+		mLongestLineIndex = range.first;
+		mLongestLineWidth = range.second;
 	}
 }
 
@@ -1580,9 +1596,6 @@ Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
 
 void UICodeEditor::updateScrollBar() {
 	int notVisibleLineCount = (int)mDoc->linesCount() - (int)getViewPortLineCount().y;
-
-	if ( mLongestLineWidthDirty && mFont )
-		updateLongestLineWidth();
 
 	mHScrollBar->setEnabled( false );
 	mHScrollBar->setVisible( false );
@@ -1700,11 +1713,14 @@ void UICodeEditor::updateEditor() {
 	mDirtyScroll = false;
 }
 
-void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& ) {
+void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) {
 	invalidateDraw();
 	checkMatchingBrackets();
 	sendCommonEvent( Event::OnTextChanged );
-	invalidateLongestLineWidth();
+
+	auto range = findLongestLineInRange( change.range );
+	mLongestLineIndex = range.first;
+	mLongestLineWidth = range.second;
 }
 
 void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
@@ -2004,8 +2020,11 @@ template <typename StringType> Float UICodeEditor::getTextWidth( const StringTyp
 Float UICodeEditor::getXOffsetColSanitized( TextPosition position ) const {
 	position.setLine( eeclamp<Int64>( position.line(), 0L, mDoc->linesCount() - 1 ) );
 	// This is different from sanitizePosition, sinze allows the last character.
-	position.setColumn( eeclamp<Int64>( position.column(), 0L,
-										eemax<Int64>( 0, mDoc->line( position.line() ).size() ) ) );
+	position.setColumn(
+		eeclamp<Int64>( position.column(), 0L,
+						eemax<Int64>( 0, position.line() < static_cast<Int64>( mDoc->linesCount() )
+											 ? mDoc->line( position.line() ).size()
+											 : 0 ) ) );
 	return getXOffsetCol( position );
 }
 
@@ -2402,8 +2421,8 @@ void UICodeEditor::setEnableColorPickerOnSelection( const bool& enableColorPicke
 
 void UICodeEditor::setSyntaxDefinition( const SyntaxDefinition& definition ) {
 	std::string oldLang( mDoc->getSyntaxDefinition().getLanguageName() );
-	mDoc->setSyntaxDefinition( definition );
 	mDoc->getHighlighter()->reset();
+	mDoc->setSyntaxDefinition( definition );
 	invalidateDraw();
 	DocSyntaxDefEvent event( this, mDoc.get(), Event::OnDocumentSyntaxDefinitionChange, oldLang,
 							 mDoc->getSyntaxDefinition().getLanguageName() );

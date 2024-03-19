@@ -1841,6 +1841,11 @@ bool SyntaxDefinitionManager::save( const std::string& path,
 	return false;
 }
 
+void SyntaxDefinitionManager::setLanguageExtensionsPriority(
+	const std::map<std::string, std::string>& priorities ) {
+	mPriorities = priorities;
+}
+
 std::optional<size_t> SyntaxDefinitionManager::getLanguageIndex( const std::string& langName ) {
 	size_t pos = 0;
 	for ( const auto& def : mDefinitions ) {
@@ -2276,6 +2281,15 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 	std::string fileName( FileSystem::fileNameFromPath( filePath ) );
 
 	bool extHasMultipleLangs = extensionCanRepresentManyLanguages( extension );
+	auto priorityLanguage = mPriorities.end();
+	if ( extHasMultipleLangs ) {
+		priorityLanguage = mPriorities.find( extension );
+		const SyntaxDefinition* def = nullptr;
+		if ( priorityLanguage != mPriorities.end() &&
+			 ( def = getPtrByLSPName( priorityLanguage->second ) ) ) {
+			return *def;
+		}
+	}
 
 	// Use the filename instead
 	if ( extension.empty() )

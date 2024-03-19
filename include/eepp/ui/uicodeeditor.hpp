@@ -708,6 +708,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Uint32 mLineBreakingColumn{ 100 };
 	TextRange mMatchingBrackets;
 	Float mLongestLineWidth{ 0 };
+	size_t mLongestLineIndex{ 0 };
 	Time mFindLongestLineWidthUpdateFrequency;
 	Clock mLongestLineWidthLastUpdate;
 	Clock mLastActivity;
@@ -761,7 +762,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void invalidateLinesCache();
 
-	virtual void findLongestLine();
+	void findLongestLine();
+
+	std::pair<size_t, Float> findLongestLineInRange( const TextRange& range );
 
 	virtual Uint32 onFocus();
 

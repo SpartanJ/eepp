@@ -263,9 +263,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		}
 
 		bool matched = false;
+		size_t patternsCount = curState.currentSyntax->getPatterns().size();
 
-		for ( size_t patternIndex = 0; patternIndex < curState.currentSyntax->getPatterns().size();
-			  patternIndex++ ) {
+		for ( size_t patternIndex = 0; patternIndex < patternsCount; patternIndex++ ) {
 			const SyntaxPattern& pattern = curState.currentSyntax->getPatterns()[patternIndex];
 			if ( i != 0 && pattern.patterns[0][0] == '^' )
 				continue;

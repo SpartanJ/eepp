@@ -77,6 +77,8 @@ class EE_API SyntaxHighlighter {
 	Int64 mFirstInvalidLine;
 	Int64 mMaxWantedLine;
 	Int64 mMaxTokenizationLength{ 0 };
+	std::mutex mAsyncTokenizeMutex;
+	std::condition_variable mAsyncTokenizeConf;
 	bool mTokenizeAsync{ false };
 	bool mStopTokenizing{ false };
 };

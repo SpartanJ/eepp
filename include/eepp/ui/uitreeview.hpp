@@ -136,7 +136,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void traverseTree( TreeViewCallback ) const;
 
-	mutable UnorderedMap<void*, MetadataForIndex> mViewMetadata;
+	mutable std::unordered_map<void*, MetadataForIndex> mViewMetadata;
 
 	virtual size_t getItemCount() const;
 

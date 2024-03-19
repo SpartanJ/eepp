@@ -35,6 +35,11 @@ void SyntaxHighlighter::changeDoc( TextDocument* doc ) {
 }
 
 void SyntaxHighlighter::reset() {
+	if ( mTokenizeAsync ) {
+		mStopTokenizing = true;
+		std::unique_lock<std::mutex> lock( mAsyncTokenizeMutex );
+		mAsyncTokenizeConf.wait( lock, [this]() { return !mTokenizeAsync; } );
+	}
 	Lock l( mLinesMutex );
 	mLines.clear();
 	mFirstInvalidLine = 0;
@@ -129,10 +134,14 @@ void SyntaxHighlighter::tokenizeAsync( std::shared_ptr<ThreadPool> pool,
 		return;
 	mTokenizeAsync = true;
 	pool->run( [this, onDone] {
-		for ( size_t i = mFirstInvalidLine; i < mDoc->linesCount() && !mStopTokenizing; i++ )
-			getLine( i );
-		mStopTokenizing = false;
-		mTokenizeAsync = false;
+		{
+			std::unique_lock<std::mutex> lock( mAsyncTokenizeMutex );
+			for ( size_t i = mFirstInvalidLine; i < mDoc->linesCount() && !mStopTokenizing; i++ )
+				getLine( i );
+			mStopTokenizing = false;
+			mTokenizeAsync = false;
+			mAsyncTokenizeConf.notify_all();
+		}
 		if ( onDone )
 			onDone();
 	} );

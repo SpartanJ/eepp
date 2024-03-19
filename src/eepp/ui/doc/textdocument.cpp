@@ -2259,7 +2259,7 @@ const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 }
 
 void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
-	if ( &mSyntaxDefinition != &definition ) {
+	if ( mSyntaxDefinition.getLSPName() != definition.getLSPName() ) {
 		mSyntaxDefinition = definition;
 		notifySyntaxDefinitionChange();
 	}
