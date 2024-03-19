@@ -1556,8 +1556,8 @@ void UICodeEditor::onPaddingChange() {
 
 std::pair<size_t, Float> UICodeEditor::findLongestLineInRange( const TextRange& range ) {
 	std::pair<size_t, Float> curRange{ mLongestLineIndex, mLongestLineWidth };
-	Float longestLineWidth = mLongestLineWidth;
 	if ( mHorizontalScrollBarEnabled ) {
+		Float longestLineWidth = 0;
 		for ( Int64 lineIndex = range.start().line(); lineIndex <= range.end().line();
 			  lineIndex++ ) {
 			Float lineWidth = getLineWidth( lineIndex );
@@ -1718,9 +1718,15 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	checkMatchingBrackets();
 	sendCommonEvent( Event::OnTextChanged );
 
-	auto range = findLongestLineInRange( change.range );
-	mLongestLineIndex = range.first;
-	mLongestLineWidth = range.second;
+	if ( !change.text.empty() ) {
+		auto range = findLongestLineInRange( change.range );
+		if ( range.second > mLongestLineWidth ) {
+			mLongestLineIndex = range.first;
+			mLongestLineWidth = range.second;
+		}
+	} else {
+		invalidateLongestLineWidth();
+	}
 }
 
 void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
