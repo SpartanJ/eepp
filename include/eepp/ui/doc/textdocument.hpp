@@ -43,6 +43,12 @@ class EE_API TextDocument {
 
 	enum class LoadStatus { Loaded, Interrupted, Failed };
 
+	struct SearchResult {
+		TextRange result{};
+		std::vector<TextRange> captures{};
+		bool isValid() const { return result.isValid(); }
+	};
+
 	enum class MatchDirection { Forward, Backward };
 
 	class EE_API Client {
@@ -345,13 +351,14 @@ class EE_API TextDocument {
 
 	bool removeCommand( const std::string& command );
 
-	TextRange find( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-					bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
-					TextRange restrictRange = TextRange() );
+	SearchResult find( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+					   bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
+					   TextRange restrictRange = TextRange() );
 
-	TextRange findLast( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-						bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
-						TextRange restrictRange = TextRange() );
+	SearchResult findLast( const String& text, TextPosition from = { 0, 0 },
+						   bool caseSensitive = true, bool wholeWord = false,
+						   FindReplaceType type = FindReplaceType::Normal,
+						   TextRange restrictRange = TextRange() );
 
 	TextRanges findAll( const String& text, bool caseSensitive = true, bool wholeWord = false,
 						FindReplaceType type = FindReplaceType::Normal,
@@ -690,13 +697,14 @@ class EE_API TextDocument {
 
 	LoadStatus loadFromStream( IOStream& file, std::string path, bool callReset );
 
-	TextRange findText( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-						bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
-						TextRange restrictRange = TextRange() );
+	SearchResult findText( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+						   bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
+						   TextRange restrictRange = TextRange() );
 
-	TextRange findTextLast( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-							bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
-							TextRange restrictRange = TextRange() );
+	SearchResult findTextLast( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+							   bool wholeWord = false,
+							   FindReplaceType type = FindReplaceType::Normal,
+							   TextRange restrictRange = TextRange() );
 };
 
 struct TextSearchParams {

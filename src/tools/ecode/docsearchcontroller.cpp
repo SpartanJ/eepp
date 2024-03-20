@@ -229,7 +229,8 @@ void DocSearchController::findPrevText( SearchState& search ) {
 			txt.unescape();
 
 		TextRange found = doc.findLast( txt, from, search.caseSensitive, search.wholeWord,
-										search.type, search.range );
+										search.type, search.range )
+							  .result;
 		if ( found.isValid() ) {
 			doc.setSelection( found );
 			mFindInput->runOnMainThread( [this, search] {
@@ -239,7 +240,8 @@ void DocSearchController::findPrevText( SearchState& search ) {
 			return;
 		} else {
 			found = doc.findLast( txt, range.end(), search.caseSensitive, search.wholeWord,
-								  search.type, range );
+								  search.type, range )
+						.result;
 			if ( found.isValid() ) {
 				doc.setSelection( found );
 				mFindInput->runOnMainThread( [this, search] {
@@ -284,7 +286,8 @@ void DocSearchController::findNextText( SearchState& search, bool resetSelection
 				txt.unescape();
 
 			TextRange found =
-				doc.find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
+				doc.find( txt, from, search.caseSensitive, search.wholeWord, search.type, range )
+					.result;
 
 			if ( found.isValid() ) {
 				doc.setSelection( found.reversed() );
@@ -295,7 +298,8 @@ void DocSearchController::findNextText( SearchState& search, bool resetSelection
 				return;
 			} else {
 				found = doc.find( txt, range.start(), search.caseSensitive, search.wholeWord,
-								  search.type, range );
+								  search.type, range )
+							.result;
 				if ( found.isValid() ) {
 					doc.setSelection( found.reversed() );
 					mFindInput->runOnMainThread( [this, search] {
@@ -316,7 +320,10 @@ bool DocSearchController::replaceSelection( SearchState& search, const String& r
 		 !search.editor->getDocument().hasSelection() )
 		return false;
 	search.editor->getDocument().setActiveClient( search.editor );
-	search.editor->getDocument().replaceSelection( replacement );
+	search.editor->getDocument().replace(
+		search.text, replacement, search.editor->getDocument().getSelection().normalized().start(),
+		search.caseSensitive, search.wholeWord, search.type,
+		search.editor->getDocument().getSelection().normalized() );
 	return true;
 }
 
@@ -379,7 +386,10 @@ void DocSearchController::findAndReplace( SearchState& search, const String& rep
 		repl.unescape();
 	}
 
-	if ( doc.hasSelection() && doc.getSelectedText() == txt ) {
+	if ( doc.hasSelection() &&
+		 ( doc.getSelectedText() == txt ||
+		   ( search.type == TextDocument::FindReplaceType::LuaPattern &&
+			 LuaPattern::matches( doc.getAllSelectedText().toUtf8(), txt.toUtf8() ) ) ) ) {
 		replaceSelection( search, repl );
 	} else {
 		findNextText( search );

@@ -221,7 +221,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 				[this] { findAndReplace( mSearchState, mReplaceInput->getText() ); } );
 	setCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
 	setCommand( "replace-selection",
-				[this] { mDoc->replaceSelection( mReplaceInput->getText() ); } );
+				[this] { replaceSelection( mSearchState, mReplaceInput->getText() ); } );
 	setCommand( "change-case", [this, editor] {
 		mCaseSensitive->setSelected( !mCaseSensitive->isSelected() );
 		refreshHighlight( editor );
@@ -415,14 +415,16 @@ bool UIDocFindReplace::findPrevText( TextSearchParams& search ) {
 		txt.unescape();
 
 	TextRange found = mDoc->findLast( txt, from, search.caseSensitive, search.wholeWord,
-									  search.type, search.range );
+									  search.type, search.range )
+						  .result;
 	if ( found.isValid() ) {
 		mDoc->setSelection( found );
 		mFindInput->removeClass( "error" );
 		return true;
 	} else {
 		found = mDoc->findLast( txt, range.end(), search.caseSensitive, search.wholeWord,
-								search.type, range );
+								search.type, range )
+					.result;
 		if ( found.isValid() ) {
 			mDoc->setSelection( found );
 			mFindInput->removeClass( "error" );
@@ -451,14 +453,15 @@ bool UIDocFindReplace::findNextText( TextSearchParams& search ) {
 		txt.unescape();
 
 	TextRange found =
-		mDoc->find( txt, from, search.caseSensitive, search.wholeWord, search.type, range );
+		mDoc->find( txt, from, search.caseSensitive, search.wholeWord, search.type, range ).result;
 	if ( found.isValid() ) {
 		mDoc->setSelection( found.reversed() );
 		mFindInput->removeClass( "error" );
 		return true;
 	} else {
 		found = mDoc->find( txt, range.start(), search.caseSensitive, search.wholeWord, search.type,
-							range );
+							range )
+					.result;
 		if ( found.isValid() ) {
 			mDoc->setSelection( found.reversed() );
 			mFindInput->removeClass( "error" );
@@ -511,7 +514,7 @@ bool UIDocFindReplace::findAndReplace( TextSearchParams& search, const String& r
 	}
 
 	if ( mDoc->hasSelection() && mDoc->getSelectedText() == txt ) {
-		mDoc->replaceSelection( repl );
+		replaceSelection( search, repl );
 		return true;
 	} else {
 		return findNextText( search );
@@ -534,5 +537,19 @@ void UIDocFindReplace::refreshHighlight( UICodeEditor* editor ) {
 		mDoc->setSelection( mDoc->getSelection().start() );
 	}
 };
+
+bool UIDocFindReplace::replaceSelection( TextSearchParams& search, const String& replacement ) {
+	UICodeEditor* editor =
+		getParent()->isType( UI_TYPE_CODEEDITOR ) ? getParent()->asType<UICodeEditor>() : nullptr;
+
+	if ( !editor || !editor->getDocument().hasSelection() )
+		return false;
+	editor->getDocument().setActiveClient( editor );
+	editor->getDocument().replace( search.text, replacement,
+								   editor->getDocument().getSelection().normalized().start(),
+								   search.caseSensitive, search.wholeWord, search.type,
+								   editor->getDocument().getSelection().normalized() );
+	return true;
+}
 
 }}} // namespace EE::UI::Tools

@@ -63,16 +63,24 @@ LuaPattern::LuaPattern( const std::string_view& pattern ) : mPattern( pattern ),
 
 bool LuaPattern::matches( const char* stringSearch, int stringStartOffset,
 						  LuaPattern::Range* matchList, size_t stringLength ) const {
-	LuaPattern::Range matchesBuffer[MAX_DEFAULT_MATCHES];
-	if ( matchList == nullptr )
-		matchList = matchesBuffer;
 	if ( stringLength == 0 )
 		stringLength = strlen( stringSearch );
-	try {
-		mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength, mPattern.data(),
-								   (LuaMatch*)matchList );
-	} catch ( const std::string& patternError ) {
-		mMatchNum = 0;
+
+	if ( matchList == nullptr ) {
+		LuaPattern::Range matchesBuffer[MAX_DEFAULT_MATCHES];
+		try {
+			mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength,
+									   mPattern.data(), (LuaMatch*)matchesBuffer );
+		} catch ( const std::string& patternError ) {
+			mMatchNum = 0;
+		}
+	} else {
+		try {
+			mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength,
+									   mPattern.data(), (LuaMatch*)matchList );
+		} catch ( const std::string& patternError ) {
+			mMatchNum = 0;
+		}
 	}
 	return mMatchNum == 0 ? false : true;
 }
