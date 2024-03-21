@@ -289,6 +289,7 @@ static void addTypeScript() {
 				 {},
 				 "//" } )
 		.setSymbols( ts.getSymbols() )
+		.setLSPName( "typescriptreact" )
 		.setAutoCloseXMLTags( true );
 	;
 }
@@ -1203,7 +1204,8 @@ static void addJSX() {
 					 { "NaN", "keyword2" },		  { "this", "keyword2" },
 				 },
 				 "//" } )
-		.setAutoCloseXMLTags( true );
+		.setAutoCloseXMLTags( true )
+		.setLSPName( "javascriptreact" );
 	;
 }
 
