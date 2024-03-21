@@ -6,6 +6,7 @@
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
@@ -1433,7 +1434,18 @@ bool LSPClientServer::trimLogs() const {
 
 LSPClientServer::LSPRequestHandle LSPClientServer::didOpen( const URI& document,
 															const std::string& text, int version ) {
-	auto params = textDocumentParams( textDocumentItem( document, mLSP.language, text, version ) );
+	std::string languageId = mLSP.language;
+	if ( !mLSP.languageIdsForFilePatterns.empty() ) {
+		for ( const auto& filePattern : mLSP.languageIdsForFilePatterns ) {
+			LuaPattern ptrn( filePattern.first );
+			if ( ptrn.matches( document.toString() ) ) {
+				languageId = filePattern.second;
+				break;
+			}
+		}
+	}
+
+	auto params = textDocumentParams( textDocumentItem( document, languageId, text, version ) );
 	return send( newRequest( "textDocument/didOpen", params ) );
 }
 

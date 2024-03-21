@@ -22,6 +22,8 @@ struct LSPDefinition {
 	std::string url;
 	std::string host;
 	std::unordered_map<std::string, std::string> env;
+	/* filePattern, languageId */
+	std::unordered_map<std::string, std::string> languageIdsForFilePatterns;
 	int port{ 0 };
 	nlohmann::json initializationOptions;
 

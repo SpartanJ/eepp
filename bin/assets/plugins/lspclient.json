@@ -31,7 +31,7 @@
       }
     },
     {
-      "language": "tsx",
+      "language": "typescriptreact",
       "use": "typescript-language-server",
       "share_process": true,
       "file_patterns": ["%.tsx$"]
@@ -43,7 +43,7 @@
       "file_patterns": ["%.js$"]
     },
     {
-      "language": "jsx",
+      "language": "javascriptreact",
       "use": "typescript-language-server",
       "share_process": true,
       "file_patterns": ["%.jsx$"]

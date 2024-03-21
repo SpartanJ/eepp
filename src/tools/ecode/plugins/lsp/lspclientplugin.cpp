@@ -770,6 +770,24 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 
+	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> lspPatternsLangId;
+
+	for ( auto& lsp : lsps ) {
+		if ( lsp.shareProcessWithOtherDefinition && !lsp.usesLSP.empty() ) {
+			for ( const auto& ptrn : lsp.filePatterns )
+				lspPatternsLangId[lsp.usesLSP][ptrn] = lsp.language;
+		}
+	}
+
+	for ( auto& lsp : lsps ) {
+		auto ptrnsLangIds = lspPatternsLangId.find( lsp.name );
+		if ( ptrnsLangIds != lspPatternsLangId.end() ) {
+			lsp.languageIdsForFilePatterns.merge( ptrnsLangIds->second );
+			for ( const auto& ptrn : lsp.filePatterns )
+				lsp.languageIdsForFilePatterns[ptrn] = lsp.language;
+		}
+	}
+
 	mClientManager.load( this, pluginManager, std::move( lsps ) );
 
 	subscribeFileSystemListener();
