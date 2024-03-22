@@ -524,7 +524,11 @@ function build_link_configuration( package_name, use_ee_icon )
 
 		if os.is("windows") and not is_vs() then
 			if ( true == use_ee_icon ) then
-				linkoptions { "../../bin/assets/icon/ee.res" }
+				if os.is64bit() then
+					linkoptions { "../../bin/assets/icon/ee.x64.res" }
+				else
+					linkoptions { "../../bin/assets/icon/ee.res" }
+				end
 			end
 		end
 
@@ -1479,7 +1483,11 @@ solution "eepp"
 			links { "bsd" }
 		end
 		if os.is("windows") and not is_vs() then
-			linkoptions { "../../bin/assets/icon/ecode.res" }
+			if os.is64bit() then
+				linkoptions { "../../bin/assets/icon/ecode.x64.res" }
+			else
+				linkoptions { "../../bin/assets/icon/ecode.res" }
+			end
 			buildoptions{ "-Wa,-mbig-obj" }
 		end
 		build_link_configuration( "ecode", false )
@@ -1497,7 +1505,11 @@ solution "eepp"
 			links { "bsd" }
 		end
 		if os.is("windows") and not is_vs() then
-			linkoptions { "../../bin/assets/icon/eterm.res" }
+			if os.is64bit() then
+				linkoptions { "../../bin/assets/icon/eterm.x64.res" }
+			else
+				linkoptions { "../../bin/assets/icon/eterm.res" }
+			end
 		end
 		build_link_configuration( "eterm", false )
 
