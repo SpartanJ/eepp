@@ -337,10 +337,10 @@ void DocSearchController::selectAll( SearchState& search ) {
 	search.editor->getDocument().setActiveClient( search.editor );
 	mLastSearch = search.text;
 	TextDocument& doc = search.editor->getDocument();
-	TextRanges ranges = doc.findAll( search.text, search.caseSensitive, search.wholeWord,
-									 search.type, search.range );
+	auto ranges = doc.findAll( search.text, search.caseSensitive, search.wholeWord, search.type,
+							   search.range );
 	for ( const auto& range : ranges )
-		doc.addSelection( range.reversed() );
+		doc.addSelection( range.result.reversed() );
 }
 
 int DocSearchController::replaceAll( SearchState& search, const String& replace ) {

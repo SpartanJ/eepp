@@ -73,7 +73,6 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 			for ( const auto& result : fileResult.results ) {
 				if ( !result.selected )
 					continue;
-				replacements.push_back( { result.start, result.end } );
 				std::string newText( replaceText );
 				LuaPattern ptrn( "$(%d+)" );
 				for ( auto& match : ptrn.gmatch( replaceText ) ) {
@@ -85,6 +84,16 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 						String::replaceAll( newText, matchSubStr, result.captures[num - 1] );
 						replaceTexts.emplace_back( std::move( newText ) );
 					}
+				}
+
+				if ( result.openDoc ) {
+					auto oldSel = result.openDoc->getSelections();
+					result.openDoc->setSelection( result.position );
+					result.openDoc->replaceSelection( replaceTexts[replaceTexts.size() - 1] );
+					result.openDoc->setSelection( oldSel );
+					count++;
+				} else {
+					replacements.push_back( { result.start, result.end } );
 				}
 			}
 
@@ -100,10 +109,19 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 		std::vector<std::pair<Int64, Int64>> replacements;
 
 		for ( const auto& result : fileResult.results )
-			if ( result.selected )
-				replacements.push_back( { result.start, result.end } );
+			if ( result.selected ) {
+				if ( result.openDoc ) {
+					auto oldSel = result.openDoc->getSelections();
+					result.openDoc->setSelection( result.position );
+					result.openDoc->replaceSelection( replaceText );
+					result.openDoc->setSelection( oldSel );
+					count++;
+				} else {
+					replacements.push_back( { result.start, result.end } );
+				}
+			}
 
-		if ( replaceInFile( fileResult.file, replaceText, replacements ) )
+		if ( !replacements.empty() && replaceInFile( fileResult.file, replaceText, replacements ) )
 			count += replacements.size();
 	}
 
@@ -597,6 +615,11 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 		if ( escapeSequence )
 			text.unescape();
 		std::string search( text.toUtf8() );
+
+		std::vector<std::shared_ptr<TextDocument>> openDocs;
+		mSplitter->forEachDocSharedPtr(
+			[&openDocs]( auto doc ) { openDocs.emplace_back( std::move( doc ) ); } );
+
 		ProjectSearch::find(
 			mApp->getDirTree()->getFiles(), search,
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
@@ -621,7 +644,7 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 			caseSensitive, wholeWord,
 			luaPattern ? TextDocument::FindReplaceType::LuaPattern
 					   : TextDocument::FindReplaceType::Normal,
-			parseGlobMatches( filter ), mApp->getCurrentProject() );
+			parseGlobMatches( filter ), mApp->getCurrentProject(), openDocs );
 	}
 }
 

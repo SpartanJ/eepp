@@ -47,6 +47,27 @@ class EE_API TextDocument {
 		TextRange result{};
 		std::vector<TextRange> captures{};
 		bool isValid() const { return result.isValid(); }
+		bool operator==( const SearchResult& other ) {
+			return result == other.result && captures == other.captures;
+		}
+	};
+
+	class SearchResults : public std::vector<SearchResult> {
+	  public:
+		bool isSorted() const { return mIsSorted; }
+
+		void setSorted() { mIsSorted = true; }
+
+		TextRanges ranges() const {
+			TextRanges ranges;
+			ranges.reserve( size() );
+			for ( const auto& r : *this )
+				ranges.push_back( r.result );
+			return ranges;
+		}
+
+	  protected:
+		bool mIsSorted{ false };
 	};
 
 	enum class MatchDirection { Forward, Backward };
@@ -360,9 +381,9 @@ class EE_API TextDocument {
 						   FindReplaceType type = FindReplaceType::Normal,
 						   TextRange restrictRange = TextRange() );
 
-	TextRanges findAll( const String& text, bool caseSensitive = true, bool wholeWord = false,
-						FindReplaceType type = FindReplaceType::Normal,
-						TextRange restrictRange = TextRange(), size_t maxResults = 0 );
+	SearchResults findAll( const String& text, bool caseSensitive = true, bool wholeWord = false,
+						   FindReplaceType type = FindReplaceType::Normal,
+						   TextRange restrictRange = TextRange(), size_t maxResults = 0 );
 
 	int replaceAll( const String& text, const String& replace, const bool& caseSensitive = true,
 					const bool& wholeWord = false, FindReplaceType type = FindReplaceType::Normal,

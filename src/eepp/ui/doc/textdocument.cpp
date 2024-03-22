@@ -1920,8 +1920,8 @@ void TextDocument::selectAllWords() {
 					   { getBottomMostCursor().normalized().end(), endOfDoc() } ) );
 	if ( !res.empty() ) {
 		for ( auto& selection : res )
-			selection.reverse();
-		addSelections( std::move( res ) );
+			selection.result.reverse();
+		addSelections( res.ranges() );
 	}
 }
 
@@ -2691,10 +2691,10 @@ bool TextDocument::isInsertingText() const {
 	return mInsertingText;
 }
 
-TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool wholeWord,
-								  FindReplaceType type, TextRange restrictRange,
-								  size_t maxResults ) {
-	TextRanges all;
+TextDocument::SearchResults TextDocument::findAll( const String& text, bool caseSensitive,
+												   bool wholeWord, FindReplaceType type,
+												   TextRange restrictRange, size_t maxResults ) {
+	SearchResults all;
 	TextDocument::SearchResult found;
 	TextPosition from = startOfDoc();
 	auto stopFlagUP = std::make_unique<bool>( false );
@@ -2709,10 +2709,10 @@ TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool w
 	do {
 		found = find( text, from, caseSensitive, wholeWord, type, restrictRange );
 		if ( found.isValid() ) {
-			if ( !all.empty() && all.back() == found.result )
+			if ( !all.empty() && all.back() == found )
 				break;
 			from = found.result.end();
-			all.push_back( found.result );
+			all.push_back( found );
 			if ( ( maxResults != 0 && all.size() >= maxResults ) || *stopFlag )
 				break;
 		}
@@ -2814,11 +2814,11 @@ void TextDocument::selectAllMatches() {
 	if ( !hasSelection() )
 		return;
 	auto sel = getSelection();
-	TextRanges ranges = findAll( getSelectedText(), true, false );
+	auto ranges = findAll( getSelectedText(), true, false );
 	for ( const auto& range : ranges ) {
-		if ( sel == range || sel.normalized() == range )
+		if ( sel == range.result || sel.normalized() == range.result )
 			continue;
-		addSelection( range.reversed() );
+		addSelection( range.result.reversed() );
 	}
 }
 

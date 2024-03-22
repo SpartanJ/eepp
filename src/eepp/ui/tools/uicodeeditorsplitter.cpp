@@ -814,6 +814,16 @@ void UICodeEditorSplitter::forEachDoc( std::function<void( TextDocument& )> run 
 		run( *doc );
 }
 
+void UICodeEditorSplitter::forEachDocSharedPtr(
+	std::function<void( std::shared_ptr<TextDocument> )> run ) const {
+	std::unordered_map<TextDocument*, std::shared_ptr<TextDocument>> docs;
+	forEachEditor( [&docs]( UICodeEditor* editor ) {
+		docs.insert( { editor->getDocumentRef().get(), editor->getDocumentRef() } );
+	} );
+	for ( const auto& doc : docs )
+		run( doc.second );
+}
+
 void UICodeEditorSplitter::forEachTabWidget( std::function<void( UITabWidget* )> run ) const {
 	for ( auto widget : mTabWidgets )
 		run( widget );

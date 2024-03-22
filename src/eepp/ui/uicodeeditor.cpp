@@ -2834,7 +2834,7 @@ void UICodeEditor::updateHighlightWordCache() {
 
 						{
 							Lock l( mHighlightWordCacheMutex );
-							mHighlightWordCache = std::move( wordCache );
+							mHighlightWordCache = wordCache.ranges();
 						}
 
 						Log::info( "Document search triggered in document: \"%s\", searched for "
@@ -2853,7 +2853,8 @@ void UICodeEditor::updateHighlightWordCache() {
 			mDoc->findAll( mHighlightWord.escapeSequences ? String::unescape( mHighlightWord.text )
 														  : mHighlightWord.text,
 						   mHighlightWord.caseSensitive, mHighlightWord.wholeWord,
-						   mHighlightWord.type, mHighlightWord.range, 100 );
+						   mHighlightWord.type, mHighlightWord.range, 100 )
+				.ranges();
 	}
 }
 

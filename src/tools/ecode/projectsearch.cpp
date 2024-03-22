@@ -145,7 +145,8 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 void ProjectSearch::find( const std::vector<std::string> files, const std::string& string,
 						  ResultCb result, bool caseSensitive, bool wholeWord,
 						  const TextDocument::FindReplaceType& type,
-						  const std::vector<GlobMatch>& pathFilters, std::string basePath ) {
+						  const std::vector<GlobMatch>& pathFilters, std::string basePath,
+						  std::vector<std::shared_ptr<TextDocument>> openDocs ) {
 	Result res;
 	const auto occ =
 		type == TextDocument::FindReplaceType::Normal
@@ -186,14 +187,15 @@ struct FindData {
 void ProjectSearch::find( const std::vector<std::string> files, std::string string,
 						  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
 						  bool wholeWord, const TextDocument::FindReplaceType& type,
-						  const std::vector<GlobMatch>& pathFilters, std::string basePath ) {
+						  const std::vector<GlobMatch>& pathFilters, std::string basePath,
+						  std::vector<std::shared_ptr<TextDocument>> openDocs ) {
 	if ( files.empty() )
 		result( {} );
 	FileSystem::dirAddSlashAtEnd( basePath );
 	pool->run( [files = std::move( files ), string = std::move( string ), pool = std::move( pool ),
 				result = std::move( result ), caseSensitive, wholeWord, type,
-				pathFilters = std::move( pathFilters ),
-				basePath = std::move( basePath )]() mutable {
+				pathFilters = std::move( pathFilters ), basePath = std::move( basePath ),
+				openDocs = std::move( openDocs )]() mutable {
 		FindData* findData = eeNew( FindData, () );
 		findData->resCount = files.size();
 		if ( !caseSensitive )
@@ -235,40 +237,87 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 			return;
 		}
 
+		std::unordered_map<std::string, std::shared_ptr<TextDocument>> openPaths;
+		for ( const auto& doc : openDocs )
+			if ( doc->isDirty() )
+				openPaths.insert( { doc->getFilePath(), doc } );
+
 		pos = 0;
 		for ( const auto& file : files ) {
 			if ( !search[pos] ) {
 				pos++;
 				continue;
 			}
+
 			pos++;
 
-			pool->run(
-				[findData, file, string, caseSensitive, wholeWord, occ, type] {
-					auto fileRes =
-						type == TextDocument::FindReplaceType::Normal
-							? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
-							: searchInFileLuaPattern( file, string, caseSensitive, wholeWord );
-					if ( !fileRes.empty() ) {
-						Lock l( findData->resMutex );
-						findData->res.push_back( { file, fileRes } );
-					}
-				},
-				[result, findData]( const auto& ) {
-					int count;
-					{
-						Lock l( findData->countMutex );
-						findData->resCount--;
-						count = findData->resCount;
-					}
-					if ( count == 0 ) {
-						result( findData->res );
-						eeDelete( findData );
+			const auto onSearchEnd = [result, findData]( const auto& ) {
+				int count;
+				{
+					Lock l( findData->countMutex );
+					findData->resCount--;
+					count = findData->resCount;
+				}
+				if ( count == 0 ) {
+					result( findData->res );
+					eeDelete( findData );
 #if EE_PLATFORM == EE_PLATFORM_LINUX
-						malloc_trim( 0 );
+					malloc_trim( 0 );
 #endif
-					}
-				} );
+				}
+			};
+
+			auto openPath = openPaths.find( file );
+			bool openDoc = openPath != openPaths.end();
+			std::shared_ptr<TextDocument> doc = nullptr;
+			if ( openDoc )
+				doc = openPath->second;
+
+			if ( openDoc && openPath->second->isDirty() ) {
+				pool->run(
+					[findData, doc, string, caseSensitive, wholeWord, type] {
+						auto res = doc->findAll( string, caseSensitive, wholeWord, type );
+						std::vector<ProjectSearch::ResultData::Result> fileRes;
+						for ( const auto& r : res ) {
+							ProjectSearch::ResultData::Result f;
+							f.openDoc = doc;
+							f.position = r.result;
+							const auto& line = doc->line( r.result.start().line() );
+							if ( line.size() > EE_1KB )
+								f.line = line.getText().substr( 0, EE_1KB );
+							else
+								f.line = line.getTextWithoutNewLine();
+							f.start = r.result.start().column();
+							f.end = r.result.end().column();
+							std::vector<std::string> captures;
+							for ( const auto& capture : r.captures )
+								captures.emplace_back( doc->getText( capture ).toUtf8() );
+							f.captures = std::move( captures );
+							fileRes.emplace_back( std::move( f ) );
+						}
+
+						if ( !fileRes.empty() ) {
+							Lock l( findData->resMutex );
+							std::string file( doc->getFilePath() );
+							findData->res.push_back( { std::move( file ), std::move( fileRes ) } );
+						}
+					},
+					onSearchEnd );
+			} else {
+				pool->run(
+					[findData, file, string, caseSensitive, wholeWord, occ, type] {
+						auto fileRes =
+							type == TextDocument::FindReplaceType::Normal
+								? searchInFileHorspool( file, string, caseSensitive, wholeWord,
+														occ )
+								: searchInFileLuaPattern( file, string, caseSensitive, wholeWord );
+						if ( !fileRes.empty() ) {
+							Lock l( findData->resMutex );
+							findData->res.push_back( { std::move( file ), std::move( fileRes ) } );
+						}
+					},
+					onSearchEnd );
+			}
 		}
 	} );
 }

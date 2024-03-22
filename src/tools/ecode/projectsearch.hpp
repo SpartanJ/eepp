@@ -32,6 +32,7 @@ class ProjectSearch {
 			Int64 end{ 0 };
 			bool selected{ true };
 			std::vector<std::string> captures;
+			std::shared_ptr<TextDocument> openDoc;
 		};
 		std::string file;
 		std::vector<Result> results;
@@ -212,14 +213,16 @@ class ProjectSearch {
 	find( const std::vector<std::string> files, const std::string& string, ResultCb result,
 		  bool caseSensitive, bool wholeWord = false,
 		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
-		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "" );
+		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "",
+		  std::vector<std::shared_ptr<TextDocument>> openDocs = {} );
 
 	static void
 	find( const std::vector<std::string> files, std::string string,
 		  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
 		  bool wholeWord = false,
 		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
-		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "" );
+		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "",
+		  std::vector<std::shared_ptr<TextDocument>> openDocs = {} );
 };
 
 } // namespace ecode

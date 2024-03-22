@@ -174,6 +174,8 @@ class EE_API UICodeEditorSplitter {
 
 	void forEachDoc( std::function<void( TextDocument& doc )> run ) const;
 
+	void forEachDocSharedPtr( std::function<void( std::shared_ptr<TextDocument> doc )> run ) const;
+
 	void forEachTabWidget( std::function<void( UITabWidget* )> run ) const;
 
 	void zoomIn();
