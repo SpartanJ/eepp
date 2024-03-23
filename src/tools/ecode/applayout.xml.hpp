@@ -36,7 +36,7 @@ TextInput.small_input,
 	font-family: icon;
 	font-size: 16dp;
 	margin-top: 4dp;
-	margin-right: 22dp;
+	margin-right: 12dp;
 	transition: all 0.15s;
 }
 #settings:hover {
