@@ -8,7 +8,7 @@ void addFreeBASIC() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "FreeBASIC",
-		  { "%.bas$" },
+		  { "%.bas$", "%.inc$" },
 		  {
 			  { { "'.*" }, "comment" },
 			  { { "REM%s.*" }, "comment" },
