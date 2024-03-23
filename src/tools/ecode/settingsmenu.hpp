@@ -50,6 +50,8 @@ class SettingsMenu {
 
 	void updateDocumentMenu();
 
+	void updateGlobalDocumentSettingsMenu();
+
 	void showProjectTreeMenu();
 
 	void createProjectTreeMenu();
@@ -80,6 +82,7 @@ class SettingsMenu {
 	UISceneNode* mUISceneNode{ nullptr };
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	UIPopUpMenu* mDocMenu{ nullptr };
+	UIPopUpMenu* mGlobalMenu{ nullptr };
 	UIPopUpMenu* mTerminalMenu{ nullptr };
 	UIPopUpMenu* mViewMenu{ nullptr };
 	UIPopUpMenu* mWindowMenu{ nullptr };

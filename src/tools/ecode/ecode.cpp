@@ -2229,6 +2229,8 @@ void App::createDocDirtyAlert( UICodeEditor* editor ) {
 		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
 			text='@string(reload_current_file, "The file on the disk is more recent that the current buffer.&#xA;Do you want to reload it?")'
 		/>
+		<PushButton id="file_autoreload" layout_width="wrap_content" layout_height="18dp" text='@string("enable_autoreload", "Enable Auto-Reload")' margin-right="4dp"
+					tooltip='@string(tooltip_autoreload_file, "Will never again warn about on disk changes but always reload unless there are local changes.")' />
 		<PushButton id="file_reload" layout_width="wrap_content" layout_height="18dp" text='@string("reload", "Reload")' margin-right="4dp"
 					tooltip='@string(tooltip_reload_file, "Reload the file from disk. Unsaved changes will be lost.")' />
 		<PushButton id="file_overwrite" layout_width="wrap_content" layout_height="18dp" text='@string("overwrite", "Overwrite")' margin-right="4dp"
@@ -2241,37 +2243,37 @@ void App::createDocDirtyAlert( UICodeEditor* editor ) {
 
 	editor->enableReportSizeChangeToChilds();
 
-	docAlert->find( "file_reload" )
-		->on( Event::MouseClick, [editor, docAlert]( const Event* event ) {
-			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-				editor->getDocument().reload();
-				editor->disableReportSizeChangeToChilds();
-				docAlert->close();
-				editor->setFocus();
-			}
+	docAlert->find( "file_autoreload" )
+		->setVisible( !editor->getDocument().isDirty() )
+		->onClick( [editor, docAlert, this]( const MouseEvent* mouseEvent ) {
+			editor->getDocument().reload();
+			editor->disableReportSizeChangeToChilds();
+			docAlert->close();
+			editor->setFocus();
+			mConfig.editor.autoReloadOnDiskChange = true;
+			mSettings->updateGlobalDocumentSettingsMenu();
 		} );
+
+	docAlert->find( "file_reload" )->onClick( [editor, docAlert]( const MouseEvent* mouseEvent ) {
+		editor->getDocument().reload();
+		editor->disableReportSizeChangeToChilds();
+		docAlert->close();
+		editor->setFocus();
+	} );
 
 	docAlert->find( "file_overwrite" )
-		->on( Event::MouseClick, [editor, docAlert]( const Event* event ) {
-			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-				editor->getDocument().save();
-				editor->disableReportSizeChangeToChilds();
-				docAlert->close();
-				editor->setFocus();
-			}
+		->onClick( [editor, docAlert]( const MouseEvent* mouseEvent ) {
+			editor->getDocument().save();
+			editor->disableReportSizeChangeToChilds();
+			docAlert->close();
+			editor->setFocus();
 		} );
 
-	docAlert->find( "file_ignore" )
-		->on( Event::MouseClick, [docAlert, editor]( const Event* event ) {
-			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-				editor->disableReportSizeChangeToChilds();
-				docAlert->close();
-				editor->setFocus();
-			}
-		} );
+	docAlert->find( "file_ignore" )->onClick( [docAlert, editor]( const MouseEvent* mouseEvent ) {
+		editor->disableReportSizeChangeToChilds();
+		docAlert->close();
+		editor->setFocus();
+	} );
 
 	docAlert->runOnMainThread(
 		[docAlert, editor] {
@@ -2279,7 +2281,7 @@ void App::createDocDirtyAlert( UICodeEditor* editor ) {
 			docAlert->close();
 			editor->setFocus();
 		},
-		Seconds( 10.f ) );
+		Seconds( 30.f ) );
 }
 
 void App::createDocManyLangsAlert( UICodeEditor* editor ) {
@@ -2567,7 +2569,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		FileInfo file( docEvent->getDoc()->getFileInfo().getFilepath() );
 		TextDocument* doc = docEvent->getDoc();
 		if ( doc->getFileInfo() != file ) {
-			if ( doc->isDirty() ) {
+			if ( !mConfig.editor.autoReloadOnDiskChange || doc->isDirty() ) {
 				editor->runOnMainThread( [this, editor]() { createDocDirtyAlert( editor ); } );
 			} else {
 				auto hash = String::hash( "OnDocumentDirtyOnFileSysten-" +

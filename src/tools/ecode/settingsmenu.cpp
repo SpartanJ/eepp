@@ -391,11 +391,11 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	// **** GLOBAL SETTINGS ****
 	mDocMenu->addSeparator()->setId( "end_current_document" );
 
-	UIPopUpMenu* globalMenu = UIPopUpMenu::New();
+	mGlobalMenu = UIPopUpMenu::New();
 	mDocMenu->addSubMenu( i18n( "global_settings", "Global Settings" ),
-						  findIcon( "global-settings" ), globalMenu );
+						  findIcon( "global-settings" ), mGlobalMenu );
 
-	globalMenu
+	mGlobalMenu
 		->addCheckBox(
 			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
 			mApp->getConfig().doc.autoDetectIndentType )
@@ -408,7 +408,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	tabTypeMenuGlobal->addRadioButton( i18n( "spaces", "Spaces" ) )
 		->setActive( mApp->getConfig().doc.indentSpaces )
 		->setId( "spaces" );
-	globalMenu
+	mGlobalMenu
 		->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenuGlobal )
 		->setId( "indent_type" );
 	tabTypeMenuGlobal->on( Event::OnItemClicked, [this]( const Event* event ) {
@@ -422,7 +422,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			->addRadioButton( String::toString( w ), mApp->getConfig().doc.indentWidth == w )
 			->setId( String::format( "indent_width_%d", w ) )
 			->setData( w );
-	globalMenu->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuGlobal )
+	mGlobalMenu
+		->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuGlobal )
 		->setId( "indent_width" );
 	indentWidthMenuGlobal->on( Event::OnItemClicked, [this]( const Event* event ) {
 		int width = event->getNode()->getData();
@@ -435,7 +436,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			->addRadioButton( String::toString( w ), mApp->getConfig().doc.tabWidth == w )
 			->setId( String::format( "tab_width_%d", w ) )
 			->setData( w );
-	globalMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuGlobal )
+	mGlobalMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuGlobal )
 		->setId( "tab_width_cur" );
 	tabWidthMenuGlobal->on( Event::OnItemClicked, [this]( const Event* event ) {
 		int width = event->getNode()->getData();
@@ -455,7 +456,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->addRadioButton( "Macintosh (CR)",
 						  mApp->getConfig().doc.lineEndings == TextFormat::LineEnding::CR )
 		->setId( "CR" );
-	globalMenu->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsGlobalMenu )
+	mGlobalMenu
+		->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsGlobalMenu )
 		->setId( "line_endings" );
 	lineEndingsGlobalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		mApp->getConfig().doc.lineEndings =
@@ -463,8 +465,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	} );
 
 	UIPopUpMenu* bracketsMenu = UIPopUpMenu::New();
-	globalMenu->addSubMenu( i18n( "auto_close_brackets_and_tags", "Auto-Close Brackets & Tags" ),
-							nullptr, bracketsMenu );
+	mGlobalMenu->addSubMenu( i18n( "auto_close_brackets_and_tags", "Auto-Close Brackets & Tags" ),
+							 nullptr, bracketsMenu );
 	auto& closeBrackets = mApp->getConfig().editor.autoCloseBrackets;
 	bracketsMenu
 		->addCheckBox( i18n( "brackets", "Brackets ()" ),
@@ -529,32 +531,37 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		}
 	} );
 
-	globalMenu
+	mGlobalMenu
 		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
 					   mApp->getConfig().doc.trimTrailingWhitespaces )
 		->setId( "trim_whitespaces" );
 
-	globalMenu
+	mGlobalMenu
 		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
 					   mApp->getConfig().doc.forceNewLineAtEndOfFile )
 		->setId( "force_nl" );
 
-	globalMenu
+	mGlobalMenu
 		->addCheckBox( i18n( "write_unicode_bom", "Write Unicode BOM" ),
 					   mApp->getConfig().doc.writeUnicodeBOM )
 		->setId( "write_bom" );
 
-	globalMenu->addSeparator();
+	mGlobalMenu
+		->addCheckBox( i18n( "autoreload_on_disk_change", "Auto-Reload on Disk Change" ),
+					   mApp->getConfig().editor.autoReloadOnDiskChange )
+		->setId( "autoreload_on_disk_change" );
 
-	globalMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
+	mGlobalMenu->addSeparator();
+
+	mGlobalMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
 		->setId( "line_breaking_column" );
 
-	globalMenu->add( i18n( "line_spacing", "Line Spacing" ) )->setId( "line_spacing" );
+	mGlobalMenu->add( i18n( "line_spacing", "Line Spacing" ) )->setId( "line_spacing" );
 
-	globalMenu->add( i18n( "cursor_blinking_time", "Cursor Blinking Time" ) )
+	mGlobalMenu->add( i18n( "cursor_blinking_time", "Cursor Blinking Time" ) )
 		->setId( "cursor_blinking_time" );
 
-	globalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+	mGlobalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ||
 			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
@@ -571,6 +578,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().doc.writeUnicodeBOM = item->isActive();
 			} else if ( "auto_indent" == id ) {
 				mApp->getConfig().doc.autoDetectIndentType = item->isActive();
+			} else if ( "autoreload_on_disk_change" == id ) {
+				mApp->getConfig().editor.autoReloadOnDiskChange = item->isActive();
 			}
 		} else if ( "line_breaking_column" == id ) {
 			mApp->setLineBreakingColumn();
@@ -1637,6 +1646,12 @@ void SettingsMenu::updateDocumentMenu() {
 	mDocMenu->find( "read_only" )
 		->asType<UIMenuCheckBox>()
 		->setActive( mSplitter->getCurEditor()->isLocked() );
+}
+
+void SettingsMenu::updateGlobalDocumentSettingsMenu() {
+	mGlobalMenu->find( "autoreload_on_disk_change" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mApp->getConfig().editor.autoReloadOnDiskChange );
 }
 
 void SettingsMenu::showProjectTreeMenu() {

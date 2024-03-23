@@ -473,6 +473,7 @@ bool UICodeEditor::loadAsyncFromFile(
 			}
 			runOnMainThread( [this, onLoaded, wasLocked, success] {
 				invalidateEditor();
+				updateLongestLineWidth();
 				invalidateDraw();
 				if ( !wasLocked )
 					setLocked( false );
