@@ -74,6 +74,42 @@
       "build_dir": "${project_root}/projects/${os}"
     }
   },
+  "ecode-windows": {
+    "build": [
+      {
+        "args": "--windows-mingw-build gmake2",
+        "command": "premake5.exe",
+        "working_dir": ""
+      },
+      {
+        "args": "-C make\\windows config=${build_type}_x86_64 -j${nproc} ecode",
+        "command": "mingw32-make.exe",
+        "working_dir": ""
+      }
+    ],
+    "build_types": [
+      "debug",
+      "release"
+    ],
+    "clean": [
+      {
+        "args": "-C make\\windows clean",
+        "command": "mingw32-make.exe",
+        "working_dir": ""
+      }
+    ],
+    "config": {
+      "clear_sys_env": false
+    },
+    "os": [
+      "windows"
+    ],
+    "output_parser": {
+      "config": {
+        "relative_file_paths": true
+      }
+    }
+  },
   "eepp-linux": {
     "build": [
       {
@@ -147,6 +183,42 @@
     },
     "var": {
       "build_dir": "${project_root}/projects/${os}"
+    }
+  },
+  "eepp-windows": {
+    "build": [
+      {
+        "args": "--windows-mingw-build gmake2",
+        "command": "premake5.exe",
+        "working_dir": ""
+      },
+      {
+        "args": "-C make\\windows config=${build_type}_x86_64 -j${nproc}",
+        "command": "mingw32-make.exe",
+        "working_dir": ""
+      }
+    ],
+    "build_types": [
+      "debug",
+      "release"
+    ],
+    "clean": [
+      {
+        "args": "-C make\\windows clean",
+        "command": "mingw32-make.exe",
+        "working_dir": ""
+      }
+    ],
+    "config": {
+      "clear_sys_env": false
+    },
+    "os": [
+      "windows"
+    ],
+    "output_parser": {
+      "config": {
+        "relative_file_paths": true
+      }
     }
   }
 }
