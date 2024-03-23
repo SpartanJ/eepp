@@ -22,6 +22,7 @@
 #include <eepp/ui/doc/languages/elixir.hpp>
 #include <eepp/ui/doc/languages/elm.hpp>
 #include <eepp/ui/doc/languages/environmentfile.hpp>
+#include <eepp/ui/doc/languages/freebasic.hpp>
 #include <eepp/ui/doc/languages/fstab.hpp>
 #include <eepp/ui/doc/languages/gdscript.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
@@ -109,7 +110,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 86 );
+	mDefinitions.reserve( 87 );
 
 	// Register some languages support.
 	addPlainText();
@@ -131,6 +132,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addElixir();
 	addElm();
 	addEnvironmentFile();
+	addFreeBASIC();
 	addFstab();
 	addGDScript();
 	addGLSL();
