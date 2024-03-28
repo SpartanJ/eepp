@@ -2237,29 +2237,40 @@ void LSPClientServer::shutdown() {
 		Lock l( mHandlersMutex );
 		mHandlers.clear();
 	}
-	sendSync( newRequest( "shutdown" ), [this]( const IdType&, const json& ) {
-		sendSync( newRequest( "exit" ) );
-		{
-			std::lock_guard l( mShutdownMutex );
-			mReady = false;
-		}
-		mEnded = true;
 
-		if ( mUsingProcess ) {
-			Clock clock;
-			bool waited = false;
-			while ( mProcess.isAlive() && clock.getElapsedTime().asMilliseconds() < 250.f ) {
-				Sys::sleep( Milliseconds( 10 ) );
-				waited = true;
+	sendSync(
+		newRequest( "shutdown" ),
+		[this]( const IdType&, const json& ) {
+			sendSync( newRequest( "exit" ) );
+			{
+				std::lock_guard l( mShutdownMutex );
+				mReady = false;
 			}
-			if ( waited ) {
-				Log::debug( "Waited \"%s\" LSP process to exit: %s", mLSP.name,
-							clock.getElapsedTime().toString() );
-			}
-		}
+			mEnded = true;
 
-		mShutdownCond.notify_all();
-	} );
+			if ( mUsingProcess ) {
+				Clock clock;
+				bool waited = false;
+				while ( mProcess.isAlive() && clock.getElapsedTime().asMilliseconds() < 250.f ) {
+					Sys::sleep( Milliseconds( 10 ) );
+					waited = true;
+				}
+				if ( waited ) {
+					Log::debug( "Waited \"%s\" LSP process to exit: %s", mLSP.name,
+								clock.getElapsedTime().toString() );
+				}
+			}
+
+			mShutdownCond.notify_all();
+		},
+		[this]( const IdType&, const json& ) {
+			{
+				std::lock_guard l( mShutdownMutex );
+				mReady = false;
+			}
+			mEnded = true;
+			mShutdownCond.notify_all();
+		} );
 }
 
 bool LSPClientServer::supportsLanguage( const std::string& lang ) const {

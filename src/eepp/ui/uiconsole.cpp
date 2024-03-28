@@ -403,15 +403,20 @@ void UIConsole::privPushText( String&& str ) {
 }
 
 Int32 UIConsole::linesOnScreen() {
+	auto lh = getLineHeight();
+	if ( lh == 0.f )
+		return 0;
 	return static_cast<Int32>(
-		( ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) / getLineHeight() ) -
-		1 );
+		( ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) / lh ) - 1 );
 }
 
 Int32 UIConsole::maxLinesOnScreen() {
-	return static_cast<Int32>(
-		( ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) / getLineHeight() ) +
-		3 );
+	auto lh = getLineHeight();
+	if ( lh == 0.f )
+		return 1;
+	auto maxLines =
+		( ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) / lh ) + 3;
+	return static_cast<Int32>( eemax( 1.f, maxLines ) );
 }
 
 void UIConsole::draw() {

@@ -762,9 +762,9 @@ void UIBuildSettings::deleteStep( size_t stepNum, bool isClean ) {
 	// cppcheck-suppress mismatchingContainerIterator
 	steps.erase( steps.begin() + stepNum );
 	cont->findByClass<UIBuildStep>( String::toString( stepNum ) )->close();
-	for ( auto step = stepNum + 1; step < steps.size(); step++ )
+	for ( auto step = stepNum + 1; step <= steps.size(); step++ )
 		cont->findByClass<UIBuildStep>( String::toString( step ) )
-			->updateStep( step, &steps[step] );
+			->updateStep( step - 1, &steps[step - 1] );
 }
 
 } // namespace ecode
