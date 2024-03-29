@@ -8,7 +8,7 @@ void addLatex() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "LaTeX",
-		  { "%.tex$" },
+		  { "%.tex$", "%.sty$", "%.ltx$" },
 		  {
 			  { { "%%", "\n" }, "comment" },
 			  { { "&" }, "operator" },
