@@ -8,7 +8,7 @@ void addJava() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Java",
-		  { "%.java$" },
+		  { "%.java$", "%.bsh$" },
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
