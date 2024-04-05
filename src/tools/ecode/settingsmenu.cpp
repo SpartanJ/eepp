@@ -748,10 +748,12 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		}
 	} );
 
-	mDocMenu
-		->addSubMenu( i18n( "folder_project_settings", "Folder/Project Settings" ),
-					  findIcon( "folder-user" ), mProjectDocMenu )
-		->setId( "project_doc_settings" );
+	auto* owner =
+		mDocMenu->addSubMenu( i18n( "folder_project_settings", "Folder/Project Settings" ),
+							  findIcon( "folder-user" ), mProjectDocMenu );
+	owner->setId( "project_doc_settings" );
+	owner->on( Event::OnMenuShow,
+			   [owner, this]( auto ) { mProjectDocMenu->setOwnerNode( owner ); } );
 
 	return mDocMenu;
 }
@@ -1967,10 +1969,11 @@ void SettingsMenu::deleteFileDialog( const FileInfo& file ) {
 }
 
 void SettingsMenu::createProjectMenu() {
-	mProjectMenu
-		->addSubMenu( i18n( "documents_settings", "Documents Settings" ), findIcon( "file" ),
-					  mProjectDocMenu )
-		->setId( "project_doc_settings" );
+	auto* owner = mProjectMenu->addSubMenu( i18n( "documents_settings", "Documents Settings" ),
+											findIcon( "file" ), mProjectDocMenu );
+	owner->setId( "project_doc_settings" );
+	owner->on( Event::OnMenuShow,
+			   [owner, this]( auto ) { mProjectDocMenu->setOwnerNode( owner ); } );
 
 	mProjectMenu
 		->addCheckBox( i18n( "h_as_cpp", "Treat .h files as C++ code." ),
