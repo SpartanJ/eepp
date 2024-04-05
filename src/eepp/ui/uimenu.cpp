@@ -786,8 +786,21 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 							pos.y = qScreen.Bottom - menu->getPixelsSize().getHeight();
 							qPos.Left = pos.x;
 							qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+
+							if ( qPos.Right > qScreen.Right ) {
+								qPos.Right = qScreen.Right;
+								qPos.Left = qPos.Right - menu->getPixelsSize().getWidth();
+							}
+
 							qPos.Top = pos.y;
 							qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
+							if ( qPos.Top < qScreen.Top ) {
+								qPos.Top = qScreen.Top;
+								qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+							}
+
+							pos = qPos.getPosition();
 						}
 					}
 				}

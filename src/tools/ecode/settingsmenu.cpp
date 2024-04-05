@@ -73,31 +73,6 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 			   getKeybind( "save-all" ) )
 		->setId( "save-all" );
 	mSettingsMenu->addSeparator();
-	UIMenuSubMenu* fileTypeMenu = mSettingsMenu->addSubMenu(
-		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu() );
-	fileTypeMenu->on( Event::OnMenuShow, [this, fileTypeMenu]( const Event* ) {
-		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
-			for ( UIPopUpMenu* menu : mFileTypeMenues )
-				menu->close();
-			mFileTypeMenues.clear();
-			auto* newMenu = createFileTypeMenu();
-			newMenu->reloadStyle( true, true );
-			fileTypeMenu->setSubMenu( newMenu );
-		}
-	} );
-	UIMenuSubMenu* colorSchemeMenu =
-		mSettingsMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
-								   findIcon( "palette" ), createColorSchemeMenu() );
-	colorSchemeMenu->on( Event::OnMenuShow, [this, colorSchemeMenu]( const Event* ) {
-		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
-			for ( UIPopUpMenu* menu : mColorSchemeMenues )
-				menu->close();
-			mColorSchemeMenues.clear();
-			auto* newMenu = createColorSchemeMenu();
-			newMenu->reloadStyle( true, true );
-			colorSchemeMenu->setSubMenu( newMenu );
-		}
-	} );
 
 	mProjectMenu = UIPopUpMenu::New();
 	mSettingsMenu
@@ -245,6 +220,20 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent_cur" );
 
+	UIMenuSubMenu* fileTypeMenu = mDocMenu->addSubMenu(
+		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu() );
+
+	fileTypeMenu->on( Event::OnMenuShow, [this, fileTypeMenu]( const Event* ) {
+		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
+			for ( UIPopUpMenu* menu : mFileTypeMenues )
+				menu->close();
+			mFileTypeMenues.clear();
+			auto* newMenu = createFileTypeMenu();
+			newMenu->reloadStyle( true, true );
+			fileTypeMenu->setSubMenu( newMenu );
+		}
+	} );
+
 	UIPopUpMenu* fileEncoding = UIPopUpMenu::New();
 	auto encodings = TextFormat::encodings();
 	for ( const auto& enc : encodings )
@@ -390,6 +379,22 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 
 	// **** GLOBAL SETTINGS ****
 	mDocMenu->addSeparator()->setId( "end_current_document" );
+
+	UIMenuSubMenu* colorSchemeMenu =
+		mDocMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
+							  findIcon( "palette" ), createColorSchemeMenu() );
+	colorSchemeMenu->on( Event::OnMenuShow, [this, colorSchemeMenu]( const Event* ) {
+		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
+			for ( UIPopUpMenu* menu : mColorSchemeMenues )
+				menu->close();
+			mColorSchemeMenues.clear();
+			auto* newMenu = createColorSchemeMenu();
+			newMenu->reloadStyle( true, true );
+			colorSchemeMenu->setSubMenu( newMenu );
+		}
+	} );
+
+	mDocMenu->addSeparator();
 
 	mGlobalMenu = UIPopUpMenu::New();
 	mDocMenu->addSubMenu( i18n( "global_settings", "Global Settings" ),
@@ -1148,6 +1153,7 @@ UIMenu* SettingsMenu::createRendererMenu() {
 
 UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu = UIPopUpMenu::New();
+
 	mViewMenu->addCheckBox( i18n( "show_line_numbers", "Show Line Numbers" ) )
 		->setActive( mApp->getConfig().editor.showLineNumbers )
 		->setId( "show-line-numbers" );
