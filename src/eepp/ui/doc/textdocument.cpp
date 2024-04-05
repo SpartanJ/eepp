@@ -2779,8 +2779,8 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 			} else {
 				setSelection( found.result );
 				from = replaceSelection( replace );
-				count++;
 			}
+			count++;
 		}
 	} while ( found.isValid() && endOfDoc() != found.result.end() );
 	if ( !wasRunningTransaction )
