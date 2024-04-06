@@ -794,38 +794,34 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 		Milliseconds( 350 ) );
 	runAction( mSearchTextAction );
 	mSearchText += String::trim( String::toLower( event.getText() ) );
-	if ( !mSearchText.empty() ) {
-		ModelIndex index = findRowWithText( mSearchText );
-		if ( index.isValid() ) {
-			setSelection( index );
-		} else {
-			if ( mSearchText.size() >= 2 &&
-				 mSearchText[mSearchText.size() - 2] == mSearchText[mSearchText.size() - 1] ) {
-				mSearchText.pop_back();
-				const Model* model = getModel();
-				ModelIndex sel = getSelection().first();
-				ModelIndex next =
-					model->index( sel.row() + 1,
-								  model->keyColumn() != -1
-									  ? model->keyColumn()
-									  : ( model->treeColumn() >= 0 ? model->treeColumn() : 0 ),
-								  sel.parent() );
-				if ( next.isValid() ) {
-					Variant var = model->data( next );
-					if ( var.isValid() &&
-						 String::startsWith( String::toLower( var.toString() ), mSearchText ) ) {
-						setSelection( model->index( next.row(), 0, next.parent() ) );
-					} else {
-						ModelIndex fIndex = findRowWithText( mSearchText );
-						if ( fIndex.isValid() )
-							setSelection( fIndex );
-					}
-				} else {
-					ModelIndex fIndex = findRowWithText( mSearchText );
-					if ( fIndex.isValid() )
-						setSelection( fIndex );
+	if ( mSearchText.empty() )
+		return 1;
+	ModelIndex index = findRowWithText( mSearchText );
+	if ( index.isValid() ) {
+		setSelection( index );
+	} else {
+		if ( mSearchText.size() >= 2 &&
+			 mSearchText[mSearchText.size() - 2] == mSearchText[mSearchText.size() - 1] ) {
+			mSearchText.pop_back();
+			const Model* model = getModel();
+			ModelIndex sel = getSelection().first();
+			auto col = model->keyColumn() != -1
+						   ? model->keyColumn()
+						   : ( model->treeColumn() >= 0 ? model->treeColumn() : 0 );
+			Int64 rowCount = model->rowCount( sel.parent() );
+			for ( auto rowNext = sel.row() + 1; rowNext < rowCount; rowNext++ ) {
+				ModelIndex next = model->index( rowNext, col, sel.parent() );
+				Variant var = model->data( next );
+				if ( var.isValid() &&
+					 String::startsWith( String::toLower( var.toString() ), mSearchText ) ) {
+					setSelection( model->index( next.row(), 0, next.parent() ) );
+					return 1;
 				}
 			}
+
+			ModelIndex fIndex = findRowWithText( mSearchText );
+			if ( fIndex.isValid() )
+				setSelection( fIndex );
 		}
 	}
 	return 1;
