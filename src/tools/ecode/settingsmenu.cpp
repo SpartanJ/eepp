@@ -989,39 +989,54 @@ UIMenu* SettingsMenu::createWindowMenu() {
 			   findIcon( "layout-right" ), getKeybind( "layout-rigth" ) )
 		->setId( "move-panel-right" );
 	mWindowMenu->addSeparator();
-	mWindowMenu
+
+	UIPopUpMenu* splitMenu = UIPopUpMenu::New();
+
+	splitMenu
 		->add( i18n( "split_left", "Split Left" ), findIcon( "split-horizontal" ),
 			   getKeybind( "split-left" ) )
 		->setId( "split-left" );
-	mWindowMenu
+	splitMenu
 		->add( i18n( "split_right", "Split Right" ), findIcon( "split-horizontal" ),
 			   getKeybind( "split-right" ) )
 		->setId( "split-right" );
-	mWindowMenu
+	splitMenu
 		->add( i18n( "split_top", "Split Top" ), findIcon( "split-vertical" ),
 			   getKeybind( "split-top" ) )
 		->setId( "split-top" );
-	mWindowMenu
+	splitMenu
 		->add( i18n( "split_bottom", "Split Bottom" ), findIcon( "split-vertical" ),
 			   getKeybind( "split-bottom" ) )
 		->setId( "split-bottom" );
-	mWindowMenu->addSeparator();
-	mWindowMenu
+	splitMenu->addSeparator();
+	splitMenu
 		->add( i18n( "terminal_split_left", "Split Terminal Left" ), findIcon( "split-horizontal" ),
 			   getKeybind( "terminal-split-left" ) )
 		->setId( "terminal-split-left" );
-	mWindowMenu
+	splitMenu
 		->add( i18n( "terminal_split_right", "Split Terminal Right" ),
 			   findIcon( "split-horizontal" ), getKeybind( "terminal-split-right" ) )
 		->setId( "terminal-split-right" );
-	mWindowMenu
+	splitMenu
 		->add( i18n( "terminal_split_top", "Split Terminal Top" ), findIcon( "split-vertical" ),
 			   getKeybind( "terminal-split-top" ) )
 		->setId( "terminal-split-top" );
-	mWindowMenu
+	splitMenu
 		->add( i18n( "terminal_split_bottom", "Split Terminal Bottom" ),
 			   findIcon( "split-vertical" ), getKeybind( "terminal-split-bottom" ) )
 		->setId( "terminal-split-bottom" );
+
+	splitMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
+		String::replaceAll( text, " ", "-" );
+		String::replaceAll( text, "/", "-" );
+		runCommand( text );
+	} );
+
+	mWindowMenu->addSubMenu( i18n( "split", "Split" ), findIcon( "split-horizontal" ), splitMenu );
+
 	mWindowMenu->addSeparator();
 	mWindowMenu
 		->add( i18n( "zoom_in", "Zoom In" ), findIcon( "zoom-in" ), getKeybind( "font-size-grow" ) )
