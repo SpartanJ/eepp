@@ -6,7 +6,7 @@
 
 #define EEPP_MAJOR_VERSION 2
 #define EEPP_MINOR_VERSION 7
-#define EEPP_PATCH_LEVEL 1
+#define EEPP_PATCH_LEVEL 2
 #define EEPP_CODENAME "Kāla"
 
 /** The compiled version of the library */

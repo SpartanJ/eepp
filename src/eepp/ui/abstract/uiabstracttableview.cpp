@@ -791,7 +791,7 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 			mSearchTextAction = nullptr;
 			mSearchText = "";
 		},
-		Milliseconds( 350 ) );
+		Milliseconds( 750 ) );
 	runAction( mSearchTextAction );
 	mSearchText += String::trim( String::toLower( event.getText() ) );
 	if ( mSearchText.empty() )

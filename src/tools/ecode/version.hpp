@@ -8,7 +8,7 @@ using namespace EE;
 
 #define ECODE_MAJOR_VERSION 0
 #define ECODE_MINOR_VERSION 5
-#define ECODE_PATCH_LEVEL 1
+#define ECODE_PATCH_LEVEL 2
 #define ECODE_CODENAME "Ākāśa"
 
 /** The compiled version of the library */
