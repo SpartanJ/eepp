@@ -9,7 +9,7 @@ void addShellScript() {
 
 		{ "Shell script",
 		  { "%.sh$", "%.bash$", "^%.bashrc$", "^%.bash_profile$", "^%.profile$", "%.zsh$",
-			"%.fish$", "^PKGBUILD$" },
+			"%.fish$", "^PKGBUILD$", "%.winlib$" },
 		  {
 			  { { "$[%a_@*#][%w_]*" }, "keyword2" },
 			  { { "#.*\n" }, "comment" },
