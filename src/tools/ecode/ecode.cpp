@@ -3374,6 +3374,7 @@ static std::string getShellEnv( const std::string& env, const std::string& defSh
 
 FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 							 const std::string& fallback ) {
+	bool wasFallback = false;
 	if ( FileSystem::isRelativePath( fontPath ) )
 		fontPath = mResPath + fontPath;
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -3383,12 +3384,26 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	if ( fontPath.empty() || !FileSystem::fileExists( fontPath ) ) {
 #endif
 		fontPath = fallback;
+		wasFallback = true;
 		if ( !fontPath.empty() && FileSystem::isRelativePath( fontPath ) )
 			fontPath = mResPath + fontPath;
 	}
 	if ( fontPath.empty() )
 		return nullptr;
-	return FontTrueType::New( name, fontPath );
+	FontTrueType* font = FontTrueType::New( name );
+	if ( font->loadFromFile( fontPath ) )
+		return font;
+	eeSAFE_DELETE( font );
+	// Failed to load original font? Try to fallback
+	if ( !fallback.empty() && !wasFallback ) {
+		if ( !fontPath.empty() && FileSystem::isRelativePath( fontPath ) )
+			fontPath = mResPath + fontPath;
+		font = FontTrueType::New( name );
+		if ( font->loadFromFile( fontPath ) )
+			return font;
+		eeSAFE_DELETE( font );
+	}
+	return nullptr;
 }
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
