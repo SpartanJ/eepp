@@ -631,7 +631,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setFileLockIconName( const std::string& fileLockIconName );
 
 	bool getDisplayLockedIcon() const;
+
 	void setDisplayLockedIcon( bool displayLockedIcon );
+
+	void invalidateLongestLineWidth();
 
   protected:
 	struct LastXOffset {
@@ -757,8 +760,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateLongestLineWidth();
 
 	void invalidateEditor( bool dirtyScroll = true );
-
-	void invalidateLongestLineWidth();
 
 	void invalidateLinesCache();
 

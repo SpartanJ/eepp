@@ -9,7 +9,6 @@
 #include <set>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 using namespace EE;
@@ -262,6 +261,8 @@ class ProjectBuildManager {
 	const std::string& getProjectRoot() const { return mProjectRoot; }
 
 	const std::string& getProjectFile() const { return mProjectFile; }
+
+	std::string getCurrentDocument();
 
 	ProjectBuild* getBuild( const std::string& buildName );
 

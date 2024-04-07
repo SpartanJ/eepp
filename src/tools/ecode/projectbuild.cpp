@@ -23,6 +23,8 @@ static const char* VAR_PROJECT_ROOT = "${project_root}";
 static const char* VAR_BUILD_TYPE = "${build_type}";
 static const char* VAR_OS = "${os}";
 static const char* VAR_NPROC = "${nproc}";
+static const char* VAR_CURRENT_DOC = "${current_doc}";
+static const char* VAR_CURRENT_DOC_NAME = "${current_doc_name}";
 
 static void replaceVar( ProjectBuildStep& s, const std::string& var, const std::string& val ) {
 	static std::string slashDup = FileSystem::getOSSlash() + FileSystem::getOSSlash();
@@ -301,6 +303,9 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 			i18n( "build_os_not_supported", "Operating System not supported for this build!" ) };
 
 	std::string nproc = String::format( "%d", Sys::getCPUCount() );
+	std::string curDoc = getCurrentDocument();
+	std::string curDocName =
+		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( curDoc ) );
 	ProjectBuildCommandsRes res;
 
 	auto finalBuild( build.replaceVars( build.mBuild ) );
@@ -309,6 +314,8 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 		ProjectBuildCommand buildCmd( step );
 		replaceVar( buildCmd, VAR_OS, currentOS );
 		replaceVar( buildCmd, VAR_NPROC, nproc );
+		replaceVar( buildCmd, VAR_CURRENT_DOC, curDoc );
+		replaceVar( buildCmd, VAR_CURRENT_DOC_NAME, curDocName );
 		if ( buildCmd.workingDir.empty() )
 			buildCmd.workingDir = mProjectRoot;
 		if ( !buildType.empty() )
@@ -362,6 +369,9 @@ ProjectBuildCommandsRes ProjectBuildManager::generateCleanCommands( const std::s
 			i18n( "build_os_not_supported", "Operating System not supported for this build!" ) };
 
 	std::string nproc = String::format( "%d", Sys::getCPUCount() );
+	std::string curDoc = getCurrentDocument();
+	std::string curDocName =
+		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( curDoc ) );
 	ProjectBuildCommandsRes res;
 
 	auto finalBuild( build.replaceVars( build.mClean ) );
@@ -370,6 +380,8 @@ ProjectBuildCommandsRes ProjectBuildManager::generateCleanCommands( const std::s
 		ProjectBuildCommand buildCmd( step );
 		replaceVar( buildCmd, VAR_OS, currentOS );
 		replaceVar( buildCmd, VAR_NPROC, nproc );
+		replaceVar( buildCmd, VAR_CURRENT_DOC, curDoc );
+		replaceVar( buildCmd, VAR_CURRENT_DOC_NAME, curDocName );
 		if ( !buildType.empty() )
 			replaceVar( buildCmd, VAR_BUILD_TYPE, buildType );
 		buildCmd.config = build.mConfig;
@@ -678,6 +690,13 @@ void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc 
 			sboc->runClean( build->getName(), mConfig.buildType,
 							getOutputParser( build->getName() ) );
 	}
+}
+
+std::string ProjectBuildManager::getCurrentDocument() {
+	return mApp->getSplitter() && mApp->getSplitter()->getCurEditor() &&
+				   mApp->getSplitter()->getCurEditor()->getDocument().hasFilepath()
+			   ? mApp->getSplitter()->getCurEditor()->getDocument().getFilePath()
+			   : "";
 }
 
 static std::unordered_map<std::string, std::string>

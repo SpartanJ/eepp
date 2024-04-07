@@ -359,7 +359,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 							<PushButton id="custom_var_del" icon="icon(delete-bin, 12dp)" min-width="20dp" tooltip="@string(del_custom_variable, Delete Selected Variable)" lg="center" />
 						</vbox>
 					</hbox>
-					<TextView class="span" lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_3, There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${nproc}: The number of logical processing units.)' />
+					<TextView class="span" lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_3, There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${nproc}: The number of logical processing units.&#10;${current_doc}: The last or current focused document path.&#10;${current_doc_name}: The last or current focused document name (without extension).)' />
 				</vbox>
 
 				<vbox lw="mp" lh="wc" class="build_environment">

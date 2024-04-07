@@ -114,6 +114,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	if ( mTableIssues )
 		mTableIssues->getSelection().clear();
 	mBuildOutput->getDocument().reset();
+	mBuildOutput->invalidateLongestLineWidth();
 	mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 
 	std::vector<SyntaxPattern> patterns;
@@ -240,6 +241,7 @@ void StatusBuildOutputController::runClean( const std::string& buildName,
 	show();
 
 	mBuildOutput->getDocument().reset();
+	mBuildOutput->invalidateLongestLineWidth();
 	mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
 
 	std::vector<SyntaxPattern> patterns;
