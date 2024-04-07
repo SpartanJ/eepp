@@ -24,8 +24,7 @@ SyntaxHighlighter::SyntaxHighlighter( TextDocument* doc ) :
 
 SyntaxHighlighter::~SyntaxHighlighter() {
 	mStopTokenizing = true;
-	while ( mTokenizeAsync )
-		Sys::sleep( Milliseconds( 0.1 ) );
+	reset();
 }
 
 void SyntaxHighlighter::changeDoc( TextDocument* doc ) {

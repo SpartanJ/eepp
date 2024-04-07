@@ -549,6 +549,10 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 			def.setVisible( json["visible"].get<bool>() );
 		if ( json.contains( "auto_close_xml_tags" ) && json["auto_close_xml_tags"].is_boolean() )
 			def.setAutoCloseXMLTags( json["auto_close_xml_tags"].get<bool>() );
+		if ( json.contains( "extension_priority" ) && json["extension_priority"].is_boolean() )
+			def.setExtensionPriority( json["extension_priority"].get<bool>() );
+		if ( json.contains( "case_insensitive" ) && json["case_insensitive"].is_boolean() )
+			def.setCaseInsensitive( json["case_insensitive"].get<bool>() );
 	} catch ( const json::exception& e ) {
 		Log::error( "SyntaxDefinition loadLanguage failed:\n%s", e.what() );
 	}

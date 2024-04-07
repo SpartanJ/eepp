@@ -129,11 +129,15 @@ class EE_API SyntaxDefinition {
 
 	bool hasExtensionPriority() const;
 
-	void setExtensionPriority( bool hasExtensionPriority );
+	SyntaxDefinition& setExtensionPriority( bool hasExtensionPriority );
 
 	UnorderedMap<std::string, std::string> getSymbolNames() const;
 
 	const Uint16& getLanguageIndex() const { return mLanguageIndex; }
+
+	bool isCaseInsensitive() const;
+
+	SyntaxDefinition& setCaseInsensitive( bool caseInsensitive );
 
   protected:
 	friend class SyntaxDefinitionManager;
@@ -151,6 +155,7 @@ class EE_API SyntaxDefinition {
 	bool mAutoCloseXMLTags{ false };
 	bool mVisible{ true };
 	bool mHasExtensionPriority{ false };
+	bool mCaseInsensitive{ false };
 };
 
 }}} // namespace EE::UI::Doc

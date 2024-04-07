@@ -2427,9 +2427,16 @@ void UICodeEditor::setEnableColorPickerOnSelection( const bool& enableColorPicke
 }
 
 void UICodeEditor::setSyntaxDefinition( const SyntaxDefinition& definition ) {
+	if ( &definition == &mDoc->getSyntaxDefinition() )
+		return;
 	std::string oldLang( mDoc->getSyntaxDefinition().getLanguageName() );
 	mDoc->getHighlighter()->reset();
 	mDoc->setSyntaxDefinition( definition );
+	if ( mMinimapEnabled && getUISceneNode()->hasThreadPool() ) {
+		mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
+			runOnMainThread( [this] { invalidateDraw(); } );
+		} );
+	}
 	invalidateDraw();
 	DocSyntaxDefEvent event( this, mDoc.get(), Event::OnDocumentSyntaxDefinitionChange, oldLang,
 							 mDoc->getSyntaxDefinition().getLanguageName() );
@@ -3043,7 +3050,7 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Float& fontSize,
 								 const Float& lineHeight ) {
 	Vector2f originalPosition( position );
-	auto& tokens = mDoc->getHighlighter()->getLine( line );
+	const auto& tokens = mDoc->getHighlighter()->getLine( line );
 	const String& strLine = mDoc->line( line ).getText();
 	Primitives primitives;
 	Int64 curChar = 0;
