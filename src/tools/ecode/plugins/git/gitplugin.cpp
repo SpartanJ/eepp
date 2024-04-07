@@ -102,10 +102,10 @@ GitPlugin::~GitPlugin() {
 
 	// TODO: Add a signal for these waits
 	while ( mRunningUpdateStatus )
-		Sys::sleep( 1.f );
+		Sys::sleep( Milliseconds( 1.f ) );
 
 	while ( mRunningUpdateBranches )
-		Sys::sleep( 1.f );
+		Sys::sleep( Milliseconds( 1.f ) );
 }
 
 void GitPlugin::load( PluginManager* pluginManager ) {

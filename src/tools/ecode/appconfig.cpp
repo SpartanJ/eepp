@@ -157,6 +157,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.newTerminalOrientation = NewTerminalOrientation::fromString(
 		ini.getValue( "terminal", "new_terminal_orientation", "vertical" ) );
 	term.scrollback = ini.getValueI( "terminal", "scrollback", 10000 );
+	term.unsupportedOSWarnDisabled = ini.getValueB( "terminal", "unsupported_os_warn_disabled" );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
@@ -278,6 +279,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "terminal", "new_terminal_orientation",
 				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
 	ini.setValue( "terminal", "scrollback", String::toString( term.scrollback ) );
+	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",

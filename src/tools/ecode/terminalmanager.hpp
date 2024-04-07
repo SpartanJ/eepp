@@ -54,6 +54,8 @@ class TerminalManager {
 
 	void setKeybindings( UITerminal* term );
 
+	void displayError();
+
   protected:
 	App* mApp;
 	std::string mTerminalColorSchemesPath;

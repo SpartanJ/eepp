@@ -166,9 +166,9 @@ void TerminalManager::configureTerminalShell() {
 }
 
 void TerminalManager::configureTerminalScrollback() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		mApp->i18n( "configure_terminal_scrollback", "Configure terminal scrollback:" ) );
+	UIMessageBox* msgBox =
+		UIMessageBox::New( UIMessageBox::INPUT, mApp->i18n( "configure_terminal_scrollback",
+															"Configure terminal scrollback:" ) );
 	msgBox->setTitle( mApp->getWindowTitle() );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
@@ -234,6 +234,55 @@ void TerminalManager::updateMenuColorScheme( UIMenuSubMenu* colorSchemeMenu ) {
 	}
 }
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+static void openExternal( const std::string& defShell = "" ) {
+	std::vector<std::string> options;
+	if ( !defShell.empty() )
+		options.push_back( defShell );
+	options.push_back( "powershell" );
+	options.push_back( "cmd" );
+#else
+static void openExternal( const std::string& ) {
+	std::vector<std::string> options = { "gnome-terminal", "konsole", "xterm", "st" };
+#endif
+	for ( const auto& option : options ) {
+		auto externalShell( Sys::which( option ) );
+		if ( !externalShell.empty() ) {
+			Sys::execute( externalShell );
+			return;
+		}
+	}
+}
+
+void TerminalManager::displayError() {
+	if ( mApp->getConfig().term.unsupportedOSWarnDisabled ) {
+		openExternal( mApp->termConfig().shell );
+	} else {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::OK,
+			mApp->i18n( "feature_not_supported_in_os",
+						"This feature is not supported in this Operating System.\necode will try "
+						"to open an external terminal." ) );
+
+		UICheckBox* chkDoNotWarn = UICheckBox::New();
+		chkDoNotWarn->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
+			->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
+			->setLayoutGravity( UI_HALIGN_LEFT | UI_VALIGN_CENTER )
+			->setClipType( ClipType::None )
+			->setParent( msgBox->getLayoutCont()->getFirstChild() )
+			->setId( "terminal-not-supported-chk" );
+		chkDoNotWarn->setText( mApp->i18n( "terminal_not_supported_do_not_warn",
+										   "Always open an external terminal (do not warn)" ) );
+		chkDoNotWarn->toPosition( 1 );
+		msgBox->on( Event::OnConfirm, [this, chkDoNotWarn]( const Event* ) {
+			if ( chkDoNotWarn->isChecked() )
+				mApp->getConfig().term.unsupportedOSWarnDisabled = true;
+			openExternal( mApp->termConfig().shell );
+		} );
+		msgBox->showWhenReady();
+	}
+}
+
 UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
 												const std::string& workingDir, std::string program,
 												const std::vector<std::string>& args ) {
@@ -281,12 +330,9 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
 		program, args, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(),
 		mApp->termConfig().scrollback, nullptr, mUseFrameBuffer );
-	if ( term->getTerm() == nullptr ) {
-		UIMessageBox* msgBox = UIMessageBox::New(
-			UIMessageBox::OK,
-			mApp->i18n( "feature_not_supported_in_os",
-						"This feature is not supported in this Operating System" ) );
-		msgBox->showWhenReady();
+
+	if ( term == nullptr || term->getTerm() == nullptr ) {
+		displayError();
 		return nullptr;
 	}
 

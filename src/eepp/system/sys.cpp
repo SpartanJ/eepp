@@ -395,6 +395,40 @@ std::string Sys::getOSArchitecture() {
 #endif
 }
 
+Sys::PlatformType Sys::getPlatformType() {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	return Sys::PlatformType::Linux;
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	return Sys::PlatformType::Android;
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+#if defined( __FreeBSD__ )
+	return Sys::PlatformType::FreeBSD;
+#elif defined( __OpenBSD__ )
+	return Sys::PlatformType::OpenBSD;
+#elif defined( __NetBSD__ )
+	return Sys::PlatformType::NetBSD;
+#elif defined( __DragonFly__ )
+	return Sys::PlatformType::DragonFlyBSD;
+#else
+	return Sys::PlatformType::BSD;
+#endif
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return Sys::PlatformType::Emscripten;
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	return Sys::PlatformType::Haiku;
+#elif EE_PLATFORM == EE_PLATFORM_IOS
+	return Sys::PlatformType::iOS;
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	return Sys::PlatformType::macOS;
+#elif EE_PLATFORM == EE_PLATFORM_SOLARIS
+	return Sys::PlatformType::Solaris;
+#elif EE_PLATFORM_WIN
+	return Sys::PlatformType::Windows;
+#else
+	return Sys::PlatformType::Unknown;
+#endif
+}
+
 std::string Sys::getPlatform() {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	return "Linux";
@@ -478,10 +512,6 @@ Uint64 Sys::getTicks() {
 #else
 #warning Sys::getTicks() not implemented in this platform.
 #endif
-}
-
-void Sys::sleep( const Uint32& ms ) {
-	sleep( Milliseconds( ms ) );
 }
 
 void Sys::sleep( const Time& time ) {
