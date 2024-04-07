@@ -9,6 +9,7 @@
 #include <eepp/ui/doc/languages/batchscript.hpp>
 #include <eepp/ui/doc/languages/blueprint.hpp>
 #include <eepp/ui/doc/languages/c.hpp>
+#include <eepp/ui/doc/languages/carbon.hpp>
 #include <eepp/ui/doc/languages/cmake.hpp>
 #include <eepp/ui/doc/languages/configfile.hpp>
 #include <eepp/ui/doc/languages/containerfile.hpp>
@@ -110,7 +111,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 86 );
+	mDefinitions.reserve( 88 );
 
 	// Register some languages support.
 	addPlainText();
@@ -119,6 +120,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addBatchScript();
 	addBlueprint();
 	addC();
+	addCarbon();
 	addCMake();
 	addContainerFile();
 	addConfigFile();

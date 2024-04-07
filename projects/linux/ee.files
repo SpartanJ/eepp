@@ -868,6 +868,8 @@
 ../../src/eepp/ui/doc/languages/blueprint.hpp
 ../../src/eepp/ui/doc/languages/c.cpp
 ../../src/eepp/ui/doc/languages/c.hpp
+../../src/eepp/ui/doc/languages/carbon.cpp
+../../src/eepp/ui/doc/languages/carbon.hpp
 ../../src/eepp/ui/doc/languages/cpp.cpp
 ../../src/eepp/ui/doc/languages/cpp.hpp
 ../../src/eepp/ui/doc/languages/crystal.hpp
@@ -875,6 +877,8 @@
 ../../src/eepp/ui/doc/languages/d.hpp
 ../../src/eepp/ui/doc/languages/elixir.hpp
 ../../src/eepp/ui/doc/languages/elm.hpp
+../../src/eepp/ui/doc/languages/fortran.cpp
+../../src/eepp/ui/doc/languages/fortran.hpp
 ../../src/eepp/ui/doc/languages/fstab.hpp
 ../../src/eepp/ui/doc/languages/gdscript.cpp
 ../../src/eepp/ui/doc/languages/gdscript.hpp

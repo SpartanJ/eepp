@@ -4,7 +4,8 @@
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addFortran() {
-
+	// Based in Lite-XL Rohan Vashisht implementation
+	// https://github.com/RohanVashisht1234/fortran_syntax_highlighter_lite-xl
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Fortran",
