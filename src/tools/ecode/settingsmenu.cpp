@@ -567,8 +567,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->setId( "cursor_blinking_time" );
 
 	mGlobalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
-		if ( !mSplitter->curEditorExistsAndFocused() ||
-			 event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
+		if ( event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
 			return;
 		const String& id = event->getNode()->getId();
