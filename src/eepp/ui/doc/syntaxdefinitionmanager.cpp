@@ -22,6 +22,7 @@
 #include <eepp/ui/doc/languages/elixir.hpp>
 #include <eepp/ui/doc/languages/elm.hpp>
 #include <eepp/ui/doc/languages/environmentfile.hpp>
+#include <eepp/ui/doc/languages/fortran.hpp>
 #include <eepp/ui/doc/languages/fstab.hpp>
 #include <eepp/ui/doc/languages/gdscript.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
@@ -131,6 +132,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addElixir();
 	addElm();
 	addEnvironmentFile();
+	addFortran();
 	addFstab();
 	addGDScript();
 	addGLSL();
