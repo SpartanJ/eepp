@@ -233,7 +233,6 @@ void addSmallBASIC() {
 			  { "read", "keyword" },
 			  { "rect", "keyword" },
 			  { "redim", "keyword" },
-			  { "rem", "keyword" },
 			  { "rename", "keyword" },
 			  { "repeat", "keyword" },
 			  { "replace", "keyword" },
