@@ -21,8 +21,6 @@ ECODE_VERSION_STRING="$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH
 cat Info.plist.tpl | sed "s/ECODE_VERSION_STRING/${ECODE_VERSION_STRING}/g" | sed "s/ECODE_MAJOR_VERSION/${ECODE_MAJOR_VERSION}/g"  | sed "s/ECODE_MINOR_VERSION/${ECODE_MINOR_VERSION}/g" > Info.plist
 cp Info.plist ecode.app/Contents/
 rm Info.plist
-chmod +x run.sh
-cp run.sh ecode.app/Contents/MacOS
 cp ../../../libs/macosx/libeepp.dylib ecode.app/Contents/MacOS
 cp ../../../bin/ecode ecode.app/Contents/MacOS
 
