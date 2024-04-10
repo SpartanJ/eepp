@@ -22,7 +22,7 @@
 #else
 #include <direct.h>
 #ifndef S_ISDIR
-#define S_ISDIR( mode ) ( ( (mode)&S_IFMT ) == S_IFDIR )
+#define S_ISDIR( mode ) ( ( ( mode ) & S_IFMT ) == S_IFDIR )
 #endif
 #endif
 
@@ -205,8 +205,8 @@ bool FileSystem::fileRemove( const std::string& filepath ) {
 
 bool FileSystem::fileHide( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return SetFileAttributesW( (LPCWSTR)String( filepath ).toWideString().c_str(), 
-		FILE_ATTRIBUTE_HIDDEN );
+	return SetFileAttributesW( (LPCWSTR)String( filepath ).toWideString().c_str(),
+							   FILE_ATTRIBUTE_HIDDEN );
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 	return 0 == chflags( filepath.c_str(), UF_HIDDEN );
 #else
@@ -415,16 +415,8 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 #else
 		if ( strcmp( dirp->d_name, ".." ) != 0 && strcmp( dirp->d_name, "." ) != 0 ) {
 #endif
-			char* p = &dirp->d_name[0];
-			String tmp;
-
-			while ( *p ) {
-				unsigned char y = *p;
-				tmp.push_back( y );
-				p++;
-			}
-
-			files.push_back( tmp );
+			files.push_back(
+				String::fromUtf8( std::string_view{ dirp->d_name, strlen( dirp->d_name ) } ) );
 		}
 	}
 

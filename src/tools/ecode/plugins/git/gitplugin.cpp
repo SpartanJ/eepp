@@ -1069,7 +1069,7 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 					break;
 			}
 			doc->setDefaultFileName( repoName + "-" + modeName + ".diff" );
-			doc->setSyntaxDefinition( SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
+			ret.second->setSyntaxDefinition( SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
 			doc->textInput( res.result, false );
 			doc->moveToStartOfDoc();
 			doc->resetUndoRedo();
@@ -1087,7 +1087,7 @@ void GitPlugin::diff( const std::string& file, bool isStaged ) {
 			auto ret = mManager->getSplitter()->createEditorInNewTab();
 			auto doc = ret.second->getDocumentRef();
 			doc->setDefaultFileName( FileSystem::fileNameFromPath( file ) + ".diff" );
-			doc->setSyntaxDefinition( SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
+			ret.second->setSyntaxDefinition( SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
 			doc->textInput( res.result, false );
 			doc->moveToStartOfDoc();
 			doc->resetUndoRedo();
