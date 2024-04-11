@@ -175,6 +175,7 @@ struct LSPShowMessageParams {
 	LSPMessageType type{ LSPMessageType::Log };
 	std::string message;
 	std::vector<LSPMessageActionItem> actions;
+	bool allowCopy{ false };
 };
 
 struct LSPTextDocumentContentChangeEvent {

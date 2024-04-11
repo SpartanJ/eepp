@@ -262,6 +262,7 @@ class LSPClientServer {
 	bool mEnded{ false };
 	bool mUsingProcess{ false };
 	bool mUsingSocket{ false };
+	bool mNotifiedServerError{ false };
 	struct QueueMessage {
 		json msg;
 		JsonReplyHandler h;
@@ -319,6 +320,8 @@ class LSPClientServer {
 	void refreshCodeLens();
 
 	bool trimLogs() const;
+
+	void notifyServerError();
 };
 
 } // namespace ecode

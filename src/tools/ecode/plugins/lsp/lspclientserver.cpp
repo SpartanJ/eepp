@@ -1218,15 +1218,19 @@ bool LSPClientServer::start() {
 	if ( !cmd.empty() ) {
 		bool ret = mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync,
 									mLSP.env, mRootPath );
-		if ( ret && mProcess.isAlive() ) {
-			mUsingProcess = true;
+		if ( ret ) {
+			if ( mProcess.isAlive() ) {
+				mUsingProcess = true;
 
-			mProcess.startAsyncRead(
-				[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
-				[this]( const char* bytes, size_t n ) { readStdErr( bytes, n ); } );
+				mProcess.startAsyncRead(
+					[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
+					[this]( const char* bytes, size_t n ) { readStdErr( bytes, n ); } );
 
-			if ( mLSP.host.empty() )
-				initialize();
+				if ( mLSP.host.empty() )
+					initialize();
+			} else {
+				ret = false;
+			}
 		}
 
 		if ( ret && !mLSP.host.empty() ) {
@@ -1313,8 +1317,10 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 	LSPRequestHandle ret;
 	ret.server = this;
 
-	if ( !isRunning() )
+	if ( !isRunning() ) {
+		notifyServerError();
 		return ret;
+	}
 
 	msg["jsonrpc"] = "2.0";
 
@@ -1394,6 +1400,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::send( json&& msg, const JsonR
 	} else {
 		Log::warning( "LSPClientServer server %s Send for non-running server: %s",
 					  mLSP.name.c_str(), mLSP.name.c_str() );
+		notifyServerError();
 	}
 	return LSPRequestHandle();
 }
@@ -1405,6 +1412,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::sendSync( json&& msg, const J
 	} else {
 		Log::warning( "LSPClientServer server %s Send for non-running server: %s",
 					  mLSP.name.c_str(), mLSP.name.c_str() );
+		notifyServerError();
 	}
 	return LSPRequestHandle();
 }
@@ -1897,20 +1905,32 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 	}
 }
 
+void LSPClientServer::notifyServerError() {
+	if ( mNotifiedServerError || mReady )
+		return;
+	mNotifiedServerError = true;
+	LSPShowMessageParams msg;
+	msg.message = String::format( "LSP Server %s failed to initialize, received some error:\n%s",
+								  mLSP.name, mReceiveErr );
+	msg.type = LSPMessageType::Error;
+	mManager->getPluginManager()->sendBroadcast( PluginMessageType::ShowMessage,
+												 PluginMessageFormat::ShowMessage, &msg );
+}
+
 void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
 	if ( mEnded )
 		return;
-	mReceiveErr += std::string( bytes, n );
-	LSPShowMessageParams msg;
-	const auto lastNewLineIndex = mReceiveErr.find_last_of( '\n' );
-	if ( lastNewLineIndex != std::string::npos ) {
-		msg.message = mReceiveErr.substr( 0, lastNewLineIndex );
-		mReceiveErr.erase( 0, lastNewLineIndex + 1 );
-	}
-	if ( !msg.message.empty() ) {
-		Log::debug( "LSPClientServer::readStdErr server %s:\n%s", mLSP.name.c_str(),
-					msg.message.c_str() );
-	}
+
+	std::string_view received( bytes, n );
+	received = String::trim( received, '\n' );
+	received = String::trim( received, ' ' );
+	mReceiveErr = received;
+
+	if ( !received.empty() )
+		Log::debug( "LSPClientServer::readStdErr server %s:\n%s", mLSP.name, received );
+
+	if ( !isRunning() )
+		notifyServerError();
 }
 
 void LSPClientServer::sendQueuedMessages() {
