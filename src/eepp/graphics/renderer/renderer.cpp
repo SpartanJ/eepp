@@ -587,11 +587,11 @@ void Renderer::multisample( bool enabled ) {
 	else
 		disable( GL_MULTISAMPLE );
 
-	BitOp::writeBitKey( &mStateFlags, RFS_MULTISAMPLE, enabled ? 1 : 0 );
+	BitOp::writeBitKey( &mStateFlags, RSF_MULTISAMPLE, enabled ? 1 : 0 );
 }
 
 bool Renderer::isMultisample() {
-	return BitOp::readBitKey( &mStateFlags, RFS_MULTISAMPLE );
+	return BitOp::readBitKey( &mStateFlags, RSF_MULTISAMPLE );
 }
 
 void Renderer::polygonMode( const PrimitiveFillMode& Mode ) {
