@@ -146,7 +146,7 @@ void ProjectSearch::find( const std::vector<std::string> files, const std::strin
 						  ResultCb result, bool caseSensitive, bool wholeWord,
 						  const TextDocument::FindReplaceType& type,
 						  const std::vector<GlobMatch>& pathFilters, std::string basePath,
-						  std::vector<std::shared_ptr<TextDocument>> openDocs ) {
+						  std::vector<std::shared_ptr<TextDocument>> ) {
 	Result res;
 	const auto occ =
 		type == TextDocument::FindReplaceType::Normal
