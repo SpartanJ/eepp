@@ -276,6 +276,10 @@ typedef char GLchar;
 
 #endif
 
+#ifndef GL_MULTISAMPLE
+#define GL_MULTISAMPLE  0x809D
+#endif
+
 #include <eepp/graphics/renderer/rendererhelper.hpp>
 
 #endif

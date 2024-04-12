@@ -3,8 +3,10 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/tools/uidocfindreplace.hpp>
@@ -3629,6 +3631,18 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		minimapStartLine = visibleLinesStart - eefloor( scrollPosPixels / lineSpacing );
 		minimapStartLine = eemax( 0, eemin( minimapStartLine, lineCount - maxMinmapLines ) );
 	}
+
+	// Disable multi-sample to avoid rectangle-smoothing
+	bool disableMultisample = !mMinimapConfig.allowSmoothing && GLi->isMultisample();
+	ScopedOp op(
+		[disableMultisample] {
+			if ( disableMultisample )
+				GLi->multisample( false );
+		},
+		[disableMultisample] {
+			if ( disableMultisample )
+				GLi->multisample( true );
+		} );
 
 	GlobalBatchRenderer* BR = GlobalBatchRenderer::instance();
 	BR->setTexture( nullptr );

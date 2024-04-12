@@ -91,9 +91,10 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 		->setId( "term-menu" );
 	mSettingsMenu->addSubMenu( i18n( "edit", "Edit" ), nullptr, createEditMenu() );
 	mSettingsMenu->addSubMenu( i18n( "view", "View" ), nullptr, createViewMenu() );
-	mSettingsMenu->addSubMenu( i18n( "tools", "Tools" ), nullptr, createToolsMenu() );
-	mSettingsMenu->addSubMenu( i18n( "window", "Window" ), nullptr, createWindowMenu() );
-	mSettingsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "package" ) )
+	mSettingsMenu->addSubMenu( i18n( "tools", "Tools" ), findIcon( "tools" ), createToolsMenu() );
+	mSettingsMenu->addSubMenu( i18n( "window", "Window" ), findIcon( "window-opt" ),
+							   createWindowMenu() );
+	mSettingsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
 		->setId( "plugin-manager-open" );
 	mSettingsMenu->addSubMenu( i18n( "help", "Help" ), findIcon( "help" ), createHelpMenu() );
 	mSettingsMenu->addSeparator();
@@ -936,7 +937,7 @@ UIMenu* SettingsMenu::createWindowMenu() {
 							 findIcon( "color-scheme" ), colorsMenu );
 	mWindowMenu->addSubMenu( i18n( "ui_thene", "UI Theme" ), findIcon( "palette" ),
 							 createThemesMenu() );
-	mWindowMenu->addSubMenu( i18n( "ui_renderer", "Renderer" ), findIcon( "renderer" ),
+	mWindowMenu->addSubMenu( i18n( "ui_renderer", "Renderer" ), findIcon( "package" ),
 							 createRendererMenu() );
 	mWindowMenu
 		->add( i18n( "ui_scale_factor", "UI Scale Factor (Pixel Density)" ),
@@ -966,27 +967,7 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
 			   getKeybind( "keybindings" ) )
 		->setId( "keybindings" );
-	mWindowMenu->addSeparator();
-	mWindowMenu
-		->addCheckBox( i18n( "fullscreen_mode", "Full Screen Mode" ), false,
-					   getKeybind( "fullscreen-toggle" ) )
-		->setId( "fullscreen-toggle" );
-	mWindowMenu
-		->addCheckBox( i18n( "show_side_panel", "Show Side Panel" ),
-					   mApp->getConfig().ui.showSidePanel, getKeybind( "switch-side-panel" ) )
-		->setId( "show-side-panel" );
-	mWindowMenu
-		->addCheckBox( i18n( "show_status_bar", "Show Status Bar" ),
-					   mApp->getConfig().ui.showStatusBar, getKeybind( "toggle-status-bar" ) )
-		->setId( "toggle-status-bar" );
-	mWindowMenu
-		->add( i18n( "move_panel_left_ellipsis", "Move panel to left..." ),
-			   findIcon( "layout-left" ), getKeybind( "layout-left" ) )
-		->setId( "move-panel-left" );
-	mWindowMenu
-		->add( i18n( "move_panel_right_ellipsis", "Move panel to right..." ),
-			   findIcon( "layout-right" ), getKeybind( "layout-rigth" ) )
-		->setId( "move-panel-right" );
+
 	mWindowMenu->addSeparator();
 
 	UIPopUpMenu* splitMenu = UIPopUpMenu::New();
@@ -1048,15 +1029,6 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->add( i18n( "zoom_reset", "Zoom Reset" ), findIcon( "zoom-reset" ),
 			   getKeybind( "font-size-reset" ) )
 		->setId( "zoom-reset" );
-	mWindowMenu->addSeparator();
-	mWindowMenu
-		->add( i18n( "show_console", "Show Console" ), findIcon( "terminal" ),
-			   getKeybind( "console-toggle" ) )
-		->setId( "console-toggle" );
-	mWindowMenu
-		->add( i18n( "inspect_widgets", "Inspect Widgets" ), findIcon( "package" ),
-			   getKeybind( "debug-widget-tree-view" ) )
-		->setId( "debug-widget-tree-view" );
 	mWindowMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -1239,6 +1211,30 @@ UIMenu* SettingsMenu::createViewMenu() {
 				  "directory tree." ) )
 		->setId( "sync-project-tree" );
 
+	mViewMenu->addSeparator();
+	mViewMenu
+		->addCheckBox( i18n( "fullscreen_mode", "Full Screen Mode" ), false,
+					   getKeybind( "fullscreen-toggle" ) )
+		->setId( "fullscreen-toggle" );
+	mViewMenu
+		->addCheckBox( i18n( "show_side_panel", "Show Side Panel" ),
+					   mApp->getConfig().ui.showSidePanel, getKeybind( "switch-side-panel" ) )
+		->setId( "show-side-panel" );
+	mViewMenu
+		->addCheckBox( i18n( "show_status_bar", "Show Status Bar" ),
+					   mApp->getConfig().ui.showStatusBar, getKeybind( "toggle-status-bar" ) )
+		->setId( "toggle-status-bar" );
+	mViewMenu
+		->add( i18n( "move_panel_left_ellipsis", "Move panel to left..." ),
+			   findIcon( "layout-left" ), getKeybind( "layout-left" ) )
+		->setId( "move-panel-left" )
+		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Right );
+	mViewMenu
+		->add( i18n( "move_panel_right_ellipsis", "Move panel to right..." ),
+			   findIcon( "layout-right" ), getKeybind( "layout-rigth" ) )
+		->setId( "move-panel-right" )
+		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Left );
+
 	mViewMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -1392,6 +1388,18 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 		->add( i18n( "load_cur_dir_as_folder", "Load current document directory as folder" ),
 			   findIcon( "folder" ), getKeybind( "load-current-dir" ) )
 		->setId( "load-current-dir" );
+
+	mToolsMenu->addSeparator();
+
+	mToolsMenu
+		->add( i18n( "show_console", "Show Console" ), findIcon( "terminal" ),
+			   getKeybind( "console-toggle" ) )
+		->setId( "console-toggle" );
+	mToolsMenu
+		->add( i18n( "inspect_widgets", "Inspect Widgets" ), findIcon( "package" ),
+			   getKeybind( "debug-widget-tree-view" ) )
+		->setId( "debug-widget-tree-view" );
+
 	mToolsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -1670,6 +1678,26 @@ void SettingsMenu::updateDocumentMenu() {
 		->setActive( mSplitter->getCurEditor()->isLocked() );
 }
 
+void SettingsMenu::updateViewMenu() {
+	mViewMenu->getItemId( "fullscreen-toggle" )
+		->asType<UIMenuCheckBox>()
+		->setActive( !mApp->getWindow()->isWindowed() );
+
+	mViewMenu->getItemId( "toggle-status-bar" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mApp->getConfig().ui.showStatusBar );
+
+	mViewMenu->getItemId( "show-side-panel" )
+		->asType<UIMenuCheckBox>()
+		->setActive( mApp->getConfig().ui.showSidePanel );
+
+	mViewMenu->getItemId( "move-panel-left" )
+		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Right );
+
+	mViewMenu->getItemId( "move-panel-right" )
+		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Left );
+}
+
 void SettingsMenu::updateGlobalDocumentSettingsMenu() {
 	mGlobalMenu->find( "autoreload_on_disk_change" )
 		->asType<UIMenuCheckBox>()
@@ -1940,6 +1968,10 @@ void SettingsMenu::updatedReopenClosedFileState() {
 		if ( reopenBtn )
 			reopenBtn->setEnabled( !mApp->getRecentClosedFiles().empty() );
 	}
+}
+
+UIPopUpMenu* SettingsMenu::getViewMenu() const {
+	return mViewMenu;
 }
 
 UIPopUpMenu* SettingsMenu::getWindowMenu() const {

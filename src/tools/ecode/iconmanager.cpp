@@ -238,6 +238,9 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "circle-filled", 0xea71 },
 			{ "circle", 0xeabc },
 			{ "diff-multiple", 0xec23 },
+			{ "extensions", 0xeae6 },
+			{ "window-opt", 0xeb7f },
+			{ "tools", 0xeb6d },
 		};
 
 		for ( const auto& icon : codIcons )

@@ -871,19 +871,13 @@ const std::string& App::getFileToOpen() const {
 
 void App::switchSidePanel() {
 	mConfig.ui.showSidePanel = !mConfig.ui.showSidePanel;
-	mSettings->getWindowMenu()
-		->getItemId( "show-side-panel" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mConfig.ui.showSidePanel );
+	mSettings->updateViewMenu();
 	showSidePanel( mConfig.ui.showSidePanel );
 }
 
 void App::switchStatusBar() {
 	mConfig.ui.showStatusBar = !mConfig.ui.showStatusBar;
-	auto chk =
-		mSettings->getWindowMenu()->getItemId( "toggle-status-bar" )->asType<UIMenuCheckBox>();
-	if ( chk->isActive() != mConfig.ui.showStatusBar )
-		chk->setActive( mConfig.ui.showStatusBar );
+	mSettings->updateViewMenu();
 	updateDocInfoLocation();
 	showStatusBar( mConfig.ui.showStatusBar );
 }
@@ -900,6 +894,8 @@ void App::panelPosition( const PanelPosition& panelPosition ) {
 		   mProjectSplitter->getFirstWidget() != mSidePanel ) ) {
 		mProjectSplitter->swap( true );
 	}
+
+	mSettings->updateViewMenu();
 }
 
 void App::setUIColorScheme( const ColorSchemePreference& colorScheme ) {
@@ -2439,10 +2435,7 @@ NotificationCenter* App::getNotificationCenter() const {
 
 void App::fullscreenToggle() {
 	mWindow->toggleFullscreen();
-	mSettings->getWindowMenu()
-		->find( "fullscreen-toggle" )
-		->asType<UIMenuCheckBox>()
-		->setActive( !mWindow->isWindowed() );
+	mSettings->updateViewMenu();
 }
 
 void App::showGlobalSearch( bool searchAndReplace ) {

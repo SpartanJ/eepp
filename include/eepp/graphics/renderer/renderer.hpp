@@ -132,6 +132,10 @@ class EE_API Renderer {
 
 	void pixelStorei( unsigned int pname, int param );
 
+	void multisample( bool enable );
+
+	bool isMultisample();
+
 	RendererGL* getRendererGL();
 
 	RendererGL3* getRendererGL3();
@@ -278,7 +282,12 @@ class EE_API Renderer {
   protected:
 	static Renderer* sSingleton;
 
-	enum RendererStateFlags { RSF_LINE_SMOOTH = 0, RSF_POLYGON_MODE, RSF_POLYGON_SMOOTH };
+	enum RendererStateFlags {
+		RSF_LINE_SMOOTH = 0,
+		RSF_POLYGON_MODE,
+		RSF_POLYGON_SMOOTH,
+		RFS_MULTISAMPLE
+	};
 
 	Uint32 mExtensions;
 	Uint32 mStateFlags;

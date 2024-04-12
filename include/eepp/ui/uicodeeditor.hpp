@@ -142,6 +142,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 		Float scale{ 1 };
 		int tabWidth{ 4 };
 		bool drawBackground{ true };
+		bool allowSmoothing{ false };
 		Float gutterWidth{ 5 }; // dp width
 	};
 

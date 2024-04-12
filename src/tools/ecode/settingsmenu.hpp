@@ -50,6 +50,8 @@ class SettingsMenu {
 
 	void updateDocumentMenu();
 
+	void updateViewMenu();
+
 	void updateGlobalDocumentSettingsMenu();
 
 	void showProjectTreeMenu();
@@ -63,6 +65,8 @@ class SettingsMenu {
 	void updateCurrentFileType();
 
 	void updatedReopenClosedFileState();
+
+	UIPopUpMenu* getViewMenu() const;
 
 	UIPopUpMenu* getWindowMenu() const;
 

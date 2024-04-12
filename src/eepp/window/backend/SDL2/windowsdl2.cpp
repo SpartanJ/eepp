@@ -389,6 +389,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	if ( NULL == Renderer::existsSingleton() ) {
 		Renderer::createSingleton( mWindow.ContextConfig.Version );
 		Renderer::instance()->init();
+		if ( mWindow.ContextConfig.Multisamples > 0 )
+			Renderer::instance()->multisample( true );
 	}
 
 	getMainContext();
