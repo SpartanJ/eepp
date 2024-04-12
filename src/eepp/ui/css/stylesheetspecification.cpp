@@ -381,6 +381,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "border-smooth", "false" ).setType( PropertyType::Bool );
 	registerProperty( "background-smooth", "false" ).setType( PropertyType::Bool );
+	registerProperty( "foreground-smooth", "false" ).setType( PropertyType::Bool );
 
 	registerProperty( "tabbar-hide-on-single-tab", "false" );
 	registerProperty( "tabbar-allow-rearrange", "false" );

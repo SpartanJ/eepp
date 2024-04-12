@@ -1370,7 +1370,8 @@ std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 			 PropertyId::BorderBottomRightRadius,
 			 PropertyId::BorderSmooth,
 			 PropertyId::BackgroundSmooth,
-			 PropertyId::Focusable };
+			 PropertyId::Focusable,
+			 PropertyId::ForegroundSmooth };
 }
 
 std::string UIWidget::getPropertyString( const std::string& property ) const {
@@ -1522,6 +1523,10 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::BackgroundSmooth:
 			return mBackground
 					   ? ( mBackground->getBackgroundDrawable().isSmooth() ? "true" : "false" )
+					   : "false";
+		case PropertyId::ForegroundSmooth:
+			return mBackground
+					   ? ( mForeground->getBackgroundDrawable().isSmooth() ? "true" : "false" )
 					   : "false";
 		case PropertyId::Focusable:
 			return isTabFocusable() ? "true" : "false";
@@ -1925,8 +1930,10 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBorderEnabled( true )->setSmooth( attribute.asBool() );
 			break;
 		case PropertyId::BackgroundSmooth:
-			setBackgroundFillEnabled( true )->getBackgroundDrawable().setSmooth(
-				attribute.asBool() );
+			setBackgroundFillEnabled( true )->setSmooth( attribute.asBool() );
+			break;
+		case PropertyId::ForegroundSmooth:
+			setForegroundFillEnabled( true )->setSmooth( attribute.asBool() );
 			break;
 		case PropertyId::Focusable:
 			if ( attribute.asBool() ) {

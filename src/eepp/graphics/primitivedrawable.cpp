@@ -34,8 +34,10 @@ void PrimitiveDrawable::draw( const Vector2f& position, const Sizef& ) {
 		bool isLineSmooth = GLi->isLineSmooth();
 
 		if ( mSmooth ) {
-			GLi->polygonSmooth( true );
-			GLi->lineSmooth( true );
+			if ( !isPolySmooth )
+				GLi->polygonSmooth( true );
+			if ( !isLineSmooth )
+				GLi->lineSmooth( true );
 		}
 
 		BR->draw();

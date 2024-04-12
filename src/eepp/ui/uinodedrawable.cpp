@@ -31,7 +31,8 @@ UINodeDrawable::UINodeDrawable( UINode* owner ) :
 	mOwner( owner ),
 	mBackgroundColor( owner ),
 	mNeedsUpdate( true ),
-	mClipEnabled( false ) {
+	mClipEnabled( false ),
+	mSmooth( false ) {
 	mBackgroundColor.setColor( Color::Transparent );
 }
 
@@ -137,6 +138,15 @@ UIBackgroundDrawable& UINodeDrawable::getBackgroundDrawable() {
 	return mBackgroundColor;
 }
 
+bool UINodeDrawable::isSmooth() const {
+	return mSmooth;
+}
+
+void UINodeDrawable::setSmooth( bool smooth ) {
+	mSmooth = smooth;
+	getBackgroundDrawable().setSmooth( smooth );
+}
+
 Sizef UINodeDrawable::getSize() {
 	return mSize;
 }
@@ -194,6 +204,17 @@ void UINodeDrawable::draw( const Vector2f& position, const Sizef& size, const Ui
 		clippingMask->stencilMaskEnable();
 	}
 
+	bool isPolySmooth = GLi->isPolygonSmooth();
+	bool isLineSmooth = GLi->isLineSmooth();
+
+	if ( mSmooth ) {
+		if ( !isPolySmooth )
+			GLi->polygonSmooth( true );
+
+		if ( !isLineSmooth )
+			GLi->lineSmooth( true );
+	}
+
 	// Draw in reverse order to respect the background-image specification:
 	// "The background images are drawn on stacking context layers on top of each other. The first
 	// layer specified is drawn as if it is closest to the user."
@@ -208,6 +229,14 @@ void UINodeDrawable::draw( const Vector2f& position, const Sizef& size, const Ui
 		} else {
 			drawable->draw( position, size );
 		}
+	}
+
+	if ( mSmooth ) {
+		if ( !isPolySmooth )
+			GLi->polygonSmooth( isPolySmooth );
+
+		if ( !isLineSmooth )
+			GLi->lineSmooth( isLineSmooth );
 	}
 
 	if ( masked ) {
