@@ -69,6 +69,8 @@ class EE_API StyleSheet {
 
 	const Uint64& getVersion() const;
 
+	StyleSheet& operator=( const StyleSheet& other );
+
   protected:
 	Uint64 mVersion{ 1 };
 	Uint32 mMarker{ 0 };

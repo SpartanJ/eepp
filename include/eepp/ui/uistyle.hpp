@@ -16,6 +16,7 @@ class Font;
 
 namespace EE { namespace UI { namespace CSS {
 class StyleSheetPropertyAnimation;
+class StyleSheet;
 }}} // namespace EE::UI::CSS
 
 namespace EE { namespace UI {
@@ -88,6 +89,7 @@ class EE_API UIStyle : public UIState {
 	UnorderedSet<UIWidget*> mStructurallyVolatileChilds;
 	Uint32 mStateDepthCounter{ 0 };
 	Uint64 mLoadedVersion{ 0 };
+	const CSS::StyleSheet* mLoadedStyleSheet{ nullptr };
 	bool mChangingState;
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
