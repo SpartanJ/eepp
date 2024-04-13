@@ -865,6 +865,9 @@ void App::closeProject() {
 }
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
+	if ( mMsgBox )
+		return false;
+
 	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
 
 	mMsgBox = UIMessageBox::New(

@@ -736,7 +736,7 @@ SpinBox::btnup:hover {
 }
 
 MenuBar {
-	height: 24dp;
+	height: 18dp;
 	background-color: var(--back);
 }
 
@@ -753,7 +753,7 @@ PopUpMenu {
 MenuBar::Button {
 	padding-left: 4dp;
 	padding-right: 4dp;
-	min-height: 24dp;
+	min-height: 18dp;
 }
 
 MenuBar::Button:hover {

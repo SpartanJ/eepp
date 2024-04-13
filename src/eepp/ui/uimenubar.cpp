@@ -55,8 +55,8 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 	button->setText( buttonText );
 	button->setVisible( true );
 	button->setEnabled( true );
-	button->addEventListener( Event::OnSizeChange, [this]( const Event* ) { refreshButtons(); } );
-	button->addEventListener( Event::OnFocus, [this, button]( const Event* ) {
+	button->on( Event::OnSizeChange, [this]( const Event* ) { refreshButtons(); } );
+	button->on( Event::OnFocus, [this, button]( const Event* ) {
 		if ( getEventDispatcher()->getReleaseTrigger() & EE_BUTTON_LMASK ) {
 			getMenuFromButton( button )->setFocus();
 		}
@@ -67,7 +67,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 	menu->setOwnerNode( button );
 	// This will force to change the parent when shown, and force the CSS style reload.
 	menu->setParent( this );
-	menu->addEventListener( Event::OnVisibleChange, [this, button]( const Event* event ) {
+	menu->on( Event::OnVisibleChange, [this, button]( const Event* event ) {
 		if ( event->getNode()->isVisible() ) {
 			button->select();
 			mCurrentMenu = event->getNode()->asType<UIPopUpMenu>();
@@ -75,7 +75,7 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 			button->unselect();
 		}
 	} );
-	menu->addEventListener( Event::OnItemClicked, [this]( const Event* ) {
+	menu->on( Event::OnItemClicked, [this]( const Event* ) {
 		mWaitingUp = nullptr;
 		mCurrentMenu = nullptr;
 	} );
@@ -156,7 +156,7 @@ void UIMenuBar::refreshButtons() {
 		Float th = tbut->getPixelsSize().getHeight();
 		switch ( Font::getVerticalAlign( getFlags() ) ) {
 			case UI_VALIGN_CENTER:
-				ycenter = eefloor( ( h - th ) / 2 );
+				ycenter = eefloor( ( h - th ) * 0.5f );
 				break;
 			case UI_VALIGN_BOTTOM:
 				ycenter = ( h - th );
@@ -167,12 +167,12 @@ void UIMenuBar::refreshButtons() {
 		}
 	}
 
-	Uint32 xpos = getPadding().Left;
+	Uint32 xpos = getPixelsPadding().Left;
 
 	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		UISelectButton* pbut = it->first;
-		pbut->setPosition( xpos, ycenter );
-		xpos += pbut->getSize().getWidth() + pbut->getLayoutMargin().Left;
+		pbut->setPixelsPosition( xpos, ycenter );
+		xpos += pbut->getPixelsSize().getWidth() + pbut->getLayoutPixelsMargin().Left;
 	}
 }
 
