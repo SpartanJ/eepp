@@ -1439,11 +1439,6 @@ UIMenu* SettingsMenu::createViewMenu() {
 UIPopUpMenu* SettingsMenu::createToolsMenu() {
 	mToolsMenu = UIPopUpMenu::New();
 
-	mToolsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
-		->setId( "plugin-manager-open" );
-
-	mToolsMenu->addSeparator();
-
 	mToolsMenu
 		->add( i18n( "locate_ellipsis", "Locate..." ), findIcon( "search" ),
 			   getKeybind( "open-locatebar" ) )
@@ -1472,6 +1467,11 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 		->add( i18n( "go_to_line_ellipsis", "Go to line..." ), findIcon( "go-to-line" ),
 			   getKeybind( "go-to-line" ) )
 		->setId( "go-to-line" );
+
+	mToolsMenu->addSeparator();
+
+	mToolsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
+		->setId( "plugin-manager-open" );
 
 	mToolsMenu->addSeparator();
 
@@ -1603,15 +1603,19 @@ UIMenu* SettingsMenu::createLanguagesMenu() {
 }
 
 void SettingsMenu::toggleSettingsMenu() {
-	if ( ( !mSettingsMenu->isVisible() || mSettingsMenu->isHiding() ) &&
-		 mSettingsMenu->getInactiveTime().getElapsedTime().asMilliseconds() > 1 ) {
-		Vector2f pos( mSettingsButton->getPixelsPosition() );
-		mSettingsButton->nodeToWorldTranslation( pos );
-		UIMenu::findBestMenuPos( pos, mSettingsMenu );
-		mSettingsMenu->setPixelsPosition( pos );
-		mSettingsMenu->show();
+	if ( mApp->getConfig().ui.showMenuBar ) {
+		mMenuBar->showMenu( 0 );
 	} else {
-		mSettingsMenu->hide();
+		if ( ( !mSettingsMenu->isVisible() || mSettingsMenu->isHiding() ) &&
+			 mSettingsMenu->getInactiveTime().getElapsedTime().asMilliseconds() > 1 ) {
+			Vector2f pos( mSettingsButton->getPixelsPosition() );
+			mSettingsButton->nodeToWorldTranslation( pos );
+			UIMenu::findBestMenuPos( pos, mSettingsMenu );
+			mSettingsMenu->setPixelsPosition( pos );
+			mSettingsMenu->show();
+		} else {
+			mSettingsMenu->hide();
+		}
 	}
 }
 

@@ -432,7 +432,7 @@ Anchor.error:hover {
 
 R"html(
 <vbox id="" lw="mp" lh="mp">
-<MenuBar id="main_menubar" visible="false" nomenu="true">
+<MenuBar id="main_menubar" visible="false">
 	<Menu id="menubar_file" text="@string(file, File)" nomenu="true" />
 	<Menu id="menubar_edit" text="@string(edit, Edit)" nomenu="true" />
 	<Menu id="menubar_view" text="@string(view, View)" nomenu="true" />

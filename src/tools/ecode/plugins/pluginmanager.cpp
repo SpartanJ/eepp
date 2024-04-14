@@ -1,6 +1,6 @@
-#include "pluginmanager.hpp"
 #include "../filesystemlistener.hpp"
 #include "plugin.hpp"
+#include "pluginmanager.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
@@ -493,6 +493,11 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 			if ( plugin )
 				plugin->removeReadyCallback( cb.second );
 		}
+	} );
+	win->on( Event::KeyDown, [win]( const Event* event ) {
+		const KeyEvent* kevent = event->asKeyEvent();
+		if ( kevent->getKeyCode() == EE::Window::KEY_ESCAPE )
+			win->close();
 	} );
 	win->center();
 	return win;

@@ -756,6 +756,7 @@ MenuBar::Button {
 	min-height: 18dp;
 }
 
+MenuBar::Button:selected,
 MenuBar::Button:hover {
 	background-color: var(--primary);
 }

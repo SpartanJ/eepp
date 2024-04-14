@@ -50,6 +50,12 @@ class EE_API UIMenuBar : public UIWidget {
 
 	void setCurrentMenu( UIPopUpMenu* currentMenu );
 
+	void showMenu( const Uint32& index );
+
+	void showNextMenu();
+
+	void showPrevMenu();
+
   protected:
 	UIMenuBar();
 
@@ -59,6 +65,8 @@ class EE_API UIMenuBar : public UIWidget {
 	UIPopUpMenu* mCurrentMenu;
 	MenuBarList mButtons;
 	UIPopUpMenu* mWaitingUp;
+
+	Uint32 getMenuIndex( UIPopUpMenu* menu );
 
 	void refreshButtons();
 

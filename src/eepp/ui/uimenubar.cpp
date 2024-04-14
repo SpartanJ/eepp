@@ -23,6 +23,16 @@ UIMenuBar::UIMenuBar() :
 	applyDefaultTheme();
 }
 
+Uint32 UIMenuBar::getMenuIndex( UIPopUpMenu* menu ) {
+	Uint32 index = 0;
+	for ( const auto& [_, tmenu] : mButtons ) {
+		if ( tmenu == menu )
+			return index;
+		index++;
+	}
+	return eeINDEX_NOT_FOUND;
+}
+
 UIPopUpMenu* UIMenuBar::getCurrentMenu() const {
 	return mCurrentMenu;
 }
@@ -30,6 +40,48 @@ UIPopUpMenu* UIMenuBar::getCurrentMenu() const {
 void UIMenuBar::setCurrentMenu( UIPopUpMenu* currentMenu ) {
 	mCurrentMenu = currentMenu;
 	mWaitingUp = nullptr;
+}
+
+void UIMenuBar::showMenu( const Uint32& index ) {
+	eeASSERT( index < mButtons.size() );
+	auto but = mButtons[index];
+	auto tbut = but.first;
+	auto tpop = but.second;
+
+	Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
+	tpop->setPosition( pos );
+
+	if ( !tpop->isVisible() ) {
+		mCurrentMenu = tpop;
+		tbut->select();
+		tpop->setParent( getWindowContainer() );
+		tpop->show();
+		mWaitingUp = tpop;
+	} else if ( mCurrentMenu != tpop || mWaitingUp == nullptr ) {
+		mCurrentMenu = nullptr;
+		tbut->unselect();
+		tpop->hide();
+	}
+}
+
+void UIMenuBar::showNextMenu() {
+	if ( mCurrentMenu ) {
+		auto index = getMenuIndex( mCurrentMenu );
+		if ( index != eeINDEX_NOT_FOUND )
+			showMenu( index + 1 < mButtons.size() ? index + 1 : 0 );
+	} else if ( !mButtons.empty() ) {
+		showMenu( 0 );
+	}
+}
+
+void UIMenuBar::showPrevMenu() {
+	if ( mCurrentMenu ) {
+		auto index = getMenuIndex( mCurrentMenu );
+		if ( index != eeINDEX_NOT_FOUND )
+			showMenu( static_cast<int>( index ) - 1 >= 0 ? index - 1 : mButtons.size() - 1 );
+	} else if ( !mButtons.empty() ) {
+		showMenu( 0 );
+	}
 }
 
 UIMenuBar::~UIMenuBar() {

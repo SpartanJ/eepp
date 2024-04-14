@@ -3,6 +3,7 @@
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -444,7 +445,8 @@ void UIMenu::trySelect( UIWidget* node, bool up ) {
 				if ( up ) {
 					if ( index > 0 ) {
 						for ( Int32 i = (Int32)index - 1; i >= 0; i-- ) {
-							if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {
+							if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) &&
+								 mItems[i]->isVisible() ) {
 								setItemSelected( mItems[i] );
 								return;
 							}
@@ -453,7 +455,8 @@ void UIMenu::trySelect( UIWidget* node, bool up ) {
 					setItemSelected( mItems[mItems.size()] );
 				} else {
 					for ( Uint32 i = index + 1; i < mItems.size(); i++ ) {
-						if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {
+						if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) &&
+							 mItems[i]->isVisible() ) {
 							setItemSelected( mItems[i] );
 							return;
 						}
@@ -515,8 +518,18 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 		case KEY_RIGHT:
 			if ( nullptr != mItemSelected && mItemSelected->isType( UI_TYPE_MENUSUBMENU ) )
 				mItemSelected->asType<UIMenuSubMenu>()->showSubMenu();
+			else if ( getOwnerNode() && getOwnerNode()->getParent() &&
+					  getOwnerNode()->getParent()->isType( UI_TYPE_MENUBAR ) )
+				getOwnerNode()->getParent()->asType<UIMenuBar>()->showNextMenu();
 			break;
 		case KEY_LEFT:
+			if ( getOwnerNode() && getOwnerNode()->getParent() &&
+				 getOwnerNode()->getParent()->isType( UI_TYPE_MENUBAR ) )
+				getOwnerNode()->getParent()->asType<UIMenuBar>()->showPrevMenu();
+			else if ( getOwnerNode() && getOwnerNode()->getParent() &&
+					  getOwnerNode()->getParent()->isType( UI_TYPE_MENU ) )
+				hide();
+			break;
 		case KEY_ESCAPE:
 			hide();
 			break;
