@@ -23,6 +23,15 @@ UIMenuBar::UIMenuBar() :
 	applyDefaultTheme();
 }
 
+UIPopUpMenu* UIMenuBar::getCurrentMenu() const {
+	return mCurrentMenu;
+}
+
+void UIMenuBar::setCurrentMenu( UIPopUpMenu* currentMenu ) {
+	mCurrentMenu = currentMenu;
+	mWaitingUp = nullptr;
+}
+
 UIMenuBar::~UIMenuBar() {
 	destroyMenues();
 }
@@ -30,7 +39,7 @@ UIMenuBar::~UIMenuBar() {
 void UIMenuBar::destroyMenues() {
 	if ( !SceneManager::instance()->isShuttingDown() ) {
 		for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
-			if ( it->second->getParent() != this ) {
+			if ( it->second && it->second->getParent() != this ) {
 				// Changing the parent ensures that the menu will be destroyed when the menubar is
 				// destroyed
 				it->second->setParent( this );
@@ -48,8 +57,6 @@ bool UIMenuBar::isType( const Uint32& type ) const {
 }
 
 void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
-	eeASSERT( nullptr != menu );
-
 	UISelectButton* button = UISelectButton::NewWithTag( "menubar::button" );
 	button->setParent( this );
 	button->setText( buttonText );
@@ -58,27 +65,32 @@ void UIMenuBar::addMenuButton( const String& buttonText, UIPopUpMenu* menu ) {
 	button->on( Event::OnSizeChange, [this]( const Event* ) { refreshButtons(); } );
 	button->on( Event::OnFocus, [this, button]( const Event* ) {
 		if ( getEventDispatcher()->getReleaseTrigger() & EE_BUTTON_LMASK ) {
-			getMenuFromButton( button )->setFocus();
+			UIPopUpMenu* menu = getMenuFromButton( button );
+			if ( menu )
+				menu->setFocus();
 		}
 	} );
 
-	menu->setVisible( false );
-	menu->setEnabled( false );
-	menu->setOwnerNode( button );
-	// This will force to change the parent when shown, and force the CSS style reload.
-	menu->setParent( this );
-	menu->on( Event::OnVisibleChange, [this, button]( const Event* event ) {
-		if ( event->getNode()->isVisible() ) {
-			button->select();
-			mCurrentMenu = event->getNode()->asType<UIPopUpMenu>();
-		} else if ( button->isSelected() ) {
-			button->unselect();
-		}
-	} );
-	menu->on( Event::OnItemClicked, [this]( const Event* ) {
-		mWaitingUp = nullptr;
-		mCurrentMenu = nullptr;
-	} );
+	if ( menu ) {
+		menu->setVisible( false );
+		menu->setEnabled( false );
+		menu->setOwnerNode( button );
+		// This will force to change the parent when shown, and force the CSS style reload.
+		menu->setParent( this );
+		menu->on( Event::OnVisibleChange, [this, button]( const Event* event ) {
+			if ( event->getNode()->isVisible() ) {
+				button->select();
+				mCurrentMenu = event->getNode()->asType<UIPopUpMenu>();
+			} else if ( button->isSelected() ) {
+				button->unselect();
+				mCurrentMenu = nullptr;
+			}
+		} );
+		menu->on( Event::OnItemClicked, [this]( const Event* ) {
+			mWaitingUp = nullptr;
+			mCurrentMenu = nullptr;
+		} );
+	}
 
 	mButtons.push_back( std::make_pair( button, menu ) );
 
@@ -105,7 +117,8 @@ void UIMenuBar::removeMenuButton( const String& buttonText ) {
 	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->first->getText() == buttonText ) {
 			it->first->close();
-			it->second->close();
+			if ( it->second )
+				it->second->close();
 			mButtons.erase( it );
 			refreshButtons();
 			break;
@@ -113,22 +126,38 @@ void UIMenuBar::removeMenuButton( const String& buttonText ) {
 	}
 }
 
-UISelectButton* UIMenuBar::getButton( const String& buttonText ) {
-	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
-		if ( it->first->getText() == buttonText ) {
-			return it->first;
-		}
-	}
+UISelectButton* UIMenuBar::getButton( const String& buttonText ) const {
+	for ( const auto& it : mButtons )
+		if ( it.first->getText() == buttonText )
+			return it.first;
 	return nullptr;
 }
 
-UIPopUpMenu* UIMenuBar::getPopUpMenu( const String& buttonText ) {
-	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
-		if ( it->first->getText() == buttonText ) {
-			return it->second;
-		}
-	}
+UISelectButton* UIMenuBar::getButton( const Uint32& index ) const {
+	eeASSERT( index < mButtons.size() );
+	return mButtons[index].first;
+}
+
+UIPopUpMenu* UIMenuBar::getPopUpMenu( const String& buttonText ) const {
+	for ( const auto& it : mButtons )
+		if ( it.first->getText() == buttonText )
+			return it.second;
 	return nullptr;
+}
+
+UIPopUpMenu* UIMenuBar::getPopUpMenu( const Uint32& index ) const {
+	eeASSERT( index < mButtons.size() );
+	return mButtons[index].second;
+}
+
+UIMenuBar* UIMenuBar::setPopUpMenu( const Uint32& index, UIPopUpMenu* menu ) {
+	eeASSERT( index < mButtons.size() );
+	mButtons[index].second = menu;
+	return this;
+}
+
+size_t UIMenuBar::getButtonsCount() const {
+	return mButtons.size();
 }
 
 Uint32 UIMenuBar::getMenuHeight() const {
@@ -195,11 +224,14 @@ Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
 	switch ( msg->getMsg() ) {
 		case NodeMessage::MouseUp:
 			mWaitingUp = nullptr;
+			break;
 		case NodeMessage::MouseDown:
 		case NodeMessage::MouseOver: {
 			if ( msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
 				UISelectButton* tbut = msg->getSender()->asType<UISelectButton>();
 				UIPopUpMenu* tpop = getMenuFromButton( tbut );
+				if ( tpop == nullptr )
+					return 1;
 
 				Vector2f pos( tbut->getPosition().x,
 							  tbut->getPosition().y + tbut->getSize().getHeight() );
@@ -238,7 +270,8 @@ Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
 			for ( auto& it : mButtons ) {
 				if ( it.first != msg->getSender() ) {
 					it.first->unselect();
-					it.second->hide();
+					if ( it.second )
+						it.second->hide();
 				}
 			}
 			return 1;
@@ -274,21 +307,16 @@ void UIMenuBar::unselectButtons() {
 }
 
 UIPopUpMenu* UIMenuBar::getMenuFromButton( UISelectButton* Button ) {
-	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
-		if ( it->first == Button ) {
+	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it )
+		if ( it->first == Button )
 			return it->second;
-		}
-	}
-
 	return nullptr;
 }
 
 bool UIMenuBar::isPopUpMenuChild( Node* node ) {
-	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
-		if ( it->second == node || it->second->isParentOf( node ) ) {
+	for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it )
+		if ( it->second == node || it->second->isParentOf( node ) )
 			return true;
-		}
-	}
 	return false;
 }
 
@@ -310,6 +338,18 @@ void UIMenuBar::loadFromXmlNode( const pugi::xml_node& node ) {
 
 		if ( "menu" == name ) {
 			std::string text( item.attribute( "text" ).as_string() );
+
+			auto attr = item.find_attribute( []( const pugi::xml_attribute& attribute ) {
+				if ( strcmp( attribute.name(), "nomenu" ) == 0 )
+					return true;
+				return false;
+			} );
+
+			if ( !attr.empty() ) {
+				addMenuButton( getTranslatorString( text ), nullptr );
+				continue;
+			}
+
 			UIPopUpMenu* subMenu = UIPopUpMenu::New();
 
 			if ( nullptr != getDrawInvalidator() )

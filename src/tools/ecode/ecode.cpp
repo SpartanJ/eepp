@@ -882,6 +882,11 @@ void App::switchStatusBar() {
 	showStatusBar( mConfig.ui.showStatusBar );
 }
 
+void App::switchMenuBar() {
+	mConfig.ui.showMenuBar = !mConfig.ui.showMenuBar;
+	mSettings->updateMenu();
+}
+
 void App::panelPosition( const PanelPosition& panelPosition ) {
 	mConfig.ui.panelPosition = panelPosition;
 
@@ -3701,6 +3706,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mUISceneNode->bind( "doc_info", mDocInfo );
 		mUISceneNode->bind( "panel", mSidePanel );
 		mUISceneNode->bind( "project_splitter", mProjectSplitter );
+		mUISceneNode->bind( "main_menubar", mMenuBar );
 		mUISceneNode->on( Event::KeyDown, [this]( const Event* event ) {
 			trySendUnlockedCmd( *static_cast<const KeyEvent*>( event ) );
 		} );
@@ -3786,7 +3792,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mStatusBar->setApp( this );
 
 		mSettings = std::make_unique<SettingsMenu>();
-		mSettings->createSettingsMenu( this );
+		mSettings->createSettingsMenu( this, mMenuBar );
 
 		mSplitter->createEditorWithTabWidget( mBaseLayout );
 

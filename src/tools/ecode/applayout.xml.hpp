@@ -431,6 +431,18 @@ Anchor.error:hover {
 )html"
 
 R"html(
+<vbox id="" lw="mp" lh="mp">
+<MenuBar id="main_menubar" visible="false" nomenu="true">
+	<Menu id="menubar_file" text="@string(file, File)" nomenu="true" />
+	<Menu id="menubar_edit" text="@string(edit, Edit)" nomenu="true" />
+	<Menu id="menubar_view" text="@string(view, View)" nomenu="true" />
+	<Menu id="menubar_document" text="@string(document, Document)" nomenu="true" />
+	<Menu id="menubar_terminal" text="@string(terminal, Terminal)" nomenu="true" />
+	<Menu id="menubar_project" text="@string(project, Project)" nomenu="true" />
+	<Menu id="menubar_tools" text="@string(tools, Tools)" nomenu="true" />
+	<Menu id="menubar_window" text="@string(window, Window)" nomenu="true" />
+	<Menu id="menubar_help" text="@string(help, Help)" nomenu="true" />
+</MenuBar>
 <MainLayout id="main_layout" lw="mp" lh="mp">
 <Splitter id="project_splitter" lw="mp" lh="mp">
 	<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
@@ -538,4 +550,5 @@ R"html(
 </Splitter>
 <TextView id="settings" text="&#xf0e9;" lg="top|right" />
 </MainLayout>
+</vbox>
 )html"

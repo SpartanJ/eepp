@@ -214,7 +214,7 @@ UIMenuItem* UIMenu::getItem( const String& text ) {
 	return nullptr;
 }
 
-UIMenuItem* UIMenu::getItemId( const String& id ) {
+UIMenuItem* UIMenu::getItemId( const std::string& id ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
 			UIMenuItem* tMenuItem = mItems[i]->asType<UIMenuItem>();

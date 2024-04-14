@@ -30,6 +30,7 @@ struct UIConfig {
 	StyleSheetLength panelFontSize{ 11, StyleSheetLength::Dp };
 	bool showSidePanel{ true };
 	bool showStatusBar{ true };
+	bool showMenuBar{ false };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;
 	std::string monospaceFont;

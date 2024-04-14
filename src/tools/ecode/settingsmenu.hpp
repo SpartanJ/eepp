@@ -8,7 +8,7 @@ namespace ecode {
 
 class SettingsMenu {
   public:
-	void createSettingsMenu( App* app );
+	void createSettingsMenu( App* app, UIMenuBar* menuBar );
 
 	String i18n( const std::string& key, const String& def );
 
@@ -72,11 +72,25 @@ class SettingsMenu {
 
 	UIPopUpMenu* getSettingsMenu() const;
 
+	UIPopUpMenu* getToolsMenu() const;
+
+	UIPopUpMenu* getProjectMenu() const;
+
+	UIPopUpMenu* getTerminalMenu() const;
+
+	UIPopUpMenu* getDocMenu() const;
+
+	UIPopUpMenu* getEditMenu() const;
+
+	UIPopUpMenu* getHelpMenu() const;
+
 	void updateRecentFolders();
 
 	void deleteFileDialog( const FileInfo& file );
 
 	void createProjectMenu();
+
+	void updateMenu();
 
   protected:
 	App* mApp{ nullptr };
@@ -95,6 +109,9 @@ class SettingsMenu {
 	UIPopUpMenu* mProjectTreeMenu{ nullptr };
 	UIPopUpMenu* mProjectDocMenu{ nullptr };
 	UIPopUpMenu* mProjectMenu{ nullptr };
+	UIPopUpMenu* mEditMenu{ nullptr };
+	UIPopUpMenu* mHelpMenu{ nullptr };
+	UIMenuBar* mMenuBar{ nullptr };
 	std::vector<UIPopUpMenu*> mFileTypeMenues;
 	Float mFileTypeMenuesCreatedWithHeight{ 0 };
 	std::vector<UIPopUpMenu*> mColorSchemeMenues;

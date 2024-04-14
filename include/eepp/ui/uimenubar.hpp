@@ -12,8 +12,6 @@ class EE_API UIMenuBar : public UIWidget {
   public:
 	static UIMenuBar* New();
 
-	UIMenuBar();
-
 	virtual ~UIMenuBar();
 
 	virtual Uint32 getType() const;
@@ -26,9 +24,19 @@ class EE_API UIMenuBar : public UIWidget {
 
 	virtual void setTheme( UITheme* theme );
 
-	UISelectButton* getButton( const String& buttonText );
+	UISelectButton* getButton( const String& buttonText ) const;
 
-	UIPopUpMenu* getPopUpMenu( const String& buttonText );
+	UISelectButton* getButton( const Uint32& index ) const;
+
+	UIPopUpMenu* getPopUpMenu( const String& buttonText ) const;
+
+	UIPopUpMenu* getPopUpMenu( const Uint32& index ) const;
+
+	UIMenuBar* setPopUpMenu( const Uint32& index, UIPopUpMenu* menu );
+
+	size_t getButtonsCount() const;
+
+	UIPopUpMenu* getMenuFromButton( UISelectButton* Button );
 
 	Uint32 getMenuHeight() const;
 
@@ -38,7 +46,13 @@ class EE_API UIMenuBar : public UIWidget {
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
+	UIPopUpMenu* getCurrentMenu() const;
+
+	void setCurrentMenu( UIPopUpMenu* currentMenu );
+
   protected:
+	UIMenuBar();
+
 	typedef std::vector<std::pair<UISelectButton*, UIPopUpMenu*>> MenuBarList;
 
 	Uint32 mMenuHeight;
@@ -53,8 +67,6 @@ class EE_API UIMenuBar : public UIWidget {
 	virtual void onParentChange();
 
 	virtual void onPaddingChange();
-
-	UIPopUpMenu* getMenuFromButton( UISelectButton* Button );
 
 	bool isPopUpMenuChild( Node* node );
 

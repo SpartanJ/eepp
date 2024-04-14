@@ -273,6 +273,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "ui-scale-factor", [this] { setUIScaleFactor(); } );
 		t.setCommand( "show-side-panel", [this] { switchSidePanel(); } );
 		t.setCommand( "toggle-status-bar", [this] { switchStatusBar(); } );
+		t.setCommand( "toggle-menu-bar", [this] { switchMenuBar(); } );
 		t.setCommand( "editor-font-size", [this] { setEditorFontSize(); } );
 		t.setCommand( "terminal-font-size", [this] { setTerminalFontSize(); } );
 		t.setCommand( "ui-font-size", [this] { setUIFontSize(); } );
@@ -421,6 +422,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void showStatusBar( bool show );
 
+	void switchMenuBar();
+
 	ProjectBuildManager* getProjectBuildManager() const;
 
 	UITabWidget* getSidePanel() const;
@@ -520,6 +523,7 @@ class App : public UICodeEditorSplitter::Client {
 	UISplitter* mMainSplitter{ nullptr };
 	StyleSheet mAppStyleSheet;
 	UIMessageBox* mCloseMsgBox{ nullptr };
+	UIMenuBar* mMenuBar{ nullptr };
 
 	void saveAllProcess();
 

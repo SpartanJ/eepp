@@ -20,11 +20,12 @@ void SettingsMenu::runCommand( const std::string& command ) {
 	mApp->runCommand( command );
 }
 
-void SettingsMenu::createSettingsMenu( App* app ) {
+void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	Clock clock;
 	mApp = app;
 	mUISceneNode = app->getUISceneNode();
 	mSplitter = app->getSplitter();
+	mMenuBar = menuBar;
 
 	mSettingsMenu = UIPopUpMenu::New();
 	mSettingsMenu->setId( "settings_menu" );
@@ -72,31 +73,57 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 		->add( i18n( "save_all", "Save All" ), findIcon( "document-save-as" ),
 			   getKeybind( "save-all" ) )
 		->setId( "save-all" );
-	mSettingsMenu->addSeparator();
+	mSettingsMenu->addSeparator()->setId( "settings-submenues-sep" );
 
 	mProjectMenu = UIPopUpMenu::New();
-	mSettingsMenu
-		->addSubMenu( i18n( "folder_settings", "Folder/Project Settings" ),
-					  findIcon( "folder-user" ), mProjectMenu )
-		->setId( "project_settings" );
+	auto projectMenuButton = mSettingsMenu
+								 ->addSubMenu( i18n( "folder_settings", "Folder/Project Settings" ),
+											   findIcon( "folder-user" ), mProjectMenu )
+								 ->setId( "project_settings" )
+								 ->asType<UIWidget>();
 
-	mSettingsMenu
-		->addSubMenu( i18n( "document", "Document" ), findIcon( "file" ), createDocumentMenu() )
-		->setId( "doc-menu" );
+	auto docMenuButton =
+		mSettingsMenu
+			->addSubMenu( i18n( "document", "Document" ), findIcon( "file" ), createDocumentMenu() )
+			->setId( "doc-menu" )
+			->asType<UIWidget>();
 
 	createProjectMenu();
 
-	mSettingsMenu
-		->addSubMenu( i18n( "terminal", "Terminal" ), findIcon( "terminal" ), createTerminalMenu() )
-		->setId( "term-menu" );
-	mSettingsMenu->addSubMenu( i18n( "edit", "Edit" ), nullptr, createEditMenu() );
-	mSettingsMenu->addSubMenu( i18n( "view", "View" ), nullptr, createViewMenu() );
-	mSettingsMenu->addSubMenu( i18n( "tools", "Tools" ), findIcon( "tools" ), createToolsMenu() );
-	mSettingsMenu->addSubMenu( i18n( "window", "Window" ), findIcon( "window-opt" ),
-							   createWindowMenu() );
+	auto terminalMenuButton = mSettingsMenu
+								  ->addSubMenu( i18n( "terminal", "Terminal" ),
+												findIcon( "terminal" ), createTerminalMenu() )
+								  ->setId( "term-menu" )
+								  ->asType<UIWidget>();
+
+	auto editMenuButton =
+		mSettingsMenu->addSubMenu( i18n( "edit", "Edit" ), nullptr, createEditMenu() )
+			->setId( "edit-menu" )
+			->asType<UIWidget>();
+
+	auto viewMenuButton =
+		mSettingsMenu->addSubMenu( i18n( "view", "View" ), nullptr, createViewMenu() )
+			->setId( "view-menu" )
+			->asType<UIWidget>();
+
+	auto toolsMenuButton =
+		mSettingsMenu
+			->addSubMenu( i18n( "tools", "Tools" ), findIcon( "tools" ), createToolsMenu() )
+			->setId( "tools-menu" )
+			->asType<UIWidget>();
+
+	auto windowMenuButton =
+		mSettingsMenu
+			->addSubMenu( i18n( "window", "Window" ), findIcon( "window-opt" ), createWindowMenu() )
+			->setId( "window-menu" )
+			->asType<UIWidget>();
+
 	mSettingsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
 		->setId( "plugin-manager-open" );
-	mSettingsMenu->addSubMenu( i18n( "help", "Help" ), findIcon( "help" ), createHelpMenu() );
+	auto helpMenuButton =
+		mSettingsMenu->addSubMenu( i18n( "help", "Help" ), findIcon( "help" ), createHelpMenu() )
+			->setId( "help-menu" )
+			->asType<UIWidget>();
 	mSettingsMenu->addSeparator();
 	mSettingsMenu
 		->add( i18n( "close", "Close" ), findIcon( "document-close" ), getKeybind( "close-tab" ) )
@@ -118,6 +145,56 @@ void SettingsMenu::createSettingsMenu( App* app ) {
 	} );
 	mApp->updateRecentFiles();
 	mApp->updateRecentFolders();
+
+	mMenuBar->setPopUpMenu( 0, mSettingsMenu );
+	mMenuBar->setPopUpMenu( 1, getEditMenu() );
+	mMenuBar->setPopUpMenu( 2, getViewMenu() );
+	mMenuBar->setPopUpMenu( 3, getDocMenu() );
+	mMenuBar->setPopUpMenu( 4, getTerminalMenu() );
+	mMenuBar->setPopUpMenu( 5, getProjectMenu() );
+	mMenuBar->setPopUpMenu( 6, getToolsMenu() );
+	mMenuBar->setPopUpMenu( 7, getWindowMenu() );
+	mMenuBar->setPopUpMenu( 8, getHelpMenu() );
+
+	const auto onMenuShowEvent = [this]( UIPopUpMenu* menu, UIWidget* menuButton,
+										 Uint32 menuBarIndex ) {
+		menu->on( Event::OnMenuShow, [this, menuButton, menuBarIndex, menu]( auto ) {
+			menu->setOwnerNode( mApp->getConfig().ui.showMenuBar
+									? mMenuBar->getButton( menuBarIndex )->asType<UIWidget>()
+									: menuButton );
+		} );
+
+		menu->on( Event::OnVisibleChange, [this, menuBarIndex]( const Event* event ) {
+			if ( mApp->getConfig().ui.showMenuBar ) {
+				auto button = mMenuBar->getButton( menuBarIndex );
+				if ( event->getNode()->isVisible() ) {
+					button->select();
+					mMenuBar->setCurrentMenu( event->getNode()->asType<UIPopUpMenu>() );
+				} else if ( button->isSelected() ) {
+					button->unselect();
+					mMenuBar->setCurrentMenu( nullptr );
+				}
+			}
+		} );
+
+		menu->on( Event::OnItemClicked, [this]( const Event* ) {
+			if ( mApp->getConfig().ui.showMenuBar )
+				mMenuBar->setCurrentMenu( nullptr );
+		} );
+	};
+
+	onMenuShowEvent( mSettingsMenu, mSettingsButton, 0 );
+	onMenuShowEvent( mEditMenu, editMenuButton, 1 );
+	onMenuShowEvent( mViewMenu, viewMenuButton, 2 );
+	onMenuShowEvent( mDocMenu, docMenuButton, 3 );
+	onMenuShowEvent( mTerminalMenu, terminalMenuButton, 4 );
+	onMenuShowEvent( mProjectMenu, projectMenuButton, 5 );
+	onMenuShowEvent( mToolsMenu, toolsMenuButton, 6 );
+	onMenuShowEvent( mWindowMenu, windowMenuButton, 7 );
+	onMenuShowEvent( mHelpMenu, helpMenuButton, 8 );
+
+	updateMenu();
+
 	Log::info( "Settings Menu took: %s", clock.getElapsedTime().toString() );
 }
 
@@ -845,72 +922,83 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 }
 
 UIMenu* SettingsMenu::createEditMenu() {
-	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->add( i18n( "undo", "Undo" ), findIcon( "undo" ), getKeybind( "undo" ) )->setId( "undo" );
-	menu->add( i18n( "redo", "Redo" ), findIcon( "redo" ), getKeybind( "redo" ) )->setId( "redo" );
-	menu->addSeparator();
-	menu->add( i18n( "cut", "Cut" ), findIcon( "cut" ), getKeybind( "cut" ) )->setId( "cut" );
-	menu->add( i18n( "copy", "Copy" ), findIcon( "copy" ), getKeybind( "copy" ) )->setId( "copy" );
-	menu->add( i18n( "paste", "Paste" ), findIcon( "paste" ), getKeybind( "paste" ) )
+	mEditMenu = UIPopUpMenu::New();
+	mEditMenu->add( i18n( "undo", "Undo" ), findIcon( "undo" ), getKeybind( "undo" ) )
+		->setId( "undo" );
+	mEditMenu->add( i18n( "redo", "Redo" ), findIcon( "redo" ), getKeybind( "redo" ) )
+		->setId( "redo" );
+	mEditMenu->addSeparator();
+	mEditMenu->add( i18n( "cut", "Cut" ), findIcon( "cut" ), getKeybind( "cut" ) )->setId( "cut" );
+	mEditMenu->add( i18n( "copy", "Copy" ), findIcon( "copy" ), getKeybind( "copy" ) )
+		->setId( "copy" );
+	mEditMenu->add( i18n( "paste", "Paste" ), findIcon( "paste" ), getKeybind( "paste" ) )
 		->setId( "paste" );
-	menu->add( i18n( "delete", "Delete" ), findIcon( "delete-text" ),
+	mEditMenu
+		->add( i18n( "delete", "Delete" ), findIcon( "delete-text" ),
 			   getKeybind( "delete-to-next-char" ) )
 		->setId( "delete-to-next-char" );
-	menu->addSeparator();
-	menu->add( i18n( "select_all", "Select All" ), findIcon( "select-all" ),
+	mEditMenu->addSeparator();
+	mEditMenu
+		->add( i18n( "select_all", "Select All" ), findIcon( "select-all" ),
 			   getKeybind( "select-all" ) )
 		->setId( "select-all" );
-	menu->addSeparator();
-	menu->add( i18n( "find_replace", "Find/Replace" ), findIcon( "find-replace" ),
+	mEditMenu->addSeparator();
+	mEditMenu
+		->add( i18n( "find_replace", "Find/Replace" ), findIcon( "find-replace" ),
 			   getKeybind( "find-replace" ) )
 		->setId( "find-replace" );
-	menu->addSeparator();
-	menu->add( i18n( "open_containing_folder_ellipsis", "Open Containing Folder..." ),
+	mEditMenu->addSeparator();
+	mEditMenu
+		->add( i18n( "open_containing_folder_ellipsis", "Open Containing Folder..." ),
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
-	menu->add( i18n( "open_in_new_window_ellipsis", "Open in New Window..." ), findIcon( "window" ),
+	mEditMenu
+		->add( i18n( "open_in_new_window_ellipsis", "Open in New Window..." ), findIcon( "window" ),
 			   getKeybind( "open-in-new-window" ) )
 		->setId( "open-in-new-window" );
-	menu->add( i18n( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path..." ),
+	mEditMenu
+		->add( i18n( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path..." ),
 			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
 		->setId( "copy-containing-folder-path" );
-	menu->add( i18n( "copy_file_path", "Copy File Path" ), findIcon( "copy" ),
+	mEditMenu
+		->add( i18n( "copy_file_path", "Copy File Path" ), findIcon( "copy" ),
 			   getKeybind( "copy-file-path" ) )
 		->setId( "copy-file-path" );
-	UIMenuSeparator* fileSep = menu->addSeparator();
-	menu->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
+	UIMenuSeparator* fileSep = mEditMenu->addSeparator();
+	mEditMenu
+		->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
 			   getKeybind( "keybindings" ) )
 		->setId( "keybindings" );
-	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+	mEditMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		runCommand( event->getNode()->getId() );
 	} );
-	menu->on( Event::OnMenuShow, [this, menu, fileSep]( const Event* ) {
+	mEditMenu->on( Event::OnMenuShow, [this, fileSep]( const Event* ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ) {
-			menu->getItemId( "undo" )->setEnabled( false );
-			menu->getItemId( "redo" )->setEnabled( false );
-			menu->getItemId( "copy" )->setEnabled( false );
-			menu->getItemId( "cut" )->setEnabled( false );
-			menu->getItemId( "open-containing-folder" )->setVisible( false );
-			menu->getItemId( "copy-containing-folder-path" )->setVisible( false );
-			menu->getItemId( "open-in-new-window" )->setVisible( false );
-			menu->getItemId( "copy-file-path" )->setVisible( false );
+			mEditMenu->getItemId( "undo" )->setEnabled( false );
+			mEditMenu->getItemId( "redo" )->setEnabled( false );
+			mEditMenu->getItemId( "copy" )->setEnabled( false );
+			mEditMenu->getItemId( "cut" )->setEnabled( false );
+			mEditMenu->getItemId( "open-containing-folder" )->setVisible( false );
+			mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( false );
+			mEditMenu->getItemId( "open-in-new-window" )->setVisible( false );
+			mEditMenu->getItemId( "copy-file-path" )->setVisible( false );
 			fileSep->setVisible( false );
 			return;
 		}
 		auto doc = mSplitter->getCurEditor()->getDocumentRef();
-		menu->getItemId( "undo" )->setEnabled( doc->hasUndo() );
-		menu->getItemId( "redo" )->setEnabled( doc->hasRedo() );
-		menu->getItemId( "copy" )->setEnabled( doc->hasSelection() );
-		menu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
-		menu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
-		menu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
-		menu->getItemId( "open-in-new-window" )->setVisible( doc->hasFilepath() );
-		menu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
+		mEditMenu->getItemId( "undo" )->setEnabled( doc->hasUndo() );
+		mEditMenu->getItemId( "redo" )->setEnabled( doc->hasRedo() );
+		mEditMenu->getItemId( "copy" )->setEnabled( doc->hasSelection() );
+		mEditMenu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
+		mEditMenu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
+		mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
+		mEditMenu->getItemId( "open-in-new-window" )->setVisible( doc->hasFilepath() );
+		mEditMenu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
 		fileSep->setVisible( doc->hasFilepath() );
 	} );
-	return menu;
+	return mEditMenu;
 }
 
 UIMenu* SettingsMenu::createWindowMenu() {
@@ -1225,6 +1313,10 @@ UIMenu* SettingsMenu::createViewMenu() {
 					   mApp->getConfig().ui.showStatusBar, getKeybind( "toggle-status-bar" ) )
 		->setId( "toggle-status-bar" );
 	mViewMenu
+		->addCheckBox( i18n( "show_menu_bar", "Show Menu Bar" ), mApp->getConfig().ui.showMenuBar,
+					   getKeybind( "toggle-menu-bar" ) )
+		->setId( "toggle-menu-bar" );
+	mViewMenu
 		->add( i18n( "move_panel_left_ellipsis", "Move panel to left..." ),
 			   findIcon( "layout-left" ), getKeybind( "layout-left" ) )
 		->setId( "move-panel-left" )
@@ -1346,6 +1438,12 @@ UIMenu* SettingsMenu::createViewMenu() {
 
 UIPopUpMenu* SettingsMenu::createToolsMenu() {
 	mToolsMenu = UIPopUpMenu::New();
+
+	mToolsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
+		->setId( "plugin-manager-open" );
+
+	mToolsMenu->addSeparator();
+
 	mToolsMenu
 		->add( i18n( "locate_ellipsis", "Locate..." ), findIcon( "search" ),
 			   getKeybind( "open-locatebar" ) )
@@ -1409,17 +1507,17 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 }
 
 UIMenu* SettingsMenu::createHelpMenu() {
-	UIPopUpMenu* helpMenu = UIPopUpMenu::New();
-	helpMenu->add( i18n( "ecode_source_ellipsis", "ecode source code..." ), findIcon( "github" ) )
+	mHelpMenu = UIPopUpMenu::New();
+	mHelpMenu->add( i18n( "ecode_source_ellipsis", "ecode source code..." ), findIcon( "github" ) )
 		->setId( "ecode-source" );
-	helpMenu
+	mHelpMenu
 		->add( i18n( "check_for_updates_ellipsis", "Check for Updates..." ), findIcon( "refresh" ) )
 		->setId( "check-for-updates" );
-	helpMenu->add( i18n( "about_ecode", "About ecode..." ), findIcon( "ecode" ) )
+	mHelpMenu->add( i18n( "about_ecode", "About ecode..." ), findIcon( "ecode" ) )
 		->setId( "about-ecode" );
-	helpMenu->on( Event::OnItemClicked,
-				  [this]( const Event* event ) { runCommand( event->getNode()->getId() ); } );
-	return helpMenu;
+	mHelpMenu->on( Event::OnItemClicked,
+				   [this]( const Event* event ) { runCommand( event->getNode()->getId() ); } );
+	return mHelpMenu;
 }
 
 UIMenu* SettingsMenu::createThemesMenu() {
@@ -1982,6 +2080,30 @@ UIPopUpMenu* SettingsMenu::getSettingsMenu() const {
 	return mSettingsMenu;
 }
 
+UIPopUpMenu* SettingsMenu::getToolsMenu() const {
+	return mToolsMenu;
+}
+
+UIPopUpMenu* SettingsMenu::getProjectMenu() const {
+	return mProjectMenu;
+}
+
+UIPopUpMenu* SettingsMenu::getTerminalMenu() const {
+	return mTerminalMenu;
+}
+
+UIPopUpMenu* SettingsMenu::getDocMenu() const {
+	return mDocMenu;
+}
+
+UIPopUpMenu* SettingsMenu::getEditMenu() const {
+	return mEditMenu;
+}
+
+UIPopUpMenu* SettingsMenu::getHelpMenu() const {
+	return mHelpMenu;
+}
+
 void SettingsMenu::deleteFileDialog( const FileInfo& file ) {
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK_CANCEL,
@@ -2048,6 +2170,40 @@ void SettingsMenu::createProjectMenu() {
 			}
 		}
 	} );
+}
+
+void SettingsMenu::updateMenu() {
+	bool showMenuBar = mApp->getConfig().ui.showMenuBar;
+	mSettingsButton->setVisible( !showMenuBar );
+	mMenuBar->setVisible( showMenuBar );
+
+	const auto setMenuParent = [this]( UIPopUpMenu* menu ) {
+		menu->setParent( mApp->getConfig().ui.showMenuBar ? mMenuBar->asType<UIWidget>()
+														  : mSettingsMenu->asType<UIWidget>() );
+	};
+
+	mSettingsMenu->setParent( showMenuBar ? mMenuBar->asType<Node>()
+										  : mApp->getUISceneNode()->asType<Node>() );
+
+	setMenuParent( mEditMenu );
+	setMenuParent( mViewMenu );
+	setMenuParent( mDocMenu );
+	setMenuParent( mTerminalMenu );
+	setMenuParent( mProjectMenu );
+	setMenuParent( mToolsMenu );
+	setMenuParent( mWindowMenu );
+	setMenuParent( mHelpMenu );
+
+	mSettingsMenu->find( "settings-submenues-sep" )->setVisible( !showMenuBar );
+	mSettingsMenu->getItemId( "project_settings" )->setVisible( !showMenuBar );
+	mSettingsMenu->getItemId( "doc-menu" )->setVisible( !showMenuBar );
+	mSettingsMenu->getItemId( "term-menu" )->setVisible( !showMenuBar );
+	mSettingsMenu->getItemId( "edit-menu" )->setVisible( !showMenuBar );
+	mSettingsMenu->getItemId( "view-menu" )->setVisible( !showMenuBar );
+	mSettingsMenu->getItemId( "tools-menu" )->setVisible( !showMenuBar );
+	mSettingsMenu->getItemId( "window-menu" )->setVisible( !showMenuBar );
+	mSettingsMenu->getItemId( "help-menu" )->setVisible( !showMenuBar );
+	mSettingsMenu->getItemId( "plugin-manager-open" )->setVisible( !showMenuBar );
 }
 
 } // namespace ecode
