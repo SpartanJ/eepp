@@ -180,8 +180,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	void toggleSettingsMenu();
 
-	void createNewTerminal();
-
 	UIStatusBar* getStatusBar() const { return mStatusBar; }
 
 	void showFolderTreeViewTab();
@@ -201,7 +199,8 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "download-file-web", [this] { downloadFileWebDialog(); } );
 		t.setCommand( "move-panel-left", [this] { panelPosition( PanelPosition::Left ); } );
 		t.setCommand( "move-panel-right", [this] { panelPosition( PanelPosition::Right ); } );
-		t.setCommand( "create-new-terminal", [this] { createNewTerminal(); } );
+		t.setCommand( "create-new-terminal",
+					  [this] { mTerminalManager->createTerminalInSplitter(); } );
 		t.setCommand( "terminal-split-right", [this] {
 			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Right,

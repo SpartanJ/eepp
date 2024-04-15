@@ -2786,40 +2786,6 @@ void App::toggleSettingsMenu() {
 	mSettings->toggleSettingsMenu();
 }
 
-void App::createNewTerminal() {
-	if ( mSplitter->hasSplit() ) {
-		if ( mSplitter->getTabWidgets().size() == 2 ) {
-			UIOrientation orientation = mSplitter->getMainSplitOrientation();
-			if ( mConfig.term.newTerminalOrientation == NewTerminalOrientation::Vertical &&
-				 orientation == UIOrientation::Horizontal ) {
-				mTerminalManager->createNewTerminal( "", mSplitter->getTabWidgets()[1] );
-				return;
-			}
-			if ( mConfig.term.newTerminalOrientation == NewTerminalOrientation::Horizontal &&
-				 orientation == UIOrientation::Vertical ) {
-				mTerminalManager->createNewTerminal( "", mSplitter->getTabWidgets()[1] );
-				return;
-			}
-		}
-		mTerminalManager->createNewTerminal();
-	} else {
-		switch ( mConfig.term.newTerminalOrientation ) {
-			case NewTerminalOrientation::Vertical: {
-				runCommand( "terminal-split-right" );
-				break;
-			}
-			case NewTerminalOrientation::Horizontal: {
-				runCommand( "terminal-split-bottom" );
-				break;
-			}
-			case NewTerminalOrientation::Same: {
-				mTerminalManager->createNewTerminal();
-				break;
-			}
-		}
-	}
-}
-
 void App::showFolderTreeViewTab() {
 	UITab* tab = mSidePanel->find<UITab>( "treeview_tab" );
 	if ( tab )

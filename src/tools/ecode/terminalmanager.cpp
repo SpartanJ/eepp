@@ -6,6 +6,50 @@ namespace ecode {
 
 TerminalManager::TerminalManager( App* app ) : mApp( app ) {}
 
+UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workingDir ) {
+	UITerminal* term = nullptr;
+	auto splitter = mApp->getSplitter();
+	auto& config = mApp->getConfig();
+	if ( splitter && splitter->hasSplit() ) {
+		if ( splitter->getTabWidgets().size() == 2 ) {
+			UIOrientation orientation = splitter->getMainSplitOrientation();
+			if ( config.term.newTerminalOrientation == NewTerminalOrientation::Vertical &&
+				 orientation == UIOrientation::Horizontal ) {
+				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir );
+			} else if ( config.term.newTerminalOrientation == NewTerminalOrientation::Horizontal &&
+						orientation == UIOrientation::Vertical ) {
+				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir );
+			} else {
+				term = createNewTerminal( "", nullptr, workingDir );
+			}
+		} else {
+			term = createNewTerminal();
+		}
+	} else {
+		switch ( config.term.newTerminalOrientation ) {
+			case NewTerminalOrientation::Vertical: {
+				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
+				splitter->split( UICodeEditorSplitter::SplitDirection::Right,
+								 splitter->getCurWidget(), false );
+				term = createNewTerminal( "", nullptr, cwd );
+				break;
+			}
+			case NewTerminalOrientation::Horizontal: {
+				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
+				splitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
+								 splitter->getCurWidget(), false );
+				term = createNewTerminal( "", nullptr, cwd );
+				break;
+			}
+			case NewTerminalOrientation::Same: {
+				term = createNewTerminal();
+				break;
+			}
+		}
+	}
+	return term;
+}
+
 void TerminalManager::applyTerminalColorScheme( const TerminalColorScheme& colorScheme ) {
 	mApp->getSplitter()->forEachWidget( [colorScheme]( UIWidget* widget ) {
 		if ( widget->isType( UI_TYPE_TERMINAL ) )
@@ -417,7 +461,8 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 		{ "open-file", "download-file-web", "open-folder", "debug-draw-highlight-toggle",
 		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
 		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
-		  "console-toggle", "go-to-line", "editor-go-back", "editor-go-forward" } );
+		  "console-toggle", "go-to-line", "editor-go-back", "editor-go-forward",
+		  "project-run-executable" } );
 }
 
 } // namespace ecode

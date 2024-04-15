@@ -35,6 +35,18 @@ static void replaceVar( ProjectBuildStep& s, const std::string& var, const std::
 	FileSystem::dirAddSlashAtEnd( s.workingDir );
 }
 
+ProjectBuildStep ProjectBuild::replaceVars( const ProjectBuildStep& step ) const {
+	ProjectBuildStep s( step );
+	replaceVar( s, VAR_PROJECT_ROOT, mProjectRoot );
+	for ( auto& var : mVars ) {
+		std::string varKey( "${" + var.first + "}" );
+		std::string varVal( var.second );
+		String::replaceAll( varVal, VAR_PROJECT_ROOT, mProjectRoot );
+		replaceVar( s, varKey, varVal );
+	}
+	return s;
+}
+
 ProjectBuildSteps ProjectBuild::replaceVars( const ProjectBuildSteps& steps ) const {
 	ProjectBuildSteps newSteps( steps );
 	for ( auto& s : newSteps ) {
@@ -723,25 +735,26 @@ void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc 
 	}
 }
 
-void ProjectBuildManager::runCurrentConfig( StatusBuildOutputController* sboc ) {
-	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
+void ProjectBuildManager::runCurrentConfig( StatusBuildOutputController* /* not used yet */ ) {
+	if ( !isBuilding() && !getBuilds().empty() ) {
 		const ProjectBuild* build = nullptr;
 		for ( const auto& buildIt : getBuilds() )
 			if ( buildIt.second.getName() == mConfig.buildName )
 				build = &buildIt.second;
 
 		if ( build && build->hasRun() ) {
-			auto cmd = build->mRun.cmd + " " + build->mRun.args;
-			if ( build->mRun.runInTerminal ) {
-				UITerminal* term = mApp->getTerminalManager()->createNewTerminal(
-					"", nullptr, build->mRun.workingDir );
+			auto finalBuild( build->replaceVars( build->mRun ) );
+			auto cmd = finalBuild.cmd + " " + finalBuild.args;
+			if ( finalBuild.runInTerminal ) {
+				UITerminal* term =
+					mApp->getTerminalManager()->createTerminalInSplitter( finalBuild.workingDir );
 				if ( term == nullptr || term->getTerm() == nullptr ) {
 					mApp->getTerminalManager()->openInExternalTerminal( cmd );
 				} else {
 					term->executeFile( cmd );
 				}
 			} else {
-				Sys::execute( cmd, build->mRun.workingDir );
+				Sys::execute( cmd, finalBuild.workingDir );
 			}
 		}
 	}

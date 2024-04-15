@@ -186,6 +186,8 @@ class ProjectBuild {
 		return !mRun.cmd.empty() || !mRun.args.empty() || !mRun.workingDir.empty();
 	}
 
+	ProjectBuildStep replaceVars( const ProjectBuildStep& step ) const;
+
 	ProjectBuildSteps replaceVars( const ProjectBuildSteps& steps ) const;
 
 	static json serialize( const ProjectBuild::Map& builds );

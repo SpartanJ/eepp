@@ -15,6 +15,8 @@ class TerminalManager {
   public:
 	TerminalManager( App* app );
 
+	UITerminal* createTerminalInSplitter( const std::string& workingDir = "" );
+
 	UITerminal* createNewTerminal( const std::string& title = "",
 								   UITabWidget* inTabWidget = nullptr,
 								   const std::string& workingDir = "", std::string program = "",
