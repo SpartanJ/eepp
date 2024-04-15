@@ -258,6 +258,10 @@ class App : public UICodeEditorSplitter::Client {
 				mProjectBuildManager->cancelBuild();
 			}
 		} );
+		t.setCommand( "project-run-executable", [this] {
+			if ( mProjectBuildManager && mStatusBuildOutputController )
+				mProjectBuildManager->runCurrentConfig( mStatusBuildOutputController.get() );
+		} );
 		t.setCommand( "show-folder-treeview-tab", [this] { showFolderTreeViewTab(); } );
 		t.setCommand( "show-build-tab", [this] { showBuildTab(); } );
 		t.setCommand( "open-workspace-symbol-search",

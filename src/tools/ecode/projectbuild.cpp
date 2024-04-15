@@ -80,6 +80,24 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 			jclean.push_back( step );
 		}
 
+		// TODO: Support multiple-runs
+		if ( curBuild.hasRun() ) {
+			bj["run"] = json::array();
+			auto& jrun = bj["run"];
+			{
+				const auto& run = curBuild.mRun;
+				json step;
+				step["working_dir"] = run.workingDir;
+				step["args"] = run.args;
+				step["command"] = run.cmd;
+				if ( !run.enabled )
+					step["enabled"] = run.enabled;
+				if ( run.runInTerminal )
+					step["run_in_terminal"] = run.runInTerminal;
+				jrun.push_back( step );
+			}
+		}
+
 		bj["build_types"] = curBuild.buildTypes();
 		bj["config"]["clear_sys_env"] = curBuild.getConfig().clearSysEnv;
 		bj["os"] = curBuild.os();
@@ -474,14 +492,27 @@ ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& p
 		}
 
 		if ( buildObj.contains( "clean" ) && buildObj["clean"].is_array() ) {
-			const auto& buildArray = buildObj["clean"];
-			for ( const auto& step : buildArray ) {
-				ProjectBuildStep bstep;
-				bstep.cmd = step.value( "command", "" );
-				bstep.args = step.value( "args", "" );
-				bstep.workingDir = step.value( "working_dir", "" );
-				bstep.enabled = step.value( "enabled", true );
-				b.mClean.emplace_back( std::move( bstep ) );
+			const auto& cleanArray = buildObj["clean"];
+			for ( const auto& step : cleanArray ) {
+				ProjectBuildStep cstep;
+				cstep.cmd = step.value( "command", "" );
+				cstep.args = step.value( "args", "" );
+				cstep.workingDir = step.value( "working_dir", "" );
+				cstep.enabled = step.value( "enabled", true );
+				b.mClean.emplace_back( std::move( cstep ) );
+			}
+		}
+
+		if ( buildObj.contains( "run" ) && buildObj["run"].is_array() ) {
+			const auto& runArray = buildObj["run"];
+			for ( const auto& step : runArray ) {
+				ProjectBuildStep rstep;
+				rstep.cmd = step.value( "command", "" );
+				rstep.args = step.value( "args", "" );
+				rstep.workingDir = step.value( "working_dir", "" );
+				rstep.enabled = step.value( "enabled", true );
+				rstep.runInTerminal = step.value( "run_in_terminal", false );
+				b.mRun = std::move( rstep );
 			}
 		}
 
@@ -689,6 +720,30 @@ void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc 
 		if ( build )
 			sboc->runClean( build->getName(), mConfig.buildType,
 							getOutputParser( build->getName() ) );
+	}
+}
+
+void ProjectBuildManager::runCurrentConfig( StatusBuildOutputController* sboc ) {
+	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
+		const ProjectBuild* build = nullptr;
+		for ( const auto& buildIt : getBuilds() )
+			if ( buildIt.second.getName() == mConfig.buildName )
+				build = &buildIt.second;
+
+		if ( build && build->hasRun() ) {
+			auto cmd = build->mRun.cmd + " " + build->mRun.args;
+			if ( build->mRun.runInTerminal ) {
+				UITerminal* term = mApp->getTerminalManager()->createNewTerminal(
+					"", nullptr, build->mRun.workingDir );
+				if ( term == nullptr || term->getTerm() == nullptr ) {
+					mApp->getTerminalManager()->openInExternalTerminal( cmd );
+				} else {
+					term->executeFile( cmd );
+				}
+			} else {
+				Sys::execute( cmd, build->mRun.workingDir );
+			}
+		}
 	}
 }
 

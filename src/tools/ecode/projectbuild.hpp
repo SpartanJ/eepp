@@ -83,6 +83,7 @@ struct ProjectBuildStep {
 	std::string args;
 	std::string workingDir;
 	bool enabled{ true };
+	bool runInTerminal{ false };
 };
 
 using ProjectBuildSteps = std::vector<ProjectBuildStep>;
@@ -171,6 +172,8 @@ class ProjectBuild {
 
 	const ProjectBuildSteps& cleanSteps() const { return mClean; }
 
+	const ProjectBuildStep& runStep() const { return mRun; }
+
 	const ProjectBuildKeyVal& envs() const { return mEnvs; }
 
 	const ProjectBuildKeyVal& vars() const { return mVars; }
@@ -178,6 +181,10 @@ class ProjectBuild {
 	bool hasBuild() const { return !mBuild.empty(); }
 
 	bool hasClean() const { return !mClean.empty(); }
+
+	bool hasRun() const {
+		return !mRun.cmd.empty() || !mRun.args.empty() || !mRun.workingDir.empty();
+	}
 
 	ProjectBuildSteps replaceVars( const ProjectBuildSteps& steps ) const;
 
@@ -195,6 +202,7 @@ class ProjectBuild {
 	std::set<std::string> mBuildTypes;
 	ProjectBuildSteps mBuild;
 	ProjectBuildSteps mClean;
+	ProjectBuildStep mRun;
 	ProjectBuildKeyVal mEnvs;
 	ProjectBuildKeyVal mVars;
 	ProjectBuildConfig mConfig;
@@ -287,6 +295,8 @@ class ProjectBuildManager {
 	void buildCurrentConfig( StatusBuildOutputController* sboc );
 
 	void cleanCurrentConfig( StatusBuildOutputController* sboc );
+
+	void runCurrentConfig( StatusBuildOutputController* sboc );
 
   protected:
 	std::string mProjectRoot;

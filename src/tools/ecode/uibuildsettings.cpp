@@ -198,9 +198,11 @@ class UICustomOutputParserWindow : public UIWindow {
 
 class UIBuildStep : public UILinearLayout {
   public:
-	static UIBuildStep* New( bool isBuildStep, UIBuildSettings* buildSettings, size_t stepNum,
+	enum class StepType { Build, Clean, Run };
+
+	static UIBuildStep* New( StepType stepType, UIBuildSettings* buildSettings, size_t stepNum,
 							 ProjectBuildStep* buildStep ) {
-		return eeNew( UIBuildStep, ( isBuildStep, buildSettings, stepNum, buildStep ) );
+		return eeNew( UIBuildStep, ( stepType, buildSettings, stepNum, buildStep ) );
 	}
 
 	void clearBindings() { mDataBindHolder.clear(); }
@@ -213,12 +215,16 @@ class UIBuildStep : public UILinearLayout {
 		mStep = buildStep;
 		addClass( String::toString( mStepNum ) );
 
-		findByClass<UITextView>( "step_name" )
-			->setText( String::format( mBuildSettings->getUISceneNode()
-										   ->i18n( "build_step_num", "Step %u: %s" )
-										   .toUtf8()
-										   .c_str(),
-									   mStepNum + 1, mStep->cmd.c_str() ) );
+		auto stepName = findByClass<UITextView>( "step_name" );
+		if ( isBuildOrClean() ) {
+			stepName->setText( String::format( mBuildSettings->getUISceneNode()
+												   ->i18n( "build_step_num", "Step %u: %s" )
+												   .toUtf8()
+												   .c_str(),
+											   mStepNum + 1, mStep->cmd.c_str() ) );
+		} else {
+			stepName->setText( getUISceneNode()->i18n( "executable_to_run", "Executable to Run" ) );
+		}
 
 		mDataBindHolder +=
 			UIDataBindBool::New( &mStep->enabled, findByClass( "enabled_checkbox" ) );
@@ -226,13 +232,15 @@ class UIBuildStep : public UILinearLayout {
 		mDataBindHolder += UIDataBindString::New( &mStep->args, findByClass( "input_args" ) );
 		mDataBindHolder +=
 			UIDataBindString::New( &mStep->workingDir, findByClass( "input_working_dir" ) );
+		mDataBindHolder +=
+			UIDataBindBool::New( &mStep->runInTerminal, findByClass( "run_in_terminal" ) );
 	}
 
   protected:
-	UIBuildStep( bool isBuildStep, UIBuildSettings* buildSettings, size_t stepNum,
+	UIBuildStep( StepType stepType, UIBuildSettings* buildSettings, size_t stepNum,
 				 ProjectBuildStep* buildStep ) :
 		UILinearLayout( "buildstep", UIOrientation::Vertical ),
-		mIsBuildStep( isBuildStep ),
+		mStepType( stepType ),
 		mBuildSettings( buildSettings ),
 		mStepNum( stepNum ),
 		mStep( buildStep ) {
@@ -241,7 +249,6 @@ class UIBuildStep : public UILinearLayout {
 		addClass( String::toString( stepNum ) );
 
 		static const auto BUILD_STEP_XML = R"xml(
-<!-- <vbox lw="mp" lh="wc" class="build_step"> -->
 	<hbox class="header" lw="mp" lh="wc">
 		<TextView lw="0" lw8="1" class="step_name" />
 		<CheckBox class="enabled_checkbox" checked="true" layout_gravity="center_vertical" tooltip="@string(enabled_question, Enabled?)" />
@@ -263,11 +270,18 @@ class UIBuildStep : public UILinearLayout {
 			<TextView lh="mp" min-width="100dp" text="@string(working_dir, Working Directory)" />
 			<Input class="input_working_dir" lw="0" lw8="1" />
 		</hbox>
+		<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
 	</vbox>
-<!-- </vbox> -->
 )xml";
 
 		getUISceneNode()->loadLayoutFromString( BUILD_STEP_XML, this );
+
+		if ( !isBuildOrClean() ) {
+			findByClass( "enabled_checkbox" )->setVisible( false );
+			auto runInTerminal = findByClass( "run_in_terminal" )->asType<UICheckBox>();
+			runInTerminal->setVisible( true );
+			runInTerminal->setChecked( buildStep->runInTerminal );
+		}
 
 		findByClass( "details_but" )->onClick( [this]( const MouseEvent* event ) {
 			auto me = event->getNode()->asType<UIPushButton>();
@@ -275,22 +289,40 @@ class UIBuildStep : public UILinearLayout {
 			me->toggleClass( "contracted" );
 		} );
 
-		findByClass( "move_down" )->onClick( [this]( auto ) {
-			mBuildSettings->moveStepDown( mStepNum, !mIsBuildStep );
-		} );
+		auto moveDown = findByClass( "move_down" );
+		if ( isBuildOrClean() ) {
+			moveDown->onClick( [this]( auto ) {
+				mBuildSettings->moveStepDown( mStepNum, mStepType == StepType::Clean );
+			} );
+		} else {
+			moveDown->setVisible( false );
+		}
 
-		findByClass( "move_up" )->onClick( [this]( auto ) {
-			mBuildSettings->moveStepUp( mStepNum, !mIsBuildStep );
-		} );
+		auto moveUp = findByClass( "move_up" );
+		if ( isBuildOrClean() ) {
+			moveUp->onClick( [this]( auto ) {
+				mBuildSettings->moveStepUp( mStepNum, mStepType == StepType::Clean );
+			} );
+		} else {
+			moveUp->setVisible( false );
+		}
 
-		findByClass( "remove_item" )->onClick( [this]( auto ) {
-			mBuildSettings->deleteStep( mStepNum, !mIsBuildStep );
-		} );
+		auto removeItem = findByClass( "remove_item" );
+
+		if ( isBuildOrClean() ) {
+			removeItem->onClick( [this]( auto ) {
+				mBuildSettings->deleteStep( mStepNum, mStepType == StepType::Clean );
+			} );
+		} else {
+			removeItem->setVisible( false );
+		}
 
 		updateStep( mStepNum, mStep );
 	}
 
-	bool mIsBuildStep{ true };
+	bool isBuildOrClean() { return mStepType == StepType::Build || mStepType == StepType::Clean; }
+
+	StepType mStepType{ true };
 	UIBuildSettings* mBuildSettings{ nullptr };
 	size_t mStepNum{ 0 };
 	ProjectBuildStep* mStep;
@@ -330,6 +362,11 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 			<TextView class="subtitle" text="@string(clean_steps, Clean Steps)" />
 			<vbox id="build_clean_steps_cont" lw="mp" lh="wc"></vbox>
 			<PushButton id="add_clean_step" class="add_build_step" text="@string(add_clean_step, Add Clean Step)" />
+		</vbox>
+
+		<vbox lw="mp" lh="wc" class="run_step">
+			<TextView class="subtitle" text="@string(run, Run)" />
+			<vbox id="run_step_cont" lw="mp" lh="wc"></vbox>
 		</vbox>
 
 		<vbox lw="mp" lh="wc" class="build_types">
@@ -465,28 +502,33 @@ UIBuildSettings::UIBuildSettings(
 
 	auto buildStepsParent = find( "build_steps_cont" );
 	for ( size_t step = 0; step < mBuild.mBuild.size(); ++step ) {
-		auto bs = UIBuildStep::New( true, this, step, &mBuild.mBuild[step] );
+		auto bs =
+			UIBuildStep::New( UIBuildStep::StepType::Build, this, step, &mBuild.mBuild[step] );
 		bs->setParent( buildStepsParent );
 	}
 
 	find( "add_build_step" )->onClick( [this, buildStepsParent]( const Event* ) {
 		mBuild.mBuild.push_back( {} );
 		auto step = mBuild.mBuild.size() - 1;
-		UIBuildStep::New( true, this, step, &mBuild.mBuild[step] )->setParent( buildStepsParent );
+		UIBuildStep::New( UIBuildStep::StepType::Build, this, step, &mBuild.mBuild[step] )
+			->setParent( buildStepsParent );
 	} );
 
 	auto buildCleanStepsParent = find( "build_clean_steps_cont" );
 	for ( size_t step = 0; step < mBuild.mClean.size(); ++step ) {
-		UIBuildStep::New( false, this, step, &mBuild.mClean[step] )
+		UIBuildStep::New( UIBuildStep::StepType::Clean, this, step, &mBuild.mClean[step] )
 			->setParent( buildCleanStepsParent );
 	}
 
 	find( "add_clean_step" )->onClick( [this, buildCleanStepsParent]( const Event* ) {
 		mBuild.mClean.push_back( {} );
 		auto step = mBuild.mClean.size() - 1;
-		UIBuildStep::New( false, this, step, &mBuild.mClean[step] )
+		UIBuildStep::New( UIBuildStep::StepType::Clean, this, step, &mBuild.mClean[step] )
 			->setParent( buildCleanStepsParent );
 	} );
+
+	UIBuildStep::New( UIBuildStep::StepType::Run, this, 0, &mBuild.mRun )
+		->setParent( find( "run_step_cont" ) );
 
 	auto buildTypeDropDown = find<UIDropDownList>( "build_type_list" );
 	auto panelBuildTypeDDL = getUISceneNode()

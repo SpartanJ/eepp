@@ -117,7 +117,7 @@ class EE_API Sys {
 	static bool windowAttachConsole();
 
 	/** Executes a command */
-	static void execute( const std::string& cmd );
+	static void execute( const std::string& cmd, const std::string& workingDir = "" );
 
 	/** @return True if current running platform / os is a mobile one */
 	static bool isMobile();

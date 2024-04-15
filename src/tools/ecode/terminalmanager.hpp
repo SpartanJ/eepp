@@ -56,6 +56,8 @@ class TerminalManager {
 
 	void displayError();
 
+	void openInExternalTerminal( const std::string& cmd );
+
   protected:
 	App* mApp;
 	std::string mTerminalColorSchemesPath;

@@ -146,6 +146,13 @@
         "relative_file_paths": true
       }
     },
+    "run": [
+      {
+        "args": "-x",
+        "command": "ecode-debug",
+        "working_dir": "${project_root}/bin/"
+      }
+    ],
     "var": {
       "build_dir": "${project_root}/make/${os}"
     }

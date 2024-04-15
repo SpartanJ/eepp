@@ -1208,24 +1208,27 @@ bool Sys::windowAttachConsole() {
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-static void windowsSystem( const std::string& programPath ) {
+static void windowsSystem( const std::string& programPath, const std::string& workingDirectory ) {
 	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory( &si, sizeof( si ) );
 	si.cb = sizeof( si );
 	ZeroMemory( &pi, sizeof( pi ) );
 
+	std::wstring workingDir = String( workingDirectory ).toWideString();
+
 	if ( CreateProcessW( NULL, (LPWSTR)String( programPath ).toWideString().c_str(), NULL, NULL,
-						 FALSE, 0, NULL, NULL, &si, &pi ) ) {
+						 FALSE, 0, NULL, workingDir.empty() ? NULL : workingDir.c_str(), &si,
+						 &pi ) ) {
 		CloseHandle( pi.hProcess );
 		CloseHandle( pi.hThread );
 	}
 }
 #endif
 
-void Sys::execute( const std::string& cmd ) {
+void Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	windowsSystem( cmd );
+	windowsSystem( cmd, workingDir );
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pid_t pid = fork();
 	if ( pid == 0 ) {
@@ -1234,6 +1237,10 @@ void Sys::execute( const std::string& cmd ) {
 		for ( size_t i = 0; i < cmdArr.size(); ++i )
 			strings.push_back( cmdArr[i].c_str() );
 		strings.push_back( NULL );
+
+		if ( !workingDir.empty() )
+			FileSystem::changeWorkingDirectory( workingDir );
+
 		execvp( strings[0], (char* const*)strings.data() );
 		exit( 0 );
 	}

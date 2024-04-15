@@ -235,23 +235,37 @@ void TerminalManager::updateMenuColorScheme( UIMenuSubMenu* colorSchemeMenu ) {
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-static void openExternal( const std::string& defShell = "" ) {
+static void openExternal( const std::string& defShell, const std::string& cmd = "" ) {
 	std::vector<std::string> options;
 	if ( !defShell.empty() )
 		options.push_back( defShell );
 	options.push_back( "powershell" );
 	options.push_back( "cmd" );
 #else
-static void openExternal( const std::string& ) {
+static void openExternal( const std::string&, const std::string& cmd = "" ) {
 	std::vector<std::string> options = { "gnome-terminal", "konsole", "xterm", "st" };
 #endif
 	for ( const auto& option : options ) {
 		auto externalShell( Sys::which( option ) );
 		if ( !externalShell.empty() ) {
-			Sys::execute( externalShell );
-			return;
+			if ( !cmd.empty() ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+				auto fcmd = externalShell + " /c " + cmd;
+#else
+				auto fcmd = externalShell + " -e " + cmd;
+#endif
+				Sys::execute( fcmd );
+				return;
+			} else {
+				Sys::execute( externalShell );
+				return;
+			}
 		}
 	}
+}
+
+void TerminalManager::openInExternalTerminal( const std::string& cmd ) {
+	openExternal( mApp->termConfig().shell, cmd );
 }
 
 void TerminalManager::displayError() {
