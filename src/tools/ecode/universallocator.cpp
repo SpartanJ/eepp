@@ -155,7 +155,7 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 		  nullptr } );
 
 	mLocatorProviders.push_back(
-		{ ".", mUISceneNode->i18n( "search_for_workspace_symbols", "Search for Workspace Symbols" ),
+		{ ".", mUISceneNode->i18n( "search_for_symbols_in_current_document", "Search for Symbols in Current Document" ),
 		  [this]( auto ) {
 			  showDocumentSymbol();
 			  return true;
