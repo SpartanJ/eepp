@@ -263,6 +263,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 				}
 				size.x = eemax( width, cpos.x );
 				width = 0;
+				cpos.x = pos.x;
 				cpos.y += height;
 				if ( i != ssize - 1 )
 					size.y += height;

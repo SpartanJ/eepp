@@ -172,10 +172,14 @@
     },
     {
       "language": "html",
-      "name": "vscode-html-languageserver",
-      "url": "https://github.com/vscode-langservers/vscode-html-languageserver-bin",
-      "command": "html-languageserver --stdio",
-      "file_patterns": ["%.htm", "%.html"]
+      "name": "emmet-language-server",
+      "url": "https://github.com/olrtg/emmet-language-server",
+      "command": "emmet-language-server --stdio",
+      "file_patterns": ["%.htm", "%.html"],
+      "rootIndicationFileNames": [".git"],
+      "initializationOptions": {
+        "showSuggestionsAsSnippets": true
+      }
     },
     {
       "language": "dockerfile",
@@ -306,6 +310,13 @@
       },
       "command": "adeptls --infrastructure $ADEPT_ROOT",
       "file_patterns": ["%.adept$"]
+    },
+    {
+      "language": "latex",
+      "name": "texlab",
+      "url": "https://github.com/latex-lsp",
+      "command": "texlab",
+      "file_patterns": ["%.tex$"]
     }
   ]
 }

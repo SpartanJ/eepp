@@ -45,9 +45,10 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 	int score;
 	for ( const auto& symbols : symbolsVec ) {
 		for ( const auto& symbol : *symbols ) {
-			if ( ( score = String::fuzzyMatch( symbol.text, match, false,
+			if ( symbol.kind == LSPCompletionItemKind::Snippet ||
+				 ( score = String::fuzzyMatch( symbol.text, match, false,
 											   symbol.kind != LSPCompletionItemKind::Text ) ) >
-				 0 ) {
+					 0 ) {
 				if ( std::find( matches.begin(), matches.end(), symbol ) == matches.end() ) {
 					symbol.setScore( score );
 					matches.push_back( symbol );
@@ -130,18 +131,17 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 			mDirty = true;
 		} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
-			if ( !mReplacing )
-				resetSuggestions( editor );
+	listeners.push_back( editor->addEventListener( Event::OnCursorPosChange, [this, editor](
+																				 const Event* ) {
+		if ( !mReplacing )
+			resetSuggestions( editor );
 
-			if ( mSignatureHelpVisible && mSignatureHelpPosition.isValid() &&
-					  !editor->getDocument().getSelection().hasSelection() &&
-					  mSignatureHelpPosition.line() !=
-						  editor->getDocument().getSelection().end().line() ) {
-				resetSignatureHelp();
-			}
-		} ) );
+		if ( mSignatureHelpVisible && mSignatureHelpPosition.isValid() &&
+			 !editor->getDocument().getSelection().hasSelection() &&
+			 mSignatureHelpPosition.line() != editor->getDocument().getSelection().end().line() ) {
+			resetSignatureHelp();
+		}
+	} ) );
 
 	listeners.push_back( editor->addEventListener(
 		Event::OnFocusLoss, [this]( const Event* ) { resetSignatureHelp(); } ) );
@@ -459,9 +459,21 @@ void AutoCompletePlugin::updateLangCache( const std::string& langName ) {
 void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 	mReplacing = true;
 	std::string symbol( getPartialSymbol( editor->getDocumentRef().get() ) );
-	if ( !symbol.empty() )
-		editor->getDocument().execute( "delete-to-previous-word" );
-	editor->getDocument().textInput( mSuggestions[mSuggestionIndex].text );
+	const auto& suggestion = mSuggestions[mSuggestionIndex];
+	auto doc = editor->getDocumentRef();
+
+	if ( doc->getSelections().size() == 1 && suggestion.range.isValid() &&
+		 doc->isValidRange( suggestion.range ) ) {
+		auto sels = doc->getSelections();
+
+		doc->setSelection( suggestion.range );
+		doc->textInput( suggestion.insertText );
+	} else {
+		if ( !symbol.empty() )
+			doc->execute( "delete-to-previous-word" );
+		doc->textInput( suggestion.text );
+	}
+
 	mReplacing = false;
 	resetSuggestions( editor );
 }
@@ -470,15 +482,22 @@ PluginRequestHandle
 AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion ) {
 	SymbolsList suggestions;
 	for ( const auto& item : completion.items ) {
-		if ( !item.insertText.empty() )
-			suggestions.push_back(
-				{ item.kind, item.insertText, item.detail, item.sortText, item.textEdit.range } );
-
-		else if ( !item.textEdit.text.empty() )
-			suggestions.push_back( { item.kind, item.textEdit.text, item.detail, item.sortText,
-									 item.textEdit.range } );
-		else
-			suggestions.push_back( { item.kind, item.filterText, item.detail, item.sortText } );
+		if ( !item.textEdit.text.empty() ) {
+			suggestions.push_back( { item.kind, item.insertText, item.detail, item.sortText,
+									 item.textEdit.range, item.textEdit.text,
+									 item.documentation } );
+		} else if ( !item.insertText.empty() ) {
+			suggestions.push_back( { item.kind, item.insertText, item.detail, item.sortText,
+									 item.textEdit.range, item.insertText, item.documentation } );
+		} else {
+			suggestions.push_back( { item.kind,
+									 item.filterText,
+									 item.detail,
+									 item.sortText,
+									 {},
+									 "",
+									 item.documentation } );
+		}
 	}
 	if ( suggestions.empty() || !mSuggestionsEditor )
 		return {};
@@ -799,6 +818,21 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 				eefloor( ( iconSpace.getHeight() - icon->getSize().getHeight() ) * 0.5f ) );
 			icon->draw( { cursorPos.x + padding.x, cursorPos.y + mRowHeight * count + padding.y } );
 		}
+
+		if ( mSuggestionIndex == (int)i && !suggestions[i].documentation.value.empty() ) {
+			Text text( "", editor->getFont(), editor->getFontSize() );
+			text.setFillColor( normalStyle.color );
+			text.setStyle( normalStyle.style );
+			text.setString( suggestions[i].documentation.value );
+			Vector2f boxPos = { cursorPos.x + mBoxRect.getWidth(),
+								cursorPos.y + mRowHeight * count };
+			Sizef boxSize = { text.getTextWidth() + mBoxPadding.Left + mBoxPadding.Right,
+							  text.getTextHeight() + mBoxPadding.Top + mBoxPadding.Bottom };
+			primitives.setColor(
+				Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
+			primitives.drawRoundedRectangle( { boxPos, boxSize }, 0.f, Vector2f::One, 6 );
+			text.draw( boxPos.x + mBoxPadding.Left, boxPos.y + mBoxPadding.Top );
+		}
 		count++;
 	}
 
@@ -984,7 +1018,7 @@ void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
 		}
 		if ( tryRequestCapabilities( editor ) )
 			requestCodeCompletion( editor );
-		if ( symbol.empty() )
+		if ( symbol.empty() || symbols.empty() )
 			return;
 		Lock l( mLangSymbolsMutex );
 		Lock l2( mSuggestionsMutex );

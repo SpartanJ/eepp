@@ -27,7 +27,9 @@ class AutoCompletePlugin : public Plugin {
 		std::string detail;
 		std::string sortText;
 		TextRange range;
+		std::string insertText;
 		double score{ 0 };
+		LSPMarkupContent documentation;
 
 		void setScore( const double& score ) const {
 			const_cast<Suggestion*>( this )->score = score;
@@ -37,12 +39,15 @@ class AutoCompletePlugin : public Plugin {
 
 		Suggestion( const LSPCompletionItemKind& kind, const std::string& text,
 					const std::string& detail, const std::string& sortText,
-					const TextRange& range = {} ) :
+					const TextRange& range = {}, const std::string insertText = "",
+					LSPMarkupContent doc = {} ) :
 			kind( kind ),
 			text( text ),
 			detail( detail ),
 			sortText( sortText.empty() ? text : sortText ),
-			range( range ){};
+			range( range ),
+			insertText( insertText ),
+			documentation( doc ){};
 
 		bool operator<( const Suggestion& other ) const { return getCmpStr() < other.getCmpStr(); }
 
@@ -59,7 +64,7 @@ class AutoCompletePlugin : public Plugin {
 				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
 				 AutoCompletePlugin::New,
-				 { 0, 2, 2 } };
+				 { 0, 2, 3 } };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );

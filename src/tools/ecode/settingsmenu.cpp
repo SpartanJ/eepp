@@ -118,12 +118,11 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 			->setId( "window-menu" )
 			->asType<UIWidget>();
 
-	mSettingsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
-		->setId( "plugin-manager-open" );
 	auto helpMenuButton =
 		mSettingsMenu->addSubMenu( i18n( "help", "Help" ), findIcon( "help" ), createHelpMenu() )
 			->setId( "help-menu" )
 			->asType<UIWidget>();
+
 	mSettingsMenu->addSeparator();
 	mSettingsMenu
 		->add( i18n( "close", "Close" ), findIcon( "document-close" ), getKeybind( "close-tab" ) )
@@ -1439,6 +1438,11 @@ UIMenu* SettingsMenu::createViewMenu() {
 UIPopUpMenu* SettingsMenu::createToolsMenu() {
 	mToolsMenu = UIPopUpMenu::New();
 
+	mToolsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
+		->setId( "plugin-manager-open" );
+
+	mToolsMenu->addSeparator();
+
 	mToolsMenu
 		->add( i18n( "locate_ellipsis", "Locate..." ), findIcon( "search" ),
 			   getKeybind( "open-locatebar" ) )
@@ -1467,11 +1471,6 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 		->add( i18n( "go_to_line_ellipsis", "Go to line..." ), findIcon( "go-to-line" ),
 			   getKeybind( "go-to-line" ) )
 		->setId( "go-to-line" );
-
-	mToolsMenu->addSeparator();
-
-	mToolsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
-		->setId( "plugin-manager-open" );
 
 	mToolsMenu->addSeparator();
 
@@ -2207,7 +2206,6 @@ void SettingsMenu::updateMenu() {
 	mSettingsMenu->getItemId( "tools-menu" )->setVisible( !showMenuBar );
 	mSettingsMenu->getItemId( "window-menu" )->setVisible( !showMenuBar );
 	mSettingsMenu->getItemId( "help-menu" )->setVisible( !showMenuBar );
-	mSettingsMenu->getItemId( "plugin-manager-open" )->setVisible( !showMenuBar );
 }
 
 } // namespace ecode
