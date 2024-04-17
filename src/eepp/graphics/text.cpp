@@ -468,25 +468,31 @@ void Text::onNewString() {
 	}
 }
 
-void Text::setString( const String::View& string ) {
+bool Text::setString( const String::View& string ) {
 	if ( mString.view() != string ) {
 		mString = string;
 		onNewString();
+		return true;
 	}
+	return false;
 }
 
-void Text::setString( const String& string ) {
+bool Text::setString( const String& string ) {
 	if ( mString != string ) {
 		mString = string;
 		onNewString();
+		return true;
 	}
+	return false;
 }
 
-void Text::setString( String&& string ) {
+bool Text::setString( String&& string ) {
 	if ( mString != string ) {
 		mString = std::move( string );
 		onNewString();
+		return true;
 	}
+	return false;
 }
 
 void Text::setFont( Font* font ) {

@@ -4,6 +4,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <nlohmann/json.hpp>
 using namespace EE::Graphics;
@@ -481,22 +482,30 @@ void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 PluginRequestHandle
 AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion ) {
 	SymbolsList suggestions;
-	for ( const auto& item : completion.items ) {
+	// FIX: Find a way of passing some messages as non-const and allow to move them.
+	// Creating a copy of each element is unnecessary and expensive, this time we are going to
+	// hack it and remove the constness of the suggestions to be able to move all its internal
+	// values
+	LSPCompletionList& wcompletion = const_cast<LSPCompletionList&>( completion );
+	for ( auto& item : wcompletion.items ) {
 		if ( !item.textEdit.text.empty() ) {
-			suggestions.push_back( { item.kind, item.insertText, item.detail, item.sortText,
-									 item.textEdit.range, item.textEdit.text,
-									 item.documentation } );
+			suggestions.push_back( { item.kind, std::move( item.insertText ),
+									 std::move( item.detail ), std::move( item.sortText ),
+									 item.textEdit.range, std::move( item.textEdit.text ),
+									 std::move( item.documentation ) } );
 		} else if ( !item.insertText.empty() ) {
-			suggestions.push_back( { item.kind, item.insertText, item.detail, item.sortText,
-									 item.textEdit.range, item.insertText, item.documentation } );
+			suggestions.push_back( { item.kind, std::move( item.insertText ),
+									 std::move( item.detail ), std::move( item.sortText ),
+									 item.textEdit.range, std::string{ item.insertText },
+									 std::move( item.documentation ) } );
 		} else {
 			suggestions.push_back( { item.kind,
-									 item.filterText,
-									 item.detail,
-									 item.sortText,
+									 std::move( item.filterText ),
+									 std::move( item.detail ),
+									 std::move( item.sortText ),
 									 {},
 									 "",
-									 item.documentation } );
+									 std::move( item.documentation ) } );
 		}
 	}
 	if ( suggestions.empty() || !mSuggestionsEditor )
@@ -786,6 +795,8 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	primitives.drawRoundedRectangle( boxRect, 0.f, Vector2f::One, 6 );
 
 	for ( size_t i = mSuggestionsStartIndex; i < maxIndex; i++ ) {
+		const auto& suggestion = suggestions[i];
+
 		if ( mSuggestionIndex == (int)i ) {
 			primitives.setColor(
 				Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
@@ -798,19 +809,18 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 		text.setFillColor( mSuggestionIndex == (int)i ? selectedStyle.color : normalStyle.color );
 		text.setStyle( mSuggestionIndex == (int)i ? selectedStyle.style : normalStyle.style );
 
-		auto nlPos = suggestions[i].text.find_first_of( '\n' );
+		auto nlPos = suggestion.text.find_first_of( '\n' );
 		if ( nlPos == std::string::npos ) {
-			text.setString( suggestions[i].text );
+			text.setString( suggestion.text );
 		} else {
-			text.setString( suggestions[i].text.substr( 0, nlPos ) );
+			text.setString( suggestion.text.substr( 0, nlPos ) );
 		}
 
 		text.draw( cursorPos.x + iconSpace.getWidth() + mBoxPadding.Left,
 				   cursorPos.y + mRowHeight * count + mBoxPadding.Top );
 
 		Drawable* icon = editor->getUISceneNode()->findIconDrawable(
-			LSPCompletionItemHelper::toIconString( suggestions[i].kind ),
-			PixelDensity::dpToPxI( 12 ) );
+			LSPCompletionItemHelper::toIconString( suggestion.kind ), PixelDensity::dpToPxI( 12 ) );
 
 		if ( icon ) {
 			Vector2f padding(
@@ -819,19 +829,34 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 			icon->draw( { cursorPos.x + padding.x, cursorPos.y + mRowHeight * count + padding.y } );
 		}
 
-		if ( mSuggestionIndex == (int)i && !suggestions[i].documentation.value.empty() ) {
-			Text text( "", editor->getFont(), editor->getFontSize() );
-			text.setFillColor( normalStyle.color );
-			text.setStyle( normalStyle.style );
-			text.setString( suggestions[i].documentation.value );
+		if ( mSuggestionIndex == (int)i && !suggestion.documentation.value.empty() ) {
+			mSuggestionDoc.setFont( editor->getFont() );
+			mSuggestionDoc.setFontSize( editor->getFontSize() );
+			mSuggestionDoc.setFillColor( normalStyle.color );
+			mSuggestionDoc.setStyle( normalStyle.style );
+			bool changed = mSuggestionDoc.setString( suggestion.documentation.value );
+
 			Vector2f boxPos = { cursorPos.x + mBoxRect.getWidth(),
 								cursorPos.y + mRowHeight * count };
-			Sizef boxSize = { text.getTextWidth() + mBoxPadding.Left + mBoxPadding.Right,
-							  text.getTextHeight() + mBoxPadding.Top + mBoxPadding.Bottom };
+			Sizef boxSize = { mSuggestionDoc.getTextWidth() + mBoxPadding.Left + mBoxPadding.Right,
+							  mSuggestionDoc.getTextHeight() + mBoxPadding.Top +
+								  mBoxPadding.Bottom };
 			primitives.setColor(
 				Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
 			primitives.drawRoundedRectangle( { boxPos, boxSize }, 0.f, Vector2f::One, 6 );
-			text.draw( boxPos.x + mBoxPadding.Left, boxPos.y + mBoxPadding.Top );
+
+			if ( changed ) {
+				bool forceHTML = String::startsWith( suggestion.detail, "Emmet" );
+				if ( suggestion.documentation.kind == LSPMarkupKind::MarkDown || forceHTML ) {
+					const auto& syntaxDef = forceHTML ?
+						SyntaxDefinitionManager::instance()->getByLSPName( "html" ) :
+						SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
+					SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(),
+												   mSuggestionDoc, 0, 0xFFFFFFFF, true, "\n\t " );
+				}
+			}
+
+			mSuggestionDoc.draw( boxPos.x + mBoxPadding.Left, boxPos.y + mBoxPadding.Top );
 		}
 		count++;
 	}

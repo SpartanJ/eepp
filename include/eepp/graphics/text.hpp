@@ -110,11 +110,11 @@ class EE_API Text {
 				 Color FontShadowColor = Color( 0, 0, 0, 255 ),
 				 Uint32 characterSize = PixelDensity::dpToPx( 12 ) );
 
-	void setString( const String::View& string );
+	bool setString( const String::View& string );
 
-	void setString( const String& string );
+	bool setString( const String& string );
 
-	void setString( String&& string );
+	bool setString( String&& string );
 
 	void setFont( Font* font );
 

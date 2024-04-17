@@ -37,16 +37,15 @@ class AutoCompletePlugin : public Plugin {
 
 		Suggestion( const std::string& text ) : text( text ), sortText( text ) {}
 
-		Suggestion( const LSPCompletionItemKind& kind, const std::string& text,
-					const std::string& detail, const std::string& sortText,
-					const TextRange& range = {}, const std::string insertText = "",
-					LSPMarkupContent doc = {} ) :
+		Suggestion( LSPCompletionItemKind kind, std::string&& text, std::string&& detail,
+					std::string&& sortText, const TextRange& range, std::string&& insertText,
+					LSPMarkupContent&& doc ) :
 			kind( kind ),
-			text( text ),
-			detail( detail ),
-			sortText( sortText.empty() ? text : sortText ),
+			text( std::move( text ) ),
+			detail( std::move( detail ) ),
+			sortText( sortText.empty() ? std::string{ text } : std::move( sortText ) ),
 			range( range ),
-			insertText( insertText ),
+			insertText( std::move( insertText ) ),
 			documentation( doc ){};
 
 		bool operator<( const Suggestion& other ) const { return getCmpStr() < other.getCmpStr(); }
@@ -149,6 +148,7 @@ class AutoCompletePlugin : public Plugin {
 	std::unordered_map<TextDocument*, std::vector<PluginIDType>> mHandles;
 	std::unordered_map<TextDocument*, std::atomic<bool>> mDocsUpdating;
 	Mutex mDocsUpdatingMutex;
+	Text mSuggestionDoc;
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
