@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/window/engine.hpp>
@@ -130,6 +129,12 @@ void EventDispatcher::update( const Time& time ) {
 			mOverNode->onMouseDown( mMousePosi, mInput->getPressTrigger() );
 			sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getPressTrigger() );
 		}
+
+		if ( NULL != mFocusNode && mDownNode == mOverNode &&
+			 ( mInput->getPressTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) &&
+			 ( !nodeWasDragging || mMousePos == mLastMousePos ) ) {
+			setFocusNode( mOverNode );
+		}
 	} else if ( NULL != mOverNode && mInput->getReleaseTrigger() &&
 				!( mInput->getPressTrigger() & mInput->getReleaseTrigger() ) &&
 				!( mInput->getLastPressTrigger() & mInput->getReleaseTrigger() ) ) {
@@ -140,15 +145,17 @@ void EventDispatcher::update( const Time& time ) {
 		}
 		mOverNode->onMouseDown( mMousePosi, mInput->getReleaseTrigger() );
 		sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getReleaseTrigger() );
+
+		if ( NULL != mFocusNode && mDownNode == mOverNode &&
+			 ( mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) &&
+			 ( !nodeWasDragging || mMousePos == mLastMousePos ) ) {
+			setFocusNode( mOverNode );
+		}
 	}
 
 	if ( mInput->getReleaseTrigger() ) {
 		if ( NULL != mFocusNode ) {
 			if ( !nodeWasDragging || mMousePos == mLastMousePos ) {
-				if ( mDownNode == mOverNode &&
-					 ( mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) )
-					setFocusNode( mOverNode );
-
 				// The focused node can change after the MouseUp ( since the node can call
 				// "setFocus()" on other node And the MouseClick would be received by the new
 				// focused node instead of the real one
