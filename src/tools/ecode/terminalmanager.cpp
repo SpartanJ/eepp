@@ -6,7 +6,8 @@ namespace ecode {
 
 TerminalManager::TerminalManager( App* app ) : mApp( app ) {}
 
-UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workingDir ) {
+UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workingDir,
+													   bool fallback ) {
 	UITerminal* term = nullptr;
 	auto splitter = mApp->getSplitter();
 	auto& config = mApp->getConfig();
@@ -15,34 +16,36 @@ UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workin
 			UIOrientation orientation = splitter->getMainSplitOrientation();
 			if ( config.term.newTerminalOrientation == NewTerminalOrientation::Vertical &&
 				 orientation == UIOrientation::Horizontal ) {
-				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir );
+				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, "", {},
+										  fallback );
 			} else if ( config.term.newTerminalOrientation == NewTerminalOrientation::Horizontal &&
 						orientation == UIOrientation::Vertical ) {
-				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir );
+				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, "", {},
+										  fallback );
 			} else {
 				term = createNewTerminal( "", nullptr, workingDir );
 			}
 		} else {
 			term = createNewTerminal();
 		}
-	} else {
+	} else if ( splitter ) {
 		switch ( config.term.newTerminalOrientation ) {
 			case NewTerminalOrientation::Vertical: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
 				splitter->split( UICodeEditorSplitter::SplitDirection::Right,
 								 splitter->getCurWidget(), false );
-				term = createNewTerminal( "", nullptr, cwd );
+				term = createNewTerminal( "", nullptr, cwd, "", {}, fallback );
 				break;
 			}
 			case NewTerminalOrientation::Horizontal: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
 				splitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
 								 splitter->getCurWidget(), false );
-				term = createNewTerminal( "", nullptr, cwd );
+				term = createNewTerminal( "", nullptr, cwd, "", {}, fallback );
 				break;
 			}
 			case NewTerminalOrientation::Same: {
-				term = createNewTerminal();
+				term = createNewTerminal( "", nullptr, "", "", {}, fallback );
 				break;
 			}
 		}
@@ -283,8 +286,8 @@ static void openExternal( const std::string& defShell, const std::string& cmd = 
 	std::vector<std::string> options;
 	if ( !defShell.empty() )
 		options.push_back( defShell );
-	options.push_back( "powershell" );
 	options.push_back( "cmd" );
+	options.push_back( "powershell" );
 #else
 static void openExternal( const std::string&, const std::string& cmd = "" ) {
 	std::vector<std::string> options = { "gnome-terminal", "konsole", "xterm", "st" };
@@ -294,7 +297,7 @@ static void openExternal( const std::string&, const std::string& cmd = "" ) {
 		if ( !externalShell.empty() ) {
 			if ( !cmd.empty() ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-				auto fcmd = externalShell + " /c " + cmd;
+				auto fcmd = externalShell + " /q /c " + cmd;
 #else
 				auto fcmd = externalShell + " -e " + cmd;
 #endif
@@ -343,7 +346,8 @@ void TerminalManager::displayError() {
 
 UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
 												const std::string& workingDir, std::string program,
-												const std::vector<std::string>& args ) {
+												const std::vector<std::string>& args,
+												bool fallback ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK,
@@ -390,7 +394,8 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		mApp->termConfig().scrollback, nullptr, mUseFrameBuffer );
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
-		displayError();
+		if ( fallback )
+			displayError();
 		return nullptr;
 	}
 

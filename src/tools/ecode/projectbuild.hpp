@@ -82,6 +82,7 @@ struct ProjectBuildStep {
 	std::string cmd;
 	std::string args;
 	std::string workingDir;
+	std::string name;
 	bool enabled{ true };
 	bool runInTerminal{ false };
 };
@@ -172,7 +173,7 @@ class ProjectBuild {
 
 	const ProjectBuildSteps& cleanSteps() const { return mClean; }
 
-	const ProjectBuildStep& runStep() const { return mRun; }
+	const ProjectBuildSteps& runConfigs() const { return mRun; }
 
 	const ProjectBuildKeyVal& envs() const { return mEnvs; }
 
@@ -183,7 +184,8 @@ class ProjectBuild {
 	bool hasClean() const { return !mClean.empty(); }
 
 	bool hasRun() const {
-		return !mRun.cmd.empty() || !mRun.args.empty() || !mRun.workingDir.empty();
+		return !mRun.empty() && ( !mRun.front().cmd.empty() || !mRun.front().args.empty() ||
+								  !mRun.front().workingDir.empty() );
 	}
 
 	ProjectBuildStep replaceVars( const ProjectBuildStep& step ) const;
@@ -204,7 +206,7 @@ class ProjectBuild {
 	std::set<std::string> mBuildTypes;
 	ProjectBuildSteps mBuild;
 	ProjectBuildSteps mClean;
-	ProjectBuildStep mRun;
+	ProjectBuildSteps mRun;
 	ProjectBuildKeyVal mEnvs;
 	ProjectBuildKeyVal mVars;
 	ProjectBuildConfig mConfig;
@@ -317,6 +319,7 @@ class ProjectBuildManager {
 	bool mBuilding{ false };
 	bool mShuttingDown{ false };
 	bool mCancelBuild{ false };
+	bool mRunning{ false };
 	std::unordered_map<Node*, std::set<Uint32>> mCbs;
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
@@ -335,6 +338,8 @@ class ProjectBuildManager {
 	void updateSidePanelTab();
 
 	void updateBuildType();
+
+	void updateRunConfig();
 
 	void addNewBuild();
 

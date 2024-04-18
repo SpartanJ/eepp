@@ -241,6 +241,7 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "extensions", 0xeae6 },
 			{ "window-opt", 0xeb7f },
 			{ "tools", 0xeb6d },
+			{ "play", 0xeb2c },
 		};
 
 		for ( const auto& icon : codIcons )

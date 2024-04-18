@@ -92,13 +92,12 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 			jclean.push_back( step );
 		}
 
-		// TODO: Support multiple-runs
 		if ( curBuild.hasRun() ) {
 			bj["run"] = json::array();
 			auto& jrun = bj["run"];
-			{
-				const auto& run = curBuild.mRun;
+			for ( auto& run : curBuild.mRun ) {
 				json step;
+				step["name"] = run.name;
 				step["working_dir"] = run.workingDir;
 				step["args"] = run.args;
 				step["command"] = run.cmd;
@@ -519,12 +518,13 @@ ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& p
 			const auto& runArray = buildObj["run"];
 			for ( const auto& step : runArray ) {
 				ProjectBuildStep rstep;
+				rstep.name = step.value( "name", "" );
 				rstep.cmd = step.value( "command", "" );
 				rstep.args = step.value( "args", "" );
 				rstep.workingDir = step.value( "working_dir", "" );
 				rstep.enabled = step.value( "enabled", true );
 				rstep.runInTerminal = step.value( "run_in_terminal", false );
-				b.mRun = std::move( rstep );
+				b.mRun.emplace_back( std::move( rstep ) );
 			}
 		}
 
@@ -686,25 +686,20 @@ ProjectBuildConfiguration ProjectBuildManager::getConfig() const {
 }
 
 void ProjectBuildManager::setConfig( const ProjectBuildConfiguration& config ) {
-	bool buildNameChanged = false;
-	bool buildTypeChanged = false;
-
 	if ( mConfig.buildName != config.buildName ) {
 		mConfig.buildName = config.buildName;
-		buildNameChanged = true;
 		updateSidePanelTab();
 	}
 
 	if ( mConfig.buildType != config.buildType ) {
 		mConfig.buildType = config.buildType;
-		buildTypeChanged = true;
 		updateBuildType();
 	}
 
-	if ( buildNameChanged )
-		updateSidePanelTab();
-	else if ( buildTypeChanged )
-		updateBuildType();
+	if ( mConfig.runName != config.runName ) {
+		mConfig.runName = config.runName;
+		updateRunConfig();
+	}
 }
 
 void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc ) {
@@ -736,18 +731,30 @@ void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc 
 }
 
 void ProjectBuildManager::runCurrentConfig( StatusBuildOutputController* /* not used yet */ ) {
-	if ( !isBuilding() && !getBuilds().empty() ) {
+	if ( !mRunning && !isBuilding() && !getBuilds().empty() ) {
+		BoolScopedOp op( mRunning, true );
 		const ProjectBuild* build = nullptr;
 		for ( const auto& buildIt : getBuilds() )
 			if ( buildIt.second.getName() == mConfig.buildName )
 				build = &buildIt.second;
 
 		if ( build && build->hasRun() ) {
-			auto finalBuild( build->replaceVars( build->mRun ) );
+			const ProjectBuildStep* run = nullptr;
+			for ( const auto& crun : build->mRun ) {
+				if ( crun.name == mConfig.runName || mConfig.runName.empty() ) {
+					run = &crun;
+					break;
+				}
+			}
+
+			if ( nullptr == run )
+				return;
+
+			auto finalBuild( build->replaceVars( *run ) );
 			auto cmd = finalBuild.cmd + " " + finalBuild.args;
 			if ( finalBuild.runInTerminal ) {
-				UITerminal* term =
-					mApp->getTerminalManager()->createTerminalInSplitter( finalBuild.workingDir );
+				UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
+					finalBuild.workingDir, false );
 				if ( term == nullptr || term->getTerm() == nullptr ) {
 					mApp->getTerminalManager()->openInExternalTerminal( cmd );
 				} else {
@@ -920,17 +927,20 @@ void ProjectBuildManager::buildSidePanelTab() {
 		R"html(
 			<ScrollView id="build_tab_view" lw="mp" lh="mp">
 				<vbox lw="mp" lh="wc" padding="4dp">
-					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" />
-					<TextView text="@string(build_configuration, Build Configuration)" />
+					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" focusable="false" />
+					<TextView text="@string(build_configuration, Build Configuration)" focusable="false" />
 					<hbox lw="mp" lh="wc" margin-bottom="4dp">
 						<DropDownList id="build_list" layout_width="0" lw8="1" layout_height="wrap_content" />
 						<PushButton id="build_edit" id="build_edit" text="@string(edit_build, Edit Build)" tooltip="@string(edit_build, Edit Build)"  text-as-fallback="true" icon="icon(file-edit, 12dp)" margin-left="2dp" />
 						<PushButton id="build_add" id="build_add" text="@string(add_build, Add Build)" tooltip="@string(add_build, Add Build)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
 					</hbox>
-					<TextView text="@string(build_target, Build Target)" margin-top="8dp" />
-					<DropDownList lw="mp" id="build_type_list" />
+					<TextView text="@string(build_target, Build Target)" margin-top="8dp" focusable="false" />
+					<DropDownList lw="mp" id="build_type_list" margin-top="2dp" />
 					<PushButton id="build_button" lw="mp" lh="wc" text="@string(build, Build)" margin-top="8dp" icon="icon(hammer, 12dp)" />
 					<PushButton id="clean_button" lw="mp" lh="wc" text="@string(clean, Clean)" margin-top="8dp" icon="icon(eraser, 12dp)" />
+					<TextView text="@string(run_target, Run Target)" margin-top="8dp" focusable="false" />
+					<DropDownList lw="mp" id="run_config_list" margin-top="2dp" />
+					<PushButton id="run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(play, 12dp)" />
 				</vbox>
 			</ScrollView>
 		)html" );
@@ -958,6 +968,7 @@ void ProjectBuildManager::updateSidePanelTab() {
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
 	UIPushButton* buildButton = buildTab->find<UIPushButton>( "build_button" );
 	UIPushButton* cleanButton = buildTab->find<UIPushButton>( "clean_button" );
+	UIPushButton* runButton = buildTab->find<UIPushButton>( "run_button" );
 	UIPushButton* buildAdd = buildTab->find<UIPushButton>( "build_add" );
 	UIPushButton* buildEdit = buildTab->find<UIPushButton>( "build_edit" );
 
@@ -988,12 +999,16 @@ void ProjectBuildManager::updateSidePanelTab() {
 
 	updateBuildType();
 
+	updateRunConfig();
+
 	if ( !buildList->hasEventsOfType( Event::OnItemSelected ) ) {
 		buildList->on( Event::OnItemSelected, [this, buildEdit, buildList]( const Event* ) {
 			mConfig.buildName = buildList->getListBox()->getItemSelectedText();
 			mConfig.buildType = "";
+			mConfig.runName = "";
 			buildEdit->setEnabled( true );
 			updateBuildType();
+			updateRunConfig();
 		} );
 	}
 
@@ -1021,6 +1036,11 @@ void ProjectBuildManager::updateSidePanelTab() {
 				cleanCurrentConfig( mApp->getStatusBuildOutputController() );
 			}
 		} );
+	}
+
+	if ( !runButton->hasEventsOfType( Event::MouseClick ) ) {
+		runButton->onClick(
+			[this]( auto ) { runCurrentConfig( mApp->getStatusBuildOutputController() ); } );
 	}
 
 	if ( !buildAdd->hasEventsOfType( Event::MouseClick ) ) {
@@ -1064,10 +1084,65 @@ void ProjectBuildManager::updateBuildType() {
 	}
 	buildTypeList->setEnabled( !buildTypeList->getListBox()->isEmpty() );
 
-	if ( !buildTypeList->hasEventsOfType( Event::OnItemSelected ) )
+	if ( !buildTypeList->hasEventsOfType( Event::OnItemSelected ) ) {
 		buildTypeList->on( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
 			mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
 		} );
+	}
+}
+
+void ProjectBuildManager::updateRunConfig() {
+	if ( mTab == nullptr )
+		return;
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab_view" );
+	if ( buildTab == nullptr )
+		return;
+	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
+	UIDropDownList* runConfigList = buildTab->find<UIDropDownList>( "run_config_list" );
+
+	runConfigList->getListBox()->clear();
+
+	String first = buildList->getListBox()->getItemSelectedText();
+	if ( !first.empty() ) {
+		auto foundIt = mBuilds.find( first );
+		if ( foundIt != mBuilds.end() ) {
+			const auto& runConfigs = foundIt->second.runConfigs();
+			std::vector<String> items;
+			size_t i = 1;
+			for ( const auto& run : runConfigs ) {
+				auto name = run.name.empty() ? String::format( mApp->i18n( "custom_executable_num",
+																		   "Custom Executable %d" )
+																   .toUtf8(),
+															   i )
+											 : run.name;
+				items.emplace_back( name );
+				i++;
+			}
+			runConfigList->getListBox()->addListBoxItems( items );
+			if ( runConfigList->getListBox()->getItemIndex( mConfig.runName ) !=
+				 eeINDEX_NOT_FOUND ) {
+				runConfigList->getListBox()->setSelected( mConfig.runName );
+			} else if ( !runConfigList->getListBox()->isEmpty() ) {
+				runConfigList->getListBox()->setSelected( 0 );
+				mConfig.runName = runConfigList->getListBox()->getItemSelectedText();
+			}
+		}
+	}
+	runConfigList->setEnabled( !runConfigList->getListBox()->isEmpty() );
+	buildTab->find( "run_button" )->setEnabled( !runConfigList->getListBox()->isEmpty() );
+
+	if ( !runConfigList->hasEventsOfType( Event::OnItemSelected ) ) {
+		runConfigList->on( Event::OnItemSelected, [this, runConfigList, buildTab]( const Event* ) {
+			mConfig.runName = runConfigList->getListBox()->getItemSelectedText();
+			buildTab->find( "run_button" )->setEnabled( !runConfigList->getListBox()->isEmpty() );
+		} );
+	}
+	if ( !runConfigList->hasEventsOfType( Event::OnClear ) ) {
+		runConfigList->on( Event::OnClear, [this, runConfigList, buildTab]( const Event* ) {
+			mConfig.runName = "";
+			buildTab->find( "run_button" )->setEnabled( !runConfigList->getListBox()->isEmpty() );
+		} );
+	}
 }
 
 std::map<std::string, ProjectBuildOutputParser> ProjectBuildOutputParser::getPresets() {

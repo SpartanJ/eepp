@@ -70,6 +70,20 @@
         "relative_file_paths": true
       }
     },
+    "run": [
+      {
+        "args": "-x",
+        "command": "${project_root}/bin/ecode-debug",
+        "name": "ecode-debug",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "-x",
+        "command": "${project_root}/bin/ecode",
+        "name": "ecode-release",
+        "working_dir": "${project_root}/bin/"
+      }
+    ],
     "var": {
       "build_dir": "${project_root}/projects/${os}"
     }
@@ -150,7 +164,14 @@
       {
         "args": "-x",
         "command": "ecode-debug",
-        "working_dir": "${project_root}/bin/"
+        "name": "ecode-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "-x",
+        "command": "ecode",
+        "name": "ecode-release",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {
@@ -188,6 +209,20 @@
         "relative_file_paths": true
       }
     },
+    "run": [
+      {
+        "args": "-x",
+        "command": "${project_root}/bin/ecode-debug",
+        "name": "ecode-debug",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "-x",
+        "command": "${project_root}/bin/ecode",
+        "name": "ecode-release",
+        "working_dir": "${project_root}/bin/"
+      }
+    ],
     "var": {
       "build_dir": "${project_root}/projects/${os}"
     }

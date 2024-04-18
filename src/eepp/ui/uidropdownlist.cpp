@@ -239,6 +239,7 @@ void UIDropDownList::setStyleConfig( const StyleConfig& styleConfig ) {
 
 void UIDropDownList::onWidgetClear( const Event* ) {
 	setText( "" );
+	sendCommonEvent( Event::OnClear );
 }
 
 void UIDropDownList::onItemKeyDown( const Event* Event ) {

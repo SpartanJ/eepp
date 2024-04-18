@@ -395,6 +395,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	cfg.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
 	cfg.setValue( "build", "build_name", buildConfig.buildName );
 	cfg.setValue( "build", "build_type", buildConfig.buildType );
+	cfg.setValue( "build", "run_name", buildConfig.runName );
 	cfg.setValue( "nodes", "documents",
 				  saveNode( editorSplitter->getBaseLayout()->getFirstChild() ).dump() );
 	cfg.deleteKey( "files" );
@@ -540,6 +541,7 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		ProjectBuildConfiguration prjCfg;
 		prjCfg.buildName = cfg.getValue( "build", "build_name", "" );
 		prjCfg.buildType = cfg.getValue( "build", "build_type", "" );
+		prjCfg.runName = cfg.getValue( "build", "run_name", "" );
 		app->getProjectBuildManager()->setConfig( prjCfg );
 	}
 

@@ -214,6 +214,9 @@ void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
 
 	if ( selectedSize != mSelected.size() )
 		sendCommonEvent( Event::OnSelectionChanged );
+
+	if ( mTexts.empty() )
+		sendCommonEvent( Event::OnClear );
 }
 
 void UIListBox::clear() {
@@ -231,7 +234,7 @@ void UIListBox::clear() {
 }
 
 Uint32 UIListBox::removeListBoxItem( Uint32 ItemIndex ) {
-	removeListBoxItems( std::vector<Uint32>( 1, ItemIndex ) );
+	removeListBoxItems( { ItemIndex } );
 
 	return ItemIndex;
 }

@@ -5,6 +5,9 @@
 #include <eepp/ui/uidatabind.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 
+namespace EE { namespace UI {
+class UIDropDownList;
+}} // namespace EE::UI
 using namespace EE::UI;
 
 namespace ecode {
@@ -52,6 +55,16 @@ class UIBuildSettings : public UIRelativeLayout {
 	void refreshTab();
 
 	void bindTable( const std::string& name, const std::string& key, ProjectBuildKeyVal& data );
+
+	void runSelect( Uint32 index = 0xFFFFFFFF );
+
+	void runRemove( bool all, UIDropDownList* runList, UIDropDownList* panelRunListDDL );
+
+	void runUpdate( bool recreateList, UIDropDownList* runList, UIDropDownList* panelRunListDDL );
+
+	Uint32 runIndex() const;
+
+	void runSetup();
 };
 
 } // namespace ecode

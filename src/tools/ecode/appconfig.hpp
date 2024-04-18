@@ -118,6 +118,7 @@ struct ProjectBuildConfiguration {
 	ProjectBuildConfiguration() {}
 	std::string buildName;
 	std::string buildType;
+	std::string runName;
 };
 
 class NewTerminalOrientation {

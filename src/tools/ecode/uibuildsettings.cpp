@@ -82,30 +82,30 @@ class UICustomOutputParserWindow : public UIWindow {
 		mCfg( cfg ) {
 		static const auto CUSTOM_OUTPUT_PARSER_XML = R"xml(
 <vbox class="custom_output_parser_cont" lw="400dp" lh="wc">
-	<TextView text="@string(type, Type)" />
+	<TextView text="@string(type, Type)" focusable="false" />
 	<DropDownList lw="mp" lh="wc" id="custom_parser_type" selectedIndex="0">
 		<item>@string("error", "Error")</item>
 		<item>@string("warning", "Warning")</item>
 		<item>@string("notice", "Notice")</item>
 	</DropDownList>
-	<TextView text="@string(message_capture_pattern, Message Capture Pattern)" />
+	<TextView text="@string(message_capture_pattern, Message Capture Pattern)" focusable="false" />
 	<TextInput lw="mp" lh="wc" id="custom_parser_pattern" hint="@string(lua_pattern, Lua Pattern)" />
-	<TextView text="@string(capture_positions, Capture Positions)" />
+	<TextView text="@string(capture_positions, Capture Positions)" focusable="false" />
 	<hbox lw="mp" lh="wc" class="capture_positions_cont">
 		<vbox lw="0" lw8="0.25" lh="wc">
-			<TextView lw="mp" lh="wc" text="@string(file_name, File Name)" />
+			<TextView lw="mp" lh="wc" text="@string(file_name, File Name)" focusable="false" />
 			<SpinBox id="file_name_pos" lw="mp" lh="wc" min-value="0" max-value="4" value="1" />
 		</vbox>
 		<vbox lw="0" lw8="0.25" lh="wc">
-			<TextView lw="mp" lh="wc" text="@string(line_number, Line Number)" />
+			<TextView lw="mp" lh="wc" text="@string(line_number, Line Number)" focusable="false" />
 			<SpinBox id="line_number_pos" lw="mp" lh="wc" min-value="0" max-value="4" value="2" />
 		</vbox>
 		<vbox lw="0" lw8="0.25" lh="wc">
-			<TextView lw="mp" lh="wc" text="@string(column_position, Column Position)" />
+			<TextView lw="mp" lh="wc" text="@string(column_position, Column Position)" focusable="false" />
 			<SpinBox id="column_pos" lw="mp" lh="wc" min-value="0" max-value="4" value="3" />
 		</vbox>
 		<vbox lw="0" lw8="0.25" lh="wc">
-			<TextView lw="mp" lh="wc" text="@string(message, Message)" />
+			<TextView lw="mp" lh="wc" text="@string(message, Message)" focusable="false" />
 			<SpinBox id="message_pos" lw="mp" lh="wc" min-value="0" max-value="4" value="4" />
 		</vbox>
 	</hbox>
@@ -215,6 +215,10 @@ class UIBuildStep : public UILinearLayout {
 		mStep = buildStep;
 		addClass( String::toString( mStepNum ) );
 
+		forEachChild( [buildStep]( Node* node ) { node->setEnabled( buildStep != nullptr ); } );
+		if ( buildStep == nullptr )
+			return;
+
 		auto stepName = findByClass<UITextView>( "step_name" );
 		if ( isBuildOrClean() ) {
 			stepName->setText( String::format( mBuildSettings->getUISceneNode()
@@ -250,7 +254,7 @@ class UIBuildStep : public UILinearLayout {
 
 		static const auto BUILD_STEP_XML = R"xml(
 	<hbox class="header" lw="mp" lh="wc">
-		<TextView lw="0" lw8="1" class="step_name" />
+		<TextView lw="0" lw8="1" class="step_name" focusable="false" />
 		<CheckBox class="enabled_checkbox" checked="true" layout_gravity="center_vertical" tooltip="@string(enabled_question, Enabled?)" />
 		<PushButton class="move_up" text="@string(move_up, Move Up)" text-as-fallback="true" icon="icon(arrow-up-s, 12dp)" tooltip="@string(move_up, Move Up)" />
 		<PushButton class="move_down" text="@string(move_down, Move Down)" text-as-fallback="true" icon="icon(arrow-down-s, 12dp)"  tooltip="@string(move_down, Move Down)" />
@@ -259,15 +263,15 @@ class UIBuildStep : public UILinearLayout {
 	</hbox>
 	<vbox class="details" lw="mp" lh="wc">
 		<hbox lw="mp">
-			<TextView lh="mp" min-width="100dp" text="@string(command, Command)" />
+			<TextView lh="mp" min-width="100dp" text="@string(command, Command)" focusable="false" />
 			<Input class="input_cmd" lw="0" lw8="1" />
 		</hbox>
 		<hbox lw="mp">
-			<TextView lh="mp" min-width="100dp" text="@string(arguments, Arguments)" />
+			<TextView lh="mp" min-width="100dp" text="@string(arguments, Arguments)" focusable="false" />
 			<Input class="input_args" lw="0" lw8="1" />
 		</hbox>
 		<hbox lw="mp">
-			<TextView lh="mp" min-width="100dp" text="@string(working_dir, Working Directory)" />
+			<TextView lh="mp" min-width="100dp" text="@string(working_dir, Working Directory)" focusable="false" />
 			<Input class="input_working_dir" lw="0" lw8="1" />
 		</hbox>
 		<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
@@ -338,9 +342,9 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 			<PushButton id="build_del" lh="mp" text="@string(delete_setting, Delete Setting)" text-as-fallback="true" icon="icon(delete-bin, 12dp)" tooltip="@string(delete_setting, Delete Setting)" />
 		</hbox>
 		<Widget class="separator" lw="mp" lh="1dp" />
-		<TextView class="subtitle" text="@string(build_name, Build Name)" />
+		<TextView class="subtitle" text="@string(build_name, Build Name)" focusable="false" />
 		<Input id="build_name" lw="mp" lh="wc" text="new_name" />
-		<TextView class="subtitle" text="@string(supported_platforms, Supported Platforms)" />
+		<TextView class="subtitle" text="@string(supported_platforms, Supported Platforms)" focusable="false" />
 		<TextView lw="mp" lh="wc" word-wrap="true" text="@string(supported_platforms_desc, Selecting none means that the build settings will work and be available on any Operating System)" />
 		<StackLayout id="os_select" class="os_select" lw="wc" lh="wc">
 			<CheckBox id="linux" text="Linux" />
@@ -353,24 +357,33 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 		</StackLayout>
 
 		<vbox lw="mp" lh="wc" class="build_steps">
-			<TextView class="subtitle" text="@string(build_steps, Build Steps)" />
+			<TextView class="subtitle" text="@string(build_steps, Build Steps)" focusable="false" />
 			<vbox id="build_steps_cont" lw="mp" lh="wc"></vbox>
 			<PushButton id="add_build_step" class="add_build_step" text="@string(add_build_step, Add Build Step)" />
 		</vbox>
 
 		<vbox lw="mp" lh="wc" class="clean_steps">
-			<TextView class="subtitle" text="@string(clean_steps, Clean Steps)" />
+			<TextView class="subtitle" text="@string(clean_steps, Clean Steps)" focusable="false" />
 			<vbox id="build_clean_steps_cont" lw="mp" lh="wc"></vbox>
 			<PushButton id="add_clean_step" class="add_build_step" text="@string(add_clean_step, Add Clean Step)" />
 		</vbox>
 
 		<vbox lw="mp" lh="wc" class="run_step">
-			<TextView class="subtitle" text="@string(run, Run)" />
-			<vbox id="run_step_cont" lw="mp" lh="wc"></vbox>
+			<TextView class="subtitle" text="@string(run, Run)" focusable="false" />
+			<StackLayout is="run_select" lw="mp" lh="wc" class="stack_margins">
+				<TextView text="@string(run_configuration_colon, Run configuration:)" focusable="false" />
+				<DropDownList id="run_list" layout_width="200dp" layout_height="19dp" />
+				<PushButton id="run_add" text="@string(add_ellipsis, Add...)" />
+				<PushButton id="run_remove" text="@string(remove, Remove)" />
+				<PushButton id="run_remove_all" text="@string(remove_all, Remove All)" />
+				<PushButton id="run_rename" text="@string(rename_ellipsis, Rename...)" />
+				<PushButton id="run_clone" text="@string(clone_ellipsis, Clone...)" />
+			</StackLayout>
+			<vbox id="run_cont" lw="mp" lh="wc"></vbox>
 		</vbox>
 
 		<vbox lw="mp" lh="wc" class="build_types">
-			<TextView class="subtitle" text="@string(build_types, Build Types)" />
+			<TextView class="subtitle" text="@string(build_types, Build Types)" focusable="false" />
 			<TextView lw="mp" lh="wc" word-wrap="true" text="@string(build_types_desc, Build types can be used as a dynamic build option represented by the special key ${build_type}. The build type can be switch easily from the editor.)" />
 			<StackLayout class="build_types_cont span" lw="mp" lh="wc">
 				<DropDownList id="build_type_list" layout_width="200dp" layout_height="wc" />
@@ -386,7 +399,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 			</hbox>
 			<vbox class="inner_box" lw="mp" lh="wc">
 				<vbox lw="mp" lh="wc" class="custom_vars">
-					<TextView class="subtitle" text="@string(custom_variables, Custom Variables)" />
+					<TextView class="subtitle" text="@string(custom_variables, Custom Variables)" focusable="false" />
 					<TextView lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc, "Custom Variables allow to simplify the build commands steps adding custom variables that can be used over the build settings in commands, arguments, and working directories.")' />
 					<TextView lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_2, "Custom Variables can be invoked using ${variable_name} in any of the commands.)' />
 					<hbox lw="mp" lh="wc">
@@ -400,9 +413,9 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 				</vbox>
 
 				<vbox lw="mp" lh="wc" class="build_environment">
-					<TextView class="subtitle" text="@string(build_environment, Build Environment)" />
+					<TextView class="subtitle" text="@string(build_environment, Build Environment)" focusable="false" />
 					<CheckBox id="clear_sys_env" text="@string(clear_system_enviroment, Clear System Environment)" />
-					<TextView class="subtitle" text="@string(custom_environment_variables, Custom Environment Variables)" />
+					<TextView class="subtitle" text="@string(custom_environment_variables, Custom Environment Variables)" focusable="false" />
 					<hbox lw="mp" lh="wc">
 						<TableView id="table_envs" lw="0" lw8="1" lh="150dp" />
 						<vbox lw="wc" lh="mp" class="buttons_box">
@@ -413,15 +426,15 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 				</vbox>
 
 				<vbox lw="mp" lh="wc" class="output_parser">
-					<TextView class="subtitle" text="@string(output_parser, Output Parser)" />
-					<TextView lw="mp" lh="wc" word-wrap="true" text="@string(output_parser_desc, Custom output parsers scan command line output for user-provided error patterns to create entries in Build Issues and highlight those errors on the Build Output)" />
-					<TextView lw="mp" lh="wc" word-wrap="true" text='@string(output_parser_preset, "Presets are provided as generic output parsers, you can select one below, by default a \"generic\" preset will be selected:")' />
+					<TextView class="subtitle" text="@string(output_parser, Output Parser)" focusable="false" />
+					<TextView lw="mp" lh="wc" word-wrap="true" text="@string(output_parser_desc, Custom output parsers scan command line output for user-provided error patterns to create entries in Build Issues and highlight those errors on the Build Output)" focusable="false" />
+					<TextView lw="mp" lh="wc" word-wrap="true" text='@string(output_parser_preset, "Presets are provided as generic output parsers, you can select one below, by default a \"generic\" preset will be selected:")' focusable="false" />
 					<DropDownList id="output_parsers_presets_list" layout_width="200dp" layout_height="wc">
 						<item></item>
 						<item>generic</item>
 					</DropDownList>
 					<hbox lw="mp" lh="wc">
-						<TableView id="table_output_parsers" lw="0" lw8="1" lh="150dp" />
+						<TableView id="table_output_parsers" lw="0" lw8="1" lh="150dp" focusable="false" />
 						<vbox lw="wc" lh="mp" class="buttons_box">
 							<PushButton id="custom_op_add" icon="icon(add, 12dp)" min-width="20dp" tooltip="@string(add_custom_output_parser, Add Custom Output Parser)" lg="center" />
 							<PushButton id="custom_op_edit" icon="icon(file-edit, 12dp)" min-width="20dp" tooltip="@string(edit_custom_output_parser, Edit Selected Custom Output Parser)" lg="center" />
@@ -434,7 +447,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 
 		</vbox>
 
-		<TextView class="build_settings_clarification span" word-wrap="true" lw="mp" lh="wc" text='@string(build_settings_save_clarification, * All changes are automatically saved)' />
+		<TextView class="build_settings_clarification span" word-wrap="true" lw="mp" lh="wc" text='@string(build_settings_save_clarification, * All changes are automatically saved)' focusable="false" />
 	</vbox>
 </ScrollView>
 )xml";
@@ -527,8 +540,6 @@ UIBuildSettings::UIBuildSettings(
 			->setParent( buildCleanStepsParent );
 	} );
 
-	UIBuildStep::New( UIBuildStep::StepType::Run, this, 0, &mBuild.mRun )
-		->setParent( find( "run_step_cont" ) );
 
 	auto buildTypeDropDown = find<UIDropDownList>( "build_type_list" );
 	auto panelBuildTypeDDL = getUISceneNode()
@@ -701,6 +712,8 @@ UIBuildSettings::UIBuildSettings(
 			modelOP->invalidate();
 		}
 	} );
+
+	runSetup();
 }
 
 void UIBuildSettings::updateOS() {
@@ -801,12 +814,287 @@ void UIBuildSettings::deleteStep( size_t stepNum, bool isClean ) {
 		isClean ? find<UIWidget>( "build_clean_steps_cont" ) : find<UIWidget>( "build_steps_cont" );
 	for ( auto step = stepNum; step < steps.size(); step++ )
 		cont->findByClass<UIBuildStep>( String::toString( step ) )->clearBindings();
-	// cppcheck-suppress mismatchingContainerIterator
 	steps.erase( steps.begin() + stepNum );
 	cont->findByClass<UIBuildStep>( String::toString( stepNum ) )->close();
 	for ( auto step = stepNum + 1; step <= steps.size(); step++ )
 		cont->findByClass<UIBuildStep>( String::toString( step ) )
 			->updateStep( step - 1, &steps[step - 1] );
+}
+
+void UIBuildSettings::runSetup() {
+	if ( mBuild.mRun.empty() ) {
+		mBuild.mRun.push_back( {} );
+		mBuild.mRun.back().name = i18n( "custom_executable", "Custom Executable" );
+	}
+
+	UIBuildStep::New( UIBuildStep::StepType::Run, this, 0, &mBuild.mRun[runIndex()] )
+		->setParent( find( "run_cont" ) );
+
+	UIDropDownList* runList = find( "run_list" )->asType<UIDropDownList>();
+	auto panelRunListDDL = getUISceneNode()
+							   ->getRoot()
+							   ->querySelector( "#build_tab_view #run_config_list" )
+							   ->asType<UIDropDownList>();
+
+	runUpdate( true, runList, panelRunListDDL );
+
+	runList->getListBox()->setSelected( runIndex() );
+	if ( panelRunListDDL )
+		panelRunListDDL->getListBox()->setSelected( runIndex() );
+
+	runSelect( runIndex() );
+
+	runList->on( Event::OnItemSelected, [this, runList, panelRunListDDL]( auto ) {
+		mConfig.runName = runList->getListBox()->getItemSelectedText().toUtf8();
+		runSelect( runIndex() );
+		if ( panelRunListDDL )
+			panelRunListDDL->getListBox()->setSelected( mConfig.runName );
+	} );
+
+	if ( panelRunListDDL ) {
+		mCbs[panelRunListDDL].push_back( panelRunListDDL->on(
+			Event::OnItemSelected, [this, runList, panelRunListDDL]( const Event* ) {
+				mConfig.runName = panelRunListDDL->getListBox()->getItemSelectedText().toUtf8();
+				if ( runList )
+					runList->getListBox()->setSelected( mConfig.runName );
+			} ) );
+		mCbs[panelRunListDDL].push_back( panelRunListDDL->on(
+			Event::OnClose, [this, panelRunListDDL]( auto ) { mCbs.erase( panelRunListDDL ); } ) );
+	}
+
+	find( "run_add" )->onClick( [this, runList, panelRunListDDL]( auto ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::INPUT, i18n( "run_configuration_name", "Run configuration name:" ) );
+		msgBox->setTitle( i18n( "run_settings", "Run Settings" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->showWhenReady();
+		msgBox->on( Event::OnConfirm, [this, msgBox, runList, panelRunListDDL]( auto ) {
+			bool unique = true;
+			auto newName = msgBox->getTextInput()->getText().toUtf8();
+			for ( const auto& run : mBuild.mRun ) {
+				if ( newName == run.name ) {
+					unique = false;
+					break;
+				}
+			}
+
+			if ( unique ) {
+				mBuild.mRun.push_back( {} );
+				mBuild.mRun.back().name = newName;
+
+				runList->getListBox()->addListBoxItem( newName );
+				runList->getListBox()->setSelected( newName );
+
+				if ( panelRunListDDL ) {
+					panelRunListDDL->getListBox()->addListBoxItem( newName );
+					panelRunListDDL->getListBox()->setSelected( newName );
+				}
+
+				runUpdate( false, runList, panelRunListDDL );
+			} else {
+				UIMessageBox* uniqueAlert = UIMessageBox::New(
+					UIMessageBox::OK, i18n( "run_configuration_name_must_be_unique",
+											"Run configuration name must be unique!" ) );
+				uniqueAlert->setTitle( i18n( "run_settings", "Run Settings" ) );
+				uniqueAlert->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+				uniqueAlert->showWhenReady();
+			}
+
+			msgBox->close();
+		} );
+	} );
+
+	find( "run_remove" )->onClick( [this, runList, panelRunListDDL]( auto ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL,
+			i18n( "run_configuration_delete_confirm",
+				  "Are you sure you want to delete the currently selected run configuration?" ) );
+		msgBox->setTitle( i18n( "run_configuration", "Run Configuration" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->showWhenReady();
+		msgBox->on( Event::OnConfirm, [this, runList, panelRunListDDL]( auto ) {
+			runRemove( false, runList, panelRunListDDL );
+		} );
+	} );
+
+	find( "run_remove_all" )->onClick( [this, runList, panelRunListDDL]( auto ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL,
+			i18n( "run_configuration_delete_all_confirm",
+				  "Are you sure you want to delete all the run configurations?" ) );
+		msgBox->setTitle( i18n( "run_configuration", "Run Configuration" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->showWhenReady();
+		msgBox->on( Event::OnConfirm, [this, runList, panelRunListDDL]( auto ) {
+			runRemove( true, runList, panelRunListDDL );
+		} );
+	} );
+
+	find( "run_rename" )->onClick( [this, runList, panelRunListDDL]( auto ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::INPUT, i18n( "run_configuration_rename", "Rename configuration name:" ) );
+		msgBox->setTitle( i18n( "run_settings", "Run Settings" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->getTextInput()->setText( runList->getText() );
+		msgBox->getTextInput()->getDocument().selectAll();
+		msgBox->showWhenReady();
+		auto selectedIndex = runList->getListBox()->getItemSelectedIndex();
+		msgBox->on(
+			Event::OnConfirm, [this, msgBox, selectedIndex, runList, panelRunListDDL]( auto ) {
+				bool unique = true;
+				auto newName = msgBox->getTextInput()->getText().toUtf8();
+				for ( size_t i = 0; i < mBuild.mRun.size(); i++ ) {
+					const auto& run = mBuild.mRun[i];
+					if ( newName == run.name && i != selectedIndex ) {
+						unique = false;
+						break;
+					}
+				}
+
+				if ( unique && selectedIndex < mBuild.mRun.size() ) {
+					if ( mBuild.mRun[selectedIndex].name == mConfig.runName )
+						mConfig.runName = newName;
+					mBuild.mRun[selectedIndex].name = newName;
+					runList->getListBox()->setItemText( selectedIndex, newName );
+					if ( panelRunListDDL )
+						panelRunListDDL->getListBox()->setItemText( selectedIndex, newName );
+				} else {
+					UIMessageBox* uniqueAlert = UIMessageBox::New(
+						UIMessageBox::OK, i18n( "run_configuration_name_must_be_unique",
+												"Run configuration name must be unique!" ) );
+					uniqueAlert->setTitle( i18n( "run_settings", "Run Settings" ) );
+					uniqueAlert->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+					uniqueAlert->showWhenReady();
+				}
+
+				msgBox->close();
+			} );
+	} );
+
+	find( "run_clone" )->onClick( [this, runList, panelRunListDDL]( auto ) {
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::INPUT, i18n( "run_configuration_name", "Run configuration name:" ) );
+		msgBox->setTitle( i18n( "run_settings", "Run Settings" ) );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->getTextInput()->setText( runList->getText() );
+		msgBox->getTextInput()->getDocument().selectAll();
+		msgBox->showWhenReady();
+		msgBox->on( Event::OnConfirm, [this, msgBox, runList, panelRunListDDL]( auto ) {
+			bool unique = true;
+			auto newName = msgBox->getTextInput()->getText().toUtf8();
+			for ( const auto& run : mBuild.mRun ) {
+				if ( newName == run.name ) {
+					unique = false;
+					break;
+				}
+			}
+
+			if ( unique ) {
+				auto selectedIndex = runList->getListBox()->getItemSelectedIndex();
+				if ( selectedIndex < mBuild.mRun.size() ) {
+					mBuild.mRun.push_back( mBuild.mRun[selectedIndex] );
+				} else {
+					mBuild.mRun.push_back( {} );
+				}
+				mBuild.mRun.back().name = newName;
+
+				runList->getListBox()->addListBoxItem( newName );
+				runList->getListBox()->setSelected( newName );
+				if ( panelRunListDDL ) {
+					panelRunListDDL->getListBox()->addListBoxItem( newName );
+					panelRunListDDL->getListBox()->setSelected( newName );
+				}
+			} else {
+				UIMessageBox* uniqueAlert = UIMessageBox::New(
+					UIMessageBox::OK, i18n( "run_configuration_name_must_be_unique",
+											"Run configuration name must be unique!" ) );
+				uniqueAlert->setTitle( i18n( "run_settings", "Run Settings" ) );
+				uniqueAlert->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+				uniqueAlert->showWhenReady();
+			}
+
+			msgBox->close();
+		} );
+	} );
+}
+
+void UIBuildSettings::runSelect( Uint32 index ) {
+	UIWidget* cont = find<UIWidget>( "run_cont" );
+	auto bs = cont->findByClass<UIBuildStep>( String::toString( 0 ) );
+	if ( index < mBuild.mRun.size() ) {
+		bs->updateStep( 0, &mBuild.mRun[index] );
+	} else {
+		if ( mBuild.mRun.empty() ) {
+			mBuild.mRun.push_back( {} );
+			mBuild.mRun.back().name = i18n( "custom_executable", "Custom Executable" );
+		}
+		bs->updateStep( 0, &mBuild.mRun[0] );
+	}
+}
+
+void UIBuildSettings::runRemove( bool all, UIDropDownList* runList,
+								 UIDropDownList* panelRunListDDL ) {
+
+	if ( runList->getListBox()->isEmpty() )
+		return;
+
+	if ( all ) {
+		runList->getListBox()->clear();
+		if ( panelRunListDDL )
+			panelRunListDDL->getListBox()->clear();
+		mBuild.mRun.clear();
+	} else {
+		auto name = runList->getListBox()->getItemSelectedText();
+		mBuild.mRun.erase( mBuild.mRun.begin() + runList->getListBox()->getItemSelectedIndex() );
+		runList->getListBox()->removeListBoxItem( name );
+		if ( panelRunListDDL )
+			panelRunListDDL->getListBox()->removeListBoxItem( name );
+	}
+
+	runUpdate( false, runList, panelRunListDDL );
+
+	if ( all )
+		runSelect();
+}
+
+void UIBuildSettings::runUpdate( bool recreateList, UIDropDownList* runList,
+								 UIDropDownList* panelRunListDDL ) {
+	if ( recreateList ) {
+		runList->getListBox()->clear();
+		if ( panelRunListDDL )
+			panelRunListDDL->getListBox()->clear();
+
+		size_t i = 1;
+		for ( const auto& run : mBuild.mRun ) {
+			auto name =
+				run.name.empty()
+					? String::format(
+						  i18n( "custom_executable_num", "Custom Executable %d" ).toUtf8(), i )
+					: run.name;
+			runList->getListBox()->addListBoxItem( name );
+			if ( panelRunListDDL )
+				panelRunListDDL->getListBox()->addListBoxItem( name );
+			i++;
+		}
+	}
+
+	bool runButEnabled = !runList->getListBox()->isEmpty();
+	runList->setEnabled( runButEnabled );
+	if ( panelRunListDDL )
+		panelRunListDDL->setEnabled( runButEnabled );
+	find( "run_cont" )->setEnabled( runButEnabled )->setVisible( runButEnabled );
+	find( "run_remove" )->setEnabled( runButEnabled );
+	find( "run_remove_all" )->setEnabled( runButEnabled );
+	find( "run_rename" )->setEnabled( runButEnabled );
+	find( "run_clone" )->setEnabled( runButEnabled );
+}
+
+Uint32 UIBuildSettings::runIndex() const {
+	for ( size_t i = 0; i < mBuild.mRun.size(); i++ ) {
+		if ( mBuild.mRun[i].name == mConfig.runName )
+			return i;
+	}
+	return 0;
 }
 
 } // namespace ecode

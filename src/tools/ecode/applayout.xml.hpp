@@ -317,6 +317,9 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .settings_panel .buttons_box > * {
 	margin-bottom: 4dp;
 }
+.settings_panel .stack_margins > * {
+	margin-right:4dp;
+}
 .settings_panel TableView {
 	margin-top: 4dp;
 }
