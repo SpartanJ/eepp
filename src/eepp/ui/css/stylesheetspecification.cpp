@@ -695,6 +695,10 @@ static int getIndexEndingWith( const std::vector<std::string>& vec, const std::s
 	return -1;
 }
 
+static bool isKeywordPosition( const std::string& str ) {
+	return str == "center" || str == "top" || str == "bottom" || str == "left" || str == "right";
+}
+
 void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["empty"] = []( const ShorthandDefinition*,
 									 std::string ) -> std::vector<StyleSheetProperty> {
@@ -815,43 +819,45 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string>& propNames = shorthand->getProperties();
 		std::vector<std::string> values = String::split( value, ',' );
-		std::map<std::string, std::vector<std::string>> tmpProperties;
+		std::unordered_map<std::string, std::vector<std::string>> tmpProperties;
 
 		for ( auto& val : values ) {
 			std::vector<std::string> pos = String::split( val, ' ' );
+			bool lastWasKeyword = false;
+			bool isXAxis = true;
+			std::string xAxis = "";
+			std::string yAxis = "";
 
-			if ( pos.size() == 1 )
-				pos.push_back( "center" );
+			for ( const auto& data : pos ) {
+				bool isKeyword = isKeywordPosition( data );
+				if ( isXAxis && ( isKeyword && lastWasKeyword ) )
+					isXAxis = false;
 
-			if ( pos.size() == 2 ) {
-				int xFloatIndex = 0;
-				int yFloatIndex = 1;
+				if ( isXAxis )
+					xAxis += data + " ";
+				else
+					yAxis += data + " ";
 
-				if ( "bottom" == pos[0] || "top" == pos[0] ) {
-					xFloatIndex = 1;
-					yFloatIndex = 0;
-				}
+				if ( isXAxis && ( !isKeyword && !lastWasKeyword ) )
+					isXAxis = false;
 
-				tmpProperties[propNames[0]].emplace_back( pos[xFloatIndex] );
-				tmpProperties[propNames[1]].emplace_back( pos[yFloatIndex] );
-			} else if ( pos.size() > 2 ) {
-				if ( pos.size() == 3 ) {
-					pos.push_back( "0dp" );
-				}
-
-				int xFloatIndex = 0;
-				int yFloatIndex = 2;
-
-				if ( "bottom" == pos[0] || "top" == pos[0] ) {
-					xFloatIndex = 2;
-					yFloatIndex = 0;
-				}
-
-				tmpProperties[propNames[0]].emplace_back( pos[xFloatIndex] + " " +
-														  pos[xFloatIndex + 1] );
-				tmpProperties[propNames[1]].emplace_back( pos[yFloatIndex] + " " +
-														  pos[yFloatIndex + 1] );
+				lastWasKeyword = isKeyword;
 			}
+
+			if ( xAxis.empty() )
+				xAxis = "center";
+
+			if ( yAxis.empty() )
+				yAxis = "center";
+
+			if ( String::startsWith( xAxis, "top" ) || String::startsWith( xAxis, "bottom" ) )
+				std::swap( xAxis, yAxis );
+
+			String::trimInPlace( xAxis );
+			String::trimInPlace( yAxis );
+
+			tmpProperties[propNames[0]].emplace_back( xAxis );
+			tmpProperties[propNames[1]].emplace_back( yAxis );
 		}
 
 		for ( auto& props : tmpProperties ) {

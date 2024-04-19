@@ -569,68 +569,57 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 	return size;
 }
 
-Vector2f UINodeDrawable::LayerDrawable::calcPosition( const std::string& positionEq ) {
+Vector2f UINodeDrawable::LayerDrawable::calcPosition( std::string positionXEq,
+													  std::string positionYEq ) {
 	Vector2f position( Vector2f::Zero );
-	std::vector<std::string> pos = String::split( positionEq, ' ' );
 
-	if ( pos.size() == 1 )
-		pos.push_back( "center" );
+	if ( positionXEq.empty() )
+		positionXEq = "center";
 
-	bool needsRoundingX = false;
-	bool needsRoundingY = false;
+	if ( positionYEq.empty() )
+		positionXEq = "center";
 
-	if ( pos.size() == 2 ) {
-		int xFloatIndex = 0;
-		int yFloatIndex = 1;
+	auto posX = String::split( positionXEq, ' ' );
+	auto posY = String::split( positionYEq, ' ' );
 
-		if ( "bottom" == pos[0] || "top" == pos[0] ) {
-			xFloatIndex = 1;
-			yFloatIndex = 0;
-		}
+	if ( posX.empty() || posY.empty() )
+		return position;
 
-		CSS::StyleSheetLength xl( pos[xFloatIndex] );
-		CSS::StyleSheetLength yl( pos[yFloatIndex] );
-		position.x = mContainer->getOwner()->convertLength(
-			xl, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getWidth() );
-		position.y = mContainer->getOwner()->convertLength(
-			yl, mContainer->getOwner()->getPixelsSize().getHeight() - mDrawableSize.getHeight() );
+	bool needsRoundingX = positionXEq.back() == '%';
+	bool needsRoundingY = positionYEq.back() == '%';
 
-		needsRoundingX = pos[xFloatIndex][pos[xFloatIndex].size() - 1] == '%';
-		needsRoundingY = pos[yFloatIndex][pos[yFloatIndex].size() - 1] == '%';
-	} else if ( pos.size() > 2 ) {
-		if ( pos.size() == 3 ) {
-			pos.push_back( "0dp" );
-		}
-
-		int xFloatIndex = 0;
-		int yFloatIndex = 2;
-
-		if ( "bottom" == pos[0] || "top" == pos[0] ) {
-			xFloatIndex = 2;
-			yFloatIndex = 0;
-		}
-
-		CSS::StyleSheetLength xl1( pos[xFloatIndex] );
-		CSS::StyleSheetLength xl2( pos[xFloatIndex + 1] );
-		CSS::StyleSheetLength yl1( pos[yFloatIndex] );
-		CSS::StyleSheetLength yl2( pos[yFloatIndex + 1] );
+	if ( posX.size() == 2 ) {
+		CSS::StyleSheetLength xl1( posX[0] );
+		CSS::StyleSheetLength xl2( posX[1] );
 
 		position.x = mContainer->getOwner()->convertLength(
 			xl1, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getWidth() );
 
 		Float xl2Val = mContainer->getOwner()->convertLength(
 			xl2, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getWidth() );
-		position.x += ( pos[xFloatIndex] == "right" ) ? -xl2Val : xl2Val;
+
+		position.x += ( posX[0] == "right" ) ? -xl2Val : xl2Val;
+	} else {
+		CSS::StyleSheetLength xl( posX[0] );
+		position.x = mContainer->getOwner()->convertLength(
+			xl, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getWidth() );
+	}
+
+	if ( posY.size() == 2 ) {
+		CSS::StyleSheetLength yl1( posY[0] );
+		CSS::StyleSheetLength yl2( posY[1] );
 
 		position.y = mContainer->getOwner()->convertLength(
-			yl1, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getHeight() );
+			yl1, mContainer->getOwner()->getPixelsSize().getHeight() - mDrawableSize.getHeight() );
 
-		Float yl2Val = mContainer->getOwner()->convertLength(
-			yl2, mContainer->getOwner()->getPixelsSize().getWidth() - mDrawableSize.getHeight() );
-		position.y += ( pos[yFloatIndex] == "bottom" ) ? -yl2Val : yl2Val;
+		Float xl2Val = mContainer->getOwner()->convertLength(
+			yl2, mContainer->getOwner()->getPixelsSize().getHeight() - mDrawableSize.getHeight() );
 
-		needsRoundingX = pos[xFloatIndex][pos[xFloatIndex].size() - 1] == '%';
-		needsRoundingY = pos[yFloatIndex][pos[yFloatIndex].size() - 1] == '%';
+		position.y += ( posY[0] == "bottom" ) ? -xl2Val : xl2Val;
+	} else {
+		CSS::StyleSheetLength yl( posY[0] );
+		position.y = mContainer->getOwner()->convertLength(
+			yl, mContainer->getOwner()->getPixelsSize().getHeight() - mDrawableSize.getHeight() );
 	}
 
 	if ( needsRoundingX )
@@ -701,7 +690,7 @@ void UINodeDrawable::LayerDrawable::update() {
 	}
 
 	mDrawableSize = calcDrawableSize( mSizeEq );
-	mOffset = calcPosition( mPositionX + " " + mPositionY );
+	mOffset = calcPosition( mPositionX, mPositionY );
 
 	mNeedsUpdate = false;
 }

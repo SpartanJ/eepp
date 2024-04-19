@@ -74,7 +74,7 @@ class EE_API UINodeDrawable : public Drawable {
 
 		Sizef calcDrawableSize( const std::string& drawableSizeEq );
 
-		Vector2f calcPosition( const std::string& positionEq );
+		Vector2f calcPosition( std::string positionXEq, std::string positionYEq );
 
 		const std::string& getPositionX() const;
 
