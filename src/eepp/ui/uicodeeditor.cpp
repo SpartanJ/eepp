@@ -1069,18 +1069,26 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	menuAdd( menu, i18n( "uicodeeditor_undo", "Undo" ), "undo", "undo" )
-		->setEnabled( mDoc->hasUndo() );
-	menuAdd( menu, i18n( "uicodeeditor_redo", "Redo" ), "redo", "redo" )
-		->setEnabled( mDoc->hasRedo() );
-	menu->addSeparator();
+	if ( !mLocked ) {
+		menuAdd( menu, i18n( "uicodeeditor_undo", "Undo" ), "undo", "undo" )
+			->setEnabled( mDoc->hasUndo() );
+		menuAdd( menu, i18n( "uicodeeditor_redo", "Redo" ), "redo", "redo" )
+			->setEnabled( mDoc->hasRedo() );
+		menu->addSeparator();
 
-	menuAdd( menu, i18n( "uicodeeditor_cut", "Cut" ), "cut", "cut" )
-		->setEnabled( mDoc->hasSelection() );
+		menuAdd( menu, i18n( "uicodeeditor_cut", "Cut" ), "cut", "cut" )
+			->setEnabled( mDoc->hasSelection() );
+	}
+
 	menuAdd( menu, i18n( "uicodeeditor_copy", "Copy" ), "copy", "copy" )
 		->setEnabled( mDoc->hasSelection() );
-	menuAdd( menu, i18n( "uicodeeditor_paste", "Paste" ), "paste", "paste" );
-	menuAdd( menu, i18n( "uicodeeditor_delete", "Delete" ), "delete-text", "delete-to-next-char" );
+
+	if ( !mLocked ) {
+		menuAdd( menu, i18n( "uicodeeditor_paste", "Paste" ), "paste", "paste" );
+		menuAdd( menu, i18n( "uicodeeditor_delete", "Delete" ), "delete-text",
+				 "delete-to-next-char" );
+	}
+
 	menu->addSeparator();
 	menuAdd( menu, i18n( "uicodeeditor_select_all", "Select All" ), "select-all", "select-all" );
 
@@ -3423,7 +3431,9 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "copy-file-path-and-position", [this] { copyFilePath( true ); } );
 	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
 	mDoc->setCommand( "open-context-menu", [this] { createContextMenu(); } );
-	mUnlockedCmd.insert( { "copy", "select-all" } );
+	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
+						   "copy-containing-folder-path", "copy-file-path",
+						   "copy-file-path-and-position", "open-context-menu", "find-replace" } );
 }
 
 void UICodeEditor::showFindReplace() {
@@ -3435,6 +3445,7 @@ void UICodeEditor::showFindReplace() {
 		return;
 	if ( nullptr == mFindReplace )
 		mFindReplace = UIDocFindReplace::New( this, mDoc );
+	mFindReplace->setReplaceDisabled( mLocked );
 	mFindReplace->show();
 
 	if ( mUISceneNode != curSceneNode )

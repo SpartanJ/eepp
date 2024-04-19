@@ -376,11 +376,12 @@ if not %autoclose%==1 pause
 static void openExternal( const std::string&, const std::string& cmd, const std::string&,
 						  const std::string& workingDir ) {
 	static const std::string externalShell = "open -a terminal";
-	if ( !cmd.empty() )
+	if ( !cmd.empty() ) {
 		std::string fcmd = externalShell + " \"" + cmd + "\"";
-	Log::info( "Running: %s", fcmd );
-	Sys::execute( fcmd, workingDir );
-	else Sys::execute( externalShell, workingDir );
+		Log::info( "Running: %s", fcmd );
+		Sys::execute( fcmd, workingDir );
+	} else
+		Sys::execute( externalShell, workingDir );
 }
 #else
 static void openExternal( const std::string&, const std::string& cmd, const std::string&,

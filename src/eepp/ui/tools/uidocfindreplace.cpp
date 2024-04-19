@@ -120,7 +120,7 @@ const char DOC_FIND_REPLACE_XML[] = R"xml(
 							  layout_to_left_of="ce_find_replace_box-escape-sequences" />
 				<selectbutton id="ce_find_replace_box-whole-word" class="whole-word"
 							  layout_width="wrap_content" layout_height="wrap_content"
-							  layout_gravity="right|center_vertical" tooltip="@string(Whole Word)"
+							  layout_gravity="right|center_vertical" tooltip="@string(whole_word, Whole Word)"
 							  layout_to_left_of="ce_find_replace_box-match-case" marginRight="2dp" />
 				<selectbutton id="ce_find_replace_box-regex" class="regex" layout_width="wrap_content"
 							  layout_height="wrap_content" layout_gravity="right|center_vertical"
@@ -178,6 +178,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 
 	setParent( parent );
 
+	mFindReplaceToggle = querySelector( ".find_replace_toggle" );
 	mReplaceBox = querySelector( ".replace_box" );
 	mToggle = querySelector( ".find_replace_toggle" );
 	mToggle->addEventListener( Event::MouseClick, [this]( const Event* event ) {
@@ -214,14 +215,22 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	setCommand( "close-find-replace", [this] { hide(); } );
 	setCommand( "repeat-find", [this] { findNextText( mSearchState ); } );
 	setCommand( "replace-all", [this] {
+		if ( mReplaceDisabled )
+			return;
 		/*size_t count = */ replaceAll( mSearchState, mReplaceInput->getText() );
 		mReplaceInput->setFocus();
 	} );
-	setCommand( "find-and-replace",
-				[this] { findAndReplace( mSearchState, mReplaceInput->getText() ); } );
+	setCommand( "find-and-replace", [this] {
+		if ( mReplaceDisabled )
+			return;
+		findAndReplace( mSearchState, mReplaceInput->getText() );
+	} );
 	setCommand( "find-prev", [this] { findPrevText( mSearchState ); } );
-	setCommand( "replace-selection",
-				[this] { replaceSelection( mSearchState, mReplaceInput->getText() ); } );
+	setCommand( "replace-selection", [this] {
+		if ( mReplaceDisabled )
+			return;
+		replaceSelection( mSearchState, mReplaceInput->getText() );
+	} );
 	setCommand( "change-case", [this, editor] {
 		mCaseSensitive->setSelected( !mCaseSensitive->isSelected() );
 		refreshHighlight( editor );
@@ -281,6 +290,8 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mReplaceInput->setTabStop();
 
 	mFindInput->addEventListener( Event::OnTabNavigate, [this]( const Event* ) {
+		if ( mReplaceDisabled  )
+			return;
 		if ( !mToggle->hasClass( "enabled" ) ) {
 			mToggle->addClass( "enabled" );
 			mReplaceBox->addClass( "enabled" );
@@ -396,6 +407,17 @@ void UIDocFindReplace::hide() {
 	}
 
 	getParent()->setFocus();
+}
+
+bool UIDocFindReplace::isReplaceDisabled() const {
+	return mReplaceDisabled;
+}
+
+void UIDocFindReplace::setReplaceDisabled( bool replaceDisabled ) {
+	if ( replaceDisabled != mReplaceDisabled ) {
+		mReplaceDisabled = replaceDisabled;
+		mFindReplaceToggle->setVisible( !mReplaceDisabled );
+	}
 }
 
 bool UIDocFindReplace::findPrevText( TextSearchParams& search ) {

@@ -39,8 +39,14 @@ class EE_API UIDocFindReplace : public UILinearLayout, public WidgetCommandExecu
 
 	virtual void hide();
 
+	bool isReplaceDisabled() const;
+
+	void setReplaceDisabled( bool replaceDisabled );
+
   protected:
 	bool mReady{ false };
+	bool mReplaceDisabled{ false };
+	UIWidget* mFindReplaceToggle{ nullptr };
 	UITextInput* mFindInput{ nullptr };
 	UITextInput* mReplaceInput{ nullptr };
 	UISelectButton* mCaseSensitive{ nullptr };
