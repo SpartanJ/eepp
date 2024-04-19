@@ -314,7 +314,8 @@ ProjectBuildManager::~ProjectBuildManager() {
 
 ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::string& buildName,
 																	const ProjectBuildi18nFn& i18n,
-																	const std::string& buildType ) {
+																	const std::string& buildType,
+																	bool isClean ) {
 	const auto& buildIt = mBuilds.find( buildName );
 
 	if ( buildIt == mBuilds.end() )
@@ -337,7 +338,7 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( curDoc ) );
 	ProjectBuildCommandsRes res;
 
-	auto finalBuild( build.replaceVars( build.mBuild ) );
+	auto finalBuild( build.replaceVars( isClean ? build.mClean : build.mBuild ) );
 
 	for ( const auto& step : finalBuild ) {
 		ProjectBuildCommand buildCmd( step );
@@ -358,76 +359,11 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 	return res;
 }
 
-ProjectBuildCommandsRes ProjectBuildManager::build( const std::string& buildName,
-													const ProjectBuildi18nFn& i18n,
-													const std::string& buildType,
-													const ProjectBuildProgressFn& progressFn,
-													const ProjectBuildDoneFn& doneFn ) {
-	ProjectBuildCommandsRes res = generateBuildCommands( buildName, i18n, buildType );
-	if ( !res.isValid() )
-		return res;
-	if ( !mThreadPool ) {
-		res.errorMsg = i18n( "no_threads", "Threaded ecode required to compile builds." );
-		return res;
-	}
-
-	mThreadPool->run( [this, res, progressFn, doneFn, i18n, buildName, buildType]() {
-		runBuild( buildName, buildType, i18n, res, progressFn, doneFn );
-	} );
-
-	return res;
-};
-
-ProjectBuildCommandsRes ProjectBuildManager::generateCleanCommands( const std::string& buildName,
-																	const ProjectBuildi18nFn& i18n,
-																	const std::string& buildType ) {
-	const auto& buildIt = mBuilds.find( buildName );
-
-	if ( buildIt == mBuilds.end() )
-		return { i18n( "build_name_not_found", "Build name not found!" ) };
-
-	const auto& build = buildIt->second;
-
-	if ( !build.mBuildTypes.empty() && buildType.empty() )
-		return { i18n( "build_type_required", "Build type must be set!" ) };
-
-	std::string currentOS = String::toLower( Sys::getPlatform() );
-
-	if ( !build.isOSSupported( currentOS ) )
-		return {
-			i18n( "build_os_not_supported", "Operating System not supported for this build!" ) };
-
-	std::string nproc = String::format( "%d", Sys::getCPUCount() );
-	std::string curDoc = getCurrentDocument();
-	std::string curDocName =
-		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( curDoc ) );
-	ProjectBuildCommandsRes res;
-
-	auto finalBuild( build.replaceVars( build.mClean ) );
-
-	for ( const auto& step : finalBuild ) {
-		ProjectBuildCommand buildCmd( step );
-		replaceVar( buildCmd, VAR_OS, currentOS );
-		replaceVar( buildCmd, VAR_NPROC, nproc );
-		replaceVar( buildCmd, VAR_CURRENT_DOC, curDoc );
-		replaceVar( buildCmd, VAR_CURRENT_DOC_NAME, curDocName );
-		if ( !buildType.empty() )
-			replaceVar( buildCmd, VAR_BUILD_TYPE, buildType );
-		buildCmd.config = build.mConfig;
-		res.cmds.emplace_back( std::move( buildCmd ) );
-	}
-
-	res.envs = build.mEnvs;
-
-	return res;
-}
-
-ProjectBuildCommandsRes ProjectBuildManager::clean( const std::string& buildName,
-													const ProjectBuildi18nFn& i18n,
-													const std::string& buildType,
-													const ProjectBuildProgressFn& progressFn,
-													const ProjectBuildDoneFn& doneFn ) {
-	ProjectBuildCommandsRes res = generateCleanCommands( buildName, i18n, buildType );
+ProjectBuildCommandsRes
+ProjectBuildManager::build( const std::string& buildName, const ProjectBuildi18nFn& i18n,
+							const std::string& buildType, const ProjectBuildProgressFn& progressFn,
+							const ProjectBuildDoneFn& doneFn, bool isClean ) {
+	ProjectBuildCommandsRes res = generateBuildCommands( buildName, i18n, buildType, isClean );
 	if ( !res.isValid() )
 		return res;
 	if ( !mThreadPool ) {
@@ -725,8 +661,8 @@ void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc 
 				build = &buildIt.second;
 
 		if ( build )
-			sboc->runClean( build->getName(), mConfig.buildType,
-							getOutputParser( build->getName() ) );
+			sboc->runBuild( build->getName(), mConfig.buildType,
+							getOutputParser( build->getName() ), true );
 	}
 }
 
@@ -756,7 +692,8 @@ void ProjectBuildManager::runCurrentConfig( StatusBuildOutputController* /* not 
 				UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
 					finalBuild.workingDir, false );
 				if ( term == nullptr || term->getTerm() == nullptr ) {
-					mApp->getTerminalManager()->openInExternalTerminal( cmd );
+					mApp->getTerminalManager()->openInExternalTerminal( cmd,
+																		finalBuild.workingDir );
 				} else {
 					term->executeFile( cmd );
 				}

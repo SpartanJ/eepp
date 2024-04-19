@@ -101,7 +101,8 @@ static void safeInsertBuffer( TextDocument& doc, const std::string& buffer ) {
 
 void StatusBuildOutputController::runBuild( const std::string& buildName,
 											const std::string& buildType,
-											const ProjectBuildOutputParser& outputParser ) {
+											const ProjectBuildOutputParser& outputParser,
+											bool isClean ) {
 	if ( nullptr == mApp->getProjectBuildManager() )
 		return;
 
@@ -111,7 +112,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	showBuildOutput();
 
 	mStatusResults.clear();
-	if ( mTableIssues )
+	if ( !isClean && mTableIssues )
 		mTableIssues->getSelection().clear();
 	mBuildOutput->getDocument().reset();
 	mBuildOutput->invalidateLongestLineWidth();
@@ -149,28 +150,48 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton( mApp );
-	if ( buildButton )
-		buildButton->setText( mApp->i18n( "cancel_build", "Cancel Build" ) );
 	UIPushButton* cleanButton = getCleanButton( mApp );
+
+	bool enableBuildButton = false;
 	bool enableCleanButton = false;
-	if ( cleanButton && cleanButton->isEnabled() ) {
+
+	if ( isClean && buildButton && buildButton->isEnabled() ) {
+		buildButton->setEnabled( false );
+		enableBuildButton = true;
+	}
+
+	if ( !isClean && cleanButton && cleanButton->isEnabled() ) {
 		cleanButton->setEnabled( false );
 		enableCleanButton = true;
 	}
 
-	const auto updateBuildButton = [this, enableCleanButton]() {
+	if ( isClean ) {
+		if ( cleanButton )
+			cleanButton->setText( mApp->i18n( "cancel_clean", "Cancel Clean" ) );
+	} else {
+		if ( buildButton )
+			buildButton->setText( mApp->i18n( "cancel_build", "Cancel Build" ) );
+	}
+
+	const auto updateBuildButton = [this, isClean, enableBuildButton, enableCleanButton]() {
 		UIPushButton* buildButton = getBuildButton( mApp );
-		if ( buildButton ) {
+		UIPushButton* cleanButton = getCleanButton( mApp );
+
+		if ( !isClean && buildButton ) {
 			buildButton->runOnMainThread(
 				[this, buildButton] { buildButton->setText( mApp->i18n( "build", "Build" ) ); } );
 		}
 
-		if ( enableCleanButton ) {
-			UIPushButton* cleanButton = getCleanButton( mApp );
-			if ( cleanButton ) {
-				cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
-			}
+		if ( isClean && cleanButton ) {
+			cleanButton->runOnMainThread(
+				[this, cleanButton] { cleanButton->setText( mApp->i18n( "clean", "Clean" ) ); } );
 		}
+
+		if ( enableBuildButton && buildButton )
+			buildButton->setEnabled( true );
+
+		if ( enableCleanButton && cleanButton )
+			cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
 	};
 
 	auto res = pbm->build(
@@ -199,17 +220,19 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 				}
 			} while ( !buffer.empty() );
 		},
-		[this, updateBuildButton]( auto exitCode, const ProjectBuildCommand* cmd ) {
+		[this, updateBuildButton, isClean]( auto exitCode, const ProjectBuildCommand* cmd ) {
 			if ( !mCurLineBuffer.empty() && nullptr != cmd )
 				searchFindAndAddStatusResult( mPatternHolder, mCurLineBuffer, cmd );
 			String buffer;
 
 			if ( EXIT_SUCCESS == exitCode ) {
 				buffer = Sys::getDateTimeStr() + ": " +
-						 mApp->i18n( "build_successful", "Build run successfully\n" );
+						 ( isClean ? mApp->i18n( "clean_successful", "Clean run successfully\n" )
+								   : mApp->i18n( "build_successful", "Build run successfully\n" ) );
 			} else {
 				buffer = Sys::getDateTimeStr() + ": " +
-						 mApp->i18n( "build_failed", "Build run with errors\n" );
+						 ( isClean ? mApp->i18n( "clean_failed", "Clean run with errors\n" )
+								   : mApp->i18n( "build_failed", "Build run with errors\n" ) );
 			}
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
@@ -222,101 +245,12 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 			if ( !mApp->getWindow()->hasFocus() )
 				mApp->getWindow()->flash( WindowFlashOperation::UntilFocused );
-		} );
+		},
+		isClean );
 
 	if ( !res.isValid() ) {
 		mApp->getNotificationCenter()->addNotification( res.errorMsg );
 		updateBuildButton();
-	}
-}
-
-void StatusBuildOutputController::runClean( const std::string& buildName,
-											const std::string& buildType,
-											const ProjectBuildOutputParser& outputParser ) {
-	if ( nullptr == mApp->getProjectBuildManager() )
-		return;
-
-	auto pbm = mApp->getProjectBuildManager();
-
-	show();
-
-	mBuildOutput->getDocument().reset();
-	mBuildOutput->invalidateLongestLineWidth();
-	mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
-
-	std::vector<SyntaxPattern> patterns;
-
-	for ( const auto& parser : outputParser.getConfig() ) {
-		SyntaxPattern ptn( { parser.pattern }, getProjectOutputParserTypeToString( parser.type ) );
-		patterns.emplace_back( std::move( ptn ) );
-	}
-
-	patterns.emplace_back(
-		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*error.*[^\n]+" }, "error" ) );
-	patterns.emplace_back( SyntaxPattern(
-		{ "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*warning.*[^\n]+" }, "warning" ) );
-	patterns.emplace_back(
-		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
-
-	SyntaxDefinition synDef( "custom_build", {}, std::move( patterns ) );
-
-	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
-	mBuildOutput->getVScrollBar()->setValue( 1.f );
-	mScrollLocked = true;
-
-	UIPushButton* buildButton = getBuildButton( mApp );
-	bool enableBuildButton = false;
-	if ( buildButton && buildButton->isEnabled() ) {
-		buildButton->setEnabled( false );
-		enableBuildButton = true;
-	}
-	UIPushButton* cleanButton = getCleanButton( mApp );
-	if ( cleanButton )
-		cleanButton->setText( mApp->i18n( "cancel_clean", "Cancel Clean" ) );
-
-	auto res = pbm->clean(
-		buildName, [this]( const auto& key, const auto& def ) { return mApp->i18n( key, def ); },
-		buildType,
-		[this]( auto, auto buffer, auto ) {
-			mBuildOutput->runOnMainThread( [this, buffer]() {
-				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
-				if ( mScrollLocked )
-					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
-			} );
-		},
-		[this, enableBuildButton]( auto exitCode, auto ) {
-			String buffer;
-
-			if ( EXIT_SUCCESS == exitCode ) {
-				buffer = Sys::getDateTimeStr() + ": " +
-						 mApp->i18n( "clean_successful", "Clean run successfully\n" );
-			} else {
-				buffer = Sys::getDateTimeStr() + ": " +
-						 mApp->i18n( "clean_failed", "Clean run with errors\n" );
-			}
-
-			mBuildOutput->runOnMainThread( [this, buffer]() {
-				safeInsertBuffer( mBuildOutput->getDocument(), buffer );
-				if ( mScrollLocked )
-					mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
-			} );
-
-			UIPushButton* cleanButton = getCleanButton( mApp );
-			if ( cleanButton )
-				cleanButton->setText( mApp->i18n( "clean", "Clean" ) );
-
-			if ( enableBuildButton ) {
-				UIPushButton* buildButton = getBuildButton( mApp );
-				if ( buildButton )
-					buildButton->setEnabled( true );
-			}
-
-			if ( !mApp->getWindow()->hasFocus() )
-				mApp->getWindow()->flash( WindowFlashOperation::UntilFocused );
-		} );
-
-	if ( !res.isValid() ) {
-		mApp->getNotificationCenter()->addNotification( res.errorMsg );
 	}
 }
 

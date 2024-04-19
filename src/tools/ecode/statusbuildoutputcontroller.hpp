@@ -39,13 +39,10 @@ class StatusBuildOutputController : public StatusBarElement {
   public:
 	StatusBuildOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app );
 
-	virtual ~StatusBuildOutputController() {};
+	virtual ~StatusBuildOutputController(){};
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
-				   const ProjectBuildOutputParser& outputParser = {} );
-
-	void runClean( const std::string& buildName, const std::string& buildType,
-				   const ProjectBuildOutputParser& outputParser = {} );
+				   const ProjectBuildOutputParser& outputParser = {}, bool isClean = false );
 
 	UIWidget* getWidget();
 

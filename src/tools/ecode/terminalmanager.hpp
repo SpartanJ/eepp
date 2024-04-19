@@ -58,9 +58,9 @@ class TerminalManager {
 
 	void setKeybindings( UITerminal* term );
 
-	void displayError();
+	void displayError( const std::string& workingDir );
 
-	void openInExternalTerminal( const std::string& cmd );
+	void openInExternalTerminal( const std::string& cmd, const std::string& workingDir );
 
   protected:
 	App* mApp;

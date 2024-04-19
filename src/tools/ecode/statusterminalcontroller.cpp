@@ -35,7 +35,7 @@ UITerminal* StatusTerminalController::createTerminal( const std::string& working
 		nullptr, false );
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
-		mApp->getTerminalManager()->displayError();
+		mApp->getTerminalManager()->displayError( workingDir );
 		return nullptr;
 	}
 

@@ -251,20 +251,12 @@ class ProjectBuildManager {
 	ProjectBuildCommandsRes build( const std::string& buildName, const ProjectBuildi18nFn& i18n,
 								   const std::string& buildType = "",
 								   const ProjectBuildProgressFn& progressFn = {},
-								   const ProjectBuildDoneFn& doneFn = {} );
+								   const ProjectBuildDoneFn& doneFn = {}, bool isClean = false );
 
 	ProjectBuildCommandsRes generateBuildCommands( const std::string& buildName,
 												   const ProjectBuildi18nFn& i18n,
-												   const std::string& buildType = "" );
-
-	ProjectBuildCommandsRes clean( const std::string& buildName, const ProjectBuildi18nFn& i18n,
-								   const std::string& buildType = "",
-								   const ProjectBuildProgressFn& progressFn = {},
-								   const ProjectBuildDoneFn& doneFn = {} );
-
-	ProjectBuildCommandsRes generateCleanCommands( const std::string& buildName,
-												   const ProjectBuildi18nFn& i18n,
-												   const std::string& buildType = "" );
+												   const std::string& buildType = "",
+												   bool isClean = false );
 
 	ProjectBuildOutputParser getOutputParser( const std::string& buildName );
 

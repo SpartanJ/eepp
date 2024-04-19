@@ -43,7 +43,7 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 				   const std::string& match, const size_t& max ) {
 	AutoCompletePlugin::SymbolsList matches;
 	matches.reserve( max );
-	int score;
+	int score = 0;
 	for ( const auto& symbols : symbolsVec ) {
 		for ( const auto& symbol : *symbols ) {
 			if ( symbol.kind == LSPCompletionItemKind::Snippet ||

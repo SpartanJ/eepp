@@ -505,6 +505,7 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	mPluginsPath = mConfigPath + "plugins";
 	mLanguagesPath = mConfigPath + "languages";
 	mThemesPath = mConfigPath + "themes";
+	mScriptsPath = mConfigPath + "scripts";
 	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes" +
 						FileSystem::getOSSlash();
 	mTerminalManager = std::make_unique<TerminalManager>( this );
@@ -524,6 +525,10 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	if ( !FileSystem::fileExists( mThemesPath ) )
 		FileSystem::makeDir( mThemesPath );
 	FileSystem::dirAddSlashAtEnd( mThemesPath );
+
+	if ( !FileSystem::fileExists( mScriptsPath ) )
+		FileSystem::makeDir( mScriptsPath );
+	FileSystem::dirAddSlashAtEnd( mScriptsPath );
 
 	mLogsPath = mConfigPath + "ecode.log";
 

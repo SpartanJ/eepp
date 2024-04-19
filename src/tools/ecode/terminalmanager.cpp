@@ -2,12 +2,22 @@
 #include "ecode.hpp"
 #include <eepp/system/filesystem.hpp>
 
+using namespace std::literals;
+
 namespace ecode {
 
 TerminalManager::TerminalManager( App* app ) : mApp( app ) {}
 
 UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workingDir,
 													   bool fallback ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::string os = Sys::getOSName( true );
+	if ( !LuaPattern::matches( os, "Windows 1%d"sv ) &&
+		 !LuaPattern::matches( os, "Windows Server 201[69]"sv ) &&
+		 !LuaPattern::matches( os, "Windows Server 202%d"sv ) )
+		return nullptr;
+#endif
+
 	UITerminal* term = nullptr;
 	auto splitter = mApp->getSplitter();
 	auto& config = mApp->getConfig();
@@ -282,42 +292,125 @@ void TerminalManager::updateMenuColorScheme( UIMenuSubMenu* colorSchemeMenu ) {
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-static void openExternal( const std::string& defShell, const std::string& cmd = "" ) {
+std::string quoteString( std::string str ) {
+	std::string escapedStr = "";
+	for ( char chr : str ) {
+		if ( std::strchr( "()%!^\"<>&| ", chr ) )
+			escapedStr += '^';
+		escapedStr += chr;
+	}
+	return escapedStr;
+}
+
+static void openExternal( const std::string& defShell, const std::string& cmd,
+						  const std::string& scriptsPath, const std::string& workingDir ) {
+	// This is an utility bat script based in the Geany utility script called "geany-run-helper"
+	static const std::string RUN_HELPER =
+		R"shellscript(REM USAGE: ecode-run-helper DIRECTORY AUTOCLOSE COMMAND...
+
+REM unnecessary, but we get the directory
+cd %1
+shift
+REM save autoclose option and remove it
+set autoclose=%1
+shift
+
+REM spawn the child
+REM it's tricky because shift doesn't affect %*, so hack it out
+REM https://en.wikibooks.org/wiki/Windows_Batch_Scripting#Command-line_arguments
+set SPAWN=
+:argloop
+if -%1-==-- goto argloop_end
+	set SPAWN=%SPAWN% %1
+	shift
+goto argloop
+:argloop_end
+%SPAWN%
+
+REM show the result
+echo:
+echo:
+echo:------------------
+echo:(program exited with code: %ERRORLEVEL%)
+echo:
+
+REM and if wanted, wait on the user
+if not %autoclose%==1 pause
+	)shellscript";
+	if ( !cmd.empty() && !scriptsPath.empty() ) {
+		std::string runHelperPath = scriptsPath + "ecode-run-helper.bat";
+		if ( !FileSystem::fileExists( runHelperPath ) )
+			FileSystem::fileWrite( runHelperPath, RUN_HELPER );
+		std::string cmdDir = String::trim( FileSystem::fileRemoveFileName( cmd ) );
+		if ( cmdDir.empty() )
+			cmdDir = workingDir;
+		std::string cmdFile = String::trim( FileSystem::fileNameFromPath( cmd ) );
+		auto fcmd = "cmd.exe /q /c " + quoteString( "\"" + runHelperPath + "\" \"" + cmdDir +
+													"\" 0 \"" + cmdFile + "\"" );
+		Log::info( "Running: %s", fcmd );
+		Sys::execute( fcmd, workingDir );
+		return;
+	}
+
 	std::vector<std::string> options;
 	if ( !defShell.empty() )
 		options.push_back( defShell );
 	options.push_back( "cmd" );
 	options.push_back( "powershell" );
-#else
-static void openExternal( const std::string&, const std::string& cmd = "" ) {
-	std::vector<std::string> options = { "gnome-terminal", "konsole", "xterm", "st" };
-#endif
 	for ( const auto& option : options ) {
 		auto externalShell( Sys::which( option ) );
 		if ( !externalShell.empty() ) {
 			if ( !cmd.empty() ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-				auto fcmd = externalShell + " /q /c " + cmd;
-#else
-				auto fcmd = externalShell + " -e " + cmd;
-#endif
-				Sys::execute( fcmd );
+				auto fcmd = externalShell + " /q /c " + quoteString( "\"" + cmd + "\"" );
+				Log::info( "Running: %s", fcmd );
+				Sys::execute( fcmd, workingDir );
 				return;
 			} else {
-				Sys::execute( externalShell );
+				Sys::execute( externalShell, workingDir );
 				return;
 			}
 		}
 	}
 }
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+static void openExternal( const std::string&, const std::string& cmd, const std::string&,
+						  const std::string& workingDir ) {
+	static const std::string externalShell = "open -a terminal";
+	if ( !cmd.empty() )
+		std::string fcmd = externalShell + " \"" + cmd + "\"";
+	Log::info( "Running: %s", fcmd );
+	Sys::execute( fcmd, workingDir );
+	else Sys::execute( externalShell, workingDir );
+}
+#else
+static void openExternal( const std::string&, const std::string& cmd, const std::string&,
+						  const std::string& workingDir ) {
+	std::vector<std::string> options = { "gnome-terminal", "konsole", "xterm", "st" };
+	for ( const auto& option : options ) {
+		auto externalShell( Sys::which( option ) );
+		if ( !externalShell.empty() ) {
+			if ( !cmd.empty() ) {
+				auto fcmd = externalShell + " -e \"" + cmd + "\"";
+				Log::info( "Running: %s", fcmd );
+				Sys::execute( fcmd, workingDir );
+				return;
+			} else {
+				Sys::execute( externalShell, workingDir );
+				return;
+			}
+		}
+	}
+}
+#endif
 
-void TerminalManager::openInExternalTerminal( const std::string& cmd ) {
-	openExternal( mApp->termConfig().shell, cmd );
+void TerminalManager::openInExternalTerminal( const std::string& cmd,
+											  const std::string& workingDir ) {
+	openExternal( mApp->termConfig().shell, cmd, mApp->getScriptsPath(), workingDir );
 }
 
-void TerminalManager::displayError() {
+void TerminalManager::displayError( const std::string& workingDir ) {
 	if ( mApp->getConfig().term.unsupportedOSWarnDisabled ) {
-		openExternal( mApp->termConfig().shell );
+		openExternal( mApp->termConfig().shell, "", mApp->getScriptsPath(), workingDir );
 	} else {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK,
@@ -335,10 +428,10 @@ void TerminalManager::displayError() {
 		chkDoNotWarn->setText( mApp->i18n( "terminal_not_supported_do_not_warn",
 										   "Always open an external terminal (do not warn)" ) );
 		chkDoNotWarn->toPosition( 1 );
-		msgBox->on( Event::OnConfirm, [this, chkDoNotWarn]( const Event* ) {
+		msgBox->on( Event::OnConfirm, [this, chkDoNotWarn, workingDir]( const Event* ) {
 			if ( chkDoNotWarn->isChecked() )
 				mApp->getConfig().term.unsupportedOSWarnDisabled = true;
-			openExternal( mApp->termConfig().shell );
+			openExternal( mApp->termConfig().shell, "", mApp->getScriptsPath(), workingDir );
 		} );
 		msgBox->showWhenReady();
 	}
@@ -395,7 +488,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
 		if ( fallback )
-			displayError();
+			displayError( workingDir );
 		return nullptr;
 	}
 

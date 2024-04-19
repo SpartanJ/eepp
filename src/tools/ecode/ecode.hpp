@@ -443,6 +443,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	std::pair<bool, std::string> generateConfigPath();
 
+	const std::string getScriptsPath() const { return mScriptsPath; }
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -479,6 +481,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mThemesPath;
 	std::string mLogsPath;
 	std::string mi18nPath;
+	std::string mScriptsPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
