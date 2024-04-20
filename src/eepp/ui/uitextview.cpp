@@ -482,7 +482,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
 
-			mTextCache->findWordFromCharacterIndex( curPos, tSelCurInit, tSelCurEnd );
+			getVisibleTextCache()->findWordFromCharacterIndex( curPos, tSelCurInit, tSelCurEnd );
 
 			selCurInit( tSelCurEnd );
 			selCurEnd( tSelCurInit );
@@ -513,7 +513,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 		nodePos.x = eemax( 0.f, nodePos.x );
 		nodePos.y = eemax( 0.f, nodePos.y );
 
-		Int32 curPos = mTextCache->findCharacterFromPos( nodePos.asInt() );
+		Int32 curPos = getVisibleTextCache()->findCharacterFromPos( nodePos.asInt() );
 
 		if ( -1 != curPos ) {
 			if ( !mSelecting ) {
@@ -654,6 +654,10 @@ void UITextView::onSelectionChange() {
 	}
 
 	invalidateDraw();
+}
+
+Text* UITextView::getVisibleTextCache() const {
+	return mTextCache;
 }
 
 const Int32& UITextView::getFontLineCenter() {

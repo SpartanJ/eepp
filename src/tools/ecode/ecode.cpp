@@ -383,6 +383,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
 				 FileSystem::fileWrite( path, "" ) ) {
 				if ( editor->getDocument().save( path ) ) {
+					insertRecentFileAndUpdateUI( path );
 					updateEditorState();
 				} else {
 					UIMessageBox* msg =
@@ -1934,20 +1935,28 @@ bool App::dirInFolderWatches( const std::string& dir ) {
 	return false;
 }
 
-void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
-	updateEditorTitle( editor );
-	if ( mSplitter->curEditorExistsAndFocused() && editor == mSplitter->getCurEditor() )
-		mSettings->updateCurrentFileType();
-	mSplitter->removeUnusedTab( mSplitter->tabWidgetFromEditor( editor ) );
+void App::insertRecentFile( const std::string& path ) {
 	auto found = std::find( mRecentFiles.begin(), mRecentFiles.end(), path );
 	if ( found != mRecentFiles.end() )
 		mRecentFiles.erase( found );
 	mRecentFiles.insert( mRecentFiles.begin(), path );
 	if ( mRecentFiles.size() > 10 )
 		mRecentFiles.resize( 10 );
+}
+
+void App::insertRecentFileAndUpdateUI( const std::string& path ) {
+	insertRecentFile( path );
 	cleanUpRecentFiles();
 	auto urfId = String::hash( "updateRecentFiles" );
 	mUISceneNode->debounce( [this] { updateRecentFiles(); }, Seconds( 0.5f ), urfId );
+}
+
+void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
+	updateEditorTitle( editor );
+	if ( mSplitter->curEditorExistsAndFocused() && editor == mSplitter->getCurEditor() )
+		mSettings->updateCurrentFileType();
+	mSplitter->removeUnusedTab( mSplitter->tabWidgetFromEditor( editor ) );
+	insertRecentFileAndUpdateUI( path );
 	if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() == editor ) {
 		mSettings->updateDocumentMenu();
 		updateDocInfo( editor->getDocument() );

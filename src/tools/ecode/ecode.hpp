@@ -627,6 +627,10 @@ class App : public UICodeEditorSplitter::Client {
 	void onReady();
 
 	bool dirInFolderWatches( const std::string& dir );
+
+	void insertRecentFile( const std::string& path );
+
+	void insertRecentFileAndUpdateUI( const std::string& path );
 };
 
 } // namespace ecode

@@ -49,6 +49,8 @@
 					<ScrollBar id="scrollbar" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="slider" />
 
 					<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="scrollbar" />
+					
+					<InputPassword id="spinbox" layout_width="200dp" layout_height="wrap_content" layout_to_bottom_of="spinbox" text="test" margin-top="8dp" />
 
 					<TextEdit layout_width="200dp" layout_height="50dp" layout_gravity="bottom|center_horizontal" />
 				</RelativeLayout>

@@ -183,6 +183,8 @@ class EE_API UITextView : public UIWidget {
 
 	virtual void onSelectionChange();
 
+	virtual Text* getVisibleTextCache() const;
+
 	const Int32& getFontLineCenter();
 
 	void transformText();

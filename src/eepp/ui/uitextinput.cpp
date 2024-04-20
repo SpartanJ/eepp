@@ -217,7 +217,7 @@ void UITextInput::alignFix() {
 	}
 
 	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
-		Float tW = mTextCache->findCharacterPos( selCurInit() ).x;
+		Float tW = getVisibleTextCache()->findCharacterPos( selCurInit() ).x;
 		mCurPos.x = tW;
 		mCurPos.y = 0;
 
