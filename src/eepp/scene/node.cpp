@@ -1646,10 +1646,11 @@ void Node::setRotationOrigin( float x, float y ) {
 	setRotationOriginPoint( OriginPoint( x, y ) );
 }
 
-Uint32 Node::onFocus() {
+Uint32 Node::onFocus( NodeFocusReason reason ) {
 	mNodeFlags |= NODE_FLAG_HAS_FOCUS;
 
-	sendCommonEvent( Event::OnFocus );
+	FocusEvent event( this, Event::OnFocus, reason );
+	sendEvent( &event );
 
 	invalidateDraw();
 
@@ -1674,7 +1675,7 @@ bool Node::hasFocusWithin() const {
 	return hasFocus() || inParentTreeOf( getEventDispatcher()->getFocusNode() );
 }
 
-Node* Node::setFocus() {
+Node* Node::setFocus( NodeFocusReason ) {
 	return this;
 }
 

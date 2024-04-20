@@ -218,7 +218,7 @@ class EE_API UIConsole : public UIWidget,
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
-	virtual Uint32 onFocus();
+	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
 

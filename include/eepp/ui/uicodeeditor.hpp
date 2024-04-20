@@ -768,7 +768,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	std::pair<size_t, Float> findLongestLineInRange( const TextRange& range );
 
-	virtual Uint32 onFocus();
+	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
 

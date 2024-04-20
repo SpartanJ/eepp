@@ -158,6 +158,9 @@ void DocSearchController::initSearchBar(
 	addClickListener( findReplaceButton, "find-and-replace" );
 	addClickListener( replaceAllButton, "replace-all" );
 	addClickListener( closeButton, "close-searchbar" );
+
+	mFindInput->setSelectAllDocOnTabNavigate( false );
+	mReplaceInput->setSelectAllDocOnTabNavigate( false );
 	mReplaceInput->addEventListener( Event::OnTabNavigate,
 									 [this]( const Event* ) { mFindInput->setFocus(); } );
 }

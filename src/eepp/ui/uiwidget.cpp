@@ -1040,7 +1040,7 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 	}
 }
 
-Uint32 UIWidget::onFocus() {
+Uint32 UIWidget::onFocus( NodeFocusReason reason ) {
 	pushState( UIState::StateFocusWithin );
 
 	Node* parent = mParentNode;
@@ -1050,7 +1050,7 @@ Uint32 UIWidget::onFocus() {
 		parent = parent->getParent();
 	}
 
-	return UINode::onFocus();
+	return UINode::onFocus( reason );
 }
 
 Uint32 UIWidget::onFocusLoss() {
@@ -2218,7 +2218,7 @@ void UIWidget::onFocusPrevWidget() {
 	if ( !isTabStop() ) {
 		Node* node = getPrevTabWidget();
 		if ( NULL != node ) {
-			node->setFocus();
+			node->setFocus( NodeFocusReason::Tab );
 			sendCommonEvent( Event::OnTabNavigate );
 		}
 	} else {
@@ -2230,7 +2230,7 @@ void UIWidget::onFocusNextWidget() {
 	if ( !isTabStop() ) {
 		Node* node = getNextTabWidget();
 		if ( NULL != node ) {
-			node->setFocus();
+			node->setFocus( NodeFocusReason::Tab );
 			sendCommonEvent( Event::OnTabNavigate );
 		}
 	} else {

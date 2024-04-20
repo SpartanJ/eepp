@@ -197,7 +197,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	virtual void onDrawDebugDataChange();
 
-	virtual Node* setFocus();
+	virtual Node* setFocus( NodeFocusReason reason = NodeFocusReason::Unknown);
 
 	virtual void onParentChange();
 

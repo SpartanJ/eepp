@@ -289,6 +289,8 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	mFindInput->setTabStop();
 	mReplaceInput->setTabStop();
 
+	mFindInput->setSelectAllDocOnTabNavigate( false );
+	mReplaceInput->setSelectAllDocOnTabNavigate( false );
 	mFindInput->addEventListener( Event::OnTabNavigate, [this]( const Event* ) {
 		if ( mReplaceDisabled  )
 			return;

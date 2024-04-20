@@ -338,10 +338,10 @@ void UIAbstractTableView::updateColumnsWidth() {
 	}
 }
 
-Uint32 UIAbstractTableView::onFocus() {
+Uint32 UIAbstractTableView::onFocus( NodeFocusReason reason ) {
 	if ( !Sys::isMobile() )
 		getUISceneNode()->getWindow()->startTextInput();
-	return UIAbstractView::onFocus();
+	return UIAbstractView::onFocus( reason );
 }
 
 Uint32 UIAbstractTableView::onFocusLoss() {

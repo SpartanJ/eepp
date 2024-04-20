@@ -155,7 +155,7 @@ class UITerminal : public UIWidget {
 
 	virtual void onPaddingChange();
 
-	virtual Uint32 onFocus();
+	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
 

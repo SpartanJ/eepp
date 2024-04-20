@@ -1019,8 +1019,8 @@ void UIConsole::resetCursor() {
 	mBlinkTimer.restart();
 }
 
-Uint32 UIConsole::onFocus() {
-	UIWidget::onFocus();
+Uint32 UIConsole::onFocus( NodeFocusReason reason ) {
+	UIWidget::onFocus( reason );
 
 	resetCursor();
 

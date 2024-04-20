@@ -119,6 +119,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	HintDisplay getHintDisplay() const;
 
+	bool getSelectAllDocOnTabNavigate() const;
+
+	void setSelectAllDocOnTabNavigate( bool selectAllDocOnTabNavigate );
+
   protected:
 	TextDocument mDoc;
 	Float mWaitCursorTime;
@@ -134,6 +138,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	bool mCreateDefaultContextMenuOptions{ true };
 	bool mEscapePastedText{ false };
 	bool mEnabledCreateContextMenu{ true };
+	bool mSelectAllDocOnTabNavigate{ true };
 	Uint32 mMaxLength{ 0 };
 	KeyBindings mKeyBindings;
 	Clock mLastDoubleClick;
@@ -164,7 +169,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
-	virtual Uint32 onFocus();
+	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
 
@@ -206,9 +211,9 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual void onDocumentMoved( TextDocument* );
 
-	void onDocumentClosed( TextDocument* ){};
+	void onDocumentClosed( TextDocument* ) {};
 
-	void onDocumentDirtyOnFileSystem( TextDocument* ){};
+	void onDocumentDirtyOnFileSystem( TextDocument* ) {};
 
 	void registerKeybindings();
 

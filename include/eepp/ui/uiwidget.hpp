@@ -349,7 +349,7 @@ class EE_API UIWidget : public UINode {
 
 	virtual void onFocusNextWidget();
 
-	virtual Uint32 onFocus();
+	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
 

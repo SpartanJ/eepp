@@ -53,4 +53,8 @@ const RowCreatedEvent* Event::asRowCreatedEvent() const {
 	return static_cast<const RowCreatedEvent*>( this );
 }
 
+const FocusEvent* Event::asFocusEvent() const {
+	return static_cast<const FocusEvent*>( this );
+}
+
 }} // namespace EE::Scene

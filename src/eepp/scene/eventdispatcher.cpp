@@ -133,7 +133,7 @@ void EventDispatcher::update( const Time& time ) {
 		if ( NULL != mFocusNode && mDownNode == mOverNode &&
 			 ( mInput->getPressTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) &&
 			 ( !nodeWasDragging || mMousePos == mLastMousePos ) ) {
-			setFocusNode( mOverNode );
+			setFocusNode( mOverNode, NodeFocusReason::Click );
 		}
 	} else if ( NULL != mOverNode && mInput->getReleaseTrigger() &&
 				!( mInput->getPressTrigger() & mInput->getReleaseTrigger() ) &&
@@ -149,7 +149,7 @@ void EventDispatcher::update( const Time& time ) {
 		if ( NULL != mFocusNode && mDownNode == mOverNode &&
 			 ( mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) &&
 			 ( !nodeWasDragging || mMousePos == mLastMousePos ) ) {
-			setFocusNode( mOverNode );
+			setFocusNode( mOverNode, NodeFocusReason::Click );
 		}
 	}
 
@@ -291,7 +291,7 @@ void EventDispatcher::sendMouseDown( Node* toNode, const Vector2i& pos, const Ui
 	toNode->onMouseDown( pos, flags );
 }
 
-void EventDispatcher::setFocusNode( Node* node ) {
+void EventDispatcher::setFocusNode( Node* node, NodeFocusReason reason ) {
 	if ( NULL != mFocusNode && NULL != node && node != mFocusNode ) {
 		mWindow->getIME().stop();
 
@@ -302,7 +302,7 @@ void EventDispatcher::setFocusNode( Node* node ) {
 		mLossFocusNode->onFocusLoss();
 		sendMsg( mLossFocusNode, NodeMessage::FocusLoss );
 
-		mFocusNode->onFocus();
+		mFocusNode->onFocus( reason );
 		sendMsg( mFocusNode, NodeMessage::Focus );
 
 		if ( !mFocusCbs.empty() ) {

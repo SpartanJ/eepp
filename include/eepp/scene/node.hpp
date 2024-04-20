@@ -357,7 +357,7 @@ class EE_API Node : public Transformable {
 
 	bool hasFocusWithin() const;
 
-	virtual Node* setFocus();
+	virtual Node* setFocus( NodeFocusReason reason = NodeFocusReason::Unknown );
 
 	Node* getFirstWidget() const;
 
@@ -546,7 +546,7 @@ class EE_API Node : public Transformable {
 
 	virtual void onSceneChange();
 
-	virtual Uint32 onFocus();
+	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
 

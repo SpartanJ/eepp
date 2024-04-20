@@ -162,8 +162,8 @@ void UITextInput::draw() {
 	}
 }
 
-Uint32 UITextInput::onFocus() {
-	UIWidget::onFocus();
+Uint32 UITextInput::onFocus( NodeFocusReason reason ) {
+	UIWidget::onFocus( reason );
 
 	if ( mAllowEditing ) {
 		resetWaitCursor();
@@ -174,6 +174,9 @@ Uint32 UITextInput::onFocus() {
 
 		updateIMELocation();
 	}
+
+	if ( mSelectAllDocOnTabNavigate && reason == NodeFocusReason::Tab )
+		mDoc.selectAll();
 
 	return 1;
 }
@@ -958,6 +961,14 @@ void UITextInput::setHintDisplay( HintDisplay display ) {
 
 HintDisplay UITextInput::getHintDisplay() const {
 	return mHintDisplay;
+}
+
+bool UITextInput::getSelectAllDocOnTabNavigate() const {
+	return mSelectAllDocOnTabNavigate;
+}
+
+void UITextInput::setSelectAllDocOnTabNavigate( bool selectAllDocOnTabNavigate ) {
+	mSelectAllDocOnTabNavigate = selectAllDocOnTabNavigate;
 }
 
 }} // namespace EE::UI

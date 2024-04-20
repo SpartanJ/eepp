@@ -228,6 +228,7 @@
 ../../include/eepp/scene/keyevent.hpp
 ../../include/eepp/scene/mouseevent.hpp
 ../../include/eepp/scene/node.hpp
+../../include/eepp/scene/nodefocusreason.hpp
 ../../include/eepp/scene/nodemessage.hpp
 ../../include/eepp/scene/scenemanager.hpp
 ../../include/eepp/scene/scenenode.hpp

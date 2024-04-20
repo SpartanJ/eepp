@@ -882,7 +882,7 @@ void UICodeEditor::invalidateLongestLineWidth() {
 	mLongestLineWidthLastUpdate.restart();
 }
 
-Uint32 UICodeEditor::onFocus() {
+Uint32 UICodeEditor::onFocus( NodeFocusReason reason  ) {
 	if ( !mLocked ) {
 		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 		resetCursor();
@@ -893,7 +893,7 @@ Uint32 UICodeEditor::onFocus() {
 	for ( auto& plugin : mPlugins )
 		plugin->onFocus( this );
 	mLastActivity.restart();
-	return UIWidget::onFocus();
+	return UIWidget::onFocus( reason );
 }
 
 Uint32 UICodeEditor::onFocusLoss() {

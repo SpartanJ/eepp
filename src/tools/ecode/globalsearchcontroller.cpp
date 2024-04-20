@@ -248,6 +248,8 @@ void GlobalSearchController::initGlobalSearchBar(
 			mGlobalSearchTree->forceKeyDown( keyEvent );
 		}
 	};
+	mGlobalSearchInput->setSelectAllDocOnTabNavigate( false );
+	mGlobalSearchWhereInput->setSelectAllDocOnTabNavigate( false );
 	mGlobalSearchInput->on( Event::OnPressEnter, pressEnterCb );
 	mGlobalSearchWhereInput->on( Event::OnPressEnter, pressEnterCb );
 	mGlobalSearchWhereInput->on( Event::OnTabNavigate,
