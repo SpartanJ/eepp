@@ -8,8 +8,11 @@
 #include <eepp/ui/doc/languages/angelscript.hpp>
 #include <eepp/ui/doc/languages/batchscript.hpp>
 #include <eepp/ui/doc/languages/blueprint.hpp>
+#include <eepp/ui/doc/languages/brainfuck.hpp>
+#include <eepp/ui/doc/languages/buzz.hpp>
 #include <eepp/ui/doc/languages/c.hpp>
 #include <eepp/ui/doc/languages/carbon.hpp>
+#include <eepp/ui/doc/languages/clojure.hpp>
 #include <eepp/ui/doc/languages/cmake.hpp>
 #include <eepp/ui/doc/languages/configfile.hpp>
 #include <eepp/ui/doc/languages/containerfile.hpp>
@@ -29,6 +32,7 @@
 #include <eepp/ui/doc/languages/glsl.hpp>
 #include <eepp/ui/doc/languages/go.hpp>
 #include <eepp/ui/doc/languages/graphql.hpp>
+#include <eepp/ui/doc/languages/groovy.hpp>
 #include <eepp/ui/doc/languages/hare.hpp>
 #include <eepp/ui/doc/languages/haskell.hpp>
 #include <eepp/ui/doc/languages/haxe.hpp>
@@ -111,7 +115,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 88 );
+	mDefinitions.reserve( 95 );
 
 	// Register some languages support.
 	addPlainText();
@@ -119,12 +123,15 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addAngelScript();
 	addBatchScript();
 	addBlueprint();
+	addBrainfuck();
+	addBuzz();
 	addC();
 	addCarbon();
 	addCMake();
 	addContainerFile();
 	addConfigFile();
 	addCPP();
+	addClojure();
 	addCrystal();
 	addCSharp();
 	addCSS();
@@ -140,6 +147,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addGLSL();
 	addGo();
 	addGraphQL();
+	addGroovy();
 	addHaskell();
 	addHare();
 	addHaxe();

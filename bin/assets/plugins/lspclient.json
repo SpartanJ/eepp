@@ -182,6 +182,24 @@
       }
     },
     {
+      "language": "css",
+      "use": "emmet-language-server",
+      "share_process": true,
+      "file_patterns": ["%.css$"]
+    },
+    {
+      "language": "sass",
+      "use": "emmet-language-server",
+      "share_process": true,
+      "file_patterns": ["%.sass$", "%.scss$"]
+    },
+    {
+      "language": "xml",
+      "use": "emmet-language-server",
+      "share_process": true,
+      "file_patterns": ["%.xml$", "%.svg$"]
+    },
+    {
       "language": "dockerfile",
       "name": "docker-langserver",
       "url": "https://github.com/rcjsuen/dockerfile-language-server-nodejs",
@@ -317,6 +335,17 @@
       "url": "https://github.com/latex-lsp",
       "command": "texlab",
       "file_patterns": ["%.tex$"]
+    },
+    {
+      "language": "clojure",
+      "name": "clojure-lsp",
+      "url": "https://github.com/clojure-lsp/clojure-lsp",
+      "command": "clojure-lsp",
+      "file_patterns": ["%.clj$", "%.cljs$", "%.clc$", "%.edn$"],
+      "rootIndicationFileNames": ["project.clj", "deps.edn"],
+      "initializationOptions": {
+        "ignore-classpath-directories": true
+      }
     }
   ]
 }
