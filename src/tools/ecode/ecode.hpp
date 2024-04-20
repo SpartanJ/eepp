@@ -10,6 +10,7 @@
 #include "plugins/pluginmanager.hpp"
 #include "projectbuild.hpp"
 #include "projectdirectorytree.hpp"
+#include "statusappoutputcontroller.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "statusterminalcontroller.hpp"
 #include "terminalmanager.hpp"
@@ -238,6 +239,8 @@ class App : public UICodeEditorSplitter::Client {
 					  [this] { mGlobalSearchController->toggleGlobalSearchBar(); } );
 		t.setCommand( "toggle-status-build-output",
 					  [this] { mStatusBuildOutputController->toggle(); } );
+		t.setCommand( "toggle-status-app-output",
+					  [this] { mStatusAppOutputController->toggle(); } );
 		t.setCommand( "toggle-status-terminal", [this] { mStatusTerminalController->toggle(); } );
 		t.setCommand( "open-locatebar", [this] { mUniversalLocator->showLocateBar(); } );
 		t.setCommand( "toggle-status-locate-bar",
@@ -258,8 +261,12 @@ class App : public UICodeEditorSplitter::Client {
 			}
 		} );
 		t.setCommand( "project-run-executable", [this] {
-			if ( mProjectBuildManager && mStatusBuildOutputController )
-				mProjectBuildManager->runCurrentConfig( mStatusBuildOutputController.get() );
+			if ( mProjectBuildManager && mStatusAppOutputController )
+				mProjectBuildManager->runCurrentConfig( mStatusAppOutputController.get() );
+		} );
+		t.setCommand( "project-stop-executable", [this] {
+			if ( mProjectBuildManager && mProjectBuildManager->isRunningApp() )
+				mProjectBuildManager->cancelRun();
 		} );
 		t.setCommand( "show-folder-treeview-tab", [this] { showFolderTreeViewTab(); } );
 		t.setCommand( "show-build-tab", [this] { showBuildTab(); } );
@@ -419,7 +426,11 @@ class App : public UICodeEditorSplitter::Client {
 
 	void hideStatusBuildOutput();
 
+	void hideStatusAppOutput();
+
 	StatusBuildOutputController* getStatusBuildOutputController() const;
+
+	StatusAppOutputController* getStatusAppOutputController() const;
 
 	void switchStatusBar();
 
@@ -517,6 +528,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<NotificationCenter> mNotificationCenter;
 	std::unique_ptr<StatusTerminalController> mStatusTerminalController;
 	std::unique_ptr<StatusBuildOutputController> mStatusBuildOutputController;
+	std::unique_ptr<StatusAppOutputController> mStatusAppOutputController;
 	std::unique_ptr<ProjectBuildManager> mProjectBuildManager;
 	std::string mLastFileFolder;
 	ColorSchemePreference mUIColorScheme;

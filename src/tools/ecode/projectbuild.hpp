@@ -19,6 +19,7 @@ namespace ecode {
 
 class App;
 class StatusBuildOutputController;
+class StatusAppOutputController;
 
 /** reference:
 {
@@ -253,6 +254,10 @@ class ProjectBuildManager {
 								   const ProjectBuildProgressFn& progressFn = {},
 								   const ProjectBuildDoneFn& doneFn = {}, bool isClean = false );
 
+	ProjectBuildCommandsRes run(const ProjectBuildCommand& runData, const ProjectBuildi18nFn& i18n,
+								const ProjectBuildProgressFn& progressFn = {},
+								const ProjectBuildDoneFn& doneFn = {} );
+
 	ProjectBuildCommandsRes generateBuildCommands( const std::string& buildName,
 												   const ProjectBuildi18nFn& i18n,
 												   const std::string& buildType = "",
@@ -282,7 +287,11 @@ class ProjectBuildManager {
 
 	bool isBuilding() const { return mBuilding; }
 
+	bool isRunningApp() const { return mRunningApp; }
+
 	void cancelBuild();
+
+	void cancelRun();
 
 	ProjectBuildConfiguration getConfig() const;
 
@@ -292,7 +301,7 @@ class ProjectBuildManager {
 
 	void cleanCurrentConfig( StatusBuildOutputController* sboc );
 
-	void runCurrentConfig( StatusBuildOutputController* sboc );
+	void runCurrentConfig( StatusAppOutputController* sboc );
 
   protected:
 	std::string mProjectRoot;
@@ -311,13 +320,19 @@ class ProjectBuildManager {
 	bool mBuilding{ false };
 	bool mShuttingDown{ false };
 	bool mCancelBuild{ false };
+	bool mCancelRun{ false };
 	bool mRunning{ false };
+	bool mRunningApp{ false };
 	std::unordered_map<Node*, std::set<Uint32>> mCbs;
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
 				   const ProjectBuildi18nFn& i18n, const ProjectBuildCommandsRes& res,
 				   const ProjectBuildProgressFn& progressFn = {},
 				   const ProjectBuildDoneFn& doneFn = {} );
+
+	void runApp( const ProjectBuildCommand& runStep, const ProjectBuildi18nFn& i18n,
+				 const ProjectBuildCommandsRes& res, const ProjectBuildProgressFn& progressFn = {},
+				 const ProjectBuildDoneFn& doneFn = {} );
 
 	bool load();
 

@@ -133,6 +133,8 @@ Uint32 UIStatusBar::onMessage( const NodeMessage* msg ) {
 	} else if ( widget->getId() == "status_build_output" ) {
 		mApp->getStatusBuildOutputController()->toggle();
 		ret = 1;
+	} else if ( widget->getId() == "status_app_output" ) {
+		mApp->getStatusAppOutputController()->toggle();
 	}
 
 	if ( ret )

@@ -1772,6 +1772,11 @@ void App::onColorSchemeChanged( const std::string& ) {
 			mSplitter->getCurrentColorScheme() );
 	}
 
+	if ( mStatusAppOutputController && mStatusAppOutputController->getContainer() ) {
+		mStatusAppOutputController->getContainer()->setColorScheme(
+			mSplitter->getCurrentColorScheme() );
+	}
+
 	mNotificationCenter->addNotification(
 		String::format( i18n( "color_scheme_set", "Color scheme: %s" ).toUtf8(),
 						mSplitter->getCurrentColorScheme().getName() ) );
@@ -2065,6 +2070,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
 		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
 		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
 		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
 		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
 		{ { KEY_F5 }, "project-run-executable" },
@@ -2110,6 +2116,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "toggle-status-global-search-bar",
 			 "toggle-status-build-output",
 			 "toggle-status-terminal",
+			 "toggle-status-app-output",
 			 "menu-toggle",
 			 "switch-side-panel",
 			 "toggle-status-bar",
@@ -2446,8 +2453,16 @@ void App::hideStatusBuildOutput() {
 	mStatusBuildOutputController->hide();
 }
 
+void App::hideStatusAppOutput() {
+	mStatusAppOutputController->hide();
+}
+
 StatusBuildOutputController* App::getStatusBuildOutputController() const {
 	return mStatusBuildOutputController.get();
+}
+
+StatusAppOutputController* App::getStatusAppOutputController() const {
+	return mStatusAppOutputController.get();
 }
 
 bool App::isDirTreeReady() const {
@@ -3772,6 +3787,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mStatusBuildOutputController =
 			std::make_unique<StatusBuildOutputController>( mMainSplitter, mUISceneNode, this );
+
+		mStatusAppOutputController =
+			std::make_unique<StatusAppOutputController>( mMainSplitter, mUISceneNode, this );
 
 		initImageView();
 

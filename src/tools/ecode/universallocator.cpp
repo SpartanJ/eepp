@@ -564,6 +564,7 @@ void UniversalLocator::showBar() {
 	mApp->hideSearchBar();
 	mApp->hideStatusTerminal();
 	mApp->hideStatusBuildOutput();
+	mApp->hideStatusAppOutput();
 
 	mLocateBarLayout->setVisible( true );
 	mLocateInput->setFocus();

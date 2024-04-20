@@ -1588,6 +1588,8 @@
 ../../src/tools/ecode/projectsearch.hpp
 ../../src/tools/ecode/settingsmenu.cpp
 ../../src/tools/ecode/settingsmenu.hpp
+../../src/tools/ecode/statusappoutputcontroller.cpp
+../../src/tools/ecode/statusappoutputcontroller.hpp
 ../../src/tools/ecode/statusbuildoutputcontroller.cpp
 ../../src/tools/ecode/statusbuildoutputcontroller.hpp
 ../../src/tools/ecode/statusterminalcontroller.cpp

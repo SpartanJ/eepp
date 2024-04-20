@@ -162,7 +162,7 @@
     },
     "run": [
       {
-        "args": "-x",
+        "args": "-v -x",
         "command": "ecode-debug",
         "name": "ecode-debug",
         "working_dir": "${project_root}/bin"

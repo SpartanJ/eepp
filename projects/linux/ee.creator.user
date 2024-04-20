@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 13.0.0, 2024-04-10T21:35:35. -->
+<!-- Written by QtCreator 13.0.0, 2024-04-20T19:59:44. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1096,8 +1096,8 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-UIEditor-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
-    <value type="bool" key="ProjectExplorer.RunConfiguration.Customized">false</value>
-    <value type="QString" key="RunConfiguration.Arguments"> -u --css=assets/layouts/test.css --xml=assets/layouts/test.xml</value>
+    <value type="bool" key="ProjectExplorer.RunConfiguration.Customized">true</value>
+    <value type="QString" key="RunConfiguration.Arguments">-u --xml /home/downloads/untitled_1.xml</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="int" key="RunConfiguration.UseQmlDebugger">1</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">false</value>

@@ -547,6 +547,7 @@ R"html(
 			<PushButton class="status_but" id="status_global_search_bar" text="@string(search, Search)" icon="icon(file-search, 12dp)" />
 			<PushButton class="status_but" id="status_terminal" text="@string(terminal, Terminal)" icon="icon(terminal, 12dp)" />
 			<PushButton class="status_but" id="status_build_output" text="@string(build, Build)" icon="icon(symbol-property, 12dp)"  />
+			<PushButton class="status_but" id="status_app_output" text="@string(app_output, App Output)" icon="icon(output, 12dp)"  />
 			<Widget class="status_sep" lw="0" lw8="1" lh="1dp" />
 		</statusbar>
 	</vbox>

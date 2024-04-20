@@ -305,6 +305,7 @@ ProjectBuildManager::~ProjectBuildManager() {
 
 	mShuttingDown = true;
 	mCancelBuild = true;
+	mCancelRun = true;
 	save();
 	while ( mLoading )
 		Sys::sleep( Milliseconds( 0.1f ) );
@@ -376,7 +377,25 @@ ProjectBuildManager::build( const std::string& buildName, const ProjectBuildi18n
 	} );
 
 	return res;
-};
+}
+
+ProjectBuildCommandsRes ProjectBuildManager::run( const ProjectBuildCommand& runData,
+												  const ProjectBuildi18nFn& i18n,
+												  const ProjectBuildProgressFn& progressFn,
+												  const ProjectBuildDoneFn& doneFn ) {
+	ProjectBuildCommandsRes res;
+
+	if ( !mThreadPool ) {
+		res.errorMsg = i18n( "no_threads", "Threaded ecode required to run builds." );
+		return res;
+	}
+
+	mThreadPool->run( [this, res, progressFn, doneFn, i18n, runData]() {
+		runApp( runData, i18n, res, progressFn, doneFn );
+	} );
+
+	return res;
+}
 
 static bool isValidType( const std::string& typeStr ) {
 	return "error" == typeStr || "warning" == typeStr || "notice" == typeStr;
@@ -617,6 +636,14 @@ void ProjectBuildManager::cancelBuild() {
 	}
 }
 
+void ProjectBuildManager::cancelRun() {
+	mCancelRun = true;
+	if ( mProcess ) {
+		mProcess->destroy();
+		mProcess->kill();
+	}
+}
+
 ProjectBuildConfiguration ProjectBuildManager::getConfig() const {
 	return mConfig;
 }
@@ -666,40 +693,42 @@ void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc 
 	}
 }
 
-void ProjectBuildManager::runCurrentConfig( StatusBuildOutputController* /* not used yet */ ) {
-	if ( !mRunning && !isBuilding() && !getBuilds().empty() ) {
+void ProjectBuildManager::runCurrentConfig( StatusAppOutputController* saoc ) {
+	if ( !mRunning && !isRunningApp() && !getBuilds().empty() ) {
 		BoolScopedOp op( mRunning, true );
 		const ProjectBuild* build = nullptr;
 		for ( const auto& buildIt : getBuilds() )
 			if ( buildIt.second.getName() == mConfig.buildName )
 				build = &buildIt.second;
 
-		if ( build && build->hasRun() ) {
-			const ProjectBuildStep* run = nullptr;
-			for ( const auto& crun : build->mRun ) {
-				if ( crun.name == mConfig.runName || mConfig.runName.empty() ) {
-					run = &crun;
-					break;
-				}
+		if ( nullptr == build || !build->hasRun() )
+			return;
+
+		const ProjectBuildStep* run = nullptr;
+		for ( const auto& crun : build->mRun ) {
+			if ( crun.name == mConfig.runName || mConfig.runName.empty() ) {
+				run = &crun;
+				break;
 			}
+		}
 
-			if ( nullptr == run )
-				return;
+		if ( nullptr == run )
+			return;
 
-			auto finalBuild( build->replaceVars( *run ) );
-			auto cmd = finalBuild.cmd + " " + finalBuild.args;
-			if ( finalBuild.runInTerminal ) {
-				UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
-					finalBuild.workingDir, false );
-				if ( term == nullptr || term->getTerm() == nullptr ) {
-					mApp->getTerminalManager()->openInExternalTerminal( cmd,
-																		finalBuild.workingDir );
-				} else {
-					term->executeFile( cmd );
-				}
+		ProjectBuildCommand finalBuild( build->replaceVars( *run ) );
+		auto cmd = finalBuild.cmd + " " + finalBuild.args;
+		if ( finalBuild.runInTerminal ) {
+			UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
+				finalBuild.workingDir, false );
+			if ( term == nullptr || term->getTerm() == nullptr ) {
+				mApp->getTerminalManager()->openInExternalTerminal( cmd, finalBuild.workingDir );
 			} else {
-				Sys::execute( cmd, finalBuild.workingDir );
+				term->executeFile( cmd );
 			}
+		} else {
+			// Sys::execute( cmd, finalBuild.workingDir );
+			finalBuild.config = build->getConfig();
+			saoc->run( finalBuild, {} );
 		}
 	}
 }
@@ -857,6 +886,108 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 	}
 }
 
+void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectBuildi18nFn& i18n,
+								  const ProjectBuildCommandsRes& res,
+								  const ProjectBuildProgressFn& progressFn,
+								  const ProjectBuildDoneFn& doneFn ) {
+	BoolScopedOp scopedOp( mRunningApp, true );
+	Clock clock;
+
+	auto printElapsed = [&clock, &i18n, &progressFn]() {
+		if ( progressFn ) {
+			progressFn(
+				100,
+				Sys::getDateTimeStr() + ": " +
+					String::format(
+						i18n( "build_elapsed_time", "Elapsed Time: %s.\n" ).toUtf8().c_str(),
+						clock.getElapsedTime().toString().c_str() ),
+				nullptr );
+		}
+	};
+
+	mProcess = std::make_unique<Process>();
+
+	auto options = Process::SearchUserPath | Process::CombinedStdoutStderr;
+	if ( !cmd.config.clearSysEnv )
+		options |= Process::InheritEnvironment;
+
+	if ( progressFn ) {
+		progressFn(
+			0,
+			Sys::getDateTimeStr() + ": " +
+				String::format( i18n( "starting_process", "Starting %s %s\n" ).toUtf8().c_str(),
+								cmd.cmd.c_str(), cmd.args.c_str() ),
+			nullptr );
+
+		progressFn(
+			0,
+			Sys::getDateTimeStr() + ": " +
+				String::format( i18n( "working_dir_at", "Working Dir %s\n" ).toUtf8().c_str(),
+								cmd.workingDir.c_str() ),
+			nullptr );
+	}
+
+	if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( res.envs ),
+						   cmd.workingDir ) ) {
+		std::string buffer( 1024, '\0' );
+		unsigned bytesRead = 0;
+		int returnCode;
+		do {
+			bytesRead = mProcess->readStdOut( buffer );
+			std::string data( buffer.substr( 0, bytesRead ) );
+			if ( progressFn )
+				progressFn( 0, std::move( data ), &cmd );
+		} while ( bytesRead != 0 && mProcess->isAlive() && !mShuttingDown && !mCancelRun );
+
+		if ( mShuttingDown || mCancelRun ) {
+			mProcess->kill();
+			mCancelRun = false;
+			printElapsed();
+			if ( doneFn )
+				doneFn( EXIT_FAILURE, &cmd );
+			return;
+		}
+
+		mProcess->join( &returnCode );
+		mProcess->destroy();
+
+		if ( returnCode != EXIT_SUCCESS ) {
+			if ( progressFn ) {
+				progressFn( 100,
+							String::format( i18n( "process_exited_with_errors",
+												  "The process \"%s\" exited with errors.\n" )
+												.toUtf8()
+												.c_str(),
+											cmd.cmd.c_str() ),
+							nullptr );
+			}
+			printElapsed();
+			if ( doneFn )
+				doneFn( returnCode, &cmd );
+			return;
+		} else {
+			if ( progressFn ) {
+				progressFn( 100,
+							String::format( i18n( "process_exited_normally",
+												  "The process \"%s\" exited normally.\n" )
+												.toUtf8()
+												.c_str(),
+											cmd.cmd.c_str() ),
+							nullptr );
+			}
+		}
+	} else {
+		printElapsed();
+		if ( doneFn )
+			doneFn( EXIT_FAILURE, nullptr );
+		return;
+	}
+
+	printElapsed();
+	if ( doneFn )
+		doneFn( EXIT_SUCCESS, &cmd );
+}
+
 void ProjectBuildManager::buildSidePanelTab() {
 	mUISceneNode = mSidePanel->getUISceneNode();
 	UIIcon* icon = mUISceneNode->findIcon( "symbol-property" );
@@ -976,8 +1107,13 @@ void ProjectBuildManager::updateSidePanelTab() {
 	}
 
 	if ( !runButton->hasEventsOfType( Event::MouseClick ) ) {
-		runButton->onClick(
-			[this]( auto ) { runCurrentConfig( mApp->getStatusBuildOutputController() ); } );
+		runButton->onClick( [this]( auto ) {
+			if ( isRunningApp() ) {
+				cancelRun();
+			} else {
+				runCurrentConfig( mApp->getStatusAppOutputController() );
+			}
+		} );
 	}
 
 	if ( !buildAdd->hasEventsOfType( Event::MouseClick ) ) {

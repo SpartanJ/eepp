@@ -418,6 +418,8 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 	mApp->hideSearchBar();
 	mApp->hideStatusTerminal();
 	mApp->hideStatusBuildOutput();
+	mApp->hideStatusAppOutput();
+
 	bool wasReplaceTree = mGlobalSearchTreeReplace == mGlobalSearchTree;
 	mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
 	mGlobalSearchTreeSearch->setVisible( !searchReplace );
