@@ -71,7 +71,7 @@ struct CodeEditorConfig {
 	bool minimap{ true };
 	bool showDocInfo{ true };
 	bool hideTabBarOnSingleTab{ true };
-	bool singleClickTreeNavigation{ false };
+	bool singleClickNavigation{ false };
 	bool syncProjectTreeWithEditor{ true };
 	bool autoCloseXMLTags{ true };
 	bool linesRelativePosition{ false };

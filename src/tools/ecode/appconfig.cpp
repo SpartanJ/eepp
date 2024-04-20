@@ -129,7 +129,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.minimap = ini.getValueB( "editor", "minimap", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", false );
-	editor.singleClickTreeNavigation =
+	editor.singleClickNavigation =
 		ini.getValueB( "editor", "single_click_tree_navigation", false );
 	editor.syncProjectTreeWithEditor =
 		ini.getValueB( "editor", "sync_project_tree_with_editor", true );
@@ -257,7 +257,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "minimap", editor.minimap );
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
 	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );
-	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickTreeNavigation );
+	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickNavigation );
 	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );
 	ini.setValue( "editor", "line_spacing", editor.lineSpacing.toString() );

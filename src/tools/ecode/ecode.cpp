@@ -208,6 +208,7 @@ void App::openFileDialog() {
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
 	dialog->on( Event::OpenFile, [this]( const Event* event ) {
 		auto file = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		mLastFileFolder = FileSystem::fileRemoveFileName( file );
@@ -252,6 +253,7 @@ void App::openFolderDialog() {
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_folder", "Open Folder" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
 	dialog->on( Event::OpenFile, [this]( const Event* event ) {
 		String path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 		if ( FileSystem::isDirectory( path ) )
@@ -280,6 +282,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "select_font_file", "Select Font File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
 	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
@@ -372,6 +375,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
+	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
 	dialog->setFileName( filename );
 	dialog->on( Event::SaveFile, [this, editor]( const Event* event ) {
 		if ( editor ) {
@@ -3033,7 +3037,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 	mProjectTreeView->setContractedIcon( "folder" );
 	mProjectTreeView->setHeadersVisible( false );
 	mProjectTreeView->setExpandersAsIcons( true );
-	mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickTreeNavigation );
+	mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
 	mProjectTreeView->setScrollViewType( UIScrollableWidget::Inclusive );
 	mProjectTreeView->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );

@@ -776,4 +776,8 @@ void UIFileDialog::setOpenShortut( const KeyBindings::Shortcut& newOpenShortut )
 	mOpenShortut = newOpenShortut;
 }
 
+void UIFileDialog::setSingleClickNavigation( bool singleClickNavigation ) {
+	mMultiView->setSingleClickNavigation( singleClickNavigation );
+}
+
 }} // namespace EE::UI

@@ -1283,13 +1283,12 @@ UIMenu* SettingsMenu::createViewMenu() {
 			i18n( "hide_tabbar_on_single_tab_tooltip",
 				  "Hides the tabbar if there's only one element in the tab widget." ) )
 		->setId( "hide-tabbar-on-single-tab" );
-	mViewMenu
-		->addCheckBox( i18n( "treeview_single_click_nav", "Single Click Navigation in Tree View" ) )
-		->setActive( mApp->getConfig().editor.singleClickTreeNavigation )
-		->setTooltipText( i18n(
-			"treeview_single_click_nav_tooltip",
-			"Uses single click to open files and expand subfolders in\nthe directory tree." ) )
-		->setId( "treeview-single-click-nav" );
+	mViewMenu->addCheckBox( i18n( "treeview_single_click_nav", "Single Click Navigation" ) )
+		->setActive( mApp->getConfig().editor.singleClickNavigation )
+		->setTooltipText( i18n( "treeview_single_click_nav_tooltip",
+								"Uses single click to open files and expand subfolders in\nthe "
+								"directory tree and in file dialogs to open a folder or file." ) )
+		->setId( "single-click-nav" );
 	mViewMenu->addCheckBox( i18n( "sync_project_tree", "Synchronize project tree with editor" ) )
 		->setActive( mApp->getConfig().editor.syncProjectTreeWithEditor )
 		->setTooltipText(
@@ -1416,12 +1415,12 @@ UIMenu* SettingsMenu::createViewMenu() {
 			mApp->getConfig().editor.hideTabBarOnSingleTab =
 				item->asType<UIMenuCheckBox>()->isActive();
 			mSplitter->setHideTabBarOnSingleTab( mApp->getConfig().editor.hideTabBarOnSingleTab );
-		} else if ( item->getId() == "treeview-single-click-nav" ) {
-			mApp->getConfig().editor.singleClickTreeNavigation =
+		} else if ( item->getId() == "single-click-nav" ) {
+			mApp->getConfig().editor.singleClickNavigation =
 				item->asType<UIMenuCheckBox>()->isActive();
 			if ( mApp->getProjectTreeView() )
 				mApp->getProjectTreeView()->setSingleClickNavigation(
-					mApp->getConfig().editor.singleClickTreeNavigation );
+					mApp->getConfig().editor.singleClickNavigation );
 		} else if ( item->getId() == "sync-project-tree" ) {
 			mApp->getConfig().editor.syncProjectTreeWithEditor =
 				item->asType<UIMenuCheckBox>()->isActive();
