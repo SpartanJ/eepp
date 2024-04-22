@@ -90,6 +90,7 @@
 #include <eepp/ui/doc/languages/x86assembly.hpp>
 #include <eepp/ui/doc/languages/xit.hpp>
 #include <eepp/ui/doc/languages/xml.hpp>
+#include <eepp/ui/doc/languages/xtend.hpp>
 #include <eepp/ui/doc/languages/yaml.hpp>
 #include <eepp/ui/doc/languages/zig.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -115,7 +116,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 95 );
+	mDefinitions.reserve( 96 );
 
 	// Register some languages support.
 	addPlainText();
@@ -205,6 +206,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addX86Assembly();
 	addXit();
 	addXML();
+	addXtend();
 	addYAML();
 	addZig();
 }
