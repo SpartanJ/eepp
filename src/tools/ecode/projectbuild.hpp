@@ -72,6 +72,20 @@ class StatusAppOutputController;
 		}
 	  ]
 	},
+	"run": [
+	  {
+		"args": "-x",
+		"command": "${project_root}/bin/ecode-debug",
+		"name": "ecode-debug",
+		"working_dir": "${project_root}/bin/"
+	  },
+	  {
+		"args": "-x",
+		"command": "${project_root}/bin/ecode",
+		"name": "ecode-release",
+		"working_dir": "${project_root}/bin/"
+	  }
+	],
 	"var": {
 	  "build_dir": "${project_root}/make/${os}"
 	}
@@ -254,9 +268,9 @@ class ProjectBuildManager {
 								   const ProjectBuildProgressFn& progressFn = {},
 								   const ProjectBuildDoneFn& doneFn = {}, bool isClean = false );
 
-	ProjectBuildCommandsRes run(const ProjectBuildCommand& runData, const ProjectBuildi18nFn& i18n,
-								const ProjectBuildProgressFn& progressFn = {},
-								const ProjectBuildDoneFn& doneFn = {} );
+	ProjectBuildCommandsRes run( const ProjectBuildCommand& runData, const ProjectBuildi18nFn& i18n,
+								 const ProjectBuildProgressFn& progressFn = {},
+								 const ProjectBuildDoneFn& doneFn = {} );
 
 	ProjectBuildCommandsRes generateBuildCommands( const std::string& buildName,
 												   const ProjectBuildi18nFn& i18n,
@@ -287,7 +301,7 @@ class ProjectBuildManager {
 
 	bool isBuilding() const { return mBuilding; }
 
-	bool isRunningApp() const { return mRunningApp; }
+	bool isRunningApp() const { return mRunning; }
 
 	void cancelBuild();
 
@@ -297,11 +311,13 @@ class ProjectBuildManager {
 
 	void setConfig( const ProjectBuildConfiguration& config );
 
-	void buildCurrentConfig( StatusBuildOutputController* sboc );
+	void buildCurrentConfig( StatusBuildOutputController* sboc,
+							 std::function<void( int exitStatus )> doneFn = {} );
 
 	void cleanCurrentConfig( StatusBuildOutputController* sboc );
 
-	void runCurrentConfig( StatusAppOutputController* sboc );
+	void runCurrentConfig( StatusAppOutputController* saoc, bool build,
+						   StatusBuildOutputController* sboc = nullptr );
 
   protected:
 	std::string mProjectRoot;
@@ -322,7 +338,6 @@ class ProjectBuildManager {
 	bool mCancelBuild{ false };
 	bool mCancelRun{ false };
 	bool mRunning{ false };
-	bool mRunningApp{ false };
 	std::unordered_map<Node*, std::set<Uint32>> mCbs;
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
@@ -355,6 +370,8 @@ class ProjectBuildManager {
 	void addBuild( UIWidget* buildTab );
 
 	void editBuild( std::string buildName, UIWidget* buildTab );
+
+	void runConfig( StatusAppOutputController* saoc );
 };
 
 } // namespace ecode

@@ -102,7 +102,8 @@ static void safeInsertBuffer( TextDocument& doc, const std::string& buffer ) {
 void StatusBuildOutputController::runBuild( const std::string& buildName,
 											const std::string& buildType,
 											const ProjectBuildOutputParser& outputParser,
-											bool isClean ) {
+											bool isClean,
+											std::function<void( int exitStatus )> doneFn ) {
 	if ( nullptr == mApp->getProjectBuildManager() )
 		return;
 
@@ -220,7 +221,8 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 				}
 			} while ( !buffer.empty() );
 		},
-		[this, updateBuildButton, isClean]( auto exitCode, const ProjectBuildCommand* cmd ) {
+		[this, updateBuildButton, isClean, doneFn]( auto exitCode,
+													const ProjectBuildCommand* cmd ) {
 			if ( !mCurLineBuffer.empty() && nullptr != cmd )
 				searchFindAndAddStatusResult( mPatternHolder, mCurLineBuffer, cmd );
 			String buffer;
@@ -245,12 +247,17 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 			if ( !mApp->getWindow()->hasFocus() )
 				mApp->getWindow()->flash( WindowFlashOperation::UntilFocused );
+
+			if ( doneFn )
+				doneFn( exitCode );
 		},
 		isClean );
 
 	if ( !res.isValid() ) {
 		mApp->getNotificationCenter()->addNotification( res.errorMsg );
 		updateBuildButton();
+		if ( doneFn )
+			doneFn( EXIT_FAILURE );
 	}
 }
 
