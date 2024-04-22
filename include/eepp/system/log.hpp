@@ -42,10 +42,10 @@ class EE_API Log : protected Mutex {
 #endif
 	}
 
-	static Log* create( const std::string& logPath, const LogLevel& level, bool consoleOutput,
+	static Log* create( const std::string& logPath, const LogLevel& level, bool stdOutLog,
 						bool liveWrite );
 
-	static Log* create( const LogLevel& level, bool consoleOutput, bool liveWrite );
+	static Log* create( const LogLevel& level, bool stdOutLog, bool liveWrite );
 
 	virtual ~Log();
 
@@ -210,12 +210,12 @@ class EE_API Log : protected Mutex {
   protected:
 	Log();
 
-	Log( const std::string& logPath, const LogLevel& level, bool consoleOutput, bool liveWrite );
+	Log( const std::string& logPath, const LogLevel& level, bool stdOutLog, bool liveWrite );
 
 	std::string mData;
 	std::string mFilePath;
 	bool mSave;
-	bool mConsoleOutput;
+	bool mStdOutEnabled;
 	bool mLiveWrite;
 	bool mKeepLog{ false };
 	LogLevel mLogLevelThreshold{ getDefaultLogLevel() };

@@ -42,7 +42,8 @@ class StatusBuildOutputController : public StatusBarElement {
 	virtual ~StatusBuildOutputController(){};
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
-				   const ProjectBuildOutputParser& outputParser = {}, bool isClean = false );
+				   const ProjectBuildOutputParser& outputParser = {}, bool isClean = false,
+				   std::function<void( int exitStatus )> doneFn = {} );
 
 	UIWidget* getWidget();
 

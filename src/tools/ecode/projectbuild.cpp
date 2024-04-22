@@ -1,5 +1,5 @@
-#include "projectbuild.hpp"
 #include "ecode.hpp"
+#include "projectbuild.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "uibuildsettings.hpp"
 #include <eepp/core/string.hpp>
@@ -665,7 +665,8 @@ void ProjectBuildManager::setConfig( const ProjectBuildConfiguration& config ) {
 	}
 }
 
-void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc ) {
+void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc,
+											  std::function<void( int exitStatus )> doneFn ) {
 	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
 		const ProjectBuild* build = nullptr;
 		for ( const auto& buildIt : getBuilds() )
@@ -675,7 +676,7 @@ void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc 
 		if ( build ) {
 			mApp->saveAll();
 			sboc->runBuild( build->getName(), mConfig.buildType,
-							getOutputParser( build->getName() ) );
+							getOutputParser( build->getName() ), false, doneFn );
 		}
 	}
 }
@@ -693,8 +694,19 @@ void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc 
 	}
 }
 
-void ProjectBuildManager::runCurrentConfig( StatusAppOutputController* saoc ) {
-	if ( !mRunning && !isRunningApp() && !getBuilds().empty() ) {
+void ProjectBuildManager::runCurrentConfig( StatusAppOutputController* saoc, bool build,
+											StatusBuildOutputController* sboc ) {
+	if ( build ) {
+		buildCurrentConfig( sboc, [this, saoc]( int ) {
+			mApp->getUISceneNode()->runOnMainThread( [saoc, this] { runConfig( saoc ); } );
+		} );
+	} else {
+		runConfig( saoc );
+	}
+}
+
+void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
+	if ( !isRunningApp() && !getBuilds().empty() ) {
 		BoolScopedOp op( mRunning, true );
 		const ProjectBuild* build = nullptr;
 		for ( const auto& buildIt : getBuilds() )
@@ -823,7 +835,7 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 
 		if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( res.envs ),
 							   cmd.workingDir ) ) {
-			std::string buffer( 1024, '\0' );
+			std::string buffer( 4096, '\0' );
 			unsigned bytesRead = 0;
 			int returnCode;
 			do {
@@ -890,7 +902,6 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 								  const ProjectBuildCommandsRes& res,
 								  const ProjectBuildProgressFn& progressFn,
 								  const ProjectBuildDoneFn& doneFn ) {
-	BoolScopedOp scopedOp( mRunningApp, true );
 	Clock clock;
 
 	auto printElapsed = [&clock, &i18n, &progressFn]() {
@@ -929,7 +940,7 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 
 	if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( res.envs ),
 						   cmd.workingDir ) ) {
-		std::string buffer( 1024, '\0' );
+		std::string buffer( 4096, '\0' );
 		unsigned bytesRead = 0;
 		int returnCode;
 		do {
@@ -1111,7 +1122,7 @@ void ProjectBuildManager::updateSidePanelTab() {
 			if ( isRunningApp() ) {
 				cancelRun();
 			} else {
-				runCurrentConfig( mApp->getStatusAppOutputController() );
+				runCurrentConfig( mApp->getStatusAppOutputController(), false );
 			}
 		} );
 	}

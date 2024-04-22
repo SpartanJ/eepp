@@ -19,6 +19,7 @@ FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel&
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	mMimeType = "";
+	mHash = String::hash( mName );
 	traverseIfNeeded( model );
 }
 
@@ -26,6 +27,7 @@ FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
 	mParent( parent ), mInfo( info ) {
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
+	mHash = String::hash( mName );
 	updateMimeType();
 }
 
@@ -99,7 +101,6 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 														   const FileSystemModel& model ) {
 	std::string childPath( mInfo.getDirectoryPath() + childName );
 	FileInfo file( childPath, false );
-	auto child = eeNew( Node, ( std::move( file ), this ) );
 
 	if ( model.getDisplayConfig().ignoreHidden && file.isHidden() )
 		return nullptr;
@@ -107,7 +108,13 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 	if ( model.getMode() == Mode::DirectoriesOnly && !file.isDirectory() )
 		return nullptr;
 
-	return child;
+	auto hash = String::hash( childName );
+
+	for ( auto node : mChildren )
+		if ( node->mParent == this && node->mHash == hash )
+			return nullptr;
+
+	return eeNew( Node, ( std::move( file ), this ) );
 }
 
 void FileSystemModel::Node::rename( const FileInfo& file ) {

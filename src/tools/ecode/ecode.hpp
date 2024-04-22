@@ -262,7 +262,12 @@ class App : public UICodeEditorSplitter::Client {
 		} );
 		t.setCommand( "project-run-executable", [this] {
 			if ( mProjectBuildManager && mStatusAppOutputController )
-				mProjectBuildManager->runCurrentConfig( mStatusAppOutputController.get() );
+				mProjectBuildManager->runCurrentConfig( mStatusAppOutputController.get(), false );
+		} );
+		t.setCommand( "project-build-and-run", [this] {
+			if ( mProjectBuildManager && mStatusAppOutputController )
+				mProjectBuildManager->runCurrentConfig( mStatusAppOutputController.get(), true,
+														mStatusBuildOutputController.get() );
 		} );
 		t.setCommand( "project-stop-executable", [this] {
 			if ( mProjectBuildManager && mProjectBuildManager->isRunningApp() )
