@@ -1,5 +1,5 @@
-﻿#include "../../stringhelper.hpp"
-#include "linterplugin.hpp"
+﻿#include "linterplugin.hpp"
+#include "../../stringhelper.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -780,6 +780,18 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 		return;
 	auto linter = supportsLinter( doc );
 	if ( linter.command.empty() )
+		return;
+
+	bool binaryFound = false;
+	auto parts = String::split( linter.command, ' ' );
+	if ( !parts.empty() ) {
+		if ( parts[0].find_first_of( "\\/" ) != std::string::npos ) {
+			binaryFound = FileSystem::fileExists( parts[0] );
+		} else {
+			binaryFound = !Sys::which( parts[0] ).empty();
+		}
+	}
+	if ( !binaryFound )
 		return;
 
 	IOStreamString fileString;
