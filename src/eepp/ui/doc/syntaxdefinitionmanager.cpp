@@ -26,6 +26,7 @@
 #include <eepp/ui/doc/languages/elixir.hpp>
 #include <eepp/ui/doc/languages/elm.hpp>
 #include <eepp/ui/doc/languages/environmentfile.hpp>
+#include <eepp/ui/doc/languages/fantom.hpp>
 #include <eepp/ui/doc/languages/fortran.hpp>
 #include <eepp/ui/doc/languages/fstab.hpp>
 #include <eepp/ui/doc/languages/gdscript.hpp>
@@ -116,7 +117,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 96 );
+	mDefinitions.reserve( 97 );
 
 	// Register some languages support.
 	addPlainText();
@@ -142,6 +143,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addElixir();
 	addElm();
 	addEnvironmentFile();
+	addFantom();
 	addFortran();
 	addFstab();
 	addGDScript();
