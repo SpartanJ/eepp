@@ -313,6 +313,20 @@ ProjectBuildManager::~ProjectBuildManager() {
 		Sys::sleep( Milliseconds( 0.1f ) );
 }
 
+void ProjectBuildManager::replaceDynamicVars( ProjectBuildCommand& cmd ) {
+	std::string currentOS = String::toLower( Sys::getPlatform() );
+	std::string nproc = String::format( "%d", Sys::getCPUCount() );
+	std::string curDoc = getCurrentDocument();
+	std::string curDocName =
+		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( curDoc ) );
+	replaceVar( cmd, VAR_OS, currentOS );
+	replaceVar( cmd, VAR_NPROC, nproc );
+	replaceVar( cmd, VAR_CURRENT_DOC, curDoc );
+	replaceVar( cmd, VAR_CURRENT_DOC_NAME, curDocName );
+	if ( cmd.workingDir.empty() )
+		cmd.workingDir = mProjectRoot;
+}
+
 ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::string& buildName,
 																	const ProjectBuildi18nFn& i18n,
 																	const std::string& buildType,
@@ -333,22 +347,12 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 		return {
 			i18n( "build_os_not_supported", "Operating System not supported for this build!" ) };
 
-	std::string nproc = String::format( "%d", Sys::getCPUCount() );
-	std::string curDoc = getCurrentDocument();
-	std::string curDocName =
-		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( curDoc ) );
-	ProjectBuildCommandsRes res;
-
 	auto finalBuild( build.replaceVars( isClean ? build.mClean : build.mBuild ) );
 
+	ProjectBuildCommandsRes res;
 	for ( const auto& step : finalBuild ) {
 		ProjectBuildCommand buildCmd( step );
-		replaceVar( buildCmd, VAR_OS, currentOS );
-		replaceVar( buildCmd, VAR_NPROC, nproc );
-		replaceVar( buildCmd, VAR_CURRENT_DOC, curDoc );
-		replaceVar( buildCmd, VAR_CURRENT_DOC_NAME, curDocName );
-		if ( buildCmd.workingDir.empty() )
-			buildCmd.workingDir = mProjectRoot;
+		replaceDynamicVars( buildCmd );
 		if ( !buildType.empty() )
 			replaceVar( buildCmd, VAR_BUILD_TYPE, buildType );
 		buildCmd.config = build.mConfig;
@@ -728,6 +732,7 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 			return;
 
 		ProjectBuildCommand finalBuild( build->replaceVars( *run ) );
+		replaceDynamicVars( finalBuild );
 		auto cmd = finalBuild.cmd + " " + finalBuild.args;
 		if ( finalBuild.runInTerminal ) {
 			UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(

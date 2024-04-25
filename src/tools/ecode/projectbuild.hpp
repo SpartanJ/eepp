@@ -277,6 +277,8 @@ class ProjectBuildManager {
 												   const std::string& buildType = "",
 												   bool isClean = false );
 
+	void replaceDynamicVars( ProjectBuildCommand& cmd );
+
 	ProjectBuildOutputParser getOutputParser( const std::string& buildName );
 
 	const ProjectBuild::Map& getBuilds() const { return mBuilds; }
