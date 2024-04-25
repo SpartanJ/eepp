@@ -728,25 +728,30 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 			}
 		}
 
-		if ( nullptr == run )
+		if ( nullptr == run ) {
+			Log::info( "No run configuration found to run with runName: %s", mConfig.runName );
 			return;
+		}
 
 		ProjectBuildCommand finalBuild( build->replaceVars( *run ) );
 		replaceDynamicVars( finalBuild );
-		auto cmd = finalBuild.cmd + " " + finalBuild.args;
+		auto cmd = String::trim( finalBuild.cmd ) + " " + finalBuild.args;
 		if ( finalBuild.runInTerminal ) {
 			UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
 				finalBuild.workingDir, false );
+			Log::info( "Running \"%s\" in terminal", cmd );
 			if ( term == nullptr || term->getTerm() == nullptr ) {
 				mApp->getTerminalManager()->openInExternalTerminal( cmd, finalBuild.workingDir );
 			} else {
 				term->executeFile( cmd );
 			}
 		} else {
-			// Sys::execute( cmd, finalBuild.workingDir );
+			Log::info( "Running \"%s\" in app", cmd );
 			finalBuild.config = build->getConfig();
 			saoc->run( finalBuild, {} );
 		}
+	} else {
+		Log::info( "ProjectBuildManager::runConfig is already running or isRunningApp() is true" );
 	}
 }
 

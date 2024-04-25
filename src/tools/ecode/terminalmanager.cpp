@@ -339,17 +339,24 @@ if not %autoclose%==1 pause
 	)shellscript";
 	if ( !cmd.empty() && !scriptsPath.empty() ) {
 		std::string runHelperPath = scriptsPath + "ecode-run-helper.bat";
-		if ( !FileSystem::fileExists( runHelperPath ) )
-			FileSystem::fileWrite( runHelperPath, RUN_HELPER );
-		std::string cmdDir = String::trim( FileSystem::fileRemoveFileName( cmd ) );
-		if ( cmdDir.empty() )
-			cmdDir = workingDir;
-		std::string cmdFile = String::trim( FileSystem::fileNameFromPath( cmd ) );
-		auto fcmd = "cmd.exe /q /c " + quoteString( "\"" + runHelperPath + "\" \"" + cmdDir +
-													"\" 0 \"" + cmdFile + "\"" );
-		Log::info( "Running: %s", fcmd );
-		Sys::execute( fcmd, workingDir );
-		return;
+		bool canContinue = true;
+		if ( !FileSystem::fileExists( runHelperPath ) ) {
+			if ( !FileSystem::fileWrite( runHelperPath, RUN_HELPER ) )
+				canContinue = false;
+		}
+		if ( canContinue ) {
+			std::string cmdDir = String::trim( FileSystem::fileRemoveFileName( cmd ) );
+			if ( cmdDir.empty() )
+				cmdDir = workingDir;
+			std::string cmdFile = String::trim( FileSystem::fileNameFromPath( cmd ) );
+			auto fcmd = "cmd.exe /q /c " + quoteString( "\"" + runHelperPath + "\" \"" + cmdDir +
+														"\" 0 \"" + cmdFile + "\"" );
+			Log::info( "Running: %s", fcmd );
+			Sys::execute( fcmd, workingDir );
+			return;
+		} else {
+			Log::info( "Couldn't write runHelperPath %s", runHelperPath );
+		}
 	}
 
 	std::vector<std::string> options;
@@ -406,6 +413,7 @@ static void openExternal( const std::string&, const std::string& cmd, const std:
 
 void TerminalManager::openInExternalTerminal( const std::string& cmd,
 											  const std::string& workingDir ) {
+	Log::info( "Trying to open in external terminal: %s %s", cmd, workingDir );
 	openExternal( mApp->termConfig().shell, cmd, mApp->getScriptsPath(), workingDir );
 }
 
