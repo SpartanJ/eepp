@@ -735,7 +735,14 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 
 		ProjectBuildCommand finalBuild( build->replaceVars( *run ) );
 		replaceDynamicVars( finalBuild );
-		auto cmd = String::trim( finalBuild.cmd ) + " " + finalBuild.args;
+		String::trimInPlace( finalBuild.cmd );
+		if ( finalBuild.cmd.find_first_of("\\/") == std::string::npos &&
+			 Sys::which( finalBuild.cmd ).empty() ) {
+			FileSystem::dirAddSlashAtEnd( finalBuild.workingDir );
+			finalBuild.cmd = finalBuild.workingDir + finalBuild.cmd;
+		}
+
+		auto cmd = finalBuild.cmd + " " + finalBuild.args;
 		if ( finalBuild.runInTerminal ) {
 			UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
 				finalBuild.workingDir, false );
@@ -928,7 +935,7 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 
 	mProcess = std::make_unique<Process>();
 
-	auto options = Process::SearchUserPath | Process::CombinedStdoutStderr;
+	auto options = Process::SearchUserPath | Process::CombinedStdoutStderr | Process::NoWindow;
 	if ( !cmd.config.clearSysEnv )
 		options |= Process::InheritEnvironment;
 
