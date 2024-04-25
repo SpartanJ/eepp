@@ -147,6 +147,13 @@ function incdirs( dirs )
 	includedirs { dirs }
 end
 
+function popen( executable_path )
+	local handle = io.popen(executable_path)
+	local result = handle:read("*a")
+	handle:close()
+	return result
+end
+
 function download_and_extract_sdl(sdl_url)
 	print("Downloading: " .. sdl_url)
 	local dest_dir = "src/thirdparty/"
@@ -212,7 +219,7 @@ function build_base_configuration( package_name )
 	incdirs { "src/thirdparty/zlib" }
 
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 	build_arch_configuration()
 
 	filter "not system:windows"
@@ -245,7 +252,7 @@ function build_base_cpp_configuration( package_name )
 	end
 
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 	build_arch_configuration()
 
 	if _OPTIONS["with-static-eepp"] then
@@ -315,7 +322,7 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	cppdialect "C++17"
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 	build_arch_configuration()
 
 	filter { "system:linux or system:macosx or system:haiku or system:bsd", "action:not vs*" }
@@ -533,12 +540,18 @@ function add_sdl2()
 	table.insert( backends, "SDL2" )
 end
 
-function set_xcode_config()
+function set_apple_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F /Library/Frameworks" }
 		buildoptions { "-F /Library/Frameworks" }
 		incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
+	end
+	if os.istarget("macosx") then
 		defines { "EE_SDL2_FROM_ROOTPATH" }
+		if not is_xcode() and not _OPTIONS["use-frameworks"] then
+			local sdl2flags = popen("sdl2-config --cflags"):gsub("\n", "")
+			buildoptions { sdl2flags }
+		end
 	end
 end
 
