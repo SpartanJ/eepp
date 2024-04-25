@@ -15,11 +15,8 @@ jobs:
         git submodule update --init --recursive
     - name: Install dependencies
       run: |
-        brew install wget
-        brew install SDL2
-        wget https://github.com/premake/premake-core/releases/download/v5.0.0-beta1/premake-5.0.0-beta1-macosx.tar.gz
-        tar -xzf premake-5.0.0-beta1-macosx.tar.gz
+        brew install wget SDL2 premake
     - name: Build
       run: |
-        ./premake5 gmake2
-        make -C make/macosx/ all
+        premake5 gmake2
+        make -C make/macosx/ -e config=release_arm64

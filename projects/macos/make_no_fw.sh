@@ -5,7 +5,7 @@ premake4 --file=../../premake4.lua --disable-static-build gmake
 cd ../../make/macosx/
 sed -e "s/-Wl,-x//g" -i .make
 
-make -j$(sysctl -n hw.ncpu) -e verbose=true $@
+make -j$(sysctl -n hw.ncpu) $@
 
 cd ../../bin/
 ln -sf ../libs/macosx/libeepp.dylib .
