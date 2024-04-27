@@ -67,6 +67,8 @@ class UniversalLocator {
 
 	void showSwitchBuildType();
 
+	void showSwitchRunTarget();
+
 	void showSwitchFileType();
 
   protected:
@@ -104,6 +106,8 @@ class UniversalLocator {
 
 	void updateSwitchBuildTypeTable();
 
+	void updateSwitchRunTargetTable();
+
 	void updateSwitchFileTypeTable();
 
 	void requestWorkspaceSymbol();
@@ -128,6 +132,8 @@ class UniversalLocator {
 	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildModel( const std::string& match );
 
 	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildTypeModel( const std::string& match );
+
+	std::shared_ptr<ItemListOwnerModel<std::string>> openRunTargetModel( const std::string& match );
 
 	std::shared_ptr<ItemListOwnerModel<std::string>> openFileTypeModel( const std::string& match );
 

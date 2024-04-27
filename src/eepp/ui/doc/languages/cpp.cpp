@@ -8,8 +8,8 @@ void addCPP() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "C++",
-		  { "%.cpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.inl$", "%.hxx$", "%.hpp$",
-			"%.h++$" },
+		  { "%.cpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.inl$", "%.hxx$", "%.hpp$", "%.h++$",
+			"%.tcc$" },
 		  {
 			  { { "R%\"xml%(", "%)xml%\"" }, "function", "XML" },
 			  { { "R%\"css%(", "%)css%\"" }, "function", "CSS" },

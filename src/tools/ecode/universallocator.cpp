@@ -125,7 +125,7 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 			showCommandPalette();
 			return true;
 		},
-		[this]( const Variant& vName, const ModelEvent* modelEvent ) {
+		[this]( const Variant&, const ModelEvent* modelEvent ) {
 			ModelIndex idx( modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 2 ) );
 			if ( idx.isValid() ) {
 				String cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
@@ -155,12 +155,14 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 		  nullptr } );
 
 	mLocatorProviders.push_back(
-		{ ".", mUISceneNode->i18n( "search_for_symbols_in_current_document", "Search for Symbols in Current Document" ),
+		{ ".",
+		  mUISceneNode->i18n( "search_for_symbols_in_current_document",
+							  "Search for Symbols in Current Document" ),
 		  [this]( auto ) {
 			  showDocumentSymbol();
 			  return true;
 		  },
-		  [this]( const Variant& vName, const ModelEvent* modelEvent ) {
+		  [this]( const Variant&, const ModelEvent* modelEvent ) {
 			  Variant rangeStr( modelEvent->getModel()->data(
 				  modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
 				  ModelRole::Custom ) );
@@ -227,8 +229,8 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 	// clang-format off
 	mLocatorProviders.push_back( { "sb", mUISceneNode->i18n( "switch_build", "Switch Build" ),
 		   [this](auto) {
-		   	showSwitchBuild();
-		   	return true;
+			showSwitchBuild();
+			return true;
 		   },
 		   [this]( const Variant& vName, const ModelEvent* ) {
 			   auto pbm = mApp->getProjectBuildManager();
@@ -260,6 +262,32 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 				  std::string buildType = vName.toString();
 				  if ( build->buildTypes().find( buildType ) != build->buildTypes().end() ) {
 					  cfg.buildType = buildType;
+					  pbm->setConfig( cfg );
+					  mLocateBarLayout->execute( "close-locatebar" );
+				  }
+			  }
+		  } } );
+
+	mLocatorProviders.push_back(
+		{ "srt", mUISceneNode->i18n( "switch_run_target", "Switch Run Target" ),
+		  [this]( auto ) {
+			  showSwitchRunTarget();
+			  return true;
+		  },
+		  [this]( const Variant& vName, const ModelEvent* ) {
+			  auto pbm = mApp->getProjectBuildManager();
+			  if ( nullptr == pbm )
+				  return;
+			  auto cfg = pbm->getConfig();
+			  auto build = pbm->getBuild( cfg.buildName );
+			  if ( build != nullptr ) {
+				  std::string runTarget = vName.toString();
+				  auto it = std::find_if( build->runConfigs().begin(), build->runConfigs().end(),
+										  [&runTarget]( const ProjectBuildStep& run ) {
+											  return run.name == runTarget;
+										  } );
+				  if ( it != build->runConfigs().end() ) {
+					  cfg.runName = runTarget;
 					  pbm->setConfig( cfg );
 					  mLocateBarLayout->execute( "close-locatebar" );
 				  }
@@ -747,7 +775,7 @@ UniversalLocator::openBuildModel( const std::string& match ) {
 			 String::startsWith( String::toLower( build.first ), String::toLower( match ) ) )
 			buildNames.push_back( build.first );
 	}
-	std::stable_sort( buildNames.begin(), buildNames.end() );
+	std::sort( buildNames.begin(), buildNames.end() );
 	return ItemListOwnerModel<std::string>::create( buildNames );
 }
 
@@ -774,6 +802,18 @@ void UniversalLocator::showSwitchBuildType() {
 	mApp->getStatusBar()->updateState();
 }
 
+void UniversalLocator::showSwitchRunTarget() {
+	showBar();
+
+	if ( mLocateInput->getText().empty() || !String::startsWith( mLocateInput->getText(), "srt " ) )
+		mLocateInput->setText( "srt " );
+
+	if ( mLocateInput->getText().size() >= 4 )
+		updateSwitchRunTargetTable();
+	updateLocateBar();
+	mApp->getStatusBar()->updateState();
+}
+
 std::shared_ptr<ItemListOwnerModel<std::string>>
 UniversalLocator::openBuildTypeModel( const std::string& match ) {
 	if ( nullptr == mApp->getProjectBuildManager() )
@@ -790,14 +830,39 @@ UniversalLocator::openBuildTypeModel( const std::string& match ) {
 		return ItemListOwnerModel<std::string>::create( {} );
 
 	std::vector<std::string> buildTypeNames;
-	buildTypeNames.reserve( builds.size() );
+	buildTypeNames.reserve( buildTypes.size() );
 	for ( const auto& build : buildTypes ) {
 		if ( match.empty() ||
 			 String::startsWith( String::toLower( build ), String::toLower( match ) ) )
 			buildTypeNames.push_back( build );
 	}
-	std::stable_sort( buildTypeNames.begin(), buildTypeNames.end() );
+	std::sort( buildTypeNames.begin(), buildTypeNames.end() );
 	return ItemListOwnerModel<std::string>::create( buildTypeNames );
+}
+
+std::shared_ptr<ItemListOwnerModel<std::string>>
+UniversalLocator::openRunTargetModel( const std::string& match ) {
+	if ( nullptr == mApp->getProjectBuildManager() )
+		return ItemListOwnerModel<std::string>::create( {} );
+	const auto& builds = mApp->getProjectBuildManager()->getBuilds();
+	const auto& cfg = mApp->getProjectBuildManager()->getConfig();
+	auto buildIt = builds.find( cfg.buildName );
+	if ( buildIt == builds.end() )
+		return ItemListOwnerModel<std::string>::create( {} );
+	const auto& build = buildIt->second;
+	const auto& runs = build.runConfigs();
+	if ( runs.empty() )
+		return ItemListOwnerModel<std::string>::create( {} );
+
+	std::vector<std::string> runTargetNames;
+	runTargetNames.reserve( runs.size() );
+	for ( const auto& run : runs ) {
+		if ( match.empty() ||
+			 String::startsWith( String::toLower( run.name ), String::toLower( match ) ) )
+			runTargetNames.push_back( run.name );
+	}
+	std::sort( runTargetNames.begin(), runTargetNames.end() );
+	return ItemListOwnerModel<std::string>::create( runTargetNames );
 }
 
 void UniversalLocator::updateSwitchBuildTypeTable() {
@@ -806,6 +871,19 @@ void UniversalLocator::updateSwitchBuildTypeTable() {
 	if ( mLocateTable->getModel()->rowCount() > 0 && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildType );
+		mLocateTable->getSelection().set( idx.isValid() ? idx
+														: mLocateTable->getModel()->index( 0 ) );
+	}
+	mLocateTable->scrollToTop();
+	mLocateTable->setColumnsVisible( { 0 } );
+}
+
+void UniversalLocator::updateSwitchRunTargetTable() {
+	mLocateTable->setModel(
+		openRunTargetModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
+	if ( mLocateTable->getModel()->rowCount() > 0 && nullptr != mApp->getProjectBuildManager() ) {
+		ModelIndex idx =
+			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().runName );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
 														: mLocateTable->getModel()->index( 0 ) );
 	}

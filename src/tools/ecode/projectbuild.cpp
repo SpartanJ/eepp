@@ -1201,7 +1201,9 @@ void ProjectBuildManager::updateRunConfig() {
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
 	UIDropDownList* runConfigList = buildTab->find<UIDropDownList>( "run_config_list" );
 
+	auto runName = mConfig.runName;
 	runConfigList->getListBox()->clear();
+	mConfig.runName = runName;
 
 	String first = buildList->getListBox()->getItemSelectedText();
 	if ( !first.empty() ) {
