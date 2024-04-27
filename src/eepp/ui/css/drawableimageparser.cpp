@@ -208,6 +208,7 @@ void DrawableImageParser::registerBaseParsers() {
 		std::vector<Vector2f> vertices;
 
 		const std::vector<std::string>& params( functionType.getParameters() );
+		Float lineWidth = PixelDensity::dpToPx( 1.f );
 
 		for ( size_t i = 0; i < params.size(); i++ ) {
 			std::string param( String::toLower( params[i] ) );
@@ -218,6 +219,9 @@ void DrawableImageParser::registerBaseParsers() {
 				drawable->setFillMode( DRAW_LINE );
 			} else if ( Color::isColorString( param ) ) {
 				colors.push_back( Color::fromString( param ) );
+			} else if ( !functionType.parameterWasString( i ) &&
+						StyleSheetLength::isLength( param ) ) {
+				lineWidth = node->convertLength( StyleSheetLength( param ), size.getWidth() );
 			} else {
 				std::vector<std::string> vertex( String::split( param, ',' ) );
 
@@ -239,6 +243,8 @@ void DrawableImageParser::registerBaseParsers() {
 		}
 
 		if ( vertices.size() == 3 && !colors.empty() ) {
+			drawable->setLineWidth( lineWidth );
+
 			Triangle2f triangle;
 
 			for ( size_t i = 0; i < 3; i++ ) {
@@ -272,6 +278,7 @@ void DrawableImageParser::registerBaseParsers() {
 		std::vector<Vector2f> vertices;
 
 		const std::vector<std::string>& params( functionType.getParameters() );
+		Float lineWidth = PixelDensity::dpToPx( 1.f );
 
 		for ( size_t i = 0; i < params.size(); i++ ) {
 			std::string param( String::toLower( params[i] ) );
@@ -284,8 +291,7 @@ void DrawableImageParser::registerBaseParsers() {
 				colors.push_back( Color::fromString( param ) );
 			} else if ( !functionType.parameterWasString( i ) &&
 						StyleSheetLength::isLength( param ) ) {
-				drawable->setLineWidth(
-					node->convertLength( StyleSheetLength( param ), size.getWidth() ) );
+				lineWidth = node->convertLength( StyleSheetLength( param ), size.getWidth() );
 			} else {
 				std::vector<std::string> vertex( String::split( param, ',' ) );
 
@@ -305,6 +311,8 @@ void DrawableImageParser::registerBaseParsers() {
 		}
 
 		if ( vertices.size() >= 2 && !colors.empty() ) {
+			drawable->setLineWidth( lineWidth );
+
 			for ( size_t i = 0; i < vertices.size(); i++ ) {
 				drawable->addPoint( vertices[i], colors[i % colors.size()] );
 			}

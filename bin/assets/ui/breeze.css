@@ -644,14 +644,14 @@ Window::maximize {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: transparent;
-	foreground-image: poly(line, var(--win-icon), "0dp 4dp, 4dp 0dp"), poly(line, var(--win-icon), "4dp 0dp, 8dp 4dp");
+	foreground-image: poly(line, var(--win-icon), "0dp 4dp, 4dp 0dp", 1dp), poly(line, var(--win-icon), "4dp 0dp, 8dp 4dp", 1dp);
 	foreground-position: 2dp 4dp, 2dp 4dp;
 	transition: all 0.15s;
 }
 
 Window::maximize:hover {
 	background-color: var(--icon-back-hover);
-	foreground-image: poly(line, var(--icon-line-hover), "0dp 4dp, 4dp 0dp"), poly(line, var(--icon-line-hover), "4dp 0dp, 8dp 4dp");
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 4dp, 4dp 0dp", 1dp), poly(line, var(--icon-line-hover), "4dp 0dp, 8dp 4dp", 1dp);
 }
 
 Window::minimize {
@@ -659,14 +659,14 @@ Window::minimize {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: transparent;
-	foreground-image: poly(line, var(--win-icon), "0dp 0dp, 4dp 4dp"), poly(line, var(--win-icon), "4dp 4dp, 8dp 0dp");
+	foreground-image: poly(line, var(--win-icon), "0dp 0dp, 4dp 4dp", 1dp), poly(line, var(--win-icon), "4dp 4dp, 8dp 0dp", 1dp);
 	foreground-position: 2dp 4dp, 2dp 4dp;
 	transition: all 0.15s;
 }
 
 Window::minimize:hover {
 	background-color: var(--icon-back-hover);
-	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 4dp 4dp"), poly(line, var(--icon-line-hover), "4dp 4dp, 8dp 0dp");
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 4dp 4dp", 1dp), poly(line, var(--icon-line-hover), "4dp 4dp, 8dp 0dp", 1dp);
 }
 
 Window {
@@ -833,7 +833,7 @@ Menu::SubMenu::Arrow {
 	width: 16dp;
 	height: 16dp;
 	margin-right: 1dp;
-	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp"), poly(line, var(--icon), "5dp 13dp, 10dp 8dp");
+	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp", 1dp), poly(line, var(--icon), "5dp 13dp, 10dp 8dp", 1dp);
 }
 
 Menu::Item::icon,
@@ -997,7 +997,7 @@ treeview::header::column::arrow-up,
 listview::header::column::arrow-up {
 	width: 16dp;
 	height: 12dp;
-	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
+	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp", 1dp), poly(line, var(--icon), "5dp 7dp, 9dp 4dp", 1dp);
 }
 
 tableview::header::column::arrow-down,
@@ -1005,7 +1005,7 @@ treeview::header::column::arrow-down,
 listview::header::column::arrow-down {
 	width: 16dp;
 	height: 12dp;
-	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
+	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp", 1dp), poly(line, var(--icon), "5dp 4dp, 9dp 7dp", 1dp);
 }
 
 ScrollBarMini {
