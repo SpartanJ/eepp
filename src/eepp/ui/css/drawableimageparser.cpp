@@ -282,6 +282,10 @@ void DrawableImageParser::registerBaseParsers() {
 				drawable->setFillMode( DRAW_LINE );
 			} else if ( Color::isColorString( param ) ) {
 				colors.push_back( Color::fromString( param ) );
+			} else if ( !functionType.parameterWasString( i ) &&
+						StyleSheetLength::isLength( param ) ) {
+				drawable->setLineWidth(
+					node->convertLength( StyleSheetLength( param ), size.getWidth() ) );
 			} else {
 				std::vector<std::string> vertex( String::split( param, ',' ) );
 

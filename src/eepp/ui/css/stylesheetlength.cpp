@@ -1,3 +1,4 @@
+#include <eepp/system/luapattern.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/math/math.hpp>
@@ -163,6 +164,23 @@ std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit )
 			return "dpr";
 	}
 	return "px";
+}
+
+bool StyleSheetLength::isLength( const std::string& unitStr ) {
+	LuaPattern ptrn( "(-?%d+[%d%.eE]*)(%w*)" );
+	LuaPattern::Range matches[4];
+	if ( ptrn.matches( unitStr, matches ) ) {
+		if ( matches[2].isValid() ) {
+			std::string unit =
+				unitStr.substr( matches[2].start, matches[2].end - matches[2].start );
+			auto unitType = unitFromString( unit );
+			if ( unitType != StyleSheetLength::Unit::Px || unit == "px" )
+				return true;
+			return false;
+		}
+		return true;
+	}
+	return false;
 }
 
 StyleSheetLength::StyleSheetLength() : mUnit( Px ), mValue( 0 ) {}

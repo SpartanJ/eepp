@@ -630,7 +630,7 @@ Window::close {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: var(--icon-back-hover);
-	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 6dp 6dp"), poly(line, var(--icon-line-hover), "6dp 0dp, 0dp 6dp");
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 6dp 6dp", 1dp), poly(line, var(--icon-line-hover), "6dp 0dp, 0dp 6dp", 1dp);
 	foreground-position: 3dp 3dp, 3dp 3dp;
 	transition: all 0.15s;
 }

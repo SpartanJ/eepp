@@ -2583,7 +2583,7 @@ linear-gradient(direction, from_color, to_color); /** valid directions are (with
 circle(radius, color, type); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
 rectangle(type, color, rotation, radius); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). rotation (optional) is a number in degress: "0º" (without quotes). radius (optional), must be the last parameter. */
 triangle(type, color, "point_1.x point1.y, point_2.x point2.y, point_3.x point3.y") /** type can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
-poly(type, color, "point_1.x point1.y, point_2.x point2.y, ...") /** polygon. type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
+poly(type, color, "point_1.x point1.y, point_2.x point2.y, ...", lineWidth) /** polygon. type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
 icon(name, size) /** icons usually come from font glyphs, size is the font glyph size. For example: icon("quit", 24dp) */
 glyph(font_family, font_size, codepoint) /** codepoint can be an integer value, an hex value (hex values start with 0x), or a 1 codepoint string representing glyph character. For example: glyph("monospace", 24dp, "@") */
 ```
