@@ -1124,13 +1124,14 @@ bool UIWindow::hide() {
 	return false;
 }
 
-void UIWindow::showWhenReady() {
+UIWindow* UIWindow::showWhenReady() {
 	if ( mWindowReady ) {
 		show();
 	} else {
 		hide();
 		mShowWhenReady = true;
 	}
+	return this;
 }
 
 void UIWindow::onAlphaChange() {
@@ -1176,9 +1177,9 @@ const Uint8& UIWindow::getBaseAlpha() const {
 	return mStyleConfig.BaseAlpha;
 }
 
-void UIWindow::setTitle( const String& text ) {
+UIWindow* UIWindow::setTitle( const String& text ) {
 	if ( mTitle && text == mTitle->getText() )
-		return;
+		return this;
 
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::NewWithTag( "window::title" );
@@ -1196,6 +1197,7 @@ void UIWindow::setTitle( const String& text ) {
 
 	mTitle->setText( text );
 	sendTextEvent( Event::OnTitleChange, text.toUtf8() );
+	return this;
 }
 
 void UIWindow::fixTitleSize() {

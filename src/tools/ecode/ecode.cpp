@@ -3291,7 +3291,6 @@ void App::loadFolder( const std::string& path ) {
 
 	mCurrentProject = rpath;
 	mCurrentProjectName = FileSystem::fileNameFromPath( mCurrentProject );
-	mPluginManager->setWorkspaceFolder( rpath );
 
 	loadDirTree( rpath );
 
@@ -3329,6 +3328,8 @@ void App::loadFolder( const std::string& path ) {
 
 	if ( mSplitter->getCurEditor() )
 		setAppTitle( titleFromEditor( mSplitter->getCurEditor() ) );
+
+	mPluginManager->setWorkspaceFolder( rpath );
 }
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS

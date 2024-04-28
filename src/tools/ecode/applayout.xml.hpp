@@ -174,6 +174,21 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 #status_bar > .status_but.selected {
 	background-color: var(--primary);
 }
+.vertical_bar {
+	background-color: var(--list-back);
+}
+.vertical_bar PushButton {
+	padding: 2dp;
+	background-color: var(--list-back);
+	border-radius: 0dp;
+	border-width: 0dp;
+}
+.vertical_bar PushButton:hover {
+	background-color: var(--item-hover);
+}
+.vertical_bar PushButton.selected {
+	background-color: var(--primary);
+}
 #panel > tabwidget::container > * {
 	background-color: var(--list-back);
 }

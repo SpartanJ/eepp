@@ -575,6 +575,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void showFindReplace();
 
+	Tools::UIDocFindReplace* getFindReplace();
+
 	TextPosition resolveScreenPosition( const Vector2f& position, bool clamp = true ) const;
 
 	Rectf getScreenPosition( const TextPosition& position ) const;

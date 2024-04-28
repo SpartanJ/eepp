@@ -1,6 +1,5 @@
 #include "statusappoutputcontroller.hpp"
 #include "ecode.hpp"
-#include "widgetcommandexecuter.hpp"
 
 namespace ecode {
 
@@ -78,10 +77,15 @@ void StatusAppOutputController::run( const ProjectBuildCommand& runData,
 	if ( runButton )
 		runButton->setText( mApp->i18n( "cancel_run", "Cancel Run" ) );
 
+	mRunButton->setEnabled( false );
+	mStopButton->setEnabled( true );
+
 	const auto updateRunButton = [this]() {
 		UIPushButton* buildButton = getRunButton( mApp );
 		buildButton->runOnMainThread(
 			[this, buildButton] { buildButton->setText( mApp->i18n( "run", "Run" ) ); } );
+		mRunButton->setEnabled( true );
+		mStopButton->setEnabled( false );
 	};
 
 	auto res = pbm->run(
@@ -138,9 +142,18 @@ void StatusAppOutputController::createContainer() {
 	if ( mContainer )
 		return;
 	const auto XML = R"xml(
-<rellayce id="app_output" lw="mp" lh="mp" visible="false" lw="mp" lh="mp">
-	<CodeEditor id="app_output_output" lw="mp" lh="mp" />
-</rellayce>
+	<hbox id="app_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
+		<rellayce id="app_command_executer" lw="0" lw8="1" lh="mp">
+			<CodeEditor id="app_output_output" lw="mp" lh="mp" />
+		</rellayce>
+		<vbox lw="16dp" lh="mp">
+			<PushButton id="app_output_clear" lw="mp" icon="icon(eraser, 12dp)" tooltip="@string(clear, Clear)" />
+			<PushButton id="app_output_run" lw="mp" icon="icon(play, 12dp)" tooltip="@string(run, Run)" />
+			<PushButton id="app_output_stop" lw="mp" icon="icon(stop, 12dp)" enabled="false" />
+			<PushButton id="app_output_find" lw="mp" icon="icon(search, 12dp)" tooltip="@string(find, Find)" />
+			<PushButton id="app_output_configure" lw="mp" icon="icon(settings, 12dp)" tooltip="@string(configure_ellipsis, Configure...)" />
+		</vbox>
+	</hbox>
 	)xml";
 
 	if ( mMainSplitter->getLastWidget() != nullptr ) {
@@ -150,7 +163,7 @@ void StatusAppOutputController::createContainer() {
 
 	mContainer = mApp->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
-					 ->asType<UIRelativeLayoutCommandExecuter>();
+					 ->asType<UILinearLayout>();
 	auto editor = mContainer->find<UICodeEditor>( "app_output_output" );
 	editor->setLocked( true );
 	editor->setLineBreakingColumn( 0 );
@@ -162,6 +175,64 @@ void StatusAppOutputController::createContainer() {
 		mScrollLocked = mAppOutput->getMaxScroll().y == mAppOutput->getScroll().y;
 	} );
 	mContainer->setVisible( false );
+
+	mContainer->bind( "app_output_clear", mClearButton );
+	mContainer->bind( "app_output_run", mRunButton );
+	mContainer->bind( "app_output_stop", mStopButton );
+	mContainer->bind( "app_output_find", mFindButton );
+	mContainer->bind( "app_output_configure", mConfigureButton );
+
+	mClearButton->onClick( [this]( auto ) {
+		mAppOutput->getDocument().reset();
+		mAppOutput->invalidateLongestLineWidth();
+		mAppOutput->setScrollY( mAppOutput->getMaxScroll().y );
+	} );
+
+	mRunButton->onClick( [this]( auto ) {
+		auto pbm = mApp->getProjectBuildManager();
+		if ( nullptr == pbm )
+			return;
+		if ( !pbm->hasRunConfig() ) {
+			UIMessageBox::New(
+				UIMessageBox::OK,
+				mApp->i18n( "must_configure_build_and_run_config",
+							"You must first add a build and run configuration" ) )
+				->setCloseShortcut( { KEY_ESCAPE } )
+				->setTitle( mApp->getWindowTitle() )
+				->showWhenReady()
+				->on( Event::OnConfirm, [this]( auto ) {
+					auto pbm = mApp->getProjectBuildManager();
+					if ( nullptr != pbm )
+						pbm->selectTab();
+				} );
+			return;
+		}
+		pbm->runCurrentConfig( this, false );
+	} );
+
+	mStopButton->onClick( [this]( auto ) {
+		auto pbm = mApp->getProjectBuildManager();
+		if ( nullptr == pbm )
+			return;
+		pbm->cancelRun();
+	} );
+
+	mFindButton->onClick( [this]( auto ) {
+		if ( mAppOutput->getFindReplace() == nullptr || !mAppOutput->getFindReplace()->isVisible() )
+			mAppOutput->showFindReplace();
+		else if ( mAppOutput->getFindReplace() ) {
+			mAppOutput->getFindReplace()->hide();
+			mAppOutput->setFocus();
+		}
+	} );
+
+	mConfigureButton->onClick( [this]( auto ) {
+		auto pbm = mApp->getProjectBuildManager();
+		if ( nullptr == pbm )
+			return;
+		pbm->editCurrentBuild();
+		hide();
+	} );
 }
 
 } // namespace ecode

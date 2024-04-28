@@ -292,6 +292,20 @@ void ProjectBuildManager::editBuild( std::string buildName, UIWidget* buildTab )
 	ret.first->setIcon( mApp->findIcon( "hammer" ) );
 }
 
+void ProjectBuildManager::editCurrentBuild() {
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab_view" );
+	if ( buildTab == nullptr )
+		return;
+	if ( !mConfig.buildName.empty() && !mBuilds.empty() )
+		editBuild( mConfig.buildName, buildTab );
+	else
+		mTab->setTabSelected();
+}
+
+void ProjectBuildManager::selectTab() {
+	mTab->setTabSelected();
+}
+
 ProjectBuildManager::~ProjectBuildManager() {
 	if ( mUISceneNode && !SceneManager::instance()->isShuttingDown() && mSidePanel && mTab ) {
 		mSidePanel->removeTab( mTab );
@@ -672,11 +686,7 @@ void ProjectBuildManager::setConfig( const ProjectBuildConfiguration& config ) {
 void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc,
 											  std::function<void( int exitStatus )> doneFn ) {
 	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
-		const ProjectBuild* build = nullptr;
-		for ( const auto& buildIt : getBuilds() )
-			if ( buildIt.second.getName() == mConfig.buildName )
-				build = &buildIt.second;
-
+		const ProjectBuild* build = getBuild( mConfig.buildName );
 		if ( build ) {
 			mApp->saveAll();
 			sboc->runBuild( build->getName(), mConfig.buildType,
@@ -687,11 +697,7 @@ void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc,
 
 void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc ) {
 	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
-		const ProjectBuild* build = nullptr;
-		for ( const auto& buildIt : getBuilds() )
-			if ( buildIt.second.getName() == mConfig.buildName )
-				build = &buildIt.second;
-
+		const ProjectBuild* build = getBuild( mConfig.buildName );
 		if ( build )
 			sboc->runBuild( build->getName(), mConfig.buildType,
 							getOutputParser( build->getName() ), true );
@@ -709,13 +715,22 @@ void ProjectBuildManager::runCurrentConfig( StatusAppOutputController* saoc, boo
 	}
 }
 
+bool ProjectBuildManager::hasBuildConfig() {
+	return !getBuilds().empty() && !mConfig.buildName.empty();
+}
+
+bool ProjectBuildManager::hasRunConfig() {
+	if ( hasBuildConfig() ) {
+		auto build = getBuild( mConfig.buildName );
+		return build != nullptr && build->hasRun();
+	}
+	return false;
+}
+
 void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 	if ( !isRunningApp() && !getBuilds().empty() ) {
 		BoolScopedOp op( mRunning, true );
-		const ProjectBuild* build = nullptr;
-		for ( const auto& buildIt : getBuilds() )
-			if ( buildIt.second.getName() == mConfig.buildName )
-				build = &buildIt.second;
+		const ProjectBuild* build = getBuild( mConfig.buildName );
 
 		if ( nullptr == build || !build->hasRun() )
 			return;

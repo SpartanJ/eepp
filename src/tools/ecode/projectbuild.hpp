@@ -321,6 +321,14 @@ class ProjectBuildManager {
 	void runCurrentConfig( StatusAppOutputController* saoc, bool build,
 						   StatusBuildOutputController* sboc = nullptr );
 
+	void editCurrentBuild();
+
+	bool hasRunConfig();
+
+	bool hasBuildConfig();
+
+	void selectTab();
+
   protected:
 	std::string mProjectRoot;
 	std::string mProjectFile;

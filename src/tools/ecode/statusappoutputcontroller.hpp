@@ -4,7 +4,6 @@
 #include "projectbuild.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "uistatusbar.hpp"
-#include "widgetcommandexecuter.hpp"
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -38,9 +37,14 @@ class StatusAppOutputController : public StatusBarElement {
 	UIPushButton* getRunButton( App* app );
 
   protected:
-	UIRelativeLayoutCommandExecuter* mContainer{ nullptr };
+	UILinearLayout* mContainer{ nullptr };
 	UICodeEditor* mAppOutput{ nullptr };
 	std::vector<PatternHolder> mPatternHolder;
+	UIPushButton* mClearButton{ nullptr };
+	UIPushButton* mRunButton{ nullptr };
+	UIPushButton* mStopButton{ nullptr };
+	UIPushButton* mFindButton{ nullptr };
+	UIPushButton* mConfigureButton{ nullptr };
 
 	bool mScrollLocked{ true };
 

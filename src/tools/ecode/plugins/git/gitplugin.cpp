@@ -471,6 +471,9 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 
 				updateUINow( true );
 				mInitialized = true;
+
+				if ( mModelStylerId == 0 )
+					initModelStyler();
 			}
 			break;
 		}

@@ -3452,6 +3452,10 @@ void UICodeEditor::showFindReplace() {
 		SceneManager::instance()->setCurrentUISceneNode( curSceneNode );
 }
 
+Tools::UIDocFindReplace* UICodeEditor::getFindReplace() {
+	return mFindReplace;
+}
+
 void UICodeEditor::registerKeybindings() {
 	mKeyBindings.addKeybinds( getDefaultKeybindings() );
 }

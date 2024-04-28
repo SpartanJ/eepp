@@ -174,6 +174,9 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 			buildButton->setText( mApp->i18n( "cancel_build", "Cancel Build" ) );
 	}
 
+	mBuildButton->setEnabled( false );
+	mStopButton->setEnabled( true );
+
 	const auto updateBuildButton = [this, isClean, enableBuildButton, enableCleanButton]() {
 		UIPushButton* buildButton = getBuildButton( mApp );
 		UIPushButton* cleanButton = getCleanButton( mApp );
@@ -193,6 +196,9 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 		if ( enableCleanButton && cleanButton )
 			cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
+
+		mBuildButton->setEnabled( true );
+		mStopButton->setEnabled( false );
 	};
 
 	auto res = pbm->build(
@@ -342,11 +348,11 @@ class StatusMessageModel : public Model {
 	virtual std::string columnName( const size_t& idx ) const {
 		switch ( idx ) {
 			case 2:
-				return mSceneNode->i18n( "message", "Message" );
+				return mSceneNode->i18n( "line", "Line" );
 			case 1:
 				return mSceneNode->i18n( "file", "File" );
 			case 0:
-				return mSceneNode->i18n( "line", "Line" );
+				return mSceneNode->i18n( "message", "Message" );
 		}
 		return "";
 	}
@@ -369,25 +375,37 @@ void StatusBuildOutputController::onLoadDone( const Variant& lineNum, const Vari
 }
 
 void StatusBuildOutputController::setHeaderWidth() {
-	auto totWidth = mTableIssues->getPixelsSize().getWidth() -
+	auto totWidth = eefloor( mTableIssues->getPixelsSize().getWidth() -
 					( mTableIssues->getVerticalScrollBar()->isVisible()
 						  ? mTableIssues->getVerticalScrollBar()->getPixelsSize().getWidth()
-						  : 0.f );
-	mTableIssues->setColumnWidth( 0, totWidth * 0.80f );
-	mTableIssues->setColumnWidth( 1, totWidth * 0.15f );
-	mTableIssues->setColumnWidth( 2, totWidth * 0.05f );
+						  : 0.f ) );
+	Float col1 = eefloor( totWidth * 0.80f );
+	Float col2 = eefloor( totWidth * 0.15f );
+	Float col3 = totWidth - col1 - col2;
+	mTableIssues->setColumnWidth( 0, col1 );
+	mTableIssues->setColumnWidth( 1, col2 );
+	mTableIssues->setColumnWidth( 2, col3 );
 }
 
 void StatusBuildOutputController::createContainer() {
 	if ( mContainer )
 		return;
 	const auto XML = R"xml(
-<rellayce id="build_output" lw="mp" lh="mp" visible="false" class="status_build_output_cont" lw="mp" lh="mp">
-	<CodeEditor id="build_output_output" lw="mp" lh="mp" />
-	<TableView id="build_output_issues" lw="mp" lh="mp" visible="false" />
-	<SelectButton id="but_build_output_issues" text="@string(issues_capitalized, Issues)" lg="bottom|right" margin-right="1dp" margin-bottom="18dp" margin-right="18dp" />
-	<SelectButton id="but_build_output_output" text="@string(output_capitalized, Output)" layout-to-left-of="but_build_output_issues" selected="true" />
-</rellayce>
+	<hbox id="build_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
+		<rellayce id="build_output_command_executer" lw="0" lw8="1" lh="mp" class="status_build_output_cont">
+			<CodeEditor id="build_output_output" lw="mp" lh="mp" />
+			<TableView id="build_output_issues" lw="mp" lh="mp" visible="false" />
+			<SelectButton id="but_build_output_issues" text="@string(issues_capitalized, Issues)" lg="bottom|right" margin-right="1dp" margin-bottom="18dp" margin-right="19dp" />
+			<SelectButton id="but_build_output_output" text="@string(output_capitalized, Output)" layout-to-left-of="but_build_output_issues" selected="true" />
+		</rellayce>
+		<vbox lw="16dp" lh="mp">
+			<PushButton id="build_output_clear" lw="mp" icon="icon(eraser, 12dp)" tooltip="@string(clear, Clear)" />
+			<PushButton id="build_output_build" lw="mp" icon="icon(hammer, 12dp)" tooltip="@string(build, Build)" />
+			<PushButton id="build_output_stop" lw="mp" icon="icon(stop, 12dp)" enabled="false" />
+			<PushButton id="build_output_find" lw="mp" icon="icon(search, 12dp)" tooltip="@string(find, Find)" />
+			<PushButton id="build_output_configure" lw="mp" icon="icon(settings, 12dp)" tooltip="@string(configure_ellipsis, Configure...)" />
+		</vbox>
+	</hbox>
 	)xml";
 
 	if ( mMainSplitter->getLastWidget() != nullptr ) {
@@ -397,7 +415,9 @@ void StatusBuildOutputController::createContainer() {
 
 	mContainer = mApp->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
-					 ->asType<UIRelativeLayoutCommandExecuter>();
+					 ->asType<UILinearLayout>();
+	mRelLayCE = mContainer->find( "build_output_command_executer" )
+					->asType<UIRelativeLayoutCommandExecuter>();
 	auto editor = mContainer->find<UICodeEditor>( "build_output_output" );
 	editor->setLocked( true );
 	editor->setLineBreakingColumn( 0 );
@@ -501,18 +521,76 @@ void StatusBuildOutputController::createContainer() {
 		mScrollLocked = mBuildOutput->getMaxScroll().y == mBuildOutput->getScroll().y;
 	} );
 	mContainer->setVisible( false );
-	mContainer->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
-	mContainer->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );
-	mContainer->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
-											 "build-output-show-build-output" );
-	mContainer->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
-											 "build-output-show-build-issues" );
+	mRelLayCE->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
+	mRelLayCE->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );
+	mRelLayCE->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
+											"build-output-show-build-output" );
+	mRelLayCE->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
+											"build-output-show-build-issues" );
 	mButOutput->onClick( [this]( auto ) { showBuildOutput(); } );
 	mButIssues->onClick( [this]( auto ) { showIssues(); } );
 	mButOutput->setTooltipText(
-		mContainer->getKeyBindings().getCommandKeybindString( "build-output-show-build-output" ) );
+		mRelLayCE->getKeyBindings().getCommandKeybindString( "build-output-show-build-output" ) );
 	mButIssues->setTooltipText(
-		mContainer->getKeyBindings().getCommandKeybindString( "build-output-show-build-issues" ) );
+		mRelLayCE->getKeyBindings().getCommandKeybindString( "build-output-show-build-issues" ) );
+
+	mContainer->bind( "build_output_clear", mClearButton );
+	mContainer->bind( "build_output_build", mBuildButton );
+	mContainer->bind( "build_output_stop", mStopButton );
+	mContainer->bind( "build_output_find", mFindButton );
+	mContainer->bind( "build_output_configure", mConfigureButton );
+
+	mClearButton->onClick( [this]( auto ) {
+		mBuildOutput->getDocument().reset();
+		mBuildOutput->invalidateLongestLineWidth();
+		mBuildOutput->setScrollY( mBuildOutput->getMaxScroll().y );
+	} );
+
+	mBuildButton->onClick( [this]( auto ) {
+		auto pbm = mApp->getProjectBuildManager();
+		if ( nullptr == pbm )
+			return;
+		if ( !pbm->hasBuildConfig() ) {
+			UIMessageBox::New( UIMessageBox::OK,
+							   mApp->i18n( "must_configure_build_config",
+										   "You must first add a build configuration" ) )
+				->setCloseShortcut( { KEY_ESCAPE } )
+				->setTitle( mApp->getWindowTitle() )
+				->showWhenReady()
+				->on( Event::OnConfirm, [this]( auto ) {
+					auto pbm = mApp->getProjectBuildManager();
+					if ( nullptr != pbm )
+						pbm->selectTab();
+				} );
+			return;
+		}
+		pbm->buildCurrentConfig( this );
+	} );
+
+	mStopButton->onClick( [this]( auto ) {
+		auto pbm = mApp->getProjectBuildManager();
+		if ( nullptr == pbm )
+			return;
+		pbm->cancelBuild();
+	} );
+
+	mFindButton->onClick( [this]( auto ) {
+		if ( mBuildOutput->getFindReplace() == nullptr ||
+			 !mBuildOutput->getFindReplace()->isVisible() )
+			mBuildOutput->showFindReplace();
+		else if ( mBuildOutput->getFindReplace() ) {
+			mBuildOutput->getFindReplace()->hide();
+			mBuildOutput->setFocus();
+		}
+	} );
+
+	mConfigureButton->onClick( [this]( auto ) {
+		auto pbm = mApp->getProjectBuildManager();
+		if ( nullptr == pbm )
+			return;
+		pbm->editCurrentBuild();
+		hide();
+	} );
 }
 
 } // namespace ecode

@@ -89,7 +89,10 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 		{ "filetype-hdr", 0xF3C5 },
 		{ "filetype-pic", 0xF3C5 },
 		{ "filetype-pvr", 0xF3C5 },
-		{ "filetype-pkm", 0xF3C5 } };
+		{ "filetype-pkm", 0xF3C5 },
+		{ "settings", 0xF0E3 },
+		{ "stop", 0xF1A0 },
+	};
 
 	for ( const auto& icon : icons )
 		iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
