@@ -1285,15 +1285,19 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	return linesRemoved;
 }
 
-TextPosition TextDocument::positionOffset( TextPosition position, int columnOffset ) const {
-	position = sanitizePosition( position );
+TextPosition TextDocument::positionOffset( TextPosition position, int columnOffset,
+										   bool sanitizeInput ) const {
+	if ( sanitizeInput )
+		position = sanitizePosition( position );
 	position.setColumn( position.column() + columnOffset );
 	while ( position.line() > 0 && position.column() < 0 ) {
 		position.setLine( position.line() - 1 );
-		position.setColumn( eemax<Int64>( 0, position.column() + mLines[position.line()].size() ) );
+		position.setColumn(
+			eemax<Int64>( 0, position.column() + (Int64)mLines[position.line()].size() ) );
 	}
 	while ( position.line() < (Int64)mLines.size() - 1 &&
-			position.column() > (Int64)eemax<Int64>( 0, mLines[position.line()].size() - 1 ) ) {
+			position.column() >
+				(Int64)eemax<Int64>( 0, (Int64)mLines[position.line()].size() - 1 ) ) {
 		position.setColumn( position.column() - mLines[position.line()].size() );
 		position.setLine( position.line() + 1 );
 	}
@@ -2340,7 +2344,7 @@ struct FindTypeResult {
 };
 
 static FindTypeResult findType( const String& str, const String& findStr,
-								const TextDocument::FindReplaceType& type ) {
+								const TextDocument::FindReplaceType& type, int colOffset ) {
 	switch ( type ) {
 		case TextDocument::FindReplaceType::LuaPattern: {
 			LuaPatternStorage words( findStr.toUtf8() );
@@ -2352,8 +2356,8 @@ static FindTypeResult findType( const String& str, const String& findStr,
 					std::vector<TextPosition> captures;
 					captures.reserve( words.getNumMatches() - 1 );
 					for ( size_t i = 1; i < words.getNumMatches(); i++ ) {
-						result.captures.emplace_back(
-							LuaPattern::Range{ matches[i].start, matches[i].end } );
+						result.captures.emplace_back( LuaPattern::Range{
+							colOffset + matches[i].start, colOffset + matches[i].end } );
 					}
 				}
 				return result;
@@ -2442,21 +2446,22 @@ TextDocument::SearchResult TextDocument::findText( String text, TextPosition fro
 		FindTypeResult col;
 		if ( i == from.line() ) {
 			col = caseSensitive
-					  ? findType( line( i ).getText().substr( from.column() ), text, type )
+					  ? findType( line( i ).getText().substr( from.column() ), text, type,
+								  from.column() )
 					  : findType( String::toLower( line( i ).getText() ).substr( from.column() ),
-								  text, type );
+								  text, type, from.column() );
 			if ( String::StringType::npos != col.start ) {
 				col.start += from.column();
 				col.end += from.column();
 			}
 		} else if ( i == to.line() && to != endOfDoc() ) {
 			col = caseSensitive
-					  ? findType( line( i ).getText().substr( 0, to.column() ), text, type )
+					  ? findType( line( i ).getText().substr( 0, to.column() ), text, type, 0 )
 					  : findType( String::toLower( line( i ).getText() ).substr( 0, to.column() ),
-								  text, type );
+								  text, type, 0 );
 		} else {
-			col = caseSensitive ? findType( line( i ).getText(), text, type )
-								: findType( String::toLower( line( i ).getText() ), text, type );
+			col = caseSensitive ? findType( line( i ).getText(), text, type, 0 )
+								: findType( String::toLower( line( i ).getText() ), text, type, 0 );
 		}
 		if ( String::StringType::npos != col.start &&
 			 ( !wholeWord || String::isWholeWord( line( i ).getText(), text, col.start ) ) ) {

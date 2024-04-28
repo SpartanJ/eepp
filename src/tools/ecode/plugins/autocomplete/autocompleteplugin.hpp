@@ -43,7 +43,7 @@ class AutoCompletePlugin : public Plugin {
 			kind( kind ),
 			text( std::move( text ) ),
 			detail( std::move( detail ) ),
-			sortText( sortText.empty() ? std::string{ text } : std::move( sortText ) ),
+			sortText( sortText.empty() ? std::string{ this->text } : std::move( sortText ) ),
 			range( range ),
 			insertText( std::move( insertText ) ),
 			documentation( doc ){};
@@ -130,7 +130,7 @@ class AutoCompletePlugin : public Plugin {
 	};
 	std::unordered_map<TextDocument*, DocCache> mDocCache;
 	std::unordered_map<std::string, SymbolsList> mLangCache;
-
+	std::vector<TextRanges> mSnippetCompletion;
 	std::vector<Suggestion> mSuggestions;
 	Mutex mSuggestionsEditorMutex;
 	Mutex mSignatureHelpEditorMutex;
@@ -188,6 +188,11 @@ class AutoCompletePlugin : public Plugin {
 
 	void drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
 							const Float& lineHeight, bool drawUp );
+
+	bool hasCompleteSteps( const Suggestion& suggestion );
+
+	void tryStartSnippetNav( const Suggestion& suggestion, UICodeEditor* editor,
+							 const TextRanges& prevSels );
 };
 
 } // namespace ecode

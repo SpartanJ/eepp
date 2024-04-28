@@ -10,8 +10,13 @@
 using namespace EE::Graphics;
 using namespace EE::System;
 using json = nlohmann::json;
+using namespace std::literals;
 
 namespace ecode {
+
+static constexpr auto SNIPPET_PTRN1 = "%$%{%d+%}"sv;
+static constexpr auto SNIPPET_PTRN2 = "%$%{%d+%:(%w+)}"sv;
+static constexpr auto SNIPPET_PTRN3 = "%$%d+"sv;
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 #define AUTO_COMPLETE_THREADED 1
@@ -462,11 +467,10 @@ void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 	std::string symbol( getPartialSymbol( editor->getDocumentRef().get() ) );
 	const auto& suggestion = mSuggestions[mSuggestionIndex];
 	auto doc = editor->getDocumentRef();
+	auto prevSels = doc->getSelections();
 
 	if ( doc->getSelections().size() == 1 && suggestion.range.isValid() &&
 		 doc->isValidRange( suggestion.range ) ) {
-		auto sels = doc->getSelections();
-
 		doc->setSelection( suggestion.range );
 		doc->textInput( suggestion.insertText );
 	} else {
@@ -475,8 +479,106 @@ void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 		doc->textInput( suggestion.text );
 	}
 
+	// tryStartSnippetNav( suggestion, editor, prevSels );
+
 	mReplacing = false;
 	resetSuggestions( editor );
+}
+
+void AutoCompletePlugin::tryStartSnippetNav( const Suggestion& suggestion, UICodeEditor* editor,
+											 const TextRanges& prevSels ) {
+	if ( !hasCompleteSteps( suggestion ) || !mSnippetCompletion.empty() )
+		return;
+
+	auto doc = editor->getDocumentRef();
+	auto selections = doc->getSelections();
+	TextRanges newSelections;
+	newSelections.reserve( selections.size() );
+	size_t i = 0;
+	for ( const auto& sel : selections ) {
+		newSelections.emplace_back( prevSels[i].start(), sel.end() );
+		i++;
+	}
+	std::vector<TextRanges> ranges;
+
+	for ( const auto& sel : newSelections ) {
+		TextRanges steps;
+
+		auto res = doc->findAll( SNIPPET_PTRN1, true, false,
+								 TextDocument::FindReplaceType::LuaPattern, sel );
+
+		auto res2 = doc->findAll( SNIPPET_PTRN2, true, false,
+								  TextDocument::FindReplaceType::LuaPattern, sel );
+
+		auto res3 = doc->findAll( SNIPPET_PTRN3, true, false,
+								  TextDocument::FindReplaceType::LuaPattern, sel );
+
+		res.reserve( res.size() + res2.size() + res3.size() );
+
+		for ( auto& r : res2 )
+			res.emplace_back( std::move( r ) );
+
+		for ( auto& r : res3 )
+			res.emplace_back( std::move( r ) );
+
+		if ( res.empty() )
+			continue;
+
+		std::sort(
+			res.begin(), res.end(),
+			[]( const TextDocument::SearchResult& left, const TextDocument::SearchResult& right ) {
+				return left.result > right.result;
+			} );
+
+		for ( TextDocument::SearchResult& sr : res ) {
+			if ( !sr.isValid() )
+				continue;
+
+			doc->setSelection( sr.result );
+
+			if ( !sr.captures.empty() ) {
+				auto text = doc->getText( sr.captures[0] );
+				auto pos = doc->replaceSelection( text );
+
+				for ( auto& step : steps ) {
+					if ( step.start().line() == sr.result.start().line() ) {
+						Int64 offset = sr.result.length() - text.size();
+						step.setStart( doc->positionOffset( step.start(), -offset, false ) );
+						step.setEnd( doc->positionOffset( step.end(), -offset, false ) );
+					}
+				}
+
+				steps.emplace_back( pos, doc->positionOffset( pos, -text.size() ) );
+			} else {
+				auto pos = doc->replaceSelection( "" );
+
+				for ( auto& step : steps ) {
+					if ( step.start().line() == sr.result.start().line() ) {
+						Int64 offset = sr.result.length();
+						step.setStart( doc->positionOffset( step.start(), -offset, false ) );
+						step.setEnd( doc->positionOffset( step.end(), -offset, false ) );
+					}
+				}
+
+				steps.emplace_back( pos, pos );
+			}
+		}
+
+		ranges.emplace_back( steps );
+	}
+
+	mSnippetCompletion = std::move( ranges );
+}
+
+bool AutoCompletePlugin::hasCompleteSteps( const Suggestion& suggestion ) {
+	if ( suggestion.kind != LSPCompletionItemKind::Snippet )
+		return false;
+	if ( LuaPattern::matches( suggestion.insertText, SNIPPET_PTRN1 ) ||
+		 LuaPattern::matches( suggestion.insertText, SNIPPET_PTRN2 ) ||
+		 LuaPattern::matches( suggestion.insertText, SNIPPET_PTRN3 ) ) {
+		return true;
+	}
+	return false;
 }
 
 PluginRequestHandle

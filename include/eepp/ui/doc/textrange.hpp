@@ -111,6 +111,14 @@ class EE_API TextRange {
 
 	bool inSameLine() const { return isValid() && mStart.line() == mEnd.line(); }
 
+	Int64 length() const {
+		if ( !inSameLine() )
+			return 0;
+		if ( mEnd.column() > mStart.column() )
+			return mEnd.column() - mStart.column();
+		return mStart.column() - mStart.column();
+	}
+
 	std::string toString() const {
 		return String::format( "%s - %s", mStart.toString().c_str(), mEnd.toString().c_str() );
 	}

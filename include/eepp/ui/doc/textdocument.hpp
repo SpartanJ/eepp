@@ -204,7 +204,8 @@ class EE_API TextDocument {
 
 	size_t remove( const size_t& cursorIdx, TextRange range );
 
-	TextPosition positionOffset( TextPosition position, int columnOffset ) const;
+	TextPosition positionOffset( TextPosition position, int columnOffset,
+								 bool sanitizeInput = true ) const;
 
 	TextPosition positionOffset( TextPosition position, TextPosition offset ) const;
 
