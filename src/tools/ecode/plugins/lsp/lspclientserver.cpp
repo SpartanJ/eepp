@@ -1156,7 +1156,7 @@ LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String:
 LSPClientServer::~LSPClientServer() {
 	shutdown();
 	std::unique_lock<std::mutex> lock( mShutdownMutex );
-	mShutdownCond.wait( lock, [this]() { return !mReady; } );
+	mShutdownCond.wait_for( lock, std::chrono::milliseconds( 275 ), [this]() { return !mReady; } );
 	eeSAFE_DELETE( mSocket );
 	{
 		Lock l( mClientsMutex );
@@ -1398,9 +1398,15 @@ LSPClientServer::LSPRequestHandle LSPClientServer::send( json&& msg, const JsonR
 	if ( isRunning() ) {
 		return write( std::move( msg ), h, eh );
 	} else {
-		Log::warning( "LSPClientServer server %s Send for non-running server: %s",
-					  mLSP.name.c_str(), mLSP.name.c_str() );
+		auto msg( String::format( "LSPClientServer server %s Send for non-running server: %s",
+								  mLSP.name, mLSP.name ) );
+
+		Log::warning( msg );
+
 		notifyServerError();
+
+		if ( eh )
+			eh( {}, { { MEMBER_ERROR, msg } } );
 	}
 	return LSPRequestHandle();
 }
@@ -1408,11 +1414,25 @@ LSPClientServer::LSPRequestHandle LSPClientServer::send( json&& msg, const JsonR
 LSPClientServer::LSPRequestHandle LSPClientServer::sendSync( json&& msg, const JsonReplyHandler& h,
 															 const JsonReplyHandler& eh ) {
 	if ( isRunning() ) {
-		return write( std::move( msg ), h, eh );
+		auto ret = write( std::move( msg ), h, eh );
+		if ( ret.isEmpty() && h ) {
+			if ( eh ) {
+				eh( {}, { { MEMBER_ERROR,
+							String::format(
+								"LSPClientServer server %s Unknown error sending sync message",
+								mLSP.name ) } } );
+			}
+		}
 	} else {
-		Log::warning( "LSPClientServer server %s Send for non-running server: %s",
-					  mLSP.name.c_str(), mLSP.name.c_str() );
+		auto msg( String::format( "LSPClientServer server %s Send for non-running server: %s",
+								  mLSP.name, mLSP.name ) );
+
+		Log::warning( msg );
+
 		notifyServerError();
+
+		if ( eh )
+			eh( {}, { { MEMBER_ERROR, msg } } );
 	}
 	return LSPRequestHandle();
 }
