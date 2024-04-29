@@ -189,7 +189,7 @@ template <typename T> class UIDataBind {
 
 		if ( success ) {
 			*data = val;
-			StyleSheetProperty prop( property, dataToString() );
+			StyleSheetProperty prop( property, dataToString(), 0, false );
 			inSetValue = true;
 			for ( auto widget : widgets ) {
 				if ( widget != emitter )
@@ -202,7 +202,7 @@ template <typename T> class UIDataBind {
 	}
 
 	void setValueChange() {
-		StyleSheetProperty prop( property, dataToString() );
+		StyleSheetProperty prop( property, dataToString(), 0, false );
 		for ( auto widget : widgets )
 			widget->applyProperty( prop );
 	}

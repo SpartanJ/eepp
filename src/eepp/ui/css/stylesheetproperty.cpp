@@ -18,10 +18,11 @@ StyleSheetProperty::StyleSheetProperty() :
 	mSpecificity( 0 ), mVolatile( false ), mImportant( false ) {}
 
 StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
-										const std::string& value, const Uint32& index ) :
+										const std::string& value, const Uint32& index,
+										bool trimValue ) :
 	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
-	mValue( String::trim( value ) ),
+	mValue( trimValue ? String::trim( value ) : value ),
 	mValueHash( String::hash( mValue ) ),
 	mSpecificity( 0 ),
 	mIndex( index ),
@@ -30,7 +31,8 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	mIsVarValue( false ),
 	mPropertyDefinition( definition ),
 	mShorthandDefinition( NULL ) {
-	cleanValue();
+	if ( trimValue )
+		cleanValue();
 	checkImportant();
 	createIndexed();
 	checkVars();

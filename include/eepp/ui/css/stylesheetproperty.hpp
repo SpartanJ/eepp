@@ -35,7 +35,7 @@ class EE_API StyleSheetProperty {
 	StyleSheetProperty();
 
 	explicit StyleSheetProperty( const PropertyDefinition* definition, const std::string& value,
-								 const Uint32& index = 0 );
+								 const Uint32& index = 0, bool trimValue = true );
 
 	explicit StyleSheetProperty( const std::string& name, const std::string& value,
 								 const bool& trimValue = true, const Uint32& specificity = 0,
