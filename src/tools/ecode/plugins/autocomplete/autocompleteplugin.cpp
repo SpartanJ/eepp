@@ -15,7 +15,7 @@ using namespace std::literals;
 namespace ecode {
 
 static constexpr auto SNIPPET_PTRN1 = "%$%{%d+%}"sv;
-static constexpr auto SNIPPET_PTRN2 = "%$%{%d+%:(%w+)}"sv;
+static constexpr auto SNIPPET_PTRN2 = "%$%{%d+%:([%w,.%s%+%-]+)}"sv;
 static constexpr auto SNIPPET_PTRN3 = "%$%d+"sv;
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
@@ -472,14 +472,14 @@ void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 	if ( doc->getSelections().size() == 1 && suggestion.range.isValid() &&
 		 doc->isValidRange( suggestion.range ) ) {
 		doc->setSelection( suggestion.range );
-		doc->textInput( suggestion.insertText );
+		doc->textInput( !suggestion.insertText.empty() ? suggestion.insertText : suggestion.text );
 	} else {
 		if ( !symbol.empty() )
 			doc->execute( "delete-to-previous-word" );
-		doc->textInput( suggestion.text );
+		doc->textInput( !suggestion.insertText.empty() ? suggestion.insertText : suggestion.text );
 	}
 
-	// tryStartSnippetNav( suggestion, editor, prevSels );
+	tryStartSnippetNav( suggestion, editor, prevSels );
 
 	mReplacing = false;
 	resetSuggestions( editor );
@@ -487,7 +487,7 @@ void AutoCompletePlugin::pickSuggestion( UICodeEditor* editor ) {
 
 void AutoCompletePlugin::tryStartSnippetNav( const Suggestion& suggestion, UICodeEditor* editor,
 											 const TextRanges& prevSels ) {
-	if ( !hasCompleteSteps( suggestion ) || !mSnippetCompletion.empty() )
+	if ( !hasCompleteSteps( suggestion ) )
 		return;
 
 	auto doc = editor->getDocumentRef();
@@ -567,7 +567,20 @@ void AutoCompletePlugin::tryStartSnippetNav( const Suggestion& suggestion, UICod
 		ranges.emplace_back( steps );
 	}
 
-	mSnippetCompletion = std::move( ranges );
+	TextRanges initialRanges;
+
+	for ( const auto& textRanges : ranges ) {
+		TextRange sel;
+		for ( const auto& range : textRanges ) {
+			// skip ranges that have default values
+			if ( range.hasSelection() )
+				continue;
+			sel = range;
+		}
+		if ( sel.isValid() )
+			initialRanges.push_back( sel );
+	}
+	doc->setSelection( initialRanges.empty() ? prevSels : initialRanges );
 }
 
 bool AutoCompletePlugin::hasCompleteSteps( const Suggestion& suggestion ) {
@@ -591,15 +604,15 @@ AutoCompletePlugin::processCodeCompletion( const LSPCompletionList& completion )
 	LSPCompletionList& wcompletion = const_cast<LSPCompletionList&>( completion );
 	for ( auto& item : wcompletion.items ) {
 		if ( !item.textEdit.text.empty() ) {
-			suggestions.push_back( { item.kind, std::move( item.insertText ),
-									 std::move( item.detail ), std::move( item.sortText ),
-									 item.textEdit.range, std::move( item.textEdit.text ),
-									 std::move( item.documentation ) } );
+			suggestions.push_back(
+				{ item.kind, std::move( item.label.empty() ? item.insertText : item.label ),
+				  std::move( item.detail ), std::move( item.sortText ), item.textEdit.range,
+				  std::move( item.textEdit.text ), std::move( item.documentation ) } );
 		} else if ( !item.insertText.empty() ) {
-			suggestions.push_back( { item.kind, std::move( item.insertText ),
-									 std::move( item.detail ), std::move( item.sortText ),
-									 item.textEdit.range, std::string{ item.insertText },
-									 std::move( item.documentation ) } );
+			suggestions.push_back(
+				{ item.kind, std::move( item.label.empty() ? item.insertText : item.label ),
+				  std::move( item.detail ), std::move( item.sortText ), item.textEdit.range,
+				  std::string{ item.insertText }, std::move( item.documentation ) } );
 		} else {
 			suggestions.push_back( { item.kind,
 									 std::move( item.filterText ),
@@ -878,9 +891,23 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	size_t maxIndex =
 		eemin<size_t>( mSuggestionsStartIndex + mSuggestionsMaxVisible, suggestions.size() );
 
-	for ( size_t i = mSuggestionsStartIndex; i < maxIndex; i++ )
-		largestString =
-			eemax<size_t>( largestString, editor->getTextWidth( String{ suggestions[i].text } ) );
+	std::vector<String> visibleStrings;
+	size_t visibleStrIndex = 0;
+	visibleStrings.resize( maxIndex - mSuggestionsStartIndex );
+	for ( size_t i = mSuggestionsStartIndex; i < maxIndex; i++ ) {
+		bool needsEllipsis = suggestions[i].text.size() > mMaxLabelCharacters;
+		String str{ needsEllipsis ? suggestions[i].text.substr( 0, mMaxLabelCharacters )
+								  : suggestions[i].text };
+		if ( needsEllipsis )
+			str[str.size() - 1] = 0x2026 /* u'…' */;
+		auto nlPos = str.find_first_of( '\n' );
+		if ( nlPos == String::InvalidPos )
+			str = str.substr( 0, nlPos );
+		String::trimInPlace( str );
+		largestString = eemax<size_t>( largestString, editor->getTextWidth( str ) );
+		visibleStrings[visibleStrIndex] = std::move( str );
+		visibleStrIndex++;
+	}
 
 	Sizef bar( PixelDensity::dpToPxI( 6 ),
 			   eemax( PixelDensity::dpToPx( 8 ),
@@ -896,6 +923,7 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 	primitives.setColor( Color( normalStyle.background ).blendAlpha( editor->getAlpha() ) );
 	primitives.drawRoundedRectangle( boxRect, 0.f, Vector2f::One, 6 );
 
+	visibleStrIndex = 0;
 	for ( size_t i = mSuggestionsStartIndex; i < maxIndex; i++ ) {
 		const auto& suggestion = suggestions[i];
 
@@ -910,12 +938,11 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 		Text text( "", editor->getFont(), editor->getFontSize() );
 		text.setFillColor( mSuggestionIndex == (int)i ? selectedStyle.color : normalStyle.color );
 		text.setStyle( mSuggestionIndex == (int)i ? selectedStyle.style : normalStyle.style );
+		text.setString( visibleStrings[visibleStrIndex] );
 
-		auto nlPos = suggestion.text.find_first_of( '\n' );
-		if ( nlPos == std::string::npos ) {
-			text.setString( suggestion.text );
-		} else {
-			text.setString( suggestion.text.substr( 0, nlPos ) );
+		if ( mHighlightSuggestions && suggestion.kind != LSPCompletionItemKind::Text ) {
+			SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(),
+										   text );
 		}
 
 		text.draw( cursorPos.x + iconSpace.getWidth() + mBoxPadding.Left,
@@ -950,9 +977,9 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 			if ( changed ) {
 				bool forceHTML = String::startsWith( suggestion.detail, "Emmet" );
 				if ( suggestion.documentation.kind == LSPMarkupKind::MarkDown || forceHTML ) {
-					const auto& syntaxDef = forceHTML ?
-						SyntaxDefinitionManager::instance()->getByLSPName( "html" ) :
-						SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
+					const auto& syntaxDef =
+						forceHTML ? SyntaxDefinitionManager::instance()->getByLSPName( "html" )
+								  : SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
 					SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(),
 												   mSuggestionDoc, 0, 0xFFFFFFFF, true, "\n\t " );
 				}
@@ -961,6 +988,7 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 			mSuggestionDoc.draw( boxPos.x + mBoxPadding.Left, boxPos.y + mBoxPadding.Top );
 		}
 		count++;
+		visibleStrIndex++;
 	}
 
 	if ( drawsSignature )

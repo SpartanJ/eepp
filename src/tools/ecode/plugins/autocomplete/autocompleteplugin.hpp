@@ -124,13 +124,13 @@ class AutoCompletePlugin : public Plugin {
 	bool mDirty{ false };
 	bool mReplacing{ false };
 	bool mSignatureHelpVisible{ false };
+	bool mHighlightSuggestions{ false };
 	struct DocCache {
 		Uint64 changeId{ static_cast<Uint64>( -1 ) };
 		SymbolsList symbols;
 	};
 	std::unordered_map<TextDocument*, DocCache> mDocCache;
 	std::unordered_map<std::string, SymbolsList> mLangCache;
-	std::vector<TextRanges> mSnippetCompletion;
 	std::vector<Suggestion> mSuggestions;
 	Mutex mSuggestionsEditorMutex;
 	Mutex mSignatureHelpEditorMutex;
@@ -149,6 +149,7 @@ class AutoCompletePlugin : public Plugin {
 	std::unordered_map<TextDocument*, std::atomic<bool>> mDocsUpdating;
 	Mutex mDocsUpdatingMutex;
 	Text mSuggestionDoc;
+	size_t mMaxLabelCharacters{ 100 };
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
