@@ -480,8 +480,10 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	if ( tabWidget->getContainerNode() ) {
 		initialSize = tabWidget->getContainerNode()->getPixelsSize();
 		if ( Sizef::Zero == initialSize ) {
-			// Minor hack. Force the Scene Node to update the styles and layouts.
-			tabWidget->getUISceneNode()->update( Time::Zero );
+			// HACK: Force the Scene Node to update the styles and layouts.
+			tabWidget->getUISceneNode()->updateDirtyStyles();
+			tabWidget->getUISceneNode()->updateDirtyStyleStates();
+			tabWidget->getUISceneNode()->updateDirtyLayouts();
 			initialSize = tabWidget->getContainerNode()->getPixelsSize();
 		}
 	}

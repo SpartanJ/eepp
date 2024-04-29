@@ -981,10 +981,6 @@ const TextDocumentLine& TextDocument::getCurrentLine() const {
 	return mLines[getSelection().start().line()];
 }
 
-std::vector<TextDocumentLine>& TextDocument::lines() {
-	return mLines;
-}
-
 bool TextDocument::hasSelection() const {
 	return mSelection.hasSelection();
 }
@@ -1248,7 +1244,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 		linesRemoved += 1;
 	}
 
-	if ( lines().empty() )
+	if ( mLines.empty() )
 		mLines.emplace_back( String( "\n" ) );
 
 	if ( mSelection.size() > 1 ) {

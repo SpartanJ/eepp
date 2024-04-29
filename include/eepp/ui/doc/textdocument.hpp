@@ -179,8 +179,6 @@ class EE_API TextDocument {
 
 	const TextDocumentLine& getCurrentLine() const;
 
-	std::vector<TextDocumentLine>& lines();
-
 	bool hasSelection() const;
 
 	const std::array<Uint8, 16>& getHash() const;
