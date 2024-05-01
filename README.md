@@ -184,13 +184,13 @@ its submodules, in order to achieve this easily you can simply clone with:
 
 ## UI Screenshots
 
-### ecode - Text Editor
+### ecode - Code Editor
 
-Text editor inspired in [lite](https://github.com/rxi/lite).
+[ecode](https://github.com/SpartanJ/ecode/) is a code editor inspired in [lite](https://github.com/rxi/lite).
 It's using the newest pure CSS theme based on the default [Plasma](https://kde.org/plasma-desktop)
-dark theme: Breeze Dark.
+dark theme: [Breeze Dark](https://github.com/KDE/breeze).
 
-![ecode - Text Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/ecode.png)
+![ecode - Code Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/ecode.png)
 
 ### UI Editor
 
@@ -342,10 +342,11 @@ Here is a small example on how the CSS looks like:
 
 Since eepp supports emscripten you can take a quick look on some of the examples, demos and tools that
 the library currently provides. Please be aware that you'll find some differences based on the limitations
-that emscripten have at the moment (no access to the file system, no custom cursors, etc).
+that emscripten have at the moment (no access to the file system, no custom cursors, etc) and also
+demos are not optimized for size and they're bigger than they should be.
 Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 70+ or Firefox 80+).
 
-* **[ecode - Text Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=ecode.js)**
+* **[ecode - Code Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=ecode.js)**
 
 * **[UI Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-UIEditor.js)**
 
@@ -362,6 +363,30 @@ Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 7
 * **[Sprites example](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-sprites.js)**
 
 * **[Full Test](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-test.js)**
+
+### 7GUIs Examples
+
+[7GUIs](https://7guis.github.io/7guis/) is known as a "GUI Programming Benchmark" that it's used to
+compare different GUI libraries and explore each library approach to GUI programming. All the 7 tasks
+proposed in 7GUIs has been implemented for eepp. The tasks are very good representative of what can
+be achieved with eepp GUI and also are very useful to demonstrate how to implement different tasks
+with the library.
+
+The 7GUIs are composed by the following tasks:
+
+* [Counter](https://7guis.github.io/7guis/tasks#counter): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-counter.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/counter/counter.cpp).
+
+* [Temperature Converter](https://7guis.github.io/7guis/tasks#temp): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-temperature-converter.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/temperature_converter/temperature_converter.cpp).
+
+* [Flight Booker](https://7guis.github.io/7guis/tasks#flight): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-flight-booker.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/flight_booker/flight_booker.cpp).
+
+* [Timer](https://7guis.github.io/7guis/tasks#timer): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-timer.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/timer/timer.cpp).
+
+* [CRUD](https://7guis.github.io/7guis/tasks#crud): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-crud.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/crud/crud.cpp).
+
+* [Circle Drawer](https://7guis.github.io/7guis/tasks#circle): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-circle-drawer.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/circle_drawer/circle_drawer.cpp).
+
+* [Cells](https://7guis.github.io/7guis/tasks#cells): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-cells.js) and [code implementation](https://github.com/SpartanJ/eepp/tree/develop/src/examples/7guis/cells).
 
 ## How to build it
 
