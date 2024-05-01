@@ -75,6 +75,11 @@ TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const SyntaxS
 	tokenizedLine.tokens = std::move( res.first );
 	tokenizedLine.state = std::move( res.second );
 	tokenizedLine.updateSignature();
+	if ( line == 0 && tokenizedLine.tokens.size() == 1 &&
+		 ( tokenizedLine.tokens[0].type == SyntaxStyleTypes::Normal ||
+		   tokenizedLine.tokens[0].type == SyntaxStyleTypes::Text ) ) {
+		Log::warning( "Something is rare..." );
+	}
 	return tokenizedLine;
 }
 
