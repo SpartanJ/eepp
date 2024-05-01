@@ -63,10 +63,13 @@ class AutoCompletePlugin : public Plugin {
 				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
 				 AutoCompletePlugin::New,
-				 { 0, 2, 3 } };
+				 { 0, 2, 3 },
+				 AutoCompletePlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
+
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~AutoCompletePlugin();
 
@@ -150,11 +153,14 @@ class AutoCompletePlugin : public Plugin {
 	Mutex mDocsUpdatingMutex;
 	Text mSuggestionDoc;
 	size_t mMaxLabelCharacters{ 100 };
+	String::HashType mConfigHash{ 0 };
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
 
-	explicit AutoCompletePlugin( PluginManager* pluginManager );
+	explicit AutoCompletePlugin( PluginManager* pluginManager, bool sync );
+
+	void load( PluginManager* pluginManager );
 
 	void resetSuggestions( UICodeEditor* editor );
 

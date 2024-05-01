@@ -114,6 +114,11 @@ void UICheckBox::onSizeChange() {
 	UITextView::onSizeChange();
 }
 
+void UICheckBox::onTextChanged() {
+	sendCommonEvent( Event::OnTextChanged );
+	invalidateDraw();
+}
+
 Uint32 UICheckBox::onMessage( const NodeMessage* msg ) {
 	switch ( msg->getMsg() ) {
 		case NodeMessage::MouseClick: {

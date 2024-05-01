@@ -2,8 +2,10 @@
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <nlohmann/json.hpp>
@@ -76,10 +78,14 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 }
 
 Plugin* AutoCompletePlugin::New( PluginManager* pluginManager ) {
-	return eeNew( AutoCompletePlugin, ( pluginManager ) );
+	return eeNew( AutoCompletePlugin, ( pluginManager, false ) );
 }
 
-AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager ) :
+Plugin* AutoCompletePlugin::NewSync( PluginManager* pluginManager ) {
+	return eeNew( AutoCompletePlugin, ( pluginManager, true ) );
+}
+
+AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager, bool sync ) :
 	Plugin( pluginManager ),
 	mSymbolPattern( "[%a_ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ][%w_"
 					"ñàáâãäåèéêëìíîïòóôõöùúûüýÿÑÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝ]*" ),
@@ -87,13 +93,21 @@ AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager ) :
 	mManager->subscribeMessages( this, [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 		return processResponse( msg );
 	} );
-	mReady = true;
-	setReady();
+	if ( sync ) {
+		load( pluginManager );
+	} else {
+#if defined( AUTO_COMPLETE_THREADED ) && AUTO_COMPLETE_THREADED == 1
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
+#else
+		load( pluginManager );
+#endif
+	}
 }
 
 AutoCompletePlugin::~AutoCompletePlugin() {
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
+	unsubscribeFileSystemListener();
 
 	Lock l( mDocMutex );
 	Lock l2( mLangSymbolsMutex );
@@ -103,6 +117,62 @@ AutoCompletePlugin::~AutoCompletePlugin() {
 			editor.first->removeEventListener( listener );
 		editor.first->unregisterPlugin( this );
 	}
+}
+
+void AutoCompletePlugin::load( PluginManager* pluginManager ) {
+	AtomicBoolScopedOp loading( mLoading, true );
+	std::string path = pluginManager->getPluginsPath() + "autocomplete.json";
+	if ( FileSystem::fileExists( path ) ||
+		 FileSystem::fileWrite( path, "{\n  \"config\":{},\n  \"keybindings\":{}\n}\n" ) ) {
+		mConfigPath = path;
+	}
+	std::string data;
+	if ( !FileSystem::fileGet( path, data ) )
+		return;
+	mConfigHash = String::hash( data );
+
+	json j;
+	try {
+		j = json::parse( data, nullptr, true, true );
+	} catch ( const json::exception& e ) {
+		Log::error(
+			"AutoCompletePlugin::load - Error parsing config from path %s, error: %s, config "
+			"file content:\n%s",
+			path.c_str(), e.what(), data.c_str() );
+		// Recreate it
+		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n}\n", nullptr, true, true );
+	}
+
+	bool updateConfigFile = false;
+
+	if ( j.contains( "config" ) ) {
+		auto& config = j["config"];
+		if ( config.contains( "suggestions_syntax_highlight" ) )
+			mHighlightSuggestions = config.value( "suggestions_syntax_highlight", false );
+		else {
+			config["suggestions_syntax_highlight"] = mHighlightSuggestions;
+			updateConfigFile = true;
+		}
+		if ( config.contains( "max_label_characters" ) )
+			mMaxLabelCharacters = config.value( "max_label_characters", 100 );
+		else {
+			config["max_label_characters"] = mMaxLabelCharacters;
+			updateConfigFile = true;
+		}
+	}
+
+	if ( updateConfigFile ) {
+		std::string newData = j.dump( 2 );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( newData );
+		}
+	}
+
+	subscribeFileSystemListener();
+	mReady = true;
+	fireReadyCbs();
+	setReady();
 }
 
 void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
