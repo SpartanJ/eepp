@@ -435,6 +435,8 @@ class EE_API TextDocument {
 
 	void setNonWordChars( const String& nonWordChars );
 
+	const SyntaxDefinition& guessSyntax() const;
+
 	void resetSyntax();
 
 	bool getAutoDetectIndentType() const;

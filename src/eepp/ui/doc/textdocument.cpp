@@ -375,6 +375,11 @@ bool TextDocument::hasSyntaxDefinition() const {
 	return !mSyntaxDefinition.getPatterns().empty();
 }
 
+const SyntaxDefinition& TextDocument::guessSyntax() const {
+	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
+	return SyntaxDefinitionManager::instance()->find( mFilePath, header, mHAsCpp );
+}
+
 void TextDocument::resetSyntax() {
 	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
 	std::string oldDef = mSyntaxDefinition.getLSPName();

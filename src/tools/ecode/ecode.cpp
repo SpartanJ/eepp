@@ -2592,8 +2592,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			refreshFolderView();
 		}
 		if ( !editor->getDocument().hasSyntaxDefinition() ) {
-			editor->getDocument().resetSyntax();
-			editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
+			editor->setSyntaxDefinition( editor->getDocument().guessSyntax() );
 		}
 	} );
 
@@ -2642,8 +2641,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		editor->runOnMainThread( [this, editor] {
 			updateEditorTabTitle( editor );
-			editor->getDocument().resetSyntax();
-			editor->setSyntaxDefinition( editor->getDocument().getSyntaxDefinition() );
+			editor->setSyntaxDefinition( editor->getDocument().guessSyntax() );
 		} );
 	} );
 
