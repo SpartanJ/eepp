@@ -461,7 +461,7 @@ R"html(
 	<Menu id="menubar_window" text="@string(window, Window)" nomenu="true" />
 	<Menu id="menubar_help" text="@string(help, Help)" nomenu="true" />
 </MenuBar>
-<MainLayout id="main_layout" lw="mp" lh="mp">
+<MainLayout id="main_layout" lw="mp" lh="0" lw8="1">
 <Splitter id="project_splitter" lw="mp" lh="mp">
 	<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
 		<RelativeLayout id="project_view_cont" lw="mp" lh="mp">
