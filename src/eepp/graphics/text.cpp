@@ -337,6 +337,7 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 	Float tMaxWidth = (Float)maxWidth;
 	auto tChar = &string[0];
 	decltype( tChar ) tLastSpace = NULL;
+	decltype( tChar ) tLastChar = &string[ string.size() - 1 ];
 	Uint32 prevChar = 0;
 	bool bold = ( style & Bold ) != 0;
 	bool italic = ( style & Italic ) != 0;
@@ -345,7 +346,7 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 	Float hspace = static_cast<Float>(
 		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
 
-	while ( *tChar ) {
+	while ( *tChar && tChar <= tLastChar ) {
 		Glyph pChar = font->getGlyph( *tChar, fontSize, bold, italic, outlineThickness );
 
 		Float fCharWidth = (Float)pChar.advance;
@@ -364,7 +365,7 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 			prevChar = *tChar;
 		}
 
-		if ( ' ' == *tChar || '\0' == *( tChar + 1 ) ) {
+		if ( ' ' == *tChar || tChar == tLastChar ) {
 			// If current width plus word width is minor to the max width, continue adding
 			if ( tCurWidth + tWordWidth < tMaxWidth ) {
 				tCurWidth += tWordWidth;
@@ -382,7 +383,7 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 					wrapped = true;
 				}
 
-				if ( '\0' == *( tChar + 1 ) )
+				if ( tChar == tLastChar )
 					tChar++;
 
 				// Set the last spaces as null, because is a new line

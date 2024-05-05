@@ -1447,8 +1447,7 @@ void GitPlugin::buildSidePanelTab() {
 				</vbox>
 			</StackWidget>
 		</vbox>
-		<TextView id="git_no_content" lw="mp" lh="wc" word-wrap="true" visible="false"
-			text='@string(git_no_git_repo, "Current folder is not a Git repository.")' padding="16dp" />
+		<TextView id="git_no_content" lw="mp" lh="wc" word-wrap="true" visible="false" text='@string(git_no_git_repo, "Current folder is not a Git repository.")' margin="8dp" text-align="center" />
 		<Loader margin-top="32dp" id="git_panel_loader" indeterminate="true" lw="24dp" lh="24dp" outline-thickness="2dp" visible="false" layout_gravity="bottom|right" margin-bottom="24dp" margin-right="24dp" />
 	</RelativeLayout>
 	)html";

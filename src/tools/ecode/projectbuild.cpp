@@ -1040,7 +1040,7 @@ void ProjectBuildManager::buildSidePanelTab() {
 				<vbox lw="mp" lh="wc" padding="4dp">
 					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" focusable="false" />
 					<TextView text="@string(build_configuration, Build Configuration)" focusable="false" />
-					<hbox lw="mp" lh="wc" margin-bottom="4dp">
+					<hbox lw="mp" lh="wc" margin-top="2dp" margin-bottom="4dp">
 						<DropDownList id="build_list" layout_width="0" lw8="1" layout_height="wrap_content" />
 						<PushButton id="build_edit" id="build_edit" text="@string(edit_build, Edit Build)" tooltip="@string(edit_build, Edit Build)"  text-as-fallback="true" icon="icon(file-edit, 12dp)" margin-left="2dp" />
 						<PushButton id="build_add" id="build_add" text="@string(add_build, Add Build)" tooltip="@string(add_build, Add Build)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
