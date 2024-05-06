@@ -334,7 +334,6 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 
 	Float tCurWidth = 0.f;
 	Float tWordWidth = 0.f;
-	Float tMaxWidth = (Float)maxWidth;
 	auto tChar = &string[0];
 	decltype( tChar ) tLastSpace = NULL;
 	decltype( tChar ) tLastChar = &string[ string.size() - 1 ];
@@ -367,7 +366,7 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 
 		if ( ' ' == *tChar || tChar == tLastChar ) {
 			// If current width plus word width is minor to the max width, continue adding
-			if ( tCurWidth + tWordWidth < tMaxWidth ) {
+			if ( tCurWidth + tWordWidth < maxWidth ) {
 				tCurWidth += tWordWidth;
 				tLastSpace = tChar;
 
@@ -690,6 +689,15 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 	bool italic = ( style & Text::Italic ) != 0;
 	Float hspace = static_cast<Float>(
 		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+
+	if ( font->isMonospace() ) {
+		size_t len = string.length();
+		Float x = 0;
+		for ( size_t i = 0; i < len; i++ )
+			x += ( string[i] == '\t' ) ? hspace * tabWidth : hspace;
+		return x;
+	}
+
 	for ( std::size_t i = 0; i < string.size(); ++i ) {
 		rune = string.at( i );
 		Glyph glyph = font->getGlyph( rune, fontSize, bold, italic, outlineThickness );
