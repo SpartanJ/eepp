@@ -4,6 +4,7 @@
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/doc/textposition.hpp>
+#include <optional>
 
 using namespace EE::Graphics;
 using namespace EE::UI::Doc;
@@ -28,7 +29,7 @@ class EE_API LineWrapping {
 			return mode == other.mode && keepIndentation == other.keepIndentation &&
 				   tabWidth == other.tabWidth && maxCharactersWidth == other.maxCharactersWidth;
 		}
-		bool operator!=( const Config& other ) { return !(*this == other); }
+		bool operator!=( const Config& other ) { return !( *this == other ); }
 	};
 
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,

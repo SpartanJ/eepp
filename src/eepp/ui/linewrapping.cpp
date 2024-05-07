@@ -191,7 +191,7 @@ void LineWrapping::setFontStyle( FontStyleConfig fontStyle ) {
 }
 
 void LineWrapping::setConfig( Config config ) {
-	if ( config != mConfig ){
+	if ( config != mConfig ) {
 		mConfig = std::move( config );
 		reconstructBreaks();
 	}
@@ -205,7 +205,7 @@ void LineWrapping::reconstructBreaks() {
 	mWrappedLineToIndex.clear();
 	mWrappedLinesOffset.clear();
 
-	size_t linesCount = mDoc->linesCount();
+	Int64 linesCount = mDoc->linesCount();
 	mWrappedLines.reserve( linesCount * 2 );
 	mWrappedLinesOffset.reserve( linesCount );
 
@@ -231,13 +231,16 @@ void LineWrapping::reconstructBreaks() {
 }
 
 Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) {
-	auto idx = mWrappedLineToIndex[docIdx < 0 ? 0
-											  : ( docIdx >= mWrappedLineToIndex.size()
-													  ? mWrappedLineToIndex.size() - 1
-													  : docIdx )];
+	auto idx =
+		mWrappedLineToIndex[docIdx < 0
+								? 0
+								: ( docIdx >= static_cast<Int64>( mWrappedLineToIndex.size() )
+										? mWrappedLineToIndex.size() - 1
+										: docIdx )];
 	if ( retLast ) {
 		Int64 lastOfLine = mWrappedLines[idx].line();
-		for ( auto i = idx + 1; i < mWrappedLines.size(); i++ ) {
+		Int64 wrappedCount = mWrappedLines.size();
+		for ( auto i = idx + 1; i < wrappedCount; i++ ) {
 			if ( mWrappedLines[i].line() == lastOfLine )
 				idx = i;
 			else
