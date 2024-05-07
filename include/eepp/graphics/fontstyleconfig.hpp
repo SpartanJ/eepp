@@ -38,6 +38,8 @@ class FontStyleConfig {
 			   OutlineColor == other.OutlineColor;
 	}
 
+	bool operator!=( const FontStyleConfig& other ) { return !( *this == other ); }
+
 	virtual void updateFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
 		Font = fontStyleConfig.Font;
 		Style = fontStyleConfig.Style;
