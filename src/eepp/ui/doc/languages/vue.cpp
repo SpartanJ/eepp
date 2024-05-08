@@ -34,7 +34,7 @@ void addVue() {
 		{ "Vue",
 		  { "%.vue?$" },
 		  {
-			  { { "<%s*[sS][cC][rR][iI][pP][tT]%s*>", "<%s*/%s*[sS][cC][rR][iI][pP][tT]>" },
+			  { { "<%s*[sS][cC][rR][iI][pP][tT][^>]*>", "<%s*/%s*[sS][cC][rR][iI][pP][tT]>" },
 				"function",
 				"JavaScript" },
 			  { { "<%s*[sS][tT][yY][lL][eE][^>]*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
