@@ -194,8 +194,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	SyntaxState retState = state;
 	SyntaxStateRestored curState = SyntaxTokenizer::retrieveSyntaxState( syntax, state );
 
-	size_t size = !text.empty() ? ( text[text.size() - 1] == '\n' ? text.size() - 1 : text.size() )
-								: 0; // skip last char ( new line char )
+	size_t size = text.size();
 	std::string patternStr;
 	std::string patternText;
 
