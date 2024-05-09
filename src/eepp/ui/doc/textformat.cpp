@@ -34,10 +34,6 @@ struct Enc_Bytes {
 				   ? TextDecodeResult{}
 				   : TextDecodeResult{ (Uint8)view[0], TextDecodeResult::Status::Valid, 1 };
 	}
-
-	static inline Uint32 backNumBytes( std::string_view view ) { return view.empty() ? 0 : 1; }
-
-	static inline Uint32 numBytes( Uint32 ) { return 1; }
 };
 
 //-------------------------------------------------------------------
@@ -55,29 +51,6 @@ struct UTF8 {
 		}
 		return decodePointSlowPath( view );
 	}
-
-	static Uint32 backNumBytesSlowPath( std::string_view view );
-
-	static inline Uint32 backNumBytes( std::string_view view ) {
-		if ( view.size() > 0 ) {
-			Uint8 last = view[view.size() - 1];
-			if ( last < 0x80 ) {
-				return 1;
-			}
-		}
-		return backNumBytesSlowPath( view );
-	}
-
-	static inline Uint32 numBytes( Uint32 point ) {
-		if ( point < 0x80 )
-			return 1;
-		else if ( point < 0x800 )
-			return 2;
-		else if ( point < 0x10000 )
-			return 3;
-		else
-			return 4;
-	}
 };
 
 //-------------------------------------------------------------------
@@ -89,16 +62,6 @@ template <bool BigEndian> struct UTF16 {
 			return ( Uint16( Uint8( src[0] ) ) << 8 ) | Uint8( src[1] );
 		} else {
 			return Uint8( src[0] ) | ( Uint16( Uint8( src[1] ) ) << 8 );
-		}
-	}
-
-	static inline void putUnit( char* src, Uint16 u ) {
-		if constexpr ( BigEndian ) {
-			src[0] = Uint8( u >> 8 );
-			src[1] = Uint8( u );
-		} else {
-			src[0] = Uint8( u );
-			src[1] = Uint8( u >> 8 );
 		}
 	}
 
@@ -122,27 +85,6 @@ template <bool BigEndian> struct UTF16 {
 			status = TextDecodeResult::Status::Valid;
 		}
 		return { first, status, 2 };
-	}
-
-	static inline Uint32 backNumBytes( std::string_view view ) {
-		if ( view.size() < 2 ) {
-			return 0;
-		}
-		const char* tail = view.data() + view.size();
-		if ( view.size() >= 4 ) {
-			Uint16 first = getUnit( tail - 4 );
-			Uint16 second = getUnit( tail - 2 );
-			if ( first >= 0xd800 && first < 0xdc00 && second >= 0xdc00 && second < 0xe000 )
-				return 4;
-		}
-		return 2;
-	}
-
-	static inline Uint32 numBytes( Uint32 point ) {
-		if ( point < 0x10000 )
-			return 2;
-		else
-			return 4;
 	}
 };
 
@@ -224,28 +166,6 @@ consume1Byte:
 	result.point = value;
 	result.status = TextDecodeResult::Status::Valid;
 	return result;
-}
-
-Uint32 UTF8::backNumBytesSlowPath( std::string_view view ) {
-	if ( view.size() == 0 ) {
-		return 0;
-	}
-	const Uint8* tail = (const Uint8*)view.data() + view.size();
-	if ( ( tail[-1] & 0xc0 ) == 0x80 && view.size() >= 2 ) {
-		if ( ( tail[-2] & 0xc0 ) == 0x80 && view.size() >= 3 ) {
-			if ( ( tail[-3] & 0xc0 ) == 0x80 && view.size() >= 4 ) {
-				if ( ( tail[-4] & 0xf8 ) == 0xf0 )
-					return 4;
-			} else {
-				if ( ( tail[-3] & 0xf0 ) == 0xe0 )
-					return 3;
-			}
-		} else {
-			if ( ( tail[-2] & 0xe0 ) == 0xc0 )
-				return 2;
-		}
-	}
-	return 1;
 }
 
 //-------------------------------------------------------------------

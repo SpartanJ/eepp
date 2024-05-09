@@ -28,6 +28,7 @@ void addCPP() {
 			  { { "^%s*(#else)%s*" }, { "keyword", "keyword", "literal" } },
 			  { { "^%s*#", "[^\\]\n" }, "comment" },
 			  { { "-?0x%x+" }, "number" },
+			  { { "-?0b[01]+" }, "number" },
 			  { { "-?%d+[%d%.eE]*f?" }, "number" },
 			  { { "-?%.?%d+f?" }, "number" },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
