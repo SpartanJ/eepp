@@ -1008,7 +1008,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 												Http http( uri.getHost(), uri.getPort(),
 														   uri.getScheme() == "https" ? true
 																					  : false );
-												return http.downloadRequest( request, writeTo,
+												return http.downloadRequest( newRequest, writeTo,
 																			 timeout );
 											}
 										}
@@ -1185,6 +1185,9 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 	if ( !toSend.hasField( "User-Agent" ) )
 		toSend.setField( "User-Agent", "eepp-network" );
 
+	if ( !toSend.hasField( "Accept" ) )
+		toSend.setField( "Accept", "*/*" );
+
 	if ( !toSend.hasField( "Host" ) )
 		toSend.setField(
 			"Host",
@@ -1200,8 +1203,9 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 		toSend.setField( "Content-Type", "application/x-www-form-urlencoded" );
 
 	if ( ( toSend.mMajorVersion * 10 + toSend.mMinorVersion >= 11 ) &&
-		 !toSend.hasField( "Connection" ) )
+		 !toSend.hasField( "Connection" ) && ( !mConnection || !mConnection->isKeepAlive() ) ) {
 		toSend.setField( "Connection", "close" );
+	}
 
 	if ( !mProxy.empty() ) {
 		toSend.setField( "Accept", "*/*" );
@@ -1400,7 +1404,7 @@ Http::HttpConnection::HttpConnection() :
 	mIsConnected( false ),
 	mIsTunneled( false ),
 	mIsSSL( false ),
-	mIsKeepAlive( false ) {}
+	mIsKeepAlive( true ) {}
 
 Http::HttpConnection::HttpConnection( TcpSocket* socket ) :
 	mSocket( socket ), mIsConnected( false ), mIsTunneled( false ), mIsSSL( false ) {}

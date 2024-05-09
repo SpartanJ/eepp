@@ -228,7 +228,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowConfig = Settings;
 	mWindow.ContextConfig = Context;
 
-	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
+	if ( !SDL_WasInit( SDL_INIT_VIDEO ) && SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 		Log::error( "Unable to initialize SDL: %s", SDL_GetError() );
 
 		logFailureInit( "WindowSDL", getVersion() );
