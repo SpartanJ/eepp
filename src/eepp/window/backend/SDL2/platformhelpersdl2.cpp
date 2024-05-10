@@ -1,14 +1,13 @@
+#include <eepp/system/log.hpp>
 #include <eepp/window/backend/SDL2/base.hpp>
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
-#include <eepp/system/log.hpp>
 
 using namespace EE::System;
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 #include <emscripten.h>
-EM_JS(void, emscripten_open_url, (const char *msg), {
-  window.open(UTF8ToString(msg), 'blank');
-});
+EM_JS( void, emscripten_open_url, ( const char* msg ),
+	   { window.open( UTF8ToString( msg ), 'blank' ); } );
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -21,18 +20,27 @@ PlatformHelperSDL2::PlatformHelperSDL2() {}
 
 bool PlatformHelperSDL2::openURL( const std::string& url ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	emscripten_open_url(url.c_str());
+	emscripten_open_url( url.c_str() );
 	return true;
 #else
-	#if SDL_VERSION_ATLEAST(2,0,14)
-		int res = SDL_OpenURL( url.c_str() );
-		if ( res != 0 )
-			Log::error( "PlatformHelperSDL2::openURL: Failed with error - %s", SDL_GetError() );
-		return res == 0;
-	#else
-		return false;
-	#endif
+#if SDL_VERSION_ATLEAST( 2, 0, 14 )
+	int res = SDL_OpenURL( url.c_str() );
+	if ( res != 0 )
+		Log::error( "PlatformHelperSDL2::openURL: Failed with error - %s", SDL_GetError() );
+	return res == 0;
+#else
+	return false;
 #endif
+#endif
+}
+
+char* PlatformHelperSDL2::iconv( const char* tocode, const char* fromcode, const char* inbuf,
+								 size_t inbytesleft ) {
+	return SDL_iconv_string( tocode, fromcode, inbuf, inbytesleft );
+}
+
+void PlatformHelperSDL2::iconvFree( char* buf ) {
+	SDL_free( buf );
 }
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID

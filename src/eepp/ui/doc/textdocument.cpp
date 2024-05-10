@@ -1,5 +1,4 @@
-﻿#include <cstdio>
-#include <eepp/core/debug.hpp>
+﻿#include <eepp/core/debug.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -12,6 +11,7 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
+#include <eepp/window/engine.hpp>
 #include <string>
 
 using namespace std::literals;
@@ -104,6 +104,17 @@ void TextDocument::resetCursor() {
 	notifySelectionChanged();
 }
 
+String shiftJISToUTF32( const std::string_view& shiftJISString ) {
+	String string;
+	auto* ret = Window::Engine::instance()->getPlatformHelper()->iconv(
+		"UTF-32LE", "SHIFT-JIS", shiftJISString.data(), shiftJISString.size() );
+	if ( ret ) {
+		string = String( reinterpret_cast<String::StringBaseType*>( ret ) );
+		Window::Engine::instance()->getPlatformHelper()->iconvFree( ret );
+	}
+	return string;
+}
+
 static constexpr int codepointSize( TextFormat::Encoding enc ) {
 	switch ( enc ) {
 		case TextFormat::Encoding::UTF16LE:
@@ -167,7 +178,9 @@ static String ptrGetLine( char* data, const size_t& size, size_t& position,
 		position++;
 	}
 
-	if ( enc == TextFormat::Encoding::Latin1 )
+	if ( enc == TextFormat::Encoding::Shift_JIS )
+		return shiftJISToUTF32( std::string_view{ data, position } );
+	else if ( enc == TextFormat::Encoding::Latin1 )
 		return String::fromLatin1( data, position );
 
 	return String( data, position );
@@ -687,6 +700,7 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 				MD5::update( md5Ctx, bom, sizeof( bom ) );
 				break;
 			}
+			case TextFormat::Encoding::Shift_JIS:
 			case TextFormat::Encoding::Latin1:
 				break;
 		}
@@ -762,6 +776,15 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 						latin1.push_back( utf32[i] );
 				stream.write( latin1.c_str(), latin1.size() );
 				MD5::update( md5Ctx, latin1.data(), latin1.size() );
+				break;
+			}
+			case TextFormat::Encoding::Shift_JIS: {
+				auto* ret = Window::Engine::instance()->getPlatformHelper()->iconv(
+					"SHIFT-JIS", "UTF-8", text.c_str(), text.size() );
+				auto len = strlen( ret );
+				stream.write( ret, len );
+				MD5::update( md5Ctx, ret, len );
+				Window::Engine::instance()->getPlatformHelper()->iconvFree( ret );
 				break;
 			}
 			case TextFormat::Encoding::UTF8: {
