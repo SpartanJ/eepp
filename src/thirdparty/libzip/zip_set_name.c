@@ -31,14 +31,14 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "zipint.h"
 
-
+
 
 int
 _zip_set_name(struct zip *za, zip_uint64_t idx, const char *name)

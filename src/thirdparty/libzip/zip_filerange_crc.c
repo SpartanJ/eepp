@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <stdio.h>
 #include <errno.h>
@@ -39,7 +39,7 @@
 #include "zipint.h"
 
 
-
+
 
 int
 _zip_filerange_crc(FILE *fp, off_t start, off_t len, uLong *crcp,

@@ -172,8 +172,10 @@ end
 function copy_sdl()
 	if _OPTIONS["windows-vc-build"] then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
 	elseif _OPTIONS["windows-mingw-build"] then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
 	end
 end
 
@@ -777,6 +779,13 @@ function postsymlinklib_arch(name)
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:universal" )
+	if name == "eepp" then
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86_64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86_64" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:ARM" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:ARM64" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:universal" )
+	end
 end
 
 workspace "eepp"
@@ -1301,6 +1310,13 @@ workspace "eepp"
 		files { "src/tests/ui_perf_test/*.cpp" }
 		includedirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-perf-test", true )
+
+	project "eepp-unit_tests"
+		kind "ConsoleApp"
+		targetdir("./bin/unit_tests")
+		language "C++"
+		files { "src/tests/unit_tests/*.cpp" }
+		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

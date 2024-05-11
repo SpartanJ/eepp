@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +46,7 @@ struct read_data {
 
 static zip_int64_t read_data(void *, void *, zip_uint64_t, enum zip_source_cmd);
 
-
+
 
 ZIP_EXTERN struct zip_source *
 zip_source_buffer(struct zip *za, const void *data, zip_uint64_t len, int freep)
@@ -80,7 +80,7 @@ zip_source_buffer(struct zip *za, const void *data, zip_uint64_t len, int freep)
     return zs;
 }
 
-
+
 
 static zip_int64_t
 read_data(void *state, void *data, zip_uint64_t len, enum zip_source_cmd cmd)

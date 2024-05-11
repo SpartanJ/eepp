@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +49,7 @@ struct crc {
 static zip_int64_t crc_read(struct zip_source *, void *, void *
 			    , zip_uint64_t, enum zip_source_cmd);
 
-
+
 
 ZIP_EXTERN struct zip_source *
 zip_source_crc(struct zip *za, struct zip_source *src, int validate)
@@ -71,7 +71,7 @@ zip_source_crc(struct zip *za, struct zip_source *src, int validate)
     return zip_source_layered(za, src, crc_read, ctx);
 }
 
-
+
 
 static zip_int64_t
 crc_read(struct zip_source *src, void *_ctx, void *data,

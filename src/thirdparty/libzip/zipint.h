@@ -94,7 +94,7 @@ int _zip_mkstemp(char *);
 #endif
 #endif
 
-
+
 
 #define CENTRAL_MAGIC "PK\1\2"
 #define LOCAL_MAGIC   "PK\3\4"
@@ -112,7 +112,7 @@ int _zip_mkstemp(char *);
 #define CDBUFSIZE       (MAXCOMLEN+EOCDLEN)
 #define BUFSIZE		8192
 
-
+
 
 /* This section contains API that won't materialize like this.  It's
    placed in the internal section, pending cleanup. */
@@ -131,7 +131,7 @@ ZIP_EXTERN zip_encryption_implementation zip_get_encryption_implementation(
     zip_uint16_t);
 
 
-
+
 
 /* This section contains API that is of limited use until support for
    user-supplied compression/encryption implementation is finished.
@@ -168,7 +168,7 @@ ZIP_EXTERN int zip_source_stat(struct zip_source *, struct zip_stat *);
 
 ZIP_EXTERN struct zip_source *zip_source_pop(struct zip_source *);
 
-
+
 
 /* state of change of a file in zip archive */
 
@@ -261,7 +261,7 @@ struct zip_cdir {
     unsigned short comment_len;	/* length of zip archive comment */
 };
 
-
+
 
 struct zip_source {
     struct zip_source *src;
@@ -286,13 +286,13 @@ struct zip_entry {
     int ch_comment_len;
 };
 
-
+
 
 extern const char * const _zip_err_str[];
 extern const int _zip_nerr_str;
 extern const int _zip_err_type[];
 
-
+
 
 #define ZIP_ENTRY_DATA_CHANGED(x)	\
 			((x)->state == ZIP_ST_REPLACED  \
@@ -300,7 +300,7 @@ extern const int _zip_err_type[];
 
 #define ZIP_IS_RDONLY(za)	((za)->ch_flags & ZIP_AFL_RDONLY)
 
-
+
 
 int _zip_cdir_compute_crc(struct zip *, uLong *);
 void _zip_cdir_free(struct zip_cdir *);

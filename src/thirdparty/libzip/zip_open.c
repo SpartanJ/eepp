@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <sys/stat.h>
 #include <errno.h>
@@ -55,7 +55,7 @@ static unsigned char *_zip_memmem(const unsigned char *, int,
 static struct zip_cdir *_zip_readcdir(FILE *, off_t, unsigned char *, unsigned char *,
 				 int, int, struct zip_error *);
 
-
+
 
 ZIP_EXTERN struct zip *
 zip_open(const char *fn, int flags, int *zep)
@@ -79,7 +79,7 @@ zip_open(const char *fn, int flags, int *zep)
     return _zip_open(fn, fp, flags, 0, zep);
 }
 
-
+
 
 struct zip *
 _zip_open(const char *fn, FILE *fp, int flags, int aflags, int *zep)
@@ -134,7 +134,7 @@ _zip_open(const char *fn, FILE *fp, int flags, int aflags, int *zep)
     return za;
 }
 
-
+
 
 static void
 set_error(int *zep, struct zip_error *err, int ze)
@@ -151,7 +151,7 @@ set_error(int *zep, struct zip_error *err, int ze)
 	*zep = ze;
 }
 
-
+
 
 /* _zip_readcdir:
    tries to find a valid end-of-central-directory at the beginning of
@@ -281,7 +281,7 @@ _zip_readcdir(FILE *fp, off_t buf_offset, unsigned char *buf, unsigned char *eoc
     return cd;
 }
 
-
+
 
 /* _zip_checkcons:
    Checks the consistency of the central directory by comparing central
@@ -339,7 +339,7 @@ _zip_checkcons(FILE *fp, struct zip_cdir *cd, struct zip_error *error)
     return max - min;
 }
 
-
+
 
 /* _zip_check_torrentzip:
    check wether ZA has a valid TORRENTZIP comment, i.e. is torrentzipped */
@@ -374,7 +374,7 @@ _zip_check_torrentzip(struct zip *za)
 }
 
 
-
+
 
 /* _zip_headercomp:
    compares two headers h1 and h2; if they are local headers, set
@@ -443,7 +443,7 @@ _zip_headercomp(struct zip_dirent *h1, int local1p, struct zip_dirent *h2,
     return 0;
 }
 
-
+
 
 static struct zip *
 _zip_allocate_new(const char *fn, int *zep)
@@ -469,7 +469,7 @@ _zip_allocate_new(const char *fn, int *zep)
     return za;
 }
 
-
+
 
 static int
 _zip_file_exists(const char *fn, int flags, int *zep)
@@ -499,7 +499,7 @@ _zip_file_exists(const char *fn, int flags, int *zep)
     return 1;
 }
 
-
+
 
 static struct zip_cdir *
 _zip_find_central_dir(FILE *fp, int flags, int *zep, off_t len)
@@ -580,7 +580,7 @@ _zip_find_central_dir(FILE *fp, int flags, int *zep, off_t len)
     return cdir;
 }
 
-
+
 
 static unsigned char *
 _zip_memmem(const unsigned char *big, int biglen, const unsigned char *little, 

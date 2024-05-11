@@ -1304,6 +1304,7 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp" )
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp" )
+		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/unit_tests/", "eepp" )
 
 	-- Examples
 	project "eepp-external-shader"
@@ -1541,6 +1542,13 @@ solution "eepp"
 		files { "src/tests/ui_perf_test/*.cpp" }
 		includedirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-perf-test", true )
+
+	project "eepp-unit_tests"
+		kind "ConsoleApp"
+		targetdir("./bin/unit_tests")
+		language "C++"
+		files { "src/tests/unit_tests/*.cpp" }
+		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

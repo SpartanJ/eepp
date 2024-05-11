@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <errno.h>
 #include <stdio.h>
@@ -40,7 +40,7 @@
 
 #include "zipint.h"
 
-
+
 
 ZIP_EXTERN int
 zip_error_to_str(char *buf, zip_uint64_t len, int ze, int se)

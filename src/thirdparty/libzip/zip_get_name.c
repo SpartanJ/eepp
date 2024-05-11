@@ -31,11 +31,11 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include "zipint.h"
 
-
+
 
 ZIP_EXTERN const char *
 zip_get_name(struct zip *za, zip_uint64_t idx, int flags)
@@ -43,7 +43,7 @@ zip_get_name(struct zip *za, zip_uint64_t idx, int flags)
     return _zip_get_name(za, idx, flags, &za->error);
 }
 
-
+
 
 const char *
 _zip_get_name(struct zip *za, zip_uint64_t idx, int flags,

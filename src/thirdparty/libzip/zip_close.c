@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include "zipint.h"
 
@@ -63,14 +63,14 @@ static int _zip_cdir_set_comment(struct zip_cdir *, struct zip *);
 static char *_zip_create_temp_output(struct zip *, FILE **);
 static int _zip_torrentzip_cmp(const void *, const void *);
 
-
+
 
 struct filelist {
     int idx;
     const char *name;
 };
 
-
+
 
 ZIP_EXTERN int
 zip_close(struct zip *za)
@@ -108,7 +108,7 @@ zip_close(struct zip *za)
 	}
 	_zip_free(za);
 	return 0;
-    }	       
+    }
 
     if ((filelist=(struct filelist *)malloc(sizeof(filelist[0])*survivors))
 	== NULL)
@@ -175,7 +175,7 @@ zip_close(struct zip *za)
 
 	    if (zip_get_archive_flag(za, ZIP_AFL_TORRENT, 0))
 		_zip_dirent_torrent_normalize(&de);
-		
+
 	    /* use it as central directory entry */
 	    memcpy(cd->entry+j, &de, sizeof(cd->entry[j]));
 
@@ -273,7 +273,7 @@ zip_close(struct zip *za)
 	    }
 	    if (zs)
 		zip_source_free(zs);
-	    
+
 	    cd->entry[j].last_mod = de.last_mod;
 	    cd->entry[j].comp_method = de.comp_method;
 	    cd->entry[j].comp_size = de.comp_size;
@@ -302,7 +302,7 @@ zip_close(struct zip *za)
 	if (write_cdir(za, cd, out) < 0)
 	    error = 1;
     }
-   
+
     /* pointers in cd entries are owned by za */
     cd->nentry = 0;
     _zip_cdir_free(cd);
@@ -321,7 +321,7 @@ zip_close(struct zip *za)
 	free(temp);
 	return -1;
     }
-    
+
     if (za->zp) {
 	fclose(za->zp);
 	za->zp = NULL;
@@ -345,11 +345,11 @@ zip_close(struct zip *za)
 
     _zip_free(za);
     free(temp);
-    
+
     return 0;
 }
 
-
+
 
 static int
 add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
@@ -360,7 +360,7 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
     struct zip_source *s2;
     zip_compression_implementation comp_impl;
     int ret;
-    
+
     if (zip_source_stat(src, &st) < 0) {
 	_zip_error_set_from_source(&za->error, src);
 	return -1;
@@ -375,7 +375,7 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
 	zip_source_pop(s2);
 	return -1;
     }
-    
+
     /* XXX: deflate 0-byte files for torrentzip? */
     if (((st.valid & ZIP_STAT_COMP_METHOD) == 0
 	 || st.comp_method == ZIP_CM_STORE)
@@ -398,12 +398,12 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
 	s2 = src;
 
     offdata = ftello(ft);
-	
+
     ret = copy_source(za, s2, ft);
-	
+
     if (zip_source_stat(s2, &st) < 0)
 	ret = -1;
-    
+
     while (s2 != src) {
 	if ((s2=zip_source_pop(s2)) == NULL) {
 	    /* XXX: set erorr */
@@ -433,7 +433,7 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
 
     if (_zip_dirent_write(de, ft, 1, &za->error) < 0)
 	return -1;
-    
+
     if (fseeko(ft, offend, SEEK_SET) < 0) {
 	_zip_error_set(&za->error, ZIP_ER_SEEK, errno);
 	return -1;
@@ -442,7 +442,7 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
     return 0;
 }
 
-
+
 
 static int
 copy_data(FILE *fs, off_t len, FILE *ft, struct zip_error *error)
@@ -468,14 +468,14 @@ copy_data(FILE *fs, off_t len, FILE *ft, struct zip_error *error)
 	    _zip_error_set(error, ZIP_ER_WRITE, errno);
 	    return -1;
 	}
-	
+
 	len -= n;
     }
 
     return 0;
 }
 
-
+
 
 static int
 copy_source(struct zip *za, struct zip_source *src, FILE *ft)
@@ -497,19 +497,19 @@ copy_source(struct zip *za, struct zip_source *src, FILE *ft)
 	    break;
 	}
     }
-    
+
     if (n < 0) {
 	if (ret == 0)
 	    _zip_error_set_from_source(&za->error, src);
 	ret = -1;
-    }	
+    }
 
     zip_source_close(src);
-    
+
     return ret;
 }
 
-
+
 
 static int
 write_cdir(struct zip *za, struct zip_cdir *cd, FILE *out)
@@ -517,10 +517,10 @@ write_cdir(struct zip *za, struct zip_cdir *cd, FILE *out)
     off_t offset;
     uLong crc;
     char buf[TORRENT_CRC_LEN+1];
-    
+
     if (_zip_cdir_write(cd, out, &za->error) < 0)
 	return -1;
-    
+
     if (zip_get_archive_flag(za, ZIP_AFL_TORRENT, 0) == 0)
 	return 0;
 
@@ -547,7 +547,7 @@ write_cdir(struct zip *za, struct zip_cdir *cd, FILE *out)
     return 0;
 }
 
-
+
 
 static int
 _zip_cdir_set_comment(struct zip_cdir *dest, struct zip *src)
@@ -571,7 +571,7 @@ _zip_cdir_set_comment(struct zip_cdir *dest, struct zip *src)
     return 0;
 }
 
-
+
 
 int
 _zip_changed(struct zip *za, int *survivorsp)
@@ -599,7 +599,7 @@ _zip_changed(struct zip *za, int *survivorsp)
     return changed;
 }
 
-
+
 
 static char *
 _zip_create_temp_output(struct zip *za, FILE **outp)
@@ -607,7 +607,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
     char *temp;
     int tfd;
     FILE *tfp;
-    
+
     if ((temp=(char *)malloc(strlen(za->zn)+8)) == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	return NULL;
@@ -620,7 +620,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
 	free(temp);
 	return NULL;
     }
-    
+
     if ((tfp=fdopen(tfd, "r+b")) == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_TMPOPEN, errno);
 	close(tfd);
@@ -641,7 +641,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
     return temp;
 }
 
-
+
 
 static int
 _zip_torrentzip_cmp(const void *a, const void *b)
