@@ -1542,6 +1542,13 @@ solution "eepp"
 		includedirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-perf-test", true )
 
+	project "eepp-unit_tests"
+		set_kind()
+		targetdir("./bin/unit_tests")
+		language "C++"
+		files { "src/tests/unit_tests/*.cpp" }
+		build_link_configuration( "eepp-unit_tests", true )
+
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
 end

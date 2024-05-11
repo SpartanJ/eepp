@@ -1433,6 +1433,9 @@
 ../../src/tests/test_everything/test.cpp
 ../../src/tests/test_everything/test.hpp
 ../../src/tests/ui_perf_test/ui_perf_test.cpp
+../../src/tests/unit_tests/main.cpp
+../../src/tests/unit_tests/textformat.cpp
+../../src/tests/unit_tests/utest.h
 ../../src/thirdparty/SOIL2/src/SOIL2/etc1_utils.c
 ../../src/thirdparty/SOIL2/src/SOIL2/etc1_utils.h
 ../../src/thirdparty/SOIL2/src/SOIL2/image_DXT.c

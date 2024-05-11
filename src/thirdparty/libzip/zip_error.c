@@ -31,13 +31,13 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <stdlib.h>
 
 #include "zipint.h"
 
-
+
 
 void
 _zip_error_clear(struct zip_error *err)
@@ -46,7 +46,7 @@ _zip_error_clear(struct zip_error *err)
     err->sys_err = 0;
 }
 
-
+
 
 void
 _zip_error_copy(struct zip_error *dst, struct zip_error *src)
@@ -55,7 +55,7 @@ _zip_error_copy(struct zip_error *dst, struct zip_error *src)
     dst->sys_err = src->sys_err;
 }
 
-
+
 
 void
 _zip_error_fini(struct zip_error *err)
@@ -64,7 +64,7 @@ _zip_error_fini(struct zip_error *err)
     err->str = NULL;
 }
 
-
+
 
 void
 _zip_error_get(struct zip_error *err, int *zep, int *sep)
@@ -79,7 +79,7 @@ _zip_error_get(struct zip_error *err, int *zep, int *sep)
     }
 }
 
-
+
 
 void
 _zip_error_init(struct zip_error *err)
@@ -89,7 +89,7 @@ _zip_error_init(struct zip_error *err)
     err->str = NULL;
 }
 
-
+
 
 void
 _zip_error_set(struct zip_error *err, int ze, int se)
@@ -100,7 +100,7 @@ _zip_error_set(struct zip_error *err, int ze, int se)
     }
 }
 
-
+
 
 void
 _zip_error_set_from_source(struct zip_error *err, struct zip_source *src)

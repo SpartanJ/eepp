@@ -309,14 +309,18 @@ struct TextFileStats {
 	}
 
 	void calcScore() {
-		if ( !score ) {
-			score = ( 2.5f * numWhitespace + numPlainAscii - 100.f * numInvalidPoints() -
-					  50.f * numControl + 5.f * numExtended + 2.5f * num16bytes ) *
-					ooNumPoints;
-		}
+		score = ( ( 2.5f * numWhitespace + numPlainAscii - 100.f * numInvalidPoints() -
+					50.f * numControl + 5.f * numExtended + 2.5f * num16bytes ) *
+				  ( count16b ? ( num16bytes > 0 ? 1 : 0 ) : 1 ) ) *
+				ooNumPoints;
 	}
 
-	float getScore() const { return score; }
+	bool allValidPoints() const { return numPoints == numValidPoints; }
+
+	float getScore() {
+		calcScore();
+		return score;
+	}
 };
 
 static Uint32 scanTextFile( TextFileStats& stats, IOStream& ins, const TextEncoding* encoding,
@@ -435,7 +439,8 @@ TextFormat guessFileEncoding( IOStream& ins ) {
 	scanTextFile( statsShiftJIS, ins, TextEncoding::get<ShiftJIS>(), NumBytesForAutodetect );
 	ins.seek( 0 );
 
-	if ( statsShiftJIS.getScore() > stats->getScore() ) {
+	if ( statsShiftJIS.allValidPoints() && statsShiftJIS.num16bytes &&
+		 statsShiftJIS.getScore() > stats->getScore() ) {
 		stats = &statsShiftJIS;
 		encoding = TextFormat::Encoding::Shift_JIS;
 	}
@@ -473,7 +478,7 @@ TextFormat TextFormat::autodetect( IOStream& ins ) {
 			tff.encoding = TextFormat::Encoding::UTF16BE;
 			tff.bom = true;
 		} else if ( h[0] == 0xff && h[1] == 0xfe ) {
-			tff.encoding = TextFormat::Encoding::UTF16BE;
+			tff.encoding = TextFormat::Encoding::UTF16LE;
 			tff.bom = true;
 		}
 		ins.seek( start );

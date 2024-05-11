@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -58,7 +58,7 @@ static zip_int64_t deflate_decompress(struct zip_source *, void *, void *,
 				      zip_uint64_t, enum zip_source_cmd);
 static void deflate_free(struct deflate *);
 
-
+
 
 ZIP_EXTERN struct zip_source *
 zip_source_deflate(struct zip *za, struct zip_source *src,
@@ -97,7 +97,7 @@ zip_source_deflate(struct zip *za, struct zip_source *src,
     return s2;
 }
 
-
+
 
 static zip_int64_t
 compress_read(struct zip_source *src, struct deflate *ctx,
@@ -172,7 +172,7 @@ compress_read(struct zip_source *src, struct deflate *ctx,
     return (ctx->e[0] == 0) ? 0 : -1;
 }
 
-
+
 
 static zip_int64_t
 decompress_read(struct zip_source *src, struct deflate *ctx,
@@ -242,7 +242,7 @@ decompress_read(struct zip_source *src, struct deflate *ctx,
     return (ctx->e[0] == 0) ? 0 : -1;
 }
 
-
+
 
 static zip_int64_t
 deflate_compress(struct zip_source *src, void *ud, void *data,
@@ -313,7 +313,7 @@ deflate_compress(struct zip_source *src, void *ud, void *data,
     }
 }
 
-
+
 
 static zip_int64_t
 deflate_decompress(struct zip_source *src, void *ud, void *data,
@@ -384,7 +384,7 @@ deflate_decompress(struct zip_source *src, void *ud, void *data,
     
 }
 
-
+
 
 static void
 deflate_free(struct deflate *ctx)

@@ -9,6 +9,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
+        ref: ${{ github.ref }}
         fetch-depth: 2
     - name: Checkout submodules
       run: |
@@ -20,3 +21,8 @@ jobs:
       run: |
         premake5 gmake2
         make -C make/macosx/ -e config=release_arm64
+    - name: Unit Tests
+      run: |
+        cd bin/unit_tests
+        ./eepp-unit_tests
+

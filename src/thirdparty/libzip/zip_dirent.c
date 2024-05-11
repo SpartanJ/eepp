@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +48,7 @@ static char *_zip_readstr(unsigned char **, int, int, struct zip_error *);
 static void _zip_write2(unsigned short, FILE *);
 static void _zip_write4(unsigned int, FILE *);
 
-
+
 
 void
 _zip_cdir_free(struct zip_cdir *cd)
@@ -65,7 +65,7 @@ _zip_cdir_free(struct zip_cdir *cd)
     free(cd);
 }
 
-
+
 
 int
 _zip_cdir_grow(struct zip_cdir *cd, int nentry, struct zip_error *error)
@@ -89,7 +89,7 @@ _zip_cdir_grow(struct zip_cdir *cd, int nentry, struct zip_error *error)
     return 0;
 }
 
-
+
 
 struct zip_cdir *
 _zip_cdir_new(int nentry, struct zip_error *error)
@@ -118,7 +118,7 @@ _zip_cdir_new(int nentry, struct zip_error *error)
     return cd;
 }
 
-
+
 
 int
 _zip_cdir_write(struct zip_cdir *cd, FILE *fp, struct zip_error *error)
@@ -152,7 +152,7 @@ _zip_cdir_write(struct zip_cdir *cd, FILE *fp, struct zip_error *error)
     return 0;
 }
 
-
+
 
 void
 _zip_dirent_finalize(struct zip_dirent *zde)
@@ -165,7 +165,7 @@ _zip_dirent_finalize(struct zip_dirent *zde)
     zde->comment = NULL;
 }
 
-
+
 
 void
 _zip_dirent_init(struct zip_dirent *de)
@@ -190,7 +190,7 @@ _zip_dirent_init(struct zip_dirent *de)
     de->offset = 0;
 }
 
-
+
 
 /* _zip_dirent_read(zde, fp, bufp, left, localp, error):
    Fills the zip directory entry zde.
@@ -346,7 +346,7 @@ _zip_dirent_read(struct zip_dirent *zde, FILE *fp,
     return 0;
 }
 
-
+
 
 /* _zip_dirent_torrent_normalize(de);
    Set values suitable for torrentzip.
@@ -403,7 +403,7 @@ _zip_dirent_torrent_normalize(struct zip_dirent *de)
     de->comment_len = 0;
 }
 
-
+
 
 /* _zip_dirent_write(zde, fp, localp, error):
    Writes zip directory entry zde to file fp.
@@ -467,7 +467,7 @@ _zip_dirent_write(struct zip_dirent *zde, FILE *fp, int localp,
     return 0;
 }
 
-
+
 
 static time_t
 _zip_d2u_time(int dtime, int ddate)
@@ -490,7 +490,7 @@ _zip_d2u_time(int dtime, int ddate)
     return mktime(&tm);
 }
 
-
+
 
 unsigned short
 _zip_read2(unsigned char **a)
@@ -503,7 +503,7 @@ _zip_read2(unsigned char **a)
     return ret;
 }
 
-
+
 
 unsigned int
 _zip_read4(unsigned char **a)
@@ -516,7 +516,7 @@ _zip_read4(unsigned char **a)
     return ret;
 }
 
-
+
 
 static char *
 _zip_readfpstr(FILE *fp, unsigned int len, int nulp, struct zip_error *error)
@@ -546,7 +546,7 @@ _zip_readfpstr(FILE *fp, unsigned int len, int nulp, struct zip_error *error)
     return r;
 }
 
-
+
 
 static char *
 _zip_readstr(unsigned char **buf, int len, int nulp, struct zip_error *error)
@@ -573,7 +573,7 @@ _zip_readstr(unsigned char **buf, int len, int nulp, struct zip_error *error)
     return r;
 }
 
-
+
 
 static void
 _zip_write2(unsigned short i, FILE *fp)
@@ -584,7 +584,7 @@ _zip_write2(unsigned short i, FILE *fp)
     return;
 }
 
-
+
 
 static void
 _zip_write4(unsigned int i, FILE *fp)
@@ -597,7 +597,7 @@ _zip_write4(unsigned int i, FILE *fp)
     return;
 }
 
-
+
 
 void
 _zip_u2d_time(time_t time, unsigned short *dtime, unsigned short *ddate)

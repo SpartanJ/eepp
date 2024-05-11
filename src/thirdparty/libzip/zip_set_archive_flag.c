@@ -31,11 +31,11 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include "zipint.h"
 
-
+
 
 ZIP_EXTERN int
 zip_set_archive_flag(struct zip *za, int flag, int value)
