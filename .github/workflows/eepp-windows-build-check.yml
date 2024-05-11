@@ -36,5 +36,4 @@ jobs:
     - name: Unit Tests
       shell: cmd
       run: |
-        cd bin\unit_tests
-        ./eepp-unit_tests.exe
+        bin\unit_tests\eepp-unit_tests.exe
