@@ -514,7 +514,7 @@ TextFormat::LineEnding TextFormat::stringToLineEnding( const std::string& str ) 
 	return TextFormat::LineEnding::LF;
 }
 
-TextFormat::Encoding TextFormat::encodingFromString( const std::string_view& str ) {
+TextFormat::Encoding TextFormat::encodingFromString( const std::string& str ) {
 	switch ( String::hash( str ) ) {
 		case static_cast<String::HashType>( TextFormat::Encoding::UTF16LE ):
 			return TextFormat::Encoding::UTF16LE;
@@ -539,7 +539,7 @@ std::string TextFormat::encodingToString( TextFormat::Encoding enc ) {
 		case TextFormat::Encoding::Latin1:
 			return "ISO-8859-1";
 		case TextFormat::Encoding::Shift_JIS:
-			return "Shift_JIS";
+			return "Shift-JIS";
 		case TextFormat::Encoding::UTF8:
 		default:
 			break;
