@@ -68,9 +68,6 @@ UTEST( TextFormat, autodetectProject ) {
 			{ "InfoPlist.strings", TextFormat::Encoding::UTF16BE },
 			{ "version.rc", TextFormat::Encoding::Latin1 },
 			{ "SDL_RLEaccel.c", TextFormat::Encoding::Latin1 },
-			{ "func_common.hpp", TextFormat::Encoding::Latin1 },
-			{ "func_common.inl", TextFormat::Encoding::Latin1 },
-			{ "type_half.inl", TextFormat::Encoding::Latin1 },
 		};
 		auto found = KNOWN_ENCS.find( filename );
 		if ( found != KNOWN_ENCS.end() )
