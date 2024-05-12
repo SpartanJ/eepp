@@ -3153,9 +3153,8 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	Sizef size;
 	FontStyleConfig fontStyle( mFontStyleConfig );
 	fontStyle.CharacterSize = fontSize;
-	bool isWrappedLine = mLineWrapping.isWrappedLine( line );
 
-	if ( isWrappedLine ) {
+	if ( mLineWrapping.isWrappedLine( line ) ) {
 		auto vline = mLineWrapping.getVisualLine( line );
 		size_t curvline = 1;
 		size_t lineLength = strLine.length();
@@ -3168,10 +3167,10 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			if ( fontStyle.OutlineThickness )
 				fontStyle.OutlineColor = style.outlineColor;
 
-			Int64 tokenPos = 0;
+			size_t tokenPos = 0;
 			while ( tokenPos < token.len && nextLineCol != pos ) {
 				Int64 maxLength = nextLineCol - pos;
-				auto textSize = std::min( (Int64)token.len, maxLength );
+				auto textSize = std::min( (Int64)( (Int64)token.len - tokenPos ), maxLength );
 				String::View text = strLine.view().substr( pos, textSize );
 
 				if ( style.background != Color::Transparent ) {
@@ -3767,7 +3766,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 	int maxMinmapLines = eefloor( rect.getHeight() / lineSpacing );
 	int minimapStartLine = 0;
 
-	if ( isMinimapFileTooLarge() ) {
+	if ( isMinimapFileTooLarge() && visibleLinesCount ) {
 		Float scrollPos = ( visibleLinesStart - 1 ) / (Float)( lineCount - visibleLinesCount - 1 );
 		scrollPos = eeclamp( scrollPos, 0.f, 1.f );
 		Float scrollPosPixels = scrollPos * ( rect.getHeight() - scrollerHeight );

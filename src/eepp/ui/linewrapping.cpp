@@ -84,8 +84,7 @@ LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& doc, size_t li
 											  LineWrapMode mode, bool keepIndentation,
 											  Uint32 tabWidth ) {
 	if ( nullptr == fontStyle.Font || mode == LineWrapMode::NoWrap ||
-		 fontStyle.Font->isMonospace() || nullptr == doc.getHighlighter() ||
-		 doc.getSyntaxDefinition().getPatterns().empty() ) {
+		 nullptr == doc.getHighlighter() || doc.getSyntaxDefinition().getPatterns().empty() ) {
 		return computeLineBreaks( doc.line( line ).getText(), fontStyle, maxWidth, mode,
 								  keepIndentation, tabWidth );
 	}
@@ -122,10 +121,7 @@ LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& doc, size_t li
 		Float w = Text::getTextWidth( text, fontStyle, tabWidth );
 
 		if ( xoffset + w > maxWidth ) {
-			auto tChar = &text[0];
-
-			while ( *tChar ) {
-				Uint32 curChar = *tChar;
+			for ( const auto& curChar : text ) {
 				Float w = fontStyle.Font
 							  ->getGlyph( curChar, fontStyle.CharacterSize, bold, italic,
 										  outlineThickness )
@@ -159,7 +155,6 @@ LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& doc, size_t li
 				}
 
 				idx++;
-				tChar++;
 			}
 		} else {
 			xoffset += w;
