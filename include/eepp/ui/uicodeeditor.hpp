@@ -6,6 +6,7 @@
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
+#include <eepp/ui/linewrapping.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <unordered_map>
@@ -72,23 +73,23 @@ class UICodeEditorPlugin {
 		return false;
 	}
 	virtual void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
-									 const Float& ){};
+									 const Float& ) {};
 	virtual void drawAfterLineText( UICodeEditor* /*editor*/, const Int64& /*index*/,
 									Vector2f /*position*/, const Float& /*fontSize*/,
-									const Float& /*lineHeight*/ ){};
+									const Float& /*lineHeight*/ ) {};
 	virtual void minimapDrawBeforeLineText( UICodeEditor* /*editor*/, const Int64& /*index*/,
 											const Vector2f& /*position*/, const Vector2f& /*size*/,
 											const Float& /*charWidth*/,
-											const Float& /*gutterWidth*/ ){};
+											const Float& /*gutterWidth*/ ) {};
 	virtual void minimapDrawAfterLineText( UICodeEditor*, const Int64&, const Vector2f&,
-										   const Vector2f&, const Float&, const Float& ){};
+										   const Vector2f&, const Float&, const Float& ) {};
 
 	virtual void drawGutter( UICodeEditor* /*editor*/, const Int64& /*index*/,
 							 const Vector2f& /*screenStart*/, const Float& /*lineHeight*/,
-							 const Float& /*gutterWidth*/, const Float& /*fontSize*/ ){};
+							 const Float& /*gutterWidth*/, const Float& /*fontSize*/ ) {};
 
 	virtual void drawTop( UICodeEditor* /*editor*/, const Vector2f& /*screenStart*/,
-						  const Sizef& /*size*/, const Float& /*fontSize*/ ){};
+						  const Sizef& /*size*/, const Float& /*fontSize*/ ) {};
 
 	Uint32 addOnReadyCallback( const OnReadyCb& cb ) {
 		mOnReadyCallbacks[mReadyCbNum++] = cb;
@@ -647,6 +648,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
 	std::shared_ptr<Doc::TextDocument> mDoc;
+	LineWrapping mLineWrapping;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
 	bool mDirtyEditor{ false };
@@ -939,6 +941,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateIMELocation();
 
 	void drawLockedIcon( const Vector2f start );
+
+	size_t getTotalVisibleLines() const;
 };
 
 }} // namespace EE::UI

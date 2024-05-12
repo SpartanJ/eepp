@@ -32,6 +32,12 @@ class EE_API LineWrapping {
 		bool operator!=( const Config& other ) { return !( *this == other ); }
 	};
 
+	struct VisualLine {
+		Int64 visualLineIndex;
+		std::vector<TextPosition> visualLines;
+		Float offset{ 0 };
+	};
+
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
 										   Float maxWidth, LineWrapMode mode, bool keepIndentation,
 										   Uint32 tabWidth = 4 );
@@ -43,6 +49,8 @@ class EE_API LineWrapping {
 
 	LineWrapping( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
 
+	bool isWrapEnabled() const;
+
 	size_t getTotalLines() const;
 
 	const Config& config() const { return mConfig; }
@@ -51,11 +59,25 @@ class EE_API LineWrapping {
 
 	void updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines );
 
+	Config getConfig() const { return mConfig; }
+
 	void setConfig( Config config );
 
 	void setMaxWidth( Float maxWidth );
 
 	void setFontStyle( FontStyleConfig fontStyle );
+
+	void setLineWrapMode( LineWrapMode mode );
+
+	TextPosition getDocumentLine( Int64 visibleIndex ) const;
+
+	Float getLineOffset( Int64 docIdx ) const;
+
+	Int64 toWrappedIndex( Int64 docIdx, bool retLast = false ) const;
+
+	bool isWrappedLine( Int64 docIdx ) const;
+
+	VisualLine getVisualLine( Int64 docIdx ) const;
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;
@@ -65,8 +87,6 @@ class EE_API LineWrapping {
 	std::vector<TextPosition> mWrappedLines;
 	std::vector<Float> mWrappedLinesOffset;
 	std::vector<Int64> mWrappedLineToIndex;
-
-	Int64 toWrappedIndex( Int64 docIdx, bool retLast );
 };
 
 }} // namespace EE::UI

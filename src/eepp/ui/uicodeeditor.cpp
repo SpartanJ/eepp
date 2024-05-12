@@ -119,6 +119,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	UIWidget( elementTag ),
 	mFont( FontManager::instance()->getByName( "monospace" ) ),
 	mDoc( std::make_shared<TextDocument>() ),
+	mLineWrapping( mDoc, mFontStyleConfig, {} ),
 	mBlinkTime( Seconds( 0.5f ) ),
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
@@ -159,6 +160,8 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	setClipType( ClipType::ContentBox );
 	mDoc->registerClient( this );
 	subscribeScheduledUpdate();
+
+	mLineWrapping.setLineWrapMode( LineWrapMode::Word );
 
 	if ( autoRegisterBaseCommands )
 		registerCommands();
@@ -267,10 +270,11 @@ void UICodeEditor::draw() {
 	if ( !mLocked && mHighlightCurrentLine ) {
 		for ( const auto& sel : mDoc->getSelections() ) {
 			primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
-			primitives.drawRectangle(
-				Rectf( Vector2f( startScroll.x + mScroll.x,
-								 startScroll.y + sel.start().line() * lineHeight ),
-					   Sizef( mSize.getWidth(), lineHeight ) ) );
+			primitives.drawRectangle( Rectf(
+				Vector2f( startScroll.x + mScroll.x,
+						  startScroll.y +
+							  mLineWrapping.toWrappedIndex( sel.start().line() ) * lineHeight ),
+				Sizef( mSize.getWidth(), lineHeight ) ) );
 		}
 	}
 
@@ -324,7 +328,9 @@ void UICodeEditor::draw() {
 
 	for ( unsigned long i = lineRange.first; i <= lineRange.second; i++ ) {
 		Vector2f curScroll(
-			{ startScroll.x, static_cast<float>( startScroll.y + lineHeight * (double)i ) } );
+			{ startScroll.x,
+			  static_cast<float>( startScroll.y +
+								  lineHeight * (double)mLineWrapping.toWrappedIndex( i ) ) } );
 
 		for ( auto& plugin : mPlugins )
 			plugin->drawBeforeLineText( this, i, curScroll, charSize, lineHeight );
@@ -349,7 +355,9 @@ void UICodeEditor::draw() {
 
 	if ( hasFocus() && getUISceneNode()->getWindow()->getIME().isEditing() ) {
 		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
-							startScroll.y + cursor.line() * lineHeight + getLineOffset() );
+							startScroll.y +
+								mLineWrapping.toWrappedIndex( cursor.line() ) * lineHeight +
+								getLineOffset() );
 		FontStyleConfig config( mFontStyleConfig );
 		config.FontColor = mFontStyleConfig.getFontSelectedColor();
 		getUISceneNode()->getWindow()->getIME().draw( cursorPos, getFontHeight(), config,
@@ -572,11 +580,15 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 void UICodeEditor::onFontChanged() {
 	invalidateLinesCache();
 	udpateGlyphWidth();
+	mLineWrapping.setFontStyle( mFontStyleConfig );
+	invalidateDraw();
 }
 
 void UICodeEditor::onFontStyleChanged() {
 	invalidateLinesCache();
 	udpateGlyphWidth();
+	mLineWrapping.setFontStyle( mFontStyleConfig );
+	invalidateDraw();
 }
 
 void UICodeEditor::onDocumentLoaded( TextDocument* ) {}
@@ -586,6 +598,7 @@ void UICodeEditor::onDocumentReloaded( TextDocument* ) {
 	sendEvent( &event );
 	invalidateDraw();
 	invalidateLongestLineWidth();
+	mLineWrapping.reconstructBreaks();
 }
 
 void UICodeEditor::onDocumentLoaded() {
@@ -593,6 +606,7 @@ void UICodeEditor::onDocumentLoaded() {
 	sendEvent( &event );
 	invalidateDraw();
 	invalidateLongestLineWidth();
+	mLineWrapping.reconstructBreaks();
 }
 
 void UICodeEditor::onDocumentChanged() {
@@ -647,8 +661,6 @@ UICodeEditor* UICodeEditor::setFontSize( const Float& size ) {
 		mFontStyleConfig.CharacterSize =
 			eeabs( size - (int)size ) == 0.5f || (int)size == size ? size : eefloor( size );
 		mFontSize = mFontStyleConfig.CharacterSize;
-		udpateGlyphWidth();
-		invalidateDraw();
 		onFontChanged();
 	}
 	return this;
@@ -702,7 +714,12 @@ const Uint32& UICodeEditor::getTabWidth() const {
 }
 
 UICodeEditor* UICodeEditor::setTabWidth( const Uint32& tabWidth ) {
-	mTabWidth = tabWidth;
+	if ( mTabWidth != tabWidth ) {
+		mTabWidth = tabWidth;
+		auto config = mLineWrapping.getConfig();
+		config.tabWidth = tabWidth;
+		mLineWrapping.setConfig( config );
+	}
 	return this;
 }
 
@@ -882,7 +899,7 @@ void UICodeEditor::invalidateLongestLineWidth() {
 	mLongestLineWidthLastUpdate.restart();
 }
 
-Uint32 UICodeEditor::onFocus( NodeFocusReason reason  ) {
+Uint32 UICodeEditor::onFocus( NodeFocusReason reason ) {
 	if ( !mLocked ) {
 		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 		resetCursor();
@@ -970,6 +987,10 @@ void UICodeEditor::drawLockedIcon( const Vector2f start ) {
 	fileLockIcon->setColor( col );
 }
 
+size_t UICodeEditor::getTotalVisibleLines() const {
+	return mLineWrapping.getTotalLines();
+}
+
 Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
 	UIWidget::onTextEditing( event );
 	mLastActivity.restart();
@@ -1051,9 +1072,9 @@ Vector2f UICodeEditor::getViewPortLineCount() const {
 Sizef UICodeEditor::getMaxScroll() const {
 	Vector2f vplc( getViewPortLineCount() );
 	return Sizef( eemax( 0.f, mLongestLineWidth - getViewportWidth() ),
-				  vplc.y > mDoc->linesCount() - 1
+				  vplc.y > getTotalVisibleLines() - 1
 					  ? 0.f
-					  : eefloor( mDoc->linesCount() - getViewPortLineCount().y ) *
+					  : eefloor( getTotalVisibleLines() - getViewPortLineCount().y ) *
 							getLineHeight() );
 }
 
@@ -1524,7 +1545,8 @@ Vector2f UICodeEditor::getRelativeScreenPosition( const TextPosition& pos ) {
 	Vector2f startScroll( start - mScroll );
 	auto lineHeight = getLineHeight();
 	return { startScroll.x + getXOffsetCol( pos ),
-			 startScroll.y + pos.line() * lineHeight + getLineOffset() };
+			 startScroll.y + mLineWrapping.toWrappedIndex( pos.line() ) * lineHeight +
+				 getLineOffset() };
 }
 
 bool UICodeEditor::getShowLinesRelativePosition() const {
@@ -1547,7 +1569,9 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 							   const TextPosition& cursor ) {
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() ) {
 		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
-							startScroll.y + cursor.line() * lineHeight + getLineOffset() );
+							startScroll.y +
+								mLineWrapping.toWrappedIndex( cursor.line() ) * lineHeight +
+								getLineOffset() );
 		Primitives primitives;
 		primitives.setColor( Color( mCaretColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle(
@@ -1558,11 +1582,13 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 void UICodeEditor::onSizeChange() {
 	UIWidget::onSizeChange();
 	invalidateEditor( false );
+	mLineWrapping.setMaxWidth( getViewportWidth() );
 }
 
 void UICodeEditor::onPaddingChange() {
 	UIWidget::onPaddingChange();
 	invalidateEditor( false );
+	mLineWrapping.setMaxWidth( getViewportWidth() );
 }
 
 std::pair<size_t, Float> UICodeEditor::findLongestLineInRange( const TextRange& range ) {
@@ -1728,6 +1754,8 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	invalidateDraw();
 	checkMatchingBrackets();
 	sendCommonEvent( Event::OnTextChanged );
+	mLineWrapping.updateBreaks( change.range.start().line(), change.range.end().line(),
+								change.range.length() );
 
 	if ( !change.text.empty() ) {
 		auto range = findLongestLineInRange( change.range );
@@ -1808,6 +1836,8 @@ void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& numLi
 				}
 			}
 		}
+		mLineWrapping.updateBreaks( fromLine, std::min( fromLine + numLines, linesCount - 1 ),
+									numLines );
 	} else if ( numLines < 0 ) {
 		for ( Int64 i = fromLine; i < linesCount; i++ ) {
 			auto lineIt = mLinesWidthCache.find( i - numLines );
@@ -1818,6 +1848,7 @@ void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& numLi
 				mLinesWidthCache[i] = std::move( nl.mapped() );
 			}
 		}
+		mLineWrapping.updateBreaks( std::max( 0ll, fromLine + numLines ), fromLine, numLines );
 	}
 }
 
@@ -1829,8 +1860,13 @@ void UICodeEditor::onDocumentDirtyOnFileSystem( TextDocument* doc ) {
 std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange() const {
 	Float lineHeight = getLineHeight();
 	Float minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
-	Float maxLine = eemin( mDoc->linesCount() - 1.f,
+	Float maxLine = eemin( getTotalVisibleLines() - 1.f,
 						   eefloor( ( mSize.getHeight() + mScroll.y ) / lineHeight ) + 1 );
+	if ( mLineWrapping.isWrapEnabled() ) {
+		return std::make_pair<Uint64, Uint64>(
+			(Uint64)mLineWrapping.getDocumentLine( minLine ).line(),
+			(Uint64)mLineWrapping.getDocumentLine( maxLine ).line() );
+	}
 	return std::make_pair<Uint64, Uint64>( (Uint64)minLine, (Uint64)maxLine );
 }
 
@@ -3002,7 +3038,8 @@ void UICodeEditor::drawWordRanges( const TextRanges& ranges, const std::pair<int
 		Rectf selRect;
 		Int64 startCol = range.start().column();
 		Int64 endCol = range.end().column();
-		selRect.Top = startScroll.y + range.start().line() * lineHeight;
+		selRect.Top =
+			startScroll.y + mLineWrapping.toWrappedIndex( range.start().line() ) * lineHeight;
 		selRect.Bottom = selRect.Top + lineHeight;
 		selRect.Left = startScroll.x + getXOffsetCol( { range.start().line(), startCol } );
 		selRect.Right = startScroll.x + getXOffsetCol( { range.start().line(), endCol } );
@@ -3043,7 +3080,7 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 				Rectf selRect;
 				Int64 startCol = pos;
 				Int64 endCol = pos + text.size();
-				selRect.Top = startScroll.y + ln * lineHeight;
+				selRect.Top = startScroll.y + mLineWrapping.toWrappedIndex( ln ) * lineHeight;
 				selRect.Bottom = selRect.Top + lineHeight;
 				selRect.Left = startScroll.x + getXOffsetCol( { ln, startCol } );
 				selRect.Right = startScroll.x + getXOffsetCol( { ln, endCol } );
@@ -3082,6 +3119,60 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	Sizef size;
 	FontStyleConfig fontStyle( mFontStyleConfig );
 	fontStyle.CharacterSize = fontSize;
+	bool isWrappedLine = mLineWrapping.isWrappedLine( line );
+
+	if ( isWrappedLine ) {
+		auto vline = mLineWrapping.getVisualLine( line );
+		size_t curvline = 1;
+		size_t nextLineCol = vline.visualLines[curvline].column();
+		for ( const auto& token : tokens ) {
+			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
+			fontStyle.Style = style.style;
+			fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
+			fontStyle.OutlineThickness = style.outlineThickness;
+			if ( fontStyle.OutlineThickness )
+				fontStyle.OutlineColor = style.outlineColor;
+
+			while ( pos <= strLine.size() ) {
+				auto maxLength = nextLineCol - pos;
+				String::View text = strLine.view().substr(
+					pos, std::min( static_cast<size_t>( token.len ), maxLength ) );
+
+				if ( style.background != Color::Transparent ) {
+					primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
+					primitives.drawRectangle(
+						Rectf( position, Sizef( getTextWidth( text ), lineHeight ) ) );
+				}
+
+				position.x += Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
+										  mTabWidth )
+								  .getWidth();
+				pos += text.size();
+
+				if ( pos < nextLineCol || maxLength == 0 )
+					break;
+
+				position.y += lineHeight;
+				position.x = originalPosition.x + vline.offset;
+				curvline++;
+				// bool nbreak = pos == nextLineCol && nextLineCol - pos == 0;
+				if ( curvline < vline.visualLines.size() ) {
+					nextLineCol = vline.visualLines[curvline].column();
+				} else {
+					nextLineCol = strLine.size();
+				}
+				/*if ( nbreak )
+					break;*/
+			}
+		}
+
+		if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {
+			FontTrueType* ttf = static_cast<FontTrueType*>( mFont );
+			ttf->setEnableFallbackFont( isFallbackFont );
+			ttf->setEnableEmojiFallback( isEmojiFallbackFont );
+		}
+		return;
+	}
 
 	for ( const auto& token : tokens ) {
 		String::View text = strLine.view();
@@ -3243,7 +3334,7 @@ void UICodeEditor::drawTextRange( const TextRange& range, const std::pair<int, i
 	for ( auto ln = startLine; ln <= endLine; ln++ ) {
 		const String& line = mDoc->line( ln ).getText();
 		Rectf selRect;
-		selRect.Top = startScroll.y + ln * lineHeight;
+		selRect.Top = startScroll.y + mLineWrapping.toWrappedIndex( ln ) * lineHeight;
 		selRect.Bottom = selRect.Top + lineHeight;
 		if ( range.start().line() == ln ) {
 			selRect.Left = startScroll.x + getXOffsetCol( { ln, range.start().column() } );
@@ -3287,7 +3378,9 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 		}
 		Text::draw( pos,
 					Vector2f( screenStart.x + mLineNumberPaddingLeft,
-							  startScroll.y + lineHeight * (double)i + lineOffset ),
+							  startScroll.y +
+								  lineHeight * (double)mLineWrapping.toWrappedIndex( i ) +
+								  lineOffset ),
 					mFontStyleConfig.Font, fontSize,
 					( i >= selection.start().line() && i <= selection.end().line() )
 						? mLineNumberActiveFontColor
@@ -3303,10 +3396,13 @@ void UICodeEditor::drawColorPreview( const Vector2f& startScroll, const Float& l
 	primitives.setColor( mPreviewColor );
 	Float startX = getXOffsetCol( mPreviewColorRange.start() );
 	Float endX = getXOffsetCol( mPreviewColorRange.end() );
-	primitives.drawRectangle( Rectf(
-		Vector2f( startScroll.x + mScroll.x + startX,
-				  startScroll.y + mPreviewColorRange.start().line() * lineHeight + lineHeight ),
-		Sizef( endX - startX, lineHeight * 2 ) ) );
+	primitives.drawRectangle(
+		Rectf( Vector2f( startScroll.x + mScroll.x + startX,
+						 startScroll.y +
+							 mLineWrapping.toWrappedIndex( mPreviewColorRange.start().line() ) *
+								 lineHeight +
+							 lineHeight ),
+			   Sizef( endX - startX, lineHeight * 2 ) ) );
 }
 
 void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
@@ -3324,7 +3420,8 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 	adv->setColor( color );
 	cpoint->setColor( color );
 	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
-		Vector2f position( { startScroll.x, startScroll.y + lineHeight * index } );
+		Vector2f position(
+			{ startScroll.x, startScroll.y + lineHeight * mLineWrapping.toWrappedIndex( index ) } );
 		const auto& text = mDoc->line( index ).getText();
 		for ( size_t i = 0; i < text.size(); i++ ) {
 			if ( position.x + mScroll.x + ( text[i] == '\t' ? tabWidth : glyphW ) >= mScreenPos.x &&
@@ -3381,7 +3478,8 @@ void UICodeEditor::drawIndentationGuides( const std::pair<int, int>& lineRange,
 						 ? getTabWidth()
 						 : mDoc->getIndentWidth();
 	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
-		Vector2f position( { startScroll.x, startScroll.y + lineHeight * index } );
+		Vector2f position(
+			{ startScroll.x, startScroll.y + lineHeight * mLineWrapping.toWrappedIndex( index ) } );
 		int spaces = getLineIndentGuideSpaces( *mDoc.get(), index, indentSize );
 		for ( int i = 0; i < spaces; i += indentSize )
 			p.drawRectangle( Rectf( { position.x + spaceW * i, position.y }, { w, lineHeight } ) );
@@ -3400,7 +3498,7 @@ void UICodeEditor::drawLineEndings( const std::pair<int, int>& lineRange,
 	nl->setColor( color );
 	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
 		Vector2f position( { startScroll.x + getLineWidth( index ) - getGlyphWidth(),
-							 startScroll.y + lineHeight * index } );
+							 startScroll.y + lineHeight * mLineWrapping.toWrappedIndex( index ) } );
 		nl->draw( Vector2f( position.x, position.y ) );
 	}
 }

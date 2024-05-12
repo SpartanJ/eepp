@@ -176,6 +176,10 @@ LineWrapping::LineWrapping( std::shared_ptr<TextDocument> doc, FontStyleConfig f
 	mFontStyle( std::move( fontStyle ) ),
 	mConfig( std::move( config ) ) {}
 
+bool LineWrapping::isWrapEnabled() const {
+	return mConfig.mode != LineWrapMode::NoWrap;
+}
+
 void LineWrapping::setMaxWidth( Float maxWidth ) {
 	if ( maxWidth != mMaxWidth ) {
 		mMaxWidth = maxWidth;
@@ -188,6 +192,25 @@ void LineWrapping::setFontStyle( FontStyleConfig fontStyle ) {
 		mFontStyle = std::move( fontStyle );
 		reconstructBreaks();
 	}
+}
+
+void LineWrapping::setLineWrapMode( LineWrapMode mode ) {
+	if ( mode != mConfig.mode ) {
+		mConfig.mode = mode;
+		reconstructBreaks();
+	}
+}
+
+TextPosition LineWrapping::getDocumentLine( Int64 visibleIndex ) const {
+	if ( mConfig.mode == LineWrapMode::NoWrap )
+		return { visibleIndex, 0 };
+	return mWrappedLines[eeclamp( visibleIndex, 0ll,
+								  static_cast<Int64>( mWrappedLines.size() - 1 ) )];
+}
+
+Float LineWrapping::getLineOffset( Int64 docIdx ) const {
+	return mWrappedLinesOffset[eeclamp( docIdx, 0ll,
+										static_cast<Int64>( mWrappedLinesOffset.size() - 1 ) )];
 }
 
 void LineWrapping::setConfig( Config config ) {
@@ -205,8 +228,11 @@ void LineWrapping::reconstructBreaks() {
 	mWrappedLineToIndex.clear();
 	mWrappedLinesOffset.clear();
 
+	if ( mConfig.mode == LineWrapMode::NoWrap )
+		return;
+
 	Int64 linesCount = mDoc->linesCount();
-	mWrappedLines.reserve( linesCount * 2 );
+	mWrappedLines.reserve( linesCount );
 	mWrappedLinesOffset.reserve( linesCount );
 
 	for ( auto i = 0; i < linesCount; i++ ) {
@@ -230,13 +256,11 @@ void LineWrapping::reconstructBreaks() {
 	}
 }
 
-Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) {
-	auto idx =
-		mWrappedLineToIndex[docIdx < 0
-								? 0
-								: ( docIdx >= static_cast<Int64>( mWrappedLineToIndex.size() )
-										? mWrappedLineToIndex.size() - 1
-										: docIdx )];
+Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) const {
+	if ( mConfig.mode == LineWrapMode::NoWrap )
+		return docIdx;
+	auto idx = mWrappedLineToIndex[eeclamp( docIdx, 0ll,
+											static_cast<Int64>( mWrappedLineToIndex.size() - 1 ) )];
 	if ( retLast ) {
 		Int64 lastOfLine = mWrappedLines[idx].line();
 		Int64 wrappedCount = mWrappedLines.size();
@@ -250,7 +274,25 @@ Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) {
 	return idx;
 }
 
+bool LineWrapping::isWrappedLine( Int64 docIdx ) const {
+	return isWrapEnabled() && toWrappedIndex( docIdx ) != toWrappedIndex( docIdx, true );
+}
+
+LineWrapping::VisualLine LineWrapping::getVisualLine( Int64 docIdx ) const {
+	VisualLine line;
+	Int64 fromIdx = toWrappedIndex( docIdx );
+	Int64 toIdx = toWrappedIndex( docIdx, true );
+	line.visualLineIndex = fromIdx;
+	line.visualLines.reserve( toIdx - fromIdx + 1 );
+	for ( Int64 i = fromIdx; i <= toIdx; i++ )
+		line.visualLines.emplace_back( mWrappedLines[i] );
+	line.offset = mWrappedLinesOffset[docIdx];
+	return line;
+}
+
 void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) {
+	if ( mConfig.mode == LineWrapMode::NoWrap )
+		return;
 	// Get affected wrapped range
 	Int64 oldIdxFrom = toWrappedIndex( fromLine, false );
 	Int64 oldIdxTo = toWrappedIndex( toLine, true );
