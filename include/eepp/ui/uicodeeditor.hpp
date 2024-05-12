@@ -459,7 +459,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getXOffsetColSanitized( TextPosition position ) const;
 
-	virtual Float getLineWidth( const Int64& lineIndex );
+	virtual Float getLineWidth( const Int64& docLine );
 
 	size_t characterWidth( const String& str ) const;
 

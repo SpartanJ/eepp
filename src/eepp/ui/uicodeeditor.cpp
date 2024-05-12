@@ -1583,12 +1583,16 @@ void UICodeEditor::onSizeChange() {
 	UIWidget::onSizeChange();
 	invalidateEditor( false );
 	mLineWrapping.setMaxWidth( getViewportWidth() );
+	if ( mLineWrapping.isWrapEnabled() )
+		invalidateLongestLineWidth();
 }
 
 void UICodeEditor::onPaddingChange() {
 	UIWidget::onPaddingChange();
 	invalidateEditor( false );
 	mLineWrapping.setMaxWidth( getViewportWidth() );
+	if ( mLineWrapping.isWrapEnabled() )
+		invalidateLongestLineWidth();
 }
 
 std::pair<size_t, Float> UICodeEditor::findLongestLineInRange( const TextRange& range ) {
@@ -1616,19 +1620,48 @@ void UICodeEditor::findLongestLine() {
 	}
 }
 
-Float UICodeEditor::getLineWidth( const Int64& lineIndex ) {
-	if ( lineIndex >= (Int64)mDoc->linesCount() )
+Float UICodeEditor::getLineWidth( const Int64& docLine ) {
+	if ( docLine >= (Int64)mDoc->linesCount() )
 		return 0;
+	if ( mLineWrapping.isWrappedLine( docLine ) ) {
+		auto vline = mLineWrapping.getVisualLine( docLine );
+		auto& line = mDoc->line( docLine ).getText();
+		Float width = 0;
+
+		if ( mFont && !mFont->isMonospace() ) {
+			auto& line = mDoc->line( docLine );
+			auto found = mLinesWidthCache.find( docLine );
+			if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
+				return found->second.second;
+		}
+
+		for ( size_t i = 0; i < vline.visualLines.size(); i++ ) {
+			auto pos = vline.visualLines[i].column();
+			auto len =
+				i + 1 < vline.visualLines.size() ? vline.visualLines[i + 1].column() : line.size();
+			auto vlineStr = line.view().substr( pos, len - pos );
+			auto curWidth = getTextWidth( vlineStr );
+			width = eemax( width, curWidth );
+		}
+
+		if ( mFont && !mFont->isMonospace() ) {
+			width += getGlyphWidth();
+			mLinesWidthCache[docLine] = { line.getHash(), width };
+		}
+
+		return width;
+	}
+
 	if ( mFont && !mFont->isMonospace() ) {
-		auto line = mDoc->line( lineIndex );
-		auto found = mLinesWidthCache.find( lineIndex );
+		auto& line = mDoc->line( docLine );
+		auto found = mLinesWidthCache.find( docLine );
 		if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
 			return found->second.second;
 		Float width = getTextWidth( line.getText() ) + getGlyphWidth();
-		mLinesWidthCache[lineIndex] = { line.getHash(), width };
+		mLinesWidthCache[docLine] = { line.getHash(), width };
 		return width;
 	}
-	return getTextWidth( mDoc->line( lineIndex ).getText() );
+	return getTextWidth( mDoc->line( docLine ).getText() );
 }
 
 void UICodeEditor::updateScrollBar() {
@@ -2985,9 +3018,10 @@ void UICodeEditor::drawMatchingBrackets( const Vector2f& startScroll, const Floa
 		primitive.setForceDraw( false );
 		primitive.setColor( Color( mMatchingBracketColor ).blendAlpha( mAlpha ) );
 		auto drawBracket = [&]( const TextPosition& pos ) {
-			primitive.drawRectangle( Rectf( Vector2f( startScroll.x + getXOffsetCol( pos ),
-													  startScroll.y + pos.line() * lineHeight ),
-											Sizef( getGlyphWidth(), lineHeight ) ) );
+			primitive.drawRectangle( Rectf(
+				Vector2f( startScroll.x + getXOffsetCol( pos ),
+						  startScroll.y + mLineWrapping.toWrappedIndex( pos.line() ) * lineHeight ),
+				Sizef( getGlyphWidth(), lineHeight ) ) );
 		};
 		drawBracket( mMatchingBrackets.start() );
 		drawBracket( mMatchingBrackets.end() );
@@ -3124,6 +3158,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	if ( isWrappedLine ) {
 		auto vline = mLineWrapping.getVisualLine( line );
 		size_t curvline = 1;
+		size_t lineLength = strLine.length();
 		size_t nextLineCol = vline.visualLines[curvline].column();
 		for ( const auto& token : tokens ) {
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
@@ -3133,10 +3168,11 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			if ( fontStyle.OutlineThickness )
 				fontStyle.OutlineColor = style.outlineColor;
 
-			while ( pos <= strLine.size() ) {
-				auto maxLength = nextLineCol - pos;
-				String::View text = strLine.view().substr(
-					pos, std::min( static_cast<size_t>( token.len ), maxLength ) );
+			Int64 tokenPos = 0;
+			while ( tokenPos < token.len && nextLineCol != pos ) {
+				Int64 maxLength = nextLineCol - pos;
+				auto textSize = std::min( (Int64)token.len, maxLength );
+				String::View text = strLine.view().substr( pos, textSize );
 
 				if ( style.background != Color::Transparent ) {
 					primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
@@ -3148,21 +3184,19 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 										  mTabWidth )
 								  .getWidth();
 				pos += text.size();
+				tokenPos += text.size();
 
-				if ( pos < nextLineCol || maxLength == 0 )
+				if ( tokenPos < lineLength && tokenPos == token.len && nextLineCol != pos )
 					break;
 
 				position.y += lineHeight;
 				position.x = originalPosition.x + vline.offset;
 				curvline++;
-				// bool nbreak = pos == nextLineCol && nextLineCol - pos == 0;
 				if ( curvline < vline.visualLines.size() ) {
 					nextLineCol = vline.visualLines[curvline].column();
 				} else {
 					nextLineCol = strLine.size();
 				}
-				/*if ( nbreak )
-					break;*/
 			}
 		}
 
