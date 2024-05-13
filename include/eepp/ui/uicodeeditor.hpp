@@ -453,11 +453,20 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void unregisterPlugin( UICodeEditorPlugin* plugin );
 
+	virtual Vector2f getTextPositionOffset( const TextPosition& pos ) const;
+
+	Vector2f getTextPositionOffsetSanitized( TextPosition pos ) const;
+
 	virtual Int64 getColFromXOffset( Int64 visualLine, const Float& x ) const;
 
 	virtual Float getXOffsetCol( const TextPosition& position ) const;
 
 	Float getXOffsetColSanitized( TextPosition position ) const;
+
+	std::vector<Rectf>
+	getTextRangeRectangles( const TextRange& range, const Vector2f& startScroll,
+							std::optional<const std::pair<int, int>> lineRange = {},
+							std::optional<Float> lineHeight = {} );
 
 	virtual Float getLineWidth( const Int64& docLine );
 
@@ -609,6 +618,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setScrollY( const Float& val, bool emmitEvent = true );
 
 	Vector2f getScreenStart() const;
+
+	Vector2f getScreenScroll() const;
 
 	Float getViewportWidth( const bool& forceVScroll = false ) const;
 

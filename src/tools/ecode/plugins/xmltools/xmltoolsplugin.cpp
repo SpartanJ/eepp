@@ -346,7 +346,7 @@ void XMLToolsPlugin::XMLToolsClient::clearMatch() {
 }
 
 void XMLToolsPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& index,
-										 Vector2f position, const Float& /*fontSize*/,
+										 Vector2f /*position*/, const Float& /*fontSize*/,
 										 const Float& lineHeight ) {
 	if ( !isOverMatch( &editor->getDocument(), index ) )
 		return;
@@ -356,13 +356,14 @@ void XMLToolsPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& inde
 	p.setColor( blendedColor );
 
 	const ClientMatch& match = mMatches[&editor->getDocument()];
+	auto screenScroll = editor->getScreenScroll();
 	for ( const auto& range : { match.matchBracket, match.currentBracket } ) {
 		if ( range.start().line() != index || !range.inSameLine() )
 			continue;
-		Float offset1 = editor->getXOffsetCol( range.normalized().start() );
-		Float offset2 = editor->getXOffsetCol( range.normalized().end() );
-		p.drawRectangle(
-			Rectf( { position.x + offset1, position.y }, { ( offset2 - offset1 ), lineHeight } ) );
+		auto rects =
+			editor->getTextRangeRectangles( range.normalized(), screenScroll, {}, lineHeight );
+		for ( const auto& rect : rects )
+			p.drawRectangle( rect );
 	}
 }
 

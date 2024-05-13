@@ -326,7 +326,8 @@ TextRange LineWrapping::getVisualLineRange( Int64 visualLine ) const {
 		return mDoc->getLineRange( visualLine );
 	auto start = getDocumentLine( visualLine );
 	auto end = start;
-	if ( visualLine + 1 < static_cast<Int64>( mWrappedLines.size() ) ) {
+	if ( visualLine + 1 < static_cast<Int64>( mWrappedLines.size() ) &&
+		 mWrappedLines[visualLine + 1].line() == start.line() ) {
 		end.setColumn( mWrappedLines[visualLine + 1].column() );
 	} else {
 		end.setColumn( mDoc->line( start.line() ).size() );

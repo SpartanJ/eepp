@@ -117,8 +117,8 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 void UITextEdit::drawCursor( const Vector2f& startScroll, const Float& lineHeight,
 							 const TextPosition& cursor ) {
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() ) {
-		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
-							startScroll.y + cursor.line() * lineHeight );
+		auto offset = getTextPositionOffset( cursor );
+		Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y );
 		Primitives primitives;
 		primitives.setColor( Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle(
