@@ -13,11 +13,6 @@ namespace EE { namespace UI {
 
 enum class LineWrapMode { NoWrap, Letter, Word };
 
-struct LineWrapInfo {
-	std::vector<Int64> wraps;
-	Float paddingStart{ 0.f };
-};
-
 class EE_API LineWrapping {
   public:
 	struct Config {
@@ -32,10 +27,20 @@ class EE_API LineWrapping {
 		bool operator!=( const Config& other ) { return !( *this == other ); }
 	};
 
+	struct LineWrapInfo {
+		std::vector<Int64> wraps;
+		Float paddingStart{ 0.f };
+	};
+
 	struct VisualLine {
-		Int64 visualLineIndex;
+		Int64 visualIndex{ 0 };
+		Float paddingStart{ 0 };
 		std::vector<TextPosition> visualLines;
-		Float offset{ 0 };
+	};
+
+	struct VisualLineInfo {
+		Int64 visualIndex;
+		TextRange range;
 	};
 
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
@@ -78,6 +83,10 @@ class EE_API LineWrapping {
 	bool isWrappedLine( Int64 docIdx ) const;
 
 	VisualLine getVisualLine( Int64 docIdx ) const;
+
+	VisualLineInfo getVisualLineInfo( const TextPosition& pos ) const;
+
+	TextRange getVisualLineRange( Int64 visualLine ) const;
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;

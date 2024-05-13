@@ -243,6 +243,8 @@ class EE_API TextDocument {
 
 	TextRange getDocRange() const;
 
+	TextRange getLineRange( Int64 line ) const;
+
 	void deleteTo( const size_t& cursorIdx, TextPosition position );
 
 	void deleteTo( const size_t& cursorIdx, int offset );

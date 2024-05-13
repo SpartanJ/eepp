@@ -5,10 +5,11 @@
 
 namespace EE { namespace UI {
 
-LineWrapInfo LineWrapping::computeLineBreaks( const String& string,
-											  const FontStyleConfig& fontStyle, Float maxWidth,
-											  LineWrapMode mode, bool keepIndentation,
-											  Uint32 tabWidth ) {
+LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const String& string,
+															const FontStyleConfig& fontStyle,
+															Float maxWidth, LineWrapMode mode,
+															bool keepIndentation,
+															Uint32 tabWidth ) {
 	LineWrapInfo info;
 	info.wraps.push_back( 0 );
 	if ( string.empty() || nullptr == fontStyle.Font || mode == LineWrapMode::NoWrap )
@@ -79,10 +80,11 @@ LineWrapInfo LineWrapping::computeLineBreaks( const String& string,
 	return info;
 }
 
-LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& doc, size_t line,
-											  const FontStyleConfig& fontStyle, Float maxWidth,
-											  LineWrapMode mode, bool keepIndentation,
-											  Uint32 tabWidth ) {
+LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& doc, size_t line,
+															const FontStyleConfig& fontStyle,
+															Float maxWidth, LineWrapMode mode,
+															bool keepIndentation,
+															Uint32 tabWidth ) {
 	if ( nullptr == fontStyle.Font || mode == LineWrapMode::NoWrap ||
 		 nullptr == doc.getHighlighter() || doc.getSyntaxDefinition().getPatterns().empty() ) {
 		return computeLineBreaks( doc.line( line ).getText(), fontStyle, maxWidth, mode,
@@ -92,7 +94,7 @@ LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& doc, size_t li
 	LineWrapInfo info;
 	info.wraps.push_back( 0 );
 	const auto& string = doc.line( line ).getText();
-	const auto& tokens = doc.getHighlighter()->getLine( line );
+	const auto tokens = doc.getHighlighter()->getLine( line );
 
 	Float xoffset = 0.f;
 	Float lastWidth = 0.f;
@@ -204,6 +206,8 @@ TextPosition LineWrapping::getDocumentLine( Int64 visibleIndex ) const {
 }
 
 Float LineWrapping::getLineOffset( Int64 docIdx ) const {
+	if ( mConfig.mode == LineWrapMode::NoWrap )
+		return 0;
 	return mWrappedLinesOffset[eeclamp( docIdx, 0ll,
 										static_cast<Int64>( mWrappedLinesOffset.size() - 1 ) )];
 }
@@ -252,7 +256,7 @@ void LineWrapping::reconstructBreaks() {
 }
 
 Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) const {
-	if ( mConfig.mode == LineWrapMode::NoWrap )
+	if ( mConfig.mode == LineWrapMode::NoWrap || mWrappedLineToIndex.empty() )
 		return docIdx;
 	auto idx = mWrappedLineToIndex[eeclamp( docIdx, 0ll,
 											static_cast<Int64>( mWrappedLineToIndex.size() - 1 ) )];
@@ -275,14 +279,59 @@ bool LineWrapping::isWrappedLine( Int64 docIdx ) const {
 
 LineWrapping::VisualLine LineWrapping::getVisualLine( Int64 docIdx ) const {
 	VisualLine line;
+	if ( mConfig.mode == LineWrapMode::NoWrap ) {
+		line.visualLines.push_back( { docIdx, 0 } );
+		line.visualIndex = docIdx;
+		return line;
+	}
 	Int64 fromIdx = toWrappedIndex( docIdx );
 	Int64 toIdx = toWrappedIndex( docIdx, true );
-	line.visualLineIndex = fromIdx;
 	line.visualLines.reserve( toIdx - fromIdx + 1 );
 	for ( Int64 i = fromIdx; i <= toIdx; i++ )
 		line.visualLines.emplace_back( mWrappedLines[i] );
-	line.offset = mWrappedLinesOffset[docIdx];
+	line.visualIndex = fromIdx;
+	line.paddingStart = mWrappedLinesOffset[docIdx];
 	return line;
+}
+
+LineWrapping::VisualLineInfo LineWrapping::getVisualLineInfo( const TextPosition& pos ) const {
+	if ( mConfig.mode == LineWrapMode::NoWrap ) {
+		LineWrapping::VisualLineInfo info;
+		info.visualIndex = pos.line();
+		info.range = mDoc->getLineRange( pos.line() );
+		return info;
+	}
+	Int64 fromIdx = toWrappedIndex( pos.line() );
+	Int64 toIdx = toWrappedIndex( pos.line(), true );
+	LineWrapping::VisualLineInfo info;
+	for ( Int64 i = fromIdx; i < toIdx; i++ ) {
+		Int64 fromCol = mWrappedLines[i].column();
+		Int64 toCol =
+			i + 1 <= toIdx ? mWrappedLines[i + 1].column() - 1 : mDoc->line( pos.line() ).size();
+		if ( pos.column() >= fromCol && pos.column() <= toCol ) {
+			info.visualIndex = i;
+			info.range = { { pos.line(), fromCol }, { pos.line(), toCol } };
+			return info;
+		}
+	}
+	eeASSERT( toIdx - 1 >= 0 );
+	info.visualIndex = toIdx;
+	info.range = { { pos.line(), mWrappedLines[toIdx].column() },
+				   mDoc->endOfLine( { pos.line(), 0ll } ) };
+	return info;
+}
+
+TextRange LineWrapping::getVisualLineRange( Int64 visualLine ) const {
+	if ( mConfig.mode == LineWrapMode::NoWrap )
+		return mDoc->getLineRange( visualLine );
+	auto start = getDocumentLine( visualLine );
+	auto end = start;
+	if ( visualLine + 1 < static_cast<Int64>( mWrappedLines.size() ) ) {
+		end.setColumn( mWrappedLines[visualLine + 1].column() );
+	} else {
+		end.setColumn( mDoc->line( start.line() ).size() );
+	}
+	return { start, end };
 }
 
 void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) {

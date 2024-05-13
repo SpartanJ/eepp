@@ -453,7 +453,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void unregisterPlugin( UICodeEditorPlugin* plugin );
 
-	virtual Int64 getColFromXOffset( Int64 line, const Float& x ) const;
+	virtual Int64 getColFromXOffset( Int64 visualLine, const Float& x ) const;
 
 	virtual Float getXOffsetCol( const TextPosition& position ) const;
 

@@ -1488,6 +1488,10 @@ TextRange TextDocument::getDocRange() const {
 	return { startOfDoc(), endOfDoc() };
 }
 
+TextRange TextDocument::getLineRange( Int64 line ) const {
+	return { startOfLine( { line, 0 } ), endOfLine( { line, 0 } ) };
+}
+
 void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
 	eeASSERT( cursorIdx < mSelection.size() );
 	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
