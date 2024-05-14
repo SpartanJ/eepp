@@ -589,6 +589,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Rectf getScreenPosition( const TextPosition& position ) const;
 
+	Rectf getVisibleScrollArea() const;
+
+	Sizef getViewportDimensions() const;
+
 	const Float& getPluginsTopSpace() const;
 
 	UICodeEditor* setFontShadowOffset( const Vector2f& offset );

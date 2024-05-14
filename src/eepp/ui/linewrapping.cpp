@@ -220,7 +220,7 @@ void LineWrapping::setConfig( Config config ) {
 }
 
 void LineWrapping::reconstructBreaks() {
-	if ( 0 == mMaxWidth )
+	if ( 0 == mMaxWidth || mDoc->isLoading() )
 		return;
 
 	mWrappedLines.clear();
