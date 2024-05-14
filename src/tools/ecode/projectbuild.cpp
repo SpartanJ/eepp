@@ -1,5 +1,5 @@
-#include "ecode.hpp"
 #include "projectbuild.hpp"
+#include "ecode.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "uibuildsettings.hpp"
 #include <eepp/core/string.hpp>
@@ -707,8 +707,9 @@ void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc 
 void ProjectBuildManager::runCurrentConfig( StatusAppOutputController* saoc, bool build,
 											StatusBuildOutputController* sboc ) {
 	if ( build ) {
-		buildCurrentConfig( sboc, [this, saoc]( int ) {
-			mApp->getUISceneNode()->runOnMainThread( [saoc, this] { runConfig( saoc ); } );
+		buildCurrentConfig( sboc, [this, saoc]( int exitStatus ) {
+			if ( EXIT_SUCCESS == exitStatus )
+				mApp->getUISceneNode()->runOnMainThread( [saoc, this] { runConfig( saoc ); } );
 		} );
 	} else {
 		runConfig( saoc );
@@ -751,7 +752,7 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 		ProjectBuildCommand finalBuild( build->replaceVars( *run ) );
 		replaceDynamicVars( finalBuild );
 		String::trimInPlace( finalBuild.cmd );
-		if ( finalBuild.cmd.find_first_of("\\/") == std::string::npos &&
+		if ( finalBuild.cmd.find_first_of( "\\/" ) == std::string::npos &&
 			 Sys::which( finalBuild.cmd ).empty() ) {
 			FileSystem::dirAddSlashAtEnd( finalBuild.workingDir );
 			finalBuild.cmd = finalBuild.workingDir + finalBuild.cmd;
