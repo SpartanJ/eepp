@@ -343,11 +343,11 @@ void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) 
 	Int64 oldIdxTo = toWrappedIndex( toLine, true );
 
 	// Remove old wrapped lines
-	mWrappedLines.erase( mWrappedLines.begin() + oldIdxFrom, mWrappedLines.begin() + oldIdxTo );
+	mWrappedLines.erase( mWrappedLines.begin() + oldIdxFrom, mWrappedLines.begin() + oldIdxTo + 1 );
 
 	// Remove old offsets
 	mWrappedLinesOffset.erase( mWrappedLinesOffset.begin() + fromLine,
-							   mWrappedLinesOffset.begin() + toLine );
+							   mWrappedLinesOffset.begin() + toLine + 1 );
 
 	// Shift the line numbers
 	if ( numLines != 0 ) {
@@ -357,27 +357,41 @@ void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) 
 	}
 
 	// Recompute line breaks
-	for ( auto i = fromLine; i <= toLine; i++ ) {
+	auto netLines = toLine + numLines;
+	auto idxOffset = oldIdxFrom;
+	for ( auto i = fromLine; i <= netLines; i++ ) {
 		auto lb = computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
 									 mConfig.keepIndentation, mConfig.tabWidth );
 		mWrappedLinesOffset.insert( mWrappedLinesOffset.begin() + i, lb.paddingStart );
-		Int64 loffset = 0;
 		for ( const auto& col : lb.wraps ) {
-			mWrappedLines.insert( mWrappedLines.begin() + i + loffset, { i, col } );
-			loffset++;
+			mWrappedLines.insert( mWrappedLines.begin() + idxOffset, { i, col } );
+			idxOffset++;
 		}
 	}
 
 	// Recompute wrapped line to index
 	Int64 line = fromLine;
-	Int64 wrappedLines = mWrappedLines.size();
-	for ( Int64 wrappedIdx = oldIdxFrom; wrappedIdx < wrappedLines; wrappedIdx++ ) {
+	Int64 wrappedLinesCount = mWrappedLines.size();
+	mWrappedLineToIndex.resize( mDoc->linesCount() );
+	for ( Int64 wrappedIdx = oldIdxFrom; wrappedIdx < wrappedLinesCount; wrappedIdx++ ) {
 		if ( mWrappedLines[wrappedIdx].column() == 0 ) {
 			mWrappedLineToIndex[line] = wrappedIdx;
 			line++;
 		}
 	}
 	mWrappedLineToIndex.resize( mDoc->linesCount() );
+
+#ifdef EE_DEBUG
+	auto wrappedLines = mWrappedLines;
+	auto wrappedLinesToIndex = mWrappedLineToIndex;
+	auto wrappedOffset = mWrappedLinesOffset;
+
+	reconstructBreaks();
+
+	eeASSERT( wrappedLines == mWrappedLines );
+	eeASSERT( wrappedLinesToIndex == mWrappedLineToIndex );
+	eeASSERT( wrappedOffset == mWrappedLinesOffset );
+#endif
 }
 
 size_t LineWrapping::getTotalLines() const {
