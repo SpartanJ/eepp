@@ -54,7 +54,13 @@
       "url": "https://golang.org/x/tools/gopls",
       "command": "gopls",
       "file_patterns": ["%.go$"],
-      "rootIndicationFileNames": ["go.work", "go.mod", ".git"]
+      "rootIndicationFileNames": ["go.work", "go.mod", ".git"],
+      "initializationOptions": {
+        "usePlaceholders": true,
+        "semanticTokens": true,
+        "noSemanticString": true,
+        "noSemanticNumber": true
+      }
     },
     {
       "language": "php",
