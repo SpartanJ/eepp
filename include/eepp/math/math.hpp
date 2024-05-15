@@ -91,12 +91,7 @@ template <typename T> inline T roundDown( T x ) {
 
 /** @return The number of digits in a number. */
 template <typename T> static T countDigits( T num ) {
-	T count = 0;
-	while ( num != 0 ) {
-		count++;
-		num /= 10;
-	}
-	return count;
+	return num == 0 ? 1 : (T)log10( std::abs( num ) ) + 1;
 }
 
 }} // namespace EE::Math

@@ -1299,8 +1299,8 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	}
 
 	if ( linesRemoved > 0 ) {
-		mHighlighter->moveHighlight( range.start().line(), -linesRemoved );
-		notifiyDocumenLineMove( range.start().line(), -linesRemoved );
+		mHighlighter->moveHighlight( range.end().line(), -linesRemoved );
+		notifiyDocumenLineMove( range.end().line(), -linesRemoved );
 	}
 
 	notifyTextChanged( { originalRange, "" } );

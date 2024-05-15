@@ -13,8 +13,18 @@ namespace EE { namespace UI {
 
 enum class LineWrapMode { NoWrap, Letter, Word };
 
+enum class LineWrapType { Viewport, LineBreakingColumn };
+
 class EE_API LineWrapping {
   public:
+	static LineWrapMode toLineWrapMode( std::string mode );
+
+	static std::string fromLineWrapMode( LineWrapMode mode );
+
+	static LineWrapType toLineWrapType( std::string type );
+
+	static std::string fromLineWrapType( LineWrapType type );
+
 	struct Config {
 		LineWrapMode mode{ LineWrapMode::NoWrap };
 		bool keepIndentation{ true };
@@ -68,7 +78,7 @@ class EE_API LineWrapping {
 
 	void setConfig( Config config );
 
-	void setMaxWidth( Float maxWidth );
+	void setMaxWidth( Float maxWidth, bool forceReconstructBreaks = false );
 
 	void setFontStyle( FontStyleConfig fontStyle );
 
@@ -87,6 +97,9 @@ class EE_API LineWrapping {
 	VisualLineInfo getVisualLineInfo( const TextPosition& pos ) const;
 
 	TextRange getVisualLineRange( Int64 visualLine ) const;
+
+	std::shared_ptr<TextDocument> getDocument() const;
+	void setDocument( const std::shared_ptr<TextDocument>& doc );
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;

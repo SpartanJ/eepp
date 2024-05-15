@@ -653,6 +653,20 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void invalidateLongestLineWidth();
 
+	const LineWrapping& lineWrapping() const { return mLineWrapping; }
+
+	LineWrapMode getLineWrapMode() const { return mLineWrapping.getConfig().mode; }
+
+	void setLineWrapMode( LineWrapMode mode );
+
+	LineWrapType getLineWrapType() const;
+
+	void setLineWrapType( LineWrapType lineWrapType );
+
+	bool getLineWrapKeepIndentation() const { return mLineWrapping.getConfig().keepIndentation; }
+
+	void setLineWrapKeepIndentation( bool keep );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -692,6 +706,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mShowIndentationGuides{ false };
 	bool mShowLinesRelativePosition{ false };
 	bool mDisplayLockedIcon{ false };
+	bool mInvalidateOnLoaded{ false };
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
@@ -767,6 +782,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	size_t mJumpLinesLength{ 5 };
 	UIIcon* mFileLockIcon{ nullptr };
 	std::string mFileLockIconName{ "file-lock-fill" };
+	LineWrapType mLineWrapType{ LineWrapType::Viewport };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );

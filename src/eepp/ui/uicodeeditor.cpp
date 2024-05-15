@@ -161,8 +161,6 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mDoc->registerClient( this );
 	subscribeScheduledUpdate();
 
-	mLineWrapping.setLineWrapMode( LineWrapMode::Word );
-
 	if ( autoRegisterBaseCommands )
 		registerCommands();
 	if ( autoRegisterBaseKeybindings )
@@ -195,6 +193,7 @@ UICodeEditor::~UICodeEditor() {
 	while ( mHighlightWordProcessing )
 		Sys::sleep( Milliseconds( 0.1 ) );
 
+	mLineWrapping.setDocument( nullptr );
 	if ( mDoc.use_count() == 1 ) {
 		DocEvent event( this, mDoc.get(), Event::OnDocumentClosed );
 		sendEvent( &event );
@@ -452,9 +451,6 @@ void UICodeEditor::reset() {
 TextDocument::LoadStatus UICodeEditor::loadFromFile( const std::string& path ) {
 	auto ret = mDoc->loadFromFile( path );
 	if ( ret == TextDocument::LoadStatus::Loaded ) {
-		invalidateEditor();
-		updateLongestLineWidth();
-		invalidateDraw();
 		onDocumentLoaded();
 	}
 	return ret;
@@ -484,12 +480,9 @@ bool UICodeEditor::loadAsyncFromFile(
 			}
 
 			// if ( mLineWrapping.isWrapEnabled() )
-			// 	mLineWrapping.reconstructBreaks();
+			// 	mLineWrapping.setMaxWidth( getViewportWidth(), true );
 
 			runOnMainThread( [this, onLoaded, wasLocked, success] {
-				invalidateEditor();
-				updateLongestLineWidth();
-				invalidateDraw();
 				if ( !wasLocked )
 					setLocked( false );
 				onDocumentLoaded();
@@ -506,9 +499,6 @@ TextDocument::LoadStatus UICodeEditor::loadFromURL( const std::string& url,
 													const Http::Request::FieldTable& headers ) {
 	auto ret = mDoc->loadFromURL( url, headers );
 	if ( ret == TextDocument::LoadStatus::Loaded ) {
-		invalidateEditor();
-		updateLongestLineWidth();
-		invalidateDraw();
 		onDocumentLoaded();
 	}
 	return ret;
@@ -528,9 +518,6 @@ bool UICodeEditor::loadAsyncFromURL(
 					runOnMainThread( [this] { invalidateDraw(); } );
 				} );
 			runOnMainThread( [this, success, onLoaded, wasLocked] {
-				invalidateEditor();
-				updateLongestLineWidth();
-				invalidateDraw();
 				if ( !wasLocked )
 					setLocked( false );
 				onDocumentLoaded();
@@ -596,22 +583,28 @@ void UICodeEditor::onFontStyleChanged() {
 	invalidateDraw();
 }
 
-void UICodeEditor::onDocumentLoaded( TextDocument* ) {}
+void UICodeEditor::onDocumentLoaded( TextDocument* ) {
+	if ( mInvalidateOnLoaded ) {
+		onDocumentLoaded();
+		mInvalidateOnLoaded = false;
+	}
+}
 
 void UICodeEditor::onDocumentReloaded( TextDocument* ) {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentReloaded );
 	sendEvent( &event );
 	invalidateDraw();
 	invalidateLongestLineWidth();
-	mLineWrapping.reconstructBreaks();
+	mLineWrapping.setMaxWidth( getViewportWidth(), true );
 }
 
 void UICodeEditor::onDocumentLoaded() {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentLoaded );
 	sendEvent( &event );
+	invalidateEditor();
 	invalidateDraw();
 	invalidateLongestLineWidth();
-	mLineWrapping.reconstructBreaks();
+	mLineWrapping.setMaxWidth( getViewportWidth(), true );
 }
 
 void UICodeEditor::onDocumentChanged() {
@@ -764,7 +757,7 @@ const Float& UICodeEditor::getLineNumberPaddingRight() const {
 }
 
 size_t UICodeEditor::getLineNumberDigits() const {
-	return eemax<size_t>( 2UL, Math::countDigits( mDoc->linesCount() ) );
+	return eemax<size_t>( 2UL, Math::countDigits( (Int64)mDoc->linesCount() ) );
 }
 
 Float UICodeEditor::getLineNumberWidth() const {
@@ -879,14 +872,21 @@ TextDocument& UICodeEditor::getDocument() {
 void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 	if ( mDoc.get() != doc.get() ) {
 		mDoc->unregisterClient( this );
+		mLineWrapping.setDocument( nullptr );
 		if ( mDoc.use_count() == 1 )
 			onDocumentClosed( mDoc.get() );
 		mDoc = doc;
 		mDoc->registerClient( this );
-		invalidateEditor();
-		invalidateLongestLineWidth();
-		invalidateDraw();
+		mLineWrapping.setDocument( doc );
 		onDocumentChanged();
+		if ( mDoc->isLoading() ) {
+			mInvalidateOnLoaded = true;
+		} else {
+			invalidateEditor();
+			invalidateLongestLineWidth();
+			invalidateDraw();
+			mLineWrapping.setDocument( mDoc );
+		}
 	}
 }
 
@@ -902,6 +902,33 @@ void UICodeEditor::invalidateEditor( bool dirtyScroll ) {
 void UICodeEditor::invalidateLongestLineWidth() {
 	mLongestLineWidthDirty = true;
 	mLongestLineWidthLastUpdate.restart();
+}
+
+void UICodeEditor::setLineWrapMode( LineWrapMode mode ) {
+	mLineWrapping.setLineWrapMode( mode );
+}
+
+LineWrapType UICodeEditor::getLineWrapType() const {
+	return mLineWrapType;
+}
+
+void UICodeEditor::setLineWrapType( LineWrapType lineWrapType ) {
+	if ( mLineWrapType != lineWrapType ) {
+		mLineWrapType = lineWrapType;
+		switch ( mLineWrapType ) {
+			case LineWrapType::Viewport:
+				mLineWrapping.setMaxWidth( getViewportWidth() );
+			case LineWrapType::LineBreakingColumn:
+				mLineWrapping.setMaxWidth( getGlyphWidth() * mLineBreakingColumn );
+				break;
+		}
+	}
+}
+
+void UICodeEditor::setLineWrapKeepIndentation( bool keep ) {
+	auto config = mLineWrapping.getConfig();
+	config.keepIndentation = keep;
+	mLineWrapping.setConfig( config );
 }
 
 Uint32 UICodeEditor::onFocus( NodeFocusReason reason ) {
@@ -1833,8 +1860,11 @@ void UICodeEditor::onDocumentSelectionChange( const Doc::TextRange& ) {
 	sendCommonEvent( Event::OnSelectionChanged );
 }
 
-void UICodeEditor::onDocumentLineCountChange( const size_t&, const size_t& ) {
+void UICodeEditor::onDocumentLineCountChange( const size_t& lastCount, const size_t& newCount ) {
 	updateScrollBar();
+
+	if ( Math::countDigits( (Int64)lastCount ) != Math::countDigits( (Int64)newCount ) )
+		mLineWrapping.setMaxWidth( getViewportWidth() );
 }
 
 void UICodeEditor::onDocumentLineChanged( const Int64& lineNumber ) {
@@ -2011,7 +2041,7 @@ bool UICodeEditor::isMinimapShown() const {
 void UICodeEditor::showMinimap( bool showMinimap ) {
 	if ( showMinimap != mMinimapEnabled ) {
 		mMinimapEnabled = showMinimap;
-		mLineWrapping.reconstructBreaks();
+		mLineWrapping.setMaxWidth( getViewportWidth(), true );
 	}
 }
 
@@ -2267,6 +2297,12 @@ void UICodeEditor::setLineBreakingColumn( const Uint32& lineBreakingColumn ) {
 	if ( lineBreakingColumn != mLineBreakingColumn ) {
 		mLineBreakingColumn = lineBreakingColumn;
 		invalidateDraw();
+		if ( mLineWrapType == LineWrapType::LineBreakingColumn ) {
+			if ( mLineBreakingColumn )
+				mLineWrapping.setMaxWidth( getGlyphWidth() * mLineBreakingColumn );
+			else
+				mLineWrapType = LineWrapType::Viewport;
+		}
 	}
 }
 

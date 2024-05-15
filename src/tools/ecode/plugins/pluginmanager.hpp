@@ -348,6 +348,8 @@ class PluginManager {
 
 	void unsubscribeFileSystemListener( Plugin* plugin );
 
+	bool isClosing() const;
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;

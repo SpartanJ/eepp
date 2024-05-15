@@ -5,6 +5,44 @@
 
 namespace EE { namespace UI {
 
+LineWrapMode LineWrapping::toLineWrapMode( std::string mode ) {
+	String::toLowerInPlace( mode );
+	if ( mode == "word" )
+		return LineWrapMode::Word;
+	if ( mode == "letter" )
+		return LineWrapMode::Letter;
+	return LineWrapMode::NoWrap;
+}
+
+std::string LineWrapping::fromLineWrapMode( LineWrapMode mode ) {
+	switch ( mode ) {
+		case LineWrapMode::Letter:
+			return "letter";
+		case LineWrapMode::Word:
+			return "word";
+		case LineWrapMode::NoWrap:
+		default:
+			return "nowrap";
+	}
+}
+
+LineWrapType LineWrapping::toLineWrapType( std::string type ) {
+	String::toLowerInPlace( type );
+	if ( "line_breaking_column" == type )
+		return LineWrapType::LineBreakingColumn;
+	return LineWrapType::Viewport;
+}
+
+std::string LineWrapping::fromLineWrapType( LineWrapType type ) {
+	switch ( type ) {
+		case LineWrapType::LineBreakingColumn:
+			return "line_breaking_column";
+		case LineWrapType::Viewport:
+		default:
+			return "viewport";
+	}
+}
+
 LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const String& string,
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
@@ -68,7 +106,7 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const String& string
 				xoffset = w + info.paddingStart;
 			}
 			lastSpace = 0;
-		} else if ( curChar == ' ' ) {
+		} else if ( curChar == ' ' || curChar == '.' ) {
 			lastSpace = idx;
 			lastWidth = xoffset;
 		}
@@ -101,6 +139,7 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& 
 	bool bold = ( fontStyle.Style & Text::Style::Bold ) != 0;
 	bool italic = ( fontStyle.Style & Text::Style::Italic ) != 0;
 	Float outlineThickness = fontStyle.OutlineThickness;
+	bool isMonospace = fontStyle.Font->isMonospace();
 
 	size_t lastSpace = 0;
 	Uint32 prevChar = 0;
@@ -120,47 +159,41 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& 
 														fontStyle, tabWidth );
 		}
 
-		Float w = Text::getTextWidth( text, fontStyle, tabWidth );
+		for ( const auto& curChar : text ) {
+			Float w = !isMonospace ? fontStyle.Font
+										 ->getGlyph( curChar, fontStyle.CharacterSize, bold, italic,
+													 outlineThickness )
+										 .advance
+								   : hspace;
 
-		if ( xoffset + w > maxWidth ) {
-			for ( const auto& curChar : text ) {
-				Float w = fontStyle.Font
-							  ->getGlyph( curChar, fontStyle.CharacterSize, bold, italic,
-										  outlineThickness )
-							  .advance;
+			if ( curChar == '\t' )
+				w += hspace * tabWidth;
+			else if ( ( curChar ) == '\r' )
+				w = 0;
 
-				if ( curChar == '\t' )
-					w += hspace * tabWidth;
-				else if ( ( curChar ) == '\r' )
-					w = 0;
-
-				if ( curChar != '\r' ) {
-					w += fontStyle.Font->getKerning( prevChar, curChar, fontStyle.CharacterSize,
-													 bold, italic, outlineThickness );
-					prevChar = curChar;
-				}
-
-				xoffset += w;
-
-				if ( xoffset > maxWidth ) {
-					if ( mode == LineWrapMode::Word && lastSpace ) {
-						info.wraps.push_back( lastSpace + 1 );
-						xoffset = w + info.paddingStart + ( xoffset - lastWidth );
-					} else {
-						info.wraps.push_back( idx );
-						xoffset = w + info.paddingStart;
-					}
-					lastSpace = 0;
-				} else if ( curChar == ' ' ) {
-					lastSpace = idx;
-					lastWidth = xoffset;
-				}
-
-				idx++;
+			if ( !isMonospace && curChar != '\r' ) {
+				w += fontStyle.Font->getKerning( prevChar, curChar, fontStyle.CharacterSize, bold,
+												 italic, outlineThickness );
+				prevChar = curChar;
 			}
-		} else {
+
 			xoffset += w;
-			idx += text.size();
+
+			if ( xoffset > maxWidth ) {
+				if ( mode == LineWrapMode::Word && lastSpace ) {
+					info.wraps.push_back( lastSpace + 1 );
+					xoffset = w + info.paddingStart + ( xoffset - lastWidth );
+				} else {
+					info.wraps.push_back( idx );
+					xoffset = w + info.paddingStart;
+				}
+				lastSpace = 0;
+			} else if ( curChar == ' ' || curChar == '.' ) {
+				lastSpace = idx;
+				lastWidth = xoffset;
+			}
+
+			idx++;
 		}
 	}
 
@@ -177,9 +210,11 @@ bool LineWrapping::isWrapEnabled() const {
 	return mConfig.mode != LineWrapMode::NoWrap;
 }
 
-void LineWrapping::setMaxWidth( Float maxWidth ) {
+void LineWrapping::setMaxWidth( Float maxWidth, bool forceReconstructBreaks ) {
 	if ( maxWidth != mMaxWidth ) {
 		mMaxWidth = maxWidth;
+		reconstructBreaks();
+	} else if ( forceReconstructBreaks ) {
 		reconstructBreaks();
 	}
 }
@@ -199,17 +234,17 @@ void LineWrapping::setLineWrapMode( LineWrapMode mode ) {
 }
 
 TextPosition LineWrapping::getDocumentLine( Int64 visibleIndex ) const {
-	if ( mConfig.mode == LineWrapMode::NoWrap )
+	if ( mConfig.mode == LineWrapMode::NoWrap || mWrappedLines.empty() )
 		return { visibleIndex, 0 };
 	return mWrappedLines[eeclamp( visibleIndex, 0ll,
-								  static_cast<Int64>( mWrappedLines.size() - 1 ) )];
+								  eemax( static_cast<Int64>( mWrappedLines.size() ) - 1, 0ll ) )];
 }
 
 Float LineWrapping::getLineOffset( Int64 docIdx ) const {
-	if ( mConfig.mode == LineWrapMode::NoWrap )
+	if ( mConfig.mode == LineWrapMode::NoWrap || mWrappedLinesOffset.empty() )
 		return 0;
-	return mWrappedLinesOffset[eeclamp( docIdx, 0ll,
-										static_cast<Int64>( mWrappedLinesOffset.size() - 1 ) )];
+	return mWrappedLinesOffset[eeclamp(
+		docIdx, 0ll, eemax( static_cast<Int64>( mWrappedLinesOffset.size() ) - 1, 0ll ) )];
 }
 
 void LineWrapping::setConfig( Config config ) {
@@ -220,7 +255,7 @@ void LineWrapping::setConfig( Config config ) {
 }
 
 void LineWrapping::reconstructBreaks() {
-	if ( 0 == mMaxWidth || mDoc->isLoading() )
+	if ( 0 == mMaxWidth || !mDoc || mDoc->isLoading() )
 		return;
 
 	mWrappedLines.clear();
@@ -333,6 +368,17 @@ TextRange LineWrapping::getVisualLineRange( Int64 visualLine ) const {
 		end.setColumn( mDoc->line( start.line() ).size() );
 	}
 	return { start, end };
+}
+
+std::shared_ptr<TextDocument> LineWrapping::getDocument() const {
+	return mDoc;
+}
+
+void LineWrapping::setDocument( const std::shared_ptr<TextDocument>& doc ) {
+	if ( mDoc != doc ) {
+		mDoc = doc;
+		reconstructBreaks();
+	}
 }
 
 void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) {

@@ -1229,6 +1229,92 @@ UIMenu* SettingsMenu::createRendererMenu() {
 UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu = UIPopUpMenu::New();
 
+	mLineWrapMenu = UIPopUpMenu::New();
+
+	mViewMenu->addSubMenu( i18n( "line_wrap", "Line Wrap" ), nullptr, mLineWrapMenu )
+		->on( Event::OnMenuShow, [this]( auto ) {
+			if ( mLineWrapMenu->getCount() == 0 ) {
+				UIPopUpMenu* wrapModeMenu = UIPopUpMenu::New();
+				wrapModeMenu->addRadioButton( i18n( "no_wrap", "No Wrap" ) )
+					->setId( LineWrapping::fromLineWrapMode( LineWrapMode::NoWrap ) );
+				wrapModeMenu->addRadioButton( i18n( "wrap_word", "Word wrap" ) )
+					->setId( LineWrapping::fromLineWrapMode( LineWrapMode::Word ) );
+				wrapModeMenu->addRadioButton( i18n( "wrap_letter", "Letter wrap" ) )
+					->setId( LineWrapping::fromLineWrapMode( LineWrapMode::Letter ) );
+
+				wrapModeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+					if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+						return;
+					UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+					LineWrapMode mode = LineWrapping::toLineWrapMode( item->getId() );
+					mApp->getConfig().editor.wrapMode = mode;
+					mApp->getSplitter()->forEachEditor(
+						[mode]( UICodeEditor* editor ) { editor->setLineWrapMode( mode ); } );
+				} );
+
+				mLineWrapMenu->addSubMenu( i18n( "wrap_mode", "Wrap Mode" ), nullptr, wrapModeMenu )
+					->setId( "wrap_mode" );
+
+				UIPopUpMenu* wrapTypeMenu = UIPopUpMenu::New();
+				wrapTypeMenu->addRadioButton( i18n( "viewport", "Viewport" ) )
+					->setId( LineWrapping::fromLineWrapType( LineWrapType::Viewport ) );
+				wrapTypeMenu
+					->addRadioButton( i18n( "line_breaking_column", "Line Breaking Column" ) )
+					->setId( LineWrapping::fromLineWrapType( LineWrapType::LineBreakingColumn ) );
+
+				wrapTypeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+					if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+						return;
+					UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+					LineWrapType type = LineWrapping::toLineWrapType( item->getId() );
+					mApp->getConfig().editor.wrapType = type;
+					mApp->getSplitter()->forEachEditor(
+						[type]( UICodeEditor* editor ) { editor->setLineWrapType( type ); } );
+				} );
+
+				mLineWrapMenu
+					->addSubMenu( i18n( "wrap_type_ellipsis", "Wrap Against..." ), nullptr,
+								  wrapTypeMenu )
+					->setId( "wrap_type" );
+
+				mLineWrapMenu->addCheckBox( i18n( "keep_indentation", "Keep Indentation" ) )
+					->setId( "keep_indentation" );
+
+				mLineWrapMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+					if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+						return;
+					UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+
+					if ( "keep_indentation" == item->getId() ) {
+						bool keep = item->asType<UIMenuCheckBox>()->isActive();
+						mApp->getConfig().editor.wrapKeepIndentation = keep;
+						mApp->getSplitter()->forEachEditor( [keep]( UICodeEditor* editor ) {
+							editor->setLineWrapKeepIndentation( keep );
+						} );
+					}
+				} );
+			}
+
+			auto* wrapModeMenu =
+				mLineWrapMenu->find( "wrap_mode" )->asType<UIMenuSubMenu>()->getSubMenu();
+			auto* wrapTypeMenu =
+				mLineWrapMenu->find( "wrap_type" )->asType<UIMenuSubMenu>()->getSubMenu();
+			UIMenuCheckBox* wrapKeepIndentation =
+				mLineWrapMenu->find( "keep_indentation" )->asType<UIMenuCheckBox>();
+
+			const auto& cfg = mApp->getConfig();
+
+			wrapModeMenu->find( LineWrapping::fromLineWrapMode( cfg.editor.wrapMode ) )
+				->asType<UIMenuRadioButton>()
+				->setActive( true );
+
+			wrapTypeMenu->find( LineWrapping::fromLineWrapType( cfg.editor.wrapType ) )
+				->asType<UIMenuRadioButton>()
+				->setActive( true );
+
+			wrapKeepIndentation->setActive( cfg.editor.wrapKeepIndentation );
+		} );
+
 	mViewMenu->addCheckBox( i18n( "show_line_numbers", "Show Line Numbers" ) )
 		->setActive( mApp->getConfig().editor.showLineNumbers )
 		->setId( "show-line-numbers" );
