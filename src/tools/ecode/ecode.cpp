@@ -2519,6 +2519,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setAutoCloseXMLTags( config.autoCloseXMLTags );
 	editor->setLineSpacing( config.lineSpacing );
 	editor->setCursorBlinkTime( config.cursorBlinkingTime );
+	editor->setLineWrapKeepIndentation( config.wrapKeepIndentation );
+	editor->setLineWrapMode( config.wrapMode );
+	editor->setLineWrapType( config.wrapType );
+
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
 	doc.setLineEnding( docc.lineEndings );

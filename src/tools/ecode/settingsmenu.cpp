@@ -1231,7 +1231,8 @@ UIMenu* SettingsMenu::createViewMenu() {
 
 	mLineWrapMenu = UIPopUpMenu::New();
 
-	mViewMenu->addSubMenu( i18n( "line_wrap", "Line Wrap" ), nullptr, mLineWrapMenu )
+	mViewMenu
+		->addSubMenu( i18n( "line_wrap", "Line Wrap" ), findIcon( "text-wrap" ), mLineWrapMenu )
 		->on( Event::OnMenuShow, [this]( auto ) {
 			if ( mLineWrapMenu->getCount() == 0 ) {
 				UIPopUpMenu* wrapModeMenu = UIPopUpMenu::New();
@@ -1314,6 +1315,8 @@ UIMenu* SettingsMenu::createViewMenu() {
 
 			wrapKeepIndentation->setActive( cfg.editor.wrapKeepIndentation );
 		} );
+
+	mViewMenu->addSeparator();
 
 	mViewMenu->addCheckBox( i18n( "show_line_numbers", "Show Line Numbers" ) )
 		->setActive( mApp->getConfig().editor.showLineNumbers )
