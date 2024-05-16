@@ -99,9 +99,16 @@ class EE_API LineWrapping {
 	TextRange getVisualLineRange( Int64 visualLine ) const;
 
 	std::shared_ptr<TextDocument> getDocument() const;
+
 	void setDocument( const std::shared_ptr<TextDocument>& doc );
 
-  protected:
+	bool isPendingReconstruction() const;
+
+	void setPendingReconstruction( bool pendingReconstruction );
+
+	bool isUnderConstruction() const;
+
+	protected:
 	std::shared_ptr<TextDocument> mDoc;
 	FontStyleConfig mFontStyle;
 	Config mConfig;
@@ -109,6 +116,8 @@ class EE_API LineWrapping {
 	std::vector<TextPosition> mWrappedLines;
 	std::vector<Float> mWrappedLinesOffset;
 	std::vector<Int64> mWrappedLineToIndex;
+	bool mPendingReconstruction{ false };
+	bool mUnderConstruction{ false };
 };
 
 }} // namespace EE::UI

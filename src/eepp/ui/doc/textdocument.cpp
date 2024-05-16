@@ -1773,7 +1773,7 @@ void TextDocument::moveToEndOfDoc() {
 void TextDocument::moveToStartOfContent() {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		TextPosition start = getSelectionIndex( i ).start();
-		TextPosition indented = startOfContent( getSelectionIndex( i ).start() );
+		TextPosition indented = startOfContent( start );
 		setSelection( i, indented.column() == start.column() ? TextPosition( start.line(), 0 )
 															 : indented );
 	}
@@ -2332,12 +2332,12 @@ void TextDocument::execute( const std::string& command ) {
 }
 
 void TextDocument::execute( const std::string& command, Client* client ) {
-	auto cmdIt = mCommands.find( command );
-	if ( cmdIt != mCommands.end() )
-		return cmdIt->second();
 	auto cmdRefIt = mRefCommands.find( command );
 	if ( cmdRefIt != mRefCommands.end() )
 		return cmdRefIt->second( client );
+	auto cmdIt = mCommands.find( command );
+	if ( cmdIt != mCommands.end() )
+		return cmdIt->second();
 }
 
 void TextDocument::setCommands( const UnorderedMap<std::string, DocumentCommand>& cmds ) {
@@ -2474,9 +2474,15 @@ TextDocument::SearchResult TextDocument::findText( String text, TextPosition fro
 		FindTypeResult col;
 		if ( i == from.line() ) {
 			col = caseSensitive
-					  ? findType( line( i ).getText().substr( from.column() ), text, type,
-								  from.column() )
-					  : findType( String::toLower( line( i ).getText() ).substr( from.column() ),
+					  ? findType( line( i ).getText().substr( from.column(),
+															  from.line() == to.line()
+																  ? to.column() - from.column()
+																  : String::InvalidPos ),
+								  text, type, from.column() )
+					  : findType( String::toLower( line( i ).getText() )
+									  .substr( from.column(), from.line() == to.line()
+																  ? to.column() - from.column()
+																  : String::InvalidPos ),
 								  text, type, from.column() );
 			if ( String::StringType::npos != col.start ) {
 				col.start += from.column();
@@ -2525,11 +2531,15 @@ TextDocument::SearchResult TextDocument::findTextLast( String text, TextPosition
 	for ( Int64 i = from.line(); i >= to.line(); i-- ) {
 		FindTypeResult res;
 		if ( i == from.line() ) {
-			res = caseSensitive
-					  ? findLastType( line( i ).getText().substr( 0, from.column() ), text, type )
-					  : findLastType(
-							String::toLower( line( i ).getText().substr( 0, from.column() ) ), text,
-							type );
+			res =
+				caseSensitive
+					? findLastType( line( i ).getText().substr(
+										from.line() == to.line() ? to.column() : 0, from.column() ),
+									text, type )
+					: findLastType(
+						  String::toLower( line( i ).getText().substr(
+							  from.line() == to.line() ? to.column() : 0, from.column() ) ),
+						  text, type );
 		} else if ( i == to.line() ) {
 			res = caseSensitive
 					  ? findLastType( line( i ).getText().substr( to.column() ), text, type )
@@ -3092,7 +3102,9 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 		do {
 			// Find all the close brackets between the first close bracket and the first open
 			// bracket
+			TextRange lastFoundClose;
 			do {
+				lastFoundClose = foundClose;
 				foundClose =
 					findLast( closeBracket, start, true, false,
 							  TextDocument::FindReplaceType::Normal, { start, foundOpen.start() } )
@@ -3104,10 +3116,11 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 					start = foundOpen.end();
 					changeDepth( highlighter, depth, start, -1 );
 				}
-			} while ( foundClose.isValid() );
+			} while ( foundClose.isValid() && lastFoundClose != foundClose );
 
 			if ( depth > 0 ) {
 				// Find the next open bracket from the last open bracket
+				auto prevFoundOpen = foundOpen;
 				if ( matchingXMLTags ) {
 					do {
 						foundOpen = findLast( openBracket, start ).result;
@@ -3130,7 +3143,7 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 					foundOpen = findLast( openBracket, start ).result;
 				}
 
-				if ( !foundOpen.isValid() )
+				if ( !foundOpen.isValid() || prevFoundOpen == foundOpen )
 					break;
 			}
 		} while ( depth > 0 );

@@ -242,6 +242,9 @@ void UICodeEditor::draw() {
 	if ( mDirtyEditor )
 		updateEditor();
 
+	if ( mLineWrapping.isPendingReconstruction() )
+		mLineWrapping.reconstructBreaks();
+
 	Color col;
 	auto lineRange = getVisibleLineRange();
 	Float charSize = getCharacterSize();
@@ -479,8 +482,8 @@ bool UICodeEditor::loadAsyncFromFile(
 				} );
 			}
 
-			// if ( mLineWrapping.isWrapEnabled() )
-			// 	mLineWrapping.setMaxWidth( getViewportWidth(), true );
+			if ( mLineWrapping.isWrapEnabled() )
+				mLineWrapping.setPendingReconstruction( true );
 
 			runOnMainThread( [this, onLoaded, wasLocked, success] {
 				if ( !wasLocked )
@@ -590,12 +593,23 @@ void UICodeEditor::onDocumentLoaded( TextDocument* ) {
 	}
 }
 
+void UICodeEditor::invalidateLineWrapMaxWidth( bool force ) {
+	switch ( mLineWrapType ) {
+		case LineWrapType::Viewport:
+			mLineWrapping.setMaxWidth( getViewportWidth(), force );
+			break;
+		case LineWrapType::LineBreakingColumn:
+			mLineWrapping.setMaxWidth( getGlyphWidth() * mLineBreakingColumn, force );
+			break;
+	}
+}
+
 void UICodeEditor::onDocumentReloaded( TextDocument* ) {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentReloaded );
 	sendEvent( &event );
 	invalidateDraw();
 	invalidateLongestLineWidth();
-	mLineWrapping.setMaxWidth( getViewportWidth(), true );
+	invalidateLineWrapMaxWidth( true );
 }
 
 void UICodeEditor::onDocumentLoaded() {
@@ -604,7 +618,7 @@ void UICodeEditor::onDocumentLoaded() {
 	invalidateEditor();
 	invalidateDraw();
 	invalidateLongestLineWidth();
-	mLineWrapping.setMaxWidth( getViewportWidth(), true );
+	invalidateLineWrapMaxWidth( true );
 }
 
 void UICodeEditor::onDocumentChanged() {
@@ -915,13 +929,7 @@ LineWrapType UICodeEditor::getLineWrapType() const {
 void UICodeEditor::setLineWrapType( LineWrapType lineWrapType ) {
 	if ( mLineWrapType != lineWrapType ) {
 		mLineWrapType = lineWrapType;
-		switch ( mLineWrapType ) {
-			case LineWrapType::Viewport:
-				mLineWrapping.setMaxWidth( getViewportWidth() );
-			case LineWrapType::LineBreakingColumn:
-				mLineWrapping.setMaxWidth( getGlyphWidth() * mLineBreakingColumn );
-				break;
-		}
+		invalidateLineWrapMaxWidth( true );
 	}
 }
 
@@ -1622,7 +1630,7 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 void UICodeEditor::onSizeChange() {
 	UIWidget::onSizeChange();
 	invalidateEditor( false );
-	mLineWrapping.setMaxWidth( getViewportWidth() );
+	invalidateLineWrapMaxWidth( false );
 	if ( mLineWrapping.isWrapEnabled() )
 		invalidateLongestLineWidth();
 }
@@ -1630,7 +1638,7 @@ void UICodeEditor::onSizeChange() {
 void UICodeEditor::onPaddingChange() {
 	UIWidget::onPaddingChange();
 	invalidateEditor( false );
-	mLineWrapping.setMaxWidth( getViewportWidth() );
+	invalidateLineWrapMaxWidth( false );
 	if ( mLineWrapping.isWrapEnabled() )
 		invalidateLongestLineWidth();
 }
@@ -1864,7 +1872,7 @@ void UICodeEditor::onDocumentLineCountChange( const size_t& lastCount, const siz
 	updateScrollBar();
 
 	if ( Math::countDigits( (Int64)lastCount ) != Math::countDigits( (Int64)newCount ) )
-		mLineWrapping.setMaxWidth( getViewportWidth() );
+		invalidateLineWrapMaxWidth( false );
 }
 
 void UICodeEditor::onDocumentLineChanged( const Int64& lineNumber ) {
@@ -1934,8 +1942,8 @@ void UICodeEditor::onDocumentDirtyOnFileSystem( TextDocument* doc ) {
 
 std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange() const {
 	Float lineHeight = getLineHeight();
-	Float minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
-	Float maxLine = eemin( getTotalVisibleLines() - 1.f,
+	Int64 minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
+	Int64 maxLine = eemin( eemax( getTotalVisibleLines() - 1.f, 0.f ),
 						   eefloor( ( mSize.getHeight() + mScroll.y ) / lineHeight ) + 1 );
 	if ( mLineWrapping.isWrapEnabled() ) {
 		return std::make_pair<Uint64, Uint64>(
@@ -2003,7 +2011,8 @@ void UICodeEditor::scrollTo( TextRange position, bool centered, bool forceExactP
 		} else if ( offsetEnd.y < scrollArea.Top ) {
 			setScrollY( eeclamp( offsetEnd.y - lineHeight, 0.f, getMaxScroll().y ) );
 		} else if ( offsetEnd.y > scrollArea.Bottom - lineHeight ) {
-			setScrollY( eeclamp( offsetEnd.y - scrollArea.getHeight(), 0.f, getMaxScroll().y ) );
+			setScrollY( eeclamp( offsetEnd.y - scrollArea.getHeight() - lineHeight, 0.f,
+								 getMaxScroll().y ) );
 		}
 	}
 
@@ -2041,7 +2050,7 @@ bool UICodeEditor::isMinimapShown() const {
 void UICodeEditor::showMinimap( bool showMinimap ) {
 	if ( showMinimap != mMinimapEnabled ) {
 		mMinimapEnabled = showMinimap;
-		mLineWrapping.setMaxWidth( getViewportWidth(), true );
+		invalidateLineWrapMaxWidth( true );
 	}
 }
 
@@ -2299,7 +2308,7 @@ void UICodeEditor::setLineBreakingColumn( const Uint32& lineBreakingColumn ) {
 		invalidateDraw();
 		if ( mLineWrapType == LineWrapType::LineBreakingColumn ) {
 			if ( mLineBreakingColumn )
-				mLineWrapping.setMaxWidth( getGlyphWidth() * mLineBreakingColumn );
+				invalidateLineWrapMaxWidth( false );
 			else
 				mLineWrapType = LineWrapType::Viewport;
 		}
@@ -2650,7 +2659,7 @@ void UICodeEditor::checkMatchingBrackets() {
 }
 
 Int64 UICodeEditor::getColFromXOffset( Int64 visualLine, const Float& x ) const {
-	if ( x <= 0 || !mFont || mDoc->isLoading() )
+	if ( x < 0 || !mFont || mDoc->isLoading() )
 		return 0;
 
 	TextPosition pos = mDoc->sanitizePosition( mLineWrapping.getDocumentLine( visualLine ) );
@@ -2832,6 +2841,15 @@ TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int o
 	auto& xo = mLastXOffset[cursorIdx];
 	if ( xo.position != position )
 		xo.offset = getTextPositionOffsetSanitized( position ).x;
+
+	if ( mLineWrapping.isWrapEnabled() ) {
+		auto info = mLineWrapping.getVisualLineInfo( position );
+		auto nextLine = mLineWrapping.getVisualLineRange( info.visualIndex + offset );
+		xo.position.setLine( nextLine.end().line() );
+		xo.position.setColumn( getColFromXOffset( info.visualIndex + offset, xo.offset ) );
+		return xo.position;
+	}
+
 	xo.position.setLine( position.line() + offset );
 	xo.position.setColumn( getColFromXOffset( position.line() + offset, xo.offset ) );
 	return xo.position;
@@ -2845,10 +2863,49 @@ void UICodeEditor::moveToNextLine() {
 	jumpLinesDown( 1 );
 }
 
+void UICodeEditor::moveToStartOfLine() {
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		auto selection = mDoc->getSelectionIndex( i );
+		auto info = mLineWrapping.getVisualLineInfo( mDoc->getSelectionIndex( i ).start() );
+		mDoc->setSelection( i, info.range.start() != selection.start()
+								   ? info.range.start()
+								   : mDoc->startOfLine( selection.start() ) );
+	}
+	mDoc->mergeSelection();
+}
+
+void UICodeEditor::moveToEndOfLine() {
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		auto selection = mDoc->getSelectionIndex( i );
+		auto info = mLineWrapping.getVisualLineInfo( selection.start() );
+		mDoc->setSelection( i, info.range.end() != selection.end()
+								   ? info.range.end()
+								   : mDoc->endOfLine( selection.end() ) );
+	}
+	mDoc->mergeSelection();
+}
+
+void UICodeEditor::moveToStartOfContent() {
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition start = mDoc->getSelectionIndex( i ).start();
+		auto info = mLineWrapping.getVisualLineInfo( start );
+		if ( info.range.start().column() != 0 ) {
+			mDoc->setSelection( i, info.range.start() != start ? info.range.start()
+															   : mDoc->startOfContent( start ) );
+		} else {
+			TextPosition indented = mDoc->startOfContent( mDoc->getSelectionIndex( i ).start() );
+			mDoc->setSelection( i, indented.column() == start.column()
+									   ? TextPosition( start.line(), 0 )
+									   : indented );
+		}
+	}
+	mDoc->mergeSelection();
+}
+
 void UICodeEditor::jumpLinesUp( int offset ) {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition position = mDoc->getSelections()[i].start();
-		if ( position.line() == 0 ) {
+		if ( mLineWrapping.toWrappedIndex( position.line() ) == 0 ) {
 			mDoc->setSelection( i, mDoc->startOfDoc(), mDoc->startOfDoc() );
 		} else {
 			mDoc->moveTo( i, moveToLineOffset( position, offset, i ) );
@@ -3725,6 +3782,15 @@ void UICodeEditor::drawLineEndings( const std::pair<int, int>& lineRange,
 void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "move-to-previous-line", [this] { moveToPreviousLine(); } );
 	mDoc->setCommand( "move-to-next-line", [this] { moveToNextLine(); } );
+	mDoc->setCommand( "move-to-start-of-line", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->moveToStartOfLine();
+	} );
+	mDoc->setCommand( "move-to-end-of-line", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->moveToEndOfLine();
+	} );
+	mDoc->setCommand( "move-to-start-of-content", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->moveToStartOfContent();
+	} );
 	mDoc->setCommand( "select-to-previous-line", [this] { selectToPreviousLine(); } );
 	mDoc->setCommand( "select-to-next-line", [this] { selectToNextLine(); } );
 	mDoc->setCommand( "move-scroll-up", [this] { moveScrollUp(); } );

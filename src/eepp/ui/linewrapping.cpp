@@ -1,5 +1,6 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/linewrapping.hpp>
 
@@ -106,7 +107,7 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const String& string
 				xoffset = w + info.paddingStart;
 			}
 			lastSpace = 0;
-		} else if ( curChar == ' ' || curChar == '.' ) {
+		} else if ( curChar == ' ' || curChar == '.' || curChar == '-' || curChar == ',' ) {
 			lastSpace = idx;
 			lastWidth = xoffset;
 		}
@@ -123,7 +124,8 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& 
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation,
 															Uint32 tabWidth ) {
-	if ( nullptr == fontStyle.Font || mode == LineWrapMode::NoWrap ||
+	// For the moment we disable using tokenization for word wrap
+	if ( true || nullptr == fontStyle.Font || mode != LineWrapMode::Word ||
 		 nullptr == doc.getHighlighter() || doc.getSyntaxDefinition().getPatterns().empty() ) {
 		return computeLineBreaks( doc.line( line ).getText(), fontStyle, maxWidth, mode,
 								  keepIndentation, tabWidth );
@@ -188,7 +190,7 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& 
 					xoffset = w + info.paddingStart;
 				}
 				lastSpace = 0;
-			} else if ( curChar == ' ' || curChar == '.' ) {
+			} else if ( curChar == ' ' || curChar == '.' || curChar == '-' || curChar == ',' ) {
 				lastSpace = idx;
 				lastWidth = xoffset;
 			}
@@ -214,7 +216,7 @@ void LineWrapping::setMaxWidth( Float maxWidth, bool forceReconstructBreaks ) {
 	if ( maxWidth != mMaxWidth ) {
 		mMaxWidth = maxWidth;
 		reconstructBreaks();
-	} else if ( forceReconstructBreaks ) {
+	} else if ( forceReconstructBreaks || mPendingReconstruction ) {
 		reconstructBreaks();
 	}
 }
@@ -255,8 +257,15 @@ void LineWrapping::setConfig( Config config ) {
 }
 
 void LineWrapping::reconstructBreaks() {
-	if ( 0 == mMaxWidth || !mDoc || mDoc->isLoading() )
+	if ( 0 == mMaxWidth || !mDoc )
 		return;
+
+	if ( mDoc->isLoading() ) {
+		mPendingReconstruction = mConfig.mode != LineWrapMode::NoWrap;
+		return;
+	}
+
+	BoolScopedOp op( mUnderConstruction, true );
 
 	mWrappedLines.clear();
 	mWrappedLineToIndex.clear();
@@ -288,6 +297,8 @@ void LineWrapping::reconstructBreaks() {
 		}
 		i++;
 	}
+
+	mPendingReconstruction = false;
 }
 
 Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) const {
@@ -349,7 +360,7 @@ LineWrapping::VisualLineInfo LineWrapping::getVisualLineInfo( const TextPosition
 			return info;
 		}
 	}
-	eeASSERT( toIdx - 1 >= 0 );
+	eeASSERT( toIdx >= 0 );
 	info.visualIndex = toIdx;
 	info.range = { { pos.line(), mWrappedLines[toIdx].column() },
 				   mDoc->endOfLine( { pos.line(), 0ll } ) };
@@ -379,6 +390,18 @@ void LineWrapping::setDocument( const std::shared_ptr<TextDocument>& doc ) {
 		mDoc = doc;
 		reconstructBreaks();
 	}
+}
+
+bool LineWrapping::isPendingReconstruction() const {
+	return mPendingReconstruction;
+}
+
+void LineWrapping::setPendingReconstruction( bool pendingReconstruction ) {
+	mPendingReconstruction = pendingReconstruction;
+}
+
+bool LineWrapping::isUnderConstruction() const {
+	return mUnderConstruction;
 }
 
 void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) {

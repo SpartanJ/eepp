@@ -75,11 +75,11 @@ class EE_API TextDocument {
 	class EE_API Client {
 	  public:
 		virtual ~Client();
-		virtual void onDocumentLoaded( TextDocument* ){};
+		virtual void onDocumentLoaded( TextDocument* ) {};
 		virtual void onDocumentTextChanged( const DocumentContentChange& ) = 0;
 		virtual void onDocumentUndoRedo( const UndoRedo& eventType ) = 0;
 		virtual void onDocumentCursorChange( const TextPosition& ) = 0;
-		virtual void onDocumentInterestingCursorChange( const TextPosition& ){};
+		virtual void onDocumentInterestingCursorChange( const TextPosition& ) {};
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
 		virtual void onDocumentLineCountChange( const size_t& lastCount,
 												const size_t& newCount ) = 0;

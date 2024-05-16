@@ -400,6 +400,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void moveToNextLine();
 
+	void moveToStartOfLine();
+
+	void moveToEndOfLine();
+
+	void moveToStartOfContent();
+
 	void selectToPreviousLine();
 
 	void selectToNextLine();
@@ -972,6 +978,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void drawLockedIcon( const Vector2f start );
 
 	size_t getTotalVisibleLines() const;
+
+	void invalidateLineWrapMaxWidth( bool force );
 };
 
 }} // namespace EE::UI
