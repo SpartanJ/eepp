@@ -103,7 +103,7 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const String& string
 				info.wraps.push_back( lastSpace + 1 );
 				xoffset = w + info.paddingStart + ( xoffset - lastWidth );
 			} else {
-				info.wraps.push_back( idx + 1 );
+				info.wraps.push_back( idx );
 				xoffset = w + info.paddingStart;
 			}
 			lastSpace = 0;
@@ -186,7 +186,7 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& 
 					info.wraps.push_back( lastSpace + 1 );
 					xoffset = w + info.paddingStart + ( xoffset - lastWidth );
 				} else {
-					info.wraps.push_back( idx + 1 );
+					info.wraps.push_back( idx );
 					xoffset = w + info.paddingStart;
 				}
 				lastSpace = 0;
@@ -340,7 +340,8 @@ LineWrapping::VisualLine LineWrapping::getVisualLine( Int64 docIdx ) const {
 	return line;
 }
 
-LineWrapping::VisualLineInfo LineWrapping::getVisualLineInfo( const TextPosition& pos ) const {
+LineWrapping::VisualLineInfo LineWrapping::getVisualLineInfo( const TextPosition& pos,
+															  bool allowVisualLineEnd ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap ) {
 		LineWrapping::VisualLineInfo info;
 		info.visualIndex = pos.line();
@@ -352,8 +353,9 @@ LineWrapping::VisualLineInfo LineWrapping::getVisualLineInfo( const TextPosition
 	LineWrapping::VisualLineInfo info;
 	for ( Int64 i = fromIdx; i < toIdx; i++ ) {
 		Int64 fromCol = mWrappedLines[i].column();
-		Int64 toCol =
-			i + 1 <= toIdx ? mWrappedLines[i + 1].column() - 1 : mDoc->line( pos.line() ).size();
+		Int64 toCol = i + 1 <= toIdx
+						  ? mWrappedLines[i + 1].column() - ( allowVisualLineEnd ? 0 : 1 )
+						  : mDoc->line( pos.line() ).size();
 		if ( pos.column() >= fromCol && pos.column() <= toCol ) {
 			info.visualIndex = i;
 			info.range = { { pos.line(), fromCol }, { pos.line(), toCol } };

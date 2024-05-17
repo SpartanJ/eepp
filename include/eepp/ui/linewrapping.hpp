@@ -94,7 +94,8 @@ class EE_API LineWrapping {
 
 	VisualLine getVisualLine( Int64 docIdx ) const;
 
-	VisualLineInfo getVisualLineInfo( const TextPosition& pos ) const;
+	VisualLineInfo getVisualLineInfo( const TextPosition& pos,
+									  bool allowVisualLineEnd = false ) const;
 
 	TextRange getVisualLineRange( Int64 visualLine ) const;
 
@@ -108,7 +109,7 @@ class EE_API LineWrapping {
 
 	bool isUnderConstruction() const;
 
-	protected:
+  protected:
 	std::shared_ptr<TextDocument> mDoc;
 	FontStyleConfig mFontStyle;
 	Config mConfig;

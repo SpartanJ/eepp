@@ -2080,10 +2080,11 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 }
 
 Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
-											  std::optional<Float> lineHeight ) const {
+											  std::optional<Float> lineHeight,
+											  bool allowVisualLineEnd ) const {
 	Float lh = lineHeight ? *lineHeight : getLineHeight();
 	if ( mLineWrapping.isWrappedLine( position.line() ) ) {
-		auto info = mLineWrapping.getVisualLineInfo( position );
+		auto info = mLineWrapping.getVisualLineInfo( position, allowVisualLineEnd );
 		if ( mFont && !mFont->isMonospace() ) {
 			const auto& line = mDoc->line( position.line() ).getText();
 			auto partialLine =
@@ -3580,9 +3581,9 @@ UICodeEditor::getTextRangeRectangles( const TextRange& range, const Vector2f& st
 					auto nextInfo = mLineWrapping.getDocumentLine( visibleIdx + 1 );
 					if ( nextInfo.line() == info.line() ) {
 						endOffset =
-							getTextPositionOffset( { info.line(), nextInfo.column() - 1 }, lh );
+							getTextPositionOffset( { info.line(), nextInfo.column() }, lh, true );
 					} else {
-						endOffset = getTextPositionOffset( mDoc->endOfLine( { ln, 0 } ), lh );
+						endOffset = getTextPositionOffset( mDoc->endOfLine( { ln, 0 } ), lh, true );
 					}
 				}
 				selRect.Right = startScroll.x + endOffset.x;

@@ -466,7 +466,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void unregisterPlugin( UICodeEditorPlugin* plugin );
 
 	virtual Vector2f getTextPositionOffset( const TextPosition& pos,
-											std::optional<Float> lineHeight = {} ) const;
+											std::optional<Float> lineHeight = {},
+											bool allowVisualLineEnd = false ) const;
 
 	Vector2f getTextPositionOffsetSanitized( TextPosition pos,
 											 std::optional<Float> lineHeight = {} ) const;
