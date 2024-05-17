@@ -410,6 +410,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void selectToNextLine();
 
+	void selectToStartOfContent();
+
+	void selectToStartOfLine();
+
+	void selectToEndOfLine();
+
 	void registerKeybindings();
 
 	void registerCommands();
@@ -555,7 +561,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const Vector2f& getScroll() const;
 
-	std::pair<Uint64, Uint64> getVisibleLineRange() const;
+	std::pair<Uint64, Uint64> getVisibleLineRange( bool visualIndexes = false ) const;
 
 	virtual TextRange getVisibleRange() const;
 
@@ -713,6 +719,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mShowLinesRelativePosition{ false };
 	bool mDisplayLockedIcon{ false };
 	bool mInvalidateOnLoaded{ false };
+	bool mUseDefaultStyle{ false };
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
@@ -767,11 +774,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	MinimapConfig mMinimapConfig;
 	Int64 mMinimapScrollOffset{ 0 };
-	struct TextLine {
-		Text text;
-		String::HashType hash;
-	};
-	mutable UnorderedMap<Int64, TextLine> mTextCache;
 	std::unordered_map<Int64, std::pair<String::HashType, Float>> mLinesWidthCache;
 	Tools::UIDocFindReplace* mFindReplace{ nullptr };
 	struct PluginRequestedSpace {
@@ -800,8 +802,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateLongestLineWidth();
 
 	void invalidateEditor( bool dirtyScroll = true );
-
-	void invalidateLinesCache();
 
 	void findLongestLine();
 
@@ -879,7 +879,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void drawMatchingBrackets( const Vector2f& startScroll, const Float& lineHeight );
 
 	virtual void drawLineText( const Int64& line, Vector2f position, const Float& fontSize,
-							   const Float& lineHeight );
+							   const Float& lineHeight,
+							   const std::pair<Uint64, Uint64>& visualLineRange );
 
 	virtual void drawSelectionMatch( const std::pair<int, int>& lineRange,
 									 const Vector2f& startScroll, const Float& lineHeight );
@@ -950,10 +951,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateMipmapHover( const Vector2f& position );
 
 	bool checkAutoCloseXMLTag( const String& text );
-
-	Text& getLineText( const Int64& lineNumber ) const;
-
-	void updateLineCache( const Int64& lineIndex );
 
 	bool gutterSpaceExists( UICodeEditorPlugin* plugin ) const;
 

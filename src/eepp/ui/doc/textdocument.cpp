@@ -1220,6 +1220,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	mUndoStack.pushInsert( undoStack, getText( range ), cursorIdx, range.start(), time );
 
 	Int64 linesRemoved = 0;
+	bool deletedAcrossNewLine = false;
 
 	// First delete all the lines in between the first and last one.
 	if ( range.start().line() + 1 < range.end().line() ) {
@@ -1270,6 +1271,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 		firstLine.setText( beforeSelection + afterSelection );
 		mLines.erase( mLines.begin() + range.end().line() );
 		linesRemoved += 1;
+		deletedAcrossNewLine = true;
 	}
 
 	if ( mLines.empty() )
@@ -1299,8 +1301,10 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	}
 
 	if ( linesRemoved > 0 ) {
-		mHighlighter->moveHighlight( range.end().line(), -linesRemoved );
-		notifiyDocumenLineMove( range.end().line(), -linesRemoved );
+		mHighlighter->moveHighlight(
+			deletedAcrossNewLine ? range.start().line() : range.end().line(), -linesRemoved );
+		notifiyDocumenLineMove( deletedAcrossNewLine ? range.start().line() : range.end().line(),
+								-linesRemoved );
 	}
 
 	notifyTextChanged( { originalRange, "" } );

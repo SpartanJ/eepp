@@ -20,18 +20,13 @@ class EE_API UITextEdit : public UICodeEditor {
 
 	virtual void setTheme( UITheme* Theme );
 
-	virtual void wrapText( const Float& maxWidth );
-
 	String getText() const;
 
 	void setText( const String& text );
 
+	void setWordWrap( bool enabled );
+
   protected:
-	virtual void onDocumentLineChanged( const Int64& lineIndex );
-
-	virtual void drawLineText( const Int64& index, Vector2f position, const Float& fontSize,
-							   const Float& lineHeight );
-
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual void drawCursor( const Vector2f& startScroll, const Float& lineHeight,

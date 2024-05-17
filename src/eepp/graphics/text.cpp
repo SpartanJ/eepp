@@ -149,13 +149,13 @@ static inline void drawGlyph( BatchRenderer* BR, GlyphDrawable* gd, const Vector
 		BR->batchQuad( position.x + gd->getGlyphOffset().x, position.y + gd->getGlyphOffset().y,
 					   gd->getDestSize().getWidth(), gd->getDestSize().getHeight() );
 	}
-};
+}
 
-static inline void drawUnderline( Font* font, Float fontSize, const Color& fontColor,
-								  const Vector2f& cpos, const Uint32& style, BatchRenderer* BR,
-								  Float outlineThickness, const Vector2f& pos, Float width,
-								  const Color& shadowColor, const Vector2f& shadowOffset,
-								  const Color& outlineColor ) {
+static inline void idrawUnderline( Font* font, Float fontSize, const Color& fontColor,
+								   const Vector2f& cpos, const Uint32& style, BatchRenderer* BR,
+								   Float outlineThickness, const Vector2f& pos, Float width,
+								   const Color& shadowColor, const Vector2f& shadowOffset,
+								   const Color& outlineColor ) {
 	Float underlineOffset = font->getUnderlinePosition( fontSize );
 	Float underlineThickness = font->getUnderlineThickness( fontSize );
 	Float top =
@@ -179,6 +179,15 @@ static inline void drawUnderline( Font* font, Float fontSize, const Color& fontC
 	BR->quadsSetTexCoord( 0, 0, 1, 1 );
 	BR->quadsSetColor( fontColor );
 	BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
+}
+
+void Text::drawUnderline( const Vector2f& pos, Float width, Font* font, Float fontSize,
+						  const Color& fontColor, const Uint32& style, Float outlineThickness,
+						  const Color& outlineColor, const Color& shadowColor,
+						  const Vector2f& shadowOffset ) {
+	BatchRenderer* BR = GlobalBatchRenderer::instance();
+	idrawUnderline( font, fontSize, fontColor, pos, style, BR, outlineThickness, pos, width,
+					shadowColor, shadowOffset, outlineColor );
 }
 
 static inline void drawStrikeThrough( Font* font, Float fontSize, const Color& fontColor,
@@ -253,8 +262,8 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 			}
 			case '\n': {
 				if ( style & Text::Underlined ) {
-					drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
-								   pos, width, shadowColor, shadowOffset, outlineColor );
+					idrawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
+									pos, width, shadowColor, shadowOffset, outlineColor );
 				}
 				if ( style & Text::StrikeThrough ) {
 					drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
@@ -285,25 +294,25 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 
 		auto* gd = font->getGlyphDrawable( ch, fontSize, isBold, isItalic );
 		if ( gd ) {
-			drawGlyph( BR, gd, cpos, fontColor, isItalic );
-
-			cpos.x += gd->getAdvance();
-			width += gd->getAdvance();
-
 			if ( !font->isMonospace() ) {
 				kerning =
 					font->getKerning( prevChar, ch, fontSize, isBold, isItalic, outlineThickness );
 				cpos.x += kerning;
 				width += kerning;
 			}
+
+			drawGlyph( BR, gd, cpos, fontColor, isItalic );
+
+			cpos.x += gd->getAdvance();
+			width += gd->getAdvance();
 		}
 
 		prevChar = ch;
 	}
 
 	if ( ( style & Text::Underlined ) && width != 0 ) {
-		drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos, width,
-					   shadowColor, shadowOffset, outlineColor );
+		idrawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos, width,
+						shadowColor, shadowOffset, outlineColor );
 	}
 
 	if ( ( style & Text::StrikeThrough ) && width != 0 ) {
@@ -336,7 +345,7 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 	Float tWordWidth = 0.f;
 	auto tChar = &string[0];
 	decltype( tChar ) tLastSpace = NULL;
-	decltype( tChar ) tLastChar = &string[ string.size() - 1 ];
+	decltype( tChar ) tLastChar = &string[string.size() - 1];
 	Uint32 prevChar = 0;
 	bool bold = ( style & Bold ) != 0;
 	bool italic = ( style & Italic ) != 0;
@@ -749,7 +758,7 @@ std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSiz
 
 Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
 								 const String& string, const Uint32& style, const Uint32& tabWidth,
-								 const Float& outlineThickness ) {
+								 const Float& outlineThickness, bool allowNewLine ) {
 	// Make sure that we have a valid font
 	if ( !font )
 		return Vector2f();
@@ -785,8 +794,10 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 				position.x += hspace * tabWidth;
 				continue;
 			case '\n':
-				position.y += vspace;
-				position.x = 0;
+				if ( allowNewLine ) {
+					position.y += vspace;
+					position.x = 0;
+				}
 				continue;
 			case '\r':
 				continue;

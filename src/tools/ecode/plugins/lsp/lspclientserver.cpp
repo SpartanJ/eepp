@@ -824,10 +824,11 @@ static LSPCompletionList parseDocumentCompletion( const json& result ) {
 
 static LSPSignatureInformation parseSignatureInformation( const json& json ) {
 	LSPSignatureInformation info;
-
 	info.label = json.value( MEMBER_LABEL, "" );
 	if ( json.contains( MEMBER_DOCUMENTATION ) )
 		info.documentation = parseMarkupContent( json.at( MEMBER_DOCUMENTATION ) );
+	if ( !json.contains( "parameters" ) || !json["parameters"].is_array() )
+		return info;
 	const auto& params = json.at( "parameters" );
 	for ( const auto& par : params ) {
 		auto& label = par.at( MEMBER_LABEL );

@@ -247,6 +247,7 @@ void UICodeEditor::draw() {
 
 	Color col;
 	auto lineRange = getVisibleLineRange();
+	auto visualLineRange = getVisibleLineRange( true );
 	Float charSize = getCharacterSize();
 	Float lineHeight = getLineHeight();
 	int lineNumberDigits = getLineNumberDigits();
@@ -340,7 +341,7 @@ void UICodeEditor::draw() {
 		for ( auto& plugin : mPlugins )
 			plugin->drawBeforeLineText( this, i, curScroll, charSize, lineHeight );
 
-		drawLineText( i, curScroll, charSize, lineHeight );
+		drawLineText( i, curScroll, charSize, lineHeight, visualLineRange );
 
 		for ( auto& plugin : mPlugins )
 			plugin->drawAfterLineText( this, i, curScroll, charSize, lineHeight );
@@ -573,14 +574,12 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 }
 
 void UICodeEditor::onFontChanged() {
-	invalidateLinesCache();
 	udpateGlyphWidth();
 	mLineWrapping.setFontStyle( mFontStyleConfig );
 	invalidateDraw();
 }
 
 void UICodeEditor::onFontStyleChanged() {
-	invalidateLinesCache();
 	udpateGlyphWidth();
 	mLineWrapping.setFontStyle( mFontStyleConfig );
 	invalidateDraw();
@@ -622,7 +621,6 @@ void UICodeEditor::onDocumentLoaded() {
 }
 
 void UICodeEditor::onDocumentChanged() {
-	invalidateLinesCache();
 	if ( mFindReplace )
 		mFindReplace->setDoc( mDoc );
 	DocEvent event( this, mDoc.get(), Event::OnDocumentChanged );
@@ -645,6 +643,7 @@ void UICodeEditor::disableEditorFeatures() {
 	mMinimapEnabled = false;
 	mFindReplaceEnabled = false;
 	mLineBreakingColumn = 0;
+	mUseDefaultStyle = true;
 }
 
 Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
@@ -1940,12 +1939,12 @@ void UICodeEditor::onDocumentDirtyOnFileSystem( TextDocument* doc ) {
 	sendEvent( &event );
 }
 
-std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange() const {
+std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange( bool visualIndexes ) const {
 	Float lineHeight = getLineHeight();
 	Int64 minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
 	Int64 maxLine = eemin( eemax( getTotalVisibleLines() - 1.f, 0.f ),
 						   eefloor( ( mSize.getHeight() + mScroll.y ) / lineHeight ) + 1 );
-	if ( mLineWrapping.isWrapEnabled() ) {
+	if ( !visualIndexes && mLineWrapping.isWrapEnabled() ) {
 		return std::make_pair<Uint64, Uint64>(
 			(Uint64)mLineWrapping.getDocumentLine( minLine ).line(),
 			(Uint64)mLineWrapping.getDocumentLine( maxLine ).line() );
@@ -2086,18 +2085,15 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 	if ( mLineWrapping.isWrappedLine( position.line() ) ) {
 		auto info = mLineWrapping.getVisualLineInfo( position );
 		if ( mFont && !mFont->isMonospace() ) {
-			return {
-				Text::findCharacterPos(
-					( position.column() == (Int64)mDoc->line( position.line() ).getText().size() )
-						? position.column() - 1
-						: position.column(),
-					mFont, getCharacterSize(),
-					mDoc->line( position.line() )
-						.getText()
-						.substr( info.range.start().column(), info.range.end().column() ),
-					mFontStyleConfig.Style, mTabWidth )
-					.x,
-				info.visualIndex * lh };
+			const auto& line = mDoc->line( position.line() ).getText();
+			auto partialLine =
+				line.view().substr( info.range.start().column(), info.range.end().column() );
+			return { Text::findCharacterPos( position.column() - info.range.start().column(), mFont,
+											 getCharacterSize(), partialLine,
+											 mFontStyleConfig.Style, mTabWidth,
+											 mFontStyleConfig.OutlineThickness, false )
+						 .x,
+					 info.visualIndex * lh };
 		}
 		const String& line = mDoc->line( position.line() ).getText();
 		Float glyphWidth = getGlyphWidth();
@@ -2123,7 +2119,7 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 						 ? position.column() - 1
 						 : position.column(),
 					 mFont, getCharacterSize(), mDoc->line( position.line() ).getText(),
-					 mFontStyleConfig.Style, mTabWidth )
+					 mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, false )
 					 .x,
 				 lh * mLineWrapping.toWrappedIndex( position.line() ) };
 	}
@@ -2902,6 +2898,44 @@ void UICodeEditor::moveToStartOfContent() {
 	mDoc->mergeSelection();
 }
 
+void UICodeEditor::selectToStartOfLine() {
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		auto selection = mDoc->getSelectionIndex( i );
+		auto info = mLineWrapping.getVisualLineInfo( mDoc->getSelectionIndex( i ).start() );
+		mDoc->selectTo( i, info.range.start() != selection.start()
+							   ? info.range.start()
+							   : mDoc->startOfLine( selection.start() ) );
+	}
+	mDoc->mergeSelection();
+}
+
+void UICodeEditor::selectToEndOfLine() {
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		auto selection = mDoc->getSelectionIndex( i );
+		auto info = mLineWrapping.getVisualLineInfo( selection.start() );
+		mDoc->selectTo( i, info.range.end() != selection.start()
+							   ? info.range.end()
+							   : mDoc->endOfLine( selection.start() ) );
+	}
+	mDoc->mergeSelection();
+}
+
+void UICodeEditor::selectToStartOfContent() {
+	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
+		TextPosition start = mDoc->getSelectionIndex( i ).start();
+		auto info = mLineWrapping.getVisualLineInfo( start );
+		if ( info.range.start().column() != 0 ) {
+			mDoc->selectTo( i, info.range.start() != start ? info.range.start()
+														   : mDoc->startOfContent( start ) );
+		} else {
+			TextPosition indented = mDoc->startOfContent( mDoc->getSelectionIndex( i ).start() );
+			mDoc->selectTo( i, indented.column() == start.column() ? TextPosition( start.line(), 0 )
+																   : indented );
+		}
+	}
+	mDoc->mergeSelection();
+}
+
 void UICodeEditor::jumpLinesUp( int offset ) {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition position = mDoc->getSelections()[i].start();
@@ -3300,7 +3334,8 @@ void UICodeEditor::drawWordMatch( const String& text, const std::pair<int, int>&
 }
 
 void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Float& fontSize,
-								 const Float& lineHeight ) {
+								 const Float& lineHeight,
+								 const std::pair<Uint64, Uint64>& visualLineRange ) {
 	Vector2f originalPosition( position );
 	const auto& tokens = mDoc->getHighlighter()->getLine( line );
 	const String& strLine = mDoc->line( line ).getText();
@@ -3310,6 +3345,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	bool isMonospace = mFont->isMonospace();
 	bool isFallbackFont = false;
 	bool isEmojiFallbackFont = false;
+	bool ended = false;
 	Float lineOffset = getLineOffset();
 	size_t pos = 0;
 	if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {
@@ -3325,34 +3361,83 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	FontStyleConfig fontStyle( mFontStyleConfig );
 	fontStyle.CharacterSize = fontSize;
 
-	if ( mLineWrapping.isWrappedLine( line ) ) {
-		auto vline = mLineWrapping.getVisualLine( line );
-		size_t curvline = 1;
-		size_t lineLength = strLine.length();
-		size_t nextLineCol = vline.visualLines[curvline].column();
-		for ( const auto& token : tokens ) {
-			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
+	const auto drawHandDown = [this, &fontStyle, &lineHeight]() {
+		auto rects = getTextRangeRectangles( mLinkPosition, getScreenScroll(), {}, lineHeight );
+		auto screenBounds = getScreenBounds();
+		if ( !std::any_of( rects.begin(), rects.end(), [&screenBounds]( const Rectf& rect ) {
+				 return screenBounds.intersect( rect );
+			 } ) ) {
+			return;
+		}
+
+		if ( !mUseDefaultStyle ) {
+			auto tokenType = mDoc->getHighlighter()->getTokenTypeAt( mLinkPosition.start() );
+			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( tokenType );
+			SyntaxColorScheme::Style linkStyle = style;
+
 			fontStyle.Style = style.style;
 			fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
 			fontStyle.OutlineThickness = style.outlineThickness;
 			if ( fontStyle.OutlineThickness )
 				fontStyle.OutlineColor = style.outlineColor;
 
-			size_t tokenPos = 0;
-			while ( tokenPos < token.len && nextLineCol != pos ) {
+			if ( mColorScheme.hasSyntaxStyle( "link_hover"_sst ) ) {
+				linkStyle = mColorScheme.getSyntaxStyle( "link_hover"_sst );
+				if ( linkStyle.color != Color::Transparent ) {
+					fontStyle.FontColor = Color( linkStyle.color ).blendAlpha( mAlpha );
+				}
+				fontStyle.Style = linkStyle.style;
+			}
+		}
+
+		for ( auto& rect : rects ) {
+			if ( screenBounds.intersect( rect ) ) {
+				Text::drawUnderline( rect.getPosition(), rect.getWidth(), fontStyle.Font,
+									 fontStyle.CharacterSize, fontStyle.FontColor, fontStyle.Style,
+									 fontStyle.OutlineThickness, fontStyle.OutlineColor,
+									 fontStyle.ShadowColor, fontStyle.ShadowOffset );
+			}
+		}
+	};
+
+	if ( mLineWrapping.isWrappedLine( line ) ) {
+		auto vline = mLineWrapping.getVisualLine( line );
+		size_t curvline = 1;
+		size_t lineLength = strLine.length();
+		size_t nextLineCol = vline.visualLines[curvline].column();
+		size_t tokenPos;
+		size_t curVisualIndex;
+		for ( const auto& token : tokens ) {
+			tokenPos = 0;
+			curVisualIndex = vline.visualIndex + curvline;
+			while ( tokenPos < token.len && nextLineCol != pos && !ended ) {
 				Int64 maxLength = nextLineCol - pos;
 				auto textSize = std::min( (Int64)( (Int64)token.len - tokenPos ), maxLength );
 				String::View text = strLine.view().substr( pos, textSize );
 
-				if ( style.background != Color::Transparent ) {
-					primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
-					primitives.drawRectangle(
-						Rectf( position, Sizef( getTextWidth( text ), lineHeight ) ) );
+				if ( curVisualIndex >= visualLineRange.first &&
+					 curVisualIndex <= visualLineRange.second + 1 ) {
+					if ( !mUseDefaultStyle ) {
+						const SyntaxColorScheme::Style& style =
+							mColorScheme.getSyntaxStyle( token.type );
+						fontStyle.Style = style.style;
+						fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
+						fontStyle.OutlineThickness = style.outlineThickness;
+						if ( fontStyle.OutlineThickness )
+							fontStyle.OutlineColor = style.outlineColor;
+
+						if ( style.background != Color::Transparent ) {
+							primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
+							primitives.drawRectangle(
+								Rectf( position, Sizef( getTextWidth( text ), lineHeight ) ) );
+						}
+					}
+
+					position.x += Text::draw( text, { position.x, position.y + lineOffset },
+											  fontStyle, mTabWidth )
+									  .getWidth();
 				}
 
-				position.x += Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-										  mTabWidth )
-								  .getWidth();
 				pos += text.size();
 				tokenPos += text.size();
 
@@ -3362,160 +3447,91 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 				position.y += lineHeight;
 				position.x = originalPosition.x + vline.paddingStart;
 				curvline++;
+				curVisualIndex++;
+
 				if ( curvline < vline.visualLines.size() ) {
 					nextLineCol = vline.visualLines[curvline].column();
 				} else {
 					nextLineCol = strLine.size();
 				}
-			}
-		}
 
-		if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {
-			FontTrueType* ttf = static_cast<FontTrueType*>( mFont );
-			ttf->setEnableFallbackFont( isFallbackFont );
-			ttf->setEnableEmojiFallback( isEmojiFallbackFont );
-		}
-		return;
-	}
-
-	for ( const auto& token : tokens ) {
-		String::View text = strLine.view();
-		if ( pos < strLine.size() && !( pos == 0 && text.size() == token.len ) ) {
-			buff = strLine.view().substr( pos, token.len );
-			text = buff;
-		}
-		pos += token.len;
-
-		Float textWidth = isMonospace ? getTextWidth( text ) : 0;
-		if ( !isMonospace || ( position.x + textWidth >= mScreenPos.x &&
-							   position.x <= mScreenPos.x + mSize.getWidth() ) ) {
-			Int64 curCharsWidth = text.size();
-			Int64 curPositionChar = eefloor( mScroll.x / getGlyphWidth() );
-			Float curMaxPositionChar = curPositionChar + maxWidth;
-			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( token.type );
-			fontStyle.Style = style.style;
-			fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
-			fontStyle.OutlineThickness = style.outlineThickness;
-			if ( fontStyle.OutlineThickness )
-				fontStyle.OutlineColor = style.outlineColor;
-
-			if ( mHandShown && mLinkPosition.isValid() && mLinkPosition.inSameLine() &&
-				 mLinkPosition.start().line() == line ) {
-				if ( mLinkPosition.start().column() >= curChar &&
-					 mLinkPosition.end().column() <= curChar + curCharsWidth ) {
-					size_t linkPos = text.find( mLink.view() );
-					if ( linkPos != String::InvalidPos ) {
-						String::View beforeString( text.substr( 0, linkPos ) );
-						String::View afterString( text.substr( linkPos + mLink.size() ) );
-
-						Float offset = 0.f;
-						Uint32 lineStyle = fontStyle.Style;
-
-						if ( !beforeString.empty() ) {
-							Float beforeWidth = getTextWidth( beforeString );
-							if ( style.background != Color::Transparent ) {
-								primitives.setColor(
-									Color( style.background ).blendAlpha( mAlpha ) );
-								primitives.drawRectangle(
-									Rectf( position, Sizef( beforeWidth, lineHeight ) ) );
-							}
-							size =
-								Text::draw( beforeString, { position.x, position.y + lineOffset },
-											fontStyle, mTabWidth );
-							offset += beforeWidth;
-						}
-
-						SyntaxColorScheme::Style linkStyle = style;
-
-						if ( mColorScheme.hasSyntaxStyle( "link_hover"_sst ) ) {
-							linkStyle = mColorScheme.getSyntaxStyle( "link_hover"_sst );
-							if ( linkStyle.color != Color::Transparent ) {
-								fontStyle.FontColor = Color( linkStyle.color ).blendAlpha( mAlpha );
-							}
-							fontStyle.Style = linkStyle.style;
-						} else {
-							fontStyle.Style = ( lineStyle & Text::Underlined )
-												  ? ( lineStyle | Text::Bold )
-												  : ( lineStyle | Text::Underlined );
-						}
-
-						Float linkWidth = getTextWidth( mLink );
-						if ( linkStyle.background != Color::Transparent ) {
-							primitives.setColor(
-								Color( linkStyle.background ).blendAlpha( mAlpha ) );
-							primitives.drawRectangle(
-								Rectf( Vector2f( position.x + offset, position.y ),
-									   Sizef( linkWidth, lineHeight ) ) );
-						}
-						size = Text::draw( mLink, { position.x + offset, position.y + lineOffset },
-										   fontStyle, mTabWidth );
-						offset += linkWidth;
-
-						if ( !afterString.empty() ) {
-							Float afterWidth = getTextWidth( afterString );
-							if ( style.background != Color::Transparent ) {
-								primitives.setColor(
-									Color( style.background ).blendAlpha( mAlpha ) );
-								primitives.drawRectangle(
-									Rectf( Vector2f( position.x + offset, position.y ),
-										   Sizef( afterWidth, lineHeight ) ) );
-							}
-							fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
-							fontStyle.Style = lineStyle;
-							size = Text::draw( afterString,
-											   { position.x + offset, position.y + lineOffset },
-											   fontStyle, mTabWidth );
-							offset += afterWidth;
-						}
-
-						if ( !isMonospace )
-							textWidth = offset;
-
-						position.x += textWidth;
-						curChar += characterWidth( text );
-						continue;
-					}
+				if ( curVisualIndex > visualLineRange.second + 1 ) {
+					ended = true;
+					break;
 				}
 			}
-
-			if ( style.background != Color::Transparent ) {
-				primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
-				primitives.drawRectangle( Rectf( position, Sizef( textWidth, lineHeight ) ) );
+		}
+	} else {
+		for ( const auto& token : tokens ) {
+			String::View text = strLine.view();
+			if ( pos < strLine.size() && !( pos == 0 && text.size() == token.len ) ) {
+				buff = strLine.view().substr( pos, token.len );
+				text = buff;
 			}
+			pos += token.len;
 
-			if ( isMonospace && curPositionChar + curChar + curCharsWidth > curMaxPositionChar ) {
-				if ( curChar < curPositionChar ) {
-					Int64 charsToVisible = curPositionChar - curChar;
-					Int64 start = eemax( (Int64)0, curPositionChar - curChar );
-					Int64 minimumCharsToCoverScreen = maxWidth + charsToVisible - start;
-					Int64 totalChars = curCharsWidth - start;
-					Int64 end = eemin( totalChars, minimumCharsToCoverScreen );
-					if ( curCharsWidth >= charsToVisible ) {
-						size = Text::draw(
-							text.substr( start, end ),
-							{ position.x + start * getGlyphWidth(), position.y + lineOffset },
-							fontStyle, mTabWidth );
-						if ( minimumCharsToCoverScreen == end )
-							break;
+			Float textWidth = isMonospace ? getTextWidth( text ) : 0;
+			if ( !isMonospace || ( position.x + textWidth >= mScreenPos.x &&
+								   position.x <= mScreenPos.x + mSize.getWidth() ) ) {
+				Int64 curCharsWidth = text.size();
+				Int64 curPositionChar = eefloor( mScroll.x / getGlyphWidth() );
+				Float curMaxPositionChar = curPositionChar + maxWidth;
+				if ( !mUseDefaultStyle ) {
+					const SyntaxColorScheme::Style& style =
+						mColorScheme.getSyntaxStyle( token.type );
+					fontStyle.Style = style.style;
+					fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
+					fontStyle.OutlineThickness = style.outlineThickness;
+					if ( fontStyle.OutlineThickness )
+						fontStyle.OutlineColor = style.outlineColor;
+
+					if ( style.background != Color::Transparent ) {
+						primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
+						primitives.drawRectangle(
+							Rectf( position, Sizef( textWidth, lineHeight ) ) );
+					}
+				}
+
+				if ( isMonospace &&
+					 curPositionChar + curChar + curCharsWidth > curMaxPositionChar ) {
+					if ( curChar < curPositionChar ) {
+						Int64 charsToVisible = curPositionChar - curChar;
+						Int64 start = eemax( (Int64)0, curPositionChar - curChar );
+						Int64 minimumCharsToCoverScreen = maxWidth + charsToVisible - start;
+						Int64 totalChars = curCharsWidth - start;
+						Int64 end = eemin( totalChars, minimumCharsToCoverScreen );
+						if ( curCharsWidth >= charsToVisible ) {
+							size = Text::draw(
+								text.substr( start, end ),
+								{ position.x + start * getGlyphWidth(), position.y + lineOffset },
+								fontStyle, mTabWidth );
+							if ( minimumCharsToCoverScreen == end )
+								break;
+						}
+					} else {
+						size = Text::draw( text.substr( 0, eemin( curCharsWidth, maxWidth ) ),
+										   { position.x, position.y + lineOffset }, fontStyle,
+										   mTabWidth );
 					}
 				} else {
-					size =
-						Text::draw( text.substr( 0, eemin( curCharsWidth, maxWidth ) ),
-									{ position.x, position.y + lineOffset }, fontStyle, mTabWidth );
+					size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
+									   mTabWidth );
 				}
-			} else {
-				size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-								   mTabWidth );
+
+				if ( !isMonospace )
+					textWidth = size.getWidth();
+			} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
+				break;
 			}
 
-			if ( !isMonospace )
-				textWidth = size.getWidth();
-		} else if ( position.x > mScreenPos.x + mSize.getWidth() ) {
-			break;
+			position.x += textWidth;
+			curChar += characterWidth( text );
 		}
+	}
 
-		position.x += textWidth;
-		curChar += characterWidth( text );
+	if ( mHandShown && mLinkPosition.isValid() && mLinkPosition.inSameLine() &&
+		 mLinkPosition.start().line() == line ) {
+		drawHandDown();
 	}
 
 	if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {
@@ -3791,8 +3807,21 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "move-to-start-of-content", []( Client* client ) {
 		static_cast<UICodeEditor*>( client )->moveToStartOfContent();
 	} );
-	mDoc->setCommand( "select-to-previous-line", [this] { selectToPreviousLine(); } );
-	mDoc->setCommand( "select-to-next-line", [this] { selectToNextLine(); } );
+	mDoc->setCommand( "select-to-previous-line", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->selectToPreviousLine();
+	} );
+	mDoc->setCommand( "select-to-next-line", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->selectToNextLine();
+	} );
+	mDoc->setCommand( "select-to-start-of-line", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->selectToStartOfLine();
+	} );
+	mDoc->setCommand( "select-to-end-of-line", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->selectToEndOfLine();
+	} );
+	mDoc->setCommand( "select-to-start-of-content", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->selectToStartOfContent();
+	} );
 	mDoc->setCommand( "move-scroll-up", [this] { moveScrollUp(); } );
 	mDoc->setCommand( "move-scroll-down", [this] { moveScrollDown(); } );
 	mDoc->setCommand( "jump-lines-up", [this] { jumpLinesUp(); } );
@@ -4478,38 +4507,6 @@ void UICodeEditor::setFindReplaceEnabled( bool findReplaceEnabled ) {
 
 const Vector2f& UICodeEditor::getScroll() const {
 	return mScroll;
-}
-
-Text& UICodeEditor::getLineText( const Int64& lineNumber ) const {
-	auto it = mTextCache.find( lineNumber );
-	if ( it == mTextCache.end() || it->second.hash != mDoc->line( lineNumber ).getHash() ||
-		 !it->second.text.hasSameFontStyleConfig( mFontStyleConfig ) ) {
-		Float fontSize = PixelDensity::pxToDp( getCharacterSize() );
-		Text txt( "", mFont, fontSize );
-		txt.setTabWidth( mTabWidth );
-		txt.setStyleConfig( mFontStyleConfig );
-		txt.setString( mDoc->line( lineNumber ).getText() );
-		mTextCache[lineNumber] = { std::move( txt ), mDoc->line( lineNumber ).getHash() };
-		return mTextCache[lineNumber].text;
-	}
-	return it->second.text;
-}
-
-void UICodeEditor::updateLineCache( const Int64& lineIndex ) {
-	if ( lineIndex >= 0 && lineIndex < (Int64)mDoc->linesCount() ) {
-		TextDocumentLine& line = mDoc->line( lineIndex );
-		auto& cacheLine = mTextCache[lineIndex];
-		cacheLine.text.setStyleConfig( mFontStyleConfig );
-		cacheLine.text.setString( line.getText() );
-		cacheLine.hash = line.getHash();
-	}
-}
-
-void UICodeEditor::invalidateLinesCache() {
-	if ( mFont && !mFont->isMonospace() ) {
-		mTextCache.clear();
-		invalidateDraw();
-	}
 }
 
 bool UICodeEditor::stopMinimapDragging( const Vector2f& mousePos ) {

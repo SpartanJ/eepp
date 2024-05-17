@@ -103,7 +103,7 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const String& string
 				info.wraps.push_back( lastSpace + 1 );
 				xoffset = w + info.paddingStart + ( xoffset - lastWidth );
 			} else {
-				info.wraps.push_back( idx );
+				info.wraps.push_back( idx + 1 );
 				xoffset = w + info.paddingStart;
 			}
 			lastSpace = 0;
@@ -186,7 +186,7 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& 
 					info.wraps.push_back( lastSpace + 1 );
 					xoffset = w + info.paddingStart + ( xoffset - lastWidth );
 				} else {
-					info.wraps.push_back( idx );
+					info.wraps.push_back( idx + 1 );
 					xoffset = w + info.paddingStart;
 				}
 				lastSpace = 0;
