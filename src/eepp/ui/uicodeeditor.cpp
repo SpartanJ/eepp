@@ -1901,14 +1901,14 @@ void UICodeEditor::onDocumentClosed( TextDocument* doc ) {
 	sendEvent( &event );
 }
 
-void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& numLines ) {
-	Int64 linesCount = mDoc->linesCount();
-	Int64 toLine = fromLine + ( numLines < 0 ? std::abs( numLines ) - 1 : 0 );
+void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& toLine,
+									   const Int64& numLines ) {
 	mLineWrapping.updateBreaks( fromLine, toLine, numLines );
 
 	if ( !mFont || mFont->isMonospace() || mLinesWidthCache.empty() )
 		return;
 
+	Int64 linesCount = mDoc->linesCount();
 	if ( numLines > 0 ) {
 		for ( Int64 i = linesCount - 1; i >= fromLine; --i ) {
 			auto lineIt = mLinesWidthCache.find( i - numLines );

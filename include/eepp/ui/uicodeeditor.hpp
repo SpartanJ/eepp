@@ -866,7 +866,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void onDocumentClosed( TextDocument* doc );
 
-	virtual void onDocumentLineMove( const Int64& fromLine, const Int64& numLines );
+	virtual void onDocumentLineMove( const Int64& fromLine, const Int64& toLine, const Int64& numLines );
 
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
 

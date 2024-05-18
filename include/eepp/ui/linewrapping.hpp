@@ -62,6 +62,9 @@ class EE_API LineWrapping {
 										   LineWrapMode mode, bool keepIndentation,
 										   Uint32 tabWidth = 4 );
 
+	static Float computeOffsets( const String& string, const FontStyleConfig& fontStyle,
+								 Uint32 tabWidth );
+
 	LineWrapping( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
 
 	bool isWrapEnabled() const;

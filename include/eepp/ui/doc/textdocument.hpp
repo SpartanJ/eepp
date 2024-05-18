@@ -93,7 +93,8 @@ class EE_API TextDocument {
 			onDocumentLoaded( doc );
 		}
 		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
-		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*numLines*/ ) {}
+		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*toLine*/,
+										 const Int64& /*numLines*/ ) {}
 		virtual TextRange getVisibleRange() const { return {}; };
 	};
 
@@ -696,7 +697,8 @@ class EE_API TextDocument {
 
 	void notifySyntaxDefinitionChange();
 
-	void notifiyDocumenLineMove( const Int64& fromLine, const Int64& numLines );
+	void notifiyDocumenLineMove( const Int64& fromLine, const Int64& toLine,
+								 const Int64& numLines );
 
 	void notifyInterstingCursorChange( TextPosition selection );
 

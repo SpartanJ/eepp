@@ -1153,7 +1153,7 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 
 	if ( linesAdd > 0 ) {
 		mHighlighter->moveHighlight( position.line(), linesAdd );
-		notifiyDocumenLineMove( position.line(), linesAdd );
+		notifiyDocumenLineMove( position.line(), position.line(), linesAdd );
 	}
 
 	notifyTextChanged( { { position, position }, text } );
@@ -1303,7 +1303,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	if ( linesRemoved > 0 ) {
 		mHighlighter->moveHighlight(
 			deletedAcrossNewLine ? range.start().line() : range.end().line(), -linesRemoved );
-		notifiyDocumenLineMove( deletedAcrossNewLine ? range.start().line() : range.end().line(),
+		notifiyDocumenLineMove( originalRange.start().line(), originalRange.end().line(),
 								-linesRemoved );
 	}
 
@@ -3293,10 +3293,11 @@ void TextDocument::notifySyntaxDefinitionChange() {
 	}
 }
 
-void TextDocument::notifiyDocumenLineMove( const Int64& fromLine, const Int64& numLines ) {
+void TextDocument::notifiyDocumenLineMove( const Int64& fromLine, const Int64& toLine,
+										   const Int64& numLines ) {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
-		client->onDocumentLineMove( fromLine, numLines );
+		client->onDocumentLineMove( fromLine, toLine, numLines );
 	}
 }
 

@@ -44,6 +44,15 @@ std::string LineWrapping::fromLineWrapType( LineWrapType type ) {
 	}
 }
 
+Float LineWrapping::computeOffsets( const String& string, const FontStyleConfig& fontStyle,
+									Uint32 tabWidth ) {
+
+	auto nonIndentPos = string.find_first_not_of( " \t\n\v\f\r" );
+	if ( nonIndentPos != String::InvalidPos )
+		return Text::getTextWidth( string.view().substr( 0, nonIndentPos ), fontStyle, tabWidth );
+	return 0.f;
+}
+
 LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const String& string,
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
@@ -453,6 +462,17 @@ void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) 
 	mWrappedLineToIndex.resize( mDoc->linesCount() );
 
 #ifdef EE_DEBUG
+	if ( mConfig.keepIndentation ) {
+		auto wrappedOffset = mWrappedLinesOffset;
+
+		for ( auto i = fromLine; i <= toLine; i++ ) {
+			mWrappedLinesOffset[i] =
+				computeOffsets( mDoc->line( i ).getText(), mFontStyle, mConfig.tabWidth );
+		}
+
+		eeASSERT( wrappedOffset == mWrappedLinesOffset );
+	}
+
 	auto wrappedLines = mWrappedLines;
 	auto wrappedLinesToIndex = mWrappedLineToIndex;
 	auto wrappedOffset = mWrappedLinesOffset;
