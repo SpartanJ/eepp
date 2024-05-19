@@ -538,6 +538,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void scrollTo( TextPosition position, bool centered = false, bool forceExactPosition = false,
 				   bool scrollX = true );
 
+	void scrollToVisualIndex( Int64 visualIndex, bool centered = false,
+							  bool forceExactPosition = false );
+
 	const MinimapConfig& getMinimapConfig() const;
 
 	void setMinimapConfig( const MinimapConfig& newMinimapConfig );
@@ -866,7 +869,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void onDocumentClosed( TextDocument* doc );
 
-	virtual void onDocumentLineMove( const Int64& fromLine, const Int64& toLine, const Int64& numLines );
+	virtual void onDocumentLineMove( const Int64& fromLine, const Int64& toLine,
+									 const Int64& numLines );
 
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* doc );
 

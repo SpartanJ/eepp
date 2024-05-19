@@ -1249,27 +1249,28 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 }
 
 Int64 UICodeEditor::calculateMinimapClickedLine( const Vector2i& position ) {
-	auto lineRange = getVisibleLineRange();
+	auto lineRange = getVisibleLineRange( true );
 	Vector2f start( getScreenStart() );
 	Float lineSpacing = getMinimapLineSpacing();
 	Rectf rect( getMinimapRect( start ) );
 	Int64 visibleLinesCount = ( lineRange.second - lineRange.first );
 	Int64 visibleLinesStart = lineRange.first;
 	Float scrollerHeight = visibleLinesCount * lineSpacing;
-	size_t lineCount = mDoc->linesCount();
+	size_t visualLineCount = getTotalVisibleLines();
 	Int64 maxMinmapLines = eefloor( rect.getHeight() / lineSpacing );
 	Int64 minimapStartLine = 0;
 	if ( isMinimapFileTooLarge() ) {
-		Float scrollPos = ( visibleLinesStart - 1 ) / (Float)( lineCount - visibleLinesCount - 1 );
+		Float scrollPos =
+			( visibleLinesStart - 1 ) / (Float)( visualLineCount - visibleLinesCount - 1 );
 		scrollPos = eeclamp( scrollPos, 0.f, 1.f );
 		Float scrollPosPixels = scrollPos * ( rect.getHeight() - scrollerHeight );
 		minimapStartLine = visibleLinesStart - eefloor( scrollPosPixels / lineSpacing );
 		minimapStartLine =
-			eemax( (Int64)0, eemin( minimapStartLine, (Int64)lineCount - maxMinmapLines ) );
+			eemax( (Int64)0, eemin( minimapStartLine, (Int64)visualLineCount - maxMinmapLines ) );
 	}
 	Float dy = position.y - rect.Top;
 	Int64 ret = minimapStartLine + eefloor( dy / lineSpacing );
-	return eeclamp( ret, (Int64)0, (Int64)lineCount );
+	return eeclamp( ret, (Int64)0, (Int64)visualLineCount );
 }
 
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
@@ -1289,12 +1290,12 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 				return 1;
 			if ( !mMinimapHover && !mMouseDown ) {
 				mMinimapScrollOffset = 0;
-				scrollTo( { calculateMinimapClickedLine( position ), 0 }, true, true, false );
+				scrollToVisualIndex( calculateMinimapClickedLine( position ), false, true );
 				return 1;
 			}
 			mMouseDown = true;
 			mMinimapScrollOffset =
-				calculateMinimapClickedLine( position ) - getVisibleLineRange().first;
+				calculateMinimapClickedLine( position ) - getVisibleLineRange( true ).first;
 			mMinimapDragging = true;
 			getEventDispatcher()->setNodeDragging( this );
 			mVScrollBar->setEnabled( false );
@@ -1303,8 +1304,8 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		} else if ( mMinimapDragging ) {
 			if ( ( flags & EE_BUTTON_LMASK ) && mMouseDown &&
 				 rect.contains( position.asFloat() ) ) {
-				scrollTo( { calculateMinimapClickedLine( position ) - mMinimapScrollOffset, 0 },
-						  false, true, false );
+				scrollToVisualIndex( calculateMinimapClickedLine( position ) - mMinimapScrollOffset,
+									 false, true );
 				getUISceneNode()->setCursor( Cursor::Arrow );
 			}
 			return 1;
@@ -1386,8 +1387,8 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 	if ( mMinimapEnabled ) {
 		updateMipmapHover( position.asFloat() );
 		if ( mMinimapDragging && ( flags & EE_BUTTON_LMASK ) ) {
-			scrollTo( { calculateMinimapClickedLine( position ) - mMinimapScrollOffset, 0 }, false,
-					  true, false );
+			scrollToVisualIndex( calculateMinimapClickedLine( position ) - mMinimapScrollOffset,
+								 false, true );
 			getUISceneNode()->setCursor( Cursor::Arrow );
 			return 1;
 		}
@@ -1987,6 +1988,29 @@ void UICodeEditor::setLineSpacing( const StyleSheetLength& lineSpace ) {
 void UICodeEditor::scrollTo( TextPosition position, bool centered, bool forceExactPosition,
 							 bool scrollX ) {
 	scrollTo( { position, position }, centered, forceExactPosition, scrollX );
+}
+
+void UICodeEditor::scrollToVisualIndex( Int64 visualIndex, bool centered,
+										bool forceExactPosition ) {
+	Rectf scrollArea = getVisibleScrollArea();
+	Float lineHeight = getLineHeight();
+	Int64 minDistance = mHScrollBar->isVisible() ? 3 : 2;
+	scrollArea.Top += lineHeight;
+	scrollArea.Bottom = eemax( scrollArea.Top, scrollArea.Bottom - minDistance * lineHeight );
+
+	Vector2f offsetEnd{ 0.f, lineHeight * visualIndex };
+
+	// Vertical Scroll
+	Float halfScreenSize = eefloor( getViewportDimensions().getHeight() * 0.5f );
+	if ( centered || forceExactPosition ) {
+		setScrollY(
+			eeclamp( offsetEnd.y - ( centered ? halfScreenSize : 0 ), 0.f, getMaxScroll().y ) );
+	} else if ( offsetEnd.y < scrollArea.Top ) {
+		setScrollY( eeclamp( offsetEnd.y - lineHeight, 0.f, getMaxScroll().y ) );
+	} else if ( offsetEnd.y > scrollArea.Bottom - lineHeight ) {
+		setScrollY(
+			eeclamp( offsetEnd.y - scrollArea.getHeight() - lineHeight, 0.f, getMaxScroll().y ) );
+	}
 }
 
 void UICodeEditor::scrollTo( TextRange position, bool centered, bool forceExactPosition,
