@@ -1351,11 +1351,11 @@ void UICodeEditor::updateMipmapHover( const Vector2f& position ) {
 		return;
 
 	Float lineSpacing = getMinimapLineSpacing();
-	auto lineRange = getVisibleLineRange();
+	auto lineRange = getVisibleLineRange( true );
 	int visibleLinesCount = ( lineRange.second - lineRange.first );
 	int visibleLinesStart = lineRange.first;
 	Float scrollerHeight = visibleLinesCount * lineSpacing;
-	int lineCount = mDoc->linesCount();
+	int lineCount = getTotalVisibleLines();
 	Float visibleY = rect.Top + visibleLinesStart * lineSpacing;
 
 	if ( isMinimapFileTooLarge() && visibleLinesCount ) {
@@ -4033,17 +4033,17 @@ Rectf UICodeEditor::getMinimapRect( const Vector2f& start ) const {
 
 static const SyntaxStyleType SYNTAX_NORMAL = SyntaxStyleTypes::Normal;
 
-void UICodeEditor::drawMinimap( const Vector2f& start,
-								const std::pair<Uint64, Uint64>& lineRange ) {
+void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& ) {
 	Float charHeight = PixelDensity::getPixelDensity() * mMinimapConfig.scale;
 	Float charSpacing =
 		eemax( 1.f, eefloor( 0.8 * PixelDensity::getPixelDensity() * mMinimapConfig.scale ) );
 	Float lineSpacing = getMinimapLineSpacing();
 	Rectf rect( getMinimapRect( start ) );
-	int visibleLinesCount = ( lineRange.second - lineRange.first );
-	int visibleLinesStart = lineRange.first;
+	auto visibleLineRange = getVisibleLineRange( true );
+	int visibleLinesCount = ( visibleLineRange.second - visibleLineRange.first );
+	int visibleLinesStart = visibleLineRange.first;
 	Float scrollerHeight = visibleLinesCount * lineSpacing;
-	int lineCount = mDoc->linesCount();
+	int lineCount = getTotalVisibleLines();
 	Float visibleY = rect.Top + visibleLinesStart * lineSpacing;
 	int maxMinmapLines = eefloor( rect.getHeight() / lineSpacing );
 	int minimapStartLine = 0;
@@ -4252,62 +4252,136 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 		drawWordRanges( mHighlightWordCache );
 	}
 
+	Int64 minimapStartDocLine = mLineWrapping.getDocumentLine( minimapStartLine ).line();
+	Int64 endDocIdx = mLineWrapping.getDocumentLine( endidx ).line();
+
 	if ( mMinimapConfig.syntaxHighlight ) {
-		for ( int index = minimapStartLine; index <= endidx; index++ ) {
+		for ( Int64 line = minimapStartDocLine; line <= endDocIdx; line++ ) {
 			batchSyntaxType = &SYNTAX_NORMAL;
 			batchStart = rect.Left + gutterWidth;
 			batchWidth = 0;
 
 			if ( mHighlightWord.isEmpty() && !selectionString.empty() )
-				drawWordMatch( selectionString, index );
+				drawWordMatch( selectionString, line );
 
 			for ( auto* plugin : mPlugins )
-				plugin->minimapDrawBeforeLineText( this, index, { rect.Left, lineY },
+				plugin->minimapDrawBeforeLineText( this, line, { rect.Left, lineY },
 												   { rect.getWidth(), charHeight }, charSpacing,
 												   gutterWidth );
 
-			const auto& tokens = mDoc->getHighlighter()->getLine( index, false );
-			const auto& text = mDoc->line( index ).getText();
-			size_t txtPos = 0;
+			const auto& tokens = mDoc->getHighlighter()->getLine( line, false );
+			const auto& text = mDoc->line( line ).getText();
+			Int64 pos = 0;
+			bool wrappedLine = mLineWrapping.isWrappedLine( line );
 
-			for ( const auto& token : tokens ) {
-				if ( *batchSyntaxType != token.type ) {
-					flushBatch( *batchSyntaxType );
-					batchSyntaxType = &token.type;
-				}
+			if ( wrappedLine ) {
+				auto vline = mLineWrapping.getVisualLine( line );
+				size_t curvline = 1;
+				Int64 nextLineCol = vline.visualLines[curvline].column();
+				Int64 lineLength = text.size();
+				Int64 curVisualIndex;
 
-				size_t pos = txtPos;
-				size_t end = pos + token.len <= text.size() ? txtPos + token.len : text.size();
+				for ( const auto& token : tokens ) {
+					if ( !token.len )
+						continue;
 
-				while ( pos < end ) {
-					String::StringBaseType ch = text[pos];
-					if ( ch == ' ' || ch == '\n' ) {
-						flushBatch( token.type );
-						batchStart += charSpacing;
-					} else if ( ch == '\t' ) {
-						flushBatch( token.type );
-						batchStart += charSpacing * mMinimapConfig.tabWidth;
-					} else if ( batchStart + batchWidth > minimapCutoffX ) {
-						flushBatch( token.type );
-						break;
-					} else {
-						batchWidth += charSpacing;
+					if ( *batchSyntaxType != token.type ) {
+						flushBatch( *batchSyntaxType );
+						batchSyntaxType = &token.type;
 					}
-					pos++;
-				};
 
-				txtPos += token.len;
+					curVisualIndex = vline.visualIndex + curvline;
+					Int64 remainingToken = token.len;
+
+					while ( remainingToken > 0 ) {
+						Int64 maxLength = nextLineCol - pos;
+						Int64 maxPos = pos + std::min( remainingToken, maxLength );
+
+						if ( curVisualIndex >= minimapStartLine ) {
+							for ( auto i = pos; i < maxPos; i++ ) {
+								String::StringBaseType ch = text[i];
+								if ( ch == ' ' || ch == '\n' ) {
+									flushBatch( token.type );
+									batchStart += charSpacing;
+								} else if ( ch == '\t' ) {
+									flushBatch( token.type );
+									batchStart += charSpacing * mMinimapConfig.tabWidth;
+								} else {
+									batchWidth += charSpacing;
+								}
+							}
+						}
+
+						remainingToken = remainingToken - ( maxPos - pos );
+						pos = maxPos;
+
+						if ( pos == nextLineCol ) {
+							flushBatch( token.type );
+
+							if ( curVisualIndex >= minimapStartLine )
+								lineY += lineSpacing;
+
+							curvline++;
+							curVisualIndex = vline.visualIndex + curvline;
+
+							if ( curvline < vline.visualLines.size() ) {
+								nextLineCol = vline.visualLines[curvline].column();
+							} else {
+								nextLineCol = lineLength;
+							}
+
+							batchStart = rect.Left + gutterWidth;
+							batchWidth = 0;
+
+							if ( pos == lineLength )
+								break;
+						} else if ( !remainingToken ) {
+							break;
+						}
+					}
+				}
+			} else {
+				Int64 tokenPos = 0;
+				for ( const auto& token : tokens ) {
+					if ( *batchSyntaxType != token.type ) {
+						flushBatch( *batchSyntaxType );
+						batchSyntaxType = &token.type;
+					}
+
+					size_t pos = tokenPos;
+					size_t end =
+						pos + token.len <= text.size() ? tokenPos + token.len : text.size();
+
+					while ( pos < end ) {
+						String::StringBaseType ch = text[pos];
+						if ( ch == ' ' || ch == '\n' ) {
+							flushBatch( token.type );
+							batchStart += charSpacing;
+						} else if ( ch == '\t' ) {
+							flushBatch( token.type );
+							batchStart += charSpacing * mMinimapConfig.tabWidth;
+						} else if ( batchStart + batchWidth > minimapCutoffX ) {
+							flushBatch( token.type );
+							break;
+						} else {
+							batchWidth += charSpacing;
+						}
+						pos++;
+					};
+
+					tokenPos += token.len;
+				}
 			}
 
 			flushBatch( SYNTAX_NORMAL );
 
 			for ( auto* plugin : mPlugins )
-				plugin->minimapDrawAfterLineText( this, index, { rect.Left, lineY },
+				plugin->minimapDrawAfterLineText( this, line, { rect.Left, lineY },
 												  { rect.getWidth(), charHeight }, charSpacing,
 												  gutterWidth );
 
 			if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
-				drawTextRange( mHighlightTextRange, index,
+				drawTextRange( mHighlightTextRange, line,
 							   Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
 			}
 
@@ -4315,11 +4389,12 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 				Color selectionColor( Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
 				auto selections = mDoc->getSelectionsSorted();
 				for ( const auto& sel : selections ) {
-					drawTextRange( sel, index, selectionColor );
+					drawTextRange( sel, line, selectionColor );
 				}
 			}
 
-			lineY = lineY + lineSpacing;
+			if ( !wrappedLine )
+				lineY += lineSpacing;
 		}
 	} else {
 		for ( int index = minimapStartLine; index <= endidx; index++ ) {
@@ -4378,7 +4453,9 @@ void UICodeEditor::drawMinimap( const Vector2f& start,
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		Float selectionY =
 			rect.Top +
-			( mDoc->getSelectionIndex( i ).start().line() - minimapStartLine ) * lineSpacing;
+			( mLineWrapping.getVisualLineInfo( mDoc->getSelectionIndex( i ).start() ).visualIndex -
+			  minimapStartLine ) *
+				lineSpacing;
 		BR->quadsSetColor( Color( mMinimapCurrentLineColor ).blendAlpha( mAlpha ) );
 		BR->batchQuad( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
 	}
