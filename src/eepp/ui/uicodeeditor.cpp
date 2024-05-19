@@ -918,7 +918,11 @@ void UICodeEditor::invalidateLongestLineWidth() {
 }
 
 void UICodeEditor::setLineWrapMode( LineWrapMode mode ) {
+	auto prevMode = mLineWrapping.getConfig().mode;
 	mLineWrapping.setLineWrapMode( mode );
+	if ( prevMode != mode && LineWrapMode::NoWrap == mode ) {
+		invalidateLongestLineWidth();
+	}
 }
 
 LineWrapType UICodeEditor::getLineWrapType() const {
