@@ -975,7 +975,7 @@ const TextRanges& TextDocument::getSelections() const {
 	return mSelection;
 }
 
-std::vector<TextRange> TextDocument::getSelectionsSorted() const {
+TextRanges TextDocument::getSelectionsSorted() const {
 	auto selections( mSelection );
 	for ( auto& selection : selections )
 		selection.normalize();

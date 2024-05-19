@@ -77,12 +77,19 @@ class UICodeEditorPlugin {
 	virtual void drawAfterLineText( UICodeEditor* /*editor*/, const Int64& /*index*/,
 									Vector2f /*position*/, const Float& /*fontSize*/,
 									const Float& /*lineHeight*/ ) {};
-	virtual void minimapDrawBeforeLineText( UICodeEditor* /*editor*/, const Int64& /*index*/,
-											const Vector2f& /*position*/, const Vector2f& /*size*/,
-											const Float& /*charWidth*/,
-											const Float& /*gutterWidth*/ ) {};
-	virtual void minimapDrawAfterLineText( UICodeEditor*, const Int64&, const Vector2f&,
-										   const Vector2f&, const Float&, const Float& ) {};
+
+	virtual void minimapDrawBeforeLineText(
+		UICodeEditor* /*editor*/, const Int64& /*index*/, const Vector2f& /*linePos*/,
+		const Vector2f& /*lineSize*/, const Float& /*charWidth*/, const Float& /*gutterWidth*/,
+		const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
+								  bool /*drawCompleteLine*/ )> /* drawTextRanges */ ) {};
+
+	virtual void minimapDrawAfterLineText(
+		UICodeEditor* /*editor*/, const Int64& /*lineIdx */, const Vector2f& /* linePos */,
+		const Vector2f& /* lineSize */, const Float& /* charWidth */,
+		const Float& /* gutterWidth */,
+		const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
+								  bool /*drawCompleteLine*/ )> /* drawTextRanges */ ) {};
 
 	virtual void drawGutter( UICodeEditor* /*editor*/, const Int64& /*index*/,
 							 const Vector2f& /*screenStart*/, const Float& /*lineHeight*/,
@@ -139,7 +146,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 		Float width{ 100 }; // dp width
 		Float maxPercentWidth{
 			0.1f }; // 0..1 max width that a minimap can ocupy on the editor view.
-		bool syntaxHighlight{ true };
 		Float scale{ 1 };
 		int tabWidth{ 4 };
 		bool drawBackground{ true };
@@ -683,6 +689,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setLineWrapKeepIndentation( bool keep );
 
+	Float getMinimapLineSpacing() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -948,8 +956,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 						 const std::string& cmd );
 
 	void drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& lineRange );
-
-	Float getMinimapLineSpacing() const;
 
 	bool isMinimapFileTooLarge() const;
 
