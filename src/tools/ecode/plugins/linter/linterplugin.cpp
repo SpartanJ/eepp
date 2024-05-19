@@ -1105,9 +1105,12 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 	}
 }
 
-void LinterPlugin::minimapDrawBeforeLineText( UICodeEditor* editor, const Int64& index,
-											  const Vector2f& pos, const Vector2f& size,
-											  const Float&, const Float& ) {
+void LinterPlugin::minimapDrawBeforeLineText(
+	UICodeEditor* editor, const Int64& index, const Vector2f& /*pos*/, const Vector2f& /*size*/,
+	const Float&, const Float&,
+	const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
+							  bool /*drawCompleteLine*/ )>
+		drawTextRanges ) {
 	Lock l( mMatchesMutex );
 	auto matchIt = mMatches.find( editor->getDocumentRef().get() );
 	if ( matchIt == mMatches.end() )
@@ -1119,15 +1122,13 @@ void LinterPlugin::minimapDrawBeforeLineText( UICodeEditor* editor, const Int64&
 		return;
 	TextDocument* doc = matchIt->first;
 	const std::vector<LinterMatch>& matches = lineIt->second;
-	Primitives p;
 	for ( const auto& match : matches ) {
 		if ( match.lineCache != doc->line( index ).getHash() )
 			return;
 		Color col(
 			editor->getColorScheme().getEditorSyntaxStyle( getMatchString( match.type ) ).color );
 		col.blendAlpha( 100 );
-		p.setColor( col );
-		p.drawRectangle( Rectf( pos, size ) );
+		drawTextRanges( match.range, col, true );
 		break;
 	}
 }

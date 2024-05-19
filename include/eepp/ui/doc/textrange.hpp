@@ -143,6 +143,12 @@ class EE_API TextRange {
 
 class EE_API TextRanges : public std::vector<TextRange> {
   public:
+	TextRanges() {}
+
+	TextRanges( const std::vector<TextRange>& ranges ) : std::vector<TextRange>( ranges ) {}
+
+	TextRanges( const TextRange& ranges ) : std::vector<TextRange>( { ranges } ) {}
+
 	bool isSorted() const { return mIsSorted; }
 
 	bool isValid() const {

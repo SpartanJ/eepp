@@ -329,7 +329,8 @@ Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) const {
 }
 
 bool LineWrapping::isWrappedLine( Int64 docIdx ) const {
-	return isWrapEnabled() && toWrappedIndex( docIdx ) != toWrappedIndex( docIdx, true );
+	return isWrapEnabled() && mConfig.mode != LineWrapMode::NoWrap &&
+		   toWrappedIndex( docIdx ) != toWrappedIndex( docIdx, true );
 }
 
 LineWrapping::VisualLine LineWrapping::getVisualLine( Int64 docIdx ) const {

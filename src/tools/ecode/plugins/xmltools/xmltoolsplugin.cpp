@@ -367,9 +367,12 @@ void XMLToolsPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& inde
 	}
 }
 
-void XMLToolsPlugin::minimapDrawAfterLineText( UICodeEditor* editor, const Int64& index,
-											   const Vector2f& pos, const Vector2f& size,
-											   const Float&, const Float& ) {
+void XMLToolsPlugin::minimapDrawAfterLineText(
+	UICodeEditor* editor, const Int64& index, const Vector2f& /*pos*/, const Vector2f& /*size*/,
+	const Float&, const Float&,
+	const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
+							  bool /*drawCompleteLine*/ )>
+		drawTextRanges ) {
 	if ( !isOverMatch( &editor->getDocument(), index ) )
 		return;
 	Primitives p;
@@ -381,7 +384,7 @@ void XMLToolsPlugin::minimapDrawAfterLineText( UICodeEditor* editor, const Int64
 	for ( const auto& range : { match.matchBracket, match.currentBracket } ) {
 		if ( range.start().line() != index || !range.inSameLine() )
 			continue;
-		p.drawRectangle( Rectf( pos, size ) );
+		drawTextRanges( range, blendedColor, true );
 	}
 }
 

@@ -43,8 +43,10 @@ class XMLToolsPlugin : public PluginBase {
 	void drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 							 const Float& fontSize, const Float& lineHeight ) override;
 
-	void minimapDrawAfterLineText( UICodeEditor*, const Int64&, const Vector2f&, const Vector2f&,
-								   const Float&, const Float& ) override;
+	void minimapDrawAfterLineText(
+		UICodeEditor*, const Int64&, const Vector2f&, const Vector2f&, const Float&, const Float&,
+		const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
+								  bool /*drawCompleteLine*/ )> /* drawTextRanges */ ) override;
 
   protected:
 	bool mHighlightMatch{ true };
@@ -71,16 +73,16 @@ class XMLToolsPlugin : public PluginBase {
 			mDoc( doc ), mParent( parent ) {}
 
 		virtual void onDocumentTextChanged( const DocumentContentChange& );
-		virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& ){};
-		virtual void onDocumentCursorChange( const TextPosition& ){};
-		virtual void onDocumentInterestingCursorChange( const TextPosition& ){};
+		virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& ) {};
+		virtual void onDocumentCursorChange( const TextPosition& ) {};
+		virtual void onDocumentInterestingCursorChange( const TextPosition& ) {};
 		virtual void onDocumentSelectionChange( const TextRange& );
-		virtual void onDocumentLineCountChange( const size_t&, const size_t& ){};
-		virtual void onDocumentLineChanged( const Int64& ){};
-		virtual void onDocumentSaved( TextDocument* ){};
-		virtual void onDocumentClosed( TextDocument* ){};
-		virtual void onDocumentDirtyOnFileSystem( TextDocument* ){};
-		virtual void onDocumentMoved( TextDocument* ){};
+		virtual void onDocumentLineCountChange( const size_t&, const size_t& ) {};
+		virtual void onDocumentLineChanged( const Int64& ) {};
+		virtual void onDocumentSaved( TextDocument* ) {};
+		virtual void onDocumentClosed( TextDocument* ) {};
+		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {};
+		virtual void onDocumentMoved( TextDocument* ) {};
 
 	  protected:
 		TextDocument* mDoc{ nullptr };

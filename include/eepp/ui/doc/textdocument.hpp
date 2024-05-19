@@ -515,7 +515,7 @@ class EE_API TextDocument {
 
 	void resetSelection( const TextRanges& selection );
 
-	std::vector<TextRange> getSelectionsSorted() const;
+	TextRanges getSelectionsSorted() const;
 
 	void addCursorAbove();
 
