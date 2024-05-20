@@ -63,6 +63,8 @@ class EE_API TextDocument {
 			ranges.reserve( size() );
 			for ( const auto& r : *this )
 				ranges.push_back( r.result );
+			if ( isSorted() )
+				ranges.setSorted();
 			return ranges;
 		}
 

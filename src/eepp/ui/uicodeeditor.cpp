@@ -3289,6 +3289,8 @@ void UICodeEditor::drawWordRanges( const TextRanges& ranges, const std::pair<int
 	primitives.setForceDraw( false );
 	primitives.setColor( Color( mSelectionMatchColor ).blendAlpha( mAlpha ) );
 	TextRange selection = mDoc->getSelection( true );
+	Rectf area = getScreenBounds();
+	Int64 lastSkipLine = -1;
 
 	for ( const auto& range : ranges ) {
 		if ( !( range.start().line() >= lineRange.first &&
@@ -3301,7 +3303,7 @@ void UICodeEditor::drawWordRanges( const TextRanges& ranges, const std::pair<int
 			continue;
 		}
 
-		if ( !range.inSameLine() )
+		if ( ranges.isSorted() && range.start().line() == lastSkipLine )
 			continue;
 
 		Int64 startCol = range.start().column();
@@ -3311,8 +3313,13 @@ void UICodeEditor::drawWordRanges( const TextRanges& ranges, const std::pair<int
 			{ { range.start().line(), startCol }, { range.start().line(), endCol } }, startScroll,
 			{}, lineHeight );
 
-		for ( const auto& rect : rects )
-			primitives.drawRectangle( rect );
+		for ( const auto& rect : rects ) {
+			if ( area.intersect( rect ) ) {
+				primitives.drawRectangle( rect );
+			} else if ( rect.Left > area.Right ) {
+				lastSkipLine = range.start().line();
+			}
+		}
 	}
 
 	primitives.setForceDraw( true );
@@ -4127,6 +4134,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, U
 	Float batchStart = rect.Left;
 	Float minimapCutoffX = rect.Left + rect.getWidth();
 	Float widthScale = charSpacing / getGlyphWidth();
+	Int64 maxVisibleColumn = eeceil( rect.getWidth() / charSpacing );
 	auto flushBatch = [this, &color, &batchSyntaxType, &batchStart, &batchWidth, &lineY, &BR,
 					   &charHeight]( const SyntaxStyleType& type ) {
 		Color oldColor = color;
@@ -4153,16 +4161,20 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, U
 	Float minimapStart = rect.Left + gutterWidth;
 
 	const auto drawTextRanges = [this, &BR, &minimapStart, &charHeight, &minimapStartLine,
-								 &lineSpacing, &rect, &minimapCutoffX, &widthScale,
-								 &endidx]( const TextRanges& ranges, const Color& backgroundColor,
-										   bool drawCompleteLine = false ) {
+								 &lineSpacing, &rect, &minimapCutoffX, &widthScale, &endidx,
+								 &maxVisibleColumn]( const TextRanges& ranges,
+													 const Color& backgroundColor,
+													 bool drawCompleteLine = false ) {
 		BR->quadsSetColor( backgroundColor );
 		Int64 lineSkip = -1;
 		for ( const auto& range : ranges ) {
+			if ( !mLineWrapping.isWrapEnabled() && range.start().column() > maxVisibleColumn )
+				continue;
+
 			auto rangeStart = mLineWrapping.getVisualLineInfo( range.start() );
 			auto rangeEnd = mLineWrapping.getVisualLineInfo( range.end() );
 
-			if ( !( endidx < rangeStart.visualIndex || minimapStartLine < rangeEnd.visualIndex ) )
+			if ( minimapStartLine > rangeEnd.visualIndex || endidx < rangeStart.visualIndex )
 				continue;
 
 			if ( ranges.isSorted() && rangeEnd.visualIndex > endidx )
