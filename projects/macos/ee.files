@@ -345,6 +345,7 @@
 ../../include/eepp/ui/doc/textrange.hpp
 ../../include/eepp/ui/doc/undostack.hpp
 ../../include/eepp/ui/keyboardshortcut.hpp
+../../include/eepp/ui/linewrapping.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/models/csspropertiesmodel.hpp
 ../../include/eepp/ui/models/filesystemmodel.hpp
@@ -681,6 +682,7 @@
 ../../src/eepp/ui/doc/languages/solidity.hpp
 ../../src/eepp/ui/doc/languages/sql.hpp
 ../../src/eepp/ui/doc/languages/x86assembly.hpp
+../../src/eepp/ui/linewrapping.cpp
 ../../src/examples/7guis/cells/formula.cpp
 ../../src/modules/maps/src/eepp/maps/gameobject.cpp
 ../../src/modules/maps/src/eepp/maps/gameobjectobject.cpp

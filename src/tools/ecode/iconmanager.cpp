@@ -92,6 +92,7 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 		{ "filetype-pkm", 0xF3C5 },
 		{ "settings", 0xF0E3 },
 		{ "stop", 0xF1A0 },
+		{ "text-wrap", 0xF200 },
 	};
 
 	for ( const auto& icon : icons )

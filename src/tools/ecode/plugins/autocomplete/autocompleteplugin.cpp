@@ -848,8 +848,8 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 		return;
 	auto curSig = mSignatureHelp.signatures[curSigIdx];
 	Float vdiff = drawUp ? -mRowHeight : mRowHeight;
-	Vector2f pos( startScroll.x + editor->getXOffsetCol( mSignatureHelpPosition ),
-				  startScroll.y + mSignatureHelpPosition.line() * lineHeight + vdiff );
+	auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
+	Vector2f pos( startScroll.x + offset.x, startScroll.y + offset.y + vdiff );
 	primitives.setColor( Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
 	String str;
 	if ( mSignatureHelp.signatures.size() > 1 ) {
@@ -889,9 +889,9 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 							  ( curParam.end - curParam.start ) * editor->getGlyphWidth(),
 						  curParamRect.getPosition().y },
 						curParamRect.getSize() } ) ) {
-			pos = { startScroll.x - curParam.start * editor->getGlyphWidth() +
-						editor->getXOffsetCol( mSignatureHelpPosition ),
-					startScroll.y + mSignatureHelpPosition.line() * lineHeight + vdiff };
+			auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
+			pos = { startScroll.x - curParam.start * editor->getGlyphWidth() + offset.x,
+					startScroll.y + offset.y + vdiff };
 
 			boxRect.setPosition( pos );
 
@@ -947,8 +947,8 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 		suggestions = mSuggestions;
 	}
 
-	Vector2f cursorPos( startScroll.x + editor->getXOffsetCol( start ),
-						startScroll.y + cursor.line() * lineHeight + lineHeight );
+	auto offset = editor->getTextPositionOffset( start );
+	Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y + lineHeight );
 	size_t largestString = 0;
 	size_t max = eemin<size_t>( mSuggestionsMaxVisible, suggestions.size() );
 

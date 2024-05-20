@@ -129,8 +129,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.minimap = ini.getValueB( "editor", "minimap", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", false );
-	editor.singleClickNavigation =
-		ini.getValueB( "editor", "single_click_tree_navigation", false );
+	editor.singleClickNavigation = ini.getValueB( "editor", "single_click_tree_navigation", false );
 	editor.syncProjectTreeWithEditor =
 		ini.getValueB( "editor", "sync_project_tree_with_editor", true );
 	editor.autoCloseXMLTags = ini.getValueB( "editor", "auto_close_xml_tags", true );
@@ -139,6 +138,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		Time::fromString( ini.getValue( "editor", "cursor_blinking_time", "0.5s" ) );
 	editor.linesRelativePosition = ini.getValueB( "editor", "lines_relative_position", false );
 	editor.autoReloadOnDiskChange = ini.getValueB( "editor", "auto_reload_on_disk_change", false );
+
+	editor.wrapMode =
+		LineWrapping::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "nowrap" ) );
+	editor.wrapType =
+		LineWrapping::toLineWrapType( ini.getValue( "editor", "wrap_type", "viewport" ) );
+	editor.wrapKeepIndentation = ini.getValueB( "editor", "wrap_keep_indentation", true );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
@@ -264,6 +269,10 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "editor", "cursor_blinking_time", editor.cursorBlinkingTime.toString() );
 	ini.setValueB( "editor", "lines_relative_position", editor.linesRelativePosition );
 	ini.setValueB( "editor", "auto_reload_on_disk_change", editor.autoReloadOnDiskChange );
+
+	ini.setValue( "editor", "wrap_mode", LineWrapping::fromLineWrapMode( editor.wrapMode ) );
+	ini.setValue( "editor", "wrap_type", LineWrapping::fromLineWrapType( editor.wrapType ) );
+	ini.setValueB( "editor", "wrap_keep_indentation", editor.wrapKeepIndentation );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );

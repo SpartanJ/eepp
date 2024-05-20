@@ -1,6 +1,6 @@
+#include "pluginmanager.hpp"
 #include "../filesystemlistener.hpp"
 #include "plugin.hpp"
-#include "pluginmanager.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
@@ -24,6 +24,10 @@ PluginManager::~PluginManager() {
 		eeDelete( plugin.second );
 	}
 	unsubscribeFileSystemListener();
+}
+
+bool PluginManager::isClosing() const {
+	return mClosing;
 }
 
 void PluginManager::registerPlugin( const PluginDefinition& def ) {

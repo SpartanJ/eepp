@@ -32,7 +32,7 @@
 				</ComboBox>
 				<TextInput layout_width="300dp" layout_height="wrap_content" margin-top="8dp" text="Testing TextInput" />
 				<TextInputPassword layout_width="300dp" layout_height="wrap_content" margin-top="8dp" hint="Password" />
-				<TextEdit layout_width="300dp" layout_height="100dp" margin-top="8dp" text="Testing TextEdit Text Texted with text as text is the way to test the text.&#10;Multi line&#10;Texts" />
+				<TextEdit word-wrap="true" layout_width="300dp" layout_height="100dp" margin-top="8dp" text="Testing TextEdit Text Texted with text as text is the way to test the text.&#10;Multi line&#10;Texts" />
 				<SelectButton layout_width="wrap_content" layout_height="wrap_content" text="Testing SelectButton" margin-top="8dp" />
 				<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" margin-top="8dp" />
 				<!-- <TextureRegion layout_width="32dp" layout_height="32dp" src="" margin-top="8dp" margin-top="8dp" /> -->

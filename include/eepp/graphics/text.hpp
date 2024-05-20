@@ -55,6 +55,11 @@ class EE_API Text {
 	static Sizef draw( const String::View& string, const Vector2f& pos,
 					   const FontStyleConfig& config, const Uint32& tabWidth = 4 );
 
+	static void drawUnderline( const Vector2f& pos, Float width, Font* font, Float fontSize,
+							   const Color& fontColor, const Uint32& style, Float outlineThickness,
+							   const Color& outlineColor, const Color& shadowColor,
+							   const Vector2f& shadowOffset );
+
 	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
 									   const Uint32& fontSize, const String& string,
 									   const Uint32& style, const Uint32& tabWidth = 4,
@@ -63,7 +68,7 @@ class EE_API Text {
 	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
 									  const String& string, const Uint32& style,
 									  const Uint32& tabWidth = 4,
-									  const Float& outlineThickness = 0.f );
+									  const Float& outlineThickness = 0.f, bool allowNewLine = true );
 
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 													const String& string, Float maxWidth,

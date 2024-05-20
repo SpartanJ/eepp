@@ -63,6 +63,8 @@ class EE_API TextDocument {
 			ranges.reserve( size() );
 			for ( const auto& r : *this )
 				ranges.push_back( r.result );
+			if ( isSorted() )
+				ranges.setSorted();
 			return ranges;
 		}
 
@@ -75,11 +77,11 @@ class EE_API TextDocument {
 	class EE_API Client {
 	  public:
 		virtual ~Client();
-		virtual void onDocumentLoaded( TextDocument* ){};
+		virtual void onDocumentLoaded( TextDocument* ) {};
 		virtual void onDocumentTextChanged( const DocumentContentChange& ) = 0;
 		virtual void onDocumentUndoRedo( const UndoRedo& eventType ) = 0;
 		virtual void onDocumentCursorChange( const TextPosition& ) = 0;
-		virtual void onDocumentInterestingCursorChange( const TextPosition& ){};
+		virtual void onDocumentInterestingCursorChange( const TextPosition& ) {};
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
 		virtual void onDocumentLineCountChange( const size_t& lastCount,
 												const size_t& newCount ) = 0;
@@ -93,7 +95,8 @@ class EE_API TextDocument {
 			onDocumentLoaded( doc );
 		}
 		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
-		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*numLines*/ ) {}
+		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*toLine*/,
+										 const Int64& /*numLines*/ ) {}
 		virtual TextRange getVisibleRange() const { return {}; };
 	};
 
@@ -242,6 +245,8 @@ class EE_API TextDocument {
 	TextPosition endOfDoc() const;
 
 	TextRange getDocRange() const;
+
+	TextRange getLineRange( Int64 line ) const;
 
 	void deleteTo( const size_t& cursorIdx, TextPosition position );
 
@@ -512,7 +517,7 @@ class EE_API TextDocument {
 
 	void resetSelection( const TextRanges& selection );
 
-	std::vector<TextRange> getSelectionsSorted() const;
+	TextRanges getSelectionsSorted() const;
 
 	void addCursorAbove();
 
@@ -694,7 +699,8 @@ class EE_API TextDocument {
 
 	void notifySyntaxDefinitionChange();
 
-	void notifiyDocumenLineMove( const Int64& fromLine, const Int64& numLines );
+	void notifiyDocumenLineMove( const Int64& fromLine, const Int64& toLine,
+								 const Int64& numLines );
 
 	void notifyInterstingCursorChange( TextPosition selection );
 
