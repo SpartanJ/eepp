@@ -620,6 +620,16 @@ void UICodeEditor::onDocumentLoaded() {
 	invalidateLineWrapMaxWidth( true );
 }
 
+void UICodeEditor::onDocumentReset( TextDocument* ) {
+	DocEvent event( this, mDoc.get(), Event::OnDocumentReset );
+	sendEvent( &event );
+	mLineWrapping.clear();
+	invalidateEditor();
+	invalidateDraw();
+	invalidateLongestLineWidth();
+	invalidateLineWrapMaxWidth( true );
+}
+
 void UICodeEditor::onDocumentChanged() {
 	if ( mFindReplace )
 		mFindReplace->setDoc( mDoc );

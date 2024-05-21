@@ -51,6 +51,7 @@ class EE_API Event {
 		OnChildCountChanged,
 		OnDocumentLoaded,
 		OnDocumentChanged,
+		OnDocumentReset,
 		OnDocumentClosed,
 		OnDocumentReloaded,
 		OnDocumentSyntaxDefinitionChange,

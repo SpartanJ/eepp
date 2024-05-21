@@ -133,82 +133,8 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& 
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation,
 															Uint32 tabWidth ) {
-	// For the moment we disable using tokenization for word wrap
-	if ( true || nullptr == fontStyle.Font || mode != LineWrapMode::Word ||
-		 nullptr == doc.getHighlighter() || doc.getSyntaxDefinition().getPatterns().empty() ) {
-		return computeLineBreaks( doc.line( line ).getText(), fontStyle, maxWidth, mode,
-								  keepIndentation, tabWidth );
-	}
-
-	LineWrapInfo info;
-	info.wraps.push_back( 0 );
-	const auto& string = doc.line( line ).getText();
-	const auto tokens = doc.getHighlighter()->getLine( line );
-
-	Float xoffset = 0.f;
-	Float lastWidth = 0.f;
-	bool bold = ( fontStyle.Style & Text::Style::Bold ) != 0;
-	bool italic = ( fontStyle.Style & Text::Style::Italic ) != 0;
-	Float outlineThickness = fontStyle.OutlineThickness;
-	bool isMonospace = fontStyle.Font->isMonospace();
-
-	size_t lastSpace = 0;
-	Uint32 prevChar = 0;
-
-	Float hspace = static_cast<Float>(
-		fontStyle.Font->getGlyph( L' ', fontStyle.CharacterSize, bold, italic, outlineThickness )
-			.advance );
-	size_t idx = 0;
-
-	for ( const auto& token : tokens ) {
-		const auto text = string.view().substr( token.pos, token.len );
-
-		if ( idx == 0 && keepIndentation ) {
-			auto nonIndentPos = string.find_first_not_of( " \t\n\v\f\r" );
-			if ( nonIndentPos != String::InvalidPos )
-				info.paddingStart = Text::getTextWidth( string.view().substr( 0, nonIndentPos ),
-														fontStyle, tabWidth );
-		}
-
-		for ( const auto& curChar : text ) {
-			Float w = !isMonospace ? fontStyle.Font
-										 ->getGlyph( curChar, fontStyle.CharacterSize, bold, italic,
-													 outlineThickness )
-										 .advance
-								   : hspace;
-
-			if ( curChar == '\t' )
-				w += hspace * tabWidth;
-			else if ( ( curChar ) == '\r' )
-				w = 0;
-
-			if ( !isMonospace && curChar != '\r' ) {
-				w += fontStyle.Font->getKerning( prevChar, curChar, fontStyle.CharacterSize, bold,
-												 italic, outlineThickness );
-				prevChar = curChar;
-			}
-
-			xoffset += w;
-
-			if ( xoffset > maxWidth ) {
-				if ( mode == LineWrapMode::Word && lastSpace ) {
-					info.wraps.push_back( lastSpace + 1 );
-					xoffset = w + info.paddingStart + ( xoffset - lastWidth );
-				} else {
-					info.wraps.push_back( idx );
-					xoffset = w + info.paddingStart;
-				}
-				lastSpace = 0;
-			} else if ( curChar == ' ' || curChar == '.' || curChar == '-' || curChar == ',' ) {
-				lastSpace = idx;
-				lastWidth = xoffset;
-			}
-
-			idx++;
-		}
-	}
-
-	return info;
+	return computeLineBreaks( doc.line( line ).getText(), fontStyle, maxWidth, mode,
+							  keepIndentation, tabWidth );
 }
 
 LineWrapping::LineWrapping( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle,
@@ -329,8 +255,12 @@ Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) const {
 }
 
 bool LineWrapping::isWrappedLine( Int64 docIdx ) const {
-	return isWrapEnabled() && mConfig.mode != LineWrapMode::NoWrap &&
-		   toWrappedIndex( docIdx ) != toWrappedIndex( docIdx, true );
+	if ( isWrapEnabled() && mConfig.mode != LineWrapMode::NoWrap ) {
+		Int64 wrappedIndex = toWrappedIndex( docIdx );
+		return wrappedIndex + 1 < static_cast<Int64>( mWrappedLines.size() ) &&
+			   mWrappedLines[wrappedIndex].line() == mWrappedLines[wrappedIndex + 1].line();
+	}
+	return false;
 }
 
 LineWrapping::VisualLine LineWrapping::getVisualLine( Int64 docIdx ) const {
@@ -412,8 +342,10 @@ void LineWrapping::setPendingReconstruction( bool pendingReconstruction ) {
 	mPendingReconstruction = pendingReconstruction;
 }
 
-bool LineWrapping::isUnderConstruction() const {
-	return mUnderConstruction;
+void LineWrapping::clear() {
+	mWrappedLines.clear();
+	mWrappedLineToIndex.clear();
+	mWrappedLinesOffset.clear();
 }
 
 void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) {

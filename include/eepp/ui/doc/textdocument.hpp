@@ -94,6 +94,7 @@ class EE_API TextDocument {
 			onDocumentClosed( doc );
 			onDocumentLoaded( doc );
 		}
+		virtual void onDocumentReset( TextDocument* ) = 0;
 		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
 		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*toLine*/,
 										 const Int64& /*numLines*/ ) {}
@@ -676,6 +677,8 @@ class EE_API TextDocument {
 	void notifyDocumentLoaded();
 
 	void notifyDocumentReloaded();
+
+	void notifyDocumentReset();
 
 	void notifyTextChanged( const DocumentContentChange& );
 

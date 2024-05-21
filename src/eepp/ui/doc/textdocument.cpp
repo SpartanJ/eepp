@@ -93,6 +93,7 @@ void TextDocument::reset() {
 	notifySyntaxDefinitionChange();
 	notifyCursorChanged();
 	notifySelectionChanged();
+	notifyDocumentReset();
 }
 
 void TextDocument::resetCursor() {
@@ -3234,6 +3235,13 @@ void TextDocument::notifyDocumentReloaded() {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentReloaded( this );
+	}
+}
+
+void TextDocument::notifyDocumentReset() {
+	Lock l( mClientsMutex );
+	for ( auto& client : mClients ) {
+		client->onDocumentReset( this );
 	}
 }
 

@@ -238,11 +238,13 @@ class EE_API UIConsole : public UIWidget,
 
 	virtual void onDocumentMoved( TextDocument* );
 
+	virtual void onDocumentReset( TextDocument* ) {}
+
 	virtual bool onCreateContextMenu( const Vector2i& position, const Uint32& flags );
 
-	void onDocumentClosed( TextDocument* ){};
+	void onDocumentClosed( TextDocument* ) {};
 
-	void onDocumentDirtyOnFileSystem( TextDocument* ){};
+	void onDocumentDirtyOnFileSystem( TextDocument* ) {};
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 

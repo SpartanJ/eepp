@@ -80,9 +80,10 @@ class XMLToolsPlugin : public PluginBase {
 		virtual void onDocumentLineCountChange( const size_t&, const size_t& ) {};
 		virtual void onDocumentLineChanged( const Int64& ) {};
 		virtual void onDocumentSaved( TextDocument* ) {};
-		virtual void onDocumentClosed( TextDocument* ) {};
+		virtual void onDocumentClosed( TextDocument* doc ) { onDocumentReset( doc ); };
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {};
 		virtual void onDocumentMoved( TextDocument* ) {};
+		virtual void onDocumentReset( TextDocument* ) { mSelections.clear(); }
 
 	  protected:
 		TextDocument* mDoc{ nullptr };

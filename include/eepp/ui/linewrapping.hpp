@@ -110,7 +110,7 @@ class EE_API LineWrapping {
 
 	void setPendingReconstruction( bool pendingReconstruction );
 
-	bool isUnderConstruction() const;
+	void clear();
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;

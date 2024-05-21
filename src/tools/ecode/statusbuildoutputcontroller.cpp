@@ -148,6 +148,8 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
 	mBuildOutput->getDocument().getHighlighter()->setMaxTokenizationLength( 2048 );
+	mBuildOutput->setLineWrapMode( LineWrapMode::Word );
+
 	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton( mApp );

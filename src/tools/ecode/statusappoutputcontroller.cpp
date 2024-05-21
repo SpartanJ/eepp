@@ -70,6 +70,7 @@ void StatusAppOutputController::run( const ProjectBuildCommand& runData,
 	mAppOutput->getDocument().setSyntaxDefinition( synDef );
 	mAppOutput->getVScrollBar()->setValue( 1.f );
 	mAppOutput->getDocument().getHighlighter()->setMaxTokenizationLength( 2048 );
+	mAppOutput->setLineWrapMode( LineWrapMode::Word );
 	mScrollLocked = true;
 
 	UIPushButton* runButton = getRunButton( mApp );
@@ -193,10 +194,9 @@ void StatusAppOutputController::createContainer() {
 		if ( nullptr == pbm )
 			return;
 		if ( !pbm->hasRunConfig() ) {
-			UIMessageBox::New(
-				UIMessageBox::OK,
-				mApp->i18n( "must_configure_build_and_run_config",
-							"You must first add a build and run configuration" ) )
+			UIMessageBox::New( UIMessageBox::OK,
+							   mApp->i18n( "must_configure_build_and_run_config",
+										   "You must first add a build and run configuration" ) )
 				->setCloseShortcut( { KEY_ESCAPE } )
 				->setTitle( mApp->getWindowTitle() )
 				->showWhenReady()

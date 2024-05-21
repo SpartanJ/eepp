@@ -211,6 +211,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	virtual void onDocumentMoved( TextDocument* );
 
+	virtual void onDocumentReset( TextDocument* ) {}
+
 	void onDocumentClosed( TextDocument* ) {};
 
 	void onDocumentDirtyOnFileSystem( TextDocument* ) {};
