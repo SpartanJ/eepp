@@ -3090,7 +3090,7 @@ void UICodeEditor::cut() {
 }
 
 void UICodeEditor::paste() {
-	mDoc->textInput( getUISceneNode()->getWindow()->getClipboard()->getText() );
+	mDoc->pasteText( String::fromUtf8( getUISceneNode()->getWindow()->getClipboard()->getText() ) );
 	sendCommonEvent( Event::OnTextPasted );
 }
 

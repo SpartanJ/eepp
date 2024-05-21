@@ -1668,6 +1668,32 @@ void TextDocument::textInput( const String& text, bool mightBeInteresting ) {
 		mLastCursorChangeWasInteresting = true;
 }
 
+void TextDocument::pasteText( String&& text ) {
+	if ( text.find_first_of( '\r' ) != String::InvalidPos )
+		String::replaceAll( text, "\r", "" );
+
+	if ( std::count( text.begin(), text.end(), '\n' ) ==
+			 static_cast<Int64>( mSelection.size() ) - 1 &&
+		 text.back() != '\n' ) {
+		std::vector<String> textLines = text.split( '\n', true, false );
+		if ( textLines.size() == mSelection.size() ) {
+			BoolScopedOp op( mDoingTextInput, true );
+			BoolScopedOp op2( mInsertingText, true );
+			for ( size_t i = 0; i < mSelection.size(); ++i ) {
+				if ( mSelection[i].hasSelection() )
+					deleteTo( i, 0 );
+				setSelection( i, insert( i, getSelectionIndex( i ).start(), textLines[i] ) );
+			}
+		} else {
+			textInput( text );
+		}
+	} else {
+		textInput( text );
+	}
+
+	mLastCursorChangeWasInteresting = true;
+}
+
 void TextDocument::imeTextEditing( const String& text ) {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		if ( mSelection[i].hasSelection() )
