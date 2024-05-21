@@ -3649,7 +3649,7 @@ UICodeEditor::getTextRangeRectangles( const TextRange& range, const Vector2f& st
 						getTextPositionOffset( { ln, static_cast<Int64>( line.length() ) }, lh ).x;
 				}
 			} else if ( range.end().line() == ln ) {
-				auto startOffset = getTextPositionOffset( { ln, 0 } );
+				auto startOffset = getTextPositionOffset( { ln, 0 }, lh );
 				selRect.Top = startScroll.y + startOffset.y;
 				selRect.Bottom = selRect.Top + lh;
 				selRect.Left = startScroll.x + startOffset.x;

@@ -1153,7 +1153,7 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	mUndoStack.pushRemove( undoStack, cursorIdx, { position, cursor }, time );
 
 	if ( linesAdd > 0 ) {
-		mHighlighter->moveHighlight( position.line(), linesAdd );
+		mHighlighter->moveHighlight( position.line(), position.line(), linesAdd );
 		notifiyDocumenLineMove( position.line(), position.line(), linesAdd );
 	}
 
@@ -1302,8 +1302,9 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	}
 
 	if ( linesRemoved > 0 ) {
-		mHighlighter->moveHighlight(
-			deletedAcrossNewLine ? range.start().line() : range.end().line(), -linesRemoved );
+		mHighlighter->moveHighlight( deletedAcrossNewLine ? range.start().line()
+														  : range.end().line(),
+									 range.end().line(), -linesRemoved );
 		notifiyDocumenLineMove( originalRange.start().line(), originalRange.end().line(),
 								-linesRemoved );
 	}

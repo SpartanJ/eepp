@@ -8,7 +8,7 @@ void addContainerFile() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Containerfile",
-		  { "^[Cc]ontainerfile$", "^[dD]ockerfile$" },
+		  { "^[Cc]ontainerfile$", "^[dD]ockerfile$", "%.[dD]ockerfile$" },
 		  {
 			  { { "#.*\n" }, "comment" },
 			  { { "%[", "%]" }, "string" },

@@ -833,7 +833,7 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 }
 
 void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
-											const Float& lineHeight, bool drawUp ) {
+											const Float& /*lineHeight*/, bool drawUp ) {
 
 	TextDocument& doc = editor->getDocument();
 	Primitives primitives;

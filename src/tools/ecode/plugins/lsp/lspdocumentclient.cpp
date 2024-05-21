@@ -93,7 +93,9 @@ void LSPDocumentClient::onDocumentReloaded( TextDocument* ) {
 	refreshTag();
 }
 
-void LSPDocumentClient::onDocumentReset( TextDocument* ) {}
+void LSPDocumentClient::onDocumentReset( TextDocument* doc ) {
+	onDocumentReloaded( doc );
+}
 
 TextDocument* LSPDocumentClient::getDoc() const {
 	return mDoc;

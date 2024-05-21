@@ -82,7 +82,8 @@ Mutex& SyntaxHighlighter::getLinesMutex() {
 	return mLinesMutex;
 }
 
-void SyntaxHighlighter::moveHighlight( const Int64& fromLine, const Int64& numLines ) {
+void SyntaxHighlighter::moveHighlight( const Int64& fromLine, const Int64& /*toLine*/,
+									   const Int64& numLines ) {
 	Lock l( mLinesMutex );
 	if ( mLines.find( fromLine ) == mLines.end() )
 		return;
