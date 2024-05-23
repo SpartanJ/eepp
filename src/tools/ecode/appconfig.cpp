@@ -140,9 +140,9 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.autoReloadOnDiskChange = ini.getValueB( "editor", "auto_reload_on_disk_change", false );
 
 	editor.wrapMode =
-		LineWrapping::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "nowrap" ) );
+		DocumentView::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "nowrap" ) );
 	editor.wrapType =
-		LineWrapping::toLineWrapType( ini.getValue( "editor", "wrap_type", "viewport" ) );
+		DocumentView::toLineWrapType( ini.getValue( "editor", "wrap_type", "viewport" ) );
 	editor.wrapKeepIndentation = ini.getValueB( "editor", "wrap_keep_indentation", true );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
@@ -270,8 +270,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "lines_relative_position", editor.linesRelativePosition );
 	ini.setValueB( "editor", "auto_reload_on_disk_change", editor.autoReloadOnDiskChange );
 
-	ini.setValue( "editor", "wrap_mode", LineWrapping::fromLineWrapMode( editor.wrapMode ) );
-	ini.setValue( "editor", "wrap_type", LineWrapping::fromLineWrapType( editor.wrapType ) );
+	ini.setValue( "editor", "wrap_mode", DocumentView::fromLineWrapMode( editor.wrapMode ) );
+	ini.setValue( "editor", "wrap_type", DocumentView::fromLineWrapType( editor.wrapType ) );
 	ini.setValueB( "editor", "wrap_keep_indentation", editor.wrapKeepIndentation );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );

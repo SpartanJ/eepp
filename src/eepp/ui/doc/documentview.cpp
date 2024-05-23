@@ -2,11 +2,11 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
-#include <eepp/ui/linewrapping.hpp>
+#include <eepp/ui/doc/documentview.hpp>
 
-namespace EE { namespace UI {
+namespace EE { namespace UI { namespace Doc {
 
-LineWrapMode LineWrapping::toLineWrapMode( std::string mode ) {
+LineWrapMode DocumentView::toLineWrapMode( std::string mode ) {
 	String::toLowerInPlace( mode );
 	if ( mode == "word" )
 		return LineWrapMode::Word;
@@ -15,7 +15,7 @@ LineWrapMode LineWrapping::toLineWrapMode( std::string mode ) {
 	return LineWrapMode::NoWrap;
 }
 
-std::string LineWrapping::fromLineWrapMode( LineWrapMode mode ) {
+std::string DocumentView::fromLineWrapMode( LineWrapMode mode ) {
 	switch ( mode ) {
 		case LineWrapMode::Letter:
 			return "letter";
@@ -27,14 +27,14 @@ std::string LineWrapping::fromLineWrapMode( LineWrapMode mode ) {
 	}
 }
 
-LineWrapType LineWrapping::toLineWrapType( std::string type ) {
+LineWrapType DocumentView::toLineWrapType( std::string type ) {
 	String::toLowerInPlace( type );
 	if ( "line_breaking_column" == type )
 		return LineWrapType::LineBreakingColumn;
 	return LineWrapType::Viewport;
 }
 
-std::string LineWrapping::fromLineWrapType( LineWrapType type ) {
+std::string DocumentView::fromLineWrapType( LineWrapType type ) {
 	switch ( type ) {
 		case LineWrapType::LineBreakingColumn:
 			return "line_breaking_column";
@@ -44,7 +44,7 @@ std::string LineWrapping::fromLineWrapType( LineWrapType type ) {
 	}
 }
 
-Float LineWrapping::computeOffsets( const String& string, const FontStyleConfig& fontStyle,
+Float DocumentView::computeOffsets( const String& string, const FontStyleConfig& fontStyle,
 									Uint32 tabWidth ) {
 
 	auto nonIndentPos = string.find_first_not_of( " \t\n\v\f\r" );
@@ -53,7 +53,7 @@ Float LineWrapping::computeOffsets( const String& string, const FontStyleConfig&
 	return 0.f;
 }
 
-LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const String& string,
+DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string,
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation,
@@ -128,7 +128,7 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const String& string
 	return info;
 }
 
-LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& doc, size_t line,
+DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& doc, size_t line,
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation,
@@ -137,61 +137,61 @@ LineWrapping::LineWrapInfo LineWrapping::computeLineBreaks( const TextDocument& 
 							  keepIndentation, tabWidth );
 }
 
-LineWrapping::LineWrapping( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle,
+DocumentView::DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle,
 							Config config ) :
 	mDoc( std::move( doc ) ),
 	mFontStyle( std::move( fontStyle ) ),
 	mConfig( std::move( config ) ) {}
 
-bool LineWrapping::isWrapEnabled() const {
+bool DocumentView::isWrapEnabled() const {
 	return mConfig.mode != LineWrapMode::NoWrap;
 }
 
-void LineWrapping::setMaxWidth( Float maxWidth, bool forceReconstructBreaks ) {
+void DocumentView::setMaxWidth( Float maxWidth, bool forceReconstructBreaks ) {
 	if ( maxWidth != mMaxWidth ) {
 		mMaxWidth = maxWidth;
-		reconstructBreaks();
+		invalidateCache();
 	} else if ( forceReconstructBreaks || mPendingReconstruction ) {
-		reconstructBreaks();
+		invalidateCache();
 	}
 }
 
-void LineWrapping::setFontStyle( FontStyleConfig fontStyle ) {
+void DocumentView::setFontStyle( FontStyleConfig fontStyle ) {
 	if ( fontStyle != mFontStyle ) {
 		mFontStyle = std::move( fontStyle );
-		reconstructBreaks();
+		invalidateCache();
 	}
 }
 
-void LineWrapping::setLineWrapMode( LineWrapMode mode ) {
+void DocumentView::setLineWrapMode( LineWrapMode mode ) {
 	if ( mode != mConfig.mode ) {
 		mConfig.mode = mode;
-		reconstructBreaks();
+		invalidateCache();
 	}
 }
 
-TextPosition LineWrapping::getDocumentLine( Int64 visibleIndex ) const {
+TextPosition DocumentView::getDocumentLine( Int64 visibleIndex ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap || mWrappedLines.empty() )
 		return { visibleIndex, 0 };
 	return mWrappedLines[eeclamp( visibleIndex, 0ll,
 								  eemax( static_cast<Int64>( mWrappedLines.size() ) - 1, 0ll ) )];
 }
 
-Float LineWrapping::getLineOffset( Int64 docIdx ) const {
+Float DocumentView::getLineOffset( Int64 docIdx ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap || mWrappedLinesOffset.empty() )
 		return 0;
 	return mWrappedLinesOffset[eeclamp(
 		docIdx, 0ll, eemax( static_cast<Int64>( mWrappedLinesOffset.size() ) - 1, 0ll ) )];
 }
 
-void LineWrapping::setConfig( Config config ) {
+void DocumentView::setConfig( Config config ) {
 	if ( config != mConfig ) {
 		mConfig = std::move( config );
-		reconstructBreaks();
+		invalidateCache();
 	}
 }
 
-void LineWrapping::reconstructBreaks() {
+void DocumentView::invalidateCache() {
 	if ( 0 == mMaxWidth || !mDoc )
 		return;
 
@@ -236,7 +236,7 @@ void LineWrapping::reconstructBreaks() {
 	mPendingReconstruction = false;
 }
 
-Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) const {
+Int64 DocumentView::toWrappedIndex( Int64 docIdx, bool retLast ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap || mWrappedLineToIndex.empty() )
 		return docIdx;
 	auto idx = mWrappedLineToIndex[eeclamp( docIdx, 0ll,
@@ -254,7 +254,7 @@ Int64 LineWrapping::toWrappedIndex( Int64 docIdx, bool retLast ) const {
 	return idx;
 }
 
-bool LineWrapping::isWrappedLine( Int64 docIdx ) const {
+bool DocumentView::isWrappedLine( Int64 docIdx ) const {
 	if ( isWrapEnabled() && mConfig.mode != LineWrapMode::NoWrap ) {
 		Int64 wrappedIndex = toWrappedIndex( docIdx );
 		return wrappedIndex + 1 < static_cast<Int64>( mWrappedLines.size() ) &&
@@ -263,7 +263,7 @@ bool LineWrapping::isWrappedLine( Int64 docIdx ) const {
 	return false;
 }
 
-LineWrapping::VisualLine LineWrapping::getVisualLine( Int64 docIdx ) const {
+DocumentView::VisualLine DocumentView::getVisualLine( Int64 docIdx ) const {
 	VisualLine line;
 	if ( mConfig.mode == LineWrapMode::NoWrap ) {
 		line.visualLines.push_back( { docIdx, 0 } );
@@ -280,17 +280,17 @@ LineWrapping::VisualLine LineWrapping::getVisualLine( Int64 docIdx ) const {
 	return line;
 }
 
-LineWrapping::VisualLineInfo LineWrapping::getVisualLineInfo( const TextPosition& pos,
+DocumentView::VisualLineInfo DocumentView::getVisualLineInfo( const TextPosition& pos,
 															  bool allowVisualLineEnd ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap ) {
-		LineWrapping::VisualLineInfo info;
+		DocumentView::VisualLineInfo info;
 		info.visualIndex = pos.line();
 		info.range = mDoc->getLineRange( pos.line() );
 		return info;
 	}
 	Int64 fromIdx = toWrappedIndex( pos.line() );
 	Int64 toIdx = toWrappedIndex( pos.line(), true );
-	LineWrapping::VisualLineInfo info;
+	DocumentView::VisualLineInfo info;
 	for ( Int64 i = fromIdx; i < toIdx; i++ ) {
 		Int64 fromCol = mWrappedLines[i].column();
 		Int64 toCol = i + 1 <= toIdx
@@ -309,7 +309,7 @@ LineWrapping::VisualLineInfo LineWrapping::getVisualLineInfo( const TextPosition
 	return info;
 }
 
-TextRange LineWrapping::getVisualLineRange( Int64 visualLine ) const {
+TextRange DocumentView::getVisualLineRange( Int64 visualLine ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap )
 		return mDoc->getLineRange( visualLine );
 	auto start = getDocumentLine( visualLine );
@@ -323,32 +323,32 @@ TextRange LineWrapping::getVisualLineRange( Int64 visualLine ) const {
 	return { start, end };
 }
 
-std::shared_ptr<TextDocument> LineWrapping::getDocument() const {
+std::shared_ptr<TextDocument> DocumentView::getDocument() const {
 	return mDoc;
 }
 
-void LineWrapping::setDocument( const std::shared_ptr<TextDocument>& doc ) {
+void DocumentView::setDocument( const std::shared_ptr<TextDocument>& doc ) {
 	if ( mDoc != doc ) {
 		mDoc = doc;
-		reconstructBreaks();
+		invalidateCache();
 	}
 }
 
-bool LineWrapping::isPendingReconstruction() const {
+bool DocumentView::isPendingReconstruction() const {
 	return mPendingReconstruction;
 }
 
-void LineWrapping::setPendingReconstruction( bool pendingReconstruction ) {
+void DocumentView::setPendingReconstruction( bool pendingReconstruction ) {
 	mPendingReconstruction = pendingReconstruction;
 }
 
-void LineWrapping::clear() {
+void DocumentView::clear() {
 	mWrappedLines.clear();
 	mWrappedLineToIndex.clear();
 	mWrappedLinesOffset.clear();
 }
 
-void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) {
+void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	if ( mConfig.mode == LineWrapMode::NoWrap )
 		return;
 	// Get affected wrapped range
@@ -410,7 +410,7 @@ void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) 
 	auto wrappedLinesToIndex = mWrappedLineToIndex;
 	auto wrappedOffset = mWrappedLinesOffset;
 
-	reconstructBreaks();
+	invalidateCache();
 
 	eeASSERT( wrappedLines == mWrappedLines );
 	eeASSERT( wrappedLinesToIndex == mWrappedLineToIndex );
@@ -418,8 +418,8 @@ void LineWrapping::updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines ) 
 #endif
 }
 
-size_t LineWrapping::getTotalLines() const {
+size_t DocumentView::getTotalLines() const {
 	return mConfig.mode == LineWrapMode::NoWrap ? mDoc->linesCount() : mWrappedLines.size();
 }
 
-}} // namespace EE::UI
+}}} // namespace EE::UI::Doc

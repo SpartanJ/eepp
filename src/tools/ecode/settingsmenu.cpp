@@ -1237,17 +1237,17 @@ UIMenu* SettingsMenu::createViewMenu() {
 			if ( mLineWrapMenu->getCount() == 0 ) {
 				UIPopUpMenu* wrapModeMenu = UIPopUpMenu::New();
 				wrapModeMenu->addRadioButton( i18n( "no_wrap", "No Wrap" ) )
-					->setId( LineWrapping::fromLineWrapMode( LineWrapMode::NoWrap ) );
+					->setId( DocumentView::fromLineWrapMode( LineWrapMode::NoWrap ) );
 				wrapModeMenu->addRadioButton( i18n( "wrap_word", "Word wrap" ) )
-					->setId( LineWrapping::fromLineWrapMode( LineWrapMode::Word ) );
+					->setId( DocumentView::fromLineWrapMode( LineWrapMode::Word ) );
 				wrapModeMenu->addRadioButton( i18n( "wrap_letter", "Letter wrap" ) )
-					->setId( LineWrapping::fromLineWrapMode( LineWrapMode::Letter ) );
+					->setId( DocumentView::fromLineWrapMode( LineWrapMode::Letter ) );
 
 				wrapModeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 					if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 						return;
 					UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-					LineWrapMode mode = LineWrapping::toLineWrapMode( item->getId() );
+					LineWrapMode mode = DocumentView::toLineWrapMode( item->getId() );
 					mApp->getConfig().editor.wrapMode = mode;
 					mApp->getSplitter()->forEachEditor(
 						[mode]( UICodeEditor* editor ) { editor->setLineWrapMode( mode ); } );
@@ -1258,16 +1258,16 @@ UIMenu* SettingsMenu::createViewMenu() {
 
 				UIPopUpMenu* wrapTypeMenu = UIPopUpMenu::New();
 				wrapTypeMenu->addRadioButton( i18n( "viewport", "Viewport" ) )
-					->setId( LineWrapping::fromLineWrapType( LineWrapType::Viewport ) );
+					->setId( DocumentView::fromLineWrapType( LineWrapType::Viewport ) );
 				wrapTypeMenu
 					->addRadioButton( i18n( "line_breaking_column", "Line Breaking Column" ) )
-					->setId( LineWrapping::fromLineWrapType( LineWrapType::LineBreakingColumn ) );
+					->setId( DocumentView::fromLineWrapType( LineWrapType::LineBreakingColumn ) );
 
 				wrapTypeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 					if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 						return;
 					UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-					LineWrapType type = LineWrapping::toLineWrapType( item->getId() );
+					LineWrapType type = DocumentView::toLineWrapType( item->getId() );
 					mApp->getConfig().editor.wrapType = type;
 					mApp->getSplitter()->forEachEditor(
 						[type]( UICodeEditor* editor ) { editor->setLineWrapType( type ); } );
@@ -1305,11 +1305,11 @@ UIMenu* SettingsMenu::createViewMenu() {
 
 			const auto& cfg = mApp->getConfig();
 
-			wrapModeMenu->find( LineWrapping::fromLineWrapMode( cfg.editor.wrapMode ) )
+			wrapModeMenu->find( DocumentView::fromLineWrapMode( cfg.editor.wrapMode ) )
 				->asType<UIMenuRadioButton>()
 				->setActive( true );
 
-			wrapTypeMenu->find( LineWrapping::fromLineWrapType( cfg.editor.wrapType ) )
+			wrapTypeMenu->find( DocumentView::fromLineWrapType( cfg.editor.wrapType ) )
 				->asType<UIMenuRadioButton>()
 				->setActive( true );
 

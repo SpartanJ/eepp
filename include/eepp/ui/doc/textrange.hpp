@@ -2,6 +2,7 @@
 #define EE_UI_DOC_TEXTRANGE_HPP
 
 #include <algorithm>
+#include <eepp/core/debug.hpp>
 #include <eepp/ui/doc/textposition.hpp>
 
 namespace EE { namespace UI { namespace Doc {
@@ -99,6 +100,22 @@ class EE_API TextRange {
 		return true;
 	}
 
+	bool intersectsLineRange( const TextRange& range ) const {
+		eeASSERT( range.isNormalized() );
+		return mStart.line() <= static_cast<Int64>( range.end().line() ) &&
+			   static_cast<Int64>( range.start().line() ) <= mEnd.line();
+	}
+
+	template <typename T> bool intersectsLineRange( T fromLine, T toLine ) const {
+		return mStart.line() <= static_cast<Int64>( toLine ) &&
+			   static_cast<Int64>( fromLine ) <= mEnd.line();
+	}
+
+	template <typename T> bool intersectsLineRange( const std::pair<T, T>& range ) const {
+		return mStart.line() <= static_cast<Int64>( range.second ) &&
+			   static_cast<Int64>( range.first ) <= mEnd.line();
+	}
+
 	bool containsLine( const Int64& line ) const {
 		return line >= mStart.line() && line <= mEnd.line();
 	}
@@ -131,6 +148,8 @@ class EE_API TextRange {
 		}
 		return {};
 	}
+
+	bool isNormalized() const { return mStart < mEnd; }
 
   private:
 	TextPosition mStart;

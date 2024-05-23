@@ -84,10 +84,11 @@ class LinterPlugin : public Plugin {
 	void drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 							const Float& fontSize, const Float& lineHeight );
 
-	void minimapDrawBeforeLineText(
-		UICodeEditor*, const Int64&, const Vector2f&, const Vector2f&, const Float&, const Float&,
-		const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
-								  bool /*drawCompleteLine*/ )> /* drawTextRanges */ );
+	void minimapDrawBefore( UICodeEditor* /*editor*/, const DocumentLineRange&,
+							const DocumentViewLineRange&, const Vector2f& /*linePos*/,
+							const Vector2f& /*lineSize*/, const Float& /*charWidth*/,
+							const Float& /*gutterWidth*/,
+							const DrawTextRangesFn& /* drawTextRanges */ );
 
 	void update( UICodeEditor* );
 

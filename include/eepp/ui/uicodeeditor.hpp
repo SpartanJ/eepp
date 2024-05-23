@@ -6,7 +6,7 @@
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
-#include <eepp/ui/linewrapping.hpp>
+#include <eepp/ui/doc/documentview.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <unordered_map>
@@ -32,6 +32,12 @@ class UIScrollBar;
 class UILoader;
 class UIPopUpMenu;
 class UIMenuItem;
+
+using DocumentLineRange = std::pair<Uint64, Uint64>;
+using DocumentViewLineRange = std::pair<Uint64, Uint64>;
+
+using DrawTextRangesFn = std::function<void(
+	const TextRanges& /*ranges*/, const Color& /*backgroundColor*/, bool /*drawCompleteLine*/ )>;
 
 class UICodeEditorPlugin {
   public:
@@ -72,24 +78,25 @@ class UICodeEditorPlugin {
 									  const Vector2i& /*position*/, const Uint32& /*flags*/ ) {
 		return false;
 	}
+
 	virtual void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
 									 const Float& ) {};
+
 	virtual void drawAfterLineText( UICodeEditor* /*editor*/, const Int64& /*index*/,
 									Vector2f /*position*/, const Float& /*fontSize*/,
 									const Float& /*lineHeight*/ ) {};
 
-	virtual void minimapDrawBeforeLineText(
-		UICodeEditor* /*editor*/, const Int64& /*index*/, const Vector2f& /*linePos*/,
-		const Vector2f& /*lineSize*/, const Float& /*charWidth*/, const Float& /*gutterWidth*/,
-		const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
-								  bool /*drawCompleteLine*/ )> /* drawTextRanges */ ) {};
+	virtual void minimapDrawBefore( UICodeEditor* /*editor*/, const DocumentLineRange&,
+									const DocumentViewLineRange&, const Vector2f& /*linePos*/,
+									const Vector2f& /*lineSize*/, const Float& /*charWidth*/,
+									const Float& /*gutterWidth*/,
+									const DrawTextRangesFn& /* drawTextRanges */ ) {};
 
-	virtual void minimapDrawAfterLineText(
-		UICodeEditor* /*editor*/, const Int64& /*lineIdx */, const Vector2f& /* linePos */,
-		const Vector2f& /* lineSize */, const Float& /* charWidth */,
-		const Float& /* gutterWidth */,
-		const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
-								  bool /*drawCompleteLine*/ )> /* drawTextRanges */ ) {};
+	virtual void minimapDrawAfter( UICodeEditor* /*editor*/, const DocumentLineRange&,
+								   const DocumentViewLineRange&, const Vector2f& /* linePos */,
+								   const Vector2f& /* lineSize */, const Float& /* charWidth */,
+								   const Float& /* gutterWidth */,
+								   const DrawTextRangesFn& /* drawTextRanges */ ) {};
 
 	virtual void drawGutter( UICodeEditor* /*editor*/, const Int64& /*index*/,
 							 const Vector2f& /*screenStart*/, const Float& /*lineHeight*/,
@@ -575,8 +582,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual TextRange getVisibleRange() const;
 
-	bool isLineVisible( const Uint64& line ) const;
-
 	int getVisibleLinesCount() const;
 
 	const StyleSheetLength& getLineSpacing() const;
@@ -675,9 +680,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void invalidateLongestLineWidth();
 
-	const LineWrapping& lineWrapping() const { return mLineWrapping; }
+	const DocumentView& documentView() const { return mDocView; }
 
-	LineWrapMode getLineWrapMode() const { return mLineWrapping.getConfig().mode; }
+	LineWrapMode getLineWrapMode() const { return mDocView.getConfig().mode; }
 
 	void setLineWrapMode( LineWrapMode mode );
 
@@ -685,7 +690,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setLineWrapType( LineWrapType lineWrapType );
 
-	bool getLineWrapKeepIndentation() const { return mLineWrapping.getConfig().keepIndentation; }
+	bool getLineWrapKeepIndentation() const { return mDocView.getConfig().keepIndentation; }
 
 	void setLineWrapKeepIndentation( bool keep );
 
@@ -699,7 +704,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
 	std::shared_ptr<Doc::TextDocument> mDoc;
-	LineWrapping mLineWrapping;
+	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
 	bool mDirtyEditor{ false };
@@ -957,7 +962,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
-	void drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& lineRange );
+	void drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& docLineRange,
+					  const std::pair<Uint64, Uint64>& visibleLineRange );
 
 	bool isMinimapFileTooLarge() const;
 

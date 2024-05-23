@@ -119,7 +119,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	UIWidget( elementTag ),
 	mFont( FontManager::instance()->getByName( "monospace" ) ),
 	mDoc( std::make_shared<TextDocument>() ),
-	mLineWrapping( mDoc, mFontStyleConfig, {} ),
+	mDocView( mDoc, mFontStyleConfig, {} ),
 	mBlinkTime( Seconds( 0.5f ) ),
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
@@ -193,7 +193,7 @@ UICodeEditor::~UICodeEditor() {
 	while ( mHighlightWordProcessing )
 		Sys::sleep( Milliseconds( 0.1 ) );
 
-	mLineWrapping.setDocument( nullptr );
+	mDocView.setDocument( nullptr );
 	if ( mDoc.use_count() == 1 ) {
 		DocEvent event( this, mDoc.get(), Event::OnDocumentClosed );
 		sendEvent( &event );
@@ -242,8 +242,8 @@ void UICodeEditor::draw() {
 	if ( mDirtyEditor )
 		updateEditor();
 
-	if ( mLineWrapping.isPendingReconstruction() )
-		mLineWrapping.reconstructBreaks();
+	if ( mDocView.isPendingReconstruction() )
+		mDocView.invalidateCache();
 
 	Color col;
 	auto lineRange = getVisibleLineRange();
@@ -274,13 +274,13 @@ void UICodeEditor::draw() {
 		for ( const auto& sel : mDoc->getSelections() ) {
 			primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
 			Float height = 1;
-			if ( mLineWrapping.isWrappedLine( sel.start().line() ) )
-				height = mLineWrapping.getVisualLine( sel.start().line() ).visualLines.size();
-			primitives.drawRectangle( Rectf(
-				Vector2f( startScroll.x + mScroll.x,
-						  startScroll.y +
-							  mLineWrapping.toWrappedIndex( sel.start().line() ) * lineHeight ),
-				Sizef( mSize.getWidth(), lineHeight * height ) ) );
+			if ( mDocView.isWrappedLine( sel.start().line() ) )
+				height = mDocView.getVisualLine( sel.start().line() ).visualLines.size();
+			primitives.drawRectangle(
+				Rectf( Vector2f( startScroll.x + mScroll.x,
+								 startScroll.y +
+									 mDocView.toWrappedIndex( sel.start().line() ) * lineHeight ),
+					   Sizef( mSize.getWidth(), lineHeight * height ) ) );
 		}
 	}
 
@@ -336,7 +336,7 @@ void UICodeEditor::draw() {
 		Vector2f curScroll(
 			{ startScroll.x,
 			  static_cast<float>( startScroll.y +
-								  lineHeight * (double)mLineWrapping.toWrappedIndex( i ) ) } );
+								  lineHeight * (double)mDocView.toWrappedIndex( i ) ) } );
 
 		for ( auto& plugin : mPlugins )
 			plugin->drawBeforeLineText( this, i, curScroll, charSize, lineHeight );
@@ -382,7 +382,7 @@ void UICodeEditor::draw() {
 	}
 
 	if ( mMinimapEnabled )
-		drawMinimap( screenStart, lineRange );
+		drawMinimap( screenStart, lineRange, visualLineRange );
 
 	if ( mLocked && mDisplayLockedIcon )
 		drawLockedIcon( start );
@@ -483,8 +483,8 @@ bool UICodeEditor::loadAsyncFromFile(
 				} );
 			}
 
-			if ( mLineWrapping.isWrapEnabled() )
-				mLineWrapping.setPendingReconstruction( true );
+			if ( mDocView.isWrapEnabled() )
+				mDocView.setPendingReconstruction( true );
 
 			runOnMainThread( [this, onLoaded, wasLocked, success] {
 				if ( !wasLocked )
@@ -575,13 +575,13 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 
 void UICodeEditor::onFontChanged() {
 	udpateGlyphWidth();
-	mLineWrapping.setFontStyle( mFontStyleConfig );
+	mDocView.setFontStyle( mFontStyleConfig );
 	invalidateDraw();
 }
 
 void UICodeEditor::onFontStyleChanged() {
 	udpateGlyphWidth();
-	mLineWrapping.setFontStyle( mFontStyleConfig );
+	mDocView.setFontStyle( mFontStyleConfig );
 	invalidateDraw();
 }
 
@@ -595,10 +595,10 @@ void UICodeEditor::onDocumentLoaded( TextDocument* ) {
 void UICodeEditor::invalidateLineWrapMaxWidth( bool force ) {
 	switch ( mLineWrapType ) {
 		case LineWrapType::Viewport:
-			mLineWrapping.setMaxWidth( getViewportWidth(), force );
+			mDocView.setMaxWidth( getViewportWidth(), force );
 			break;
 		case LineWrapType::LineBreakingColumn:
-			mLineWrapping.setMaxWidth( getGlyphWidth() * mLineBreakingColumn, force );
+			mDocView.setMaxWidth( getGlyphWidth() * mLineBreakingColumn, force );
 			break;
 	}
 }
@@ -623,7 +623,7 @@ void UICodeEditor::onDocumentLoaded() {
 void UICodeEditor::onDocumentReset( TextDocument* ) {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentReset );
 	sendEvent( &event );
-	mLineWrapping.clear();
+	mDocView.clear();
 	invalidateEditor();
 	invalidateDraw();
 	invalidateLongestLineWidth();
@@ -737,9 +737,9 @@ const Uint32& UICodeEditor::getTabWidth() const {
 UICodeEditor* UICodeEditor::setTabWidth( const Uint32& tabWidth ) {
 	if ( mTabWidth != tabWidth ) {
 		mTabWidth = tabWidth;
-		auto config = mLineWrapping.getConfig();
+		auto config = mDocView.getConfig();
 		config.tabWidth = tabWidth;
-		mLineWrapping.setConfig( config );
+		mDocView.setConfig( config );
 	}
 	return this;
 }
@@ -895,12 +895,12 @@ TextDocument& UICodeEditor::getDocument() {
 void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 	if ( mDoc.get() != doc.get() ) {
 		mDoc->unregisterClient( this );
-		mLineWrapping.setDocument( nullptr );
+		mDocView.setDocument( nullptr );
 		if ( mDoc.use_count() == 1 )
 			onDocumentClosed( mDoc.get() );
 		mDoc = doc;
 		mDoc->registerClient( this );
-		mLineWrapping.setDocument( doc );
+		mDocView.setDocument( doc );
 		onDocumentChanged();
 		if ( mDoc->isLoading() ) {
 			mInvalidateOnLoaded = true;
@@ -908,7 +908,7 @@ void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 			invalidateEditor();
 			invalidateLongestLineWidth();
 			invalidateDraw();
-			mLineWrapping.setDocument( mDoc );
+			mDocView.setDocument( mDoc );
 		}
 	}
 }
@@ -928,8 +928,8 @@ void UICodeEditor::invalidateLongestLineWidth() {
 }
 
 void UICodeEditor::setLineWrapMode( LineWrapMode mode ) {
-	auto prevMode = mLineWrapping.getConfig().mode;
-	mLineWrapping.setLineWrapMode( mode );
+	auto prevMode = mDocView.getConfig().mode;
+	mDocView.setLineWrapMode( mode );
 	if ( prevMode != mode && LineWrapMode::NoWrap == mode ) {
 		invalidateLongestLineWidth();
 	}
@@ -947,9 +947,9 @@ void UICodeEditor::setLineWrapType( LineWrapType lineWrapType ) {
 }
 
 void UICodeEditor::setLineWrapKeepIndentation( bool keep ) {
-	auto config = mLineWrapping.getConfig();
+	auto config = mDocView.getConfig();
 	config.keepIndentation = keep;
-	mLineWrapping.setConfig( config );
+	mDocView.setConfig( config );
 }
 
 Uint32 UICodeEditor::onFocus( NodeFocusReason reason ) {
@@ -1041,7 +1041,7 @@ void UICodeEditor::drawLockedIcon( const Vector2f start ) {
 }
 
 size_t UICodeEditor::getTotalVisibleLines() const {
-	return mLineWrapping.getTotalLines();
+	return mDocView.getTotalLines();
 }
 
 Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
@@ -1099,7 +1099,7 @@ TextPosition UICodeEditor::resolveScreenPosition( const Vector2f& position, bool
 		visibleLineIndex =
 			eeclamp<Int64>( visibleLineIndex, 0, (Int64)( getTotalVisibleLines() - 1 ) );
 	}
-	return TextPosition( mLineWrapping.getDocumentLine( visibleLineIndex ).line(),
+	return TextPosition( mDocView.getDocumentLine( visibleLineIndex ).line(),
 						 getColFromXOffset( visibleLineIndex, localPos.x ) );
 }
 
@@ -1645,7 +1645,7 @@ void UICodeEditor::onSizeChange() {
 	UIWidget::onSizeChange();
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
-	if ( mLineWrapping.isWrapEnabled() )
+	if ( mDocView.isWrapEnabled() )
 		invalidateLongestLineWidth();
 }
 
@@ -1653,7 +1653,7 @@ void UICodeEditor::onPaddingChange() {
 	UIWidget::onPaddingChange();
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
-	if ( mLineWrapping.isWrapEnabled() )
+	if ( mDocView.isWrapEnabled() )
 		invalidateLongestLineWidth();
 }
 
@@ -1685,8 +1685,8 @@ void UICodeEditor::findLongestLine() {
 Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 	if ( docLine >= (Int64)mDoc->linesCount() )
 		return 0;
-	if ( mLineWrapping.isWrappedLine( docLine ) ) {
-		auto vline = mLineWrapping.getVisualLine( docLine );
+	if ( mDocView.isWrappedLine( docLine ) ) {
+		auto vline = mDocView.getVisualLine( docLine );
 		auto& line = mDoc->line( docLine ).getText();
 		Float width = 0;
 
@@ -1849,7 +1849,7 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	invalidateDraw();
 	checkMatchingBrackets();
 	sendCommonEvent( Event::OnTextChanged );
-	mLineWrapping.updateBreaks( change.range.start().line(), change.range.start().line(), 0 );
+	mDocView.updateCache( change.range.start().line(), change.range.start().line(), 0 );
 
 	if ( !change.text.empty() ) {
 		auto range = findLongestLineInRange( change.range );
@@ -1918,7 +1918,7 @@ void UICodeEditor::onDocumentClosed( TextDocument* doc ) {
 
 void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& toLine,
 									   const Int64& numLines ) {
-	mLineWrapping.updateBreaks( fromLine, toLine, numLines );
+	mDocView.updateCache( fromLine, toLine, numLines );
 
 	if ( !mFont || mFont->isMonospace() || mLinesWidthCache.empty() )
 		return;
@@ -1959,10 +1959,9 @@ std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange( bool visualIndexes 
 	Int64 minLine = eemax( 0.f, eefloor( mScroll.y / lineHeight ) );
 	Int64 maxLine = eemin( eemax( getTotalVisibleLines() - 1.f, 0.f ),
 						   eefloor( ( mSize.getHeight() + mScroll.y ) / lineHeight ) + 1 );
-	if ( !visualIndexes && mLineWrapping.isWrapEnabled() ) {
-		return std::make_pair<Uint64, Uint64>(
-			(Uint64)mLineWrapping.getDocumentLine( minLine ).line(),
-			(Uint64)mLineWrapping.getDocumentLine( maxLine ).line() );
+	if ( !visualIndexes && mDocView.isWrapEnabled() ) {
+		return std::make_pair<Uint64, Uint64>( (Uint64)mDocView.getDocumentLine( minLine ).line(),
+											   (Uint64)mDocView.getDocumentLine( maxLine ).line() );
 	}
 	return std::make_pair<Uint64, Uint64>( (Uint64)minLine, (Uint64)maxLine );
 }
@@ -1970,22 +1969,14 @@ std::pair<Uint64, Uint64> UICodeEditor::getVisibleLineRange( bool visualIndexes 
 TextRange UICodeEditor::getVisibleRange() const {
 	auto visibleLineRange = getVisibleLineRange();
 	return mDoc->sanitizeRange( TextRange(
-		TextPosition(
-			visibleLineRange.first,
-			mDoc->endOfLine( { static_cast<Int64>( visibleLineRange.first ), 0 } ).column() ),
+		TextPosition( visibleLineRange.first, 0 ),
 		TextPosition(
 			visibleLineRange.second,
 			mDoc->endOfLine( { static_cast<Int64>( visibleLineRange.second ), 0 } ).column() ) ) );
 }
 
-bool UICodeEditor::isLineVisible( const Uint64& line ) const {
-	auto range = getVisibleLineRange();
-	return line >= range.first && line <= range.second;
-}
-
 int UICodeEditor::getVisibleLinesCount() const {
-	auto lines = getVisibleLineRange();
-	return lines.second - lines.first;
+	return eefloor( mSize.getHeight() / getLineHeight() ) + 1;
 }
 
 const StyleSheetLength& UICodeEditor::getLineSpacing() const {
@@ -2121,8 +2112,8 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 											  std::optional<Float> lineHeight,
 											  bool allowVisualLineEnd ) const {
 	Float lh = lineHeight ? *lineHeight : getLineHeight();
-	if ( mLineWrapping.isWrappedLine( position.line() ) ) {
-		auto info = mLineWrapping.getVisualLineInfo( position, allowVisualLineEnd );
+	if ( mDocView.isWrappedLine( position.line() ) ) {
+		auto info = mDocView.getVisualLineInfo( position, allowVisualLineEnd );
 		if ( mFont && !mFont->isMonospace() ) {
 			const auto& line = mDoc->line( position.line() ).getText();
 			auto partialLine =
@@ -2145,9 +2136,9 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 				x += glyphWidth;
 			}
 		}
-		auto firstWrappedIndex = mLineWrapping.toWrappedIndex( position.line() );
+		auto firstWrappedIndex = mDocView.toWrappedIndex( position.line() );
 		if ( info.visualIndex != firstWrappedIndex ) {
-			x += mLineWrapping.getLineOffset( position.line() );
+			x += mDocView.getLineOffset( position.line() );
 		}
 		return { x, info.visualIndex * lh };
 	}
@@ -2160,7 +2151,7 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 					 mFont, getCharacterSize(), mDoc->line( position.line() ).getText(),
 					 mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, false )
 					 .x,
-				 lh * mLineWrapping.toWrappedIndex( position.line() ) };
+				 lh * mDocView.toWrappedIndex( position.line() ) };
 	}
 
 	const String& line = mDoc->line( position.line() ).getText();
@@ -2174,7 +2165,7 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 			x += glyphWidth;
 		}
 	}
-	return { x, lh * mLineWrapping.toWrappedIndex( position.line() ) };
+	return { x, lh * mDocView.toWrappedIndex( position.line() ) };
 }
 
 template <typename StringType> size_t UICodeEditor::characterWidth( const StringType& str ) const {
@@ -2697,13 +2688,13 @@ Int64 UICodeEditor::getColFromXOffset( Int64 visualLine, const Float& x ) const 
 	if ( x < 0 || !mFont || mDoc->isLoading() )
 		return 0;
 
-	TextPosition pos = mDoc->sanitizePosition( mLineWrapping.getDocumentLine( visualLine ) );
+	TextPosition pos = mDoc->sanitizePosition( mDocView.getDocumentLine( visualLine ) );
 
-	if ( mLineWrapping.isWrappedLine( pos.line() ) ) {
-		auto visualRange = mLineWrapping.getVisualLineRange( visualLine );
-		auto firstVisualIndex = mLineWrapping.toWrappedIndex( visualRange.start().line() );
+	if ( mDocView.isWrappedLine( pos.line() ) ) {
+		auto visualRange = mDocView.getVisualLineRange( visualLine );
+		auto firstVisualIndex = mDocView.toWrappedIndex( visualRange.start().line() );
 		Float xOffset = firstVisualIndex != visualLine
-							? mLineWrapping.getLineOffset( visualRange.start().line() )
+							? mDocView.getLineOffset( visualRange.start().line() )
 							: 0;
 
 		auto line = mDoc->line( visualRange.start().line() )
@@ -2877,9 +2868,9 @@ TextPosition UICodeEditor::moveToLineOffset( const TextPosition& position, int o
 	if ( xo.position != position )
 		xo.offset = getTextPositionOffsetSanitized( position ).x;
 
-	if ( mLineWrapping.isWrapEnabled() ) {
-		auto info = mLineWrapping.getVisualLineInfo( position );
-		auto nextLine = mLineWrapping.getVisualLineRange( info.visualIndex + offset );
+	if ( mDocView.isWrapEnabled() ) {
+		auto info = mDocView.getVisualLineInfo( position );
+		auto nextLine = mDocView.getVisualLineRange( info.visualIndex + offset );
 		xo.position.setLine( nextLine.end().line() );
 		xo.position.setColumn( getColFromXOffset( info.visualIndex + offset, xo.offset ) );
 		return xo.position;
@@ -2901,7 +2892,7 @@ void UICodeEditor::moveToNextLine() {
 void UICodeEditor::moveToStartOfLine() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		auto selection = mDoc->getSelectionIndex( i );
-		auto info = mLineWrapping.getVisualLineInfo( mDoc->getSelectionIndex( i ).start() );
+		auto info = mDocView.getVisualLineInfo( mDoc->getSelectionIndex( i ).start() );
 		mDoc->setSelection( i, info.range.start() != selection.start()
 								   ? info.range.start()
 								   : mDoc->startOfLine( selection.start() ) );
@@ -2912,7 +2903,7 @@ void UICodeEditor::moveToStartOfLine() {
 void UICodeEditor::moveToEndOfLine() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		auto selection = mDoc->getSelectionIndex( i );
-		auto info = mLineWrapping.getVisualLineInfo( selection.start() );
+		auto info = mDocView.getVisualLineInfo( selection.start() );
 		mDoc->setSelection( i, info.range.end() != selection.end()
 								   ? info.range.end()
 								   : mDoc->endOfLine( selection.end() ) );
@@ -2923,7 +2914,7 @@ void UICodeEditor::moveToEndOfLine() {
 void UICodeEditor::moveToStartOfContent() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition start = mDoc->getSelectionIndex( i ).start();
-		auto info = mLineWrapping.getVisualLineInfo( start );
+		auto info = mDocView.getVisualLineInfo( start );
 		if ( info.range.start().column() != 0 ) {
 			mDoc->setSelection( i, info.range.start() != start ? info.range.start()
 															   : mDoc->startOfContent( start ) );
@@ -2940,7 +2931,7 @@ void UICodeEditor::moveToStartOfContent() {
 void UICodeEditor::selectToStartOfLine() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		auto selection = mDoc->getSelectionIndex( i );
-		auto info = mLineWrapping.getVisualLineInfo( mDoc->getSelectionIndex( i ).start() );
+		auto info = mDocView.getVisualLineInfo( mDoc->getSelectionIndex( i ).start() );
 		mDoc->selectTo( i, info.range.start() != selection.start()
 							   ? info.range.start()
 							   : mDoc->startOfLine( selection.start() ) );
@@ -2951,7 +2942,7 @@ void UICodeEditor::selectToStartOfLine() {
 void UICodeEditor::selectToEndOfLine() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		auto selection = mDoc->getSelectionIndex( i );
-		auto info = mLineWrapping.getVisualLineInfo( selection.start() );
+		auto info = mDocView.getVisualLineInfo( selection.start() );
 		mDoc->selectTo( i, info.range.end() != selection.start()
 							   ? info.range.end()
 							   : mDoc->endOfLine( selection.start() ) );
@@ -2962,7 +2953,7 @@ void UICodeEditor::selectToEndOfLine() {
 void UICodeEditor::selectToStartOfContent() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition start = mDoc->getSelectionIndex( i ).start();
-		auto info = mLineWrapping.getVisualLineInfo( start );
+		auto info = mDocView.getVisualLineInfo( start );
 		if ( info.range.start().column() != 0 ) {
 			mDoc->selectTo( i, info.range.start() != start ? info.range.start()
 														   : mDoc->startOfContent( start ) );
@@ -2978,7 +2969,7 @@ void UICodeEditor::selectToStartOfContent() {
 void UICodeEditor::jumpLinesUp( int offset ) {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition position = mDoc->getSelections()[i].start();
-		if ( mLineWrapping.toWrappedIndex( position.line() ) == 0 ) {
+		if ( mDocView.toWrappedIndex( position.line() ) == 0 ) {
 			mDoc->setSelection( i, mDoc->startOfDoc(), mDoc->startOfDoc() );
 		} else {
 			mDoc->moveTo( i, moveToLineOffset( position, offset, i ) );
@@ -3446,8 +3437,8 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 		}
 	};
 
-	if ( mLineWrapping.isWrappedLine( line ) ) {
-		auto vline = mLineWrapping.getVisualLine( line );
+	if ( mDocView.isWrappedLine( line ) ) {
+		auto vline = mDocView.getVisualLine( line );
 		size_t curvline = 1;
 		size_t lineLength = strLine.length();
 		size_t nextLineCol = vline.visualLines[curvline].column();
@@ -3600,14 +3591,14 @@ UICodeEditor::getTextRangeRectangles( const TextRange& range, const Vector2f& st
 	for ( auto ln = startLine; ln <= endLine; ln++ ) {
 		const String& line = mDoc->line( ln ).getText();
 		Rectf selRect;
-		if ( mLineWrapping.isWrappedLine( ln ) ) {
-			auto fromInfo = mLineWrapping.getVisualLineInfo(
+		if ( mDocView.isWrappedLine( ln ) ) {
+			auto fromInfo = mDocView.getVisualLineInfo(
 				ln == range.start().line() ? range.start() : mDoc->startOfLine( { ln, 0 } ) );
-			auto toInfo = mLineWrapping.getVisualLineInfo(
+			auto toInfo = mDocView.getVisualLineInfo(
 				ln == range.end().line() ? range.end() : mDoc->endOfLine( { ln, 0 } ) );
 			for ( Int64 visibleIdx = fromInfo.visualIndex; visibleIdx <= toInfo.visualIndex;
 				  visibleIdx++ ) {
-				auto info = mLineWrapping.getDocumentLine( visibleIdx );
+				auto info = mDocView.getDocumentLine( visibleIdx );
 				Vector2f startOffset;
 				Vector2f endOffset;
 				if ( ln == range.start().line() && fromInfo.range.start().line() == ln &&
@@ -3623,7 +3614,7 @@ UICodeEditor::getTextRangeRectangles( const TextRange& range, const Vector2f& st
 					 toInfo.visualIndex == visibleIdx ) {
 					endOffset = getTextPositionOffset( range.end(), lh );
 				} else {
-					auto nextInfo = mLineWrapping.getDocumentLine( visibleIdx + 1 );
+					auto nextInfo = mDocView.getDocumentLine( visibleIdx + 1 );
 					if ( nextInfo.line() == info.line() ) {
 						endOffset =
 							getTextPositionOffset( { info.line(), nextInfo.column() }, lh, true );
@@ -3703,8 +3694,7 @@ void UICodeEditor::drawLineNumbers( const std::pair<int, int>& lineRange,
 		}
 		Text::draw( pos,
 					Vector2f( screenStart.x + mLineNumberPaddingLeft,
-							  startScroll.y +
-								  lineHeight * (double)mLineWrapping.toWrappedIndex( i ) +
+							  startScroll.y + lineHeight * (double)mDocView.toWrappedIndex( i ) +
 								  lineOffset ),
 					mFontStyleConfig.Font, fontSize,
 					( i >= selection.start().line() && i <= selection.end().line() )
@@ -3742,7 +3732,7 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 	cpoint->setColor( color );
 	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
 		const auto& text = mDoc->line( index ).getText();
-		if ( mLineWrapping.isWrappedLine( index ) ) {
+		if ( mDocView.isWrappedLine( index ) ) {
 			for ( size_t i = 0; i < text.size(); i++ ) {
 				if ( ' ' == text[i] ) {
 					auto offset =
@@ -3757,8 +3747,7 @@ void UICodeEditor::drawWhitespaces( const std::pair<int, int>& lineRange,
 			}
 		} else {
 			Vector2f position(
-				{ startScroll.x,
-				  startScroll.y + lineHeight * mLineWrapping.toWrappedIndex( index ) } );
+				{ startScroll.x, startScroll.y + lineHeight * mDocView.toWrappedIndex( index ) } );
 			for ( size_t i = 0; i < text.size(); i++ ) {
 				if ( position.x + mScroll.x + ( text[i] == '\t' ? tabWidth : glyphW ) >=
 						 mScreenPos.x &&
@@ -3817,7 +3806,7 @@ void UICodeEditor::drawIndentationGuides( const std::pair<int, int>& lineRange,
 						 : mDoc->getIndentWidth();
 	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
 		Vector2f position(
-			{ startScroll.x, startScroll.y + lineHeight * mLineWrapping.toWrappedIndex( index ) } );
+			{ startScroll.x, startScroll.y + lineHeight * mDocView.toWrappedIndex( index ) } );
 		int spaces = getLineIndentGuideSpaces( *mDoc.get(), index, indentSize );
 		for ( int i = 0; i < spaces; i += indentSize )
 			p.drawRectangle( Rectf( { position.x + spaceW * i, position.y }, { w, lineHeight } ) );
@@ -3836,7 +3825,7 @@ void UICodeEditor::drawLineEndings( const std::pair<int, int>& lineRange,
 	nl->setColor( color );
 	for ( int index = lineRange.first; index <= lineRange.second; index++ ) {
 		Vector2f position( { startScroll.x + getLineWidth( index ) - getGlyphWidth(),
-							 startScroll.y + lineHeight * mLineWrapping.toWrappedIndex( index ) } );
+							 startScroll.y + lineHeight * mDocView.toWrappedIndex( index ) } );
 		nl->draw( Vector2f( position.x, position.y ) );
 	}
 }
@@ -4078,13 +4067,13 @@ Rectf UICodeEditor::getMinimapRect( const Vector2f& start ) const {
 
 static const SyntaxStyleType SYNTAX_NORMAL = SyntaxStyleTypes::Normal;
 
-void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& ) {
+void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>&,
+								const std::pair<Uint64, Uint64>& visibleLineRange ) {
 	Float charHeight = PixelDensity::getPixelDensity() * mMinimapConfig.scale;
 	Float charSpacing =
 		eemax( 1.f, eefloor( 0.8 * PixelDensity::getPixelDensity() * mMinimapConfig.scale ) );
 	Float lineSpacing = getMinimapLineSpacing();
 	Rectf rect( getMinimapRect( start ) );
-	auto visibleLineRange = getVisibleLineRange( true );
 	int visibleLinesCount = ( visibleLineRange.second - visibleLineRange.first );
 	int visibleLinesStart = visibleLineRange.first;
 	Float scrollerHeight = visibleLinesCount * lineSpacing;
@@ -4178,11 +4167,11 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, U
 		BR->quadsSetColor( backgroundColor );
 		Int64 lineSkip = -1;
 		for ( const auto& range : ranges ) {
-			if ( !mLineWrapping.isWrapEnabled() && range.start().column() > maxVisibleColumn )
+			if ( !mDocView.isWrapEnabled() && range.start().column() > maxVisibleColumn )
 				continue;
 
-			auto rangeStart = mLineWrapping.getVisualLineInfo( range.start() );
-			auto rangeEnd = mLineWrapping.getVisualLineInfo( range.end() );
+			auto rangeStart = mDocView.getVisualLineInfo( range.start() );
+			auto rangeEnd = mDocView.getVisualLineInfo( range.end() );
 
 			if ( minimapStartLine > rangeEnd.visualIndex || endidx < rangeStart.visualIndex )
 				continue;
@@ -4262,8 +4251,16 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, U
 		drawTextRanges( mHighlightWordCache, Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
 	}
 
-	Int64 minimapStartDocLine = mLineWrapping.getDocumentLine( minimapStartLine ).line();
-	Int64 endDocIdx = mLineWrapping.getDocumentLine( endidx ).line();
+	Int64 minimapStartDocLine = mDocView.getDocumentLine( minimapStartLine ).line();
+	Int64 endDocIdx = mDocView.getDocumentLine( endidx ).line();
+	DocumentLineRange docRange = { minimapStartDocLine, endDocIdx };
+	DocumentViewLineRange docViewRange = { minimapStartLine, endidx };
+
+	for ( auto* plugin : mPlugins ) {
+		plugin->minimapDrawBefore( this, docRange, docViewRange, { rect.Left, lineY },
+								   { rect.getWidth(), charHeight }, charSpacing, gutterWidth,
+								   drawTextRanges );
+	}
 
 	for ( Int64 line = minimapStartDocLine; line <= endDocIdx; line++ ) {
 		batchSyntaxType = &SYNTAX_NORMAL;
@@ -4273,20 +4270,14 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, U
 		if ( mHighlightWord.isEmpty() && !selectionString.empty() )
 			drawWordMatch( selectionString, line );
 
-		for ( auto* plugin : mPlugins ) {
-			plugin->minimapDrawBeforeLineText( this, line, { rect.Left, lineY },
-											   { rect.getWidth(), charHeight }, charSpacing,
-											   gutterWidth, drawTextRanges );
-		}
-
 		const auto& tokens = mDoc->getHighlighter()->getLine( line, false );
 		const auto& text = mDoc->line( line ).getText();
 		Int64 pos = 0;
-		bool wrappedLine = mLineWrapping.isWrappedLine( line );
+		bool wrappedLine = mDocView.isWrappedLine( line );
 
 		if ( wrappedLine ) {
 			bool outOfRange = false;
-			auto vline = mLineWrapping.getVisualLine( line );
+			auto vline = mDocView.getVisualLine( line );
 			size_t curvline = 1;
 			Int64 nextLineCol = vline.visualLines[curvline].column();
 			Int64 lineLength = text.size();
@@ -4393,14 +4384,14 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, U
 
 		flushBatch( SYNTAX_NORMAL );
 
-		for ( auto* plugin : mPlugins ) {
-			plugin->minimapDrawAfterLineText( this, line, { rect.Left, lineY },
-											  { rect.getWidth(), charHeight }, charSpacing,
-											  gutterWidth, drawTextRanges );
-		}
-
 		if ( !wrappedLine )
 			lineY += lineSpacing;
+	}
+
+	for ( auto* plugin : mPlugins ) {
+		plugin->minimapDrawAfter( this, docRange, docViewRange, { rect.Left, lineY },
+								  { rect.getWidth(), charHeight }, charSpacing, gutterWidth,
+								  drawTextRanges );
 	}
 
 	if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
@@ -4416,9 +4407,9 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const std::pair<Uint64, U
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		const auto& selection = mDoc->getSelectionIndex( i );
 		Float selectionY =
-			rect.Top + ( mLineWrapping.getVisualLineInfo( selection.start() ).visualIndex -
-						 minimapStartLine ) *
-						   lineSpacing;
+			rect.Top +
+			( mDocView.getVisualLineInfo( selection.start() ).visualIndex - minimapStartLine ) *
+				lineSpacing;
 		BR->quadsSetColor( Color( mMinimapCurrentLineColor ).blendAlpha( mAlpha ) );
 		BR->batchQuad( { { rect.Left, selectionY }, { rect.getWidth(), lineSpacing } } );
 	}

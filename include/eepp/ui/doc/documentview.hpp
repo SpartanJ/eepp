@@ -1,5 +1,5 @@
-#ifndef EE_UI_LINEWRAPPING_HPP
-#define EE_UI_LINEWRAPPING_HPP
+#ifndef EE_UI_DOCUMENTVIEW_HPP
+#define EE_UI_DOCUMENTVIEW_HPP
 
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
@@ -9,13 +9,13 @@
 using namespace EE::Graphics;
 using namespace EE::UI::Doc;
 
-namespace EE { namespace UI {
+namespace EE { namespace UI { namespace Doc {
 
 enum class LineWrapMode { NoWrap, Letter, Word };
 
 enum class LineWrapType { Viewport, LineBreakingColumn };
 
-class EE_API LineWrapping {
+class EE_API DocumentView {
   public:
 	static LineWrapMode toLineWrapMode( std::string mode );
 
@@ -65,7 +65,7 @@ class EE_API LineWrapping {
 	static Float computeOffsets( const String& string, const FontStyleConfig& fontStyle,
 								 Uint32 tabWidth );
 
-	LineWrapping( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
+	DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
 
 	bool isWrapEnabled() const;
 
@@ -73,9 +73,9 @@ class EE_API LineWrapping {
 
 	const Config& config() const { return mConfig; }
 
-	void reconstructBreaks();
+	void invalidateCache();
 
-	void updateBreaks( Int64 fromLine, Int64 toLine, Int64 numLines );
+	void updateCache( Int64 fromLine, Int64 toLine, Int64 numLines );
 
 	Config getConfig() const { return mConfig; }
 
@@ -124,6 +124,6 @@ class EE_API LineWrapping {
 	bool mUnderConstruction{ false };
 };
 
-}} // namespace EE::UI
+}}} // namespace EE::UI::Doc
 
 #endif

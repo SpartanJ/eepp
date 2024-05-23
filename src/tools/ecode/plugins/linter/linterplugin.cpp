@@ -1105,31 +1105,29 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 	}
 }
 
-void LinterPlugin::minimapDrawBeforeLineText(
-	UICodeEditor* editor, const Int64& index, const Vector2f& /*pos*/, const Vector2f& /*size*/,
-	const Float&, const Float&,
-	const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
-							  bool /*drawCompleteLine*/ )>
-		drawTextRanges ) {
+void LinterPlugin::minimapDrawBefore( UICodeEditor* editor, const DocumentLineRange& docLineRange,
+									  const DocumentViewLineRange&, const Vector2f& /*linePos*/,
+									  const Vector2f& /*lineSize*/, const Float& /*charWidth*/,
+									  const Float& /*gutterWidth*/,
+									  const DrawTextRangesFn& drawTextRanges ) {
 	Lock l( mMatchesMutex );
 	auto matchIt = mMatches.find( editor->getDocumentRef().get() );
 	if ( matchIt == mMatches.end() )
 		return;
 
-	const std::map<Int64, std::vector<LinterMatch>>& map = matchIt->second;
-	auto lineIt = map.find( index );
-	if ( lineIt == map.end() )
-		return;
 	TextDocument* doc = matchIt->first;
-	const std::vector<LinterMatch>& matches = lineIt->second;
-	for ( const auto& match : matches ) {
-		if ( match.lineCache != doc->line( index ).getHash() )
-			return;
-		Color col(
-			editor->getColorScheme().getEditorSyntaxStyle( getMatchString( match.type ) ).color );
-		col.blendAlpha( 100 );
-		drawTextRanges( match.range, col, true );
-		break;
+	for ( const auto& matches : matchIt->second ) {
+		for ( const auto& match : matches.second ) {
+			if ( match.range.intersectsLineRange( docLineRange ) ) {
+				if ( match.lineCache != doc->line( match.range.start().line() ).getHash() )
+					return;
+				Color col( editor->getColorScheme()
+							   .getEditorSyntaxStyle( getMatchString( match.type ) )
+							   .color );
+				col.blendAlpha( 100 );
+				drawTextRanges( match.range, col, true );
+			}
+		}
 	}
 }
 

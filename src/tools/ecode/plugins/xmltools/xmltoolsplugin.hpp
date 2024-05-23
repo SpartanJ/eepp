@@ -43,10 +43,10 @@ class XMLToolsPlugin : public PluginBase {
 	void drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 							 const Float& fontSize, const Float& lineHeight ) override;
 
-	void minimapDrawAfterLineText(
-		UICodeEditor*, const Int64&, const Vector2f&, const Vector2f&, const Float&, const Float&,
-		const std::function<void( const TextRanges& /*ranges*/, const Color& /*backgroundColor*/,
-								  bool /*drawCompleteLine*/ )> /* drawTextRanges */ ) override;
+	void minimapDrawAfter( UICodeEditor*, const DocumentLineRange&, const DocumentViewLineRange&,
+						   const Vector2f& /*linePos*/, const Vector2f& /*lineSize*/,
+						   const Float& /*charWidth*/, const Float& /*gutterWidth*/,
+						   const DrawTextRangesFn& ) override;
 
   protected:
 	bool mHighlightMatch{ true };
@@ -115,6 +115,8 @@ class XMLToolsPlugin : public PluginBase {
 	virtual void onUnregisterDocument( TextDocument* doc ) override;
 
 	bool isOverMatch( TextDocument* doc, const Int64& index ) const;
+
+	bool isVisibleInRange( TextDocument* doc, const DocumentLineRange& docLineRange );
 };
 
 } // namespace ecode
