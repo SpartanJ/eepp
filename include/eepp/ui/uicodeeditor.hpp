@@ -2,11 +2,11 @@
 #define EE_UI_UICODEEDIT_HPP
 
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/doc/documentview.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
-#include <eepp/ui/doc/documentview.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <unordered_map>
@@ -33,8 +33,8 @@ class UILoader;
 class UIPopUpMenu;
 class UIMenuItem;
 
-using DocumentLineRange = std::pair<Uint64, Uint64>;
-using DocumentViewLineRange = std::pair<Uint64, Uint64>;
+using DocumentLineRange = std::pair<Int64, Int64>;
+using DocumentViewLineRange = std::pair<VisibleIndex, VisibleIndex>;
 
 using DrawTextRangesFn = std::function<void(
 	const TextRanges& /*ranges*/, const Color& /*backgroundColor*/, bool /*drawCompleteLine*/ )>;
@@ -485,11 +485,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Vector2f getTextPositionOffsetSanitized( TextPosition pos,
 											 std::optional<Float> lineHeight = {} ) const;
 
-	virtual Int64 getColFromXOffset( Int64 visualLine, const Float& x ) const;
+	virtual Int64 getColFromXOffset( VisibleIndex visibleIndex, const Float& x ) const;
 
 	std::vector<Rectf>
 	getTextRangeRectangles( const TextRange& range, const Vector2f& startScroll,
-							std::optional<const std::pair<int, int>> lineRange = {},
+							std::optional<const DocumentLineRange> lineRange = {},
 							std::optional<Float> lineHeight = {} );
 
 	virtual Float getLineWidth( const Int64& docLine );
@@ -551,8 +551,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void scrollTo( TextPosition position, bool centered = false, bool forceExactPosition = false,
 				   bool scrollX = true );
 
-	void scrollToVisualIndex( Int64 visualIndex, bool centered = false,
-							  bool forceExactPosition = false );
+	void scrollToVisibleIndex( Int64 visibleIndex, bool centered = false,
+							   bool forceExactPosition = false );
 
 	const MinimapConfig& getMinimapConfig() const;
 
@@ -578,7 +578,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const Vector2f& getScroll() const;
 
-	std::pair<Uint64, Uint64> getVisibleLineRange( bool visualIndexes = false ) const;
+	DocumentLineRange getDocumentLineRange() const;
+
+	DocumentViewLineRange getVisibleLineRange() const;
 
 	virtual TextRange getVisibleRange() const;
 
@@ -898,29 +900,29 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void drawLineText( const Int64& line, Vector2f position, const Float& fontSize,
 							   const Float& lineHeight,
-							   const std::pair<Uint64, Uint64>& visualLineRange );
+							   const DocumentViewLineRange& visualLineRange );
 
-	virtual void drawSelectionMatch( const std::pair<int, int>& lineRange,
+	virtual void drawSelectionMatch( const DocumentLineRange& lineRange,
 									 const Vector2f& startScroll, const Float& lineHeight );
 
-	virtual void drawWordMatch( const String& text, const std::pair<int, int>& lineRange,
+	virtual void drawWordMatch( const String& text, const DocumentLineRange& lineRange,
 								const Vector2f& startScroll, const Float& lineHeight,
 								bool ignoreSelectionMatch = false );
 
-	virtual void drawWhitespaces( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
+	virtual void drawWhitespaces( const DocumentLineRange& lineRange, const Vector2f& startScroll,
 								  const Float& lineHeight );
 
-	virtual void drawIndentationGuides( const std::pair<int, int>& lineRange,
+	virtual void drawIndentationGuides( const DocumentLineRange& lineRange,
 										const Vector2f& startScroll, const Float& lineHeight );
 
-	virtual void drawLineEndings( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
+	virtual void drawLineEndings( const DocumentLineRange& lineRange, const Vector2f& startScroll,
 								  const Float& lineHeight );
 
-	virtual void drawTextRange( const TextRange& range, const std::pair<int, int>& lineRange,
+	virtual void drawTextRange( const TextRange& range, const DocumentLineRange& lineRange,
 								const Vector2f& startScroll, const Float& lineHeight,
 								const Color& backgroundColor );
 
-	virtual void drawLineNumbers( const std::pair<int, int>& lineRange, const Vector2f& startScroll,
+	virtual void drawLineNumbers( const DocumentLineRange& lineRange, const Vector2f& startScroll,
 								  const Vector2f& screenStart, const Float& lineHeight,
 								  const Float& lineNumberWidth, const int& lineNumberDigits,
 								  const Float& fontSize );
@@ -962,8 +964,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIMenuItem* menuAdd( UIPopUpMenu* menu, const String& translateString, const std::string& icon,
 						 const std::string& cmd );
 
-	void drawMinimap( const Vector2f& start, const std::pair<Uint64, Uint64>& docLineRange,
-					  const std::pair<Uint64, Uint64>& visibleLineRange );
+	void drawMinimap( const Vector2f& start, const DocumentLineRange& docLineRange,
+					  const DocumentViewLineRange& visibleLineRange );
 
 	bool isMinimapFileTooLarge() const;
 
@@ -979,7 +981,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool stopMinimapDragging( const Vector2f& mousePos );
 
-	void drawWordRanges( const TextRanges& ranges, const std::pair<int, int>& lineRange,
+	void drawWordRanges( const TextRanges& ranges, const DocumentLineRange& lineRange,
 						 const Vector2f& startScroll, const Float& lineHeight,
 						 bool ignoreSelectionMatch );
 

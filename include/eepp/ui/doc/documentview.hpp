@@ -15,6 +15,12 @@ enum class LineWrapMode { NoWrap, Letter, Word };
 
 enum class LineWrapType { Viewport, LineBreakingColumn };
 
+enum class VisibleIndex : Int64 { first = 0, invalid = std::numeric_limits<Int64>::max() };
+
+inline VisibleIndex visibleIndexOffset( VisibleIndex idx, Int64 offset ) {
+	return static_cast<VisibleIndex>( static_cast<Int64>( idx ) + offset );
+}
+
 class EE_API DocumentView {
   public:
 	static LineWrapMode toLineWrapMode( std::string mode );
@@ -39,19 +45,24 @@ class EE_API DocumentView {
 
 	struct LineWrapInfo {
 		std::vector<Int64> wraps;
-		Float paddingStart{ 0.f };
+		Float paddingStart{ 0 };
 	};
 
-	struct VisualLine {
-		Int64 visualIndex{ 0 };
+	struct VisibleLineInfo {
+		VisibleIndex visibleIndex{ VisibleIndex::invalid };
 		Float paddingStart{ 0 };
 		std::vector<TextPosition> visualLines;
 	};
 
-	struct VisualLineInfo {
-		Int64 visualIndex;
+	struct VisibleLineRange {
+		VisibleIndex visibleIndex{ VisibleIndex::invalid };
 		TextRange range;
 	};
+
+	static LineWrapInfo computeLineBreaks( const String::View& string,
+										   const FontStyleConfig& fontStyle, Float maxWidth,
+										   LineWrapMode mode, bool keepIndentation,
+										   Uint32 tabWidth = 4 );
 
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
 										   Float maxWidth, LineWrapMode mode, bool keepIndentation,
@@ -69,7 +80,7 @@ class EE_API DocumentView {
 
 	bool isWrapEnabled() const;
 
-	size_t getTotalLines() const;
+	size_t getVisibleLinesCount() const;
 
 	const Config& config() const { return mConfig; }
 
@@ -87,20 +98,20 @@ class EE_API DocumentView {
 
 	void setLineWrapMode( LineWrapMode mode );
 
-	TextPosition getDocumentLine( Int64 visibleIndex ) const;
+	TextPosition getVisibleIndexPosition( VisibleIndex visibleIndex ) const;
 
-	Float getLineOffset( Int64 docIdx ) const;
+	Float getLinePadding( Int64 docIdx ) const;
 
-	Int64 toWrappedIndex( Int64 docIdx, bool retLast = false ) const;
+	VisibleIndex toVisibleIndex( Int64 docIdx, bool retLast = false ) const;
 
 	bool isWrappedLine( Int64 docIdx ) const;
 
-	VisualLine getVisualLine( Int64 docIdx ) const;
+	VisibleLineInfo getVisibleLineInfo( Int64 docIdx ) const;
 
-	VisualLineInfo getVisualLineInfo( const TextPosition& pos,
-									  bool allowVisualLineEnd = false ) const;
+	VisibleLineRange getVisibleLineRange( const TextPosition& pos,
+										  bool allowVisualLineEnd = false ) const;
 
-	TextRange getVisualLineRange( Int64 visualLine ) const;
+	TextRange getVisibleIndexRange( VisibleIndex visibleIndex ) const;
 
 	std::shared_ptr<TextDocument> getDocument() const;
 
@@ -111,6 +122,12 @@ class EE_API DocumentView {
 	void setPendingReconstruction( bool pendingReconstruction );
 
 	void clear();
+
+	Float getLineYOffset( VisibleIndex visibleIndex, Float lineHeight ) const;
+
+	Float getLineYOffset( Int64 docIdx, Float lineHeight ) const;
+
+	bool isLineVisible( Int64 docIdx ) const;
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;

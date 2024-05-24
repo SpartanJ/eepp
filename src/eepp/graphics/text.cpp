@@ -360,7 +360,7 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 		Float fCharWidth = (Float)pChar.advance;
 
 		if ( ( *tChar ) == '\t' )
-			fCharWidth += hspace * tabWidth;
+			fCharWidth = hspace * tabWidth;
 		else if ( ( *tChar ) == '\r' )
 			fCharWidth = 0;
 

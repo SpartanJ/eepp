@@ -1,7 +1,6 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
-#include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/documentview.hpp>
 
 namespace EE { namespace UI { namespace Doc {
@@ -53,7 +52,7 @@ Float DocumentView::computeOffsets( const String& string, const FontStyleConfig&
 	return 0.f;
 }
 
-DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string,
+DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& string,
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation,
@@ -64,10 +63,11 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string
 		return info;
 
 	if ( keepIndentation ) {
-		auto nonIndentPos = string.find_first_not_of( " \t\n\v\f\r" );
+		static const String nofOf = " \t\n\v\f\r";
+		auto nonIndentPos = string.find_first_not_of( nofOf.data() );
 		if ( nonIndentPos != String::InvalidPos )
 			info.paddingStart =
-				Text::getTextWidth( string.view().substr( 0, nonIndentPos ), fontStyle, tabWidth );
+				Text::getTextWidth( string.substr( 0, nonIndentPos ), fontStyle, tabWidth );
 	}
 
 	Float xoffset = 0.f;
@@ -77,7 +77,6 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string
 	bool isMonospace = fontStyle.Font->isMonospace();
 	Float outlineThickness = fontStyle.OutlineThickness;
 
-	auto tChar = &string[0];
 	size_t lastSpace = 0;
 	Uint32 prevChar = 0;
 
@@ -86,8 +85,7 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string
 			.advance );
 	size_t idx = 0;
 
-	while ( *tChar ) {
-		Uint32 curChar = *tChar;
+	for ( const auto& curChar : string ) {
 		Float w = !isMonospace ? fontStyle.Font
 									 ->getGlyph( curChar, fontStyle.CharacterSize, bold, italic,
 												 outlineThickness )
@@ -95,7 +93,7 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string
 							   : hspace;
 
 		if ( curChar == '\t' )
-			w += hspace * tabWidth;
+			w = hspace * tabWidth;
 		else if ( ( curChar ) == '\r' )
 			w = 0;
 
@@ -122,10 +120,17 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string
 		}
 
 		idx++;
-		tChar++;
 	}
 
 	return info;
+}
+
+DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string,
+															const FontStyleConfig& fontStyle,
+															Float maxWidth, LineWrapMode mode,
+															bool keepIndentation,
+															Uint32 tabWidth ) {
+	return computeLineBreaks( string.view(), fontStyle, maxWidth, mode, keepIndentation, tabWidth );
 }
 
 DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& doc, size_t line,
@@ -133,7 +138,8 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& 
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation,
 															Uint32 tabWidth ) {
-	return computeLineBreaks( doc.line( line ).getText(), fontStyle, maxWidth, mode,
+	const auto& text = doc.line( line ).getText();
+	return computeLineBreaks( text.substr( 0, text.size() - 1 ), fontStyle, maxWidth, mode,
 							  keepIndentation, tabWidth );
 }
 
@@ -170,14 +176,14 @@ void DocumentView::setLineWrapMode( LineWrapMode mode ) {
 	}
 }
 
-TextPosition DocumentView::getDocumentLine( Int64 visibleIndex ) const {
+TextPosition DocumentView::getVisibleIndexPosition( VisibleIndex visibleIndex ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap || mWrappedLines.empty() )
-		return { visibleIndex, 0 };
-	return mWrappedLines[eeclamp( visibleIndex, 0ll,
+		return { static_cast<Int64>( visibleIndex ), 0 };
+	return mWrappedLines[eeclamp( static_cast<Int64>( visibleIndex ), 0ll,
 								  eemax( static_cast<Int64>( mWrappedLines.size() ) - 1, 0ll ) )];
 }
 
-Float DocumentView::getLineOffset( Int64 docIdx ) const {
+Float DocumentView::getLinePadding( Int64 docIdx ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap || mWrappedLinesOffset.empty() )
 		return 0;
 	return mWrappedLinesOffset[eeclamp(
@@ -236,9 +242,10 @@ void DocumentView::invalidateCache() {
 	mPendingReconstruction = false;
 }
 
-Int64 DocumentView::toWrappedIndex( Int64 docIdx, bool retLast ) const {
+VisibleIndex DocumentView::toVisibleIndex( Int64 docIdx, bool retLast ) const {
+	eeASSERT( isLineVisible( docIdx ) );
 	if ( mConfig.mode == LineWrapMode::NoWrap || mWrappedLineToIndex.empty() )
-		return docIdx;
+		return static_cast<VisibleIndex>( docIdx );
 	auto idx = mWrappedLineToIndex[eeclamp( docIdx, 0ll,
 											static_cast<Int64>( mWrappedLineToIndex.size() - 1 ) )];
 	if ( retLast ) {
@@ -251,72 +258,74 @@ Int64 DocumentView::toWrappedIndex( Int64 docIdx, bool retLast ) const {
 				break;
 		}
 	}
-	return idx;
+	return static_cast<VisibleIndex>( idx );
 }
 
 bool DocumentView::isWrappedLine( Int64 docIdx ) const {
 	if ( isWrapEnabled() && mConfig.mode != LineWrapMode::NoWrap ) {
-		Int64 wrappedIndex = toWrappedIndex( docIdx );
+		Int64 wrappedIndex = static_cast<Int64>( toVisibleIndex( docIdx ) );
 		return wrappedIndex + 1 < static_cast<Int64>( mWrappedLines.size() ) &&
 			   mWrappedLines[wrappedIndex].line() == mWrappedLines[wrappedIndex + 1].line();
 	}
 	return false;
 }
 
-DocumentView::VisualLine DocumentView::getVisualLine( Int64 docIdx ) const {
-	VisualLine line;
+DocumentView::VisibleLineInfo DocumentView::getVisibleLineInfo( Int64 docIdx ) const {
+	eeASSERT( isLineVisible( docIdx ) );
+	VisibleLineInfo line;
 	if ( mConfig.mode == LineWrapMode::NoWrap ) {
 		line.visualLines.push_back( { docIdx, 0 } );
-		line.visualIndex = docIdx;
+		line.visibleIndex = static_cast<VisibleIndex>( docIdx );
 		return line;
 	}
-	Int64 fromIdx = toWrappedIndex( docIdx );
-	Int64 toIdx = toWrappedIndex( docIdx, true );
+	Int64 fromIdx = static_cast<Int64>( toVisibleIndex( docIdx ) );
+	Int64 toIdx = static_cast<Int64>( toVisibleIndex( docIdx, true ) );
 	line.visualLines.reserve( toIdx - fromIdx + 1 );
 	for ( Int64 i = fromIdx; i <= toIdx; i++ )
 		line.visualLines.emplace_back( mWrappedLines[i] );
-	line.visualIndex = fromIdx;
+	line.visibleIndex = static_cast<VisibleIndex>( fromIdx );
 	line.paddingStart = mWrappedLinesOffset[docIdx];
 	return line;
 }
 
-DocumentView::VisualLineInfo DocumentView::getVisualLineInfo( const TextPosition& pos,
-															  bool allowVisualLineEnd ) const {
+DocumentView::VisibleLineRange DocumentView::getVisibleLineRange( const TextPosition& pos,
+																  bool allowVisualLineEnd ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap ) {
-		DocumentView::VisualLineInfo info;
-		info.visualIndex = pos.line();
+		DocumentView::VisibleLineRange info;
+		info.visibleIndex = static_cast<VisibleIndex>( pos.line() );
 		info.range = mDoc->getLineRange( pos.line() );
 		return info;
 	}
-	Int64 fromIdx = toWrappedIndex( pos.line() );
-	Int64 toIdx = toWrappedIndex( pos.line(), true );
-	DocumentView::VisualLineInfo info;
+	Int64 fromIdx = static_cast<Int64>( toVisibleIndex( pos.line() ) );
+	Int64 toIdx = static_cast<Int64>( toVisibleIndex( pos.line(), true ) );
+	DocumentView::VisibleLineRange info;
 	for ( Int64 i = fromIdx; i < toIdx; i++ ) {
 		Int64 fromCol = mWrappedLines[i].column();
 		Int64 toCol = i + 1 <= toIdx
 						  ? mWrappedLines[i + 1].column() - ( allowVisualLineEnd ? 0 : 1 )
 						  : mDoc->line( pos.line() ).size();
 		if ( pos.column() >= fromCol && pos.column() <= toCol ) {
-			info.visualIndex = i;
+			info.visibleIndex = static_cast<VisibleIndex>( i );
 			info.range = { { pos.line(), fromCol }, { pos.line(), toCol } };
 			return info;
 		}
 	}
 	eeASSERT( toIdx >= 0 );
-	info.visualIndex = toIdx;
+	info.visibleIndex = static_cast<VisibleIndex>( toIdx );
 	info.range = { { pos.line(), mWrappedLines[toIdx].column() },
 				   mDoc->endOfLine( { pos.line(), 0ll } ) };
 	return info;
 }
 
-TextRange DocumentView::getVisualLineRange( Int64 visualLine ) const {
+TextRange DocumentView::getVisibleIndexRange( VisibleIndex visibleIndex ) const {
 	if ( mConfig.mode == LineWrapMode::NoWrap )
-		return mDoc->getLineRange( visualLine );
-	auto start = getDocumentLine( visualLine );
+		return mDoc->getLineRange( static_cast<Int64>( visibleIndex ) );
+	Int64 idx = static_cast<Int64>( visibleIndex );
+	auto start = getVisibleIndexPosition( visibleIndex );
 	auto end = start;
-	if ( visualLine + 1 < static_cast<Int64>( mWrappedLines.size() ) &&
-		 mWrappedLines[visualLine + 1].line() == start.line() ) {
-		end.setColumn( mWrappedLines[visualLine + 1].column() );
+	if ( idx + 1 < static_cast<Int64>( mWrappedLines.size() ) &&
+		 mWrappedLines[idx + 1].line() == start.line() ) {
+		end.setColumn( mWrappedLines[idx + 1].column() );
 	} else {
 		end.setColumn( mDoc->line( start.line() ).size() );
 	}
@@ -348,12 +357,24 @@ void DocumentView::clear() {
 	mWrappedLinesOffset.clear();
 }
 
+Float DocumentView::getLineYOffset( VisibleIndex visibleIndex, Float lineHeight ) const {
+	return static_cast<Float>( visibleIndex ) * lineHeight;
+}
+
+Float DocumentView::getLineYOffset( Int64 docIdx, Float lineHeight ) const {
+	return static_cast<Float>( toVisibleIndex( docIdx ) ) * lineHeight;
+}
+
+bool DocumentView::isLineVisible( Int64 ) const {
+	return true;
+}
+
 void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	if ( mConfig.mode == LineWrapMode::NoWrap )
 		return;
 	// Get affected wrapped range
-	Int64 oldIdxFrom = toWrappedIndex( fromLine, false );
-	Int64 oldIdxTo = toWrappedIndex( toLine, true );
+	Int64 oldIdxFrom = static_cast<Int64>( toVisibleIndex( fromLine, false ) );
+	Int64 oldIdxTo = static_cast<Int64>( toVisibleIndex( toLine, true ) );
 
 	// Remove old wrapped lines
 	mWrappedLines.erase( mWrappedLines.begin() + oldIdxFrom, mWrappedLines.begin() + oldIdxTo + 1 );
@@ -418,7 +439,7 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 #endif
 }
 
-size_t DocumentView::getTotalLines() const {
+size_t DocumentView::getVisibleLinesCount() const {
 	return mConfig.mode == LineWrapMode::NoWrap ? mDoc->linesCount() : mWrappedLines.size();
 }
 
