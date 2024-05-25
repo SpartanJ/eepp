@@ -73,7 +73,7 @@ class EE_API DocumentView {
 										   LineWrapMode mode, bool keepIndentation,
 										   Uint32 tabWidth = 4 );
 
-	static Float computeOffsets( const String& string, const FontStyleConfig& fontStyle,
+	static Float computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
 								 Uint32 tabWidth );
 
 	DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
@@ -134,9 +134,9 @@ class EE_API DocumentView {
 	FontStyleConfig mFontStyle;
 	Config mConfig;
 	Float mMaxWidth{ 0 };
-	std::vector<TextPosition> mWrappedLines;
-	std::vector<Float> mWrappedLinesOffset;
-	std::vector<Int64> mWrappedLineToIndex;
+	std::vector<TextPosition> mVisibleLines;
+	std::vector<Float> mVisibleLinesOffset;
+	std::vector<Int64> mDocLineToVisibleIndex;
 	bool mPendingReconstruction{ false };
 	bool mUnderConstruction{ false };
 };

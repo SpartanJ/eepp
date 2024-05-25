@@ -1740,7 +1740,7 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 }
 
 void UICodeEditor::updateScrollBar() {
-	int notVisibleLineCount = (int)mDoc->linesCount() - (int)getViewPortLineCount().y;
+	Int64 notVisibleLineCount = (Int64)getTotalVisibleLines() - (Int64)getViewPortLineCount().y;
 
 	mHScrollBar->setEnabled( false );
 	mHScrollBar->setVisible( false );
