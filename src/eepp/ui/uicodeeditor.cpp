@@ -1696,7 +1696,7 @@ void UICodeEditor::findLongestLine() {
 }
 
 Float UICodeEditor::getLineWidth( const Int64& docLine ) {
-	if ( docLine >= (Int64)mDoc->linesCount() )
+	if ( docLine >= (Int64)mDoc->linesCount() || !mDocView.isLineVisible( docLine ) )
 		return 0;
 	if ( mDocView.isWrappedLine( docLine ) ) {
 		auto vline = mDocView.getVisibleLineInfo( docLine );
@@ -3707,6 +3707,8 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 	Float lineOffset = getLineOffset();
 
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
+		if ( !mDocView.isLineVisible( i ) )
+			continue;
 		String pos;
 		if ( mShowLinesRelativePosition && selection.start().line() != i ) {
 			pos = String( String::toString( eeabs( i - selection.start().line() ) ) )
@@ -4302,6 +4304,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 	}
 
 	for ( Int64 line = minimapStartDocLine; line <= endDocIdx; line++ ) {
+		if ( !mDocView.isLineVisible( line ) )
+			continue;
 		batchSyntaxType = &SYNTAX_NORMAL;
 		batchStart = rect.Left + gutterWidth;
 		batchWidth = 0;

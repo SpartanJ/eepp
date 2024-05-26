@@ -123,11 +123,25 @@ class EE_API DocumentView {
 
 	void clear();
 
+	void clearCache();
+
 	Float getLineYOffset( VisibleIndex visibleIndex, Float lineHeight ) const;
 
 	Float getLineYOffset( Int64 docIdx, Float lineHeight ) const;
 
 	bool isLineVisible( Int64 docIdx ) const;
+
+	bool isFolded( Int64 docIdx ) const;
+
+	void addFoldRegion( TextRange region );
+
+	bool isFoldingRegionInLine( Int64 docIdx );
+
+	void foldRegion( Int64 foldDocIdx );
+
+	void unfoldRegion( Int64 foldDocIdx );
+
+	bool isOneToOne() const;
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;
@@ -137,8 +151,16 @@ class EE_API DocumentView {
 	std::vector<TextPosition> mVisibleLines;
 	std::vector<Float> mVisibleLinesOffset;
 	std::vector<Int64> mDocLineToVisibleIndex;
+	std::unordered_map<Int64, TextRange> mFoldingRegions;
+	std::vector<TextRange> mFoldedRegions;
 	bool mPendingReconstruction{ false };
 	bool mUnderConstruction{ false };
+
+	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible );
+
+	void removeFoldedRegion( const TextRange& region );
+
+	void shiftFoldingRegions( Int64 fromLine, Int64 numLines );
 };
 
 }}} // namespace EE::UI::Doc
