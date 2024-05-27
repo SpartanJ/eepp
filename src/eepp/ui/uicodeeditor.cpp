@@ -124,8 +124,8 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
-	mLineNumberPaddingLeft( 8 ),
-	mLineNumberPaddingRight( 8 ),
+	mLineNumberPaddingLeft( PixelDensity::dpToPx( 6 ) ),
+	mLineNumberPaddingRight( PixelDensity::dpToPx( 6 ) ),
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ),
 	mPreviewColor( Color::Transparent ) {
@@ -529,6 +529,7 @@ bool UICodeEditor::loadAsyncFromURL(
 				mDoc->getHighlighter()->tokenizeAsync( getUISceneNode()->getThreadPool(), [this] {
 					runOnMainThread( [this] { invalidateDraw(); } );
 				} );
+
 			runOnMainThread( [this, success, onLoaded, wasLocked] {
 				if ( !wasLocked )
 					setLocked( false );
@@ -1344,28 +1345,37 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		Input* input = getUISceneNode()->getWindow()->getInput();
 		input->captureMouse( true );
 		setFocus();
+
+		auto textScreenPos( resolveScreenPosition( position.asFloat() ) );
 		if ( flags & EE_BUTTON_LMASK ) {
-			if ( input->isModState( KEYMOD_LALT | KEYMOD_SHIFT ) ) {
-				TextRange range( mDoc->getSelection().start(),
-								 resolveScreenPosition( position.asFloat() ) );
+			Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+			if ( localPos.x < mPaddingPx.Left + getGutterWidth() &&
+				 mDoc->getFoldRangeService().isFoldingRegionInLine( textScreenPos.line() ) ) {
+				if ( mDocView.isFolded( textScreenPos.line() ) ) {
+					mDocView.unfoldRegion( textScreenPos.line() );
+				} else {
+					mDocView.foldRegion( textScreenPos.line() );
+				}
+			} else if ( input->isModState( KEYMOD_LALT | KEYMOD_SHIFT ) ) {
+				TextRange range( mDoc->getSelection().start(), textScreenPos );
 				range.normalize();
 				range = mDoc->sanitizeRange( range );
 				for ( Int64 i = range.start().line(); i < range.end().line(); ++i )
 					mDoc->addSelection( { i, range.start().column() } );
 			} else if ( input->isModState( KEYMOD_SHIFT ) ) {
-				mDoc->selectTo( resolveScreenPosition( position.asFloat() ) );
+				mDoc->selectTo( textScreenPos );
 			} else if ( input->isModState( KEYMOD_CTRL ) &&
 						checkMouseOverLink( position ).empty() ) {
-				TextPosition pos( resolveScreenPosition( position.asFloat() ) );
+				TextPosition pos( textScreenPos );
 				if ( !mDoc->selectionExists( pos ) )
 					mDoc->addSelection( { pos, pos } );
 			} else if ( mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 				mDoc->selectLine();
 			} else {
-				mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
+				mDoc->setSelection( textScreenPos );
 			}
 		} else if ( !mDoc->hasSelection() ) {
-			mDoc->setSelection( resolveScreenPosition( position.asFloat() ) );
+			mDoc->setSelection( textScreenPos );
 		}
 	}
 	return UIWidget::onMouseDown( position, flags );
@@ -3716,17 +3726,38 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 		} else {
 			pos = String( String::toString( i + 1 ) ).padLeft( lineNumberDigits, ' ' );
 		}
-		Text::draw(
-			pos,
+		auto lnPos(
 			Vector2f( screenStart.x + mLineNumberPaddingLeft,
-					  startScroll.y + mDocView.getLineYOffset( i, lineHeight ) + lineOffset ),
-			mFontStyleConfig.Font, fontSize,
-			( i >= selection.start().line() && i <= selection.end().line() )
-				? mLineNumberActiveFontColor
-				: mLineNumberFontColor,
-			mFontStyleConfig.Style, mFontStyleConfig.OutlineThickness,
-			mFontStyleConfig.OutlineColor, mFontStyleConfig.ShadowColor,
-			mFontStyleConfig.ShadowOffset );
+					  startScroll.y + mDocView.getLineYOffset( i, lineHeight ) + lineOffset ) );
+
+		Text::draw( pos, lnPos, mFontStyleConfig.Font, fontSize,
+					( i >= selection.start().line() && i <= selection.end().line() )
+						? mLineNumberActiveFontColor
+						: mLineNumberFontColor,
+					mFontStyleConfig.Style, mFontStyleConfig.OutlineThickness,
+					mFontStyleConfig.OutlineColor, mFontStyleConfig.ShadowColor,
+					mFontStyleConfig.ShadowOffset );
+
+		if ( mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
+			Float dim = PixelDensity::dpToPx( 4 );
+			lnPos = Vector2f( screenStart.x + lineNumberWidth - dim,
+							  lnPos.y + lineHeight * 0.5f - dim * 0.5f );
+			primitives.setColor( mLineNumberFontColor );
+			Triangle2f tri;
+			if ( mDocView.isFolded( i ) ) {
+				tri.V[0] = { 0, 0 };
+				tri.V[1] = { 0, dim };
+				tri.V[2] = { dim, dim * 0.5f };
+			} else {
+				tri.V[0] = { 0, 0 };
+				tri.V[1] = { dim, 0 };
+				tri.V[2] = { dim * 0.5f, dim };
+			}
+			tri.V[0] += lnPos;
+			tri.V[1] += lnPos;
+			tri.V[2] += lnPos;
+			primitives.drawTriangle( tri );
+		}
 	}
 }
 

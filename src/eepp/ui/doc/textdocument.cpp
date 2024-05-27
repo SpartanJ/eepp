@@ -37,7 +37,8 @@ TextDocument::TextDocument( bool verbose ) :
 	mDefaultFileName( "untitled" ),
 	mCleanChangeId( 0 ),
 	mNonWordChars( DEFAULT_NON_WORD_CHARS ),
-	mHighlighter( std::make_unique<SyntaxHighlighter>( this ) ) {
+	mHighlighter( std::make_unique<SyntaxHighlighter>( this ) ),
+	mFoldRangeService( this ) {
 	initializeCommands();
 	reset();
 }
@@ -2972,6 +2973,14 @@ TextFormat::Encoding TextDocument::getEncoding() const {
 
 void TextDocument::setEncoding( TextFormat::Encoding encoding ) {
 	mEncoding = encoding;
+}
+
+const FoldRangeServive& TextDocument::getFoldRangeService() const {
+	return mFoldRangeService;
+}
+
+FoldRangeServive& TextDocument::getFoldRangeService() {
+	return mFoldRangeService;
 }
 
 static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, const TextPosition& pos,

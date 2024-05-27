@@ -18,6 +18,13 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	notifyOpen();
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
+	requestFoldRangeDelayed();
+	doc->getFoldRangeService().setProvider( [this]( auto ) -> bool {
+		bool ret = mServer->getCapabilities().foldingRangeProvider;
+		if ( ret )
+			requestFoldRangeDelayed();
+		return ret;
+	} );
 }
 
 LSPDocumentClient::~LSPDocumentClient() {
@@ -27,6 +34,8 @@ LSPDocumentClient::~LSPDocumentClient() {
 		sceneNode->removeActionsByTag( mTag );
 	if ( nullptr != sceneNode && 0 != mTagSemanticTokens )
 		sceneNode->removeActionsByTag( mTagSemanticTokens );
+	if ( nullptr != sceneNode && 0 != mTagFoldRange )
+		sceneNode->removeActionsByTag( mTagFoldRange );
 	mShutdown = true;
 	while ( mRunningSemanticTokens )
 		Sys::sleep( Milliseconds( 0.1f ) );
@@ -35,6 +44,7 @@ LSPDocumentClient::~LSPDocumentClient() {
 void LSPDocumentClient::onDocumentLoaded( TextDocument* ) {
 	refreshTag();
 	requestSemanticHighlightingDelayed();
+	requestFoldRangeDelayed();
 	// requestCodeLens();
 }
 
@@ -112,6 +122,7 @@ int LSPDocumentClient::getVersion() const {
 void LSPDocumentClient::onServerInitialized() {
 	requestSymbols();
 	requestSemanticHighlighting();
+	requestFoldRange();
 	// requestCodeLens();
 }
 
@@ -119,6 +130,7 @@ void LSPDocumentClient::refreshTag() {
 	String::HashType oldTag = mTag;
 	mTag = String::hash( mDoc->getURI().toString() );
 	mTagSemanticTokens = String::hash( mDoc->getURI().toString() + ":semantictokens" );
+	mTagFoldRange = String::hash( mDoc->getURI().toString() + ":foldrange" );
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( nullptr != sceneNode && 0 != oldTag )
 		sceneNode->removeActionsByTag( oldTag );
@@ -379,6 +391,46 @@ void LSPDocumentClient::requestSymbols() {
 			[server, uri]() { server->documentSymbolsBroadcast( uri ); } );
 	} else {
 		server->documentSymbolsBroadcast( uri );
+	}
+}
+
+void LSPDocumentClient::requestFoldRange() {
+	eeASSERT( mDoc );
+	LSPClientServer* server = mServer;
+	if ( !server->getCapabilities().foldingRangeProvider )
+		return;
+	URI uri = mDoc->getURI();
+	auto handler = [uri, this]( const PluginIDType&, const std::vector<LSPFoldingRange>& res ) {
+		std::vector<TextRange> regions;
+		regions.reserve( res.size() );
+		for ( const auto& region : res )
+			regions.push_back( { { region.startLine, 0 }, { region.endLine, 0 } } );
+		mDoc->getFoldRangeService().setFoldingRegions( regions );
+	};
+
+	if ( Engine::instance()->isMainThread() ) {
+		server->getThreadPool()->run(
+			[server, uri, handler]() { server->documentFoldingRange( uri, handler ); } );
+	} else {
+		server->documentFoldingRange( uri, handler );
+	}
+}
+
+void LSPDocumentClient::requestFoldRangeDelayed() {
+	if ( !mServer || !mServer->getCapabilities().foldingRangeProvider )
+		return;
+	UISceneNode* sceneNode = getUISceneNode();
+	if ( sceneNode ) {
+		sceneNode->removeActionsByTag( mTagFoldRange );
+		LSPDocumentClient* docClient = this;
+		URI uri = mDoc->getURI();
+		LSPClientServer* server = mServer;
+		sceneNode->runOnMainThread(
+			[docClient, server, uri]() {
+				if ( server->hasDocument( uri ) )
+					docClient->requestFoldRange();
+			},
+			Seconds( 1.f ), mTagFoldRange );
 	}
 }
 

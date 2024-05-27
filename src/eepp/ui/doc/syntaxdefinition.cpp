@@ -75,7 +75,7 @@ bool SyntaxDefinition::hasExtensionPriority() const {
 	return mHasExtensionPriority;
 }
 
-SyntaxDefinition&  SyntaxDefinition::setExtensionPriority( bool hasExtensionPriority ) {
+SyntaxDefinition& SyntaxDefinition::setExtensionPriority( bool hasExtensionPriority ) {
 	mHasExtensionPriority = hasExtensionPriority;
 	return *this;
 }
@@ -90,6 +90,25 @@ bool SyntaxDefinition::isCaseInsensitive() const {
 
 SyntaxDefinition& SyntaxDefinition::setCaseInsensitive( bool caseInsensitive ) {
 	mCaseInsensitive = caseInsensitive;
+	return *this;
+}
+
+FoldRangeType SyntaxDefinition::getFoldRangeType() const {
+	return mFoldRangeType;
+}
+
+SyntaxDefinition& SyntaxDefinition::setFoldRangeType( FoldRangeType foldRangeType ) {
+	mFoldRangeType = foldRangeType;
+	return *this;
+}
+
+std::vector<std::pair<char, char>> SyntaxDefinition::getFoldBraces() const {
+	return mFoldBraces;
+}
+
+SyntaxDefinition&
+SyntaxDefinition::setFoldBraces( const std::vector<std::pair<char, char>>& foldBraces ) {
+	mFoldBraces = foldBraces;
 	return *this;
 }
 

@@ -1,4 +1,5 @@
 #include <eepp/graphics/text.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/documentview.hpp>
@@ -202,6 +203,7 @@ void DocumentView::invalidateCache() {
 		return;
 	}
 
+	Clock clock;
 	BoolScopedOp op( mUnderConstruction, true );
 
 	mVisibleLines.clear();
@@ -215,7 +217,7 @@ void DocumentView::invalidateCache() {
 	mDocLineToVisibleIndex.reserve( linesCount );
 
 	for ( auto i = 0; i < linesCount; i++ ) {
-		if ( isFolded( i ) ) {
+		if ( isFolded( i, true ) ) {
 			mVisibleLinesOffset.emplace_back(
 				wrap ? computeOffsets( mDoc->line( i ).getText().view(), mFontStyle,
 									   mConfig.tabWidth )
@@ -240,6 +242,9 @@ void DocumentView::invalidateCache() {
 	eeASSERT( static_cast<Int64>( mDocLineToVisibleIndex.size() ) == linesCount );
 
 	mPendingReconstruction = false;
+
+	Log::debug( "DocumentView for \"%s\" generated in %s", mDoc->getFilePath(),
+				clock.getElapsedTime().toString() );
 }
 
 VisibleIndex DocumentView::toVisibleIndex( Int64 docIdx, bool retLast ) const {
@@ -359,8 +364,8 @@ void DocumentView::clearCache() {
 
 void DocumentView::clear() {
 	clearCache();
-	mFoldingRegions.clear();
 	mFoldedRegions.clear();
+	mDoc->getFoldRangeService().clear();
 }
 
 Float DocumentView::getLineYOffset( VisibleIndex visibleIndex, Float lineHeight ) const {
@@ -419,11 +424,17 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 		}
 	}
 
+	recomputeDocLineToVisibleIndex( oldIdxFrom );
+
+	verifyStructuralConsistency();
+}
+
+void DocumentView::recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex ) {
 	// Recompute document line to visible index
 	Int64 visibleLinesCount = mVisibleLines.size();
 	mDocLineToVisibleIndex.resize( mDoc->linesCount() );
-	Int64 previousLineIdx = mVisibleLines[oldIdxFrom].line();
-	for ( Int64 visibleIdx = oldIdxFrom; visibleIdx < visibleLinesCount; visibleIdx++ ) {
+	Int64 previousLineIdx = mVisibleLines[fromVisibleIndex].line();
+	for ( Int64 visibleIdx = fromVisibleIndex; visibleIdx < visibleLinesCount; visibleIdx++ ) {
 		const auto& visibleLine = mVisibleLines[visibleIdx];
 		if ( visibleLine.column() == 0 ) {
 			// Non-contiguos lines means hidden lines
@@ -435,54 +446,34 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 			previousLineIdx = visibleLine.line();
 		}
 	}
-
-#ifdef EE_DEBUG
-	auto visibleLines = mVisibleLines;
-	auto docLineToVisibleIndex = mDocLineToVisibleIndex;
-	auto visibleLinesOffset = mVisibleLinesOffset;
-
-	invalidateCache();
-
-	eeASSERT( visibleLines == mVisibleLines );
-	eeASSERT( docLineToVisibleIndex == mDocLineToVisibleIndex );
-	eeASSERT( visibleLinesOffset == mVisibleLinesOffset );
-#endif
 }
 
 size_t DocumentView::getVisibleLinesCount() const {
 	return isOneToOne() ? mDoc->linesCount() : mVisibleLines.size();
 }
 
-void DocumentView::addFoldRegion( TextRange region ) {
-	region.normalize();
-	mFoldingRegions[region.start().line()] = std::move( region );
-}
-
-bool DocumentView::isFoldingRegionInLine( Int64 docIdx ) {
-	auto foldRegionIt = mFoldingRegions.find( docIdx );
-	return foldRegionIt != mFoldingRegions.end();
-}
-
 void DocumentView::foldRegion( Int64 foldDocIdx ) {
-	auto foldRegionIt = mFoldingRegions.find( foldDocIdx );
-	if ( foldRegionIt == mFoldingRegions.end() )
+	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
+	if ( !foldRegion )
 		return;
-	Int64 toDocIdx = foldRegionIt->second.end().line();
-	changeVisibility( foldDocIdx, toDocIdx, false );
+	Int64 toDocIdx = foldRegion->end().line();
 	bool foldWasEmpty = mFoldedRegions.empty();
-	mFoldedRegions.push_back( foldRegionIt->second );
+	changeVisibility( foldDocIdx + 1, toDocIdx, false );
+	mFoldedRegions.push_back( *foldRegion );
 	std::sort( mFoldedRegions.begin(), mFoldedRegions.end() );
+	verifyStructuralConsistency();
 	if ( foldWasEmpty && mConfig.mode == LineWrapMode::NoWrap )
 		invalidateCache();
 }
 
 void DocumentView::unfoldRegion( Int64 foldDocIdx ) {
-	auto foldRegionIt = mFoldingRegions.find( foldDocIdx );
-	if ( foldRegionIt == mFoldingRegions.end() )
+	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
+	if ( !foldRegion )
 		return;
-	Int64 toDocIdx = foldRegionIt->second.end().line();
-	changeVisibility( foldDocIdx, toDocIdx, true );
-	removeFoldedRegion( foldRegionIt->second );
+	Int64 toDocIdx = foldRegion->end().line();
+	changeVisibility( foldDocIdx + 1, toDocIdx, true );
+	removeFoldedRegion( *foldRegion );
+	verifyStructuralConsistency();
 	if ( isOneToOne() )
 		clearCache();
 }
@@ -493,9 +484,11 @@ bool DocumentView::isOneToOne() const {
 
 void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible ) {
 	if ( visible ) {
+
 		auto it = std::lower_bound( mVisibleLines.begin(), mVisibleLines.end(),
 									TextPosition{ fromDocIdx, 0 } );
-		auto idxOffset = std::distance( mVisibleLines.begin(), it );
+		Int64 oldIdxFrom = std::distance( mVisibleLines.begin(), it );
+		auto idxOffset = oldIdxFrom;
 		for ( auto i = fromDocIdx; i <= toDocIdx; i++ ) {
 			auto lb = isWrapEnabled()
 						  ? computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
@@ -507,6 +500,8 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 				idxOffset++;
 			}
 		}
+
+		recomputeDocLineToVisibleIndex( oldIdxFrom );
 	} else {
 		Int64 oldIdxFrom = static_cast<Int64>( toVisibleIndex( fromDocIdx ) );
 		Int64 oldIdxTo = static_cast<Int64>( toVisibleIndex( toDocIdx, true ) );
@@ -519,8 +514,16 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 		Int64 idxOffset = oldIdxTo - oldIdxFrom + 1;
 		for ( Int64 idx = toDocIdx + 1; idx < linesCount; idx++ )
 			mDocLineToVisibleIndex[idx] -= idxOffset;
-		eeASSERT( mDocLineToVisibleIndex.size() == mDoc->linesCount() );
 	}
+	eeASSERT( mDocLineToVisibleIndex.size() == mDoc->linesCount() );
+}
+
+bool DocumentView::isFolded( Int64 docIdx, bool andNotFirstLine ) const {
+	return std::any_of( mFoldedRegions.begin(), mFoldedRegions.end(),
+						[&]( const TextRange& region ) {
+							return region.containsLine( docIdx ) &&
+								   ( andNotFirstLine ? region.start().line() != docIdx : true );
+						} );
 }
 
 void DocumentView::removeFoldedRegion( const TextRange& region ) {
@@ -529,25 +532,29 @@ void DocumentView::removeFoldedRegion( const TextRange& region ) {
 		mFoldedRegions.erase( found );
 }
 
-bool DocumentView::isFolded( Int64 docIdx ) const {
-	return std::any_of(
-		mFoldedRegions.begin(), mFoldedRegions.end(),
-		[docIdx]( const TextRange& region ) { return region.containsLine( docIdx ); } );
-}
-
 void DocumentView::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
-	for ( auto& [_, region] : mFoldingRegions ) {
-		if ( region.start().line() >= fromLine ) {
-			region.start().setLine( region.start().line() + numLines );
-			region.end().setLine( region.end().line() + numLines );
-		}
-	}
+	mDoc->getFoldRangeService().shiftFoldingRegions( fromLine, numLines );
+
 	for ( auto& region : mFoldedRegions ) {
 		if ( region.start().line() >= fromLine ) {
 			region.start().setLine( region.start().line() + numLines );
 			region.end().setLine( region.end().line() + numLines );
 		}
 	}
+}
+
+void DocumentView::verifyStructuralConsistency() {
+#ifdef EE_DEBUG
+	auto visibleLines = mVisibleLines;
+	auto docLineToVisibleIndex = mDocLineToVisibleIndex;
+	auto visibleLinesOffset = mVisibleLinesOffset;
+
+	invalidateCache();
+
+	eeASSERT( visibleLines == mVisibleLines );
+	eeASSERT( docLineToVisibleIndex == mDocLineToVisibleIndex );
+	eeASSERT( visibleLinesOffset == mVisibleLinesOffset );
+#endif
 }
 
 }}} // namespace EE::UI::Doc

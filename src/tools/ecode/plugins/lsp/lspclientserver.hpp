@@ -95,6 +95,14 @@ class LSPClientServer {
 									  const WReplyHandler<LSPSymbolInformationList>& h,
 									  const ReplyHandler<LSPResponseError>& eh = {} );
 
+	LSPClientServer::LSPRequestHandle documentFoldingRange( const URI& document,
+															const JsonReplyHandler& h,
+															const JsonReplyHandler& eh );
+
+	LSPRequestHandle documentFoldingRange( const URI& document,
+										   const ReplyHandler<std::vector<LSPFoldingRange>>& h,
+										   const ReplyHandler<LSPResponseError>& eh = {} );
+
 	LSPRequestHandle documentSymbolsBroadcast( const URI& document );
 
 	LSPRequestHandle didOpen( const URI& document, const std::string& text, int version );

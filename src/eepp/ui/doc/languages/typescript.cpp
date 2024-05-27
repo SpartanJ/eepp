@@ -71,6 +71,8 @@ void addTypeScript() {
 
 		} );
 
+	ts.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+
 	SyntaxDefinitionManager::instance()
 		->add( { "TSX",
 				 { "%.tsx$" },
@@ -101,7 +103,10 @@ void addTypeScript() {
 				 "//" } )
 		.setSymbols( ts.getSymbols() )
 		.setLSPName( "typescriptreact" )
-		.setAutoCloseXMLTags( true );
+		.setAutoCloseXMLTags( true )
+		.setFoldRangeType( FoldRangeType::Braces )
+		.setFoldBraces( { { '{', '}' } } );
+	;
 }
 
 }}}} // namespace EE::UI::Doc::Language

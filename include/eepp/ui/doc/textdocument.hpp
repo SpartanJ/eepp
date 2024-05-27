@@ -12,6 +12,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/ui/doc/foldrangeservice.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/textdocumentline.hpp>
 #include <eepp/ui/doc/textformat.hpp>
@@ -619,6 +620,10 @@ class EE_API TextDocument {
 
 	void setEncoding( TextFormat::Encoding encoding );
 
+	const FoldRangeServive& getFoldRangeService() const;
+
+	FoldRangeServive& getFoldRangeService();
+
   protected:
 	friend class TextUndoStack;
 
@@ -671,6 +676,7 @@ class EE_API TextDocument {
 	std::unique_ptr<SyntaxHighlighter> mHighlighter;
 	Mutex mStopFlagsMutex;
 	UnorderedMap<bool*, std::unique_ptr<bool>> mStopFlags;
+	FoldRangeServive mFoldRangeService;
 
 	void initializeCommands();
 

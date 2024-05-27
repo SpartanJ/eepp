@@ -340,6 +340,34 @@ PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMess
 	return { uri.toString() };
 }
 
+PluginRequestHandle LSPClientPlugin::processFoldingRanges( const PluginMessage& msg ) {
+	if ( !msg.isRequest() || msg.type != PluginMessageType::FoldingRanges ||
+		 msg.format != PluginMessageFormat::JSON || !msg.asJSON().contains( "uri" ) )
+		return {};
+
+	URI uri( msg.asJSON().value( "uri", "" ) );
+	if ( uri.empty() )
+		return {};
+
+	LSPClientServer* server = mClientManager.getOneLSPClientServer( uri );
+	if ( !server || !server->getCapabilities().foldingRangeProvider )
+		return {};
+
+	auto handler = [uri, this]( const PluginIDType& id, const std::vector<LSPFoldingRange>& res ) {
+		mManager->sendResponse( this, PluginMessageType::FoldingRanges,
+								PluginMessageFormat::FoldingRanges, &res, id );
+	};
+
+	if ( Engine::instance()->isMainThread() ) {
+		server->getThreadPool()->run(
+			[server, uri, handler]() { server->documentFoldingRange( uri, handler ); } );
+	} else {
+		server->documentFoldingRange( uri, handler );
+	}
+
+	return { uri.toString() };
+}
+
 void processFormattingResponse( const std::shared_ptr<TextDocument>& doc,
 								std::vector<LSPTextEdit> edits ) {
 	TextRanges ranges = doc->getSelections();
@@ -689,6 +717,8 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 								return server->getCapabilities().workspaceSymbolProvider;
 							case PluginCapability::TextDocumentSymbol:
 								return server->getCapabilities().documentSymbolProvider;
+							case PluginCapability::FoldingRange:
+								return server->getCapabilities().foldingRangeProvider;
 							default: {
 							}
 						}
@@ -732,6 +762,10 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 		}
 		case PluginMessageType::DiagnosticsCodeAction: {
 			processDiagnosticsCodeAction( msg );
+			break;
+		}
+		case PluginMessageType::FoldingRanges: {
+			processFoldingRanges( msg );
 			break;
 		}
 		default:

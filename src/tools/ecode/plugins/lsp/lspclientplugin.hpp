@@ -25,7 +25,7 @@ class LSPClientPlugin : public Plugin {
   public:
 	static PluginDefinition Definition() {
 		return { "lspclient",		   "LSP Client", "Language Server Protocol Client.",
-				 LSPClientPlugin::New, { 0, 2, 4 },	 LSPClientPlugin::NewSync };
+				 LSPClientPlugin::New, { 0, 2, 5 },	 LSPClientPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -178,6 +178,8 @@ class LSPClientPlugin : public Plugin {
 						 const std::function<void( UIListView* )> onCreateCb = {} );
 
 	PluginRequestHandle processTextDocumentSymbol( const PluginMessage& msg );
+
+	PluginRequestHandle processFoldingRanges( const PluginMessage& msg );
 
 	void setDocumentSymbols( const URI& docURI, LSPSymbolInformationList&& res );
 

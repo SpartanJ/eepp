@@ -365,6 +365,7 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	caps.documentHighlightProvider = toBoolOrObject( json, "documentHighlightProvider" );
 	caps.documentFormattingProvider = toBoolOrObject( json, "documentFormattingProvider" );
 	caps.workspaceSymbolProvider = toBoolOrObject( json, "workspaceSymbolProvider" );
+	caps.foldingRangeProvider = toBoolOrObject( json, "foldingRangeProvider" );
 	if ( json.contains( "documentRangeFormattingProvider" ) )
 		caps.documentRangeFormattingProvider =
 			toBoolOrObject( json, "documentRangeFormattingProvider" );
@@ -988,6 +989,31 @@ static LSPSemanticTokensDelta parseSemanticTokensDelta( const json& result ) {
 	return ret;
 }
 
+static std::vector<LSPFoldingRange> parseFoldingRange( const json& result ) {
+	std::vector<LSPFoldingRange> ranges;
+	if ( !result.is_array() )
+		return ranges;
+	for ( const auto& range : result ) {
+		if ( !range.contains( "startLine" ) || !range.contains( "endLine" ) )
+			continue;
+		LSPFoldingRange nrange;
+		nrange.startLine = range.value( "startLine", 0u );
+		nrange.endLine = range.value( "endLine", 0u );
+		auto kind = range.value( "kind", "region" );
+		switch ( String::hash( kind ) ) {
+			case static_cast<String::HashType>( LSPFoldingRangeKind::Comment ):
+				nrange.kind = LSPFoldingRangeKind::Comment;
+			case static_cast<String::HashType>( LSPFoldingRangeKind::Imports ):
+				nrange.kind = LSPFoldingRangeKind::Imports;
+			case static_cast<String::HashType>( LSPFoldingRangeKind::Region ):
+			default:
+				nrange.kind = LSPFoldingRangeKind::Region;
+		}
+		ranges.emplace_back( nrange );
+	}
+	return ranges;
+}
+
 void LSPClientServer::registerCapabilities( const json& jcap ) {
 	if ( !jcap.is_object() || !jcap.contains( "registrations" ) ||
 		 !jcap["registrations"].is_array() )
@@ -1571,6 +1597,29 @@ LSPClientServer::LSPRequestHandle LSPClientServer::documentSymbols( const URI& d
 																	const JsonReplyHandler& eh ) {
 	auto params = textDocumentParams( document );
 	return send( newRequest( "textDocument/documentSymbol", params ), h, eh );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentFoldingRange( const URI& document, const JsonReplyHandler& h,
+									   const JsonReplyHandler& eh ) {
+	auto params = textDocumentParams( document );
+	return send( newRequest( "textDocument/foldingRange", params ), h, eh );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentFoldingRange( const URI& document,
+									   const ReplyHandler<std::vector<LSPFoldingRange>>& h,
+									   const ReplyHandler<LSPResponseError>& eh ) {
+	return documentFoldingRange(
+		document,
+		[h]( const IdType& id, const json& json ) {
+			if ( h )
+				h( id, parseFoldingRange( json ) );
+		},
+		[eh]( const IdType& id, const json& json ) {
+			if ( eh )
+				eh( id, parseResponseError( json ) );
+		} );
 }
 
 LSPClientServer::LSPRequestHandle
