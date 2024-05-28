@@ -124,8 +124,9 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
-	mLineNumberPaddingLeft( PixelDensity::dpToPx( 6 ) ),
-	mLineNumberPaddingRight( PixelDensity::dpToPx( 6 ) ),
+	mLineNumberPaddingLeft( PixelDensity::dpToPx( 4 ) ),
+	mLineNumberPaddingRight( PixelDensity::dpToPx( 4 ) ),
+	mFoldRegionWidth( PixelDensity::dpToPx( 12 ) ),
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ),
 	mPreviewColor( Color::Transparent ) {
@@ -272,6 +273,8 @@ void UICodeEditor::draw() {
 
 	if ( !mLocked && mHighlightCurrentLine ) {
 		for ( const auto& sel : mDoc->getSelections() ) {
+			if ( mDocView.isFolded( sel.start().line(), true ) )
+				continue;
 			primitives.setColor( Color( mCurrentLineBackgroundColor ).blendAlpha( mAlpha ) );
 			Float height = 1;
 			if ( mDocView.isWrappedLine( sel.start().line() ) )
@@ -350,7 +353,7 @@ void UICodeEditor::draw() {
 	}
 
 	if ( mPluginsGutterSpace > 0 ) {
-		Float curGutterPos = 0.f;
+		Float curGutterPos = 0;
 		for ( auto& plugin : mPluginGutterSpaces ) {
 			for ( auto gi = lineRange.first; gi <= lineRange.second; gi++ ) {
 				if ( !mDocView.isLineVisible( gi ) )
@@ -379,7 +382,7 @@ void UICodeEditor::draw() {
 			drawCursor( startScroll, lineHeight, sel.start() );
 	}
 
-	if ( mShowLineNumber ) {
+	if ( mShowLineNumber || mShowFoldingRegion ) {
 		drawLineNumbers( lineRange, startScroll,
 						 { screenStart.x + mPluginsGutterSpace, screenStart.y }, lineHeight,
 						 getLineNumberWidth(), lineNumberDigits, charSize );
@@ -798,8 +801,13 @@ Float UICodeEditor::getLineNumberWidth() const {
 						   : 0.f;
 }
 
+Float UICodeEditor::getInternalGutterWidth() const {
+	return getLineNumberWidth() +
+		   ( !mShowFoldingRegion || mDoc->getFoldRangeService().empty() ? 0.f : mFoldRegionWidth );
+}
+
 Float UICodeEditor::getGutterWidth() const {
-	return getLineNumberWidth() + mPluginsGutterSpace;
+	return getInternalGutterWidth() + mPluginsGutterSpace;
 }
 
 const bool& UICodeEditor::getShowLineNumber() const {
@@ -1019,7 +1027,8 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 }
 
 void UICodeEditor::updateIMELocation() {
-	if ( mDoc->getActiveClient() != this || !Engine::isRunninMainThread() )
+	if ( mDoc->getActiveClient() != this || !Engine::isRunninMainThread() ||
+		 mDocView.isFolded( mDoc->getSelection( true ).start().line() ) )
 		return;
 	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
 	getUISceneNode()->getWindow()->getIME().setLocation( r.asInt() );
@@ -1450,6 +1459,12 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		checkMouseOverLink( position );
 	}
 
+	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+	bool oldFoldVisible = mFoldsVisible;
+	mFoldsVisible = localPos.x <= mPaddingPx.Left + getGutterWidth();
+	if ( oldFoldVisible != mFoldsVisible )
+		invalidateDraw();
+
 	return UIWidget::onMouseMove( position, flags );
 }
 
@@ -1577,6 +1592,10 @@ Uint32 UICodeEditor::onMouseLeave( const Vector2i& position, const Uint32& flags
 		mMinimapHover = false;
 		invalidateDraw();
 	}
+	if ( mFoldsVisible ) {
+		invalidateDraw();
+		mFoldsVisible = false;
+	}
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onMouseLeave( this, position, flags ) )
 			return UIWidget::onMouseLeave( position, flags );
@@ -1654,7 +1673,8 @@ UIScrollBar* UICodeEditor::getHScrollBar() const {
 
 void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHeight,
 							   const TextPosition& cursor ) {
-	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() ) {
+	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() &&
+		 !mDocView.isFolded( cursor.line(), true ) ) {
 		auto offset = getTextPositionOffset( cursor, lineHeight );
 		Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y );
 		Primitives primitives;
@@ -3712,7 +3732,12 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 									const Float& fontSize ) {
 	Primitives primitives;
 	primitives.setColor( Color( mLineNumberBackgroundColor ).blendAlpha( mAlpha ) );
-	primitives.drawRectangle( Rectf( screenStart, Sizef( lineNumberWidth, mSize.getHeight() ) ) );
+	Float w = 0.f;
+	if ( mShowLineNumber )
+		w += lineNumberWidth;
+	if ( mShowFoldingRegion && !mDoc->getFoldRangeService().empty() )
+		w += mFoldRegionWidth;
+	primitives.drawRectangle( Rectf( screenStart, Sizef( w, mSize.getHeight() ) ) );
 	TextRange selection = mDoc->getSelection( true );
 	Float lineOffset = getLineOffset();
 
@@ -3730,28 +3755,34 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 			Vector2f( screenStart.x + mLineNumberPaddingLeft,
 					  startScroll.y + mDocView.getLineYOffset( i, lineHeight ) + lineOffset ) );
 
-		Text::draw( pos, lnPos, mFontStyleConfig.Font, fontSize,
-					( i >= selection.start().line() && i <= selection.end().line() )
-						? mLineNumberActiveFontColor
-						: mLineNumberFontColor,
-					mFontStyleConfig.Style, mFontStyleConfig.OutlineThickness,
-					mFontStyleConfig.OutlineColor, mFontStyleConfig.ShadowColor,
-					mFontStyleConfig.ShadowOffset );
+		if ( mShowLineNumber ) {
+			Text::draw( pos, lnPos, mFontStyleConfig.Font, fontSize,
+						( i >= selection.start().line() && i <= selection.end().line() )
+							? mLineNumberActiveFontColor
+							: mLineNumberFontColor,
+						mFontStyleConfig.Style, mFontStyleConfig.OutlineThickness,
+						mFontStyleConfig.OutlineColor, mFontStyleConfig.ShadowColor,
+						mFontStyleConfig.ShadowOffset );
+		}
 
-		if ( mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
-			Float dim = PixelDensity::dpToPx( 4 );
-			lnPos = Vector2f( screenStart.x + lineNumberWidth - dim,
-							  lnPos.y + lineHeight * 0.5f - dim * 0.5f );
+		if ( mShowFoldingRegion && mFoldsVisible &&
+			 mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
+			Float dim = PixelDensity::dpToPx( 6 );
+			Float center = ( mFoldRegionWidth - dim ) * 0.5f;
+			bool isFolded = mDocView.isFolded( i );
+			Float dimH = isFolded ? dim : eeceil( dim * 0.75f );
+			lnPos = Vector2f( screenStart.x + ( mShowLineNumber ? lineNumberWidth : 0.f ) + center,
+							  lnPos.y + eeceil( ( lineHeight - dimH ) * 0.5f ) );
 			primitives.setColor( mLineNumberFontColor );
 			Triangle2f tri;
-			if ( mDocView.isFolded( i ) ) {
+			if ( isFolded ) {
 				tri.V[0] = { 0, 0 };
 				tri.V[1] = { 0, dim };
 				tri.V[2] = { dim, dim * 0.5f };
 			} else {
 				tri.V[0] = { 0, 0 };
 				tri.V[1] = { dim, 0 };
-				tri.V[2] = { dim * 0.5f, dim };
+				tri.V[2] = { dim * 0.5f, dim * 0.75f };
 			}
 			tri.V[0] += lnPos;
 			tri.V[1] += lnPos;
@@ -4480,6 +4511,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		const auto& selection = mDoc->getSelectionIndex( i );
+		if ( mDocView.isFolded( selection.start().line(), true ) )
+			continue;
 		Float selectionY =
 			rect.Top +
 			( static_cast<Int64>( mDocView.getVisibleLineRange( selection.start() ).visibleIndex ) -
@@ -4507,6 +4540,17 @@ Vector2f UICodeEditor::getScreenScroll() const {
 
 Float UICodeEditor::getMinimapLineSpacing() const {
 	return eemax( 1.f, eefloor( 2 * PixelDensity::getPixelDensity() * mMinimapConfig.scale ) );
+}
+
+bool UICodeEditor::getShowFoldingRegion() const {
+	return mShowFoldingRegion;
+}
+
+void UICodeEditor::setShowFoldingRegion( bool showFoldingRegion ) {
+	if ( mShowFoldingRegion != showFoldingRegion ) {
+		mShowFoldingRegion = showFoldingRegion;
+		invalidateDraw();
+	}
 }
 
 bool UICodeEditor::isMinimapFileTooLarge() const {

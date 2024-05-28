@@ -24,6 +24,8 @@ class EE_API FoldRangeServive {
 
 	void clear();
 
+	bool empty();
+
 	std::optional<TextRange> find( Int64 docIdx );
 
 	void addFoldRegion( TextRange region );

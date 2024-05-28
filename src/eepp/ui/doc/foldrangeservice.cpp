@@ -27,6 +27,11 @@ void FoldRangeServive::clear() {
 	mFoldingRegions.clear();
 }
 
+bool FoldRangeServive::empty() {
+	Lock l( mMutex );
+	return mFoldingRegions.empty();
+}
+
 std::optional<TextRange> FoldRangeServive::find( Int64 docIdx ) {
 	Lock l( mMutex );
 	auto foldRegionIt = mFoldingRegions.find( docIdx );
@@ -48,13 +53,18 @@ bool FoldRangeServive::isFoldingRegionInLine( Int64 docIdx ) {
 }
 
 void FoldRangeServive::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
+	// TODO: Optimize this
 	Lock l( mMutex );
-	for ( auto& [_, region] : mFoldingRegions ) {
-		if ( region.start().line() >= fromLine ) {
-			region.start().setLine( region.start().line() + numLines );
-			region.end().setLine( region.end().line() + numLines );
+	std::unordered_map<Int64, TextRange> foldingRegions;
+	for ( auto& foldingRegion : mFoldingRegions ) {
+		if ( foldingRegion.second.start().line() > fromLine ) {
+			foldingRegion.second.start().setLine( foldingRegion.second.start().line() + numLines );
+			foldingRegion.second.end().setLine( foldingRegion.second.end().line() + numLines );
+			foldingRegions[foldingRegion.second.start().line()] = foldingRegion.second;
 		}
+		foldingRegions[foldingRegion.second.start().line()] = foldingRegion.second;
 	}
+	mFoldingRegions = foldingRegions;
 }
 
 void FoldRangeServive::setFoldingRegions( std::vector<TextRange> regions ) {

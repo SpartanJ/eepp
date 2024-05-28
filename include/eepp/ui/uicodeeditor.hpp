@@ -265,6 +265,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getLineNumberWidth() const;
 
+	Float getInternalGutterWidth() const;
+
 	virtual Float getGutterWidth() const;
 
 	const bool& getShowLineNumber() const;
@@ -698,7 +700,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getMinimapLineSpacing() const;
 
-  protected:
+	bool getShowFoldingRegion() const;
+	void setShowFoldingRegion(bool showFoldingRegion);
+
+	protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };
@@ -714,6 +719,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mCursorVisible{ false };
 	bool mMouseDown{ false };
 	bool mShowLineNumber{ true };
+	bool mShowFoldingRegion{ true };
 	bool mShowWhitespaces{ true };
 	bool mShowLineEndings{ false };
 	bool mLocked{ false };
@@ -739,6 +745,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mDisplayLockedIcon{ false };
 	bool mInvalidateOnLoaded{ false };
 	bool mUseDefaultStyle{ false };
+	bool mFoldsVisible{ false };
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
@@ -749,6 +756,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	StyleSheetLength mLineSpacing{ 0.f, StyleSheetLength::Px };
 	Float mLineNumberPaddingLeft;
 	Float mLineNumberPaddingRight;
+	Float mFoldRegionWidth;
 	Color mLineNumberFontColor;
 	Color mLineNumberActiveFontColor;
 	Color mLineNumberBackgroundColor;

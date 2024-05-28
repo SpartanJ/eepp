@@ -142,9 +142,9 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& 
 
 DocumentView::DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle,
 							Config config ) :
-	mDoc( std::move( doc ) ),
-	mFontStyle( std::move( fontStyle ) ),
-	mConfig( std::move( config ) ) {}
+	mDoc( std::move( doc ) ), mFontStyle( std::move( fontStyle ) ), mConfig( std::move( config ) ) {
+	invalidateCache();
+}
 
 bool DocumentView::isWrapEnabled() const {
 	return mConfig.mode != LineWrapMode::NoWrap;
@@ -249,11 +249,11 @@ void DocumentView::invalidateCache() {
 
 VisibleIndex DocumentView::toVisibleIndex( Int64 docIdx, bool retLast ) const {
 	// eeASSERT( isLineVisible( docIdx ) );
-	if ( isOneToOne() )
+	if ( isOneToOne() || mDocLineToVisibleIndex.empty() )
 		return static_cast<VisibleIndex>( docIdx );
 	auto idx = mDocLineToVisibleIndex[eeclamp(
 		docIdx, 0ll, static_cast<Int64>( mDocLineToVisibleIndex.size() - 1 ) )];
-	if ( retLast ) {
+	if ( retLast && idx != static_cast<Int64>( VisibleIndex::invalid ) ) {
 		Int64 lastOfLine = mVisibleLines[idx].line();
 		Int64 visibleLinesCount = mVisibleLines.size();
 		for ( auto i = idx + 1; i < visibleLinesCount; i++ ) {
@@ -442,7 +442,9 @@ void DocumentView::recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex ) {
 				for ( Int64 i = previousLineIdx + 1; i < visibleLine.line(); i++ )
 					mDocLineToVisibleIndex[i] = static_cast<Int64>( VisibleIndex::invalid );
 			}
-			mDocLineToVisibleIndex[visibleLine.line()] = visibleIdx;
+			mDocLineToVisibleIndex[visibleLine.line()] =
+				isFolded( visibleLine.line(), true ) ? static_cast<Int64>( VisibleIndex::invalid )
+													 : visibleIdx;
 			previousLineIdx = visibleLine.line();
 		}
 	}
@@ -471,8 +473,8 @@ void DocumentView::unfoldRegion( Int64 foldDocIdx ) {
 	if ( !foldRegion )
 		return;
 	Int64 toDocIdx = foldRegion->end().line();
-	changeVisibility( foldDocIdx + 1, toDocIdx, true );
 	removeFoldedRegion( *foldRegion );
+	changeVisibility( foldDocIdx + 1, toDocIdx, true );
 	verifyStructuralConsistency();
 	if ( isOneToOne() )
 		clearCache();
@@ -484,12 +486,16 @@ bool DocumentView::isOneToOne() const {
 
 void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible ) {
 	if ( visible ) {
-
 		auto it = std::lower_bound( mVisibleLines.begin(), mVisibleLines.end(),
 									TextPosition{ fromDocIdx, 0 } );
 		Int64 oldIdxFrom = std::distance( mVisibleLines.begin(), it );
 		auto idxOffset = oldIdxFrom;
 		for ( auto i = fromDocIdx; i <= toDocIdx; i++ ) {
+			if ( isFolded( i, true ) ) {
+				mVisibleLinesOffset[i] = computeOffsets( mDoc->line( i ).getText().view(),
+														 mFontStyle, mConfig.tabWidth );
+				continue;
+			}
 			auto lb = isWrapEnabled()
 						  ? computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
 											   mConfig.keepIndentation, mConfig.tabWidth )
@@ -512,8 +518,10 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 		}
 		Int64 linesCount = mDoc->linesCount();
 		Int64 idxOffset = oldIdxTo - oldIdxFrom + 1;
-		for ( Int64 idx = toDocIdx + 1; idx < linesCount; idx++ )
-			mDocLineToVisibleIndex[idx] -= idxOffset;
+		for ( Int64 idx = toDocIdx + 1; idx < linesCount; idx++ ) {
+			if ( mDocLineToVisibleIndex[idx] != static_cast<Int64>( VisibleIndex::invalid ) )
+				mDocLineToVisibleIndex[idx] -= idxOffset;
+		}
 	}
 	eeASSERT( mDocLineToVisibleIndex.size() == mDoc->linesCount() );
 }
@@ -551,8 +559,30 @@ void DocumentView::verifyStructuralConsistency() {
 
 	invalidateCache();
 
-	eeASSERT( visibleLines == mVisibleLines );
-	eeASSERT( docLineToVisibleIndex == mDocLineToVisibleIndex );
+	auto visibleLinesConsistency = visibleLines == mVisibleLines;
+	eeASSERT( visibleLinesConsistency );
+
+	if ( !visibleLinesConsistency && mVisibleLines.size() == visibleLines.size() ) {
+		for ( size_t i = 0; i < mVisibleLines.size(); i++ ) {
+			if ( mVisibleLines[i] != visibleLines[i] ) {
+				eeASSERT( mVisibleLines[i] == visibleLines[i] );
+				break;
+			}
+		}
+	}
+
+	bool docConsistency = docLineToVisibleIndex == mDocLineToVisibleIndex;
+	eeASSERT( docConsistency );
+
+	if ( !docConsistency && docLineToVisibleIndex.size() == mDocLineToVisibleIndex.size() ) {
+		for ( size_t i = 0; i < mDocLineToVisibleIndex.size(); i++ ) {
+			if ( mDocLineToVisibleIndex[i] != docLineToVisibleIndex[i] ) {
+				eeASSERT( mDocLineToVisibleIndex[i] == docLineToVisibleIndex[i] );
+				break;
+			}
+		}
+	}
+
 	eeASSERT( visibleLinesOffset == mVisibleLinesOffset );
 #endif
 }

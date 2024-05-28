@@ -56,6 +56,7 @@ void LSPDocumentClient::onDocumentTextChanged( const DocumentContentChange& chan
 	mServer->getThreadPool()->run( [this, change]() { mServer->processDidChangeQueue(); } );
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
+	requestFoldRangeDelayed();
 }
 
 void LSPDocumentClient::onDocumentUndoRedo( const TextDocument::UndoRedo& /*eventType*/ ) {}
