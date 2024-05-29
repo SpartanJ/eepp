@@ -19,9 +19,9 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
 	requestFoldRangeDelayed();
-	doc->getFoldRangeService().setProvider( [this]( auto ) -> bool {
+	doc->getFoldRangeService().setProvider( [this]( auto, bool requestFolds ) -> bool {
 		bool ret = mServer->getCapabilities().foldingRangeProvider;
-		if ( ret )
+		if ( ret && requestFolds )
 			requestFoldRangeDelayed();
 		return ret;
 	} );

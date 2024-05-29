@@ -3251,6 +3251,13 @@ void TextDocument::notifyInterstingCursorChange( TextPosition selection ) {
 	}
 }
 
+void TextDocument::notifyFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
+	Lock l( mClientsMutex );
+	for ( auto& client : mClients ) {
+		client->onFoldRegionsUpdated( oldCount, newCount );
+	}
+}
+
 void TextDocument::notifySelectionChanged( TextRange selection ) {
 	if ( !selection.isValid() )
 		selection = getSelection();

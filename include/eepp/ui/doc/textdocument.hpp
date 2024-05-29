@@ -100,6 +100,7 @@ class EE_API TextDocument {
 		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*toLine*/,
 										 const Int64& /*numLines*/ ) {}
 		virtual TextRange getVisibleRange() const { return {}; };
+		virtual void onFoldRegionsUpdated( size_t /*oldCount*/, size_t /*newCount*/ ) {}
 	};
 
 	typedef std::function<void()> DocumentCommand;
@@ -626,6 +627,7 @@ class EE_API TextDocument {
 
   protected:
 	friend class TextUndoStack;
+	friend class FoldRangeServive;
 
 	Uint64 mModificationId{ 0 };
 	TextUndoStack mUndoStack;
@@ -714,6 +716,8 @@ class EE_API TextDocument {
 								 const Int64& numLines );
 
 	void notifyInterstingCursorChange( TextPosition selection );
+
+	void notifyFoldRegionsUpdated( size_t oldCount, size_t newCount );
 
 	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
 

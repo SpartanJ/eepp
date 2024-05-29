@@ -41,7 +41,6 @@ void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
 #endif
 
 #endif
-
 }
 
 #ifndef EE_SILENT

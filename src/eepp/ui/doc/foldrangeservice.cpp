@@ -5,11 +5,18 @@ namespace EE { namespace UI { namespace Doc {
 
 FoldRangeServive::FoldRangeServive( TextDocument* doc ) : mDoc( doc ) {}
 
+bool FoldRangeServive::canFold() const {
+	if ( mProvider && mProvider( mDoc, false ) )
+		return true;
+	// return mDoc->getSyntaxDefinition().getFoldRangeType() != FoldRangeType::Undefined;
+	return false;
+}
+
 void FoldRangeServive::findRegions() {
 	if ( mDoc == nullptr )
 		return;
 
-	if ( mProvider && mProvider( mDoc ) )
+	if ( mProvider && mProvider( mDoc, true ) )
 		return;
 
 	switch ( mDoc->getSyntaxDefinition().getFoldRangeType() ) {
@@ -68,13 +75,19 @@ void FoldRangeServive::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
 }
 
 void FoldRangeServive::setFoldingRegions( std::vector<TextRange> regions ) {
+	size_t newCount = regions.size();
+	size_t oldCount;
 	Lock l( mMutex );
-	mFoldingRegions.clear();
-	std::sort( regions.begin(), regions.end() );
-	for ( auto& range : regions ) {
-		auto line = range.start().line();
-		mFoldingRegions[line] = std::move( range );
+	{
+		oldCount = mFoldingRegions.size();
+		mFoldingRegions.clear();
+		std::sort( regions.begin(), regions.end() );
+		for ( auto& range : regions ) {
+			auto line = range.start().line();
+			mFoldingRegions[line] = std::move( range );
+		}
 	}
+	mDoc->notifyFoldRegionsUpdated( oldCount, newCount );
 }
 
 const FoldRangeServive::FoldRangeProvider& FoldRangeServive::getProvider() const {

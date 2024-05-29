@@ -649,6 +649,15 @@ void UICodeEditor::onDocumentChanged() {
 	sendEvent( &event );
 }
 
+void UICodeEditor::onFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
+	if ( oldCount == 0 && newCount > 0 ) {
+		runOnMainThread( [this] {
+			invalidateLineWrapMaxWidth( false );
+			invalidateLongestLineWidth();
+		} );
+	}
+}
+
 Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
 	if ( msg->getMsg() == NodeMessage::MouseDown )
 		return 1;
@@ -658,6 +667,7 @@ Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
 void UICodeEditor::disableEditorFeatures() {
 	mShowLineNumber = false;
 	mShowWhitespaces = false;
+	mShowFoldingRegion = false;
 	mHighlightCurrentLine = false;
 	mHighlightMatchingBracket = false;
 	mHighlightSelectionMatch = false;
@@ -803,7 +813,7 @@ Float UICodeEditor::getLineNumberWidth() const {
 
 Float UICodeEditor::getInternalGutterWidth() const {
 	return getLineNumberWidth() +
-		   ( !mShowFoldingRegion || mDoc->getFoldRangeService().empty() ? 0.f : mFoldRegionWidth );
+		   ( mShowFoldingRegion && mDoc->getFoldRangeService().canFold() ? mFoldRegionWidth : 0.f );
 }
 
 Float UICodeEditor::getGutterWidth() const {
@@ -1459,11 +1469,13 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		checkMouseOverLink( position );
 	}
 
-	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
-	bool oldFoldVisible = mFoldsVisible;
-	mFoldsVisible = localPos.x <= mPaddingPx.Left + getGutterWidth();
-	if ( oldFoldVisible != mFoldsVisible )
-		invalidateDraw();
+	if ( mShowFoldingRegion ) {
+		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+		bool oldFoldVisible = mFoldsVisible;
+		mFoldsVisible = localPos.x <= mPaddingPx.Left + getGutterWidth();
+		if ( oldFoldVisible != mFoldsVisible )
+			invalidateDraw();
+	}
 
 	return UIWidget::onMouseMove( position, flags );
 }
@@ -2249,7 +2261,8 @@ template <typename StringType> Float UICodeEditor::getTextWidth( const StringTyp
 	}
 
 	Float glyphWidth = getGlyphWidth();
-	size_t len = line.length();
+	size_t len =
+		line.length() ? ( line[line.length() - 1] == '\n' ? line.length() - 1 : line.length() ) : 0;
 	Float x = 0;
 	for ( size_t i = 0; i < len; i++ )
 		x += ( line[i] == '\t' ) ? glyphWidth * mTabWidth : glyphWidth;
@@ -3735,7 +3748,7 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 	Float w = 0.f;
 	if ( mShowLineNumber )
 		w += lineNumberWidth;
-	if ( mShowFoldingRegion && !mDoc->getFoldRangeService().empty() )
+	if ( mShowFoldingRegion && mDoc->getFoldRangeService().canFold() )
 		w += mFoldRegionWidth;
 	primitives.drawRectangle( Rectf( screenStart, Sizef( w, mSize.getHeight() ) ) );
 	TextRange selection = mDoc->getSelection( true );
@@ -3821,7 +3834,7 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 			continue;
 
 		const auto& text = mDoc->line( index ).getText();
-		if ( mDocView.isWrappedLine( index ) ) {
+		if ( mDocView.isWrappedLine( index ) || !mFont->isMonospace() ) {
 			for ( size_t i = 0; i < text.size(); i++ ) {
 				if ( ' ' == text[i] ) {
 					auto offset =
@@ -4554,8 +4567,8 @@ void UICodeEditor::setShowFoldingRegion( bool showFoldingRegion ) {
 }
 
 bool UICodeEditor::isMinimapFileTooLarge() const {
-	return mDoc->linesCount() > 1 &&
-		   mDoc->linesCount() >
+	return mDocView.getVisibleLinesCount() > 1 &&
+		   mDocView.getVisibleLinesCount() >
 			   eefloor( getMinimapRect( getScreenStart() ).getHeight() / getMinimapLineSpacing() );
 }
 

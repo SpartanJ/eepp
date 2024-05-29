@@ -384,6 +384,12 @@ bool DocumentView::isLineVisible( Int64 docIdx ) const {
 void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	if ( isOneToOne() )
 		return;
+
+	// Unfold ANY modification over a folded range
+	if ( isFolded( fromLine ) ) {
+		unfoldRegion( fromLine );
+	}
+
 	// Get affected visible range
 	Int64 oldIdxFrom = static_cast<Int64>( toVisibleIndex( fromLine, false ) );
 	Int64 oldIdxTo = static_cast<Int64>( toVisibleIndex( toLine, true ) );
@@ -553,6 +559,9 @@ void DocumentView::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
 
 void DocumentView::verifyStructuralConsistency() {
 #ifdef EE_DEBUG
+	if ( isOneToOne() )
+		return;
+
 	auto visibleLines = mVisibleLines;
 	auto docLineToVisibleIndex = mDocLineToVisibleIndex;
 	auto visibleLinesOffset = mVisibleLinesOffset;

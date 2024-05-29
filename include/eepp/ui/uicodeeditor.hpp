@@ -951,6 +951,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentChanged();
 
+	virtual void onFoldRegionsUpdated( size_t oldCount, size_t newCount );
+
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
 	void checkMouseOverColor( const Vector2i& position );

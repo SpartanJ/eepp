@@ -16,9 +16,11 @@ class TextDocument;
 
 class EE_API FoldRangeServive {
   public:
-	using FoldRangeProvider = std::function<bool( TextDocument* )>;
+	using FoldRangeProvider = std::function<bool( TextDocument*, bool /* requestFolds */ )>;
 
 	FoldRangeServive( TextDocument* doc );
+
+	bool canFold() const;
 
 	void findRegions();
 
