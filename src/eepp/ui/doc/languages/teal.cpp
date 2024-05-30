@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addTeal() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Teal",
 		  { "%.tl$", "%.d.tl$" },
@@ -44,6 +44,8 @@ void addTeal() {
 		  { "^#!.*[ /]tl" }
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Indentation );
 }
 
 }}}} // namespace EE::UI::Doc::Language

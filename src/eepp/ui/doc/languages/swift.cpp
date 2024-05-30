@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addSwift() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Swift",
 		  { "%.swift$" },
@@ -225,6 +225,8 @@ void addSwift() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

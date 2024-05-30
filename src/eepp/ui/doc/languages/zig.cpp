@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addZig() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Zig",
 		  { "%.zig$" },
@@ -120,6 +120,8 @@ void addZig() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

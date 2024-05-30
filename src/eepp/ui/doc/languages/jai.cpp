@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addJai() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Jai",
 		  { "%.jai$" },
@@ -59,6 +59,8 @@ void addJai() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

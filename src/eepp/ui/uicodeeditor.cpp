@@ -133,6 +133,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDS_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
 	setColorScheme( SyntaxColorScheme::getDefault() );
+	refreshTag();
 	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );
 	mVScrollBar->addEventListener( Event::OnSizeChange,
@@ -621,6 +622,8 @@ void UICodeEditor::onDocumentReloaded( TextDocument* ) {
 	invalidateDraw();
 	invalidateLongestLineWidth();
 	invalidateLineWrapMaxWidth( true );
+	refreshTag();
+	findRegionsDelayed();
 }
 
 void UICodeEditor::onDocumentLoaded() {
@@ -630,6 +633,8 @@ void UICodeEditor::onDocumentLoaded() {
 	invalidateDraw();
 	invalidateLongestLineWidth();
 	invalidateLineWrapMaxWidth( true );
+	refreshTag();
+	findRegionsDelayed();
 }
 
 void UICodeEditor::onDocumentReset( TextDocument* ) {
@@ -640,6 +645,8 @@ void UICodeEditor::onDocumentReset( TextDocument* ) {
 	invalidateDraw();
 	invalidateLongestLineWidth();
 	invalidateLineWrapMaxWidth( true );
+	refreshTag();
+	findRegionsDelayed();
 }
 
 void UICodeEditor::onDocumentChanged() {
@@ -1915,6 +1922,8 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	} else {
 		invalidateLongestLineWidth();
 	}
+
+	findRegionsDelayed();
 }
 
 void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
@@ -1964,6 +1973,7 @@ void UICodeEditor::onDocumentSaved( TextDocument* doc ) {
 void UICodeEditor::onDocumentMoved( TextDocument* doc ) {
 	DocEvent event( this, doc, Event::OnDocumentMoved );
 	sendEvent( &event );
+	refreshTag();
 }
 
 void UICodeEditor::onDocumentClosed( TextDocument* doc ) {
@@ -4748,6 +4758,21 @@ bool UICodeEditor::stopMinimapDragging( const Vector2f& mousePos ) {
 		return true;
 	}
 	return false;
+}
+
+void UICodeEditor::findRegionsDelayed() {
+	if ( !mDoc->getFoldRangeService().canFold() )
+		return;
+	UISceneNode* sceneNode = getUISceneNode();
+	if ( sceneNode ) {
+		sceneNode->removeActionsByTag( mTagFoldRange );
+		sceneNode->runOnMainThread( [this]() { mDoc->getFoldRangeService().findRegions(); },
+									Seconds( 1.f ), mTagFoldRange );
+	}
+}
+
+void UICodeEditor::refreshTag() {
+	mTagFoldRange = String::hash( mDoc->getURI().toString() + ":foldrange" );
 }
 
 }} // namespace EE::UI

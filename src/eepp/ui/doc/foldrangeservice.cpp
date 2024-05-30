@@ -1,28 +1,124 @@
+#include "eepp/ui/doc/syntaxhighlighter.hpp"
+#include <eepp/system/log.hpp>
 #include <eepp/ui/doc/foldrangeservice.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 
+#include <stack>
+
 namespace EE { namespace UI { namespace Doc {
+
+static std::vector<TextRange> findFoldingRangesBraces( TextDocument* doc ) {
+	Clock c;
+	std::stack<TextPosition> braceStack;
+	std::vector<TextRange> regions;
+	const auto& braces = doc->getSyntaxDefinition().getFoldBraces();
+	size_t linesCount = doc->linesCount();
+	auto highlighter = doc->getHighlighter();
+	for ( size_t lineIdx = 0; lineIdx < linesCount; lineIdx++ ) {
+		const auto& line = doc->line( lineIdx ).getText();
+		size_t lineLength = line.length();
+		for ( size_t colIdx = 0; colIdx < lineLength; colIdx++ ) {
+			for ( const auto& bracePair : braces ) {
+				String::StringBaseType curChar = line[colIdx];
+				if ( curChar == bracePair.first ) {
+					auto textPosition = TextPosition( lineIdx, colIdx );
+					auto tokenType = highlighter->getTokenTypeAt( textPosition );
+					if ( tokenType != SyntaxStyleTypes::String &&
+						 tokenType != SyntaxStyleTypes::Comment ) {
+						braceStack.push( TextPosition( lineIdx, colIdx ) );
+					}
+				} else if ( curChar == bracePair.second ) {
+					if ( !braceStack.empty() ) {
+						auto textPosition = TextPosition( lineIdx, colIdx );
+						auto tokenType = highlighter->getTokenTypeAt( textPosition );
+						if ( tokenType != SyntaxStyleTypes::String &&
+							 tokenType != SyntaxStyleTypes::Comment ) {
+							auto start = braceStack.top();
+							braceStack.pop();
+							if ( start.line() != static_cast<Int64>( lineIdx ) )
+								regions.emplace_back( start, TextPosition( lineIdx, colIdx ) );
+						}
+					}
+				}
+			}
+		}
+	}
+	Log::debug( "findFoldingRangesBraces for \"%s\" took %s", doc->getFilePath(),
+				c.getElapsedTime().toString() );
+	return regions;
+}
+
+static int countLeadingSpaces( const String& line ) {
+	int count = 0;
+	for ( auto ch : line ) {
+		if ( ch != ' ' && ch != '\t' )
+			break;
+		++count;
+	}
+	return count;
+}
+
+static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) {
+	Clock c;
+	std::stack<TextPosition> indentStack;
+	std::vector<TextRange> regions;
+	const auto& braces = doc->getSyntaxDefinition().getFoldBraces();
+	size_t linesCount = doc->linesCount();
+	int currentIndent = 0;
+
+	for ( size_t lineIdx = 0; lineIdx < linesCount; lineIdx++ ) {
+		const auto& line = doc->line( lineIdx ).getText();
+		int newIndent = countLeadingSpaces( line );
+		if ( newIndent > currentIndent ) {
+			// Block starts at the previous line
+			indentStack.push( { static_cast<Int64>( lineIdx - 1 ), 0 } );
+		} else if ( newIndent < currentIndent && !indentStack.empty() ) {
+			while ( !indentStack.empty() && indentStack.top().column() >= newIndent ) {
+				auto top = indentStack.top();
+				indentStack.pop();
+				// End at the previous line
+				regions.emplace_back( TextPosition( top.line(), 0 ),
+									  TextPosition( static_cast<Int64>( lineIdx ) - 1, 0 ) );
+			}
+		}
+		currentIndent = newIndent;
+	}
+
+	// Close any remaining open blocks
+	while ( !indentStack.empty() ) {
+		auto top = indentStack.top();
+		indentStack.pop();
+		regions.emplace_back( TextPosition( top.line() + 1, 0 ),
+							  TextPosition( static_cast<Int64>( linesCount ) - 1, 0 ) );
+	}
+
+	Log::debug( "findFoldingRangesIndentation for \"%s\" took %s", doc->getFilePath(),
+				c.getElapsedTime().toString() );
+	return regions;
+}
 
 FoldRangeServive::FoldRangeServive( TextDocument* doc ) : mDoc( doc ) {}
 
 bool FoldRangeServive::canFold() const {
-	if ( mProvider && mProvider( mDoc, false ) )
-		return true;
-	// return mDoc->getSyntaxDefinition().getFoldRangeType() != FoldRangeType::Undefined;
-	return false;
+	// if ( mProvider && mProvider( mDoc, false ) )
+	// 	return true;
+	auto type = mDoc->getSyntaxDefinition().getFoldRangeType();
+	return type == FoldRangeType::Braces || type == FoldRangeType::Indentation;
 }
 
 void FoldRangeServive::findRegions() {
-	if ( mDoc == nullptr )
+	if ( mDoc == nullptr || !canFold() )
 		return;
 
-	if ( mProvider && mProvider( mDoc, true ) )
-		return;
+	// if ( mProvider && mProvider( mDoc, true ) )
+	// 	return;
 
 	switch ( mDoc->getSyntaxDefinition().getFoldRangeType() ) {
 		case FoldRangeType::Braces:
+			setFoldingRegions( findFoldingRangesBraces( mDoc ) );
 			break;
 		case FoldRangeType::Indentation:
+			setFoldingRegions( findFoldingRangesIndentation( mDoc ) );
 		case FoldRangeType::Tag:
 		case FoldRangeType::Undefined:
 			break;

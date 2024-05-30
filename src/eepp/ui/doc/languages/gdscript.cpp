@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addGDScript() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "GDScript",
 		  { "%.gd$" },
@@ -102,6 +102,8 @@ void addGDScript() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Indentation );
 }
 
 }}}} // namespace EE::UI::Doc::Language

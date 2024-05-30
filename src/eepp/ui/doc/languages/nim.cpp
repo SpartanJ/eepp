@@ -79,13 +79,15 @@ void addNim() {
 
 	nim_patterns.insert( nim_patterns.end(), nim_user_patterns.begin(), nim_user_patterns.end() );
 
-	SyntaxDefinitionManager::instance()->add( {
+	auto& sd = SyntaxDefinitionManager::instance()->add( {
 		"Nim",
 		{ "%.nim$", "%.nims$", "%.nimble$" },
 		std::move( nim_patterns ),
 		std::move( nim_symbols ),
 		"#",
 	} );
+
+	sd.setFoldRangeType( FoldRangeType::Indentation );
 }
 
 }}}} // namespace EE::UI::Doc::Language

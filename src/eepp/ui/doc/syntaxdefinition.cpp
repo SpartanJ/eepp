@@ -102,12 +102,12 @@ SyntaxDefinition& SyntaxDefinition::setFoldRangeType( FoldRangeType foldRangeTyp
 	return *this;
 }
 
-std::vector<std::pair<char, char>> SyntaxDefinition::getFoldBraces() const {
+std::vector<std::pair<Int64, Int64>> SyntaxDefinition::getFoldBraces() const {
 	return mFoldBraces;
 }
 
 SyntaxDefinition&
-SyntaxDefinition::setFoldBraces( const std::vector<std::pair<char, char>>& foldBraces ) {
+SyntaxDefinition::setFoldBraces( const std::vector<std::pair<Int64, Int64>>& foldBraces ) {
 	mFoldBraces = foldBraces;
 	return *this;
 }

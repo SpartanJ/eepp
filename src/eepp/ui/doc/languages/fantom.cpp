@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addFantom() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Fantom",
 		  { "%.fan$", "%.fanx$" },
@@ -114,6 +114,8 @@ void addFantom() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

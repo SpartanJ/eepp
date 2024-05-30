@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addRuby() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Ruby",
 		  { "%.rb", "%.gemspec", "%.ruby" },
@@ -78,6 +78,8 @@ void addRuby() {
 		  { "^#!.*[ /]ruby" }
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Indentation );
 }
 
 }}}} // namespace EE::UI::Doc::Language

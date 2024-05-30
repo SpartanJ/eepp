@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addRust() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Rust",
 		  { "%.rs$" },
@@ -56,6 +56,8 @@ void addRust() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

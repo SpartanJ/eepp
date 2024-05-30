@@ -4,7 +4,7 @@
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addAdept() {
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 		{ "Adept",
 		  { "%.adept$" },
 		  {
@@ -124,6 +124,8 @@ void addAdept() {
 			  { "null", "literal" },
 		  },
 		  "//" } );
+
+	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

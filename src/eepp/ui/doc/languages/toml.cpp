@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addToml() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "TOML",
 		  { "%.toml$" },
@@ -41,6 +41,8 @@ void addToml() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Indentation );
 }
 
 }}}} // namespace EE::UI::Doc::Language

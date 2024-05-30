@@ -826,6 +826,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	LineWrapType mLineWrapType{ LineWrapType::Viewport };
 	Drawable* mFoldDrawable{ nullptr };
 	Drawable* mFoldedDrawable{ nullptr };
+	String::HashType mTagFoldRange{ 0 };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -1016,6 +1017,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	size_t getTotalVisibleLines() const;
 
 	void invalidateLineWrapMaxWidth( bool force );
+
+	void findRegionsDelayed();
+
+	void refreshTag();
 };
 
 }} // namespace EE::UI

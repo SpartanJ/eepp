@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addContainerFile() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Containerfile",
 		  { "^[Cc]ontainerfile$", "^[dD]ockerfile$", "%.[dD]ockerfile$" },
@@ -41,6 +41,8 @@ void addContainerFile() {
 		  "#",
 		  {},
 		  "dockerfile" } );
+
+	sd.setFoldRangeType( FoldRangeType::Indentation );
 }
 
 }}}} // namespace EE::UI::Doc::Language

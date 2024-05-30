@@ -6,7 +6,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 void addCarbon() {
 	// Based in Lite-XL Rohan Vashisht implementation
 	// https://github.com/RohanVashisht1234/carbon_syntax_highlighter_lite-xl
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Carbon",
 		  { "%.carbon$" },
@@ -54,6 +54,8 @@ void addCarbon() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

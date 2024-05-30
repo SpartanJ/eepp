@@ -18,13 +18,13 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	notifyOpen();
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
-	requestFoldRangeDelayed();
 	doc->getFoldRangeService().setProvider( [this]( auto, bool requestFolds ) -> bool {
 		bool ret = mServer->getCapabilities().foldingRangeProvider;
 		if ( ret && requestFolds )
-			requestFoldRangeDelayed();
+			requestFoldRange();
 		return ret;
 	} );
+	mDoc->getFoldRangeService().findRegions();
 }
 
 LSPDocumentClient::~LSPDocumentClient() {
@@ -45,7 +45,6 @@ LSPDocumentClient::~LSPDocumentClient() {
 void LSPDocumentClient::onDocumentLoaded( TextDocument* ) {
 	refreshTag();
 	requestSemanticHighlightingDelayed();
-	requestFoldRangeDelayed();
 	// requestCodeLens();
 }
 
@@ -57,7 +56,6 @@ void LSPDocumentClient::onDocumentTextChanged( const DocumentContentChange& chan
 	mServer->getThreadPool()->run( [this, change]() { mServer->processDidChangeQueue(); } );
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
-	requestFoldRangeDelayed();
 }
 
 void LSPDocumentClient::onDocumentUndoRedo( const TextDocument::UndoRedo& /*eventType*/ ) {}
@@ -124,7 +122,7 @@ int LSPDocumentClient::getVersion() const {
 void LSPDocumentClient::onServerInitialized() {
 	requestSymbols();
 	requestSemanticHighlighting();
-	requestFoldRange();
+	mDoc->getFoldRangeService().findRegions();
 	// requestCodeLens();
 }
 
@@ -402,12 +400,16 @@ void LSPDocumentClient::requestFoldRange() {
 	if ( !server->getCapabilities().foldingRangeProvider )
 		return;
 	URI uri = mDoc->getURI();
-	auto handler = [uri, this]( const PluginIDType&, const std::vector<LSPFoldingRange>& res ) {
+	TextDocument* doc = mDoc;
+	auto handler = [uri, server, doc]( const PluginIDType&,
+									   const std::vector<LSPFoldingRange>& res ) {
+		if ( !server->hasDocument( uri ) )
+			return;
 		std::vector<TextRange> regions;
 		regions.reserve( res.size() );
 		for ( const auto& region : res )
 			regions.push_back( { { region.startLine, 0 }, { region.endLine, 0 } } );
-		mDoc->getFoldRangeService().setFoldingRegions( regions );
+		doc->getFoldRangeService().setFoldingRegions( regions );
 	};
 
 	if ( Engine::instance()->isMainThread() ) {
