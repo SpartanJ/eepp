@@ -139,6 +139,8 @@ class EE_API DocumentView {
 
 	bool isOneToOne() const;
 
+	std::vector<TextRange> intersectsFoldedRegions( const TextRange& range ) const;
+
   protected:
 	std::shared_ptr<TextDocument> mDoc;
 	FontStyleConfig mFontStyle;
@@ -151,7 +153,8 @@ class EE_API DocumentView {
 	bool mPendingReconstruction{ false };
 	bool mUnderConstruction{ false };
 
-	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible );
+	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
+						   bool recomputeOffset = true );
 
 	void removeFoldedRegion( const TextRange& region );
 
@@ -160,6 +163,8 @@ class EE_API DocumentView {
 	void verifyStructuralConsistency();
 
 	void recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex );
+
+	void unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool recomputeOffset = true );
 };
 
 }}} // namespace EE::UI::Doc

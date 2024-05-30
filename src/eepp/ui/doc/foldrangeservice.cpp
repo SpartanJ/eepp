@@ -100,8 +100,8 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 FoldRangeServive::FoldRangeServive( TextDocument* doc ) : mDoc( doc ) {}
 
 bool FoldRangeServive::canFold() const {
-	// if ( mProvider && mProvider( mDoc, false ) )
-	// 	return true;
+	if ( mProvider && mProvider( mDoc, false ) )
+		return true;
 	auto type = mDoc->getSyntaxDefinition().getFoldRangeType();
 	return type == FoldRangeType::Braces || type == FoldRangeType::Indentation;
 }
@@ -110,8 +110,8 @@ void FoldRangeServive::findRegions() {
 	if ( mDoc == nullptr || !canFold() )
 		return;
 
-	// if ( mProvider && mProvider( mDoc, true ) )
-	// 	return;
+	if ( mProvider && mProvider( mDoc, true ) )
+		return;
 
 	switch ( mDoc->getSyntaxDefinition().getFoldRangeType() ) {
 		case FoldRangeType::Braces:

@@ -386,13 +386,27 @@ bool DocumentView::isLineVisible( Int64 docIdx ) const {
 		   mDocLineToVisibleIndex[docIdx] != static_cast<Int64>( VisibleIndex::invalid );
 }
 
+std::vector<TextRange> DocumentView::intersectsFoldedRegions( const TextRange& range ) const {
+	std::vector<TextRange> folds;
+	for ( const auto& fold : mFoldedRegions ) {
+		if ( fold.intersectsLineRange( range ) )
+			folds.push_back( fold );
+	}
+	return folds;
+}
+
 void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	if ( isOneToOne() )
 		return;
 
 	// Unfold ANY modification over a folded range
-	if ( isFolded( fromLine ) ) {
-		unfoldRegion( fromLine );
+	if ( numLines < 0 ) {
+		auto foldedRegions = intersectsFoldedRegions( { { fromLine, 0 }, { toLine, 0 } } );
+		for ( const auto& fold : foldedRegions )
+			unfoldRegion( fold.start().line(), false, false );
+	} else if ( isFolded( fromLine ) ) {
+		// Offsets will be recomputed here instead in the unfold operation
+		unfoldRegion( fromLine, false, false );
 	}
 
 	// Get affected visible range
@@ -480,13 +494,18 @@ void DocumentView::foldRegion( Int64 foldDocIdx ) {
 }
 
 void DocumentView::unfoldRegion( Int64 foldDocIdx ) {
+	return unfoldRegion( foldDocIdx, true );
+}
+
+void DocumentView::unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool recomputeOffset ) {
 	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
 	if ( !foldRegion )
 		return;
 	Int64 toDocIdx = foldRegion->end().line();
 	removeFoldedRegion( *foldRegion );
-	changeVisibility( foldDocIdx + 1, toDocIdx, true );
-	verifyStructuralConsistency();
+	changeVisibility( foldDocIdx + 1, toDocIdx, true, recomputeOffset );
+	if ( verifyConsistency )
+		verifyStructuralConsistency();
 	if ( isOneToOne() )
 		clearCache();
 }
@@ -495,7 +514,8 @@ bool DocumentView::isOneToOne() const {
 	return mConfig.mode == LineWrapMode::NoWrap && mFoldedRegions.empty();
 }
 
-void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible ) {
+void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
+									 bool recomputeOffset ) {
 	if ( visible ) {
 		auto it = std::lower_bound( mVisibleLines.begin(), mVisibleLines.end(),
 									TextPosition{ fromDocIdx, 0 } );
@@ -503,15 +523,18 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 		auto idxOffset = oldIdxFrom;
 		for ( auto i = fromDocIdx; i <= toDocIdx; i++ ) {
 			if ( isFolded( i, true ) ) {
-				mVisibleLinesOffset[i] = computeOffsets( mDoc->line( i ).getText().view(),
-														 mFontStyle, mConfig.tabWidth );
+				if ( recomputeOffset ) {
+					mVisibleLinesOffset[i] = computeOffsets( mDoc->line( i ).getText().view(),
+															 mFontStyle, mConfig.tabWidth );
+				}
 				continue;
 			}
 			auto lb = isWrapEnabled()
 						  ? computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
 											   mConfig.keepIndentation, mConfig.tabWidth )
 						  : LineWrapInfo{ { 0 }, 0 };
-			mVisibleLinesOffset[i] = lb.paddingStart;
+			if ( recomputeOffset )
+				mVisibleLinesOffset[i] = lb.paddingStart;
 			for ( const auto& col : lb.wraps ) {
 				mVisibleLines.insert( mVisibleLines.begin() + idxOffset, { i, col } );
 				idxOffset++;
@@ -597,7 +620,19 @@ void DocumentView::verifyStructuralConsistency() {
 		}
 	}
 
-	eeASSERT( visibleLinesOffset == mVisibleLinesOffset );
+	bool offsetConsistency = visibleLinesOffset == mVisibleLinesOffset;
+	eeASSERT( offsetConsistency );
+
+	if ( !offsetConsistency && visibleLinesOffset.size() == mVisibleLinesOffset.size() ) {
+		for ( size_t i = 0; i < mVisibleLinesOffset.size(); i++ ) {
+			if ( mVisibleLinesOffset[i] != visibleLinesOffset[i] ) {
+				eeASSERT( mVisibleLinesOffset[i] == visibleLinesOffset[i] );
+				break;
+			}
+		}
+	}
+
+	eeASSERT( mVisibleLinesOffset.size() == mDoc->linesCount() );
 #endif
 }
 
