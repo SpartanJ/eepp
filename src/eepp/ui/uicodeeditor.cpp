@@ -1807,8 +1807,10 @@ void UICodeEditor::updateScrollBar() {
 		Float viewPortWidth = getViewportWidth();
 		mHScrollBar->setPageStep( viewPortWidth / mLongestLineWidth );
 		mHScrollBar->setClickStep( 0.2f );
-		mHScrollBar->setEnabled( mLongestLineWidth > viewPortWidth );
-		mHScrollBar->setVisible( mLongestLineWidth > viewPortWidth );
+		bool showHScroll = mLongestLineWidth > viewPortWidth &&
+						   !( mDocView.isWrapEnabled() && mLongestLineWidthDirty );
+		mHScrollBar->setEnabled( showHScroll );
+		mHScrollBar->setVisible( showHScroll );
 	}
 
 	mVScrollBar->setPixelsPosition( mSize.getWidth() - mVScrollBar->getPixelsSize().getWidth(), 0 );
