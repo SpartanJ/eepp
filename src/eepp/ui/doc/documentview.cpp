@@ -4,6 +4,10 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/documentview.hpp>
 
+#ifdef EE_DEBUG
+#define EE_VERIFY_STRUCTURAL_CONSISTENCY
+#endif
+
 namespace EE { namespace UI { namespace Doc {
 
 LineWrapMode DocumentView::toLineWrapMode( std::string mode ) {
@@ -378,7 +382,8 @@ Float DocumentView::getLineYOffset( Int64 docIdx, Float lineHeight ) const {
 }
 
 bool DocumentView::isLineVisible( Int64 docIdx ) const {
-	return mDocLineToVisibleIndex[docIdx] != static_cast<Int64>( VisibleIndex::invalid );
+	return mDocLineToVisibleIndex.empty() ||
+		   mDocLineToVisibleIndex[docIdx] != static_cast<Int64>( VisibleIndex::invalid );
 }
 
 void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
@@ -558,7 +563,7 @@ void DocumentView::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
 }
 
 void DocumentView::verifyStructuralConsistency() {
-#ifdef EE_DEBUG
+#ifdef EE_VERIFY_STRUCTURAL_CONSISTENCY
 	if ( isOneToOne() )
 		return;
 

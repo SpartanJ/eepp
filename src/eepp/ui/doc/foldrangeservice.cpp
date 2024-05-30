@@ -96,6 +96,9 @@ const FoldRangeServive::FoldRangeProvider& FoldRangeServive::getProvider() const
 
 void FoldRangeServive::setProvider( const FoldRangeProvider& provider ) {
 	mProvider = provider;
+	if ( provider == nullptr ) {
+		mFoldingRegions.clear();
+	}
 }
 
 }}} // namespace EE::UI::Doc

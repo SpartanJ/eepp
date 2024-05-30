@@ -203,6 +203,8 @@ class EE_API TextDocument {
 
 	String::StringBaseType getChar( const TextPosition& position ) const;
 
+	String::StringBaseType getCharFromUnsanitizedPosition( const TextPosition& position ) const;
+
 	TextPosition insert( const size_t& cursorIdx, const TextPosition& position,
 						 const String& text );
 

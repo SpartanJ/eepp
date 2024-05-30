@@ -701,7 +701,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float getMinimapLineSpacing() const;
 
 	bool getShowFoldingRegion() const;
-	void setShowFoldingRegion(bool showFoldingRegion);
+	void setShowFoldingRegion( bool showFoldingRegion );
+
+	Drawable* getFoldDrawable() const;
+	void setFoldDrawable(Drawable* foldDrawable);
+
+	Drawable* getFoldedDrawable() const;
+	void setFoldedDrawable(Drawable* foldedDrawable);
 
 	protected:
 	struct LastXOffset {
@@ -818,6 +824,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIIcon* mFileLockIcon{ nullptr };
 	std::string mFileLockIconName{ "file-lock-fill" };
 	LineWrapType mLineWrapType{ LineWrapType::Viewport };
+	Drawable* mFoldDrawable{ nullptr };
+	Drawable* mFoldedDrawable{ nullptr };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );

@@ -1102,6 +1102,11 @@ String::StringBaseType TextDocument::getChar( const TextPosition& position ) con
 	return mLines[pos.line()][pos.column()];
 }
 
+String::StringBaseType
+TextDocument::getCharFromUnsanitizedPosition( const TextPosition& position ) const {
+	return mLines[position.line()][position.column()];
+}
+
 TextPosition TextDocument::insert( const size_t& cursorIdx, const TextPosition& position,
 								   const String& text ) {
 	mUndoStack.clearRedoStack();
@@ -3001,7 +3006,7 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 	SyntaxHighlighter* highlighter = getHighlighter();
 	int depth = 0;
 	while ( sp.isValid() ) {
-		auto byte = getChar( sp );
+		auto byte = getCharFromUnsanitizedPosition( sp );
 		if ( byte == openBracket ) {
 			changeDepth( highlighter, depth, sp, 1 );
 			if ( depth == 0 )
@@ -3017,7 +3022,7 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 		}
 
 		auto prevPos = sp;
-		sp = positionOffset( sp, dir == MatchDirection::Forward ? 1 : -1 );
+		sp = positionOffset( sp, dir == MatchDirection::Forward ? 1 : -1, false );
 		if ( sp == prevPos )
 			return {};
 	}

@@ -28,6 +28,7 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 }
 
 LSPDocumentClient::~LSPDocumentClient() {
+	mDoc->getFoldRangeService().setProvider( nullptr );
 	mDoc = nullptr;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( nullptr != sceneNode && 0 != mTag )

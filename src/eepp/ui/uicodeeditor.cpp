@@ -124,8 +124,8 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
-	mLineNumberPaddingLeft( PixelDensity::dpToPx( 4 ) ),
-	mLineNumberPaddingRight( PixelDensity::dpToPx( 4 ) ),
+	mLineNumberPaddingLeft( PixelDensity::dpToPx( 6 ) ),
+	mLineNumberPaddingRight( PixelDensity::dpToPx( 6 ) ),
 	mFoldRegionWidth( PixelDensity::dpToPx( 12 ) ),
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ),
@@ -1906,7 +1906,7 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	sendCommonEvent( Event::OnTextChanged );
 	mDocView.updateCache( change.range.start().line(), change.range.start().line(), 0 );
 
-	if ( !change.text.empty() ) {
+	if ( !change.text.empty() && !mDocView.isWrapEnabled() ) {
 		auto range = findLongestLineInRange( change.range );
 		if ( range.second > mLongestLineWidth ) {
 			mLongestLineIndex = range.first;
@@ -2712,38 +2712,38 @@ const SyntaxDefinition& UICodeEditor::getSyntaxDefinition() const {
 }
 
 void UICodeEditor::checkMatchingBrackets() {
-	if ( mHighlightMatchingBracket ) {
-		static const std::vector<String::StringBaseType> open{ '{', '(', '[' };
-		static const std::vector<String::StringBaseType> close{ '}', ')', ']' };
-		mMatchingBrackets = TextRange();
-		TextPosition pos = mDoc->sanitizePosition( mDoc->getSelection().start() );
-		TextDocumentLine& line = mDoc->line( pos.line() );
-		auto isOpenIt = std::find( open.begin(), open.end(), line[pos.column()] );
-		auto isCloseIt = std::find( close.begin(), close.end(), line[pos.column()] );
-		if ( ( isOpenIt == open.end() && isCloseIt == close.end() ) && pos.column() > 0 ) {
-			isOpenIt = std::find( open.begin(), open.end(), line[pos.column() - 1] );
-			isCloseIt = std::find( close.begin(), close.end(), line[pos.column() - 1] );
-			if ( isOpenIt != open.end() ) {
-				pos.setColumn( pos.column() - 1 );
-			} else if ( isCloseIt != close.end() ) {
-				pos.setColumn( pos.column() - 1 );
-			}
-		}
+	if ( !mHighlightMatchingBracket )
+		return;
+	static const std::vector<String::StringBaseType> open{ '{', '(', '[' };
+	static const std::vector<String::StringBaseType> close{ '}', ')', ']' };
+	mMatchingBrackets = TextRange();
+	TextPosition pos = mDoc->sanitizePosition( mDoc->getSelection().start() );
+	TextDocumentLine& line = mDoc->line( pos.line() );
+	auto isOpenIt = std::find( open.begin(), open.end(), line[pos.column()] );
+	auto isCloseIt = std::find( close.begin(), close.end(), line[pos.column()] );
+	if ( ( isOpenIt == open.end() && isCloseIt == close.end() ) && pos.column() > 0 ) {
+		isOpenIt = std::find( open.begin(), open.end(), line[pos.column() - 1] );
+		isCloseIt = std::find( close.begin(), close.end(), line[pos.column() - 1] );
 		if ( isOpenIt != open.end() ) {
-			size_t index = std::distance( open.begin(), isOpenIt );
-			String::StringBaseType openBracket = open[index];
-			String::StringBaseType closeBracket = close[index];
-			TextPosition closePosition = mDoc->getMatchingBracket(
-				pos, openBracket, closeBracket, TextDocument::MatchDirection::Forward );
-			mMatchingBrackets = { pos, closePosition };
+			pos.setColumn( pos.column() - 1 );
 		} else if ( isCloseIt != close.end() ) {
-			size_t index = std::distance( close.begin(), isCloseIt );
-			String::StringBaseType openBracket = open[index];
-			String::StringBaseType closeBracket = close[index];
-			TextPosition closePosition = mDoc->getMatchingBracket(
-				pos, openBracket, closeBracket, TextDocument::MatchDirection::Backward );
-			mMatchingBrackets = { pos, closePosition };
+			pos.setColumn( pos.column() - 1 );
 		}
+	}
+	if ( isOpenIt != open.end() ) {
+		size_t index = std::distance( open.begin(), isOpenIt );
+		String::StringBaseType openBracket = open[index];
+		String::StringBaseType closeBracket = close[index];
+		TextPosition closePosition = mDoc->getMatchingBracket(
+			pos, openBracket, closeBracket, TextDocument::MatchDirection::Forward );
+		mMatchingBrackets = { pos, closePosition };
+	} else if ( isCloseIt != close.end() ) {
+		size_t index = std::distance( close.begin(), isCloseIt );
+		String::StringBaseType openBracket = open[index];
+		String::StringBaseType closeBracket = close[index];
+		TextPosition closePosition = mDoc->getMatchingBracket(
+			pos, openBracket, closeBracket, TextDocument::MatchDirection::Backward );
+		mMatchingBrackets = { pos, closePosition };
 	}
 }
 
@@ -3778,29 +3778,78 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 						mFontStyleConfig.ShadowOffset );
 		}
 
-		if ( mShowFoldingRegion && mFoldsVisible &&
-			 mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
-			Float dim = PixelDensity::dpToPx( 6 );
-			Float center = ( mFoldRegionWidth - dim ) * 0.5f;
+		if ( mShowFoldingRegion && mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
 			bool isFolded = mDocView.isFolded( i );
-			Float dimH = isFolded ? dim : eeceil( dim * 0.75f );
-			lnPos = Vector2f( screenStart.x + ( mShowLineNumber ? lineNumberWidth : 0.f ) + center,
-							  lnPos.y + eeceil( ( lineHeight - dimH ) * 0.5f ) );
-			primitives.setColor( mLineNumberFontColor );
-			Triangle2f tri;
-			if ( isFolded ) {
-				tri.V[0] = { 0, 0 };
-				tri.V[1] = { 0, dim };
-				tri.V[2] = { dim, dim * 0.5f };
-			} else {
-				tri.V[0] = { 0, 0 };
-				tri.V[1] = { dim, 0 };
-				tri.V[2] = { dim * 0.5f, dim * 0.75f };
+
+			if ( mFoldsVisible ) {
+				if ( ( isFolded && mFoldedDrawable ) || ( !isFolded && mFoldedDrawable ) ) {
+					Drawable* drawable = isFolded ? mFoldedDrawable : mFoldDrawable;
+					GlyphDrawable::DrawMode oldMode;
+
+					if ( drawable->getDrawableType() == Drawable::Type::GLYPH ) {
+						oldMode = static_cast<GlyphDrawable*>( drawable )->getDrawMode();
+						static_cast<GlyphDrawable*>( drawable )
+							->setDrawMode( GlyphDrawable::DrawMode::Text );
+					}
+
+					lnPos = Vector2f( screenStart.x + ( mShowLineNumber ? lineNumberWidth : 0.f ),
+									  lnPos.y );
+
+					drawable->setColorFilter( mLineNumberActiveFontColor );
+					drawable->draw( lnPos );
+
+					if ( drawable->getDrawableType() == Drawable::Type::GLYPH )
+						static_cast<GlyphDrawable*>( drawable )->setDrawMode( oldMode );
+				} else {
+					Float dim = PixelDensity::dpToPx( 6 );
+					Float center = ( mFoldRegionWidth - dim ) * 0.5f;
+					Float dimH = isFolded ? dim : eeceil( dim * 0.75f );
+					lnPos = Vector2f( screenStart.x + ( mShowLineNumber ? lineNumberWidth : 0.f ) +
+										  center,
+									  lnPos.y + eeceil( ( lineHeight - dimH ) * 0.5f ) );
+					primitives.setColor( mLineNumberActiveFontColor );
+					Triangle2f tri;
+					if ( isFolded ) {
+						tri.V[0] = { 0, 0 };
+						tri.V[1] = { 0, dim };
+						tri.V[2] = { dim, dim * 0.5f };
+					} else {
+						tri.V[0] = { 0, 0 };
+						tri.V[1] = { dim, 0 };
+						tri.V[2] = { dim * 0.5f, dim * 0.75f };
+					}
+					tri.V[0] += lnPos;
+					tri.V[1] += lnPos;
+					tri.V[2] += lnPos;
+					primitives.drawTriangle( tri );
+				}
 			}
-			tri.V[0] += lnPos;
-			tri.V[1] += lnPos;
-			tri.V[2] += lnPos;
-			primitives.drawTriangle( tri );
+
+			if ( isFolded ) {
+				FontStyleConfig fontStyle( mFontStyleConfig );
+				const auto& style = mColorScheme.getSyntaxStyle( "normal"_sst );
+				fontStyle.FontColor = style.color;
+
+				Vector2f offset( startScroll );
+				offset.x += getGlyphWidth();
+
+				if ( mDocView.isWrappedLine( i ) ) {
+					auto info = mDocView.getVisibleLineRange( { i, 0 }, true );
+					offset += getTextPositionOffset( info.range.end(), lineHeight, true );
+				} else {
+					offset += getTextPositionOffset(
+						{ i, static_cast<Int64>( mDoc->line( i ).getText().size() ) }, lineHeight,
+						true );
+				}
+
+				Text::draw( String( (String::StringBaseType)0x2026 /* … */ ), offset, fontStyle,
+							mTabWidth );
+
+				primitives.setColor( mLineBreakColumnColor );
+				primitives.drawLine(
+					{ { startScroll.x, offset.y + lineHeight },
+					  { startScroll.x + mSize.getWidth(), offset.y + lineHeight } } );
+			}
 		}
 	}
 }
@@ -4564,6 +4613,22 @@ void UICodeEditor::setShowFoldingRegion( bool showFoldingRegion ) {
 		mShowFoldingRegion = showFoldingRegion;
 		invalidateDraw();
 	}
+}
+
+Drawable* UICodeEditor::getFoldDrawable() const {
+	return mFoldDrawable;
+}
+
+void UICodeEditor::setFoldDrawable( Drawable* foldDrawable ) {
+	mFoldDrawable = foldDrawable;
+}
+
+Drawable* UICodeEditor::getFoldedDrawable() const {
+	return mFoldedDrawable;
+}
+
+void UICodeEditor::setFoldedDrawable( Drawable* foldedDrawable ) {
+	mFoldedDrawable = foldedDrawable;
 }
 
 bool UICodeEditor::isMinimapFileTooLarge() const {
