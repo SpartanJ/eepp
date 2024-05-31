@@ -1199,14 +1199,15 @@ void LSPClientPlugin::renameSymbol( UICodeEditor* editor ) {
 								 "New name (caution: not all references may be replaced)" ) );
 	msgBox->setTitle( editor->getUISceneNode()->i18n( "rename", "Rename" ) );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
-	TextPosition pos = editor->getDocument().getSelection().start();
-	msgBox->getTextInput()->setText(
-		editor->getDocument().getWordInPosition( editor->getDocument().getSelection().start() ) );
+	auto selection = editor->getDocument().getSelection();
+	TextPosition selStart = selection.start();
+	msgBox->getTextInput()->setText( editor->getDocument().getWordInPosition(
+		selection.hasSelection() ? selection.end() : selStart ) );
 	msgBox->getTextInput()->getDocument().selectAll();
 	msgBox->showWhenReady();
-	msgBox->addEventListener( Event::OnConfirm, [this, pos, editor, msgBox]( const Event* ) {
+	msgBox->addEventListener( Event::OnConfirm, [this, selStart, editor, msgBox]( const Event* ) {
 		String newName( msgBox->getTextInput()->getText() );
-		mClientManager.renameSymbol( editor->getDocumentRef()->getURI(), pos, newName );
+		mClientManager.renameSymbol( editor->getDocumentRef()->getURI(), selStart, newName );
 		msgBox->closeWindow();
 	} );
 	msgBox->addEventListener( Event::OnClose, [this]( const Event* ) {

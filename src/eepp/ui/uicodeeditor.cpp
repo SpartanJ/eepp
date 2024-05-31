@@ -3860,7 +3860,7 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 				primitives.setColor( mLineBreakColumnColor );
 				primitives.drawLine(
 					{ { startScroll.x, offset.y + lineHeight },
-					  { startScroll.x + mSize.getWidth(), offset.y + lineHeight } } );
+					  { startScroll.x + getViewportWidth(), offset.y + lineHeight } } );
 			}
 		}
 	}
