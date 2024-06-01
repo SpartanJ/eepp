@@ -155,7 +155,7 @@ class EE_API TextRange {
 		return {};
 	}
 
-	bool isNormalized() const { return mStart < mEnd; }
+	bool isNormalized() const { return mStart <= mEnd; }
 
   private:
 	TextPosition mStart;

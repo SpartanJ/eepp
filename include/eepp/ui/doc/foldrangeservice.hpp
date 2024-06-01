@@ -47,7 +47,7 @@ class EE_API FoldRangeServive {
   protected:
 	TextDocument* mDoc;
 	std::unordered_map<Int64, TextRange> mFoldingRegions;
-	FoldRangeProvider mProvider;
+	FoldRangeProvider mProvider{ nullptr };
 	Mutex mMutex;
 };
 

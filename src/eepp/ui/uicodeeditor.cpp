@@ -436,7 +436,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 		invalidateDraw();
 	}
 
-	if ( mDoc && !mDoc->isLoading() && mHorizontalScrollBarEnabled && hasFocus() &&
+	if ( mDoc && !mDoc->isLoading() && mHorizontalScrollBarEnabled && isVisible() &&
 		 mLongestLineWidthDirty &&
 		 mLongestLineWidthLastUpdate.getElapsedTime() > mFindLongestLineWidthUpdateFrequency ) {
 		updateLongestLineWidth();
@@ -964,7 +964,8 @@ void UICodeEditor::invalidateLongestLineWidth() {
 void UICodeEditor::setLineWrapMode( LineWrapMode mode ) {
 	auto prevMode = mDocView.getConfig().mode;
 	mDocView.setLineWrapMode( mode );
-	if ( prevMode != mode && LineWrapMode::NoWrap == mode ) {
+	if ( prevMode != mode ) {
+		scrollToCursor();
 		invalidateLongestLineWidth();
 	}
 }
@@ -976,6 +977,7 @@ LineWrapType UICodeEditor::getLineWrapType() const {
 void UICodeEditor::setLineWrapType( LineWrapType lineWrapType ) {
 	if ( mLineWrapType != lineWrapType ) {
 		mLineWrapType = lineWrapType;
+		scrollToCursor();
 		invalidateLineWrapMaxWidth( true );
 	}
 }
@@ -1375,12 +1377,13 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		auto textScreenPos( resolveScreenPosition( position.asFloat() ) );
 		if ( flags & EE_BUTTON_LMASK ) {
 			Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
-			if ( localPos.x < mPaddingPx.Left + getGutterWidth() &&
-				 mDoc->getFoldRangeService().isFoldingRegionInLine( textScreenPos.line() ) ) {
-				if ( mDocView.isFolded( textScreenPos.line() ) ) {
-					mDocView.unfoldRegion( textScreenPos.line() );
-				} else {
-					mDocView.foldRegion( textScreenPos.line() );
+			if ( localPos.x < mPaddingPx.Left + getGutterWidth() ) {
+				if ( mDoc->getFoldRangeService().isFoldingRegionInLine( textScreenPos.line() ) ) {
+					if ( mDocView.isFolded( textScreenPos.line() ) ) {
+						mDocView.unfoldRegion( textScreenPos.line() );
+					} else {
+						mDocView.foldRegion( textScreenPos.line() );
+					}
 				}
 			} else if ( input->isModState( KEYMOD_LALT | KEYMOD_SHIFT ) ) {
 				TextRange range( mDoc->getSelection().start(), textScreenPos );
@@ -1499,17 +1502,15 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	bool minimapHover =
 		mMinimapEnabled && getMinimapRect( getScreenStart() ).contains( position.asFloat() );
 
+	Input* input = getUISceneNode()->getWindow()->getInput();
+
 	if ( flags & EE_BUTTON_LMASK ) {
 		stopMinimapDragging( position.asFloat() );
-
 		if ( mMouseDown ) {
 			mMouseDown = false;
-			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+			input->captureMouse( false );
 		}
-	}
-
-	Input* input = getUISceneNode()->getWindow()->getInput();
-	if ( flags & EE_BUTTON_WDMASK ) {
+	} else if ( flags & EE_BUTTON_WDMASK ) {
 		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-shrink" );
 		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
@@ -4077,6 +4078,10 @@ void UICodeEditor::onCursorPosChange() {
 	mLastActivity.restart();
 	sendCommonEvent( Event::OnCursorPosChange );
 	invalidateDraw();
+	if ( !Engine::isRunninMainThread() )
+		runOnMainThread( [this] { mDocView.ensureCursorVisibility(); } );
+	else
+		mDocView.ensureCursorVisibility();
 }
 
 static bool checkHexa( const std::string& hexStr ) {
@@ -4461,6 +4466,10 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 			Int64 nextLineCol = vline.visualLines[curvline].column();
 			Int64 lineLength = text.size();
 			Int64 curVisualIndex;
+			Float paddingStart =
+				vline.paddingStart != 0.f
+					? vline.paddingStart / mDocView.getWhiteSpaceWidth() * charSpacing
+					: 0.f;
 
 			for ( const auto& token : tokens ) {
 				if ( outOfRange )
@@ -4514,7 +4523,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 							nextLineCol = lineLength;
 						}
 
-						batchStart = rect.Left + gutterWidth;
+						batchStart = rect.Left + gutterWidth + paddingStart;
 						batchWidth = 0;
 
 						if ( pos == lineLength )

@@ -49,41 +49,47 @@ std::string DocumentView::fromLineWrapType( LineWrapType type ) {
 }
 
 Float DocumentView::computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
-									Uint32 tabWidth ) {
+									Uint32 tabWidth, Float maxWidth ) {
 
 	static const String sepSpaces = " \t\n\v\f\r";
 	auto nonIndentPos = string.find_first_not_of( sepSpaces.data() );
-	if ( nonIndentPos != String::View::npos )
-		return Text::getTextWidth( string.substr( 0, nonIndentPos ), fontStyle, tabWidth );
+	if ( nonIndentPos != String::View::npos ) {
+		Float w = Text::getTextWidth( string.substr( 0, nonIndentPos ), fontStyle, tabWidth );
+		return maxWidth != 0.f ? ( w > maxWidth ? 0.f : w ) : w;
+	}
 	return 0.f;
 }
 
 DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& string,
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
-															bool keepIndentation,
-															Uint32 tabWidth ) {
+															bool keepIndentation, Uint32 tabWidth,
+															Float whiteSpaceWidth ) {
 	LineWrapInfo info;
 	info.wraps.push_back( 0 );
 	if ( string.empty() || nullptr == fontStyle.Font || mode == LineWrapMode::NoWrap )
 		return info;
 
-	if ( keepIndentation )
-		info.paddingStart = computeOffsets( string, fontStyle, tabWidth );
+	bool bold = ( fontStyle.Style & Text::Style::Bold ) != 0;
+	bool italic = ( fontStyle.Style & Text::Style::Italic ) != 0;
+	Float outlineThickness = fontStyle.OutlineThickness;
+	Float hspace = whiteSpaceWidth == 0.f ? fontStyle.Font
+												->getGlyph( L' ', fontStyle.CharacterSize, bold,
+															italic, outlineThickness )
+												.advance
+										  : whiteSpaceWidth;
+
+	if ( keepIndentation ) {
+		info.paddingStart =
+			computeOffsets( string, fontStyle, tabWidth, eemax( maxWidth - hspace, hspace ) );
+	}
 
 	Float xoffset = 0.f;
 	Float lastWidth = 0.f;
-	bool bold = ( fontStyle.Style & Text::Style::Bold ) != 0;
-	bool italic = ( fontStyle.Style & Text::Style::Italic ) != 0;
 	bool isMonospace = fontStyle.Font->isMonospace();
-	Float outlineThickness = fontStyle.OutlineThickness;
 
 	size_t lastSpace = 0;
 	Uint32 prevChar = 0;
-
-	Float hspace = static_cast<Float>(
-		fontStyle.Font->getGlyph( L' ', fontStyle.CharacterSize, bold, italic, outlineThickness )
-			.advance );
 	size_t idx = 0;
 
 	for ( const auto& curChar : string ) {
@@ -129,19 +135,20 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string,
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
-															bool keepIndentation,
-															Uint32 tabWidth ) {
-	return computeLineBreaks( string.view(), fontStyle, maxWidth, mode, keepIndentation, tabWidth );
+															bool keepIndentation, Uint32 tabWidth,
+															Float whiteSpaceWidth ) {
+	return computeLineBreaks( string.view(), fontStyle, maxWidth, mode, keepIndentation, tabWidth,
+							  whiteSpaceWidth );
 }
 
 DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& doc, size_t line,
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
-															bool keepIndentation,
-															Uint32 tabWidth ) {
+															bool keepIndentation, Uint32 tabWidth,
+															Float whiteSpaceWidth ) {
 	const auto& text = doc.line( line ).getText();
 	return computeLineBreaks( text.substr( 0, text.size() - 1 ), fontStyle, maxWidth, mode,
-							  keepIndentation, tabWidth );
+							  keepIndentation, tabWidth, whiteSpaceWidth );
 }
 
 DocumentView::DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle,
@@ -166,6 +173,16 @@ void DocumentView::setMaxWidth( Float maxWidth, bool forceReconstructBreaks ) {
 void DocumentView::setFontStyle( FontStyleConfig fontStyle ) {
 	if ( fontStyle != mFontStyle ) {
 		mFontStyle = std::move( fontStyle );
+
+		mWhiteSpaceWidth = fontStyle.Font
+							   ? fontStyle.Font
+									 ->getGlyph( L' ', fontStyle.CharacterSize,
+												 ( fontStyle.Style & Text::Style::Bold ) != 0,
+												 ( fontStyle.Style & Text::Style::Italic ),
+												 fontStyle.OutlineThickness )
+									 .advance
+							   : 0.f;
+
 		invalidateCache();
 	}
 }
@@ -224,12 +241,14 @@ void DocumentView::invalidateCache() {
 		if ( isFolded( i, true ) ) {
 			mVisibleLinesOffset.emplace_back(
 				wrap ? computeOffsets( mDoc->line( i ).getText().view(), mFontStyle,
-									   mConfig.tabWidth )
+									   mConfig.tabWidth,
+									   eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) )
 					 : 0 );
 			mDocLineToVisibleIndex.push_back( static_cast<Int64>( VisibleIndex::invalid ) );
 		} else {
 			auto lb = wrap ? computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
-												mConfig.keepIndentation, mConfig.tabWidth )
+												mConfig.keepIndentation, mConfig.tabWidth,
+												mWhiteSpaceWidth )
 						   : LineWrapInfo{ { 0 }, 0.f };
 			mVisibleLinesOffset.emplace_back( lb.paddingStart );
 			bool first = true;
@@ -395,6 +414,10 @@ std::vector<TextRange> DocumentView::intersectsFoldedRegions( const TextRange& r
 	return folds;
 }
 
+Float DocumentView::getWhiteSpaceWidth() const {
+	return mWhiteSpaceWidth;
+}
+
 void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	if ( isOneToOne() )
 		return;
@@ -436,11 +459,13 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 		if ( isFolded( i ) ) {
 			mVisibleLinesOffset.insert(
 				mVisibleLinesOffset.begin() + i,
-				computeOffsets( mDoc->line( i ).getText().view(), mFontStyle, mConfig.tabWidth ) );
+				computeOffsets( mDoc->line( i ).getText().view(), mFontStyle, mConfig.tabWidth,
+								eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) ) );
 			mDocLineToVisibleIndex[i] = static_cast<Int64>( VisibleIndex::invalid );
 		} else {
-			auto lb = computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
-										 mConfig.keepIndentation, mConfig.tabWidth );
+			auto lb =
+				computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
+								   mConfig.keepIndentation, mConfig.tabWidth, mWhiteSpaceWidth );
 			mVisibleLinesOffset.insert( mVisibleLinesOffset.begin() + i, lb.paddingStart );
 			for ( const auto& col : lb.wraps ) {
 				mVisibleLines.insert( mVisibleLines.begin() + idxOffset, { i, col } );
@@ -483,14 +508,14 @@ void DocumentView::foldRegion( Int64 foldDocIdx ) {
 	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
 	if ( !foldRegion )
 		return;
+	if ( isOneToOne() )
+		invalidateCache();
 	Int64 toDocIdx = foldRegion->end().line();
-	bool foldWasEmpty = mFoldedRegions.empty();
 	changeVisibility( foldDocIdx + 1, toDocIdx, false );
 	mFoldedRegions.push_back( *foldRegion );
 	std::sort( mFoldedRegions.begin(), mFoldedRegions.end() );
+	moveCursorToVisibleArea();
 	verifyStructuralConsistency();
-	if ( foldWasEmpty && mConfig.mode == LineWrapMode::NoWrap )
-		invalidateCache();
 }
 
 void DocumentView::unfoldRegion( Int64 foldDocIdx ) {
@@ -510,6 +535,42 @@ void DocumentView::unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool 
 		clearCache();
 }
 
+void DocumentView::ensureCursorVisibility() {
+	if ( mFoldedRegions.empty() )
+		return;
+	const auto& selections = mDoc->getSelections();
+	std::vector<TextRange> ranges;
+	for ( const auto& selection : selections ) {
+		auto res = isInFoldedRange( selection, true );
+		if ( res && std::find( ranges.begin(), ranges.end(), *res ) == ranges.end() ) {
+			auto sel( selection.normalized() );
+			sel.start().setColumn( 0 );
+			if ( !sel.normalized().contains( *res ) )
+				ranges.emplace_back( std::move( *res ) );
+		}
+	}
+	for ( const auto& range : ranges )
+		unfoldRegion( range.start().line() );
+}
+
+void DocumentView::moveCursorToVisibleArea() {
+	if ( mFoldedRegions.empty() )
+		return;
+	const auto& selections = mDoc->getSelections();
+	TextRanges newSelections;
+	for ( const auto& selection : selections ) {
+		auto res = isInFoldedRange( selection, true );
+		if ( res ) {
+			newSelections.emplace_back( TextRange{ res->start(), res->start() } );
+		} else {
+			newSelections.emplace_back( selection );
+		}
+	}
+	newSelections.merge();
+	if ( selections != newSelections )
+		mDoc->resetSelection( newSelections );
+}
+
 bool DocumentView::isOneToOne() const {
 	return mConfig.mode == LineWrapMode::NoWrap && mFoldedRegions.empty();
 }
@@ -524,15 +585,16 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 		for ( auto i = fromDocIdx; i <= toDocIdx; i++ ) {
 			if ( isFolded( i, true ) ) {
 				if ( recomputeOffset ) {
-					mVisibleLinesOffset[i] = computeOffsets( mDoc->line( i ).getText().view(),
-															 mFontStyle, mConfig.tabWidth );
+					mVisibleLinesOffset[i] = computeOffsets(
+						mDoc->line( i ).getText().view(), mFontStyle, mConfig.tabWidth,
+						eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) );
 				}
 				continue;
 			}
-			auto lb = isWrapEnabled()
-						  ? computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
-											   mConfig.keepIndentation, mConfig.tabWidth )
-						  : LineWrapInfo{ { 0 }, 0 };
+			auto lb = isWrapEnabled() ? computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth,
+														   mConfig.mode, mConfig.keepIndentation,
+														   mConfig.tabWidth, mWhiteSpaceWidth )
+									  : LineWrapInfo{ { 0 }, 0 };
 			if ( recomputeOffset )
 				mVisibleLinesOffset[i] = lb.paddingStart;
 			for ( const auto& col : lb.wraps ) {
@@ -566,6 +628,24 @@ bool DocumentView::isFolded( Int64 docIdx, bool andNotFirstLine ) const {
 							return region.containsLine( docIdx ) &&
 								   ( andNotFirstLine ? region.start().line() != docIdx : true );
 						} );
+}
+
+std::optional<TextRange> DocumentView::isInFoldedRange( TextRange range,
+														bool andNotFirstLine ) const {
+	range.normalize();
+	for ( const auto& region : mFoldedRegions ) {
+		if ( andNotFirstLine && !region.inSameLine() ) {
+			auto sregion( region );
+			sregion.start().setLine(
+				eemin<Int64>( sregion.start().line() + 1, mDoc->linesCount() - 1 ) );
+			sregion.start().setColumn( 0 );
+			sregion.normalize();
+			if ( sregion.intersectsLineRange( range ) )
+				return region;
+		} else if ( region.intersectsLineRange( range ) )
+			return region;
+	}
+	return {};
 }
 
 void DocumentView::removeFoldedRegion( const TextRange& region ) {
