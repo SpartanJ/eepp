@@ -175,7 +175,7 @@ void EventDispatcher::update( const Time& time ) {
 						sendMsg( mOverNode, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
 				}
 
-				if ( mInput->getClickTrigger() ) {
+				if ( mInput->getClickTrigger() && mDownNode == mOverNode ) {
 					mLastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
 					sendMsg( mLastFocusNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
 

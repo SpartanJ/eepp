@@ -96,7 +96,7 @@ class SettingsMenu {
 	App* mApp{ nullptr };
 	UIPopUpMenu* mSettingsMenu{ nullptr };
 	UIPopUpMenu* mRecentFilesMenu{ nullptr };
-	UITextView* mSettingsButton{ nullptr };
+	UIWidget* mSettingsButton{ nullptr };
 	UISceneNode* mUISceneNode{ nullptr };
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	UIPopUpMenu* mDocMenu{ nullptr };

@@ -134,7 +134,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( i18n( "quit", "Quit" ), findIcon( "quit" ), getKeybind( "close-app" ) )
 		->setId( "close-app" );
-	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
+	mSettingsButton = mUISceneNode->find<UIWidget>( "settings" );
 	mSettingsButton->on( Event::MouseClick, [this]( const Event* ) { toggleSettingsMenu(); } );
 	mSettingsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )

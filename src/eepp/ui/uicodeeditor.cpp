@@ -1770,7 +1770,6 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 		}
 
 		if ( mFont && !mFont->isMonospace() ) {
-			width += getGlyphWidth();
 			mLinesWidthCache[docLine] = { line.getHash(), width };
 		}
 
@@ -1782,7 +1781,7 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 		auto found = mLinesWidthCache.find( docLine );
 		if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
 			return found->second.second;
-		Float width = getTextWidth( line.getText() ) + getGlyphWidth();
+		Float width = getTextWidth( line.getText() );
 		mLinesWidthCache[docLine] = { line.getHash(), width };
 		return width;
 	}
@@ -1815,10 +1814,16 @@ void UICodeEditor::updateScrollBar() {
 	}
 
 	mVScrollBar->setPixelsPosition( mSize.getWidth() - mVScrollBar->getPixelsSize().getWidth(), 0 );
-	mVScrollBar->setPageStep( getViewPortLineCount().y / (float)mDoc->linesCount() );
+	mVScrollBar->setPageStep( getViewPortLineCount().y / (float)mDocView.getVisibleLinesCount() );
 	mVScrollBar->setClickStep( 0.2f );
-	mVScrollBar->setEnabled( mVerticalScrollBarEnabled && notVisibleLineCount > 0 );
-	mVScrollBar->setVisible( mVerticalScrollBarEnabled && notVisibleLineCount > 0 );
+	bool wasVScrollVisible = mVScrollBar->isVisible();
+	bool showVScroll = mVerticalScrollBarEnabled && notVisibleLineCount > 0;
+	mVScrollBar->setEnabled( showVScroll );
+	mVScrollBar->setVisible( showVScroll );
+
+	if ( wasVScrollVisible != showVScroll && mDocView.isWrapEnabled() )
+		invalidateLineWrapMaxWidth( false );
+
 	setScrollY( mScroll.y );
 }
 
