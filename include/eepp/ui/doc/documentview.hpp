@@ -162,7 +162,7 @@ class EE_API DocumentView {
 	bool mUnderConstruction{ false };
 
 	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
-						   bool recomputeOffset = true );
+						   bool recomputeOffset = true, bool recomputeLineToVisibleIndex = true );
 
 	void removeFoldedRegion( const TextRange& region );
 
@@ -170,12 +170,12 @@ class EE_API DocumentView {
 
 	void verifyStructuralConsistency();
 
-	void recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex );
+	void recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex, bool ensureDocSize = true );
 
-	void unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool recomputeOffset = true );
+	void unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool recomputeOffset = true,
+					   bool recomputeLineToVisibleIndex = true );
 
 	void moveCursorToVisibleArea();
-
 };
 
 }}} // namespace EE::UI::Doc

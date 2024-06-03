@@ -426,10 +426,10 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	if ( numLines < 0 ) {
 		auto foldedRegions = intersectsFoldedRegions( { { fromLine, 0 }, { toLine, 0 } } );
 		for ( const auto& fold : foldedRegions )
-			unfoldRegion( fold.start().line(), false, false );
+			unfoldRegion( fold.start().line(), false, false, false );
 	} else if ( isFolded( fromLine ) ) {
 		// Offsets will be recomputed here instead in the unfold operation
-		unfoldRegion( fromLine, false, false );
+		unfoldRegion( fromLine, false, false, false );
 	}
 
 	// Get affected visible range
@@ -479,10 +479,11 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	verifyStructuralConsistency();
 }
 
-void DocumentView::recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex ) {
+void DocumentView::recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex, bool ensureDocSize ) {
 	// Recompute document line to visible index
 	Int64 visibleLinesCount = mVisibleLines.size();
-	mDocLineToVisibleIndex.resize( mDoc->linesCount() );
+	if ( ensureDocSize )
+		mDocLineToVisibleIndex.resize( mDoc->linesCount() );
 	Int64 previousLineIdx = mVisibleLines[fromVisibleIndex].line();
 	for ( Int64 visibleIdx = fromVisibleIndex; visibleIdx < visibleLinesCount; visibleIdx++ ) {
 		const auto& visibleLine = mVisibleLines[visibleIdx];
@@ -522,13 +523,15 @@ void DocumentView::unfoldRegion( Int64 foldDocIdx ) {
 	return unfoldRegion( foldDocIdx, true );
 }
 
-void DocumentView::unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool recomputeOffset ) {
+void DocumentView::unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool recomputeOffset,
+								 bool recomputeLineToVisibleIndex ) {
 	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
 	if ( !foldRegion )
 		return;
 	Int64 toDocIdx = foldRegion->end().line();
 	removeFoldedRegion( *foldRegion );
-	changeVisibility( foldDocIdx + 1, toDocIdx, true, recomputeOffset );
+	changeVisibility( foldDocIdx + 1, toDocIdx, true, recomputeOffset,
+					  recomputeLineToVisibleIndex );
 	if ( verifyConsistency )
 		verifyStructuralConsistency();
 	if ( isOneToOne() )
@@ -576,7 +579,7 @@ bool DocumentView::isOneToOne() const {
 }
 
 void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
-									 bool recomputeOffset ) {
+									 bool recomputeOffset, bool recomputeLineToVisibleIndex ) {
 	if ( visible ) {
 		auto it = std::lower_bound( mVisibleLines.begin(), mVisibleLines.end(),
 									TextPosition{ fromDocIdx, 0 } );
@@ -603,7 +606,7 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 			}
 		}
 
-		recomputeDocLineToVisibleIndex( oldIdxFrom );
+		recomputeDocLineToVisibleIndex( oldIdxFrom, recomputeLineToVisibleIndex );
 	} else {
 		Int64 oldIdxFrom = static_cast<Int64>( toVisibleIndex( fromDocIdx ) );
 		Int64 oldIdxTo = static_cast<Int64>( toVisibleIndex( toDocIdx, true ) );
@@ -619,7 +622,9 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 				mDocLineToVisibleIndex[idx] -= idxOffset;
 		}
 	}
-	eeASSERT( mDocLineToVisibleIndex.size() == mDoc->linesCount() );
+
+	if ( recomputeLineToVisibleIndex )
+		eeASSERT( mDocLineToVisibleIndex.size() == mDoc->linesCount() );
 }
 
 bool DocumentView::isFolded( Int64 docIdx, bool andNotFirstLine ) const {

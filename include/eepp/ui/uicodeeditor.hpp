@@ -765,6 +765,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mUseDefaultStyle{ false };
 	bool mFoldsAlwaysVisible{ false };
 	bool mFoldsVisible{ false };
+	bool mFoldsIsFirst{ true };
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
