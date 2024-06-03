@@ -7,6 +7,7 @@
 #include <eepp/ui/doc/languages/adept.hpp>
 #include <eepp/ui/doc/languages/angelscript.hpp>
 #include <eepp/ui/doc/languages/batchscript.hpp>
+#include <eepp/ui/doc/languages/bend.hpp>
 #include <eepp/ui/doc/languages/blueprint.hpp>
 #include <eepp/ui/doc/languages/brainfuck.hpp>
 #include <eepp/ui/doc/languages/buzz.hpp>
@@ -117,13 +118,14 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 97 );
+	mDefinitions.reserve( 98 );
 
 	// Register some languages support.
 	addPlainText();
 	addAdept();
 	addAngelScript();
 	addBatchScript();
+	addBend();
 	addBlueprint();
 	addBrainfuck();
 	addBuzz();

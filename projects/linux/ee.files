@@ -871,6 +871,8 @@
 ../../src/eepp/ui/doc/languages/angelscript.hpp
 ../../src/eepp/ui/doc/languages/batchscript.cpp
 ../../src/eepp/ui/doc/languages/batchscript.hpp
+../../src/eepp/ui/doc/languages/bend.cpp
+../../src/eepp/ui/doc/languages/bend.hpp
 ../../src/eepp/ui/doc/languages/blueprint.cpp
 ../../src/eepp/ui/doc/languages/blueprint.hpp
 ../../src/eepp/ui/doc/languages/brainfuck.cpp
@@ -909,6 +911,8 @@
 ../../src/eepp/ui/doc/languages/elm.hpp
 ../../src/eepp/ui/doc/languages/environmentfile.cpp
 ../../src/eepp/ui/doc/languages/environmentfile.hpp
+../../src/eepp/ui/doc/languages/fantom.cpp
+../../src/eepp/ui/doc/languages/fantom.hpp
 ../../src/eepp/ui/doc/languages/fortran.cpp
 ../../src/eepp/ui/doc/languages/fortran.hpp
 ../../src/eepp/ui/doc/languages/fstab.cpp
@@ -1108,6 +1112,8 @@
 ../../src/eepp/ui/doc/languages/xit.hpp
 ../../src/eepp/ui/doc/languages/xml.cpp
 ../../src/eepp/ui/doc/languages/xml.hpp
+../../src/eepp/ui/doc/languages/xtend.cpp
+../../src/eepp/ui/doc/languages/xtend.hpp
 ../../src/eepp/ui/doc/languages/yaml.cpp
 ../../src/eepp/ui/doc/languages/yaml.hpp
 ../../src/eepp/ui/doc/languages/zig.cpp
