@@ -44,11 +44,16 @@ class EE_API FoldRangeServive {
 
 	void setProvider( const FoldRangeProvider& provider );
 
+	bool isEnabled() const;
+
+	void setEnabled( bool enabled );
+
   protected:
 	TextDocument* mDoc;
 	std::unordered_map<Int64, TextRange> mFoldingRegions;
 	FoldRangeProvider mProvider{ nullptr };
 	Mutex mMutex;
+	bool mEnabled{ true };
 };
 
 }}} // namespace EE::UI::Doc

@@ -76,11 +76,14 @@ struct CodeEditorConfig {
 	bool autoCloseXMLTags{ true };
 	bool linesRelativePosition{ false };
 	bool autoReloadOnDiskChange{ false };
+	bool codeFoldingEnabled{ true };
+	bool codeFoldingAlwaysVisible{ false };
 	LineWrapMode wrapMode{ LineWrapMode::NoWrap };
 	LineWrapType wrapType{ LineWrapType::Viewport };
 	bool wrapKeepIndentation{ true };
 	std::string autoCloseBrackets{ "" };
 	Time cursorBlinkingTime{ Seconds( 0.5f ) };
+	Time codeFoldingRefreshFreq{ Seconds( 2.f ) };
 };
 
 struct DocumentConfig {

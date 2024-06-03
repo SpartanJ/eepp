@@ -701,15 +701,26 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float getMinimapLineSpacing() const;
 
 	bool getShowFoldingRegion() const;
+
 	void setShowFoldingRegion( bool showFoldingRegion );
 
 	Drawable* getFoldDrawable() const;
-	void setFoldDrawable(Drawable* foldDrawable);
+
+	void setFoldDrawable( Drawable* foldDrawable );
 
 	Drawable* getFoldedDrawable() const;
-	void setFoldedDrawable(Drawable* foldedDrawable);
 
-	protected:
+	void setFoldedDrawable( Drawable* foldedDrawable );
+
+	bool getFoldsAlwaysVisible() const;
+
+	void setFoldsAlwaysVisible( bool foldsAlwaysVisible );
+
+	Time getFoldsRefreshTime() const;
+
+	void setFoldsRefreshTime( const Time& foldsRefreshTime );
+
+  protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
 		Float offset{ 0.f };
@@ -720,6 +731,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
+	Time mFoldsRefreshTime;
 	bool mDirtyEditor{ false };
 	bool mDirtyScroll{ false };
 	bool mCursorVisible{ false };
@@ -751,6 +763,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mDisplayLockedIcon{ false };
 	bool mInvalidateOnLoaded{ false };
 	bool mUseDefaultStyle{ false };
+	bool mFoldsAlwaysVisible{ false };
 	bool mFoldsVisible{ false };
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;

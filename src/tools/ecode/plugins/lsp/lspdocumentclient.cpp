@@ -35,8 +35,6 @@ LSPDocumentClient::~LSPDocumentClient() {
 		sceneNode->removeActionsByTag( mTag );
 	if ( nullptr != sceneNode && 0 != mTagSemanticTokens )
 		sceneNode->removeActionsByTag( mTagSemanticTokens );
-	if ( nullptr != sceneNode && 0 != mTagFoldRange )
-		sceneNode->removeActionsByTag( mTagFoldRange );
 	mShutdown = true;
 	while ( mRunningSemanticTokens )
 		Sys::sleep( Milliseconds( 0.1f ) );
@@ -130,7 +128,6 @@ void LSPDocumentClient::refreshTag() {
 	String::HashType oldTag = mTag;
 	mTag = String::hash( mDoc->getURI().toString() );
 	mTagSemanticTokens = String::hash( mDoc->getURI().toString() + ":semantictokens" );
-	mTagFoldRange = String::hash( mDoc->getURI().toString() + ":foldrange" );
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( nullptr != sceneNode && 0 != oldTag )
 		sceneNode->removeActionsByTag( oldTag );
@@ -417,24 +414,6 @@ void LSPDocumentClient::requestFoldRange() {
 			[server, uri, handler]() { server->documentFoldingRange( uri, handler ); } );
 	} else {
 		server->documentFoldingRange( uri, handler );
-	}
-}
-
-void LSPDocumentClient::requestFoldRangeDelayed() {
-	if ( !mServer || !mServer->getCapabilities().foldingRangeProvider )
-		return;
-	UISceneNode* sceneNode = getUISceneNode();
-	if ( sceneNode ) {
-		sceneNode->removeActionsByTag( mTagFoldRange );
-		LSPDocumentClient* docClient = this;
-		URI uri = mDoc->getURI();
-		LSPClientServer* server = mServer;
-		sceneNode->runOnMainThread(
-			[docClient, server, uri]() {
-				if ( server->hasDocument( uri ) )
-					docClient->requestFoldRange();
-			},
-			Seconds( 1.f ), mTagFoldRange );
 	}
 }
 

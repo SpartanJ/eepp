@@ -121,6 +121,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mDoc( std::make_shared<TextDocument>() ),
 	mDocView( mDoc, mFontStyleConfig, {} ),
 	mBlinkTime( Seconds( 0.5f ) ),
+	mFoldsRefreshTime( Seconds( 2.f ) ),
 	mTabWidth( 4 ),
 	mMouseWheelScroll( 50 ),
 	mFontSize( mFontStyleConfig.getFontCharacterSize() ),
@@ -1479,7 +1480,7 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		checkMouseOverLink( position );
 	}
 
-	if ( mShowFoldingRegion ) {
+	if ( mShowFoldingRegion && !mFoldsAlwaysVisible ) {
 		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 		bool oldFoldVisible = mFoldsVisible;
 		mFoldsVisible = localPos.x <= mPaddingPx.Left + getGutterWidth();
@@ -3766,7 +3767,8 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 	Float w = 0.f;
 	if ( mShowLineNumber )
 		w += lineNumberWidth;
-	if ( mShowFoldingRegion && mDoc->getFoldRangeService().canFold() )
+	bool foldVisible = mShowFoldingRegion && mDoc->getFoldRangeService().canFold();
+	if ( foldVisible )
 		w += mFoldRegionWidth;
 	primitives.drawRectangle( Rectf( screenStart, Sizef( w, mSize.getHeight() ) ) );
 	TextRange selection = mDoc->getSelection( true );
@@ -3796,10 +3798,10 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 						mFontStyleConfig.ShadowOffset );
 		}
 
-		if ( mShowFoldingRegion && mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
+		if ( foldVisible && mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
 			bool isFolded = mDocView.isFolded( i );
 
-			if ( mFoldsVisible ) {
+			if ( mFoldsAlwaysVisible || mFoldsVisible ) {
 				if ( ( isFolded && mFoldedDrawable ) || ( !isFolded && mFoldedDrawable ) ) {
 					Drawable* drawable = isFolded ? mFoldedDrawable : mFoldDrawable;
 					GlyphDrawable::DrawMode oldMode;
@@ -4657,6 +4659,22 @@ void UICodeEditor::setFoldedDrawable( Drawable* foldedDrawable ) {
 	mFoldedDrawable = foldedDrawable;
 }
 
+bool UICodeEditor::getFoldsAlwaysVisible() const {
+	return mFoldsAlwaysVisible;
+}
+
+void UICodeEditor::setFoldsAlwaysVisible( bool foldsAlwaysVisible ) {
+	mFoldsAlwaysVisible = foldsAlwaysVisible;
+}
+
+Time UICodeEditor::getFoldsRefreshTime() const {
+	return mFoldsRefreshTime;
+}
+
+void UICodeEditor::setFoldsRefreshTime( const Time& foldsRefreshTime ) {
+	mFoldsRefreshTime = foldsRefreshTime;
+}
+
 bool UICodeEditor::isMinimapFileTooLarge() const {
 	return mDocView.getVisibleLinesCount() > 1 &&
 		   mDocView.getVisibleLinesCount() >
@@ -4781,9 +4799,8 @@ void UICodeEditor::findRegionsDelayed() {
 		return;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
-		sceneNode->removeActionsByTag( mTagFoldRange );
-		sceneNode->runOnMainThread( [this]() { mDoc->getFoldRangeService().findRegions(); },
-									Seconds( 1.f ), mTagFoldRange );
+		sceneNode->debounce( [this]() { mDoc->getFoldRangeService().findRegions(); },
+							 mFoldsRefreshTime, mTagFoldRange );
 	}
 }
 

@@ -469,10 +469,11 @@ UIWidget* UIPushButton::getExtraInnerWidget() const {
 	return NULL;
 }
 
-void UIPushButton::setTextAlign( const Uint32& align ) {
+UIWidget* UIPushButton::setTextAlign( const Uint32& align ) {
 	mFlags &= ~( UI_HALIGN_CENTER | UI_HALIGN_RIGHT );
 	mFlags |= align;
 	onAlignChange();
+	return this;
 }
 
 Sizef UIPushButton::getContentSize() const {

@@ -60,8 +60,6 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void requestFoldRange();
 
-	void requestFoldRangeDelayed();
-
 	bool isRunningSemanticTokens() const;
 
 	bool isWaitingSemanticTokensResponse() const;
@@ -74,7 +72,6 @@ class LSPDocumentClient : public TextDocument::Client {
 	TextDocument* mDoc{ nullptr };
 	String::HashType mTag{ 0 };
 	String::HashType mTagSemanticTokens{ 0 };
-	String::HashType mTagFoldRange{ 0 };
 	int mVersion{ 0 };
 	std::string mSemanticeResultId;
 	LSPSemanticTokensDelta mSemanticTokens;

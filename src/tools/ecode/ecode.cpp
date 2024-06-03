@@ -1313,6 +1313,30 @@ void App::setCursorBlinkingTime() {
 	setFocusEditorOnClose( msgBox );
 }
 
+void App::setFoldRefreshFreq() {
+	UIMessageBox* msgBox = UIMessageBox::New(
+		UIMessageBox::INPUT,
+		i18n( "set_fold_refresh_frequency",
+			  "Set code folds refresh frequency:\nIt should be bigger than 1 second.\nFolds are "
+			  "only refreshed after any document modification." )
+			.unescape() );
+	msgBox->setTitle( mWindowTitle );
+	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
+	msgBox->getTextInput()->setText( mConfig.editor.codeFoldingRefreshFreq.toString() );
+	msgBox->showWhenReady();
+	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
+		mConfig.editor.codeFoldingRefreshFreq =
+			Time::fromString( msgBox->getTextInput()->getText().toUtf8() );
+		if ( mConfig.editor.codeFoldingRefreshFreq < Seconds( 1 ) )
+			mConfig.editor.codeFoldingRefreshFreq = Seconds( 1 );
+		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+			editor->setFoldsRefreshTime( mConfig.editor.codeFoldingRefreshFreq );
+		} );
+		msgBox->closeWindow();
+	} );
+	setFocusEditorOnClose( msgBox );
+}
+
 void App::loadFileFromPathOrFocus( const std::string& path ) {
 	UITab* tab = mSplitter->isDocumentOpen( path );
 	if ( !tab ) {
@@ -2534,6 +2558,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setIndentWidth( docc.indentWidth );
 	doc.setAutoDetectIndentType( docc.autoDetectIndentType );
 	doc.setBOM( docc.writeUnicodeBOM );
+
+	doc.getFoldRangeService().setEnabled( config.codeFoldingEnabled );
+	editor->setFoldsAlwaysVisible( config.codeFoldingAlwaysVisible );
+	editor->setFoldsRefreshTime( config.codeFoldingRefreshFreq );
 
 	editor->addKeyBinds( getLocalKeybindings() );
 	editor->addUnlockedCommands( getUnlockedCommands() );

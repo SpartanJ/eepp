@@ -61,7 +61,7 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-	void setTextAlign( const Uint32& align );
+	UIWidget* setTextAlign( const Uint32& align );
 
 	virtual Sizef getContentSize() const;
 

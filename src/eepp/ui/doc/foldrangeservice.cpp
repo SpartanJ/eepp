@@ -100,6 +100,8 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 FoldRangeServive::FoldRangeServive( TextDocument* doc ) : mDoc( doc ) {}
 
 bool FoldRangeServive::canFold() const {
+	if ( !mEnabled )
+		return false;
 	if ( mProvider && mProvider( mDoc, false ) )
 		return true;
 	auto type = mDoc->getSyntaxDefinition().getFoldRangeType();
@@ -107,7 +109,7 @@ bool FoldRangeServive::canFold() const {
 }
 
 void FoldRangeServive::findRegions() {
-	if ( mDoc == nullptr || !canFold() )
+	if ( !mEnabled || mDoc == nullptr || !canFold() )
 		return;
 
 	if ( mProvider && mProvider( mDoc, true ) )
@@ -195,6 +197,14 @@ void FoldRangeServive::setProvider( const FoldRangeProvider& provider ) {
 	if ( provider == nullptr ) {
 		mFoldingRegions.clear();
 	}
+}
+
+bool FoldRangeServive::isEnabled() const {
+	return mEnabled;
+}
+
+void FoldRangeServive::setEnabled( bool enabled ) {
+	mEnabled = enabled;
 }
 
 }}} // namespace EE::UI::Doc

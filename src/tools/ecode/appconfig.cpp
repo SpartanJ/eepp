@@ -145,6 +145,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		DocumentView::toLineWrapType( ini.getValue( "editor", "wrap_type", "viewport" ) );
 	editor.wrapKeepIndentation = ini.getValueB( "editor", "wrap_keep_indentation", true );
 
+	editor.codeFoldingEnabled = ini.getValueB( "editor", "code_folding_enabled", true );
+	editor.codeFoldingAlwaysVisible =
+		ini.getValueB( "editor", "code_folding_always_visible", false );
+	editor.codeFoldingRefreshFreq =
+		Time::fromString( ini.getValue( "editor", "code_folding_refresh_frequency", "2s" ) );
+
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
 	searchBarConfig.wholeWord = ini.getValueB( "search_bar", "whole_word", false );
@@ -273,6 +279,11 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "editor", "wrap_mode", DocumentView::fromLineWrapMode( editor.wrapMode ) );
 	ini.setValue( "editor", "wrap_type", DocumentView::fromLineWrapType( editor.wrapType ) );
 	ini.setValueB( "editor", "wrap_keep_indentation", editor.wrapKeepIndentation );
+
+	ini.setValueB( "editor", "code_folding_enabled", editor.codeFoldingEnabled );
+	ini.setValueB( "editor", "code_folding_always_visible", editor.codeFoldingAlwaysVisible );
+	ini.setValue( "editor", "code_folding_refresh_frequency",
+				  editor.codeFoldingRefreshFreq.toString() );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );

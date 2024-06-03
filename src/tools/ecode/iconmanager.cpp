@@ -248,6 +248,7 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "tools", 0xeb6d },
 			{ "play", 0xeb2c },
 			{ "output", 0xeb9d },
+			{ "fold", 0xeaf5 },
 		};
 
 		for ( const auto& icon : codIcons )
