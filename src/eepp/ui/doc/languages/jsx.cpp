@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addJSX() {
 
-	SyntaxDefinitionManager::instance()
+	auto& sd = SyntaxDefinitionManager::instance()
 		->add( { "JSX",
 				 { "%.jsx$" },
 				 {
@@ -58,6 +58,7 @@ void addJSX() {
 		.setAutoCloseXMLTags( true )
 		.setLSPName( "javascriptreact" );
 
+	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

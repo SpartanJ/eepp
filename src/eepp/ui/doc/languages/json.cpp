@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addJSON() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "JSON",
 		  { "%.json$", "%.cson$", "%.webmanifest" },
@@ -30,6 +30,8 @@ void addJSON() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' }, { '[', ']' } } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

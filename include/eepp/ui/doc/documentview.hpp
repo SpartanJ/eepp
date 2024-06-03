@@ -59,22 +59,22 @@ class EE_API DocumentView {
 		TextRange range;
 	};
 
-	static LineWrapInfo computeLineBreaks( const String::View& string,
-										   const FontStyleConfig& fontStyle, Float maxWidth,
-										   LineWrapMode mode, bool keepIndentation,
-										   Uint32 tabWidth = 4 );
+	static LineWrapInfo
+	computeLineBreaks( const String::View& string, const FontStyleConfig& fontStyle, Float maxWidth,
+					   LineWrapMode mode, bool keepIndentation, Uint32 tabWidth = 4,
+					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */ );
 
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
 										   Float maxWidth, LineWrapMode mode, bool keepIndentation,
-										   Uint32 tabWidth = 4 );
+										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f );
 
 	static LineWrapInfo computeLineBreaks( const TextDocument& doc, size_t line,
 										   const FontStyleConfig& fontStyle, Float maxWidth,
 										   LineWrapMode mode, bool keepIndentation,
-										   Uint32 tabWidth = 4 );
+										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f );
 
 	static Float computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
-								 Uint32 tabWidth );
+								 Uint32 tabWidth, Float maxWidth = 0.f );
 
 	DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
 
@@ -123,22 +123,59 @@ class EE_API DocumentView {
 
 	void clear();
 
+	void clearCache();
+
 	Float getLineYOffset( VisibleIndex visibleIndex, Float lineHeight ) const;
 
 	Float getLineYOffset( Int64 docIdx, Float lineHeight ) const;
 
 	bool isLineVisible( Int64 docIdx ) const;
 
+	bool isFolded( Int64 docIdx, bool andNotFirstLine = false ) const;
+
+	std::optional<TextRange> isInFoldedRange( TextRange range, bool andNotFirstLine ) const;
+
+	void foldRegion( Int64 foldDocIdx );
+
+	void unfoldRegion( Int64 foldDocIdx );
+
+	bool isOneToOne() const;
+
+	std::vector<TextRange> intersectsFoldedRegions( const TextRange& range ) const;
+
+	Float getWhiteSpaceWidth() const;
+
+	/* Unfolds any folded region that contains a current non-visible cursor */
+	void ensureCursorVisibility();
+
   protected:
 	std::shared_ptr<TextDocument> mDoc;
 	FontStyleConfig mFontStyle;
 	Config mConfig;
 	Float mMaxWidth{ 0 };
+	Float mWhiteSpaceWidth{ 0 };
 	std::vector<TextPosition> mVisibleLines;
 	std::vector<Float> mVisibleLinesOffset;
 	std::vector<Int64> mDocLineToVisibleIndex;
+	std::vector<TextRange> mFoldedRegions;
 	bool mPendingReconstruction{ false };
 	bool mUnderConstruction{ false };
+
+	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
+						   bool recomputeOffset = true );
+
+	void removeFoldedRegion( const TextRange& region );
+
+	void shiftFoldingRegions( Int64 fromLine, Int64 numLines );
+
+	void verifyStructuralConsistency();
+
+	void recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex );
+
+	void unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool recomputeOffset = true );
+
+	void moveCursorToVisibleArea();
+
 };
 
 }}} // namespace EE::UI::Doc

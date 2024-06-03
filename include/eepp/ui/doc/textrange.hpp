@@ -128,12 +128,18 @@ class EE_API TextRange {
 
 	bool inSameLine() const { return isValid() && mStart.line() == mEnd.line(); }
 
+	Int64 height() const {
+		if ( mEnd.line() > mStart.line() )
+			return mEnd.line() - mStart.line() + 1;
+		return mStart.line() - mStart.line() + 1;
+	}
+
 	Int64 length() const {
 		if ( !inSameLine() )
 			return 0;
 		if ( mEnd.column() > mStart.column() )
 			return mEnd.column() - mStart.column();
-		return mStart.column() - mStart.column();
+		return mStart.column() - mEnd.column();
 	}
 
 	std::string toString() const {
@@ -149,7 +155,7 @@ class EE_API TextRange {
 		return {};
 	}
 
-	bool isNormalized() const { return mStart < mEnd; }
+	bool isNormalized() const { return mStart <= mEnd; }
 
   private:
 	TextPosition mStart;

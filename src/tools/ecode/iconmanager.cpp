@@ -216,6 +216,7 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "symbol-key", 0xea93 },
 			{ "symbol-null", 0xea8f },
 			{ "collapse-all", 0xeac5 },
+			{ "chevron-down", 0xeab4 },
 			{ "chevron-right", 0xeab6 },
 			{ "lightbulb-autofix", 0xeb13 },
 			{ "layout-sidebar-left-off", 0xec02 },
@@ -247,6 +248,7 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "tools", 0xeb6d },
 			{ "play", 0xeb2c },
 			{ "output", 0xeb9d },
+			{ "fold", 0xeaf5 },
 		};
 
 		for ( const auto& icon : codIcons )

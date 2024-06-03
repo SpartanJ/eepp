@@ -3,6 +3,7 @@
 
 #include <eepp/ui/doc/textdocument.hpp>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 
 using namespace EE;
@@ -151,6 +152,7 @@ struct LSPServerCapabilities {
 	bool documentHighlightProvider = false;
 	bool documentFormattingProvider = false;
 	bool documentRangeFormattingProvider = false;
+	bool foldingRangeProvider = false;
 	LSPCodeLensOptions codeLensProvider;
 	bool workspaceSymbolProvider = false;
 	LSPDocumentOnTypeFormattingOptions documentOnTypeFormattingProvider;
@@ -600,6 +602,18 @@ struct LSPSemanticTokensDelta {
 	std::string resultId;
 	std::vector<LSPSemanticTokensEdit> edits;
 	std::vector<Int32> data;
+};
+
+enum class LSPFoldingRangeKind : String::HashType {
+	Comment = String::hash( "comment" ),
+	Imports = String::hash( "imports" ),
+	Region = String::hash( "region" ),
+};
+
+struct LSPFoldingRange {
+	unsigned int startLine;
+	unsigned int endLine;
+	LSPFoldingRangeKind kind{ LSPFoldingRangeKind::Region };
 };
 
 } // namespace ecode

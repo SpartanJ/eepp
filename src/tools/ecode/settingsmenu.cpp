@@ -123,6 +123,14 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 			->setId( "help-menu" )
 			->asType<UIWidget>();
 
+	auto shiftHintBut =
+		mSettingsMenu->add( i18n( "menu_hold_shift_hint", "(Hold \"Shift\" to keep menu open)" ) );
+	shiftHintBut->getTextBox()->setFontStyle( Text::Italic );
+	shiftHintBut->setTextAlign( UI_HALIGN_CENTER );
+	shiftHintBut->setTooltipText( i18n(
+		"menu_hold_shift_hint_desc",
+		"Keeping \"Shift\" clicked while changing any options it will keep the menu open." ) );
+
 	mSettingsMenu->addSeparator();
 	mSettingsMenu
 		->add( i18n( "close", "Close" ), findIcon( "document-close" ), getKeybind( "close-tab" ) )
@@ -134,7 +142,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	mSettingsMenu->addSeparator();
 	mSettingsMenu->add( i18n( "quit", "Quit" ), findIcon( "quit" ), getKeybind( "close-app" ) )
 		->setId( "close-app" );
-	mSettingsButton = mUISceneNode->find<UITextView>( "settings" );
+	mSettingsButton = mUISceneNode->find<UIWidget>( "settings" );
 	mSettingsButton->on( Event::MouseClick, [this]( const Event* ) { toggleSettingsMenu(); } );
 	mSettingsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
@@ -1314,6 +1322,68 @@ UIMenu* SettingsMenu::createViewMenu() {
 				->setActive( true );
 
 			wrapKeepIndentation->setActive( cfg.editor.wrapKeepIndentation );
+		} );
+
+	mViewMenu->addSeparator();
+
+	mCodeFoldingMenu = UIPopUpMenu::New();
+
+	const auto codeFoldingMenuRefresh = [this] {
+		const auto& cfg = mApp->getConfig();
+
+		mCodeFoldingMenu->getItemId( "code_folding_enabled" )
+			->asType<UIMenuCheckBox>()
+			->setActive( cfg.editor.codeFoldingEnabled );
+
+		mCodeFoldingMenu->getItemId( "code_folding_always_display_folds" )
+			->asType<UIMenuCheckBox>()
+			->setActive( cfg.editor.codeFoldingAlwaysVisible )
+			->setEnabled( cfg.editor.codeFoldingEnabled );
+
+		mCodeFoldingMenu->getItemId( "folds_refresh_freq" )
+			->setEnabled( cfg.editor.codeFoldingEnabled );
+	};
+
+	mViewMenu
+		->addSubMenu( i18n( "code_folding", "Code Folding" ), findIcon( "fold" ), mCodeFoldingMenu )
+		->on( Event::OnMenuShow, [this, codeFoldingMenuRefresh]( auto ) {
+			if ( mCodeFoldingMenu->getCount() == 0 ) {
+				mCodeFoldingMenu->addCheckBox( i18n( "enabled", "Enabled" ) )
+					->setId( "code_folding_enabled" );
+
+				mCodeFoldingMenu
+					->addCheckBox(
+						i18n( "code_folding_always_display_folds", "Folds always visible" ) )
+					->setId( "code_folding_always_display_folds" );
+
+				mCodeFoldingMenu->add( i18n( "folds_refresh_freq", "Folds Refresh Frequency" ) )
+					->setId( "folds_refresh_freq" );
+
+				mCodeFoldingMenu->on(
+					Event::OnItemClicked, [this, codeFoldingMenuRefresh]( const Event* event ) {
+						if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+							return;
+						UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+						if ( "code_folding_enabled" == item->getId() ) {
+							bool enabled = item->asType<UIMenuCheckBox>()->isActive();
+							mApp->getConfig().editor.codeFoldingEnabled = enabled;
+							mApp->getSplitter()->forEachDoc( [enabled]( TextDocument& doc ) {
+								doc.getFoldRangeService().setEnabled( enabled );
+							} );
+							codeFoldingMenuRefresh();
+						} else if ( "code_folding_always_display_folds" == item->getId() ) {
+							bool enabled = item->asType<UIMenuCheckBox>()->isActive();
+							mApp->getConfig().editor.codeFoldingAlwaysVisible = enabled;
+							mApp->getSplitter()->forEachEditor( [enabled]( UICodeEditor* editor ) {
+								editor->setFoldsAlwaysVisible( enabled );
+							} );
+						} else if ( "folds_refresh_freq" == item->getId() ) {
+							mApp->setFoldRefreshFreq();
+						}
+					} );
+			}
+
+			codeFoldingMenuRefresh();
 		} );
 
 	mViewMenu->addSeparator();

@@ -58,6 +58,8 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void requestSemanticHighlightingDelayed( bool reqFull = false );
 
+	void requestFoldRange();
+
 	bool isRunningSemanticTokens() const;
 
 	bool isWaitingSemanticTokensResponse() const;

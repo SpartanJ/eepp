@@ -18,9 +18,17 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	notifyOpen();
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
+	doc->getFoldRangeService().setProvider( [this]( auto, bool requestFolds ) -> bool {
+		bool ret = mServer->getCapabilities().foldingRangeProvider;
+		if ( ret && requestFolds )
+			requestFoldRange();
+		return ret;
+	} );
+	mDoc->getFoldRangeService().findRegions();
 }
 
 LSPDocumentClient::~LSPDocumentClient() {
+	mDoc->getFoldRangeService().setProvider( nullptr );
 	mDoc = nullptr;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( nullptr != sceneNode && 0 != mTag )
@@ -112,6 +120,7 @@ int LSPDocumentClient::getVersion() const {
 void LSPDocumentClient::onServerInitialized() {
 	requestSymbols();
 	requestSemanticHighlighting();
+	mDoc->getFoldRangeService().findRegions();
 	// requestCodeLens();
 }
 
@@ -379,6 +388,32 @@ void LSPDocumentClient::requestSymbols() {
 			[server, uri]() { server->documentSymbolsBroadcast( uri ); } );
 	} else {
 		server->documentSymbolsBroadcast( uri );
+	}
+}
+
+void LSPDocumentClient::requestFoldRange() {
+	eeASSERT( mDoc );
+	LSPClientServer* server = mServer;
+	if ( !server->getCapabilities().foldingRangeProvider )
+		return;
+	URI uri = mDoc->getURI();
+	TextDocument* doc = mDoc;
+	auto handler = [uri, server, doc]( const PluginIDType&,
+									   const std::vector<LSPFoldingRange>& res ) {
+		if ( !server->hasDocument( uri ) )
+			return;
+		std::vector<TextRange> regions;
+		regions.reserve( res.size() );
+		for ( const auto& region : res )
+			regions.push_back( { { region.startLine, 0 }, { region.endLine, 0 } } );
+		doc->getFoldRangeService().setFoldingRegions( regions );
+	};
+
+	if ( Engine::instance()->isMainThread() ) {
+		server->getThreadPool()->run(
+			[server, uri, handler]() { server->documentFoldingRange( uri, handler ); } );
+	} else {
+		server->documentFoldingRange( uri, handler );
 	}
 }
 

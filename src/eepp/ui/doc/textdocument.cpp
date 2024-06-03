@@ -37,7 +37,8 @@ TextDocument::TextDocument( bool verbose ) :
 	mDefaultFileName( "untitled" ),
 	mCleanChangeId( 0 ),
 	mNonWordChars( DEFAULT_NON_WORD_CHARS ),
-	mHighlighter( std::make_unique<SyntaxHighlighter>( this ) ) {
+	mHighlighter( std::make_unique<SyntaxHighlighter>( this ) ),
+	mFoldRangeService( this ) {
 	initializeCommands();
 	reset();
 }
@@ -1099,6 +1100,11 @@ String::StringBaseType TextDocument::getCurrentChar() const {
 String::StringBaseType TextDocument::getChar( const TextPosition& position ) const {
 	auto pos = sanitizePosition( position );
 	return mLines[pos.line()][pos.column()];
+}
+
+String::StringBaseType
+TextDocument::getCharFromUnsanitizedPosition( const TextPosition& position ) const {
+	return mLines[position.line()][position.column()];
 }
 
 TextPosition TextDocument::insert( const size_t& cursorIdx, const TextPosition& position,
@@ -2974,6 +2980,14 @@ void TextDocument::setEncoding( TextFormat::Encoding encoding ) {
 	mEncoding = encoding;
 }
 
+const FoldRangeServive& TextDocument::getFoldRangeService() const {
+	return mFoldRangeService;
+}
+
+FoldRangeServive& TextDocument::getFoldRangeService() {
+	return mFoldRangeService;
+}
+
 static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, const TextPosition& pos,
 								int dir ) {
 	if ( highlighter ) {
@@ -2992,7 +3006,7 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 	SyntaxHighlighter* highlighter = getHighlighter();
 	int depth = 0;
 	while ( sp.isValid() ) {
-		auto byte = getChar( sp );
+		auto byte = getCharFromUnsanitizedPosition( sp );
 		if ( byte == openBracket ) {
 			changeDepth( highlighter, depth, sp, 1 );
 			if ( depth == 0 )
@@ -3008,7 +3022,7 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 		}
 
 		auto prevPos = sp;
-		sp = positionOffset( sp, dir == MatchDirection::Forward ? 1 : -1 );
+		sp = positionOffset( sp, dir == MatchDirection::Forward ? 1 : -1, false );
 		if ( sp == prevPos )
 			return {};
 	}
@@ -3239,6 +3253,13 @@ void TextDocument::notifyInterstingCursorChange( TextPosition selection ) {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentInterestingCursorChange( selection );
+	}
+}
+
+void TextDocument::notifyFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
+	Lock l( mClientsMutex );
+	for ( auto& client : mClients ) {
+		client->onFoldRegionsUpdated( oldCount, newCount );
 	}
 }
 

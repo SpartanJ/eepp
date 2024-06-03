@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addPython() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Python",
 		  { "%.py$", "%.pyw$", "%.bry$" },
@@ -41,6 +41,8 @@ void addPython() {
 		  { "^#!.*[ /]python", "^#!.*[ /]python3" }
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Indentation );
 }
 
 }}}} // namespace EE::UI::Doc::Language

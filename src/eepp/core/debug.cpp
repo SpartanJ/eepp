@@ -25,12 +25,12 @@ void eeREPORT_ASSERT( const char* File, int Line, const char* Exp ) {
 #else
 
 	if ( PrintDebugInLog ) {
-		Log::instance()->writef( LogLevel::Assert, "%s file:%s line:%d", Exp, File, Line );
+		Log::instance()->writef( LogLevel::Assert, "%s file:%s line:%d\n", Exp, File, Line );
 
 		if ( !Log::instance()->isLoggingToStdOut() )
-			printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
+			printf( "ASSERT: %s file:%s line:%d\n", Exp, File, Line );
 	} else {
-		printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
+		printf( "ASSERT: %s file:%s line:%d\n", Exp, File, Line );
 	}
 
 #if defined( EE_COMPILER_GCC ) && !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && \

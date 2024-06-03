@@ -3,6 +3,7 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/ui/doc/foldrangetype.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <string>
 #include <type_traits>
@@ -139,6 +140,14 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setCaseInsensitive( bool caseInsensitive );
 
+	FoldRangeType getFoldRangeType() const;
+
+	SyntaxDefinition& setFoldRangeType( FoldRangeType foldRangeType );
+
+	std::vector<std::pair<Int64, Int64>> getFoldBraces() const;
+
+	SyntaxDefinition& setFoldBraces( const std::vector<std::pair<Int64, Int64>>& foldBraces );
+
   protected:
 	friend class SyntaxDefinitionManager;
 
@@ -152,6 +161,8 @@ class EE_API SyntaxDefinition {
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;
 	Uint16 mLanguageIndex{ 0 };
+	FoldRangeType mFoldRangeType{ FoldRangeType::Undefined };
+	std::vector<std::pair<Int64, Int64>> mFoldBraces;
 	bool mAutoCloseXMLTags{ false };
 	bool mVisible{ true };
 	bool mHasExtensionPriority{ false };

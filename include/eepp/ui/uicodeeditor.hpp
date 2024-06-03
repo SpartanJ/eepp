@@ -265,6 +265,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getLineNumberWidth() const;
 
+	Float getInternalGutterWidth() const;
+
 	virtual Float getGutterWidth() const;
 
 	const bool& getShowLineNumber() const;
@@ -698,6 +700,26 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getMinimapLineSpacing() const;
 
+	bool getShowFoldingRegion() const;
+
+	void setShowFoldingRegion( bool showFoldingRegion );
+
+	Drawable* getFoldDrawable() const;
+
+	void setFoldDrawable( Drawable* foldDrawable );
+
+	Drawable* getFoldedDrawable() const;
+
+	void setFoldedDrawable( Drawable* foldedDrawable );
+
+	bool getFoldsAlwaysVisible() const;
+
+	void setFoldsAlwaysVisible( bool foldsAlwaysVisible );
+
+	Time getFoldsRefreshTime() const;
+
+	void setFoldsRefreshTime( const Time& foldsRefreshTime );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -709,11 +731,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
+	Time mFoldsRefreshTime;
 	bool mDirtyEditor{ false };
 	bool mDirtyScroll{ false };
 	bool mCursorVisible{ false };
 	bool mMouseDown{ false };
 	bool mShowLineNumber{ true };
+	bool mShowFoldingRegion{ true };
 	bool mShowWhitespaces{ true };
 	bool mShowLineEndings{ false };
 	bool mLocked{ false };
@@ -739,6 +763,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mDisplayLockedIcon{ false };
 	bool mInvalidateOnLoaded{ false };
 	bool mUseDefaultStyle{ false };
+	bool mFoldsAlwaysVisible{ false };
+	bool mFoldsVisible{ false };
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
@@ -749,6 +775,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	StyleSheetLength mLineSpacing{ 0.f, StyleSheetLength::Px };
 	Float mLineNumberPaddingLeft;
 	Float mLineNumberPaddingRight;
+	Float mFoldRegionWidth;
 	Color mLineNumberFontColor;
 	Color mLineNumberActiveFontColor;
 	Color mLineNumberBackgroundColor;
@@ -810,6 +837,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIIcon* mFileLockIcon{ nullptr };
 	std::string mFileLockIconName{ "file-lock-fill" };
 	LineWrapType mLineWrapType{ LineWrapType::Viewport };
+	Drawable* mFoldDrawable{ nullptr };
+	Drawable* mFoldedDrawable{ nullptr };
+	String::HashType mTagFoldRange{ 0 };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -943,6 +973,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentChanged();
 
+	virtual void onFoldRegionsUpdated( size_t oldCount, size_t newCount );
+
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
 	void checkMouseOverColor( const Vector2i& position );
@@ -998,6 +1030,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	size_t getTotalVisibleLines() const;
 
 	void invalidateLineWrapMaxWidth( bool force );
+
+	void findRegionsDelayed();
+
+	void refreshTag();
 };
 
 }} // namespace EE::UI

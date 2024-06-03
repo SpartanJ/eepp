@@ -303,6 +303,7 @@
 ../../include/eepp/thirdparty/chipmunk/cpSpatialIndex.h
 ../../include/eepp/thirdparty/chipmunk/cpVect.h
 ../../include/eepp/ui/doc/documentview.hpp
+../../include/eepp/ui/doc/foldrangeservice.hpp
 ../../include/eepp/ui/models/model.hpp
 ../../include/eepp/ui/abstract/uiabstracttableview.hpp
 ../../include/eepp/ui/abstract/uiabstractview.hpp
@@ -335,6 +336,7 @@
 ../../include/eepp/ui/css/stylesheetvariable.hpp
 ../../include/eepp/ui/css/timingfunction.hpp
 ../../include/eepp/ui/css/transitiondefinition.hpp
+../../include/eepp/ui/doc/foldrangetype.hpp
 ../../include/eepp/ui/doc/syntaxcolorscheme.hpp
 ../../include/eepp/ui/doc/syntaxdefinition.hpp
 ../../include/eepp/ui/doc/syntaxdefinitionmanager.hpp
@@ -862,6 +864,7 @@
 ../../src/eepp/system/virtualfilesystem.cpp
 ../../src/eepp/system/zip.cpp
 ../../src/eepp/ui/abstract/filesystemmodel.hpp
+../../src/eepp/ui/doc/foldrangeservice.cpp
 ../../src/eepp/ui/doc/languages/adept.cpp
 ../../src/eepp/ui/doc/languages/adept.hpp
 ../../src/eepp/ui/doc/languages/angelscript.cpp
