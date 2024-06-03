@@ -93,6 +93,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
 	ui.showStatusBar = ini.getValueB( "ui", "show_status_bar", true );
 	ui.showMenuBar = ini.getValueB( "ui", "show_menu_bar", false );
+	ui.welcomeScreen = ini.getValueB( "ui", "welcome_screen", true );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
@@ -242,6 +243,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
 	ini.setValueB( "ui", "show_status_bar", ui.showStatusBar );
 	ini.setValueB( "ui", "show_menu_bar", ui.showMenuBar );
+	ini.setValueB( "ui", "welcome_screen", ui.welcomeScreen );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );

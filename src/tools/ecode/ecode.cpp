@@ -2266,8 +2266,10 @@ void App::closeFolder() {
 	mFileSystemModel->setRootPath( "" );
 	mPluginManager->setWorkspaceFolder( "" );
 	updateOpenRecentFolderBtn();
-	UIWelcomeScreen::createWelcomeScreen( this );
-	mStatusBar->setVisible( false );
+	if ( getConfig().ui.welcomeScreen ) {
+		UIWelcomeScreen::createWelcomeScreen( this );
+		mStatusBar->setVisible( false );
+	}
 }
 
 void App::createDocDirtyAlert( UICodeEditor* editor ) {
@@ -3208,8 +3210,10 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 	} else {
 		updateOpenRecentFolderBtn();
 
-		UIWelcomeScreen::createWelcomeScreen( this );
-		mStatusBar->setVisible( false );
+		if ( getConfig().ui.welcomeScreen ) {
+			UIWelcomeScreen::createWelcomeScreen( this );
+			mStatusBar->setVisible( false );
+		}
 	}
 
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
@@ -3361,6 +3365,8 @@ void App::loadFolder( const std::string& path ) {
 		setAppTitle( titleFromEditor( mSplitter->getCurEditor() ) );
 
 	mPluginManager->setWorkspaceFolder( rpath );
+
+	saveProject();
 }
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS

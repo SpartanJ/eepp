@@ -1124,6 +1124,13 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->add( i18n( "zoom_reset", "Zoom Reset" ), findIcon( "zoom-reset" ),
 			   getKeybind( "font-size-reset" ) )
 		->setId( "zoom-reset" );
+
+	mWindowMenu->addSeparator();
+	mWindowMenu
+		->addCheckBox( i18n( "welcome_screen_enable", "Enable Welcome Screen" ),
+					   mApp->getConfig().ui.welcomeScreen )
+		->setId( "welcome-screen-enable" );
+
 	mWindowMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
@@ -1134,6 +1141,9 @@ UIMenu* SettingsMenu::createWindowMenu() {
 			mSplitter->zoomOut();
 		} else if ( "zoom-reset" == item->getId() ) {
 			mSplitter->zoomReset();
+		} else if ( "welcome-screen-enable" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.welcomeScreen = active;
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
 			String::replaceAll( text, " ", "-" );

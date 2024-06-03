@@ -117,6 +117,17 @@ AutoCompletePlugin::~AutoCompletePlugin() {
 			editor.first->removeEventListener( listener );
 		editor.first->unregisterPlugin( this );
 	}
+
+	bool isUpdating = false;
+	do {
+		{
+			Lock lu( mDocsUpdatingMutex );
+			isUpdating = std::any_of( mDocsUpdating.begin(), mDocsUpdating.end(),
+									  []( const auto& du ) { return du.second == true; } );
+		}
+		if ( isUpdating )
+			Sys::sleep( Milliseconds( 1 ) );
+	} while ( isUpdating );
 }
 
 void AutoCompletePlugin::load( PluginManager* pluginManager ) {

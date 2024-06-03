@@ -674,6 +674,9 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 		 !prevCurEditor->getDocument().isEmpty() ) {
 		editorData.second->setDocument( prevCurEditor->getDocumentRef() );
 		editorData.second->goToLine( prevCurEditor->getDocument().getSelection().start() );
+		auto path( editorData.second->getDocument().getFilePath() );
+		if ( !path.empty() )
+			editorData.first->setTooltipText( path );
 	}
 	mAboutToAddEditor = nullptr;
 	Lock l( mTabWidgetMutex );

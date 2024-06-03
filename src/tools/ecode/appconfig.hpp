@@ -31,6 +31,7 @@ struct UIConfig {
 	bool showSidePanel{ true };
 	bool showStatusBar{ true };
 	bool showMenuBar{ false };
+	bool welcomeScreen{ true };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;
 	std::string monospaceFont;

@@ -141,6 +141,7 @@ static const auto LAYOUT = R"xml(
 			</vbox>
 		</vbox>
 	</hbox>
+	<CheckBox id="disable_welcome_screen" text="@string(disable_welcome_screen, Disable Welcome Screen)" lg="bottom|center_horizontal" margin-bottom="8dp" />
 </RelativeLayout>
 )xml";
 
@@ -238,6 +239,11 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 	find<UITextView>( "open_folder_shortcut" )->setText( mApp->getKeybind( "open-folder" ) );
 
 	find<UITextView>( "open_file_shortcut" )->setText( mApp->getKeybind( "open-file" ) );
+
+	auto welcomeDisabledChk = find<UICheckBox>( "disable_welcome_screen" );
+	welcomeDisabledChk->on( Event::OnValueChange, [welcomeDisabledChk, this]( auto ) {
+		mApp->getConfig().ui.welcomeScreen = !welcomeDisabledChk->isChecked();
+	} );
 }
 
 } // namespace ecode
