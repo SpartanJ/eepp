@@ -57,21 +57,27 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 		return 0;
 	Vector2f newPos( mPosition - dragDiff );
 	if ( mFlags & UI_DRAG_VERTICAL )
-		newPos = tabW->convertToNodeSpace( newPos );
+		newPos = tabW->getTabBar()->convertToNodeSpace( newPos );
+
 	Uint32 index = tabW->getTabIndex( this );
+	bool swapped = false;
 	if ( index > 0 ) {
 		UITab* tab = tabW->getTab( index - 1 );
-		if ( tab && newPos.x < tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f )
+		Float tabMiddle = tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f;
+		if ( tab && newPos.x < tabMiddle ) {
 			tabW->swapTabs( this, tab );
+			swapped = true;
+		}
 	}
-	if ( index + 1 < tabW->getTabCount() ) {
+	if ( !swapped && index + 1 < tabW->getTabCount() ) {
 		UITab* tab = tabW->getTab( index + 1 );
-		if ( tab && newPos.x + mSize.getWidth() >
-						tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f )
+		Float tabMiddle = tab->getPixelsPosition().x + tab->getPixelsSize().getWidth() * 0.5f;
+		if ( tab && newPos.x + mSize.getWidth() > tabMiddle )
 			tabW->swapTabs( tab, this );
 	}
+
 	if ( tabW->getAllowDragAndDropTabs() && !( mFlags & UI_DRAG_VERTICAL ) ) {
-		mDragTotalDiff += (Float)( mDragPoint.y - pos.y );
+		mDragTotalDiff += mDragPoint.y - pos.y;
 		if ( eeabs( mDragTotalDiff ) >= tabW->getTabVerticalDragResistance() ) {
 			setFlags( UI_DRAG_VERTICAL );
 			setPixelsPosition( mPosition.x, mPosition.y - mDragTotalDiff );
@@ -146,6 +152,7 @@ Uint32 UITab::onDragStop( const Vector2i& position, const Uint32& flags ) {
 			}
 		}
 		tabW->posTabs();
+		tabW->zorderTabs();
 	}
 	return UISelectButton::onDragStop( position, flags );
 }

@@ -1059,7 +1059,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 
 		if ( !quickFixRendered && doc->getSelection().start().line() == index &&
 			 !match.diagnostic.codeActions.empty() ) {
-			rLineWidth = editor->getLineWidth( index );
+			rLineWidth = editor->getLineWidth( index ) + editor->getGlyphWidth();
 			Color wcolor( editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
 			if ( nullptr == mLightbulbIcon ) {
 				mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
