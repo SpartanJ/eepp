@@ -404,8 +404,10 @@ void LSPDocumentClient::requestFoldRange() {
 			return;
 		std::vector<TextRange> regions;
 		regions.reserve( res.size() );
-		for ( const auto& region : res )
-			regions.push_back( { { region.startLine, 0 }, { region.endLine, 0 } } );
+		for ( const auto& region : res ) {
+			if ( region.endLine - region.startLine > 1 )
+				regions.push_back( { { region.startLine, 0 }, { region.endLine, 0 } } );
+		}
 		doc->getFoldRangeService().setFoldingRegions( regions );
 	};
 
