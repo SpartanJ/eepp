@@ -1502,9 +1502,9 @@ TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
 }
 
 void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
-	TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
 	if ( !mCurrentHover.range.isValid() ||
-		 ( mCurrentHover.range.isValid() && !mCurrentHover.range.contains( cursorPosition ) ) )
+		 ( mCurrentHover.range.isValid() &&
+		   !mCurrentHover.range.contains( editor->resolveScreenPosition( position.asFloat() ) ) ) )
 		hideTooltip( editor );
 }
 

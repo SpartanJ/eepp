@@ -13,6 +13,8 @@ static std::vector<TextRange> findFoldingRangesBraces( TextDocument* doc ) {
 	std::vector<TextRange> regions;
 	const auto& braces = doc->getSyntaxDefinition().getFoldBraces();
 	size_t linesCount = doc->linesCount();
+	if ( linesCount <= 2 )
+		return regions;
 	auto highlighter = doc->getHighlighter();
 	for ( size_t lineIdx = 0; lineIdx < linesCount; lineIdx++ ) {
 		const auto& line = doc->line( lineIdx ).getText();
