@@ -284,7 +284,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 							f.position = r.result;
 							const auto& line = doc->line( r.result.start().line() );
 							if ( line.size() > EE_1KB )
-								f.line = line.getText().substr( 0, EE_1KB );
+								f.line = line.substr( 0, EE_1KB );
 							else
 								f.line = line.getTextWithoutNewLine();
 							f.start = r.result.start().column();

@@ -9,14 +9,13 @@ namespace EE { namespace UI { namespace Doc {
 
 static std::vector<TextRange> findFoldingRangesBraces( TextDocument* doc ) {
 	Clock c;
-	std::stack<TextPosition> braceStack;
 	std::vector<TextRange> regions;
-	const auto& braces = doc->getSyntaxDefinition().getFoldBraces();
-	size_t linesCount = doc->linesCount();
-	if ( linesCount <= 2 )
+	if ( doc->linesCount() <= 2 )
 		return regions;
+	const auto& braces = doc->getSyntaxDefinition().getFoldBraces();
+	std::stack<TextPosition> braceStack;
 	auto highlighter = doc->getHighlighter();
-	for ( size_t lineIdx = 0; lineIdx < linesCount; lineIdx++ ) {
+	for ( size_t lineIdx = 0; lineIdx < doc->linesCount(); lineIdx++ ) {
 		const auto& line = doc->line( lineIdx ).getText();
 		size_t lineLength = line.length();
 		for ( size_t colIdx = 0; colIdx < lineLength; colIdx++ ) {
@@ -64,11 +63,12 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 	Clock c;
 	std::stack<TextPosition> indentStack;
 	std::vector<TextRange> regions;
+	if ( doc->linesCount() <= 2 )
+		return regions;
 	const auto& braces = doc->getSyntaxDefinition().getFoldBraces();
-	size_t linesCount = doc->linesCount();
 	int currentIndent = 0;
 
-	for ( size_t lineIdx = 0; lineIdx < linesCount; lineIdx++ ) {
+	for ( size_t lineIdx = 0; lineIdx < doc->linesCount(); lineIdx++ ) {
 		const auto& line = doc->line( lineIdx ).getText();
 		int newIndent = countLeadingSpaces( line );
 		if ( newIndent > currentIndent ) {
@@ -91,7 +91,7 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 		auto top = indentStack.top();
 		indentStack.pop();
 		regions.emplace_back( TextPosition( top.line() + 1, 0 ),
-							  TextPosition( static_cast<Int64>( linesCount ) - 1, 0 ) );
+							  TextPosition( static_cast<Int64>( doc->linesCount() ) - 1, 0 ) );
 	}
 
 	Log::debug( "findFoldingRangesIndentation for \"%s\" took %s", doc->getFilePath(),
@@ -192,6 +192,10 @@ void FoldRangeServive::setFoldingRegions( std::vector<TextRange> regions ) {
 
 const FoldRangeServive::FoldRangeProvider& FoldRangeServive::getProvider() const {
 	return mProvider;
+}
+
+bool FoldRangeServive::hasProvider() const {
+	return mProvider != nullptr;
 }
 
 void FoldRangeServive::setProvider( const FoldRangeProvider& provider ) {

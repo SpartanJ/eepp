@@ -164,7 +164,8 @@ bool DocumentView::isWrapEnabled() const {
 void DocumentView::setMaxWidth( Float maxWidth, bool forceReconstructBreaks ) {
 	if ( maxWidth != mMaxWidth ) {
 		mMaxWidth = maxWidth;
-		invalidateCache();
+		if ( !isOneToOne() )
+			invalidateCache();
 	} else if ( forceReconstructBreaks || mPendingReconstruction ) {
 		invalidateCache();
 	}
@@ -195,7 +196,8 @@ void DocumentView::setLineWrapMode( LineWrapMode mode ) {
 }
 
 TextPosition DocumentView::getVisibleIndexPosition( VisibleIndex visibleIndex ) const {
-	if ( isOneToOne() )
+	eeASSERT( mConfig.mode == LineWrapMode::NoWrap || !mVisibleLines.empty() );
+	if ( isOneToOne() || mVisibleLines.empty() )
 		return { static_cast<Int64>( visibleIndex ), 0 };
 	return mVisibleLines[eeclamp( static_cast<Int64>( visibleIndex ), 0ll,
 								  eemax( static_cast<Int64>( mVisibleLines.size() ) - 1, 0ll ) )];
@@ -509,7 +511,7 @@ void DocumentView::foldRegion( Int64 foldDocIdx ) {
 	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
 	if ( !foldRegion )
 		return;
-	if ( isOneToOne() )
+	if ( isOneToOne() && mDocLineToVisibleIndex.empty() )
 		invalidateCache();
 	Int64 toDocIdx = foldRegion->end().line();
 	changeVisibility( foldDocIdx + 1, toDocIdx, false );

@@ -627,6 +627,10 @@ class EE_API TextDocument {
 
 	FoldRangeServive& getFoldRangeService();
 
+	std::vector<TextDocumentLine> getLines() const;
+
+	void setLines( std::vector<TextDocumentLine>&& lines );
+
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeServive;

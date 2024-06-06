@@ -42,6 +42,8 @@ class EE_API FoldRangeServive {
 
 	const FoldRangeProvider& getProvider() const;
 
+	bool hasProvider() const;
+
 	void setProvider( const FoldRangeProvider& provider );
 
 	bool isEnabled() const;

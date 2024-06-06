@@ -996,11 +996,15 @@ const TextRange& TextDocument::getSelection() const {
 }
 
 TextDocumentLine& TextDocument::line( const size_t& index ) {
-	return mLines[index];
+	static TextDocumentLine safeLine = TextDocumentLine( "" );
+	eeASSERT( index < mLines.size() );
+	return index >= mLines.size() ? safeLine : mLines[index];
 }
 
 const TextDocumentLine& TextDocument::line( const size_t& index ) const {
-	return mLines[index];
+	static TextDocumentLine safeLine = TextDocumentLine( "" );
+	eeASSERT( index < mLines.size() );
+	return index >= mLines.size() ? safeLine : mLines[index];
 }
 
 size_t TextDocument::linesCount() const {
@@ -2986,6 +2990,14 @@ const FoldRangeServive& TextDocument::getFoldRangeService() const {
 
 FoldRangeServive& TextDocument::getFoldRangeService() {
 	return mFoldRangeService;
+}
+
+std::vector<TextDocumentLine> TextDocument::getLines() const {
+	return mLines;
+}
+
+void TextDocument::setLines( std::vector<TextDocumentLine>&& lines ) {
+	mLines = std::move( lines );
 }
 
 static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, const TextPosition& pos,
