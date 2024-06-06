@@ -4190,12 +4190,8 @@ String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
 				 pos.column() <= startB.column() + link.second ) {
 				getUISceneNode()->setCursor( Cursor::Hand );
 				mHandShown = true;
-				mLinkPosition = {
-					{ startB.line(), static_cast<Int64>( characterWidth(
-										 mDoc->line( startB.line() )
-											 .getText()
-											 .substr( 0, startB.column() + link.first ) ) ) },
-					{ startB.line(), startB.column() + link.second } };
+				mLinkPosition = { { startB.line(), startB.column() + link.first },
+								  { startB.line(), startB.column() + link.second } };
 				mLink = String( linkStr.substr( link.first, link.second - link.first ) );
 				invalidateDraw();
 				return mLink;
