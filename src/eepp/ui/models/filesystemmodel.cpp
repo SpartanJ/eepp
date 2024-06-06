@@ -678,12 +678,11 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 				} );
 			} );
 
-			beginDeleteRows( index.parent(), index.row(), index.row() );
-
-			eeDelete( parent->mChildren[index.row()] );
-			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
-
-			endDeleteRows();
+			if ( beginDeleteRows( index.parent(), index.row(), index.row() ) ) {
+				eeDelete( parent->mChildren[index.row()] );
+				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+				endDeleteRows();
+			}
 
 			forEachView( [&]( UIAbstractView* view ) {
 				std::vector<ModelIndex> newIndexes;
