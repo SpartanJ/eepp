@@ -109,13 +109,15 @@ AutoCompletePlugin::~AutoCompletePlugin() {
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();
 
-	Lock l( mDocMutex );
-	Lock l2( mLangSymbolsMutex );
-	Lock l3( mSuggestionsMutex );
-	for ( const auto& editor : mEditors ) {
-		for ( auto listener : editor.second )
-			editor.first->removeEventListener( listener );
-		editor.first->unregisterPlugin( this );
+	{
+		Lock l( mDocMutex );
+		Lock l2( mLangSymbolsMutex );
+		Lock l3( mSuggestionsMutex );
+		for ( const auto& editor : mEditors ) {
+			for ( auto listener : editor.second )
+				editor.first->removeEventListener( listener );
+			editor.first->unregisterPlugin( this );
+		}
 	}
 
 	bool isUpdating = false;
@@ -484,10 +486,16 @@ bool AutoCompletePlugin::onTextInput( UICodeEditor* editor, const TextInputEvent
 }
 
 void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
-	{
-		Lock lu( mDocsUpdatingMutex );
-		mDocsUpdating[doc] = true;
-	}
+	ScopedOp op(
+		[this, doc] {
+			Lock lu( mDocsUpdatingMutex );
+			mDocsUpdating[doc] = true;
+		},
+		[this, doc] {
+			Lock lu( mDocsUpdatingMutex );
+			mDocsUpdating[doc] = false;
+		} );
+
 	Clock clock;
 	std::unordered_map<TextDocument*, DocCache>::iterator docCache;
 	{
@@ -523,10 +531,6 @@ void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
 	}
 	Log::debug( "Dictionary for %s updated in: %.2fms", doc->getFilename().c_str(),
 				clock.getElapsedTime().asMilliseconds() );
-	{
-		Lock lu( mDocsUpdatingMutex );
-		mDocsUpdating[doc] = false;
-	}
 }
 
 void AutoCompletePlugin::updateLangCache( const std::string& langName ) {

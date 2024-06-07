@@ -273,6 +273,10 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 							std::search( lineBuffer.begin(), lineBuffer.end(), BINARY_STR.data(),
 										 BINARY_STR.data() + BINARY_STR.size() ) !=
 							lineBuffer.end();
+
+						if ( mMightBeBinary && mEncoding == TextFormat::Encoding::UTF16BE ) {
+							mEncoding = TextFormat::Encoding::UTF8;
+						}
 					}
 
 					if ( mLineEnding == TextFormat::LineEnding::CRLF && lineBufferSize > 1 &&

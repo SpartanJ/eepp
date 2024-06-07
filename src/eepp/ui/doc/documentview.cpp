@@ -101,8 +101,6 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 
 		if ( curChar == '\t' )
 			w = hspace * tabWidth;
-		else if ( ( curChar ) == '\r' )
-			w = 0;
 
 		if ( !isMonospace && curChar != '\r' ) {
 			w += fontStyle.Font->getKerning( prevChar, curChar, fontStyle.CharacterSize, bold,
@@ -147,7 +145,7 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& 
 															bool keepIndentation, Uint32 tabWidth,
 															Float whiteSpaceWidth ) {
 	const auto& text = doc.line( line ).getText();
-	return computeLineBreaks( text.substr( 0, text.size() - 1 ), fontStyle, maxWidth, mode,
+	return computeLineBreaks( text.view().substr( 0, text.size() - 1 ), fontStyle, maxWidth, mode,
 							  keepIndentation, tabWidth, whiteSpaceWidth );
 }
 
