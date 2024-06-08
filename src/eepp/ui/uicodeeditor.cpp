@@ -1122,7 +1122,7 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 		if ( plugin->onKeyUp( this, event ) )
 			return 1;
 	if ( mHandShown && !getUISceneNode()->getWindow()->getInput()->isKeyModPressed() )
-		resetLinkOver();
+		resetLinkOver( getUISceneNode()->getWindow()->getInput()->getMousePos() );
 	return UIWidget::onKeyUp( event );
 }
 
@@ -1478,6 +1478,8 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		checkMouseOverColor( position );
 
 		checkMouseOverLink( position );
+
+		updateMouseCursor( position.asFloat() );
 	}
 
 	if ( mShowFoldingRegion && !mFoldsAlwaysVisible ) {
@@ -1557,7 +1559,7 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 		String link( checkMouseOverLink( position ) );
 		if ( !link.empty() ) {
 			Engine::instance()->openURI( link.toUtf8() );
-			resetLinkOver();
+			resetLinkOver( position );
 		}
 	} else if ( ( flags & EE_BUTTON_MMASK ) && isMouseOverMeOrChilds() ) {
 		auto txt( getUISceneNode()->getWindow()->getClipboard()->getText() );
@@ -1603,7 +1605,7 @@ Uint32 UICodeEditor::onMouseOver( const Vector2i& position, const Uint32& flags 
 		if ( plugin->onMouseOver( this, position, flags ) )
 			return UIWidget::onMouseOver( position, flags );
 	if ( getEventDispatcher()->getMouseOverNode() == this )
-		getUISceneNode()->setCursor( !mLocked ? Cursor::IBeam : Cursor::Arrow );
+		updateMouseCursor( position.asFloat() );
 	return UIWidget::onMouseOver( position, flags );
 }
 
@@ -2708,6 +2710,7 @@ void UICodeEditor::setSyntaxDefinition( const SyntaxDefinition& definition ) {
 			runOnMainThread( [this] { invalidateDraw(); } );
 		} );
 	}
+	findRegionsDelayed();
 	invalidateDraw();
 	DocSyntaxDefEvent event( this, mDoc.get(), Event::OnDocumentSyntaxDefinitionChange, oldLang,
 							 mDoc->getSyntaxDefinition().getLanguageName() );
@@ -4147,27 +4150,27 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 
 String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
 	if ( !mInteractiveLinks || !getUISceneNode()->getWindow()->getInput()->isKeyModPressed() )
-		return resetLinkOver();
+		return resetLinkOver( position );
 
 	TextPosition pos( resolveScreenPosition( position.asFloat(), false ) );
 	if ( pos.line() >= (Int64)mDoc->linesCount() )
-		return resetLinkOver();
+		return resetLinkOver( position );
 
 	const String& line = mDoc->line( pos.line() ).getText();
 	if ( pos.column() >= (Int64)line.size() - 1 )
-		return resetLinkOver();
+		return resetLinkOver( position );
 
 	if ( mDoc->getChar( pos ) == '\n' )
-		return resetLinkOver();
+		return resetLinkOver( position );
 
 	TextPosition startB( mDoc->previousSpaceBoundaryInLine( pos ) );
 	TextPosition endB( mDoc->nextSpaceBoundaryInLine( pos ) );
 
 	if ( startB.column() >= (Int64)line.size() || endB.column() >= (Int64)line.size() )
-		return resetLinkOver();
+		return resetLinkOver( position );
 
 	if ( pos.column() <= startB.column() || pos.column() >= endB.column() )
-		return resetLinkOver();
+		return resetLinkOver( position );
 
 	String partialLine( line.substr( startB.column(), endB.column() ) );
 
@@ -4199,14 +4202,14 @@ String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
 		}
 	}
 
-	return resetLinkOver();
+	return resetLinkOver( position );
 }
 
-String UICodeEditor::resetLinkOver() {
+String UICodeEditor::resetLinkOver( const Vector2i& mousePos ) {
 	if ( mHandShown )
 		invalidateDraw();
 	mHandShown = false;
-	getUISceneNode()->setCursor( !mLocked ? Cursor::IBeam : Cursor::Arrow );
+	updateMouseCursor( mousePos.asFloat() );
 	mLinkPosition = TextRange();
 	mLink.clear();
 	return "";
@@ -4783,7 +4786,7 @@ bool UICodeEditor::stopMinimapDragging( const Vector2f& mousePos ) {
 		mMinimapDragging = false;
 		getEventDispatcher()->setNodeDragging( NULL );
 		mVScrollBar->setEnabled( true );
-		getUISceneNode()->setCursor( Cursor::Arrow );
+		updateMouseCursor( mousePos );
 		updateMipmapHover( mousePos );
 		return true;
 	}
@@ -4804,6 +4807,11 @@ void UICodeEditor::findRegionsDelayed() {
 
 void UICodeEditor::refreshTag() {
 	mTagFoldRange = String::hash( mDoc->getURI().toString() + ":foldrange" );
+}
+
+void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
+	bool overGutter = convertToNodeSpace( position ).x < getGutterWidth();
+	getUISceneNode()->setCursor( !overGutter && !mLocked ? Cursor::IBeam : Cursor::Arrow );
 }
 
 }} // namespace EE::UI

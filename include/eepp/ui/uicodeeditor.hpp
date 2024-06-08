@@ -982,7 +982,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	String checkMouseOverLink( const Vector2i& position );
 
-	String resetLinkOver();
+	String resetLinkOver( const Vector2i& mousePos );
 
 	void resetPreviewColor();
 
@@ -1035,6 +1035,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void findRegionsDelayed();
 
 	void refreshTag();
+
+	void updateMouseCursor( const Vector2f& position );
 };
 
 }} // namespace EE::UI

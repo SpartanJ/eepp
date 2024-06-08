@@ -184,24 +184,22 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 	widget->setCurIndex( index );
 	if ( index.column() == (Int64)getModel()->treeColumn() ) {
 		bindNavigationClick( widget );
-		widget->addEventListener( Event::MouseClick, [this]( const Event* event ) {
+		widget->onClick( [this]( const MouseEvent* mouseEvent ) {
 			if ( mSingleClickNavigation )
 				return;
-			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			UIWidget* icon = mouseEvent->getNode()->asType<UIPushButton>()->getExtraInnerWidget();
-			if ( icon ) {
-				Vector2f pos( icon->convertToNodeSpace( mouseEvent->getPosition().asFloat() ) );
-				if ( pos >= Vector2f::Zero && pos <= icon->getPixelsSize() ) {
-					ConditionalLock l( getModel() != nullptr,
-									   getModel() ? &getModel()->resourceMutex() : nullptr );
-					auto idx =
-						mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-					if ( getModel()->rowCount( idx ) ) {
-						auto& data = getIndexMetadata( idx );
-						data.open = !data.open;
-						createOrUpdateColumns( false );
-						onOpenTreeModelIndex( idx, data.open );
-					}
+			if ( nullptr == icon )
+				return;
+			Vector2f pos( icon->convertToNodeSpace( mouseEvent->getPosition().asFloat() ) );
+			if ( pos >= Vector2f::Zero && pos <= icon->getPixelsSize() ) {
+				ConditionalLock l( getModel() != nullptr,
+								   getModel() ? &getModel()->resourceMutex() : nullptr );
+				auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
+				if ( getModel()->rowCount( idx ) ) {
+					auto& data = getIndexMetadata( idx );
+					data.open = !data.open;
+					createOrUpdateColumns( false );
+					onOpenTreeModelIndex( idx, data.open );
 				}
 			}
 		} );
