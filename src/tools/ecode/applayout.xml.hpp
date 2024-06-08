@@ -446,6 +446,16 @@ Anchor.error:hover {
 .bold {
 	font-style: bold;
 }
+.app_hint {
+	background-color: var(--button-back);
+	border-left-color: var(--button-border);
+	border-top-color: var(--button-border);
+	padding: 4dp 16dp 4dp 16dp;
+	border-top-left-radius: 12dp;
+	margin-bottom: 16dp;
+	margin-right: 2dp;
+	font-style: shadow;
+}
 ]]>
 </style>
 )html"
@@ -570,6 +580,9 @@ R"html(
 	</vbox>
 </Splitter>
 <Image id="settings" lw="16dp" lh="16dp" lg="top|right" gravity="center" />
+<TextView id="menu_hint" class="app_hint" lw="wc" lh="wc" lg="bottom|right" visible="false"
+		  text='@string(menu_hold_shift_hint, "Hold \"Shift\" to keep menu open)"'
+		  tooltip='@string(menu_hold_shift_hint_desc, "Keeping \"Shift\" clicked while changing any options it will keep the menu open.")' />
 </MainLayout>
 </vbox>
 )html"

@@ -1543,6 +1543,7 @@ void App::saveAll() {
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setAutoCloseXMLTags( true );
 	editor->setColorPreview( true );
+	editor->setLineWrapMode( LineWrapMode::Word );
 	doc.setCommand( "save-doc", [this] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() )

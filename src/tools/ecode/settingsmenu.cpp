@@ -123,14 +123,6 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 			->setId( "help-menu" )
 			->asType<UIWidget>();
 
-	auto shiftHintBut =
-		mSettingsMenu->add( i18n( "menu_hold_shift_hint", "(Hold \"Shift\" to keep menu open)" ) );
-	shiftHintBut->getTextBox()->setFontStyle( Text::Italic );
-	shiftHintBut->setTextAlign( UI_HALIGN_CENTER );
-	shiftHintBut->setTooltipText( i18n(
-		"menu_hold_shift_hint_desc",
-		"Keeping \"Shift\" clicked while changing any options it will keep the menu open." ) );
-
 	mSettingsMenu->addSeparator();
 	mSettingsMenu
 		->add( i18n( "close", "Close" ), findIcon( "document-close" ), getKeybind( "close-tab" ) )
@@ -163,13 +155,20 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	mMenuBar->setPopUpMenu( 7, getWindowMenu() );
 	mMenuBar->setPopUpMenu( 8, getHelpMenu() );
 
-	const auto onMenuShowEvent = [this]( UIPopUpMenu* menu, UIWidget* menuButton,
-										 Uint32 menuBarIndex ) {
-		menu->on( Event::OnMenuShow, [this, menuButton, menuBarIndex, menu]( auto ) {
+	auto* menuHint = mUISceneNode->find( "menu_hint" );
+
+	const auto onMenuShowEvent = [this, menuHint]( UIPopUpMenu* menu, UIWidget* menuButton,
+												   Uint32 menuBarIndex ) {
+		menu->on( Event::OnMenuShow, [this, menuButton, menuBarIndex, menu, menuHint]( auto ) {
+			if ( menuBarIndex == 0 && !mApp->isAnyStatusBarSectionVisible() )
+				menuHint->setVisible( true );
 			menu->setOwnerNode( mApp->getConfig().ui.showMenuBar
 									? mMenuBar->getButton( menuBarIndex )->asType<UIWidget>()
 									: menuButton );
 		} );
+
+		if ( menuBarIndex == 0 )
+			menu->on( Event::OnMenuHide, [menuHint]( auto ) { menuHint->setVisible( false ); } );
 
 		menu->on( Event::OnVisibleChange, [this, menuBarIndex]( const Event* event ) {
 			if ( mApp->getConfig().ui.showMenuBar ) {

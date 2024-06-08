@@ -494,6 +494,11 @@ std::pair<bool, std::string> App::generateConfigPath() {
 	return { true, Sys::getConfigPath( "ecode" ) };
 }
 
+bool App::isAnyStatusBarSectionVisible() const {
+	return ( mMainSplitter && mMainSplitter->getLastWidget() != nullptr ) ||
+		   mStatusBar->querySelector( ".selected" ) != nullptr;
+}
+
 bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync,
 					  bool stdOutLogs, bool disableFileLogs ) {
 	if ( !mPortableMode )

@@ -463,6 +463,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string getScriptsPath() const { return mScriptsPath; }
 
+	bool isAnyStatusBarSectionVisible() const;
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
