@@ -2195,10 +2195,11 @@ bool App::isUnlockedCommand( const std::string& command ) {
 }
 
 void App::saveProject() {
-	if ( !mCurrentProject.empty() )
+	if ( !mCurrentProject.empty() ) {
 		mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
 							 mProjectBuildManager ? mProjectBuildManager->getConfig()
 												  : ProjectBuildConfiguration() );
+	}
 }
 
 void App::closeEditors() {

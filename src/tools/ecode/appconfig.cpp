@@ -368,10 +368,15 @@ json saveNode( Node* node ) {
 				continue;
 			if ( ownedWidget->isType( UI_TYPE_CODEEDITOR ) ) {
 				UICodeEditor* editor = ownedWidget->asType<UICodeEditor>();
-				if ( !editor->getDocument().getFilePath().empty() ) {
+				if ( !editor->getDocument().isLoading() && editor->getDocument().isEmpty() )
+					continue;
+				if ( !editor->getDocument().getFilePath().empty() ||
+					 !editor->getDocument().getLoadingFilePath().empty() ) {
 					json f;
 					f["type"] = "editor";
-					f["path"] = editor->getDocument().getFilePath();
+					f["path"] = editor->getDocument().isLoading()
+									? editor->getDocument().getLoadingFilePath()
+									: editor->getDocument().getFilePath();
 					f["selection"] = editor->getDocument().getSelections().toString();
 					files.emplace_back( f );
 				}
