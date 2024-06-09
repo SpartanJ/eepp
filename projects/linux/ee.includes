@@ -13,4 +13,5 @@
 ../../src/modules/physics/include/
 ../../src/modules/physics/src/
 ../../src/tools/ecode
+../../src/thirdparty/mojoAL/
 /usr/include/freetype2/
