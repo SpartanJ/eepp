@@ -3061,7 +3061,7 @@ void UICodeEditor::jumpLinesUp( int offset ) {
 void UICodeEditor::jumpLinesDown( int offset ) {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition position = mDoc->getSelections()[i].start();
-		if ( position.line() >= (Int64)mDoc->linesCount() - offset ) {
+		if ( position.line() >= (Int64)mDocView.getVisibleLinesCount() - offset ) {
 			mDoc->setSelection( i, mDoc->endOfDoc(), mDoc->endOfDoc() );
 		} else {
 			mDoc->moveTo( i, moveToLineOffset( position, offset, i ) );
@@ -3081,18 +3081,14 @@ void UICodeEditor::jumpLinesDown() {
 void UICodeEditor::selectToPreviousLine() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition position = mDoc->getSelectionIndex( i ).start();
-		if ( position.line() == 0 ) {
-			mDoc->selectTo( i, mDoc->startOfDoc() );
-		} else {
-			mDoc->selectTo( i, moveToLineOffset( position, -1 ) );
-		}
+		mDoc->selectTo( i, moveToLineOffset( position, -1 ) );
 	}
 }
 
 void UICodeEditor::selectToNextLine() {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition position = mDoc->getSelectionIndex( i ).start();
-		if ( position.line() == (Int64)mDoc->linesCount() - 1 ) {
+		if ( position.line() == (Int64)mDocView.getVisibleLinesCount() - 1 ) {
 			mDoc->selectTo( i, mDoc->endOfDoc() );
 		} else {
 			mDoc->selectTo( i, moveToLineOffset( position, 1 ) );
