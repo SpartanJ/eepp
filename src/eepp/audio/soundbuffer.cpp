@@ -10,7 +10,6 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/scopedbuffer.hpp>
-#include <memory>
 
 namespace EE { namespace Audio {
 
