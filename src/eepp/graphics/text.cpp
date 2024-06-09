@@ -12,7 +12,65 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <limits>
 
+#include <harfbuzz/hb-ft.h>
+#include <harfbuzz/hb.h>
+
 namespace EE { namespace Graphics {
+
+namespace {
+
+// helper class that divides the string into lines and font runs.
+class TextShapeRun {
+  public:
+	TextShapeRun( const String::StringBaseType* start, std::size_t length,
+				  FontStyleConfig& config ) :
+		mLineBegin( start ), mEnd( start + length ), mConfig( config ) {
+		findNextEnd();
+	}
+
+	const String::StringBaseType* getLineStart() const { return mLineBegin; }
+
+	std::size_t getLineLen() const { return mLineLen; }
+
+	bool hasNext() const { return mLineBegin < mEnd; }
+
+	void next() {
+		mLineBegin += mLineLen + 1;
+		findNextEnd();
+	}
+
+	bool runIsNewLine() const { return mIsNewLine; }
+
+	FontTrueType* font() { return static_cast<FontTrueType*>( mFont ); }
+
+  private:
+	void findNextEnd() {
+		std::size_t lineLen = 0;
+		const String::StringBaseType delimiter = static_cast<String::StringBaseType>( '\n' );
+		Font* lFont = nullptr;
+		mIsNewLine = true;
+		for ( const auto* it = mLineBegin; *it != delimiter && it < mEnd; ++it, ++lineLen ) {
+			Font* font = mConfig.Font
+							 ->getGlyph( *it, mConfig.CharacterSize, mConfig.Style & Text::Bold,
+										 mConfig.Style & Text::Italic, mConfig.OutlineThickness )
+							 .font;
+			if ( lFont != nullptr && font != lFont ) {
+				mIsNewLine = false;
+				break;
+			}
+			mFont = font;
+		}
+		mLineLen = lineLen;
+	}
+
+	const String::StringBaseType* mLineBegin;
+	const String::StringBaseType* mEnd;
+	std::size_t mLineLen;
+	Font* mFont{ nullptr };
+	bool mIsNewLine{ false };
+	FontStyleConfig& mConfig;
+};
+} // namespace
 
 std::string Text::styleFlagToString( const Uint32& flags ) {
 	std::string str;
@@ -1233,6 +1291,132 @@ void Text::ensureGeometryUpdate() {
 			centerDiffX = line < mLinesWidth.size() ? mCachedWidth - mLinesWidth[line] : 0.f;
 			line++;
 			break;
+	}
+
+	if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
+		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+		hb_buffer_t* hbBuffer = hb_buffer_create();
+		TextShapeRun run( mString.data(), mString.size(), mFontStyleConfig );
+
+		while ( run.hasNext() ) {
+			FontTrueType* font = static_cast<FontTrueType*>( run.font() );
+			font->setCurrentSize( mFontStyleConfig.CharacterSize );
+
+			hb_buffer_reset( hbBuffer );
+			hb_buffer_add_utf32( hbBuffer, (Uint32*)run.getLineStart(), run.getLineLen(), 0,
+								 run.getLineLen() );
+			hb_buffer_guess_segment_properties( hbBuffer );
+
+			// Enable kerning
+			static const hb_feature_t features[] = {
+				hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), 1, HB_FEATURE_GLOBAL_START,
+							  HB_FEATURE_GLOBAL_END },
+			};
+
+			// whitelist cross-platforms shapers only
+			static const char* shaper_list[] = { "graphite2", "ot", "fallback", nullptr };
+
+			hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features, 1,
+						   shaper_list );
+
+			// from the shaped text we get the glyphs and positions
+			unsigned int glyphCount;
+			hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
+			hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
+			// Uint32 prevIndex = 0;
+
+			for ( std::size_t i = 0; i < glyphCount; ++i ) {
+				hb_glyph_info_t curGlyph = glyphInfo[i];
+				hb_glyph_position_t curGlyphPos = glyphPos[i];
+
+				// Extract the current glyph's description
+				const Glyph& glyph = font->getGlyphByIndex(
+					curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, italic, 0,
+					rFont->getPage( mFontStyleConfig.CharacterSize ), 0 );
+
+				// Apply the kerning offset
+				// x += font->getKerningFromGlyphIndex( prevIndex, curGlyph.codepoint,
+				// 									 mFontStyleConfig.CharacterSize, bold,
+				// 									 reqItalic, mFontStyleConfig.OutlineThickness );
+
+				int left = glyph.bounds.Left;
+				int top = glyph.bounds.Top;
+				int right = glyph.bounds.Left + glyph.bounds.Right;
+				int bottom = glyph.bounds.Top + glyph.bounds.Bottom;
+
+				int currentX = x + ( curGlyphPos.x_offset >> 6 );
+				int currentY = y + ( curGlyphPos.y_offset >> 6 );
+
+				// Add a quad for the current character
+				if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
+					addGlyphQuad( mVertices, Vector2f( currentX, currentY ), glyph, italic, 0,
+								  centerDiffX );
+				}
+
+				// Update the current bounds
+				minX = std::min( minX, (float)currentX + left - italic * bottom );
+				maxX = std::max( maxX, (float)currentX + right - italic * top );
+				minY = std::min( minY, (float)currentY + top );
+				maxY = std::max( maxY, (float)currentY + bottom );
+
+				// Advance to the next character
+				if ( font->isColorEmojiFont() ) {
+					x += glyph.size.getWidth();
+					y += ( curGlyphPos.y_advance >> 6 ) *
+						 ( mFontStyleConfig.CharacterSize /
+						   static_cast<FT_Face>( font->face() )->available_sizes[0].height );
+				} else {
+					// x += glyph.advance;
+					x += curGlyphPos.x_advance >> 6;
+					y += curGlyphPos.y_advance >> 6;
+				}
+
+				// prevIndex = curGlyph.codepoint;
+			}
+
+			// If we're using the underlined style, add the last line
+			if ( underlined ) {
+				addLine( mVertices, x, y, underlineOffset, underlineThickness, 0, centerDiffX );
+
+				if ( mFontStyleConfig.OutlineThickness != 0 )
+					addLine( mOutlineVertices, x, y, underlineOffset, underlineThickness,
+							 mFontStyleConfig.OutlineThickness, centerDiffX );
+			}
+
+			// If we're using the strike through style, add the last line across all characters
+			if ( strikeThrough ) {
+				addLine( mVertices, x, y, strikeThroughOffset, underlineThickness, 0, centerDiffX );
+
+				if ( mFontStyleConfig.OutlineThickness != 0 )
+					addLine( mOutlineVertices, x, y, strikeThroughOffset, underlineThickness,
+							 mFontStyleConfig.OutlineThickness, centerDiffX );
+			}
+
+			if ( mCachedWidthNeedUpdate )
+				mLinesWidth.push_back( x );
+
+			// next line
+			if ( run.runIsNewLine() ) {
+				y += vspace;
+				x = 0;
+			}
+			run.next();
+		}
+
+		// Update the bounding rectangle
+		mBounds.Left = minX;
+		mBounds.Top = minY;
+		mBounds.Right = maxX;
+		mBounds.Bottom = maxY;
+
+		if ( mCachedWidthNeedUpdate ) {
+			mCachedWidth = maxW;
+			mCachedWidthNeedUpdate = false;
+		}
+
+		hb_buffer_destroy( hbBuffer );
+
+		return;
 	}
 
 	for ( std::size_t i = 0; i < size; ++i ) {

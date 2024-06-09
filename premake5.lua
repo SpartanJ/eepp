@@ -496,7 +496,8 @@ function add_static_links()
 		links { "freetype-static", "libpng-static" }
 	end
 
-	links { "SOIL2-static",
+	links { "harfbuzz-static",
+			"SOIL2-static",
 			"chipmunk-static",
 			"libzip-static",
 			"jpeg-compressor-static",
@@ -910,6 +911,15 @@ workspace "eepp"
 		files { "src/thirdparty/freetype2/src/**.c" }
 		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
 		build_base_configuration( "freetype" )
+		target_dir_thirdparty()
+
+	project "harfbuzz-static"
+		kind "StaticLib"
+		language "C++"
+		defines { "HAVE_CONFIG_H" }
+		files { "src/thirdparty/harfbuzz/**.c", "src/thirdparty/harfbuzz/**.cc" }
+		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
+		build_base_cpp_configuration( "harfbuzz" )
 		target_dir_thirdparty()
 
 	project "chipmunk-static"

@@ -8,6 +8,8 @@
 
 namespace EE { namespace Graphics {
 
+class Font;
+
 class EE_API Glyph {
   public:
 	Float advance{ 0 }; ///< Offset to move horizontally to the next character
@@ -16,6 +18,7 @@ class EE_API Glyph {
 	Sizef size;
 	int lsbDelta{ 0 }; //!< Left offset after forced autohint. Internally used by getKerning()
 	int rsbDelta{ 0 }; //!< Right offset after forced autohint. Internally used by getKerning()
+	Font* font{ nullptr };
 };
 
 enum class FontType { TTF, BMF, Sprite };

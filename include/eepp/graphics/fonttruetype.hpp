@@ -44,6 +44,9 @@ class EE_API FontTrueType : public Font {
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 					  bool italic, Float outlineThickness = 0 ) const;
 
+	Float getKerningFromGlyphIndex( Uint32 first, Uint32 second, unsigned int characterSize,
+									bool bold, bool italic, Float outlineThickness = 0 ) const;
+
 	Float getLineSpacing( unsigned int characterSize ) const;
 
 	Uint32 getFontHeight( const Uint32& characterSize ) const;
@@ -126,7 +129,13 @@ class EE_API FontTrueType : public Font {
 
 	void setBoldItalicFont( FontTrueType* fontBoldItalic );
 
+	void* face() const { return mFace; }
+
+	void* hb() const { return mHBFont; }
+
   protected:
+	friend class Text;
+
 	explicit FontTrueType( const std::string& FontName );
 
 	struct Row {
@@ -185,6 +194,7 @@ class EE_API FontTrueType : public Font {
 					  ///< implementation details)
 	void* mStroker;	  ///< Pointer to the stroker (it is typeless to avoid exposing implementation
 					  ///< details)
+	void* mHBFont{ nullptr };
 	mutable ScopedBuffer mMemCopy; ///< If loaded from memory, this is the file copy in memory
 	Font::Info mInfo;			   ///< Information about the font
 	Uint32 mFontInternalId{ 0 };
