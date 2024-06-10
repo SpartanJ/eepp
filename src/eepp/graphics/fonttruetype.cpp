@@ -318,8 +318,9 @@ Uint32 FontTrueType::getGlyphIndex( const Uint32& codePoint ) const {
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
 									 bool italic, Float outlineThickness, Float maxWidth ) const {
-	if ( mEnableEmojiFallback && Font::isEmojiCodePoint( codePoint ) && !mIsColorEmojiFont &&
-		 !mIsEmojiFont ) {
+	Uint32 idx = 0;
+	if ( mEnableEmojiFallback && !mIsColorEmojiFont && !mIsEmojiFont &&
+		 Font::isEmojiCodePoint( codePoint ) ) {
 		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 
@@ -331,9 +332,11 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
-			if ( 0 != fontEmoji->getGlyphIndex( codePoint ) )
-				return fontEmoji->getGlyph( codePoint, characterSize, bold, italic,
-											outlineThickness, getPage( characterSize ), maxWidth );
+			if ( ( idx = fontEmoji->getGlyphIndex( codePoint ) ) ) {
+				return fontEmoji->getGlyphByIndex( idx, characterSize, bold, italic,
+												   outlineThickness, getPage( characterSize ),
+												   maxWidth );
+			}
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 
@@ -345,48 +348,51 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
-			if ( 0 != fontEmoji->getGlyphIndex( codePoint ) )
-				return fontEmoji->getGlyph( codePoint, characterSize, bold, italic,
-											outlineThickness, getPage( characterSize ), maxWidth );
-		}
-	}
-
-	if ( bold && italic && mFontBoldItalic != nullptr &&
-		 0 != mFontBoldItalic->getGlyphIndex( codePoint ) ) {
-		return mFontBoldItalic->getGlyph( codePoint, characterSize, true, true, outlineThickness,
-										  getPage( characterSize ), maxWidth );
-	}
-
-	if ( bold && !italic && mFontBold != nullptr && 0 != mFontBold->getGlyphIndex( codePoint ) ) {
-		return mFontBold->getGlyph( codePoint, characterSize, true, false, outlineThickness,
-									getPage( characterSize ), maxWidth );
-	}
-
-	if ( italic && !bold && mFontItalic != nullptr &&
-		 0 != mFontItalic->getGlyphIndex( codePoint ) ) {
-		return mFontItalic->getGlyph( codePoint, characterSize, false, true, outlineThickness,
-									  getPage( characterSize ), maxWidth );
-	}
-
-	Uint32 glyphIndex = getGlyphIndex( codePoint );
-	if ( 0 == glyphIndex && mEnableFallbackFont && FontManager::instance()->hasFallbackFonts() ) {
-		for ( Font* fallbackFontPtr : FontManager::instance()->getFallbackFonts() ) {
-			if ( fallbackFontPtr->getType() != FontType::TTF )
-				continue;
-			FontTrueType* fallbackFont = static_cast<FontTrueType*>( fallbackFontPtr );
-			if ( 0 != fallbackFont->getGlyphIndex( codePoint ) ) {
-				if ( mIsMonospace && mEnableDynamicMonospace ) {
-					mIsMonospaceComplete = false;
-					mUsingFallback = true;
-				}
-				return fallbackFont->getGlyph( codePoint, characterSize, bold, italic,
-											   outlineThickness, getPage( characterSize ),
-											   maxWidth );
+			if ( ( idx = fontEmoji->getGlyphIndex( codePoint ) ) ) {
+				return fontEmoji->getGlyphByIndex( idx, characterSize, bold, italic,
+												   outlineThickness, getPage( characterSize ),
+												   maxWidth );
 			}
 		}
 	}
 
-	return getGlyphByIndex( glyphIndex, characterSize, bold, italic, outlineThickness );
+	if ( bold && italic && mFontBoldItalic != nullptr &&
+		 ( idx = mFontBoldItalic->getGlyphIndex( codePoint ) ) ) {
+		return mFontBoldItalic->getGlyphByIndex( idx, characterSize, true, true, outlineThickness,
+												 getPage( characterSize ), maxWidth );
+	}
+
+	if ( bold && !italic && mFontBold != nullptr &&
+		 ( idx = mFontBold->getGlyphIndex( codePoint ) ) ) {
+		return mFontBold->getGlyph( idx, characterSize, true, false, outlineThickness,
+									getPage( characterSize ), maxWidth );
+	}
+
+	if ( italic && !bold && mFontItalic != nullptr &&
+		 ( idx = mFontItalic->getGlyphIndex( codePoint ) ) ) {
+		return mFontItalic->getGlyph( idx, characterSize, false, true, outlineThickness,
+									  getPage( characterSize ), maxWidth );
+	}
+
+	idx = getGlyphIndex( codePoint );
+	if ( 0 == idx && mEnableFallbackFont && FontManager::instance()->hasFallbackFonts() ) {
+		for ( Font* fallbackFontPtr : FontManager::instance()->getFallbackFonts() ) {
+			if ( fallbackFontPtr->getType() != FontType::TTF )
+				continue;
+			FontTrueType* fallbackFont = static_cast<FontTrueType*>( fallbackFontPtr );
+			if ( ( idx = fallbackFont->getGlyphIndex( codePoint ) ) ) {
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
+					mIsMonospaceComplete = false;
+					mUsingFallback = true;
+				}
+				return fallbackFont->getGlyphByIndex( idx, characterSize, bold, italic,
+													  outlineThickness, getPage( characterSize ),
+													  maxWidth );
+			}
+		}
+	}
+
+	return getGlyphByIndex( idx, characterSize, bold, italic, outlineThickness );
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
@@ -541,15 +547,19 @@ Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int charac
 	FT_Face face = static_cast<FT_Face>( mFace );
 
 	if ( face && setCurrentSize( characterSize ) ) {
+		const Glyph& glyph1 = getGlyph( first, characterSize, bold, italic, outlineThickness );
+		const Glyph& glyph2 = getGlyph( second, characterSize, bold, italic, outlineThickness );
+
+		if ( glyph1.font != glyph2.font )
+			return 0.f;
+
 		// Convert the characters to indices
 		FT_UInt index1 = getGlyphIndex( first );
 		FT_UInt index2 = getGlyphIndex( second );
 
 		// Retrieve position compensation deltas generated by FT_LOAD_FORCE_AUTOHINT flag
-		auto firstRsbDelta = static_cast<float>(
-			getGlyph( first, characterSize, bold, italic, outlineThickness ).rsbDelta );
-		auto secondLsbDelta = static_cast<float>(
-			getGlyph( second, characterSize, bold, italic, outlineThickness ).lsbDelta );
+		auto firstRsbDelta = static_cast<Float>( glyph1.rsbDelta );
+		auto secondLsbDelta = static_cast<Float>( glyph2.lsbDelta );
 
 		// Get the kerning vector
 		FT_Vector kerning;

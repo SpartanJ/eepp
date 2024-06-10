@@ -22,20 +22,18 @@ namespace {
 // helper class that divides the string into lines and font runs.
 class TextShapeRun {
   public:
-	TextShapeRun( const String::StringBaseType* start, std::size_t length,
-				  FontStyleConfig& config ) :
-		mLineBegin( start ), mEnd( start + length ), mConfig( config ) {
+	TextShapeRun( const String& str, FontStyleConfig& config ) : mString( str ), mConfig( config ) {
 		findNextEnd();
 	}
 
-	const String::StringBaseType* getLineStart() const { return mLineBegin; }
+	String::View curRun() const {
+		return mString.view().substr( mIndex, mIsNewLine ? mLen - 1 : mLen );
+	}
 
-	std::size_t getLineLen() const { return mLineLen; }
-
-	bool hasNext() const { return mLineBegin < mEnd; }
+	bool hasNext() const { return mIndex < mString.size(); }
 
 	void next() {
-		mLineBegin += mLineLen + 1;
+		mIndex += mLen;
 		findNextEnd();
 	}
 
@@ -45,28 +43,39 @@ class TextShapeRun {
 
   private:
 	void findNextEnd() {
-		std::size_t lineLen = 0;
-		const String::StringBaseType delimiter = static_cast<String::StringBaseType>( '\n' );
-		Font* lFont = nullptr;
-		mIsNewLine = true;
-		for ( const auto* it = mLineBegin; *it != delimiter && it < mEnd; ++it, ++lineLen ) {
-			Font* font = mConfig.Font
-							 ->getGlyph( *it, mConfig.CharacterSize, mConfig.Style & Text::Bold,
-										 mConfig.Style & Text::Italic, mConfig.OutlineThickness )
-							 .font;
-			if ( lFont != nullptr && font != lFont ) {
-				mIsNewLine = false;
-				break;
+		Font* lFont = mStartFont;
+		std::size_t len = mString.size();
+		std::size_t idx = mIndex;
+		std::size_t pos = 0;
+		for ( idx = mIndex; idx < len; idx++, pos++ ) {
+			Font* font =
+				mConfig.Font
+					->getGlyph( mString[idx], mConfig.CharacterSize, mConfig.Style & Text::Bold,
+								mConfig.Style & Text::Italic, mConfig.OutlineThickness )
+					.font;
+			mIsNewLine = mString[idx] == '\n';
+			if ( mIsNewLine ) {
+				mFont = lFont;
+				mStartFont = font;
+				mLen = pos + 1;
+				return;
+			} else if ( ( lFont != nullptr && font != lFont ) ) {
+				mFont = lFont;
+				mStartFont = font;
+				mLen = pos;
+				return;
 			}
+			lFont = font;
 			mFont = font;
 		}
-		mLineLen = lineLen;
+		mLen = idx;
 	}
 
-	const String::StringBaseType* mLineBegin;
-	const String::StringBaseType* mEnd;
-	std::size_t mLineLen;
+	const String& mString;
+	std::size_t mIndex{ 0 };
+	std::size_t mLen{ 0 };
 	Font* mFont{ nullptr };
+	Font* mStartFont{ nullptr };
 	bool mIsNewLine{ false };
 	FontStyleConfig& mConfig;
 };
@@ -1296,15 +1305,16 @@ void Text::ensureGeometryUpdate() {
 	if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
 		hb_buffer_t* hbBuffer = hb_buffer_create();
-		TextShapeRun run( mString.data(), mString.size(), mFontStyleConfig );
+		TextShapeRun run( mString, mFontStyleConfig );
 
 		while ( run.hasNext() ) {
+			String::View curRun( run.curRun() );
 			FontTrueType* font = static_cast<FontTrueType*>( run.font() );
 			font->setCurrentSize( mFontStyleConfig.CharacterSize );
 
 			hb_buffer_reset( hbBuffer );
-			hb_buffer_add_utf32( hbBuffer, (Uint32*)run.getLineStart(), run.getLineLen(), 0,
-								 run.getLineLen() );
+			hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0,
+								 curRun.size() );
 			hb_buffer_guess_segment_properties( hbBuffer );
 
 			// Enable kerning
@@ -1320,10 +1330,10 @@ void Text::ensureGeometryUpdate() {
 						   shaper_list );
 
 			// from the shaped text we get the glyphs and positions
+			Uint32 prevGlyphIndex = 0;
 			unsigned int glyphCount;
 			hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
 			hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
-			// Uint32 prevIndex = 0;
 
 			for ( std::size_t i = 0; i < glyphCount; ++i ) {
 				hb_glyph_info_t curGlyph = glyphInfo[i];
@@ -1334,18 +1344,19 @@ void Text::ensureGeometryUpdate() {
 					curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, italic, 0,
 					rFont->getPage( mFontStyleConfig.CharacterSize ), 0 );
 
-				// Apply the kerning offset
-				// x += font->getKerningFromGlyphIndex( prevIndex, curGlyph.codepoint,
-				// 									 mFontStyleConfig.CharacterSize, bold,
-				// 									 reqItalic, mFontStyleConfig.OutlineThickness );
+				if ( prevGlyphIndex != 0 ) {
+					x += rFont->getKerningFromGlyphIndex( prevGlyphIndex, curGlyph.codepoint,
+														  mFontStyleConfig.CharacterSize, bold,
+														  italic, 0 );
+				}
 
-				int left = glyph.bounds.Left;
-				int top = glyph.bounds.Top;
-				int right = glyph.bounds.Left + glyph.bounds.Right;
-				int bottom = glyph.bounds.Top + glyph.bounds.Bottom;
+				Float left = glyph.bounds.Left;
+				Float top = glyph.bounds.Top;
+				Float right = glyph.bounds.Left + glyph.bounds.Right;
+				Float bottom = glyph.bounds.Top + glyph.bounds.Bottom;
 
-				int currentX = x + ( curGlyphPos.x_offset >> 6 );
-				int currentY = y + ( curGlyphPos.y_offset >> 6 );
+				Float currentX = x + ( curGlyphPos.x_offset / 64.f );
+				Float currentY = y + ( curGlyphPos.y_offset / 64.f );
 
 				// Add a quad for the current character
 				if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
@@ -1354,24 +1365,23 @@ void Text::ensureGeometryUpdate() {
 				}
 
 				// Update the current bounds
-				minX = std::min( minX, (float)currentX + left - italic * bottom );
-				maxX = std::max( maxX, (float)currentX + right - italic * top );
-				minY = std::min( minY, (float)currentY + top );
-				maxY = std::max( maxY, (float)currentY + bottom );
+				minX = std::min( minX, currentX + left - italic * bottom );
+				maxX = std::max( maxX, currentX + right - italic * top );
+				minY = std::min( minY, currentY + top );
+				maxY = std::max( maxY, currentY + bottom );
 
 				// Advance to the next character
 				if ( font->isColorEmojiFont() ) {
 					x += glyph.size.getWidth();
-					y += ( curGlyphPos.y_advance >> 6 ) *
+					y += ( curGlyphPos.y_advance / 64.f ) *
 						 ( mFontStyleConfig.CharacterSize /
 						   static_cast<FT_Face>( font->face() )->available_sizes[0].height );
 				} else {
-					// x += glyph.advance;
-					x += curGlyphPos.x_advance >> 6;
-					y += curGlyphPos.y_advance >> 6;
+					x += glyph.advance;
+					y += curGlyphPos.y_advance / 64.f;
 				}
 
-				// prevIndex = curGlyph.codepoint;
+				prevGlyphIndex = curGlyph.codepoint;
 			}
 
 			// If we're using the underlined style, add the last line
