@@ -1309,7 +1309,7 @@ void Text::ensureGeometryUpdate() {
 
 		while ( run.hasNext() ) {
 			String::View curRun( run.curRun() );
-			FontTrueType* font = static_cast<FontTrueType*>( run.font() );
+			FontTrueType* font = run.font();
 			font->setCurrentSize( mFontStyleConfig.CharacterSize );
 
 			hb_buffer_reset( hbBuffer );

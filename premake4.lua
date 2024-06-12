@@ -404,8 +404,10 @@ function build_base_cpp_configuration( package_name )
 		buildoptions{ "-fPIC" }
 	end
 
-	if is_vs() then
-		buildoptions { "/utf-8" }
+	if not is_vs() then
+		buildoptions{ "-std=c++17" }
+	else
+		buildoptions{ "/std:c++17", "/utf-8" }
 	end
 
 	set_ios_config()

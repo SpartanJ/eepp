@@ -256,13 +256,14 @@ function build_base_cpp_configuration( package_name )
 	set_ios_config()
 	set_apple_config()
 	build_arch_configuration()
+	cppdialect "C++17"
 
 	if _OPTIONS["with-static-eepp"] then
 		defines { "EE_STATIC" }
 	end
 
 	filter "action:vs*"
-		buildoptions { "/utf-8" }
+		buildoptions{ "/std:c++17", "/utf-8" }
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
