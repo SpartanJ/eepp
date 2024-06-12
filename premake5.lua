@@ -256,7 +256,6 @@ function build_base_cpp_configuration( package_name )
 	set_ios_config()
 	set_apple_config()
 	build_arch_configuration()
-	cppdialect "C++17"
 
 	if _OPTIONS["with-static-eepp"] then
 		defines { "EE_STATIC" }
@@ -266,6 +265,7 @@ function build_base_cpp_configuration( package_name )
 		buildoptions{ "/std:c++17", "/utf-8" }
 
 	filter "action:not vs*"
+		cppdialect "C++17"
 		buildoptions { "-Wall" }
 
 	filter "configurations:debug*"
@@ -918,7 +918,7 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C++"
 		defines { "HAVE_CONFIG_H" }
-		files { "src/thirdparty/harfbuzz/**.c", "src/thirdparty/harfbuzz/**.cc" }
+		files { "src/thirdparty/harfbuzz/**.cc" }
 		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
 		build_base_cpp_configuration( "harfbuzz" )
 		target_dir_thirdparty()

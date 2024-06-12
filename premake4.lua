@@ -1115,7 +1115,7 @@ solution "eepp"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		defines { "HAVE_CONFIG_H" }
-		files { "src/thirdparty/harfbuzz/**.c", "src/thirdparty/harfbuzz/**.cc" }
+		files { "src/thirdparty/harfbuzz/**.cc" }
 		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
 		build_base_cpp_configuration( "harfbuzz" )
 
@@ -1156,7 +1156,7 @@ solution "eepp"
 			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 			includedirs { "include/eepp/thirdparty/mojoAL" }
 			files { "src/thirdparty/mojoAL/*.c" }
-			build_base_cpp_configuration( "mojoal" )
+			build_base_configuration( "mojoal" )
 	end
 
 	project "efsw-static"
