@@ -12,8 +12,10 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <limits>
 
+#ifdef EE_TEXT_SHAPER_ENABLED
 #include <harfbuzz/hb-ft.h>
 #include <harfbuzz/hb.h>
+#endif
 
 namespace EE { namespace Graphics {
 
@@ -79,6 +81,7 @@ class TextShapeRun {
 	bool mIsNewLine{ false };
 	FontStyleConfig& mConfig;
 };
+
 } // namespace
 
 std::string Text::styleFlagToString( const Uint32& flags ) {
@@ -218,7 +221,7 @@ static inline void drawGlyph( BatchRenderer* BR, GlyphDrawable* gd, const Vector
 	}
 }
 
-static inline void idrawUnderline( Font* font, Float fontSize, const Color& fontColor,
+static inline void _drawUnderline( Font* font, Float fontSize, const Color& fontColor,
 								   const Vector2f& cpos, const Uint32& style, BatchRenderer* BR,
 								   Float outlineThickness, const Vector2f& pos, Float width,
 								   const Color& shadowColor, const Vector2f& shadowOffset,
@@ -253,7 +256,7 @@ void Text::drawUnderline( const Vector2f& pos, Float width, Font* font, Float fo
 						  const Color& outlineColor, const Color& shadowColor,
 						  const Vector2f& shadowOffset ) {
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
-	idrawUnderline( font, fontSize, fontColor, pos, style, BR, outlineThickness, pos, width,
+	_drawUnderline( font, fontSize, fontColor, pos, style, BR, outlineThickness, pos, width,
 					shadowColor, shadowOffset, outlineColor );
 }
 
@@ -329,7 +332,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 			}
 			case '\n': {
 				if ( style & Text::Underlined ) {
-					idrawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
+					_drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
 									pos, width, shadowColor, shadowOffset, outlineColor );
 				}
 				if ( style & Text::StrikeThrough ) {
@@ -378,7 +381,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	}
 
 	if ( ( style & Text::Underlined ) && width != 0 ) {
-		idrawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos, width,
+		_drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos, width,
 						shadowColor, shadowOffset, outlineColor );
 	}
 
@@ -1302,6 +1305,7 @@ void Text::ensureGeometryUpdate() {
 			break;
 	}
 
+#ifdef EE_TEXT_SHAPER_ENABLED
 	if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
 		hb_buffer_t* hbBuffer = hb_buffer_create();
@@ -1339,24 +1343,53 @@ void Text::ensureGeometryUpdate() {
 				hb_glyph_info_t curGlyph = glyphInfo[i];
 				hb_glyph_position_t curGlyphPos = glyphPos[i];
 
+				x += rFont->getKerningFromGlyphIndex(
+					prevGlyphIndex, curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold,
+					reqItalic, mFontStyleConfig.OutlineThickness );
+
+				Float currentX = x + ( curGlyphPos.x_offset / 64.f );
+				Float currentY = y + ( curGlyphPos.y_offset / 64.f );
+
+				// Apply the outline
+				if ( mFontStyleConfig.OutlineThickness != 0 ) {
+					const Glyph& glyph = font->getGlyphByIndex(
+						curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, reqItalic,
+						mFontStyleConfig.OutlineThickness,
+						rFont->getPage( mFontStyleConfig.CharacterSize ), 0 );
+
+					Float left = glyph.bounds.Left;
+					Float top = glyph.bounds.Top;
+					Float right = glyph.bounds.Left + glyph.bounds.Right;
+					Float bottom = glyph.bounds.Top + glyph.bounds.Bottom;
+
+					// Add the outline glyph to the vertices
+					if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
+						addGlyphQuad( mOutlineVertices, Vector2f( currentX, currentY ), glyph,
+									  italic, mFontStyleConfig.OutlineThickness, centerDiffX );
+					}
+
+					// Update the current bounds with the outlined glyph bounds
+					minX = std::min( minX, x + left - italic * bottom -
+											   mFontStyleConfig.OutlineThickness );
+					maxX = std::max( maxX,
+									 x + right - italic * top - mFontStyleConfig.OutlineThickness );
+					minY = std::min( minY, y + top - mFontStyleConfig.OutlineThickness );
+					maxY = std::max( maxY, y + bottom - mFontStyleConfig.OutlineThickness );
+					if ( mCachedWidthNeedUpdate ) {
+						maxW = std::max( maxW, x + glyph.advance - italic * top -
+												   mFontStyleConfig.OutlineThickness );
+					}
+				}
+
 				// Extract the current glyph's description
 				const Glyph& glyph = font->getGlyphByIndex(
-					curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, italic, 0,
+					curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, reqItalic, 0,
 					rFont->getPage( mFontStyleConfig.CharacterSize ), 0 );
-
-				if ( prevGlyphIndex != 0 ) {
-					x += rFont->getKerningFromGlyphIndex( prevGlyphIndex, curGlyph.codepoint,
-														  mFontStyleConfig.CharacterSize, bold,
-														  italic, 0 );
-				}
 
 				Float left = glyph.bounds.Left;
 				Float top = glyph.bounds.Top;
 				Float right = glyph.bounds.Left + glyph.bounds.Right;
 				Float bottom = glyph.bounds.Top + glyph.bounds.Bottom;
-
-				Float currentX = x + ( curGlyphPos.x_offset / 64.f );
-				Float currentY = y + ( curGlyphPos.y_offset / 64.f );
 
 				// Add a quad for the current character
 				if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
@@ -1385,7 +1418,7 @@ void Text::ensureGeometryUpdate() {
 			}
 
 			// If we're using the underlined style, add the last line
-			if ( underlined ) {
+			if ( underlined && run.runIsNewLine() ) {
 				addLine( mVertices, x, y, underlineOffset, underlineThickness, 0, centerDiffX );
 
 				if ( mFontStyleConfig.OutlineThickness != 0 )
@@ -1394,7 +1427,7 @@ void Text::ensureGeometryUpdate() {
 			}
 
 			// If we're using the strike through style, add the last line across all characters
-			if ( strikeThrough ) {
+			if ( strikeThrough && run.runIsNewLine() ) {
 				addLine( mVertices, x, y, strikeThroughOffset, underlineThickness, 0, centerDiffX );
 
 				if ( mFontStyleConfig.OutlineThickness != 0 )
@@ -1428,6 +1461,7 @@ void Text::ensureGeometryUpdate() {
 
 		return;
 	}
+#endif
 
 	for ( std::size_t i = 0; i < size; ++i ) {
 		Uint32 curChar = mString[i];
@@ -1514,7 +1548,7 @@ void Text::ensureGeometryUpdate() {
 		if ( mFontStyleConfig.OutlineThickness != 0 ) {
 			const Glyph& glyph =
 				mFontStyleConfig.Font->getGlyph( curChar, mFontStyleConfig.CharacterSize, bold,
-												 italic, mFontStyleConfig.OutlineThickness );
+												 reqItalic, mFontStyleConfig.OutlineThickness );
 
 			Float left = glyph.bounds.Left;
 			Float top = glyph.bounds.Top;
@@ -1615,9 +1649,10 @@ void Text::ensureColorUpdate() {
 
 		if ( mContainsColorEmoji ) {
 			auto positions = Font::emojiCodePointsPositions( mString );
-			for ( const auto& position : positions )
+			for ( const auto& position : positions ) {
 				setFillColor( Color( 255, 255, 255, mFontStyleConfig.FontColor.a ), position,
 							  position );
+			}
 		}
 	}
 }
@@ -1752,7 +1787,7 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 			}
 		}
 
-		if ( rto == s ) {
+		if ( to == s ) {
 			if ( underlined ) {
 				lpos++;
 				Uint32 pos = lpos * GLi->quadVertexs();
@@ -1932,21 +1967,18 @@ void Text::addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
 Uint32 Text::getTotalVertices() {
 	bool underlined = ( mFontStyleConfig.Style & Underlined ) != 0;
 	bool strikeThrough = ( mFontStyleConfig.Style & StrikeThrough ) != 0;
-	size_t sl = mString.size();
-	size_t sv = sl * GLi->quadVertexs();
-
-	String::StringBaseType* c = &mString[0];
+	size_t sv = mString.size() * GLi->quadVertexs();
 	Uint32 skiped = 0;
 	bool lineHasChars = false;
 
-	while ( '\0' != *c ) {
+	for ( const auto& ch : mString ) {
 		lineHasChars = true;
 
-		if ( ' ' == *c || '\n' == *c || '\t' == *c || '\r' == *c ) {
+		if ( ' ' == ch || '\n' == ch || '\t' == ch || '\r' == ch ) {
 			lineHasChars = false;
 			skiped++;
 
-			if ( '\n' == *c ) {
+			if ( '\n' == ch ) {
 				if ( underlined )
 					skiped--;
 
@@ -1954,8 +1986,6 @@ Uint32 Text::getTotalVertices() {
 					skiped--;
 			}
 		}
-
-		c++;
 	}
 
 	if ( lineHasChars ) {

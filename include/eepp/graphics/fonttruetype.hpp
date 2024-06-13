@@ -174,7 +174,7 @@ class EE_API FontTrueType : public Font {
 
 	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
 
-	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+	Glyph loadGlyphByIndex( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 					 Float outlineThickness, Page& page, const Float& maxWidth = 0.f ) const;
 
 	Rect findGlyphRect( Page& page, unsigned int width, unsigned int height ) const;
@@ -214,6 +214,7 @@ class EE_API FontTrueType : public Font {
 	bool mIsItalic{ false };
 	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
+	mutable UnorderedMap<Uint64, Float> mKerningCache;
 	FontHinting mHinting{ FontHinting::Full };
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 	FontTrueType* mFontBold{ nullptr };

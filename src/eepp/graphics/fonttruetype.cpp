@@ -22,8 +22,10 @@ using namespace EE::Window;
 #include <cstdlib>
 #include <cstring>
 
+#ifdef EE_TEXT_SHAPER_ENABLED
 #include <harfbuzz/hb-ft.h>
 #include <harfbuzz/hb.h>
+#endif
 
 namespace {
 
@@ -240,8 +242,9 @@ bool FontTrueType::loadFromPack( Pack* pack, std::string filePackPath ) {
 bool FontTrueType::setFontFace( void* _face ) {
 	FT_Face face = (FT_Face)_face;
 	mFace = face;
+#ifdef EE_TEXT_SHAPER_ENABLED
 	mHBFont = hb_ft_font_create( static_cast<FT_Face>( face ), NULL );
-
+#endif
 	mIsMonospaceComplete = mIsMonospace = FT_IS_FIXED_WIDTH( face );
 	mIsColorEmojiFont = checkIsColorEmojiFont( face );
 	mIsEmojiFont = FT_Get_Char_Index( face, 0x1F600 ) != 0;
@@ -334,8 +337,8 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
 			if ( ( idx = fontEmoji->getGlyphIndex( codePoint ) ) ) {
 				return fontEmoji->getGlyphByIndex( idx, characterSize, bold, italic,
-												   outlineThickness, getPage( characterSize ),
-												   maxWidth );
+												   0 /* outline thickness won't work here */,
+												   getPage( characterSize ), maxWidth );
 			}
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
@@ -420,8 +423,8 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 		return it->second;
 	} else {
 		// Not found: we have to load it
-		Glyph glyph =
-			loadGlyph( index, characterSize, bold, italic, outlineThickness, page, maxWidth );
+		Glyph glyph = loadGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page,
+										maxWidth );
 
 		return glyphs.emplace( key, glyph ).first->second;
 	}
@@ -564,12 +567,15 @@ Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int charac
 		// Get the kerning vector
 		FT_Vector kerning;
 		kerning.x = kerning.y = 0;
-		if ( FT_HAS_KERNING( face ) )
-			FT_Get_Kerning( face, index1, index2, FT_KERNING_UNFITTED, &kerning );
 
-		// X advance is already in pixels for bitmap fonts
-		if ( !FT_IS_SCALABLE( face ) )
-			return static_cast<Float>( kerning.x );
+		if ( glyph1.font == glyph2.font ) {
+			if ( FT_HAS_KERNING( face ) )
+				FT_Get_Kerning( face, index1, index2, FT_KERNING_UNFITTED, &kerning );
+
+			// X advance is already in pixels for bitmap fonts
+			if ( !FT_IS_SCALABLE( face ) )
+				return static_cast<Float>( kerning.x );
+		}
 
 		// Return the X advance
 		return std::floor(
@@ -588,6 +594,11 @@ Float FontTrueType::getKerningFromGlyphIndex( Uint32 index1, Uint32 index2,
 	if ( index1 == 0 || index2 == 0 || isMonospace() )
 		return 0.f;
 
+	auto pair = static_cast<Uint64>( index1 ) << 32 | index2;
+	auto found = mKerningCache.find( pair );
+	if ( found != mKerningCache.end() )
+		return found->second;
+
 	FT_Face face = static_cast<FT_Face>( mFace );
 
 	if ( face && setCurrentSize( characterSize ) ) {
@@ -604,15 +615,20 @@ Float FontTrueType::getKerningFromGlyphIndex( Uint32 index1, Uint32 index2,
 			FT_Get_Kerning( face, index1, index2, FT_KERNING_UNFITTED, &kerning );
 
 		// X advance is already in pixels for bitmap fonts
-		if ( !FT_IS_SCALABLE( face ) )
+		if ( !FT_IS_SCALABLE( face ) ) {
+			mKerningCache.insert( { pair, static_cast<Float>( kerning.x ) } );
 			return static_cast<Float>( kerning.x );
+		}
 
 		// Return the X advance
-		return std::floor(
-			( secondLsbDelta - firstRsbDelta + static_cast<float>( kerning.x ) + 32 ) /
-			static_cast<float>( 1 << 6 ) );
+		Float val =
+			std::floor( ( secondLsbDelta - firstRsbDelta + static_cast<float>( kerning.x ) + 32 ) /
+						static_cast<float>( 1 << 6 ) );
+		mKerningCache.insert( { pair, val } );
+		return val;
 	} else {
 		// Invalid font, or no kerning
+		mKerningCache.insert( { pair, 0.f } );
 		return 0.f;
 	}
 }
@@ -728,8 +744,10 @@ void FontTrueType::cleanup() {
 	mCallbacks.clear();
 	mNumCallBacks = 0;
 
+#ifdef EE_TEXT_SHAPER_ENABLED
 	if ( mHBFont )
 		hb_font_destroy( (hb_font_t*)mHBFont );
+#endif
 
 	// Destroy the stroker
 	if ( mStroker )
@@ -797,8 +815,9 @@ fontSetRenderOptions( FT_Library library, FontAntialiasing antialiasing, FontHin
 	return FT_RENDER_MODE_NORMAL;
 }
 
-Glyph FontTrueType::loadGlyph( Uint32 index, unsigned int characterSize, bool bold, bool /*italic*/,
-							   Float outlineThickness, Page& page, const Float& maxWidth ) const {
+Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
+									  bool /*italic*/, Float outlineThickness, Page& page,
+									  const Float& maxWidth ) const {
 	// The glyph to return
 	Glyph glyph;
 

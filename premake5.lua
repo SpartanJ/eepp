@@ -15,6 +15,7 @@ newoption { trigger = "thread-sanitizer", description = "Compile with ThreadSani
 newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
 newoption { trigger = "time-trace", description = "Compile with time tracing." }
 newoption { trigger = "disable-static-build", description = "Disables eepp static build project, this is just a helper to avoid rebuilding twice eepp while developing the library." }
+newoption { trigger = "with-text-shaper", description = "Enables text-shaping capabilities by relying on harfbuzz." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -497,8 +498,12 @@ function add_static_links()
 		links { "freetype-static", "libpng-static" }
 	end
 
-	links { "harfbuzz-static",
-			"SOIL2-static",
+	if _OPTIONS["with-text-shaper"] then
+		links { "harfbuzz-static" }
+		defines { "EE_TEXT_SHAPER_ENABLED" }
+	end
+
+	links { "SOIL2-static",
 			"chipmunk-static",
 			"libzip-static",
 			"jpeg-compressor-static",
