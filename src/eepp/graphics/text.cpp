@@ -21,10 +21,15 @@ namespace EE { namespace Graphics {
 
 namespace {
 
+#ifdef EE_TEXT_SHAPER_ENABLED
+static constexpr bool TextShaperEnabled = true;
+#endif
+
 // helper class that divides the string into lines and font runs.
 class TextShapeRun {
   public:
-	TextShapeRun( const String& str, FontStyleConfig& config ) : mString( str ), mConfig( config ) {
+	TextShapeRun( const String& str, const FontStyleConfig& config ) :
+		mString( str ), mConfig( config ) {
 		findNextEnd();
 	}
 
@@ -79,8 +84,47 @@ class TextShapeRun {
 	Font* mFont{ nullptr };
 	Font* mStartFont{ nullptr };
 	bool mIsNewLine{ false };
-	FontStyleConfig& mConfig;
+	const FontStyleConfig& mConfig;
 };
+
+static void shapeAndRun( const String& string, const FontStyleConfig& config,
+						 const std::function<void( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
+												   TextShapeRun& )>& cb ) {
+	hb_buffer_t* hbBuffer = hb_buffer_create();
+	TextShapeRun run( string, config );
+
+	while ( run.hasNext() ) {
+		String::View curRun( run.curRun() );
+		FontTrueType* font = run.font();
+		font->setCurrentSize( config.CharacterSize );
+
+		hb_buffer_reset( hbBuffer );
+		hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0, curRun.size() );
+		hb_buffer_guess_segment_properties( hbBuffer );
+
+		// Enable kerning
+		static const hb_feature_t features[] = {
+			hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), 1, HB_FEATURE_GLOBAL_START,
+						  HB_FEATURE_GLOBAL_END },
+		};
+
+		// whitelist cross-platforms shapers only
+		static const char* shaper_list[] = { "graphite2", "ot", "fallback", nullptr };
+
+		hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features, 1, shaper_list );
+
+		// from the shaped text we get the glyphs and positions
+		unsigned int glyphCount;
+		hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
+		hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
+
+		cb( glyphInfo, glyphPos, glyphCount, run );
+
+		run.next();
+	}
+
+	hb_buffer_destroy( hbBuffer );
+}
 
 } // namespace
 
@@ -992,16 +1036,66 @@ void Text::updateWidthCache() {
 
 	Float width = 0;
 	Float maxWidth = 0;
-	Uint32 rune;
-	Uint32 prevChar = 0;
 	bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
 	bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
-
 	Float hspace = static_cast<Float>( mFontStyleConfig.Font
 										   ->getGlyph( L' ', mFontStyleConfig.CharacterSize, bold,
 													   italic, mFontStyleConfig.OutlineThickness )
 										   .advance );
 
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF ) {
+		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+		shapeAndRun( mString, mFontStyleConfig,
+					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
+						  TextShapeRun& run ) {
+						 FontTrueType* font = run.font();
+						 Uint32 prevGlyphIndex = 0;
+
+						 for ( std::size_t i = 0; i < glyphCount; ++i ) {
+							 hb_glyph_info_t curGlyph = glyphInfo[i];
+							 auto curChar = mString[curGlyph.cluster];
+
+							 if ( curChar == '\t' ) {
+								 width += hspace * mTabWidth;
+								 prevGlyphIndex = curGlyph.codepoint;
+								 continue;
+							 }
+
+							 const Glyph& glyph = font->getGlyphByIndex(
+								 curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, italic,
+								 0, rFont->getPage( mFontStyleConfig.CharacterSize ), 0 );
+
+							 width += rFont->getKerningFromGlyphIndex(
+								 prevGlyphIndex, curGlyph.codepoint, mFontStyleConfig.CharacterSize,
+								 bold, italic, mFontStyleConfig.OutlineThickness );
+
+							 width += font->isColorEmojiFont() && ' ' != curChar
+										  ? glyph.size.getWidth()
+										  : glyph.advance;
+
+							 if ( width > maxWidth )
+								 maxWidth = width;
+
+							 prevGlyphIndex = curGlyph.codepoint;
+						 }
+
+						 if ( run.runIsNewLine() ) {
+							 mLinesWidth.push_back( width );
+							 width = 0;
+						 }
+					 } );
+
+		if ( !mString.empty() && mString[mString.size() - 1] != '\n' )
+			mLinesWidth.push_back( width );
+
+		mCachedWidth = maxWidth;
+		return;
+	}
+#endif
+
+	Uint32 rune;
+	Uint32 prevChar = 0;
 	size_t size = mString.size();
 	for ( std::size_t i = 0; i < size; ++i ) {
 		rune = mString[i];
@@ -1306,55 +1400,79 @@ void Text::ensureGeometryUpdate() {
 	}
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-	if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
+	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
-		hb_buffer_t* hbBuffer = hb_buffer_create();
-		TextShapeRun run( mString, mFontStyleConfig );
 
-		while ( run.hasNext() ) {
-			String::View curRun( run.curRun() );
-			FontTrueType* font = run.font();
-			font->setCurrentSize( mFontStyleConfig.CharacterSize );
+		shapeAndRun(
+			mString, mFontStyleConfig,
+			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
+				 TextShapeRun& run ) {
+				FontTrueType* font = run.font();
+				Uint32 prevGlyphIndex = 0;
 
-			hb_buffer_reset( hbBuffer );
-			hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0,
-								 curRun.size() );
-			hb_buffer_guess_segment_properties( hbBuffer );
+				for ( std::size_t i = 0; i < glyphCount; ++i ) {
+					hb_glyph_info_t curGlyph = glyphInfo[i];
+					hb_glyph_position_t curGlyphPos = glyphPos[i];
+					auto curChar = mString[curGlyph.cluster];
 
-			// Enable kerning
-			static const hb_feature_t features[] = {
-				hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), 1, HB_FEATURE_GLOBAL_START,
-							  HB_FEATURE_GLOBAL_END },
-			};
+					if ( curChar == '\t' ) {
+						minX = std::min( minX, x );
 
-			// whitelist cross-platforms shapers only
-			static const char* shaper_list[] = { "graphite2", "ot", "fallback", nullptr };
+						if ( curChar == '\t' )
+							x += hspace * mTabWidth;
+						else
+							x += hspace;
 
-			hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features, 1,
-						   shaper_list );
+						maxX = std::max( maxX, x );
 
-			// from the shaped text we get the glyphs and positions
-			Uint32 prevGlyphIndex = 0;
-			unsigned int glyphCount;
-			hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
-			hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
+						if ( mCachedWidthNeedUpdate )
+							maxW = std::max( maxW, x );
 
-			for ( std::size_t i = 0; i < glyphCount; ++i ) {
-				hb_glyph_info_t curGlyph = glyphInfo[i];
-				hb_glyph_position_t curGlyphPos = glyphPos[i];
+						prevGlyphIndex = curGlyph.codepoint;
+						continue;
+					}
 
-				x += rFont->getKerningFromGlyphIndex(
-					prevGlyphIndex, curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold,
-					reqItalic, mFontStyleConfig.OutlineThickness );
+					x += rFont->getKerningFromGlyphIndex(
+						prevGlyphIndex, curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold,
+						reqItalic, mFontStyleConfig.OutlineThickness );
 
-				Float currentX = x + ( curGlyphPos.x_offset / 64.f );
-				Float currentY = y + ( curGlyphPos.y_offset / 64.f );
+					Float currentX = x + ( curGlyphPos.x_offset / 64.f );
+					Float currentY = y + ( curGlyphPos.y_offset / 64.f );
 
-				// Apply the outline
-				if ( mFontStyleConfig.OutlineThickness != 0 ) {
+					// Apply the outline
+					if ( mFontStyleConfig.OutlineThickness != 0 ) {
+						const Glyph& glyph = font->getGlyphByIndex(
+							curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, reqItalic,
+							mFontStyleConfig.OutlineThickness,
+							rFont->getPage( mFontStyleConfig.CharacterSize ), 0 );
+
+						Float left = glyph.bounds.Left;
+						Float top = glyph.bounds.Top;
+						Float right = glyph.bounds.Left + glyph.bounds.Right;
+						Float bottom = glyph.bounds.Top + glyph.bounds.Bottom;
+
+						// Add the outline glyph to the vertices
+						if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
+							addGlyphQuad( mOutlineVertices, Vector2f( currentX, currentY ), glyph,
+										  italic, mFontStyleConfig.OutlineThickness, centerDiffX );
+						}
+
+						// Update the current bounds with the outlined glyph bounds
+						minX = std::min( minX, x + left - italic * bottom -
+												   mFontStyleConfig.OutlineThickness );
+						maxX = std::max( maxX, x + right - italic * top -
+												   mFontStyleConfig.OutlineThickness );
+						minY = std::min( minY, y + top - mFontStyleConfig.OutlineThickness );
+						maxY = std::max( maxY, y + bottom - mFontStyleConfig.OutlineThickness );
+						if ( mCachedWidthNeedUpdate ) {
+							maxW = std::max( maxW, x + glyph.advance - italic * top -
+													   mFontStyleConfig.OutlineThickness );
+						}
+					}
+
+					// Extract the current glyph's description
 					const Glyph& glyph = font->getGlyphByIndex(
-						curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, reqItalic,
-						mFontStyleConfig.OutlineThickness,
+						curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, reqItalic, 0,
 						rFont->getPage( mFontStyleConfig.CharacterSize ), 0 );
 
 					Float left = glyph.bounds.Left;
@@ -1362,89 +1480,68 @@ void Text::ensureGeometryUpdate() {
 					Float right = glyph.bounds.Left + glyph.bounds.Right;
 					Float bottom = glyph.bounds.Top + glyph.bounds.Bottom;
 
-					// Add the outline glyph to the vertices
+					// Add a quad for the current character
 					if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
-						addGlyphQuad( mOutlineVertices, Vector2f( currentX, currentY ), glyph,
-									  italic, mFontStyleConfig.OutlineThickness, centerDiffX );
+						addGlyphQuad( mVertices, Vector2f( currentX, currentY ), glyph, italic, 0,
+									  centerDiffX );
 					}
 
-					// Update the current bounds with the outlined glyph bounds
-					minX = std::min( minX, x + left - italic * bottom -
-											   mFontStyleConfig.OutlineThickness );
-					maxX = std::max( maxX,
-									 x + right - italic * top - mFontStyleConfig.OutlineThickness );
-					minY = std::min( minY, y + top - mFontStyleConfig.OutlineThickness );
-					maxY = std::max( maxY, y + bottom - mFontStyleConfig.OutlineThickness );
-					if ( mCachedWidthNeedUpdate ) {
-						maxW = std::max( maxW, x + glyph.advance - italic * top -
-												   mFontStyleConfig.OutlineThickness );
+					// Update the current bounds
+					minX = std::min( minX, currentX + left - italic * bottom );
+					maxX = std::max( maxX, currentX + right - italic * top );
+					minY = std::min( minY, currentY + top );
+					maxY = std::max( maxY, currentY + bottom );
+
+					// Advance to the next character
+					x += font->isColorEmojiFont() && ' ' != curChar ? glyph.size.getWidth()
+																	: glyph.advance;
+
+					prevGlyphIndex = curGlyph.codepoint;
+				}
+
+				// If we're using the underlined style, add the last line
+				if ( underlined && run.runIsNewLine() ) {
+					addLine( mVertices, x, y, underlineOffset, underlineThickness, 0, centerDiffX );
+
+					if ( mFontStyleConfig.OutlineThickness != 0 )
+						addLine( mOutlineVertices, x, y, underlineOffset, underlineThickness,
+								 mFontStyleConfig.OutlineThickness, centerDiffX );
+				}
+
+				// If we're using the strike through style, add the last line across all characters
+				if ( strikeThrough && run.runIsNewLine() ) {
+					addLine( mVertices, x, y, strikeThroughOffset, underlineThickness, 0,
+							 centerDiffX );
+
+					if ( mFontStyleConfig.OutlineThickness != 0 )
+						addLine( mOutlineVertices, x, y, strikeThroughOffset, underlineThickness,
+								 mFontStyleConfig.OutlineThickness, centerDiffX );
+				}
+
+				if ( mCachedWidthNeedUpdate )
+					mLinesWidth.push_back( x );
+
+				// next line
+				if ( run.runIsNewLine() ) {
+					y += vspace;
+					x = 0;
+					switch ( Font::getHorizontalAlign( mAlign ) ) {
+						case TEXT_ALIGN_CENTER:
+							centerDiffX =
+								line < mLinesWidth.size()
+									? (Float)( (Int32)( ( mCachedWidth - mLinesWidth[line] ) *
+														0.5f ) )
+									: 0.f;
+							line++;
+							break;
+						case TEXT_ALIGN_RIGHT:
+							centerDiffX =
+								line < mLinesWidth.size() ? mCachedWidth - mLinesWidth[line] : 0.f;
+							line++;
+							break;
 					}
 				}
-
-				// Extract the current glyph's description
-				const Glyph& glyph = font->getGlyphByIndex(
-					curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, reqItalic, 0,
-					rFont->getPage( mFontStyleConfig.CharacterSize ), 0 );
-
-				Float left = glyph.bounds.Left;
-				Float top = glyph.bounds.Top;
-				Float right = glyph.bounds.Left + glyph.bounds.Right;
-				Float bottom = glyph.bounds.Top + glyph.bounds.Bottom;
-
-				// Add a quad for the current character
-				if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
-					addGlyphQuad( mVertices, Vector2f( currentX, currentY ), glyph, italic, 0,
-								  centerDiffX );
-				}
-
-				// Update the current bounds
-				minX = std::min( minX, currentX + left - italic * bottom );
-				maxX = std::max( maxX, currentX + right - italic * top );
-				minY = std::min( minY, currentY + top );
-				maxY = std::max( maxY, currentY + bottom );
-
-				// Advance to the next character
-				if ( font->isColorEmojiFont() ) {
-					x += glyph.size.getWidth();
-					y += ( curGlyphPos.y_advance / 64.f ) *
-						 ( mFontStyleConfig.CharacterSize /
-						   static_cast<FT_Face>( font->face() )->available_sizes[0].height );
-				} else {
-					x += glyph.advance;
-					y += curGlyphPos.y_advance / 64.f;
-				}
-
-				prevGlyphIndex = curGlyph.codepoint;
-			}
-
-			// If we're using the underlined style, add the last line
-			if ( underlined && run.runIsNewLine() ) {
-				addLine( mVertices, x, y, underlineOffset, underlineThickness, 0, centerDiffX );
-
-				if ( mFontStyleConfig.OutlineThickness != 0 )
-					addLine( mOutlineVertices, x, y, underlineOffset, underlineThickness,
-							 mFontStyleConfig.OutlineThickness, centerDiffX );
-			}
-
-			// If we're using the strike through style, add the last line across all characters
-			if ( strikeThrough && run.runIsNewLine() ) {
-				addLine( mVertices, x, y, strikeThroughOffset, underlineThickness, 0, centerDiffX );
-
-				if ( mFontStyleConfig.OutlineThickness != 0 )
-					addLine( mOutlineVertices, x, y, strikeThroughOffset, underlineThickness,
-							 mFontStyleConfig.OutlineThickness, centerDiffX );
-			}
-
-			if ( mCachedWidthNeedUpdate )
-				mLinesWidth.push_back( x );
-
-			// next line
-			if ( run.runIsNewLine() ) {
-				y += vspace;
-				x = 0;
-			}
-			run.next();
-		}
+			} );
 
 		// Update the bounding rectangle
 		mBounds.Left = minX;
@@ -1456,8 +1553,6 @@ void Text::ensureGeometryUpdate() {
 			mCachedWidth = maxW;
 			mCachedWidthNeedUpdate = false;
 		}
-
-		hb_buffer_destroy( hbBuffer );
 
 		return;
 	}

@@ -133,6 +133,8 @@ class EE_API FontTrueType : public Font {
 
 	void* hb() const { return mHBFont; }
 
+	bool setCurrentSize( unsigned int characterSize ) const;
+
   protected:
 	friend class Text;
 
@@ -178,8 +180,6 @@ class EE_API FontTrueType : public Font {
 					 Float outlineThickness, Page& page, const Float& maxWidth = 0.f ) const;
 
 	Rect findGlyphRect( Page& page, unsigned int width, unsigned int height ) const;
-
-	bool setCurrentSize( unsigned int characterSize ) const;
 
 	Page& getPage( unsigned int characterSize ) const;
 
