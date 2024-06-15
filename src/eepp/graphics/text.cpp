@@ -21,15 +21,16 @@ namespace EE { namespace Graphics {
 
 namespace {
 
-#ifdef EE_TEXT_SHAPER_ENABLED
-static constexpr bool TextShaperEnabled = true;
-#endif
-
 // helper class that divides the string into lines and font runs.
 class TextShapeRun {
   public:
-	TextShapeRun( const String& str, const FontStyleConfig& config ) :
-		mString( str ), mConfig( config ) {
+	TextShapeRun( const String& str, FontTrueType* font, Uint32 characterSize, Uint32 style,
+				  Float outlineThickness ) :
+		mString( str ),
+		mFont( font ),
+		mCharacterSize( characterSize ),
+		mStyle( style ),
+		mOutlineThickness( outlineThickness ) {
 		findNextEnd();
 	}
 
@@ -46,7 +47,7 @@ class TextShapeRun {
 
 	bool runIsNewLine() const { return mIsNewLine; }
 
-	FontTrueType* font() { return static_cast<FontTrueType*>( mFont ); }
+	FontTrueType* font() { return static_cast<FontTrueType*>( mCurFont ); }
 
   private:
 	void findNextEnd() {
@@ -55,25 +56,19 @@ class TextShapeRun {
 		std::size_t idx = mIndex;
 		std::size_t pos = 0;
 		for ( idx = mIndex; idx < len; idx++, pos++ ) {
-			Font* font =
-				mConfig.Font
-					->getGlyph( mString[idx], mConfig.CharacterSize, mConfig.Style & Text::Bold,
-								mConfig.Style & Text::Italic, mConfig.OutlineThickness )
-					.font;
+			Font* font = mFont
+							 ->getGlyph( mString[idx], mCharacterSize, mStyle & Text::Bold,
+										 mStyle & Text::Italic, mOutlineThickness )
+							 .font;
 			mIsNewLine = mString[idx] == '\n';
-			if ( mIsNewLine ) {
-				mFont = lFont;
+			if ( mIsNewLine || ( lFont != nullptr && font != lFont ) ) {
+				mCurFont = lFont;
 				mStartFont = font;
-				mLen = pos + 1;
-				return;
-			} else if ( ( lFont != nullptr && font != lFont ) ) {
-				mFont = lFont;
-				mStartFont = font;
-				mLen = pos;
+				mLen = mIsNewLine ? pos + 1 : pos;
 				return;
 			}
 			lFont = font;
-			mFont = font;
+			mCurFont = font;
 		}
 		mLen = idx;
 	}
@@ -82,21 +77,26 @@ class TextShapeRun {
 	std::size_t mIndex{ 0 };
 	std::size_t mLen{ 0 };
 	Font* mFont{ nullptr };
+	Uint32 mCharacterSize;
+	Uint32 mStyle;
+	Float mOutlineThickness;
+	Font* mCurFont{ nullptr };
 	Font* mStartFont{ nullptr };
 	bool mIsNewLine{ false };
-	const FontStyleConfig& mConfig;
 };
 
-static void shapeAndRun( const String& string, const FontStyleConfig& config,
-						 const std::function<void( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
+static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize,
+						 Uint32 style, Float outlineThickness,
+						 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
 												   TextShapeRun& )>& cb ) {
 	hb_buffer_t* hbBuffer = hb_buffer_create();
-	TextShapeRun run( string, config );
+	TextShapeRun run( string, font, characterSize, style, outlineThickness );
+	bool completeRun = true;
 
 	while ( run.hasNext() ) {
 		String::View curRun( run.curRun() );
 		FontTrueType* font = run.font();
-		font->setCurrentSize( config.CharacterSize );
+		font->setCurrentSize( characterSize );
 
 		hb_buffer_reset( hbBuffer );
 		hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0, curRun.size() );
@@ -118,15 +118,28 @@ static void shapeAndRun( const String& string, const FontStyleConfig& config,
 		hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
 		hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
 
-		cb( glyphInfo, glyphPos, glyphCount, run );
-
-		run.next();
+		if ( cb( glyphInfo, glyphPos, glyphCount, run ) )
+			run.next();
+		else {
+			completeRun = false;
+			break;
+		}
 	}
 
 	hb_buffer_destroy( hbBuffer );
+	return completeRun;
+}
+
+static bool shapeAndRun( const String& string, const FontStyleConfig& config,
+						 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
+												   TextShapeRun& )>& cb ) {
+	return shapeAndRun( string, static_cast<FontTrueType*>( config.Font ), config.CharacterSize,
+						config.Style, config.OutlineThickness, cb );
 }
 
 } // namespace
+
+bool Text::TextShaperEnabled = true;
 
 std::string Text::styleFlagToString( const Uint32& flags ) {
 	std::string str;
@@ -304,12 +317,13 @@ void Text::drawUnderline( const Vector2f& pos, Float width, Font* font, Float fo
 					shadowColor, shadowOffset, outlineColor );
 }
 
-static inline void drawStrikeThrough( Font* font, Float fontSize, const Color& fontColor,
-									  const Vector2f& cpos, const Uint32& style, BatchRenderer* BR,
-									  Float outlineThickness, const Vector2f& pos, Float width,
-									  const Color& shadowColor, const Vector2f& shadowOffset,
-									  const Color& outlineColor, bool isBold, bool isItalic ) {
-	Rectf xBounds = font->getGlyph( L'x', fontSize, isBold, isItalic ).bounds;
+static inline void _drawStrikeThrough( Font* font, Float fontSize, const Color& fontColor,
+									   const Vector2f& cpos, const Uint32& style, BatchRenderer* BR,
+									   Float outlineThickness, const Vector2f& pos, Float width,
+									   const Color& shadowColor, const Vector2f& shadowOffset,
+									   const Color& outlineColor ) {
+	Rectf xBounds =
+		font->getGlyph( L'x', fontSize, style & Text::Bold, style & Text::Italic ).bounds;
 	Float strikeThroughOffset = xBounds.Top + xBounds.Bottom * 0.5f;
 	Float underlineThickness = font->getUnderlineThickness( fontSize );
 	Float top =
@@ -330,6 +344,15 @@ static inline void drawStrikeThrough( Font* font, Float fontSize, const Color& f
 	BR->quadsSetTexCoord( 0, 0, 1, 1 );
 	BR->quadsSetColor( fontColor );
 	BR->batchQuad( Rectf( pos.x, top, pos.x + width, bottom ) );
+}
+
+void Text::drawStrikeThrough( const Vector2f& pos, Float width, Font* font, Float fontSize,
+							  const Color& fontColor, const Uint32& style, Float outlineThickness,
+							  const Color& outlineColor, const Color& shadowColor,
+							  const Vector2f& shadowOffset ) {
+	BatchRenderer* BR = GlobalBatchRenderer::instance();
+	_drawStrikeThrough( font, fontSize, fontColor, pos, style, BR, outlineThickness, pos, width,
+						shadowColor, shadowOffset, outlineColor );
 }
 
 template <typename StringType>
@@ -380,9 +403,9 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 									pos, width, shadowColor, shadowOffset, outlineColor );
 				}
 				if ( style & Text::StrikeThrough ) {
-					drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR, outlineThickness,
-									   pos, width, shadowColor, shadowOffset, outlineColor, isBold,
-									   isItalic );
+					_drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR,
+										outlineThickness, pos, width, shadowColor, shadowOffset,
+										outlineColor );
 				}
 				size.x = eemax( width, cpos.x );
 				width = 0;
@@ -430,8 +453,8 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	}
 
 	if ( ( style & Text::StrikeThrough ) && width != 0 ) {
-		drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos, width,
-						   shadowColor, shadowOffset, outlineColor, isBold, isItalic );
+		_drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos,
+							width, shadowColor, shadowOffset, outlineColor );
 	}
 
 	size.x = eemax( width, size.x );
@@ -815,11 +838,62 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 
 	if ( font->isMonospace() ) {
 		size_t len = string.length();
-		Float x = 0;
-		for ( size_t i = 0; i < len; i++ )
-			x += ( string[i] == '\t' ) ? hspace * tabWidth : hspace;
-		return x;
+		Float width = 0;
+		Float maxWidth = 0;
+		for ( size_t i = 0; i < len; i++ ) {
+			if ( string[i] == '\n' ) {
+				width = 0;
+			} else {
+				width += ( string[i] == '\t' ) ? hspace * tabWidth : hspace;
+			}
+			maxWidth = eemax( width, maxWidth );
+		}
+		return width;
 	}
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
+		FontTrueType* rFont = static_cast<FontTrueType*>( font );
+		shapeAndRun( string, rFont, fontSize, style, outlineThickness,
+					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
+						  TextShapeRun& run ) {
+						 FontTrueType* font = run.font();
+						 Uint32 prevGlyphIndex = 0;
+
+						 for ( std::size_t i = 0; i < glyphCount; ++i ) {
+							 hb_glyph_info_t curGlyph = glyphInfo[i];
+							 auto curChar = string[curGlyph.cluster];
+
+							 if ( curChar == '\t' ) {
+								 width += hspace * tabWidth;
+								 prevGlyphIndex = curGlyph.codepoint;
+								 continue;
+							 }
+
+							 const Glyph& glyph =
+								 font->getGlyphByIndex( curGlyph.codepoint, fontSize, bold, italic,
+														0, rFont->getPage( fontSize ), 0 );
+
+							 width += rFont->getKerningFromGlyphIndex(
+								 prevGlyphIndex, curGlyph.codepoint, fontSize, bold, italic,
+								 outlineThickness );
+
+							 width += font->isColorEmojiFont() && ' ' != curChar
+										  ? glyph.size.getWidth()
+										  : glyph.advance;
+
+							 maxWidth = eemax( maxWidth, width );
+							 prevGlyphIndex = curGlyph.codepoint;
+						 }
+
+						 if ( run.runIsNewLine() )
+							 width = 0;
+
+						 return true;
+					 } );
+		return maxWidth;
+	}
+#endif
 
 	for ( std::size_t i = 0; i < string.size(); ++i ) {
 		rune = string.at( i );
@@ -845,27 +919,76 @@ std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSiz
 											   const Float& outlineThickness ) {
 	if ( NULL == font || string.empty() )
 		return 0;
-	String::StringBaseType rune;
+	String::StringBaseType codepoint;
 	Uint32 prevChar = 0;
 	Float width = 0;
 	bool bold = ( style & Text::Bold ) != 0;
 	bool italic = ( style & Text::Italic ) != 0;
 	Float hspace = static_cast<Float>(
 		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
+		FontTrueType* rFont = static_cast<FontTrueType*>( font );
+		std::size_t it = 0;
+		std::size_t pos = 0;
+		bool completeRun = shapeAndRun(
+			string, rFont, fontSize, style, outlineThickness,
+			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
+				 TextShapeRun& run ) {
+				FontTrueType* font = run.font();
+				Uint32 prevGlyphIndex = 0;
+
+				for ( std::size_t i = 0; i < glyphCount; ++i ) {
+					hb_glyph_info_t curGlyph = glyphInfo[i];
+					auto curChar = string[curGlyph.cluster];
+
+					if ( curChar == '\t' ) {
+						width += hspace * tabWidth;
+					} else {
+						const Glyph& glyph =
+							font->getGlyphByIndex( curGlyph.codepoint, fontSize, bold, italic, 0,
+												   rFont->getPage( fontSize ), 0 );
+
+						width += rFont->getKerningFromGlyphIndex( prevGlyphIndex,
+																  curGlyph.codepoint, fontSize,
+																  bold, italic, outlineThickness );
+
+						width += font->isColorEmojiFont() && ' ' != curChar ? glyph.size.getWidth()
+																			: glyph.advance;
+					}
+
+					if ( width > maxWidth ) {
+						pos = it > 0 ? it - 1 : 0;
+						return false;
+					}
+
+					prevGlyphIndex = curGlyph.codepoint;
+					it++;
+				}
+				if ( run.runIsNewLine() )
+					width = 0;
+				return true;
+			} );
+		return completeRun ? ( width <= maxWidth ? it : it - 1 ) : pos;
+	}
+#endif
+
 	for ( std::size_t i = 0; i < string.size(); ++i ) {
-		rune = string.at( i );
-		Glyph glyph = font->getGlyph( rune, fontSize, bold, italic, outlineThickness );
-		if ( rune != '\r' && rune != '\t' ) {
-			width += font->getKerning( prevChar, rune, fontSize, bold, italic, outlineThickness );
+		codepoint = string.at( i );
+		Glyph glyph = font->getGlyph( codepoint, fontSize, bold, italic, outlineThickness );
+		if ( codepoint != '\r' && codepoint != '\t' ) {
+			width +=
+				font->getKerning( prevChar, codepoint, fontSize, bold, italic, outlineThickness );
 			width += glyph.advance;
-		} else if ( rune == '\t' )
+		} else if ( codepoint == '\t' )
 			width += hspace * tabWidth;
 
 		if ( width > maxWidth )
 			return i > 0 ? i - 1 : 0;
-		if ( rune == '\n' )
+		if ( codepoint == '\n' )
 			width = 0;
-		prevChar = rune;
+		prevChar = codepoint;
 	}
 	return width <= maxWidth ? string.size() : string.size() - 1;
 }
@@ -890,13 +1013,67 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 
 	// Compute the position
 	Vector2f position;
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
+		FontTrueType* rFont = static_cast<FontTrueType*>( font );
+		std::size_t curPos = 0;
+		shapeAndRun( string, rFont, fontSize, style, outlineThickness,
+					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
+						  TextShapeRun& run ) {
+						 if ( index == curPos )
+							 return false;
+
+						 FontTrueType* font = run.font();
+						 Uint32 prevGlyphIndex = 0;
+
+						 for ( std::size_t i = 0; i < glyphCount; ++i ) {
+							 hb_glyph_info_t curGlyph = glyphInfo[i];
+							 auto curChar = string[curGlyph.cluster];
+
+							 if ( curChar == '\t' ) {
+								 position.x += hspace * tabWidth;
+								 prevGlyphIndex = curGlyph.codepoint;
+								 continue;
+							 }
+
+							 const Glyph& glyph =
+								 font->getGlyphByIndex( curGlyph.codepoint, fontSize, bold, italic,
+														0, rFont->getPage( fontSize ), 0 );
+
+							 position.x += rFont->getKerningFromGlyphIndex(
+								 prevGlyphIndex, curGlyph.codepoint, fontSize, bold, italic,
+								 outlineThickness );
+
+							 position.x += font->isColorEmojiFont() && ' ' != curChar
+											   ? glyph.size.getWidth()
+											   : glyph.advance;
+
+							 prevGlyphIndex = curGlyph.codepoint;
+							 curPos++;
+						 }
+
+						 if ( run.runIsNewLine() ) {
+							 position.x = 0;
+							 position.y = vspace;
+						 }
+
+						 return true;
+					 } );
+		return position;
+	}
+#endif
+
 	Uint32 prevChar = 0;
+	bool isMonospace = font->isMonospace();
 	for ( std::size_t i = 0; i < index; ++i ) {
 		String::StringBaseType curChar = string[i];
 
 		// Apply the kerning offset
-		position.x += static_cast<Float>(
-			font->getKerning( prevChar, curChar, fontSize, bold, italic, outlineThickness ) );
+		position.x += isMonospace
+						  ? 0
+						  : static_cast<Float>( font->getKerning( prevChar, curChar, fontSize, bold,
+																  italic, outlineThickness ) );
 		prevChar = curChar;
 
 		// Handle special characters
@@ -918,8 +1095,11 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 		}
 
 		// For regular characters, add the advance offset of the glyph
-		position.x += static_cast<Float>(
-			font->getGlyph( curChar, fontSize, bold, italic, outlineThickness ).advance );
+		position.x +=
+			isMonospace
+				? hspace
+				: static_cast<Float>(
+					  font->getGlyph( curChar, fontSize, bold, italic, outlineThickness ).advance );
 	}
 
 	return position;
@@ -933,7 +1113,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 
 	Float vspace = font->getLineSpacing( fontSize );
 	Float width = 0, lWidth = 0, height = vspace, lHeight = 0;
-	Uint32 rune;
+	Uint32 codepoint;
 	Uint32 prevChar = 0;
 	Int32 nearest = -1;
 	Int32 minDist = std::numeric_limits<Int32>::max();
@@ -946,20 +1126,100 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 	Float hspace = static_cast<Float>(
 		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
 
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
+		FontTrueType* rFont = static_cast<FontTrueType*>( font );
+		Int32 it = 0;
+		bool completeRun = shapeAndRun(
+			string, rFont, fontSize, style, outlineThickness,
+			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
+				 TextShapeRun& run ) {
+				FontTrueType* font = run.font();
+				Uint32 prevGlyphIndex = 0;
+
+				for ( std::size_t i = 0; i < glyphCount; ++i ) {
+					hb_glyph_info_t curGlyph = glyphInfo[i];
+					auto curChar = string[curGlyph.cluster];
+					lWidth = width;
+
+					if ( curChar == '\t' ) {
+						width += hspace * tabWidth;
+					} else {
+						const Glyph& glyph =
+							font->getGlyphByIndex( curGlyph.codepoint, fontSize, bold, italic, 0,
+												   rFont->getPage( fontSize ), 0 );
+
+						width += rFont->getKerningFromGlyphIndex( prevGlyphIndex,
+																  curGlyph.codepoint, fontSize,
+																  bold, italic, outlineThickness );
+
+						width += font->isColorEmojiFont() && ' ' != curChar ? glyph.size.getWidth()
+																			: glyph.advance;
+					}
+
+					if ( pos.x <= width && pos.x >= lWidth && pos.y <= height &&
+						 pos.y >= lHeight ) {
+						if ( it + 1 < (Int32)tSize ) {
+							Int32 tcurDist = eeabs( pos.x - lWidth );
+							Int32 nextDist = eeabs( pos.x - width );
+							if ( nextDist < tcurDist ) {
+								nearest = ++it;
+								return false;
+							}
+						}
+						nearest = it;
+						return false;
+					}
+
+					if ( returnNearest ) {
+						curDist = eeabs(
+							fpos.distance( Vector2f( width - ( width - lWidth ) * 0.5f,
+													 height - ( height - lHeight ) * 0.5f ) ) );
+						if ( curDist < minDist ) {
+							nearest = it;
+							minDist = curDist;
+						}
+					}
+
+					prevGlyphIndex = curGlyph.codepoint;
+					it++;
+				}
+
+				if ( run.runIsNewLine() ) {
+					lWidth = 0;
+					width = 0;
+					lHeight = height;
+					height += vspace;
+					if ( pos.x > width && pos.y <= lHeight ) {
+						nearest = it;
+						return false;
+					}
+				}
+
+				return true;
+			} );
+
+		if ( completeRun && pos.x >= width )
+			return tSize;
+		return nearest;
+	}
+#endif
+
 	for ( std::size_t i = 0; i < tSize; ++i ) {
-		rune = string[i];
-		Glyph glyph = font->getGlyph( rune, fontSize, bold, italic, outlineThickness );
+		codepoint = string[i];
+		Glyph glyph = font->getGlyph( codepoint, fontSize, bold, italic, outlineThickness );
 
 		lWidth = width;
 
-		if ( rune != '\r' && rune != '\t' ) {
-			width += font->getKerning( prevChar, rune, fontSize, bold, italic, outlineThickness );
-			prevChar = rune;
+		if ( codepoint != '\r' && codepoint != '\t' ) {
+			width +=
+				font->getKerning( prevChar, codepoint, fontSize, bold, italic, outlineThickness );
+			prevChar = codepoint;
 			width += glyph.advance;
-		} else if ( rune == '\t' ) {
+		} else if ( codepoint == '\t' ) {
 			width += hspace * tabWidth;
 		}
-		if ( rune == '\n' ) {
+		if ( codepoint == '\n' ) {
 			lWidth = 0;
 			width = 0;
 		}
@@ -983,7 +1243,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 			}
 		}
 
-		if ( rune == '\n' ) {
+		if ( codepoint == '\n' ) {
 			lHeight = height;
 			height += vspace;
 			if ( pos.x > width && pos.y <= lHeight ) {
@@ -1084,6 +1344,8 @@ void Text::updateWidthCache() {
 							 mLinesWidth.push_back( width );
 							 width = 0;
 						 }
+
+						 return true;
 					 } );
 
 		if ( !mString.empty() && mString[mString.size() - 1] != '\n' )
@@ -1094,30 +1356,31 @@ void Text::updateWidthCache() {
 	}
 #endif
 
-	Uint32 rune;
+	Uint32 codepoint;
 	Uint32 prevChar = 0;
 	size_t size = mString.size();
 	for ( std::size_t i = 0; i < size; ++i ) {
-		rune = mString[i];
-		const Glyph& glyph = mFontStyleConfig.Font->getGlyph(
-			rune, mFontStyleConfig.CharacterSize, bold, italic, mFontStyleConfig.OutlineThickness );
-		if ( rune != '\r' && rune != '\t' ) {
-			width += mFontStyleConfig.Font->getKerning( prevChar, rune,
+		codepoint = mString[i];
+		const Glyph& glyph =
+			mFontStyleConfig.Font->getGlyph( codepoint, mFontStyleConfig.CharacterSize, bold,
+											 italic, mFontStyleConfig.OutlineThickness );
+		if ( codepoint != '\r' && codepoint != '\t' ) {
+			width += mFontStyleConfig.Font->getKerning( prevChar, codepoint,
 														mFontStyleConfig.CharacterSize, bold,
 														italic, mFontStyleConfig.OutlineThickness );
 			width += glyph.advance;
-		} else if ( rune == '\t' ) {
+		} else if ( codepoint == '\t' ) {
 			width += hspace * mTabWidth;
 		}
 
-		if ( rune == '\n' ) {
+		if ( codepoint == '\n' ) {
 			mLinesWidth.push_back( width - glyph.advance );
 			width = 0;
 		}
 
 		if ( width > maxWidth )
 			maxWidth = width;
-		prevChar = rune;
+		prevChar = codepoint;
 	}
 
 	if ( !mString.empty() && mString[mString.size() - 1] != '\n' )
@@ -1415,13 +1678,14 @@ void Text::ensureGeometryUpdate() {
 					hb_glyph_position_t curGlyphPos = glyphPos[i];
 					auto curChar = mString[curGlyph.cluster];
 
+					x += rFont->getKerningFromGlyphIndex(
+						prevGlyphIndex, curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold,
+						reqItalic, mFontStyleConfig.OutlineThickness );
+
 					if ( curChar == '\t' ) {
 						minX = std::min( minX, x );
 
-						if ( curChar == '\t' )
-							x += hspace * mTabWidth;
-						else
-							x += hspace;
+						x += hspace * mTabWidth;
 
 						maxX = std::max( maxX, x );
 
@@ -1431,10 +1695,6 @@ void Text::ensureGeometryUpdate() {
 						prevGlyphIndex = curGlyph.codepoint;
 						continue;
 					}
-
-					x += rFont->getKerningFromGlyphIndex(
-						prevGlyphIndex, curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold,
-						reqItalic, mFontStyleConfig.OutlineThickness );
 
 					Float currentX = x + ( curGlyphPos.x_offset / 64.f );
 					Float currentY = y + ( curGlyphPos.y_offset / 64.f );
@@ -1541,6 +1801,8 @@ void Text::ensureGeometryUpdate() {
 							break;
 					}
 				}
+
+				return true;
 			} );
 
 		// Update the bounding rectangle

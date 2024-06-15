@@ -594,11 +594,6 @@ Float FontTrueType::getKerningFromGlyphIndex( Uint32 index1, Uint32 index2,
 	if ( index1 == 0 || index2 == 0 || isMonospace() )
 		return 0.f;
 
-	auto pair = static_cast<Uint64>( index1 ) << 32 | index2;
-	auto found = mKerningCache.find( pair );
-	if ( found != mKerningCache.end() )
-		return found->second;
-
 	FT_Face face = static_cast<FT_Face>( mFace );
 
 	if ( face && setCurrentSize( characterSize ) ) {
@@ -616,7 +611,6 @@ Float FontTrueType::getKerningFromGlyphIndex( Uint32 index1, Uint32 index2,
 
 		// X advance is already in pixels for bitmap fonts
 		if ( !FT_IS_SCALABLE( face ) ) {
-			mKerningCache.insert( { pair, static_cast<Float>( kerning.x ) } );
 			return static_cast<Float>( kerning.x );
 		}
 
@@ -624,11 +618,9 @@ Float FontTrueType::getKerningFromGlyphIndex( Uint32 index1, Uint32 index2,
 		Float val =
 			std::floor( ( secondLsbDelta - firstRsbDelta + static_cast<float>( kerning.x ) + 32 ) /
 						static_cast<float>( 1 << 6 ) );
-		mKerningCache.insert( { pair, val } );
 		return val;
 	} else {
 		// Invalid font, or no kerning
-		mKerningCache.insert( { pair, 0.f } );
 		return 0.f;
 	}
 }
