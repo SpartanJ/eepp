@@ -958,15 +958,16 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 
 		Float scale = 1.f;
 
-		if ( mIsColorEmojiFont || mIsEmojiFont )
+		if ( mIsColorEmojiFont || mIsEmojiFont ) {
 			scale = eemin( 1.f, (Float)( maxWidth > 0.f ? maxWidth : characterSize ) /
 									(Float)( maxWidth > 0.f ? width : height ) );
+		}
 
 		int destWidth = width;
 		int destHeight = height;
 
 		if ( maxWidth <= 0.f )
-			glyph.advance *= scale;
+			glyph.advance = eeceil( glyph.advance * scale );
 
 		if ( scale >= 1.f ) {
 			destWidth *= scale;
