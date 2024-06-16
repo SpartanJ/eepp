@@ -41,6 +41,8 @@ class TextShapeRun {
 
 	bool hasNext() const { return mIndex < mString.size(); }
 
+	std::size_t pos() const { return mIndex; }
+
 	void next() {
 		mIndex += mLen;
 		findNextEnd();
@@ -106,14 +108,20 @@ static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 charac
 		hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0, curRun.size() );
 		hb_buffer_guess_segment_properties( hbBuffer );
 
-		// Enable kerning
+		// We use our own kerning algo
 		static const hb_feature_t features[] = {
-			hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), 1, HB_FEATURE_GLOBAL_START,
+			hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), 0, HB_FEATURE_GLOBAL_START,
 						  HB_FEATURE_GLOBAL_END },
 		};
 
 		// whitelist cross-platforms shapers only
 		static const char* shaper_list[] = { "graphite2", "ot", "fallback", nullptr };
+
+		if ( !font || !font->hb() ) {
+			eeASSERT( font && font->hb() );
+			completeRun = false;
+			break;
+		}
 
 		hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features, 1, shaper_list );
 
@@ -380,6 +388,104 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	BR->quadsBegin();
 	BR->setTexture( fontTexture, fontTexture->getCoordinateType() );
 
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
+		Float hspace = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
+		FontTrueType* rFont = static_cast<FontTrueType*>( font );
+		shapeAndRun( string, rFont, fontSize, style, outlineThickness,
+					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
+						  TextShapeRun& run ) {
+						 FontTrueType* font = run.font();
+						 Uint32 prevGlyphIndex = 0;
+						 Uint32 cluster = 0;
+						 for ( std::size_t i = 0; i < glyphCount; ++i ) {
+							 hb_glyph_info_t curGlyph = glyphInfo[i];
+							 cluster = curGlyph.cluster;
+							 ch = string[cluster];
+							 if ( ch == '\t' ) {
+								 width += hspace * tabWidth;
+								 cpos.x += hspace * tabWidth;
+							 } else {
+								 if ( style & Text::Shadow ) {
+									 auto* gds = font->getGlyphDrawableFromGlyphIndex(
+										 curGlyph.codepoint, fontSize, isBold, isItalic,
+										 outlineThickness, rFont->getPage( fontSize ) );
+									 if ( gds )
+										 drawGlyph( BR, gds, cpos, shadowColor, isItalic );
+								 }
+
+								 if ( outlineThickness != 0.f ) {
+									 auto* gdo = font->getGlyphDrawableFromGlyphIndex(
+										 curGlyph.codepoint, fontSize, isBold, isItalic,
+										 outlineThickness, rFont->getPage( fontSize ) );
+									 if ( gdo )
+										 drawGlyph( BR, gdo, cpos, outlineColor, isItalic );
+								 }
+
+								 auto* gd = font->getGlyphDrawableFromGlyphIndex(
+									 curGlyph.codepoint, fontSize, isBold, isItalic, 0,
+									 rFont->getPage( fontSize ) );
+								 if ( gd ) {
+									 if ( !font->isMonospace() ) {
+										 kerning = font->getKerningFromGlyphIndex(
+											 prevGlyphIndex, curGlyph.codepoint, fontSize, isBold,
+											 isItalic, outlineThickness );
+										 cpos.x += kerning;
+										 width += kerning;
+									 }
+
+									 drawGlyph( BR, gd, cpos, fontColor, isItalic );
+
+									 Float advance = font->isColorEmojiFont() && ' ' != ch
+														 ? gd->getPixelsSize().getWidth()
+														 : gd->getAdvance();
+									 cpos.x += advance;
+									 width += advance;
+								 }
+							 }
+
+							 prevGlyphIndex = curGlyph.codepoint;
+						 }
+
+						 if ( run.runIsNewLine() ) {
+							 if ( style & Text::Underlined ) {
+								 _drawUnderline( font, fontSize, fontColor, cpos, style, BR,
+												 outlineThickness, pos, width, shadowColor,
+												 shadowOffset, outlineColor );
+							 }
+							 if ( style & Text::StrikeThrough ) {
+								 _drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR,
+													 outlineThickness, pos, width, shadowColor,
+													 shadowOffset, outlineColor );
+							 }
+							 size.x = eemax( width, size.x );
+							 width = 0;
+							 cpos.x = pos.x;
+							 cpos.y += height;
+							 if ( cluster != ssize - 1 )
+								 size.y += height;
+						 }
+						 return true;
+					 } );
+
+		if ( ( style & Text::Underlined ) && width != 0 ) {
+			_drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos,
+							width, shadowColor, shadowOffset, outlineColor );
+		}
+
+		if ( ( style & Text::StrikeThrough ) && width != 0 ) {
+			_drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos,
+								width, shadowColor, shadowOffset, outlineColor );
+		}
+
+		size.x = eemax( width, size.x );
+
+		BR->drawOpt();
+
+		return size;
+	}
+#endif
+
 	for ( size_t i = 0; i < ssize; ++i ) {
 		ch = string[i];
 
@@ -411,7 +517,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 										outlineThickness, pos, width, shadowColor, shadowOffset,
 										outlineColor );
 				}
-				size.x = eemax( width, cpos.x );
+				size.x = eemax( width, size.x );
 				width = 0;
 				cpos.x = pos.x;
 				cpos.y += height;

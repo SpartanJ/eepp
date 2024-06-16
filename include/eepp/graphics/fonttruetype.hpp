@@ -41,6 +41,11 @@ class EE_API FontTrueType : public Font {
 									 bool bold = false, bool italic = false,
 									 Float outlineThickness = 0, const Float& maxWidth = 0 ) const;
 
+	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
+												   bool bold = false, bool italic = false,
+												   Float outlineThickness = 0,
+												   const Float& maxWidth = 0 ) const;
+
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 					  bool italic, Float outlineThickness = 0 ) const;
 
@@ -174,10 +179,15 @@ class EE_API FontTrueType : public Font {
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness, Page& page, const Float& maxWidth ) const;
 
+	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
+												   bool bold, bool italic,
+												   Float outlineThickness, Page& page,
+												   const Float& maxWidth = 0 ) const;
+
 	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
 
 	Glyph loadGlyphByIndex( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-					 Float outlineThickness, Page& page, const Float& maxWidth = 0.f ) const;
+							Float outlineThickness, Page& page, const Float& maxWidth = 0.f ) const;
 
 	Rect findGlyphRect( Page& page, unsigned int width, unsigned int height ) const;
 
