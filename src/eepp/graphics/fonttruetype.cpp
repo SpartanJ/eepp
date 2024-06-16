@@ -375,14 +375,14 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 
 	if ( bold && !italic && mFontBold != nullptr &&
 		 ( idx = mFontBold->getGlyphIndex( codePoint ) ) ) {
-		return mFontBold->getGlyph( idx, characterSize, true, false, outlineThickness,
-									getPage( characterSize ), maxWidth );
+		return mFontBold->getGlyphByIndex( idx, characterSize, true, false, outlineThickness,
+										   getPage( characterSize ), maxWidth );
 	}
 
 	if ( italic && !bold && mFontItalic != nullptr &&
 		 ( idx = mFontItalic->getGlyphIndex( codePoint ) ) ) {
-		return mFontItalic->getGlyph( idx, characterSize, false, true, outlineThickness,
-									  getPage( characterSize ), maxWidth );
+		return mFontItalic->getGlyphByIndex( idx, characterSize, false, true, outlineThickness,
+											 getPage( characterSize ), maxWidth );
 	}
 
 	idx = getGlyphIndex( codePoint );
