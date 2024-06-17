@@ -328,7 +328,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 
 			if ( isMonospace() && maxWidth == 0.f ) {
-				Glyph monospaceGlyph =
+				const Glyph& monospaceGlyph =
 					getGlyph( ' ', characterSize, bold, italic, outlineThickness );
 				maxWidth = monospaceGlyph.advance;
 			}
@@ -341,14 +341,14 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 					mUsingFallback = true;
 				}
 				return fontEmoji->getGlyphByIndex( idx, characterSize, bold, italic,
-												   0 /* outline thickness won't work here */,
-												   getPage( characterSize ), maxWidth );
+												   outlineThickness, getPage( characterSize ),
+												   maxWidth );
 			}
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 
 			if ( isMonospace() && maxWidth == 0.f ) {
-				Glyph monospaceGlyph =
+				const Glyph& monospaceGlyph =
 					getGlyph( ' ', characterSize, bold, italic, outlineThickness );
 				maxWidth = monospaceGlyph.advance;
 			}
