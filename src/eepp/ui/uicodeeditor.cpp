@@ -4808,7 +4808,8 @@ void UICodeEditor::refreshTag() {
 
 void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
 	bool overGutter = convertToNodeSpace( position ).x < getGutterWidth();
-	getUISceneNode()->setCursor( !overGutter && !mLocked ? Cursor::IBeam : Cursor::Arrow );
+	getUISceneNode()->setCursor(
+		mHandShown ? Cursor::Hand : ( !overGutter && !mLocked ? Cursor::IBeam : Cursor::Arrow ) );
 }
 
 }} // namespace EE::UI

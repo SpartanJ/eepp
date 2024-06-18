@@ -224,6 +224,7 @@ class EE_API FontTrueType : public Font {
 	bool mIsItalic{ false };
 	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
+	mutable UnorderedMap<Uint32, std::tuple<Uint32, Uint32, bool>> mKeyCache;
 	FontHinting mHinting{ FontHinting::Full };
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 	FontTrueType* mFontBold{ nullptr };

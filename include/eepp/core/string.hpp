@@ -944,7 +944,9 @@ class EE_API String {
 	/** @return True if a string contains a substring.
 	 * @param needle The searched string.
 	 */
-	bool contains( const String& needle );
+	bool contains( const String& needle ) const;
+
+	bool isAscii() const;
 
 	String::View view() const;
 
