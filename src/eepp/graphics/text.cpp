@@ -56,7 +56,7 @@ class TextShapeRun {
 	void findNextEnd() {
 		Font* lFont = mStartFont;
 		std::size_t len = mString.size();
-		std::size_t idx = mIndex;
+		std::size_t idx;
 		std::size_t pos = 0;
 		for ( idx = mIndex; idx < len; idx++, pos++ ) {
 			Font* font = mFont
@@ -88,6 +88,7 @@ class TextShapeRun {
 	bool mIsNewLine{ false };
 };
 
+#ifdef EE_TEXT_SHAPER_ENABLED
 static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize,
 						 Uint32 style, Float outlineThickness,
 						 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
@@ -148,6 +149,7 @@ static bool shapeAndRun( const String& string, const FontStyleConfig& config,
 	return shapeAndRun( string, static_cast<FontTrueType*>( config.Font ), config.CharacterSize,
 						config.Style, config.OutlineThickness, cb );
 }
+#endif
 
 } // namespace
 
