@@ -3886,7 +3886,8 @@ void UICodeEditor::drawColorPreview( const Vector2f& startScroll, const Float& l
 
 void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Vector2f& startScroll,
 									const Float& lineHeight ) {
-	Float tabWidth = getTextWidth( String( "\t" ) );
+	static const String tab = "\t";
+	Float tabWidth = getTextWidth( tab );
 	Float glyphW = getGlyphWidth();
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();

@@ -20,6 +20,7 @@ FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel&
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	mMimeType = "";
 	mHash = String::hash( mName );
+	mDisplayName = mName;
 	traverseIfNeeded( model );
 }
 
@@ -28,6 +29,7 @@ FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	mHash = String::hash( mName );
+	mDisplayName = mName;
 	updateMimeType();
 }
 
@@ -120,6 +122,8 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 void FileSystemModel::Node::rename( const FileInfo& file ) {
 	mInfo = file;
 	mName = file.getFileName();
+	mHash = String::hash( mName );
+	mDisplayName = mName;
 	updateMimeType();
 }
 
@@ -259,6 +263,8 @@ bool FileSystemModel::Node::fetchData( const String& fullPath ) {
 	if ( mInfoDirty ) {
 		mInfo = FileInfo( fullPath, mParent == nullptr );
 		mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
+		mHash = String::hash( mName );
+		mDisplayName = mName;
 		mInfoDirty = false;
 	}
 	return true;
@@ -444,7 +450,7 @@ Variant FileSystemModel::data( const ModelIndex& index, ModelRole role ) const {
 				case Column::Icon:
 					return iconFor( node, index );
 				case Column::Name:
-					return Variant( node.getName().c_str() );
+					return Variant( &node.getDisplayName() );
 				case Column::Size:
 					return Variant( FileSystem::sizeToString( node.info().getSize() ) );
 				case Column::Owner:

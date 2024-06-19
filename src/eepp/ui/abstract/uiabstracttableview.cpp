@@ -599,8 +599,14 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
-		if ( txt.isValid() )
-			cell->setText( txt.toString() );
+		if ( txt.isValid() ) {
+			if ( txt.is( Variant::Type::String ) )
+				cell->setText( txt.asString() );
+			else if ( txt.is( Variant::Type::StringPtr ) )
+				cell->setText( txt.asStringPtr() );
+			else
+				cell->setText( txt.toString() );
+		}
 
 		bool isVisible = false;
 		Variant icon( getModel()->data( index, ModelRole::Icon ) );
