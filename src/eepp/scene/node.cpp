@@ -558,7 +558,7 @@ void Node::nodeDraw() {
 
 		matrixSet();
 
-		bool needsClipPlanes = isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
+		bool needsClipPlanes = isClipped() && isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
 
 		clipStart( needsClipPlanes );
 
